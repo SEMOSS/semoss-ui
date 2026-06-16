@@ -50,6 +50,7 @@ const buildSlashCommands = (
 		description: "Add knowledge sources to this conversation",
 		icon: BookOpenIcon,
 		onExecute: () => onOpenMcpOverlay("KNOWLEDGE"),
+		noChip: true,
 	},
 	{
 		id: "toolbox",
@@ -57,6 +58,7 @@ const buildSlashCommands = (
 		description: "Add toolboxes to this conversation",
 		icon: HammerIcon,
 		onExecute: () => onOpenMcpOverlay("TOOLBOX"),
+		noChip: true,
 	},
 	{
 		id: "mcp",
@@ -64,6 +66,7 @@ const buildSlashCommands = (
 		icon: HammerIcon,
 		onExecute: () => onOpenMcpOverlay("TOOLBOX"),
 		hiddenInMenu: true,
+		noChip: true,
 	},
 	{
 		id: "agent",
@@ -71,6 +74,7 @@ const buildSlashCommands = (
 		description: "Select an agent for this conversation",
 		icon: BotIcon,
 		onExecute: () => onOpenMcpOverlay("AGENT"),
+		noChip: true,
 	},
 	{
 		id: "workspace",
@@ -78,6 +82,7 @@ const buildSlashCommands = (
 		icon: BotIcon,
 		onExecute: () => onOpenMcpOverlay("AGENT"),
 		hiddenInMenu: true,
+		noChip: true,
 	},
 	{
 		id: "compact",
@@ -93,6 +98,7 @@ const buildSlashCommands = (
 		description: "Attach a document to this message",
 		icon: PaperclipIcon,
 		onExecute: onAttachDocument,
+		noChip: true,
 	},
 	{
 		id: "file",
@@ -100,6 +106,7 @@ const buildSlashCommands = (
 		icon: PaperclipIcon,
 		onExecute: onAttachDocument,
 		hiddenInMenu: true,
+		noChip: true,
 	},
 	{
 		id: "settings",
@@ -107,6 +114,7 @@ const buildSlashCommands = (
 		description: "Open room configuration",
 		icon: Settings2Icon,
 		onExecute: onOpenSettings,
+		noChip: true,
 	},
 	{
 		id: "room-options",
@@ -114,6 +122,7 @@ const buildSlashCommands = (
 		icon: Settings2Icon,
 		onExecute: onOpenSettings,
 		hiddenInMenu: true,
+		noChip: true,
 	},
 ];
 
