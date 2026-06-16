@@ -1,0 +1,34 @@
+{
+	"context": {
+		"switchTo": "Cambiar a {{context}}"
+	},
+	"run": {
+		"button": "Ejecutar",
+		"tooltipActive": "Ejecutar (Ctrl+Enter)",
+		"tooltipInactive": "Vuelve al alcance de este archivo para ejecutarlo"
+	},
+	"errors": {
+		"loadFailed": "Error al cargar {{name}}",
+		"runFailed": "No se pudo ejecutar {{name}}. Valida el script."
+	},
+	"maximizedToast": {
+		"title": "La salida aparecerá en el panel Terminal",
+		"description": "Restaura el diseño para ver el resultado de la ejecución."
+	},
+	"noMode": {
+		"title": "Elige un lenguaje para ejecutar",
+		"description": "Selecciona Pixel, R, Python o Shell en la barra de herramientas y luego ejecuta {{name}}."
+	},
+	"scopeChanged": {
+		"title": "El alcance ha cambiado",
+		"body": "Este archivo se abrió en <strong>{{scope}}</strong>. Vuelve a ese alcance para editarlo o ejecutarlo."
+	},
+	"scopeLabel": {
+		"appWithName": "App · {{name}} · {{id}}",
+		"appIdOnly": "App · {{id}}",
+		"engine": "Motor · {{id}}",
+		"storage": "Almacenamiento · {{name}}",
+		"user": "Usuario",
+		"insight": "Perspectiva"
+	}
+}

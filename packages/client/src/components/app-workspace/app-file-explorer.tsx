@@ -42,10 +42,20 @@ interface AppFileExplorerProps {
 	 * Optional callback when the file explorer panel is mounted/unmounted
 	 */
 	onOpenStateChange?: (isOpen: boolean) => void;
+
+	/** Initial directory path to open to (defaults to "/") */
+	initialPath?: string;
 }
 
 export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
-	({ layout, node, app, onVisibleAssetPathsChange, onOpenStateChange }) => {
+	({
+		layout,
+		node,
+		app,
+		onVisibleAssetPathsChange,
+		onOpenStateChange,
+		initialPath,
+	}) => {
 		const insight = useInsight();
 
 		const [isPublishing, setIsPublishing] = useState(false);
@@ -350,6 +360,7 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 					type: "APP",
 					app: app,
 				}}
+				initialPath={initialPath}
 				onVisibleItemsChange={({ path, items }) => {
 					onVisibleAssetPathsChange?.({
 						path,
@@ -552,20 +563,6 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 												await download(
 													insight.insightId,
 													fileKey,
-												);
-
-												refresh();
-											},
-										}
-									: null,
-								item.path.endsWith(".zip")
-									? {
-											name: "Unzip",
-											action: async () => {
-												const pixel = `UnzipFile(filePath=["${item.path}"], space=["${app}"])`;
-
-												await insight.actions.run(
-													pixel,
 												);
 
 												refresh();

@@ -115,6 +115,11 @@
 	},
 	"overrides": [
 		{
+			"includes": ["**/src/assets/img/**", "**/src/assets/loginProviders/**"],
+			"linter": { "enabled": false },
+			"formatter": { "enabled": false }
+		},
+		{
 			"includes": ["**/*.test.{js,ts,jsx,tsx}", "**/*.spec.{js,ts,jsx,tsx}"],
 			"linter": {
 				"rules": {

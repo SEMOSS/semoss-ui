@@ -11,13 +11,13 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
+import GroupIcon from "@/assets/img/Group.svg";
+import MultiBlockIcon from "@/assets/img/Multiple_Block.svg";
+import VariationIcon from "@/assets/img/VariationLogo.svg";
 import { SelectedMenuSection } from "@/components/designer";
 import { AddVariableModal } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
 import { useDesigner } from "@/hooks";
-import GroupIcon from "../../../assets/img/Group.svg";
-import MultiBlockIcon from "../../../assets/img/Multiple_Block.svg";
-import VariationIcon from "../../../assets/img/VariationLogo.svg";
 import { BlockSettingsRegistry } from "../blocks";
 
 // IconButtonWrapper parent of UnstyledIconButton
@@ -345,7 +345,8 @@ export const SelectedBlockPanel = observer(() => {
 								style={{
 									alignSelf: "stretch",
 									color: "#666",
-									fontFamily: "Inter",
+									fontFamily:
+										'"Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
 									fontSize: "16px",
 									fontWeight: 500,
 									lineHeight: "150%",
@@ -358,7 +359,8 @@ export const SelectedBlockPanel = observer(() => {
 								style={{
 									alignSelf: "stretch",
 									color: "#666",
-									fontFamily: "Inter",
+									fontFamily:
+										'"Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
 									fontSize: "14px",
 									fontWeight: 400,
 									lineHeight: "150%",
@@ -389,7 +391,8 @@ export const SelectedBlockPanel = observer(() => {
 								style={{
 									alignSelf: "stretch",
 									color: "#666",
-									fontFamily: "Inter",
+									fontFamily:
+										'"Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
 									fontSize: "16px",
 									fontWeight: 500,
 									lineHeight: "150%",
@@ -402,7 +405,8 @@ export const SelectedBlockPanel = observer(() => {
 								style={{
 									alignSelf: "stretch",
 									color: "#666",
-									fontFamily: "Inter",
+									fontFamily:
+										'"Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
 									fontSize: "14px",
 									fontWeight: 400,
 									lineHeight: "150%",

@@ -1,6 +1,7 @@
 import { ArrowDown, ArrowUp, Search, X } from "lucide-react";
 import { useEffect, useReducer, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { AppCatalogAvatar } from "@semoss/shared";
 import {
 	Button,
 	InputGroup,
@@ -68,6 +69,7 @@ export interface ProjectInterface {
 	project_date_last_edited?: string;
 	project_permission?: number | string;
 	project_user_permission?: number | string;
+	project_type?: string;
 	app_global?: boolean | string | number;
 	app_id?: string;
 	app_name?: string;
@@ -114,6 +116,7 @@ export const ProjectSettingsPage = () => {
 	const [appToDelete, setAppToDelete] = useState<{
 		id: string;
 		name: string;
+		type?: string;
 	} | null>(null);
 
 	//** amount of items to be loaded */
@@ -248,6 +251,10 @@ export const ProjectSettingsPage = () => {
 		return project.description || project.app_description || "";
 	};
 
+	const getProjectType = (project: ProjectInterface) => {
+		return project.project_type;
+	};
+
 	const isOwnerPermission = (permission?: number | string | null) => {
 		return permission === 1 || permission === "OWNER";
 	};
@@ -270,9 +277,25 @@ export const ProjectSettingsPage = () => {
 		try {
 			setIsDeletingApp(true);
 
-			const response = await monolithStore.runQuery(
-				`DeleteProject(project=['${escapePixelString(appToDelete.id)}']);`,
-			);
+			// Determine the correct delete pixel based on project_type
+			let deletePixel = "";
+			let entityLabel = "app";
+
+			const isWorkspace = appToDelete.type === "WORKSPACE";
+			const isSkill = appToDelete.type === "SKILL";
+
+			if (isWorkspace) {
+				deletePixel = `DeleteWorkspace(workspaceId=['${escapePixelString(appToDelete.id)}']);`;
+				entityLabel = "agent";
+			} else if (isSkill) {
+				deletePixel = `DeleteSkill(skillId=['${escapePixelString(appToDelete.id)}']);`;
+				entityLabel = "skill";
+			} else {
+				deletePixel = `DeleteProject(project=['${escapePixelString(appToDelete.id)}']);`;
+				entityLabel = "app";
+			}
+
+			const response = await monolithStore.runQuery(deletePixel);
 
 			const operationType =
 				response.pixelReturn?.[0]?.operationType || "";
@@ -286,9 +309,11 @@ export const ProjectSettingsPage = () => {
 						(project) => getProjectId(project) !== appToDelete.id,
 					),
 				});
-				toast.success(`Successfully deleted ${appToDelete.name}`);
+				toast.success(`Successfully deleted ${entityLabel}`);
 			} else {
-				toast.error(String(output || "Failed to delete app"));
+				toast.error(
+					String(output || `Failed to delete ${entityLabel}`),
+				);
 			}
 		} catch (error) {
 			toast.error(String(error));
@@ -512,6 +537,7 @@ export const ProjectSettingsPage = () => {
 								const projectIsGlobal = isGlobalProject(
 									getProjectGlobal(project),
 								);
+								const projectType = getProjectType(project);
 
 								if (!projectId) {
 									return null;
@@ -525,7 +551,12 @@ export const ProjectSettingsPage = () => {
 											name={projectName}
 											id={projectId}
 											type={"PROJECT"}
-											forceFolderIcon={true}
+											customIcon={
+												<AppCatalogAvatar
+													name={projectName || "App"}
+													className="h-full w-full rounded-md text-sm"
+												/>
+											}
 											desktopInlineMeta={true}
 											tag={getProjectTags(project)}
 											date={getProjectCreatedDate(
@@ -548,6 +579,7 @@ export const ProjectSettingsPage = () => {
 															setAppToDelete({
 																id: projectId,
 																name: projectName,
+																type: projectType,
 															});
 														}
 													: undefined

@@ -1,0 +1,34 @@
+{
+	"context": {
+		"switchTo": "{{context}} に切り替え"
+	},
+	"run": {
+		"button": "実行",
+		"tooltipActive": "実行 (Ctrl+Enter)",
+		"tooltipInactive": "このファイルを実行するには、元のスコープに戻ってください"
+	},
+	"errors": {
+		"loadFailed": "{{name}} の読み込みに失敗しました",
+		"runFailed": "{{name}} を実行できませんでした。スクリプトを確認してください。"
+	},
+	"maximizedToast": {
+		"title": "出力はターミナルペインに表示されます",
+		"description": "実行結果を表示するにはレイアウトを復元してください。"
+	},
+	"noMode": {
+		"title": "実行する言語を選択してください",
+		"description": "ツールバーから Pixel、R、Python、または Shell を選択してから {{name}} を実行します。"
+	},
+	"scopeChanged": {
+		"title": "スコープが変更されました",
+		"body": "このファイルは <strong>{{scope}}</strong> で開かれました。編集または実行するには、そのスコープに戻ってください。"
+	},
+	"scopeLabel": {
+		"appWithName": "App · {{name}} · {{id}}",
+		"appIdOnly": "App · {{id}}",
+		"engine": "エンジン · {{id}}",
+		"storage": "ストレージ · {{name}}",
+		"user": "ユーザー",
+		"insight": "インサイト"
+	}
+}

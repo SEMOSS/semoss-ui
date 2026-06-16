@@ -1,9 +1,8 @@
 import { ExternalLinkIcon } from "lucide-react";
 import { useIteratorPixel } from "@semoss/sdk/react";
-import type { Engine } from "@semoss/shared";
+import { type Engine, EngineSubtypeIcon } from "@semoss/shared";
 import { Button, CommandGroup, CommandItem, Spinner } from "@semoss/ui/next";
 import { useNavigate } from "@/hooks/useNavigate";
-import { getEngineSubtypeIcon } from "./platform-search-icon-utils";
 
 const LIMIT = 5;
 
@@ -78,7 +77,6 @@ export const PlatformSearchEngine = ({
 							app_subtype?: string;
 						}
 					).app_subtype;
-				const icon = getEngineSubtypeIcon(type, engineSubtype);
 				return (
 					<CommandItem
 						key={engineId}
@@ -94,8 +92,9 @@ export const PlatformSearchEngine = ({
 							onSelect(engine);
 						}}
 					>
-						<img
-							src={icon}
+						<EngineSubtypeIcon
+							engineType={type}
+							engineSubtype={engineSubtype}
 							alt={`${engineName} icon`}
 							className="size-8 shrink-0 object-contain"
 						/>

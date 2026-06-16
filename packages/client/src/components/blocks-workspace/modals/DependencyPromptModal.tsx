@@ -39,7 +39,7 @@ interface DependencyPromptModalProps {
 	cosmetics?: {
 		title: string;
 		desc: string;
-	}
+	};
 }
 
 export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
@@ -53,7 +53,7 @@ export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
 		showReplaceOptions = true,
 		cosmetics = {
 			title: "Delete Cell?",
-			desc: "This cell is linked to multiple components in your app. Deleting it may cause errors or broken connections."
+			desc: "This cell is linked to multiple components in your app. Deleting it may cause errors or broken connections.",
 		},
 	} = props;
 
@@ -64,7 +64,10 @@ export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
 	const [individualReplacements, setIndividualReplacements] = useState<{
 		[blockId: string]: string;
 	}>({});
-	const type: string = cosmetics.title.split(" ")[1].replace("?", "").toUpperCase();
+	const type: string = cosmetics.title
+		.split(" ")[1]
+		.replace("?", "")
+		.toUpperCase();
 
 	// Unique IDs
 	const radioGroupId = useId();
@@ -128,11 +131,11 @@ export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
 		setSelectedReplacement("");
 		setIndividualReplacements({});
 	};
-	
+
 	return (
 		<Dialog open={open} onOpenChange={handleClose}>
 			<DialogContent
-				className={`gap-0 p-0 ${showReplaceOptions? "sm:max-w-3xl" : "sm:max-w-2xl"}`}
+				className={`gap-0 p-0 ${showReplaceOptions ? "sm:max-w-3xl" : "sm:max-w-2xl"}`}
 				data-testid={`delete-${type.toLowerCase()}-modal`}
 			>
 				<DialogHeader className="space-y-0 border-b px-6 py-4">
@@ -147,7 +150,9 @@ export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
 					{/* Warning Alert */}
 					<div className="mb-4 flex items-start gap-2 rounded border border-orange-300 bg-orange-50 p-3">
 						<AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-orange-600" />
-						<p className="text-gray-800 text-sm leading-relaxed">{cosmetics.desc}</p>
+						<p className="text-gray-800 text-sm leading-relaxed">
+							{cosmetics.desc}
+						</p>
 					</div>
 
 					{/* Cell Usage Collapsible Section with max 3 rows */}

@@ -103,7 +103,7 @@ function Calendar({
 					"select-none font-medium",
 					captionLayout === "label"
 						? "text-sm"
-						: "rounded-md pl-2 pr-1 flex items-center gap-1 text-sm h-8 [&>svg]:text-muted-foreground [&>svg]:size-3.5",
+						: "rounded-md ps-2 pe-1 flex items-center gap-1 text-sm h-8 [&>svg]:text-muted-foreground [&>svg]:size-3.5",
 					defaultClassNames.caption_label,
 				),
 				table: "w-full border-collapse",
@@ -122,14 +122,14 @@ function Calendar({
 					defaultClassNames.week_number,
 				),
 				day: cn(
-					"relative w-full h-full p-0 text-center [&:last-child[data-selected=true]_button]:rounded-r-md group/day aspect-square select-none",
+					"relative w-full h-full p-0 text-center [&:last-child[data-selected=true]_button]:rounded-e-md group/day aspect-square select-none",
 					props.showWeekNumber
-						? "[&:nth-child(2)[data-selected=true]_button]:rounded-l-md"
-						: "[&:first-child[data-selected=true]_button]:rounded-l-md",
+						? "[&:nth-child(2)[data-selected=true]_button]:rounded-s-md"
+						: "[&:first-child[data-selected=true]_button]:rounded-s-md",
 					defaultClassNames.day,
 				),
 				range_start: cn(
-					"rounded-l-md bg-accent",
+					"rounded-s-md bg-accent",
 					defaultClassNames.range_start,
 				),
 				range_middle: cn(
@@ -137,7 +137,7 @@ function Calendar({
 					defaultClassNames.range_middle,
 				),
 				range_end: cn(
-					"rounded-r-md bg-accent",
+					"rounded-e-md bg-accent",
 					defaultClassNames.range_end,
 				),
 				today: cn(
@@ -203,13 +203,19 @@ function CalendarChevron({
 }: React.ComponentProps<typeof Chevron>) {
 	if (orientation === "left") {
 		return (
-			<ChevronLeftIcon className={cn("size-4", className)} {...props} />
+			<ChevronLeftIcon
+				className={cn("rtl:-scale-x-100 size-4", className)}
+				{...props}
+			/>
 		);
 	}
 
 	if (orientation === "right") {
 		return (
-			<ChevronRightIcon className={cn("size-4", className)} {...props} />
+			<ChevronRightIcon
+				className={cn("rtl:-scale-x-100 size-4", className)}
+				{...props}
+			/>
 		);
 	}
 
@@ -276,7 +282,7 @@ function CalendarDayButton({
 			data-range-end={modifiers.range_end}
 			data-range-middle={modifiers.range_middle}
 			className={cn(
-				"flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 font-normal leading-none data-[range-end=true]:rounded-md data-[range-middle=true]:rounded-none data-[range-start=true]:rounded-md data-[range-end=true]:rounded-r-md data-[range-start=true]:rounded-l-md data-[range-end=true]:bg-primary data-[range-middle=true]:bg-accent data-[range-start=true]:bg-primary data-[selected-single=true]:bg-primary data-[range-end=true]:text-primary-foreground data-[range-middle=true]:text-accent-foreground data-[range-start=true]:text-primary-foreground data-[selected-single=true]:text-primary-foreground group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10 group-data-[focused=true]/day:border-ring group-data-[focused=true]/day:ring-[3px] group-data-[focused=true]/day:ring-ring/50 dark:hover:text-accent-foreground [&>span]:text-xs [&>span]:opacity-70",
+				"flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 font-normal leading-none data-[range-end=true]:rounded-md data-[range-middle=true]:rounded-none data-[range-start=true]:rounded-md data-[range-start=true]:rounded-s-md data-[range-end=true]:rounded-e-md data-[range-end=true]:bg-primary data-[range-middle=true]:bg-accent data-[range-start=true]:bg-primary data-[selected-single=true]:bg-primary data-[range-end=true]:text-primary-foreground data-[range-middle=true]:text-accent-foreground data-[range-start=true]:text-primary-foreground data-[selected-single=true]:text-primary-foreground group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10 group-data-[focused=true]/day:border-ring group-data-[focused=true]/day:ring-[3px] group-data-[focused=true]/day:ring-ring/50 dark:hover:text-accent-foreground [&>span]:text-xs [&>span]:opacity-70",
 				defaultClassNames.day,
 				className,
 			)}

@@ -92,29 +92,39 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 	const { id, type, name, condensed, onDelete, direction = "column" } = props;
 
 	const { monolithStore, configStore } = useRootStore();
-	const { adminMode } = useSettings();
+	const { adminMode, engineInfo: contextEngineInfo } = useSettings();
 
 	const [deleteModal, setDeleteModal] = useState(false);
 	const [discoverable, setDiscoverable] = useState(true);
 	const [global, setGlobal] = useState(true);
 	const [loading, setLoading] = useState(false);
 
-	const engineInfo = usePixel(
+	const isEngineType =
 		type === "DATABASE" ||
-			type === "STORAGE" ||
-			type === "MODEL" ||
-			type === "VECTOR" ||
-			type === "GUARDRAIL" ||
-			type === "FUNCTION"
-			? adminMode
-				? `AdminEngineInfo(engine='${id}');`
-				: `EngineInfo(engine='${id}');`
-			: type === "PROJECT"
+		type === "STORAGE" ||
+		type === "MODEL" ||
+		type === "VECTOR" ||
+		type === "GUARDRAIL" ||
+		type === "FUNCTION";
+	// Reuse the parent settings layout's EngineInfo result when available to
+	// avoid a duplicate pixel call.
+	const shouldFetchLocally = !(isEngineType && contextEngineInfo);
+
+	const localEngineInfo = usePixel(
+		shouldFetchLocally
+			? isEngineType
 				? adminMode
-					? `AdminProjectInfo(project='${id}')`
-					: `ProjectInfo(project='${id}')`
-				: "",
+					? `AdminEngineInfo(engine='${id}');`
+					: `EngineInfo(engine='${id}');`
+				: type === "PROJECT"
+					? adminMode
+						? `AdminProjectInfo(project='${id}')`
+						: `ProjectInfo(project='${id}')`
+					: ""
+			: "",
 	);
+
+	const engineInfo = shouldFetchLocally ? localEngineInfo : contextEngineInfo;
 
 	useEffect(() => {
 		// pixel call to get pending members
@@ -178,25 +188,47 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 			// start the loading screen
 			setLoading(true);
 
-			// run the pixel
-			const response = await monolithStore.runQuery(
+			// Determine the correct delete pixel based on type and project_type
+			let deletePixel = "";
+			let entityLabel = "";
+
+			if (
 				type === "DATABASE" ||
-					type === "STORAGE" ||
-					type === "MODEL" ||
-					type === "VECTOR" ||
-					type === "GUARDRAIL" ||
-					type === "FUNCTION"
-					? `DeleteEngine(engine=['${id}']);`
-					: type === "PROJECT"
-						? `DeleteProject(project=['${id}']);`
-						: "",
-			);
+				type === "STORAGE" ||
+				type === "MODEL" ||
+				type === "VECTOR" ||
+				type === "GUARDRAIL" ||
+				type === "FUNCTION"
+			) {
+				deletePixel = `DeleteEngine(engine=['${id}']);`;
+				entityLabel = "engine";
+			} else if (type === "PROJECT") {
+				const projectData = engineInfo.data as {
+					project_type?: string;
+				};
+				const isWorkspace = projectData?.project_type === "WORKSPACE";
+				const isSkill = projectData?.project_type === "SKILL";
+
+				if (isWorkspace) {
+					deletePixel = `DeleteWorkspace(workspaceId=['${id}']);`;
+					entityLabel = "agent";
+				} else if (isSkill) {
+					deletePixel = `DeleteSkill(skillId=['${id}']);`;
+					entityLabel = "skill";
+				} else {
+					deletePixel = `DeleteProject(project=['${id}']);`;
+					entityLabel = "app";
+				}
+			}
+
+			// run the pixel
+			const response = await monolithStore.runQuery(deletePixel);
 
 			const operationType = response.pixelReturn[0].operationType;
 			const output = response.pixelReturn[0].output;
 
 			if (operationType.indexOf("ERROR") === -1) {
-				toast.success(`Successfully deleted ${name}`);
+				toast.success(`Successfully deleted ${entityLabel}`);
 
 				// go back to page before
 				onDelete();

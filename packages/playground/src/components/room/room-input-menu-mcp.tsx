@@ -3,25 +3,24 @@ import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
 import { Badge, DropdownMenuItem } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
+import { isKnowledgeMcp } from "@/utility/mcp-utils";
 
 interface RoomInputMenuMCPProps {
 	type: "KNOWLEDGE" | "TOOLBOX";
 	options: RoomStore["options"];
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
+	onSelect: () => void;
 }
 
 const RoomInputMenuMCPInner: React.FC<RoomInputMenuMCPProps> = ({
 	type,
 	options,
-	onOpenChange,
+	onSelect,
 }) => {
 	const { t } = useTranslation("room");
 
-	const items =
-		type === "KNOWLEDGE"
-			? options.mcp.filter((mcp) => mcp.type === "VECTOR")
-			: options.mcp.filter((mcp) => mcp.type !== "VECTOR");
+	const items = options.mcp.filter((mcp) =>
+		type === "KNOWLEDGE" ? isKnowledgeMcp(mcp) : !isKnowledgeMcp(mcp),
+	);
 
 	const Icon = type === "KNOWLEDGE" ? BookOpenIcon : HammerIcon;
 	const labelKey =
@@ -30,7 +29,7 @@ const RoomInputMenuMCPInner: React.FC<RoomInputMenuMCPProps> = ({
 			: "menuToolbox.addToolbox";
 
 	return (
-		<DropdownMenuItem onSelect={() => onOpenChange(true)}>
+		<DropdownMenuItem onSelect={onSelect}>
 			<Icon />
 			<span className="flex-1">{t(labelKey)}</span>
 			<Badge variant="outline">{items.length}</Badge>

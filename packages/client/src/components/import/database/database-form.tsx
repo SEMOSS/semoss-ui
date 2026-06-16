@@ -35,6 +35,7 @@ import {
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
+import { EngineFormHeader } from "../shared/engine-form-header";
 import { computeOptions, computeVisibility } from "../shared/import-form.utils";
 import DataSelection from "./flat-table-column-editor";
 import ExcelDataSelection from "./flat-table-column-editor-excel";
@@ -63,6 +64,7 @@ export const DatabaseForm = ({
 	selectedTab,
 	title,
 	description,
+	icon,
 	fields,
 	advanced,
 	categoryDescription,
@@ -1730,9 +1732,9 @@ export const DatabaseForm = ({
 	const hasBothOptions = hasTableOptions && hasViewOptions;
 	const hasSingleOptionType = hasTableOptions !== hasViewOptions;
 	const connectionDialogClassName = hasBothOptions
-		? "h-[92dvh] max-h-[980px] w-[96vw] max-w-[1500px] overflow-hidden p-0"
+		? "flex h-[92dvh] max-h-[980px] w-[96vw] max-w-[1500px] flex-col overflow-hidden p-0"
 		: hasSingleOptionType
-			? "h-[90dvh] max-h-[920px] w-[96vw] max-w-[980px] overflow-hidden p-0"
+			? "flex h-[90dvh] max-h-[920px] w-[96vw] max-w-[980px] flex-col overflow-hidden p-0"
 			: "max-h-[520px] w-[96vw] max-w-[640px] overflow-hidden p-0";
 
 	const handleApply = async (output) => {
@@ -1773,15 +1775,12 @@ export const DatabaseForm = ({
 					className="my-4"
 					autoComplete="off"
 				>
-					<div className="mb-6">
-						<H4 data-testid="database-form-title">{title}</H4>
-						<Muted
-							className="mt-1 text-base"
-							data-testid="database-form-description"
-						>
-							{description}
-						</Muted>
-					</div>
+					<EngineFormHeader
+						testIdPrefix="database"
+						icon={icon}
+						title={title}
+						description={description}
+					/>
 
 					{Object.keys(grouped).map((category) => (
 						<div

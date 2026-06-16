@@ -248,7 +248,7 @@ export const HtmlPreviewBlock = ({
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button
-								className="-my-1 -mr-2 h-6 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
+								className="-my-1 -me-2 h-6 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
 								variant="ghost"
 								size="sm"
 								disabled={!html || isLoading}
@@ -299,9 +299,9 @@ export const HtmlPreviewBlock = ({
 			<Dialog open={isFullViewOpen} onOpenChange={setIsFullViewOpen}>
 				<DialogContent
 					showOverlay={false}
-					className="!inset-0 !top-0 !left-0 !flex !h-[100dvh] !max-h-[100dvh] !w-[100dvw] !max-w-[100dvw] !translate-x-0 !translate-y-0 !flex-col !gap-3 !overflow-hidden !rounded-none !border-0 !p-3 sm:!w-[100dvw] sm:!max-w-[100dvw]"
+					className="!inset-0 !top-0 !start-0 !flex !h-[100dvh] !max-h-[100dvh] !w-[100dvw] !max-w-[100dvw] !translate-x-0 !translate-y-0 !flex-col !gap-3 !overflow-hidden !rounded-none !border-0 !p-3 sm:!w-[100dvw] sm:!max-w-[100dvw]"
 				>
-					<DialogHeader className="shrink-0 pr-8">
+					<DialogHeader className="shrink-0 pe-8">
 						<DialogTitle>HTML Preview</DialogTitle>
 					</DialogHeader>
 					<div className="relative min-h-0 flex-1 overflow-hidden">

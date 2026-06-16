@@ -39,7 +39,7 @@ export interface WorkspaceStoreInterface {
 	/**
 	 * Type of the app
 	 */
-	type: "BLOCKS" | "CODE";
+	type: "BLOCKS" | "CODE" | "SKILL" | "WORKSPACE";
 
 	/**
 	 * Model associated with the layout
@@ -62,7 +62,16 @@ export interface WorkspaceStoreInterface {
 			/**
 			 * Set the maxWidth of the overlay
 			 */
-			maxWidth: "sm" | "md" | "lg" | "xl" | null;
+			maxWidth:
+				| "sm"
+				| "md"
+				| "lg"
+				| "xl"
+				| "2xl"
+				| "3xl"
+				| "4xl"
+				| "5xl"
+				| null;
 		};
 
 		/**
@@ -111,7 +120,7 @@ export interface WorkspaceConfigInterface {
 	/**
 	 * Type of the app
 	 */
-	type: "BLOCKS" | "CODE";
+	type: "BLOCKS" | "CODE" | "SKILL" | "WORKSPACE";
 
 	/**
 	 * Metadata associated with the loaded app
@@ -123,6 +132,7 @@ export interface WorkspaceConfigInterface {
  * Store that manages instances of the insights and handles applicaiton level querying
  */
 export class WorkspaceStore {
+	// biome-ignore lint/correctness/noUnusedPrivateClassMembers: kept for future use
 	private _root: RootStore;
 	private _store: WorkspaceStoreInterface = {
 		appId: "",
@@ -249,7 +259,7 @@ export class WorkspaceStore {
 	 * The key for the local storage cache
 	 */
 	get cacheKey() {
-		return `smss-workspace--${this._store.appId}-v4`;
+		return `smss-workspace--${this._store.appId}-v5`;
 	}
 
 	/**

@@ -8,15 +8,13 @@
     "start": "vite"
   },
   "dependencies": {
-    "@emotion/react": "^11.11.1",
-    "@emotion/styled": "^11.11.0",
     "@semoss/sdk": "workspace:*",
     "@semoss/ui": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@crxjs/vite-plugin": "^2.0.0-beta.25",
+    "@crxjs/vite-plugin": "^2.4.0",
     "@types/chrome": "^0.0.202",
     "@types/react": "18.3.1",
     "@types/react-dom": "18.3.0",

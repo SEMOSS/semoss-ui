@@ -25,7 +25,8 @@
 		"updateInstructions": "निर्देश अपडेट करें",
 		"updateTokenLength": "टोकन लंबाई अपडेट करें",
 		"uploadFiles": "फ़ाइलें अपलोड करें",
-		"search": "खोजें..."
+		"search": "खोजें...",
+		"enterPromptLibraryTag": "प्रॉम्प्ट लाइब्रेरी टैग दर्ज करें"
 	},
 	"actions": {
 		"addKnowledge": "ज्ञान जोड़ें",
@@ -64,5 +65,162 @@
 	},
 	"images": {
 		"logoAlt": "लोगो"
+	},
+	"fileDrag": {
+		"title": "संदेश में संलग्न करने के लिए फ़ाइलें यहाँ छोड़ें",
+		"modalTitle": "दस्तावेज़ जोड़ें",
+		"browse": "ब्राउज़ करें",
+		"done": "हो गया"
+	},
+	"fileExplorer": {
+		"search": "खोजें",
+		"name": "नाम",
+		"dateModified": "संशोधन की तारीख",
+		"pathLabel": "पथ: {{path}}",
+		"lastModifiedLabel": "अंतिम संशोधन: {{date}}",
+		"bulkShortcutsAria": "बल्क चयन शॉर्टकट",
+		"bulkShortcutsTooltip": "Ctrl/Cmd+क्लिक से कई आइटम चुनें। Ctrl/Cmd+A से सभी दृश्य आइटम चुनें।",
+		"toggleMenu": "मेनू टॉगल करें",
+		"resizeDateColumn": "तारीख कॉलम का आकार बदलें",
+		"failedToLoadFiles": "फ़ाइलें लोड करने में विफल",
+		"pdfNotSupported": "आपका ब्राउज़र PDF देखने का समर्थन नहीं करता।",
+		"binaryView": {
+			"backToDownload": "डाउनलोड पर वापस जाएँ",
+			"downloading": "डाउनलोड हो रहा है…",
+			"download": "डाउनलोड करें",
+			"viewRawContent": "कच्ची सामग्री देखें"
+		},
+		"toasts": {
+			"uploadSuccess_one": "फ़ाइल सफलतापूर्वक अपलोड हुई",
+			"uploadSuccess_other": "फ़ाइलें सफलतापूर्वक अपलोड हुईं",
+			"uploadFailed": "फ़ाइल अपलोड करने में विफल",
+			"moveSuccess_one": "आइटम सफलतापूर्वक ले जाया गया",
+			"moveSuccess_other": "आइटम सफलतापूर्वक ले जाए गए",
+			"moveFailed": "आइटम ले जाने में विफल",
+			"copySuccess_one": "आइटम सफलतापूर्वक कॉपी हुआ",
+			"copySuccess_other": "आइटम सफलतापूर्वक कॉपी हुए",
+			"copyFailed": "आइटम कॉपी करने में विफल",
+			"copyFailedItems": "कॉपी करने में विफल: {{items}}",
+			"deleteSuccess_one": "आइटम सफलतापूर्वक हटाया गया",
+			"deleteSuccess_other": "आइटम सफलतापूर्वक हटाए गए",
+			"deleteFailed": "आइटम हटाने में विफल",
+			"deleteFailedItems": "हटाने में विफल: {{items}}",
+			"copyPathSuccess": "पथ कॉपी किया गया",
+			"copyPathFailed": "पथ कॉपी करने में विफल",
+			"downloadSuccess_one": "आइटम सफलतापूर्वक डाउनलोड हुआ",
+			"downloadSuccess_other": "आइटम सफलतापूर्वक डाउनलोड हुए",
+			"downloadFailed": "आइटम डाउनलोड करने में विफल",
+			"downloadFailedItems": "डाउनलोड करने में विफल: {{items}}",
+			"renameSuccess": "सफलतापूर्वक नाम बदला",
+			"renameFailed": "नाम बदलने में विफल",
+			"unzipFailed": "फ़ाइल अनज़िप करने में विफल",
+			"saveSuccess": "फ़ाइल सफलतापूर्वक सहेजी गई",
+			"saveFailed": "फ़ाइल सहेजने में त्रुटि",
+			"downloadFileSuccess": "फ़ाइल सफलतापूर्वक डाउनलोड हुई",
+			"downloadFileFailed": "फ़ाइल डाउनलोड करने में त्रुटि"
+		},
+		"dateFormat": {
+			"justNow": "अभी अभी",
+			"minutesAgoShort": "{{count}} मिनट पहले",
+			"minutesAgo": "{{count}} मिनट पहले",
+			"hoursAgoShort": "{{count}} घंटे पहले",
+			"hoursAgo": "{{count}} घंटे पहले",
+			"yesterday": "कल",
+			"yesterdayAt": "कल {{time}} पर",
+			"dayAt": "{{day}} {{time}} पर",
+			"dateAt": "{{date}} {{time}} पर",
+			"dateAndTime": "{{date}}, {{time}}"
+		},
+		"refreshTooltip": "{{path}} रिफ्रेश करें",
+		"createTooltip": "{{path}} पर बनाएं",
+		"searchAll": "सभी",
+		"searchOnly": "केवल \"{{name}}\"",
+		"searchAllAria": "सभी में खोजें",
+		"searchCurrentAria": "केवल वर्तमान निर्देशिका में खोजें",
+		"searchCurrentTitle": "केवल {{path}} में खोजें",
+		"moveDropHint": "{{label}} को {{path}} में ले जाने के लिए छोड़ें",
+		"contextMenu": {
+			"copyPath": "पथ कॉपी करें",
+			"copy": "कॉपी करें",
+			"cut": "काटें",
+			"pasteHere": "यहाँ चिपकाएँ",
+			"rename": "नाम बदलें",
+			"download": "डाउनलोड करें",
+			"delete": "हटाएँ",
+			"newFile": "नई फ़ाइल",
+			"newFolder": "नया फ़ोल्डर",
+			"ariaLabel": "फ़ाइल क्रियाएँ"
+		},
+		"overlay": {
+			"title": "फ़ाइल या निर्देशिका बनाएँ",
+			"description": "पथ पर एक नई फ़ाइल या निर्देशिका अपलोड करें या बनाएँ: {{path}}",
+			"fields": {
+				"action": "क्रिया",
+				"fileName": "फ़ाइल का नाम",
+				"directoryName": "निर्देशिका का नाम",
+				"uploadFileZip": "फ़ाइल/ZIP अपलोड करें"
+			},
+			"placeholders": {
+				"selectAction": "क्रिया चुनें",
+				"fileName": "फ़ाइल का नाम दर्ज करें",
+				"directoryName": "निर्देशिका का नाम दर्ज करें"
+			},
+			"actions": {
+				"upload": "फ़ाइलें अपलोड करें",
+				"newFile": "नई फ़ाइल",
+				"newDirectory": "नई निर्देशिका"
+			},
+			"dropzone": {
+				"dragAndDrop": "फ़ाइलें यहाँ खींचें और छोड़ें",
+				"orClickToBrowse": "या ब्राउज़ करने के लिए क्लिक करें",
+				"uploadIconAlt": "अपलोड आइकन"
+			},
+			"files": {
+				"selectedCount_one": "{{count}} फ़ाइल चयनित:",
+				"selectedCount_other": "{{count}} फ़ाइलें चयनित:",
+				"unzip": "अनज़िप करें",
+				"unzipTitle": "अपलोड के बाद इस ZIP को निकालें"
+			},
+			"buttons": {
+				"cancel": "रद्द करें",
+				"upload": "अपलोड करें",
+				"create": "बनाएँ"
+			},
+			"toasts": {
+				"selectAtLeastOne": "कृपया अपलोड करने के लिए कम से कम एक फ़ाइल चुनें",
+				"enterFileName": "कृपया फ़ाइल का नाम दर्ज करें",
+				"enterDirectoryName": "कृपया निर्देशिका का नाम दर्ज करें",
+				"uploadSuccess": "फ़ाइल(फ़ाइलें) सफलतापूर्वक अपलोड हुईं",
+				"uploadWithExtractSuccess": "{{count}} फ़ाइल(फ़ाइलें) सफलतापूर्वक अपलोड हुईं, {{extractedCount}} ZIP निकाला गया",
+				"extractionsFailed": "{{count}} निष्कर्षण विफल: {{errors}}",
+				"fileCreated": "फ़ाइल सफलतापूर्वक बनाई गई",
+				"directoryCreated": "निर्देशिका सफलतापूर्वक बनाई गई",
+				"anError": "एक त्रुटि हुई"
+			}
+		}
+	},
+	"cellOutput": {
+		"panels": {
+			"logs": "लॉग्स",
+			"result": "परिणाम",
+			"error": "त्रुटि"
+		},
+		"running": "चल रहा है…",
+		"format": {
+			"formatted": "स्वरूपित",
+			"raw": "कच्चा"
+		},
+		"copy": {
+			"command": "कमांड कॉपी करें",
+			"logs": "लॉग्स कॉपी करें",
+			"output": "आउटपुट कॉपी करें",
+			"copied": "कॉपी किया गया!"
+		},
+		"popout": "पॉप आउट",
+		"expandAll": "सब विस्तार करें",
+		"collapseAll": "सब बंद करें",
+		"close": "बंद करें",
+		"lines_one": "{{count}} पंक्ति",
+		"lines_other": "{{count}} पंक्तियाँ"
 	}
 }

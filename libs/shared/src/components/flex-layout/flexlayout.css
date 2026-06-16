@@ -60,7 +60,7 @@
     --size-mini-scroll-indicator: 3px;
     --color-toolbar-button-hover: var(--color-3);
     --font-size: medium;
-    --font-family: Roboto, Arial, sans-serif;
+    --font-family: var(--font-sans, "Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
     background-color: var(--color-background);
     bottom: 0;
     display: flex;
@@ -299,7 +299,7 @@
     --color-background: transparent;
     --color-tabset-background: transparent;
     --color-tabset-background-selected: transparent;
-    --font-family: 'Inter', sans-serif;
+    --font-family: var(--font-sans, "Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
     --font-size: 0.875rem;
     --smss-tab-border-radius: 4px;
 }
@@ -312,6 +312,7 @@
 
 .flexlayout__theme_smss .flexlayout__tabset_tabbar_outer_top {
     padding-right: var(--room-sidebar-controls-width, 85px);
+    @apply border-b border-muted;
 }
 
 .flexlayout__theme_smss .flexlayout__tab_button {
@@ -406,4 +407,62 @@
 
 .flexlayout__theme_smss .flexlayout__border_button--selected .flexlayout__border_button_leading {
     @apply text-primary;
+}
+
+/**
+ * RTL overrides for FlexLayout.
+ *
+ * flexlayout-react ships only an LTR stylesheet (combined.css), and applies
+ * physical inline styles (e.g. `right: 100%` on the border tab strip) from
+ * its JS based on `border_left` / `border_right` naming. In an RTL document
+ * the "left" border ends up visually on the right side of the screen, but
+ * its internal positioning still uses physical `right` — which puts the tab
+ * strip off-screen. We patch the high-impact spots here so the layout reads
+ * correctly under `dir="rtl"`.
+ *
+ * Scope is `:dir(rtl) .flexlayout__layout` so these only fire inside an RTL
+ * page AND only for FlexLayout content.
+ */
+:dir(rtl) .flexlayout__layout {
+    /* Logical divider line for borders: left-border should sit on the
+       INLINE-END of the screen in RTL (= visual left), so its divider line
+       belongs on the inline-start, not the physical right. */
+    & .flexlayout__border_left {
+        border-right: none;
+        border-inline-end: 1px solid var(--color-border-divider-line);
+    }
+
+    & .flexlayout__border_right {
+        border-left: none;
+        border-inline-start: 1px solid var(--color-border-divider-line);
+    }
+
+    /* The vertical "Files" tab strip is positioned absolutely with `right:
+       100%` inline — meaning "outside the border, to its left". Under RTL we
+       want it on the OTHER side (outside, to its right), so flip the inline
+       style by anchoring left:100% and clearing right. The exclamation
+       marks beat the inline style. */
+    & .flexlayout__border_inner_tab_container_left {
+        right: auto !important;
+        left: 100% !important;
+        transform-origin: top left;
+        transform: rotate(90deg);
+    }
+
+    & .flexlayout__border_inner_tab_container_right {
+        left: auto !important;
+        right: 100% !important;
+        transform-origin: top right;
+        transform: rotate(-90deg);
+    }
+
+    /* Asymmetric paddings on tab toolbars + border toolbars — convert to
+       logical so the maximize/close buttons get the larger pad on the
+       reading-leading side, matching LTR. */
+    & .flexlayout__tab_toolbar,
+    & .flexlayout__border_toolbar_top,
+    & .flexlayout__border_toolbar_bottom {
+        padding-left: 0.3em;
+        padding-right: 0.5em;
+    }
 }
