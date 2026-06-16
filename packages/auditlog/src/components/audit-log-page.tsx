@@ -77,7 +77,7 @@ export const AuditLogPage = ({ catalogName }) => {
 			);
 			const SelectedDuration = filteredData.current.SelectedDuration;
 			const response = await runPixel(
-				`AuditLogReport(paramValues=[{"userId": "${rootStore?.user?.id}","projectId" : "${catalogName === "APP" ? catalogId : ""}","engineId": "${catalogName === "APP" ? "" : catalogId}","dateTime":"${dateTime}","limit":"${limit}","offset":"${offset}","dateRangeType": "${SelectedDuration.dateRangeType || "DAY"}","dateRangeValue": ${SelectedDuration.dateRangeValue} ${SelectedDuration.dateRangeType === "CUSTOM" ? `,"startDate": "${startDate?.toISOString()}", "endDate": "${endDate?.toISOString()}"` : ""}}]);`,
+				`AuditLogReport(paramValues=[{"projectId" : "${catalogName === "APP" ? catalogId : ""}","engineId": "${catalogName === "APP" ? "" : catalogId}","dateTime":"${dateTime}","limit":"${limit}","offset":"${offset}","dateRangeType": "${SelectedDuration.dateRangeType || "DAY"}","dateRangeValue": ${SelectedDuration.dateRangeValue} ${SelectedDuration.dateRangeType === "CUSTOM" ? `,"startDate": "${startDate?.toISOString()}", "endDate": "${endDate?.toISOString()}"` : ""}}]);`,
 				insightId,
 			);
 			const responseData = response.pixelReturn[0].output as {

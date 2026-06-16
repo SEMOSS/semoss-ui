@@ -30,6 +30,7 @@ interface ConfigStoreInterface {
 		admin: boolean;
 		meta: unknown;
 		lastLogin?: string;
+		lastLoginFromTracking?: string;
 		groupInfo?: { groups: string[] };
 	};
 	/** Native mode */
@@ -524,6 +525,9 @@ export class ConfigStore {
 				this._store.userEpoch = user.userEpoch;
 				this._store.user.lastLogin = (user as Record<string, unknown>)
 					.lastLogin as string | undefined;
+				this._store.user.lastLoginFromTracking = (
+					user as Record<string, unknown>
+				).lastLoginFromTracking as string | undefined;
 				this._store.user.groupInfo = (user as Record<string, unknown>)
 					.groupInfo as { groups: string[] } | undefined;
 
