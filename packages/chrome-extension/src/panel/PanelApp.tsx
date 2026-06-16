@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./panel.css";
-import { Box, Button, Card, Stack, TextField, Typography } from "@semoss/ui";
+import { Button, Card, H1, H3, H4, Input, P } from "@semoss/ui/next";
 import {
 	type PlaywrightScript,
 	ScriptExecutor,
@@ -184,7 +184,7 @@ const PanelApp: React.FC = () => {
 				setActionHistory([
 					`🎬 Received script from Portal: ${title || fileName}`,
 				]);
-				setMode("script");
+				setMode("execution");
 
 				// Check if script content is provided (new format)
 				if (scriptContent) {
@@ -417,10 +417,7 @@ const PanelApp: React.FC = () => {
 				setActionHistory([
 					`🎬 Received script from Playground: ${script.fileName}`,
 				]);
-				setMode("script");
-
-				// Set ref IMMEDIATELY to block duplicate messages
-				isRunningRef.current = true;
+				setMode("execution");
 				setIsRunning(true);
 
 				// Always fetch script content from backend (no longer accepting scriptContent)
@@ -1228,124 +1225,39 @@ const PanelApp: React.FC = () => {
 	return (
 		<div className="panel-container">
 			<div className="panel-header">
-				<Typography variant="h1">Browser Automation</Typography>
+				<H1>Browser Automation</H1>
 			</div>
 
 			{/* Mode Switcher */}
-			<Box sx={{ display: "flex", gap: 1.5, p: 2.5, pt: 1.5 }}>
+			<div className="flex gap-3 px-6 pt-6 pb-4">
 				<Button
-					variant={mode === "execution" ? "contained" : "outlined"}
 					onClick={() => setMode("execution")}
-					fullWidth
-					sx={{
-						textTransform: "none",
-						fontWeight: 600,
-						py: 1.25,
-						borderRadius: "10px",
-						transition: "all 0.3s ease",
-						...(mode === "execution"
-							? {
-									background:
-										"linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
-									boxShadow:
-										"0 4px 12px rgba(99, 102, 241, 0.3)",
-									"&:hover": {
-										background:
-											"linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)",
-										boxShadow:
-											"0 6px 20px rgba(99, 102, 241, 0.4)",
-										transform: "translateY(-1px)",
-									},
-								}
-							: {
-									borderWidth: "2px",
-									borderColor: "rgba(0,0,0,0.12)",
-									color: "text.secondary",
-									"&:hover": {
-										borderWidth: "2px",
-										borderColor: "#6366f1",
-										backgroundColor:
-											"rgba(99, 102, 241, 0.04)",
-										transform: "translateY(-1px)",
-										boxShadow:
-											"0 4px 12px rgba(99, 102, 241, 0.15)",
-									},
-								}),
-					}}
+					className={`flex-1 cursor-pointer rounded-lg px-5 py-3 font-semibold text-[15px] shadow-sm transition-all duration-200 ${
+						mode === "execution"
+							? "border-0 bg-blue-600 text-white hover:bg-blue-700"
+							: "border-[1.5px] border-gray-300 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50"
+					}`}
 				>
 					⚡ Execute Scripts
 				</Button>
 				<Button
-					variant={mode === "recording" ? "contained" : "outlined"}
 					onClick={() => setMode("recording")}
-					fullWidth
-					sx={{
-						textTransform: "none",
-						fontWeight: 600,
-						py: 1.25,
-						borderRadius: "10px",
-						transition: "all 0.3s ease",
-						...(mode === "recording"
-							? {
-									background:
-										"linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
-									boxShadow:
-										"0 4px 12px rgba(37, 99, 235, 0.3)",
-									"&:hover": {
-										background:
-											"linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%)",
-										boxShadow:
-											"0 6px 20px rgba(37, 99, 235, 0.4)",
-										transform: "translateY(-1px)",
-									},
-								}
-							: {
-									borderWidth: "2px",
-									borderColor: "rgba(0,0,0,0.12)",
-									color: "text.secondary",
-									"&:hover": {
-										borderWidth: "2px",
-										borderColor: "#2563eb",
-										backgroundColor:
-											"rgba(37, 99, 235, 0.04)",
-										transform: "translateY(-1px)",
-										boxShadow:
-											"0 4px 12px rgba(37, 99, 235, 0.15)",
-									},
-								}),
-					}}
+					className={`flex-1 cursor-pointer rounded-lg px-5 py-3 font-semibold text-[15px] shadow-sm transition-all duration-200 ${
+						mode === "recording"
+							? "border-0 bg-blue-600 text-white hover:bg-blue-700"
+							: "border-[1.5px] border-gray-300 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50"
+					}`}
 				>
-					🎬 Record Script
+					🎬 Record Script test
 				</Button>
-			</Box>
+			</div>
 
 			{isPaused && mode === "execution" && (
-				<Box
-					sx={{
-						ml: 2,
-						px: 2,
-						py: 0.75,
-						borderRadius: 2,
-						bgColor: "rgba(255, 152, 0, 0.15)",
-						border: "1.5px solid rgba(255, 152, 0, 0.8)",
-						color: "#ffffff",
-						display: "inline-flex",
-						alignItems: "center",
-						gap: 0.75,
-						boxShadow: "0 2px 8px rgba(255, 152, 0, 0.3)",
-					}}
-				>
-					<Typography
-						variant="body2"
-						sx={{
-							fontWeight: 700,
-							fontSize: "0.8125rem",
-							letterSpacing: "0.5px",
-						}}
-					>
+				<div className="ml-8 inline-flex items-center gap-3 rounded-lg border-[1.5px] border-[rgba(255,152,0,0.8)] bg-[rgba(255,152,0,0.15)] px-8 py-3 text-white shadow-[0_2px_8px_rgba(255,152,0,0.3)]">
+					<P className="font-bold text-[0.8125rem] tracking-[0.5px]">
 						⏸️ PAUSED
-					</Typography>
-				</Box>
+					</P>
+				</div>
 			)}
 
 			<div className="panel-content">
@@ -1360,34 +1272,12 @@ const PanelApp: React.FC = () => {
 
 						{/* Action History */}
 						{actionHistory.length > 0 && (
-							<Box sx={{ width: "100%" }}>
-								<Card
-									sx={{
-										width: "100%",
-										p: 2.5,
-										border: "1px solid",
-										borderColor: "divider",
-										minHeight: "calc(100vh - 180px)",
-										maxHeight: "calc(100vh - 180px)",
-										overflowY: "auto",
-										backgroundColor: "background.paper",
-										boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-									}}
-								>
-									<Typography
-										variant="h4"
-										sx={{
-											mb: 2,
-											fontWeight: 600,
-											fontSize: "0.9375rem",
-											color: "text.secondary",
-											textTransform: "uppercase",
-											letterSpacing: "0.5px",
-										}}
-									>
+							<div className="w-full">
+								<Card className="max-h-[calc(100vh-180px)] min-h-[calc(100vh-180px)] w-full overflow-y-auto border border-border bg-background p-10 shadow-sm">
+									<H4 className="mb-8 font-semibold text-[0.9375rem] text-muted-foreground uppercase tracking-[0.5px]">
 										Execution Log
-									</Typography>
-									<Stack spacing={0.75}>
+									</H4>
+									<div className="flex flex-col gap-3">
 										{actionHistory.map((action, index) => {
 											const isError =
 												action.startsWith("❌");
@@ -1402,105 +1292,59 @@ const PanelApp: React.FC = () => {
 											);
 
 											return (
-												<Box
+												<div
 													key={`action-${index}-${action.substring(0, 20)}`}
-													sx={{
-														py: 1,
-														px: 1.5,
-														borderRadius: 1.5,
-														border: "1px solid",
-														borderColor: isError
-															? "error.light"
+													className={`rounded-xl border px-6 py-4 transition-all duration-200 hover:translate-x-0.5 ${
+														isError
+															? "border-red-300 bg-red-50 hover:border-red-500 hover:bg-red-100"
 															: isSuccess
-																? "success.light"
+																? "border-green-300 bg-green-50 hover:border-green-500 hover:bg-green-100"
 																: isCheckmark
-																	? "rgba(76, 175, 80, 0.3)"
-																	: "divider",
-														backgroundColor: isError
-															? "rgba(211, 47, 47, 0.04)"
-															: isSuccess
-																? "rgba(46, 125, 50, 0.04)"
-																: isCheckmark
-																	? "rgba(76, 175, 80, 0.04)"
+																	? "border-[rgba(76,175,80,0.3)] bg-[rgba(76,175,80,0.04)] hover:border-[rgba(76,175,80,0.5)] hover:bg-[rgba(76,175,80,0.08)]"
 																	: isUserInput
-																		? "rgba(25, 118, 210, 0.04)"
-																		: "background.default",
-														transition:
-															"all 0.2s ease",
-														"&:hover": {
-															backgroundColor:
-																isError
-																	? "rgba(211, 47, 47, 0.08)"
-																	: isSuccess
-																		? "rgba(46, 125, 50, 0.08)"
-																		: isCheckmark
-																			? "rgba(76, 175, 80, 0.08)"
-																			: isUserInput
-																				? "rgba(25, 118, 210, 0.08)"
-																				: "action.hover",
-															borderColor: isError
-																? "error.main"
-																: isSuccess
-																	? "success.main"
-																	: isCheckmark
-																		? "rgba(76, 175, 80, 0.5)"
-																		: isUserInput
-																			? "primary.light"
-																			: "divider",
-															transform:
-																"translateX(2px)",
-														},
-													}}
+																		? "border-border bg-[rgba(25,118,210,0.04)] hover:border-blue-300 hover:bg-[rgba(25,118,210,0.08)]"
+																		: "border-border bg-background hover:bg-accent"
+													}`}
 												>
-													<Typography
-														variant="body2"
-														sx={{
-															fontSize:
-																"0.8125rem",
-															lineHeight: 1.6,
-															color: isError
-																? "error.dark"
+													<P
+														className={`text-[0.8125rem] leading-relaxed tracking-[0.01em] ${
+															isError
+																? "font-medium text-red-700"
 																: isSuccess
-																	? "success.dark"
+																	? "font-medium text-green-700"
 																	: isCheckmark
-																		? "success.main"
-																		: "text.primary",
-															fontWeight:
-																isNumbered ||
-																isError ||
-																isSuccess
-																	? 500
-																	: 400,
-															fontFamily:
-																isNumbered
-																	? "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui"
-																	: "inherit",
-															letterSpacing:
-																"0.01em",
-														}}
+																		? "font-normal text-green-600"
+																		: "text-foreground"
+														} ${
+															isNumbered ||
+															isError ||
+															isSuccess
+																? "font-medium"
+																: "font-normal"
+														} ${
+															isNumbered
+																? "font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',system-ui]"
+																: ""
+														}`}
 													>
 														{action}
-													</Typography>
-												</Box>
+													</P>
+												</div>
 											);
 										})}
 										<div ref={historyEndRef} />
-									</Stack>
+									</div>
 								</Card>
-							</Box>
+							</div>
 						)}
 
 						{/* User Input Dialog */}
 						{waitingForUserInput && (
 							<div className="user-input-overlay">
 								<div className="user-input-dialog">
-									<Typography variant="h3">
-										Input Required
-									</Typography>
-									<Typography variant="body1">
-										{userInputPrompt}
-									</Typography>
-									<TextField
+									<H3>Input Required</H3>
+									<P>{userInputPrompt}</P>
+									<Input
 										type={
 											isPasswordInput
 												? "password"
@@ -1559,7 +1403,7 @@ const PanelApp: React.FC = () => {
 									/>
 									<div className="user-input-buttons">
 										<Button
-											variant="contained"
+											variant="default"
 											onClick={() => {
 												if (
 													userInputCallback &&
@@ -1574,7 +1418,7 @@ const PanelApp: React.FC = () => {
 												!userInputValue.trim() ||
 												isPaused
 											}
-											className="submit-btn"
+											className="rounded-xl bg-blue-600 px-8 py-3 font-semibold text-base text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:opacity-60"
 										>
 											Submit
 										</Button>

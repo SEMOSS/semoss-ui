@@ -5,18 +5,21 @@
 
 import type { FC } from "react";
 // biome-ignore lint/correctness/noUnusedImports: React is required for JSX transform
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useId, useState } from "react";
 import {
-	Backdrop,
-	Box,
 	Button,
 	Card,
-	CircularProgress,
-	Stack,
-	TextField,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	cn,
+	Field,
+	FieldLabel,
+	H4,
+	Input,
+	Muted,
+	P,
+	Small,
+	toast,
+	useLoadingScreen,
+} from "@semoss/ui/next";
 import type { RecordedAction } from "../../recorder/types";
 import { AuthService, type Project } from "../../services/authService";
 import { useRecordingState } from "../../services/recordingStateManager";
@@ -37,7 +40,7 @@ export const RecordingPanel: FC = () => {
 		resumeRecording,
 		clearRecording,
 	} = useRecordingState();
-	const notification = useNotification();
+	const loadingScreen = useLoadingScreen();
 	const [scriptName, setScriptName] = useState("");
 	const [isAuthenticated, setIsAuthenticated] = useState(false);
 	const [selectedProject, setSelectedProject] = useState<string | null>(null);
@@ -45,6 +48,8 @@ export const RecordingPanel: FC = () => {
 	const [showNewProjectInput, setShowNewProjectInput] = useState(false);
 	const [newProjectName, setNewProjectName] = useState("");
 	const [isCreatingProject, setIsCreatingProject] = useState(false);
+	const newProjectNameId = useId();
+	const scriptNameId = useId();
 
 	// Function to refresh project list
 	const refreshProjects = async () => {
@@ -112,7 +117,7 @@ export const RecordingPanel: FC = () => {
 				handleVisibilityChange,
 			);
 		};
-	}, [isAuthenticated]);
+	}, [isAuthenticated, refreshProjects]);
 
 	const handleSettings = () => {
 		// Open the extension options page
@@ -129,73 +134,58 @@ export const RecordingPanel: FC = () => {
 		setShowNewProjectInput(false);
 		setSelectedProject(newProjectId);
 		await AuthService.saveSelectedProject(newProjectId);
-		notification.add({
-			color: "success",
-			message: "Project selection saved",
-			autoClose: 3000,
-		});
+		toast.success("Project selection saved", { duration: 3000 });
 	};
 
 	const handleNewProjectCreation = async () => {
 		const projectName = newProjectName.trim();
 
 		if (!projectName) {
-			notification.add({
-				color: "error",
-				message: "Please enter a project name",
-				autoClose: 3000,
-			});
+			toast.error("Please enter a project name", { duration: 3000 });
 			return;
 		}
 
 		// Validate project name (must start with letter, only letters/numbers/spaces)
 		if (!/^[a-zA-Z][a-zA-Z0-9 ]*$/.test(projectName)) {
-			notification.add({
-				color: "error",
-				message:
-					"Invalid project name. Must start with a letter and contain only letters, numbers, and spaces.",
-				autoClose: 3000,
-			});
+			toast.error(
+				"Invalid project name. Must start with a letter and contain only letters, numbers, and spaces.",
+				{ duration: 3000 },
+			);
 			return;
 		}
 
 		setIsCreatingProject(true);
-
+		loadingScreen.start(
+			"Creating Project...",
+			"This may take a few moments...",
+		);
 		try {
-			notification.add({
-				color: "info",
-				message: `Creating project "${projectName}"...`,
-				autoClose: 3000,
+			toast.info(`Creating project "${projectName}"...`, {
+				duration: 3000,
 			});
 
 			// Step 1: Create the project
 			const newProjectId = await AuthService.createProject(projectName);
 			console.log("Project created with ID:", newProjectId);
 
-			notification.add({
-				color: "info",
-				message: "Project created! Cloning portal template...",
-				autoClose: 3000,
+			toast.info("Project created! Cloning portal template...", {
+				duration: 3000,
 			});
 
 			// Step 2: Clone portals to the new project
 			await AuthService.clonePortalsToProject(newProjectId);
 			console.log("Portals cloned successfully");
 
-			notification.add({
-				color: "info",
-				message: "Portals cloned! Adding MCP and Playwright tags...",
-				autoClose: 3000,
+			toast.info("Portals cloned! Adding MCP and Playwright tags...", {
+				duration: 3000,
 			});
 
 			// Step 3: Add MCP and PLAYWRIGHT tags so project shows in playground
 			await AuthService.addPlaywrightTags(newProjectId);
 			console.log("Tags added successfully");
 
-			notification.add({
-				color: "info",
-				message: "Tags added! Refreshing project list...",
-				autoClose: 3000,
+			toast.info("Tags added! Refreshing project list...", {
+				duration: 3000,
 			});
 
 			// Step 4: Get updated project list
@@ -214,20 +204,19 @@ export const RecordingPanel: FC = () => {
 			setShowNewProjectInput(false);
 			setNewProjectName("");
 
-			notification.add({
-				color: "success",
-				message: `✅ Project "${projectName}" created successfully! Recordings will be saved here.`,
-				autoClose: 3000,
-			});
+			toast.success(
+				`✅ Project "${projectName}" created successfully! Recordings will be saved here.`,
+				{ duration: 3000 },
+			);
 		} catch (error) {
 			console.error("Project creation failed:", error);
-			notification.add({
-				color: "error",
-				message: `Failed to create project: ${error instanceof Error ? error.message : "Unknown error"}`,
-				autoClose: 3000,
-			});
+			toast.error(
+				`Failed to create project: ${error instanceof Error ? error.message : "Unknown error"}`,
+				{ duration: 3000 },
+			);
 		} finally {
 			setIsCreatingProject(false);
+			loadingScreen.stop();
 		}
 	};
 
@@ -236,11 +225,10 @@ export const RecordingPanel: FC = () => {
 			await startRecording();
 		} catch (error) {
 			console.error("[RecordingPanel] Failed to start recording:", error);
-			notification.add({
-				color: "error",
-				message: `Failed to start recording: ${error instanceof Error ? error.message : "Unknown error"}`,
-				autoClose: 3000,
-			});
+			toast.error(
+				`Failed to start recording: ${error instanceof Error ? error.message : "Unknown error"}`,
+				{ duration: 3000 },
+			);
 		}
 	};
 
@@ -271,24 +259,20 @@ export const RecordingPanel: FC = () => {
 		try {
 			// Check if authenticated
 			if (!isAuthenticated || !selectedProject) {
-				notification.add({
-					color: "error",
-					message:
-						"Please configure Semoss credentials (Click ⚙️ Settings icon)",
-					autoClose: 3000,
-				});
+				toast.error(
+					"Please configure Semoss credentials (Click ⚙️ Settings icon)",
+					{ duration: 3000 },
+				);
 				return;
 			}
 
 			// Get stored credentials
 			const credentials = await AuthService.getCredentials();
 			if (!credentials) {
-				notification.add({
-					color: "error",
-					message:
-						"Authentication credentials not found. Please reconfigure in settings.",
-					autoClose: 3000,
-				});
+				toast.error(
+					"Authentication credentials not found. Please reconfigure in settings.",
+					{ duration: 3000 },
+				);
 				return;
 			}
 
@@ -358,22 +342,20 @@ export const RecordingPanel: FC = () => {
 				data = rawData;
 			}
 
-			if (data && data.success) {
-				notification.add({
-					color: "success",
-					message: `Recording saved successfully: ${data.fileName || name}`,
-					autoClose: 3000,
-				});
+			if (data?.success) {
+				toast.success(
+					`Recording saved successfully: ${data.fileName || name}`,
+					{ duration: 3000 },
+				);
 			} else {
 				throw new Error(data?.message || "Failed to save recording");
 			}
 		} catch (error) {
 			console.error("[RecordingPanel] Failed to save:", error);
-			notification.add({
-				color: "error",
-				message: `Failed to save: ${error instanceof Error ? error.message : "Unknown error"}`,
-				autoClose: 3000,
-			});
+			toast.error(
+				`Failed to save: ${error instanceof Error ? error.message : "Unknown error"}`,
+				{ duration: 3000 },
+			);
 		}
 	};
 
@@ -417,11 +399,10 @@ export const RecordingPanel: FC = () => {
 			URL.revokeObjectURL(url);
 		} catch (error) {
 			console.error("[RecordingPanel] Failed to download:", error);
-			notification.add({
-				color: "error",
-				message: `Failed to download: ${error instanceof Error ? error.message : "Unknown error"}`,
-				autoClose: 3000,
-			});
+			toast.error(
+				`Failed to download: ${error instanceof Error ? error.message : "Unknown error"}`,
+				{ duration: 3000 },
+			);
 		}
 	};
 
@@ -436,523 +417,254 @@ export const RecordingPanel: FC = () => {
 
 	if (isLoading) {
 		return (
-			<Box sx={{ p: 3 }}>
-				<Typography variant="body1">Loading...</Typography>
-			</Box>
+			<div className={cn("p-3")}>
+				<P>Loading...</P>
+			</div>
 		);
 	}
 
 	return (
-		<>
-			{/* Full Page Loading Overlay */}
-			<Backdrop
-				open={isCreatingProject}
-				sx={{
-					color: "#fff",
-					zIndex: 9999,
-					position: "fixed",
-					top: 0,
-					left: 0,
-					right: 0,
-					bottom: 0,
-					backdropFilter: "blur(4px)",
-					backgroundColor: "rgba(15, 23, 42, 0.7)",
-					display: "flex",
-					flexDirection: "column",
-					alignItems: "center",
-					justifyContent: "center",
-					gap: 2,
-				}}
-			>
-				<CircularProgress
-					size={60}
-					thickness={4}
-					sx={{
-						color: "#10b981",
-					}}
-				/>
-				<Typography
-					variant="h6"
-					sx={{
-						color: "#ffffff",
-						fontWeight: 600,
-						mt: 2,
-					}}
+		<div
+			className={cn(
+				"flex h-full flex-col gap-4 overflow-auto p-4",
+				"bg-gradient-to-b from-[#f8fafc] to-[#f1f5f9]",
+			)}
+		>
+			{/* Header with Settings */}
+			<div className={cn("-mb-1 flex items-center justify-between")}>
+				<H4 className="font-bold text-[#1e293b] text-[18px]">
+					🎬 Recording Panel
+				</H4>
+				<Button
+					onClick={handleSettings}
+					variant="ghost"
+					size="sm"
+					className="size-9 min-w-9 rounded-full text-slate-500 text-xl transition-all hover:rotate-90 hover:bg-blue-600/8 hover:text-blue-600"
+					title="Settings"
 				>
-					Creating Project...
-				</Typography>
-				<Typography
-					variant="body2"
-					sx={{
-						color: "rgba(255, 255, 255, 0.7)",
-					}}
-				>
-					This may take a few moments...
-				</Typography>
-			</Backdrop>
+					⚙️
+				</Button>
+			</div>
 
-			<Box
-				sx={{
-					p: 2.5,
-					height: "100%",
-					display: "flex",
-					flexDirection: "column",
-					gap: 2.5,
-					overflow: "auto",
-					background:
-						"linear-gradient(to bottom, #f8fafc 0%, #f1f5f9 100%)",
-				}}
-			>
-				{/* Header with Settings */}
-				<Box
-					sx={{
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
-						mb: -1,
-					}}
-				>
-					<Typography
-						variant="h6"
-						sx={{
-							fontWeight: 700,
-							color: "#1e293b",
-							fontSize: "18px",
-						}}
-					>
-						🎬 Recording Panel
-					</Typography>
-					<Button
-						onClick={handleSettings}
-						variant="text"
-						size="small"
-						sx={{
-							minWidth: "36px",
-							width: "36px",
-							height: "36px",
-							padding: 0,
-							borderRadius: "50%",
-							color: "#64748b",
-							fontSize: "20px",
-							transition: "all 0.2s ease",
-							"&:hover": {
-								color: "#2563eb",
-								backgroundColor: "rgba(37, 99, 235, 0.08)",
-								transform: "rotate(90deg)",
-							},
-						}}
-						title="Settings"
-					>
-						⚙️
-					</Button>
-				</Box>
-
-				{/* Authentication Status Banner */}
-				{!isAuthenticated && (
-					<Card
-						sx={{
-							width: "100%",
-							backgroundColor: "#fff3cd",
-							borderLeft: "4px solid #ffc107",
-							borderRadius: "8px",
-							p: 2,
-							boxShadow: "none",
-							flexShrink: 0,
-						}}
-					>
-						<Stack spacing={1} sx={{ width: "100%" }}>
-							<Typography
-								variant="subtitle2"
-								sx={{ fontWeight: 600, color: "#856404" }}
-							>
-								⚠️ Authentication Required
-							</Typography>
-							<Typography
-								variant="body2"
-								sx={{ color: "#856404" }}
-							>
-								Please configure your Semoss credentials to save
-								recordings.
-							</Typography>
-							<Button
-								variant="outlined"
-								size="small"
-								onClick={handleSettings}
-								sx={{
-									mt: 0.5,
-									borderColor: "#ffc107",
-									color: "#856404",
-									textTransform: "none",
-									fontWeight: 600,
-									alignSelf: "flex-start",
-									"&:hover": {
-										borderColor: "#e0a800",
-										backgroundColor:
-											"rgba(255, 193, 7, 0.08)",
-									},
-								}}
-							>
-								⚙️ Open Settings
-							</Button>
-						</Stack>
-					</Card>
-				)}
-
-				{/* Recording Controls Card */}
-				<Card
-					sx={{
-						boxShadow:
-							"0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05)",
-						flexShrink: 0,
-						borderRadius: "12px",
-						border: "1px solid rgba(0,0,0,0.06)",
-						transition: "all 0.3s ease",
-						"&:hover": {
-							boxShadow:
-								"0 4px 6px rgba(0,0,0,0.1), 0 8px 20px rgba(0,0,0,0.08)",
-							transform: "translateY(-2px)",
-						},
-					}}
-				>
-					<Stack spacing={2} sx={{ p: 2.5 }}>
-						{!state.isRecording ? (
-							<Button
-								variant="contained"
-								color="primary"
-								onClick={handleStartRecording}
-								size="large"
-								fullWidth
-								sx={{
-									py: 1.75,
-									fontSize: "16px",
-									fontWeight: 600,
-									textTransform: "none",
-									borderRadius: "8px",
-									background:
-										"linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
-									boxShadow:
-										"0 4px 12px rgba(37, 99, 235, 0.3)",
-									transition: "all 0.3s ease",
-									"&:hover": {
-										background:
-											"linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%)",
-										boxShadow:
-											"0 6px 20px rgba(37, 99, 235, 0.4)",
-										transform: "translateY(-1px)",
-									},
-									"&:active": {
-										transform: "translateY(0)",
-									},
-								}}
-							>
-								🎬 Start Recording
-							</Button>
-						) : (
-							<Stack direction="row" spacing={1.5}>
-								<Button
-									variant="outlined"
-									onClick={handlePause}
-									fullWidth
-									sx={{
-										textTransform: "none",
-										fontWeight: 600,
-										py: 1.5,
-										borderRadius: "8px",
-										borderWidth: "2px",
-										borderColor: "#2563eb",
-										color: "#2563eb",
-										transition: "all 0.3s ease",
-										"&:hover": {
-											borderWidth: "2px",
-											borderColor: "#1d4ed8",
-											backgroundColor:
-												"rgba(37, 99, 235, 0.04)",
-											transform: "translateY(-1px)",
-											boxShadow:
-												"0 4px 12px rgba(37, 99, 235, 0.2)",
-										},
-									}}
-								>
-									{state.isPaused ? "▶️ Resume" : "⏸️ Pause"}
-								</Button>
-								<Button
-									variant="contained"
-									color="error"
-									onClick={handleStopRecording}
-									fullWidth
-									sx={{
-										textTransform: "none",
-										fontWeight: 600,
-										py: 1.5,
-										borderRadius: "8px",
-										background:
-											"linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
-										boxShadow:
-											"0 4px 12px rgba(239, 68, 68, 0.3)",
-										transition: "all 0.3s ease",
-										"&:hover": {
-											background:
-												"linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)",
-											boxShadow:
-												"0 6px 20px rgba(239, 68, 68, 0.4)",
-											transform: "translateY(-1px)",
-										},
-									}}
-								>
-									⏹️ Stop
-								</Button>
-							</Stack>
-						)}
-					</Stack>
-				</Card>
-
-				{/* Recorded Actions Card */}
-				<Card
-					sx={{
-						flex: state.actionsList.length > 0 ? 1 : "none",
-						flexShrink: 0,
-						overflow: "hidden",
-						display: "flex",
-						flexDirection: "column",
-						boxShadow:
-							"0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05)",
-						minHeight: "fit-content",
-						borderRadius: "12px",
-						border: "1px solid rgba(0,0,0,0.06)",
-						transition: "all 0.3s ease",
-					}}
-				>
-					<Box
-						sx={{
-							p: 2,
-							borderBottom: "1px solid rgba(0,0,0,0.06)",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "space-between",
-							background:
-								"linear-gradient(to bottom, #f8fafc 0%, #f1f5f9 100%)",
-						}}
-					>
-						<Typography
-							variant="subtitle1"
-							sx={{ fontWeight: 600, fontSize: "15px" }}
+			{/* Authentication Status Banner */}
+			{!isAuthenticated && (
+				<Card className="w-full flex-shrink-0 rounded-xl border-l-4 border-l-[#ffc107] bg-[#fff3cd] p-5 shadow-none">
+					<div className="flex w-full flex-col gap-3">
+						<P className="font-semibold text-[#856404]">
+							⚠️ Authentication Required
+						</P>
+						<Small className="text-[#856404]">
+							Please configure your Semoss credentials to save
+							recordings.
+						</Small>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={handleSettings}
+							className="mt-1 self-start rounded-lg border-2 border-amber-500 bg-white px-4 py-2 font-semibold text-amber-700 text-sm hover:bg-amber-50"
 						>
-							📋 Recorded Actions
-							{state.actionsList.length > 0 && (
-								<Typography
-									variant="body2"
-									component="span"
-									sx={{
-										ml: 1,
-										color: "text.secondary",
-										fontSize: "14px",
-									}}
-								>
-									({state.actionsList.length})
-								</Typography>
-							)}
-						</Typography>
-						{state.actionsList.length > 0 && (
-							<Button
-								variant="text"
-								size="small"
-								onClick={handleClear}
-								sx={{
-									color: "#ef4444",
-									textTransform: "none",
-									minWidth: "auto",
-									px: 1.5,
-									py: 0.5,
-									borderRadius: "6px",
-									fontWeight: 600,
-									transition: "all 0.2s ease",
-									"&:hover": {
-										backgroundColor:
-											"rgba(239, 68, 68, 0.1)",
-										transform: "scale(1.05)",
-									},
-								}}
-							>
-								🗑️ Clear
-							</Button>
-						)}
-					</Box>
-
-					<Box
-						sx={{
-							flex: state.actionsList.length > 0 ? 1 : "none",
-							overflow:
-								state.actionsList.length > 0
-									? "auto"
-									: "visible",
-							p: 2,
-						}}
-					>
-						{state.actionsList.length === 0 ? (
-							<Box
-								sx={{
-									textAlign: "center",
-									py: 4,
-									color: "text.secondary",
-								}}
-							>
-								<Box
-									sx={{
-										fontSize: "48px",
-										mb: 2,
-										opacity: 0.6,
-									}}
-								>
-									📝
-								</Box>
-								<Typography
-									variant="body1"
-									sx={{
-										mb: 1,
-										fontWeight: 600,
-										color: "#374151",
-										fontSize: "15px",
-									}}
-								>
-									No actions recorded yet
-								</Typography>
-								<Typography
-									variant="body2"
-									sx={{
-										color: "#6b7280",
-										fontSize: "13px",
-									}}
-								>
-									{state.isRecording
-										? "Interact with the page to start recording actions"
-										: 'Click "Start Recording" to begin'}
-								</Typography>
-							</Box>
-						) : (
-							<Stack spacing={1}>
-								{state.actionsList.map((action, index) => (
-									<ActionCard
-										key={`${action.timestamp}-${index}`}
-										action={action}
-										index={index}
-									/>
-								))}
-							</Stack>
-						)}
-					</Box>
+							⚙️ Open Settings
+						</Button>
+					</div>
 				</Card>
+			)}
 
-				{/* Save/Download Section - Always visible */}
-				<Card
-					sx={{
-						boxShadow:
-							"0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05)",
-						flexShrink: 0,
-						borderRadius: "12px",
-						border: "1px solid rgba(0,0,0,0.06)",
-						transition: "all 0.3s ease",
-						"&:hover": {
-							boxShadow:
-								"0 4px 6px rgba(0,0,0,0.1), 0 8px 20px rgba(0,0,0,0.08)",
-							transform: "translateY(-2px)",
-						},
-					}}
+			{/* Recording Controls Card */}
+			<Card className="hover:-translate-y-0.5 flex-shrink-0 rounded-xl border border-black/[0.06] shadow-sm transition-all duration-300 hover:shadow-lg">
+				<div className="flex flex-col gap-4 p-6">
+					{!state.isRecording ? (
+						<Button
+							variant="default"
+							onClick={handleStartRecording}
+							size="lg"
+							className="w-full rounded-xl bg-blue-600 px-6 py-8 font-semibold text-lg text-white hover:bg-blue-700"
+						>
+							🎬 Start Recording
+						</Button>
+					) : (
+						<div className="flex flex-row gap-4">
+							<Button
+								variant="outline"
+								onClick={handlePause}
+								className="w-full rounded-xl border-2 border-blue-600 bg-white px-6 py-6 font-semibold text-base text-blue-600 hover:bg-blue-50"
+							>
+								{state.isPaused ? "▶️ Resume" : "⏸️ Pause"}
+							</Button>
+							<Button
+								variant="destructive"
+								onClick={handleStopRecording}
+								className="w-full rounded-xl bg-red-600 px-6 py-6 font-semibold text-base text-white hover:bg-red-700"
+							>
+								⏹️ Stop
+							</Button>
+						</div>
+					)}
+				</div>
+			</Card>
+
+			{/* Recorded Actions Card */}
+			<Card
+				className={cn(
+					"flex min-h-fit flex-shrink-0 flex-col overflow-hidden rounded-xl border border-black/[0.06] shadow-sm transition-all duration-300",
+					state.actionsList.length > 0 ? "flex-1" : "flex-none",
+				)}
+			>
+				<div
+					className={cn(
+						"flex items-center justify-between border-black/[0.06] border-b bg-gradient-to-b from-[#f8fafc] to-[#f1f5f9] p-4",
+					)}
 				>
-					<Stack spacing={2} sx={{ p: 2.5 }}>
-						{/* Project Selection Dropdown */}
-						{isAuthenticated && projects.length > 0 && (
-							<Box>
-								<Typography
-									variant="caption"
-									sx={{
-										mb: 1,
-										display: "block",
-										fontWeight: 600,
-										color: "#1e293b",
-										fontSize: "0.875rem",
-									}}
+					<P className="font-semibold text-[15px]">
+						📋 Recorded Actions
+						{state.actionsList.length > 0 && (
+							<Muted className="ml-2 text-[14px]">
+								({state.actionsList.length})
+							</Muted>
+						)}
+					</P>
+					{state.actionsList.length > 0 && (
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={handleClear}
+							className="min-w-fit rounded-lg px-4 py-2 font-semibold text-red-500 text-sm hover:bg-red-50"
+						>
+							🗑️ Clear
+						</Button>
+					)}
+				</div>
+
+				<div
+					className={cn(
+						"p-4",
+						state.actionsList.length > 0 ? "flex-1" : "flex-none",
+						state.actionsList.length > 0
+							? "overflow-auto"
+							: "overflow-visible",
+					)}
+				>
+					{state.actionsList.length === 0 ? (
+						<div
+							className={cn(
+								"py-4 text-center text-muted-foreground",
+							)}
+						>
+							<div className={cn("mb-2 text-[48px] opacity-60")}>
+								📝
+							</div>
+							<P className="mb-2 font-semibold text-[#374151] text-[15px]">
+								No actions recorded yet
+							</P>
+							<Small className="text-[#6b7280] text-[13px]">
+								{state.isRecording
+									? "Interact with the page to start recording actions"
+									: 'Click "Start Recording" to begin'}
+							</Small>
+						</div>
+					) : (
+						<div className="flex flex-col gap-2">
+							{state.actionsList.map((action, index) => (
+								<ActionCard
+									key={`${action.timestamp}-${index}`}
+									action={action}
+									index={index}
+								/>
+							))}
+						</div>
+					)}
+				</div>
+			</Card>
+
+			{/* Save/Download Section - Always visible */}
+			<Card className="hover:-translate-y-0.5 flex-shrink-0 rounded-xl border border-black/[0.06] shadow-sm transition-all duration-300 hover:shadow-lg">
+				<div className="flex flex-col gap-4 p-6">
+					{/* Project Selection Dropdown */}
+					{isAuthenticated && projects.length > 0 && (
+						<div>
+							<Muted className="mb-2 block font-semibold text-[#1e293b] text-[0.875rem]">
+								📁 Select Project
+							</Muted>
+							<select
+								value={
+									showNewProjectInput
+										? "__NEW_PROJECT__"
+										: selectedProject || ""
+								}
+								onChange={(e) =>
+									handleProjectChange(e.target.value)
+								}
+								onMouseDown={() => refreshProjects()}
+								disabled={
+									state.actionsList.length === 0 ||
+									isCreatingProject
+								}
+								style={{
+									width: "100%",
+									padding: "12px 36px 12px 16px",
+									border: "2px solid #cbd5e1",
+									borderRadius: "10px",
+									fontSize: "14.5px",
+									fontWeight: "500",
+									fontFamily: "inherit",
+									background:
+										"linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%)",
+									backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cpath fill='%23475569' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z'/%3E%3C/svg%3E")`,
+									cursor: "pointer",
+									transition: "all 0.2s ease",
+									outline: "none",
+									boxShadow: "0 1px 3px rgba(0, 0, 0, 0.08)",
+									appearance: "none",
+									backgroundPosition: "right 10px center",
+									backgroundRepeat: "no-repeat",
+									backgroundSize: "20px 20px",
+								}}
+								onFocus={(e) => {
+									e.target.style.borderColor = "#2563eb";
+									e.target.style.boxShadow =
+										"0 0 0 3px rgba(37, 99, 235, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1)";
+									e.target.style.borderWidth = "2px";
+								}}
+								onBlur={(e) => {
+									e.target.style.borderColor = "#cbd5e1";
+									e.target.style.boxShadow =
+										"0 1px 3px rgba(0, 0, 0, 0.08)";
+								}}
+							>
+								<option
+									value=""
+									disabled
+									style={{ cursor: "pointer" }}
 								>
-									📁 Select Project
-								</Typography>
-								<select
-									value={
-										showNewProjectInput
-											? "__NEW_PROJECT__"
-											: selectedProject || ""
-									}
-									onChange={(e) =>
-										handleProjectChange(e.target.value)
-									}
-									onMouseDown={() => refreshProjects()}
-									disabled={
-										state.actionsList.length === 0 ||
-										isCreatingProject
-									}
+									-- Select a project --
+								</option>
+								<option
+									value="__NEW_PROJECT__"
 									style={{
-										width: "100%",
-										padding: "12px 36px 12px 16px",
-										border: "2px solid #cbd5e1",
-										borderRadius: "10px",
-										fontSize: "14.5px",
-										fontWeight: "500",
-										fontFamily: "inherit",
-										background:
-											"linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%)",
-										backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cpath fill='%23475569' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z'/%3E%3C/svg%3E")`,
+										fontWeight: 600,
+										color: "#10b981",
 										cursor: "pointer",
-										transition: "all 0.2s ease",
-										outline: "none",
-										boxShadow:
-											"0 1px 3px rgba(0, 0, 0, 0.08)",
-										appearance: "none",
-										backgroundPosition: "right 10px center",
-										backgroundRepeat: "no-repeat",
-										backgroundSize: "20px 20px",
-									}}
-									onFocus={(e) => {
-										e.target.style.borderColor = "#2563eb";
-										e.target.style.boxShadow =
-											"0 0 0 3px rgba(37, 99, 235, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1)";
-										e.target.style.borderWidth = "2px";
-									}}
-									onBlur={(e) => {
-										e.target.style.borderColor = "#cbd5e1";
-										e.target.style.boxShadow =
-											"0 1px 3px rgba(0, 0, 0, 0.08)";
 									}}
 								>
+									+ Create New Project
+								</option>
+								{projects.map((project) => (
 									<option
-										value=""
-										disabled
+										key={project.id}
+										value={project.id}
 										style={{ cursor: "pointer" }}
 									>
-										-- Select a project --
+										{project.displayName || project.name}
 									</option>
-									<option
-										value="__NEW_PROJECT__"
-										style={{
-											fontWeight: 600,
-											color: "#10b981",
-											cursor: "pointer",
-										}}
-									>
-										+ Create New Project
-									</option>
-									{projects.map((project) => (
-										<option
-											key={project.id}
-											value={project.id}
-											style={{ cursor: "pointer" }}
-										>
-											{project.displayName ||
-												project.name}
-										</option>
-									))}
-								</select>
-								{showNewProjectInput && (
-									<Box sx={{ mt: 2 }}>
-										<TextField
-											label="New Project Name"
+								))}
+							</select>
+							{showNewProjectInput && (
+								<div className={cn("mt-2")}>
+									<Field className="w-full">
+										<FieldLabel htmlFor={newProjectNameId}>
+											New Project Name
+										</FieldLabel>
+										<Input
+											id={newProjectNameId}
 											placeholder="Enter project name (e.g., My Extension Project)"
 											value={newProjectName}
 											onChange={(e) =>
@@ -960,8 +672,6 @@ export const RecordingPanel: FC = () => {
 													e.target.value,
 												)
 											}
-											size="small"
-											fullWidth
 											disabled={isCreatingProject}
 											onKeyPress={(e) => {
 												if (
@@ -971,153 +681,72 @@ export const RecordingPanel: FC = () => {
 													handleNewProjectCreation();
 												}
 											}}
-											sx={{
-												"& .MuiOutlinedInput-root": {
-													borderRadius: "8px",
-												},
-											}}
+											className="rounded-lg"
 										/>
-										<Typography
-											variant="caption"
-											sx={{
-												mt: 0.5,
-												display: "block",
-												color: "#64748b",
-											}}
-										>
-											Must start with a letter and contain
-											only letters, numbers, and spaces
-										</Typography>
-										<Button
-											variant="contained"
-											color="primary"
-											onClick={handleNewProjectCreation}
-											fullWidth
-											disabled={
-												isCreatingProject ||
-												!newProjectName.trim()
-											}
-											sx={{
-												mt: 1.5,
-												py: 1.25,
-												textTransform: "none",
-												fontWeight: 600,
-												borderRadius: "8px",
-												background:
-													"linear-gradient(135deg, #10b981 0%, #059669 100)",
-												"&:hover": {
-													background:
-														"linear-gradient(135deg, #059669 0%, #047857 100%)",
-												},
-											}}
-										>
-											{isCreatingProject
-												? "Creating Project..."
-												: "Create Project"}
-										</Button>
-									</Box>
-								)}
-							</Box>
-						)}
+									</Field>
+									<Muted className="mt-1 block text-[#64748b]">
+										Must start with a letter and contain
+										only letters, numbers, and spaces
+									</Muted>
+									<Button
+										variant="default"
+										onClick={handleNewProjectCreation}
+										className="mt-6 w-full rounded-xl bg-emerald-600 px-6 py-5 font-semibold text-base text-white hover:bg-emerald-700"
+										disabled={
+											isCreatingProject ||
+											!newProjectName.trim()
+										}
+									>
+										{isCreatingProject
+											? "Creating Project..."
+											: "Create Project"}
+									</Button>
+								</div>
+							)}
+						</div>
+					)}
 
-						<TextField
-							label="Script Name"
+					<Field className="w-full">
+						<FieldLabel htmlFor={scriptNameId}>
+							Script Name
+						</FieldLabel>
+						<Input
+							id={scriptNameId}
 							placeholder="Enter script name (optional)"
 							value={scriptName}
 							onChange={(e) => setScriptName(e.target.value)}
-							size="small"
-							fullWidth
 							disabled={
 								state.actionsList.length === 0 ||
 								isCreatingProject
 							}
-							sx={{
-								"& .MuiOutlinedInput-root": {
-									borderRadius: "8px",
-									transition: "all 0.3s ease",
-									"&:hover": {
-										boxShadow:
-											"0 0 0 3px rgba(37, 99, 235, 0.08)",
-									},
-									"&.Mui-focused": {
-										boxShadow:
-											"0 0 0 3px rgba(37, 99, 235, 0.12)",
-									},
-								},
-							}}
+							className="rounded-lg transition-all duration-300 hover:shadow-[0_0_0_3px_rgba(37,99,235,0.08)] focus:shadow-[0_0_0_3px_rgba(37,99,235,0.12)]"
 						/>
-						<Stack direction="row" spacing={1.5}>
-							<Button
-								variant="outlined"
-								onClick={handleSave}
-								fullWidth
-								disabled={
-									state.actionsList.length === 0 ||
-									isCreatingProject
-								}
-								sx={{
-									textTransform: "none",
-									fontWeight: 600,
-									py: 1.25,
-									borderRadius: "8px",
-									borderWidth: "2px",
-									borderColor: "#10b981",
-									color: "#10b981",
-									transition: "all 0.3s ease",
-									"&:hover": {
-										borderWidth: "2px",
-										borderColor: "#059669",
-										backgroundColor:
-											"rgba(16, 185, 129, 0.04)",
-										transform: "translateY(-1px)",
-										boxShadow:
-											"0 4px 12px rgba(16, 185, 129, 0.2)",
-									},
-									"&:disabled": {
-										borderColor: "rgba(0,0,0,0.12)",
-									},
-								}}
-							>
-								💾 Save
-							</Button>
-							<Button
-								variant="contained"
-								color="primary"
-								onClick={handleDownload}
-								fullWidth
-								disabled={
-									state.actionsList.length === 0 ||
-									isCreatingProject
-								}
-								sx={{
-									textTransform: "none",
-									fontWeight: 600,
-									py: 1.25,
-									borderRadius: "8px",
-									background:
-										"linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
-									boxShadow:
-										"0 4px 12px rgba(37, 99, 235, 0.3)",
-									transition: "all 0.3s ease",
-									"&:hover": {
-										background:
-											"linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%)",
-										boxShadow:
-											"0 6px 20px rgba(37, 99, 235, 0.4)",
-										transform: "translateY(-1px)",
-									},
-									"&:disabled": {
-										background: "rgba(0,0,0,0.12)",
-									},
-								}}
-							>
-								⬇️ Download
-							</Button>
-						</Stack>
-					</Stack>
-				</Card>
-			</Box>
-		</>
+					</Field>
+					<div className="flex flex-row gap-3">
+						<Button
+							onClick={handleSave}
+							className="w-full cursor-pointer rounded-lg border-[1.5px] border-emerald-500 bg-white px-5 py-3 font-semibold text-[15px] text-emerald-600 shadow-sm transition-all duration-200 hover:border-emerald-600 hover:bg-emerald-50"
+							disabled={
+								state.actionsList.length === 0 ||
+								isCreatingProject
+							}
+						>
+							💾 Save
+						</Button>
+						<Button
+							onClick={handleDownload}
+							className="w-full cursor-pointer rounded-lg border-0 bg-blue-600 px-5 py-3 font-semibold text-[15px] text-white shadow-sm transition-all duration-200 hover:bg-blue-700"
+							disabled={
+								state.actionsList.length === 0 ||
+								isCreatingProject
+							}
+						>
+							⬇️ Download
+						</Button>
+					</div>
+				</div>
+			</Card>
+		</div>
 	);
 };
 
@@ -1155,101 +784,45 @@ const ActionCard: FC<ActionCardProps> = ({ action, index }) => {
 	};
 
 	return (
-		<Box
-			sx={{
-				p: 1.75,
-				border: "1px solid rgba(0,0,0,0.08)",
-				borderRadius: "8px",
-				background:
-					"linear-gradient(to bottom, #ffffff 0%, #fafafa 100%)",
-				fontSize: "13px",
-				transition: "all 0.2s ease",
-				"&:hover": {
-					borderColor: "#2563eb",
-					boxShadow: "0 2px 8px rgba(37, 99, 235, 0.12)",
-					transform: "translateX(4px)",
-				},
-			}}
+		<div
+			className={cn(
+				"rounded-lg border border-black/[0.08] p-[7px]",
+				"bg-gradient-to-b from-white to-[#fafafa]",
+				"text-[13px] transition-all duration-200 ease-in-out",
+				"hover:translate-x-1 hover:border-[#2563eb] hover:shadow-[0_2px_8px_rgba(37,99,235,0.12)]",
+			)}
 		>
-			<Box
-				sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.75 }}
-			>
-				<Typography
-					variant="caption"
-					sx={{
-						fontWeight: 700,
-						color: "#2563eb",
-						backgroundColor: "rgba(37, 99, 235, 0.1)",
-						px: 0.75,
-						py: 0.25,
-						borderRadius: "4px",
-						fontSize: "11px",
-					}}
-				>
+			<div className={cn("mb-[3px] flex items-center gap-1")}>
+				<Muted className="rounded bg-[rgba(37,99,235,0.1)] px-1.5 py-0.5 font-bold text-[#2563eb] text-[11px]">
 					#{index + 1}
-				</Typography>
+				</Muted>
 				<span>{getActionIcon(action.type)}</span>
-				<Typography
-					variant="caption"
-					sx={{
-						fontWeight: 600,
-						color: "#1f2937",
-						fontSize: "13px",
-					}}
-				>
+				<Muted className="font-semibold text-[#1f2937] text-[13px]">
 					{action.type}
-				</Typography>
-			</Box>
+				</Muted>
+			</div>
 
 			{action.selector && action.selector.length > 0 && (
-				<Typography
-					variant="caption"
-					sx={{
-						display: "block",
-						color: "#6b7280",
-						fontFamily: "monospace",
-						backgroundColor: "#f9fafb",
-						px: 1,
-						py: 0.5,
-						borderRadius: "4px",
-						fontSize: "12px",
-					}}
-				>
+				<Muted className="block rounded bg-[#f9fafb] px-2 py-1 font-mono text-[#6b7280] text-[12px]">
 					{formatSelector(action.selector)}
-				</Typography>
+				</Muted>
 			)}
 
 			{action.text && (
-				<Typography
-					variant="caption"
-					sx={{
-						display: "block",
-						color: "#2563eb",
-						mt: 0.5,
-						fontWeight: 500,
-					}}
-				>
+				<Muted className="mt-1 block font-medium text-[#2563eb]">
 					Value:{" "}
 					{action.text.length > 50
 						? `${action.text.substring(0, 50)}...`
 						: action.text}
-				</Typography>
+				</Muted>
 			)}
 
 			{action.url && (
-				<Typography
-					variant="caption"
-					sx={{
-						display: "block",
-						color: "#2563eb",
-						mt: 0.5,
-						fontWeight: 500,
-					}}
-				>
+				<Muted className="mt-1 block font-medium text-[#2563eb]">
 					URL: {action.url}
-				</Typography>
+				</Muted>
 			)}
-		</Box>
+		</div>
 	);
 };
 
