@@ -3,7 +3,7 @@ import { describe, expect, test, vi } from "vitest";
 import { usePixel } from "@semoss/sdk/react";
 import { DefaultBlocks } from "../../components/block-defaults";
 import { Blocks } from "../../components/blocks";
-import { QueryImportCell } from "../../components/cell-defaults/query-import-cell/QueryImportCell";
+import { NotebookImportCell } from "../../components/cell-defaults/notebook-import-cell";
 import * as hooks from "../../hooks";
 import { StateStore } from "../../store";
 
@@ -16,6 +16,10 @@ vi.mock("@semoss/sdk/react", () => ({
 // that are unrelated to this cell behavior test.
 vi.mock("@semoss/shared", () => ({
 	MonacoEditor: () => null,
+	EngineSubtypeIcon: () => null,
+	registerSparqlLanguage: vi.fn(),
+	SPARQL_LANGUAGE_ID: "sparql",
+	SPARQL_THEME_LIGHT: "sparql-light",
 }));
 
 const query = {
@@ -30,19 +34,16 @@ const query = {
 					frameType: "NATIVE",
 					frameVariableName: "result_frame",
 					selectQuery: "SELECT * FROM table1",
-					enableBatching: false,
-					batchSize: undefined,
-					currentOffset: 0,
 				},
 			},
 		],
 	},
 };
 
-describe("Query Import Cell", () => {
+describe("Notebook Import Cell", () => {
 	/**
 	 * Helper that wraps a component in the Blocks context provider,
-	 * which QueryImportCell requires to access the state store and block registry.
+	 * which NotebookImportCell requires to access the state store and block registry.
 	 * The store's dispatch is replaced with a spy so tests can assert on actions
 	 * dispatched without triggering real state mutations.
 	 */
@@ -79,20 +80,28 @@ describe("Query Import Cell", () => {
 	// dropdown is populated from the mocked usePixel response.
 	test("renders database selector and editor when expanded", async () => {
 		// Mock usePixel to return two available databases.
-		// Whenever usePixedl is invoked from the app, it returns the mockValue
+		// Whenever usePixel is invoked from the app, it returns the mockValue
 		// for this test
 		vi.mocked(usePixel).mockReturnValue({
 			status: "SUCCESS",
 			data: [
-				{ app_id: "db1", app_name: "Database 1" },
-				{ app_id: "db2", app_name: "Database 2" },
+				{
+					engine_id: "db1",
+					engine_name: "Database 1",
+					engine_type: "DATABASE",
+				},
+				{
+					engine_id: "db2",
+					engine_name: "Database 2",
+					engine_type: "DATABASE",
+				},
 			],
 		} as never);
 
 		// Spy on useBlocks so the component can access a dispatch function
 		// without needing the real Blocks context wiring.
 		// Difference from mocked is that mocked is replaced before code runs,
-		// But spyOn runs after code runs, where it listens to whereever useBlocks is called,
+		// But spyOn runs after code runs, where it listens to wherever useBlocks is called,
 		// and return the mock value.
 		const useBlocksSpy = vi.spyOn(hooks, "useBlocks").mockReturnValue({
 			state: {
@@ -108,20 +117,20 @@ describe("Query Import Cell", () => {
 		};
 
 		renderWithBlocks(
-			<QueryImportCell cell={cell as never} isExpanded={true} />,
+			<NotebookImportCell cell={cell as never} isExpanded={true} />,
 		);
 
 		// Wait for the async database list to resolve before asserting.
 		await waitFor(() => {
-			expect(screen.getByTitle("Select Database")).toBeInTheDocument();
+			expect(screen.getByText("Database")).toBeInTheDocument();
 		});
 		// Initial state shows the toggle in "Show" mode until clicked.
 		expect(
-			screen.getByRole("button", { name: /Show Available Columns/i }),
+			screen.getByRole("button", { name: /Show columns/i }),
 		).toBeInTheDocument();
-		expect(screen.getByTitle("Select Type")).toBeInTheDocument();
+		expect(screen.getByText("Frame type")).toBeInTheDocument();
 		expect(
-			screen.getByTitle("Set Frame Variable Name"),
+			screen.getByTitle("Set frame variable name"),
 		).toBeInTheDocument();
 
 		useBlocksSpy.mockRestore();
@@ -132,7 +141,13 @@ describe("Query Import Cell", () => {
 	test("renders editor and frame variable name input", async () => {
 		vi.mocked(usePixel).mockReturnValue({
 			status: "SUCCESS",
-			data: [{ app_id: "db1", app_name: "Database 1" }],
+			data: [
+				{
+					engine_id: "db1",
+					engine_name: "Database 1",
+					engine_type: "DATABASE",
+				},
+			],
 		} as never);
 
 		const useBlocksSpy = vi.spyOn(hooks, "useBlocks").mockReturnValue({
@@ -149,19 +164,19 @@ describe("Query Import Cell", () => {
 		};
 
 		renderWithBlocks(
-			<QueryImportCell cell={cell as never} isExpanded={true} />,
+			<NotebookImportCell cell={cell as never} isExpanded={true} />,
 		);
 
 		await waitFor(() => {
 			expect(
-				screen.getByTitle("Set Frame Variable Name"),
+				screen.getByTitle("Set frame variable name"),
 			).toBeInTheDocument();
 		});
 
 		// The input should be initialized with the value from the cell parameters.
-		const frameVariableInput = within(
-			screen.getByTitle("Set Frame Variable Name"),
-		).getByRole("textbox") as HTMLInputElement;
+		const frameVariableInput = screen.getByTitle(
+			"Set frame variable name",
+		) as HTMLInputElement;
 		expect(frameVariableInput).toHaveValue("result_frame");
 
 		useBlocksSpy.mockRestore();
@@ -173,7 +188,13 @@ describe("Query Import Cell", () => {
 	test("renders frame type selector with correct value", async () => {
 		vi.mocked(usePixel).mockReturnValue({
 			status: "SUCCESS",
-			data: [{ app_id: "db1", app_name: "Database 1" }],
+			data: [
+				{
+					engine_id: "db1",
+					engine_name: "Database 1",
+					engine_type: "DATABASE",
+				},
+			],
 		} as never);
 
 		const useBlocksSpy = vi.spyOn(hooks, "useBlocks").mockReturnValue({
@@ -190,115 +211,19 @@ describe("Query Import Cell", () => {
 		};
 
 		renderWithBlocks(
-			<QueryImportCell cell={cell as never} isExpanded={true} />,
+			<NotebookImportCell cell={cell as never} isExpanded={true} />,
 		);
 
 		await waitFor(() => {
-			expect(screen.getByTitle("Select Type")).toBeInTheDocument();
+			expect(screen.getByText("Frame type")).toBeInTheDocument();
 		});
 
 		// The selector should show "NATIVE" as set in the fixture parameters.
+		const frameTypeSection = screen.getByText("Frame type").closest("div");
 		const frameTypeSelect = within(
-			screen.getByTitle("Select Type"),
+			frameTypeSection as HTMLElement,
 		).getByRole("combobox");
 		expect(frameTypeSelect).toHaveTextContent(/Native/i);
-
-		useBlocksSpy.mockRestore();
-	});
-
-	// When enableBatching is false (the default fixture), the "Batch Size" and
-	// "Current Offset" inputs should be hidden. The "Enable Batching" toggle
-	// itself must still be present so the user can opt in.
-	test("does not display batching controls when batching is disabled", async () => {
-		vi.mocked(usePixel).mockReturnValue({
-			status: "SUCCESS",
-			data: [{ app_id: "db1", app_name: "Database 1" }],
-		} as never);
-
-		const useBlocksSpy = vi.spyOn(hooks, "useBlocks").mockReturnValue({
-			state: {
-				dispatch: vi.fn(),
-			},
-		} as never);
-
-		const cell = {
-			id: "1",
-			isLoading: false,
-			query: query.mcp_driver,
-			parameters: query.mcp_driver.cells[0].parameters,
-		};
-
-		renderWithBlocks(
-			<QueryImportCell cell={cell as never} isExpanded={true} />,
-		);
-
-		// Wait until the toggle is rendered before checking for absent controls.
-		await waitFor(() => {
-			expect(
-				screen.getByRole("checkbox", {
-					name: /Enable Batching/i,
-				}),
-			).toBeInTheDocument();
-		});
-
-		// Batch Size and Current Offset should not be in the DOM when batching is off.
-		expect(screen.queryByTitle("Batch Size")).not.toBeInTheDocument();
-		expect(screen.queryByTitle("Current Offset")).not.toBeInTheDocument();
-
-		useBlocksSpy.mockRestore();
-	});
-
-	// Overrides the base fixture to enable batching with batchSize=100 and
-	// currentOffset=0. Verifies that the Batch Size and Current Offset inputs
-	// are rendered with the correct values, and that a Reset button is present
-	// to allow the user to clear the current offset back to 0.
-	test("displays batching controls when batching is enabled", async () => {
-		vi.mocked(usePixel).mockReturnValue({
-			status: "SUCCESS",
-			data: [{ app_id: "db1", app_name: "Database 1" }],
-		} as never);
-
-		const useBlocksSpy = vi.spyOn(hooks, "useBlocks").mockReturnValue({
-			state: {
-				dispatch: vi.fn(),
-			},
-		} as never);
-
-		// Spread the base parameters and override only the batching-related fields.
-		const cell = {
-			id: "1",
-			isLoading: false,
-			query: query.mcp_driver,
-			parameters: {
-				...query.mcp_driver.cells[0].parameters,
-				enableBatching: true,
-				batchSize: 100,
-				currentOffset: 0,
-			},
-		};
-
-		renderWithBlocks(
-			<QueryImportCell cell={cell as never} isExpanded={true} />,
-		);
-
-		// Wait for the batching controls to appear before asserting values.
-		await waitFor(() => {
-			expect(screen.getByTitle("Batch Size")).toBeInTheDocument();
-		});
-
-		const batchSizeInput = within(
-			screen.getByTitle("Batch Size"),
-		).getByRole("spinbutton") as HTMLInputElement;
-		const currentOffsetInput = within(
-			screen.getByTitle("Current Offset"),
-		).getByRole("spinbutton") as HTMLInputElement;
-
-		expect(batchSizeInput).toHaveValue(100);
-		expect(currentOffsetInput).toHaveValue(0);
-		// A Reset button should be present to clear the current offset.
-		expect(
-			screen.getByRole("button", { name: "Reset" }),
-		).toBeInTheDocument();
 
 		useBlocksSpy.mockRestore();
 	});
