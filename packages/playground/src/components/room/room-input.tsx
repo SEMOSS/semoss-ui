@@ -45,7 +45,6 @@ import {
 import {
 	EnterPlugin,
 	FocusPlugin,
-	isKnowledgeMcp,
 	MCPOverlay,
 	PromptLibraryDialog,
 	type PromptLibraryItem,
@@ -62,6 +61,7 @@ import { useFileDrag } from "@/contexts";
 import { useGracefulErrors, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { Engine, MCPConfig, Workspace } from "@/types";
+import { isKnowledgeMcp } from "@/utility/mcp-utils";
 import { PromptOptimizer } from "../../components/prompt/PromptOptimizer";
 
 type WorkspaceRef = Pick<Workspace, "workspace_id"> &

@@ -32,6 +32,9 @@ export const ScopePicker = () => {
 	const selectedApp = terminal.selectedApp;
 	const setSelectedApp = terminal.setSelectedApp;
 	const [pickerOpen, setPickerOpen] = useState(false);
+	// True while LoadApp is running — disables the trigger button to prevent
+	// double-clicks queuing a second call before the first resolves.
+	const [loadingApp, setLoadingApp] = useState(false);
 
 	// search + pagination state
 	const [search, setSearch] = useState("");
@@ -163,12 +166,20 @@ export const ScopePicker = () => {
 				<div className="relative" ref={pickerWrapRef}>
 					<button
 						type="button"
-						className={`flex w-full items-center gap-2 rounded border border-border bg-background px-2 py-1.5 text-left text-xs hover:bg-accent hover:text-accent-foreground ${
+						disabled={loadingApp}
+						className={`flex w-full items-center gap-2 rounded border border-border bg-background px-2 py-1.5 text-left text-xs hover:bg-accent hover:text-accent-foreground disabled:opacity-60 ${
 							pickerOpen ? "border-ring" : ""
 						}`}
-						onClick={() => setPickerOpen((v) => !v)}
+						onClick={() => !loadingApp && setPickerOpen((v) => !v)}
 					>
-						{selectedApp ? (
+						{loadingApp ? (
+							<>
+								<span className="inline-block h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+								<span className="flex-1 text-muted-foreground text-xs">
+									{t("scope.loadingProjects")}
+								</span>
+							</>
+						) : selectedApp ? (
 							<>
 								<AppCatalogAvatar
 									name={selectedApp.project_name}
@@ -188,7 +199,9 @@ export const ScopePicker = () => {
 								{t("scope.selectProject")}
 							</span>
 						)}
-						<span className="text-muted-foreground">▾</span>
+						{!loadingApp && (
+							<span className="text-muted-foreground">▾</span>
+						)}
 					</button>
 
 					{pickerOpen && (
@@ -245,19 +258,43 @@ export const ScopePicker = () => {
 												? "bg-primary/10"
 												: ""
 										}`}
-										onClick={() => {
-											setSelectedApp(app);
+										onClick={async () => {
 											setPickerOpen(false);
-											// attach the project so
-											// app-scoped reactors (GetAppAssets,
-											// etc.) have what they need
-											// server-side
-											runPixel(
-												actions,
-												`LoadApp("${app.project_id}");`,
-											).catch(() => {
-												/* errors surface on next call */
-											});
+											setLoadingApp(true);
+											try {
+												// LoadApp initializes the project's
+												// reactor hash server-side — await it
+												// before updating selectedApp so that
+												// TerminalConsole's GetProjectAvailableReactors
+												// call sees a populated hash.
+												const result = await runPixel(
+													actions,
+													`LoadApp("${app.project_id}");`,
+												);
+												// Only update context if LoadApp succeeded
+												if (
+													result &&
+													!result.operationType.some(
+														(t) =>
+															t.indexOf("ERROR") >
+															-1,
+													)
+												) {
+													setSelectedApp(app);
+												} else {
+													terminal.alert(
+														"error",
+														`Failed to load app: ${app.project_name}`,
+													);
+												}
+											} catch {
+												terminal.alert(
+													"error",
+													`Failed to load app: ${app.project_name}`,
+												);
+											} finally {
+												setLoadingApp(false);
+											}
 										}}
 										title={app.project_id}
 									>

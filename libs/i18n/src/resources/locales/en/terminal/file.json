@@ -15,6 +15,10 @@
 		"title": "Output will appear in the Terminal pane",
 		"description": "Restore the layout to see the run output."
 	},
+	"noMode": {
+		"title": "Choose a language to run",
+		"description": "Select Pixel, R, Python, or Shell from the toolbar, then run {{name}}."
+	},
 	"scopeChanged": {
 		"title": "Scope changed",
 		"body": "This file was opened in <strong>{{scope}}</strong>. Switch back to that scope to edit or run it."

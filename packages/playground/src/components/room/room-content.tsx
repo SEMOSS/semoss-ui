@@ -21,7 +21,6 @@ import {
 } from "@semoss/ui/next";
 import {
 	InputMessage,
-	PlanMessage,
 	ResponseMessage,
 	RoomInput,
 	RoomInputMenuFileExplorer,
@@ -355,15 +354,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 											<ResponseMessage
 												room={room}
 												message={m}
-											/>
-										)}
-										{m.type === "PLAN" && (
-											<PlanMessage
-												message={m}
-												isLast={
-													mIdx ===
-													room.history.length - 1
-												}
 											/>
 										)}
 

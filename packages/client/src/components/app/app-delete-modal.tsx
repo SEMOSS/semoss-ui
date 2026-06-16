@@ -2,6 +2,7 @@ import { useState } from "react";
 import { toast } from "@semoss/ui/next";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { useRootStore } from "@/hooks";
+import type { AppTileCardEntityType } from "./app-tile-card";
 
 interface AppDeleteModalProps {
 	isOpen: boolean;
@@ -9,17 +10,43 @@ interface AppDeleteModalProps {
 	appId: string;
 	appName?: string;
 	onDelete?: () => void;
+	entityType?: AppTileCardEntityType;
 }
 
 export const AppDeleteModal = (props: AppDeleteModalProps) => {
-	const { isOpen, onClose, appId, appName, onDelete } = props;
+	const {
+		isOpen,
+		onClose,
+		appId,
+		appName,
+		onDelete,
+		entityType = "app",
+	} = props;
 
 	const { monolithStore } = useRootStore();
 
 	const [loading, setLoading] = useState(false);
 
+	const entityLabel =
+		entityType === "skill"
+			? "Skill"
+			: entityType === "agent"
+				? "Agent"
+				: "App";
+
 	const escapePixelString = (value: string) => {
 		return value.replaceAll("'", "\\'");
+	};
+
+	const buildDeletePixel = () => {
+		const id = escapePixelString(appId);
+		if (entityType === "skill") {
+			return `DeleteSkill(skillId=['${id}']);`;
+		}
+		if (entityType === "agent") {
+			return `DeleteWorkspace(workspaceId=['${id}']);`;
+		}
+		return `DeleteProject(project=['${id}']);`;
 	};
 
 	/**
@@ -31,9 +58,7 @@ export const AppDeleteModal = (props: AppDeleteModalProps) => {
 			setLoading(true);
 
 			// run the pixel
-			const response = await monolithStore.runQuery(
-				`DeleteProject(project=['${escapePixelString(appId)}']);`,
-			);
+			const response = await monolithStore.runQuery(buildDeletePixel());
 
 			const operationType =
 				response.pixelReturn?.[0]?.operationType || "";
@@ -43,7 +68,12 @@ export const AppDeleteModal = (props: AppDeleteModalProps) => {
 				toast.success("Successfully deleted");
 				onDelete?.();
 			} else {
-				toast.error(String(output || "Failed to delete app"));
+				toast.error(
+					String(
+						output ||
+							`Failed to delete ${entityLabel.toLowerCase()}`,
+					),
+				);
 			}
 		} catch (e) {
 			toast.error(String(e));
@@ -62,7 +92,7 @@ export const AppDeleteModal = (props: AppDeleteModalProps) => {
 					onClose();
 				}
 			}}
-			entityType="App"
+			entityType={entityLabel}
 			entityName={appName}
 			entityId={appId}
 			onConfirm={deleteApp}
