@@ -1,6 +1,15 @@
-import { type Dispatch, type SetStateAction, useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
+import { useId, useState } from "react";
 import { type Control, Controller } from "react-hook-form";
-import { FileDropzone, Select, Stack } from "@semoss/ui";
+import {
+	FileDropzone,
+	Label,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import type { AddAppFormStep } from "./AddAppModal";
 import {
 	ADD_APP_FORM_FIELD_APP_TYPE,
@@ -23,6 +32,7 @@ const FOLDER_TYPE_OPTIONS = [
 ];
 
 export const AppUploadStep = (props: {
+	// biome-ignore lint/suspicious/noExplicitAny: react-hook-form generic
 	control: Control<any, any>;
 	setAddAppFormSteps: Dispatch<SetStateAction<AddAppFormStep[]>>;
 	appZipFormSteps: AddAppFormStep[];
@@ -36,85 +46,91 @@ export const AppUploadStep = (props: {
 	} = props;
 
 	const [isZip, setIsZip] = useState(true);
+	const folderTypeId = useId();
+	const appTypeId = useId();
 
 	return (
-		<Stack direction="column">
+		<div className="flex flex-col gap-3">
 			<Controller
 				name={ADD_APP_FORM_FIELD_UPLOAD}
 				control={control}
 				rules={{ required: true }}
-				render={({ field }) => {
-					return (
-						<FileDropzone
-							multiple={false}
-							value={field.value}
-							onChange={(newValues) => {
-								field.onChange(newValues);
-							}}
-							extensions={[".zip"]}
-						/>
-					);
-				}}
+				render={({ field }) => (
+					<FileDropzone
+						multiple={false}
+						value={field.value}
+						onChange={(newValues) => field.onChange(newValues)}
+						extensions={[".zip"]}
+					/>
+				)}
 			/>
 			<Controller
 				name={ADD_APP_FORM_FIELD_TYPE}
 				control={control}
-				render={({ field }) => {
-					return (
+				render={({ field }) => (
+					<div className="flex flex-col gap-1.5">
+						<Label htmlFor={folderTypeId}>Folder Type</Label>
 						<Select
-							label="Folder Type"
 							value={field.value}
-							defaultValue={"App Zip"}
-							onChange={(value) => {
-								field.onChange(value);
+							defaultValue="App Zip"
+							onValueChange={(val) => {
+								field.onChange(val);
 								setAddAppFormSteps(
-									value.target.value === "App Zip"
+									val === "App Zip"
 										? appZipFormSteps
 										: projectZipFormSteps,
 								);
-
-								if (value.target.value === "App Zip") {
-									setIsZip(true);
-								} else {
-									setIsZip(false);
-								}
+								setIsZip(val === "App Zip");
 							}}
 						>
-							{FOLDER_TYPE_OPTIONS.map((option, idx) => (
-								<Select.Item key={idx} value={option.value}>
-									{option.display}
-								</Select.Item>
-							))}
+							<SelectTrigger id={folderTypeId} className="w-full">
+								<SelectValue placeholder="Select folder type" />
+							</SelectTrigger>
+							<SelectContent>
+								{FOLDER_TYPE_OPTIONS.map((option) => (
+									<SelectItem
+										key={option.value}
+										value={option.value}
+									>
+										{option.display}
+									</SelectItem>
+								))}
+							</SelectContent>
 						</Select>
-					);
-				}}
+					</div>
+				)}
 			/>
-
 			<Controller
 				name={ADD_APP_FORM_FIELD_APP_TYPE}
 				control={control}
 				rules={{ required: true }}
-				render={({ field }) => {
-					return isZip ? (
-						<></>
-					) : (
-						<Select
-							label="App Type"
-							value={field.value}
-							defaultValue={"Assets Copy"}
-							onChange={(value) => {
-								field.onChange(value);
-							}}
-						>
-							{["CODE", "BLOCKS"].map((option, idx) => (
-								<Select.Item key={idx} value={option}>
-									{option}
-								</Select.Item>
-							))}
-						</Select>
-					);
-				}}
+				render={({ field }) =>
+					isZip ? null : (
+						<div className="flex flex-col gap-1.5">
+							<Label htmlFor={appTypeId}>App Type</Label>
+							<Select
+								value={field.value}
+								defaultValue="Assets Copy"
+								onValueChange={(val) => field.onChange(val)}
+							>
+								<SelectTrigger
+									id={appTypeId}
+									className="w-full"
+								>
+									<SelectValue placeholder="Select app type" />
+								</SelectTrigger>
+								<SelectContent>
+									{["CODE", "BLOCKS"].map((option) => (
+										<SelectItem key={option} value={option}>
+											{option}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+					)
+				}
 			/>
-		</Stack>
+		</div>
 	);
 };

@@ -24,10 +24,10 @@ env:
     
 jobs:
     pnpm_build_dev:
-        runs-on: self-hosted
+        runs-on: codebuild-semoss-github-runner-${{ github.run_id }}-${{ github.run_attempt }}
         if: ${{ vars.RELEASE != 'TRUE'  && (github.event_name =='push' || github.event_name =='pull_request')  }}
         container:
-            image: node:24-bullseye
+            image: public.ecr.aws/docker/library/node:24-bullseye
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
@@ -74,6 +74,11 @@ jobs:
             - name: Build playground
               run: |
                 cd packages/playground
+                pnpm run build
+
+            - name: Build terminal
+              run: |
+                cd packages/terminal
                 pnpm run build
 
             # ---------- Download and Set Up semoss/bi -----------
@@ -123,8 +128,10 @@ jobs:
                 mkdir -p semoss-ui-build/packages
                 mkdir -p semoss-ui-build/packages/client
                 mkdir -p semoss-ui-build/packages/playground
+                mkdir -p semoss-ui-build/packages/terminal
                 cp -r packages/client/dist semoss-ui-build/packages/client
                 cp -r packages/playground/dist semoss-ui-build/packages/playground
+                cp -r packages/terminal/dist semoss-ui-build/packages/terminal
                 cp -r packages/legacy semoss-ui-build/packages
                 cp -r index.html semoss-ui-build/
             
@@ -156,10 +163,10 @@ jobs:
             #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     pnpm_build_deploy:
-        runs-on: self-hosted
+        runs-on: codebuild-semoss-github-runner-${{ github.run_id }}-${{ github.run_attempt }}
         if: ${{ vars.RELEASE != 'TRUE'  && github.event_name =='workflow_dispatch' }}
         container:
-            image: node:24-bullseye
+            image: public.ecr.aws/docker/library/node:24-bullseye
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
@@ -225,27 +232,32 @@ jobs:
             - name: Build Component Library
               run: |
                 cd libs/ui
-                pnpm run build:dev
+                pnpm run build
 
             - name: Build SDK
               run: |
                 cd libs/sdk
-                pnpm run build:dev    
+                pnpm run build   
 
             - name: Build Renderer Library
               run: |
                 cd libs/renderer
-                pnpm run build:dev
+                pnpm run build
 
             - name: Build semoss-ui
               run: |
                 cd packages/client
-                pnpm run build:dev
+                pnpm run build
 
             - name: Build playground
               run: |
                 cd packages/playground
-                pnpm run build:dev
+                pnpm run build
+
+            - name: Build terminal
+              run: |
+                cd packages/terminal
+                pnpm run build
 
             # ---------- Download and Set Up semoss/bi -----------
             
@@ -380,10 +392,10 @@ jobs:
             #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     pnpm_build_release:
-        runs-on: self-hosted
+        runs-on: codebuild-semoss-github-runner-${{ github.run_id }}-${{ github.run_attempt }}
         if: ${{ vars.RELEASE == 'TRUE' && github.event_name == 'workflow_dispatch' && (github.ref_name == 'main' || github.ref_name == 'dev') }}
         container:
-            image: node:24-bullseye
+            image: public.ecr.aws/docker/library/node:24-bullseye
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
@@ -466,6 +478,11 @@ jobs:
             - name: Build playground
               run: |
                 cd packages/playground
+                pnpm run build
+
+            - name: Build terminal
+              run: |
+                cd packages/terminal
                 pnpm run build
 
             # ---------- Download and Set Up semoss/bi -----------

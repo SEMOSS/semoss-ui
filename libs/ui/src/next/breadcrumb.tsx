@@ -52,10 +52,11 @@ function BreadcrumbPage({ className, ...props }: React.ComponentProps<"span">) {
 	return (
 		<span
 			data-slot="breadcrumb-page"
-			role="link"
-			aria-disabled="true"
 			aria-current="page"
-			className={cn("font-normal text-foreground", className)}
+			className={cn(
+				"inline-flex items-center font-normal text-foreground",
+				className,
+			)}
 			{...props}
 		/>
 	);
@@ -71,10 +72,13 @@ function BreadcrumbSeparator({
 			data-slot="breadcrumb-separator"
 			role="presentation"
 			aria-hidden="true"
-			className={cn("[&>svg]:size-3.5", className)}
+			className={cn(
+				"inline-flex items-center [&>svg]:size-3.5",
+				className,
+			)}
 			{...props}
 		>
-			{children ?? <ChevronRight />}
+			{children ?? <ChevronRight className="rtl:-scale-x-100" />}
 		</li>
 	);
 }

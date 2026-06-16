@@ -1,4 +1,5 @@
 import { Link, matchPath, useLocation } from "react-router-dom";
+import { useTranslation } from "@semoss/i18n";
 import { SidebarMenuButton, SidebarMenuItem } from "@semoss/ui/next";
 
 interface GlobalNavItemProps {
@@ -17,6 +18,17 @@ interface GlobalNavItemProps {
 	/** Whether to embed the item */
 	embed: boolean;
 }
+
+// Maps the well-known English item names that ship in default themes to
+// translation keys under sidebar:nav.<item>.tooltip. Items with names outside
+// this map fall back to displaying the raw `name` as both label and tooltip.
+const KNOWN_TOOLTIP_KEYS: Record<string, string> = {
+	"Agents/Workspaces": "nav.agentsWorkspaces.tooltip",
+	"Knowledge Library": "nav.knowledgeLibrary.tooltip",
+	Toolbox: "nav.toolbox.tooltip",
+	"Prompt Library": "nav.promptLibrary.tooltip",
+};
+
 /**
  * Renders a sidebar allowing users to navigate between pages
  *
@@ -30,13 +42,22 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 	embed,
 }) => {
 	const { pathname } = useLocation();
+	const { t } = useTranslation("sidebar");
+	const tooltipKey = KNOWN_TOOLTIP_KEYS[name];
+	const tooltip = tooltipKey ? t(tooltipKey) : name;
 
 	if (embed) {
 		return (
-			<SidebarMenuItem>
+			<SidebarMenuItem data-tour={`nav-${path}`}>
 				<SidebarMenuButton
 					asChild
-					isActive={!!matchPath(`/embed/${path}`, pathname)}
+					isActive={
+						!!matchPath(
+							{ path: `/embed/${path}`, end: false },
+							pathname,
+						)
+					}
+					tooltip={{ children: tooltip, hidden: false }}
 				>
 					<Link to={`/embed/${path}`} aria-label={name}>
 						{icon ? (
@@ -57,10 +78,11 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 	if (url?.startsWith("#/")) {
 		const internalPath = url.slice(1); // "#/knowledge" → "/knowledge"
 		return (
-			<SidebarMenuItem>
+			<SidebarMenuItem data-tour={`nav-${path}`}>
 				<SidebarMenuButton
 					asChild
 					isActive={!!matchPath(internalPath, pathname)}
+					tooltip={{ children: tooltip, hidden: false }}
 				>
 					<Link to={internalPath} aria-label={name}>
 						{icon ? (
@@ -78,8 +100,11 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 	}
 
 	return (
-		<SidebarMenuItem>
-			<SidebarMenuButton asChild>
+		<SidebarMenuItem data-tour={`nav-${path}`}>
+			<SidebarMenuButton
+				asChild
+				tooltip={{ children: tooltip, hidden: false }}
+			>
 				<a
 					href={url}
 					target="_blank"

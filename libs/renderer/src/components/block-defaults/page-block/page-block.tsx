@@ -1,0 +1,56 @@
+import { observer } from "mobx-react-lite";
+import { type CSSProperties, useEffect } from "react";
+import { Spinner } from "@semoss/ui/next";
+import { Slot } from "../../../components/blocks";
+import { useBlock } from "../../../hooks";
+import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
+
+export interface PageBlockDef extends BlockDef<"page"> {
+	widget: "page";
+	data: {
+		style: CSSProperties;
+		loading: boolean | string;
+	};
+	slots: {
+		content: true;
+	};
+	listeners: {
+		onPageLoad: {
+			type: "sync" | "async";
+			order: ListenerActions[];
+		};
+	};
+}
+
+export const PageBlock: BlockComponent = observer(({ id }) => {
+	const { attrs, data, slots, listeners } = useBlock<PageBlockDef>(id);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
+	useEffect(() => {
+		if (listeners.onPageLoad) {
+			listeners.onPageLoad();
+		}
+	}, []);
+
+	const isLoading =
+		typeof data.loading === "string"
+			? data.loading.toLowerCase() === "true"
+			: data.loading;
+
+	return (
+		<div
+			id={id}
+			{...attrs}
+			style={data.style}
+			className="relative w-full overflow-auto bg-background"
+			data-page
+		>
+			{isLoading && (
+				<div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80">
+					<Spinner className="size-8" />
+				</div>
+			)}
+			<Slot slot={slots.content} />
+		</div>
+	);
+});

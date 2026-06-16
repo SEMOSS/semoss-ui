@@ -1,0 +1,106 @@
+.welcome-container {
+	width: 100%;
+	padding: 16px;
+	display: flex;
+	justify-content: center;
+	align-items: flex-start;
+	min-height: calc(100vh - 80px);
+	overflow-y: auto;
+}
+
+.welcome-stack {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 12px;
+	width: 100%;
+}
+
+.welcome-card {
+	width: 100%;
+	max-width: 500px;
+	padding: 16px !important;
+	gap: 14px !important;
+	border-color: rgba(15, 23, 42, 0.1) !important;
+}
+
+.welcome-title {
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 1.4;
+}
+
+.welcome-steps {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.welcome-step-row {
+	display: flex;
+	gap: 12px;
+	align-items: flex-start;
+}
+
+.welcome-step-index {
+	min-width: 28px;
+	height: 28px;
+	border-radius: 9999px;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	color: #fff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 14px;
+	font-weight: 700;
+}
+
+.welcome-step-copy {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding-top: 2px;
+}
+
+.welcome-step-heading {
+	font-size: 13px;
+	line-height: 1.45;
+	font-weight: 600;
+	color: #111827;
+}
+
+.welcome-step-detail {
+	font-size: 12px;
+	line-height: 1.45;
+	color: #4b5563;
+}
+
+.welcome-tip {
+	width: 100%;
+	max-width: 500px;
+	margin-top: 2px;
+	padding: 8px 12px;
+	border-radius: 10px;
+	background: #f0f7ff;
+	border: 1px solid #2196f3;
+}
+
+.welcome-tip p {
+	font-size: 12px;
+	line-height: 1.4;
+	font-weight: 500;
+	color: #1976d2;
+}
+
+/* Responsive adjustments */
+@media (max-width: 500px) {
+	.welcome-container {
+		padding: 12px 10px;
+	}
+}
+
+@media (min-height: 700px) {
+	.welcome-container {
+		align-items: center;
+	}
+}

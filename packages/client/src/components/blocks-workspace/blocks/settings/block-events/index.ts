@@ -1,6 +1,6 @@
 export { BlockEventNameSelector } from "./BlockEventNameSelector";
 export { CellIdSelector } from "./CellIdSelector";
-export { QueryIdSelector } from "./QueryIdSelector";
+export { QueryIdSelector } from "./query-id-selector";
 export { RedirectDestinationSelector } from "./RedirectDestinationSelector";
-export { useEventActionData } from "./useEventActionData";
+export { useEventActionData } from "./use-event-action-data";
 export * from "./utils";

@@ -1,47 +1,16 @@
-import { Search } from "@mui/icons-material";
-import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
+import { X as CloseOutlinedIcon, Search } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import type { BlockDef } from "@semoss/renderer";
-import {
-	IconButton,
-	InputAdornment,
-	Stack,
-	styled,
-	TextField,
-} from "@semoss/ui";
 import { VisualMapConstant } from "./VisualMapConstant";
 
 export const VisualMap = observer(
-	<D extends BlockDef = BlockDef>({ selectedItem, handleClose }) => {
-		const StyledMain = styled("div")(() => ({
-			width: "100%",
-			height: "100%",
-			marginTop: "1px",
-		}));
-		const StyledVisualMapSection = styled("div")(() => ({
-			width: "95%",
-			left: "8%",
-			top: "1%",
-			position: "relative",
-			maxHeight: "530px",
-			overflowY: "auto",
-		}));
-
-		const StyledSpanHeader = styled("span")(() => ({
-			fontSize: "1rem",
-			color: "#808080",
-			marginTop: "5px",
-			position: "relative",
-			display: "block",
-			wordWrap: "break-word",
-			whiteSpace: "normal",
-		}));
-
+	<_D extends BlockDef = BlockDef>({ selectedItem, handleClose }) => {
 		const [search, setSearch] = useState("");
 		const [filteredData, setFilteredData] = useState(VisualMapConstant);
 		const searchInputRef = useRef<HTMLInputElement | null>(null);
 
+		// biome-ignore lint/correctness/useExhaustiveDependencies: searchInputRef is a stable ref
 		useEffect(() => {
 			setTimeout(() => {
 				searchInputRef.current?.focus();
@@ -71,111 +40,66 @@ export const VisualMap = observer(
 				},
 				{} as typeof VisualMapConstant,
 			);
-
 			setFilteredData(filtered);
 		};
 
+		// biome-ignore lint/suspicious/noExplicitAny: echart visual map item type
 		function handleSelectItem(item: any) {
 			selectedItem(item);
 		}
 
 		return (
-			<StyledMain>
-				<StyledVisualMapSection>
-					<span
-						style={{
-							color: "#0471F0",
-							display: "block",
-						}}
-					>
-						Select Visual
-					</span>
+			<div className="mt-px h-full w-full">
+				<div className="relative top-[1%] left-[8%] max-h-[530px] w-[95%] overflow-y-auto">
+					<span className="block text-[#0471F0]">Select Visual</span>
 					<CloseOutlinedIcon
-						sx={{ color: "#808080" }}
-						style={{
-							position: "absolute",
-							marginLeft: "84%",
-							zIndex: 10,
-						}}
-						onClick={() => {
-							handleClose();
-						}}
+						className="absolute top-0 z-10 ml-[84%] cursor-pointer text-[#808080]"
+						onClick={handleClose}
 					/>
-					<StyledSpanHeader>
+					<span className="relative mt-1 block whitespace-normal break-words text-[#808080] text-sm">
 						Select a chart type for your data visualization
-					</StyledSpanHeader>
-				</StyledVisualMapSection>
-				<hr
-					style={{ marginTop: "20px", border: "1px solid #E0E0E0" }}
-				/>
-				<StyledVisualMapSection>
-					<Stack paddingTop={2} width={"85%"}>
-						<TextField
-							inputRef={searchInputRef}
-							placeholder="Search"
-							size="small"
-							sx={{
-								"& .MuiOutlinedInput-root": {
-									borderRadius: "7px",
-								},
-							}}
-							value={search}
-							onChange={handleSearch}
-							InputProps={{
-								startAdornment: (
-									<InputAdornment position="start">
-										<Search />
-									</InputAdornment>
-								),
-								endAdornment: (
-									<InputAdornment position="end">
-										<IconButton
-											size="small"
-											// onClick={(e) =>
-											//     setMenuAnchorEl(e.currentTarget)
-											// }
-										></IconButton>
-									</InputAdornment>
-								),
-							}}
-						/>
-					</Stack>
+					</span>
+				</div>
+				<hr className="mt-5 border border-[#E0E0E0]" />
+				<div className="relative top-[1%] left-[8%] max-h-[530px] w-[95%] overflow-y-auto">
+					<div className="w-[85%] pt-2">
+						<div className="relative">
+							<Search className="-translate-y-1/2 absolute top-1/2 left-2 h-4 w-4 text-muted-foreground" />
+							<input
+								ref={searchInputRef}
+								className="w-full rounded border py-1 pr-2 pl-8 text-sm"
+								placeholder="Search"
+								value={search}
+								onChange={handleSearch}
+							/>
+						</div>
+					</div>
 					{Object.entries(filteredData).map(([key, value]) => (
-						<Stack key={key} paddingTop={2} width={"85%"}>
-							<StyledSpanHeader>{key}</StyledSpanHeader>
-							{value?.map((item, index) => (
+						<div key={key} className="w-[85%] pt-2">
+							<span className="relative mt-1 block whitespace-normal break-words text-[#808080] text-sm">
+								{key}
+							</span>
+							{value?.map((item) => (
+								// biome-ignore lint/a11y/noStaticElementInteractions: visual map item
+								// biome-ignore lint/a11y/useKeyWithClickEvents: visual map item
 								<div
-									key={index}
-									style={{
-										display: "flex",
-										alignItems: "center",
-										marginTop: "15px",
-										cursor: item?.option
-											? "pointer"
-											: "default",
-									}}
+									key={item.name}
+									className={`mt-4 flex items-center ${item?.option ? "cursor-pointer" : "cursor-default"}`}
 									onClick={() => {
-										if (item?.option) {
+										if (item?.option)
 											handleSelectItem(item);
-										}
 									}}
 								>
-									<div
-										style={{
-											display: "flex",
-											alignItems: "center",
-										}}
-									>
+									<div className="flex items-center">
 										{item.icon}
 									</div>
 									<span
+										className="ml-10 flex items-center"
 										style={{
 											marginLeft:
 												item.icon?.type === "img"
 													? "30px"
 													: "38px",
-											display: "flex",
-											alignItems: "center",
 											color: item?.option
 												? "#000000"
 												: "#808080",
@@ -185,10 +109,10 @@ export const VisualMap = observer(
 									</span>
 								</div>
 							))}
-						</Stack>
+						</div>
 					))}
-				</StyledVisualMapSection>
-			</StyledMain>
+				</div>
+			</div>
 		);
 	},
 );

@@ -1,95 +1,66 @@
 import {
-	AdminPanelSettingsOutlined,
-	ContentCopyOutlined,
-} from "@mui/icons-material";
-import { MoreVertical, Pencil, Trash2 } from "lucide-react";
+	ExternalLink,
+	MoreVertical,
+	Pencil,
+	ShieldCheck,
+	Trash2,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import {
-	Link,
 	matchPath,
 	Outlet,
+	Link as RouterLink,
 	useLocation,
-	useNavigate,
 	useParams,
 } from "react-router-dom";
+import { usePixel } from "@semoss/sdk/react";
 import {
-	Breadcrumbs,
+	AppCatalogAvatar,
+	EngineSubtypeIcon,
+	EntityHeader,
+} from "@semoss/shared";
+import {
+	Badge,
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
 	Button,
-	Chip,
-	IconButton,
-	Stack,
-	styled,
-	Tooltip,
-	Typography,
-} from "@semoss/ui";
-import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
+	P,
 	toast,
 } from "@semoss/ui/next";
 import { deleteTeam, getGroupDetails } from "@/api";
-import { PrivacyPreferenceCenterModal } from "@/components/cookies/PrivacyPreferenceCenterModal";
+import { PrivacyPreferenceCenterModal } from "@/components/cookies/privacy-preference-center-modal";
 import { AddTeamModal, TeamDeleteDialog } from "@/components/teams";
 import { SettingsContext } from "@/contexts";
-import { useRootStore } from "@/hooks";
+import { useAPI, useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
 import { SETTINGS_ROUTES } from "./settings.constants";
 
-const StyledHeader = styled("div")(() => ({
-	display: "flex",
-	justifyContent: "space-between",
-}));
-
-const StyledAdminHeader = styled("div")(() => ({
-	display: "flex",
-	flexDirection: "row",
-	justifyContent: "space-between",
-	alignItems: "center",
-}));
-
-const StyledAdminActionButtons = styled("div")(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	gap: theme.spacing(1),
-}));
-
-const StyledId = styled(Typography)(({ theme }) => ({
-	color: theme.palette.secondary.dark,
-}));
-
-const StyledChip = styled(Chip, {
-	shouldForwardProp: (prop) => prop !== "adminMode",
-})<{ adminMode: boolean }>(({ theme, adminMode }) => ({
-	backgroundColor: `${
-		adminMode ? "rgba(46, 125, 50, .15)" : theme.palette.success
-	}`,
-	"&&:hover": {
-		backgroundColor: `${
-			adminMode ? "rgba(46, 125, 50, .25)" : theme.palette.grey[300]
-		}`,
-	},
-}));
-
-const IdContainer = styled("span")(() => ({
-	display: "flex",
-	alignItems: "center",
-}));
-
-const StyledAdminContainer = styled("div")(({ theme }) => ({
-	top: theme.spacing(1),
-	right: theme.spacing(1),
-	zIndex: 1,
-}));
-
-// StyledLink removed (unused)
+const ENGINE_CATALOG_SETTINGS_PATHS = new Set([
+	"app",
+	"agents",
+	"skills",
+	"database",
+	"function",
+	"guardrail",
+	"model",
+	"storage",
+	"vector",
+]);
 
 export const SettingsLayout = observer(() => {
 	const { configStore } = useRootStore();
 	const { id, type } = useParams();
-	const { pathname, state } = useLocation();
+	const { pathname, search, state } = useLocation();
 	const navigate = useNavigate();
 	const [privacyCenterOpen, setPrivacyCenterOpen] = useState(false);
 
@@ -123,9 +94,178 @@ export const SettingsLayout = observer(() => {
 
 		return null;
 	}, [pathname]);
+	const isSettingsIndexRoute = matchedRoute?.path === "";
+	const shouldPreserveEngineCatalogSearch = useMemo(() => {
+		if (!matchedRoute || !search) {
+			return false;
+		}
+
+		const routePathRoot = matchedRoute.path.split("/:")[0];
+		return ENGINE_CATALOG_SETTINGS_PATHS.has(routePathRoot);
+	}, [matchedRoute, search]);
+
+	const hasPrivacyCenterThemeContent = useMemo(() => {
+		const theme = configStore.theme as Record<string, unknown>;
+		const order = Array.isArray(theme.cookiePolicyOrderReact)
+			? theme.cookiePolicyOrderReact
+			: [];
+		const policies =
+			theme.cookiePoliciesReact &&
+			typeof theme.cookiePoliciesReact === "object"
+				? (theme.cookiePoliciesReact as Record<string, string>)
+				: {};
+		const body =
+			typeof theme.cookiePolicyModalBodyReact === "string"
+				? theme.cookiePolicyModalBodyReact.trim()
+				: "";
+
+		return (
+			(order.length > 0 && Object.keys(policies).length > 0) ||
+			body.length > 0
+		);
+	}, [configStore.theme]);
+	const showPrivacyCenter =
+		isSettingsIndexRoute && hasPrivacyCenterThemeContent;
 
 	const isTeamPermissionsDetail =
 		matchedRoute?.path === "team-permissions/:type/:id";
+
+	const isAppDetail = matchedRoute?.path === "app/:id";
+
+	const engineDetailType = useMemo<
+		| "DATABASE"
+		| "MODEL"
+		| "STORAGE"
+		| "VECTOR"
+		| "FUNCTION"
+		| "GUARDRAIL"
+		| null
+	>(() => {
+		if (!matchedRoute || !id) return null;
+		const root = matchedRoute.path.split("/:")[0];
+		switch (root) {
+			case "database":
+				return "DATABASE";
+			case "model":
+				return "MODEL";
+			case "storage":
+				return "STORAGE";
+			case "vector":
+				return "VECTOR";
+			case "function":
+				return "FUNCTION";
+			case "guardrail":
+				return "GUARDRAIL";
+			default:
+				return null;
+		}
+	}, [matchedRoute, id]);
+
+	const engineInfoPixel = usePixel<Record<string, unknown>>(
+		engineDetailType && id
+			? adminMode
+				? `AdminEngineInfo(engine='${id}');`
+				: `EngineInfo(engine='${id}');`
+			: "",
+		{ data: {} },
+	);
+	const engineSubtype =
+		(engineInfoPixel.data?.engine_subtype as string | undefined) || "";
+	const engineInfoForContext = useMemo(
+		() => ({
+			status: engineInfoPixel.status,
+			data: engineInfoPixel.data,
+		}),
+		[engineInfoPixel.status, engineInfoPixel.data],
+	);
+
+	// User-scoped access check used to gate the "View In Catalog" button so admins
+	// who don't actually belong to the engine/app don't get a click-through that
+	// dead-ends at a permission-denied page.
+	// Only fire the permission lookup on the matching detail route; passing an
+	// empty tuple makes useAPI short-circuit (no request, INITIAL status).
+	const userEnginePermissionApi = useAPI(
+		(engineDetailType && id
+			? ["getUserEnginePermission", id]
+			: []) as unknown as ["getUserEnginePermission", string],
+	);
+	const userProjectPermissionApi = useAPI(
+		(isAppDetail && id
+			? ["getUserProjectPermission", id]
+			: []) as unknown as ["getUserProjectPermission", string],
+	);
+
+	const hasCatalogAccess = useMemo(() => {
+		if (engineDetailType && id) {
+			const permission = (
+				userEnginePermissionApi.data as
+					| { permission?: string }
+					| undefined
+			)?.permission;
+			return userEnginePermissionApi.status === "SUCCESS" && !!permission;
+		}
+		if (isAppDetail && id) {
+			return (
+				userProjectPermissionApi.status === "SUCCESS" &&
+				!!userProjectPermissionApi.data
+			);
+		}
+		return false;
+	}, [
+		engineDetailType,
+		isAppDetail,
+		id,
+		userEnginePermissionApi.status,
+		userEnginePermissionApi.data,
+		userProjectPermissionApi.status,
+		userProjectPermissionApi.data,
+	]);
+
+	// Only fetch project info if we have catalog access (button will be shown)
+	const projectInfoPixel = usePixel<{ project_type?: string }>(
+		isAppDetail && id && hasCatalogAccess
+			? adminMode
+				? `AdminProjectInfo(project='${id}');`
+				: `ProjectInfo(project='${id}');`
+			: "",
+		{ data: {} },
+	);
+
+	const catalogUrl = useMemo(() => {
+		if (engineDetailType && id) {
+			return `/engine/${engineDetailType.toLowerCase()}/${id}`;
+		}
+		if (isAppDetail && id) {
+			const projectType = projectInfoPixel.data?.project_type;
+			if (projectType === "WORKSPACE") {
+				return `/agent/${id}/edit`;
+			}
+			if (projectType === "SKILL") {
+				return `/skill/${id}/edit`;
+			}
+			return `/app/${id}`;
+		}
+		return null;
+	}, [
+		engineDetailType,
+		isAppDetail,
+		id,
+		projectInfoPixel.data?.project_type,
+	]);
+
+	const stateName =
+		state && typeof state === "object" && "name" in state
+			? (state as { name?: string }).name
+			: undefined;
+	// Resolve a friendly display name for the current engine/app detail page;
+	// used both as the breadcrumb label and the h1 (with raw id falling back below).
+	const detailDisplayName = engineDetailType
+		? (engineInfoPixel.data?.engine_display_name as string | undefined) ||
+			(engineInfoPixel.data?.engine_name as string | undefined) ||
+			stateName
+		: isAppDetail
+			? stateName
+			: undefined;
 	const teamId = id ? decodeURIComponent(id) : undefined;
 	const teamType = type ? decodeURIComponent(type) : undefined;
 	const [teamDescription, setTeamDescription] = useState<
@@ -141,6 +281,12 @@ export const SettingsLayout = observer(() => {
 			setAdminMode(true);
 		}
 	}, [configStore.store.user.admin, matchedRoute?.admin, adminMode]);
+
+	useEffect(() => {
+		if (!showPrivacyCenter && privacyCenterOpen) {
+			setPrivacyCenterOpen(false);
+		}
+	}, [showPrivacyCenter, privacyCenterOpen]);
 
 	// persist admin mode for admins
 	useEffect(() => {
@@ -209,14 +355,6 @@ export const SettingsLayout = observer(() => {
 		}
 	};
 
-	/**
-	 * Copy text and add it to the clipboard
-	 * @param text - text to copy
-	 */
-	const copy = (text: string) => {
-		navigator.clipboard.writeText(text);
-	};
-
 	if (!matchedRoute) {
 		return null;
 	}
@@ -237,153 +375,256 @@ export const SettingsLayout = observer(() => {
 			<SettingsContext.Provider
 				value={{
 					adminMode: adminMode,
+					engineInfo: engineDetailType
+						? engineInfoForContext
+						: undefined,
 				}}
 			>
-				<Stack direction="column" gap={2}>
-					<Stack>
+				<div className="flex flex-col gap-2">
+					<div className="flex flex-col gap-2">
 						{matchedRoute.path && (
-							<StyledHeader>
-								<Breadcrumbs separator="/">
-									<Breadcrumbs.Item
-										//@ts-expect-error: TODO FIX Type
-										as={Link}
-										to={`..`}
-										underline="none"
-										color="inherit"
-										variant="body1"
-									>
-										Settings
-									</Breadcrumbs.Item>
-									{matchedRoute.history.map((link, idx) => {
-										return (
-											<Breadcrumbs.Item
-												//@ts-expect-error: TODO FIX Type
-												as={Link}
-												key={idx + link}
-												to={link.replace("<id>", id)}
-												underline="none"
-												color={
+							<div className="flex justify-between">
+								<Breadcrumb>
+									<BreadcrumbList>
+										<BreadcrumbItem>
+											<BreadcrumbLink asChild>
+												<RouterLink to={`..`}>
+													Settings
+												</RouterLink>
+											</BreadcrumbLink>
+										</BreadcrumbItem>
+										{matchedRoute.history.map(
+											(link, idx) => {
+												const linkRoute =
+													SETTINGS_ROUTES.find(
+														(r) =>
+															r.path === link ||
+															r.path ===
+																link.replace(
+																	"/<id>",
+																	"/:id",
+																),
+													);
+
+												const isLastItem =
 													matchedRoute.history
 														.length -
 														1 ===
-													idx
-														? "text.disabled"
-														: "inherit"
-												}
-												variant="body1"
-												state={{ ...state }}
-											>
-												{link.includes("<id>")
-													? id
-													: matchedRoute.title}
-											</Breadcrumbs.Item>
-										);
-									})}
-								</Breadcrumbs>
-							</StyledHeader>
+													idx;
+												const label = link.includes(
+													"<id>",
+												)
+													? detailDisplayName || id
+													: isLastItem
+														? matchedRoute.title
+														: linkRoute?.title ||
+															link;
+
+												const to = link.replace(
+													"<id>",
+													id ?? "",
+												);
+												const toRoot = to.split("/")[0];
+												const breadcrumbTo =
+													shouldPreserveEngineCatalogSearch &&
+													ENGINE_CATALOG_SETTINGS_PATHS.has(
+														toRoot,
+													)
+														? {
+																pathname: to,
+																search,
+															}
+														: to;
+
+												return (
+													<Fragment key={idx + link}>
+														<BreadcrumbSeparator />
+														<BreadcrumbItem>
+															{isLastItem ? (
+																<BreadcrumbPage>
+																	{label}
+																</BreadcrumbPage>
+															) : (
+																<BreadcrumbLink
+																	asChild
+																>
+																	<RouterLink
+																		to={
+																			breadcrumbTo
+																		}
+																		state={
+																			state &&
+																			typeof state ===
+																				"object"
+																				? {
+																						...state,
+																					}
+																				: undefined
+																		}
+																	>
+																		{label}
+																	</RouterLink>
+																</BreadcrumbLink>
+															)}
+														</BreadcrumbItem>
+													</Fragment>
+												);
+											},
+										)}
+									</BreadcrumbList>
+								</Breadcrumb>
+							</div>
 						)}
-						<StyledAdminContainer>
-							<StyledAdminHeader>
-								{isTeamPermissionsDetail && id ? (
-									<Stack
-										direction="row"
-										spacing={1}
-										alignItems="center"
-									>
-										<Typography variant="h4">
-											{id}
-										</Typography>
-										{type ? (
-											<Chip
-												size="small"
-												label={String(
-													type,
-												).toUpperCase()}
-												variant="outlined"
-											/>
-										) : null}
-									</Stack>
-								) : (
-									<Typography variant="h4">
-										{matchedRoute.history.length < 2
-											? matchedRoute.title
-											: state
-												? state.name
-												: matchedRoute.title}
-									</Typography>
-								)}
+						<div className="z-[1]">
+							{(() => {
+								const fallbackTitle =
+									matchedRoute.history &&
+									matchedRoute.history.length < 2
+										? matchedRoute.title
+										: stateName || matchedRoute.title;
+								const headerActions = (
+									<>
+										{showPrivacyCenter && (
+											<Button
+												variant="ghost"
+												onClick={() =>
+													setPrivacyCenterOpen(true)
+												}
+												data-testid={
+													"settingsLayout-privacy-btn"
+												}
+											>
+												Privacy Center
+											</Button>
+										)}
+										{catalogUrl && hasCatalogAccess && (
+											<Button
+												asChild
+												variant="outline"
+												size="sm"
+												className="gap-2"
+												data-testid="settingsLayout-view-in-catalog-btn"
+											>
+												<RouterLink to={catalogUrl}>
+													<ExternalLink className="size-4" />
+													View In Catalog
+												</RouterLink>
+											</Button>
+										)}
+										{configStore.store.user.admin && (
+											<Button
+												variant="outline"
+												size="sm"
+												className={`h-8 rounded-full px-3 ${
+													adminMode
+														? "border-green-700/30 bg-green-700/10 text-green-800 hover:bg-green-700/20"
+														: "border-border bg-muted text-foreground hover:bg-muted/80"
+												}`}
+												onClick={() =>
+													setAdminMode(!adminMode)
+												}
+											>
+												<ShieldCheck className="size-4" />
+												{adminMode
+													? "Admin On"
+													: "Admin Off"}
+											</Button>
+										)}
+									</>
+								);
 
-								<StyledAdminActionButtons>
-									<Button
-										variant="text"
-										onClick={() =>
-											setPrivacyCenterOpen(true)
-										}
-										data-testid={
-											"settingsLayout-privacy-btn"
-										}
-									>
-										Privacy Center
-									</Button>
+								if (isTeamPermissionsDetail && id) {
+									return (
+										<div className="flex flex-row items-center justify-between">
+											<div className="flex flex-row items-center gap-2">
+												<h1 className="font-semibold text-2xl leading-normal">
+													{id}
+												</h1>
+												{type ? (
+													<Badge
+														variant="outline"
+														className="uppercase"
+													>
+														{String(
+															type,
+														).toUpperCase()}
+													</Badge>
+												) : null}
+											</div>
+											<div className="flex items-center gap-2">
+												{headerActions}
+											</div>
+										</div>
+									);
+								}
 
-									{configStore.store.user.admin && (
-										<StyledChip
-											adminMode={adminMode}
-											size="medium"
-											clickable
+								if (engineDetailType && id) {
+									return (
+										<EntityHeader
 											icon={
-												<AdminPanelSettingsOutlined
-													color={
-														adminMode
-															? "success"
-															: "disabled"
+												<EngineSubtypeIcon
+													engineType={
+														engineDetailType
 													}
+													engineSubtype={
+														engineSubtype
+													}
+													alt={
+														detailDisplayName || id
+													}
+													className="size-full object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.08)]"
 												/>
 											}
-											label={
-												adminMode
-													? "Admin On"
-													: "Admin Off"
-											}
-											onClick={() =>
-												setAdminMode(!adminMode)
-											}
+											name={detailDisplayName || id}
+											id={id}
+											copyLabel="Copy Engine ID"
+											copyTestId="settingsLayout-copy-btn"
+											actions={headerActions}
 										/>
-									)}
-								</StyledAdminActionButtons>
-							</StyledAdminHeader>
-						</StyledAdminContainer>
-						{id ? (
-							<IdContainer>
-								<StyledId variant={"subtitle2"}>{id}</StyledId>
-								<IconButton
-									size="small"
-									onClick={() => {
-										copy(id);
-									}}
-									data-testid={"settingsLayout-copy-btn"}
-								>
-									<Tooltip title={`Copy ID`}>
-										<ContentCopyOutlined fontSize="inherit" />
-									</Tooltip>
-								</IconButton>
-							</IdContainer>
-						) : null}
+									);
+								}
+
+								if (isAppDetail && id) {
+									const appName = detailDisplayName || id;
+									return (
+										<EntityHeader
+											icon={
+												<AppCatalogAvatar
+													name={appName}
+													className="h-full w-full rounded-lg text-xl"
+												/>
+											}
+											name={appName}
+											id={id}
+											copyLabel="Copy App ID"
+											copyTestId="settingsLayout-copy-btn"
+											actions={headerActions}
+										/>
+									);
+								}
+
+								return (
+									<EntityHeader
+										name={fallbackTitle || ""}
+										actions={headerActions}
+									/>
+								);
+							})()}
+						</div>
 						{isTeamPermissionsDetail ? (
 							<>
 								<div className="flex w-full items-start justify-between gap-3">
-									<Typography variant="body1">
-										{descriptionText}
-									</Typography>
+									<P>{descriptionText}</P>
 									{teamId && teamType ? (
 										<DropdownMenu>
 											<DropdownMenuTrigger asChild>
-												<IconButton
-													size="small"
+												<Button
+													variant="ghost"
+													size="icon-sm"
 													aria-label="Team actions"
 												>
 													<MoreVertical className="size-4" />
-												</IconButton>
+												</Button>
 											</DropdownMenuTrigger>
 											<DropdownMenuContent align="end">
 												<DropdownMenuItem
@@ -410,23 +651,18 @@ export const SettingsLayout = observer(() => {
 										</DropdownMenu>
 									) : null}
 								</div>
-								<Typography
-									variant="body2"
-									color="textSecondary"
-								>
+								<P className="text-muted-foreground text-sm">
 									{teamDescriptionText}
-								</Typography>
+								</P>
 							</>
 						) : (
-							<Typography variant="body1">
-								{descriptionText}
-							</Typography>
+							<P className="mt-2">{descriptionText}</P>
 						)}
-					</Stack>
+					</div>
 					<Outlet />
 
 					<PrivacyPreferenceCenterModal
-						isOpen={privacyCenterOpen}
+						isOpen={showPrivacyCenter && privacyCenterOpen}
 						onClose={() => setPrivacyCenterOpen(false)}
 					/>
 					<AddTeamModal
@@ -454,7 +690,7 @@ export const SettingsLayout = observer(() => {
 						onConfirm={handleDelete}
 						isLoading={isDeleting}
 					/>
-				</Stack>
+				</div>
 			</SettingsContext.Provider>
 		</>
 	);

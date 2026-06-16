@@ -1,19 +1,21 @@
 import { ArrowRight } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
-import { STATE_VERSION, type Variable } from "@semoss/renderer";
+import { Link, Navigate } from "react-router-dom";
+import type { Variable } from "@semoss/renderer";
+import { STATE_VERSION } from "@semoss/renderer/version";
 import { Button, H4, Muted } from "@semoss/ui/next";
 import DevBanner from "@/assets/img/DevBanner.png";
 import { NewAppModal } from "@/components/app";
 import { BannerSection } from "@/components/landing/banner-section";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import {
 	BASE_APP_QUERIES,
 	BASE_APP_VARIABLES,
 	BASE_PAGE_BLOCKS,
 } from "../../pages/app/app.constants";
-import { FanFavoritesSection } from "./FanFavoritesSection";
+import { FanFavoritesSection } from "./fan-favorites-section";
 import { LandingHeader } from "./landing-header";
 
 export const DeveloperUserScreen = observer(() => {
@@ -48,7 +50,7 @@ export const DeveloperUserScreen = observer(() => {
 	}
 
 	return (
-		<div className="flex flex-col gap-6">
+		<div className="flex w-full flex-col gap-6 pb-8">
 			<BannerSection
 				imageUrl={DevBanner}
 				tagline={"Experiment with AI in the Playground"}

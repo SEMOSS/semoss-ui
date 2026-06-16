@@ -1,5 +1,5 @@
-import { Box, Button } from "@mui/material";
 import { useEffect, useState } from "react";
+import { Button } from "@semoss/ui/next";
 import type { FilterComponentProps } from "../filter";
 import FilterIconComponent from "./FilterIconComponent";
 import FilterListComponent from "./FilterListComponent";
@@ -14,7 +14,9 @@ const FilterChecklistComponent: React.FC<FilterComponentProps> = ({
 	onReset,
 	showSearch = true,
 	multi = true,
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: props destructuring pattern
 	color = "primary",
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: props destructuring pattern
 	size = "medium",
 	resetChecked,
 	setResetChecked,
@@ -22,6 +24,7 @@ const FilterChecklistComponent: React.FC<FilterComponentProps> = ({
 	const [checked, setChecked] = useState<string[]>([]);
 	const [searchText, setSearchText] = useState("");
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		setSearchText("");
 		if (mode === "checklist") {
@@ -30,17 +33,14 @@ const FilterChecklistComponent: React.FC<FilterComponentProps> = ({
 	}, [resetKey, mode, JSON.stringify(checkedValues)]);
 
 	const handleApply = async () => {
-		let selected: string[] = [];
-
-		selected = checked;
-		onApply(selected, mode);
+		onApply(checked, mode);
 	};
+
 	const handleReset = () => {
 		if (mode === "checklist") {
 			setChecked([]);
 		}
 		setSearchText("");
-
 		if (onReset) {
 			onReset();
 		}
@@ -51,38 +51,20 @@ const FilterChecklistComponent: React.FC<FilterComponentProps> = ({
 	);
 
 	return (
-		<Box
-			sx={{
-				width: "100%",
-				height: "100%",
-				border: "1px solid #ccc",
-				borderRadius: 1,
-				p: 2,
-				display: "flex",
-				flexDirection: "column",
-				gap: 2,
-			}}
-		>
+		<div className="flex h-full w-full flex-col gap-4 rounded-md border border-border p-4">
 			{mode === "checklist" && (
-				<Box
-					sx={{
-						display: "flex",
-						gap: 1,
-						alignItems: "center",
-						width: "100%",
-					}}
-				>
+				<div className="flex w-full items-center gap-2">
 					{showSearch && (
-						<Box sx={{ flex: 1 }}>
+						<div className="flex-1">
 							<FilterSearchFilterHeader
 								searchText={searchText}
 								setSearchText={setSearchText}
 								setChecked={setChecked}
 							/>
-						</Box>
+						</div>
 					)}
 					<FilterIconComponent handleReset={handleReset} />
-				</Box>
+				</div>
 			)}
 			<FilterListComponent
 				listOptions={listOptions}
@@ -93,26 +75,10 @@ const FilterChecklistComponent: React.FC<FilterComponentProps> = ({
 				resetChecked={resetChecked}
 				setResetChecked={setResetChecked}
 			/>
-			<Box
-				sx={{
-					display: "flex",
-					justifyContent: "flex-end",
-					mt: 2,
-					alignItems: "center",
-					borderTop: "1px solid #ddd",
-					pt: 2,
-				}}
-			>
-				<Button
-					variant="contained"
-					onClick={handleApply}
-					color={color}
-					size={size}
-				>
-					Apply
-				</Button>
-			</Box>
-		</Box>
+			<div className="mt-4 flex items-center justify-end border-border border-t pt-4">
+				<Button onClick={handleApply}>Apply</Button>
+			</div>
+		</div>
 	);
 };
 

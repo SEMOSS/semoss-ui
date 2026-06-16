@@ -1,8 +1,8 @@
-import { FileUploadOutlined } from "@mui/icons-material";
+// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
+
 import { ChevronRight, Search, Upload } from "lucide-react";
 import type React from "react";
 import { useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -25,6 +25,7 @@ import {
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import { VECTOR_CONNECTIONS } from "./vector-import.constants";
 import { VectorForm } from "./vector-import-form";
 import { VectorTitleCard } from "./vector-title-card";
@@ -44,9 +45,7 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState("");
 	const [selectedTab, setSelectedTab] = useState("Connections");
-	const [selectedDatabase, setSelectedDatabase] = useState<vector | null>(
-		null,
-	);
+	const [selectedEngine, setSelectedEngine] = useState<vector | null>(null);
 
 	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
 	const [filedata, setFiledata] = useState(null);
@@ -64,13 +63,12 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 			(key) => key !== "description",
 		);
 	}, []);
-	const allDatabases = useMemo(() => {
-		return [...(VectorOptions.Connections || [])];
-	}, [VectorOptions]);
+	const hasMultipleTabs = tabLabels.length > 1;
+	const activeTab = selectedTab || tabLabels[0] || "";
 
 	const DatabasesForTab = useMemo(() => {
-		return VectorOptions[selectedTab] || [];
-	}, [selectedTab, VectorOptions, allDatabases]);
+		return VectorOptions[activeTab] || [];
+	}, [activeTab, VectorOptions]);
 
 	if (loading) {
 		return <Spinner />;
@@ -121,7 +119,7 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 				return;
 			}
 			const pixelExpressions = uploadedFiles.map(
-				(file) =>
+				() =>
 					`UploadEngine(filePath=["${uploadedFiles[0].fileLocation}"], engineTypes=["VECTOR"])`,
 			);
 			for (const pixelString of pixelExpressions) {
@@ -133,8 +131,7 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 					return;
 				}
 				toast.success("Successfully Created Vector Database");
-				const databaseId = output
-					.database_id;
+				const databaseId = output.database_id;
 				navigate(`/engine/vector/${databaseId}`);
 			}
 		} catch {
@@ -146,7 +143,7 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 	};
 
 	const renderBreadcrumbs = () => (
-		<Breadcrumb data-testid="breadcrumbs" className="mb-4">
+		<Breadcrumb data-testid="breadcrumbs" className="mb-6">
 			<BreadcrumbList>
 				<BreadcrumbItem>
 					<BreadcrumbLink
@@ -165,7 +162,7 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 				<BreadcrumbSeparator>/</BreadcrumbSeparator>
 
 				<BreadcrumbItem>
-					{selectedDatabase === null ? (
+					{selectedEngine === null ? (
 						<BreadcrumbPage>
 							Connect to Vector Database
 						</BreadcrumbPage>
@@ -173,7 +170,7 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 						<BreadcrumbLink
 							className="cursor-pointer"
 							onClick={() => {
-								setSelectedDatabase(null);
+								setSelectedEngine(null);
 							}}
 						>
 							Connect to Vector Database
@@ -181,14 +178,14 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 					)}
 				</BreadcrumbItem>
 
-				{selectedDatabase && (
+				{selectedEngine && (
 					<>
 						<BreadcrumbSeparator>
 							<ChevronRight />
 						</BreadcrumbSeparator>
 						<BreadcrumbItem>
 							<BreadcrumbPage>
-								{selectedDatabase.name}
+								{selectedEngine.name}
 							</BreadcrumbPage>
 						</BreadcrumbItem>
 					</>
@@ -198,7 +195,10 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 	);
 
 	const renderDatabaseGrid = (Databases: vector[]) => (
-		<div className="mt-1 grid grid-cols-6 gap-2" data-testid="vector-grid">
+		<div
+			className="mt-1 flex flex-col gap-2 sm:flex-row sm:flex-wrap"
+			data-testid="vector-grid"
+		>
 			{Databases.filter((v) =>
 				v.name.toLowerCase().includes(search.toLowerCase()),
 			).map((v) => (
@@ -209,7 +209,7 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 						display: v.name,
 					}}
 					onModelSelect={() => {
-						setSelectedDatabase(v);
+						setSelectedEngine(v);
 					}}
 				/>
 			))}
@@ -224,7 +224,7 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 				onOpenChange={(isOpen) => setIsFileUploadModalOpen(isOpen)}
 			>
 				<DialogContent
-					className="w-[600px]"
+					className="w-[calc(100vw-2rem)] max-w-[600px] sm:w-[600px]"
 					data-testid="vector-zip-upload-modal"
 				>
 					<div className="flex h-full w-full flex-col gap-4">
@@ -261,7 +261,7 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 								</div>
 							) : (
 								<div className="text-center">
-									<FileUploadOutlined className="mb-2 h-12 w-12 text-muted-foreground" />
+									<Upload className="mb-2 h-12 w-12 text-muted-foreground" />
 									<P className="font-medium text-foreground">
 										Drop your file here or click to browse
 									</P>
@@ -271,13 +271,13 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 								</div>
 							)}
 						</div>
-						<div className="flex flex-row justify-end gap-2">
+						<div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
 							<Button
 								size="sm"
 								variant="ghost"
 								onClick={() => setIsFileUploadModalOpen(false)}
 								data-testid="vector-upload-close-button"
-								className="rounded-xl"
+								className="w-full rounded-xl sm:w-auto"
 							>
 								Close
 							</Button>
@@ -287,7 +287,7 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 								disabled={!filedata || loading}
 								onClick={() => onSubmit(filedata)}
 								data-testid="vector-upload-submit-button"
-								className="rounded-xl"
+								className="w-full rounded-xl sm:w-auto"
 							>
 								Upload
 							</Button>
@@ -295,13 +295,14 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 					</div>
 				</DialogContent>
 			</Dialog>
-			{selectedDatabase ? (
+			{selectedEngine ? (
 				<div data-testid="vector-form-wrapper">
 					<VectorForm
-						title={selectedDatabase.name}
-						description={`Fill out ${selectedDatabase.name} details in order to add vector to catalog`}
-						fields={selectedDatabase.fields}
-						advanced={selectedDatabase.advanced}
+						title={selectedEngine.name}
+						description={`Fill out ${selectedEngine.name} details in order to add vector to catalog`}
+						icon={selectedEngine.icon}
+						fields={selectedEngine.fields}
+						advanced={selectedEngine.advanced}
 						categoryDescription={CategoryDescription}
 					/>
 				</div>
@@ -319,8 +320,8 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 						</P>
 					</div>
 
-					<div className="flex w-auto flex-col items-start">
-						<div className="flex w-full items-start gap-4">
+					<div className="flex w-full flex-col items-start">
+						<div className="flex w-full flex-col items-stretch gap-3 sm:flex-row sm:items-start sm:gap-4">
 							<div className="relative flex-1">
 								<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
 								<Input
@@ -334,7 +335,7 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 							<Button
 								size="lg"
 								variant="outline"
-								className="rounded-xl"
+								className="w-full rounded-xl sm:w-auto"
 								onClick={() => handleFileUpload(true)}
 								data-testid="vector-upload-file-button"
 							>
@@ -343,31 +344,45 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 						</div>
 
 						<div className="mt-4 w-full">
-							<Tabs
-								value={selectedTab}
-								onValueChange={(value) => setSelectedTab(value)}
-							>
-								<TabsList data-testid="tabs">
+							{hasMultipleTabs ? (
+								<Tabs
+									value={activeTab}
+									onValueChange={(value) =>
+										setSelectedTab(value)
+									}
+								>
+									<TabsList
+										data-testid="tabs"
+										className="w-full justify-start overflow-x-auto sm:w-auto"
+									>
+										{tabLabels.map((label) => (
+											<TabsTrigger
+												key={label}
+												value={label}
+												data-testid={`tab-${label.toLowerCase()}`}
+												className="shrink-0"
+											>
+												{label}
+											</TabsTrigger>
+										))}
+									</TabsList>
 									{tabLabels.map((label) => (
-										<TabsTrigger
+										<TabsContent
 											key={label}
 											value={label}
-											data-testid={`tab-${label.toLowerCase()}`}
+											className="mt-8"
 										>
-											{label}
-										</TabsTrigger>
+											{renderDatabaseGrid(
+												DatabasesForTab,
+											)}
+										</TabsContent>
 									))}
-								</TabsList>
-								{tabLabels.map((label) => (
-									<TabsContent
-										key={label}
-										value={label}
-										className="mt-8"
-									>
-										{renderDatabaseGrid(DatabasesForTab)}
-									</TabsContent>
-								))}
-							</Tabs>
+								</Tabs>
+							) : (
+								<div className="mt-8">
+									{renderDatabaseGrid(DatabasesForTab)}
+								</div>
+							)}
 						</div>
 					</div>
 				</div>

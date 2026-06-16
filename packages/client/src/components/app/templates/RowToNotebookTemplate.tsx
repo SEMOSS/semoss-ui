@@ -1,5 +1,5 @@
-import { ActionMessages } from "@semoss/renderer";
-import LANDINGPAGE from "@/assets/img/query.jpeg";
+import LANDINGPAGE from "@/assets/img/DragDrop.png";
+import { TEMPLATE_ACTION_MESSAGES } from "./action-messages";
 import type { Template } from "./templates.types";
 
 export const RowToNotebookTemplate: Template = {
@@ -104,21 +104,21 @@ export const RowToNotebookTemplate: Template = {
 						type: "async",
 						order: [
 							{
-								message: "RUN_CELL",
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "data",
 									cellId: "1",
 								},
 							},
 							{
-								message: "RUN_CELL",
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "modal",
 									cellId: "1",
 								},
 							},
 							{
-								message: "RUN_CELL",
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "modal",
 									cellId: "3",
@@ -296,7 +296,7 @@ export const RowToNotebookTemplate: Template = {
 						whiteSpace: "pre-line",
 						textOverflow: "ellipsis",
 					},
-					text: "$data--1.database_name",
+					text: "$data--1.engine_name",
 					variant: "p",
 					show: "true",
 					loading: false,
@@ -324,7 +324,7 @@ export const RowToNotebookTemplate: Template = {
 						whiteSpace: "pre-line",
 						textOverflow: "ellipsis",
 					},
-					text: "$data--1.database_id",
+					text: "$data--1.engine_id",
 					variant: "p",
 					show: "true",
 					loading: false,
@@ -352,7 +352,7 @@ export const RowToNotebookTemplate: Template = {
 						whiteSpace: "pre-line",
 						textOverflow: "ellipsis",
 					},
-					text: "$data--1.database_subtype",
+					text: "$data--1.engine_subtype",
 					variant: "p",
 					show: "true",
 					loading: false,
@@ -389,14 +389,14 @@ export const RowToNotebookTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: "RUN_CELL",
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "modal",
 									cellId: "2",
 								},
 							},
 							{
-								message: "RUN_CELL",
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "modal",
 									cellId: "3",
@@ -434,17 +434,16 @@ export const RowToNotebookTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: "MODIFY_VARIABLE",
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
-									destinationType: "",
-									destination: "",
 									variable: "row-id",
-									value: "$data--1.database_name",
+									value: "$data--1.engine_name",
 									blockId: "button--2",
 								},
 							},
 							{
-								message: "RUN_CELL",
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "data",
 									cellId: "3",
@@ -548,21 +547,21 @@ export const RowToNotebookTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: "RUN_CELL",
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "data",
 									cellId: "2",
 								},
 							},
 							{
-								message: "RUN_CELL",
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "modal",
 									cellId: "2",
 								},
 							},
 							{
-								message: "RUN_CELL",
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "modal",
 									cellId: "3",
@@ -600,14 +599,14 @@ export const RowToNotebookTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: "RUN_CELL",
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "modal",
 									cellId: "2",
 								},
 							},
 							{
-								message: "RUN_CELL",
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "modal",
 									cellId: "3",

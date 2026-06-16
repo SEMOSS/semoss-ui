@@ -1,0 +1,34 @@
+{
+	"context": {
+		"switchTo": "{{context}} पर स्विच करें"
+	},
+	"run": {
+		"button": "चलाएँ",
+		"tooltipActive": "चलाएँ (Ctrl+Enter)",
+		"tooltipInactive": "इस फ़ाइल को चलाने के लिए उसके स्कोप पर वापस जाएँ"
+	},
+	"errors": {
+		"loadFailed": "{{name}} लोड करने में विफल",
+		"runFailed": "{{name}} नहीं चल सका। कृपया स्क्रिप्ट सत्यापित करें।"
+	},
+	"maximizedToast": {
+		"title": "आउटपुट टर्मिनल पैनल में दिखाई देगा",
+		"description": "रन आउटपुट देखने के लिए लेआउट को पुनर्स्थापित करें।"
+	},
+	"noMode": {
+		"title": "चलाने के लिए एक भाषा चुनें",
+		"description": "टूलबार से Pixel, R, Python या Shell चुनें, फिर {{name}} चलाएँ।"
+	},
+	"scopeChanged": {
+		"title": "स्कोप बदल गया",
+		"body": "यह फ़ाइल <strong>{{scope}}</strong> में खोली गई थी। इसे संपादित करने या चलाने के लिए उस स्कोप पर वापस जाएँ।"
+	},
+	"scopeLabel": {
+		"appWithName": "ऐप · {{name}} · {{id}}",
+		"appIdOnly": "ऐप · {{id}}",
+		"engine": "इंजन · {{id}}",
+		"storage": "स्टोरेज · {{name}}",
+		"user": "उपयोगकर्ता",
+		"insight": "अंतर्दृष्टि"
+	}
+}

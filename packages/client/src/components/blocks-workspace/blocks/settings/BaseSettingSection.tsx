@@ -1,10 +1,11 @@
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import { CircleHelp as HelpOutlineIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { Stack, styled, Tooltip, Typography } from "@semoss/ui";
-
-const StyledTypography = styled(Typography)(() => ({
-	width: "100%",
-}));
+import {
+	Muted,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 
 /**
  * Standardized styling for all setting sections
@@ -17,31 +18,27 @@ export const BaseSettingSection = (props: {
 	description?: string;
 }) => {
 	return (
-		<Stack direction="column" spacing={1} className="base-setting-section">
-			<Stack direction="row" alignItems="center" spacing={1}>
-				<StyledTypography variant="body2">
-					{props.label}
-				</StyledTypography>
+		<div className="base-setting-section flex flex-col gap-1">
+			<div className="flex flex-row items-center gap-1">
+				<Muted className="w-full">{props.label}</Muted>
 				{!!props.description?.length && (
-					<Tooltip placement="top" title={props.description} arrow>
-						<HelpOutlineIcon
-							color="action"
-							sx={{
-								fontSize: 15,
-								marginLeft: "5px",
-							}}
-						/>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<HelpOutlineIcon
+								style={{
+									width: 15,
+									height: 15,
+									marginLeft: "5px",
+								}}
+							/>
+						</TooltipTrigger>
+						<TooltipContent>{props.description}</TooltipContent>
 					</Tooltip>
 				)}
-			</Stack>
-			<Stack
-				direction="row"
-				justifyContent="start"
-				spacing={1}
-				width="100%"
-			>
+			</div>
+			<div className="flex w-full flex-row justify-start gap-1">
 				{props.children}
-			</Stack>
-		</Stack>
+			</div>
+		</div>
 	);
 };

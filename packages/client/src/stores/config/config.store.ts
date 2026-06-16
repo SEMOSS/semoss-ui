@@ -1,7 +1,7 @@
 import { makeAutoObservable, runInAction } from "mobx";
 // TODO: Pull from sdk
 import { Env, logout, runPixel } from "@semoss/sdk/react";
-import { getUserProjectPermission as getUserProjectLevelPermission } from "@semoss/shared";
+import { getUserProjectPermission as getUserProjectLevelPermission } from "@semoss/shared/api";
 import { registerUser } from "@/api";
 import type { AppMetadata } from "@/components/app";
 import { THEME } from "@/constants";
@@ -29,6 +29,9 @@ interface ConfigStoreInterface {
 		email: string;
 		admin: boolean;
 		meta: unknown;
+		lastLogin?: string;
+		lastLoginFromTracking?: string;
+		groupInfo?: { groups: string[] };
 	};
 	/** Native mode */
 	isNative: boolean;
@@ -145,6 +148,7 @@ interface ConfigStoreInterface {
 		adminOnlyGuardrailDelete: boolean;
 		adminOnlyGuardrailSetDiscoverable: boolean;
 		adminOnlyGuardrailSetPublic: boolean;
+		notificationEnabled: boolean;
 
 		[key: string]: unknown;
 	};
@@ -168,6 +172,8 @@ export class ConfigStore {
 			email: "",
 			admin: false,
 			meta: {},
+			lastLogin: undefined,
+			groupInfo: undefined,
 		},
 		config: {
 			databaseMetaKeys: [],
@@ -220,6 +226,7 @@ export class ConfigStore {
 			adminOnlyGuardrailDelete: false,
 			adminOnlyGuardrailSetDiscoverable: false,
 			adminOnlyGuardrailSetPublic: false,
+			notificationEnabled: false,
 		},
 	};
 	private _generalReactors: Array<string> = [];
@@ -262,6 +269,7 @@ export class ConfigStore {
 	get theme(): {
 		name: string;
 		logo: string;
+		banner: string | undefined;
 		landingPageName: string;
 		isLogoUrl: boolean;
 		cookiePolicyBannerReact: string;
@@ -280,6 +288,7 @@ export class ConfigStore {
 		const defaultTheme = {
 			name: THEME.name,
 			logo: THEME.logo,
+			banner: undefined,
 			landingPageName: THEME.name,
 			isLogoUrl: false,
 			cookiePolicyBannerReact: "",
@@ -372,7 +381,7 @@ export class ConfigStore {
 
 		// Set CSRF flag to true
 		Env.update({ CSRF: this.store.config.csrf });
-		
+
 		// get the user information
 		await this.getUser();
 
@@ -514,6 +523,13 @@ export class ConfigStore {
 				this._store.user.name = user.name || "";
 				this._store.user.email = user.email || "";
 				this._store.userEpoch = user.userEpoch;
+				this._store.user.lastLogin = (user as Record<string, unknown>)
+					.lastLogin as string | undefined;
+				this._store.user.lastLoginFromTracking = (
+					user as Record<string, unknown>
+				).lastLoginFromTracking as string | undefined;
+				this._store.user.groupInfo = (user as Record<string, unknown>)
+					.groupInfo as { groups: string[] } | undefined;
 
 				// sync meta into insight store
 				this._root.insightStore.setUserDefaultModel(
@@ -798,9 +814,12 @@ export class ConfigStore {
 			metadata: metadata,
 		};
 
-		// set it as blocks
 		if (metadata.project_type === "BLOCKS") {
 			workspace.type = "BLOCKS";
+		} else if (metadata.project_type === "SKILL") {
+			workspace.type = "SKILL";
+		} else if (metadata.project_type === "WORKSPACE") {
+			workspace.type = "WORKSPACE";
 		}
 
 		// create the newly loaded workspace

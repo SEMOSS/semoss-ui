@@ -1,27 +1,15 @@
-import {
-	AlertCircle,
-	ImageIcon,
-	SquareArrowOutUpRightIcon,
-	TriangleAlert,
-} from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
-	Badge,
-	Button,
-	Card,
-	CardContent,
-	Muted,
-	ScrollArea,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-	toast,
-} from "@semoss/ui/next";
-import { mcpToPlatformUrl } from "@/components";
+	getDepEffectivePermission,
+	MCPCard,
+	projectDependencyToMCP,
+} from "@semoss/shared";
+import { Muted, ScrollArea, toast } from "@semoss/ui/next";
 import { useRoot } from "@/hooks";
-import { toSentenceCase } from "@/utility";
+import type { ProjectDependency } from "@/types";
+import { mcpToPlatformUrl } from "@/utility/mcp-utils";
 
 export interface WorkspaceMCPListProps {
 	/**
@@ -40,28 +28,6 @@ export interface WorkspaceMCPListProps {
 	search: string;
 }
 
-interface ProjectDependency {
-	engine_type:
-		| "PROJECT"
-		| "STORAGE"
-		| "DATABASE"
-		| "FUNCTION"
-		| "MODEL"
-		| "VECTOR";
-	engine_id: string;
-	engine_name: string;
-	engine_subtype?: string;
-	description?: string;
-	engine_discoverable?: boolean;
-	permission_name?: "READ_ONLY" | "EDIT" | "OWNER";
-	engine_global?: boolean;
-	access_permission?: number; // The permission level the user has requested, if any
-	tags?: string; // comma separated tags
-	can_view_dependencies?: boolean;
-	engine_date_created?: string;
-	dependencies?: string[]; // Array of dependency engine IDs
-}
-
 /**
  * Renders a card representing a workspace
  *
@@ -73,8 +39,8 @@ export const WorkspaceMCPList = ({
 	search,
 }: WorkspaceMCPListProps) => {
 	const { t } = useTranslation("workspace");
-	const { root } = useRoot();
 	const { actions } = useInsight();
+	const { root } = useRoot();
 
 	const getDependencies = usePixel<{
 		engines: ProjectDependency[];
@@ -84,7 +50,6 @@ export const WorkspaceMCPList = ({
 			? `GetProjectDependencies(project=["${workspaceId}"]);`
 			: "",
 		{
-			data: null,
 			onError: (_d, e) => {
 				toast.error(
 					t("mcp.failedToLoad") +
@@ -118,7 +83,7 @@ export const WorkspaceMCPList = ({
 
 	if (searchedMCP.length === 0) {
 		return (
-			<div className="flex h-full w-full items-center justify-center">
+			<div className="flex min-h-32 w-full items-center justify-center p-6">
 				<Muted>
 					{type === "TOOLBOX"
 						? t("mcp.noToolboxes")
@@ -127,49 +92,6 @@ export const WorkspaceMCPList = ({
 			</div>
 		);
 	}
-
-	const getEffectivePermission = (
-		m: ProjectDependency,
-	): {
-		effectivePermission:
-			| "READ_ONLY"
-			| "EDIT"
-			| "OWNER"
-			| "REQUESTED"
-			| "DISCOVERABLE"
-			| "FULLY_PRIVATE";
-		label: string;
-	} => {
-		if (m.permission_name) {
-			return {
-				effectivePermission: m.permission_name,
-				label: toSentenceCase(
-					m.permission_name === "EDIT" ? "Editor" : m.permission_name,
-				),
-			};
-		} else if (m.engine_global) {
-			return {
-				effectivePermission: "READ_ONLY",
-				label: toSentenceCase("READ_ONLY"),
-			};
-		} else if (m.engine_discoverable) {
-			if (typeof m.access_permission === "number") {
-				return {
-					effectivePermission: "REQUESTED",
-					label: t("mcp.accessRequested"),
-				};
-			} else {
-				return {
-					effectivePermission: "DISCOVERABLE",
-					label: t("mcp.requestAccess"),
-				};
-			}
-		}
-		return {
-			effectivePermission: "FULLY_PRIVATE",
-			label: t("mcp.noAccess"),
-		};
-	};
 
 	const handleRequestAccess = async (m: ProjectDependency) => {
 		try {
@@ -198,175 +120,22 @@ export const WorkspaceMCPList = ({
 		<ScrollArea className="h-full w-full">
 			<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
 				{searchedMCP.map((m) => {
-					const { effectivePermission, label } =
-						getEffectivePermission(m);
-
-					const accessMissing =
-						effectivePermission === "REQUESTED" ||
-						effectivePermission === "DISCOVERABLE" ||
-						effectivePermission === "FULLY_PRIVATE";
-					const missingSubDependencies =
-						m.can_view_dependencies === false;
 					return (
-						<Card
+						<MCPCard
 							key={m.engine_id}
-							className={`col-span-1 p-0 ${
-								accessMissing
-									? "border-destructive/50 border-dashed"
-									: ""
-							}`}
-						>
-							<CardContent className="space-y-2 p-4">
-								{/* Title & Open Button */}
-								<div className="flex items-start justify-between gap-2">
-									<div className="wrap-break-word min-w-0 flex-1 font-semibold text-sm leading-tight">
-										{m.engine_name}
-									</div>
-									<Tooltip>
-										    <TooltipTrigger asChild>
-                        {effectivePermission === "FULLY_PRIVATE" ? (
-                            <AlertCircle className="size-4 shrink-0 cursor-help text-destructive" />
-                        ) : root.theme.showPlatformLinks !== false ? (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className={`-m-2 shrink-0 ${accessMissing || missingSubDependencies ? "w-auto px-2" : ""}`}
-                                asChild
-                            >
-                                <a
-                                    target="_blank"
-                                    href={mcpToPlatformUrl(m)}
-                                    className="flex items-center gap-1"
-                                >
-                                    {(missingSubDependencies || accessMissing) && (
-                                        <TriangleAlert
-                                            className={`size-4 ${accessMissing ? "text-destructive" : "text-amber-500"}`}
-                                        />
-                                    )}
-                                    <SquareArrowOutUpRightIcon className="size-4" />
-                                </a>
-                            </Button>
-                        ) : (missingSubDependencies || accessMissing) ? (
-                            <TriangleAlert
-                                className={`size-4 cursor-help ${accessMissing ? "text-destructive" : "text-amber-500"}`}
-                            />
-                        ) : (
-                            <span />
-                        )}
-                    </TooltipTrigger>
-										<TooltipContent>
-											{accessMissing
-												? t("mcp.tooltipNoAccess", {
-														type:
-															type === "TOOLBOX"
-																? "toolbox"
-																: "knowledge base",
-													})
-												: missingSubDependencies
-													? t(
-															"mcp.tooltipMissingDependencies",
-															{
-																type:
-																	type ===
-																	"TOOLBOX"
-																		? "toolbox"
-																		: "knowledge base",
-															},
-														)
-													: t("mcp.tooltipOpen", {
-															type:
-																type ===
-																"TOOLBOX"
-																	? "toolbox"
-																	: "knowledge base",
-														})}
-										</TooltipContent>
-									</Tooltip>
-								</div>
-
-								{/* Image & Details */}
-								<div className="flex items-center gap-3">
-									{/* Image Placeholder */}
-									{effectivePermission === "FULLY_PRIVATE" ? (
-										<div className="flex size-16 shrink-0 items-center justify-center rounded-md border border-border border-dashed bg-muted/50">
-											<ImageIcon className="size-6 text-muted-foreground" />
-										</div>
-									) : (
-										<img
-											src={
-												m.engine_type === "PROJECT"
-													? `${import.meta.env.MODULE}/api/project-${m.engine_id}/projectImage/download`
-													: `${import.meta.env.MODULE}/api/e-${m.engine_id}/image/download`
-											}
-											alt={m.engine_name}
-											className="size-16 shrink-0 rounded-md object-cover object-center"
-										/>
-									)}
-
-									{/* Type & Permission */}
-									<div className="flex flex-1 flex-col gap-2">
-										{/* Type */}
-										<Badge
-											variant="outline"
-											className="w-fit"
-										>
-											{toSentenceCase(m.engine_type)}
-										</Badge>
-
-										{effectivePermission ===
-										"DISCOVERABLE" ? (
-											<Button
-												size="sm"
-												className="h-fit w-fit px-2 py-1 text-xs"
-												onClick={() =>
-													handleRequestAccess(m)
-												}
-											>
-												{t("mcp.requestAccessButton")}
-											</Button>
-										) : (
-											<Badge
-												variant={
-													{
-														OWNER: "default",
-														EDIT: "secondary",
-														READ_ONLY: "outline",
-														REQUESTED: "outline",
-														FULLY_PRIVATE:
-															"destructive",
-													}[effectivePermission] as
-														| "default"
-														| "secondary"
-														| "outline"
-														| "destructive"
-												}
-												className="w-fit"
-											>
-												{label}
-											</Badge>
-										)}
-									</div>
-								</div>
-
-								{/* Description */}
-								<div className="text-muted-foreground text-xs">
-									{m.description || t("mcp.noDescription")}
-								</div>
-								{m.tags?.length && (
-									<div className="flex flex-wrap gap-1">
-										{m.tags.split(",").map((tag) => (
-											<Badge
-												key={tag}
-												variant="secondary"
-												className="text-xs"
-											>
-												{tag}
-											</Badge>
-										))}
-									</div>
-								)}
-							</CardContent>
-						</Card>
+							m={projectDependencyToMCP(m)}
+							type={type}
+							effectivePermission={getDepEffectivePermission(m)}
+							missingSubDependencies={
+								m.can_view_dependencies === false
+							}
+							handleRequestAccess={() => handleRequestAccess(m)}
+							getPlatformUrl={
+								root.theme.featureFlags?.showPlatformLinks
+									? mcpToPlatformUrl
+									: undefined
+							}
+						/>
 					);
 				})}
 			</div>

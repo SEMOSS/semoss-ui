@@ -1,11 +1,28 @@
-import { Controller } from "react-hook-form";
-import { Select, TextField } from "@semoss/ui";
+import {
+	type Control,
+	Controller,
+	type UseFormSetValue,
+} from "react-hook-form";
+import type { ListenerActions } from "@semoss/renderer";
+import {
+	Input,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
+
+interface Page {
+	id: string;
+	route: string;
+}
 
 interface RedirectDestinationSelectorProps {
-	control: any;
-	setValue: any;
+	control: Control<ListenerActions>;
+	setValue: UseFormSetValue<ListenerActions>;
 	destinationType: string;
-	pages: any[];
+	pages: Page[];
 }
 
 export const RedirectDestinationSelector = ({
@@ -21,18 +38,22 @@ export const RedirectDestinationSelector = ({
 				control={control}
 				render={({ field }) => (
 					<Select
-						label="Destination"
 						value={field.value || ""}
-						onChange={(value) => {
+						onValueChange={(value) => {
 							setValue("payload.destination", "");
 							field.onChange(value);
 						}}
 					>
-						{["External", "Internal"].map((type, index) => (
-							<Select.Item key={`${type}-${index}`} value={type}>
-								{type}
-							</Select.Item>
-						))}
+						<SelectTrigger className="w-full">
+							<SelectValue placeholder="Destination" />
+						</SelectTrigger>
+						<SelectContent>
+							{["External", "Internal"].map((type) => (
+								<SelectItem key={type} value={type}>
+									{type}
+								</SelectItem>
+							))}
+						</SelectContent>
 					</Select>
 				)}
 			/>
@@ -44,25 +65,31 @@ export const RedirectDestinationSelector = ({
 					render={({ field }) => (
 						<>
 							{destinationType === "External" ? (
-								<TextField
-									label="URL"
+								<Input
+									placeholder="URL"
 									value={field.value || ""}
 									onChange={field.onChange}
 								/>
 							) : (
 								<Select
-									label="Page"
 									value={field.value || ""}
-									onChange={field.onChange}
+									onValueChange={field.onChange}
 								>
-									{pages.map((page: any, index: number) => (
-										<Select.Item
-											key={`${page.id}-${index}`}
-											value={`${page.route}`}
-										>
-											{page.id === "page-1" ? "/page-1" : `/${page.route}`}
-										</Select.Item>
-									))}
+									<SelectTrigger className="w-full">
+										<SelectValue placeholder="Page" />
+									</SelectTrigger>
+									<SelectContent>
+										{pages.map((page) => (
+											<SelectItem
+												key={page.id}
+												value={`${page.route}`}
+											>
+												{page.id === "page-1"
+													? "/page-1"
+													: `/${page.route}`}
+											</SelectItem>
+										))}
+									</SelectContent>
 								</Select>
 							)}
 						</>

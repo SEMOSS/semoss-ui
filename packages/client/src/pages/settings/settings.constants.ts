@@ -2,8 +2,9 @@ import {
 	mdiAccountGroup,
 	// mdiTextBoxMultipleOutline,
 	mdiArchive,
-	mdiClipboardTextOutline,
 	// mdiClock,
+	mdiChatProcessingOutline,
+	mdiClipboardTextOutline,
 	mdiCog,
 	mdiDatabase,
 	mdiDatabaseSearch,
@@ -31,25 +32,26 @@ export const SETTINGS_ROUTES: {
 	history?: string[];
 
 	admin?: boolean;
+	hidden?: boolean;
 }[] = [
 	{
 		title: "Settings",
 		path: "",
-		description: "View and edit settings for the application",
+		description: "View and make changes to settings to engines and apps",
 		adminDescription:
 			"View and make changes to settings to engines and apps. As an admin, view and manage platform settings.",
 		icon: mdiCog,
 		history: [],
 	},
 	{
-		title: "App Settings",
+		title: "App, Agent, & Skill Settings",
 		path: "app",
-		description: "View and edit settings for apps",
+		description: "View and edit settings for apps, agents, and skills",
 		icon: mdiClipboardTextOutline,
 		history: ["app"],
 	},
 	{
-		title: "App Settings",
+		title: "App, Agent, & Skill Settings",
 		path: "app/:id",
 		description:
 			"View member permissions, pending requests, and all other viewable settings pertaining to the app",
@@ -146,27 +148,29 @@ export const SETTINGS_ROUTES: {
 		icon: mdiDatabase,
 		history: ["vector", "vector/<id>"],
 	},
-	// {
-	//     title: 'Insight Settings',
-	//     path: 'insight',
-	//     description: 'View and edit settings for app insights',
-	//     icon: mdiTextBoxMultipleOutline,
-	//     history: ['insight'],
-	// },
-	// {
-	//     title: 'Insight Settings',
-	//     path: 'insight/:id/:appId',
-	//     description:
-	//         'View member permissions, pending requests, and all other viewable settings pertaining to the app',
-	//     icon: mdiClipboardTextOutline,
-	//     history: ['insight', 'insight/<id>/<appId>'],
-	// },
+	{
+		title: "Insight Settings",
+		path: "insight",
+		description: "View and edit settings for app insights",
+		icon: mdiClipboardTextOutline,
+		history: ["insight"],
+		hidden: true,
+	},
+	{
+		title: "Insight Settings",
+		path: "insight/:id/:projectId",
+		description:
+			"View member permissions, pending requests, and all other viewable settings pertaining to the app",
+		icon: mdiClipboardTextOutline,
+		history: ["insight", "insight/<id>/<projectId>"],
+		hidden: true,
+	},
 	{
 		title: "Jobs",
 		path: "jobs",
-		description: "Search by job name or filter using job tags",
+		description: "Manage and schedule cron jobs for the platform",
 		icon: mdiTabletCellphone,
-		history: ["settings/"],
+		history: ["jobs"],
 		admin: true,
 	},
 	{
@@ -184,6 +188,14 @@ export const SETTINGS_ROUTES: {
 		description: "View and edit permissions for teams",
 		icon: mdiDatabase,
 		history: ["team-permissions"],
+		admin: true,
+	},
+	{
+		title: "Service Accounts",
+		path: "service-accounts",
+		description: "Create and manage service accounts for system access.",
+		icon: mdiAccountGroup,
+		history: ["settings/"],
 		admin: true,
 	},
 	{
@@ -233,6 +245,32 @@ export const SETTINGS_ROUTES: {
 		description: "See configuration details in the RDF Map of the instance",
 		icon: mdiClipboardTextOutline,
 		history: ["settings/"],
+		admin: true,
+	},
+	{
+		title: "LLM Feedback",
+		path: "llm-feedback",
+		description: "Provide feedback on LLM's performance",
+		icon: mdiChatProcessingOutline,
+		history: ["settings/"],
+		admin: true,
+	},
+	{
+		title: "Add Jobs",
+		path: "jobs/add-new-job",
+		description:
+			"Fill out all the details in order to add the model to the catalog.",
+		icon: mdiClipboardTextOutline,
+		history: ["jobs", "add-new-job"],
+		admin: true,
+	},
+	{
+		title: "Edit Jobs",
+		path: "jobs/edit-job/:id",
+		description:
+			"Fill out all the details in order to edit the model in the catalog.",
+		icon: mdiClipboardTextOutline,
+		history: ["jobs", "edit-job/:id"],
 		admin: true,
 	},
 ];

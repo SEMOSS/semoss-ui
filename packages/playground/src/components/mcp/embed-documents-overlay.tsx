@@ -15,8 +15,8 @@ import {
 } from "@semoss/ui/next";
 
 type KnowledgeEngine = {
-	app_id: string;
-	app_name: string;
+	engine_id: string;
+	engine_name: string;
 };
 
 type EmbedDocumentsOverlayProps = {
@@ -77,7 +77,7 @@ export const EmbedDocumentsOverlay = ({
 			await actions.run<
 				[
 					{
-						database_id: string;
+						engine_id: string;
 					},
 				]
 			>(`CreateEmbeddingsFromDocuments(
@@ -133,20 +133,20 @@ export const EmbedDocumentsOverlay = ({
 									{getKnowledgeSources.data.map((source) => (
 										<button
 											type="button"
-											key={source.app_id}
+											key={source.engine_id}
 											onClick={() =>
 												setSelectedKnowledge(
-													source.app_id,
+													source.engine_id,
 												)
 											}
-											className={`w-full rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+											className={`w-full rounded-md border px-3 py-2 text-start text-sm transition-colors ${
 												selectedKnowledge ===
-												source.app_id
+												source.engine_id
 													? "border-primary bg-primary/10"
 													: "border-border hover:bg-accent"
 											}`}
 										>
-											{source.app_name}
+											{source.engine_name}
 										</button>
 									))}
 								</div>
@@ -233,7 +233,7 @@ export const EmbedDocumentsOverlay = ({
 						>
 							{isEmbedding ? (
 								<>
-									<Spinner className="mr-2 h-4 w-4" />
+									<Spinner className="me-2 h-4 w-4" />
 									{t("embedDocuments.embedding")}
 								</>
 							) : (

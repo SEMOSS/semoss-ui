@@ -1,4 +1,4 @@
-import { waitFor } from "@testing-library/react";
+import { fireEvent, waitFor } from "@testing-library/react";
 import { expect } from "vitest";
 import { ToggleButtonBlock } from "../../components/block-defaults/toggle-button-block/ToggleButtonBlock";
 import { render, screen } from "../utils";
@@ -33,7 +33,10 @@ const blocks = {
 			},
 		},
 		listeners: {
-			onChange: [],
+			onChange: {
+				type: "sync",
+				order: [],
+			},
 		},
 	},
 
@@ -143,24 +146,26 @@ const blocks = {
 
 describe("toggle button block", () => {
 	it("renders correctly with mocked provider", async () => {
-		const { container } = await render(
+		const { container } = render(
 			<ToggleButtonBlock id={blocks["toggle-button"].id} />,
 			{
 				blocks: blocks,
 			},
 		);
-		const element = container.querySelector("[data-block='toggle-button']");
-		const elementList = container.querySelectorAll("[type='button']");
-		const onElement = container.querySelector("[value='on']");
-		const offElement = container.querySelector("[value='off']");
 
 		await waitFor(() => {
+			const element = container.querySelector(
+				"[data-block='toggle-button']",
+			);
+			const items = container.querySelectorAll(
+				"[data-slot='toggle-group-item']",
+			);
 			expect(element).toBeInTheDocument();
-			expect(elementList.length).toBe(2);
+			expect(items.length).toBe(2);
 			expect(screen.getByText("on")).toBeInTheDocument();
 			expect(screen.getByText("off")).toBeInTheDocument();
-			expect(onElement.getAttribute("aria-pressed")).toBe("false");
-			expect(offElement.getAttribute("aria-pressed")).toBe("false");
+			expect(items[0].getAttribute("data-state")).toBe("off");
+			expect(items[1].getAttribute("data-state")).toBe("off");
 		});
 	});
 
@@ -172,20 +177,19 @@ describe("toggle button block", () => {
 			},
 		);
 
-		const element = container.querySelector(
-			"[data-block='toggle-button2']",
-		);
-		const elementList = container.querySelectorAll("[type='button']");
-		const onElement = container.querySelector("[value='on']");
-		const offElement = container.querySelector("[value='off']");
-
 		await waitFor(() => {
+			const element = container.querySelector(
+				"[data-block='toggle-button2']",
+			);
+			const items = container.querySelectorAll(
+				"[data-slot='toggle-group-item']",
+			);
 			expect(element).toBeInTheDocument();
-			expect(elementList.length).toBe(2);
+			expect(items.length).toBe(2);
 			expect(screen.getByText("on")).toBeInTheDocument();
 			expect(screen.getByText("off")).toBeInTheDocument();
-			expect(onElement.getAttribute("aria-pressed")).toBe("true");
-			expect(offElement.getAttribute("aria-pressed")).toBe("false");
+			expect(items[0].getAttribute("data-state")).toBe("on");
+			expect(items[1].getAttribute("data-state")).toBe("off");
 		});
 	});
 
@@ -197,47 +201,45 @@ describe("toggle button block", () => {
 			},
 		);
 
-		const element = container.querySelector(
-			"[data-block='toggle-button3']",
-		);
-		const elementList = container.querySelectorAll("[type='button']");
-		const onElement = container.querySelector("[value='on']");
-		const offElement = container.querySelector("[value='off']");
-
 		await waitFor(() => {
+			const element = container.querySelector(
+				"[data-block='toggle-button3']",
+			);
+			const items = container.querySelectorAll(
+				"[data-slot='toggle-group-item']",
+			);
 			expect(element).toBeInTheDocument();
-			expect(elementList.length).toBe(2);
+			expect(items.length).toBe(2);
 			expect(screen.getByText("on")).toBeInTheDocument();
 			expect(screen.getByText("off")).toBeInTheDocument();
-			expect(onElement.getAttribute("aria-pressed")).toBe("false");
-			expect(offElement.getAttribute("aria-pressed")).toBe("true");
+			expect(items[0].getAttribute("data-state")).toBe("off");
+			expect(items[1].getAttribute("data-state")).toBe("on");
 		});
 	});
 
 	it("renders correctly with toggle button disabled", async () => {
-		const { container } = await render(
+		const { container } = render(
 			<ToggleButtonBlock id={blocks["toggle-button4"].id} />,
 			{
 				blocks: blocks,
 			},
 		);
 
-		const element = container.querySelector(
-			"[data-block='toggle-button4']",
-		);
-		const elementList = container.querySelectorAll("[type='button']");
-		const onElement = container.querySelector("[value='on']");
-		const offElement = container.querySelector("[value='off']");
-
 		await waitFor(() => {
+			const element = container.querySelector(
+				"[data-block='toggle-button4']",
+			);
+			const items = container.querySelectorAll(
+				"[data-slot='toggle-group-item']",
+			);
 			expect(element).toBeInTheDocument();
-			expect(elementList.length).toBe(2);
+			expect(items.length).toBe(2);
 			expect(screen.getByText("on")).toBeInTheDocument();
 			expect(screen.getByText("off")).toBeInTheDocument();
-			expect(onElement.getAttribute("aria-pressed")).toBe("false");
-			expect(offElement.getAttribute("aria-pressed")).toBe("true");
-			expect(onElement.classList.contains("Mui-disabled")).toBeTruthy;
-			expect(offElement.classList.contains("Mui-disabled")).toBeTruthy;
+			expect(items[0].getAttribute("data-state")).toBe("off");
+			expect(items[1].getAttribute("data-state")).toBe("on");
+			expect((items[0] as HTMLButtonElement).disabled).toBeTruthy();
+			expect((items[1] as HTMLButtonElement).disabled).toBeTruthy();
 		});
 	});
 
@@ -249,26 +251,26 @@ describe("toggle button block", () => {
 			},
 		);
 
-		const element = container.querySelector("[data-block='toggle-button']");
-		const elementList = container.querySelectorAll("[type='button']");
-		const onElement = container.querySelector("[value='on']");
-		const offElement = container.querySelector("[value='off']");
-
 		await waitFor(() => {
-			expect(element).toBeInTheDocument();
-			expect(elementList.length).toBe(2);
-			expect(screen.getByText("on")).toBeInTheDocument();
-			expect(screen.getByText("off")).toBeInTheDocument();
-			expect(onElement.getAttribute("aria-pressed")).toBe("false");
-			expect(offElement.getAttribute("aria-pressed")).toBe("false");
+			const items = container.querySelectorAll(
+				"[data-slot='toggle-group-item']",
+			);
+			expect(items.length).toBe(2);
+			expect(items[0].getAttribute("data-state")).toBe("off");
+			expect(items[1].getAttribute("data-state")).toBe("off");
 		});
 
-		//this fire event click is causing the error: actions.order is not iterable
-		// fireEvent.click(onElement);
-		// screen.debug()
-		// await waitFor(() => {
-		// 	expect(onElement.getAttribute("aria-pressed")).toBe("true");
-		// 	expect(offElement.getAttribute("aria-pressed")).toBe("false");
-		// });
+		const onButton = screen
+			.getByText("on")
+			.closest("button") as HTMLElement;
+		fireEvent.click(onButton);
+
+		await waitFor(() => {
+			const items = container.querySelectorAll(
+				"[data-slot='toggle-group-item']",
+			);
+			expect(items[0].getAttribute("data-state")).toBe("on");
+			expect(items[1].getAttribute("data-state")).toBe("off");
+		});
 	});
 });

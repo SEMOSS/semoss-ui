@@ -56,8 +56,9 @@ import { NewKnowledgeOverlay } from "@/components/knowledge/new-knowledge-mcp-ov
 import { useGlobalBreadcrumbs } from "@/hooks";
 
 type KnowledgeEngine = {
-	app_id: string;
-	app_name: string;
+	engine_id: string;
+	engine_name: string;
+	engine_display_name?: string;
 	description?: string;
 	tag?: string[] | string;
 };
@@ -126,7 +127,7 @@ const formatFileSize = (fileSize: string | number): string => {
 
 const formatDateTime = (dateStr: string): string => {
 	const d = new Date(dateStr.replace(" ", "T"));
-	if (isNaN(d.getTime())) return dateStr;
+	if (Number.isNaN(d.getTime())) return dateStr;
 	return d.toLocaleString(undefined, {
 		month: "short",
 		day: "numeric",
@@ -197,7 +198,9 @@ export const KnowledgeDetailPage = observer(() => {
 			{
 				name:
 					getKnowledge.status === "SUCCESS"
-						? knowledge?.app_name || t("knowledge:detail.knowledge")
+						? knowledge?.engine_display_name ||
+							knowledge?.engine_name ||
+							t("knowledge:detail.knowledge")
 						: t("knowledge:breadcrumbs.loading"),
 				path: `/knowledge/${knowledgeId}`,
 			},
@@ -436,12 +439,13 @@ export const KnowledgeDetailPage = observer(() => {
 						onClick={() => navigate(-1)}
 						aria-label={t("common:buttons.back")}
 					>
-						<ArrowLeftIcon />
+						<ArrowLeftIcon className="rtl:-scale-x-100" />
 					</Button>
 
 					<div className="flex-1 space-y-1">
 						<h1 className="text-2xl font-semibold leading-none">
-							{knowledge?.app_name ||
+							{knowledge?.engine_display_name ||
+								knowledge?.engine_name ||
 								t("knowledge:detail.knowledge")}
 						</h1>
 						<p className="text-sm text-muted-foreground">
@@ -550,7 +554,7 @@ export const KnowledgeDetailPage = observer(() => {
 										<table className="w-full table-fixed text-sm">
 											<thead>
 												<tr className="border-b text-xs text-muted-foreground">
-													<th className="px-6 pb-2 text-left font-medium">
+													<th className="px-6 pb-2 text-start font-medium">
 														<button
 															type="button"
 															className="flex items-center gap-1 hover:text-foreground"
@@ -574,7 +578,7 @@ export const KnowledgeDetailPage = observer(() => {
 															)}
 														</button>
 													</th>
-													<th className="px-4 pb-2 text-left font-medium w-44">
+													<th className="px-4 pb-2 text-start font-medium w-44">
 														<button
 															type="button"
 															className="flex items-center gap-1 hover:text-foreground"
@@ -598,7 +602,7 @@ export const KnowledgeDetailPage = observer(() => {
 															)}
 														</button>
 													</th>
-													<th className="px-6 pb-2 text-right font-medium w-28">
+													<th className="px-6 pb-2 text-end font-medium w-28">
 														<button
 															type="button"
 															className="flex items-center gap-1 hover:text-foreground justify-end"
@@ -638,7 +642,7 @@ export const KnowledgeDetailPage = observer(() => {
 																)}
 																<button
 																	type="button"
-																	className="break-all text-left text-sm font-medium hover:underline cursor-pointer"
+																	className="break-all text-start text-sm font-medium hover:underline cursor-pointer"
 																	onClick={() =>
 																		setPreviewDoc(
 																			d,
@@ -654,7 +658,7 @@ export const KnowledgeDetailPage = observer(() => {
 																d.lastModified,
 															)}
 														</td>
-														<td className="px-6 py-2 text-right text-xs text-muted-foreground tabular-nums w-28">
+														<td className="px-6 py-2 text-end text-xs text-muted-foreground tabular-nums w-28">
 															{formatFileSize(
 																d.fileSize,
 															)}
@@ -711,10 +715,10 @@ export const KnowledgeDetailPage = observer(() => {
 									<table className="w-full text-sm">
 										<thead>
 											<tr className="border-b text-xs text-muted-foreground">
-												<th className="px-6 pb-2 text-left font-medium">
+												<th className="px-6 pb-2 text-start font-medium">
 													User
 												</th>
-												<th className="px-4 pb-2 text-left font-medium w-36">
+												<th className="px-4 pb-2 text-start font-medium w-36">
 													Role
 												</th>
 												<th className="w-16 pb-2" />
@@ -762,7 +766,7 @@ export const KnowledgeDetailPage = observer(() => {
 															</SelectContent>
 														</Select>
 													</td>
-													<td className="px-2 py-1 w-16 text-right">
+													<td className="px-2 py-1 w-16 text-end">
 														<Button
 															variant="ghost"
 															size="sm"
@@ -880,13 +884,13 @@ export const KnowledgeDetailPage = observer(() => {
 										<button
 											key={u.id}
 											type="button"
-											className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors${selectedUser?.id === u.id ? " bg-muted font-medium" : ""}`}
+											className={`w-full px-3 py-2 text-start text-sm hover:bg-muted transition-colors${selectedUser?.id === u.id ? " bg-muted font-medium" : ""}`}
 											onClick={() => setSelectedUser(u)}
 										>
 											<span className="font-medium">
 												{u.name}
 											</span>
-											<span className="ml-2 text-muted-foreground">
+											<span className="ms-2 text-muted-foreground">
 												{u.email}
 											</span>
 										</button>

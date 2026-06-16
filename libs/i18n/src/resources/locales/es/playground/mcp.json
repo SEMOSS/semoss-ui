@@ -1,52 +1,61 @@
 {
 	"embedDocuments": {
-		"title": "Insertar documentos en fuente existente",
-		"description": "Selecciona una fuente de conocimiento y sube documentos para insertar.",
-		"knowledgeSource": "Fuente de conocimiento",
+		"title": "Insertar documentos en almacén existente",
+		"description": "Selecciona un almacén de conocimiento y sube documentos para insertar.",
+		"knowledgeSource": "Almacén de conocimiento",
 		"documents": "Documentos",
 		"selectFiles": "Haz clic para seleccionar archivos o arrastra y suelta",
 		"embedButton": "Insertar documentos",
 		"embedding": "Insertando...",
 		"removeFile": "Eliminar archivo",
-		"selectPlaceholder": "Selecciona una fuente de conocimiento"
+		"selectPlaceholder": "Selecciona un almacén de conocimiento"
 	},
 	"selector": {
-		"title": "Seleccionar MCP",
 		"search": "Buscar",
-		"searchPlaceholder": "Buscar...",
-		"noResults": "No se encontraron resultados",
-		"createKnowledgeSource": "Crear fuente de conocimiento",
+		"createKnowledgeSource": "Crear almacén de conocimiento",
 		"viewDetails": "Ver detalles",
 		"noToolboxesFound": "No se encontraron cajas de herramientas",
-		"noKnowledgeFound": "No se encontró conocimiento"
+		"noKnowledgeFound": "No se encontró conocimiento",
+		"noAgentsFound": "No se encontraron agentes"
 	},
 	"overlay": {
-		"title": "Configuración de MCP",
-		"description": "Configura los ajustes de tu MCP",
-		"editToolbox": "Editar caja de herramientas",
-		"editKnowledge": "Editar conocimiento",
-		"toolboxDescription": "Agrega capacidades a tu agente y amplía lo que puede hacer",
-		"knowledgeDescription": "Edita las fuentes de conocimiento a las que tu agente puede acceder"
+		"title": "Configura tu chat",
+		"description": "Elige un agente guardado, o ensambla tu propio conocimiento y cajas de herramientas.",
+		"tabAgent": "Agente",
+		"tabKnowledge": "Conocimiento",
+		"tabToolbox": "Cajas de herramientas"
 	},
 	"tools": {
-		"selectMcp": "Seleccionar MCP",
-		"selectTool": "Seleccionar herramienta",
 		"enterValues": "Ingresa valores separados por comas",
 		"selectField": "Seleccionar {{field}}",
 		"enterField": "Ingresar {{field}}"
 	},
 	"messages": {
-		"selectKnowledgeSource": "Por favor, selecciona una fuente de conocimiento",
+		"selectKnowledgeSource": "Por favor, selecciona un almacén de conocimiento",
 		"selectDocument": "Por favor, selecciona al menos un documento",
 		"embedSuccess": "Documentos insertados con éxito",
 		"embedFailed": "Error al insertar documentos",
-		"loadFailed": "Error al cargar fuentes de conocimiento.",
-		"noSources": "No se encontraron fuentes de conocimiento."
+		"loadFailed": "Error al cargar almacenes de conocimiento.",
+		"noSources": "No se encontraron almacenes de conocimiento."
 	},
 	"buttons": {
 		"cancel": "Cancelar",
 		"embed": "Insertar",
 		"save": "Guardar",
 		"close": "Cerrar"
+	},
+	"permission": {
+		"owner": "Propietario",
+		"editor": "Editor",
+		"readOnly": "Solo lectura",
+		"accessRequested": "Acceso solicitado",
+		"requestAccess": "Solicitar acceso",
+		"noAccess": "Sin acceso",
+		"requestAccessButton": "Solicitar Acceso",
+		"tooltipNoAccess": "No tienes acceso a este {{type}}. Por favor, solicita acceso al propietario.",
+		"tooltipMissingDependencies": "No tienes acceso a todas las dependencias de este {{type}}, por lo que la funcionalidad puede ser limitada. Ábrelo en la plataforma para más información.",
+		"tooltipOpen": "Abrir este {{type}} en la plataforma",
+		"typeToolbox": "caja de herramientas",
+		"typeKnowledge": "almacén de conocimiento"
 	}
 }

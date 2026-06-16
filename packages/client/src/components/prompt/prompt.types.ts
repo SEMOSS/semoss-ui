@@ -44,4 +44,6 @@ export interface Prompt {
 	intent: string;
 	created_by: string;
 	date_created: string;
+	version?: number;
+	global?: boolean;
 }

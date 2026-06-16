@@ -1,4 +1,10 @@
-import { Pencil, Plus, Search as SearchIcon, Trash2 } from "lucide-react";
+import {
+	Pencil,
+	Plus,
+	Search as SearchIcon,
+	Trash2,
+	Upload,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
 import {
@@ -37,8 +43,9 @@ import {
 	useServerPagination,
 	useSettings,
 } from "@/hooks";
-import type { ALL_TYPES, ApiResponse } from "@/types";
+import type { ALL_TYPES } from "@/types";
 import { permissionPriorityMapper } from "@/utility/general";
+import { BatchUploadPermissionsOverlay } from "./batch-upload-permissions-overlay";
 import { MembersAddOverlay } from "./members-add-overlay";
 import { MembersDeleteOverlay } from "./members-delete-overlay";
 import type {
@@ -55,6 +62,8 @@ const formatValue = (input: string) => {
 			DAY: "Daily",
 			WEEK: "Weekly",
 			MONTH: "Monthly",
+			YEAR: "Yearly",
+			ALL_TIME: "All time",
 			NULL: "None",
 		};
 		return mappings[input.toUpperCase()] || input;
@@ -107,6 +116,7 @@ interface GetMembersData {
 interface JsonType {
 	userid: string;
 	permission: string;
+	type?: string;
 	maxResponseTime?: number;
 	usageRestriction?: string;
 	usageFrequency?: string;
@@ -158,6 +168,9 @@ export const MembersTable = (props: MembersTableProps) => {
 	const [pendingDeletedMembers, setPendingDeletedMembers] = useState<
 		SETTINGS_PROVISIONED_USER[]
 	>([]);
+
+	/** Batch Upload State */
+	const [batchUploadModal, setBatchUploadModal] = useState<boolean>(false);
 
 	/** Add Member State */
 	const [addMembersModal, setAddMembersModal] = useState<boolean>(false);
@@ -337,6 +350,7 @@ export const MembersTable = (props: MembersTableProps) => {
 				const json: JsonType = {
 					userid: m.id,
 					permission: quickUpdate ? quickUpdate : "OWNER",
+					type: m.type as string,
 				};
 
 				// FOR MODELS
@@ -474,6 +488,10 @@ export const MembersTable = (props: MembersTableProps) => {
 		);
 	}, [rowsPerPage]);
 
+	const memberCountLabel = `${totalMembers} ${
+		totalMembers === 1 ? "member" : "members"
+	}`;
+
 	const isLastAuthor = (user) => {
 		const authors = allAuthors.filter(
 			(m) =>
@@ -491,13 +509,13 @@ export const MembersTable = (props: MembersTableProps) => {
 		<div className="flex w-full shrink-0 flex-col items-start gap-[25px]">
 			<div className="flex flex-col items-start gap-5 self-stretch">
 				<div className="w-full rounded-xl border border-border">
-					<div className="flex items-center self-stretch rounded-t-xl bg-background shadow-[0px_-1px_0px_0px_rgba(0,0,0,0.12)_inset]">
-						<div className="flex items-center gap-2.5 p-3 px-6 py-3">
+					<div className="flex flex-wrap items-center gap-x-2 gap-y-1 self-stretch rounded-t-xl bg-background shadow-[0px_-1px_0px_0px_rgba(0,0,0,0.12)_inset]">
+						<div className="flex items-center gap-2.5 px-3 py-3 sm:px-6">
 							<H4 data-testid="permissions-title">Permissions</H4>
 						</div>
-						<div className="flex flex-1 items-start">
+						<div className="flex min-w-0 flex-1 items-center px-2 py-2 sm:px-4">
 							{avatarMembers.length > 0 ? (
-								<div className="flex h-14 w-[130px] flex-col items-center justify-center gap-2.5 px-4 py-2.5">
+								<div className="mr-3 flex h-10 flex-shrink-0 flex-col items-center justify-center gap-2.5">
 									<div
 										className="-space-x-2 flex"
 										data-testid="membersTable-avatarGroup"
@@ -528,20 +546,19 @@ export const MembersTable = (props: MembersTableProps) => {
 									</div>
 								</div>
 							) : null}
-							<div className="flex h-14 flex-col items-center justify-center gap-2.5 px-4 py-1.5">
-								<div className="flex flex-col items-start">
-									<P data-testid="membersTable-memberCount">
-										{totalMembers} member
-									</P>
-								</div>
-							</div>
+							<P
+								className="truncate font-medium text-muted-foreground text-sm"
+								data-testid="membersTable-memberCount"
+							>
+								{memberCountLabel}
+							</P>
 						</div>
 						<div className="flex items-center">
 							{isSearch ? (
 								<Input
 									autoFocus={true}
 									placeholder="Search Members"
-									className="h-8 w-[200px]"
+									className="h-8 w-[140px] sm:w-[200px]"
 									value={search}
 									data-testid={`membersTables-searchMembers-searchBar}`}
 									onChange={(e) => {
@@ -581,6 +598,24 @@ export const MembersTable = (props: MembersTableProps) => {
 											Delete Selected
 										</Button>
 									)}
+								</div>
+								<div className="flex flex-col items-center justify-center gap-2.5 px-2 py-2.5">
+									<Button
+										variant="outline"
+										disabled={
+											isLoading ||
+											userPermission === "Read-Only"
+										}
+										data-testid="membersTables-batchUpload-btn"
+										onClick={() => {
+											setBatchUploadModal(true);
+										}}
+									>
+										<div className="flex items-center gap-2">
+											<Upload className="size-4" />
+											Batch Upload
+										</div>
+									</Button>
 								</div>
 								<div className="flex flex-col items-center justify-center gap-2.5 px-2 px-6 py-2.5 py-2.5">
 									<Button
@@ -1027,9 +1062,9 @@ export const MembersTable = (props: MembersTableProps) => {
 														type === "MODEL" ? 8 : 5
 													}
 												>
-													<div className="flex items-center justify-end gap-4 px-2">
+													<div className="flex flex-wrap items-center justify-end gap-3 px-2 sm:gap-4">
 														<div className="flex items-center gap-2">
-															<span className="text-sm">
+															<span className="text-muted-foreground text-sm">
 																Rows per page:
 															</span>
 															<Select
@@ -1067,7 +1102,7 @@ export const MembersTable = (props: MembersTableProps) => {
 																</SelectContent>
 															</Select>
 														</div>
-														<div className="text-sm">
+														<div className="whitespace-nowrap text-muted-foreground text-sm">
 															{startRow}-{endRow}{" "}
 															of {totalMembers}
 														</div>
@@ -1177,6 +1212,20 @@ export const MembersTable = (props: MembersTableProps) => {
 					)}
 				</div>
 			</div>
+			<BatchUploadPermissionsOverlay
+				open={batchUploadModal}
+				onClose={(success) => {
+					setBatchUploadModal(false);
+					if (success) {
+						onChange();
+						getMembers.refresh();
+						allAuthorsResponse.refresh();
+						userDetails.refresh();
+					}
+				}}
+				id={id}
+				type={type}
+			/>
 			<MembersDeleteOverlay
 				type={type}
 				id={id}

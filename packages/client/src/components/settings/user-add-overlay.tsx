@@ -190,6 +190,8 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 		DAY: "Daily",
 		WEEK: "Weekly",
 		MONTH: "Monthly",
+		YEAR: "Yearly",
+		ALL_TIME: "All time",
 	};
 	const unitTypes: string[] = ["milliseconds"];
 
@@ -314,6 +316,18 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 								control={control}
 								rules={{}}
 								render={({ field }) => {
+									const availableTypeLabels =
+										configStore.store.config.availableProviders.map(
+											(option) => option.label,
+										);
+									const fieldValue = field.value || "";
+									const shouldShowCurrentTypeFallback =
+										!isNewUser &&
+										!!fieldValue &&
+										!availableTypeLabels.includes(
+											fieldValue,
+										);
+
 									return (
 										<div className="grid gap-1.5">
 											<Label>Type</Label>
@@ -348,6 +362,14 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 															);
 														},
 													)}
+													{shouldShowCurrentTypeFallback ? (
+														<SelectItem
+															value={fieldValue}
+															key={`type-${fieldValue}-current`}
+														>
+															{fieldValue}
+														</SelectItem>
+													) : null}
 												</SelectContent>
 											</Select>
 										</div>

@@ -17,24 +17,21 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	toast,
 } from "@semoss/ui/next";
 import {
 	InputMessage,
-	PlanMessage,
 	ResponseMessage,
-	RoomContextChart,
 	RoomInput,
 	RoomInputMenuFileExplorer,
-	RoomInputMenuKnowledge,
-	RoomInputMenuToolbox,
+	RoomInputMenuMCP,
 	RoomInputMenuUpload,
 } from "@/components";
-import { useChat } from "@/hooks";
+import { useChat, useGracefulErrors } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
+import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomSuggestions } from "./room-suggestions";
-
-const ENABLE_SUGGESTIONS = import.meta.env.VITE_ENABLE_SUGGESTIONS === "true";
 
 const ROOM_CONFIGURATION_ID = "CONFIGURATION";
 const SCROLL_THRESHOLD = 150;
@@ -50,9 +47,9 @@ interface RoomContentProps {
 export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const { chat } = useChat();
 	const { t } = useTranslation("room");
+	const { getGracefulErrorMessage } = useGracefulErrors();
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
 	const [contentEle, setContentEle] = useState<HTMLDivElement | null>(null);
-
 	const [contentHeight, setContentHeight] = useState(0);
 	const [showScrollup, setShowScrollup] = useState(false);
 	const [showScrolldown, setShowScrolldown] = useState(false);
@@ -68,15 +65,35 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		// ask the room
 		await room.askMessage(prompt, files);
 
+		// re-sync room options from backend after message completes,
+		// preserving workspace MCPs that are only held in memory
+		await room.syncRoomOptions();
+
 		return true;
 	};
 
 	/**
-	 * Handle tool selection
+	 * Compact messages in the room
+	 */
+	const handleCompactMessages = async () => {
+		try {
+			const result = await room.compactMessages();
+			if (result === "skipped") {
+				toast.info(t("settings.compactSkipped"));
+			} else {
+				toast.success(t("settings.compactSuccess"));
+			}
+		} catch {
+			toast.error(t("settings.compactError"));
+		}
+	};
+
+	/**
+	 * Handle tool add (add-only for slash menu)
 	 * @param tool - selected tool
 	 */
-	const handleToolSelect = (tool: MCPConfig) => {
-		// Toggle tool in options
+	const handleToolAdd = (tool: MCPConfig) => {
+		// Add tool to options (skip if already present)
 		const tools = room.options.mcp.reduce(
 			(acc, curr) => {
 				acc[curr.id] = curr;
@@ -85,9 +102,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			{} as Record<string, typeof tool>,
 		);
 
-		if (Object.hasOwn(tools, tool.id)) {
-			delete tools[tool.id];
-		} else {
+		// Only add if not already present
+		if (!Object.hasOwn(tools, tool.id)) {
 			tools[tool.id] = tool;
 		}
 
@@ -174,7 +190,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					tool.id,
 					tool.response,
 					tool.tool_status,
-					tool.executedParameters,
+					tool.executedParameters ?? {},
 				);
 			} catch {
 				// noop
@@ -188,24 +204,29 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		};
 	}, [room]);
 
-	/**
-	 * Auto-scroll when dependency changes (new messages added)
-	 */
+	// Initial scroll to bottom when scroll element is first available
+	useEffect(() => {
+		if (!scrollEle) {
+			return;
+		}
+
+		setIsScrollLocked(false);
+		requestAnimationFrame(() => {
+			scrollEle.scrollTop = scrollEle.scrollHeight;
+		});
+	}, [scrollEle]);
+
+	// Auto-scroll to bottom when messages are added or content grows (streaming), unless user has scrolled away
+	// biome-ignore lint/correctness/useExhaustiveDependencies: room.history.length and contentHeight are used as triggers
 	useEffect(() => {
 		if (!scrollEle || isScrollLocked) {
 			return;
 		}
 
-		const timeout = setTimeout(() => {
-			const animationFrame = requestAnimationFrame(() => {
-				scrollToTarget(contentHeight);
-			});
-
-			return () => cancelAnimationFrame(animationFrame);
-		}, 100); // ~100ms delay to allow for rendering
-
-		return () => clearTimeout(timeout);
-	}, [scrollEle, scrollToTarget, isScrollLocked, contentHeight]);
+		requestAnimationFrame(() => {
+			scrollEle.scrollTop = scrollEle.scrollHeight;
+		});
+	}, [scrollEle, isScrollLocked, room.history.length, contentHeight]);
 
 	/**
 	 * Set up scroll event listener
@@ -262,8 +283,39 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		};
 	}, [contentEle]);
 
+	/**
+	 * Constants
+	 */
+	const isAutoExecutingTools = ((): boolean => {
+		// Check the latest response message for auto-executing tools
+		if (!room.latestResponseMessage) {
+			return false;
+		}
+
+		for (const part of room.latestResponseMessage.parts) {
+			if (
+				part.type === "TOOL_CALL" &&
+				part.toolCall._meta?.SMSS_MCP_EXECUTION === "auto"
+			) {
+				const tool = room.getTool(part.toolCall.id);
+				if (
+					tool &&
+					(tool.status === "INITIAL" || tool.status === "LOADING")
+				) {
+					return true;
+				}
+			}
+		}
+		return false;
+	})();
+
+	const showLoadingState =
+		room.isLoading ||
+		room.latestResponseMessage.isThinking ||
+		isAutoExecutingTools;
+
 	return (
-		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
+		<div className="flex h-full w-full flex-col bg-background transition-all duration-200 ease-in-out">
 			<div className="relative w-full flex-1 overflow-hidden">
 				<ScrollArea
 					className="h-full w-full overflow-hidden"
@@ -276,17 +328,29 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							setContentEle(ele);
 						}}
 					>
-						<div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 py-6 sm:gap-6">
+						<div className="mx-auto flex w-full max-w-[1120px] flex-col gap-2 px-4 py-6 sm:px-8 lg:px-16">
 							{room.history.map((m, mIdx) => {
 								if (!m.visible) {
 									return null;
 								}
 
+								const showModelName = (() => {
+									// find the most recent ancestor that actually has a model
+									let ancestor = m.parent;
+									while (ancestor) {
+										if (ancestor.modelId) break;
+										ancestor = ancestor.parent;
+									}
+									// If no ancestor has a model, show the model name for this message
+									if (!ancestor) return true;
+									// Only show the model name if it's different from the ancestor's model to reduce clutter
+									return m.modelId !== ancestor.modelId;
+								})();
+
 								return (
 									<React.Fragment key={m.key}>
-										{(m.parent.modelId !== m.modelId ||
-											m.parent.parent === null) && (
-											<div className="relative flex flex-col items-center justify-center">
+										{showModelName && (
+											<div className="relative mb-4 flex flex-col items-center justify-center">
 												<div className="z-10 bg-background px-2 text-muted-foreground text-xs leading-normal">
 													{m.ornaments.modelName}
 												</div>
@@ -305,30 +369,26 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 												message={m}
 											/>
 										)}
-										{m.type === "PLAN" && (
-											<PlanMessage
+
+										{m.type === "OUTPUT" && (
+											<RoomCompactionIndicator
 												message={m}
-												isLast={
-													mIdx ===
-													room.history.length - 1
-												}
 											/>
 										)}
 									</React.Fragment>
 								);
 							})}
-							{ENABLE_SUGGESTIONS && (
+							{room.theme.featureFlags?.enableSuggestions && (
 								<RoomSuggestions room={room} />
 							)}
 						</div>
 						{room.error ? (
-							<div className="mx-auto flex w-screen max-w-4xl items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
+							<div className="mx-auto flex w-screen max-w-[1120px] items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
 								<div className="flex h-10 w-10 items-center justify-center rounded-full">
 									<TriangleAlertIcon className="h-6 w-6" />
 								</div>
 								<span>
-									{room.error.message ||
-										t("content.errorDefault")}
+									{getGracefulErrorMessage(room.error)}
 								</span>
 							</div>
 						) : null}
@@ -338,7 +398,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 				{showScrollup && (
 					<Tooltip>
 						<TooltipTrigger asChild>
-							<span className="absolute top-4 right-4 z-50">
+							<span className="absolute end-4 top-4 z-50">
 								<Button
 									size="icon-sm"
 									variant={"outline"}
@@ -359,7 +419,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 				{showScrolldown && (
 					<Tooltip>
 						<TooltipTrigger asChild>
-							<span className="absolute right-4 bottom-4 z-50">
+							<span className="absolute end-4 bottom-4 z-50">
 								<Button
 									size="icon-sm"
 									variant={"outline"}
@@ -379,40 +439,53 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					</Tooltip>
 				)}
 			</div>
-			<div className="mx-auto w-full max-w-4xl shrink-0 p-4">
+			<div className="mx-auto flex w-full max-w-[1120px] shrink-0 flex-col px-4 py-4 sm:px-8 lg:px-16">
 				<RoomInput
+					predefinedPrompts={room.options.predefinedPrompts}
 					className="max-h-56 min-h-24"
-					isLoading={room.isLoading}
+					isLoading={showLoadingState}
+					hidePauseButton={!room.numberOfTools}
 					model={room.model}
+					room={room}
 					setModel={(model) => {
 						room.setModel(model);
 						chat.setSelectedModel(model);
 					}}
+					options={room.options}
+					onMcpSelect={handleToolAdd}
+					onMcpChange={(mcp) =>
+						room.setOptions({
+							...room.options,
+							mcp,
+						})
+					}
 					MenuComponent={observer(
-						({ addToken, onOpenChange, fileRef }) => (
+						({ onOpenChange, onOpenMcpOverlay }) => (
 							<>
 								<RoomInputMenuUpload
-									fileRef={fileRef}
-									onSelect={() => onOpenChange(false)}
-								/>
-								<RoomInputMenuFileExplorer
-									room={room}
 									onSelect={() => onOpenChange(false)}
 								/>
 								<DropdownMenuSeparator />
-								<RoomInputMenuKnowledge
+								<RoomInputMenuMCP
+									type="KNOWLEDGE"
 									options={room.options}
-									onSelect={(tool) => {
-										handleToolSelect(tool);
-										addToken(`<${tool.name}>`);
+									onSelect={() => {
+										onOpenMcpOverlay("KNOWLEDGE");
+										onOpenChange(false);
 									}}
 								/>
-								<RoomInputMenuToolbox
+								<RoomInputMenuMCP
+									type="TOOLBOX"
 									options={room.options}
-									onSelect={(tool) => {
-										handleToolSelect(tool);
-										addToken(`<${tool.name}>`);
+									onSelect={() => {
+										onOpenMcpOverlay("TOOLBOX");
+										onOpenChange(false);
 									}}
+								/>
+								<DropdownMenuSeparator />
+								<RoomInputMenuFileExplorer
+									room={room}
+									onSelect={() => onOpenChange(false)}
 								/>
 								<DropdownMenuItem
 									onSelect={(e) => {
@@ -441,13 +514,16 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						),
 					)}
 					onPrompt={handlePrompt}
-					hasOutstandingTools={room.hasUnfinishedTools}
-					footer={
-						<RoomContextChart
-							tokensUsed={room.tokensUsed}
-							tokensMax={chat.models.contextWindow}
-						/>
+					hasOutstandingTools={
+						room.latestResponseMessage.hasUnfinishedTools
 					}
+					hasToolsPaused={room.latestResponseMessage.isPaused}
+					toggleToolsPaused={
+						room.latestResponseMessage.toggleIsPaused
+					}
+					tokensUsed={room.tokensUsed}
+					tokensMax={chat.models.contextWindow}
+					onCompact={handleCompactMessages}
 				/>
 			</div>
 		</div>

@@ -84,7 +84,7 @@ function Markdown({
 			),
 			ul: ({ children, ...props }) => <List {...props}>{children}</List>,
 			ol: ({ children, ...props }) => (
-				<ol className="my-6 ml-6 list-decimal [&>li]:mt-2" {...props}>
+				<ol className="my-6 ms-6 list-decimal [&>li]:mt-2" {...props}>
 					{children}
 				</ol>
 			),
@@ -147,7 +147,7 @@ function Markdown({
 		<div
 			data-slot="markdown"
 			className={cn(
-				"prose prose-slate dark:prose-invert max-w-none",
+				"prose prose-slate dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
 				className,
 			)}
 			{...props}

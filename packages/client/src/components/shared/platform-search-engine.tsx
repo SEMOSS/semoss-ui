@@ -1,17 +1,17 @@
 import { ExternalLinkIcon } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { Env, useIteratorPixel } from "@semoss/sdk/react";
-import type { Engine } from "@semoss/shared";
+import { useIteratorPixel } from "@semoss/sdk/react";
+import { type Engine, EngineSubtypeIcon } from "@semoss/shared";
 import { Button, CommandGroup, CommandItem, Spinner } from "@semoss/ui/next";
+import { useNavigate } from "@/hooks/useNavigate";
 
-const LIMIT = 3;
+const LIMIT = 5;
 
 interface PlatformSearchEngineProps {
 	/** Name of the group */
 	name: string;
 
 	/** Types of engines to pre-filter on */
-	type: Engine["app_type"];
+	type: Engine["engine_type"] | "GUARDRAIL";
 
 	/** Search to filter on */
 	search: string;
@@ -60,37 +60,61 @@ export const PlatformSearchEngine = ({
 	return (
 		<CommandGroup heading={name}>
 			{getEngines.data.map((engine) => {
+				const engineId = engine.engine_id;
+				const engineName =
+					engine.engine_display_name || engine.engine_name;
+				const engineSubtype =
+					engine.engine_subtype ||
+					(
+						engine as Engine & {
+							database_subtype?: string;
+							app_subtype?: string;
+						}
+					).database_subtype ||
+					(
+						engine as Engine & {
+							database_subtype?: string;
+							app_subtype?: string;
+						}
+					).app_subtype;
 				return (
 					<CommandItem
-						key={engine.app_id}
-						value={engine.app_id}
+						key={engineId}
+						value={engineId}
+						className="group rounded-md px-2 py-2.5"
 						onSelect={() => {
 							// manually navigate since it doesn't propagate with a link
 							navigate(
-								`/engine/${type.toLowerCase()}/${engine.app_id}`,
+								`/engine/${type.toLowerCase()}/${engineId}`,
 							);
 
 							// close it
 							onSelect(engine);
 						}}
 					>
-						<img
-							src={`${Env.MODULE}/api/e-${engine.app_id}/image/download`}
-							alt={`${engine.app_name} icon`}
-							className="size-8 object-contain"
+						<EngineSubtypeIcon
+							engineType={type}
+							engineSubtype={engineSubtype}
+							alt={`${engineName} icon`}
+							className="size-8 shrink-0 object-contain"
 						/>
 						<div className="flex flex-1 flex-col truncate">
-							<span>{engine.app_name}</span>
+							<span className="truncate font-medium text-sm">
+								{engineName}
+							</span>
+							<span className="truncate text-[11px] text-muted-foreground">
+								{engineId}
+							</span>
 							{engine.description && (
-								<span className="text-muted-foreground text-xs">
+								<span className="line-clamp-1 text-[11px] text-muted-foreground">
 									{engine.description}
 								</span>
 							)}
 						</div>
 						<a
-							className=""
+							className="rounded-sm p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
 							target="_blank"
-							href={`./#/engine/${type.toLowerCase()}/${engine.app_id}`}
+							href={`./#/engine/${type.toLowerCase()}/${engineId}`}
 							onClick={(e) => {
 								e.stopPropagation();
 							}}
@@ -110,7 +134,7 @@ export const PlatformSearchEngine = ({
 			{!getEngines.isLoading && getEngines.hasMore && (
 				<div className="flex items-center justify-center">
 					<Button
-						className="text-muted-foreground text-xs"
+						className="h-7 rounded-md text-muted-foreground text-xs"
 						size="sm"
 						variant="ghost"
 						onClick={() => getEngines.next()}

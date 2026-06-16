@@ -1,23 +1,27 @@
 {
-	"welcome": "Bienvenido",
+	"welcome": "Bienvenido, {{name}}",
 	"settings": {
 		"title": "Configuración de la sala",
 		"description": "Actualizar la configuración de la sala y modificar el comportamiento del chat",
 		"open": "Abrir Configuración",
 		"close": "Cerrar",
-		"edit": "Editar configuración"
+		"edit": "Editar configuración",
+		"compact": "Compactar mensajes de herramientas",
+		"compactSuccess": "Mensajes de herramientas compactados correctamente",
+		"compactError": "Error al compactar los mensajes de herramientas"
 	},
 	"form": {
 		"modelLabel": "Modelo",
 		"instructionsLabel": "Instrucciones",
+		"agentLabel": "Agente",
 		"knowledgeLabel": "Conocimiento",
-		"toolboxLabel": "Caja de herramientas",
+		"toolboxLabel": "Cajas de herramientas",
 		"maxTokenLabel": "Token máximo",
 		"temperatureLabel": "Temperatura"
 	},
 	"modes": {
 		"ask": "Preguntar",
-		"plan": "Planificar"
+		"agent": "Arnés de agente"
 	},
 	"workspace": {
 		"publishTooltip": "Publicar como agente",
@@ -37,8 +41,8 @@
 	"input": {
 		"ariaPlaceholder": "Ingresa texto",
 		"thinking": "Pensando...",
-		"menuPrompt": "/ para abrir menú",
-		"openSettings": "Abrir configuración",
+		"menuPrompt": "¿Cómo puedo ayudarte hoy?",
+		"openSettings": "Agregar archivos, agentes y más",
 		"recordLabel": "Grabar al modelo",
 		"stopRecording": "Detener grabación",
 		"record": "Grabar",
@@ -47,12 +51,13 @@
 		"enterQuestion": "Por favor, ingresa una pregunta",
 		"completeTool": "Por favor, completa las herramientas para continuar",
 		"ask": "Preguntar",
-		"errorProcessing": "Error al procesar el chat"
+		"errorProcessing": "Error al procesar el chat",
+		"pauseTools": "Pausar herramientas",
+		"pauseToolsTooltip": "Pausar toda la ejecución de herramientas hasta después del siguiente mensaje"
 	},
 	"content": {
 		"scrollToTop": "Ir al inicio",
-		"scrollToBottom": "Ir al final",
-		"errorDefault": "No se pudo procesar la solicitud. Verifica tu conexión, copia tu mensaje y actualiza la página."
+		"scrollToBottom": "Ir al final"
 	},
 	"inlineTool": {
 		"openInSidebar": "Abrir en barra lateral",
@@ -67,23 +72,18 @@
 		"copyFailed": "Error al copiar al portapapeles"
 	},
 	"menuToolbox": {
-		"addToolbox": "Agregar caja de herramientas",
-		"searchPlaceholder": "Buscar cajas de herramientas",
-		"notFound": "No encontrado",
-		"allTools": "Todas las herramientas"
+		"addToolbox": "Agregar cajas de herramientas"
 	},
 	"menuKnowledge": {
-		"addKnowledge": "Agregar conocimiento",
-		"searchPlaceholder": "Buscar conocimiento",
-		"notFound": "No encontrado"
+		"addKnowledge": "Agregar conocimiento"
 	},
 	"menuWorkspace": {
 		"selectAgent": "Seleccionar agente",
-		"searchPlaceholder": "Buscar espacios de trabajo",
+		"searchPlaceholder": "Buscar agentes",
 		"notFound": "No encontrado"
 	},
 	"menuUpload": {
-		"attachDocument": "Adjuntar Documento"
+		"attachDocument": "Agregar Documentos"
 	},
 	"menuFileExplorer": {
 		"name": "Explorador de Archivos",
@@ -92,5 +92,18 @@
 	},
 	"errors": {
 		"createRoom": "Ocurrió un error al crear la sala. Error: {{message}}"
+	},
+	"contextWindow": {
+		"descriptionLow": "Todas las conversaciones tienen un límite. Las conversaciones muy largas eventualmente harán que el modelo olvide mensajes anteriores.",
+		"descriptionMedium": "Esta conversación se está alargando. Si continúa, el modelo comenzará a olvidar mensajes anteriores. Considera compactar esta conversación o iniciar un nuevo chat pronto.",
+		"descriptionHigh": "Esta conversación está casi llena. El modelo pronto comenzará a olvidar mensajes anteriores. Compacta esta conversación o inicia un nuevo chat para continuar con el contexto completo.",
+		"descriptionExceeded": "Esta conversación ha superado su límite. El modelo ahora está olvidando mensajes anteriores. Compacta esta conversación o inicia un nuevo chat para obtener mejores resultados.",
+		"memoryUsedTitle": "Memoria usada:",
+		"memoryUsedValue": "{{used}} / {{total}} tokens ({{percent}}%)"
+	},
+	"menuMcp": {
+		"searchPlaceholder": "Buscar conocimiento y cajas de herramientas",
+		"noResults": "No se encontraron elementos coincidentes",
+		"noItemsAvailable": "No hay conocimiento o cajas de herramientas disponibles"
 	}
 }

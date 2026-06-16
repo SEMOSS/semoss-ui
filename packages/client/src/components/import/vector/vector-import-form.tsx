@@ -1,9 +1,10 @@
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
+// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
+
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
 import {
 	Button,
 	Checkbox,
@@ -31,6 +32,9 @@ import {
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
+import { EngineFormHeader } from "../shared/engine-form-header";
+import { computeVisibility } from "../shared/import-form.utils";
 
 export interface ParsedResult {
 	headers: string[];
@@ -49,6 +53,7 @@ export interface ParsedResult {
 export const VectorForm = ({
 	title,
 	description,
+	icon,
 	fields,
 	advanced,
 	categoryDescription,
@@ -109,7 +114,11 @@ export const VectorForm = ({
 		}"],conDetails=[${JSON.stringify(newFormData)}]);SetDatabaseMetadata(database=["${formData.NAME}"],meta=[${metaData}])`;
 
 		monolithStore.runQuery(pixel).then(async (response) => {
-			const pixelOutput = response.pixelReturn[0].output as { database_id: string },
+			const pixelOutput = response.pixelReturn[0].output as {
+					engine_id?: string;
+					// engine_id is the current key; database_id is the legacy fallback
+					database_id?: string;
+				},
 				operationType = response.pixelReturn[0].operationType;
 
 			if (operationType.indexOf("ERROR") > -1) {
@@ -127,18 +136,19 @@ export const VectorForm = ({
 					);
 
 					if (!uploadedFiles || !Array.isArray(uploadedFiles)) {
-						toast.error("Upload failed or returned invalid response.");
+						toast.error(
+							"Upload failed or returned invalid response.",
+						);
 						setLoading(false);
 						return;
 					}
-					const pixelExpressions = `CreateEmbeddingsFromDocuments(filePaths=["${uploadedFiles[0].fileLocation}"], engine=["${pixelOutput.database_id}"])`;
+					const pixelExpressions = `CreateEmbeddingsFromDocuments(filePaths=["${uploadedFiles[0].fileLocation}"], engine=["${pixelOutput.engine_id || pixelOutput.database_id}"])`;
 					const response =
 						await monolithStore.runQuery(pixelExpressions);
 					const { output, operationType } = response.pixelReturn[0];
 					if (operationType.includes("ERROR")) {
 						toast.error(String(output));
 						setLoading(false);
-						return;
 					}
 				} catch {
 					toast.error("Upload failed or returned invalid response.");
@@ -146,7 +156,9 @@ export const VectorForm = ({
 					return;
 				}
 			}
-			navigate(`/engine/vector/${pixelOutput.database_id}`);
+			navigate(
+				`/engine/vector/${pixelOutput.engine_id || pixelOutput.database_id}`,
+			);
 			setLoading(false);
 		});
 	};
@@ -218,8 +230,11 @@ export const VectorForm = ({
 								...f,
 								options: Array.isArray(output)
 									? output.map((opt) => ({
-											display: opt[f.optionRule.optionDisplay],
-											value: opt[f.optionRule.optionValue],
+											display:
+												opt[f.optionRule.optionDisplay],
+											value: opt[
+												f.optionRule.optionValue
+											],
 										}))
 									: [],
 							}
@@ -255,24 +270,6 @@ export const VectorForm = ({
 		return true;
 	};
 
-	const checkForDisplayRulesSet = (field, value) => {
-		const selectedDefaultField = resolvedFields.find(
-			(f) => f.key === field.name,
-		);
-		if (selectedDefaultField?.displayRules?.hideOtherFields) {
-			selectedDefaultField.displayRules.hideOtherFields.forEach((fth) => {
-				const optionValue = fth.value;
-				setResolvedFields((prev) =>
-					prev.map((f) =>
-						f.key === fth.key
-							? { ...f, hidden: optionValue.includes(value) }
-							: f,
-					),
-				);
-			});
-		}
-	};
-
 	const renderControllerField = (val) => (
 		<Controller
 			key={val.key}
@@ -282,11 +279,15 @@ export const VectorForm = ({
 				required: val?.required,
 				pattern: val.rules?.pattern,
 			}}
-			render={({ field, fieldState: { error }, formState }) => {
-				switch (val.component) {
+			render={({ field, fieldState: { error } }) => {
+				switch (val.type) {
 					case "text":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+							>
 								<FieldLabel htmlFor={val.key}>
 									{val.label}
 									{val?.required && (
@@ -397,7 +398,11 @@ export const VectorForm = ({
 
 					case "number":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+							>
 								<FieldLabel htmlFor={val.key}>
 									{val.label}
 									{val?.required && (
@@ -431,7 +436,11 @@ export const VectorForm = ({
 
 					case "select":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+							>
 								<FieldLabel htmlFor={val.key}>
 									{val.label}
 									{val?.required && (
@@ -444,7 +453,6 @@ export const VectorForm = ({
 									value={field.value || ""}
 									onValueChange={(value) => {
 										field.onChange(value);
-										checkForDisplayRulesSet(field, value);
 									}}
 									disabled={val.disabled}
 								>
@@ -492,7 +500,11 @@ export const VectorForm = ({
 
 					case "radio":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+							>
 								<FieldLabel>
 									{val.label}
 									{val?.required && (
@@ -506,7 +518,7 @@ export const VectorForm = ({
 									onValueChange={(value) =>
 										field.onChange(value)
 									}
-									className="flex flex-row gap-4"
+									className="flex flex-wrap gap-4"
 									data-testid={`vector-form-input-${val.key}`}
 								>
 									{val.options.options.map((opt) => (
@@ -556,8 +568,9 @@ export const VectorForm = ({
 												",",
 											) || "*";
 										input.onchange = (e) => {
-											const file = (e.target as HTMLInputElement)
-												.files?.[0];
+											const file = (
+												e.target as HTMLInputElement
+											).files?.[0];
 											if (file) {
 												field.onChange(file);
 											}
@@ -592,7 +605,11 @@ export const VectorForm = ({
 					case "checkbox":
 						return (
 							<div
-								className={`flex items-center gap-2 ${val.hidden ? "hidden" : ""}`}
+								className={
+									computeVisibility(val, {})
+										? "flex items-center gap-2"
+										: "hidden"
+								}
 							>
 								<Checkbox
 									id={val.key}
@@ -625,82 +642,107 @@ export const VectorForm = ({
 							</div>
 						);
 					case "tags":
-    return (
-        <Field
-            className={val.hidden ? "hidden" : ""}
-            data-testid={`vector-form-field-${val.key}`}
-        >
-            <FieldLabel htmlFor={val.key}>
-                {val.label}
-                {val.required && (
-                    <span className="text-destructive">
-                        {" "}
-                        *
-                    </span>
-                )}
-            </FieldLabel>
-            <Input
-                id={val.key}
-                placeholder='Press "Enter" to add tag'
-                disabled={val.disabled}
-                data-testid={`vector-form-input-${val.key}`}
-                onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                        e.preventDefault();
-                        const value =
-                            e.currentTarget.value.trim();
-                        if (value) {
-                            const currentTags =
-                                field.value || [];
-                            field.onChange([
-                                ...currentTags,
-                                value,
-                            ]);
-                            e.currentTarget.value = "";
-                        }
-                    }
-                }}
-            />
-            {field.value && field.value?.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                    {field.value.map((tag, index) => (
-                        <span
-                            key={index}
-                            className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-sm"
-                        >
-                            {tag}
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    const newTags =
-                                        field.value.filter(
-                                            (_, i) =>
-                                                i !== index,
-                                        );
-                                    field.onChange(newTags);
-                                }}
-                                className="text-muted-foreground hover:text-foreground"
-                            >
-                                ×
-                            </button>
-                        </span>
-                    ))}
-                </div>
-            )}
-            {error && (
-                <FieldDescription className="text-destructive">
-                    {error.message ||
-                        (val.rules?.pattern?.message ??
-                            val.helperText)}
-                </FieldDescription>
-            )}
-            {!error && val.helperText && (
-                <FieldDescription>
-                    {val.helperText}
-                </FieldDescription>
-            )}
-        </Field>
-    );
+						return (
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+								data-testid={`vector-form-field-${val.key}`}
+							>
+								<FieldLabel htmlFor={val.key}>
+									{val.label}
+									{val.required && (
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<Input
+									id={val.key}
+									placeholder='Press "Enter" to add tag'
+									disabled={val.disabled}
+									data-testid={`vector-form-input-${val.key}`}
+									onKeyDown={(e) => {
+										if (e.key === "Enter") {
+											e.preventDefault();
+											const value =
+												e.currentTarget.value.trim();
+											if (value) {
+												const currentTags =
+													field.value || [];
+												field.onChange([
+													...currentTags,
+													value,
+												]);
+												e.currentTarget.value = "";
+											}
+										}
+									}}
+								/>
+								{field.value && field.value?.length > 0 && (
+									<div className="flex flex-wrap gap-2">
+										{(() => {
+											const tagCounts = new Map<
+												string,
+												number
+											>();
+											return field.value.map(
+												(tag, index) => {
+													const nextCount =
+														(tagCounts.get(tag) ??
+															0) + 1;
+													tagCounts.set(
+														tag,
+														nextCount,
+													);
+													return (
+														<span
+															key={`${tag}-${nextCount}`}
+															className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-sm"
+														>
+															{tag}
+															<button
+																type="button"
+																onClick={() => {
+																	const newTags =
+																		field.value.filter(
+																			(
+																				_,
+																				i,
+																			) =>
+																				i !==
+																				index,
+																		);
+																	field.onChange(
+																		newTags,
+																	);
+																}}
+																className="text-muted-foreground hover:text-foreground"
+															>
+																×
+															</button>
+														</span>
+													);
+												},
+											);
+										})()}
+									</div>
+								)}
+								{error && (
+									<FieldDescription className="text-destructive">
+										{error.message ||
+											(val.rules?.pattern?.message ??
+												val.helperText)}
+									</FieldDescription>
+								)}
+								{!error && val.helperText && (
+									<FieldDescription>
+										{val.helperText}
+									</FieldDescription>
+								)}
+							</Field>
+						);
 
 					default:
 						return null;
@@ -719,10 +761,12 @@ export const VectorForm = ({
 
 	return (
 		<form onSubmit={handleSubmit(onFormSubmit)} data-testid="vector-form">
-			<H4 data-testid="vector-form-title">{title}</H4>
-			<Muted className="mt-1" data-testid="vector-form-description">
-				{description}
-			</Muted>
+			<EngineFormHeader
+				testIdPrefix="vector"
+				icon={icon}
+				title={title}
+				description={description}
+			/>
 			<div className="mt-8 mb-8" data-testid="vector-form-box">
 				<div className="flex flex-col gap-4">
 					{Object.keys(grouped).map((category) => (
@@ -730,17 +774,23 @@ export const VectorForm = ({
 							key={category}
 							className="mb-4 flex flex-col gap-4"
 						>
-							<div className="flex items-start gap-4">
+							<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 								<div className="flex flex-1 flex-col gap-1">
-									<H4 data-testId="vector-importForm-category-title">
+									<H4
+										className="font-semibold text-base tracking-tight"
+										data-testid="vector-importForm-category-title"
+									>
 										{category}
 									</H4>
-									<Muted data-testId="model-importForm-category-description">
+									<Muted
+										className="text-muted-foreground text-sm leading-6"
+										data-testid="model-importForm-category-description"
+									>
 										{categoryDescriptions[category] ??
 											"No description available."}
 									</Muted>
 								</div>
-								<div className="flex flex-[2] flex-col gap-2">
+								<div className="flex flex-2 flex-col gap-2">
 									{grouped[category].map((f) =>
 										renderControllerField(f),
 									)}
@@ -755,7 +805,7 @@ export const VectorForm = ({
 								open={openAdvanced}
 								onOpenChange={setOpenAdvanced}
 							>
-								<div className="flex flex-row items-center justify-between py-2">
+								<div className="flex flex-row items-center justify-between gap-2 py-2">
 									<H4 data-testid="vector-form-advanced-header">
 										ADVANCED SETTINGS
 									</H4>
@@ -775,13 +825,13 @@ export const VectorForm = ({
 								</div>
 								<CollapsibleContent>
 									<div className="mb-4 flex flex-col gap-4">
-										<div className="flex items-start gap-4">
+										<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 											<div className="flex flex-1 flex-col gap-1">
 												<Muted>
 													Add advanced settings here
 												</Muted>
 											</div>
-											<div className="flex flex-[2] flex-col gap-2">
+											<div className="flex flex-2 flex-col gap-2">
 												{advancedFields.map((val) => (
 													<div
 														key={val.key}
@@ -802,7 +852,7 @@ export const VectorForm = ({
 				</div>
 
 				<div
-					className="mt-8 flex justify-end gap-2"
+					className="mt-8 flex flex-col gap-2 sm:flex-row sm:justify-end"
 					data-testid="vector-form-actions"
 				>
 					<Button
@@ -810,7 +860,7 @@ export const VectorForm = ({
 						variant="default"
 						data-testid="vector-form-submit"
 						disabled={!formState.isValid || isValidDatabaseName}
-						className="min-w-[128px] capitalize"
+						className="w-full min-w-32 capitalize sm:w-auto"
 					>
 						Connect
 					</Button>

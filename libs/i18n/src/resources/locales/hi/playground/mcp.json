@@ -1,52 +1,61 @@
 {
 	"embedDocuments": {
-		"title": "मौजूदा स्रोत में दस्तावेज़ एम्बेड करें",
-		"description": "एक ज्ञान स्रोत चुनें और एम्बेड करने के लिए दस्तावेज़ अपलोड करें।",
-		"knowledgeSource": "ज्ञान स्रोत",
+		"title": "मौजूदा भंडार में दस्तावेज़ एम्बेड करें",
+		"description": "एक ज्ञान भंडार चुनें और एम्बेड करने के लिए दस्तावेज़ अपलोड करें।",
+		"knowledgeSource": "ज्ञान भंडार",
 		"documents": "दस्तावेज़",
 		"selectFiles": "फ़ाइलें चुनने के लिए क्लिक करें या ड्रैग और ड्रॉप करें",
 		"embedButton": "दस्तावेज़ एम्बेड करें",
 		"embedding": "एम्बेड किया जा रहा है...",
 		"removeFile": "फ़ाइल हटाएं",
-		"selectPlaceholder": "एक ज्ञान स्रोत चुनें"
+		"selectPlaceholder": "एक ज्ञान भंडार चुनें"
 	},
 	"selector": {
-		"title": "MCP चुनें",
 		"search": "खोजें",
-		"searchPlaceholder": "खोजें...",
-		"noResults": "कोई परिणाम नहीं मिला",
-		"createKnowledgeSource": "ज्ञान स्रोत बनाएं",
+		"createKnowledgeSource": "ज्ञान भंडार बनाएं",
 		"viewDetails": "विवरण देखें",
 		"noToolboxesFound": "कोई टूलबॉक्स नहीं मिला",
-		"noKnowledgeFound": "कोई ज्ञान नहीं मिला"
+		"noKnowledgeFound": "कोई ज्ञान नहीं मिला",
+		"noAgentsFound": "कोई एजेंट नहीं मिला"
 	},
 	"overlay": {
-		"title": "MCP कॉन्फ़िगरेशन",
-		"description": "अपनी MCP सेटिंग्स कॉन्फ़िगर करें",
-		"editToolbox": "टूलबॉक्स संपादित करें",
-		"editKnowledge": "ज्ञान संपादित करें",
-		"toolboxDescription": "अपने एजेंट में क्षमताएं जोड़ें और इसे बढ़ाएं कि यह क्या कर सकता है",
-		"knowledgeDescription": "उन ज्ञान स्रोतों को संपादित करें जिन तक आपका एजेंट पहुंच सकता है"
+		"title": "अपनी चैट कॉन्फ़िगर करें",
+		"description": "एक सहेजा हुआ एजेंट चुनें, या अपना खुद का ज्ञान और टूलबॉक्स असेंबल करें।",
+		"tabAgent": "एजेंट",
+		"tabKnowledge": "ज्ञान",
+		"tabToolbox": "टूलबॉक्स"
 	},
 	"tools": {
-		"selectMcp": "MCP चुनें",
-		"selectTool": "टूल चुनें",
 		"enterValues": "अल्पविराम से अलग किए गए मान दर्ज करें",
 		"selectField": "{{field}} चुनें",
 		"enterField": "{{field}} दर्ज करें"
 	},
 	"messages": {
-		"selectKnowledgeSource": "कृपया एक ज्ञान स्रोत चुनें",
+		"selectKnowledgeSource": "कृपया एक ज्ञान भंडार चुनें",
 		"selectDocument": "कृपया कम से कम एक दस्तावेज़ चुनें",
 		"embedSuccess": "दस्तावेज़ सफलतापूर्वक एम्बेड किए गए",
 		"embedFailed": "दस्तावेज़ एम्बेड करने में विफल",
-		"loadFailed": "ज्ञान स्रोत लोड करने में विफल।",
-		"noSources": "कोई ज्ञान स्रोत नहीं मिला।"
+		"loadFailed": "ज्ञान भंडार लोड करने में विफल।",
+		"noSources": "कोई ज्ञान भंडार नहीं मिला।"
 	},
 	"buttons": {
 		"cancel": "रद्द करें",
 		"embed": "एम्बेड करें",
 		"save": "सहेजें",
 		"close": "बंद करें"
+	},
+	"permission": {
+		"owner": "मालिक",
+		"editor": "संपादक",
+		"readOnly": "केवल पढ़ने के लिए",
+		"accessRequested": "पहुंच का अनुरोध किया गया",
+		"requestAccess": "पहुंच का अनुरोध करें",
+		"noAccess": "कोई पहुंच नहीं",
+		"requestAccessButton": "पहुंच का अनुरोध करें",
+		"tooltipNoAccess": "आपके पास इस {{type}} तक पहुंच नहीं है। कृपया मालिक से पहुंच का अनुरोध करें।",
+		"tooltipMissingDependencies": "आपके पास इस {{type}} की सभी निर्भरताओं तक पहुंच नहीं है, इसलिए कार्यक्षमता सीमित हो सकती है। अधिक जानकारी के लिए प्लेटफ़ॉर्म में खोलें।",
+		"tooltipOpen": "प्लेटफ़ॉर्म में इस {{type}} को खोलें",
+		"typeToolbox": "टूलबॉक्स",
+		"typeKnowledge": "ज्ञान भंडार"
 	}
 }

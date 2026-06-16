@@ -1,0 +1,30 @@
+{
+	"context": {
+		"switchTo": "Cambiar a {{context}}"
+	},
+	"run": {
+		"button": "Ejecutar",
+		"tooltip": "Ejecutar (Enter)"
+	},
+	"emptyState": {
+		"prefix": "Escribe un comando arriba y presiona",
+		"and": "+",
+		"suffix": "para ejecutar. La salida aparecerá aquí."
+	},
+	"dragToResize": "Arrastra para redimensionar",
+	"copyAll": {
+		"button": "Copiar Todos los Pasos",
+		"tooltip": "Copiar cada paso enviado al portapapeles",
+		"success": "Receta copiada correctamente al portapapeles",
+		"error": "No se pudo copiar la receta al portapapeles"
+	},
+	"actions": {
+		"enteredRMode": "Has entrado en Modo R.",
+		"enteredPythonMode": "Has entrado en Modo Python."
+	},
+	"results": {
+		"successNoOutput": "✓ Ejecutado correctamente (sin salida)",
+		"insightNotReady": "La perspectiva no está lista",
+		"unknownError": "Error desconocido"
+	}
+}

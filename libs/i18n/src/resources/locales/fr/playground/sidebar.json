@@ -1,12 +1,39 @@
 {
 	"search": "Rechercher",
-	"new": "Nouveau",
-	"agents": "Agents",
+	"takeTour": "Faire une Visite",
+	"nav": {
+		"newChat": {
+			"label": "Nouveau",
+			"tooltip": "Nouvelle discussion - Démarrez une nouvelle conversation à tout moment."
+		},
+		"agents": {
+			"label": "Agents",
+			"tooltip": "Agents"
+		},
+		"allChats": {
+			"label": "Toutes les discussions",
+			"tooltip": "Toutes les discussions"
+		},
+		"agentsWorkspaces": {
+			"tooltip": "Agents/Espaces de travail - Accédez à vos espaces ou créez de nouveaux agents IA."
+		},
+		"knowledgeLibrary": {
+			"tooltip": "Bibliothèque de connaissances - Parcourez, créez, partagez et gérez vos bibliothèques de documents."
+		},
+		"toolbox": {
+			"tooltip": "Boîte à outils - Découvrez les capacités étendues d'Elsa avec de puissants outils supplémentaires."
+		},
+		"promptLibrary": {
+			"tooltip": "Bibliothèque de prompts - Parcourez, créez et utilisez des prompts enregistrés."
+		}
+	},
 	"buckets": {
 		"favorites": "Favoris",
 		"today": "Aujourd'hui",
 		"yesterday": "Hier",
+		"fewDaysAgo": "Il y a quelques jours",
 		"lastWeek": "La semaine dernière",
+		"thisMonth": "Ce mois-ci",
 		"lastMonth": "Le mois dernier",
 		"older": "Plus ancien"
 	},

@@ -1,4 +1,4 @@
-import { FormatShapes } from "@mui/icons-material";
+import { Shapes } from "lucide-react";
 import { QueryInputSettings } from "../../settings";
 import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
 import {
@@ -11,7 +11,7 @@ import type { BlockSettingsConfig } from "../settings.types";
 // export the config for the block
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_INPUT,
-	icon: FormatShapes,
+	icon: Shapes,
 	contentMenu: [
 		{
 			name: "Data Source",
