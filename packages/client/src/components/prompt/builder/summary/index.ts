@@ -1,1 +1,1 @@
-export { PromptBuilderSummary } from "./PromptBuilderSummary";
+export { PromptBuilderSummary } from "./prompt-builder-summary";

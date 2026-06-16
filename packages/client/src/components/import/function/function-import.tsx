@@ -1,11 +1,10 @@
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
-import { FileUploadOutlined } from "@mui/icons-material";
+
 import { SearchIcon, UploadIcon } from "lucide-react";
 import type React from "react";
 import { useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -30,6 +29,7 @@ import {
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import { FUNCTION_CONNECTIONS } from "./function-import.constants";
 import { FunctionForm } from "./function-import-form";
 import { FunctionTitleCard } from "./function-title-card";
@@ -49,7 +49,7 @@ export const FunctionImport = ({ name }: { name: string }) => {
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState("");
 	const [selectedTab, setSelectedTab] = useState("0");
-	const [selectedDatabase, setSelectedDatabase] =
+	const [selectedEngine, setSelectedEngine] =
 		useState<functionCatalog | null>(null);
 
 	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
@@ -71,7 +71,7 @@ export const FunctionImport = ({ name }: { name: string }) => {
 	const hasMultipleTabs = tabLabels.length > 1;
 
 	const DatabasesForTab = useMemo(() => {
-		const selectedIndex = Number.parseInt(selectedTab);
+		const selectedIndex = Number.parseInt(selectedTab, 10);
 		return FunctionOptions[tabLabels[selectedIndex]] || [];
 	}, [selectedTab, tabLabels, FunctionOptions]);
 
@@ -116,7 +116,7 @@ export const FunctionImport = ({ name }: { name: string }) => {
 	};
 
 	const renderBreadcrumbs = () => (
-		<Breadcrumb data-testid="breadcrumbs">
+		<Breadcrumb data-testid="breadcrumbs" className="mb-6">
 			<BreadcrumbList>
 				<BreadcrumbItem>
 					<BreadcrumbLink
@@ -133,11 +133,11 @@ export const FunctionImport = ({ name }: { name: string }) => {
 				</BreadcrumbItem>
 				<BreadcrumbSeparator>/</BreadcrumbSeparator>
 				<BreadcrumbItem>
-					{selectedDatabase ? (
+					{selectedEngine ? (
 						<BreadcrumbLink
 							className="cursor-pointer"
 							onClick={() => {
-								setSelectedDatabase(null);
+								setSelectedEngine(null);
 							}}
 							data-testid="breadcrumb-page"
 						>
@@ -149,12 +149,12 @@ export const FunctionImport = ({ name }: { name: string }) => {
 						</BreadcrumbPage>
 					)}
 				</BreadcrumbItem>
-				{selectedDatabase && (
+				{selectedEngine && (
 					<>
 						<BreadcrumbSeparator>/</BreadcrumbSeparator>
 						<BreadcrumbItem>
 							<BreadcrumbPage data-testid="breadcrumb-selected-function">
-								{selectedDatabase.name}
+								{selectedEngine.name}
 							</BreadcrumbPage>
 						</BreadcrumbItem>
 					</>
@@ -178,7 +178,7 @@ export const FunctionImport = ({ name }: { name: string }) => {
 						display: v.name,
 					}}
 					onModelSelect={() => {
-						setSelectedDatabase(v);
+						setSelectedEngine(v);
 					}}
 				/>
 			))}
@@ -252,7 +252,7 @@ export const FunctionImport = ({ name }: { name: string }) => {
 								</div>
 							) : (
 								<div className="text-center">
-									<FileUploadOutlined className="mb-2 h-12 w-12 text-muted-foreground" />
+									<UploadIcon className="mb-2 h-12 w-12 text-muted-foreground" />
 									<P className="font-medium text-foreground">
 										Drop your file here or click to browse
 									</P>
@@ -286,13 +286,15 @@ export const FunctionImport = ({ name }: { name: string }) => {
 					</div>
 				</DialogContent>
 			</Dialog>
-			{selectedDatabase ? (
+			{selectedEngine ? (
 				<div data-testid="function-form-wrapper">
 					<FunctionForm
-						title={selectedDatabase.name}
-						description={`Fill out ${selectedDatabase.name} details in order to add function to catalog`}
-						fields={selectedDatabase.fields}
-						advanced={selectedDatabase.advanced}
+						title={selectedEngine.name}
+						description={`Fill out ${selectedEngine.name} details in order to add function to catalog`}
+						notice={(selectedEngine as { notice?: string }).notice}
+						icon={(selectedEngine as { icon?: string }).icon}
+						fields={selectedEngine.fields}
+						advanced={selectedEngine.advanced}
 						categoryDescription={CategoryDescription}
 					/>
 				</div>

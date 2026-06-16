@@ -1,6 +1,6 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
@@ -8,33 +8,13 @@ import {
 	type Paths,
 	type PathValue,
 } from "@semoss/renderer";
-import { Switch, styled, Typography } from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+import { Switch } from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
-	/**
-	 * Id of the block that is being worked with
-	 */
 	id: string;
-
 	path: Paths<Block<D>["data"], 4>;
 }
-const StyledAxisDiv = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-	gap?: string;
-}>(({ theme, display, justifyContent, gap }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "8px 16px",
-	alignItems: "center",
-	gap: gap ?? undefined,
-}));
-
-const StyledTypography = styled(Typography)(({ theme }) => ({
-	color: theme.palette.text.primary,
-}));
 
 export const CustomTooltip = observer(
 	<D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
@@ -55,9 +35,11 @@ export const CustomTooltip = observer(
 				return JSON.stringify(v, null, 2);
 			});
 		}, [data, path]).get();
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			setValue(computedValue);
 		}, [computedValue, data]);
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (Object.hasOwn(data, "option")) {
 				reInitializeFeatures(data.option);
@@ -66,32 +48,26 @@ export const CustomTooltip = observer(
 		//Reinitialize the feature when the chart is loaded
 		const reInitializeFeatures = (options) => {
 			if (Object.hasOwn(options, "tooltip")) {
-				setShowTooltip(options["tooltip"]["show"]);
+				setShowTooltip(options.tooltip.show);
 			}
 		};
 		//Handle the change event for the toggle switch
-		const showTooltip = (e) => {
+		const showTooltip = (checked: boolean) => {
 			const option = JSON.parse(value);
-			setShowTooltip(!showTooltips);
-			option["tooltip"]["show"] = e.target.checked;
+			setShowTooltip(checked);
+			option.tooltip.show = checked;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 		return (
-			<StyledAxisDiv>
-				<StyledAxisDiv display="flex" gap="8px">
+			<div className="px-4 py-2">
+				<div className="flex flex-row items-center gap-2">
 					<Switch
 						checked={showTooltips}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							showTooltip(e)
-						}
-						title="Show Tooltip"
-						size="small"
+						onCheckedChange={showTooltip}
 					/>
-					<StyledTypography variant="body2">
-						Show Tooltip
-					</StyledTypography>
-				</StyledAxisDiv>
-			</StyledAxisDiv>
+					<span className="text-sm">Show Tooltip</span>
+				</div>
+			</div>
 		);
 	},
 );

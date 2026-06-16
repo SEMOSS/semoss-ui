@@ -1,0 +1,30 @@
+{
+	"context": {
+		"switchTo": "{{context}} に切り替え"
+	},
+	"run": {
+		"button": "実行",
+		"tooltip": "実行 (Enter)"
+	},
+	"emptyState": {
+		"prefix": "上にコマンドを入力して、",
+		"and": "+",
+		"suffix": "を押すと実行されます。出力はここに表示されます。"
+	},
+	"dragToResize": "ドラッグでサイズ変更",
+	"copyAll": {
+		"button": "すべてのステップをコピー",
+		"tooltip": "送信したすべてのステップをクリップボードにコピー",
+		"success": "レシピをクリップボードにコピーしました",
+		"error": "レシピをクリップボードにコピーできませんでした"
+	},
+	"actions": {
+		"enteredRMode": "R モードに入りました。",
+		"enteredPythonMode": "Python モードに入りました。"
+	},
+	"results": {
+		"successNoOutput": "✓ 正常に実行されました（出力なし）",
+		"insightNotReady": "インサイトの準備ができていません",
+		"unknownError": "不明なエラー"
+	}
+}

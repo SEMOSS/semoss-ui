@@ -10,8 +10,8 @@ import {
 import type React from "react";
 import { useEffect } from "react";
 import type { ColumnInterface, TableInterface } from "@semoss/sdk";
+import { DataTypeIcon } from "@semoss/shared";
 import { Button, CardContent, CardHeader, cn, Input, P } from "@semoss/ui/next";
-import { DatabaseColumnIcon } from "@/components/database";
 
 interface DatabaseStructureBrowserProps {
 	searchTerm: string;
@@ -384,7 +384,7 @@ export const DatabaseStructureBrowser: React.FC<
 															data-testid={`database-column-${table.table}-${column.column}`}
 														>
 															<div className="flex flex-1 items-center gap-2.5">
-																<DatabaseColumnIcon
+																<DataTypeIcon
 																	type={
 																		column.type
 																	}

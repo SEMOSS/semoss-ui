@@ -8,6 +8,7 @@ import {
 import { download } from "@semoss/sdk/react";
 import {
 	MCP_EXECUTION_AUTO,
+	STREAMING_PLACEHOLDER_ID,
 	TOOL_CANCELLATION_PROMPT,
 	TOOL_ERROR_PROMPT,
 	TOOL_OUTPUT_UNREADABLE_PROMPT,
@@ -16,8 +17,9 @@ import {
 import type { ToolStore } from "@/stores";
 import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
 import { AbstractMessageStore } from "./abstract-message.store";
+import { runAgentMessage } from "./agent-harness";
 import { InputMessageStore } from "./input-message.store";
-import { PlanMessageStore } from "./plan-message.store";
+import { applyToolStreamChunk } from "./tool-stream";
 
 /**
  * Response Message Store
@@ -70,17 +72,32 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	 */
 	isPaused: boolean = false;
 
+	/**
+	 * Whether this conversation is compacted above this message
+	 */
+	conversationCompactedAbove: boolean = false;
+
+	/**
+	 * Whether this message's conversation is currently being compacted
+	 */
+	isCompacting: boolean = false;
+
 	constructor(
 		room: AbstractMessageStore["room"],
 		message: ResponsePixelMessage,
 	) {
 		super(room, message);
 
+		// if prune, compaction happened
+		this.conversationCompactedAbove ||= message.pruneToolsAbove;
+
 		makeObservable(this, {
 			isThinking: observable,
 			parts: observable,
 			feedback: observable,
 			isPaused: observable,
+			conversationCompactedAbove: observable,
+			isCompacting: observable,
 			runMessage: action,
 			savePart: action,
 			recordFeedback: action,
@@ -88,6 +105,8 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			hasUnfinishedTools: computed,
 			continueToolExecution: action,
 			saveToolExecution: action,
+			setConversationCompactedAbove: action,
+			setIsCompacting: action,
 			toggleIsPaused: action,
 		});
 
@@ -107,10 +126,14 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		// set the parts
 		this.parts = message.parts;
 
-		// sync the tools
+		// sync the tools — server tools (e.g. provider-side web_search) deliver
+		// both the call and result in the same response message, so we sync both
+		// part types here.
 		for (const part of message.parts) {
 			if (part.type === "TOOL_CALL") {
 				this.room.syncTool(part.toolCall.id, this, part);
+			} else if (part.type === "TOOL_RESULT") {
+				this.room.syncTool(part.toolResult.toolCallId, this, part);
 			}
 		}
 
@@ -140,44 +163,61 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	 * initiates tool execution if the response contains tool calls.
 	 *
 	 * @param inputMessage - The user input message to send to the AI model
+	 * @param existingResponse - Optional pre-created response placeholder already wired into the message tree. When provided, skips creating a new ResponseMessageStore and skips the addChild setup calls, streaming directly into the existing placeholder instead.
 	 * @returns Promise resolving to the pixel response containing input and output messages
 	 */
-	runMessage = async (inputMessage: InputMessageStore) => {
+	runMessage = async (
+		inputMessage: InputMessageStore,
+		existingResponse?: ResponseMessageStore,
+	) => {
 		const room = this.room;
 
+		// In agent-harness mode the message is run server-side via RunAgent
+		// instead of the streaming AskPlayground flow. See ./agent-harness.
+		if (room.mode === "agent") {
+			await runAgentMessage(this, inputMessage, existingResponse);
+			return;
+		}
+
 		// Create a placeholder response message to show streaming content
-		const responseMessage = new ResponseMessageStore(room, {
-			io: "OUTPUT",
-			messageId: "STREAMING_PLACEHOLDER_ID",
-			visible: true,
-			platform_generated: true,
-			modelId: room.model.app_id,
-			dateCreated: new Date().toISOString(),
-			parts: [
-				{
-					type: "THINKING",
-					thinking: "",
+		const responseMessage =
+			existingResponse ??
+			new ResponseMessageStore(room, {
+				io: "OUTPUT",
+				messageId: STREAMING_PLACEHOLDER_ID,
+				visible: true,
+				platform_generated: true,
+				modelId: room.model.engine_id,
+				dateCreated: new Date().toISOString(),
+				parts: [
+					{
+						type: "THINKING",
+						thinking: "",
+					},
+				],
+				tokens: 0,
+				ornaments: {
+					modelName:
+						room.model.engine_display_name ||
+						room.model.engine_name ||
+						"",
 				},
-			],
-			tokens: 0,
-			ornaments: {
-				modelName:
-					room.model.engine_display_name || room.model.app_name,
-			},
-		} as ResponsePixelMessage);
+			} as ResponsePixelMessage);
 
 		try {
-			// connect to the parent
-			this.addChild(inputMessage);
-
 			// build the context if it is there
 			let context = "";
 			if (room.options?.instructions) {
 				context = room.options?.instructions;
 			}
 
-			// Add placeholder as child of input to show streaming text
-			inputMessage.addChild(responseMessage);
+			if (!existingResponse) {
+				// connect to the parent
+				this.addChild(inputMessage);
+
+				// Add placeholder as child of input to show streaming text
+				inputMessage.addChild(responseMessage);
+			}
 
 			// turn on thinking
 			responseMessage.isThinking = true;
@@ -193,11 +233,15 @@ export class ResponseMessageStore extends AbstractMessageStore {
 
 			const media = inputMessage.parts.reduce((acc, part) => {
 				if (part.type === "MEDIA") {
-					acc.push(part.mediaInfo.fileLocation);
+					acc.push(part.mediaInfo.fileLocation as string);
 				}
 
 				return acc;
-			}, []);
+			}, [] as string[]);
+
+			// per-stream map from tool delta `index` → wire `id`, used to associate
+			// arguments/name deltas with the ToolStore created on the opening chunk
+			const toolStreamIndexToId: Record<number, string> = {};
 
 			// wait for the pixel to run with streaming
 			const response = await room.runRoomPixelStreaming<
@@ -209,7 +253,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				]
 			>(
 				`AskPlayground(
-engine=["${room.model.app_id}"],
+engine=["${room.model.engine_id}"],
 roomId=["${room.roomId}"],
 command=["<encode>${text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
@@ -238,7 +282,11 @@ paramValues=[${JSON.stringify({
 								});
 							}
 						} else if (chunk.stream_type === "tool") {
-							//noop
+							applyToolStreamChunk(
+								responseMessage,
+								toolStreamIndexToId,
+								chunk.data,
+							);
 						} else {
 							console.error(`Unknown stream type`, chunk);
 						}
@@ -257,8 +305,8 @@ paramValues=[${JSON.stringify({
 
 			return response;
 		} catch (e) {
-			// remove as a child
-			this.removeChild(responseMessage);
+			// remove message if we failed
+			this.removeChild(inputMessage);
 
 			throw e;
 		} finally {
@@ -298,6 +346,20 @@ paramValues=[${JSON.stringify({
 				this.parts.push(part);
 			}
 		}
+	};
+
+	/*
+	 * Set whether this conversation is compacted above this message
+	 */
+	setConversationCompactedAbove = (compacted: boolean) => {
+		this.conversationCompactedAbove = compacted;
+	};
+
+	/*
+	 * Set whether this message's conversation is currently being compacted
+	 */
+	setIsCompacting = (compacting: boolean) => {
+		this.isCompacting = compacting;
 	};
 
 	/**
@@ -418,12 +480,9 @@ paramValues=[${JSON.stringify({
 
 		// get the grand parent message
 		const grandParentMessage = parentMessage.parent;
-		if (
-			grandParentMessage instanceof ResponseMessageStore === false &&
-			grandParentMessage instanceof PlanMessageStore === false
-		) {
+		if (grandParentMessage instanceof ResponseMessageStore === false) {
 			throw new Error(
-				"Can only if the parent is a response or plan message",
+				"Can only rewrite if the parent is a response message",
 			);
 		}
 
@@ -434,15 +493,18 @@ paramValues=[${JSON.stringify({
 			messageId: "REWRITE_PLACEHOLDER_ID",
 			visible: true,
 			platform_generated: true,
-			modelId: room.model.app_id,
-			modelType: room.model.app_type,
+			modelId: room.model.engine_id,
+			modelType: room.model.engine_type,
 			dateCreated: new Date().toISOString(),
 			parts: parentMessage.parts,
 			tokens: parentMessage.tokens,
 			ornaments: {
 				modelName:
-					room.model.engine_display_name || room.model.app_name,
+					room.model.engine_display_name ||
+					room.model.engine_name ||
+					"",
 			},
+			pruneToolsAbove: false,
 		});
 
 		// Update room options with current modelId before running message
@@ -494,9 +556,9 @@ paramValues=[${JSON.stringify({
 			}
 		}
 
-		const toolLimit = this.room.theme.toolAutoExecutionLimit;
-		// Check how many tools can be run. If toolLimit is null or undefined, then limit to 5
-		const numToolsToRun = (toolLimit > 0 ? toolLimit : 5) - numRunningTools;
+		// Check how many tools can be run. If toolLimit is false-y, then limit to 5
+		const toolLimit = this.room.theme.toolAutoExecutionLimit || 5;
+		const numToolsToRun = toolLimit - numRunningTools;
 		if (numToolsToRun > 0) {
 			toolsToRun.slice(0, numToolsToRun).forEach((tool) => {
 				this.runToolExecution(tool);
@@ -553,7 +615,7 @@ paramValues=[${JSON.stringify({
 						: JSON.stringify(rawOutput);
 			} catch (e) {
 				// If RunMCPTool fails, we want to save the error message as the tool response, and set the tool status to error
-				output = e.message;
+				output = (e as Error).message;
 				toolError = true;
 			}
 
@@ -624,18 +686,22 @@ paramValues=[${JSON.stringify({
 		if (!responseMessage) {
 			this.toolResponseMessage = new ResponseMessageStore(room, {
 				io: "OUTPUT",
-				messageId: "STREAMING_TOOL_PLACEHOLDER_ID",
+				messageId: STREAMING_PLACEHOLDER_ID,
 				visible: true,
 				platform_generated: true,
 				modelId: this.room.model.app_id,
 				dateCreated: new Date().toISOString(),
-				// Add blank thinking part for loading
-				parts: [
-					{
-						type: "THINKING",
-						thinking: "",
-					},
-				],
+				// Add blank thinking part for loading if this is the last tool
+				// We've already updated this tool's status optimistically, so can check
+				// hasUnfinishedTools to see if it was the last tool
+				parts: this.hasUnfinishedTools
+					? []
+					: [
+							{
+								type: "THINKING",
+								thinking: "",
+							},
+						],
 				tokens: 0,
 				ornaments: {
 					modelName:
@@ -661,6 +727,9 @@ paramValues=[${JSON.stringify({
 		try {
 			// turn on thinking
 			responseMessage.isThinking = true;
+
+			// per-stream map from tool delta `index` → wire `id` for the post-exec stream
+			const toolStreamIndexToId: Record<number, string> = {};
 
 			// wait for the pixel to run
 			const response = await room.runRoomPixelStreaming<
@@ -695,7 +764,11 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 								});
 							}
 						} else if (chunk.stream_type === "tool") {
-							//noop
+							applyToolStreamChunk(
+								responseMessage,
+								toolStreamIndexToId,
+								chunk.data,
+							);
 						} else {
 							console.error(`Unknown stream type`, chunk);
 						}

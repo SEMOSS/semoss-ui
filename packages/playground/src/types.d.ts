@@ -29,6 +29,7 @@ export interface App {
 	description?: string;
 	project_date_created: string;
 	project_type: string;
+	user_permission: number;
 }
 
 export interface Workspace {
@@ -38,6 +39,7 @@ export interface Workspace {
 	description: string;
 	system_prompt: string;
 	mcp: MCPConfig[];
+	prompts: string[];
 }
 
 /**
@@ -54,41 +56,8 @@ export interface Instructions {
 	context: string;
 }
 
-export interface MCP {
-	/** Type of the mcp */
-	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION" | "MODEL" | "VECTOR";
-
-	/** Id of the mcp */
-	id: string;
-
-	/** Name of the mcp */
-	name: string;
-
-	/** Description of the mcp */
-	description: string;
-
-	/** Tags of the mcp */
-	tags: string[];
-}
-
-export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {
-	/** Flag to indicate if this MCP comes from a workspace */
-	fromWorkspace?: boolean;
-};
-
-/**
- * Item from the prompt library
- */
-export interface Prompt {
-	ID: string;
-	CREATED_BY: string;
-	DATE_CREATED: string;
-	VERSION: number;
-	INTENT: string;
-	TITLE: string;
-	CONTEXT: string;
-	tags: string[];
-}
+// Re-export types from shared to avoid breaking existing imports
+export type { MCP, MCPConfig, Prompt } from "@semoss/shared";
 
 /**
  * Messages from the backend
@@ -99,6 +68,7 @@ export interface AbstractPixelMessage {
 	io: "INPUT" | "OUTPUT";
 	messageId: string;
 	parentMessageId?: string;
+	summaryLeafMessageId?: string;
 	visible: boolean;
 	platform_generated: boolean;
 	modelId: string;
@@ -115,6 +85,7 @@ export interface AbstractPixelMessage {
 	ornaments: {
 		modelName?: string;
 	};
+	pruneToolsAbove: boolean;
 }
 
 export interface InputPixelMessage extends AbstractPixelMessage {
@@ -134,10 +105,10 @@ export interface ResponsePixelMessage extends AbstractPixelMessage {
 		| PixelMessageThinkingPart
 		| PixelMessageMediaPart
 		| PixelMessageToolCallPart
+		| PixelMessageToolResultPart
 	)[];
 	ornaments: {
 		modelName?: string;
-		PLAYGROUND_MESSAGE_TYPE?: "COT";
 	};
 	feedback?: {
 		rating: boolean;
@@ -162,12 +133,12 @@ export interface PixelMessageTextPart {
 export interface PixelMessageMediaPart {
 	type: "MEDIA";
 	mediaInfo: {
-		base64Data: string;
-		fileFormat: string;
+		base64Data?: string;
+		fileFormat?: string;
 		fileName: string;
-		fileLocation: string;
+		fileLocation?: string;
 		mediaInputType: "FILE";
-		mimeType: string;
+		mimeType?: string;
 	};
 }
 
@@ -182,6 +153,10 @@ export interface PixelMessageToolCallPart {
 		original_name: string;
 		title: string;
 		description: string;
+		// Set by the backend when the model provider executed the tool itself
+		// (e.g. web_search). Server tools lack the MCP `_meta`
+		// block and their TOOL_RESULT lands in the same response message.
+		server_tool?: boolean;
 		_meta: {
 			SMSS_ENGINE_NAME: string;
 			SMSS_ENGINE_ID: string;
@@ -193,6 +168,7 @@ export interface PixelMessageToolCallPart {
 				loadingMessage?: string;
 				displayLocation?: "inline" | "sidebar" | "hidden";
 				resourceURI?: string;
+				autoOpen?: boolean;
 			};
 		};
 	};
@@ -207,55 +183,6 @@ export interface PixelMessageToolResultPart {
 		toolParameterValues: Record<string, unknown>;
 		toolStatus: "success" | "error" | "cancelled" | "paused";
 	};
-}
-
-/**
- * Plan
- */
-export interface Plan {
-	user_prompt: string;
-	plan_id: string;
-	steps: PlanStep[];
-}
-
-export interface PlanStep {
-	step_number: number;
-	step_name: string;
-	description: string;
-	type:
-		| "tool_call"
-		| "llm_reasoning"
-		| "human_intervention"
-		| "no_tool_available";
-	status: "pending" | "in_progress" | "completed" | "failed";
-	details:
-		| {
-				stepType: "tool_call";
-				tool_name: string;
-				parameters: Record<string, unknown>;
-				rationaleForStep: string;
-				title: string;
-				_meta: {
-					SMSS_PROJECT_NAME: string;
-					SMSS_PROJECT_ID: string;
-				};
-		  }
-		| {
-				stepType: "llm_reasoning";
-				prompt: string;
-				rationaleForStep: string;
-		  }
-		| {
-				stepType: "human_intervention";
-				required_role: string;
-				instructions: string;
-				rationaleForStep: string;
-		  }
-		| {
-				stepType: "no_tool_available";
-				missing_capability: string;
-				rationaleForStep: string;
-		  };
 }
 
 export interface MCPTool {
@@ -282,6 +209,7 @@ export interface MCPTool {
 			loadingMessage?: string;
 			resourceURI?: string;
 			displayLocation?: "inline" | "sidebar" | "hidden";
+			autoOpen?: boolean;
 		};
 	};
 }
@@ -304,4 +232,26 @@ export interface User {
 	id: string;
 	type: string;
 	email: string;
+}
+
+export interface ProjectDependency {
+	engine_type:
+		| "PROJECT"
+		| "STORAGE"
+		| "DATABASE"
+		| "FUNCTION"
+		| "MODEL"
+		| "VECTOR";
+	engine_id: string;
+	engine_name: string;
+	engine_subtype?: string;
+	description?: string;
+	engine_discoverable?: boolean;
+	permission_name?: "READ_ONLY" | "EDIT" | "OWNER";
+	engine_global?: boolean;
+	access_permission?: number; // The permission level the user has requested, if any
+	tags?: string; // comma separated tags
+	can_view_dependencies?: boolean;
+	engine_date_created?: string;
+	dependencies?: string[]; // Array of dependency engine IDs
 }

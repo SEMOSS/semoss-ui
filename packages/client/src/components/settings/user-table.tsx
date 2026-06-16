@@ -75,6 +75,8 @@ const formatValue = (input: string) => {
 			DAY: "Daily",
 			WEEK: "Weekly",
 			MONTH: "Monthly",
+			YEAR: "Yearly",
+			ALL_TIME: "All time",
 		};
 		return mappings[input.toUpperCase()] || input;
 	}
@@ -140,6 +142,7 @@ export const UserTable = (props: UserTableProps) => {
 		getUsers.status === "SUCCESS"
 			? (getUsers.data?.filteredUsers ?? totalUsers)
 			: 0;
+	const memberLabel = totalUsers === 1 ? "member" : "members";
 	const hasSearch = (debouncedSearch ?? "").trim().length > 0;
 	const activeTotalUsers = hasSearch ? filteredUsers : totalUsers;
 	const hasUsers = getUsers.status === "SUCCESS" && activeTotalUsers > 0;
@@ -161,6 +164,7 @@ export const UserTable = (props: UserTableProps) => {
 		setPaginationTotalUsers(nextActiveTotal);
 	}, [getUsers.status, getUsers.data, cachedTotalUsers, hasSearch]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional reset on search change
 	useEffect(() => {
 		resetPage();
 	}, [debouncedSearch, resetPage]);
@@ -316,8 +320,8 @@ export const UserTable = (props: UserTableProps) => {
 					<CardTitle>Members</CardTitle>
 					<Badge variant="secondary" className="rounded-full">
 						{hasSearch
-							? `${filteredUsers} of ${totalUsers} members`
-							: `${totalUsers} members`}
+							? `${filteredUsers} of ${totalUsers} ${memberLabel}`
+							: `${totalUsers} ${memberLabel}`}
 					</Badge>
 				</div>
 				<div className="flex flex-wrap items-center gap-2">
@@ -493,6 +497,10 @@ export const UserTable = (props: UserTableProps) => {
 																{displayName}
 															</span>
 															<span className="text-muted-foreground text-xs">
+																id: {user.id}
+															</span>
+															<span className="text-muted-foreground text-xs">
+																email:{" "}
 																{user.email ||
 																	"No email"}
 															</span>

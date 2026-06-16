@@ -6,7 +6,8 @@
 		"descriptionLabel": "الوصف",
 		"instructionsLabel": "التعليمات",
 		"knowledgeLabel": "المعرفة",
-		"toolboxLabel": "صندوق الأدوات"
+		"toolboxLabel": "صناديق الأدوات",
+		"promptsLabel": "مكتبة الموجهات"
 	},
 	"actions": {
 		"create": "إنشاء",
@@ -17,9 +18,9 @@
 		"newChat": "دردشة جديدة"
 	},
 	"card": {
-		"noDescription": "لا يوجد وصف متاح",
 		"deleteConfirmTitle": "هل أنت متأكد؟",
-		"deleteConfirmDescription": "هذا الإجراء لا رجعة فيه. سيؤدي ذلك إلى حذف مساحة العمل {{name}} نهائياً."
+		"deleteConfirmDescription": "هذا الإجراء لا رجعة فيه. سيؤدي ذلك إلى حذف مساحة العمل {{name}} نهائياً.",
+		"createdAgo": "تم الإنشاء {{when}}"
 	},
 	"sharing": {
 		"title": "إضافة أعضاء",
@@ -35,6 +36,7 @@
 		"buttonAdd": "إضافة أعضاء"
 	},
 	"members": {
+		"autoSaveHint": "تُحفظ إضافات الأعضاء وإزالاتهم وتغييرات الأذونات تلقائيًا.",
 		"heading": "من لديه الوصول",
 		"you": "(أنت)",
 		"owner": "المالك",
@@ -52,14 +54,6 @@
 	"mcp": {
 		"noToolboxes": "لم يتم العثور على صناديق أدوات",
 		"noKnowledge": "لم يتم العثور على مكتبات معرفة",
-		"accessRequested": "تم طلب الوصول",
-		"requestAccess": "طلب الوصول",
-		"noAccess": "لا يوجد وصول",
-		"requestAccessButton": "طلب الوصول",
-		"noDescription": "لا يوجد وصف متاح.",
-		"tooltipNoAccess": "ليس لديك وصول إلى {{type}} هذا. يرجى طلب الوصول من المالك.",
-		"tooltipMissingDependencies": "ليس لديك وصول إلى جميع تبعيات {{type}} هذا، لذا قد تكون الوظيفة محدودة. افتحه في المنصة لمزيد من المعلومات.",
-		"tooltipOpen": "فتح {{type}} هذا في المنصة",
 		"failedToLoad": "فشل تحميل موارد مساحة العمل",
 		"requestedSuccess": "تم طلب الوصول إلى {{name}}",
 		"requestedFailed": "فشل طلب الوصول"
@@ -67,7 +61,26 @@
 	"chat": {
 		"noChats": "لم يتم العثور على دردشات",
 		"error": "خطأ:",
-		"selectRoom": "اختر غرفة"
+		"selectRoom": "اختر غرفة",
+		"newChat": "دردشة جديدة",
+		"delete": "حذف",
+		"cancel": "إلغاء",
+		"deleteSuccess": "تم حذف الدردشة",
+		"deleteFailed": "فشل حذف الدردشة",
+		"deleteConfirmTitle": "حذف الدردشة؟",
+		"deleteConfirmDescription": "سيؤدي هذا إلى حذف \"{{name}}\" نهائيًا. لا يمكن التراجع عن هذا الإجراء.",
+		"rename": "إعادة تسمية",
+		"renameSave": "حفظ",
+		"renameEmpty": "لا يمكن أن يكون اسم الدردشة فارغًا",
+		"renameSuccess": "تمت إعادة تسمية الدردشة",
+		"renameFailed": "فشلت إعادة تسمية الدردشة",
+		"pin": "إضافة إلى المفضلة",
+		"unpin": "إزالة من المفضلة",
+		"pinFailed": "فشل إضافة الدردشة إلى المفضلة",
+		"unpinFailed": "فشل إزالة الدردشة من المفضلة",
+		"dayToday": "اليوم",
+		"dayYesterday": "أمس",
+		"daysAgo": "قبل {{count}} يوم"
 	},
 	"images": {
 		"agentIllustration": "توضيح الوكيل"
@@ -98,8 +111,16 @@
 		"tabs": {
 			"myChats": "محادثاتي",
 			"knowledge": "المعرفة",
-			"toolbox": "صندوق الأدوات",
+			"toolbox": "صناديق الأدوات",
+			"prompts": "الموجهات",
 			"members": "الأعضاء"
+		},
+		"about": {
+			"title": "نبذة",
+			"noInstructions": "لا توجد تعليمات مكوَّنة."
+		},
+		"recentChats": {
+			"title": "متابعة دردشة سابقة"
 		},
 		"failedToDelete": "فشل حذف الوكيل",
 		"failedToLoad": "فشل تحميل الوكيل: {{error}}"
@@ -114,5 +135,30 @@
 	"new": {
 		"title": "وكيل جديد",
 		"subtitle": "إنشاء وكيل جديد للبدء"
+	},
+	"prompts": {
+		"noPrompts": "لم يتم العثور على موجهات",
+		"searchPlaceholder": "البحث في الموجهات..."
+	},
+	"chats": {
+		"title": "جميع الدردشات",
+		"subtitle": "تصفّح دردشاتك وابحث فيها ونظّفها.",
+		"selectAll": "تحديد الكل",
+		"selectChat": "تحديد الدردشة {{name}}",
+		"selectedCount": "تم تحديد {{count}}",
+		"totalCount": "{{count}} دردشات",
+		"deleteSelected": "حذف {{count}} المحددة",
+		"bulkDeleteConfirmTitle": "حذف {{count}} دردشات؟",
+		"bulkDeleteConfirmDescription": "سيؤدي هذا إلى حذف {{count}} دردشات نهائيًا. لا يمكن التراجع عن هذا الإجراء.",
+		"bulkDeleteSuccess": "تم حذف {{count}} دردشات",
+		"bulkDeletePartialFail": "فشل حذف {{failed}} من أصل {{total}} دردشات"
+	},
+	"instructions": {
+		"expand": "توسيع",
+		"viewTitle": "التعليمات",
+		"viewDescription": "موجه النظام الذي يوجِّه سلوك هذا الوكيل.",
+		"editTitle": "تعديل التعليمات",
+		"editDescription": "تحديث موجه النظام الذي يوجِّه سلوك هذا الوكيل.",
+		"charCount": "{{count}} حرفًا"
 	}
 }

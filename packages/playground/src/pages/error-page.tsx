@@ -5,8 +5,11 @@ import {
 	ResizablePanel,
 	ResizablePanelGroup,
 	SidebarTrigger,
+	useTheme,
 } from "@semoss/ui/next";
 import background from "@/assets/img/render-error-background.png";
+import backgroundDark from "@/assets/img/render-error-background-darkmode.jpg";
+import { useRoot } from "@/hooks";
 
 export interface ErrorPageProps {
 	isInnerComponent?: boolean;
@@ -17,6 +20,17 @@ export interface ErrorPageProps {
  */
 export const ErrorPage = ({ isInnerComponent = false }: ErrorPageProps) => {
 	const navigate = useNavigate();
+	const { root } = useRoot();
+	const { theme: colorMode } = useTheme();
+
+	const isDark =
+		colorMode === "dark" ||
+		(colorMode === "system" &&
+			window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+	const src = isDark
+		? root.theme.images.errorDark || backgroundDark
+		: root.theme.images.error || background;
 
 	const content = (
 		<div className="max-w-md p-8 text-center">
@@ -52,13 +66,13 @@ export const ErrorPage = ({ isInnerComponent = false }: ErrorPageProps) => {
 	if (isInnerComponent) {
 		return (
 			<div className="relative h-full w-full overflow-hidden">
-				<div className="absolute top-2 left-2 z-10 flex h-12.5 items-center px-4">
+				<div className="absolute start-2 top-2 z-10 flex h-12.5 items-center px-4">
 					<SidebarTrigger />
 				</div>
 				<ResizablePanelGroup direction="horizontal">
 					<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
 						<img
-							src={background}
+							src={src}
 							alt="Background"
 							className="absolute inset-0 h-full w-full object-cover"
 						/>
@@ -72,7 +86,7 @@ export const ErrorPage = ({ isInnerComponent = false }: ErrorPageProps) => {
 	return (
 		<div className="relative flex min-h-screen items-center justify-center overflow-hidden">
 			<img
-				src={background}
+				src={src}
 				alt="Background"
 				className="absolute inset-0 h-full w-full object-cover"
 			/>

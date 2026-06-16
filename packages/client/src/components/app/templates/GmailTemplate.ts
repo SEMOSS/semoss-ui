@@ -1,12 +1,12 @@
-import { ActionMessages } from "@semoss/renderer";
-import GOOGLE from "@/assets/img/google.png";
+import QUERY from "@/assets/img/DragDrop.png";
+import { TEMPLATE_ACTION_MESSAGES } from "./action-messages";
 import type { Template } from "./templates.types";
 
 export const GmailTemplate: Template = {
 	name: "Gmail",
 	description:
 		"This is a template app that performs gmail operations using the Gmail API.",
-	image: GOOGLE,
+	image: QUERY,
 	author: "SYSTEM",
 	lastUpdatedDate: new Date().toISOString(),
 	tags: [],
@@ -99,21 +99,21 @@ export const GmailTemplate: Template = {
 						type: "async",
 						order: [
 							{
-								message: ActionMessages.RUN_CELL,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "data",
 									cellId: "6",
 								},
 							},
 							{
-								message: ActionMessages.RUN_CELL,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "data",
 									cellId: "1",
 								},
 							},
 							{
-								message: ActionMessages.RUN_CELL,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "data",
 									cellId: "2",
@@ -326,7 +326,7 @@ export const GmailTemplate: Template = {
 					"2": {
 						name: "2",
 						children: ["iteration--2"],
-					}
+					},
 				},
 				communityBlockMapping: {},
 			},
@@ -463,7 +463,8 @@ export const GmailTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									variable: "selectedMailId",
 									value: "$getAllMails.id",
@@ -471,7 +472,8 @@ export const GmailTemplate: Template = {
 								},
 							},
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									variable: "mailDetailsModal",
 									value: "true",
@@ -510,7 +512,8 @@ export const GmailTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									variable: "selectedMailId",
 									value: "$getAllMails.id",
@@ -518,7 +521,8 @@ export const GmailTemplate: Template = {
 								},
 							},
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									blockId: "",
 									variable: "deleteModal",
@@ -585,7 +589,8 @@ export const GmailTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									variable: "selectedMailId",
 									value: "$getUnreadMails.id",
@@ -593,7 +598,8 @@ export const GmailTemplate: Template = {
 								},
 							},
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									variable: "mailDetailsModal",
 									value: "true",
@@ -674,7 +680,8 @@ export const GmailTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									variable: "composeModal",
 									value: "true",
@@ -717,7 +724,8 @@ export const GmailTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									variable: "composeModal",
 									value: "false",
@@ -1009,7 +1017,8 @@ export const GmailTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									variable: "composeModal",
 									value: "false",
@@ -1048,14 +1057,15 @@ export const GmailTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.RUN_CELL,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "data",
 									cellId: "4",
 								},
 							},
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									variable: "composeModal",
 									value: "false",
@@ -1094,7 +1104,7 @@ export const GmailTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.RUN_CELL,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "data",
 									cellId: "3",
@@ -1106,7 +1116,8 @@ export const GmailTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									variable: "mailDetailsModal",
 									value: "false",
@@ -1593,7 +1604,8 @@ export const GmailTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									variable: "mailDetailsModal",
 									value: "false",
@@ -1914,14 +1926,14 @@ export const GmailTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.RUN_CELL,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "data",
 									cellId: "1",
 								},
 							},
 							{
-								message: ActionMessages.RUN_CELL,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "data",
 									cellId: "2",
@@ -1963,7 +1975,8 @@ export const GmailTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									blockId: "",
 									variable: "deleteModal",
@@ -2117,7 +2130,8 @@ export const GmailTemplate: Template = {
 						type: "async",
 						order: [
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									blockId: "",
 									variable: "selectedMailId",
@@ -2125,7 +2139,8 @@ export const GmailTemplate: Template = {
 								},
 							},
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									variable: "deleteModal",
 									value: "false",
@@ -2164,28 +2179,29 @@ export const GmailTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.RUN_CELL,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "data",
 									cellId: "5",
 								},
 							},
 							{
-								message: ActionMessages.RUN_CELL,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "data",
 									cellId: "1",
 								},
 							},
 							{
-								message: ActionMessages.RUN_CELL,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "data",
 									cellId: "2",
 								},
 							},
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									variable: "deleteModal",
 									value: "false",

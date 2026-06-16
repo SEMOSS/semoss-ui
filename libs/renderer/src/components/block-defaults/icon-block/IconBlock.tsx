@@ -1,4 +1,3 @@
-import { Badge } from "@mui/material";
 import { observer } from "mobx-react-lite";
 import type { CSSProperties } from "react";
 import { iconMap } from "../../../constants";
@@ -30,41 +29,36 @@ export interface IconBlockDef extends BlockDef<"icon"> {
 export const IconBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data } = useBlock<IconBlockDef>(id);
 
-	const displayIcon = (key: string) => {
-		const Icon = iconMap[key] || iconMap["Icon"];
-		const color = data.style.color || "primary";
-		const width = data.style.width ?? null;
-		const maxWidth = data.style.maxWidth ?? null;
-		const height = data.style.height ?? null;
-		const maxHeight = data.style.maxHeight ?? null;
-		const iconElement = (
-			<Icon sx={{ width, maxWidth, height, maxHeight, color }} />
-		);
+	const Icon = iconMap[data.icon] || iconMap.Icon;
+	const { color, width, maxWidth, height, maxHeight } = data.style;
 
-		if (data.showBadge && data.badgeContent > 0) {
-			return (
-				<Badge badgeContent={data.badgeContent} color={data.color}>
-					{iconElement}
-				</Badge>
-			);
-		}
-
-		return iconElement;
-	};
+	const iconElement = (
+		<Icon
+			style={{
+				width: width ?? undefined,
+				maxWidth: maxWidth ?? undefined,
+				height: height ?? undefined,
+				maxHeight: maxHeight ?? undefined,
+				color,
+			}}
+		/>
+	);
 
 	return (
 		<div
 			{...attrs}
-			style={{
-				display: "flex",
-				justifyContent: "center",
-				alignItems: "center",
-				height: "fit-content",
-				width: "fit-content",
-				paddingInline: "10px",
-			}}
+			className="flex h-fit w-fit items-center justify-center px-2.5"
 		>
-			{displayIcon(data.icon)}
+			{data.showBadge && data.badgeContent > 0 ? (
+				<div className="relative inline-flex">
+					{iconElement}
+					<span className="-top-1 -right-1 absolute flex h-4 w-4 items-center justify-center rounded-full bg-primary font-medium text-[10px] text-primary-foreground">
+						{data.badgeContent > 99 ? "99+" : data.badgeContent}
+					</span>
+				</div>
+			) : (
+				iconElement
+			)}
 		</div>
 	);
 });

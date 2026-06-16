@@ -1,5 +1,4 @@
 import {
-	FileIcon,
 	FolderTreeIcon,
 	HammerIcon,
 	MonitorXIcon,
@@ -9,9 +8,20 @@ import {
 	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useRef, useState } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { FlexLayout } from "@semoss/shared";
+import { useInsight } from "@semoss/sdk/react";
+import {
+	FlexLayout,
+	getFileIconComponent,
+	useTabBarScroll,
+} from "@semoss/shared";
+
+const getFileTabIcon = (fileName: string) => {
+	const Icon = getFileIconComponent(fileName);
+	return <Icon className="size-4 text-foreground" />;
+};
+
 import {
 	Button,
 	Separator,
@@ -32,8 +42,45 @@ interface RoomSidebarProps {
 
 export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 	const { t } = useTranslation("sidebar");
+	const insight = useInsight();
 	const layoutRef = useRef<FlexLayout.Layout | null>(null);
+	const sidebarRef = useRef<HTMLDivElement | null>(null);
+	const controlsRef = useRef<HTMLDivElement | null>(null);
 	const [isMaximized, setIsMaximized] = useState(false);
+	const [controlsWidth, setControlsWidth] = useState(85);
+	const [explorerRefreshKey, setExplorerRefreshKey] = useState(0);
+	const [pendingRename, setPendingRename] = useState<{
+		id: string;
+		newName: string;
+		path: string;
+	} | null>(null);
+
+	useEffect(() => {
+		if (!pendingRename) return;
+		const { id, newName, path } = pendingRename;
+		const dir = path.substring(0, path.lastIndexOf("/") + 1);
+		const newPath = `${dir}${newName}`;
+		(async () => {
+			try {
+				await insight.actions.run(
+					`RenameInsightAsset(filePath=["${path}"], newValue=["${newPath}"]);`,
+				);
+				room.removeSidebarNode(id);
+				room.addSidebarNode(`FILE--${newPath}`, {
+					type: "tab",
+					name: newName,
+					component: "room-file-editor",
+					config: { name: newName, path: newPath },
+					enableClose: true,
+				});
+				setExplorerRefreshKey((k) => k + 1);
+			} catch (e) {
+				console.error(e);
+			} finally {
+				setPendingRename(null);
+			}
+		})();
+	}, [pendingRename, insight.actions.run, room]);
 
 	// this will render the component whenever the sidebar model changes
 	room.sidebar.counter;
@@ -52,8 +99,76 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 		}
 	}
 
+	useTabBarScroll(sidebarRef);
+
+	useEffect(() => {
+		const container = sidebarRef.current;
+		if (!container) return;
+		const observer = new MutationObserver((mutations) => {
+			for (const mutation of mutations) {
+				for (const added of Array.from(mutation.addedNodes)) {
+					if (!(added instanceof HTMLElement)) continue;
+					const input = added.classList.contains(
+						"flexlayout__tab_button_textbox",
+					)
+						? (added as HTMLInputElement)
+						: (added.querySelector(
+								".flexlayout__tab_button_textbox",
+							) as HTMLInputElement | null);
+					if (!input) continue;
+					requestAnimationFrame(() => {
+						const dot = input.value.lastIndexOf(".");
+						input.setSelectionRange(
+							0,
+							dot > 0 ? dot : input.value.length,
+						);
+					});
+					return;
+				}
+			}
+		});
+		observer.observe(container, { childList: true, subtree: true });
+		return () => observer.disconnect();
+	}, []);
+
+	/**
+	 * Keep tab-strip spacing in sync with the top-right controls width so tabs never hide behind overlay buttons.
+	 */
+	useEffect(() => {
+		const controls = controlsRef.current;
+		if (!controls) {
+			return;
+		}
+
+		const updateControlsWidth = () => {
+			const measuredWidth = Math.ceil(
+				controls.getBoundingClientRect().width,
+			);
+			const nextWidth = Math.max(85, measuredWidth + 8);
+			setControlsWidth((prev) => (prev === nextWidth ? prev : nextWidth));
+		};
+
+		updateControlsWidth();
+
+		if (typeof ResizeObserver === "undefined") {
+			return;
+		}
+
+		const resizeObserver = new ResizeObserver(() => {
+			updateControlsWidth();
+		});
+		resizeObserver.observe(controls);
+
+		return () => {
+			resizeObserver.disconnect();
+		};
+	}, []);
+
 	return (
-		<div className="relative h-full w-full overflow-hidden">
+		<div
+			ref={sidebarRef}
+			className="relative h-full w-full overflow-hidden"
+		>
 			<div
 				className={`fixed inset-0 z-50 bg-black/50 transition-opacity duration-200 ${
 					isMaximized
@@ -62,9 +177,12 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 				}`}
 			/>
 			<div
-				className={`flex flex-col overflow-hidden rounded-lg border border-border bg-secondary-background shadow-sm transition-all duration-200 ease-in-out ${isMaximized ? "fixed inset-4 z-50" : "h-full w-full"}`}
+				className={`flex flex-col overflow-hidden rounded-lg border border-border bg-background shadow-sm transition-all duration-200 ease-in-out ${isMaximized ? "fixed inset-4 z-50" : "h-full w-full"}`}
 			>
-				<div className="absolute top-0 right-0 z-10 flex h-12.5 flex-row items-center gap-1.5 overflow-hidden pr-2">
+				<div
+					ref={controlsRef}
+					className="absolute end-0 top-0 z-10 flex h-12.5 flex-row items-center gap-1.5 overflow-hidden pe-2"
+				>
 					{activeTool && (
 						<Tooltip>
 							<TooltipTrigger asChild>
@@ -142,7 +260,14 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 					</Tooltip>
 				</div>
 				<div className="w-full flex-1 overflow-hidden rounded-md">
-					<div className="flexlayout__theme_smss relative h-full w-full overflow-hidden">
+					<div
+						className="flexlayout__theme_smss relative h-full w-full overflow-hidden"
+						style={
+							{
+								"--room-sidebar-controls-width": `${controlsWidth}px`,
+							} as CSSProperties
+						}
+					>
 						<FlexLayout.Layout
 							ref={layoutRef}
 							model={room.sidebar.model}
@@ -150,21 +275,52 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 								const component = node.getComponent();
 								if (component === "room-tool") {
 									renderValues.leading = (
-										<HammerIcon className="size-4" />
+										<HammerIcon className="size-4 text-foreground" />
 									);
 								} else if (component === "room-configuration") {
 									renderValues.leading = (
-										<Settings2Icon className="size-4" />
+										<Settings2Icon className="size-4 text-foreground" />
 									);
 								} else if (component === "room-file-explorer") {
 									renderValues.leading = (
-										<FolderTreeIcon className="size-4" />
+										<FolderTreeIcon className="size-4 text-foreground" />
 									);
 								} else if (component === "room-file-editor") {
-									renderValues.leading = (
-										<FileIcon className="size-4" />
+									renderValues.leading = getFileTabIcon(
+										node.getName(),
 									);
 								}
+							}}
+							onAction={(action) => {
+								if (
+									action.type ===
+									FlexLayout.Actions.RENAME_TAB
+								) {
+									const { node: id, text } = action.data as {
+										node: string;
+										text: string;
+									};
+									const tabNode =
+										room.sidebar.model.getNodeById(id);
+									if (
+										tabNode instanceof FlexLayout.TabNode &&
+										tabNode.getComponent() ===
+											"room-file-editor"
+									) {
+										const cfg = tabNode.getConfig() as {
+											path?: string;
+										};
+										if (cfg?.path) {
+											setPendingRename({
+												id,
+												newName: text,
+												path: cfg.path,
+											});
+											return undefined;
+										}
+									}
+								}
+								return action;
 							}}
 							factory={(node) => {
 								const component = node.getComponent();
@@ -174,6 +330,7 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 								} else if (component === "room-file-explorer") {
 									return (
 										<RoomFileExplorer
+											key={explorerRefreshKey}
 											layout={layoutRef.current}
 											room={room}
 											node={node}
@@ -193,7 +350,9 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 								return null;
 							}}
 							icons={{
-								close: <XIcon className="size-4" />,
+								close: (
+									<XIcon className="size-4 text-foreground" />
+								),
 							}}
 						/>
 					</div>

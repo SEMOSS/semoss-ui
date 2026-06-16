@@ -4,3 +4,5 @@ export * from "./base";
 export * from "./engine";
 export * from "./file";
 export * from "./insight";
+export * from "./user";
+export * from "./websocket";

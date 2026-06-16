@@ -1,11 +1,10 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
-import { FileUploadOutlined } from "@mui/icons-material";
+
 import { GitCompare, Search, Upload } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -26,6 +25,7 @@ import {
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import {
 	CATEGORY_DESCRIPTIONS,
 	DATABASE_CONNECTION,
@@ -35,7 +35,6 @@ import { DatabaseForm } from "./database-form";
 interface database {
 	fields: [];
 	advanced: [];
-	id: number;
 	name: string;
 	icon: string;
 	disable: boolean;
@@ -61,7 +60,7 @@ const DatabaseCard = ({
 
 	const cardContent = (
 		<div
-			data-testid={`database-card-${database.id}`}
+			data-testid={`database-card-${database.name}`}
 			className={`flex w-full flex-col items-start justify-start gap-2 rounded-lg border border-border bg-card p-4 transition-all sm:w-[215px] ${
 				database.disable
 					? "cursor-auto opacity-60"
@@ -90,7 +89,7 @@ const DatabaseCard = ({
 			)}
 			<p
 				ref={textRef}
-				data-testid={`database-name-${database.id}`}
+				data-testid={`database-name-${database.name}`}
 				className="m-0 overflow-hidden text-ellipsis whitespace-nowrap text-card-foreground text-sm"
 			>
 				{database.name}
@@ -116,9 +115,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState("");
 	const [selectedTab, setSelectedTab] = useState(0);
-	const [selectedDatabase, setSelectedDatabase] = useState<database | null>(
-		null,
-	);
+	const [selectedEngine, setSelectedEngine] = useState<database | null>(null);
 
 	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
 	const [filedata, setFiledata] = useState(null);
@@ -180,7 +177,9 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 					return;
 				}
 				toast.success("Successfully Created Database");
-				navigate(`/engine/database/${output.database_id}`);
+				navigate(
+					`/engine/database/${(output as { database_id?: string }).database_id}`,
+				);
 			}
 		} catch {
 			toast.error("Upload failed or returned invalid response.");
@@ -233,13 +232,13 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 					<BreadcrumbItem>
 						<BreadcrumbLink
 							onClick={() => {
-								if (selectedDatabase) {
-									setSelectedDatabase(null);
+								if (selectedEngine) {
+									setSelectedEngine(null);
 								}
 							}}
 							data-testid="breadcrumb-page"
 							className={
-								selectedDatabase
+								selectedEngine
 									? "cursor-pointer text-muted-foreground hover:text-foreground"
 									: "cursor-default text-foreground"
 							}
@@ -247,7 +246,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 							Connect To Database
 						</BreadcrumbLink>
 					</BreadcrumbItem>
-					{selectedDatabase && (
+					{selectedEngine && (
 						<>
 							<BreadcrumbSeparator />
 							<BreadcrumbItem>
@@ -255,7 +254,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 									data-testid="breadcrumb-selected-database"
 									className="text-foreground"
 								>
-									{selectedDatabase.name}
+									{selectedEngine.name}
 								</span>
 							</BreadcrumbItem>
 						</>
@@ -274,9 +273,9 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 				v.name.toLowerCase().includes(search.toLowerCase()),
 			).map((v) => (
 				<DatabaseCard
-					key={v.id}
+					key={v.name}
 					database={v}
-					onSelect={() => setSelectedDatabase(v)}
+					onSelect={() => setSelectedEngine(v)}
 				/>
 			))}
 		</div>
@@ -329,7 +328,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 								</div>
 							) : (
 								<div className="text-center">
-									<FileUploadOutlined className="mb-2 h-12 w-12 text-muted-foreground" />
+									<Upload className="mb-2 h-12 w-12 text-muted-foreground" />
 									<P className="font-medium text-foreground">
 										Drop your file here or click to browse
 									</P>
@@ -363,14 +362,15 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 					</div>
 				</DialogContent>
 			</Dialog>
-			{selectedDatabase ? (
+			{selectedEngine ? (
 				<div data-testid="database-form-wrapper">
 					<DatabaseForm
 						selectedTab={tabLabels[selectedTab]}
-						title={selectedDatabase.name}
-						description={`Fill out ${selectedDatabase.name} details in order to add database to catalog`}
-						fields={selectedDatabase.fields}
-						advanced={selectedDatabase.advanced}
+						title={selectedEngine.name}
+						description={`Fill out ${selectedEngine.name} details in order to add database to catalog`}
+						icon={selectedEngine.icon}
+						fields={selectedEngine.fields}
+						advanced={selectedEngine.advanced}
 						categoryDescription={CategoryDescription}
 					/>
 				</div>
@@ -414,7 +414,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 								data-testid="database-upload-file-button"
 								className="h-10 w-full rounded-lg leading-[0.75] sm:w-auto"
 							>
-								<FileUploadOutlined fontSize="medium" />
+								<Upload className="size-5" />
 							</Button>
 						</div>
 
@@ -424,15 +424,15 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 								onValueChange={(value) =>
 									setSelectedTab(Number(value))
 								}
+								className="gap-6"
 								data-testid="tabs"
 							>
-								<TabsList className="mb-6 inline-flex h-9 w-full items-center justify-start overflow-x-auto rounded-lg bg-muted p-1 text-muted-foreground sm:w-auto sm:justify-center">
+								<TabsList>
 									{tabLabels.map((label, index) => (
 										<TabsTrigger
 											key={label}
 											value={index.toString()}
 											data-testid={`tab-${label.toLowerCase()}`}
-											className="inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md px-2.5 py-1 font-medium text-sm ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
 										>
 											{index === 0 && (
 												<GitCompare

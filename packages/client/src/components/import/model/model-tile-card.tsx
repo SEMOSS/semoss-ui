@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Badge,
 	Button,
@@ -7,7 +8,6 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { ENGINE_IMAGES } from "@/pages/import/import.constants";
 import { formatToDataTestId } from "@/utility";
 
 const normalizeEngineKey = (value?: string) =>
@@ -46,19 +46,6 @@ const MODEL_SUBTYPE_BY_ICON_FILE_NAME: Record<string, string> = {
 	"STABILITY_AI.png": "STABLITY_AI",
 };
 
-const getModelIconBySubtype = (subtype?: string) => {
-	if (!subtype) return "";
-	const normalizedSubtype = normalizeEngineKey(subtype);
-
-	const match = (ENGINE_IMAGES.MODEL || []).find((option) => {
-		return normalizeEngineKey(option.name) === normalizedSubtype;
-	});
-
-	return match?.icon || "";
-};
-
-const FALLBACK_MODEL_ICON = getModelIconBySubtype("BRAIN");
-
 const toKnownModelSubtype = (value?: string) => {
 	const normalized = normalizeEngineKey(value);
 	if (!normalized) return "";
@@ -66,27 +53,30 @@ const toKnownModelSubtype = (value?: string) => {
 	return normalized;
 };
 
-const resolveModelIcon = (model: Model, provider?: string) => {
+const resolveModelSubtype = (
+	model: { icon?: string; modelBrand?: string },
+	provider?: string,
+): string => {
 	const icon = model.icon;
-	if (!icon) return FALLBACK_MODEL_ICON;
 
-	if (!icon.startsWith("/src/assets/img/")) {
-		return icon;
+	if (icon?.startsWith("/src/assets/img/")) {
+		const fileName = icon.split("/").pop() || "";
+		const subtypeFromFile = MODEL_SUBTYPE_BY_ICON_FILE_NAME[fileName] || "";
+		if (subtypeFromFile) return subtypeFromFile;
 	}
 
-	const fileName = icon.split("/").pop() || "";
-	const subtypeFromFile = MODEL_SUBTYPE_BY_ICON_FILE_NAME[fileName] || "";
 	const subtypeFromBrand = toKnownModelSubtype(model.modelBrand);
+	if (subtypeFromBrand) return subtypeFromBrand;
+
 	const subtypeFromProvider = provider
 		? MODEL_PROVIDER_SUBTYPE_BY_NAME[provider] || ""
 		: "";
 
-	return (
-		getModelIconBySubtype(
-			subtypeFromFile || subtypeFromBrand || subtypeFromProvider,
-		) || FALLBACK_MODEL_ICON
-	);
+	return subtypeFromProvider;
 };
+
+const isRemoteModelIcon = (icon?: string) =>
+	Boolean(icon) && !icon?.startsWith("/src/assets/img/");
 
 interface Model {
 	name: string;
@@ -100,6 +90,48 @@ interface Model {
 	image?: boolean;
 	link?: string; // optional documentation link
 }
+
+interface ModelEngineIconProps {
+	model: Pick<Model, "icon" | "name"> & {
+		display?: string;
+		modelBrand?: string;
+	};
+	provider?: string;
+	alt?: string;
+	className?: string;
+	fallbackClassName?: string;
+}
+
+export const ModelEngineIcon: React.FC<ModelEngineIconProps> = ({
+	model,
+	provider,
+	alt,
+	className = "h-full w-full object-cover",
+	fallbackClassName = "flex h-full w-full select-none items-center justify-center rounded-lg bg-muted font-semibold text-secondary-foreground text-sm uppercase shadow-[0_0_0_1px_rgba(0,0,0,0.08)_inset] [-webkit-font-smoothing:antialiased]",
+}) => {
+	const label = alt || model.display || model.name;
+	const remoteIcon = isRemoteModelIcon(model.icon) ? model.icon : null;
+	const resolvedSubtype = remoteIcon
+		? ""
+		: resolveModelSubtype(model, provider);
+
+	if (remoteIcon) {
+		return <img src={remoteIcon} alt={label} className={className} />;
+	}
+
+	if (resolvedSubtype) {
+		return (
+			<EngineSubtypeIcon
+				engineType="MODEL"
+				engineSubtype={resolvedSubtype}
+				alt={label}
+				className={className}
+			/>
+		);
+	}
+
+	return <div className={fallbackClassName}>AI</div>;
+};
 
 interface ModelTileCardProps {
 	model: Model;
@@ -134,8 +166,6 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 		};
 	}, []);
 
-	const resolvedIcon = resolveModelIcon(model, provider);
-	const hasIcon = Boolean(resolvedIcon);
 	const handleCardClick = () => {
 		if (!model.disable && onModelSelect) {
 			onModelSelect(model);
@@ -160,7 +190,7 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 			)}
 			onClick={handleCardClick}
 			onKeyDown={handleCardKeyDown}
-			data-testId={formatToDataTestId(
+			data-testid={formatToDataTestId(
 				`importPageContent-connect-to-${model.name}-img`,
 			)}
 			role="button"
@@ -168,20 +198,12 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 		>
 			<div className="flex flex-col items-start gap-1">
 				<div className="flex w-full flex-row items-center gap-2">
-					<div className="flex h-10 w-10 shrink-0 items-center justify-center">
-						{hasIcon ? (
-							<div className="h-10 w-10 overflow-hidden rounded-lg">
-								<img
-									src={resolvedIcon}
-									alt={label}
-									className="h-full w-full object-cover"
-								/>
-							</div>
-						) : (
-							<div className="flex h-10 w-10 select-none items-center justify-center rounded-lg bg-muted font-semibold text-secondary-foreground text-sm uppercase shadow-[0_0_0_1px_rgba(0,0,0,0.08)_inset] [-webkit-font-smoothing:antialiased]">
-								AI
-							</div>
-						)}
+					<div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg">
+						<ModelEngineIcon
+							model={model}
+							provider={provider}
+							alt={label}
+						/>
 					</div>
 					<div className="flex flex-wrap items-center gap-1">
 						{model.disable && (
@@ -190,7 +212,7 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 						{!model.disable && model.embedding && (
 							<Badge
 								variant="default"
-								data-testId={formatToDataTestId(
+								data-testid={formatToDataTestId(
 									`importPageContent-${model.name}-embeddings-tag`,
 								)}
 							>
@@ -200,7 +222,7 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 						{!model.disable && model.image && (
 							<Badge
 								className="rounded-2xl border-none bg-primary/10 px-2.5 font-semibold text-[13px] text-primary"
-								data-testId={formatToDataTestId(
+								data-testid={formatToDataTestId(
 									`importPageContent-${model.name}-image-tag`,
 								)}
 							>
@@ -210,7 +232,7 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 						{!model.disable && model.audio && (
 							<Badge
 								className="rounded-2xl border-none bg-primary/10 px-2.5 font-semibold text-[13px] text-primary"
-								data-testId={formatToDataTestId(
+								data-testid={formatToDataTestId(
 									`importPageContent-${model.name}-audio-tag`,
 								)}
 							>

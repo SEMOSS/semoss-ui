@@ -1,11 +1,10 @@
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
-import { FileUploadOutlined } from "@mui/icons-material";
-import { Search } from "lucide-react";
+
+import { Search, Upload } from "lucide-react";
 import type React from "react";
 import { useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -26,6 +25,7 @@ import {
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import { STORAGE_CONNECTIONS, type Storage } from "./storage-import.constants";
 import { StorageForm } from "./storage-import-form";
 import { StorageTitleCard } from "./storage-title-card";
@@ -36,9 +36,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState("");
 	const [selectedTab, setSelectedTab] = useState("0");
-	const [selectedDatabase, setSelectedDatabase] = useState<Storage | null>(
-		null,
-	);
+	const [selectedEngine, setSelectedEngine] = useState<Storage | null>(null);
 	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
 	const [filedata, setFiledata] = useState(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
@@ -134,7 +132,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 	};
 
 	const renderBreadcrumbs = () => (
-		<div className="mb-4">
+		<div className="mb-6">
 			<Breadcrumb data-testid="breadcrumbs">
 				<BreadcrumbList>
 					<BreadcrumbItem>
@@ -154,13 +152,13 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 					<BreadcrumbItem>
 						<BreadcrumbLink
 							onClick={() => {
-								if (selectedDatabase) {
-									setSelectedDatabase(null);
+								if (selectedEngine) {
+									setSelectedEngine(null);
 								}
 							}}
 							data-testid="breadcrumb-page"
 							className={
-								selectedDatabase
+								selectedEngine
 									? "cursor-pointer text-muted-foreground hover:text-foreground"
 									: "cursor-default text-foreground"
 							}
@@ -168,7 +166,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 							Connect to Storage Database
 						</BreadcrumbLink>
 					</BreadcrumbItem>
-					{selectedDatabase && (
+					{selectedEngine && (
 						<>
 							<BreadcrumbSeparator />
 							<BreadcrumbItem>
@@ -176,7 +174,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 									data-testid="breadcrumb-selected-storage"
 									className="text-foreground"
 								>
-									{selectedDatabase.name}
+									{selectedEngine.name}
 								</span>
 							</BreadcrumbItem>
 						</>
@@ -197,7 +195,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 				<StorageTitleCard
 					key={v.id}
 					storage={v}
-					onSelect={() => setSelectedDatabase(v)}
+					onSelect={() => setSelectedEngine(v)}
 				/>
 			))}
 		</div>
@@ -252,7 +250,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 								</div>
 							) : (
 								<div className="text-center">
-									<FileUploadOutlined className="mb-2 h-12 w-12 text-muted-foreground" />
+									<Upload className="mb-2 h-12 w-12 text-muted-foreground" />
 									<P className="font-medium text-foreground">
 										Drop your file here or click to browse
 									</P>
@@ -287,13 +285,14 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 				</DialogContent>
 			</Dialog>
 
-			{selectedDatabase ? (
+			{selectedEngine ? (
 				<div data-testid="storage-form-wrapper">
 					<StorageForm
-						title={selectedDatabase.name}
-						description={`Fill out ${selectedDatabase.name} details in order to add storage to catalog`}
-						fields={selectedDatabase.fields}
-						advanced={selectedDatabase.advanced}
+						title={selectedEngine.name}
+						description={`Fill out ${selectedEngine.name} details in order to add storage to catalog`}
+						icon={selectedEngine.icon}
+						fields={selectedEngine.fields}
+						advanced={selectedEngine.advanced}
 						categoryDescription={CategoryDescription}
 					/>
 				</div>
@@ -335,7 +334,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 							data-testid="storage-upload-file-button"
 							className="h-10 w-full rounded-lg leading-[0.75] sm:w-auto"
 						>
-							<FileUploadOutlined fontSize="medium" />
+							<Upload className="size-5" />
 						</Button>
 					</div>
 

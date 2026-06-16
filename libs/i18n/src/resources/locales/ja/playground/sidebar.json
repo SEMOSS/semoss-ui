@@ -1,7 +1,32 @@
 {
 	"search": "検索",
-	"new": "新規",
-	"agents": "エージェント",
+	"takeTour": "ツアーを開始",
+	"nav": {
+		"newChat": {
+			"label": "新規",
+			"tooltip": "新規チャット - いつでも新しい会話を開始できます。"
+		},
+		"agents": {
+			"label": "エージェント",
+			"tooltip": "エージェント"
+		},
+		"allChats": {
+			"label": "すべてのチャット",
+			"tooltip": "すべてのチャット"
+		},
+		"agentsWorkspaces": {
+			"tooltip": "エージェント/ワークスペース - ワークスペースにアクセスしたり、新しいAIエージェントを作成します。"
+		},
+		"knowledgeLibrary": {
+			"tooltip": "ナレッジライブラリ - ドキュメントライブラリを閲覧、作成、共有、管理します。"
+		},
+		"toolbox": {
+			"tooltip": "ツールボックス - 強力なアドオンツールでElsaの拡張機能をご利用ください。"
+		},
+		"promptLibrary": {
+			"tooltip": "プロンプトライブラリ - 保存したプロンプトを閲覧、作成、使用します。"
+		}
+	},
 	"buckets": {
 		"favorites": "お気に入り",
 		"today": "今日",

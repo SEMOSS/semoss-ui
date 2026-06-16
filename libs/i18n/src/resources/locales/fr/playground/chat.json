@@ -17,8 +17,15 @@
 		"poorResponse": "Mauvaise réponse",
 		"copyResponse": "Copier la réponse",
 		"copyCode": "Copier le code",
+		"feedbackPlaceholder": "Ajouter un commentaire (facultatif)",
+		"feedbackCancel": "Annuler",
+		"feedbackSubmit": "Envoyer",
 		"fastForwardToEnd": "Aller à la fin",
-		"completeTools": "Veuillez compléter le(s) outil(s) pour continuer."
+		"completeToolsAsk_one": "Veuillez compléter l'outil pour continuer.",
+		"completeToolsAsk_other": "Veuillez compléter les outils pour continuer.",
+		"completeToolsAuto_one": "Veuillez attendre que l'outil se termine.",
+		"completeToolsAuto_other": "Veuillez attendre que les outils se terminent.",
+		"emptyResponse": "Réponse vide."
 	},
 	"input": {
 		"copyMessage": "Copier le message"
@@ -30,23 +37,6 @@
 		"delete": "Supprimer",
 		"addTask": "Ajouter une tâche",
 		"confirmPlan": "Confirmer le plan"
-	},
-	"tool": {
-		"failed": "Échec de l'exécution de l'outil",
-		"cancelled": "Exécution de l'outil annulée",
-		"completed": "Terminé",
-		"ready": "Prêt",
-		"autoExecute": "Cet outil est configuré pour s'exécuter automatiquement",
-		"paused": "En pause",
-		"queued": "En file d'attente pour l'exécution automatique",
-		"cancel": "Annuler",
-		"expand": "Développer",
-		"openInSidebar": "Ouvrir dans le panneau latéral",
-		"closeInSidebar": "Fermer le panneau latéral",
-		"collapse": "Réduire",
-		"openInline": "Ouvrir en ligne",
-		"groupLabel": "Exécuté",
-		"groupSuffix": "outil(s)"
 	},
 	"notifications": {
 		"feedbackSuccess": "Merci pour votre retour !",

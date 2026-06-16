@@ -1,11 +1,11 @@
 import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
 import { Outlet } from "react-router-dom";
-import { ErrorBoundary } from "@/components/common";
+import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { Page } from "@/components/shared/page";
 import { PageContext } from "@/contexts";
 import { PageStore } from "@/stores";
-import { ErrorPage } from "./ErrorPage";
+import { ErrorPage } from "./error-page";
 
 /**
  * Wrap the routes with a side navigation

@@ -46,7 +46,7 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 					className={`flex flex-col overflow-hidden rounded-lg border border-border bg-secondary-background shadow-sm transition-all duration-200 ease-in-out ${tool.isExpanded ? "fixed inset-4 z-50" : "h-full w-full"}`}
 				>
 					{tool.isExpanded && (
-						<div className="flex h-12.5 w-full flex-row items-center justify-end gap-1.5 overflow-hidden border-b border-b-input pr-2">
+						<div className="flex h-12.5 w-full flex-row items-center justify-end gap-1.5 overflow-hidden border-b border-b-input pe-2">
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<Button
@@ -63,7 +63,7 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 											tool.openTool("sidebar");
 										}}
 									>
-										<PanelRightIcon />
+										<PanelRightIcon className="rtl:-scale-x-100" />
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent>
@@ -123,13 +123,7 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 							room={room}
 							app={tool.json._meta.SMSS_PROJECT_ID}
 							message={message.id}
-							tool={tool.json}
-							toolResponse={
-								tool.status === "SUCCESS"
-									? tool.response
-									: undefined
-							}
-							toolParameters={tool.parameters}
+							toolId={tool.json.id}
 						/>
 					</div>
 				</div>

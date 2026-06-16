@@ -1,4 +1,4 @@
-export * from "./PreviewOverlay";
 export * from "./panels";
-export * from "./WorkspaceManager";
+export * from "./preview-overlay";
 export * from "./workspace";
+export * from "./workspace-manager";

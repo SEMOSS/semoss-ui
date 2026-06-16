@@ -1,1 +1,1 @@
-export * from "./CookieWrapper";
+export * from "./cookie-wrapper";

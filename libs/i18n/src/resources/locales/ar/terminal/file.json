@@ -1,0 +1,34 @@
+{
+	"context": {
+		"switchTo": "التبديل إلى {{context}}"
+	},
+	"run": {
+		"button": "تشغيل",
+		"tooltipActive": "تشغيل (Ctrl+Enter)",
+		"tooltipInactive": "عد إلى نطاق هذا الملف لتشغيله"
+	},
+	"errors": {
+		"loadFailed": "فشل تحميل {{name}}",
+		"runFailed": "تعذر تشغيل {{name}}. يرجى التحقق من البرنامج النصي."
+	},
+	"maximizedToast": {
+		"title": "ستظهر المخرجات في لوحة الطرفية",
+		"description": "استعد التخطيط لرؤية نتائج التشغيل."
+	},
+	"noMode": {
+		"title": "اختر لغة للتشغيل",
+		"description": "اختر Pixel أو R أو Python أو Shell من شريط الأدوات، ثم شغّل {{name}}."
+	},
+	"scopeChanged": {
+		"title": "تم تغيير النطاق",
+		"body": "تم فتح هذا الملف في <strong>{{scope}}</strong>. عد إلى ذلك النطاق لتحريره أو تشغيله."
+	},
+	"scopeLabel": {
+		"appWithName": "تطبيق · {{name}} · {{id}}",
+		"appIdOnly": "تطبيق · {{id}}",
+		"engine": "محرك · {{id}}",
+		"storage": "تخزين · {{name}}",
+		"user": "المستخدم",
+		"insight": "رؤية"
+	}
+}

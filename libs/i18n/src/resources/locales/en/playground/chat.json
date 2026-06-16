@@ -17,8 +17,15 @@
 		"poorResponse": "Poor response",
 		"copyResponse": "Copy Response",
 		"copyCode": "Copy Code",
+		"feedbackPlaceholder": "Add a comment (optional)",
+		"feedbackCancel": "Cancel",
+		"feedbackSubmit": "Submit",
 		"fastForwardToEnd": "Fast Forward to End",
-		"completeTools": "Please complete the tool(s) to proceed."
+		"completeToolsAsk_one": "Please complete the tool to proceed.",
+		"completeToolsAsk_other": "Please complete the tools to proceed.",
+		"completeToolsAuto_one": "Please wait for the tool to complete.",
+		"completeToolsAuto_other": "Please wait for the tools to complete.",
+		"emptyResponse": "Empty response."
 	},
 	"input": {
 		"copyMessage": "Copy Message"
@@ -31,25 +38,8 @@
 		"addTask": "Add Task",
 		"confirmPlan": "Confirm Plan"
 	},
-	"tool": {
-		"failed": "Failed",
-		"cancelled": "Cancelled",
-		"completed": "Completed",
-		"ready": "Ready",
-		"autoExecute": "Auto-executing",
-		"paused": "Paused",
-		"queued": "In queue to auto-execute",
-		"cancel": "Cancel",
-		"expand": "Expand",
-		"openInSidebar": "Open in sidebar",
-		"closeInSidebar": "Close sidebar",
-		"collapse": "Collapse",
-		"openInline": "Open in-line",
-		"groupLabel": "Executed",
-		"groupSuffix": "tool(s)"
-	},
 	"notifications": {
-		"feedbackSuccess": "Thank you for the feedback!",
+		"feedbackSuccess": "Successfully submitted feedback",
 		"rewriteSuccess": "Successfully rewrote message",
 		"copySuccess": "Successfully copied to clipboard",
 		"noCopyContent": "No content to copy",

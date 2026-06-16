@@ -1,8 +1,15 @@
 import { CloudUploadIcon, HammerIcon, PencilIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useCallback, useState } from "react";
+import { useEffect, useState } from "react";
 import { download, useInsight } from "@semoss/sdk/react";
-import { FileExplorer, FileExplorerItem, FlexLayout } from "@semoss/shared";
+import {
+	FileExplorer,
+	FileExplorerItem,
+	type FileExplorerMovedItem,
+	FlexLayout,
+	getFileEditorPathScope,
+	notifyFileEditorPathMoved,
+} from "@semoss/shared";
 import {
 	Button,
 	Spinner,
@@ -22,57 +29,197 @@ interface AppFileExplorerProps {
 
 	/** App */
 	app: string;
+
+	/**
+	 * Optional callback when visible asset paths change in the browser
+	 */
+	onVisibleAssetPathsChange?: (payload: {
+		path: string;
+		paths: string[];
+	}) => void;
+
+	/**
+	 * Optional callback when the file explorer panel is mounted/unmounted
+	 */
+	onOpenStateChange?: (isOpen: boolean) => void;
+
+	/** Initial directory path to open to (defaults to "/") */
+	initialPath?: string;
 }
 
 export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
-	({ layout, node, app }) => {
+	({
+		layout,
+		node,
+		app,
+		onVisibleAssetPathsChange,
+		onOpenStateChange,
+		initialPath,
+	}) => {
 		const insight = useInsight();
 
 		const [isPublishing, setIsPublishing] = useState(false);
+
+		useEffect(() => {
+			onOpenStateChange?.(true);
+			return () => {
+				onOpenStateChange?.(false);
+			};
+		}, [onOpenStateChange]);
+
+		const getTabPath = (
+			config: { path?: string; data?: { path?: string } } | undefined,
+		) => config?.path || config?.data?.path;
+
+		const getMovedPath = (
+			path: string,
+			movedItem: FileExplorerMovedItem,
+		) => {
+			const oldPathWithSlash = movedItem.oldPath.endsWith("/")
+				? movedItem.oldPath
+				: `${movedItem.oldPath}/`;
+			const newPathWithSlash = movedItem.newPath.endsWith("/")
+				? movedItem.newPath
+				: `${movedItem.newPath}/`;
+
+			if (path === movedItem.oldPath) {
+				return movedItem.newPath;
+			}
+
+			if (
+				movedItem.item.type === "directory" &&
+				path.startsWith(oldPathWithSlash)
+			) {
+				return `${newPathWithSlash}${path.slice(oldPathWithSlash.length)}`;
+			}
+
+			return null;
+		};
+
+		const updateTabPath = (
+			tabNode: FlexLayout.TabNode,
+			newPath: string,
+		) => {
+			const config = tabNode.getConfig() as
+				| {
+						name?: string;
+						path?: string;
+						data?: { name?: string; path?: string };
+				  }
+				| undefined;
+			const newName = newPath.split("/").filter(Boolean).pop() ?? newPath;
+			const oldPath = getTabPath(config);
+			const scope = getFileEditorPathScope({ type: "APP", app });
+			const tabName = tabNode.getName();
+			const displayName = tabName.endsWith("*") ? `${newName}*` : newName;
+
+			tabNode.getModel().doAction(
+				FlexLayout.Actions.updateNodeAttributes(tabNode.getId(), {
+					config: {
+						...config,
+						name: newName,
+						path: newPath,
+						data: config?.data
+							? {
+									...config.data,
+									name: config.data.name
+										? newName
+										: undefined,
+									path: newPath,
+								}
+							: config?.data,
+					},
+				}),
+			);
+			tabNode
+				.getModel()
+				.doAction(
+					FlexLayout.Actions.renameTab(tabNode.getId(), displayName),
+				);
+
+			if (oldPath) {
+				notifyFileEditorPathMoved(oldPath, newPath, scope);
+			}
+		};
+
+		const migrateMovedTabs = (movedItems: FileExplorerMovedItem[]) => {
+			const model = node.getModel();
+			let migrated = false;
+
+			model.visitNodes((currentNode) => {
+				if (!(currentNode instanceof FlexLayout.TabNode)) {
+					return;
+				}
+
+				const config = currentNode.getConfig() as
+					| { path?: string; data?: { path?: string } }
+					| undefined;
+				const path = getTabPath(config);
+				if (!path) {
+					return;
+				}
+
+				const movedPath = movedItems.reduce<string | null>(
+					(currentPath, movedItem) => {
+						if (!currentPath) return currentPath;
+						return (
+							getMovedPath(currentPath, movedItem) ?? currentPath
+						);
+					},
+					path,
+				);
+
+				if (movedPath && movedPath !== path) {
+					updateTabPath(currentNode, movedPath);
+					migrated = true;
+				}
+			});
+
+			return migrated;
+		};
 
 		/**
 		 * Remove tabs that are open for a file that has been deleted. If it's a directory, remove all tabs that are open for files within that directory
 		 * @param deletedPath the path of the deleted file or directory
 		 * @param isDirectory whether the deleted path is a directory
 		 */
-		const removeDeletedTabs = useCallback(
-			(deletedPath: string, isDirectory: boolean) => {
-				const model = node.getModel();
-				const deletedPathWithSlash =
-					isDirectory && !deletedPath.endsWith("/")
-						? `${deletedPath}/`
-						: deletedPath;
-				const tabsToRemove: string[] = [];
+		const removeDeletedTabs = (
+			deletedPath: string,
+			isDirectory: boolean,
+		) => {
+			const model = node.getModel();
+			const deletedPathWithSlash =
+				isDirectory && !deletedPath.endsWith("/")
+					? `${deletedPath}/`
+					: deletedPath;
+			const tabsToRemove: string[] = [];
 
-				model.visitNodes((currentNode) => {
-					if (!(currentNode instanceof FlexLayout.TabNode)) {
-						return;
-					}
-					
-					const config = currentNode.getConfig() as
+			model.visitNodes((currentNode) => {
+				if (!(currentNode instanceof FlexLayout.TabNode)) {
+					return;
+				}
+
+				const config = currentNode.getConfig() as
 					| { path?: string; data?: { path?: string } }
 					| undefined;
-					const path = config?.path || config?.data?.path;
-					console.log("VISITING NODE >>>", currentNode.getId(), " >> ", currentNode.getConfig, " >> ", path);
-					if (!path) {
-						return;
-					}
-					console.log("TESTING >>>", deletedPath, path, isDirectory, config);
-					if (
-						isDirectory
-							? path === deletedPath || path.startsWith(deletedPathWithSlash)
-							: path === deletedPath
-					) {
-						tabsToRemove.push(currentNode.getId());
-					}
-				});
+				const path = getTabPath(config);
+				if (!path) {
+					return;
+				}
+				if (
+					isDirectory
+						? path === deletedPath ||
+							path.startsWith(deletedPathWithSlash)
+						: path === deletedPath
+				) {
+					tabsToRemove.push(currentNode.getId());
+				}
+			});
 
-				tabsToRemove.forEach((tabId) => {
-					model.doAction(FlexLayout.Actions.deleteTab(tabId));
-				});
-			},
-			[node],
-		);
+			tabsToRemove.forEach((tabId) => {
+				model.doAction(FlexLayout.Actions.deleteTab(tabId));
+			});
+		};
 
 		/**
 		 * Add a node to the layout
@@ -89,7 +236,31 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 			const model = node.getModel();
 
 			// select the node if there
-			const selectedNode = model.getNodeById(nodeId);
+			let selectedNode = model.getNodeById(nodeId);
+			const targetConfig = options.config as
+				| { path?: string; data?: { path?: string } }
+				| undefined;
+			const targetPath = getTabPath(targetConfig);
+			if (!selectedNode && targetPath) {
+				model.visitNodes((currentNode) => {
+					if (
+						selectedNode ||
+						!(currentNode instanceof FlexLayout.TabNode)
+					) {
+						return;
+					}
+
+					const config = currentNode.getConfig() as
+						| { path?: string; data?: { path?: string } }
+						| undefined;
+					if (
+						currentNode.getComponent() === options.component &&
+						getTabPath(config) === targetPath
+					) {
+						selectedNode = currentNode;
+					}
+				});
+			}
 			if (selectedNode) {
 				model.doAction(
 					FlexLayout.Actions.selectTab(selectedNode.getId()),
@@ -189,6 +360,13 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 					type: "APP",
 					app: app,
 				}}
+				initialPath={initialPath}
+				onVisibleItemsChange={({ path, items }) => {
+					onVisibleAssetPathsChange?.({
+						path,
+						paths: items.map((item) => item.path),
+					});
+				}}
 				headerActions={
 					<Tooltip>
 						<TooltipTrigger asChild>
@@ -246,6 +424,13 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 							path: item.path,
 						},
 						enableClose: true,
+						enableRename: true,
+					});
+				}}
+				onItemsMoved={migrateMovedTabs}
+				onItemsDeleted={(items) => {
+					items.forEach((item) => {
+						removeDeletedTabs(item.path, item.type === "directory");
 					});
 				}}
 				ItemComponent={({ item, refresh, ...otherProps }) => {
@@ -275,8 +460,33 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 											path: item.path,
 										},
 										enableClose: true,
+										enableRename: true,
 									},
 								);
+							}}
+							onAfterRename={(oldPath, newPath) => {
+								const migrated = migrateMovedTabs([
+									{
+										item,
+										oldPath,
+										newPath,
+									},
+								]);
+								if (migrated) {
+									return;
+								}
+
+								const newName =
+									newPath.split("/").filter(Boolean).pop() ??
+									newPath;
+								addNode(`ENGINE_FILE--${newPath}`, {
+									type: "tab",
+									name: newName,
+									component: "app-file-editor",
+									config: { name: newName, path: newPath },
+									enableClose: true,
+									enableRename: true,
+								});
 							}}
 							{...otherProps}
 							actions={[
@@ -353,20 +563,6 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 												await download(
 													insight.insightId,
 													fileKey,
-												);
-
-												refresh();
-											},
-										}
-									: null,
-								item.path.endsWith(".zip")
-									? {
-											name: "Unzip",
-											action: async () => {
-												const pixel = `UnzipFile(filePath=["${item.path}"], space=["${app}"])`;
-
-												await insight.actions.run(
-													pixel,
 												);
 
 												refresh();

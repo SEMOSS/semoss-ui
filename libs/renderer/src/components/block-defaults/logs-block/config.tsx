@@ -1,6 +1,6 @@
 import type { BlockConfig } from "../../../store";
 import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
-import { LogsBlock, type LogsBlockDef } from "./LogsBlock";
+import { LogsBlock, type LogsBlockDef } from "./logs-block";
 
 export const config: BlockConfig<LogsBlockDef> = {
 	widget: "logs",

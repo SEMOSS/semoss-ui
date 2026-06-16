@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Env } from "@semoss/sdk/react";
+import { toast } from "@semoss/ui/next";
 import type { Role } from "@/types";
 
 /**
@@ -90,19 +91,12 @@ export const formatPermission = (permission: Role | ""): string => {
 /**
  * @desc Copies string to clipboard
  */
-export const copyTextToClipboard = (text: string, notificationService) => {
+export const copyTextToClipboard = (text: string) => {
 	try {
 		navigator.clipboard.writeText(text);
-
-		notificationService.add({
-			color: "success",
-			message: "Successfully copied to clipboard",
-		});
+		toast.success("Successfully copied to clipboard");
 	} catch (e) {
-		notificationService.add({
-			color: "error",
-			message: e.message,
-		});
+		toast.error(e.message);
 	}
 };
 
@@ -112,30 +106,22 @@ export const getSDKSnippet = (
 	secretKey?: string,
 ) => {
 	if (type === "py") {
-		return `
-# import the ai platform package
+		return `# import the ai platform package
 import ai_server
 
 # pass in your access and secret keys to authenticate
 server_connection=ai_server.ServerClient(
-    access_key="${
-		accessKey ? accessKey : "<your access key>"
-	}",             # example: "d0033d40-ea83-4083-96ce-17a01451f831"
-    secret_key="${
-		secretKey ? secretKey : "<your access key>"
-	}",             # example: "c2b3fae8-20d1-458c-8565-30ae935c4dfb"
+    access_key="${accessKey ? accessKey : "<your access key>"}",
+    secret_key="${secretKey ? secretKey : "<your secret key>"}",
     base="${Env.MODULE}/api"
-)
-`;
+)`;
 	} else {
-		return `
-# .env
+		return `# .env
 MODULE="${Env.MODULE}"
 
 #.env.local
 ACCESS_KEY="${accessKey ? accessKey : "<your access key>"}"
-SECRET_KEY="${secretKey ? secretKey : "<your secret key>"}"
-`;
+SECRET_KEY="${secretKey ? secretKey : "<your secret key>"}"`;
 	}
 };
 

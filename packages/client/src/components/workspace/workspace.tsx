@@ -1,10 +1,30 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import { Spinner, toast } from "@semoss/ui/next";
-import { BlocksWorkspace } from "@/components/blocks-workspace";
-import { CodeWorkspace } from "@/components/code-workspace";
 import { WorkspaceContext } from "@/contexts";
+import { useNavigate } from "@/hooks/useNavigate";
+
+const BlocksWorkspace = lazy(() =>
+	import("@/components/blocks-workspace").then((m) => ({
+		default: m.BlocksWorkspace,
+	})),
+);
+const CodeWorkspace = lazy(() =>
+	import("@/components/code-workspace").then((m) => ({
+		default: m.CodeWorkspace,
+	})),
+);
+const SkillWorkspace = lazy(() =>
+	import("@/components/skill-workspace").then((m) => ({
+		default: m.SkillWorkspace,
+	})),
+);
+const AgentWorkspace = lazy(() =>
+	import("@/components/agent-workspace").then((m) => ({
+		default: m.AgentWorkspace,
+	})),
+);
+
 import { useRootStore } from "@/hooks";
 import type { WorkspaceStore } from "@/stores";
 
@@ -12,6 +32,20 @@ interface WorkspaceProps {
 	/** App to load */
 	app: string;
 }
+
+const WorkspaceLoadingState = () => {
+	return (
+		<div
+			className="absolute inset-0 flex items-center justify-center"
+			style={{
+				background: "rgba(255, 255, 255, 0.5)",
+				zIndex: 1501,
+			}}
+		>
+			<Spinner className="size-6" />
+		</div>
+	);
+};
 
 export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
 	const insight = useInsight();
@@ -23,7 +57,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
 
 	useEffect(() => {
 		// clear out the old app
-		setWorkspace(undefined);
+		setWorkspace(null);
 
 		if (!insight.isReady) {
 			return;
@@ -34,7 +68,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
 			.then((loadedWorkspace) => {
 				setWorkspace(loadedWorkspace);
 			})
-			.catch((e) => {
+			.catch((_e) => {
 				toast.error("Failed to load app, returning to home page.");
 
 				navigate("/");
@@ -51,10 +85,10 @@ export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
 	usePixel(
 		insight.isReady && app
 			? `ValidateUserProjectDependencies(project="${app}");`
-			: null,
+			: "",
 		{
 			onSuccess: (data: Record<string, boolean>) => {
-				const needsAccess = [];
+				const needsAccess: string[] = [];
 				Object.entries(data).forEach((kv) => {
 					const hasAccess = kv[1];
 
@@ -75,11 +109,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
 	);
 
 	if (!insight.isReady || !workspace) {
-		return (
-			<div className="flex h-full w-full items-center justify-center">
-				<Spinner />
-			</div>
-		);
+		return <WorkspaceLoadingState />;
 	}
 
 	return (
@@ -88,8 +118,12 @@ export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
 				workspace: workspace,
 			}}
 		>
-			{workspace.type === "CODE" && <CodeWorkspace />}
-			{workspace.type === "BLOCKS" && <BlocksWorkspace />}
+			<Suspense fallback={<WorkspaceLoadingState />}>
+				{workspace.type === "CODE" && <CodeWorkspace />}
+				{workspace.type === "BLOCKS" && <BlocksWorkspace />}
+				{workspace.type === "SKILL" && <SkillWorkspace />}
+				{workspace.type === "WORKSPACE" && <AgentWorkspace />}
+			</Suspense>
 		</WorkspaceContext.Provider>
 	);
 };

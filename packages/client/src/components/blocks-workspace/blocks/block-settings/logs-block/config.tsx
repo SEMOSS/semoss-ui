@@ -1,22 +1,22 @@
-import { HighlightAlt } from "@mui/icons-material";
-import { QueryNameDropdownSettings } from "../../settings/custom/QueryNameDropdownSettings";
+import { MousePointerClick } from "lucide-react";
+import { QueryNameDropdownSettings } from "../../settings/custom/query-name-dropdown-settings";
 import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
 import { buildListener, buildShowField } from "../block-defaults.shared";
 import type { BlockSettingsConfig } from "../settings.types";
 
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_LAYOUT,
-	icon: HighlightAlt,
+	icon: MousePointerClick,
 	contentMenu: [
 		{
 			name: "General",
 			children: [
 				{
-					description: "Sheet",
+					description: "Notebook",
 					render: ({ id }) => (
 						<QueryNameDropdownSettings
 							id={id}
-							label="Query"
+							label="Notebook"
 							path="queryId"
 						/>
 					),

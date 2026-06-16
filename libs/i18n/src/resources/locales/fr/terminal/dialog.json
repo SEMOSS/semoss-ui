@@ -1,0 +1,52 @@
+{
+	"help": {
+		"title": "Aide du Terminal",
+		"emptyMessage": "Aucun exemple d'utilisation structuré n'a été renvoyé pour {{type}}.",
+		"rawResponse": "Réponse brute",
+		"copy": "Copier",
+		"copied": "Copié",
+		"copyFailed": "Échec de la copie du code",
+		"fetchFailed": "Échec de la récupération de l'utilisation (aucune réponse)",
+		"usageReturnedError": "GetEngineUsage(type=[\"{{type}}\"]) a renvoyé une erreur."
+	},
+	"save": {
+		"title": "Enregistrer",
+		"fields": {
+			"name": "Nom :",
+			"comment": "Commentaire :"
+		},
+		"buttons": {
+			"save": "Enregistrer",
+			"cancel": "Annuler"
+		},
+		"comment": "Enregistrement à {{timestamp}}",
+		"errors": {
+			"nameRequired": "Le fichier a besoin d'un nom.",
+			"commentRequired": "Veuillez inclure un commentaire décrivant vos modifications.",
+			"saveFailed": "Échec de l'enregistrement de l'actif.",
+			"unknown": "Échec de l'enregistrement"
+		}
+	},
+	"upload": {
+		"title": "Téléverser",
+		"fields": {
+			"selectFile": "Sélectionner un fichier :",
+			"comment": "Commentaire :"
+		},
+		"dropzone": {
+			"drag": "Glissez-déposez des fichiers",
+			"or": "ou téléversez"
+		},
+		"buttons": {
+			"upload": "Téléverser",
+			"cancel": "Annuler",
+			"remove": "Retirer"
+		},
+		"comment": "Téléversement à {{timestamp}}",
+		"errors": {
+			"filesRequired": "Veuillez sélectionner des fichiers à téléverser.",
+			"commentRequired": "Veuillez inclure un commentaire décrivant les fichiers ajoutés.",
+			"unknown": "Échec du téléversement"
+		}
+	}
+}

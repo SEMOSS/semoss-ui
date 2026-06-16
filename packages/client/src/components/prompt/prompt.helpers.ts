@@ -1,7 +1,7 @@
 import {
 	ActionMessages,
 	type Block,
-	type QueryStateConfig,
+	type NotebookStateConfig,
 	type SerializedState,
 } from "@semoss/renderer";
 import type { MonolithStore } from "@/stores";
@@ -77,7 +77,7 @@ function getSelectInputBlock(
 	inputType: string,
 	index: number,
 	label: string,
-	options: string[] = []
+	options: string[] = [],
 ): Block {
 	return {
 		id: getIdForInput(inputType, index),
@@ -111,7 +111,7 @@ function getSelectInputBlock(
 export function getBlockForInput(
 	token: Token,
 	inputType: string,
-	inputTypeMeta: any,
+	inputTypeMeta: { options?: string[] } | null | undefined,
 ): Block | null {
 	switch (inputType) {
 		case INPUT_TYPE_TEXT:
@@ -133,7 +133,7 @@ export function getBlockForInput(
 				inputType,
 				token.index,
 				capitalizeLabel(token.key),
-				inputTypeMeta?.options || [] // Pass actual options if available, otherwise empty array
+				inputTypeMeta?.options || [], // Pass actual options if available, otherwise empty array
 			);
 		default:
 			alert("Block not implemented for this input type yet.");
@@ -210,10 +210,10 @@ function getDatabaseQuery() {
     return f"Use the following list of objects representing each row in table to inform your answer: {result_df.to_dict(orient='records')}. The are the headers for the table are: {list(result_df.columns)}"`;
 }
 
-export function getQueryForPrompt(
+export function getNotebookForPrompt(
 	tokens: Token[],
 	inputTypes: object,
-): Record<string, QueryStateConfig> {
+): Record<string, NotebookStateConfig> {
 	const prompt = getInputFormatPrompt(tokens, inputTypes);
 
 	// filter out custom input types
@@ -332,7 +332,7 @@ export function getQueryForPrompt(
 		.map((customInputTokenIndex) => {
 			return `"{{${getIdForInput(
 				customInputTypes[customInputTokenIndex].type,
-				parseInt(customInputTokenIndex),
+				parseInt(customInputTokenIndex, 10),
 			)}.value}}"`;
 		})
 		.join(", ")})`;
@@ -393,7 +393,7 @@ export function getQueryForPrompt(
 		});
 	}
 
-	const queryJson: Record<string, QueryStateConfig> = {
+	const queryJson: Record<string, NotebookStateConfig> = {
 		[PROMPT_QUERY_DEFINITION_ID]: {
 			id: PROMPT_QUERY_DEFINITION_ID,
 			cells: queryDefinitionCells,
@@ -457,7 +457,7 @@ export async function setBlocksAndOpenUIBuilder(
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.RUN_QUERY,
+								message: ActionMessages.RUN_NOTEBOOK,
 								payload: {
 									queryId: PROMPT_QUERY_DEFINITION_ID,
 								},
@@ -599,7 +599,7 @@ export async function setBlocksAndOpenUIBuilder(
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.RUN_QUERY,
+								message: ActionMessages.RUN_NOTEBOOK,
 								payload: {
 									queryId: PROMPT_QUERY_ID,
 								},
@@ -647,7 +647,11 @@ export async function setBlocksAndOpenUIBuilder(
 		(builder.inputTypes.value as object) ?? {},
 	)) {
 		const token = builder.inputs.value[tokenIndex] as Token;
-		const inputBlock = getBlockForInput(token, inputType.type, inputType.meta);
+		const inputBlock = getBlockForInput(
+			token,
+			inputType.type,
+			inputType.meta,
+		);
 		if (inputBlock) {
 			childInputIds = [...childInputIds, inputBlock.id];
 			state.blocks = { ...state.blocks, [inputBlock.id]: inputBlock };
@@ -665,7 +669,10 @@ export async function setBlocksAndOpenUIBuilder(
 
 			// If this is a select input type, prepare to create a variable
 			if (inputType.type === INPUT_TYPE_SELECT) {
-				if (inputType.meta?.options && inputType.meta.options.length > 0) {
+				if (
+					inputType.meta?.options &&
+					inputType.meta.options.length > 0
+				) {
 					selectInputVariables.push({
 						id: inputId,
 						blockId: inputBlock.id, // Store block ID to update later
@@ -683,7 +690,7 @@ export async function setBlocksAndOpenUIBuilder(
 		...state.blocks[PROMPT_CONTAINER_BLOCK_ID].slots.children.children,
 	];
 
-	state.queries = getQueryForPrompt(
+	state.notebooks = getNotebookForPrompt(
 		builder.inputs.value as Token[],
 		builder.inputTypes.value as object,
 	);
@@ -707,14 +714,14 @@ export async function setBlocksAndOpenUIBuilder(
 
 			// Set the block's options to reference the variable instead of the direct array
 			// This will automatically select the variable in the Options dropdown
-			state.blocks[
-				selectInput.blockId
-			].data.options = `{{${variableId}.output}}`;
+			state.blocks[selectInput.blockId].data.options =
+				`{{${variableId}.output}}`;
 		}
 	}
 
-	const pixel = `CreateAppFromBlocks ( project = [ "${builder.title.value
-		}" ] , json =["<encode>${JSON.stringify(state)}</encode>"]  ) ;`;
+	const pixel = `CreateAppFromBlocks ( project = [ "${
+		builder.title.value
+	}" ] , json =["<encode>${JSON.stringify(state)}</encode>"]  ) ;`;
 
 	// create the app
 	const { errors, pixelReturn } =

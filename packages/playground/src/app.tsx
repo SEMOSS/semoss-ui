@@ -17,7 +17,11 @@ export const App = () => {
 	return (
 		<I18nextProvider i18n={i18n}>
 			<InsightProvider>
-				<ThemeProvider defaultTheme="light">
+				{/* TODO: read default theme from theme map somehow */}
+				<ThemeProvider
+					defaultTheme="light"
+					storageKey="smss-ui-theme-playground"
+				>
 					<div className="absolute inset-0 h-screen w-screen overflow-hidden">
 						<Router />
 					</div>

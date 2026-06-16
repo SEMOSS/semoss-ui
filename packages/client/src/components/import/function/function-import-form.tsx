@@ -1,11 +1,13 @@
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
-import { ChevronDown, ChevronUp, X } from "lucide-react";
+
+import { ChevronDown, ChevronUp, Info, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
 import {
+	Alert,
+	AlertDescription,
 	Button,
 	Checkbox,
 	Collapsible,
@@ -33,6 +35,9 @@ import {
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
+import { EngineFormHeader } from "../shared/engine-form-header";
+import { computeVisibility } from "../shared/import-form.utils";
 
 export interface ParsedResult {
 	headers: string[];
@@ -51,9 +56,19 @@ export interface ParsedResult {
 export const FunctionForm = ({
 	title,
 	description,
+	notice,
+	icon,
 	fields,
 	advanced,
 	categoryDescription,
+}: {
+	title: string;
+	description: string;
+	notice?: string;
+	icon?: string;
+	fields;
+	advanced;
+	categoryDescription;
 }) => {
 	const [openAdvanced, setOpenAdvanced] = useState(false);
 	const [resolvedFields, setResolvedFields] = useState(fields);
@@ -77,7 +92,11 @@ export const FunctionForm = ({
 		mode: "onChange",
 		reValidateMode: "onChange",
 		defaultValues: [...fields].reduce((acc, f) => {
-			acc[f.key] = f.value || "";
+			if (f.type === "parameter-list" || f.type === "string-list") {
+				acc[f.key] = Array.isArray(f.value) ? f.value : [];
+			} else {
+				acc[f.key] = f.value || "";
+			}
 			return acc;
 		}, {}),
 	});
@@ -99,6 +118,18 @@ export const FunctionForm = ({
 
 	const onFormSubmit = async (formData) => {
 		const { FILE, ...newFormData } = formData;
+
+		// Structured list fields are kept as arrays in form state for the UI,
+		// but the backend reads them as JSON strings via Gson on the SMSS prop.
+		(fields as Array<{ key: string; type: string }>).forEach((f) => {
+			if (f.type === "parameter-list" || f.type === "string-list") {
+				const value = newFormData[f.key];
+				if (Array.isArray(value)) {
+					newFormData[f.key] =
+						value.length === 0 ? "" : JSON.stringify(value);
+				}
+			}
+		});
 
 		setLoading(true);
 		let pixel = `CreateRestFunctionEngine(function=["${
@@ -251,24 +282,6 @@ export const FunctionForm = ({
 		return true;
 	};
 
-	const checkForDisplayRulesSet = (field, value) => {
-		const selectedDefaultField = resolvedFields.find(
-			(f) => f.key === field.name,
-		);
-		if (selectedDefaultField?.displayRules?.hideOtherFields) {
-			selectedDefaultField.displayRules.hideOtherFields.forEach((fth) => {
-				const optionValue = fth.value;
-				setResolvedFields((prev) =>
-					prev.map((f) =>
-						f.key === fth.key
-							? { ...f, hidden: optionValue.includes(value) }
-							: f,
-					),
-				);
-			});
-		}
-	};
-
 	// Helper functions for file upload
 	const onFileUpload = (
 		files: File | File[],
@@ -355,7 +368,11 @@ export const FunctionForm = ({
 				switch (val.type) {
 					case "text":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+							>
 								<FieldLabel htmlFor={val.key}>
 									{val.label}
 									{val?.required && (
@@ -466,7 +483,11 @@ export const FunctionForm = ({
 
 					case "number":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+							>
 								<FieldLabel htmlFor={val.key}>
 									{val.label}
 									{val?.required && (
@@ -500,7 +521,11 @@ export const FunctionForm = ({
 
 					case "select":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+							>
 								<FieldLabel htmlFor={val.key}>
 									{val.label}
 									{val?.required && (
@@ -513,7 +538,6 @@ export const FunctionForm = ({
 									value={field.value || ""}
 									onValueChange={(value) => {
 										field.onChange(value);
-										checkForDisplayRulesSet(field, value);
 									}}
 									disabled={val.disabled}
 								>
@@ -561,7 +585,11 @@ export const FunctionForm = ({
 
 					case "radio":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+							>
 								<FieldLabel>
 									{val.label}
 									{val?.required && (
@@ -747,7 +775,11 @@ export const FunctionForm = ({
 					case "checkbox":
 						return (
 							<div
-								className={`flex items-center gap-2 ${val.hidden ? "hidden" : ""}`}
+								className={
+									computeVisibility(val, {})
+										? "flex items-center gap-2"
+										: "hidden"
+								}
 							>
 								<Checkbox
 									id={val.key}
@@ -781,7 +813,11 @@ export const FunctionForm = ({
 						);
 					case "tags":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+							>
 								<FieldLabel htmlFor={val.key}>
 									{val.label}
 									{val?.required && (
@@ -825,6 +861,266 @@ export const FunctionForm = ({
 							</Field>
 						);
 
+					case "parameter-list": {
+						const rows: Array<{
+							parameterName?: string;
+							parameterType?: string;
+							parameterDescription?: string;
+						}> = Array.isArray(field.value) ? field.value : [];
+						const updateRow = (
+							idx: number,
+							patch: Record<string, string>,
+						) => {
+							const next = rows.map((r, i) =>
+								i === idx ? { ...r, ...patch } : r,
+							);
+							field.onChange(next);
+						};
+						return (
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+							>
+								<FieldLabel>
+									{val.label}
+									{val?.required && (
+										<span className="text-destructive">
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<div
+									className="flex flex-col gap-2"
+									data-testid={`function-form-input-${val.key}`}
+								>
+									{rows.length === 0 && (
+										<Muted className="text-sm">
+											No parameters defined.
+										</Muted>
+									)}
+									{rows.map((row, idx) => (
+										<div
+											// biome-ignore lint/suspicious/noArrayIndexKey: row order is stable
+											key={idx}
+											className="flex flex-col gap-2 rounded-md border border-input p-2 sm:flex-row sm:items-start"
+										>
+											<Input
+												className="flex-1"
+												placeholder="Name"
+												value={row.parameterName ?? ""}
+												disabled={val.disabled}
+												onChange={(e) =>
+													updateRow(idx, {
+														parameterName:
+															e.target.value,
+													})
+												}
+												data-testid={`function-form-input-${val.key}-name-${idx}`}
+											/>
+											<Select
+												value={
+													row.parameterType ||
+													"string"
+												}
+												onValueChange={(v) =>
+													updateRow(idx, {
+														parameterType: v,
+													})
+												}
+												disabled={val.disabled}
+											>
+												<SelectTrigger
+													className="w-full sm:w-32"
+													data-testid={`function-form-input-${val.key}-type-${idx}`}
+												>
+													<SelectValue placeholder="Type" />
+												</SelectTrigger>
+												<SelectContent>
+													{[
+														"string",
+														"number",
+														"integer",
+														"boolean",
+														"object",
+														"array",
+													].map((t) => (
+														<SelectItem
+															key={t}
+															value={t}
+														>
+															{t}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+											<Input
+												className="flex-1"
+												placeholder="Description"
+												value={
+													row.parameterDescription ??
+													""
+												}
+												disabled={val.disabled}
+												onChange={(e) =>
+													updateRow(idx, {
+														parameterDescription:
+															e.target.value,
+													})
+												}
+												data-testid={`function-form-input-${val.key}-desc-${idx}`}
+											/>
+											<Button
+												type="button"
+												variant="ghost"
+												size="icon"
+												disabled={val.disabled}
+												onClick={() =>
+													field.onChange(
+														rows.filter(
+															(_, i) => i !== idx,
+														),
+													)
+												}
+												data-testid={`function-form-remove-${val.key}-${idx}`}
+											>
+												<X className="size-4" />
+											</Button>
+										</div>
+									))}
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										className="self-start"
+										disabled={val.disabled}
+										onClick={() =>
+											field.onChange([
+												...rows,
+												{
+													parameterName: "",
+													parameterType: "string",
+													parameterDescription: "",
+												},
+											])
+										}
+										data-testid={`function-form-add-${val.key}`}
+									>
+										+ Add parameter
+									</Button>
+								</div>
+								{error ? (
+									<FieldDescription className="text-destructive">
+										{error.message ?? val.helperText}
+									</FieldDescription>
+								) : (
+									val.helperText && (
+										<FieldDescription>
+											{val.helperText}
+										</FieldDescription>
+									)
+								)}
+							</Field>
+						);
+					}
+					case "string-list": {
+						const items: string[] = Array.isArray(field.value)
+							? field.value
+							: [];
+						return (
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+							>
+								<FieldLabel>
+									{val.label}
+									{val?.required && (
+										<span className="text-destructive">
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<div
+									className="flex flex-col gap-2"
+									data-testid={`function-form-input-${val.key}`}
+								>
+									{items.length === 0 && (
+										<Muted className="text-sm">
+											No values defined.
+										</Muted>
+									)}
+									{items.map((item, idx) => (
+										<div
+											// biome-ignore lint/suspicious/noArrayIndexKey: row order is stable
+											key={idx}
+											className="flex items-start gap-2"
+										>
+											<Input
+												className="flex-1"
+												placeholder={
+													val.placeholder ??
+													"Parameter name"
+												}
+												value={item ?? ""}
+												disabled={val.disabled}
+												onChange={(e) => {
+													const next = items.map(
+														(s, i) =>
+															i === idx
+																? e.target.value
+																: s,
+													);
+													field.onChange(next);
+												}}
+												data-testid={`function-form-input-${val.key}-${idx}`}
+											/>
+											<Button
+												type="button"
+												variant="ghost"
+												size="icon"
+												disabled={val.disabled}
+												onClick={() =>
+													field.onChange(
+														items.filter(
+															(_, i) => i !== idx,
+														),
+													)
+												}
+												data-testid={`function-form-remove-${val.key}-${idx}`}
+											>
+												<X className="size-4" />
+											</Button>
+										</div>
+									))}
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										className="self-start"
+										disabled={val.disabled}
+										onClick={() =>
+											field.onChange([...items, ""])
+										}
+										data-testid={`function-form-add-${val.key}`}
+									>
+										+ Add
+									</Button>
+								</div>
+								{error ? (
+									<FieldDescription className="text-destructive">
+										{error.message ?? val.helperText}
+									</FieldDescription>
+								) : (
+									val.helperText && (
+										<FieldDescription>
+											{val.helperText}
+										</FieldDescription>
+									)
+								)}
+							</Field>
+						);
+					}
 					default:
 						return null;
 				}
@@ -842,10 +1138,18 @@ export const FunctionForm = ({
 
 	return (
 		<form onSubmit={handleSubmit(onFormSubmit)} data-testid="function-form">
-			<H4 data-testid="function-form-title">{title}</H4>
-			<Muted className="mt-1" data-testid="function-form-description">
-				{description}
-			</Muted>
+			<EngineFormHeader
+				testIdPrefix="function"
+				icon={icon}
+				title={title}
+				description={description}
+			/>
+			{notice && (
+				<Alert className="mt-4" data-testid="function-form-notice">
+					<Info />
+					<AlertDescription>{notice}</AlertDescription>
+				</Alert>
+			)}
 			<div className="mt-8 mb-8" data-testid="function-form-box">
 				<div className="flex flex-col gap-4">
 					{Object.keys(grouped).map((category) => (
@@ -855,10 +1159,16 @@ export const FunctionForm = ({
 						>
 							<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 								<div className="flex flex-1 flex-col gap-1">
-									<H4 data-testId="function-importForm-category-title">
+									<H4
+										className="font-semibold text-base tracking-tight"
+										data-testid="function-importForm-category-title"
+									>
 										{category}
 									</H4>
-									<Muted data-testId="model-importForm-category-description">
+									<Muted
+										className="text-muted-foreground text-sm leading-6"
+										data-testid="model-importForm-category-description"
+									>
 										{categoryDescriptions[category] ??
 											"No description available."}
 									</Muted>

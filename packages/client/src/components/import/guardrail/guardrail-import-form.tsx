@@ -1,10 +1,10 @@
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
+
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
 import {
 	Button,
 	Checkbox,
@@ -30,6 +30,9 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
+import { EngineFormHeader } from "../shared/engine-form-header";
+import { computeVisibility } from "../shared/import-form.utils";
 
 export interface ParsedResult {
 	headers: string[];
@@ -48,6 +51,7 @@ export interface ParsedResult {
 export const GuardrailForm = ({
 	title,
 	description,
+	icon,
 	fields,
 	advanced,
 	categoryDescription,
@@ -391,24 +395,6 @@ export const GuardrailForm = ({
 		return true;
 	};
 
-	const checkForDisplayRulesSet = (field, value) => {
-		const selectedDefaultField = resolvedFields.find(
-			(f) => f.key === field.name,
-		);
-		if (selectedDefaultField?.displayRules?.hideOtherFields) {
-			selectedDefaultField.displayRules.hideOtherFields.forEach((fth) => {
-				const optionValue = fth.value;
-				setResolvedFields((prev) =>
-					prev.map((f) =>
-						f.key === fth.key
-							? { ...f, hidden: optionValue.includes(value) }
-							: f,
-					),
-				);
-			});
-		}
-	};
-
 	/**
 	 * This runs on input changes to check if the user has changed a dynamically updated field manually
 	 * It sets a flag that will stop dynamic update from running if the user has manually changed it
@@ -529,11 +515,13 @@ export const GuardrailForm = ({
 				required: val?.required,
 			}}
 			render={({ field, fieldState: { error } }) => {
-				switch (val.component) {
+				switch (val.type) {
 					case "text":
 						return (
 							<Field
-								className={val.hidden ? "hidden" : ""}
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
 								data-testid={`guardrail-form-field-${val.key}`}
 							>
 								<FieldLabel htmlFor={val.key}>
@@ -655,7 +643,9 @@ export const GuardrailForm = ({
 					case "number":
 						return (
 							<Field
-								className={val.hidden ? "hidden" : ""}
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
 								data-testid={`guardrail-form-field-${val.key}`}
 							>
 								<FieldLabel htmlFor={val.key}>
@@ -690,7 +680,9 @@ export const GuardrailForm = ({
 					case "select":
 						return (
 							<Field
-								className={val.hidden ? "hidden" : ""}
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
 								data-testid={`guardrail-form-field-${val.key}`}
 							>
 								<FieldLabel htmlFor={val.key}>
@@ -706,7 +698,6 @@ export const GuardrailForm = ({
 									value={field.value}
 									onValueChange={(value) => {
 										field.onChange(value);
-										checkForDisplayRulesSet(field, value);
 									}}
 									disabled={val.disabled}
 								>
@@ -752,7 +743,9 @@ export const GuardrailForm = ({
 					case "radio":
 						return (
 							<Field
-								className={val.hidden ? "hidden" : ""}
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
 								data-testid={`guardrail-form-field-${val.key}`}
 							>
 								<FieldLabel>{val.label}</FieldLabel>
@@ -929,9 +922,9 @@ export const GuardrailForm = ({
 						return (
 							<div
 								className={
-									val.hidden
-										? "hidden"
-										: "flex flex-row items-center gap-2"
+									computeVisibility(val, {})
+										? "flex flex-row items-center gap-2"
+										: "hidden"
 								}
 								data-testid={`guardrail-form-field-${val.key}`}
 							>
@@ -968,7 +961,9 @@ export const GuardrailForm = ({
 					case "tags":
 						return (
 							<Field
-								className={val.hidden ? "hidden" : ""}
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
 								data-testid={`guardrail-form-field-${val.key}`}
 							>
 								<FieldLabel htmlFor={val.key}>
@@ -1096,15 +1091,12 @@ export const GuardrailForm = ({
 			data-testid="guardrail-form"
 			className="my-4"
 		>
-			<div className="mb-6">
-				<H4 data-testid="guardrail-form-title">{title}</H4>
-				<Muted
-					className="mt-1 text-base"
-					data-testid="guardrail-form-description"
-				>
-					{description}
-				</Muted>
-			</div>
+			<EngineFormHeader
+				testIdPrefix="guardrail"
+				icon={icon}
+				title={title}
+				description={description}
+			/>
 
 			<div className="mt-4 mb-8" data-testid="guardrail-form-box">
 				<div className="flex flex-col gap-4">
@@ -1115,12 +1107,15 @@ export const GuardrailForm = ({
 						>
 							<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 								<div className="flex flex-1 flex-col gap-1">
-									<H4 data-testId="guardrail-importForm-category-title">
+									<H4
+										className="font-semibold text-base tracking-tight"
+										data-testid="guardrail-importForm-category-title"
+									>
 										{category}
 									</H4>
 									<Muted
-										data-testId="model-importForm-category-description"
-										className="text-base"
+										className="text-muted-foreground text-sm leading-6"
+										data-testid="model-importForm-category-description"
 									>
 										{categoryDescriptions[category] ??
 											"No description available."}

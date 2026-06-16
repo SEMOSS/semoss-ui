@@ -1,5 +1,5 @@
 import { Check, Copy, Terminal } from "lucide-react";
-import { Children, isValidElement, useRef, useState } from "react";
+import { Children, isValidElement, useState } from "react";
 import {
 	CodeContainer,
 	H4,
@@ -17,28 +17,53 @@ import { useEngine, usePixel } from "@/hooks";
  * not treat it as a new component type on every render.
  */
 const CodeBlockWithCopy = ({ children }: { children: React.ReactNode }) => {
-	const containerRef = useRef<HTMLDivElement>(null);
 	const [copied, setCopied] = useState(false);
 
-	// The Markdown <code> renderer passes a <Code language="python" …> element
-	// as a child of <pre>.  Pull the language prop from it for the label.
-	let language: string | undefined;
-	Children.forEach(children, (child) => {
-		if (isValidElement(child)) {
-			const lang = (child.props as Record<string, unknown>)?.language as
-				| string
-				| undefined;
-			if (lang) language = lang;
-		}
-	});
+	const extractCodeDetails = (node: React.ReactNode) => {
+		let language: string | undefined;
+		let code = "";
+
+		const walk = (child: React.ReactNode) => {
+			if (typeof child === "string" || typeof child === "number") {
+				code += String(child);
+				return;
+			}
+
+			if (!isValidElement(child)) {
+				return;
+			}
+
+			const props = child.props as {
+				language?: string;
+				code?: string;
+				children?: React.ReactNode;
+			};
+
+			if (!language && typeof props.language === "string") {
+				language = props.language;
+			}
+
+			if (typeof props.code === "string") {
+				code += props.code;
+				return;
+			}
+
+			if (props.children) {
+				Children.forEach(props.children, walk);
+			}
+		};
+
+		Children.forEach(node, walk);
+
+		return { language, code };
+	};
+
+	const { language, code } = extractCodeDetails(children);
 
 	const handleCopy = async (e: React.MouseEvent) => {
 		e.stopPropagation();
-		const text =
-			containerRef.current?.querySelector("pre")?.textContent?.trim() ??
-			"";
 		try {
-			await navigator.clipboard.writeText(text);
+			await navigator.clipboard.writeText(code);
 			setCopied(true);
 			setTimeout(() => setCopied(false), 2000);
 		} catch {
@@ -47,10 +72,7 @@ const CodeBlockWithCopy = ({ children }: { children: React.ReactNode }) => {
 	};
 
 	return (
-		<div
-			ref={containerRef}
-			className="my-2 overflow-hidden rounded-md border border-border"
-		>
+		<div className="my-2 overflow-hidden rounded-md border border-border">
 			{/* Header bar — language label left, copy button right */}
 			<div className="flex items-center justify-between border-border border-b bg-muted px-3 py-1.5">
 				{language && (
@@ -122,7 +144,7 @@ export const EngineUsagePage = () => {
 					<P className="text-muted-foreground text-sm">
 						Click{" "}
 						<a
-							href="../../legacy/dist/#!/embed-terminal"
+							href="../../terminal/dist/"
 							rel="noopener noreferrer"
 							target="_blank"
 							className="text-primary underline underline-offset-4 hover:text-primary/80"

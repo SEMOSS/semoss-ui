@@ -71,7 +71,7 @@ const THINKING_MARKDOWN_COMPONENTS = {
 	),
 	ul: ({ children, ...props }) => (
 		<ul
-			className="my-1 ml-4 list-disc text-inherit text-sm [&>li]:mt-1"
+			className="my-1 ms-4 list-disc text-inherit text-sm [&>li]:mt-1"
 			{...props}
 		>
 			{children}
@@ -79,7 +79,7 @@ const THINKING_MARKDOWN_COMPONENTS = {
 	),
 	ol: ({ children, ...props }) => (
 		<ol
-			className="my-1 ml-4 list-decimal text-inherit text-sm [&>li]:mt-1"
+			className="my-1 ms-4 list-decimal text-inherit text-sm [&>li]:mt-1"
 			{...props}
 		>
 			{children}
@@ -234,7 +234,7 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 							canToggleExpansion && setIsExpanded(!isExpanded)
 						}
 						disabled={!canToggleExpansion}
-						className="mb-2 flex w-full items-center justify-between text-left transition-colors enabled:hover:text-foreground disabled:cursor-default"
+						className="mb-2 flex w-full items-center justify-between text-start transition-colors enabled:hover:text-foreground disabled:cursor-default"
 					>
 						<span className="font-medium">Thinking</span>
 						{canToggleExpansion && (
@@ -266,9 +266,10 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 							}}
 							type="always"
 						>
-							<div className="-mt-1 pr-3">
+							<div className="-mt-1 pe-3">
 								{displayedThinking ? (
 									<Markdown
+										dir="auto"
 										components={
 											THINKING_MARKDOWN_COMPONENTS
 										}
@@ -290,13 +291,14 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 							>
 								{/* don't need loadingMessage check here because loadingMessage only shows before streaming, so effectiveExpanded is true */}
 								<Markdown
+									dir="auto"
 									components={THINKING_MARKDOWN_COMPONENTS}
 								>
 									{displayedThinking}
 								</Markdown>
 							</div>
 							{isOverflowing && (
-								<div className="pointer-events-none absolute right-0 bottom-0 left-0 h-5 bg-linear-to-t from-background to-transparent" />
+								<div className="pointer-events-none absolute start-0 end-0 bottom-0 h-5 bg-linear-to-t from-background to-transparent" />
 							)}
 						</div>
 					)}

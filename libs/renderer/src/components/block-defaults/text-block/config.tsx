@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import type { BlockConfig } from "../../../store";
 import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
-import { TextBlock, type TextBlockDef } from "./TextBlock";
+import { TextBlock, type TextBlockDef } from "./text-block";
 
 export const DefaultStyles: CSSProperties = {
 	padding: "4px",

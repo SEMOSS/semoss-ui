@@ -1,33 +1,31 @@
-import { DeleteRounded, MoreVert } from "@mui/icons-material";
-import EditIcon from "@mui/icons-material/Edit";
-import { Users } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, Users } from "lucide-react";
 import React, { useState } from "react";
 import {
-	Card,
-	IconButton,
-	Menu,
-	Stack,
-	styled,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	Button,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+	toast,
+} from "@semoss/ui/next";
 import { deleteTeam } from "@/api/teams";
-import AMAZON_S3 from "@/assets/loginProviders/AMAZON_S3.png";
-import ADFS from "@/assets/loginProviders/adfs_microsoft_1.png";
-import Dropbox from "@/assets/loginProviders/DROPBOX.png";
-import Github from "@/assets/loginProviders/github.png";
-import Gitlab from "@/assets/loginProviders/gitlab.png";
-import newGoogle from "@/assets/loginProviders/google.png";
-import Keycloak from "@/assets/loginProviders/keycloak.png";
-import Linkedin from "@/assets/loginProviders/linkedin.png";
-import Microsoft from "@/assets/loginProviders/MICROSOFT.png";
-import Okta from "@/assets/loginProviders/okta.png";
+import AMAZON_S3 from "@/assets/img/AMAZON_S3.png";
+import Dropbox from "@/assets/img/DROPBOX.png";
+import Github from "@/assets/img/GITHUB.svg";
+import newGoogle from "@/assets/img/GOOGLE.svg";
+import Microsoft from "@/assets/img/MICROSOFT.png";
+import CAC from "@/assets/loginProviders/CAC.svg";
+import Generic from "@/assets/loginProviders/GENERIC.svg";
+import Gitlab from "@/assets/loginProviders/GITLAB.svg";
+import Keycloak from "@/assets/loginProviders/KEYCLOAK.svg";
+import Linkedin from "@/assets/loginProviders/LINKEDIN.svg";
+import Okta from "@/assets/loginProviders/OKTA.svg";
 import ProductHunt from "@/assets/loginProviders/product_hunt.png";
-import Salesforce from "@/assets/loginProviders/salesforce.png";
+import Salesforce from "@/assets/loginProviders/SALESFORCE.svg";
+import Surverymonkey from "@/assets/loginProviders/SURVEYMONKEY.svg";
 import Saml from "@/assets/loginProviders/saml.png";
 import Siteminder from "@/assets/loginProviders/siteminder.png";
-import Surverymonkey from "@/assets/loginProviders/surveymonkey.png";
-import Twitter from "@/assets/loginProviders/x_twitter.png";
+import Twitter from "@/assets/loginProviders/X_TWITTER.svg";
 import { AddTeamModal } from "./add-team-modal";
 import { TeamDeleteDialog } from "./team-delete-dialog";
 
@@ -36,8 +34,10 @@ const TypeImageObject = {
 	google: newGoogle,
 	github: Github,
 	okta: Okta,
+	cac: CAC,
 	dropbox: Dropbox,
-	adfs: ADFS,
+	adfs: Microsoft,
+	generic: Generic,
 	gitlab: Gitlab,
 	keycloak: Keycloak,
 	linkedin: Linkedin,
@@ -49,60 +49,6 @@ const TypeImageObject = {
 	surveymonkey: Surverymonkey,
 	twitter: Twitter,
 };
-
-const StyledTileCard = styled(Card)(() => ({
-	"&:hover": {
-		cursor: "pointer",
-	},
-	width: "100%",
-	padding: "8px",
-	borderRadius: "12px",
-	minWidth: "288px",
-	maxHeight: "200px",
-}));
-
-const StyledCardDescription = styled(Typography)({
-	display: "-webkit-box",
-	minHeight: "80px",
-	maxHeight: "80px",
-	maxWidth: "256px",
-	WebkitLineClamp: 4,
-	WebkitBoxOrient: "vertical",
-	overflow: "hidden",
-	textOverflow: "ellipsis",
-	fontSize: "14px",
-	color: "rgba(0, 0, 0, 0.6)",
-	lineHeight: "20.02px",
-	letter: "0.17px",
-});
-
-const StyledTitle = styled(Typography)({
-	display: "block",
-	minHeight: "24px",
-	maxHeight: "24px",
-	maxWidth: "350px",
-	whiteSpace: "pre-wrap",
-	overflow: "hidden",
-	textOverflow: "ellipsis",
-	fontSize: "16px",
-	lineHeight: "24px",
-	letter: "0.15px",
-});
-
-const StyledHeaderActions = styled("div")({
-	display: "flex",
-	alignItems: "flex-start",
-	justifyContent: "flex-end",
-});
-
-const StyledMoreVert = styled(MoreVert, {
-	shouldForwardProp: (prop) => prop !== "hover",
-})<{
-	/** Track if the page header is stuck */
-	hover: boolean;
-}>(({ theme, hover }) => ({
-	color: hover ? theme.palette.divider : theme.palette.text.secondary,
-}));
 
 interface TeamCardProps {
 	/** ID of team */
@@ -128,13 +74,8 @@ interface TeamCardProps {
 
 export const TeamTileCard = (props: TeamCardProps) => {
 	const { id, description, type, dispatch, teams, onDelete, onClick } = props;
-	const notification = useNotification();
 
-	const [hover, setHover] = React.useState(false);
 	const [deleteModal, setDeleteModal] = React.useState(false);
-	const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(
-		null,
-	);
 	const [editTeam, setEditTeam] = useState(false);
 
 	const descriptionText = description
@@ -157,29 +98,13 @@ export const TeamTileCard = (props: TeamCardProps) => {
 				value: [...teams.filter((val) => val.id !== id)],
 			});
 			onDelete?.();
-			notification.add({
-				color: "success",
-				message: "Successfully deleted team",
-			});
+			toast.success("Successfully deleted team");
 		} catch (e) {
 			console.error(e);
-			notification.add({
-				color: "error",
-				message: e instanceof Error ? e.message : String(e),
-			});
+			toast.error(e instanceof Error ? e.message : String(e));
 		} finally {
 			setDeleteModal(false);
 		}
-	};
-
-	const handleClick = (event) => {
-		event.stopPropagation();
-		setAnchorEl(event.currentTarget);
-	};
-
-	const handleClose = (event?: React.SyntheticEvent) => {
-		event?.stopPropagation();
-		setAnchorEl(null);
 	};
 
 	const providerKey = type ? type.toLowerCase() : "";
@@ -187,121 +112,66 @@ export const TeamTileCard = (props: TeamCardProps) => {
 
 	return (
 		<React.Fragment>
-			<StyledTileCard onClick={() => onClick(id)}>
-				<Card.Header
-					title={
-						<div
-							style={{
-								display: "flex",
-								flexDirection: "row",
-								gap: "8px",
-								alignItems: "center",
-							}}
-						>
-							{providerIcon ? (
-								<img
-									src={providerIcon}
-									alt={`${type} icon`}
-									style={{
-										height: "20px",
-										width: "20px",
-									}}
-								/>
-							) : (
-								<Users className="size-4 text-muted-foreground" />
-							)}
-							<StyledTitle variant={"body1"}>{id}</StyledTitle>
-						</div>
-					}
-					action={
-						<StyledHeaderActions>
-							<IconButton
-								size={"small"}
-								color="default"
-								onClick={handleClick}
+			{/* biome-ignore lint/a11y/useSemanticElements: card contains nested interactive elements, cannot use button */}
+			<div
+				className="max-h-[200px] w-full min-w-[288px] cursor-pointer rounded-xl border bg-background p-2 shadow-sm transition-shadow hover:shadow-md"
+				role="button"
+				tabIndex={0}
+				onClick={() => onClick(id)}
+				onKeyDown={(e) => e.key === "Enter" && onClick(id)}
+			>
+				<div className="flex items-center justify-between">
+					<div className="flex items-center gap-2 overflow-hidden">
+						{providerIcon ? (
+							<img
+								src={providerIcon}
+								alt={`${type} icon`}
+								className="size-5 shrink-0"
+							/>
+						) : (
+							<Users className="size-4 shrink-0 text-muted-foreground" />
+						)}
+						<span className="block max-w-[350px] overflow-hidden text-ellipsis whitespace-nowrap text-base leading-6">
+							{id}
+						</span>
+					</div>
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon"
+								onClick={(e) => e.stopPropagation()}
 							>
-								<StyledMoreVert hover={hover} />
-							</IconButton>
-							<Menu
-								anchorEl={anchorEl}
-								open={Boolean(anchorEl)}
-								onClose={handleClose}
-								anchorOrigin={{
-									vertical: "bottom",
-									horizontal: "right",
-								}}
-								transformOrigin={{
-									vertical: "top",
-									horizontal: "right",
-								}}
-								sx={{
-									"& .MuiPaper-root": {
-										borderRadius: "4px",
-									},
+								<MoreHorizontal className="size-4" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem
+								onClick={(e) => {
+									e.stopPropagation();
+									setEditTeam(true);
 								}}
 							>
-								<Menu.Item
-									onClick={(e) => {
-										e.stopPropagation();
-										handleClose(e);
-										setEditTeam(true);
-									}}
-								>
-									<Stack direction="row" gap={0.5}>
-										<EditIcon
-											sx={{
-												color: "#0000008A",
-												fontSize: 18,
-											}}
-										/>
-										<Typography variant="body2">
-											Edit team
-										</Typography>
-									</Stack>
-								</Menu.Item>
-								<Menu.Item
-									onClick={(e) => {
-										e.stopPropagation();
-										setDeleteModal(true);
-										handleClose(e);
-									}}
-									onMouseOver={() => {
-										setHover(true);
-									}}
-									sx={{ color: hover ? "red" : "#0000008A" }}
-									onMouseLeave={() => {
-										setHover(false);
-									}}
-								>
-									<Stack direction="row" gap={0.5}>
-										<DeleteRounded
-											sx={{
-												color: hover
-													? "red"
-													: "#0000008A",
-												fontSize: 18,
-											}}
-										/>
-										<Typography
-											variant="body2"
-											sx={{
-												color: hover ? "red" : "black",
-											}}
-										>
-											Delete team
-										</Typography>
-									</Stack>
-								</Menu.Item>
-							</Menu>
-						</StyledHeaderActions>
-					}
-				/>
-				<Card.Content>
-					<StyledCardDescription variant={"body2"}>
-						{descriptionText}
-					</StyledCardDescription>
-				</Card.Content>
-			</StyledTileCard>
+								<Pencil className="mr-2 size-4" />
+								Edit team
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								className="text-destructive focus:text-destructive"
+								onClick={(e) => {
+									e.stopPropagation();
+									setDeleteModal(true);
+								}}
+							>
+								<Trash2 className="mr-2 size-4" />
+								Delete team
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
+				<p className="mt-2 line-clamp-4 min-h-[80px] max-w-[256px] overflow-hidden text-ellipsis text-muted-foreground text-sm">
+					{descriptionText}
+				</p>
+			</div>
 			<TeamDeleteDialog
 				open={deleteModal}
 				onOpenChange={setDeleteModal}
@@ -329,7 +199,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 						dispatch({
 							type: "field",
 							field: "teams",
-							value: updatedTeams, // Update the existing team in the array
+							value: updatedTeams,
 						});
 					}
 					setEditTeam(false);

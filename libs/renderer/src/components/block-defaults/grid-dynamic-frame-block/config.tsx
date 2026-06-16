@@ -3,7 +3,7 @@ import { BLOCK_TYPE_DATA } from "../block-defaults.constants";
 import {
 	GridDynamicFrameBlock,
 	type GridDynamicFrameBlockDef,
-} from "./GridDynamicFrameBlock";
+} from "./grid-dynamic-frame-block";
 
 // export the config for the block
 export const config: BlockConfig<GridDynamicFrameBlockDef> = {

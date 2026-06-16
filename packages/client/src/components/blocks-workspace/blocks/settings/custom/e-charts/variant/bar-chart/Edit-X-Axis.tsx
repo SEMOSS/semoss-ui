@@ -1,6 +1,6 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	type BlockDef,
 	type EchartVisualizationBlockConfig,
@@ -8,67 +8,8 @@ import {
 	getValueByPath,
 	type PathValue,
 } from "@semoss/renderer";
-import {
-	Button,
-	Slider,
-	Switch,
-	styled,
-	TextField,
-	Typography,
-} from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
-
-// Axis div styling for switch type fields, to show labels and fields in a row
-const StyledAxisDiv = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-	gap?: string;
-}>(({ theme, display, justifyContent, gap }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "8px 16px",
-	alignItems: "center",
-	gap: gap ?? undefined,
-}));
-
-const StyledAxis = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-}));
-// Axis div styling for input type fields, to show labels and fields in a column
-const StyledAxisColDiv = styled("div")<{
-	display?: string;
-	justifyContent: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "column",
-	padding: "8px 16px",
-	gap: "8px",
-}));
-// Axis div styling for span type fields
-const StyledAxisSpan = styled("span")<{
-	display?: string;
-	justifyContent?: string;
-	width?: string;
-}>(({ display, justifyContent, width }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	width: width ?? undefined,
-}));
-// Axis div styling for text fields
-const StyledTextField = styled(TextField)(({ theme }) => ({
-	width: "100%",
-}));
-
-const StyledTypography = styled(Typography)(({ theme }) => ({
-	color: theme.palette.text.primary,
-}));
+import { Button, Input, Slider, Switch } from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 //Changing the X axis styling like title, rotate and changing the labels
 export const EditXAxis = observer(
@@ -81,11 +22,11 @@ export const EditXAxis = observer(
 		const [value, setValue] = useState(data.option);
 		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 		// Store the initial value of xAxis.name in a ref to persist it across renders
-        const initialXAxisNameRef = useRef(data.option.xAxis["name"]);
+		const initialXAxisNameRef = useRef(data.option.xAxis.name);
 
-        // Use the initial value from the ref
-        const storedValue = initialXAxisNameRef.current;
-		
+		// Use the initial value from the ref
+		const storedValue = initialXAxisNameRef.current;
+
 		//Initial xaxis state used for restoring
 		const INITIAL_XAXIS_STATE = {
 			showAxis: true,
@@ -130,12 +71,13 @@ export const EditXAxis = observer(
 			}
 		}, [computedValue]);
 		//updating the initial local state, based on the existing state store
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			const axis = "xAxis";
 			const xAxisStateData = {
 				showAxis: true,
 				showAxisTitle: true,
-				xaxistitle: data.option[axis]["name"],
+				xaxistitle: data.option[axis].name,
 				xaxisTitleFontSize: 12,
 				showXAxisLineTicks: false,
 				showXAxisLabels: true,
@@ -148,29 +90,29 @@ export const EditXAxis = observer(
 			};
 			if (Object.hasOwn(option, axis) && option[axis]) {
 				xAxisStateData.xaxistitle = Object.hasOwn(option[axis], "name")
-					? option[axis]["name"]
+					? option[axis].name
 					: "";
 
 				if (Object.hasOwn(option[axis], "axisTick")) {
 					xAxisStateData.showXAxisLineTicks = Object.hasOwn(
-						option[axis]["axisTick"],
+						option[axis].axisTick,
 						"show",
 					)
-						? option[axis]["axisTick"].show
+						? option[axis].axisTick.show
 						: false;
 				}
 				if (Object.hasOwn(option[axis], "axisLabel")) {
 					xAxisStateData.labelFontSize = Object.hasOwn(
-						option[axis]["axisLabel"],
+						option[axis].axisLabel,
 						"fontSize",
 					)
-						? option[axis]["axisLabel"]["fontSize"]
+						? option[axis].axisLabel.fontSize
 						: 12;
 					xAxisStateData.rotate = Object.hasOwn(
-						option[axis]["axisLabel"],
+						option[axis].axisLabel,
 						"rotate",
 					)
-						? option[axis]["axisLabel"]["rotate"]
+						? option[axis].axisLabel.rotate
 						: 0;
 				}
 			}
@@ -182,6 +124,7 @@ export const EditXAxis = observer(
 			});
 		}, []);
 		//when the x axis fields are updated, then the chart data will be updated to store
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (xAxisDataUpdated === "updated") {
 				updateChartData();
@@ -223,84 +166,84 @@ export const EditXAxis = observer(
 			let option = typeof value === "string" ? JSON.parse(value) : value;
 			//update the chart data based on the changes in the x axis fields
 			let optionUpdated = option;
-			if (Object.hasOwn(option, "xAxis") && option["xAxis"]) {
+			if (Object.hasOwn(option, "xAxis") && option.xAxis) {
 				if (axisData.showAxisTitle) {
 					if (Object.hasOwn(axisData, "xaxistitle")) {
-						option["xAxis"] = {
-							...option["xAxis"],
-							["name"]: axisData.xaxistitle,
+						option.xAxis = {
+							...option.xAxis,
+							name: axisData.xaxistitle,
 						};
 					}
 					if (Object.hasOwn(axisData, "xaxisTitleFontSize")) {
-						option["xAxis"] = {
-							...option["xAxis"],
-							["nameTextStyle"]: {
-								...option["xAxis"]["nameTextStyle"],
-								["fontSize"]:
+						option.xAxis = {
+							...option.xAxis,
+							nameTextStyle: {
+								...option.xAxis.nameTextStyle,
+								fontSize:
 									Number(axisData.xaxisTitleFontSize) ||
 									undefined,
 							},
 						};
 					}
 				} else {
-					option["xAxis"] = {
-						...option["xAxis"],
-						["name"]: "",
+					option.xAxis = {
+						...option.xAxis,
+						name: "",
 					};
 				}
 
 				if (Object.hasOwn(axisData, "showXAxisLineTicks")) {
-					option["xAxis"] = {
-						...option["xAxis"],
-						["axisTick"]: {
-							...option["xAxis"]["axisTick"],
-							["show"]: axisData.showXAxisLineTicks,
-							["alignWithLabel"]: axisData.showXAxisLineTicks,
+					option.xAxis = {
+						...option.xAxis,
+						axisTick: {
+							...option.xAxis.axisTick,
+							show: axisData.showXAxisLineTicks,
+							alignWithLabel: axisData.showXAxisLineTicks,
 						},
 					};
 				}
 
 				if (Object.hasOwn(axisData, "showXAxisLabels")) {
-					option["xAxis"] = {
-						...option["xAxis"],
-						["axisLabel"]: {
-							...option["xAxis"]["axisLabel"],
-							["show"]: axisData.showXAxisLabels,
+					option.xAxis = {
+						...option.xAxis,
+						axisLabel: {
+							...option.xAxis.axisLabel,
+							show: axisData.showXAxisLabels,
 						},
 					};
 				}
 
 				if (Object.hasOwn(axisData, "labelFontSize")) {
-					option["xAxis"] = {
-						...option["xAxis"],
-						["axisLabel"]: {
-							...option["xAxis"]["axisLabel"],
-							["show"]: option["xAxis"]["axisLabel"]["show"],
-							["fontSize"]:
+					option.xAxis = {
+						...option.xAxis,
+						axisLabel: {
+							...option.xAxis.axisLabel,
+							show: option.xAxis.axisLabel.show,
+							fontSize:
 								Number(axisData.labelFontSize) || undefined,
 						},
 					};
 				}
 				if (Object.hasOwn(axisData, "rotate")) {
-					option["xAxis"] = {
-						...option["xAxis"],
-						["axisLabel"]: {
-							...option["xAxis"]["axisLabel"],
-							["show"]: option["xAxis"]["axisLabel"]["show"],
-							["rotate"]: axisData.rotate,
+					option.xAxis = {
+						...option.xAxis,
+						axisLabel: {
+							...option.xAxis.axisLabel,
+							show: option.xAxis.axisLabel.show,
+							rotate: axisData.rotate,
 						},
 					};
 				}
 				if (Object.hasOwn(axisData, "showxAxisZoom")) {
-					if (option["dataZoom"]) {
-						const xAxisPosition = option["dataZoom"].findIndex(
-							(opt) => Object.hasOwn(opt, "xAxisIndex"),
+					if (option.dataZoom) {
+						const xAxisPosition = option.dataZoom.findIndex((opt) =>
+							Object.hasOwn(opt, "xAxisIndex"),
 						);
 						if (xAxisPosition > -1) {
-							option["dataZoom"][xAxisPosition].show =
+							option.dataZoom[xAxisPosition].show =
 								axisData.showxAxisZoom;
 						} else {
-							option["dataZoom"].push({
+							option.dataZoom.push({
 								type: "slider",
 								xAxisIndex: [0],
 								show: axisData.showxAxisZoom,
@@ -308,14 +251,14 @@ export const EditXAxis = observer(
 						}
 					}
 					if (Object.hasOwn(axisData, "axisGap")) {
-						option["xAxis"] = {
-							...option["xAxis"],
-							["nameGap"]: Number(axisData.axisGap) || undefined,
+						option.xAxis = {
+							...option.xAxis,
+							nameGap: Number(axisData.axisGap) || undefined,
 						};
 					} else {
 						option = {
 							...option,
-							["dataZoom"]: {
+							dataZoom: {
 								show: axisData.showxAxisZoom,
 								type: "slider",
 								xAxisIndex: [0],
@@ -325,9 +268,9 @@ export const EditXAxis = observer(
 				}
 				option = {
 					...option,
-					["customSettings"]: {
-						...option["customSettings"],
-						["toolsUpdated"]: true,
+					customSettings: {
+						...option.customSettings,
+						toolsUpdated: true,
 					},
 				};
 				optionUpdated = option;
@@ -359,196 +302,122 @@ export const EditXAxis = observer(
 		}
 
 		const accordionDetails = (
-			<StyledAxis>
-				<StyledAxisDiv
-					display="flex"
-					justifyContent="flex-start"
-					gap="8px"
-				>
+			<div className="flex flex-col">
+				<div className="flex flex-row items-center gap-2 px-4 py-2">
 					<Switch
-						size="small"
-						defaultChecked={xaxisState.showAxisTitle ?? undefined}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							handleInputChange(
-								e,
-								"showAxisTitle",
-								e.target.checked,
-							)
+						defaultChecked={!!xaxisState.showAxisTitle}
+						onCheckedChange={(checked) =>
+							handleInputChange(null, "showAxisTitle", checked)
 						}
-						title="Show Axis Title"
 					/>
-					<StyledTypography variant="body2">
-						Show Axis Title
-					</StyledTypography>
-				</StyledAxisDiv>
+					<span className="text-sm">Show Axis Title</span>
+				</div>
 				{xaxisState.showAxisTitle && (
-					<StyledAxisColDiv
-						display="flex"
-						justifyContent="space-around"
-					>
-						<Typography variant="body2" color="secondary">
+					<div className="flex flex-col gap-2 px-4 py-2">
+						<span className="text-muted-foreground text-sm">
 							Set Axis Title
-						</Typography>
-						<StyledTextField
-							size="small"
+						</span>
+						<Input
 							value={xaxisState.xaxistitle}
 							onChange={(e) => handleInputChange(e, "xaxistitle")}
 						/>
-					</StyledAxisColDiv>
+					</div>
 				)}
 				{xaxisState.showAxisTitle && (
-					<StyledAxisColDiv
-						display="flex"
-						justifyContent="space-around"
-					>
-						<Typography variant="body2" color="secondary">
+					<div className="flex flex-col gap-2 px-4 py-2">
+						<span className="text-muted-foreground text-sm">
 							Edit Axis Title Font Size
-						</Typography>
-						<TextField
-							size="small"
+						</span>
+						<Input
 							type="number"
 							value={xaxisState.xaxisTitleFontSize}
 							onChange={(e) =>
 								handleInputChange(e, "xaxisTitleFontSize")
 							}
 						/>
-					</StyledAxisColDiv>
+					</div>
 				)}
 				{xaxisState.showAxisTitle && (
-					<StyledAxisColDiv
-						display="flex"
-						justifyContent="space-around"
-					>
-						<Typography variant="body2" color="secondary">
+					<div className="flex flex-col gap-2 px-4 py-2">
+						<span className="text-muted-foreground text-sm">
 							Axis Gap
-						</Typography>
-						<TextField
-							size="small"
+						</span>
+						<Input
 							type="number"
 							value={xaxisState.axisGap}
 							onChange={(e) => handleInputChange(e, "axisGap")}
 						/>
-					</StyledAxisColDiv>
+					</div>
 				)}
-				<StyledAxisDiv display="flex" justifyContent="flex-start">
+				<div className="flex flex-row items-center gap-2 px-4 py-2">
 					<Switch
-						size="small"
-						defaultChecked={xaxisState.showXAxisLabels ?? undefined}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							handleInputChange(
-								e,
-								"showXAxisLabels",
-								e.target.checked,
-							)
+						defaultChecked={!!xaxisState.showXAxisLabels}
+						onCheckedChange={(checked) =>
+							handleInputChange(null, "showXAxisLabels", checked)
 						}
-						title="Show XAxis Labels"
 					/>
-					<StyledTypography variant="body2">
-						Show XAxis Labels
-					</StyledTypography>
-				</StyledAxisDiv>
+					<span className="text-sm">Show XAxis Labels</span>
+				</div>
 				{xaxisState.showXAxisLabels && (
-					<StyledAxisColDiv
-						display="flex"
-						justifyContent="space-around"
-					>
-						<Typography variant="body2" color="secondary">
+					<div className="flex flex-col gap-2 px-4 py-2">
+						<span className="text-muted-foreground text-sm">
 							Edit Label Font Size:
-						</Typography>
-						<StyledTextField
-							size="small"
+						</span>
+						<Input
 							value={xaxisState.labelFontSize}
 							type="number"
 							onChange={(e) =>
 								handleInputChange(e, "labelFontSize")
 							}
 						/>
-					</StyledAxisColDiv>
+					</div>
 				)}
 				{xaxisState.showXAxisLabels && (
-					<StyledAxisColDiv
-						display="flex"
-						justifyContent="space-around"
-					>
-						<Typography variant="body2" color="secondary">
+					<div className="flex flex-col gap-2 px-4 py-2">
+						<span className="text-muted-foreground text-sm">
 							Rotate X-Axis Values:
-						</Typography>
+						</span>
 						<Slider
-							size="small"
-							aria-label="Always visible"
-							value={xaxisState.rotate}
+							value={[xaxisState.rotate]}
 							min={xaxisState.rotateLabelMinValue}
 							max={xaxisState.rotateLabelMaxValue}
-							valueLabelDisplay="on"
-							onChange={(event, newValue) =>
-								handleInputChange(event, "rotate", newValue)
+							onValueChange={(newValue: number[]) =>
+								handleInputChange(null, "rotate", newValue[0])
 							}
 						/>
-						<StyledAxisSpan
-							display="flex"
-							width="100%"
-							justifyContent="space-between"
-						>
+						<div className="flex w-full justify-between">
 							<span>{xaxisState.rotateLabelMinValue}</span>
 							<span>{xaxisState.rotateLabelMaxValue}</span>
-						</StyledAxisSpan>
-					</StyledAxisColDiv>
+						</div>
+					</div>
 				)}
 
-				<StyledAxisDiv
-					display="flex"
-					justifyContent="flex-start"
-					gap="8px"
-				>
+				<div className="flex flex-row items-center gap-2 px-4 py-2">
 					<Switch
-						size="small"
-						defaultChecked={
-							xaxisState.showXAxisLineTicks ?? undefined
-						}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
+						defaultChecked={!!xaxisState.showXAxisLineTicks}
+						onCheckedChange={(checked) =>
 							handleInputChange(
-								e,
+								null,
 								"showXAxisLineTicks",
-								e.target.checked,
+								checked,
 							)
 						}
-						title="Show XAxis Line Ticks"
 					/>
-					<StyledTypography variant="body2">
-						Show XAxis Line Ticks
-					</StyledTypography>
-				</StyledAxisDiv>
-				<StyledAxisDiv
-					display="flex"
-					justifyContent="flex-start"
-					gap="8px"
-				>
+					<span className="text-sm">Show XAxis Line Ticks</span>
+				</div>
+				<div className="flex flex-row items-center gap-2 px-4 py-2">
 					<Switch
-						size="small"
-						checked={xaxisState.showxAxisZoom ?? undefined}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							handleInputChange(
-								e,
-								"showxAxisZoom",
-								e.target.checked,
-							)
+						checked={!!xaxisState.showxAxisZoom}
+						onCheckedChange={(checked) =>
+							handleInputChange(null, "showxAxisZoom", checked)
 						}
-						title="Show / Hide X-Axis Zoom"
 					/>
-					<StyledTypography variant="body2">
-						Show / Hide X-Axis Zoom
-					</StyledTypography>
-				</StyledAxisDiv>
-				<StyledAxisDiv justifyContent="end" display="flex">
-					<Button
-						color="primary"
-						variant="contained"
-						onClick={resetToInitialState}
-					>
-						Reset
-					</Button>
-				</StyledAxisDiv>
-			</StyledAxis>
+					<span className="text-sm">Show / Hide X-Axis Zoom</span>
+				</div>
+				<div className="flex justify-end px-4 py-2">
+					<Button onClick={resetToInitialState}>Reset</Button>
+				</div>
+			</div>
 		);
 		return <>{accordionDetails}</>;
 	},

@@ -1,9 +1,9 @@
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: legacy click handlers */
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: legacy click handlers */
-import { FileUploadOutlined } from "@mui/icons-material";
+
 import { ChevronRight, SearchIcon, UploadIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -38,17 +38,17 @@ import {
 	MODEL_VERSIONS,
 	UNKNOWN_MODEL_BRAND,
 } from "@/components/import/model/model-import.constants";
-import { ModelTileCard } from "@/components/import/model/model-tile-card";
+import {
+	ModelEngineIcon,
+	ModelTileCard,
+} from "@/components/import/model/model-tile-card";
 import { useRootStore } from "@/hooks";
-import { ENGINE_IMAGES } from "@/pages/import/import.constants";
+import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId } from "@/utility";
 import { ModelImportDetailsPage } from "./model-import-details-page";
 
-const normalizeEngineKey = (value?: string) =>
-	(value || "").trim().replace(/\W+/g, "_").toUpperCase();
-
 // Provider labels shown in UI tabs/section headers are display names (e.g. "Google Gemini"),
-// while ENGINE_IMAGES.MODEL keys are engine subtypes (e.g. "VERTEX"), so we translate here.
+// while engine subtypes are keys like "VERTEX", so we translate here.
 // This mapping is used by ProviderIcon in this file (top provider labels only).
 const MODEL_PROVIDER_SUBTYPE_BY_NAME: Record<string, string> = {
 	OpenAI: "OPEN_AI",
@@ -62,24 +62,11 @@ const MODEL_PROVIDER_SUBTYPE_BY_NAME: Record<string, string> = {
 	Embedded: "BRAIN",
 };
 
-const getModelIconBySubtype = (subtype?: string) => {
-	if (!subtype) return "";
-	const normalizedSubtype = normalizeEngineKey(subtype);
-
-	const match = (ENGINE_IMAGES.MODEL || []).find((option) => {
-		return normalizeEngineKey(option.name) === normalizedSubtype;
-	});
-
-	return match?.icon || "";
-};
-
 /**
  * Helper component to display provider icon with fallback to initials
  */
 const ProviderIcon: React.FC<{ provider: string }> = ({ provider }) => {
-	const providerIcon = getModelIconBySubtype(
-		MODEL_PROVIDER_SUBTYPE_BY_NAME[provider],
-	);
+	const subtype = MODEL_PROVIDER_SUBTYPE_BY_NAME[provider];
 
 	const getInitials = (name: string) => {
 		return name
@@ -90,10 +77,11 @@ const ProviderIcon: React.FC<{ provider: string }> = ({ provider }) => {
 			.toUpperCase();
 	};
 
-	if (providerIcon) {
+	if (subtype) {
 		return (
-			<img
-				src={providerIcon}
+			<EngineSubtypeIcon
+				engineType="MODEL"
+				engineSubtype={subtype}
 				alt={`${provider} logo`}
 				className="size-5 rounded-[4px] object-contain"
 			/>
@@ -353,9 +341,7 @@ export const ModelImportPage: React.FC = () => {
 		return;
 	};
 
-	/**
-	 * Determines view
-	 */
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional - deps cover all needed values
 	const view = useMemo(() => {
 		switch (selectedModel) {
 			case null:
@@ -693,7 +679,7 @@ export const ModelImportPage: React.FC = () => {
 									</div>
 								) : (
 									<div className="text-center">
-										<FileUploadOutlined className="mb-2 h-12 w-12 text-muted-foreground" />
+										<UploadIcon className="mb-2 h-12 w-12 text-muted-foreground" />
 										<P className="font-medium text-foreground">
 											Drop your file here or click to
 											browse
@@ -731,9 +717,23 @@ export const ModelImportPage: React.FC = () => {
 					</DialogContent>
 				</Dialog>
 
-				<H4 className="mb-2" data-testid="model-import-title">
-					{selectedModel?.trim() || "Connect to Model Catalog"}
-				</H4>
+				<div className="mb-2 flex items-center gap-2">
+					{selectedModel?.trim() && selectedModelMetadata && (
+						<div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg">
+							<ModelEngineIcon
+								model={selectedModelMetadata}
+								provider={selectedProvider}
+								alt={
+									selectedModelMetadata.display ||
+									selectedModelMetadata.name
+								}
+							/>
+						</div>
+					)}
+					<H4 data-testid="model-import-title">
+						{selectedModel?.trim() || "Connect to Model Catalog"}
+					</H4>
+				</div>
 				<P
 					className="mb-3 text-muted-foreground"
 					data-testid="model-import-description"

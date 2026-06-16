@@ -2,6 +2,7 @@ import type { FileMode } from "./file.types";
 import { FileCodeEditor } from "./file-code-editor";
 import { FileDownloadView } from "./file-download-view";
 import { FileImageViewer } from "./file-image-viewer";
+import { FileMarkdownEditor } from "./file-markdown-editor";
 import { FilePdfViewer } from "./file-pdf-viewer";
 
 // Extensions that cannot be rendered in the editor — show a download-first view instead
@@ -23,12 +24,17 @@ interface FileEditorProps {
 
 	/** Callback when the file is changed */
 	onChange?: (content: string, isModified: boolean) => void;
+
+	/** Optional handler invoked when the user runs the file via Ctrl/Cmd+Enter.
+	 * Only applies to the code editor (non-rendered file types aren't runnable). */
+	onRun?: () => void;
 }
 
 export const FileEditor: React.FC<FileEditorProps> = ({
 	mode,
 	path,
 	onChange = () => null,
+	onRun,
 }) => {
 	const ext = path.split(".").pop()?.toLowerCase() || "";
 
@@ -43,6 +49,7 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 	].includes(ext);
 	const isPdf = ext === "pdf";
 	const isNotRendered = NON_RENDERED_EXTENSIONS.has(ext);
+	const isMarkdown = ext === "md" || ext === "markdown";
 
 	return (
 		<div className="relative flex h-full w-full flex-col overflow-hidden bg-background py-1">
@@ -56,12 +63,21 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 					onChange={onChange}
 				/>
 			)}
-			{!isImage && !isPdf && !isNotRendered && (
+			{isMarkdown && (
+				<FileMarkdownEditor
+					key={path}
+					mode={mode}
+					path={path}
+					onChange={onChange}
+				/>
+			)}
+			{!isImage && !isPdf && !isNotRendered && !isMarkdown && (
 				<FileCodeEditor
 					key={path}
 					mode={mode}
 					path={path}
 					onChange={onChange}
+					onRun={onRun}
 				/>
 			)}
 		</div>

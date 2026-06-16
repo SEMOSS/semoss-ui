@@ -14,8 +14,8 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Env } from "@semoss/sdk/react";
+import { EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Avatar,
 	AvatarFallback,
@@ -34,38 +34,10 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import BRAIN from "@/assets/img/BRAIN.png";
 import { Folder } from "@/assets/img/Folder";
-import GOOGLE from "@/assets/img/google.png";
-import { ENGINE_IMAGES } from "@/pages/import";
-import { formatToDataTestId } from "@/utility";
-
-/**
- * @name findDBImage
- * @params appType & appSubType
- * @returns image link for associated engine
- */
-const findDBImage = (appType: string, appSubType: string) => {
-	const normalizeEngineKey = (value?: string) =>
-		(value || "")
-			.trim()
-			.replace(/[^A-Za-z0-9]+/g, "_")
-			.toUpperCase();
-	const typeKey = normalizeEngineKey(appType);
-	const subtypeKeyRaw = normalizeEngineKey(appSubType);
-	const subtypeKey =
-		subtypeKeyRaw === "GUANACO" ? "HUGGINGFACE" : subtypeKeyRaw;
-	const images = ENGINE_IMAGES[typeKey] || [];
-	const obj = images.find((ele) => {
-		return normalizeEngineKey(ele.name) === subtypeKey;
-	});
-
-	if (!obj) {
-		return BRAIN;
-	}
-
-	return obj.icon;
-};
+import GOOGLE from "@/assets/img/GOOGLE.svg";
+import { useNavigate } from "@/hooks/useNavigate";
+import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
 
 const parseUtcDate = (rawDate?: string) => {
 	if (!rawDate) {
@@ -164,6 +136,7 @@ interface DatabaseCardProps {
 	date?: string;
 
 	onClick?: (value: string) => void;
+	href?: string;
 
 	onDelete?: () => void;
 
@@ -192,6 +165,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 		desktopInlineMeta = false,
 		date,
 		onClick,
+		href,
 		onDelete,
 		favorite,
 		global,
@@ -249,6 +223,36 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 					: [];
 	const hasTags = tagArray.length > 0;
 	const hasDate = Boolean(parsedDate);
+	const displayId = `id: ${id}`;
+	const openHrefInNewTab = () => {
+		if (!href) {
+			return false;
+		}
+
+		window.open(href, "_blank", "noopener,noreferrer");
+		return true;
+	};
+
+	const handleCardClick = (event: React.MouseEvent) => {
+		if (href && (event.ctrlKey || event.metaKey || event.button === 1)) {
+			event.preventDefault();
+			event.stopPropagation();
+			openHrefInNewTab();
+			return;
+		}
+
+		onClick?.(id);
+	};
+
+	const handleCardAuxClick = (event: React.MouseEvent) => {
+		if (!href || event.button !== 1) {
+			return;
+		}
+
+		event.preventDefault();
+		event.stopPropagation();
+		openHrefInNewTab();
+	};
 
 	const renderTags = (compact = false) => {
 		if (!hasTags) {
@@ -267,6 +271,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 							variant="outline"
 							title={t}
 							className={compact ? "h-6" : undefined}
+							style={getTagBadgeStyle(t)}
 						>
 							<span
 								className={
@@ -313,6 +318,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 							variant="outline"
 							title={t}
 							className={compact ? "h-6" : undefined}
+							style={getTagBadgeStyle(t)}
 						>
 							<span
 								className={
@@ -459,9 +465,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent>
-							{isProjectType(type)
-								? "Delete App"
-								: "Delete Engine"}
+							{isProjectType(type) ? "Delete" : "Delete Engine"}
 						</TooltipContent>
 					</Tooltip>
 				)}
@@ -471,8 +475,10 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 
 	return (
 		<Card
-			onClick={() => onClick?.(id)}
-			data-testId={formatToDataTestId(
+			onClick={handleCardClick}
+			onAuxClick={handleCardAuxClick}
+			data-semoss-nav-click={onClick ? "true" : undefined}
+			data-testid={formatToDataTestId(
 				`genericEngineCards-${type}-${name}`,
 			)}
 			className="flex h-auto w-full max-w-full flex-col items-start justify-center gap-1.5 overflow-hidden rounded-lg border bg-card p-3 shadow-md hover:cursor-pointer sm:p-3.5"
@@ -487,7 +493,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 				>
 					<div className="flex min-w-0 flex-1 items-start gap-2.5">
 						{/* Engine icon — always visible */}
-						<div className="flex size-10 flex-shrink-0 items-center justify-center overflow-hidden bg-muted/30 p-1">
+						<div className="flex size-10 flex-shrink-0 items-center justify-center overflow-hidden bg-transparent p-1">
 							{customIcon ? (
 								<div className="flex h-full w-full items-center justify-center">
 									{customIcon}
@@ -497,8 +503,9 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 									<Folder />
 								</div>
 							) : (
-								<img
-									src={findDBImage(type, sub_type)}
+								<EngineSubtypeIcon
+									engineType={type}
+									engineSubtype={sub_type}
 									alt={name}
 									className="size-full object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.08)]"
 								/>
@@ -514,20 +521,13 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 								>
 									{name}
 								</P>
-								{sub_type === "EMBEDDED" && (
-									<img
-										src={GOOGLE}
-										alt="Google"
-										className="size-5 flex-shrink-0 object-cover"
-									/>
-								)}
 							</div>
 							<div className="flex min-w-0 items-center gap-1">
 								<P
 									className="truncate font-mono text-muted-foreground text-xs"
-									title={id}
+									title={displayId}
 								>
-									{id}
+									{displayId}
 								</P>
 								<Tooltip>
 									<TooltipTrigger asChild>
@@ -628,13 +628,49 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 		owner = "N/A",
 		votes = "0",
 		onClick,
+		href,
 		favorite,
 		upvote,
 		global,
 	} = props;
 
+	const openHrefInNewTab = () => {
+		if (!href) {
+			return false;
+		}
+
+		window.open(href, "_blank", "noopener,noreferrer");
+		return true;
+	};
+
+	const handleCardClick = (event: React.MouseEvent) => {
+		if (href && (event.ctrlKey || event.metaKey || event.button === 1)) {
+			event.preventDefault();
+			event.stopPropagation();
+			openHrefInNewTab();
+			return;
+		}
+
+		onClick?.(id);
+	};
+
+	const handleCardAuxClick = (event: React.MouseEvent) => {
+		if (!href || event.button !== 1) {
+			return;
+		}
+
+		event.preventDefault();
+		event.stopPropagation();
+		openHrefInNewTab();
+	};
+
 	return (
-		<Card onClick={() => onClick(id)} className="h-full cursor-pointer p-0">
+		<Card
+			onClick={handleCardClick}
+			onAuxClick={handleCardAuxClick}
+			data-semoss-nav-click={onClick ? "true" : undefined}
+			className="h-full cursor-pointer p-0"
+		>
 			<img
 				src={`${Env.MODULE}/api/e-${id}/image/download`}
 				alt={name || id}
@@ -701,7 +737,11 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 						(Array.isArray(tag) ? (
 							<>
 								{tag.slice(0, 2).map((t, _i) => (
-									<Badge key={`${id}`} variant="secondary">
+									<Badge
+										key={`${id}`}
+										variant="secondary"
+										style={getTagBadgeStyle(t)}
+									>
 										{t}
 									</Badge>
 								))}
@@ -725,7 +765,12 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 								)}
 							</>
 						) : tag !== "" ? (
-							<Badge variant="secondary">{tag}</Badge>
+							<Badge
+								variant="secondary"
+								style={getTagBadgeStyle(tag)}
+							>
+								{tag}
+							</Badge>
 						) : null)}
 				</div>
 			</CardContent>

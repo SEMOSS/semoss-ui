@@ -1,5 +1,4 @@
-import type { QueryState } from "../query.state";
-import { SerializedState } from "../state.types";
+import type { NotebookState } from "../notebook.state";
 import type { Migration } from "./migration.types";
 
 /**
@@ -19,15 +18,15 @@ const config: Migration = {
 			const id = keyValue[0];
 			const variable = keyValue[1];
 			if (variable.type === "cell" || variable.type === "query") {
-				variable["isInput"] = false;
-				variable["isOutput"] = true;
+				variable.isInput = false;
+				variable.isOutput = true;
 			} else {
-				variable["isInput"] = true;
-				variable["isOutput"] = false;
+				variable.isInput = true;
+				variable.isOutput = false;
 			}
 
 			if (newState.dependencies[variable.to]) {
-				variable["value"] = newState.dependencies[variable.to];
+				variable.value = newState.dependencies[variable.to];
 
 				// Delete the dependency while we are at it
 				delete newState.dependencies[variable.to];
@@ -57,7 +56,7 @@ const config: Migration = {
 
 		// Start keeping track of order of sheets to be executed
 		const orderedQueries = [];
-		Object.values(newState.queries).forEach((q: QueryState) => {
+		Object.values(newState.queries).forEach((q: NotebookState) => {
 			orderedQueries.push(q.id);
 		});
 

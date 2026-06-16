@@ -1,18 +1,12 @@
-import {
-	Edit,
-	LocalOffer,
-	OpenInBrowser,
-	Visibility,
-} from "@mui/icons-material";
+import { ExternalLink, Eye, Pencil } from "lucide-react";
 import type React from "react";
 import { type Dispatch, type SetStateAction, useState } from "react";
 import type { Control } from "react-hook-form";
-import { useNotification } from "@semoss/ui";
+import { toast } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
 import { AppAccessStep } from "./AppAccessStep";
-import { AppDetailsStep } from "./AppDetailsStep";
-import { AppTagsStep } from "./AppTagsStep";
+import { AppDetailsAndTagsStep } from "./AppDetailsAndTagsStep";
 import { AppUploadStep } from "./AppUploadStep";
 import { SaveAppModal } from "./SaveAppModal";
 import {
@@ -49,12 +43,28 @@ export type AddAppFormStep = {
 	requiredFields: string[];
 };
 
-interface AddAppProps {
-	/** Track if the model is open */
-	open: boolean;
+const MODAL_CONFIG = {
+	app: {
+		title: "Upload app from my computer",
+		errorMessage:
+			"There was an error creating your app. Please check your zip file and try again.",
+	},
+	skill: {
+		title: "Upload skill from my computer",
+		errorMessage:
+			"There was an error creating your skill. Please check your zip file and try again.",
+	},
+	agent: {
+		title: "Upload agent from my computer",
+		errorMessage:
+			"There was an error creating your agent. Please check your zip file and try again.",
+	},
+} as const;
 
-	/** Callback that is triggered on close */
+interface AddAppProps {
+	open: boolean;
 	handleClose: (appId?: string) => void;
+	type?: keyof typeof MODAL_CONFIG;
 }
 
 export const AddAppModal = (props: AddAppProps) => {
@@ -72,7 +82,7 @@ export const AddAppModal = (props: AddAppProps) => {
 	const appZipFormSteps = [
 		{
 			name: "Upload",
-			icon: <OpenInBrowser />,
+			icon: <ExternalLink className="size-4" />,
 			title: "Upload a zip file",
 			component: addAppUploadStep,
 			requiredFields: [
@@ -80,10 +90,9 @@ export const AddAppModal = (props: AddAppProps) => {
 				ADD_APP_FORM_FIELD_TYPE,
 			],
 		},
-
 		{
 			name: "Access",
-			icon: <Visibility />,
+			icon: <Eye className="size-4" />,
 			title: "Access",
 			component: AppAccessStep,
 			requiredFields: [],
@@ -93,7 +102,7 @@ export const AddAppModal = (props: AddAppProps) => {
 	const projectZipFormSteps = [
 		{
 			name: "Upload",
-			icon: <OpenInBrowser />,
+			icon: <ExternalLink className="size-4" />,
 			title: "Upload a zip file",
 			component: addAppUploadStep,
 			requiredFields: [
@@ -103,23 +112,14 @@ export const AddAppModal = (props: AddAppProps) => {
 		},
 		{
 			name: "Details",
-			icon: <Edit />,
+			icon: <Pencil className="size-4" />,
 			title: "Details",
-			component: AppDetailsStep,
-			requiredFields: [
-				ADD_APP_FORM_FIELD_DESCRIPTION,
-			],
-		},
-		{
-			name: "Tags",
-			icon: <LocalOffer />,
-			title: "Tags",
-			component: AppTagsStep,
+			component: AppDetailsAndTagsStep,
 			requiredFields: [],
 		},
 		{
 			name: "Access",
-			icon: <Visibility />,
+			icon: <Eye className="size-4" />,
 			title: "Access",
 			component: AppAccessStep,
 			requiredFields: [],
@@ -129,10 +129,9 @@ export const AddAppModal = (props: AddAppProps) => {
 	const [_addAppFormSteps, setAddAppFormSteps] =
 		useState<AddAppFormStep[]>(appZipFormSteps);
 
-	const { open, handleClose } = props;
-
+	const { open, handleClose, type = "app" } = props;
+	const config = MODAL_CONFIG[type];
 	const { monolithStore, configStore } = useRootStore();
-	const notification = useNotification();
 
 	const defaultFormValues: AddAppForm = {
 		[ADD_APP_FORM_FIELD_NAME]: "",
@@ -144,18 +143,12 @@ export const AddAppModal = (props: AddAppProps) => {
 		[ADD_APP_FORM_FIELD_TYPE]: "App Zip",
 	};
 
-	/**
-	 * Method that is called to create the app
-	 */
 	const createApp = async (data: AddAppForm) => {
-		// upload the file
-
 		if (data[ADD_APP_FORM_FIELD_TYPE] === "App Zip") {
 			const upload = await uploadFile(
 				[data[ADD_APP_FORM_FIELD_UPLOAD]],
 				configStore.store.insightID,
 			);
-			// *** Waiting on the ImportApp reactor to be ready so that we can hook up the metadata ****.
 			const resp = await monolithStore.runQuery(
 				`UploadProjectApp(filePath=["${upload[0].fileLocation}"], global=[${data[ADD_APP_FORM_FIELD_IS_GLOBAL]}]);`,
 			);
@@ -164,11 +157,7 @@ export const AddAppModal = (props: AddAppProps) => {
 			const type = resp.pixelReturn[0].operationType[0];
 
 			if (type.indexOf("ERROR") > -1) {
-				notification.add({
-					color: "error",
-					message: output,
-				});
-
+				toast.error(output);
 				return;
 			}
 			handleClose(output.project_id);
@@ -182,13 +171,10 @@ export const AddAppModal = (props: AddAppProps) => {
 			const type = createProjectResponse.pixelReturn[0].operationType[0];
 
 			if (type.indexOf("ERROR") > -1) {
-				notification.add({
-					color: "error",
-					message: createProjectOutput,
-				});
-
+				toast.error(createProjectOutput);
 				return;
 			}
+
 			const setProjectMetadataResponse = await monolithStore.runQuery(
 				`SetProjectMetadata(project=["${
 					createProjectOutput.project_id
@@ -204,11 +190,7 @@ export const AddAppModal = (props: AddAppProps) => {
 				setProjectMetadataResponse.pixelReturn[0].operationType[0];
 
 			if (projectType.indexOf("ERROR") > -1) {
-				notification.add({
-					color: "error",
-					message: projectOutput,
-				});
-
+				toast.error(projectOutput);
 				return;
 			}
 
@@ -220,11 +202,7 @@ export const AddAppModal = (props: AddAppProps) => {
 				deleteAssetResponse.pixelReturn[0].operationType[0];
 
 			if (deleteAssetType.indexOf("ERROR") > -1) {
-				notification.add({
-					color: "error",
-					message: deleteAssetOutput,
-				});
-
+				toast.error(deleteAssetOutput);
 				return;
 			}
 
@@ -243,14 +221,9 @@ export const AddAppModal = (props: AddAppProps) => {
 			const unzipType = unzipFileResponse.pixelReturn[0].operationType[0];
 
 			if (unzipType.indexOf("ERROR") > -1) {
-				notification.add({
-					color: "error",
-					message: unzipOutput,
-				});
-
+				toast.error(unzipOutput);
 				return;
 			}
-			// close it
 
 			handleClose(createProjectOutput.project_id);
 		}
@@ -260,11 +233,11 @@ export const AddAppModal = (props: AddAppProps) => {
 		<SaveAppModal
 			open={open}
 			handleClose={handleClose}
-			title="Upload app from my computer"
+			title={config.title}
 			steps={projectZipFormSteps}
 			defaultFormValues={defaultFormValues}
 			handleFormSubmit={createApp}
-			errorMessage="There was an error creating your app. Please check your zip file and try again."
+			errorMessage={config.errorMessage}
 			submitBtnText="Upload"
 		/>
 	);

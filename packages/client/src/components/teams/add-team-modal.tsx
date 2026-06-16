@@ -1,7 +1,11 @@
 import { Users, X } from "lucide-react";
-import React, { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import {
+	getLoginProviderInitials,
+	getLoginProviderKey,
+	loadLoginProviderLogos,
+} from "@semoss/shared";
 import {
 	Button,
 	Dialog,
@@ -23,42 +27,8 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { addTeam, editTeam } from "@/api/teams";
-import AMAZON_S3 from "@/assets/loginProviders/AMAZON_S3.png";
-import ADFS from "@/assets/loginProviders/adfs_microsoft_1.png";
-import Dropbox from "@/assets/loginProviders/DROPBOX.png";
-import Github from "@/assets/loginProviders/github.png";
-import Gitlab from "@/assets/loginProviders/gitlab.png";
-import newGoogle from "@/assets/loginProviders/google.png";
-import Keycloak from "@/assets/loginProviders/keycloak.png";
-import Linkedin from "@/assets/loginProviders/linkedin.png";
-import Microsoft from "@/assets/loginProviders/MICROSOFT.png";
-import Okta from "@/assets/loginProviders/okta.png";
-import ProductHunt from "@/assets/loginProviders/product_hunt.png";
-import Salesforce from "@/assets/loginProviders/salesforce.png";
-import Saml from "@/assets/loginProviders/saml.png";
-import Siteminder from "@/assets/loginProviders/siteminder.png";
-import Surverymonkey from "@/assets/loginProviders/surveymonkey.png";
-import Twitter from "@/assets/loginProviders/x_twitter.png";
 import { useRootStore } from "@/hooks";
-
-const TypeImageObject = {
-	native: AMAZON_S3,
-	google: newGoogle,
-	github: Github,
-	okta: Okta,
-	dropbox: Dropbox,
-	adfs: ADFS,
-	gitlab: Gitlab,
-	keycloak: Keycloak,
-	linkedin: Linkedin,
-	ms: Microsoft,
-	product_hunt: ProductHunt,
-	salesforce: Salesforce,
-	saml: Saml,
-	siteminder: Siteminder,
-	surveymonkey: Surverymonkey,
-	twitter: Twitter,
-};
+import { useNavigate } from "@/hooks/useNavigate";
 
 type TeamReturn = {
 	id: string;
@@ -97,14 +67,15 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 
 	const navigate = useNavigate();
 	const { configStore } = useRootStore();
+	const [providerLogos, setProviderLogos] = useState<Record<string, string>>(
+		{},
+	);
 
 	// State to track the previous team name, type
-	const [previousTeamName, setPreviousTeamName] = React.useState<
+	const [previousTeamName, setPreviousTeamName] = useState<
 		string | undefined
 	>(id);
-	const [_previousType, setPreviousType] = React.useState<string | undefined>(
-		id,
-	);
+	const [_previousType, setPreviousType] = useState<string | undefined>(id);
 	const {
 		handleSubmit,
 		control,
@@ -134,20 +105,69 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 
 	const selectedTeamType = watch("TEAM_TYPE");
 
-	const loginTypes = [
-		{
-			provider: "CUSTOM",
-			name: "Custom",
-			description: "Directly manage users in the team",
-			isOauth: false,
-		},
-		...configStore.store.config.availableProviders,
-	] as {
-		provider: string;
-		name: string;
-		isOauth: boolean;
-		description?: string;
-	}[];
+	const loginTypes = useMemo(() => {
+		return [
+			{
+				provider: "CUSTOM",
+				name: "Custom",
+				description: "Directly manage users in the team",
+				isOauth: false,
+			},
+			...configStore.store.config.availableProviders,
+		] as {
+			provider: string;
+			name: string;
+			isOauth: boolean;
+			description?: string;
+		}[];
+	}, [configStore.store.config.availableProviders]);
+
+	const loginTypesSignature = useMemo(() => {
+		return loginTypes
+			.map((provider) => getLoginProviderKey(provider.provider))
+			.sort()
+			.join("|");
+	}, [loginTypes]);
+
+	useEffect(() => {
+		if (!open || !loginTypesSignature) return;
+
+		const providers = loginTypesSignature
+			.split("|")
+			.filter(
+				(provider) =>
+					!["custom", "native", "registration"].includes(provider),
+			);
+
+		if (providers.length === 0) return;
+
+		let isMounted = true;
+
+		const loadProviderLogos = async () => {
+			const loadedLogos = await loadLoginProviderLogos(providers);
+
+			if (!isMounted || Object.keys(loadedLogos).length === 0) return;
+
+			setProviderLogos((previous) => {
+				const next = { ...previous };
+				let hasChanged = false;
+
+				for (const [provider, logo] of Object.entries(loadedLogos)) {
+					if (next[provider] === logo) continue;
+					next[provider] = logo;
+					hasChanged = true;
+				}
+
+				return hasChanged ? next : previous;
+			});
+		};
+
+		void loadProviderLogos();
+
+		return () => {
+			isMounted = false;
+		};
+	}, [open, loginTypesSignature]);
 
 	/**
 	 * Method that is called to create the team
@@ -278,23 +298,44 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 												</SelectTrigger>
 												<SelectContent>
 													{(() => {
-														const filteredTypes =
-															loginTypes
-																.sort()
-																.filter(
-																	(p) =>
-																		![
-																			"native",
-																			"registration",
-																		].includes(
+														const filteredTypes = [
+															...loginTypes,
+														]
+															.sort((a, b) =>
+																a.name.localeCompare(
+																	b.name,
+																),
+															)
+															.filter(
+																(p) =>
+																	![
+																		"native",
+																		"registration",
+																	].includes(
+																		getLoginProviderKey(
 																			p.provider,
 																		),
-																);
+																	),
+															);
 														const hasMultipleTypes =
 															filteredTypes.length >
 															1;
 														return filteredTypes.map(
 															(p) => {
+																const providerKey =
+																	getLoginProviderKey(
+																		p.provider,
+																	);
+																const providerLogo =
+																	providerLogos[
+																		providerKey
+																	];
+																const providerInitials =
+																	getLoginProviderInitials(
+																		p.name ||
+																			p.provider,
+																	);
+
 																return (
 																	<SelectItem
 																		key={`logintype-${p.provider}`}
@@ -302,30 +343,33 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 																			p.provider
 																		}
 																		className={
-																			p.provider ===
-																				"CUSTOM" &&
+																			providerKey ===
+																				"custom" &&
 																			hasMultipleTypes
 																				? "border-border border-b"
 																				: ""
 																		}
 																	>
 																		<div className="flex flex-row items-center gap-6">
-																			{TypeImageObject[
-																				p
-																					.provider
-																			] ? (
+																			{providerKey ===
+																			"custom" ? (
+																				<Users className="h-6 w-6 text-muted-foreground" />
+																			) : providerLogo ? (
 																				<img
 																					src={
-																						TypeImageObject[
-																							p
-																								.provider
-																						]
+																						providerLogo
 																					}
 																					className="h-6 w-6"
 																					alt="login provider icon"
+																					loading="lazy"
+																					decoding="async"
 																				/>
 																			) : (
-																				<Users className="h-6 w-6 text-muted-foreground" />
+																				<div className="flex h-6 w-6 items-center justify-center rounded-md border border-border/70 bg-muted/60 font-semibold text-[9px] text-muted-foreground">
+																					{
+																						providerInitials
+																					}
+																				</div>
 																			)}
 																			<span>
 																				{

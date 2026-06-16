@@ -1,7 +1,6 @@
 import { ArrowDown, ArrowUp, SearchIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { runPixel, useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -28,6 +27,7 @@ import { Help } from "@/components/help";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { Filterbox } from "@/components/ui";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId } from "@/utility";
 import type { ENGINE_ROUTES } from "./engine.constants";
 
@@ -463,6 +463,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 							}}
 							filteredCatalogIds={[]}
 							hideHeaderToggleFrom="md"
+							colorizeValues
+							colorizeSelectedOnly
 						/>
 					</div>
 					<div className="flex h-full w-full flex-1 flex-col gap-6">
@@ -496,8 +498,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 							</Tabs>
 						</div>
 
-						{Object.entries(metaFilters).length === 0 &&
-							!isDiscoverable &&
+						{!isDiscoverable &&
 							getFavoritedEngines.data.length > 0 && (
 								<p className="font-medium text-sm">
 									Bookmarked
@@ -505,79 +506,106 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 							)}
 
 						{!isDiscoverable &&
-						getFavoritedEngines.data.length &&
-						Object.entries(metaFilters).length === 0 ? (
-							<div className="grid grid-cols-1 gap-6">
-								{getFavoritedEngines.data.map((db) => {
-									return (
-										<div key={db.engine_id}>
-											<EngineLandscapeCard
-												name={
-													db.engine_display_name ||
-													db.engine_name
-												}
-												desktopInlineMeta={true}
-												type={db.engine_type}
-												id={db.engine_id}
-												tag={db.tag}
-												owner={db.engine_created_by}
-												date={db.engine_date_created}
-												description={db.description}
-												votes={db.upvotes}
-												views={db.views}
-												sub_type={db.engine_subtype}
-												trending={db.trending}
-												isGlobal={db.engine_global}
-												isUpvoted={db.hasUpvoted}
-												isFavorite={
-													isDiscoverable
-														? false
-														: isFavorited(
-																db.engine_id,
-															)
-												}
-												isDiscoverable={isDiscoverable}
-												onDelete={
-													isOwnerPermission(
-														db.engine_user_permission ||
-															db.permission ||
-															db.engine_permission,
-													)
-														? () => {
-																setEngineToDelete(
-																	{
-																		id: db.engine_id,
-																		name:
-																			db.engine_display_name ||
-																			db.engine_name,
-																	},
-																);
-															}
-														: undefined
-												}
-												onClick={() => {
-													navigate(`${db.engine_id}`);
-												}}
-												favorite={() => {
-													favoriteDb(db);
-												}}
-												upvote={() => {
-													upvoteDb(db);
-												}}
-												global={
-													db.engine_user_permission ===
-													1
-														? () => {
-																setGlobal(db);
-															}
-														: null
-												}
-											/>
-										</div>
-									);
-								})}
-							</div>
-						) : null}
+							getFavoritedEngines.data.length > 0 && (
+								<div className="grid grid-cols-1 gap-6">
+									{getFavoritedEngines.data.map((db) => {
+										return (
+											<div key={db.engine_id}>
+												<EngineLandscapeCard
+													name={
+														db.engine_display_name ||
+														db.engine_name
+													}
+													href={`#/engine/${route.path}/${db.engine_id}`}
+													desktopInlineMeta={true}
+													type={db.engine_type}
+													id={db.engine_id}
+													tag={db.tag}
+													owner={db.engine_created_by}
+													date={
+														db.engine_date_created
+													}
+													description={db.description}
+													votes={db.upvotes}
+													views={db.views}
+													sub_type={db.engine_subtype}
+													trending={db.trending}
+													isGlobal={db.engine_global}
+													isUpvoted={db.hasUpvoted}
+													isFavorite={
+														isDiscoverable
+															? false
+															: isFavorited(
+																	db.engine_id,
+																)
+													}
+													isDiscoverable={
+														isDiscoverable
+													}
+													onDelete={
+														isOwnerPermission(
+															db.engine_user_permission ||
+																db.permission ||
+																db.engine_permission,
+														)
+															? () => {
+																	setEngineToDelete(
+																		{
+																			id: db.engine_id,
+																			name:
+																				db.engine_display_name ||
+																				db.engine_name,
+																		},
+																	);
+																}
+															: undefined
+													}
+													onClick={() => {
+														navigate(
+															`${db.engine_id}`,
+															{
+																state: {
+																	fromDiscoverable:
+																		isDiscoverable,
+																	engineName:
+																		db.engine_display_name ||
+																		db.engine_name,
+																	engineDescription:
+																		db.description,
+																	engineSubtype:
+																		db.engine_subtype,
+																	engineCreatedBy:
+																		db.engine_created_by,
+																	engineDateCreated:
+																		db.engine_date_created,
+																	engineTags:
+																		db.tag,
+																},
+															},
+														);
+													}}
+													favorite={() => {
+														favoriteDb(db);
+													}}
+													upvote={() => {
+														upvoteDb(db);
+													}}
+													global={
+														db.engine_user_permission ===
+														1
+															? () => {
+																	setGlobal(
+																		db,
+																	);
+																}
+															: null
+													}
+												/>
+											</div>
+										);
+									})}
+								</div>
+							)}
 
 						{Object.entries(metaFilters).length === 0 &&
 							getEngines.data.length > 0 &&
@@ -606,6 +634,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 														db.engine_display_name ||
 														db.engine_name
 													}
+													href={`#/engine/${route.path}/${db.engine_id}`}
 													desktopInlineMeta={true}
 													type={db.engine_type}
 													id={db.engine_id}
@@ -652,6 +681,25 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 													onClick={() => {
 														navigate(
 															`${db.engine_id}`,
+															{
+																state: {
+																	fromDiscoverable:
+																		isDiscoverable,
+																	engineName:
+																		db.engine_display_name ||
+																		db.engine_name,
+																	engineDescription:
+																		db.description,
+																	engineSubtype:
+																		db.engine_subtype,
+																	engineCreatedBy:
+																		db.engine_created_by,
+																	engineDateCreated:
+																		db.engine_date_created,
+																	engineTags:
+																		db.tag,
+																},
+															},
 														);
 													}}
 													favorite={() => {
