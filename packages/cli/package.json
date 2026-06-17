@@ -23,7 +23,7 @@
         "@semoss/sdk": "workspace:*",
         "adm-zip": "^0.5.10",
         "dotenv": "^16.0.1",
-        "glob": "^10.3.10",
+        "glob": "^10.5.0",
         "listr": "^0.14.3"
     },
     "devDependencies": {
