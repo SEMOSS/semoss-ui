@@ -16,6 +16,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
+import type { AppTileCardEntityType } from "../app-tile-card";
 
 interface AddAppProps {
 	/** Track if the model is open */
@@ -23,11 +24,19 @@ interface AddAppProps {
 	appId: string;
 	/** Callback that is triggered on close */
 	handleClose: (appId?: string) => void;
+	entityType?: AppTileCardEntityType;
 }
 
 export const AddAppCloneModal = (props: AddAppProps) => {
-	const { open, handleClose, appId } = props;
+	const { open, handleClose, appId, entityType = "app" } = props;
 	const { monolithStore } = useRootStore();
+
+	const entityLabel =
+		entityType === "skill"
+			? "Skill"
+			: entityType === "agent"
+				? "Agent"
+				: "App";
 	const [currentStep, setCurrentStep] = useState(0);
 	const [isLoading, setIsLoading] = useState(false);
 	const [name, setName] = useState("");
@@ -50,73 +59,106 @@ export const AddAppCloneModal = (props: AddAppProps) => {
 	}, [open]);
 
 	const isNameValid = name.trim().length > 0;
-	const isLastStep = currentStep === 1;
+	// Skills use a single step (no Make Public); apps and agents use two steps
+	const isLastStep = entityType === "skill" ? true : currentStep === 1;
 
 	const escapePixelString = (value: string) => {
 		return value.replaceAll("'", "\\'");
 	};
 
 	/**
-	 * Method that is called to clone the app
+	 * Method that is called to clone the entity
 	 */
 	const cloneApp = async () => {
 		setIsLoading(true);
 		setErrorMessage(null);
 
 		try {
-			const cloneProjectResponse = await monolithStore.runQuery(
-				`CreateAppFromTemplate(project=["${escapePixelString(name.trim())}"], projectTemplate=["${appId}"], global=["${isGlobal}"]);`,
-			);
-			const output = cloneProjectResponse.pixelReturn?.[0]?.output;
-			const operationTypeRaw =
-				cloneProjectResponse.pixelReturn?.[0]?.operationType;
-			const operationType = Array.isArray(operationTypeRaw)
-				? String(operationTypeRaw[0] ?? "")
-				: String(operationTypeRaw ?? "");
+			let clonedProjectId: string | undefined;
 
-			if (operationType.indexOf("ERROR") > -1) {
-				const error =
-					typeof output === "string"
-						? output
-						: "There was an error cloning your app. Please try again.";
-				setErrorMessage(error);
-				toast.error(error);
-				return;
-			}
+			if (entityType === "skill") {
+				const response = await monolithStore.runQuery(
+					`CloneSkill(skillId=["${appId}"], name=["${escapePixelString(name.trim())}"]);`,
+				);
+				const output = response.pixelReturn?.[0]?.output;
+				const operationTypeRaw =
+					response.pixelReturn?.[0]?.operationType;
+				const operationType = Array.isArray(operationTypeRaw)
+					? String(operationTypeRaw[0] ?? "")
+					: String(operationTypeRaw ?? "");
 
-			const clonedProjectId = String(output?.project_id || "");
-			const trimmedDescription = description.trim();
+				if (operationType.indexOf("ERROR") > -1) {
+					const error =
+						typeof output === "string"
+							? output
+							: "There was an error cloning your skill. Please try again.";
+					setErrorMessage(error);
+					toast.error(error);
+					return;
+				}
 
-			if (trimmedDescription && clonedProjectId) {
-				const setProjectMetadataResponse = await monolithStore.runQuery(
-					`SetProjectMetadata(project=["${escapePixelString(clonedProjectId)}"], meta=[${JSON.stringify({ description: trimmedDescription })}]);`,
+				clonedProjectId = String(
+					(output as { project_id?: string })?.project_id || "",
+				);
+			} else {
+				// app and agent both use CreateAppFromTemplate
+				const cloneProjectResponse = await monolithStore.runQuery(
+					`CreateAppFromTemplate(project=["${escapePixelString(name.trim())}"], projectTemplate=["${appId}"], global=["${isGlobal}"]);`,
+				);
+				const output = cloneProjectResponse.pixelReturn?.[0]?.output;
+				const operationTypeRaw =
+					cloneProjectResponse.pixelReturn?.[0]?.operationType;
+				const operationType = Array.isArray(operationTypeRaw)
+					? String(operationTypeRaw[0] ?? "")
+					: String(operationTypeRaw ?? "");
+
+				if (operationType.indexOf("ERROR") > -1) {
+					const error =
+						typeof output === "string"
+							? output
+							: `There was an error cloning your ${entityLabel.toLowerCase()}. Please try again.`;
+					setErrorMessage(error);
+					toast.error(error);
+					return;
+				}
+
+				clonedProjectId = String(
+					(output as { project_id?: string })?.project_id || "",
 				);
 
-				const metadataOutput =
-					setProjectMetadataResponse.pixelReturn?.[0]?.output;
-				const metadataOperationTypeRaw =
-					setProjectMetadataResponse.pixelReturn?.[0]?.operationType;
-				const metadataOperationType = Array.isArray(
-					metadataOperationTypeRaw,
-				)
-					? String(metadataOperationTypeRaw[0] ?? "")
-					: String(metadataOperationTypeRaw ?? "");
+				const trimmedDescription = description.trim();
+				if (trimmedDescription && clonedProjectId) {
+					const metaResponse = await monolithStore.runQuery(
+						`SetProjectMetadata(project=["${escapePixelString(clonedProjectId)}"], meta=[${JSON.stringify({ description: trimmedDescription })}]);`,
+					);
+					const metaOperationType = Array.isArray(
+						metaResponse.pixelReturn?.[0]?.operationType,
+					)
+						? String(
+								metaResponse.pixelReturn[0].operationType[0] ??
+									"",
+							)
+						: String(
+								metaResponse.pixelReturn?.[0]?.operationType ??
+									"",
+							);
 
-				if (metadataOperationType.indexOf("ERROR") > -1) {
-					const message =
-						typeof metadataOutput === "string"
-							? metadataOutput
-							: "App cloned, but failed to save description metadata.";
-					toast.error(message);
+					if (metaOperationType.indexOf("ERROR") > -1) {
+						const message =
+							typeof metaResponse.pixelReturn?.[0]?.output ===
+							"string"
+								? metaResponse.pixelReturn[0].output
+								: `${entityLabel} cloned, but failed to save description.`;
+						toast.error(message);
+					}
 				}
 			}
 
-			toast.success("App cloned successfully");
-			handleClose(output?.project_id);
+			toast.success(`${entityLabel} cloned successfully`);
+			handleClose(clonedProjectId);
 		} catch (error) {
 			console.error(error);
-			const message =
-				"There was an error cloning your app. Please check your template files and try again.";
+			const message = `There was an error cloning your ${entityLabel.toLowerCase()}. Please try again.`;
 			setErrorMessage(message);
 			toast.error(message);
 		} finally {
@@ -151,26 +193,33 @@ export const AddAppCloneModal = (props: AddAppProps) => {
 		>
 			<DialogContent className="sm:max-w-lg">
 				<DialogHeader>
-					<DialogTitle>Clone App</DialogTitle>
+					<DialogTitle>Clone {entityLabel}</DialogTitle>
 					<DialogDescription>
-						Create a new app from this app as a template.
+						Create a new {entityLabel.toLowerCase()} from this{" "}
+						{entityLabel.toLowerCase()} as a template.
 					</DialogDescription>
 				</DialogHeader>
 
-				<div className="flex items-center gap-2 pb-1">
-					<Badge
-						variant={currentStep === 0 ? "default" : "secondary"}
-					>
-						<Pencil className="mr-1 size-3.5" />
-						Details
-					</Badge>
-					<Badge
-						variant={currentStep === 1 ? "default" : "secondary"}
-					>
-						<Eye className="mr-1 size-3.5" />
-						Access
-					</Badge>
-				</div>
+				{entityType !== "skill" && (
+					<div className="flex items-center gap-2 pb-1">
+						<Badge
+							variant={
+								currentStep === 0 ? "default" : "secondary"
+							}
+						>
+							<Pencil className="mr-1 size-3.5" />
+							Details
+						</Badge>
+						<Badge
+							variant={
+								currentStep === 1 ? "default" : "secondary"
+							}
+						>
+							<Eye className="mr-1 size-3.5" />
+							Access
+						</Badge>
+					</div>
+				)}
 
 				<div className="space-y-4">
 					{currentStep === 0 ? (
@@ -183,27 +232,29 @@ export const AddAppCloneModal = (props: AddAppProps) => {
 									onChange={(event) =>
 										setName(event.target.value)
 									}
-									placeholder="Enter app name"
+									placeholder={`Enter ${entityLabel.toLowerCase()} name`}
 									disabled={isLoading}
 									autoFocus
 								/>
 							</div>
-							<div className="space-y-2">
-								<Label htmlFor={descriptionId}>
-									Description
-								</Label>
-								<textarea
-									id={descriptionId}
-									value={description}
-									onChange={(event) =>
-										setDescription(event.target.value)
-									}
-									placeholder="Optional description for your cloned app"
-									disabled={isLoading}
-									rows={3}
-									className="flex min-h-[84px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
-								/>
-							</div>
+							{entityType !== "skill" && (
+								<div className="space-y-2">
+									<Label htmlFor={descriptionId}>
+										Description
+									</Label>
+									<textarea
+										id={descriptionId}
+										value={description}
+										onChange={(event) =>
+											setDescription(event.target.value)
+										}
+										placeholder={`Optional description for your cloned ${entityLabel.toLowerCase()}`}
+										disabled={isLoading}
+										rows={3}
+										className="flex min-h-[84px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+									/>
+								</div>
+							)}
 						</>
 					) : (
 						<div className="space-y-3">
