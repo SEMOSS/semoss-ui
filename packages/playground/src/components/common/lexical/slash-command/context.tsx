@@ -90,6 +90,7 @@ const buildSlashCommands = (
 		description: "Summarize conversation history to free up context",
 		icon: ChevronsDownUpIcon,
 		noChip: true,
+		disableDuringLoading: true,
 		onExecute: onCompact,
 	},
 	{

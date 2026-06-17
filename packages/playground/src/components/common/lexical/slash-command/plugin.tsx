@@ -77,9 +77,10 @@ const MenuPortal: React.FC<{
  * LexicalComposer wrapped by SlashCommandProvider so it can read the current
  * command list from context via useSlashCommands().
  */
-export const SlashMentionPlugin: React.FC<{ disabled?: boolean }> = ({
-	disabled,
-}) => {
+export const SlashMentionPlugin: React.FC<{
+	disabled?: boolean;
+	isLoading?: boolean;
+}> = ({ disabled, isLoading }) => {
 	const { root } = useRoot();
 	const { commands } = useSlashCommands();
 
@@ -93,6 +94,7 @@ export const SlashMentionPlugin: React.FC<{ disabled?: boolean }> = ({
 				const filtered = filterSlashCommands(commands, query);
 				const match = filtered[selectedIndex] ?? filtered[0];
 				if (!match) return;
+				if (match.disableDuringLoading && isLoading) return;
 				if (!match.noChip) {
 					addNode(() =>
 						$createSlashCommandNode(match.id, match.label),
@@ -127,7 +129,10 @@ export const SlashMentionPlugin: React.FC<{ disabled?: boolean }> = ({
 							setItemCount={setItemCount}
 							setSelectedIndex={setSelectedIndex}
 							onRequestClose={onRequestClose}
+							isLoading={isLoading}
 							onCommandSelect={(cmd) => {
+								if (cmd.disableDuringLoading && isLoading)
+									return;
 								if (cmd.noChip) {
 									cmd.onExecute();
 									onRequestClose();
