@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { ResponseMessageStore } from "@/stores";
 import type { PixelMessageTextPart } from "@/types";
 import { parseChunks } from "./response-message-text/parse-chunks";
@@ -38,44 +38,25 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 		// Index of the chunk currently allowed to animate.
 		const [activeIndex, setActiveIndex] = useState(0);
 
-		// Tracks whether onComplete fired before the next chunk existed.
-		// When chunks grow (a new chunk is appended), this state lets us advance.
-		const [pendingAdvance, setPendingAdvance] = useState(false);
-
-		// When a new chunk is appended and there's a pending advance, advance now.
-		useEffect(() => {
-			if (pendingAdvance && activeIndex < chunks.length - 1) {
-				setPendingAdvance(false);
-				setActiveIndex((i) => i + 1);
-			}
-		}, [pendingAdvance, chunks.length, activeIndex]);
-
 		// Called by each subcomponent when its animation is complete.
 		// Guards against duplicate or stale onComplete calls: only advances when
 		// the completed chunk is actually the current active one.
-		const handleChunkComplete = useCallback(
-			(completedIndex: number) => {
-				setActiveIndex((current) => {
-					if (completedIndex !== current) return current;
-					if (completedIndex + 1 < chunks.length) {
-						return completedIndex + 1;
-					}
-					// The next chunk hasn't appeared yet — set pending flag.
-					// Return current unchanged; the pendingAdvance effect will advance.
-					setPendingAdvance(true);
-					return current;
-				});
-			},
-			[chunks.length],
-		);
+		// activeIndex may temporarily sit one past the last chunk — that's fine.
+		// When the next chunk streams in with that index it becomes active immediately.
+		const handleChunkComplete = useCallback((completedIndex: number) => {
+			setActiveIndex((current) => {
+				if (completedIndex !== current) return current;
+				return completedIndex + 1;
+			});
+		}, []);
 
 		// Stable per-chunk callbacks — each function identity is preserved across
-		// re-renders as long as chunk count and handleChunkComplete don't change.
-		// This prevents effects in children that dep on `onComplete` from firing
-		// on every streaming token just because the parent re-rendered.
-		// `chunks` itself is a new array every render (parseChunks is pure and
-		// runs fresh each time), so using it as a dep would defeat the purpose —
-		// we only need to regenerate callbacks when the number of chunks changes.
+		// re-renders as long as chunk count doesn't change. This prevents effects
+		// in children that dep on `onComplete` from firing on every streaming token
+		// just because the parent re-rendered.
+		// `chunks` is a new array every render (parseChunks is pure and runs fresh
+		// each time), so using it as a dep would defeat the purpose — we only need
+		// to regenerate callbacks when the number of chunks changes.
 		// biome-ignore lint/correctness/useExhaustiveDependencies: chunks is intentionally replaced with chunks.length — see comment above
 		const chunkCallbacks = useMemo(
 			() => chunks.map((_, idx) => () => handleChunkComplete(idx)),
