@@ -45,6 +45,9 @@
 		"close": "إغلاق"
 	},
 	"permission": {
+		"owner": "المالك",
+		"editor": "المحرر",
+		"readOnly": "للقراءة فقط",
 		"accessRequested": "تم طلب الوصول",
 		"requestAccess": "طلب الوصول",
 		"noAccess": "لا يوجد وصول",

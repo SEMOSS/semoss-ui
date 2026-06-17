@@ -51,7 +51,7 @@ export const AgentSelector = observer(
 
 		const getWorkspaces = useIteratorPixel<App[], App>(
 			(limit, offset) =>
-				`META | MyProjects(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""}type = "WORKSPACE", limit=[${limit}], offset=[${offset}])`,
+				`META | MyProjects(${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}type = "WORKSPACE", limit=[${limit}], offset=[${offset}])`,
 			(response) => (response.length < 25 ? -1 : Infinity),
 			(response) => response,
 			{ limit: 25 },

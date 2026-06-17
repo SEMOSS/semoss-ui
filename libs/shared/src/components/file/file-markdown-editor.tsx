@@ -1,15 +1,17 @@
+import { DownloadIcon, RefreshCwIcon, SaveIcon } from "lucide-react";
 import { useRef, useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
+	Button,
 	Markdown,
 	Muted,
 	Spinner,
 	Tabs,
-	TabsContent,
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
 import type { FileMode } from "./file.types";
+import type { FileCodeEditorActions } from "./file-code-editor";
 import { FileCodeEditor } from "./file-code-editor";
 
 interface FileMarkdownEditorProps {
@@ -32,6 +34,7 @@ export const FileMarkdownEditor: React.FC<FileMarkdownEditorProps> = ({
 	const [tab, setTab] = useState<"edit" | "preview">("edit");
 	const editedContentRef = useRef<string | null>(null);
 	const [previewContent, setPreviewContent] = useState<string | null>(null);
+	const editorActionsRef = useRef<FileCodeEditorActions | null>(null);
 
 	const targetInsightId =
 		mode.type === "INSIGHT"
@@ -49,8 +52,6 @@ export const FileMarkdownEditor: React.FC<FileMarkdownEditorProps> = ({
 		getFilePixel = `GetUserAssets(filePath=["${path}"]);`;
 	}
 
-	// Only fetch when we actually need the preview content (preview tab active
-	// and the user has not produced edited content yet).
 	const shouldFetchPreview =
 		tab === "preview" && editedContentRef.current === null;
 	const previewFetch = usePixel<string>(
@@ -64,54 +65,79 @@ export const FileMarkdownEditor: React.FC<FileMarkdownEditorProps> = ({
 		onChange(content, isModified);
 	};
 
-	const handleTabChange = (next: string) => {
-		const nextTab = next === "preview" ? "preview" : "edit";
-		if (nextTab === "preview") {
+	const handleTabChange = (next: "edit" | "preview") => {
+		if (next === "preview") {
 			setPreviewContent(editedContentRef.current);
 		}
-		setTab(nextTab);
+		setTab(next);
 	};
 
 	const resolvedPreview =
 		previewContent ??
 		(previewFetch.status === "SUCCESS" ? previewFetch.data : null);
 
-	const tabsHeader = (
-		<TabsList className="h-7">
-			<TabsTrigger value="edit" className="px-3 text-xs">
-				Edit
-			</TabsTrigger>
-			<TabsTrigger value="preview" className="px-3 text-xs">
-				Preview
-			</TabsTrigger>
-		</TabsList>
-	);
-
 	return (
-		<Tabs
-			value={tab}
-			onValueChange={handleTabChange}
-			className="relative h-full w-full overflow-hidden bg-background"
-		>
-			<TabsContent
-				value="edit"
-				forceMount
-				className="absolute inset-0 data-[state=inactive]:pointer-events-none data-[state=inactive]:invisible"
+		<div className="relative flex h-full w-full flex-col overflow-hidden bg-background">
+			{/* Unified toolbar — always visible */}
+			<div className="flex w-full shrink-0 items-center justify-between gap-2 border-border border-b px-3 pt-[4px] pb-[7px]">
+				<Tabs
+					value={tab}
+					onValueChange={(v) =>
+						handleTabChange(v as "edit" | "preview")
+					}
+				>
+					<TabsList>
+						<TabsTrigger value="edit">Edit</TabsTrigger>
+						<TabsTrigger value="preview">Preview</TabsTrigger>
+					</TabsList>
+				</Tabs>
+				<div className="flex items-center gap-1.5">
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => editorActionsRef.current?.refresh()}
+					>
+						<RefreshCwIcon className="size-4" />
+						Refresh
+					</Button>
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => editorActionsRef.current?.save()}
+					>
+						<SaveIcon className="size-4" />
+						Save
+					</Button>
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => editorActionsRef.current?.download()}
+					>
+						<DownloadIcon className="size-4" />
+						Download
+					</Button>
+				</div>
+			</div>
+
+			{/* Edit panel — always mounted so Monaco state is preserved */}
+			<div
+				className={
+					tab === "edit"
+						? "absolute inset-0 top-[48px]"
+						: "pointer-events-none invisible absolute inset-0 top-[48px]"
+				}
 			>
 				<FileCodeEditor
+					ref={editorActionsRef}
 					mode={mode}
 					path={path}
 					onChange={handleContentChange}
-					leadingToolbar={tabsHeader}
+					hideToolbar
 				/>
-			</TabsContent>
-			<TabsContent
-				value="preview"
-				className="absolute inset-0 flex flex-col"
-			>
-				<div className="flex shrink-0 items-center justify-between gap-1 border-border border-b px-1.5 py-0.5">
-					<div className="flex items-center gap-1">{tabsHeader}</div>
-				</div>
+			</div>
+
+			{/* Preview panel */}
+			{tab === "preview" && (
 				<div className="flex-1 overflow-y-auto px-6 py-4">
 					{shouldFetchPreview &&
 						previewFetch.status === "LOADING" && (
@@ -131,7 +157,7 @@ export const FileMarkdownEditor: React.FC<FileMarkdownEditorProps> = ({
 						<Markdown>{resolvedPreview}</Markdown>
 					)}
 				</div>
-			</TabsContent>
-		</Tabs>
+			)}
+		</div>
 	);
 };

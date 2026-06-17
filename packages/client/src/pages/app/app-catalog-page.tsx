@@ -1,52 +1,4 @@
-import {
-	ArrowDown,
-	ArrowUp,
-	LayoutGrid,
-	List,
-	Plus,
-	Search,
-	X,
-} from "lucide-react";
-import { observer } from "mobx-react-lite";
-import {
-	useCallback,
-	useEffect,
-	useId,
-	useMemo,
-	useReducer,
-	useState,
-} from "react";
-import { useSearchParams } from "react-router-dom";
-import { debounced, useIteratorPixel } from "@semoss/sdk/react";
-import {
-	Button,
-	H3,
-	InputGroup,
-	InputGroupAddon,
-	InputGroupButton,
-	InputGroupInput,
-	Label,
-	P,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-	Spinner,
-	Switch,
-	Tabs,
-	TabsList,
-	TabsTrigger,
-	toast,
-	useInfiniteScroll,
-} from "@semoss/ui/next";
-import { setProjectFavorite } from "@/api";
-import { type AppMetadata, AppTileCard } from "@/components/app";
-import { Help } from "@/components/help";
-import { Filterbox } from "@/components/ui";
-import { useRootStore } from "@/hooks";
-import { useNavigate } from "@/hooks/useNavigate";
-import { NavbarHeader, NavbarLeft } from "../../components/shared";
+import { CatalogPage } from "./catalog-page";
 
 type TabMode = "Bookmarked" | "Mine" | "Discoverable" | "System";
 type ViewMode = "grid" | "list";
@@ -1204,3 +1156,4 @@ export const AppCatalogPage = observer((): JSX.Element => {
 		</>
 	);
 });
+export const AppCatalogPage = () => <CatalogPage type="app" />;
