@@ -242,9 +242,8 @@ export const AuditLogsDashboard = ({
 
 				customDateRangeParams = `,"startDate": "${startDate.toISOString()}", "endDate": "${endDate.toISOString()}"`;
 			}
-
 			const response = await monolithStore.runQuery(
-				`AuditLogReport(paramValues=[{"userId": "${configStore.store.user.id}", "${catalogIdKey}": "${catalogId}","dateTime":"${dateTime}","limit":"${limit}","offset":"${offset}", "dateRangeType": "${SelectedDuration.dateRangeType || "DAY"}","dateRangeValue": ${SelectedDuration.dateRangeValue}${customDateRangeParams}}]);`,
+				`AuditLogReport(paramValues=[{"${catalogIdKey}": "${catalogId}","dateTime":"${dateTime}","limit":"${limit}","offset":"${offset}", "dateRangeType": "${SelectedDuration.dateRangeType || "DAY"}","dateRangeValue": ${SelectedDuration.dateRangeValue}${customDateRangeParams}}]);`,
 			);
 			const { operationType } = response.pixelReturn[0];
 			if (operationType.indexOf("ERROR") > -1)

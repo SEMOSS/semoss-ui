@@ -6,7 +6,6 @@ import {
 	TriangleAlert,
 } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
-import { AppCatalogAvatar, EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Badge,
 	Button,
@@ -17,10 +16,19 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useRoot } from "@/hooks";
-import type { MCP } from "@/types";
-import { toSentenceCase } from "@/utility";
-import { getMcpTypeIcon, mcpToPlatformUrl } from "./utility";
+import type { MCP } from "../../types";
+import { AppCatalogAvatar } from "../app-catalog-avatar";
+import { EngineSubtypeIcon } from "../engine-subtype-icon";
+import { getMcpTypeIcon } from "./mcp-utils";
+
+/**
+ * Converts a snake_case or space-separated string to Sentence case
+ */
+const toSentenceCase = (str: string | undefined): string | undefined => {
+	if (!str) return undefined;
+	const normalized = str.replace(/[_\s]+/g, " ").toLowerCase();
+	return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+};
 
 export interface MCPCardProps {
 	m: MCP;
@@ -42,6 +50,11 @@ export interface MCPCardProps {
 	 * click affordance.
 	 */
 	fromWorkspace?: boolean;
+	/**
+	 * Optional callback to generate an external platform URL for the MCP.
+	 * When provided, an external link icon is shown in the card header.
+	 */
+	getPlatformUrl?: (mcp: MCP) => string;
 }
 
 export const MCPCard = ({
@@ -53,8 +66,8 @@ export const MCPCard = ({
 	onClick,
 	selected,
 	fromWorkspace,
+	getPlatformUrl,
 }: MCPCardProps) => {
-	const { root } = useRoot();
 	const { t } = useTranslation(["mcp", "common", "workspace"]);
 	const effectiveOnClick = fromWorkspace ? undefined : onClick;
 	const TypeIcon = getMcpTypeIcon(m.type);
@@ -68,16 +81,16 @@ export const MCPCard = ({
 		type === "TOOLBOX"
 			? t("permission.typeToolbox")
 			: t("permission.typeKnowledge");
-	const showPlatformLink = !!root.theme.featureFlags?.showPlatformLinks;
+	const platformUrl = getPlatformUrl?.(m);
 
 	const permissionLabel = ((): string => {
 		switch (effectivePermission) {
 			case "OWNER":
-				return t("workspace:members.owner");
+				return t("permission.owner");
 			case "EDIT":
-				return t("workspace:members.editor");
+				return t("permission.editor");
 			case "READ_ONLY":
-				return t("workspace:members.readOnly");
+				return t("permission.readOnly");
 			case "REQUESTED":
 				return t("permission.accessRequested");
 			case "DISCOVERABLE":
@@ -105,13 +118,13 @@ export const MCPCard = ({
 				    the left; the selection / lock indicator on the right. */}
 				<div className="flex items-center gap-2">
 					<div className="flex min-w-0 flex-1 items-center gap-1.5">
-						{showPlatformLink ? (
+						{platformUrl ? (
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<a
 										target="_blank"
 										rel="noopener noreferrer"
-										href={mcpToPlatformUrl(m)}
+										href={platformUrl}
 										onClick={(event) =>
 											event.stopPropagation()
 										}

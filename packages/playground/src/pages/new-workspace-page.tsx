@@ -8,6 +8,7 @@ import { observer } from "mobx-react-lite";
 import { useId, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
+import { MCPSelector, PromptSelector } from "@semoss/shared";
 import {
 	Button,
 	Field,
@@ -16,9 +17,10 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
-import { InstructionsModal, MCPSelector, PromptSelector } from "@/components";
-import { useChat, useGlobalBreadcrumbs } from "@/hooks";
+import { InstructionsModal } from "@/components";
+import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { MCPConfig } from "@/types";
+import { mcpToPlatformUrl, promptToPlatformUrl } from "@/utility/mcp-utils";
 
 const FORM_ID = "workspace-new-form";
 
@@ -33,6 +35,7 @@ export const NewWorkspacePage = observer(() => {
 	const { t } = useTranslation(["workspace", "common", "notifications"]);
 	const navigate = useNavigate();
 	const { chat } = useChat();
+	const { root } = useRoot();
 
 	const nameId = useId();
 	const descriptionId = useId();
@@ -211,6 +214,14 @@ export const NewWorkspacePage = observer(() => {
 							disabled={isSaving}
 							onChange={(next) => setKnowledge(next)}
 							className="h-112"
+							enableKnowledgeMCP={
+								root.theme.featureFlags?.enableKnowledgeMCP
+							}
+							getPlatformUrl={
+								root.theme.featureFlags?.showPlatformLinks
+									? mcpToPlatformUrl
+									: undefined
+							}
 						/>
 					</section>
 
@@ -226,6 +237,14 @@ export const NewWorkspacePage = observer(() => {
 							disabled={isSaving}
 							onChange={(next) => setToolbox(next)}
 							className="h-112"
+							enableKnowledgeMCP={
+								root.theme.featureFlags?.enableKnowledgeMCP
+							}
+							getPlatformUrl={
+								root.theme.featureFlags?.showPlatformLinks
+									? mcpToPlatformUrl
+									: undefined
+							}
 						/>
 					</section>
 
@@ -240,6 +259,11 @@ export const NewWorkspacePage = observer(() => {
 							disabled={isSaving}
 							onChange={(next) => setPrompts(next)}
 							className="h-112"
+							getPlatformUrl={
+								root.theme.featureFlags?.showPlatformLinks
+									? promptToPlatformUrl
+									: undefined
+							}
 						/>
 					</section>
 				</form>

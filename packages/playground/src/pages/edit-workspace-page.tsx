@@ -10,7 +10,7 @@ import { useEffect, useId, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
-import { MembersTable } from "@semoss/shared";
+import { MCPSelector, MembersTable, PromptSelector } from "@semoss/shared";
 import {
 	Button,
 	Field,
@@ -20,14 +20,14 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
-import {
-	InstructionsModal,
-	MCPSelector,
-	PromptSelector,
-	splitMcpByType,
-} from "@/components";
-import { useChat, useGlobalBreadcrumbs } from "@/hooks";
+import { InstructionsModal } from "@/components";
+import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { MCPConfig, Workspace } from "@/types";
+import {
+	mcpToPlatformUrl,
+	promptToPlatformUrl,
+	splitMcpByType,
+} from "@/utility/mcp-utils";
 
 const FORM_ID = "workspace-edit-form";
 
@@ -43,6 +43,7 @@ export const EditWorkspacePage = observer(() => {
 	const { workspaceId } = useParams<{ workspaceId: string }>();
 	const navigate = useNavigate();
 	const { chat } = useChat();
+	const { root } = useRoot();
 
 	const nameId = useId();
 	const descriptionId = useId();
@@ -315,6 +316,15 @@ export const EditWorkspacePage = observer(() => {
 							disabled={isSaving}
 							onChange={(next) => setKnowledge(next)}
 							className="h-112"
+							workspaceId={workspaceId}
+							enableKnowledgeMCP={
+								root.theme.featureFlags?.enableKnowledgeMCP
+							}
+							getPlatformUrl={
+								root.theme.featureFlags?.showPlatformLinks
+									? mcpToPlatformUrl
+									: undefined
+							}
 						/>
 					</section>
 
@@ -330,6 +340,15 @@ export const EditWorkspacePage = observer(() => {
 							disabled={isSaving}
 							onChange={(next) => setToolbox(next)}
 							className="h-112"
+							workspaceId={workspaceId}
+							enableKnowledgeMCP={
+								root.theme.featureFlags?.enableKnowledgeMCP
+							}
+							getPlatformUrl={
+								root.theme.featureFlags?.showPlatformLinks
+									? mcpToPlatformUrl
+									: undefined
+							}
 						/>
 					</section>
 
@@ -344,6 +363,11 @@ export const EditWorkspacePage = observer(() => {
 							disabled={isSaving}
 							onChange={(next) => setPrompts(next)}
 							className="h-112"
+							getPlatformUrl={
+								root.theme.featureFlags?.showPlatformLinks
+									? promptToPlatformUrl
+									: undefined
+							}
 						/>
 					</section>
 				</form>

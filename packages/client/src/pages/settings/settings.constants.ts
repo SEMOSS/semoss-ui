@@ -44,14 +44,14 @@ export const SETTINGS_ROUTES: {
 		history: [],
 	},
 	{
-		title: "App Settings",
+		title: "App, Agent, & Skill Settings",
 		path: "app",
-		description: "View and edit settings for apps",
+		description: "View and edit settings for apps, agents, and skills",
 		icon: mdiClipboardTextOutline,
 		history: ["app"],
 	},
 	{
-		title: "App Settings",
+		title: "App, Agent, & Skill Settings",
 		path: "app/:id",
 		description:
 			"View member permissions, pending requests, and all other viewable settings pertaining to the app",
