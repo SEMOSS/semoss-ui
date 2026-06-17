@@ -223,8 +223,8 @@ export const EngineSelect = ({
 
 	// Calculate pie chart geometry
 	const roundedPercent =
-		contextUsedPercent !== undefined
-			? Math.round(contextUsedPercent / 12.5) * 12.5
+		contextUsedPercent !== undefined && contextUsedPercent > 0
+			? Math.max(12.5, Math.round(contextUsedPercent / 12.5) * 12.5)
 			: 0;
 	const radius = 8;
 	const cx = 9;
