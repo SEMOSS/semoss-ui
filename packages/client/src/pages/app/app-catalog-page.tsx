@@ -1,5 +1,7 @@
 import { CatalogPage } from "./catalog-page";
 
+export const AppCatalogPage = () => <CatalogPage type="app" />;
+
 type TabMode = "Bookmarked" | "Mine" | "Discoverable" | "System";
 type ViewMode = "grid" | "list";
 type CloneRefreshState = {
