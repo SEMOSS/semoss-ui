@@ -29,7 +29,6 @@ import {
 } from "@/components";
 import { useChat, useGracefulErrors } from "@/hooks";
 import type { RoomStore } from "@/stores";
-import type { MCPConfig } from "@/types";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomSuggestions } from "./room-suggestions";
 
@@ -73,6 +72,19 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	};
 
 	/**
+	 * Open the room configuration sidebar tab
+	 */
+	const handleOpenSettings = useCallback(() => {
+		room.addSidebarNode(ROOM_CONFIGURATION_ID, {
+			type: "tab",
+			name: "Configuration",
+			component: "room-configuration",
+			config: {},
+			enableClose: true,
+		});
+	}, [room]);
+
+	/**
 	 * Compact messages in the room
 	 */
 	const handleCompactMessages = async () => {
@@ -86,31 +98,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		} catch {
 			toast.error(t("settings.compactError"));
 		}
-	};
-
-	/**
-	 * Handle tool add (add-only for slash menu)
-	 * @param tool - selected tool
-	 */
-	const handleToolAdd = (tool: MCPConfig) => {
-		// Add tool to options (skip if already present)
-		const tools = room.options.mcp.reduce(
-			(acc, curr) => {
-				acc[curr.id] = curr;
-				return acc;
-			},
-			{} as Record<string, typeof tool>,
-		);
-
-		// Only add if not already present
-		if (!Object.hasOwn(tools, tool.id)) {
-			tools[tool.id] = tool;
-		}
-
-		room.setOptions({
-			...room.options,
-			mcp: Object.values(tools),
-		});
 	};
 
 	/**
@@ -453,7 +440,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						chat.setSelectedModel(model);
 					}}
 					options={room.options}
-					onMcpSelect={handleToolAdd}
 					onMcpChange={(mcp) =>
 						room.setOptions({
 							...room.options,
@@ -491,18 +477,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 								<DropdownMenuItem
 									onSelect={(e) => {
 										e.preventDefault();
-
-										// add to the sidebar
-										room.addSidebarNode(
-											ROOM_CONFIGURATION_ID,
-											{
-												type: "tab",
-												name: "Configuration",
-												component: "room-configuration",
-												config: {},
-												enableClose: true,
-											},
-										);
+										handleOpenSettings();
 										onOpenChange(false);
 									}}
 								>
@@ -525,6 +500,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					tokensUsed={room.tokensUsed}
 					tokensMax={chat.models.contextWindow}
 					onCompact={handleCompactMessages}
+					onOpenSettings={handleOpenSettings}
+					excludeCommandIds={["agent", "workspace"]}
 				/>
 			</div>
 		</div>

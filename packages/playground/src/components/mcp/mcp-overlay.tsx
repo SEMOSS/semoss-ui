@@ -182,7 +182,12 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 		>
 			<DialogContent
 				className="flex h-[80vh] max-h-[40rem] w-full flex-col gap-4 sm:max-w-4xl"
-				onOpenAutoFocus={(e) => e.preventDefault()}
+				onOpenAutoFocus={(e) => {
+					e.preventDefault();
+					(e.currentTarget as HTMLElement)
+						.querySelector<HTMLElement>("input")
+						?.focus();
+				}}
 				onCloseAutoFocus={(e) => e.preventDefault()}
 			>
 				{view === "create" ? (
