@@ -305,7 +305,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		<div className="flex h-full w-full flex-col bg-background transition-all duration-200 ease-in-out">
 			<div className="relative w-full flex-1 overflow-hidden">
 				<ScrollArea
-					className="h-full w-full overflow-hidden"
+					// Force Radix's table-display viewport wrapper to block so wide content can't push the column past the viewport width
+					className="[&_[data-slot=scroll-area-viewport]>div]:!block h-full w-full overflow-hidden"
 					viewportRef={(ele) => {
 						setScrollEle(ele);
 					}}
