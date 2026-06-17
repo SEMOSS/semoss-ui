@@ -1,7 +1,6 @@
 import {
 	BotIcon,
 	CheckIcon,
-	ComputerIcon,
 	MessageCircleIcon,
 	Settings2Icon,
 	XIcon,
@@ -567,7 +566,7 @@ export const NewRoomPage = observer(() => {
 														onOpenChange(false);
 													}}
 												>
-													<ComputerIcon />
+													<BotIcon />
 													<span className="flex-1">
 														{t(
 															"room:menuWorkspace.selectAgent",
