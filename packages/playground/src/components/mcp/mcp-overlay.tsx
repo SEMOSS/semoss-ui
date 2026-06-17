@@ -1,9 +1,4 @@
-import {
-	BookOpenIcon,
-	CheckIcon,
-	ComputerIcon,
-	HammerIcon,
-} from "lucide-react";
+import { BookOpenIcon, Bot, CheckIcon, HammerIcon } from "lucide-react";
 import type React from "react";
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
@@ -264,7 +259,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 										value="AGENT"
 										className="relative h-full gap-2"
 									>
-										<ComputerIcon className="size-4" />
+										<Bot className="size-4" />
 										{t("overlay.tabAgent")}
 										{/* Absolutely positioned so the centered label
 										    doesn't shift when the indicator appears. */}

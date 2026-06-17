@@ -14,7 +14,7 @@ import {
 } from "lexical";
 import {
 	BookOpenIcon,
-	ComputerIcon,
+	Bot,
 	ExternalLinkIcon,
 	HammerIcon,
 	MicIcon,
@@ -773,7 +773,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 														undefined
 													}
 												>
-													<ComputerIcon className="size-3.5 shrink-0" />
+													<Bot className="size-3.5 shrink-0" />
 													<span className="max-w-32 truncate">
 														{agentChipWorkspace.name ||
 															agentChipWorkspace.workspace_id}
@@ -787,7 +787,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 														undefined
 													}
 												>
-													<ComputerIcon className="size-3.5 shrink-0" />
+													<Bot className="size-3.5 shrink-0" />
 													<span className="max-w-32 truncate">
 														{agentChipWorkspace.name ||
 															agentChipWorkspace.workspace_id}
