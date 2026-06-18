@@ -1,0 +1,44 @@
+{
+	"header": {
+		"title": "GitHub ऐप",
+		"description": "ऐसा GitHub ऐप बनाएं और प्रबंधित करें जो ऐप्स को GitHub प्रोजेक्ट्स और वेबहुक्स से जोड़ता है।"
+	},
+	"list": {
+		"title": "कॉन्फ़िगर किए गए GitHub ऐप्स",
+		"emptyTitle": "अभी तक कोई GitHub ऐप कॉन्फ़िगर नहीं है",
+		"emptyDescription": "SEMOSS ऐप्स को GitHub प्रोजेक्ट्स से जोड़ने के लिए एक GitHub ऐप बनाएं।",
+		"owner": "मालिक",
+		"createdOn": "बनाया गया",
+		"openInGithub": "GitHub में खोलें",
+		"unknownDate": "अज्ञात तिथि"
+	},
+	"buttons": {
+		"create": "GitHub ऐप बनाएं",
+		"refresh": "रीफ्रेश करें",
+		"cancel": "रद्द करें",
+		"creating": "रीडायरेक्ट किया जा रहा है..."
+	},
+	"dialog": {
+		"title": "GitHub ऐप बनाएं",
+		"description": "नया ऐप बनाने के लिए GitHub manifest फ़्लो शुरू करें।",
+		"appNameLabel": "ऐप नाम",
+		"appNamePlaceholder": "Semoss GitHub App",
+		"createUnderLabel": "किसके अंतर्गत बनाएं",
+		"myAccount": "मेरा खाता",
+		"organization": "संगठन",
+		"organizationLabel": "संगठन",
+		"organizationPlaceholder": "mera-github-org"
+	},
+	"status": {
+		"loading": "GitHub ऐप कॉन्फ़िगरेशन लोड हो रहा है...",
+		"notPermitted": "आपको GitHub ऐप कॉन्फ़िगरेशन प्रबंधित करने की अनुमति नहीं है।"
+	},
+	"validation": {
+		"organizationRequired": "संगठन आवश्यक है।"
+	},
+	"toasts": {
+		"loadFailed": "GitHub ऐप कॉन्फ़िगरेशन लोड नहीं हो सका।",
+		"notPermitted": "आपको GitHub ऐप कॉन्फ़िगरेशन तक पहुंच की अनुमति नहीं है।",
+		"redirecting": "ऐप बनाने के लिए GitHub पर भेजा जा रहा है..."
+	}
+}
