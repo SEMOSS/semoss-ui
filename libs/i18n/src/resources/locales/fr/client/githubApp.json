@@ -1,0 +1,44 @@
+{
+	"header": {
+		"title": "Application GitHub",
+		"description": "Créez et gérez l'application GitHub utilisée pour relier les apps aux projets GitHub et aux webhooks."
+	},
+	"list": {
+		"title": "Applications GitHub configurées",
+		"emptyTitle": "Aucune application GitHub n'est encore configurée",
+		"emptyDescription": "Créez une application GitHub pour connecter les apps SEMOSS aux projets GitHub.",
+		"owner": "Propriétaire",
+		"createdOn": "Créé le",
+		"openInGithub": "Ouvrir dans GitHub",
+		"unknownDate": "Date inconnue"
+	},
+	"buttons": {
+		"create": "Créer une application GitHub",
+		"refresh": "Actualiser",
+		"cancel": "Annuler",
+		"creating": "Redirection..."
+	},
+	"dialog": {
+		"title": "Créer une application GitHub",
+		"description": "Démarrez le flux de manifeste GitHub pour créer une nouvelle application.",
+		"appNameLabel": "Nom de l'application",
+		"appNamePlaceholder": "Semoss GitHub App",
+		"createUnderLabel": "Créer sous",
+		"myAccount": "Mon compte",
+		"organization": "Organisation",
+		"organizationLabel": "Organisation",
+		"organizationPlaceholder": "mon-org-github"
+	},
+	"status": {
+		"loading": "Chargement de la configuration de l'application GitHub...",
+		"notPermitted": "Vous n'êtes pas autorisé à gérer la configuration de l'application GitHub."
+	},
+	"validation": {
+		"organizationRequired": "L'organisation est obligatoire."
+	},
+	"toasts": {
+		"loadFailed": "Échec du chargement de la configuration de l'application GitHub.",
+		"notPermitted": "Vous n'êtes pas autorisé à accéder à la configuration de l'application GitHub.",
+		"redirecting": "Redirection vers GitHub pour créer l'application..."
+	}
+}

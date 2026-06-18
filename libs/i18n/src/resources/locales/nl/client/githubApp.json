@@ -1,0 +1,44 @@
+{
+	"header": {
+		"title": "GitHub-app",
+		"description": "Maak en beheer de GitHub-app die wordt gebruikt om apps te koppelen aan GitHub-projecten en webhooks."
+	},
+	"list": {
+		"title": "Geconfigureerde GitHub-apps",
+		"emptyTitle": "Er is nog geen GitHub-app geconfigureerd",
+		"emptyDescription": "Maak een GitHub-app om SEMOSS-apps met GitHub-projecten te verbinden.",
+		"owner": "Eigenaar",
+		"createdOn": "Aangemaakt",
+		"openInGithub": "Openen in GitHub",
+		"unknownDate": "Onbekende datum"
+	},
+	"buttons": {
+		"create": "GitHub-app maken",
+		"refresh": "Vernieuwen",
+		"cancel": "Annuleren",
+		"creating": "Doorsturen..."
+	},
+	"dialog": {
+		"title": "GitHub-app maken",
+		"description": "Start de GitHub manifest-flow om een nieuwe app te maken.",
+		"appNameLabel": "App-naam",
+		"appNamePlaceholder": "Semoss GitHub App",
+		"createUnderLabel": "Maken onder",
+		"myAccount": "Mijn account",
+		"organization": "Organisatie",
+		"organizationLabel": "Organisatie",
+		"organizationPlaceholder": "mijn-github-org"
+	},
+	"status": {
+		"loading": "GitHub-appconfiguratie laden...",
+		"notPermitted": "Je hebt geen rechten om de GitHub-appconfiguratie te beheren."
+	},
+	"validation": {
+		"organizationRequired": "Organisatie is verplicht."
+	},
+	"toasts": {
+		"loadFailed": "Laden van de GitHub-appconfiguratie is mislukt.",
+		"notPermitted": "Je hebt geen toegang tot de GitHub-appconfiguratie.",
+		"redirecting": "Je wordt doorgestuurd naar GitHub om de app te maken..."
+	}
+}
