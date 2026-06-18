@@ -86,27 +86,30 @@ export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
 
 		// ── Effects ───────────────────────────────────────────────────────────────
 
-		// Start the typewriter when this chunk becomes active.
-		// If there's no new content to animate, call onComplete immediately.
-		// biome-ignore lint/correctness/useExhaustiveDependencies: typewriter.start is stable (useCallback with empty deps) — status is the only meaningful trigger here
+		// Drive the typewriter while this chunk is active:
+		// - If there's unrendered content and the typewriter isn't running, start it.
+		// - If the typewriter has caught up, report onComplete (parent decides whether
+		//   to actually advance based on whether this is the last chunk + isThinking).
 		useEffect(() => {
 			if (status !== "active") return;
+
 			if (newContent.length === 0) {
 				onComplete();
 				return;
 			}
-			typewriter.start();
-		}, [status]);
 
-		// Fire onComplete when the typewriter has caught up to the full new content.
-		useEffect(() => {
-			if (status !== "active") return;
-			if (newContent.length === 0) return;
 			const caughtUp =
 				!typewriter.isTyping &&
 				typewriter.rendered.length >= newContent.length;
+
 			if (caughtUp) {
 				onComplete();
+				return;
+			}
+
+			// New content arrived while typewriter was idle — restart it
+			if (!typewriter.isTyping) {
+				typewriter.start();
 			}
 		}, [
 			status,
@@ -114,6 +117,7 @@ export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
 			typewriter.rendered.length,
 			newContent.length,
 			onComplete,
+			typewriter.start,
 		]);
 
 		// ── Render ────────────────────────────────────────────────────────────────

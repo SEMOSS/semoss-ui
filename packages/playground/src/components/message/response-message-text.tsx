@@ -43,14 +43,20 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 		// Called by each subcomponent when its animation is complete.
 		// Guards against duplicate or stale onComplete calls: only advances when
 		// the completed chunk is actually the current active one.
-		// activeIndex may temporarily sit one past the last chunk — that's fine.
-		// When the next chunk streams in with that index it becomes active immediately.
-		const handleChunkComplete = useCallback((completedIndex: number) => {
-			setActiveIndex((current) => {
-				if (completedIndex !== current) return current;
-				return completedIndex + 1;
-			});
-		}, []);
+		// If this is the last chunk and we're still receiving tokens (isThinking),
+		// hold — the typewriter caught up mid-stream and should wait for more content.
+		// A next chunk existing means this chunk is sealed by the parser, so advance freely.
+		const handleChunkComplete = useCallback(
+			(completedIndex: number) => {
+				setActiveIndex((current) => {
+					if (completedIndex !== current) return current;
+					if (completedIndex === chunks.length - 1 && isThinking)
+						return current;
+					return completedIndex + 1;
+				});
+			},
+			[chunks.length, isThinking],
+		);
 
 		// Stable per-chunk callbacks — each function identity is preserved across
 		// re-renders as long as chunk count doesn't change. This prevents effects
@@ -62,6 +68,7 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 		// biome-ignore lint/correctness/useExhaustiveDependencies: chunks is intentionally replaced with chunks.length — see comment above
 		const chunkCallbacks = useMemo(
 			() => chunks.map((_, idx) => () => handleChunkComplete(idx)),
+			// handleChunkComplete already captures chunks.length and isThinking
 			[chunks.length, handleChunkComplete],
 		);
 
