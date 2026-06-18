@@ -109,6 +109,7 @@
 			"refresh": "Refresh",
 			"loading": "Loading webhook activity...",
 			"empty": "No recent webhook deliveries.",
+			"eventLabel": "Event:",
 			"redelivery": "redelivery",
 			"unknownTime": "Unknown time"
 		},

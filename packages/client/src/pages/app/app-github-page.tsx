@@ -427,14 +427,33 @@ export const AppGithubPage = () => {
 												delivery.guid ??
 												`${delivery.event}-${delivery.deliveredAt}`
 											}
-											className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm"
+											className="flex items-center gap-3 py-2 text-sm"
 										>
-											<div className="flex min-w-0 items-center gap-2">
-												<span className="truncate font-medium">
-													{delivery.event || "—"}
-													{delivery.action
-														? `.${delivery.action}`
-														: ""}
+											<div className="flex min-w-0 flex-1 items-center gap-2">
+												<Badge
+													variant="outline"
+													className={`w-14 shrink-0 justify-center ${
+														ok
+															? "border-green-600/30 bg-green-600/10 text-green-600 dark:text-green-500"
+															: "border-destructive/30 bg-destructive/10 text-destructive"
+													}`}
+												>
+													{delivery.statusCode ??
+														delivery.status ??
+														"—"}
+												</Badge>
+												<span className="min-w-0 truncate">
+													<span className="text-muted-foreground">
+														{t(
+															"project.webhooks.eventLabel",
+														)}{" "}
+													</span>
+													<span className="font-medium">
+														{delivery.event || "—"}
+														{delivery.action
+															? `.${delivery.action}`
+															: ""}
+													</span>
 												</span>
 												{delivery.redelivery ? (
 													<Badge
@@ -447,26 +466,12 @@ export const AppGithubPage = () => {
 													</Badge>
 												) : null}
 											</div>
-											<div className="flex items-center gap-3">
-												<Badge
-													variant="outline"
-													className={
-														ok
-															? "border-green-600/30 bg-green-600/10 text-green-600 dark:text-green-500"
-															: "border-destructive/30 bg-destructive/10 text-destructive"
-													}
-												>
-													{delivery.statusCode ??
-														delivery.status ??
-														"—"}
-												</Badge>
-												<span className="flex items-center gap-1 text-muted-foreground text-xs">
-													<Clock className="size-3.5" />
-													{formatDelivered(
-														delivery.deliveredAt,
-													)}
-												</span>
-											</div>
+											<span className="flex shrink-0 items-center gap-1 whitespace-nowrap text-muted-foreground text-xs">
+												<Clock className="size-3.5" />
+												{formatDelivered(
+													delivery.deliveredAt,
+												)}
+											</span>
 										</div>
 									);
 								})}
