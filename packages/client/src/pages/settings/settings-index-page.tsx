@@ -8,6 +8,7 @@ import {
 	Database,
 	DatabaseZap,
 	FileText,
+	Github,
 	KeyRound,
 	LayoutGrid,
 	Link2,
@@ -84,6 +85,10 @@ const CardMapper: Record<string, CardConfig> = {
 	Configuration: {
 		icon: <Settings className={ICON_CLASS} />,
 		color: "#ED2F77",
+	},
+	"GitHub App": {
+		icon: <Github className={ICON_CLASS} />,
+		color: "#111827",
 	},
 	"Admin Query": {
 		icon: <DatabaseZap className={ICON_CLASS} />,

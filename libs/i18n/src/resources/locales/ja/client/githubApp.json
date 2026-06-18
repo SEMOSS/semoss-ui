@@ -1,0 +1,44 @@
+{
+	"header": {
+		"title": "GitHub アプリ",
+		"description": "アプリを GitHub プロジェクトや Webhook と連携するための GitHub アプリを作成・管理します。"
+	},
+	"list": {
+		"title": "設定済みの GitHub アプリ",
+		"emptyTitle": "GitHub アプリはまだ設定されていません",
+		"emptyDescription": "SEMOSS アプリを GitHub プロジェクトに接続するために GitHub アプリを作成してください。",
+		"owner": "オーナー",
+		"createdOn": "作成日",
+		"openInGithub": "GitHub で開く",
+		"unknownDate": "不明な日付"
+	},
+	"buttons": {
+		"create": "GitHub アプリを作成",
+		"refresh": "再読み込み",
+		"cancel": "キャンセル",
+		"creating": "リダイレクト中..."
+	},
+	"dialog": {
+		"title": "GitHub アプリを作成",
+		"description": "新しいアプリを作成するために GitHub manifest フローを開始します。",
+		"appNameLabel": "アプリ名",
+		"appNamePlaceholder": "Semoss GitHub App",
+		"createUnderLabel": "作成先",
+		"myAccount": "自分のアカウント",
+		"organization": "組織",
+		"organizationLabel": "組織",
+		"organizationPlaceholder": "my-github-org"
+	},
+	"status": {
+		"loading": "GitHub アプリ設定を読み込み中...",
+		"notPermitted": "GitHub アプリ設定を管理する権限がありません。"
+	},
+	"validation": {
+		"organizationRequired": "組織は必須です。"
+	},
+	"toasts": {
+		"loadFailed": "GitHub アプリ設定の読み込みに失敗しました。",
+		"notPermitted": "GitHub アプリ設定にアクセスする権限がありません。",
+		"redirecting": "アプリ作成のため GitHub にリダイレクトしています..."
+	}
+}
