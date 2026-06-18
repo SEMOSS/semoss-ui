@@ -24,6 +24,11 @@ const AppCatalogPage = lazy(() =>
 		default: m.AppCatalogPage,
 	})),
 );
+const AppGithubSelectRepoPage = lazy(() =>
+	import("./app/app-github-select-repo-page").then((m) => ({
+		default: m.AppGithubSelectRepoPage,
+	})),
+);
 const AppDetailLayout = lazy(() =>
 	import("./app/app-detail-layout").then((m) => ({
 		default: m.AppDetailLayout,
@@ -157,6 +162,16 @@ export const Router = observer(() => {
 										/>
 									),
 								)}
+								{/* Post-install repo picker. Sub-route of the
+								    GitHub tab; the install callback redirects here
+								    when multiple repos were granted. */}
+								<Route
+									path="github/select-repo"
+									element={createElement(
+										AppGithubSelectRepoPage,
+										{},
+									)}
+								/>
 								<Route path="*" element={<AppIdRedirect />} />
 							</Route>
 							<Route

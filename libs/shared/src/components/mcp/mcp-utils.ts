@@ -1,8 +1,8 @@
 import {
 	Archive,
 	Bolt,
-	Bot,
 	BoxIcon,
+	Cpu,
 	Database,
 	LayoutGrid,
 	type LucideIcon,
@@ -33,7 +33,7 @@ export const getMcpTypeIcon = (type: MCPConfig["type"]): LucideIcon => {
 		case "FUNCTION":
 			return Sigma;
 		case "MODEL":
-			return Bot;
+			return Cpu;
 		case "VECTOR":
 			return Bolt;
 		default:

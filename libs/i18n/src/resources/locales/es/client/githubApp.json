@@ -1,0 +1,155 @@
+{
+	"header": {
+		"title": "Aplicación de GitHub",
+		"description": "Crea y administra la aplicación de GitHub usada para vincular apps con proyectos y webhooks."
+	},
+	"list": {
+		"title": "Aplicaciones de GitHub configuradas",
+		"emptyTitle": "Aún no hay una aplicación de GitHub configurada",
+		"emptyDescription": "Crea una aplicación de GitHub para conectar apps de SEMOSS con proyectos de GitHub.",
+		"connected": "Conectado",
+		"appId": "ID de la app {{appId}}",
+		"owner": "Propietario",
+		"createdOn": "Creado",
+		"openInGithub": "Abrir en GitHub",
+		"unknownDate": "Fecha desconocida"
+	},
+	"buttons": {
+		"create": "Crear aplicación de GitHub",
+		"refresh": "Actualizar",
+		"cancel": "Cancelar",
+		"creating": "Redirigiendo...",
+		"remove": "Eliminar",
+		"removing": "Eliminando..."
+	},
+	"deleteDialog": {
+		"title": "¿Eliminar la aplicación de GitHub?",
+		"description": "¿Eliminar \"{{appName}}\" de esta instancia? Esto borra sus credenciales almacenadas y los enlaces de proyectos aquí. No elimina la app en GitHub: un propietario debe quitarla allí (Settings → Developer settings → GitHub Apps → Advanced).",
+		"openInGithub": "Abrir en GitHub para eliminar por completo"
+	},
+	"dialog": {
+		"title": "Crear aplicación de GitHub",
+		"description": "Inicia el flujo de manifiesto de GitHub para crear una nueva aplicación.",
+		"appNameLabel": "Nombre de la aplicación",
+		"appNamePlaceholder": "Semoss GitHub App",
+		"createUnderLabel": "Crear en",
+		"myAccount": "Mi cuenta",
+		"organization": "Organización",
+		"organizationLabel": "Organización",
+		"organizationPlaceholder": "mi-organizacion-github"
+	},
+	"status": {
+		"loading": "Cargando configuración de la aplicación de GitHub...",
+		"notPermitted": "No tienes permiso para administrar la configuración de la aplicación de GitHub."
+	},
+	"validation": {
+		"organizationRequired": "La organización es obligatoria."
+	},
+	"toasts": {
+		"loadFailed": "No se pudo cargar la configuración de la aplicación de GitHub.",
+		"notPermitted": "No tienes permiso para acceder a la configuración de la aplicación de GitHub.",
+		"redirecting": "Redirigiendo a GitHub para crear la aplicación...",
+		"createSuccess": "Aplicación de GitHub creada y configurada para esta instancia.",
+		"createError": "Algo salió mal al crear la aplicación de GitHub.",
+		"createErrorConversion": "No se pudo crear la aplicación de GitHub: falló el intercambio con GitHub. Inténtalo de nuevo.",
+		"createErrorSave": "La aplicación de GitHub se creó en GitHub, pero no se pudo guardar aquí. Inténtalo de nuevo.",
+		"deleteSuccess": "Aplicación de GitHub eliminada de esta instancia.",
+		"deleteFailed": "No se pudo eliminar la aplicación de GitHub."
+	},
+	"projects": {
+		"title": "Proyectos conectados",
+		"loading": "Cargando proyectos conectados...",
+		"empty": "Aún no hay proyectos conectados a GitHub.",
+		"unknownRepo": "Repositorio desconocido",
+		"lastOpened": "Última apertura {{date}}",
+		"openTab": "Abrir configuración de la app"
+	},
+	"branchSelect": {
+		"label": "Rama",
+		"placeholder": "Selecciona una rama",
+		"loading": "Cargando ramas...",
+		"retry": "Reintentar",
+		"errorFallback": "No se pudieron cargar las ramas desde GitHub. Reintenta o escribe el nombre de la rama."
+	},
+	"project": {
+		"title": "GitHub",
+		"description": "Conecta esta app a un repositorio de GitHub para sincronizar el código y recibir actualizaciones de push.",
+		"syncWarning": "Los pushes a la rama seguida en GitHub se sincronizan automáticamente en este proyecto, reemplazando los cambios locales. La rama seguida es la fuente de verdad.",
+		"loading": "Cargando conexión con GitHub...",
+		"connectedRepo": "Repositorio conectado",
+		"changeRepo": "Cambiar repositorio",
+		"disconnect": "Desconectar",
+		"connect": "Conectar con GitHub",
+		"checking": "Comprobando disponibilidad de GitHub...",
+		"notConnectedTitle": "No conectado a GitHub",
+		"notConnectedDescription": "Instala la aplicación de GitHub en tu cuenta u organización y concédele acceso al repositorio que quieres vincular.",
+		"unavailableTitle": "GitHub no está configurado para esta instancia",
+		"unavailableDescription": "Un administrador debe configurar la aplicación de GitHub de la instancia antes de que los proyectos puedan conectarse.",
+		"installation": {
+			"valid": "Instalación activa",
+			"invalidTitle": "La instalación de la aplicación de GitHub ya no es válida",
+			"invalidDescription": "La aplicación de GitHub se desinstaló o suspendió para este repositorio, por lo que la sincronización se detuvo. Vuelve a conectar para restaurarla.",
+			"reconnect": "Reconectar"
+		},
+		"branch": {
+			"label": "Rama seguida",
+			"default": "rama predeterminada",
+			"change": "Cambiar"
+		},
+		"branchDialog": {
+			"title": "Establecer la rama seguida",
+			"description": "Solo los pushes a esta rama sincronizan el proyecto. Normalmente es tu rama predeterminada (p. ej. main).",
+			"placeholder": "main",
+			"cancel": "Cancelar",
+			"confirm": "Guardar"
+		},
+		"webhooks": {
+			"title": "Actividad reciente de webhooks",
+			"description": "Entregas de webhook recientes que GitHub envió para este repositorio. GitHub solo conserva una ventana reciente breve.",
+			"refresh": "Actualizar",
+			"loading": "Cargando actividad de webhooks...",
+			"empty": "No hay entregas de webhook recientes.",
+			"eventLabel": "Evento:",
+			"redelivery": "reenvío",
+			"unknownTime": "Hora desconocida"
+		},
+		"changeDialog": {
+			"title": "Cambiar repositorio",
+			"description": "Elige un repositorio diferente para este proyecto entre los que la instalación puede acceder.",
+			"confirm": "Cambiar repositorio"
+		},
+		"disconnectDialog": {
+			"title": "¿Desconectar de GitHub?",
+			"description": "Esto desvincula el proyecto de su repositorio. No desinstala la aplicación de GitHub de tu cuenta u organización.",
+			"cancel": "Cancelar",
+			"confirm": "Desconectar"
+		},
+		"picker": {
+			"searchPlaceholder": "Buscar repositorios...",
+			"loading": "Cargando repositorios...",
+			"noRepos": "No hay repositorios que coincidan.",
+			"manageOnGithub": "¿No encuentras tu repo? Gestiónalo en GitHub",
+			"branchLabel": "Rama a seguir",
+			"branchHelp": "Solo los pushes a esta rama sincronizan el proyecto."
+		},
+		"selectRepo": {
+			"title": "Selecciona un repositorio",
+			"description": "La instalación puede acceder a varios repositorios. Elige el que debe usar este proyecto.",
+			"confirm": "Conectar repositorio",
+			"missingInstallation": "No se proporcionó ninguna instalación. Inicia de nuevo el flujo de conexión desde la pestaña de GitHub.",
+			"back": "Volver a GitHub"
+		},
+		"toasts": {
+			"reposFailed": "No se pudieron cargar los repositorios.",
+			"connected": "Proyecto conectado a GitHub.",
+			"connectFailed": "No se pudo conectar el repositorio.",
+			"changed": "Repositorio vinculado actualizado.",
+			"changeFailed": "No se pudo cambiar el repositorio.",
+			"disconnected": "Proyecto desconectado de GitHub.",
+			"disconnectFailed": "No se pudo desconectar el proyecto.",
+			"deliveriesFailed": "No se pudo cargar la actividad de webhooks.",
+			"branchUpdated": "Rama seguida actualizada.",
+			"branchFailed": "No se pudo establecer la rama seguida."
+		}
+	}
+}
