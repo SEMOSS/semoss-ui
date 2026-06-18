@@ -35,7 +35,6 @@ import { DatabaseForm } from "./database-form";
 interface database {
 	fields: [];
 	advanced: [];
-	id: number;
 	name: string;
 	icon: string;
 	disable: boolean;
@@ -61,7 +60,7 @@ const DatabaseCard = ({
 
 	const cardContent = (
 		<div
-			data-testid={`database-card-${database.id}`}
+			data-testid={`database-card-${database.name}`}
 			className={`flex w-full flex-col items-start justify-start gap-2 rounded-lg border border-border bg-card p-4 transition-all sm:w-[215px] ${
 				database.disable
 					? "cursor-auto opacity-60"
@@ -90,7 +89,7 @@ const DatabaseCard = ({
 			)}
 			<p
 				ref={textRef}
-				data-testid={`database-name-${database.id}`}
+				data-testid={`database-name-${database.name}`}
 				className="m-0 overflow-hidden text-ellipsis whitespace-nowrap text-card-foreground text-sm"
 			>
 				{database.name}
@@ -116,9 +115,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState("");
 	const [selectedTab, setSelectedTab] = useState(0);
-	const [selectedDatabase, setSelectedDatabase] = useState<database | null>(
-		null,
-	);
+	const [selectedEngine, setSelectedEngine] = useState<database | null>(null);
 
 	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
 	const [filedata, setFiledata] = useState(null);
@@ -180,7 +177,9 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 					return;
 				}
 				toast.success("Successfully Created Database");
-				navigate(`/engine/database/${output.database_id}`);
+				navigate(
+					`/engine/database/${(output as { database_id?: string }).database_id}`,
+				);
 			}
 		} catch {
 			toast.error("Upload failed or returned invalid response.");
@@ -233,13 +232,13 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 					<BreadcrumbItem>
 						<BreadcrumbLink
 							onClick={() => {
-								if (selectedDatabase) {
-									setSelectedDatabase(null);
+								if (selectedEngine) {
+									setSelectedEngine(null);
 								}
 							}}
 							data-testid="breadcrumb-page"
 							className={
-								selectedDatabase
+								selectedEngine
 									? "cursor-pointer text-muted-foreground hover:text-foreground"
 									: "cursor-default text-foreground"
 							}
@@ -247,7 +246,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 							Connect To Database
 						</BreadcrumbLink>
 					</BreadcrumbItem>
-					{selectedDatabase && (
+					{selectedEngine && (
 						<>
 							<BreadcrumbSeparator />
 							<BreadcrumbItem>
@@ -255,7 +254,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 									data-testid="breadcrumb-selected-database"
 									className="text-foreground"
 								>
-									{selectedDatabase.name}
+									{selectedEngine.name}
 								</span>
 							</BreadcrumbItem>
 						</>
@@ -274,9 +273,9 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 				v.name.toLowerCase().includes(search.toLowerCase()),
 			).map((v) => (
 				<DatabaseCard
-					key={v.id}
+					key={v.name}
 					database={v}
-					onSelect={() => setSelectedDatabase(v)}
+					onSelect={() => setSelectedEngine(v)}
 				/>
 			))}
 		</div>
@@ -363,14 +362,15 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 					</div>
 				</DialogContent>
 			</Dialog>
-			{selectedDatabase ? (
+			{selectedEngine ? (
 				<div data-testid="database-form-wrapper">
 					<DatabaseForm
 						selectedTab={tabLabels[selectedTab]}
-						title={selectedDatabase.name}
-						description={`Fill out ${selectedDatabase.name} details in order to add database to catalog`}
-						fields={selectedDatabase.fields}
-						advanced={selectedDatabase.advanced}
+						title={selectedEngine.name}
+						description={`Fill out ${selectedEngine.name} details in order to add database to catalog`}
+						icon={selectedEngine.icon}
+						fields={selectedEngine.fields}
+						advanced={selectedEngine.advanced}
 						categoryDescription={CategoryDescription}
 					/>
 				</div>

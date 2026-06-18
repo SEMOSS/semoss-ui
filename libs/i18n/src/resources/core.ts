@@ -18,6 +18,9 @@ import validationHI from "./locales/hi/validation.json";
 import commonJA from "./locales/ja/common.json";
 import notificationsJA from "./locales/ja/notifications.json";
 import validationJA from "./locales/ja/validation.json";
+import commonNL from "./locales/nl/common.json";
+import notificationsNL from "./locales/nl/notifications.json";
+import validationNL from "./locales/nl/validation.json";
 
 export const coreResources = {
 	en: {
@@ -49,5 +52,10 @@ export const coreResources = {
 		common: commonJA,
 		validation: validationJA,
 		notifications: notificationsJA,
+	},
+	nl: {
+		common: commonNL,
+		validation: validationNL,
+		notifications: notificationsNL,
 	},
 } as const;

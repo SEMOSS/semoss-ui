@@ -1,9 +1,15 @@
 import { useMemo } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight, usePixel } from "@semoss/sdk/react";
+import {
+	getDepEffectivePermission,
+	MCPCard,
+	projectDependencyToMCP,
+} from "@semoss/shared";
 import { Muted, ScrollArea, toast } from "@semoss/ui/next";
+import { useRoot } from "@/hooks";
 import type { ProjectDependency } from "@/types";
-import { MCPCard } from "../mcp";
+import { mcpToPlatformUrl } from "@/utility/mcp-utils";
 
 export interface WorkspaceMCPListProps {
 	/**
@@ -34,6 +40,7 @@ export const WorkspaceMCPList = ({
 }: WorkspaceMCPListProps) => {
 	const { t } = useTranslation("workspace");
 	const { actions } = useInsight();
+	const { root } = useRoot();
 
 	const getDependencies = usePixel<{
 		engines: ProjectDependency[];
@@ -76,7 +83,7 @@ export const WorkspaceMCPList = ({
 
 	if (searchedMCP.length === 0) {
 		return (
-			<div className="flex h-full w-full items-center justify-center">
+			<div className="flex min-h-32 w-full items-center justify-center p-6">
 				<Muted>
 					{type === "TOOLBOX"
 						? t("mcp.noToolboxes")
@@ -85,29 +92,6 @@ export const WorkspaceMCPList = ({
 			</div>
 		);
 	}
-
-	const getEffectivePermission = (
-		m: ProjectDependency,
-	):
-		| "READ_ONLY"
-		| "REQUESTED"
-		| "DISCOVERABLE"
-		| "FULLY_PRIVATE"
-		| "EDIT"
-		| "OWNER" => {
-		if (m.permission_name) {
-			return m.permission_name;
-		} else if (m.engine_global) {
-			return "READ_ONLY";
-		} else if (m.engine_discoverable) {
-			if (typeof m.access_permission === "number") {
-				return "REQUESTED";
-			} else {
-				return "DISCOVERABLE";
-			}
-		}
-		return "FULLY_PRIVATE";
-	};
 
 	const handleRequestAccess = async (m: ProjectDependency) => {
 		try {
@@ -136,24 +120,21 @@ export const WorkspaceMCPList = ({
 		<ScrollArea className="h-full w-full">
 			<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
 				{searchedMCP.map((m) => {
-					const effectivePermission = getEffectivePermission(m);
-
-					const missingSubDependencies =
-						m.can_view_dependencies === false;
 					return (
 						<MCPCard
 							key={m.engine_id}
-							m={{
-								id: m.engine_id,
-								name: m.engine_name,
-								type: m.engine_type,
-								description: m.description,
-								tags: m.tags?.split(",") || [],
-							}}
+							m={projectDependencyToMCP(m)}
 							type={type}
-							effectivePermission={effectivePermission}
-							missingSubDependencies={missingSubDependencies}
+							effectivePermission={getDepEffectivePermission(m)}
+							missingSubDependencies={
+								m.can_view_dependencies === false
+							}
 							handleRequestAccess={() => handleRequestAccess(m)}
+							getPlatformUrl={
+								root.theme.featureFlags?.showPlatformLinks
+									? mcpToPlatformUrl
+									: undefined
+							}
 						/>
 					);
 				})}

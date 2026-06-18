@@ -8,12 +8,12 @@ import {
 import type React from "react";
 import { DefaultBlocks } from "@/components/block-defaults";
 import { Blocks, RendererEngine } from "@/components/blocks";
-import { type Block, type QueryStateConfig, StateStore } from "@/store";
+import { type Block, type NotebookStateConfig, StateStore } from "@/store";
 
 interface MockProviderProps {
 	children: React.ReactNode;
 	blocks: Record<string, Block>;
-	queryConfig?: Record<string, QueryStateConfig>;
+	queryConfig?: Record<string, NotebookStateConfig>;
 	renderEngineId: string;
 }
 
@@ -64,7 +64,7 @@ const MockHookProvider: React.FC<MockProviderProps> = ({
 
 	return (
 		<Blocks state={store} registry={DefaultBlocks}>
-			<RendererEngine id={renderEngineId} />
+			{!!renderEngineId && <RendererEngine id={renderEngineId} />}
 			{children && children}
 		</Blocks>
 	);
@@ -73,7 +73,7 @@ const MockHookProvider: React.FC<MockProviderProps> = ({
 // Define the type for the custom render function
 type CustomRenderOptions = {
 	blocks: Record<string, Block>;
-	queryConfig?: Record<string, QueryStateConfig>;
+	queryConfig?: Record<string, NotebookStateConfig>;
 	renderOptions?: RenderOptions;
 } & Omit<RenderOptions, "wrapper">;
 
@@ -100,8 +100,8 @@ const customRender = (
 
 interface CustomHookRenderOptions<TProps> extends RenderHookOptions<TProps> {
 	blocks: Record<string, Block>;
-	queryConfig?: Record<string, QueryStateConfig>;
-	renderEngineId: string;
+	queryConfig?: Record<string, NotebookStateConfig>;
+	renderEngineId?: string;
 	customChildren?: React.ReactNode;
 }
 const customRenderHook = <TProps, TResult>(

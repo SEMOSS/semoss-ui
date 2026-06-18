@@ -1,6 +1,6 @@
 {
     "name": "@semoss/sdk",
-    "version": "1.0.0-beta.39",
+    "version": "1.0.0-beta.43",
     "type": "module",
     "main": "./dist/index.mjs",
     "module": "./dist/index.mjs",
@@ -27,18 +27,17 @@
     "keywords": [],
     "author": "",
     "license": "ISC",
-    "dependencies": {},
     "devDependencies": {
         "@rollup/plugin-commonjs": "28.0.6",
         "@rollup/plugin-node-resolve": "16.0.1",
-        "@rollup/plugin-terser": "^0.4.4",
+        "@rollup/plugin-terser": "^1.0.0",
         "@rollup/plugin-typescript": "12.1.4",
         "@types/react": "18.3.1",
         "react": "18.3.1",
         "rollup": "4.59.0",
         "rollup-plugin-delete": "3.0.1",
-        "typescript": "~5.5.2",
-        "tslib": "2.5.3"
+        "tslib": "2.5.3",
+        "typescript": "~5.5.2"
     },
     "peerDependencies": {
         "react": "18.3.1"

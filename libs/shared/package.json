@@ -4,13 +4,17 @@
   "sideEffects": ["**/*.css"],
   "exports": {
     "./globals.css": "./src/styles/globals.css",
+    "./flexlayout.css": "./src/components/flex-layout/flexlayout.css",
     ".": "./src/index.ts",
-    "./api": "./src/api/index.ts"
+    "./api": "./src/api/index.ts",
+    "./assets/img/*": "./src/assets/img/*"
   },
   "license": "MIT",
   "dependencies": {
+    "@iconify-icons/vscode-icons": "^1.1.18",
+    "@iconify/react": "^5.2.0",
     "@monaco-editor/react": "^4.5.1",
-    "@mui/icons-material": "6.0.0",
+    "@semoss/i18n": "workspace:*",
     "@semoss/sdk": "workspace:*",
     "@semoss/ui": "workspace:*",
     "echarts": "^5.5.1",
@@ -26,7 +30,5 @@
     "@types/react-dom": "18.3.0",
     "typescript": "~5.5.2"
   },
-  "peerDependencies": {
-    "@mui/icons-material": "6.0.0"
-  }
+  "peerDependencies": {}
 }

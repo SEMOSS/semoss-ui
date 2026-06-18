@@ -23,7 +23,7 @@ import {
 	ThumbsUpIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { Fragment, useState } from "react";
+import { Fragment, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
@@ -32,6 +32,7 @@ import {
 	DialogDescription,
 	DialogHeader,
 	DialogTitle,
+	Textarea,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -113,6 +114,14 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		const [downloadingFormat, setDownloadingFormat] = useState<
 			string | null
 		>(null);
+		const [isFeedbackTextOpen, setIsFeedbackTextOpen] = useState(false);
+		const [feedbackText, setFeedbackText] = useState(
+			message.feedback?.feedbackText ?? "",
+		);
+		const [pendingRating, setPendingRating] = useState<boolean | null>(
+			null,
+		);
+		const feedbackTextRef = useRef<HTMLTextAreaElement>(null);
 
 		// get the parent input message
 		let inputMessage: InputMessageStore | null = null;
@@ -120,17 +129,51 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			inputMessage = message.parent;
 		}
 
+		const feedbackTextEnabled =
+			!!root.theme.featureFlags?.enableFeedbackText;
+
 		/**
 		 * Record the feedback
 		 * @param rating - positive or negative
 		 */
 		const recordFeedback = async (rating: boolean) => {
 			const isDeleting = message.feedback?.rating === rating;
+
+			if (feedbackTextEnabled && !isDeleting) {
+				// Open text input for the user to optionally add a comment
+				setPendingRating(rating);
+				setFeedbackText("");
+				setIsFeedbackTextOpen(true);
+				return;
+			}
+
 			try {
 				await message.recordFeedback(isDeleting ? null : rating);
-				if (!isDeleting) {
+				if (isDeleting) {
+					setFeedbackText("");
+					setIsFeedbackTextOpen(false);
+				} else {
 					toast.success(t("notifications.feedbackSuccess"));
 				}
+			} catch (e: unknown) {
+				const error = e as { message: string };
+				toast.error(error.message);
+			}
+		};
+
+		/**
+		 * Submit the feedback with optional text comment
+		 */
+		const submitFeedbackText = async () => {
+			if (pendingRating === null) return;
+			try {
+				await message.recordFeedback(
+					pendingRating,
+					feedbackText.trim(),
+				);
+				toast.success(t("notifications.feedbackSuccess"));
+				setIsFeedbackTextOpen(false);
+				setPendingRating(null);
 			} catch (e: unknown) {
 				const error = e as { message: string };
 				toast.error(error.message);
@@ -177,6 +220,38 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 				toast.error(error.message || "Failed to download response");
 			} finally {
 				setDownloadingFormat(null);
+			}
+		};
+
+		/**
+		 * Copy image to clipboard
+		 */
+		const copyImage = async () => {
+			const mediaPart = message.parts.find((p) => p.type === "MEDIA");
+			if (
+				!mediaPart ||
+				mediaPart.type !== "MEDIA" ||
+				!mediaPart.mediaInfo.base64Data
+			)
+				return;
+			try {
+				const mimeType = mediaPart.mediaInfo.mimeType;
+				if (!mimeType || !mimeType.startsWith("image/")) {
+					toast.error("Invalid image format");
+					return;
+				}
+				const bytes = atob(mediaPart.mediaInfo.base64Data);
+				const arr = new Uint8Array(bytes.length).map((_, i) =>
+					bytes.charCodeAt(i),
+				);
+				const blob = new Blob([arr], { type: mimeType });
+				await navigator.clipboard.write([
+					new ClipboardItem({ [mimeType]: blob }),
+				]);
+				toast.success(t("notifications.copySuccess"));
+			} catch (e: unknown) {
+				const error = e as { message: string };
+				toast.error(error.message);
 			}
 		};
 
@@ -245,13 +320,27 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			})();
 
 		const hasText = message.parts.some((part) => part.type === "TEXT");
-		const parentHasText = inputMessage?.parts.some(
-			(part) => part.type === "TEXT",
+
+		const hasVisibleContent = message.parts.some(
+			(part) =>
+				(part.type === "TEXT" &&
+					part.text.replace(/[\s\u00AD\u200B-\u200D\u2060]/g, "")
+						.length > 0) ||
+				part.type === "MEDIA" ||
+				part.type === "TOOL_CALL",
+		);
+
+		const hasImage = message.parts.some(
+			(part) => part.type === "MEDIA" && part.mediaInfo.base64Data,
+		);
+
+		const parentHasContent = inputMessage?.parts.some(
+			(part) => part.type === "TEXT" || part.type === "MEDIA",
 		);
 
 		return (
 			<div className="group">
-				<div className="mb-0 flex w-full flex-col gap-2 pr-3 sm:pr-10">
+				<div className="mb-0 flex w-full flex-col gap-2 pe-3 sm:pe-10">
 					{message.parts.map((p, pIdx) => {
 						const key = `message-part-${pIdx}`;
 						const isLast = pIdx === message.parts.length - 1;
@@ -291,21 +380,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									? `data:${p.mediaInfo.mimeType?.startsWith("image/") ? p.mediaInfo.mimeType : ({ jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", svg: "image/svg+xml", bmp: "image/bmp" } as Record<string, string>)[p.mediaInfo.fileName?.split(".").pop()?.toLowerCase() ?? ""] || "image/png"};base64,${p.mediaInfo.base64Data}`
 									: "";
 							const handleClick = () => {
-								if (p.mediaInfo.fileLocation) {
-									room.addSidebarNode(
-										`FILE--${p.mediaInfo.fileLocation}`,
-										{
-											type: "tab",
-											name: p.mediaInfo.fileName,
-											component: "room-file-editor",
-											config: {
-												name: p.mediaInfo.fileName,
-												path: p.mediaInfo.fileLocation,
-											},
-											enableClose: true,
-										},
-									);
-								} else if (p.mediaInfo.base64Data && isImage) {
+								if (isImage && p.mediaInfo.base64Data) {
 									const imgExt =
 										p.mediaInfo.fileName
 											?.split(".")
@@ -327,6 +402,20 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 											mimeMap[imgExt] ||
 											"image/png",
 									});
+								} else if (p.mediaInfo.fileLocation) {
+									room.addSidebarNode(
+										`FILE--${p.mediaInfo.fileLocation}`,
+										{
+											type: "tab",
+											name: p.mediaInfo.fileName,
+											component: "room-file-editor",
+											config: {
+												name: p.mediaInfo.fileName,
+												path: p.mediaInfo.fileLocation,
+											},
+											enableClose: true,
+										},
+									);
 								} else if (p.mediaInfo.base64Data) {
 									setPreviewPdf({
 										fileName: p.mediaInfo.fileName,
@@ -339,7 +428,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									<TooltipTrigger asChild>
 										<button
 											type="button"
-											className="cursor-zoom-in overflow-hidden rounded-lg border border-border"
+											className="w-fit cursor-zoom-in overflow-hidden rounded-lg border border-border"
 											onClick={handleClick}
 											aria-label={`View ${p.mediaInfo.fileName}`}
 										>
@@ -444,6 +533,12 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									})}
 						</p>
 					)}
+					{!hasVisibleContent &&
+						message.id !== STREAMING_PLACEHOLDER_ID && (
+							<p className="text-muted-foreground text-sm italic">
+								{t("response.emptyResponse")}
+							</p>
+						)}
 				</div>
 
 				{message.id !== STREAMING_PLACEHOLDER_ID && (
@@ -469,7 +564,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 													inputMessage.previousSibling.activateMessage();
 												}}
 											>
-												<ArrowLeftIcon />
+												<ArrowLeftIcon className="rtl:-scale-x-100" />
 											</Button>
 										</TooltipTrigger>
 										<TooltipContent side="bottom">
@@ -499,7 +594,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 													inputMessage.nextSibling.activateMessage();
 												}}
 											>
-												<ArrowRightIcon />
+												<ArrowRightIcon className="rtl:-scale-x-100" />
 											</Button>
 										</TooltipTrigger>
 										<TooltipContent side="bottom">
@@ -510,14 +605,12 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							)}
 
 						{root.theme.featureFlags?.enableRewrite &&
-							parentHasText && (
+							parentHasContent && (
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<Button
 											disabled={
-												!inputMessage?.parent?.parent ||
-												message.room.mode ===
-													"executing"
+												!inputMessage?.parent?.parent
 											}
 											variant="ghost"
 											size="icon"
@@ -579,6 +672,84 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								{t("response.poorResponse")}
 							</TooltipContent>
 						</Tooltip>
+
+						{feedbackTextEnabled && isFeedbackTextOpen && (
+							<Dialog
+								open={isFeedbackTextOpen}
+								onOpenChange={(open) => {
+									if (!open) {
+										setIsFeedbackTextOpen(false);
+										setPendingRating(null);
+										setFeedbackText("");
+									}
+								}}
+							>
+								<DialogContent className="sm:max-w-md">
+									<DialogHeader>
+										<DialogTitle className="flex items-center gap-2">
+											{pendingRating === true ? (
+												<ThumbsUpIcon
+													className="size-5"
+													fill="currentColor"
+												/>
+											) : (
+												<ThumbsDownIcon
+													className="size-5"
+													fill="currentColor"
+												/>
+											)}
+											{pendingRating === true
+												? t("response.goodResponse")
+												: t("response.poorResponse")}
+										</DialogTitle>
+									</DialogHeader>
+									<Textarea
+										ref={feedbackTextRef}
+										placeholder={t(
+											"response.feedbackPlaceholder",
+										)}
+										value={feedbackText}
+										onChange={(e) =>
+											setFeedbackText(e.target.value)
+										}
+										rows={3}
+										className="text-sm"
+									/>
+									<div className="flex justify-end gap-2">
+										<Button
+											variant="ghost"
+											onClick={() => {
+												setIsFeedbackTextOpen(false);
+												setPendingRating(null);
+												setFeedbackText("");
+											}}
+										>
+											{t("response.feedbackCancel")}
+										</Button>
+										<Button onClick={submitFeedbackText}>
+											{t("response.feedbackSubmit")}
+										</Button>
+									</div>
+								</DialogContent>
+							</Dialog>
+						)}
+
+						{hasImage && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon"
+										onClick={copyImage}
+									>
+										<CopyIcon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">
+									{t("response.copyResponse")}
+								</TooltipContent>
+							</Tooltip>
+						)}
 
 						{hasText && (
 							<>
@@ -777,7 +948,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						if (!open) setPreviewImage(null);
 					}}
 				>
-					<DialogContent className="flex max-h-[90vh] max-w-4xl flex-col gap-3 p-4">
+					<DialogContent className="flex h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] flex-col gap-3 p-4 sm:max-w-[calc(100vw-2rem)]">
 						<div className="flex items-center gap-2 border-b pb-3">
 							<div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted">
 								<ImageIcon className="size-4 text-muted-foreground" />
@@ -790,11 +961,13 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							</span>
 						</div>
 						{previewImage && (
-							<img
-								className="max-h-[78vh] max-w-full rounded object-contain"
-								src={`data:${previewImage.mimeType};base64,${previewImage.base64Data}`}
-								alt={previewImage.fileName}
-							/>
+							<div className="flex flex-1 items-center justify-center overflow-hidden">
+								<img
+									className="max-h-full max-w-full rounded object-contain"
+									src={`data:${previewImage.mimeType};base64,${previewImage.base64Data}`}
+									alt={previewImage.fileName}
+								/>
+							</div>
 						)}
 					</DialogContent>
 				</Dialog>

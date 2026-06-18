@@ -3,10 +3,10 @@
 	"aboutTitle": "ナレッジストアについて",
 	"whatIsKnowledgeStore": "ナレッジストアとは?",
 	"ragDescription": "RAG(検索拡張生成)チャットは、信頼できるデータに基づいた応答を提供することで、AI会話を強化します。以下のライブラリから選択して、特定のドキュメントを参照した応答を受け取ることができます。",
-	"subtitle": "ナレッジソースを検索、フィルタ、作成します。",
+	"subtitle": "ナレッジストアを検索、フィルタ、作成します。",
 	"newSource": {
-		"title": "新しいナレッジソース",
-		"description": "ドキュメントをアップロードして新しいナレッジソースを作成"
+		"title": "新しいナレッジストア",
+		"description": "ドキュメントをアップロードして新しいナレッジストアを作成"
 	},
 	"form": {
 		"nameLabel": "名前",
@@ -25,7 +25,7 @@
 		"all": "すべて"
 	},
 	"actions": {
-		"createSource": "ナレッジソースを作成",
+		"createSource": "ナレッジストアを作成",
 		"viewDocuments": "ドキュメントを表示",
 		"newChat": "新しいチャット"
 	},
@@ -37,11 +37,11 @@
 	},
 	"documents": {
 		"title": "ドキュメント",
-		"description": "このナレッジソースに現在関連付けられているファイル。"
+		"description": "このナレッジストアに現在関連付けられているファイル。"
 	},
 	"embedDocuments": {
 		"title": "既存ソースにドキュメントを埋め込む",
-		"description": "このナレッジソースに埋め込むドキュメントをアップロードします。",
+		"description": "このナレッジストアに埋め込むドキュメントをアップロードします。",
 		"documents": "ドキュメント",
 		"selectFiles": "クリックしてファイルを選択するか、ドラッグ＆ドロップ",
 		"embedButton": "ドキュメントを埋め込む",
@@ -49,7 +49,7 @@
 		"removeFile": "ファイルを削除"
 	},
 	"embedMessages": {
-		"selectKnowledgeSource": "ナレッジソースを選択してください",
+		"selectKnowledgeSource": "ナレッジストアを選択してください",
 		"selectDocument": "少なくとも1つのドキュメントを選択してください",
 		"embedSuccess": "ドキュメントを正常に埋め込みました",
 		"embedFailed": "ドキュメントの埋め込みに失敗しました"
@@ -62,8 +62,8 @@
 	"detail": {
 		"knowledge": "ナレッジ",
 		"embedDocuments": "ドキュメントを埋め込む",
-		"newKnowledgeCreated": "新しいナレッジソースが作成されました。追加のドキュメントを埋め込むために選択できます。",
-		"documentsDescription": "このナレッジソースに現在埋め込まれているドキュメント。",
+		"newKnowledgeCreated": "新しいナレッジストアが作成されました。追加のドキュメントを埋め込むために選択できます。",
+		"documentsDescription": "このナレッジストアに現在埋め込まれているドキュメント。",
 		"failedToLoadDocuments": "ドキュメントの読み込みに失敗しました。"
 	}
 }

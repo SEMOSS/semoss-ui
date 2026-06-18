@@ -1,9 +1,9 @@
+import { Droppable } from "@hello-pangea/dnd";
 import { ChevronDown, Info, Plus, X } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
-import { Droppable } from "react-beautiful-dnd";
 import {
 	type BlockDef,
 	type EchartVisualizationBlockDef,
@@ -119,9 +119,11 @@ export const DataTabStyling = observer(
 			);
 		};
 
-		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
-			const updatedColumns = { ...selectedColumns };
+			if (!Array.isArray(storedColumns) || storedColumns.length === 0) {
+				return;
+			}
+			const updatedColumns = {};
 			storedColumns.forEach((item, index) => {
 				const key = `data-tab-drop-area-${index}`;
 				if (item.values && item.values.length > 0) {
@@ -131,41 +133,51 @@ export const DataTabStyling = observer(
 					};
 				}
 			});
-			if (
-				Object.keys(updatedColumns).length > 0 &&
-				JSON.stringify(updatedColumns) !==
-					JSON.stringify(selectedColumns)
-			) {
-				setSelectedColumns({ ...updatedColumns });
+			if (Object.keys(updatedColumns).length === 0) {
+				return;
 			}
-		}, [JSON.stringify(storedColumns)]);
+			setSelectedColumns((prevColumns) =>
+				JSON.stringify(updatedColumns) === JSON.stringify(prevColumns)
+					? prevColumns
+					: updatedColumns,
+			);
+		}, [storedColumns]);
 
-		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
+		// biome-ignore lint/correctness/useExhaustiveDependencies: chart config is stable for this menu
 		useEffect(() => {
-			const updatedColumns = { ...selectedColumns, ...dragdropColumns };
-			chart.forEach((item, index) => {
-				const key = `data-tab-drop-area-${index}`;
-				if (
-					!item.multiLabel &&
-					updatedColumns[key]?.values?.length > 1
-				) {
-					updatedColumns[key] = {
-						values: [updatedColumns[key]?.values[0]],
-						dataType: [updatedColumns[key]?.dataType[0]],
-					};
-				} else if (item.multiLabel && updatedColumns[key]?.values) {
-					const uniqueValues = Array.from(
-						new Set(updatedColumns[key].values),
-					);
-					updatedColumns[key] = {
-						...updatedColumns[key],
-						values: uniqueValues,
-					};
+			setSelectedColumns((prevColumns) => {
+				const updatedColumns = {
+					...prevColumns,
+					...dragdropColumns,
+				};
+				chart.forEach((item, index) => {
+					const key = `data-tab-drop-area-${index}`;
+					if (
+						!item.multiLabel &&
+						updatedColumns[key]?.values?.length > 1
+					) {
+						updatedColumns[key] = {
+							values: [updatedColumns[key]?.values[0]],
+							dataType: [updatedColumns[key]?.dataType[0]],
+						};
+					} else if (item.multiLabel && updatedColumns[key]?.values) {
+						const uniqueValues = Array.from(
+							new Set(updatedColumns[key].values),
+						);
+						updatedColumns[key] = {
+							...updatedColumns[key],
+							values: uniqueValues,
+						};
+					}
+				});
+				if (Object.keys(updatedColumns).length === 0) {
+					return prevColumns;
 				}
+				return JSON.stringify(updatedColumns) ===
+					JSON.stringify(prevColumns)
+					? prevColumns
+					: { ...updatedColumns };
 			});
-			if (Object.keys(updatedColumns).length > 0) {
-				setSelectedColumns({ ...updatedColumns });
-			}
 		}, [dragdropColumns]);
 
 		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
@@ -317,14 +329,9 @@ export const DataTabStyling = observer(
 				<span className="relative pl-4 text-[#808080] text-sm">
 					Selected Visual
 				</span>
-				{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-				{/* biome-ignore lint/a11y/noStaticElementInteractions: visual */}
-				item // biome-ignore lint/a11y/useKeyWithClickEvents: visual
-				item
-				{/* biome-ignore lint/a11y/noStaticElementInteractions: visual item */}
-				{/* biome-ignore lint/a11y/useKeyWithClickEvents: visual item */}
-				<div
-					className="mt-1 flex w-full cursor-pointer justify-center p-2"
+				<button
+					type="button"
+					className="mt-1 flex w-full cursor-pointer justify-center border-0 bg-transparent p-2 text-left"
 					onClick={() => handleChangeVisual(initialVisual)}
 				>
 					<div className="flex w-full items-center gap-2 rounded border px-2 py-1 text-sm">
@@ -340,16 +347,14 @@ export const DataTabStyling = observer(
 							</span>
 						)}
 					</div>
-				</div>
+				</button>
 				{/* Visual selector popover */}
 				{initialVisual && (
 					<div className="fixed inset-0 z-50 flex items-start justify-start pt-[14vh] pl-[51vw]">
-						{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-						{/* biome-ignore lint/a11y/noStaticElementInteractions: visual item*/}
-						{/* biome-ignore lint/a11y/useKeyWithClickEvents: visual item */}
-						{/* biome-ignore lint/a11y/noStaticElementInteractions: visual item */}
-						<div
+						<button
+							type="button"
 							className="fixed inset-0 bg-transparent"
+							aria-label="Close visual selector"
 							onClick={handleCloseVisual}
 						/>
 						<div className="relative z-10 rounded border bg-background shadow-lg">
@@ -404,90 +409,87 @@ export const DataTabStyling = observer(
 								</div>
 							)}
 						</Droppable>
-						{Object.entries(selectedColumns)
-							.filter(
-								([key]) =>
-									key === `data-tab-drop-area-${index}`,
-							)
-							.map(([key, columns]) =>
-								(columns.values ?? []).map(
-									(column, colIndex) => {
-										const refId = `${column + colIndex + index}`;
-										const aggregatedColumnName = (
-											col: string,
-										) => {
-											if (!item.aggregate) return col;
-											const dataType =
-												columns.dataType?.[colIndex];
-											if (!dataType) return col;
-											if (dataType === "NUMBER")
-												return `Average of ${col}`;
-											if (dataType === "STRING")
-												return `Count of ${col}`;
-											return `${dataType} of ${col}`;
-										};
-										return (
-											<div
-												key={column}
-												id={refId}
-												className="mx-3 mt-2 flex items-center justify-between rounded-[34px] bg-[#f0f0f0] px-4 py-2 text-sm"
-											>
-												<span>
-													{aggregatedColumnName(
-														column,
-													).length > 20 ? (
-														<span
-															className="cursor-pointer"
-															title={aggregatedColumnName(
-																column,
-															)}
-														>
-															{aggregatedColumnName(
-																column,
-															).slice(0, 12) +
-																"..."}
-														</span>
-													) : (
-														aggregatedColumnName(
-															column,
-														)
-													)}
+						{(() => {
+							const key = `data-tab-drop-area-${index}`;
+							const dropAreaColumns = selectedColumns[key];
+							const selectedValues =
+								dropAreaColumns?.values ?? [];
+							return selectedValues.map((column, colIndex) => {
+								const refId = `${column + colIndex + index}`;
+								const dataType =
+									dropAreaColumns?.dataType?.[colIndex];
+								const displayColumnName = !item.aggregate
+									? column
+									: dataType === "NUMBER"
+										? `Average of ${column}`
+										: dataType === "STRING"
+											? `Count of ${column}`
+											: dataType
+												? `${dataType} of ${column}`
+												: column;
+								return (
+									<div
+										key={`${key}-${column}`}
+										id={refId}
+										className="mx-3 mt-2 flex items-center justify-between rounded-[34px] bg-[#f0f0f0] px-4 py-2 text-sm"
+									>
+										<span>
+											{displayColumnName.length > 20 ? (
+												<span
+													className="cursor-pointer"
+													title={displayColumnName}
+												>
+													{`${displayColumnName.slice(0, 12)}...`}
 												</span>
-												<div className="flex items-center gap-1">
-													{item.aggregate && (
-														<ChevronDown
-															className="h-4 w-4 cursor-pointer text-[#888]"
-															onClick={() => {
-																setAggregateMenuAnchorEl(
-																	document.getElementById(
-																		refId,
-																	),
-																);
-																handleAggregateClick(
-																	column,
-																	index,
-																	colIndex,
-																);
-															}}
-														/>
-													)}
-													<X
-														className="h-4 w-4 cursor-pointer text-[#888]"
-														onClick={() => {
+											) : (
+												displayColumnName
+											)}
+										</span>
+										<div className="flex items-center gap-1">
+											{item.aggregate && (
+												<ChevronDown
+													className="h-4 w-4 cursor-pointer text-[#888]"
+													onClick={() => {
+														setAggregateMenuAnchorEl(
+															document.getElementById(
+																refId,
+															),
+														);
+														handleAggregateClick(
+															column,
+															index,
+															colIndex,
+														);
+													}}
+												/>
+											)}
+											<X
+												className="h-4 w-4 cursor-pointer text-[#888]"
+												onClick={() => {
+													setSelectedColumns(
+														(prevColumns) => {
 															const updatedColumns =
 																{
-																	...selectedColumns,
+																	...prevColumns,
 																};
-															const filtered =
+															const filteredValues =
 																updatedColumns[
 																	key
 																]?.values?.filter(
 																	(_, i) =>
 																		i !==
 																		colIndex,
-																);
+																) ?? [];
+															const filteredDataTypes =
+																updatedColumns[
+																	key
+																]?.dataType?.filter(
+																	(_, i) =>
+																		i !==
+																		colIndex,
+																) ?? [];
 															if (
-																filtered?.length ===
+																filteredValues.length ===
 																0
 															) {
 																delete updatedColumns[
@@ -500,23 +502,22 @@ export const DataTabStyling = observer(
 																	...updatedColumns[
 																		key
 																	],
-																	values: filtered,
+																	values: filteredValues,
+																	dataType:
+																		filteredDataTypes,
 																};
 															}
-															setSelectedColumns(
-																updatedColumns,
-															);
-															deleteColumns(
-																column,
-															);
-														}}
-													/>
-												</div>
-											</div>
-										);
-									},
-								),
-							)}
+															return updatedColumns;
+														},
+													);
+													deleteColumns(column);
+												}}
+											/>
+										</div>
+									</div>
+								);
+							});
+						})()}
 					</div>
 				))}
 				<div className="mt-4 ml-2 flex w-full items-center gap-2">
@@ -553,16 +554,10 @@ export const DataTabStyling = observer(
 							width: aggregateMenuAnchorEl.offsetWidth,
 						}}
 					>
-						{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-						{/* biome-ignore lint/a11y/noStaticElementInteractions: visual item*/}
-						{/* biome-ignore lint/a11y/useKeyWithClickEvents: visual item */}
-						{/* biome-ignore lint/suspicious/noCommentText: original comment text */}
-						// biome-ignore lint/a11y/useKeyWithClickEvents: visual
-						item
-						{/* biome-ignore lint/a11y/noStaticElementInteractions: visual item */}
-						{/* biome-ignore lint/a11y/useKeyWithClickEvents: visual item */}
-						<div
+						<button
+							type="button"
 							className="fixed inset-0 bg-transparent"
+							aria-label="Close aggregate selector"
 							onClick={() => {
 								setAggregateFilterInput("");
 								setAggregateMenuAnchorEl(null);

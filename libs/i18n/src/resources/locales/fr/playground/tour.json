@@ -1,0 +1,47 @@
+{
+	"steps": {
+		"welcome": {
+			"title": "Bienvenue !",
+			"content": "Faisons un rapide tour d'horizon pour bien démarrer."
+		},
+		"input": {
+			"title": "Démarrer une conversation",
+			"content": "Saisissez votre question ici et appuyez sur Entrée."
+		},
+		"inputMenu": {
+			"title": "Joindre et configurer",
+			"content": "Ajoutez des fichiers, des agents, des bibliothèques de connaissances et des outils pour enrichir votre conversation."
+		},
+		"model": {
+			"title": "Modèle",
+			"content": "Sélectionnez le modèle d'IA qui propulse votre conversation."
+		},
+		"record": {
+			"title": "Enregistrer",
+			"content": "Cliquez pour parler, votre voix sera convertie en texte."
+		},
+		"newChat": {
+			"title": "Nouveau chat",
+			"content": "Démarrez une nouvelle conversation à tout moment."
+		},
+		"chatHistory": {
+			"title": "Historique des chats",
+			"content": "Continuez, mettez en favori, modifiez ou supprimez les conversations passées."
+		},
+		"search": {
+			"title": "Recherche",
+			"content": "Retrouvez rapidement vos chats précédents dans l'historique."
+		},
+		"takeTour": {
+			"title": "Faire le tour",
+			"content": "Rejouez cette visite guidée à tout moment."
+		}
+	},
+	"controls": {
+		"closeTour": "Fermer le tour",
+		"skip": "Passer",
+		"back": "Précédent",
+		"next": "Suivant",
+		"done": "Terminé"
+	}
+}

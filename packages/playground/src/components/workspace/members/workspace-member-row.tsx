@@ -48,7 +48,7 @@ export const WorkspaceMemberRow = ({
 				<span className="font-medium text-sm">
 					{member.name}{" "}
 					{member.id === currentUserId && (
-						<span className="ml-1 text-muted-foreground">
+						<span className="ms-1 text-muted-foreground">
 							{t("members.you")}
 						</span>
 					)}

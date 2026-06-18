@@ -131,7 +131,7 @@ export const EmbedDocumentsOverlay = ({
 						</label>
 						<button
 							type="button"
-							className={`w-full rounded-md border-2 border-dashed p-4 transition-colors text-left ${
+							className={`w-full rounded-md border-2 border-dashed p-4 transition-colors text-start ${
 								isDragging
 									? "border-primary bg-primary/5"
 									: "border-border"
@@ -160,7 +160,7 @@ export const EmbedDocumentsOverlay = ({
 						</button>
 
 						{files.length > 0 && (
-							<div className="mt-3 max-h-[200px] overflow-y-auto pr-2 w-full">
+							<div className="mt-3 max-h-[200px] overflow-y-auto pe-2 w-full">
 								<div className="space-y-2">
 									{files.map((file, index) => (
 										<div
@@ -210,7 +210,7 @@ export const EmbedDocumentsOverlay = ({
 						>
 							{isEmbedding ? (
 								<>
-									<Spinner className="mr-2 h-4 w-4" />
+									<Spinner className="me-2 h-4 w-4" />
 									{t("embedDocuments.embedding")}
 								</>
 							) : (

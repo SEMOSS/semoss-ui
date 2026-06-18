@@ -39,7 +39,7 @@ export interface WorkspaceStoreInterface {
 	/**
 	 * Type of the app
 	 */
-	type: "BLOCKS" | "CODE";
+	type: "BLOCKS" | "CODE" | "SKILL" | "WORKSPACE";
 
 	/**
 	 * Model associated with the layout
@@ -62,13 +62,42 @@ export interface WorkspaceStoreInterface {
 			/**
 			 * Set the maxWidth of the overlay
 			 */
-			maxWidth: "sm" | "md" | "lg" | "xl" | null;
+			maxWidth:
+				| "sm"
+				| "md"
+				| "lg"
+				| "xl"
+				| "2xl"
+				| "3xl"
+				| "4xl"
+				| "5xl"
+				| null;
 		};
 
 		/**
 		 * Content to display in the overlay
 		 */
 		content: () => JSX.Element;
+	};
+
+	/**
+	 * File browser state used to sync asset path suggestions to terminal
+	 */
+	fileBrowser: {
+		/**
+		 * True while the app file browser panel is mounted/open
+		 */
+		isOpen: boolean;
+
+		/**
+		 * Current directory path shown by the browser
+		 */
+		path: string;
+
+		/**
+		 * Visible asset paths currently rendered in the browser tree
+		 */
+		visiblePaths: string[];
 	};
 }
 
@@ -91,7 +120,7 @@ export interface WorkspaceConfigInterface {
 	/**
 	 * Type of the app
 	 */
-	type: "BLOCKS" | "CODE";
+	type: "BLOCKS" | "CODE" | "SKILL" | "WORKSPACE";
 
 	/**
 	 * Metadata associated with the loaded app
@@ -103,6 +132,7 @@ export interface WorkspaceConfigInterface {
  * Store that manages instances of the insights and handles applicaiton level querying
  */
 export class WorkspaceStore {
+	// biome-ignore lint/correctness/noUnusedPrivateClassMembers: kept for future use
 	private _root: RootStore;
 	private _store: WorkspaceStoreInterface = {
 		appId: "",
@@ -130,6 +160,11 @@ export class WorkspaceStore {
 				maxWidth: "sm",
 			},
 			content: () => null,
+		},
+		fileBrowser: {
+			isOpen: false,
+			path: "/",
+			visiblePaths: [],
 		},
 	};
 
@@ -214,10 +249,17 @@ export class WorkspaceStore {
 	}
 
 	/**
+	 * Get the file browser snapshot used for terminal suggestion sync
+	 */
+	get fileBrowser() {
+		return this._store.fileBrowser;
+	}
+
+	/**
 	 * The key for the local storage cache
 	 */
 	get cacheKey() {
-		return `smss-workspace--${this._store.appId}-v4`;
+		return `smss-workspace--${this._store.appId}-v5`;
 	}
 
 	/**
@@ -350,5 +392,29 @@ export class WorkspaceStore {
 	 */
 	setAgentModelEngine = (id: string) => {
 		this._store.agentModelEngine = id;
+	};
+
+	/**
+	 * Track whether the app file browser is open/mounted
+	 */
+	setFileBrowserOpen = (isOpen: boolean) => {
+		this._store.fileBrowser.isOpen = isOpen;
+
+		if (!isOpen) {
+			this._store.fileBrowser.path = "/";
+			this._store.fileBrowser.visiblePaths = [];
+		}
+	};
+
+	/**
+	 * Update the latest visible paths from the app file browser
+	 */
+	setFileBrowserVisiblePaths = (path: string, visiblePaths: string[]) => {
+		const normalized = Array.from(
+			new Set(visiblePaths.map((value) => value.trim()).filter(Boolean)),
+		);
+
+		this._store.fileBrowser.path = path || "/";
+		this._store.fileBrowser.visiblePaths = normalized;
 	};
 }

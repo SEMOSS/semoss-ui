@@ -1,11 +1,13 @@
 import { CheckIcon, CirclePause, HammerIcon, XCircleIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
+import { useEffect } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { Button, cn, Spinner } from "@semoss/ui/next";
+import { Button, cn, Spinner, useIsMobile } from "@semoss/ui/next";
 import { useLoadingMessage } from "@/hooks";
 import type { ResponseMessageStore, ToolStore } from "@/stores";
 import { RoomInlineTool } from "../room";
 import { ResponseMessageToolMenu } from "./response-message-tool-menu";
+import { ResponseMessageToolStreaming } from "./response-message-tool-streaming";
 
 const getToolState = (
 	tool: ToolStore,
@@ -118,6 +120,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 	({ message, tool, isLarge }) => {
 		const { t } = useTranslation("tool");
 		const { room } = message;
+		const isMobile = useIsMobile();
 
 		const { loadingMessage: toolExecutionMessage } = useLoadingMessage(
 			tool.status === "LOADING",
@@ -126,21 +129,34 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				: [],
 		);
 
-		// TODO: if the plan is executing, only the execution step is enabled
-		const isDisabled =
-			room.mode === "executing" &&
-			(room.plan?.step?.details.stepType !== "tool_call" ||
-				room.plan?.step?.details.tool_name !== tool.json.name ||
-				room.plan?.step?.details._meta.SMSS_PROJECT_ID !==
-					tool.json._meta.SMSS_PROJECT_ID);
+		useEffect(() => {
+			if (
+				!tool.argumentsStreaming &&
+				tool.display !== "hidden" &&
+				tool.json._meta.SMSS_MCP_UI?.autoOpen === true &&
+				!tool.isOpen
+			) {
+				tool.openTool(isMobile ? "inline" : undefined);
+			}
+		}, [
+			tool,
+			tool.argumentsStreaming,
+			tool.json._meta.SMSS_MCP_UI?.autoOpen,
+			isMobile,
+		]);
+
+		// While the tool call is still streaming in, we don't have title/meta/args
+		// yet — delegate to a dedicated placeholder pill that shows a spinner and
+		// optionally expands to preview the accumulating JSON.
+		if (tool.argumentsStreaming) {
+			return <ResponseMessageToolStreaming tool={tool} />;
+		}
 
 		const isActive =
 			tool.isOpen &&
 			(tool.display === "sidebar" ? room.sidebar.isOpen : true);
 
 		const toolState = getToolState(tool, t, toolExecutionMessage);
-
-		const isButtonDisabled = !tool.isOpen && isDisabled;
 
 		// Don't render if hidden
 		if (tool.display === "hidden") {
@@ -159,11 +175,11 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 					// Clicks when inline should close
 					tool.closeTool();
 				} else {
-					// if it's open in the sidebar, we want to move it to the front
-					tool.openTool("sidebar");
+					// if it's open in the sidebar, move to front on desktop or switch to inline on mobile
+					tool.openTool(isMobile ? "inline" : "sidebar");
 				}
 			} else {
-				tool.openTool();
+				tool.openTool(isMobile ? "inline" : undefined);
 			}
 		};
 
@@ -172,25 +188,22 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				<div
 					className={cn(
 						"flex flex-col rounded-lg border border-border bg-sidebar",
-						isDisabled && "opacity-50",
-						!isDisabled && isActive && "border-primary",
+						isActive && "border-primary",
 					)}
 				>
 					<div className="flex items-center">
 						<button
 							type="button"
-							disabled={isButtonDisabled}
 							className={cn(
-								"flex min-w-0 flex-1 items-center gap-3 p-2 text-left",
-								!toolState.actionType && "pr-0",
-								isButtonDisabled && "cursor-default",
+								"flex min-w-0 flex-1 items-center gap-3 p-2 text-start",
+								!toolState.actionType && "pe-0",
 							)}
 							onClick={handleClick}
 						>
 							<div className="flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground">
 								{toolState.icon}
 							</div>
-							<div className="-ml-1.5 flex min-w-0 flex-1 items-center gap-2">
+							<div className="-ms-1.5 flex min-w-0 flex-1 items-center gap-2">
 								<span
 									className="truncate text-muted-foreground text-sm"
 									title={tool.json.title}
@@ -215,7 +228,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 						{toolState.actionType === "cancel" && (
 							<button
 								type="button"
-								className="flex shrink-0 cursor-pointer items-center self-stretch rounded-r-lg px-4.5 text-muted-foreground text-sm hover:bg-accent"
+								className="flex shrink-0 cursor-pointer items-center self-stretch rounded-e-lg px-4.5 text-muted-foreground text-sm hover:bg-accent"
 								onClick={handleCancel}
 							>
 								{t("actions.cancel")}
@@ -250,23 +263,18 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			<div
 				className={cn(
 					"flex flex-col rounded-lg border border-border",
-					isDisabled && "opacity-50",
 					toolState.background,
-					!isDisabled && isActive && "border-primary",
-					!isDisabled &&
-						toolState.showHoverAccent &&
-						"hover:bg-accent",
+					isActive && "border-primary",
+					toolState.showHoverAccent && "hover:bg-accent",
 				)}
 			>
 				{/* Top section: button + actions */}
 				<div className="flex items-center">
 					<button
 						type="button"
-						disabled={isButtonDisabled}
 						className={cn(
-							"flex min-w-0 flex-1 items-center gap-3 p-2 text-left",
-							!toolState.actionType && "pr-0",
-							isButtonDisabled && "cursor-default",
+							"flex min-w-0 flex-1 items-center gap-3 p-2 text-start",
+							!toolState.actionType && "pe-0",
 						)}
 						onClick={handleClick}
 					>
@@ -302,7 +310,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 							type="button"
 							size="sm"
 							variant="secondary"
-							className="mr-2 shrink-0"
+							className="me-2 shrink-0"
 							onClick={handleCancel}
 						>
 							{t("actions.cancel")}

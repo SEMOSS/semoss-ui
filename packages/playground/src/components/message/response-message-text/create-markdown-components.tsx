@@ -9,8 +9,6 @@ import {
 	type Markdown,
 	P,
 	ScrollArea,
-	ScrollBar,
-	Table,
 } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
 import { CodePreviewBlock } from "./code-preview-block";
@@ -144,7 +142,7 @@ export const createMarkdownComponents = (
 	},
 	ul: ({ children, ...props }) => (
 		<ul
-			className="my-1 ml-4 list-disc text-base text-inherit [&>li]:mt-1"
+			className="my-1 ms-4 list-disc text-base text-inherit [&>li]:mt-1"
 			{...props}
 		>
 			{children}
@@ -152,7 +150,7 @@ export const createMarkdownComponents = (
 	),
 	ol: ({ children, ...props }) => (
 		<ol
-			className="my-1 ml-4 list-decimal text-base text-inherit [&>li]:mt-1"
+			className="my-1 ms-4 list-decimal text-base text-inherit [&>li]:mt-1"
 			{...props}
 		>
 			{children}
@@ -191,7 +189,7 @@ export const createMarkdownComponents = (
 
 		return (
 			<blockquote
-				className="mt-1 ml-6 border-border border-l-2 pl-3 text-base text-foreground italic"
+				className="ms-6 mt-1 border-border border-s-2 ps-3 text-base text-foreground italic"
 				{...props}
 			>
 				{children}
@@ -258,10 +256,13 @@ export const createMarkdownComponents = (
 			/>
 		);
 	},
-	table: ({ ...props }) => (
-		<ScrollArea className="w-full">
-			<ScrollBar orientation="horizontal"></ScrollBar>
-			<Table {...props} />
+	table: ({ className, ...props }) => (
+		<ScrollArea className="w-full" scrollOrientation="horizontal">
+			<table
+				data-slot="table"
+				className={`min-w-full caption-bottom text-sm${className ? ` ${className}` : ""}`}
+				{...props}
+			/>
 		</ScrollArea>
 	),
 });

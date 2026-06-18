@@ -1,22 +1,14 @@
 import {
-	ComputerIcon,
-	ExternalLinkIcon,
 	MoveDownIcon,
 	MoveUpIcon,
 	Settings2Icon,
 	TriangleAlertIcon,
 } from "lucide-react";
-
-const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
-	? import.meta.env.VITE_PLATFORM_URL
-	: "";
-
 import { observer } from "mobx-react-lite";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
-	Badge,
 	Button,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
@@ -25,19 +17,19 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	toast,
 } from "@semoss/ui/next";
 import {
 	InputMessage,
-	PlanMessage,
 	ResponseMessage,
 	RoomInput,
 	RoomInputMenuFileExplorer,
 	RoomInputMenuMCP,
 	RoomInputMenuUpload,
 } from "@/components";
-import { useChat, useGracefulErrors, useRoot } from "@/hooks";
+import { useChat, useGracefulErrors } from "@/hooks";
 import type { RoomStore } from "@/stores";
-import type { MCPConfig } from "@/types";
+import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomSuggestions } from "./room-suggestions";
 
 const ROOM_CONFIGURATION_ID = "CONFIGURATION";
@@ -55,10 +47,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const { chat } = useChat();
 	const { t } = useTranslation("room");
 	const { getGracefulErrorMessage } = useGracefulErrors();
-	const { root } = useRoot();
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
 	const [contentEle, setContentEle] = useState<HTMLDivElement | null>(null);
-
 	const [contentHeight, setContentHeight] = useState(0);
 	const [showScrollup, setShowScrollup] = useState(false);
 	const [showScrolldown, setShowScrolldown] = useState(false);
@@ -82,54 +72,32 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	};
 
 	/**
-	 * Handle tool selection (toggle for plus menu)
-	 * @param tool - selected tool
+	 * Open the room configuration sidebar tab
 	 */
-	const handleToolSelect = (tool: MCPConfig) => {
-		// Toggle tool in options
-		const tools = room.options.mcp.reduce(
-			(acc, curr) => {
-				acc[curr.id] = curr;
-				return acc;
-			},
-			{} as Record<string, typeof tool>,
-		);
-
-		if (Object.hasOwn(tools, tool.id)) {
-			delete tools[tool.id];
-		} else {
-			tools[tool.id] = tool;
-		}
-
-		room.setOptions({
-			...room.options,
-			mcp: Object.values(tools),
+	const handleOpenSettings = useCallback(() => {
+		room.addSidebarNode(ROOM_CONFIGURATION_ID, {
+			type: "tab",
+			name: "Configuration",
+			component: "room-configuration",
+			config: {},
+			enableClose: true,
 		});
-	};
+	}, [room]);
 
 	/**
-	 * Handle tool add (add-only for slash menu)
-	 * @param tool - selected tool
+	 * Compact messages in the room
 	 */
-	const handleToolAdd = (tool: MCPConfig) => {
-		// Add tool to options (skip if already present)
-		const tools = room.options.mcp.reduce(
-			(acc, curr) => {
-				acc[curr.id] = curr;
-				return acc;
-			},
-			{} as Record<string, typeof tool>,
-		);
-
-		// Only add if not already present
-		if (!Object.hasOwn(tools, tool.id)) {
-			tools[tool.id] = tool;
+	const handleCompactMessages = async () => {
+		try {
+			const result = await room.compactMessages();
+			if (result === "skipped") {
+				toast.info(t("settings.compactSkipped"));
+			} else {
+				toast.success(t("settings.compactSuccess"));
+			}
+		} catch {
+			toast.error(t("settings.compactError"));
 		}
-
-		room.setOptions({
-			...room.options,
-			mcp: Object.values(tools),
-		});
 	};
 
 	/**
@@ -314,7 +282,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		for (const part of room.latestResponseMessage.parts) {
 			if (
 				part.type === "TOOL_CALL" &&
-				part.toolCall._meta.SMSS_MCP_EXECUTION === "auto"
+				part.toolCall._meta?.SMSS_MCP_EXECUTION === "auto"
 			) {
 				const tool = room.getTool(part.toolCall.id);
 				if (
@@ -334,10 +302,11 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		isAutoExecutingTools;
 
 	return (
-		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
+		<div className="flex h-full w-full flex-col bg-background transition-all duration-200 ease-in-out">
 			<div className="relative w-full flex-1 overflow-hidden">
 				<ScrollArea
-					className="h-full w-full overflow-hidden"
+					// Force Radix's table-display viewport wrapper to block so wide content can't push the column past the viewport width
+					className="[&_[data-slot=scroll-area-viewport]>div]:!block h-full w-full overflow-hidden"
 					viewportRef={(ele) => {
 						setScrollEle(ele);
 					}}
@@ -353,11 +322,23 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									return null;
 								}
 
+								const showModelName = (() => {
+									// find the most recent ancestor that actually has a model
+									let ancestor = m.parent;
+									while (ancestor) {
+										if (ancestor.modelId) break;
+										ancestor = ancestor.parent;
+									}
+									// If no ancestor has a model, show the model name for this message
+									if (!ancestor) return true;
+									// Only show the model name if it's different from the ancestor's model to reduce clutter
+									return m.modelId !== ancestor.modelId;
+								})();
+
 								return (
 									<React.Fragment key={m.key}>
-										{(m.parent.modelId !== m.modelId ||
-											m.parent.parent === null) && (
-											<div className="relative flex flex-col items-center justify-center">
+										{showModelName && (
+											<div className="relative mb-4 flex flex-col items-center justify-center">
 												<div className="z-10 bg-background px-2 text-muted-foreground text-xs leading-normal">
 													{m.ornaments.modelName}
 												</div>
@@ -376,13 +357,10 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 												message={m}
 											/>
 										)}
-										{m.type === "PLAN" && (
-											<PlanMessage
+
+										{m.type === "OUTPUT" && (
+											<RoomCompactionIndicator
 												message={m}
-												isLast={
-													mIdx ===
-													room.history.length - 1
-												}
 											/>
 										)}
 									</React.Fragment>
@@ -408,7 +386,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 				{showScrollup && (
 					<Tooltip>
 						<TooltipTrigger asChild>
-							<span className="absolute top-4 right-4 z-50">
+							<span className="absolute end-4 top-4 z-50">
 								<Button
 									size="icon-sm"
 									variant={"outline"}
@@ -429,7 +407,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 				{showScrolldown && (
 					<Tooltip>
 						<TooltipTrigger asChild>
-							<span className="absolute right-4 bottom-4 z-50">
+							<span className="absolute end-4 bottom-4 z-50">
 								<Button
 									size="icon-sm"
 									variant={"outline"}
@@ -462,28 +440,34 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						chat.setSelectedModel(model);
 					}}
 					options={room.options}
-					onMcpSelect={handleToolAdd}
+					onMcpChange={(mcp) =>
+						room.setOptions({
+							...room.options,
+							mcp,
+						})
+					}
 					MenuComponent={observer(
-						({ onOpenChange, fileRef, editorRef }) => (
+						({ onOpenChange, onOpenMcpOverlay }) => (
 							<>
 								<RoomInputMenuUpload
-									fileRef={fileRef}
 									onSelect={() => onOpenChange(false)}
 								/>
 								<DropdownMenuSeparator />
 								<RoomInputMenuMCP
 									type="KNOWLEDGE"
 									options={room.options}
-									onSelect={handleToolSelect}
-									editorRef={editorRef}
-									onOverlayClose={() => onOpenChange(false)}
+									onSelect={() => {
+										onOpenMcpOverlay("KNOWLEDGE");
+										onOpenChange(false);
+									}}
 								/>
 								<RoomInputMenuMCP
 									type="TOOLBOX"
 									options={room.options}
-									onSelect={handleToolSelect}
-									editorRef={editorRef}
-									onOverlayClose={() => onOpenChange(false)}
+									onSelect={() => {
+										onOpenMcpOverlay("TOOLBOX");
+										onOpenChange(false);
+									}}
 								/>
 								<DropdownMenuSeparator />
 								<RoomInputMenuFileExplorer
@@ -493,18 +477,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 								<DropdownMenuItem
 									onSelect={(e) => {
 										e.preventDefault();
-
-										// add to the sidebar
-										room.addSidebarNode(
-											ROOM_CONFIGURATION_ID,
-											{
-												type: "tab",
-												name: "Configuration",
-												component: "room-configuration",
-												config: {},
-												enableClose: true,
-											},
-										);
+										handleOpenSettings();
 										onOpenChange(false);
 									}}
 								>
@@ -516,57 +489,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							</>
 						),
 					)}
-					footer={
-						room.options.workspace?.workspace_id ? (
-							room.theme.showPlatformLinks !== false ? (
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<span>
-											<Badge variant="secondary" asChild>
-												<a
-													target="_blank"
-													href={`${PLATFORM_URL}/#/app/${room.options.workspace.workspace_id}`}
-												>
-													<ComputerIcon data-icon="inline-start" />
-													<div className="w-18 truncate">
-														{room.options.workspace
-															.name ||
-															room.options
-																.workspace
-																.workspace_id}
-													</div>
-													<ExternalLinkIcon data-icon="inline-end" />
-												</a>
-											</Badge>
-										</span>
-									</TooltipTrigger>
-									<TooltipContent>
-										Click to view agent details
-									</TooltipContent>
-								</Tooltip>
-							) : (
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<span>
-											<Badge variant="secondary">
-												<ComputerIcon data-icon="inline-start" />
-												<div className="w-18 truncate">
-													{room.options.workspace
-														.name ||
-														room.options.workspace
-															.workspace_id}
-												</div>
-											</Badge>
-										</span>
-									</TooltipTrigger>
-									<TooltipContent>
-										{room.options.workspace.name ||
-											room.options.workspace.workspace_id}
-									</TooltipContent>
-								</Tooltip>
-							)
-						) : null
-					}
 					onPrompt={handlePrompt}
 					hasOutstandingTools={
 						room.latestResponseMessage.hasUnfinishedTools
@@ -577,6 +499,9 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					}
 					tokensUsed={room.tokensUsed}
 					tokensMax={chat.models.contextWindow}
+					onCompact={handleCompactMessages}
+					onOpenSettings={handleOpenSettings}
+					excludeCommandIds={["agent", "workspace"]}
 				/>
 			</div>
 		</div>
