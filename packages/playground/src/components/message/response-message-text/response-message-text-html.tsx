@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useTranslation } from "@semoss/i18n";
-import type { ResponseMessageStore, RoomStore } from "@/stores";
+import type { RoomStore } from "@/stores";
+import type { ChunkStatus } from "../response-message-text";
 import { HtmlPreviewBlock } from "./html-preview-block";
 
 interface ResponseMessageTextHtmlProps {
@@ -8,51 +9,37 @@ interface ResponseMessageTextHtmlProps {
 	html: string;
 
 	/**
-	 * True when this chunk is the currently-active one in the queue.
-	 * Waiting chunks (isActive=false, isDone=false) render nothing.
+	 * Animation status for this chunk, controlled by the parent.
+	 * - "not_started": waiting in queue, renders nothing
+	 * - "active": currently streaming, shows loading state in preview
+	 * - "done": fence closed and complete, renders full preview
 	 */
-	isActive: boolean;
-
-	/**
-	 * True when this chunk has already completed (index < activeIndex).
-	 * Renders the block directly without any gating.
-	 */
-	isDone: boolean;
-
-	/**
-	 * True when no more tokens will arrive for this chunk (fence is closed,
-	 * or streaming has ended). Passed as `!isLoading` to HtmlPreviewBlock.
-	 */
-	isFinalized: boolean;
+	status: ChunkStatus;
 
 	/** Room store, forwarded to HtmlPreviewBlock for "Save in Room". */
 	room?: RoomStore;
 
-	/** Parent response message (used for translation context). */
-	message: ResponseMessageStore;
-
-	/** Called when this chunk is done and the next chunk may start. */
+	/** Called when this chunk is done so the parent can advance to the next chunk. */
 	onComplete: () => void;
 }
 
 export const ResponseMessageTextHtml: React.FC<
 	ResponseMessageTextHtmlProps
-> = ({ html, isActive, isDone, isFinalized, room, onComplete }) => {
+> = ({ html, status, room, onComplete }) => {
 	const { t } = useTranslation("chat");
 
-	// Fire onComplete as soon as the fence closes (isFinalized becomes true).
-	// HtmlPreviewBlock manages its own internal streaming throttle and iframe
-	// load state — we don't need to wait for the iframe before advancing the
-	// queue. The next md chunk starting while the HTML preview settles is fine.
+	// Advance the queue as soon as this chunk becomes done.
+	// The parent flips status from "active" → "done" once the fence closes
+	// (isFinalized in the chunk), so this fires at exactly the right moment.
 	// Duplicate-call protection lives in the parent (handleChunkComplete).
 	useEffect(() => {
-		if (isFinalized && isActive) {
+		if (status === "done") {
 			onComplete();
 		}
-	}, [isFinalized, isActive, onComplete]);
+	}, [status, onComplete]);
 
 	// Waiting chunks render nothing until it's their turn
-	if (!isActive && !isDone) {
+	if (status === "not_started") {
 		return null;
 	}
 
@@ -60,7 +47,7 @@ export const ResponseMessageTextHtml: React.FC<
 		<HtmlPreviewBlock
 			html={html}
 			room={room}
-			isLoading={!isFinalized}
+			isLoading={status === "active"}
 			copyTooltip="Copy"
 			copySuccessMessage={t("notifications.copySuccess")}
 			copyLabel="Copy"

@@ -7,6 +7,8 @@ import { parseChunks } from "./response-message-text/parse-chunks";
 import { ResponseMessageTextHtml } from "./response-message-text/response-message-text-html";
 import { ResponseMessageTextMd } from "./response-message-text/response-message-text-md";
 
+export type ChunkStatus = "done" | "active" | "not_started";
+
 interface ResponseMessageTextProps {
 	/** Message to render */
 	message: ResponseMessageStore;
@@ -30,10 +32,10 @@ interface ResponseMessageTextProps {
  */
 export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 	({ message, part, isLast }) => {
-		const isStreaming = message.isThinking && isLast;
+		const isThinking = message.isThinking && isLast;
 
 		// Parse text into chunks on every render (pure, cheap function).
-		const chunks = parseChunks(part.text, isStreaming);
+		const chunks = parseChunks(part.text, isThinking);
 
 		// Index of the chunk currently allowed to animate.
 		const [activeIndex, setActiveIndex] = useState(0);
@@ -63,22 +65,25 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 			[chunks.length, handleChunkComplete],
 		);
 
+		// Derives the animation status for a chunk at the given index.
+		// When the message is no longer streaming, all chunks are "done" —
+		// they render their full content immediately without animation.
+		const getChunkStatus = (index: number): ChunkStatus => {
+			if (!isThinking || activeIndex > index) return "done";
+			if (activeIndex === index) return "active";
+			return "not_started";
+		};
+
 		return (
 			<>
 				{chunks.map((chunk, idx) => {
-					const isActive = idx === activeIndex;
-					const isDone = idx < activeIndex;
-
 					if (chunk.type === "html") {
 						return (
 							<ResponseMessageTextHtml
 								key={chunk.key}
 								html={chunk.content}
-								isFinalized={chunk.isFinalized}
-								isActive={isActive}
-								isDone={isDone}
+								status={getChunkStatus(idx)}
 								room={message.room}
-								message={message}
 								onComplete={chunkCallbacks[idx]}
 							/>
 						);
@@ -88,9 +93,7 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 						<ResponseMessageTextMd
 							key={chunk.key}
 							content={chunk.content}
-							isFinalized={chunk.isFinalized}
-							isActive={isActive}
-							isDone={isDone}
+							status={getChunkStatus(idx)}
 							message={message}
 							isLast={isLast && idx === chunks.length - 1}
 							onComplete={chunkCallbacks[idx]}
