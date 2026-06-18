@@ -1,12 +1,5 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import {
-	cancelPixelJob,
-	getPixelAsyncResult,
-	getPixelJobStreaming,
-	runPixel,
-	runPixelAsync,
-	uploadInsight,
-} from "@semoss/sdk/react";
+import { runPixel, uploadInsight } from "@semoss/sdk/react";
 import { FlexLayout, type ThemeMap } from "@semoss/shared";
 import {
 	STREAMING_PLACEHOLDER_ID,
@@ -31,17 +24,11 @@ import type {
 	ResponsePixelMessage,
 	Workspace,
 } from "@/types";
-
-/**
- * Thrown when a streaming pixel job is cancelled intentionally via cancelActiveJob().
- * Callers can catch this specifically to avoid treating a cancel as a real error.
- */
-export class PixelJobCancelledError extends Error {
-	constructor() {
-		super("Pixel job was cancelled");
-		this.name = "PixelJobCancelledError";
-	}
-}
+import {
+	type StreamHandlers,
+	StreamJobController,
+	type StreamOptions,
+} from "./stream-job-controller";
 
 interface RoomStoreInterface {
 	/**
@@ -59,12 +46,6 @@ interface RoomStoreInterface {
 	 *  Track if the room is loading
 	 */
 	isLoading: boolean;
-
-	/**
-	 * Job ID of the currently in-flight async pixel call (e.g. AskPlayground).
-	 * Set while streaming, cleared when the call completes or is cancelled.
-	 */
-	activeJobId: string | null;
 
 	/**
 	 *  Track if the room has errored
@@ -177,11 +158,18 @@ interface RoomStoreInterface {
  */
 export class RoomStore {
 	private _theme: ThemeMap["playground"];
+	readonly streamJob = new StreamJobController({
+		getInsightId: () => this._store.insightId,
+		setLoading: (isLoading) => this.setIsLoading(isLoading),
+		setError: (error) =>
+			runInAction(() => {
+				this._store.error = error;
+			}),
+	});
 	private _store: RoomStoreInterface = {
 		roomId: "",
 		insightId: "new",
 		isLoading: false,
-		activeJobId: null,
 		mode: "chat",
 		metadata: {
 			name: "",
@@ -263,6 +251,14 @@ export class RoomStore {
 	 */
 	get isLoading() {
 		return this._store.isLoading;
+	}
+
+	/**
+	 * Whether a cancellable streaming call (e.g. AskPlayground) is in flight and
+	 * can still be stopped by the user.
+	 */
+	get canCancel() {
+		return this.streamJob.canCancel;
 	}
 
 	/**
@@ -1143,124 +1139,24 @@ export class RoomStore {
 	};
 
 	/**
-	 * Run a pixel with streaming support for LLM responses
-	 * @param pixel - pixel to execute
-	 * @param onPoll - callback for each streaming chunk
+	 * Run a pixel with streaming support for LLM responses. Pass `onCancel` in
+	 * the handlers to make the job cancellable via {@link cancelActiveJob}
+	 * (AskPlayground); omit it for fire-to-completion jobs (tool execution,
+	 * agent harness).
 	 */
-	runRoomPixelStreaming = async <O extends unknown[] | []>(
+	runRoomPixelStreaming = <O extends unknown[] | []>(
 		pixel: string,
-		onPoll: (
-			message: Awaited<
-				ReturnType<typeof getPixelJobStreaming>
-			>["message"][number],
-		) => void,
-		showLoading: boolean = true,
-		setErrorOnFail: boolean = true,
-	) => {
-		try {
-			if (showLoading) {
-				this.setIsLoading(true);
-			}
-
-			// Start async execution to get job ID
-			const { jobId } = await runPixelAsync(pixel, this._store.insightId);
-
-			if (!jobId) {
-				throw new Error("No job ID returned from pixel execution");
-			}
-
-			// track so callers can cancel this in-flight call
-			runInAction(() => {
-				this._store.activeJobId = jobId;
-			});
-
-			// Poll for streaming content
-			let isPolling = true;
-
-			const pollingInterval = 300; // 300ms for responsive streaming
-
-			while (isPolling) {
-				try {
-					const response = await getPixelJobStreaming(jobId);
-
-					if (response && response.message.length > 0) {
-						for (const message of response.message) {
-							onPoll(message);
-						}
-					}
-
-					// Check status for completion
-					if (
-						response.status === "ProgressComplete" ||
-						response.status === "Complete"
-					) {
-						isPolling = false;
-					} else if (response.status === "Error") {
-						throw new Error("Streaming job encountered an error");
-					} else if (response.status === "UnknownJob") {
-						// Job was removed from the server — this is the expected
-						// outcome of a user-initiated cancel via cancelActiveJob().
-						// Exit cleanly without fetching the final result.
-						throw new PixelJobCancelledError();
-					}
-
-					if (isPolling) {
-						await new Promise((resolve) =>
-							setTimeout(resolve, pollingInterval),
-						);
-					}
-				} catch (error) {
-					isPolling = false;
-					throw error;
-				}
-			}
-
-			// get the final result
-			const result = await getPixelAsyncResult<O>(jobId);
-
-			if (result.errors.length > 0) {
-				throw new Error(result.errors.join(""));
-			}
-
-			return result;
-		} catch (e) {
-			// Don't surface a user-initiated cancel as a room error
-			if (!(e instanceof PixelJobCancelledError)) {
-				console.error(e);
-
-				if (setErrorOnFail) {
-					runInAction(() => {
-						this._store.error = e as Error;
-					});
-				}
-			}
-
-			throw e;
-		} finally {
-			if (showLoading) {
-				this.setIsLoading(false);
-			}
-			runInAction(() => {
-				this._store.activeJobId = null;
-			});
-		}
-	};
+		handlers: StreamHandlers<O>,
+		options?: StreamOptions,
+	): Promise<void> => this.streamJob.run<O>(pixel, handlers, options);
 
 	/**
-	 * Cancel the currently in-flight streaming pixel call (e.g. AskPlayground).
-	 * Fires StopPixelExecution on the backend to abort the SSE stream, then
-	 * clears the tracked job ID. No-op if nothing is in flight.
+	 * Stop the in-flight cancellable streaming call (e.g. AskPlayground).
+	 * No-op when nothing cancellable is running, so it's safe to wire to a
+	 * button that's always visible.
 	 */
 	cancelActiveJob = async (): Promise<void> => {
-		const jobId = this._store.activeJobId;
-		if (!jobId) return;
-		// clear immediately so a second click is a no-op. The partial-response
-		// persistence (RecordCancelledTurn) happens in response-message.store.ts
-		// runMessage's PixelJobCancelledError catch.
-		runInAction(() => {
-			this._store.activeJobId = null;
-		});
-		await cancelPixelJob(jobId, this._store.insightId);
+		await this.streamJob.stop();
 	};
 
 	/**

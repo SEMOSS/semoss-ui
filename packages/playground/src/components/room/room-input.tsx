@@ -578,6 +578,38 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			}
 		};
 
+		// While loading, the send button does double duty: pause the tool loop
+		// when tools are queued, otherwise stop the in-flight LLM stream. The
+		// stop only takes effect during a cancellable Ask; it's a no-op otherwise.
+		const inToolsMode = isLoading && hasOutstandingTools;
+		const showSendSpinner =
+			inToolsMode && (hasToolsPaused || hidePauseButton);
+		const sendDisabled = isLoading
+			? inToolsMode
+				? hasToolsPaused || hidePauseButton
+				: false
+			: isEmpty || hasOutstandingTools;
+		const handleSendClick = () => {
+			if (!isLoading) {
+				promptModel();
+				return;
+			}
+			if (hasOutstandingTools) {
+				toggleToolsPaused?.();
+			} else {
+				onCancelLlm?.();
+			}
+		};
+		const sendTooltip = isLoading
+			? hasToolsPaused || hidePauseButton
+				? t("input.thinkingTooltip")
+				: t("input.pauseToolsTooltip")
+			: isEmpty
+				? t("input.enterQuestion")
+				: hasOutstandingTools
+					? t("input.completeTool")
+					: t("input.ask");
+
 		// ========================================================================
 		// Render
 		// ========================================================================
@@ -990,97 +1022,43 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									</div>
 								</div>
 								{/* Send button — pinned bottom-right, sibling of body */}
-								{(() => {
-									// While loading the button does double duty: pause the
-									// tool loop if tools are queued, otherwise cancel the
-									// in-flight LLM stream.
-									const inToolsMode =
-										isLoading && hasOutstandingTools;
-									const sendDisabled = isLoading
-										? inToolsMode
-											? hasToolsPaused || hidePauseButton
-											: !onCancelLlm
-										: isEmpty || hasOutstandingTools;
-									const handleSendClick = () => {
-										if (!isLoading) {
-											promptModel();
-											return;
-										}
-										if (hasOutstandingTools) {
-											toggleToolsPaused?.();
-										} else {
-											onCancelLlm?.();
-										}
-									};
-									const showSpinner =
-										inToolsMode &&
-										(hasToolsPaused || hidePauseButton);
-									return (
-										<div className="shrink-0">
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<span data-tour="tour-send">
-														<Button
-															variant="default"
-															size="icon-sm"
-															aria-label={
-																isLoading
-																	? t(
-																			"input.pauseToolsTooltip",
-																		)
-																	: t(
-																			"input.askLabel",
-																		)
-															}
-															disabled={
-																sendDisabled
-															}
-															onClick={
-																handleSendClick
-															}
-														>
-															{!isLoading ? (
-																<SendIcon />
-															) : showSpinner ? (
-																<Spinner />
-															) : (
-																<Square
-																	className="size-3"
-																	fill="currentColor"
-																/>
-															)}
-														</Button>
-													</span>
-												</TooltipTrigger>
-												<TooltipContent>
-													{(() => {
-														if (isLoading) {
-															return hasToolsPaused ||
-																hidePauseButton
-																? t(
-																		"input.thinkingTooltip",
-																	)
-																: t(
-																		"input.pauseToolsTooltip",
-																	);
-														} else if (isEmpty) {
-															return t(
-																"input.enterQuestion",
-															);
-														} else if (
-															hasOutstandingTools
-														) {
-															return t(
-																"input.completeTool",
-															);
-														}
-														return t("input.ask");
-													})()}
-												</TooltipContent>
-											</Tooltip>
-										</div>
-									);
-								})()}
+								<div className="shrink-0">
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<span data-tour="tour-send">
+												<Button
+													variant="default"
+													size="icon-sm"
+													aria-label={
+														isLoading
+															? t(
+																	"input.pauseToolsTooltip",
+																)
+															: t(
+																	"input.askLabel",
+																)
+													}
+													disabled={sendDisabled}
+													onClick={handleSendClick}
+												>
+													{!isLoading ? (
+														<SendIcon />
+													) : showSendSpinner ? (
+														<Spinner />
+													) : (
+														<Square
+															className="size-3"
+															fill="currentColor"
+														/>
+													)}
+												</Button>
+											</span>
+										</TooltipTrigger>
+										<TooltipContent>
+											{sendTooltip}
+										</TooltipContent>
+									</Tooltip>
+								</div>
 							</div>
 						</div>
 						<OnChangePlugin

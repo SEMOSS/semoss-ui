@@ -5,7 +5,7 @@ import {
 	observable,
 	runInAction,
 } from "mobx";
-import { download, recordCancelledTurn } from "@semoss/sdk/react";
+import { download } from "@semoss/sdk/react";
 import {
 	MCP_EXECUTION_AUTO,
 	STREAMING_PLACEHOLDER_ID,
@@ -15,7 +15,6 @@ import {
 	TOOL_PAUSE_PROMPT,
 } from "@/constants";
 import type { ToolStore } from "@/stores";
-import { PixelJobCancelledError } from "@/stores/room/room.store";
 import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
 import { AbstractMessageStore } from "./abstract-message.store";
 import { runAgentMessage } from "./agent-harness";
@@ -245,7 +244,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			const toolStreamIndexToId: Record<number, string> = {};
 
 			// wait for the pixel to run with streaming
-			const response = await room.runRoomPixelStreaming<
+			await room.runRoomPixelStreaming<
 				[
 					{
 						inputMessage: InputPixelMessage;
@@ -265,80 +264,52 @@ paramValues=[${JSON.stringify({
 					temperature: room.options.temperature,
 				})}]
 );`,
-				(chunk) => {
-					runInAction(() => {
-						if (chunk.stream_type === "content") {
-							if (chunk.data.content) {
-								responseMessage.savePart({
-									type: "TEXT",
-									text: chunk.data.content,
-									uiText: chunk.data.content,
-								});
+				{
+					onEmit: (chunk) => {
+						runInAction(() => {
+							if (chunk.stream_type === "content") {
+								if (chunk.data.content) {
+									responseMessage.savePart({
+										type: "TEXT",
+										text: chunk.data.content,
+										uiText: chunk.data.content,
+									});
+								}
+							} else if (chunk.stream_type === "thinking") {
+								if (chunk.data.thinking) {
+									responseMessage.savePart({
+										type: "THINKING",
+										thinking: chunk.data.thinking,
+									});
+								}
+							} else if (chunk.stream_type === "tool") {
+								applyToolStreamChunk(
+									responseMessage,
+									toolStreamIndexToId,
+									chunk.data,
+								);
+							} else {
+								console.error(`Unknown stream type`, chunk);
 							}
-						} else if (chunk.stream_type === "thinking") {
-							if (chunk.data.thinking) {
-								responseMessage.savePart({
-									type: "THINKING",
-									thinking: chunk.data.thinking,
-								});
-							}
-						} else if (chunk.stream_type === "tool") {
-							applyToolStreamChunk(
-								responseMessage,
-								toolStreamIndexToId,
-								chunk.data,
-							);
-						} else {
-							console.error(`Unknown stream type`, chunk);
-						}
-					});
+						});
+					},
+					onResult: ({ results }) => {
+						const { output } = results[0];
+
+						// sync with the results
+						inputMessage.sync(output.inputMessage);
+						responseMessage.sync(output.responseMessage);
+
+						// start running tools if there are any
+						responseMessage.continueToolExecution();
+					},
+					// The user stopped the stream mid-response: persist what they
+					// saw and reload, rather than treating it as a result or error.
+					onCancel: () =>
+						this.recordCancelledTurn(inputMessage, responseMessage),
 				},
 			);
-
-			const { output } = response.results[0];
-
-			// sync with the results
-			inputMessage.sync(output.inputMessage);
-			responseMessage.sync(output.responseMessage);
-
-			// start running tools if there are any
-			responseMessage.continueToolExecution();
-
-			return response;
 		} catch (e) {
-			if (e instanceof PixelJobCancelledError) {
-				// The original AskPlayground call died on the backend without
-				// persisting anything. Take what the FE has on screen (the
-				// streamed partial in responseMessage.parts) and commit it via
-				// RecordCancelledTurn, then reload the room so the FE reflects
-				// the persisted state (correct IDs, hidden note round-trip).
-				type TextPart = {
-					type: "TEXT";
-					text: string;
-					uiText?: string;
-				};
-				const joinTextParts = (parts: { type: string }[]): string =>
-					parts
-						.filter((p): p is TextPart => p.type === "TEXT")
-						.map((p) => p.text)
-						.join("");
-				const partial = joinTextParts(responseMessage.parts);
-				const userPrompt = joinTextParts(inputMessage.parts);
-				try {
-					await recordCancelledTurn(
-						room.model.engine_id,
-						room.roomId,
-						userPrompt,
-						partial,
-						this.id !== "ROOT_PLACEHOLDER_ID" ? this.id : undefined,
-						room.insightId,
-					);
-				} catch (recordErr) {
-					console.error("Failed to record cancelled turn", recordErr);
-				}
-				await this.room.initialize();
-				return;
-			}
 			// remove message if we failed
 			this.removeChild(inputMessage);
 
@@ -349,6 +320,35 @@ paramValues=[${JSON.stringify({
 				responseMessage.isThinking = false;
 			});
 		}
+	};
+
+	/**
+	 * Commit a stopped turn. The cancelled AskPlayground call leaves nothing
+	 * persisted on the backend, so we hand back the prompt and the parts the
+	 * user actually saw via RecordCancelledTurn, then reload so the FE picks up
+	 * the server's committed state.
+	 */
+	private recordCancelledTurn = async (
+		inputMessage: InputMessageStore,
+		responseMessage: ResponseMessageStore,
+	): Promise<void> => {
+		const room = this.room;
+		const command = inputMessage.parts
+			.filter((part) => part.type === "TEXT")
+			.map((part) => (part as { text: string }).text)
+			.join("");
+		const parentMessageId =
+			this.id !== "ROOT_PLACEHOLDER_ID" ? this.id : undefined;
+
+		try {
+			await room.runRoomPixel(
+				`RecordCancelledTurn(engine=${JSON.stringify(room.model.engine_id)}, roomId=${JSON.stringify(room.roomId)}, command=${JSON.stringify(command)}, outputParts=${JSON.stringify(responseMessage.parts)}${parentMessageId ? `, parentMessageId=${JSON.stringify(parentMessageId)}` : ""});`,
+			);
+		} catch (e) {
+			console.error("Failed to record cancelled turn", e);
+		}
+
+		await room.initialize();
 	};
 
 	/**
@@ -766,9 +766,7 @@ paramValues=[${JSON.stringify({
 			const toolStreamIndexToId: Record<number, string> = {};
 
 			// wait for the pixel to run
-			const response = await room.runRoomPixelStreaming<
-				[PartialResponse | TotalResponse]
-			>(
+			await room.runRoomPixelStreaming<[PartialResponse | TotalResponse]>(
 				`AddPlaygroundToolExecution(
 engine=["${room.model.app_id}"],
 roomId = ["${room.roomId}"],
@@ -780,74 +778,78 @@ paramValues=[${JSON.stringify({})}],
 mcpToolStatus=${JSON.stringify(toolStatus)},
 toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 );`,
-				(chunk) => {
-					runInAction(() => {
-						if (chunk.stream_type === "content") {
-							if (chunk.data.content) {
-								responseMessage.savePart({
-									type: "TEXT",
-									text: chunk.data.content,
-									uiText: chunk.data.content,
-								});
+				{
+					onEmit: (chunk) => {
+						runInAction(() => {
+							if (chunk.stream_type === "content") {
+								if (chunk.data.content) {
+									responseMessage.savePart({
+										type: "TEXT",
+										text: chunk.data.content,
+										uiText: chunk.data.content,
+									});
+								}
+							} else if (chunk.stream_type === "thinking") {
+								if (chunk.data.thinking) {
+									responseMessage.savePart({
+										type: "THINKING",
+										thinking: chunk.data.thinking,
+									});
+								}
+							} else if (chunk.stream_type === "tool") {
+								applyToolStreamChunk(
+									responseMessage,
+									toolStreamIndexToId,
+									chunk.data,
+								);
+							} else {
+								console.error(`Unknown stream type`, chunk);
 							}
-						} else if (chunk.stream_type === "thinking") {
-							if (chunk.data.thinking) {
-								responseMessage.savePart({
-									type: "THINKING",
-									thinking: chunk.data.thinking,
-								});
-							}
-						} else if (chunk.stream_type === "tool") {
-							applyToolStreamChunk(
-								responseMessage,
-								toolStreamIndexToId,
-								chunk.data,
-							);
+						});
+					},
+					onResult: ({ results }) => {
+						const { output } = results[0];
+
+						// If the output is a string (as opposed to a tool response message), continue tool execution. Otherwise, create the response message
+						if (
+							typeof output === "string" ||
+							typeof output.responseMessage === "string"
+						) {
+							// Keep executing tools
+							this.continueToolExecution();
 						} else {
-							console.error(`Unknown stream type`, chunk);
+							const inputMessage = (output as TotalResponse)
+								.inputMessage;
+
+							// create the response and link to the message
+							responseMessage.sync(output.responseMessage);
+
+							// We don't create INPUT_TOOL_EXEC messages, so stamp the server's cumulative
+							// input token count onto this response message as a proxy. tokensUsed() in
+							// room.store relies on finding a (cumulative, incremental) pair when walking back.
+							runInAction(() => {
+								this.tokens = inputMessage.tokens;
+							});
+
+							// edge case handling: it's possible that the user paused tools while this tool was running
+							// mark the new response as paused if that is the case
+							if (this.isPaused) {
+								runInAction(() => {
+									responseMessage.isPaused = true;
+								});
+							}
+
+							// start running tools if there are any
+							responseMessage.continueToolExecution();
+
+							// clear it
+							this.toolResponseMessage = null;
 						}
-					});
+					},
 				},
-				true,
-				toolStatus !== "success", // If the tool execution succeeds but saving it failed, we will try to save it again with an error status, so dont error the room yet
+				// If the tool execution succeeds but saving it failed, we will try to save it again with an error status, so dont error the room yet
+				{ setErrorOnFail: toolStatus !== "success" },
 			);
-
-			const { output } = response.results[0];
-
-			// If the output is a string (as opposed to a tool response message), continue tool execution. Otherwise, create the response message
-			if (
-				typeof output === "string" ||
-				typeof output.responseMessage === "string"
-			) {
-				// Keep executing tools
-				this.continueToolExecution();
-			} else {
-				const inputMessage = (output as TotalResponse).inputMessage;
-
-				// create the response and link to the message
-				responseMessage.sync(output.responseMessage);
-
-				// We don't create INPUT_TOOL_EXEC messages, so stamp the server's cumulative
-				// input token count onto this response message as a proxy. tokensUsed() in
-				// room.store relies on finding a (cumulative, incremental) pair when walking back.
-				runInAction(() => {
-					this.tokens = inputMessage.tokens;
-				});
-
-				// edge case handling: it's possible that the user paused tools while this tool was running
-				// mark the new response as paused if that is the case
-				if (this.isPaused) {
-					runInAction(() => {
-						responseMessage.isPaused = true;
-					});
-				}
-
-				// start running tools if there are any
-				responseMessage.continueToolExecution();
-
-				// clear it
-				this.toolResponseMessage = null;
-			}
 		} catch (e) {
 			if (toolStatus === "success") {
 				// Attempt to save the error response
