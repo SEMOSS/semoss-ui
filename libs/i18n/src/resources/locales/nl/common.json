@@ -1,0 +1,226 @@
+{
+	"buttons": {
+		"save": "Opslaan",
+		"cancel": "Annuleren",
+		"create": "Aanmaken",
+		"back": "Terug",
+		"close": "Sluiten",
+		"confirm": "Bevestigen",
+		"upload": "Uploaden",
+		"search": "Zoeken"
+	},
+	"labels": {
+		"name": "Naam",
+		"description": "Beschrijving",
+		"type": "Type",
+		"model": "Model",
+		"instructions": "Instructies",
+		"temperature": "Temperatuur",
+		"maxToken": "Max. token"
+	},
+	"placeholders": {
+		"enterName": "Voer naam in",
+		"enterDescription": "Voer beschrijving in",
+		"enterInstructions": "Voer instructies in",
+		"updateInstructions": "Instructies bijwerken",
+		"updateTokenLength": "Tokenlengte bijwerken",
+		"uploadFiles": "Bestanden uploaden",
+		"search": "Zoeken...",
+		"enterPromptLibraryTag": "Voer prompt library-tag in"
+	},
+	"actions": {
+		"addKnowledge": "Kennis toevoegen",
+		"addToolbox": "Toolboxes toevoegen",
+		"deleteMCP": "MCP verwijderen"
+	},
+	"badges": {
+		"fromAgent": "Van agent"
+	},
+	"messages": {
+		"noKnowledgeFound": "Geen kennis gevonden",
+		"noToolboxFound": "Geen Toolboxes gevonden"
+	},
+	"tooltips": {
+		"cannotDeleteWorkspaceMCPs": "Kan werkruimte-MCP's niet verwijderen",
+		"cannotDeleteAgentMCPs": "Kan agent-MCP's niet verwijderen"
+	},
+	"plan": {
+		"newStep": "Nieuwe stap",
+		"editStep": "Stap bewerken",
+		"selectType": "Selecteer type",
+		"selectMcp": "Selecteer MCP",
+		"selectTool": "Selecteer tool",
+		"tool": "Tool",
+		"ai": "AI",
+		"prompt": "Prompt",
+		"promptPlaceholder": "Voer de instructies voor de AI in",
+		"instructionsPlaceholder": "Instructies voor de AI om de feedback van de gebruiker te verwerken"
+	},
+	"navigation": {
+		"logOut": "Afmelden",
+		"acknowledge": "Bevestigen"
+	},
+	"pagination": {
+		"rowsPerPage": "Rijen per pagina:"
+	},
+	"images": {
+		"logoAlt": "logo"
+	},
+	"fileDrag": {
+		"title": "Sleep bestanden hierheen om aan het bericht toe te voegen",
+		"modalTitle": "Documenten toevoegen",
+		"browse": "Bladeren",
+		"done": "Klaar"
+	},
+	"fileExplorer": {
+		"search": "Zoeken",
+		"name": "Naam",
+		"dateModified": "Wijzigingsdatum",
+		"pathLabel": "Pad: {{path}}",
+		"lastModifiedLabel": "Laatst gewijzigd: {{date}}",
+		"bulkShortcutsAria": "Sneltoetsen voor bulkselectie",
+		"bulkShortcutsTooltip": "Ctrl/Cmd+klik selecteert meerdere items. Ctrl/Cmd+A selecteert alle zichtbare items.",
+		"toggleMenu": "Menu in-/uitschakelen",
+		"resizeDateColumn": "Datumkolom vergroten/verkleinen",
+		"failedToLoadFiles": "Bestanden laden mislukt",
+		"pdfNotSupported": "Uw browser ondersteunt het weergeven van PDF's niet.",
+		"binaryView": {
+			"backToDownload": "Terug naar downloaden",
+			"downloading": "Downloaden...",
+			"download": "Downloaden",
+			"viewRawContent": "Onbewerkte inhoud weergeven"
+		},
+		"toasts": {
+			"uploadSuccess_one": "Bestand succesvol geüpload",
+			"uploadSuccess_other": "Bestanden succesvol geüpload",
+			"uploadFailed": "Uploaden van bestand mislukt",
+			"moveSuccess_one": "Item succesvol verplaatst",
+			"moveSuccess_other": "Items succesvol verplaatst",
+			"moveFailed": "Verplaatsen van item mislukt",
+			"copySuccess_one": "Item succesvol gekopieerd",
+			"copySuccess_other": "Items succesvol gekopieerd",
+			"copyFailed": "Kopiëren van item mislukt",
+			"copyFailedItems": "Kopiëren mislukt: {{items}}",
+			"deleteSuccess_one": "Item succesvol verwijderd",
+			"deleteSuccess_other": "Items succesvol verwijderd",
+			"deleteFailed": "Verwijderen van item mislukt",
+			"deleteFailedItems": "Verwijderen mislukt: {{items}}",
+			"copyPathSuccess": "Pad gekopieerd",
+			"copyPathFailed": "Kopiëren van pad mislukt",
+			"downloadSuccess_one": "Item succesvol gedownload",
+			"downloadSuccess_other": "Items succesvol gedownload",
+			"downloadFailed": "Downloaden van item mislukt",
+			"downloadFailedItems": "Downloaden mislukt: {{items}}",
+			"renameSuccess": "Succesvol hernoemd",
+			"renameFailed": "Hernoemen mislukt",
+			"unzipFailed": "Uitpakken van bestand mislukt",
+			"saveSuccess": "Bestand succesvol opgeslagen",
+			"saveFailed": "Fout bij opslaan van bestand",
+			"downloadFileSuccess": "Bestand succesvol gedownload",
+			"downloadFileFailed": "Fout bij downloaden van bestand"
+		},
+		"dateFormat": {
+			"justNow": "Zojuist",
+			"minutesAgoShort": "{{count}} min geleden",
+			"minutesAgo": "{{count}} min geleden",
+			"hoursAgoShort": "{{count}} u geleden",
+			"hoursAgo": "{{count}} uur geleden",
+			"yesterday": "Gisteren",
+			"yesterdayAt": "Gisteren om {{time}}",
+			"dayAt": "{{day}} om {{time}}",
+			"dateAt": "{{date}} om {{time}}",
+			"dateAndTime": "{{date}}, {{time}}"
+		},
+		"refreshTooltip": "{{path}} vernieuwen",
+		"createTooltip": "Aanmaken in {{path}}",
+		"searchAll": "Alle",
+		"searchOnly": "Alleen \"{{name}}\"",
+		"searchAllAria": "Alles doorzoeken",
+		"searchCurrentAria": "Alleen huidige map doorzoeken",
+		"searchCurrentTitle": "Alleen zoeken in {{path}}",
+		"moveDropHint": "Sleep om {{label}} naar {{path}} te verplaatsen",
+		"contextMenu": {
+			"copyPath": "Pad kopiëren",
+			"copy": "Kopiëren",
+			"cut": "Knippen",
+			"pasteHere": "Hier plakken",
+			"rename": "Hernoemen",
+			"download": "Downloaden",
+			"delete": "Verwijderen",
+			"newFile": "Nieuw bestand",
+			"newFolder": "Nieuwe map",
+			"ariaLabel": "Bestandsacties"
+		},
+		"overlay": {
+			"title": "Bestand of map aanmaken",
+			"description": "Upload of maak een nieuw bestand of een nieuwe map aan op pad: {{path}}",
+			"fields": {
+				"action": "Actie",
+				"fileName": "Bestandsnaam",
+				"directoryName": "Mapnaam",
+				"uploadFileZip": "Bestand/zip uploaden"
+			},
+			"placeholders": {
+				"selectAction": "Selecteer actie",
+				"fileName": "Voer bestandsnaam in",
+				"directoryName": "Voer mapnaam in"
+			},
+			"actions": {
+				"upload": "Bestanden uploaden",
+				"newFile": "Nieuw bestand",
+				"newDirectory": "Nieuwe map"
+			},
+			"dropzone": {
+				"dragAndDrop": "Sleep bestanden hierheen",
+				"orClickToBrowse": "of klik om te bladeren",
+				"uploadIconAlt": "Uploadpictogram"
+			},
+			"files": {
+				"selectedCount_one": "{{count}} bestand geselecteerd:",
+				"selectedCount_other": "{{count}} bestanden geselecteerd:",
+				"unzip": "Uitpakken",
+				"unzipTitle": "Deze ZIP na het uploaden uitpakken"
+			},
+			"buttons": {
+				"cancel": "Annuleren",
+				"upload": "Uploaden",
+				"create": "Aanmaken"
+			},
+			"toasts": {
+				"selectAtLeastOne": "Selecteer ten minste één bestand om te uploaden",
+				"enterFileName": "Voer een naam voor het bestand in",
+				"enterDirectoryName": "Voer een naam voor de map in",
+				"uploadSuccess": "Bestand(en) succesvol geüpload",
+				"uploadWithExtractSuccess": "{{count}} bestand(en) succesvol geüpload, {{extractedCount}} ZIP('s) uitgepakt",
+				"extractionsFailed": "{{count}} uitpakbewerking(en) mislukt: {{errors}}",
+				"fileCreated": "Bestand succesvol aangemaakt",
+				"directoryCreated": "Map succesvol aangemaakt",
+				"anError": "Er is een fout opgetreden"
+			}
+		}
+	},
+	"cellOutput": {
+		"panels": {
+			"logs": "Logboeken",
+			"result": "Resultaat",
+			"error": "Fout"
+		},
+		"running": "Bezig met uitvoeren…",
+		"format": {
+			"formatted": "GEFORMATTEERD",
+			"raw": "ONBEWERKT"
+		},
+		"copy": {
+			"command": "Opdracht kopiëren",
+			"logs": "Logboeken kopiëren",
+			"output": "Uitvoer kopiëren",
+			"copied": "Gekopieerd!"
+		},
+		"popout": "Uitklappen",
+		"expandAll": "Alles uitvouwen",
+		"collapseAll": "Alles samenvouwen",
+		"close": "Sluiten",
+		"lines_one": "{{count}} regel",
+		"lines_other": "{{count}} regels"
+	}
+}

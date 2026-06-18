@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import {
-	ComputerIcon,
+	Bot,
 	HelpCircle,
 	MapIcon,
 	MessagesSquareIcon,
@@ -450,7 +450,7 @@ export const GlobalNav = observer(() => {
 											to={"/agent"}
 											aria-label={"agent"}
 										>
-											<ComputerIcon />
+											<Bot />
 											{t("nav.agents.label")}
 										</Link>
 									</SidebarMenuButton>

@@ -14,6 +14,16 @@ const CodeWorkspace = lazy(() =>
 		default: m.CodeWorkspace,
 	})),
 );
+const SkillWorkspace = lazy(() =>
+	import("@/components/skill-workspace").then((m) => ({
+		default: m.SkillWorkspace,
+	})),
+);
+const AgentWorkspace = lazy(() =>
+	import("@/components/agent-workspace").then((m) => ({
+		default: m.AgentWorkspace,
+	})),
+);
 
 import { useRootStore } from "@/hooks";
 import type { WorkspaceStore } from "@/stores";
@@ -47,7 +57,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
 
 	useEffect(() => {
 		// clear out the old app
-		setWorkspace(undefined);
+		setWorkspace(null);
 
 		if (!insight.isReady) {
 			return;
@@ -75,10 +85,10 @@ export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
 	usePixel(
 		insight.isReady && app
 			? `ValidateUserProjectDependencies(project="${app}");`
-			: null,
+			: "",
 		{
 			onSuccess: (data: Record<string, boolean>) => {
-				const needsAccess = [];
+				const needsAccess: string[] = [];
 				Object.entries(data).forEach((kv) => {
 					const hasAccess = kv[1];
 
@@ -111,6 +121,8 @@ export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
 			<Suspense fallback={<WorkspaceLoadingState />}>
 				{workspace.type === "CODE" && <CodeWorkspace />}
 				{workspace.type === "BLOCKS" && <BlocksWorkspace />}
+				{workspace.type === "SKILL" && <SkillWorkspace />}
+				{workspace.type === "WORKSPACE" && <AgentWorkspace />}
 			</Suspense>
 		</WorkspaceContext.Provider>
 	);
