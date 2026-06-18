@@ -1,0 +1,44 @@
+{
+	"header": {
+		"title": "تطبيق GitHub",
+		"description": "أنشئ وأدر تطبيق GitHub المستخدم لربط التطبيقات بمشاريع GitHub وخطافات الويب."
+	},
+	"list": {
+		"title": "تطبيقات GitHub المُعدّة",
+		"emptyTitle": "لا يوجد تطبيق GitHub مُعدّ بعد",
+		"emptyDescription": "أنشئ تطبيق GitHub لربط تطبيقات SEMOSS بمشاريع GitHub.",
+		"owner": "المالك",
+		"createdOn": "تاريخ الإنشاء",
+		"openInGithub": "فتح في GitHub",
+		"unknownDate": "تاريخ غير معروف"
+	},
+	"buttons": {
+		"create": "إنشاء تطبيق GitHub",
+		"refresh": "تحديث",
+		"cancel": "إلغاء",
+		"creating": "جارٍ إعادة التوجيه..."
+	},
+	"dialog": {
+		"title": "إنشاء تطبيق GitHub",
+		"description": "ابدأ مسار manifest في GitHub لإنشاء تطبيق جديد.",
+		"appNameLabel": "اسم التطبيق",
+		"appNamePlaceholder": "Semoss GitHub App",
+		"createUnderLabel": "الإنشاء تحت",
+		"myAccount": "حسابي",
+		"organization": "مؤسسة",
+		"organizationLabel": "المؤسسة",
+		"organizationPlaceholder": "my-github-org"
+	},
+	"status": {
+		"loading": "جارٍ تحميل إعدادات تطبيق GitHub...",
+		"notPermitted": "ليست لديك صلاحية لإدارة إعدادات تطبيق GitHub."
+	},
+	"validation": {
+		"organizationRequired": "المؤسسة مطلوبة."
+	},
+	"toasts": {
+		"loadFailed": "فشل تحميل إعدادات تطبيق GitHub.",
+		"notPermitted": "ليست لديك صلاحية للوصول إلى إعدادات تطبيق GitHub.",
+		"redirecting": "جارٍ إعادة التوجيه إلى GitHub لإنشاء التطبيق..."
+	}
+}

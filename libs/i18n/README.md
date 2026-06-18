@@ -42,7 +42,7 @@ Translations used across **all** packages:
 ### Tier 2: Package-Specific
 Translations specific to individual packages:
 - `playground/` - Playground app translations (chat, room, sidebar, knowledge, workspace, mcp)
-- Future: `client/` - Client app translations (will be added when needed)
+- `client/` - Client app translations (for example `githubApp`)
 
 ## Usage
 
@@ -102,8 +102,8 @@ function ClientComponent() {
     // Core shared translations
     t('common:buttons.save')           // "Save"
 
-    // Client-specific (add namespaces as needed)
-    t('dashboard:welcome')              // "Welcome to your dashboard"
+    // Client-specific
+    t('githubApp:header.title')         // "GitHub App"
 }
 ```
 
@@ -148,6 +148,7 @@ export const playgroundResources = {
 - Hindi (`hi`)
 - Arabic (`ar`)
 - Japanese (`ja`)
+- Dutch (`nl`)
 
 ## Type Safety
 
