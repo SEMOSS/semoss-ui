@@ -29,8 +29,8 @@ export const ResponseMessageTextHtml: React.FC<
 	const { t } = useTranslation("chat");
 
 	// Advance the queue as soon as this chunk becomes done.
-	// The parent flips status from "active" → "done" once the fence closes
-	// (isFinalized in the chunk), so this fires at exactly the right moment.
+	// The parent flips status from "active" → "done" once the closing fence
+	// is detected and the next chunk exists (or streaming has ended).
 	// Duplicate-call protection lives in the parent (handleChunkComplete).
 	useEffect(() => {
 		if (status === "done") {

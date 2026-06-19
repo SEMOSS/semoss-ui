@@ -16,13 +16,6 @@ export interface ContentChunk {
 
 	/** The text content of this chunk (growing during streaming for the last chunk). */
 	content: string;
-
-	/**
-	 * True when no more tokens will arrive for this chunk — either because a
-	 * subsequent chunk exists, or because streaming has ended.
-	 * Subcomponents should only fire `onComplete` when this is true.
-	 */
-	isFinalized: boolean;
 }
 
 // ============================================================
@@ -37,15 +30,12 @@ export interface ContentChunk {
  * - Performs a single forward scan, emitting chunks as boundaries are found.
  * - As soon as a ` ```html ` opening fence is detected, a new HTML chunk starts
  *   immediately — partial HTML streams into an HTML chunk, not an MD chunk.
- * - If no closing ` ``` ` exists yet, the HTML chunk grows with isFinalized: false.
+ * - If no closing ` ``` ` exists yet, the HTML chunk grows until the fence closes.
  * - After a closing fence, scanning resumes — the next segment may be MD, HTML,
  *   or nothing. Two adjacent HTML blocks produce no MD chunk between them.
  * - Chunk `key` = start offset in original string — stable across re-parses.
  */
-export const parseChunks = (
-	text: string,
-	isStreaming: boolean,
-): ContentChunk[] => {
+export const parseChunks = (text: string): ContentChunk[] => {
 	// ── Standalone HTML detection ─────────────────────────────────────────────
 	// If the response opens with <!DOCTYPE (no code fence), treat the whole
 	// text as a single HTML chunk.
@@ -56,7 +46,6 @@ export const parseChunks = (
 				key: 0,
 				type: "html",
 				content: text,
-				isFinalized: !isStreaming,
 			},
 		];
 	}
@@ -79,7 +68,6 @@ export const parseChunks = (
 					key: cursor,
 					type: "md",
 					content: tail,
-					isFinalized: !isStreaming,
 				});
 			}
 			break;
@@ -91,8 +79,6 @@ export const parseChunks = (
 				key: cursor,
 				type: "md",
 				content: text.slice(cursor, openIdx),
-				// More content follows — this MD chunk is done
-				isFinalized: true,
 			});
 		}
 
@@ -113,19 +99,17 @@ export const parseChunks = (
 				key: openIdx,
 				type: "html",
 				content: text.slice(contentStart),
-				isFinalized: false,
 			});
 			// Can't know what follows until the fence closes — stop here
 			break;
 		}
 
-		// Closing fence found — emit a finalized HTML chunk
+		// Closing fence found — emit the HTML chunk
 		const closeEnd = closeIdx + 3;
 		chunks.push({
 			key: openIdx,
 			type: "html",
 			content: text.slice(contentStart, closeIdx),
-			isFinalized: true,
 		});
 
 		// Advance past the closing fence and continue scanning
@@ -133,7 +117,6 @@ export const parseChunks = (
 		cursor = closeEnd;
 	}
 
-	console.log("[parseChunks]", chunks);
 	return chunks;
 };
 

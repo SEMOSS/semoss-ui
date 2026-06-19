@@ -25,15 +25,15 @@ interface ResponseMessageTextProps {
  *
  * Parses `part.text` into ordered segments of `md` and `html` chunks on every
  * render. Chunks animate one at a time — each child calls `onComplete` when its
- * typewriter catches up, but the parent only advances `activeIndex` once the
- * chunk is sealed (a next chunk exists, or streaming has ended).
+ * typewriter catches up, but the parent only advances `activeIndex` if a next
+ * chunk exists or streaming has fully ended.
  */
 export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 	({ message, part, isLast }) => {
 		const isThinking = message.isThinking && isLast;
 
 		// Parse text into chunks on every render (pure, cheap function).
-		const chunks = parseChunks(part.text, isThinking);
+		const chunks = parseChunks(part.text);
 
 		// Index of the chunk currently allowed to animate.
 		const [activeIndex, setActiveIndex] = useState(0);
