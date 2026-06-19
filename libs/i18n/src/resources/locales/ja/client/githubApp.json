@@ -36,7 +36,11 @@
 		"myAccount": "自分のアカウント",
 		"organization": "組織",
 		"organizationLabel": "組織",
-		"organizationPlaceholder": "my-github-org"
+		"organizationPlaceholder": "my-github-org",
+		"visibilityLabel": "公開設定",
+		"public": "公開",
+		"private": "非公開",
+		"visibilityHelp": "公開アプリは任意のアカウントまたは組織にインストールできます。非公開アプリは所有するアカウントにのみインストールできます。"
 	},
 	"status": {
 		"loading": "GitHub アプリ設定を読み込み中...",

@@ -61,12 +61,14 @@ interface CreateGitHubAppFormValues {
 	appName: string;
 	createUnder: "account" | "organization";
 	organization: string;
+	visibility: "public" | "private";
 }
 
 const CREATE_FORM_DEFAULTS: CreateGitHubAppFormValues = {
 	appName: "",
 	createUnder: "account",
 	organization: "",
+	visibility: "private",
 };
 
 export const GitHubAppPage = () => {
@@ -88,6 +90,8 @@ export const GitHubAppPage = () => {
 	const organizationId = useId();
 	const accountId = useId();
 	const orgId = useId();
+	const publicId = useId();
+	const privateId = useId();
 	const {
 		control,
 		formState: { isSubmitting },
@@ -245,6 +249,11 @@ export const GitHubAppPage = () => {
 		if (values.createUnder === "organization" && organization) {
 			manifestUrl.searchParams.set("org", organization);
 		}
+
+		manifestUrl.searchParams.set(
+			"public",
+			values.visibility === "public" ? "true" : "false",
+		);
 
 		toast.info(t("toasts.redirecting"));
 		window.location.assign(manifestUrl.toString());
@@ -677,6 +686,54 @@ export const GitHubAppPage = () => {
 								/>
 							</Field>
 						) : null}
+
+						<Field>
+							<FieldLabel>
+								{t("dialog.visibilityLabel")}
+							</FieldLabel>
+							<Controller
+								name="visibility"
+								control={control}
+								render={({ field }) => (
+									<RadioGroup
+										value={field.value}
+										onValueChange={(value) =>
+											field.onChange(
+												value as CreateGitHubAppFormValues["visibility"],
+											)
+										}
+									>
+										<Field
+											orientation="horizontal"
+											className="items-center gap-2"
+										>
+											<RadioGroupItem
+												id={privateId}
+												value="private"
+											/>
+											<FieldLabel htmlFor={privateId}>
+												{t("dialog.private")}
+											</FieldLabel>
+										</Field>
+										<Field
+											orientation="horizontal"
+											className="items-center gap-2"
+										>
+											<RadioGroupItem
+												id={publicId}
+												value="public"
+											/>
+											<FieldLabel htmlFor={publicId}>
+												{t("dialog.public")}
+											</FieldLabel>
+										</Field>
+									</RadioGroup>
+								)}
+							/>
+							<p className="text-muted-foreground text-sm">
+								{t("dialog.visibilityHelp")}
+							</p>
+						</Field>
 
 						<DialogFooter>
 							<Button
