@@ -102,6 +102,7 @@ export default defineConfig(({ mode }) => {
 		},
 		server: {
 			port: 5173,
+			allowedHosts: [".ngrok-free.dev", ".pinggy-free.link"],
 			proxy: {
 				[MODULE]: {
 					target: ENDPOINT,

@@ -1,34 +1,48 @@
 // Client-specific translations
-import { coreResources } from "./core";
 
-// Add client-specific namespaces here when needed
+import { coreResources } from "./core";
+import githubAppAR from "./locales/ar/client/githubApp.json";
+import githubAppEN from "./locales/en/client/githubApp.json";
+import githubAppES from "./locales/es/client/githubApp.json";
+import githubAppFR from "./locales/fr/client/githubApp.json";
+import githubAppHI from "./locales/hi/client/githubApp.json";
+import githubAppJA from "./locales/ja/client/githubApp.json";
+import githubAppNL from "./locales/nl/client/githubApp.json";
+import { sharedResources } from "./shared";
+
 export const clientResources = {
 	en: {
 		...coreResources.en,
-		// Add client namespaces here
+		...sharedResources.en,
+		githubApp: githubAppEN,
 	},
 	es: {
 		...coreResources.es,
-		// Add client namespaces here
+		...sharedResources.es,
+		githubApp: githubAppES,
 	},
 	fr: {
 		...coreResources.fr,
-		// Add client namespaces here
+		...sharedResources.fr,
+		githubApp: githubAppFR,
 	},
 	hi: {
 		...coreResources.hi,
-		// Add client namespaces here
+		...sharedResources.hi,
+		githubApp: githubAppHI,
 	},
 	ar: {
 		...coreResources.ar,
-		// Add client namespaces here
+		...sharedResources.ar,
+		githubApp: githubAppAR,
 	},
 	ja: {
 		...coreResources.ja,
-		// Add client namespaces here
+		...sharedResources.ja,
+		githubApp: githubAppJA,
 	},
 	nl: {
 		...coreResources.nl,
-		// Add client namespaces here
+		githubApp: githubAppNL,
 	},
 } as const;

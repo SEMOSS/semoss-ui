@@ -45,6 +45,9 @@
 		"close": "बंद करें"
 	},
 	"permission": {
+		"owner": "मालिक",
+		"editor": "संपादक",
+		"readOnly": "केवल पढ़ने के लिए",
 		"accessRequested": "पहुंच का अनुरोध किया गया",
 		"requestAccess": "पहुंच का अनुरोध करें",
 		"noAccess": "कोई पहुंच नहीं",

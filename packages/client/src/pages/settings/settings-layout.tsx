@@ -47,6 +47,8 @@ import { SETTINGS_ROUTES } from "./settings.constants";
 
 const ENGINE_CATALOG_SETTINGS_PATHS = new Set([
 	"app",
+	"agents",
+	"skills",
 	"database",
 	"function",
 	"guardrail",
@@ -192,6 +194,7 @@ export const SettingsLayout = observer(() => {
 			? ["getUserProjectPermission", id]
 			: []) as unknown as ["getUserProjectPermission", string],
 	);
+
 	const hasCatalogAccess = useMemo(() => {
 		if (engineDetailType && id) {
 			const permission = (
@@ -217,12 +220,38 @@ export const SettingsLayout = observer(() => {
 		userProjectPermissionApi.status,
 		userProjectPermissionApi.data,
 	]);
-	const catalogUrl =
-		engineDetailType && id
-			? `/engine/${engineDetailType.toLowerCase()}/${id}`
-			: isAppDetail && id
-				? `/app/${id}`
-				: null;
+
+	// Only fetch project info if we have catalog access (button will be shown)
+	const projectInfoPixel = usePixel<{ project_type?: string }>(
+		isAppDetail && id && hasCatalogAccess
+			? adminMode
+				? `AdminProjectInfo(project='${id}');`
+				: `ProjectInfo(project='${id}');`
+			: "",
+		{ data: {} },
+	);
+
+	const catalogUrl = useMemo(() => {
+		if (engineDetailType && id) {
+			return `/engine/${engineDetailType.toLowerCase()}/${id}`;
+		}
+		if (isAppDetail && id) {
+			const projectType = projectInfoPixel.data?.project_type;
+			if (projectType === "WORKSPACE") {
+				return `/agent/${id}/edit`;
+			}
+			if (projectType === "SKILL") {
+				return `/skill/${id}/edit`;
+			}
+			return `/app/${id}`;
+		}
+		return null;
+	}, [
+		engineDetailType,
+		isAppDetail,
+		id,
+		projectInfoPixel.data?.project_type,
+	]);
 
 	const stateName =
 		state && typeof state === "object" && "name" in state

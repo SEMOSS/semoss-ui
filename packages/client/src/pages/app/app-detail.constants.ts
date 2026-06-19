@@ -4,6 +4,7 @@ import { AppCommitsPage } from "./app-commits-page";
 import { AppDependenciesPage } from "./app-dependencies-page";
 import { UsageLimitsTab } from "./app-detail-tabs/usage-limits-tab";
 import { AppFilesPage } from "./app-files-page";
+import { AppGithubPage } from "./app-github-page";
 import { AppMcpUsagePage } from "./app-mcp-usage-page";
 import { AppOverviewPage } from "./app-overview-page";
 import { AppSettingsPage } from "./app-settings-page";
@@ -50,6 +51,14 @@ export const APP_DETAIL_TABS: AppDetailTab[] = [
 		path: "commits",
 		component: AppCommitsPage,
 		restrict: ["author", "editor"],
+	},
+	{
+		name: "GitHub",
+		path: "github",
+		component: AppGithubPage,
+		// Connecting/changing/disconnecting all require project ownership on the
+		// backend, so only show the tab to owners (authors).
+		restrict: ["author"],
 	},
 	{
 		name: "Settings",
