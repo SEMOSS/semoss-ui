@@ -24,11 +24,9 @@ interface ResponseMessageTextProps {
  * Orchestrates sequential chunk animation for a single text part.
  *
  * Parses `part.text` into ordered segments of `md` and `html` chunks on every
- * render. Chunks animate one at a time — each subcomponent calls `onComplete`
- * when it finishes, advancing `activeIndex` to the next chunk.
- *
- * Chunk keys are stable (start offset in text), so React reuses subcomponents
- * across re-parses rather than remounting them as content grows.
+ * render. Chunks animate one at a time — each child calls `onComplete` when its
+ * typewriter catches up, but the parent only advances `activeIndex` once the
+ * chunk is sealed (a next chunk exists, or streaming has ended).
  */
 export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 	({ message, part, isLast }) => {
@@ -73,8 +71,8 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 		);
 
 		// Derives the animation status for a chunk at the given index.
-		// When the message is no longer streaming, all chunks are "done" —
-		// they render their full content immediately without animation.
+		// Once streaming ends (!isThinking), all remaining chunks render their full
+		// content immediately rather than animating sequentially.
 		const getChunkStatus = (index: number): ChunkStatus => {
 			if (!isThinking || activeIndex > index) return "done";
 			if (activeIndex === index) return "active";
