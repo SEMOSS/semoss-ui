@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Markdown } from "@semoss/ui/next";
 import { useRoot } from "@/hooks";
 import { useMarkdownTypewriter } from "@/hooks/use-markdown-typewriter";
@@ -69,20 +69,17 @@ export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
 		);
 
 		// ── URL transform ─────────────────────────────────────────────────────────
-		const urlTransform = useCallback(
-			(url: string) => {
-				if (url.startsWith("room://")) return url;
-				if (
-					root.theme.allowedUrlPrefixes?.some((prefix) =>
-						url.startsWith(prefix),
-					)
+		const urlTransform = (url: string) => {
+			if (url.startsWith("room://")) return url;
+			if (
+				root.theme.allowedUrlPrefixes?.some((prefix) =>
+					url.startsWith(prefix),
 				)
-					return url;
-				if (/^(https?:|mailto:|#)/.test(url)) return url;
-				return "";
-			},
-			[root.theme.allowedUrlPrefixes],
-		);
+			)
+				return url;
+			if (/^(https?:|mailto:|#)/.test(url)) return url;
+			return "";
+		};
 
 		// ── Effects ───────────────────────────────────────────────────────────────
 
