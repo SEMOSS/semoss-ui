@@ -36,7 +36,11 @@
 		"myAccount": "حسابي",
 		"organization": "مؤسسة",
 		"organizationLabel": "المؤسسة",
-		"organizationPlaceholder": "my-github-org"
+		"organizationPlaceholder": "my-github-org",
+		"visibilityLabel": "الظهور",
+		"public": "عام",
+		"private": "خاص",
+		"visibilityHelp": "يمكن تثبيت التطبيقات العامة على أي حساب أو مؤسسة. أما التطبيقات الخاصة فلا يمكن تثبيتها إلا على الحساب المالك لها."
 	},
 	"status": {
 		"loading": "جارٍ تحميل إعدادات تطبيق GitHub...",
