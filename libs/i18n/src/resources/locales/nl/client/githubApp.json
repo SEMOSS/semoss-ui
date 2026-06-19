@@ -36,7 +36,11 @@
 		"myAccount": "Mijn account",
 		"organization": "Organisatie",
 		"organizationLabel": "Organisatie",
-		"organizationPlaceholder": "mijn-github-org"
+		"organizationPlaceholder": "mijn-github-org",
+		"visibilityLabel": "Zichtbaarheid",
+		"public": "Openbaar",
+		"private": "Privé",
+		"visibilityHelp": "Openbare apps kunnen op elk account of elke organisatie worden geïnstalleerd. Privé-apps kunnen alleen worden geïnstalleerd op het account dat ze bezit."
 	},
 	"status": {
 		"loading": "GitHub-appconfiguratie laden...",

@@ -36,7 +36,11 @@
 		"myAccount": "मेरा खाता",
 		"organization": "संगठन",
 		"organizationLabel": "संगठन",
-		"organizationPlaceholder": "mera-github-org"
+		"organizationPlaceholder": "mera-github-org",
+		"visibilityLabel": "दृश्यता",
+		"public": "सार्वजनिक",
+		"private": "निजी",
+		"visibilityHelp": "सार्वजनिक ऐप्स किसी भी खाते या संगठन पर इंस्टॉल किए जा सकते हैं। निजी ऐप्स केवल उस खाते पर इंस्टॉल किए जा सकते हैं जिसका वे स्वामित्व रखते हैं।"
 	},
 	"status": {
 		"loading": "GitHub ऐप कॉन्फ़िगरेशन लोड हो रहा है...",

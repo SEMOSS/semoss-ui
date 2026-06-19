@@ -36,7 +36,11 @@
 		"myAccount": "My account",
 		"organization": "Organization",
 		"organizationLabel": "Organization",
-		"organizationPlaceholder": "my-github-org"
+		"organizationPlaceholder": "my-github-org",
+		"visibilityLabel": "Visibility",
+		"public": "Public",
+		"private": "Private",
+		"visibilityHelp": "Public apps can be installed on any account or organization. Private apps can only be installed on the account that owns them."
 	},
 	"status": {
 		"loading": "Loading GitHub App configuration...",
