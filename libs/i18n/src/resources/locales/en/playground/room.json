@@ -56,8 +56,9 @@
 		"completeTool": "Please complete the tool(s) to proceed",
 		"ask": "Ask",
 		"errorProcessing": "Error processing chat",
-		"pauseTools": "Pause tools",
-		"pauseToolsTooltip": "Pause all tool execution until after the next message"
+		"stopLabel": "Stop the response",
+		"stopTooltip": "Stop",
+		"stoppingTooltip": "Stopping"
 	},
 	"content": {
 		"scrollToTop": "Scroll to top",

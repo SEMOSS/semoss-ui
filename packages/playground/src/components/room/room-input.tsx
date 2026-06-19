@@ -36,7 +36,6 @@ import {
 	DropdownMenuContent,
 	DropdownMenuTrigger,
 	ScrollArea,
-	Spinner,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -145,18 +144,12 @@ interface RoomInputProps {
 	/** Has outstanding tools */
 	hasOutstandingTools?: boolean;
 
-	/** Whether the pause-on-next-tool flag is armed */
-	hasToolsPaused?: boolean;
+	/** A stop has been issued for the active turn and it's still unwinding. */
+	isCancelling?: boolean;
 
-	/** Toggle the pause-on-next-tool flag */
-	toggleToolsPaused?: () => void;
-
-	/** Hide the pause-on-next-tool button */
-	hidePauseButton?: boolean;
-
-	/** Cancel the in-flight LLM stream (pre-tool-execution). When provided
-	 *  and the LLM is streaming, the stop button cancels the pixel job. */
-	onCancelLlm?: () => void;
+	/** Stop the in-flight turn. While loading, the send button becomes a stop
+	 *  button that invokes this. */
+	onStop?: () => void;
 
 	/** Content to render in the footer */
 	footer?: React.ReactNode;
@@ -212,11 +205,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		onMcpChange,
 		onWorkspaceChange,
 		hasOutstandingTools = false,
-		hasToolsPaused = false,
-		toggleToolsPaused,
+		isCancelling = false,
 		footer = null,
-		hidePauseButton = false,
-		onCancelLlm,
+		onStop,
 		predefinedPrompts = [],
 		initialValue,
 		tokensUsed,
@@ -581,29 +572,24 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// While loading, the send button does double duty: pause the tool loop
 		// when tools are queued, otherwise stop the in-flight LLM stream. The
 		// stop only takes effect during a cancellable Ask; it's a no-op otherwise.
-		const inToolsMode = isLoading && hasOutstandingTools;
-		const showSendSpinner =
-			inToolsMode && (hasToolsPaused || hidePauseButton);
+		// While loading the send button becomes a stop button for the in-flight
+		// turn; once stop is pressed it's disabled until the turn unwinds. Stop
+		// only takes effect during a cancellable run today — it's a harmless
+		// no-op otherwise (e.g. while tools execute).
 		const sendDisabled = isLoading
-			? inToolsMode
-				? hasToolsPaused || hidePauseButton
-				: false
+			? isCancelling
 			: isEmpty || hasOutstandingTools;
 		const handleSendClick = () => {
-			if (!isLoading) {
-				promptModel();
-				return;
-			}
-			if (hasOutstandingTools) {
-				toggleToolsPaused?.();
+			if (isLoading) {
+				onStop?.();
 			} else {
-				onCancelLlm?.();
+				promptModel();
 			}
 		};
 		const sendTooltip = isLoading
-			? hasToolsPaused || hidePauseButton
-				? t("input.thinkingTooltip")
-				: t("input.pauseToolsTooltip")
+			? isCancelling
+				? t("input.stoppingTooltip")
+				: t("input.stopTooltip")
 			: isEmpty
 				? t("input.enterQuestion")
 				: hasOutstandingTools
@@ -1032,7 +1018,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													aria-label={
 														isLoading
 															? t(
-																	"input.pauseToolsTooltip",
+																	"input.stopLabel",
 																)
 															: t(
 																	"input.askLabel",
@@ -1041,15 +1027,13 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													disabled={sendDisabled}
 													onClick={handleSendClick}
 												>
-													{!isLoading ? (
-														<SendIcon />
-													) : showSendSpinner ? (
-														<Spinner />
-													) : (
+													{isLoading ? (
 														<Square
 															className="size-3"
 															fill="currentColor"
 														/>
+													) : (
+														<SendIcon />
 													)}
 												</Button>
 											</span>

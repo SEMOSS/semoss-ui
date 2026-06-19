@@ -492,7 +492,6 @@ export const NewRoomPage = observer(() => {
 
 										return true;
 									}}
-									hidePauseButton
 									excludeCommandIds={["compact"]}
 									onOpenSettings={() =>
 										setIsConfgurationOpen(true)

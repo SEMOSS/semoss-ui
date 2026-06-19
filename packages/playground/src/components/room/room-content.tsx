@@ -306,7 +306,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			<div className="relative w-full flex-1 overflow-hidden">
 				<ScrollArea
 					// Force Radix's table-display viewport wrapper to block so wide content can't push the column past the viewport width
-					className="[&_[data-slot=scroll-area-viewport]>div]:!block h-full w-full overflow-hidden"
+					className="[&_[data-slot=scroll-area-viewport]>div]:block! h-full w-full overflow-hidden"
 					viewportRef={(ele) => {
 						setScrollEle(ele);
 					}}
@@ -317,7 +317,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						}}
 					>
 						<div className="mx-auto flex w-full max-w-[1120px] flex-col gap-2 px-4 py-6 sm:px-8 lg:px-16">
-							{room.history.map((m, mIdx) => {
+							{room.history.map((m) => {
 								if (!m.visible) {
 									return null;
 								}
@@ -432,7 +432,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					predefinedPrompts={room.options.predefinedPrompts}
 					className="max-h-56 min-h-24"
 					isLoading={showLoadingState}
-					hidePauseButton={!room.numberOfTools}
 					model={room.model}
 					room={room}
 					setModel={(model) => {
@@ -493,11 +492,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					hasOutstandingTools={
 						room.latestResponseMessage.hasUnfinishedTools
 					}
-					hasToolsPaused={room.latestResponseMessage.isPaused}
-					toggleToolsPaused={
-						room.latestResponseMessage.toggleIsPaused
-					}
-					onCancelLlm={room.cancelActiveJob}
+					isCancelling={room.isCancelling}
+					onStop={room.cancelActiveJob}
 					tokensUsed={room.tokensUsed}
 					tokensMax={chat.models.contextWindow}
 					onCompact={handleCompactMessages}

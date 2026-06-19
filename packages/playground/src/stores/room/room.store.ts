@@ -261,6 +261,11 @@ export class RoomStore {
 		return this.streamJob.canCancel;
 	}
 
+	/** A stop has been issued for the active job and it's still unwinding. */
+	get isCancelling() {
+		return this.streamJob.isCancelling;
+	}
+
 	/**
 	 * Get the error of the room
 	 */

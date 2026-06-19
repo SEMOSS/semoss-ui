@@ -57,7 +57,7 @@ export class StreamJobController {
 	/** Cancel handler stashed by run(), invoked by stop() on a user stop. */
 	private onCancel: (() => void | Promise<void>) | null = null;
 
-	private static readonly POLL_INTERVAL_MS = 300;
+	private static readonly POLL_INTERVAL_MS = 500;
 
 	constructor(private readonly deps: StreamJobDeps) {
 		makeAutoObservable(this);
@@ -66,6 +66,11 @@ export class StreamJobController {
 	/** A cancellable job is in flight and a cancel hasn't already been issued. */
 	get canCancel(): boolean {
 		return this.jobId !== null && !this.cancelling;
+	}
+
+	/** A stop has been issued and the job is still unwinding. */
+	get isCancelling(): boolean {
+		return this.cancelling;
 	}
 
 	/**
