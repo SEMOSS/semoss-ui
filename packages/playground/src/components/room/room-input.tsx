@@ -36,6 +36,7 @@ import {
 	DropdownMenuContent,
 	DropdownMenuTrigger,
 	ScrollArea,
+	Spinner,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -151,6 +152,11 @@ interface RoomInputProps {
 	 *  button that invokes this. */
 	onStop?: () => void;
 
+	/** Suppress the stop affordance. While loading, the send button shows a
+	 *  plain spinner instead of a stop button (e.g. the new-room flow, which
+	 *  has no in-flight turn to cancel). */
+	hideStopButton?: boolean;
+
 	/** Content to render in the footer */
 	footer?: React.ReactNode;
 
@@ -208,6 +214,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		isCancelling = false,
 		footer = null,
 		onStop,
+		hideStopButton = false,
 		predefinedPrompts = [],
 		initialValue,
 		tokensUsed,
@@ -569,24 +576,27 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			}
 		};
 
-		// While loading, the send button does double duty: pause the tool loop
-		// when tools are queued, otherwise stop the in-flight LLM stream. The
-		// stop only takes effect during a cancellable Ask; it's a no-op otherwise.
 		// While loading the send button becomes a stop button for the in-flight
 		// turn; once stop is pressed it's disabled until the turn unwinds. Stop
 		// only takes effect during a cancellable run today — it's a harmless
-		// no-op otherwise (e.g. while tools execute).
+		// no-op otherwise (e.g. while tools execute). Callers with no turn to
+		// cancel (the new-room flow) pass hideStopButton to show a plain spinner
+		// instead.
+		const showStop = isLoading && !hideStopButton;
+		const showSpinner = isLoading && hideStopButton;
 		const sendDisabled = isLoading
-			? isCancelling
+			? showStop
+				? isCancelling
+				: true
 			: isEmpty || hasOutstandingTools;
 		const handleSendClick = () => {
-			if (isLoading) {
+			if (showStop) {
 				onStop?.();
-			} else {
+			} else if (!isLoading) {
 				promptModel();
 			}
 		};
-		const sendTooltip = isLoading
+		const sendTooltip = showStop
 			? isCancelling
 				? t("input.stoppingTooltip")
 				: t("input.stopTooltip")
@@ -1016,7 +1026,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													variant="default"
 													size="icon-sm"
 													aria-label={
-														isLoading
+														showStop
 															? t(
 																	"input.stopLabel",
 																)
@@ -1027,11 +1037,13 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													disabled={sendDisabled}
 													onClick={handleSendClick}
 												>
-													{isLoading ? (
+													{showStop ? (
 														<Square
 															className="size-3"
 															fill="currentColor"
 														/>
+													) : showSpinner ? (
+														<Spinner />
 													) : (
 														<SendIcon />
 													)}
