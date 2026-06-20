@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { Env } from "@semoss/sdk";
 import {
 	Badge,
 	Button,
@@ -287,6 +288,9 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 		() => (systemApp ? ["SYSTEM"] : tags),
 		[systemApp, tags],
 	);
+
+	const [imgError, setImgError] = useState(false);
+	const projectImageSrc = `${Env.MODULE}/api/project-${app.project_id}/projectImage/download`;
 
 	const showBookmark = !systemApp && !isDiscoverable;
 	const showMenu = app.project_created_by !== "SYSTEM";
@@ -789,15 +793,24 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 						}}
 					>
 						<div
-							className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px]"
+							className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[10px]"
 							style={{ background: background || gradient }}
 						>
-							<div
-								className="font-semibold text-xs"
-								style={{ color: initialsColor }}
-							>
-								{initials}
-							</div>
+							{!imgError ? (
+								<img
+									src={cardImgSrc || projectImageSrc}
+									alt=""
+									className="h-full w-full object-cover"
+									onError={() => setImgError(true)}
+								/>
+							) : (
+								<div
+									className="font-semibold text-xs"
+									style={{ color: initialsColor }}
+								>
+									{initials}
+								</div>
+							)}
 						</div>
 
 						<div ref={leftTextRef} className="min-w-0 flex-1">
@@ -1006,12 +1019,21 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 						className={`relative w-full ${headerHeightClass}`}
 						style={{ background: background || gradient }}
 					>
-						<div
-							className="flex h-full items-center justify-center font-semibold text-base"
-							style={{ color: initialsColor }}
-						>
-							{initials}
-						</div>
+						{!imgError ? (
+							<img
+								src={cardImgSrc || projectImageSrc}
+								alt=""
+								className="h-full w-full object-cover"
+								onError={() => setImgError(true)}
+							/>
+						) : (
+							<div
+								className="flex h-full items-center justify-center font-semibold text-base"
+								style={{ color: initialsColor }}
+							>
+								{initials}
+							</div>
+						)}
 						<div className="-translate-y-1/2 absolute top-1/2 right-3 flex items-center gap-2">
 							{showBookmark && (
 								<Button
@@ -1284,12 +1306,21 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 					className="relative h-[77px] w-full"
 					style={{ background: background || gradient }}
 				>
-					<div
-						className="flex h-full items-center justify-center font-semibold text-2xl"
-						style={{ color: initialsColor }}
-					>
-						{initials}
-					</div>
+					{!imgError ? (
+						<img
+							src={cardImgSrc || projectImageSrc}
+							alt=""
+							className="h-full w-full object-cover"
+							onError={() => setImgError(true)}
+						/>
+					) : (
+						<div
+							className="flex h-full items-center justify-center font-semibold text-2xl"
+							style={{ color: initialsColor }}
+						>
+							{initials}
+						</div>
+					)}
 					<div className="-translate-y-1/2 absolute top-1/2 right-2 flex items-center gap-2">
 						{showBookmark && (
 							<Button
