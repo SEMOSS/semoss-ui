@@ -1,4 +1,5 @@
 import { Env } from "@semoss/sdk/react";
+import { toast } from "@semoss/ui/next";
 
 /**
  * Project → GitHub repository link, as surfaced by the ProjectInfo reactor.
@@ -13,6 +14,24 @@ export interface GithubLink {
 	htmlUrl?: string;
 	/** Branch the push webhook syncs the project's local repo to. */
 	branch?: string;
+}
+
+/**
+ * A GitHub App installation the logged-in user can link a project to, as
+ * returned by `/github/install/installations`. An installation is the App
+ * installed on one account (a user or an organization); each can grant access
+ * to all repos or a hand-picked ("selected") subset.
+ */
+export interface GithubInstallation {
+	installationId: number | string;
+	/** Login of the account the App is installed on (e.g. "my-org"). */
+	account: string;
+	/** "Organization" or "User" — drives the "manage repos on GitHub" URL. */
+	accountType?: string;
+	/** "all" or "selected" — whether the App can see every repo or a subset. */
+	repositorySelection?: string;
+	/** Suspended installations can't be used until un-suspended on GitHub. */
+	suspended?: boolean;
 }
 
 /** A repository a GitHub App installation can access. */
@@ -68,6 +87,26 @@ export interface GithubWebhookDelivery {
 interface GithubErrorBody {
 	status?: string;
 	reason?: string;
+	/**
+	 * Set by the per-user-scoped picker endpoints when the logged-in user hasn't
+	 * authorized their GitHub access (or it expired/was revoked). Recoverable via
+	 * a one-time authorize redirect — not a hard error.
+	 */
+	needsAuth?: boolean;
+}
+
+/**
+ * Thrown when a GitHub picker endpoint returns `401 { needsAuth: true }`. This
+ * is an expected, recoverable state (the user must authorize their GitHub
+ * access), not a failure — callers should redirect to the authorize flow via
+ * {@link redirectToGithubAuthorize} / {@link handleNeedsAuth} rather than
+ * surfacing an error toast.
+ */
+export class GithubNeedsAuthError extends Error {
+	constructor(reason?: string) {
+		super(reason || "GitHub authorization required");
+		this.name = "GithubNeedsAuthError";
+	}
 }
 
 const buildUrl = (path: string, params?: Record<string, string>): string => {
@@ -84,13 +123,18 @@ const readJson = async (response: Response): Promise<unknown> =>
 	response.json().catch(() => null);
 
 /**
- * Throws an Error carrying the backend `reason` when the response failed or the
- * body reports `status: "error"`. Callers surface the message in a toast.
+ * Throws on a failed response. A `401 { needsAuth: true }` becomes a
+ * {@link GithubNeedsAuthError} (recoverable re-auth, handled by redirecting to
+ * the authorize flow); any other failure becomes a plain Error carrying the
+ * backend `reason`, which callers surface in a toast.
  */
 const throwIfError = (
 	response: Response,
 	body: GithubErrorBody | null,
 ): void => {
+	if (body?.needsAuth) {
+		throw new GithubNeedsAuthError(body.reason);
+	}
 	if (!response.ok || body?.status === "error") {
 		throw new Error(body?.reason || `Request failed (${response.status})`);
 	}
@@ -154,6 +198,30 @@ export const getAllProjectLinks = async (): Promise<GithubProjectLink[]> => {
 };
 
 /**
+ * Lists the GitHub App installations the user can link this project to (the App
+ * installed across the user's accounts/orgs). Drives the connect-flow picker.
+ * Requires owner access to `projectId`. Throws (with the backend `reason`) on
+ * 400 ("no GitHub App is configured") or 502 ("unable to read installations").
+ */
+export const getInstallInstallations = async (
+	projectId: string,
+): Promise<GithubInstallation[]> => {
+	const response = await fetch(
+		buildUrl("/github/install/installations", { projectId }),
+		{
+			method: "GET",
+			credentials: "include",
+			headers: { Accept: "application/json" },
+		},
+	);
+	const body = (await readJson(response)) as
+		| (GithubErrorBody & { installations?: GithubInstallation[] })
+		| null;
+	throwIfError(response, body);
+	return Array.isArray(body?.installations) ? body.installations : [];
+};
+
+/**
  * Lists every repo the given installation can access. Requires owner access to
  * `projectId` (the backend guards repo reads as part of linking a project).
  */
@@ -207,29 +275,31 @@ export const getInstallBranches = async (
 };
 
 /**
- * Persists the project → repo link the user chose, including the branch to
- * track. The backend takes the authoritative repo full name from GitHub, so
- * only the ids + branch are sent (as query params, matching the servlet).
+ * Persists the project → repo link the user chose. The backend takes the
+ * authoritative repo full name from GitHub, so only the ids (and optional
+ * branch) are sent as query params, matching the servlet, and the resolved full
+ * name is returned. Omitting `branch` lets the backend default to the repo's
+ * default branch.
  */
 export const selectRepo = async (input: {
 	projectId: string;
 	installationId: number | string;
 	repoId: number | string;
-	branch: string;
+	branch?: string;
 }): Promise<{ repoFullName: string }> => {
-	const response = await fetch(
-		buildUrl("/github/install/select", {
-			projectId: input.projectId,
-			installationId: String(input.installationId),
-			repoId: String(input.repoId),
-			branch: input.branch,
-		}),
-		{
-			method: "POST",
-			credentials: "include",
-			headers: { Accept: "application/json" },
-		},
-	);
+	const params: Record<string, string> = {
+		projectId: input.projectId,
+		installationId: String(input.installationId),
+		repoId: String(input.repoId),
+	};
+	if (input.branch) {
+		params.branch = input.branch;
+	}
+	const response = await fetch(buildUrl("/github/install/select", params), {
+		method: "POST",
+		credentials: "include",
+		headers: { Accept: "application/json" },
+	});
 	const body = (await readJson(response)) as
 		| (GithubErrorBody & { repoFullName?: string })
 		| null;
@@ -282,6 +352,69 @@ export const setProjectBranch = async (
 export const buildInstallAppUrl = (projectId: string): string =>
 	buildUrl("/github/install/app", { projectId });
 
+/**
+ * Full-page URL that starts the per-user GitHub authorization flow for a
+ * project. Navigating here (top-level, not fetch) redirects to GitHub to
+ * authorize the logged-in user's access (one click if previously authorized);
+ * GitHub returns through a backend callback that lands the browser back on the
+ * project page, where the picker flow can be retried.
+ */
+export const buildUserAuthorizeUrl = (projectId: string): string =>
+	buildUrl("/github/user/authorize", { projectId });
+
+/** Sends the browser to the per-user GitHub authorization flow. */
+export const redirectToGithubAuthorize = (projectId: string): void => {
+	window.location.assign(buildUserAuthorizeUrl(projectId));
+};
+
+/** How long to let the re-auth message show before the full-page redirect. */
+const NEEDS_AUTH_REDIRECT_DELAY_MS = 1200;
+
+/**
+ * Single needsAuth handler: if `error` is a {@link GithubNeedsAuthError},
+ * redirect to the authorize flow and return `true` (the page is now navigating
+ * away, so the caller should stop). Otherwise return `false` so the caller can
+ * handle it as a real error. Covers both the initial gate and a token that
+ * silently expired mid-session.
+ *
+ * Pass a translated `message` to first show a toast explaining the redirect
+ * (e.g. "GitHub authorization required — sending you to GitHub to authorize");
+ * the navigation is then deferred briefly so the message is actually seen
+ * before the page unloads.
+ */
+export const handleNeedsAuth = (
+	error: unknown,
+	projectId: string,
+	message?: string,
+): boolean => {
+	if (!(error instanceof GithubNeedsAuthError)) {
+		return false;
+	}
+	if (message) {
+		toast.info(message);
+	}
+	window.setTimeout(
+		() => redirectToGithubAuthorize(projectId),
+		message ? NEEDS_AUTH_REDIRECT_DELAY_MS : 0,
+	);
+	return true;
+};
+
 /** Convenience: the github.com URL for a `owner/repo` full name. */
 export const repoHtmlUrl = (repoFullName: string): string =>
 	`https://github.com/${repoFullName}`;
+
+/**
+ * GitHub-side settings page where the user adjusts which repositories an
+ * installation can access. Surfaced when an installation's `repositorySelection`
+ * is "selected" and the repo the user wants isn't in the list. Organizations use
+ * a different path than personal accounts.
+ */
+export const installationSettingsUrl = (installation: {
+	installationId: number | string;
+	account?: string;
+	accountType?: string;
+}): string =>
+	installation.accountType === "Organization" && installation.account
+		? `https://github.com/organizations/${installation.account}/settings/installations/${installation.installationId}`
+		: `https://github.com/settings/installations/${installation.installationId}`;

@@ -28,11 +28,13 @@ import {
 import {
 	buildInstallAppUrl,
 	disconnectProject,
+	type GithubInstallation,
 	type GithubInstallationCheck,
 	type GithubLink,
 	type GithubRepo,
 	type GithubWebhookDelivery,
 	getProjectLink,
+	handleNeedsAuth,
 	isGithubAvailable,
 	repoHtmlUrl,
 	selectRepo,
@@ -41,6 +43,7 @@ import {
 import { useAppDetail } from "@/contexts";
 import { useRootStore } from "@/hooks";
 import { GithubBranchSelect } from "./app-detail-tabs/github-branch-select";
+import { GithubInstallationPicker } from "./app-detail-tabs/github-installation-picker";
 import { GithubRepoPicker } from "./app-detail-tabs/github-repo-picker";
 
 /** How many recent webhook deliveries to request for the health panel. */
@@ -72,6 +75,7 @@ export const AppGithubPage = () => {
 	);
 	const [isLinkLoading, setIsLinkLoading] = useState(true);
 	const [available, setAvailable] = useState<boolean | null>(null);
+	const [isConnectOpen, setIsConnectOpen] = useState(false);
 	const [isChangeOpen, setIsChangeOpen] = useState(false);
 	const [isDisconnectOpen, setIsDisconnectOpen] = useState(false);
 	const [isBranchOpen, setIsBranchOpen] = useState(false);
@@ -251,8 +255,42 @@ export const AppGithubPage = () => {
 			setIsChangeOpen(false);
 			toast.success(t("project.toasts.changed"));
 		} catch (error) {
+			if (handleNeedsAuth(error, appId, t("project.toasts.needsAuth"))) {
+				return;
+			}
 			toast.error(
 				(error as Error).message || t("project.toasts.changeFailed"),
+			);
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
+
+	// Connect flow (installation picker): persist the chosen installation + repo,
+	// then re-read the link so the tab reflects exactly what the backend stored.
+	const connectRepo = async (
+		installation: GithubInstallation,
+		repo: GithubRepo,
+		branch: string,
+	) => {
+		setIsSubmitting(true);
+		try {
+			await selectRepo({
+				projectId: appId,
+				installationId: installation.installationId,
+				repoId: repo.id,
+				branch,
+			});
+			const fresh = await getProjectLink(appId);
+			setLink(fresh.linked ? fresh : null);
+			setIsConnectOpen(false);
+			toast.success(t("project.toasts.connected"));
+		} catch (error) {
+			if (handleNeedsAuth(error, appId, t("project.toasts.needsAuth"))) {
+				return;
+			}
+			toast.error(
+				(error as Error).message || t("project.toasts.connectFailed"),
 			);
 		} finally {
 			setIsSubmitting(false);
@@ -502,13 +540,40 @@ export const AppGithubPage = () => {
 						{t("project.notConnectedDescription")}
 					</p>
 					<div className="mt-4">
-						<Button onClick={connect}>
+						<Button onClick={() => setIsConnectOpen(true)}>
 							<Github className="mr-2 size-4" />
 							{t("project.connect")}
 						</Button>
 					</div>
 				</div>
 			)}
+
+			<Dialog
+				open={isConnectOpen}
+				onOpenChange={(open: boolean) => {
+					if (!isSubmitting) {
+						setIsConnectOpen(open);
+					}
+				}}
+			>
+				<DialogContent className="sm:max-w-lg">
+					<DialogHeader>
+						<DialogTitle>
+							{t("project.connectDialog.title")}
+						</DialogTitle>
+						<DialogDescription>
+							{t("project.connectDialog.description")}
+						</DialogDescription>
+					</DialogHeader>
+					<GithubInstallationPicker
+						projectId={appId}
+						isSubmitting={isSubmitting}
+						confirmLabel={t("project.connectDialog.confirm")}
+						onConfirm={connectRepo}
+						onInstallNew={connect}
+					/>
+				</DialogContent>
+			</Dialog>
 
 			<Dialog
 				open={isChangeOpen}
@@ -518,7 +583,7 @@ export const AppGithubPage = () => {
 					}
 				}}
 			>
-				<DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+				<DialogContent className="sm:max-w-lg">
 					<DialogHeader>
 						<DialogTitle>
 							{t("project.changeDialog.title")}
