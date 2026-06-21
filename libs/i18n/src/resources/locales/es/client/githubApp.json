@@ -128,6 +128,29 @@
 			"cancel": "Cancelar",
 			"confirm": "Desconectar"
 		},
+		"connectDialog": {
+			"title": "Conectar con GitHub",
+			"description": "Elige una instalación de la aplicación de GitHub y, a continuación, el repositorio con el que se sincronizará este proyecto.",
+			"confirm": "Conectar repositorio"
+		},
+		"installPicker": {
+			"loading": "Cargando instalaciones de GitHub...",
+			"loadFailed": "No se pudieron cargar las instalaciones de GitHub.",
+			"retry": "Reintentar",
+			"selectLabel": "Elige una instalación",
+			"accountTypeOrganization": "Organización",
+			"accountTypeUser": "Cuenta personal",
+			"suspended": "Suspendida",
+			"suspendedTooltip": "Esta instalación está suspendida en GitHub y no se puede usar hasta que se reactive.",
+			"backToInstallations": "Instalaciones",
+			"authTitle": "Autorizar GitHub",
+			"authDescription": "Autoriza tu acceso a GitHub para ver las instalaciones y los repositorios que puedes vincular.",
+			"authorize": "Autorizar GitHub",
+			"installApp": "Instalar la aplicación de GitHub",
+			"installAnother": "Instalar en otra cuenta",
+			"emptyTitle": "No se encontraron instalaciones",
+			"emptyDescription": "La aplicación de GitHub aún no está instalada en ninguna de tus cuentas. Instálala para conectar un repositorio."
+		},
 		"picker": {
 			"searchPlaceholder": "Buscar repositorios...",
 			"loading": "Cargando repositorios...",
@@ -153,7 +176,8 @@
 			"disconnectFailed": "No se pudo desconectar el proyecto.",
 			"deliveriesFailed": "No se pudo cargar la actividad de webhooks.",
 			"branchUpdated": "Rama seguida actualizada.",
-			"branchFailed": "No se pudo establecer la rama seguida."
+			"branchFailed": "No se pudo establecer la rama seguida.",
+			"needsAuth": "Se requiere autorización de GitHub: te estamos enviando a GitHub para autorizar..."
 		}
 	}
 }

@@ -341,10 +341,10 @@ export const GitHubAppPage = () => {
 							<RefreshCw className="mr-2 size-4" />
 							{t("buttons.refresh")}
 						</Button>
-						<Button onClick={() => setIsCreateDialogOpen(true)}>
-							<Plus className="mr-2 size-4" />
-							{t("buttons.create")}
-						</Button>
+						{/* Only one GitHub App can be configured per instance, so
+						    the create action lives in the empty state below and is
+						    only offered while no app exists. Once one is configured
+						    there's no "create" button until it's removed. */}
 					</div>
 				</div>
 
