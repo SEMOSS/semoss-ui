@@ -128,6 +128,29 @@
 			"cancel": "Annuleren",
 			"confirm": "Verbinding verbreken"
 		},
+		"connectDialog": {
+			"title": "Verbinden met GitHub",
+			"description": "Kies een GitHub-app-installatie en vervolgens de repository waarmee dit project moet synchroniseren.",
+			"confirm": "Repository verbinden"
+		},
+		"installPicker": {
+			"loading": "GitHub-installaties laden...",
+			"loadFailed": "Kan GitHub-installaties niet laden.",
+			"retry": "Opnieuw proberen",
+			"selectLabel": "Kies een installatie",
+			"accountTypeOrganization": "Organisatie",
+			"accountTypeUser": "Persoonlijk account",
+			"suspended": "Opgeschort",
+			"suspendedTooltip": "Deze installatie is opgeschort op GitHub en kan pas worden gebruikt nadat deze opnieuw is geactiveerd.",
+			"backToInstallations": "Installaties",
+			"authTitle": "GitHub autoriseren",
+			"authDescription": "Autoriseer je GitHub-toegang om de installaties en repository's te tonen die je kunt koppelen.",
+			"authorize": "GitHub autoriseren",
+			"installApp": "De GitHub-app installeren",
+			"installAnother": "Op een ander account installeren",
+			"emptyTitle": "Geen installaties gevonden",
+			"emptyDescription": "De GitHub-app is nog op geen van je accounts geïnstalleerd. Installeer deze om een repository te verbinden."
+		},
 		"picker": {
 			"searchPlaceholder": "Repository's zoeken...",
 			"loading": "Repository's laden...",
@@ -153,7 +176,8 @@
 			"disconnectFailed": "Verbinding verbreken van het project is mislukt.",
 			"deliveriesFailed": "Laden van webhook-activiteit is mislukt.",
 			"branchUpdated": "Gevolgde branch bijgewerkt.",
-			"branchFailed": "Instellen van de gevolgde branch is mislukt."
+			"branchFailed": "Instellen van de gevolgde branch is mislukt.",
+			"needsAuth": "GitHub-autorisatie vereist — je wordt naar GitHub gestuurd om te autoriseren..."
 		}
 	}
 }
