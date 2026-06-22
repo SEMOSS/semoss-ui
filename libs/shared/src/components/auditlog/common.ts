@@ -1,6 +1,7 @@
 //Common place to keep and make changes for audit logs related common functions for enhancing reusablity
 //event data object will have all the details about when the user clicks on table row
 export interface EventData {
+	requestId?: string;
 	startTime: string;
 	endTime: string;
 	logTimestamp: string;
@@ -11,15 +12,22 @@ export interface EventData {
 	status: string | null;
 	engineName: string;
 	engineType: string;
+	methodName?: string;
+	userName?: string;
 	userId: string;
 	sessionId: string;
 	spanId: string;
 }
 /**
- * A function to format a timestamp into a date and time string.
- * @param {string|number|null|undefined} timeStamp - The timestamp to be formatted.
- * @returns {{date: string, time: string}} - An object containing the date and time strings.
- * @return  {{date : "", time: ""}} when the date is not valid
+ * Format an audit-log timestamp into separate date and time strings for display.
+ *
+ * Audit-log timestamps are ISO-8601 UTC strings (e.g. "2026-06-22T17:48:07.123Z").
+ * `new Date(...)` parses the trailing `Z` as a UTC instant, and the toLocale*
+ * formatters render it in the viewer's local timezone (client-side display).
+ *
+ * @param {string|number|null|undefined} timeStamp - ISO-8601 UTC string (or epoch ms).
+ * @returns {{date: string, time: string}} - Localized date ("MM/DD/YYYY") and time
+ *   ("hh:mm:ss AM/PM"); both empty when the timestamp is missing or invalid.
  */
 export const TimeDateFormatter = (
 	timeStamp: string | number | null | undefined,
@@ -28,37 +36,25 @@ export const TimeDateFormatter = (
 		return { date: "", time: "" };
 	}
 
-	try {
-		const tempDate = new Date(timeStamp);
-
-		// Check if date is invalid
-		if (Number.isNaN(tempDate.getTime())) {
-			return { date: "", time: "" };
-		}
-
-		const formattedDate = tempDate.toLocaleTimeString("en-US", {
-			year: "numeric",
-			month: "2-digit",
-			day: "2-digit",
-			hour: "2-digit",
-			minute: "2-digit",
-			second: "2-digit",
-			hour12: true,
-		});
-
-		try {
-			const [datePart, timePart] = formattedDate.split(", ");
-			const date = datePart || "";
-			const time = timePart ? timePart.split(" ")[0] : "";
-			return { date, time };
-		} catch (_formatError) {
-			// Handle string parsing errors
-			return { date: "", time: "" };
-		}
-	} catch (_dateError) {
-		// Handle date creation errors
+	const parsed = new Date(timeStamp);
+	if (Number.isNaN(parsed.getTime())) {
 		return { date: "", time: "" };
 	}
+
+	//Format date and time independently so we don't depend on the locale's
+	//combined-format separator (the previous split on ", " was brittle).
+	const date = parsed.toLocaleDateString("en-US", {
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+	});
+	const time = parsed.toLocaleTimeString("en-US", {
+		hour: "2-digit",
+		minute: "2-digit",
+		second: "2-digit",
+		hour12: true,
+	});
+	return { date, time };
 };
 
 /**
