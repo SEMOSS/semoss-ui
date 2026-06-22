@@ -1,13 +1,9 @@
-import {
-	BookOpenIcon,
-	CheckIcon,
-	ComputerIcon,
-	HammerIcon,
-} from "lucide-react";
+import { BookOpenIcon, Bot, CheckIcon, HammerIcon } from "lucide-react";
 import type React from "react";
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
+import { type MCPConfig, MCPSelector } from "@semoss/shared";
 import {
 	Badge,
 	Button,
@@ -23,11 +19,11 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
-import type { MCPConfig, Workspace } from "@/types";
+import { useRoot } from "@/hooks";
+import type { Workspace } from "@/types";
+import { mcpToPlatformUrl, splitMcpByType } from "@/utility/mcp-utils";
 import { NewKnowledgeFormBody } from "../knowledge/new-knowledge-form-body";
 import { AgentSelector } from "./agent-selector";
-import { MCPSelector } from "./mcp-selector";
-import { splitMcpByType } from "./utility";
 
 type Tab = "AGENT" | "TOOLBOX" | "KNOWLEDGE";
 type WorkspaceRef = Pick<Workspace, "workspace_id"> &
@@ -79,6 +75,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 	onClose,
 }) => {
 	const { t } = useTranslation(["mcp", "knowledge", "common"]);
+	const { root } = useRoot();
 
 	const [knowledge, setKnowledge] = useState<MCPConfig[]>(
 		() => splitMcpByType(values).knowledge,
@@ -185,7 +182,12 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 		>
 			<DialogContent
 				className="flex h-[80vh] max-h-[40rem] w-full flex-col gap-4 sm:max-w-4xl"
-				onOpenAutoFocus={(e) => e.preventDefault()}
+				onOpenAutoFocus={(e) => {
+					e.preventDefault();
+					(e.currentTarget as HTMLElement)
+						.querySelector<HTMLElement>("input")
+						?.focus();
+				}}
 				onCloseAutoFocus={(e) => e.preventDefault()}
 			>
 				{view === "create" ? (
@@ -262,7 +264,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 										value="AGENT"
 										className="relative h-full gap-2"
 									>
-										<ComputerIcon className="size-4" />
+										<Bot className="size-4" />
 										{t("overlay.tabAgent")}
 										{/* Absolutely positioned so the centered label
 										    doesn't shift when the indicator appears. */}
@@ -319,6 +321,16 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 											setView("create")
 										}
 										autoFocus
+										enableKnowledgeMCP={
+											root.theme.featureFlags
+												?.enableKnowledgeMCP
+										}
+										getPlatformUrl={
+											root.theme.featureFlags
+												?.showPlatformLinks
+												? mcpToPlatformUrl
+												: undefined
+										}
 									/>
 								)}
 							</TabsContent>
@@ -332,6 +344,16 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 										values={toolbox}
 										onChange={setToolbox}
 										autoFocus
+										enableKnowledgeMCP={
+											root.theme.featureFlags
+												?.enableKnowledgeMCP
+										}
+										getPlatformUrl={
+											root.theme.featureFlags
+												?.showPlatformLinks
+												? mcpToPlatformUrl
+												: undefined
+										}
 									/>
 								)}
 							</TabsContent>

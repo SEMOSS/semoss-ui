@@ -50,10 +50,20 @@ import sidebarJA from "./locales/ja/playground/sidebar.json";
 import toolJA from "./locales/ja/playground/tool.json";
 import tourJA from "./locales/ja/playground/tour.json";
 import workspaceJA from "./locales/ja/playground/workspace.json";
+import chatNL from "./locales/nl/playground/chat.json";
+import knowledgeNL from "./locales/nl/playground/knowledge.json";
+import mcpNL from "./locales/nl/playground/mcp.json";
+import roomNL from "./locales/nl/playground/room.json";
+import sidebarNL from "./locales/nl/playground/sidebar.json";
+import toolNL from "./locales/nl/playground/tool.json";
+import tourNL from "./locales/nl/playground/tour.json";
+import workspaceNL from "./locales/nl/playground/workspace.json";
+import { sharedResources } from "./shared";
 
 export const playgroundResources = {
 	en: {
 		...coreResources.en,
+		...sharedResources.en,
 		chat: chatEN,
 		knowledge: knowledgeEN,
 		mcp: mcpEN,
@@ -65,6 +75,7 @@ export const playgroundResources = {
 	},
 	es: {
 		...coreResources.es,
+		...sharedResources.es,
 		chat: chatES,
 		knowledge: knowledgeES,
 		mcp: mcpES,
@@ -76,6 +87,7 @@ export const playgroundResources = {
 	},
 	fr: {
 		...coreResources.fr,
+		...sharedResources.fr,
 		chat: chatFR,
 		knowledge: knowledgeFR,
 		mcp: mcpFR,
@@ -87,6 +99,7 @@ export const playgroundResources = {
 	},
 	hi: {
 		...coreResources.hi,
+		...sharedResources.hi,
 		chat: chatHI,
 		knowledge: knowledgeHI,
 		mcp: mcpHI,
@@ -98,6 +111,7 @@ export const playgroundResources = {
 	},
 	ar: {
 		...coreResources.ar,
+		...sharedResources.ar,
 		chat: chatAR,
 		knowledge: knowledgeAR,
 		mcp: mcpAR,
@@ -109,6 +123,7 @@ export const playgroundResources = {
 	},
 	ja: {
 		...coreResources.ja,
+		...sharedResources.ja,
 		chat: chatJA,
 		knowledge: knowledgeJA,
 		mcp: mcpJA,
@@ -117,5 +132,16 @@ export const playgroundResources = {
 		sidebar: sidebarJA,
 		tool: toolJA,
 		tour: tourJA,
+	},
+	nl: {
+		...coreResources.nl,
+		chat: chatNL,
+		knowledge: knowledgeNL,
+		mcp: mcpNL,
+		room: roomNL,
+		workspace: workspaceNL,
+		sidebar: sidebarNL,
+		tool: toolNL,
+		tour: tourNL,
 	},
 } as const;

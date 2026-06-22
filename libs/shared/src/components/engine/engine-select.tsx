@@ -219,7 +219,8 @@ export const EngineSelect = ({
 			? (tokensUsed / tokensMax) * 100
 			: undefined;
 
-	const showContextIndicator = contextUsedPercent !== undefined;
+	const showContextIndicator =
+		contextUsedPercent !== undefined && contextUsedPercent > 0;
 
 	// Calculate pie chart geometry
 	const roundedPercent =

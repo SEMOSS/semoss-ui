@@ -1,9 +1,14 @@
 import { observer } from "mobx-react-lite";
 import { createElement, lazy, Suspense } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useParams } from "react-router-dom";
 import { Spinner } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import { APP_DETAIL_TABS } from "./app/app-detail.constants";
+
+const AppIdRedirect = () => {
+	const { appId } = useParams();
+	return <Navigate to={`/app/${appId}`} replace />;
+};
 
 const AuthenticatedLayout = lazy(() =>
 	import("./AuthenticatedLayout").then((m) => ({
@@ -17,6 +22,11 @@ const PageLayout = lazy(() =>
 const AppCatalogPage = lazy(() =>
 	import("./app/app-catalog-page").then((m) => ({
 		default: m.AppCatalogPage,
+	})),
+);
+const AppGithubSelectRepoPage = lazy(() =>
+	import("./app/app-github-select-repo-page").then((m) => ({
+		default: m.AppGithubSelectRepoPage,
 	})),
 );
 const AppDetailLayout = lazy(() =>
@@ -65,6 +75,32 @@ const PromptRouter = lazy(() =>
 const SettingsRouter = lazy(() =>
 	import("./settings/settings-router").then((m) => ({
 		default: m.SettingsRouter,
+	})),
+);
+const SkillPage = lazy(() =>
+	import("./skill/skill-page").then((m) => ({ default: m.SkillPage })),
+);
+const CreateSkillPage = lazy(() =>
+	import("./skill/create-skill-page").then((m) => ({
+		default: m.CreateSkillPage,
+	})),
+);
+const SkillEditPage = lazy(() =>
+	import("./skill/skill-edit-page").then((m) => ({
+		default: m.SkillEditPage,
+	})),
+);
+const AgentPage = lazy(() =>
+	import("./agent/agent-page").then((m) => ({ default: m.AgentPage })),
+);
+const CreateAgentPage = lazy(() =>
+	import("./agent/create-agent-page").then((m) => ({
+		default: m.CreateAgentPage,
+	})),
+);
+const AgentEditPage = lazy(() =>
+	import("./agent/agent-edit-page").then((m) => ({
+		default: m.AgentEditPage,
 	})),
 );
 const SharePage = lazy(() =>
@@ -126,6 +162,17 @@ export const Router = observer(() => {
 										/>
 									),
 								)}
+								{/* Post-install repo picker. Sub-route of the
+								    GitHub tab; the install callback redirects here
+								    when multiple repos were granted. */}
+								<Route
+									path="github/select-repo"
+									element={createElement(
+										AppGithubSelectRepoPage,
+										{},
+									)}
+								/>
+								<Route path="*" element={<AppIdRedirect />} />
 							</Route>
 							<Route
 								path=":appId/view/*"
@@ -145,6 +192,30 @@ export const Router = observer(() => {
 						<Route path="engine/*" element={<EngineRouter />} />
 						<Route path="prompt/*" element={<PromptRouter />} />
 						<Route path="settings/*" element={<SettingsRouter />} />
+						<Route path="skill/*">
+							<Route index element={<SkillPage />} />
+							<Route path="new" element={<CreateSkillPage />} />
+							<Route
+								path=":appId/edit/*"
+								element={<SkillEditPage />}
+							/>
+							<Route
+								path=":appId/*"
+								element={<AppIdRedirect />}
+							/>
+						</Route>
+						<Route path="agent/*">
+							<Route index element={<AgentPage />} />
+							<Route path="new" element={<CreateAgentPage />} />
+							<Route
+								path=":appId/edit/*"
+								element={<AgentEditPage />}
+							/>
+							<Route
+								path=":appId/*"
+								element={<AppIdRedirect />}
+							/>
+						</Route>
 						<Route path="*" element={<Navigate to="/" replace />} />
 					</Route>
 				</Route>

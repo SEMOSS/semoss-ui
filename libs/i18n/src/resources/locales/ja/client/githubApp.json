@@ -1,0 +1,183 @@
+{
+	"header": {
+		"title": "GitHub アプリ",
+		"description": "アプリを GitHub プロジェクトや Webhook と連携するための GitHub アプリを作成・管理します。"
+	},
+	"list": {
+		"title": "設定済みの GitHub アプリ",
+		"emptyTitle": "GitHub アプリはまだ設定されていません",
+		"emptyDescription": "SEMOSS アプリを GitHub プロジェクトに接続するために GitHub アプリを作成してください。",
+		"connected": "接続済み",
+		"appId": "アプリ ID {{appId}}",
+		"owner": "オーナー",
+		"createdOn": "作成日",
+		"openInGithub": "GitHub で開く",
+		"unknownDate": "不明な日付"
+	},
+	"buttons": {
+		"create": "GitHub アプリを作成",
+		"refresh": "再読み込み",
+		"cancel": "キャンセル",
+		"creating": "リダイレクト中...",
+		"remove": "削除",
+		"removing": "削除中..."
+	},
+	"deleteDialog": {
+		"title": "GitHub アプリを削除しますか？",
+		"description": "このインスタンスから「{{appName}}」を削除しますか？ここに保存された認証情報とプロジェクトのリンクが削除されます。GitHub 上のアプリは削除されません。オーナーが GitHub 側で削除する必要があります（Settings → Developer settings → GitHub Apps → Advanced）。",
+		"openInGithub": "完全に削除するには GitHub で開く"
+	},
+	"dialog": {
+		"title": "GitHub アプリを作成",
+		"description": "新しいアプリを作成するために GitHub manifest フローを開始します。",
+		"appNameLabel": "アプリ名",
+		"appNamePlaceholder": "Semoss GitHub App",
+		"createUnderLabel": "作成先",
+		"myAccount": "自分のアカウント",
+		"organization": "組織",
+		"organizationLabel": "組織",
+		"organizationPlaceholder": "my-github-org",
+		"visibilityLabel": "公開設定",
+		"public": "公開",
+		"private": "非公開",
+		"visibilityHelp": "公開アプリは任意のアカウントまたは組織にインストールできます。非公開アプリは所有するアカウントにのみインストールできます。"
+	},
+	"status": {
+		"loading": "GitHub アプリ設定を読み込み中...",
+		"notPermitted": "GitHub アプリ設定を管理する権限がありません。"
+	},
+	"validation": {
+		"organizationRequired": "組織は必須です。"
+	},
+	"toasts": {
+		"loadFailed": "GitHub アプリ設定の読み込みに失敗しました。",
+		"notPermitted": "GitHub アプリ設定にアクセスする権限がありません。",
+		"redirecting": "アプリ作成のため GitHub にリダイレクトしています...",
+		"createSuccess": "GitHub アプリを作成し、このインスタンス用に設定しました。",
+		"createError": "GitHub アプリの作成中に問題が発生しました。",
+		"createErrorConversion": "GitHub アプリを作成できませんでした。GitHub とのやり取りに失敗しました。もう一度お試しください。",
+		"createErrorSave": "GitHub アプリは GitHub 上に作成されましたが、ここに保存できませんでした。もう一度お試しください。",
+		"deleteSuccess": "このインスタンスから GitHub アプリを削除しました。",
+		"deleteFailed": "GitHub アプリの削除に失敗しました。"
+	},
+	"projects": {
+		"title": "接続済みプロジェクト",
+		"loading": "接続済みプロジェクトを読み込み中...",
+		"empty": "GitHub に接続されているプロジェクトはまだありません。",
+		"unknownRepo": "不明なリポジトリ",
+		"lastOpened": "最終アクセス {{date}}",
+		"openTab": "アプリ設定を開く"
+	},
+	"branchSelect": {
+		"label": "ブランチ",
+		"placeholder": "ブランチを選択",
+		"loading": "ブランチを読み込み中...",
+		"retry": "再試行",
+		"errorFallback": "GitHub からブランチを読み込めませんでした。再試行するか、ブランチ名を入力してください。"
+	},
+	"project": {
+		"title": "GitHub",
+		"description": "コードを同期し、プッシュの更新を受け取るために、このアプリを GitHub リポジトリに接続します。",
+		"syncWarning": "GitHub 上の追跡ブランチへのプッシュはこのプロジェクトに自動的に同期され、ローカルの変更を上書きします。追跡ブランチが信頼できる情報源です。",
+		"loading": "GitHub 接続を読み込み中...",
+		"connectedRepo": "接続済みリポジトリ",
+		"changeRepo": "リポジトリを変更",
+		"disconnect": "切断",
+		"connect": "GitHub に接続",
+		"checking": "GitHub の利用可否を確認中...",
+		"notConnectedTitle": "GitHub に接続されていません",
+		"notConnectedDescription": "GitHub アプリをアカウントまたは組織にインストールし、リンクしたいリポジトリへのアクセスを許可してください。",
+		"unavailableTitle": "このインスタンスでは GitHub が設定されていません",
+		"unavailableDescription": "プロジェクトが接続できるようにするには、管理者がインスタンスの GitHub アプリを設定する必要があります。",
+		"installation": {
+			"valid": "インストール有効",
+			"invalidTitle": "GitHub アプリのインストールは無効になりました",
+			"invalidDescription": "このリポジトリで GitHub アプリがアンインストールまたは停止されたため、同期が停止しました。再接続して復元してください。",
+			"reconnect": "再接続"
+		},
+		"branch": {
+			"label": "追跡ブランチ",
+			"default": "デフォルトブランチ",
+			"change": "変更"
+		},
+		"branchDialog": {
+			"title": "追跡ブランチを設定",
+			"description": "このブランチへのプッシュのみがプロジェクトを同期します。通常はデフォルトブランチ（例: main）です。",
+			"placeholder": "main",
+			"cancel": "キャンセル",
+			"confirm": "保存"
+		},
+		"webhooks": {
+			"title": "最近の Webhook アクティビティ",
+			"description": "GitHub がこのリポジトリに送信した最近の Webhook 配信です。GitHub は直近の短い期間のみ保持します。",
+			"refresh": "更新",
+			"loading": "Webhook アクティビティを読み込み中...",
+			"empty": "最近の Webhook 配信はありません。",
+			"eventLabel": "イベント:",
+			"redelivery": "再配信",
+			"unknownTime": "不明な時刻"
+		},
+		"changeDialog": {
+			"title": "リポジトリを変更",
+			"description": "インストールがアクセスできるリポジトリの中から、このプロジェクトに別のリポジトリを選択します。",
+			"confirm": "リポジトリを変更"
+		},
+		"disconnectDialog": {
+			"title": "GitHub から切断しますか？",
+			"description": "プロジェクトとリポジトリのリンクが解除されます。アカウントや組織から GitHub アプリがアンインストールされることはありません。",
+			"cancel": "キャンセル",
+			"confirm": "切断"
+		},
+		"connectDialog": {
+			"title": "GitHub に接続",
+			"description": "GitHub アプリのインストールを選択し、このプロジェクトを同期するリポジトリを選びます。",
+			"confirm": "リポジトリを接続"
+		},
+		"installPicker": {
+			"loading": "GitHub のインストールを読み込んでいます...",
+			"loadFailed": "GitHub のインストールを読み込めませんでした。",
+			"retry": "再試行",
+			"selectLabel": "インストールを選択",
+			"accountTypeOrganization": "組織",
+			"accountTypeUser": "個人アカウント",
+			"suspended": "停止中",
+			"suspendedTooltip": "このインストールは GitHub で停止されており、再有効化されるまで使用できません。",
+			"backToInstallations": "インストール",
+			"authTitle": "GitHub を認可",
+			"authDescription": "リンクできるインストールとリポジトリを一覧表示するには、GitHub へのアクセスを認可してください。",
+			"authorize": "GitHub を認可",
+			"installApp": "GitHub アプリをインストール",
+			"installAnother": "別のアカウントにインストール",
+			"emptyTitle": "インストールが見つかりません",
+			"emptyDescription": "GitHub アプリはまだどのアカウントにもインストールされていません。リポジトリを接続するにはインストールしてください。"
+		},
+		"picker": {
+			"searchPlaceholder": "リポジトリを検索...",
+			"loading": "リポジトリを読み込み中...",
+			"noRepos": "一致するリポジトリがありません。",
+			"manageOnGithub": "リポジトリが見つかりませんか？ GitHub で管理",
+			"branchLabel": "追跡するブランチ",
+			"branchHelp": "このブランチへのプッシュのみがプロジェクトを同期します。"
+		},
+		"selectRepo": {
+			"title": "リポジトリを選択",
+			"description": "インストールは複数のリポジトリにアクセスできます。このプロジェクトで使用するものを選択してください。",
+			"confirm": "リポジトリを接続",
+			"missingInstallation": "インストールが指定されていません。GitHub タブから接続フローをやり直してください。",
+			"back": "GitHub に戻る"
+		},
+		"toasts": {
+			"reposFailed": "リポジトリの読み込みに失敗しました。",
+			"connected": "プロジェクトを GitHub に接続しました。",
+			"connectFailed": "リポジトリの接続に失敗しました。",
+			"changed": "リンクされたリポジトリを更新しました。",
+			"changeFailed": "リポジトリの変更に失敗しました。",
+			"disconnected": "プロジェクトを GitHub から切断しました。",
+			"disconnectFailed": "プロジェクトの切断に失敗しました。",
+			"deliveriesFailed": "Webhook アクティビティの読み込みに失敗しました。",
+			"branchUpdated": "追跡ブランチを更新しました。",
+			"branchFailed": "追跡ブランチの設定に失敗しました。",
+			"needsAuth": "GitHub の認可が必要です — 認可のために GitHub に移動しています..."
+		}
+	}
+}

@@ -21,7 +21,6 @@ import {
 } from "@semoss/ui/next";
 import {
 	InputMessage,
-	PlanMessage,
 	ResponseMessage,
 	RoomInput,
 	RoomInputMenuFileExplorer,
@@ -31,7 +30,6 @@ import {
 } from "@/components";
 import { useChat, useGracefulErrors } from "@/hooks";
 import type { RoomStore } from "@/stores";
-import type { MCPConfig } from "@/types";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomSuggestions } from "./room-suggestions";
 
@@ -75,6 +73,19 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	};
 
 	/**
+	 * Open the room configuration sidebar tab
+	 */
+	const handleOpenSettings = useCallback(() => {
+		room.addSidebarNode(ROOM_CONFIGURATION_ID, {
+			type: "tab",
+			name: "Configuration",
+			component: "room-configuration",
+			config: {},
+			enableClose: true,
+		});
+	}, [room]);
+
+	/**
 	 * Compact messages in the room
 	 */
 	const handleCompactMessages = async () => {
@@ -88,31 +99,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		} catch {
 			toast.error(t("settings.compactError"));
 		}
-	};
-
-	/**
-	 * Handle tool add (add-only for slash menu)
-	 * @param tool - selected tool
-	 */
-	const handleToolAdd = (tool: MCPConfig) => {
-		// Add tool to options (skip if already present)
-		const tools = room.options.mcp.reduce(
-			(acc, curr) => {
-				acc[curr.id] = curr;
-				return acc;
-			},
-			{} as Record<string, typeof tool>,
-		);
-
-		// Only add if not already present
-		if (!Object.hasOwn(tools, tool.id)) {
-			tools[tool.id] = tool;
-		}
-
-		room.setOptions({
-			...room.options,
-			mcp: Object.values(tools),
-		});
 	};
 
 	/**
@@ -320,7 +306,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		<div className="flex h-full w-full flex-col bg-background transition-all duration-200 ease-in-out">
 			<div className="relative w-full flex-1 overflow-hidden">
 				<ScrollArea
-					className="h-full w-full overflow-hidden"
+					// Force Radix's table-display viewport wrapper to block so wide content can't push the column past the viewport width
+					className="[&_[data-slot=scroll-area-viewport]>div]:!block h-full w-full overflow-hidden"
 					viewportRef={(ele) => {
 						setScrollEle(ele);
 					}}
@@ -369,15 +356,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 											<ResponseMessage
 												room={room}
 												message={m}
-											/>
-										)}
-										{m.type === "PLAN" && (
-											<PlanMessage
-												message={m}
-												isLast={
-													mIdx ===
-													room.history.length - 1
-												}
 											/>
 										)}
 
@@ -463,7 +441,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						chat.setSelectedModel(model);
 					}}
 					options={room.options}
-					onMcpSelect={handleToolAdd}
 					onMcpChange={(mcp) =>
 						room.setOptions({
 							...room.options,
@@ -501,18 +478,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 								<DropdownMenuItem
 									onSelect={(e) => {
 										e.preventDefault();
-
-										// add to the sidebar
-										room.addSidebarNode(
-											ROOM_CONFIGURATION_ID,
-											{
-												type: "tab",
-												name: "Configuration",
-												component: "room-configuration",
-												config: {},
-												enableClose: true,
-											},
-										);
+										handleOpenSettings();
 										onOpenChange(false);
 									}}
 								>
@@ -538,6 +504,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					footer={
 						<RoomStatsBar totalTokens={room.totalTokensConsumed} />
 					}
+					onOpenSettings={handleOpenSettings}
+					excludeCommandIds={["agent", "workspace"]}
 				/>
 			</div>
 		</div>

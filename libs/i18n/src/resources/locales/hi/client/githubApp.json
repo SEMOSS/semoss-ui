@@ -1,0 +1,183 @@
+{
+	"header": {
+		"title": "GitHub ऐप",
+		"description": "ऐसा GitHub ऐप बनाएं और प्रबंधित करें जो ऐप्स को GitHub प्रोजेक्ट्स और वेबहुक्स से जोड़ता है।"
+	},
+	"list": {
+		"title": "कॉन्फ़िगर किए गए GitHub ऐप्स",
+		"emptyTitle": "अभी तक कोई GitHub ऐप कॉन्फ़िगर नहीं है",
+		"emptyDescription": "SEMOSS ऐप्स को GitHub प्रोजेक्ट्स से जोड़ने के लिए एक GitHub ऐप बनाएं।",
+		"connected": "कनेक्टेड",
+		"appId": "ऐप आईडी {{appId}}",
+		"owner": "मालिक",
+		"createdOn": "बनाया गया",
+		"openInGithub": "GitHub में खोलें",
+		"unknownDate": "अज्ञात तिथि"
+	},
+	"buttons": {
+		"create": "GitHub ऐप बनाएं",
+		"refresh": "रीफ्रेश करें",
+		"cancel": "रद्द करें",
+		"creating": "रीडायरेक्ट किया जा रहा है...",
+		"remove": "हटाएं",
+		"removing": "हटाया जा रहा है..."
+	},
+	"deleteDialog": {
+		"title": "GitHub ऐप हटाएं?",
+		"description": "इस इंस्टेंस से \"{{appName}}\" हटाएं? इससे यहां इसके संग्रहीत क्रेडेंशियल और प्रोजेक्ट लिंक हट जाते हैं। यह GitHub पर ऐप को नहीं हटाता — किसी मालिक को इसे वहां हटाना होगा (Settings → Developer settings → GitHub Apps → Advanced)।",
+		"openInGithub": "पूरी तरह हटाने के लिए GitHub में खोलें"
+	},
+	"dialog": {
+		"title": "GitHub ऐप बनाएं",
+		"description": "नया ऐप बनाने के लिए GitHub manifest फ़्लो शुरू करें।",
+		"appNameLabel": "ऐप नाम",
+		"appNamePlaceholder": "Semoss GitHub App",
+		"createUnderLabel": "किसके अंतर्गत बनाएं",
+		"myAccount": "मेरा खाता",
+		"organization": "संगठन",
+		"organizationLabel": "संगठन",
+		"organizationPlaceholder": "mera-github-org",
+		"visibilityLabel": "दृश्यता",
+		"public": "सार्वजनिक",
+		"private": "निजी",
+		"visibilityHelp": "सार्वजनिक ऐप्स किसी भी खाते या संगठन पर इंस्टॉल किए जा सकते हैं। निजी ऐप्स केवल उस खाते पर इंस्टॉल किए जा सकते हैं जिसका वे स्वामित्व रखते हैं।"
+	},
+	"status": {
+		"loading": "GitHub ऐप कॉन्फ़िगरेशन लोड हो रहा है...",
+		"notPermitted": "आपको GitHub ऐप कॉन्फ़िगरेशन प्रबंधित करने की अनुमति नहीं है।"
+	},
+	"validation": {
+		"organizationRequired": "संगठन आवश्यक है।"
+	},
+	"toasts": {
+		"loadFailed": "GitHub ऐप कॉन्फ़िगरेशन लोड नहीं हो सका।",
+		"notPermitted": "आपको GitHub ऐप कॉन्फ़िगरेशन तक पहुंच की अनुमति नहीं है।",
+		"redirecting": "ऐप बनाने के लिए GitHub पर भेजा जा रहा है...",
+		"createSuccess": "GitHub ऐप बनाया गया और इस इंस्टेंस के लिए कॉन्फ़िगर किया गया।",
+		"createError": "GitHub ऐप बनाते समय कुछ गलत हो गया।",
+		"createErrorConversion": "GitHub ऐप नहीं बनाया जा सका — GitHub के साथ आदान-प्रदान विफल रहा। कृपया पुनः प्रयास करें।",
+		"createErrorSave": "GitHub ऐप GitHub पर बनाया गया लेकिन यहां सहेजा नहीं जा सका। कृपया पुनः प्रयास करें।",
+		"deleteSuccess": "इस इंस्टेंस से GitHub ऐप हटा दिया गया।",
+		"deleteFailed": "GitHub ऐप हटाने में विफल।"
+	},
+	"projects": {
+		"title": "कनेक्टेड प्रोजेक्ट्स",
+		"loading": "कनेक्टेड प्रोजेक्ट्स लोड हो रहे हैं...",
+		"empty": "अभी तक कोई प्रोजेक्ट GitHub से कनेक्ट नहीं है।",
+		"unknownRepo": "अज्ञात रिपॉज़िटरी",
+		"lastOpened": "अंतिम बार खोला गया {{date}}",
+		"openTab": "ऐप सेटिंग्स खोलें"
+	},
+	"branchSelect": {
+		"label": "ब्रांच",
+		"placeholder": "एक ब्रांच चुनें",
+		"loading": "ब्रांचें लोड हो रही हैं...",
+		"retry": "पुनः प्रयास करें",
+		"errorFallback": "GitHub से ब्रांचें लोड नहीं हो सकीं। पुनः प्रयास करें, या ब्रांच का नाम टाइप करें।"
+	},
+	"project": {
+		"title": "GitHub",
+		"description": "कोड सिंक करने और पुश अपडेट प्राप्त करने के लिए इस ऐप को किसी GitHub रिपॉज़िटरी से कनेक्ट करें।",
+		"syncWarning": "GitHub पर ट्रैक की गई ब्रांच पर किए गए पुश स्वतः इस प्रोजेक्ट में सिंक हो जाते हैं और स्थानीय बदलावों को बदल देते हैं। ट्रैक की गई ब्रांच ही प्रामाणिक स्रोत है।",
+		"loading": "GitHub कनेक्शन लोड हो रहा है...",
+		"connectedRepo": "कनेक्टेड रिपॉज़िटरी",
+		"changeRepo": "रिपॉज़िटरी बदलें",
+		"disconnect": "डिस्कनेक्ट करें",
+		"connect": "GitHub से कनेक्ट करें",
+		"checking": "GitHub की उपलब्धता जांची जा रही है...",
+		"notConnectedTitle": "GitHub से कनेक्ट नहीं है",
+		"notConnectedDescription": "GitHub ऐप को अपने खाते या संगठन पर इंस्टॉल करें और उसे उस रिपॉज़िटरी तक पहुंच दें जिसे आप लिंक करना चाहते हैं।",
+		"unavailableTitle": "इस इंस्टेंस के लिए GitHub सेट नहीं है",
+		"unavailableDescription": "प्रोजेक्ट कनेक्ट कर सकें, इससे पहले किसी व्यवस्थापक को इंस्टेंस का GitHub ऐप कॉन्फ़िगर करना होगा।",
+		"installation": {
+			"valid": "इंस्टॉलेशन सक्रिय",
+			"invalidTitle": "GitHub ऐप इंस्टॉलेशन अब मान्य नहीं है",
+			"invalidDescription": "इस रिपॉज़िटरी के लिए GitHub ऐप को अनइंस्टॉल या निलंबित कर दिया गया है, इसलिए सिंक करना बंद हो गया है। इसे पुनर्स्थापित करने के लिए फिर से कनेक्ट करें।",
+			"reconnect": "फिर से कनेक्ट करें"
+		},
+		"branch": {
+			"label": "ट्रैक की गई ब्रांच",
+			"default": "डिफ़ॉल्ट ब्रांच",
+			"change": "बदलें"
+		},
+		"branchDialog": {
+			"title": "ट्रैक की जाने वाली ब्रांच सेट करें",
+			"description": "केवल इस ब्रांच पर किए गए पुश प्रोजेक्ट को सिंक करते हैं। यह आमतौर पर आपकी डिफ़ॉल्ट ब्रांच होती है (जैसे main)।",
+			"placeholder": "main",
+			"cancel": "रद्द करें",
+			"confirm": "सहेजें"
+		},
+		"webhooks": {
+			"title": "हाल की वेबहुक गतिविधि",
+			"description": "इस रिपॉज़िटरी के लिए GitHub द्वारा भेजी गई हाल की वेबहुक डिलीवरी। GitHub केवल एक छोटी हालिया अवधि ही रखता है।",
+			"refresh": "रीफ्रेश करें",
+			"loading": "वेबहुक गतिविधि लोड हो रही है...",
+			"empty": "कोई हालिया वेबहुक डिलीवरी नहीं।",
+			"eventLabel": "इवेंट:",
+			"redelivery": "पुनः डिलीवरी",
+			"unknownTime": "अज्ञात समय"
+		},
+		"changeDialog": {
+			"title": "रिपॉज़िटरी बदलें",
+			"description": "इंस्टॉलेशन जिन रिपॉज़िटरीज़ तक पहुंच सकता है, उनमें से इस प्रोजेक्ट के लिए कोई अलग रिपॉज़िटरी चुनें।",
+			"confirm": "रिपॉज़िटरी बदलें"
+		},
+		"disconnectDialog": {
+			"title": "GitHub से डिस्कनेक्ट करें?",
+			"description": "इससे प्रोजेक्ट उसकी रिपॉज़िटरी से अनलिंक हो जाता है। यह आपके खाते या संगठन से GitHub ऐप को अनइंस्टॉल नहीं करता।",
+			"cancel": "रद्द करें",
+			"confirm": "डिस्कनेक्ट करें"
+		},
+		"connectDialog": {
+			"title": "GitHub से कनेक्ट करें",
+			"description": "एक GitHub ऐप इंस्टॉलेशन चुनें, फिर वह रिपॉज़िटरी चुनें जिससे यह प्रोजेक्ट सिंक होना चाहिए।",
+			"confirm": "रिपॉज़िटरी कनेक्ट करें"
+		},
+		"installPicker": {
+			"loading": "GitHub इंस्टॉलेशन लोड हो रहे हैं...",
+			"loadFailed": "GitHub इंस्टॉलेशन लोड नहीं हो सके।",
+			"retry": "पुनः प्रयास करें",
+			"selectLabel": "एक इंस्टॉलेशन चुनें",
+			"accountTypeOrganization": "संगठन",
+			"accountTypeUser": "व्यक्तिगत खाता",
+			"suspended": "निलंबित",
+			"suspendedTooltip": "यह इंस्टॉलेशन GitHub पर निलंबित है और पुनः सक्रिय होने तक इसका उपयोग नहीं किया जा सकता।",
+			"backToInstallations": "इंस्टॉलेशन",
+			"authTitle": "GitHub को अधिकृत करें",
+			"authDescription": "जिन इंस्टॉलेशन और रिपॉज़िटरीज़ को आप लिंक कर सकते हैं उन्हें सूचीबद्ध करने के लिए अपनी GitHub पहुँच को अधिकृत करें।",
+			"authorize": "GitHub को अधिकृत करें",
+			"installApp": "GitHub ऐप इंस्टॉल करें",
+			"installAnother": "किसी अन्य खाते पर इंस्टॉल करें",
+			"emptyTitle": "कोई इंस्टॉलेशन नहीं मिला",
+			"emptyDescription": "GitHub ऐप अभी तक आपके किसी भी खाते पर इंस्टॉल नहीं है। रिपॉज़िटरी कनेक्ट करने के लिए इसे इंस्टॉल करें।"
+		},
+		"picker": {
+			"searchPlaceholder": "रिपॉज़िटरीज़ खोजें...",
+			"loading": "रिपॉज़िटरीज़ लोड हो रही हैं...",
+			"noRepos": "कोई मेल खाती रिपॉज़िटरी नहीं।",
+			"manageOnGithub": "अपना रेपो नहीं मिल रहा? GitHub पर प्रबंधित करें",
+			"branchLabel": "ट्रैक करने के लिए ब्रांच",
+			"branchHelp": "केवल इस ब्रांच पर किए गए पुश प्रोजेक्ट को सिंक करते हैं।"
+		},
+		"selectRepo": {
+			"title": "एक रिपॉज़िटरी चुनें",
+			"description": "इंस्टॉलेशन कई रिपॉज़िटरीज़ तक पहुंच सकता है। वह चुनें जिसे इस प्रोजेक्ट को उपयोग करना चाहिए।",
+			"confirm": "रिपॉज़िटरी कनेक्ट करें",
+			"missingInstallation": "कोई इंस्टॉलेशन प्रदान नहीं किया गया। GitHub टैब से कनेक्ट फ़्लो फिर से शुरू करें।",
+			"back": "GitHub पर वापस जाएं"
+		},
+		"toasts": {
+			"reposFailed": "रिपॉज़िटरीज़ लोड करने में विफल।",
+			"connected": "प्रोजेक्ट GitHub से कनेक्ट हो गया।",
+			"connectFailed": "रिपॉज़िटरी कनेक्ट करने में विफल।",
+			"changed": "लिंक की गई रिपॉज़िटरी अपडेट की गई।",
+			"changeFailed": "रिपॉज़िटरी बदलने में विफल।",
+			"disconnected": "प्रोजेक्ट GitHub से डिस्कनेक्ट हो गया।",
+			"disconnectFailed": "प्रोजेक्ट डिस्कनेक्ट करने में विफल।",
+			"deliveriesFailed": "वेबहुक गतिविधि लोड करने में विफल।",
+			"branchUpdated": "ट्रैक की गई ब्रांच अपडेट की गई।",
+			"branchFailed": "ट्रैक की गई ब्रांच सेट करने में विफल।",
+			"needsAuth": "GitHub अधिकृतीकरण आवश्यक है — आपको अधिकृत करने के लिए GitHub पर भेजा जा रहा है..."
+		}
+	}
+}
