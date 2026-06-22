@@ -7,7 +7,8 @@
 		"instructionsLabel": "Instrucciones",
 		"knowledgeLabel": "Conocimiento",
 		"toolboxLabel": "Cajas de herramientas",
-		"promptsLabel": "Biblioteca de indicaciones"
+		"promptsLabel": "Biblioteca de indicaciones",
+		"skillsLabel": "Habilidades"
 	},
 	"actions": {
 		"create": "Crear",
@@ -113,7 +114,8 @@
 			"knowledge": "Conocimiento",
 			"toolbox": "Cajas de herramientas",
 			"prompts": "Indicaciones",
-			"members": "Miembros"
+			"members": "Miembros",
+			"skills": "Habilidades"
 		},
 		"about": {
 			"title": "Acerca de",
@@ -160,5 +162,8 @@
 		"editTitle": "Editar instrucciones",
 		"editDescription": "Actualiza la indicación del sistema que guía el comportamiento de este agente.",
 		"charCount": "{{count}} caracteres"
+	},
+	"skills": {
+		"noSkills": "No se han añadido habilidades"
 	}
 }

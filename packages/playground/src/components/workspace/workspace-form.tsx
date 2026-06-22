@@ -218,11 +218,7 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 					/>
 				</Field>
 				<Field>
-					<FieldLabel>
-						{t("workspace:form.skillsLabel", {
-							defaultValue: "Skills",
-						})}
-					</FieldLabel>
+					<FieldLabel>{t("workspace:form.skillsLabel")}</FieldLabel>
 					<SkillSelector
 						values={skills}
 						disabled={isLoading}

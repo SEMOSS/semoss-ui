@@ -300,9 +300,7 @@ export const WorkspaceDetailPage = observer(() => {
 					<section className="flex flex-col gap-3">
 						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
 							<BlocksIcon className="size-5" />
-							{t("workspace:detail.tabs.skills", {
-								defaultValue: "Skills",
-							})}
+							{t("workspace:detail.tabs.skills")}
 						</h2>
 						<div className="min-h-32 rounded-xl border border-border bg-card">
 							<WorkspaceSkillList

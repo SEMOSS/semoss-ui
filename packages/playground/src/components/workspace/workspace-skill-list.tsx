@@ -18,9 +18,7 @@ export const WorkspaceSkillList = ({ skills }: WorkspaceSkillListProps) => {
 	if (skills.length === 0) {
 		return (
 			<div className="flex min-h-32 w-full items-center justify-center p-6">
-				<Muted>
-					{t("skills.noSkills", { defaultValue: "No skills added" })}
-				</Muted>
+				<Muted>{t("skills.noSkills")}</Muted>
 			</div>
 		);
 	}

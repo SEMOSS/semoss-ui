@@ -126,11 +126,7 @@ export const SkillSelector: React.FC<SkillSelectorProps> = ({
 				)}
 				{!getSkills.isLoading && getSkills.data.length === 0 && (
 					<div className="flex h-24 w-full items-center justify-center">
-						<Muted>
-							{t("selector.noSkillsFound", {
-								defaultValue: "No skills found",
-							})}
-						</Muted>
+						<Muted>{t("selector.noSkillsFound")}</Muted>
 					</div>
 				)}
 				{!getSkills.isLoading && getSkills.data.length !== 0 && (
