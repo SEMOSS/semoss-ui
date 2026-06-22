@@ -1,6 +1,12 @@
 import { useEffect, useId, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { type MCPConfig, MCPSelector, PromptSelector } from "@semoss/shared";
+import {
+	type MCPConfig,
+	MCPSelector,
+	PromptSelector,
+	type SkillConfig,
+	SkillSelector,
+} from "@semoss/shared";
 import {
 	Button,
 	Field,
@@ -56,6 +62,7 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 	const [instructions, setInstructions] = useState<string>("");
 	const [toolbox, setToolbox] = useState<MCPConfig[]>([]);
 	const [knowledge, setKnowledge] = useState<MCPConfig[]>([]);
+	const [skills, setSkills] = useState<SkillConfig[]>([]);
 
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -75,6 +82,7 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 			splitMcpByType(values?.mcp ?? []);
 		setKnowledge(nextKnowledge);
 		setToolbox(nextToolbox);
+		setSkills(values?.skills ?? []);
 	}, [values]);
 
 	/**
@@ -87,12 +95,16 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 			// start the loading screen
 			setIsLoading(true);
 
-			const updated: Omit<Workspace, "workspace_id" | "date_created"> = {
+			const updated: Omit<
+				Workspace,
+				"workspace_id" | "date_created" | "skills"
+			> & { skills: SkillConfig[] } = {
 				name: name,
 				system_prompt: instructions,
 				description: description,
 				prompts: prompts,
 				mcp: [...knowledge, ...toolbox],
+				skills: skills,
 			};
 
 			let output = "";
@@ -203,6 +215,19 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 								? mcpToPlatformUrl
 								: undefined
 						}
+					/>
+				</Field>
+				<Field>
+					<FieldLabel>
+						{t("workspace:form.skillsLabel", {
+							defaultValue: "Skills",
+						})}
+					</FieldLabel>
+					<SkillSelector
+						values={skills}
+						disabled={isLoading}
+						onChange={(next) => setSkills(next)}
+						className="h-112"
 					/>
 				</Field>
 				<Field>
