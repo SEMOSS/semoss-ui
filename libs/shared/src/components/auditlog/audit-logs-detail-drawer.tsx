@@ -1,13 +1,15 @@
 import {
 	CircleX as Cancel,
 	CircleCheck as CheckCircleIcon,
+	Copy as CopyIcon,
 	ChevronDown as KeyboardArrowDownIcon,
 	ChevronRight as KeyboardArrowRightIcon,
 	FoldVertical as UnfoldLessIcon,
 	UnfoldVertical as UnfoldMoreIcon,
 } from "lucide-react";
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button } from "@semoss/ui/next";
+import { Button, toast } from "@semoss/ui/next";
 import { TimeDateFormatter } from "./common";
 
 interface JSONTreeViewProps {
@@ -137,6 +139,33 @@ const hasExpandableContent = (data: unknown): boolean => {
 	return false;
 };
 
+//Matches the table/timeline: success is truthy and not the string "false".
+const isSuccessStatus = (status: unknown) =>
+	Boolean(status) && status !== "false";
+
+interface DetailFieldProps {
+	label: string;
+	value: ReactNode;
+	/** Render the value monospace + break-all (for long ids). */
+	mono?: boolean;
+}
+
+//A single label/value pair in the detail grid.
+const DetailField = ({ label, value, mono = false }: DetailFieldProps) => (
+	<div className="flex min-w-0 flex-col gap-0.5">
+		<span className="text-gray-500 text-xs leading-[1.66]">{label}</span>
+		<span
+			className={`font-medium text-gray-900 text-sm leading-[1.43] ${
+				mono ? "break-all font-mono" : ""
+			}`}
+		>
+			{value === null || value === undefined || value === ""
+				? "—"
+				: value}
+		</span>
+	</div>
+);
+
 /**
  * A drawer component for displaying audit log details.
  *
@@ -193,6 +222,23 @@ export const AuditLogsDetailDrawer = (props) => {
 	};
 
 	/**
+	 * Copy the full audit log record as formatted JSON, so it can be pulled out
+	 * and compared (e.g. confirming two similar-looking rows have distinct
+	 * span/request ids). Copies every field, not just the visible columns.
+	 */
+	const handleCopyJson = useCallback(async () => {
+		if (!logDetails) return;
+		try {
+			await navigator.clipboard.writeText(
+				JSON.stringify(logDetails, null, 2),
+			);
+			toast.success("Copied audit log as JSON");
+		} catch (error) {
+			toast.error(`Failed to copy: ${error}`);
+		}
+	}, [logDetails]);
+
+	/**
 	 * Attempts to parse the request of an audit log into a JSON object.
 	 *
 	 * @returns {unknown|null} The parsed request JSON object, or null if the request is not JSON.
@@ -236,32 +282,113 @@ export const AuditLogsDetailDrawer = (props) => {
 			ref={drawerRef}
 			className="end-0 top-20 flex h-full min-w-[500px] flex-col bg-white"
 		>
-			<div className="flex items-center justify-between border-b bg-[#F5F9FE] px-3 py-2">
+			<div className="flex items-center justify-between gap-2 border-b bg-[#F5F9FE] py-2 ps-3 pe-12">
 				<span className="font-normal text-base text-primary leading-normal">
 					Audit Details
 				</span>
-				{/* <button
-					onClick={handleDrawerClose}
-					type="button"
-					className="inline-flex items-center justify-center rounded-full p-1 text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400"
-					aria-label="Close"
+				<Button
+					size="sm"
+					variant="outline"
+					onClick={handleCopyJson}
+					title="Copy this record as JSON"
 				>
-					<CloseIcon className="h-4 w-4" />
-				</button> */}
+					<CopyIcon className="h-4 w-4" />
+					Copy JSON
+				</Button>
 			</div>
 
 			{logDetails && (
-				<div className="flex-1 overflow-y-auto bg-white p-0">
-					<div className="border-gray-200 border-b px-3 py-2">
-						<span className="mb-4 font-semibold text-black text-sm leading-[1.57] tracking-normal">
-							Event Summary
+				<div className="flex-1 overflow-y-auto bg-white">
+					{/* Title + status badge */}
+					<div className="flex items-start justify-between gap-3 border-b px-4 py-3">
+						<div className="flex min-w-0 flex-col">
+							<span className="break-all font-semibold text-base text-gray-900 leading-snug">
+								{logDetails.methodName ||
+									logDetails.engineName ||
+									"Event"}
+							</span>
+							<span className="text-gray-500 text-sm">
+								{logDetails.engineName}
+								{logDetails.engineType
+									? ` · ${logDetails.engineType}`
+									: ""}
+							</span>
+						</div>
+						<span
+							className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 font-medium text-xs ${
+								isSuccessStatus(logDetails.status)
+									? "bg-green-50 text-green-700"
+									: "bg-red-50 text-red-700"
+							}`}
+						>
+							{isSuccessStatus(logDetails.status) ? (
+								<CheckCircleIcon className="h-3.5 w-3.5" />
+							) : (
+								<Cancel className="h-3.5 w-3.5" />
+							)}
+							{isSuccessStatus(logDetails.status)
+								? "Success"
+								: "Failed"}
 						</span>
-						<div className="mt-3 mb-1.5 flex items-center justify-between">
-							<span className="flex items-center gap-2 font-semibold text-gray-900">
+					</div>
+
+					{/* Metrics, user, timing */}
+					<div className="grid grid-cols-2 gap-x-4 gap-y-3 border-b px-4 py-3">
+						<DetailField
+							label="Latency"
+							value={`${logDetails.latency}ms`}
+						/>
+						<DetailField label="Tokens" value={logDetails.tokens} />
+						<DetailField label="User" value={logDetails.userName} />
+						<DetailField
+							label="User Id"
+							value={logDetails.userId}
+						/>
+						<DetailField
+							label="Start"
+							value={`${TimeDateFormatter(logDetails.startTime).date} ${TimeDateFormatter(logDetails.startTime).time}`}
+						/>
+						<DetailField
+							label="End"
+							value={`${TimeDateFormatter(logDetails.endTime).date} ${TimeDateFormatter(logDetails.endTime).time}`}
+						/>
+						<DetailField
+							label="Log Timestamp"
+							value={`${TimeDateFormatter(logDetails.logTimestamp).date} ${TimeDateFormatter(logDetails.logTimestamp).time}`}
+						/>
+					</div>
+
+					{/* Trace identifiers (full width, monospace for easy comparison) */}
+					<div className="flex flex-col gap-3 border-b px-4 py-3">
+						<DetailField
+							label="Session Id"
+							value={logDetails.sessionId}
+							mono
+						/>
+						<DetailField
+							label="Request Id"
+							value={logDetails.requestId}
+							mono
+						/>
+						<DetailField
+							label="Span Id"
+							value={logDetails.spanId}
+							mono
+						/>
+					</div>
+
+					{/* Request / Response payloads */}
+					<div className="px-4 py-3">
+						<div className="mb-1.5 flex items-center justify-between">
+							<span className="font-semibold text-gray-900">
 								Request
 							</span>
 							{showPromptExpandButton && (
-								<Button size="sm" onClick={handlePromptToggle}>
+								<Button
+									size="sm"
+									variant="outline"
+									onClick={handlePromptToggle}
+								>
 									{promptExpandAll ? (
 										<UnfoldLessIcon />
 									) : (
@@ -273,35 +400,28 @@ export const AuditLogsDetailDrawer = (props) => {
 								</Button>
 							)}
 						</div>
-						{/*
-						//theme.palette.background.paper2
-						*/}
-						<div className="mb-3 rounded-md border border-gray-300">
-							{(() => {
-								if (promptData) {
-									return (
-										<div className="overflow-x-auto rounded p-2 font-[inter] text-gray-900 text-sm leading-[1.4]">
-											<JSONTreeView
-												data={promptData}
-												expandAll={promptExpandAll}
-											/>
-										</div>
-									);
-								}
-								return (
-									<span className="font-normal text-sm leading-[1.43] tracking-normal">
-										{logDetails.request}
-									</span>
-								);
-							})()}
+						<div className="mb-4 rounded-md border border-gray-300">
+							{promptData ? (
+								<div className="overflow-x-auto rounded p-2 font-[inter] text-gray-900 text-sm leading-[1.4]">
+									<JSONTreeView
+										data={promptData}
+										expandAll={promptExpandAll}
+									/>
+								</div>
+							) : (
+								<div className="whitespace-pre-wrap break-words p-2 text-gray-900 text-sm leading-relaxed">
+									{logDetails.request}
+								</div>
+							)}
 						</div>
-						<div className="mt-0 mb-1.5 flex items-center justify-between">
-							<span className="flex items-center gap-2 font-semibold text-gray-900">
+						<div className="mb-1.5 flex items-center justify-between">
+							<span className="font-semibold text-gray-900">
 								Response
 							</span>
 							{showResponseExpandButton && (
 								<Button
 									size="sm"
+									variant="outline"
 									onClick={handleResponseToggle}
 								>
 									{responseExpandAll ? (
@@ -316,115 +436,18 @@ export const AuditLogsDetailDrawer = (props) => {
 							)}
 						</div>
 						<div className="rounded-md border border-gray-300 bg-[#FAFAFA]">
-							{(() => {
-								if (responseData) {
-									return (
-										<div className="overflow-x-auto rounded p-2 font-[inter] text-gray-900 text-sm leading-[1.4]">
-											<JSONTreeView
-												data={responseData}
-												expandAll={responseExpandAll}
-											/>
-										</div>
-									);
-								}
-								return (
-									<span className="whitespace-pre-wrap break-words text-primary leading-relaxed">
-										{logDetails.response}
-									</span>
-								);
-							})()}
-						</div>
-					</div>
-
-					<div
-						className="grid gap-3"
-						style={{
-							gridTemplateColumns: "1fr 1fr",
-							padding: "20px",
-						}}
-					>
-						<div className="flex flex-col gap-1">
-							<span className="font-normal text-gray-500 text-xs leading-[1.66]">
-								Engine Type
-							</span>
-							<span className="font-bold text-gray-900 text-sm leading-[1.43]">
-								{logDetails.engineType}
-							</span>
-						</div>
-						<div className="flex flex-col gap-1">
-							<span className="font-normal text-gray-500 text-xs leading-[1.66]">
-								Engine Name
-							</span>
-							<span className="font-bold text-gray-900 text-sm leading-[1.43]">
-								{logDetails.engineName}
-							</span>
-						</div>
-						<div className="flex flex-col gap-1">
-							<span className="font-normal text-gray-500 text-xs leading-[1.66]">
-								Latency
-							</span>
-							<span className="font-bold text-gray-900 text-sm leading-[1.43]">
-								{logDetails.latency}s
-							</span>
-						</div>
-						<div className="flex flex-col gap-1">
-							<span className="font-normal text-gray-500 text-xs leading-[1.66]">
-								Tokens
-							</span>
-							<span className="font-bold text-gray-900 text-sm leading-[1.43]">
-								{logDetails.tokens}
-							</span>
-						</div>
-						<div className="flex flex-col gap-1">
-							<span className="font-normal text-gray-500 text-xs leading-[1.66]">
-								Timestamp
-							</span>
-							<span className="font-bold text-gray-900 text-sm leading-[1.43]">
-								{`${TimeDateFormatter(logDetails.startTime).time} - ${
-									TimeDateFormatter(logDetails.endTime).time
-								}`}
-							</span>
-						</div>
-						<div className="flex flex-col gap-1">
-							<span className="font-normal text-gray-500 text-xs leading-[1.66]">
-								Request Status
-							</span>
-							<span className="font-normal text-gray-900 text-sm leading-[1.43]">
-								<div className="flex items-center gap-2">
-									{logDetails.status ? (
-										<CheckCircleIcon color="#2e7d32" />
-									) : (
-										<Cancel color="#da291c" />
-									)}
-									<span className="font-bold text-gray-900 text-sm leading-[1.43]">
-										{logDetails.status}
-									</span>
+							{responseData ? (
+								<div className="overflow-x-auto rounded p-2 font-[inter] text-gray-900 text-sm leading-[1.4]">
+									<JSONTreeView
+										data={responseData}
+										expandAll={responseExpandAll}
+									/>
 								</div>
-							</span>
-						</div>
-						<div className="flex flex-col gap-1">
-							<span className="font-normal text-gray-500 text-xs leading-[1.66]">
-								User Id
-							</span>
-							<span className="font-bold text-gray-900 text-sm leading-[1.43]">
-								{logDetails.userId}
-							</span>
-						</div>
-						<div className="flex flex-col gap-1">
-							<span className="font-normal text-gray-500 text-xs leading-[1.66]">
-								Session Id
-							</span>
-							<span className="font-bold text-gray-900 text-sm leading-[1.43]">
-								{logDetails.sessionId}
-							</span>
-						</div>
-						<div className="flex flex-col gap-1">
-							<span className="font-normal text-gray-500 text-xs leading-[1.66]">
-								Log Timestamp
-							</span>
-							<span className="font-bold text-gray-900 text-sm leading-[1.43]">
-								{`${TimeDateFormatter(logDetails.logTimestamp).date} ${TimeDateFormatter(logDetails.logTimestamp).time}`}
-							</span>
+							) : (
+								<div className="whitespace-pre-wrap break-words p-2 text-gray-900 text-sm leading-relaxed">
+									{logDetails.response}
+								</div>
+							)}
 						</div>
 					</div>
 				</div>

@@ -140,6 +140,8 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 	//Mirror in a ref so the zrender drag handlers (bound once) read the latest value.
 	const zoomSelectActiveRef = useRef(zoomSelectActive);
 	zoomSelectActiveRef.current = zoomSelectActive;
+	//Set by the chart effect; lets Reset / disarming wipe any stray selection masks.
+	const clearMasksRef = useRef<(() => void) | null>(null);
 	const grouped = rowMode !== "event";
 
 	//Parse + order the rows. Each row becomes one lane (top-to-bottom).
@@ -332,8 +334,13 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 					height: 16,
 					start: xZoom.start,
 					end: xZoom.end,
+					//Time is a continuous scale: "none" zooms the range and lets clip:true
+					//trim the bars, so long bars spanning the window still render.
+					filterMode: "none",
 				},
-				//Vertical scrollbar through rows (keeps the time axis pinned).
+				//Vertical scrollbar through rows (keeps the time axis pinned). "filter"
+				//(not "none") so a narrow row-window REMOVES out-of-range lanes instead of
+				//collapsing every bar onto the single visible ordinal band.
 				{
 					id: "yZoom",
 					type: "slider",
@@ -342,7 +349,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 					width: 14,
 					start: yZoom.start,
 					end: yZoom.end,
-					filterMode: "none",
+					filterMode: "filter",
 					brushSelect: false,
 					showDetail: false,
 				},
@@ -383,6 +390,9 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 				{
 					type: "custom",
 					clip: true,
+					//Tell the dataZooms which value dimensions map to each axis so their
+					//filterMode targets the right dimension (x = start..end, y = lane).
+					encode: { x: [0, 2], y: 1 },
 					data: seriesData,
 					renderItem: (
 						params: RenderItemParams,
@@ -442,18 +452,28 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 		//done with zrender events (rather than the toolbox feature) so it works reliably.
 		const zr = chart.getZr();
 		let dragStart: [number, number] | null = null;
-		let maskEl: echarts.graphic.Rect | null = null;
+		//Track EVERY mask we add so we can always remove all of them — a single
+		//reference can leak (e.g. a new drag starts over a leftover, or mouseup lands
+		//off-canvas so zrender never fires), stranding blue boxes on the chart.
+		const masks = new Set<echarts.graphic.Rect>();
+		//The mask currently being dragged (resized on mousemove).
+		let activeMask: echarts.graphic.Rect | null = null;
 		const clearMask = () => {
-			if (maskEl) {
-				zr.remove(maskEl);
-				maskEl = null;
+			for (const mask of masks) {
+				zr.remove(mask);
 			}
+			masks.clear();
+			activeMask = null;
 			dragStart = null;
 		};
+		//Expose cleanup so Reset and disarming the cursor can wipe any stray masks.
+		clearMasksRef.current = clearMask;
 		const onZrDown = (event: { offsetX: number; offsetY: number }) => {
 			if (!zoomSelectActiveRef.current) return;
+			//Remove any leftover selection before starting a fresh one.
+			clearMask();
 			dragStart = [event.offsetX, event.offsetY];
-			maskEl = new echarts.graphic.Rect({
+			const maskEl = new echarts.graphic.Rect({
 				shape: {
 					x: event.offsetX,
 					y: event.offsetY,
@@ -468,11 +488,13 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 				z: 100,
 				silent: true,
 			});
+			masks.add(maskEl);
+			activeMask = maskEl;
 			zr.add(maskEl);
 		};
 		const onZrMove = (event: { offsetX: number; offsetY: number }) => {
-			if (!dragStart || !maskEl) return;
-			maskEl.setShape({
+			if (!dragStart || !activeMask) return;
+			activeMask.setShape({
 				x: Math.min(dragStart[0], event.offsetX),
 				y: Math.min(dragStart[1], event.offsetY),
 				width: Math.abs(event.offsetX - dragStart[0]),
@@ -487,6 +509,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 			clearMask();
 			//Ignore tiny drags (treated as a click).
 			if (Math.abs(ex - sx) < 4 && Math.abs(ey - sy) < 4) return;
+			//Zoom the time (x) axis to the drawn span.
 			const x1 = chart.convertFromPixel(
 				{ xAxisIndex: 0 },
 				Math.min(sx, ex),
@@ -495,6 +518,17 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 				{ xAxisIndex: 0 },
 				Math.max(sx, ex),
 			) as number;
+			chart.dispatchAction({
+				type: "dataZoom",
+				dataZoomId: "xZoom",
+				startValue: x1,
+				endValue: x2,
+			});
+			//Also zoom the row (y) axis to the rows the rectangle covers. This is safe now
+			//that yZoom uses filterMode:"filter": out-of-window lanes are REMOVED rather than
+			//clamped onto the single visible ordinal band, so a thin selection narrows to
+			//those rows instead of collapsing every event onto one (the earlier bug came from
+			//filterMode:"none"). Skip if the drag fell outside the plottable row area.
 			const yTop = chart.convertFromPixel(
 				{ yAxisIndex: 0 },
 				Math.min(sy, ey),
@@ -503,24 +537,28 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 				{ yAxisIndex: 0 },
 				Math.max(sy, ey),
 			) as number;
-			chart.dispatchAction({
-				type: "dataZoom",
-				dataZoomId: "xZoom",
-				startValue: x1,
-				endValue: x2,
-			});
-			chart.dispatchAction({
-				type: "dataZoom",
-				dataZoomId: "yZoom",
-				startValue: Math.min(yTop, yBottom),
-				endValue: Math.max(yTop, yBottom),
-			});
+			const yStart = Math.min(yTop, yBottom);
+			const yEnd = Math.max(yTop, yBottom);
+			if (Number.isFinite(yStart) && Number.isFinite(yEnd)) {
+				chart.dispatchAction({
+					type: "dataZoom",
+					dataZoomId: "yZoom",
+					startValue: yStart,
+					endValue: yEnd,
+				});
+			}
 			//Stay armed so the user can keep drawing zoom regions until they toggle
 			//the highlight button off.
 		};
 		zr.on("mousedown", onZrDown);
 		zr.on("mousemove", onZrMove);
 		zr.on("mouseup", onZrUp);
+		//If the pointer is released anywhere (including outside the canvas, where zrender
+		//never fires mouseup), cancel the in-progress selection so no stray box is left.
+		const onWindowUp = () => {
+			if (dragStart) clearMask();
+		};
+		window.addEventListener("mouseup", onWindowUp);
 
 		//After any zoom (slider drag, rectangle highlight, or buttons) read the
 		//authoritative current windows off the chart so our state always matches what
@@ -555,6 +593,9 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 
 		return () => {
 			window.removeEventListener("resize", handleResize);
+			window.removeEventListener("mouseup", onWindowUp);
+			clearMask();
+			clearMasksRef.current = null;
 			resizeObserver.disconnect();
 			chart.dispose();
 			chartInstanceRef.current = null;
@@ -598,11 +639,17 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 	//Arm/disarm the rectangle-zoom cursor. While armed, dragging on the chart zooms
 	//into that region; toggling off restores normal click-to-open-drawer behavior.
 	const toggleHighlightZoom = () => {
-		setZoomSelectActive((active) => !active);
+		setZoomSelectActive((active) => {
+			//Disarming clears any selection box still on screen.
+			if (active) clearMasksRef.current?.();
+			return !active;
+		});
 	};
 
 	//Restore the full time + row range.
 	const resetZoom = () => {
+		//Wipe any stray selection masks that may have been left on the chart.
+		clearMasksRef.current?.();
 		setXZoom({ start: 0, end: 100 });
 		setYZoom({ start: 0, end: 100 });
 		chartInstanceRef.current?.dispatchAction({
