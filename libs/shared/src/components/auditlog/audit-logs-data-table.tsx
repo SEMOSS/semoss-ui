@@ -1,10 +1,11 @@
 import {
 	CircleX as Cancel,
+	ChevronDown,
 	ChevronLeft,
 	ChevronRight,
 	CircleCheck as CircleCheckIcon,
 } from "lucide-react"; // Example icons
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
 	Button,
 	Select,
@@ -34,6 +35,19 @@ interface AuditLogsDataTableProps {
 	rowsPerPage: number;
 	onPaginationChange: (page: number, rowsPerPage: number) => void;
 }
+//Row grouping mirrors the timeline: ungrouped, or one collapsible group per
+//spanId / requestId. Grouping is client-side over the current page (the same set
+//the timeline groups), since filtering + pagination are server-side.
+type RowGroupMode = "none" | "span" | "request";
+const GROUP_MODE_LABELS: Record<RowGroupMode, string> = {
+	none: "No grouping",
+	span: "Group by span",
+	request: "Group by request",
+};
+const TABLE_COLUMN_COUNT = 11;
+//Matches the timeline: success is truthy and not the string "false".
+const isSuccess = (status: EventData["status"]) =>
+	Boolean(status) && status !== "false";
 //truncate text when maxlength is reached
 const ellipsed = (text: string | null | undefined, maxLength = 50) => {
 	if (!text) return "";
@@ -53,6 +67,59 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 }) => {
 	const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null); //setting event when row clicked, and event will have all the rowdata
 	const [drawerOpen, setDrawerOpen] = useState(false); //drawer show or close
+	const [groupMode, setGroupMode] = useState<RowGroupMode>("none");
+	//Collapsed group keys (default = expanded, so rows stay visible when grouping on).
+	const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
+		() => new Set(),
+	);
+
+	//Build the groups for the current page when grouping is on, preserving
+	//first-appearance order and rolling up count / latency / tokens / status.
+	const groups = useMemo(() => {
+		if (groupMode === "none") return null;
+		const keyOf = (event: EventData) =>
+			groupMode === "request"
+				? event.requestId || "—"
+				: event.spanId || "—";
+		const order: string[] = [];
+		const byKey = new Map<string, EventData[]>();
+		for (const event of logs) {
+			const key = keyOf(event);
+			if (!byKey.has(key)) {
+				byKey.set(key, []);
+				order.push(key);
+			}
+			byKey.get(key)?.push(event);
+		}
+		return order.map((key) => {
+			const events = byKey.get(key) ?? [];
+			return {
+				key,
+				events,
+				totalLatency: events.reduce(
+					(sum, e) => sum + (Number(e.latency) || 0),
+					0,
+				),
+				totalTokens: events.reduce(
+					(sum, e) => sum + (Number(e.tokens) || 0),
+					0,
+				),
+				hasFailure: events.some((e) => !isSuccess(e.status)),
+			};
+		});
+	}, [logs, groupMode]);
+
+	const toggleGroup = useCallback((key: string) => {
+		setCollapsedGroups((prev) => {
+			const next = new Set(prev);
+			if (next.has(key)) {
+				next.delete(key);
+			} else {
+				next.add(key);
+			}
+			return next;
+		});
+	}, []);
 
 	//onclick drawer has to open, it is handled here
 	const handleRowClick = useCallback((event: EventData) => {
@@ -74,6 +141,70 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 			onPaginationChange(0, newRowsPerPage);
 		},
 		[onPaginationChange],
+	);
+
+	//A single event row. `indent` left-pads the first cell when shown under a group.
+	const renderEventRow = (
+		event: EventData,
+		index: number,
+		indent = false,
+	) => (
+		<TableRow
+			key={`Log-${event.requestId ?? event.endTime}-${index}`}
+			className="cursor-pointer hover:[background-color:rgb(245,249,254)!important] [a&]:hover:bg-primary"
+			onClick={() => handleRowClick(event)}
+		>
+			<TableCell className={indent ? "pl-8" : undefined}>
+				<span title={event.userId} className="text-sm">
+					{ellipsed(event.userName || event.userId, 23)}
+				</span>
+			</TableCell>
+			<TableCell>
+				<span title={event.sessionId} className="text-sm">
+					{ellipsed(event.sessionId, 23)}
+				</span>
+			</TableCell>
+			<TableCell>
+				<span title={event.request} className="text-sm">
+					{ellipsed(event.request)}
+				</span>
+			</TableCell>
+			<TableCell>
+				<span title={event.response} className="text-sm">
+					{ellipsed(event.response)}
+				</span>
+			</TableCell>
+			<TableCell>
+				<span title={event.methodName} className="text-sm">
+					{event.methodName}
+				</span>
+			</TableCell>
+			<TableCell>
+				<span className="text-sm">{event.engineType}</span>
+			</TableCell>
+			<TableCell>
+				<span className="text-sm">{event.engineName}</span>
+			</TableCell>
+			<TableCell>
+				<span className="text-sm">{event.latency}ms</span>
+			</TableCell>
+			<TableCell>
+				<span className="text-sm">{event.tokens}</span>
+			</TableCell>
+			<TableCell>
+				<span className="text-xs">{`${TimeDateFormatter(event.startTime).time} - ${TimeDateFormatter(event.endTime).time}`}</span>
+			</TableCell>
+			<TableCell className="text-center">
+				{isSuccess(event.status) ? (
+					<CircleCheckIcon
+						className="inline-block h-4 w-4"
+						color="#2e7d32"
+					/>
+				) : (
+					<Cancel className="inline-block h-4 w-4" color="#da291c" />
+				)}
+			</TableCell>
+		</TableRow>
 	);
 
 	const totalPages = Math.max(1, Math.ceil(totalCount / rowsPerPage));
@@ -103,6 +234,25 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 					<span className="font-semibold text-lg">
 						Prompt & Response Timeline
 					</span>
+					<Select
+						value={groupMode}
+						onValueChange={(value) =>
+							setGroupMode(value as RowGroupMode)
+						}
+					>
+						<SelectTrigger className="h-8 w-[160px] text-sm">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{(
+								Object.keys(GROUP_MODE_LABELS) as RowGroupMode[]
+							).map((mode) => (
+								<SelectItem key={mode} value={mode}>
+									{GROUP_MODE_LABELS[mode]}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
 				</div>
 				<div className="border-b p-4">
 					<Table>
@@ -166,93 +316,91 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{logs.map((event, index) => (
-								<TableRow
-									key={`Log-${event.requestId ?? event.endTime}-${index}`}
-									className="cursor-pointer hover:[background-color:rgb(245,249,254)!important] [a&]:hover:bg-primary"
-									onClick={() => handleRowClick(event)}
-								>
-									<TableCell>
-										<span
-											title={event.userId}
-											className="text-sm"
-										>
-											{ellipsed(
-												event.userName || event.userId,
-												23,
-											)}
-										</span>
-									</TableCell>
-									<TableCell>
-										<span
-											title={event.sessionId}
-											className="text-sm"
-										>
-											{ellipsed(event.sessionId, 23)}
-										</span>
-									</TableCell>
-									<TableCell>
-										<span
-											title={event.request}
-											className="text-sm"
-										>
-											{ellipsed(event.request)}
-										</span>
-									</TableCell>
-									<TableCell>
-										<span
-											title={event.response}
-											className="text-sm"
-										>
-											{ellipsed(event.response)}
-										</span>
-									</TableCell>
-									<TableCell>
-										<span
-											title={event.methodName}
-											className="text-sm"
-										>
-											{event.methodName}
-										</span>
-									</TableCell>
-									<TableCell>
-										<span className="text-sm">
-											{event.engineType}
-										</span>
-									</TableCell>
-									<TableCell>
-										<span className="text-sm">
-											{event.engineName}
-										</span>
-									</TableCell>
-									<TableCell>
-										<span className="text-sm">
-											{event.latency}ms
-										</span>
-									</TableCell>
-									<TableCell>
-										<span className="text-sm">
-											{event.tokens}
-										</span>
-									</TableCell>
-									<TableCell>
-										<span className="text-xs">{`${TimeDateFormatter(event.startTime).time} - ${TimeDateFormatter(event.endTime).time}`}</span>
-									</TableCell>
-									<TableCell className="text-center">
-										{event.status ? (
-											<CircleCheckIcon
-												className="inline-block h-4 w-4"
-												color="#2e7d32"
-											/>
-										) : (
-											<Cancel
-												className="inline-block h-4 w-4"
-												color="#da291c"
-											/>
-										)}
-									</TableCell>
-								</TableRow>
-							))}
+							{groups
+								? groups.flatMap((group) => {
+										const collapsed = collapsedGroups.has(
+											group.key,
+										);
+										const rows = [
+											<TableRow
+												key={`group-${group.key}`}
+												className="cursor-pointer bg-[#F5F9FE] hover:[background-color:rgb(236,243,252)!important]"
+												onClick={() =>
+													toggleGroup(group.key)
+												}
+											>
+												<TableCell
+													colSpan={TABLE_COLUMN_COUNT}
+												>
+													<div className="flex items-center gap-2">
+														{collapsed ? (
+															<ChevronRight className="rtl:-scale-x-100 h-4 w-4 shrink-0 text-gray-500" />
+														) : (
+															<ChevronDown className="h-4 w-4 shrink-0 text-gray-500" />
+														)}
+														<span className="font-semibold text-primary text-sm">
+															{groupMode ===
+															"request"
+																? "Request"
+																: "Span"}
+														</span>
+														<span
+															title={group.key}
+															className="font-mono text-gray-700 text-sm"
+														>
+															{ellipsed(
+																group.key,
+																32,
+															)}
+														</span>
+														<span className="ml-2 text-gray-500 text-xs">
+															{
+																group.events
+																	.length
+															}{" "}
+															{group.events
+																.length === 1
+																? "event"
+																: "events"}{" "}
+															·{" "}
+															{group.totalLatency}
+															ms ·{" "}
+															{group.totalTokens}{" "}
+															tokens
+														</span>
+														{group.hasFailure ? (
+															<Cancel
+																className="h-4 w-4 shrink-0"
+																color="#da291c"
+															/>
+														) : (
+															<CircleCheckIcon
+																className="h-4 w-4 shrink-0"
+																color="#2e7d32"
+															/>
+														)}
+													</div>
+												</TableCell>
+											</TableRow>,
+										];
+										if (!collapsed) {
+											group.events.forEach(
+												(event, index) => {
+													rows.push(
+														renderEventRow(
+															event,
+															index,
+															true,
+														),
+													);
+												},
+											);
+										}
+										return rows;
+									})
+								: logs.map((event, index) =>
+										renderEventRow(event, index),
+									)}
 						</TableBody>
 					</Table>
 				</div>
