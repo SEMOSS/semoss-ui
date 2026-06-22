@@ -37,14 +37,14 @@ interface GithubInstallationPickerProps {
 	/** Label for the final confirm button (e.g. "Connect repository"). */
 	confirmLabel: string;
 	/**
-	 * Called with the chosen installation, repo, and tracked branch once the user
-	 * confirms. The parent owns the actual `selectRepo` call so it can refresh the
-	 * tab afterwards.
+	 * Called with the chosen installation, repo, tracked branch, and optional
+	 * subdir once the user confirms. The parent owns the actual `selectRepo` call.
 	 */
 	onConfirm: (
 		installation: GithubInstallation,
 		repo: GithubRepo,
 		branch: string,
+		subdir: string,
 	) => void;
 	/**
 	 * Kicks off a fresh GitHub App install on a new account (the existing install
@@ -204,8 +204,8 @@ export const GithubInstallationPicker = ({
 					installationId={String(selectedInstallation.installationId)}
 					isSubmitting={isSubmitting}
 					confirmLabel={confirmLabel}
-					onConfirm={(repo, branch) =>
-						onConfirm(selectedInstallation, repo, branch)
+					onConfirm={(repo, branch, subdir) =>
+						onConfirm(selectedInstallation, repo, branch, subdir)
 					}
 					manageOnGithubUrl={installationSettingsUrl(
 						selectedInstallation,
