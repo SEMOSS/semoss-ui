@@ -94,7 +94,7 @@ export class RootStore {
 				enableModelSelect: true,
 				enableAgent: true,
 				enableSuggestions: false,
-				enablePlan: false,
+				enableAgentHarness: false,
 				enableRewrite: true,
 				enablePromptOptimizer: true,
 				enableDarkMode: true,
@@ -256,6 +256,9 @@ export class RootStore {
 			name: theme?.name || this._store.theme.name,
 			banner: theme?.banner || this._store.theme.banner,
 			description: theme?.description || this._store.theme.description,
+			fileDragDisclaimer:
+				theme?.fileDragDisclaimer ??
+				this._store.theme.fileDragDisclaimer,
 			variables: {
 				...this._store.theme.variables,
 				...(theme?.variables || {}),

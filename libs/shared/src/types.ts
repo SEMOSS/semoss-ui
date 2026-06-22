@@ -25,7 +25,9 @@ export interface Engine {
 export interface App {
 	project_id: string;
 	project_name: string;
+	project_display_name?: string;
 	description?: string;
+	user_permission?: number;
 }
 
 /**
@@ -40,6 +42,12 @@ export interface ThemeMap {
 
 		/** Description of the app */
 		description: string;
+
+		/**
+		 * Optional disclaimer shown in the file drag overlay.
+		 * When omitted, the description is hidden entirely.
+		 */
+		fileDragDisclaimer?: string;
 
 		/** Styles of the app */
 		variables: {
@@ -102,6 +110,7 @@ export interface ThemeMap {
 				path: string;
 				url: string;
 				embed: boolean;
+				tooltip?: string;
 			}[];
 			footerItems: {
 				name: string;
@@ -109,6 +118,7 @@ export interface ThemeMap {
 				path: string;
 				url: string;
 				embed: boolean;
+				tooltip?: string;
 			}[];
 		};
 
@@ -257,7 +267,8 @@ export interface ThemeMap {
 			enableModelSelect?: boolean;
 			enableAgent?: boolean;
 			enableSuggestions?: boolean;
-			enablePlan?: boolean;
+			/** Whether to enable the server-side agent harness mode (RunAgent) in the chat input. */
+			enableAgentHarness?: boolean;
 			enableRewrite?: boolean;
 			enableDarkMode?: boolean;
 			enablePromptOptimizer?: boolean;
@@ -307,4 +318,57 @@ export interface User {
 export interface UserAccessRequest {
 	id: string;
 	permission: Role;
+}
+
+export interface MCP {
+	/** Type of the mcp */
+	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION" | "MODEL" | "VECTOR";
+	/** Id of the mcp */
+	id: string;
+	/** Name of the mcp */
+	name: string;
+	/** Engine subtype (e.g. POSTGRES, OPEN_AI) */
+	subtype?: string;
+	/** Description of the mcp */
+	description?: string;
+	/** Tags of the mcp */
+	tags: string[];
+	permission: "READ_ONLY" | "EDIT" | "OWNER";
+}
+
+export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {
+	/** Flag to indicate if this MCP comes from a workspace */
+	fromWorkspace?: boolean;
+};
+
+export interface ProjectDependency {
+	engine_type:
+		| "PROJECT"
+		| "STORAGE"
+		| "DATABASE"
+		| "FUNCTION"
+		| "MODEL"
+		| "VECTOR";
+	engine_id: string;
+	engine_name: string;
+	engine_subtype?: string;
+	description?: string;
+	engine_discoverable?: boolean;
+	permission_name?: "READ_ONLY" | "EDIT" | "OWNER";
+	engine_global?: boolean;
+	access_permission?: number;
+	tags?: string;
+	can_view_dependencies?: boolean;
+}
+
+export interface Prompt {
+	id: string;
+	createdBy: string;
+	dateCreated: string;
+	version: number;
+	intent: string;
+	title: string;
+	context: string;
+	tags: string[];
+	global: boolean;
 }

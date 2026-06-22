@@ -1,9 +1,12 @@
+// Ordered by UTF code-point of the label (the order shown in the playground
+// and terminal settings language pickers, which map over this list directly).
 export const LANGUAGES = [
 	{ code: "en", label: "English" },
 	{ code: "es", label: "Español" },
 	{ code: "fr", label: "Français" },
-	{ code: "hi", label: "हिन्दी" },
+	{ code: "nl", label: "Nederlands" },
 	{ code: "ar", label: "العربية" },
+	{ code: "hi", label: "हिन्दी" },
 	{ code: "ja", label: "日本語" },
 ];
 

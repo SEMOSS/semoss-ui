@@ -86,7 +86,15 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 							{configStore.store.user.name}
 						</span>
 					</div>
-
+					{configStore.store.user.lastLogin &&
+						configStore.store.user.lastLogin !== "null" && (
+							<div className="flex items-center justify-center border-border border-b px-4 py-2">
+								<span className="text-muted-foreground text-xs">
+									Last login:{" "}
+									{configStore.store.user.lastLogin} UTC
+								</span>
+							</div>
+						)}
 					{/* Logout button row */}
 					<div className="flex items-center justify-center border-border border-b px-4 py-3">
 						<Button
