@@ -36,7 +36,11 @@
 		"myAccount": "My account",
 		"organization": "Organization",
 		"organizationLabel": "Organization",
-		"organizationPlaceholder": "my-github-org"
+		"organizationPlaceholder": "my-github-org",
+		"visibilityLabel": "Visibility",
+		"public": "Public",
+		"private": "Private",
+		"visibilityHelp": "Public apps can be installed on any account or organization. Private apps can only be installed on the account that owns them."
 	},
 	"status": {
 		"loading": "Loading GitHub App configuration...",
@@ -124,6 +128,29 @@
 			"cancel": "Cancel",
 			"confirm": "Disconnect"
 		},
+		"connectDialog": {
+			"title": "Connect to GitHub",
+			"description": "Choose a GitHub App installation, then pick the repository this project should sync with.",
+			"confirm": "Connect repository"
+		},
+		"installPicker": {
+			"loading": "Loading GitHub installations...",
+			"loadFailed": "Couldn't load GitHub installations.",
+			"retry": "Retry",
+			"selectLabel": "Choose an installation",
+			"accountTypeOrganization": "Organization",
+			"accountTypeUser": "Personal account",
+			"suspended": "Suspended",
+			"suspendedTooltip": "This installation is suspended on GitHub and can't be used until it's reactivated.",
+			"backToInstallations": "Installations",
+			"authTitle": "Authorize GitHub",
+			"authDescription": "Authorize your GitHub access to list the installations and repositories you can link.",
+			"authorize": "Authorize GitHub",
+			"installApp": "Install the GitHub App",
+			"installAnother": "Install on another account",
+			"emptyTitle": "No installations found",
+			"emptyDescription": "The GitHub App isn't installed on any of your accounts yet. Install it to connect a repository."
+		},
 		"picker": {
 			"searchPlaceholder": "Search repositories...",
 			"loading": "Loading repositories...",
@@ -149,7 +176,8 @@
 			"disconnectFailed": "Failed to disconnect the project.",
 			"deliveriesFailed": "Failed to load webhook activity.",
 			"branchUpdated": "Updated the tracked branch.",
-			"branchFailed": "Failed to set the tracked branch."
+			"branchFailed": "Failed to set the tracked branch.",
+			"needsAuth": "GitHub authorization required — sending you to GitHub to authorize..."
 		}
 	}
 }

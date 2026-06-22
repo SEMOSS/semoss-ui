@@ -11,7 +11,7 @@ import {
 	SelectValue,
 	Spinner,
 } from "@semoss/ui/next";
-import { getInstallBranches } from "@/api/github";
+import { getInstallBranches, handleNeedsAuth } from "@/api/github";
 
 interface GithubBranchSelectProps {
 	projectId: string;
@@ -67,14 +67,20 @@ export const GithubBranchSelect = ({
 			if (next.length > 0 && !next.includes(valueRef.current)) {
 				onChangeRef.current(next[0]);
 			}
-		} catch {
-			// Fall back to free-text entry; the user can retry or type a branch.
+		} catch (error) {
+			// A needsAuth 401 redirects to re-authorize; other failures (e.g. 502
+			// when GitHub is unreachable) fall back to free-text entry.
+			if (
+				handleNeedsAuth(error, projectId, t("project.toasts.needsAuth"))
+			) {
+				return;
+			}
 			setHasError(true);
 			setBranches([]);
 		} finally {
 			setIsLoading(false);
 		}
-	}, [projectId, installationId, repoFullName]);
+	}, [projectId, installationId, repoFullName, t]);
 
 	useEffect(() => {
 		loadBranches();

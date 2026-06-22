@@ -36,7 +36,11 @@
 		"myAccount": "Mon compte",
 		"organization": "Organisation",
 		"organizationLabel": "Organisation",
-		"organizationPlaceholder": "mon-org-github"
+		"organizationPlaceholder": "mon-org-github",
+		"visibilityLabel": "Visibilité",
+		"public": "Publique",
+		"private": "Privée",
+		"visibilityHelp": "Les applications publiques peuvent être installées sur n'importe quel compte ou organisation. Les applications privées ne peuvent être installées que sur le compte qui les possède."
 	},
 	"status": {
 		"loading": "Chargement de la configuration de l'application GitHub...",
@@ -124,6 +128,29 @@
 			"cancel": "Annuler",
 			"confirm": "Déconnecter"
 		},
+		"connectDialog": {
+			"title": "Se connecter à GitHub",
+			"description": "Choisissez une installation de l'application GitHub, puis le dépôt avec lequel ce projet doit se synchroniser.",
+			"confirm": "Connecter le dépôt"
+		},
+		"installPicker": {
+			"loading": "Chargement des installations GitHub...",
+			"loadFailed": "Impossible de charger les installations GitHub.",
+			"retry": "Réessayer",
+			"selectLabel": "Choisissez une installation",
+			"accountTypeOrganization": "Organisation",
+			"accountTypeUser": "Compte personnel",
+			"suspended": "Suspendue",
+			"suspendedTooltip": "Cette installation est suspendue sur GitHub et ne peut pas être utilisée tant qu'elle n'est pas réactivée.",
+			"backToInstallations": "Installations",
+			"authTitle": "Autoriser GitHub",
+			"authDescription": "Autorisez votre accès GitHub pour lister les installations et les dépôts que vous pouvez relier.",
+			"authorize": "Autoriser GitHub",
+			"installApp": "Installer l'application GitHub",
+			"installAnother": "Installer sur un autre compte",
+			"emptyTitle": "Aucune installation trouvée",
+			"emptyDescription": "L'application GitHub n'est encore installée sur aucun de vos comptes. Installez-la pour connecter un dépôt."
+		},
 		"picker": {
 			"searchPlaceholder": "Rechercher des dépôts...",
 			"loading": "Chargement des dépôts...",
@@ -149,7 +176,8 @@
 			"disconnectFailed": "Échec de la déconnexion du projet.",
 			"deliveriesFailed": "Échec du chargement de l'activité des webhooks.",
 			"branchUpdated": "Branche suivie mise à jour.",
-			"branchFailed": "Échec de la définition de la branche suivie."
+			"branchFailed": "Échec de la définition de la branche suivie.",
+			"needsAuth": "Autorisation GitHub requise — redirection vers GitHub pour autoriser..."
 		}
 	}
 }

@@ -36,7 +36,11 @@
 		"myAccount": "حسابي",
 		"organization": "مؤسسة",
 		"organizationLabel": "المؤسسة",
-		"organizationPlaceholder": "my-github-org"
+		"organizationPlaceholder": "my-github-org",
+		"visibilityLabel": "الظهور",
+		"public": "عام",
+		"private": "خاص",
+		"visibilityHelp": "يمكن تثبيت التطبيقات العامة على أي حساب أو مؤسسة. أما التطبيقات الخاصة فلا يمكن تثبيتها إلا على الحساب المالك لها."
 	},
 	"status": {
 		"loading": "جارٍ تحميل إعدادات تطبيق GitHub...",
@@ -124,6 +128,29 @@
 			"cancel": "إلغاء",
 			"confirm": "قطع الاتصال"
 		},
+		"connectDialog": {
+			"title": "الاتصال بـ GitHub",
+			"description": "اختر تثبيت تطبيق GitHub، ثم اختر المستودع الذي ينبغي أن يتزامن معه هذا المشروع.",
+			"confirm": "ربط المستودع"
+		},
+		"installPicker": {
+			"loading": "جارٍ تحميل تثبيتات GitHub...",
+			"loadFailed": "تعذّر تحميل تثبيتات GitHub.",
+			"retry": "إعادة المحاولة",
+			"selectLabel": "اختر تثبيتًا",
+			"accountTypeOrganization": "مؤسسة",
+			"accountTypeUser": "حساب شخصي",
+			"suspended": "معلّق",
+			"suspendedTooltip": "هذا التثبيت معلّق على GitHub ولا يمكن استخدامه حتى تتم إعادة تفعيله.",
+			"backToInstallations": "التثبيتات",
+			"authTitle": "تفويض GitHub",
+			"authDescription": "فوّض وصولك إلى GitHub لعرض التثبيتات والمستودعات التي يمكنك ربطها.",
+			"authorize": "تفويض GitHub",
+			"installApp": "تثبيت تطبيق GitHub",
+			"installAnother": "التثبيت على حساب آخر",
+			"emptyTitle": "لم يتم العثور على تثبيتات",
+			"emptyDescription": "لم يتم تثبيت تطبيق GitHub على أي من حساباتك بعد. ثبّته لربط مستودع."
+		},
 		"picker": {
 			"searchPlaceholder": "ابحث عن المستودعات...",
 			"loading": "جارٍ تحميل المستودعات...",
@@ -149,7 +176,8 @@
 			"disconnectFailed": "فشل قطع اتصال المشروع.",
 			"deliveriesFailed": "فشل تحميل نشاط خطافات الويب.",
 			"branchUpdated": "تم تحديث الفرع المتتبَّع.",
-			"branchFailed": "فشل تعيين الفرع المتتبَّع."
+			"branchFailed": "فشل تعيين الفرع المتتبَّع.",
+			"needsAuth": "مطلوب تفويض GitHub — جارٍ إرسالك إلى GitHub للتفويض..."
 		}
 	}
 }

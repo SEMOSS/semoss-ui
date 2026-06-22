@@ -36,7 +36,11 @@
 		"myAccount": "自分のアカウント",
 		"organization": "組織",
 		"organizationLabel": "組織",
-		"organizationPlaceholder": "my-github-org"
+		"organizationPlaceholder": "my-github-org",
+		"visibilityLabel": "公開設定",
+		"public": "公開",
+		"private": "非公開",
+		"visibilityHelp": "公開アプリは任意のアカウントまたは組織にインストールできます。非公開アプリは所有するアカウントにのみインストールできます。"
 	},
 	"status": {
 		"loading": "GitHub アプリ設定を読み込み中...",
@@ -124,6 +128,29 @@
 			"cancel": "キャンセル",
 			"confirm": "切断"
 		},
+		"connectDialog": {
+			"title": "GitHub に接続",
+			"description": "GitHub アプリのインストールを選択し、このプロジェクトを同期するリポジトリを選びます。",
+			"confirm": "リポジトリを接続"
+		},
+		"installPicker": {
+			"loading": "GitHub のインストールを読み込んでいます...",
+			"loadFailed": "GitHub のインストールを読み込めませんでした。",
+			"retry": "再試行",
+			"selectLabel": "インストールを選択",
+			"accountTypeOrganization": "組織",
+			"accountTypeUser": "個人アカウント",
+			"suspended": "停止中",
+			"suspendedTooltip": "このインストールは GitHub で停止されており、再有効化されるまで使用できません。",
+			"backToInstallations": "インストール",
+			"authTitle": "GitHub を認可",
+			"authDescription": "リンクできるインストールとリポジトリを一覧表示するには、GitHub へのアクセスを認可してください。",
+			"authorize": "GitHub を認可",
+			"installApp": "GitHub アプリをインストール",
+			"installAnother": "別のアカウントにインストール",
+			"emptyTitle": "インストールが見つかりません",
+			"emptyDescription": "GitHub アプリはまだどのアカウントにもインストールされていません。リポジトリを接続するにはインストールしてください。"
+		},
 		"picker": {
 			"searchPlaceholder": "リポジトリを検索...",
 			"loading": "リポジトリを読み込み中...",
@@ -149,7 +176,8 @@
 			"disconnectFailed": "プロジェクトの切断に失敗しました。",
 			"deliveriesFailed": "Webhook アクティビティの読み込みに失敗しました。",
 			"branchUpdated": "追跡ブランチを更新しました。",
-			"branchFailed": "追跡ブランチの設定に失敗しました。"
+			"branchFailed": "追跡ブランチの設定に失敗しました。",
+			"needsAuth": "GitHub の認可が必要です — 認可のために GitHub に移動しています..."
 		}
 	}
 }

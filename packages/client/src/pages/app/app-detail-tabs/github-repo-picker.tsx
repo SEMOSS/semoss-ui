@@ -10,7 +10,11 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
-import { type GithubRepo, getInstallRepos } from "@/api/github";
+import {
+	type GithubRepo,
+	getInstallRepos,
+	handleNeedsAuth,
+} from "@/api/github";
 import { GithubBranchSelect } from "./github-branch-select";
 
 interface GithubRepoPickerProps {
@@ -70,6 +74,17 @@ export const GithubRepoPicker = ({
 			})
 			.catch((error: Error) => {
 				if (!cancelled) {
+					// A needsAuth 401 redirects to re-authorize; only real
+					// failures surface as a toast.
+					if (
+						handleNeedsAuth(
+							error,
+							projectId,
+							t("project.toasts.needsAuth"),
+						)
+					) {
+						return;
+					}
 					toast.error(
 						error.message || t("project.toasts.reposFailed"),
 					);
@@ -198,15 +213,21 @@ export const GithubRepoPicker = ({
 				<Button
 					asChild
 					variant="link"
-					className="h-auto justify-start px-0"
+					// `shrink min-w-0` overrides the Button base's `shrink-0` so
+					// the link can shrink in the row and its (long, nowrap) text
+					// truncates instead of pushing the confirm button past the
+					// dialog's right edge.
+					className="h-auto min-w-0 max-w-full shrink justify-start px-0"
 				>
 					<a
 						href={manageOnGithubUrl}
 						target="_blank"
 						rel="noopener noreferrer"
 					>
-						<ExternalLink className="mr-2 size-4" />
-						{t("project.picker.manageOnGithub")}
+						<ExternalLink className="mr-2 size-4 shrink-0" />
+						<span className="truncate">
+							{t("project.picker.manageOnGithub")}
+						</span>
 					</a>
 				</Button>
 				<Button
@@ -215,7 +236,7 @@ export const GithubRepoPicker = ({
 					disabled={
 						!selectedId || !selectedBranch.trim() || isSubmitting
 					}
-					className="w-full sm:w-auto"
+					className="w-full shrink-0 sm:w-auto"
 				>
 					{isSubmitting ? <Spinner className="mr-2 size-4" /> : null}
 					{confirmLabel}
