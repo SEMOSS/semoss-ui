@@ -281,7 +281,6 @@ export const InsightSettingsPage = () => {
 								)}
 								hideFavorite={true}
 								isDiscoverable={true}
-								showLogs={false}
 								enableGlobalAction={canManage}
 								global={() => {
 									void setInsightGlobal(insight);
