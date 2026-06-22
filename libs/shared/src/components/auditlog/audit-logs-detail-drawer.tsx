@@ -423,14 +423,7 @@ export const AuditLogsDetailDrawer = (props) => {
 								Log Timestamp
 							</span>
 							<span className="font-bold text-gray-900 text-sm leading-[1.43]">
-								{
-									TimeDateFormatter(logDetails.logTimestamp)
-										.time
-								}{" "}
-								{
-									TimeDateFormatter(logDetails.logTimestamp)
-										.date
-								}
+								{`${TimeDateFormatter(logDetails.logTimestamp).date} ${TimeDateFormatter(logDetails.logTimestamp).time}`}
 							</span>
 						</div>
 					</div>

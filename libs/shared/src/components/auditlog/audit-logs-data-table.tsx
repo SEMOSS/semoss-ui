@@ -3,21 +3,10 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	CircleCheck as CircleCheckIcon,
-	Filter,
-	Search,
-	X,
 } from "lucide-react"; // Example icons
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import {
-	Badge,
 	Button,
-	Checkbox,
-	InputGroup,
-	InputGroupAddon,
-	InputGroupInput,
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
 	Select,
 	SelectContent,
 	SelectItem,
@@ -37,15 +26,6 @@ import { AuditLogsDetailDrawer } from "./audit-logs-detail-drawer";
 import type { EventData } from "./common";
 import { TimeDateFormatter } from "./common";
 
-//filter state basic structre
-interface FilterState {
-	engineType: string[];
-	engineName: string[];
-	status: string[];
-	latencyRange: string[];
-	tokenRange: string[];
-}
-
 //table data props
 interface AuditLogsDataTableProps {
 	logs: EventData[];
@@ -55,20 +35,15 @@ interface AuditLogsDataTableProps {
 	onPaginationChange: (page: number, rowsPerPage: number) => void;
 }
 //truncate text when maxlength is reached
-const ellipsed = (text: string | null, maxLength = 50) => {
+const ellipsed = (text: string | null | undefined, maxLength = 50) => {
 	if (!text) return "";
 	return text.length > maxLength
 		? `${text.substring(0, maxLength - 3)}...`
 		: text;
 };
-//to convert between true/false to success/failed or viceversa
-const STATUS_LABEL_CONVERSION = {
-	Success: true,
-	Failed: false,
-	true: "Success",
-	false: "Failed",
-};
-//handling table data and work with table related events
+//handling table data and work with table related events. Filtering and search are
+//performed server-side (see AuditLogFilter + AuditLogsReport); this component only
+//renders the current page and drives server-side pagination.
 export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	logs = [],
 	totalCount = 0,
@@ -76,224 +51,15 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	rowsPerPage,
 	onPaginationChange,
 }) => {
-	// State Management
 	const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null); //setting event when row clicked, and event will have all the rowdata
 	const [drawerOpen, setDrawerOpen] = useState(false); //drawer show or close
-	const [searchQuery, setSearchQuery] = useState(""); //user searched query
-	const [appliedFilters, setAppliedFilters] = useState<FilterState>({
-		engineType: [],
-		engineName: [],
-		status: [],
-		latencyRange: [],
-		tokenRange: [],
-	}); //after clicking on popover apply button, values from tempFilters will be added to here
-	const [tempFilters, setTempFilters] = useState<FilterState>({
-		engineType: [],
-		engineName: [],
-		status: [],
-		latencyRange: [],
-		tokenRange: [],
-	}); //table column level filters for enginetype, name,etc
-	const [popoverColumn, setPopoverColumn] = useState<
-		keyof FilterState | null
-	>(null); //set the popover column, so popover will display over respective column
-	const [popoverOpen, setPopoverOpen] = useState(false); //show popover open or not
 
-	// Generate Filter Options (same logic as before)
-	const filterOptions = useMemo(() => {
-		return {
-			engineType: [
-				...new Set(
-					logs?.map((log) => log.engineType).filter(Boolean) || [],
-				),
-			],
-			engineName: [
-				...new Set(
-					logs?.map((log) => log.engineName).filter(Boolean) || [],
-				),
-			],
-			status: [
-				...new Set(
-					logs?.map((log) => STATUS_LABEL_CONVERSION[log.status]),
-				),
-			].filter((status) => status !== undefined && status !== null) ?? [
-				"Success",
-				"Failed",
-			],
-			latencyRange: [
-				{ label: "Fast (≤ 5ms)", value: "0-5" },
-				{ label: "Medium (5-50ms)", value: "6-50" },
-				{ label: "Slow (> 50ms)", value: "51-999999" },
-			],
-			tokenRange: [
-				{ label: "Short (< 100)", value: "0-100" },
-				{ label: "Medium (100-500)", value: "100-500" },
-				{ label: "Long (> 500)", value: "500-999999" },
-			],
-		};
-	}, [logs]);
-
-	//Check condition for if any filters are applied
-	const filtersApplied = useMemo(
-		() =>
-			Object.values(appliedFilters).some((filter) => filter.length > 0) ||
-			false,
-		[appliedFilters],
-	);
-
-	// Filter Logs (same logic as before)
-	const filteredLogs = useMemo(() => {
-		let filtered = [...logs];
-		if (searchQuery.trim()) {
-			const query = searchQuery.toLowerCase().trim();
-			filtered = filtered.filter(
-				(log) =>
-					log.engineName?.toLowerCase().includes(query) ||
-					log.engineType?.toLowerCase().includes(query) ||
-					log.userId?.toLowerCase().includes(query) ||
-					log.sessionId?.toLowerCase().includes(query) ||
-					log.request?.toLowerCase().includes(query) ||
-					log.response?.toLowerCase().includes(query) ||
-					log.latency
-						?.toString()
-						.concat("ms")
-						.toLowerCase()
-						.includes(query) || //additng latency search with milliseconds option
-					log.tokens?.toString().toLowerCase().includes(query),
-			);
-		}
-		// Apply engine type filter
-		if (appliedFilters.engineType.length > 0) {
-			filtered = filtered.filter((log) =>
-				appliedFilters.engineType.includes(log.engineType),
-			);
-		}
-
-		// Apply engine name filter
-		if (appliedFilters.engineName.length > 0) {
-			filtered = filtered.filter((log) =>
-				appliedFilters.engineName.includes(log.engineName),
-			);
-		}
-
-		// Apply status filter
-		if (appliedFilters.status.length > 0) {
-			filtered = filtered.filter((log) =>
-				appliedFilters.status.includes(
-					STATUS_LABEL_CONVERSION[log.status],
-				),
-			);
-		}
-
-		// Apply latency range filter
-		if (appliedFilters.latencyRange.length > 0) {
-			filtered = filtered.filter((log) => {
-				const logLatency = Number(log.latency);
-				if (Number.isNaN(logLatency)) return false;
-
-				return appliedFilters.latencyRange.some((range) => {
-					const [min, max] = range.split("-").map(Number);
-					return logLatency >= min && logLatency <= max;
-				});
-			});
-		}
-
-		// Apply token range filter
-		if (appliedFilters.tokenRange.length > 0) {
-			filtered = filtered.filter((log) => {
-				const logTokens = parseInt(log.tokens, 10);
-				if (Number.isNaN(logTokens)) return false;
-
-				return appliedFilters.tokenRange.some((range) => {
-					const [min, max] = range.split("-").map(Number);
-					return logTokens >= min && logTokens <= max;
-				});
-			});
-		}
-		// ...apply filters...
-		return filtered;
-	}, [logs, searchQuery, appliedFilters]);
-	//show the filtered total count in the table based on the records
-	const filteredTotalCount = useMemo(() => {
-		return filtersApplied || searchQuery.trim().length > 0
-			? filteredLogs.length
-			: totalCount;
-	}, [filteredLogs, filtersApplied, totalCount, searchQuery]);
-
-	// Event Handlers (same logic as before)
-	const handleFilterClick = useCallback(
-		(column: keyof FilterState) => {
-			setTempFilters({ ...appliedFilters });
-			setPopoverColumn(column);
-			setPopoverOpen(true);
-		},
-		[appliedFilters],
-	);
-	//handle the popover close event gracefully
-	const handlePopoverClose = useCallback(() => {
-		setPopoverOpen(false);
-		setPopoverColumn(null);
-		setTempFilters({ ...appliedFilters });
-	}, [appliedFilters]);
-	//apply the selected values in the filter
-	const handleApplyFilters = useCallback(() => {
-		setAppliedFilters({ ...tempFilters });
-		handlePopoverClose();
-	}, [tempFilters, handlePopoverClose]);
-	//in every filter popover, this function will clear selected options
-	const handleClearFilterPopover = useCallback(() => {
-		if (popoverColumn) {
-			setTempFilters((prev) => ({
-				...prev,
-				[popoverColumn as string]: [],
-			}));
-		}
-	}, [popoverColumn]);
-	//IF Select all is not active and only few options are selected, then this will handle respective filters in search
-	const handleMultiSelectFilter = useCallback(
-		(filterType: keyof FilterState, value: string) => {
-			setTempFilters((prev) => ({
-				...prev,
-				[filterType]: prev[filterType].includes(value)
-					? prev[filterType].filter((item) => item !== value)
-					: [...prev[filterType], value],
-			}));
-		},
-		[],
-	);
-	//Handle select all filter in the every custom popover filter, and when applied all values are added in search
-	const handleSelectAll = useCallback(
-		(filterType: keyof FilterState, allOptions: string[]) => {
-			setTempFilters((prev) => {
-				const isAllSelected =
-					prev[filterType].length === allOptions.length;
-				return {
-					...prev,
-					[filterType]: isAllSelected ? [] : [...allOptions],
-				};
-			});
-		},
-		[],
-	);
-	//Clicking on Clear all filters in near to search dropdown will clear all the filters applied
-	const handleClearAllFilters = useCallback(() => {
-		setSearchQuery("");
-		const clearedFilters: FilterState = {
-			engineType: [],
-			engineName: [],
-			status: [],
-			latencyRange: [],
-			tokenRange: [],
-		};
-		setAppliedFilters(clearedFilters);
-		setTempFilters(clearedFilters);
-	}, []);
 	//onclick drawer has to open, it is handled here
 	const handleRowClick = useCallback((event: EventData) => {
 		setSelectedEvent(event);
 		setDrawerOpen(true);
 	}, []);
-	//handle drawer close by settingg timeout
+	//handle drawer close by setting timeout
 	const handleDrawerClose = useCallback(() => {
 		setDrawerOpen(false);
 		setTimeout(() => {
@@ -301,12 +67,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		}, 300);
 	}, []);
 
-	/*const handleChangePage = useCallback(
-		(_event: unknown, newPage: number) => {
-			onPaginationChange(newPage, rowsPerPage);
-		},
-		[onPaginationChange, rowsPerPage],
-	);*/
 	//handle rows per page dropdown value
 	const handleChangeRowsPerPage = useCallback(
 		(value: string) => {
@@ -315,154 +75,10 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		},
 		[onPaginationChange],
 	);
-	//getting filters count based on applied filters state
-	const getActiveFiltersCount = useCallback(
-		(column?: keyof FilterState) => {
-			if (column) {
-				return appliedFilters[column].length;
-			}
-			return (
-				appliedFilters.engineType.length +
-				appliedFilters.engineName.length +
-				appliedFilters.latencyRange.length +
-				appliedFilters.tokenRange.length +
-				appliedFilters.status.length
-			);
-		},
-		[appliedFilters],
-	);
 
-	const totalActiveFilters = getActiveFiltersCount() + (searchQuery ? 1 : 0);
-	//Render popover content of Filter options like model, status ,etc
-	//biome-ignore lint/correctness/useExhaustiveDependencies : not adding functions as dependencies
-	const renderPopoverContent = useCallback(
-		(filterName: keyof FilterState) => {
-			return (
-				<Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-					<PopoverTrigger asChild>
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={() =>
-								handleFilterClick(
-									filterName as keyof FilterState,
-								)
-							}
-						>
-							<Filter className="h-4 w-4" />
-						</Button>
-					</PopoverTrigger>
-					{popoverColumn === filterName ? (
-						<PopoverContent className="w-56">
-							{/* Render filter options for filterType */}
-							{/* ...custom filter UI... */}
-							<div className="flex flex-col gap-2">
-								<div
-									key={`${filterName}SelectAll`}
-									className="flex flex-row items-center gap-4 overflow-x-auto"
-								>
-									<Checkbox
-										checked={
-											tempFilters?.[filterName].length ===
-											filterOptions?.[filterName]?.length
-												? true
-												: tempFilters?.[filterName]
-															?.length > 0
-													? "indeterminate"
-													: false
-										}
-										onCheckedChange={() => {
-											handleSelectAll(
-												filterName,
-												![
-													"latencyRange",
-													"tokenRange",
-												].includes(filterName)
-													? filterOptions?.[
-															filterName
-														]
-													: filterOptions?.[
-															filterName
-														].map(
-															(filtered) =>
-																filtered.value,
-														),
-											);
-										}}
-									/>
-									<span key={`${filterName}SelectAll`}>
-										Select All
-									</span>
-								</div>
-								{filterOptions?.[filterName]?.map((filtered) =>
-									Object.hasOwn(filtered, "value") ? (
-										<div
-											key={`${filtered.value}`}
-											className="items-cemter flex flex-row gap-4 overflow-x-auto"
-										>
-											<Checkbox
-												checked={tempFilters?.[
-													filterName
-												]?.includes(filtered.value)}
-												onCheckedChange={() => {
-													handleMultiSelectFilter(
-														filterName,
-														filtered.value,
-													);
-													return;
-												}}
-											/>
-											<span key={`${filtered.value}`}>
-												{filtered.label}
-											</span>
-										</div>
-									) : (
-										<div
-											key={`${filtered}`}
-											className="flex flex-row items-center gap-4 overflow-x-auto"
-										>
-											<Checkbox
-												checked={tempFilters?.[
-													filterName
-												]?.includes(filtered)}
-												onCheckedChange={() => {
-													handleMultiSelectFilter(
-														filterName,
-														filtered,
-													);
-													return;
-												}}
-											/>
-											<span key={`${filtered}`}>
-												{filtered}
-											</span>
-										</div>
-									),
-								)}
-								<div className="flex flex-row items-center justify-between gap-2 border-t py-2">
-									<Button
-										variant="ghost"
-										onClick={() =>
-											handleClearFilterPopover()
-										}
-									>
-										Clear
-									</Button>
-									<Button
-										variant="default"
-										onClick={handleApplyFilters}
-									>
-										Apply
-									</Button>
-								</div>
-							</div>
-						</PopoverContent>
-					) : null}
-				</Popover>
-			);
-		},
-		[popoverOpen, popoverColumn, tempFilters, filterOptions],
-	);
+	const totalPages = Math.max(1, Math.ceil(totalCount / rowsPerPage));
+	const firstRow = totalCount === 0 ? 0 : page * rowsPerPage + 1;
+	const lastRow = Math.min((page + 1) * rowsPerPage, totalCount);
 
 	// Empty State
 	if (!logs || logs.length === 0) {
@@ -487,44 +103,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 					<span className="font-semibold text-lg">
 						Prompt & Response Timeline
 					</span>
-					<div className="flex items-center gap-2">
-						{totalActiveFilters > 0 && (
-							<Button
-								variant="outline"
-								onClick={handleClearAllFilters}
-							>
-								<X className="me-2 h-4 w-4" />
-								Clear All Filters
-							</Button>
-						)}
-						<div className="relative">
-							<InputGroup>
-								<InputGroupInput
-									placeholder="Search logs..."
-									value={searchQuery}
-									onChange={(e) =>
-										setSearchQuery(e.target.value)
-									}
-									className="w-96 ps-10"
-								/>
-								<InputGroupAddon>
-									<Search />
-								</InputGroupAddon>
-								<InputGroupAddon align="inline-end">
-									{searchQuery && (
-										<Button
-											variant="ghost"
-											size="icon"
-											className="absolute end-2 top-2"
-											onClick={() => setSearchQuery("")}
-										>
-											<X className="h-4 w-4" />
-										</Button>
-									)}
-								</InputGroupAddon>
-							</InputGroup>
-						</div>
-					</div>
 				</div>
 				<div className="border-b p-4">
 					<Table>
@@ -532,7 +110,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 							<TableRow style={{ backgroundColor: "#F5F9FE" }}>
 								<TableHead>
 									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
-										User Id
+										User
 									</span>
 								</TableHead>
 								<TableHead>
@@ -551,68 +129,29 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 									</span>
 								</TableHead>
 								<TableHead>
-									<div className="flex items-center gap-1">
-										<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
-											Engine Type
-										</span>
-										{appliedFilters.engineType.length >
-										0 ? (
-											<Badge variant="outline">
-												{getActiveFiltersCount(
-													"engineType",
-												)}
-											</Badge>
-										) : null}
-										{renderPopoverContent("engineType")}
-									</div>
+									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
+										Method
+									</span>
 								</TableHead>
 								<TableHead>
-									<div className="flex items-center gap-1">
-										<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
-											Engine Name
-										</span>
-										{appliedFilters.engineName.length >
-										0 ? (
-											<Badge variant="outline">
-												{getActiveFiltersCount(
-													"engineName",
-												)}
-											</Badge>
-										) : null}
-										{renderPopoverContent("engineName")}
-									</div>
+									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
+										Engine Type
+									</span>
 								</TableHead>
 								<TableHead>
-									<div className="flex items-center gap-1">
-										<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
-											Latency
-										</span>
-										{appliedFilters.latencyRange.length >
-										0 ? (
-											<Badge variant="outline">
-												{getActiveFiltersCount(
-													"latencyRange",
-												)}
-											</Badge>
-										) : null}
-										{renderPopoverContent("latencyRange")}
-									</div>
+									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
+										Engine Name
+									</span>
 								</TableHead>
 								<TableHead>
-									<div className="flex items-center gap-1">
-										<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
-											Tokens
-										</span>
-										{appliedFilters.tokenRange.length >
-										0 ? (
-											<Badge variant="outline">
-												{getActiveFiltersCount(
-													"tokenRange",
-												)}
-											</Badge>
-										) : null}
-										{renderPopoverContent("tokenRange")}
-									</div>
+									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
+										Latency
+									</span>
+								</TableHead>
+								<TableHead>
+									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
+										Tokens
+									</span>
 								</TableHead>
 								<TableHead>
 									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
@@ -620,26 +159,16 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 									</span>
 								</TableHead>
 								<TableHead>
-									<div className="flex items-center gap-1">
-										<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
-											Status
-										</span>
-										{appliedFilters.status.length > 0 ? (
-											<Badge variant="outline">
-												{getActiveFiltersCount(
-													"status",
-												)}
-											</Badge>
-										) : null}
-										{renderPopoverContent("status")}
-									</div>
+									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
+										Status
+									</span>
 								</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{filteredLogs.map((event, index) => (
+							{logs.map((event, index) => (
 								<TableRow
-									key={`Log-${event.endTime}-${index}`}
+									key={`Log-${event.requestId ?? event.endTime}-${index}`}
 									className="cursor-pointer hover:[background-color:rgb(245,249,254)!important] [a&]:hover:bg-primary"
 									onClick={() => handleRowClick(event)}
 								>
@@ -648,7 +177,10 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 											title={event.userId}
 											className="text-sm"
 										>
-											{ellipsed(event.userId, 23)}
+											{ellipsed(
+												event.userName || event.userId,
+												23,
+											)}
 										</span>
 									</TableCell>
 									<TableCell>
@@ -673,6 +205,14 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 											className="text-sm"
 										>
 											{ellipsed(event.response)}
+										</span>
+									</TableCell>
+									<TableCell>
+										<span
+											title={event.methodName}
+											className="text-sm"
+										>
+											{event.methodName}
 										</span>
 									</TableCell>
 									<TableCell>
@@ -716,9 +256,8 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 						</TableBody>
 					</Table>
 				</div>
-				{/* Pagination: You may need to implement your own or use shadcn/ui's Table.Pagination if available */}
+				{/* Server-side pagination */}
 				<div className="flex items-center gap-2 justify-self-end bg-white p-2">
-					{/* Simple pagination example */}
 					<label
 						htmlFor="rows-per-page"
 						className="font-medium text-gray-700 text-sm"
@@ -729,7 +268,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 						value={rowsPerPage.toString()}
 						onValueChange={(value: string) => {
 							handleChangeRowsPerPage(value);
-							return;
 						}}
 					>
 						<SelectTrigger
@@ -747,15 +285,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 						</SelectContent>
 					</Select>
 					<span className="mx-2 text-sm">
-						{/**
-							Checking for the case like , if a user searches on 2 or 3rd pages, then the filtered records might not have much records, so 
-							checking and resetting page to 1
-						*/}
-						{page + 1 > Math.ceil(filteredTotalCount / rowsPerPage)
-							? Math.ceil(filteredTotalCount / rowsPerPage)
-							: page + 1}{" "}
-						- {Math.ceil(filteredTotalCount / rowsPerPage)} of{" "}
-						{Math.ceil(filteredTotalCount / rowsPerPage)}
+						{firstRow} - {lastRow} of {totalCount}
 					</span>
 					<Button
 						variant="ghost"
@@ -768,10 +298,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 					</Button>
 					<Button
 						variant="ghost"
-						disabled={
-							page + 1 >=
-							Math.ceil(filteredTotalCount / rowsPerPage)
-						}
+						disabled={page + 1 >= totalPages}
 						onClick={() =>
 							onPaginationChange(page + 1, rowsPerPage)
 						}
@@ -783,17 +310,8 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 
 			<div className="flex items-center justify-between border-b bg-gray-50 px-4 py-2">
 				<span className="text-gray-500 text-sm">
-					Showing {filteredLogs.length} of {totalCount} results
-					{totalActiveFilters > 0 &&
-						` (${totalActiveFilters} filter${
-							totalActiveFilters > 1 ? "s" : ""
-						} applied)`}
+					Showing {logs.length} of {totalCount} results
 				</span>
-				{filteredLogs.length === 0 && logs.length > 0 && (
-					<span className="text-red-600 text-sm">
-						No results found. Try adjusting your filters.
-					</span>
-				)}
 			</div>
 			{/** sheet open/close when user clicks on the row in auditlog table */}
 			<Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
@@ -807,7 +325,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 						handleDrawerClose={handleDrawerClose}
 					/>
 				</SheetContent>
-				{/* <SheetClose /> */}
 			</Sheet>
 		</>
 	);

@@ -5,7 +5,6 @@ import { Help } from "@/components/help";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
-import { AuditLogsDashboard } from "../audit-logs-dashboard";
 import { ImportPage } from "../import";
 import { ENGINE_ROUTES } from "./engine.constants";
 import { EngineEditPage } from "./engine-edit-page";
@@ -67,12 +66,6 @@ export const EngineRouter = observer(() => {
 									element={<EngineEditPage />}
 								/>
 							</Route>
-							<Route
-								path=":engineId/dashboard"
-								element={
-									<AuditLogsDashboard catalogName={r.name} />
-								}
-							/>
 							<Route
 								path="*"
 								element={<Navigate to="." replace />}

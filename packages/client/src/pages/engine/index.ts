@@ -1,3 +1,3 @@
-import { EngineRouter } from "./EngineRouter";
+import { EngineRouter } from "./engine-router";
 
 export { EngineRouter };
