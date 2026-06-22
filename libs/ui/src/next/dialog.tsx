@@ -73,7 +73,22 @@ const DialogContent = React.forwardRef<
 					// a logical inset with a physical translate breaks RTL
 					// (start resolves to right, translate still goes left →
 					// dialog flies off-screen).
-					"data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 data-[state=closed]:animate-out data-[state=open]:animate-in sm:max-w-lg",
+					//
+					// `max-h-[calc(100dvh-2rem)] overflow-y-auto` keeps a tall
+					// dialog inside the viewport and scrolls its content instead
+					// of overflowing off-screen (`dvh` so mobile browser chrome
+					// is accounted for). Callers can still override max-w/max-h.
+					//
+					// `scrollbar-gutter: stable both-edges` reserves equal space
+					// on BOTH sides for the scrollbar, so when the dialog scrolls
+					// its scrollbar doesn't eat only the right padding and make
+					// the content look off-center. No-op on overlay scrollbars.
+					// NOTE: use `flex flex-col` (not `grid`) — CSS Grid does NOT
+					// honor `scrollbar-gutter: both-edges` symmetrically, which
+					// left the content visibly shifted; flex column is an
+					// equivalent single-column layout that reserves both gutters
+					// evenly.
+					"data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 flex max-h-[calc(100dvh-2rem)] w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] flex-col gap-4 overflow-y-auto rounded-lg border bg-background p-6 shadow-lg duration-200 [scrollbar-gutter:stable_both-edges] data-[state=closed]:animate-out data-[state=open]:animate-in sm:max-w-lg",
 					className,
 				)}
 				{...props}

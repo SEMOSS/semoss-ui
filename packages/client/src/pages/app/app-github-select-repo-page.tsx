@@ -5,6 +5,7 @@ import { Button, toast } from "@semoss/ui/next";
 import {
 	buildInstallAppUrl,
 	type GithubRepo,
+	handleNeedsAuth,
 	repoHtmlUrl,
 	selectRepo,
 } from "@/api/github";
@@ -51,6 +52,11 @@ export const AppGithubSelectRepoPage = () => {
 				},
 			});
 		} catch (error) {
+			if (
+				handleNeedsAuth(error, projectId, t("project.toasts.needsAuth"))
+			) {
+				return;
+			}
 			toast.error(
 				(error as Error).message || t("project.toasts.connectFailed"),
 			);
