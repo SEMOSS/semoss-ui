@@ -1,715 +1,723 @@
 import * as echarts from "echarts";
-import { ZoomIn as ZoomInIcon, ZoomOut as ZoomOutIcon } from "lucide-react";
+import {
+	Crop as CropIcon,
+	RotateCcw as ResetIcon,
+	ZoomIn as ZoomInIcon,
+	ZoomOut as ZoomOutIcon,
+} from "lucide-react";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
-import { Button } from "@semoss/ui/next";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+	Button,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Sheet,
+	SheetContent,
+	SheetTitle,
+} from "@semoss/ui/next";
+import { AuditLogsDetailDrawer } from "./audit-logs-detail-drawer";
 import type { EventData } from "./common";
 import { TimeDateFormatter } from "./common";
 
-// Type definitions
-interface ProcessedEventData {
-	value: [number, number, number];
-	eventData: EventData;
+//Status colors mirror the data table: success is green, failure is red. Unlike
+//the request/response split (which we removed), status is a real good/bad signal.
+const STATUS_OK_COLOR = "#16a34a";
+const STATUS_FAIL_COLOR = "#dc2626";
+//Cycled per consecutive part within a span (by-span mode) so each segment of the
+//execution is visually distinct and its duration is readable. Avoids green/red so
+//the part colors aren't confused with status.
+const SPAN_PART_COLORS = [
+	"#3b82f6",
+	"#8b5cf6",
+	"#06b6d4",
+	"#f59e0b",
+	"#ec4899",
+];
+
+const isSuccess = (status: EventData["status"]) =>
+	Boolean(status) && status !== "false";
+
+//Granularity options for the time (x) axis labels.
+type AxisMode = "time" | "datetime" | "date" | "month";
+const AXIS_MODE_LABELS: Record<AxisMode, string> = {
+	time: "Time",
+	datetime: "Date & time",
+	date: "Date",
+	month: "Month",
+};
+//Row grouping: one lane per event, or one lane per spanId / requestId (trace-style,
+//where the group's events stack as parts of the execution along the row).
+type RowMode = "event" | "span" | "request";
+const ROW_MODE_LABELS: Record<RowMode, string> = {
+	event: "Row: per event",
+	span: "Row: by span",
+	request: "Row: by request",
+};
+const formatAxisValue = (value: number, mode: AxisMode): string => {
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return "";
+	switch (mode) {
+		case "month":
+			return date.toLocaleDateString(undefined, {
+				month: "short",
+				year: "numeric",
+			});
+		case "date":
+			return date.toLocaleDateString(undefined, {
+				month: "short",
+				day: "2-digit",
+			});
+		case "datetime":
+			return date.toLocaleString(undefined, {
+				month: "short",
+				day: "2-digit",
+				hour: "2-digit",
+				minute: "2-digit",
+			});
+		default:
+			return date.toLocaleTimeString(undefined, {
+				hour: "2-digit",
+				minute: "2-digit",
+				second: "2-digit",
+			});
+	}
+};
+
+interface WaterfallRow {
+	event: EventData;
+	startMs: number;
+	endMs: number;
+	sessionId: string;
 }
 
-interface ProcessApiDataResult {
-	timeCategories: string[];
-	eventData: ProcessedEventData[];
-	timeToPosition: Map<string, number>;
-}
-
-interface DataZoomParams {
-	batch?: Array<{
-		start?: number;
-		end?: number;
-	}>;
-}
-
-interface TooltipParams {
-	data?: ProcessedEventData;
-}
-
-interface RenderItemParams {
-	coordSys: {
-		x: number;
-		y: number;
-		width: number;
-		height: number;
-	};
-}
-
-interface RenderItemAPI {
-	value: (index: number) => number | undefined;
-	coord: (point: [number, number]) => [number, number];
-}
-
-interface BarRect {
-	x: number;
-	y: number;
-	width: number;
-	height: number;
-}
-
-interface ClippedRect {
-	x: number;
-	y: number;
-	width: number;
-	height: number;
-}
-
-interface ShapeConfig {
-	x: number;
-	y: number;
-	width: number;
-	height: number;
-	r: number[] | number;
-}
-
-interface RenderItemResult {
-	type: "group" | "rect";
-	children?: Array<{
-		type: "rect";
-		shape: ShapeConfig;
-		style: {
-			fill: string;
-		};
-	}>;
-	shape?: ShapeConfig;
-	style?: {
-		fill: string;
-	};
-}
-
-/*const ZoomButtonGroup = styled(ButtonGroup)({
-	backgroundColor: "#fff",
-	boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
-
-	"& .MuiButtonGroup-grouped": {
-		minWidth: "32px",
-		height: "32px",
-		border: "none",
-
-		"&:not(:last-of-type)": {
-			borderRight: "1px solid #e0e0e0",
-		},
-
-		"&:hover": {
-			backgroundColor: "#f5f5f5",
-		},
-
-		"&:disabled": {
-			backgroundColor: "#f9f9f9",
-			opacity: 0.5,
-		},
-	},
-});
-
-const ZoomIconButton = styled(IconButton)<{ position: "left" | "right" }>(
-	({ position }) => ({
-		padding: "4px",
-		borderRadius: position === "left" ? "4px 0 0 4px" : "0 4px 4px 0",
-	}),
-);*/
-//props for audit logs timeline
 interface AuditLogsTimelineProps {
 	logs: EventData[];
 }
+
+//Minimal shapes for echarts custom-series rendering.
+interface RenderItemParams {
+	dataIndex: number;
+	coordSys: { x: number; y: number; width: number; height: number };
+}
+interface RenderItemAPI {
+	value: (index: number) => number;
+	coord: (point: [number, number]) => [number, number];
+	size: (data: [number, number]) => [number, number];
+}
+interface RenderRect {
+	type: "rect";
+	shape: { x: number; y: number; width: number; height: number; r: number };
+	style: { fill: string };
+}
+
 /**
-	Renders a chart with a time series as the x-axis and a custom series 
-	as the y-axis. The chart can be zoomed in and out using the mouse wheel 
-	or by clicking the zoom in/out buttons. The chart can be resized by 
-	dragging one of its corners. The chart is also responsive to window resizing events.
-	*/
+ * A DevTools-style waterfall of audit-log activity. Each event is one lane on a
+ * real, continuous time axis: the bar's horizontal position is its actual start
+ * time and its length is its real duration, so overlap and gaps are meaningful.
+ * Bars are colored by status (green ok / red failed). Clicking a bar opens the
+ * detail drawer. The row mode can be switched from one lane per event to one lane
+ * per spanId or requestId, where the group's events render in sequence on that
+ * single row (alternating colors) — a trace-style breakdown of the execution.
+ */
 export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 	logs,
 }) => {
-	const chartRef = useRef<HTMLDivElement>(null); //ref object for placing chart created
-	const [chartInstance, setChartInstance] = useState<echarts.ECharts | null>(
-		null,
-	); //placing the chart instance in this state obj
-	const [zoomState, setZoomState] = useState({ start: 0, end: 100 }); //setting zoom state
+	const chartRef = useRef<HTMLDivElement>(null);
+	const chartInstanceRef = useRef<echarts.ECharts | null>(null);
+	//Persisted zoom windows (percent) for both axes, so the current zoom survives
+	//chart rebuilds and the rectangle-zoom composes with whatever is already zoomed.
+	const [xZoom, setXZoom] = useState({ start: 0, end: 100 });
+	const [yZoom, setYZoom] = useState({ start: 0, end: 100 });
+	const [axisMode, setAxisMode] = useState<AxisMode>("time");
+	const [rowMode, setRowMode] = useState<RowMode>("event");
+	const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null);
+	const [drawerOpen, setDrawerOpen] = useState(false);
+	//Whether the drag-a-rectangle-to-zoom cursor is currently armed.
+	const [zoomSelectActive, setZoomSelectActive] = useState(false);
+	//Mirror in a ref so the zrender drag handlers (bound once) read the latest value.
+	const zoomSelectActiveRef = useRef(zoomSelectActive);
+	zoomSelectActiveRef.current = zoomSelectActive;
+	const grouped = rowMode !== "event";
 
-	/**
-	 * Processes the logs to prepare the data for the chart.
-	 * It creates a set of all times in the logs, sorts them, and maps each time to its position in the sorted array.
-	 * It then goes through each log and creates a data point for the chart with the start position, latency, and end position.
-	 * The function returns an object with the time categories, event data, and time to position map.
-	 */
-	const processApiData = (): ProcessApiDataResult => {
-		const allTimes = new Set<string>();
-		const timeToPosition = new Map<string, number>();
-
-		logs.forEach((event) => {
-			allTimes.add(TimeDateFormatter(event.startTime).time);
-			allTimes.add(TimeDateFormatter(event.endTime).time);
-		});
-
-		const sortedTimes = Array.from(allTimes).sort((a, b) => {
-			const timeA = new Date(`1970-01-01 ${a}`);
-			const timeB = new Date(`1970-01-01 ${b}`);
-			return timeA.getTime() - timeB.getTime();
-		});
-
-		sortedTimes.forEach((time, index) => {
-			timeToPosition.set(time, index);
-		});
-
-		const eventData: ProcessedEventData[] = [];
-
-		logs.forEach((event) => {
-			const startPos =
-				timeToPosition.get(TimeDateFormatter(event.startTime).time) ??
-				-1; //need testing with -1 position
-			const endPos =
-				timeToPosition.get(TimeDateFormatter(event.endTime).time) ?? -1; //need testing with -1 position
-
-			const dataPoint: ProcessedEventData = {
-				value: [startPos, event.latency, endPos],
-				eventData: event,
-			};
-
-			eventData.push(dataPoint);
-		});
-
-		return {
-			timeCategories: sortedTimes,
-			eventData,
-			timeToPosition,
-		};
-	};
-
-	/**
-	 * Calculates the configuration for the x-axis labels based on the available width and the number of labels.
-	 * If there are too many labels, it uses smart interval calculation to determine the interval between labels.
-	 * If there are very many labels, it tilts the labels by 45 degrees to fit more labels.
-	 * If there are a moderate number of labels, it tilts the labels by 30 degrees.
-	 * If there are few labels, it does not tilt the labels and uses the default margin.
-	 * @param {string[]} timeCategories - The array of time categories.
-	 * @param {number} [chartWidth=800] - The width of the chart in pixels.
-	 * @returns {Object} - An object with the interval, rotate, and margin properties.
-	 */
-	const calculateXAxisLabelConfig = (
-		timeCategories: string[],
-		chartWidth: number = 800,
-	) => {
-		const totalLabels = timeCategories.length;
-		const availableWidth = chartWidth - 80; // Account for margins
-		const averageLabelWidth = 60; // Estimated width per label in pixels
-		const maxLabelsWithoutOverlap = Math.floor(
-			availableWidth / averageLabelWidth,
-		);
-
-		// If we have too many labels, use smart interval calculation
-		if (totalLabels > maxLabelsWithoutOverlap) {
-			const interval =
-				Math.ceil(totalLabels / maxLabelsWithoutOverlap) - 1;
-
-			// For very congested scenarios, tilt the labels
-			if (totalLabels > maxLabelsWithoutOverlap * 1.5) {
-				return {
-					interval: interval,
-					rotate: 45,
-					margin: 12,
-				};
-			} else {
-				return {
-					interval: interval,
-					rotate: 0,
-					margin: 8,
-				};
-			}
-		} else if (totalLabels > maxLabelsWithoutOverlap * 0.7) {
-			// Moderate congestion - just tilt
-			return {
-				interval: 0,
-				rotate: 30,
-				margin: 10,
-			};
-		} else {
-			return {
-				interval: 0,
-				rotate: 0,
-				margin: 8,
-			};
-		}
-	};
-
-	/**
-	 * Zooms in the chart by a factor of 0.6.
-	 * If the current zoom range is less than or equal to 15, the function does nothing.
-	 * Otherwise, it calculates the new start and end points of the zoom range and updates the zoom state.
-	 * Finally, it dispatches an action to the chart with the type "dataZoom" and the new start and end points as parameters.
-	 */
-	const handleZoomIn = () => {
-		if (!chartInstance) return;
-
-		const currentRange = zoomState.end - zoomState.start;
-		if (currentRange <= 15) return;
-
-		const center = (zoomState.start + zoomState.end) / 2;
-		const newRange = currentRange * 0.6;
-		const newStart = Math.max(0, center - newRange / 2);
-		const newEnd = Math.min(100, center + newRange / 2);
-
-		setZoomState({ start: newStart, end: newEnd });
-
-		chartInstance.dispatchAction({
-			type: "dataZoom",
-			start: newStart,
-			end: newEnd,
-		});
-	};
-
-	/**
-	 * Zooms out the chart by a factor of 1.4.
-	 * If the current zoom range is greater than or equal to 100, the function does nothing.
-	 * Otherwise, it calculates the new start and end points of the zoom range and updates the zoom state.
-	 * Finally, it dispatches an action to the chart with the type "dataZoom" and the new start and end points as parameters.
-	 */
-	const handleZoomOut = () => {
-		if (!chartInstance) return;
-
-		const currentRange = zoomState.end - zoomState.start;
-		if (currentRange >= 100) return;
-
-		const center = (zoomState.start + zoomState.end) / 2;
-		const newRange = Math.min(100, currentRange * 1.4);
-		const newStart = Math.max(0, center - newRange / 2);
-		const newEnd = Math.min(100, center + newRange / 2);
-
-		setZoomState({ start: newStart, end: newEnd });
-
-		chartInstance.dispatchAction({
-			type: "dataZoom",
-			start: newStart,
-			end: newEnd,
-		});
-	};
-	//when the logs are available then the chart will start to render
-	//biome-ignore lint/correctness/useExhaustiveDependencies: chart needs to be re-rendered on logs change
-	useEffect(() => {
-		if (chartRef.current && logs.length > 0) {
-			const chart = echarts.init(chartRef.current);
-			setChartInstance(chart);
-
-			const { timeCategories, eventData } = processApiData();
-
-			// Calculate optimal x-axis configuration based on data density
-			const chartWidth = chartRef.current.clientWidth || 800;
-			const xAxisConfig = calculateXAxisLabelConfig(
-				timeCategories,
-				chartWidth,
-			);
-
-			const option = {
-				backgroundColor: "#ffffff",
-				animation: false,
-				tooltip: {
-					trigger: "item",
-					backgroundColor: "rgba(255, 255, 255, 0.98)",
-					borderColor: "#e0e0e0",
-					borderRadius: 8,
-					padding: [12, 16],
-					textStyle: {
-						color: "#333",
-						fontSize: 13,
-						fontFamily:
-							'-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-					},
-					boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-					formatter: (params: TooltipParams): string => {
-						if (!params || !params.data || !params.data.eventData) {
-							return "No data available";
-						}
-
-						const eventData = params.data.eventData;
-
-						const truncateText = (
-							text: string | null,
-							maxLength: number = 50,
-						): string => {
-							return text?.length > maxLength
-								? `${text.substring(0, maxLength)}...`
-								: text;
-						};
-
-						return `
-              <div style="
-                width: 100%;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-                line-height: 1.4;
-              ">
-                <div style="
-                  display: flex;
-                  justify-content: space-between;
-                  align-items: center;
-                  margin-bottom: 10px;
-                  padding-bottom: 6px;
-                  border-bottom: 1px solid #f0f0f0;
-                ">
-                  <div style="font-weight: 600; color: #333; font-size: 12px;">${
-						TimeDateFormatter(eventData.startTime).time
-					} - ${TimeDateFormatter(eventData.endTime).time}</div>
-                  <div style="
-                    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
-                    padding: 2px 8px;
-                    border-radius: 4px;
-                    font-size: 12px;
-                    font-weight: 600;
-                    color: #333;
-                  ">${eventData.latency}ms</div>
-                </div>
-                
-                <div style="margin-bottom: 8px;">
-                  <div style="
-                    color: #4caf50; 
-                    font-size: 11px; 
-                    font-weight: 600; 
-                    margin-bottom: 4px; 
-                    text-transform: uppercase; 
-                    letter-spacing: 0.5px;
-                  ">Request</div>
-                  <div style="
-                    font-size: 12px; 
-                    line-height: 1.4; 
-                    color: #333;
-                    background: #f8fcf9;
-                    padding: 6px 8px;
-                    border-radius: 4px;
-                    border-left: 2px solid #4caf50;
-                    height: 32px;
-                    display: flex;
-                    align-items: center;
-                    overflow: hidden;
-                  ">${truncateText(eventData.request)}</div>
-                </div>
-                
-                <div style="margin-bottom: 8px;">
-                  <div style="
-                    color: #e91e63; 
-                    font-size: 11px; 
-                    font-weight: 600; 
-                    margin-bottom: 4px; 
-                    text-transform: uppercase; 
-                    letter-spacing: 0.5px;
-                  ">Response</div>
-                  <div style="
-                    font-size: 12px; 
-                    line-height: 1.4; 
-                    color: #333;
-                    background: #fdf8fc;
-                    padding: 6px 8px;
-                    border-radius: 4px;
-                    border-left: 2px solid #e91e63;
-                    height: 32px;
-                    display: flex;
-                    align-items: center;
-                    overflow: hidden;
-                  ">${truncateText(eventData.response)}</div>
-                </div>
-                
-                <div style="
-                  display: flex;
-                  justify-content: flex-end;
-                  margin-top: 6px;
-                ">
-                  <div style="
-                    background: #f5f5f5;
-                    padding: 2px 8px;
-                    border-radius: 10px;
-                    font-size: 11px;
-                    font-weight: 500;
-                    color: #666;
-                  ">${eventData.tokens} tokens</div>
-                </div>
-              </div>
-            `;
-					},
-					extraCssText: `
-            min-width: 300px !important;
-            white-space: normal !important;
-            word-wrap: break-word !important;
-          `,
-				},
-				dataZoom: [
-					{
-						type: "inside",
-						xAxisIndex: 0,
-						filterMode: "filter",
-						zoomOnMouseWheel: true,
-						moveOnMouseWheel: false,
-						preventDefaultMouseMove: true,
-						throttle: 100,
-						minSpan: 10,
-						maxSpan: 100,
-					},
-				],
-				grid: {
-					left: "50px",
-					right: "30px",
-					top: "30px",
-					bottom: xAxisConfig.rotate > 0 ? "90px" : "70px",
-					containLabel: true,
-				},
-				xAxis: {
-					type: "category",
-					data: timeCategories,
-					name: "Timestamp",
-					nameLocation: "middle",
-					nameGap: xAxisConfig.rotate > 0 ? 60 : 40,
-					nameTextStyle: {
-						color: "#666",
-						fontSize: 12,
-					},
-					axisLine: {
-						show: true,
-						onZero: false,
-						lineStyle: {
-							color: "#e0e0e0",
-						},
-					},
-					axisTick: {
-						show: true,
-						alignWithLabel: true,
-						lineStyle: {
-							color: "#e0e0e0",
-						},
-					},
-					axisLabel: {
-						color: "#666",
-						fontSize: 11,
-						margin: xAxisConfig.margin,
-						rotate: xAxisConfig.rotate,
-						interval: xAxisConfig.interval,
-						formatter: (value: string): string => {
-							// Shorten the format when rotated to save space
-							if (xAxisConfig.rotate > 0) {
-								return value.replace(/:\d{2}\s(AM|PM)$/, "$1");
-							}
-							return value.replace(/:\d{2}\s(AM|PM)$/, " $1");
-						},
-						...(xAxisConfig.rotate > 0 && {
-							align: "right",
-							verticalAlign: "middle",
-						}),
-					},
-					splitLine: {
-						show: true,
-						alignWithLabel: true,
-						lineStyle: {
-							color: "#f0f0f0",
-							type: "dashed",
-						},
-					},
-				},
-				yAxis: {
-					type: "value",
-					name: "Latency (ms)",
-					nameLocation: "middle",
-					nameGap: 50,
-					nameTextStyle: {
-						color: "#666",
-						fontSize: 12,
-						fontWeight: 500,
-					},
-					nameRotate: 90,
-					min: 0,
-					max: Math.max(...logs.map((d) => d.latency)) + 20,
-					axisLine: {
-						show: true,
-						lineStyle: {
-							color: "#e0e0e0",
-						},
-					},
-					axisTick: {
-						show: false,
-					},
-					axisLabel: {
-						color: "#666",
-						fontSize: 12,
-					},
-					splitLine: {
-						show: true,
-						lineStyle: {
-							color: "#f0f0f0",
-							type: "dashed",
-						},
-					},
-				},
-				legend: {
-					data: ["Request", "Response"],
-					bottom: 0,
-					left: 15,
-					itemGap: 30,
-					textStyle: {
-						color: "#333",
-						fontSize: 13,
-						fontWeight: 500,
-					},
-					icon: "rect",
-					itemWidth: 20,
-					itemHeight: 6,
-				},
-				series: [
-					{
-						name: "Request",
-						type: "custom",
-						data: eventData,
-						clip: true,
-						itemStyle: {
-							color: "#4caf50",
-						},
-						renderItem: (
-							params: RenderItemParams,
-							api: RenderItemAPI,
-						): RenderItemResult | null => {
-							try {
-								const startPos = api.value(0);
-								const latency = api.value(1);
-								const endPos = api.value(2);
-
-								if (
-									startPos === undefined ||
-									latency === undefined ||
-									endPos === undefined
-								) {
-									return null;
-								}
-
-								const startCoord = api.coord([
-									startPos,
-									latency,
-								]);
-								const endCoord = api.coord([endPos, latency]);
-
-								const coordSys = params.coordSys;
-								if (!coordSys) return null;
-
-								const barRect: BarRect = {
-									x: startCoord[0],
-									y: startCoord[1] - 3,
-									width: Math.max(
-										endCoord[0] - startCoord[0],
-										16,
-									),
-									height: 6,
-								};
-
-								const gridRect = {
-									x: coordSys.x,
-									y: coordSys.y,
-									width: coordSys.width,
-									height: coordSys.height,
-								};
-
-								const clippedRect =
-									echarts.graphic.clipRectByRect(
-										barRect,
-										gridRect,
-									) as ClippedRect | null;
-
-								if (!clippedRect || clippedRect.width <= 0) {
-									return null;
-								}
-
-								const halfWidth = clippedRect.width / 2;
-
-								return {
-									type: "group",
-									children: [
-										{
-											type: "rect",
-											shape: {
-												x: clippedRect.x,
-												y: clippedRect.y,
-												width: halfWidth,
-												height: clippedRect.height,
-												r: [3, 0, 0, 3],
-											},
-											style: {
-												fill: "#4caf50",
-											},
-										},
-										{
-											type: "rect",
-											shape: {
-												x: clippedRect.x + halfWidth,
-												y: clippedRect.y,
-												width: halfWidth,
-												height: clippedRect.height,
-												r: [0, 3, 3, 0],
-											},
-											style: {
-												fill: "#e91e63",
-											},
-										},
-									],
-								};
-							} catch (error) {
-								console.warn(
-									"Error rendering custom series item:",
-									error,
-								);
-								return null;
-							}
-						},
-					},
-					{
-						name: "Response",
-						type: "custom",
-						data: [],
-						itemStyle: {
-							color: "#e91e63",
-						},
-						renderItem: (): null => null,
-					},
-				],
-			};
-
-			chart.setOption(option);
-
-			chart.on("dataZoom", (params: DataZoomParams) => {
-				try {
-					if (params?.batch?.[0]) {
-						const zoomInfo = params.batch[0];
-						setZoomState({
-							start: zoomInfo.start || 0,
-							end: zoomInfo.end || 100,
-						});
-					}
-				} catch (error) {
-					console.warn("Error handling dataZoom event:", error);
+	//Parse + order the rows. Each row becomes one lane (top-to-bottom).
+	const rows = useMemo<WaterfallRow[]>(() => {
+		const parsed = logs
+			.map((event): WaterfallRow | null => {
+				const startMs = new Date(event.startTime).getTime();
+				let endMs = new Date(event.endTime).getTime();
+				const latency = Number(event.latency) || 0;
+				if (!Number.isFinite(startMs)) return null;
+				//Fall back to latency when end is missing/invalid so the bar has width.
+				if (!Number.isFinite(endMs) || endMs < startMs) {
+					endMs = startMs + latency;
 				}
-			});
+				return {
+					event,
+					startMs,
+					endMs,
+					sessionId: event.sessionId || "—",
+				};
+			})
+			.filter((row): row is WaterfallRow => row !== null);
 
-			setTimeout(() => {
-				chart.resize({
-					width: "auto",
-					height: 295,
-				});
-			}, 100);
-
-			const handleResize = () => {
-				chart.resize();
-			};
-
-			window.addEventListener("resize", handleResize);
-
-			return () => {
-				window.removeEventListener("resize", handleResize);
-				chart.dispose();
-			};
-		}
+		parsed.sort((a, b) => a.startMs - b.startMs);
+		return parsed;
 	}, [logs]);
 
-	if (logs.length === 0) {
+	//Row layout. "event" → one lane per event. "span"/"request" → one lane per
+	//spanId/requestId; every event in the group is a part drawn on that single row
+	//at its real start→end, in sequence. subIndex (part order within the group) is
+	//used only to alternate the part colors.
+	const lanes = useMemo(() => {
+		const keyOf = (row: WaterfallRow) =>
+			rowMode === "request"
+				? row.event.requestId || "—"
+				: row.event.spanId || "—";
+
+		if (!grouped) {
+			return {
+				laneOf: rows.map((_, index) => index),
+				subIndexOf: rows.map(() => 0),
+				laneCount: rows.length,
+				laneLabels: rows.map(
+					(row) =>
+						row.event.methodName ||
+						row.event.engineName ||
+						row.event.requestId ||
+						"",
+				),
+			};
+		}
+
+		//rows are already sorted by start, so first-appearance order = chronological.
+		const order: string[] = [];
+		const laneIndexOf = new Map<string, number>();
+		for (const row of rows) {
+			const key = keyOf(row);
+			if (!laneIndexOf.has(key)) {
+				laneIndexOf.set(key, order.length);
+				order.push(key);
+			}
+		}
+		//Part index within the group (drives the alternating part colors).
+		const running = new Map<string, number>();
+		const subIndexOf = rows.map((row) => {
+			const key = keyOf(row);
+			const index = running.get(key) ?? 0;
+			running.set(key, index + 1);
+			return index;
+		});
+		//Label each row by its group id (spanId / requestId), not the method.
+		const laneLabels = [...order];
+		return {
+			laneOf: rows.map((row) => laneIndexOf.get(keyOf(row)) ?? 0),
+			subIndexOf,
+			laneCount: order.length,
+			laneLabels,
+		};
+	}, [rows, rowMode, grouped]);
+	const { laneOf, subIndexOf, laneCount, laneLabels } = lanes;
+
+	//Per-event mode: color encodes status (green ok / red failed). Grouped modes:
+	//cycle colors across the parts of each group so each part is distinct and its
+	//duration is readable (status is still shown in the tooltip).
+	const barColors = useMemo(() => {
+		if (!grouped) {
+			return rows.map((row) =>
+				isSuccess(row.event.status)
+					? STATUS_OK_COLOR
+					: STATUS_FAIL_COLOR,
+			);
+		}
+		return rows.map(
+			(_, index) =>
+				SPAN_PART_COLORS[subIndexOf[index] % SPAN_PART_COLORS.length],
+		);
+	}, [rows, grouped, subIndexOf]);
+
+	//Bounded chart height: the time axis stays pinned at the top and a vertical
+	//scrollbar (echarts dataZoom) pages through rows, instead of an ever-growing
+	//canvas inside a scroll container (which hid the axis and the bottom slider).
+	const chartHeight = useMemo(
+		() => Math.min(Math.max(laneCount * 28 + 96, 240), 560),
+		[laneCount],
+	);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: chart is rebuilt when rows/height change
+	useEffect(() => {
+		if (!chartRef.current || rows.length === 0) return;
+
+		const chart = echarts.init(chartRef.current);
+		chartInstanceRef.current = chart;
+
+		const minStart = Math.min(...rows.map((r) => r.startMs));
+		const maxEnd = Math.max(...rows.map((r) => r.endMs));
+		const pad = Math.max((maxEnd - minStart) * 0.02, 250);
+
+		const seriesData = rows.map((row, index) => ({
+			value: [row.startMs, laneOf[index], row.endMs],
+		}));
+
+		const option = {
+			backgroundColor: "#ffffff",
+			animation: false,
+			tooltip: {
+				trigger: "item",
+				//Render to <body> so the chart's overflow:auto scroll wrapper can't clip the tooltip.
+				appendToBody: true,
+				confine: false,
+				backgroundColor: "rgba(255, 255, 255, 0.98)",
+				borderColor: "#e0e0e0",
+				borderRadius: 8,
+				padding: [10, 14],
+				textStyle: { color: "#333", fontSize: 13 },
+				extraCssText:
+					"box-shadow: 0 8px 24px rgba(0,0,0,0.12); max-width: 320px; white-space: normal;",
+				formatter: (params: unknown): string => {
+					const dataIndex = (params as { dataIndex: number })
+						.dataIndex;
+					const row = rows[dataIndex];
+					if (!row) return "";
+					const e = row.event;
+					const ok = isSuccess(e.status);
+					const truncate = (text: string | null, max = 70) =>
+						text && text.length > max
+							? `${text.substring(0, max)}…`
+							: (text ?? "");
+					const line = (label: string, value: string) =>
+						value
+							? `<div style="display:flex;gap:8px;margin-top:2px;"><span style="color:#888;min-width:78px;flex-shrink:0;">${label}</span><span style="color:#333;flex:1;min-width:0;word-break:break-all;overflow-wrap:anywhere;">${value}</span></div>`
+							: "";
+					const start = TimeDateFormatter(e.startTime);
+					const end = TimeDateFormatter(e.endTime);
+					return `
+						<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.45;">
+							<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #f0f0f0;">
+								<span style="font-weight:600;">${e.methodName || e.engineName || "Event"}</span>
+								<span style="font-weight:600;color:${ok ? STATUS_OK_COLOR : STATUS_FAIL_COLOR};">${ok ? "Success" : "Failed"}</span>
+							</div>
+							${line("Engine", `${e.engineName ?? ""}${e.engineType ? ` (${e.engineType})` : ""}`)}
+							${line("User", e.userName || e.userId || "")}
+							${line("Latency", `${e.latency}ms`)}
+							${line("Tokens", e.tokens != null ? String(e.tokens) : "")}
+							${line("Start", `${start.date} ${start.time}`)}
+							${line("End", `${end.date} ${end.time}`)}
+							${line("Span", e.spanId || "")}
+							${line("Session", e.sessionId || "")}
+							<div style="margin-top:6px;color:#888;">Request</div>
+							<div style="color:#333;word-break:break-word;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${truncate(e.request)}</div>
+							<div style="margin-top:4px;color:#888;">Response</div>
+							<div style="color:#333;word-break:break-word;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${truncate(e.response)}</div>
+						</div>`;
+				},
+			},
+			grid: {
+				left: grouped ? "190px" : "120px",
+				right: "44px",
+				top: "28px",
+				bottom: "40px",
+				containLabel: false,
+			},
+			dataZoom: [
+				//Horizontal time zoom/scrollbar. start/end restore the current zoom on
+				//rebuild so it isn't lost when the chart re-renders.
+				{
+					id: "xZoom",
+					type: "slider",
+					xAxisIndex: 0,
+					bottom: 4,
+					height: 16,
+					start: xZoom.start,
+					end: xZoom.end,
+				},
+				//Vertical scrollbar through rows (keeps the time axis pinned).
+				{
+					id: "yZoom",
+					type: "slider",
+					yAxisIndex: 0,
+					right: 6,
+					width: 14,
+					start: yZoom.start,
+					end: yZoom.end,
+					filterMode: "none",
+					brushSelect: false,
+					showDetail: false,
+				},
+			],
+			xAxis: {
+				type: "time",
+				min: minStart - pad,
+				max: maxEnd + pad,
+				position: "top",
+				axisLine: { lineStyle: { color: "#e0e0e0" } },
+				axisLabel: {
+					color: "#666",
+					fontSize: 11,
+					hideOverlap: true,
+					formatter: (value: number) =>
+						formatAxisValue(value, axisMode),
+				},
+				splitLine: { show: true, lineStyle: { color: "#f0f0f0" } },
+			},
+			yAxis: {
+				type: "category",
+				inverse: true,
+				data: Array.from({ length: laneCount }, (_, index) =>
+					String(index),
+				),
+				axisTick: { show: false },
+				axisLine: { show: false },
+				axisLabel: {
+					color: "#555",
+					fontSize: 11,
+					width: grouped ? 180 : 110,
+					overflow: "truncate",
+					formatter: (value: string) =>
+						laneLabels[Number(value)] ?? "",
+				},
+			},
+			series: [
+				{
+					type: "custom",
+					clip: true,
+					data: seriesData,
+					renderItem: (
+						params: RenderItemParams,
+						api: RenderItemAPI,
+					): RenderRect | null => {
+						const startCoord = api.coord([
+							api.value(0),
+							api.value(1),
+						]);
+						const endCoord = api.coord([
+							api.value(2),
+							api.value(1),
+						]);
+						const bandHeight = api.size([0, 1])[1];
+						const barHeight = Math.max(
+							Math.min(bandHeight * 0.55, 14),
+							4,
+						);
+						//Leave a 1px gap so consecutive parts on a row read as distinct.
+						const width = Math.max(
+							endCoord[0] - startCoord[0] - 1,
+							2,
+						);
+						return {
+							type: "rect",
+							shape: {
+								x: startCoord[0],
+								y: startCoord[1] - barHeight / 2,
+								width,
+								height: barHeight,
+								r: 2,
+							},
+							style: {
+								fill:
+									barColors[params.dataIndex] ??
+									STATUS_OK_COLOR,
+							},
+						};
+					},
+				},
+			],
+		};
+
+		chart.setOption(option as echarts.EChartsOption);
+
+		chart.on("click", (params: { dataIndex?: number }) => {
+			//Ignore clicks while the highlight (drag-to-zoom) cursor is armed.
+			if (zoomSelectActiveRef.current) return;
+			if (params.dataIndex != null && rows[params.dataIndex]) {
+				setSelectedEvent(rows[params.dataIndex].event);
+				setDrawerOpen(true);
+			}
+		});
+
+		//Manual drag-a-rectangle-to-zoom: when the highlight cursor is armed, dragging
+		//on the plot draws a selection mask and zooms both axes to that region. This is
+		//done with zrender events (rather than the toolbox feature) so it works reliably.
+		const zr = chart.getZr();
+		let dragStart: [number, number] | null = null;
+		let maskEl: echarts.graphic.Rect | null = null;
+		const clearMask = () => {
+			if (maskEl) {
+				zr.remove(maskEl);
+				maskEl = null;
+			}
+			dragStart = null;
+		};
+		const onZrDown = (event: { offsetX: number; offsetY: number }) => {
+			if (!zoomSelectActiveRef.current) return;
+			dragStart = [event.offsetX, event.offsetY];
+			maskEl = new echarts.graphic.Rect({
+				shape: {
+					x: event.offsetX,
+					y: event.offsetY,
+					width: 0,
+					height: 0,
+				},
+				style: {
+					fill: "rgba(59,130,246,0.15)",
+					stroke: "#3b82f6",
+					lineWidth: 1,
+				},
+				z: 100,
+				silent: true,
+			});
+			zr.add(maskEl);
+		};
+		const onZrMove = (event: { offsetX: number; offsetY: number }) => {
+			if (!dragStart || !maskEl) return;
+			maskEl.setShape({
+				x: Math.min(dragStart[0], event.offsetX),
+				y: Math.min(dragStart[1], event.offsetY),
+				width: Math.abs(event.offsetX - dragStart[0]),
+				height: Math.abs(event.offsetY - dragStart[1]),
+			});
+		};
+		const onZrUp = (event: { offsetX: number; offsetY: number }) => {
+			if (!dragStart) return;
+			const [sx, sy] = dragStart;
+			const ex = event.offsetX;
+			const ey = event.offsetY;
+			clearMask();
+			//Ignore tiny drags (treated as a click).
+			if (Math.abs(ex - sx) < 4 && Math.abs(ey - sy) < 4) return;
+			const x1 = chart.convertFromPixel(
+				{ xAxisIndex: 0 },
+				Math.min(sx, ex),
+			) as number;
+			const x2 = chart.convertFromPixel(
+				{ xAxisIndex: 0 },
+				Math.max(sx, ex),
+			) as number;
+			const yTop = chart.convertFromPixel(
+				{ yAxisIndex: 0 },
+				Math.min(sy, ey),
+			) as number;
+			const yBottom = chart.convertFromPixel(
+				{ yAxisIndex: 0 },
+				Math.max(sy, ey),
+			) as number;
+			chart.dispatchAction({
+				type: "dataZoom",
+				dataZoomId: "xZoom",
+				startValue: x1,
+				endValue: x2,
+			});
+			chart.dispatchAction({
+				type: "dataZoom",
+				dataZoomId: "yZoom",
+				startValue: Math.min(yTop, yBottom),
+				endValue: Math.max(yTop, yBottom),
+			});
+			//Stay armed so the user can keep drawing zoom regions until they toggle
+			//the highlight button off.
+		};
+		zr.on("mousedown", onZrDown);
+		zr.on("mousemove", onZrMove);
+		zr.on("mouseup", onZrUp);
+
+		//After any zoom (slider drag, rectangle highlight, or buttons) read the
+		//authoritative current windows off the chart so our state always matches what
+		//is shown — and so a rebuild restores the exact same zoom.
+		chart.on("dataZoom", () => {
+			const dataZooms =
+				(
+					chart.getOption() as {
+						dataZoom?: Array<{
+							id?: string;
+							start?: number;
+							end?: number;
+						}>;
+					}
+				).dataZoom ?? [];
+			const x = dataZooms.find((d) => d.id === "xZoom");
+			const y = dataZooms.find((d) => d.id === "yZoom");
+			if (x && typeof x.start === "number" && typeof x.end === "number") {
+				setXZoom({ start: x.start, end: x.end });
+			}
+			if (y && typeof y.start === "number" && typeof y.end === "number") {
+				setYZoom({ start: y.start, end: y.end });
+			}
+		});
+
+		//Keep the chart sized to its container — covers window resizes AND container
+		//changes that don't fire a window resize (panels, sidebars, devtools docking).
+		const handleResize = () => chart.resize();
+		window.addEventListener("resize", handleResize);
+		const resizeObserver = new ResizeObserver(() => chart.resize());
+		if (chartRef.current) resizeObserver.observe(chartRef.current);
+
+		return () => {
+			window.removeEventListener("resize", handleResize);
+			resizeObserver.disconnect();
+			chart.dispose();
+			chartInstanceRef.current = null;
+		};
+	}, [rows, lanes, barColors, chartHeight, axisMode]);
+
+	//Zoom the time (x) axis around the center of the CURRENT window, so the buttons
+	//compose with whatever is already zoomed (slider/rectangle).
+	const applyXZoom = (start: number, end: number) => {
+		setXZoom({ start, end });
+		chartInstanceRef.current?.dispatchAction({
+			type: "dataZoom",
+			dataZoomId: "xZoom",
+			start,
+			end,
+		});
+	};
+
+	const handleZoomIn = () => {
+		const range = xZoom.end - xZoom.start;
+		if (range <= 5) return;
+		const center = (xZoom.start + xZoom.end) / 2;
+		const newRange = range * 0.6;
+		applyXZoom(
+			Math.max(0, center - newRange / 2),
+			Math.min(100, center + newRange / 2),
+		);
+	};
+
+	const handleZoomOut = () => {
+		const range = xZoom.end - xZoom.start;
+		if (range >= 100) return;
+		const center = (xZoom.start + xZoom.end) / 2;
+		const newRange = Math.min(100, range * 1.4);
+		applyXZoom(
+			Math.max(0, center - newRange / 2),
+			Math.min(100, center + newRange / 2),
+		);
+	};
+
+	//Arm/disarm the rectangle-zoom cursor. While armed, dragging on the chart zooms
+	//into that region; toggling off restores normal click-to-open-drawer behavior.
+	const toggleHighlightZoom = () => {
+		setZoomSelectActive((active) => !active);
+	};
+
+	//Restore the full time + row range.
+	const resetZoom = () => {
+		setXZoom({ start: 0, end: 100 });
+		setYZoom({ start: 0, end: 100 });
+		chartInstanceRef.current?.dispatchAction({
+			type: "dataZoom",
+			dataZoomId: "xZoom",
+			start: 0,
+			end: 100,
+		});
+		chartInstanceRef.current?.dispatchAction({
+			type: "dataZoom",
+			dataZoomId: "yZoom",
+			start: 0,
+			end: 100,
+		});
+	};
+
+	const handleDrawerClose = () => {
+		setDrawerOpen(false);
+		setTimeout(() => setSelectedEvent(null), 300);
+	};
+
+	const header = (
+		<div className="flex flex-wrap items-center justify-between gap-2 p-4">
+			<span className="font-semibold text-[#333] text-[18px]">
+				Event History
+			</span>
+			<div className="flex flex-wrap items-center gap-2">
+				<Select
+					value={rowMode}
+					onValueChange={(value) => setRowMode(value as RowMode)}
+				>
+					<SelectTrigger className="h-8 w-[150px] text-sm">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						{(Object.keys(ROW_MODE_LABELS) as RowMode[]).map(
+							(mode) => (
+								<SelectItem key={mode} value={mode}>
+									{ROW_MODE_LABELS[mode]}
+								</SelectItem>
+							),
+						)}
+					</SelectContent>
+				</Select>
+				<Select
+					value={axisMode}
+					onValueChange={(value) => setAxisMode(value as AxisMode)}
+				>
+					<SelectTrigger className="h-8 w-[150px] text-sm">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						{(Object.keys(AXIS_MODE_LABELS) as AxisMode[]).map(
+							(mode) => (
+								<SelectItem key={mode} value={mode}>
+									{AXIS_MODE_LABELS[mode]}
+								</SelectItem>
+							),
+						)}
+					</SelectContent>
+				</Select>
+				<fieldset
+					className="inline-flex gap-1 rounded-md bg-white shadow-sm"
+					style={{ boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)" }}
+				>
+					<Button
+						variant={zoomSelectActive ? "secondary" : "ghost"}
+						className="rounded-[4px_0_0_4px] px-[4px] py-[4px]"
+						onClick={toggleHighlightZoom}
+						title="Highlight a region to zoom in"
+						aria-pressed={zoomSelectActive}
+					>
+						<CropIcon style={{ color: "#666" }} />
+					</Button>
+					<Button
+						variant="ghost"
+						className="rounded-none px-[4px] py-[4px]"
+						onClick={handleZoomIn}
+						title="Zoom in"
+						disabled={xZoom.end - xZoom.start <= 5}
+					>
+						<ZoomInIcon style={{ color: "#666" }} />
+					</Button>
+					<Button
+						variant="ghost"
+						className="rounded-none px-[4px] py-[4px]"
+						onClick={handleZoomOut}
+						title="Zoom out"
+						disabled={xZoom.start === 0 && xZoom.end === 100}
+					>
+						<ZoomOutIcon style={{ color: "#666" }} />
+					</Button>
+					<Button
+						variant="ghost"
+						className="rounded-[0_4px_4px_0] px-[4px] py-[4px]"
+						onClick={resetZoom}
+						title="Reset zoom"
+						disabled={
+							xZoom.start === 0 &&
+							xZoom.end === 100 &&
+							yZoom.start === 0 &&
+							yZoom.end === 100
+						}
+					>
+						<ResetIcon style={{ color: "#666" }} />
+					</Button>
+				</fieldset>
+			</div>
+		</div>
+	);
+
+	if (rows.length === 0) {
 		return (
 			<div className="rounded-[8px] bg-white p-0 pb-2 shadow-lg">
-				<div className="flex items-center justify-between p-4">
-					<span className="font-semibold text-[#333] text-[18px]">
-						Event History
-					</span>
-				</div>
+				{header}
 				<div className="p-4 text-center">
 					<span className="font-normal text-[14px] text-gray-500">
 						No logs available.
@@ -720,49 +728,29 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 	}
 
 	return (
-		<div className="h-auto rounded-[8px] bg-white p-0 pb-4 shadow-lg">
-			<div className="flex items-center justify-between p-4">
-				<span className="font-semibold text-[#333] text-[18px]">
-					Event History
-				</span>
-				{/** changing from div role="group", to fieldset */}
-				<fieldset
-					className="inline-flex gap-1 rounded-md bg-white shadow-sm"
-					style={{ boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)" }}
+		<>
+			<div className="rounded-[8px] bg-white p-0 pb-2 shadow-lg">
+				{header}
+				<div className="w-full px-2 pb-2">
+					<div
+						className="w-full bg-[#FFFFFF]"
+						style={{ height: `${chartHeight}px` }}
+						ref={chartRef}
+					/>
+				</div>
+			</div>
+			<Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+				<SheetContent
+					side="right"
+					className="min-w-[500px] transition-all duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] data-[state=closed]:translate-x-full data-[state=open]:translate-x-0 data-[state=closed]:opacity-0 data-[state=open]:opacity-100"
 				>
-					<Button
-						variant="ghost"
-						className="rounded-[4px_0_0_4px] px-[4px] py-[4px]"
-						onClick={handleZoomIn}
-						disabled={zoomState.end - zoomState.start <= 15}
-					>
-						<ZoomInIcon
-							fontSize="small"
-							style={{ color: "#666" }}
-						/>
-					</Button>
-					<Button
-						variant="ghost"
-						className="rounded-[0_4px_4px_0] px-[4px] py-[4px]"
-						onClick={handleZoomOut}
-						disabled={
-							zoomState.start === 0 && zoomState.end === 100
-						}
-					>
-						<ZoomOutIcon
-							fontSize="small"
-							style={{ color: "#666" }}
-						/>
-					</Button>
-				</fieldset>
-			</div>
-
-			<div
-				className="m-0 h-[295px] w-full bg-[#FFFFFF] pb-[10px]"
-				ref={chartRef}
-			>
-				&nbsp;
-			</div>
-		</div>
+					<SheetTitle className="sr-only">Audit Details</SheetTitle>
+					<AuditLogsDetailDrawer
+						logDetails={selectedEvent}
+						handleDrawerClose={handleDrawerClose}
+					/>
+				</SheetContent>
+			</Sheet>
+		</>
 	);
 };
