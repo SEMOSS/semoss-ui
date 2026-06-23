@@ -682,7 +682,6 @@ export const FeatureDetailPage = observer(() => {
 				onOpenChange={setIsEditVersionsOpen}
 				appId={appId || ""}
 				flag={flag}
-				monolithStore={monolithStore}
 				onSaved={(updated) => {
 					setFlag((prev) =>
 						prev

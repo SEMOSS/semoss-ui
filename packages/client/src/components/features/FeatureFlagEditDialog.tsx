@@ -14,6 +14,7 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
+import { useRootStore } from "@/hooks/useRootStore";
 
 interface EditableFeatureFlag {
 	flagId: string;
@@ -28,14 +29,6 @@ interface FeatureFlagEditDialogProps {
 	onOpenChange: (open: boolean) => void;
 	appId: string;
 	flag: EditableFeatureFlag | null;
-	monolithStore: {
-		runQuery: (query: string) => Promise<{
-			pixelReturn: Array<{
-				output: unknown;
-				operationType: string;
-			}>;
-		}>;
-	};
 	onSaved: (updated: {
 		minVersion: number;
 		defaultVersion: number;
@@ -48,9 +41,11 @@ export const FeatureFlagEditDialog = ({
 	onOpenChange,
 	appId,
 	flag,
-	monolithStore,
 	onSaved,
 }: FeatureFlagEditDialogProps) => {
+	// Service for Axios calls
+	const { monolithStore } = useRootStore();
+
 	const [editMinVersion, setEditMinVersion] = useState("");
 	const [editDefaultVersion, setEditDefaultVersion] = useState("");
 	const [editDescription, setEditDescription] = useState("");

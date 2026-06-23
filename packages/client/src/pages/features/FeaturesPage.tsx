@@ -573,7 +573,6 @@ export const FeaturesPage = observer(() => {
 				}}
 				appId={selectedAppId}
 				flag={editingFlag}
-				monolithStore={monolithStore}
 				onSaved={(updated) => {
 					setFlags((prev) =>
 						prev.map((f) =>
