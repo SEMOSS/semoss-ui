@@ -1,6 +1,7 @@
 import { I18nBuilder, I18nextProvider } from "@semoss/i18n";
 import { Env, InsightProvider } from "@semoss/sdk/react";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
+import { LandscapeRestriction } from "@/components/common/landscape-restriction";
 import { Router } from "@/pages";
 
 // use the environment variable to set the module
@@ -22,6 +23,7 @@ export const App = () => {
 					defaultTheme="light"
 					storageKey="smss-ui-theme-playground"
 				>
+					<LandscapeRestriction />
 					<div className="absolute inset-0 h-screen w-screen overflow-hidden">
 						<Router />
 					</div>
