@@ -243,6 +243,21 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			// arguments/name deltas with the ToolStore created on the opening chunk
 			const toolStreamIndexToId: Record<number, string> = {};
 
+			// Shared param block for the turn. RecordCancelledTurn (on a stop)
+			// must replay the exact same params as AskPlayground, so both pixels
+			// are built from this single string — RecordCancelledTurn just adds
+			// outputParts.
+			const turnParams = `engine=["${room.model.engine_id}"],
+roomId=["${room.roomId}"],
+command=["<encode>${text}</encode>"],
+${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
+${media.length ? `image=${JSON.stringify(media)},` : "image=[],"}
+${this.id ? `parentMessageId=["${this.id}"],` : ""}
+paramValues=[${JSON.stringify({
+				max_new_tokens: room.options.tokenLength,
+				temperature: room.options.temperature,
+			})}]`;
+
 			// wait for the pixel to run with streaming
 			await room.runRoomPixelStreaming<
 				[
@@ -251,64 +266,50 @@ export class ResponseMessageStore extends AbstractMessageStore {
 						responseMessage: ResponsePixelMessage;
 					},
 				]
-			>(
-				`AskPlayground(
-engine=["${room.model.engine_id}"],
-roomId=["${room.roomId}"],
-command=["<encode>${text}</encode>"],
-${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
-${media.length ? `image=${JSON.stringify(media)},` : "image=[],"}
-${this.id ? `parentMessageId=["${this.id}"],` : ""}
-paramValues=[${JSON.stringify({
-					max_new_tokens: room.options.tokenLength,
-					temperature: room.options.temperature,
-				})}]
-);`,
-				{
-					onEmit: (chunk) => {
-						runInAction(() => {
-							if (chunk.stream_type === "content") {
-								if (chunk.data.content) {
-									responseMessage.savePart({
-										type: "TEXT",
-										text: chunk.data.content,
-										uiText: chunk.data.content,
-									});
-								}
-							} else if (chunk.stream_type === "thinking") {
-								if (chunk.data.thinking) {
-									responseMessage.savePart({
-										type: "THINKING",
-										thinking: chunk.data.thinking,
-									});
-								}
-							} else if (chunk.stream_type === "tool") {
-								applyToolStreamChunk(
-									responseMessage,
-									toolStreamIndexToId,
-									chunk.data,
-								);
-							} else {
-								console.error(`Unknown stream type`, chunk);
+			>(`AskPlayground(${turnParams});`, {
+				onEmit: (chunk) => {
+					runInAction(() => {
+						if (chunk.stream_type === "content") {
+							if (chunk.data.content) {
+								responseMessage.savePart({
+									type: "TEXT",
+									text: chunk.data.content,
+									uiText: chunk.data.content,
+								});
 							}
-						});
-					},
-					onResult: ({ results }) => {
-						const { output } = results[0];
-
-						// sync with the results
-						inputMessage.sync(output.inputMessage);
-						responseMessage.sync(output.responseMessage);
-
-						// start running tools if there are any
-						responseMessage.continueToolExecution();
-					},
-					// The user stopped the stream mid-response: persist what they
-					// saw and reload, rather than treating it as a result or error.
-					onCancel: () =>
-						this.recordCancelledTurn(inputMessage, responseMessage),
+						} else if (chunk.stream_type === "thinking") {
+							if (chunk.data.thinking) {
+								responseMessage.savePart({
+									type: "THINKING",
+									thinking: chunk.data.thinking,
+								});
+							}
+						} else if (chunk.stream_type === "tool") {
+							applyToolStreamChunk(
+								responseMessage,
+								toolStreamIndexToId,
+								chunk.data,
+							);
+						} else {
+							console.error(`Unknown stream type`, chunk);
+						}
+					});
 				},
-			);
+				onResult: ({ results }) => {
+					const { output } = results[0];
+
+					// sync with the results
+					inputMessage.sync(output.inputMessage);
+					responseMessage.sync(output.responseMessage);
+
+					// start running tools if there are any
+					responseMessage.continueToolExecution();
+				},
+				// The user stopped the stream mid-response: persist what they
+				// saw and reload, rather than treating it as a result or error.
+				onCancel: () =>
+					this.recordCancelledTurn(turnParams, responseMessage),
+			});
 		} catch (e) {
 			// remove message if we failed
 			this.removeChild(inputMessage);
@@ -324,31 +325,25 @@ paramValues=[${JSON.stringify({
 
 	/**
 	 * Commit a stopped turn. The cancelled AskPlayground call leaves nothing
-	 * persisted on the backend, so we hand back the prompt and the parts the
-	 * user actually saw via RecordCancelledTurn, then reload so the FE picks up
-	 * the server's committed state.
+	 * persisted on the backend, so we replay the turn's exact params via
+	 * RecordCancelledTurn — adding outputParts for what the user actually saw —
+	 * then reload so the FE picks up the server's committed state.
 	 */
 	private recordCancelledTurn = async (
-		inputMessage: InputMessageStore,
+		turnParams: string,
 		responseMessage: ResponseMessageStore,
 	): Promise<void> => {
 		const room = this.room;
-		const command = inputMessage.parts
-			.filter((part) => part.type === "TEXT")
-			.map((part) => (part as { text: string }).text)
-			.join("");
-		const parentMessageId =
-			this.id !== "ROOT_PLACEHOLDER_ID" ? this.id : undefined;
 
 		try {
 			await room.runRoomPixel(
-				`RecordCancelledTurn(engine=${JSON.stringify(room.model.engine_id)}, roomId=${JSON.stringify(room.roomId)}, command=${JSON.stringify(command)}, outputParts=${JSON.stringify(responseMessage.parts)}${parentMessageId ? `, parentMessageId=${JSON.stringify(parentMessageId)}` : ""});`,
+				`RecordCancelledTurn(${turnParams}, responseParts=${JSON.stringify(responseMessage.parts)});`,
 			);
 		} catch (e) {
 			console.error("Failed to record cancelled turn", e);
 		}
 
-		await room.initialize();
+		// await room.initialize();
 	};
 
 	/**
