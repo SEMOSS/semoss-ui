@@ -30,6 +30,7 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
+import { RoomAuditLogReport } from "./room-audit-log-report";
 import { RoomConfiguration } from "./room-configuration";
 import { RoomFileEditor } from "./room-file-editor";
 import { RoomFileExplorer } from "./room-file-explorer";
@@ -338,6 +339,8 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 									);
 								} else if (component === "room-configuration") {
 									return <RoomConfiguration room={room} />;
+								} else if (component === "audit-log-report") {
+									return <RoomAuditLogReport room={room} />;
 								} else if (component === "room-file-editor") {
 									return (
 										<RoomFileEditor
