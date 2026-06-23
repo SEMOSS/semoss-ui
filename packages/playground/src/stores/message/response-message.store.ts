@@ -306,9 +306,13 @@ paramValues=[${JSON.stringify({
 					responseMessage.continueToolExecution();
 				},
 				// The user stopped the stream mid-response: persist what they
-				// saw and reload, rather than treating it as a result or error.
+				// saw, rather than treating it as a result or error.
 				onCancel: () =>
-					this.recordCancelledTurn(turnParams, responseMessage),
+					this.recordCancelledTurn(
+						turnParams,
+						inputMessage,
+						responseMessage,
+					),
 			});
 		} catch (e) {
 			// remove message if we failed
@@ -326,24 +330,37 @@ paramValues=[${JSON.stringify({
 	/**
 	 * Commit a stopped turn. The cancelled AskPlayground call leaves nothing
 	 * persisted on the backend, so we replay the turn's exact params via
-	 * RecordCancelledTurn — adding outputParts for what the user actually saw —
-	 * then reload so the FE picks up the server's committed state.
+	 * RecordCancelledTurn — adding responseParts for what the user actually saw.
+	 * It returns the same paired output as AskPlayground, so we sync both
+	 * messages from the committed result.
 	 */
 	private recordCancelledTurn = async (
 		turnParams: string,
+		inputMessage: InputMessageStore,
 		responseMessage: ResponseMessageStore,
 	): Promise<void> => {
 		const room = this.room;
 
 		try {
-			await room.runRoomPixel(
+			const response = await room.runRoomPixel<
+				[
+					{
+						inputMessage: InputPixelMessage;
+						responseMessage: ResponsePixelMessage;
+					},
+				]
+			>(
 				`RecordCancelledTurn(${turnParams}, responseParts=${JSON.stringify(responseMessage.parts)});`,
 			);
+
+			const { output } = response.pixelReturn[0];
+
+			// sync with the results
+			inputMessage.sync(output.inputMessage);
+			responseMessage.sync(output.responseMessage);
 		} catch (e) {
 			console.error("Failed to record cancelled turn", e);
 		}
-
-		// await room.initialize();
 	};
 
 	/**
