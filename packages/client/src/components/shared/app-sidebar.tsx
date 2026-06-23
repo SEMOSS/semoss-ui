@@ -5,6 +5,7 @@ import {
 	CircleUserRound,
 	Computer,
 	Database,
+	Flag,
 	Home,
 	LayoutGrid,
 	PanelLeftOpen,
@@ -82,6 +83,11 @@ const CATALOG_ROUTES = [
 		text: "Guardrail",
 		icon: <ShieldCheck className="size-4" />,
 		route: "/engine/guardrail",
+	},
+	{
+		text: "Features",
+		icon: <Flag className="size-4" />,
+		route: "/features",
 	},
 ];
 
