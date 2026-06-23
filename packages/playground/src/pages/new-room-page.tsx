@@ -126,6 +126,24 @@ export const NewRoomPage = observer(() => {
 		},
 	);
 
+	// Fetch the agent's default model metadata (stored as project metadata)
+	const getWorkspaceMeta = usePixel<{
+		default_model?: {
+			engine_id?: string;
+			engine_name?: string;
+			engine_display_name?: string;
+			/** legacy elsa-beta key names */
+			app_id?: string;
+			app_name?: string;
+			app_display_name?: string;
+		} | null;
+	}>(
+		mode === "workspace" && selectedWorkspaceId
+			? `GetProjectMetadata(project=["${selectedWorkspaceId}"], metaKeys=["default_model"]);`
+			: "",
+		{ data: {} },
+	);
+
 	// Fetch knowledge vector engine if knowledgeId is provided
 	const getKnowledge = usePixel<
 		| {
@@ -303,6 +321,37 @@ export const NewRoomPage = observer(() => {
 			},
 		});
 	}, [mode, getWorkspace.status, getWorkspace.data, tempRoomStore]);
+
+	// Apply the agent's default model when workspace metadata resolves.
+	// Normalises both the semoss-ui (engine_id/engine_name) and
+	// elsa-beta (app_id/app_name) key shapes that SetProjectMetadata may have
+	// stored, then calls setSelectedModel so the model dropdown updates.
+	useEffect(() => {
+		if (
+			mode !== "workspace" ||
+			getWorkspaceMeta.status !== "SUCCESS" ||
+			!getWorkspaceMeta.data
+		) {
+			return;
+		}
+
+		const raw = getWorkspaceMeta.data.default_model;
+		if (!raw) return;
+
+		// Normalise key names — elsa-beta stores app_* keys
+		const engineId = raw.engine_id ?? raw.app_id;
+		const engineName = raw.engine_name ?? raw.app_name;
+		const displayName = raw.engine_display_name ?? raw.app_display_name;
+
+		if (!engineId || !engineName) return;
+
+		chat.setSelectedModel({
+			engine_id: engineId,
+			engine_name: engineName,
+			engine_display_name: displayName,
+			engine_type: "MODEL",
+		});
+	}, [mode, getWorkspaceMeta.status, getWorkspaceMeta.data, chat]);
 
 	// Handle knowledge vector engine from URL parameter
 	useEffect(() => {
