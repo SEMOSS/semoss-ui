@@ -211,7 +211,8 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 								<Markdown
 									dir="auto"
 									components={components}
-									className="[&>*:first-child]:mt-0"
+									// wrap-anywhere: breaks long tokens and collapses min-width so they don't overflow the scroll area
+									className="wrap-anywhere [&>*:first-child]:mt-0"
 									urlTransform={urlTransform}
 								>
 									{postTypewriter.isTyping
@@ -226,7 +227,8 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 							<Markdown
 								dir="auto"
 								components={components}
-								className="[&>*:first-child]:mt-0"
+								// wrap-anywhere: breaks long tokens and collapses min-width so they don't overflow the scroll area
+								className="wrap-anywhere [&>*:first-child]:mt-0"
 								urlTransform={urlTransform}
 							>
 								{typewriter.isTyping &&
@@ -251,7 +253,8 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 								<Markdown
 									dir="auto"
 									components={components}
-									className="[&>*:first-child]:mt-0"
+									// wrap-anywhere: breaks long tokens and collapses min-width so they don't overflow the scroll area
+									className="wrap-anywhere [&>*:first-child]:mt-0"
 									urlTransform={urlTransform}
 								>
 									{postTypewriter.isTyping
@@ -264,7 +267,8 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 					<Markdown
 						dir="auto"
 						components={components}
-						className="[&>*:first-child]:mt-0"
+						// wrap-anywhere: breaks long tokens and collapses min-width so they don't overflow the scroll area
+						className="wrap-anywhere [&>*:first-child]:mt-0"
 						urlTransform={urlTransform}
 					>
 						{renderedText}
