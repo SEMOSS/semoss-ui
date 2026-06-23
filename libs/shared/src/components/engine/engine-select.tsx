@@ -219,7 +219,8 @@ export const EngineSelect = ({
 			? (tokensUsed / tokensMax) * 100
 			: undefined;
 
-	const showContextIndicator = contextUsedPercent !== undefined;
+	const showContextIndicator = 
+    contextUsedPercent !== undefined && contextUsedPercent > 0;
 
 	// Pie-chart geometry — fills smoothly from 0%. Clamp to [0, 100] so the
 	// wedge never overshoots when usage briefly exceeds the window.
@@ -227,6 +228,7 @@ export const EngineSelect = ({
 		contextUsedPercent !== undefined
 			? Math.min(100, Math.max(0, contextUsedPercent))
 			: 0;
+  
 	const isDestructive = fillPercent >= 75;
 	const radius = 8;
 	const cx = 9;

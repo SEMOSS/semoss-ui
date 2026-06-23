@@ -623,14 +623,6 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 		[favorite, isFavorite],
 	);
 
-	const handleViewDashboard = useCallback(
-		(e: React.MouseEvent) => {
-			e.stopPropagation();
-			navigate(`/app/${app.project_id}/dashboard`);
-		},
-		[navigate, app.project_id],
-	);
-
 	const handleCopyId = useCallback(
 		(e: React.MouseEvent) => {
 			e.stopPropagation();
@@ -668,9 +660,6 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 
 	const dropdownMenuContent = (
 		<DropdownMenuContent align="end">
-			<DropdownMenuItem onClick={handleViewDashboard}>
-				View Dashboard
-			</DropdownMenuItem>
 			{canEdit && (
 				<>
 					{entityType !== "agent" && (

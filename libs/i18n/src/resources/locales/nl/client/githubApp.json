@@ -1,0 +1,183 @@
+{
+	"header": {
+		"title": "GitHub-app",
+		"description": "Maak en beheer de GitHub-app die wordt gebruikt om apps te koppelen aan GitHub-projecten en webhooks."
+	},
+	"list": {
+		"title": "Geconfigureerde GitHub-apps",
+		"emptyTitle": "Er is nog geen GitHub-app geconfigureerd",
+		"emptyDescription": "Maak een GitHub-app om SEMOSS-apps met GitHub-projecten te verbinden.",
+		"connected": "Verbonden",
+		"appId": "App-ID {{appId}}",
+		"owner": "Eigenaar",
+		"createdOn": "Aangemaakt",
+		"openInGithub": "Openen in GitHub",
+		"unknownDate": "Onbekende datum"
+	},
+	"buttons": {
+		"create": "GitHub-app maken",
+		"refresh": "Vernieuwen",
+		"cancel": "Annuleren",
+		"creating": "Doorsturen...",
+		"remove": "Verwijderen",
+		"removing": "Verwijderen..."
+	},
+	"deleteDialog": {
+		"title": "GitHub-app verwijderen?",
+		"description": "\"{{appName}}\" uit deze instantie verwijderen? Hiermee worden de opgeslagen inloggegevens en projectkoppelingen hier verwijderd. De app wordt niet van GitHub verwijderd — een eigenaar moet die daar verwijderen (Settings → Developer settings → GitHub Apps → Advanced).",
+		"openInGithub": "Openen in GitHub om volledig te verwijderen"
+	},
+	"dialog": {
+		"title": "GitHub-app maken",
+		"description": "Start de GitHub manifest-flow om een nieuwe app te maken.",
+		"appNameLabel": "App-naam",
+		"appNamePlaceholder": "Semoss GitHub App",
+		"createUnderLabel": "Maken onder",
+		"myAccount": "Mijn account",
+		"organization": "Organisatie",
+		"organizationLabel": "Organisatie",
+		"organizationPlaceholder": "mijn-github-org",
+		"visibilityLabel": "Zichtbaarheid",
+		"public": "Openbaar",
+		"private": "Privé",
+		"visibilityHelp": "Openbare apps kunnen op elk account of elke organisatie worden geïnstalleerd. Privé-apps kunnen alleen worden geïnstalleerd op het account dat ze bezit."
+	},
+	"status": {
+		"loading": "GitHub-appconfiguratie laden...",
+		"notPermitted": "Je hebt geen rechten om de GitHub-appconfiguratie te beheren."
+	},
+	"validation": {
+		"organizationRequired": "Organisatie is verplicht."
+	},
+	"toasts": {
+		"loadFailed": "Laden van de GitHub-appconfiguratie is mislukt.",
+		"notPermitted": "Je hebt geen toegang tot de GitHub-appconfiguratie.",
+		"redirecting": "Je wordt doorgestuurd naar GitHub om de app te maken...",
+		"createSuccess": "GitHub-app aangemaakt en geconfigureerd voor deze instantie.",
+		"createError": "Er ging iets mis bij het maken van de GitHub-app.",
+		"createErrorConversion": "Kon de GitHub-app niet maken — de uitwisseling met GitHub is mislukt. Probeer het opnieuw.",
+		"createErrorSave": "De GitHub-app is op GitHub gemaakt, maar kon hier niet worden opgeslagen. Probeer het opnieuw.",
+		"deleteSuccess": "GitHub-app uit deze instantie verwijderd.",
+		"deleteFailed": "Verwijderen van de GitHub-app is mislukt."
+	},
+	"projects": {
+		"title": "Verbonden projecten",
+		"loading": "Verbonden projecten laden...",
+		"empty": "Er zijn nog geen projecten met GitHub verbonden.",
+		"unknownRepo": "Onbekende repository",
+		"lastOpened": "Laatst geopend {{date}}",
+		"openTab": "App-instellingen openen"
+	},
+	"branchSelect": {
+		"label": "Branch",
+		"placeholder": "Selecteer een branch",
+		"loading": "Branches laden...",
+		"retry": "Opnieuw proberen",
+		"errorFallback": "Kon de branches niet laden vanaf GitHub. Probeer opnieuw of typ de branchnaam."
+	},
+	"project": {
+		"title": "GitHub",
+		"description": "Verbind deze app met een GitHub-repository om code te synchroniseren en push-updates te ontvangen.",
+		"syncWarning": "Pushes naar de gevolgde branch op GitHub worden automatisch in dit project gesynchroniseerd en vervangen lokale wijzigingen. De gevolgde branch is de bron van waarheid.",
+		"loading": "GitHub-verbinding laden...",
+		"connectedRepo": "Verbonden repository",
+		"changeRepo": "Repository wijzigen",
+		"disconnect": "Verbinding verbreken",
+		"connect": "Verbinden met GitHub",
+		"checking": "Beschikbaarheid van GitHub controleren...",
+		"notConnectedTitle": "Niet verbonden met GitHub",
+		"notConnectedDescription": "Installeer de GitHub-app op je account of organisatie en geef die toegang tot de repository die je wilt koppelen.",
+		"unavailableTitle": "GitHub is niet ingesteld voor deze instantie",
+		"unavailableDescription": "Een beheerder moet de GitHub-app van de instantie configureren voordat projecten kunnen verbinden.",
+		"installation": {
+			"valid": "Installatie actief",
+			"invalidTitle": "De installatie van de GitHub-app is niet meer geldig",
+			"invalidDescription": "De GitHub-app is voor deze repository gedeïnstalleerd of opgeschort, dus synchroniseren is gestopt. Verbind opnieuw om het te herstellen.",
+			"reconnect": "Opnieuw verbinden"
+		},
+		"branch": {
+			"label": "Gevolgde branch",
+			"default": "standaardbranch",
+			"change": "Wijzigen"
+		},
+		"branchDialog": {
+			"title": "Gevolgde branch instellen",
+			"description": "Alleen pushes naar deze branch synchroniseren het project. Dit is meestal je standaardbranch (bijv. main).",
+			"placeholder": "main",
+			"cancel": "Annuleren",
+			"confirm": "Opslaan"
+		},
+		"webhooks": {
+			"title": "Recente webhook-activiteit",
+			"description": "Recente webhook-leveringen die GitHub voor deze repository heeft verzonden. GitHub bewaart slechts een korte recente periode.",
+			"refresh": "Vernieuwen",
+			"loading": "Webhook-activiteit laden...",
+			"empty": "Geen recente webhook-leveringen.",
+			"eventLabel": "Gebeurtenis:",
+			"redelivery": "herlevering",
+			"unknownTime": "Onbekende tijd"
+		},
+		"changeDialog": {
+			"title": "Repository wijzigen",
+			"description": "Kies een andere repository voor dit project uit de repository's waartoe de installatie toegang heeft.",
+			"confirm": "Repository wijzigen"
+		},
+		"disconnectDialog": {
+			"title": "Verbinding met GitHub verbreken?",
+			"description": "Hiermee wordt de koppeling van het project met zijn repository verbroken. De GitHub-app wordt niet van je account of organisatie verwijderd.",
+			"cancel": "Annuleren",
+			"confirm": "Verbinding verbreken"
+		},
+		"connectDialog": {
+			"title": "Verbinden met GitHub",
+			"description": "Kies een GitHub-app-installatie en vervolgens de repository waarmee dit project moet synchroniseren.",
+			"confirm": "Repository verbinden"
+		},
+		"installPicker": {
+			"loading": "GitHub-installaties laden...",
+			"loadFailed": "Kan GitHub-installaties niet laden.",
+			"retry": "Opnieuw proberen",
+			"selectLabel": "Kies een installatie",
+			"accountTypeOrganization": "Organisatie",
+			"accountTypeUser": "Persoonlijk account",
+			"suspended": "Opgeschort",
+			"suspendedTooltip": "Deze installatie is opgeschort op GitHub en kan pas worden gebruikt nadat deze opnieuw is geactiveerd.",
+			"backToInstallations": "Installaties",
+			"authTitle": "GitHub autoriseren",
+			"authDescription": "Autoriseer je GitHub-toegang om de installaties en repository's te tonen die je kunt koppelen.",
+			"authorize": "GitHub autoriseren",
+			"installApp": "De GitHub-app installeren",
+			"installAnother": "Op een ander account installeren",
+			"emptyTitle": "Geen installaties gevonden",
+			"emptyDescription": "De GitHub-app is nog op geen van je accounts geïnstalleerd. Installeer deze om een repository te verbinden."
+		},
+		"picker": {
+			"searchPlaceholder": "Repository's zoeken...",
+			"loading": "Repository's laden...",
+			"noRepos": "Geen overeenkomende repository's.",
+			"manageOnGithub": "Vind je je repo niet? Beheer op GitHub",
+			"branchLabel": "Te volgen branch",
+			"branchHelp": "Alleen pushes naar deze branch synchroniseren het project."
+		},
+		"selectRepo": {
+			"title": "Selecteer een repository",
+			"description": "De installatie heeft toegang tot meerdere repository's. Kies degene die dit project moet gebruiken.",
+			"confirm": "Repository verbinden",
+			"missingInstallation": "Er is geen installatie opgegeven. Start de verbindingsflow opnieuw vanaf het GitHub-tabblad.",
+			"back": "Terug naar GitHub"
+		},
+		"toasts": {
+			"reposFailed": "Laden van repository's is mislukt.",
+			"connected": "Project verbonden met GitHub.",
+			"connectFailed": "Verbinden van de repository is mislukt.",
+			"changed": "Gekoppelde repository bijgewerkt.",
+			"changeFailed": "Wijzigen van de repository is mislukt.",
+			"disconnected": "Verbinding van het project met GitHub verbroken.",
+			"disconnectFailed": "Verbinding verbreken van het project is mislukt.",
+			"deliveriesFailed": "Laden van webhook-activiteit is mislukt.",
+			"branchUpdated": "Gevolgde branch bijgewerkt.",
+			"branchFailed": "Instellen van de gevolgde branch is mislukt.",
+			"needsAuth": "GitHub-autorisatie vereist — je wordt naar GitHub gestuurd om te autoriseren..."
+		}
+	}
+}
