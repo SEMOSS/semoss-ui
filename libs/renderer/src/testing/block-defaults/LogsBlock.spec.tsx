@@ -52,7 +52,7 @@ describe("logs block", () => {
 
 		expect(element).toBeInTheDocument();
 		expect(element.tagName).equal("DIV", "element is type div");
-		expect(screen.getByText("Attach Query")).toBeInTheDocument();
+		expect(screen.getByText("Attach Notebook")).toBeInTheDocument();
 	});
 
 	it("renders correctly with mocked provider and query", async () => {
