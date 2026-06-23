@@ -1,5 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import "@/styles/globals.css";
 import { LoadingScreen, Toaster } from "@semoss/ui/next";
 import PanelApp from "./PanelApp";
 
