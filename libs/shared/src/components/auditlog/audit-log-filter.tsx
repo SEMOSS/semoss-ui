@@ -46,6 +46,8 @@ const initialAcc = {
 	FUNCTION: [],
 	STORAGE: [],
 };
+
+type OwnerStatus = "unknown" | "owner" | "non-owner";
 //Dashboard durations for filtering logs based on duration like day, week, month, etc
 const DashboardDurations = [
 	{ label: "Today", value: "today", dateRangeType: "DAY", dateRangeValue: 1 },
@@ -84,6 +86,13 @@ interface AuditLogFilterProps {
 	hideDateFilter?: boolean;
 	//Right-aligned actions rendered on the search line (e.g. export / refresh).
 	actions?: React.ReactNode;
+	//Optional custom runner for filter-option pixels (used by room-scoped reports).
+	runFilterPixel?: (pixel: string) => Promise<{
+		pixelReturn: {
+			operationType: string[];
+			output: unknown;
+		}[];
+	}>;
 }
 
 //A compact multi-select dropdown backed by the server-driven option lists.
@@ -182,8 +191,8 @@ const MultiSelectDropdown = ({
  * It drives the server-side filter set documented by the AuditLogsReport contract:
  * scope (engine type + engine, when not contextual), date range, method name,
  * engine type, the owner-only user filter, and the global search term. Filter
- * options are populated from GetAuditLogsReportFilterOptionList and the user
- * filter is only shown to owners of the scoped project/engine.
+ * options are populated from GetAuditLogsReportFilterOptionList; ownership is
+ * resolved lazily when the user filter is opened.
  *
  * @param {AuditLogFilterProps} props - The props passed to the component
  * @returns {JSX.Element} - The rendered filter bar
@@ -197,6 +206,7 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 		hideRoomFilter = false,
 		hideDateFilter = false,
 		actions = null,
+		runFilterPixel,
 	} = props;
 	const [engineDetails, setEngineDetails] = useState({ ...initialAcc }); //engine details for user
 	const [engineSelectionDetails, setEngineSelectionDetails] = useState({
@@ -223,6 +233,13 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 	//Tracks the scope+date key each option list was last fetched for, so reopening
 	//a dropdown doesn't refetch unless the scope or date window changed.
 	const loadedKeyRef = useRef<Record<string, string>>({});
+	//Skip the first reset pass: initial state is already clean and resetting it on
+	//mount can emit a duplicate report fetch.
+	const didInitializeRef = useRef(false);
+	const lastScopeKeyRef = useRef<string>("");
+	//Avoid duplicate report fetches when upstream state toggles but the effective
+	//filter payload did not actually change (e.g. ownership resolution on load).
+	const lastEmittedFilterKeyRef = useRef<string>("");
 	const [selectedMethods, setSelectedMethods] = useState<string[]>([]);
 	const [selectedEngineTypes, setSelectedEngineTypes] = useState<string[]>(
 		[],
@@ -232,7 +249,13 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 	const [searchTerm, setSearchTerm] = useState<string>("");
 	const [roomOptions, setRoomOptions] = useState<string[]>([]);
 	const [selectedRoomId, setSelectedRoomId] = useState<string>("");
-	const [isOwner, setIsOwner] = useState<boolean>(false);
+	const [ownerStatus, setOwnerStatus] = useState<OwnerStatus>("unknown");
+	const executeFilterPixel = (pixel: string) => {
+		if (runFilterPixel) {
+			return runFilterPixel(pixel);
+		}
+		return runPixel(pixel, insightId);
+	};
 
 	//The scope the report is actually run against. For the contextual client
 	//dashboard it is supplied by the page; otherwise it follows the pickers.
@@ -352,49 +375,29 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 		[userOptions, selectedUserKey],
 	);
 
-	//Resolve ownership for the scoped project/engine. The owner-only user filter
-	//is hidden for non-owners (the backend auto-scopes them to their own logs).
-	useEffect(() => {
-		let cancelled = false;
-		setIsOwner(false);
-		setSelectedUserKey("");
-		if (!hasScope(effectiveScope) || !effectiveScope) return;
-		const resolveOwnership = async () => {
-			try {
-				let permission: string | undefined;
-				if (effectiveScope.projectId) {
-					permission = await getUserProjectPermission(
-						effectiveScope.projectId,
-					);
-				} else if (effectiveScope.engineId) {
-					permission = await getUserEnginePermission(
-						effectiveScope.engineId,
-					);
-				}
-				if (!cancelled) setIsOwner(permission === "OWNER");
-			} catch (error) {
-				if (!cancelled) setIsOwner(false);
-				console.error("Error resolving audit log ownership:", error);
-			}
-		};
-		resolveOwnership();
-		return () => {
-			cancelled = true;
-		};
-	}, [scopeKey]);
-
 	//Reset selections + cached option lists whenever the scope or date window
 	//changes, so stale picks/options don't leak across engines or time ranges. The
 	//options themselves are (re)fetched lazily the next time a dropdown is opened.
 	useEffect(() => {
+		if (!didInitializeRef.current) {
+			didInitializeRef.current = true;
+			lastScopeKeyRef.current = scopeKey;
+			return;
+		}
+		const scopeChanged = lastScopeKeyRef.current !== scopeKey;
 		setSelectedMethods([]);
 		setSelectedEngineTypes([]);
 		setSelectedRoomId("");
+		if (scopeChanged) {
+			setSelectedUserKey("");
+			setOwnerStatus("unknown");
+		}
 		setMethodOptions([]);
 		setEngineTypeOptions([]);
 		setRoomOptions([]);
 		setUserOptions([]);
 		loadedKeyRef.current = {};
+		lastScopeKeyRef.current = scopeKey;
 	}, [scopeKey, dateKey]);
 
 	//Fetch a single option list on demand (when its dropdown opens), caching by
@@ -404,18 +407,23 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 		filterName: "methodName" | "engineType" | "roomId",
 		setOptions: (options: string[]) => void,
 	) => {
-		if (!hasScope(effectiveScope) || !effectiveScope || !insightId) return;
+		if (
+			!hasScope(effectiveScope) ||
+			!effectiveScope ||
+			(!runFilterPixel && !insightId)
+		) {
+			return;
+		}
 		const key = `${scopeKey}|${dateKey}`;
 		if (loadedKeyRef.current[filterName] === key) return;
 		loadedKeyRef.current[filterName] = key;
 		setLoadingFilters((prev) => ({ ...prev, [filterName]: true }));
-		runPixel(
+		executeFilterPixel(
 			buildFilterOptionListPixel({
 				filterName,
 				scope: effectiveScope,
 				date: hideDateFilter ? undefined : dateParams,
 			}),
-			insightId,
 		)
 			.then((response) => {
 				const result = response.pixelReturn[0];
@@ -441,40 +449,58 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 	};
 
 	//Fetch the owner-only user option list on demand (when its dropdown opens).
-	const ensureUserOptions = () => {
+	const ensureUserOptions = async () => {
 		if (
 			!hasScope(effectiveScope) ||
 			!effectiveScope ||
-			!insightId ||
-			!isOwner
+			effectiveScope.roomId ||
+			(!runFilterPixel && !insightId)
 		) {
 			return;
 		}
 		const key = `${scopeKey}|${dateKey}`;
 		if (loadedKeyRef.current.user === key) return;
-		loadedKeyRef.current.user = key;
 		setLoadingFilters((prev) => ({ ...prev, user: true }));
-		runPixel(
-			buildFilterOptionListPixel({
-				filterName: "user",
-				scope: effectiveScope,
-				date: hideDateFilter ? undefined : dateParams,
-			}),
-			insightId,
-		)
-			.then((response) => {
-				setUserOptions(
-					parseUserFilterOptions(response.pixelReturn[0].output),
-				);
-			})
-			.catch((error) => {
-				loadedKeyRef.current.user = "";
+		try {
+			let resolvedOwnerStatus = ownerStatus;
+			if (resolvedOwnerStatus === "unknown") {
+				let permission: string | undefined;
+				if (effectiveScope.projectId) {
+					permission = await getUserProjectPermission(
+						effectiveScope.projectId,
+					);
+				} else if (effectiveScope.engineId) {
+					permission = await getUserEnginePermission(
+						effectiveScope.engineId,
+					);
+				}
+				resolvedOwnerStatus =
+					permission === "OWNER" ? "owner" : "non-owner";
+				setOwnerStatus(resolvedOwnerStatus);
+			}
+			if (resolvedOwnerStatus !== "owner") {
+				loadedKeyRef.current.user = key;
 				setUserOptions([]);
-				console.error("Error loading audit log user options:", error);
-			})
-			.finally(() =>
-				setLoadingFilters((prev) => ({ ...prev, user: false })),
+				return;
+			}
+			loadedKeyRef.current.user = key;
+			const response = await executeFilterPixel(
+				buildFilterOptionListPixel({
+					filterName: "user",
+					scope: effectiveScope,
+					date: hideDateFilter ? undefined : dateParams,
+				}),
 			);
+			setUserOptions(
+				parseUserFilterOptions(response.pixelReturn[0].output),
+			);
+		} catch (error) {
+			loadedKeyRef.current.user = "";
+			setUserOptions([]);
+			console.error("Error loading audit log user options:", error);
+		} finally {
+			setLoadingFilters((prev) => ({ ...prev, user: false }));
+		}
 	};
 
 	//Debounce the global search input so we don't refetch on every keystroke.
@@ -485,8 +511,11 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 
 	//Emit the full filter value whenever anything changes (once a scope exists).
 	useEffect(() => {
-		if (!hasScope(effectiveScope)) return;
-		updateLogs({
+		if (!hasScope(effectiveScope)) {
+			lastEmittedFilterKeyRef.current = "";
+			return;
+		}
+		const nextFilterValue = {
 			scope: effectiveScope,
 			dateRangeType: SelectedDuration.dateRangeType,
 			dateRangeValue: SelectedDuration.dateRangeValue,
@@ -496,10 +525,15 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 			},
 			methodNames: selectedMethods,
 			engineTypes: selectedEngineTypes,
-			filterUserId: isOwner ? (selectedUser?.userId ?? "") : "",
+			filterUserId:
+				ownerStatus === "owner" ? (selectedUser?.userId ?? "") : "",
 			roomId: selectedRoomId,
 			searchTerm,
-		});
+		};
+		const nextFilterKey = JSON.stringify(nextFilterValue);
+		if (lastEmittedFilterKeyRef.current === nextFilterKey) return;
+		lastEmittedFilterKeyRef.current = nextFilterKey;
+		updateLogs(nextFilterValue);
 	}, [
 		scopeKey,
 		SelectedDuration.dateRangeType,
@@ -510,7 +544,7 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 		selectedUser,
 		selectedRoomId,
 		searchTerm,
-		isOwner,
+		ownerStatus,
 	]);
 
 	//Calendar content shown under the date dropdown when "Custom" is selected.
@@ -570,6 +604,9 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 	);
 
 	const scopeReady = hasScope(effectiveScope);
+	const supportsUserFilter = Boolean(
+		effectiveScope && !effectiveScope.roomId,
+	);
 	//Filter selections only — the scope pickers (engine type/engine) are left alone
 	//since clearing them would empty the table entirely.
 	const hasActiveFilters =
@@ -798,11 +835,11 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 				disabled={!scopeReady}
 			/>
 
-			{/** user filter — owners only (loaded on open) */}
-			{isOwner && (
+			{/** user filter (loaded on open; ownership resolved lazily) */}
+			{supportsUserFilter && ownerStatus !== "non-owner" && (
 				<DropdownMenu
 					onOpenChange={(open) => {
-						if (open) ensureUserOptions();
+						if (open) void ensureUserOptions();
 					}}
 				>
 					<DropdownMenuTrigger asChild>
