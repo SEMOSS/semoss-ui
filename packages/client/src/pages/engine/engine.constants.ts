@@ -6,6 +6,7 @@ import { EngineActivityPage } from "./engine-activity-page";
 import { EngineCommitsPage } from "./engine-commits-page";
 import { EngineFileManagerPage } from "./engine-file-manager-page";
 import { EngineFilePage } from "./engine-file-page";
+import { EngineGuardrailPage } from "./engine-guardrail-page";
 import { EngineMcpUsagePage } from "./engine-mcp-usage-page";
 import { EngineMetadataPage } from "./engine-metadata-page";
 import { EngineModelChatPage } from "./engine-model-chat-page";
@@ -99,6 +100,12 @@ const ENGINE_ROUTES_BASE: {
 				component: EngineSmssPage,
 				restrict: ["OWNER"],
 			},
+			{
+				name: "Guardrail",
+				path: "guardrail",
+				component: EngineGuardrailPage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
 		],
 	},
 	{
@@ -150,6 +157,12 @@ const ENGINE_ROUTES_BASE: {
 				path: "smss",
 				component: EngineSmssPage,
 				restrict: ["OWNER"],
+			},
+			{
+				name: "Guardrail",
+				path: "guardrail",
+				component: EngineGuardrailPage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 		],
 	},
@@ -215,6 +228,12 @@ const ENGINE_ROUTES_BASE: {
 				component: EngineSmssPage,
 				restrict: ["OWNER"],
 			},
+			{
+				name: "Guardrail",
+				path: "guardrail",
+				component: EngineGuardrailPage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
 		],
 	},
 	{
@@ -273,6 +292,12 @@ const ENGINE_ROUTES_BASE: {
 				component: EngineSmssPage,
 				restrict: ["OWNER"],
 			},
+			{
+				name: "Guardrail",
+				path: "guardrail",
+				component: EngineGuardrailPage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
 		],
 	},
 	{
@@ -324,6 +349,12 @@ const ENGINE_ROUTES_BASE: {
 				path: "smss",
 				component: EngineSmssPage,
 				restrict: ["OWNER"],
+			},
+			{
+				name: "Guardrail",
+				path: "guardrail",
+				component: EngineGuardrailPage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 		],
 	},

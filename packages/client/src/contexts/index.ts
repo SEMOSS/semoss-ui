@@ -5,6 +5,11 @@ import {
 } from "./AppDetailContext";
 import { DesignerContext, type DesignerContextType } from "./DesignerContext";
 import { EngineContext, type EngineContextType } from "./EngineContext";
+import {
+	GuardrailSelectorControlsContext,
+	type GuardrailSelectorControlsContextType,
+	useGuardrailSelectorControls,
+} from "./GuardrailSelectorControlsContext";
 import { LLMContext, type LLMContextType } from "./LLMContext";
 import {
 	MetamodelContext,
@@ -26,6 +31,7 @@ export type {
 	AppDetailContextType,
 	DesignerContextType,
 	EngineContextType,
+	GuardrailSelectorControlsContextType,
 	LLMContextType,
 	MetamodelContextType,
 	RootStoreContextType,
@@ -39,12 +45,14 @@ export {
 	AppDetailContext,
 	DesignerContext,
 	EngineContext,
+	GuardrailSelectorControlsContext,
 	LLMContext,
 	MetamodelContext,
 	RootStoreContext,
 	SettingsContext,
 	StepperContext,
 	PageContext,
+	useGuardrailSelectorControls,
 	WorkspaceContext,
 	useAppDetail,
 };
