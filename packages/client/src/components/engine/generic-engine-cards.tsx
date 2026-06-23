@@ -4,7 +4,6 @@ import {
 	ChevronDown,
 	ChevronUp,
 	Copy,
-	GanttChartSquare,
 	LockKeyhole,
 	LockKeyholeOpen,
 	Star,
@@ -36,7 +35,6 @@ import {
 } from "@semoss/ui/next";
 import { Folder } from "@/assets/img/Folder";
 import GOOGLE from "@/assets/img/GOOGLE.svg";
-import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
 
 const parseUtcDate = (rawDate?: string) => {
@@ -62,18 +60,6 @@ const parseUtcDate = (rawDate?: string) => {
 	}
 
 	return parsedDate;
-};
-
-const getDashboardPath = (engineType: string | undefined, engineId: string) => {
-	const normalizedType = (engineType || "").trim().toLowerCase();
-	if (!normalizedType) {
-		return `${engineId}/dashboard`;
-	}
-	if (normalizedType === "project" || normalizedType === "app") {
-		return `/app/${engineId}/dashboard`;
-	}
-
-	return `/engine/${normalizedType}/${engineId}/dashboard`;
 };
 
 const isProjectType = (engineType?: string) => {
@@ -121,8 +107,6 @@ interface DatabaseCardProps {
 
 	isDiscoverable?: boolean;
 
-	showLogs?: boolean;
-
 	enableGlobalAction?: boolean;
 
 	isUpvoted?: boolean;
@@ -155,7 +139,6 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 		isFavorite,
 		hideFavorite = false,
 		isDiscoverable = false,
-		showLogs = true,
 		enableGlobalAction = false,
 		isGlobal,
 		type,
@@ -187,8 +170,6 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 				})
 				.replace(",", "")
 		: "N/A";
-
-	const navigate = useNavigate();
 
 	// Observe the row width and collapse tags when there isn't enough space
 	useEffect(() => {
@@ -426,24 +407,6 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 							<Bookmark className="size-4" />
 						)}
 					</Button>
-				)}
-				{showLogs && (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								title="View Logs Dashboard"
-								onClick={(e) => {
-									e.stopPropagation();
-									navigate(getDashboardPath(type, id));
-								}}
-							>
-								<GanttChartSquare className="size-4" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>View Logs Dashboard</TooltipContent>
-					</Tooltip>
 				)}
 				{onDelete && (
 					<Tooltip>
