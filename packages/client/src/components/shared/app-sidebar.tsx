@@ -3,7 +3,7 @@ import {
 	Bolt,
 	Bot,
 	CircleUserRound,
-	Computer,
+	Cpu,
 	Database,
 	Flag,
 	Home,
@@ -46,7 +46,7 @@ const CATALOG_ROUTES = [
 	},
 	{
 		text: "Model",
-		icon: <Bot className="size-4" />,
+		icon: <Cpu className="size-4" />,
 		route: "/engine/model",
 	},
 	{
@@ -71,7 +71,7 @@ const CATALOG_ROUTES = [
 	},
 	{
 		text: "Agents",
-		icon: <Computer className="size-4" />,
+		icon: <Bot className="size-4" />,
 		route: "/agent",
 	},
 	{

@@ -1,13 +1,14 @@
 import {
 	Archive,
 	Bolt,
-	Bot,
 	Briefcase,
 	ChartBar,
 	CircleUserRound,
+	Cpu,
 	Database,
 	DatabaseZap,
 	FileText,
+	Github,
 	KeyRound,
 	LayoutGrid,
 	Link2,
@@ -49,7 +50,7 @@ const CardMapper: Record<string, CardConfig> = {
 		color: "#00A593",
 	},
 	"Model Settings": {
-		icon: <Bot className={ICON_CLASS} />,
+		icon: <Cpu className={ICON_CLASS} />,
 		color: "#0471F0",
 	},
 	"Storage Settings": {
@@ -84,6 +85,10 @@ const CardMapper: Record<string, CardConfig> = {
 	Configuration: {
 		icon: <Settings className={ICON_CLASS} />,
 		color: "#ED2F77",
+	},
+	"GitHub App": {
+		icon: <Github className={ICON_CLASS} />,
+		color: "#111827",
 	},
 	"Admin Query": {
 		icon: <DatabaseZap className={ICON_CLASS} />,

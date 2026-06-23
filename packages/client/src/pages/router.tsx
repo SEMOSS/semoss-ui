@@ -24,6 +24,11 @@ const AppCatalogPage = lazy(() =>
 		default: m.AppCatalogPage,
 	})),
 );
+const AppGithubSelectRepoPage = lazy(() =>
+	import("./app/app-github-select-repo-page").then((m) => ({
+		default: m.AppGithubSelectRepoPage,
+	})),
+);
 const AppDetailLayout = lazy(() =>
 	import("./app/app-detail-layout").then((m) => ({
 		default: m.AppDetailLayout,
@@ -45,13 +50,8 @@ const NewPromptBuilderAppPage = lazy(() =>
 const ViewAppPage = lazy(() =>
 	import("./app/view-app-page").then((m) => ({ default: m.ViewAppPage })),
 );
-const AuditLogsDashboard = lazy(() =>
-	import("./audit-logs-dashboard").then((m) => ({
-		default: m.AuditLogsDashboard,
-	})),
-);
 const EngineRouter = lazy(() =>
-	import("./engine/EngineRouter").then((m) => ({ default: m.EngineRouter })),
+	import("./engine/engine-router").then((m) => ({ default: m.EngineRouter })),
 );
 const LandingPage = lazy(() =>
 	import("./landing-page").then((m) => ({ default: m.LandingPage })),
@@ -162,6 +162,16 @@ export const Router = observer(() => {
 										/>
 									),
 								)}
+								{/* Post-install repo picker. Sub-route of the
+								    GitHub tab; the install callback redirects here
+								    when multiple repos were granted. */}
+								<Route
+									path="github/select-repo"
+									element={createElement(
+										AppGithubSelectRepoPage,
+										{},
+									)}
+								/>
 								<Route path="*" element={<AppIdRedirect />} />
 							</Route>
 							<Route
@@ -171,12 +181,6 @@ export const Router = observer(() => {
 							<Route
 								path=":appId/edit/*"
 								element={<EditAppPage />}
-							/>
-							<Route
-								path=":appId/dashboard/*"
-								element={
-									<AuditLogsDashboard catalogName={"Apps"} />
-								}
 							/>
 						</Route>
 						<Route path="engine/*" element={<EngineRouter />} />

@@ -1,15 +1,28 @@
-import { RotateCw } from "lucide-react";
+import { Download, RotateCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { runPixel } from "@semoss/sdk";
+import { download, runPixel } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	AuditLogFilter,
+	type AuditLogFilterValue,
 	AuditLogsDataTable,
+	AuditLogsSummary,
 	AuditLogsTimeline,
+	buildAuditLogReportPixel,
+	buildExportAuditLogReportPixel,
 	type EventData,
+	filterValueToReportParams,
+	hasScope,
 } from "@semoss/shared";
-import { Button, Skeleton, toast } from "@semoss/ui/next";
-import { useUserRootStore } from "@/hooks/useUserRootStore";
+import {
+	Button,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+	Skeleton,
+	toast,
+} from "@semoss/ui/next";
 
 /**
  * This component displays the audit logs.
@@ -21,89 +34,91 @@ export const AuditLogPage = ({ catalogName }) => {
 	const { insightId } = useInsight(); // fetching insight id for access
 	const [logs, setLogs] = useState<EventData[]>([]);
 	const [page, setPage] = useState(0);
-	const [rowsPerPage, setRowsPerPage] = useState(10);
+	const [rowsPerPage, setRowsPerPage] = useState(50);
 	const [totalCount, setTotalCount] = useState(0);
-	const [loading, setLoading] = useState<boolean>(true);
-	const rootStore = useUserRootStore(insightId);
-	const filteredData = useRef({
-		engineType: "",
-		engineId: "",
-		dashboardDuration: "",
+	const [loading, setLoading] = useState<boolean>(false);
+	const filteredData = useRef<AuditLogFilterValue>({
+		scope: null,
+		dateRangeType: "DAY",
+		dateRangeValue: 1,
 		customDateRange: { from: null, to: null },
-		SelectedDuration: {
-			label: "",
-			value: "",
-			dateRangeType: "",
-			dateRangeValue: 1,
-		},
+		methodNames: [],
+		engineTypes: [],
+		filterUserId: "",
+		roomId: "",
+		searchTerm: "",
 	});
 
 	/**
-	 * Fetches audit logs from the API.
+	 * Fetches audit logs from the API using the current filter state.
 	 *
 	 * @param {number} limit - The limit of the logs to fetch.
 	 * @param {number} offset - The offset of the logs to fetch.
 	 */
 	const fetchLogs = async (limit: number, offset: number) => {
+		const filterValue = filteredData.current;
+		if (!hasScope(filterValue.scope) || !insightId) {
+			setLogs([]);
+			setTotalCount(0);
+			setLoading(false);
+			return;
+		}
 		setLoading(true);
 		try {
-			const date = new Date();
-			const yyyy = date.getFullYear();
-			const mm = String(date.getMonth() + 1).padStart(2, "0");
-			const dd = String(date.getDate()).padStart(2, "0");
-			const hh = String(date.getHours()).padStart(2, "0");
-			const min = String(date.getMinutes()).padStart(2, "0");
-			const ss = String(date.getSeconds()).padStart(2, "0");
-
-			const dateTime = `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
-			const catalogId = filteredData.current.engineId ?? null;
-			catalogName = filteredData.current.engineType;
-			console.log(catalogName, "catalogName");
-			const startDate = new Date(
-				filteredData.current?.customDateRange?.from?.setUTCHours(
-					0,
-					0,
-					0,
-					0,
-				),
-			);
-			const endDate = new Date(
-				filteredData.current?.customDateRange?.to?.setUTCHours(
-					23,
-					59,
-					59,
-					999,
-				),
-			);
-			const SelectedDuration = filteredData.current.SelectedDuration;
+			const params = filterValueToReportParams(filterValue);
 			const response = await runPixel(
-				`AuditLogReport(paramValues=[{"projectId" : "${catalogName === "APP" ? catalogId : ""}","engineId": "${catalogName === "APP" ? "" : catalogId}","dateTime":"${dateTime}","limit":"${limit}","offset":"${offset}","dateRangeType": "${SelectedDuration.dateRangeType || "DAY"}","dateRangeValue": ${SelectedDuration.dateRangeValue} ${SelectedDuration.dateRangeType === "CUSTOM" ? `,"startDate": "${startDate?.toISOString()}", "endDate": "${endDate?.toISOString()}"` : ""}}]);`,
+				buildAuditLogReportPixel(params, limit, offset),
 				insightId,
 			);
-			const responseData = response.pixelReturn[0].output as {
-				logs: EventData[];
-				totalCount: number;
+			const { operationType, output } = response.pixelReturn[0];
+			if (operationType.indexOf("ERROR") > -1)
+				throw new Error(`API Error: ${output}`);
+
+			const responseData = output as unknown as {
+				logs?: EventData[];
+				totalCount?: number;
 			};
-			if (responseData?.logs) {
-				const responseLogs =
-					responseData?.logs as unknown as EventData[];
-				setLogs((responseLogs as unknown as EventData[]) || []);
-				setTotalCount(responseData?.totalCount || 0);
-			}
-			if (!responseData?.logs) {
-				const responseLogs = responseData as unknown as EventData[];
-				setLogs((responseLogs as unknown as EventData[]) || []);
-				setTotalCount(responseLogs?.length || 0);
-			}
+			setLogs(
+				responseData?.logs ?? (output as unknown as EventData[]) ?? [],
+			);
+			setTotalCount(
+				responseData?.totalCount ??
+					(output as unknown as EventData[])?.length ??
+					0,
+			);
 		} catch (error) {
 			setLogs([]);
-			// notification.add({
-			// 	color: "error",
-			// 	message: `Error fetching logs: ${error}`,
-			// });
+			setTotalCount(0);
+			toast.error(`Error fetching logs: ${error}`);
 			console.error("Error fetching logs:", error);
 		} finally {
 			setLoading(false);
+		}
+	};
+
+	/**
+	 * Exports the current filtered report as CSV or PDF.
+	 */
+	const handleExport = async (pdf: boolean) => {
+		const filterValue = filteredData.current;
+		if (!hasScope(filterValue.scope) || !insightId) {
+			toast.info("Select an engine before exporting logs.");
+			return;
+		}
+		try {
+			const params = filterValueToReportParams(filterValue);
+			const exportLimit = totalCount > 0 ? totalCount : rowsPerPage;
+			const response = await runPixel(
+				buildExportAuditLogReportPixel(params, exportLimit, 0, pdf),
+				insightId,
+			);
+			const { operationType, output } = response.pixelReturn[0];
+			if (operationType.indexOf("ERROR") > -1)
+				throw new Error(`API Error: ${output}`);
+			await download(insightId, output as unknown as string);
+		} catch (error) {
+			toast.error(`Error exporting logs: ${error}`);
+			console.error("Error exporting logs:", error);
 		}
 	};
 
@@ -121,27 +136,9 @@ export const AuditLogPage = ({ catalogName }) => {
 		setRowsPerPage(newRowsPerPage);
 		fetchLogs(newRowsPerPage, offset);
 	};
-	// biome-ignore lint/correctness/useExhaustiveDependencies: adding fetchLogs causes infinite rerender and based on rootStore user id, data has to be fetched
+
+	//Override the parent css container used by Page.
 	useEffect(() => {
-		//By default engine type and id is required to show the logs
-		if (
-			!catalogName ||
-			!rootStore?.user?.id ||
-			!filteredData.current?.engineId
-		) {
-			setLogs([]);
-			setLoading(false);
-			return;
-		}
-		if (
-			catalogName &&
-			rootStore?.user?.id &&
-			filteredData.current?.engineId
-		) {
-			setLogs([]);
-			fetchLogs(rowsPerPage, page * rowsPerPage);
-		}
-		// override the parent css container used by Page
 		const contentElement = document.querySelector(
 			'[data-home-container="true"]',
 		) as HTMLElement | null;
@@ -152,57 +149,54 @@ export const AuditLogPage = ({ catalogName }) => {
 
 		return () => {
 			if (contentElement) {
-				//restore the original styles
 				contentElement.style.padding = "";
 				contentElement.style.maxWidth = "";
 			}
 		};
-	}, [catalogName, rowsPerPage, page, rootStore?.user?.id]);
+	}, []);
 
 	/**
-	 * Updates the filtered data state with the new filter data and fetches logs with the new offset.
-	 * @param {object} filterData - The new filter data.
+	 * Updates the filtered data state (emitted by the filter) and fetches from
+	 * the first page.
+	 * @param {AuditLogFilterValue} filterValue - The new filter value.
 	 */
-	const updateLogs = (filterData) => {
-		filteredData.current = {
-			...filterData,
-		};
-		fetchLogs(rowsPerPage, page * rowsPerPage);
+	const updateLogs = (filterValue: AuditLogFilterValue) => {
+		filteredData.current = filterValue;
+		setPage(0);
+		fetchLogs(rowsPerPage, 0);
 	};
+
 	return (
 		<div className="flex flex-col gap-4 px-8 py-8">
-			<div className="flex w-full items-center py-4">
+			<div className="flex w-full flex-wrap items-center gap-2 py-4">
 				<h6 className="font-medium text-xl leading-[1.6] tracking-normal">
 					{catalogName} Insight Dashboard
 				</h6>
-				<div className="ml-auto flex flex-row gap-4">
-					{/* Disabled for now */}
-					{/* <Select
-							variant="outlined"
-							size="small"
-							onChange={() => {}}
-							sx={{ minWidth: 120 }}
-							value={"Last 30 Days"}
-						>
-							<Menu.Item value="Last 30 Days">
-								Last 30 Days
-							</Menu.Item>
-							<Menu.Item value="Last 90 Days">
-								Last 90 Days
-							</Menu.Item>
-							<Menu.Item value="Last Year">Last Year</Menu.Item>
-						</Select> */}
-					<AuditLogFilter
-						updateLogs={updateLogs}
-						insightId={insightId}
-					/>
+				<div className="ml-auto flex flex-row items-center gap-2">
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button variant="outline">
+								<Download className="mr-2 h-4 w-4" />
+								Export
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuItem
+								onClick={() => handleExport(false)}
+							>
+								Export as CSV
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() => handleExport(true)}
+							>
+								Export as PDF
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
 					<Button
 						variant="default"
 						onClick={() => {
-							if (
-								filteredData.current.engineId &&
-								filteredData.current.engineType
-							)
+							if (hasScope(filteredData.current.scope))
 								fetchLogs(rowsPerPage, page * rowsPerPage);
 							else {
 								toast.info(
@@ -216,6 +210,9 @@ export const AuditLogPage = ({ catalogName }) => {
 					</Button>
 				</div>
 			</div>
+			<div className="flex w-full flex-wrap items-center gap-2">
+				<AuditLogFilter updateLogs={updateLogs} insightId={insightId} />
+			</div>
 			{loading ? (
 				<div className="flex flex-col gap-4">
 					<Skeleton className="h-[400px] w-full rounded-md" />{" "}
@@ -223,6 +220,7 @@ export const AuditLogPage = ({ catalogName }) => {
 				</div>
 			) : (
 				<>
+					<AuditLogsSummary logs={logs} totalCount={totalCount} />
 					<AuditLogsTimeline logs={logs} />
 					<AuditLogsDataTable
 						logs={logs}
