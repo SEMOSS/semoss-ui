@@ -1,5 +1,6 @@
 import type { AppDetailPermission } from "@/contexts/AppDetailContext";
 import { AppAccessControlPage } from "./app-access-control-page";
+import { AppActivityPage } from "./app-activity-page";
 import { AppCommitsPage } from "./app-commits-page";
 import { AppDependenciesPage } from "./app-dependencies-page";
 import { AppFilesPage } from "./app-files-page";
@@ -43,6 +44,12 @@ export const APP_DETAIL_TABS: AppDetailTab[] = [
 		name: "MCP Usage",
 		path: "mcp-usage",
 		component: AppMcpUsagePage,
+		restrict: ["author", "editor", "readOnly"],
+	},
+	{
+		name: "Activity Log",
+		path: "activity",
+		component: AppActivityPage,
 		restrict: ["author", "editor", "readOnly"],
 	},
 	{
