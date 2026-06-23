@@ -7,6 +7,7 @@ import { AdminThemePage } from "./admin-theme-page";
 import { ConfigurationsPage } from "./configurations-page";
 import { EngineSettingsDetailPage } from "./engine-settings-detail-page";
 import { EngineSettingsIndexPage } from "./engine-settings-index-page";
+import { GitHubAppPage } from "./github-app-page";
 import { InsightSettingsDetailPage } from "./InsightSettingsDetailPage";
 import { InsightSettingsPage } from "./insight-settings-page";
 import { LLMFeedbackPage } from "./llm-feedback-page";
@@ -32,6 +33,7 @@ const SETTINGS_COMPONETS = {
 	members: MemberSettingsPage,
 	"service-accounts": ServiceAccountsSettingsPage,
 	"social-properties": ConfigurationsPage,
+	"github-app": GitHubAppPage,
 	"admin-query": AdminQueryPage,
 	"admin-theme": AdminThemePage,
 	"my-profile": MyProfilePage,
