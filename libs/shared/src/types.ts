@@ -282,6 +282,8 @@ export interface ThemeMap {
 			showKnowledgeMenu?: boolean;
 			/** Whether to show the Toolbox picker in the chat input menu. Defaults to true. */
 			showToolboxMenu?: boolean;
+			/** Whether to show the Activity Log (audit logs) option in the room menu. Defaults to true. */
+			showActivityLog?: boolean;
 			/** Whether to show external links to the SEMOSS platform. Defaults to true. */
 			showPlatformLinks?: boolean;
 			/** Whether to show a text input for feedback comments when rating a response. Defaults to false. */
