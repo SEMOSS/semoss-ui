@@ -103,6 +103,7 @@ export class RootStore {
 				allowEmbeddingOptions: true,
 				showKnowledgeMenu: true,
 				showToolboxMenu: true,
+				showActivityLog: true,
 				showPlatformLinks: true,
 				enableFeedbackText: true,
 			},

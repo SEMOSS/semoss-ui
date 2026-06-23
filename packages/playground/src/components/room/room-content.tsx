@@ -1,6 +1,7 @@
 import {
 	MoveDownIcon,
 	MoveUpIcon,
+	ScrollTextIcon,
 	Settings2Icon,
 	TriangleAlertIcon,
 } from "lucide-react";
@@ -79,6 +80,19 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			type: "tab",
 			name: "Configuration",
 			component: "room-configuration",
+			config: {},
+			enableClose: true,
+		});
+	}, [room]);
+
+	/**
+	 * Open the audit logs dashboard for this room in the right side panel.
+	 */
+	const handleOpenActivityLog = useCallback(() => {
+		room.addSidebarNode("room-activity-log", {
+			type: "tab",
+			name: "Activity Log",
+			component: "audit-log-report",
 			config: {},
 			enableClose: true,
 		});
@@ -473,6 +487,21 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									room={room}
 									onSelect={() => onOpenChange(false)}
 								/>
+								{room.theme.featureFlags?.showActivityLog !==
+									false && (
+									<DropdownMenuItem
+										onSelect={(e) => {
+											e.preventDefault();
+											handleOpenActivityLog();
+											onOpenChange(false);
+										}}
+									>
+										<ScrollTextIcon />
+										<span className="flex-1">
+											Activity Log
+										</span>
+									</DropdownMenuItem>
+								)}
 								<DropdownMenuItem
 									onSelect={(e) => {
 										e.preventDefault();
