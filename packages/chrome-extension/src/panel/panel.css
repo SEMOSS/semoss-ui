@@ -58,8 +58,538 @@ body {
 .panel-content {
   flex: 1;
   padding: 20px;
-  overflow-y: auto;
   background: #fafbfc;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Custom Tabs Styling (replaces @semoss/ui/next Tabs that need Tailwind) */
+.custom-tabs {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.custom-tabs-list {
+  display: flex;
+  gap: 16px;
+  padding: 20px 24px 24px 24px;
+  background: #ffffff;
+}
+
+.custom-tab-trigger {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #6b7280;
+  background: #f9fafb;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.custom-tab-trigger:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  color: #374151;
+  transform: translateY(-1px);
+}
+
+.custom-tab-trigger.active {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.custom-tab-trigger.active:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.custom-tab-content {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+  padding-top: 0;
+}
+
+.custom-tab-content.active {
+  display: flex;
+}
+
+/* Recording Panel - Modern Professional Design */
+
+/* Main container - Clean minimal background */
+.custom-tab-content.active>div[class*="flex flex-col"] {
+  padding: 24px !important;
+  gap: 32px !important;
+  background: #fafbfc !important;
+}
+
+/* Header section - Clean and minimal */
+.custom-tab-content.active>div[class*="flex flex-col"]>div:first-child {
+  margin-bottom: 0px !important;
+  padding-bottom: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6) !important;
+}
+
+/* Recording Panel title - Strong hierarchy */
+.custom-tab-content h4[class*="font-bold"] {
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  margin-bottom: 0 !important;
+  letter-spacing: -0.03em !important;
+  line-height: 1 !important;
+}
+
+/* Settings button - Subtle and refined */
+.custom-tab-content button[title="Settings"] {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  border-radius: 50% !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  font-size: 18px !important;
+  opacity: 0.5 !important;
+  background: transparent !important;
+  color: #64748b !important;
+}
+
+.custom-tab-content button[title="Settings"]:hover {
+  opacity: 1 !important;
+  background: #f1f5f9 !important;
+  color: #3b82f6 !important;
+  transform: rotate(90deg) !important;
+}
+
+/* Warning banner - Clean and professional */
+.custom-tab-content div[class*="border-l-4"][class*="border-l-[#ffc107]"] {
+  border-radius: 12px !important;
+  padding: 20px 24px !important;
+  background: #fffbeb !important;
+  border-left: 4px solid #f59e0b !important;
+  border-top: none !important;
+  border-right: none !important;
+  border-bottom: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+  margin-bottom: 24px !important;
+}
+
+/* Warning banner button */
+.custom-tab-content div[class*="border-l-4"] button {
+  margin-top: 12px !important;
+  padding: 11px 20px !important;
+  font-size: 14px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  background: #f59e0b !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.custom-tab-content div[class*="border-l-4"] button:hover {
+  background: #d97706 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Remove card wrapper from Start Recording button */
+.custom-tab-content>div>div[class*="rounded-xl"][class*="hover:-translate-y-0.5"]:not([class*="min-h-fit"]) {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin-bottom: 24px !important;
+  transition: none !important;
+  display: block !important;
+}
+
+.custom-tab-content>div>div[class*="rounded-xl"][class*="hover:-translate-y-0.5"]:not([class*="min-h-fit"]):hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Ensure Start Recording button parent has no extra spacing */
+.custom-tab-content>div>div[class*="rounded-xl"][class*="hover:-translate-y-0.5"]:not([class*="min-h-fit"])>div {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Start Recording button - Hero primary action */
+.custom-tab-content button[class*="bg-blue-600"][class*="py-8"] {
+  width: 100% !important;
+  padding: 20px 32px !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  border-radius: 12px !important;
+  background: #3b82f6 !important;
+  color: white !important;
+  border: none !important;
+  letter-spacing: 0.015em !important;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35), 0 1px 3px rgba(0, 0, 0, 0.12) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  margin-bottom: 0 !important;
+}
+
+.custom-tab-content button[class*="bg-blue-600"][class*="py-8"]:hover {
+  background: #2563eb !important;
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.45), 0 2px 6px rgba(0, 0, 0, 0.16) !important;
+  transform: translateY(-2px) !important;
+}
+
+.custom-tab-content button[class*="bg-blue-600"][class*="py-8"]:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35) !important;
+}
+
+/* Pause/Resume and Stop buttons row */
+.custom-tab-content div[class*="flex flex-row gap-4"] {
+  gap: 16px !important;
+  margin-top: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+}
+
+.custom-tab-content div[class*="flex flex-row gap-4"] button {
+  flex: 1 !important;
+  padding: 18px 24px !important;
+  font-size: 15px !important;
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  letter-spacing: 0.015em !important;
+}
+
+/* Pause/Resume button - Modern blue filled style */
+.custom-tab-content button[class*="bg-blue-600"][class*="py-6"] {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  border: none !important;
+  color: white !important;
+  padding: 18px 24px !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4), 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.custom-tab-content button[class*="bg-blue-600"][class*="py-6"]:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5), 0 3px 6px rgba(0, 0, 0, 0.12) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Stop button - Modern red filled style */
+.custom-tab-content button[class*="bg-red-600"][class*="py-6"] {
+  padding: 18px 24px !important;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4), 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.custom-tab-content button[class*="bg-red-600"][class*="py-6"]:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.5), 0 3px 6px rgba(0, 0, 0, 0.12) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Recorded Actions card - Add spacing */
+.custom-tab-content>div>div[class*="min-h-fit"][class*="overflow-hidden"] {
+  margin-bottom: 24px !important;
+}
+
+/* All cards - Clean minimal design */
+.custom-tab-content>div>div[class*="rounded-xl"][class*="border"][class*="shadow-sm"] {
+  border-radius: 12px !important;
+  border: 1px solid #e2e8f0 !important;
+  background: white !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Card hover - Subtle elevation */
+.custom-tab-content>div>div[class*="rounded-xl"][class*="border"][class*="shadow-sm"]:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06) !important;
+  transform: translateY(-2px) !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Card content padding */
+.custom-tab-content div[class*="flex flex-col gap-"][class*="p-6"] {
+  padding: 24px !important;
+  gap: 18px !important;
+}
+
+/* Recorded Actions header - Clean and minimal */
+.custom-tab-content div[class*="border-b"][class*="bg-gradient-to-b"] {
+  padding: 16px 20px !important;
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  border-radius: 12px 12px 0 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-wrap: nowrap !important;
+}
+
+.custom-tab-content div[class*="border-b"] p[class*="font-semibold"] {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  letter-spacing: -0.01em !important;
+  margin: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+/* Clear button - Modern professional style */
+.custom-tab-content div[class*="border-b"] button[class*="text-red-500"] {
+  padding: 8px 16px !important;
+  font-size: 13px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  color: #ef4444 !important;
+  background: white !important;
+  border: 1.5px solid #fee2e2 !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  flex-shrink: 0 !important;
+  margin-left: 12px !important;
+}
+
+.custom-tab-content div[class*="border-b"] button[class*="text-red-500"]:hover {
+  background: #fef2f2 !important;
+  border-color: #fecaca !important;
+  color: #dc2626 !important;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.15) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Recorded Actions content */
+.custom-tab-content div[class*="overflow-auto"][class*="p-4"]:not([class*="h-full"]) {
+  padding: 16px !important;
+}
+
+/* ActionCard styles - Modern compact design */
+.custom-tab-content div[class*="rounded-lg"][class*="border-black"] {
+  padding: 12px !important;
+  margin-bottom: 8px !important;
+  border-radius: 8px !important;
+  border: 1px solid #e5e7eb !important;
+  background: #ffffff !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.custom-tab-content div[class*="rounded-lg"][class*="border-black"]:hover {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.12) !important;
+  transform: translateX(2px) !important;
+}
+
+/* ActionCard header row (number + icon + type) */
+.custom-tab-content div[class*="rounded-lg"]>div:first-child {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin-bottom: 10px !important;
+}
+
+/* Action number badge */
+.custom-tab-content div[class*="rounded-lg"] span[class*="bg-\[rgba"] {
+  padding: 2px 7px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  border-radius: 4px !important;
+  background: #dbeafe !important;
+  color: #1e40af !important;
+  min-width: 24px !important;
+  text-align: center !important;
+}
+
+/* Action icon */
+.custom-tab-content div[class*="rounded-lg"]>div:first-child>span:nth-child(2) {
+  font-size: 16px !important;
+  line-height: 1 !important;
+}
+
+/* Action type text */
+.custom-tab-content div[class*="rounded-lg"] span[class*="font-semibold"][class*="text-\[13px\]"] {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #111827 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.02em !important;
+}
+
+/* Selector box - compact monospace style */
+.custom-tab-content div[class*="rounded-lg"] span[class*="bg-\[#f9fafb\]"] {
+  display: block !important;
+  padding: 6px 10px !important;
+  margin-top: 8px !important;
+  border-radius: 5px !important;
+  background: #f9fafb !important;
+  border: 1px dashed #d1d5db !important;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace !important;
+  font-size: 11px !important;
+  color: #6b7280 !important;
+  line-height: 1.4 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+/* Value/URL text - inline badge style */
+.custom-tab-content div[class*="rounded-lg"] span[class*="text-\[#2563eb\]"] {
+  display: inline-block !important;
+  margin-top: 8px !important;
+  padding: 4px 10px !important;
+  background: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+  border-radius: 5px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #1e40af !important;
+  line-height: 1.4 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+/* Actions list container */
+.custom-tab-content div[class*="flex flex-col gap-2"] {
+  gap: 0 !important;
+}
+
+/* Remove extra margin from last action card */
+.custom-tab-content div[class*="rounded-lg"][class*="border-black"]:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Empty state - Clean and inviting */
+.custom-tab-content div[class*="py-4 text-center"] {
+  padding: 40px 24px !important;
+  color: #64748b !important;
+}
+
+.custom-tab-content div[class*="text-center"] p[class*="font-semibold"] {
+  margin-bottom: 8px !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+}
+
+/* Input fields - Clean modern design */
+.custom-tab-content input[type="text"],
+.custom-tab-content select {
+  border-radius: 10px !important;
+  border: 1.5px solid #cbd5e1 !important;
+  padding: 12px 16px !important;
+  font-size: 14px !important;
+  color: #0f172a !important;
+  background: white !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+
+.custom-tab-content input[type="text"]:focus,
+.custom-tab-content select:focus {
+  border-color: #3b82f6 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12), 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Labels - Clear hierarchy */
+.custom-tab-content label,
+.custom-tab-content span[class*="text-[0.875rem]"] {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #334155 !important;
+  margin-bottom: 8px !important;
+  letter-spacing: -0.005em !important;
+  display: block !important;
+}
+
+/* Save and Download buttons - Clean and balanced */
+.custom-tab-content button[class*="💾"],
+.custom-tab-content button[class*="⬇️"] {
+  padding: 13px 24px !important;
+  font-size: 14px !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Save button - Primary action */
+.custom-tab-content button[class*="💾"][class*="bg-blue-600"] {
+  background: #3b82f6 !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3), 0 1px 2px rgba(0, 0, 0, 0.08) !important;
+}
+
+.custom-tab-content button[class*="💾"][class*="bg-blue-600"]:hover:not(:disabled) {
+  background: #2563eb !important;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.4), 0 2px 4px rgba(0, 0, 0, 0.12) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Download button - Secondary action */
+.custom-tab-content button[class*="⬇️"][class*="border-blue-600"] {
+  background: white !important;
+  border: 1.5px solid #3b82f6 !important;
+  color: #3b82f6 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.custom-tab-content button[class*="⬇️"][class*="border-blue-600"]:hover:not(:disabled) {
+  background: #eff6ff !important;
+  border-color: #2563eb !important;
+  color: #2563eb !important;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2) !important;
+  transform: translateY(-1px) !important;
+}
+
+.custom-tab-content button[class*="⬇️"][class*="border-blue-600"]:hover:not(:disabled) {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Improve card spacing and appearance */
+.custom-tab-content.active>div {
+  gap: 16px;
+}
+
+/* Action cards in list hover effect */
+.custom-tab-content .card .card:hover {
+  transform: translateX(2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Project dropdown custom arrow */
+.custom-tab-content select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cpath fill='%23475569' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z'/%3E%3C/svg%3E");
+  background-position: right 10px center;
+  background-repeat: no-repeat;
+  background-size: 20px 20px;
+  padding-right: 36px !important;
 }
 
 .mode-switcher {

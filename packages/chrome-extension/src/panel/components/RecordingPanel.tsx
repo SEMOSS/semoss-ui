@@ -5,15 +5,12 @@
 
 import type { FC } from "react";
 // biome-ignore lint/correctness/noUnusedImports: React is required for JSX transform
-import React, { useEffect, useId, useState } from "react";
+import React, { useCallback, useEffect, useId, useState } from "react";
 import {
 	Button,
 	Card,
 	cn,
-	Field,
-	FieldLabel,
 	H4,
-	Input,
 	Muted,
 	P,
 	Small,
@@ -50,9 +47,10 @@ export const RecordingPanel: FC = () => {
 	const [isCreatingProject, setIsCreatingProject] = useState(false);
 	const newProjectNameId = useId();
 	const scriptNameId = useId();
+	const projectSelectId = useId();
 
 	// Function to refresh project list
-	const refreshProjects = async () => {
+	const refreshProjects = useCallback(async () => {
 		const authenticated = await AuthService.isAuthenticated();
 		if (authenticated) {
 			try {
@@ -63,7 +61,7 @@ export const RecordingPanel: FC = () => {
 				console.error("Failed to refresh projects:", error);
 			}
 		}
-	};
+	}, []);
 
 	// Check authentication status on mount and when storage changes
 	useEffect(() => {
@@ -426,12 +424,12 @@ export const RecordingPanel: FC = () => {
 	return (
 		<div
 			className={cn(
-				"flex h-full flex-col gap-4 overflow-auto p-4",
+				"flex flex-col gap-8 p-6",
 				"bg-gradient-to-b from-[#f8fafc] to-[#f1f5f9]",
 			)}
 		>
 			{/* Header with Settings */}
-			<div className={cn("-mb-1 flex items-center justify-between")}>
+			<div className={cn("flex items-center justify-between")}>
 				<H4 className="font-bold text-[#1e293b] text-[18px]">
 					🎬 Recording Panel
 				</H4>
@@ -448,7 +446,7 @@ export const RecordingPanel: FC = () => {
 
 			{/* Authentication Status Banner */}
 			{!isAuthenticated && (
-				<Card className="w-full flex-shrink-0 rounded-xl border-l-4 border-l-[#ffc107] bg-[#fff3cd] p-5 shadow-none">
+				<Card className="mb-6 w-full flex-shrink-0 rounded-xl border-l-4 border-l-[#ffc107] bg-[#fff3cd] p-5 shadow-none">
 					<div className="flex w-full flex-col gap-3">
 						<P className="font-semibold text-[#856404]">
 							⚠️ Authentication Required
@@ -470,7 +468,7 @@ export const RecordingPanel: FC = () => {
 			)}
 
 			{/* Recording Controls Card */}
-			<Card className="hover:-translate-y-0.5 flex-shrink-0 rounded-xl border border-black/[0.06] shadow-sm transition-all duration-300 hover:shadow-lg">
+			<Card className="hover:-translate-y-0.5 mb-6 flex-shrink-0 rounded-xl border border-black/[0.06] shadow-sm transition-all duration-300 hover:shadow-lg">
 				<div className="flex flex-col gap-4 p-6">
 					{!state.isRecording ? (
 						<Button
@@ -484,9 +482,9 @@ export const RecordingPanel: FC = () => {
 					) : (
 						<div className="flex flex-row gap-4">
 							<Button
-								variant="outline"
+								variant="default"
 								onClick={handlePause}
-								className="w-full rounded-xl border-2 border-blue-600 bg-white px-6 py-6 font-semibold text-base text-blue-600 hover:bg-blue-50"
+								className="w-full rounded-xl bg-blue-600 px-6 py-6 font-semibold text-base text-white hover:bg-blue-700"
 							>
 								{state.isPaused ? "▶️ Resume" : "⏸️ Pause"}
 							</Button>
@@ -505,8 +503,7 @@ export const RecordingPanel: FC = () => {
 			{/* Recorded Actions Card */}
 			<Card
 				className={cn(
-					"flex min-h-fit flex-shrink-0 flex-col overflow-hidden rounded-xl border border-black/[0.06] shadow-sm transition-all duration-300",
-					state.actionsList.length > 0 ? "flex-1" : "flex-none",
+					"mb-6 flex min-h-fit flex-shrink-0 flex-col overflow-hidden rounded-xl border border-black/[0.06] shadow-sm transition-all duration-300",
 				)}
 			>
 				<div
@@ -534,15 +531,7 @@ export const RecordingPanel: FC = () => {
 					)}
 				</div>
 
-				<div
-					className={cn(
-						"p-4",
-						state.actionsList.length > 0 ? "flex-1" : "flex-none",
-						state.actionsList.length > 0
-							? "overflow-auto"
-							: "overflow-visible",
-					)}
-				>
+				<div className={cn("p-4")}>
 					{state.actionsList.length === 0 ? (
 						<div
 							className={cn(
@@ -575,173 +564,182 @@ export const RecordingPanel: FC = () => {
 				</div>
 			</Card>
 
-			{/* Save/Download Section - Always visible */}
-			<Card className="hover:-translate-y-0.5 flex-shrink-0 rounded-xl border border-black/[0.06] shadow-sm transition-all duration-300 hover:shadow-lg">
-				<div className="flex flex-col gap-4 p-6">
-					{/* Project Selection Dropdown */}
-					{isAuthenticated && projects.length > 0 && (
-						<div>
-							<Muted className="mb-2 block font-semibold text-[#1e293b] text-[0.875rem]">
-								📁 Select Project
-							</Muted>
-							<select
-								value={
-									showNewProjectInput
-										? "__NEW_PROJECT__"
-										: selectedProject || ""
-								}
-								onChange={(e) =>
-									handleProjectChange(e.target.value)
-								}
-								onMouseDown={() => refreshProjects()}
-								disabled={
+			{/* Save/Download Section */}
+			<Card className="flex-shrink-0 rounded-xl border border-slate-200 bg-white shadow-sm">
+				<div className="flex flex-col gap-5 p-5">
+					{/* Header */}
+					<div className="flex items-center justify-between border-slate-200 border-b pb-3">
+						<H4 className="font-semibold text-[15px] text-slate-900">
+							Save & Export
+						</H4>
+					</div>
+
+					{/* Project Dropdown */}
+					<div className="space-y-2">
+						<label
+							htmlFor={projectSelectId}
+							className="block font-medium text-slate-600 text-xs uppercase tracking-wide"
+						>
+							Project
+						</label>
+						<select
+							id={projectSelectId}
+							value={
+								showNewProjectInput
+									? "__NEW_PROJECT__"
+									: selectedProject || ""
+							}
+							onChange={(e) =>
+								handleProjectChange(e.target.value)
+							}
+							onMouseDown={() => refreshProjects()}
+							disabled={
+								!isAuthenticated ||
+								state.actionsList.length === 0 ||
+								isCreatingProject
+							}
+							className={cn(
+								"w-full appearance-none rounded-xl border px-4 py-3.5 pr-12",
+								"font-medium text-[14px]",
+								"bg-[center_right_1rem] bg-[length:1.25rem] bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%2364748b%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22M6%208l4%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-white bg-no-repeat",
+								"transition-all duration-200",
+								"shadow-sm outline-none",
+								// Enabled states
+								!(
+									!isAuthenticated ||
 									state.actionsList.length === 0 ||
 									isCreatingProject
-								}
-								style={{
-									width: "100%",
-									padding: "12px 36px 12px 16px",
-									border: "2px solid #cbd5e1",
-									borderRadius: "10px",
-									fontSize: "14.5px",
-									fontWeight: "500",
-									fontFamily: "inherit",
-									background:
-										"linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%)",
-									backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cpath fill='%23475569' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z'/%3E%3C/svg%3E")`,
-									cursor: "pointer",
-									transition: "all 0.2s ease",
-									outline: "none",
-									boxShadow: "0 1px 3px rgba(0, 0, 0, 0.08)",
-									appearance: "none",
-									backgroundPosition: "right 10px center",
-									backgroundRepeat: "no-repeat",
-									backgroundSize: "20px 20px",
-								}}
-								onFocus={(e) => {
-									e.target.style.borderColor = "#2563eb";
-									e.target.style.boxShadow =
-										"0 0 0 3px rgba(37, 99, 235, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1)";
-									e.target.style.borderWidth = "2px";
-								}}
-								onBlur={(e) => {
-									e.target.style.borderColor = "#cbd5e1";
-									e.target.style.boxShadow =
-										"0 1px 3px rgba(0, 0, 0, 0.08)";
-								}}
-							>
-								<option
-									value=""
-									disabled
-									style={{ cursor: "pointer" }}
-								>
-									-- Select a project --
-								</option>
-								<option
-									value="__NEW_PROJECT__"
-									style={{
-										fontWeight: 600,
-										color: "#10b981",
-										cursor: "pointer",
-									}}
-								>
-									+ Create New Project
-								</option>
-								{projects.map((project) => (
+								) &&
+									"cursor-pointer border-slate-200 text-slate-900 hover:border-indigo-300 hover:shadow-indigo-100/50 hover:shadow-md focus:border-indigo-400 focus:ring-3 focus:ring-indigo-100",
+								// Disabled states
+								(!isAuthenticated ||
+									state.actionsList.length === 0 ||
+									isCreatingProject) &&
+									"cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400 opacity-60",
+							)}
+						>
+							<option value="" disabled>
+								-- Select a project --
+							</option>
+							{isAuthenticated && projects.length > 0 && (
+								<>
 									<option
-										key={project.id}
-										value={project.id}
-										style={{ cursor: "pointer" }}
+										value="__NEW_PROJECT__"
+										className="font-semibold text-emerald-600"
 									>
-										{project.displayName || project.name}
+										✨ Create New Project
 									</option>
-								))}
-							</select>
-							{showNewProjectInput && (
-								<div className={cn("mt-2")}>
-									<Field className="w-full">
-										<FieldLabel htmlFor={newProjectNameId}>
-											New Project Name
-										</FieldLabel>
-										<Input
-											id={newProjectNameId}
-											placeholder="Enter project name (e.g., My Extension Project)"
-											value={newProjectName}
-											onChange={(e) =>
-												setNewProjectName(
-													e.target.value,
-												)
-											}
-											disabled={isCreatingProject}
-											onKeyPress={(e) => {
-												if (
-													e.key === "Enter" &&
-													!isCreatingProject
-												) {
-													handleNewProjectCreation();
-												}
-											}}
-											className="rounded-lg"
-										/>
-									</Field>
-									<Muted className="mt-1 block text-[#64748b]">
+									{projects.map((project) => (
+										<option
+											key={project.id}
+											value={project.id}
+										>
+											{project.displayName ||
+												project.name}
+										</option>
+									))}
+								</>
+							)}
+						</select>
+
+						{/* New Project Input */}
+						{showNewProjectInput && (
+							<div className="mt-5 space-y-4 rounded-xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 to-green-50 p-5 shadow-sm">
+								<div className="flex items-center gap-2">
+									<span className="text-xl">✨</span>
+									<span className="font-semibold text-emerald-800 text-sm">
+										New Project
+									</span>
+								</div>
+								<input
+									type="text"
+									id={newProjectNameId}
+									placeholder="Enter project name"
+									value={newProjectName}
+									onChange={(e) =>
+										setNewProjectName(e.target.value)
+									}
+									disabled={isCreatingProject}
+									onKeyPress={(e) => {
+										if (
+											e.key === "Enter" &&
+											!isCreatingProject
+										) {
+											handleNewProjectCreation();
+										}
+									}}
+									className="w-full rounded-lg border-2 border-emerald-300 bg-white px-4 py-3 font-medium text-[15px] text-slate-900 shadow-sm transition-all focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/20 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-60"
+								/>
+								<Muted className="flex items-start gap-2 text-[12px] text-emerald-700 leading-relaxed">
+									<span>💡</span>
+									<span>
 										Must start with a letter and contain
 										only letters, numbers, and spaces
-									</Muted>
-									<Button
-										variant="default"
-										onClick={handleNewProjectCreation}
-										className="mt-6 w-full rounded-xl bg-emerald-600 px-6 py-5 font-semibold text-base text-white hover:bg-emerald-700"
-										disabled={
-											isCreatingProject ||
-											!newProjectName.trim()
-										}
-									>
-										{isCreatingProject
-											? "Creating Project..."
-											: "Create Project"}
-									</Button>
-								</div>
-							)}
-						</div>
-					)}
+									</span>
+								</Muted>
+								<Button
+									variant="default"
+									onClick={handleNewProjectCreation}
+									className="hover:-translate-y-0.5 w-full rounded-lg bg-emerald-600 px-6 py-3 font-semibold text-[14px] text-white shadow-md transition-all duration-200 hover:bg-emerald-700 hover:shadow-lg"
+									disabled={
+										isCreatingProject ||
+										!newProjectName.trim()
+									}
+								>
+									{isCreatingProject
+										? "⏳ Creating..."
+										: "✨ Create Project"}
+								</Button>
+							</div>
+						)}
+					</div>
 
-					<Field className="w-full">
-						<FieldLabel htmlFor={scriptNameId}>
-							Script Name
-						</FieldLabel>
-						<Input
+					{/* Script Name Input */}
+					<div className="space-y-2">
+						<label
+							htmlFor={scriptNameId}
+							className="block font-medium text-slate-600 text-xs uppercase tracking-wide"
+						>
+							Script Name{" "}
+							<span className="font-normal text-slate-400 lowercase">
+								(optional)
+							</span>
+						</label>
+						<input
+							type="text"
 							id={scriptNameId}
-							placeholder="Enter script name (optional)"
+							placeholder="e.g., Login Test Script"
 							value={scriptName}
 							onChange={(e) => setScriptName(e.target.value)}
 							disabled={
 								state.actionsList.length === 0 ||
 								isCreatingProject
 							}
-							className="rounded-lg transition-all duration-300 hover:shadow-[0_0_0_3px_rgba(37,99,235,0.08)] focus:shadow-[0_0_0_3px_rgba(37,99,235,0.12)]"
+							className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 font-medium text-slate-900 text-sm transition-colors duration-150 placeholder:text-slate-400 hover:border-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-50 disabled:opacity-60"
 						/>
-					</Field>
-					<div className="flex flex-row gap-3">
+					</div>
+
+					{/* Action Buttons */}
+					<div className="flex gap-3 pt-1">
 						<Button
 							onClick={handleSave}
-							className="w-full cursor-pointer rounded-lg border-[1.5px] border-emerald-500 bg-white px-5 py-3 font-semibold text-[15px] text-emerald-600 shadow-sm transition-all duration-200 hover:border-emerald-600 hover:bg-emerald-50"
 							disabled={
 								state.actionsList.length === 0 ||
 								isCreatingProject
 							}
+							className="hover:-translate-y-0.5 flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-semibold text-sm text-white shadow-sm transition-all duration-150 hover:bg-blue-700 hover:shadow-md active:translate-y-0 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:opacity-50 disabled:shadow-none disabled:hover:translate-y-0"
 						>
-							💾 Save
+							Save to Project
 						</Button>
 						<Button
 							onClick={handleDownload}
-							className="w-full cursor-pointer rounded-lg border-0 bg-blue-600 px-5 py-3 font-semibold text-[15px] text-white shadow-sm transition-all duration-200 hover:bg-blue-700"
 							disabled={
 								state.actionsList.length === 0 ||
 								isCreatingProject
 							}
+							className="hover:-translate-y-0.5 flex flex-1 items-center justify-center gap-2 rounded-lg border-2 border-slate-300 bg-white px-6 py-3 font-semibold text-slate-700 text-sm shadow-sm transition-all duration-150 hover:border-slate-400 hover:bg-slate-50 hover:shadow-md active:translate-y-0 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400 disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:bg-white"
 						>
-							⬇️ Download
+							Download JSON
 						</Button>
 					</div>
 				</div>

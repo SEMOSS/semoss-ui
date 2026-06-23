@@ -1,11 +1,11 @@
 .welcome-container {
 	width: 100%;
-	padding: 16px;
+	padding: 20px;
 	display: flex;
 	justify-content: center;
 	align-items: flex-start;
-	min-height: calc(100vh - 80px);
-	overflow-y: auto;
+	min-height: 0;
+	overflow-y: visible;
 }
 
 .welcome-stack {
@@ -14,20 +14,24 @@
 	align-items: center;
 	gap: 12px;
 	width: 100%;
+	max-width: 540px;
 }
 
 .welcome-card {
 	width: 100%;
-	max-width: 500px;
-	padding: 16px !important;
+	padding: 20px !important;
 	gap: 14px !important;
 	border-color: rgba(15, 23, 42, 0.1) !important;
+	border-radius: 12px !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
 }
 
 .welcome-title {
-	font-size: 16px;
-	font-weight: 600;
-	line-height: 1.4;
+	font-size: 17px;
+	font-weight: 700;
+	line-height: 1.3;
+	color: #1e293b;
+	margin-bottom: 14px;
 }
 
 .welcome-steps {
@@ -46,25 +50,28 @@
 	min-width: 28px;
 	height: 28px;
 	border-radius: 9999px;
-	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
 	color: #fff;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	font-size: 14px;
 	font-weight: 700;
+	box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+	flex-shrink: 0;
 }
 
 .welcome-step-copy {
 	display: flex;
 	flex-direction: column;
-	gap: 2px;
-	padding-top: 2px;
+	gap: 3px;
+	padding-top: 1px;
+	flex: 1;
 }
 
 .welcome-step-heading {
 	font-size: 13px;
-	line-height: 1.45;
+	line-height: 1.4;
 	font-weight: 600;
 	color: #111827;
 }
@@ -72,30 +79,38 @@
 .welcome-step-detail {
 	font-size: 12px;
 	line-height: 1.45;
-	color: #4b5563;
+	color: #6b7280;
 }
 
 .welcome-tip {
 	width: 100%;
-	max-width: 500px;
-	margin-top: 2px;
-	padding: 8px 12px;
+	margin-top: 0;
+	padding: 12px 16px;
 	border-radius: 10px;
-	background: #f0f7ff;
-	border: 1px solid #2196f3;
+	background: #eff6ff;
+	border: 1.5px solid #3b82f6;
+	box-shadow: 0 1px 3px rgba(59, 130, 246, 0.1);
 }
 
 .welcome-tip p {
 	font-size: 12px;
 	line-height: 1.4;
 	font-weight: 500;
-	color: #1976d2;
+	color: #1e40af;
 }
 
 /* Responsive adjustments */
 @media (max-width: 500px) {
 	.welcome-container {
-		padding: 12px 10px;
+		padding: 16px;
+	}
+
+	.welcome-card {
+		padding: 20px !important;
+	}
+
+	.welcome-steps {
+		gap: 16px;
 	}
 }
 

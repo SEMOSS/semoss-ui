@@ -1228,43 +1228,67 @@ const PanelApp: React.FC = () => {
 				<H1>Browser Automation</H1>
 			</div>
 
-			{/* Mode Switcher */}
-			<div className="flex gap-3 px-6 pt-6 pb-4">
-				<Button
-					onClick={() => setMode("execution")}
-					className={`flex-1 cursor-pointer rounded-lg px-5 py-3 font-semibold text-[15px] shadow-sm transition-all duration-200 ${
-						mode === "execution"
-							? "border-0 bg-blue-600 text-white hover:bg-blue-700"
-							: "border-[1.5px] border-gray-300 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50"
-					}`}
-				>
-					⚡ Execute Scripts
-				</Button>
-				<Button
-					onClick={() => setMode("recording")}
-					className={`flex-1 cursor-pointer rounded-lg px-5 py-3 font-semibold text-[15px] shadow-sm transition-all duration-200 ${
-						mode === "recording"
-							? "border-0 bg-blue-600 text-white hover:bg-blue-700"
-							: "border-[1.5px] border-gray-300 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50"
-					}`}
-				>
-					🎬 Record Script test
-				</Button>
-			</div>
-
-			{isPaused && mode === "execution" && (
-				<div className="ml-8 inline-flex items-center gap-3 rounded-lg border-[1.5px] border-[rgba(255,152,0,0.8)] bg-[rgba(255,152,0,0.15)] px-8 py-3 text-white shadow-[0_2px_8px_rgba(255,152,0,0.3)]">
-					<P className="font-bold text-[0.8125rem] tracking-[0.5px]">
-						⏸️ PAUSED
-					</P>
+			<div className="custom-tabs">
+				<div className="custom-tabs-list">
+					<button
+						type="button"
+						className={
+							mode === "execution"
+								? "custom-tab-trigger active"
+								: "custom-tab-trigger"
+						}
+						onClick={() => setMode("execution")}
+					>
+						⚡ Execute Scripts
+					</button>
+					<button
+						type="button"
+						className={
+							mode === "recording"
+								? "custom-tab-trigger active"
+								: "custom-tab-trigger"
+						}
+						onClick={() => setMode("recording")}
+					>
+						🎬 Record Script
+					</button>
 				</div>
-			)}
 
-			<div className="panel-content">
-				{mode === "recording" ? (
-					<RecordingPanel />
-				) : (
-					<>
+				{isPaused && mode === "execution" && (
+					<div
+						style={{
+							marginLeft: "32px",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "12px",
+							borderRadius: "8px",
+							border: "1.5px solid rgba(255, 152, 0, 0.8)",
+							background: "rgba(255, 152, 0, 0.15)",
+							padding: "12px 32px",
+							color: "white",
+							boxShadow: "0 2px 8px rgba(255, 152, 0, 0.3)",
+						}}
+					>
+						<P
+							style={{
+								fontWeight: "bold",
+								fontSize: "0.8125rem",
+								letterSpacing: "0.5px",
+							}}
+						>
+							⏸️ PAUSED
+						</P>
+					</div>
+				)}
+
+				<div className="panel-content">
+					<div
+						className={
+							mode === "execution"
+								? "custom-tab-content active"
+								: "custom-tab-content"
+						}
+					>
 						{/* Welcome State - shown when no script is running */}
 						{!isRunning && actionHistory.length === 0 && (
 							<WelcomeState />
@@ -1273,7 +1297,7 @@ const PanelApp: React.FC = () => {
 						{/* Action History */}
 						{actionHistory.length > 0 && (
 							<div className="w-full">
-								<Card className="max-h-[calc(100vh-180px)] min-h-[calc(100vh-180px)] w-full overflow-y-auto border border-border bg-background p-10 shadow-sm">
+								<Card className="w-full border border-border bg-background p-10 shadow-sm">
 									<H4 className="mb-8 font-semibold text-[0.9375rem] text-muted-foreground uppercase tracking-[0.5px]">
 										Execution Log
 									</H4>
@@ -1426,8 +1450,18 @@ const PanelApp: React.FC = () => {
 								</div>
 							</div>
 						)}
-					</>
-				)}
+					</div>
+
+					<div
+						className={
+							mode === "recording"
+								? "custom-tab-content active"
+								: "custom-tab-content"
+						}
+					>
+						<RecordingPanel />
+					</div>
+				</div>
 			</div>
 		</div>
 	);

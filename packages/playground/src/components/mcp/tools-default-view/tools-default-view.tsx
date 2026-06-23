@@ -278,12 +278,11 @@ export const ToolsDefaultView = observer(
 						) : (
 							<form onSubmit={handleSubmit}>
 								<div className="space-y-4">
-									{Object.keys(properties).length === 0 &&
-										!scriptForBrowserAutomation && (
-											<p className="py-8 text-center text-muted-foreground text-sm">
-												{t("form.noParameters")}
-											</p>
-										)}
+									{Object.keys(properties).length === 0 && (
+										<p className="py-8 text-center text-muted-foreground text-sm">
+											{t("form.noParameters")}
+										</p>
+									)}
 
 									{/* Required fields */}
 									{renderFields(requiredFields, true)}
