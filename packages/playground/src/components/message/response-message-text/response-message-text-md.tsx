@@ -22,18 +22,12 @@ interface ResponseMessageTextMdProps {
 	/** The response message (for room access and isThinking). */
 	message: ResponseMessageStore;
 
-	/**
-	 * True when this is the last part of the last message.
-	 * Drives isPreviewLoading for code blocks (Mermaid, CodePreviewBlock).
-	 */
-	isLast: boolean;
-
 	/** Called when animation completes so the parent can advance to the next chunk. */
 	onComplete: () => void;
 }
 
 export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
-	observer(({ content, status, message, isLast, onComplete }) => {
+	observer(({ content, status, message, onComplete }) => {
 		const { root } = useRoot();
 
 		// ── Content tracking ──────────────────────────────────────────────────────
@@ -62,7 +56,7 @@ export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
 				: content;
 
 		// ── Markdown components ───────────────────────────────────────────────────
-		const isPreviewLoading = isLast && message.isThinking;
+		const isPreviewLoading = status !== "done";
 		const components = useMemo(
 			() => createMarkdownComponents(message.room, isPreviewLoading),
 			[message.room, isPreviewLoading],

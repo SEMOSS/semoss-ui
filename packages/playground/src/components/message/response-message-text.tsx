@@ -100,7 +100,6 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 							content={chunk.content}
 							status={getChunkStatus(idx)}
 							message={message}
-							isLast={isLast && idx === chunks.length - 1}
 							onComplete={chunkCallbacks[idx]}
 						/>
 					);
