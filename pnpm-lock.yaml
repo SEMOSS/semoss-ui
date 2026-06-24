@@ -682,6 +682,9 @@ importers:
       '@semoss/shared':
         specifier: workspace:*
         version: link:../../libs/shared
+      '@semoss/terminal':
+        specifier: workspace:*
+        version: link:../terminal
       '@semoss/ui':
         specifier: workspace:*
         version: link:../../libs/ui

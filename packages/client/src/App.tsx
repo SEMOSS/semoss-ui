@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { I18nBuilder, I18nextProvider } from "@semoss/i18n";
+import { clientResources, I18nBuilder, I18nextProvider } from "@semoss/i18n";
 import { CSRF, Env } from "@semoss/sdk/react";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
 import { RootStoreContext } from "@/contexts";
@@ -13,8 +13,15 @@ Env.update({
 
 // The client isn't localized yet, but shared components (file explorer,
 // dialogs, etc.) now use i18n. Initialize an English-locked instance so those
-// keys resolve to their default copy instead of rendering raw.
-const i18n = new I18nBuilder("client").i18n;
+// keys resolve to their default copy instead of rendering raw. Languages load
+// lazily (one chunk per language) and the embedded terminal's namespaces are
+// fetched on demand (preloadNamespaces) so they don't weigh down first paint.
+const i18nBuilder = new I18nBuilder(clientResources, { lockToEnglish: true });
+const i18n = i18nBuilder.i18n;
+
+// Awaited by main.tsx before the first render so English copy is present
+// instead of raw keys.
+export const i18nReady = i18nBuilder.ready;
 
 // create a new root store
 const _store = new RootStore();

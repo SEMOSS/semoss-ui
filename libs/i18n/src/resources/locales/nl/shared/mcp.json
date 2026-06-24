@@ -1,0 +1,24 @@
+{
+	"selector": {
+		"search": "Zoeken",
+		"createKnowledgeSource": "Kennisopslag maken",
+		"viewDetails": "Details bekijken",
+		"noToolboxesFound": "Geen toolboxes gevonden",
+		"noKnowledgeFound": "Geen kennis gevonden",
+		"noAgentsFound": "Geen agents gevonden"
+	},
+	"permission": {
+		"owner": "Eigenaar",
+		"editor": "Bewerker",
+		"readOnly": "Alleen-lezen",
+		"accessRequested": "Toegang aangevraagd",
+		"requestAccess": "Toegang aanvragen",
+		"noAccess": "Geen toegang",
+		"requestAccessButton": "Toegang aanvragen",
+		"tooltipNoAccess": "Je hebt geen toegang tot deze {{type}}. Vraag toegang aan bij de eigenaar.",
+		"tooltipMissingDependencies": "Je hebt geen toegang tot alle afhankelijkheden van deze {{type}}, dus de functionaliteit kan beperkt zijn. Open in het platform voor meer informatie.",
+		"tooltipOpen": "Open deze {{type}} in het platform",
+		"typeToolbox": "toolbox",
+		"typeKnowledge": "kennisopslag"
+	}
+}
