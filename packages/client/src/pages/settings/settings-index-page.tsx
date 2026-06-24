@@ -134,6 +134,10 @@ const CardMapper: Record<string, CardConfig> = {
 		icon: <ChartBar className={ICON_CLASS} />,
 		color: "#0471F0",
 	},
+	"Platform Profiles": {
+		icon: <ShieldUser className={ICON_CLASS} />,
+		color: "#471F96",
+	},
 };
 
 export const SettingsIndexPage = () => {

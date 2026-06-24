@@ -207,7 +207,10 @@ export const PlatformProfilesPage = () => {
 			await runPixel(
 				`AssignUserPlatformProfile(userId="${safeUserId}", profileId="${selectedProfile.profileId}");`,
 			);
-			await loadProfileUsers(selectedProfile.profileId);
+			await Promise.all([
+				loadProfileUsers(selectedProfile.profileId),
+				loadProfiles(),
+			]);
 			setShowAssignUser(false);
 			setAssignUserId("");
 		} finally {
@@ -222,8 +225,12 @@ export const PlatformProfilesPage = () => {
 			await runPixel(
 				`RemoveUserPlatformProfile(userId="${removeUserTarget}");`,
 			);
-			if (selectedProfile)
-				await loadProfileUsers(selectedProfile.profileId);
+			await Promise.all([
+				selectedProfile
+					? loadProfileUsers(selectedProfile.profileId)
+					: Promise.resolve(),
+				loadProfiles(),
+			]);
 			setRemoveUserTarget(null);
 		} finally {
 			setConfirmLoading(false);
@@ -421,14 +428,9 @@ export const PlatformProfilesPage = () => {
 										key={f.key}
 										className="flex items-center justify-between rounded-lg border px-3 py-2.5"
 									>
-										<div>
-											<span className="text-sm">
-												{f.label}
-											</span>
-											<p className="font-mono text-muted-foreground text-xs">
-												{f.key}
-											</p>
-										</div>
+										<span className="text-sm">
+											{f.label}
+										</span>
 										<Switch
 											checked={features[f.key] ?? false}
 											onCheckedChange={() =>
