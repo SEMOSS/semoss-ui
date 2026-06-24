@@ -8,7 +8,7 @@ import EChartsReact, { type EChartsOption } from "echarts-for-react";
 import { observer } from "mobx-react-lite";
 import { useRef, useState } from "react";
 import { useBlock, useFrame } from "../../../../../hooks";
-import type { BlockComponent } from "../../../../../store";
+import type { BlockComponent, ListenerActions } from "../../../../../store";
 import { ChartContextMenu } from "../bar-chart/ChartContextMenu";
 export interface EChartColumns {
 	name: string;
@@ -18,7 +18,8 @@ export interface EChartColumns {
 export interface EchartVisualizationBlockDef {
 	widget: "e-chart";
 	data: {
-		option: Record<string, unknown>;
+		// biome-ignore lint/suspicious/noExplicitAny: echart option structure is dynamic
+		option: Record<string, any>;
 		frame: {
 			name: string;
 		};
@@ -32,7 +33,10 @@ export interface EchartVisualizationBlockDef {
 			hideExclude: boolean;
 		};
 	};
-	listeners: Record<string, unknown>;
+	listeners: Record<
+		string,
+		{ order: ListenerActions[]; type: "sync" | "async" }
+	>;
 	slots: never;
 }
 
