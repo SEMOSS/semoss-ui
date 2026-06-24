@@ -29,6 +29,8 @@ import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
 import type { AppMetadata } from "./app.types";
 
+export type AppTileCardEntityType = "app" | "skill" | "agent";
+
 interface AppTileCardProps {
 	app: AppMetadata;
 	background?: string;
@@ -288,11 +290,20 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 
 	const showBookmark = !systemApp && !isDiscoverable;
 	const showMenu = app.project_created_by !== "SYSTEM";
-	const showInfo = app.project_created_by !== "SYSTEM";
 	const isCatalog = variant === "catalog";
 	const isRow = variant === "row";
 	const isFillerCard = variant === "fillerCard";
 	const canEdit = app?.user_permission != null && app.user_permission < 2;
+
+	const entityType: AppTileCardEntityType =
+		appType === "SKILL"
+			? "skill"
+			: appType === "WORKSPACE"
+				? "agent"
+				: "app";
+
+	const showInfo =
+		app.project_created_by !== "SYSTEM" && entityType === "app";
 
 	// Style classes
 	const cardWidthClass = isRow
@@ -612,14 +623,6 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 		[favorite, isFavorite],
 	);
 
-	const handleViewDashboard = useCallback(
-		(e: React.MouseEvent) => {
-			e.stopPropagation();
-			navigate(`/app/${app.project_id}/dashboard`);
-		},
-		[navigate, app.project_id],
-	);
-
 	const handleCopyId = useCallback(
 		(e: React.MouseEvent) => {
 			e.stopPropagation();
@@ -654,6 +657,28 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 	}, []);
 
 	const infoHref = `/app/${app.project_id}`;
+
+	const dropdownMenuContent = (
+		<DropdownMenuContent align="end">
+			{canEdit && (
+				<>
+					{entityType !== "agent" && (
+						<DropdownMenuItem onClick={handleClone}>
+							Clone {entityType === "skill" ? "Skill" : "App"}
+						</DropdownMenuItem>
+					)}
+					<DropdownMenuItem onClick={handleDelete}>
+						Delete{" "}
+						{entityType === "skill"
+							? "Skill"
+							: entityType === "agent"
+								? "Agent"
+								: "App"}
+					</DropdownMenuItem>
+				</>
+			)}
+		</DropdownMenuContent>
+	);
 
 	// Show skeleton
 	if (loading || showSkeleton) {
@@ -915,27 +940,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 												<MoreVertical className="size-4" />
 											</Button>
 										</DropdownMenuTrigger>
-										<DropdownMenuContent align="end">
-											<DropdownMenuItem
-												onClick={handleViewDashboard}
-											>
-												View Dashboard
-											</DropdownMenuItem>
-											{canEdit && (
-												<>
-													<DropdownMenuItem
-														onClick={handleClone}
-													>
-														Clone App
-													</DropdownMenuItem>
-													<DropdownMenuItem
-														onClick={handleDelete}
-													>
-														Delete App
-													</DropdownMenuItem>
-												</>
-											)}
-										</DropdownMenuContent>
+										{dropdownMenuContent}
 									</DropdownMenu>
 								)}
 							</div>
@@ -949,12 +954,14 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 					appId={app.project_id}
 					appName={displayName}
 					onDelete={onDelete}
+					entityType={entityType}
 				/>
 				{isCloneModalOpen && (
 					<AddAppCloneModal
 						open={isCloneModalOpen}
 						appId={app.project_id}
 						handleClose={handleCloneModalClose}
+						entityType={entityType}
 					/>
 				)}
 			</div>
@@ -1032,27 +1039,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 											<MoreVertical className="size-4" />
 										</Button>
 									</DropdownMenuTrigger>
-									<DropdownMenuContent align="end">
-										<DropdownMenuItem
-											onClick={handleViewDashboard}
-										>
-											View Dashboard
-										</DropdownMenuItem>
-										{canEdit && (
-											<>
-												<DropdownMenuItem
-													onClick={handleClone}
-												>
-													Clone App
-												</DropdownMenuItem>
-												<DropdownMenuItem
-													onClick={handleDelete}
-												>
-													Delete App
-												</DropdownMenuItem>
-											</>
-										)}
-									</DropdownMenuContent>
+									{dropdownMenuContent}
 								</DropdownMenu>
 							)}
 						</div>
@@ -1185,12 +1172,14 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 					appId={app.project_id}
 					appName={displayName}
 					onDelete={onDelete}
+					entityType={entityType}
 				/>
 				{isCloneModalOpen && (
 					<AddAppCloneModal
 						open={isCloneModalOpen}
 						appId={app.project_id}
 						handleClose={handleCloneModalClose}
+						entityType={entityType}
 					/>
 				)}
 			</div>
@@ -1326,27 +1315,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 										<MoreVertical className="size-4" />
 									</Button>
 								</DropdownMenuTrigger>
-								<DropdownMenuContent align="end">
-									<DropdownMenuItem
-										onClick={handleViewDashboard}
-									>
-										View Dashboard
-									</DropdownMenuItem>
-									{canEdit && (
-										<>
-											<DropdownMenuItem
-												onClick={handleClone}
-											>
-												Clone App
-											</DropdownMenuItem>
-											<DropdownMenuItem
-												onClick={handleDelete}
-											>
-												Delete App
-											</DropdownMenuItem>
-										</>
-									)}
-								</DropdownMenuContent>
+								{dropdownMenuContent}
 							</DropdownMenu>
 						)}
 					</div>

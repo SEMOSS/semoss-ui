@@ -22,8 +22,6 @@ export const getNotificationMessage = (
 	n: NotificationRecord,
 	loggedInUser?: string,
 ) => {
-	console.log("Generating message for notification:", n);
-	console.log("Logged in user:", loggedInUser);
 	const type = (n.notification_type || "").trim() as NotificationType;
 	const isSelf = !!loggedInUser && loggedInUser === n.recipient_user_id;
 	const isAuthor =

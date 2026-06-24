@@ -1,0 +1,7 @@
+{
+	"selector": {
+		"searchPlaceholder": "Search prompts...",
+		"noPrompts": "No prompts found",
+		"viewDetails": "View Details"
+	}
+}

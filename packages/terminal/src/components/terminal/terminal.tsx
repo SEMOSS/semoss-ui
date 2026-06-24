@@ -12,7 +12,10 @@ import { getLanguageDirection, useTranslation } from "@semoss/i18n";
 import { FileExplorer, FlexLayout, getFileIconComponent } from "@semoss/shared";
 import type { SelectedFile } from "../../types";
 import { modeKey } from "../../utility/file-mode";
-import type { FileEditorTabConfig } from "../terminal-file/terminal-file";
+import {
+	type FileEditorTabConfig,
+	inferExt,
+} from "../terminal-file/terminal-file";
 import { Tooltip } from "../tooltip";
 import { HelpDialog } from "./help-dialog";
 import { SaveModal } from "./save-modal";
@@ -281,11 +284,7 @@ export const Terminal = () => {
 				mode: tabMode,
 				baseName: file.name,
 				appName: tabAppName,
-				ext: (file.name.split(".").pop() || "pixel").toLowerCase() as
-					| "pixel"
-					| "r"
-					| "py"
-					| "shell",
+				ext: inferExt(file.name),
 			};
 			const tabJson: FlexLayout.IJsonTabNode = {
 				id: tabId,

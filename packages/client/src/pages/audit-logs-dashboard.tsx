@@ -1,38 +1,44 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
-import { RefreshCw } from "lucide-react";
+import { Download, RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
+import { download } from "@semoss/sdk";
 import {
 	AppCatalogAvatar,
 	AuditLogFilter,
+	type AuditLogFilterValue,
+	type AuditLogScope,
 	AuditLogsDataTable,
+	AuditLogsSummary,
 	AuditLogsTimeline,
+	buildAuditLogReportPixel,
+	buildExportAuditLogReportPixel,
 	EngineSubtypeIcon,
 	EntityHeader,
 	type EventData,
+	filterValueToReportParams,
+	hasScope,
 } from "@semoss/shared";
-import { Button, Skeleton, toast } from "@semoss/ui/next";
+import {
+	Button,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+	Skeleton,
+	toast,
+} from "@semoss/ui/next";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
 
 interface AuditLogsDashboardProps {
 	catalogName: string;
-}
-
-interface AuditLogsFilterData {
-	engineType: string;
-	engineId: string;
-	duration: string;
-	customDateRange: {
-		from: Date | null;
-		to: Date | null;
-	};
-	SelectedDuration: {
-		label: string;
-		value: string;
-		dateRangeType: string;
-		dateRangeValue: number;
-	};
+	/**
+	 * When rendered inside the app/engine detail tabs (not as a standalone page),
+	 * skip the page navbar, the full-page padding side effect, and the entity
+	 * header — the surrounding layout already provides those.
+	 */
+	embedded?: boolean;
 }
 
 interface AppMetadataResponse {
@@ -69,6 +75,7 @@ type ContextEntity =
  */
 export const AuditLogsDashboard = ({
 	catalogName,
+	embedded = false,
 }: AuditLogsDashboardProps) => {
 	const { configStore, monolithStore } = useRootStore();
 	const { appId, engineId } = useParams();
@@ -76,21 +83,19 @@ export const AuditLogsDashboard = ({
 	const [page, setPage] = useState(0);
 	const [rowsPerPage, setRowsPerPage] = useState(50);
 	const [totalCount, setTotalCount] = useState(0);
-	const [loading, setLoading] = useState<boolean>(true);
+	const [loading, setLoading] = useState<boolean>(false);
 	const [contextEntityDetails, setContextEntityDetails] =
 		useState<ContextEntity | null>(null);
-	const hasSkippedInitialFilterFetchRef = useRef(false);
-	const filteredData = useRef<AuditLogsFilterData>({
-		engineType: "",
-		engineId: "",
-		duration: "",
+	const filteredData = useRef<AuditLogFilterValue>({
+		scope: null,
+		dateRangeType: "DAY",
+		dateRangeValue: 1,
 		customDateRange: { from: null, to: null },
-		SelectedDuration: {
-			label: "",
-			value: "",
-			dateRangeType: "",
-			dateRangeValue: 1,
-		},
+		methodNames: [],
+		engineTypes: [],
+		filterUserId: "",
+		roomId: "",
+		searchTerm: "",
 	});
 	const routeContextEntity = useMemo<ContextEntity | null>(() => {
 		if (appId) {
@@ -114,6 +119,13 @@ export const AuditLogsDashboard = ({
 	}, [appId, engineId, catalogName]);
 	const contextEntity = contextEntityDetails || routeContextEntity;
 	const isContextualDashboard = Boolean(routeContextEntity);
+	//Scope passed to the filter for contextual dashboards (route-derived). For the
+	//global "Apps" dashboard this is null and the filter renders its own pickers.
+	const routeScope = useMemo<AuditLogScope | null>(() => {
+		if (appId) return { projectId: appId };
+		if (engineId) return { engineId };
+		return null;
+	}, [appId, engineId]);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -194,85 +206,73 @@ export const AuditLogsDashboard = ({
 	}, [appId, engineId, monolithStore, catalogName]);
 
 	/**
-	 * Fetches the audit logs from the API.
+	 * Fetches the audit logs from the API using the current filter state.
 	 */
 	const fetchLogs = async (limit: number, offset: number) => {
+		const filterValue = filteredData.current;
+		if (!hasScope(filterValue.scope)) {
+			setLogs([]);
+			setTotalCount(0);
+			setLoading(false);
+			return;
+		}
 		setLoading(true);
 		try {
-			const date = new Date();
-			const yyyy = date.getFullYear();
-			const mm = String(date.getMonth() + 1).padStart(2, "0");
-			const dd = String(date.getDate()).padStart(2, "0");
-			const hh = String(date.getHours()).padStart(2, "0");
-			const min = String(date.getMinutes()).padStart(2, "0");
-			const ss = String(date.getSeconds()).padStart(2, "0");
-
-			const dateTime = `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
-			const routeCatalogId = appId || engineId || "";
-			const catalogId = routeCatalogId || filteredData.current.engineId;
-			const SelectedDuration = filteredData.current.SelectedDuration;
-			const selectedEngineType =
-				filteredData.current.engineType.toUpperCase();
-			const useProjectId =
-				Boolean(appId) ||
-				(!engineId &&
-					(selectedEngineType === "APP" || catalogName === "Apps"));
-			const catalogIdKey = useProjectId ? "projectId" : "engineId";
-
-			if (!catalogId) {
-				setLogs([]);
-				setTotalCount(0);
-				return;
-			}
-
-			const customStartDate = filteredData.current.customDateRange.from;
-			const customEndDate = filteredData.current.customDateRange.to;
-			const hasCustomDateRange =
-				SelectedDuration.dateRangeType === "CUSTOM" &&
-				customStartDate &&
-				customEndDate;
-			let customDateRangeParams = "";
-
-			if (hasCustomDateRange) {
-				const startDate = new Date(customStartDate);
-				const endDate = new Date(customEndDate);
-
-				startDate.setUTCHours(0, 0, 0, 0);
-				endDate.setUTCHours(23, 59, 59, 999);
-
-				customDateRangeParams = `,"startDate": "${startDate.toISOString()}", "endDate": "${endDate.toISOString()}"`;
-			}
-
+			const params = filterValueToReportParams(filterValue);
 			const response = await monolithStore.runQuery(
-				`AuditLogReport(paramValues=[{"userId": "${configStore.store.user.id}", "${catalogIdKey}": "${catalogId}","dateTime":"${dateTime}","limit":"${limit}","offset":"${offset}", "dateRangeType": "${SelectedDuration.dateRangeType || "DAY"}","dateRangeValue": ${SelectedDuration.dateRangeValue}${customDateRangeParams}}]);`,
+				buildAuditLogReportPixel(params, limit, offset),
 			);
-			const { operationType } = response.pixelReturn[0];
+			const { operationType, output } = response.pixelReturn[0];
 			if (operationType.indexOf("ERROR") > -1)
-				throw new Error(`API Error: ${response.pixelReturn[0].output}`);
+				throw new Error(`API Error: ${output}`);
 
-			const responseData = response.pixelReturn[0].output;
+			const responseData = output as unknown as {
+				logs?: EventData[];
+				totalCount?: number;
+			};
 			setLogs(
-				(
-					responseData as unknown as {
-						logs: EventData[];
-						totalCount: number;
-					}
-				)?.logs ||
-					(responseData as unknown as EventData[]) ||
-					[],
+				responseData?.logs ?? (output as unknown as EventData[]) ?? [],
 			);
 			setTotalCount(
-				(responseData as unknown as { totalCount: number })
-					?.totalCount ||
-					(responseData as unknown as EventData[])?.length ||
+				responseData?.totalCount ??
+					(output as unknown as EventData[])?.length ??
 					0,
 			);
 		} catch (error) {
 			setLogs([]);
+			setTotalCount(0);
 			toast.error(`Error fetching logs: ${error}`);
 			console.error("Error fetching logs:", error);
 		} finally {
 			setLoading(false);
+		}
+	};
+
+	/**
+	 * Exports the current filtered report as CSV or PDF.
+	 */
+	const handleExport = async (pdf: boolean) => {
+		const filterValue = filteredData.current;
+		if (!hasScope(filterValue.scope)) {
+			toast.info("Select a scope before exporting logs.");
+			return;
+		}
+		try {
+			const params = filterValueToReportParams(filterValue);
+			const exportLimit = totalCount > 0 ? totalCount : rowsPerPage;
+			const response = await monolithStore.runQuery(
+				buildExportAuditLogReportPixel(params, exportLimit, 0, pdf),
+			);
+			const { operationType, output } = response.pixelReturn[0];
+			if (operationType.indexOf("ERROR") > -1)
+				throw new Error(`API Error: ${output}`);
+			await download(
+				configStore.store.insightID,
+				output as unknown as string,
+			);
+		} catch (error) {
+			toast.error(`Error exporting logs: ${error}`);
+			console.error("Error exporting logs:", error);
 		}
 	};
 
@@ -289,11 +289,10 @@ export const AuditLogsDashboard = ({
 		fetchLogs(newRowsPerPage, offset);
 	};
 
+	//Override the parent Page container styles for the dashboard layout. Skipped
+	//when embedded in a tab, where the surrounding layout owns the container.
 	useEffect(() => {
-		if (catalogName) {
-			setLogs([]);
-			fetchLogs(rowsPerPage, page * rowsPerPage);
-		}
+		if (embedded) return;
 		const contentElement = document.querySelector(
 			'[data-home-container="true"]',
 		) as HTMLElement | null;
@@ -311,32 +310,85 @@ export const AuditLogsDashboard = ({
 	}, [catalogName, appId, engineId]);
 
 	/**
-	 * Updates the filtered data state and refetches logs.
+	 * Updates the filtered data state (emitted by the filter) and refetches from
+	 * the first page.
 	 */
-	const updateLogs = (filterData: AuditLogsFilterData) => {
-		filteredData.current = {
-			...filterData,
-		};
-		if (isContextualDashboard && !hasSkippedInitialFilterFetchRef.current) {
-			hasSkippedInitialFilterFetchRef.current = true;
-			return;
-		}
-		fetchLogs(rowsPerPage, page * rowsPerPage);
+	const updateLogs = (filterValue: AuditLogFilterValue) => {
+		filteredData.current = filterValue;
+		setPage(0);
+		fetchLogs(rowsPerPage, 0);
 	};
 
-	const dashboardControls = (
-		<div className="flex flex-row items-center gap-4">
+	//Compact header actions (Export + Refresh). The filter set lives in its own
+	//full-width row below so it can wrap instead of overlapping the header.
+	const headerActions = (
+		<div className="flex flex-row items-center gap-2">
+			<DropdownMenu>
+				<DropdownMenuTrigger asChild>
+					<Button variant="outline" size="icon-sm" title="Export">
+						<Download className="size-4" />
+					</Button>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent>
+					<DropdownMenuItem onClick={() => handleExport(false)}>
+						Export as CSV
+					</DropdownMenuItem>
+					<DropdownMenuItem onClick={() => handleExport(true)}>
+						Export as PDF
+					</DropdownMenuItem>
+				</DropdownMenuContent>
+			</DropdownMenu>
+			<Button
+				variant="outline"
+				size="icon-sm"
+				title="Refresh"
+				onClick={() => fetchLogs(rowsPerPage, page * rowsPerPage)}
+			>
+				<RefreshCw className="size-4" />
+			</Button>
+		</div>
+	);
+
+	const filterBar = (
+		<div className="flex w-full flex-wrap items-center gap-2">
 			<AuditLogFilter
 				updateLogs={updateLogs}
 				insightId={configStore.store.insightID}
 				parent={isContextualDashboard ? "client" : null}
+				scope={routeScope}
+				actions={headerActions}
 			/>
-			<Button onClick={() => fetchLogs(rowsPerPage, page * rowsPerPage)}>
-				<RefreshCw className="mr-2 size-4" />
-				Refresh
-			</Button>
 		</div>
 	);
+
+	const body = loading ? (
+		<div className="flex flex-col gap-4">
+			<Skeleton className="h-[400px] w-full" />
+			<Skeleton className="h-[400px] w-full" />
+		</div>
+	) : (
+		<>
+			<AuditLogsSummary logs={logs} totalCount={totalCount} />
+			<AuditLogsTimeline logs={logs} />
+			<AuditLogsDataTable
+				logs={logs}
+				totalCount={totalCount}
+				page={page}
+				rowsPerPage={rowsPerPage}
+				onPaginationChange={handlePaginationChange}
+			/>
+		</>
+	);
+
+	//Embedded in a settings tab: filters (with search + export/refresh inline) + body.
+	if (embedded) {
+		return (
+			<div className="flex flex-col gap-4">
+				{filterBar}
+				{body}
+			</div>
+		);
+	}
 
 	return (
 		<>
@@ -377,34 +429,18 @@ export const AuditLogsDashboard = ({
 									? "Copy App ID"
 									: "Copy Engine ID"
 							}
-							actions={dashboardControls}
 						/>
+						{filterBar}
 					</div>
 				) : (
-					<div className="flex w-full items-center py-2">
+					<div className="flex w-full flex-col gap-4 py-2">
 						<h6 className="font-semibold text-xl">
 							{catalogName} Insight Dashboard
 						</h6>
-						<div className="ml-auto">{dashboardControls}</div>
+						{filterBar}
 					</div>
 				)}
-				{loading ? (
-					<div className="flex flex-col gap-4">
-						<Skeleton className="h-[400px] w-full" />
-						<Skeleton className="h-[400px] w-full" />
-					</div>
-				) : (
-					<>
-						<AuditLogsTimeline logs={logs} />
-						<AuditLogsDataTable
-							logs={logs}
-							totalCount={totalCount}
-							page={page}
-							rowsPerPage={rowsPerPage}
-							onPaginationChange={handlePaginationChange}
-						/>
-					</>
-				)}
+				{body}
 			</div>
 		</>
 	);

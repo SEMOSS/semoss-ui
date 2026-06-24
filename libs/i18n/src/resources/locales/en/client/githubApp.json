@@ -1,0 +1,192 @@
+{
+	"header": {
+		"title": "GitHub App",
+		"description": "Create and manage the GitHub App used to link apps with GitHub projects and webhooks."
+	},
+	"list": {
+		"title": "Configured GitHub Apps",
+		"emptyTitle": "No GitHub App configured yet",
+		"emptyDescription": "Create a GitHub App to connect SEMOSS apps to GitHub projects.",
+		"connected": "Connected",
+		"appId": "App ID {{appId}}",
+		"owner": "Owner",
+		"createdOn": "Created",
+		"openInGithub": "Open in GitHub",
+		"unknownDate": "Unknown date"
+	},
+	"buttons": {
+		"create": "Create GitHub App",
+		"refresh": "Refresh",
+		"cancel": "Cancel",
+		"creating": "Redirecting...",
+		"remove": "Remove",
+		"removing": "Removing..."
+	},
+	"deleteDialog": {
+		"title": "Remove GitHub App?",
+		"description": "Remove \"{{appName}}\" from this instance? This deletes its stored credentials and project links here. It does not delete the app on GitHub — an owner must remove it there (Settings → Developer settings → GitHub Apps → Advanced).",
+		"openInGithub": "Open in GitHub to fully delete"
+	},
+	"dialog": {
+		"title": "Create GitHub App",
+		"description": "Start the GitHub manifest flow to create a new app.",
+		"appNameLabel": "App name",
+		"appNamePlaceholder": "Semoss GitHub App",
+		"createUnderLabel": "Create under",
+		"myAccount": "My account",
+		"organization": "Organization",
+		"organizationLabel": "Organization",
+		"organizationPlaceholder": "my-github-org",
+		"visibilityLabel": "Visibility",
+		"public": "Public",
+		"private": "Private",
+		"visibilityHelp": "Public apps can be installed on any account or organization. Private apps can only be installed on the account that owns them."
+	},
+	"status": {
+		"loading": "Loading GitHub App configuration...",
+		"notPermitted": "You are not permitted to manage GitHub App configuration."
+	},
+	"validation": {
+		"organizationRequired": "Organization is required."
+	},
+	"toasts": {
+		"loadFailed": "Failed to load GitHub App configuration.",
+		"notPermitted": "You are not permitted to access GitHub App configuration.",
+		"redirecting": "Redirecting to GitHub to create the app...",
+		"createSuccess": "GitHub App created and configured for this instance.",
+		"createError": "Something went wrong creating the GitHub App.",
+		"createErrorConversion": "Couldn't create the GitHub App — the exchange with GitHub failed. Please try again.",
+		"createErrorSave": "The GitHub App was created on GitHub but couldn't be saved here. Please try again.",
+		"deleteSuccess": "Removed the GitHub App from this instance.",
+		"deleteFailed": "Failed to remove the GitHub App."
+	},
+	"projects": {
+		"title": "Connected projects",
+		"loading": "Loading connected projects...",
+		"empty": "No projects are connected to GitHub yet.",
+		"unknownRepo": "Unknown repository",
+		"lastOpened": "Last opened {{date}}",
+		"openTab": "Open App Settings"
+	},
+	"branchSelect": {
+		"label": "Branch",
+		"placeholder": "Select a branch",
+		"loading": "Loading branches...",
+		"retry": "Retry",
+		"errorFallback": "Couldn't load branches from GitHub. Retry, or type the branch name."
+	},
+	"project": {
+		"title": "GitHub",
+		"description": "Connect this app to a GitHub repository to sync code and receive push updates.",
+		"syncWarning": "Pushes to the tracked branch on GitHub are automatically synced into this project, replacing local changes. The tracked branch is the source of truth.",
+		"loading": "Loading GitHub connection...",
+		"connectedRepo": "Connected repository",
+		"changeRepo": "Change repository",
+		"disconnect": "Disconnect",
+		"connect": "Connect to GitHub",
+		"checking": "Checking GitHub availability...",
+		"notConnectedTitle": "Not connected to GitHub",
+		"notConnectedDescription": "Install the GitHub App on your account or organization and grant it access to the repository you want to link.",
+		"unavailableTitle": "GitHub isn't set up for this instance",
+		"unavailableDescription": "An administrator needs to configure the instance GitHub App before projects can connect.",
+		"installation": {
+			"valid": "Installation active",
+			"invalidTitle": "GitHub App installation is no longer valid",
+			"invalidDescription": "The GitHub App was uninstalled or suspended for this repository, so syncing has stopped. Reconnect to restore it.",
+			"reconnect": "Reconnect"
+		},
+		"branch": {
+			"label": "Tracked branch",
+			"default": "default branch",
+			"change": "Change"
+		},
+		"branchDialog": {
+			"title": "Set tracked branch",
+			"description": "Only pushes to this branch sync the project. This is usually your default branch (e.g. main).",
+			"placeholder": "main",
+			"cancel": "Cancel",
+			"confirm": "Save"
+		},
+		"webhooks": {
+			"title": "Recent webhook activity",
+			"description": "Recent webhook deliveries GitHub sent for this repository. GitHub only retains a short recent window.",
+			"refresh": "Refresh",
+			"loading": "Loading webhook activity...",
+			"empty": "No recent webhook deliveries.",
+			"eventLabel": "Event:",
+			"redelivery": "redelivery",
+			"unknownTime": "Unknown time"
+		},
+		"changeDialog": {
+			"title": "Change repository",
+			"description": "Pick a different repository for this project from the ones the installation can access.",
+			"confirm": "Change repository"
+		},
+		"disconnectDialog": {
+			"title": "Disconnect from GitHub?",
+			"description": "This unlinks the project from its repository. It does not uninstall the GitHub App from your account or organization.",
+			"cancel": "Cancel",
+			"confirm": "Disconnect"
+		},
+		"connectDialog": {
+			"title": "Connect to GitHub",
+			"description": "Choose a GitHub App installation, then pick the repository this project should sync with.",
+			"confirm": "Connect repository"
+		},
+		"installPicker": {
+			"loading": "Loading GitHub installations...",
+			"loadFailed": "Couldn't load GitHub installations.",
+			"retry": "Retry",
+			"selectLabel": "Choose an installation",
+			"accountTypeOrganization": "Organization",
+			"accountTypeUser": "Personal account",
+			"suspended": "Suspended",
+			"suspendedTooltip": "This installation is suspended on GitHub and can't be used until it's reactivated.",
+			"backToInstallations": "Installations",
+			"authTitle": "Authorize GitHub",
+			"authDescription": "Authorize your GitHub access to list the installations and repositories you can link.",
+			"authorize": "Authorize GitHub",
+			"installApp": "Install the GitHub App",
+			"installAnother": "Install on another account",
+			"emptyTitle": "No installations found",
+			"emptyDescription": "The GitHub App isn't installed on any of your accounts yet. Install it to connect a repository."
+		},
+		"picker": {
+			"searchPlaceholder": "Search repositories...",
+			"loading": "Loading repositories...",
+			"noRepos": "No repositories match.",
+			"manageOnGithub": "Can't find your repo? Manage on GitHub",
+			"branchLabel": "Branch to track",
+			"branchHelp": "Only pushes to this branch sync the project."
+		},
+		"subdir": {
+			"label": "Subdirectory",
+			"optional": "(optional)",
+			"placeholder": "apps/my-app",
+			"help": "Leave blank to sync the entire repository. Use for monorepos where the app lives in a subfolder.",
+			"display": "Subdirectory",
+			"errorLeadingSlash": "Path must not start with a slash.",
+			"errorDotDot": "Path must not contain \"..\"."
+		},
+		"selectRepo": {
+			"title": "Select a repository",
+			"description": "The installation can access multiple repositories. Choose the one this project should use.",
+			"confirm": "Connect repository",
+			"missingInstallation": "No installation was provided. Start the connect flow again from the GitHub tab.",
+			"back": "Back to GitHub"
+		},
+		"toasts": {
+			"reposFailed": "Failed to load repositories.",
+			"connected": "Connected the project to GitHub.",
+			"connectFailed": "Failed to connect the repository.",
+			"changed": "Updated the linked repository.",
+			"changeFailed": "Failed to change the repository.",
+			"disconnected": "Disconnected the project from GitHub.",
+			"disconnectFailed": "Failed to disconnect the project.",
+			"deliveriesFailed": "Failed to load webhook activity.",
+			"branchUpdated": "Updated the tracked branch.",
+			"branchFailed": "Failed to set the tracked branch.",
+			"needsAuth": "GitHub authorization required — sending you to GitHub to authorize..."
+		}
+	}
+}

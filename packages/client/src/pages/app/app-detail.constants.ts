@@ -1,8 +1,10 @@
 import type { AppDetailPermission } from "@/contexts/AppDetailContext";
 import { AppAccessControlPage } from "./app-access-control-page";
+import { AppActivityPage } from "./app-activity-page";
 import { AppCommitsPage } from "./app-commits-page";
 import { AppDependenciesPage } from "./app-dependencies-page";
 import { AppFilesPage } from "./app-files-page";
+import { AppGithubPage } from "./app-github-page";
 import { AppLogsPage } from "./app-logs-page";
 import { AppMcpUsagePage } from "./app-mcp-usage-page";
 import { AppOverviewPage } from "./app-overview-page";
@@ -46,10 +48,24 @@ export const APP_DETAIL_TABS: AppDetailTab[] = [
 		restrict: ["author", "editor", "readOnly"],
 	},
 	{
+		name: "Activity Log",
+		path: "activity",
+		component: AppActivityPage,
+		restrict: ["author", "editor", "readOnly"],
+	},
+	{
 		name: "Commits",
 		path: "commits",
 		component: AppCommitsPage,
 		restrict: ["author", "editor"],
+	},
+	{
+		name: "GitHub",
+		path: "github",
+		component: AppGithubPage,
+		// Connecting/changing/disconnecting all require project ownership on the
+		// backend, so only show the tab to owners (authors).
+		restrict: ["author"],
 	},
 	{
 		name: "Settings",

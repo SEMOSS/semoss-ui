@@ -1,0 +1,47 @@
+{
+	"steps": {
+		"welcome": {
+			"title": "Welkom!",
+			"content": "Laten we een korte rondleiding doen om je op weg te helpen."
+		},
+		"input": {
+			"title": "Begin een gesprek",
+			"content": "Typ hier je vraag en druk op Enter."
+		},
+		"inputMenu": {
+			"title": "Bijvoegen en configureren",
+			"content": "Voeg bestanden, agents, kennisbibliotheken en tools toe om je gesprek te verrijken."
+		},
+		"model": {
+			"title": "Model",
+			"content": "Selecteer welk AI-model je gesprek aanstuurt."
+		},
+		"record": {
+			"title": "Opnemen",
+			"content": "Klik om te spreken; je stem wordt omgezet naar tekst."
+		},
+		"newChat": {
+			"title": "Nieuwe chat",
+			"content": "Begin op elk moment een nieuw gesprek."
+		},
+		"chatHistory": {
+			"title": "Chatgeschiedenis",
+			"content": "Zet gesprekken voort, markeer ze als favoriet, bewerk of verwijder eerdere gesprekken."
+		},
+		"search": {
+			"title": "Zoeken",
+			"content": "Vind snel eerdere chats in je chatgeschiedenis."
+		},
+		"takeTour": {
+			"title": "Volg een rondleiding",
+			"content": "Speel deze rondleiding op elk moment opnieuw af."
+		}
+	},
+	"controls": {
+		"closeTour": "Rondleiding sluiten",
+		"skip": "Overslaan",
+		"back": "Terug",
+		"next": "Volgende",
+		"done": "Klaar"
+	}
+}

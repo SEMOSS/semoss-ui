@@ -1,7 +1,13 @@
 /**
  * Different types of apps
  */
-export type AppType = "BLOCKS" | "CODE" | "INSIGHT" | "";
+export type AppType =
+	| "BLOCKS"
+	| "CODE"
+	| "INSIGHT"
+	| "SKILL"
+	| "WORKSPACE"
+	| "";
 
 /**
  * Metadata associated with the app
