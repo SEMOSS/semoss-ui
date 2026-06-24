@@ -1,10 +1,9 @@
 import { observer } from "mobx-react-lite";
 import { useMemo, useRef } from "react";
 import { Markdown } from "@semoss/ui/next";
-import { useRoot } from "@/hooks";
+import { type ChunkStatus, useRoot } from "@/hooks";
 import { useMarkdownTypewriter } from "@/hooks/use-markdown-typewriter";
 import type { ResponseMessageStore } from "@/stores";
-import type { ChunkStatus } from "../response-message-text";
 import { createMarkdownComponents } from "./create-markdown-components";
 
 interface ResponseMessageTextMdProps {
