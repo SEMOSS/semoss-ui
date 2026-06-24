@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	Select,
@@ -42,19 +43,19 @@ const isSuccess = (status: EventData["status"]) =>
 
 //Granularity options for the time (x) axis labels.
 type AxisMode = "time" | "datetime" | "date" | "month";
-const AXIS_MODE_LABELS: Record<AxisMode, string> = {
-	time: "Time",
-	datetime: "Date & time",
-	date: "Date",
-	month: "Month",
+const AXIS_MODE_LABEL_KEYS: Record<AxisMode, string> = {
+	time: "timeline.axisMode.time",
+	datetime: "timeline.axisMode.datetime",
+	date: "timeline.axisMode.date",
+	month: "timeline.axisMode.month",
 };
 //Row grouping: one lane per event, or one lane per spanId / requestId (trace-style,
 //where the group's events stack as parts of the execution along the row).
 type RowMode = "event" | "span" | "request";
-const ROW_MODE_LABELS: Record<RowMode, string> = {
-	event: "Row: per event",
-	span: "Row: by span",
-	request: "Row: by request",
+const ROW_MODE_LABEL_KEYS: Record<RowMode, string> = {
+	event: "timeline.rowMode.event",
+	span: "timeline.rowMode.span",
+	request: "timeline.rowMode.request",
 };
 const formatAxisValue = (value: number, mode: AxisMode): string => {
 	const date = new Date(value);
@@ -125,6 +126,28 @@ interface RenderRect {
 export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 	logs,
 }) => {
+	const { t } = useTranslation("auditlog");
+	//Resolved chart copy. Memoized per-language and fed into the chart effect's
+	//dependency array so the echarts tooltip (built as an HTML string) re-renders
+	//in the new language when the user switches it.
+	const chartText = useMemo(
+		() => ({
+			event: t("common.event"),
+			success: t("common.success"),
+			failed: t("common.failed"),
+			engine: t("timeline.tooltip.engine"),
+			user: t("timeline.tooltip.user"),
+			latency: t("timeline.tooltip.latency"),
+			tokens: t("timeline.tooltip.tokens"),
+			start: t("timeline.tooltip.start"),
+			end: t("timeline.tooltip.end"),
+			span: t("timeline.tooltip.span"),
+			session: t("timeline.tooltip.session"),
+			request: t("timeline.tooltip.request"),
+			response: t("timeline.tooltip.response"),
+		}),
+		[t],
+	);
 	const chartRef = useRef<HTMLDivElement>(null);
 	const chartInstanceRef = useRef<echarts.ECharts | null>(null);
 	//Persisted zoom windows (percent) for both axes, so the current zoom survives
@@ -298,20 +321,20 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 					return `
 						<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.45;">
 							<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #f0f0f0;">
-								<span style="font-weight:600;">${e.methodName || e.engineName || "Event"}</span>
-								<span style="font-weight:600;color:${ok ? STATUS_OK_COLOR : STATUS_FAIL_COLOR};">${ok ? "Success" : "Failed"}</span>
+								<span style="font-weight:600;">${e.methodName || e.engineName || chartText.event}</span>
+								<span style="font-weight:600;color:${ok ? STATUS_OK_COLOR : STATUS_FAIL_COLOR};">${ok ? chartText.success : chartText.failed}</span>
 							</div>
-							${line("Engine", `${e.engineName ?? ""}${e.engineType ? ` (${e.engineType})` : ""}`)}
-							${line("User", e.userName || e.userId || "")}
-							${line("Latency", `${e.latency}ms`)}
-							${line("Tokens", e.tokens != null ? String(e.tokens) : "")}
-							${line("Start", `${start.date} ${start.time}`)}
-							${line("End", `${end.date} ${end.time}`)}
-							${line("Span", e.spanId || "")}
-							${line("Session", e.sessionId || "")}
-							<div style="margin-top:6px;color:#888;">Request</div>
+							${line(chartText.engine, `${e.engineName ?? ""}${e.engineType ? ` (${e.engineType})` : ""}`)}
+							${line(chartText.user, e.userName || e.userId || "")}
+							${line(chartText.latency, `${e.latency}ms`)}
+							${line(chartText.tokens, e.tokens != null ? String(e.tokens) : "")}
+							${line(chartText.start, `${start.date} ${start.time}`)}
+							${line(chartText.end, `${end.date} ${end.time}`)}
+							${line(chartText.span, e.spanId || "")}
+							${line(chartText.session, e.sessionId || "")}
+							<div style="margin-top:6px;color:#888;">${chartText.request}</div>
 							<div style="color:#333;word-break:break-word;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${truncate(e.request)}</div>
-							<div style="margin-top:4px;color:#888;">Response</div>
+							<div style="margin-top:4px;color:#888;">${chartText.response}</div>
 							<div style="color:#333;word-break:break-word;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${truncate(e.response)}</div>
 						</div>`;
 				},
@@ -600,7 +623,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 			chart.dispose();
 			chartInstanceRef.current = null;
 		};
-	}, [rows, lanes, barColors, chartHeight, axisMode]);
+	}, [rows, lanes, barColors, chartHeight, axisMode, chartText]);
 
 	//Zoom the time (x) axis around the center of the CURRENT window, so the buttons
 	//compose with whatever is already zoomed (slider/rectangle).
@@ -674,7 +697,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 	const header = (
 		<div className="flex flex-wrap items-center justify-between gap-2 p-4">
 			<span className="font-semibold text-[#333] text-[18px]">
-				Event History
+				{t("timeline.title")}
 			</span>
 			<div className="flex flex-wrap items-center gap-2">
 				<Select
@@ -685,10 +708,10 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
-						{(Object.keys(ROW_MODE_LABELS) as RowMode[]).map(
+						{(Object.keys(ROW_MODE_LABEL_KEYS) as RowMode[]).map(
 							(mode) => (
 								<SelectItem key={mode} value={mode}>
-									{ROW_MODE_LABELS[mode]}
+									{t(ROW_MODE_LABEL_KEYS[mode])}
 								</SelectItem>
 							),
 						)}
@@ -702,10 +725,10 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
-						{(Object.keys(AXIS_MODE_LABELS) as AxisMode[]).map(
+						{(Object.keys(AXIS_MODE_LABEL_KEYS) as AxisMode[]).map(
 							(mode) => (
 								<SelectItem key={mode} value={mode}>
-									{AXIS_MODE_LABELS[mode]}
+									{t(AXIS_MODE_LABEL_KEYS[mode])}
 								</SelectItem>
 							),
 						)}
@@ -719,7 +742,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 						variant={zoomSelectActive ? "secondary" : "ghost"}
 						className="rounded-[4px_0_0_4px] px-[4px] py-[4px]"
 						onClick={toggleHighlightZoom}
-						title="Highlight a region to zoom in"
+						title={t("timeline.highlightZoom")}
 						aria-pressed={zoomSelectActive}
 					>
 						<CropIcon style={{ color: "#666" }} />
@@ -728,7 +751,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 						variant="ghost"
 						className="rounded-none px-[4px] py-[4px]"
 						onClick={handleZoomIn}
-						title="Zoom in"
+						title={t("timeline.zoomIn")}
 						disabled={xZoom.end - xZoom.start <= 5}
 					>
 						<ZoomInIcon style={{ color: "#666" }} />
@@ -737,7 +760,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 						variant="ghost"
 						className="rounded-none px-[4px] py-[4px]"
 						onClick={handleZoomOut}
-						title="Zoom out"
+						title={t("timeline.zoomOut")}
 						disabled={xZoom.start === 0 && xZoom.end === 100}
 					>
 						<ZoomOutIcon style={{ color: "#666" }} />
@@ -746,7 +769,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 						variant="ghost"
 						className="rounded-[0_4px_4px_0] px-[4px] py-[4px]"
 						onClick={resetZoom}
-						title="Reset zoom"
+						title={t("timeline.resetZoom")}
 						disabled={
 							xZoom.start === 0 &&
 							xZoom.end === 100 &&
@@ -767,7 +790,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 				{header}
 				<div className="p-4 text-center">
 					<span className="font-normal text-[14px] text-gray-500">
-						No logs available.
+						{t("common.noLogs")}
 					</span>
 				</div>
 			</div>
@@ -791,7 +814,9 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 					side="right"
 					className="min-w-[500px] transition-all duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] data-[state=closed]:translate-x-full data-[state=open]:translate-x-0 data-[state=closed]:opacity-0 data-[state=open]:opacity-100"
 				>
-					<SheetTitle className="sr-only">Audit Details</SheetTitle>
+					<SheetTitle className="sr-only">
+						{t("detail.title")}
+					</SheetTitle>
 					<AuditLogsDetailDrawer
 						logDetails={selectedEvent}
 						handleDrawerClose={handleDrawerClose}
