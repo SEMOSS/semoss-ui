@@ -195,8 +195,10 @@ export const EngineModelChatPage = () => {
 		}
 	};
 
+	const isEmptyState = !isInsightLoading && messages.length === 0;
+
 	return (
-		<div className="flex flex-col gap-2 md:flex-row">
+		<div className="flex min-h-0 flex-col gap-2 md:h-[calc(100vh-340px)] md:max-h-[728px] md:min-h-[565px] md:flex-row md:items-stretch">
 			<EngineModelTestSidebar
 				selectedModel={selectedModel}
 				setSelectedModel={setSelectedModel}
@@ -205,9 +207,9 @@ export const EngineModelChatPage = () => {
 				maxTokens={maxTokens}
 				setMaxTokens={setMaxTokens}
 			/>
-			<div className="flex flex-1 flex-col">
-				<Card className="gap-4 p-6 md:h-[calc(100vh-240px)]">
-					<div className="flex flex-col gap-4 md:h-full md:overflow-hidden">
+			<div className="flex min-h-0 min-w-0 flex-1 flex-col md:h-full">
+				<Card className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-6 md:h-full">
+					<div className="flex min-h-0 flex-1 flex-col gap-4 md:h-full">
 						<div className="flex flex-row items-center justify-between">
 							<H4>Chat with the Model</H4>
 						</div>
@@ -257,18 +259,22 @@ export const EngineModelChatPage = () => {
 							</div>
 							<div
 								ref={messagesContainerRef}
-								className="flex min-h-[300px] flex-col overflow-y-auto md:min-h-0 md:flex-1"
+								className={
+									isEmptyState
+										? "grid min-h-[280px] flex-1 place-items-center px-4 py-6 md:min-h-0"
+										: "flex min-h-[280px] flex-1 flex-col overflow-y-auto md:min-h-0"
+								}
 							>
 								{isInsightLoading ? (
 									<Muted className="mt-4 block text-center">
 										Initializing chat session...
 									</Muted>
 								) : messages.length === 0 ? (
-									<div className="flex flex-1 flex-col items-center justify-center gap-4">
+									<div className="flex w-full max-w-md flex-col items-center gap-4 text-center">
 										<div className="flex h-[40px] w-[40px] items-center justify-center rounded-[10px] bg-(--muted)">
 											<Pencil className="h-6 w-6 text-(--foreground)" />
 										</div>
-										<Muted className="text-center">
+										<Muted className="text-center text-xs">
 											Ask a question to start a
 											conversation
 										</Muted>
@@ -282,7 +288,7 @@ export const EngineModelChatPage = () => {
 												className="flex items-end justify-end gap-2 px-4 py-2"
 											>
 												<div className="max-w-[90%] rounded-2xl rounded-br-sm bg-primary px-4 py-2.5 text-primary-foreground sm:max-w-[75%]">
-													<p className="whitespace-pre-wrap break-words text-sm">
+													<p className="whitespace-pre-wrap break-words text-xs">
 														{message.content}
 													</p>
 												</div>
@@ -376,7 +382,7 @@ export const EngineModelChatPage = () => {
 										</Avatar>
 										<div className="flex items-center gap-2 rounded-2xl rounded-bl-sm bg-muted px-4 py-2.5">
 											<Spinner className="size-4" />
-											<Muted className="text-sm">
+											<Muted className="text-xs">
 												Generating response…
 											</Muted>
 										</div>
@@ -385,7 +391,7 @@ export const EngineModelChatPage = () => {
 							</div>
 							<form
 								onSubmit={handleSubmit(sendMessage)}
-								className="border-border border-t p-3"
+								className="shrink-0 border-border border-t bg-background p-3"
 							>
 								<Controller
 									name="prompt"
@@ -401,7 +407,7 @@ export const EngineModelChatPage = () => {
 													fieldRef(el);
 												}}
 												autoFocus
-												placeholder="Ask a question… (Enter to send, Shift+Enter for new line)"
+												placeholder="Ask a question"
 												disabled={
 													isLoading ||
 													isInsightLoading

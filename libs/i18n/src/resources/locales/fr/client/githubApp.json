@@ -1,0 +1,192 @@
+{
+	"header": {
+		"title": "Application GitHub",
+		"description": "Créez et gérez l'application GitHub utilisée pour relier les apps aux projets GitHub et aux webhooks."
+	},
+	"list": {
+		"title": "Applications GitHub configurées",
+		"emptyTitle": "Aucune application GitHub n'est encore configurée",
+		"emptyDescription": "Créez une application GitHub pour connecter les apps SEMOSS aux projets GitHub.",
+		"connected": "Connecté",
+		"appId": "ID de l'app {{appId}}",
+		"owner": "Propriétaire",
+		"createdOn": "Créé le",
+		"openInGithub": "Ouvrir dans GitHub",
+		"unknownDate": "Date inconnue"
+	},
+	"buttons": {
+		"create": "Créer une application GitHub",
+		"refresh": "Actualiser",
+		"cancel": "Annuler",
+		"creating": "Redirection...",
+		"remove": "Supprimer",
+		"removing": "Suppression..."
+	},
+	"deleteDialog": {
+		"title": "Supprimer l'application GitHub ?",
+		"description": "Supprimer « {{appName}} » de cette instance ? Cela supprime ses identifiants stockés et les liens de projets ici. Cela ne supprime pas l'app sur GitHub : un propriétaire doit la retirer là-bas (Settings → Developer settings → GitHub Apps → Advanced).",
+		"openInGithub": "Ouvrir dans GitHub pour supprimer définitivement"
+	},
+	"dialog": {
+		"title": "Créer une application GitHub",
+		"description": "Démarrez le flux de manifeste GitHub pour créer une nouvelle application.",
+		"appNameLabel": "Nom de l'application",
+		"appNamePlaceholder": "Semoss GitHub App",
+		"createUnderLabel": "Créer sous",
+		"myAccount": "Mon compte",
+		"organization": "Organisation",
+		"organizationLabel": "Organisation",
+		"organizationPlaceholder": "mon-org-github",
+		"visibilityLabel": "Visibilité",
+		"public": "Publique",
+		"private": "Privée",
+		"visibilityHelp": "Les applications publiques peuvent être installées sur n'importe quel compte ou organisation. Les applications privées ne peuvent être installées que sur le compte qui les possède."
+	},
+	"status": {
+		"loading": "Chargement de la configuration de l'application GitHub...",
+		"notPermitted": "Vous n'êtes pas autorisé à gérer la configuration de l'application GitHub."
+	},
+	"validation": {
+		"organizationRequired": "L'organisation est obligatoire."
+	},
+	"toasts": {
+		"loadFailed": "Échec du chargement de la configuration de l'application GitHub.",
+		"notPermitted": "Vous n'êtes pas autorisé à accéder à la configuration de l'application GitHub.",
+		"redirecting": "Redirection vers GitHub pour créer l'application...",
+		"createSuccess": "Application GitHub créée et configurée pour cette instance.",
+		"createError": "Un problème est survenu lors de la création de l'application GitHub.",
+		"createErrorConversion": "Impossible de créer l'application GitHub : l'échange avec GitHub a échoué. Veuillez réessayer.",
+		"createErrorSave": "L'application GitHub a été créée sur GitHub mais n'a pas pu être enregistrée ici. Veuillez réessayer.",
+		"deleteSuccess": "Application GitHub supprimée de cette instance.",
+		"deleteFailed": "Échec de la suppression de l'application GitHub."
+	},
+	"projects": {
+		"title": "Projets connectés",
+		"loading": "Chargement des projets connectés...",
+		"empty": "Aucun projet n'est encore connecté à GitHub.",
+		"unknownRepo": "Dépôt inconnu",
+		"lastOpened": "Dernière ouverture {{date}}",
+		"openTab": "Ouvrir les paramètres de l'app"
+	},
+	"branchSelect": {
+		"label": "Branche",
+		"placeholder": "Sélectionnez une branche",
+		"loading": "Chargement des branches...",
+		"retry": "Réessayer",
+		"errorFallback": "Impossible de charger les branches depuis GitHub. Réessayez ou saisissez le nom de la branche."
+	},
+	"project": {
+		"title": "GitHub",
+		"description": "Connectez cette app à un dépôt GitHub pour synchroniser le code et recevoir les mises à jour des push.",
+		"syncWarning": "Les push vers la branche suivie sur GitHub sont automatiquement synchronisés dans ce projet, remplaçant les modifications locales. La branche suivie fait foi.",
+		"loading": "Chargement de la connexion GitHub...",
+		"connectedRepo": "Dépôt connecté",
+		"changeRepo": "Changer de dépôt",
+		"disconnect": "Déconnecter",
+		"connect": "Se connecter à GitHub",
+		"checking": "Vérification de la disponibilité de GitHub...",
+		"notConnectedTitle": "Non connecté à GitHub",
+		"notConnectedDescription": "Installez l'application GitHub sur votre compte ou votre organisation et accordez-lui l'accès au dépôt que vous souhaitez relier.",
+		"unavailableTitle": "GitHub n'est pas configuré pour cette instance",
+		"unavailableDescription": "Un administrateur doit configurer l'application GitHub de l'instance avant que les projets puissent se connecter.",
+		"installation": {
+			"valid": "Installation active",
+			"invalidTitle": "L'installation de l'application GitHub n'est plus valide",
+			"invalidDescription": "L'application GitHub a été désinstallée ou suspendue pour ce dépôt, la synchronisation s'est donc arrêtée. Reconnectez-vous pour la rétablir.",
+			"reconnect": "Reconnecter"
+		},
+		"branch": {
+			"label": "Branche suivie",
+			"default": "branche par défaut",
+			"change": "Changer"
+		},
+		"branchDialog": {
+			"title": "Définir la branche suivie",
+			"description": "Seuls les push vers cette branche synchronisent le projet. Il s'agit généralement de votre branche par défaut (p. ex. main).",
+			"placeholder": "main",
+			"cancel": "Annuler",
+			"confirm": "Enregistrer"
+		},
+		"webhooks": {
+			"title": "Activité récente des webhooks",
+			"description": "Livraisons de webhook récentes envoyées par GitHub pour ce dépôt. GitHub ne conserve qu'une courte fenêtre récente.",
+			"refresh": "Actualiser",
+			"loading": "Chargement de l'activité des webhooks...",
+			"empty": "Aucune livraison de webhook récente.",
+			"eventLabel": "Événement :",
+			"redelivery": "renvoi",
+			"unknownTime": "Heure inconnue"
+		},
+		"changeDialog": {
+			"title": "Changer de dépôt",
+			"description": "Choisissez un autre dépôt pour ce projet parmi ceux auxquels l'installation a accès.",
+			"confirm": "Changer de dépôt"
+		},
+		"disconnectDialog": {
+			"title": "Se déconnecter de GitHub ?",
+			"description": "Cela dissocie le projet de son dépôt. Cela ne désinstalle pas l'application GitHub de votre compte ou de votre organisation.",
+			"cancel": "Annuler",
+			"confirm": "Déconnecter"
+		},
+		"connectDialog": {
+			"title": "Se connecter à GitHub",
+			"description": "Choisissez une installation de l'application GitHub, puis le dépôt avec lequel ce projet doit se synchroniser.",
+			"confirm": "Connecter le dépôt"
+		},
+		"installPicker": {
+			"loading": "Chargement des installations GitHub...",
+			"loadFailed": "Impossible de charger les installations GitHub.",
+			"retry": "Réessayer",
+			"selectLabel": "Choisissez une installation",
+			"accountTypeOrganization": "Organisation",
+			"accountTypeUser": "Compte personnel",
+			"suspended": "Suspendue",
+			"suspendedTooltip": "Cette installation est suspendue sur GitHub et ne peut pas être utilisée tant qu'elle n'est pas réactivée.",
+			"backToInstallations": "Installations",
+			"authTitle": "Autoriser GitHub",
+			"authDescription": "Autorisez votre accès GitHub pour lister les installations et les dépôts que vous pouvez relier.",
+			"authorize": "Autoriser GitHub",
+			"installApp": "Installer l'application GitHub",
+			"installAnother": "Installer sur un autre compte",
+			"emptyTitle": "Aucune installation trouvée",
+			"emptyDescription": "L'application GitHub n'est encore installée sur aucun de vos comptes. Installez-la pour connecter un dépôt."
+		},
+		"picker": {
+			"searchPlaceholder": "Rechercher des dépôts...",
+			"loading": "Chargement des dépôts...",
+			"noRepos": "Aucun dépôt correspondant.",
+			"manageOnGithub": "Vous ne trouvez pas votre dépôt ? Gérez-le sur GitHub",
+			"branchLabel": "Branche à suivre",
+			"branchHelp": "Seuls les push vers cette branche synchronisent le projet."
+		},
+		"subdir": {
+			"label": "Sous-répertoire",
+			"optional": "(facultatif)",
+			"placeholder": "apps/my-app",
+			"help": "Laissez vide pour synchroniser l'ensemble du dépôt. Utilisez ceci pour les monorepos où l'app se trouve dans un sous-dossier.",
+			"display": "Sous-répertoire",
+			"errorLeadingSlash": "Le chemin ne doit pas commencer par une barre oblique.",
+			"errorDotDot": "Le chemin ne doit pas contenir \"..\"."
+		},
+		"selectRepo": {
+			"title": "Sélectionnez un dépôt",
+			"description": "L'installation peut accéder à plusieurs dépôts. Choisissez celui que ce projet doit utiliser.",
+			"confirm": "Connecter le dépôt",
+			"missingInstallation": "Aucune installation n'a été fournie. Recommencez le flux de connexion depuis l'onglet GitHub.",
+			"back": "Retour à GitHub"
+		},
+		"toasts": {
+			"reposFailed": "Échec du chargement des dépôts.",
+			"connected": "Projet connecté à GitHub.",
+			"connectFailed": "Échec de la connexion du dépôt.",
+			"changed": "Dépôt relié mis à jour.",
+			"changeFailed": "Échec du changement de dépôt.",
+			"disconnected": "Projet déconnecté de GitHub.",
+			"disconnectFailed": "Échec de la déconnexion du projet.",
+			"deliveriesFailed": "Échec du chargement de l'activité des webhooks.",
+			"branchUpdated": "Branche suivie mise à jour.",
+			"branchFailed": "Échec de la définition de la branche suivie.",
+			"needsAuth": "Autorisation GitHub requise — redirection vers GitHub pour autoriser..."
+		}
+	}
+}
