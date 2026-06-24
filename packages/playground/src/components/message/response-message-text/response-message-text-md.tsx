@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo, useRef } from "react";
 import { Markdown } from "@semoss/ui/next";
 import { useRoot } from "@/hooks";
 import { useMarkdownTypewriter } from "@/hooks/use-markdown-typewriter";
@@ -81,10 +81,13 @@ export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
 		// - If there's unrendered content and the typewriter isn't running, start it.
 		// - If the typewriter has caught up, report onComplete (parent decides whether
 		//   to actually advance based on whether this is the last chunk + isThinking).
-		useEffect(() => {
+		(() => {
 			if (status !== "active") return;
 
 			if (newContent.length === 0) {
+				console.log(
+					"ResponseMessageTextMd: no new content to animate, calling onComplete",
+				);
 				onComplete();
 				return;
 			}
@@ -94,22 +97,21 @@ export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
 				typewriter.rendered.length >= newContent.length;
 
 			if (caughtUp) {
+				console.log(
+					"ResponseMessageTextMd: typewriter caught up, calling onComplete",
+				);
 				onComplete();
 				return;
 			}
 
 			// New content arrived while typewriter was idle — restart it
 			if (!typewriter.isTyping) {
+				console.log(
+					"ResponseMessageTextMd: starting typewriter for new content",
+				);
 				typewriter.start();
 			}
-		}, [
-			status,
-			typewriter.isTyping,
-			typewriter.rendered.length,
-			newContent.length,
-			onComplete,
-			typewriter.start,
-		]);
+		})();
 
 		// ── Render ────────────────────────────────────────────────────────────────
 		// not_started chunks render nothing — they mount invisibly and wait for

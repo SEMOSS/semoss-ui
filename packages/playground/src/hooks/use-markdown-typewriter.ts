@@ -3,8 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 // ============================================
 // CONFIGURATION
 // ============================================
-const CHARS_PER_FRAME = 3; // Characters to reveal per animation frame
-const DEBOUNCE_MS = 8; // Batch updates when content streams too fast (125fps throttle)
+const CHARS_PER_FRAME = 2; // Characters to reveal per animation frame
+const DEBOUNCE_MS = 15; // Batch updates when content streams too fast (66fps throttle)
 const MAX_BACKTRACK = 40; // Maximum characters to walk back for syntax safety
 
 // ============================================
@@ -229,7 +229,7 @@ export function useMarkdownTypewriter(
 
 	return {
 		rendered,
-		isTyping: isRunning && renderedLength < contentRef.current.length,
+		isTyping: isRunning && renderedLength < content.length,
 		start,
 		stop,
 		skipToEnd,
