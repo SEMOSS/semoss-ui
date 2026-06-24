@@ -1,6 +1,16 @@
 import { useCallback, useRef, useState } from "react";
+import { preloadNamespaces, useTranslation } from "@semoss/i18n";
 import { InsightProvider } from "@semoss/sdk/react";
 import { TerminalConsole, TerminalProvider } from "@semoss/terminal";
+
+// Terminal i18n namespaces (file/console/dialog/chrome) are kept out of the
+// client's initial load.
+const TERMINAL_NS = ["console", "file", "chrome", "dialog"];
+
+// This module only loads inside the lazy workspace chunk, so fetching the
+// namespaces here pulls the terminal locale JSON alongside the terminal JS —
+// not into the main bundle.
+void preloadNamespaces(TERMINAL_NS);
 
 // ── tab model ─────────────────────────────────────────────────────────────────
 
@@ -27,6 +37,11 @@ interface WorkspaceTerminalProps {
  * The left sidebar's "Insight" tab handles file browsing separately.
  */
 export const WorkspaceTerminal = ({ appId }: WorkspaceTerminalProps) => {
+	// Gate the render until the terminal namespaces are registered so the
+	// console never paints raw i18n keys. They're in the already-loaded
+	// locale chunk, so `ready` flips on the next tick — no visible delay.
+	const { ready } = useTranslation(TERMINAL_NS);
+
 	const counterRef = useRef(0);
 	const nextTab = () => {
 		counterRef.current += 1;
@@ -69,6 +84,11 @@ export const WorkspaceTerminal = ({ appId }: WorkspaceTerminalProps) => {
 		setActiveId(id);
 		setMountedIds((prev) => new Set([...prev, id]));
 	}, []);
+
+	// All hooks run above this point — safe to bail out once they have.
+	if (!ready) {
+		return null;
+	}
 
 	return (
 		<div className="flex h-full flex-col overflow-hidden bg-background">

@@ -1,48 +1,33 @@
-// Client-specific translations
+// Client-specific lazy translations.
+//
+// Core + shared + githubApp namespaces are preloaded; the embedded workspace
+// terminal's namespaces (console/file/chrome/dialog) are loadable on demand
+// (see preloadNamespaces) so they don't weigh down first paint.
+import type { LazyResources } from "./types";
 
-import { coreResources } from "./core";
-import githubAppAR from "./locales/ar/client/githubApp.json";
-import githubAppEN from "./locales/en/client/githubApp.json";
-import githubAppES from "./locales/es/client/githubApp.json";
-import githubAppFR from "./locales/fr/client/githubApp.json";
-import githubAppHI from "./locales/hi/client/githubApp.json";
-import githubAppJA from "./locales/ja/client/githubApp.json";
-import githubAppNL from "./locales/nl/client/githubApp.json";
-import { sharedResources } from "./shared";
-
-export const clientResources = {
-	en: {
-		...coreResources.en,
-		...sharedResources.en,
-		githubApp: githubAppEN,
+export const clientResources: LazyResources = {
+	ns: [
+		"common",
+		"notifications",
+		"validation",
+		"mcp",
+		"prompts",
+		"githubApp",
+	],
+	load: {
+		// core
+		common: (l) => import(`./locales/${l}/common.json`),
+		notifications: (l) => import(`./locales/${l}/notifications.json`),
+		validation: (l) => import(`./locales/${l}/validation.json`),
+		// shared (MCP + prompt selectors)
+		mcp: (l) => import(`./locales/${l}/shared/mcp.json`),
+		prompts: (l) => import(`./locales/${l}/shared/prompts.json`),
+		// client
+		githubApp: (l) => import(`./locales/${l}/client/githubApp.json`),
+		// embedded terminal — fetched on demand when the terminal panel mounts
+		console: (l) => import(`./locales/${l}/terminal/console.json`),
+		file: (l) => import(`./locales/${l}/terminal/file.json`),
+		chrome: (l) => import(`./locales/${l}/terminal/chrome.json`),
+		dialog: (l) => import(`./locales/${l}/terminal/dialog.json`),
 	},
-	es: {
-		...coreResources.es,
-		...sharedResources.es,
-		githubApp: githubAppES,
-	},
-	fr: {
-		...coreResources.fr,
-		...sharedResources.fr,
-		githubApp: githubAppFR,
-	},
-	hi: {
-		...coreResources.hi,
-		...sharedResources.hi,
-		githubApp: githubAppHI,
-	},
-	ar: {
-		...coreResources.ar,
-		...sharedResources.ar,
-		githubApp: githubAppAR,
-	},
-	ja: {
-		...coreResources.ja,
-		...sharedResources.ja,
-		githubApp: githubAppJA,
-	},
-	nl: {
-		...coreResources.nl,
-		githubApp: githubAppNL,
-	},
-} as const;
+};
