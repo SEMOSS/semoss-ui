@@ -7,6 +7,7 @@ import { AppFilesPage } from "./app-files-page";
 import { AppGithubPage } from "./app-github-page";
 import { AppMcpUsagePage } from "./app-mcp-usage-page";
 import { AppOverviewPage } from "./app-overview-page";
+import { AppProfilesPage } from "./app-profiles-page";
 import { AppSettingsPage } from "./app-settings-page";
 import { AppSmssPage } from "./app-smss-page";
 
@@ -76,6 +77,12 @@ export const APP_DETAIL_TABS: AppDetailTab[] = [
 		name: "Access Control",
 		path: "access-control",
 		component: AppAccessControlPage,
+		restrict: ["author", "editor"],
+	},
+	{
+		name: "Profiles",
+		path: "profiles",
+		component: AppProfilesPage,
 		restrict: ["author", "editor"],
 	},
 	{

@@ -10,6 +10,7 @@ import {
 	mdiDatabaseSearch,
 	mdiGithub,
 	mdiPalette,
+	mdiShieldAccount,
 	mdiTabletCellphone,
 } from "@mdi/js";
 
@@ -262,6 +263,14 @@ export const SETTINGS_ROUTES: {
 		path: "llm-feedback",
 		description: "Provide feedback on LLM's performance",
 		icon: mdiChatProcessingOutline,
+		history: ["settings/"],
+		admin: true,
+	},
+	{
+		title: "Platform Profiles",
+		path: "platform-profiles",
+		description: "Control which platform pages are visible to each user.",
+		icon: mdiShieldAccount,
 		history: ["settings/"],
 		admin: true,
 	},
