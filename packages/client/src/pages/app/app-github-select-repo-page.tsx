@@ -29,7 +29,11 @@ export const AppGithubSelectRepoPage = () => {
 	const installationId = params.get("installation_id") || "";
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const handleConfirm = async (repo: GithubRepo, branch: string) => {
+	const handleConfirm = async (
+		repo: GithubRepo,
+		branch: string,
+		subdir: string,
+	) => {
 		setIsSubmitting(true);
 		try {
 			const result = await selectRepo({
@@ -37,6 +41,7 @@ export const AppGithubSelectRepoPage = () => {
 				installationId,
 				repoId: repo.id,
 				branch,
+				subdir,
 			});
 			toast.success(t("project.toasts.connected"));
 			navigate(`/app/${projectId}/github`, {
@@ -47,6 +52,7 @@ export const AppGithubSelectRepoPage = () => {
 						repoFullName: result.repoFullName,
 						installationId,
 						branch,
+						subdir: subdir || undefined,
 						htmlUrl: repoHtmlUrl(result.repoFullName),
 					},
 				},
