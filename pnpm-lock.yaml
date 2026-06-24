@@ -502,6 +502,9 @@ importers:
 
   packages/auditlog:
     dependencies:
+      '@semoss/i18n':
+        specifier: workspace:*
+        version: link:../../libs/i18n
       '@semoss/sdk':
         specifier: workspace:*
         version: link:../../libs/sdk

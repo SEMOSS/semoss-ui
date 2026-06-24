@@ -9,6 +9,7 @@ export { I18nBuilder, type I18nBuilderOptions } from "./builder";
 export * from "./constants";
 // Fetch on-demand namespaces (e.g. the client's embedded terminal) at runtime.
 export { preloadNamespaces } from "./preload";
+export { auditlogResources } from "./resources/auditlog";
 export { clientResources } from "./resources/client";
 export { playgroundResources } from "./resources/playground";
 export { terminalResources } from "./resources/terminal";

@@ -10,6 +10,7 @@ export const playgroundResources: LazyResources = {
 		"notifications",
 		"validation",
 		"prompts",
+		"auditlog",
 		"mcp",
 		"chat",
 		"knowledge",
@@ -26,6 +27,7 @@ export const playgroundResources: LazyResources = {
 		validation: (l) => import(`./locales/${l}/validation.json`),
 		// shared
 		prompts: (l) => import(`./locales/${l}/shared/prompts.json`),
+		auditlog: (l) => import(`./locales/${l}/shared/auditlog.json`),
 		// playground (note: playground/mcp.json overrides shared/mcp.json)
 		mcp: (l) => import(`./locales/${l}/playground/mcp.json`),
 		chat: (l) => import(`./locales/${l}/playground/chat.json`),
