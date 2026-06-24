@@ -159,6 +159,15 @@
 			"branchLabel": "Te volgen branch",
 			"branchHelp": "Alleen pushes naar deze branch synchroniseren het project."
 		},
+		"subdir": {
+			"label": "Submap",
+			"optional": "(optioneel)",
+			"placeholder": "apps/my-app",
+			"help": "Laat leeg om de volledige repository te synchroniseren. Gebruik dit voor monorepo's waarin de app in een submap staat.",
+			"display": "Submap",
+			"errorLeadingSlash": "Pad mag niet met een slash beginnen.",
+			"errorDotDot": "Pad mag geen \"..\" bevatten."
+		},
 		"selectRepo": {
 			"title": "Selecteer een repository",
 			"description": "De installatie heeft toegang tot meerdere repository's. Kies degene die dit project moet gebruiken.",

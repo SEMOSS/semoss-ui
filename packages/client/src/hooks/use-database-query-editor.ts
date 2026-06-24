@@ -37,7 +37,7 @@ interface EditorHookParams {
 	initialValue?: string;
 	tables?: Array<{
 		table: string;
-		columns: Array<{ column: string }>;
+		columns: Array<{ column: string; type?: string; dataType?: string }>;
 	}>;
 }
 
@@ -147,6 +147,11 @@ export function useQueryEditor({
 	const editorRef = useRef<MonacoEditor | null>(null);
 	const monacoRef = useRef<MonacoApi | null>(null);
 	const completionProviderRef = useRef<MonacoDisposable | null>(null);
+	const onRunRef = useRef(onRun);
+
+	useEffect(() => {
+		onRunRef.current = onRun;
+	}, [onRun]);
 
 	const registerCompletionProvider = useCallback(() => {
 		if (!monacoRef.current) {
@@ -177,13 +182,18 @@ export function useQueryEditor({
 				};
 
 				const columnSuggestions: MonacoCompletionItem[] =
-					table.columns.map((column) => ({
-						label: column.column,
-						kind: monaco.languages.CompletionItemKind.Field,
-						insertText: column.column,
-						detail: `Column (${table.table})`,
-						sortText: `2_${table.table}_${column.column}`,
-					}));
+					table.columns.map((column) => {
+						const columnType = column.dataType || column.type;
+						return {
+							label: column.column,
+							kind: monaco.languages.CompletionItemKind.Field,
+							insertText: column.column,
+							detail: columnType
+								? `Column (${table.table}) • ${columnType}`
+								: `Column (${table.table})`,
+							sortText: `2_${table.table}_${column.column}`,
+						};
+					});
 
 				return [tableSuggestion, ...columnSuggestions];
 			}),
@@ -240,7 +250,7 @@ export function useQueryEditor({
 				label: "Run Query",
 				keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
 				run: () => {
-					onRun(editor.getValue());
+					onRunRef.current(editor.getValue());
 				},
 			});
 
