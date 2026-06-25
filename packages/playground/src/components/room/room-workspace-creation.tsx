@@ -65,6 +65,7 @@ export const SaveWorkspaceDialog = observer(
 					description,
 					system_prompt: systemPrompt,
 					mcp: mcps,
+					skills: [],
 					prompts: [],
 				});
 

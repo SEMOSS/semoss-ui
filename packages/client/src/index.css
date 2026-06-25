@@ -4,3 +4,4 @@
 
 @source "./**/*.{ts,tsx}";
 @source "../../../libs/shared/src/**/*.{ts,tsx}";
+@source "../../terminal/src/**/*.{ts,tsx}";

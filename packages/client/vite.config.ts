@@ -46,6 +46,13 @@ export default defineConfig(({ mode }) => {
 			rollupOptions: {
 				output: {
 					manualChunks(id: string) {
+						// Group each language's translation JSON into a single
+						// lazy chunk so loading/switching a language is one request
+						// and new languages never bloat the main bundle.
+						const locale = id.match(/\/locales\/([^/]+)\/.*\.json/);
+						if (locale) {
+							return `locale-${locale[1]}`;
+						}
 						if (
 							id.includes("/src/pages/import/import.constants.ts")
 						) {
