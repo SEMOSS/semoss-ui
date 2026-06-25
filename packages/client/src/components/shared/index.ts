@@ -1,4 +1,4 @@
-import { MCPJsonEditor } from "./mcp-json-editor";
+import { MCPJsonEditor, MetadataHelpDialog } from "./mcp-json-editor";
 import { NavbarLeft } from "./NavbarLeft";
 import { NavbarRight } from "./NavbarRight";
 import { NavbarHeader } from "./navbar-header";
@@ -13,4 +13,5 @@ export {
 	NavbarRight,
 	NavbarHeader,
 	MCPJsonEditor,
+	MetadataHelpDialog,
 };
