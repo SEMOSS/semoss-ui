@@ -1,4 +1,9 @@
-import { I18nBuilder, I18nextProvider, useTranslation } from "@semoss/i18n";
+import {
+	I18nBuilder,
+	I18nextProvider,
+	terminalResources,
+	useTranslation,
+} from "@semoss/i18n";
 import { Env, InsightProvider } from "@semoss/sdk/react";
 import { LoginPage } from "@semoss/shared";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
@@ -10,7 +15,13 @@ Env.update({
 	SECRET_KEY: import.meta.env.SECRET_KEY,
 });
 
-const i18n = new I18nBuilder("terminal").i18n;
+// Languages load lazily (one chunk per language) via the builder's dynamic
+// backend.
+const i18nBuilder = new I18nBuilder(terminalResources);
+const i18n = i18nBuilder.i18n;
+
+// Awaited by main.tsx before the first render so the active language is present.
+export const i18nReady = i18nBuilder.ready;
 
 const Branding = () => {
 	const { t } = useTranslation("chrome");
