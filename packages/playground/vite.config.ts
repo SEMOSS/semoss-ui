@@ -21,7 +21,16 @@ export default defineConfig(({ mode }) => {
 			react({ include: /\.(js|jsx|ts|tsx)$/ }),
 		],
 		resolve: {
-			alias: [{ find: "@", replacement: resolve(__dirname, "./src") }],
+			alias: [
+				{ find: "@", replacement: resolve(__dirname, "./src") },
+				{
+					find: /^monaco-editor$/,
+					replacement: resolve(
+						__dirname,
+						"../../libs/shared/node_modules/monaco-editor/esm/vs/editor/editor.api",
+					),
+				},
+			],
 		},
 		define: {
 			"import.meta.env.MODULE": JSON.stringify(MODULE),
