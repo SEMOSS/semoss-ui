@@ -1,6 +1,7 @@
 import {
 	MoveDownIcon,
 	MoveUpIcon,
+	ScrollTextIcon,
 	Settings2Icon,
 	TriangleAlertIcon,
 } from "lucide-react";
@@ -17,10 +18,10 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	toast,
 } from "@semoss/ui/next";
 import {
 	InputMessage,
-	PlanMessage,
 	ResponseMessage,
 	RoomInput,
 	RoomInputMenuFileExplorer,
@@ -29,7 +30,7 @@ import {
 } from "@/components";
 import { useChat, useGracefulErrors } from "@/hooks";
 import type { RoomStore } from "@/stores";
-import type { MCPConfig } from "@/types";
+import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomSuggestions } from "./room-suggestions";
 
 const ROOM_CONFIGURATION_ID = "CONFIGURATION";
@@ -72,28 +73,45 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	};
 
 	/**
-	 * Handle tool add (add-only for slash menu)
-	 * @param tool - selected tool
+	 * Open the room configuration sidebar tab
 	 */
-	const handleToolAdd = (tool: MCPConfig) => {
-		// Add tool to options (skip if already present)
-		const tools = room.options.mcp.reduce(
-			(acc, curr) => {
-				acc[curr.id] = curr;
-				return acc;
-			},
-			{} as Record<string, typeof tool>,
-		);
-
-		// Only add if not already present
-		if (!Object.hasOwn(tools, tool.id)) {
-			tools[tool.id] = tool;
-		}
-
-		room.setOptions({
-			...room.options,
-			mcp: Object.values(tools),
+	const handleOpenSettings = useCallback(() => {
+		room.addSidebarNode(ROOM_CONFIGURATION_ID, {
+			type: "tab",
+			name: "Configuration",
+			component: "room-configuration",
+			config: {},
+			enableClose: true,
 		});
+	}, [room]);
+
+	/**
+	 * Open the audit logs dashboard for this room in the right side panel.
+	 */
+	const handleOpenActivityLog = useCallback(() => {
+		room.addSidebarNode("room-activity-log", {
+			type: "tab",
+			name: "Activity Log",
+			component: "audit-log-report",
+			config: {},
+			enableClose: true,
+		});
+	}, [room]);
+
+	/**
+	 * Compact messages in the room
+	 */
+	const handleCompactMessages = async () => {
+		try {
+			const result = await room.compactMessages();
+			if (result === "skipped") {
+				toast.info(t("settings.compactSkipped"));
+			} else {
+				toast.success(t("settings.compactSuccess"));
+			}
+		} catch {
+			toast.error(t("settings.compactError"));
+		}
 	};
 
 	/**
@@ -301,7 +319,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		<div className="flex h-full w-full flex-col bg-background transition-all duration-200 ease-in-out">
 			<div className="relative w-full flex-1 overflow-hidden">
 				<ScrollArea
-					className="h-full w-full overflow-hidden"
+					// Force Radix's table-display viewport wrapper to block so wide content can't push the column past the viewport width
+					className="[&_[data-slot=scroll-area-viewport]>div]:!block h-full w-full overflow-hidden"
 					viewportRef={(ele) => {
 						setScrollEle(ele);
 					}}
@@ -317,11 +336,23 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									return null;
 								}
 
+								const showModelName = (() => {
+									// find the most recent ancestor that actually has a model
+									let ancestor = m.parent;
+									while (ancestor) {
+										if (ancestor.modelId) break;
+										ancestor = ancestor.parent;
+									}
+									// If no ancestor has a model, show the model name for this message
+									if (!ancestor) return true;
+									// Only show the model name if it's different from the ancestor's model to reduce clutter
+									return m.modelId !== ancestor.modelId;
+								})();
+
 								return (
 									<React.Fragment key={m.key}>
-										{(m.parent.modelId !== m.modelId ||
-											m.parent.parent === null) && (
-											<div className="relative flex flex-col items-center justify-center">
+										{showModelName && (
+											<div className="relative mb-4 flex flex-col items-center justify-center">
 												<div className="z-10 bg-background px-2 text-muted-foreground text-xs leading-normal">
 													{m.ornaments.modelName}
 												</div>
@@ -340,13 +371,10 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 												message={m}
 											/>
 										)}
-										{m.type === "PLAN" && (
-											<PlanMessage
+
+										{m.type === "OUTPUT" && (
+											<RoomCompactionIndicator
 												message={m}
-												isLast={
-													mIdx ===
-													room.history.length - 1
-												}
 											/>
 										)}
 									</React.Fragment>
@@ -426,7 +454,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						chat.setSelectedModel(model);
 					}}
 					options={room.options}
-					onMcpSelect={handleToolAdd}
 					onMcpChange={(mcp) =>
 						room.setOptions({
 							...room.options,
@@ -434,10 +461,9 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						})
 					}
 					MenuComponent={observer(
-						({ onOpenChange, fileRef, onOpenMcpOverlay }) => (
+						({ onOpenChange, onOpenMcpOverlay }) => (
 							<>
 								<RoomInputMenuUpload
-									fileRef={fileRef}
 									onSelect={() => onOpenChange(false)}
 								/>
 								<DropdownMenuSeparator />
@@ -462,21 +488,25 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									room={room}
 									onSelect={() => onOpenChange(false)}
 								/>
+								{room.theme.featureFlags?.showActivityLog !==
+									false && (
+									<DropdownMenuItem
+										onSelect={(e) => {
+											e.preventDefault();
+											handleOpenActivityLog();
+											onOpenChange(false);
+										}}
+									>
+										<ScrollTextIcon />
+										<span className="flex-1">
+											Activity Log
+										</span>
+									</DropdownMenuItem>
+								)}
 								<DropdownMenuItem
 									onSelect={(e) => {
 										e.preventDefault();
-
-										// add to the sidebar
-										room.addSidebarNode(
-											ROOM_CONFIGURATION_ID,
-											{
-												type: "tab",
-												name: "Configuration",
-												component: "room-configuration",
-												config: {},
-												enableClose: true,
-											},
-										);
+										handleOpenSettings();
 										onOpenChange(false);
 									}}
 								>
@@ -498,6 +528,9 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					}
 					tokensUsed={room.tokensUsed}
 					tokensMax={chat.models.contextWindow}
+					onCompact={handleCompactMessages}
+					onOpenSettings={handleOpenSettings}
+					excludeCommandIds={["agent", "workspace"]}
 				/>
 			</div>
 		</div>

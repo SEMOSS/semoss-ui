@@ -1,4 +1,5 @@
 import {
+	BlocksIcon,
 	BookOpenIcon,
 	HammerIcon,
 	Maximize2Icon,
@@ -10,7 +11,12 @@ import { useEffect, useId, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
-import { MembersTable } from "@semoss/shared";
+import {
+	MCPSelector,
+	MembersTable,
+	PromptSelector,
+	SkillSelector,
+} from "@semoss/shared";
 import {
 	Button,
 	Field,
@@ -20,14 +26,14 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
+import { InstructionsModal } from "@/components";
+import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
+import type { MCPConfig, SkillConfig, Workspace } from "@/types";
 import {
-	InstructionsModal,
-	MCPSelector,
-	PromptSelector,
+	mcpToPlatformUrl,
+	promptToPlatformUrl,
 	splitMcpByType,
-} from "@/components";
-import { useChat, useGlobalBreadcrumbs } from "@/hooks";
-import type { MCPConfig, Workspace } from "@/types";
+} from "@/utility/mcp-utils";
 
 const FORM_ID = "workspace-edit-form";
 
@@ -43,6 +49,7 @@ export const EditWorkspacePage = observer(() => {
 	const { workspaceId } = useParams<{ workspaceId: string }>();
 	const navigate = useNavigate();
 	const { chat } = useChat();
+	const { root } = useRoot();
 
 	const nameId = useId();
 	const descriptionId = useId();
@@ -53,6 +60,7 @@ export const EditWorkspacePage = observer(() => {
 	const [instructions, setInstructions] = useState("");
 	const [knowledge, setKnowledge] = useState<MCPConfig[]>([]);
 	const [toolbox, setToolbox] = useState<MCPConfig[]>([]);
+	const [skills, setSkills] = useState<SkillConfig[]>([]);
 	const [prompts, setPrompts] = useState<string[]>([]);
 	const [isSaving, setIsSaving] = useState(false);
 	const [instructionsModal, setInstructionsModal] = useState(false);
@@ -101,6 +109,7 @@ export const EditWorkspacePage = observer(() => {
 			splitMcpByType(w.mcp ?? []);
 		setKnowledge(nextKnowledge);
 		setToolbox(nextToolbox);
+		setSkills(w.skills ?? []);
 	}, [getWorkspace.status, getWorkspace.data]);
 
 	// Track whether form differs from the loaded workspace
@@ -125,7 +134,8 @@ export const EditWorkspacePage = observer(() => {
 			instructions !== initialInstructions ||
 			stringIdsKey(prompts) !== stringIdsKey(w.prompts ?? []) ||
 			idsKey(knowledge) !== idsKey(initKnowledge) ||
-			idsKey(toolbox) !== idsKey(initToolbox)
+			idsKey(toolbox) !== idsKey(initToolbox) ||
+			idsKey(skills) !== idsKey(w.skills ?? [])
 		);
 	}, [
 		name,
@@ -134,6 +144,7 @@ export const EditWorkspacePage = observer(() => {
 		prompts,
 		knowledge,
 		toolbox,
+		skills,
 		getWorkspace.data,
 	]);
 
@@ -176,6 +187,7 @@ export const EditWorkspacePage = observer(() => {
 				system_prompt: instructions,
 				prompts,
 				mcp: [...knowledge, ...toolbox],
+				skills,
 			});
 			navigate(`/agent/${workspaceId}`);
 		} catch (err) {
@@ -315,6 +327,15 @@ export const EditWorkspacePage = observer(() => {
 							disabled={isSaving}
 							onChange={(next) => setKnowledge(next)}
 							className="h-112"
+							workspaceId={workspaceId}
+							enableKnowledgeMCP={
+								root.theme.featureFlags?.enableKnowledgeMCP
+							}
+							getPlatformUrl={
+								root.theme.featureFlags?.showPlatformLinks
+									? mcpToPlatformUrl
+									: undefined
+							}
 						/>
 					</section>
 
@@ -330,6 +351,29 @@ export const EditWorkspacePage = observer(() => {
 							disabled={isSaving}
 							onChange={(next) => setToolbox(next)}
 							className="h-112"
+							workspaceId={workspaceId}
+							enableKnowledgeMCP={
+								root.theme.featureFlags?.enableKnowledgeMCP
+							}
+							getPlatformUrl={
+								root.theme.featureFlags?.showPlatformLinks
+									? mcpToPlatformUrl
+									: undefined
+							}
+						/>
+					</section>
+
+					{/* Skills */}
+					<section className="flex flex-col gap-3">
+						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
+							<BlocksIcon className="size-5" />
+							{t("workspace:detail.tabs.skills")}
+						</h2>
+						<SkillSelector
+							values={skills}
+							disabled={isSaving}
+							onChange={(next) => setSkills(next)}
+							className="h-112"
 						/>
 					</section>
 
@@ -344,6 +388,11 @@ export const EditWorkspacePage = observer(() => {
 							disabled={isSaving}
 							onChange={(next) => setPrompts(next)}
 							className="h-112"
+							getPlatformUrl={
+								root.theme.featureFlags?.showPlatformLinks
+									? promptToPlatformUrl
+									: undefined
+							}
 						/>
 					</section>
 				</form>

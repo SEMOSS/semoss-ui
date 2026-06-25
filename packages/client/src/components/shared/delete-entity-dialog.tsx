@@ -11,7 +11,7 @@ import {
 interface DeleteEntityDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	entityType: "App" | "Engine" | "Insight";
+	entityType: string;
 	entityName?: string;
 	entityId?: string;
 	onConfirm: () => void;

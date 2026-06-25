@@ -1,0 +1,58 @@
+{
+	"embedDocuments": {
+		"title": "Documenten insluiten in bestaande opslag",
+		"description": "Selecteer een kennisopslag en upload documenten om in te sluiten.",
+		"knowledgeSource": "Kennisopslag",
+		"documents": "Documenten",
+		"selectFiles": "Klik om bestanden te selecteren of sleep ze hierheen",
+		"embedButton": "Documenten insluiten",
+		"embedding": "Insluiten...",
+		"removeFile": "Bestand verwijderen",
+		"selectPlaceholder": "Selecteer een kennisopslag"
+	},
+	"selector": {
+		"search": "Zoeken",
+		"createKnowledgeSource": "Kennisopslag maken",
+		"viewDetails": "Details bekijken",
+		"noToolboxesFound": "Geen toolboxes gevonden",
+		"noKnowledgeFound": "Geen kennis gevonden",
+		"noAgentsFound": "Geen agents gevonden"
+	},
+	"overlay": {
+		"title": "Configureer je chat",
+		"description": "Kies een opgeslagen agent, of stel je eigen kennis en toolboxes samen.",
+		"tabAgent": "Agent",
+		"tabKnowledge": "Kennis",
+		"tabToolbox": "Toolboxes"
+	},
+	"tools": {
+		"enterValues": "Voer door komma's gescheiden waarden in",
+		"selectField": "Selecteer {{field}}",
+		"enterField": "Voer {{field}} in"
+	},
+	"messages": {
+		"selectKnowledgeSource": "Selecteer een kennisopslag",
+		"selectDocument": "Selecteer ten minste één document",
+		"embedSuccess": "Documenten succesvol ingesloten",
+		"embedFailed": "Insluiten van documenten mislukt",
+		"loadFailed": "Laden van kennisopslagen mislukt.",
+		"noSources": "Geen kennisopslagen gevonden."
+	},
+	"buttons": {
+		"cancel": "Annuleren",
+		"embed": "Insluiten",
+		"save": "Opslaan",
+		"close": "Sluiten"
+	},
+	"permission": {
+		"accessRequested": "Toegang aangevraagd",
+		"requestAccess": "Toegang aanvragen",
+		"noAccess": "Geen toegang",
+		"requestAccessButton": "Toegang aanvragen",
+		"tooltipNoAccess": "Je hebt geen toegang tot deze {{type}}. Vraag toegang aan bij de eigenaar.",
+		"tooltipMissingDependencies": "Je hebt geen toegang tot alle afhankelijkheden van deze {{type}}, dus de functionaliteit kan beperkt zijn. Open in het platform voor meer informatie.",
+		"tooltipOpen": "Open deze {{type}} in het platform",
+		"typeToolbox": "toolbox",
+		"typeKnowledge": "kennisopslag"
+	}
+}

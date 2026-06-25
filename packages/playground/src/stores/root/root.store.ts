@@ -86,6 +86,7 @@ export class RootStore {
 				tokenLength: TOKEN_LENGTH,
 			},
 			allowedFileTypes: [],
+			allowedUrlPrefixes: [],
 			defaultTools: [],
 			gracefulErrors: [],
 			featureFlags: {
@@ -93,7 +94,7 @@ export class RootStore {
 				enableModelSelect: true,
 				enableAgent: true,
 				enableSuggestions: false,
-				enablePlan: false,
+				enableAgentHarness: false,
 				enableRewrite: true,
 				enablePromptOptimizer: true,
 				enableDarkMode: true,
@@ -102,6 +103,7 @@ export class RootStore {
 				allowEmbeddingOptions: true,
 				showKnowledgeMenu: true,
 				showToolboxMenu: true,
+				showActivityLog: true,
 				showPlatformLinks: true,
 				enableFeedbackText: true,
 			},
@@ -255,6 +257,9 @@ export class RootStore {
 			name: theme?.name || this._store.theme.name,
 			banner: theme?.banner || this._store.theme.banner,
 			description: theme?.description || this._store.theme.description,
+			fileDragDisclaimer:
+				theme?.fileDragDisclaimer ??
+				this._store.theme.fileDragDisclaimer,
 			variables: {
 				...this._store.theme.variables,
 				...(theme?.variables || {}),
@@ -304,6 +309,9 @@ export class RootStore {
 				theme?.allowedFileTypes ||
 				this._store.theme.allowedFileTypes ||
 				[],
+			allowedUrlPrefixes:
+				theme?.allowedUrlPrefixes ||
+				this._store.theme.allowedUrlPrefixes,
 			defaultEmbedderId:
 				theme?.defaultEmbedderId || this._store.theme.defaultEmbedderId,
 			defaultTools: [

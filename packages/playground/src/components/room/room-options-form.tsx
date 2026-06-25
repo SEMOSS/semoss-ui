@@ -1,9 +1,9 @@
-import { ComputerIcon, HammerIcon, PlusIcon, TrashIcon } from "lucide-react";
+import { Bot, HammerIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type { MouseEvent } from "react";
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { EngineSelect } from "@semoss/shared";
+import { EngineSelect, type MCPConfig } from "@semoss/shared";
 import {
 	Badge,
 	Button,
@@ -21,10 +21,10 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { MCPOverlay, splitMcpByType } from "@/components";
+import { MCPOverlay } from "@/components";
 import { useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
-import type { MCPConfig } from "@/types";
+import { splitMcpByType } from "@/utility/mcp-utils";
 
 interface RoomOptionsFormProps {
 	/** Model of the room */
@@ -183,7 +183,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 														})
 													}
 												>
-													<ComputerIcon className="size-4" />
+													<Bot className="size-4" />
 													<span className="flex-1 truncate text-sm">
 														{options.workspace
 															.name ||
@@ -193,7 +193,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 												</button>
 											) : (
 												<div className="flex h-10 w-full items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-start text-card-foreground">
-													<ComputerIcon className="size-4" />
+													<Bot className="size-4" />
 													<span className="flex-1 truncate text-sm">
 														{options.workspace
 															.name ||

@@ -45,6 +45,9 @@
 		"close": "Close"
 	},
 	"permission": {
+		"owner": "Owner",
+		"editor": "Editor",
+		"readOnly": "Read-only",
 		"accessRequested": "Access requested",
 		"requestAccess": "Request access",
 		"noAccess": "No access",

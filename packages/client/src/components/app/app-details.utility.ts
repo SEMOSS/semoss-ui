@@ -28,6 +28,7 @@ export interface modelledDependency {
 	name: string;
 	id: string;
 	type: string;
+	subtype?: string;
 	userPermission: Role | "";
 	isPublic: boolean;
 	isDiscoverable: boolean;
