@@ -329,13 +329,10 @@ export const GlobalNav = observer(() => {
 		isFavorite: boolean,
 	) => {
 		try {
-			await runPixel(
-				`PinRoom(roomId=["${roomId}"], pinned=[${!isFavorite}]);`,
-			);
-
-			// Refetch rooms after toggling favorite
-			getRooms.reset();
-			getPinnedRooms.reset();
+			// pinRoom bumps roomCounter, which the effect above watches to
+			// refetch both room queries here — and keeps the chats page in
+			// sync, so pinning is bidirectional across the two views.
+			await chat.pinRoom(roomId, !isFavorite);
 		} catch {
 			toast.error(
 				isFavorite

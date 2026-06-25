@@ -146,6 +146,8 @@
 		"title": "All chats",
 		"subtitle": "Browse, search, and clean up your chats.",
 		"selectAll": "Select all",
+		"deselectAll": "Deselect all",
+		"favorites": "Favorites",
 		"selectChat": "Select chat {{name}}",
 		"selectedCount": "{{count}} selected",
 		"totalCount": "{{count}} chats",

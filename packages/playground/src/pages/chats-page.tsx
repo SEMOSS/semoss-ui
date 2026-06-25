@@ -1,59 +1,56 @@
 import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
-import {
-	ArrowRightIcon,
-	CheckIcon,
-	MessagesSquareIcon,
-	PencilIcon,
-	SearchIcon,
-	StarIcon,
-	Trash2Icon,
-	XIcon,
-} from "lucide-react";
+import { SearchIcon, StarIcon, Trash2Icon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
-import { useIteratorPixel } from "@semoss/sdk/react";
+import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
-	cn,
 	Dialog,
 	DialogContent,
 	DialogDescription,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	Input,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
 	Muted,
-	Separator,
 	Spinner,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 	toast,
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
+import {
+	CHECKBOX_CLASS,
+	ChatRow,
+	type RoomItem,
+	roomTime,
+	type TFn,
+} from "@/components";
 import { useChat, useGlobalBreadcrumbs } from "@/hooks";
 
-dayjs.extend(relativeTime);
-
-interface RoomItem {
-	ROOM_ID: string;
-	ROOM_NAME: string;
-	DATE_CREATED: string;
-	WORKSPACE_ID?: string;
-	PINNED?: boolean;
-}
+const getDayLabel = (startOfDay: dayjs.Dayjs, t: TFn): string => {
+	const today = dayjs().startOf("day");
+	const days = today.diff(startOfDay, "day");
+	if (days <= 0)
+		return t("workspace:chat.dayToday", { defaultValue: "Today" });
+	if (days === 1)
+		return t("workspace:chat.dayYesterday", { defaultValue: "Yesterday" });
+	if (days < 30)
+		return t("workspace:chat.daysAgo", {
+			count: days,
+			defaultValue: "{{count}} days ago",
+		});
+	return startOfDay.format("MMM D, YYYY");
+};
 
 /**
  * All-chats page.
- * Lists every chat (across all workspaces) with multi-select + bulk delete.
+ * Lists every chat (across all workspaces) grouped into a pinned
+ * section plus calendar-day sections, with multi-select + bulk delete,
+ * inline rename, and pin/unpin.
  */
 export const ChatsPage = observer(() => {
 	const { t } = useTranslation(["workspace", "common"]);
@@ -63,6 +60,7 @@ export const ChatsPage = observer(() => {
 	const debouncedSearch = useDebouncedValue(search);
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [deletedSet, setDeletedSet] = useState<Set<string>>(new Set());
+	const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
 	const [confirmOpen, setConfirmOpen] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [editingId, setEditingId] = useState<string | null>(null);
@@ -91,6 +89,14 @@ export const ChatsPage = observer(() => {
 		[debouncedSearch],
 	);
 
+	// Full set of pinned rooms across every workspace, independent of the
+	// paginated list above — so the pinned section shows every pinned chat
+	// even before the user scrolls it into view.
+	const getPinnedRooms = usePixel<RoomItem[]>(
+		`META | GetPlaygroundRooms(pinned=[true], sort=["DESC"]);`,
+		{ data: [] },
+	);
+
 	const { setScroll } = useInfiniteScroll({
 		disabled: getRooms.isLoading || !getRooms.hasMore,
 		onNext: () => {
@@ -98,22 +104,90 @@ export const ChatsPage = observer(() => {
 		},
 	});
 
+	// Seed pinned ids from the dedicated pinned query. Toggles update
+	// `pinnedIds` optimistically and never refetch this query, so this
+	// effect won't clobber an in-flight optimistic change.
+	useEffect(() => {
+		if (getPinnedRooms.status !== "SUCCESS" || !getPinnedRooms.data) return;
+		setPinnedIds(new Set(getPinnedRooms.data.map((r) => r.ROOM_ID)));
+	}, [getPinnedRooms.status, getPinnedRooms.data]);
+
+	// Lookup of room metadata, preferring the freshest (paginated) data but
+	// falling back to the pinned query for pinned rooms not yet paged in.
+	const roomById = useMemo(() => {
+		const map = new Map<string, RoomItem>();
+		for (const r of getPinnedRooms.data ?? []) map.set(r.ROOM_ID, r);
+		for (const r of getRooms.data) map.set(r.ROOM_ID, r);
+		return map;
+	}, [getPinnedRooms.data, getRooms.data]);
+
 	const visibleRooms = useMemo(
 		() => getRooms.data.filter((r) => !deletedSet.has(r.ROOM_ID)),
 		[getRooms.data, deletedSet],
 	);
 
+	// While searching, drop the dedicated pinned section so results aren't
+	// split confusingly — matches still show their star inline.
+	const isSearching = debouncedSearch.length > 0;
+
+	const pinnedRooms = useMemo(() => {
+		if (isSearching) return [];
+		return Array.from(pinnedIds)
+			.filter((id) => !deletedSet.has(id))
+			.map((id) => roomById.get(id))
+			.filter((r): r is RoomItem => Boolean(r))
+			.sort(
+				(a, b) =>
+					roomTime(b.DATE_CREATED).valueOf() -
+					roomTime(a.DATE_CREATED).valueOf(),
+			);
+	}, [pinnedIds, deletedSet, roomById, isSearching]);
+
+	// Date-grouped, non-pinned rooms (descending by day).
+	const groups = useMemo(() => {
+		const map = new Map<
+			string,
+			{ label: string; ts: number; rooms: RoomItem[] }
+		>();
+		for (const room of visibleRooms) {
+			if (!isSearching && pinnedIds.has(room.ROOM_ID)) continue;
+			const d = roomTime(room.DATE_CREATED);
+			if (!d.isValid()) continue;
+			const startOfDay = d.startOf("day");
+			const key = startOfDay.format("YYYY-MM-DD");
+			if (!map.has(key)) {
+				map.set(key, {
+					label: getDayLabel(startOfDay, t),
+					ts: startOfDay.valueOf(),
+					rooms: [],
+				});
+			}
+			map.get(key)?.rooms.push(room);
+		}
+		return Array.from(map.values()).sort((a, b) => b.ts - a.ts);
+	}, [visibleRooms, pinnedIds, isSearching, t]);
+
+	const allVisibleIds = useMemo(() => {
+		const ids: string[] = [];
+		for (const r of pinnedRooms) ids.push(r.ROOM_ID);
+		for (const g of groups) for (const r of g.rooms) ids.push(r.ROOM_ID);
+		return ids;
+	}, [pinnedRooms, groups]);
+
+	const hasRooms = allVisibleIds.length > 0;
 	const hasSelection = selectedIds.size > 0;
 	const allSelected =
-		visibleRooms.length > 0 &&
-		selectedIds.size >= visibleRooms.length &&
-		visibleRooms.every((r) => selectedIds.has(r.ROOM_ID));
+		hasRooms && allVisibleIds.every((id) => selectedIds.has(id));
 
 	const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
 	const selectAll = useCallback(
-		() => setSelectedIds(new Set(visibleRooms.map((r) => r.ROOM_ID))),
-		[visibleRooms],
+		() => setSelectedIds(new Set(allVisibleIds)),
+		[allVisibleIds],
 	);
+	const toggleSelectAll = useCallback(() => {
+		if (allSelected) clearSelection();
+		else selectAll();
+	}, [allSelected, clearSelection, selectAll]);
 
 	// Re-fetch when roomCounter increments (create / rename / delete from
 	// anywhere in the app) without clearing the list first. reset()
@@ -126,7 +200,8 @@ export const ChatsPage = observer(() => {
 			return;
 		}
 		getRooms.reset();
-	}, [getRooms.reset, chat.keys.roomCounter]);
+		getPinnedRooms.refresh();
+	}, [getRooms.reset, getPinnedRooms.refresh, chat.keys.roomCounter]);
 
 	// Keyboard shortcuts: Esc clears the current selection;
 	// Cmd/Ctrl+A selects all visible chats (only when focus isn't
@@ -154,7 +229,7 @@ export const ChatsPage = observer(() => {
 				(e.metaKey || e.ctrlKey) &&
 				e.key.toLowerCase() === "a" &&
 				!inEditableField &&
-				visibleRooms.length > 0
+				hasRooms
 			) {
 				e.preventDefault();
 				selectAll();
@@ -162,7 +237,7 @@ export const ChatsPage = observer(() => {
 		};
 		window.addEventListener("keydown", onKey);
 		return () => window.removeEventListener("keydown", onKey);
-	}, [hasSelection, editingId, visibleRooms, clearSelection, selectAll]);
+	}, [hasSelection, editingId, hasRooms, clearSelection, selectAll]);
 
 	const toggleSelectOne = (roomId: string) => {
 		setSelectedIds((prev) => {
@@ -171,6 +246,31 @@ export const ChatsPage = observer(() => {
 			else next.add(roomId);
 			return next;
 		});
+	};
+
+	const handleTogglePin = async (roomId: string) => {
+		const wasPinned = pinnedIds.has(roomId);
+		setPinnedIds((prev) => {
+			const next = new Set(prev);
+			if (wasPinned) next.delete(roomId);
+			else next.add(roomId);
+			return next;
+		});
+		try {
+			await chat.pinRoom(roomId, !wasPinned);
+		} catch {
+			setPinnedIds((prev) => {
+				const next = new Set(prev);
+				if (wasPinned) next.add(roomId);
+				else next.delete(roomId);
+				return next;
+			});
+			toast.error(
+				wasPinned
+					? t("workspace:chat.unpinFailed")
+					: t("workspace:chat.pinFailed"),
+			);
+		}
 	};
 
 	const handleConfirmDelete = async () => {
@@ -215,6 +315,7 @@ export const ChatsPage = observer(() => {
 		setConfirmOpen(false);
 		setIsDeleting(false);
 		getRooms.reset();
+		getPinnedRooms.refresh();
 	};
 
 	const handleStartRename = (room: RoomItem) => {
@@ -241,12 +342,32 @@ export const ChatsPage = observer(() => {
 			setEditingId(null);
 			setEditingName("");
 			getRooms.reset();
+			getPinnedRooms.refresh();
 		} catch {
 			toast.error(t("workspace:chat.renameFailed"));
 		} finally {
 			setIsRenaming(false);
 		}
 	};
+
+	const renderRow = (room: RoomItem) => (
+		<ChatRow
+			key={room.ROOM_ID}
+			t={t}
+			room={room}
+			isSelected={selectedIds.has(room.ROOM_ID)}
+			isPinned={pinnedIds.has(room.ROOM_ID)}
+			isEditing={editingId === room.ROOM_ID}
+			editingName={editingName}
+			setEditingName={setEditingName}
+			isRenaming={isRenaming}
+			onToggleSelect={() => toggleSelectOne(room.ROOM_ID)}
+			onTogglePin={() => handleTogglePin(room.ROOM_ID)}
+			onStartRename={() => handleStartRename(room)}
+			onCancelRename={handleCancelRename}
+			onSaveRename={handleSaveRename}
+		/>
+	);
 
 	return (
 		<div
@@ -287,13 +408,77 @@ export const ChatsPage = observer(() => {
 					</InputGroupAddon>
 				</InputGroup>
 
+				{/* Select-all toolbar — always visible so the user can select
+				    every chat without first selecting one. */}
+				{hasRooms && (
+					<div className="flex h-8 items-center gap-3 px-1">
+						<Checkbox
+							checked={allSelected}
+							onCheckedChange={toggleSelectAll}
+							aria-label={t("workspace:chats.selectAll", {
+								defaultValue: "Select all",
+							})}
+							className={CHECKBOX_CLASS}
+							data-testid="chats-page--select-all-checkbox"
+						/>
+						<button
+							type="button"
+							onClick={toggleSelectAll}
+							className="font-medium text-foreground text-sm hover:text-foreground/80"
+						>
+							{allSelected
+								? t("workspace:chats.deselectAll", {
+										defaultValue: "Deselect all",
+									})
+								: t("workspace:chats.selectAll", {
+										defaultValue: "Select all",
+									})}
+						</button>
+						{hasSelection && (
+							<>
+								<span className="text-muted-foreground text-sm">
+									{t("workspace:chats.selectedCount", {
+										count: selectedIds.size,
+										defaultValue: "{{count}} selected",
+									})}
+								</span>
+								<div className="ms-auto flex items-center gap-1">
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() => setConfirmOpen(true)}
+										disabled={isDeleting}
+										className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+										data-testid="chats-page--delete-selected-btn"
+									>
+										<Trash2Icon />
+										{t("workspace:chat.delete", {
+											defaultValue: "Delete",
+										})}
+									</Button>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={clearSelection}
+										disabled={isDeleting}
+									>
+										{t("workspace:chat.cancel", {
+											defaultValue: "Cancel",
+										})}
+									</Button>
+								</div>
+							</>
+						)}
+					</div>
+				)}
+
 				{/* Body */}
 				<div>
 					{getRooms.isLoading && getRooms.data.length === 0 ? (
 						<div className="flex w-full items-center justify-center py-12">
 							<Spinner />
 						</div>
-					) : visibleRooms.length === 0 ? (
+					) : !hasRooms ? (
 						<div className="flex w-full items-center justify-center py-12">
 							<Muted>
 								{t("workspace:chat.noChats", {
@@ -302,244 +487,33 @@ export const ChatsPage = observer(() => {
 							</Muted>
 						</div>
 					) : (
-						<div className="flex w-full flex-col gap-2">
-							{visibleRooms.map((r) => {
-								const isSelected = selectedIds.has(r.ROOM_ID);
-								const isEditing = editingId === r.ROOM_ID;
-								const dateInput = r.DATE_CREATED.endsWith("Z")
-									? r.DATE_CREATED
-									: `${r.DATE_CREATED}Z`;
-								const d = dayjs(dateInput);
-								const relative = d.isValid()
-									? d.fromNow()
-									: r.DATE_CREATED;
-								const absolute = d.isValid()
-									? d.format("MMM D, YYYY h:mm A")
-									: r.DATE_CREATED;
-
-								if (isEditing) {
-									return (
-										<div
-											key={r.ROOM_ID}
-											className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2"
-										>
-											<Input
-												autoFocus
-												value={editingName}
-												disabled={isRenaming}
-												onChange={(e) =>
-													setEditingName(
-														e.target.value,
-													)
-												}
-												onKeyDown={(e) => {
-													if (e.key === "Enter") {
-														e.preventDefault();
-														handleSaveRename();
-													} else if (
-														e.key === "Escape"
-													) {
-														handleCancelRename();
-													}
-												}}
-												className="h-8 flex-1"
-											/>
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<Button
-														type="button"
-														variant="ghost"
-														size="icon-sm"
-														disabled={isRenaming}
-														onClick={
-															handleSaveRename
-														}
-														aria-label={t(
-															"workspace:chat.renameSave",
-														)}
-													>
-														<CheckIcon className="size-4" />
-													</Button>
-												</TooltipTrigger>
-												<TooltipContent>
-													{t(
-														"workspace:chat.renameSave",
-													)}
-												</TooltipContent>
-											</Tooltip>
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<Button
-														type="button"
-														variant="ghost"
-														size="icon-sm"
-														disabled={isRenaming}
-														onClick={
-															handleCancelRename
-														}
-														aria-label={t(
-															"workspace:chat.cancel",
-														)}
-													>
-														<XIcon className="size-4" />
-													</Button>
-												</TooltipTrigger>
-												<TooltipContent>
-													{t("workspace:chat.cancel")}
-												</TooltipContent>
-											</Tooltip>
-										</div>
-									);
-								}
-
-								return (
-									<div
-										key={r.ROOM_ID}
-										className={cn(
-											"group/row relative flex min-w-0 items-center rounded-lg border border-border bg-card transition-colors hover:border-border/80 hover:bg-accent/40",
-											isSelected &&
-												"border-primary bg-accent/30",
-										)}
-									>
-										{/* Stretched link covers the WHOLE row but z-0,
-										    so anything with z-[1] above it intercepts
-										    clicks before the link does. */}
-										<Link
-											to={`/room/${r.ROOM_ID}`}
-											aria-label={t(
-												"workspace:chat.selectRoom",
-											)}
-											className="absolute inset-0 z-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-										/>
-
-										{/* Left select zone — wider hit area for the
-										    checkbox. Clicking anywhere here toggles
-										    selection instead of opening the room.
-										    Keyboard users tab to the inner Checkbox
-										    directly, so this zone is mouse-only
-										    (tabIndex={-1}) but still gets a `button`
-										    role so AT announces its purpose. */}
-										{/* biome-ignore lint/a11y/useSemanticElements: cannot use a real <button> here — it would wrap the interactive Checkbox component, which is itself a button (Radix renders <button role="checkbox">). Nested buttons are invalid HTML. The role + tabIndex + aria-label + onKeyDown gives equivalent a11y semantics. */}
-										<div
-											role="button"
-											tabIndex={-1}
-											aria-label={t(
-												"workspace:chats.selectChat",
-												{
-													name: r.ROOM_NAME,
-													defaultValue:
-														"Select chat {{name}}",
-												},
-											)}
-											onClick={(e) => {
-												e.preventDefault();
-												e.stopPropagation();
-												toggleSelectOne(r.ROOM_ID);
-											}}
-											onKeyDown={(e) => {
-												if (
-													e.key === "Enter" ||
-													e.key === " "
-												) {
-													e.preventDefault();
-													e.stopPropagation();
-													toggleSelectOne(r.ROOM_ID);
-												}
-											}}
-											className="relative z-1 flex shrink-0 cursor-pointer items-center @md:gap-3 gap-2 py-2.5 @md:ps-3 ps-2 @md:pe-2 pe-1"
-										>
-											<Checkbox
-												checked={isSelected}
-												onCheckedChange={() =>
-													toggleSelectOne(r.ROOM_ID)
-												}
-												onClick={(e) =>
-													e.stopPropagation()
-												}
-												aria-label={t(
-													"workspace:chats.selectChat",
-													{
-														name: r.ROOM_NAME,
-														defaultValue:
-															"Select chat {{name}}",
-													},
-												)}
-												className={cn(
-													!hasSelection &&
-														"invisible focus-visible:visible group-hover/row:visible",
-												)}
-											/>
-											<div className="@md:flex hidden size-9 items-center justify-center rounded-md bg-muted text-muted-foreground">
-												<MessagesSquareIcon className="size-4" />
-											</div>
-										</div>
-
-										{/* Name + date — link covers this area for navigation */}
-										<div className="pointer-events-none relative z-1 flex min-w-0 flex-1 flex-col py-2.5">
-											<div className="flex min-w-0 items-center gap-1.5">
-												<div
-													dir="auto"
-													className="truncate font-semibold text-foreground text-sm leading-tight"
-													title={r.ROOM_NAME}
-												>
-													{r.ROOM_NAME}
-												</div>
-												{r.PINNED ? (
-													<StarIcon
-														className="size-3.5 shrink-0 fill-yellow-500 text-yellow-500"
-														aria-label={t(
-															"workspace:chat.pin",
-														)}
-													/>
-												) : null}
-											</div>
-											<div
-												className="text-muted-foreground text-xs leading-tight"
-												title={absolute}
-											>
-												{relative}
-											</div>
-										</div>
-
-										{/* Right actions: rename (hover-revealed) + arrow */}
-										{/* Right actions: rename (hover-revealed) + arrow.
-										    Wrapper is `pointer-events-none` so clicks
-										    on the arrow (purely visual) fall through
-										    to the stretched Link and navigate to the
-										    room. The rename Button re-enables events
-										    on itself via `pointer-events-auto`. */}
-										<div className="pointer-events-none relative z-1 flex shrink-0 items-center gap-1 @md:pe-3 pe-2">
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<Button
-														type="button"
-														variant="ghost"
-														size="icon-sm"
-														aria-label={t(
-															"workspace:chat.rename",
-														)}
-														className="pointer-events-auto hidden text-muted-foreground hover:text-foreground focus-visible:inline-flex group-hover/row:inline-flex"
-														onClick={(e) => {
-															e.preventDefault();
-															e.stopPropagation();
-															handleStartRename(
-																r,
-															);
-														}}
-														data-testid={`chats-page--rename-${r.ROOM_ID}`}
-													>
-														<PencilIcon className="size-4" />
-													</Button>
-												</TooltipTrigger>
-												<TooltipContent>
-													{t("workspace:chat.rename")}
-												</TooltipContent>
-											</Tooltip>
-											<ArrowRightIcon className="rtl:-scale-x-100 size-4 shrink-0 text-muted-foreground transition-colors group-hover/row:text-foreground" />
-										</div>
+						<div className="flex w-full flex-col gap-6">
+							{/* Pinned section */}
+							{pinnedRooms.length > 0 && (
+								<div className="flex flex-col gap-2">
+									<div className="flex items-center gap-1.5 px-1 font-medium text-muted-foreground text-xs uppercase tracking-wide">
+										<StarIcon className="size-3.5 fill-yellow-500 text-yellow-500" />
+										{t("workspace:chats.favorites", {
+											defaultValue: "Favorites",
+										})}
 									</div>
-								);
-							})}
+									<div className="flex flex-col gap-2">
+										{pinnedRooms.map(renderRow)}
+									</div>
+								</div>
+							)}
+
+							{/* Date-grouped sections */}
+							{groups.map((g) => (
+								<div key={g.ts} className="flex flex-col gap-2">
+									<div className="px-1 font-medium text-muted-foreground text-xs uppercase tracking-wide">
+										{g.label}
+									</div>
+									<div className="flex flex-col gap-2">
+										{g.rooms.map(renderRow)}
+									</div>
+								</div>
+							))}
 
 							{getRooms.isLoading && getRooms.data.length > 0 && (
 								<div className="flex items-center justify-center p-4">
@@ -550,67 +524,6 @@ export const ChatsPage = observer(() => {
 					)}
 				</div>
 			</div>
-
-			{/* Floating action bar — appears when ≥1 chat is selected.
-			    Fixed to viewport bottom so it follows the user as they
-			    scroll the list. Esc and the Cancel button both clear
-			    the selection. */}
-			{hasSelection && (
-				<div className="-translate-x-1/2 fade-in-0 slide-in-from-bottom-4 fixed bottom-6 left-1/2 z-30 animate-in">
-					<div className="flex items-center gap-1 rounded-full border border-border bg-card/95 px-2 py-1.5 shadow-lg backdrop-blur supports-backdrop-filter:bg-card/80">
-						<span className="px-3 font-medium text-foreground text-sm">
-							{t("workspace:chats.selectedCount", {
-								count: selectedIds.size,
-								defaultValue: "{{count}} selected",
-							})}
-						</span>
-						{!allSelected && (
-							<>
-								<Separator
-									orientation="vertical"
-									className="h-6"
-								/>
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={selectAll}
-									disabled={isDeleting}
-									data-testid="chats-page--select-all-btn"
-								>
-									{t("workspace:chats.selectAll", {
-										defaultValue: "Select all",
-									})}
-								</Button>
-							</>
-						)}
-						<Separator orientation="vertical" className="h-6" />
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={() => setConfirmOpen(true)}
-							disabled={isDeleting}
-							className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-							data-testid="chats-page--delete-selected-btn"
-						>
-							<Trash2Icon />
-							{t("workspace:chat.delete", {
-								defaultValue: "Delete",
-							})}
-						</Button>
-						<Separator orientation="vertical" className="h-6" />
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={clearSelection}
-							disabled={isDeleting}
-						>
-							{t("workspace:chat.cancel", {
-								defaultValue: "Cancel",
-							})}
-						</Button>
-					</div>
-				</div>
-			)}
 
 			{/* Bulk delete confirmation */}
 			<Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
