@@ -29,7 +29,9 @@ type NewAppForm = {
 
 interface NewAppModalProps {
 	open: boolean;
-	options: { type: "blocks"; state: SerializedState } | { type: "code" };
+	options:
+		| { type: "blocks"; state: SerializedState; tags?: string[] }
+		| { type: "code" };
 	onClose: (appId?: string) => void;
 }
 
@@ -87,12 +89,17 @@ export const NewAppModal = (props: NewAppModalProps) => {
 					);
 				}
 
-				if (data.APP_TAGS.length || data.APP_DESCRIPTION) {
+				// merge any template-provided tags with the user-entered tags
+				const blocksTags = Array.from(
+					new Set([...(options.tags ?? []), ...data.APP_TAGS]),
+				);
+
+				if (blocksTags.length || data.APP_DESCRIPTION) {
 					const setProjectMetadataResponse =
 						await monolithStore.runQuery(
 							`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
 								{
-									tag: data.APP_TAGS,
+									tag: blocksTags,
 									description: data.APP_DESCRIPTION,
 								},
 							)}])`,
