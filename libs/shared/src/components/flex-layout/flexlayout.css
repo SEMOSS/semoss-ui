@@ -410,6 +410,47 @@
 }
 
 /**
+ * Splitters double as both the pane divider AND the resize selector. The base
+ * theme paints the whole ~8px drag band a near-white grey, so it reads as a
+ * faint, fat strip that doesn't line up with crisp 1px content borders. Paint
+ * a single 1px line centered in the (still full-width) drag band instead, using
+ * the app's border token — so the divider you see is exactly the handle you
+ * grab, and it matches every other 1px border in the workspace.
+ */
+.flexlayout__theme_smss .flexlayout__splitter {
+    background: transparent;
+    /* Anchor the ::before line to the splitter itself. */
+    position: relative;
+}
+
+.flexlayout__theme_smss .flexlayout__splitter::before {
+    content: "";
+    position: absolute;
+    background: var(--border);
+}
+
+/* FlexLayout naming is by orientation, not by the line drawn:
+ * `_horz` sits in a horizontal row and resizes WIDTH (ew-resize) → it's a
+ * VERTICAL divider line down the middle of the band. */
+.flexlayout__theme_smss .flexlayout__splitter_horz::before {
+    inset: 0 auto 0 50%;
+    width: 1px;
+    transform: translateX(-50%);
+}
+
+/* `_vert` sits in a vertical column and resizes HEIGHT (ns-resize) → it's a
+ * HORIZONTAL divider line across the middle of the band. */
+.flexlayout__theme_smss .flexlayout__splitter_vert::before {
+    inset: 50% 0 auto 0;
+    height: 1px;
+    transform: translateY(-50%);
+}
+
+.flexlayout__theme_smss .flexlayout__splitter:hover::before {
+    background: var(--color-splitter-hover);
+}
+
+/**
  * RTL overrides for FlexLayout.
  *
  * flexlayout-react ships only an LTR stylesheet (combined.css), and applies

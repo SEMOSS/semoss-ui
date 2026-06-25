@@ -1,0 +1,139 @@
+{
+	"common": {
+		"success": "Success",
+		"failed": "Failed",
+		"event": "Event",
+		"noLogs": "No logs available."
+	},
+	"filter": {
+		"searchPlaceholder": "Search logs...",
+		"selectEngineType": "Select Engine Type",
+		"selectEngine": "Select Engine",
+		"roomId": "Room ID",
+		"allRooms": "All Rooms",
+		"methodName": "Method Name",
+		"engineType": "Engine Type",
+		"allUsers": "All Users",
+		"loading": "Loading…",
+		"noOptions": "No options",
+		"clear": "Clear",
+		"clearFilters": "Clear filters",
+		"close": "Close",
+		"apply": "Apply",
+		"countSummary": "{{label}} ({{count}})",
+		"dateRange": {
+			"today": "Today",
+			"last7Days": "Last 7 Days",
+			"last30Days": "Last 30 Days",
+			"custom": "Custom"
+		}
+	},
+	"summary": {
+		"events": "Events",
+		"shown": "Shown",
+		"errors": "Errors",
+		"p50": "P50",
+		"p95": "P95",
+		"tokens": "Tokens",
+		"currentPage": "current page",
+		"currentPageHint": "Latency, errors and tokens are calculated across the events on the current page."
+	},
+	"table": {
+		"title": "Prompt & Response Timeline",
+		"grouping": {
+			"none": "No grouping",
+			"span": "Group by span",
+			"request": "Group by request"
+		},
+		"columns": {
+			"user": "User",
+			"sessionId": "Session Id",
+			"request": "Request",
+			"response": "Response",
+			"method": "Method",
+			"engineType": "Engine Type",
+			"engineName": "Engine Name",
+			"latency": "Latency",
+			"tokens": "Tokens",
+			"timestamp": "Timestamp",
+			"status": "Status"
+		},
+		"groupRequest": "Request",
+		"groupSpan": "Span",
+		"event_one": "{{count}} event",
+		"event_other": "{{count}} events",
+		"groupMeta": "{{latency}}ms · {{tokens}} tokens",
+		"rowsPerPage": "Rows per page:",
+		"pageRange": "{{first}} - {{last}} of {{total}}",
+		"showingResults": "Showing {{shown}} of {{total}} results"
+	},
+	"timeline": {
+		"title": "Event History",
+		"rowMode": {
+			"event": "Row: per event",
+			"span": "Row: by span",
+			"request": "Row: by request"
+		},
+		"axisMode": {
+			"time": "Time",
+			"datetime": "Date & time",
+			"date": "Date",
+			"month": "Month"
+		},
+		"highlightZoom": "Highlight a region to zoom in",
+		"zoomIn": "Zoom in",
+		"zoomOut": "Zoom out",
+		"resetZoom": "Reset zoom",
+		"tooltip": {
+			"engine": "Engine",
+			"user": "User",
+			"latency": "Latency",
+			"tokens": "Tokens",
+			"start": "Start",
+			"end": "End",
+			"span": "Span",
+			"session": "Session",
+			"request": "Request",
+			"response": "Response"
+		}
+	},
+	"detail": {
+		"title": "Audit Details",
+		"copyJson": "Copy JSON",
+		"copyJsonTooltip": "Copy this record as JSON",
+		"copySuccess": "Copied audit log as JSON",
+		"copyFailed": "Failed to copy: {{error}}",
+		"noDetails": "No details available",
+		"expandAll": "Expand All",
+		"collapseAll": "Collapse All",
+		"fields": {
+			"latency": "Latency",
+			"tokens": "Tokens",
+			"user": "User",
+			"userId": "User Id",
+			"start": "Start",
+			"end": "End",
+			"logTimestamp": "Log Timestamp",
+			"sessionId": "Session Id",
+			"requestId": "Request Id",
+			"spanId": "Span Id",
+			"request": "Request",
+			"response": "Response"
+		}
+	},
+	"page": {
+		"dashboardTitle": "{{catalogName}} Insight Dashboard",
+		"export": "Export",
+		"exportCsv": "Export as CSV",
+		"exportPdf": "Export as PDF",
+		"refresh": "Refresh",
+		"selectToFetch": "Please select Engine Type and Engine to fetch logs",
+		"selectBeforeExport": "Select an engine before exporting logs.",
+		"errorFetching": "Error fetching logs: {{error}}",
+		"errorExporting": "Error exporting logs: {{error}}"
+	},
+	"layout": {
+		"appName": "Audit Log",
+		"appDescription": "Audit log app"
+	}
+}

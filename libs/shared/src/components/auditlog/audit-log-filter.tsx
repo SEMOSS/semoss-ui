@@ -1,6 +1,7 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { ChevronDownIcon, Search, X } from "lucide-react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { runPixel } from "@semoss/sdk";
 import {
 	Button,
@@ -48,23 +49,29 @@ const initialAcc = {
 };
 
 type OwnerStatus = "unknown" | "owner" | "non-owner";
-//Dashboard durations for filtering logs based on duration like day, week, month, etc
+//Dashboard durations for filtering logs based on duration like day, week, month, etc.
+//`labelKey` resolves the display label through the `auditlog` i18n namespace.
 const DashboardDurations = [
-	{ label: "Today", value: "today", dateRangeType: "DAY", dateRangeValue: 1 },
 	{
-		label: "Last 7 Days",
+		labelKey: "filter.dateRange.today",
+		value: "today",
+		dateRangeType: "DAY",
+		dateRangeValue: 1,
+	},
+	{
+		labelKey: "filter.dateRange.last7Days",
 		value: "last7days",
 		dateRangeType: "WEEK",
 		dateRangeValue: 1,
 	},
 	{
-		label: "Last 30 Days",
+		labelKey: "filter.dateRange.last30Days",
 		value: "last30days",
 		dateRangeType: "MONTH",
 		dateRangeValue: 1,
 	},
 	{
-		label: "Custom",
+		labelKey: "filter.dateRange.custom",
 		value: "custom",
 		renderWithSeparator: true,
 		dateRangeType: "CUSTOM",
@@ -114,12 +121,16 @@ const MultiSelectDropdown = ({
 	loading?: boolean;
 	disabled?: boolean;
 }) => {
+	const { t } = useTranslation("auditlog");
 	const summary =
 		selected.length === 0
 			? label
 			: selected.length === 1
 				? selected[0]
-				: `${label} (${selected.length})`;
+				: t("filter.countSummary", {
+						label,
+						count: selected.length,
+					});
 	return (
 		<DropdownMenu
 			onOpenChange={(open) => {
@@ -140,11 +151,11 @@ const MultiSelectDropdown = ({
 			<DropdownMenuContent className="max-h-[300px] overflow-y-auto">
 				{loading ? (
 					<div className="px-2 py-1.5 text-muted-foreground text-sm">
-						Loading…
+						{t("filter.loading")}
 					</div>
 				) : options.length === 0 ? (
 					<div className="px-2 py-1.5 text-muted-foreground text-sm">
-						No options
+						{t("filter.noOptions")}
 					</div>
 				) : (
 					options.map((option) => (
@@ -176,7 +187,7 @@ const MultiSelectDropdown = ({
 							onClick={() => onChange([])}
 						>
 							<X className="me-2 size-4" />
-							Clear
+							{t("filter.clear")}
 						</Button>
 					</>
 				)}
@@ -208,6 +219,7 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 		actions = null,
 		runFilterPixel,
 	} = props;
+	const { t } = useTranslation("auditlog");
 	const [engineDetails, setEngineDetails] = useState({ ...initialAcc }); //engine details for user
 	const [engineSelectionDetails, setEngineSelectionDetails] = useState({
 		engineType: "", // selected scope engine type
@@ -342,7 +354,7 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 			DashboardDurations.find(
 				(duration) => duration.value === dashboardDuration,
 			) || {
-				label: "",
+				labelKey: "",
 				value: "",
 				dateRangeType: "DAY" as AuditLogDateRangeType,
 				dateRangeValue: 1,
@@ -587,7 +599,7 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 						setDateOpen(false);
 					}}
 				>
-					Close
+					{t("filter.close")}
 				</Button>
 				<Button
 					variant="outline"
@@ -597,7 +609,7 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 						setDateOpen(false);
 					}}
 				>
-					Apply
+					{t("filter.apply")}
 				</Button>
 			</div>
 		</div>
@@ -636,7 +648,7 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 				<Search className="absolute start-2 size-4 text-muted-foreground" />
 				<Input
 					type="text"
-					placeholder="Search logs..."
+					placeholder={t("filter.searchPlaceholder")}
 					value={searchInput}
 					onChange={(event) => setSearchInput(event.target.value)}
 					disabled={!scopeReady}
@@ -663,7 +675,9 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 											{engineSelectionDetails.engineType !==
 											""
 												? engineSelectionDetails.engineType
-												: "Select Engine Type"}{" "}
+												: t(
+														"filter.selectEngineType",
+													)}{" "}
 										</span>
 										<ChevronDownIcon className="flex justify-end self-center" />
 									</div>
@@ -719,7 +733,8 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 												)
 												.map(
 													(engine) => engine.label,
-												) ?? "Select Engine"}{" "}
+												) ??
+												t("filter.selectEngine")}{" "}
 										</span>
 										<ChevronDownIcon className="flex justify-end self-center" />
 									</div>
@@ -774,7 +789,7 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 							className="flex w-[150px] justify-between self-center"
 						>
 							<span className="truncate">
-								{selectedRoomId || "Room ID"}
+								{selectedRoomId || t("filter.roomId")}
 							</span>
 							<ChevronDownIcon className="ms-2 size-4 shrink-0" />
 						</Button>
@@ -785,11 +800,11 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 							onCheckedChange={() => setSelectedRoomId("")}
 							onSelect={(event) => event.preventDefault()}
 						>
-							All Rooms
+							{t("filter.allRooms")}
 						</DropdownMenuCheckboxItem>
 						{loadingFilters.roomId ? (
 							<div className="px-2 py-1.5 text-muted-foreground text-sm">
-								Loading…
+								{t("filter.loading")}
 							</div>
 						) : (
 							roomOptions.map((room) => (
@@ -811,7 +826,7 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 
 			{/** method name filter (server-side, multi-select; loaded on open) */}
 			<MultiSelectDropdown
-				label="Method Name"
+				label={t("filter.methodName")}
 				options={methodOptions}
 				selected={selectedMethods}
 				onChange={setSelectedMethods}
@@ -824,7 +839,7 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 
 			{/** engine type filter (server-side, multi-select; loaded on open) */}
 			<MultiSelectDropdown
-				label="Engine Type"
+				label={t("filter.engineType")}
 				options={engineTypeOptions}
 				selected={selectedEngineTypes}
 				onChange={setSelectedEngineTypes}
@@ -852,7 +867,7 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 							<span className="truncate">
 								{selectedUser
 									? selectedUser.userName
-									: "All Users"}
+									: t("filter.allUsers")}
 							</span>
 							<ChevronDownIcon className="ms-2 size-4 shrink-0" />
 						</Button>
@@ -863,11 +878,11 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 							onCheckedChange={() => setSelectedUserKey("")}
 							onSelect={(event) => event.preventDefault()}
 						>
-							All Users
+							{t("filter.allUsers")}
 						</DropdownMenuCheckboxItem>
 						{loadingFilters.user && (
 							<div className="px-2 py-1.5 text-muted-foreground text-sm">
-								Loading…
+								{t("filter.loading")}
 							</div>
 						)}
 						{userOptions.map((user) => {
@@ -906,9 +921,9 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 							className="flex w-[150px] justify-between self-center"
 						>
 							<span className="truncate">
-								{SelectedDuration?.label === ""
-									? "Today"
-									: SelectedDuration?.label}
+								{SelectedDuration?.labelKey === ""
+									? t("filter.dateRange.today")
+									: t(SelectedDuration.labelKey)}
 							</span>
 							<ChevronDownIcon className="ms-2 size-4 shrink-0" />
 						</Button>
@@ -917,7 +932,8 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 						align="end"
 						side="bottom"
 						sideOffset={6}
-						className="w-auto p-2"
+						collisionPadding={8}
+						className="max-h-[var(--radix-popover-content-available-height)] w-auto overflow-y-auto p-2"
 					>
 						<div className="flex flex-col gap-1">
 							{DashboardDurations.map((duration) => (
@@ -947,7 +963,7 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 											}
 										}}
 									>
-										{duration.label}
+										{t(duration.labelKey)}
 									</Button>
 								</React.Fragment>
 							))}
@@ -970,7 +986,7 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 					className="text-muted-foreground"
 				>
 					<X className="me-1 size-4" />
-					Clear filters
+					{t("filter.clearFilters")}
 				</Button>
 			)}
 			{actions ? (
