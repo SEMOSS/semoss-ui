@@ -7,7 +7,8 @@
 		"instructionsLabel": "指示",
 		"knowledgeLabel": "ナレッジ",
 		"toolboxLabel": "ツールボックス",
-		"promptsLabel": "プロンプトライブラリ"
+		"promptsLabel": "プロンプトライブラリ",
+		"skillsLabel": "スキル"
 	},
 	"actions": {
 		"create": "作成",
@@ -113,7 +114,8 @@
 			"knowledge": "ナレッジ",
 			"toolbox": "ツールボックス",
 			"prompts": "プロンプト",
-			"members": "メンバー"
+			"members": "メンバー",
+			"skills": "スキル"
 		},
 		"about": {
 			"title": "概要",
@@ -160,5 +162,8 @@
 		"editTitle": "指示を編集",
 		"editDescription": "このエージェントの動作を導くシステムプロンプトを更新します。",
 		"charCount": "{{count}} 文字"
+	},
+	"skills": {
+		"noSkills": "スキルが追加されていません"
 	}
 }

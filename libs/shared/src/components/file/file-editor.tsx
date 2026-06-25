@@ -28,6 +28,10 @@ interface FileEditorProps {
 	/** Optional handler invoked when the user runs the file via Ctrl/Cmd+Enter.
 	 * Only applies to the code editor (non-rendered file types aren't runnable). */
 	onRun?: () => void;
+
+	/** Optional content rendered at the start of the code editor's toolbar row.
+	 * Only applies to the code editor (other file viewers have no toolbar). */
+	leadingToolbar?: React.ReactNode;
 }
 
 export const FileEditor: React.FC<FileEditorProps> = ({
@@ -35,6 +39,7 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 	path,
 	onChange = () => null,
 	onRun,
+	leadingToolbar,
 }) => {
 	const ext = path.split(".").pop()?.toLowerCase() || "";
 
@@ -78,6 +83,7 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 					path={path}
 					onChange={onChange}
 					onRun={onRun}
+					leadingToolbar={leadingToolbar}
 				/>
 			)}
 		</div>

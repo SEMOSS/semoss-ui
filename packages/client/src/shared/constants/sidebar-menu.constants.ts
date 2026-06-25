@@ -1,6 +1,7 @@
 import {
 	Blocks,
 	Braces,
+	FlaskConical,
 	Folder,
 	Layers,
 	Notebook,
@@ -57,6 +58,13 @@ export const SIDEBAR_MENU = {
 			icon: {
 				component: Terminal,
 				tooltip: "Terminal",
+			},
+		},
+		{
+			name: "Insight",
+			icon: {
+				component: FlaskConical,
+				tooltip: "Insight files",
 			},
 		},
 	],
