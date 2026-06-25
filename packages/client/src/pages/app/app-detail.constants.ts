@@ -83,7 +83,7 @@ export const APP_DETAIL_TABS: AppDetailTab[] = [
 		name: "Profiles",
 		path: "profiles",
 		component: AppProfilesPage,
-		restrict: ["author", "editor"],
+		restrict: ["author", "editor", "readOnly"],
 	},
 	{
 		name: "Files",

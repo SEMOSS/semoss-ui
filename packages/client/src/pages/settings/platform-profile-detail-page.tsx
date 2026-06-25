@@ -1,4 +1,5 @@
 import { ArrowLeft, Trash2, UserPlus, X } from "lucide-react";
+import { observer } from "mobx-react-lite";
 import { useEffect, useId, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
@@ -31,6 +32,7 @@ import type { AdminUser } from "@/api/auth";
 import { UserSearchCombobox } from "@/components/settings/user-search-combobox";
 import { useRootStore } from "@/hooks/";
 import { useNavigate } from "@/hooks/useNavigate";
+import { PLATFORM_FEATURES } from "./settings.constants";
 
 interface PlatformProfile {
 	profileId: string;
@@ -47,48 +49,16 @@ interface ProfileUser {
 	assignedAt: string;
 }
 
-const PLATFORM_FEATURES: {
-	key: string;
-	label: string;
-	description: string;
-}[] = [
-	{
-		key: "nav.app-catalog",
-		label: "App Catalog",
-		description:
-			"Access the main app catalog to browse and launch published apps.",
-	},
-	{
-		key: "nav.skills",
-		label: "Skills",
-		description:
-			"Browse and run Skills — reusable LLM-powered task templates.",
-	},
-	{
-		key: "nav.settings",
-		label: "Settings",
-		description:
-			"Access platform settings including members, engines, and configuration.",
-	},
-	{
-		key: "nav.engine",
-		label: "Engines",
-		description:
-			"Connect, manage, and query databases, models, and storage engines.",
-	},
-];
+const escapePixelString = (s: string) => s.replaceAll("'", "\\'");
 
-function sanitizeForPixel(s: string): string {
-	return s.replace(/[^a-zA-Z0-9 _\-.,!?]/g, "");
-}
-
-export const PlatformProfileDetailPage = () => {
+export const PlatformProfileDetailPage = observer(() => {
 	const { profileId } = useParams<{ profileId: string }>();
 	const navigate = useNavigate();
 	const { monolithStore } = useRootStore();
 	const uid = useId();
 
 	const [profile, setProfile] = useState<PlatformProfile | null>(null);
+	const [loadError, setLoadError] = useState(false);
 	const [features, setFeatures] = useState<Record<string, boolean>>({});
 	const [profileUsers, setProfileUsers] = useState<ProfileUser[]>([]);
 
@@ -139,7 +109,11 @@ export const PlatformProfileDetailPage = () => {
 				setProfile(found);
 				setEditName(found.profileName);
 				setEditDesc(found.description || "");
+			} else {
+				setLoadError(true);
 			}
+		} else {
+			setLoadError(true);
 		}
 	}
 
@@ -158,12 +132,12 @@ export const PlatformProfileDetailPage = () => {
 	}
 
 	async function handleSaveProfile() {
-		const name = sanitizeForPixel(editName.trim());
+		const name = escapePixelString(editName.trim());
 		if (!name) {
 			toast.error("Name is required.");
 			return;
 		}
-		const desc = sanitizeForPixel(editDesc);
+		const desc = escapePixelString(editDesc);
 		setSavingProfile(true);
 		try {
 			await runPixel(
@@ -229,6 +203,20 @@ export const PlatformProfileDetailPage = () => {
 	}
 
 	if (!profile) {
+		if (loadError) {
+			return (
+				<div className="flex h-full flex-col items-center justify-center gap-2">
+					<p className="font-medium text-sm">Profile not found.</p>
+					<Button
+						variant="ghost"
+						size="sm"
+						onClick={() => navigate("../platform-profiles")}
+					>
+						Back to Platform Profiles
+					</Button>
+				</div>
+			);
+		}
 		return (
 			<div className="flex h-full items-center justify-center">
 				<p className="text-muted-foreground text-sm">
@@ -267,6 +255,7 @@ export const PlatformProfileDetailPage = () => {
 						size="sm"
 						className="gap-1.5 text-destructive hover:text-destructive"
 						disabled={profile.userCount > 0}
+						data-testid="delete-profile-btn"
 						onClick={() => setShowDeleteDialog(true)}
 					>
 						<Trash2 className="size-4" />
@@ -414,6 +403,7 @@ export const PlatformProfileDetailPage = () => {
 													size="sm"
 													variant="ghost"
 													className="text-destructive hover:text-destructive"
+													data-testid={`remove-user-${u.userId}-btn`}
 													onClick={() =>
 														setRemoveUserTarget(u)
 													}
@@ -463,6 +453,7 @@ export const PlatformProfileDetailPage = () => {
 							<Button
 								onClick={handleSaveProfile}
 								disabled={savingProfile || !editName.trim()}
+								data-testid="save-profile-changes-btn"
 							>
 								{savingProfile ? "Saving…" : "Save Changes"}
 							</Button>
@@ -569,6 +560,7 @@ export const PlatformProfileDetailPage = () => {
 							variant="destructive"
 							onClick={confirmRemoveUser}
 							disabled={confirmLoading}
+							data-testid="confirm-remove-user-btn"
 						>
 							{confirmLoading ? "Removing…" : "Remove"}
 						</Button>
@@ -601,6 +593,7 @@ export const PlatformProfileDetailPage = () => {
 							variant="destructive"
 							onClick={handleDeleteProfile}
 							disabled={confirmLoading}
+							data-testid="confirm-delete-profile-btn"
 						>
 							{confirmLoading ? "Deleting…" : "Delete"}
 						</Button>
@@ -609,4 +602,4 @@ export const PlatformProfileDetailPage = () => {
 			</Dialog>
 		</div>
 	);
-};
+});

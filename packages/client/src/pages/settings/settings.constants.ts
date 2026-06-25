@@ -300,3 +300,34 @@ export const SETTINGS_ROUTES: {
 		admin: true,
 	},
 ];
+
+export const PLATFORM_FEATURES: {
+	key: string;
+	label: string;
+	description: string;
+}[] = [
+	{
+		key: "nav.app-catalog",
+		label: "App Catalog",
+		description:
+			"Access the main app catalog to browse and launch published apps.",
+	},
+	{
+		key: "nav.skills",
+		label: "Skills",
+		description:
+			"Browse and run Skills — reusable LLM-powered task templates.",
+	},
+	{
+		key: "nav.settings",
+		label: "Settings",
+		description:
+			"Access platform settings including members, engines, and configuration.",
+	},
+	{
+		key: "nav.engine",
+		label: "Engines",
+		description:
+			"Connect, manage, and query databases, models, and storage engines.",
+	},
+];

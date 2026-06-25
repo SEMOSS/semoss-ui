@@ -1,4 +1,5 @@
 import { ChevronRight, Plus, ShieldCheck, Users, X } from "lucide-react";
+import { observer } from "mobx-react-lite";
 import { useEffect, useId, useState } from "react";
 import {
 	Button,
@@ -22,11 +23,9 @@ interface PlatformProfile {
 	userCount: number;
 }
 
-function sanitizeForPixel(s: string): string {
-	return s.replace(/[^a-zA-Z0-9 _\-.,!?]/g, "");
-}
+const escapePixelString = (s: string) => s.replaceAll("'", "\\'");
 
-export const PlatformProfilesPage = () => {
+export const PlatformProfilesPage = observer(() => {
 	const { monolithStore } = useRootStore();
 	const navigate = useNavigate();
 	const nameId = useId();
@@ -83,12 +82,12 @@ export const PlatformProfilesPage = () => {
 	}
 
 	async function handleCreate() {
-		const name = sanitizeForPixel(formName.trim());
+		const name = escapePixelString(formName.trim());
 		if (!name) {
 			toast.error("Profile name is required.");
 			return;
 		}
-		const desc = sanitizeForPixel(formDesc);
+		const desc = escapePixelString(formDesc);
 		setSaving(true);
 		try {
 			const result = await runPixel<{ profileId: string }>(
@@ -159,6 +158,7 @@ export const PlatformProfilesPage = () => {
 							key={p.profileId}
 							type="button"
 							className="group flex flex-col gap-3 rounded-xl border bg-card p-5 text-left shadow-sm transition-all hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+							data-testid={`platform-profile-card-${p.profileId}`}
 							onClick={() => navigate(p.profileId)}
 						>
 							<div className="flex items-start justify-between gap-2">
@@ -261,4 +261,4 @@ export const PlatformProfilesPage = () => {
 			</Dialog>
 		</div>
 	);
-};
+});
