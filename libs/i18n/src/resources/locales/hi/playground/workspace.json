@@ -7,7 +7,8 @@
 		"instructionsLabel": "निर्देश",
 		"knowledgeLabel": "ज्ञान",
 		"toolboxLabel": "टूलबॉक्स",
-		"promptsLabel": "प्रॉम्प्ट लाइब्रेरी"
+		"promptsLabel": "प्रॉम्प्ट लाइब्रेरी",
+		"skillsLabel": "कौशल"
 	},
 	"actions": {
 		"create": "बनाएं",
@@ -113,7 +114,8 @@
 			"knowledge": "ज्ञान",
 			"toolbox": "टूलबॉक्स",
 			"prompts": "प्रॉम्प्ट",
-			"members": "सदस्य"
+			"members": "सदस्य",
+			"skills": "कौशल"
 		},
 		"about": {
 			"title": "परिचय",
@@ -160,5 +162,8 @@
 		"editTitle": "निर्देश संपादित करें",
 		"editDescription": "इस एजेंट के व्यवहार को निर्देशित करने वाले सिस्टम प्रॉम्प्ट को अपडेट करें।",
 		"charCount": "{{count}} वर्ण"
+	},
+	"skills": {
+		"noSkills": "कोई कौशल नहीं जोड़ा गया"
 	}
 }

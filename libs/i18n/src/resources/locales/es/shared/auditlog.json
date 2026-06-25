@@ -1,0 +1,139 @@
+{
+	"common": {
+		"success": "Correcto",
+		"failed": "Fallido",
+		"event": "Evento",
+		"noLogs": "No hay registros disponibles."
+	},
+	"filter": {
+		"searchPlaceholder": "Buscar registros...",
+		"selectEngineType": "Seleccionar tipo de motor",
+		"selectEngine": "Seleccionar motor",
+		"roomId": "ID de sala",
+		"allRooms": "Todas las salas",
+		"methodName": "Nombre del método",
+		"engineType": "Tipo de motor",
+		"allUsers": "Todos los usuarios",
+		"loading": "Cargando…",
+		"noOptions": "Sin opciones",
+		"clear": "Borrar",
+		"clearFilters": "Borrar filtros",
+		"close": "Cerrar",
+		"apply": "Aplicar",
+		"countSummary": "{{label}} ({{count}})",
+		"dateRange": {
+			"today": "Hoy",
+			"last7Days": "Últimos 7 días",
+			"last30Days": "Últimos 30 días",
+			"custom": "Personalizado"
+		}
+	},
+	"summary": {
+		"events": "Eventos",
+		"shown": "Mostrados",
+		"errors": "Errores",
+		"p50": "P50",
+		"p95": "P95",
+		"tokens": "Tokens",
+		"currentPage": "página actual",
+		"currentPageHint": "La latencia, los errores y los tokens se calculan sobre los eventos de la página actual."
+	},
+	"table": {
+		"title": "Cronología de petición y respuesta",
+		"grouping": {
+			"none": "Sin agrupar",
+			"span": "Agrupar por span",
+			"request": "Agrupar por petición"
+		},
+		"columns": {
+			"user": "Usuario",
+			"sessionId": "ID de sesión",
+			"request": "Petición",
+			"response": "Respuesta",
+			"method": "Método",
+			"engineType": "Tipo de motor",
+			"engineName": "Nombre del motor",
+			"latency": "Latencia",
+			"tokens": "Tokens",
+			"timestamp": "Marca de tiempo",
+			"status": "Estado"
+		},
+		"groupRequest": "Petición",
+		"groupSpan": "Span",
+		"event_one": "{{count}} evento",
+		"event_other": "{{count}} eventos",
+		"groupMeta": "{{latency}}ms · {{tokens}} tokens",
+		"rowsPerPage": "Filas por página:",
+		"pageRange": "{{first}} - {{last}} de {{total}}",
+		"showingResults": "Mostrando {{shown}} de {{total}} resultados"
+	},
+	"timeline": {
+		"title": "Historial de eventos",
+		"rowMode": {
+			"event": "Fila: por evento",
+			"span": "Fila: por span",
+			"request": "Fila: por petición"
+		},
+		"axisMode": {
+			"time": "Hora",
+			"datetime": "Fecha y hora",
+			"date": "Fecha",
+			"month": "Mes"
+		},
+		"highlightZoom": "Resalta una región para ampliar",
+		"zoomIn": "Acercar",
+		"zoomOut": "Alejar",
+		"resetZoom": "Restablecer zoom",
+		"tooltip": {
+			"engine": "Motor",
+			"user": "Usuario",
+			"latency": "Latencia",
+			"tokens": "Tokens",
+			"start": "Inicio",
+			"end": "Fin",
+			"span": "Span",
+			"session": "Sesión",
+			"request": "Petición",
+			"response": "Respuesta"
+		}
+	},
+	"detail": {
+		"title": "Detalles de auditoría",
+		"copyJson": "Copiar JSON",
+		"copyJsonTooltip": "Copiar este registro como JSON",
+		"copySuccess": "Registro de auditoría copiado como JSON",
+		"copyFailed": "Error al copiar: {{error}}",
+		"noDetails": "No hay detalles disponibles",
+		"expandAll": "Expandir todo",
+		"collapseAll": "Contraer todo",
+		"fields": {
+			"latency": "Latencia",
+			"tokens": "Tokens",
+			"user": "Usuario",
+			"userId": "ID de usuario",
+			"start": "Inicio",
+			"end": "Fin",
+			"logTimestamp": "Marca de tiempo del registro",
+			"sessionId": "ID de sesión",
+			"requestId": "ID de petición",
+			"spanId": "ID de span",
+			"request": "Petición",
+			"response": "Respuesta"
+		}
+	},
+	"page": {
+		"dashboardTitle": "Panel de información de {{catalogName}}",
+		"export": "Exportar",
+		"exportCsv": "Exportar como CSV",
+		"exportPdf": "Exportar como PDF",
+		"refresh": "Actualizar",
+		"selectToFetch": "Seleccione el tipo de motor y el motor para obtener los registros",
+		"selectBeforeExport": "Seleccione un motor antes de exportar los registros.",
+		"errorFetching": "Error al obtener los registros: {{error}}",
+		"errorExporting": "Error al exportar los registros: {{error}}"
+	},
+	"layout": {
+		"appName": "Registro de auditoría",
+		"appDescription": "Aplicación de registro de auditoría"
+	}
+}

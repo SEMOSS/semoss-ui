@@ -8,6 +8,7 @@ import {
 	mdiCog,
 	mdiDatabase,
 	mdiDatabaseSearch,
+	mdiGithub,
 	mdiPalette,
 	mdiTabletCellphone,
 } from "@mdi/js";
@@ -212,6 +213,15 @@ export const SETTINGS_ROUTES: {
 		path: "social-properties",
 		description: "Use this portal to change login configuration settings.",
 		icon: mdiTabletCellphone,
+		history: ["settings/"],
+		admin: true,
+	},
+	{
+		title: "GitHub App",
+		path: "github-app",
+		description:
+			"Create and manage the GitHub App used for project linking and webhooks.",
+		icon: mdiGithub,
 		history: ["settings/"],
 		admin: true,
 	},

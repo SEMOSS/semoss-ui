@@ -1,6 +1,6 @@
 import {
+	Bot,
 	CheckIcon,
-	ComputerIcon,
 	PlusIcon,
 	SearchIcon,
 	SquareArrowOutUpRightIcon,
@@ -254,7 +254,7 @@ export const AgentSelector = observer(
 																w.project_name}
 														</div>
 														<div className="flex items-center gap-1.5 text-muted-foreground text-xs">
-															<ComputerIcon className="size-3.5 shrink-0" />
+															<Bot className="size-3.5 shrink-0" />
 															<span>
 																{t(
 																	"agent.typeLabel",

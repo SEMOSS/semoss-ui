@@ -9,7 +9,7 @@ import { AppDetailPage } from "@/pages/app/app-detail-page";
 import type { WorkspaceOptions } from "../../stores";
 import { CodeWorkspaceActions } from "../code-workspace/code-workspace-actions";
 import { MCPJsonEditor } from "../shared";
-import { TerminalPanel, WorkspaceManager } from "../workspace";
+import { WorkspaceManager, WorkspaceTerminal } from "../workspace";
 import { AgentEditor } from "./agent-editor";
 
 const DEFAULT_BORDER_SIZE = 300;
@@ -135,7 +135,7 @@ export const AgentWorkspace: React.FC = observer(() => {
 				<AppDetailPage showNav={false} excludeTabs={["mcp-usage"]} />
 			);
 		} else if (component === "terminal") {
-			return <TerminalPanel />;
+			return <WorkspaceTerminal appId={workspace.appId} />;
 		}
 
 		return <>{component}</>;

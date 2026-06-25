@@ -1,4 +1,4 @@
-import { ComputerIcon, PlusIcon, SearchIcon, XIcon } from "lucide-react";
+import { Bot, PlusIcon, SearchIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
@@ -123,9 +123,9 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 	 * Engines source. KNOWLEDGE only ever uses this (VECTOR engines).
 	 * TOOLBOX combines this with a parallel MyProjects query below.
 	 *
-	 * We split into two iterators rather than using MyEngineProject —
-	 * that combined reactor mixed both shapes in a way that broke
-	 * stable pagination.
+	 * Engines and projects each get their own iterator so the two paginate
+	 * independently and stably; their differing response shapes are normalized
+	 * by engineProjectToMCP.
 	 */
 	const getEngines = useIteratorPixel<Engine[], MCP>(
 		(limit, offset) =>
@@ -394,7 +394,7 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 									key="__workspace_summary"
 									className="inline-flex h-7 items-center gap-1.5 rounded-md border border-primary/60 bg-card px-2 text-primary text-xs"
 								>
-									<ComputerIcon className="size-4 shrink-0" />
+									<Bot className="size-4 shrink-0" />
 									<span>{workspaceCount} from agent</span>
 								</div>
 							</TooltipTrigger>

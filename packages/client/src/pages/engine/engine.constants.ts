@@ -2,6 +2,7 @@ import { Boxes, Braces, Coins } from "lucide-react";
 import { Database } from "@/assets/img/Database";
 import { ModelBrain } from "@/assets/img/ModelBrain";
 import type { ENGINE_TYPES, Role } from "@/types";
+import { EngineActivityPage } from "./engine-activity-page";
 import { EngineCommitsPage } from "./engine-commits-page";
 import { EngineFileManagerPage } from "./engine-file-manager-page";
 import { EngineFilePage } from "./engine-file-page";
@@ -17,7 +18,7 @@ import { EngineSqlQueryPage } from "./engine-sql-query-page";
 import { EngineStorageViewerPage } from "./engine-storage-viewer-page";
 import { EngineUsagePage } from "./engine-usage-page";
 
-export const ENGINE_ROUTES: {
+const ENGINE_ROUTES_BASE: {
 	/** Name of the route */
 	name: string;
 
@@ -367,3 +368,23 @@ export const ENGINE_ROUTES: {
 		],
 	},
 ];
+
+//The audit-logs dashboard, shown as an "Activity Log" tab on every engine type.
+//Inserted right after each engine's "MCP Usage" tab (falling back to "Usage", then
+//the Overview tab). Visible to anyone with access; the backend role-scopes the rows.
+const ENGINE_ACTIVITY_TAB = {
+	name: "Activity Log",
+	path: "activity",
+	component: EngineActivityPage,
+	restrict: ["READ_ONLY", "EDIT", "OWNER"] as Role[],
+};
+
+export const ENGINE_ROUTES = ENGINE_ROUTES_BASE.map((route) => {
+	const specific = [...route.specific];
+	const mcpIndex = specific.findIndex((tab) => tab.path === "mcp-usage");
+	const usageIndex = specific.findIndex((tab) => tab.path === "usage");
+	const insertAt =
+		mcpIndex >= 0 ? mcpIndex + 1 : usageIndex >= 0 ? usageIndex + 1 : 1;
+	specific.splice(insertAt, 0, ENGINE_ACTIVITY_TAB);
+	return { ...route, specific };
+});
