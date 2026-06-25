@@ -21,6 +21,7 @@
         "@semoss/renderer": "workspace:*",
         "@semoss/sdk": "workspace:*",
         "@semoss/shared": "workspace:*",
+        "@semoss/terminal": "workspace:*",
         "@semoss/ui": "workspace:*",
         "@tailwindcss/vite": "^4.1.14",
         "@xyflow/react": "^12.0.4",

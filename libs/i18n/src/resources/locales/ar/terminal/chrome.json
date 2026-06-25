@@ -2,7 +2,8 @@
 	"branding": "الطرفية",
 	"tabs": {
 		"files": "الملفات",
-		"terminal": "الطرفية"
+		"terminal": "الطرفية",
+		"newTerminal": "طرفية جديدة"
 	},
 	"views": {
 		"inline": "ضمنياً",

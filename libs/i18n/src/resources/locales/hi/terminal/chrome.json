@@ -2,7 +2,8 @@
 	"branding": "टर्मिनल",
 	"tabs": {
 		"files": "फ़ाइलें",
-		"terminal": "टर्मिनल"
+		"terminal": "टर्मिनल",
+		"newTerminal": "नया टर्मिनल"
 	},
 	"views": {
 		"inline": "इनलाइन",

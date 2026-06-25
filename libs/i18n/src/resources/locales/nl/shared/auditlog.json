@@ -1,0 +1,139 @@
+{
+	"common": {
+		"success": "Geslaagd",
+		"failed": "Mislukt",
+		"event": "Gebeurtenis",
+		"noLogs": "Geen logboeken beschikbaar."
+	},
+	"filter": {
+		"searchPlaceholder": "Logboeken zoeken...",
+		"selectEngineType": "Enginetype selecteren",
+		"selectEngine": "Engine selecteren",
+		"roomId": "Ruimte-ID",
+		"allRooms": "Alle ruimtes",
+		"methodName": "Methodenaam",
+		"engineType": "Enginetype",
+		"allUsers": "Alle gebruikers",
+		"loading": "Laden…",
+		"noOptions": "Geen opties",
+		"clear": "Wissen",
+		"clearFilters": "Filters wissen",
+		"close": "Sluiten",
+		"apply": "Toepassen",
+		"countSummary": "{{label}} ({{count}})",
+		"dateRange": {
+			"today": "Vandaag",
+			"last7Days": "Laatste 7 dagen",
+			"last30Days": "Laatste 30 dagen",
+			"custom": "Aangepast"
+		}
+	},
+	"summary": {
+		"events": "Gebeurtenissen",
+		"shown": "Getoond",
+		"errors": "Fouten",
+		"p50": "P50",
+		"p95": "P95",
+		"tokens": "Tokens",
+		"currentPage": "huidige pagina",
+		"currentPageHint": "Latentie, fouten en tokens worden berekend over de gebeurtenissen op de huidige pagina."
+	},
+	"table": {
+		"title": "Tijdlijn van verzoek en antwoord",
+		"grouping": {
+			"none": "Niet groeperen",
+			"span": "Groeperen op span",
+			"request": "Groeperen op verzoek"
+		},
+		"columns": {
+			"user": "Gebruiker",
+			"sessionId": "Sessie-ID",
+			"request": "Verzoek",
+			"response": "Antwoord",
+			"method": "Methode",
+			"engineType": "Enginetype",
+			"engineName": "Enginenaam",
+			"latency": "Latentie",
+			"tokens": "Tokens",
+			"timestamp": "Tijdstempel",
+			"status": "Status"
+		},
+		"groupRequest": "Verzoek",
+		"groupSpan": "Span",
+		"event_one": "{{count}} gebeurtenis",
+		"event_other": "{{count}} gebeurtenissen",
+		"groupMeta": "{{latency}}ms · {{tokens}} tokens",
+		"rowsPerPage": "Rijen per pagina:",
+		"pageRange": "{{first}} - {{last}} van {{total}}",
+		"showingResults": "{{shown}} van {{total}} resultaten weergegeven"
+	},
+	"timeline": {
+		"title": "Gebeurtenisgeschiedenis",
+		"rowMode": {
+			"event": "Rij: per gebeurtenis",
+			"span": "Rij: per span",
+			"request": "Rij: per verzoek"
+		},
+		"axisMode": {
+			"time": "Tijd",
+			"datetime": "Datum en tijd",
+			"date": "Datum",
+			"month": "Maand"
+		},
+		"highlightZoom": "Markeer een gebied om in te zoomen",
+		"zoomIn": "Inzoomen",
+		"zoomOut": "Uitzoomen",
+		"resetZoom": "Zoom opnieuw instellen",
+		"tooltip": {
+			"engine": "Engine",
+			"user": "Gebruiker",
+			"latency": "Latentie",
+			"tokens": "Tokens",
+			"start": "Begin",
+			"end": "Einde",
+			"span": "Span",
+			"session": "Sessie",
+			"request": "Verzoek",
+			"response": "Antwoord"
+		}
+	},
+	"detail": {
+		"title": "Auditgegevens",
+		"copyJson": "JSON kopiëren",
+		"copyJsonTooltip": "Dit record als JSON kopiëren",
+		"copySuccess": "Auditlogboek als JSON gekopieerd",
+		"copyFailed": "Kopiëren mislukt: {{error}}",
+		"noDetails": "Geen gegevens beschikbaar",
+		"expandAll": "Alles uitvouwen",
+		"collapseAll": "Alles samenvouwen",
+		"fields": {
+			"latency": "Latentie",
+			"tokens": "Tokens",
+			"user": "Gebruiker",
+			"userId": "Gebruikers-ID",
+			"start": "Begin",
+			"end": "Einde",
+			"logTimestamp": "Tijdstempel van logboek",
+			"sessionId": "Sessie-ID",
+			"requestId": "Verzoek-ID",
+			"spanId": "Span-ID",
+			"request": "Verzoek",
+			"response": "Antwoord"
+		}
+	},
+	"page": {
+		"dashboardTitle": "{{catalogName}} Insight-dashboard",
+		"export": "Exporteren",
+		"exportCsv": "Exporteren als CSV",
+		"exportPdf": "Exporteren als PDF",
+		"refresh": "Vernieuwen",
+		"selectToFetch": "Selecteer een enginetype en een engine om logboeken op te halen",
+		"selectBeforeExport": "Selecteer een engine voordat u logboeken exporteert.",
+		"errorFetching": "Fout bij het ophalen van logboeken: {{error}}",
+		"errorExporting": "Fout bij het exporteren van logboeken: {{error}}"
+	},
+	"layout": {
+		"appName": "Auditlogboek",
+		"appDescription": "Auditlogboek-app"
+	}
+}
