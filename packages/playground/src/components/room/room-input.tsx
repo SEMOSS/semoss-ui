@@ -154,9 +154,6 @@ interface RoomInputProps {
 	/** Hide the pause-on-next-tool button */
 	hidePauseButton?: boolean;
 
-	/** Content to render in the footer */
-	footer?: React.ReactNode;
-
 	/** Predefined prompts shown in prompt library */
 	predefinedPrompts?: PromptLibraryItem[];
 
@@ -167,6 +164,9 @@ interface RoomInputProps {
 
 	/** Maximum token capacity for context window */
 	tokensMax?: number;
+
+	/** Total tokens consumed across the entire chat */
+	totalTokens?: number;
 
 	/** Room store for prompt optimizer */
 	room: RoomStore;
@@ -210,12 +210,12 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		hasOutstandingTools = false,
 		hasToolsPaused = false,
 		toggleToolsPaused,
-		footer = null,
 		hidePauseButton = false,
 		predefinedPrompts = [],
 		initialValue,
 		tokensUsed,
 		tokensMax,
+		totalTokens,
 		room,
 		onCompact,
 		excludeCommandIds,
@@ -338,21 +338,30 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			return (
 				<div className="w-full space-y-1">
 					{contextUsedPercent !== undefined && descriptionKey && (
-						<>
-							<p className="w-full">{t(descriptionKey)}</p>
-							<p className="flex w-full items-baseline justify-between gap-3">
-								<span>
-									{t("contextWindow.memoryUsedTitle")}
-								</span>
-								<span className="whitespace-nowrap text-end tabular-nums">
-									{t("contextWindow.memoryUsedValue", {
-										used: formatTokens(tokensUsed),
-										total: formatTokens(tokensMax),
-										percent: contextUsedPercent.toFixed(1),
-									})}
-								</span>
-							</p>
-						</>
+						<p className="w-full">{t(descriptionKey)}</p>
+					)}
+					{(contextUsedPercent !== undefined ||
+						totalTokens !== undefined) && (
+						<div className="mt-1 space-y-1 border-t pt-1">
+							{contextUsedPercent !== undefined && (
+								<p className="tabular-nums">
+									<span className="font-bold">
+										Last Message:
+									</span>{" "}
+									{tokensUsed?.toLocaleString()} /{" "}
+									{formatTokens(tokensMax)} Context Window (
+									{contextUsedPercent.toFixed(1)}%)
+								</p>
+							)}
+							{totalTokens !== undefined && (
+								<p className="tabular-nums">
+									<span className="font-bold">
+										Chat Total:
+									</span>{" "}
+									{totalTokens.toLocaleString()} tokens
+								</p>
+							)}
+						</div>
 					)}
 					{onCompact && (
 						<Tooltip>
@@ -388,6 +397,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		}, [
 			tokensUsed,
 			tokensMax,
+			totalTokens,
 			onCompact,
 			t,
 			isLoading,
@@ -877,7 +887,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											</button>
 										)}
 									</div>
-									{footer}
 									{/* Middle controls — sit at natural width on the right
 								    until chips-region collapses; then clip from the
 								    left (justify-end + overflow-hidden). */}
