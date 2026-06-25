@@ -13,6 +13,7 @@ import { InsightSettingsPage } from "./insight-settings-page";
 import { LLMFeedbackPage } from "./llm-feedback-page";
 import { MemberSettingsPage } from "./MemberSettingsPage";
 import { MyProfilePage } from "./my-profile-page";
+import { PlatformProfileDetailPage } from "./platform-profile-detail-page";
 import { PlatformProfilesPage } from "./platform-profiles-page";
 import { ProjectSettingsDetailsPage } from "./project-settings-details-page";
 import { ProjectSettingsPage } from "./project-settings-page";
@@ -46,6 +47,7 @@ const SETTINGS_COMPONETS = {
 	"view-rdf-map": RDFMapPage,
 	"llm-feedback": LLMFeedbackPage,
 	"platform-profiles": PlatformProfilesPage,
+	"platform-profiles/:profileId": PlatformProfileDetailPage,
 
 	// engine
 	database: () => <EngineSettingsIndexPage type="DATABASE" />,

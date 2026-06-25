@@ -1041,6 +1041,33 @@ export const setUserDefaultModel = async (
 	return response;
 };
 
+export interface AdminUser {
+	id: string;
+	name: string;
+	email: string;
+	type: string;
+	username: string;
+}
+
+export const searchAllUsers = async (
+	searchTerm: string,
+	limit = 10,
+	offset = 0,
+): Promise<AdminUser[]> => {
+	const params = new URLSearchParams({
+		limit: String(limit),
+		offset: String(offset),
+	});
+	if (searchTerm) params.set("filterWord", searchTerm);
+	const response = await get<AdminUser[]>(
+		`${Env.MODULE}/api/auth/admin/user/getAllUsers?${params}`,
+	).catch((error) => {
+		throw Error(error);
+	});
+	if (!response) throw Error("No response from getAllUsers");
+	return response.data ?? [];
+};
+
 const processPostData = (data: unknown) => {
 	const postRecordData: Record<string, unknown> = {};
 	Object.keys(data).forEach((item) => {

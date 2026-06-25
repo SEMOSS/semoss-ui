@@ -34,6 +34,7 @@ import {
 	SidebarSeparator,
 } from "@semoss/ui/next";
 import { usePage, useRootStore } from "@/hooks";
+import { usePlatformFeatures } from "@/pages/AuthenticatedLayout";
 import { formatToDataTestId } from "@/utility";
 import { LogoutPopover } from "./LogoutPopover";
 
@@ -42,46 +43,55 @@ const CATALOG_ROUTES = [
 		text: "Apps",
 		icon: <LayoutGrid className="size-4" />,
 		route: "/app",
+		featureKey: "nav.app-catalog",
 	},
 	{
 		text: "Model",
 		icon: <Cpu className="size-4" />,
 		route: "/engine/model",
+		featureKey: "nav.engine",
 	},
 	{
 		text: "Database",
 		icon: <Database className="size-4" />,
 		route: "/engine/database",
+		featureKey: "nav.engine",
 	},
 	{
 		text: "Vector",
 		icon: <Bolt className="size-4" />,
 		route: "/engine/vector",
+		featureKey: "nav.engine",
 	},
 	{
 		text: "Function",
 		icon: <Sigma className="size-4" />,
 		route: "/engine/function",
+		featureKey: "nav.engine",
 	},
 	{
 		text: "Storage",
 		icon: <Archive className="size-4" />,
 		route: "/engine/storage",
+		featureKey: "nav.engine",
 	},
 	{
 		text: "Agents",
 		icon: <Bot className="size-4" />,
 		route: "/agent",
+		featureKey: "nav.app-catalog",
 	},
 	{
 		text: "Skills",
 		icon: <Puzzle className="size-4" />,
 		route: "/skill",
+		featureKey: "nav.skills",
 	},
 	{
 		text: "Guardrail",
 		icon: <ShieldCheck className="size-4" />,
 		route: "/engine/guardrail",
+		featureKey: "nav.engine",
 	},
 ];
 
@@ -92,6 +102,7 @@ const NAV_BUTTON_CLASS =
 export const Sidebar: React.FC = observer(() => {
 	const { configStore } = useRootStore();
 	const { page } = usePage();
+	const { platformFeatures } = usePlatformFeatures();
 
 	const { pathname } = useLocation();
 
@@ -110,6 +121,14 @@ export const Sidebar: React.FC = observer(() => {
 		configStore.store.user.admin,
 		configStore.store.config.adminOnlyViewMenuBarFlag,
 	]);
+
+	// A missing key means "not restricted" (fail-open). Admins always see everything.
+	const isVisible = (key: string) =>
+		configStore.store.user.admin || platformFeatures[key] !== false;
+
+	const visibleCatalogRoutes = CATALOG_ROUTES.filter((r) =>
+		isVisible(r.featureKey),
+	);
 
 	function closeSidebar() {
 		if (page.sidebar.pinned || isLogoutPopoverOpen) {
@@ -206,7 +225,7 @@ export const Sidebar: React.FC = observer(() => {
 					<SidebarSeparator className="mx-0" />
 
 					{/* Catalog navigation */}
-					{viewSidebar ? (
+					{viewSidebar && visibleCatalogRoutes.length > 0 ? (
 						<SidebarGroup className="p-0">
 							<SidebarGroupLabel
 								className="h-auto rounded-none px-4 py-2 font-semibold text-muted-foreground text-xs"
@@ -218,7 +237,7 @@ export const Sidebar: React.FC = observer(() => {
 								className="gap-0"
 								aria-label="catalog navigation"
 							>
-								{CATALOG_ROUTES.map((r) => (
+								{visibleCatalogRoutes.map((r) => (
 									<SidebarMenuItem
 										key={r.route}
 										className="py-0.5"
@@ -255,38 +274,42 @@ export const Sidebar: React.FC = observer(() => {
 						</SidebarGroup>
 					) : null}
 
-					<SidebarSeparator className="mx-0" />
+					{isVisible("nav.settings") && (
+						<SidebarSeparator className="mx-0" />
+					)}
 
 					{/* Settings */}
-					<SidebarGroup className="flex-1 p-0">
-						<SidebarMenu className="gap-0">
-							<SidebarMenuItem className="py-0.5">
-								<SidebarMenuButton
-									asChild
-									isActive={
-										!!matchPath("/settings/*", pathname)
-									}
-									className={NAV_BUTTON_CLASS}
-									data-testid={formatToDataTestId(
-										"sidebar-settings-btn",
-									)}
-								>
-									<Link
-										to={"/settings"}
-										aria-label={"Settings"}
-										className="text-inherit no-underline"
+					{isVisible("nav.settings") && (
+						<SidebarGroup className="flex-1 p-0">
+							<SidebarMenu className="gap-0">
+								<SidebarMenuItem className="py-0.5">
+									<SidebarMenuButton
+										asChild
+										isActive={
+											!!matchPath("/settings/*", pathname)
+										}
+										className={NAV_BUTTON_CLASS}
+										data-testid={formatToDataTestId(
+											"sidebar-settings-btn",
+										)}
 									>
-										<span className="flex w-7 min-w-0 shrink-0 items-center">
-											<Settings className="size-4" />
-										</span>
-										<span className="flex-1 truncate text-left">
-											Settings
-										</span>
-									</Link>
-								</SidebarMenuButton>
-							</SidebarMenuItem>
-						</SidebarMenu>
-					</SidebarGroup>
+										<Link
+											to={"/settings"}
+											aria-label={"Settings"}
+											className="text-inherit no-underline"
+										>
+											<span className="flex w-7 min-w-0 shrink-0 items-center">
+												<Settings className="size-4" />
+											</span>
+											<span className="flex-1 truncate text-left">
+												Settings
+											</span>
+										</Link>
+									</SidebarMenuButton>
+								</SidebarMenuItem>
+							</SidebarMenu>
+						</SidebarGroup>
+					)}
 				</ShadcnSidebarContent>
 
 				<SidebarSeparator className="mx-0" />

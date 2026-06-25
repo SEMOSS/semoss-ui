@@ -14,8 +14,6 @@ import {
 	mdiTabletCellphone,
 } from "@mdi/js";
 
-console.log(mdiPalette);
-
 export const SETTINGS_ROUTES: {
 	/*** Title of the page */
 	title: string;
@@ -273,6 +271,15 @@ export const SETTINGS_ROUTES: {
 		icon: mdiShieldAccount,
 		history: ["settings/"],
 		admin: true,
+	},
+	{
+		title: "Platform Profile",
+		path: "platform-profiles/:profileId",
+		description: "View and edit a platform profile — features and members.",
+		icon: mdiShieldAccount,
+		history: ["platform-profiles", "platform-profiles/<profileId>"],
+		admin: true,
+		hidden: true,
 	},
 	{
 		title: "Add Jobs",
