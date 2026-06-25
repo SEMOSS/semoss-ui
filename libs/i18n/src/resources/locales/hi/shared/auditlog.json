@@ -1,0 +1,139 @@
+{
+	"common": {
+		"success": "सफल",
+		"failed": "विफल",
+		"event": "इवेंट",
+		"noLogs": "कोई लॉग उपलब्ध नहीं है।"
+	},
+	"filter": {
+		"searchPlaceholder": "लॉग खोजें...",
+		"selectEngineType": "इंजन प्रकार चुनें",
+		"selectEngine": "इंजन चुनें",
+		"roomId": "रूम आईडी",
+		"allRooms": "सभी रूम",
+		"methodName": "मेथड नाम",
+		"engineType": "इंजन प्रकार",
+		"allUsers": "सभी उपयोगकर्ता",
+		"loading": "लोड हो रहा है…",
+		"noOptions": "कोई विकल्प नहीं",
+		"clear": "साफ़ करें",
+		"clearFilters": "फ़िल्टर साफ़ करें",
+		"close": "बंद करें",
+		"apply": "लागू करें",
+		"countSummary": "{{label}} ({{count}})",
+		"dateRange": {
+			"today": "आज",
+			"last7Days": "पिछले 7 दिन",
+			"last30Days": "पिछले 30 दिन",
+			"custom": "कस्टम"
+		}
+	},
+	"summary": {
+		"events": "इवेंट",
+		"shown": "दिखाए गए",
+		"errors": "त्रुटियाँ",
+		"p50": "P50",
+		"p95": "P95",
+		"tokens": "टोकन",
+		"currentPage": "वर्तमान पृष्ठ",
+		"currentPageHint": "लेटेंसी, त्रुटियाँ और टोकन वर्तमान पृष्ठ के इवेंट पर गणना किए जाते हैं।"
+	},
+	"table": {
+		"title": "अनुरोध और प्रतिक्रिया टाइमलाइन",
+		"grouping": {
+			"none": "कोई समूहन नहीं",
+			"span": "स्पैन के अनुसार समूह बनाएं",
+			"request": "अनुरोध के अनुसार समूह बनाएं"
+		},
+		"columns": {
+			"user": "उपयोगकर्ता",
+			"sessionId": "सेशन आईडी",
+			"request": "अनुरोध",
+			"response": "प्रतिक्रिया",
+			"method": "मेथड",
+			"engineType": "इंजन प्रकार",
+			"engineName": "इंजन नाम",
+			"latency": "लेटेंसी",
+			"tokens": "टोकन",
+			"timestamp": "टाइमस्टैम्प",
+			"status": "स्थिति"
+		},
+		"groupRequest": "अनुरोध",
+		"groupSpan": "स्पैन",
+		"event_one": "{{count}} इवेंट",
+		"event_other": "{{count}} इवेंट",
+		"groupMeta": "{{latency}}ms · {{tokens}} टोकन",
+		"rowsPerPage": "प्रति पृष्ठ पंक्तियाँ:",
+		"pageRange": "{{total}} में से {{first}} - {{last}}",
+		"showingResults": "{{total}} में से {{shown}} परिणाम दिखाए जा रहे हैं"
+	},
+	"timeline": {
+		"title": "इवेंट इतिहास",
+		"rowMode": {
+			"event": "पंक्ति: प्रति इवेंट",
+			"span": "पंक्ति: स्पैन के अनुसार",
+			"request": "पंक्ति: अनुरोध के अनुसार"
+		},
+		"axisMode": {
+			"time": "समय",
+			"datetime": "दिनांक और समय",
+			"date": "दिनांक",
+			"month": "माह"
+		},
+		"highlightZoom": "ज़ूम करने के लिए किसी क्षेत्र को हाइलाइट करें",
+		"zoomIn": "ज़ूम इन",
+		"zoomOut": "ज़ूम आउट",
+		"resetZoom": "ज़ूम रीसेट करें",
+		"tooltip": {
+			"engine": "इंजन",
+			"user": "उपयोगकर्ता",
+			"latency": "लेटेंसी",
+			"tokens": "टोकन",
+			"start": "प्रारंभ",
+			"end": "समाप्त",
+			"span": "स्पैन",
+			"session": "सेशन",
+			"request": "अनुरोध",
+			"response": "प्रतिक्रिया"
+		}
+	},
+	"detail": {
+		"title": "ऑडिट विवरण",
+		"copyJson": "JSON कॉपी करें",
+		"copyJsonTooltip": "इस रिकॉर्ड को JSON के रूप में कॉपी करें",
+		"copySuccess": "ऑडिट लॉग को JSON के रूप में कॉपी किया गया",
+		"copyFailed": "कॉपी करने में विफल: {{error}}",
+		"noDetails": "कोई विवरण उपलब्ध नहीं है",
+		"expandAll": "सभी विस्तृत करें",
+		"collapseAll": "सभी संक्षिप्त करें",
+		"fields": {
+			"latency": "लेटेंसी",
+			"tokens": "टोकन",
+			"user": "उपयोगकर्ता",
+			"userId": "उपयोगकर्ता आईडी",
+			"start": "प्रारंभ",
+			"end": "समाप्त",
+			"logTimestamp": "लॉग टाइमस्टैम्प",
+			"sessionId": "सेशन आईडी",
+			"requestId": "अनुरोध आईडी",
+			"spanId": "स्पैन आईडी",
+			"request": "अनुरोध",
+			"response": "प्रतिक्रिया"
+		}
+	},
+	"page": {
+		"dashboardTitle": "{{catalogName}} इनसाइट डैशबोर्ड",
+		"export": "निर्यात करें",
+		"exportCsv": "CSV के रूप में निर्यात करें",
+		"exportPdf": "PDF के रूप में निर्यात करें",
+		"refresh": "रीफ़्रेश करें",
+		"selectToFetch": "लॉग प्राप्त करने के लिए कृपया इंजन प्रकार और इंजन चुनें",
+		"selectBeforeExport": "लॉग निर्यात करने से पहले एक इंजन चुनें।",
+		"errorFetching": "लॉग प्राप्त करने में त्रुटि: {{error}}",
+		"errorExporting": "लॉग निर्यात करने में त्रुटि: {{error}}"
+	},
+	"layout": {
+		"appName": "ऑडिट लॉग",
+		"appDescription": "ऑडिट लॉग ऐप"
+	}
+}

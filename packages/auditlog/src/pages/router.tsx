@@ -6,7 +6,7 @@ import { AuditLogPage } from "@/components/audit-log-page";
 // import { AuditLogsDashboard } from "./AuditLogsDashboard";
 import { AuthenticatedLayout } from "./AuthenticatedLayout";
 import { LoginPage } from "./LoginPage";
-import { RootLayout } from "./RootLayout";
+import { RootLayout } from "./root-layout";
 
 export const Router = () => {
 	const { isInitialized } = useInsight();

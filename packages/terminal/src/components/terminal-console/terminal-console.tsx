@@ -64,9 +64,16 @@ interface TerminalConsoleProps {
 	/** When set, fetches app-specific reactors via GetProjectAvailableReactors
 	 *  and merges them with the platform catalog from help(). */
 	projectId?: string;
+	/** Unique id when multiple consoles are mounted (one per terminal tab), so
+	 *  the file editor's "Run" can be routed to the active one. Defaults to a
+	 *  single shared id for the common single-console case. */
+	consoleId?: string;
 }
 
-export const TerminalConsole = ({ projectId }: TerminalConsoleProps) => {
+export const TerminalConsole = ({
+	projectId,
+	consoleId = "default",
+}: TerminalConsoleProps) => {
 	const terminal = useTerminal();
 	const { actions, insightId, isAuthorized } = useInsight();
 	const { theme } = useTheme();
@@ -556,11 +563,11 @@ export const TerminalConsole = ({ projectId }: TerminalConsoleProps) => {
 	// Run button) can pipe their pixel through this transcript — same async
 	// flow with stdout/stderr capture as the in-pane execute().
 	useEffect(() => {
-		terminal.registerSubmitToConsole((pixel, opts) => {
+		terminal.registerSubmitToConsole(consoleId, (pixel, opts) => {
 			runPixelWithLogs(opts.displayInput, pixel, opts.context);
 		});
-		return () => terminal.registerSubmitToConsole(() => {});
-	}, [terminal, runPixelWithLogs]);
+		return () => terminal.registerSubmitToConsole(consoleId, null);
+	}, [terminal, runPixelWithLogs, consoleId]);
 
 	/**
 	 * Hook up Monaco keybindings + the reactor completion provider when the
