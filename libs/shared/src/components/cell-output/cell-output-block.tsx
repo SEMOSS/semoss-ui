@@ -62,8 +62,8 @@ export const CellOutputBlock = ({
 	pending = false,
 	error = false,
 }: CellOutputBlockProps) => {
-	// `common` namespace is part of coreResources (loaded by every
-	// I18nBuilder type), so this works from libs/shared without coupling.
+	// `common` is preloaded by every app's I18nBuilder (it's in each app's
+	// initial `ns`), so this works from libs/shared without coupling.
 	const { t } = useTranslation("common");
 	const [rawOutput, setRawOutput] = useState(false);
 	const [rawLogsMode, setRawLogsMode] = useState(false);

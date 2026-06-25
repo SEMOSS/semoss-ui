@@ -2,7 +2,8 @@
 	"branding": "ターミナル",
 	"tabs": {
 		"files": "ファイル",
-		"terminal": "ターミナル"
+		"terminal": "ターミナル",
+		"newTerminal": "新しいターミナル"
 	},
 	"views": {
 		"inline": "インライン",

@@ -1,4 +1,8 @@
-import { I18nBuilder, I18nextProvider } from "@semoss/i18n";
+import {
+	I18nBuilder,
+	I18nextProvider,
+	playgroundResources,
+} from "@semoss/i18n";
 import { Env, InsightProvider } from "@semoss/sdk/react";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
 import { LandscapeRestriction } from "@/components/common/landscape-restriction";
@@ -11,8 +15,13 @@ Env.update({
 	SECRET_KEY: import.meta.env.SECRET_KEY,
 });
 
-// create a new i18n instance for the playground
-const i18n = new I18nBuilder("playground").i18n;
+// create a new i18n instance for the playground. Languages load lazily (one
+// chunk per language) via the builder's dynamic backend.
+const i18nBuilder = new I18nBuilder(playgroundResources);
+const i18n = i18nBuilder.i18n;
+
+// Awaited by main.tsx before the first render so the active language is present.
+export const i18nReady = i18nBuilder.ready;
 
 export const App = () => {
 	return (
