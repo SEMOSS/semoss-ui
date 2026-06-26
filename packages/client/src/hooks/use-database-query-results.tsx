@@ -110,7 +110,7 @@ export function useQueryResults() {
 
 			return (
 				<div
-					className="h-full w-full overflow-auto p-4 pt-0"
+					className="h-full w-full overflow-auto p-4 pt-0 pb-4"
 					data-testid="query-results-table-container"
 				>
 					<table

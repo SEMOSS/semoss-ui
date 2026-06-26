@@ -4,7 +4,6 @@ import {
 	ChevronDown,
 	ChevronUp,
 	Copy,
-	GanttChartSquare,
 	LockKeyhole,
 	LockKeyholeOpen,
 	Star,
@@ -15,7 +14,7 @@ import {
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Env } from "@semoss/sdk/react";
-import { EngineSubtypeIcon } from "@semoss/shared";
+import { AppCatalogAvatar, EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Avatar,
 	AvatarFallback,
@@ -34,9 +33,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { Folder } from "@/assets/img/Folder";
 import GOOGLE from "@/assets/img/GOOGLE.svg";
-import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
 
 const parseUtcDate = (rawDate?: string) => {
@@ -62,18 +59,6 @@ const parseUtcDate = (rawDate?: string) => {
 	}
 
 	return parsedDate;
-};
-
-const getDashboardPath = (engineType: string | undefined, engineId: string) => {
-	const normalizedType = (engineType || "").trim().toLowerCase();
-	if (!normalizedType) {
-		return `${engineId}/dashboard`;
-	}
-	if (normalizedType === "project" || normalizedType === "app") {
-		return `/app/${engineId}/dashboard`;
-	}
-
-	return `/engine/${normalizedType}/${engineId}/dashboard`;
 };
 
 const isProjectType = (engineType?: string) => {
@@ -103,9 +88,6 @@ interface DatabaseCardProps {
 	/** Subtype for Icon */
 	sub_type?: string;
 
-	/** Force folder icon instead of engine/provider icon */
-	forceFolderIcon?: boolean;
-
 	/** Optional custom leading icon content */
 	customIcon?: ReactNode;
 
@@ -120,8 +102,6 @@ interface DatabaseCardProps {
 	hideFavorite?: boolean;
 
 	isDiscoverable?: boolean;
-
-	showLogs?: boolean;
 
 	enableGlobalAction?: boolean;
 
@@ -155,12 +135,10 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 		isFavorite,
 		hideFavorite = false,
 		isDiscoverable = false,
-		showLogs = true,
 		enableGlobalAction = false,
 		isGlobal,
 		type,
 		sub_type,
-		forceFolderIcon = false,
 		customIcon,
 		desktopInlineMeta = false,
 		date,
@@ -187,8 +165,6 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 				})
 				.replace(",", "")
 		: "N/A";
-
-	const navigate = useNavigate();
 
 	// Observe the row width and collapse tags when there isn't enough space
 	useEffect(() => {
@@ -427,24 +403,6 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 						)}
 					</Button>
 				)}
-				{showLogs && (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								title="View Logs Dashboard"
-								onClick={(e) => {
-									e.stopPropagation();
-									navigate(getDashboardPath(type, id));
-								}}
-							>
-								<GanttChartSquare className="size-4" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>View Logs Dashboard</TooltipContent>
-					</Tooltip>
-				)}
 				{onDelete && (
 					<Tooltip>
 						<TooltipTrigger asChild>
@@ -498,10 +456,11 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 								<div className="flex h-full w-full items-center justify-center">
 									{customIcon}
 								</div>
-							) : forceFolderIcon || isProjectType(type) ? (
-								<div className="[&_svg]:h-8 [&_svg]:w-8">
-									<Folder />
-								</div>
+							) : isProjectType(type) ? (
+								<AppCatalogAvatar
+									name={name || id}
+									className="size-full rounded text-xs"
+								/>
 							) : (
 								<EngineSubtypeIcon
 									engineType={type}

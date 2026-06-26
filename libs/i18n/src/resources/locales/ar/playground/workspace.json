@@ -7,7 +7,8 @@
 		"instructionsLabel": "التعليمات",
 		"knowledgeLabel": "المعرفة",
 		"toolboxLabel": "صناديق الأدوات",
-		"promptsLabel": "مكتبة الموجهات"
+		"promptsLabel": "مكتبة الموجهات",
+		"skillsLabel": "المهارات"
 	},
 	"actions": {
 		"create": "إنشاء",
@@ -113,7 +114,8 @@
 			"knowledge": "المعرفة",
 			"toolbox": "صناديق الأدوات",
 			"prompts": "الموجهات",
-			"members": "الأعضاء"
+			"members": "الأعضاء",
+			"skills": "المهارات"
 		},
 		"about": {
 			"title": "نبذة",
@@ -160,5 +162,8 @@
 		"editTitle": "تعديل التعليمات",
 		"editDescription": "تحديث موجه النظام الذي يوجِّه سلوك هذا الوكيل.",
 		"charCount": "{{count}} حرفًا"
+	},
+	"skills": {
+		"noSkills": "لم تتم إضافة أي مهارات"
 	}
 }

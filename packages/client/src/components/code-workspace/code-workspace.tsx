@@ -1,11 +1,13 @@
 import { observer } from "mobx-react-lite";
+import { useEffect } from "react";
 import { useInsight } from "@semoss/sdk/react";
-import { FlexLayout } from "@semoss/shared";
+import { FileExplorer, FlexLayout } from "@semoss/shared";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
 import { useWorkspace } from "@/hooks";
 import { AppDetailPage } from "@/pages/app/app-detail-page";
-import { TerminalPanel, WorkspaceManager } from "../../components/workspace";
+import { WorkspaceManager } from "../../components/workspace";
+import { WorkspaceTerminal } from "../../components/workspace/panels";
 import type { WorkspaceOptions } from "../../stores";
 import { MCPJsonEditor } from "../shared";
 import { CodeWorkspaceActions } from "./code-workspace-actions";
@@ -40,6 +42,14 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						type: "tab",
 						name: "Settings",
 						component: "settingsPanel",
+						config: {},
+					},
+					{
+						id: "insight-explorer",
+						type: "tab",
+						name: "Insight",
+						component: "insight-explorer",
+						enableClose: false,
 						config: {},
 					},
 				],
@@ -91,6 +101,35 @@ export const CodeWorkspace: React.FC = observer(() => {
 	const { workspace } = useWorkspace();
 	const insight = useInsight();
 
+	// Inject the Insight tab into the left border if it was loaded from a
+	// cached layout that pre-dates this tab. Runs once after the model loads.
+	useEffect(() => {
+		const model = workspace.model;
+		if (!model) return;
+		if (model.getNodeById("insight-explorer")) return; // already there
+
+		// Find the left border via the always-present file-explorer tab
+		const fileExplorerNode = model.getNodeById("file-explorer");
+		const leftBorder = fileExplorerNode?.getParent();
+		if (!leftBorder) return;
+
+		model.doAction(
+			FlexLayout.Actions.addNode(
+				{
+					id: "insight-explorer",
+					type: "tab",
+					name: "Insight",
+					component: "insight-explorer",
+					enableClose: false,
+					config: {},
+				},
+				leftBorder.getId(),
+				FlexLayout.DockLocation.CENTER,
+				-1,
+			),
+		);
+	}, [workspace.model]);
+
 	const FACTORY: React.ComponentProps<typeof WorkspaceManager>["factory"] = (
 		node,
 		layout,
@@ -118,8 +157,15 @@ export const CodeWorkspace: React.FC = observer(() => {
 			return <RendererPanel />;
 		} else if (component === "settingsPanel") {
 			return <AppDetailPage showNav={false} />;
+		} else if (component === "insight-explorer") {
+			return (
+				<FileExplorer
+					mode={{ type: "INSIGHT" }}
+					onItemSelect={() => {}}
+				/>
+			);
 		} else if (component === "terminal") {
-			return <TerminalPanel />;
+			return <WorkspaceTerminal appId={workspace.appId} />;
 		}
 
 		return <>{component}</>;

@@ -1,5 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { FileEditor, FlexLayout } from "@semoss/shared";
+import { MetadataHelpDialog } from "@/components/shared";
+import { MCP } from "@/constants";
 
 interface EngineFileEditorProps {
 	/** Node */
@@ -17,6 +19,10 @@ export const EngineFileEditor: React.FC<EngineFileEditorProps> = observer(
 			fileMode?: "ENGINE" | "INSIGHT";
 			insightId?: string;
 		} = node.getConfig();
+
+		const isDriverFile = MCP.DRIVER_PATHS.some((f) =>
+			config.path.endsWith(f),
+		);
 
 		if (config.fileMode === "INSIGHT" && config.insightId) {
 			return (
@@ -47,6 +53,9 @@ export const EngineFileEditor: React.FC<EngineFileEditorProps> = observer(
 					engine: engine,
 				}}
 				path={config.path}
+				leadingToolbar={
+					isDriverFile ? <MetadataHelpDialog compact /> : undefined
+				}
 				onChange={(_content, isModified) => {
 					const updated = isModified
 						? `${config.name}*`

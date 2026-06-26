@@ -1,0 +1,192 @@
+{
+	"header": {
+		"title": "تطبيق GitHub",
+		"description": "أنشئ وأدر تطبيق GitHub المستخدم لربط التطبيقات بمشاريع GitHub وخطافات الويب."
+	},
+	"list": {
+		"title": "تطبيقات GitHub المُعدّة",
+		"emptyTitle": "لا يوجد تطبيق GitHub مُعدّ بعد",
+		"emptyDescription": "أنشئ تطبيق GitHub لربط تطبيقات SEMOSS بمشاريع GitHub.",
+		"connected": "متصل",
+		"appId": "معرّف التطبيق {{appId}}",
+		"owner": "المالك",
+		"createdOn": "تاريخ الإنشاء",
+		"openInGithub": "فتح في GitHub",
+		"unknownDate": "تاريخ غير معروف"
+	},
+	"buttons": {
+		"create": "إنشاء تطبيق GitHub",
+		"refresh": "تحديث",
+		"cancel": "إلغاء",
+		"creating": "جارٍ إعادة التوجيه...",
+		"remove": "إزالة",
+		"removing": "جارٍ الإزالة..."
+	},
+	"deleteDialog": {
+		"title": "إزالة تطبيق GitHub؟",
+		"description": "إزالة \"{{appName}}\" من هذا المثيل؟ يؤدي ذلك إلى حذف بيانات الاعتماد المخزنة وروابط المشاريع هنا. لا يحذف ذلك التطبيق على GitHub — يجب على المالك إزالته هناك (Settings → Developer settings → GitHub Apps → Advanced).",
+		"openInGithub": "افتح في GitHub للحذف نهائيًا"
+	},
+	"dialog": {
+		"title": "إنشاء تطبيق GitHub",
+		"description": "ابدأ مسار manifest في GitHub لإنشاء تطبيق جديد.",
+		"appNameLabel": "اسم التطبيق",
+		"appNamePlaceholder": "Semoss GitHub App",
+		"createUnderLabel": "الإنشاء تحت",
+		"myAccount": "حسابي",
+		"organization": "مؤسسة",
+		"organizationLabel": "المؤسسة",
+		"organizationPlaceholder": "my-github-org",
+		"visibilityLabel": "الظهور",
+		"public": "عام",
+		"private": "خاص",
+		"visibilityHelp": "يمكن تثبيت التطبيقات العامة على أي حساب أو مؤسسة. أما التطبيقات الخاصة فلا يمكن تثبيتها إلا على الحساب المالك لها."
+	},
+	"status": {
+		"loading": "جارٍ تحميل إعدادات تطبيق GitHub...",
+		"notPermitted": "ليست لديك صلاحية لإدارة إعدادات تطبيق GitHub."
+	},
+	"validation": {
+		"organizationRequired": "المؤسسة مطلوبة."
+	},
+	"toasts": {
+		"loadFailed": "فشل تحميل إعدادات تطبيق GitHub.",
+		"notPermitted": "ليست لديك صلاحية للوصول إلى إعدادات تطبيق GitHub.",
+		"redirecting": "جارٍ إعادة التوجيه إلى GitHub لإنشاء التطبيق...",
+		"createSuccess": "تم إنشاء تطبيق GitHub وإعداده لهذا المثيل.",
+		"createError": "حدث خطأ ما أثناء إنشاء تطبيق GitHub.",
+		"createErrorConversion": "تعذّر إنشاء تطبيق GitHub — فشل التبادل مع GitHub. يرجى المحاولة مرة أخرى.",
+		"createErrorSave": "تم إنشاء تطبيق GitHub على GitHub ولكن تعذّر حفظه هنا. يرجى المحاولة مرة أخرى.",
+		"deleteSuccess": "تمت إزالة تطبيق GitHub من هذا المثيل.",
+		"deleteFailed": "فشلت إزالة تطبيق GitHub."
+	},
+	"projects": {
+		"title": "المشاريع المتصلة",
+		"loading": "جارٍ تحميل المشاريع المتصلة...",
+		"empty": "لا توجد مشاريع متصلة بـ GitHub بعد.",
+		"unknownRepo": "مستودع غير معروف",
+		"lastOpened": "آخر فتح {{date}}",
+		"openTab": "فتح إعدادات التطبيق"
+	},
+	"branchSelect": {
+		"label": "الفرع",
+		"placeholder": "اختر فرعًا",
+		"loading": "جارٍ تحميل الفروع...",
+		"retry": "إعادة المحاولة",
+		"errorFallback": "تعذّر تحميل الفروع من GitHub. أعد المحاولة أو اكتب اسم الفرع."
+	},
+	"project": {
+		"title": "GitHub",
+		"description": "اربط هذا التطبيق بمستودع GitHub لمزامنة الكود وتلقّي تحديثات الدفع.",
+		"syncWarning": "تتم مزامنة عمليات الدفع إلى الفرع المتتبَّع على GitHub تلقائيًا في هذا المشروع، مع استبدال التغييرات المحلية. الفرع المتتبَّع هو المصدر الموثوق.",
+		"loading": "جارٍ تحميل اتصال GitHub...",
+		"connectedRepo": "المستودع المتصل",
+		"changeRepo": "تغيير المستودع",
+		"disconnect": "قطع الاتصال",
+		"connect": "الاتصال بـ GitHub",
+		"checking": "جارٍ التحقق من توفّر GitHub...",
+		"notConnectedTitle": "غير متصل بـ GitHub",
+		"notConnectedDescription": "ثبّت تطبيق GitHub على حسابك أو مؤسستك وامنحه حق الوصول إلى المستودع الذي تريد ربطه.",
+		"unavailableTitle": "لم يتم إعداد GitHub لهذا المثيل",
+		"unavailableDescription": "يجب على المسؤول إعداد تطبيق GitHub الخاص بالمثيل قبل أن تتمكن المشاريع من الاتصال.",
+		"installation": {
+			"valid": "التثبيت نشط",
+			"invalidTitle": "لم يعد تثبيت تطبيق GitHub صالحًا",
+			"invalidDescription": "تمت إزالة تثبيت تطبيق GitHub أو تعليقه لهذا المستودع، لذا توقفت المزامنة. أعد الاتصال لاستعادتها.",
+			"reconnect": "إعادة الاتصال"
+		},
+		"branch": {
+			"label": "الفرع المتتبَّع",
+			"default": "الفرع الافتراضي",
+			"change": "تغيير"
+		},
+		"branchDialog": {
+			"title": "تعيين الفرع المتتبَّع",
+			"description": "تتم مزامنة المشروع فقط عبر عمليات الدفع إلى هذا الفرع. عادةً ما يكون فرعك الافتراضي (مثل main).",
+			"placeholder": "main",
+			"cancel": "إلغاء",
+			"confirm": "حفظ"
+		},
+		"webhooks": {
+			"title": "نشاط خطافات الويب الأخير",
+			"description": "عمليات تسليم خطافات الويب الأخيرة التي أرسلها GitHub لهذا المستودع. يحتفظ GitHub بنافذة زمنية قصيرة حديثة فقط.",
+			"refresh": "تحديث",
+			"loading": "جارٍ تحميل نشاط خطافات الويب...",
+			"empty": "لا توجد عمليات تسليم خطافات ويب حديثة.",
+			"eventLabel": "الحدث:",
+			"redelivery": "إعادة تسليم",
+			"unknownTime": "وقت غير معروف"
+		},
+		"changeDialog": {
+			"title": "تغيير المستودع",
+			"description": "اختر مستودعًا مختلفًا لهذا المشروع من بين المستودعات التي يمكن للتثبيت الوصول إليها.",
+			"confirm": "تغيير المستودع"
+		},
+		"disconnectDialog": {
+			"title": "قطع الاتصال بـ GitHub؟",
+			"description": "يؤدي هذا إلى إلغاء ربط المشروع بمستودعه. ولا يلغي تثبيت تطبيق GitHub من حسابك أو مؤسستك.",
+			"cancel": "إلغاء",
+			"confirm": "قطع الاتصال"
+		},
+		"connectDialog": {
+			"title": "الاتصال بـ GitHub",
+			"description": "اختر تثبيت تطبيق GitHub، ثم اختر المستودع الذي ينبغي أن يتزامن معه هذا المشروع.",
+			"confirm": "ربط المستودع"
+		},
+		"installPicker": {
+			"loading": "جارٍ تحميل تثبيتات GitHub...",
+			"loadFailed": "تعذّر تحميل تثبيتات GitHub.",
+			"retry": "إعادة المحاولة",
+			"selectLabel": "اختر تثبيتًا",
+			"accountTypeOrganization": "مؤسسة",
+			"accountTypeUser": "حساب شخصي",
+			"suspended": "معلّق",
+			"suspendedTooltip": "هذا التثبيت معلّق على GitHub ولا يمكن استخدامه حتى تتم إعادة تفعيله.",
+			"backToInstallations": "التثبيتات",
+			"authTitle": "تفويض GitHub",
+			"authDescription": "فوّض وصولك إلى GitHub لعرض التثبيتات والمستودعات التي يمكنك ربطها.",
+			"authorize": "تفويض GitHub",
+			"installApp": "تثبيت تطبيق GitHub",
+			"installAnother": "التثبيت على حساب آخر",
+			"emptyTitle": "لم يتم العثور على تثبيتات",
+			"emptyDescription": "لم يتم تثبيت تطبيق GitHub على أي من حساباتك بعد. ثبّته لربط مستودع."
+		},
+		"picker": {
+			"searchPlaceholder": "ابحث عن المستودعات...",
+			"loading": "جارٍ تحميل المستودعات...",
+			"noRepos": "لا توجد مستودعات مطابقة.",
+			"manageOnGithub": "لا تجد مستودعك؟ أدِره على GitHub",
+			"branchLabel": "الفرع المراد تتبّعه",
+			"branchHelp": "تتم مزامنة المشروع فقط عبر عمليات الدفع إلى هذا الفرع."
+		},
+		"subdir": {
+			"label": "الدليل الفرعي",
+			"optional": "(اختياري)",
+			"placeholder": "apps/my-app",
+			"help": "اتركه فارغًا لمزامنة المستودع بالكامل. استخدمه في المستودعات الأحادية عندما يكون التطبيق داخل مجلد فرعي.",
+			"display": "الدليل الفرعي",
+			"errorLeadingSlash": "يجب ألا يبدأ المسار بشرطة مائلة.",
+			"errorDotDot": "يجب ألا يحتوي المسار على \"..\"."
+		},
+		"selectRepo": {
+			"title": "اختر مستودعًا",
+			"description": "يمكن للتثبيت الوصول إلى عدة مستودعات. اختر الذي ينبغي أن يستخدمه هذا المشروع.",
+			"confirm": "ربط المستودع",
+			"missingInstallation": "لم يتم توفير أي تثبيت. ابدأ مسار الاتصال من جديد من علامة تبويب GitHub.",
+			"back": "العودة إلى GitHub"
+		},
+		"toasts": {
+			"reposFailed": "فشل تحميل المستودعات.",
+			"connected": "تم ربط المشروع بـ GitHub.",
+			"connectFailed": "فشل ربط المستودع.",
+			"changed": "تم تحديث المستودع المرتبط.",
+			"changeFailed": "فشل تغيير المستودع.",
+			"disconnected": "تم قطع اتصال المشروع بـ GitHub.",
+			"disconnectFailed": "فشل قطع اتصال المشروع.",
+			"deliveriesFailed": "فشل تحميل نشاط خطافات الويب.",
+			"branchUpdated": "تم تحديث الفرع المتتبَّع.",
+			"branchFailed": "فشل تعيين الفرع المتتبَّع.",
+			"needsAuth": "مطلوب تفويض GitHub — جارٍ إرسالك إلى GitHub للتفويض..."
+		}
+	}
+}

@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import {
-	ComputerIcon,
+	Bot,
 	HelpCircle,
 	MapIcon,
 	MessagesSquareIcon,
@@ -450,7 +450,7 @@ export const GlobalNav = observer(() => {
 											to={"/agent"}
 											aria-label={"agent"}
 										>
-											<ComputerIcon />
+											<Bot />
 											{t("nav.agents.label")}
 										</Link>
 									</SidebarMenuButton>
@@ -482,6 +482,7 @@ export const GlobalNav = observer(() => {
 										path={item.path}
 										url={item.url}
 										embed={item.embed}
+										tooltip={item.tooltip}
 									/>
 								),
 							)}
@@ -844,6 +845,7 @@ export const GlobalNav = observer(() => {
 													path={item.path}
 													url={item.url}
 													embed={item.embed}
+													tooltip={item.tooltip} // Just pass it directly!
 												/>
 											),
 										)}
