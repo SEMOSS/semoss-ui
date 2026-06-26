@@ -1,11 +1,12 @@
 {
 	"selector": {
 		"search": "Zoeken",
-		"createKnowledgeSource": "Kennisopslag maken",
+		"createKnowledgeSource": "Kennisopslag aanmaken",
 		"viewDetails": "Details bekijken",
-		"noToolboxesFound": "Geen toolboxes gevonden",
+		"noToolboxesFound": "Geen toolboxen gevonden",
 		"noKnowledgeFound": "Geen kennis gevonden",
-		"noAgentsFound": "Geen agents gevonden"
+		"noAgentsFound": "Geen agenten gevonden",
+		"noSkillsFound": "Geen vaardigheden gevonden"
 	},
 	"permission": {
 		"owner": "Eigenaar",

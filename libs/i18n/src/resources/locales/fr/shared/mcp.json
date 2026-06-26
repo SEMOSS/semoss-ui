@@ -5,7 +5,8 @@
 		"viewDetails": "View Details",
 		"noToolboxesFound": "No toolboxes found",
 		"noKnowledgeFound": "No knowledge found",
-		"noAgentsFound": "No agents found"
+		"noAgentsFound": "No agents found",
+		"noSkillsFound": "Aucune compétence trouvée"
 	},
 	"permission": {
 		"owner": "Owner",
