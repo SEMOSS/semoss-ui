@@ -19,13 +19,21 @@ import {
 } from "@semoss/ui/next";
 import type { RecordedAction } from "../../recorder/types";
 import { AuthService, type Project } from "../../services/authService";
+import {
+	type DeleteImpact,
+	DependencyAnalyzer,
+} from "../../services/dependencyAnalyzer";
 import { useRecordingState } from "../../services/recordingStateManager";
+import { DeleteConfirmationDialog } from "./DeleteConfirmationDialog";
 
 interface SaveRecordingResponse {
 	success?: boolean;
 	fileName?: string;
 	message?: string;
 }
+
+// SEMOSS endpoint for API calls (uses OAuth session)
+const SEMOSS_ENDPOINT = "http://localhost:9090/Monolith";
 
 export const RecordingPanel: FC = () => {
 	const {
@@ -36,10 +44,13 @@ export const RecordingPanel: FC = () => {
 		pauseRecording,
 		resumeRecording,
 		clearRecording,
+		updateAction,
+		deleteAction,
 	} = useRecordingState();
 	const loadingScreen = useLoadingScreen();
 	const [scriptName, setScriptName] = useState("");
 	const [isAuthenticated, setIsAuthenticated] = useState(false);
+	const [isLoggingIn, setIsLoggingIn] = useState(false);
 	const [selectedProject, setSelectedProject] = useState<string | null>(null);
 	const [projects, setProjects] = useState<Project[]>([]);
 	const [showNewProjectInput, setShowNewProjectInput] = useState(false);
@@ -49,31 +60,33 @@ export const RecordingPanel: FC = () => {
 	const scriptNameId = useId();
 	const projectSelectId = useId();
 
-	// Function to refresh project list
-	const refreshProjects = useCallback(async () => {
-		const authenticated = await AuthService.isAuthenticated();
-		if (authenticated) {
-			try {
-				const projectsList = await AuthService.getUpdatedProjects();
-				const editableProjects = projectsList.filter((p) => p.canEdit);
-				setProjects(editableProjects);
-			} catch (error) {
-				console.error("Failed to refresh projects:", error);
-			}
-		}
-	}, []);
-
 	// Check authentication status on mount and when storage changes
 	useEffect(() => {
 		const checkAuth = async () => {
 			const authenticated = await AuthService.isAuthenticated();
 			setIsAuthenticated(authenticated);
 
-			// Load projects if authenticated
+			// Load projects if authenticated - fetch fresh from SEMOSS
 			if (authenticated) {
-				const projectsList = await AuthService.getProjects();
-				const editableProjects = projectsList.filter((p) => p.canEdit);
-				setProjects(editableProjects);
+				try {
+					const projectsList =
+						await AuthService.fetchProjectsFromSemoss();
+					const editableProjects = projectsList.filter(
+						(p) => p.canEdit,
+					);
+					setProjects(editableProjects);
+					console.log(
+						`Loaded ${editableProjects.length} editable projects from SEMOSS`,
+					);
+				} catch (error) {
+					console.error("Failed to fetch projects on mount:", error);
+					// Fallback to storage if fetch fails
+					const projectsList = await AuthService.getProjects();
+					const editableProjects = projectsList.filter(
+						(p) => p.canEdit,
+					);
+					setProjects(editableProjects);
+				}
 			} else {
 				setProjects([]);
 			}
@@ -81,45 +94,42 @@ export const RecordingPanel: FC = () => {
 
 		// Initial check
 		checkAuth();
+	}, []);
 
-		// Listen for storage changes (when user saves credentials in Settings)
-		const handleStorageChange = (
-			changes: { [key: string]: chrome.storage.StorageChange },
-			areaName: string,
-		) => {
-			if (
-				areaName === "local" &&
-				(changes.isAuthenticated ||
-					changes.selectedProject ||
-					changes.projects)
-			) {
-				checkAuth();
+	const handleGoogleLogin = async () => {
+		try {
+			setIsLoggingIn(true);
+			const success = await AuthService.loginWithOAuth("google");
+			if (success) {
+				setIsAuthenticated(true);
+
+				// Fetch projects from SEMOSS
+				try {
+					const projectsList =
+						await AuthService.fetchProjectsFromSemoss();
+					const editableProjects = projectsList.filter(
+						(p) => p.canEdit,
+					);
+					setProjects(editableProjects);
+					toast.success("Signed in with Google - Projects loaded", {
+						duration: 3000,
+					});
+				} catch (error) {
+					console.error("Failed to fetch projects:", error);
+					toast.success("Signed in with Google", { duration: 3000 });
+					toast.error("Could not load projects. Please refresh.", {
+						duration: 3000,
+					});
+				}
 			}
-		};
-
-		// Listen for visibility changes to refresh projects when panel becomes visible
-		const handleVisibilityChange = () => {
-			if (!document.hidden && isAuthenticated) {
-				refreshProjects();
-			}
-		};
-
-		chrome.storage.onChanged.addListener(handleStorageChange);
-		document.addEventListener("visibilitychange", handleVisibilityChange);
-
-		// Cleanup listeners on unmount
-		return () => {
-			chrome.storage.onChanged.removeListener(handleStorageChange);
-			document.removeEventListener(
-				"visibilitychange",
-				handleVisibilityChange,
+		} catch (error) {
+			toast.error(
+				`Sign-in failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+				{ duration: 3000 },
 			);
-		};
-	}, [isAuthenticated, refreshProjects]);
-
-	const handleSettings = () => {
-		// Open the extension options page
-		chrome.runtime.openOptionsPage();
+		} finally {
+			setIsLoggingIn(false);
+		}
 	};
 
 	const handleProjectChange = async (newProjectId: string) => {
@@ -182,16 +192,13 @@ export const RecordingPanel: FC = () => {
 			await AuthService.addPlaywrightTags(newProjectId);
 			console.log("Tags added successfully");
 
-			toast.info("Tags added! Refreshing project list...", {
+			toast.info("Tags added! Project created successfully.", {
 				duration: 3000,
 			});
 
-			// Step 4: Get updated project list
-			const updatedProjects = await AuthService.getUpdatedProjects();
-			console.log("Updated projects:", updatedProjects);
-
-			// Update projects list with only editable projects
-			const editableProjects = updatedProjects.filter((p) => p.canEdit);
+			// Step 4: Fetch fresh project list from SEMOSS
+			const projectsList = await AuthService.fetchProjectsFromSemoss();
+			const editableProjects = projectsList.filter((p) => p.canEdit);
 			setProjects(editableProjects);
 
 			// Step 5: Save the new project as selected
@@ -257,20 +264,9 @@ export const RecordingPanel: FC = () => {
 		try {
 			// Check if authenticated
 			if (!isAuthenticated || !selectedProject) {
-				toast.error(
-					"Please configure Semoss credentials (Click ⚙️ Settings icon)",
-					{ duration: 3000 },
-				);
-				return;
-			}
-
-			// Get stored credentials
-			const credentials = await AuthService.getCredentials();
-			if (!credentials) {
-				toast.error(
-					"Authentication credentials not found. Please reconfigure in settings.",
-					{ duration: 3000 },
-				);
+				toast.error("Please sign in with Google first", {
+					duration: 3000,
+				});
 				return;
 			}
 
@@ -298,22 +294,23 @@ export const RecordingPanel: FC = () => {
 			// Format JSON with proper indentation (4 spaces to match Playwright unified format)
 			const jsonString = JSON.stringify(playwrightJson, replacer, 4);
 
-			// Build Semoss pixel expression
+			// Build Semoss pixel expression (no credentials needed - uses OAuth session)
 			const escapedJson = jsonString
 				.replace(/"/g, '\\"')
 				.replace(/\n/g, "\\n");
-			const expression = `SaveRecordingFromExtension(project=["${selectedProject}"], name=["${name}"], jsonPayload=["${escapedJson}"], clientKey=["${credentials.clientKey}"], secretKey=["${credentials.secretKey}"]);`;
+			const expression = `SaveRecordingFromExtension(project=["${selectedProject}"], name=["${name}"], jsonPayload=["${escapedJson}"]);`;
 
 			console.log("[RecordingPanel] Saving recording to Semoss...");
 
-			// Send to Semoss
+			// Send to Semoss (uses OAuth session cookie)
 			const response = await fetch(
-				`${credentials.endpointUrl}/api/engine/runPixel`,
+				`${SEMOSS_ENDPOINT}/api/engine/runPixel`,
 				{
 					method: "POST",
 					headers: {
 						"Content-Type": "application/x-www-form-urlencoded",
 					},
+					credentials: "include", // Send OAuth session cookie
 					body: new URLSearchParams({
 						expression: expression,
 					}),
@@ -428,40 +425,55 @@ export const RecordingPanel: FC = () => {
 				"bg-gradient-to-b from-[#f8fafc] to-[#f1f5f9]",
 			)}
 		>
-			{/* Header with Settings */}
-			<div className={cn("flex items-center justify-between")}>
-				<H4 className="font-bold text-[#1e293b] text-[18px]">
-					🎬 Recording Panel
-				</H4>
-				<Button
-					onClick={handleSettings}
-					variant="ghost"
-					size="sm"
-					className="size-9 min-w-9 rounded-full text-slate-500 text-xl transition-all hover:rotate-90 hover:bg-blue-600/8 hover:text-blue-600"
-					title="Settings"
-				>
-					⚙️
-				</Button>
-			</div>
+			{/* Header */}
+			<H4 className="font-bold text-[#1e293b] text-[18px]">
+				🎬 Recording Panel
+			</H4>
 
 			{/* Authentication Status Banner */}
 			{!isAuthenticated && (
-				<Card className="mb-6 w-full flex-shrink-0 rounded-xl border-l-4 border-l-[#ffc107] bg-[#fff3cd] p-5 shadow-none">
-					<div className="flex w-full flex-col gap-3">
-						<P className="font-semibold text-[#856404]">
-							⚠️ Authentication Required
+				<Card className="mb-6 w-full flex-shrink-0 rounded-xl border border-slate-200 bg-white p-6 shadow-none">
+					<div className="flex w-full flex-col items-center gap-4 text-center">
+						<P className="font-semibold text-[#1e293b]">
+							Sign in to save recordings
 						</P>
-						<Small className="text-[#856404]">
-							Please configure your Semoss credentials to save
-							recordings.
+						<Small className="text-slate-500">
+							Sign in with your Google account to save recordings
+							to Semoss.
 						</Small>
 						<Button
 							variant="outline"
-							size="sm"
-							onClick={handleSettings}
-							className="mt-1 self-start rounded-lg border-2 border-amber-500 bg-white px-4 py-2 font-semibold text-amber-700 text-sm hover:bg-amber-50"
+							onClick={handleGoogleLogin}
+							disabled={isLoggingIn}
+							className="mt-1 flex w-full items-center justify-center gap-3 rounded-lg border border-slate-300 bg-white px-4 py-6 font-semibold text-slate-700 text-sm hover:bg-slate-50"
 						>
-							⚙️ Open Settings
+							<svg
+								aria-hidden="true"
+								width="18"
+								height="18"
+								viewBox="0 0 18 18"
+								xmlns="http://www.w3.org/2000/svg"
+							>
+								<path
+									fill="#4285F4"
+									d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"
+								/>
+								<path
+									fill="#34A853"
+									d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.583-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"
+								/>
+								<path
+									fill="#FBBC05"
+									d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"
+								/>
+								<path
+									fill="#EA4335"
+									d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"
+								/>
+							</svg>
+							{isLoggingIn
+								? "Signing in…"
+								: "Sign in with Google"}
 						</Button>
 					</div>
 				</Card>
@@ -503,60 +515,57 @@ export const RecordingPanel: FC = () => {
 			{/* Recorded Actions Card */}
 			<Card
 				className={cn(
-					"mb-6 flex min-h-fit flex-shrink-0 flex-col overflow-hidden rounded-xl border border-black/[0.06] shadow-sm transition-all duration-300",
+					"mb-6 flex-shrink-0 rounded-xl border border-slate-200 bg-white shadow-sm",
 				)}
 			>
-				<div
-					className={cn(
-						"flex items-center justify-between border-black/[0.06] border-b bg-gradient-to-b from-[#f8fafc] to-[#f1f5f9] p-4",
-					)}
-				>
-					<P className="font-semibold text-[15px]">
-						📋 Recorded Actions
-						{state.actionsList.length > 0 && (
-							<Muted className="ml-2 text-[14px]">
-								({state.actionsList.length})
-							</Muted>
-						)}
-					</P>
-					{state.actionsList.length > 0 && (
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={handleClear}
-							className="min-w-fit rounded-lg px-4 py-2 font-semibold text-red-500 text-sm hover:bg-red-50"
-						>
-							🗑️ Clear
-						</Button>
-					)}
-				</div>
-
-				<div className={cn("p-4")}>
-					{state.actionsList.length === 0 ? (
-						<div
-							className={cn(
-								"py-4 text-center text-muted-foreground",
+				<div className="flex flex-col gap-5 p-5">
+					{/* Header */}
+					<div className="flex items-center justify-between border-slate-200 border-b pb-5">
+						<P className="font-semibold text-[15px] text-slate-900">
+							📋 Recorded Actions
+							{state.actionsList.length > 0 && (
+								<Muted className="ml-2 text-[14px]">
+									({state.actionsList.length})
+								</Muted>
 							)}
-						>
-							<div className={cn("mb-2 text-[48px] opacity-60")}>
+						</P>
+						{state.actionsList.length > 0 && (
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={handleClear}
+								className="min-w-fit rounded-lg px-4 py-2 font-semibold text-red-500 text-sm hover:bg-red-50"
+							>
+								🗑️ Clear
+							</Button>
+						)}
+					</div>
+
+					{/* Content */}
+					{state.actionsList.length === 0 ? (
+						<div className="py-4 text-center text-muted-foreground">
+							<div className={cn("mb-3 text-[52px] opacity-50")}>
 								📝
 							</div>
-							<P className="mb-2 font-semibold text-[#374151] text-[15px]">
+							<P className="mb-2 font-semibold text-base text-slate-700">
 								No actions recorded yet
 							</P>
-							<Small className="text-[#6b7280] text-[13px]">
+							<Small className="text-slate-500 text-sm">
 								{state.isRecording
 									? "Interact with the page to start recording actions"
 									: 'Click "Start Recording" to begin'}
 							</Small>
 						</div>
 					) : (
-						<div className="flex flex-col gap-2">
+						<div className="-mx-5 flex max-h-[500px] flex-col gap-5 overflow-y-auto px-5">
 							{state.actionsList.map((action, index) => (
 								<ActionCard
 									key={`${action.timestamp}-${index}`}
 									action={action}
 									index={index}
+									allActions={state.actionsList}
+									onUpdate={updateAction}
+									onDelete={deleteAction}
 								/>
 							))}
 						</div>
@@ -621,7 +630,7 @@ export const RecordingPanel: FC = () => {
 							<option value="" disabled>
 								-- Select a project --
 							</option>
-							{isAuthenticated && projects.length > 0 && (
+							{isAuthenticated && (
 								<>
 									<option
 										value="__NEW_PROJECT__"
@@ -751,9 +760,23 @@ export const RecordingPanel: FC = () => {
 interface ActionCardProps {
 	action: RecordedAction;
 	index: number;
+	allActions: RecordedAction[];
+	onUpdate: (index: number, action: RecordedAction) => Promise<void>;
+	onDelete: (index: number) => Promise<void>;
 }
 
-const ActionCard: FC<ActionCardProps> = ({ action, index }) => {
+const ActionCard: FC<ActionCardProps> = ({
+	action,
+	index,
+	allActions,
+	onUpdate,
+	onDelete,
+}) => {
+	const [isEditing, setIsEditing] = useState(false);
+	const [editedAction, setEditedAction] = useState(action);
+	const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+	const [deleteImpact, setDeleteImpact] = useState<DeleteImpact | null>(null);
+
 	const getActionIcon = (type: string) => {
 		switch (type) {
 			case "CLICK":
@@ -776,49 +799,221 @@ const ActionCard: FC<ActionCardProps> = ({ action, index }) => {
 
 	const formatSelector = (selectors?: string[]) => {
 		if (!selectors || selectors.length === 0) return "No selector";
-		return selectors[0].length > 60
-			? `${selectors[0].substring(0, 60)}...`
+		return selectors[0].length > 80
+			? `${selectors[0].substring(0, 80)}...`
 			: selectors[0];
+	};
+
+	const handleSave = async () => {
+		try {
+			await onUpdate(index, editedAction);
+			setIsEditing(false);
+		} catch (error) {
+			console.error("Failed to update action:", error);
+			toast.error("Failed to update action");
+		}
+	};
+
+	const handleCancel = () => {
+		setEditedAction(action);
+		setIsEditing(false);
+	};
+
+	const handleDelete = async () => {
+		try {
+			// Analyze dependencies before deletion
+			const impact = DependencyAnalyzer.getDeleteImpact(
+				allActions,
+				index,
+			);
+
+			// If there are dependencies, show confirmation dialog
+			if (impact.hasImpact) {
+				setDeleteImpact(impact);
+				setShowDeleteConfirmation(true);
+			} else {
+				// No dependencies, delete immediately
+				await onDelete(index);
+			}
+		} catch (error) {
+			console.error("Failed to delete action:", error);
+			toast.error("Failed to delete action");
+		}
+	};
+
+	const handleConfirmDelete = async () => {
+		try {
+			await onDelete(index);
+			setShowDeleteConfirmation(false);
+			setDeleteImpact(null);
+		} catch (error) {
+			console.error("Failed to delete action:", error);
+			toast.error("Failed to delete action");
+		}
+	};
+
+	const handleCancelDelete = () => {
+		setShowDeleteConfirmation(false);
+		setDeleteImpact(null);
 	};
 
 	return (
 		<div
 			className={cn(
-				"rounded-lg border border-black/[0.08] p-[7px]",
-				"bg-gradient-to-b from-white to-[#fafafa]",
-				"text-[13px] transition-all duration-200 ease-in-out",
-				"hover:translate-x-1 hover:border-[#2563eb] hover:shadow-[0_2px_8px_rgba(37,99,235,0.12)]",
+				"rounded-lg border border-slate-200 p-5",
+				"bg-white",
+				"transition-all duration-150 ease-in-out",
+				isEditing
+					? "border-blue-300 shadow-md"
+					: "hover:border-slate-300 hover:shadow-sm",
 			)}
 		>
-			<div className={cn("mb-[3px] flex items-center gap-1")}>
-				<Muted className="rounded bg-[rgba(37,99,235,0.1)] px-1.5 py-0.5 font-bold text-[#2563eb] text-[11px]">
-					#{index + 1}
-				</Muted>
-				<span>{getActionIcon(action.type)}</span>
-				<Muted className="font-semibold text-[#1f2937] text-[13px]">
+			{/* Header with Action Type and Edit/Delete Buttons */}
+			<div className="mb-4 flex items-center gap-2.5">
+				<span className="text-lg">{getActionIcon(action.type)}</span>
+				<span className="font-semibold text-slate-900 text-sm">
 					{action.type}
-				</Muted>
+				</span>
+				<span className="ml-auto font-medium text-slate-400 text-xs">
+					#{index + 1}
+				</span>
+				{!isEditing ? (
+					<div className="ml-2 flex items-center gap-1.5">
+						{action.type === "TYPE" && (
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => setIsEditing(true)}
+								className="min-w-fit rounded-lg px-2.5 py-1.5 text-blue-600 text-xs transition-all duration-200 hover:bg-blue-50 hover:text-blue-700 hover:shadow-sm active:scale-95"
+								title="Edit action"
+							>
+								<span className="text-sm">✏️</span>
+							</Button>
+						)}
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={handleDelete}
+							className="min-w-fit rounded-lg px-2.5 py-1.5 text-red-500 text-xs transition-all duration-200 hover:bg-red-50 hover:text-red-600 hover:shadow-sm active:scale-95"
+							title="Delete action"
+						>
+							<span className="text-sm">🗑️</span>
+						</Button>
+					</div>
+				) : (
+					<div className="mt-4 ml-2 flex items-center gap-2">
+						<Button
+							variant="default"
+							size="sm"
+							onClick={handleSave}
+							className="w-20 rounded-md bg-green-600 px-3 py-1 text-white text-xs hover:bg-green-700"
+						>
+							Save
+						</Button>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={handleCancel}
+							className="w-20 rounded-md border border-slate-300 bg-white px-3 py-1 text-slate-700 text-xs hover:bg-slate-50"
+						>
+							Cancel
+						</Button>
+					</div>
+				)}
 			</div>
 
+			{/* Selector Section */}
 			{action.selector && action.selector.length > 0 && (
-				<Muted className="block rounded bg-[#f9fafb] px-2 py-1 font-mono text-[#6b7280] text-[12px]">
-					{formatSelector(action.selector)}
-				</Muted>
+				<div className="mb-3">
+					<div className="mb-2 font-medium text-slate-500 text-xs">
+						Selector
+					</div>
+					<div
+						className={cn(
+							"rounded-md px-3 py-2",
+							"border border-slate-100 bg-slate-50",
+							"font-mono text-slate-700 text-xs",
+							"overflow-hidden text-ellipsis whitespace-nowrap",
+						)}
+						title={action.selector[0]}
+					>
+						{formatSelector(action.selector)}
+					</div>
+				</div>
 			)}
 
-			{action.text && (
-				<Muted className="mt-1 block font-medium text-[#2563eb]">
-					Value:{" "}
-					{action.text.length > 50
-						? `${action.text.substring(0, 50)}...`
-						: action.text}
-				</Muted>
+			{/* Value/Text Section */}
+			{(action.text || isEditing) && (
+				<div className="mb-3">
+					<div className="mb-2 font-medium text-slate-500 text-xs">
+						Value
+					</div>
+					{isEditing ? (
+						<input
+							type="text"
+							value={editedAction.text || ""}
+							onChange={(e) =>
+								setEditedAction({
+									...editedAction,
+									text: e.target.value,
+								})
+							}
+							className="w-full rounded-md border border-blue-200 bg-white px-3 py-2 text-slate-700 text-xs focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+							placeholder="Text value"
+						/>
+					) : (
+						<div
+							className={cn(
+								"rounded-md px-3 py-2",
+								"border border-slate-100 bg-slate-50",
+								"text-slate-700 text-xs",
+								"overflow-hidden text-ellipsis whitespace-nowrap",
+							)}
+							title={action.text}
+						>
+							{action.text}
+						</div>
+					)}
+				</div>
 			)}
 
+			{/* URL Section */}
 			{action.url && (
-				<Muted className="mt-1 block font-medium text-[#2563eb]">
-					URL: {action.url}
-				</Muted>
+				<div className="mb-3">
+					<div className="mb-2 font-medium text-slate-500 text-xs">
+						URL
+					</div>
+					<div
+						className={cn(
+							"rounded-md px-3 py-2",
+							"border border-slate-100 bg-slate-50",
+							"text-slate-700 text-xs",
+							"overflow-hidden text-ellipsis whitespace-nowrap",
+						)}
+						title={action.url}
+					>
+						{action.url}
+					</div>
+				</div>
+			)}
+
+			{/* Scroll Delta (for SCROLL actions) */}
+			{action.deltaY !== undefined && (
+				<div className="mt-3 border-slate-100 border-t pt-3 text-slate-500 text-xs">
+					Scroll: {action.deltaY}px
+				</div>
+			)}
+
+			{/* Delete Confirmation Dialog */}
+			{deleteImpact && (
+				<DeleteConfirmationDialog
+					isOpen={showDeleteConfirmation}
+					onClose={handleCancelDelete}
+					onConfirm={handleConfirmDelete}
+					impact={deleteImpact}
+					stepIndex={index}
+					actionType={action.type}
+				/>
 			)}
 		</div>
 	);

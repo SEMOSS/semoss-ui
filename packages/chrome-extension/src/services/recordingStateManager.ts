@@ -27,58 +27,27 @@ export function useRecordingState() {
 
 	const loadState = useCallback(async () => {
 		try {
-			const data = await chrome.storage.local.get([
-				"isRecording",
-				"isPaused",
-				"isStopped",
-				"actionsList",
-				"actionCounter",
-				"startedAt",
-				"currentTabId",
-			]);
+			// Always clear state when panel opens to ensure fresh start
+			console.log(
+				"[RecordingStateManager] Clearing all state on panel open",
+			);
+			await chrome.storage.local.set({
+				isRecording: false,
+				isPaused: false,
+				isStopped: false,
+				actionsList: [],
+				actionCounter: 0,
+				startedAt: undefined,
+				currentTabId: undefined,
+			});
 
-			// If recording is stopped or not started, clear it on panel open
-			const isRecording = data.isRecording || false;
-			const isPaused = data.isPaused || false;
-			const isStopped = data.isStopped || false;
-
-			// Clear stopped recordings automatically when panel opens
-			if (
-				isStopped ||
-				(!isRecording && !isPaused && data.actionsList?.length > 0)
-			) {
-				console.log(
-					"[RecordingStateManager] Clearing stopped recording on panel open",
-				);
-				await chrome.storage.local.set({
-					isRecording: false,
-					isPaused: false,
-					isStopped: false,
-					actionsList: [],
-					actionCounter: 0,
-					startedAt: undefined,
-					currentTabId: undefined,
-				});
-
-				setState({
-					isRecording: false,
-					isPaused: false,
-					isStopped: false,
-					actionsList: [],
-					actionCounter: 0,
-				});
-			} else {
-				// Load active or paused recording
-				setState({
-					isRecording,
-					isPaused,
-					isStopped,
-					actionsList: data.actionsList || [],
-					actionCounter: data.actionCounter || 0,
-					startedAt: data.startedAt,
-					currentTabId: data.currentTabId,
-				});
-			}
+			setState({
+				isRecording: false,
+				isPaused: false,
+				isStopped: false,
+				actionsList: [],
+				actionCounter: 0,
+			});
 		} catch (error) {
 			console.error(
 				"[RecordingStateManager] Failed to load state:",
@@ -207,6 +176,55 @@ export function useRecordingState() {
 		}
 	}, []);
 
+	const updateAction = useCallback(
+		async (index: number, updatedAction: RecordedAction) => {
+			try {
+				const data = await chrome.storage.local.get(["actionsList"]);
+				const actionsList = data.actionsList || [];
+
+				if (index >= 0 && index < actionsList.length) {
+					actionsList[index] = updatedAction;
+					await chrome.storage.local.set({ actionsList });
+
+					setState((prev) => ({
+						...prev,
+						actionsList,
+					}));
+				}
+			} catch (error) {
+				console.error(
+					"[RecordingStateManager] Failed to update action:",
+					error,
+				);
+				throw error;
+			}
+		},
+		[],
+	);
+
+	const deleteAction = useCallback(async (index: number) => {
+		try {
+			const data = await chrome.storage.local.get(["actionsList"]);
+			const actionsList = data.actionsList || [];
+
+			if (index >= 0 && index < actionsList.length) {
+				actionsList.splice(index, 1);
+				await chrome.storage.local.set({ actionsList });
+
+				setState((prev) => ({
+					...prev,
+					actionsList,
+				}));
+			}
+		} catch (error) {
+			console.error(
+				"[RecordingStateManager] Failed to delete action:",
+				error,
+			);
+			throw error;
+		}
+	}, []);
+
 	return {
 		state,
 		isLoading,
@@ -215,6 +233,8 @@ export function useRecordingState() {
 		pauseRecording,
 		resumeRecording,
 		clearRecording,
+		updateAction,
+		deleteAction,
 	};
 }
 

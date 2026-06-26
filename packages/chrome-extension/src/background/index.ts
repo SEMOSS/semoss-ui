@@ -236,7 +236,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		console.log("[BACKGROUND] Pixel command length:", pixelCommand.length);
 		console.log(
 			"[BACKGROUND] Pixel preview:",
-			pixelCommand.substring(0, 200) + "...",
+			`${pixelCommand.substring(0, 200)}...`,
 		);
 
 		// Try multiple possible Semoss URLs (base URLs + constant endpoint)
@@ -325,15 +325,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 						!!data?.pixelReturn,
 					);
 
-					if (
-						data &&
-						data.pixelReturn &&
-						data.pixelReturn.length > 0
-					) {
+					if (data?.pixelReturn && data.pixelReturn.length > 0) {
 						const result = data.pixelReturn[0];
 						console.log("[BACKGROUND] First result:", result);
 
-						if (result && result.output) {
+						if (result?.output) {
 							console.log("[BACKGROUND] Output:", result.output);
 							success = result.output.success || false;
 							fileName = result.output.fileName;
@@ -1548,6 +1544,7 @@ async function _handleStopRecording(): Promise<void> {
 	lastInputClickCoords.clear();
 
 	recordingState.isRecording = false;
+	recordingState.isPaused = false;
 	recordingState.isStopped = true;
 	initialRecordingUrls.clear(); // Clear initial URLs
 	lastRecordedNavigationUrl = null; // Clear last navigation URL
