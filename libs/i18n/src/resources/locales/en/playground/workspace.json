@@ -78,10 +78,7 @@
 		"pin": "Favorite",
 		"unpin": "Unfavorite",
 		"pinFailed": "Failed to favorite chat",
-		"unpinFailed": "Failed to unfavorite chat",
-		"dayToday": "Today",
-		"dayYesterday": "Yesterday",
-		"daysAgo": "{{count}} days ago"
+		"unpinFailed": "Failed to unfavorite chat"
 	},
 	"images": {
 		"agentIllustration": "Agent illustration"
