@@ -1,4 +1,13 @@
-import { Pencil, Plus, Search, Trash2, UserPlus, Users, X } from "lucide-react";
+import {
+	Info,
+	Pencil,
+	Plus,
+	Search,
+	Trash2,
+	UserPlus,
+	Users,
+	X,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useId, useRef, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
@@ -108,6 +117,8 @@ export const AppProfiles = observer(
 		const { monolithStore } = useRootStore();
 		const uid = useId();
 		const canWrite = permission !== "readOnly";
+		const isAuthor = permission === "author";
+		const isManager = canWrite && !isAuthor;
 
 		// Data
 		const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -229,7 +240,7 @@ export const AppProfiles = observer(
 		// biome-ignore lint/correctness/useExhaustiveDependencies: loaders defined in component scope
 		useEffect(() => {
 			loadProfiles();
-			loadProfileManagers();
+			if (isAuthor) loadProfileManagers();
 		}, [appId]);
 
 		// biome-ignore lint/correctness/useExhaustiveDependencies: loaders defined in component scope
@@ -670,7 +681,7 @@ export const AppProfiles = observer(
 						</p>
 					</div>
 					<div className="flex shrink-0 items-center gap-2">
-						{canWrite && (
+						{isAuthor && (
 							<Button
 								size="sm"
 								variant="ghost"
@@ -695,6 +706,23 @@ export const AppProfiles = observer(
 						)}
 					</div>
 				</div>
+
+				{/* Manager access banner */}
+				{isManager && (
+					<div className="flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-blue-800 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
+						<Info className="mt-0.5 size-4 shrink-0" />
+						<div className="flex flex-col gap-0.5">
+							<span className="font-medium text-sm">
+								Profile Manager Access
+							</span>
+							<span className="text-xs opacity-80">
+								You can manage profiles, features, subgroups,
+								and member assignments. Contact the app owner to
+								add or remove other profile managers.
+							</span>
+						</div>
+					</div>
+				)}
 
 				{/* Master-detail */}
 				{profiles.length === 0 ? (
@@ -1802,9 +1830,9 @@ export const AppProfiles = observer(
 								<div>
 									<DialogTitle>Profile Managers</DialogTitle>
 									<p className="mt-1 text-muted-foreground text-xs">
-										Managers can view profiles and assign
-										users, but cannot create profiles,
-										features, or subgroups.
+										Managers can manage profiles, features,
+										subgroups, and member assignments, but
+										cannot add or remove other managers.
 									</p>
 								</div>
 								<Button
