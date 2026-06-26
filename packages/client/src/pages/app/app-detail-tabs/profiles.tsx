@@ -116,9 +116,18 @@ export const AppProfiles = observer(
 	({ appId, permission }: AppProfilesProps) => {
 		const { monolithStore } = useRootStore();
 		const uid = useId();
-		const canWrite = permission !== "readOnly";
-		const isAuthor = permission === "author";
-		const isManager = canWrite && !isAuthor;
+		// Authors and editors both pass canManageProfiles on the backend —
+		// they can grant/revoke managers and list the manager table.
+		const canManageManagers =
+			permission === "author" || permission === "editor";
+		// readOnly users who were granted via AddAppProfileManager are detected
+		// via a silent probe (see useEffect below); this flag is set when it succeeds.
+		const [readOnlyManagerConfirmed, setReadOnlyManagerConfirmed] =
+			useState(false);
+		const canWrite = canManageManagers || readOnlyManagerConfirmed;
+		// isManager drives the "Profile Manager Access" banner: only for explicitly
+		// granted non-owner managers (i.e., the probe succeeded).
+		const isManager = readOnlyManagerConfirmed;
 
 		// Data
 		const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -239,9 +248,34 @@ export const AppProfiles = observer(
 
 		// biome-ignore lint/correctness/useExhaustiveDependencies: loaders defined in component scope
 		useEffect(() => {
-			loadProfiles();
-			if (isAuthor) loadProfileManagers();
-		}, [appId]);
+			// Reset readOnly manager probe whenever the app or permission changes.
+			setReadOnlyManagerConfirmed(false);
+			// Wait for the async permission fetch (layout sets it from "" to the real value).
+			if (!permission) return;
+			if (permission === "author" || permission === "editor") {
+				loadProfiles();
+			} else {
+				// GetAppProfiles requires canAssignProfiles — probe silently. If it
+				// succeeds the user is a profile manager despite their lower app
+				// permission level; if it fails they're a regular viewer.
+				runPixel<Profile[]>(
+					`GetAppProfiles(app="${appId}");`,
+					true,
+				).then((result) => {
+					if (result !== null) {
+						setProfiles(result);
+						setReadOnlyManagerConfirmed(true);
+					}
+				});
+			}
+		}, [appId, permission]);
+
+		// biome-ignore lint/correctness/useExhaustiveDependencies: loaders defined in component scope
+		useEffect(() => {
+			// Refresh managers list every time the dialog opens so it's always current,
+			// even if the async permission fetch hadn't resolved at mount time.
+			if (showManagersDialog) loadProfileManagers();
+		}, [showManagersDialog]);
 
 		// biome-ignore lint/correctness/useExhaustiveDependencies: loaders defined in component scope
 		useEffect(() => {
@@ -299,13 +333,19 @@ export const AppProfiles = observer(
 				});
 		}, [assignTarget, debouncedAssignSearch, profileUsers, subgroupUsers]);
 
-		async function runPixel<T = unknown>(pixel: string): Promise<T | null> {
+		async function runPixel<T = unknown>(
+			pixel: string,
+			silent = false,
+		): Promise<T | null> {
 			const response = await monolithStore.runQuery(pixel);
 			const { operationType, output } = response.pixelReturn[0];
 			if (operationType.indexOf("ERROR") > -1) {
-				toast.error(
-					typeof output === "string" ? output : "Operation failed.",
-				);
+				if (!silent)
+					toast.error(
+						typeof output === "string"
+							? output
+							: "Operation failed.",
+					);
 				return null;
 			}
 			return output as T;
@@ -681,7 +721,7 @@ export const AppProfiles = observer(
 						</p>
 					</div>
 					<div className="flex shrink-0 items-center gap-2">
-						{isAuthor && (
+						{canManageManagers && (
 							<Button
 								size="sm"
 								variant="ghost"
@@ -693,7 +733,7 @@ export const AppProfiles = observer(
 								Managers
 							</Button>
 						)}
-						{canWrite && (
+						{canManageManagers && (
 							<Button
 								size="sm"
 								variant="outline"
@@ -730,7 +770,7 @@ export const AppProfiles = observer(
 						<p className="text-muted-foreground text-sm">
 							No profiles defined yet.
 						</p>
-						{canWrite && (
+						{canManageManagers && (
 							<Button size="sm" onClick={openNewProfileModal}>
 								New Profile
 							</Button>
@@ -852,7 +892,7 @@ export const AppProfiles = observer(
 												</p>
 											)}
 										</div>
-										{canWrite && (
+										{canManageManagers && (
 											<div className="flex shrink-0 items-center gap-1.5">
 												<Button
 													variant="outline"
