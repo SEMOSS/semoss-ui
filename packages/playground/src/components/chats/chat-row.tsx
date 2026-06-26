@@ -1,5 +1,3 @@
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
 import {
 	ArrowRightIcon,
 	CheckIcon,
@@ -8,6 +6,7 @@ import {
 	XIcon,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	Checkbox,
@@ -17,8 +16,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-
-dayjs.extend(relativeTime);
+import { normalizeTimestamp } from "@/utility";
 
 export interface RoomItem {
 	ROOM_ID: string;
@@ -28,20 +26,13 @@ export interface RoomItem {
 	PINNED?: boolean;
 }
 
-export type TFn = (key: string, params?: Record<string, unknown>) => string;
-
 // Default-size checkbox with a slightly stronger border than the faint
 // default, so the selection affordance stays distinct against the card
 // without reading as a chunky form control.
 export const CHECKBOX_CLASS =
 	"border-muted-foreground/50 hover:border-muted-foreground";
 
-/** Parse a room timestamp, normalizing to UTC when no zone is present. */
-export const roomTime = (raw: string) =>
-	dayjs(raw.endsWith("Z") ? raw : `${raw}Z`);
-
 interface ChatRowProps {
-	t: TFn;
 	room: RoomItem;
 	isSelected: boolean;
 	isPinned: boolean;
@@ -61,7 +52,6 @@ interface ChatRowProps {
  * favorite (pin) toggle, inline rename, and navigation to the room.
  */
 export const ChatRow = ({
-	t,
 	room,
 	isSelected,
 	isPinned,
@@ -75,7 +65,8 @@ export const ChatRow = ({
 	onCancelRename,
 	onSaveRename,
 }: ChatRowProps) => {
-	const d = roomTime(room.DATE_CREATED);
+	const { t } = useTranslation("workspace");
+	const d = normalizeTimestamp(room.DATE_CREATED);
 	const relative = d.isValid() ? d.fromNow() : room.DATE_CREATED;
 	const absolute = d.isValid()
 		? d.format("MMM D, YYYY h:mm A")

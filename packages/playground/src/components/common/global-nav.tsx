@@ -1,4 +1,3 @@
-import dayjs from "dayjs";
 import {
 	Bot,
 	HelpCircle,
@@ -53,6 +52,7 @@ import {
 	useSidebar,
 } from "@semoss/ui/next";
 import { useChat, useRoot, useTour } from "@/hooks";
+import { normalizeTimestamp } from "@/utility";
 import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
@@ -114,7 +114,7 @@ export const GlobalNav = observer(() => {
 
 	const [deletedSet, setDeletedSet] = useState(new Set<string>());
 
-	const systemDate = dayjs(`${system.config.systemDate}Z`);
+	const systemDate = normalizeTimestamp(system.config.systemDate);
 
 	const navigate = useNavigate();
 
@@ -289,7 +289,7 @@ export const GlobalNav = observer(() => {
 			// Skip rooms handled by the dedicated pinned query
 			if (val.PINNED || pinnedRoomIds.has(val.ROOM_ID)) return acc;
 
-			const d = dayjs(`${val.DATE_CREATED}Z`);
+			const d = normalizeTimestamp(val.DATE_CREATED);
 
 			if (systemDate.isSame(d, "day")) {
 				acc[t("buckets.today")].push(val);
@@ -553,19 +553,21 @@ export const GlobalNav = observer(() => {
 												t("messages.untitled");
 											const date = root.theme.sidebar
 												.chatHistoryDate
-												? new Date(
-														`${room.DATE_CREATED}Z`,
-													).toLocaleString(
-														undefined,
-														{
-															month: "numeric",
-															day: "numeric",
-															year: "numeric",
-															hour: "numeric",
-															minute: "2-digit",
-															hour12: true,
-														},
+												? normalizeTimestamp(
+														room.DATE_CREATED,
 													)
+														.toDate()
+														.toLocaleString(
+															undefined,
+															{
+																month: "numeric",
+																day: "numeric",
+																year: "numeric",
+																hour: "numeric",
+																minute: "2-digit",
+																hour12: true,
+															},
+														)
 												: null;
 											const isFavorite =
 												room.PINNED || false;

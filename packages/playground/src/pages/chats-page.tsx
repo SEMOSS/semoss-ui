@@ -1,4 +1,3 @@
-import dayjs from "dayjs";
 import { SearchIcon, StarIcon, Trash2Icon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -22,29 +21,9 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
-import {
-	CHECKBOX_CLASS,
-	ChatRow,
-	type RoomItem,
-	roomTime,
-	type TFn,
-} from "@/components";
+import { CHECKBOX_CLASS, ChatRow, type RoomItem } from "@/components";
 import { useChat, useGlobalBreadcrumbs } from "@/hooks";
-
-const getDayLabel = (startOfDay: dayjs.Dayjs, t: TFn): string => {
-	const today = dayjs().startOf("day");
-	const days = today.diff(startOfDay, "day");
-	if (days <= 0)
-		return t("workspace:chat.dayToday", { defaultValue: "Today" });
-	if (days === 1)
-		return t("workspace:chat.dayYesterday", { defaultValue: "Yesterday" });
-	if (days < 30)
-		return t("workspace:chat.daysAgo", {
-			count: days,
-			defaultValue: "{{count}} days ago",
-		});
-	return startOfDay.format("MMM D, YYYY");
-};
+import { getDayLabel, normalizeTimestamp } from "@/utility";
 
 /**
  * All-chats page.
@@ -138,8 +117,8 @@ export const ChatsPage = observer(() => {
 			.filter((r): r is RoomItem => Boolean(r))
 			.sort(
 				(a, b) =>
-					roomTime(b.DATE_CREATED).valueOf() -
-					roomTime(a.DATE_CREATED).valueOf(),
+					normalizeTimestamp(b.DATE_CREATED).valueOf() -
+					normalizeTimestamp(a.DATE_CREATED).valueOf(),
 			);
 	}, [pinnedIds, deletedSet, roomById, isSearching]);
 
@@ -151,7 +130,7 @@ export const ChatsPage = observer(() => {
 		>();
 		for (const room of visibleRooms) {
 			if (!isSearching && pinnedIds.has(room.ROOM_ID)) continue;
-			const d = roomTime(room.DATE_CREATED);
+			const d = normalizeTimestamp(room.DATE_CREATED);
 			if (!d.isValid()) continue;
 			const startOfDay = d.startOf("day");
 			const key = startOfDay.format("YYYY-MM-DD");
@@ -353,7 +332,6 @@ export const ChatsPage = observer(() => {
 	const renderRow = (room: RoomItem) => (
 		<ChatRow
 			key={room.ROOM_ID}
-			t={t}
 			room={room}
 			isSelected={selectedIds.has(room.ROOM_ID)}
 			isPinned={pinnedIds.has(room.ROOM_ID)}

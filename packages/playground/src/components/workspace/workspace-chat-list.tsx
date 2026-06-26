@@ -1,5 +1,3 @@
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
 import {
 	ArrowRightIcon,
 	CheckIcon,
@@ -36,8 +34,7 @@ import {
 	useInfiniteScroll,
 } from "@semoss/ui/next";
 import { useChat } from "@/hooks";
-
-dayjs.extend(relativeTime);
+import { getDayLabel, normalizeTimestamp } from "@/utility";
 
 interface WorkspaceChatListProps {
 	/**
@@ -140,8 +137,7 @@ export const WorkspaceChatList = ({
 			{ label: string; ts: number; rooms: Room[] }
 		>();
 		for (const room of visibleRooms) {
-			const raw = room.date_updated;
-			const d = dayjs(raw.endsWith("Z") ? raw : `${raw}Z`);
+			const d = normalizeTimestamp(room.date_updated);
 			if (!d.isValid()) continue;
 			const startOfDay = d.startOf("day");
 			const key = startOfDay.format("YYYY-MM-DD");
@@ -623,16 +619,4 @@ function ChatRow({
 			</div>
 		</div>
 	);
-}
-
-function getDayLabel(
-	startOfDay: dayjs.Dayjs,
-	t: (key: string, params?: Record<string, unknown>) => string,
-): string {
-	const today = dayjs().startOf("day");
-	const days = today.diff(startOfDay, "day");
-	if (days <= 0) return t("chat.dayToday");
-	if (days === 1) return t("chat.dayYesterday");
-	if (days < 30) return t("chat.daysAgo", { count: days });
-	return startOfDay.format("MMM D, YYYY");
 }
