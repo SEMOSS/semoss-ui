@@ -5,6 +5,7 @@ import {
 	StarIcon,
 	XIcon,
 } from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import {
@@ -15,7 +16,9 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	toast,
 } from "@semoss/ui/next";
+import { useChat } from "@/hooks";
 import { normalizeTimestamp } from "@/utility";
 
 export interface RoomItem {
@@ -36,36 +39,60 @@ interface ChatRowProps {
 	room: RoomItem;
 	isSelected: boolean;
 	isPinned: boolean;
-	isEditing: boolean;
-	editingName: string;
-	setEditingName: (next: string) => void;
-	isRenaming: boolean;
 	onToggleSelect: () => void;
 	onTogglePin: () => void;
-	onStartRename: () => void;
-	onCancelRename: () => void;
-	onSaveRename: () => void;
 }
 
 /**
  * A single chat row on the all-chats page: select checkbox, name + date,
  * favorite (pin) toggle, inline rename, and navigation to the room.
+ *
+ * Inline rename is owned here — it's per-row, ephemeral state. Saving runs
+ * `chat.renameRoom`, which bumps the room counter so any list watching it
+ * (the chats page, the sidebar) refetches on its own.
  */
 export const ChatRow = ({
 	room,
 	isSelected,
 	isPinned,
-	isEditing,
-	editingName,
-	setEditingName,
-	isRenaming,
 	onToggleSelect,
 	onTogglePin,
-	onStartRename,
-	onCancelRename,
-	onSaveRename,
 }: ChatRowProps) => {
 	const { t } = useTranslation("workspace");
+	const { chat } = useChat();
+
+	const [isEditing, setIsEditing] = useState(false);
+	const [editingName, setEditingName] = useState("");
+	const [isRenaming, setIsRenaming] = useState(false);
+
+	const handleStartRename = () => {
+		setEditingName(room.ROOM_NAME);
+		setIsEditing(true);
+	};
+
+	const handleCancelRename = () => {
+		setIsEditing(false);
+		setEditingName("");
+	};
+
+	const handleSaveRename = async () => {
+		const trimmed = editingName.trim();
+		if (!trimmed) {
+			toast.error(t("workspace:chat.renameEmpty"));
+			return;
+		}
+		setIsRenaming(true);
+		try {
+			await chat.renameRoom(room.ROOM_ID, trimmed);
+			toast.success(t("workspace:chat.renameSuccess"));
+			handleCancelRename();
+		} catch {
+			toast.error(t("workspace:chat.renameFailed"));
+		} finally {
+			setIsRenaming(false);
+		}
+	};
+
 	const d = normalizeTimestamp(room.DATE_CREATED);
 	const relative = d.isValid() ? d.fromNow() : room.DATE_CREATED;
 	const absolute = d.isValid()
@@ -74,7 +101,7 @@ export const ChatRow = ({
 
 	if (isEditing) {
 		return (
-			<div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
+			<div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5">
 				<Input
 					autoFocus
 					value={editingName}
@@ -83,9 +110,9 @@ export const ChatRow = ({
 					onKeyDown={(e) => {
 						if (e.key === "Enter") {
 							e.preventDefault();
-							onSaveRename();
+							handleSaveRename();
 						} else if (e.key === "Escape") {
-							onCancelRename();
+							handleCancelRename();
 						}
 					}}
 					className="h-8 flex-1"
@@ -97,7 +124,7 @@ export const ChatRow = ({
 							variant="ghost"
 							size="icon-sm"
 							disabled={isRenaming}
-							onClick={onSaveRename}
+							onClick={handleSaveRename}
 							aria-label={t("workspace:chat.renameSave")}
 						>
 							<CheckIcon className="size-4" />
@@ -114,7 +141,7 @@ export const ChatRow = ({
 							variant="ghost"
 							size="icon-sm"
 							disabled={isRenaming}
-							onClick={onCancelRename}
+							onClick={handleCancelRename}
 							aria-label={t("workspace:chat.cancel")}
 						>
 							<XIcon className="size-4" />
@@ -251,7 +278,7 @@ export const ChatRow = ({
 							onClick={(e) => {
 								e.preventDefault();
 								e.stopPropagation();
-								onStartRename();
+								handleStartRename();
 							}}
 							data-testid={`chats-page--rename-${room.ROOM_ID}`}
 						>

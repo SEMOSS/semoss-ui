@@ -23,16 +23,20 @@ import {
 } from "@semoss/ui/next";
 import { CHECKBOX_CLASS, ChatRow, type RoomItem } from "@/components";
 import { useChat, useGlobalBreadcrumbs } from "@/hooks";
-import { getDayLabel, normalizeTimestamp } from "@/utility";
+import {
+	DATE_BUCKET_ORDER,
+	getDateBucket,
+	normalizeTimestamp,
+} from "@/utility";
 
 /**
  * All-chats page.
- * Lists every chat (across all workspaces) grouped into a pinned
- * section plus calendar-day sections, with multi-select + bulk delete,
- * inline rename, and pin/unpin.
+ * Lists every chat (across all workspaces) grouped into a favorites
+ * section plus date buckets, with multi-select + bulk delete, inline
+ * rename, and pin/unpin.
  */
 export const ChatsPage = observer(() => {
-	const { t } = useTranslation(["workspace", "common"]);
+	const { t } = useTranslation(["workspace", "common", "sidebar"]);
 	const { chat } = useChat();
 
 	const [search, setSearch] = useState("");
@@ -42,9 +46,6 @@ export const ChatsPage = observer(() => {
 	const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
 	const [confirmOpen, setConfirmOpen] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
-	const [editingId, setEditingId] = useState<string | null>(null);
-	const [editingName, setEditingName] = useState("");
-	const [isRenaming, setIsRenaming] = useState(false);
 
 	useGlobalBreadcrumbs({
 		breadcrumbs: [
@@ -122,28 +123,25 @@ export const ChatsPage = observer(() => {
 			);
 	}, [pinnedIds, deletedSet, roomById, isSearching]);
 
-	// Date-grouped, non-pinned rooms (descending by day).
+	// Non-pinned rooms grouped into date buckets, matching the sidebar.
 	const groups = useMemo(() => {
-		const map = new Map<
-			string,
-			{ label: string; ts: number; rooms: RoomItem[] }
-		>();
+		const byBucket = new Map<string, RoomItem[]>();
 		for (const room of visibleRooms) {
 			if (!isSearching && pinnedIds.has(room.ROOM_ID)) continue;
 			const d = normalizeTimestamp(room.DATE_CREATED);
 			if (!d.isValid()) continue;
-			const startOfDay = d.startOf("day");
-			const key = startOfDay.format("YYYY-MM-DD");
-			if (!map.has(key)) {
-				map.set(key, {
-					label: getDayLabel(startOfDay, t),
-					ts: startOfDay.valueOf(),
-					rooms: [],
-				});
-			}
-			map.get(key)?.rooms.push(room);
+			const bucket = getDateBucket(d);
+			const rooms = byBucket.get(bucket);
+			if (rooms) rooms.push(room);
+			else byBucket.set(bucket, [room]);
 		}
-		return Array.from(map.values()).sort((a, b) => b.ts - a.ts);
+		return DATE_BUCKET_ORDER.filter((bucket) => byBucket.has(bucket)).map(
+			(bucket) => ({
+				bucket,
+				label: t(`sidebar:buckets.${bucket}`),
+				rooms: byBucket.get(bucket) ?? [],
+			}),
+		);
 	}, [visibleRooms, pinnedIds, isSearching, t]);
 
 	const allVisibleIds = useMemo(() => {
@@ -194,12 +192,7 @@ export const ChatsPage = observer(() => {
 					target.tagName === "TEXTAREA" ||
 					target.isContentEditable);
 
-			if (
-				e.key === "Escape" &&
-				hasSelection &&
-				!editingId &&
-				!inEditableField
-			) {
+			if (e.key === "Escape" && hasSelection && !inEditableField) {
 				clearSelection();
 				return;
 			}
@@ -216,7 +209,7 @@ export const ChatsPage = observer(() => {
 		};
 		window.addEventListener("keydown", onKey);
 		return () => window.removeEventListener("keydown", onKey);
-	}, [hasSelection, editingId, hasRooms, clearSelection, selectAll]);
+	}, [hasSelection, hasRooms, clearSelection, selectAll]);
 
 	const toggleSelectOne = (roomId: string) => {
 		setSelectedIds((prev) => {
@@ -297,53 +290,14 @@ export const ChatsPage = observer(() => {
 		getPinnedRooms.refresh();
 	};
 
-	const handleStartRename = (room: RoomItem) => {
-		setEditingId(room.ROOM_ID);
-		setEditingName(room.ROOM_NAME);
-	};
-
-	const handleCancelRename = () => {
-		setEditingId(null);
-		setEditingName("");
-	};
-
-	const handleSaveRename = async () => {
-		if (!editingId) return;
-		const trimmed = editingName.trim();
-		if (!trimmed) {
-			toast.error(t("workspace:chat.renameEmpty"));
-			return;
-		}
-		setIsRenaming(true);
-		try {
-			await chat.renameRoom(editingId, trimmed);
-			toast.success(t("workspace:chat.renameSuccess"));
-			setEditingId(null);
-			setEditingName("");
-			getRooms.reset();
-			getPinnedRooms.refresh();
-		} catch {
-			toast.error(t("workspace:chat.renameFailed"));
-		} finally {
-			setIsRenaming(false);
-		}
-	};
-
 	const renderRow = (room: RoomItem) => (
 		<ChatRow
 			key={room.ROOM_ID}
 			room={room}
 			isSelected={selectedIds.has(room.ROOM_ID)}
 			isPinned={pinnedIds.has(room.ROOM_ID)}
-			isEditing={editingId === room.ROOM_ID}
-			editingName={editingName}
-			setEditingName={setEditingName}
-			isRenaming={isRenaming}
 			onToggleSelect={() => toggleSelectOne(room.ROOM_ID)}
 			onTogglePin={() => handleTogglePin(room.ROOM_ID)}
-			onStartRename={() => handleStartRename(room)}
-			onCancelRename={handleCancelRename}
-			onSaveRename={handleSaveRename}
 		/>
 	);
 
@@ -469,7 +423,7 @@ export const ChatsPage = observer(() => {
 							{/* Pinned section */}
 							{pinnedRooms.length > 0 && (
 								<div className="flex flex-col gap-2">
-									<div className="flex items-center gap-1.5 px-1 font-medium text-muted-foreground text-xs uppercase tracking-wide">
+									<div className="flex items-center gap-1.5 px-1 font-medium text-muted-foreground text-xs">
 										<StarIcon className="size-3.5 fill-yellow-500 text-yellow-500" />
 										{t("workspace:chats.favorites", {
 											defaultValue: "Favorites",
@@ -483,8 +437,11 @@ export const ChatsPage = observer(() => {
 
 							{/* Date-grouped sections */}
 							{groups.map((g) => (
-								<div key={g.ts} className="flex flex-col gap-2">
-									<div className="px-1 font-medium text-muted-foreground text-xs uppercase tracking-wide">
+								<div
+									key={g.bucket}
+									className="flex flex-col gap-2"
+								>
+									<div className="px-1 font-medium text-muted-foreground text-xs">
 										{g.label}
 									</div>
 									<div className="flex flex-col gap-2">

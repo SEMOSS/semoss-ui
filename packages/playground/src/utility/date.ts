@@ -3,8 +3,6 @@ import relativeTime from "dayjs/plugin/relativeTime";
 
 dayjs.extend(relativeTime);
 
-type TranslateFn = (key: string, params?: Record<string, unknown>) => string;
-
 /**
  * Parse a Semoss timestamp into a dayjs instance, normalizing to UTC.
  *
@@ -22,25 +20,42 @@ export const normalizeTimestamp = (raw: string): dayjs.Dayjs => {
 };
 
 /**
- * Human day-bucket label for a start-of-day timestamp: "Today",
- * "Yesterday", "N days ago", or an absolute date once older than a month.
- *
- * Expects a `t` whose default namespace is `workspace` (uses the unprefixed
- * `chat.*` keys).
+ * Date buckets used to group chat lists. Values double as the `buckets.*`
+ * i18n keys in the `sidebar` namespace, so callers can label a bucket with
+ * `t(\`buckets.${bucket}\`)`.
  */
-export const getDayLabel = (
-	startOfDay: dayjs.Dayjs,
-	t: TranslateFn,
-): string => {
-	const today = dayjs().startOf("day");
-	const days = today.diff(startOfDay, "day");
-	if (days <= 0) return t("chat.dayToday", { defaultValue: "Today" });
-	if (days === 1)
-		return t("chat.dayYesterday", { defaultValue: "Yesterday" });
-	if (days < 30)
-		return t("chat.daysAgo", {
-			count: days,
-			defaultValue: "{{count}} days ago",
-		});
-	return startOfDay.format("MMM D, YYYY");
+export type DateBucket =
+	| "today"
+	| "yesterday"
+	| "fewDaysAgo"
+	| "lastWeek"
+	| "thisMonth"
+	| "lastMonth"
+	| "older";
+
+/** Buckets in the order they should be rendered (most to least recent). */
+export const DATE_BUCKET_ORDER: DateBucket[] = [
+	"today",
+	"yesterday",
+	"fewDaysAgo",
+	"lastWeek",
+	"thisMonth",
+	"lastMonth",
+	"older",
+];
+
+/**
+ * Assign a date to one of the {@link DATE_BUCKET_ORDER} buckets, relative to
+ * now. Shared by the sidebar and the chat-list pages so they group dates
+ * identically.
+ */
+export const getDateBucket = (date: dayjs.Dayjs): DateBucket => {
+	const now = dayjs();
+	if (now.isSame(date, "day")) return "today";
+	if (now.subtract(1, "day").isSame(date, "day")) return "yesterday";
+	if (date.isAfter(now.subtract(3, "day"))) return "fewDaysAgo";
+	if (date.isAfter(now.subtract(7, "day"))) return "lastWeek";
+	if (now.isSame(date, "month")) return "thisMonth";
+	if (now.subtract(1, "month").isSame(date, "month")) return "lastMonth";
+	return "older";
 };

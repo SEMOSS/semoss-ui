@@ -20,7 +20,7 @@ import {
 	useParams,
 } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
-import { runPixel, useInsight, useIteratorPixel } from "@semoss/sdk/react";
+import { runPixel, useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	DropdownMenu,
@@ -52,7 +52,7 @@ import {
 	useSidebar,
 } from "@semoss/ui/next";
 import { useChat, useRoot, useTour } from "@/hooks";
-import { normalizeTimestamp } from "@/utility";
+import { getDateBucket, normalizeTimestamp } from "@/utility";
 import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
@@ -70,7 +70,6 @@ try {
  * @component
  */
 export const GlobalNav = observer(() => {
-	const { system } = useInsight();
 	const { t } = useTranslation("sidebar");
 
 	const BUCKETS = [
@@ -113,8 +112,6 @@ export const GlobalNav = observer(() => {
 	const [editingName, setEditingName] = useState("");
 
 	const [deletedSet, setDeletedSet] = useState(new Set<string>());
-
-	const systemDate = normalizeTimestamp(system.config.systemDate);
 
 	const navigate = useNavigate();
 
@@ -290,22 +287,8 @@ export const GlobalNav = observer(() => {
 			if (val.PINNED || pinnedRoomIds.has(val.ROOM_ID)) return acc;
 
 			const d = normalizeTimestamp(val.DATE_CREATED);
-
-			if (systemDate.isSame(d, "day")) {
-				acc[t("buckets.today")].push(val);
-			} else if (systemDate.subtract(1, "day").isSame(d, "day")) {
-				acc[t("buckets.yesterday")].push(val);
-			} else if (d.isAfter(systemDate.subtract(3, "day"))) {
-				acc[t("buckets.fewDaysAgo")].push(val);
-			} else if (d.isAfter(systemDate.subtract(7, "day"))) {
-				acc[t("buckets.lastWeek")].push(val);
-			} else if (systemDate.isSame(d, "month")) {
-				acc[t("buckets.thisMonth")].push(val);
-			} else if (systemDate.subtract(1, "month").isSame(d, "month")) {
-				acc[t("buckets.lastMonth")].push(val);
-			} else {
-				acc[t("buckets.older")].push(val);
-			}
+			const bucket = getDateBucket(d);
+			acc[t(`buckets.${bucket}`)].push(val);
 
 			return acc;
 		},

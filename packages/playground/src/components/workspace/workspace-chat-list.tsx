@@ -34,7 +34,11 @@ import {
 	useInfiniteScroll,
 } from "@semoss/ui/next";
 import { useChat } from "@/hooks";
-import { getDayLabel, normalizeTimestamp } from "@/utility";
+import {
+	DATE_BUCKET_ORDER,
+	getDateBucket,
+	normalizeTimestamp,
+} from "@/utility";
 
 interface WorkspaceChatListProps {
 	/**
@@ -67,8 +71,8 @@ interface PinnedRoom {
 }
 
 /**
- * Renders an agent's recent chats as a vertical timeline grouped by
- * calendar day. Each row supports favorite (pin), rename (inline),
+ * Renders an agent's recent chats as a vertical timeline grouped into
+ * date buckets. Each row supports favorite (pin), rename (inline),
  * and delete (confirmed).
  *
  * @component
@@ -78,7 +82,7 @@ export const WorkspaceChatList = ({
 	limit,
 	maxHeightClassName = "max-h-96",
 }: WorkspaceChatListProps) => {
-	const { t } = useTranslation("workspace");
+	const { t } = useTranslation(["workspace", "sidebar"]);
 	const { chat } = useChat();
 
 	const [search, setSearch] = useState("");
@@ -130,27 +134,24 @@ export const WorkspaceChatList = ({
 		[getWorkspaceRooms.data, deletedSet],
 	);
 
-	// Group rooms by calendar day (descending)
+	// Group rooms into date buckets, matching the sidebar.
 	const groups = useMemo(() => {
-		const map = new Map<
-			string,
-			{ label: string; ts: number; rooms: Room[] }
-		>();
+		const byBucket = new Map<string, Room[]>();
 		for (const room of visibleRooms) {
 			const d = normalizeTimestamp(room.date_updated);
 			if (!d.isValid()) continue;
-			const startOfDay = d.startOf("day");
-			const key = startOfDay.format("YYYY-MM-DD");
-			if (!map.has(key)) {
-				map.set(key, {
-					label: getDayLabel(startOfDay, t),
-					ts: startOfDay.valueOf(),
-					rooms: [],
-				});
-			}
-			map.get(key)?.rooms.push(room);
+			const bucket = getDateBucket(d);
+			const rooms = byBucket.get(bucket);
+			if (rooms) rooms.push(room);
+			else byBucket.set(bucket, [room]);
 		}
-		return Array.from(map.values()).sort((a, b) => b.ts - a.ts);
+		return DATE_BUCKET_ORDER.filter((bucket) => byBucket.has(bucket)).map(
+			(bucket) => ({
+				bucket,
+				label: t(`sidebar:buckets.${bucket}`),
+				rooms: byBucket.get(bucket) ?? [],
+			}),
+		);
 	}, [visibleRooms, t]);
 
 	/* Handlers */
@@ -291,7 +292,7 @@ export const WorkspaceChatList = ({
 							{groups.map((g, gi) => {
 								const isLast = gi === groups.length - 1;
 								return (
-									<div key={g.ts} className="flex gap-4">
+									<div key={g.bucket} className="flex gap-4">
 										{/* Timeline column */}
 										<div className="relative flex w-3 shrink-0 flex-col items-center pt-2">
 											<div
