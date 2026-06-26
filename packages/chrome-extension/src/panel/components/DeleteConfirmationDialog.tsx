@@ -110,20 +110,20 @@ export const DeleteConfirmationDialog: FC<DeleteConfirmationDialogProps> = ({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onClose}>
-			<DialogContent className="!p-6 mx-auto flex max-h-[80vh] w-[90%] max-w-md flex-col gap-0">
-				<DialogHeader className="mb-4 flex-shrink-0">
+			<DialogContent className="!p-6 !gap-0 mx-auto flex max-h-[80vh] w-[90%] max-w-md flex-col">
+				<DialogHeader className="!mb-6 flex-shrink-0">
 					<DialogTitle className="flex items-center gap-2 text-lg">
 						<span className="text-2xl">⚠️</span>
 						<span>Confirm Deletion</span>
 					</DialogTitle>
-					<DialogDescription className="mt-2 text-slate-600 text-sm">
+					<DialogDescription className="!mt-3 text-slate-600 text-sm">
 						Deleting Step #{stepIndex + 1} ({actionType})
 					</DialogDescription>
 				</DialogHeader>
 
 				<div className="-mx-2 min-h-0 flex-1 overflow-y-auto px-2 pb-2">
 					{/* Summary */}
-					<div className="mb-4">
+					<div className="!mb-6">
 						<P className="text-slate-600 text-sm leading-relaxed">
 							{impact.summary}
 						</P>
@@ -131,19 +131,19 @@ export const DeleteConfirmationDialog: FC<DeleteConfirmationDialogProps> = ({
 
 					{/* Dependencies breakdown */}
 					{impact.hasImpact && (
-						<div className="space-y-3">
+						<div className="space-y-4">
 							<P className="font-medium text-slate-500 text-xs uppercase tracking-wide">
 								Affected Steps
 							</P>
 
 							{/* Show all dependencies without grouping */}
-							<div className="space-y-1.5">
+							<div className="space-y-3">
 								{impact.dependencies.map((dep, idx) => (
 									<div
 										key={`${dep.dependentStepIndex}-${idx}`}
-										className="rounded-md bg-slate-50 p-3 transition-colors hover:bg-slate-100"
+										className="!p-4 rounded-md bg-slate-50 transition-colors hover:bg-slate-100"
 									>
-										<div className="mb-1 flex items-center gap-2">
+										<div className="!mb-2 flex items-center gap-2">
 											<Small className="font-semibold text-slate-900">
 												Step #
 												{dep.dependentStepIndex + 1}
@@ -162,7 +162,7 @@ export const DeleteConfirmationDialog: FC<DeleteConfirmationDialogProps> = ({
 					)}
 				</div>
 
-				<DialogFooter className="mt-4 flex-shrink-0 gap-2 border-slate-200 border-t pt-4">
+				<DialogFooter className="!mt-6 !pt-5 flex-shrink-0 gap-2 border-slate-200 border-t">
 					<Button
 						variant="outline"
 						onClick={onClose}
