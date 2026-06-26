@@ -8,6 +8,7 @@ import {
 	Database,
 	DatabaseZap,
 	FileText,
+	Flag,
 	Github,
 	KeyRound,
 	LayoutGrid,
@@ -135,8 +136,8 @@ const CardMapper: Record<string, CardConfig> = {
 		color: "#0471F0",
 	},
 	"Platform Profiles": {
-		icon: <ShieldUser className={ICON_CLASS} />,
-		color: "#471F96",
+		icon: <Flag className={ICON_CLASS} />,
+		color: "#F97316",
 	},
 };
 

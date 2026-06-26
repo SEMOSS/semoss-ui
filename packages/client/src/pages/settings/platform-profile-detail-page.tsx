@@ -1,7 +1,8 @@
-import { ArrowLeft, Trash2, UserPlus, X } from "lucide-react";
+import { Pencil, Search, Trash2, UserPlus, X } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
+import { useDebouncedValue } from "@semoss/sdk/react";
 import {
 	Avatar,
 	AvatarFallback,
@@ -13,7 +14,11 @@ import {
 	DialogHeader,
 	DialogTitle,
 	Input,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
 	Label,
+	Muted,
 	Switch,
 	Table,
 	TableBody,
@@ -28,8 +33,7 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
-import type { AdminUser } from "@/api/auth";
-import { UserSearchCombobox } from "@/components/settings/user-search-combobox";
+import { type AdminUser, searchAllUsers } from "@/api/auth";
 import { useRootStore } from "@/hooks/";
 import { useNavigate } from "@/hooks/useNavigate";
 import { PLATFORM_FEATURES } from "./settings.constants";
@@ -63,14 +67,23 @@ export const PlatformProfileDetailPage = observer(() => {
 	const [profileUsers, setProfileUsers] = useState<ProfileUser[]>([]);
 
 	// Edit state
+	const [showEditDialog, setShowEditDialog] = useState(false);
 	const [editName, setEditName] = useState("");
 	const [editDesc, setEditDesc] = useState("");
 	const [savingProfile, setSavingProfile] = useState(false);
 
-	// Assign user modal
+	// Member search
+	const [memberSearch, setMemberSearch] = useState("");
+
+	// Assign users modal
 	const [showAssignModal, setShowAssignModal] = useState(false);
-	const [assignUser, setAssignUser] = useState<AdminUser | null>(null);
-	const [assigningUser, setAssigningUser] = useState(false);
+	const [selectedUsers, setSelectedUsers] = useState<AdminUser[]>([]);
+	const [assignSearch, setAssignSearch] = useState("");
+	const [assignResults, setAssignResults] = useState<AdminUser[]>([]);
+	const [assignSearching, setAssignSearching] = useState(false);
+	const [assigningUsers, setAssigningUsers] = useState(false);
+	const assignFetchVersionRef = useRef(0);
+	const debouncedAssignSearch = useDebouncedValue(assignSearch, 300);
 
 	// Confirmations
 	const [removeUserTarget, setRemoveUserTarget] =
@@ -145,6 +158,7 @@ export const PlatformProfileDetailPage = observer(() => {
 			);
 			await loadProfile();
 			toast.success("Profile updated.");
+			setShowEditDialog(false);
 		} finally {
 			setSavingProfile(false);
 		}
@@ -158,18 +172,55 @@ export const PlatformProfileDetailPage = observer(() => {
 		await loadFeatures();
 	}
 
-	async function handleAssignUser() {
-		if (!assignUser) return;
-		setAssigningUser(true);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: fetch on search/modal change
+	useEffect(() => {
+		if (!showAssignModal) return;
+		const version = ++assignFetchVersionRef.current;
+		setAssignSearching(true);
+		const excludeIds = new Set(profileUsers.map((u) => u.userId));
+		searchAllUsers(debouncedAssignSearch, 20, 0)
+			.then((results) => {
+				if (assignFetchVersionRef.current !== version) return;
+				setAssignResults(results.filter((u) => !excludeIds.has(u.id)));
+			})
+			.catch(() => {
+				if (assignFetchVersionRef.current === version)
+					setAssignResults([]);
+			})
+			.finally(() => {
+				if (assignFetchVersionRef.current === version)
+					setAssignSearching(false);
+			});
+	}, [showAssignModal, debouncedAssignSearch, profileUsers]);
+
+	function toggleUserSelected(user: AdminUser) {
+		setSelectedUsers((prev) =>
+			prev.find((u) => u.id === user.id)
+				? prev.filter((u) => u.id !== user.id)
+				: [...prev, user],
+		);
+	}
+
+	function closeAssignModal() {
+		setShowAssignModal(false);
+		setSelectedUsers([]);
+		setAssignSearch("");
+		setAssignResults([]);
+	}
+
+	async function handleAssignUsers() {
+		if (selectedUsers.length === 0) return;
+		setAssigningUsers(true);
 		try {
-			await runPixel(
-				`AssignUserPlatformProfile(userId="${assignUser.id}", profileId="${profileId}");`,
-			);
+			for (const user of selectedUsers) {
+				await runPixel(
+					`AssignUserPlatformProfile(userId="${user.id}", profileId="${profileId}");`,
+				);
+			}
 			await Promise.all([loadUsers(), loadProfile()]);
-			setShowAssignModal(false);
-			setAssignUser(null);
+			closeAssignModal();
 		} finally {
-			setAssigningUser(false);
+			setAssigningUsers(false);
 		}
 	}
 
@@ -189,10 +240,6 @@ export const PlatformProfileDetailPage = observer(() => {
 
 	async function handleDeleteProfile() {
 		if (!profile) return;
-		if (profile.userCount > 0) {
-			toast.error("Reassign all users before deleting this profile.");
-			return;
-		}
 		setConfirmLoading(true);
 		try {
 			await runPixel(`DeletePlatformProfile(profileId="${profileId}");`);
@@ -201,6 +248,16 @@ export const PlatformProfileDetailPage = observer(() => {
 			setConfirmLoading(false);
 		}
 	}
+
+	const filteredMembers = memberSearch.trim()
+		? profileUsers.filter((u) => {
+				const term = memberSearch.trim().toLowerCase();
+				return (
+					(u.name || u.userId).toLowerCase().includes(term) ||
+					(u.email || "").toLowerCase().includes(term)
+				);
+			})
+		: profileUsers;
 
 	if (!profile) {
 		if (loadError) {
@@ -229,37 +286,41 @@ export const PlatformProfileDetailPage = observer(() => {
 	return (
 		<div className="flex w-full flex-col gap-6">
 			{/* Header */}
-			<div className="flex flex-col gap-3">
-				<Button
-					variant="ghost"
-					size="sm"
-					className="w-fit gap-1.5 text-muted-foreground"
-					onClick={() => navigate("../platform-profiles")}
-				>
-					<ArrowLeft className="size-4" />
-					Platform Profiles
-				</Button>
-				<div className="flex items-center justify-between">
-					<div className="flex flex-col gap-1">
-						<h2 className="font-semibold text-xl">
-							{profile.profileName}
-						</h2>
-						{profile.description && (
-							<p className="text-muted-foreground text-sm">
-								{profile.description}
-							</p>
-						)}
-					</div>
+			<div className="flex items-center justify-between">
+				<div className="flex flex-col gap-1">
+					<h2 className="font-semibold text-xl">
+						{profile.profileName}
+					</h2>
+					{profile.description && (
+						<p className="text-muted-foreground text-sm">
+							{profile.description}
+						</p>
+					)}
+				</div>
+				<div className="flex items-center gap-2">
+					<Button
+						variant="outline"
+						size="sm"
+						className="gap-1.5"
+						onClick={() => {
+							setEditName(profile.profileName);
+							setEditDesc(profile.description || "");
+							setShowEditDialog(true);
+						}}
+						data-testid="edit-profile-btn"
+					>
+						<Pencil className="size-3.5" />
+						Edit
+					</Button>
 					<Button
 						variant="ghost"
 						size="sm"
 						className="gap-1.5 text-destructive hover:text-destructive"
-						disabled={profile.userCount > 0}
 						data-testid="delete-profile-btn"
 						onClick={() => setShowDeleteDialog(true)}
 					>
 						<Trash2 className="size-4" />
-						Delete Profile
+						Delete
 					</Button>
 				</div>
 			</div>
@@ -275,7 +336,6 @@ export const PlatformProfileDetailPage = observer(() => {
 							</span>
 						)}
 					</TabsTrigger>
-					<TabsTrigger value="settings">Profile Settings</TabsTrigger>
 				</TabsList>
 
 				{/* ── Features tab ─────────────────────────────────────────────── */}
@@ -320,114 +380,171 @@ export const PlatformProfileDetailPage = observer(() => {
 				</TabsContent>
 
 				{/* ── Members tab ───────────────────────────────────────────────── */}
-				<TabsContent value="members" className="flex flex-col gap-4">
-					<div className="flex items-center justify-between">
-						<div className="flex flex-col gap-1">
-							<p className="font-medium text-sm">
-								Assigned Members
-							</p>
-							<p className="text-muted-foreground text-sm">
-								Users assigned to this profile will see only the
-								navigation sections enabled above. Unassigned
-								users see everything.
-							</p>
+				<TabsContent value="members">
+					<div className="w-full rounded-xl border">
+						{/* Header — matches MembersTable style */}
+						<div className="flex flex-column gap-[10px] rounded-xl rounded-ee-none rounded-es-none border-gray-200 border-b bg-muted p-4 align-start">
+							<div className="flex h-[36px] w-full flex-column gap-2">
+								<InputGroup className="flex h-auto gap-1 self-stretch bg-background px-2 py-1 align-center">
+									<InputGroupInput
+										placeholder="Search members"
+										value={memberSearch}
+										onChange={(
+											e: React.ChangeEvent<HTMLInputElement>,
+										) => setMemberSearch(e.target.value)}
+									/>
+									<InputGroupAddon>
+										<Search className="size-4" />
+									</InputGroupAddon>
+								</InputGroup>
+								<Button
+									type="button"
+									size="sm"
+									className="flex h-auto flex-column gap-2 align-center"
+									onClick={() => setShowAssignModal(true)}
+									data-testid="assign-platform-user-btn"
+								>
+									<div className="flex flex-column items-center gap-2">
+										<UserPlus className="size-4" />
+										<span>Assign User</span>
+									</div>
+								</Button>
+							</div>
 						</div>
-						<Button
-							size="sm"
-							onClick={() => setShowAssignModal(true)}
-							data-testid="assign-platform-user-btn"
-						>
-							<UserPlus className="mr-1.5 size-4" />
-							Assign User
-						</Button>
-					</div>
 
-					{profileUsers.length === 0 ? (
-						<div className="rounded-lg border border-dashed p-8 text-center">
-							<p className="text-muted-foreground text-sm">
-								No users assigned to this profile yet.
-							</p>
-						</div>
-					) : (
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>User</TableHead>
-									<TableHead>Assigned By</TableHead>
-									<TableHead>Assigned At</TableHead>
-									<TableHead className="w-16" />
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{profileUsers.map((u) => {
-									const displayName = u.name || u.userId;
-									const initials = displayName
-										.split(" ")
-										.map((w) => w[0])
-										.join("")
-										.toUpperCase()
-										.slice(0, 2);
-									return (
-										<TableRow key={u.userId}>
-											<TableCell>
-												<div className="flex items-center gap-2">
-													<Avatar className="size-7 shrink-0 text-xs">
-														<AvatarFallback>
-															{initials}
-														</AvatarFallback>
-													</Avatar>
-													<div className="flex min-w-0 flex-col">
-														<span className="truncate font-medium text-sm">
-															{displayName}
-														</span>
-														{u.email && (
-															<span className="truncate text-muted-foreground text-xs">
-																{u.email}
+						{/* Scrollable table */}
+						<div className="max-h-[400px] overflow-y-auto">
+							<Table>
+								<TableHeader className="sticky top-0 z-10 bg-background">
+									<TableRow>
+										<TableHead>Name</TableHead>
+										<TableHead>Assigned By</TableHead>
+										<TableHead>Assigned Date</TableHead>
+										<TableHead className="w-px whitespace-nowrap">
+											Actions
+										</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{filteredMembers.length > 0 ? (
+										filteredMembers.map((u) => {
+											const displayName =
+												u.name || u.userId;
+											return (
+												<TableRow key={u.userId}>
+													<TableCell>
+														<div className="flex items-center gap-2">
+															<Avatar className="items-center justify-center bg-[#ECEDEF] text-gray-500">
+																<AvatarFallback className="bg-[#ECEDEF] text-gray-500">
+																	{displayName
+																		.charAt(
+																			0,
+																		)
+																		.toUpperCase()}
+																</AvatarFallback>
+															</Avatar>
+															<span className="flex flex-col overflow-hidden">
+																<span className="font-semibold text-accent-foreground text-sm">
+																	{
+																		displayName
+																	}
+																</span>
+																<span className="text-muted-foreground text-xs">
+																	id:{" "}
+																	{u.userId}
+																</span>
+																{u.email && (
+																	<span className="text-muted-foreground text-xs">
+																		email:{" "}
+																		{
+																			u.email
+																		}
+																	</span>
+																)}
 															</span>
-														)}
-													</div>
-												</div>
-											</TableCell>
-											<TableCell className="text-muted-foreground text-sm">
-												{u.assignedBy ?? "—"}
-											</TableCell>
-											<TableCell className="text-muted-foreground text-sm">
-												{u.assignedAt
-													? new Date(
-															u.assignedAt,
-														).toLocaleDateString()
-													: "—"}
-											</TableCell>
-											<TableCell>
-												<Button
-													size="sm"
-													variant="ghost"
-													className="text-destructive hover:text-destructive"
-													data-testid={`remove-user-${u.userId}-btn`}
-													onClick={() =>
-														setRemoveUserTarget(u)
-													}
-												>
-													Remove
-												</Button>
+														</div>
+													</TableCell>
+													<TableCell className="text-sm">
+														{u.assignedBy ?? "—"}
+													</TableCell>
+													<TableCell className="text-muted-foreground text-sm">
+														{u.assignedAt
+															? new Date(
+																	u.assignedAt,
+																).toLocaleDateString()
+															: "—"}
+													</TableCell>
+													<TableCell>
+														<Button
+															type="button"
+															variant="outline"
+															size="icon-sm"
+															className="border-none"
+															data-testid={`remove-user-${u.userId}-btn`}
+															onClick={() =>
+																setRemoveUserTarget(
+																	u,
+																)
+															}
+														>
+															<Trash2 className="h-4 w-4" />
+														</Button>
+													</TableCell>
+												</TableRow>
+											);
+										})
+									) : (
+										<TableRow>
+											<TableCell
+												colSpan={4}
+												className="text-center"
+											>
+												{memberSearch ? (
+													`No members match "${memberSearch}"`
+												) : (
+													<Muted>
+														No members assigned yet.
+													</Muted>
+												)}
 											</TableCell>
 										</TableRow>
-									);
-								})}
-							</TableBody>
-						</Table>
-					)}
-				</TabsContent>
+									)}
+								</TableBody>
+							</Table>
+						</div>
 
-				{/* ── Settings tab ─────────────────────────────────────────────── */}
-				<TabsContent value="settings" className="flex flex-col gap-4">
-					<div className="flex flex-col gap-1">
-						<p className="font-medium text-sm">Profile Details</p>
-						<p className="text-muted-foreground text-sm">
-							Update the name and description for this profile.
+						{/* Count footer */}
+						<p className="mt-2 px-4 pb-3 text-end text-muted-foreground text-sm">
+							{filteredMembers.length} of {profileUsers.length}{" "}
+							{profileUsers.length === 1 ? "member" : "members"}
 						</p>
 					</div>
-					<div className="flex max-w-md flex-col gap-4 rounded-lg border p-4">
+				</TabsContent>
+			</Tabs>
+
+			{/* ── Edit Profile modal ─────────────────────────────────────────── */}
+			<Dialog
+				open={showEditDialog}
+				onOpenChange={(open) => !open && setShowEditDialog(false)}
+			>
+				<DialogContent
+					className="max-w-[480px] gap-6 rounded-xl"
+					showCloseButton={false}
+				>
+					<DialogHeader>
+						<div className="flex items-center justify-between">
+							<DialogTitle>Edit Profile</DialogTitle>
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								onClick={() => setShowEditDialog(false)}
+								className="hover:bg-accent"
+							>
+								<X className="size-4" />
+							</Button>
+						</div>
+					</DialogHeader>
+					<div className="flex flex-col gap-4 pb-2">
 						<div className="flex flex-col gap-1.5">
 							<Label htmlFor={`${uid}-name`}>
 								Name <span className="text-destructive">*</span>
@@ -437,6 +554,7 @@ export const PlatformProfileDetailPage = observer(() => {
 								value={editName}
 								onChange={(e) => setEditName(e.target.value)}
 								maxLength={100}
+								autoFocus
 							/>
 						</div>
 						<div className="flex flex-col gap-1.5">
@@ -449,7 +567,16 @@ export const PlatformProfileDetailPage = observer(() => {
 								className="max-h-[120px] resize-none"
 							/>
 						</div>
-						<div className="flex justify-end">
+					</div>
+					<DialogFooter>
+						<div className="flex flex-row gap-2">
+							<Button
+								variant="ghost"
+								onClick={() => setShowEditDialog(false)}
+								disabled={savingProfile}
+							>
+								Cancel
+							</Button>
 							<Button
 								onClick={handleSaveProfile}
 								disabled={savingProfile || !editName.trim()}
@@ -458,78 +585,169 @@ export const PlatformProfileDetailPage = observer(() => {
 								{savingProfile ? "Saving…" : "Save Changes"}
 							</Button>
 						</div>
-					</div>
-				</TabsContent>
-			</Tabs>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 
-			{/* ── Assign User modal ──────────────────────────────────────────── */}
+			{/* ── Assign Users modal ─────────────────────────────────────────── */}
 			<Dialog
 				open={showAssignModal}
-				onOpenChange={(isOpen) => {
-					if (!isOpen) {
-						setShowAssignModal(false);
-						setAssignUser(null);
-					}
-				}}
+				onOpenChange={(open) => !open && closeAssignModal()}
 			>
-				<DialogContent
-					className="max-w-[480px] gap-6 rounded-xl"
-					showCloseButton={false}
-				>
+				<DialogContent className="flex max-h-[90vh] w-full max-w-2xl flex-col gap-4 overflow-hidden">
 					<DialogHeader>
-						<div className="flex items-center justify-between">
-							<DialogTitle>Assign User to Profile</DialogTitle>
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								onClick={() => {
-									setShowAssignModal(false);
-									setAssignUser(null);
-								}}
-								className="hover:bg-accent"
-							>
-								<X className="size-4" />
-							</Button>
-						</div>
-					</DialogHeader>
-					<div className="flex flex-col gap-4 pb-2">
-						<div className="flex flex-col gap-1.5">
-							<Label>
-								User <span className="text-destructive">*</span>
-							</Label>
-							<UserSearchCombobox
-								value={assignUser}
-								onChange={setAssignUser}
-								excludeIds={profileUsers.map((u) => u.userId)}
-							/>
-						</div>
-						<p className="text-muted-foreground text-sm">
-							Assigning to:{" "}
+						<DialogTitle>Assign Users</DialogTitle>
+						<DialogDescription>
+							Search for users to assign to{" "}
 							<span className="font-medium text-foreground">
 								{profile.profileName}
 							</span>
-						</p>
-					</div>
-					<DialogFooter>
-						<div className="flex flex-row gap-2">
-							<Button
-								variant="ghost"
-								onClick={() => {
-									setShowAssignModal(false);
-									setAssignUser(null);
-								}}
-								disabled={assigningUser}
-							>
-								Cancel
-							</Button>
-							<Button
-								onClick={handleAssignUser}
-								disabled={assigningUser || !assignUser}
-							>
-								{assigningUser ? "Assigning…" : "Assign"}
-							</Button>
+							.
+						</DialogDescription>
+					</DialogHeader>
+
+					{/* Search input */}
+					<input
+						className="h-10 w-full shrink-0 rounded border bg-background px-3 text-sm outline-none ring-primary placeholder:text-muted-foreground focus:ring-2"
+						placeholder="Search by name or email..."
+						value={assignSearch}
+						autoComplete="off"
+						autoCorrect="off"
+						autoCapitalize="off"
+						spellCheck={false}
+						onChange={(e) => setAssignSearch(e.target.value)}
+					/>
+
+					{/* Scrollable middle */}
+					<div className="flex flex-1 flex-col gap-4 overflow-y-auto">
+						{/* Results */}
+						<div className="max-h-56 min-h-32 w-full shrink-0 overflow-y-auto rounded-md border bg-background">
+							{assignResults.length > 0 ? (
+								assignResults.map((item) => {
+									const isAdded = selectedUsers.some(
+										(u) => u.id === item.id,
+									);
+									return (
+										<button
+											key={item.id}
+											type="button"
+											className="flex w-full items-center justify-between px-3 py-2 text-start text-sm hover:bg-accent"
+											onClick={() =>
+												toggleUserSelected(item)
+											}
+										>
+											<span className="flex items-center gap-2">
+												<Avatar className="h-7 w-7 items-center justify-center bg-muted text-muted-foreground text-xs">
+													<AvatarFallback>
+														{(item.name || item.id)
+															.charAt(0)
+															.toUpperCase()}
+													</AvatarFallback>
+												</Avatar>
+												<span className="flex flex-col">
+													<span className="font-medium">
+														{item.name ||
+															item.username ||
+															item.id}
+													</span>
+													<span className="text-muted-foreground text-xs">
+														id: {item.id}
+													</span>
+													{item.email && (
+														<span className="text-muted-foreground text-xs">
+															email: {item.email}
+														</span>
+													)}
+												</span>
+											</span>
+											{isAdded && (
+												<span className="font-medium text-primary text-xs">
+													Added ✓
+												</span>
+											)}
+										</button>
+									);
+								})
+							) : (
+								<div className="px-3 py-4 text-center text-muted-foreground text-sm">
+									{assignSearching
+										? "Searching…"
+										: "No users found"}
+								</div>
+							)}
 						</div>
-					</DialogFooter>
+
+						{/* Selected users */}
+						<div className="flex flex-col gap-2">
+							<span className="font-medium text-muted-foreground text-sm">
+								{selectedUsers.length} user
+								{selectedUsers.length !== 1 ? "s" : ""} selected
+							</span>
+							<div className="flex flex-col gap-1.5">
+								{selectedUsers.map((u) => (
+									<div
+										key={u.id}
+										className="flex items-center justify-between rounded-md border bg-muted/40 px-3 py-2"
+									>
+										<span className="flex items-center gap-2">
+											<Avatar className="h-8 w-8 items-center justify-center bg-muted text-muted-foreground text-sm">
+												<AvatarFallback>
+													{(u.name || u.id)
+														.charAt(0)
+														.toUpperCase()}
+												</AvatarFallback>
+											</Avatar>
+											<span className="flex flex-col">
+												<span className="font-medium text-sm">
+													{u.name ||
+														u.username ||
+														u.id}
+												</span>
+												<span className="text-muted-foreground text-xs">
+													id: {u.id}
+												</span>
+												{u.email && (
+													<span className="text-muted-foreground text-xs">
+														email: {u.email}
+													</span>
+												)}
+											</span>
+										</span>
+										<button
+											type="button"
+											className="text-muted-foreground hover:text-destructive"
+											onClick={() =>
+												toggleUserSelected(u)
+											}
+										>
+											<X className="h-4 w-4" />
+										</button>
+									</div>
+								))}
+							</div>
+						</div>
+					</div>
+
+					{/* Footer */}
+					<div className="flex items-center justify-end gap-2 border-t pt-3">
+						<Button
+							variant="ghost"
+							onClick={closeAssignModal}
+							disabled={assigningUsers}
+						>
+							Cancel
+						</Button>
+						<Button
+							onClick={handleAssignUsers}
+							disabled={
+								assigningUsers || selectedUsers.length === 0
+							}
+						>
+							{assigningUsers
+								? "Assigning…"
+								: `Assign${selectedUsers.length > 0 ? ` (${selectedUsers.length})` : ""}`}
+						</Button>
+					</div>
 				</DialogContent>
 			</Dialog>
 
@@ -577,8 +795,22 @@ export const PlatformProfileDetailPage = observer(() => {
 					<DialogHeader>
 						<DialogTitle>Delete Profile</DialogTitle>
 						<DialogDescription>
-							Delete &quot;{profile.profileName}&quot;? This
-							cannot be undone.
+							Delete &quot;{profile.profileName}&quot;?
+							{profile.userCount > 0 && (
+								<>
+									{" "}
+									This profile has{" "}
+									<span className="font-medium text-foreground">
+										{profile.userCount}{" "}
+										{profile.userCount === 1
+											? "user"
+											: "users"}
+									</span>{" "}
+									assigned — they will revert to seeing all
+									navigation sections.
+								</>
+							)}{" "}
+							This cannot be undone.
 						</DialogDescription>
 					</DialogHeader>
 					<DialogFooter>

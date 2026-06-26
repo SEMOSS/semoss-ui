@@ -1,4 +1,11 @@
-import { ChevronRight, Plus, ShieldCheck, Users, X } from "lucide-react";
+import {
+	ChevronRight,
+	Plus,
+	Search,
+	ShieldCheck,
+	Users,
+	X,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useId, useState } from "react";
 import {
@@ -33,6 +40,7 @@ export const PlatformProfilesPage = observer(() => {
 
 	const [profiles, setProfiles] = useState<PlatformProfile[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [search, setSearch] = useState("");
 
 	// New profile modal
 	const [showModal, setShowModal] = useState(false);
@@ -103,19 +111,27 @@ export const PlatformProfilesPage = observer(() => {
 		}
 	}
 
+	const filteredProfiles = search.trim()
+		? profiles.filter((p) =>
+				p.profileName
+					.toLowerCase()
+					.includes(search.trim().toLowerCase()),
+			)
+		: profiles;
+
 	return (
 		<div className="flex w-full flex-col gap-6">
-			{/* Page header */}
-			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-				<div className="flex flex-col gap-1">
-					<h2 className="font-semibold text-xl">Platform Profiles</h2>
-					<p className="max-w-xl text-muted-foreground text-sm">
-						Platform profiles let you restrict which top-level
-						navigation sections (App Catalog, Skills, Settings,
-						Engines) are visible to specific users. Assign a profile
-						to a user and only the enabled sections appear in their
-						sidebar. Users without a profile see everything.
-					</p>
+			{/* Toolbar */}
+			<div className="flex items-center gap-3">
+				<div className="relative flex-1">
+					<Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 size-4 text-muted-foreground" />
+					<Input
+						value={search}
+						onChange={(e) => setSearch(e.target.value)}
+						placeholder="Search profiles"
+						className="h-11 pl-9"
+						data-testid="platform-profiles-search"
+					/>
 				</div>
 				<Button
 					className="shrink-0 gap-2"
@@ -151,9 +167,15 @@ export const PlatformProfilesPage = observer(() => {
 						Create Profile
 					</Button>
 				</div>
+			) : filteredProfiles.length === 0 ? (
+				<div className="flex flex-col items-center gap-4 rounded-lg border border-dashed py-16 text-center">
+					<p className="text-muted-foreground text-sm">
+						No profiles match &ldquo;{search}&rdquo;.
+					</p>
+				</div>
 			) : (
 				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-					{profiles.map((p) => (
+					{filteredProfiles.map((p) => (
 						<button
 							key={p.profileId}
 							type="button"

@@ -267,7 +267,8 @@ export const SETTINGS_ROUTES: {
 	{
 		title: "Platform Profiles",
 		path: "platform-profiles",
-		description: "Control which platform pages are visible to each user.",
+		description:
+			"Restrict which top-level navigation sections (App Catalog, Skills, Settings, Engines) are visible per user. Assign a profile and only the enabled sections appear in their sidebar.",
 		icon: mdiShieldAccount,
 		history: ["settings/"],
 		admin: true,
