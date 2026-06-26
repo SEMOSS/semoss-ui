@@ -1,5 +1,6 @@
 import { Download, RotateCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { download, runPixel } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import {
@@ -31,6 +32,7 @@ import {
  */
 
 export const AuditLogPage = ({ catalogName }) => {
+	const { t } = useTranslation("auditlog");
 	const { insightId } = useInsight(); // fetching insight id for access
 	const [logs, setLogs] = useState<EventData[]>([]);
 	const [page, setPage] = useState(0);
@@ -89,7 +91,7 @@ export const AuditLogPage = ({ catalogName }) => {
 		} catch (error) {
 			setLogs([]);
 			setTotalCount(0);
-			toast.error(`Error fetching logs: ${error}`);
+			toast.error(t("page.errorFetching", { error: String(error) }));
 			console.error("Error fetching logs:", error);
 		} finally {
 			setLoading(false);
@@ -102,7 +104,7 @@ export const AuditLogPage = ({ catalogName }) => {
 	const handleExport = async (pdf: boolean) => {
 		const filterValue = filteredData.current;
 		if (!hasScope(filterValue.scope) || !insightId) {
-			toast.info("Select an engine before exporting logs.");
+			toast.info(t("page.selectBeforeExport"));
 			return;
 		}
 		try {
@@ -117,7 +119,7 @@ export const AuditLogPage = ({ catalogName }) => {
 				throw new Error(`API Error: ${output}`);
 			await download(insightId, output as unknown as string);
 		} catch (error) {
-			toast.error(`Error exporting logs: ${error}`);
+			toast.error(t("page.errorExporting", { error: String(error) }));
 			console.error("Error exporting logs:", error);
 		}
 	};
@@ -170,26 +172,26 @@ export const AuditLogPage = ({ catalogName }) => {
 		<div className="flex flex-col gap-4 px-8 py-8">
 			<div className="flex w-full flex-wrap items-center gap-2 py-4">
 				<h6 className="font-medium text-xl leading-[1.6] tracking-normal">
-					{catalogName} Insight Dashboard
+					{t("page.dashboardTitle", { catalogName })}
 				</h6>
 				<div className="ml-auto flex flex-row items-center gap-2">
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
 							<Button variant="outline">
 								<Download className="mr-2 h-4 w-4" />
-								Export
+								{t("page.export")}
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent>
 							<DropdownMenuItem
 								onClick={() => handleExport(false)}
 							>
-								Export as CSV
+								{t("page.exportCsv")}
 							</DropdownMenuItem>
 							<DropdownMenuItem
 								onClick={() => handleExport(true)}
 							>
-								Export as PDF
+								{t("page.exportPdf")}
 							</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>
@@ -199,14 +201,12 @@ export const AuditLogPage = ({ catalogName }) => {
 							if (hasScope(filteredData.current.scope))
 								fetchLogs(rowsPerPage, page * rowsPerPage);
 							else {
-								toast.info(
-									"Please select Engine Type and Engine to fetch logs",
-								);
+								toast.info(t("page.selectToFetch"));
 							}
 						}}
 					>
 						<RotateCw className="mr-2 h-4 w-4" />
-						Refresh
+						{t("page.refresh")}
 					</Button>
 				</div>
 			</div>

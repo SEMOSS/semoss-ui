@@ -123,9 +123,9 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 	 * Engines source. KNOWLEDGE only ever uses this (VECTOR engines).
 	 * TOOLBOX combines this with a parallel MyProjects query below.
 	 *
-	 * We split into two iterators rather than using MyEngineProject —
-	 * that combined reactor mixed both shapes in a way that broke
-	 * stable pagination.
+	 * Engines and projects each get their own iterator so the two paginate
+	 * independently and stably; their differing response shapes are normalized
+	 * by engineProjectToMCP.
 	 */
 	const getEngines = useIteratorPixel<Engine[], MCP>(
 		(limit, offset) =>

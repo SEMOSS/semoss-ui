@@ -1,0 +1,139 @@
+{
+	"common": {
+		"success": "ناجح",
+		"failed": "فشل",
+		"event": "حدث",
+		"noLogs": "لا توجد سجلات متاحة."
+	},
+	"filter": {
+		"searchPlaceholder": "البحث في السجلات...",
+		"selectEngineType": "اختر نوع المحرك",
+		"selectEngine": "اختر المحرك",
+		"roomId": "معرّف الغرفة",
+		"allRooms": "جميع الغرف",
+		"methodName": "اسم الطريقة",
+		"engineType": "نوع المحرك",
+		"allUsers": "جميع المستخدمين",
+		"loading": "جارٍ التحميل…",
+		"noOptions": "لا توجد خيارات",
+		"clear": "مسح",
+		"clearFilters": "مسح عوامل التصفية",
+		"close": "إغلاق",
+		"apply": "تطبيق",
+		"countSummary": "{{label}} ({{count}})",
+		"dateRange": {
+			"today": "اليوم",
+			"last7Days": "آخر 7 أيام",
+			"last30Days": "آخر 30 يومًا",
+			"custom": "مخصص"
+		}
+	},
+	"summary": {
+		"events": "الأحداث",
+		"shown": "المعروضة",
+		"errors": "الأخطاء",
+		"p50": "P50",
+		"p95": "P95",
+		"tokens": "الرموز",
+		"currentPage": "الصفحة الحالية",
+		"currentPageHint": "يتم حساب زمن الاستجابة والأخطاء والرموز عبر الأحداث الموجودة في الصفحة الحالية."
+	},
+	"table": {
+		"title": "الجدول الزمني للطلب والاستجابة",
+		"grouping": {
+			"none": "بدون تجميع",
+			"span": "التجميع حسب النطاق",
+			"request": "التجميع حسب الطلب"
+		},
+		"columns": {
+			"user": "المستخدم",
+			"sessionId": "معرّف الجلسة",
+			"request": "الطلب",
+			"response": "الاستجابة",
+			"method": "الطريقة",
+			"engineType": "نوع المحرك",
+			"engineName": "اسم المحرك",
+			"latency": "زمن الاستجابة",
+			"tokens": "الرموز",
+			"timestamp": "الطابع الزمني",
+			"status": "الحالة"
+		},
+		"groupRequest": "الطلب",
+		"groupSpan": "النطاق",
+		"event_one": "{{count}} حدث",
+		"event_other": "{{count}} حدثًا",
+		"groupMeta": "{{latency}}ms · {{tokens}} رمز",
+		"rowsPerPage": "الصفوف لكل صفحة:",
+		"pageRange": "{{first}} - {{last}} من {{total}}",
+		"showingResults": "عرض {{shown}} من {{total}} نتيجة"
+	},
+	"timeline": {
+		"title": "سجل الأحداث",
+		"rowMode": {
+			"event": "صف: لكل حدث",
+			"span": "صف: حسب النطاق",
+			"request": "صف: حسب الطلب"
+		},
+		"axisMode": {
+			"time": "الوقت",
+			"datetime": "التاريخ والوقت",
+			"date": "التاريخ",
+			"month": "الشهر"
+		},
+		"highlightZoom": "حدّد منطقة للتكبير",
+		"zoomIn": "تكبير",
+		"zoomOut": "تصغير",
+		"resetZoom": "إعادة تعيين التكبير",
+		"tooltip": {
+			"engine": "المحرك",
+			"user": "المستخدم",
+			"latency": "زمن الاستجابة",
+			"tokens": "الرموز",
+			"start": "البداية",
+			"end": "النهاية",
+			"span": "النطاق",
+			"session": "الجلسة",
+			"request": "الطلب",
+			"response": "الاستجابة"
+		}
+	},
+	"detail": {
+		"title": "تفاصيل التدقيق",
+		"copyJson": "نسخ JSON",
+		"copyJsonTooltip": "نسخ هذا السجل بصيغة JSON",
+		"copySuccess": "تم نسخ سجل التدقيق بصيغة JSON",
+		"copyFailed": "فشل النسخ: {{error}}",
+		"noDetails": "لا توجد تفاصيل متاحة",
+		"expandAll": "توسيع الكل",
+		"collapseAll": "طي الكل",
+		"fields": {
+			"latency": "زمن الاستجابة",
+			"tokens": "الرموز",
+			"user": "المستخدم",
+			"userId": "معرّف المستخدم",
+			"start": "البداية",
+			"end": "النهاية",
+			"logTimestamp": "الطابع الزمني للسجل",
+			"sessionId": "معرّف الجلسة",
+			"requestId": "معرّف الطلب",
+			"spanId": "معرّف النطاق",
+			"request": "الطلب",
+			"response": "الاستجابة"
+		}
+	},
+	"page": {
+		"dashboardTitle": "لوحة معلومات {{catalogName}}",
+		"export": "تصدير",
+		"exportCsv": "تصدير بصيغة CSV",
+		"exportPdf": "تصدير بصيغة PDF",
+		"refresh": "تحديث",
+		"selectToFetch": "يرجى اختيار نوع المحرك والمحرك لجلب السجلات",
+		"selectBeforeExport": "اختر محركًا قبل تصدير السجلات.",
+		"errorFetching": "خطأ في جلب السجلات: {{error}}",
+		"errorExporting": "خطأ في تصدير السجلات: {{error}}"
+	},
+	"layout": {
+		"appName": "سجل التدقيق",
+		"appDescription": "تطبيق سجل التدقيق"
+	}
+}

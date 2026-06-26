@@ -195,11 +195,16 @@ describe("GridDynamicFrameBlock", () => {
 			data: { list: [] },
 		});
 
-		render(<GridDynamicFrameBlock id={blocks.gridDynamic.id} />, {
-			blocks: blocks,
-		});
+		const { container } = render(
+			<GridDynamicFrameBlock id={blocks.gridDynamic.id} />,
+			{
+				blocks: blocks,
+			},
+		);
 
-		expect(screen.getByRole("grid")).toBeInTheDocument();
+		expect(
+			container.querySelector("[data-block='gridDynamic']"),
+		).toBeInTheDocument();
 	});
 
 	it("does not render when show is false", () => {

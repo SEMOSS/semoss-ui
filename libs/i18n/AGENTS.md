@@ -10,6 +10,19 @@ This document provides context for AI coding assistants working with the SEMOSS 
 - **Tier 1: Core Shared** - Translations used across all packages
 - **Tier 2: Package-Specific** - Translations unique to each package
 
+### Lazy loading architecture (IMPORTANT)
+
+Languages are **loaded lazily, one per language at a time** — the locale JSON is **not** bundled into the app's main chunk. This keeps first paint light and means adding languages/namespaces never grows the initial bundle.
+
+How it works:
+- Each app exports a `LazyResources` config (`resources/client.ts`, `resources/playground.ts`, `resources/terminal.ts`) — a map of `namespace → (language) => import("./locales/${language}/.../ns.json")`. There are **no static `import x from "./locales/..."` lines** anymore.
+- `builder.ts` registers a tiny i18next **backend** that calls those loaders on demand — at init for the active language, and again on `i18n.changeLanguage()`.
+- Each app's `vite.config.ts` has a `manualChunks` rule that groups every file under `locales/<lng>/` into a single `locale-<lng>` chunk, so loading/switching a language is **one request**.
+- Apps `await i18nBuilder.ready` in `main.tsx` before the first render so the active language is present (no flash of raw keys).
+- Namespaces not preloaded at init (e.g. the client's embedded terminal) are fetched at runtime via `preloadNamespaces([...])`.
+
+There is **no** `core.ts` / `shared.ts` aggregate and **no** `coreResources`/`sharedResources` export. Core/shared namespaces are just entries in each app's loader map.
+
 ## Supported Languages
 
 - **English** (`en`) - Default
@@ -18,8 +31,9 @@ This document provides context for AI coding assistants working with the SEMOSS 
 - **Hindi** (`hi`)
 - **Arabic** (`ar`)
 - **Japanese** (`ja`)
+- **Dutch** (`nl`)
 
-All translation changes must be reflected across all six languages.
+All translation changes must be reflected across all languages (see `LANGUAGES` in `constants.ts`).
 
 ## Directory Structure
 
@@ -27,13 +41,15 @@ All translation changes must be reflected across all six languages.
 libs/i18n/
 ├── README.md                          # Documentation (CRITICAL)
 └── src/
-    ├── builder.ts                     # I18nBuilder class (i18next configuration)
+    ├── builder.ts                     # I18nBuilder + dynamic-import i18next backend
+    ├── preload.ts                     # preloadNamespaces() for on-demand namespaces
     ├── constants.ts                   # Language definitions (LANGUAGES array)
     ├── index.ts                       # Main exports
     └── resources/
-        ├── core.ts                    # Core shared resources
-        ├── playground.ts              # Playground package resources
-        ├── client.ts                  # Client package resources (template)
+        ├── types.ts                   # LazyResources interface
+        ├── playground.ts              # Playground lazy loader map
+        ├── terminal.ts                # Terminal lazy loader map
+        ├── client.ts                  # Client lazy loader map
         └── locales/
             ├── en/                    # English translations
             │   ├── common.json        # Core: buttons, labels, actions
@@ -83,16 +99,22 @@ t('sidebar:search')               // "Search"
 
 ### Resource Export Pattern
 
-Each package has its own resource export:
+Each package exports a lazy `LazyResources` config — a `ns` list (preloaded at init) and a `load` map of `namespace → (language) => import(...)`:
 
 ```typescript
 // playground.ts
-export const playgroundResources = {
-  en: { ...coreResources.en, chat: chatEN, room: roomEN, ... },
-  es: { ...coreResources.es, chat: chatES, room: roomES, ... },
-  fr: { ...coreResources.fr, chat: chatFR, room: roomFR, ... },
+export const playgroundResources: LazyResources = {
+  ns: ["common", "notifications", "validation", "chat", "room", ...],
+  load: {
+    common: (l) => import(`./locales/${l}/common.json`),
+    chat: (l) => import(`./locales/${l}/playground/chat.json`),
+    room: (l) => import(`./locales/${l}/playground/room.json`),
+    // ...
+  },
 };
 ```
+
+To add a namespace: add one `load` entry (and, if it should render before user interaction, add its name to `ns`). The template-literal `import()` makes the bundler emit it lazily; do **not** add a static top-level import.
 
 ## Agent Workflow for Translation Updates
 
@@ -204,10 +226,11 @@ The `README.md` is the source of truth for developers. Keep it accurate.
 
 ### Be Cautious With
 
-- **`core.ts`** - Changes affect all packages
-- **`playground.ts` / `client.ts`** - Changes affect specific packages
+- **`builder.ts`** - The dynamic-import backend + i18next setup affects all packages
+- **`playground.ts` / `terminal.ts` / `client.ts`** - Lazy loader maps for specific packages
 - **`index.ts`** - Main export file, affects all consumers
-- **File/directory renames** - Must update imports in package config files
+- **`vite.config.ts` `manualChunks`** - The `locale-<lng>` grouping lives in each app's config
+- **File/directory renames** - Must update the `load` paths in the package loader maps
 
 ### When Adding Translations
 
@@ -225,8 +248,7 @@ The `README.md` is the source of truth for developers. Keep it accurate.
    - `locales/ja/...` - Japanese translation
 
 3. **Update the config file**:
-   - Core translations: No changes needed (auto-imported)
-   - Package translations: Add import and resource entry to `playground.ts` or `client.ts`
+   - Add a `load` entry (and `ns` entry if preloaded) to the relevant `playground.ts` / `terminal.ts` / `client.ts`. No static imports — use the `(l) => import(\`./locales/${l}/.../ns.json\`)` form.
 
 4. **Verify the build**:
    ```bash
@@ -271,22 +293,15 @@ To add translations for a new package (e.g., `@semoss/client`):
    - `locales/ar/client/feature.json`
    - `locales/ja/client/feature.json`
 
-3. **Update `client.ts`**:
+3. **Update `client.ts`** — add a lazy `load` entry (and `ns` entry if it should preload):
    ```typescript
-   import featureEN from "./locales/en/client/feature.json";
-   import featureES from "./locales/es/client/feature.json";
-   import featureFR from "./locales/fr/client/feature.json";
-   import featureHI from "./locales/hi/client/feature.json";
-   import featureAR from "./locales/ar/client/feature.json";
-   import featureJA from "./locales/ja/client/feature.json";
-
-   export const clientResources = {
-     en: { ...coreResources.en, feature: featureEN },
-     es: { ...coreResources.es, feature: featureES },
-     fr: { ...coreResources.fr, feature: featureFR },
-     hi: { ...coreResources.hi, feature: featureHI },
-     ar: { ...coreResources.ar, feature: featureAR },
-     ja: { ...coreResources.ja, feature: featureJA },
+   export const clientResources: LazyResources = {
+     ns: ["common", "notifications", "validation", "feature"],
+     load: {
+       common: (l) => import(`./locales/${l}/common.json`),
+       // ...
+       feature: (l) => import(`./locales/${l}/client/feature.json`),
+     },
    };
    ```
 
@@ -373,7 +388,7 @@ If a translation is needed by multiple packages:
 
 // 3. Remove from playground files (all languages)
 // 4. Add to common files (all languages)
-// 5. No config file changes needed (core auto-imports)
+// 5. `common` is already in every app's loader map + `ns`, so no config change needed
 ```
 
 ## README.md Maintenance

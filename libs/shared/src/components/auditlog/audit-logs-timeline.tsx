@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	Select,
@@ -42,19 +43,19 @@ const isSuccess = (status: EventData["status"]) =>
 
 //Granularity options for the time (x) axis labels.
 type AxisMode = "time" | "datetime" | "date" | "month";
-const AXIS_MODE_LABELS: Record<AxisMode, string> = {
-	time: "Time",
-	datetime: "Date & time",
-	date: "Date",
-	month: "Month",
+const AXIS_MODE_LABEL_KEYS: Record<AxisMode, string> = {
+	time: "timeline.axisMode.time",
+	datetime: "timeline.axisMode.datetime",
+	date: "timeline.axisMode.date",
+	month: "timeline.axisMode.month",
 };
 //Row grouping: one lane per event, or one lane per spanId / requestId (trace-style,
 //where the group's events stack as parts of the execution along the row).
 type RowMode = "event" | "span" | "request";
-const ROW_MODE_LABELS: Record<RowMode, string> = {
-	event: "Row: per event",
-	span: "Row: by span",
-	request: "Row: by request",
+const ROW_MODE_LABEL_KEYS: Record<RowMode, string> = {
+	event: "timeline.rowMode.event",
+	span: "timeline.rowMode.span",
+	request: "timeline.rowMode.request",
 };
 const formatAxisValue = (value: number, mode: AxisMode): string => {
 	const date = new Date(value);
@@ -125,6 +126,28 @@ interface RenderRect {
 export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 	logs,
 }) => {
+	const { t } = useTranslation("auditlog");
+	//Resolved chart copy. Memoized per-language and fed into the chart effect's
+	//dependency array so the echarts tooltip (built as an HTML string) re-renders
+	//in the new language when the user switches it.
+	const chartText = useMemo(
+		() => ({
+			event: t("common.event"),
+			success: t("common.success"),
+			failed: t("common.failed"),
+			engine: t("timeline.tooltip.engine"),
+			user: t("timeline.tooltip.user"),
+			latency: t("timeline.tooltip.latency"),
+			tokens: t("timeline.tooltip.tokens"),
+			start: t("timeline.tooltip.start"),
+			end: t("timeline.tooltip.end"),
+			span: t("timeline.tooltip.span"),
+			session: t("timeline.tooltip.session"),
+			request: t("timeline.tooltip.request"),
+			response: t("timeline.tooltip.response"),
+		}),
+		[t],
+	);
 	const chartRef = useRef<HTMLDivElement>(null);
 	const chartInstanceRef = useRef<echarts.ECharts | null>(null);
 	//Persisted zoom windows (percent) for both axes, so the current zoom survives
@@ -140,6 +163,8 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 	//Mirror in a ref so the zrender drag handlers (bound once) read the latest value.
 	const zoomSelectActiveRef = useRef(zoomSelectActive);
 	zoomSelectActiveRef.current = zoomSelectActive;
+	//Set by the chart effect; lets Reset / disarming wipe any stray selection masks.
+	const clearMasksRef = useRef<(() => void) | null>(null);
 	const grouped = rowMode !== "event";
 
 	//Parse + order the rows. Each row becomes one lane (top-to-bottom).
@@ -296,20 +321,20 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 					return `
 						<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.45;">
 							<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #f0f0f0;">
-								<span style="font-weight:600;">${e.methodName || e.engineName || "Event"}</span>
-								<span style="font-weight:600;color:${ok ? STATUS_OK_COLOR : STATUS_FAIL_COLOR};">${ok ? "Success" : "Failed"}</span>
+								<span style="font-weight:600;">${e.methodName || e.engineName || chartText.event}</span>
+								<span style="font-weight:600;color:${ok ? STATUS_OK_COLOR : STATUS_FAIL_COLOR};">${ok ? chartText.success : chartText.failed}</span>
 							</div>
-							${line("Engine", `${e.engineName ?? ""}${e.engineType ? ` (${e.engineType})` : ""}`)}
-							${line("User", e.userName || e.userId || "")}
-							${line("Latency", `${e.latency}ms`)}
-							${line("Tokens", e.tokens != null ? String(e.tokens) : "")}
-							${line("Start", `${start.date} ${start.time}`)}
-							${line("End", `${end.date} ${end.time}`)}
-							${line("Span", e.spanId || "")}
-							${line("Session", e.sessionId || "")}
-							<div style="margin-top:6px;color:#888;">Request</div>
+							${line(chartText.engine, `${e.engineName ?? ""}${e.engineType ? ` (${e.engineType})` : ""}`)}
+							${line(chartText.user, e.userName || e.userId || "")}
+							${line(chartText.latency, `${e.latency}ms`)}
+							${line(chartText.tokens, e.tokens != null ? String(e.tokens) : "")}
+							${line(chartText.start, `${start.date} ${start.time}`)}
+							${line(chartText.end, `${end.date} ${end.time}`)}
+							${line(chartText.span, e.spanId || "")}
+							${line(chartText.session, e.sessionId || "")}
+							<div style="margin-top:6px;color:#888;">${chartText.request}</div>
 							<div style="color:#333;word-break:break-word;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${truncate(e.request)}</div>
-							<div style="margin-top:4px;color:#888;">Response</div>
+							<div style="margin-top:4px;color:#888;">${chartText.response}</div>
 							<div style="color:#333;word-break:break-word;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${truncate(e.response)}</div>
 						</div>`;
 				},
@@ -332,8 +357,13 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 					height: 16,
 					start: xZoom.start,
 					end: xZoom.end,
+					//Time is a continuous scale: "none" zooms the range and lets clip:true
+					//trim the bars, so long bars spanning the window still render.
+					filterMode: "none",
 				},
-				//Vertical scrollbar through rows (keeps the time axis pinned).
+				//Vertical scrollbar through rows (keeps the time axis pinned). "filter"
+				//(not "none") so a narrow row-window REMOVES out-of-range lanes instead of
+				//collapsing every bar onto the single visible ordinal band.
 				{
 					id: "yZoom",
 					type: "slider",
@@ -342,7 +372,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 					width: 14,
 					start: yZoom.start,
 					end: yZoom.end,
-					filterMode: "none",
+					filterMode: "filter",
 					brushSelect: false,
 					showDetail: false,
 				},
@@ -383,6 +413,9 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 				{
 					type: "custom",
 					clip: true,
+					//Tell the dataZooms which value dimensions map to each axis so their
+					//filterMode targets the right dimension (x = start..end, y = lane).
+					encode: { x: [0, 2], y: 1 },
 					data: seriesData,
 					renderItem: (
 						params: RenderItemParams,
@@ -442,18 +475,28 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 		//done with zrender events (rather than the toolbox feature) so it works reliably.
 		const zr = chart.getZr();
 		let dragStart: [number, number] | null = null;
-		let maskEl: echarts.graphic.Rect | null = null;
+		//Track EVERY mask we add so we can always remove all of them — a single
+		//reference can leak (e.g. a new drag starts over a leftover, or mouseup lands
+		//off-canvas so zrender never fires), stranding blue boxes on the chart.
+		const masks = new Set<echarts.graphic.Rect>();
+		//The mask currently being dragged (resized on mousemove).
+		let activeMask: echarts.graphic.Rect | null = null;
 		const clearMask = () => {
-			if (maskEl) {
-				zr.remove(maskEl);
-				maskEl = null;
+			for (const mask of masks) {
+				zr.remove(mask);
 			}
+			masks.clear();
+			activeMask = null;
 			dragStart = null;
 		};
+		//Expose cleanup so Reset and disarming the cursor can wipe any stray masks.
+		clearMasksRef.current = clearMask;
 		const onZrDown = (event: { offsetX: number; offsetY: number }) => {
 			if (!zoomSelectActiveRef.current) return;
+			//Remove any leftover selection before starting a fresh one.
+			clearMask();
 			dragStart = [event.offsetX, event.offsetY];
-			maskEl = new echarts.graphic.Rect({
+			const maskEl = new echarts.graphic.Rect({
 				shape: {
 					x: event.offsetX,
 					y: event.offsetY,
@@ -468,11 +511,13 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 				z: 100,
 				silent: true,
 			});
+			masks.add(maskEl);
+			activeMask = maskEl;
 			zr.add(maskEl);
 		};
 		const onZrMove = (event: { offsetX: number; offsetY: number }) => {
-			if (!dragStart || !maskEl) return;
-			maskEl.setShape({
+			if (!dragStart || !activeMask) return;
+			activeMask.setShape({
 				x: Math.min(dragStart[0], event.offsetX),
 				y: Math.min(dragStart[1], event.offsetY),
 				width: Math.abs(event.offsetX - dragStart[0]),
@@ -487,6 +532,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 			clearMask();
 			//Ignore tiny drags (treated as a click).
 			if (Math.abs(ex - sx) < 4 && Math.abs(ey - sy) < 4) return;
+			//Zoom the time (x) axis to the drawn span.
 			const x1 = chart.convertFromPixel(
 				{ xAxisIndex: 0 },
 				Math.min(sx, ex),
@@ -495,6 +541,17 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 				{ xAxisIndex: 0 },
 				Math.max(sx, ex),
 			) as number;
+			chart.dispatchAction({
+				type: "dataZoom",
+				dataZoomId: "xZoom",
+				startValue: x1,
+				endValue: x2,
+			});
+			//Also zoom the row (y) axis to the rows the rectangle covers. This is safe now
+			//that yZoom uses filterMode:"filter": out-of-window lanes are REMOVED rather than
+			//clamped onto the single visible ordinal band, so a thin selection narrows to
+			//those rows instead of collapsing every event onto one (the earlier bug came from
+			//filterMode:"none"). Skip if the drag fell outside the plottable row area.
 			const yTop = chart.convertFromPixel(
 				{ yAxisIndex: 0 },
 				Math.min(sy, ey),
@@ -503,24 +560,28 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 				{ yAxisIndex: 0 },
 				Math.max(sy, ey),
 			) as number;
-			chart.dispatchAction({
-				type: "dataZoom",
-				dataZoomId: "xZoom",
-				startValue: x1,
-				endValue: x2,
-			});
-			chart.dispatchAction({
-				type: "dataZoom",
-				dataZoomId: "yZoom",
-				startValue: Math.min(yTop, yBottom),
-				endValue: Math.max(yTop, yBottom),
-			});
+			const yStart = Math.min(yTop, yBottom);
+			const yEnd = Math.max(yTop, yBottom);
+			if (Number.isFinite(yStart) && Number.isFinite(yEnd)) {
+				chart.dispatchAction({
+					type: "dataZoom",
+					dataZoomId: "yZoom",
+					startValue: yStart,
+					endValue: yEnd,
+				});
+			}
 			//Stay armed so the user can keep drawing zoom regions until they toggle
 			//the highlight button off.
 		};
 		zr.on("mousedown", onZrDown);
 		zr.on("mousemove", onZrMove);
 		zr.on("mouseup", onZrUp);
+		//If the pointer is released anywhere (including outside the canvas, where zrender
+		//never fires mouseup), cancel the in-progress selection so no stray box is left.
+		const onWindowUp = () => {
+			if (dragStart) clearMask();
+		};
+		window.addEventListener("mouseup", onWindowUp);
 
 		//After any zoom (slider drag, rectangle highlight, or buttons) read the
 		//authoritative current windows off the chart so our state always matches what
@@ -555,11 +616,14 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 
 		return () => {
 			window.removeEventListener("resize", handleResize);
+			window.removeEventListener("mouseup", onWindowUp);
+			clearMask();
+			clearMasksRef.current = null;
 			resizeObserver.disconnect();
 			chart.dispose();
 			chartInstanceRef.current = null;
 		};
-	}, [rows, lanes, barColors, chartHeight, axisMode]);
+	}, [rows, lanes, barColors, chartHeight, axisMode, chartText]);
 
 	//Zoom the time (x) axis around the center of the CURRENT window, so the buttons
 	//compose with whatever is already zoomed (slider/rectangle).
@@ -598,11 +662,17 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 	//Arm/disarm the rectangle-zoom cursor. While armed, dragging on the chart zooms
 	//into that region; toggling off restores normal click-to-open-drawer behavior.
 	const toggleHighlightZoom = () => {
-		setZoomSelectActive((active) => !active);
+		setZoomSelectActive((active) => {
+			//Disarming clears any selection box still on screen.
+			if (active) clearMasksRef.current?.();
+			return !active;
+		});
 	};
 
 	//Restore the full time + row range.
 	const resetZoom = () => {
+		//Wipe any stray selection masks that may have been left on the chart.
+		clearMasksRef.current?.();
 		setXZoom({ start: 0, end: 100 });
 		setYZoom({ start: 0, end: 100 });
 		chartInstanceRef.current?.dispatchAction({
@@ -627,7 +697,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 	const header = (
 		<div className="flex flex-wrap items-center justify-between gap-2 p-4">
 			<span className="font-semibold text-[#333] text-[18px]">
-				Event History
+				{t("timeline.title")}
 			</span>
 			<div className="flex flex-wrap items-center gap-2">
 				<Select
@@ -638,10 +708,10 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
-						{(Object.keys(ROW_MODE_LABELS) as RowMode[]).map(
+						{(Object.keys(ROW_MODE_LABEL_KEYS) as RowMode[]).map(
 							(mode) => (
 								<SelectItem key={mode} value={mode}>
-									{ROW_MODE_LABELS[mode]}
+									{t(ROW_MODE_LABEL_KEYS[mode])}
 								</SelectItem>
 							),
 						)}
@@ -655,10 +725,10 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
-						{(Object.keys(AXIS_MODE_LABELS) as AxisMode[]).map(
+						{(Object.keys(AXIS_MODE_LABEL_KEYS) as AxisMode[]).map(
 							(mode) => (
 								<SelectItem key={mode} value={mode}>
-									{AXIS_MODE_LABELS[mode]}
+									{t(AXIS_MODE_LABEL_KEYS[mode])}
 								</SelectItem>
 							),
 						)}
@@ -672,7 +742,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 						variant={zoomSelectActive ? "secondary" : "ghost"}
 						className="rounded-[4px_0_0_4px] px-[4px] py-[4px]"
 						onClick={toggleHighlightZoom}
-						title="Highlight a region to zoom in"
+						title={t("timeline.highlightZoom")}
 						aria-pressed={zoomSelectActive}
 					>
 						<CropIcon style={{ color: "#666" }} />
@@ -681,7 +751,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 						variant="ghost"
 						className="rounded-none px-[4px] py-[4px]"
 						onClick={handleZoomIn}
-						title="Zoom in"
+						title={t("timeline.zoomIn")}
 						disabled={xZoom.end - xZoom.start <= 5}
 					>
 						<ZoomInIcon style={{ color: "#666" }} />
@@ -690,7 +760,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 						variant="ghost"
 						className="rounded-none px-[4px] py-[4px]"
 						onClick={handleZoomOut}
-						title="Zoom out"
+						title={t("timeline.zoomOut")}
 						disabled={xZoom.start === 0 && xZoom.end === 100}
 					>
 						<ZoomOutIcon style={{ color: "#666" }} />
@@ -699,7 +769,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 						variant="ghost"
 						className="rounded-[0_4px_4px_0] px-[4px] py-[4px]"
 						onClick={resetZoom}
-						title="Reset zoom"
+						title={t("timeline.resetZoom")}
 						disabled={
 							xZoom.start === 0 &&
 							xZoom.end === 100 &&
@@ -720,7 +790,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 				{header}
 				<div className="p-4 text-center">
 					<span className="font-normal text-[14px] text-gray-500">
-						No logs available.
+						{t("common.noLogs")}
 					</span>
 				</div>
 			</div>
@@ -744,7 +814,9 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 					side="right"
 					className="min-w-[500px] transition-all duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] data-[state=closed]:translate-x-full data-[state=open]:translate-x-0 data-[state=closed]:opacity-0 data-[state=open]:opacity-100"
 				>
-					<SheetTitle className="sr-only">Audit Details</SheetTitle>
+					<SheetTitle className="sr-only">
+						{t("detail.title")}
+					</SheetTitle>
 					<AuditLogsDetailDrawer
 						logDetails={selectedEvent}
 						handleDrawerClose={handleDrawerClose}

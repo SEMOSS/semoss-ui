@@ -28,6 +28,19 @@ export default defineConfig(({ mode }) => {
 		build: {
 			minify: isProduction,
 			commonjsOptions: { transformMixedEsModules: true },
+			rollupOptions: {
+				output: {
+					manualChunks(id: string) {
+						// One lazy chunk per language so loading/switching a
+						// language is a single request and new languages never
+						// bloat the main bundle.
+						const locale = id.match(/\/locales\/([^/]+)\/.*\.json/);
+						if (locale) {
+							return `locale-${locale[1]}`;
+						}
+					},
+				},
+			},
 		},
 		optimizeDeps: {
 			esbuildOptions: { target: "es2020" },

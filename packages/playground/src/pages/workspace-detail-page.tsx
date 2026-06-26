@@ -1,4 +1,5 @@
 import {
+	BlocksIcon,
 	BookOpenIcon,
 	HammerIcon,
 	Maximize2Icon,
@@ -39,6 +40,7 @@ import {
 	WorkspaceChatList,
 	WorkspaceMCPList,
 	WorkspacePromptList,
+	WorkspaceSkillList,
 } from "@/components";
 import { useGlobalBreadcrumbs } from "@/hooks";
 import { useChat } from "@/hooks/use-chat";
@@ -290,6 +292,19 @@ export const WorkspaceDetailPage = observer(() => {
 								type="TOOLBOX"
 								workspaceId={workspaceId}
 								search=""
+							/>
+						</div>
+					</section>
+
+					{/* Skills */}
+					<section className="flex flex-col gap-3">
+						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
+							<BlocksIcon className="size-5" />
+							{t("workspace:detail.tabs.skills")}
+						</h2>
+						<div className="min-h-32 rounded-xl border border-border bg-card">
+							<WorkspaceSkillList
+								skills={workspace.skills ?? []}
 							/>
 						</div>
 					</section>
