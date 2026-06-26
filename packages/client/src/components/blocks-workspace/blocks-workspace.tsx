@@ -18,7 +18,8 @@ import { FlexLayout } from "@/components/flex-layout";
 import { useWorkspace } from "@/hooks";
 import { AppDetailPage } from "@/pages/app";
 import { DesignerStore, type WorkspaceOptions } from "@/stores";
-import { TerminalPanel, WorkspaceManager } from "../../components/workspace";
+import { WorkspaceManager } from "../../components/workspace";
+import { WorkspaceTerminal } from "../../components/workspace/panels";
 import { DesignerContext } from "../../contexts";
 import { MCPJsonEditor } from "../shared";
 import { GraphPanel } from "../workspace/panels/graph-panel";
@@ -372,7 +373,7 @@ export const BlocksWorkspace: React.FC = observer(() => {
 		} else if (component === "notebook-viewer") {
 			return <NotebookViewerPanel id={config.id} />;
 		} else if (component === "terminal") {
-			return <TerminalPanel />;
+			return <WorkspaceTerminal appId={workspace.appId} />;
 		} else if (component === "graph") {
 			return <GraphPanel />;
 		} else if (component === "settingsPanel") {

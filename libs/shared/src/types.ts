@@ -282,6 +282,8 @@ export interface ThemeMap {
 			showKnowledgeMenu?: boolean;
 			/** Whether to show the Toolbox picker in the chat input menu. Defaults to true. */
 			showToolboxMenu?: boolean;
+			/** Whether to show the Activity Log (audit logs) option in the room menu. Defaults to true. */
+			showActivityLog?: boolean;
 			/** Whether to show external links to the SEMOSS platform. Defaults to true. */
 			showPlatformLinks?: boolean;
 			/** Whether to show a text input for feedback comments when rating a response. Defaults to false. */
@@ -340,6 +342,25 @@ export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {
 	/** Flag to indicate if this MCP comes from a workspace */
 	fromWorkspace?: boolean;
 };
+
+export interface Skill {
+	/** Id of the skill (project id) */
+	id: string;
+	/** Display name of the skill */
+	name: string;
+	/** Type discriminator — always SKILL */
+	type: "SKILL";
+	/** URL-friendly identifier */
+	slug: string;
+}
+
+/**
+ * The shape carried in form state and selectors. Mirrors MCPConfig — the
+ * name travels with the value so selectors can render chips without a
+ * separate lookup. Reduced to IDs only at the EditWorkspace/AddWorkspace
+ * pixel boundary.
+ */
+export type SkillConfig = Pick<Skill, "id" | "name">;
 
 export interface ProjectDependency {
 	engine_type:
