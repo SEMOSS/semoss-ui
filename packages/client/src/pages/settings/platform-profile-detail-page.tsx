@@ -172,7 +172,6 @@ export const PlatformProfileDetailPage = observer(() => {
 		await loadFeatures();
 	}
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: fetch on search/modal change
 	useEffect(() => {
 		if (!showAssignModal) return;
 		const version = ++assignFetchVersionRef.current;
@@ -212,11 +211,12 @@ export const PlatformProfileDetailPage = observer(() => {
 		if (selectedUsers.length === 0) return;
 		setAssigningUsers(true);
 		try {
-			for (const user of selectedUsers) {
-				await runPixel(
-					`AssignUserPlatformProfile(userId="${user.id}", profileId="${profileId}");`,
-				);
-			}
+			const userList = selectedUsers
+				.map((u) => `"${escapePixelString(u.id)}"`)
+				.join(", ");
+			await runPixel(
+				`AssignUserPlatformProfile(userId=[${userList}], profileId="${profileId}");`,
+			);
 			await Promise.all([loadUsers(), loadProfile()]);
 			closeAssignModal();
 		} finally {

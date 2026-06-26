@@ -1,6 +1,7 @@
-import { ChevronDown, Pencil, Trash2, UserPlus, Users, X } from "lucide-react";
+import { Pencil, Plus, Search, Trash2, UserPlus, Users, X } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { useDebouncedValue } from "@semoss/sdk/react";
 import {
 	Avatar,
 	AvatarFallback,
@@ -14,7 +15,11 @@ import {
 	DialogHeader,
 	DialogTitle,
 	Input,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
 	Label,
+	Muted,
 	Switch,
 	Table,
 	TableBody,
@@ -33,6 +38,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import type { AdminUser } from "@/api/auth";
+import { searchAllUsers } from "@/api/auth";
 import { UserSearchCombobox } from "@/components/settings/user-search-combobox";
 import { useRootStore } from "@/hooks/";
 
@@ -87,6 +93,10 @@ interface AppProfilesProps {
 	permission?: string;
 }
 
+type AssignTarget =
+	| { type: "profile"; profileId: string; profileName: string }
+	| { type: "subgroup"; subgroupId: string; subgroupName: string };
+
 const escapePixelString = (s: string) => s.replaceAll("'", "\\'");
 
 function validateFeatureKey(key: string): boolean {
@@ -99,14 +109,26 @@ export const AppProfiles = observer(
 		const uid = useId();
 		const canWrite = permission !== "readOnly";
 
+		// Data
 		const [profiles, setProfiles] = useState<Profile[]>([]);
 		const [selectedProfile, setSelectedProfile] = useState<Profile | null>(
 			null,
 		);
 		const [features, setFeatures] = useState<Feature[]>([]);
 		const [profileUsers, setProfileUsers] = useState<ProfileUser[]>([]);
+		const [subgroups, setSubgroups] = useState<Subgroup[]>([]);
+		const [subgroupFeatures, setSubgroupFeatures] = useState<Feature[]>([]);
+		const [subgroupUsers, setSubgroupUsers] = useState<SubgroupUser[]>([]);
+		const [profileManagers, setProfileManagers] = useState<
+			ProfileManager[]
+		>([]);
 
-		// Profile modal state
+		// Search / filter
+		const [profileSearch, setProfileSearch] = useState("");
+		const [memberSearch, setMemberSearch] = useState("");
+		const [subgroupMemberSearch, setSubgroupMemberSearch] = useState("");
+
+		// Profile CRUD modal
 		const [showProfileModal, setShowProfileModal] = useState(false);
 		const [editingProfile, setEditingProfile] = useState<Profile | null>(
 			null,
@@ -117,33 +139,19 @@ export const AppProfiles = observer(
 		const [profileFormIsGroup, setProfileFormIsGroup] = useState(false);
 		const [savingProfile, setSavingProfile] = useState(false);
 
-		// Feature modal state
+		// Feature CRUD
 		const [showFeatureModal, setShowFeatureModal] = useState(false);
 		const [featureFormKey, setFeatureFormKey] = useState("");
 		const [featureFormDesc, setFeatureFormDesc] = useState("");
 		const [featureKeyError, setFeatureKeyError] = useState("");
 		const [savingFeature, setSavingFeature] = useState(false);
+		const [deleteFeatureTarget, setDeleteFeatureTarget] =
+			useState<Feature | null>(null);
 
-		// Assign user modal state
-		const [showAssignModal, setShowAssignModal] = useState(false);
-		const [assignUser, setAssignUser] = useState<AdminUser | null>(null);
-		const [assigningUser, setAssigningUser] = useState(false);
-
-		// App-level managers state
-		const [profileManagers, setProfileManagers] = useState<
-			ProfileManager[]
-		>([]);
-		const [showManagersDialog, setShowManagersDialog] = useState(false);
-		const [showAddManagerModal, setShowAddManagerModal] = useState(false);
-		const [addManagerUser, setAddManagerUser] = useState<AdminUser | null>(
-			null,
-		);
-		const [addingManager, setAddingManager] = useState(false);
-		const [removeManagerTarget, setRemoveManagerTarget] =
-			useState<ProfileManager | null>(null);
-
-		// Subgroups state (group profiles)
-		const [subgroups, setSubgroups] = useState<Subgroup[]>([]);
+		// Subgroup CRUD
+		const [configureSubgroupId, setConfigureSubgroupId] = useState<
+			string | null
+		>(null);
 		const [showSubgroupModal, setShowSubgroupModal] = useState(false);
 		const [editingSubgroup, setEditingSubgroup] = useState<Subgroup | null>(
 			null,
@@ -154,45 +162,83 @@ export const AppProfiles = observer(
 		const [deleteSubgroupTarget, setDeleteSubgroupTarget] =
 			useState<Subgroup | null>(null);
 
-		// Expanded subgroup accordion state
-		const [expandedSubgroupId, setExpandedSubgroupId] = useState<
-			string | null
-		>(null);
-		const [subgroupFeatures, setSubgroupFeatures] = useState<Feature[]>([]);
-		const [subgroupUsers, setSubgroupUsers] = useState<SubgroupUser[]>([]);
-		const [showAssignSubgroupUserModal, setShowAssignSubgroupUserModal] =
-			useState(false);
-		const [assignSubgroupUser, setAssignSubgroupUser] =
-			useState<AdminUser | null>(null);
-		const [assigningSubgroupUser, setAssigningSubgroupUser] =
-			useState(false);
-		const [removeSubgroupUserTarget, setRemoveSubgroupUserTarget] =
-			useState<SubgroupUser | null>(null);
+		// Unified assign users modal (profile + subgroup)
+		const [assignTarget, setAssignTarget] = useState<AssignTarget | null>(
+			null,
+		);
+		const [selectedUsers, setSelectedUsers] = useState<AdminUser[]>([]);
+		const [assignSearch, setAssignSearch] = useState("");
+		const [assignResults, setAssignResults] = useState<AdminUser[]>([]);
+		const [assignSearching, setAssignSearching] = useState(false);
+		const [assigningUsers, setAssigningUsers] = useState(false);
+		const assignFetchVersionRef = useRef(0);
+		const debouncedAssignSearch = useDebouncedValue(assignSearch, 300);
 
-		// Confirmation dialogs
+		// Managers
+		const [showManagersDialog, setShowManagersDialog] = useState(false);
+		const [showAddManagerModal, setShowAddManagerModal] = useState(false);
+		const [addManagerUser, setAddManagerUser] = useState<AdminUser | null>(
+			null,
+		);
+		const [addingManager, setAddingManager] = useState(false);
+		const [removeManagerTarget, setRemoveManagerTarget] =
+			useState<ProfileManager | null>(null);
+
+		// Confirmations
 		const [deleteProfileTarget, setDeleteProfileTarget] =
 			useState<Profile | null>(null);
 		const [removeUserTarget, setRemoveUserTarget] =
 			useState<ProfileUser | null>(null);
+		const [removeSubgroupUserTarget, setRemoveSubgroupUserTarget] =
+			useState<SubgroupUser | null>(null);
 		const [confirmLoading, setConfirmLoading] = useState(false);
 
-		const expandedSubgroup =
-			subgroups.find((sg) => sg.subgroupId === expandedSubgroupId) ??
+		// Computed
+		const configureSubgroup =
+			subgroups.find((sg) => sg.subgroupId === configureSubgroupId) ??
 			null;
 
-		// biome-ignore lint/correctness/useExhaustiveDependencies: loadProfiles is defined in component scope
+		const filteredProfiles = profileSearch.trim()
+			? profiles.filter((p) =>
+					p.profileName
+						.toLowerCase()
+						.includes(profileSearch.trim().toLowerCase()),
+				)
+			: profiles;
+
+		const filteredMembers = memberSearch.trim()
+			? profileUsers.filter((u) => {
+					const term = memberSearch.trim().toLowerCase();
+					return (
+						(u.name || u.userId).toLowerCase().includes(term) ||
+						(u.email || "").toLowerCase().includes(term)
+					);
+				})
+			: profileUsers;
+
+		const filteredSubgroupMembers = subgroupMemberSearch.trim()
+			? subgroupUsers.filter((u) => {
+					const term = subgroupMemberSearch.trim().toLowerCase();
+					return (
+						(u.name || u.userId).toLowerCase().includes(term) ||
+						(u.email || "").toLowerCase().includes(term)
+					);
+				})
+			: subgroupUsers;
+
+		// biome-ignore lint/correctness/useExhaustiveDependencies: loaders defined in component scope
 		useEffect(() => {
 			loadProfiles();
 			loadProfileManagers();
 		}, [appId]);
 
-		// biome-ignore lint/correctness/useExhaustiveDependencies: loader functions are defined in component scope
+		// biome-ignore lint/correctness/useExhaustiveDependencies: loaders defined in component scope
 		useEffect(() => {
-			// Clear all profile-specific state on profile switch to prevent stale data
 			setFeatures([]);
 			setProfileUsers([]);
 			setSubgroups([]);
-			setExpandedSubgroupId(null);
+			setConfigureSubgroupId(null);
+			setMemberSearch("");
 
 			if (selectedProfile) {
 				if (selectedProfile.isGroup) {
@@ -205,13 +251,42 @@ export const AppProfiles = observer(
 			}
 		}, [selectedProfile]);
 
-		// biome-ignore lint/correctness/useExhaustiveDependencies: loader functions are defined in component scope
+		// biome-ignore lint/correctness/useExhaustiveDependencies: loaders defined in component scope
 		useEffect(() => {
-			if (expandedSubgroupId) {
-				loadSubgroupFeatures(expandedSubgroupId);
-				loadSubgroupUsers(expandedSubgroupId);
+			setSubgroupFeatures([]);
+			setSubgroupUsers([]);
+			setSubgroupMemberSearch("");
+			if (configureSubgroupId) {
+				loadSubgroupFeatures(configureSubgroupId);
+				loadSubgroupUsers(configureSubgroupId);
 			}
-		}, [expandedSubgroupId]);
+		}, [configureSubgroupId]);
+
+		useEffect(() => {
+			if (!assignTarget) return;
+			const version = ++assignFetchVersionRef.current;
+			setAssignSearching(true);
+			const excludeIds = new Set(
+				assignTarget.type === "profile"
+					? profileUsers.map((u) => u.userId)
+					: subgroupUsers.map((u) => u.userId),
+			);
+			searchAllUsers(debouncedAssignSearch, 20, 0)
+				.then((results) => {
+					if (assignFetchVersionRef.current !== version) return;
+					setAssignResults(
+						results.filter((u) => !excludeIds.has(u.id)),
+					);
+				})
+				.catch(() => {
+					if (assignFetchVersionRef.current === version)
+						setAssignResults([]);
+				})
+				.finally(() => {
+					if (assignFetchVersionRef.current === version)
+						setAssignSearching(false);
+				});
+		}, [assignTarget, debouncedAssignSearch, profileUsers, subgroupUsers]);
 
 		async function runPixel<T = unknown>(pixel: string): Promise<T | null> {
 			const response = await monolithStore.runQuery(pixel);
@@ -331,6 +406,21 @@ export const AppProfiles = observer(
 			setSubgroupFormDesc("");
 		}
 
+		function toggleUserSelected(user: AdminUser) {
+			setSelectedUsers((prev) =>
+				prev.find((u) => u.id === user.id)
+					? prev.filter((u) => u.id !== user.id)
+					: [...prev, user],
+			);
+		}
+
+		function closeAssignModal() {
+			setAssignTarget(null);
+			setSelectedUsers([]);
+			setAssignSearch("");
+			setAssignResults([]);
+		}
+
 		async function handleSaveProfile() {
 			const name = escapePixelString(profileFormName.trim());
 			if (!name) {
@@ -399,24 +489,61 @@ export const AppProfiles = observer(
 				);
 				if (selectedProfile)
 					await loadProfileFeatures(selectedProfile.profileId);
+				if (configureSubgroupId)
+					await loadSubgroupFeatures(configureSubgroupId);
 				closeFeatureModal();
 			} finally {
 				setSavingFeature(false);
 			}
 		}
 
-		async function handleAssignUser() {
-			if (!selectedProfile || !assignUser) return;
-			setAssigningUser(true);
+		async function confirmDeleteFeature() {
+			if (!deleteFeatureTarget) return;
+			setConfirmLoading(true);
 			try {
 				await runPixel(
-					`AssignAppUserProfile(app="${appId}", userId="${assignUser.id}", profileId="${selectedProfile.profileId}");`,
+					`DeleteAppFeature(app="${appId}", featureId="${deleteFeatureTarget.featureId}");`,
 				);
-				await loadProfileUsers(selectedProfile.profileId);
-				setShowAssignModal(false);
-				setAssignUser(null);
+				if (selectedProfile)
+					await loadProfileFeatures(selectedProfile.profileId);
+				if (configureSubgroupId)
+					await loadSubgroupFeatures(configureSubgroupId);
+				setDeleteFeatureTarget(null);
 			} finally {
-				setAssigningUser(false);
+				setConfirmLoading(false);
+			}
+		}
+
+		async function handleAssignUsers() {
+			if (selectedUsers.length === 0 || !assignTarget) return;
+			setAssigningUsers(true);
+			try {
+				const userList = selectedUsers
+					.map((u) => `"${escapePixelString(u.id)}"`)
+					.join(", ");
+				if (assignTarget.type === "profile") {
+					await runPixel(
+						`AssignAppUserProfile(app="${appId}", userId=[${userList}], profileId="${assignTarget.profileId}");`,
+					);
+					await Promise.all([
+						loadProfileUsers(assignTarget.profileId),
+						loadProfiles(),
+					]);
+				} else {
+					await runPixel(
+						`AssignAppUserSubgroup(app="${appId}", userId=[${userList}], subgroupId="${assignTarget.subgroupId}");`,
+					);
+					await Promise.all([
+						loadSubgroupUsers(assignTarget.subgroupId),
+						selectedProfile
+							? loadSubgroups(selectedProfile.profileId)
+							: Promise.resolve(),
+						loadProfiles(),
+					]);
+				}
+				closeAssignModal();
+			} finally {
+				setAssigningUsers(false);
 			}
 		}
 
@@ -504,55 +631,35 @@ export const AppProfiles = observer(
 		}
 
 		async function handleToggleSubgroupFeature(feature: Feature) {
-			if (!expandedSubgroup) return;
+			if (!configureSubgroup) return;
 			await runPixel(
-				`SetAppSubgroupFeature(app="${appId}", subgroupId="${expandedSubgroup.subgroupId}", featureId="${feature.featureId}", enabled="${!feature.enabled}");`,
+				`SetAppSubgroupFeature(app="${appId}", subgroupId="${configureSubgroup.subgroupId}", featureId="${feature.featureId}", enabled="${!feature.enabled}");`,
 			);
-			await loadSubgroupFeatures(expandedSubgroup.subgroupId);
-		}
-
-		async function handleAssignSubgroupUser() {
-			if (!expandedSubgroup || !assignSubgroupUser) return;
-			setAssigningSubgroupUser(true);
-			try {
-				await runPixel(
-					`AssignAppUserSubgroup(app="${appId}", userId="${assignSubgroupUser.id}", subgroupId="${expandedSubgroup.subgroupId}");`,
-				);
-				await loadSubgroupUsers(expandedSubgroup.subgroupId);
-				setShowAssignSubgroupUserModal(false);
-				setAssignSubgroupUser(null);
-			} finally {
-				setAssigningSubgroupUser(false);
-			}
+			await loadSubgroupFeatures(configureSubgroup.subgroupId);
 		}
 
 		async function confirmRemoveSubgroupUser() {
-			if (!removeSubgroupUserTarget || !expandedSubgroup) return;
+			if (!removeSubgroupUserTarget || !configureSubgroup) return;
 			setConfirmLoading(true);
 			try {
 				await runPixel(
-					`RemoveAppUserSubgroup(app="${appId}", userId="${removeSubgroupUserTarget.userId}", subgroupId="${expandedSubgroup.subgroupId}");`,
+					`RemoveAppUserSubgroup(app="${appId}", userId="${removeSubgroupUserTarget.userId}", subgroupId="${configureSubgroup.subgroupId}");`,
 				);
-				await loadSubgroupUsers(expandedSubgroup.subgroupId);
+				await Promise.all([
+					loadSubgroupUsers(configureSubgroup.subgroupId),
+					selectedProfile
+						? loadSubgroups(selectedProfile.profileId)
+						: Promise.resolve(),
+					loadProfiles(),
+				]);
 				setRemoveSubgroupUserTarget(null);
 			} finally {
 				setConfirmLoading(false);
 			}
 		}
 
-		// Shared user display helpers
-		function getUserInitials(name: string | null, userId: string): string {
-			const displayName = name || userId;
-			return displayName
-				.split(" ")
-				.map((w) => w[0])
-				.join("")
-				.toUpperCase()
-				.slice(0, 2);
-		}
-
 		return (
-			<div className="flex w-full flex-col gap-6">
+			<div className="flex w-full flex-col gap-4">
 				{/* Page header */}
 				<div className="flex items-start justify-between gap-4">
 					<div className="flex flex-col gap-1">
@@ -582,13 +689,14 @@ export const AppProfiles = observer(
 								onClick={openNewProfileModal}
 								data-testid="new-profile-btn"
 							>
+								<Plus className="mr-1.5 size-3.5" />
 								New Profile
 							</Button>
 						)}
 					</div>
 				</div>
 
-				{/* Profile list */}
+				{/* Master-detail */}
 				{profiles.length === 0 ? (
 					<div className="flex flex-col items-center gap-4 rounded-lg border border-dashed py-16 text-center">
 						<p className="text-muted-foreground text-sm">
@@ -601,712 +709,315 @@ export const AppProfiles = observer(
 						)}
 					</div>
 				) : (
-					<div className="flex flex-col gap-2">
-						{profiles.map((p) => {
-							const isExpanded =
-								selectedProfile?.profileId === p.profileId;
-							return (
-								<div
-									key={p.profileId}
-									className="rounded-lg border bg-card"
-								>
-									{/* Profile card header — click to expand/collapse */}
-									{/* biome-ignore lint/a11y/useSemanticElements: card has nested interactive buttons */}
-									<div
-										role="button"
-										tabIndex={0}
-										className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left"
-										onClick={() =>
-											setSelectedProfile(
-												isExpanded ? null : p,
-											)
+					<div
+						className="flex overflow-hidden rounded-xl border"
+						style={{ minHeight: 480 }}
+					>
+						{/* Left rail — profile list */}
+						<div className="flex w-[240px] shrink-0 flex-col border-r">
+							<div className="border-b p-3">
+								<div className="relative">
+									<Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 size-3.5 text-muted-foreground" />
+									<Input
+										value={profileSearch}
+										onChange={(e) =>
+											setProfileSearch(e.target.value)
 										}
-										onKeyDown={(e) => {
-											if (
-												e.key === "Enter" ||
-												e.key === " "
-											)
-												setSelectedProfile(
-													isExpanded ? null : p,
-												);
-										}}
-									>
-										<ChevronDown
-											className={`size-4 shrink-0 text-muted-foreground transition-transform ${isExpanded ? "" : "-rotate-90"}`}
-										/>
-										<div className="flex min-w-0 flex-1 items-center gap-2">
-											<span className="truncate font-medium text-sm">
-												{p.profileName}
-											</span>
-											{p.isDefault && (
-												<Badge
-													variant="secondary"
-													className="text-xs"
-												>
-													Default
-												</Badge>
+										placeholder="Search profiles"
+										className="h-8 pl-8 text-sm"
+									/>
+								</div>
+							</div>
+							<div className="flex-1 overflow-y-auto">
+								{filteredProfiles.length === 0 ? (
+									<p className="p-4 text-center text-muted-foreground text-xs">
+										No profiles match &ldquo;{profileSearch}
+										&rdquo;
+									</p>
+								) : (
+									filteredProfiles.map((p) => {
+										const isSelected =
+											selectedProfile?.profileId ===
+											p.profileId;
+										return (
+											<button
+												key={p.profileId}
+												type="button"
+												className={`flex w-full flex-col gap-0.5 border-l-2 px-3 py-2.5 text-left transition-colors hover:bg-accent ${
+													isSelected
+														? "border-primary bg-accent"
+														: "border-transparent"
+												}`}
+												onClick={() =>
+													setSelectedProfile(
+														isSelected ? null : p,
+													)
+												}
+											>
+												<div className="flex min-w-0 items-center gap-1.5">
+													<span
+														className={`truncate text-sm ${isSelected ? "font-semibold" : "font-medium"}`}
+													>
+														{p.profileName}
+													</span>
+												</div>
+												<div className="flex items-center gap-1.5">
+													{p.isGroup && (
+														<Badge
+															variant="outline"
+															className="h-4 px-1.5 py-0 text-xs"
+														>
+															Group
+														</Badge>
+													)}
+													{p.isDefault && (
+														<Badge
+															variant="secondary"
+															className="h-4 px-1.5 py-0 text-xs"
+														>
+															Default
+														</Badge>
+													)}
+													<span className="text-muted-foreground text-xs">
+														{p.userCount}{" "}
+														{p.userCount === 1
+															? "user"
+															: "users"}
+													</span>
+												</div>
+											</button>
+										);
+									})
+								)}
+							</div>
+						</div>
+
+						{/* Right detail panel */}
+						<div className="flex flex-1 flex-col overflow-hidden">
+							{selectedProfile ? (
+								<>
+									{/* Profile header */}
+									<div className="flex items-start justify-between gap-4 border-b px-5 py-4">
+										<div className="flex min-w-0 flex-col gap-1">
+											<div className="flex items-center gap-2">
+												<span className="font-semibold text-lg">
+													{
+														selectedProfile.profileName
+													}
+												</span>
+												{selectedProfile.isGroup && (
+													<Badge variant="outline">
+														Group
+													</Badge>
+												)}
+												{selectedProfile.isDefault && (
+													<Badge variant="secondary">
+														Default
+													</Badge>
+												)}
+											</div>
+											{selectedProfile.description && (
+												<p className="text-muted-foreground text-sm">
+													{
+														selectedProfile.description
+													}
+												</p>
 											)}
-											{p.isGroup && (
-												<Badge
-													variant="outline"
-													className="gap-0.5 text-xs"
-												>
-													<Users className="size-3" />
-													Group
-												</Badge>
-											)}
-											<span className="ml-auto shrink-0 text-muted-foreground text-xs">
-												{p.userCount}{" "}
-												{p.userCount === 1
-													? "user"
-													: "users"}
-											</span>
 										</div>
 										{canWrite && (
-											<div className="flex shrink-0 items-center gap-0.5">
+											<div className="flex shrink-0 items-center gap-1.5">
 												<Button
-													size="icon"
-													variant="ghost"
-													className="size-7"
-													title="Edit profile"
+													variant="outline"
+													size="sm"
+													className="gap-1.5"
 													onClick={(e) =>
 														openEditProfileModal(
-															p,
+															selectedProfile,
 															e,
 														)
 													}
+													data-testid="edit-profile-btn"
 												>
 													<Pencil className="size-3.5" />
+													Edit
 												</Button>
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<span>
-															<Button
-																size="icon"
-																variant="ghost"
-																className="size-7 text-muted-foreground hover:text-destructive disabled:pointer-events-none"
-																disabled={
-																	p.userCount >
-																	0
-																}
-																onClick={(
-																	e,
-																) => {
-																	e.stopPropagation();
-																	setDeleteProfileTarget(
-																		p,
-																	);
-																}}
-															>
-																<Trash2 className="size-3.5" />
-															</Button>
-														</span>
-													</TooltipTrigger>
-													{p.userCount > 0 && (
-														<TooltipContent>
-															{p.userCount}{" "}
-															{p.userCount === 1
-																? "user"
-																: "users"}{" "}
-															assigned — reassign
-															first
-														</TooltipContent>
-													)}
-												</Tooltip>
+												<Button
+													variant="ghost"
+													size="sm"
+													className="gap-1.5 text-destructive hover:text-destructive"
+													onClick={() =>
+														setDeleteProfileTarget(
+															selectedProfile,
+														)
+													}
+													data-testid="delete-profile-btn"
+												>
+													<Trash2 className="size-3.5" />
+													Delete
+												</Button>
 											</div>
 										)}
 									</div>
 
-									{/* Expanded profile detail */}
-									{isExpanded && (
-										<div className="border-t px-4 pt-3 pb-4">
-											{p.isGroup ? (
-												/* Group profile — Features + Subgroups tabs */
-												<Tabs
-													defaultValue="features"
-													className="flex flex-col gap-3"
-												>
-													<TabsList className="w-fit">
-														<TabsTrigger value="features">
-															Features
-														</TabsTrigger>
-														<TabsTrigger value="subgroups">
-															Subgroups
-														</TabsTrigger>
-													</TabsList>
+									{/* Tabs */}
+									<div className="flex-1 overflow-y-auto p-5">
+										<Tabs
+											key={selectedProfile.profileId}
+											defaultValue="features"
+											className="flex flex-col gap-4"
+										>
+											<TabsList className="w-fit">
+												<TabsTrigger value="features">
+													Features
+												</TabsTrigger>
+												{selectedProfile.isGroup ? (
+													<TabsTrigger value="subgroups">
+														Subgroups
+													</TabsTrigger>
+												) : (
+													<TabsTrigger value="members">
+														Members
+														{selectedProfile.userCount >
+															0 && (
+															<span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-xs">
+																{
+																	selectedProfile.userCount
+																}
+															</span>
+														)}
+													</TabsTrigger>
+												)}
+											</TabsList>
 
-													{/* Group Features tab */}
-													<TabsContent
-														value="features"
-														className="flex flex-col gap-2"
-													>
-														<div className="flex items-center justify-between">
-															<p className="text-muted-foreground text-sm">
-																Base features
-																enabled for all
-																members of this
-																group profile.
-															</p>
-															{canWrite && (
-																<Button
-																	size="sm"
-																	variant="outline"
-																	onClick={() =>
-																		setShowFeatureModal(
-																			true,
+											{/* Features tab */}
+											<TabsContent
+												value="features"
+												className="flex flex-col gap-3"
+											>
+												<div className="flex items-center justify-between">
+													<p className="text-muted-foreground text-sm">
+														Toggle which features
+														are enabled for this
+														profile.
+													</p>
+													{canWrite && (
+														<Button
+															size="sm"
+															variant="outline"
+															className="gap-1.5"
+															onClick={() =>
+																setShowFeatureModal(
+																	true,
+																)
+															}
+															data-testid="add-feature-btn"
+														>
+															<Plus className="size-3.5" />
+															Add Feature
+														</Button>
+													)}
+												</div>
+												{features.length === 0 ? (
+													<p className="text-muted-foreground text-sm">
+														No features defined for
+														this app yet.
+													</p>
+												) : (
+													<div className="flex flex-col gap-1.5">
+														{features.map((f) => (
+															<div
+																key={
+																	f.featureId
+																}
+																className="flex items-center justify-between rounded-lg border px-3 py-2.5"
+															>
+																<div>
+																	<span className="font-mono text-sm">
+																		{
+																			f.featureKey
+																		}
+																	</span>
+																	{f.description && (
+																		<p className="text-muted-foreground text-xs">
+																			{
+																				f.description
+																			}
+																		</p>
+																	)}
+																</div>
+																<div className="flex items-center gap-2">
+																	<Switch
+																		checked={
+																			f.enabled
+																		}
+																		onCheckedChange={() =>
+																			handleToggleFeature(
+																				f,
+																			)
+																		}
+																		disabled={
+																			!canWrite
+																		}
+																	/>
+																	{canWrite && (
+																		<Button
+																			size="icon"
+																			variant="ghost"
+																			className="size-7 text-muted-foreground hover:text-destructive"
+																			onClick={() =>
+																				setDeleteFeatureTarget(
+																					f,
+																				)
+																			}
+																			data-testid={`delete-feature-${f.featureId}`}
+																		>
+																			<Trash2 className="size-3.5" />
+																		</Button>
+																	)}
+																</div>
+															</div>
+														))}
+													</div>
+												)}
+											</TabsContent>
+
+											{/* Members tab — regular profiles */}
+											<TabsContent value="members">
+												<div className="w-full rounded-xl border">
+													<div className="flex flex-col gap-2 rounded-t-xl border-b bg-muted p-3">
+														<div className="flex items-center gap-2">
+															<InputGroup className="flex-1 bg-background">
+																<InputGroupInput
+																	placeholder="Search members"
+																	value={
+																		memberSearch
+																	}
+																	onChange={(
+																		e: React.ChangeEvent<HTMLInputElement>,
+																	) =>
+																		setMemberSearch(
+																			e
+																				.target
+																				.value,
 																		)
 																	}
-																>
-																	Add Feature
-																</Button>
-															)}
-														</div>
-														{features.length ===
-														0 ? (
-															<p className="text-muted-foreground text-sm">
-																No features
-																defined for this
-																app yet.
-															</p>
-														) : (
-															<div className="flex flex-col gap-1.5">
-																{features.map(
-																	(f) => (
-																		<div
-																			key={
-																				f.featureId
-																			}
-																			className="flex items-center justify-between rounded-lg border px-3 py-2.5"
-																		>
-																			<div>
-																				<span className="font-mono text-sm">
-																					{
-																						f.featureKey
-																					}
-																				</span>
-																				{f.description && (
-																					<p className="text-muted-foreground text-xs">
-																						{
-																							f.description
-																						}
-																					</p>
-																				)}
-																			</div>
-																			<Switch
-																				checked={
-																					f.enabled
-																				}
-																				onCheckedChange={() =>
-																					handleToggleFeature(
-																						f,
-																					)
-																				}
-																				disabled={
-																					!canWrite
-																				}
-																			/>
-																		</div>
-																	),
-																)}
-															</div>
-														)}
-													</TabsContent>
-
-													{/* Subgroups tab — inline accordion */}
-													<TabsContent
-														value="subgroups"
-														className="flex flex-col gap-2"
-													>
-														<div className="flex items-center justify-between">
-															<p className="text-muted-foreground text-sm">
-																Subgroups within
-																this group
-																profile.
-															</p>
+																/>
+																<InputGroupAddon>
+																	<Search className="size-4" />
+																</InputGroupAddon>
+															</InputGroup>
 															{canWrite && (
 																<Button
 																	size="sm"
-																	variant="outline"
-																	onClick={
-																		openNewSubgroupModal
-																	}
-																	data-testid="new-subgroup-btn"
-																>
-																	New Subgroup
-																</Button>
-															)}
-														</div>
-														{subgroups.length ===
-														0 ? (
-															<p className="text-muted-foreground text-sm">
-																No subgroups
-																defined yet.
-															</p>
-														) : (
-															<div className="flex flex-col gap-1.5">
-																{subgroups.map(
-																	(sg) => {
-																		const sgExpanded =
-																			expandedSubgroupId ===
-																			sg.subgroupId;
-																		return (
-																			<div
-																				key={
-																					sg.subgroupId
-																				}
-																				className="rounded-lg border"
-																			>
-																				{/* Subgroup row */}
-																				<div className="flex items-center gap-2 px-3 py-2.5">
-																					{/* biome-ignore lint/a11y/useSemanticElements: interactive div with role */}
-																					<div
-																						role="button"
-																						tabIndex={
-																							0
-																						}
-																						className="flex min-w-0 flex-1 cursor-pointer items-center gap-2"
-																						onClick={() =>
-																							setExpandedSubgroupId(
-																								sgExpanded
-																									? null
-																									: sg.subgroupId,
-																							)
-																						}
-																						onKeyDown={(
-																							e,
-																						) => {
-																							if (
-																								e.key ===
-																									"Enter" ||
-																								e.key ===
-																									" "
-																							)
-																								setExpandedSubgroupId(
-																									sgExpanded
-																										? null
-																										: sg.subgroupId,
-																								);
-																						}}
-																					>
-																						<ChevronDown
-																							className={`size-4 shrink-0 text-muted-foreground transition-transform ${sgExpanded ? "" : "-rotate-90"}`}
-																						/>
-																						<span className="truncate font-medium text-sm">
-																							{
-																								sg.subgroupName
-																							}
-																						</span>
-																						{sg.description && (
-																							<span className="truncate text-muted-foreground text-xs">
-																								{
-																									sg.description
-																								}
-																							</span>
-																						)}
-																						<span className="ml-auto shrink-0 text-muted-foreground text-xs">
-																							{
-																								sg.userCount
-																							}{" "}
-																							{sg.userCount ===
-																							1
-																								? "user"
-																								: "users"}
-																						</span>
-																					</div>
-																					{canWrite && (
-																						<div className="flex shrink-0 items-center gap-0.5">
-																							<Button
-																								size="icon"
-																								variant="ghost"
-																								className="size-7"
-																								title="Edit subgroup"
-																								onClick={(
-																									e,
-																								) =>
-																									openEditSubgroupModal(
-																										sg,
-																										e,
-																									)
-																								}
-																							>
-																								<Pencil className="size-3.5" />
-																							</Button>
-																							<Tooltip>
-																								<TooltipTrigger
-																									asChild
-																								>
-																									<span>
-																										<Button
-																											size="icon"
-																											variant="ghost"
-																											className="size-7 text-muted-foreground hover:text-destructive disabled:pointer-events-none"
-																											disabled={
-																												sg.userCount >
-																												0
-																											}
-																											onClick={() =>
-																												setDeleteSubgroupTarget(
-																													sg,
-																												)
-																											}
-																											data-testid={`delete-subgroup-${sg.subgroupId}`}
-																										>
-																											<Trash2 className="size-3.5" />
-																										</Button>
-																									</span>
-																								</TooltipTrigger>
-																								{sg.userCount >
-																									0 && (
-																									<TooltipContent>
-																										{
-																											sg.userCount
-																										}{" "}
-																										{sg.userCount ===
-																										1
-																											? "user"
-																											: "users"}{" "}
-																										assigned
-																										—
-																										remove
-																										first
-																									</TooltipContent>
-																								)}
-																							</Tooltip>
-																						</div>
-																					)}
-																				</div>
-
-																				{/* Inline subgroup expanded content */}
-																				{sgExpanded && (
-																					<div className="border-t px-3 pt-2 pb-3">
-																						<Tabs
-																							defaultValue="sg-features"
-																							className="flex flex-col gap-2"
-																						>
-																							<TabsList className="w-fit">
-																								<TabsTrigger value="sg-features">
-																									Features
-																								</TabsTrigger>
-																								<TabsTrigger value="sg-members">
-																									Members
-																								</TabsTrigger>
-																							</TabsList>
-																							<TabsContent
-																								value="sg-features"
-																								className="flex flex-col gap-1.5"
-																							>
-																								{subgroupFeatures.length ===
-																								0 ? (
-																									<p className="text-muted-foreground text-sm">
-																										No
-																										features
-																										defined
-																										for
-																										this
-																										app
-																										yet.
-																									</p>
-																								) : (
-																									subgroupFeatures.map(
-																										(
-																											f,
-																										) => (
-																											<div
-																												key={
-																													f.featureId
-																												}
-																												className="flex items-center justify-between rounded-lg border px-3 py-2.5"
-																											>
-																												<div>
-																													<span className="font-mono text-sm">
-																														{
-																															f.featureKey
-																														}
-																													</span>
-																													{f.description && (
-																														<p className="text-muted-foreground text-xs">
-																															{
-																																f.description
-																															}
-																														</p>
-																													)}
-																												</div>
-																												<Switch
-																													checked={
-																														f.enabled
-																													}
-																													onCheckedChange={() =>
-																														handleToggleSubgroupFeature(
-																															f,
-																														)
-																													}
-																													disabled={
-																														!canWrite
-																													}
-																												/>
-																											</div>
-																										),
-																									)
-																								)}
-																							</TabsContent>
-																							<TabsContent
-																								value="sg-members"
-																								className="flex flex-col gap-2"
-																							>
-																								<div className="flex items-center justify-between">
-																									<p className="text-muted-foreground text-sm">
-																										Users
-																										assigned
-																										to
-																										this
-																										subgroup.
-																									</p>
-																									{canWrite && (
-																										<Button
-																											size="sm"
-																											variant="outline"
-																											onClick={() =>
-																												setShowAssignSubgroupUserModal(
-																													true,
-																												)
-																											}
-																											data-testid="assign-subgroup-user-btn"
-																										>
-																											<UserPlus className="mr-1.5 size-3.5" />
-																											Assign
-																											User
-																										</Button>
-																									)}
-																								</div>
-																								{subgroupUsers.length ===
-																								0 ? (
-																									<p className="text-muted-foreground text-sm">
-																										No
-																										users
-																										assigned
-																										to
-																										this
-																										subgroup.
-																									</p>
-																								) : (
-																									<Table>
-																										<TableHeader>
-																											<TableRow>
-																												<TableHead>
-																													User
-																												</TableHead>
-																												<TableHead>
-																													Assigned
-																													By
-																												</TableHead>
-																												<TableHead>
-																													Assigned
-																													At
-																												</TableHead>
-																												{canWrite && (
-																													<TableHead className="w-16" />
-																												)}
-																											</TableRow>
-																										</TableHeader>
-																										<TableBody>
-																											{subgroupUsers.map(
-																												(
-																													u,
-																												) => {
-																													const displayName =
-																														u.name ||
-																														u.userId;
-																													const initials =
-																														getUserInitials(
-																															u.name,
-																															u.userId,
-																														);
-																													return (
-																														<TableRow
-																															key={
-																																u.userId
-																															}
-																														>
-																															<TableCell>
-																																<div className="flex items-center gap-2">
-																																	<Avatar className="size-7 shrink-0 text-xs">
-																																		<AvatarFallback>
-																																			{
-																																				initials
-																																			}
-																																		</AvatarFallback>
-																																	</Avatar>
-																																	<div className="flex min-w-0 flex-col">
-																																		<span className="truncate font-medium text-sm">
-																																			{
-																																				displayName
-																																			}
-																																		</span>
-																																		{u.email && (
-																																			<span className="truncate text-muted-foreground text-xs">
-																																				{
-																																					u.email
-																																				}
-																																			</span>
-																																		)}
-																																	</div>
-																																</div>
-																															</TableCell>
-																															<TableCell className="text-muted-foreground text-sm">
-																																{u.assignedBy ??
-																																	"—"}
-																															</TableCell>
-																															<TableCell className="text-muted-foreground text-sm">
-																																{u.assignedAt
-																																	? new Date(
-																																			u.assignedAt,
-																																		).toLocaleDateString()
-																																	: "—"}
-																															</TableCell>
-																															{canWrite && (
-																																<TableCell>
-																																	<Button
-																																		size="sm"
-																																		variant="ghost"
-																																		className="text-destructive hover:text-destructive"
-																																		data-testid={`remove-subgroup-user-${u.userId}`}
-																																		onClick={() =>
-																																			setRemoveSubgroupUserTarget(
-																																				u,
-																																			)
-																																		}
-																																	>
-																																		Remove
-																																	</Button>
-																																</TableCell>
-																															)}
-																														</TableRow>
-																													);
-																												},
-																											)}
-																										</TableBody>
-																									</Table>
-																								)}
-																							</TabsContent>
-																						</Tabs>
-																					</div>
-																				)}
-																			</div>
-																		);
-																	},
-																)}
-															</div>
-														)}
-													</TabsContent>
-												</Tabs>
-											) : (
-												/* Regular profile — Features + Members tabs */
-												<Tabs
-													defaultValue="features"
-													className="flex flex-col gap-3"
-												>
-													<TabsList className="w-fit">
-														<TabsTrigger value="features">
-															Features
-														</TabsTrigger>
-														<TabsTrigger value="members">
-															Members
-														</TabsTrigger>
-													</TabsList>
-
-													<TabsContent
-														value="features"
-														className="flex flex-col gap-2"
-													>
-														<div className="flex items-center justify-between">
-															<p className="text-muted-foreground text-sm">
-																Toggle which
-																features are
-																enabled for this
-																profile.
-															</p>
-															{canWrite && (
-																<Button
-																	size="sm"
-																	variant="outline"
 																	onClick={() =>
-																		setShowFeatureModal(
-																			true,
-																		)
-																	}
-																>
-																	Add Feature
-																</Button>
-															)}
-														</div>
-														{features.length ===
-														0 ? (
-															<p className="text-muted-foreground text-sm">
-																No features
-																defined for this
-																app yet.
-															</p>
-														) : (
-															<div className="flex flex-col gap-1.5">
-																{features.map(
-																	(f) => (
-																		<div
-																			key={
-																				f.featureId
-																			}
-																			className="flex items-center justify-between rounded-lg border px-3 py-2.5"
-																		>
-																			<div>
-																				<span className="font-mono text-sm">
-																					{
-																						f.featureKey
-																					}
-																				</span>
-																				{f.description && (
-																					<p className="text-muted-foreground text-xs">
-																						{
-																							f.description
-																						}
-																					</p>
-																				)}
-																			</div>
-																			<Switch
-																				checked={
-																					f.enabled
-																				}
-																				onCheckedChange={() =>
-																					handleToggleFeature(
-																						f,
-																					)
-																				}
-																				disabled={
-																					!canWrite
-																				}
-																			/>
-																		</div>
-																	),
-																)}
-															</div>
-														)}
-													</TabsContent>
-
-													<TabsContent
-														value="members"
-														className="flex flex-col gap-2"
-													>
-														<div className="flex items-center justify-between">
-															<p className="text-muted-foreground text-sm">
-																Users explicitly
-																assigned to this
-																profile.
-															</p>
-															{canWrite && (
-																<Button
-																	size="sm"
-																	variant="outline"
-																	onClick={() =>
-																		setShowAssignModal(
-																			true,
+																		setAssignTarget(
+																			{
+																				type: "profile",
+																				profileId:
+																					selectedProfile.profileId,
+																				profileName:
+																					selectedProfile.profileName,
+																			},
 																		)
 																	}
 																	data-testid="assign-user-btn"
@@ -1316,45 +1027,35 @@ export const AppProfiles = observer(
 																</Button>
 															)}
 														</div>
-														{profileUsers.length ===
-														0 ? (
-															<p className="text-muted-foreground text-sm">
-																No users
-																explicitly
-																assigned to this
-																profile.
-															</p>
-														) : (
-															<Table>
-																<TableHeader>
-																	<TableRow>
-																		<TableHead>
-																			User
-																		</TableHead>
-																		<TableHead>
-																			Assigned
-																			By
-																		</TableHead>
-																		<TableHead>
-																			Assigned
-																			At
-																		</TableHead>
-																		{canWrite && (
-																			<TableHead className="w-16" />
-																		)}
-																	</TableRow>
-																</TableHeader>
-																<TableBody>
-																	{profileUsers.map(
+													</div>
+													<div className="max-h-[400px] overflow-y-auto">
+														<Table>
+															<TableHeader className="sticky top-0 z-10 bg-background">
+																<TableRow>
+																	<TableHead>
+																		Name
+																	</TableHead>
+																	<TableHead>
+																		Assigned
+																		By
+																	</TableHead>
+																	<TableHead>
+																		Assigned
+																		Date
+																	</TableHead>
+																	<TableHead className="w-px whitespace-nowrap">
+																		Actions
+																	</TableHead>
+																</TableRow>
+															</TableHeader>
+															<TableBody>
+																{filteredMembers.length >
+																0 ? (
+																	filteredMembers.map(
 																		(u) => {
 																			const displayName =
 																				u.name ||
 																				u.userId;
-																			const initials =
-																				getUserInitials(
-																					u.name,
-																					u.userId,
-																				);
 																			return (
 																				<TableRow
 																					key={
@@ -1363,30 +1064,39 @@ export const AppProfiles = observer(
 																				>
 																					<TableCell>
 																						<div className="flex items-center gap-2">
-																							<Avatar className="size-7 shrink-0 text-xs">
-																								<AvatarFallback>
-																									{
-																										initials
-																									}
+																							<Avatar className="items-center justify-center bg-[#ECEDEF] text-gray-500">
+																								<AvatarFallback className="bg-[#ECEDEF] text-gray-500">
+																									{displayName
+																										.charAt(
+																											0,
+																										)
+																										.toUpperCase()}
 																								</AvatarFallback>
 																							</Avatar>
-																							<div className="flex min-w-0 flex-col">
-																								<span className="truncate font-medium text-sm">
+																							<span className="flex flex-col overflow-hidden">
+																								<span className="font-semibold text-accent-foreground text-sm">
 																									{
 																										displayName
 																									}
 																								</span>
+																								<span className="text-muted-foreground text-xs">
+																									id:{" "}
+																									{
+																										u.userId
+																									}
+																								</span>
 																								{u.email && (
-																									<span className="truncate text-muted-foreground text-xs">
+																									<span className="text-muted-foreground text-xs">
+																										email:{" "}
 																										{
 																											u.email
 																										}
 																									</span>
 																								)}
-																							</div>
+																							</span>
 																						</div>
 																					</TableCell>
-																					<TableCell className="text-muted-foreground text-sm">
+																					<TableCell className="text-sm">
 																						{u.assignedBy ??
 																							"—"}
 																					</TableCell>
@@ -1397,40 +1107,686 @@ export const AppProfiles = observer(
 																								).toLocaleDateString()
 																							: "—"}
 																					</TableCell>
-																					{canWrite && (
-																						<TableCell>
-																							<Button
-																								size="sm"
-																								variant="ghost"
-																								className="text-destructive hover:text-destructive"
-																								data-testid={`remove-user-${u.userId}`}
-																								onClick={() =>
-																									setRemoveUserTarget(
-																										u,
-																									)
-																								}
-																							>
-																								Remove
-																							</Button>
-																						</TableCell>
-																					)}
+																					<TableCell>
+																						<Button
+																							type="button"
+																							variant="outline"
+																							size="icon-sm"
+																							className="border-none"
+																							data-testid={`remove-user-${u.userId}`}
+																							onClick={() =>
+																								setRemoveUserTarget(
+																									u,
+																								)
+																							}
+																						>
+																							<Trash2 className="size-4" />
+																						</Button>
+																					</TableCell>
 																				</TableRow>
 																			);
 																		},
+																	)
+																) : (
+																	<TableRow>
+																		<TableCell
+																			colSpan={
+																				4
+																			}
+																			className="text-center"
+																		>
+																			{memberSearch ? (
+																				`No members match "${memberSearch}"`
+																			) : (
+																				<Muted>
+																					No
+																					members
+																					assigned
+																					yet.
+																				</Muted>
+																			)}
+																		</TableCell>
+																	</TableRow>
+																)}
+															</TableBody>
+														</Table>
+													</div>
+													<p className="mt-2 px-4 pb-3 text-end text-muted-foreground text-sm">
+														{filteredMembers.length}{" "}
+														of {profileUsers.length}{" "}
+														{profileUsers.length ===
+														1
+															? "member"
+															: "members"}
+													</p>
+												</div>
+											</TabsContent>
+
+											{/* Subgroups tab — group profiles */}
+											<TabsContent
+												value="subgroups"
+												className="flex flex-col gap-3"
+											>
+												<div className="flex items-center justify-between">
+													<p className="text-muted-foreground text-sm">
+														Subgroups within this
+														group profile.
+													</p>
+													{canWrite && (
+														<Button
+															size="sm"
+															variant="outline"
+															onClick={
+																openNewSubgroupModal
+															}
+															data-testid="new-subgroup-btn"
+														>
+															New Subgroup
+														</Button>
+													)}
+												</div>
+												{subgroups.length === 0 ? (
+													<p className="text-muted-foreground text-sm">
+														No subgroups defined
+														yet.
+													</p>
+												) : (
+													<div className="flex flex-col gap-2">
+														{subgroups.map((sg) => (
+															<div
+																key={
+																	sg.subgroupId
+																}
+																className="flex items-center justify-between rounded-lg border px-4 py-3"
+															>
+																<div className="flex min-w-0 flex-col gap-0.5">
+																	<span className="truncate font-medium text-sm">
+																		{
+																			sg.subgroupName
+																		}
+																	</span>
+																	{sg.description && (
+																		<span className="truncate text-muted-foreground text-xs">
+																			{
+																				sg.description
+																			}
+																		</span>
 																	)}
-																</TableBody>
-															</Table>
-														)}
-													</TabsContent>
-												</Tabs>
-											)}
-										</div>
-									)}
+																	<span className="text-muted-foreground text-xs">
+																		{
+																			sg.userCount
+																		}{" "}
+																		{sg.userCount ===
+																		1
+																			? "user"
+																			: "users"}
+																	</span>
+																</div>
+																{canWrite && (
+																	<div className="ml-3 flex shrink-0 items-center gap-1.5">
+																		<Button
+																			size="sm"
+																			variant="outline"
+																			onClick={() =>
+																				setConfigureSubgroupId(
+																					sg.subgroupId,
+																				)
+																			}
+																			data-testid={`configure-subgroup-${sg.subgroupId}`}
+																		>
+																			Configure
+																		</Button>
+																		<Button
+																			size="icon"
+																			variant="ghost"
+																			className="size-8 text-muted-foreground hover:text-foreground"
+																			title="Edit subgroup"
+																			onClick={(
+																				e,
+																			) =>
+																				openEditSubgroupModal(
+																					sg,
+																					e,
+																				)
+																			}
+																		>
+																			<Pencil className="size-3.5" />
+																		</Button>
+																		<Tooltip>
+																			<TooltipTrigger
+																				asChild
+																			>
+																				<span>
+																					<Button
+																						size="icon"
+																						variant="ghost"
+																						className="size-8 text-muted-foreground hover:text-destructive disabled:pointer-events-none"
+																						disabled={
+																							sg.userCount >
+																							0
+																						}
+																						onClick={() =>
+																							setDeleteSubgroupTarget(
+																								sg,
+																							)
+																						}
+																						data-testid={`delete-subgroup-${sg.subgroupId}`}
+																					>
+																						<Trash2 className="size-3.5" />
+																					</Button>
+																				</span>
+																			</TooltipTrigger>
+																			{sg.userCount >
+																				0 && (
+																				<TooltipContent>
+																					{
+																						sg.userCount
+																					}{" "}
+																					{sg.userCount ===
+																					1
+																						? "user"
+																						: "users"}{" "}
+																					assigned
+																					—
+																					remove
+																					first
+																				</TooltipContent>
+																			)}
+																		</Tooltip>
+																	</div>
+																)}
+															</div>
+														))}
+													</div>
+												)}
+											</TabsContent>
+										</Tabs>
+									</div>
+								</>
+							) : (
+								<div className="flex flex-1 items-center justify-center">
+									<div className="flex flex-col items-center gap-2 text-center">
+										<p className="font-medium text-sm">
+											Select a profile
+										</p>
+										<p className="max-w-xs text-muted-foreground text-xs">
+											Choose a profile from the list to
+											view and edit its features and
+											members.
+										</p>
+									</div>
 								</div>
-							);
-						})}
+							)}
+						</div>
 					</div>
 				)}
+
+				{/* ── Configure Subgroup dialog ─────────────────────────────────── */}
+				<Dialog
+					open={!!configureSubgroupId}
+					onOpenChange={(open) =>
+						!open && setConfigureSubgroupId(null)
+					}
+				>
+					<DialogContent
+						className="flex max-h-[90vh] w-full max-w-2xl flex-col gap-4 overflow-hidden"
+						showCloseButton={false}
+					>
+						<DialogHeader>
+							<div className="flex items-center justify-between">
+								<div>
+									<DialogTitle>
+										{configureSubgroup?.subgroupName ??
+											"Subgroup"}
+									</DialogTitle>
+									{configureSubgroup?.description && (
+										<p className="mt-0.5 text-muted-foreground text-sm">
+											{configureSubgroup.description}
+										</p>
+									)}
+								</div>
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									onClick={() => setConfigureSubgroupId(null)}
+									className="hover:bg-accent"
+								>
+									<X className="size-4" />
+								</Button>
+							</div>
+						</DialogHeader>
+
+						<Tabs
+							defaultValue="sg-features"
+							className="flex flex-col gap-3 overflow-hidden"
+						>
+							<TabsList className="w-fit">
+								<TabsTrigger value="sg-features">
+									Features
+								</TabsTrigger>
+								<TabsTrigger value="sg-members">
+									Members
+									{configureSubgroup &&
+										configureSubgroup.userCount > 0 && (
+											<span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-xs">
+												{configureSubgroup.userCount}
+											</span>
+										)}
+								</TabsTrigger>
+							</TabsList>
+
+							<TabsContent
+								value="sg-features"
+								className="flex flex-col gap-3"
+							>
+								<div className="flex items-center justify-between">
+									<p className="text-muted-foreground text-sm">
+										Features enabled for members of this
+										subgroup.
+									</p>
+									{canWrite && (
+										<Button
+											size="sm"
+											variant="outline"
+											className="gap-1.5"
+											onClick={() =>
+												setShowFeatureModal(true)
+											}
+										>
+											<Plus className="size-3.5" />
+											Add Feature
+										</Button>
+									)}
+								</div>
+								{subgroupFeatures.length === 0 ? (
+									<p className="text-muted-foreground text-sm">
+										No features defined for this app yet.
+									</p>
+								) : (
+									<div className="flex max-h-[300px] flex-col gap-1.5 overflow-y-auto">
+										{subgroupFeatures.map((f) => (
+											<div
+												key={f.featureId}
+												className="flex items-center justify-between rounded-lg border px-3 py-2.5"
+											>
+												<div>
+													<span className="font-mono text-sm">
+														{f.featureKey}
+													</span>
+													{f.description && (
+														<p className="text-muted-foreground text-xs">
+															{f.description}
+														</p>
+													)}
+												</div>
+												<div className="flex items-center gap-2">
+													<Switch
+														checked={f.enabled}
+														onCheckedChange={() =>
+															handleToggleSubgroupFeature(
+																f,
+															)
+														}
+														disabled={!canWrite}
+													/>
+													{canWrite && (
+														<Button
+															size="icon"
+															variant="ghost"
+															className="size-7 text-muted-foreground hover:text-destructive"
+															onClick={() =>
+																setDeleteFeatureTarget(
+																	f,
+																)
+															}
+														>
+															<Trash2 className="size-3.5" />
+														</Button>
+													)}
+												</div>
+											</div>
+										))}
+									</div>
+								)}
+							</TabsContent>
+
+							<TabsContent
+								value="sg-members"
+								className="overflow-hidden"
+							>
+								<div className="w-full rounded-xl border">
+									<div className="flex flex-col gap-2 rounded-t-xl border-b bg-muted p-3">
+										<div className="flex items-center gap-2">
+											<InputGroup className="flex-1 bg-background">
+												<InputGroupInput
+													placeholder="Search members"
+													value={subgroupMemberSearch}
+													onChange={(
+														e: React.ChangeEvent<HTMLInputElement>,
+													) =>
+														setSubgroupMemberSearch(
+															e.target.value,
+														)
+													}
+												/>
+												<InputGroupAddon>
+													<Search className="size-4" />
+												</InputGroupAddon>
+											</InputGroup>
+											{canWrite &&
+												configureSubgroupId && (
+													<Button
+														size="sm"
+														onClick={() =>
+															setAssignTarget({
+																type: "subgroup",
+																subgroupId:
+																	configureSubgroupId,
+																subgroupName:
+																	configureSubgroup?.subgroupName ??
+																	"",
+															})
+														}
+														data-testid="assign-subgroup-user-btn"
+													>
+														<UserPlus className="mr-1.5 size-3.5" />
+														Assign User
+													</Button>
+												)}
+										</div>
+									</div>
+									<div className="max-h-[300px] overflow-y-auto">
+										<Table>
+											<TableHeader className="sticky top-0 z-10 bg-background">
+												<TableRow>
+													<TableHead>Name</TableHead>
+													<TableHead>
+														Assigned By
+													</TableHead>
+													<TableHead>
+														Assigned Date
+													</TableHead>
+													<TableHead className="w-px whitespace-nowrap">
+														Actions
+													</TableHead>
+												</TableRow>
+											</TableHeader>
+											<TableBody>
+												{filteredSubgroupMembers.length >
+												0 ? (
+													filteredSubgroupMembers.map(
+														(u) => {
+															const displayName =
+																u.name ||
+																u.userId;
+															return (
+																<TableRow
+																	key={
+																		u.userId
+																	}
+																>
+																	<TableCell>
+																		<div className="flex items-center gap-2">
+																			<Avatar className="items-center justify-center bg-[#ECEDEF] text-gray-500">
+																				<AvatarFallback className="bg-[#ECEDEF] text-gray-500">
+																					{displayName
+																						.charAt(
+																							0,
+																						)
+																						.toUpperCase()}
+																				</AvatarFallback>
+																			</Avatar>
+																			<span className="flex flex-col overflow-hidden">
+																				<span className="font-semibold text-accent-foreground text-sm">
+																					{
+																						displayName
+																					}
+																				</span>
+																				<span className="text-muted-foreground text-xs">
+																					id:{" "}
+																					{
+																						u.userId
+																					}
+																				</span>
+																				{u.email && (
+																					<span className="text-muted-foreground text-xs">
+																						email:{" "}
+																						{
+																							u.email
+																						}
+																					</span>
+																				)}
+																			</span>
+																		</div>
+																	</TableCell>
+																	<TableCell className="text-sm">
+																		{u.assignedBy ??
+																			"—"}
+																	</TableCell>
+																	<TableCell className="text-muted-foreground text-sm">
+																		{u.assignedAt
+																			? new Date(
+																					u.assignedAt,
+																				).toLocaleDateString()
+																			: "—"}
+																	</TableCell>
+																	<TableCell>
+																		<Button
+																			type="button"
+																			variant="outline"
+																			size="icon-sm"
+																			className="border-none"
+																			data-testid={`remove-subgroup-user-${u.userId}`}
+																			onClick={() =>
+																				setRemoveSubgroupUserTarget(
+																					u,
+																				)
+																			}
+																		>
+																			<Trash2 className="size-4" />
+																		</Button>
+																	</TableCell>
+																</TableRow>
+															);
+														},
+													)
+												) : (
+													<TableRow>
+														<TableCell
+															colSpan={4}
+															className="text-center"
+														>
+															{subgroupMemberSearch ? (
+																`No members match "${subgroupMemberSearch}"`
+															) : (
+																<Muted>
+																	No members
+																	assigned
+																	yet.
+																</Muted>
+															)}
+														</TableCell>
+													</TableRow>
+												)}
+											</TableBody>
+										</Table>
+									</div>
+									<p className="mt-2 px-4 pb-3 text-end text-muted-foreground text-sm">
+										{filteredSubgroupMembers.length} of{" "}
+										{subgroupUsers.length}{" "}
+										{subgroupUsers.length === 1
+											? "member"
+											: "members"}
+									</p>
+								</div>
+							</TabsContent>
+						</Tabs>
+					</DialogContent>
+				</Dialog>
+
+				{/* ── Assign Users dialog (profile + subgroup, multi-select) ───── */}
+				<Dialog
+					open={!!assignTarget}
+					onOpenChange={(open) => !open && closeAssignModal()}
+				>
+					<DialogContent className="flex max-h-[90vh] w-full max-w-2xl flex-col gap-4 overflow-hidden">
+						<DialogHeader>
+							<DialogTitle>Assign Users</DialogTitle>
+							<DialogDescription>
+								Search for users to assign to{" "}
+								<span className="font-medium text-foreground">
+									{assignTarget?.type === "profile"
+										? assignTarget.profileName
+										: assignTarget?.subgroupName}
+								</span>
+								.
+							</DialogDescription>
+						</DialogHeader>
+
+						<input
+							className="h-10 w-full shrink-0 rounded border bg-background px-3 text-sm outline-none ring-primary placeholder:text-muted-foreground focus:ring-2"
+							placeholder="Search by name or email..."
+							value={assignSearch}
+							autoComplete="off"
+							autoCorrect="off"
+							autoCapitalize="off"
+							spellCheck={false}
+							onChange={(e) => setAssignSearch(e.target.value)}
+						/>
+
+						<div className="flex flex-1 flex-col gap-4 overflow-y-auto">
+							<div className="max-h-56 min-h-32 w-full shrink-0 overflow-y-auto rounded-md border bg-background">
+								{assignResults.length > 0 ? (
+									assignResults.map((item) => {
+										const isAdded = selectedUsers.some(
+											(u) => u.id === item.id,
+										);
+										return (
+											<button
+												key={item.id}
+												type="button"
+												className="flex w-full items-center justify-between px-3 py-2 text-start text-sm hover:bg-accent"
+												onClick={() =>
+													toggleUserSelected(item)
+												}
+											>
+												<span className="flex items-center gap-2">
+													<Avatar className="h-7 w-7 items-center justify-center bg-muted text-muted-foreground text-xs">
+														<AvatarFallback>
+															{(
+																item.name ||
+																item.id
+															)
+																.charAt(0)
+																.toUpperCase()}
+														</AvatarFallback>
+													</Avatar>
+													<span className="flex flex-col">
+														<span className="font-medium">
+															{item.name ||
+																item.username ||
+																item.id}
+														</span>
+														<span className="text-muted-foreground text-xs">
+															id: {item.id}
+														</span>
+														{item.email && (
+															<span className="text-muted-foreground text-xs">
+																email:{" "}
+																{item.email}
+															</span>
+														)}
+													</span>
+												</span>
+												{isAdded && (
+													<span className="font-medium text-primary text-xs">
+														Added ✓
+													</span>
+												)}
+											</button>
+										);
+									})
+								) : (
+									<div className="px-3 py-4 text-center text-muted-foreground text-sm">
+										{assignSearching
+											? "Searching…"
+											: "No users found"}
+									</div>
+								)}
+							</div>
+
+							<div className="flex flex-col gap-2">
+								<span className="font-medium text-muted-foreground text-sm">
+									{selectedUsers.length} user
+									{selectedUsers.length !== 1 ? "s" : ""}{" "}
+									selected
+								</span>
+								<div className="flex flex-col gap-1.5">
+									{selectedUsers.map((u) => (
+										<div
+											key={u.id}
+											className="flex items-center justify-between rounded-md border bg-muted/40 px-3 py-2"
+										>
+											<span className="flex items-center gap-2">
+												<Avatar className="h-8 w-8 items-center justify-center bg-muted text-muted-foreground text-sm">
+													<AvatarFallback>
+														{(u.name || u.id)
+															.charAt(0)
+															.toUpperCase()}
+													</AvatarFallback>
+												</Avatar>
+												<span className="flex flex-col">
+													<span className="font-medium text-sm">
+														{u.name ||
+															u.username ||
+															u.id}
+													</span>
+													<span className="text-muted-foreground text-xs">
+														id: {u.id}
+													</span>
+													{u.email && (
+														<span className="text-muted-foreground text-xs">
+															email: {u.email}
+														</span>
+													)}
+												</span>
+											</span>
+											<button
+												type="button"
+												className="text-muted-foreground hover:text-destructive"
+												onClick={() =>
+													toggleUserSelected(u)
+												}
+											>
+												<X className="h-4 w-4" />
+											</button>
+										</div>
+									))}
+								</div>
+							</div>
+						</div>
+
+						<div className="flex items-center justify-end gap-2 border-t pt-3">
+							<Button
+								variant="ghost"
+								onClick={closeAssignModal}
+								disabled={assigningUsers}
+							>
+								Cancel
+							</Button>
+							<Button
+								onClick={handleAssignUsers}
+								disabled={
+									assigningUsers || selectedUsers.length === 0
+								}
+							>
+								{assigningUsers
+									? "Assigning…"
+									: `Assign${selectedUsers.length > 0 ? ` (${selectedUsers.length})` : ""}`}
+							</Button>
+						</div>
+					</DialogContent>
+				</Dialog>
 
 				{/* ── App Profile Managers dialog ──────────────────────────────── */}
 				<Dialog
@@ -1683,86 +2039,6 @@ export const AppProfiles = observer(
 					</DialogContent>
 				</Dialog>
 
-				{/* ── Assign User modal ────────────────────────────────────────── */}
-				<Dialog
-					open={showAssignModal}
-					onOpenChange={(isOpen) => {
-						if (!isOpen) {
-							setShowAssignModal(false);
-							setAssignUser(null);
-						}
-					}}
-				>
-					<DialogContent
-						className="max-w-[480px] gap-6 rounded-xl"
-						showCloseButton={false}
-					>
-						<DialogHeader>
-							<div className="flex items-center justify-between">
-								<DialogTitle>
-									Assign User to Profile
-								</DialogTitle>
-								<Button
-									variant="ghost"
-									size="icon-sm"
-									onClick={() => {
-										setShowAssignModal(false);
-										setAssignUser(null);
-									}}
-									className="hover:bg-accent"
-								>
-									<X className="size-4" />
-								</Button>
-							</div>
-						</DialogHeader>
-						<div className="flex flex-col gap-4 pb-2">
-							<div className="flex flex-col gap-1.5">
-								<Label>
-									User{" "}
-									<span className="text-destructive">*</span>
-								</Label>
-								<UserSearchCombobox
-									value={assignUser}
-									onChange={setAssignUser}
-									excludeIds={profileUsers.map(
-										(u) => u.userId,
-									)}
-									data-testid="assign-user-search"
-								/>
-							</div>
-							{selectedProfile && (
-								<p className="text-muted-foreground text-sm">
-									Assigning to:{" "}
-									<span className="font-medium text-foreground">
-										{selectedProfile.profileName}
-									</span>
-								</p>
-							)}
-						</div>
-						<DialogFooter>
-							<div className="flex flex-row gap-2">
-								<Button
-									variant="ghost"
-									onClick={() => {
-										setShowAssignModal(false);
-										setAssignUser(null);
-									}}
-									disabled={assigningUser}
-								>
-									Cancel
-								</Button>
-								<Button
-									onClick={handleAssignUser}
-									disabled={assigningUser || !assignUser}
-									data-testid="confirm-assign-user-btn"
-								>
-									{assigningUser ? "Assigning…" : "Assign"}
-								</Button>
-							</div>
-						</DialogFooter>
-					</DialogContent>
-				</Dialog>
-
 				{/* ── Add Manager modal ─────────────────────────────────────────── */}
 				<Dialog
 					open={showAddManagerModal}
@@ -1920,87 +2196,39 @@ export const AppProfiles = observer(
 					</DialogContent>
 				</Dialog>
 
-				{/* ── Assign User to Subgroup modal ────────────────────────────── */}
+				{/* ── Delete Feature confirmation ──────────────────────────────── */}
 				<Dialog
-					open={showAssignSubgroupUserModal}
-					onOpenChange={(isOpen) => {
-						if (!isOpen) {
-							setShowAssignSubgroupUserModal(false);
-							setAssignSubgroupUser(null);
-						}
-					}}
+					open={!!deleteFeatureTarget}
+					onOpenChange={(open) =>
+						!open && setDeleteFeatureTarget(null)
+					}
 				>
-					<DialogContent
-						className="max-w-[480px] gap-6 rounded-xl"
-						showCloseButton={false}
-					>
+					<DialogContent>
 						<DialogHeader>
-							<div className="flex items-center justify-between">
-								<DialogTitle>
-									Assign User to Subgroup
-								</DialogTitle>
-								<Button
-									variant="ghost"
-									size="icon-sm"
-									onClick={() => {
-										setShowAssignSubgroupUserModal(false);
-										setAssignSubgroupUser(null);
-									}}
-									className="hover:bg-accent"
-								>
-									<X className="size-4" />
-								</Button>
-							</div>
+							<DialogTitle>Delete Feature</DialogTitle>
+							<DialogDescription>
+								Delete feature &quot;
+								{deleteFeatureTarget?.featureKey}&quot;? This
+								will remove it from all profiles and subgroups.
+								This cannot be undone.
+							</DialogDescription>
 						</DialogHeader>
-						<div className="flex flex-col gap-4 pb-2">
-							<div className="flex flex-col gap-1.5">
-								<Label>
-									User{" "}
-									<span className="text-destructive">*</span>
-								</Label>
-								<UserSearchCombobox
-									value={assignSubgroupUser}
-									onChange={setAssignSubgroupUser}
-									excludeIds={subgroupUsers.map(
-										(u) => u.userId,
-									)}
-									data-testid="assign-subgroup-user-search"
-								/>
-							</div>
-							{expandedSubgroup && (
-								<p className="text-muted-foreground text-sm">
-									Assigning to:{" "}
-									<span className="font-medium text-foreground">
-										{expandedSubgroup.subgroupName}
-									</span>
-								</p>
-							)}
-						</div>
 						<DialogFooter>
-							<div className="flex flex-row gap-2">
-								<Button
-									variant="ghost"
-									onClick={() => {
-										setShowAssignSubgroupUserModal(false);
-										setAssignSubgroupUser(null);
-									}}
-									disabled={assigningSubgroupUser}
-								>
-									Cancel
-								</Button>
-								<Button
-									onClick={handleAssignSubgroupUser}
-									disabled={
-										assigningSubgroupUser ||
-										!assignSubgroupUser
-									}
-									data-testid="confirm-assign-subgroup-user-btn"
-								>
-									{assigningSubgroupUser
-										? "Assigning…"
-										: "Assign"}
-								</Button>
-							</div>
+							<Button
+								variant="ghost"
+								onClick={() => setDeleteFeatureTarget(null)}
+								disabled={confirmLoading}
+							>
+								Cancel
+							</Button>
+							<Button
+								variant="destructive"
+								onClick={confirmDeleteFeature}
+								disabled={confirmLoading}
+								data-testid="confirm-delete-feature-btn"
+							>
+								{confirmLoading ? "Deleting…" : "Delete"}
+							</Button>
 						</DialogFooter>
 					</DialogContent>
 				</Dialog>
@@ -2017,8 +2245,24 @@ export const AppProfiles = observer(
 							<DialogTitle>Delete Profile</DialogTitle>
 							<DialogDescription>
 								Delete profile &quot;
-								{deleteProfileTarget?.profileName}&quot;? This
-								cannot be undone.
+								{deleteProfileTarget?.profileName}&quot;?
+								{deleteProfileTarget &&
+									deleteProfileTarget.userCount > 0 && (
+										<>
+											{" "}
+											This profile has{" "}
+											<span className="font-medium text-foreground">
+												{deleteProfileTarget.userCount}{" "}
+												{deleteProfileTarget.userCount ===
+												1
+													? "user"
+													: "users"}
+											</span>{" "}
+											assigned — they will be removed from
+											this profile.
+										</>
+									)}{" "}
+								This cannot be undone.
 							</DialogDescription>
 						</DialogHeader>
 						<DialogFooter>
@@ -2053,9 +2297,8 @@ export const AppProfiles = observer(
 								Remove &quot;
 								{removeUserTarget?.name ||
 									removeUserTarget?.userId}
-								&quot; from this profile? They will be removed
-								from this profile assignment. They may still be
-								in other profiles.
+								&quot; from this profile? They may still be in
+								other profiles.
 							</DialogDescription>
 						</DialogHeader>
 						<DialogFooter>
@@ -2165,9 +2408,7 @@ export const AppProfiles = observer(
 								Remove &quot;
 								{removeSubgroupUserTarget?.name ||
 									removeSubgroupUserTarget?.userId}
-								&quot; from this subgroup? They will be removed
-								from this subgroup assignment. They may still be
-								in other profiles.
+								&quot; from this subgroup?
 							</DialogDescription>
 						</DialogHeader>
 						<DialogFooter>
