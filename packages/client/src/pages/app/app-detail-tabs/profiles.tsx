@@ -41,9 +41,6 @@ import {
 	TabsList,
 	TabsTrigger,
 	Textarea,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import type { AdminUser } from "@/api/auth";
@@ -56,7 +53,6 @@ interface Profile {
 	profileName: string;
 	description: string;
 	isDefault: boolean;
-	isGroup: boolean;
 	userCount: number;
 }
 
@@ -68,21 +64,6 @@ interface Feature {
 }
 
 interface ProfileUser {
-	userId: string;
-	name: string | null;
-	email: string | null;
-	assignedBy: string;
-	assignedAt: string;
-}
-
-interface Subgroup {
-	subgroupId: string;
-	subgroupName: string;
-	description: string;
-	userCount: number;
-}
-
-interface SubgroupUser {
 	userId: string;
 	name: string | null;
 	email: string | null;
@@ -102,9 +83,10 @@ interface AppProfilesProps {
 	permission?: string;
 }
 
-type AssignTarget =
-	| { type: "profile"; profileId: string; profileName: string }
-	| { type: "subgroup"; subgroupId: string; subgroupName: string };
+interface AssignTarget {
+	profileId: string;
+	profileName: string;
+}
 
 const escapePixelString = (s: string) => s.replaceAll("'", "\\'");
 
@@ -116,17 +98,11 @@ export const AppProfiles = observer(
 	({ appId, permission }: AppProfilesProps) => {
 		const { monolithStore } = useRootStore();
 		const uid = useId();
-		// Authors and editors both pass canManageProfiles on the backend —
-		// they can grant/revoke managers and list the manager table.
 		const canManageManagers =
 			permission === "author" || permission === "editor";
-		// readOnly users who were granted via AddAppProfileManager are detected
-		// via a silent probe (see useEffect below); this flag is set when it succeeds.
 		const [readOnlyManagerConfirmed, setReadOnlyManagerConfirmed] =
 			useState(false);
 		const canWrite = canManageManagers || readOnlyManagerConfirmed;
-		// isManager drives the "Profile Manager Access" banner: only for explicitly
-		// granted non-owner managers (i.e., the probe succeeded).
 		const isManager = readOnlyManagerConfirmed;
 
 		// Data
@@ -136,9 +112,6 @@ export const AppProfiles = observer(
 		);
 		const [features, setFeatures] = useState<Feature[]>([]);
 		const [profileUsers, setProfileUsers] = useState<ProfileUser[]>([]);
-		const [subgroups, setSubgroups] = useState<Subgroup[]>([]);
-		const [subgroupFeatures, setSubgroupFeatures] = useState<Feature[]>([]);
-		const [subgroupUsers, setSubgroupUsers] = useState<SubgroupUser[]>([]);
 		const [profileManagers, setProfileManagers] = useState<
 			ProfileManager[]
 		>([]);
@@ -146,7 +119,6 @@ export const AppProfiles = observer(
 		// Search / filter
 		const [profileSearch, setProfileSearch] = useState("");
 		const [memberSearch, setMemberSearch] = useState("");
-		const [subgroupMemberSearch, setSubgroupMemberSearch] = useState("");
 
 		// Profile CRUD modal
 		const [showProfileModal, setShowProfileModal] = useState(false);
@@ -156,7 +128,6 @@ export const AppProfiles = observer(
 		const [profileFormName, setProfileFormName] = useState("");
 		const [profileFormDesc, setProfileFormDesc] = useState("");
 		const [profileFormDefault, setProfileFormDefault] = useState(false);
-		const [profileFormIsGroup, setProfileFormIsGroup] = useState(false);
 		const [savingProfile, setSavingProfile] = useState(false);
 
 		// Feature CRUD
@@ -168,21 +139,7 @@ export const AppProfiles = observer(
 		const [deleteFeatureTarget, setDeleteFeatureTarget] =
 			useState<Feature | null>(null);
 
-		// Subgroup CRUD
-		const [configureSubgroupId, setConfigureSubgroupId] = useState<
-			string | null
-		>(null);
-		const [showSubgroupModal, setShowSubgroupModal] = useState(false);
-		const [editingSubgroup, setEditingSubgroup] = useState<Subgroup | null>(
-			null,
-		);
-		const [subgroupFormName, setSubgroupFormName] = useState("");
-		const [subgroupFormDesc, setSubgroupFormDesc] = useState("");
-		const [savingSubgroup, setSavingSubgroup] = useState(false);
-		const [deleteSubgroupTarget, setDeleteSubgroupTarget] =
-			useState<Subgroup | null>(null);
-
-		// Unified assign users modal (profile + subgroup)
+		// Assign users modal
 		const [assignTarget, setAssignTarget] = useState<AssignTarget | null>(
 			null,
 		);
@@ -209,15 +166,9 @@ export const AppProfiles = observer(
 			useState<Profile | null>(null);
 		const [removeUserTarget, setRemoveUserTarget] =
 			useState<ProfileUser | null>(null);
-		const [removeSubgroupUserTarget, setRemoveSubgroupUserTarget] =
-			useState<SubgroupUser | null>(null);
 		const [confirmLoading, setConfirmLoading] = useState(false);
 
 		// Computed
-		const configureSubgroup =
-			subgroups.find((sg) => sg.subgroupId === configureSubgroupId) ??
-			null;
-
 		const filteredProfiles = profileSearch.trim()
 			? profiles.filter((p) =>
 					p.profileName
@@ -236,28 +187,13 @@ export const AppProfiles = observer(
 				})
 			: profileUsers;
 
-		const filteredSubgroupMembers = subgroupMemberSearch.trim()
-			? subgroupUsers.filter((u) => {
-					const term = subgroupMemberSearch.trim().toLowerCase();
-					return (
-						(u.name || u.userId).toLowerCase().includes(term) ||
-						(u.email || "").toLowerCase().includes(term)
-					);
-				})
-			: subgroupUsers;
-
 		// biome-ignore lint/correctness/useExhaustiveDependencies: loaders defined in component scope
 		useEffect(() => {
-			// Reset readOnly manager probe whenever the app or permission changes.
 			setReadOnlyManagerConfirmed(false);
-			// Wait for the async permission fetch (layout sets it from "" to the real value).
 			if (!permission) return;
 			if (permission === "author" || permission === "editor") {
 				loadProfiles();
 			} else {
-				// GetAppProfiles requires canAssignProfiles — probe silently. If it
-				// succeeds the user is a profile manager despite their lower app
-				// permission level; if it fails they're a regular viewer.
 				runPixel<Profile[]>(
 					`GetAppProfiles(app="${appId}");`,
 					true,
@@ -272,8 +208,6 @@ export const AppProfiles = observer(
 
 		// biome-ignore lint/correctness/useExhaustiveDependencies: loaders defined in component scope
 		useEffect(() => {
-			// Refresh managers list every time the dialog opens so it's always current,
-			// even if the async permission fetch hadn't resolved at mount time.
 			if (showManagersDialog) loadProfileManagers();
 		}, [showManagersDialog]);
 
@@ -281,41 +215,19 @@ export const AppProfiles = observer(
 		useEffect(() => {
 			setFeatures([]);
 			setProfileUsers([]);
-			setSubgroups([]);
-			setConfigureSubgroupId(null);
 			setMemberSearch("");
 
 			if (selectedProfile) {
-				if (selectedProfile.isGroup) {
-					loadSubgroups(selectedProfile.profileId);
-					loadProfileFeatures(selectedProfile.profileId);
-				} else {
-					loadProfileFeatures(selectedProfile.profileId);
-					loadProfileUsers(selectedProfile.profileId);
-				}
+				loadProfileFeatures(selectedProfile.profileId);
+				loadProfileUsers(selectedProfile.profileId);
 			}
 		}, [selectedProfile]);
-
-		// biome-ignore lint/correctness/useExhaustiveDependencies: loaders defined in component scope
-		useEffect(() => {
-			setSubgroupFeatures([]);
-			setSubgroupUsers([]);
-			setSubgroupMemberSearch("");
-			if (configureSubgroupId) {
-				loadSubgroupFeatures(configureSubgroupId);
-				loadSubgroupUsers(configureSubgroupId);
-			}
-		}, [configureSubgroupId]);
 
 		useEffect(() => {
 			if (!assignTarget) return;
 			const version = ++assignFetchVersionRef.current;
 			setAssignSearching(true);
-			const excludeIds = new Set(
-				assignTarget.type === "profile"
-					? profileUsers.map((u) => u.userId)
-					: subgroupUsers.map((u) => u.userId),
-			);
+			const excludeIds = new Set(profileUsers.map((u) => u.userId));
 			searchAllUsers(debouncedAssignSearch, 20, 0)
 				.then((results) => {
 					if (assignFetchVersionRef.current !== version) return;
@@ -331,7 +243,7 @@ export const AppProfiles = observer(
 					if (assignFetchVersionRef.current === version)
 						setAssignSearching(false);
 				});
-		}, [assignTarget, debouncedAssignSearch, profileUsers, subgroupUsers]);
+		}, [assignTarget, debouncedAssignSearch, profileUsers]);
 
 		async function runPixel<T = unknown>(
 			pixel: string,
@@ -379,33 +291,11 @@ export const AppProfiles = observer(
 			if (result) setProfileUsers(result);
 		}
 
-		async function loadSubgroups(profileId: string) {
-			const result = await runPixel<Subgroup[]>(
-				`GetAppSubgroups(app="${appId}", profileId="${profileId}");`,
-			);
-			if (result) setSubgroups(result);
-		}
-
-		async function loadSubgroupFeatures(subgroupId: string) {
-			const result = await runPixel<Feature[]>(
-				`GetAppSubgroupFeatures(app="${appId}", subgroupId="${subgroupId}");`,
-			);
-			if (result) setSubgroupFeatures(result);
-		}
-
-		async function loadSubgroupUsers(subgroupId: string) {
-			const result = await runPixel<SubgroupUser[]>(
-				`GetAppSubgroupUsers(app="${appId}", subgroupId="${subgroupId}");`,
-			);
-			if (result) setSubgroupUsers(result);
-		}
-
 		function openNewProfileModal() {
 			setEditingProfile(null);
 			setProfileFormName("");
 			setProfileFormDesc("");
 			setProfileFormDefault(false);
-			setProfileFormIsGroup(false);
 			setShowProfileModal(true);
 		}
 
@@ -415,7 +305,6 @@ export const AppProfiles = observer(
 			setProfileFormName(p.profileName);
 			setProfileFormDesc(p.description ?? "");
 			setProfileFormDefault(p.isDefault);
-			setProfileFormIsGroup(p.isGroup);
 			setShowProfileModal(true);
 		}
 
@@ -425,7 +314,6 @@ export const AppProfiles = observer(
 			setProfileFormName("");
 			setProfileFormDesc("");
 			setProfileFormDefault(false);
-			setProfileFormIsGroup(false);
 		}
 
 		function closeFeatureModal() {
@@ -433,28 +321,6 @@ export const AppProfiles = observer(
 			setFeatureFormKey("");
 			setFeatureFormDesc("");
 			setFeatureKeyError("");
-		}
-
-		function openNewSubgroupModal() {
-			setEditingSubgroup(null);
-			setSubgroupFormName("");
-			setSubgroupFormDesc("");
-			setShowSubgroupModal(true);
-		}
-
-		function openEditSubgroupModal(sg: Subgroup, e: React.MouseEvent) {
-			e.stopPropagation();
-			setEditingSubgroup(sg);
-			setSubgroupFormName(sg.subgroupName);
-			setSubgroupFormDesc(sg.description ?? "");
-			setShowSubgroupModal(true);
-		}
-
-		function closeSubgroupModal() {
-			setShowSubgroupModal(false);
-			setEditingSubgroup(null);
-			setSubgroupFormName("");
-			setSubgroupFormDesc("");
 		}
 
 		function toggleUserSelected(user: AdminUser) {
@@ -487,7 +353,7 @@ export const AppProfiles = observer(
 					);
 				} else {
 					await runPixel(
-						`CreateAppProfile(app="${appId}", name="${name}", description="${desc}", isDefault="${profileFormDefault}", isGroup="${profileFormIsGroup}");`,
+						`CreateAppProfile(app="${appId}", name="${name}", description="${desc}", isDefault="${profileFormDefault}");`,
 					);
 				}
 				await loadProfiles();
@@ -540,8 +406,6 @@ export const AppProfiles = observer(
 				);
 				if (selectedProfile)
 					await loadProfileFeatures(selectedProfile.profileId);
-				if (configureSubgroupId)
-					await loadSubgroupFeatures(configureSubgroupId);
 				closeFeatureModal();
 			} finally {
 				setSavingFeature(false);
@@ -557,8 +421,6 @@ export const AppProfiles = observer(
 				);
 				if (selectedProfile)
 					await loadProfileFeatures(selectedProfile.profileId);
-				if (configureSubgroupId)
-					await loadSubgroupFeatures(configureSubgroupId);
 				setDeleteFeatureTarget(null);
 			} finally {
 				setConfirmLoading(false);
@@ -572,26 +434,13 @@ export const AppProfiles = observer(
 				const userList = selectedUsers
 					.map((u) => `"${escapePixelString(u.id)}"`)
 					.join(", ");
-				if (assignTarget.type === "profile") {
-					await runPixel(
-						`AssignAppUserProfile(app="${appId}", userId=[${userList}], profileId="${assignTarget.profileId}");`,
-					);
-					await Promise.all([
-						loadProfileUsers(assignTarget.profileId),
-						loadProfiles(),
-					]);
-				} else {
-					await runPixel(
-						`AssignAppUserSubgroup(app="${appId}", userId=[${userList}], subgroupId="${assignTarget.subgroupId}");`,
-					);
-					await Promise.all([
-						loadSubgroupUsers(assignTarget.subgroupId),
-						selectedProfile
-							? loadSubgroups(selectedProfile.profileId)
-							: Promise.resolve(),
-						loadProfiles(),
-					]);
-				}
+				await runPixel(
+					`AssignAppUserProfile(app="${appId}", userId=[${userList}], profileId="${assignTarget.profileId}");`,
+				);
+				await Promise.all([
+					loadProfileUsers(assignTarget.profileId),
+					loadProfiles(),
+				]);
 				closeAssignModal();
 			} finally {
 				setAssigningUsers(false);
@@ -636,74 +485,6 @@ export const AppProfiles = observer(
 				);
 				await loadProfileManagers();
 				setRemoveManagerTarget(null);
-			} finally {
-				setConfirmLoading(false);
-			}
-		}
-
-		async function handleSaveSubgroup() {
-			const name = escapePixelString(subgroupFormName.trim());
-			if (!name) {
-				toast.error("Subgroup name is required.");
-				return;
-			}
-			if (!selectedProfile) return;
-			const desc = escapePixelString(subgroupFormDesc);
-			setSavingSubgroup(true);
-			try {
-				if (editingSubgroup) {
-					await runPixel(
-						`UpdateAppSubgroup(app="${appId}", subgroupId="${editingSubgroup.subgroupId}", name="${name}", description="${desc}");`,
-					);
-				} else {
-					await runPixel(
-						`CreateAppSubgroup(app="${appId}", profileId="${selectedProfile.profileId}", name="${name}", description="${desc}");`,
-					);
-				}
-				await loadSubgroups(selectedProfile.profileId);
-				closeSubgroupModal();
-			} finally {
-				setSavingSubgroup(false);
-			}
-		}
-
-		async function confirmDeleteSubgroup() {
-			if (!deleteSubgroupTarget || !selectedProfile) return;
-			setConfirmLoading(true);
-			try {
-				await runPixel(
-					`DeleteAppSubgroup(app="${appId}", subgroupId="${deleteSubgroupTarget.subgroupId}");`,
-				);
-				await loadSubgroups(selectedProfile.profileId);
-				setDeleteSubgroupTarget(null);
-			} finally {
-				setConfirmLoading(false);
-			}
-		}
-
-		async function handleToggleSubgroupFeature(feature: Feature) {
-			if (!configureSubgroup) return;
-			await runPixel(
-				`SetAppSubgroupFeature(app="${appId}", subgroupId="${configureSubgroup.subgroupId}", featureId="${feature.featureId}", enabled="${!feature.enabled}");`,
-			);
-			await loadSubgroupFeatures(configureSubgroup.subgroupId);
-		}
-
-		async function confirmRemoveSubgroupUser() {
-			if (!removeSubgroupUserTarget || !configureSubgroup) return;
-			setConfirmLoading(true);
-			try {
-				await runPixel(
-					`RemoveAppUserSubgroup(app="${appId}", userId="${removeSubgroupUserTarget.userId}", subgroupId="${configureSubgroup.subgroupId}");`,
-				);
-				await Promise.all([
-					loadSubgroupUsers(configureSubgroup.subgroupId),
-					selectedProfile
-						? loadSubgroups(selectedProfile.profileId)
-						: Promise.resolve(),
-					loadProfiles(),
-				]);
-				setRemoveSubgroupUserTarget(null);
 			} finally {
 				setConfirmLoading(false);
 			}
@@ -756,9 +537,9 @@ export const AppProfiles = observer(
 								Profile Manager Access
 							</span>
 							<span className="text-xs opacity-80">
-								You can manage profiles, features, subgroups,
-								and member assignments. Contact the app owner to
-								add or remove other profile managers.
+								You can manage profile member assignments.
+								Contact the app owner to add or remove other
+								profile managers.
 							</span>
 						</div>
 					</div>
@@ -830,14 +611,6 @@ export const AppProfiles = observer(
 													</span>
 												</div>
 												<div className="flex items-center gap-1.5">
-													{p.isGroup && (
-														<Badge
-															variant="outline"
-															className="h-4 px-1.5 py-0 text-xs"
-														>
-															Group
-														</Badge>
-													)}
 													{p.isDefault && (
 														<Badge
 															variant="secondary"
@@ -873,11 +646,6 @@ export const AppProfiles = observer(
 														selectedProfile.profileName
 													}
 												</span>
-												{selectedProfile.isGroup && (
-													<Badge variant="outline">
-														Group
-													</Badge>
-												)}
 												{selectedProfile.isDefault && (
 													<Badge variant="secondary">
 														Default
@@ -938,23 +706,17 @@ export const AppProfiles = observer(
 												<TabsTrigger value="features">
 													Features
 												</TabsTrigger>
-												{selectedProfile.isGroup ? (
-													<TabsTrigger value="subgroups">
-														Subgroups
-													</TabsTrigger>
-												) : (
-													<TabsTrigger value="members">
-														Members
-														{selectedProfile.userCount >
-															0 && (
-															<span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-xs">
-																{
-																	selectedProfile.userCount
-																}
-															</span>
-														)}
-													</TabsTrigger>
-												)}
+												<TabsTrigger value="members">
+													Members
+													{selectedProfile.userCount >
+														0 && (
+														<span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-xs">
+															{
+																selectedProfile.userCount
+															}
+														</span>
+													)}
+												</TabsTrigger>
 											</TabsList>
 
 											{/* Features tab */}
@@ -1049,7 +811,7 @@ export const AppProfiles = observer(
 												)}
 											</TabsContent>
 
-											{/* Members tab — regular profiles */}
+											{/* Members tab */}
 											<TabsContent value="members">
 												<div className="w-full rounded-xl border">
 													<div className="flex flex-col gap-2 rounded-t-xl border-b bg-muted p-3">
@@ -1080,7 +842,6 @@ export const AppProfiles = observer(
 																	onClick={() =>
 																		setAssignTarget(
 																			{
-																				type: "profile",
 																				profileId:
 																					selectedProfile.profileId,
 																				profileName:
@@ -1229,145 +990,6 @@ export const AppProfiles = observer(
 													</p>
 												</div>
 											</TabsContent>
-
-											{/* Subgroups tab — group profiles */}
-											<TabsContent
-												value="subgroups"
-												className="flex flex-col gap-3"
-											>
-												<div className="flex items-center justify-between">
-													<p className="text-muted-foreground text-sm">
-														Subgroups within this
-														group profile.
-													</p>
-													{canWrite && (
-														<Button
-															size="sm"
-															variant="outline"
-															onClick={
-																openNewSubgroupModal
-															}
-															data-testid="new-subgroup-btn"
-														>
-															New Subgroup
-														</Button>
-													)}
-												</div>
-												{subgroups.length === 0 ? (
-													<p className="text-muted-foreground text-sm">
-														No subgroups defined
-														yet.
-													</p>
-												) : (
-													<div className="flex flex-col gap-2">
-														{subgroups.map((sg) => (
-															<div
-																key={
-																	sg.subgroupId
-																}
-																className="flex items-center justify-between rounded-lg border px-4 py-3"
-															>
-																<div className="flex min-w-0 flex-col gap-0.5">
-																	<span className="truncate font-medium text-sm">
-																		{
-																			sg.subgroupName
-																		}
-																	</span>
-																	{sg.description && (
-																		<span className="truncate text-muted-foreground text-xs">
-																			{
-																				sg.description
-																			}
-																		</span>
-																	)}
-																	<span className="text-muted-foreground text-xs">
-																		{
-																			sg.userCount
-																		}{" "}
-																		{sg.userCount ===
-																		1
-																			? "user"
-																			: "users"}
-																	</span>
-																</div>
-																{canWrite && (
-																	<div className="ml-3 flex shrink-0 items-center gap-1.5">
-																		<Button
-																			size="sm"
-																			variant="outline"
-																			onClick={() =>
-																				setConfigureSubgroupId(
-																					sg.subgroupId,
-																				)
-																			}
-																			data-testid={`configure-subgroup-${sg.subgroupId}`}
-																		>
-																			Configure
-																		</Button>
-																		<Button
-																			size="icon"
-																			variant="ghost"
-																			className="size-8 text-muted-foreground hover:text-foreground"
-																			title="Edit subgroup"
-																			onClick={(
-																				e,
-																			) =>
-																				openEditSubgroupModal(
-																					sg,
-																					e,
-																				)
-																			}
-																		>
-																			<Pencil className="size-3.5" />
-																		</Button>
-																		<Tooltip>
-																			<TooltipTrigger
-																				asChild
-																			>
-																				<span>
-																					<Button
-																						size="icon"
-																						variant="ghost"
-																						className="size-8 text-muted-foreground hover:text-destructive disabled:pointer-events-none"
-																						disabled={
-																							sg.userCount >
-																							0
-																						}
-																						onClick={() =>
-																							setDeleteSubgroupTarget(
-																								sg,
-																							)
-																						}
-																						data-testid={`delete-subgroup-${sg.subgroupId}`}
-																					>
-																						<Trash2 className="size-3.5" />
-																					</Button>
-																				</span>
-																			</TooltipTrigger>
-																			{sg.userCount >
-																				0 && (
-																				<TooltipContent>
-																					{
-																						sg.userCount
-																					}{" "}
-																					{sg.userCount ===
-																					1
-																						? "user"
-																						: "users"}{" "}
-																					assigned
-																					—
-																					remove
-																					first
-																				</TooltipContent>
-																			)}
-																		</Tooltip>
-																	</div>
-																)}
-															</div>
-														))}
-													</div>
-												)}
-											</TabsContent>
 										</Tabs>
 									</div>
 								</>
@@ -1389,310 +1011,7 @@ export const AppProfiles = observer(
 					</div>
 				)}
 
-				{/* ── Configure Subgroup dialog ─────────────────────────────────── */}
-				<Dialog
-					open={!!configureSubgroupId}
-					onOpenChange={(open) =>
-						!open && setConfigureSubgroupId(null)
-					}
-				>
-					<DialogContent
-						className="flex max-h-[90vh] w-full max-w-2xl flex-col gap-4 overflow-hidden"
-						showCloseButton={false}
-					>
-						<DialogHeader>
-							<div className="flex items-center justify-between">
-								<div>
-									<DialogTitle>
-										{configureSubgroup?.subgroupName ??
-											"Subgroup"}
-									</DialogTitle>
-									{configureSubgroup?.description && (
-										<p className="mt-0.5 text-muted-foreground text-sm">
-											{configureSubgroup.description}
-										</p>
-									)}
-								</div>
-								<Button
-									variant="ghost"
-									size="icon-sm"
-									onClick={() => setConfigureSubgroupId(null)}
-									className="hover:bg-accent"
-								>
-									<X className="size-4" />
-								</Button>
-							</div>
-						</DialogHeader>
-
-						<Tabs
-							defaultValue="sg-features"
-							className="flex flex-col gap-3 overflow-hidden"
-						>
-							<TabsList className="w-fit">
-								<TabsTrigger value="sg-features">
-									Features
-								</TabsTrigger>
-								<TabsTrigger value="sg-members">
-									Members
-									{configureSubgroup &&
-										configureSubgroup.userCount > 0 && (
-											<span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-xs">
-												{configureSubgroup.userCount}
-											</span>
-										)}
-								</TabsTrigger>
-							</TabsList>
-
-							<TabsContent
-								value="sg-features"
-								className="flex flex-col gap-3"
-							>
-								<div className="flex items-center justify-between">
-									<p className="text-muted-foreground text-sm">
-										Features enabled for members of this
-										subgroup.
-									</p>
-									{canWrite && (
-										<Button
-											size="sm"
-											variant="outline"
-											className="gap-1.5"
-											onClick={() =>
-												setShowFeatureModal(true)
-											}
-										>
-											<Plus className="size-3.5" />
-											Add Feature
-										</Button>
-									)}
-								</div>
-								{subgroupFeatures.length === 0 ? (
-									<p className="text-muted-foreground text-sm">
-										No features defined for this app yet.
-									</p>
-								) : (
-									<div className="flex max-h-[300px] flex-col gap-1.5 overflow-y-auto">
-										{subgroupFeatures.map((f) => (
-											<div
-												key={f.featureId}
-												className="flex items-center justify-between rounded-lg border px-3 py-2.5"
-											>
-												<div>
-													<span className="font-mono text-sm">
-														{f.featureKey}
-													</span>
-													{f.description && (
-														<p className="text-muted-foreground text-xs">
-															{f.description}
-														</p>
-													)}
-												</div>
-												<div className="flex items-center gap-2">
-													<Switch
-														checked={f.enabled}
-														onCheckedChange={() =>
-															handleToggleSubgroupFeature(
-																f,
-															)
-														}
-														disabled={!canWrite}
-													/>
-													{canWrite && (
-														<Button
-															size="icon"
-															variant="ghost"
-															className="size-7 text-muted-foreground hover:text-destructive"
-															onClick={() =>
-																setDeleteFeatureTarget(
-																	f,
-																)
-															}
-														>
-															<Trash2 className="size-3.5" />
-														</Button>
-													)}
-												</div>
-											</div>
-										))}
-									</div>
-								)}
-							</TabsContent>
-
-							<TabsContent
-								value="sg-members"
-								className="overflow-hidden"
-							>
-								<div className="w-full rounded-xl border">
-									<div className="flex flex-col gap-2 rounded-t-xl border-b bg-muted p-3">
-										<div className="flex items-center gap-2">
-											<InputGroup className="flex-1 bg-background">
-												<InputGroupInput
-													placeholder="Search members"
-													value={subgroupMemberSearch}
-													onChange={(
-														e: React.ChangeEvent<HTMLInputElement>,
-													) =>
-														setSubgroupMemberSearch(
-															e.target.value,
-														)
-													}
-												/>
-												<InputGroupAddon>
-													<Search className="size-4" />
-												</InputGroupAddon>
-											</InputGroup>
-											{canWrite &&
-												configureSubgroupId && (
-													<Button
-														size="sm"
-														onClick={() =>
-															setAssignTarget({
-																type: "subgroup",
-																subgroupId:
-																	configureSubgroupId,
-																subgroupName:
-																	configureSubgroup?.subgroupName ??
-																	"",
-															})
-														}
-														data-testid="assign-subgroup-user-btn"
-													>
-														<UserPlus className="mr-1.5 size-3.5" />
-														Assign User
-													</Button>
-												)}
-										</div>
-									</div>
-									<div className="max-h-[300px] overflow-y-auto">
-										<Table>
-											<TableHeader className="sticky top-0 z-10 bg-background">
-												<TableRow>
-													<TableHead>Name</TableHead>
-													<TableHead>
-														Assigned By
-													</TableHead>
-													<TableHead>
-														Assigned Date
-													</TableHead>
-													<TableHead className="w-px whitespace-nowrap">
-														Actions
-													</TableHead>
-												</TableRow>
-											</TableHeader>
-											<TableBody>
-												{filteredSubgroupMembers.length >
-												0 ? (
-													filteredSubgroupMembers.map(
-														(u) => {
-															const displayName =
-																u.name ||
-																u.userId;
-															return (
-																<TableRow
-																	key={
-																		u.userId
-																	}
-																>
-																	<TableCell>
-																		<div className="flex items-center gap-2">
-																			<Avatar className="items-center justify-center bg-[#ECEDEF] text-gray-500">
-																				<AvatarFallback className="bg-[#ECEDEF] text-gray-500">
-																					{displayName
-																						.charAt(
-																							0,
-																						)
-																						.toUpperCase()}
-																				</AvatarFallback>
-																			</Avatar>
-																			<span className="flex flex-col overflow-hidden">
-																				<span className="font-semibold text-accent-foreground text-sm">
-																					{
-																						displayName
-																					}
-																				</span>
-																				<span className="text-muted-foreground text-xs">
-																					id:{" "}
-																					{
-																						u.userId
-																					}
-																				</span>
-																				{u.email && (
-																					<span className="text-muted-foreground text-xs">
-																						email:{" "}
-																						{
-																							u.email
-																						}
-																					</span>
-																				)}
-																			</span>
-																		</div>
-																	</TableCell>
-																	<TableCell className="text-sm">
-																		{u.assignedBy ??
-																			"—"}
-																	</TableCell>
-																	<TableCell className="text-muted-foreground text-sm">
-																		{u.assignedAt
-																			? new Date(
-																					u.assignedAt,
-																				).toLocaleDateString()
-																			: "—"}
-																	</TableCell>
-																	<TableCell>
-																		<Button
-																			type="button"
-																			variant="outline"
-																			size="icon-sm"
-																			className="border-none"
-																			data-testid={`remove-subgroup-user-${u.userId}`}
-																			onClick={() =>
-																				setRemoveSubgroupUserTarget(
-																					u,
-																				)
-																			}
-																		>
-																			<Trash2 className="size-4" />
-																		</Button>
-																	</TableCell>
-																</TableRow>
-															);
-														},
-													)
-												) : (
-													<TableRow>
-														<TableCell
-															colSpan={4}
-															className="text-center"
-														>
-															{subgroupMemberSearch ? (
-																`No members match "${subgroupMemberSearch}"`
-															) : (
-																<Muted>
-																	No members
-																	assigned
-																	yet.
-																</Muted>
-															)}
-														</TableCell>
-													</TableRow>
-												)}
-											</TableBody>
-										</Table>
-									</div>
-									<p className="mt-2 px-4 pb-3 text-end text-muted-foreground text-sm">
-										{filteredSubgroupMembers.length} of{" "}
-										{subgroupUsers.length}{" "}
-										{subgroupUsers.length === 1
-											? "member"
-											: "members"}
-									</p>
-								</div>
-							</TabsContent>
-						</Tabs>
-					</DialogContent>
-				</Dialog>
-
-				{/* ── Assign Users dialog (profile + subgroup, multi-select) ───── */}
+				{/* ── Assign Users dialog ───────────────────────────────────────── */}
 				<Dialog
 					open={!!assignTarget}
 					onOpenChange={(open) => !open && closeAssignModal()}
@@ -1703,9 +1022,7 @@ export const AppProfiles = observer(
 							<DialogDescription>
 								Search for users to assign to{" "}
 								<span className="font-medium text-foreground">
-									{assignTarget?.type === "profile"
-										? assignTarget.profileName
-										: assignTarget?.subgroupName}
+									{assignTarget?.profileName}
 								</span>
 								.
 							</DialogDescription>
@@ -1870,9 +1187,8 @@ export const AppProfiles = observer(
 								<div>
 									<DialogTitle>Profile Managers</DialogTitle>
 									<p className="mt-1 text-muted-foreground text-xs">
-										Managers can manage profiles, features,
-										subgroups, and member assignments, but
-										cannot add or remove other managers.
+										Managers can manage member assignments
+										but cannot add or remove other managers.
 									</p>
 								</div>
 								<Button
@@ -1966,24 +1282,6 @@ export const AppProfiles = observer(
 									Set as default profile
 								</Label>
 							</div>
-							{!editingProfile && (
-								<div className="flex items-center gap-2">
-									<Checkbox
-										id={`${uid}-profile-isgroup`}
-										checked={profileFormIsGroup}
-										onCheckedChange={(v) =>
-											setProfileFormIsGroup(v === true)
-										}
-									/>
-									<Label
-										htmlFor={`${uid}-profile-isgroup`}
-										className="cursor-pointer"
-									>
-										Group profile — contains named
-										sub-groups
-									</Label>
-								</div>
-							)}
 						</div>
 						<DialogFooter>
 							<div className="flex flex-row gap-2">
@@ -2177,93 +1475,6 @@ export const AppProfiles = observer(
 					</DialogContent>
 				</Dialog>
 
-				{/* ── New / Edit Subgroup modal ────────────────────────────────── */}
-				<Dialog
-					open={showSubgroupModal}
-					onOpenChange={(isOpen) => !isOpen && closeSubgroupModal()}
-				>
-					<DialogContent
-						className="max-w-[480px] gap-6 rounded-xl"
-						showCloseButton={false}
-					>
-						<DialogHeader>
-							<div className="flex items-center justify-between">
-								<DialogTitle>
-									{editingSubgroup
-										? "Edit Subgroup"
-										: "New Subgroup"}
-								</DialogTitle>
-								<Button
-									variant="ghost"
-									size="icon-sm"
-									onClick={closeSubgroupModal}
-									className="hover:bg-accent"
-								>
-									<X className="size-4" />
-								</Button>
-							</div>
-						</DialogHeader>
-						<div className="flex flex-col gap-4 pb-2">
-							<div className="flex flex-col gap-1.5">
-								<Label htmlFor={`${uid}-subgroup-name`}>
-									Name{" "}
-									<span className="text-destructive">*</span>
-								</Label>
-								<Input
-									id={`${uid}-subgroup-name`}
-									placeholder="e.g. admins, read-only"
-									value={subgroupFormName}
-									onChange={(e) =>
-										setSubgroupFormName(e.target.value)
-									}
-									maxLength={100}
-									autoFocus
-								/>
-							</div>
-							<div className="flex flex-col gap-1.5">
-								<Label htmlFor={`${uid}-subgroup-desc`}>
-									Description
-								</Label>
-								<Textarea
-									id={`${uid}-subgroup-desc`}
-									placeholder="Optional description"
-									value={subgroupFormDesc}
-									onChange={(e) =>
-										setSubgroupFormDesc(e.target.value)
-									}
-									rows={2}
-									className="max-h-[120px] resize-none"
-								/>
-							</div>
-						</div>
-						<DialogFooter>
-							<div className="flex flex-row gap-2">
-								<Button
-									variant="ghost"
-									onClick={closeSubgroupModal}
-									disabled={savingSubgroup}
-								>
-									Cancel
-								</Button>
-								<Button
-									onClick={handleSaveSubgroup}
-									disabled={
-										savingSubgroup ||
-										!subgroupFormName.trim()
-									}
-									data-testid="save-subgroup-btn"
-								>
-									{savingSubgroup
-										? "Saving…"
-										: editingSubgroup
-											? "Update"
-											: "Create"}
-								</Button>
-							</div>
-						</DialogFooter>
-					</DialogContent>
-				</Dialog>
-
 				{/* ── Delete Feature confirmation ──────────────────────────────── */}
 				<Dialog
 					open={!!deleteFeatureTarget}
@@ -2277,8 +1488,8 @@ export const AppProfiles = observer(
 							<DialogDescription>
 								Delete feature &quot;
 								{deleteFeatureTarget?.featureKey}&quot;? This
-								will remove it from all profiles and subgroups.
-								This cannot be undone.
+								will remove it from all profiles. This cannot be
+								undone.
 							</DialogDescription>
 						</DialogHeader>
 						<DialogFooter>
@@ -2419,81 +1630,6 @@ export const AppProfiles = observer(
 								onClick={confirmRemoveManager}
 								disabled={confirmLoading}
 								data-testid="confirm-remove-manager-btn"
-							>
-								{confirmLoading ? "Removing…" : "Remove"}
-							</Button>
-						</DialogFooter>
-					</DialogContent>
-				</Dialog>
-
-				{/* ── Delete subgroup confirmation ─────────────────────────────── */}
-				<Dialog
-					open={!!deleteSubgroupTarget}
-					onOpenChange={(open) =>
-						!open && setDeleteSubgroupTarget(null)
-					}
-				>
-					<DialogContent>
-						<DialogHeader>
-							<DialogTitle>Delete Subgroup</DialogTitle>
-							<DialogDescription>
-								Delete subgroup &quot;
-								{deleteSubgroupTarget?.subgroupName}&quot;? This
-								cannot be undone.
-							</DialogDescription>
-						</DialogHeader>
-						<DialogFooter>
-							<Button
-								variant="ghost"
-								onClick={() => setDeleteSubgroupTarget(null)}
-								disabled={confirmLoading}
-							>
-								Cancel
-							</Button>
-							<Button
-								variant="destructive"
-								onClick={confirmDeleteSubgroup}
-								disabled={confirmLoading}
-								data-testid="confirm-delete-subgroup-btn"
-							>
-								{confirmLoading ? "Deleting…" : "Delete"}
-							</Button>
-						</DialogFooter>
-					</DialogContent>
-				</Dialog>
-
-				{/* ── Remove subgroup user confirmation ───────────────────────── */}
-				<Dialog
-					open={!!removeSubgroupUserTarget}
-					onOpenChange={(open) =>
-						!open && setRemoveSubgroupUserTarget(null)
-					}
-				>
-					<DialogContent>
-						<DialogHeader>
-							<DialogTitle>Remove User from Subgroup</DialogTitle>
-							<DialogDescription>
-								Remove &quot;
-								{removeSubgroupUserTarget?.name ||
-									removeSubgroupUserTarget?.userId}
-								&quot; from this subgroup?
-							</DialogDescription>
-						</DialogHeader>
-						<DialogFooter>
-							<Button
-								variant="ghost"
-								onClick={() =>
-									setRemoveSubgroupUserTarget(null)
-								}
-								disabled={confirmLoading}
-							>
-								Cancel
-							</Button>
-							<Button
-								variant="destructive"
-								onClick={confirmRemoveSubgroupUser}
-								disabled={confirmLoading}
-								data-testid="confirm-remove-subgroup-user-btn"
 							>
 								{confirmLoading ? "Removing…" : "Remove"}
 							</Button>
