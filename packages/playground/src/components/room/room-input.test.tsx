@@ -1,94 +1,232 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { expect, test, vi } from "vitest";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import React from "react";
+import { beforeEach, expect, test, vi } from "vitest";
 import { toast } from "@semoss/ui/next";
 import { RoomInput } from "./room-input";
 
-test("pressing Enter calls onPrompt with textarea content", async () => {
+// ---------------------------------------------------------------------------
+// Fake editor state shared between mocks
+// ---------------------------------------------------------------------------
+let fakeEditorText = "";
+let triggerOnChange: (() => void) | null = null;
+
+// ---------------------------------------------------------------------------
+// Mocks
+// ---------------------------------------------------------------------------
+
+vi.mock("@semoss/i18n", async (importOriginal) => {
+	const actual = await importOriginal();
+	return {
+		...actual,
+		useTranslation: () => ({
+			t: (key: string) => {
+				const map: Record<string, string> = {
+					"input.ariaPlaceholder": "Enter text",
+					"input.askLabel": "Ask the AI",
+					"input.thinking": "Thinking...",
+					"input.menuPrompt": "What do you want to do today?",
+				};
+				return map[key] ?? key;
+			},
+			i18n: { language: "en" },
+		}),
+	};
+});
+
+vi.mock("@/contexts", async (importOriginal) => {
+	const actual = await importOriginal();
+	return {
+		...actual,
+		useFileDrag: () => ({
+			isDragging: false,
+			setIsDragging: vi.fn(),
+			shouldStayOpen: false,
+			setShouldStayOpen: vi.fn(),
+			files: [],
+			addFiles: vi.fn(),
+			removeFile: vi.fn(),
+			clearFiles: vi.fn(),
+			fileInputRef: { current: null },
+			containerRef: { current: null },
+		}),
+	};
+});
+
+vi.mock("@/hooks", async (importOriginal) => {
+	const actual = await importOriginal();
+	return {
+		...actual,
+		useRoot: () => ({ root: { theme: { featureFlags: {} } } }),
+		useGracefulErrors: () => ({
+			getGracefulErrorMessage: vi.fn((msg: string) => msg),
+		}),
+	};
+});
+
+// Mock $getRoot so promptModel can read fakeEditorText
+vi.mock("lexical", async (importOriginal) => {
+	const actual = await importOriginal();
+	return {
+		...actual,
+		$getRoot: vi.fn(() => ({
+			getTextContent: () => fakeEditorText,
+			getChildren: () =>
+				fakeEditorText
+					? [
+							{
+								getTextContent: () => fakeEditorText,
+								getChildren: () => [
+									{ getTextContent: () => fakeEditorText },
+								],
+							},
+						]
+					: [],
+			clear: vi.fn(() => {
+				fakeEditorText = "";
+			}),
+			append: vi.fn(),
+		})),
+		$createParagraphNode: vi.fn(() => ({ append: vi.fn() })),
+		$createTextNode: vi.fn(),
+		$isElementNode: vi.fn(() => true),
+		$isSlashCommandNode: vi.fn(() => false),
+	};
+});
+
+// Mock EditorRefPlugin to inject a fake editor that uses fakeEditorText
+vi.mock("@lexical/react/LexicalEditorRefPlugin", () => ({
+	EditorRefPlugin: ({
+		editorRef,
+	}: {
+		editorRef: React.MutableRefObject<unknown>;
+	}) => {
+		React.useEffect(() => {
+			editorRef.current = {
+				getEditorState: () => ({ read: (cb: () => void) => cb() }),
+				update: (cb: () => void) => cb(),
+				focus: vi.fn(),
+			};
+		});
+		return null;
+	},
+}));
+
+// Mock OnChangePlugin to expose a trigger so tests can update isEmpty state
+vi.mock("@lexical/react/LexicalOnChangePlugin", () => ({
+	OnChangePlugin: ({
+		onChange,
+	}: {
+		onChange: (state: { read: (cb: () => void) => void }) => void;
+	}) => {
+		triggerOnChange = () => onChange({ read: (cb) => cb() });
+		React.useEffect(() => {
+			triggerOnChange?.();
+		}, []);
+		return null;
+	},
+}));
+
+// Mock EnterPlugin to listen for keydown directly (bypasses Lexical command system)
+vi.mock("@/components/common/lexical/enter-plugin", () => ({
+	EnterPlugin: ({ onEnter }: { onEnter: () => void }) => {
+		React.useEffect(() => {
+			const handler = (e: KeyboardEvent) => {
+				if (e.key === "Enter" && !e.shiftKey) {
+					e.preventDefault();
+					onEnter();
+				}
+			};
+			document.addEventListener("keydown", handler);
+			return () => document.removeEventListener("keydown", handler);
+		}, [onEnter]);
+		return null;
+	},
+}));
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const defaultProps = {
+	isLoading: false,
+	onPrompt: vi.fn(() => Promise.resolve(true)),
+	model: null,
+	setModel: vi.fn(),
+	MenuComponent: () => React.createElement("div", null),
+	options: {
+		instructions: "",
+		mcp: [],
+		tokenLength: 4096,
+		temperature: 0.5,
+		workspace: null,
+	},
+};
+
+/** Set fake editor text and trigger the OnChangePlugin callback to update isEmpty */
+function setEditorText(text: string) {
+	fakeEditorText = text;
+	act(() => triggerOnChange?.());
+}
+
+beforeEach(() => {
+	fakeEditorText = "";
+	triggerOnChange = null;
+});
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+test("pressing Enter calls onPrompt with editor content", async () => {
 	const onPrompt = vi.fn(() => Promise.resolve(true));
+	render(<RoomInput {...defaultProps} onPrompt={onPrompt} />);
 
-	render(<RoomInput isLoading={false} onPrompt={onPrompt} />);
+	setEditorText("Hello world");
 
-	const textarea = screen.getByPlaceholderText(
-		"What do you want to do today?",
-	);
+	fireEvent.keyDown(document, { key: "Enter", code: "Enter", bubbles: true });
 
-	// type some text
-	fireEvent.change(textarea, { target: { value: "Hello world" } });
-
-	// press Enter (without Shift) to submit
-	fireEvent.keyDown(textarea, { key: "Enter", code: "Enter", charCode: 13 });
-
-	// onPrompt is async — wait a tick
-	await Promise.resolve();
-
-	expect(onPrompt).toHaveBeenCalledTimes(1);
+	await vi.waitFor(() => expect(onPrompt).toHaveBeenCalledTimes(1));
 	expect(onPrompt).toHaveBeenCalledWith("Hello world", []);
 });
 
 test("clicking send button calls onPrompt", async () => {
 	const onPrompt = vi.fn(() => Promise.resolve(true));
+	render(<RoomInput {...defaultProps} onPrompt={onPrompt} />);
 
-	render(<RoomInput isLoading={false} onPrompt={onPrompt} />);
+	setEditorText("Click send");
 
-	const textarea = screen.getByPlaceholderText(
-		"What do you want to do today?",
-	);
-	fireEvent.change(textarea, { target: { value: "Click send" } });
-
-	// find the button by aria-label
-	const sendButton = screen.getByLabelText("Prompt the Model");
-
+	const sendButton = screen.getByLabelText("Ask the AI");
 	fireEvent.click(sendButton);
 
-	await Promise.resolve();
-
-	expect(onPrompt).toHaveBeenCalledTimes(1);
+	await vi.waitFor(() => expect(onPrompt).toHaveBeenCalledTimes(1));
 	expect(onPrompt).toHaveBeenCalledWith("Click send", []);
 });
 
-test("does not call onPrompt when loading or disabled", async () => {
+test("does not call onPrompt when loading", async () => {
 	const onPrompt = vi.fn(() => Promise.resolve(true));
-
-	// isLoading true
-	const { rerender } = render(
-		<RoomInput isLoading={true} onPrompt={onPrompt} />,
+	render(
+		<RoomInput {...defaultProps} isLoading={true} onPrompt={onPrompt} />,
 	);
 
-	const textarea = screen.getByPlaceholderText(
-		"What do you want to do today?",
-	);
-	fireEvent.change(textarea, { target: { value: "Should not send" } });
-	fireEvent.keyDown(textarea, { key: "Enter", code: "Enter", charCode: 13 });
+	setEditorText("Should not send");
 
-	await Promise.resolve();
-	expect(onPrompt).not.toHaveBeenCalled();
+	fireEvent.keyDown(document, { key: "Enter", code: "Enter", bubbles: true });
 
-	// isDisabled true
-	rerender(<RoomInput isLoading={false} onPrompt={onPrompt} />);
-
-	fireEvent.change(textarea, { target: { value: "Should not send either" } });
-	fireEvent.keyDown(textarea, { key: "Enter", code: "Enter", charCode: 13 });
-
-	await Promise.resolve();
+	await new Promise((r) => setTimeout(r, 50));
 	expect(onPrompt).not.toHaveBeenCalled();
 });
 
-test("shows toast when onPrompt fails or returns false", async () => {
+test("shows toast when onPrompt returns false", async () => {
 	const onPrompt = vi.fn(() => Promise.resolve(false));
 	toast.error = vi.fn();
 
-	render(<RoomInput isLoading={false} onPrompt={onPrompt} />);
+	render(<RoomInput {...defaultProps} onPrompt={onPrompt} />);
 
-	const textarea = screen.getByPlaceholderText(
-		"What do you want to do today?",
-	);
-	fireEvent.change(textarea, { target: { value: "Will fail" } });
-	fireEvent.keyDown(textarea, { key: "Enter", code: "Enter", charCode: 13 });
+	setEditorText("Will fail");
 
-	await Promise.resolve();
+	const sendButton = screen.getByLabelText("Ask the AI");
+	fireEvent.click(sendButton);
 
-	// toast.error should be called with the thrown message
-	expect(toast.error).toHaveBeenCalled();
-	// ensure onPrompt was called once
+	await vi.waitFor(() => expect(toast.error).toHaveBeenCalled());
 	expect(onPrompt).toHaveBeenCalledTimes(1);
 });
