@@ -134,6 +134,10 @@ const CardMapper: Record<string, CardConfig> = {
 		icon: <ChartBar className={ICON_CLASS} />,
 		color: "#0471F0",
 	},
+	"Usage Limits": {
+		icon: <ChartBar className={ICON_CLASS} />,
+		color: "#558B2F",
+	},
 };
 
 export const SettingsIndexPage = () => {
