@@ -507,6 +507,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									message={message}
 									part={p}
 									status={status}
+									isFirstView={isFirstView}
 								/>
 							);
 						} else if (p.type === "TOOL_CALL") {

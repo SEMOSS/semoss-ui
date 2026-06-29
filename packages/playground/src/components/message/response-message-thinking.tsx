@@ -125,6 +125,13 @@ interface ResponseMessageThinkingProps {
 	 * - "done": message moved past this part — snaps to full content
 	 */
 	status: ChunkStatus;
+
+	/**
+	 * First time the user is seeing this message stream. On a first view the
+	 * typewriter animates thinking from 0; on a return it baselines at the
+	 * thinking present on mount, jumping to the latest then typing new tokens.
+	 */
+	isFirstView: boolean;
 }
 
 /**
@@ -137,19 +144,23 @@ interface ResponseMessageThinkingProps {
  * - Smooth CSS transitions for expand/collapse
  */
 export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
-	observer(({ part, status }) => {
+	observer(({ part, status, isFirstView }) => {
 		// This part is actively streaming only while the parent has it "active".
 		// "done" means the message moved on (next part arrived or streaming ended).
 		const isStreaming = status === "active";
 		const [isExpanded, setIsExpanded] = useState(false);
 		const [isOverflowing, setIsOverflowing] = useState(false);
-		const typewriter = useMarkdownTypewriter(part.thinking);
+		// On a return view, baseline at the thinking present on mount so we jump to
+		// the latest then type new tokens, instead of replaying from the start.
+		const typewriter = useMarkdownTypewriter(part.thinking, !isFirstView);
 		const contentRef = useRef<HTMLDivElement | null>(null);
 		const hasUserScrolledRef = useRef(false);
 		const isProgrammaticScrollRef = useRef(false);
 		const { loadingMessage } = useLoadingMessage(isStreaming, undefined, 1);
 
-		const displayedThinking = typewriter.isTyping
+		// While streaming, show what the typewriter has revealed (baseline + typed
+		// net-new); otherwise render the full thinking directly.
+		const displayedThinking = isStreaming
 			? typewriter.rendered
 			: part.thinking;
 		// While actively thinking, the card is always expanded and cannot be collapsed.

@@ -111,8 +111,14 @@ interface UseMarkdownTypewriterReturn {
 
 export function useMarkdownTypewriter(
 	content: string,
+	startAtLatest: boolean = false,
 ): UseMarkdownTypewriterReturn {
-	const [renderedLength, setRenderedLength] = useState<number>(0);
+	// On a return view, start fully revealed (only later tokens animate); on a
+	// first view, start from 0. `rendered` slices the full content, so this seed
+	// alone gives baseline + animated net-new with no work in the consumer.
+	const [renderedLength, setRenderedLength] = useState<number>(() =>
+		startAtLatest ? content.length : 0,
+	);
 	const [isRunning, setIsRunning] = useState<boolean>(false);
 	const contentRef = useRef<string>(content);
 	const rafRef = useRef<number | null>(null);
