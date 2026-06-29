@@ -219,6 +219,7 @@ export const MembersList = ({
 			userpermissions: [payload],
 		}).catch((error: Error) => {
 			toast.error(error?.message || "Error updating user permission.");
+			return undefined;
 		});
 		if ((response?.data as { success?: boolean })?.success) {
 			setUserData((prev) =>
