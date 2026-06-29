@@ -39,7 +39,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { STREAMING_PLACEHOLDER_ID } from "@/constants";
-import { useRoot } from "@/hooks";
+import { useActiveIndex, useRoot } from "@/hooks";
 import {
 	InputMessageStore,
 	type ResponseMessageStore,
@@ -122,6 +122,15 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			null,
 		);
 		const feedbackTextRef = useRef<HTMLTextAreaElement>(null);
+
+		// Sequential reveal queue: parts animate in order, each waiting for the
+		// part above to finish. Text parts type via their own nested typewriter;
+		// thinking/media/tool parts snap to their final state but still wait their
+		// turn. Once the message stops streaming, every part renders in full.
+		const { chunkCallbacks, getChunkStatus } = useActiveIndex(
+			message.parts.length,
+			message.isThinking,
+		);
 
 		// get the parent input message
 		let inputMessage: InputMessageStore | null = null;
@@ -311,7 +320,32 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 				<div className="mb-0 flex w-full flex-col gap-2 pe-3 sm:pe-10">
 					{message.parts.map((p, pIdx) => {
 						const key = `message-part-${pIdx}`;
-						const isLast = pIdx === message.parts.length - 1;
+						const status = getChunkStatus(pIdx);
+
+						// Not this part's turn yet — wait for the part above to finish.
+						if (status === "not_started") {
+							return null;
+						}
+
+						// Non-text parts (thinking, media, tools) snap to their final
+						// state, so report complete the moment they become active — the
+						// queue advances and the next part can reveal. Text parts report
+						// their own completion once their typewriter catches up.
+						//
+						// Only call when it can actually advance. The hook holds the last
+						// part while streaming, so the call would be a no-op state-wise —
+						// but calling our own setter during render still re-triggers a
+						// render-phase update every render, which React loops on forever.
+						const isHeld =
+							pIdx === message.parts.length - 1 &&
+							message.isThinking;
+						if (
+							status === "active" &&
+							p.type !== "TEXT" &&
+							!isHeld
+						) {
+							chunkCallbacks[pIdx]();
+						}
 
 						if (p.type === "TEXT") {
 							return (
@@ -319,7 +353,8 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									key={key}
 									message={message}
 									part={p}
-									isLast={isLast}
+									status={status}
+									onComplete={chunkCallbacks[pIdx]}
 								/>
 							);
 						} else if (p.type === "MEDIA") {
@@ -446,7 +481,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									key={key}
 									message={message}
 									part={p}
-									isStreaming={isLast && message.isThinking}
+									status={status}
 								/>
 							);
 						} else if (p.type === "TOOL_CALL") {
