@@ -23,7 +23,7 @@ import {
 	ThumbsUpIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { Fragment, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
@@ -131,6 +131,23 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			message.parts.length,
 			message.isThinking,
 		);
+
+		// Non-text parts (thinking, media, tools) snap to their final state, so
+		// advance the queue past the active one the moment it's reached — the next
+		// part can then reveal. Text parts report their own completion once their
+		// typewriter catches up, so they're skipped here. Runs after every render
+		// (no dep array): each advance re-renders, which re-runs this and cascades
+		// to the next part until it lands on a text part or a part the hook holds
+		// (the last one while streaming), where the advance call bails harmlessly.
+		useEffect(() => {
+			for (let i = 0; i < message.parts.length; i++) {
+				if (getChunkStatus(i) !== "active") continue;
+				if (message.parts[i].type !== "TEXT") {
+					chunkCallbacks[i]();
+				}
+				break;
+			}
+		});
 
 		// get the parent input message
 		let inputMessage: InputMessageStore | null = null;
@@ -325,26 +342,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						// Not this part's turn yet — wait for the part above to finish.
 						if (status === "not_started") {
 							return null;
-						}
-
-						// Non-text parts (thinking, media, tools) snap to their final
-						// state, so report complete the moment they become active — the
-						// queue advances and the next part can reveal. Text parts report
-						// their own completion once their typewriter catches up.
-						//
-						// Only call when it can actually advance. The hook holds the last
-						// part while streaming, so the call would be a no-op state-wise —
-						// but calling our own setter during render still re-triggers a
-						// render-phase update every render, which React loops on forever.
-						const isHeld =
-							pIdx === message.parts.length - 1 &&
-							message.isThinking;
-						if (
-							status === "active" &&
-							p.type !== "TEXT" &&
-							!isHeld
-						) {
-							chunkCallbacks[pIdx]();
 						}
 
 						if (p.type === "TEXT") {
