@@ -521,7 +521,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 
 						return null;
 					})}
-					{message.hasUnfinishedTools && (
+					{message.hasUnfinishedTools && !message.isThinking && (
 						<p className="mt-2 flex items-center gap-2 text-muted-foreground text-sm">
 							<CircleAlert className="size-4" />
 							{hasAskTools
