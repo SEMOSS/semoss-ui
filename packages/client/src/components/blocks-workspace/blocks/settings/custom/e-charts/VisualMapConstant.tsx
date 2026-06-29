@@ -348,8 +348,6 @@ export const VisualMapConstant = {
 			name: "kpi",
 			label: "KPI",
 		},
-	],
-	Words: [
 		{
 			icon: <img src={String(CloudIcon)} alt="Cloud Icon" />,
 			name: "cloud",
@@ -705,7 +703,7 @@ export const VisualMapConstant = {
 			},
 		},
 	],
-	"Part To Whoel": [
+	"Part To Whole": [
 		{
 			icon: <img src={String(BulletIcon)} alt="Bullet Icon" />,
 			name: "bullet",

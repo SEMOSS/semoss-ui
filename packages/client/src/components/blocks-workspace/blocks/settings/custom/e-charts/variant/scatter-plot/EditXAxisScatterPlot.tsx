@@ -1,6 +1,6 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useState } from "react";
+import { type ChangeEvent, useEffect, useMemo, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
@@ -10,15 +10,30 @@ import {
 } from "@semoss/renderer";
 import { Button, Input, Slider, Switch } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks/useBlockSettings";
+import type { AxisConfig } from "../shared/shared-interfaces";
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 	id: string;
 	path: Paths<Block<D>["data"], 4>;
 }
 
+interface ScatterPlotOption {
+	xAxis: AxisConfig;
+	reset: {
+		axis: {
+			xaxis: AxisConfig;
+		};
+	};
+}
+
 export const EditXAxisScatterPlot = observer(
 	<D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
 		const { data, setData } = useBlockSettings<D>(id);
+		const optionData = (
+			data as Block<D>["data"] & {
+				option?: ScatterPlotOption;
+			}
+		).option;
 		const [showXaxis, setShowXaxis] = useState(true);
 		const [value, setValue] = useState("");
 		const [showXaxisTitle, setShowXaxisTitle] = useState(true);
@@ -49,12 +64,12 @@ export const EditXAxisScatterPlot = observer(
 		}, [computedValue, data]);
 		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
-			if (Object.hasOwn(data, "option")) {
-				reinitializeFeatures(data.option);
+			if (optionData) {
+				reinitializeFeatures(optionData);
 			}
-		}, [id]);
+		}, [id, optionData]);
 
-		const reinitializeFeatures = (options) => {
+		const reinitializeFeatures = (options: ScatterPlotOption) => {
 			if (Object.hasOwn(options, "xAxis")) {
 				if (options.xAxis && Object.hasOwn(options.xAxis, "show")) {
 					setShowXaxis(options.xAxis.show);
@@ -83,81 +98,87 @@ export const EditXAxisScatterPlot = observer(
 		};
 		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
-			if (Object.hasOwn(data, "option")) {
-				retainXAxisTitle(data.option);
+			if (optionData) {
+				retainXAxisTitle(optionData);
 			}
-		}, [data.option.xAxis.name]);
+		}, [optionData?.xAxis.name]);
 
-		const retainXAxisTitle = (options) => {
+		const retainXAxisTitle = (options: ScatterPlotOption) => {
 			if (Object.hasOwn(options, "xAxis")) {
 				if (options.xAxis && Object.hasOwn(options.xAxis, "name")) {
-					setXaxisTitle(data.option.xAxis.name);
+					setXaxisTitle(String(options.xAxis.name ?? ""));
 				}
 			}
 		};
 
 		const showXAxis = (checked: boolean) => {
-			const option = JSON.parse(value);
+			const option = JSON.parse(value) as ScatterPlotOption;
 			setShowXaxis(checked);
 			option.xAxis.show = checked;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
 		const showXAxisTitle = (checked: boolean) => {
-			const option = JSON.parse(value);
+			const option = JSON.parse(value) as ScatterPlotOption;
 			setShowXaxisTitle(checked);
 			option.xAxis.name =
 				option.xAxis.name === "" ? option.xAxis.pixelName : "";
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		const handleXaxisTitleChange = (e) => {
+		const handleXaxisTitleChange = (e: ChangeEvent<HTMLInputElement>) => {
 			setXaxisTitle(e.target.value);
-			const option = JSON.parse(value);
+			const option = JSON.parse(value) as ScatterPlotOption;
 			option.xAxis.name = e.target.value;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		const handleChangeXAxisFontSize = (e) => {
-			const option = JSON.parse(value);
-			setFontSizeXAxis(e.target.value);
-			option.xAxis.nameTextStyle.fontSize = e.target.value;
+		const handleChangeXAxisFontSize = (
+			e: ChangeEvent<HTMLInputElement>,
+		) => {
+			const option = JSON.parse(value) as ScatterPlotOption;
+			const nextValue = e.target.valueAsNumber;
+			setFontSizeXAxis(nextValue);
+			option.xAxis.nameTextStyle.fontSize = nextValue;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		const handleChangeXAxisLabelFontSize = (e) => {
-			const option = JSON.parse(value);
-			setFontSizeXAxisLabel(e.target.value);
-			option.xAxis.axisLabel.fontSize = e.target.value;
+		const handleChangeXAxisLabelFontSize = (
+			e: ChangeEvent<HTMLInputElement>,
+		) => {
+			const option = JSON.parse(value) as ScatterPlotOption;
+			const nextValue = e.target.valueAsNumber;
+			setFontSizeXAxisLabel(nextValue);
+			option.xAxis.axisLabel.fontSize = nextValue;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
 		const rotateXAxis = (newValue: number[]) => {
-			const option = JSON.parse(value);
+			const option = JSON.parse(value) as ScatterPlotOption;
 			setRotateXaxis(newValue[0]);
 			option.xAxis.axisLabel.rotate = newValue[0];
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
 		const showXAxisTick = (checked: boolean) => {
-			const option = JSON.parse(value);
+			const option = JSON.parse(value) as ScatterPlotOption;
 			setShowXaxisTick(checked);
 			option.xAxis.axisTick.show = checked;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
 		const showXAxisLabel = (checked: boolean) => {
-			const option = JSON.parse(value);
+			const option = JSON.parse(value) as ScatterPlotOption;
 			setShowAxisLabel(checked);
 			option.xAxis.axisLabel.show = checked;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
 		const Reset = () => {
-			const option = JSON.parse(value);
+			const option = JSON.parse(value) as ScatterPlotOption;
 			setShowXaxis(option.reset.axis.xaxis.show);
 			setShowXaxisTitle(true);
-			setXaxisTitle(option.xAxis.pixelName);
+			setXaxisTitle(String(option.xAxis.pixelName ?? ""));
 			setFontSizeXAxis(option.reset.axis.xaxis.nameTextStyle.fontSize);
 			setFontSizeXAxisLabel(option.reset.axis.xaxis.axisLabel.fontSize);
 			setRotateXaxis(option.reset.axis.xaxis.axisLabel.rotate);
@@ -195,8 +216,6 @@ export const EditXAxisScatterPlot = observer(
 							<span className="text-muted-foreground text-sm">
 								Set X Axis Title
 							</span>
-							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-							// biome-ignore
 							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
 							<Input
 								id="xaxis-title"
@@ -208,8 +227,6 @@ export const EditXAxisScatterPlot = observer(
 							<span className="text-muted-foreground text-sm">
 								Edit Axis Title Font Size
 							</span>
-							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-							// biome-ignore
 							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
 							<Input
 								id="xaxis-edit-title-font-size"
@@ -234,8 +251,6 @@ export const EditXAxisScatterPlot = observer(
 							<span className="text-muted-foreground text-sm">
 								Edit Label Font Size
 							</span>
-							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-							// biome-ignore
 							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
 							<Input
 								id="xaxis-label-font-size"

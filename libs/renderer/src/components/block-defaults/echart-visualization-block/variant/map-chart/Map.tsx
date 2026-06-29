@@ -1,3 +1,4 @@
+import type { ECharts } from "echarts";
 import { BarChart } from "echarts/charts";
 import {
 	GeoComponent,
@@ -10,7 +11,7 @@ import EChartsReact from "echarts-for-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import { useBlock, useFrame } from "../../../../../hooks";
-import type { BlockComponent } from "../../../../../store";
+import type { BlockComponent, ListenerActions } from "../../../../../store";
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
 import { processData } from "./MapChartProcessData";
 import { formatdatapoints } from "./MapChartTooltipData";
@@ -25,18 +26,57 @@ echarts.use([
 	CanvasRenderer,
 ]);
 
+interface MapDataPoint {
+	value: [number, number, ...unknown[]];
+}
+
+interface MapContextMenuParams {
+	data?: unknown;
+	event: {
+		event: {
+			clientX: number;
+			clientY: number;
+			preventDefault: () => void;
+		};
+	};
+}
+
+interface MapBlockDef {
+	widget: "e-chart";
+	data: {
+		frame: { name: string };
+		aggregate: Record<string, Record<string, string>>;
+		option?: Record<string, unknown>;
+	};
+	listeners: Record<
+		string,
+		{ order: ListenerActions[]; type: "sync" | "async" }
+	>;
+	slots: never;
+}
+
 // biome-ignore lint/suspicious/noShadowRestrictedNames: component name follows Map chart convention
 export const Map: BlockComponent = observer(({ id }) => {
-	// biome-ignore lint/suspicious/noExplicitAny: echart block data type is untyped
-	const { data } = useBlock<any>(id);
-	// biome-ignore lint/suspicious/noExplicitAny: echart chart ref type is untyped
-	const chartRef = useRef<any>(null);
+	const { data } = useBlock<MapBlockDef>(id);
+	const chartRef = useRef<ECharts | null>(null);
+	type SelectorInput = Parameters<typeof getSelector>[0];
+	type SelectorAggregates = Parameters<typeof getSelector>[1];
+	type ProcessApiData = Parameters<typeof processData>[0];
+	type ProcessInput = Parameters<typeof processData>[1];
+	type TooltipApiData = Parameters<typeof formatdatapoints>[0];
+	type TooltipInput = Parameters<typeof formatdatapoints>[1];
 
-	// biome-ignore lint/suspicious/noExplicitAny: context menu state type is untyped
-	const [contextMenu, setContextMenu] = useState<any>(null);
+	const [contextMenu, setContextMenu] = useState<{
+		mouseX: number;
+		mouseY: number;
+		value: unknown;
+	} | null>(null);
 
 	const frame = useFrame(data?.frame?.name, {
-		selector: getSelector(data, data?.aggregate),
+		selector: getSelector(
+			data as unknown as SelectorInput,
+			(data?.aggregate ?? {}) as SelectorAggregates,
+		),
 	});
 
 	const baseOption = {
@@ -58,6 +98,7 @@ export const Map: BlockComponent = observer(({ id }) => {
 			{
 				type: "scatter",
 				coordinateSystem: "geo",
+				name: "Markers",
 				symbol: "circle",
 				data: [],
 			},
@@ -66,62 +107,108 @@ export const Map: BlockComponent = observer(({ id }) => {
 
 	useEffect(() => {
 		const worldJson = fetchWorldMap("");
-		echarts.registerMap("world", worldJson);
+		// biome-ignore lint/suspicious/noExplicitAny: echarts.registerMap requires strict GeoJSON type
+		echarts.registerMap("world", worldJson as any);
 	}, []);
 
-	const processedData = processData(frame.data, data);
+	const processedData = processData(
+		frame.data as ProcessApiData,
+		data as unknown as ProcessInput,
+	);
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
-		if (!chartRef.current || !processedData?.length) return;
+		if (!chartRef.current) return;
 
-		// biome-ignore lint/suspicious/noExplicitAny: echart data map type is untyped
-		const lats = processedData.map((d: any) => d.value[0]);
-		// biome-ignore lint/suspicious/noExplicitAny: echart data map type is untyped
-		const lons = processedData.map((d: any) => d.value[1]);
+		const storedOption = (data as unknown as ProcessInput)
+			?.option as unknown as Record<string, unknown> | undefined;
+		const storedTooltip = storedOption?.tooltip as
+			| Record<string, unknown>
+			| undefined;
+		const storedGeo = (
+			storedOption?.geo as Record<string, unknown>[] | undefined
+		)?.[0];
+		const storedSeries = (
+			storedOption?.series as Record<string, unknown>[] | undefined
+		)?.[0];
 
-		const minLat = Math.min(...lats);
-		const maxLat = Math.max(...lats);
-		const minLon = Math.min(...lons);
-		const maxLon = Math.max(...lons);
+		const fallbackCenter = Array.isArray(storedGeo?.["center"])
+			? (storedGeo?.["center"] as [number, number])
+			: [0, 0];
+		const fallbackZoom =
+			typeof storedGeo?.["zoom"] === "number"
+				? (storedGeo["zoom"] as number)
+				: 1;
 
-		const center = [(minLat + maxLat) / 2, (minLon + maxLon) / 2];
-		const diff = Math.max(maxLat - minLat, maxLon - minLon);
+		let center = fallbackCenter;
+		let zoom = fallbackZoom;
+		const mappedData = processedData as MapDataPoint[] | undefined;
+		if (mappedData?.length) {
+			const lats = mappedData.map((point) => point.value[0]);
+			const lons = mappedData.map((point) => point.value[1]);
 
-		let zoom = 1;
-		if (diff < 1) zoom = 8;
-		else if (diff < 5) zoom = 6;
-		else if (diff < 10) zoom = 5;
-		else if (diff < 20) zoom = 4;
+			const minLat = Math.min(...lats);
+			const maxLat = Math.max(...lats);
+			const minLon = Math.min(...lons);
+			const maxLon = Math.max(...lons);
 
-		chartRef.current.setOption(
-			{
-				tooltip: {
-					formatter: formatdatapoints(frame.data, data),
-				},
-				geo: [
-					{
-						center,
-						zoom,
-					},
-				],
-				series: [
-					{
-						data: processedData,
-					},
-				],
+			center = [(minLat + maxLat) / 2, (minLon + maxLon) / 2];
+			const diff = Math.max(maxLat - minLat, maxLon - minLon);
+
+			zoom = 1;
+			if (diff < 1) zoom = 8;
+			else if (diff < 5) zoom = 6;
+			else if (diff < 10) zoom = 5;
+			else if (diff < 20) zoom = 4;
+		}
+
+		const storedSeriesName = storedSeries?.["name"];
+		const seriesName =
+			typeof storedSeriesName === "string" &&
+			storedSeriesName.trim().length > 0
+				? storedSeriesName
+				: "Markers";
+
+		const mergedOption = {
+			...(storedOption ?? {}),
+			tooltip: {
+				...(storedTooltip ?? {}),
+				show: (storedTooltip?.["show"] as boolean | undefined) ?? true,
+				trigger: "item",
+				formatter: formatdatapoints(
+					frame.data as TooltipApiData,
+					data as unknown as TooltipInput,
+				),
 			},
-			false,
-		);
-	}, [processedData, frame.data]);
+			geo: [
+				{
+					...(storedGeo ?? {}),
+					map: "world",
+					roam: true,
+					center,
+					zoom,
+				},
+			],
+			series: [
+				{
+					...(storedSeries ?? {}),
+					type: "scatter",
+					coordinateSystem: "geo",
+					name: seriesName,
+					symbol: "circle",
+					data: processedData ?? [],
+				},
+			],
+		};
 
-	// biome-ignore lint/suspicious/noExplicitAny: echart chart ready callback type is untyped
-	const onChartReady = (chart: any) => {
+		chartRef.current.setOption(mergedOption, false);
+	}, [processedData, frame.data, data]);
+
+	const onChartReady = (chart: ECharts) => {
 		chartRef.current = chart;
 		chart.setOption(baseOption);
 
-		// biome-ignore lint/suspicious/noExplicitAny: echart contextmenu event type is untyped
-		chart.on("contextmenu", (params: any) => {
+		chart.on("contextmenu", (rawParams: unknown) => {
+			const params = rawParams as MapContextMenuParams;
 			if (!params.data) return;
 			setContextMenu({
 				mouseX: params.event.event.clientX,

@@ -5,14 +5,44 @@ import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useBlock, useFrame } from "../../../../../hooks";
 import { getValueByPath } from "../../../../../utility";
+import type {
+	AxisDataItem,
+	BrushEndParams,
+	BrushSelectedParams,
+	EChartContextMenuParams,
+} from "../../shared-types";
 import type { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { ChartContextMenu } from "./ChartContextMenu";
-//echart field structure
-export interface EChartColumns {
-	name: string;
-	selector: string;
-	width: string;
+
+interface BarChartSeriesItem {
+	name?: string;
+	data?: (number | null)[];
+	toggleTrendLineObject?: boolean;
+	type?: string;
+	barWidth?: number;
+	itemStyle?: Record<string, unknown>;
 }
+
+interface BarChartOption {
+	xAxis: {
+		name: string | string[];
+		data: AxisDataItem[];
+		pixelname?: string[];
+		pixelvalue?: string[];
+		pixeldataType?: string[];
+	};
+	yAxis: {
+		name?: string | string[];
+		pixelname?: string[];
+	};
+	series: BarChartSeriesItem[];
+	customSettings?: {
+		toolsUpdated?: boolean;
+		[key: string]: unknown;
+	};
+	[key: string]: unknown;
+}
+
 //bar component properties
 interface BarProps {
 	id: string;
@@ -28,7 +58,7 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 		mouseY: number; //y axis position for the click/brush event
 		value: unknown; //value can be of object or string or number type
 	} | null>(null);
-	let resultData: unknown = {};
+	let resultData: BarChartOption = {} as BarChartOption;
 
 	/**
 	 * Builds a dynamic query string based on the provided input data.
@@ -67,7 +97,16 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 	const frameData = useFrame(data.frame.name, {
 		selector: selector,
 	});
-	const chartOperationData = useRef({
+	const chartOperationData = useRef<{
+		brushSelected: AxisDataItem[] | null;
+		contextMenu: null;
+		yAxisColumn: {
+			name: string;
+			selector: string;
+			width: undefined;
+		} | null;
+		chartInstance: { setOption: null };
+	}>({
 		brushSelected: [],
 		contextMenu: null,
 		yAxisColumn: { name: "", selector: "", width: undefined },
@@ -116,7 +155,7 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 	//update frame values to the series data when frame values are changed
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dependency on frameData.data.values only
 	const receiveValueswithCorrections = useCallback(
-		(resultData: unknown) => {
+		(resultData: BarChartOption) => {
 			let frameDataIndex = 0;
 
 			// Check if xAxis name exists
@@ -126,13 +165,17 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 				return resultData;
 			}
 
-			//setting xaxis data
-			resultData.xAxis.data = frameData.data?.values?.map((item) => {
-				const value = item[frameDataIndex];
-				return typeof value === "number" && !Number.isNaN(value)
-					? parseFloat(value.toFixed(2)) // Round to 2 decimal places
-					: null; // Replace NaN with null
-			});
+			//setting xaxis data - accept all values (strings for categorical, numbers for continuous)
+			resultData.xAxis.data =
+				frameData.data?.values?.map((item) => {
+					const value = item[frameDataIndex];
+					// X-axis accepts any value (strings for categorical axis, numbers for value axis)
+					if (typeof value === "number" && !Number.isNaN(value)) {
+						return parseFloat(value.toFixed(2));
+					}
+					// Return strings and other values as-is for categorical axis
+					return value as AxisDataItem;
+				}) ?? [];
 
 			if (resultData.xAxis.name?.length > 0) {
 				const optionSeriesLength = frameData.data.headers.length;
@@ -152,7 +195,9 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 						)
 					) {
 						resultData.series[seriesIdx].data =
-							frameData.data?.values?.map((_item) => null); // Set to null directly
+							frameData.data?.values?.map(
+								(_item: unknown) => null,
+							); // Set to null directly
 					}
 				}
 
@@ -170,20 +215,34 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 						resultData.series[i - 1].data =
 							frameData.data?.values?.map((item) => {
 								const value = item[i];
-								return typeof value === "number" &&
+
+								// Handle numeric values
+								if (
+									typeof value === "number" &&
 									!Number.isNaN(value)
-									? parseFloat(value.toFixed(2)) // Round to 2 decimal places
-									: null; // Replace NaN with null
+								) {
+									return parseFloat(value.toFixed(2));
+								}
+
+								// Handle string numbers
+								if (typeof value === "string") {
+									const numValue = parseFloat(value);
+									if (!Number.isNaN(numValue)) {
+										return parseFloat(numValue.toFixed(2));
+									}
+								}
+
+								return null; // Replace non-numeric with null
 							});
 					}
 				}
 
-				// Filter series based on yAxis.name array
-				const yAxisNames = resultData.yAxis.name;
+				// Filter series based on yAxis.pixelname array
+				const yAxisNames = resultData.yAxis.pixelname || [];
 
 				resultData.series = resultData.series.filter(
 					(seriesItem) =>
-						yAxisNames.includes(seriesItem.name) ||
+						yAxisNames.includes(seriesItem.name as string) ||
 						seriesItem.toggleTrendLineObject === true,
 				);
 
@@ -216,18 +275,18 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 	//on events object for getting and processing events with chart
 	const onClickChart = {
 		//when contextmenu event is raised, default context menu made hidden, and custom component is shown
-		contextmenu: (params) => {
+		contextmenu: (params: EChartContextMenuParams) => {
 			if (params.data) {
-				const xAxisName = data.option.xAxis.pixelvalue[0];
+				const option = data.option as BarChartOption;
+				const xAxisName = option.xAxis.pixelvalue?.[0];
+				const xAxisDataItem =
+					option.xAxis.data[params.dataIndex as number];
 				const xAxisValue =
-					typeof data.option.xAxis.data[params.dataIndex] ===
-						"object" &&
-					Object.hasOwn(
-						data.option.xAxis.data[params.dataIndex],
-						"value",
-					)
-						? data.option.xAxis.data[params.dataIndex].value
-						: data.option.xAxis.data[params.dataIndex];
+					typeof xAxisDataItem === "object" &&
+					xAxisDataItem !== null &&
+					"value" in xAxisDataItem
+						? xAxisDataItem.value
+						: xAxisDataItem;
 				setContextMenu(
 					contextMenu === null
 						? {
@@ -249,29 +308,34 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 			}
 		},
 		//After brushing in bar chart, this event will be triggered to filter the selected data
-		brushend: (params) => {
+		brushend: (params: BrushEndParams) => {
 			const _batch = params.batch;
-			const xAxisName = data.option.xAxis.pixelvalue[0];
-			const xAxisValue = chartOperationData.current.brushSelected.map(
-				(item) =>
-					typeof item === "object" && Object.hasOwn(item, "value")
-						? item.value
-						: item,
+			const xAxisName = (data.option as BarChartOption).xAxis
+				.pixelvalue?.[0];
+			const xAxisValue = (
+				chartOperationData.current.brushSelected ?? []
+			).map((item) =>
+				typeof item === "object" && item !== null && "value" in item
+					? item.value
+					: item,
 			);
 			frameData.filter(
 				`SetFrameFilter(${xAxisName}==${JSON.stringify(xAxisValue)})`,
 			);
 		},
 		//this event will be triggered when bar data is being selected
-		brushselected: (params) => {
+		brushselected: (params: BrushSelectedParams) => {
 			const batch = params.batch;
 			if (batch.length) {
 				const firstBatch = batch[0];
 				const selectedData = firstBatch.selected;
-				const firstSelectedData = selectedData[0] || [];
-				const xAxisData = data.option.xAxis.data.filter(
-					(_item, index) =>
-						firstSelectedData.dataIndex.includes(index),
+				const firstSelectedData = selectedData[0] ?? {
+					dataIndex: [] as number[],
+				};
+				const xAxisData = (
+					data.option as BarChartOption
+				).xAxis.data.filter((_item, index) =>
+					firstSelectedData.dataIndex.includes(index),
 				);
 				chartOperationData.current.brushSelected = xAxisData;
 			}

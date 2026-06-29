@@ -25,13 +25,38 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 	chartType: string;
 }
 
+interface LineSeries {
+	type?: string;
+	name?: string;
+	data: Array<number | null>;
+	toggleTrendLineObject?: boolean;
+	sourceObjectIndex?: number;
+	smooth?: boolean;
+	step?: string | boolean;
+	lineStyle?: {
+		type?: string;
+		width?: number;
+	};
+	[key: string]: unknown;
+}
+
+interface TrendlineOption {
+	series: LineSeries[];
+	customSettings?: {
+		toolsUpdated?: boolean;
+		[key: string]: unknown;
+	};
+	[key: string]: unknown;
+}
+
 export const ToggleTrendline = observer(
 	<D extends BlockDef = BlockDef>({
 		id,
 		path,
 		chartType,
 	}: JsonSettingsProps<D>) => {
-		const [toggleTrendlines, setToggleTrendlines] = useState<string>(""); //contains toggle trendlines tool state
+		const [toggleTrendlines, setToggleTrendlines] =
+			useState<string>("none"); //contains toggle trendlines tool state
 		const { data, setData } = useBlockSettings<D>(id); //chart block data and setdata
 		const [value, setValue] = useState("");
 		//different trendlines option to draw lines over bar graph in different format
@@ -42,7 +67,7 @@ export const ToggleTrendline = observer(
 			{ label: "Step(Middle)", value: "step_middle" },
 			{ label: "Step(End)", value: "step_end" },
 		];
-		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+		const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 		// get the value of the input (wrapped in usememo because of path prop)
 		const computedValue = useMemo(() => {
 			return computed(() => {
@@ -67,13 +92,16 @@ export const ToggleTrendline = observer(
 		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (BAR_CHART_DATA.JSONVALUE.includes(chartType)) {
-				const seriesIndex = data.option.series.findIndex(
-					(op) =>
-						LINE_CHART_DATA.JSONVALUE.includes(op.type) &&
+				const option = JSON.parse(
+					computedValue || "{}",
+				) as TrendlineOption;
+				const seriesIndex = option.series.findIndex(
+					(op: LineSeries) =>
+						LINE_CHART_DATA.JSONVALUE.includes(op.type ?? "") &&
 						Object.hasOwn(op, "toggleTrendLineObject"),
 				);
 				if (seriesIndex > -1) {
-					const trendLineOptions = data.option.series[seriesIndex];
+					const trendLineOptions = option.series[seriesIndex];
 					if (trendLineOptions.smooth) {
 						setToggleTrendlines("smooth");
 					}
@@ -106,31 +134,35 @@ export const ToggleTrendline = observer(
 		//getting the indexes for drawing lines over bar chart
 		function getFilteredSeriesIndex(): number[] {
 			const index: number[] = [];
-			// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
-			const seriesAvailable: any[] = data.option.series.filter((item) =>
-				BAR_CHART_DATA.JSONVALUE.includes(item.type),
+			const option = JSON.parse(computedValue || "{}") as TrendlineOption;
+			const seriesAvailable = option.series.filter((item: LineSeries) =>
+				BAR_CHART_DATA.JSONVALUE.includes(item.type ?? ""),
 			);
-			seriesAvailable.forEach((_item, seriesIndex) => {
-				index.push(seriesIndex);
-			});
+			seriesAvailable.forEach(
+				(_item: LineSeries, seriesIndex: number) => {
+					index.push(seriesIndex);
+				},
+			);
 			return index;
 		}
 		//update chart data when toggle trendlines is changed and execute button is clicked
 		function updateChartData(trendLinesSelected: string) {
-			let option = typeof value === "string" ? JSON.parse(value) : value;
+			let option = JSON.parse(value || "{}") as TrendlineOption;
 			const filteredSeries = getFilteredSeriesIndex();
-			if (trendLinesSelected !== "") {
-				filteredSeries.forEach((item) => {
+			if (trendLinesSelected !== "none") {
+				filteredSeries.forEach((item: number) => {
 					const displayPositionIndex: number = item;
 					const lineAlreadyExists = option.series.findIndex(
-						(opt) =>
+						(opt: LineSeries) =>
 							Object.hasOwn(opt, "toggleTrendLineObject") &&
-							LINE_CHART_DATA.JSONVALUE.includes(opt.type) &&
+							LINE_CHART_DATA.JSONVALUE.includes(
+								opt.type ?? "",
+							) &&
 							(Object.hasOwn(opt, "sourceObjectIndex")
 								? opt.sourceObjectIndex === displayPositionIndex
 								: true),
 					);
-					let trendLinesData = {};
+					let trendLinesData: Record<string, unknown> = {};
 					if (["smooth", "exact"].includes(trendLinesSelected)) {
 						trendLinesData = {
 							...trendLinesData,
@@ -184,7 +216,7 @@ export const ToggleTrendline = observer(
 				runStateUpdate(option);
 			} else {
 				const displayPositionData = option.series.filter(
-					(item) =>
+					(item: LineSeries) =>
 						item.type === "line" &&
 						Object.hasOwn(item, "toggleTrendLineObject"),
 				);
@@ -192,21 +224,25 @@ export const ToggleTrendline = observer(
 			}
 		}
 		//setting value of line chart to null when no trendline option is selected
-		function runDisplayPositionData(_displayPositionData) {
-			let option = typeof value === "string" ? JSON.parse(value) : value;
+		function runDisplayPositionData(_displayPositionData: LineSeries[]) {
+			let option = JSON.parse(value || "{}") as TrendlineOption;
 			const seriesOption = option.series;
-			seriesOption.forEach((seriesItem, seriesIndex) => {
-				if (
-					seriesItem.type === "line" &&
-					Object.hasOwn(seriesItem, "toggleTrendLineObject")
-				) {
-					const lineData = [];
-					seriesItem.data.forEach((_seriesData) => {
-						lineData.push(null);
-					});
-					option.series[seriesIndex].data = lineData;
-				}
-			});
+			seriesOption.forEach(
+				(seriesItem: LineSeries, seriesIndex: number) => {
+					if (
+						seriesItem.type === "line" &&
+						Object.hasOwn(seriesItem, "toggleTrendLineObject")
+					) {
+						const lineData: Array<number | null> = [];
+						seriesItem.data.forEach(
+							(_seriesData: number | null) => {
+								lineData.push(null);
+							},
+						);
+						option.series[seriesIndex].data = lineData;
+					}
+				},
+			);
 			option = {
 				...option,
 				customSettings: {
@@ -220,10 +256,9 @@ export const ToggleTrendline = observer(
 		//removing the line object when the series is updated line type and toggleTrendlineObject
 		function removeLineObject() {
 			setTimeout(() => {
-				const option =
-					typeof value === "string" ? JSON.parse(value) : value;
+				const option = JSON.parse(value || "{}") as TrendlineOption;
 				const displayPositionData = option.series.filter(
-					(item) =>
+					(item: LineSeries) =>
 						!(
 							item.type === "line" &&
 							Object.hasOwn(item, "toggleTrendLineObject")
@@ -234,7 +269,7 @@ export const ToggleTrendline = observer(
 			}, 300);
 		}
 		//running the option update of a chart
-		function runStateUpdate(updatedOption) {
+		function runStateUpdate(updatedOption: TrendlineOption) {
 			if (timeoutRef.current) {
 				clearTimeout(timeoutRef.current);
 				timeoutRef.current = null;
@@ -264,7 +299,7 @@ export const ToggleTrendline = observer(
 							<SelectValue placeholder="No Trendline" />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="">No Trendline</SelectItem>
+							<SelectItem value="none">No Trendline</SelectItem>
 							{trendLineOptions.map((trendOption, index) => (
 								<SelectItem
 									value={trendOption.value}

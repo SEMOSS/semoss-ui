@@ -9,11 +9,36 @@ import type { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
 import { DendrogramChartField } from "./DendrogramChartField";
 
+interface DendrogramNode {
+	name: string;
+	value?: unknown;
+	category?: string;
+	selector?: string;
+	children: DendrogramNode[];
+	childrenIndex: number;
+	itemStyle: { color: string };
+}
+
+interface DendrogramContextMenuParams {
+	data?: {
+		name: string;
+		value?: unknown;
+		selector?: string;
+	};
+	event: {
+		event: {
+			clientX: number;
+			clientY: number;
+			preventDefault: () => void;
+		};
+	};
+	seriesIndex: number;
+}
+
 //bar component properties
 interface DendrogramProps {
 	id: string;
-	// biome-ignore lint/suspicious/noExplicitAny: echart data/path types are untyped
-	updateJson: (data: any, path: any) => void;
+	updateJson: (data: unknown, path: string) => void;
 }
 
 export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
@@ -82,7 +107,9 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
 			data.facet?.facetSelected?.[0]?.value === 0
 				? facetFrame.data.values[0]?.[0]
 				: data.facet?.facetSelected?.[0]?.value;
-		valueToCheck = Number.isNaN(parseInt(valueToCheck?.toString(), 10))
+		valueToCheck = Number.isNaN(
+			parseInt(valueToCheck?.toString() ?? "", 10),
+		)
 			? `"${valueToCheck}"`
 			: valueToCheck;
 		return `Select(${data.columns
@@ -107,7 +134,8 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
 		) {
 			return facetAndDimensionSelector;
 		}
-		return `Select(${data.columns
+
+		const builtSelector = `Select(${data.columns
 			?.map((c, _index) => {
 				//Converting Y axis columns to Average by default
 				return c.selector;
@@ -117,6 +145,7 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
 				return c.name;
 			})
 			.join(", ")}])`;
+		return builtSelector;
 	}, [data.columns, data.facet.facetSelected, facetFrame.data.values]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dependency list
@@ -127,8 +156,8 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
 		) {
 			setData(
 				"facet.facetList",
-				facetFrame.data.values.map((item: string[] | number[]) =>
-					item[0].toString(),
+				facetFrame.data.values.map((item: unknown[]) =>
+					String(item[0]),
 				),
 			);
 			setData("facet.facetSelected", [
@@ -144,64 +173,91 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
 	const frame = useFrame(data.frame.name, {
 		selector: selector,
 	});
-	function getSelectorData(header) {
+
+	function getSelectorData(header: string): string {
 		const headerDataList =
 			data.columns.find((item) => item.name === header)?.selector || "";
 		return headerDataList;
 	}
-	function getColorData(currentIndex) {
+	function getColorData(currentIndex: number): string {
 		const colorList = parsedJson?.color || [];
 		return colorList[currentIndex % colorList.length] || "#b0c4de";
 	}
-	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dependency list
-	const dataOption = useMemo(() => {
+
+	// Build dendrogram option - computed in render like Bar/Line charts
+	const buildDendrogramOption = () => {
 		let option = JSON.parse(computedValue);
 
 		const seriesIndex = option.series.findIndex(
-			(item) => item.type === "tree" && item.data.length,
+			(item: { type: string; data: unknown[] }) =>
+				item.type === "tree" && item.data.length,
 		);
 		const dataColumns =
 			data.columns?.find((item) => Object.hasOwn(item, "isFacet")) || {};
 		if (seriesIndex > -1) {
-			const _data = option.series[seriesIndex].data;
-			// let updatedDataListres = getDataValuesUpdate(0,frame.data.headers.length, [{name: 'Root', children: [], childrenIndex: 0, itemStyle: {color: getColorData(0)}}], -1);
-			const updatedDataListresLoop = [
-				{
-					name: "Root",
-					children: [],
-					childrenIndex: 0,
-					itemStyle: { color: getColorData(0) },
-				},
-			];
+			// Build hierarchical tree structure by grouping data
+			const root: DendrogramNode = {
+				name: "Root",
+				children: [],
+				childrenIndex: 0,
+				itemStyle: { color: getColorData(0) },
+			};
+
+			// Helper function to find or create a child node
+			const findOrCreateChild = (
+				parent: DendrogramNode,
+				category: string,
+				value: unknown,
+				depth: number,
+			): DendrogramNode => {
+				let child = parent.children.find((c) => c.value === value);
+				if (!child) {
+					child = {
+						name: category,
+						value: value,
+						category: category,
+						selector: getSelectorData(category),
+						children: [],
+						childrenIndex: depth,
+						itemStyle: {
+							color: getColorData(depth),
+						},
+					};
+					parent.children.push(child);
+				}
+				return child;
+			};
+
+			// Build the tree hierarchically
 			for (let i = 0; i < frame.data.values.length; i++) {
-				let currentParent = updatedDataListresLoop[0]; // Start from Root for each row
+				let currentParent: DendrogramNode = root;
+
 				for (let j = 0; j < frame.data.values[i].length; j++) {
+					// Skip facet column if present
 					if (
 						Object.hasOwn(dataColumns, "name") &&
 						j + 1 === frame.data.values[i].length
 					)
 						continue;
-					const childNode = {
-						name: frame.data.headers[j],
-						value: frame.data.values[i][j],
-						category: frame.data.headers[j],
-						selector: getSelectorData(frame.data.headers[j]),
-						children: [],
-						childrenIndex: j + 1,
-						itemStyle: {
-							color: getColorData(j + 1),
-						},
-					};
-					currentParent.children.push(childNode);
-					currentParent = childNode; // Move deeper for the next child
+
+					currentParent = findOrCreateChild(
+						currentParent,
+						frame.data.headers[j],
+						frame.data.values[i][j],
+						j + 1,
+					);
 				}
 			}
-			option.series[seriesIndex].data = updatedDataListresLoop;
+
+			option.series[seriesIndex].data = [root];
 			option.series[seriesIndex] = {
 				...option.series[seriesIndex],
 				label: {
 					...option.series[seriesIndex].label,
-					formatter: (params) => {
+					formatter: (params: {
+						data: { name: string; value?: unknown };
+						seriesIndex: number;
+					}) => {
 						if (
 							params.data.name === "Root" &&
 							params.seriesIndex === 0
@@ -215,6 +271,12 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
 		}
 		const legendData = ["Root", ...frame.data.headers];
 		if (option.legend?.show) {
+			// Remove existing legend series to avoid duplicates
+			option.series = option.series.filter(
+				(s: { type: string; data: unknown[] }) =>
+					s.type === "tree" && s.data.length > 0,
+			);
+			// Add legend series
 			const legendSeries = legendData.map((item, _index) => {
 				return {
 					name: item,
@@ -247,7 +309,15 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
 			},
 		};
 		return option;
-	}, [frame.data.values, computedValue]);
+	};
+
+	// Compute option in render
+	const dataOption =
+		data.frame.name &&
+		frame.data.values.length > 0 &&
+		frame.isLoading === false
+			? buildDendrogramOption()
+			: parsedJson;
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dependency list
 	useEffect(() => {
@@ -259,7 +329,8 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
 	//on events object for getting and processing events with chart
 	const onClickChart = {
 		//when contextmenu event is raised, default context menu made hidden, and custom component is shown
-		contextmenu: (params) => {
+		contextmenu: (rawParams: unknown) => {
+			const params = rawParams as DendrogramContextMenuParams;
 			if (params.data) {
 				const selector = params.data.selector;
 				const value = params.data.value;
@@ -288,6 +359,7 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
 	return (
 		<div id={id} className="h-full w-full">
 			<EChartsReact
+				key={JSON.stringify(dataOption)}
 				option={dataOption as EChartsOption}
 				// onChartReady={echartsLoaded}
 				onEvents={onClickChart}

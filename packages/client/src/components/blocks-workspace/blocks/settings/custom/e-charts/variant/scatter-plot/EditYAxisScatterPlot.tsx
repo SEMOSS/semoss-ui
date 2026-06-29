@@ -1,6 +1,6 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useState } from "react";
+import { type ChangeEvent, useEffect, useMemo, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
@@ -10,15 +10,45 @@ import {
 } from "@semoss/renderer";
 import { Button, Input, Slider, Switch } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks/useBlockSettings";
+import type { AxisConfig } from "../shared/shared-interfaces";
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 	id: string;
 	path: Paths<Block<D>["data"], 4>;
 }
 
+// interface ScatterResetAxisSettings {
+// 	show: boolean;
+// 	axisTick: {
+// 		show: boolean;
+// 	};
+// 	axisLabel: {
+// 		show: boolean;
+// 		rotate: number;
+// 		fontSize: number;
+// 	};
+// 	nameTextStyle: {
+// 		fontSize: number;
+// 	};
+// }
+
+interface ScatterPlotOption {
+	yAxis: AxisConfig;
+	reset: {
+		axis: {
+			yaxis: AxisConfig;
+		};
+	};
+}
+
 export const EditYAxisScatterPlot = observer(
 	<D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
 		const { data, setData } = useBlockSettings<D>(id);
+		const optionData = (
+			data as Block<D>["data"] & {
+				option?: ScatterPlotOption;
+			}
+		).option;
 		const [showYaxis, setShowYaxis] = useState(true);
 		const [value, setValue] = useState("");
 		const [showYaxisTitle, setShowYaxisTitle] = useState(true);
@@ -50,12 +80,12 @@ export const EditYAxisScatterPlot = observer(
 		}, [computedValue, data]);
 		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
-			if (Object.hasOwn(data, "option")) {
-				reinitializeFeatures(data.option);
+			if (optionData) {
+				reinitializeFeatures(optionData);
 			}
-		}, [id]);
+		}, [id, optionData]);
 
-		const reinitializeFeatures = (options) => {
+		const reinitializeFeatures = (options: ScatterPlotOption) => {
 			if (Object.hasOwn(options, "yAxis")) {
 				if (options.yAxis && Object.hasOwn(options.yAxis, "show")) {
 					setShowYaxis(options.yAxis.show);
@@ -81,81 +111,87 @@ export const EditYAxisScatterPlot = observer(
 		};
 		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
-			if (Object.hasOwn(data, "option")) {
-				retainYAxisTitle(data.option);
+			if (optionData) {
+				retainYAxisTitle(optionData);
 			}
-		}, [data.option.yAxis.name]);
+		}, [optionData?.yAxis.name]);
 
-		const retainYAxisTitle = (options) => {
+		const retainYAxisTitle = (options: ScatterPlotOption) => {
 			if (Object.hasOwn(options, "yAxis")) {
 				if (options.yAxis && Object.hasOwn(options.yAxis, "name")) {
-					setYaxisTitle(data.option.yAxis.name);
+					setYaxisTitle(String(options.yAxis.name ?? ""));
 				}
 			}
 		};
 
 		const showYAxis = (checked: boolean) => {
-			const option = JSON.parse(value);
+			const option = JSON.parse(value) as ScatterPlotOption;
 			setShowYaxis(checked);
 			option.yAxis.show = checked;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
 		const showYAxisTitle = (checked: boolean) => {
-			const option = JSON.parse(value);
+			const option = JSON.parse(value) as ScatterPlotOption;
 			setShowYaxisTitle(checked);
 			option.yAxis.name =
 				option.yAxis.name === "" ? option.yAxis.pixelName : "";
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		const handleYaxisTitleChange = (e) => {
+		const handleYaxisTitleChange = (e: ChangeEvent<HTMLInputElement>) => {
 			setYaxisTitle(e.target.value);
-			const option = JSON.parse(value);
+			const option = JSON.parse(value) as ScatterPlotOption;
 			option.yAxis.name = e.target.value;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		const handleChangeYAxisFontSize = (e) => {
-			const option = JSON.parse(value);
-			setFontSizeYAxis(e.target.valueAsNumber);
-			option.yAxis.nameTextStyle.fontSize = e.target.valueAsNumber;
+		const handleChangeYAxisFontSize = (
+			e: ChangeEvent<HTMLInputElement>,
+		) => {
+			const option = JSON.parse(value) as ScatterPlotOption;
+			const nextValue = e.target.valueAsNumber;
+			setFontSizeYAxis(nextValue);
+			option.yAxis.nameTextStyle.fontSize = nextValue;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		const handleChangeYAxisLabelFontSize = (e) => {
-			const option = JSON.parse(value);
-			setFontSizeYAxisLabel(e.target.value);
-			option.yAxis.axisLabel.fontSize = e.target.value;
+		const handleChangeYAxisLabelFontSize = (
+			e: ChangeEvent<HTMLInputElement>,
+		) => {
+			const option = JSON.parse(value) as ScatterPlotOption;
+			const nextValue = e.target.valueAsNumber;
+			setFontSizeYAxisLabel(nextValue);
+			option.yAxis.axisLabel.fontSize = nextValue;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
 		const rotateYAxis = (newValue: number[]) => {
-			const option = JSON.parse(value);
+			const option = JSON.parse(value) as ScatterPlotOption;
 			setRotateYaxis(newValue[0]);
 			option.yAxis.axisLabel.rotate = newValue[0];
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
 		const showYAxisTick = (checked: boolean) => {
-			const option = JSON.parse(value);
+			const option = JSON.parse(value) as ScatterPlotOption;
 			setShowYaxisTick(checked);
 			option.yAxis.axisTick.show = checked;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
 		const showYAxisLabel = (checked: boolean) => {
-			const option = JSON.parse(value);
+			const option = JSON.parse(value) as ScatterPlotOption;
 			setShowAxisLabel(checked);
 			option.yAxis.axisLabel.show = checked;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
 		const Reset = () => {
-			const option = JSON.parse(value);
+			const option = JSON.parse(value) as ScatterPlotOption;
 			setShowYaxis(option.reset.axis.yaxis.show);
 			setShowYaxisTitle(true);
-			setYaxisTitle(option.yAxis.pixelName);
+			setYaxisTitle(String(option.yAxis.pixelName ?? ""));
 			setFontSizeYAxis(option.reset.axis.yaxis.nameTextStyle.fontSize);
 			setFontSizeYAxisLabel(option.reset.axis.yaxis.axisLabel.fontSize);
 			setRotateYaxis(option.reset.axis.yaxis.axisLabel.rotate);
@@ -193,8 +229,6 @@ export const EditYAxisScatterPlot = observer(
 							<span className="text-muted-foreground text-sm">
 								Set Y Axis Title
 							</span>
-							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-							// biome-ignore
 							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
 							<Input
 								id="xaxis-title"
@@ -206,8 +240,6 @@ export const EditYAxisScatterPlot = observer(
 							<span className="text-muted-foreground text-sm">
 								Edit Axis Title Font Size
 							</span>
-							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-							// biome-ignore
 							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
 							<Input
 								id="xaxis-edit-title-font-size"
@@ -231,8 +263,6 @@ export const EditYAxisScatterPlot = observer(
 							<span className="text-muted-foreground text-sm">
 								Edit Label Font Size
 							</span>
-							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-							// biome-ignore
 							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
 							<Input
 								id="yaxis-label-font-size"

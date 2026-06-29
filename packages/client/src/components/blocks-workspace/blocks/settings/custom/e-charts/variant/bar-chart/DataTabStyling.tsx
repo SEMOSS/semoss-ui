@@ -1,9 +1,9 @@
-import { Droppable } from "@hello-pangea/dnd";
 import { ChevronDown, Info, Plus, X } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
+import { Droppable } from "react-beautiful-dnd";
 import {
 	type BlockDef,
 	type EchartVisualizationBlockDef,
@@ -29,6 +29,43 @@ const AGGREGATE_OPTIONS = {
 	STRING_DATE: ["Count", "Unique Count"],
 };
 
+interface ChartColumnOption {
+	name: string;
+	label: string;
+	values?: string[];
+	selectors?: string[];
+	dataType?: string[];
+	multiLabel?: boolean;
+	aggregate?: boolean;
+}
+
+interface SelectedColumnEntry {
+	values: string[];
+	dataType: string[];
+}
+
+type SelectedColumnsMap = Record<string, SelectedColumnEntry>;
+
+type DropColumnsMap = Record<string, SelectedColumnEntry>;
+
+interface DataTabStylingProps {
+	id: string;
+	updateFrame: (option: unknown) => void;
+	path: string;
+	dragdropColumns: DropColumnsMap;
+	deleteColumns: (column: string) => void;
+	formmattedColumns: (
+		columns: ChartColumnOption[],
+		variation: string,
+	) => void;
+	isAdd: (value: boolean, id: string) => void;
+	syncHeader: (value: string, frameChanged: boolean) => void;
+	chart: ChartColumnOption[];
+	storedColumns: ChartColumnOption[];
+	visual: (value: boolean) => void;
+	selectedItem: (item: unknown) => void;
+}
+
 //data tab right section of the echart visualization block
 export const DataTabStyling = observer(
 	<_D extends BlockDef = BlockDef>({
@@ -45,15 +82,24 @@ export const DataTabStyling = observer(
 		storedColumns,
 		visual,
 		selectedItem,
-	}) => {
+	}: DataTabStylingProps) => {
 		const { data, setData } =
 			useBlockSettings<EchartVisualizationBlockDef>(id);
-		const [selectedColumns, setSelectedColumns] = useState<
-			// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
-			Record<string, Record<string, any>>
-		>(() => {
-			return storedColumns || {};
-		});
+		const [selectedColumns, setSelectedColumns] =
+			useState<SelectedColumnsMap>(() => {
+				const initialColumns: SelectedColumnsMap = {};
+				storedColumns.forEach(
+					(item: ChartColumnOption, index: number) => {
+						if (item.values && item.values.length > 0) {
+							initialColumns[`data-tab-drop-area-${index}`] = {
+								values: item.values,
+								dataType: item.dataType as string[],
+							};
+						}
+					},
+				);
+				return initialColumns;
+			});
 		const [checkedInstruction, setCheckedInstruction] = useState(false);
 		const [checkedVisual, setCheckedVisual] = useState(false);
 		const [isAddIcon, setIsAddIcon] = useState(false);
@@ -92,24 +138,42 @@ export const DataTabStyling = observer(
 
 		const matchedVisualMap = getMatchingVisualMapRow(data);
 
-		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
-		function getMatchingVisualMapRow(data: any) {
-			// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
-			const matchingRow: any = {};
-			Object.keys(VisualMapConstant).forEach((category) => {
+		type VisualMapEntry = {
+			icon: React.ReactNode;
+			name: string;
+			label: string;
+			title?: string;
+		};
+		function getMatchingVisualMapRow(inputData: { variation?: string }) {
+			const matchingRow: Partial<
+				Record<keyof typeof VisualMapConstant, VisualMapEntry>
+			> = {};
+
+			(
+				Object.keys(VisualMapConstant) as Array<
+					keyof typeof VisualMapConstant
+				>
+			).forEach((category) => {
 				const items = VisualMapConstant[category];
 				const foundItem = items.find(
-					// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
-					(item: any) =>
-						String(item.title) === String(data.variation),
+					(item) =>
+						("title" in item &&
+							String(item.title) ===
+								String(inputData.variation)) ||
+						String(item.name) === String(inputData.variation),
 				);
-				if (foundItem) matchingRow[category] = foundItem;
+				// const foundItem = items.find(
+				// 	(item) => String(item?.title) === String(inputData.variation),
+				// );
+				if (foundItem) {
+					matchingRow[category] = foundItem;
+				}
 			});
+
 			return matchingRow;
 		}
 
-		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
-		const handleSelectedItem = (item: any) => {
+		const handleSelectedItem = (item: unknown) => {
 			selectedItem(item);
 			setSelectedColumns({});
 			storedColumns.length = 0;
@@ -119,88 +183,99 @@ export const DataTabStyling = observer(
 			);
 		};
 
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
-			if (!Array.isArray(storedColumns) || storedColumns.length === 0) {
-				return;
-			}
-			const updatedColumns = {};
-			storedColumns.forEach((item, index) => {
+			const updatedColumns = { ...selectedColumns };
+			storedColumns.forEach((item: ChartColumnOption, index: number) => {
 				const key = `data-tab-drop-area-${index}`;
 				if (item.values && item.values.length > 0) {
 					updatedColumns[key] = {
 						values: item.values,
-						dataType: item.dataType,
+						dataType: item.dataType as string[],
 					};
 				}
 			});
-			if (Object.keys(updatedColumns).length === 0) {
-				return;
+			if (
+				Object.keys(updatedColumns).length > 0 &&
+				JSON.stringify(updatedColumns) !==
+					JSON.stringify(selectedColumns)
+			) {
+				setSelectedColumns({ ...updatedColumns });
 			}
-			setSelectedColumns((prevColumns) =>
-				JSON.stringify(updatedColumns) === JSON.stringify(prevColumns)
-					? prevColumns
-					: updatedColumns,
-			);
-		}, [storedColumns]);
+		}, [JSON.stringify(storedColumns)]);
 
-		// biome-ignore lint/correctness/useExhaustiveDependencies: chart config is stable for this menu
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
-			setSelectedColumns((prevColumns) => {
-				const updatedColumns = {
-					...prevColumns,
-					...dragdropColumns,
-				};
-				chart.forEach((item, index) => {
-					const key = `data-tab-drop-area-${index}`;
-					if (
-						!item.multiLabel &&
-						updatedColumns[key]?.values?.length > 1
-					) {
-						updatedColumns[key] = {
-							values: [updatedColumns[key]?.values[0]],
-							dataType: [updatedColumns[key]?.dataType[0]],
-						};
-					} else if (item.multiLabel && updatedColumns[key]?.values) {
-						const uniqueValues = Array.from(
-							new Set(updatedColumns[key].values),
-						);
-						updatedColumns[key] = {
-							...updatedColumns[key],
-							values: uniqueValues,
-						};
-					}
-				});
-				if (Object.keys(updatedColumns).length === 0) {
-					return prevColumns;
+			const updatedColumns = { ...selectedColumns, ...dragdropColumns };
+			chart.forEach((item: ChartColumnOption, index: number) => {
+				const key = `data-tab-drop-area-${index}`;
+				if (
+					!item.multiLabel &&
+					updatedColumns[key]?.values?.length > 1
+				) {
+					updatedColumns[key] = {
+						values: [updatedColumns[key]?.values[0]],
+						dataType: [updatedColumns[key]?.dataType[0]],
+					};
+				} else if (item.multiLabel && updatedColumns[key]?.values) {
+					const uniqueValues = Array.from(
+						new Set(updatedColumns[key].values),
+					);
+					updatedColumns[key] = {
+						...updatedColumns[key],
+						values: uniqueValues,
+					};
 				}
-				return JSON.stringify(updatedColumns) ===
-					JSON.stringify(prevColumns)
-					? prevColumns
-					: { ...updatedColumns };
 			});
+			if (Object.keys(updatedColumns).length > 0) {
+				setSelectedColumns({ ...updatedColumns });
+			}
 		}, [dragdropColumns]);
 
 		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (!columnsSelector || columnsSelector.length === 0) return;
-			const parsedValue = JSON.parse(computedValue);
-			const formattedArray = chart.map((item, index) => {
-				// biome-ignore lint/suspicious/noImplicitAnyLet: inferred from usage
-				let value;
+			const parsedValue = JSON.parse(computedValue) as {
+				customSettings?: {
+					columnDetails?: Record<
+						string,
+						{ name?: string | string[] }
+					>;
+				};
+				xAxis?: { pixelname?: string[] };
+				yAxis?: { pixelname?: string[] };
+				_state?: {
+					fields?: Record<string, string[] | string | undefined>;
+				};
+				[label: string]: unknown;
+			};
+			const formattedArray = chart.map((item: ChartColumnOption) => {
+				let value: string[] = [];
 				if (data.variation === "echart-bar-graph") {
-					value = parsedValue[chart[index].label]?.pixelname;
+					const axisValue = parsedValue[item.label] as
+						| { pixelname?: string[] }
+						| undefined;
+					value = axisValue?.pixelname ?? [];
 				} else if (data.variation === "echart-gantt-chart") {
-					value =
-						parsedValue.customSettings?.columnDetails?.[
-							chart[index].label
-						]?.name;
+					const detailValue =
+						parsedValue.customSettings?.columnDetails?.[item.label]
+							?.name;
+					value = detailValue
+						? Array.isArray(detailValue)
+							? detailValue
+							: [detailValue]
+						: [];
 				} else {
-					value = parsedValue._state?.fields?.[chart[index].label];
+					const fieldValue = parsedValue._state?.fields?.[item.label];
+					value = fieldValue
+						? Array.isArray(fieldValue)
+							? fieldValue
+							: [fieldValue]
+						: [];
 				}
-				value = value ? (Array.isArray(value) ? value : [value]) : [];
 				const selectorsList: string[] = [];
 				const dataTypeList: string[] = [];
-				value.forEach((col) => {
+				value.forEach((col: string) => {
 					const selector = columnsSelector.find(
 						(column) => column.name === col,
 					);
@@ -217,35 +292,40 @@ export const DataTabStyling = observer(
 					dataType: dataTypeList,
 				};
 			});
-			formmattedColumns(formattedArray, data.variation);
+			formmattedColumns(formattedArray, data.variation ?? "");
 		}, [columnsSelector.length]);
 
 		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (!columnsSelector || columnsSelector.length === 0) return;
-			const formattedArray = chart.map((item, index) => {
-				const key = `data-tab-drop-area-${index}`;
-				const value = selectedColumns[key]?.values ?? [];
-				const selectorsList: string[] = [];
-				const dataTypeList: string[] = [];
-				value.forEach((col) => {
-					const selector = columnsSelector.find(
-						(column) => column.name === col,
-					);
-					if (selector) {
-						selectorsList.push(selector.selector);
-						dataTypeList.push(selector.dataType);
-					}
-				});
-				return {
-					name: item.name,
-					label: item.label,
-					values: selectedColumns[key] || [],
-					selectors: selectorsList || [],
-					dataType: dataTypeList || [],
-				};
-			});
-			formmattedColumns(formattedArray, data.variation);
+			const formattedArray = chart.map(
+				(item: ChartColumnOption, index: number) => {
+					const key = `data-tab-drop-area-${index}`;
+					const value = selectedColumns[key]?.values ?? [];
+					const selectorsList: string[] = [];
+					const dataTypeList: string[] = [];
+					value.forEach((col: string, colIndex: number) => {
+						const selector = columnsSelector.find(
+							(column) => column.name === col,
+						);
+						if (selector) {
+							selectorsList.push(selector.selector);
+							dataTypeList.push(
+								selectedColumns[key]?.dataType?.[colIndex] ??
+									selector.dataType,
+							);
+						}
+					});
+					return {
+						name: item.name,
+						label: item.label,
+						values: selectedColumns[key]?.values ?? [],
+						selectors: selectorsList || [],
+						dataType: dataTypeList || [],
+					};
+				},
+			);
+			formmattedColumns(formattedArray, data.variation ?? "");
 		}, [selectedColumns, columnsSelector.length]);
 
 		const handleChangeVisual = (value: boolean) => {
@@ -258,19 +338,15 @@ export const DataTabStyling = observer(
 		};
 
 		const onAggregateChange = (selectedAggregate: string) => {
-			const targetDataType =
-				selectedColumns[
-					`data-tab-drop-area-${tempAggClickData.chartIndex}`
-				]?.dataType;
-			if (targetDataType && targetDataType.length > 0) {
+			const key = `data-tab-drop-area-${tempAggClickData.chartIndex}`;
+			const targetDataType = [...(selectedColumns[key]?.dataType ?? [])];
+			if (targetDataType.length > 0) {
 				targetDataType[tempAggClickData.columnIndex] =
 					selectedAggregate;
 				setSelectedColumns({
 					...selectedColumns,
-					[`data-tab-drop-area-${tempAggClickData.chartIndex}`]: {
-						...selectedColumns[
-							`data-tab-drop-area-${tempAggClickData.chartIndex}`
-						],
+					[key]: {
+						...selectedColumns[key],
 						dataType: targetDataType,
 					},
 				});
@@ -331,7 +407,7 @@ export const DataTabStyling = observer(
 				</span>
 				<button
 					type="button"
-					className="mt-1 flex w-full cursor-pointer justify-center border-0 bg-transparent p-2 text-left"
+					className="mt-1 flex w-full cursor-pointer justify-center p-2"
 					onClick={() => handleChangeVisual(initialVisual)}
 				>
 					<div className="flex w-full items-center gap-2 rounded border px-2 py-1 text-sm">
@@ -354,8 +430,8 @@ export const DataTabStyling = observer(
 						<button
 							type="button"
 							className="fixed inset-0 bg-transparent"
-							aria-label="Close visual selector"
 							onClick={handleCloseVisual}
+							aria-label="Close visual selector"
 						/>
 						<div className="relative z-10 rounded border bg-background shadow-lg">
 							<VisualMap
@@ -409,87 +485,93 @@ export const DataTabStyling = observer(
 								</div>
 							)}
 						</Droppable>
-						{(() => {
-							const key = `data-tab-drop-area-${index}`;
-							const dropAreaColumns = selectedColumns[key];
-							const selectedValues =
-								dropAreaColumns?.values ?? [];
-							return selectedValues.map((column, colIndex) => {
-								const refId = `${column + colIndex + index}`;
-								const dataType =
-									dropAreaColumns?.dataType?.[colIndex];
-								const displayColumnName = !item.aggregate
-									? column
-									: dataType === "NUMBER"
-										? `Average of ${column}`
-										: dataType === "STRING"
-											? `Count of ${column}`
-											: dataType
-												? `${dataType} of ${column}`
-												: column;
-								return (
-									<div
-										key={`${key}-${column}`}
-										id={refId}
-										className="mx-3 mt-2 flex items-center justify-between rounded-[34px] bg-[#f0f0f0] px-4 py-2 text-sm"
-									>
-										<span>
-											{displayColumnName.length > 20 ? (
-												<span
-													className="cursor-pointer"
-													title={displayColumnName}
-												>
-													{`${displayColumnName.slice(0, 12)}...`}
-												</span>
-											) : (
-												displayColumnName
-											)}
-										</span>
-										<div className="flex items-center gap-1">
-											{item.aggregate && (
-												<ChevronDown
-													className="h-4 w-4 cursor-pointer text-[#888]"
-													onClick={() => {
-														setAggregateMenuAnchorEl(
-															document.getElementById(
-																refId,
-															),
-														);
-														handleAggregateClick(
+						{Object.entries(selectedColumns)
+							.filter(
+								([key]) =>
+									key === `data-tab-drop-area-${index}`,
+							)
+							.map(([key, columns]) =>
+								(columns.values ?? []).map(
+									(column: string, colIndex: number) => {
+										const refId = `${column + colIndex + index}`;
+										const aggregatedColumnName = (
+											col: string,
+										) => {
+											if (!item.aggregate) return col;
+											const dataType =
+												columns.dataType?.[colIndex];
+											if (!dataType) return col;
+											if (dataType === "NUMBER")
+												return `Average of ${col}`;
+											if (dataType === "STRING")
+												return `Count of ${col}`;
+											return `${dataType} of ${col}`;
+										};
+										return (
+											<div
+												key={column}
+												id={refId}
+												className="mx-3 mt-2 flex items-center justify-between rounded-[34px] bg-[#f0f0f0] px-4 py-2 text-sm"
+											>
+												<span>
+													{aggregatedColumnName(
+														column,
+													).length > 20 ? (
+														<span
+															className="cursor-pointer"
+															title={aggregatedColumnName(
+																column,
+															)}
+														>
+															{aggregatedColumnName(
+																column,
+															).slice(0, 12) +
+																"..."}
+														</span>
+													) : (
+														aggregatedColumnName(
 															column,
-															index,
-															colIndex,
-														);
-													}}
-												/>
-											)}
-											<X
-												className="h-4 w-4 cursor-pointer text-[#888]"
-												onClick={() => {
-													setSelectedColumns(
-														(prevColumns) => {
+														)
+													)}
+												</span>
+												<div className="flex items-center gap-1">
+													{item.aggregate && (
+														<ChevronDown
+															className="h-4 w-4 cursor-pointer text-[#888]"
+															onClick={() => {
+																setAggregateMenuAnchorEl(
+																	document.getElementById(
+																		refId,
+																	),
+																);
+																handleAggregateClick(
+																	column,
+																	index,
+																	colIndex,
+																);
+															}}
+														/>
+													)}
+													<X
+														className="h-4 w-4 cursor-pointer text-[#888]"
+														onClick={() => {
 															const updatedColumns =
 																{
-																	...prevColumns,
+																	...selectedColumns,
 																};
-															const filteredValues =
+															const filtered =
 																updatedColumns[
 																	key
 																]?.values?.filter(
-																	(_, i) =>
+																	(
+																		_: string,
+																		i: number,
+																	) =>
 																		i !==
 																		colIndex,
-																) ?? [];
-															const filteredDataTypes =
-																updatedColumns[
-																	key
-																]?.dataType?.filter(
-																	(_, i) =>
-																		i !==
-																		colIndex,
-																) ?? [];
+																);
 															if (
-																filteredValues.length ===
+																filtered?.length ===
 																0
 															) {
 																delete updatedColumns[
@@ -502,22 +584,23 @@ export const DataTabStyling = observer(
 																	...updatedColumns[
 																		key
 																	],
-																	values: filteredValues,
-																	dataType:
-																		filteredDataTypes,
+																	values: filtered,
 																};
 															}
-															return updatedColumns;
-														},
-													);
-													deleteColumns(column);
-												}}
-											/>
-										</div>
-									</div>
-								);
-							});
-						})()}
+															setSelectedColumns(
+																updatedColumns,
+															);
+															deleteColumns(
+																column,
+															);
+														}}
+													/>
+												</div>
+											</div>
+										);
+									},
+								),
+							)}
 					</div>
 				))}
 				<div className="mt-4 ml-2 flex w-full items-center gap-2">
@@ -557,11 +640,11 @@ export const DataTabStyling = observer(
 						<button
 							type="button"
 							className="fixed inset-0 bg-transparent"
-							aria-label="Close aggregate selector"
 							onClick={() => {
 								setAggregateFilterInput("");
 								setAggregateMenuAnchorEl(null);
 							}}
+							aria-label="Close aggregate menu"
 						/>
 						<div className="relative z-10 rounded border bg-background p-2 shadow-lg">
 							<input

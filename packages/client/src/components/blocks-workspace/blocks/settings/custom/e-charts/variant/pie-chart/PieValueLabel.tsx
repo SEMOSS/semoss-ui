@@ -1,6 +1,6 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
@@ -31,6 +31,8 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 export const PieValueLabel = observer(
 	<D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
 		const { data, setData } = useBlockSettings<D>(id);
+		const sizeId = useId();
+		const lengthId = useId();
 		// biome-ignore lint/style/useConst: reassigned
 		let [value, setValue] = useState("");
 		const [showValueLabel, setShowValueLabel] = useState(true);
@@ -115,7 +117,7 @@ export const PieValueLabel = observer(
 			setData(path, option as PathValue<D["data"], typeof path>);
 		}
 
-		function _handleReset() {
+		function handleReset() {
 			const option = JSON.parse(value);
 			option.series[0].label.show = option.reset.label.show;
 			option.series[0].label.position = option.reset.label.position;
@@ -188,10 +190,8 @@ export const PieValueLabel = observer(
 						<span className="text-muted-foreground text-sm">
 							Value Label Size
 						</span>
-						{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-						{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id*/}
 						<Input
-							id="size"
+							id={sizeId}
 							name="size"
 							value={valueLabel?.size}
 							onChange={(e) =>
@@ -205,10 +205,8 @@ export const PieValueLabel = observer(
 						<span className="text-muted-foreground text-sm">
 							Value Label Line Length
 						</span>
-						{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-						{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id*/}
 						<Input
-							id="length"
+							id={lengthId}
 							name="length"
 							value={valueLabel?.lineLength}
 							onChange={(e) =>

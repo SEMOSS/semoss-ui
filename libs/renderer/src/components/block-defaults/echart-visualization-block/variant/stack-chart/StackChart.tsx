@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
+import type { ECharts } from "echarts";
 import { BarChart } from "echarts/charts";
 import { TooltipComponent } from "echarts/components";
 import * as echarts from "echarts/core";
@@ -8,31 +7,121 @@ import EChartsReact, { type EChartsOption } from "echarts-for-react";
 import { observer } from "mobx-react-lite";
 import { useRef, useState } from "react";
 import { useBlock, useFrame } from "../../../../../hooks";
-import type { BlockComponent } from "../../../../../store";
+import type { BlockComponent, ListenerActions } from "../../../../../store";
+import type {
+	BrushBatchItem,
+	BrushSelectedParams,
+	BrushSelection,
+	EChartColumns,
+	EChartContextMenuParams,
+} from "../../shared-types";
 import { ChartContextMenu } from "../bar-chart/ChartContextMenu";
-export interface EChartColumns {
-	name: string;
-	selector: string;
-	width: string;
+
+interface StackChartFields {
+	XAxis: string[];
+	XAxisDataType: string[];
+	YAxis: string[];
+	YAxisDataType: string[];
+	category: string[];
+	categoryDataType: string[];
+	tooltip: string[];
+	tooltipDataType: string[];
 }
+
+interface StackChartState {
+	fields: StackChartFields;
+}
+
+interface StackChartDataPoint {
+	value: number | string | undefined;
+	category: string;
+	itemStyle: { color: string };
+	tooltipValue?: string;
+}
+
+interface StackChartSeries {
+	type: string;
+	stack: string;
+	name: string;
+	data: StackChartDataPoint[];
+}
+
+interface StackChartTooltipParam {
+	axisValue: string;
+	marker: string;
+	value: string | number;
+	data: StackChartDataPoint;
+}
+
+interface StackChartTooltipOption {
+	show?: boolean;
+	trigger?: string;
+	position?: string;
+	axisPointer?: Record<string, unknown>;
+	formatter?: string | ((params: StackChartTooltipParam[]) => string);
+}
+
+interface StackChartAxisOption {
+	data: unknown[];
+	name?: unknown;
+	pixelName?: unknown;
+	flipAxisName?: unknown;
+	axisName?: unknown;
+	nameLocation?: string;
+	type?: string;
+}
+
+interface StackChartOption {
+	state?: StackChartState;
+	series: StackChartSeries[];
+	xAxis: StackChartAxisOption;
+	yAxis: StackChartAxisOption;
+	color: string[];
+	flipAxis?: boolean;
+	legend: {
+		data: string[];
+		show?: boolean;
+		bottom?: string;
+		left?: string;
+		orient?: string;
+		type?: string;
+		selectedMode?: string;
+		itemHeight?: number;
+		itemWidth?: number;
+		pageButtonItemGap?: number;
+		pageTextSize?: Record<string, unknown>;
+		top?: string;
+		textStyle?: Record<string, unknown>;
+	};
+	tooltip: StackChartTooltipOption;
+	barWidth?: number;
+	brush?: Record<string, unknown>;
+	label?: Record<string, unknown>;
+	title?: Record<string, unknown>;
+	toolbox?: Record<string, unknown>;
+	reset?: Record<string, unknown>;
+}
+
 export interface EchartVisualizationBlockDef {
 	widget: "e-chart";
 	data: {
-		option: Record<string, unknown>;
+		option: StackChartOption;
 		frame: {
 			name: string;
 		};
 		variation: undefined | string;
 		columns: EChartColumns[];
-		// biome-ignore lint/suspicious/noExplicitAny: echart aggregate type is dynamic
-		aggregate: Record<string, any>;
+		aggregate: Record<string, Record<string, string>>;
 		contextMenu: {
 			hideUnfilter: boolean;
 			hideFilter: boolean;
 			hideExclude: boolean;
 		};
 	};
-	listeners: Record<string, unknown>;
+	listeners: Record<
+		string,
+		{ order: ListenerActions[]; type: "sync" | "async" }
+	>;
 	slots: never;
 }
 
@@ -46,23 +135,31 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 	} | null>(null);
 
 	const chartOperationData = useRef({
-		brushSelected: [],
-		contextMenu: null,
-		yAxisColumn: { name: "", selector: "", width: undefined },
-		chartInstance: { setOption: null },
+		brushSelected: [] as number[] | null,
+		contextMenu: null as null,
+		yAxisColumn: {
+			name: "",
+			selector: "",
+			width: undefined as undefined | string,
+		} as {
+			name: string;
+			selector: string;
+			width: undefined | string;
+		} | null,
+		chartInstance: { setOption: null as null },
 	});
-	// biome-ignore lint/suspicious/noExplicitAny: echart fields type is dynamic
-	let fields: Record<string, any> = {};
-	let xAxis = "";
-	let yAxis = "";
-	let category = "";
-	let tooltip = "";
-	if (Object.hasOwn(data.option, "_state")) {
-		fields = data.option._state.fields;
-		xAxis = fields.XAxis;
-		yAxis = fields.YAxis;
-		category = fields.category;
-		tooltip = fields.tooltip;
+
+	let fields: Partial<StackChartFields> = {};
+	let xAxis: string[] = [];
+	let yAxis: string[] = [];
+	let category: string[] = [];
+	let tooltip: string[] = [];
+	if (Object.hasOwn(data.option, "state") && data.option.state) {
+		fields = data.option.state.fields;
+		xAxis = fields.XAxis ?? [];
+		yAxis = fields.YAxis ?? [];
+		category = fields.category ?? [];
+		tooltip = fields.tooltip ?? [];
 	}
 
 	/**
@@ -70,14 +167,16 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 	 * @param inputData - An array of tuples where each tuple contains a string and an object mapping field names to aggregation methods.
 	 * @returns A query string that selects and groups by the specified fields with appropriate aggregations.
 	 */
-	const buildDynamicQuery = (inputData): string => {
+	const buildDynamicQuery = (
+		inputData: [string, Record<string, string>][],
+	): string => {
 		const selectParts: string[] = [];
 		const aliasParts: string[] = [];
 		const groupByParts: string[] = [];
 
-		inputData.forEach(([_, fields]) => {
-			for (const field in fields) {
-				const rawAgg = fields[field];
+		inputData.forEach(([_key, aggFields]) => {
+			for (const field in aggFields) {
+				const rawAgg = aggFields[field];
 				if (!aliasParts.includes(field)) aliasParts.push(field);
 
 				if (rawAgg) {
@@ -101,11 +200,23 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 
 	// useFrame hook to get the frame data
 	const frame = useFrame(data?.frame?.name, {
-		selector: buildDynamicQuery(Object.entries(data?.aggregate ?? {})),
+		selector: buildDynamicQuery(
+			Object.entries(
+				data?.aggregate ??
+					({} as {
+						y: unknown;
+						category: unknown;
+						tooltip?: unknown;
+					}),
+			) as [string, Record<string, string>][],
+		),
 	});
 	//  Function to add only new values and avoid duplicates
-	const updateSelectedIndexes = (selectedIndexes, newIndexes) => {
-		newIndexes.forEach((index) => {
+	const updateSelectedIndexes = (
+		selectedIndexes: number[],
+		newIndexes: number[],
+	): number[] => {
+		newIndexes.forEach((index: number) => {
 			if (!selectedIndexes.includes(index)) {
 				selectedIndexes.push(index); // Add only if it's not already present
 			}
@@ -113,12 +224,13 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 		return selectedIndexes;
 	};
 	//Brushing of data points
-	const echartsLoaded = (chart) => {
-		chart.on("brushSelected", (params) => {
-			let selectedDataIndexes = [];
+	const echartsLoaded = (chart: ECharts) => {
+		chart.on("brushSelected", (rawParams: unknown) => {
+			const params = rawParams as BrushSelectedParams;
+			let selectedDataIndexes: number[] = [];
 
-			params.batch.forEach((batch) => {
-				batch.selected.forEach((selection) => {
+			params.batch.forEach((batch: BrushBatchItem) => {
+				batch.selected.forEach((selection: BrushSelection) => {
 					//  Extract exact dataIndex for each series
 					if (selection.dataIndex && selection.dataIndex.length > 0) {
 						selectedDataIndexes = updateSelectedIndexes(
@@ -129,49 +241,54 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 				});
 			});
 			if (selectedDataIndexes.length > 0) {
-				const currentOption = chart.getOption();
+				const currentOption =
+					chart.getOption() as unknown as StackChartOption & {
+						xAxis: { data: unknown[] }[];
+						yAxis: { data: unknown[] }[];
+					};
 				const xAxisData =
 					data.option.flipAxis === true
 						? currentOption.yAxis[0].data
 						: currentOption.xAxis[0].data;
 				const filteredXaxis = [...selectedDataIndexes]
 					.filter((index) => {
-						return data.option.series.some((series) => {
-							const yValue = series.data[index]?.value;
-							return (
-								yValue !== null &&
-								yValue !== 0 &&
-								yValue !== undefined &&
-								yValue !== "NaN" &&
-								yValue !== ""
-							);
-						});
+						return data.option.series.some(
+							(series: StackChartSeries) => {
+								const yValue = series.data[index]?.value;
+								return (
+									yValue !== null &&
+									yValue !== 0 &&
+									yValue !== undefined &&
+									yValue !== "NaN" &&
+									yValue !== ""
+								);
+							},
+						);
 					})
 					.map((index) => xAxisData[index]);
 				handleSelection(
 					filteredXaxis,
-					currentOption._state.fields.XAxis,
+					currentOption.state?.fields.XAxis,
 				);
 			}
 		});
 	};
 	//Brushed Data points selection and pixel expression of brushed data points to send to the server
-	// biome-ignore lint/suspicious/noExplicitAny: echart handleSelection value/name types are untyped
-	const handleSelection = (value: any, name: any) => {
+	const handleSelection = (value: unknown[], name: string[] | undefined) => {
 		// update the frame
 		frame.filter(`SetFrameFilter(${name}==[${JSON.stringify(value)}])`);
 	};
 
 	//  Context menu to show on right click
 	const onClickChart = {
-		contextmenu: (params) => {
+		contextmenu: (params: EChartContextMenuParams) => {
 			if (params.data) {
 				const XAxisName = xAxis;
-				const selectedData = params.dataIndex;
+				const selectedData = params.dataIndex as number;
 				const filteredXaxis =
 					data.option.flipAxis === true
-						? data.option.yAxis.data[selectedData]
-						: data.option.xAxis.data[selectedData];
+						? data.option.xAxis.data[selectedData]
+						: data.option.yAxis.data[selectedData];
 				setContextMenu(
 					contextMenu === null
 						? {
@@ -191,17 +308,23 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 		},
 	};
 	//  Process the API data to render the Stack Chart
-	const processData = (apiData, data) => {
-		const xAxisData = [];
-		const groupedData = {};
+	const processData = (
+		apiData: { values: unknown[][] },
+		chartData: { option: StackChartOption },
+	) => {
+		const xAxisData: unknown[] = [];
+		const groupedData: Record<
+			string,
+			{ y: unknown; category: unknown; tooltip?: unknown }[]
+		> = {};
 		let maxStackSize = 0;
-		const uniqueCategories = [];
+		const uniqueCategories: unknown[] = [];
 		//Reset data before updating
-		data.option.series = [];
-		data.option.xAxis.data = [];
+		chartData.option.series = [];
+		chartData.option.xAxis.data = [];
 
 		if (apiData.values) {
-			if (Object.hasOwn(data.option, "_state")) {
+			if (Object.hasOwn(chartData.option, "state")) {
 				if (
 					Object.hasOwn(fields, "XAxis") &&
 					Object.hasOwn(fields, "YAxis") &&
@@ -213,11 +336,16 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 						JSON.stringify(yAxis) === JSON.stringify(tooltip)
 					) {
 						apiData.values.forEach(([x, y]) => {
-							if (!groupedData[x]) {
-								groupedData[x] = [];
+							const xKey = String(x);
+							if (!groupedData[xKey]) {
+								groupedData[xKey] = [];
 								xAxisData.push(x);
 							}
-							groupedData[x].push({ y, category: x, tooltip: y });
+							groupedData[xKey].push({
+								y,
+								category: x,
+								tooltip: y,
+							});
 							//  Store unique categories for legend
 							if (x && !uniqueCategories.includes(x)) {
 								uniqueCategories.push(x);
@@ -225,45 +353,52 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 							//  Calculate max stack size (Max number of bars stacked at any x value)
 							maxStackSize = Math.max(
 								...Object.values(groupedData).map(
-									// biome-ignore lint/suspicious/noExplicitAny: echart arr type is untyped
-									(arr: any) => arr.length,
+									(arr: unknown[]) => arr.length,
 								),
 							);
 						});
-						const colorList = data.option.color;
+						const colorList = chartData.option.color;
 						const colorCount = colorList.length;
 
 						//  Assign colors to categories
-						const categoryColorMap = {};
-						uniqueCategories.forEach((category, index) => {
-							categoryColorMap[category] =
+						const categoryColorMap: Record<string, string> = {};
+						uniqueCategories.forEach((cat, index) => {
+							categoryColorMap[String(cat)] =
 								colorList[index % colorCount]; //  Cycle colors
 						});
 						//  Ensure we only create the exact number of stacks needed
-						const series = uniqueCategories.map(
-							(category, _index) => ({
+						const series: StackChartSeries[] = uniqueCategories.map(
+							(cat) => ({
 								type: "bar",
 								stack: "stack",
-								name: category.toString(), //  Legend name
+								name: String(cat), //  Legend name
 								data: xAxisData.map((x) => {
 									const point =
-										groupedData[x].find(
-											(item) =>
-												item.category === category,
-										) || {};
+										groupedData[String(x)].find(
+											(item) => item.category === cat,
+										) ??
+										({} as {
+											y: unknown;
+											category: unknown;
+											tooltip?: unknown;
+										});
 									return {
 										value:
 											Number.isNaN(point.y) ||
 											point.y === undefined
-												? point.y
-												: parseFloat(point.y)
+												? undefined
+												: parseFloat(String(point.y))
 														.toFixed(2)
 														.replace(/\.00$/, ""),
-										category: point.category ?? "",
+										category: String(point.category ?? ""),
 										itemStyle: {
-											color: categoryColorMap[category],
+											color: categoryColorMap[
+												String(cat)
+											],
 										}, //  Assign correct color
-										tooltipValue: point.tooltip ?? "", //  Store tooltip inside each data point
+										tooltipValue: String(
+											point.tooltip ?? "",
+										), //  Store tooltip inside each data point
 									};
 								}),
 							}),
@@ -272,12 +407,17 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 						return { xAxisData, series, maxStackSize, legendData };
 					}
 					if (JSON.stringify(xAxis) === JSON.stringify(category)) {
-						apiData.values.forEach(([x, y, tooltip]) => {
-							if (!groupedData[x]) {
-								groupedData[x] = [];
+						apiData.values.forEach(([x, y, tip]) => {
+							const xKey = String(x);
+							if (!groupedData[xKey]) {
+								groupedData[xKey] = [];
 								xAxisData.push(x);
 							}
-							groupedData[x].push({ y, category: x, tooltip });
+							groupedData[xKey].push({
+								y,
+								category: x,
+								tooltip: tip,
+							});
 
 							//  Store unique categories for legend
 							if (x && !uniqueCategories.includes(x)) {
@@ -287,46 +427,53 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 							//  Calculate max stack size (Max number of bars stacked at any x value)
 							maxStackSize = Math.max(
 								...Object.values(groupedData).map(
-									// biome-ignore lint/suspicious/noExplicitAny: echart arr type is untyped
-									(arr: any) => arr.length,
+									(arr: unknown[]) => arr.length,
 								),
 							);
 						});
 
-						const colorList = data.option.color;
+						const colorList = chartData.option.color;
 						const colorCount = colorList.length;
 
 						//  Assign colors to categories
-						const categoryColorMap = {};
-						uniqueCategories.forEach((category, index) => {
-							categoryColorMap[category] =
+						const categoryColorMap: Record<string, string> = {};
+						uniqueCategories.forEach((cat, index) => {
+							categoryColorMap[String(cat)] =
 								colorList[index % colorCount]; //  Cycle colors
 						});
 						//  Ensure we only create the exact number of stacks needed
-						const series = uniqueCategories.map(
-							(category, _index) => ({
+						const series: StackChartSeries[] = uniqueCategories.map(
+							(cat) => ({
 								type: "bar",
 								stack: "stack",
-								name: category.toString(), //  Legend name
+								name: String(cat), //  Legend name
 								data: xAxisData.map((x) => {
 									const point =
-										groupedData[x].find(
-											(item) =>
-												item.category === category,
-										) || {};
+										groupedData[String(x)].find(
+											(item) => item.category === cat,
+										) ??
+										({} as {
+											y: unknown;
+											category: unknown;
+											tooltip?: unknown;
+										});
 									return {
 										value:
 											Number.isNaN(point.y) ||
 											point.y === undefined
-												? point.y
-												: parseFloat(point.y)
+												? undefined
+												: parseFloat(String(point.y))
 														.toFixed(2)
 														.replace(/\.00$/, ""),
-										category: point.category ?? "",
+										category: String(point.category ?? ""),
 										itemStyle: {
-											color: categoryColorMap[category],
+											color: categoryColorMap[
+												String(cat)
+											],
 										}, //  Assign correct color
-										tooltipValue: point.tooltip ?? "", //  Store tooltip inside each data point
+										tooltipValue: String(
+											point.tooltip ?? "",
+										), //  Store tooltip inside each data point
 									};
 								}),
 							}),
@@ -335,61 +482,70 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 						return { xAxisData, series, maxStackSize, legendData };
 					}
 					if (JSON.stringify(yAxis) === JSON.stringify(tooltip)) {
-						apiData.values.forEach(([x, y, category]) => {
-							if (!groupedData[x]) {
-								groupedData[x] = [];
+						apiData.values.forEach(([x, y, cat]) => {
+							const xKey = String(x);
+							if (!groupedData[xKey]) {
+								groupedData[xKey] = [];
 								xAxisData.push(x);
 							}
-							groupedData[x].push({ y, category, tooltip: y });
+							groupedData[xKey].push({
+								y,
+								category: cat,
+								tooltip: y,
+							});
 							//  Store unique categories for legend
-							if (
-								category &&
-								!uniqueCategories.includes(category)
-							) {
-								uniqueCategories.push(category);
+							if (cat && !uniqueCategories.includes(cat)) {
+								uniqueCategories.push(cat);
 							}
 							//  Calculate max stack size (Max number of bars stacked at any x value)
 							maxStackSize = Math.max(
 								...Object.values(groupedData).map(
-									// biome-ignore lint/suspicious/noExplicitAny: echart arr type is untyped
-									(arr: any) => arr.length,
+									(arr: unknown[]) => arr.length,
 								),
 							);
 						});
-						const colorList = data.option.color;
+						const colorList = chartData.option.color;
 						const colorCount = colorList.length;
 
 						//  Assign colors to categories
-						const categoryColorMap = {};
-						uniqueCategories.forEach((category, index) => {
-							categoryColorMap[category] =
+						const categoryColorMap: Record<string, string> = {};
+						uniqueCategories.forEach((cat, index) => {
+							categoryColorMap[String(cat)] =
 								colorList[index % colorCount]; //  Cycle colors
 						});
 						//  Ensure we only create the exact number of stacks needed
-						const series = uniqueCategories.map(
-							(category, _index) => ({
+						const series: StackChartSeries[] = uniqueCategories.map(
+							(cat) => ({
 								type: "bar",
 								stack: "stack",
-								name: category.toString(), //  Legend name
+								name: String(cat), //  Legend name
 								data: xAxisData.map((x) => {
 									const point =
-										groupedData[x].find(
-											(item) =>
-												item.category === category,
-										) || {};
+										groupedData[String(x)].find(
+											(item) => item.category === cat,
+										) ??
+										({} as {
+											y: unknown;
+											category: unknown;
+											tooltip?: unknown;
+										});
 									return {
 										value:
 											Number.isNaN(point.y) ||
 											point.y === undefined
-												? point.y
-												: parseFloat(point.y)
+												? undefined
+												: parseFloat(String(point.y))
 														.toFixed(2)
 														.replace(/\.00$/, ""),
-										category: point.category ?? "",
+										category: String(point.category ?? ""),
 										itemStyle: {
-											color: categoryColorMap[category],
+											color: categoryColorMap[
+												String(cat)
+											],
 										}, //  Assign correct color
-										tooltipValue: point.tooltip ?? "", //  Store tooltip inside each data point
+										tooltipValue: String(
+											point.tooltip ?? "",
+										), //  Store tooltip inside each data point
 									};
 								}),
 							}),
@@ -397,60 +553,71 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 						const legendData = uniqueCategories.map(String);
 						return { xAxisData, series, maxStackSize, legendData };
 					}
-					apiData.values.forEach(([x, y, category, tooltip]) => {
-						if (!groupedData[x]) {
-							groupedData[x] = [];
+					apiData.values.forEach(([x, y, cat, tip]) => {
+						const xKey = String(x);
+						if (!groupedData[xKey]) {
+							groupedData[xKey] = [];
 							xAxisData.push(x);
 						}
-						groupedData[x].push({ y, category, tooltip });
+						groupedData[xKey].push({
+							y,
+							category: cat,
+							tooltip: tip,
+						});
 						//  Store unique categories for legend
-						if (category && !uniqueCategories.includes(category)) {
-							uniqueCategories.push(category);
+						if (cat && !uniqueCategories.includes(cat)) {
+							uniqueCategories.push(cat);
 						}
 						//  Calculate max stack size (Max number of bars stacked at any x value)
 						maxStackSize = Math.max(
 							...Object.values(groupedData).map(
-								// biome-ignore lint/suspicious/noExplicitAny: echart arr type is untyped
-								(arr: any) => arr.length,
+								(arr: unknown[]) => arr.length,
 							),
 						);
 					});
 
-					const colorList = data.option.color;
+					const colorList = chartData.option.color;
 					const colorCount = colorList.length;
 
 					//  Assign colors to categories
-					const categoryColorMap = {};
-					uniqueCategories.forEach((category, index) => {
-						categoryColorMap[category] =
+					const categoryColorMap: Record<string, string> = {};
+					uniqueCategories.forEach((cat, index) => {
+						categoryColorMap[String(cat)] =
 							colorList[index % colorCount]; //  Cycle colors
 					});
 					//  Ensure we only create the exact number of stacks needed
-					const series = uniqueCategories.map((category, _index) => ({
-						type: "bar",
-						stack: "stack",
-						name: category.toString(), //  Legend name
-						data: xAxisData.map((x) => {
-							const point =
-								groupedData[x].find(
-									(item) => item.category === category,
-								) || {};
-							return {
-								value:
-									Number.isNaN(point.y) ||
-									point.y === undefined
-										? point.y
-										: parseFloat(point.y)
-												.toFixed(2)
-												.replace(/\.00$/, ""),
-								category: point.category ?? "",
-								itemStyle: {
-									color: categoryColorMap[category],
-								}, //  Assign correct color
-								tooltipValue: point.tooltip ?? "", //  Store tooltip inside each data point
-							};
+					const series: StackChartSeries[] = uniqueCategories.map(
+						(cat) => ({
+							type: "bar",
+							stack: "stack",
+							name: String(cat), //  Legend name
+							data: xAxisData.map((x) => {
+								const point =
+									groupedData[String(x)].find(
+										(item) => item.category === cat,
+									) ??
+									({} as {
+										y: unknown;
+										category: unknown;
+										tooltip?: unknown;
+									});
+								return {
+									value:
+										Number.isNaN(point.y) ||
+										point.y === undefined
+											? undefined
+											: parseFloat(String(point.y))
+													.toFixed(2)
+													.replace(/\.00$/, ""),
+									category: String(point.category ?? ""),
+									itemStyle: {
+										color: categoryColorMap[String(cat)],
+									}, //  Assign correct color
+									tooltipValue: String(point.tooltip ?? ""), //  Store tooltip inside each data point
+								};
+							}),
 						}),
-					}));
+					);
 					const legendData = uniqueCategories.map(String);
 					return { xAxisData, series, maxStackSize, legendData };
 				}
@@ -461,11 +628,12 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 				) {
 					if (JSON.stringify(xAxis) === JSON.stringify(category)) {
 						apiData.values.forEach(([x, y]) => {
-							if (!groupedData[x]) {
-								groupedData[x] = [];
+							const xKey = String(x);
+							if (!groupedData[xKey]) {
+								groupedData[xKey] = [];
 								xAxisData.push(x);
 							}
-							groupedData[x].push({ y, category: x });
+							groupedData[xKey].push({ y, category: x });
 
 							//  Store unique categories for legend
 							if (x && !uniqueCategories.includes(x)) {
@@ -475,43 +643,48 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 							//  Calculate max stack size (Max number of bars stacked at any x value)
 							maxStackSize = Math.max(
 								...Object.values(groupedData).map(
-									// biome-ignore lint/suspicious/noExplicitAny: echart arr type is untyped
-									(arr: any) => arr.length,
+									(arr: unknown[]) => arr.length,
 								),
 							);
 						});
-						const colorList = data.option.color;
+						const colorList = chartData.option.color;
 						const colorCount = colorList.length;
 
 						//  Assign colors to categories
-						const categoryColorMap = {};
-						uniqueCategories.forEach((category, index) => {
-							categoryColorMap[category] =
+						const categoryColorMap: Record<string, string> = {};
+						uniqueCategories.forEach((cat, index) => {
+							categoryColorMap[String(cat)] =
 								colorList[index % colorCount]; //  Cycle colors
 						});
 						//  Ensure we only create the exact number of stacks needed
-						const series = uniqueCategories.map(
-							(category, _index) => ({
+						const series: StackChartSeries[] = uniqueCategories.map(
+							(cat) => ({
 								type: "bar",
 								stack: "stack",
-								name: category.toString(), //  Legend name
+								name: String(cat), //  Legend name
 								data: xAxisData.map((x) => {
 									const point =
-										groupedData[x].find(
-											(item) =>
-												item.category === category,
-										) || {};
+										groupedData[String(x)].find(
+											(item) => item.category === cat,
+										) ??
+										({} as {
+											y: unknown;
+											category: unknown;
+											tooltip?: unknown;
+										});
 									return {
 										value:
 											Number.isNaN(point.y) ||
 											point.y === undefined
-												? point.y
-												: parseFloat(point.y)
+												? undefined
+												: parseFloat(String(point.y))
 														.toFixed(2)
 														.replace(/\.00$/, ""),
-										category: point.category ?? "",
+										category: String(point.category ?? ""),
 										itemStyle: {
-											color: categoryColorMap[category],
+											color: categoryColorMap[
+												String(cat)
+											],
 										}, //  Assign correct color
 									};
 								}),
@@ -521,61 +694,68 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 						return { xAxisData, series, maxStackSize, legendData };
 					}
 					//  Process the API data
-					apiData.values.forEach(([x, y, category]) => {
-						if (!groupedData[x]) {
-							groupedData[x] = [];
+					apiData.values.forEach(([x, y, cat]) => {
+						const xKey = String(x);
+						if (!groupedData[xKey]) {
+							groupedData[xKey] = [];
 							xAxisData.push(x);
 						}
-						groupedData[x].push({ y, category });
+						groupedData[xKey].push({ y, category: cat });
 
 						//  Store unique categories for legend
-						if (category && !uniqueCategories.includes(category)) {
-							uniqueCategories.push(category);
+						if (cat && !uniqueCategories.includes(cat)) {
+							uniqueCategories.push(cat);
 						}
 
 						//  Calculate max stack size (Max number of bars stacked at any x value)
 						maxStackSize = Math.max(
 							...Object.values(groupedData).map(
-								// biome-ignore lint/suspicious/noExplicitAny: echart arr type is untyped
-								(arr: any) => arr.length,
+								(arr: unknown[]) => arr.length,
 							),
 						);
 					});
 
-					const colorList = data.option.color;
+					const colorList = chartData.option.color;
 					const colorCount = colorList.length;
 
 					//  Assign colors to categories
-					const categoryColorMap = {};
-					uniqueCategories.forEach((category, index) => {
-						categoryColorMap[category] =
+					const categoryColorMap: Record<string, string> = {};
+					uniqueCategories.forEach((cat, index) => {
+						categoryColorMap[String(cat)] =
 							colorList[index % colorCount]; //  Cycle colors
 					});
 					//  Ensure we only create the exact number of stacks needed
-					const series = uniqueCategories.map((category, _index) => ({
-						type: "bar",
-						stack: "stack",
-						name: category.toString(), //  Legend name
-						data: xAxisData.map((x) => {
-							const point =
-								groupedData[x].find(
-									(item) => item.category === category,
-								) || {};
-							return {
-								value:
-									Number.isNaN(point.y) ||
-									point.y === undefined
-										? point.y
-										: parseFloat(point.y)
-												.toFixed(2)
-												.replace(/\.00$/, ""),
-								category: point.category ?? "",
-								itemStyle: {
-									color: categoryColorMap[category],
-								}, //  Assign correct color
-							};
+					const series: StackChartSeries[] = uniqueCategories.map(
+						(cat) => ({
+							type: "bar",
+							stack: "stack",
+							name: String(cat), //  Legend name
+							data: xAxisData.map((x) => {
+								const point =
+									groupedData[String(x)].find(
+										(item) => item.category === cat,
+									) ??
+									({} as {
+										y: unknown;
+										category: unknown;
+										tooltip?: unknown;
+									});
+								return {
+									value:
+										Number.isNaN(point.y) ||
+										point.y === undefined
+											? undefined
+											: parseFloat(String(point.y))
+													.toFixed(2)
+													.replace(/\.00$/, ""),
+									category: String(point.category ?? ""),
+									itemStyle: {
+										color: categoryColorMap[String(cat)],
+									}, //  Assign correct color
+								};
+							}),
 						}),
-					}));
+					);
 					const legendData = uniqueCategories.map(String);
 					return { xAxisData, series, maxStackSize, legendData };
 				}
@@ -583,24 +763,32 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 		}
 		return { xAxisData: [], series: [], maxStackSize: 0, legendData: [] };
 	};
+
 	// this function is used to show the data in tooltip
-	const formatdatapoints = (apiData, data, maxStackSize) => {
+	const formatdatapoints = (
+		apiData: { values: unknown[][] },
+		chartData: { option: StackChartOption },
+		maxStackSize: number,
+	) => {
 		if (apiData.values) {
-			if (Object.hasOwn(data.option, "_state")) {
-				if (Object.hasOwn(data.option._state, "fields")) {
+			if (
+				Object.hasOwn(chartData.option, "state") &&
+				chartData.option.state
+			) {
+				if (Object.hasOwn(chartData.option.state, "fields")) {
 					if (
 						Object.hasOwn(fields, "XAxis") &&
 						Object.hasOwn(fields, "YAxis") &&
 						Object.hasOwn(fields, "category") &&
 						Object.hasOwn(fields, "tooltip")
 					) {
-						return (params) => {
+						return (params: StackChartTooltipParam[]) => {
 							let tooltipText = `${params[0].axisValue} <br/>`;
-							const tooltipValues = [];
+							const tooltipValues: number[] = [];
 							let totalTooltipValue = 0;
 							const tooltipPrefix =
-								data.option._state.fields.tooltipDataType ===
-								"NUMBER"
+								chartData.option.state?.fields
+									.tooltipDataType[0] === "NUMBER"
 									? "Average of"
 									: "Count of";
 							params.forEach((param) => {
@@ -614,8 +802,9 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 									tooltipValue !== undefined
 								) {
 									tooltipValues.push(Number(tooltipValue));
-									totalTooltipValue +=
-										parseFloat(tooltipValue);
+									totalTooltipValue += parseFloat(
+										String(tooltipValue),
+									);
 								}
 							});
 							if (maxStackSize > 0) {
@@ -631,7 +820,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 						Object.hasOwn(fields, "YAxis") &&
 						Object.hasOwn(fields, "category")
 					) {
-						return (params) => {
+						return (params: StackChartTooltipParam[]) => {
 							let tooltipText = `${params[0].axisValue} <br/>`;
 							params.forEach((param) => {
 								if (param.data.category !== "") {
@@ -644,7 +833,9 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 				}
 			}
 		}
+		return undefined;
 	};
+
 	if (!data.option) {
 		return (
 			<div className="h-full w-full">
@@ -652,81 +843,62 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 			</div>
 		);
 	}
-	if (typeof data.option === "string") {
-		try {
-			return (
-				<div className="h-full w-full">
-					<EChartsReact
-						option={data.option as unknown as EChartsOption}
-						style={{ height: "inherit", width: "inherit" }}
-					/>
-				</div>
-			);
-		} catch (_e) {
-			return (
-				<div className="h-full w-full text-destructive">
-					There was an issue parsing your JSON.
-				</div>
-			);
+	data.option.series = [];
+	data.option.xAxis.data = [];
+	data.option.yAxis.data = [];
+	const processedFrameData = processData(frame.data, data);
+	if (
+		processedFrameData &&
+		Object.hasOwn(processedFrameData, "xAxisData") &&
+		Object.hasOwn(processedFrameData, "series")
+	) {
+		data.option.series = processedFrameData.series;
+		data.option.legend.data = processedFrameData.legendData;
+		if (data.option.flipAxis === true) {
+			data.option.xAxis.data = [];
+			data.option.yAxis.data = processedFrameData.xAxisData;
+		} else {
+			data.option.yAxis.data = [];
+			data.option.xAxis.data = processedFrameData.xAxisData;
 		}
-	} else {
-		data.option.series = [];
-		data.option.xAxis.data = [];
-		data.option.yAxis.data = [];
-		const processedFrameData = processData(frame.data, data);
-		if (
-			processedFrameData &&
-			Object.hasOwn(processedFrameData, "xAxisData") &&
-			Object.hasOwn(processedFrameData, "series")
-		) {
-			data.option.series = processedFrameData.series;
-			data.option.legend.data = processedFrameData.legendData;
-			if (data.option.flipAxis === true) {
-				data.option.xAxis.data = [];
-				data.option.yAxis.data = processedFrameData.xAxisData;
-			} else {
-				data.option.yAxis.data = [];
-				data.option.xAxis.data = processedFrameData.xAxisData;
-			}
-		}
-		if (frame.data.values.length > 0) {
-			if (
-				!Object.hasOwn(data.option.tooltip, "formatter") ||
-				data.option.tooltip.formatter === ""
-			) {
-				data.option.tooltip = {
-					...data.option.tooltip,
-					formatter: formatdatapoints(
-						frame.data,
-						data,
-						processedFrameData.maxStackSize,
-					),
-				};
-			}
-		}
-		return (
-			<div className="h-full w-full">
-				<EChartsReact
-					option={data.option as EChartsOption}
-					style={{ height: "inherit", width: "inherit" }}
-					onChartReady={(chart) => {
-						echartsLoaded(chart);
-					}}
-					onEvents={onClickChart}
-				/>
-				<ChartContextMenu
-					id={id}
-					frame={frame}
-					contextMenu={contextMenu}
-					chartInstance={chartOperationData.current.chartInstance}
-					onClose={() => {
-						chartOperationData.current.contextMenu = null;
-						chartOperationData.current.yAxisColumn = null;
-						chartOperationData.current.brushSelected = null;
-						setContextMenu(null);
-					}}
-				/>
-			</div>
-		);
 	}
+	if (frame.data.values.length > 0) {
+		if (
+			!Object.hasOwn(data.option.tooltip, "formatter") ||
+			data.option.tooltip.formatter === ""
+		) {
+			data.option.tooltip = {
+				...data.option.tooltip,
+				formatter: formatdatapoints(
+					frame.data,
+					data,
+					processedFrameData.maxStackSize,
+				),
+			};
+		}
+	}
+	return (
+		<div className="h-full w-full">
+			<EChartsReact
+				option={data.option as unknown as EChartsOption}
+				style={{ height: "inherit", width: "inherit" }}
+				onChartReady={(chart) => {
+					echartsLoaded(chart);
+				}}
+				onEvents={onClickChart}
+			/>
+			<ChartContextMenu
+				id={id}
+				frame={frame}
+				contextMenu={contextMenu}
+				chartInstance={chartOperationData.current.chartInstance}
+				onClose={() => {
+					chartOperationData.current.contextMenu = null;
+					chartOperationData.current.yAxisColumn = null;
+					chartOperationData.current.brushSelected = null;
+					setContextMenu(null);
+				}}
+			/>
+		</div>
+	);
 });

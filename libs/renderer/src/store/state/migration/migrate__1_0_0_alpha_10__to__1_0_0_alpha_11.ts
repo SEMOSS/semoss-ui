@@ -1,5 +1,16 @@
 import type { Migration } from "./migration.types";
 
+interface AggregateColumnLike {
+	selector?: string;
+}
+
+type AggregateColumnCollection = Array<AggregateColumnLike>;
+type AggregateInputMap = Record<string, string[]>;
+type AggregateResultCollection = Record<
+	string | number,
+	Record<string, string>
+>;
+
 /**
  * @name config
  * @description
@@ -15,28 +26,30 @@ const config: Migration = {
 		 * Derives the selector from the backup state if no aggregate data is available.
 		 * @returns An array of tuples representing the field and its aggregation method.
 		 */
-		const aggregateFormatter1 = (inputData) => {
+		const aggregateFormatter1 = (inputData: AggregateColumnCollection) => {
 			if (inputData) {
-				const formattedColumns = {};
-				inputData.forEach((column, index) => {
-					if (column.selector) {
-						formattedColumns[index] = {
-							[column.selector]: index != 0 ? "Average" : "",
-						};
-					}
-				});
+				const formattedColumns: AggregateResultCollection = {};
+				inputData.forEach(
+					(column: AggregateColumnLike, index: number) => {
+						if (column.selector) {
+							formattedColumns[index] = {
+								[column.selector]: index !== 0 ? "Average" : "",
+							};
+						}
+					},
+				);
 				return formattedColumns;
 			}
 			return {};
 		};
 
-		const aggregateFormatter2 = (inputData) => {
+		const aggregateFormatter2 = (inputData: AggregateInputMap) => {
 			if (inputData) {
-				const formatedData = {};
+				const formatedData: AggregateResultCollection = {};
 				Object.entries(inputData).forEach(
-					([key, value]: [string, string[]], index) => {
+					([key, value]: [string, string[]], index: number) => {
 						formatedData[key] = {};
-						value.forEach((field) => {
+						value.forEach((field: string) => {
 							formatedData[key][field] =
 								index !== 0 ? "Average" : "";
 						});
@@ -47,17 +60,17 @@ const config: Migration = {
 			return {};
 		};
 
-		const aggregateFormatter3 = (inputData) => {
+		const aggregateFormatter3 = (inputData: AggregateInputMap) => {
 			if (inputData) {
-				const formatedData = {};
+				const formatedData: AggregateResultCollection = {};
 				Object.entries(inputData).forEach(
-					([key, value]: [string, string[]], index) => {
+					([key, value]: [string, string[]], index: number) => {
 						if (!key.includes("DataType")) {
 							formatedData[key] = {};
-							value.forEach((field, idx) => {
+							value.forEach((field: string, idx: number) => {
 								formatedData[key][field] =
 									index !== 0
-										? inputData[`${key}DataType`][idx] ===
+										? inputData[`${key}DataType`]?.[idx] ===
 											"NUMBER"
 											? "Average"
 											: "Count"
@@ -79,41 +92,52 @@ const config: Migration = {
 							aggregateFormatter1(b.data.columns);
 					} else if (b.data.variation === "echart-gantt-chart") {
 						const columns = Object.values(
-							b.data.option["customSettings"]["columnDetails"],
+							b.data.option.customSettings.columnDetails,
 						);
 						b.data.aggregate =
-							b.data.aggregate || aggregateFormatter1(columns);
-					} else if (b.data.variation === "echart-pie-chart") {
-						const fields = {
-							Label: [b.data.option["_state"]["fields"]["Label"]],
-							Value: [b.data.option["_state"]["fields"]["Value"]],
-						};
-						b.data.aggregate =
-							b.data.aggregate || aggregateFormatter2(fields);
-					} else if (b.data.variation === "echart-line-graph") {
-						b.data.aggregate =
 							b.data.aggregate ||
-							aggregateFormatter2(
-								b.data.option["_state"]["fields"],
+							aggregateFormatter1(
+								columns as AggregateColumnCollection,
 							);
+					} else if (b.data.variation === "echart-pie-chart") {
+						if (b.data.option._state?.fields) {
+							const fields: AggregateInputMap = {
+								Label: [b.data.option._state.fields.Label],
+								Value: [b.data.option._state.fields.Value],
+							};
+							b.data.aggregate =
+								b.data.aggregate || aggregateFormatter2(fields);
+						}
+					} else if (b.data.variation === "echart-line-graph") {
+						if (b.data.option._state?.fields) {
+							b.data.aggregate =
+								b.data.aggregate ||
+								aggregateFormatter2(
+									b.data.option._state.fields,
+								);
+						}
 					} else if (
 						b.data.variation === "echart-scatter-plots" ||
 						b.data.variation === "echart-stack-chart"
 					) {
-						b.data.aggregate =
-							b.data.aggregate ||
-							aggregateFormatter3(
-								b.data.option["_state"]["fields"],
-							);
+						if (b.data.option._state?.fields) {
+							b.data.aggregate =
+								b.data.aggregate ||
+								aggregateFormatter3(
+									b.data.option._state.fields,
+								);
+						}
 					} else if (b.data.variation === "echart-world-map-chart") {
-						const fields = {};
-						Object.entries(
-							b.data.option["_state"]["fields"],
-						).forEach(([key, value]) => {
-							fields[key] = [value];
-						});
-						b.data.aggregate =
-							b.data.aggregate || aggregateFormatter3(fields);
+						if (b.data.option._state?.fields) {
+							const fields: AggregateInputMap = {};
+							Object.entries(b.data.option._state.fields).forEach(
+								([key, value]: [string, unknown]) => {
+									fields[key] = [String(value)];
+								},
+							);
+							b.data.aggregate =
+								b.data.aggregate || aggregateFormatter3(fields);
+						}
 					}
 				}
 			});
