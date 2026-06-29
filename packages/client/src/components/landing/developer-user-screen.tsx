@@ -123,6 +123,10 @@ export const DeveloperUserScreen = observer(() => {
 							});
 						} else if (type === "agent") {
 							navigate("/app/new/prompt");
+						} else if (type === "workflow") {
+							setNewAppOptions({
+								type: "workflow",
+							});
 						}
 					}}
 				/>
