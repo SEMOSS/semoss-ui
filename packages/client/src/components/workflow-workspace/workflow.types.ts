@@ -32,11 +32,14 @@ export interface VectorEngineConfig {
 	engineId: string;
 	operation: "query" | "embed";
 	expression?: string;
+	limit?: number;
 }
 
 export interface ModelEngineConfig {
 	engineId: string;
 	promptTemplate: string;
+	systemMessage?: string;
+	paramValues?: string; // JSON object string e.g. {"temperature": 0.7}
 }
 
 export interface FunctionEngineConfig {

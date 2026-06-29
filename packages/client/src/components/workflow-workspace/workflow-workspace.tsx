@@ -73,6 +73,112 @@ function wfEdgeToRF(wfEdge: WorkflowEdge): Edge {
 	};
 }
 
+/** Escape double-quotes and backslashes for embedding in a Pixel string literal */
+function escapePixel(s: string): string {
+	return s.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
+/** Replace ${nodeId} tokens with known outputs */
+function substituteVars(
+	template: string,
+	outputs: Record<string, string>,
+): string {
+	return template.replace(/\$\{([^}]+)\}/g, (_, key) => outputs[key] ?? "");
+}
+
+/**
+ * Build the executable pixel for a node using the same logic as
+ * WorkflowExecutorReactor.buildPixel, substituting ${nodeId} vars from
+ * already-known outputs before sending to the server.
+ */
+function assembleNodePixel(
+	wfNode: WorkflowNode,
+	nodeOutputs: Record<string, string>,
+): string | null {
+	const cfg = wfNode.config as unknown as Record<
+		string,
+		string | number | undefined
+	>;
+	let pixel: string | null = null;
+
+	switch (wfNode.type) {
+		case "trigger":
+			return null;
+
+		case "custom-pixel": {
+			const p = (cfg.pixel as string) || "";
+			pixel = p || null;
+			break;
+		}
+
+		case "model-engine": {
+			const engineId = cfg.engineId as string;
+			const prompt = cfg.promptTemplate as string;
+			if (!engineId || !prompt) return null;
+			let px = `LLMChat(engine=["${engineId}"], command=["${escapePixel(prompt)}"]`;
+			if (cfg.systemMessage) {
+				px += `, systemMessage=["${escapePixel(cfg.systemMessage as string)}"]`;
+			}
+			if (cfg.paramValues) {
+				px += `, paramValues=[${cfg.paramValues}]`;
+			}
+			px += ");";
+			pixel = px;
+			break;
+		}
+
+		case "database-engine": {
+			const engineId = cfg.engineId as string;
+			const query = cfg.expression as string;
+			if (!engineId || !query) return null;
+			pixel = `DatabaseQuery(engine=["${engineId}"], query=["${escapePixel(query)}"]);`;
+			break;
+		}
+
+		case "vector-engine": {
+			const engineId = cfg.engineId as string;
+			const expression = cfg.expression as string;
+			if (!engineId || !expression) return null;
+			const limit = cfg.limit ? `, limit=[${cfg.limit}]` : "";
+			pixel = `VectorDatabaseQuery(engine=["${engineId}"], command=["${escapePixel(expression)}"]${limit});`;
+			break;
+		}
+
+		case "storage-engine": {
+			const engineId = cfg.engineId as string;
+			const operation = (cfg.operation as string) || "list";
+			const path = (cfg.path as string) || "/";
+			if (!engineId) return null;
+			if (operation === "read") {
+				pixel = `StorageGet(engine=["${engineId}"], path=["${escapePixel(path)}"]);`;
+			} else {
+				pixel = `StorageList(engine=["${engineId}"], path=["${escapePixel(path)}"]);`;
+			}
+			break;
+		}
+
+		case "function-engine": {
+			const engineId = cfg.engineId as string;
+			if (!engineId) return null;
+			const params = cfg.paramsExpression as string;
+			pixel = `FunctionEngine(engine=["${engineId}"]${params ? `, parameters=[${params}]` : ""});`;
+			break;
+		}
+
+		case "transform": {
+			const expression = cfg.expression as string;
+			pixel = expression || null;
+			break;
+		}
+
+		default:
+			return null;
+	}
+
+	if (!pixel) return null;
+	return substituteVars(pixel, nodeOutputs);
+}
+
 /** Inner canvas — must be inside ReactFlowProvider */
 const WorkflowCanvas: FC = () => {
 	const insight = useInsight();
@@ -94,10 +200,11 @@ const WorkflowCanvas: FC = () => {
 		string | null
 	>(null);
 	const [runDetail, setRunDetail] = useState<WorkflowRunDetail | null>(null);
+	const [nodeOutputs, setNodeOutputs] = useState<Record<string, string>>({});
 	const [isSaving, setIsSaving] = useState(false);
 	const [isRunning, setIsRunning] = useState(false);
 
-	// Derived: keep wfNodes in sync with rfNodes (source of truth is rfNodes after drops/moves)
+	// Derived: keep wfNodes in sync with rfNodes
 	const [wfNodes, setWfNodes] = useState<WorkflowNode[]>([]);
 	useEffect(() => {
 		setWfNodes(rfNodes.map((rf) => rfNodeToWf(rf)));
@@ -109,7 +216,7 @@ const WorkflowCanvas: FC = () => {
 		monolithStore
 			.runQuery<[string]>(
 				`GetWorkflow(project=["${appId}"]);`,
-				insight.insightId,
+				workspace.insightId,
 			)
 			.then(({ errors, pixelReturn }) => {
 				if (errors.length > 0) return;
@@ -122,17 +229,20 @@ const WorkflowCanvas: FC = () => {
 				} catch (_) {
 					// empty / malformed JSON — start fresh
 				}
+			})
+			.catch((err) => {
+				console.error("Failed to load workflow:", err);
 			});
 	}, [
 		insight.isReady,
 		appId,
-		insight.insightId,
+		workspace.insightId,
 		monolithStore,
 		setRfNodes,
 		setRfEdges,
 	]);
 
-	// Load engines on mount
+	// Load all engine types in a single batched pixel call
 	useEffect(() => {
 		if (!insight.isReady) return;
 		const engineTypes = [
@@ -142,27 +252,24 @@ const WorkflowCanvas: FC = () => {
 			"STORAGE",
 			"FUNCTION",
 		];
-		Promise.all(
-			engineTypes.map((et) =>
-				monolithStore
-					.runQuery<[EngineOption[]]>(
-						`MyEngines(engineTypes=["${et}"]);`,
-						insight.insightId,
-					)
-					.then(({ errors, pixelReturn }) => {
-						if (errors.length > 0)
-							return [et, [] as EngineOption[]] as const;
-						const list = pixelReturn[0]?.output ?? [];
-						return [et, list] as const;
-					})
-					.catch(() => [et, [] as EngineOption[]] as const),
-			),
-		).then((results) => {
-			const map: Record<string, EngineOption[]> = {};
-			for (const [et, list] of results) map[et] = list;
-			setEnginesByType(map);
-		});
-	}, [insight.isReady, insight.insightId, monolithStore]);
+		const batchPixel = engineTypes
+			.map((et) => `MyEngines(engineTypes=["${et}"]);`)
+			.join("");
+
+		monolithStore
+			.runQuery(batchPixel, workspace.insightId)
+			.then(({ pixelReturn }) => {
+				const map: Record<string, EngineOption[]> = {};
+				engineTypes.forEach((et, i) => {
+					const out = pixelReturn[i]?.output;
+					map[et] = Array.isArray(out) ? (out as EngineOption[]) : [];
+				});
+				setEnginesByType(map);
+			})
+			.catch((err) => {
+				console.error("Failed to load engines:", err);
+			});
+	}, [insight.isReady, workspace.insightId, monolithStore]);
 
 	const onConnect = useCallback(
 		(connection: Connection) =>
@@ -186,7 +293,6 @@ const WorkflowCanvas: FC = () => {
 			);
 			if (!type) return;
 
-			// screenToFlowPosition takes raw client coords (not canvas-relative)
 			const position = rfInstance.screenToFlowPosition({
 				x: event.clientX,
 				y: event.clientY,
@@ -214,7 +320,6 @@ const WorkflowCanvas: FC = () => {
 		event.dataTransfer.dropEffect = "move";
 	}, []);
 
-	// Context callbacks — keep these stable
 	const getWfNode = useCallback(
 		(id: string) => wfNodes.find((n) => n.id === id),
 		[wfNodes],
@@ -244,6 +349,11 @@ const WorkflowCanvas: FC = () => {
 				prev.filter((e) => e.source !== id && e.target !== id),
 			);
 			setExpandedNodeId((cur) => (cur === id ? null : cur));
+			setNodeOutputs((prev) => {
+				const next = { ...prev };
+				delete next[id];
+				return next;
+			});
 		},
 		[setRfNodes, setRfEdges],
 	);
@@ -251,6 +361,48 @@ const WorkflowCanvas: FC = () => {
 	const openSettings = useCallback((id: string) => {
 		setSettingsPanelNodeId(id);
 	}, []);
+
+	/** Run a single node by assembling + executing its pixel */
+	const runNode = useCallback(
+		async (nodeId: string) => {
+			const wfNode = wfNodes.find((n) => n.id === nodeId);
+			if (!wfNode) return;
+
+			const pixel = assembleNodePixel(wfNode, nodeOutputs);
+			if (!pixel) {
+				toast.error(
+					`Node "${wfNode.label}": fill in all required fields before running`,
+				);
+				return;
+			}
+
+			try {
+				const { errors, pixelReturn } = await monolithStore.runQuery(
+					pixel,
+					workspace.insightId,
+				);
+
+				if (errors.length > 0) {
+					toast.error(
+						`Node "${wfNode.label}" error: ${errors.join(", ")}`,
+					);
+					return;
+				}
+
+				const raw = pixelReturn[0]?.output;
+				const output =
+					typeof raw === "string"
+						? raw
+						: JSON.stringify(raw, null, 2);
+
+				setNodeOutputs((prev) => ({ ...prev, [nodeId]: output }));
+			} catch (e) {
+				toast.error(`Node run failed: ${(e as Error).message}`);
+				throw e;
+			}
+		},
+		[wfNodes, nodeOutputs, monolithStore, workspace.insightId],
+	);
 
 	const saveWorkflow = async () => {
 		setIsSaving(true);
@@ -267,7 +419,7 @@ const WorkflowCanvas: FC = () => {
 			const encoded = encodeURIComponent(JSON.stringify(doc));
 			const { errors } = await monolithStore.runQuery(
 				`SaveWorkflow(project=["${appId}"], json=["<encode>${encoded}</encode>"]);`,
-				insight.insightId,
+				workspace.insightId,
 			);
 			if (errors.length > 0) throw new Error(errors.join(", "));
 			toast.success("Workflow saved");
@@ -285,11 +437,21 @@ const WorkflowCanvas: FC = () => {
 		try {
 			const { errors, pixelReturn } = await monolithStore.runQuery<
 				[WorkflowRunDetail]
-			>(`WorkflowExecutor(project=["${appId}"]);`, insight.insightId);
+			>(`WorkflowExecutor(project=["${appId}"]);`, workspace.insightId);
 			if (errors.length > 0) throw new Error(errors.join(", "));
 			const result = pixelReturn[0]
 				.output as unknown as WorkflowRunDetail;
 			setRunDetail(result);
+
+			// Populate nodeOutputs from the run so per-node output refs work
+			if (result?.nodeResults) {
+				const outputs: Record<string, string> = {};
+				for (const nr of result.nodeResults) {
+					if (nr.output) outputs[nr.nodeId] = nr.output;
+				}
+				setNodeOutputs((prev) => ({ ...prev, ...outputs }));
+			}
+
 			const hasErrors = result?.nodeResults?.some(
 				(r) => r.status === "error",
 			);
@@ -314,11 +476,13 @@ const WorkflowCanvas: FC = () => {
 			value={{
 				enginesByType,
 				expandedNodeId,
+				nodeOutputs,
 				getWfNode,
 				onNodeUpdate,
 				deleteNode,
 				openSettings,
 				toggleExpand,
+				runNode,
 			}}
 		>
 			<div className="flex h-full w-full flex-col">
@@ -351,7 +515,7 @@ const WorkflowCanvas: FC = () => {
 							) : (
 								<Play className="mr-1.5 size-3.5" />
 							)}
-							Run
+							Run All
 						</Button>
 					</div>
 				</div>
@@ -426,7 +590,7 @@ const SettingsPanel: FC<{
 	wfNode: WorkflowNode;
 	onUpdate: (updated: WorkflowNode) => void;
 }> = ({ wfNode, onUpdate }) => {
-	const cfg = wfNode.config as Record<string, string>;
+	const cfg = wfNode.config as unknown as Record<string, string>;
 	const [label, setLabel] = useState(wfNode.label);
 	const [localCfg, setLocalCfg] = useState<Record<string, string>>(cfg);
 
@@ -506,7 +670,7 @@ const SettingsPanel: FC<{
 					onUpdate({
 						...wfNode,
 						label,
-						config: localCfg as WorkflowNodeConfig,
+						config: localCfg as unknown as WorkflowNodeConfig,
 					})
 				}
 			>
@@ -516,7 +680,7 @@ const SettingsPanel: FC<{
 	);
 };
 
-/** Panel showing per-node run results */
+/** Panel showing per-node run results from a full workflow run */
 const RunResultsPanel: FC<{
 	detail: WorkflowRunDetail;
 	onClose: () => void;
