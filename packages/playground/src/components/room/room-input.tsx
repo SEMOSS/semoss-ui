@@ -182,6 +182,53 @@ interface RoomInputProps {
 }
 
 // ============================================================================
+// CompactButton
+// ============================================================================
+
+const CompactButton: React.FC<{
+	disabled: boolean;
+	tooltipText: string;
+	onClick: (e: React.MouseEvent) => void;
+}> = ({ disabled, tooltipText, onClick }) => {
+	const [tooltipOpen, setTooltipOpen] = useState(false);
+	const isHovering = useRef(false);
+
+	const handleMouseEnter = () => {
+		isHovering.current = true;
+		setTooltipOpen(true);
+	};
+
+	const handleMouseLeave = () => {
+		isHovering.current = false;
+		setTooltipOpen(false);
+	};
+
+	return (
+		<Tooltip open={tooltipOpen}>
+			<TooltipTrigger asChild>
+				{/* biome-ignore lint/a11y/noStaticElementInteractions: span wraps a disabled button to capture hover for tooltip */}
+				<span
+					className="mt-2 w-full"
+					onMouseEnter={handleMouseEnter}
+					onMouseLeave={handleMouseLeave}
+				>
+					<Button
+						size="sm"
+						variant="outline"
+						className="w-full text-foreground"
+						disabled={disabled}
+						onClick={onClick}
+					>
+						Compact Conversation
+					</Button>
+				</span>
+			</TooltipTrigger>
+			<TooltipContent>{tooltipText}</TooltipContent>
+		</Tooltip>
+	);
+};
+
+// ============================================================================
 // Main Component
 // ============================================================================
 
@@ -364,33 +411,20 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						</div>
 					)}
 					{onCompact && (
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<span className="mt-2 w-full">
-									<Button
-										size="sm"
-										variant="outline"
-										className="w-full text-foreground"
-										disabled={
-											isLoading || hasOutstandingTools
-										}
-										onClick={(e) => {
-											e.stopPropagation();
-											onCompact();
-										}}
-									>
-										{t("settings.compact")}
-									</Button>
-								</span>
-							</TooltipTrigger>
-							{(isLoading || hasOutstandingTools) && (
-								<TooltipContent>
-									{isLoading
-										? t("input.thinkingTooltip")
-										: t("input.completeTool")}
-								</TooltipContent>
-							)}
-						</Tooltip>
+						<CompactButton
+							disabled={isLoading || hasOutstandingTools}
+							tooltipText={
+								isLoading
+									? t("input.thinkingTooltip")
+									: hasOutstandingTools
+										? t("input.completeTool")
+										: "Compress your conversation to save tokens. Your previous messages stay as is."
+							}
+							onClick={(e) => {
+								e.stopPropagation();
+								onCompact();
+							}}
+						/>
 					)}
 				</div>
 			);
