@@ -84,9 +84,6 @@ export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
 			if (status !== "active") return;
 
 			if (newContent.length === 0) {
-				console.log(
-					"ResponseMessageTextMd: no new content to animate, calling onComplete",
-				);
 				onComplete();
 				return;
 			}
@@ -96,18 +93,12 @@ export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
 				typewriter.rendered.length >= newContent.length;
 
 			if (caughtUp) {
-				console.log(
-					"ResponseMessageTextMd: typewriter caught up, calling onComplete",
-				);
 				onComplete();
 				return;
 			}
 
 			// New content arrived while typewriter was idle — restart it
 			if (!typewriter.isTyping) {
-				console.log(
-					"ResponseMessageTextMd: starting typewriter for new content",
-				);
 				typewriter.start();
 			}
 		})();
