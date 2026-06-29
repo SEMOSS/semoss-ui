@@ -51,7 +51,7 @@ export const ChatsPage = observer(() => {
 		breadcrumbs: [
 			{ name: t("workspace:breadcrumbs.home"), path: "/" },
 			{
-				name: t("workspace:chats.title", { defaultValue: "All chats" }),
+				name: t("workspace:chats.title"),
 				path: "/chats",
 			},
 		],
@@ -263,7 +263,6 @@ export const ChatsPage = observer(() => {
 			toast.success(
 				t("workspace:chats.bulkDeleteSuccess", {
 					count: ids.length,
-					defaultValue: "Deleted {{count}} chats",
 				}),
 			);
 		} else {
@@ -277,8 +276,6 @@ export const ChatsPage = observer(() => {
 				t("workspace:chats.bulkDeletePartialFail", {
 					failed: failed.length,
 					total: ids.length,
-					defaultValue:
-						"Failed to delete {{failed}} of {{total}} chats",
 				}),
 			);
 		}
@@ -313,15 +310,10 @@ export const ChatsPage = observer(() => {
 				<div className="-mx-4 -mt-8 @md:-mx-6 @3xl:-mx-12 sticky top-0 z-20 flex flex-row items-center gap-3 border-border border-b bg-background/95 @3xl:px-12 @md:px-6 px-4 py-4 backdrop-blur supports-backdrop-filter:bg-background/80">
 					<div className="min-w-0 flex-1">
 						<div className="truncate font-semibold @md:text-2xl text-foreground text-xl leading-tight">
-							{t("workspace:chats.title", {
-								defaultValue: "All chats",
-							})}
+							{t("workspace:chats.title")}
 						</div>
 						<div className="@md:block hidden text-muted-foreground text-sm">
-							{t("workspace:chats.subtitle", {
-								defaultValue:
-									"Browse, search, and clean up your chats.",
-							})}
+							{t("workspace:chats.subtitle")}
 						</div>
 					</div>
 				</div>
@@ -329,9 +321,7 @@ export const ChatsPage = observer(() => {
 				{/* Search */}
 				<InputGroup className="bg-background">
 					<InputGroupInput
-						placeholder={t("common:buttons.search", {
-							defaultValue: "Search",
-						})}
+						placeholder={t("common:buttons.search")}
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
 					/>
@@ -347,9 +337,7 @@ export const ChatsPage = observer(() => {
 						<Checkbox
 							checked={allSelected}
 							onCheckedChange={toggleSelectAll}
-							aria-label={t("workspace:chats.selectAll", {
-								defaultValue: "Select all",
-							})}
+							aria-label={t("workspace:chats.selectAll")}
 							className={CHECKBOX_CLASS}
 							data-testid="chats-page--select-all-checkbox"
 						/>
@@ -359,19 +347,14 @@ export const ChatsPage = observer(() => {
 							className="font-medium text-foreground text-sm hover:text-foreground/80"
 						>
 							{allSelected
-								? t("workspace:chats.deselectAll", {
-										defaultValue: "Deselect all",
-									})
-								: t("workspace:chats.selectAll", {
-										defaultValue: "Select all",
-									})}
+								? t("workspace:chats.deselectAll")
+								: t("workspace:chats.selectAll")}
 						</button>
 						{hasSelection && (
 							<>
 								<span className="text-muted-foreground text-sm">
 									{t("workspace:chats.selectedCount", {
 										count: selectedIds.size,
-										defaultValue: "{{count}} selected",
 									})}
 								</span>
 								<div className="ms-auto flex items-center gap-1">
@@ -384,9 +367,7 @@ export const ChatsPage = observer(() => {
 										data-testid="chats-page--delete-selected-btn"
 									>
 										<Trash2Icon />
-										{t("workspace:chat.delete", {
-											defaultValue: "Delete",
-										})}
+										{t("workspace:chat.delete")}
 									</Button>
 									<Button
 										variant="ghost"
@@ -394,9 +375,7 @@ export const ChatsPage = observer(() => {
 										onClick={clearSelection}
 										disabled={isDeleting}
 									>
-										{t("workspace:chat.cancel", {
-											defaultValue: "Cancel",
-										})}
+										{t("workspace:chat.cancel")}
 									</Button>
 								</div>
 							</>
@@ -412,11 +391,7 @@ export const ChatsPage = observer(() => {
 						</div>
 					) : !hasRooms ? (
 						<div className="flex w-full items-center justify-center py-12">
-							<Muted>
-								{t("workspace:chat.noChats", {
-									defaultValue: "No chats found",
-								})}
-							</Muted>
+							<Muted>{t("workspace:chat.noChats")}</Muted>
 						</div>
 					) : (
 						<div className="flex w-full flex-col gap-6">
@@ -425,9 +400,7 @@ export const ChatsPage = observer(() => {
 								<div className="flex flex-col gap-2">
 									<div className="flex items-center gap-1.5 px-1 font-medium text-muted-foreground text-xs">
 										<StarIcon className="size-3.5 fill-yellow-500 text-yellow-500" />
-										{t("workspace:chats.favorites", {
-											defaultValue: "Favorites",
-										})}
+										{t("workspace:chats.favorites")}
 									</div>
 									<div className="flex flex-col gap-2">
 										{pinnedRooms.map(renderRow)}
@@ -467,14 +440,11 @@ export const ChatsPage = observer(() => {
 						<DialogTitle>
 							{t("workspace:chats.bulkDeleteConfirmTitle", {
 								count: selectedIds.size,
-								defaultValue: "Delete {{count}} chats?",
 							})}
 						</DialogTitle>
 						<DialogDescription>
 							{t("workspace:chats.bulkDeleteConfirmDescription", {
 								count: selectedIds.size,
-								defaultValue:
-									"This will permanently delete {{count}} chats. This action cannot be undone.",
 							})}
 						</DialogDescription>
 					</DialogHeader>

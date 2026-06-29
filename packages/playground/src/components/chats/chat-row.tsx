@@ -178,7 +178,6 @@ export const ChatRow = ({
 				tabIndex={-1}
 				aria-label={t("workspace:chats.selectChat", {
 					name: room.ROOM_NAME,
-					defaultValue: "Select chat {{name}}",
 				})}
 				onClick={(e) => {
 					e.preventDefault();
@@ -200,7 +199,6 @@ export const ChatRow = ({
 					onClick={(e) => e.stopPropagation()}
 					aria-label={t("workspace:chats.selectChat", {
 						name: room.ROOM_NAME,
-						defaultValue: "Select chat {{name}}",
 					})}
 					className={CHECKBOX_CLASS}
 				/>
