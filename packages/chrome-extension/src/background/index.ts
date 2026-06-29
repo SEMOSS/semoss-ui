@@ -4,17 +4,19 @@ import { enhancedClick, enhancedSetValue } from "./enhancedActions";
 // Track which tabs have debuggers attached
 const attachedDebuggers = new Set<number>();
 
-// Handle extension icon click to open side panel
+// Handle extension icon click to toggle the floating on-page panel
 chrome.action.onClicked.addListener((tab) => {
 	if (tab.id) {
-		chrome.sidePanel.open({ tabId: tab.id }).catch(() => {
-			// Side panel opening failed
-		});
+		chrome.tabs
+			.sendMessage(tab.id, { type: "TOGGLE_FLOATING_PANEL" })
+			.catch(() => {
+				// Content script may not be available on browser/internal pages.
+			});
 	}
 });
 
 // Clean up when debugger is detached (user closes tab, etc.)
-chrome.debugger.onDetach.addListener((source, reason) => {
+chrome.debugger.onDetach.addListener((source, _reason) => {
 	if (source.tabId) {
 		attachedDebuggers.delete(source.tabId);
 	}
@@ -31,9 +33,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 			message.type === "PLAYGROUND_CHAT_RESPONSE" ||
 			message.type === "PLAYGROUND_CHAT_SUBMIT")
 	) {
+		const forwardedMessage = {
+			...message,
+			sourceTabId: sender.tab.id,
+		};
 		// Broadcast to all extension contexts (this won't trigger this listener again since sender.tab will be undefined)
 		chrome.runtime
-			.sendMessage(message)
+			.sendMessage(forwardedMessage)
 			.then(() => {
 				// Successfully broadcasted
 			})
@@ -181,12 +187,33 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		return true;
 	}
 
+	if (!sender.tab && message.type === "UPDATE_FLOATING_PANEL_STATUS") {
+		if (message.tabId) {
+			chrome.tabs
+				.sendMessage(message.tabId, message)
+				.then(() => sendResponse({ success: true }))
+				.catch((error) =>
+					sendResponse({
+						success: false,
+						error: error.message,
+					}),
+				);
+		} else {
+			sendResponse({ success: false, error: "No tabId provided" });
+		}
+		return true;
+	}
+
 	switch (message.type) {
 		case "GET_CURRENT_TAB":
 			chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
 				sendResponse({ tabId: tabs[0]?.id });
 			});
 			return true; // Keep channel open for async response
+
+		case "GET_HOST_TAB_ID":
+			sendResponse({ tabId: sender.tab?.id });
+			return true;
 
 		case "ATTACH_DEBUGGER":
 			attachDebugger(message.tabId)
@@ -370,7 +397,6 @@ async function highlightElement(
 	selector: string,
 ): Promise<void> {
 	const maxRetries = 5;
-	let lastError: string | undefined;
 
 	for (let attempt = 1; attempt <= maxRetries; attempt++) {
 		try {
@@ -413,11 +439,8 @@ async function highlightElement(
 				await wait(300);
 				return; // Success, exit function
 			}
-
-			lastError = result?.result?.value?.error || "Unknown error";
-		} catch (error) {
-			lastError =
-				error instanceof Error ? error.message : "Unknown error";
+		} catch {
+			// Retry below. Highlighting is helpful, but not critical to execution.
 		}
 
 		// Wait before retry (longer delay for first few attempts)

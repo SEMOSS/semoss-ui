@@ -46,10 +46,10 @@
 	},
 	"extension": {
 		"required": "Browser Extension Required",
-		"notResponding": "The browser extension is not responding. To execute Playwright scripts, please ensure the SEMOSS Chrome Extension is installed and the side panel is open.",
+		"notResponding": "The browser extension is not responding. To execute Playwright scripts, please ensure the SEMOSS Chrome Extension is installed and the floating widget is available.",
 		"stepsTitle": "Steps to open the extension:",
 		"step1": "Look for the SEMOSS extension icon in your browser toolbar (puzzle piece icon)",
-		"step2": "Click the extension icon to open the side panel",
+		"step2": "Click the extension icon to expand the floating widget",
 		"step3": "Wait for the panel to load completely",
 		"step4": "Click \"Retry\" below to continue",
 		"cancel": "Cancel",

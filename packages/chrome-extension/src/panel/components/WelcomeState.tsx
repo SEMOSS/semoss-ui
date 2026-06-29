@@ -12,12 +12,13 @@ const QUICK_START_STEPS = [
 	{
 		step: 2,
 		title: "Activate the extension from browser",
-		description: "Click the extension icon to open this panel.",
+		description: "Click the extension icon to expand the floating widget.",
 	},
 	{
 		step: 3,
 		title: 'Click "Execute Tool" in Playground',
-		description: "The script will run automatically in this panel.",
+		description:
+			"The script will run automatically in the floating widget.",
 	},
 ];
 
@@ -48,7 +49,8 @@ export const WelcomeState: React.FC = () => {
 
 				<div className="welcome-tip">
 					<p>
-						Tip: Keep this panel open to monitor execution progress.
+						Tip: Collapse the widget when you only need status
+						alerts.
 					</p>
 				</div>
 			</div>

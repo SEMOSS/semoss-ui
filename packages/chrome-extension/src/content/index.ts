@@ -3,6 +3,12 @@ import { getDOMStats, getSimplifiedDOM } from "./simplifyDOM";
 
 // Initialize RPC system for communication
 initializeRPC();
+
+const FLOATING_PANEL_WRAPPER_ID = "semoss-browser-automation-frame";
+const FLOATING_PANEL_COLLAPSED_SIZE = 72;
+const FLOATING_PANEL_EXPANDED_WIDTH = 380;
+const FLOATING_PANEL_EXPANDED_HEIGHT = 620;
+
 let annotatedElements: HTMLElement[] = [];
 const elementIdToUniqueId: Map<number, string> = new Map();
 
@@ -16,6 +22,94 @@ let fieldMonitoringListeners: {
 // Listen for playground chat events
 let isPlaygroundPage = false;
 let playgroundListenersSetup = false; // Track if listeners have been setup
+let floatingPanelFrame: HTMLIFrameElement | null = null;
+
+async function getHostTabId(): Promise<number | undefined> {
+	try {
+		const response = await chrome.runtime.sendMessage({
+			type: "GET_HOST_TAB_ID",
+		});
+		return response?.tabId;
+	} catch {
+		return undefined;
+	}
+}
+
+function sizeFloatingPanel(expanded: boolean) {
+	if (!floatingPanelFrame) return;
+
+	const width = expanded
+		? Math.min(FLOATING_PANEL_EXPANDED_WIDTH, window.innerWidth - 24)
+		: FLOATING_PANEL_COLLAPSED_SIZE;
+	const height = expanded
+		? Math.min(FLOATING_PANEL_EXPANDED_HEIGHT, window.innerHeight - 24)
+		: FLOATING_PANEL_COLLAPSED_SIZE;
+
+	floatingPanelFrame.style.width = `${Math.max(width, FLOATING_PANEL_COLLAPSED_SIZE)}px`;
+	floatingPanelFrame.style.height = `${Math.max(height, FLOATING_PANEL_COLLAPSED_SIZE)}px`;
+}
+
+async function ensureFloatingPanel() {
+	if (floatingPanelFrame || !isExtensionContextValid()) return;
+	if (!document.documentElement || !document.body) return;
+
+	const hostTabId = await getHostTabId();
+	const panelUrl = new URL(chrome.runtime.getURL("src/panel/index.html"));
+	panelUrl.searchParams.set("floating", "1");
+	if (typeof hostTabId === "number") {
+		panelUrl.searchParams.set("tabId", String(hostTabId));
+	}
+
+	const frame = document.createElement("iframe");
+	frame.id = FLOATING_PANEL_WRAPPER_ID;
+	frame.title = "SEMOSS Browser Automation";
+	frame.src = panelUrl.toString();
+	frame.setAttribute("allow", "clipboard-read; clipboard-write");
+	frame.style.position = "fixed";
+	frame.style.right = "16px";
+	frame.style.bottom = "16px";
+	frame.style.width = `${FLOATING_PANEL_COLLAPSED_SIZE}px`;
+	frame.style.height = `${FLOATING_PANEL_COLLAPSED_SIZE}px`;
+	frame.style.border = "0";
+	frame.style.borderRadius = `${FLOATING_PANEL_COLLAPSED_SIZE / 2}px`;
+	frame.style.background = "transparent";
+	frame.style.boxShadow = "0 12px 36px rgba(15, 23, 42, 0.24)";
+	frame.style.zIndex = "2147483647";
+	frame.style.overflow = "hidden";
+	frame.style.transition =
+		"width 180ms ease, height 180ms ease, border-radius 180ms ease, box-shadow 180ms ease";
+
+	document.documentElement.appendChild(frame);
+	floatingPanelFrame = frame;
+}
+
+window.addEventListener("resize", () => {
+	if (!floatingPanelFrame) return;
+	floatingPanelFrame.contentWindow?.postMessage(
+		{ type: "SMSS_FLOATING_PANEL_REQUEST_STATE" },
+		"*",
+	);
+});
+
+window.addEventListener("message", (event) => {
+	if (
+		!floatingPanelFrame ||
+		event.source !== floatingPanelFrame.contentWindow
+	) {
+		return;
+	}
+
+	if (event.data?.type === "SMSS_FLOATING_PANEL_RESIZE") {
+		const expanded = event.data.expanded === true;
+		sizeFloatingPanel(expanded);
+		floatingPanelFrame.style.borderRadius = expanded ? "14px" : "36px";
+		floatingPanelFrame.style.boxShadow = expanded
+			? "0 18px 54px rgba(15, 23, 42, 0.28)"
+			: "0 12px 36px rgba(15, 23, 42, 0.24)";
+	}
+});
+
+void ensureFloatingPanel();
 
 // Check if current page is playground
 function checkIfPlayground() {
@@ -130,6 +224,29 @@ new MutationObserver(() => {
 // Listen for messages from popup/background
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 	switch (message.type) {
+		case "TOGGLE_FLOATING_PANEL":
+			void ensureFloatingPanel().then(() => {
+				floatingPanelFrame?.contentWindow?.postMessage(
+					{ type: "SMSS_FLOATING_PANEL_TOGGLE" },
+					"*",
+				);
+			});
+			sendResponse({ success: true });
+			break;
+
+		case "UPDATE_FLOATING_PANEL_STATUS":
+			void ensureFloatingPanel().then(() => {
+				floatingPanelFrame?.contentWindow?.postMessage(
+					{
+						type: "SMSS_FLOATING_PANEL_EXTERNAL_STATUS",
+						status: message.status,
+					},
+					"*",
+				);
+			});
+			sendResponse({ success: true });
+			break;
+
 		case "GET_ANNOTATED_DOM":
 			try {
 				const result = getSimplifiedDOMFromPage();
@@ -464,8 +581,6 @@ function stopFieldMonitoring() {
  * Get simplified DOM optimized for LLM consumption
  */
 function getSimplifiedDOMFromPage() {
-	const startTime = performance.now();
-
 	// First, get annotated DOM with visibility and interactivity info
 	// This populates annotatedElements array with ALL original page elements
 	annotatedElements = [];

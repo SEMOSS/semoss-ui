@@ -10,6 +10,7 @@ import { WelcomeState } from "./components/WelcomeState";
 type PanelRuntimeMessage = {
 	type: string;
 	timestamp?: number;
+	sourceTabId?: number;
 	script?: {
 		name?: string;
 		scriptContent?: unknown;
@@ -18,9 +19,25 @@ type PanelRuntimeMessage = {
 	isPassword?: boolean;
 };
 
+type FloatingPanelExternalStatus = {
+	isLoading?: boolean;
+	isRunning?: boolean;
+	needsInput?: boolean;
+	message?: string;
+};
+
 const PanelApp: React.FC = () => {
+	const searchParams = new URLSearchParams(window.location.search);
+	const isFloatingPanel = searchParams.get("floating") === "1";
+	const hostTabId = Number(searchParams.get("tabId"));
+	const hasHostTabId = Number.isFinite(hostTabId);
+
 	const [isLoading, setIsLoading] = useState(true);
+	const [isScriptLoading, setIsScriptLoading] = useState(false);
 	const [isRunning, setIsRunning] = useState(false);
+	const [isCollapsed, setIsCollapsed] = useState(isFloatingPanel);
+	const [externalStatus, setExternalStatus] =
+		useState<FloatingPanelExternalStatus | null>(null);
 	const [actionHistory, setActionHistory] = useState<string[]>([]);
 	const [waitingForUserInput, setWaitingForUserInput] = useState(false);
 	const [userInputPrompt, setUserInputPrompt] = useState("");
@@ -34,22 +51,105 @@ const PanelApp: React.FC = () => {
 	const [jsonFormat, setJsonFormat] = useState<"playwright">("playwright");
 
 	const historyEndRef = React.useRef<HTMLDivElement>(null);
+	const actionHistoryCount = actionHistory.length;
 
 	// Real-time input mirroring state
 	const [currentSelector, setCurrentSelector] = useState<string | null>(null);
 	const [currentTabId, setCurrentTabId] = useState<number | null>(null);
 	const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const activeStatusTabIdRef = useRef<number | null>(null);
+
+	const publishFloatingStatus = (
+		tabId: number | null | undefined,
+		status: FloatingPanelExternalStatus,
+	) => {
+		if (!tabId) return;
+
+		activeStatusTabIdRef.current = tabId;
+		chrome.runtime
+			.sendMessage({
+				type: "UPDATE_FLOATING_PANEL_STATUS",
+				tabId,
+				status,
+			})
+			.catch(() => {
+				// Target tabs may not have the content script available yet.
+			});
+	};
 
 	// Auto-scroll to bottom when action history updates
 	React.useEffect(() => {
-		if (historyEndRef.current) {
+		if (actionHistoryCount > 0 && historyEndRef.current) {
 			historyEndRef.current.scrollIntoView({ behavior: "smooth" });
 		}
-	}, []);
+	}, [actionHistoryCount]);
 
 	useEffect(() => {
 		setIsLoading(false);
 	}, []);
+
+	useEffect(() => {
+		if (!isFloatingPanel) return;
+
+		window.parent.postMessage(
+			{
+				type: "SMSS_FLOATING_PANEL_RESIZE",
+				expanded: !isCollapsed,
+			},
+			"*",
+		);
+	}, [isCollapsed, isFloatingPanel]);
+
+	useEffect(() => {
+		if (!isFloatingPanel) return;
+
+		const handleFloatingMessage = (event: MessageEvent) => {
+			if (event.source !== window.parent) return;
+
+			if (event.data?.type === "SMSS_FLOATING_PANEL_TOGGLE") {
+				setIsCollapsed((prev) => !prev);
+			}
+
+			if (event.data?.type === "SMSS_FLOATING_PANEL_REQUEST_STATE") {
+				window.parent.postMessage(
+					{
+						type: "SMSS_FLOATING_PANEL_RESIZE",
+						expanded: !isCollapsed,
+					},
+					"*",
+				);
+			}
+
+			if (event.data?.type === "SMSS_FLOATING_PANEL_EXTERNAL_STATUS") {
+				setExternalStatus(event.data.status || null);
+			}
+		};
+
+		window.addEventListener("message", handleFloatingMessage);
+
+		return () => {
+			window.removeEventListener("message", handleFloatingMessage);
+		};
+	}, [isCollapsed, isFloatingPanel]);
+
+	useEffect(() => {
+		if (!externalStatus) return;
+		if (
+			externalStatus.isLoading ||
+			externalStatus.isRunning ||
+			externalStatus.needsInput
+		) {
+			return;
+		}
+
+		const clearTimer = window.setTimeout(() => {
+			setExternalStatus(null);
+		}, 4000);
+
+		return () => {
+			window.clearTimeout(clearTimer);
+		};
+	}, [externalStatus]);
 
 	useEffect(() => {
 		chrome.runtime
@@ -94,6 +194,15 @@ const PanelApp: React.FC = () => {
 				return;
 			}
 
+			if (
+				message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT" &&
+				hasHostTabId &&
+				message.sourceTabId &&
+				message.sourceTabId !== hostTabId
+			) {
+				return;
+			}
+
 			// Handle ping request from Playground to validate extension is alive
 			if (message.type === "SMSS_EXTENSION_PING") {
 				console.log("[PANEL] 🏓 Received PING - sending PONG");
@@ -111,7 +220,15 @@ const PanelApp: React.FC = () => {
 			if (message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT") {
 				// Handle Playwright script execution request from Playground
 				const script = message.script;
+				const sourceTabId =
+					message.sourceTabId || (hasHostTabId ? hostTabId : null);
 
+				setIsScriptLoading(true);
+				setIsCollapsed(false);
+				publishFloatingStatus(sourceTabId, {
+					isLoading: true,
+					message: "Loading recorded steps",
+				});
 				setActionHistory([
 					`🎬 Received script from Playground: ${script.name}`,
 				]);
@@ -119,7 +236,9 @@ const PanelApp: React.FC = () => {
 
 				// Check if script content was provided
 				if (script.scriptContent) {
-					let content = script.scriptContent;
+					let content = script.scriptContent as
+						| Record<string, unknown>
+						| string;
 
 					// If scriptContent is a string, parse it first
 					if (typeof content === "string") {
@@ -134,7 +253,11 @@ const PanelApp: React.FC = () => {
 					}
 
 					// If steps is a string, parse it too (handle nested stringification)
-					if (content && typeof content.steps === "string") {
+					if (
+						content &&
+						typeof content === "object" &&
+						typeof content.steps === "string"
+					) {
 						try {
 							content.steps = JSON.parse(content.steps);
 						} catch (e) {
@@ -162,41 +285,89 @@ const PanelApp: React.FC = () => {
 
 					// Wait longer and check if page is loaded before executing
 					setTimeout(async () => {
-						// Wait for current tab to be in complete state
-						const [currentTab] = await chrome.tabs.query({
-							active: true,
-							currentWindow: true,
-						});
-						if (currentTab?.id) {
-							// Wait for tab to be fully loaded
-							let retries = 20; // 10 seconds total
-							while (retries > 0) {
-								const tabs = await chrome.tabs.query({});
-								const tab = tabs.find(
-									(t) => t.id === currentTab.id,
-								);
-								if (tab?.status === "complete") {
-									break;
+						try {
+							// Wait for current tab to be in complete state
+							const messageTabId = sourceTabId || undefined;
+							const currentTab = messageTabId
+								? await chrome.tabs.get(messageTabId)
+								: (
+										await chrome.tabs.query({
+											active: true,
+											currentWindow: true,
+										})
+									)[0];
+							if (currentTab?.id) {
+								// Wait for tab to be fully loaded
+								let retries = 20; // 10 seconds total
+								while (retries > 0) {
+									const tabs = await chrome.tabs.query({});
+									const tab = tabs.find(
+										(t) => t.id === currentTab.id,
+									);
+									if (tab?.status === "complete") {
+										break;
+									}
+									await new Promise((resolve) =>
+										setTimeout(resolve, 500),
+									);
+									retries--;
 								}
+								// Additional buffer time after page load
 								await new Promise((resolve) =>
-									setTimeout(resolve, 500),
+									setTimeout(resolve, 1500),
 								);
-								retries--;
 							}
-							// Additional buffer time after page load
-							await new Promise((resolve) =>
-								setTimeout(resolve, 1500),
+							setActionHistory((prev) => [
+								...prev,
+								`▶️ Page loaded, executing script...`,
+							]);
+							setIsScriptLoading(false);
+							publishFloatingStatus(sourceTabId, {
+								isLoading: false,
+								isRunning: true,
+								message: "Running automation",
+							});
+							await executeScriptWithContent(
+								scriptContent,
+								"playwright",
 							);
+						} catch (error) {
+							const errorMessage =
+								error instanceof Error
+									? error.message
+									: String(error);
+							setIsScriptLoading(false);
+							publishFloatingStatus(sourceTabId, {
+								isLoading: false,
+								isRunning: false,
+								needsInput: false,
+								message: "Automation failed",
+							});
+							setActionHistory((prev) => [
+								...prev,
+								`❌ Error: ${errorMessage}`,
+							]);
+							chrome.runtime
+								.sendMessage({
+									type: "SCRIPT_EXECUTION_COMPLETE",
+									success: false,
+									message: `Script execution failed: ${errorMessage}`,
+								})
+								.catch((err) => {
+									console.error(
+										"[PANEL] ❌ Failed to send error message:",
+										err,
+									);
+								});
 						}
-						setActionHistory((prev) => [
-							...prev,
-							`▶️ Page loaded, executing script...`,
-						]);
-						await executeScriptWithContent(
-							scriptContent,
-							"playwright",
-						);
 					}, 1000);
+				} else {
+					setIsScriptLoading(false);
+					publishFloatingStatus(sourceTabId, {
+						isLoading: false,
+						isRunning: false,
+						needsInput: false,
+					});
 				}
 			}
 
@@ -254,6 +425,8 @@ const PanelApp: React.FC = () => {
 				const tabId = chrome.devtools.inspectedWindow.tabId;
 				const tabs = await chrome.tabs.query({});
 				tab = tabs.find((t) => t.id === tabId);
+			} else if (hasHostTabId) {
+				tab = await chrome.tabs.get(hostTabId);
 			} else {
 				const [currentTab] = await chrome.tabs.query({
 					active: true,
@@ -338,8 +511,18 @@ const PanelApp: React.FC = () => {
 
 			// Track tabs: maps tabId (tab-1, tab-2) to Chrome tab ID
 			const tabMap = new Map<string, number>();
-			tabMap.set("tab-1", targetTab.id!); // First tab is the target tab
-			let currentTabId = targetTab.id!;
+			const targetTabId = targetTab.id;
+			if (!targetTabId) {
+				throw new Error("No target tab found");
+			}
+			publishFloatingStatus(targetTabId, {
+				isLoading: false,
+				isRunning: true,
+				needsInput: false,
+				message: "Running automation",
+			});
+			tabMap.set("tab-1", targetTabId); // First tab is the target tab
+			let currentTabId = targetTabId;
 
 			// Track which navigate URL we already executed during tab creation
 			const preExecutedNavigateUrl = createdNewTab ? initialUrl : null;
@@ -500,6 +683,11 @@ const PanelApp: React.FC = () => {
 						// Store selector and tabId for real-time mirroring
 						setCurrentSelector(selector || null);
 						setCurrentTabId(targetTabId || null);
+						publishFloatingStatus(targetTabId, {
+							isRunning: true,
+							needsInput: true,
+							message: "Input required",
+						});
 
 						// Highlight the field on the webpage while the dialog is open
 						if (selector && targetTabId) {
@@ -571,6 +759,11 @@ const PanelApp: React.FC = () => {
 							}
 
 							setWaitingForUserInput(false);
+							publishFloatingStatus(targetTabId, {
+								isRunning: true,
+								needsInput: false,
+								message: "Running automation",
+							});
 							setUserInputPrompt("");
 							setUserInputValue("");
 							setIsPasswordInput(false);
@@ -674,6 +867,13 @@ const PanelApp: React.FC = () => {
 			}
 		} finally {
 			setIsRunning(false);
+			setIsScriptLoading(false);
+			publishFloatingStatus(activeStatusTabIdRef.current, {
+				isLoading: false,
+				isRunning: false,
+				needsInput: false,
+				message: "Automation complete",
+			});
 		}
 	};
 
@@ -709,6 +909,46 @@ const PanelApp: React.FC = () => {
 		}
 	};
 
+	const needsInputStatus =
+		waitingForUserInput || externalStatus?.needsInput === true;
+	const loadingStatus = isScriptLoading || externalStatus?.isLoading === true;
+	const runningStatus = isRunning || externalStatus?.isRunning === true;
+	const launcherStatus = needsInputStatus
+		? "Input required"
+		: loadingStatus
+			? "Loading steps"
+			: runningStatus
+				? "Running automation"
+				: "Browser Automation";
+
+	if (isFloatingPanel && isCollapsed) {
+		return (
+			<button
+				type="button"
+				className={cn(
+					"floating-launcher",
+					(loadingStatus || runningStatus) &&
+						"floating-launcher--busy",
+					needsInputStatus && "floating-launcher--needs-input",
+				)}
+				onClick={() => setIsCollapsed(false)}
+				aria-label={launcherStatus}
+				title={launcherStatus}
+			>
+				<span className="floating-launcher-icon">S</span>
+				{(loadingStatus || runningStatus) && (
+					<span
+						className="floating-launcher-spinner"
+						aria-hidden="true"
+					/>
+				)}
+				{needsInputStatus && (
+					<span className="floating-launcher-badge">1</span>
+				)}
+			</button>
+		);
+	}
+
 	if (isLoading) {
 		return (
 			<div className="panel-container">
@@ -728,14 +968,53 @@ const PanelApp: React.FC = () => {
 	}
 
 	return (
-		<div className="panel-container">
+		<div
+			className={cn(
+				"panel-container",
+				isFloatingPanel && "panel-container--floating",
+			)}
+		>
 			<div className="panel-header">
 				<h1 className="panel-title">Browser Automation</h1>
+				{isFloatingPanel && (
+					<Button
+						type="button"
+						className="panel-collapse-btn"
+						onClick={() => setIsCollapsed(true)}
+						aria-label="Collapse Browser Automation"
+						title="Collapse"
+					>
+						-
+					</Button>
+				)}
 			</div>
 
 			<div className="panel-content">
+				{isScriptLoading && (
+					<output className="steps-loading-banner">
+						<span
+							className="steps-loading-spinner"
+							aria-hidden="true"
+						/>
+						<span>Loading recorded steps...</span>
+					</output>
+				)}
+
+				{externalStatus &&
+					!isScriptLoading &&
+					!isRunning &&
+					actionHistory.length === 0 && (
+						<div className="external-status-banner">
+							<span>
+								{externalStatus.message || launcherStatus}
+							</span>
+						</div>
+					)}
+
 				{/* Welcome State - shown when no script is running */}
-				{!isRunning && actionHistory.length === 0 && <WelcomeState />}
+				{!isRunning &&
+					actionHistory.length === 0 &&
+					!externalStatus && <WelcomeState />}
 
 				{/* Action History */}
 				{actionHistory.length > 0 && (

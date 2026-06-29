@@ -13,6 +13,13 @@ body {
   background: #f5f5f5;
 }
 
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+}
+
 .panel-container {
   width: 100%;
   height: 100vh;
@@ -21,9 +28,16 @@ body {
   background: #ffffff;
 }
 
+.panel-container--floating {
+  height: 100%;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
 .panel-header {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
   padding: 14px 24px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -37,6 +51,23 @@ body {
   font-weight: 600;
   margin: 0;
   letter-spacing: 0.3px;
+}
+
+.panel-collapse-btn {
+  width: 30px !important;
+  min-width: 30px !important;
+  height: 30px !important;
+  padding: 0 !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.16) !important;
+  color: white !important;
+  font-size: 20px !important;
+  line-height: 1 !important;
+}
+
+.panel-collapse-btn:hover {
+  background: rgba(255, 255, 255, 0.26) !important;
 }
 
 .settings-btn {
@@ -62,6 +93,10 @@ body {
   background: #fafbfc;
 }
 
+.panel-container--floating .panel-content {
+  padding: 14px;
+}
+
 .execution-log-wrapper {
   width: 100%;
 }
@@ -75,6 +110,11 @@ body {
   gap: 10px !important;
   border-color: rgba(15, 23, 42, 0.12) !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.panel-container--floating .execution-log-card {
+  min-height: auto;
+  max-height: calc(100vh - 150px);
 }
 
 .execution-log-title {
@@ -760,6 +800,118 @@ body {
   font-size: 13px;
   color: #1976d2;
   text-align: center;
+}
+
+.steps-loading-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(25, 118, 210, 0.22);
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.external-status-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 96px;
+  padding: 16px;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  border-radius: 8px;
+  background: #f8fbff;
+  color: #1e3a8a;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.steps-loading-spinner,
+.floating-launcher-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(37, 99, 235, 0.22);
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: semoss-spin 0.8s linear infinite;
+}
+
+.floating-launcher {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border: 0;
+  border-radius: 50%;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.28);
+  transition:
+    transform 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.floating-launcher:hover {
+  transform: translateY(-1px);
+  background: #1d4ed8;
+  box-shadow: 0 16px 38px rgba(15, 23, 42, 0.32);
+}
+
+.floating-launcher-icon {
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.floating-launcher--busy .floating-launcher-icon {
+  opacity: 0;
+}
+
+.floating-launcher .floating-launcher-spinner {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border-width: 3px;
+  border-color: rgba(255, 255, 255, 0.32);
+  border-top-color: #ffffff;
+}
+
+.floating-launcher-badge {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border: 2px solid white;
+  border-radius: 999px;
+  background: #dc2626;
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.floating-launcher--needs-input {
+  background: #7c3aed;
+}
+
+@keyframes semoss-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Playground Monitor Section */
