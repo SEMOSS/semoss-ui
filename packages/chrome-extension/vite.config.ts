@@ -23,6 +23,11 @@ export default defineConfig({
 	build: {
 		outDir: "build",
 		sourcemap: true,
+		rollupOptions: {
+			input: {
+				panel: resolve(__dirname, "src/panel/index.html"),
+			},
+		},
 	},
 	server: {
 		port: 5174,
