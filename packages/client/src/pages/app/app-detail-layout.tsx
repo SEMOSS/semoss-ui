@@ -80,6 +80,7 @@ const modelDependencies = (
 		name: dep.engine_name ? dep.engine_name.replace(/_/g, " ") : "",
 		id: dep.engine_id,
 		type: dep.engine_type,
+		subtype: dep.engine_subtype,
 		userPermission: dep.permission_name as Role,
 		isPublic: !!dep.engine_global,
 		isDiscoverable: !!dep.engine_discoverable,

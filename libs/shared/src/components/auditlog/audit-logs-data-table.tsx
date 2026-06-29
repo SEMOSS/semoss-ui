@@ -6,6 +6,7 @@ import {
 	CircleCheck as CircleCheckIcon,
 } from "lucide-react"; // Example icons
 import { useCallback, useMemo, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	Select,
@@ -39,10 +40,10 @@ interface AuditLogsDataTableProps {
 //spanId / requestId. Grouping is client-side over the current page (the same set
 //the timeline groups), since filtering + pagination are server-side.
 type RowGroupMode = "none" | "span" | "request";
-const GROUP_MODE_LABELS: Record<RowGroupMode, string> = {
-	none: "No grouping",
-	span: "Group by span",
-	request: "Group by request",
+const GROUP_MODE_LABEL_KEYS: Record<RowGroupMode, string> = {
+	none: "table.grouping.none",
+	span: "table.grouping.span",
+	request: "table.grouping.request",
 };
 const TABLE_COLUMN_COUNT = 11;
 //Matches the timeline: success is truthy and not the string "false".
@@ -65,6 +66,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	rowsPerPage,
 	onPaginationChange,
 }) => {
+	const { t } = useTranslation("auditlog");
 	const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null); //setting event when row clicked, and event will have all the rowdata
 	const [drawerOpen, setDrawerOpen] = useState(false); //drawer show or close
 	const [groupMode, setGroupMode] = useState<RowGroupMode>("none");
@@ -217,11 +219,11 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 			<div className="mt-4 rounded-lg border bg-white shadow">
 				<div className="flex items-center justify-between p-4">
 					<span className="font-semibold text-lg">
-						Prompt & Response Timeline
+						{t("table.title")}
 					</span>
 				</div>
 				<div className="flex items-center justify-center border-b p-4">
-					<span className="text-gray-500">No logs available.</span>
+					<span className="text-gray-500">{t("common.noLogs")}</span>
 				</div>
 			</div>
 		);
@@ -232,7 +234,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 			<div className="mt-4 rounded-lg border bg-white shadow">
 				<div className="flex items-center justify-between p-4">
 					<span className="font-semibold text-lg">
-						Prompt & Response Timeline
+						{t("table.title")}
 					</span>
 					<Select
 						value={groupMode}
@@ -245,10 +247,12 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 						</SelectTrigger>
 						<SelectContent>
 							{(
-								Object.keys(GROUP_MODE_LABELS) as RowGroupMode[]
+								Object.keys(
+									GROUP_MODE_LABEL_KEYS,
+								) as RowGroupMode[]
 							).map((mode) => (
 								<SelectItem key={mode} value={mode}>
-									{GROUP_MODE_LABELS[mode]}
+									{t(GROUP_MODE_LABEL_KEYS[mode])}
 								</SelectItem>
 							))}
 						</SelectContent>
@@ -260,57 +264,57 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 							<TableRow style={{ backgroundColor: "#F5F9FE" }}>
 								<TableHead>
 									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
-										User
+										{t("table.columns.user")}
 									</span>
 								</TableHead>
 								<TableHead>
 									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
-										Session Id
+										{t("table.columns.sessionId")}
 									</span>
 								</TableHead>
 								<TableHead>
 									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
-										Request
+										{t("table.columns.request")}
 									</span>
 								</TableHead>
 								<TableHead>
 									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
-										Response
+										{t("table.columns.response")}
 									</span>
 								</TableHead>
 								<TableHead>
 									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
-										Method
+										{t("table.columns.method")}
 									</span>
 								</TableHead>
 								<TableHead>
 									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
-										Engine Type
+										{t("table.columns.engineType")}
 									</span>
 								</TableHead>
 								<TableHead>
 									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
-										Engine Name
+										{t("table.columns.engineName")}
 									</span>
 								</TableHead>
 								<TableHead>
 									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
-										Latency
+										{t("table.columns.latency")}
 									</span>
 								</TableHead>
 								<TableHead>
 									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
-										Tokens
+										{t("table.columns.tokens")}
 									</span>
 								</TableHead>
 								<TableHead>
 									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
-										Timestamp
+										{t("table.columns.timestamp")}
 									</span>
 								</TableHead>
 								<TableHead>
 									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
-										Status
+										{t("table.columns.status")}
 									</span>
 								</TableHead>
 							</TableRow>
@@ -341,8 +345,12 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 														<span className="font-semibold text-primary text-sm">
 															{groupMode ===
 															"request"
-																? "Request"
-																: "Span"}
+																? t(
+																		"table.groupRequest",
+																	)
+																: t(
+																		"table.groupSpan",
+																	)}
 														</span>
 														<span
 															title={group.key}
@@ -354,19 +362,20 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 															)}
 														</span>
 														<span className="ml-2 text-gray-500 text-xs">
-															{
-																group.events
-																	.length
-															}{" "}
-															{group.events
-																.length === 1
-																? "event"
-																: "events"}{" "}
+															{t("table.event", {
+																count: group
+																	.events
+																	.length,
+															})}{" "}
 															·{" "}
-															{group.totalLatency}
-															ms ·{" "}
-															{group.totalTokens}{" "}
-															tokens
+															{t(
+																"table.groupMeta",
+																{
+																	latency:
+																		group.totalLatency,
+																	tokens: group.totalTokens,
+																},
+															)}
 														</span>
 														{group.hasFailure ? (
 															<Cancel
@@ -410,7 +419,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 						htmlFor="rows-per-page"
 						className="font-medium text-gray-700 text-sm"
 					>
-						Rows per page:
+						{t("table.rowsPerPage")}
 					</label>
 					<Select
 						value={rowsPerPage.toString()}
@@ -433,7 +442,11 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 						</SelectContent>
 					</Select>
 					<span className="mx-2 text-sm">
-						{firstRow} - {lastRow} of {totalCount}
+						{t("table.pageRange", {
+							first: firstRow,
+							last: lastRow,
+							total: totalCount,
+						})}
 					</span>
 					<Button
 						variant="ghost"
@@ -458,7 +471,10 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 
 			<div className="flex items-center justify-between border-b bg-gray-50 px-4 py-2">
 				<span className="text-gray-500 text-sm">
-					Showing {logs.length} of {totalCount} results
+					{t("table.showingResults", {
+						shown: logs.length,
+						total: totalCount,
+					})}
 				</span>
 			</div>
 			{/** sheet open/close when user clicks on the row in auditlog table */}
@@ -467,7 +483,9 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 					side="right"
 					className="min-w-[500px] transition-all duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] data-[state=closed]:translate-x-full data-[state=open]:translate-x-0 data-[state=closed]:opacity-0 data-[state=open]:opacity-100"
 				>
-					<SheetTitle className="sr-only">Audit Details</SheetTitle>
+					<SheetTitle className="sr-only">
+						{t("detail.title")}
+					</SheetTitle>
 					<AuditLogsDetailDrawer
 						logDetails={selectedEvent}
 						handleDrawerClose={handleDrawerClose}

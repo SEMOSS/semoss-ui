@@ -2,7 +2,13 @@ import { ChevronRight, UploadIcon } from "lucide-react";
 import { useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
-import { type MCPConfig, MCPSelector, PromptSelector } from "@semoss/shared";
+import {
+	type MCPConfig,
+	MCPSelector,
+	PromptSelector,
+	type SkillConfig,
+	SkillSelector,
+} from "@semoss/shared";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -35,6 +41,7 @@ type CreateAgentForm = {
 	instructions: string;
 	knowledge: MCPConfig[];
 	toolboxes: MCPConfig[];
+	skills: SkillConfig[];
 	prompts: string[];
 };
 
@@ -59,6 +66,7 @@ export const CreateAgentPage = () => {
 			instructions: "",
 			knowledge: [],
 			toolboxes: [],
+			skills: [],
 			prompts: [],
 		},
 	});
@@ -75,10 +83,12 @@ export const CreateAgentPage = () => {
 			// Combine knowledge and toolboxes into mcp array
 			const mcp = [...data.knowledge, ...data.toolboxes];
 
+			const skills = data.skills.map((s) => s.id);
+
 			const { errors, pixelReturn } = await monolithStore.runQuery<
 				[string]
 			>(
-				`AddWorkspace(name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, prompts=${JSON.stringify(data.prompts)});`,
+				`AddWorkspace(name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)});`,
 			);
 
 			if (errors.length > 0) throw new Error(errors.join(","));
@@ -283,6 +293,35 @@ export const CreateAgentPage = () => {
 											className="h-112"
 											enableKnowledgeMCP={true}
 											getPlatformUrl={mcpToPlatformUrl}
+										/>
+									)}
+								/>
+							</div>
+						</div>
+						<Separator />
+					</div>
+
+					{/* Skills Section */}
+					<div className="mb-4 flex flex-col gap-4">
+						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+							<div className="flex flex-1 flex-col gap-1">
+								<H4 className="font-semibold text-base tracking-tight">
+									Skills
+								</H4>
+								<Muted className="text-muted-foreground text-sm leading-6">
+									Add reusable skills to your agent
+								</Muted>
+							</div>
+
+							<div className="flex flex-2 flex-col gap-3">
+								<Controller
+									name="skills"
+									control={control}
+									render={({ field }) => (
+										<SkillSelector
+											values={field.value}
+											onChange={field.onChange}
+											className="h-112"
 										/>
 									)}
 								/>

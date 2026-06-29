@@ -39,6 +39,7 @@ export interface Workspace {
 	description: string;
 	system_prompt: string;
 	mcp: MCPConfig[];
+	skills: SkillConfig[];
 	prompts: string[];
 }
 
@@ -57,7 +58,13 @@ export interface Instructions {
 }
 
 // Re-export types from shared to avoid breaking existing imports
-export type { MCP, MCPConfig, Prompt } from "@semoss/shared";
+export type {
+	MCP,
+	MCPConfig,
+	Prompt,
+	Skill,
+	SkillConfig,
+} from "@semoss/shared";
 
 /**
  * Messages from the backend
