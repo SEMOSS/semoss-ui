@@ -12,14 +12,21 @@ export type ChunkStatus = "done" | "active" | "not_started";
  * @param onComplete optional — called when the *last* item reports completion,
  *                   so a parent queue can learn this whole queue has caught up.
  *                   The parent's own guard decides whether to actually advance.
+ * @param startAtLatest optional — on a return view, seed at the latest item so
+ *                   we jump straight to the frontier instead of replaying the
+ *                   reveal from the start. Only seeds the initial index; once
+ *                   mounted the queue advances normally.
  */
 export const useActiveIndex = (
 	length: number,
 	isActive: boolean,
 	onComplete?: () => void,
+	startAtLatest = false,
 ) => {
 	// Index of the item currently allowed to animate.
-	const [activeIndex, setActiveIndex] = useState(0);
+	const [activeIndex, setActiveIndex] = useState(
+		startAtLatest ? Math.max(0, length - 1) : 0,
+	);
 
 	// Keep onComplete in a ref so it's never a dependency below — callers may
 	// pass a fresh closure each render, and we don't want to regenerate

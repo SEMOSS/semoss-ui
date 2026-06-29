@@ -30,6 +30,14 @@ interface ResponseMessageTextProps {
 	 * (it holds while this is the last part and the message is still streaming).
 	 */
 	onComplete: () => void;
+
+	/**
+	 * First time the user is seeing this message stream (vs returning to one
+	 * already in progress). On a first view chunks animate from 0; on a return
+	 * the chunk queue seeds at the latest chunk and the typewriter at the latest
+	 * content, so we jump to the frontier instead of replaying.
+	 */
+	isFirstView: boolean;
 }
 
 /**
@@ -41,7 +49,7 @@ interface ResponseMessageTextProps {
  * parent marks it "done", every chunk renders its full content directly.
  */
 export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
-	({ message, part, status, onComplete }) => {
+	({ message, part, status, onComplete, isFirstView }) => {
 		// This part feeds its internal chunk queue only while it's the active
 		// part. Once "done", the internal queue snaps every chunk to full content.
 		const isActive = status === "active";
@@ -49,11 +57,13 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 		// Parse text into chunks on every render (pure, cheap function). The hook
 		// bubbles `onComplete` to the parent message queue when the last chunk
 		// catches up, so this part reports its own completion without extra wiring.
+		// On a return view, seed at the latest chunk to jump to the frontier.
 		const chunks = parseChunks(part.text);
 		const { chunkCallbacks, getChunkStatus } = useActiveIndex(
 			chunks.length,
 			isActive,
 			onComplete,
+			!isFirstView,
 		);
 
 		// An empty text part has nothing to animate — report complete so the
@@ -89,6 +99,7 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 							status={getChunkStatus(idx)}
 							message={message}
 							onComplete={chunkCallbacks[idx]}
+							isFirstView={isFirstView}
 						/>
 					);
 				})}

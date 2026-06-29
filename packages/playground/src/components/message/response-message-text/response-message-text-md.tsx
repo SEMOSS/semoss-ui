@@ -23,18 +23,26 @@ interface ResponseMessageTextMdProps {
 
 	/** Called when animation completes so the parent can advance to the next chunk. */
 	onComplete: () => void;
+
+	/**
+	 * First time the user is seeing this message stream. On a first view the
+	 * typewriter animates from 0; on a return it baselines at the content present
+	 * on mount, so already-streamed text shows instantly and only new tokens type.
+	 */
+	isFirstView: boolean;
 }
 
 export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
-	observer(({ content, status, message, onComplete }) => {
+	observer(({ content, status, message, onComplete, isFirstView }) => {
 		const { root } = useRoot();
 
 		// ── Content tracking ──────────────────────────────────────────────────────
-		// Snapshot content that existed at mount so the typewriter only animates
-		// content that arrives *after* this component mounted. This handles the
-		// navigate-away-and-return case — on remount the typewriter starts from
-		// whatever the chunk already contains.
-		const contentOnMountRef = useRef(content);
+		// Baseline the typewriter only animates content *after*. On a first view
+		// we start from 0 so the whole chunk types out, even if some content had
+		// already buffered before this chunk's turn came up. On a return view we
+		// baseline at the content present on mount, so already-streamed text shows
+		// instantly and only net-new tokens animate (jump to latest, no replay).
+		const contentOnMountRef = useRef(isFirstView ? "" : content);
 
 		// Content that arrived after this component mounted (the part to animate)
 		const newContent = content.slice(contentOnMountRef.current.length);

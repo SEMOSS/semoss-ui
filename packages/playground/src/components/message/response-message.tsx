@@ -88,6 +88,22 @@ const getExtIcon = (fileName: string) => {
 	return { Icon: FileIcon, ext };
 };
 
+/**
+ * Whether the message has streamed any real content yet. A freshly-created
+ * streaming message is seeded with a single empty THINKING part, so an empty
+ * thinking string with no other parts means nothing has streamed. Used to tell
+ * a first view (start animations from 0) apart from a return view (jump to the
+ * latest part/chunk/content).
+ */
+const hasStreamedContent = (message: ResponseMessageStore) =>
+	message.parts.some(
+		(part) =>
+			(part.type === "TEXT" && part.text.length > 0) ||
+			(part.type === "THINKING" && part.thinking.length > 0) ||
+			part.type === "TOOL_CALL" ||
+			part.type === "MEDIA",
+	);
+
 interface ResponseMessageProps {
 	/** Room */
 	room: RoomStore;
@@ -123,13 +139,24 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		);
 		const feedbackTextRef = useRef<HTMLTextAreaElement>(null);
 
+		// Captured once at mount: was this the first time we saw this message
+		// stream (it had no content yet), or are we returning to one already in
+		// progress? Drives whether animations play from 0 or jump to the latest
+		// part/chunk/content. Anchored here at the message level so a late-
+		// mounting part (e.g. text revealed after thinking) still inherits the
+		// correct decision instead of inferring it from its own mount.
+		const [isFirstView] = useState(() => !hasStreamedContent(message));
+
 		// Sequential reveal queue: parts animate in order, each waiting for the
 		// part above to finish. Text parts type via their own nested typewriter;
 		// thinking/media/tool parts snap to their final state but still wait their
-		// turn. Once the message stops streaming, every part renders in full.
+		// turn. Once the message stops streaming, every part renders in full. On a
+		// return view, seed at the latest part to jump straight to the frontier.
 		const { chunkCallbacks, getChunkStatus } = useActiveIndex(
 			message.parts.length,
 			message.isThinking,
+			undefined,
+			!isFirstView,
 		);
 
 		// Non-text parts (thinking, media, tools) snap to their final state, so
@@ -352,6 +379,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									part={p}
 									status={status}
 									onComplete={chunkCallbacks[pIdx]}
+									isFirstView={isFirstView}
 								/>
 							);
 						} else if (p.type === "MEDIA") {
