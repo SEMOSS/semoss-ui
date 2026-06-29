@@ -39,7 +39,7 @@ export interface WorkspaceStoreInterface {
 	/**
 	 * Type of the app
 	 */
-	type: "BLOCKS" | "CODE" | "SKILL" | "WORKSPACE";
+	type: "BLOCKS" | "CODE" | "SKILL" | "WORKSPACE" | "WORKFLOW";
 
 	/**
 	 * Model associated with the layout
@@ -120,7 +120,7 @@ export interface WorkspaceConfigInterface {
 	/**
 	 * Type of the app
 	 */
-	type: "BLOCKS" | "CODE" | "SKILL" | "WORKSPACE";
+	type: "BLOCKS" | "CODE" | "SKILL" | "WORKSPACE" | "WORKFLOW";
 
 	/**
 	 * Metadata associated with the loaded app

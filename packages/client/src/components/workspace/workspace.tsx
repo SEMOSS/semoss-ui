@@ -24,6 +24,11 @@ const AgentWorkspace = lazy(() =>
 		default: m.AgentWorkspace,
 	})),
 );
+const WorkflowWorkspace = lazy(() =>
+	import("@/components/workflow-workspace").then((m) => ({
+		default: m.WorkflowWorkspace,
+	})),
+);
 
 import { useRootStore } from "@/hooks";
 import type { WorkspaceStore } from "@/stores";
@@ -123,6 +128,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
 				{workspace.type === "BLOCKS" && <BlocksWorkspace />}
 				{workspace.type === "SKILL" && <SkillWorkspace />}
 				{workspace.type === "WORKSPACE" && <AgentWorkspace />}
+				{workspace.type === "WORKFLOW" && <WorkflowWorkspace />}
 			</Suspense>
 		</WorkspaceContext.Provider>
 	);

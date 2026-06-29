@@ -816,6 +816,8 @@ export class ConfigStore {
 			workspace.type = "SKILL";
 		} else if (metadata.project_type === "WORKSPACE") {
 			workspace.type = "WORKSPACE";
+		} else if (metadata.project_type === "WORKFLOW") {
+			workspace.type = "WORKFLOW";
 		}
 
 		// create the newly loaded workspace

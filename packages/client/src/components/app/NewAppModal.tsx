@@ -29,7 +29,10 @@ type NewAppForm = {
 
 interface NewAppModalProps {
 	open: boolean;
-	options: { type: "blocks"; state: SerializedState } | { type: "code" };
+	options:
+		| { type: "blocks"; state: SerializedState }
+		| { type: "code" }
+		| { type: "workflow" };
 	onClose: (appId?: string) => void;
 }
 
@@ -169,6 +172,42 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
 					if (operationType.indexOf("ERROR") > -1) {
 						toast.error(output);
+					}
+				}
+			} else if (type === "workflow") {
+				const pixel = `CreateProject(project=["${data.APP_NAME}"], portal=[true], projectType=["WORKFLOW"]);`;
+				const { errors, pixelReturn } =
+					await monolithStore.runQuery<[AppMetadata]>(pixel);
+
+				if (errors.length > 0) throw new Error(errors.join(","));
+
+				appId = pixelReturn[0].output.project_id;
+
+				if (data.APP_IMG && appId) {
+					await uploadImage(
+						data.APP_IMG,
+						appId,
+						configStore.store.insightID,
+					);
+				}
+
+				if (data.APP_TAGS.length || data.APP_DESCRIPTION) {
+					const setProjectMetadataResponse =
+						await monolithStore.runQuery(
+							`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
+								{
+									tag: data.APP_TAGS,
+									description: data.APP_DESCRIPTION,
+								},
+							)}])`,
+						);
+					const output =
+						setProjectMetadataResponse.pixelReturn[0].output;
+					const operationType =
+						setProjectMetadataResponse.pixelReturn[0].operationType;
+					if (operationType.indexOf("ERROR") > -1) {
+						toast.error(output);
+						return;
 					}
 				}
 			} else {
