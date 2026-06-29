@@ -17,6 +17,7 @@
 		"outDir": "./dist",
 		"declarationDir": "./dist/types",
 		"emitDeclarationOnly": true,
+		"importHelpers": false,
 
 		/* Skip */
 		"skipLibCheck": true,

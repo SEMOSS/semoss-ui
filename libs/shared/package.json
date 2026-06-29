@@ -28,6 +28,7 @@
   "devDependencies": {
     "@types/react": "18.3.1",
     "@types/react-dom": "18.3.0",
+    "tslib": "2.5.3",
     "typescript": "~5.5.2"
   },
   "peerDependencies": {}

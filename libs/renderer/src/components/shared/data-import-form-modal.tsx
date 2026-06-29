@@ -254,7 +254,14 @@ export const DataImportFormModal = observer(
 			if (getDatabases.status !== "SUCCESS") {
 				return;
 			}
-			setUserDatabases(getDatabases.data);
+			setUserDatabases(
+				getDatabases.data as Array<{
+					database_id: string;
+					app_name: string;
+					database_type?: string;
+					database_subtype?: string;
+				}>,
+			);
 		}, [getDatabases.status, getDatabases.data]);
 
 		const selectedDatabase = useMemo(
