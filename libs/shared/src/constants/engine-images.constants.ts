@@ -1,3 +1,4 @@
+/// <reference path="../vite-env.d.ts" />
 // Shared engine/subtype image lookup used outside import pages.
 // Keep in sync with import constants mappings where needed.
 //

@@ -97,7 +97,8 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 				`LLM(engine = "${modelId}", command = "${prompt}", paramValues = [ {"max_completion_tokens": 2000, "temperature": 0.3} ] );`,
 			);
 
-			const LLMResponse = res.pixelReturn[0].output.response;
+			// biome-ignore lint/suspicious/noExplicitAny: pixel response output type is unknown
+			const LLMResponse = (res.pixelReturn[0].output as any).response;
 			let trimmedStarterCode = LLMResponse;
 			trimmedStarterCode = LLMResponse.replace(/^```|```$/g, "");
 			trimmedStarterCode = trimmedStarterCode.substring(
