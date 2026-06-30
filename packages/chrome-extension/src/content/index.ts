@@ -111,6 +111,54 @@ window.addEventListener("message", (event) => {
 
 void ensureFloatingPanel();
 
+const handleAutomationBridgeMessage = (event: MessageEvent) => {
+	// Only accept messages from this page or same-origin embedded tool UIs.
+	if (event.origin !== window.location.origin) {
+		return;
+	}
+
+	if (event.data?.type === "SMSS_EXTENSION_PING") {
+		if (!isExtensionContextValid()) {
+			return;
+		}
+
+		window.postMessage(
+			{
+				type: "SMSS_EXTENSION_PONG",
+				timestamp: Date.now(),
+			},
+			window.location.origin,
+		);
+
+		return;
+	}
+
+	if (event.data?.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT") {
+		if (!isExtensionContextValid()) {
+			console.warn("[CONTENT SCRIPT] Extension context invalidated!");
+			alert(
+				"Chrome Extension was reloaded. Please refresh this page to execute Playwright scripts.",
+			);
+			return;
+		}
+
+		void ensureFloatingPanel().then(() => {
+			chrome.runtime
+				.sendMessage({
+					type: "SMSS_EXEC_PLAYWRIGHT_SCRIPT",
+					script: event.data.script,
+				})
+				.catch(() => {
+					console.warn(
+						"[CONTENT] Failed to send Playwright script to extension runtime",
+					);
+				});
+		});
+	}
+};
+
+window.addEventListener("message", handleAutomationBridgeMessage);
+
 // Check if current page is playground
 function checkIfPlayground() {
 	// Check if URL contains playground patterns
@@ -160,53 +208,6 @@ function setupPlaygroundListeners() {
 			data: event.detail,
 		});
 	}) as EventListener);
-
-	// Listen for Playwright script execution requests from Playground
-	const messageHandler = (event: MessageEvent) => {
-		// Log all messages for debugging
-
-		// Only accept messages from same origin
-		if (event.origin !== window.location.origin) {
-			return;
-		}
-
-		// Handle ping request from playground to extension
-		if (event.data && event.data.type === "SMSS_EXTENSION_PING") {
-			console.log(
-				"[CONTENT] 🏓 Received PING from Playground - forwarding to extension",
-			);
-			chrome.runtime
-				.sendMessage(event.data)
-				.then(() => {
-					// Successfully sent ping to extension
-				})
-				.catch(() => {
-					// Extension not available - no pong will be sent
-					console.warn(
-						"[CONTENT] ❌ Failed to send PING - extension may not be available",
-					);
-				});
-			return;
-		}
-
-		if (event.data && event.data.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT") {
-			if (!isExtensionContextValid()) {
-				console.warn("[CONTENT SCRIPT] Extension context invalidated!");
-				alert(
-					"Chrome Extension was reloaded. Please refresh this page to execute Playwright scripts.",
-				);
-				return;
-			}
-
-			// Forward to extension panel
-			chrome.runtime.sendMessage({
-				type: "SMSS_EXEC_PLAYWRIGHT_SCRIPT",
-				script: event.data.script,
-			});
-		}
-	};
-
-	window.addEventListener("message", messageHandler);
 }
 
 checkIfPlayground();

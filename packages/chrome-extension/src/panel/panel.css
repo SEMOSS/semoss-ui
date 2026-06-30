@@ -866,10 +866,21 @@ body,
 }
 
 .floating-launcher-icon {
-  font-size: 24px;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: 0;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.floating-launcher-icon svg {
+  width: 34px;
+  height: 34px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .floating-launcher--busy .floating-launcher-icon {

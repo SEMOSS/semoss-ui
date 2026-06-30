@@ -935,7 +935,17 @@ const PanelApp: React.FC = () => {
 				aria-label={launcherStatus}
 				title={launcherStatus}
 			>
-				<span className="floating-launcher-icon">S</span>
+				<span className="floating-launcher-icon" aria-hidden="true">
+					<svg viewBox="0 0 28 28">
+						<title>Browser automation</title>
+						<rect x="4" y="5" width="20" height="16" rx="3" />
+						<path d="M4 10h20" />
+						<path d="M9 8h.01" />
+						<path d="M13 8h.01" />
+						<path d="M12 15l4 2-3 2.5 1.5 3" />
+						<path d="M17.5 17.5l2 2" />
+					</svg>
+				</span>
 				{(loadingStatus || runningStatus) && (
 					<span
 						className="floating-launcher-spinner"
