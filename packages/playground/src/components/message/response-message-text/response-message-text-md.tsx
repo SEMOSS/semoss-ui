@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Markdown } from "@semoss/ui/next";
 import { type ChunkStatus, useRoot } from "@/hooks";
 import { useMarkdownTypewriter } from "@/hooks/use-markdown-typewriter";
@@ -76,7 +76,9 @@ export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
 		//   (parent decides whether to actually advance based on whether this is the
 		//   last chunk + isThinking).
 		// - Otherwise, if it isn't running, start it.
-		(() => {
+		// In an effect (not render) since onComplete updates the parent queue —
+		// doing it during render would update a different component mid-render.
+		useEffect(() => {
 			if (status !== "active") return;
 
 			const caughtUp =
@@ -91,7 +93,14 @@ export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
 			if (!typewriter.isTyping) {
 				typewriter.start();
 			}
-		})();
+		}, [
+			status,
+			typewriter.isTyping,
+			typewriter.rendered.length,
+			content.length,
+			onComplete,
+			typewriter.start,
+		]);
 
 		// ── Render ────────────────────────────────────────────────────────────────
 		// not_started chunks render nothing — they mount invisibly and wait for

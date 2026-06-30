@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useMemo } from "react";
 import { type ChunkStatus, useActiveIndex } from "@/hooks";
 import type { ResponseMessageStore } from "@/stores";
 import type { PixelMessageTextPart } from "@/types";
@@ -54,11 +55,13 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 		// part. Once "done", the internal queue snaps every chunk to full content.
 		const isActive = status === "active";
 
-		// Parse text into chunks on every render (pure, cheap function). The hook
-		// bubbles `onComplete` to the parent message queue when the last chunk
-		// catches up, so this part reports its own completion without extra wiring.
-		// On a return view, seed at the latest chunk to jump to the frontier.
-		const chunks = parseChunks(part.text);
+		// Parse text into ordered md/html chunks. Memoized on the text so a
+		// streaming message (which re-renders per token) doesn't re-scan the full
+		// string every render. The hook bubbles `onComplete` to the parent message
+		// queue when the last chunk catches up, so this part reports its own
+		// completion without extra wiring. On a return view, seed at the latest
+		// chunk to jump to the frontier.
+		const chunks = useMemo(() => parseChunks(part.text), [part.text]);
 		const { chunkCallbacks, getChunkStatus } = useActiveIndex(
 			chunks.length,
 			isActive,
