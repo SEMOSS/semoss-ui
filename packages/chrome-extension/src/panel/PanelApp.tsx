@@ -24,6 +24,10 @@ type FloatingPanelExternalStatus = {
 	isRunning?: boolean;
 	needsInput?: boolean;
 	message?: string;
+	recordingName?: string;
+	currentStep?: string;
+	stepIndex?: number;
+	stepCount?: number;
 };
 
 const PanelApp: React.FC = () => {
@@ -58,6 +62,11 @@ const PanelApp: React.FC = () => {
 	const [currentTabId, setCurrentTabId] = useState<number | null>(null);
 	const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const activeStatusTabIdRef = useRef<number | null>(null);
+	const activeRunTabIdsRef = useRef<Set<number>>(new Set());
+	const activeRunContextRef = useRef<{
+		recordingName?: string;
+		stepCount?: number;
+	}>({});
 	const dragStateRef = useRef<{
 		pointerId: number;
 		lastX: number;
@@ -73,15 +82,45 @@ const PanelApp: React.FC = () => {
 		if (!tabId) return;
 
 		activeStatusTabIdRef.current = tabId;
+		activeRunTabIdsRef.current.add(tabId);
+		const statusWithContext = {
+			...activeRunContextRef.current,
+			...status,
+		};
 		chrome.runtime
 			.sendMessage({
 				type: "UPDATE_FLOATING_PANEL_STATUS",
 				tabId,
-				status,
+				status: statusWithContext,
 			})
 			.catch(() => {
 				// Target tabs may not have the content script available yet.
 			});
+	};
+
+	const publishFloatingStatusToRunTabs = (
+		status: FloatingPanelExternalStatus,
+	) => {
+		activeRunTabIdsRef.current.forEach((tabId) => {
+			publishFloatingStatus(tabId, status);
+		});
+	};
+
+	const formatActionStatus = (
+		action: { type: string; label?: string; url?: string },
+		stepIndex: number,
+		stepCount: number,
+	): FloatingPanelExternalStatus => {
+		const actionLabel = action.label || action.url || action.type;
+
+		return {
+			isRunning: true,
+			needsInput: false,
+			currentStep: `${action.type.toUpperCase()}${actionLabel ? `: ${actionLabel}` : ""}`,
+			stepIndex,
+			stepCount,
+			message: `Step ${stepIndex} of ${stepCount}`,
+		};
 	};
 
 	const startFloatingDrag = (event: React.PointerEvent<HTMLElement>) => {
@@ -282,6 +321,10 @@ const PanelApp: React.FC = () => {
 				const script = message.script;
 				const sourceTabId =
 					message.sourceTabId || (hasHostTabId ? hostTabId : null);
+				activeRunTabIdsRef.current = new Set();
+				activeRunContextRef.current = {
+					recordingName: script?.name || "Playwright recording",
+				};
 
 				setIsScriptLoading(true);
 				setIsCollapsed(false);
@@ -517,6 +560,10 @@ const PanelApp: React.FC = () => {
 					script as PlaywrightScript,
 				);
 			}
+			activeRunContextRef.current = {
+				...activeRunContextRef.current,
+				stepCount: actions.length,
+			};
 			addToHistory(`✓ Found ${actions.length} actions to execute`);
 
 			// Find the first navigate action (might not be the very first action)
@@ -580,6 +627,7 @@ const PanelApp: React.FC = () => {
 				isRunning: true,
 				needsInput: false,
 				message: "Running automation",
+				stepCount: actions.length,
 			});
 			tabMap.set("tab-1", targetTabId); // First tab is the target tab
 			let currentTabId = targetTabId;
@@ -634,6 +682,12 @@ const PanelApp: React.FC = () => {
 							addToHistory(
 								`✓ Switched to new tab: ${action.tabId}`,
 							);
+							publishFloatingStatus(currentTabId, {
+								isRunning: true,
+								needsInput: false,
+								message: "Running automation",
+								stepCount: actions.length,
+							});
 
 							// Attach debugger to the new tab
 							try {
@@ -681,6 +735,12 @@ const PanelApp: React.FC = () => {
 							active: true,
 						});
 						addToHistory(`✓ Switched to tab: ${action.tabId}`);
+						publishFloatingStatus(currentTabId, {
+							isRunning: true,
+							needsInput: false,
+							message: "Running automation",
+							stepCount: actions.length,
+						});
 
 						// Attach debugger to the new tab
 						try {
@@ -725,6 +785,10 @@ const PanelApp: React.FC = () => {
 				addToHistory(
 					`${actionCounter}. ${action.type.toUpperCase()}${action.label ? `: ${action.label}` : ""}`,
 				);
+				publishFloatingStatus(
+					currentTabId,
+					formatActionStatus(action, actionCounter, actions.length),
+				);
 
 				// Handle ask user for TYPE actions
 				const onAskUser = async (
@@ -747,6 +811,7 @@ const PanelApp: React.FC = () => {
 							isRunning: true,
 							needsInput: true,
 							message: "Input required",
+							currentStep: label,
 						});
 
 						// Highlight the field on the webpage while the dialog is open
@@ -857,6 +922,13 @@ const PanelApp: React.FC = () => {
 						addToHistory(
 							`✓ New tab created: ${action.isTriggerNewTab.tabId}`,
 						);
+						publishFloatingStatus(currentTabId, {
+							isRunning: true,
+							needsInput: false,
+							message: "Running automation",
+							stepIndex: actionCounter,
+							stepCount: actions.length,
+						});
 
 						// Make the new tab active
 						await chrome.tabs.update(currentTabId, {
@@ -928,12 +1000,15 @@ const PanelApp: React.FC = () => {
 		} finally {
 			setIsRunning(false);
 			setIsScriptLoading(false);
-			publishFloatingStatus(activeStatusTabIdRef.current, {
+			publishFloatingStatusToRunTabs({
 				isLoading: false,
 				isRunning: false,
 				needsInput: false,
 				message: "Automation complete",
 			});
+			activeStatusTabIdRef.current = null;
+			activeRunTabIdsRef.current = new Set();
+			activeRunContextRef.current = {};
 		}
 	};
 
@@ -1096,9 +1171,17 @@ const PanelApp: React.FC = () => {
 					!isRunning &&
 					actionHistory.length === 0 && (
 						<div className="external-status-banner">
+							{externalStatus.recordingName && (
+								<strong>{externalStatus.recordingName}</strong>
+							)}
 							<span>
 								{externalStatus.message || launcherStatus}
 							</span>
+							{externalStatus.currentStep && (
+								<span className="external-status-step">
+									{externalStatus.currentStep}
+								</span>
+							)}
 						</div>
 					)}
 

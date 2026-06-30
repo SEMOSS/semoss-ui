@@ -827,8 +827,10 @@ body,
 
 .external-status-banner {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   min-height: 96px;
   padding: 16px;
   border: 1px solid rgba(37, 99, 235, 0.2);
@@ -838,6 +840,12 @@ body,
   font-size: 14px;
   font-weight: 600;
   text-align: center;
+}
+
+.external-status-step {
+  color: #475569;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .steps-loading-spinner,
