@@ -126,6 +126,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 											popoverContentProps={{
 												align: "start",
 											}}
+											showEngineIcon={false}
 										/>
 									</div>
 								</Field>

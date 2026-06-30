@@ -910,6 +910,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													contextTooltipContent={
 														contextTooltipContent
 													}
+													showEngineIcon={false}
 												/>
 											)}
 										</div>
