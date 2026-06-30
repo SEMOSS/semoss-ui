@@ -1,8 +1,107 @@
 // Background service worker for the extension
 import { enhancedClick, enhancedSetValue } from "./enhancedActions";
 
+const AUTOMATION_RUN_STATE_STORAGE_KEY = "semoss-automation-run-state";
+
+type AutomationRunState = {
+	active: boolean;
+	status:
+		| "idle"
+		| "loading"
+		| "running"
+		| "needs-input"
+		| "complete"
+		| "failed";
+	recordingName?: string;
+	message?: string;
+	currentStep?: string;
+	stepIndex?: number;
+	stepCount?: number;
+	history: string[];
+	tabIds: number[];
+	updatedAt: number;
+};
+
 // Track which tabs have debuggers attached
 const attachedDebuggers = new Set<number>();
+let automationRunState: AutomationRunState = {
+	active: false,
+	status: "idle",
+	history: [],
+	tabIds: [],
+	updatedAt: Date.now(),
+};
+let hasAutomationRunStateUpdates = false;
+
+chrome.storage.local
+	.get(AUTOMATION_RUN_STATE_STORAGE_KEY)
+	.then((stored) => {
+		const value = stored[AUTOMATION_RUN_STATE_STORAGE_KEY];
+		if (!hasAutomationRunStateUpdates && value?.updatedAt) {
+			automationRunState = value;
+		}
+	})
+	.catch(() => {
+		// Shared run state can start fresh if storage is unavailable.
+	});
+
+function persistAutomationRunState() {
+	chrome.storage.local
+		.set({
+			[AUTOMATION_RUN_STATE_STORAGE_KEY]: automationRunState,
+		})
+		.catch(() => {
+			// State broadcasts still work even if persistence fails.
+		});
+}
+
+function broadcastAutomationRunState() {
+	chrome.runtime
+		.sendMessage({
+			type: "AUTOMATION_RUN_STATE_UPDATED",
+			state: automationRunState,
+		})
+		.catch(() => {
+			// No panel may be listening yet.
+		});
+}
+
+function updateAutomationRunState(message: {
+	state?: Partial<AutomationRunState>;
+	appendHistory?: string;
+	tabId?: number;
+}) {
+	hasAutomationRunStateUpdates = true;
+	const existingTabIds = new Set(automationRunState.tabIds);
+	if (message.tabId) {
+		existingTabIds.add(message.tabId);
+	}
+	message.state?.tabIds?.forEach((tabId) => {
+		existingTabIds.add(tabId);
+	});
+
+	automationRunState = {
+		...automationRunState,
+		...message.state,
+		history: message.state?.history ?? automationRunState.history,
+		tabIds: Array.from(existingTabIds),
+		updatedAt: Date.now(),
+	};
+
+	if (message.appendHistory) {
+		automationRunState = {
+			...automationRunState,
+			history: [
+				...automationRunState.history,
+				message.appendHistory,
+			].slice(-80),
+			updatedAt: Date.now(),
+		};
+	}
+
+	persistAutomationRunState();
+	broadcastAutomationRunState();
+}
 
 // Handle extension icon click to toggle the floating on-page panel
 chrome.action.onClicked.addListener((tab) => {
@@ -205,6 +304,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	}
 
 	switch (message.type) {
+		case "GET_AUTOMATION_RUN_STATE":
+			sendResponse({ state: automationRunState });
+			return true;
+
+		case "UPDATE_AUTOMATION_RUN_STATE":
+			updateAutomationRunState(message);
+			sendResponse({ success: true, state: automationRunState });
+			return true;
+
 		case "GET_CURRENT_TAB":
 			chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
 				sendResponse({ tabId: tabs[0]?.id });

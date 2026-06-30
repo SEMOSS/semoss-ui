@@ -30,6 +30,27 @@ type FloatingPanelExternalStatus = {
 	stepCount?: number;
 };
 
+type AutomationRunState = {
+	active: boolean;
+	status:
+		| "idle"
+		| "loading"
+		| "running"
+		| "needs-input"
+		| "complete"
+		| "failed";
+	recordingName?: string;
+	message?: string;
+	currentStep?: string;
+	stepIndex?: number;
+	stepCount?: number;
+	history: string[];
+	tabIds: number[];
+	updatedAt: number;
+};
+
+type AutomationRunStatePatch = Partial<AutomationRunState>;
+
 const PanelApp: React.FC = () => {
 	const searchParams = new URLSearchParams(window.location.search);
 	const isFloatingPanel = searchParams.get("floating") === "1";
@@ -42,6 +63,8 @@ const PanelApp: React.FC = () => {
 	const [isCollapsed, setIsCollapsed] = useState(isFloatingPanel);
 	const [externalStatus, setExternalStatus] =
 		useState<FloatingPanelExternalStatus | null>(null);
+	const [sharedRunState, setSharedRunState] =
+		useState<AutomationRunState | null>(null);
 	const [actionHistory, setActionHistory] = useState<string[]>([]);
 	const [waitingForUserInput, setWaitingForUserInput] = useState(false);
 	const [userInputPrompt, setUserInputPrompt] = useState("");
@@ -75,6 +98,60 @@ const PanelApp: React.FC = () => {
 	} | null>(null);
 	const suppressNextClickRef = useRef(false);
 
+	const getAutomationStatus = (
+		status: FloatingPanelExternalStatus,
+	): AutomationRunState["status"] => {
+		if (status.needsInput) return "needs-input";
+		if (status.isLoading) return "loading";
+		if (status.isRunning) return "running";
+		if (status.message?.toLowerCase().includes("failed")) return "failed";
+		if (status.message?.toLowerCase().includes("complete"))
+			return "complete";
+		return "idle";
+	};
+
+	const publishAutomationRunState = (
+		status: FloatingPanelExternalStatus,
+		tabId?: number | null,
+		appendHistory?: string,
+		state?: AutomationRunStatePatch,
+	) => {
+		const automationStatus = getAutomationStatus(status);
+		const hasStatusUpdate = Object.keys(status).length > 0;
+		const statePatch: AutomationRunStatePatch = {
+			...(hasStatusUpdate
+				? {
+						active:
+							automationStatus === "loading" ||
+							automationStatus === "running" ||
+							automationStatus === "needs-input",
+						status: automationStatus,
+						recordingName:
+							status.recordingName ||
+							activeRunContextRef.current.recordingName,
+						message: status.message,
+						currentStep: status.currentStep,
+						stepIndex: status.stepIndex,
+						stepCount:
+							status.stepCount ||
+							activeRunContextRef.current.stepCount,
+					}
+				: {}),
+			...state,
+		};
+
+		chrome.runtime
+			.sendMessage({
+				type: "UPDATE_AUTOMATION_RUN_STATE",
+				state: statePatch,
+				appendHistory,
+				tabId,
+			})
+			.catch(() => {
+				// Shared state is best effort; execution should continue without it.
+			});
+	};
+
 	const publishFloatingStatus = (
 		tabId: number | null | undefined,
 		status: FloatingPanelExternalStatus,
@@ -87,6 +164,7 @@ const PanelApp: React.FC = () => {
 			...activeRunContextRef.current,
 			...status,
 		};
+		publishAutomationRunState(statusWithContext, tabId);
 		chrome.runtime
 			.sendMessage({
 				type: "UPDATE_FLOATING_PANEL_STATUS",
@@ -275,6 +353,37 @@ const PanelApp: React.FC = () => {
 		};
 	}, []);
 
+	useEffect(() => {
+		chrome.runtime
+			.sendMessage({ type: "GET_AUTOMATION_RUN_STATE" })
+			.then((response) => {
+				if (response?.state?.updatedAt) {
+					setSharedRunState(response.state);
+				}
+			})
+			.catch(() => {
+				// The panel can still run without a shared state snapshot.
+			});
+
+		const handleSharedRunState = (message: {
+			type?: string;
+			state?: AutomationRunState;
+		}) => {
+			if (
+				message.type === "AUTOMATION_RUN_STATE_UPDATED" &&
+				message.state
+			) {
+				setSharedRunState(message.state);
+			}
+		};
+
+		chrome.runtime.onMessage.addListener(handleSharedRunState);
+
+		return () => {
+			chrome.runtime.onMessage.removeListener(handleSharedRunState);
+		};
+	}, []);
+
 	// Listen for playground chat events from content script
 	useEffect(() => {
 		const messageListener = (
@@ -325,6 +434,19 @@ const PanelApp: React.FC = () => {
 				activeRunContextRef.current = {
 					recordingName: script?.name || "Playwright recording",
 				};
+				publishAutomationRunState(
+					{
+						isLoading: true,
+						message: "Loading recorded steps",
+					},
+					sourceTabId,
+					undefined,
+					{
+						history: [
+							`🎬 Received script from Playground: ${script.name}`,
+						],
+					},
+				);
 
 				setIsScriptLoading(true);
 				setIsCollapsed(false);
@@ -379,12 +501,28 @@ const PanelApp: React.FC = () => {
 						...prev,
 						`✅ Script loaded: ${script.name}`,
 					]);
+					publishAutomationRunState(
+						{
+							isLoading: true,
+							message: "Loading recorded steps",
+						},
+						sourceTabId,
+						`✅ Script loaded: ${script.name}`,
+					);
 
 					// Auto-execute the script
 					setActionHistory((prev) => [
 						...prev,
 						`▶️ Waiting for page to load before executing script...`,
 					]);
+					publishAutomationRunState(
+						{
+							isLoading: true,
+							message: "Waiting for page load",
+						},
+						sourceTabId,
+						`▶️ Waiting for page to load before executing script...`,
+					);
 
 					// Wait longer and check if page is loaded before executing
 					setTimeout(async () => {
@@ -424,6 +562,14 @@ const PanelApp: React.FC = () => {
 								...prev,
 								`▶️ Page loaded, executing script...`,
 							]);
+							publishAutomationRunState(
+								{
+									isRunning: true,
+									message: "Running automation",
+								},
+								sourceTabId,
+								`▶️ Page loaded, executing script...`,
+							);
 							setIsScriptLoading(false);
 							publishFloatingStatus(sourceTabId, {
 								isLoading: false,
@@ -446,6 +592,15 @@ const PanelApp: React.FC = () => {
 								needsInput: false,
 								message: "Automation failed",
 							});
+							publishAutomationRunState(
+								{
+									isRunning: false,
+									needsInput: false,
+									message: "Automation failed",
+								},
+								sourceTabId,
+								`❌ Error: ${errorMessage}`,
+							);
 							setActionHistory((prev) => [
 								...prev,
 								`❌ Error: ${errorMessage}`,
@@ -1032,22 +1187,55 @@ const PanelApp: React.FC = () => {
 			message.startsWith("❌") // Error messages
 		) {
 			setActionHistory((prev) => [...prev, message]);
+			publishAutomationRunState(
+				{},
+				activeStatusTabIdRef.current,
+				message,
+			);
 		} else {
 			setHistoryCounter((prev) => {
 				const newCount = prev + 1;
-				setActionHistory((history) => [
-					...history,
-					`${newCount}. ${message}`,
-				]);
+				const numberedMessage = `${newCount}. ${message}`;
+				setActionHistory((history) => [...history, numberedMessage]);
+				publishAutomationRunState(
+					{},
+					activeStatusTabIdRef.current,
+					numberedMessage,
+				);
 				return newCount;
 			});
 		}
 	};
 
+	const hasLocalRunState =
+		isScriptLoading ||
+		isRunning ||
+		waitingForUserInput ||
+		actionHistory.length > 0;
+	const sharedStatus =
+		!hasLocalRunState && sharedRunState?.updatedAt
+			? {
+					isLoading: sharedRunState.status === "loading",
+					isRunning: sharedRunState.status === "running",
+					needsInput: sharedRunState.status === "needs-input",
+					message: sharedRunState.message,
+					recordingName: sharedRunState.recordingName,
+					currentStep: sharedRunState.currentStep,
+					stepIndex: sharedRunState.stepIndex,
+					stepCount: sharedRunState.stepCount,
+				}
+			: null;
+	const effectiveExternalStatus = externalStatus || sharedStatus;
+	const displayActionHistory =
+		actionHistory.length > 0
+			? actionHistory
+			: sharedRunState?.history || [];
 	const needsInputStatus =
-		waitingForUserInput || externalStatus?.needsInput === true;
-	const loadingStatus = isScriptLoading || externalStatus?.isLoading === true;
-	const runningStatus = isRunning || externalStatus?.isRunning === true;
+		waitingForUserInput || effectiveExternalStatus?.needsInput === true;
+	const loadingStatus =
+		isScriptLoading || effectiveExternalStatus?.isLoading === true;
+	const runningStatus =
+		isRunning || effectiveExternalStatus?.isRunning === true;
 	const launcherStatus = needsInputStatus
 		? "Input required"
 		: loadingStatus
@@ -1166,20 +1354,23 @@ const PanelApp: React.FC = () => {
 					</output>
 				)}
 
-				{externalStatus &&
+				{effectiveExternalStatus &&
 					!isScriptLoading &&
 					!isRunning &&
-					actionHistory.length === 0 && (
+					displayActionHistory.length === 0 && (
 						<div className="external-status-banner">
-							{externalStatus.recordingName && (
-								<strong>{externalStatus.recordingName}</strong>
+							{effectiveExternalStatus.recordingName && (
+								<strong>
+									{effectiveExternalStatus.recordingName}
+								</strong>
 							)}
 							<span>
-								{externalStatus.message || launcherStatus}
+								{effectiveExternalStatus.message ||
+									launcherStatus}
 							</span>
-							{externalStatus.currentStep && (
+							{effectiveExternalStatus.currentStep && (
 								<span className="external-status-step">
-									{externalStatus.currentStep}
+									{effectiveExternalStatus.currentStep}
 								</span>
 							)}
 						</div>
@@ -1187,18 +1378,18 @@ const PanelApp: React.FC = () => {
 
 				{/* Welcome State - shown when no script is running */}
 				{!isRunning &&
-					actionHistory.length === 0 &&
-					!externalStatus && <WelcomeState />}
+					displayActionHistory.length === 0 &&
+					!effectiveExternalStatus && <WelcomeState />}
 
 				{/* Action History */}
-				{actionHistory.length > 0 && (
+				{displayActionHistory.length > 0 && (
 					<div className="execution-log-wrapper">
 						<Card className="execution-log-card">
 							<h2 className="execution-log-title">
 								Execution Log
 							</h2>
 							<div className="execution-log-list">
-								{actionHistory.map((action, index) => {
+								{displayActionHistory.map((action, index) => {
 									const isError = action.startsWith("❌");
 									const isSuccess = action.startsWith("✅");
 									const isCheckmark = action.startsWith("✓");
