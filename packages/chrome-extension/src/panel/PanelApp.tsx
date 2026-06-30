@@ -58,6 +58,13 @@ const PanelApp: React.FC = () => {
 	const [currentTabId, setCurrentTabId] = useState<number | null>(null);
 	const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const activeStatusTabIdRef = useRef<number | null>(null);
+	const dragStateRef = useRef<{
+		pointerId: number;
+		lastX: number;
+		lastY: number;
+		hasMoved: boolean;
+	} | null>(null);
+	const suppressNextClickRef = useRef(false);
 
 	const publishFloatingStatus = (
 		tabId: number | null | undefined,
@@ -75,6 +82,59 @@ const PanelApp: React.FC = () => {
 			.catch(() => {
 				// Target tabs may not have the content script available yet.
 			});
+	};
+
+	const startFloatingDrag = (event: React.PointerEvent<HTMLElement>) => {
+		if (!isFloatingPanel || event.button !== 0) return;
+
+		dragStateRef.current = {
+			pointerId: event.pointerId,
+			lastX: event.screenX,
+			lastY: event.screenY,
+			hasMoved: false,
+		};
+		event.currentTarget.setPointerCapture(event.pointerId);
+	};
+
+	const moveFloatingPanel = (event: React.PointerEvent<HTMLElement>) => {
+		const dragState = dragStateRef.current;
+		if (!dragState || dragState.pointerId !== event.pointerId) return;
+
+		const deltaX = event.screenX - dragState.lastX;
+		const deltaY = event.screenY - dragState.lastY;
+		if (Math.abs(deltaX) < 1 && Math.abs(deltaY) < 1) return;
+
+		dragState.hasMoved = true;
+		dragState.lastX = event.screenX;
+		dragState.lastY = event.screenY;
+
+		window.parent.postMessage(
+			{
+				type: "SMSS_FLOATING_PANEL_DRAG",
+				deltaX,
+				deltaY,
+			},
+			"*",
+		);
+	};
+
+	const finishFloatingDrag = (event: React.PointerEvent<HTMLElement>) => {
+		const dragState = dragStateRef.current;
+		if (!dragState || dragState.pointerId !== event.pointerId) return;
+
+		if (dragState.hasMoved) {
+			suppressNextClickRef.current = true;
+		}
+
+		dragStateRef.current = null;
+		event.currentTarget.releasePointerCapture(event.pointerId);
+
+		window.parent.postMessage(
+			{
+				type: "SMSS_FLOATING_PANEL_DRAG_END",
+			},
+			"*",
+		);
 	};
 
 	// Auto-scroll to bottom when action history updates
@@ -931,7 +991,18 @@ const PanelApp: React.FC = () => {
 						"floating-launcher--busy",
 					needsInputStatus && "floating-launcher--needs-input",
 				)}
-				onClick={() => setIsCollapsed(false)}
+				onClick={() => {
+					if (suppressNextClickRef.current) {
+						suppressNextClickRef.current = false;
+						return;
+					}
+
+					setIsCollapsed(false);
+				}}
+				onPointerDown={startFloatingDrag}
+				onPointerMove={moveFloatingPanel}
+				onPointerUp={finishFloatingDrag}
+				onPointerCancel={finishFloatingDrag}
 				aria-label={launcherStatus}
 				title={launcherStatus}
 			>
@@ -984,12 +1055,22 @@ const PanelApp: React.FC = () => {
 				isFloatingPanel && "panel-container--floating",
 			)}
 		>
-			<div className="panel-header">
+			<div
+				className={cn(
+					"panel-header",
+					isFloatingPanel && "panel-header--draggable",
+				)}
+				onPointerDown={startFloatingDrag}
+				onPointerMove={moveFloatingPanel}
+				onPointerUp={finishFloatingDrag}
+				onPointerCancel={finishFloatingDrag}
+			>
 				<h1 className="panel-title">Browser Automation</h1>
 				{isFloatingPanel && (
 					<Button
 						type="button"
 						className="panel-collapse-btn"
+						onPointerDown={(event) => event.stopPropagation()}
 						onClick={() => setIsCollapsed(true)}
 						aria-label="Collapse Browser Automation"
 						title="Collapse"

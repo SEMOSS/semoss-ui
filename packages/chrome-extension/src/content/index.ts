@@ -8,6 +8,14 @@ const FLOATING_PANEL_WRAPPER_ID = "semoss-browser-automation-frame";
 const FLOATING_PANEL_COLLAPSED_SIZE = 72;
 const FLOATING_PANEL_EXPANDED_WIDTH = 380;
 const FLOATING_PANEL_EXPANDED_HEIGHT = 620;
+const FLOATING_PANEL_MARGIN = 16;
+const FLOATING_PANEL_POSITION_STORAGE_KEY =
+	"semoss-browser-automation-panel-position";
+
+type FloatingPanelPosition = {
+	left: number;
+	top: number;
+};
 
 let annotatedElements: HTMLElement[] = [];
 const elementIdToUniqueId: Map<number, string> = new Map();
@@ -23,6 +31,7 @@ let fieldMonitoringListeners: {
 let isPlaygroundPage = false;
 let playgroundListenersSetup = false; // Track if listeners have been setup
 let floatingPanelFrame: HTMLIFrameElement | null = null;
+let floatingPanelPosition: FloatingPanelPosition | null = null;
 
 async function getHostTabId(): Promise<number | undefined> {
 	try {
@@ -47,6 +56,95 @@ function sizeFloatingPanel(expanded: boolean) {
 
 	floatingPanelFrame.style.width = `${Math.max(width, FLOATING_PANEL_COLLAPSED_SIZE)}px`;
 	floatingPanelFrame.style.height = `${Math.max(height, FLOATING_PANEL_COLLAPSED_SIZE)}px`;
+	applyFloatingPanelPosition(floatingPanelPosition);
+}
+
+function getFloatingPanelSize() {
+	if (!floatingPanelFrame) {
+		return {
+			width: FLOATING_PANEL_COLLAPSED_SIZE,
+			height: FLOATING_PANEL_COLLAPSED_SIZE,
+		};
+	}
+
+	return {
+		width: floatingPanelFrame.offsetWidth || FLOATING_PANEL_COLLAPSED_SIZE,
+		height:
+			floatingPanelFrame.offsetHeight || FLOATING_PANEL_COLLAPSED_SIZE,
+	};
+}
+
+function getDefaultFloatingPanelPosition(): FloatingPanelPosition {
+	const { width, height } = getFloatingPanelSize();
+
+	return {
+		left: window.innerWidth - width - FLOATING_PANEL_MARGIN,
+		top: window.innerHeight - height - FLOATING_PANEL_MARGIN,
+	};
+}
+
+function clampFloatingPanelPosition(
+	position: FloatingPanelPosition,
+): FloatingPanelPosition {
+	const { width, height } = getFloatingPanelSize();
+	const maxLeft = Math.max(
+		FLOATING_PANEL_MARGIN,
+		window.innerWidth - width - 8,
+	);
+	const maxTop = Math.max(
+		FLOATING_PANEL_MARGIN,
+		window.innerHeight - height - 8,
+	);
+
+	return {
+		left: Math.min(Math.max(8, position.left), maxLeft),
+		top: Math.min(Math.max(8, position.top), maxTop),
+	};
+}
+
+function applyFloatingPanelPosition(position: FloatingPanelPosition | null) {
+	if (!floatingPanelFrame) return;
+
+	floatingPanelPosition = clampFloatingPanelPosition(
+		position ?? getDefaultFloatingPanelPosition(),
+	);
+	floatingPanelFrame.style.left = `${floatingPanelPosition.left}px`;
+	floatingPanelFrame.style.top = `${floatingPanelPosition.top}px`;
+	floatingPanelFrame.style.right = "auto";
+	floatingPanelFrame.style.bottom = "auto";
+}
+
+function saveFloatingPanelPosition() {
+	if (!floatingPanelPosition || !isExtensionContextValid()) return;
+
+	chrome.storage.local
+		.set({
+			[FLOATING_PANEL_POSITION_STORAGE_KEY]: floatingPanelPosition,
+		})
+		.catch(() => {
+			// Persisting the position is best effort only.
+		});
+}
+
+async function loadFloatingPanelPosition() {
+	if (!isExtensionContextValid()) return;
+
+	try {
+		const stored = await chrome.storage.local.get(
+			FLOATING_PANEL_POSITION_STORAGE_KEY,
+		);
+		const value = stored[FLOATING_PANEL_POSITION_STORAGE_KEY];
+
+		if (
+			value &&
+			typeof value.left === "number" &&
+			typeof value.top === "number"
+		) {
+			applyFloatingPanelPosition(value);
+		}
+	} catch {
+		// Keep the default bottom-right position if storage is unavailable.
+	}
 }
 
 async function ensureFloatingPanel() {
@@ -66,8 +164,6 @@ async function ensureFloatingPanel() {
 	frame.src = panelUrl.toString();
 	frame.setAttribute("allow", "clipboard-read; clipboard-write");
 	frame.style.position = "fixed";
-	frame.style.right = "16px";
-	frame.style.bottom = "16px";
 	frame.style.width = `${FLOATING_PANEL_COLLAPSED_SIZE}px`;
 	frame.style.height = `${FLOATING_PANEL_COLLAPSED_SIZE}px`;
 	frame.style.border = "0";
@@ -81,10 +177,13 @@ async function ensureFloatingPanel() {
 
 	document.documentElement.appendChild(frame);
 	floatingPanelFrame = frame;
+	applyFloatingPanelPosition(null);
+	void loadFloatingPanelPosition();
 }
 
 window.addEventListener("resize", () => {
 	if (!floatingPanelFrame) return;
+	applyFloatingPanelPosition(floatingPanelPosition);
 	floatingPanelFrame.contentWindow?.postMessage(
 		{ type: "SMSS_FLOATING_PANEL_REQUEST_STATE" },
 		"*",
@@ -106,6 +205,21 @@ window.addEventListener("message", (event) => {
 		floatingPanelFrame.style.boxShadow = expanded
 			? "0 18px 54px rgba(15, 23, 42, 0.28)"
 			: "0 12px 36px rgba(15, 23, 42, 0.24)";
+	}
+
+	if (event.data?.type === "SMSS_FLOATING_PANEL_DRAG") {
+		const deltaX = Number(event.data.deltaX) || 0;
+		const deltaY = Number(event.data.deltaY) || 0;
+		const nextPosition =
+			floatingPanelPosition ?? getDefaultFloatingPanelPosition();
+		applyFloatingPanelPosition({
+			left: nextPosition.left + deltaX,
+			top: nextPosition.top + deltaY,
+		});
+	}
+
+	if (event.data?.type === "SMSS_FLOATING_PANEL_DRAG_END") {
+		saveFloatingPanelPosition();
 	}
 });
 

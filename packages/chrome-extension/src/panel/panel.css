@@ -46,6 +46,15 @@ body,
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.panel-header--draggable {
+  cursor: grab;
+  user-select: none;
+}
+
+.panel-header--draggable:active {
+  cursor: grabbing;
+}
+
 .panel-title {
   font-size: 18px;
   font-weight: 600;
