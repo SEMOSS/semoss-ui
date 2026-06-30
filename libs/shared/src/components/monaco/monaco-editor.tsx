@@ -1,3 +1,4 @@
+/// <reference path="../../vite-env.d.ts" />
 import { createElement, lazy } from "react";
 
 type MonacoReactModule = typeof import("@monaco-editor/react");
@@ -87,13 +88,16 @@ const ensureMonacoSetup = async () => {
 type EditorProps = React.ComponentProps<MonacoReactModule["Editor"]>;
 type DiffEditorProps = React.ComponentProps<MonacoReactModule["DiffEditor"]>;
 
-const withLtrWrapper = <P extends { wrapperProps?: Record<string, unknown> }>(
+const withLtrWrapper = <P extends { wrapperProps?: object }>(
 	Component: React.ComponentType<P>,
 ) => {
 	const Wrapped: React.FC<P> = (props) =>
 		createElement(Component, {
 			...props,
-			wrapperProps: { dir: "ltr", ...(props.wrapperProps ?? {}) },
+			wrapperProps: {
+				dir: "ltr",
+				...((props.wrapperProps ?? {}) as Record<string, unknown>),
+			},
 		});
 	Wrapped.displayName = `WithLtr(${Component.displayName ?? Component.name ?? "Component"})`;
 	return Wrapped;

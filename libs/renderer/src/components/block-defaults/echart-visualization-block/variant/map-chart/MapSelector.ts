@@ -1,5 +1,5 @@
 export const getSelector = (data, aggregates) => {
-	let fields = "",
+	let fields: Record<string, string> = {},
 		label = "",
 		latitude = "",
 		longitude = "",
