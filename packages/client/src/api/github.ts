@@ -14,6 +14,8 @@ export interface GithubLink {
 	htmlUrl?: string;
 	/** Branch the push webhook syncs the project's local repo to. */
 	branch?: string;
+	/** Optional subdirectory within the repo to sync (monorepo support). */
+	subdir?: string;
 }
 
 /**
@@ -50,6 +52,8 @@ export interface GithubProjectLink {
 	repoId?: number | string;
 	repoFullName?: string;
 	branch?: string;
+	/** Optional subdirectory within the repo to sync (monorepo support). */
+	subdir?: string;
 	createdOn?: string;
 	updatedOn?: string;
 }
@@ -286,6 +290,8 @@ export const selectRepo = async (input: {
 	installationId: number | string;
 	repoId: number | string;
 	branch?: string;
+	/** Subdirectory within the repo to sync. Empty/omitted = full repo. */
+	subdir?: string;
 }): Promise<{ repoFullName: string }> => {
 	const params: Record<string, string> = {
 		projectId: input.projectId,
@@ -294,6 +300,9 @@ export const selectRepo = async (input: {
 	};
 	if (input.branch) {
 		params.branch = input.branch;
+	}
+	if (input.subdir?.trim()) {
+		params.subdir = input.subdir.trim();
 	}
 	const response = await fetch(buildUrl("/github/install/select", params), {
 		method: "POST",

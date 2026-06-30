@@ -18,7 +18,7 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
-import type { Engine } from "@/types";
+import type { Engine } from "../../types";
 import { EngineSubtypeIcon } from "../engine-subtype-icon";
 
 // ============================================================================
