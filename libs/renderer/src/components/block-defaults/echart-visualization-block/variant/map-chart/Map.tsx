@@ -66,7 +66,8 @@ export const Map: BlockComponent = observer(({ id }) => {
 
 	useEffect(() => {
 		const worldJson = fetchWorldMap("");
-		echarts.registerMap("world", worldJson);
+		// biome-ignore lint/suspicious/noExplicitAny: world GeoJSON shape doesn't match strict echarts type
+		echarts.registerMap("world", worldJson as any);
 	}, []);
 
 	const processedData = processData(frame.data, data);
