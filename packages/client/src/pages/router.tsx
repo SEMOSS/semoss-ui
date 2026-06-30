@@ -52,6 +52,11 @@ const NotebookAppPage = lazy(() =>
 		default: m.NotebookAppPage,
 	})),
 );
+const NotebookEmbedPage = lazy(() =>
+	import("./app/NotebookEmbedPage").then((m) => ({
+		default: m.NotebookEmbedPage,
+	})),
+);
 const ViewAppPage = lazy(() =>
 	import("./app/view-app-page").then((m) => ({ default: m.ViewAppPage })),
 );
@@ -130,6 +135,10 @@ export const Router = observer(() => {
 		<Suspense fallback={<PageSpinner />}>
 			<Routes>
 				<Route path="/" element={<AuthenticatedLayout />}>
+					<Route
+						path="s/:appId/notebook"
+						element={<NotebookEmbedPage />}
+					/>
 					<Route path="s/:appId/*" element={<SharePage />} />
 					<Route path="notebook" element={<NotebookAppPage />} />
 					<Route path="*" element={<PageLayout />}>

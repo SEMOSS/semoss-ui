@@ -75,7 +75,7 @@ def _find_blocks_json():
     return None, f"Could not find project folder ending with {PROJECT_ID}"
 
 
-@mcp_metadata({"execution": "auto"})
+@mcp_metadata({"execution": "auto", "resourceURI": "/notebook", "displayLocation": "sidebar", "autoOpen": True})
 def add_cell_to_notebook(code: str, cell_type: str = "py", notebook_id: str = "notebook 1"):
     """
     Adds a new code cell to the notebook with the specified code content.
@@ -158,7 +158,7 @@ def add_cell_to_notebook(code: str, cell_type: str = "py", notebook_id: str = "n
         return f"Error adding cell to notebook: {str(e)}"
 
 
-@mcp_metadata({"execution": "auto"})
+@mcp_metadata({"execution": "auto", "resourceURI": "/notebook", "displayLocation": "sidebar", "autoOpen": True})
 def read_notebook_cells():
     """
     Reads and returns all cells and their code content from the notebook.
@@ -248,7 +248,11 @@ export const buildNotebookMcpManifest = (
 				_meta: {
 					generated_on: today(),
 					SMSS_MCP_EXECUTION: "auto",
-					SMSS_MCP_UI: {},
+					SMSS_MCP_UI: {
+						resourceURI: "/notebook",
+						displayLocation: "sidebar",
+						autoOpen: true,
+					},
 				},
 				_type: "python",
 			},
@@ -266,7 +270,11 @@ export const buildNotebookMcpManifest = (
 				_meta: {
 					generated_on: today(),
 					SMSS_MCP_EXECUTION: "auto",
-					SMSS_MCP_UI: {},
+					SMSS_MCP_UI: {
+						resourceURI: "/notebook",
+						displayLocation: "sidebar",
+						autoOpen: true,
+					},
 				},
 				_type: "python",
 			},
