@@ -42,7 +42,13 @@ const analyzeTools = (tools: ToolStore[]) => {
 	};
 	const loadingOptions: string[] = [];
 
+	// "Resolving" (the call is still streaming in, or in the gap before the
+	// final sync) is distinct from status LOADING (the call is done, the tool is
+	// executing). Both drive the same spinner, but the header copy differs.
+	let isResolving = false;
+
 	for (const tool of tools) {
+		if (!tool.isResolved) isResolving = true;
 		counts[tool.status] = (counts[tool.status] ?? 0) + 1;
 		if (
 			tool.status === "LOADING" &&
@@ -58,7 +64,7 @@ const analyzeTools = (tools: ToolStore[]) => {
 	else if (counts.PAUSED > 0) status = "PAUSED";
 	else if (counts.CANCELLED === tools.length) status = "CANCELLED";
 
-	return { status, counts, loadingOptions };
+	return { status, counts, loadingOptions, isResolving };
 };
 
 interface ResponseMessageToolGroupProps {
@@ -74,8 +80,11 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 		const { t } = useTranslation("tool");
 		const [isOpen, setIsOpen] = useState(false);
 
-		const { status, counts, loadingOptions } = analyzeTools(tools);
-		const { icon } = groupStatusConfig[status];
+		const { status, counts, loadingOptions, isResolving } =
+			analyzeTools(tools);
+		// While still resolving, tools sit at INITIAL (which would otherwise
+		// resolve to the SUCCESS check) — force the spinner instead.
+		const icon = isResolving ? <Spinner /> : groupStatusConfig[status].icon;
 		const isLoading = status === "LOADING";
 
 		const { loadingMessage } = useLoadingMessage(isLoading, loadingOptions);
@@ -110,10 +119,14 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 					<span className="-ms-1.5 truncate text-muted-foreground text-sm">
 						{isOpen
 							? t("group.labelOpen", { count: tools.length })
-							: t("group.labelClosed", {
-									toolName: tools[0].json.title,
-									count: tools.length - 1,
-								})}
+							: isResolving
+								? t("group.labelStreaming", {
+										count: tools.length,
+									})
+								: t("group.labelClosed", {
+										toolName: tools[0].json.title,
+										count: tools.length - 1,
+									})}
 					</span>
 					{isLoading && !isOpen && loadingMessage && (
 						<span className="shrink-0 text-muted-foreground text-sm italic">

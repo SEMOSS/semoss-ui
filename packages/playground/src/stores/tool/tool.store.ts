@@ -127,6 +127,23 @@ export class ToolStore {
 	}
 
 	/**
+	 * Whether the server-resolved tool part has synced. Until it has we only
+	 * have wire-level data (id, raw name, partial args) from the SSE stream — no
+	 * friendly title, description, or `_meta` — so the tool should render as a
+	 * generic loading state rather than exposing the raw wire name. Server tools
+	 * arrive fully resolved in a single sync, so they count as resolved at once.
+	 *
+	 * Distinct from `argumentsStreaming` (only true while deltas are still
+	 * arriving): a tool stays unresolved through the gap between the terminal
+	 * stream chunk and the final `sync()`, which is what prevents a flicker
+	 * there.
+	 */
+	get isResolved(): boolean {
+		const part = this.toolCall.part?.toolCall;
+		return !!part && (part.server_tool === true || !!part.title);
+	}
+
+	/**
 	 * Response for the tool
 	 */
 	response: string = "";

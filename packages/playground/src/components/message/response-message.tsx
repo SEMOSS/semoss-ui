@@ -255,6 +255,10 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		// part index (regardless of completion) so the group always renders at
 		// the top of the tool list even when an auto-execute tool completes first.
 		const getShouldGroupTool = (tool: ToolStore) => {
+			// tools whose call hasn't resolved yet (still streaming in, or in the
+			// gap before the final sync) fold into the group so they show as one
+			// loading cluster rather than separate raw-named pills
+			if (!tool.isResolved) return true;
 			// auto-execute tools should always be grouped
 			if (tool.json._meta.SMSS_MCP_EXECUTION === "auto") return true;
 			// ask tools only enter group when there are no unfinished tools
@@ -456,7 +460,12 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								<Fragment key={key}>
 									{pIdx === firstToolPartIdx &&
 										groupedTools.length > 0 &&
-										(groupedTools.length > 1 ? (
+										// A single tool renders as a group only while it's
+										// still resolving (so it shows as one loading
+										// cluster); once resolved it collapses back to its
+										// own pill.
+										(groupedTools.length > 1 ||
+										!groupedTools[0].isResolved ? (
 											<ResponseMessageToolGroup
 												key={`${key}-group`}
 												message={message}

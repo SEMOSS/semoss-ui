@@ -21,6 +21,8 @@
 	"group": {
 		"labelClosed": "{{toolName}} + {{count}} more",
 		"labelOpen": "Executed Tools ({{count}})",
+		"labelStreaming_one": "Loading {{count}} tool…",
+		"labelStreaming_other": "Loading {{count}} tools…",
 		"summaryCompleted": "{{count}} completed",
 		"summaryError": "{{count}} failed",
 		"summaryCancelled": "{{count}} cancelled",
