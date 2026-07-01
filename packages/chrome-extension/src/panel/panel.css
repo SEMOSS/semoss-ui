@@ -46,6 +46,10 @@ body,
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.panel-container--floating .panel-header {
+  padding: 10px 12px;
+}
+
 .panel-header--draggable {
   cursor: grab;
   user-select: none;
@@ -62,10 +66,18 @@ body,
   letter-spacing: 0.3px;
 }
 
+.panel-container--floating .panel-title {
+  font-size: 15px;
+}
+
 .panel-header-actions {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.panel-container--floating .panel-header-actions {
+  gap: 6px;
 }
 
 .panel-icon-btn,
@@ -89,11 +101,26 @@ body,
 
 .panel-reset-btn {
   height: 30px !important;
-  min-width: 58px !important;
-  padding: 0 10px !important;
-  border-radius: 999px !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
+  min-width: 30px !important;
+  width: 30px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+}
+
+.panel-container--floating .panel-reset-btn {
+  height: 28px !important;
+  min-width: 28px !important;
+  width: 28px !important;
+}
+
+.panel-reset-icon {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .panel-icon-btn {
@@ -103,6 +130,13 @@ body,
   padding: 0 !important;
   border-radius: 50% !important;
   font-size: 20px !important;
+}
+
+.panel-container--floating .panel-icon-btn {
+  width: 28px !important;
+  min-width: 28px !important;
+  height: 28px !important;
+  font-size: 18px !important;
 }
 
 .panel-close-btn {
@@ -133,7 +167,7 @@ body,
 }
 
 .panel-container--floating .panel-content {
-  padding: 14px;
+  padding: 10px;
 }
 
 .execution-log-wrapper {
@@ -153,7 +187,9 @@ body,
 
 .panel-container--floating .execution-log-card {
   min-height: auto;
-  max-height: calc(100vh - 150px);
+  max-height: calc(100vh - 112px);
+  padding: 12px !important;
+  gap: 8px !important;
 }
 
 .execution-log-title {
@@ -177,6 +213,11 @@ body,
   padding: 8px 12px;
   background: #f8fafc;
   transition: all 0.2s ease;
+}
+
+.panel-container--floating .execution-log-item {
+  border-radius: 7px;
+  padding: 7px 9px;
 }
 
 .execution-log-item:hover {
@@ -230,6 +271,11 @@ body,
   line-height: 1.55;
   color: #1f2937;
   letter-spacing: 0.01em;
+}
+
+.panel-container--floating .execution-log-line {
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .execution-log-line--strong {
@@ -502,6 +548,26 @@ body,
   max-width: 520px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.08);
   animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.panel-container--floating .user-input-dialog {
+  width: calc(100% - 28px);
+  min-width: 0;
+  max-width: none;
+  padding: 18px;
+}
+
+.panel-container--floating .user-input-dialog h3 {
+  font-size: 16px;
+}
+
+.panel-container--floating .user-input-dialog p {
+  margin-bottom: 14px;
+  font-size: 13px;
+}
+
+.panel-container--floating .user-input-buttons {
+  margin-top: 14px;
 }
 
 @keyframes slideUp {
@@ -855,6 +921,12 @@ body,
   font-weight: 600;
 }
 
+.panel-container--floating .steps-loading-banner {
+  margin-bottom: 10px;
+  padding: 9px 10px;
+  font-size: 12px;
+}
+
 .external-status-banner {
   display: flex;
   flex-direction: column;
@@ -870,6 +942,13 @@ body,
   font-size: 14px;
   font-weight: 600;
   text-align: center;
+}
+
+.panel-container--floating .external-status-banner {
+  gap: 4px;
+  min-height: 76px;
+  padding: 10px;
+  font-size: 12px;
 }
 
 .external-status-step {
