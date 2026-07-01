@@ -196,12 +196,7 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 
 const ACTIVE = "page-1";
 
-/**
- * Layout for notebook-only apps (created from the Notebook template).
- * Restricts the left border to Notebooks, Files, and Settings — Blocks,
- * Layers, and Variables are intentionally excluded. The main area starts
- * empty and is populated with notebook viewers opened from the explorer.
- */
+// Layout for notebook-only apps (created from the Notebook template)
 const NOTEBOOK_OPTIONS: WorkspaceOptions = {
 	version: "",
 
