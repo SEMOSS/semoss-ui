@@ -1,5 +1,3 @@
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
 import { PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
@@ -23,8 +21,7 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import type { Workspace } from "@/types";
-
-dayjs.extend(relativeTime);
+import { normalizeTimestamp } from "@/utility";
 
 interface WorkspaceCardProps {
 	workspace: Pick<Workspace, "workspace_id" | "name" | "description">;
@@ -80,9 +77,7 @@ export const WorkspaceCard = observer(
 
 		const createdLabel = (() => {
 			if (!dateCreated) return null;
-			const d = dayjs(
-				dateCreated.endsWith("Z") ? dateCreated : `${dateCreated}Z`,
-			);
+			const d = normalizeTimestamp(dateCreated);
 			if (!d.isValid()) return null;
 			return t("workspace:card.createdAgo", { when: d.fromNow() });
 		})();
