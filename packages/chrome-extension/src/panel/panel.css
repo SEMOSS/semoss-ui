@@ -70,6 +70,9 @@ body,
 
 .panel-icon-btn,
 .panel-reset-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   border: 1px solid rgba(255, 255, 255, 0.35) !important;
   background: rgba(255, 255, 255, 0.16) !important;
   color: white !important;
@@ -96,6 +99,8 @@ body,
 }
 
 .panel-reset-icon {
+  display: block;
+  flex-shrink: 0;
   width: 15px;
   height: 15px;
   fill: none;
