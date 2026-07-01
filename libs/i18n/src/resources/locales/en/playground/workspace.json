@@ -78,10 +78,7 @@
 		"pin": "Favorite",
 		"unpin": "Unfavorite",
 		"pinFailed": "Failed to favorite chat",
-		"unpinFailed": "Failed to unfavorite chat",
-		"dayToday": "Today",
-		"dayYesterday": "Yesterday",
-		"daysAgo": "{{count}} days ago"
+		"unpinFailed": "Failed to unfavorite chat"
 	},
 	"images": {
 		"agentIllustration": "Agent illustration"
@@ -146,6 +143,8 @@
 		"title": "All chats",
 		"subtitle": "Browse, search, and clean up your chats.",
 		"selectAll": "Select all",
+		"deselectAll": "Deselect all",
+		"favorites": "Favorites",
 		"selectChat": "Select chat {{name}}",
 		"selectedCount": "{{count}} selected",
 		"totalCount": "{{count}} chats",

@@ -78,10 +78,7 @@
 		"pin": "Favoriet",
 		"unpin": "Favoriet verwijderen",
 		"pinFailed": "Chat als favoriet markeren mislukt",
-		"unpinFailed": "Favoriet verwijderen van chat mislukt",
-		"dayToday": "Vandaag",
-		"dayYesterday": "Gisteren",
-		"daysAgo": "{{count}} dagen geleden"
+		"unpinFailed": "Favoriet verwijderen van chat mislukt"
 	},
 	"images": {
 		"agentIllustration": "Agentillustratie"
@@ -146,6 +143,8 @@
 		"title": "Alle chats",
 		"subtitle": "Blader door, zoek en ruim uw chats op.",
 		"selectAll": "Alles selecteren",
+		"deselectAll": "Alles deselecteren",
+		"favorites": "Favorieten",
 		"selectChat": "Chat {{name}} selecteren",
 		"selectedCount": "{{count}} geselecteerd",
 		"totalCount": "{{count}} chats",

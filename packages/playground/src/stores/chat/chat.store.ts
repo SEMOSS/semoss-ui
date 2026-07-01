@@ -364,6 +364,20 @@ export class ChatStore {
 	};
 
 	/**
+	 * Pin or unpin a room. Runs the PinRoom pixel and bumps the
+	 * roomCounter so any room lists elsewhere in the app (sidebar,
+	 * chats page, per-agent timeline) refetch and stay in sync.
+	 */
+	pinRoom = async (roomId: string, pinned: boolean): Promise<void> => {
+		await this._actions.run<[boolean]>(
+			`PinRoom(roomId=["${roomId}"], pinned=[${pinned}]);`,
+		);
+		runInAction(() => {
+			this._store.keys.roomCounter++;
+		});
+	};
+
+	/**
 	 * Load a room from the store or create a new one
 	 * @param roomId - Room to remove
 	 */

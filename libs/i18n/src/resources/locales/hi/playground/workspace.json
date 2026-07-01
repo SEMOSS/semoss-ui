@@ -78,10 +78,7 @@
 		"pin": "पसंदीदा में जोड़ें",
 		"unpin": "पसंदीदा से हटाएं",
 		"pinFailed": "चैट को पसंदीदा बनाने में विफल",
-		"unpinFailed": "चैट को पसंदीदा से हटाने में विफल",
-		"dayToday": "आज",
-		"dayYesterday": "कल",
-		"daysAgo": "{{count}} दिन पहले"
+		"unpinFailed": "चैट को पसंदीदा से हटाने में विफल"
 	},
 	"images": {
 		"agentIllustration": "एजेंट चित्रण"
@@ -146,6 +143,8 @@
 		"title": "सभी चैट",
 		"subtitle": "अपनी चैट ब्राउज़ करें, खोजें और साफ़ करें।",
 		"selectAll": "सभी चुनें",
+		"deselectAll": "सभी अचयनित करें",
+		"favorites": "पसंदीदा",
 		"selectChat": "चैट {{name}} चुनें",
 		"selectedCount": "{{count}} चुनी गई",
 		"totalCount": "{{count}} चैट",
