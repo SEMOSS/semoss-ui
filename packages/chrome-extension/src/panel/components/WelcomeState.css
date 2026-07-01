@@ -8,21 +8,12 @@
 	overflow-y: auto;
 }
 
-.panel-container--floating .welcome-container {
-	padding: 8px 4px;
-	min-height: calc(100vh - 68px);
-}
-
 .welcome-stack {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	gap: 12px;
 	width: 100%;
-}
-
-.panel-container--floating .welcome-stack {
-	gap: 8px;
 }
 
 .welcome-card {
@@ -33,19 +24,10 @@
 	border-color: rgba(15, 23, 42, 0.1) !important;
 }
 
-.panel-container--floating .welcome-card {
-	padding: 12px !important;
-	gap: 10px !important;
-}
-
 .welcome-title {
 	font-size: 16px;
 	font-weight: 600;
 	line-height: 1.4;
-}
-
-.panel-container--floating .welcome-title {
-	font-size: 14px;
 }
 
 .welcome-steps {
@@ -54,18 +36,10 @@
 	gap: 14px;
 }
 
-.panel-container--floating .welcome-steps {
-	gap: 10px;
-}
-
 .welcome-step-row {
 	display: flex;
 	gap: 12px;
 	align-items: flex-start;
-}
-
-.panel-container--floating .welcome-step-row {
-	gap: 9px;
 }
 
 .welcome-step-index {
@@ -79,12 +53,6 @@
 	justify-content: center;
 	font-size: 14px;
 	font-weight: 700;
-}
-
-.panel-container--floating .welcome-step-index {
-	min-width: 24px;
-	height: 24px;
-	font-size: 12px;
 }
 
 .welcome-step-copy {
@@ -115,11 +83,6 @@
 	border-radius: 10px;
 	background: #f0f7ff;
 	border: 1px solid #2196f3;
-}
-
-.panel-container--floating .welcome-tip {
-	padding: 7px 10px;
-	border-radius: 8px;
 }
 
 .welcome-tip p {

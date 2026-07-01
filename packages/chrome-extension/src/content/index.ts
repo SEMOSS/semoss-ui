@@ -5,9 +5,9 @@ import { getDOMStats, getSimplifiedDOM } from "./simplifyDOM";
 initializeRPC();
 
 const FLOATING_PANEL_WRAPPER_ID = "semoss-browser-automation-frame";
-const FLOATING_PANEL_COLLAPSED_SIZE = 64;
-const FLOATING_PANEL_EXPANDED_WIDTH = 340;
-const FLOATING_PANEL_EXPANDED_HEIGHT = 560;
+const FLOATING_PANEL_COLLAPSED_SIZE = 72;
+const FLOATING_PANEL_EXPANDED_WIDTH = 380;
+const FLOATING_PANEL_EXPANDED_HEIGHT = 620;
 const FLOATING_PANEL_MARGIN = 16;
 const FLOATING_PANEL_POSITION_STORAGE_KEY =
 	"semoss-browser-automation-panel-position";
