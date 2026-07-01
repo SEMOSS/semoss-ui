@@ -74,8 +74,9 @@ const PanelApp: React.FC = () => {
 		((value: string) => void) | null
 	>(null);
 	const [, setMode] = useState<"script">("script");
-	const [, setScriptJson] = useState("");
+	const [scriptJson, setScriptJson] = useState("");
 	const [jsonFormat, setJsonFormat] = useState<"playwright">("playwright");
+	const [_historyCounter, setHistoryCounter] = React.useState(0);
 
 	const historyEndRef = React.useRef<HTMLDivElement>(null);
 	const actionHistoryCount = actionHistory.length;
@@ -252,6 +253,52 @@ const PanelApp: React.FC = () => {
 			},
 			"*",
 		);
+	};
+
+	const closeFloatingPanel = () => {
+		if (!isFloatingPanel) return;
+
+		window.parent.postMessage(
+			{
+				type: "SMSS_FLOATING_PANEL_CLOSE",
+			},
+			"*",
+		);
+	};
+
+	const resetRecordingStatus = () => {
+		if (isScriptLoading || isRunning || waitingForUserInput) return;
+
+		if (debounceTimerRef.current) {
+			clearTimeout(debounceTimerRef.current);
+			debounceTimerRef.current = null;
+		}
+
+		setIsScriptLoading(false);
+		setIsRunning(false);
+		setWaitingForUserInput(false);
+		setUserInputPrompt("");
+		setUserInputValue("");
+		setIsPasswordInput(false);
+		setUserInputCallback(null);
+		setCurrentSelector(null);
+		setCurrentTabId(null);
+		setExternalStatus(null);
+		setSharedRunState(null);
+		setActionHistory([]);
+		setScriptJson("");
+		setJsonFormat("playwright");
+		setMode("script");
+		setHistoryCounter(0);
+		activeStatusTabIdRef.current = null;
+		activeRunTabIdsRef.current = new Set();
+		activeRunContextRef.current = {};
+
+		chrome.runtime
+			.sendMessage({ type: "RESET_AUTOMATION_RUN_STATE" })
+			.catch(() => {
+				// Resetting shared state is best effort.
+			});
 	};
 
 	// Auto-scroll to bottom when action history updates
@@ -1167,8 +1214,6 @@ const PanelApp: React.FC = () => {
 		}
 	};
 
-	const [_historyCounter, setHistoryCounter] = React.useState(0);
-
 	const addToHistory = (message: string, skipNumbering = false) => {
 		// Skip adding counter for:
 		// 1. Messages that explicitly request no numbering
@@ -1236,6 +1281,14 @@ const PanelApp: React.FC = () => {
 		isScriptLoading || effectiveExternalStatus?.isLoading === true;
 	const runningStatus =
 		isRunning || effectiveExternalStatus?.isRunning === true;
+	const canResetRecordingStatus =
+		!loadingStatus &&
+		!runningStatus &&
+		!needsInputStatus &&
+		(scriptJson.trim().length > 0 ||
+			actionHistory.length > 0 ||
+			!!externalStatus ||
+			!!sharedRunState?.updatedAt);
 	const launcherStatus = needsInputStatus
 		? "Input required"
 		: loadingStatus
@@ -1330,16 +1383,39 @@ const PanelApp: React.FC = () => {
 			>
 				<h1 className="panel-title">Browser Automation</h1>
 				{isFloatingPanel && (
-					<Button
-						type="button"
-						className="panel-collapse-btn"
-						onPointerDown={(event) => event.stopPropagation()}
-						onClick={() => setIsCollapsed(true)}
-						aria-label="Collapse Browser Automation"
-						title="Collapse"
-					>
-						-
-					</Button>
+					<div className="panel-header-actions">
+						<Button
+							type="button"
+							className="panel-reset-btn"
+							onPointerDown={(event) => event.stopPropagation()}
+							onClick={resetRecordingStatus}
+							disabled={!canResetRecordingStatus}
+							aria-label="Reset recording status"
+							title="Reset recording status"
+						>
+							Reset
+						</Button>
+						<Button
+							type="button"
+							className="panel-icon-btn panel-collapse-btn"
+							onPointerDown={(event) => event.stopPropagation()}
+							onClick={() => setIsCollapsed(true)}
+							aria-label="Collapse Browser Automation"
+							title="Collapse"
+						>
+							-
+						</Button>
+						<Button
+							type="button"
+							className="panel-icon-btn panel-close-btn"
+							onPointerDown={(event) => event.stopPropagation()}
+							onClick={closeFloatingPanel}
+							aria-label="Close Browser Automation"
+							title="Close"
+						>
+							x
+						</Button>
+					</div>
 				)}
 			</div>
 

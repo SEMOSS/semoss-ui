@@ -62,21 +62,51 @@ body,
   letter-spacing: 0.3px;
 }
 
-.panel-collapse-btn {
+.panel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-icon-btn,
+.panel-reset-btn {
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  background: rgba(255, 255, 255, 0.16) !important;
+  color: white !important;
+  line-height: 1 !important;
+}
+
+.panel-icon-btn:hover,
+.panel-reset-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.26) !important;
+}
+
+.panel-icon-btn:disabled,
+.panel-reset-btn:disabled {
+  cursor: not-allowed !important;
+  opacity: 0.45 !important;
+}
+
+.panel-reset-btn {
+  height: 30px !important;
+  min-width: 58px !important;
+  padding: 0 10px !important;
+  border-radius: 999px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+.panel-icon-btn {
   width: 30px !important;
   min-width: 30px !important;
   height: 30px !important;
   padding: 0 !important;
-  border: 1px solid rgba(255, 255, 255, 0.35) !important;
   border-radius: 50% !important;
-  background: rgba(255, 255, 255, 0.16) !important;
-  color: white !important;
   font-size: 20px !important;
-  line-height: 1 !important;
 }
 
-.panel-collapse-btn:hover {
-  background: rgba(255, 255, 255, 0.26) !important;
+.panel-close-btn {
+  font-size: 17px !important;
 }
 
 .settings-btn {

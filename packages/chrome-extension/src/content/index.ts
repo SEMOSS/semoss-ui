@@ -32,6 +32,7 @@ let isPlaygroundPage = false;
 let playgroundListenersSetup = false; // Track if listeners have been setup
 let floatingPanelFrame: HTMLIFrameElement | null = null;
 let floatingPanelPosition: FloatingPanelPosition | null = null;
+let floatingPanelHidden = false;
 
 async function getHostTabId(): Promise<number | undefined> {
 	try {
@@ -57,6 +58,24 @@ function sizeFloatingPanel(expanded: boolean) {
 	floatingPanelFrame.style.width = `${Math.max(width, FLOATING_PANEL_COLLAPSED_SIZE)}px`;
 	floatingPanelFrame.style.height = `${Math.max(height, FLOATING_PANEL_COLLAPSED_SIZE)}px`;
 	applyFloatingPanelPosition(floatingPanelPosition);
+}
+
+function showFloatingPanel() {
+	if (!floatingPanelFrame) return;
+
+	floatingPanelHidden = false;
+	floatingPanelFrame.style.display = "block";
+	floatingPanelFrame.contentWindow?.postMessage(
+		{ type: "SMSS_FLOATING_PANEL_REQUEST_STATE" },
+		"*",
+	);
+}
+
+function hideFloatingPanel() {
+	if (!floatingPanelFrame) return;
+
+	floatingPanelHidden = true;
+	floatingPanelFrame.style.display = "none";
 }
 
 function getFloatingPanelSize() {
@@ -148,7 +167,11 @@ async function loadFloatingPanelPosition() {
 }
 
 async function ensureFloatingPanel() {
-	if (floatingPanelFrame || !isExtensionContextValid()) return;
+	if (floatingPanelFrame) {
+		showFloatingPanel();
+		return;
+	}
+	if (!isExtensionContextValid()) return;
 	if (!document.documentElement || !document.body) return;
 
 	const hostTabId = await getHostTabId();
@@ -177,6 +200,7 @@ async function ensureFloatingPanel() {
 
 	document.documentElement.appendChild(frame);
 	floatingPanelFrame = frame;
+	floatingPanelHidden = false;
 	applyFloatingPanelPosition(null);
 	void loadFloatingPanelPosition();
 }
@@ -220,6 +244,10 @@ window.addEventListener("message", (event) => {
 
 	if (event.data?.type === "SMSS_FLOATING_PANEL_DRAG_END") {
 		saveFloatingPanelPosition();
+	}
+
+	if (event.data?.type === "SMSS_FLOATING_PANEL_CLOSE") {
+		hideFloatingPanel();
 	}
 });
 
@@ -339,18 +367,28 @@ new MutationObserver(() => {
 // Listen for messages from popup/background
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 	switch (message.type) {
-		case "TOGGLE_FLOATING_PANEL":
+		case "TOGGLE_FLOATING_PANEL": {
+			const wasFloatingPanelHidden = floatingPanelHidden;
 			void ensureFloatingPanel().then(() => {
+				if (wasFloatingPanelHidden) {
+					showFloatingPanel();
+					sendResponse({ success: true });
+					return;
+				}
+
 				floatingPanelFrame?.contentWindow?.postMessage(
 					{ type: "SMSS_FLOATING_PANEL_TOGGLE" },
 					"*",
 				);
+				sendResponse({ success: true });
 			});
-			sendResponse({ success: true });
 			break;
+		}
 
 		case "UPDATE_FLOATING_PANEL_STATUS":
-			void ensureFloatingPanel().then(() => {
+			void (
+				floatingPanelFrame ? Promise.resolve() : ensureFloatingPanel()
+			).then(() => {
 				floatingPanelFrame?.contentWindow?.postMessage(
 					{
 						type: "SMSS_FLOATING_PANEL_EXTERNAL_STATUS",

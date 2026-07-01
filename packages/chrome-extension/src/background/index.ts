@@ -103,6 +103,20 @@ function updateAutomationRunState(message: {
 	broadcastAutomationRunState();
 }
 
+function resetAutomationRunState() {
+	hasAutomationRunStateUpdates = true;
+	automationRunState = {
+		active: false,
+		status: "idle",
+		history: [],
+		tabIds: [],
+		updatedAt: Date.now(),
+	};
+
+	persistAutomationRunState();
+	broadcastAutomationRunState();
+}
+
 // Handle extension icon click to toggle the floating on-page panel
 chrome.action.onClicked.addListener((tab) => {
 	if (tab.id) {
@@ -310,6 +324,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 		case "UPDATE_AUTOMATION_RUN_STATE":
 			updateAutomationRunState(message);
+			sendResponse({ success: true, state: automationRunState });
+			return true;
+
+		case "RESET_AUTOMATION_RUN_STATE":
+			resetAutomationRunState();
 			sendResponse({ success: true, state: automationRunState });
 			return true;
 
