@@ -1,7 +1,8 @@
 import { Boxes, Braces, Coins } from "lucide-react";
+import type { Engine } from "@semoss/shared";
 import { Database } from "@/assets/img/Database";
 import { ModelBrain } from "@/assets/img/ModelBrain";
-import type { ENGINE_TYPES, Role } from "@/types";
+import type { Role } from "@/types";
 import { EngineActivityPage } from "./engine-activity-page";
 import { EngineCommitsPage } from "./engine-commits-page";
 import { EngineFileManagerPage } from "./engine-file-manager-page";
@@ -29,7 +30,7 @@ const ENGINE_ROUTES_BASE: {
 	icon: React.FunctionComponent;
 
 	/** Type of the engine */
-	type: ENGINE_TYPES;
+	type: Engine["engine_type"];
 
 	/** Description of the engine*/
 	description: string;

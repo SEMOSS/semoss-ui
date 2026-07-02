@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useIteratorPixel } from "@semoss/sdk/react";
-import type { Engine } from "@semoss/shared";
+import type { Project } from "@semoss/shared";
 import {
 	Muted,
 	toast,
@@ -8,44 +8,26 @@ import {
 	useInfiniteScroll,
 } from "@semoss/ui/next";
 import { CatalogGrid, CatalogSearchBar } from "@/components/catalog";
-import { EngineGridItem } from "@/components/engine";
+import { ProjectGridItem } from "@/components/project";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { useRootStore, useSettings } from "@/hooks";
-import { getEngineLabel, isOwnerPermission } from "@/utility/catalog";
+import { getProjectLabel, isOwnerPermission } from "@/utility/catalog";
 
-export interface DBMember {
-	ID: string;
-	NAME: string;
-	PERMISSION: string;
-	EMAIL: string;
-	SELECTED: boolean;
-}
-
-/**
- * Show detailed settings for an engine
- */
-interface EngineSettingsIndexPageProps {
-	/** Type of the page to render */
-	type: Engine["engine_type"];
-}
-
-export const EngineSettingsIndexPage = (
-	props: EngineSettingsIndexPageProps,
-) => {
-	const { type } = props;
-
+export const ProjectSettingsIndexPage = () => {
 	const { adminMode } = useSettings();
 	const { configStore } = useRootStore();
 
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);
-	const [sort, setSort] = useState<string>("ENGINENAME");
+	const [sort, setSort] = useState<string>("PROJECTNAME");
 	const [sortOrder, setSortOrder] = useState<"ASC" | "DESC">("ASC");
-	const [isDeletingEngine, setIsDeletingEngine] = useState(false);
-	const [engineToDelete, setEngineToDelete] = useState<Engine | null>(null);
+	const [isDeletingProject, setIsDeletingProject] = useState(false);
+	const [projectToDelete, setProjectToDelete] = useState<Project | null>(
+		null,
+	);
 
 	// get metakeys to the ones we want
-	const metaKeys = configStore.store.config.databaseMetaKeys
+	const metaKeys = configStore.store.config.projectMetaKeys
 		.filter((k) => {
 			return (
 				k.display_options === "single-checklist" ||
@@ -61,14 +43,14 @@ export const EngineSettingsIndexPage = (
 			return k.metakey;
 		});
 
-	const enginePixelPrefix = adminMode ? "AdminMyEngines" : "MyEngines";
+	const projectPixelPrefix = adminMode ? "AdminMyProjects" : "MyProjects";
 
 	/**
-	 * Get all of the engines with lazy loading
+	 * Get all of the projects with lazy loading
 	 */
-	const getEngines = useIteratorPixel<Engine[], Engine>(
+	const getProjects = useIteratorPixel<Project[], Project>(
 		(limit, offset) =>
-			`${enginePixelPrefix}(metaKeys = ${JSON.stringify(metaKeys)}, filterWord=["${debouncedSearch}"], sort=[{"${sort}" : "${sortOrder}"}], engineTypes=["${type}"], limit=[${limit}], offset=[${offset}]);`,
+			`${projectPixelPrefix}(metaKeys = ${JSON.stringify(metaKeys)}, filterWord=["${debouncedSearch}"], sort=[{"${sort}" : "${sortOrder}"}], limit=[${limit}], offset=[${offset}]);`,
 		(response) => {
 			// if its less than the limit, we know its the end
 			if (response.length < 15) {
@@ -83,16 +65,16 @@ export const EngineSettingsIndexPage = (
 		{
 			limit: 15,
 		},
-		[adminMode, type, debouncedSearch, sort, sortOrder],
+		[adminMode, debouncedSearch, sort, sortOrder],
 	);
 
 	/**
-	 * Setup infinite scroll for the engine list
+	 * Setup infinite scroll for the project list
 	 */
 	const { setScroll, resetScroll } = useInfiniteScroll({
-		disabled: getEngines.isLoading || !getEngines.hasMore || !type,
+		disabled: getProjects.isLoading || !getProjects.hasMore,
 		onNext: () => {
-			getEngines.next();
+			getProjects.next();
 		},
 	});
 
@@ -115,17 +97,24 @@ export const EngineSettingsIndexPage = (
 	 * Delete the engine
 	 * @returns
 	 */
-	const deleteEngine = async () => {
-		if (!engineToDelete) {
+	const deleteProject = async () => {
+		if (!projectToDelete) {
 			return;
 		}
 
 		try {
-			setIsDeletingEngine(true);
+			setIsDeletingProject(true);
 
-			const response = await configStore.runPixel(
-				`DeleteEngine(engine=['${engineToDelete.engine_id}']);`,
-			);
+			let deletePixel = "";
+			if (projectToDelete.project_type === "WORKSPACE") {
+				deletePixel = `DeleteWorkspace(workspaceId=['${projectToDelete.project_id}']);`;
+			} else if (projectToDelete.project_type === "SKILL") {
+				deletePixel = `DeleteSkill(skillId=['${projectToDelete.project_id}']);`;
+			} else {
+				deletePixel = `DeleteProject(project=['${projectToDelete.project_id}']);`;
+			}
+
+			const response = await configStore.runPixel(deletePixel);
 
 			const operationType =
 				response.pixelReturn?.[0]?.operationType || "";
@@ -133,18 +122,18 @@ export const EngineSettingsIndexPage = (
 
 			if (operationType.indexOf("ERROR") === -1) {
 				toast.success(
-					`Successfully deleted ${engineToDelete.engine_display_name || engineToDelete.engine_name}`,
+					`Successfully deleted ${projectToDelete.project_display_name || projectToDelete.project_name}`,
 				);
 				resetScroll();
-				getEngines.reset();
+				getProjects.reset();
 			} else {
-				toast.error(String(output || "Failed to delete engine"));
+				toast.error(String(output || "Failed to delete"));
 			}
 		} catch (error) {
 			toast.error(String(error));
 		} finally {
-			setIsDeletingEngine(false);
-			setEngineToDelete(null);
+			setIsDeletingProject(false);
+			setProjectToDelete(null);
 		}
 	};
 
@@ -158,8 +147,9 @@ export const EngineSettingsIndexPage = (
 					sortValue={sort}
 					sortOrder={sortOrder}
 					sortOptions={[
-						{ value: "ENGINENAME", label: "Name" },
+						{ value: "PROJECTNAME", label: "Name" },
 						{ value: "DATECREATED", label: "Date Created" },
+						{ value: "DATELASTEDITED", label: "Date Last Edited" },
 					]}
 					onSortChange={(value, order) => {
 						setSort(value);
@@ -171,58 +161,61 @@ export const EngineSettingsIndexPage = (
 				/>
 
 				{/* Empty State */}
-				{!getEngines.isLoading && getEngines.data.length === 0 && (
+				{!getProjects.isLoading && getProjects.data.length === 0 && (
 					<div className="w-full px-2 py-4 text-center">
 						<Muted>No results found</Muted>
 					</div>
 				)}
 
-				{/* Engine list */}
-				{getEngines.data.length > 0 && (
+				{/* Project list */}
+				{getProjects.data.length > 0 && (
 					<CatalogGrid
 						variant="LIST"
-						isLoading={getEngines.isLoading}
-						showLoadingMore={getEngines.data.length > 0}
+						isLoading={getProjects.isLoading}
+						showLoadingMore={getProjects.data.length > 0}
 					>
-						{getEngines.data.map((engine) => (
-							<EngineGridItem
+						{getProjects.data.map((project) => (
+							<ProjectGridItem
 								variant="LIST"
-								key={engine.engine_id}
-								path={`/settings/${type.toLowerCase()}/${engine.engine_id}`}
-								engine={engine}
+								key={project.project_id}
+								path={`/settings/app/${project.project_id}`}
+								project={project}
 								isFavorited={false}
 								showFavorite={false}
 								showGlobal={false}
 								showDelete={
 									adminMode ||
-									isOwnerPermission(
-										engine.engine_user_permission,
-									)
+									isOwnerPermission(project.user_permission)
 								}
+								showClone={false}
 								onFavorite={() => null}
 								onGlobalToggle={() => null}
-								onDelete={(engine) => setEngineToDelete(engine)}
+								onClone={() => null}
+								onDelete={(project) =>
+									setProjectToDelete(project)
+								}
 							/>
 						))}
 					</CatalogGrid>
 				)}
 			</div>
+
 			<DeleteEntityDialog
-				open={Boolean(engineToDelete)}
+				open={Boolean(projectToDelete)}
 				onOpenChange={(open) => {
 					if (!open) {
-						setEngineToDelete(null);
+						setProjectToDelete(null);
 					}
 				}}
-				entityLabel={getEngineLabel(engineToDelete?.engine_type)}
+				entityLabel={getProjectLabel(projectToDelete?.project_type)}
 				entityName={
-					engineToDelete?.engine_display_name ||
-					engineToDelete?.engine_name ||
-					"Engine"
+					projectToDelete?.project_display_name ||
+					projectToDelete?.project_name ||
+					"Project"
 				}
-				entityId={engineToDelete?.engine_id || ""}
-				onConfirm={deleteEngine}
-				isLoading={isDeletingEngine}
+				entityId={projectToDelete?.project_id || ""}
+				onConfirm={deleteProject}
+				isLoading={isDeletingProject}
 			/>
 		</>
 	);

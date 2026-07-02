@@ -39,8 +39,8 @@ const CreateAppPage = lazy(() =>
 		default: m.CreateAppPage,
 	})),
 );
-const EditAppPage = lazy(() =>
-	import("./app/edit-app-page").then((m) => ({ default: m.EditAppPage })),
+const AppEditPage = lazy(() =>
+	import("./app/app-edit-page").then((m) => ({ default: m.AppEditPage })),
 );
 const NewPromptBuilderAppPage = lazy(() =>
 	import("./app/NewPromptBuilderAppPage").then((m) => ({
@@ -175,7 +175,7 @@ export const Router = observer(() => {
 							/>
 							<Route
 								path=":appId/edit/*"
-								element={<EditAppPage />}
+								element={<AppEditPage />}
 							/>
 						</Route>
 						<Route path="engine/*" element={<EngineRouter />} />
