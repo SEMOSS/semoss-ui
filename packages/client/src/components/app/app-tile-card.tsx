@@ -22,6 +22,7 @@ import {
 	P,
 	Skeleton,
 	toast,
+	useTheme,
 } from "@semoss/ui/next";
 import { AppDeleteModal } from "@/components/app/app-delete-modal";
 import { AddAppCloneModal } from "@/components/app/save-app/add-app-clone-modal";
@@ -48,6 +49,7 @@ interface AppTileCardProps {
 	variant?: "classic" | "catalog" | "row" | "fillerCard";
 	onCloneComplete?: (appId?: string) => void;
 	cardImgSrc?: string;
+	cardDarkImgSrc?: string;
 }
 
 /**
@@ -231,9 +233,15 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 		variant = "classic",
 		onCloneComplete,
 		cardImgSrc,
+		cardDarkImgSrc,
 	} = props;
+	const { resolvedTheme } = useTheme();
 
 	const navigate = useNavigate();
+	const resolvedCardImage =
+		resolvedTheme === "dark" && cardDarkImgSrc
+			? cardDarkImgSrc
+			: cardImgSrc;
 
 	const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -1245,7 +1253,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 						<div className="relative w-1/2">
 							<div className="absolute inset-0 h-full w-full overflow-hidden">
 								<img
-									src={cardImgSrc}
+									src={resolvedCardImage}
 									alt={`${displayName} illustration`}
 									className={`absolute inset-0 h-full w-full transform object-cover object-right`}
 								/>

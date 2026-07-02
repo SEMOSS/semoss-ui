@@ -461,7 +461,7 @@ export const LoginPage = observer(() => {
 					}
 				}
 			`}</style>
-			<div className="login-grid relative grid min-h-screen w-full bg-white">
+			<div className="semoss-login-page login-grid relative grid min-h-screen w-full bg-background">
 				<div className="relative flex min-h-screen w-full flex-col overflow-hidden">
 					<div className="relative z-10 flex w-full flex-1 items-center justify-center overflow-y-auto px-6 pt-4 pb-4 md:px-10 md:pt-8 md:pb-6">
 						<div className="relative w-full max-w-[520px] overflow-hidden rounded-2xl p-6 md:p-8 dark:bg-background/95 dark:shadow-sm">
@@ -484,7 +484,7 @@ export const LoginPage = observer(() => {
 										? "Create your account"
 										: "Welcome back"}
 								</h4>
-								<p className="min-h-[1.25rem] text-black text-sm md:text-base dark:text-muted-foreground">
+								<p className="min-h-[1.25rem] text-muted-foreground text-sm md:text-base">
 									{register
 										? "Register to access your workspace."
 										: "Sign in to continue to your workspace."}
@@ -504,7 +504,7 @@ export const LoginPage = observer(() => {
 							)}
 
 							<form>
-								<div className="flex flex-col gap-4 [&_input]:border-[#9ea5af] [&_input]:bg-white [&_input]:shadow-none [&_input]:focus-visible:border-[#0176d3] [&_input]:focus-visible:ring-[#0176d3]/35 dark:[&_input]:border-input dark:[&_input]:bg-background dark:[&_input]:focus-visible:border-primary dark:[&_input]:focus-visible:ring-primary/30 [&_label]:font-medium [&_label]:text-black dark:[&_label]:text-muted-foreground">
+								<div className="flex flex-col gap-4 [&_input]:border-input [&_input]:bg-background [&_input]:text-foreground [&_input]:shadow-none [&_input]:focus-visible:border-primary [&_input]:focus-visible:ring-primary/30 [&_label]:font-medium [&_label]:text-foreground">
 									{!register && hasOAuth && (
 										<>
 											{configStore.store.config.availableProviders.map(

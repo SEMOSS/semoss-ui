@@ -2,7 +2,7 @@ import { Check, Copy, RotateCcw } from "lucide-react";
 import type React from "react";
 import { Suspense, useState } from "react";
 import { MonacoEditor } from "@semoss/shared";
-import { Button, cn, P } from "@semoss/ui/next";
+import { Button, cn, P, useTheme } from "@semoss/ui/next";
 import { QueryActions } from "./query-actions";
 
 interface SQLQueryEditorProps {
@@ -27,6 +27,7 @@ export const SQLQueryEditor: React.FC<SQLQueryEditorProps> = ({
 	runDisabled = false,
 }) => {
 	const [copied, setCopied] = useState(false);
+	const { resolvedTheme } = useTheme();
 
 	const handleCopyQuery = async () => {
 		if (query && navigator.clipboard) {
@@ -107,6 +108,7 @@ export const SQLQueryEditor: React.FC<SQLQueryEditorProps> = ({
 							value={query}
 							defaultValue=""
 							language="sql"
+							theme={resolvedTheme === "dark" ? "vs-dark" : "vs"}
 							options={{
 								fixedOverflowWidgets: true,
 								scrollbar: {

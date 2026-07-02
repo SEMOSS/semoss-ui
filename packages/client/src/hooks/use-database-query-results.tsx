@@ -120,12 +120,12 @@ export function useQueryResults() {
 						data-testid="query-results-table"
 					>
 						{headers.length > 0 && (
-							<thead className="sticky top-0 z-[1] border-[#e0e0e0] border-b bg-[#F5F9FE]">
+							<thead className="sticky top-0 z-[1] border-border border-b bg-muted/80 backdrop-blur supports-[backdrop-filter]:bg-muted/60">
 								<tr>
 									{headers.map((header: string) => (
 										<th
 											key={`header-${header}`}
-											className="min-w-[100px] overflow-hidden text-ellipsis whitespace-nowrap bg-[#F5F9FE] p-2 font-bold text-[#0471F0] text-xs"
+											className="min-w-[100px] overflow-hidden text-ellipsis whitespace-nowrap bg-transparent p-2 font-bold text-muted-foreground text-xs"
 										>
 											{header}
 										</th>
@@ -139,7 +139,7 @@ export function useQueryResults() {
 									<tr>
 										<td
 											colSpan={headers.length}
-											className="p-6 text-center text-muted-foreground text-sm"
+											className="border-border border-b p-6 text-center text-muted-foreground text-sm"
 										>
 											No data returned
 										</td>
@@ -154,7 +154,7 @@ export function useQueryResults() {
 													return `${header}:${String(cell ?? "(null)")}`;
 												})
 												.join("|")}`}
-											className="border-[#e0e0e0] border-b hover:bg-muted/50"
+											className="border-border border-b hover:bg-muted/50"
 										>
 											{headers.map(
 												(
@@ -188,7 +188,7 @@ export function useQueryResults() {
 
 		return (
 			<div className="p-4">
-				<div className="mb-4 flex items-start gap-2 rounded-md border border-blue-300 bg-blue-50 p-3 text-blue-700">
+				<div className="mb-4 flex items-start gap-2 rounded-md border border-primary/25 bg-primary/10 p-3 text-primary">
 					<Info className="mt-0.5 size-4 shrink-0" />
 					<div>
 						<p className="font-semibold text-sm">Query Executed</p>
@@ -213,7 +213,7 @@ export function useQueryResults() {
 						<span className="mb-1 block font-semibold text-xs">
 							Raw Output:
 						</span>
-						<pre className="max-h-[150px] overflow-auto whitespace-pre-wrap rounded border border-[#ddd] bg-[#f5f5f5] p-2 text-[11px]">
+						<pre className="max-h-[150px] overflow-auto whitespace-pre-wrap rounded border border-border bg-muted/40 p-2 text-[11px]">
 							{typeof previewData.output === "string"
 								? previewData.output
 								: JSON.stringify(previewData.output, null, 2)}

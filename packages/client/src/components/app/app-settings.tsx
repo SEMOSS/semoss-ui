@@ -442,7 +442,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 					</div>
 					<div className="w-1/2">
 						{portalReactors.reactors.length > 0 ? (
-							<Table className="rounded border border-[#BDBDBD]">
+							<Table className="rounded border border-border">
 								<TableBody>
 									{portalReactors.reactors.map((reactor) => (
 										<TableRow key={reactor}>
@@ -466,7 +466,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 			</div>
 
 			{/* MCP Usage */}
-			<div className="w-full rounded-md bg-background shadow-[0px_5px_22px_0px_rgba(0,0,0,0.06)]">
+			<div className="w-full rounded-md bg-background shadow-sm">
 				<div className="block shrink-0 grow basis-0 p-4">
 					<Collapsible open={openMcp} onOpenChange={setOpenMcp}>
 						<div className="flex flex-row items-center justify-between">

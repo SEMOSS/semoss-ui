@@ -1,8 +1,8 @@
 import { H4, Muted } from "@semoss/ui/next";
-import BIDark from "@/assets/img/BI-dark.png";
 import BI from "@/assets/img/BI.png";
-import TerminalDark from "@/assets/img/Terminal-dark.png";
+import BIDark from "@/assets/img/BI-dark.png";
 import Terminal from "@/assets/img/Terminal.png";
+import TerminalDark from "@/assets/img/Terminal-dark.png";
 import { type AppMetadata, AppTileCard } from "../app";
 
 const BUSINESS_INTELLIGENCE_APP: AppMetadata = {
@@ -69,7 +69,7 @@ export const FanFavoritesSection = () => {
 			<div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2">
 				<AppTileCard
 					app={BUSINESS_INTELLIGENCE_APP}
-					background="#BADEFF"
+					background="color-mix(in srgb, var(--primary) 18%, var(--card))"
 					href="../../legacy/dist/"
 					systemApp={true}
 					appType={"BI"}
@@ -81,7 +81,7 @@ export const FanFavoritesSection = () => {
 				/>
 				<AppTileCard
 					app={TERMINAL_APP}
-					background="#BADEFF"
+					background="color-mix(in srgb, var(--primary) 18%, var(--card))"
 					href="../../terminal/dist/"
 					systemApp={true}
 					appType={"TERMINAL"}

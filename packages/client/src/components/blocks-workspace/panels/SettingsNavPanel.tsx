@@ -74,8 +74,8 @@ export const SettingsNavPanel = observer(() => {
 
 	return (
 		<Panel>
-			<div className="mt-2 mb-2 w-fit rounded-2xl bg-[#EBF4FE] px-4">
-				<span className="mt-2 mb-2 inline-block font-normal text-[#1260DD] text-[13px] leading-[18px] tracking-[0.16px]">
+			<div className="mt-2 mb-2 w-fit rounded-2xl bg-primary/10 px-4">
+				<span className="mt-2 mb-2 inline-block font-normal text-[13px] text-primary leading-[18px] tracking-[0.16px]">
 					Settings
 				</span>
 			</div>

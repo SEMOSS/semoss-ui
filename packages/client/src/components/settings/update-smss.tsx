@@ -11,6 +11,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 	toast,
+	useTheme,
 } from "@semoss/ui/next";
 import {
 	updateDatabaseSmssProperties,
@@ -33,6 +34,7 @@ interface UpdateSMSSFormProps {
 
 export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 	const { adminMode } = useSettings();
+	const { resolvedTheme } = useTheme();
 
 	const [value, setValue] = useState("");
 	const [readOnly, setReadOnly] = useState(true);
@@ -193,6 +195,7 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 					<MonacoEditor
 						width={"100%"}
 						height={editorHeight}
+						theme={resolvedTheme === "dark" ? "vs-dark" : "vs"}
 						options={{
 							minimap: {
 								enabled: false,

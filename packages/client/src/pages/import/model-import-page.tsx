@@ -91,7 +91,7 @@ const ProviderIcon: React.FC<{ provider: string }> = ({ provider }) => {
 	return (
 		<div
 			className="flex size-5 shrink-0 items-center justify-center rounded-[4px] font-semibold text-[10px] text-white"
-			style={{ backgroundColor: "#8aa0b4" }}
+			style={{ backgroundColor: "var(--muted-foreground)" }}
 		>
 			{getInitials(provider)}
 		</div>

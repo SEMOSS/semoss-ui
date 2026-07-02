@@ -1,12 +1,13 @@
 import { Check, Copy, RotateCcw } from "lucide-react";
 import type React from "react";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import {
 	MonacoEditor,
 	registerSparqlLanguage,
+	SPARQL_THEME_DARK,
 	SPARQL_THEME_LIGHT,
 } from "@semoss/shared";
-import { Button, cn, P } from "@semoss/ui/next";
+import { Button, cn, P, useTheme } from "@semoss/ui/next";
 
 interface SPARQLQueryEditorProps {
 	query: string;
@@ -32,6 +33,9 @@ export const SPARQLQueryEditor: React.FC<SPARQLQueryEditorProps> = ({
 	onRawChange,
 }) => {
 	const [copied, setCopied] = useState(false);
+	const editorRef = useRef(null);
+	const monacoRef = useRef(null);
+	const { resolvedTheme } = useTheme();
 
 	const handleCopyQuery = async () => {
 		if (query && navigator.clipboard) {
@@ -45,9 +49,21 @@ export const SPARQLQueryEditor: React.FC<SPARQLQueryEditorProps> = ({
 		}
 	};
 
+	useEffect(() => {
+		const monaco = monacoRef.current;
+		if (!monaco) return;
+		monaco.editor.setTheme(
+			resolvedTheme === "dark" ? SPARQL_THEME_DARK : SPARQL_THEME_LIGHT,
+		);
+	}, [resolvedTheme]);
+
 	const handleMount = (editor, monaco) => {
+		editorRef.current = editor;
+		monacoRef.current = monaco;
 		registerSparqlLanguage(monaco);
-		monaco.editor.setTheme(SPARQL_THEME_LIGHT);
+		monaco.editor.setTheme(
+			resolvedTheme === "dark" ? SPARQL_THEME_DARK : SPARQL_THEME_LIGHT,
+		);
 		handleEditorMount(editor, monaco);
 	};
 

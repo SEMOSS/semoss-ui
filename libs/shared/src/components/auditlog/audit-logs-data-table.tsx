@@ -153,7 +153,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	) => (
 		<TableRow
 			key={`Log-${event.requestId ?? event.endTime}-${index}`}
-			className="cursor-pointer hover:[background-color:rgb(245,249,254)!important] [a&]:hover:bg-primary"
+			className="cursor-pointer hover:bg-accent/60"
 			onClick={() => handleRowClick(event)}
 		>
 			<TableCell className={indent ? "pl-8" : undefined}>
@@ -198,12 +198,9 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 			</TableCell>
 			<TableCell className="text-center">
 				{isSuccess(event.status) ? (
-					<CircleCheckIcon
-						className="inline-block h-4 w-4"
-						color="#2e7d32"
-					/>
+					<CircleCheckIcon className="inline-block h-4 w-4 text-emerald-600" />
 				) : (
-					<Cancel className="inline-block h-4 w-4" color="#da291c" />
+					<Cancel className="inline-block h-4 w-4 text-destructive" />
 				)}
 			</TableCell>
 		</TableRow>
@@ -216,14 +213,16 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	// Empty State
 	if (!logs || logs.length === 0) {
 		return (
-			<div className="mt-4 rounded-lg border bg-white shadow">
+			<div className="mt-4 rounded-lg border border-border bg-card shadow-sm">
 				<div className="flex items-center justify-between p-4">
 					<span className="font-semibold text-lg">
 						{t("table.title")}
 					</span>
 				</div>
 				<div className="flex items-center justify-center border-b p-4">
-					<span className="text-gray-500">{t("common.noLogs")}</span>
+					<span className="text-muted-foreground">
+						{t("common.noLogs")}
+					</span>
 				</div>
 			</div>
 		);
@@ -231,7 +230,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 
 	return (
 		<>
-			<div className="mt-4 rounded-lg border bg-white shadow">
+			<div className="mt-4 rounded-lg border border-border bg-card shadow-sm">
 				<div className="flex items-center justify-between p-4">
 					<span className="font-semibold text-lg">
 						{t("table.title")}
@@ -261,7 +260,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 				<div className="border-b p-4">
 					<Table>
 						<TableHeader>
-							<TableRow style={{ backgroundColor: "#F5F9FE" }}>
+							<TableRow className="bg-accent/50">
 								<TableHead>
 									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
 										{t("table.columns.user")}
@@ -328,7 +327,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 										const rows = [
 											<TableRow
 												key={`group-${group.key}`}
-												className="cursor-pointer bg-[#F5F9FE] hover:[background-color:rgb(236,243,252)!important]"
+												className="cursor-pointer bg-accent/45 hover:bg-accent/65"
 												onClick={() =>
 													toggleGroup(group.key)
 												}
@@ -338,9 +337,9 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 												>
 													<div className="flex items-center gap-2">
 														{collapsed ? (
-															<ChevronRight className="rtl:-scale-x-100 h-4 w-4 shrink-0 text-gray-500" />
+															<ChevronRight className="rtl:-scale-x-100 h-4 w-4 shrink-0 text-muted-foreground" />
 														) : (
-															<ChevronDown className="h-4 w-4 shrink-0 text-gray-500" />
+															<ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
 														)}
 														<span className="font-semibold text-primary text-sm">
 															{groupMode ===
@@ -354,14 +353,14 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 														</span>
 														<span
 															title={group.key}
-															className="font-mono text-gray-700 text-sm"
+															className="font-mono text-foreground/80 text-sm"
 														>
 															{ellipsed(
 																group.key,
 																32,
 															)}
 														</span>
-														<span className="ml-2 text-gray-500 text-xs">
+														<span className="ml-2 text-muted-foreground text-xs">
 															{t("table.event", {
 																count: group
 																	.events
@@ -378,15 +377,9 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 															)}
 														</span>
 														{group.hasFailure ? (
-															<Cancel
-																className="h-4 w-4 shrink-0"
-																color="#da291c"
-															/>
+															<Cancel className="h-4 w-4 shrink-0 text-destructive" />
 														) : (
-															<CircleCheckIcon
-																className="h-4 w-4 shrink-0"
-																color="#2e7d32"
-															/>
+															<CircleCheckIcon className="h-4 w-4 shrink-0 text-emerald-600" />
 														)}
 													</div>
 												</TableCell>
@@ -414,10 +407,10 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 					</Table>
 				</div>
 				{/* Server-side pagination */}
-				<div className="flex items-center gap-2 justify-self-end bg-white p-2">
+				<div className="flex items-center gap-2 justify-self-end border-border border-t bg-card p-2">
 					<label
 						htmlFor="rows-per-page"
-						className="font-medium text-gray-700 text-sm"
+						className="font-medium text-foreground/80 text-sm"
 					>
 						{t("table.rowsPerPage")}
 					</label>
@@ -469,8 +462,8 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 				</div>
 			</div>
 
-			<div className="flex items-center justify-between border-b bg-gray-50 px-4 py-2">
-				<span className="text-gray-500 text-sm">
+			<div className="flex items-center justify-between border-border border-b bg-accent/30 px-4 py-2">
+				<span className="text-muted-foreground text-sm">
 					{t("table.showingResults", {
 						shown: logs.length,
 						total: totalCount,

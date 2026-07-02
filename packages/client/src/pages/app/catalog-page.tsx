@@ -1129,7 +1129,7 @@ export const CatalogPage = observer(
 												<AppTileCard
 													key={app.project_id}
 													app={app}
-													background="#BADEFF"
+													background="color-mix(in srgb, var(--primary) 18%, var(--card))"
 													href={
 														app.project_name ===
 														"BI"

@@ -517,7 +517,7 @@ export const LayersPanel = observer(
 									height: "4px",
 									background:
 										dropPosition === "top"
-											? "#1976D2"
+											? "var(--primary)"
 											: "transparent",
 									zIndex: 10,
 								}}
@@ -534,11 +534,11 @@ export const LayersPanel = observer(
 										bottom: "4px",
 										border:
 											dropPosition === "inside"
-												? "2px dashed #E91E63"
+												? "2px dashed var(--primary)"
 												: "none",
 										background:
 											dropPosition === "inside"
-												? "rgba(233, 30, 99, 0.1)"
+												? "color-mix(in srgb, var(--primary) 12%, transparent)"
 												: "transparent",
 										zIndex: 9,
 									}}
@@ -555,7 +555,7 @@ export const LayersPanel = observer(
 									height: isContainer ? "8px" : "4px",
 									background:
 										dropPosition === "bottom"
-											? "#1976D2"
+											? "var(--primary)"
 											: "transparent",
 									zIndex: 10,
 								}}

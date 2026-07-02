@@ -18,6 +18,7 @@ import {
 	Sheet,
 	SheetContent,
 	SheetTitle,
+	useTheme,
 } from "@semoss/ui/next";
 import { AuditLogsDetailDrawer } from "./audit-logs-detail-drawer";
 import type { EventData } from "./common";
@@ -127,6 +128,8 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 	logs,
 }) => {
 	const { t } = useTranslation("auditlog");
+	const { resolvedTheme } = useTheme();
+	const isDark = resolvedTheme === "dark";
 	//Resolved chart copy. Memoized per-language and fed into the chart effect's
 	//dependency array so the echarts tooltip (built as an HTML string) re-renders
 	//in the new language when the user switches it.
@@ -286,19 +289,29 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 			value: [row.startMs, laneOf[index], row.endMs],
 		}));
 
+		const tooltipBackground = isDark
+			? "rgba(15, 23, 42, 0.96)"
+			: "rgba(255, 255, 255, 0.98)";
+		const tooltipBorder = isDark ? "#334155" : "#e0e0e0";
+		const tooltipText = isDark ? "#e2e8f0" : "#333";
+		const tooltipMuted = isDark ? "#94a3b8" : "#888";
+		const tooltipDivider = isDark ? "#334155" : "#f0f0f0";
+		const axisLineColor = isDark ? "#334155" : "#e0e0e0";
+		const axisLabelColor = isDark ? "#94a3b8" : "#666";
+		const splitLineColor = isDark ? "#1e293b" : "#f0f0f0";
 		const option = {
-			backgroundColor: "#ffffff",
+			backgroundColor: "transparent",
 			animation: false,
 			tooltip: {
 				trigger: "item",
 				//Render to <body> so the chart's overflow:auto scroll wrapper can't clip the tooltip.
 				appendToBody: true,
 				confine: false,
-				backgroundColor: "rgba(255, 255, 255, 0.98)",
-				borderColor: "#e0e0e0",
+				backgroundColor: tooltipBackground,
+				borderColor: tooltipBorder,
 				borderRadius: 8,
 				padding: [10, 14],
-				textStyle: { color: "#333", fontSize: 13 },
+				textStyle: { color: tooltipText, fontSize: 13 },
 				extraCssText:
 					"box-shadow: 0 8px 24px rgba(0,0,0,0.12); max-width: 320px; white-space: normal;",
 				formatter: (params: unknown): string => {
@@ -314,13 +327,13 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 							: (text ?? "");
 					const line = (label: string, value: string) =>
 						value
-							? `<div style="display:flex;gap:8px;margin-top:2px;"><span style="color:#888;min-width:78px;flex-shrink:0;">${label}</span><span style="color:#333;flex:1;min-width:0;word-break:break-all;overflow-wrap:anywhere;">${value}</span></div>`
+							? `<div style="display:flex;gap:8px;margin-top:2px;"><span style="color:${tooltipMuted};min-width:78px;flex-shrink:0;">${label}</span><span style="color:${tooltipText};flex:1;min-width:0;word-break:break-all;overflow-wrap:anywhere;">${value}</span></div>`
 							: "";
 					const start = TimeDateFormatter(e.startTime);
 					const end = TimeDateFormatter(e.endTime);
 					return `
 						<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.45;">
-							<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #f0f0f0;">
+							<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid ${tooltipDivider};">
 								<span style="font-weight:600;">${e.methodName || e.engineName || chartText.event}</span>
 								<span style="font-weight:600;color:${ok ? STATUS_OK_COLOR : STATUS_FAIL_COLOR};">${ok ? chartText.success : chartText.failed}</span>
 							</div>
@@ -332,10 +345,10 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 							${line(chartText.end, `${end.date} ${end.time}`)}
 							${line(chartText.span, e.spanId || "")}
 							${line(chartText.session, e.sessionId || "")}
-							<div style="margin-top:6px;color:#888;">${chartText.request}</div>
-							<div style="color:#333;word-break:break-word;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${truncate(e.request)}</div>
-							<div style="margin-top:4px;color:#888;">${chartText.response}</div>
-							<div style="color:#333;word-break:break-word;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${truncate(e.response)}</div>
+							<div style="margin-top:6px;color:${tooltipMuted};">${chartText.request}</div>
+							<div style="color:${tooltipText};word-break:break-word;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${truncate(e.request)}</div>
+							<div style="margin-top:4px;color:${tooltipMuted};">${chartText.response}</div>
+							<div style="color:${tooltipText};word-break:break-word;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${truncate(e.response)}</div>
 						</div>`;
 				},
 			},
@@ -382,15 +395,15 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 				min: minStart - pad,
 				max: maxEnd + pad,
 				position: "top",
-				axisLine: { lineStyle: { color: "#e0e0e0" } },
+				axisLine: { lineStyle: { color: axisLineColor } },
 				axisLabel: {
-					color: "#666",
+					color: axisLabelColor,
 					fontSize: 11,
 					hideOverlap: true,
 					formatter: (value: number) =>
 						formatAxisValue(value, axisMode),
 				},
-				splitLine: { show: true, lineStyle: { color: "#f0f0f0" } },
+				splitLine: { show: true, lineStyle: { color: splitLineColor } },
 			},
 			yAxis: {
 				type: "category",
@@ -401,7 +414,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 				axisTick: { show: false },
 				axisLine: { show: false },
 				axisLabel: {
-					color: "#555",
+					color: isDark ? "#cbd5e1" : "#555",
 					fontSize: 11,
 					width: grouped ? 180 : 110,
 					overflow: "truncate",
@@ -623,7 +636,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 			chart.dispose();
 			chartInstanceRef.current = null;
 		};
-	}, [rows, lanes, barColors, chartHeight, axisMode, chartText]);
+	}, [rows, lanes, barColors, chartHeight, axisMode, chartText, isDark]);
 
 	//Zoom the time (x) axis around the center of the CURRENT window, so the buttons
 	//compose with whatever is already zoomed (slider/rectangle).
@@ -696,7 +709,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 
 	const header = (
 		<div className="flex flex-wrap items-center justify-between gap-2 p-4">
-			<span className="font-semibold text-[#333] text-[18px]">
+			<span className="font-semibold text-[18px] text-foreground">
 				{t("timeline.title")}
 			</span>
 			<div className="flex flex-wrap items-center gap-2">
@@ -735,7 +748,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 					</SelectContent>
 				</Select>
 				<fieldset
-					className="inline-flex gap-1 rounded-md bg-white shadow-sm"
+					className="inline-flex gap-1 rounded-md border border-border bg-background shadow-sm"
 					style={{ boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)" }}
 				>
 					<Button
@@ -745,7 +758,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 						title={t("timeline.highlightZoom")}
 						aria-pressed={zoomSelectActive}
 					>
-						<CropIcon style={{ color: "#666" }} />
+						<CropIcon className="text-muted-foreground" />
 					</Button>
 					<Button
 						variant="ghost"
@@ -754,7 +767,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 						title={t("timeline.zoomIn")}
 						disabled={xZoom.end - xZoom.start <= 5}
 					>
-						<ZoomInIcon style={{ color: "#666" }} />
+						<ZoomInIcon className="text-muted-foreground" />
 					</Button>
 					<Button
 						variant="ghost"
@@ -763,7 +776,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 						title={t("timeline.zoomOut")}
 						disabled={xZoom.start === 0 && xZoom.end === 100}
 					>
-						<ZoomOutIcon style={{ color: "#666" }} />
+						<ZoomOutIcon className="text-muted-foreground" />
 					</Button>
 					<Button
 						variant="ghost"
@@ -777,7 +790,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 							yZoom.end === 100
 						}
 					>
-						<ResetIcon style={{ color: "#666" }} />
+						<ResetIcon className="text-muted-foreground" />
 					</Button>
 				</fieldset>
 			</div>
@@ -786,10 +799,10 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 
 	if (rows.length === 0) {
 		return (
-			<div className="rounded-[8px] bg-white p-0 pb-2 shadow-lg">
+			<div className="rounded-[8px] border border-border bg-card p-0 pb-2 shadow-sm">
 				{header}
 				<div className="p-4 text-center">
-					<span className="font-normal text-[14px] text-gray-500">
+					<span className="font-normal text-[14px] text-muted-foreground">
 						{t("common.noLogs")}
 					</span>
 				</div>
@@ -799,11 +812,11 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 
 	return (
 		<>
-			<div className="rounded-[8px] bg-white p-0 pb-2 shadow-lg">
+			<div className="rounded-[8px] border border-border bg-card p-0 pb-2 shadow-sm">
 				{header}
 				<div className="w-full px-2 pb-2">
 					<div
-						className="w-full bg-[#FFFFFF]"
+						className="w-full rounded-md bg-background"
 						style={{ height: `${chartHeight}px` }}
 						ref={chartRef}
 					/>

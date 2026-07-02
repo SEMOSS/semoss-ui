@@ -7,20 +7,17 @@ import {
 	Database,
 	Home,
 	LayoutGrid,
-	Moon,
 	PanelLeftOpen,
 	Puzzle,
 	Settings,
 	ShieldCheck,
 	Sigma,
-	Sun,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { Link, matchPath, useLocation } from "react-router-dom";
 import {
-	cn,
 	Sidebar as ShadcnSidebar,
 	SidebarContent as ShadcnSidebarContent,
 	SidebarFooter as ShadcnSidebarFooter,
@@ -35,7 +32,6 @@ import {
 	SidebarMenuItem,
 	SidebarProvider,
 	SidebarSeparator,
-	useTheme,
 } from "@semoss/ui/next";
 import { usePage, useRootStore } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
@@ -91,17 +87,17 @@ const CATALOG_ROUTES = [
 
 const SIDEBAR_WIDTH = "18rem";
 const NAV_BUTTON_CLASS =
-	"h-auto rounded-none px-4 py-2 text-sm data-[active=true]:rounded-md data-[active=true]:bg-primary/10 data-[active=true]:text-primary dark:data-[active=true]:bg-[#262626] dark:data-[active=true]:text-white";
+	"h-auto rounded-none px-4 py-2 text-sm data-[active=true]:rounded-md data-[active=true]:bg-primary/10 data-[active=true]:text-primary";
 
 export const Sidebar: React.FC = observer(() => {
 	const { configStore } = useRootStore();
 	const { page } = usePage();
-	const { theme, setTheme } = useTheme();
 
 	const { pathname } = useLocation();
 
 	const [viewSidebar, setViewSidebar] = useState(false);
 	const [isLogoutPopoverOpen, setIsLogoutPopoverOpen] = useState(false);
+
 	useEffect(() => {
 		if (configStore.store.user.admin) {
 			setViewSidebar(true);
@@ -301,64 +297,7 @@ export const Sidebar: React.FC = observer(() => {
 					className="p-0"
 					data-testid="sidebar-footer"
 				>
-					<SidebarMenu
-						className="gap-0"
-						aria-label="theme and user navigation"
-					>
-						<SidebarMenuItem className="px-4 py-3">
-							<div className="flex items-center gap-1 rounded-md border border-border bg-muted/70 p-1">
-								<button
-									type="button"
-									aria-pressed={theme === "light"}
-									onClick={() => setTheme("light")}
-									className={cn(
-										"flex-1",
-										"rounded-md",
-										"text-sm",
-										"font-semibold",
-										"px-4",
-										"py-2.5",
-										"transition-colors",
-										"focus-visible:outline-none",
-										"focus-visible:ring-2",
-										"focus-visible:ring-ring/50",
-										theme === "light"
-											? "bg-background text-foreground shadow-sm"
-											: "text-muted-foreground hover:bg-muted hover:text-foreground",
-									)}
-								>
-									<span className="inline-flex items-center justify-center gap-2.5">
-										<Sun className="size-4" />
-										Light
-									</span>
-								</button>
-								<button
-									type="button"
-									aria-pressed={theme === "dark"}
-									onClick={() => setTheme("dark")}
-									className={cn(
-										"flex-1",
-										"rounded-md",
-										"text-sm",
-										"font-semibold",
-										"px-4",
-										"py-2.5",
-										"transition-colors",
-										"focus-visible:outline-none",
-										"focus-visible:ring-2",
-										"focus-visible:ring-ring/50",
-										theme === "dark"
-											? "bg-background text-foreground shadow-sm"
-											: "text-muted-foreground hover:bg-muted hover:text-foreground",
-									)}
-								>
-									<span className="inline-flex items-center justify-center gap-2.5">
-										<Moon className="size-4" />
-										Dark
-									</span>
-								</button>
-							</div>
-						</SidebarMenuItem>
+					<SidebarMenu className="gap-0" aria-label="user navigation">
 						<SidebarMenuItem>
 							<LogoutPopover
 								onOpenChange={setIsLogoutPopoverOpen}

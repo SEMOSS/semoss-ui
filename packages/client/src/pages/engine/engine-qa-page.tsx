@@ -219,7 +219,7 @@ export const EngineQAPage = () => {
 								<Large className="mb-0.5 font-semibold">
 									Policy Extraction Response:
 								</Large>
-								<Small className="font-semibold text-[#1260DD]">
+								<Small className="font-semibold text-primary">
 									Conclusion:
 								</Small>
 								<div className="mb-2 overflow-auto">

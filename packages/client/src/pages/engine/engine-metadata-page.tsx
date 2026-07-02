@@ -1062,8 +1062,8 @@ Error ${e.message || "Unknown error"}
 		? "Positions updated. Save to persist layout."
 		: "Save changes or they will be lost.";
 	const saveButtonHighlightClass = isPositionOnlyChange
-		? "border-sky-500 bg-sky-50 text-sky-900 hover:bg-sky-100"
-		: "border-amber-500 bg-amber-50 text-amber-900 hover:bg-amber-100";
+		? "border-primary/40 bg-primary/10 text-foreground hover:bg-primary/15"
+		: "border-destructive/40 bg-destructive/10 text-foreground hover:bg-destructive/15";
 	const saveTooltipText = isPositionOnlyChange
 		? "Save to persist updated table positions."
 		: "You must save your changes or they will be lost.";
@@ -1078,15 +1078,15 @@ Error ${e.message || "Unknown error"}
 								<div
 									className={
 										isPositionOnlyChange
-											? "rounded-md border border-sky-300 bg-sky-50 px-2 py-1"
-											: "rounded-md border border-amber-300 bg-amber-50 px-2 py-1"
+											? "rounded-md border border-primary/40 bg-primary/10 px-2 py-1"
+											: "rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1"
 									}
 								>
 									<P
 										className={
 											isPositionOnlyChange
-												? "whitespace-nowrap font-medium text-[11px] text-sky-900"
-												: "whitespace-nowrap font-medium text-[11px] text-amber-900"
+												? "whitespace-nowrap font-medium text-[11px] text-foreground"
+												: "whitespace-nowrap font-medium text-[11px] text-foreground"
 										}
 									>
 										{saveReminderText}
@@ -1511,7 +1511,7 @@ Error ${e.message || "Unknown error"}
 																	className={
 																		isMetadataMatch ||
 																		isColumnSearchMatch
-																			? "rounded bg-yellow-200 px-1 py-0.5 font-medium text-[13px] text-foreground leading-5"
+																			? "rounded bg-primary/20 px-1 py-0.5 font-medium text-[13px] text-foreground leading-5"
 																			: "font-medium text-[13px] text-foreground leading-5"
 																	}
 																>

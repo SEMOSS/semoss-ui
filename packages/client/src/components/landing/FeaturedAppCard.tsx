@@ -34,13 +34,17 @@ interface FeaturedAppCardProps {
 export const FeaturedAppCard = observer((props: FeaturedAppCardProps) => {
 	const { tagline, imageUrl, description, chip, href } = props;
 	return (
-		<div className="flex rounded-xl bg-white shadow-[0px_5px_8px_0px_rgba(0,0,0,0.08)]">
+		<div className="flex rounded-xl border border-border bg-card shadow-sm">
 			<div className="flex w-full flex-col items-start justify-between p-4">
 				<div className="flex w-full justify-between">
 					<p className="font-medium text-base">{tagline}</p>
 					<Badge
 						variant="secondary"
-						className="rounded bg-[#FDF0E5] text-[#5F2B01]"
+						className="rounded"
+						style={{
+							backgroundColor: `color-mix(in srgb, ${chip.color} 14%, var(--background))`,
+							color: chip.color,
+						}}
 					>
 						{chip.label}
 					</Badge>
