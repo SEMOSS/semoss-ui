@@ -143,6 +143,68 @@ export class AuthService {
 	}
 
 	/**
+	 * Log in with native SEMOSS credentials (username/password).
+	 *
+	 * Follows the same pattern as loginWithOAuth(), but opens a native login
+	 * form instead of an external OAuth provider. The form is served by the
+	 * backend at /api/auth/login/native, POSTs to /api/auth/login, and on
+	 * success redirects. The extension polls /api/auth/userinfo/native to
+	 * detect when authentication completes.
+	 */
+	static async loginWithNative(): Promise<boolean> {
+		// Already logged in?
+		const existing = await AuthService.getOAuthUserInfo("native");
+		if (existing) {
+			await AuthService.saveOAuthSession("native", existing);
+			return true;
+		}
+
+		// Open the backend login form in a popup window.
+		const url = `${SEMOSS_OAUTH_BASE}/api/auth/login/native`;
+		const popup = window.open(
+			url,
+			"_blank",
+			"height=600,width=400,top=300,left=600",
+		);
+
+		if (!popup) {
+			throw new Error(
+				"Unable to open the login window. Please allow popups and try again.",
+			);
+		}
+
+		// Poll until the native session is established or the popup closes.
+		return new Promise<boolean>((resolve, reject) => {
+			const interval = setInterval(async () => {
+				try {
+					const info = await AuthService.getOAuthUserInfo("native");
+					if (info) {
+						clearInterval(interval);
+						if (!popup.closed) {
+							popup.close();
+						}
+						await AuthService.saveOAuthSession("native", info);
+						resolve(true);
+						return;
+					}
+
+					if (popup.closed) {
+						clearInterval(interval);
+						reject(
+							new Error(
+								"Login window was closed before authentication completed.",
+							),
+						);
+					}
+				} catch {
+					// Ignore transient errors during authentication;
+					// the next tick will re-check.
+				}
+			}, 1000);
+		});
+	}
+
+	/**
 	 * Persist the authenticated OAuth session so the panel can react and the
 	 * authentication banner clears.
 	 */

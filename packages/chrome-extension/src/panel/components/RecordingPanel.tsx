@@ -132,17 +132,64 @@ export const RecordingPanel: FC = () => {
 		}
 	};
 
-	const handleProjectChange = async (newProjectId: string) => {
-		if (newProjectId === "__NEW_PROJECT__") {
-			setShowNewProjectInput(true);
-			setNewProjectName("");
-			return;
-		}
+	const handleSemossLogin = async () => {
+		try {
+			setIsLoggingIn(true);
+			const success = await AuthService.loginWithNative();
+			if (success) {
+				setIsAuthenticated(true);
 
-		setShowNewProjectInput(false);
-		setSelectedProject(newProjectId);
-		await AuthService.saveSelectedProject(newProjectId);
-		toast.success("Project selection saved", { duration: 3000 });
+				// Fetch projects from SEMOSS
+				try {
+					const projectsList =
+						await AuthService.fetchProjectsFromSemoss();
+					const editableProjects = projectsList.filter(
+						(p) => p.canEdit,
+					);
+					setProjects(editableProjects);
+					toast.success("Signed in with SEMOSS - Projects loaded", {
+						duration: 3000,
+					});
+				} catch (error) {
+					console.error("Failed to fetch projects:", error);
+					toast.success("Signed in with SEMOSS", { duration: 3000 });
+					toast.error("Could not load projects. Please refresh.", {
+						duration: 3000,
+					});
+				}
+			}
+		} catch (error) {
+			toast.error(
+				`Sign-in failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+				{ duration: 3000 },
+			);
+		} finally {
+			setIsLoggingIn(false);
+		}
+	};
+
+	const handleProjectChange = (value: string) => {
+		if (value === "__NEW_PROJECT__") {
+			setShowNewProjectInput(true);
+			setSelectedProject(null);
+			setNewProjectName("");
+		} else {
+			setShowNewProjectInput(false);
+			setSelectedProject(value);
+		}
+	};
+
+	const refreshProjects = async () => {
+		if (!isAuthenticated) return;
+
+		try {
+			const projectsList = await AuthService.fetchProjectsFromSemoss();
+			const editableProjects = projectsList.filter((p) => p.canEdit);
+			setProjects(editableProjects);
+			console.log(`Refreshed ${editableProjects.length} projects`);
+		} catch (error) {
+			console.error("Failed to refresh projects:", error);
+		}
 	};
 
 	const handleNewProjectCreation = async () => {
@@ -438,8 +485,8 @@ export const RecordingPanel: FC = () => {
 							Sign in to save recordings
 						</P>
 						<Small className="text-slate-500">
-							Sign in with your Google account to save recordings
-							to Semoss.
+							Sign in with your Google account or SEMOSS
+							credentials to save recordings to Semoss.
 						</Small>
 						<Button
 							variant="outline"
@@ -474,6 +521,35 @@ export const RecordingPanel: FC = () => {
 							{isLoggingIn
 								? "Signing in…"
 								: "Sign in with Google"}
+						</Button>
+						<Button
+							variant="outline"
+							onClick={handleSemossLogin}
+							disabled={isLoggingIn}
+							className="flex w-full items-center justify-center gap-3 rounded-lg border border-slate-300 bg-white px-4 py-6 font-semibold text-slate-700 text-sm hover:bg-slate-50"
+						>
+							<svg
+								aria-hidden="true"
+								width="18"
+								height="18"
+								viewBox="0 0 24 24"
+								xmlns="http://www.w3.org/2000/svg"
+							>
+								<circle cx="12" cy="12" r="10" fill="#667eea" />
+								<text
+									x="12"
+									y="16"
+									fontSize="12"
+									fontWeight="bold"
+									fill="white"
+									textAnchor="middle"
+								>
+									S
+								</text>
+							</svg>
+							{isLoggingIn
+								? "Signing in…"
+								: "Sign in with SEMOSS"}
 						</Button>
 					</div>
 				</Card>
@@ -602,11 +678,7 @@ export const RecordingPanel: FC = () => {
 								handleProjectChange(e.target.value)
 							}
 							onMouseDown={() => refreshProjects()}
-							disabled={
-								!isAuthenticated ||
-								state.actionsList.length === 0 ||
-								isCreatingProject
-							}
+							disabled={!isAuthenticated || isCreatingProject}
 							className={cn(
 								"w-full appearance-none rounded-xl border px-4 py-3.5 pr-12",
 								"font-medium text-[14px]",
@@ -614,16 +686,10 @@ export const RecordingPanel: FC = () => {
 								"transition-all duration-200",
 								"shadow-sm outline-none",
 								// Enabled states
-								!(
-									!isAuthenticated ||
-									state.actionsList.length === 0 ||
-									isCreatingProject
-								) &&
+								!(!isAuthenticated || isCreatingProject) &&
 									"cursor-pointer border-slate-200 text-slate-900 hover:border-indigo-300 hover:shadow-indigo-100/50 hover:shadow-md focus:border-indigo-400 focus:ring-3 focus:ring-indigo-100",
 								// Disabled states
-								(!isAuthenticated ||
-									state.actionsList.length === 0 ||
-									isCreatingProject) &&
+								(!isAuthenticated || isCreatingProject) &&
 									"cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400 opacity-60",
 							)}
 						>
@@ -720,10 +786,7 @@ export const RecordingPanel: FC = () => {
 							placeholder="e.g., Login Test Script"
 							value={scriptName}
 							onChange={(e) => setScriptName(e.target.value)}
-							disabled={
-								state.actionsList.length === 0 ||
-								isCreatingProject
-							}
+							disabled={isCreatingProject}
 							className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 font-medium text-slate-900 text-sm transition-colors duration-150 placeholder:text-slate-400 hover:border-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-50 disabled:opacity-60"
 						/>
 					</div>
