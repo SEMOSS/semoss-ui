@@ -250,7 +250,7 @@ export const DatabaseForm = ({
 					const engineId =
 						engineOutput.engine_id || engineOutput.database_id;
 					toast.success("Successfully created database.");
-					navigate(`/engine/database/${engineId}`);
+					navigate(`/database/${engineId}`);
 				} catch {
 					toast.error(
 						"An error occurred while creating the database.",
@@ -376,9 +376,7 @@ export const DatabaseForm = ({
 						database_id?: string;
 					};
 					toast.success("Successfully created database.");
-					navigate(
-						`/engine/database/${out.engine_id || out.database_id}`,
-					);
+					navigate(`/database/${out.engine_id || out.database_id}`);
 				} catch {
 					toast.error("An error occurred during Excel RDF upload.");
 				} finally {
@@ -484,7 +482,7 @@ export const DatabaseForm = ({
 				if (title === "ZIP") {
 					// engine_id is the current key; database_id is the legacy fallback
 					navigate(
-						`/engine/database/${output.engine_id || output.database_id}`,
+						`/database/${output.engine_id || output.database_id}`,
 					);
 				}
 			}
@@ -674,7 +672,7 @@ export const DatabaseForm = ({
 
 			toast.success("Successfully created database");
 
-			navigate(`/engine/database/${engineId}`);
+			navigate(`/database/${engineId}`);
 		} catch {
 			toast.error("An error occurred while submitting the metamodel.");
 		} finally {
@@ -713,9 +711,7 @@ export const DatabaseForm = ({
 			}
 			toast.success("Successfully created database");
 			// engine_id is the current key; database_id is the legacy fallback
-			navigate(
-				`/engine/database/${output.engine_id || output.database_id}`,
-			);
+			navigate(`/database/${output.engine_id || output.database_id}`);
 		} catch {
 			toast.error("An error occurred while processing the request.");
 		} finally {
@@ -760,9 +756,7 @@ export const DatabaseForm = ({
 			toast.success("Successfully created database");
 
 			// engine_id is the current key; database_id is the legacy fallback
-			navigate(
-				`/engine/database/${output.engine_id || output.database_id}`,
-			);
+			navigate(`/database/${output.engine_id || output.database_id}`);
 		} catch {
 			toast.error("An error occurred while processing the request.");
 		} finally {
@@ -815,9 +809,7 @@ export const DatabaseForm = ({
 			}
 			toast.success("Successfully created database.");
 			// engine_id is the current key; database_id is the legacy fallback
-			navigate(
-				`/engine/database/${output.engine_id || output.database_id}`,
-			);
+			navigate(`/database/${output.engine_id || output.database_id}`);
 		} catch {
 			toast.error("An error occurred while processing the request.");
 		} finally {

@@ -55,7 +55,7 @@ export const CatalogLayout = ({
 						{filterBox}
 					</div>
 				)}
-				<div className="flex h-full w-full flex-1 flex-col gap-6 overflow-hidden">
+				<div className="flex w-full flex-1 flex-col gap-6 overflow-x-hidden">
 					{tabs}
 					{children}
 				</div>

@@ -1,3 +1,4 @@
+import { Plus } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
@@ -6,6 +7,7 @@ import {
 	Button,
 	Muted,
 	P,
+	Spinner,
 	toast,
 	useDebouncedValue,
 	useInfiniteScroll,
@@ -84,9 +86,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 						debouncedSearch
 							? `filterWord=["${debouncedSearch}"], `
 							: ""
-					} sort=[{"${sortValue}" : "${sortOrder}"}], onlyFavorites=[true], ${
-						route ? `engineTypes=['${route.type}']` : ""
-					});`
+					} sort=[{"${sortValue}" : "${sortOrder}"}], onlyFavorites=[true], engineTypes=['${route.type}']);`
 				: "",
 			{
 				data: [],
@@ -104,7 +104,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 			(limit, offset) =>
 				`${enginePrefix}(metaKeys = ${JSON.stringify(
 					metaKeysDescription,
-				)}, ${debouncedSearch ? `filterWord=["${debouncedSearch}"], ` : ""} ${route ? `engineTypes=['${route.type}'], ` : ""} ${metaFilters ? `metaFilters=[${JSON.stringify(metaFilters)}],` : ""} sort=[{"${sortValue}" : "${sortOrder}"}], userT = [true], limit=[${limit}], offset=[${offset}]);`,
+				)}, ${debouncedSearch ? `filterWord=["${debouncedSearch}"], ` : ""} engineTypes=['${route.type}'], ${metaFilters ? `metaFilters=[${JSON.stringify(metaFilters)}],` : ""} sort=[{"${sortValue}" : "${sortOrder}"}], userT = [true], limit=[${limit}], offset=[${offset}]);`,
 			(response) => {
 				// if its less than the limit, we know its the end
 				if (response.length < 15) {
@@ -193,23 +193,12 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		};
 
 		/**
-		 * @name isFavorited
-		 * @param id
-		 * @desc determines if card is favorited
-		 */
-		const isFavorited = (engineId: string) => {
-			return getFavoritedEngines.data.some(
-				(el) => el.engine_id === engineId,
-			);
-		};
-
-		/**
 		 * @name setFavorite
 		 * @param engine
 		 */
 		const setFavorite = async (engine: Engine) => {
 			// check if is favorited
-			const updatedFavorite = !isFavorited(engine.engine_id);
+			const updatedFavorite = !(engine.engine_favorite === 1);
 
 			try {
 				await setEngineFavorite(engine.engine_id, updatedFavorite);
@@ -285,20 +274,21 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 
 		return (
 			<CatalogLayout
-				title={`${route ? route.name : ""} Catalog`}
-				description={route ? route.description : ""}
+				title={`${route.name} Catalog`}
+				description={route.description}
 				headerActions={
 					<Button
 						variant="default"
 						onClick={() => {
-							navigate(`/engine/${route.type.toLowerCase()}/new`);
+							navigate(`/${route.type.toLowerCase()}/new`);
 						}}
-						aria-label={`Add ${route ? route.name : "Engine"}`}
+						aria-label={`Add ${route.name}`}
 						data-testid={formatToDataTestId(
-							`engineIndex-add-${route ? route.name : "Engine"}-btn`,
+							`engineIndex-add-${route.name}-btn`,
 						)}
 					>
-						Add {route ? route.name : "Engine"}
+						<Plus className="size-4" />
+						Add {route.name}
 					</Button>
 				}
 				searchBar={
@@ -334,13 +324,13 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 						tabs={[
 							{
 								value: "Mine",
-								label: `My ${route ? `${route.name}s` : "Engines"}`,
-								dataTestId: `engineIndexPage-${route ? `${route.name}s` : "Engines"}-my-switch`,
+								label: `My ${route.name}s`,
+								dataTestId: `engineIndexPage-${route.name}s-my-switch`,
 							},
 							{
 								value: "Discoverable",
-								label: `Discoverable ${route ? `${route.name}s` : "Engines"}`,
-								dataTestId: `engineIndexPage-${route ? `${route.name}s` : "Engines"}-discoverable-switch`,
+								label: `Discoverable ${route.name}s`,
+								dataTestId: `engineIndexPage-${route.name}s-discoverable-switch`,
 							},
 						]}
 					/>
@@ -354,71 +344,142 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 					/>
 				}
 			>
-				{/* Bookmarked Section */}
-				{tab === "Mine" && getFavoritedEngines.data.length > 0 && (
+				{tab === "Mine" && (
 					<>
-						<p className="font-medium text-sm">Bookmarked</p>
-						<CatalogGrid variant={gridStyle}>
-							{getFavoritedEngines.data.map((engine) => (
-								<EngineGridItem
-									key={engine.engine_id}
-									variant={gridStyle}
-									path={`/engine/${route.path}/${engine.engine_id}`}
-									engine={engine}
-									isFavorited={isFavorited(engine.engine_id)}
-									showFavorite={true}
-									showGlobal={true}
-									showDelete={isOwnerPermission(
-										engine.engine_user_permission,
-									)}
-									onFavorite={setFavorite}
-									onGlobalToggle={setGlobal}
-									onDelete={handleDeleteRequest}
-								/>
-							))}
-						</CatalogGrid>
+						{/* Loading State */}
+						{getFavoritedEngines.status === "LOADING" &&
+						getEngines.isLoading ? (
+							<div className="flex flex-col items-center justify-center py-6">
+								<Spinner className="size-4" />
+							</div>
+						) : null}
+
+						{/* Bookmarked Section */}
+						{getFavoritedEngines.data.length > 0 && (
+							<>
+								<p className="font-medium text-sm">
+									Bookmarked
+								</p>
+								<CatalogGrid variant={gridStyle}>
+									{getFavoritedEngines.data.map((engine) => (
+										<EngineGridItem
+											key={engine.engine_id}
+											variant={gridStyle}
+											path={`/${route.path}/${engine.engine_id}`}
+											engine={engine}
+											isFavorited={true}
+											showFavorite={true}
+											showGlobal={true}
+											showDelete={isOwnerPermission(
+												engine.engine_user_permission,
+											)}
+											onFavorite={setFavorite}
+											onGlobalToggle={setGlobal}
+											onDelete={handleDeleteRequest}
+										/>
+									))}
+								</CatalogGrid>
+							</>
+						)}
+
+						{/* All Section Label */}
+						{Object.entries(metaFilters).length === 0 &&
+							nonBookmarked.length > 0 && (
+								<p className="font-medium text-sm">
+									All {route.name}s
+								</p>
+							)}
+
+						{/* All Items */}
+						{nonBookmarked.length > 0 && (
+							<CatalogGrid
+								isLoading={getEngines.isLoading}
+								showLoadingMore={nonBookmarked.length > 0}
+								variant={gridStyle}
+							>
+								{nonBookmarked.map((engine) => (
+									<EngineGridItem
+										key={engine.engine_id}
+										variant={gridStyle}
+										path={`/${route.path}/${engine.engine_id}`}
+										engine={engine}
+										isFavorited={
+											engine.engine_favorite === 1
+										} // should be false
+										showFavorite={true}
+										showGlobal={true}
+										showDelete={isOwnerPermission(
+											engine.engine_user_permission,
+										)}
+										onFavorite={setFavorite}
+										onGlobalToggle={setGlobal}
+										onDelete={handleDeleteRequest}
+									/>
+								))}
+							</CatalogGrid>
+						)}
+
+						{/* Empty State */}
+						{!getEngines.isLoading &&
+							getFavoritedEngines.status !== "LOADING" &&
+							nonBookmarked.length === 0 &&
+							getFavoritedEngines.data.length === 0 && (
+								<div className="w-full px-2 py-4 text-center">
+									<Muted>No results found</Muted>
+								</div>
+							)}
 					</>
 				)}
+				{tab === "Discoverable" && (
+					<>
+						{/* Loading State */}
+						{getEngines.isLoading ? (
+							<div className="flex flex-col items-center justify-center py-6">
+								<Spinner className="size-4" />
+							</div>
+						) : null}
 
-				{/* All Section Label */}
-				{Object.entries(metaFilters).length === 0 &&
-					getEngines.data.length > 0 &&
-					nonBookmarked.length > 0 && (
-						<p className="font-medium text-sm">All {route.name}s</p>
-					)}
-
-				{/* All Items */}
-				{getEngines.data.length > 0 && (
-					<CatalogGrid
-						isLoading={getEngines.isLoading}
-						showLoadingMore={getEngines.data.length > 0}
-						variant={gridStyle}
-					>
-						{nonBookmarked.map((engine) => (
-							<EngineGridItem
-								key={engine.engine_id}
+						{/* All Items */}
+						{getEngines.data.length > 0 && (
+							<CatalogGrid
+								isLoading={getEngines.isLoading}
+								showLoadingMore={getEngines.data.length > 0}
 								variant={gridStyle}
-								path={`/engine/${route.path}/${engine.engine_id}`}
-								engine={engine}
-								isFavorited={isFavorited(engine.engine_id)}
-								showFavorite={tab === "Mine"}
-								showGlobal={true}
-								showDelete={isOwnerPermission(
-									engine.engine_user_permission,
-								)}
-								onFavorite={setFavorite}
-								onGlobalToggle={setGlobal}
-								onDelete={handleDeleteRequest}
-							/>
-						))}
-					</CatalogGrid>
-				)}
+							>
+								{getEngines.data.map((engine) => (
+									<EngineGridItem
+										key={engine.engine_id}
+										variant={gridStyle}
+										path={`/${route.path}/${engine.engine_id}`}
+										engine={engine}
+										isFavorited={
+											engine.engine_favorite === 1
+										}
+										showFavorite={isOwnerPermission(
+											engine.engine_user_permission,
+										)}
+										showGlobal={isOwnerPermission(
+											engine.engine_user_permission,
+										)}
+										showDelete={isOwnerPermission(
+											engine.engine_user_permission,
+										)}
+										onFavorite={setFavorite}
+										onGlobalToggle={setGlobal}
+										onDelete={handleDeleteRequest}
+									/>
+								))}
+							</CatalogGrid>
+						)}
 
-				{/* Empty State */}
-				{!getEngines.isLoading && getEngines.data.length === 0 && (
-					<div className="w-full px-2 py-4 text-center">
-						<Muted>No results found</Muted>
-					</div>
+						{/* Empty State */}
+						{!getEngines.isLoading &&
+							getEngines.data.length === 0 && (
+								<div className="w-full px-2 py-4 text-center">
+									<Muted>No results found</Muted>
+								</div>
+							)}
+					</>
 				)}
 
 				<DeleteEntityDialog

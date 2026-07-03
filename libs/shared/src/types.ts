@@ -58,7 +58,7 @@ export interface Project {
 	project_reactors_compiled_date?: string;
 	project_reactors_compiled_user?: string;
 	project_reactors_compiled_user_type?: string;
-	project_favorite?: string;
+	project_favorite?: number; // 1 for favorite, 0 for not favorite
 	user_permission?: number;
 	group_permission?: string;
 	"data classification"?: string[];

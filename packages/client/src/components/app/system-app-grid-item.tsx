@@ -1,9 +1,7 @@
-import { Copy } from "lucide-react";
 import { useMemo } from "react";
 import { AppCatalogAvatar } from "@semoss/shared";
 import {
 	Badge,
-	Button,
 	Card,
 	CardContent,
 	CardHeader,
@@ -11,31 +9,25 @@ import {
 	HoverCardContent,
 	HoverCardTrigger,
 	P,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-	toast,
 } from "@semoss/ui/next";
-import type { AppMetadata } from "@/components/app";
 import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
 
 export interface SystemAppGridItemProps {
+	/** test id of the app */
+	id: string;
+
+	/** Name of the app */
+	name: string;
+
+	/** Description of the app */
+	description: string;
+
 	/** External URL to open in a new tab */
 	href: string;
-	/** The system app data to display */
-	app: Pick<AppMetadata, "project_id" | "project_name" | "description">;
+
 	/** Display style - list row or grid card */
 	gridStyle: "LIST" | "CARD";
 }
-
-const copyToClipboard = (text: string) => {
-	try {
-		navigator.clipboard.writeText(text);
-		toast.success("Copied to clipboard");
-	} catch {
-		toast.error("Failed to copy");
-	}
-};
 
 const hashString = (str: string): number => {
 	let h = 0;
@@ -57,13 +49,12 @@ const generateGradient = (name: string): string => {
  * target app in a new browser tab.
  */
 export const SystemAppGridItem: React.FC<SystemAppGridItemProps> = ({
+	id,
+	name,
+	description,
 	href,
-	app,
 	gridStyle,
 }) => {
-	const id = app.project_id;
-	const name = app.project_name || id;
-	const description = app.description || "";
 	const tag = "SYSTEM";
 
 	const icon = (
@@ -103,29 +94,7 @@ export const SystemAppGridItem: React.FC<SystemAppGridItemProps> = ({
 									</P>
 									<div className="flex min-w-0 items-center gap-1">
 										<div className="flex items-center gap-1 truncate text-muted-foreground text-xs">
-											<span>ID:</span>
-											<span className="truncate">
-												{id}
-											</span>
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<Button
-														variant="ghost"
-														size="icon-sm"
-														className="h-5 w-5"
-														onClick={(event) => {
-															event.preventDefault();
-															event.stopPropagation();
-															copyToClipboard(id);
-														}}
-													>
-														<Copy className="size-3.5" />
-													</Button>
-												</TooltipTrigger>
-												<TooltipContent>
-													Copy ID
-												</TooltipContent>
-											</Tooltip>
+											&nbsp;
 										</div>
 									</div>
 								</div>

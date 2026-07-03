@@ -6,7 +6,7 @@ import type { Project } from "@semoss/shared";
 import {
 	Button,
 	Muted,
-	P,
+	Spinner,
 	toast,
 	useDebouncedValue,
 	useInfiniteScroll,
@@ -31,47 +31,34 @@ import { ProjectGridItem } from "./project-grid-item";
 
 const CATALOG_CONFIG = {
 	CODE: {
-		title: "Apps",
-		description: "Manage and discover applications.",
-		createLabel: "Create New App",
+		name: "App",
+		description:
+			"Build, organize, and share apps in one place. Create new experiences, manage existing apps, and discover what your team has published.",
 		createPath: "/app/new",
 		basePath: "/app",
 		itemSubPath: "view",
 		pixelFilter: "onlyPortals=[true]",
-		myTab: "My Apps",
-		discoverableTab: "Discoverable Apps",
-		systemTab: "System Apps",
-		emptySystem: "No system apps found.",
 		showSystemTab: true,
 	},
 	SKILL: {
-		title: "Skills",
+		name: "Skill",
 		description:
-			"Skills are reusable capabilities that extend agent functionality through specialized tools, integrations, and workflows. Build custom skills to connect to APIs, process data, or automate complex tasks. Browse and discover skills to enhance your agents with pre-built functionality across diverse use cases.",
-		createLabel: "Create New Skill",
+			"Create reusable capabilities for your agents. Skills package tools, integrations, and workflows so you can automate tasks, connect external systems, and scale proven patterns across teams.",
 		createPath: "/skill/new",
 		basePath: "/skill",
 		itemSubPath: "edit",
 		pixelFilter: 'type="SKILL"',
-		myTab: "My Skills",
-		discoverableTab: "Discoverable Skills",
-		systemTab: "System Skills",
-		emptySystem: "No system skills found.",
 		showSystemTab: false,
 	},
 	WORKSPACE: {
-		title: "Agents",
+		name: "Agent",
 		description:
 			"Agents are autonomous AI assistants configured with specific skills, knowledge bases, and behavioral guidelines to accomplish complex tasks. Create agents tailored to your workflows, from customer support and data analysis to content generation and research. Manage and deploy intelligent agents that can reason, plan, and execute multi-step processes.",
-		createLabel: "Create New Agent",
 		createPath: "/agent/new",
 		basePath: "/agent",
 		itemSubPath: "edit",
 		pixelFilter: 'type="WORKSPACE"',
-		myTab: "My Agents",
-		discoverableTab: "Discoverable Agents",
-		systemTab: "System Agents",
-		emptySystem: "No system agents found.",
+
 		showSystemTab: false,
 	},
 } as const;
@@ -79,28 +66,27 @@ const CATALOG_CONFIG = {
 type TabMode = "Mine" | "Discoverable" | "System";
 
 const SYSTEM_APPS: {
-	project_id: string;
-	project_name: string;
+	id: string;
+	name: string;
 	description: string;
-	/** External URL of the deployed system app, opened in a new tab */
 	href: string;
 }[] = [
 	{
-		project_id: "playground-system-app",
-		project_name: "Playground",
+		id: "playground-system-app",
+		name: "Playground",
 		description:
 			"Experiment with AI agents, tools, and MCP integrations in an interactive workspace.",
 		href: "../../playground/dist/",
 	},
 	{
-		project_id: "bi-system-app",
-		project_name: "BI",
+		id: "bi-system-app",
+		name: "BI",
 		description: "Develop dashboards and visualizations to view data",
 		href: "../../legacy/dist/",
 	},
 	{
-		project_id: "terminal-system-app",
-		project_name: "Terminal",
+		id: "terminal-system-app",
+		name: "Terminal",
 		description: "Execute commands and see a response",
 		href: "../../terminal/dist/",
 	},
@@ -155,7 +141,6 @@ export const ProjectCatalog = observer(
 			null,
 		);
 
-		const isSystemMode = tab === "System";
 		const metaKeysDescription = [...metaKeys, "description"];
 
 		const getFavoriteProjects = usePixel<Project[]>(
@@ -179,7 +164,7 @@ export const ProjectCatalog = observer(
 
 		const getProjects = useIteratorPixel<Project[], Project>(
 			(limit, offset) => {
-				if (isSystemMode) {
+				if (tab === "System") {
 					return "";
 				}
 
@@ -214,7 +199,9 @@ export const ProjectCatalog = observer(
 
 		const { setScroll, resetScroll } = useInfiniteScroll({
 			disabled:
-				isSystemMode || getProjects.isLoading || !getProjects.hasMore,
+				tab === "System" ||
+				getProjects.isLoading ||
+				!getProjects.hasMore,
 			onNext: () => {
 				getProjects.next();
 			},
@@ -273,23 +260,12 @@ export const ProjectCatalog = observer(
 		};
 
 		/**
-		 * @name isFavorited
-		 * @param id
-		 * @desc determines if card is favorited
-		 */
-		const isFavorited = (projectId: string) => {
-			return getFavoriteProjects.data.some(
-				(p) => p.project_id === projectId,
-			);
-		};
-
-		/**
 		 * @name setFavorite
 		 * @param project
 		 */
 		const setFavorite = async (project: Project) => {
 			// check if is favorited
-			const updatedFavorite = !isFavorited(project.project_id);
+			const updatedFavorite = !(project.project_favorite === 1);
 
 			try {
 				await setProjectFavorite(project.project_id, updatedFavorite);
@@ -352,15 +328,12 @@ export const ProjectCatalog = observer(
 
 		// filter out the bookmarked
 		const nonBookmarked = getProjects.data.filter(
-			(db) =>
-				!getFavoriteProjects.data.some(
-					(fav) => fav.project_id === db.project_id,
-				),
+			(db) => db.project_favorite !== 1,
 		);
 
 		// filter out system mode
 		const filteredSystemApps = SYSTEM_APPS.filter((app) =>
-			app.project_name.toLowerCase().includes(search.toLowerCase()),
+			app.name.toLowerCase().includes(search.toLowerCase()),
 		);
 
 		return (
@@ -369,7 +342,7 @@ export const ProjectCatalog = observer(
 					<NavbarHeader />
 				</NavbarLeft>
 				<CatalogLayout
-					title={config.title}
+					title={`${config.name} Catalog`}
 					description={config.description}
 					headerActions={
 						configStore.isEngineOperationAvailable(
@@ -379,11 +352,11 @@ export const ProjectCatalog = observer(
 							<Button
 								variant="default"
 								onClick={() => navigate(config.createPath)}
-								aria-label={config.createLabel}
+								aria-label={`Add ${config.name}`}
 								data-testid="ProjectPage-create-new-app-btn"
 							>
 								<Plus className="size-4" />
-								{config.createLabel}
+								Add {config.name}
 							</Button>
 						) : null
 					}
@@ -427,19 +400,19 @@ export const ProjectCatalog = observer(
 							tabs={[
 								{
 									value: "Mine",
-									label: config.myTab,
+									label: `My ${config.name}`,
 									dataTestId: "ProjectPage-myApps-tab",
 								},
 								{
 									value: "Discoverable",
-									label: config.discoverableTab,
+									label: `Discoverable ${config.name}s`,
 									dataTestId: "ProjectPage-discoverable-tab",
 								},
 								...(config.showSystemTab
 									? [
 											{
 												value: "System",
-												label: config.systemTab,
+												label: `System ${config.name}s`,
 												dataTestId:
 													"ProjectPage-systemApps-tab",
 											},
@@ -467,22 +440,76 @@ export const ProjectCatalog = observer(
 						) : null
 					}
 				>
-					{/* Bookmarked Section */}
-					{!isSystemMode &&
-						tab === "Mine" &&
-						getFavoriteProjects.data.length > 0 && (
-							<>
-								<p className="font-medium text-sm">
-									Bookmarked
-								</p>
-								<CatalogGrid variant={gridStyle}>
-									{getFavoriteProjects.data.map((project) => (
+					{tab === "Mine" ? (
+						<>
+							{/* Loading State */}
+							{getFavoriteProjects.status === "LOADING" &&
+							getProjects.isLoading ? (
+								<div className="flex flex-col items-center justify-center py-6">
+									<Spinner className="size-4" />
+								</div>
+							) : null}
+
+							{/* Bookmarked Section */}
+							{getFavoriteProjects.data.length > 0 && (
+								<>
+									<p className="font-medium text-sm">
+										Bookmarked
+									</p>
+									<CatalogGrid variant={gridStyle}>
+										{getFavoriteProjects.data.map(
+											(project) => (
+												<ProjectGridItem
+													key={project.project_id}
+													variant={gridStyle}
+													path={`${config.basePath}/${project.project_id}/${config.itemSubPath}`}
+													project={project}
+													isFavorited={true}
+													showFavorite={true}
+													showGlobal={true}
+													showInfo={true}
+													showClone={true}
+													showDelete={isOwnerPermission(
+														project.user_permission,
+													)}
+													infoPath={`${config.basePath}/${project.project_id}`}
+													onFavorite={setFavorite}
+													onGlobalToggle={setGlobal}
+													onClone={setCloneModalApp}
+													onDelete={
+														handleDeleteRequest
+													}
+												/>
+											),
+										)}
+									</CatalogGrid>
+								</>
+							)}
+
+							{/* All Section Label */}
+							{Object.entries(metaFilters).length === 0 &&
+								nonBookmarked.length > 0 && (
+									<p className="font-medium text-sm">
+										All {config.name}s
+									</p>
+								)}
+
+							{/* All Items */}
+							{nonBookmarked.length > 0 && (
+								<CatalogGrid
+									isLoading={getProjects.isLoading}
+									showLoadingMore={nonBookmarked.length > 0}
+									variant={gridStyle}
+								>
+									{nonBookmarked.map((project) => (
 										<ProjectGridItem
 											key={project.project_id}
 											variant={gridStyle}
 											path={`${config.basePath}/${project.project_id}/${config.itemSubPath}`}
 											project={project}
-											isFavorited={true}
+											isFavorited={
+												project.project_favorite === 1
+											} // should be false
 											showFavorite={true}
 											showGlobal={true}
 											showInfo={true}
@@ -498,76 +525,92 @@ export const ProjectCatalog = observer(
 										/>
 									))}
 								</CatalogGrid>
-							</>
-						)}
+							)}
 
-					{/* All Section Label */}
-					{!isSystemMode &&
-						Object.entries(metaFilters).length === 0 &&
-						getProjects.data.length > 0 &&
-						nonBookmarked.length > 0 && (
-							<p className="font-medium text-sm">
-								All {config.title}
-							</p>
-						)}
+							{/* Empty State */}
+							{!getProjects.isLoading &&
+								getFavoriteProjects.status !== "LOADING" &&
+								nonBookmarked.length === 0 &&
+								getFavoriteProjects.data.length === 0 && (
+									<div className="w-full px-2 py-4 text-center">
+										<Muted>No results found</Muted>
+									</div>
+								)}
+						</>
+					) : null}
+					{tab === "Discoverable" ? (
+						<>
+							{/* Loading State */}
+							{getProjects.isLoading ? (
+								<div className="flex flex-col items-center justify-center py-6">
+									<Spinner className="size-4" />
+								</div>
+							) : null}
 
-					{/* All Items */}
-					{!isSystemMode && getProjects.data.length > 0 && (
-						<CatalogGrid
-							isLoading={getProjects.isLoading}
-							showLoadingMore={getProjects.data.length > 0}
-							variant={gridStyle}
-						>
-							{nonBookmarked.map((project) => (
-								<ProjectGridItem
-									key={project.project_id}
+							{/* All Items */}
+							{getProjects.data.length > 0 && (
+								<CatalogGrid
+									isLoading={getProjects.isLoading}
+									showLoadingMore={
+										getProjects.data.length > 0
+									}
 									variant={gridStyle}
-									path={`${config.basePath}/${project.project_id}/${config.itemSubPath}`}
-									project={project}
-									isFavorited={isFavorited(
-										project.project_id,
-									)}
-									showFavorite={true}
-									showGlobal={true}
-									showInfo={true}
-									showClone={true}
-									showDelete={isOwnerPermission(
-										project.user_permission,
-									)}
-									infoPath={`${config.basePath}/${project.project_id}`}
-									onFavorite={setFavorite}
-									onGlobalToggle={setGlobal}
-									onClone={setCloneModalApp}
-									onDelete={handleDeleteRequest}
-								/>
-							))}
-						</CatalogGrid>
-					)}
+								>
+									{getProjects.data.map((project) => (
+										<ProjectGridItem
+											key={project.project_id}
+											variant={gridStyle}
+											path={`${config.basePath}/${project.project_id}`}
+											project={project}
+											isFavorited={
+												project.project_favorite === 1
+											}
+											showFavorite={false}
+											showGlobal={isOwnerPermission(
+												project.user_permission,
+											)}
+											showInfo={false}
+											showClone={isOwnerPermission(
+												project.user_permission,
+											)}
+											showDelete={isOwnerPermission(
+												project.user_permission,
+											)}
+											infoPath={""}
+											onFavorite={setFavorite}
+											onGlobalToggle={setGlobal}
+											onClone={setCloneModalApp}
+											onDelete={handleDeleteRequest}
+										/>
+									))}
+								</CatalogGrid>
+							)}
 
-					{/* Empty State */}
-					{!isSystemMode &&
-						!getProjects.isLoading &&
-						getProjects.data.length === 0 && (
-							<div className="w-full px-2 py-4 text-center">
-								<Muted>No results found</Muted>
-							</div>
-						)}
-
-					{/* System */}
-					{isSystemMode && (
+							{/* Empty State */}
+							{!getProjects.isLoading &&
+								getProjects.data.length === 0 && (
+									<div className="w-full px-2 py-4 text-center">
+										<Muted>No results found</Muted>
+									</div>
+								)}
+						</>
+					) : null}
+					{tab === "System" && (
 						<CatalogGrid variant={gridStyle}>
 							{filteredSystemApps.length > 0 ? (
 								filteredSystemApps.map((project) => (
 									<SystemAppGridItem
-										key={project.project_id}
-										app={project}
+										key={project.id}
+										id={project.id}
+										name={project.name}
+										description={project.description}
 										href={project.href}
 										gridStyle={gridStyle}
 									/>
 								))
 							) : (
-								<div className="col-span-full rounded-lg border border-dashed p-8 text-center text-muted-foreground">
-									<P>{config.emptySystem}</P>
+								<div className="w-full px-2 py-4 text-center">
+									<Muted>No results found</Muted>
 								</div>
 							)}
 						</CatalogGrid>

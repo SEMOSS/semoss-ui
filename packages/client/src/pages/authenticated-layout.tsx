@@ -14,9 +14,5 @@ export const AuthenticatedLayout = observer(() => {
 		return <Navigate to="/login" state={{ from: location }} replace />;
 	}
 
-	return (
-		<>
-			<Outlet />
-		</>
-	);
+	return <Outlet />;
 });

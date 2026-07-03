@@ -142,7 +142,7 @@ export const CatalogGridItem = ({
 									>
 										{name}
 									</P>
-									<div className="flex min-w-0 items-center gap-1">
+									<div className="flex min-w-0 flex-2 items-center gap-1">
 										<div className="flex items-center gap-1 truncate text-muted-foreground text-xs">
 											<span>ID:</span>
 											<span className="truncate">
@@ -172,39 +172,44 @@ export const CatalogGridItem = ({
 								</div>
 
 								{tags && tags.length > 0 && (
-									<div className="flex shrink-0 flex-wrap items-center gap-1.5">
-										{tags.slice(0, 3).map((tag) => (
-											<Badge
-												key={tag}
-												variant="outline"
-												title={tag}
-												style={getTagBadgeStyle(tag)}
-											>
-												<span className="max-w-[18ch] truncate px-2 font-semibold text-xs">
-													{tag}
-												</span>
-											</Badge>
-										))}
-										{tags.length > 3 && (
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<Badge
-														variant="outline"
-														className="flex cursor-pointer items-center gap-1"
-													>
-														<Tag className="size-3" />
-														{tags.length - 3}
-													</Badge>
-												</TooltipTrigger>
-												<TooltipContent>
-													<span className="max-w-[300px]">
-														{tags
-															.slice(3)
-															.join(", ")}
+									<div className="min-w-0 flex-1 overflow-hidden hover:overflow-x-auto">
+										<div className="ml-auto flex w-max flex-nowrap items-center gap-1.5">
+											{tags.slice(0, 3).map((tag) => (
+												<Badge
+													key={tag}
+													variant="outline"
+													className="shrink-0"
+													title={tag}
+													style={getTagBadgeStyle(
+														tag,
+													)}
+												>
+													<span className="max-w-[18ch] truncate px-2 font-semibold text-xs">
+														{tag}
 													</span>
-												</TooltipContent>
-											</Tooltip>
-										)}
+												</Badge>
+											))}
+											{tags.length > 3 && (
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<Badge
+															variant="outline"
+															className="flex shrink-0 cursor-pointer items-center gap-1"
+														>
+															<Tag className="size-3" />
+															{tags.length - 3}
+														</Badge>
+													</TooltipTrigger>
+													<TooltipContent>
+														<span className="max-w-[300px]">
+															{tags
+																.slice(3)
+																.join(", ")}
+														</span>
+													</TooltipContent>
+												</Tooltip>
+											)}
+										</div>
 									</div>
 								)}
 

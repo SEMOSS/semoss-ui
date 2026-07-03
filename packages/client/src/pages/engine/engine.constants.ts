@@ -12,14 +12,14 @@ import { EngineMetadataPage } from "./engine-metadata-page";
 import { EngineModelChatPage } from "./engine-model-chat-page";
 import { EngineOverviewPage } from "./engine-overview-page";
 import { EngineQAPage } from "./engine-qa-page";
-import { EngineSettingsPage } from "./engine-settingsPage";
+import { EngineSettingsPage } from "./engine-settings-page";
 import { EngineSmssPage } from "./engine-smss-page";
 import { EngineSparqlQueryPage } from "./engine-sparql-query-page";
 import { EngineSqlQueryPage } from "./engine-sql-query-page";
 import { EngineStorageViewerPage } from "./engine-storage-viewer-page";
 import { EngineUsagePage } from "./engine-usage-page";
 
-const ENGINE_ROUTES_BASE: {
+export const ENGINE_ROUTES: {
 	/** Name of the route */
 	name: string;
 
@@ -77,6 +77,12 @@ const ENGINE_ROUTES_BASE: {
 				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
+				name: "Activity Log",
+				path: "activity",
+				component: EngineActivityPage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
 				name: "Access Control",
 				path: "access-control",
 				component: EngineSettingsPage,
@@ -129,6 +135,12 @@ const ENGINE_ROUTES_BASE: {
 				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
+				name: "Activity Log",
+				path: "activity",
+				component: EngineActivityPage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
 				name: "Chat",
 				path: "chat",
 				component: EngineModelChatPage,
@@ -178,6 +190,12 @@ const ENGINE_ROUTES_BASE: {
 				name: "MCP Usage",
 				path: "mcp-usage",
 				component: EngineMcpUsagePage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "Activity Log",
+				path: "activity",
+				component: EngineActivityPage,
 				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
@@ -245,6 +263,12 @@ const ENGINE_ROUTES_BASE: {
 				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
+				name: "Activity Log",
+				path: "activity",
+				component: EngineActivityPage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
 				name: "Documents",
 				path: "documents",
 				component: EngineFilePage,
@@ -303,6 +327,12 @@ const ENGINE_ROUTES_BASE: {
 				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
+				name: "Activity Log",
+				path: "activity",
+				component: EngineActivityPage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
 				name: "Storage Viewer",
 				path: "storage-viewer",
 				component: EngineStorageViewerPage,
@@ -349,6 +379,12 @@ const ENGINE_ROUTES_BASE: {
 				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
+				name: "Activity Log",
+				path: "activity",
+				component: EngineActivityPage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
 				name: "Access Control",
 				path: "access-control",
 				component: EngineSettingsPage,
@@ -369,23 +405,3 @@ const ENGINE_ROUTES_BASE: {
 		],
 	},
 ];
-
-//The audit-logs dashboard, shown as an "Activity Log" tab on every engine type.
-//Inserted right after each engine's "MCP Usage" tab (falling back to "Usage", then
-//the Overview tab). Visible to anyone with access; the backend role-scopes the rows.
-const ENGINE_ACTIVITY_TAB = {
-	name: "Activity Log",
-	path: "activity",
-	component: EngineActivityPage,
-	restrict: ["READ_ONLY", "EDIT", "OWNER"] as Role[],
-};
-
-export const ENGINE_ROUTES = ENGINE_ROUTES_BASE.map((route) => {
-	const specific = [...route.specific];
-	const mcpIndex = specific.findIndex((tab) => tab.path === "mcp-usage");
-	const usageIndex = specific.findIndex((tab) => tab.path === "usage");
-	const insertAt =
-		mcpIndex >= 0 ? mcpIndex + 1 : usageIndex >= 0 ? usageIndex + 1 : 1;
-	specific.splice(insertAt, 0, ENGINE_ACTIVITY_TAB);
-	return { ...route, specific };
-});

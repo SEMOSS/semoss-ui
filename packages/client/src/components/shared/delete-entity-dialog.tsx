@@ -49,26 +49,23 @@ export const DeleteEntityDialog = (props: DeleteEntityDialogProps) => {
 				<DialogHeader>
 					<DialogTitle>Delete {entityLabel}</DialogTitle>
 					<DialogDescription>
-						<div
-							className={`my-4 grid grid-cols-[max-content_1fr] gap-2 text-foreground`}
-						>
-							<span>Name:</span>
-							<span className="break-all font-semibold">
-								{entityName || "N/A"}
-							</span>
-							<span>ID:</span>
-							<span className="break-all font-semibold">
-								{entityId || "N/A"}
-							</span>
-						</div>
-						<p className="text-foreground">
-							Are you sure you want to delete this{" "}
-							{entityLabel.toLowerCase()}? This action cannot be
-							undone.
-						</p>
+						Are you sure you want to delete this{" "}
+						{entityLabel.toLowerCase()}? This action cannot be
+						undone.
 					</DialogDescription>
 				</DialogHeader>
-
+				<div
+					className={`grid grid-cols-[max-content_1fr] gap-2 text-foreground text-sm`}
+				>
+					<span>Name:</span>
+					<span className="break-all font-semibold">
+						{entityName || "N/A"}
+					</span>
+					<span>ID:</span>
+					<span className="break-all font-semibold">
+						{entityId || "N/A"}
+					</span>
+				</div>
 				<DialogFooter className="w-full justify-center sm:justify-center">
 					<Button
 						variant="outline"
