@@ -192,6 +192,47 @@ export const createCodeFilePath = (lang: string): string => {
 	return `save-code-response-${Date.now()}.${ext}`;
 };
 
+export const createNotebookFilePath = (): string => {
+	return `save-notebook-response-${Date.now()}.notebook.json`;
+};
+
+const toNotebookCellType = (lang: string): string => {
+	const normalized = lang.toLowerCase();
+	if (normalized === "sql") return "sql";
+	if (normalized === "r") return "r";
+	return "py";
+};
+
+export const createNotebookFileContent = (
+	code: string,
+	lang: string,
+): string => {
+	const notebookId = "notebook 1";
+	const content = {
+		version: "1",
+		queries: {
+			[notebookId]: {
+				id: notebookId,
+				cells: [
+					{
+						id: "1",
+						widget: "code",
+						parameters: {
+							code,
+							type: toNotebookCellType(lang),
+						},
+					},
+				],
+			},
+		},
+		blocks: {},
+		variables: {},
+		executionOrder: [],
+	};
+
+	return JSON.stringify(content, null, 2);
+};
+
 /**
  * Build a runnable pixel expression for a code block, or null when the
  * language is not something we can execute server-side. Python runs through

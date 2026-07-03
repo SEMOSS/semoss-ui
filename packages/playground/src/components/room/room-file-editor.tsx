@@ -2,6 +2,10 @@ import { observer } from "mobx-react-lite";
 import { FileEditor, FlexLayout } from "@semoss/shared";
 import type { RoomStore } from "@/stores";
 
+const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
+	? import.meta.env.VITE_PLATFORM_URL
+	: "";
+
 interface RoomFileEditorProps {
 	/** Node */
 	node: FlexLayout.TabNode;
@@ -15,6 +19,7 @@ export const RoomFileEditor: React.FC<RoomFileEditorProps> = observer(
 		const config: {
 			name: string;
 			path: string;
+			initialTab?: "edit" | "preview";
 		} = node.getConfig();
 
 		return (
@@ -23,6 +28,8 @@ export const RoomFileEditor: React.FC<RoomFileEditorProps> = observer(
 					type: "INSIGHT",
 				}}
 				path={config.path}
+				platformUrl={PLATFORM_URL}
+				notebookInitialTab={config.initialTab}
 				onChange={(_content, isModified) => {
 					const updated = isModified
 						? `${config.name}*`

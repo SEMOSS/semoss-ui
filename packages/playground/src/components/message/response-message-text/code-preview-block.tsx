@@ -21,6 +21,8 @@ import {
 	buildExecutePixel,
 	CODE_LANG_LABELS,
 	createCodeFilePath,
+	createNotebookFileContent,
+	createNotebookFilePath,
 	formatExecuteOutput,
 	MAX_EXECUTE_LOG_CHARS,
 	unwrapPixelOutput,
@@ -51,6 +53,7 @@ export const CodePreviewBlock = ({
 	const { t } = useTranslation("chat");
 	const [isFullViewOpen, setIsFullViewOpen] = useState(false);
 	const [isSavingToRoom, setIsSavingToRoom] = useState(false);
+	const [isSavingToNotebook, setIsSavingToNotebook] = useState(false);
 	const [isCollapsed, setIsCollapsed] = useState(false);
 	const [isExecuting, setIsExecuting] = useState(false);
 	const [executeResult, setExecuteResult] = useState<ExecuteResult | null>(
@@ -142,6 +145,40 @@ export const CodePreviewBlock = ({
 		}
 	};
 
+	const saveAsNotebook = async () => {
+		if (!room || !code) return;
+		const filePath = createNotebookFilePath();
+		const notebookContent = createNotebookFileContent(code, langStr);
+		try {
+			setIsSavingToNotebook(true);
+			await room.runRoomPixel(
+				`SaveInsightAssets(filePath=[${JSON.stringify(filePath)}], content=["<encode>${notebookContent}</encode>"]);`,
+				false,
+				false,
+			);
+			toast.success(`Added to notebook as ${filePath}`);
+
+			// Open the saved notebook in the sidebar's file editor, defaulting
+			// to the Preview tab so the interactive notebook shows immediately.
+			const fileName = filePath.split("/").pop() ?? filePath;
+			room.addSidebarNode(`FILE--${filePath}`, {
+				type: "tab",
+				name: fileName,
+				component: "room-file-editor",
+				config: {
+					name: fileName,
+					path: filePath,
+					initialTab: "preview",
+				},
+				enableClose: true,
+			});
+		} catch (error) {
+			toast.error(getErrorMessage(error));
+		} finally {
+			setIsSavingToNotebook(false);
+		}
+	};
+
 	return (
 		<>
 			<div className="relative overflow-hidden rounded-md border border-border bg-background">
@@ -171,6 +208,15 @@ export const CodePreviewBlock = ({
 						onClick={() => void saveInRoom()}
 					>
 						{isSavingToRoom ? "Saving..." : "Save In Room"}
+					</Button>
+					<Button
+						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
+						variant="ghost"
+						size="sm"
+						disabled={!room || !code || isSavingToNotebook}
+						onClick={() => void saveAsNotebook()}
+					>
+						{isSavingToNotebook ? "Adding..." : "Add to Notebook"}
 					</Button>
 					<Button
 						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"

@@ -3,6 +3,7 @@ import { FileCodeEditor } from "./file-code-editor";
 import { FileDownloadView } from "./file-download-view";
 import { FileImageViewer } from "./file-image-viewer";
 import { FileMarkdownEditor } from "./file-markdown-editor";
+import { FileNotebookEditor } from "./file-notebook-editor";
 import { FilePdfViewer } from "./file-pdf-viewer";
 
 // Extensions that cannot be rendered in the editor — show a download-first view instead
@@ -32,6 +33,13 @@ interface FileEditorProps {
 	/** Optional content rendered at the start of the code editor's toolbar row.
 	 * Only applies to the code editor (other file viewers have no toolbar). */
 	leadingToolbar?: React.ReactNode;
+
+	/** Base URL of the client SPA for notebook preview iframes.
+	 * Pass VITE_PLATFORM_URL from the playground; omit in the client app. */
+	platformUrl?: string;
+
+	/** Which tab a notebook (.notebook.json) file should open on. */
+	notebookInitialTab?: "edit" | "preview";
 }
 
 export const FileEditor: React.FC<FileEditorProps> = ({
@@ -40,6 +48,8 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 	onChange = () => null,
 	onRun,
 	leadingToolbar,
+	platformUrl,
+	notebookInitialTab,
 }) => {
 	const ext = path.split(".").pop()?.toLowerCase() || "";
 
@@ -55,6 +65,7 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 	const isPdf = ext === "pdf";
 	const isNotRendered = NON_RENDERED_EXTENSIONS.has(ext);
 	const isMarkdown = ext === "md" || ext === "markdown";
+	const isNotebookJson = path.toLowerCase().endsWith(".notebook.json");
 
 	return (
 		<div className="relative flex h-full w-full flex-col overflow-hidden bg-background py-1">
@@ -76,16 +87,30 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 					onChange={onChange}
 				/>
 			)}
-			{!isImage && !isPdf && !isNotRendered && !isMarkdown && (
-				<FileCodeEditor
+			{isNotebookJson && (
+				<FileNotebookEditor
 					key={path}
 					mode={mode}
 					path={path}
 					onChange={onChange}
-					onRun={onRun}
-					leadingToolbar={leadingToolbar}
+					platformUrl={platformUrl}
+					initialTab={notebookInitialTab}
 				/>
 			)}
+			{!isImage &&
+				!isPdf &&
+				!isNotRendered &&
+				!isMarkdown &&
+				!isNotebookJson && (
+					<FileCodeEditor
+						key={path}
+						mode={mode}
+						path={path}
+						onChange={onChange}
+						onRun={onRun}
+						leadingToolbar={leadingToolbar}
+					/>
+				)}
 		</div>
 	);
 };

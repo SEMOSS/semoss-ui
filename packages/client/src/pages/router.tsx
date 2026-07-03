@@ -104,6 +104,11 @@ const SharePage = lazy(() =>
 const LoginPage = lazy(() =>
 	import("./login-page").then((m) => ({ default: m.LoginPage })),
 );
+const NotebookPreviewPage = lazy(() =>
+	import("./notebook-preview-page").then((m) => ({
+		default: m.NotebookPreviewPage,
+	})),
+);
 
 const PageSpinner = () => (
 	<div className="flex h-screen w-screen items-center justify-center">
@@ -126,6 +131,10 @@ export const Router = observer(() => {
 			<Routes>
 				<Route path="/" element={<AuthenticatedLayout />}>
 					<Route path="s/:appId/*" element={<SharePage />} />
+					<Route
+						path="notebook-preview"
+						element={<NotebookPreviewPage />}
+					/>
 					<Route path="*" element={<PageLayout />}>
 						<Route index element={<LandingPage />} />
 						<Route path="app/*">
