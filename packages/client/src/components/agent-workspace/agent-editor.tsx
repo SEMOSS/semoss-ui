@@ -21,7 +21,13 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useRootStore, useWorkspace } from "@/hooks";
+import type { MonolithStore } from "@/stores";
 import { mcpToPlatformUrl, promptToPlatformUrl } from "@/utility";
+import {
+	nextSubAgentKey,
+	SubAgentEditor,
+	type SubAgentEntry,
+} from "./subagent-editor";
 
 type AgentForm = {
 	name: string;
@@ -31,6 +37,7 @@ type AgentForm = {
 	toolboxes: MCPConfig[];
 	skills: SkillConfig[];
 	prompts: string[];
+	subagents: SubAgentEntry[];
 };
 
 type GetWorkspaceResponse = {
@@ -40,6 +47,94 @@ type GetWorkspaceResponse = {
 	mcp: MCPConfig[];
 	skills: SkillConfig[];
 	prompts: { id: string; name: string; type: string }[];
+	config_json?: unknown;
+};
+
+const parseConfigJson = (raw: unknown): { subagents?: unknown } | null => {
+	if (raw == null) return null;
+	if (typeof raw === "string") {
+		try {
+			const parsed = JSON.parse(raw);
+			return parsed && typeof parsed === "object"
+				? (parsed as { subagents?: unknown })
+				: null;
+		} catch {
+			return null;
+		}
+	}
+	return typeof raw === "object" ? (raw as { subagents?: unknown }) : null;
+};
+
+const coerceSubAgentEntries = (raw: unknown): SubAgentEntry[] => {
+	if (!Array.isArray(raw)) return [];
+	return raw
+		.filter(
+			(e): e is SubAgentEntry =>
+				!!e &&
+				typeof (e as SubAgentEntry).alias === "string" &&
+				typeof (e as SubAgentEntry).workspaceId === "string",
+		)
+		.map((e) => ({
+			alias: e.alias,
+			workspaceId: e.workspaceId,
+			description:
+				typeof e.description === "string" ? e.description : undefined,
+			_key: nextSubAgentKey(),
+		}));
+};
+
+type WorkspaceNameRow = {
+	project_id: string;
+	project_name?: string;
+	project_display_name?: string;
+};
+
+const fetchWorkspaceNames = async (
+	monolithStore: MonolithStore,
+	ids: string[],
+): Promise<Map<string, string>> => {
+	const nameById = new Map<string, string>();
+	if (ids.length === 0) return nameById;
+	try {
+		const { errors, pixelReturn } = await monolithStore.runQuery<
+			[WorkspaceNameRow[]]
+		>(
+			`META | MyProjects(project=${JSON.stringify(ids)}, noMeta=[true], limit=[${ids.length}], offset=[0]);`,
+		);
+		if (errors.length > 0) return nameById;
+		const rows = pixelReturn[0]?.output ?? [];
+		for (const row of rows) {
+			if (row?.project_id) {
+				nameById.set(
+					row.project_id,
+					row.project_display_name || row.project_name || "",
+				);
+			}
+		}
+	} catch {
+		// ignore — picker still shows the UUID with a warning icon
+	}
+	return nameById;
+};
+
+const sanitizeSubAgentsForSave = (
+	entries: SubAgentEntry[],
+): SubAgentEntry[] => {
+	const seen = new Set<string>();
+	const out: SubAgentEntry[] = [];
+	for (const entry of entries) {
+		const alias = entry.alias.trim();
+		const workspaceId = entry.workspaceId.trim();
+		if (!alias || !workspaceId || seen.has(alias)) continue;
+		seen.add(alias);
+		const description = entry.description?.trim();
+		out.push({
+			alias,
+			workspaceId,
+			...(description ? { description } : {}),
+		});
+	}
+	return out;
 };
 
 export const AgentEditor = () => {
@@ -60,6 +155,7 @@ export const AgentEditor = () => {
 			toolboxes: [],
 			skills: [],
 			prompts: [],
+			subagents: [],
 		},
 	});
 
@@ -73,6 +169,19 @@ export const AgentEditor = () => {
 				if (errors.length > 0) throw new Error(errors.join(", "));
 				const data = pixelReturn[0].output;
 				const allMcps = data.mcp ?? [];
+				const configJson = parseConfigJson(data.config_json);
+				const subagents = coerceSubAgentEntries(configJson?.subagents);
+				const nameIds = subagents
+					.map((s) => s.workspaceId.trim())
+					.filter((id, i, arr) => id && arr.indexOf(id) === i);
+				const nameById = await fetchWorkspaceNames(
+					monolithStore,
+					nameIds,
+				);
+				for (const entry of subagents) {
+					const name = nameById.get(entry.workspaceId.trim());
+					if (name) entry.workspaceName = name;
+				}
 				reset({
 					name: data.name ?? "",
 					description: data.description ?? "",
@@ -81,6 +190,7 @@ export const AgentEditor = () => {
 					toolboxes: allMcps.filter((m) => m.type !== "VECTOR"),
 					skills: data.skills ?? [],
 					prompts: (data.prompts ?? []).map((p) => p.id),
+					subagents,
 				});
 			} catch (e) {
 				console.error(e);
@@ -101,6 +211,15 @@ export const AgentEditor = () => {
 				`EditWorkspace(workspaceId=["${workspace.appId}"], name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)});`,
 			);
 			if (errors.length > 0) throw new Error(errors.join(", "));
+
+			const subagents = sanitizeSubAgentsForSave(data.subagents);
+			const { errors: subagentErrors } = await monolithStore.runQuery(
+				`SetSubAgents(workspaceId=["${workspace.appId}"], subagents=${JSON.stringify(subagents)});`,
+			);
+			if (subagentErrors.length > 0) {
+				throw new Error(subagentErrors.join(", "));
+			}
+
 			toast.success("Agent saved");
 		} catch (e) {
 			console.error(e);
@@ -291,6 +410,32 @@ export const AgentEditor = () => {
 										onChange={field.onChange}
 										className="h-112"
 										getPlatformUrl={promptToPlatformUrl}
+									/>
+								)}
+							/>
+						</div>
+
+						<Separator />
+
+						<div className="flex flex-col gap-3">
+							<div>
+								<H4 className="font-semibold text-base tracking-tight">
+									Subagents
+								</H4>
+								<Muted className="text-muted-foreground text-sm leading-6">
+									Named delegates the agent can call to hand
+									off focused work to another workspace. Each
+									becomes a tool named by its alias.
+								</Muted>
+							</div>
+							<Controller
+								name="subagents"
+								control={control}
+								render={({ field }) => (
+									<SubAgentEditor
+										values={field.value}
+										onChange={field.onChange}
+										currentWorkspaceId={workspace.appId}
 									/>
 								)}
 							/>
