@@ -24,6 +24,11 @@ export interface SubmitToConsoleOptions {
 	context: ConsoleContext;
 }
 
+export type SubmitToConsoleFn = (
+	pixel: string,
+	opts: SubmitToConsoleOptions,
+) => void;
+
 interface SaveModalState {
 	open: boolean;
 	name: string;
@@ -73,9 +78,21 @@ interface TerminalContextValue {
 	 * "Run" button so output lands in the same transcript as REPL submissions.
 	 */
 	submitToConsole: (pixel: string, opts: SubmitToConsoleOptions) => void;
-	registerSubmitToConsole: (
-		fn: (pixel: string, opts: SubmitToConsoleOptions) => void,
-	) => void;
+	/**
+	 * Register (or, with `fn === null`, unregister) a console's submit handler
+	 * keyed by its id. Multiple consoles can be mounted at once (one per
+	 * terminal tab); `submitToConsole` dispatches to whichever is active — see
+	 * `activeConsoleId`.
+	 */
+	registerSubmitToConsole: (id: string, fn: SubmitToConsoleFn | null) => void;
+
+	/**
+	 * Id of the terminal tab that currently owns the file editor's "Run"
+	 * target. Set as the user focuses terminal tabs; `null` falls back to the
+	 * first (anchor) console.
+	 */
+	activeConsoleId: string | null;
+	setActiveConsoleId: (id: string | null) => void;
 
 	/**
 	 * Current file scope — which Pixel reactor family the file explorer
@@ -152,8 +169,10 @@ export const TerminalProvider = ({
 	const openFileRef = useRef<(file: SelectedFile) => void>(noop);
 	const updateFileRef = useRef<(file: Partial<SelectedFile>) => void>(noop);
 	const selectFileRef = useRef<(file: SelectedFile) => void>(noop);
-	const submitToConsoleRef =
-		useRef<(pixel: string, opts: SubmitToConsoleOptions) => void>(noop);
+	// One submit handler per mounted console, keyed by console/tab id. The
+	// file editor's "Run" dispatches to the active console (see below).
+	const submitToConsoleMapRef = useRef(new Map<string, SubmitToConsoleFn>());
+	const [activeConsoleId, setActiveConsoleId] = useState<string | null>(null);
 
 	const [fileMode, setFileMode] = useState<FileMode>({ type: "INSIGHT" });
 	const [selectedApp, setSelectedApp] = useState<AppRef | undefined>(
@@ -246,11 +265,22 @@ export const TerminalProvider = ({
 				selectFileRef.current = fn;
 			},
 
-			submitToConsole: (pixel, opts) =>
-				submitToConsoleRef.current(pixel, opts),
-			registerSubmitToConsole: (fn) => {
-				submitToConsoleRef.current = fn;
+			submitToConsole: (pixel, opts) => {
+				const map = submitToConsoleMapRef.current;
+				// Prefer the active console; fall back to the first registered
+				// (insertion order → the anchor terminal) if it's gone stale.
+				const fn =
+					(activeConsoleId && map.get(activeConsoleId)) ||
+					map.values().next().value;
+				fn?.(pixel, opts);
 			},
+			registerSubmitToConsole: (id, fn) => {
+				if (fn) submitToConsoleMapRef.current.set(id, fn);
+				else submitToConsoleMapRef.current.delete(id);
+			},
+
+			activeConsoleId,
+			setActiveConsoleId,
 
 			fileMode,
 			setFileMode,
@@ -285,6 +315,7 @@ export const TerminalProvider = ({
 			openUpload,
 			closeUpload,
 			setUpload,
+			activeConsoleId,
 			fileMode,
 			selectedApp,
 			browserRenderToken,

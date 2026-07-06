@@ -137,8 +137,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 	onVisibleItemsChange,
 }) => {
 	const insight = useInsight();
-	// `common` namespace is part of coreResources — loaded by every I18nBuilder
-	// type (playground/terminal/etc.), so this is safe to use from libs/shared.
+	// `common` is preloaded by every app's I18nBuilder (it's in each app's
+	// initial `ns`), so this is safe to use from libs/shared.
 	const { t } = useTranslation("common");
 
 	const [path, setPath] = useState<string>(

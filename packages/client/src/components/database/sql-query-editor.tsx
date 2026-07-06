@@ -13,6 +13,7 @@ interface SQLQueryEditorProps {
 	executeQuery: () => void;
 	previewLoading: boolean;
 	onUserQueryInput?: (query: string) => void;
+	runDisabled?: boolean;
 }
 
 export const SQLQueryEditor: React.FC<SQLQueryEditorProps> = ({
@@ -23,6 +24,7 @@ export const SQLQueryEditor: React.FC<SQLQueryEditorProps> = ({
 	executeQuery,
 	previewLoading,
 	onUserQueryInput,
+	runDisabled = false,
 }) => {
 	const [copied, setCopied] = useState(false);
 
@@ -106,6 +108,7 @@ export const SQLQueryEditor: React.FC<SQLQueryEditorProps> = ({
 							defaultValue=""
 							language="sql"
 							options={{
+								fixedOverflowWidgets: true,
 								scrollbar: {
 									horizontal: "hidden",
 									horizontalScrollbarSize: 0,
@@ -152,6 +155,7 @@ export const SQLQueryEditor: React.FC<SQLQueryEditorProps> = ({
 					executeQuery={executeQuery}
 					previewLoading={previewLoading}
 					query={query}
+					runDisabled={runDisabled}
 				/>
 			</div>
 		</div>

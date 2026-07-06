@@ -24,12 +24,14 @@ interface GithubRepoPickerProps {
 	installationId: string;
 	/** Currently-linked repo id, pre-selected when present. */
 	currentRepoId?: number | string;
+	/** Pre-filled subdirectory value (for the change-repo dialog). */
+	currentSubdir?: string;
 	/** Disables the confirm action while a select request is in flight. */
 	isSubmitting?: boolean;
 	/** Label for the confirm button (e.g. "Connect" vs "Change repository"). */
 	confirmLabel: string;
-	/** Called with the chosen repo and tracked branch when the user confirms. */
-	onConfirm: (repo: GithubRepo, branch: string) => void;
+	/** Called with the chosen repo, tracked branch, and optional subdir when the user confirms. */
+	onConfirm: (repo: GithubRepo, branch: string, subdir: string) => void;
 	/**
 	 * URL to the install flow for adjusting which repos the App can access (when
 	 * the repo the user wants isn't in the list). Opened in a new tab so the
@@ -49,6 +51,7 @@ export const GithubRepoPicker = ({
 	projectId,
 	installationId,
 	currentRepoId,
+	currentSubdir,
 	isSubmitting = false,
 	confirmLabel,
 	onConfirm,
@@ -62,6 +65,8 @@ export const GithubRepoPicker = ({
 		currentRepoId != null ? String(currentRepoId) : "",
 	);
 	const [selectedBranch, setSelectedBranch] = useState("");
+	const [subdir, setSubdir] = useState(currentSubdir ?? "");
+	const [subdirError, setSubdirError] = useState<string | null>(null);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -131,10 +136,29 @@ export const GithubRepoPicker = ({
 		setSelectedBranch(repo?.defaultBranch ?? "");
 	};
 
+	const validateSubdir = (value: string): string | null => {
+		const trimmed = value.trim();
+		if (!trimmed) return null;
+		if (trimmed.startsWith("/"))
+			return t("project.subdir.errorLeadingSlash");
+		if (trimmed.includes("..")) return t("project.subdir.errorDotDot");
+		return null;
+	};
+
+	const handleSubdirChange = (value: string) => {
+		setSubdir(value);
+		setSubdirError(validateSubdir(value));
+	};
+
 	const handleConfirm = () => {
 		const branch = selectedBranch.trim();
+		const err = validateSubdir(subdir);
+		if (err) {
+			setSubdirError(err);
+			return;
+		}
 		if (selectedRepo && branch) {
-			onConfirm(selectedRepo, branch);
+			onConfirm(selectedRepo, branch, subdir.trim());
 		}
 	};
 
@@ -191,22 +215,47 @@ export const GithubRepoPicker = ({
 			)}
 
 			{selectedRepo ? (
-				<div className="flex flex-col gap-1.5">
-					<span className="font-medium text-sm">
-						{t("project.picker.branchLabel")}
-					</span>
-					<GithubBranchSelect
-						projectId={projectId}
-						installationId={installationId}
-						repoFullName={selectedRepo.fullName}
-						value={selectedBranch}
-						onChange={setSelectedBranch}
-						disabled={isSubmitting}
-					/>
-					<span className="text-muted-foreground text-xs">
-						{t("project.picker.branchHelp")}
-					</span>
-				</div>
+				<>
+					<div className="flex flex-col gap-1.5">
+						<span className="font-medium text-sm">
+							{t("project.picker.branchLabel")}
+						</span>
+						<GithubBranchSelect
+							projectId={projectId}
+							installationId={installationId}
+							repoFullName={selectedRepo.fullName}
+							value={selectedBranch}
+							onChange={setSelectedBranch}
+							disabled={isSubmitting}
+						/>
+						<span className="text-muted-foreground text-xs">
+							{t("project.picker.branchHelp")}
+						</span>
+					</div>
+					<div className="flex flex-col gap-1.5">
+						<span className="font-medium text-sm">
+							{t("project.subdir.label")}{" "}
+							<span className="font-normal text-muted-foreground">
+								{t("project.subdir.optional")}
+							</span>
+						</span>
+						<Input
+							value={subdir}
+							onChange={(e) => handleSubdirChange(e.target.value)}
+							placeholder={t("project.subdir.placeholder")}
+							disabled={isSubmitting}
+						/>
+						{subdirError ? (
+							<span className="text-destructive text-xs">
+								{subdirError}
+							</span>
+						) : (
+							<span className="text-muted-foreground text-xs">
+								{t("project.subdir.help")}
+							</span>
+						)}
+					</div>
+				</>
 			) : null}
 
 			<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

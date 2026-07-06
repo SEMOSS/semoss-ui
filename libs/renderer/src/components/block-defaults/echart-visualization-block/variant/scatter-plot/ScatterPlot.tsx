@@ -7,7 +7,7 @@ import EChartsReact from "echarts-for-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useBlock, useFrame } from "../../../../../hooks";
-import type { BlockComponent } from "../../../../../store";
+import type { BlockComponent, ListenerActions } from "../../../../../store";
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
 import { processData } from "./ScatterPlotProcessData";
 import { getSelector } from "./ScatterPlotSelector";
@@ -20,7 +20,8 @@ export interface EChartColumns {
 export interface EchartVisualizationBlockDef {
 	widget: "e-chart";
 	data: {
-		option: Record<string, unknown>;
+		// biome-ignore lint/suspicious/noExplicitAny: echart option structure is dynamic
+		option: Record<string, any>;
 		frame: {
 			name: string;
 		};
@@ -34,7 +35,10 @@ export interface EchartVisualizationBlockDef {
 			hideExclude: boolean;
 		};
 	};
-	listeners: Record<string, unknown>;
+	listeners: Record<
+		string,
+		{ order: ListenerActions[]; type: "sync" | "async" }
+	>;
 	slots: never;
 }
 
@@ -113,20 +117,22 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
 	}
 	if (typeof data.option === "string") {
 		try {
+			// biome-ignore lint/suspicious/noExplicitAny: data.option narrowed to string by typeof check but used as object
+			const opt = data.option as any;
 			const processedFrameData = processData(frame.data, data);
 			if (processedFrameData && processedFrameData.length > 0) {
-				data.option.series[0].data = processedFrameData;
+				opt.series[0].data = processedFrameData;
 			}
-			if (!Object.hasOwn(data.option.tooltip, "formatter")) {
-				data.option.tooltip = {
-					...data.option.tooltip,
+			if (!Object.hasOwn(opt.tooltip, "formatter")) {
+				opt.tooltip = {
+					...opt.tooltip,
 					formatter: formatdatapoints(frame.data, data),
 				};
 			}
 			return (
 				<div className="h-full w-full">
 					<EChartsReact
-						option={data.option as unknown as EChartsOption}
+						option={opt as unknown as EChartsOption}
 						onChartReady={(chart) => {
 							echartsLoaded(chart);
 						}}

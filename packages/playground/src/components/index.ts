@@ -1,3 +1,4 @@
+export * from "./chats";
 export * from "./common";
 export * from "./knowledge";
 export * from "./mcp";

@@ -1,0 +1,139 @@
+{
+	"common": {
+		"success": "Réussi",
+		"failed": "Échoué",
+		"event": "Événement",
+		"noLogs": "Aucun journal disponible."
+	},
+	"filter": {
+		"searchPlaceholder": "Rechercher dans les journaux...",
+		"selectEngineType": "Sélectionner le type de moteur",
+		"selectEngine": "Sélectionner le moteur",
+		"roomId": "ID de salle",
+		"allRooms": "Toutes les salles",
+		"methodName": "Nom de la méthode",
+		"engineType": "Type de moteur",
+		"allUsers": "Tous les utilisateurs",
+		"loading": "Chargement…",
+		"noOptions": "Aucune option",
+		"clear": "Effacer",
+		"clearFilters": "Effacer les filtres",
+		"close": "Fermer",
+		"apply": "Appliquer",
+		"countSummary": "{{label}} ({{count}})",
+		"dateRange": {
+			"today": "Aujourd'hui",
+			"last7Days": "7 derniers jours",
+			"last30Days": "30 derniers jours",
+			"custom": "Personnalisé"
+		}
+	},
+	"summary": {
+		"events": "Événements",
+		"shown": "Affichés",
+		"errors": "Erreurs",
+		"p50": "P50",
+		"p95": "P95",
+		"tokens": "Jetons",
+		"currentPage": "page actuelle",
+		"currentPageHint": "La latence, les erreurs et les jetons sont calculés sur les événements de la page actuelle."
+	},
+	"table": {
+		"title": "Chronologie des requêtes et réponses",
+		"grouping": {
+			"none": "Aucun regroupement",
+			"span": "Grouper par span",
+			"request": "Grouper par requête"
+		},
+		"columns": {
+			"user": "Utilisateur",
+			"sessionId": "ID de session",
+			"request": "Requête",
+			"response": "Réponse",
+			"method": "Méthode",
+			"engineType": "Type de moteur",
+			"engineName": "Nom du moteur",
+			"latency": "Latence",
+			"tokens": "Jetons",
+			"timestamp": "Horodatage",
+			"status": "Statut"
+		},
+		"groupRequest": "Requête",
+		"groupSpan": "Span",
+		"event_one": "{{count}} événement",
+		"event_other": "{{count}} événements",
+		"groupMeta": "{{latency}}ms · {{tokens}} jetons",
+		"rowsPerPage": "Lignes par page :",
+		"pageRange": "{{first}} - {{last}} sur {{total}}",
+		"showingResults": "Affichage de {{shown}} sur {{total}} résultats"
+	},
+	"timeline": {
+		"title": "Historique des événements",
+		"rowMode": {
+			"event": "Ligne : par événement",
+			"span": "Ligne : par span",
+			"request": "Ligne : par requête"
+		},
+		"axisMode": {
+			"time": "Heure",
+			"datetime": "Date et heure",
+			"date": "Date",
+			"month": "Mois"
+		},
+		"highlightZoom": "Surlignez une zone pour zoomer",
+		"zoomIn": "Zoom avant",
+		"zoomOut": "Zoom arrière",
+		"resetZoom": "Réinitialiser le zoom",
+		"tooltip": {
+			"engine": "Moteur",
+			"user": "Utilisateur",
+			"latency": "Latence",
+			"tokens": "Jetons",
+			"start": "Début",
+			"end": "Fin",
+			"span": "Span",
+			"session": "Session",
+			"request": "Requête",
+			"response": "Réponse"
+		}
+	},
+	"detail": {
+		"title": "Détails de l'audit",
+		"copyJson": "Copier le JSON",
+		"copyJsonTooltip": "Copier cet enregistrement au format JSON",
+		"copySuccess": "Journal d'audit copié au format JSON",
+		"copyFailed": "Échec de la copie : {{error}}",
+		"noDetails": "Aucun détail disponible",
+		"expandAll": "Tout développer",
+		"collapseAll": "Tout réduire",
+		"fields": {
+			"latency": "Latence",
+			"tokens": "Jetons",
+			"user": "Utilisateur",
+			"userId": "ID d'utilisateur",
+			"start": "Début",
+			"end": "Fin",
+			"logTimestamp": "Horodatage du journal",
+			"sessionId": "ID de session",
+			"requestId": "ID de requête",
+			"spanId": "ID de span",
+			"request": "Requête",
+			"response": "Réponse"
+		}
+	},
+	"page": {
+		"dashboardTitle": "Tableau de bord d'analyse de {{catalogName}}",
+		"export": "Exporter",
+		"exportCsv": "Exporter au format CSV",
+		"exportPdf": "Exporter au format PDF",
+		"refresh": "Actualiser",
+		"selectToFetch": "Veuillez sélectionner le type de moteur et le moteur pour récupérer les journaux",
+		"selectBeforeExport": "Sélectionnez un moteur avant d'exporter les journaux.",
+		"errorFetching": "Erreur lors de la récupération des journaux : {{error}}",
+		"errorExporting": "Erreur lors de l'exportation des journaux : {{error}}"
+	},
+	"layout": {
+		"appName": "Journal d'audit",
+		"appDescription": "Application de journal d'audit"
+	}
+}

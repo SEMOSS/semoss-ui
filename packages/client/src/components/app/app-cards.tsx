@@ -1,5 +1,5 @@
+import { AppCatalogAvatar } from "@semoss/shared";
 import { Card, CardContent } from "@semoss/ui/next";
-import { Folder } from "@/assets/img/Folder";
 
 export const ProjectLandscapeCard = (_props) => {
 	return <div>Landscape</div>;
@@ -14,7 +14,10 @@ export const ProjectTileCard = (props) => {
 			onClick={() => onClick(id)}
 		>
 			<div className="flex items-center gap-2 px-4 pt-4 pb-2">
-				<Folder />
+				<AppCatalogAvatar
+					name={name}
+					className="size-8 shrink-0 rounded text-xs"
+				/>
 				<span className="font-medium text-sm">{name}</span>
 			</div>
 			<CardContent className="block max-w-[350px] overflow-hidden text-ellipsis whitespace-nowrap pb-4">

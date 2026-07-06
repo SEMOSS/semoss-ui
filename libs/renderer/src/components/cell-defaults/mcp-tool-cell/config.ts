@@ -8,6 +8,7 @@ export const MCPToolCellConfig: CellConfig<MCPToolCellDef> = {
 		projectId: "",
 		name: "",
 		params: {},
+		paramType: "pixel" as const,
 	},
 	view: MCPToolCell,
 	toPixel: (params) => {

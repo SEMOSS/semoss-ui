@@ -14,7 +14,7 @@ import {
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Env } from "@semoss/sdk/react";
-import { EngineSubtypeIcon } from "@semoss/shared";
+import { AppCatalogAvatar, EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Avatar,
 	AvatarFallback,
@@ -33,7 +33,6 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { Folder } from "@/assets/img/Folder";
 import GOOGLE from "@/assets/img/GOOGLE.svg";
 import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
 
@@ -89,9 +88,6 @@ interface DatabaseCardProps {
 	/** Subtype for Icon */
 	sub_type?: string;
 
-	/** Force folder icon instead of engine/provider icon */
-	forceFolderIcon?: boolean;
-
 	/** Optional custom leading icon content */
 	customIcon?: ReactNode;
 
@@ -143,7 +139,6 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 		isGlobal,
 		type,
 		sub_type,
-		forceFolderIcon = false,
 		customIcon,
 		desktopInlineMeta = false,
 		date,
@@ -461,10 +456,11 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 								<div className="flex h-full w-full items-center justify-center">
 									{customIcon}
 								</div>
-							) : forceFolderIcon || isProjectType(type) ? (
-								<div className="[&_svg]:h-8 [&_svg]:w-8">
-									<Folder />
-								</div>
+							) : isProjectType(type) ? (
+								<AppCatalogAvatar
+									name={name || id}
+									className="size-full rounded text-xs"
+								/>
 							) : (
 								<EngineSubtypeIcon
 									engineType={type}

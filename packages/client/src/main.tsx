@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client";
 import { waitForEmbedAuth } from "@semoss/sdk/react";
-import { App } from "./App";
+import { App, i18nReady } from "./App";
 import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import "./index.css";
 
@@ -8,7 +8,9 @@ const container = document.getElementById("root");
 const root = createRoot(container);
 
 const mount = async () => {
-	await waitForEmbedAuth();
+	// Wait for the active language's translations before the first render so
+	// shared components don't flash raw i18n keys.
+	await Promise.all([waitForEmbedAuth(), i18nReady]);
 
 	root.render(
 		// <React.StrictMode>

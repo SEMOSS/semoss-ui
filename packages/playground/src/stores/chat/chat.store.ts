@@ -364,6 +364,20 @@ export class ChatStore {
 	};
 
 	/**
+	 * Pin or unpin a room. Runs the PinRoom pixel and bumps the
+	 * roomCounter so any room lists elsewhere in the app (sidebar,
+	 * chats page, per-agent timeline) refetch and stay in sync.
+	 */
+	pinRoom = async (roomId: string, pinned: boolean): Promise<void> => {
+		await this._actions.run<[boolean]>(
+			`PinRoom(roomId=["${roomId}"], pinned=[${pinned}]);`,
+		);
+		runInAction(() => {
+			this._store.keys.roomCounter++;
+		});
+	};
+
+	/**
 	 * Load a room from the store or create a new one
 	 * @param roomId - Room to remove
 	 */
@@ -434,15 +448,21 @@ export class ChatStore {
 	addWorkspace = async (
 		data: Pick<
 			Workspace,
-			"name" | "system_prompt" | "description" | "mcp" | "prompts"
+			| "name"
+			| "system_prompt"
+			| "description"
+			| "mcp"
+			| "skills"
+			| "prompts"
 		>,
 	): Promise<string> => {
 		try {
 			const mcp = data.mcp.map(
 				({ name, id, type }): MCPConfig => ({ name, id, type }),
 			);
+			const skills = data.skills.map((s) => s.id);
 
-			const pixel = `AddWorkspace(name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, prompts=${JSON.stringify(data.prompts)})`;
+			const pixel = `AddWorkspace(name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
 			return pixelReturn[0].output;
@@ -458,15 +478,21 @@ export class ChatStore {
 		workspaceId: string,
 		data: Pick<
 			Workspace,
-			"name" | "system_prompt" | "description" | "mcp" | "prompts"
+			| "name"
+			| "system_prompt"
+			| "description"
+			| "mcp"
+			| "skills"
+			| "prompts"
 		>,
 	): Promise<string> => {
 		try {
 			const mcp = data.mcp.map(
 				({ name, id, type }): MCPConfig => ({ name, id, type }),
 			);
+			const skills = data.skills.map((s) => s.id);
 
-			const pixel = `EditWorkspace(workspaceId=${JSON.stringify(workspaceId)}, name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, prompts=${JSON.stringify(data.prompts)})`;
+			const pixel = `EditWorkspace(workspaceId=${JSON.stringify(workspaceId)}, name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
 			// throw errors

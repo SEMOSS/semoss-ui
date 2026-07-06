@@ -159,6 +159,15 @@
 			"branchLabel": "Branche à suivre",
 			"branchHelp": "Seuls les push vers cette branche synchronisent le projet."
 		},
+		"subdir": {
+			"label": "Sous-répertoire",
+			"optional": "(facultatif)",
+			"placeholder": "apps/my-app",
+			"help": "Laissez vide pour synchroniser l'ensemble du dépôt. Utilisez ceci pour les monorepos où l'app se trouve dans un sous-dossier.",
+			"display": "Sous-répertoire",
+			"errorLeadingSlash": "Le chemin ne doit pas commencer par une barre oblique.",
+			"errorDotDot": "Le chemin ne doit pas contenir \"..\"."
+		},
 		"selectRepo": {
 			"title": "Sélectionnez un dépôt",
 			"description": "L'installation peut accéder à plusieurs dépôts. Choisissez celui que ce projet doit utiliser.",

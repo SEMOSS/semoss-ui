@@ -7,7 +7,8 @@
 		"instructionsLabel": "निर्देश",
 		"knowledgeLabel": "ज्ञान",
 		"toolboxLabel": "टूलबॉक्स",
-		"promptsLabel": "प्रॉम्प्ट लाइब्रेरी"
+		"promptsLabel": "प्रॉम्प्ट लाइब्रेरी",
+		"skillsLabel": "कौशल"
 	},
 	"actions": {
 		"create": "बनाएं",
@@ -77,10 +78,7 @@
 		"pin": "पसंदीदा में जोड़ें",
 		"unpin": "पसंदीदा से हटाएं",
 		"pinFailed": "चैट को पसंदीदा बनाने में विफल",
-		"unpinFailed": "चैट को पसंदीदा से हटाने में विफल",
-		"dayToday": "आज",
-		"dayYesterday": "कल",
-		"daysAgo": "{{count}} दिन पहले"
+		"unpinFailed": "चैट को पसंदीदा से हटाने में विफल"
 	},
 	"images": {
 		"agentIllustration": "एजेंट चित्रण"
@@ -113,7 +111,8 @@
 			"knowledge": "ज्ञान",
 			"toolbox": "टूलबॉक्स",
 			"prompts": "प्रॉम्प्ट",
-			"members": "सदस्य"
+			"members": "सदस्य",
+			"skills": "कौशल"
 		},
 		"about": {
 			"title": "परिचय",
@@ -144,6 +143,8 @@
 		"title": "सभी चैट",
 		"subtitle": "अपनी चैट ब्राउज़ करें, खोजें और साफ़ करें।",
 		"selectAll": "सभी चुनें",
+		"deselectAll": "सभी अचयनित करें",
+		"favorites": "पसंदीदा",
 		"selectChat": "चैट {{name}} चुनें",
 		"selectedCount": "{{count}} चुनी गई",
 		"totalCount": "{{count}} चैट",
@@ -160,5 +161,8 @@
 		"editTitle": "निर्देश संपादित करें",
 		"editDescription": "इस एजेंट के व्यवहार को निर्देशित करने वाले सिस्टम प्रॉम्प्ट को अपडेट करें।",
 		"charCount": "{{count}} वर्ण"
+	},
+	"skills": {
+		"noSkills": "कोई कौशल नहीं जोड़ा गया"
 	}
 }

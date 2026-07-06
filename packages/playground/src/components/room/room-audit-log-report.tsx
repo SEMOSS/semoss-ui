@@ -172,6 +172,9 @@ export const RoomAuditLogReport = observer(
 						hideRoomFilter
 						hideDateFilter
 						actions={actions}
+						runFilterPixel={(pixel) =>
+							room.runRoomPixel(pixel, false, false)
+						}
 					/>
 				</div>
 				{loading ? (

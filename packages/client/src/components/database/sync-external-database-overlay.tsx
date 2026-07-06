@@ -125,12 +125,14 @@ export const SyncExternalDatabaseOverlay: React.FC<
 					</DialogDescription>
 				</DialogHeader>
 
-				<Alert>
-					<AlertCircleIcon />
-					<AlertTitle>Note</AlertTitle>
-					<AlertDescription>
-						Local changes will be overwritten by sync.
-					</AlertDescription>
+				<Alert className="flex items-start gap-3 text-left">
+					<AlertCircleIcon className="mt-0.5 shrink-0" />
+					<div className="flex flex-col gap-0.5">
+						<AlertTitle>Note</AlertTitle>
+						<AlertDescription>
+							Local changes will be overwritten by sync.
+						</AlertDescription>
+					</div>
 				</Alert>
 
 				<div className="grid grid-cols-2 gap-6">

@@ -7,7 +7,8 @@
 		"instructionsLabel": "Instrucciones",
 		"knowledgeLabel": "Conocimiento",
 		"toolboxLabel": "Cajas de herramientas",
-		"promptsLabel": "Biblioteca de indicaciones"
+		"promptsLabel": "Biblioteca de indicaciones",
+		"skillsLabel": "Habilidades"
 	},
 	"actions": {
 		"create": "Crear",
@@ -77,10 +78,7 @@
 		"pin": "Marcar como favorito",
 		"unpin": "Quitar de favoritos",
 		"pinFailed": "Error al marcar como favorito",
-		"unpinFailed": "Error al quitar de favoritos",
-		"dayToday": "Hoy",
-		"dayYesterday": "Ayer",
-		"daysAgo": "Hace {{count}} días"
+		"unpinFailed": "Error al quitar de favoritos"
 	},
 	"images": {
 		"agentIllustration": "Ilustración del agente"
@@ -113,7 +111,8 @@
 			"knowledge": "Conocimiento",
 			"toolbox": "Cajas de herramientas",
 			"prompts": "Indicaciones",
-			"members": "Miembros"
+			"members": "Miembros",
+			"skills": "Habilidades"
 		},
 		"about": {
 			"title": "Acerca de",
@@ -144,6 +143,8 @@
 		"title": "Todos los chats",
 		"subtitle": "Explora, busca y limpia tus chats.",
 		"selectAll": "Seleccionar todo",
+		"deselectAll": "Deseleccionar todo",
+		"favorites": "Favoritos",
 		"selectChat": "Seleccionar chat {{name}}",
 		"selectedCount": "{{count}} seleccionados",
 		"totalCount": "{{count}} chats",
@@ -160,5 +161,8 @@
 		"editTitle": "Editar instrucciones",
 		"editDescription": "Actualiza la indicación del sistema que guía el comportamiento de este agente.",
 		"charCount": "{{count}} caracteres"
+	},
+	"skills": {
+		"noSkills": "No se han añadido habilidades"
 	}
 }

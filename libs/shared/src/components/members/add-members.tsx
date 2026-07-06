@@ -198,6 +198,7 @@ export const AddMembersOverlay = ({
 			);
 			resetState();
 			onClose(true);
+			return undefined;
 		});
 
 		const responseData = (response?.data || {}) as { success?: boolean };

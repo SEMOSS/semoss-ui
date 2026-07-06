@@ -1,6 +1,6 @@
-export * from "./AppCards";
 export * from "./AppFilter";
 export * from "./app.types";
+export * from "./app-cards";
 export * from "./app-delete-modal";
 export * from "./app-details.utility";
 export * from "./app-landscape-card";
