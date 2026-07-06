@@ -185,7 +185,7 @@ export const MainLayout = observer(() => {
 						}
 					>
 						<GlobalNav />
-						<SidebarInset className="m-0! rounded-none! shadow-none">
+						<SidebarInset className="m-0! min-w-0 rounded-none! shadow-none">
 							<GlobalDialog
 								onAcknowledge={() => {
 									if (pendingTour) {
