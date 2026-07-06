@@ -78,10 +78,7 @@
 		"pin": "إضافة إلى المفضلة",
 		"unpin": "إزالة من المفضلة",
 		"pinFailed": "فشل إضافة الدردشة إلى المفضلة",
-		"unpinFailed": "فشل إزالة الدردشة من المفضلة",
-		"dayToday": "اليوم",
-		"dayYesterday": "أمس",
-		"daysAgo": "قبل {{count}} يوم"
+		"unpinFailed": "فشل إزالة الدردشة من المفضلة"
 	},
 	"images": {
 		"agentIllustration": "توضيح الوكيل"
@@ -146,6 +143,8 @@
 		"title": "جميع الدردشات",
 		"subtitle": "تصفّح دردشاتك وابحث فيها ونظّفها.",
 		"selectAll": "تحديد الكل",
+		"deselectAll": "إلغاء تحديد الكل",
+		"favorites": "المفضلة",
 		"selectChat": "تحديد الدردشة {{name}}",
 		"selectedCount": "تم تحديد {{count}}",
 		"totalCount": "{{count}} دردشات",
