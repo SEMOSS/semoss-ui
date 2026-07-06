@@ -1,5 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { FileEditor, FlexLayout } from "@semoss/shared";
+import { MetadataHelpDialog } from "@/components/shared";
+import { MCP } from "@/constants";
 
 interface AppFileEditorProps {
 	/** Node */
@@ -16,6 +18,10 @@ export const AppFileEditor: React.FC<AppFileEditorProps> = observer(
 			path: string;
 		} = node.getConfig();
 
+		const isDriverFile = MCP.DRIVER_PATHS.some((f) =>
+			config.path.endsWith(f),
+		);
+
 		return (
 			<FileEditor
 				mode={{
@@ -23,6 +29,9 @@ export const AppFileEditor: React.FC<AppFileEditorProps> = observer(
 					app: app,
 				}}
 				path={config.path}
+				leadingToolbar={
+					isDriverFile ? <MetadataHelpDialog compact /> : undefined
+				}
 				onChange={(_content, isModified) => {
 					const updated = isModified
 						? `${config.name}*`

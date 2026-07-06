@@ -7,7 +7,8 @@
 		"instructionsLabel": "Instructions",
 		"knowledgeLabel": "Connaissances",
 		"toolboxLabel": "Boîtes à outils",
-		"promptsLabel": "Bibliothèque d'invites"
+		"promptsLabel": "Bibliothèque d'invites",
+		"skillsLabel": "Compétences"
 	},
 	"actions": {
 		"create": "Créer",
@@ -77,10 +78,7 @@
 		"pin": "Ajouter aux favoris",
 		"unpin": "Retirer des favoris",
 		"pinFailed": "Échec de l'ajout aux favoris",
-		"unpinFailed": "Échec du retrait des favoris",
-		"dayToday": "Aujourd'hui",
-		"dayYesterday": "Hier",
-		"daysAgo": "Il y a {{count}} jours"
+		"unpinFailed": "Échec du retrait des favoris"
 	},
 	"images": {
 		"agentIllustration": "Illustration de l'agent"
@@ -113,7 +111,8 @@
 			"knowledge": "Connaissances",
 			"toolbox": "Boîtes à outils",
 			"prompts": "Invites",
-			"members": "Membres"
+			"members": "Membres",
+			"skills": "Compétences"
 		},
 		"about": {
 			"title": "À propos",
@@ -144,6 +143,8 @@
 		"title": "Toutes les discussions",
 		"subtitle": "Parcourez, recherchez et nettoyez vos discussions.",
 		"selectAll": "Tout sélectionner",
+		"deselectAll": "Tout désélectionner",
+		"favorites": "Favoris",
 		"selectChat": "Sélectionner la discussion {{name}}",
 		"selectedCount": "{{count}} sélectionnée(s)",
 		"totalCount": "{{count}} discussions",
@@ -160,5 +161,8 @@
 		"editTitle": "Modifier les instructions",
 		"editDescription": "Mettez à jour l'invite système qui guide le comportement de cet agent.",
 		"charCount": "{{count}} caractères"
+	},
+	"skills": {
+		"noSkills": "Aucune compétence ajoutée"
 	}
 }

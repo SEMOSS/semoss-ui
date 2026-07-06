@@ -1,5 +1,5 @@
 import { Env, get, post } from "@semoss/sdk/react";
-import type { PostUser, Role, User, UserAccessRequest } from "@/types";
+import type { PostUser, Role, User, UserAccessRequest } from "../types";
 
 /**
  * Get the current user's permission for a project

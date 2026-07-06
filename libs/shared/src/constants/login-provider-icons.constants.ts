@@ -1,3 +1,4 @@
+/// <reference path="../vite-env.d.ts" />
 const LOGIN_PROVIDER_LOGO_LOADERS = {
 	...import.meta.glob("../assets/loginProviders/*.{png,svg}", {
 		query: "?url",
