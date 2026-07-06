@@ -1,30 +1,9 @@
-import {
-	Ellipsis,
-	FileArchiveIcon,
-	FileAudioIcon,
-	FileBadgeIcon,
-	FileChartPieIcon,
-	FileCodeIcon,
-	FileIcon,
-	FileJsonIcon,
-	FileSpreadsheetIcon,
-	FileTerminalIcon,
-	FileTextIcon,
-	FileTypeIcon,
-	FileVideoIcon,
-	FolderIcon,
-	FolderOpenIcon,
-	ImageIcon,
-} from "lucide-react";
+import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
 	Muted,
 	Tooltip,
 	TooltipContent,
@@ -34,16 +13,43 @@ import {
 	useTreeView,
 } from "@semoss/ui/next";
 import type { FileItem, FileMode } from "./file.types";
-import { FileExplorerMenuItem } from "./file-explorer-menu-item";
+import {
+	canMoveItemToDirectory,
+	FILE_EXPLORER_DRAG_DATA_TYPE,
+	getFileExplorerTestIdSegment,
+	getFileIconComponent,
+	getFileOperationErrorMessage,
+	getItemTargetDirectory,
+	isPointerOutsideElement,
+	mapStorageEntriesToFileItems,
+	parseExplorerDragItems,
+} from "./file-explorer.utils";
 
 const ACTIONS_COL_WIDTH = 36;
+type FileExplorerSecondaryAction = {
+	name: string;
+	action: (item: FileItem) => Promise<void>;
+};
 
-// Worst-case string widths at text-[11px] (~7px/char) + 16px column padding (px-2):
-//   numeric:       "12/31/26"                      =  8 chars → ~72px  → threshold  80px
-//   numeric+time:  "12/31/26, 10:55 PM"            = 18 chars → ~142px → threshold 150px
-//   short+time:    "Sep 30, 2026 at 10:55 PM"      = 24 chars → ~184px → threshold 195px
-//   long+time:     "September 30, 2026 at 10:55 PM"= 30 chars → ~226px → threshold 235px
-const formatMacDate = (raw: string | undefined, width = 170): string | null => {
+/**
+ * Worst-case string widths at text-11px (~7px/char + 16px column padding px-2):
+ *   numeric          "1/23/26"           8  chars  72px   → threshold  80px
+ *   numeric+time     "1/23/26, 10:55 PM" 18 chars 142px   → threshold 150px
+ *   short+time       "Sep 30, 2026 at 10:55 PM" 24 chars 184px → threshold 195px
+ *   long+time        "September 30, 2026 at 10:55 PM" 30 chars 226px → threshold 235px
+ *
+ * The `t` translator is passed in so phrases like "Yesterday at {time}" and
+ * weekday names use the user's active locale rather than hardcoded English.
+ * `locale` is `i18n.language` and feeds `Intl.DateTimeFormat` for the
+ * numeric/month-name pieces so date numerals also match (e.g. ٢٥/١٢/٢٦ in
+ * Arabic).
+ */
+const formatMacDate = (
+	raw: string | undefined,
+	width = 170,
+	t: (key: string, opts?: Record<string, unknown>) => string,
+	locale: string,
+): string | null => {
 	if (!raw) return null;
 	const date = new Date(raw);
 	if (Number.isNaN(date.getTime())) return null;
@@ -58,123 +64,68 @@ const formatMacDate = (raw: string | undefined, width = 170): string | null => {
 	const diffDays = Math.round(
 		(today.getTime() - fileDay.getTime()) / 86400000,
 	);
-	const time = date.toLocaleTimeString("en-US", {
+	const time = date.toLocaleTimeString(locale, {
 		hour: "numeric",
 		minute: "2-digit",
 		hour12: true,
 	});
 
-	// Today — show relative elapsed time ("2h ago", "5 min ago", "Just now")
+	// Today: show relative elapsed time (2h ago, 5 min ago, Just now)
 	if (diffDays === 0) {
 		const diffMs = now.getTime() - date.getTime();
 		const diffMins = Math.floor(diffMs / 60000);
 		const diffHours = Math.floor(diffMins / 60);
-		if (diffMins < 1) return "Just now";
+		if (diffMins < 1) return t("fileExplorer.dateFormat.justNow");
 		if (diffMins < 60)
-			return width < 150 ? `${diffMins}m ago` : `${diffMins} min ago`;
-		return width < 150 ? `${diffHours}h ago` : `${diffHours} hr ago`;
+			return width < 150
+				? t("fileExplorer.dateFormat.minutesAgoShort", {
+						count: diffMins,
+					})
+				: t("fileExplorer.dateFormat.minutesAgo", { count: diffMins });
+		return width < 150
+			? t("fileExplorer.dateFormat.hoursAgoShort", { count: diffHours })
+			: t("fileExplorer.dateFormat.hoursAgo", { count: diffHours });
 	}
 	if (diffDays === 1)
-		return width < 150 ? "Yesterday" : `Yesterday at ${time}`;
+		return width < 150
+			? t("fileExplorer.dateFormat.yesterday")
+			: t("fileExplorer.dateFormat.yesterdayAt", { time });
 	if (diffDays < 7) {
-		const day = date.toLocaleDateString("en-US", { weekday: "short" });
-		return width < 150 ? day : `${day} at ${time}`;
+		const day = date.toLocaleDateString(locale, { weekday: "short" });
+		return width < 150
+			? day
+			: t("fileExplorer.dateFormat.dayAt", { day, time });
 	}
 
-	// Absolute — thresholds guarantee worst-case fits without truncation
+	// Absolute thresholds — guarantee worst-case fits without truncation
 	if (width < 150)
-		return date.toLocaleDateString("en-US", {
+		return date.toLocaleDateString(locale, {
 			month: "numeric",
 			day: "numeric",
 			year: "2-digit",
 		});
 	if (width < 195) {
-		const d = date.toLocaleDateString("en-US", {
+		const d = date.toLocaleDateString(locale, {
 			month: "numeric",
 			day: "numeric",
 			year: "2-digit",
 		});
-		return `${d}, ${time}`;
+		return t("fileExplorer.dateFormat.dateAndTime", { date: d, time });
 	}
 	if (width < 235) {
-		const d = date.toLocaleDateString("en-US", {
+		const d = date.toLocaleDateString(locale, {
 			month: "short",
 			day: "numeric",
 			year: "numeric",
 		});
-		return `${d} at ${time}`;
+		return t("fileExplorer.dateFormat.dateAt", { date: d, time });
 	}
-	const d = date.toLocaleDateString("en-US", {
+	const d = date.toLocaleDateString(locale, {
 		month: "long",
 		day: "numeric",
 		year: "numeric",
 	});
-	return `${d} at ${time}`;
-};
-
-interface StoragePathEntry {
-	Name?: string;
-	name?: string;
-	Path?: string;
-	path?: string;
-	IsDir?: boolean;
-	isDir?: boolean;
-	ModTime?: string;
-	lastModified?: string;
-	last_modified?: string;
-}
-
-const mapStorageEntriesToFileItems = (entries: unknown): FileItem[] => {
-	if (!Array.isArray(entries)) {
-		return [];
-	}
-
-	return entries.reduce<FileItem[]>((acc, entry) => {
-		if (typeof entry === "string") {
-			if (!entry) {
-				return acc;
-			}
-
-			const normalizedEntry = entry.replace(/\/+$/, "");
-			const name =
-				normalizedEntry.split("/").filter(Boolean).pop() ||
-				normalizedEntry;
-			const isDirectory = entry.endsWith("/");
-
-			acc.push({
-				name: name,
-				path: entry,
-				type: isDirectory ? "directory" : undefined,
-			});
-
-			return acc;
-		}
-
-		if (!entry || typeof entry !== "object") {
-			return acc;
-		}
-
-		const details = entry as StoragePathEntry;
-		const name = details.Name || details.name || "";
-		const path = details.Path || details.path || "";
-		if (!path) {
-			return acc;
-		}
-		const fallbackName = path.split("/").filter(Boolean).pop() || "/";
-		const isDirectory = details.IsDir || details.isDir;
-
-		acc.push({
-			name: name || fallbackName,
-			path: path,
-			type: isDirectory ? "directory" : undefined,
-			lastModified:
-				details.ModTime ||
-				details.lastModified ||
-				details.last_modified,
-		});
-
-		return acc;
-	}, []);
+	return t("fileExplorer.dateFormat.dateAt", { date: d, time });
 };
 
 interface FileExplorerItemProps extends React.HTMLAttributes<HTMLLIElement> {
@@ -198,14 +149,8 @@ interface FileExplorerItemProps extends React.HTMLAttributes<HTMLLIElement> {
 	} | null)[];
 
 	/** Secondary Actions */
-	secondaryActions?: ({
-		name: string;
-		action: (item: FileItem) => Promise<void>;
-	} | null)[];
-
-	/**
-	 * Override for the file item component
-	 */
+	secondaryActions?: (FileExplorerSecondaryAction | null)[];
+	/** Override for the file item component */
 	ItemComponent?: typeof FileExplorerItem;
 
 	/** Width of the date column in px — drives adaptive date formatting */
@@ -215,6 +160,46 @@ interface FileExplorerItemProps extends React.HTMLAttributes<HTMLLIElement> {
 	 * Called after a successful rename with the old and new paths
 	 */
 	onAfterRename?: (oldPath: string, newPath: string) => void;
+	/** Whether this item is the active right-click context target */
+	isContextActive?: boolean;
+	/** Whether this item is currently part of a bulk selection */
+	isBulkSelected?: boolean;
+	/** Callback to open the context menu for this item */
+	onContextMenuOpen?: (
+		e: React.MouseEvent,
+		item: FileItem,
+		targetPath: string,
+		secondaryActions?: FileExplorerSecondaryAction[],
+	) => void;
+	/** Propagated down to children: checks if a given path is the context target */
+	isItemContextActive?: (path: string) => boolean;
+	/** Propagated down to children: checks if a given path is bulk-selected */
+	isItemBulkSelected?: (path: string) => boolean;
+	/** Track visible rendered items so keyboard bulk select can include expanded rows */
+	onItemRegister?: (item: FileItem, isVisible: boolean) => void;
+	/** Register expanded directory refresh callbacks for targeted parent updates */
+	onDirectoryRefreshRegister?: (
+		directoryPath: string,
+		refresh: () => void,
+		isRegistered: boolean,
+	) => void;
+	/** Toggle this item in the bulk selection */
+	onBulkSelectionToggle?: (item: FileItem) => void;
+	/** Resolve the items that should be moved when this row starts a drag */
+	getDragItems?: (item: FileItem) => FileItem[];
+	/** Move dragged items into a target directory */
+	onMoveItems?: (
+		items: FileItem[],
+		targetDirectory: string,
+	) => Promise<unknown>;
+	/** Items currently being dragged inside this explorer */
+	activeDragItems?: FileItem[];
+	/** The one folder row currently selected as the active drop target */
+	activeDropTargetPath?: string | null;
+	/** Notify the explorer when an internal drag starts, ends, or targets a row */
+	onExplorerDragStateChange?: (itemCount: number, items?: FileItem[]) => void;
+	/** Notify the explorer which folder row is the active drop target */
+	onExplorerDropTargetChange?: (path: string | null) => void;
 }
 
 export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
@@ -226,18 +211,88 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 	ItemComponent = FileExplorerItem,
 	dateColWidth = 130,
 	onAfterRename,
+	isContextActive = false,
+	isBulkSelected = false,
+	onContextMenuOpen,
+	isItemContextActive,
+	isItemBulkSelected,
+	onItemRegister,
+	onDirectoryRefreshRegister,
+	onBulkSelectionToggle,
+	getDragItems,
+	onMoveItems,
+	activeDragItems = [],
+	activeDropTargetPath = null,
+	onExplorerDragStateChange,
+	onExplorerDropTargetChange,
+	draggable,
+	onDragStart,
+	onDragOver,
+	onDragLeave,
+	onDrop,
+	onDragEnd,
 	...otherProps
 }) => {
 	const treeView = useTreeView<FileItem>();
 	const insight = useInsight();
+	const { t, i18n } = useTranslation("common");
 	const isDirectory = item.type === "directory";
 	const isExpanded = treeView.expanded.includes(item.path);
+	const itemTestId = `file-explorer-item-${getFileExplorerTestIdSegment(item.path)}`;
 
 	const [isRenaming, setIsRenaming] = useState(false);
+	const [isDraggingSource, setIsDraggingSource] = useState(false);
+	const [draggedItemCount, setDraggedItemCount] = useState(0);
 	const [renameValue, setRenameValue] = useState("");
 	const inputRef = useRef<HTMLInputElement>(null);
 	const canRename = mode.type !== "STORAGE";
-	const renameFromMenuRef = useRef(false);
+	const visibleSecondaryActions = useMemo(() => {
+		const visible = secondaryActions.filter(
+			(action): action is FileExplorerSecondaryAction => action !== null,
+		);
+
+		// Built-in Unzip for every mode that supports it. Consumers can still
+		// inject their own "Unzip" via the secondaryActions prop to override
+		// (e.g. to attach side effects like closing related tabs).
+		const isZip =
+			item.type !== "directory" &&
+			item.path.toLowerCase().endsWith(".zip");
+		const hasUnzip = visible.some(
+			(action) => action.name.toLowerCase() === "unzip",
+		);
+		if (isZip && !hasUnzip) {
+			let unzipPixel: string | null = null;
+			if (mode.type === "APP") {
+				unzipPixel = `UnzipAppAssetFile(project=["${mode.app}"], filePath=["${item.path}"])`;
+			} else if (mode.type === "ENGINE") {
+				unzipPixel = `UnzipEngineAssetFile(engine=["${mode.engine}"], filePath=["${item.path}"])`;
+			} else if (mode.type === "INSIGHT") {
+				unzipPixel = `UnzipInsightAssetFile(filePath=["${item.path}"])`;
+			} else if (mode.type === "USER") {
+				unzipPixel = `UnzipUserAssetFile(filePath=["${item.path}"])`;
+			}
+			if (unzipPixel) {
+				const pixel = unzipPixel;
+				visible.push({
+					name: "Unzip",
+					action: async () => {
+						try {
+							await insight.actions.run(pixel);
+							refresh();
+						} catch (e) {
+							toast.error(
+								getFileOperationErrorMessage(
+									t("fileExplorer.toasts.unzipFailed"),
+									e,
+								),
+							);
+						}
+					},
+				});
+			}
+		}
+		return visible;
+	}, [secondaryActions, item.type, item.path, mode, insight, refresh]);
 
 	useEffect(() => {
 		if (!isRenaming) return;
@@ -245,6 +300,30 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 			inputRef.current?.focus();
 		});
 	}, [isRenaming]);
+
+	useEffect(() => {
+		onItemRegister?.(item, true);
+		return () => onItemRegister?.(item, false);
+	}, [item, onItemRegister]);
+
+	// Listen for the rename CustomEvent dispatched by the context menu
+	useEffect(() => {
+		const handleRenameEvent = (event: Event) => {
+			const customEvent = event as CustomEvent<{ path: string }>;
+			if (customEvent.detail?.path === item.path) {
+				setRenameValue(item.name);
+				setIsRenaming(true);
+			}
+		};
+
+		window.addEventListener("file-explorer:rename", handleRenameEvent);
+		return () => {
+			window.removeEventListener(
+				"file-explorer:rename",
+				handleRenameEvent,
+			);
+		};
+	}, [item.path, item.name]);
 
 	const handleRename = async () => {
 		const newName = renameValue.trim();
@@ -262,14 +341,22 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 				pixel = `RenameEngineAsset(engine=["${mode.engine}"], filePath=["${item.path}"], newValue=["${newPath}"]);`;
 			} else if (mode.type === "INSIGHT") {
 				pixel = `RenameInsightAsset(filePath=["${item.path}"], newValue=["${newPath}"]);`;
+			} else if (mode.type === "USER") {
+				pixel = `RenameUserAsset(filePath=["${item.path}"], newValue=["${newPath}"]);`;
 			}
 			if (pixel) {
 				await insight.actions.run(pixel);
 				onAfterRename?.(item.path, newPath);
 				refresh();
+				toast.success(t("fileExplorer.toasts.renameSuccess"));
 			}
 		} catch (e) {
-			toast.error("Failed to rename");
+			toast.error(
+				getFileOperationErrorMessage(
+					t("fileExplorer.toasts.renameFailed"),
+					e,
+				),
+			);
 			console.error(e);
 		} finally {
 			setIsRenaming(false);
@@ -287,6 +374,8 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 			getChildrenPixel = `ListStoragePathDetails(storage=["${mode.storage}"], storagePath=["${item.path}"]);`;
 		} else if (mode.type === "INSIGHT") {
 			getChildrenPixel = `BrowseInsightAssets(filePath=["${item.path}"]);`;
+		} else if (mode.type === "USER") {
+			getChildrenPixel = `BrowseUserAssets(filePath=["${item.path}"]);`;
 		}
 	}
 
@@ -306,100 +395,231 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 		return getChildren.data as FileItem[];
 	}, [mode.type, getChildren.data]);
 
-	const macDate = formatMacDate(item.lastModified, dateColWidth);
+	useEffect(() => {
+		if (!isDirectory) return;
 
-	const renderIcon = () => {
-		if (isDirectory) {
-			return isExpanded ? (
-				<FolderOpenIcon className="size-4 shrink-0 text-muted-foreground" />
-			) : (
-				<FolderIcon className="size-4 shrink-0 text-muted-foreground" />
-			);
-		}
-		const ext = item.name.split(".").pop()?.toLowerCase() ?? "";
-		if (
-			["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "img"].includes(
-				ext,
-			)
-		)
-			return (
-				<ImageIcon className="size-4 shrink-0 text-muted-foreground" />
-			);
-		if (ext === "pdf")
-			return (
-				<FileBadgeIcon className="size-4 shrink-0 text-muted-foreground" />
-			);
-		if (["xls", "xlsx", "csv"].includes(ext))
-			return (
-				<FileSpreadsheetIcon className="size-4 shrink-0 text-muted-foreground" />
-			);
-		if (
-			[
-				"py",
-				"js",
-				"ts",
-				"tsx",
-				"jsx",
-				"java",
-				"cpp",
-				"c",
-				"go",
-				"rs",
-			].includes(ext)
-		)
-			return (
-				<FileCodeIcon className="size-4 shrink-0 text-muted-foreground" />
-			);
-		if (["sh", "bash", "zsh", "bat", "ps1"].includes(ext))
-			return (
-				<FileTerminalIcon className="size-4 shrink-0 text-muted-foreground" />
-			);
-		if (ext === "json")
-			return (
-				<FileJsonIcon className="size-4 shrink-0 text-muted-foreground" />
-			);
-		if (["zip", "tar", "gz", "rar", "7z"].includes(ext))
-			return (
-				<FileArchiveIcon className="size-4 shrink-0 text-muted-foreground" />
-			);
-		if (["ppt", "pptx"].includes(ext))
-			return (
-				<FileChartPieIcon className="size-4 shrink-0 text-muted-foreground" />
-			);
-		if (["mp3", "wav", "ogg", "flac", "aac"].includes(ext))
-			return (
-				<FileAudioIcon className="size-4 shrink-0 text-muted-foreground" />
-			);
-		if (["mp4", "mov", "avi", "mkv", "webm"].includes(ext))
-			return (
-				<FileVideoIcon className="size-4 shrink-0 text-muted-foreground" />
-			);
-		if (["html", "xml", "md", "mdx", "rtf"].includes(ext))
-			return (
-				<FileTypeIcon className="size-4 shrink-0 text-muted-foreground" />
-			);
-		if (["doc", "docx", "msg", "txt"].includes(ext))
-			return (
-				<FileTextIcon className="size-4 shrink-0 text-muted-foreground" />
-			);
-		return <FileIcon className="size-4 shrink-0 text-muted-foreground" />;
+		onDirectoryRefreshRegister?.(item.path, getChildren.refresh, true);
+		return () => {
+			onDirectoryRefreshRegister?.(item.path, getChildren.refresh, false);
+		};
+	}, [
+		getChildren.refresh,
+		isDirectory,
+		item.path,
+		onDirectoryRefreshRegister,
+	]);
+
+	const macDate = formatMacDate(
+		item.lastModified,
+		dateColWidth,
+		t,
+		i18n.language,
+	);
+
+	const FileIcon = isDirectory ? null : getFileIconComponent(item.name);
+
+	// Resolve context-active state: propagated checker takes priority over direct prop
+	const effectiveIsContextActive = isItemContextActive
+		? isItemContextActive(item.path)
+		: isContextActive;
+	const effectiveIsBulkSelected = isItemBulkSelected
+		? isItemBulkSelected(item.path)
+		: isBulkSelected;
+	const isFileMoveEnabled = Boolean(getDragItems && onMoveItems);
+	const isActiveDropTarget = activeDropTargetPath === item.path;
+
+	const canDropDraggedItems = (draggedItems: FileItem[]) => {
+		if (!isDirectory || draggedItems.length === 0) return false;
+
+		const targetDirectory = getItemTargetDirectory(item);
+		return draggedItems.some((draggedItem) =>
+			canMoveItemToDirectory(draggedItem, targetDirectory),
+		);
+	};
+
+	const getCurrentDragItems = (dataTransfer: DataTransfer) =>
+		activeDragItems.length > 0
+			? activeDragItems
+			: parseExplorerDragItems(dataTransfer);
+
+	const setDragPreview = (
+		dataTransfer: DataTransfer,
+		dragItems: FileItem[],
+	) => {
+		const preview = document.createElement("div");
+		const count = dragItems.length;
+		preview.textContent =
+			count > 1 ? `Move ${count} items` : `Move ${dragItems[0]?.name}`;
+		preview.className =
+			"fixed -top-96 start-0 rounded-md border border-primary/30 bg-background px-2 py-1 text-xs font-medium text-foreground shadow-md";
+		document.body.appendChild(preview);
+		dataTransfer.setDragImage(preview, 12, 12);
+		window.setTimeout(() => preview.remove(), 0);
 	};
 
 	return (
 		<TreeViewItem
+			data-testid={itemTestId}
 			id={item.path}
 			item={item}
 			loading={getChildren.status === "LOADING"}
+			leadingIcon={
+				FileIcon ? <FileIcon className="size-4 shrink-0" /> : undefined
+			}
+			draggable={isFileMoveEnabled ? true : draggable}
+			onDragStart={(e) => {
+				if (!isFileMoveEnabled) {
+					onDragStart?.(e);
+					return;
+				}
+
+				e.stopPropagation();
+				const dragItems = getDragItems?.(item) ?? [item];
+				setIsDraggingSource(true);
+				setDraggedItemCount(dragItems.length);
+				onExplorerDragStateChange?.(dragItems.length, dragItems);
+				e.dataTransfer.effectAllowed = "move";
+				e.dataTransfer.setData(
+					FILE_EXPLORER_DRAG_DATA_TYPE,
+					JSON.stringify(dragItems),
+				);
+				e.dataTransfer.setData(
+					"text/plain",
+					dragItems.map((dragItem) => dragItem.path).join("\n"),
+				);
+				setDragPreview(e.dataTransfer, dragItems);
+			}}
+			onDragOver={(e) => {
+				if (!isFileMoveEnabled) {
+					onDragOver?.(e);
+					return;
+				}
+
+				const draggedItems = getCurrentDragItems(e.dataTransfer);
+				if (!canDropDraggedItems(draggedItems)) return;
+
+				e.preventDefault();
+				e.stopPropagation();
+				e.dataTransfer.dropEffect = "move";
+				onExplorerDropTargetChange?.(item.path);
+				onExplorerDragStateChange?.(0, draggedItems);
+			}}
+			onDragLeave={(e) => {
+				if (!isFileMoveEnabled) {
+					onDragLeave?.(e);
+					return;
+				}
+
+				e.stopPropagation();
+				if (
+					!isPointerOutsideElement(
+						e.currentTarget,
+						e.clientX,
+						e.clientY,
+					)
+				) {
+					return;
+				}
+				if (isActiveDropTarget) {
+					onExplorerDropTargetChange?.(null);
+				}
+				onExplorerDragStateChange?.(
+					activeDragItems.length,
+					activeDragItems,
+				);
+			}}
+			onDrop={(e) => {
+				if (!isFileMoveEnabled) {
+					onDrop?.(e);
+					return;
+				}
+
+				const draggedItems = getCurrentDragItems(e.dataTransfer);
+				if (!canDropDraggedItems(draggedItems)) return;
+
+				e.preventDefault();
+				e.stopPropagation();
+				onExplorerDropTargetChange?.(null);
+				onExplorerDragStateChange?.(0, []);
+				onMoveItems?.(draggedItems, getItemTargetDirectory(item));
+			}}
+			onDragEnd={(e) => {
+				if (!isFileMoveEnabled) {
+					onDragEnd?.(e);
+					return;
+				}
+
+				e.stopPropagation();
+				onExplorerDropTargetChange?.(null);
+				setIsDraggingSource(false);
+				setDraggedItemCount(0);
+				onExplorerDragStateChange?.(0, []);
+			}}
+			onClickCapture={(e) => {
+				if (!(e.ctrlKey || e.metaKey)) return;
+				if (!(e.target instanceof Element)) return;
+				const nearestTreeItem = e.target.closest('[role="treeitem"]');
+				if (nearestTreeItem !== e.currentTarget) return;
+				e.preventDefault();
+				e.stopPropagation();
+				onBulkSelectionToggle?.(item);
+			}}
+			onContextMenu={(e) => {
+				if (!onContextMenuOpen) return;
+				e.preventDefault();
+				e.stopPropagation();
+				onContextMenuOpen(
+					e,
+					item,
+					getItemTargetDirectory(item),
+					visibleSecondaryActions,
+				);
+			}}
 			label={
 				<div
-					className="group flex min-w-full flex-row items-center"
-					title={`Path: ${item.path} Last Modified: ${item.lastModified}`}
+					data-testid={`${itemTestId}-row`}
+					className={[
+						// `rtl:flex-row-reverse` mirrors the header's column
+						// order in RTL. The header (in file-explorer.tsx)
+						// flips correctly via writing-direction inheritance,
+						// but inside TreeViewItem the row label doesn't —
+						// likely because nested Radix wrappers swallow the
+						// direction context. Explicit reverse keeps Name and
+						// Date aligned with the header in both directions.
+						"group flex min-h-7 min-w-full flex-row items-center rounded-md pe-2 transition-colors rtl:flex-row-reverse",
+						effectiveIsContextActive
+							? "bg-accent text-accent-foreground ring-1 ring-primary/30 ring-inset"
+							: "",
+						effectiveIsBulkSelected
+							? "bg-primary/10 text-accent-foreground ring-1 ring-primary/40 ring-inset"
+							: "",
+						isActiveDropTarget
+							? "bg-primary/15 ring-1 ring-primary/50 ring-inset"
+							: "",
+						isDraggingSource
+							? "opacity-60 ring-1 ring-primary/30 ring-inset"
+							: "",
+						isFileMoveEnabled
+							? "cursor-grab active:cursor-grabbing"
+							: "",
+					]
+						.filter(Boolean)
+						.join(" ")}
+					title={
+						item.lastModified
+							? `${t("fileExplorer.pathLabel", {
+									path: item.path,
+								})}\n${t("fileExplorer.lastModifiedLabel", {
+									date: item.lastModified,
+								})}`
+							: t("fileExplorer.pathLabel", { path: item.path })
+					}
 				>
-					{/* Column 1: Name */}
-					<div className="flex min-w-[80px] flex-1 items-center gap-2 overflow-hidden pr-2">
-						{renderIcon()}
+					{/* Column 1 — Name */}
+					<div className="flex min-w-[80px] flex-1 items-center gap-2 overflow-hidden pe-2">
 						{isRenaming ? (
 							<input
+								data-testid={`${itemTestId}-rename-input`}
 								ref={inputRef}
 								className="w-full rounded border border-primary bg-background px-1 text-sm outline-none"
 								value={renameValue}
@@ -426,10 +646,11 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 							/>
 						) : (
 							<button
+								data-testid={`${itemTestId}-name-button`}
 								type="button"
-								className="min-w-0 truncate bg-transparent p-0 text-left text-sm"
+								className="min-w-0 truncate bg-transparent p-0 text-start text-sm"
 								onDoubleClick={(e) => {
-									if (!canRename) return;
+									if (!canRename || isDirectory) return;
 									e.stopPropagation();
 									setRenameValue(item.name);
 									setIsRenaming(true);
@@ -439,94 +660,68 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 							</button>
 						)}
 						<div className="flex-1" />
+						{isDraggingSource && (
+							<span
+								data-testid={`${itemTestId}-drag-source-indicator`}
+								className="shrink-0 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary"
+							>
+								Moving{" "}
+								{draggedItemCount > 1
+									? `${draggedItemCount} items`
+									: "1 item"}
+							</span>
+						)}
+						{isActiveDropTarget && (
+							<span
+								data-testid={`${itemTestId}-drop-target-indicator`}
+								className="shrink-0 rounded border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary"
+							>
+								Move here
+							</span>
+						)}
 					</div>
 
 					{/* Column 2: Date */}
 					<div
-						className="shrink-0 overflow-hidden truncate px-2 text-[11px] text-muted-foreground"
+						data-testid={`${itemTestId}-date`}
+						className="shrink-0 overflow-hidden truncate px-2 text-end text-[11px] text-muted-foreground"
 						style={{ width: "var(--date-col-width, 170px)" }}
 					>
 						{macDate ?? ""}
 					</div>
 
 					{/* Column 3: Actions */}
-					<div
-						className="flex shrink-0 items-center justify-end"
-						style={{ width: ACTIONS_COL_WIDTH }}
-					>
-						{actions.map((a) => {
-							if (!a) return null;
-							return (
-								<Tooltip key={a.name}>
-									<TooltipTrigger asChild>
-										<Button
-											variant="ghost"
-											size="icon-sm"
-											className="opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
-											onClick={(e) => {
-												e.stopPropagation();
-												a.action(item);
-											}}
-										>
-											{a.icon}
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent>{a.tooltip}</TooltipContent>
-								</Tooltip>
-							);
-						})}
-						{(canRename || secondaryActions.length > 0) && (
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button
-										variant="ghost"
-										size="icon-sm"
-										onClick={(e) => e.stopPropagation()}
-									>
-										<Ellipsis className="size-4" />
-									</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent
-									align="end"
-									onCloseAutoFocus={(e) => {
-										if (renameFromMenuRef.current) {
-											e.preventDefault();
-											renameFromMenuRef.current = false;
-										}
-									}}
-								>
-									<DropdownMenuGroup>
-										{canRename && (
-											<DropdownMenuItem
-												className="text-xs"
-												onSelect={() => {
-													renameFromMenuRef.current = true;
-													setRenameValue(item.name);
-													setIsRenaming(true);
+					{actions.some(Boolean) && (
+						<div
+							className="flex shrink-0 items-center justify-end"
+							style={{ width: ACTIONS_COL_WIDTH }}
+						>
+							{actions.map((a) => {
+								if (!a) return null;
+								return (
+									<Tooltip key={a.name}>
+										<TooltipTrigger asChild>
+											<Button
+												data-testid={`${itemTestId}-action-${getFileExplorerTestIdSegment(a.name)}`}
+												variant="ghost"
+												size="icon-sm"
+												className="opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
+												onClick={(e) => {
+													e.stopPropagation();
+													a.action(item);
 												}}
-												onClick={(e) =>
-													e.stopPropagation()
-												}
 											>
-												Rename
-											</DropdownMenuItem>
-										)}
-										{secondaryActions.map((a) => {
-											if (!a) return null;
-											return (
-												<FileExplorerMenuItem
-													key={a.name}
-													item={item}
-													name={a.name}
-													action={a.action}
-												/>
-											);
-										})}
-									</DropdownMenuGroup>
-								</DropdownMenuContent>
-							</DropdownMenu>
-						)}
-					</div>
+												{a.icon}
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent>
+											{a.tooltip}
+										</TooltipContent>
+									</Tooltip>
+								);
+							})}
+						</div>
+					)}
 				</div>
 			}
 			{...otherProps}
@@ -537,17 +732,40 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 						children.map((child) => (
 							<ItemComponent
 								key={child.path}
+								data-testid={`file-explorer-item-${getFileExplorerTestIdSegment(child.path)}`}
 								mode={mode}
 								item={child}
-								refresh={refresh}
+								refresh={getChildren.refresh}
 								actions={actions}
 								secondaryActions={secondaryActions}
 								dateColWidth={dateColWidth}
+								onAfterRename={onAfterRename}
+								isItemBulkSelected={isItemBulkSelected}
+								isItemContextActive={isItemContextActive}
+								onItemRegister={onItemRegister}
+								onDirectoryRefreshRegister={
+									onDirectoryRefreshRegister
+								}
+								onBulkSelectionToggle={onBulkSelectionToggle}
+								onContextMenuOpen={onContextMenuOpen}
+								getDragItems={getDragItems}
+								onMoveItems={onMoveItems}
+								activeDragItems={activeDragItems}
+								activeDropTargetPath={activeDropTargetPath}
+								onExplorerDragStateChange={
+									onExplorerDragStateChange
+								}
+								onExplorerDropTargetChange={
+									onExplorerDropTargetChange
+								}
 							/>
 						))}
 					{getChildren.status === "SUCCESS" &&
 						children.length === 0 && (
-							<Muted className="flex items-center justify-center py-2 text-xs">
+							<Muted
+								data-testid={`${itemTestId}-empty-folder`}
+								className="flex items-center justify-center py-2 text-xs"
+							>
 								Empty folder
 							</Muted>
 						)}

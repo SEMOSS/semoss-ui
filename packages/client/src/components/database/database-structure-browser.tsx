@@ -10,8 +10,8 @@ import {
 import type React from "react";
 import { useEffect } from "react";
 import type { ColumnInterface, TableInterface } from "@semoss/sdk";
+import { DataTypeIcon } from "@semoss/shared";
 import { Button, CardContent, CardHeader, cn, Input, P } from "@semoss/ui/next";
-import { DatabaseColumnIcon } from "@/components/database";
 
 interface DatabaseStructureBrowserProps {
 	searchTerm: string;
@@ -33,6 +33,7 @@ interface DatabaseStructureBrowserProps {
 	onGenerateQuery?: (query: string) => void;
 	generateSelectedColumnsQuery?: () => string;
 	canAutoGenerateQuery?: boolean;
+	titleClassName?: string;
 }
 
 export const DatabaseStructureBrowser: React.FC<
@@ -57,6 +58,7 @@ export const DatabaseStructureBrowser: React.FC<
 	onGenerateQuery,
 	generateSelectedColumnsQuery,
 	canAutoGenerateQuery = false,
+	titleClassName,
 }) => {
 	// "Expand All/Collapse All" button in sync with expand/collapse icons
 	const allExpanded =
@@ -146,7 +148,10 @@ export const DatabaseStructureBrowser: React.FC<
 			{/* Header */}
 			<CardHeader className="flex flex-row items-center justify-between border-border/50 border-b-1 px-3 py-2.5">
 				<h3
-					className="font-semibold text-base text-foreground"
+					className={cn(
+						"font-semibold text-base text-foreground",
+						titleClassName,
+					)}
 					data-testid="database-browser-title"
 				>
 					Data Columns
@@ -384,7 +389,7 @@ export const DatabaseStructureBrowser: React.FC<
 															data-testid={`database-column-${table.table}-${column.column}`}
 														>
 															<div className="flex flex-1 items-center gap-2.5">
-																<DatabaseColumnIcon
+																<DataTypeIcon
 																	type={
 																		column.type
 																	}

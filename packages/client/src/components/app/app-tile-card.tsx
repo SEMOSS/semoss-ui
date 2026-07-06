@@ -26,8 +26,10 @@ import {
 import { AppDeleteModal } from "@/components/app/app-delete-modal";
 import { AddAppCloneModal } from "@/components/app/save-app/add-app-clone-modal";
 import { useNavigate } from "@/hooks/useNavigate";
-import { formatToDataTestId } from "@/utility";
+import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
 import type { AppMetadata } from "./app.types";
+
+export type AppTileCardEntityType = "app" | "skill" | "agent";
 
 interface AppTileCardProps {
 	app: AppMetadata;
@@ -121,48 +123,6 @@ const extractTags = (app: AppMetadata): string[] => {
 	return (Array.isArray(app.tag) ? app.tag : [app.tag])
 		.filter(Boolean)
 		.map((tag) => String(tag));
-};
-
-const getTagPillStyles = (tag: string) => {
-	const normalizedTag = tag
-		.trim()
-		.toUpperCase()
-		.replace(/[_-]+/g, " ")
-		.replace(/\s+/g, " ");
-
-	if (normalizedTag === "MCP") {
-		return {
-			backgroundColor: "#ede9fe",
-			color: "#5b21b6",
-			border: "none",
-			borderRadius: "4px",
-			padding: "3px 8px",
-			fontSize: "11px",
-			fontWeight: 500,
-		};
-	}
-
-	if (/(DUMMY|SAMPLE|TEST)\s*DATA/.test(normalizedTag)) {
-		return {
-			backgroundColor: "#fef3c7",
-			color: "#78350f",
-			border: "none",
-			borderRadius: "4px",
-			padding: "3px 8px",
-			fontSize: "11px",
-			fontWeight: 500,
-		};
-	}
-
-	return {
-		backgroundColor: "var(--color-background-secondary)",
-		color: "var(--color-text-secondary)",
-		border: "0.5px solid var(--color-border-tertiary)",
-		borderRadius: "4px",
-		padding: "3px 8px",
-		fontSize: "11px",
-		fontWeight: 500,
-	};
 };
 
 /**
@@ -330,11 +290,20 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 
 	const showBookmark = !systemApp && !isDiscoverable;
 	const showMenu = app.project_created_by !== "SYSTEM";
-	const showInfo = app.project_created_by !== "SYSTEM";
 	const isCatalog = variant === "catalog";
 	const isRow = variant === "row";
 	const isFillerCard = variant === "fillerCard";
 	const canEdit = app?.user_permission != null && app.user_permission < 2;
+
+	const entityType: AppTileCardEntityType =
+		appType === "SKILL"
+			? "skill"
+			: appType === "WORKSPACE"
+				? "agent"
+				: "app";
+
+	const showInfo =
+		app.project_created_by !== "SYSTEM" && entityType === "app";
 
 	// Style classes
 	const cardWidthClass = isRow
@@ -654,14 +623,6 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 		[favorite, isFavorite],
 	);
 
-	const handleViewDashboard = useCallback(
-		(e: React.MouseEvent) => {
-			e.stopPropagation();
-			navigate(`/app/${app.project_id}/dashboard`);
-		},
-		[navigate, app.project_id],
-	);
-
 	const handleCopyId = useCallback(
 		(e: React.MouseEvent) => {
 			e.stopPropagation();
@@ -696,6 +657,28 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 	}, []);
 
 	const infoHref = `/app/${app.project_id}`;
+
+	const dropdownMenuContent = (
+		<DropdownMenuContent align="end">
+			{canEdit && (
+				<>
+					{entityType !== "agent" && (
+						<DropdownMenuItem onClick={handleClone}>
+							Clone {entityType === "skill" ? "Skill" : "App"}
+						</DropdownMenuItem>
+					)}
+					<DropdownMenuItem onClick={handleDelete}>
+						Delete{" "}
+						{entityType === "skill"
+							? "Skill"
+							: entityType === "agent"
+								? "Agent"
+								: "App"}
+					</DropdownMenuItem>
+				</>
+			)}
+		</DropdownMenuContent>
+	);
 
 	// Show skeleton
 	if (loading || showSkeleton) {
@@ -752,7 +735,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 								key={`${app.project_id}-measure-${tag}`}
 								data-tag-measure="true"
 								variant="secondary"
-								style={getTagPillStyles(tag)}
+								style={getTagBadgeStyle(tag)}
 							>
 								{tag}
 							</Badge>
@@ -831,7 +814,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 										<Badge
 											key={`${app.project_id}-left-${tag}`}
 											variant="secondary"
-											style={getTagPillStyles(tag)}
+											style={getTagBadgeStyle(tag)}
 										>
 											{tag}
 										</Badge>
@@ -866,7 +849,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 									<Badge
 										key={`${app.project_id}-right-${tag}`}
 										variant="secondary"
-										style={getTagPillStyles(tag)}
+										style={getTagBadgeStyle(tag)}
 									>
 										{tag}
 									</Badge>
@@ -957,27 +940,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 												<MoreVertical className="size-4" />
 											</Button>
 										</DropdownMenuTrigger>
-										<DropdownMenuContent align="end">
-											<DropdownMenuItem
-												onClick={handleViewDashboard}
-											>
-												View Dashboard
-											</DropdownMenuItem>
-											{canEdit && (
-												<>
-													<DropdownMenuItem
-														onClick={handleClone}
-													>
-														Clone App
-													</DropdownMenuItem>
-													<DropdownMenuItem
-														onClick={handleDelete}
-													>
-														Delete App
-													</DropdownMenuItem>
-												</>
-											)}
-										</DropdownMenuContent>
+										{dropdownMenuContent}
 									</DropdownMenu>
 								)}
 							</div>
@@ -991,12 +954,14 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 					appId={app.project_id}
 					appName={displayName}
 					onDelete={onDelete}
+					entityType={entityType}
 				/>
 				{isCloneModalOpen && (
 					<AddAppCloneModal
 						open={isCloneModalOpen}
 						appId={app.project_id}
 						handleClose={handleCloneModalClose}
+						entityType={entityType}
 					/>
 				)}
 			</div>
@@ -1074,27 +1039,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 											<MoreVertical className="size-4" />
 										</Button>
 									</DropdownMenuTrigger>
-									<DropdownMenuContent align="end">
-										<DropdownMenuItem
-											onClick={handleViewDashboard}
-										>
-											View Dashboard
-										</DropdownMenuItem>
-										{canEdit && (
-											<>
-												<DropdownMenuItem
-													onClick={handleClone}
-												>
-													Clone App
-												</DropdownMenuItem>
-												<DropdownMenuItem
-													onClick={handleDelete}
-												>
-													Delete App
-												</DropdownMenuItem>
-											</>
-										)}
-									</DropdownMenuContent>
+									{dropdownMenuContent}
 								</DropdownMenu>
 							)}
 						</div>
@@ -1118,7 +1063,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 										key={`${app.project_id}-grid-measure-${tag}`}
 										data-grid-tag-measure="true"
 										variant="secondary"
-										style={getTagPillStyles(tag)}
+										style={getTagBadgeStyle(tag)}
 									>
 										{tag}
 									</Badge>
@@ -1159,7 +1104,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 										<Badge
 											key={`${app.project_id}-${tag}`}
 											variant="secondary"
-											style={getTagPillStyles(tag)}
+											style={getTagBadgeStyle(tag)}
 										>
 											{tag}
 										</Badge>
@@ -1227,12 +1172,14 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 					appId={app.project_id}
 					appName={displayName}
 					onDelete={onDelete}
+					entityType={entityType}
 				/>
 				{isCloneModalOpen && (
 					<AddAppCloneModal
 						open={isCloneModalOpen}
 						appId={app.project_id}
 						handleClose={handleCloneModalClose}
+						entityType={entityType}
 					/>
 				)}
 			</div>
@@ -1261,6 +1208,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 									<Badge
 										variant="secondary"
 										className="background-color-[var(--muted-foreground)] text-[12px]"
+										style={getTagBadgeStyle(displayTags[0])}
 									>
 										{displayTags[0]}
 									</Badge>
@@ -1367,27 +1315,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 										<MoreVertical className="size-4" />
 									</Button>
 								</DropdownMenuTrigger>
-								<DropdownMenuContent align="end">
-									<DropdownMenuItem
-										onClick={handleViewDashboard}
-									>
-										View Dashboard
-									</DropdownMenuItem>
-									{canEdit && (
-										<>
-											<DropdownMenuItem
-												onClick={handleClone}
-											>
-												Clone App
-											</DropdownMenuItem>
-											<DropdownMenuItem
-												onClick={handleDelete}
-											>
-												Delete App
-											</DropdownMenuItem>
-										</>
-									)}
-								</DropdownMenuContent>
+								{dropdownMenuContent}
 							</DropdownMenu>
 						)}
 					</div>
@@ -1409,6 +1337,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 										key={`${app.project_id}-${tag}`}
 										variant="secondary"
 										className="text-[11px] uppercase"
+										style={getTagBadgeStyle(tag)}
 									>
 										{tag}
 									</Badge>

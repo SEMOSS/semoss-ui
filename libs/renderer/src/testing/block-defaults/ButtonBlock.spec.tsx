@@ -72,8 +72,7 @@ describe("button block", () => {
 		const buttonElement = container.querySelector("button");
 
 		expect(element).toBeInTheDocument();
-		expect(buttonElement).toHaveClass("MuiButton-outlined");
-		expect(buttonElement).toHaveClass("MuiButton-outlinedSecondary");
+		expect(buttonElement).toHaveClass("border");
 		expect(buttonElement).toHaveStyle({ width: "30px", height: "50px" });
 	});
 });

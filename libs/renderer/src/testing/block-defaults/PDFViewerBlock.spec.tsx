@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, expect, vi } from "vitest";
 import * as sdk from "@semoss/sdk/react";
 import { PDFViewerBlock } from "../../components/block-defaults/pdfViewer-block/PDFViewerBlock";
@@ -197,7 +197,7 @@ describe("PDF Viewer Block", () => {
 		await waitFor(
 			() => {
 				expect(mockRunPixel).toHaveBeenCalledWith(
-					expect.stringContaining("DownloadAsset"),
+					expect.stringContaining("GetAppAssetsBase64"),
 				);
 				expect(mockRunPixel).toHaveBeenCalledWith(
 					expect.stringContaining("version/assets/test-document.pdf"),
@@ -258,7 +258,7 @@ describe("PDF Viewer Block", () => {
 		);
 	});
 
-	it("renders clear button when PDF is selected", async () => {
+	it("does not render clear button in interactive mode", async () => {
 		const mockRunPixel = vi.mocked(sdk.runPixel);
 		mockRunPixel.mockResolvedValueOnce({
 			errors: [],
@@ -283,55 +283,50 @@ describe("PDF Viewer Block", () => {
 		);
 
 		await waitFor(() => {
-			const clearButton = container.querySelector(
-				'button[aria-label="clear pdf"]',
-			);
-			expect(clearButton).toBeInTheDocument();
-		});
-	});
-
-	it("clears PDF when clear button is clicked", async () => {
-		const mockRunPixel = vi.mocked(sdk.runPixel);
-		mockRunPixel.mockResolvedValueOnce({
-			errors: [],
-			insightId: "test-insight",
-			pixelReturn: [
-				{
-					isMeta: false,
-					operationType: [],
-					output: mockBase64PDF,
-					pixelExpression: "",
-					pixelId: "test-pixel",
-					timeToRun: 0,
-				},
-			],
-		} as MockPixelResponse);
-
-		const { container } = render(
-			<PDFViewerBlock id={blocks.pdfViewerWithEngine.id} />,
-			{
-				blocks: blocks,
-			},
-		);
-
-		await waitFor(() => {
-			const clearButton = container.querySelector(
-				'button[aria-label="clear pdf"]',
-			);
-			expect(clearButton).toBeInTheDocument();
+			const header = screen.getByText("test-document.pdf");
+			expect(header).toBeInTheDocument();
 		});
 
 		const clearButton = container.querySelector(
 			'button[aria-label="clear pdf"]',
 		);
-		if (clearButton) {
-			fireEvent.click(clearButton);
-		}
+		expect(clearButton).toBeNull();
+	});
+
+	it("renders PDF content when loaded successfully", async () => {
+		const mockRunPixel = vi.mocked(sdk.runPixel);
+		mockRunPixel.mockResolvedValueOnce({
+			errors: [],
+			insightId: "test-insight",
+			pixelReturn: [
+				{
+					isMeta: false,
+					operationType: [],
+					output: mockBase64PDF,
+					pixelExpression: "",
+					pixelId: "test-pixel",
+					timeToRun: 0,
+				},
+			],
+		} as MockPixelResponse);
+
+		const { container } = render(
+			<PDFViewerBlock id={blocks.pdfViewerWithEngine.id} />,
+			{
+				blocks: blocks,
+			},
+		);
 
 		await waitFor(() => {
-			expect(
-				screen.getByText("Select a PDF from settings to view it here"),
-			).toBeInTheDocument();
+			const header = screen.getByText("test-document.pdf");
+			expect(header).toBeInTheDocument();
+		});
+
+		await waitFor(() => {
+			const pdfObject = container.querySelector(
+				"object[type='application/pdf']",
+			);
+			expect(pdfObject).toBeInTheDocument();
 		});
 	});
 
@@ -367,9 +362,7 @@ describe("PDF Viewer Block", () => {
 
 		// Component should show loading while promise is pending
 		await waitFor(() => {
-			const loadingIndicator = container.querySelector(
-				".MuiCircularProgress-root",
-			);
+			const loadingIndicator = container.querySelector("[role='status']");
 			expect(loadingIndicator).toBeInTheDocument();
 		});
 

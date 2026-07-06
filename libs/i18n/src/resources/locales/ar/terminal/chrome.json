@@ -1,0 +1,41 @@
+{
+	"branding": "الطرفية",
+	"tabs": {
+		"files": "الملفات",
+		"terminal": "الطرفية",
+		"newTerminal": "طرفية جديدة"
+	},
+	"views": {
+		"inline": "ضمنياً",
+		"overlay": "تراكب",
+		"side": "جانب",
+		"popup": "نافذة منبثقة"
+	},
+	"actions": {
+		"closeTerminal": "إغلاق الطرفية",
+		"help": "مساعدة"
+	},
+	"scope": {
+		"insight": "رؤية",
+		"app": "تطبيق",
+		"user": "المستخدم",
+		"selectProject": "اختر مشروعاً…",
+		"searchProjects": "البحث عن المشاريع…",
+		"loadingProjects": "جاري تحميل المشاريع…",
+		"loadingMore": "جاري تحميل المزيد…",
+		"endOfList": "نهاية القائمة",
+		"noProjectsMatch": "لا توجد مشاريع تطابق \"{{query}}\"",
+		"noProjectsFound": "لم يتم العثور على مشاريع"
+	},
+	"userMenu": {
+		"accountAria": "الحساب",
+		"loggingOut": "جاري تسجيل الخروج",
+		"defaultUser": "المستخدم",
+		"theme": {
+			"light": "فاتح",
+			"dark": "داكن",
+			"system": "النظام"
+		},
+		"logOut": "تسجيل الخروج"
+	}
+}

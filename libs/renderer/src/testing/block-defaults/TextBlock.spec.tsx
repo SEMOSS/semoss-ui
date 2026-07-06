@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react";
 import { expect } from "vitest";
-import { TextBlock } from "../../components/block-defaults/text-block/TextBlock";
+import { TextBlock } from "../../components/block-defaults/text-block/text-block";
 import { render } from "../utils";
 
 const blocks = {
@@ -62,7 +62,7 @@ describe("text block", () => {
 		const tagNames = ["h1", "h2", "h3", "h4", "h5", "h6", "p", "span"];
 		const variantBlock = blocks;
 		tagNames.forEach((tag) => {
-			variantBlock.text.data.variant = tag;
+			(variantBlock.text.data as Record<string, unknown>).variant = tag;
 			const { container } = render(<TextBlock id={blocks.text.id} />, {
 				blocks: variantBlock,
 			});

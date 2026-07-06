@@ -255,15 +255,15 @@ export const config: BlockSettingsConfig = {
 			],
 		},
 		{
-			name: "MUI Theme Editor",
+			name: "Theme Editor",
 			children: [
 				{
-					description: "Edit MUI Theme",
+					description: "Edit Theme",
 					render: ({ id }) => {
 						const [open, setOpen] = useState(false);
 						return (
 							<>
-								<BaseSettingSection label={"Edit MUI Theme"}>
+								<BaseSettingSection label={"Edit Theme"}>
 									<Button
 										variant="ghost"
 										size="icon-sm"
@@ -281,7 +281,7 @@ export const config: BlockSettingsConfig = {
 										<DialogHeader>
 											<div className="flex flex-row items-center justify-between">
 												<DialogTitle>
-													Edit MUI theme
+													Edit Theme
 												</DialogTitle>
 												<Button
 													variant="ghost"

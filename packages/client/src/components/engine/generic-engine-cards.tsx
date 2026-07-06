@@ -4,7 +4,6 @@ import {
 	ChevronDown,
 	ChevronUp,
 	Copy,
-	GanttChartSquare,
 	LockKeyhole,
 	LockKeyholeOpen,
 	Star,
@@ -15,6 +14,7 @@ import {
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Env } from "@semoss/sdk/react";
+import { AppCatalogAvatar, EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Avatar,
 	AvatarFallback,
@@ -33,39 +33,8 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import BRAIN from "@/assets/img/BRAIN.png";
-import { Folder } from "@/assets/img/Folder";
-import GOOGLE from "@/assets/img/google.png";
-import { useNavigate } from "@/hooks/useNavigate";
-import { ENGINE_IMAGES } from "@/pages/import";
-import { formatToDataTestId } from "@/utility";
-
-/**
- * @name findDBImage
- * @params appType & appSubType
- * @returns image link for associated engine
- */
-const findDBImage = (appType: string, appSubType: string) => {
-	const normalizeEngineKey = (value?: string) =>
-		(value || "")
-			.trim()
-			.replace(/[^A-Za-z0-9]+/g, "_")
-			.toUpperCase();
-	const typeKey = normalizeEngineKey(appType);
-	const subtypeKeyRaw = normalizeEngineKey(appSubType);
-	const subtypeKey =
-		subtypeKeyRaw === "GUANACO" ? "HUGGINGFACE" : subtypeKeyRaw;
-	const images = ENGINE_IMAGES[typeKey] || [];
-	const obj = images.find((ele) => {
-		return normalizeEngineKey(ele.name) === subtypeKey;
-	});
-
-	if (!obj) {
-		return BRAIN;
-	}
-
-	return obj.icon;
-};
+import GOOGLE from "@/assets/img/GOOGLE.svg";
+import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
 
 const parseUtcDate = (rawDate?: string) => {
 	if (!rawDate) {
@@ -90,18 +59,6 @@ const parseUtcDate = (rawDate?: string) => {
 	}
 
 	return parsedDate;
-};
-
-const getDashboardPath = (engineType: string | undefined, engineId: string) => {
-	const normalizedType = (engineType || "").trim().toLowerCase();
-	if (!normalizedType) {
-		return `${engineId}/dashboard`;
-	}
-	if (normalizedType === "project" || normalizedType === "app") {
-		return `/app/${engineId}/dashboard`;
-	}
-
-	return `/engine/${normalizedType}/${engineId}/dashboard`;
 };
 
 const isProjectType = (engineType?: string) => {
@@ -131,9 +88,6 @@ interface DatabaseCardProps {
 	/** Subtype for Icon */
 	sub_type?: string;
 
-	/** Force folder icon instead of engine/provider icon */
-	forceFolderIcon?: boolean;
-
 	/** Optional custom leading icon content */
 	customIcon?: ReactNode;
 
@@ -148,8 +102,6 @@ interface DatabaseCardProps {
 	hideFavorite?: boolean;
 
 	isDiscoverable?: boolean;
-
-	showLogs?: boolean;
 
 	enableGlobalAction?: boolean;
 
@@ -183,12 +135,10 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 		isFavorite,
 		hideFavorite = false,
 		isDiscoverable = false,
-		showLogs = true,
 		enableGlobalAction = false,
 		isGlobal,
 		type,
 		sub_type,
-		forceFolderIcon = false,
 		customIcon,
 		desktopInlineMeta = false,
 		date,
@@ -215,8 +165,6 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 				})
 				.replace(",", "")
 		: "N/A";
-
-	const navigate = useNavigate();
 
 	// Observe the row width and collapse tags when there isn't enough space
 	useEffect(() => {
@@ -299,6 +247,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 							variant="outline"
 							title={t}
 							className={compact ? "h-6" : undefined}
+							style={getTagBadgeStyle(t)}
 						>
 							<span
 								className={
@@ -345,6 +294,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 							variant="outline"
 							title={t}
 							className={compact ? "h-6" : undefined}
+							style={getTagBadgeStyle(t)}
 						>
 							<span
 								className={
@@ -453,24 +403,6 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 						)}
 					</Button>
 				)}
-				{showLogs && (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								title="View Logs Dashboard"
-								onClick={(e) => {
-									e.stopPropagation();
-									navigate(getDashboardPath(type, id));
-								}}
-							>
-								<GanttChartSquare className="size-4" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>View Logs Dashboard</TooltipContent>
-					</Tooltip>
-				)}
 				{onDelete && (
 					<Tooltip>
 						<TooltipTrigger asChild>
@@ -491,9 +423,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent>
-							{isProjectType(type)
-								? "Delete App"
-								: "Delete Engine"}
+							{isProjectType(type) ? "Delete" : "Delete Engine"}
 						</TooltipContent>
 					</Tooltip>
 				)}
@@ -526,13 +456,15 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 								<div className="flex h-full w-full items-center justify-center">
 									{customIcon}
 								</div>
-							) : forceFolderIcon || isProjectType(type) ? (
-								<div className="[&_svg]:h-8 [&_svg]:w-8">
-									<Folder />
-								</div>
+							) : isProjectType(type) ? (
+								<AppCatalogAvatar
+									name={name || id}
+									className="size-full rounded text-xs"
+								/>
 							) : (
-								<img
-									src={findDBImage(type, sub_type)}
+								<EngineSubtypeIcon
+									engineType={type}
+									engineSubtype={sub_type}
 									alt={name}
 									className="size-full object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.08)]"
 								/>
@@ -548,13 +480,6 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 								>
 									{name}
 								</P>
-								{sub_type === "EMBEDDED" && (
-									<img
-										src={GOOGLE}
-										alt="Google"
-										className="size-5 flex-shrink-0 object-cover"
-									/>
-								)}
 							</div>
 							<div className="flex min-w-0 items-center gap-1">
 								<P
@@ -771,7 +696,11 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 						(Array.isArray(tag) ? (
 							<>
 								{tag.slice(0, 2).map((t, _i) => (
-									<Badge key={`${id}`} variant="secondary">
+									<Badge
+										key={`${id}`}
+										variant="secondary"
+										style={getTagBadgeStyle(t)}
+									>
 										{t}
 									</Badge>
 								))}
@@ -795,7 +724,12 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 								)}
 							</>
 						) : tag !== "" ? (
-							<Badge variant="secondary">{tag}</Badge>
+							<Badge
+								variant="secondary"
+								style={getTagBadgeStyle(tag)}
+							>
+								{tag}
+							</Badge>
 						) : null)}
 				</div>
 			</CardContent>

@@ -1,27 +1,29 @@
 {
 	"embedDocuments": {
-		"title": "تضمين المستندات في مصدر موجود",
-		"description": "اختر مصدر معرفة ورفع المستندات للتضمين.",
-		"knowledgeSource": "مصدر المعرفة",
+		"title": "تضمين المستندات في مخزن موجود",
+		"description": "اختر مخزن معرفة ورفع المستندات للتضمين.",
+		"knowledgeSource": "مخزن المعرفة",
 		"documents": "المستندات",
 		"selectFiles": "انقر لتحديد الملفات أو اسحب وأفلت",
 		"embedButton": "تضمين المستندات",
 		"embedding": "جارٍ التضمين...",
 		"removeFile": "إزالة الملف",
-		"selectPlaceholder": "اختر مصدر معرفة"
+		"selectPlaceholder": "اختر مخزن معرفة"
 	},
 	"selector": {
 		"search": "بحث",
-		"createKnowledgeSource": "إنشاء مصدر معرفة",
+		"createKnowledgeSource": "إنشاء مخزن معرفة",
 		"viewDetails": "عرض التفاصيل",
 		"noToolboxesFound": "لم يتم العثور على صناديق أدوات",
-		"noKnowledgeFound": "لم يتم العثور على معرفة"
+		"noKnowledgeFound": "لم يتم العثور على معرفة",
+		"noAgentsFound": "لم يتم العثور على وكلاء"
 	},
 	"overlay": {
-		"editToolbox": "تكوين صناديق الأدوات",
-		"editKnowledge": "تكوين المعرفة",
-		"toolboxDescription": "أضف أدوات لمنح هذه الدردشة المزيد من القدرات",
-		"knowledgeDescription": "أضف مصادر المعرفة لمنح النموذج المزيد من السياق"
+		"title": "قم بتكوين دردشتك",
+		"description": "اختر وكيلاً محفوظاً، أو اجمع معرفتك وصناديق أدواتك الخاصة.",
+		"tabAgent": "الوكيل",
+		"tabKnowledge": "المعرفة",
+		"tabToolbox": "صناديق الأدوات"
 	},
 	"tools": {
 		"enterValues": "أدخل القيم المفصولة بفواصل",
@@ -29,12 +31,12 @@
 		"enterField": "أدخل {{field}}"
 	},
 	"messages": {
-		"selectKnowledgeSource": "الرجاء اختيار مصدر معرفة",
+		"selectKnowledgeSource": "الرجاء اختيار مخزن معرفة",
 		"selectDocument": "الرجاء اختيار مستند واحد على الأقل",
 		"embedSuccess": "تم تضمين المستندات بنجاح",
 		"embedFailed": "فشل تضمين المستندات",
-		"loadFailed": "فشل تحميل مصادر المعرفة.",
-		"noSources": "لم يتم العثور على مصادر معرفة."
+		"loadFailed": "فشل تحميل مخازن المعرفة.",
+		"noSources": "لم يتم العثور على مخازن معرفة."
 	},
 	"buttons": {
 		"cancel": "إلغاء",
@@ -43,13 +45,17 @@
 		"close": "إغلاق"
 	},
 	"permission": {
+		"owner": "المالك",
+		"editor": "المحرر",
+		"readOnly": "للقراءة فقط",
 		"accessRequested": "تم طلب الوصول",
 		"requestAccess": "طلب الوصول",
 		"noAccess": "لا يوجد وصول",
 		"requestAccessButton": "طلب الوصول",
-		"noDescription": "لا يوجد وصف متاح.",
 		"tooltipNoAccess": "ليس لديك وصول إلى {{type}} هذا. يرجى طلب الوصول من المالك.",
 		"tooltipMissingDependencies": "ليس لديك وصول إلى جميع تبعيات {{type}} هذا، لذا قد تكون الوظيفة محدودة. افتحه في المنصة لمزيد من المعلومات.",
-		"tooltipOpen": "فتح {{type}} هذا في المنصة"
+		"tooltipOpen": "فتح {{type}} هذا في المنصة",
+		"typeToolbox": "صندوق أدوات",
+		"typeKnowledge": "مخزن المعرفة"
 	}
 }

@@ -67,7 +67,28 @@ const DialogContent = React.forwardRef<
 				ref={ref}
 				data-slot="dialog-content"
 				className={cn(
-					"data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 data-[state=closed]:animate-out data-[state=open]:animate-in sm:max-w-lg",
+					// Use physical `left-[50%]` (not the logical `start-[50%]`)
+					// because the `translate-x-[-50%]` that centers the dialog
+					// is physical — Tailwind has no logical translate. Pairing
+					// a logical inset with a physical translate breaks RTL
+					// (start resolves to right, translate still goes left →
+					// dialog flies off-screen).
+					//
+					// `max-h-[calc(100dvh-2rem)] overflow-y-auto` keeps a tall
+					// dialog inside the viewport and scrolls its content instead
+					// of overflowing off-screen (`dvh` so mobile browser chrome
+					// is accounted for). Callers can still override max-w/max-h.
+					//
+					// `scrollbar-gutter: stable both-edges` reserves equal space
+					// on BOTH sides for the scrollbar, so when the dialog scrolls
+					// its scrollbar doesn't eat only the right padding and make
+					// the content look off-center. No-op on overlay scrollbars.
+					// NOTE: use `flex flex-col` (not `grid`) — CSS Grid does NOT
+					// honor `scrollbar-gutter: both-edges` symmetrically, which
+					// left the content visibly shifted; flex column is an
+					// equivalent single-column layout that reserves both gutters
+					// evenly.
+					"data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 flex max-h-[calc(100dvh-2rem)] w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] flex-col gap-4 overflow-y-auto rounded-lg border bg-background p-6 shadow-lg duration-200 [scrollbar-gutter:stable_both-edges] data-[state=closed]:animate-out data-[state=open]:animate-in sm:max-w-lg",
 					className,
 				)}
 				{...props}
@@ -76,7 +97,7 @@ const DialogContent = React.forwardRef<
 				{showCloseButton && (
 					<DialogPrimitive.Close
 						data-slot="dialog-close"
-						className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0"
+						className="absolute end-4 top-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0"
 					>
 						<XIcon />
 						<span className="sr-only">Close</span>
@@ -97,7 +118,7 @@ const DialogHeader = React.forwardRef<
 		ref={ref}
 		data-slot="dialog-header"
 		className={cn(
-			"flex flex-col gap-2 text-center sm:text-left",
+			"flex flex-col gap-2 text-center sm:text-start",
 			className,
 		)}
 		{...props}

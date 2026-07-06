@@ -25,7 +25,9 @@ export interface Engine {
 export interface App {
 	project_id: string;
 	project_name: string;
+	project_display_name?: string;
 	description?: string;
+	user_permission?: number;
 }
 
 /**
@@ -40,6 +42,12 @@ export interface ThemeMap {
 
 		/** Description of the app */
 		description: string;
+
+		/**
+		 * Optional disclaimer shown in the file drag overlay.
+		 * When omitted, the description is hidden entirely.
+		 */
+		fileDragDisclaimer?: string;
 
 		/** Styles of the app */
 		variables: {
@@ -91,11 +99,6 @@ export interface ThemeMap {
 		altLandingKey?: string;
 
 		/**
-		 * Whether to hide tools in iframes (e.g. when the app is embedded in another platform). Defaults to false (tools shown).
-		 */
-		hideToolsInIframe?: boolean;
-
-		/**
 		 * Content to show in the sidebar
 		 */
 		sidebar: {
@@ -107,6 +110,7 @@ export interface ThemeMap {
 				path: string;
 				url: string;
 				embed: boolean;
+				tooltip?: string;
 			}[];
 			footerItems: {
 				name: string;
@@ -114,6 +118,7 @@ export interface ThemeMap {
 				path: string;
 				url: string;
 				embed: boolean;
+				tooltip?: string;
 			}[];
 		};
 
@@ -146,33 +151,15 @@ export interface ThemeMap {
 		allowedFileTypes?: string[];
 
 		/**
-		 * Whether to run MakeEngineMCP after creating a new knowledge source.
-		 * Defaults to true when not set.
+		 * Additional URL prefixes (e.g. custom protocols) allowed in markdown link rendering.
+		 * Defaults to ["docubridge://"].
 		 */
-		enableKnowledgeMCP?: boolean;
+		allowedUrlPrefixes?: string[];
 
 		/**
 		 * Default embedding engine UUID to use when allowEmbeddingOptions is false.
 		 */
 		defaultEmbedderId?: string;
-
-		/**
-		 * Whether to show the embedding model selector in the new knowledge form.
-		 * Defaults to true when not set.
-		 */
-		allowEmbeddingOptions?: boolean;
-
-		/**
-		 * Whether to show the Knowledge library picker in the chat input menu.
-		 * Defaults to true when not set.
-		 */
-		showKnowledgeMenu?: boolean;
-
-		/**
-		 * Whether to show the Toolbox picker in the chat input menu.
-		 * Defaults to true when not set.
-		 */
-		showToolboxMenu?: boolean;
 
 		/**
 		 * Default tools to show in the room
@@ -193,12 +180,6 @@ export interface ThemeMap {
 			/** Name of the mcp */
 			name: string;
 		}[];
-
-		/**
-		 * When false, hides external links that navigate users to the SEMOSS platform.
-		 * Defaults to true (links shown).
-		 */
-		showPlatformLinks?: boolean;
 
 		/**
 		 * Optional tour customization. When present, custom steps are appended
@@ -286,10 +267,27 @@ export interface ThemeMap {
 			enableModelSelect?: boolean;
 			enableAgent?: boolean;
 			enableSuggestions?: boolean;
-			enablePlan?: boolean;
+			/** Whether to enable the server-side agent harness mode (RunAgent) in the chat input. */
+			enableAgentHarness?: boolean;
 			enableRewrite?: boolean;
 			enableDarkMode?: boolean;
 			enablePromptOptimizer?: boolean;
+			/** Whether to hide tools when the app is rendered inside an iframe. */
+			hideToolsInIframe?: boolean;
+			/** Whether to run MakeEngineMCP after creating a new knowledge source. Defaults to true. */
+			enableKnowledgeMCP?: boolean;
+			/** Whether to show the embedding model selector in the new knowledge form. Defaults to true. */
+			allowEmbeddingOptions?: boolean;
+			/** Whether to show the Knowledge library picker in the chat input menu. Defaults to true. */
+			showKnowledgeMenu?: boolean;
+			/** Whether to show the Toolbox picker in the chat input menu. Defaults to true. */
+			showToolboxMenu?: boolean;
+			/** Whether to show the Activity Log (audit logs) option in the room menu. Defaults to true. */
+			showActivityLog?: boolean;
+			/** Whether to show external links to the SEMOSS platform. Defaults to true. */
+			showPlatformLinks?: boolean;
+			/** Whether to show a text input for feedback comments when rating a response. Defaults to false. */
+			enableFeedbackText?: boolean;
 		};
 	};
 }
@@ -322,4 +320,76 @@ export interface User {
 export interface UserAccessRequest {
 	id: string;
 	permission: Role;
+}
+
+export interface MCP {
+	/** Type of the mcp */
+	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION" | "MODEL" | "VECTOR";
+	/** Id of the mcp */
+	id: string;
+	/** Name of the mcp */
+	name: string;
+	/** Engine subtype (e.g. POSTGRES, OPEN_AI) */
+	subtype?: string;
+	/** Description of the mcp */
+	description?: string;
+	/** Tags of the mcp */
+	tags: string[];
+	permission: "READ_ONLY" | "EDIT" | "OWNER";
+}
+
+export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {
+	/** Flag to indicate if this MCP comes from a workspace */
+	fromWorkspace?: boolean;
+};
+
+export interface Skill {
+	/** Id of the skill (project id) */
+	id: string;
+	/** Display name of the skill */
+	name: string;
+	/** Type discriminator — always SKILL */
+	type: "SKILL";
+	/** URL-friendly identifier */
+	slug: string;
+}
+
+/**
+ * The shape carried in form state and selectors. Mirrors MCPConfig — the
+ * name travels with the value so selectors can render chips without a
+ * separate lookup. Reduced to IDs only at the EditWorkspace/AddWorkspace
+ * pixel boundary.
+ */
+export type SkillConfig = Pick<Skill, "id" | "name">;
+
+export interface ProjectDependency {
+	engine_type:
+		| "PROJECT"
+		| "STORAGE"
+		| "DATABASE"
+		| "FUNCTION"
+		| "MODEL"
+		| "VECTOR";
+	engine_id: string;
+	engine_name: string;
+	engine_subtype?: string;
+	description?: string;
+	engine_discoverable?: boolean;
+	permission_name?: "READ_ONLY" | "EDIT" | "OWNER";
+	engine_global?: boolean;
+	access_permission?: number;
+	tags?: string;
+	can_view_dependencies?: boolean;
+}
+
+export interface Prompt {
+	id: string;
+	createdBy: string;
+	dateCreated: string;
+	version: number;
+	intent: string;
+	title: string;
+	context: string;
+	tags: string[];
+	global: boolean;
 }

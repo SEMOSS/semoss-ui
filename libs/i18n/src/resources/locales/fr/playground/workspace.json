@@ -6,7 +6,9 @@
 		"descriptionLabel": "Description",
 		"instructionsLabel": "Instructions",
 		"knowledgeLabel": "Connaissances",
-		"toolboxLabel": "Boîte à outils"
+		"toolboxLabel": "Boîtes à outils",
+		"promptsLabel": "Bibliothèque d'invites",
+		"skillsLabel": "Compétences"
 	},
 	"actions": {
 		"create": "Créer",
@@ -17,9 +19,9 @@
 		"newChat": "Nouveau Chat"
 	},
 	"card": {
-		"noDescription": "Aucune description disponible",
 		"deleteConfirmTitle": "Êtes-vous sûr ?",
-		"deleteConfirmDescription": "Cette action est irréversible. Cela supprimera définitivement l'espace de travail {{name}}."
+		"deleteConfirmDescription": "Cette action est irréversible. Cela supprimera définitivement l'espace de travail {{name}}.",
+		"createdAgo": "Créé {{when}}"
 	},
 	"sharing": {
 		"title": "Ajouter des membres",
@@ -35,6 +37,7 @@
 		"buttonAdd": "Ajouter des Membres"
 	},
 	"members": {
+		"autoSaveHint": "Les ajouts, suppressions de membres et les modifications d'autorisations sont enregistrés automatiquement.",
 		"heading": "Qui a accès",
 		"you": "(Vous)",
 		"owner": "Propriétaire",
@@ -59,7 +62,23 @@
 	"chat": {
 		"noChats": "Aucun chat trouvé",
 		"error": "Erreur :",
-		"selectRoom": "Sélectionner une salle"
+		"selectRoom": "Sélectionner une salle",
+		"newChat": "Nouveau chat",
+		"delete": "Supprimer",
+		"cancel": "Annuler",
+		"deleteSuccess": "Chat supprimé",
+		"deleteFailed": "Échec de la suppression du chat",
+		"deleteConfirmTitle": "Supprimer le chat ?",
+		"deleteConfirmDescription": "Cela supprimera définitivement « {{name}} ». Cette action est irréversible.",
+		"rename": "Renommer",
+		"renameSave": "Enregistrer",
+		"renameEmpty": "Le nom du chat ne peut pas être vide",
+		"renameSuccess": "Chat renommé",
+		"renameFailed": "Échec du renommage du chat",
+		"pin": "Ajouter aux favoris",
+		"unpin": "Retirer des favoris",
+		"pinFailed": "Échec de l'ajout aux favoris",
+		"unpinFailed": "Échec du retrait des favoris"
 	},
 	"images": {
 		"agentIllustration": "Illustration de l'agent"
@@ -90,8 +109,17 @@
 		"tabs": {
 			"myChats": "Mes discussions",
 			"knowledge": "Connaissances",
-			"toolbox": "Boîte à outils",
-			"members": "Membres"
+			"toolbox": "Boîtes à outils",
+			"prompts": "Invites",
+			"members": "Membres",
+			"skills": "Compétences"
+		},
+		"about": {
+			"title": "À propos",
+			"noInstructions": "Aucune instruction configurée."
+		},
+		"recentChats": {
+			"title": "Continuer une discussion précédente"
 		},
 		"failedToDelete": "Échec de la suppression de l'agent",
 		"failedToLoad": "Échec du chargement de l'agent : {{error}}"
@@ -106,5 +134,35 @@
 	"new": {
 		"title": "Nouvel agent",
 		"subtitle": "Créer un nouvel agent pour commencer"
+	},
+	"prompts": {
+		"noPrompts": "Aucune invite trouvée",
+		"searchPlaceholder": "Rechercher des invites..."
+	},
+	"chats": {
+		"title": "Toutes les discussions",
+		"subtitle": "Parcourez, recherchez et nettoyez vos discussions.",
+		"selectAll": "Tout sélectionner",
+		"deselectAll": "Tout désélectionner",
+		"favorites": "Favoris",
+		"selectChat": "Sélectionner la discussion {{name}}",
+		"selectedCount": "{{count}} sélectionnée(s)",
+		"totalCount": "{{count}} discussions",
+		"deleteSelected": "Supprimer les {{count}} sélectionnée(s)",
+		"bulkDeleteConfirmTitle": "Supprimer {{count}} discussions ?",
+		"bulkDeleteConfirmDescription": "Cela supprimera définitivement {{count}} discussions. Cette action est irréversible.",
+		"bulkDeleteSuccess": "{{count}} discussions supprimées",
+		"bulkDeletePartialFail": "Échec de la suppression de {{failed}} discussion(s) sur {{total}}"
+	},
+	"instructions": {
+		"expand": "Agrandir",
+		"viewTitle": "Instructions",
+		"viewDescription": "L'invite système qui guide le comportement de cet agent.",
+		"editTitle": "Modifier les instructions",
+		"editDescription": "Mettez à jour l'invite système qui guide le comportement de cet agent.",
+		"charCount": "{{count}} caractères"
+	},
+	"skills": {
+		"noSkills": "Aucune compétence ajoutée"
 	}
 }

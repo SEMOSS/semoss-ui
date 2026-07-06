@@ -1,6 +1,7 @@
-import { CopyIcon } from "lucide-react";
+import { CopyIcon, PlayIcon } from "lucide-react";
 import { type ComponentProps, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
+import { CellOutputBlock } from "@semoss/shared";
 import {
 	Button,
 	Code,
@@ -16,7 +17,21 @@ import {
 import type { RoomStore } from "@/stores";
 import { BlockHeader } from "./block-header";
 import { copyToClipboard, getErrorMessage } from "./clipboard";
-import { CODE_LANG_LABELS, createCodeFilePath } from "./constants";
+import {
+	buildExecutePixel,
+	CODE_LANG_LABELS,
+	createCodeFilePath,
+	formatExecuteOutput,
+	MAX_EXECUTE_LOG_CHARS,
+	unwrapPixelOutput,
+} from "./constants";
+
+interface ExecuteResult {
+	output: string;
+	logs: string[];
+	isError: boolean;
+	pending: boolean;
+}
 
 interface CodePreviewBlockProps {
 	code: string;
@@ -37,11 +52,77 @@ export const CodePreviewBlock = ({
 	const [isFullViewOpen, setIsFullViewOpen] = useState(false);
 	const [isSavingToRoom, setIsSavingToRoom] = useState(false);
 	const [isCollapsed, setIsCollapsed] = useState(false);
+	const [isExecuting, setIsExecuting] = useState(false);
+	const [executeResult, setExecuteResult] = useState<ExecuteResult | null>(
+		null,
+	);
 
 	// Prefer rawLanguage for display/filename so custom tokens like "pixel"
 	// show their proper label even though Shiki falls back to "txt" for rendering.
 	const langStr = rawLanguage ?? language ?? "txt";
 	const langLabel = CODE_LANG_LABELS[langStr] ?? langStr.toUpperCase();
+
+	// Only Python, R, and Pixel blocks can be run server-side.
+	const executePixel = buildExecutePixel(langStr, code);
+	const canExecute = executePixel !== null;
+
+	const execute = async () => {
+		if (!room || !executePixel) return;
+		setIsExecuting(true);
+		// Seed a pending row so the result panel shows the running spinner and
+		// streams console logs in, just like the terminal transcript.
+		setExecuteResult({
+			output: "",
+			logs: [],
+			isError: false,
+			pending: true,
+		});
+		try {
+			const { errors, results, logs } =
+				await room.runRoomPixelWithConsole(
+					executePixel,
+					(streamed) =>
+						setExecuteResult((prev) =>
+							prev ? { ...prev, logs: streamed } : prev,
+						),
+					MAX_EXECUTE_LOG_CHARS,
+				);
+
+			if (errors.length > 0) {
+				setExecuteResult({
+					output: errors.join("\n"),
+					logs,
+					isError: true,
+					pending: false,
+				});
+				return;
+			}
+
+			// Pixel reactors can return multiple outputs; process the last one
+			// the same way the terminal REPL does (unwrap by operationType,
+			// then format for display).
+			const last = results.at(-1);
+			const opType = last?.operationType?.[0] ?? "";
+			const value = unwrapPixelOutput(last ?? {});
+			const formatted = formatExecuteOutput(value, opType);
+			const isError = opType === "ERROR" || opType === "INVALID_SYNTAX";
+			// A CODE_EXECUTION pixel (Py/R) with no return value renders nothing,
+			// which reads like it never ran — show a success marker instead.
+			const output =
+				!formatted && !isError ? "Success (no output)" : formatted;
+
+			setExecuteResult({ output, logs, isError, pending: false });
+		} catch (error) {
+			setExecuteResult({
+				output: getErrorMessage(error),
+				logs: [],
+				isError: true,
+				pending: false,
+			});
+		} finally {
+			setIsExecuting(false);
+		}
+	};
 
 	const saveInRoom = async () => {
 		if (!room || !code) return;
@@ -70,6 +151,18 @@ export const CodePreviewBlock = ({
 					onToggleCollapse={() => setIsCollapsed((prev) => !prev)}
 					collapseDisabled={!code}
 				>
+					{canExecute && (
+						<Button
+							className="-my-1 h-6 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
+							variant="ghost"
+							size="sm"
+							disabled={!room || isExecuting}
+							onClick={() => void execute()}
+						>
+							<PlayIcon className="size-3.5" />
+							{isExecuting ? "Running..." : "Execute"}
+						</Button>
+					)}
 					<Button
 						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
 						variant="ghost"
@@ -91,7 +184,7 @@ export const CodePreviewBlock = ({
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button
-								className="-my-1 -mr-2 h-6 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
+								className="-my-1 -me-2 h-6 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
 								variant="ghost"
 								size="sm"
 								disabled={!code}
@@ -116,6 +209,40 @@ export const CodePreviewBlock = ({
 				{!isCollapsed && (
 					<div className="p-3">
 						<Code code={code} language={language ?? "txt"} />
+					</div>
+				)}
+				{executeResult && (
+					<div className="border-border border-t">
+						<div className="flex items-center justify-between gap-2 border-border border-b px-3 py-2 text-muted-foreground text-xs">
+							<span>
+								{executeResult.pending
+									? "Running…"
+									: executeResult.isError
+										? "Error"
+										: "Output"}
+							</span>
+							<Button
+								className="-my-1 -me-2 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
+								variant="ghost"
+								size="sm"
+								disabled={isExecuting}
+								onClick={() => setExecuteResult(null)}
+							>
+								Clear
+							</Button>
+						</div>
+						{/* Cap the rendered height so a really large response
+						    scrolls within the block instead of stretching the
+						    whole chat message. CellOutputBlock's popout still
+						    opens the full result in a viewport-sized modal. */}
+						<div className="max-h-96 overflow-auto">
+							<CellOutputBlock
+								output={executeResult.output}
+								logs={executeResult.logs}
+								error={executeResult.isError}
+								pending={executeResult.pending}
+							/>
+						</div>
 					</div>
 				)}
 			</div>

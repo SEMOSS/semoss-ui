@@ -103,7 +103,7 @@ export const BlocksWorkspaceActions = observer(() => {
 					/>
 				),
 				{
-					maxWidth: "lg",
+					maxWidth: "3xl",
 				},
 			);
 		} catch (e) {

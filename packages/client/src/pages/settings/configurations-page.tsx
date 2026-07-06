@@ -14,14 +14,14 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
+import dropbox from "@/assets/img/DROPBOX.png";
+import github from "@/assets/img/GITHUB.svg";
+import google from "@/assets/img/GOOGLE.svg";
+import ms from "@/assets/img/ms.png";
+import other from "@/assets/img/other.png";
 import { useAPI, useRootStore, useSettings } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId } from "@/utility";
-import dropbox from "../../assets/img/DROPBOX.png";
-import github from "../../assets/img/github.png";
-import google from "../../assets/img/google.png";
-import ms from "../../assets/img/ms.png";
-import other from "../../assets/img/other.png";
 
 const SOCIAL = {
 	google: {

@@ -1,7 +1,6 @@
 import { Plus, Search } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Env, get, post } from "@semoss/sdk";
-import { useInsight } from "@semoss/sdk/react";
+import { Env, get, post, runPixel } from "@semoss/sdk";
 import {
 	Avatar,
 	Button,
@@ -42,6 +41,13 @@ interface MembersProps {
 	isOwner?: boolean;
 	adminMode?: boolean;
 	currentUserId?: string;
+	/**
+	 * Read-only mode:
+	 *   - hides the "Add Members" button
+	 *   - hides per-row Actions (edit/delete) and bulk selection
+	 *   - renders the Permission column as static text (no dropdown)
+	 */
+	readOnly?: boolean;
 }
 
 function formatNum(val: string): string {
@@ -61,6 +67,7 @@ export const MembersTable = ({
 	isOwner = false,
 	adminMode = false,
 	currentUserId,
+	readOnly = false,
 }: MembersProps) => {
 	const [openAddMembers, setOpenAddMembers] = useState<boolean>(false);
 	const [listRefreshKey, setListRefreshKey] = useState<number>(0);
@@ -68,17 +75,15 @@ export const MembersTable = ({
 	const debouncedValue = useDebouncedValue(searchKey, 300);
 
 	// Self-fetch current user's ID and permission
-	const { actions } = useInsight();
 	const [myUserId, setMyUserId] = useState<string>("");
 	const [myPermission, setMyPermission] = useState<string>("");
 	const effectiveIsOwner = isOwner || myPermission === "OWNER";
 	const effectiveCurrentUserId = currentUserId ?? myUserId;
 
 	useEffect(() => {
-		actions
-			.run<[Record<string, { id: string; name: string; email: string }>]>(
-				"META | GetUserInfo()",
-			)
+		runPixel<[Record<string, { id: string; name: string; email: string }>]>(
+			"META | GetUserInfo();",
+		)
 			.then((result) => {
 				if (!result) return;
 				const output = result.pixelReturn[0]?.output ?? {};
@@ -144,7 +149,7 @@ export const MembersTable = ({
 			}
 		}
 
-		const response = await post(url, {
+		const response = await post<{ success: boolean }>(url, {
 			[isEngine ? "engineId" : "projectId"]: id,
 			userpermissions: [payload],
 		}).catch((error: Error) => {
@@ -162,9 +167,9 @@ export const MembersTable = ({
 	return (
 		<div className="w-full">
 			{/* Header Section */}
-			<div className="flex flex-column gap-[10px] rounded-xl rounded-br-none rounded-bl-none border-gray-200 border-b bg-[#f4f4f4] p-4 align-start">
+			<div className="flex flex-column gap-[10px] rounded-xl rounded-ee-none rounded-es-none border-gray-200 border-b bg-muted p-4 align-start">
 				<div className="flex h-[36px] w-full flex-column gap-2">
-					<InputGroup className="flex h-auto gap-1 self-stretch bg-[#FFF] px-2 py-1 align-center">
+					<InputGroup className="flex h-auto gap-1 self-stretch bg-background px-2 py-1 align-center">
 						<InputGroupInput
 							placeholder="Search"
 							value={searchKey}
@@ -174,20 +179,22 @@ export const MembersTable = ({
 							<Search />
 						</InputGroupAddon>
 					</InputGroup>
-					{(adminMode ||
-						myPermission === "OWNER" ||
-						myPermission === "EDIT") && (
-						<Button
-							size="sm"
-							className="flex h-auto flex-column gap-2 align-center"
-							onClick={() => setOpenAddMembers(true)}
-						>
-							<div className="flex flex-column items-center gap-2">
-								<Plus />
-								<span>Add Members</span>
-							</div>
-						</Button>
-					)}
+					{!readOnly &&
+						(adminMode ||
+							myPermission === "OWNER" ||
+							myPermission === "EDIT") && (
+							<Button
+								type="button"
+								size="sm"
+								className="flex h-auto flex-column gap-2 align-center"
+								onClick={() => setOpenAddMembers(true)}
+							>
+								<div className="flex flex-column items-center gap-2">
+									<Plus />
+									<span>Add Members</span>
+								</div>
+							</Button>
+						)}
 				</div>
 			</div>
 
@@ -202,6 +209,7 @@ export const MembersTable = ({
 				adminMode={adminMode}
 				currentUserId={effectiveCurrentUserId}
 				myPermission={myPermission}
+				readOnly={readOnly}
 			/>
 
 			{/** Add members overlay */}

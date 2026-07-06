@@ -84,7 +84,7 @@ function Markdown({
 			),
 			ul: ({ children, ...props }) => <List {...props}>{children}</List>,
 			ol: ({ children, ...props }) => (
-				<ol className="my-6 ml-6 list-decimal [&>li]:mt-2" {...props}>
+				<ol className="my-6 ms-6 list-decimal [&>li]:mt-2" {...props}>
 					{children}
 				</ol>
 			),

@@ -1,2 +1,2 @@
 export * from "./config";
-export * from "./DataImportCell";
+export * from "./data-import-cell";

@@ -14,6 +14,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { useRoot } from "@/hooks";
 import { useMarkdownTypewriter } from "@/hooks/use-markdown-typewriter";
 import type { ResponseMessageStore } from "@/stores";
 import type { PixelMessageTextPart } from "@/types";
@@ -35,6 +36,7 @@ interface ResponseMessageTextProps {
 export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 	({ message, part, isLast }) => {
 		const { t } = useTranslation("chat");
+		const { root } = useRoot();
 
 		// ── Standalone-HTML detection ────────────────────────────────────────────
 		// Sticky: once the response opens with <!DOCTYPE (no code fence), stay in
@@ -185,6 +187,12 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 
 		const urlTransform = (url: string) => {
 			if (url.startsWith("room://")) return url;
+			if (
+				root.theme.allowedUrlPrefixes?.some((prefix) =>
+					url.startsWith(prefix),
+				)
+			)
+				return url;
 			if (/^(https?:|mailto:|#)/.test(url)) return url;
 			return "";
 		};
@@ -206,8 +214,10 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 								!isLast ||
 								!message.isThinking) && (
 								<Markdown
+									dir="auto"
 									components={components}
-									className="[&>*:first-child]:mt-0"
+									// wrap-anywhere: breaks long tokens and collapses min-width so they don't overflow the scroll area
+									className="wrap-anywhere [&>*:first-child]:mt-0"
 									urlTransform={urlTransform}
 								>
 									{postTypewriter.isTyping
@@ -220,8 +230,10 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 					<>
 						{fencedHtmlData?.preFenceProse && (
 							<Markdown
+								dir="auto"
 								components={components}
-								className="[&>*:first-child]:mt-0"
+								// wrap-anywhere: breaks long tokens and collapses min-width so they don't overflow the scroll area
+								className="wrap-anywhere [&>*:first-child]:mt-0"
 								urlTransform={urlTransform}
 							>
 								{typewriter.isTyping &&
@@ -244,8 +256,10 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 								!isLast ||
 								!message.isThinking) && (
 								<Markdown
+									dir="auto"
 									components={components}
-									className="[&>*:first-child]:mt-0"
+									// wrap-anywhere: breaks long tokens and collapses min-width so they don't overflow the scroll area
+									className="wrap-anywhere [&>*:first-child]:mt-0"
 									urlTransform={urlTransform}
 								>
 									{postTypewriter.isTyping
@@ -256,8 +270,10 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 					</>
 				) : (
 					<Markdown
+						dir="auto"
 						components={components}
-						className="[&>*:first-child]:mt-0"
+						// wrap-anywhere: breaks long tokens and collapses min-width so they don't overflow the scroll area
+						className="wrap-anywhere [&>*:first-child]:mt-0"
 						urlTransform={urlTransform}
 					>
 						{renderedText}
@@ -266,7 +282,7 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 				{isAnyTyping && (
 					<Tooltip>
 						<TooltipTrigger asChild>
-							<span className="absolute right-4 bottom-4 z-50">
+							<span className="absolute end-4 bottom-4 z-50">
 								<Button
 									size="icon-sm"
 									variant={"outline"}

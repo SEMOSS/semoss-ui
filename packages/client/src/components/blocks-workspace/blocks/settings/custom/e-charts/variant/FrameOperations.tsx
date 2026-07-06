@@ -1,8 +1,9 @@
+import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
 import { ChevronDown, Search } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { createElement, useEffect, useMemo, useRef, useState } from "react";
-import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
+import { createPortal } from "react-dom";
 import {
 	type BlockDef,
 	type EchartVisualizationBlockDef,
@@ -11,8 +12,8 @@ import {
 	useBlocksPixel,
 	useFrameHeaders,
 } from "@semoss/renderer";
+import { DataTypeIcon } from "@semoss/shared";
 import { useBlockSettings } from "@/hooks/useBlockSettings";
-import NumberIcon from "../../../../../../../assets/block-settings/img/NumberIcon.svg";
 import { buildListener } from "../../../../block-settings/block-defaults.shared";
 import { BAR_CHART_DATA } from "../Visualization.constants";
 import { DataTabStyling } from "./bar-chart/DataTabStyling";
@@ -64,15 +65,15 @@ export const FrameOperations = observer(
 		const { data, setData } =
 			useBlockSettings<EchartVisualizationBlockDef>(id);
 		const [_columnsData, setColumnsData] = useState([]);
-		const [_search, setSearch] = useState("");
-		const [_isAdd, _setIsAdd] = useState(false);
-		const [_addedColumnName, _setAddedColumnName] = useState("");
+		const [search, setSearch] = useState("");
+		const [isAdd, setIsAdd] = useState(false);
+		const [addedColumnName, setAddedColumnName] = useState("");
 		const [droppedColumns, setDroppedColumns] = useState<
 			// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
 			Record<string, any>
 		>({});
-		const [_selectedColumn, setSelectedColumn] = useState<string[]>([]);
-		const [_accordionSection, _setAccordionSection] = useState<
+		const [selectedColumn, setSelectedColumn] = useState<string[]>([]);
+		const [accordionSection, setAccordionSection] = useState<
 			AccordionSection[]
 		>([
 			{
@@ -82,7 +83,7 @@ export const FrameOperations = observer(
 				},
 			},
 		]);
-		const _accordionList = ["preProcess"];
+		const accordionList = ["preProcess"];
 		const [_value, setValue] = useState("");
 		const _getFrames = useBlocksPixel<string[]>("GetFrames();", {
 			data: [],
@@ -116,7 +117,7 @@ export const FrameOperations = observer(
 			setDroppedColumns({});
 		}, [data.variation]);
 
-		const _handleSearch = (searchValue: string) => {
+		const handleSearch = (searchValue: string) => {
 			setSearch(searchValue); // Update the search state
 			const lowerCaseSearch = searchValue.toLowerCase();
 			const filtered = columnsSelector.filter((col) =>
@@ -218,7 +219,7 @@ export const FrameOperations = observer(
 			}
 		}
 		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
-		function _syncHeaders(value: any, frameChanged: boolean) {
+		function syncHeaders(value: any, frameChanged: boolean) {
 			if (!value) return;
 			const columns = frameHeaders.data.list.map((item) => {
 				return {
@@ -252,6 +253,22 @@ export const FrameOperations = observer(
 				return JSON.stringify(v, null, 2);
 			});
 		}, [data.option]).get();
+		// biome-ignore lint/suspicious/noExplicitAny: chart settings payload is polymorphic
+		const setSelectedColumnIfChanged = (nextValue: any) => {
+			setSelectedColumn((prevValue) =>
+				JSON.stringify(prevValue) === JSON.stringify(nextValue)
+					? prevValue
+					: nextValue,
+			);
+		};
+		// biome-ignore lint/suspicious/noExplicitAny: dropped columns shape varies by chart type
+		const setDroppedColumnsIfChanged = (nextValue: any) => {
+			setDroppedColumns((prevValue) =>
+				JSON.stringify(prevValue) === JSON.stringify(nextValue)
+					? prevValue
+					: nextValue,
+			);
+		};
 		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			let tempStoredColumnsForDropped = {};
@@ -284,7 +301,7 @@ export const FrameOperations = observer(
 						};
 					});
 					tempStoredColumnsForDropped = tempStoredColumns;
-					setSelectedColumn((_preVCol) => tempStoredColumns);
+					setSelectedColumnIfChanged(tempStoredColumns);
 				}
 			}
 			if (data.variation === "echart-dendrogram-chart") {
@@ -319,7 +336,7 @@ export const FrameOperations = observer(
 					};
 				});
 				tempStoredColumnsForDropped = tempStoredColumns;
-				setSelectedColumn((_preVCol) => tempStoredColumns);
+				setSelectedColumnIfChanged(tempStoredColumns);
 			}
 			if (data.variation === "echart-pie-chart") {
 				const parsedOption = JSON.parse(computedValue) || {};
@@ -357,7 +374,7 @@ export const FrameOperations = observer(
 						};
 					});
 					tempStoredColumnsForDropped = tempStoredColumns;
-					setSelectedColumn((_preVCol) => tempStoredColumns);
+					setSelectedColumnIfChanged(tempStoredColumns);
 				}
 			}
 			if (data.variation === "echart-line-graph") {
@@ -391,7 +408,7 @@ export const FrameOperations = observer(
 						};
 					});
 					tempStoredColumnsForDropped = tempStoredColumns;
-					setSelectedColumn((_prevSelectedCol) => tempStoredColumns);
+					setSelectedColumnIfChanged(tempStoredColumns);
 				}
 			}
 			if (data.variation === "echart-world-map-chart") {
@@ -451,7 +468,7 @@ export const FrameOperations = observer(
 						};
 					});
 					tempStoredColumnsForDropped = tempStoredColumns;
-					setSelectedColumn((_prevSelectedCol) => tempStoredColumns);
+					setSelectedColumnIfChanged(tempStoredColumns);
 				}
 			}
 			if (data.variation === "echart-scatter-plots") {
@@ -506,7 +523,7 @@ export const FrameOperations = observer(
 						};
 					});
 					tempStoredColumnsForDropped = tempStoredColumns;
-					setSelectedColumn((_preVCol) => tempStoredColumns);
+					setSelectedColumnIfChanged(tempStoredColumns);
 				}
 			}
 			if (data.variation === "echart-stack-chart") {
@@ -550,7 +567,7 @@ export const FrameOperations = observer(
 						};
 					});
 					tempStoredColumnsForDropped = tempStoredColumns;
-					setSelectedColumn((_preVCol) => tempStoredColumns);
+					setSelectedColumnIfChanged(tempStoredColumns);
 				}
 			}
 			if (data.variation === "echart-gantt-chart") {
@@ -617,7 +634,7 @@ export const FrameOperations = observer(
 						};
 					});
 					tempStoredColumnsForDropped = tempStoredColumns;
-					setSelectedColumn((_preVCol) => tempStoredColumns);
+					setSelectedColumnIfChanged(tempStoredColumns);
 				}
 			}
 			if (data.variation === "echart-word-cloud") {
@@ -652,7 +669,7 @@ export const FrameOperations = observer(
 						};
 					});
 					tempStoredColumnsForDropped = tempStoredColumns;
-					setSelectedColumn((_preVCol) => tempStoredColumns);
+					setSelectedColumnIfChanged(tempStoredColumns);
 				}
 			}
 			//run the dropped columns update when block is changed
@@ -661,7 +678,7 @@ export const FrameOperations = observer(
 					tempStoredColumnsForDropped,
 					data.variation,
 				);
-				setDroppedColumns((_preVCol) => dragAndDropColumns);
+				setDroppedColumnsIfChanged(dragAndDropColumns);
 			}
 		}, [data.variation, id, filteredColumns]);
 
@@ -685,12 +702,12 @@ export const FrameOperations = observer(
 			return droppedColumnsList;
 		}
 		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
-		const _formattedColumns = (columnsValue: any[], variation: any) => {
+		const formattedColumns = (columnsValue: any[], variation: any) => {
 			const hasValues = columnsValue.some(
 				(item) => item?.values && item?.values.length > 0,
 			);
 			if (hasValues) {
-				setSelectedColumn(columnsValue);
+				setSelectedColumnIfChanged(columnsValue);
 				handleStoreData(columnsValue);
 			}
 
@@ -1607,7 +1624,7 @@ export const FrameOperations = observer(
 			});
 			return colIndex;
 		}
-		const _handleDragEnd = (result) => {
+		const handleDragEnd = (result) => {
 			if (!result.destination) return;
 			// biome-ignore lint/correctness/noUnusedVariables: used in JSX or callback
 			const { source, destination, draggableId } = result;
@@ -1617,7 +1634,7 @@ export const FrameOperations = observer(
 			if (!updated[dropId])
 				updated[dropId] = { values: [], dataType: [] };
 
-			const _dropCol = filteredColumns.find(
+			const dropCol = filteredColumns.find(
 				(col) => col?.name === draggableId,
 			);
 			const dropIndex = parseInt(dropId.split("-").pop(), 10);
@@ -1790,154 +1807,147 @@ export const FrameOperations = observer(
 											draggableId={col.name}
 											index={index}
 										>
-											{(provided, snapshot) => (
-												<div
-													ref={provided.innerRef}
-													{...provided.draggableProps}
-													{...provided.dragHandleProps}
-													className={`mt-0.5 mb-2 flex max-w-full items-center justify-between gap-3 rounded p-2 ${snapshot.isDragging ? "bg-[#f0f0f0] shadow-md" : "bg-white"}`}
-													style={{
-														...provided
-															.draggableProps
-															.style,
-													}}
-												>
-													<div className="flex flex-none items-center">
-														{col.dataType ===
-														"STRING" ? (
-															// biome-ignore lint/a11y/useAltText: decorative image
-															<img
-																src={String(
-																	_StringIcon,
-																)}
-																className="mr-0.5"
+											{(provided, snapshot) => {
+												const draggableItem = (
+													<div
+														ref={provided.innerRef}
+														{...provided.draggableProps}
+														{...provided.dragHandleProps}
+														className={`mb-1 flex w-full items-center gap-2 rounded-md border px-2 py-1.5 ${snapshot.isDragging ? "border-[#9ec5fe] bg-[#f0f0f0]" : "border-[#e5e7eb] bg-white hover:bg-[#fafafa]"}`}
+														style={{
+															...provided
+																.draggableProps
+																.style,
+															willChange:
+																"transform",
+														}}
+													>
+														<div className="flex flex-none items-center">
+															<DataTypeIcon
+																type={
+																	col.dataType
+																}
+																className="mr-0.5 size-4 text-muted-foreground"
 															/>
-														) : (
-															// biome-ignore lint/a11y/useAltText: decorative image
-															<img
-																src={String(
-																	NumberIcon,
-																)}
-																className="mr-0.5"
-															/>
-														)}
-													</div>
-													<div className="flex flex-1 items-center">
-														{col.name.length > 7 ? (
+														</div>
+														<div className="flex min-w-0 flex-1 items-center">
 															<span
-																className="leading-6"
+																className="block truncate font-medium text-sm leading-6"
 																title={col.name}
 															>
-																{col.name.slice(
-																	0,
-																	7,
-																)}
-																...
-															</span>
-														) : (
-															<span className="leading-6">
 																{col.name}
 															</span>
-														)}
-													</div>
-													{isAdd && (
-														<div className="flex flex-1 justify-end">
-															<input
-																type="checkbox"
-																className="cursor-pointer"
-																onChange={(
-																	e,
-																) => {
-																	setDroppedColumns(
-																		(
-																			prev,
-																		) => {
-																			const updated =
-																				{
-																					...prev,
-																				};
-																			if (
-																				e
-																					.target
-																					.checked
-																			) {
+														</div>
+														{isAdd && (
+															<div className="ml-auto flex items-center pl-2">
+																<input
+																	type="checkbox"
+																	className="cursor-pointer"
+																	onChange={(
+																		e,
+																	) => {
+																		setDroppedColumns(
+																			(
+																				prev,
+																			) => {
+																				const updated =
+																					{
+																						...prev,
+																					};
 																				if (
-																					!updated[
-																						addedColumnName
-																					]
-																				)
+																					e
+																						.target
+																						.checked
+																				) {
+																					if (
+																						!updated[
+																							addedColumnName
+																						]
+																					)
+																						updated[
+																							addedColumnName
+																						] =
+																							{
+																								values: [],
+																								dataType:
+																									[],
+																							};
 																					updated[
 																						addedColumnName
 																					] =
 																						{
-																							values: [],
-																							dataType:
-																								[],
-																						};
-																				updated[
-																					addedColumnName
-																				] =
-																					{
-																						values: [
-																							...updated[
-																								addedColumnName
-																							]
-																								.values,
-																							col.name,
-																						],
-																						dataType:
-																							[
+																							values: [
 																								...updated[
 																									addedColumnName
 																								]
-																									.dataType,
-																								col.dataType,
+																									.values,
+																								col.name,
 																							],
-																					};
-																			} else {
-																				if (
-																					updated[
-																						addedColumnName
-																					]
-																				) {
-																					const index =
-																						updated[
-																							addedColumnName
-																						].values.indexOf(
-																							col.name,
-																						);
-																					updated[
-																						addedColumnName
-																					] =
-																						updated[
-																							addedColumnName
-																						].values.splice(
-																							index,
-																							1,
-																						);
+																							dataType:
+																								[
+																									...updated[
+																										addedColumnName
+																									]
+																										.dataType,
+																									col.dataType,
+																								],
+																						};
+																				} else {
 																					if (
 																						updated[
 																							addedColumnName
 																						]
-																							?.values
-																							?.length ===
-																						0
 																					) {
-																						delete updated[
+																						const index =
+																							updated[
+																								addedColumnName
+																							].values.indexOf(
+																								col.name,
+																							);
+																						updated[
 																							addedColumnName
-																						];
+																						] =
+																							updated[
+																								addedColumnName
+																							].values.splice(
+																								index,
+																								1,
+																							);
+																						if (
+																							updated[
+																								addedColumnName
+																							]
+																								?.values
+																								?.length ===
+																							0
+																						) {
+																							delete updated[
+																								addedColumnName
+																							];
+																						}
 																					}
 																				}
-																			}
-																			return updated;
-																		},
-																	);
-																}}
-															/>
-														</div>
-													)}
-												</div>
-											)}
+																				return updated;
+																			},
+																		);
+																	}}
+																/>
+															</div>
+														)}
+													</div>
+												);
+												if (
+													snapshot.isDragging &&
+													typeof document !==
+														"undefined"
+												) {
+													return createPortal(
+														draggableItem,
+														document.body,
+													);
+												}
+												return draggableItem;
+											}}
 										</Draggable>
 									))}
 									{provided.placeholder}

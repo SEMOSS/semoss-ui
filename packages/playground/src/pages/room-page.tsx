@@ -10,7 +10,13 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
-import { RoomContent, RoomSidebar, SaveWorkspaceDialog } from "@/components";
+import {
+	FileDragOverlay,
+	RoomContent,
+	RoomSidebar,
+	SaveWorkspaceDialog,
+} from "@/components";
+import { FileDragProvider } from "@/contexts";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { Engine } from "@/types";
@@ -27,7 +33,7 @@ export const RoomPage = observer(() => {
 	const { root } = useRoot();
 	const navigate = useNavigate();
 
-	const platformLinksDisabled = root.theme.showPlatformLinks === false;
+	const platformLinksDisabled = !root.theme.featureFlags?.showPlatformLinks;
 
 	/**
 	 * State
@@ -78,6 +84,11 @@ export const RoomPage = observer(() => {
 	// load the room
 	useEffect(() => {
 		const loadRoom = async () => {
+			// if chat isn't initialized yet, wait for it to initialize
+			if (!chat.isInitialized) {
+				return;
+			}
+
 			// Reset room state when roomId changes to prevent stale content flash
 			setRoom(null);
 			try {
@@ -105,7 +116,13 @@ export const RoomPage = observer(() => {
 		};
 
 		loadRoom();
-	}, [roomId, navigate, chat.loadRoom, chat.setSelectedModel]);
+	}, [
+		roomId,
+		navigate,
+		chat.loadRoom,
+		chat.setSelectedModel,
+		chat.isInitialized,
+	]);
 
 	const navbarActions = useMemo<React.ReactNode>(() => {
 		if (room?.options) {
@@ -147,7 +164,10 @@ export const RoomPage = observer(() => {
 					className="w-full flex-1 overflow-hidden"
 				>
 					<ResizablePanel className="h-full w-full flex-1 overflow-hidden p-2">
-						<RoomContent room={room} />
+						<FileDragProvider>
+							<FileDragOverlay />
+							<RoomContent room={room} />
+						</FileDragProvider>
 					</ResizablePanel>
 					{room.sidebar.isOpen && (
 						<>

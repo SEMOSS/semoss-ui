@@ -1,7 +1,7 @@
 {
 	"knowledge": {
-		"createSuccess": "ナレッジソース「{{name}}」を正常に作成しました",
-		"createError": "ナレッジソースの作成に失敗しました"
+		"createSuccess": "ナレッジストア「{{name}}」を正常に作成しました",
+		"createError": "ナレッジストアの作成に失敗しました"
 	},
 	"workspace": {
 		"saveError": "エージェントの保存に失敗しました",

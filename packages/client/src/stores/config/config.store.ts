@@ -810,9 +810,12 @@ export class ConfigStore {
 			metadata: metadata,
 		};
 
-		// set it as blocks
 		if (metadata.project_type === "BLOCKS") {
 			workspace.type = "BLOCKS";
+		} else if (metadata.project_type === "SKILL") {
+			workspace.type = "SKILL";
+		} else if (metadata.project_type === "WORKSPACE") {
+			workspace.type = "WORKSPACE";
 		}
 
 		// create the newly loaded workspace

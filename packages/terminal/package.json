@@ -1,0 +1,36 @@
+{
+    "name": "@semoss/terminal",
+    "private": true,
+    "type": "module",
+    "main": "./src/index.ts",
+    "exports": {
+        ".": "./src/index.ts"
+    },
+    "scripts": {
+        "dev": "vite --mode development",
+        "build": "vite build --mode production",
+        "build:dev": "vite build --mode development",
+        "type-check": "tsc --pretty --noEmit",
+        "test": "vitest run --passWithNoTests"
+    },
+    "dependencies": {
+        "@semoss/i18n": "workspace:*",
+        "@semoss/sdk": "workspace:*",
+        "@semoss/shared": "workspace:*",
+        "@semoss/ui": "workspace:*",
+        "@tailwindcss/vite": "^4.1.14",
+        "flexlayout-react": "^0.8.1",
+        "lucide-react": "^0.545.0",
+        "react": "18.3.1",
+        "react-dom": "18.3.1",
+        "tailwindcss": "^4.1.14"
+    },
+    "devDependencies": {
+        "@types/react": "18.3.1",
+        "@types/react-dom": "18.3.0",
+        "@vitejs/plugin-react": "^4.6.0",
+        "typescript": "~5.5.2",
+        "vite": "^7.0.0",
+        "vitest": "^4.1.8"
+    }
+}

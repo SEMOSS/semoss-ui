@@ -1,6 +1,13 @@
 import { useEffect, useId, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
+	type MCPConfig,
+	MCPSelector,
+	PromptSelector,
+	type SkillConfig,
+	SkillSelector,
+} from "@semoss/shared";
+import {
 	Button,
 	Field,
 	FieldGroup,
@@ -10,9 +17,13 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
-import { MCPSelector, NewKnowledgeOverlay, PromptSelector } from "@/components";
-import { useChat } from "@/hooks";
-import type { MCPConfig, Workspace } from "@/types";
+import { useChat, useRoot } from "@/hooks";
+import type { Workspace } from "@/types";
+import {
+	mcpToPlatformUrl,
+	promptToPlatformUrl,
+	splitMcpByType,
+} from "@/utility/mcp-utils";
 
 interface WorkspaceFormProps {
 	/**
@@ -51,27 +62,27 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 	const [instructions, setInstructions] = useState<string>("");
 	const [toolbox, setToolbox] = useState<MCPConfig[]>([]);
 	const [knowledge, setKnowledge] = useState<MCPConfig[]>([]);
+	const [skills, setSkills] = useState<SkillConfig[]>([]);
 
 	const [isLoading, setIsLoading] = useState<boolean>(false);
-	const [isKnowledgeOverlayOpen, setIsKnowledgeOverlayOpen] = useState(false);
 
 	/**
 	 * Library Hooks
 	 */
 	const { chat } = useChat();
+	const { root } = useRoot();
 
 	// Initialize form data from workspace prop
 	useEffect(() => {
 		setName(values?.name || "");
 		setDescription(values?.description || "");
-		setPrompts(
-			Array.isArray(values?.prompts)
-				? values.prompts.map((p) => (typeof p === "string" ? p : p.id))
-				: [],
-		);
+		setPrompts(values?.prompts ?? []);
 		setInstructions(values?.system_prompt || "");
-		setKnowledge(values?.mcp.filter((mcp) => mcp.type === "VECTOR") || []);
-		setToolbox(values?.mcp.filter((mcp) => mcp.type !== "VECTOR") || []);
+		const { knowledge: nextKnowledge, toolbox: nextToolbox } =
+			splitMcpByType(values?.mcp ?? []);
+		setKnowledge(nextKnowledge);
+		setToolbox(nextToolbox);
+		setSkills(values?.skills ?? []);
 	}, [values]);
 
 	/**
@@ -84,19 +95,26 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 			// start the loading screen
 			setIsLoading(true);
 
-			const updated: Omit<Workspace, "workspace_id" | "date_created"> = {
+			const updated: Omit<
+				Workspace,
+				"workspace_id" | "date_created" | "skills"
+			> & { skills: SkillConfig[] } = {
 				name: name,
 				system_prompt: instructions,
 				description: description,
 				prompts: prompts,
-				mcp: [...toolbox, ...knowledge],
+				mcp: [...knowledge, ...toolbox],
+				skills: skills,
 			};
 
 			let output = "";
 			if (isNew) {
 				output = await chat.addWorkspace(updated);
 			} else {
-				output = await chat.editWorkspace(values.workspace_id, updated);
+				output = await chat.editWorkspace(
+					(values as Workspace).workspace_id,
+					updated,
+				);
 			}
 
 			// get new app id and return in the onclose
@@ -144,16 +162,6 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 						data-testid="workspaceForm-description-txt"
 					/>
 				</Field>
-				<Field>
-					<FieldLabel htmlFor={promptsId}>
-						{t("workspace:form.promptsLabel")}
-					</FieldLabel>
-					<PromptSelector
-						values={prompts}
-						disabled={isLoading}
-						onChange={(values) => setPrompts(values)}
-					/>
-				</Field>
 			</FieldGroup>
 			<FieldSeparator />
 			<FieldGroup>
@@ -167,40 +175,28 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 						value={instructions.replace(/\\n/g, "\n")}
 						onChange={(e) => setInstructions(e.target.value)}
 						rows={4}
+						className="max-h-96 overflow-y-auto"
 						data-testid="workspaceForm-system_prompt-txt"
 					/>
 				</Field>
 				<Field>
-					<FieldLabel
-						onClick={(event) => {
-							event.preventDefault();
-							event.stopPropagation();
-
-							setIsKnowledgeOverlayOpen(true);
-						}}
-					>
-						<div className="flex-1">
-							{t("workspace:form.knowledgeLabel")}
-						</div>
+					<FieldLabel>
+						{t("workspace:form.knowledgeLabel")}
 					</FieldLabel>
-
 					<MCPSelector
 						type="KNOWLEDGE"
 						values={knowledge}
 						disabled={isLoading}
 						onChange={(knowledge) => setKnowledge(knowledge)}
-					/>
-
-					<NewKnowledgeOverlay
-						open={isKnowledgeOverlayOpen}
-						onClose={(knowledge) => {
-							// update it
-							if (knowledge) {
-								setKnowledge((prev) => [...prev, knowledge]);
-							}
-
-							setIsKnowledgeOverlayOpen(false);
-						}}
+						className="h-112"
+						enableKnowledgeMCP={
+							root.theme.featureFlags?.enableKnowledgeMCP
+						}
+						getPlatformUrl={
+							root.theme.featureFlags?.showPlatformLinks
+								? mcpToPlatformUrl
+								: undefined
+						}
 					/>
 				</Field>
 				<Field>
@@ -210,6 +206,40 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 						values={toolbox}
 						disabled={isLoading}
 						onChange={(mcps) => setToolbox(mcps)}
+						className="h-112"
+						enableKnowledgeMCP={
+							root.theme.featureFlags?.enableKnowledgeMCP
+						}
+						getPlatformUrl={
+							root.theme.featureFlags?.showPlatformLinks
+								? mcpToPlatformUrl
+								: undefined
+						}
+					/>
+				</Field>
+				<Field>
+					<FieldLabel>{t("workspace:form.skillsLabel")}</FieldLabel>
+					<SkillSelector
+						values={skills}
+						disabled={isLoading}
+						onChange={(next) => setSkills(next)}
+						className="h-112"
+					/>
+				</Field>
+				<Field>
+					<FieldLabel htmlFor={promptsId}>
+						{t("workspace:form.promptsLabel")}
+					</FieldLabel>
+					<PromptSelector
+						values={prompts}
+						disabled={isLoading}
+						onChange={(values) => setPrompts(values)}
+						className="h-112"
+						getPlatformUrl={
+							root.theme.featureFlags?.showPlatformLinks
+								? promptToPlatformUrl
+								: undefined
+						}
 					/>
 				</Field>
 			</FieldGroup>

@@ -132,7 +132,7 @@ export const MermaidBlock = ({ code, isLoading, room }: MermaidBlockProps) => {
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button
-								className="-my-1 -mr-2 h-6 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
+								className="-my-1 -me-2 h-6 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
 								variant="ghost"
 								size="sm"
 								disabled={!code}

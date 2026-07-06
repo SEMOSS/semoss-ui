@@ -1,7 +1,6 @@
 import type { RoomStore } from "@/stores";
 import type { PixelMessage } from "@/types";
 import { InputMessageStore } from "./input-message.store";
-import { PlanMessageStore } from "./plan-message.store";
 import { ResponseMessageStore } from "./response-message.store";
 
 /**
@@ -12,15 +11,12 @@ import { ResponseMessageStore } from "./response-message.store";
 export const createMessageStore = (
 	room: RoomStore,
 	pixelMessage: PixelMessage,
-): ResponseMessageStore | InputMessageStore | PlanMessageStore => {
+): ResponseMessageStore | InputMessageStore => {
 	// set data based on type
 	if (pixelMessage.io === "INPUT") {
 		return new InputMessageStore(room, pixelMessage);
 	} else if (pixelMessage.io === "OUTPUT") {
-		if (pixelMessage.ornaments.PLAYGROUND_MESSAGE_TYPE === "COT") {
-			return new PlanMessageStore(room, pixelMessage);
-		}
-
 		return new ResponseMessageStore(room, pixelMessage);
 	}
+	throw new Error(`Unknown message type: ${pixelMessage}`);
 };

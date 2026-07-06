@@ -1,6 +1,6 @@
 import { expect } from "vitest";
-import { LogsBlock } from "../../components/block-defaults/logs-block/LogsBlock";
-import type { QueryStateConfig } from "../../store";
+import { LogsBlock } from "../../components/block-defaults/logs-block/logs-block";
+import type { NotebookStateConfig } from "../../store";
 import { render, screen } from "../utils";
 
 const blocks = {
@@ -29,7 +29,7 @@ const blocks = {
 	},
 };
 
-const queries: Record<string, QueryStateConfig> = {
+const queries: Record<string, NotebookStateConfig> = {
 	"test-query-id": {
 		id: "test-query-id",
 		cells: [
@@ -46,11 +46,13 @@ describe("logs block", () => {
 			blocks: blocks,
 		});
 
-		const element = container.querySelector("[data-block='logs']");
+		const element = container.querySelector(
+			"[data-block='logs']",
+		) as HTMLElement;
 
 		expect(element).toBeInTheDocument();
 		expect(element.tagName).equal("DIV", "element is type div");
-		expect(screen.getByText("Attach Query")).toBeInTheDocument();
+		expect(screen.getByText("Attach Notebook")).toBeInTheDocument();
 	});
 
 	it("renders correctly with mocked provider and query", async () => {
@@ -59,7 +61,9 @@ describe("logs block", () => {
 			queryConfig: queries,
 		});
 
-		const element = container.querySelector("[data-block='logs']");
+		const element = container.querySelector(
+			"[data-block='logs']",
+		) as HTMLElement;
 
 		expect(element).toBeInTheDocument();
 		expect(element.tagName).equal("DIV", "element is type div");

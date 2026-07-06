@@ -25,7 +25,24 @@ export default defineConfig(({ mode }) => {
 			// visualizer({ open: true, filename: "dist/stats.html", gzipSize: true }),
 		],
 		resolve: {
-			alias: [{ find: "@", replacement: resolve(__dirname, "./src") }],
+			alias: [
+				{
+					find: /^@\/assets\/img\//,
+					replacement: `${resolve(__dirname, "../../libs/shared/src/assets/img")}/`,
+				},
+				{
+					find: /^@\/assets\/loginProviders\//,
+					replacement: `${resolve(__dirname, "../../libs/shared/src/assets/loginProviders")}/`,
+				},
+				{ find: "@", replacement: resolve(__dirname, "./src") },
+				{
+					find: /^monaco-editor$/,
+					replacement: resolve(
+						__dirname,
+						"../../libs/shared/node_modules/monaco-editor/esm/vs/editor/editor.api",
+					),
+				},
+			],
 		},
 		define: {
 			"import.meta.env.MODULE": JSON.stringify(MODULE),
@@ -36,6 +53,44 @@ export default defineConfig(({ mode }) => {
 			rollupOptions: {
 				output: {
 					manualChunks(id: string) {
+						// Group each language's translation JSON into a single
+						// lazy chunk so loading/switching a language is one request
+						// and new languages never bloat the main bundle.
+						const locale = id.match(/\/locales\/([^/]+)\/.*\.json/);
+						if (locale) {
+							return `locale-${locale[1]}`;
+						}
+						if (
+							id.includes("/src/pages/import/import.constants.ts")
+						) {
+							return "import-constants";
+						}
+						if (
+							id.includes(
+								"/src/components/import/model/model-import.constants.ts",
+							)
+						) {
+							return "model-import-constants";
+						}
+						if (
+							id.includes(
+								"/libs/shared/src/constants/engine-images.constants.ts",
+							) ||
+							id.includes(
+								"/src/shared/constants/sidebar-menu.constants.ts",
+							)
+						) {
+							return "icon-assets";
+						}
+						if (id.includes("/node_modules/flexlayout-react/")) {
+							return "vendor-flexlayout";
+						}
+						if (
+							id.includes("/node_modules/@xyflow/react/") ||
+							id.includes("/node_modules/@xyflow/system/")
+						) {
+							return "vendor-xyflow";
+						}
 						if (
 							id.includes("/node_modules/react/") ||
 							id.includes("/node_modules/react-dom/") ||
@@ -55,18 +110,13 @@ export default defineConfig(({ mode }) => {
 						) {
 							return "vendor-mobx";
 						}
-						if (
-							id.includes("/node_modules/@mui/") ||
-							id.includes("/node_modules/@emotion/")
-						) {
-							return "vendor-mui";
-						}
 					},
 				},
 			},
 		},
 		server: {
 			port: 5173,
+			allowedHosts: [".ngrok-free.dev", ".pinggy-free.link"],
 			proxy: {
 				[MODULE]: {
 					target: ENDPOINT,
@@ -101,7 +151,7 @@ export default defineConfig(({ mode }) => {
 						include: ["vitest-canvas-mock"],
 					},
 				},
-				external: ["@semoss/ui", "@semoss/sdk"],
+				external: ["@semoss/ui/next", "@semoss/sdk"],
 			},
 			browser: {
 				enabled: false,
