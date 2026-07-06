@@ -54,4 +54,9 @@ export const TOOL_OUTPUT_UNREADABLE_PROMPT = `This tool returned a response, but
 
 // Hidden note sent to the model after the user stops a response mid-stream, so
 // the next turn it knows the prior response was cut short rather than complete.
-export const TURN_CANCELLATION_PROMPT = `The user stopped your previous response before it finished generating. Do not assume it was completed or that any action it described was carried out. Wait for the user's next instruction before continuing.`;
+export const TURN_CANCELLATION_PROMPT = `The user stopped your previous response before it finished generating. This could be for various reasons (they had enough of the answer, saw it going the wrong way, changed their mind, or simply wanted to redirect). You should:
+1. Treat the prior response as incomplete — do not assume it fully generated or that anything it described or started was actually carried out
+2. Acknowledge the stop without assuming why, and without apologizing excessively
+3. Wait for the user's next instruction rather than resuming or re-generating the same response on your own
+4. If they ask you to continue, pick up from where you left off; if they redirect, follow the new direction instead
+5. Take no further actions and execute no tools until the user has spoken`;
