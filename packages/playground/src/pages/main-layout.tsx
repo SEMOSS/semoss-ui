@@ -76,7 +76,7 @@ export const MainLayout = observer(() => {
 				const hash = new URL(item.url).hash; // e.g. "#/agent"
 				map[embedPath] = hash.startsWith("#") ? hash.slice(1) : hash; // e.g. "/agent"
 			} catch {
-				map[embedPath] = "/" + embedPath;
+				map[embedPath] = `/${embedPath}`; // fallback to the embed path itself
 			}
 		}
 		return map;
