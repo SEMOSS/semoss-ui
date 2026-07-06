@@ -13,6 +13,7 @@ import {
 	TOOL_ERROR_PROMPT,
 	TOOL_OUTPUT_UNREADABLE_PROMPT,
 	TOOL_PAUSE_PROMPT,
+	TURN_CANCELLATION_PROMPT,
 } from "@/constants";
 import type { ToolStore } from "@/stores";
 import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
@@ -20,6 +21,7 @@ import { AbstractMessageStore } from "./abstract-message.store";
 import { runAgentMessage } from "./agent-harness";
 import { InputMessageStore } from "./input-message.store";
 import { applyToolStreamChunk } from "./tool-stream";
+import { createMessageStore } from "./utility";
 
 /**
  * Response Message Store
@@ -243,10 +245,10 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			// arguments/name deltas with the ToolStore created on the opening chunk
 			const toolStreamIndexToId: Record<number, string> = {};
 
-			// Shared param block for the turn. RecordCancelledTurn (on a stop)
-			// must replay the exact same params as AskPlayground, so both pixels
-			// are built from this single string — RecordCancelledTurn just adds
-			// outputParts.
+			// Shared param block for the turn. On a stop, recordCancelledTurn
+			// must replay the exact same params, so both the live AskPlayground
+			// call and the cancel-commit call are built from this single string —
+			// the cancel call just adds responseParts + hiddenMessage.
 			const turnParams = `engine=["${room.model.engine_id}"],
 roomId=["${room.roomId}"],
 command=["<encode>${text}</encode>"],
@@ -328,11 +330,14 @@ paramValues=[${JSON.stringify({
 	};
 
 	/**
-	 * Commit a stopped turn. The cancelled AskPlayground call leaves nothing
-	 * persisted on the backend, so we replay the turn's exact params via
-	 * RecordCancelledTurn — adding responseParts for what the user actually saw.
-	 * It returns the same paired output as AskPlayground, so we sync both
-	 * messages from the committed result.
+	 * Commit a stopped turn. Cancelling the AskPlayground stream leaves nothing
+	 * persisted on the backend, so we replay the turn's exact params through a
+	 * second AskPlayground call carrying `responseParts` (what the user actually
+	 * saw) and a `hiddenMessage` note. The backend skips the LLM call, persists
+	 * the turn, and appends a hidden user-note/assistant-ack pair so the model
+	 * sees next turn that its response was cut short. We sync the visible pair
+	 * from the result and splice the returned hidden pair(s) into the tree so
+	 * the room's parent chain stays aligned with the backend's provider history.
 	 */
 	private recordCancelledTurn = async (
 		turnParams: string,
@@ -347,17 +352,36 @@ paramValues=[${JSON.stringify({
 					{
 						inputMessage: InputPixelMessage;
 						responseMessage: ResponsePixelMessage;
+						extraMessages: {
+							inputMessage: InputPixelMessage;
+							responseMessage: ResponsePixelMessage;
+						}[];
 					},
 				]
 			>(
-				`RecordCancelledTurn(${turnParams}, responseParts=${JSON.stringify(responseMessage.parts)});`,
+				`AskPlayground(${turnParams}, responseParts=${JSON.stringify(responseMessage.parts)}, hiddenMessage=["<encode>${TURN_CANCELLATION_PROMPT}</encode>"]);`,
 			);
 
 			const { output } = response.pixelReturn[0];
 
-			// sync with the results
+			// sync the visible pair with the committed result
 			inputMessage.sync(output.inputMessage);
 			responseMessage.sync(output.responseMessage);
+
+			// The hidden user-note/assistant-ack pair(s) are invisible (not
+			// rendered) but must join the tree in order so `tail` — and thus the
+			// next message's parent — points at the latest hidden message.
+			let parent: AbstractMessageStore = responseMessage;
+			for (const pair of output.extraMessages ?? []) {
+				const hiddenInput = createMessageStore(room, pair.inputMessage);
+				const hiddenResponse = createMessageStore(
+					room,
+					pair.responseMessage,
+				);
+				parent.addChild(hiddenInput);
+				hiddenInput.addChild(hiddenResponse);
+				parent = hiddenResponse;
+			}
 		} catch (e) {
 			console.error("Failed to record cancelled turn", e);
 		}

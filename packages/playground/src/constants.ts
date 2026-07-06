@@ -51,3 +51,7 @@ export const TOOL_OUTPUT_UNREADABLE_PROMPT = `This tool returned a response, but
 3. Suggest a possible reason (e.g., response too large, unexpected format) without overstating certainty
 4. Ask the user if they'd like to try again, narrow the request, or proceed a different way
 5. Do not repeat the tool call without user confirmation`;
+
+// Hidden note sent to the model after the user stops a response mid-stream, so
+// the next turn it knows the prior response was cut short rather than complete.
+export const TURN_CANCELLATION_PROMPT = `The user stopped your previous response before it finished generating. Do not assume it was completed or that any action it described was carried out. Wait for the user's next instruction before continuing.`;
