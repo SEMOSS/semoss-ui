@@ -1,6 +1,7 @@
 import { action, computed, makeObservable, observable } from "mobx";
 import type { RoomStore } from "@/stores";
 import type { AbstractPixelMessage, PixelMessage } from "@/types";
+import { normalizeTimestamp } from "@/utility";
 
 /**
  * Abstract Message Store
@@ -173,13 +174,7 @@ export abstract class AbstractMessageStore {
 	 * Sync store properties from the pixel message
 	 */
 	sync(message: PixelMessage) {
-		this.dateCreated = (() => {
-			const raw = message.dateCreated;
-			const normalized = /Z|[+-]\d{2}:?\d{2}$/.test(raw)
-				? raw
-				: `${raw.replace(" ", "T")}Z`;
-			return new Date(normalized);
-		})();
+		this.dateCreated = normalizeTimestamp(message.dateCreated).toDate();
 	}
 
 	/**
