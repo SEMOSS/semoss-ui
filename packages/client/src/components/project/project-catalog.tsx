@@ -281,6 +281,14 @@ export const ProjectCatalog = observer(
 		};
 
 		/**
+		 * @name openInfo
+		 * @param project
+		 */
+		const openInfo = async (project: Project) => {
+			window.open(`#${config.basePath}/${project.project_id}`, "_blank");
+		};
+
+		/**
 		 * @name deleteProject
 		 * @desc confirm deleting a project
 		 */
@@ -472,9 +480,9 @@ export const ProjectCatalog = observer(
 													showDelete={isOwnerPermission(
 														project.user_permission,
 													)}
-													infoPath={`${config.basePath}/${project.project_id}`}
 													onFavorite={setFavorite}
-													onGlobalToggle={setGlobal}
+													onInfo={openInfo}
+													onGlobal={setGlobal}
 													onClone={setCloneModalApp}
 													onDelete={
 														handleDeleteRequest
@@ -517,9 +525,9 @@ export const ProjectCatalog = observer(
 											showDelete={isOwnerPermission(
 												project.user_permission,
 											)}
-											infoPath={`${config.basePath}/${project.project_id}`}
 											onFavorite={setFavorite}
-											onGlobalToggle={setGlobal}
+											onInfo={openInfo}
+											onGlobal={setGlobal}
 											onClone={setCloneModalApp}
 											onDelete={handleDeleteRequest}
 										/>
@@ -576,9 +584,9 @@ export const ProjectCatalog = observer(
 											showDelete={isOwnerPermission(
 												project.user_permission,
 											)}
-											infoPath={""}
 											onFavorite={setFavorite}
-											onGlobalToggle={setGlobal}
+											onInfo={openInfo}
+											onGlobal={setGlobal}
 											onClone={setCloneModalApp}
 											onDelete={handleDeleteRequest}
 										/>

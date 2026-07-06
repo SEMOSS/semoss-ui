@@ -7,7 +7,6 @@ import {
 	LockKeyholeOpen,
 	Trash2,
 } from "lucide-react";
-import { Link } from "react-router-dom";
 import { AppCatalogAvatar, type Project } from "@semoss/shared";
 import {
 	Button,
@@ -37,12 +36,12 @@ export interface ProjectGridItemProps {
 	showDelete: boolean;
 	/** Show the info button */
 	showInfo?: boolean;
-	/** Path to info page (e.g., "/app/{id}/settings") */
-	infoPath?: string;
 	/** Callback when favorite/bookmark is toggled (required if showFavorite is true) */
 	onFavorite: (project: Project) => void;
+	/** Callback when info button is clicked */
+	onInfo: (project: Project) => void;
 	/** Callback when global toggle is clicked */
-	onGlobalToggle: (project: Project) => void;
+	onGlobal: (project: Project) => void;
 	/** Callback when delete is requested */
 	onDelete: (project: Project) => void;
 	/** Callback when clone is requested */
@@ -63,9 +62,9 @@ export const ProjectGridItem: React.FC<ProjectGridItemProps> = ({
 	showClone = true,
 	showDelete = true,
 	showInfo = true,
-	infoPath,
+	onInfo,
 	onFavorite,
-	onGlobalToggle,
+	onGlobal,
 	onDelete,
 	onClone,
 }) => {
@@ -97,26 +96,22 @@ export const ProjectGridItem: React.FC<ProjectGridItemProps> = ({
 
 	const actions = (
 		<>
-			{showInfo && infoPath && (
+			{showInfo && (
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<Button
 							variant="ghost"
 							size="icon-sm"
-							title="View details"
-							asChild
+							onClick={(e) => {
+								e.preventDefault();
+								e.stopPropagation();
+								onInfo(project);
+							}}
 						>
-							<Link
-								to={infoPath}
-								onClick={(event) => {
-									event.stopPropagation();
-								}}
-							>
-								<Info className="size-4" />
-							</Link>
+							<Info className="size-4" />
 						</Button>
 					</TooltipTrigger>
-					<TooltipContent>Details</TooltipContent>
+					<TooltipContent>Open Details in a New Tab</TooltipContent>
 				</Tooltip>
 			)}
 			{typeof project.project_global === "boolean" && showGlobal && (
@@ -129,7 +124,7 @@ export const ProjectGridItem: React.FC<ProjectGridItemProps> = ({
 								e.preventDefault();
 								e.stopPropagation();
 								if (project.user_permission === 1) {
-									onGlobalToggle(project);
+									onGlobal(project);
 								}
 							}}
 							disabled={project.user_permission !== 1}

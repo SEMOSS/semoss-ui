@@ -189,7 +189,7 @@ export const ProjectSettingsIndexPage = () => {
 								}
 								showClone={false}
 								onFavorite={() => null}
-								onGlobalToggle={() => null}
+								onGlobal={() => null}
 								onClone={() => null}
 								onDelete={(project) =>
 									setProjectToDelete(project)
