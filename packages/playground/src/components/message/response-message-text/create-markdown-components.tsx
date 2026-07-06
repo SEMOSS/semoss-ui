@@ -9,6 +9,7 @@ import {
 	type Markdown,
 	P,
 	ScrollArea,
+	Table,
 } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
 import { CodePreviewBlock } from "./code-preview-block";
@@ -258,11 +259,16 @@ export const createMarkdownComponents = (
 	},
 	table: ({ className, ...props }) => (
 		<ScrollArea className="w-full" scrollOrientation="horizontal">
-			<table
+			{/* <table
 				data-slot="table"
 				className={`min-w-full caption-bottom text-sm${className ? ` ${className}` : ""}`}
 				{...props}
-			/>
+			/> */}
+			<Table
+				className={`min-w-full caption-bottom text-sm${className ? ` ${className}` : ""}`}
+				{...props}
+				showExportButton={true}
+			></Table>
 		</ScrollArea>
 	),
 });

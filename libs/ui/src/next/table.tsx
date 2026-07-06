@@ -1,88 +1,50 @@
-import { Button, Stack } from "@mui/material";
-import Tooltip from "@mui/material/Tooltip";
+import { Download } from "lucide-react";
 import type * as React from "react";
 import * as XLSX from "xlsx";
 import { cn } from "@/lib/utils";
+import { Button } from "@/next/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/next/tooltip";
 
 interface TableProps extends React.ComponentProps<"table"> {
 	showExportButton?: boolean;
 }
 
-const ENV_SHOW_EXPORT_BUTTON =
-	(import.meta as unknown as { env: Record<string, string> }).env
-		.VITE_ENABLE_EXCEL_DOWNLOAD_BUTTON === "true";
-
-function Table({
-	className,
-	showExportButton = ENV_SHOW_EXPORT_BUTTON,
-	...props
-}: TableProps) {
+function Table({ className, showExportButton = false, ...props }: TableProps) {
 	const id = `table-${Math.random() * 1000}`;
 
 	return (
 		<div>
 			{showExportButton && (
-				<Stack
-					direction="row"
-					spacing={1}
-					style={{ float: "right", marginBottom: "5px" }}
-				>
-					<Tooltip
-						title="Export to Excel"
-						arrow
-						placement="left"
-						slotProps={{
-							tooltip: {
-								sx: {
-									bgcolor: "black",
-									color: "white",
-									fontSize: "0.85rem",
-								},
-							},
-							arrow: {
-								sx: {
-									color: "black",
-								},
-							},
-						}}
-					>
-						<Button
-							variant="text"
-							onClick={() => {
-								const today = new Date();
-								const formattedDate = today
-									.toISOString()
-									.slice(0, 10);
-								const fileName = `table_response_${formattedDate}.xlsx`;
-								exportTableByIdToExcel(id, fileName);
-							}}
-							size="large"
-							aria-label="Export to Excel"
-							title="Export to Excel"
-							sx={{
-								textTransform: "none",
-								borderRadius: 2,
-								px: 1.5,
-								gap: 1,
-								minWidth: 0,
-							}}
-						>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								viewBox="0 0 384 512"
-								width="24"
-								height="24"
-								fill="rgb(177, 137, 80)"
-								aria-hidden="true"
+				<div>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon"
+								onClick={() => {
+									const today = new Date();
+									const formattedDate = today
+										.toISOString()
+										.slice(0, 10);
+									const fileName = `table_response_${formattedDate}.xlsx`;
+									exportTableByIdToExcel(id, fileName);
+								}}
+								aria-label="Export to Excel"
+								title="Export to Excel"
+								className="rounded-md bg-background"
 							>
-								<title>Export to Excel</title>
-								<path d="M64 0C28.7 0 0 28.7 0 64v384c0 35.3 28.7 64 64 64h256c35.3 0 64-28.7 64-64V160H256c-17.7 0-32-14.3-32-32V0zm192 0v128h128zM155.7 250.2l36.3 51.9l36.3-51.9c7.6-10.9 22.6-13.5 33.4-5.9s13.5 22.6 5.9 33.4L221.3 344l46.4 66.2c7.6 10.9 5 25.8-5.9 33.4s-25.8 5-33.4-5.9L192 385.8l-36.3 51.9c-7.6 10.9-22.6 13.5-33.4 5.9s-13.5-22.6-5.9-33.4l46.3-66.2l-46.4-66.2c-7.6-10.9-5-25.8 5.9-33.4s25.8-5 33.4 5.9z" />
-							</svg>
-						</Button>
+								<Download fontSize="medium" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent
+							side="left"
+							className="bg-black text-white"
+						>
+							Export to Excel
+						</TooltipContent>
 					</Tooltip>
-				</Stack>
+				</div>
 			)}
-
 			<div
 				data-slot="table-container"
 				className="relative w-full overflow-x-auto"
