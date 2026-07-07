@@ -182,6 +182,7 @@ export const ProjectSettingsIndexPage = () => {
 								project={project}
 								isFavorited={false}
 								showFavorite={false}
+								showInfo={false}
 								showGlobal={false}
 								showDelete={
 									adminMode ||
@@ -189,6 +190,7 @@ export const ProjectSettingsIndexPage = () => {
 								}
 								showClone={false}
 								onFavorite={() => null}
+								onInfo={() => null}
 								onGlobal={() => null}
 								onClone={() => null}
 								onDelete={(project) =>
