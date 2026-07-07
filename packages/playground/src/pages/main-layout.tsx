@@ -14,6 +14,7 @@ import {
 	BreadcrumbLink,
 	BreadcrumbList,
 	BreadcrumbSeparator,
+	cn,
 	Separator,
 	SidebarInset,
 	SidebarProvider,
@@ -235,11 +236,11 @@ export const MainLayout = observer(() => {
 																>
 																	{crumb.path ? (
 																		<BreadcrumbLink
-																			className={`min-w-0 truncate ${
-																				isLast
-																					? "text-foreground"
-																					: ""
-																			}`}
+																			className={cn(
+																				"min-w-0 truncate",
+																				isLast &&
+																					"text-foreground",
+																			)}
 																			asChild
 																		>
 																			<Link
@@ -252,11 +253,12 @@ export const MainLayout = observer(() => {
 																		</BreadcrumbLink>
 																	) : (
 																		<span
-																			className={`min-w-0 truncate ${
+																			className={cn(
+																				"min-w-0 truncate",
 																				isLast
 																					? "text-foreground"
-																					: "text-muted-foreground"
-																			}`}
+																					: "text-muted-foreground",
+																			)}
 																		>
 																			{
 																				crumb.name

@@ -23,6 +23,7 @@ import { useTranslation } from "@semoss/i18n";
 import { runPixel, useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
+	cn,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
@@ -637,7 +638,11 @@ export const GlobalNav = observer(() => {
 																}
 															>
 																<Link
-																	className={`flex h-auto flex-col items-start p-2 ${date ? "gap-1" : ""}`}
+																	className={cn(
+																		"flex h-auto flex-col items-start p-2",
+																		date &&
+																			"gap-1",
+																	)}
 																	to={`/room/${roomId}`}
 																	aria-label={
 																		"Select room"
@@ -697,11 +702,11 @@ export const GlobalNav = observer(() => {
 																		}}
 																	>
 																		<StarIcon
-																			className={`me-2 size-4 ${
-																				isFavorite
-																					? "fill-yellow-500 text-yellow-500"
-																					: ""
-																			}`}
+																			className={cn(
+																				"me-2 size-4",
+																				isFavorite &&
+																					"fill-yellow-500 text-yellow-500",
+																			)}
 																		/>
 																		{isFavorite
 																			? t(
