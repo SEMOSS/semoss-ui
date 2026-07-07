@@ -10,6 +10,7 @@ import {
 import Appagent from "@/assets/img/Appagent.svg";
 import Appcode from "@/assets/img/Appcode.svg";
 import Appdragdrop from "@/assets/img/Appdragdrop.svg";
+import Appworkflow from "@/assets/img/Appworkflow.svg";
 
 const CARDS = [
 	{
@@ -36,18 +37,26 @@ const CARDS = [
 		type: "agent",
 		testId: "new-app-agent-btn",
 	},
+	{
+		title: "Build a workflow",
+		description:
+			"Connect engines, models, and custom logic into a visual pipeline. Drag nodes onto a canvas and wire them together to automate end-to-end data flows.",
+		image: Appworkflow,
+		type: "workflow",
+		testId: "new-app-workflow-btn",
+	},
 ] as const;
 
 interface LandingHeaderProps {
 	/** Trigger creation of a new app */
-	onCreate: (type: "blocks" | "code" | "agent") => void;
+	onCreate: (type: "blocks" | "code" | "agent" | "workflow") => void;
 }
 
 export const LandingHeader: React.FC<LandingHeaderProps> = ({
 	onCreate = () => null,
 }) => {
 	return (
-		<div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3">
+		<div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
 			{CARDS.map((card) => (
 				<Card
 					key={card.title}

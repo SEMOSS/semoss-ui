@@ -7,6 +7,7 @@ export type AppType =
 	| "INSIGHT"
 	| "SKILL"
 	| "WORKSPACE"
+	| "WORKFLOW"
 	| "";
 
 /**

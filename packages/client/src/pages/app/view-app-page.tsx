@@ -26,6 +26,11 @@ const CodeRenderer = lazy(() =>
 		default: m.CodeRenderer,
 	})),
 );
+const WorkflowFormEditor = lazy(() =>
+	import("@/components/workflow-form-editor").then((m) => ({
+		default: m.WorkflowFormEditor,
+	})),
+);
 
 import { usePage, useRootStore } from "@/hooks";
 import type { WorkspaceStore } from "@/stores";
@@ -180,6 +185,9 @@ export const ViewAppPage = observer(() => {
 					) : null}
 					{workspace.type === "CODE" ? (
 						<CodeRenderer appId={appId} />
+					) : null}
+					{workspace.type === "WORKFLOW" ? (
+						<WorkflowFormEditor appId={appId} />
 					) : null}
 				</Suspense>
 			</div>

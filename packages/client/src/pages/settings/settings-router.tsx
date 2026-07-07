@@ -24,7 +24,7 @@ import { TeamSettingsDetailPage } from "./team-settings-detail-page";
 import { TeamsSettingsPage } from "./teams-settings-page";
 
 // map each route to a component
-const SETTINGS_COMPONETS = {
+const SETTINGS_COMPONETS: Record<string, React.ComponentType> = {
 	"": SettingsIndexPage,
 	app: ProjectSettingsPage,
 	"app/:id": ProjectSettingsDetailsPage,
@@ -88,7 +88,7 @@ export const SettingsRouter = observer(() => {
 					);
 				})}
 			</Route>
-			<Route path="*" element={<Navigate to={`.`} replace />} />
+			<Route path="*" element={<Navigate to="." replace />} />
 		</Routes>
 	);
 });
