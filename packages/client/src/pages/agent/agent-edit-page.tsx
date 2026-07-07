@@ -1,3 +1,3 @@
-import { EditPage } from "../app/edit-page";
+import { ProjectEdit } from "@/components/project";
 
-export const AgentEditPage = () => <EditPage type="agent" />;
+export const AgentEditPage = () => <ProjectEdit type="WORKSPACE" />;

@@ -34,7 +34,7 @@ import {
 	SidebarSeparator,
 } from "@semoss/ui/next";
 import { usePage, useRootStore } from "@/hooks";
-import { usePlatformFeatures } from "@/pages/AuthenticatedLayout";
+import { usePlatformFeatures } from "@/pages/authenticated-layout";
 import { formatToDataTestId } from "@/utility";
 import { LogoutPopover } from "./LogoutPopover";
 
@@ -48,31 +48,31 @@ const CATALOG_ROUTES = [
 	{
 		text: "Model",
 		icon: <Cpu className="size-4" />,
-		route: "/engine/model",
+		route: "/model",
 		featureKey: "nav.engine",
 	},
 	{
 		text: "Database",
 		icon: <Database className="size-4" />,
-		route: "/engine/database",
+		route: "/database",
 		featureKey: "nav.engine",
 	},
 	{
 		text: "Vector",
 		icon: <Bolt className="size-4" />,
-		route: "/engine/vector",
+		route: "/vector",
 		featureKey: "nav.engine",
 	},
 	{
 		text: "Function",
 		icon: <Sigma className="size-4" />,
-		route: "/engine/function",
+		route: "/function",
 		featureKey: "nav.engine",
 	},
 	{
 		text: "Storage",
 		icon: <Archive className="size-4" />,
-		route: "/engine/storage",
+		route: "/storage",
 		featureKey: "nav.engine",
 	},
 	{
@@ -90,7 +90,7 @@ const CATALOG_ROUTES = [
 	{
 		text: "Guardrail",
 		icon: <ShieldCheck className="size-4" />,
-		route: "/engine/guardrail",
+		route: "/guardrail",
 		featureKey: "nav.engine",
 	},
 ];
