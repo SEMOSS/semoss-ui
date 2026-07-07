@@ -14,6 +14,12 @@ const FALLBACK_TAG_PALETTE: TagColorPalette = {
 
 const tagPaletteCache = new Map<string, TagColorPalette>();
 
+export const normalizeTagArray = (tag?: string[] | string): string[] => {
+	if (tag === undefined) return [];
+	if (Array.isArray(tag)) return tag.filter(Boolean);
+	return tag !== "" ? [tag] : [];
+};
+
 const normalizeTagKey = (tag: string): string => {
 	return tag.trim().toLowerCase().replace(/\s+/g, " ");
 };

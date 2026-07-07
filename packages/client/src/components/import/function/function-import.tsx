@@ -105,7 +105,7 @@ export const FunctionImport = ({ name }: { name: string }) => {
 					return;
 				}
 				toast.success("Successfully Created Function Database");
-				navigate(`/engine/function/${output.database_id}`);
+				navigate(`/function/${output.database_id}`);
 			}
 		} catch {
 			toast.error("Upload failed or returned invalid response.");
