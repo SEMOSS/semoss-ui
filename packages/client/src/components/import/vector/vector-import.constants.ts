@@ -2167,7 +2167,7 @@ export const VECTOR_CONNECTIONS = {
 			disable: false,
 			icon: QDRANT,
 			description:
-				"An in-process, in-memory Qdrant vector store. Runs entirely inside SEMOSS with server-side filtering, sparse+dense hybrid search, quantization, and a native recommendation API — no external server required. State is ephemeral and resets on restart.",
+				"An embedded Qdrant vector store. Runs entirely inside SEMOSS with server-side filtering, sparse+dense hybrid search, quantization, and a native recommendation API — no external server required. Collections persist to the engine's own folder between restarts.",
 			link: "https://qdrant.tech/documentation/",
 			fields: [
 				{
