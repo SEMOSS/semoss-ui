@@ -81,7 +81,7 @@ export const SystemAppGridItem: React.FC<SystemAppGridItemProps> = ({
 					>
 						<Card className="flex h-auto w-full max-w-full cursor-pointer flex-col items-start justify-center gap-1.5 overflow-hidden rounded-lg p-3.5 hover:shadow-md group-focus:ring group-focus:ring-ring/50 group-focus:ring-inset">
 							<div className="flex w-full min-w-0 items-center gap-3">
-								<div className="flex size-10 shrink-0 items-center justify-center overflow-hidden bg-transparent p-1">
+								<div className="flex size-14 shrink-0 items-center justify-center overflow-hidden bg-transparent p-1">
 									{icon}
 								</div>
 
