@@ -1,6 +1,6 @@
 import { BlocksIcon } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
-import { Muted, ScrollArea } from "@semoss/ui/next";
+import { Badge, Muted, ScrollArea } from "@semoss/ui/next";
 import type { SkillConfig } from "@/types";
 
 interface WorkspaceSkillListProps {
@@ -35,6 +35,14 @@ export const WorkspaceSkillList = ({ skills }: WorkspaceSkillListProps) => {
 						<div className="font-semibold text-foreground text-sm">
 							{s.name}
 						</div>
+						{s.type === "PLATFORM_SKILL" && (
+							<Badge
+								variant="secondary"
+								className="ms-auto h-4 px-1.5 text-[10px]"
+							>
+								{t("skills.builtInBadge", "Platform")}
+							</Badge>
+						)}
 					</div>
 				))}
 			</div>

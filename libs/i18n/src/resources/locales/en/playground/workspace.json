@@ -163,6 +163,7 @@
 		"charCount": "{{count}} characters"
 	},
 	"skills": {
-		"noSkills": "No skills added"
+		"noSkills": "No skills added",
+		"builtInBadge": "Platform"
 	}
 }

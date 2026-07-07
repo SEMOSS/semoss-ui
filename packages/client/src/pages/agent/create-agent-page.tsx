@@ -82,13 +82,17 @@ export const CreateAgentPage = () => {
 
 			// Combine knowledge and toolboxes into mcp array
 			const mcp = [...data.knowledge, ...data.toolboxes];
-
-			const skills = data.skills.map((s) => s.id);
+			const skills = data.skills
+				.filter((s) => s.type !== "PLATFORM_SKILL")
+				.map((s) => s.id);
+			const platformSkills = data.skills
+				.filter((s) => s.type === "PLATFORM_SKILL")
+				.map((s) => s.id);
 
 			const { errors, pixelReturn } = await monolithStore.runQuery<
 				[string]
 			>(
-				`AddWorkspace(name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)});`,
+				`AddWorkspace(name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, platformSkills=${JSON.stringify(platformSkills)}, prompts=${JSON.stringify(data.prompts)});`,
 			);
 
 			if (errors.length > 0) throw new Error(errors.join(","));

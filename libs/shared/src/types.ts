@@ -389,23 +389,36 @@ export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {
 };
 
 export interface Skill {
-	/** Id of the skill (project id) */
+	/**
+	 * Identifier of the skill. For a registry skill this is the project id
+	 * (a UUID). For a platform skill it is the folder `slug` — platform
+	 * skills are not projects and have no project id, and GetWorkspace
+	 * returns `id === slug` for them.
+	 */
 	id: string;
 	/** Display name of the skill */
 	name: string;
-	/** Type discriminator — always SKILL */
-	type: "SKILL";
+	/**
+	 * Type discriminator. `SKILL` is a user-owned registry skill (attached
+	 * by skill id); `PLATFORM_SKILL` is a read-only built-in shipped with
+	 * the platform (attached by slug).
+	 */
+	type: "SKILL" | "PLATFORM_SKILL";
 	/** URL-friendly identifier */
 	slug: string;
+	/** Optional description (shown on platform skill cards) */
+	description?: string;
 }
 
 /**
  * The shape carried in form state and selectors. Mirrors MCPConfig — the
  * name travels with the value so selectors can render chips without a
- * separate lookup. Reduced to IDs only at the EditWorkspace/AddWorkspace
- * pixel boundary.
+ * separate lookup. The `type` discriminator lets save paths split registry
+ * skills (persisted by id via `skills=`) from platform skills (persisted by
+ * slug via `platformSkills=`); for platform skills `id` is the slug.
+ * Reduced to identifiers only at the EditWorkspace/AddWorkspace pixel boundary.
  */
-export type SkillConfig = Pick<Skill, "id" | "name">;
+export type SkillConfig = Pick<Skill, "id" | "name" | "type">;
 
 export interface ProjectDependency {
 	engine_type:

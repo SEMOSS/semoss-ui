@@ -6,7 +6,10 @@
 		"noToolboxesFound": "No toolboxes found",
 		"noKnowledgeFound": "No knowledge found",
 		"noAgentsFound": "No agents found",
-		"noSkillsFound": "No skills found"
+		"noSkillsFound": "No skills found",
+		"platformBadge": "Platform",
+		"builtInSection": "Platform skills",
+		"registrySection": "Your skills"
 	},
 	"permission": {
 		"owner": "Owner",

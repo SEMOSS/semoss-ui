@@ -61,6 +61,11 @@ export interface MCPCardProps {
 	 * for skills, which are projects but should read "Skill".
 	 */
 	typeLabel?: string;
+	/**
+	 * Optional small badge shown next to the type label — e.g. "Platform" to
+	 * mark a read-only platform skill apart from a user's registry skills.
+	 */
+	badge?: string;
 }
 
 export const MCPCard = ({
@@ -74,6 +79,7 @@ export const MCPCard = ({
 	fromWorkspace,
 	getPlatformUrl,
 	typeLabel,
+	badge,
 }: MCPCardProps) => {
 	const { t } = useTranslation(["mcp", "common", "workspace"]);
 	const effectiveOnClick = fromWorkspace ? undefined : onClick;
@@ -265,6 +271,14 @@ export const MCPCard = ({
 						<div className="flex items-center gap-1.5 text-muted-foreground text-xs">
 							<TypeIcon className="size-3.5 shrink-0" />
 							<span>{typeLabel ?? toSentenceCase(m.type)}</span>
+							{badge ? (
+								<Badge
+									variant="secondary"
+									className="h-4 px-1.5 text-[10px]"
+								>
+									{badge}
+								</Badge>
+							) : null}
 						</div>
 					</div>
 

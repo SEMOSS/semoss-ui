@@ -460,9 +460,14 @@ export class ChatStore {
 			const mcp = data.mcp.map(
 				({ name, id, type }): MCPConfig => ({ name, id, type }),
 			);
-			const skills = data.skills.map((s) => s.id);
+			const skills = data.skills
+				.filter((s) => s.type !== "PLATFORM_SKILL")
+				.map((s) => s.id);
+			const platformSkills = data.skills
+				.filter((s) => s.type === "PLATFORM_SKILL")
+				.map((s) => s.id);
 
-			const pixel = `AddWorkspace(name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)})`;
+			const pixel = `AddWorkspace(name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, platformSkills=${JSON.stringify(platformSkills)}, prompts=${JSON.stringify(data.prompts)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
 			return pixelReturn[0].output;
@@ -490,12 +495,16 @@ export class ChatStore {
 			const mcp = data.mcp.map(
 				({ name, id, type }): MCPConfig => ({ name, id, type }),
 			);
-			const skills = data.skills.map((s) => s.id);
+			const skills = data.skills
+				.filter((s) => s.type !== "PLATFORM_SKILL")
+				.map((s) => s.id);
+			const platformSkills = data.skills
+				.filter((s) => s.type === "PLATFORM_SKILL")
+				.map((s) => s.id);
 
-			const pixel = `EditWorkspace(workspaceId=${JSON.stringify(workspaceId)}, name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)})`;
+			const pixel = `EditWorkspace(workspaceId=${JSON.stringify(workspaceId)}, name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, platformSkills=${JSON.stringify(platformSkills)}, prompts=${JSON.stringify(data.prompts)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
-			// throw errors
 			if (!pixelReturn[0].output) {
 				throw new Error();
 			}
