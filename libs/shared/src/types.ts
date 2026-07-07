@@ -288,6 +288,8 @@ export interface ThemeMap {
 			showPlatformLinks?: boolean;
 			/** Whether to show a text input for feedback comments when rating a response. Defaults to false. */
 			enableFeedbackText?: boolean;
+			/** Whether to show an export button on tables rendered in chat responses. Defaults to false. */
+			enableTableExport?: boolean;
 		};
 	};
 }

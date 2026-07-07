@@ -35,6 +35,7 @@ type BlockQuoteProps = ComponentProps<"blockquote"> & {
 export const createMarkdownComponents = (
 	room?: RoomStore,
 	isHtmlPreviewLoading?: boolean,
+	enableTableExport?: boolean,
 ): MarkdownComponents => ({
 	h1: ({ children, ...props }) => (
 		<H1 className="mt-5 font-semibold text-2xl text-inherit" {...props}>
@@ -267,7 +268,7 @@ export const createMarkdownComponents = (
 			<Table
 				className={`min-w-full caption-bottom text-sm${className ? ` ${className}` : ""}`}
 				{...props}
-				showExportButton={true}
+				showExportButton={enableTableExport}
 			></Table>
 		</ScrollArea>
 	),
