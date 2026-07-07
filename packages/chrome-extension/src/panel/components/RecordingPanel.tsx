@@ -24,6 +24,7 @@ import {
 	DependencyAnalyzer,
 } from "../../services/dependencyAnalyzer";
 import { useRecordingState } from "../../services/recordingStateManager";
+import { escapePixelString, SemossClient } from "../../services/semossClient";
 import { DeleteConfirmationDialog } from "./DeleteConfirmationDialog";
 
 interface SaveRecordingResponse {
@@ -31,9 +32,6 @@ interface SaveRecordingResponse {
 	fileName?: string;
 	message?: string;
 }
-
-// SEMOSS endpoint for API calls (uses OAuth session)
-const SEMOSS_ENDPOINT = "http://localhost:9090/Monolith";
 
 export const RecordingPanel: FC = () => {
 	const {
@@ -63,7 +61,7 @@ export const RecordingPanel: FC = () => {
 	// Check authentication status on mount and when storage changes
 	useEffect(() => {
 		const checkAuth = async () => {
-			const authenticated = await AuthService.isAuthenticated();
+			const authenticated = await AuthService.refreshAuthState();
 			setIsAuthenticated(authenticated);
 
 			// Load projects if authenticated - fetch fresh from SEMOSS
@@ -342,47 +340,12 @@ export const RecordingPanel: FC = () => {
 			const jsonString = JSON.stringify(playwrightJson, replacer, 4);
 
 			// Build Semoss pixel expression (no credentials needed - uses OAuth session)
-			const escapedJson = jsonString
-				.replace(/"/g, '\\"')
-				.replace(/\n/g, "\\n");
-			const expression = `SaveRecordingFromExtension(project=["${selectedProject}"], name=["${name}"], jsonPayload=["${escapedJson}"]);`;
+			const expression = `SaveRecordingFromExtension(project=["${escapePixelString(selectedProject)}"], name=["${escapePixelString(name)}"], jsonPayload=["${escapePixelString(jsonString)}"]);`;
 
 			console.log("[RecordingPanel] Saving recording to Semoss...");
 
-			// Send to Semoss (uses OAuth session cookie)
-			const response = await fetch(
-				`${SEMOSS_ENDPOINT}/api/engine/runPixel`,
-				{
-					method: "POST",
-					headers: {
-						"Content-Type": "application/x-www-form-urlencoded",
-					},
-					credentials: "include", // Send OAuth session cookie
-					body: new URLSearchParams({
-						expression: expression,
-					}),
-				},
-			);
-
-			if (!response.ok) {
-				throw new Error(
-					`HTTP ${response.status}: ${response.statusText}`,
-				);
-			}
-
-			const rawData = await response.json();
-
-			// Unwrap Pixel engine response format
-			let data: SaveRecordingResponse;
-			if (
-				rawData.pixelReturn &&
-				Array.isArray(rawData.pixelReturn) &&
-				rawData.pixelReturn.length > 0
-			) {
-				data = rawData.pixelReturn[0].output;
-			} else {
-				data = rawData;
-			}
+			const data =
+				await SemossClient.runPixel<SaveRecordingResponse>(expression);
 
 			if (data?.success) {
 				toast.success(
