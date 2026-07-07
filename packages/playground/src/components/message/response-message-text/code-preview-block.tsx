@@ -1,7 +1,7 @@
 import { CopyIcon, PlayIcon } from "lucide-react";
 import { type ComponentProps, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { CellOutputBlock } from "@semoss/shared";
+import { CellOutputBlock, notifyFileEditorRefresh } from "@semoss/shared";
 import {
 	Button,
 	Code,
@@ -18,6 +18,7 @@ import type { RoomStore } from "@/stores";
 import { BlockHeader } from "./block-header";
 import { copyToClipboard, getErrorMessage } from "./clipboard";
 import {
+	appendCellToNotebook,
 	buildExecutePixel,
 	CODE_LANG_LABELS,
 	createCodeFilePath,
@@ -147,31 +148,92 @@ export const CodePreviewBlock = ({
 
 	const saveAsNotebook = async () => {
 		if (!room || !code) return;
-		const filePath = createNotebookFilePath();
-		const notebookContent = createNotebookFileContent(code, langStr);
+
+		// Check if a save-notebook-response-*.notebook.json is already open in
+		// the sidebar. If so, append a new cell to it instead of creating a
+		// brand-new file each time ("rough sheet" behaviour).
+		let existingFilePath: string | null = null;
+		room.sidebar.model.visitNodes((node) => {
+			if (existingFilePath) return; // already found one
+			const id = node.getId();
+			if (
+				id.startsWith("FILE--save-notebook-response-") &&
+				id.endsWith(".notebook.json") &&
+				node.isVisible?.() // only count visible (open) nodes
+			) {
+				existingFilePath = id.slice("FILE--".length);
+			}
+		});
+
 		try {
 			setIsSavingToNotebook(true);
-			await room.runRoomPixel(
-				`SaveInsightAssets(filePath=[${JSON.stringify(filePath)}], content=["<encode>${notebookContent}</encode>"]);`,
-				false,
-				false,
-			);
-			toast.success(`Added to notebook as ${filePath}`);
 
-			// Open the saved notebook in the sidebar's file editor, defaulting
-			// to the Preview tab so the interactive notebook shows immediately.
-			const fileName = filePath.split("/").pop() ?? filePath;
-			room.addSidebarNode(`FILE--${filePath}`, {
-				type: "tab",
-				name: fileName,
-				component: "room-file-editor",
-				config: {
+			if (existingFilePath) {
+				// Load the existing notebook, append the new cell, and save back.
+				const notebookPath = existingFilePath;
+				const loadResponse = await room.runRoomPixel<[string]>(
+					`GetInsightAssets(filePath=[${JSON.stringify(notebookPath)}]);`,
+					false,
+					false,
+				);
+				const existingContent =
+					loadResponse.pixelReturn[0]?.output ?? "";
+				const updatedContent =
+					appendCellToNotebook(existingContent, code, langStr) ??
+					createNotebookFileContent(code, langStr);
+				await room.runRoomPixel(
+					`SaveInsightAssets(filePath=[${JSON.stringify(notebookPath)}], content=["<encode>${updatedContent}</encode>"]);`,
+					false,
+					false,
+				);
+				notifyFileEditorRefresh(
+					notebookPath,
+					`INSIGHT:${room.insightId}`,
+				);
+				const existingFileName =
+					notebookPath.split("/").pop() ?? notebookPath;
+				toast.success(`Appended to notebook ${existingFileName}`);
+				// addSidebarNode focuses the tab if it already exists.
+				room.addSidebarNode(`FILE--${notebookPath}`, {
+					type: "tab",
+					name: existingFileName,
+					component: "room-file-editor",
+					config: {
+						name: existingFileName,
+						path: notebookPath,
+						initialTab: "preview",
+					},
+					enableClose: true,
+				});
+			} else {
+				// No open notebook found — create a new one (original behaviour).
+				const filePath = createNotebookFilePath();
+				const notebookContent = createNotebookFileContent(
+					code,
+					langStr,
+				);
+				await room.runRoomPixel(
+					`SaveInsightAssets(filePath=[${JSON.stringify(filePath)}], content=["<encode>${notebookContent}</encode>"]);`,
+					false,
+					false,
+				);
+				notifyFileEditorRefresh(filePath, `INSIGHT:${room.insightId}`);
+				const fileName = filePath.split("/").pop() ?? filePath;
+				toast.success(`Added to notebook as ${fileName}`);
+				// Open the saved notebook in the sidebar's file editor, defaulting
+				// to the Preview tab so the interactive notebook shows immediately.
+				room.addSidebarNode(`FILE--${filePath}`, {
+					type: "tab",
 					name: fileName,
-					path: filePath,
-					initialTab: "preview",
-				},
-				enableClose: true,
-			});
+					component: "room-file-editor",
+					config: {
+						name: fileName,
+						path: filePath,
+						initialTab: "preview",
+					},
+					enableClose: true,
+				});
+			}
 		} catch (error) {
 			toast.error(getErrorMessage(error));
 		} finally {

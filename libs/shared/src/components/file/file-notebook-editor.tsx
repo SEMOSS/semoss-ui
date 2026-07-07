@@ -6,6 +6,10 @@ import { Button, Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import type { FileMode } from "./file.types";
 import type { FileCodeEditorActions } from "./file-code-editor";
 import { FileCodeEditor } from "./file-code-editor";
+import {
+	getFileEditorPathScope,
+	useFileEditorRefreshListener,
+} from "./file-editor-path-events";
 
 interface FileNotebookEditorProps {
 	/** Mode of file editor */
@@ -37,6 +41,7 @@ export const FileNotebookEditor: React.FC<FileNotebookEditorProps> = ({
 }) => {
 	const insight = useInsight();
 	const [tab, setTab] = useState<"edit" | "preview">(initialTab);
+	const [previewRefreshKey, setPreviewRefreshKey] = useState(0);
 	const editorActionsRef = useRef<FileCodeEditorActions | null>(null);
 
 	const targetInsightId =
@@ -58,6 +63,12 @@ export const FileNotebookEditor: React.FC<FileNotebookEditorProps> = ({
 	const handleContentChange = (content: string, isModified: boolean) => {
 		onChange(content, isModified);
 	};
+
+	const scope = getFileEditorPathScope(mode, targetInsightId);
+	useFileEditorRefreshListener(path, scope, () => {
+		editorActionsRef.current?.refresh();
+		setPreviewRefreshKey((value) => value + 1);
+	});
 
 	return (
 		<div className="relative flex h-full w-full flex-col overflow-hidden bg-background">
@@ -121,6 +132,7 @@ export const FileNotebookEditor: React.FC<FileNotebookEditorProps> = ({
 				<div className="flex-1 overflow-hidden">
 					{previewUrl ? (
 						<iframe
+							key={previewRefreshKey}
 							src={previewUrl}
 							className="h-full w-full border-0"
 							title="Notebook Preview"

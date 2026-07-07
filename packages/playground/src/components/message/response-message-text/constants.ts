@@ -234,6 +234,49 @@ export const createNotebookFileContent = (
 };
 
 /**
+ * Append a new code cell to an existing notebook JSON string.
+ * Returns the updated JSON string, or null if the existing content
+ * cannot be parsed as a valid notebook.
+ */
+export const appendCellToNotebook = (
+	existingJson: string,
+	code: string,
+	lang: string,
+): string | null => {
+	try {
+		const notebook = JSON.parse(existingJson) as {
+			queries: Record<
+				string,
+				{
+					id: string;
+					cells: Array<{ id: string; [key: string]: unknown }>;
+				}
+			>;
+		};
+		const queryIds = Object.keys(notebook.queries);
+		if (queryIds.length === 0) return null;
+		const query = notebook.queries[queryIds[0]];
+		const maxId = query.cells.reduce((max, cell) => {
+			const numericId = Number(cell.id);
+			return Number.isFinite(numericId) && numericId > max
+				? numericId
+				: max;
+		}, 0);
+		query.cells.push({
+			id: String(maxId + 1),
+			widget: "code",
+			parameters: {
+				code,
+				type: toNotebookCellType(lang),
+			},
+		});
+		return JSON.stringify(notebook, null, 2);
+	} catch {
+		return null;
+	}
+};
+
+/**
  * Build a runnable pixel expression for a code block, or null when the
  * language is not something we can execute server-side. Python runs through
  * the Py reactor, R through the R reactor, and pixel is sent as-is.
