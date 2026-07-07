@@ -6,6 +6,7 @@ import MILVUS from "@/assets/img/MILVUS.png";
 import OPEN_SEARCH from "@/assets/img/OPEN_SEARCH.png";
 import PINECONE from "@/assets/img/PINECONE.png";
 import POSTGRES from "@/assets/img/POSTGRES.svg";
+import QDRANT from "@/assets/img/QDRANT.svg";
 import WEVIATE from "@/assets/img/WEVIATE.png";
 
 export type FieldType =
@@ -2160,6 +2161,348 @@ export const VECTOR_CONNECTIONS = {
 				// },
 			],
 			advanced: [],
+		},
+		{
+			name: "Qdrant",
+			disable: false,
+			icon: QDRANT,
+			description:
+				"A high-performance open-source vector database with server-side filtering, sparse/dense hybrid search, quantization, and a native recommendation API.",
+			link: "https://qdrant.tech/documentation/",
+			fields: [
+				{
+					key: "NAME",
+					label: "Catalog Name",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+					category: "General",
+				},
+				{
+					key: "VECTOR_TYPE",
+					label: "Type",
+					value: "QDRANT",
+					type: "text",
+					disabled: true,
+					hidden: true,
+					required: true,
+					category: "General",
+				},
+				{
+					key: "DESCRIPTION",
+					label: "Description",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					category: "General",
+				},
+				{
+					key: "TAGS",
+					label: "Tags",
+					value: "",
+					type: "tags",
+					disabled: false,
+					required: false,
+					category: "General",
+				},
+				{
+					key: "QDRANT_URL",
+					label: "Server URL",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Optional. URL of a Qdrant server (e.g. http://localhost:6333). Leave empty to run embedded/in-memory. Hybrid search requires a real server.",
+					category: "Credentials",
+				},
+				{
+					key: "QDRANT_API_KEY",
+					label: "API Key",
+					value: "",
+					type: "password",
+					disabled: false,
+					required: false,
+					helperText:
+						"Only required for authenticated Qdrant Cloud or servers configured with an API key.",
+					category: "Credentials",
+				},
+				{
+					key: "QDRANT_LOCATION",
+					label: "Local Storage",
+					value: "AUTO",
+					type: "select",
+					options: [
+						{
+							display: "Auto (persist under engine folder)",
+							value: "AUTO",
+						},
+						{
+							display: "In-memory (ephemeral)",
+							value: "MEMORY",
+						},
+					],
+					disabled: false,
+					required: true,
+					helperText:
+						"Applies only when Server URL is empty. AUTO persists to disk between restarts; MEMORY is ephemeral.",
+					category: "Credentials",
+				},
+				{
+					key: "EMBEDDER_ENGINE_ID",
+					label: "Embedder",
+					value: "",
+					type: "select",
+					options: [],
+					optionRule: {
+						pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
+						optionDisplay: "engine_name",
+						optionValue: "engine_id",
+					},
+					disabled: false,
+					required: true,
+					helperText:
+						"The registered model engine responsible for converting input strings into fixed-size vectors.",
+					category: "Settings",
+				},
+				{
+					key: "INDEX_CLASSES",
+					label: "Index Classes",
+					value: "default",
+					type: "text",
+					disabled: true,
+					hidden: true,
+					required: true,
+					category: "Settings",
+				},
+				{
+					key: "CHUNKING_STRATEGY",
+					label: "Chunking Strategy",
+					value: "ALL",
+					type: "select",
+					options: [
+						{ display: "Token", value: "ALL" },
+						{ display: "Page by page", value: "PAGE_BY_PAGE" },
+						{ display: "Markdown", value: "MARKDOWN" },
+					],
+					disabled: false,
+					hidden: false,
+					required: true,
+					displayRules: {
+						hideOtherFields: [
+							{
+								key: "CONTENT_LENGTH",
+								value: ["PAGE_BY_PAGE", "MARKDOWN"],
+							},
+						],
+					},
+					category: "Settings",
+				},
+				{
+					key: "CONTENT_LENGTH",
+					label: "Content Length",
+					value: "512",
+					type: "number",
+					disabled: false,
+					required: true,
+					min: 0,
+					helperText:
+						"The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
+					category: "Settings",
+				},
+				{
+					key: "CONTENT_OVERLAP",
+					label: "Content Overlap",
+					value: "20",
+					type: "number",
+					disabled: false,
+					required: true,
+					min: 0,
+					helperText:
+						"The number of tokens from prior chunks that are carried over into the current chunk when processing content.",
+					category: "Settings",
+				},
+				{
+					key: "KEEP_INPUT_OUTPUT",
+					label: "Record Questions and Responses",
+					value: "true",
+					type: "select",
+					options: [
+						{ display: "true", value: "true" },
+						{ display: "false", value: "false" },
+					],
+					disabled: false,
+					required: true,
+					category: "Settings",
+				},
+				{
+					key: "EMBEDDINGS",
+					label: "Embeddings",
+					value: null,
+					type: "file-upload",
+					disabled: false,
+					secondary: true,
+					rules: {},
+					category: "Settings",
+				},
+			],
+			advanced: [
+				{
+					key: "DISTANCE_METHOD",
+					label: "Distance Method",
+					value: "Cosine Similarity",
+					type: "select",
+					options: [
+						{
+							display: "Cosine Similarity",
+							value: "Cosine Similarity",
+						},
+						{
+							display: "Squared Euclidean (L2) distance",
+							value: "Squared Euclidean (L2) distance",
+						},
+						{ display: "Dot product", value: "Dot" },
+						{ display: "Manhattan (L1)", value: "Manhattan" },
+					],
+					disabled: false,
+					required: false,
+					helperText:
+						"Similarity metric used for dense-vector search.",
+				},
+				{
+					key: "QDRANT_ENABLE_HYBRID_SEARCH",
+					label: "Enable Hybrid Search",
+					value: "false",
+					type: "select",
+					options: [
+						{ display: "false", value: "false" },
+						{ display: "true", value: "true" },
+					],
+					disabled: false,
+					required: false,
+					helperText:
+						"Combine BM25 sparse + dense vectors with Prefetch/RRF or DBSF fusion. Requires a real Qdrant server (Server URL set).",
+				},
+				{
+					key: "QDRANT_FUSION",
+					label: "Hybrid Fusion Method",
+					value: "rrf",
+					type: "select",
+					options: [
+						{
+							display: "Reciprocal Rank Fusion (RRF)",
+							value: "rrf",
+						},
+						{
+							display: "Distribution-Based Score Fusion (DBSF)",
+							value: "dbsf",
+						},
+					],
+					disabled: false,
+					required: false,
+					helperText:
+						"Only applied when hybrid search is enabled. DBSF often beats RRF for BM25+dense.",
+				},
+				{
+					key: "QDRANT_SPARSE_MODEL",
+					label: "Sparse Model",
+					value: "Qdrant/bm25",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"fastembed-compatible BM25 sparse model. Default is the Qdrant-official BM25 pack.",
+				},
+				{
+					key: "QDRANT_PREFER_GRPC",
+					label: "Prefer gRPC",
+					value: "false",
+					type: "select",
+					options: [
+						{ display: "false", value: "false" },
+						{ display: "true", value: "true" },
+					],
+					disabled: false,
+					required: false,
+					helperText:
+						"When a Server URL is provided, prefer the gRPC transport for lower-latency streaming.",
+				},
+				{
+					key: "QDRANT_QUANTIZATION",
+					label: "Quantization",
+					value: "none",
+					type: "select",
+					options: [
+						{ display: "None", value: "none" },
+						{ display: "Scalar (INT8)", value: "scalar" },
+						{ display: "Binary", value: "binary" },
+					],
+					disabled: false,
+					required: false,
+					helperText:
+						"Vector quantization for memory savings. Scalar is a strong default for most workloads.",
+				},
+				{
+					key: "QDRANT_HNSW_M",
+					label: "HNSW M",
+					value: "",
+					type: "number",
+					disabled: false,
+					required: false,
+					min: 0,
+					helperText:
+						"HNSW graph connectivity. Leave empty for library default (16). Higher = better recall / more memory.",
+				},
+				{
+					key: "QDRANT_HNSW_EF_CONSTRUCT",
+					label: "HNSW ef_construct",
+					value: "",
+					type: "number",
+					disabled: false,
+					required: false,
+					min: 0,
+					helperText:
+						"HNSW build-time search width. Leave empty for library default (100). Higher = slower build, better recall.",
+				},
+				{
+					key: "QDRANT_ON_DISK_PAYLOAD",
+					label: "On-Disk Payload",
+					value: "false",
+					type: "select",
+					options: [
+						{ display: "false", value: "false" },
+						{ display: "true", value: "true" },
+					],
+					disabled: false,
+					required: false,
+					helperText:
+						"Store payloads on disk instead of RAM. Recommended for large collections when RAM is scarce.",
+				},
+				{
+					key: "QDRANT_INDEXED_FIELDS",
+					label: "Indexed Payload Fields (JSON)",
+					value: "",
+					type: "textarea",
+					disabled: false,
+					required: false,
+					helperText:
+						'Optional JSON array of {field, schema} entries, e.g. [{"field":"Source","schema":"keyword"}]. Defaults to indexing \'Source\' as keyword.',
+				},
+			],
 		},
 		{
 			name: "Weaviate",
