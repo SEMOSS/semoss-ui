@@ -24,6 +24,20 @@ import { applyToolStreamChunk } from "./tool-stream";
 import { createMessageStore } from "./utility";
 
 /**
+ * Shape returned by the cancel-commit pixels (AskPlayground /
+ * AddPlaygroundToolExecution with `responseParts`): the visible pair plus any
+ * hidden (invisible) input/response pairs the backend appended alongside it.
+ */
+interface CancelCommitOutput {
+	inputMessage: InputPixelMessage;
+	responseMessage: ResponsePixelMessage;
+	extraMessages: {
+		inputMessage: InputPixelMessage;
+		responseMessage: ResponsePixelMessage;
+	}[];
+}
+
+/**
  * Response Message Store
  */
 export class ResponseMessageStore extends AbstractMessageStore {
@@ -38,6 +52,14 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	 *  Track if the message is thinking
 	 */
 	isThinking: boolean = false;
+
+	/**
+	 * Guards the tool-execution cancel commit: every in-flight tool stream
+	 * carries an onCancel, but only the first should persist the stopped turn.
+	 * Scoped to this response (each turn is its own store), so it never leaks
+	 * across turns.
+	 */
+	private cancelCommitted: boolean = false;
 
 	/**
 	 * Response to an execution
@@ -347,18 +369,7 @@ paramValues=[${JSON.stringify({
 		const room = this.room;
 
 		try {
-			const response = await room.runRoomPixel<
-				[
-					{
-						inputMessage: InputPixelMessage;
-						responseMessage: ResponsePixelMessage;
-						extraMessages: {
-							inputMessage: InputPixelMessage;
-							responseMessage: ResponsePixelMessage;
-						}[];
-					},
-				]
-			>(
+			const response = await room.runRoomPixel<[CancelCommitOutput]>(
 				`AskPlayground(${turnParams}, responseParts=${JSON.stringify(responseMessage.parts)}, hiddenMessage=["<encode>${TURN_CANCELLATION_PROMPT}</encode>"]);`,
 			);
 
@@ -368,22 +379,78 @@ paramValues=[${JSON.stringify({
 			inputMessage.sync(output.inputMessage);
 			responseMessage.sync(output.responseMessage);
 
-			// The hidden user-note/assistant-ack pair(s) are invisible (not
-			// rendered) but must join the tree in order so `tail` — and thus the
-			// next message's parent — points at the latest hidden message.
-			let parent: AbstractMessageStore = responseMessage;
-			for (const pair of output.extraMessages ?? []) {
-				const hiddenInput = createMessageStore(room, pair.inputMessage);
-				const hiddenResponse = createMessageStore(
-					room,
-					pair.responseMessage,
-				);
-				parent.addChild(hiddenInput);
-				hiddenInput.addChild(hiddenResponse);
-				parent = hiddenResponse;
-			}
+			this.spliceHiddenMessages(responseMessage, output.extraMessages);
 		} catch (e) {
 			console.error("Failed to record cancelled turn", e);
+		}
+	};
+
+	/**
+	 * Commit a stopped tool-execution turn. Every in-flight
+	 * AddPlaygroundToolExecution stream carries this onCancel, but only one
+	 * should persist — the single-commit guard ensures the first to fire wins
+	 * (in practice the sole streaming job, since the backend only streams once
+	 * every tool result is recorded). Replays the same params plus responseParts
+	 * (what streamed) and a hiddenMessage note; commits an empty response when
+	 * the user stopped before anything streamed.
+	 */
+	private recordCancelledToolExecution = async (
+		toolExecParams: string,
+		responseMessage: ResponseMessageStore,
+	): Promise<void> => {
+		if (this.cancelCommitted) {
+			return;
+		}
+		this.cancelCommitted = true;
+
+		const room = this.room;
+
+		try {
+			const response = await room.runRoomPixel<[CancelCommitOutput]>(
+				`AddPlaygroundToolExecution(${toolExecParams}, responseParts=${JSON.stringify(responseMessage.parts)}, hiddenMessage=["<encode>${TURN_CANCELLATION_PROMPT}</encode>"]);`,
+			);
+
+			const { output } = response.pixelReturn[0];
+
+			responseMessage.sync(output.responseMessage);
+			// No INPUT_TOOL_EXEC message store exists; stamp the server's
+			// cumulative input token count onto this response as a proxy (matches
+			// the live tool-exec onResult path).
+			runInAction(() => {
+				this.tokens = output.inputMessage.tokens;
+			});
+
+			this.spliceHiddenMessages(responseMessage, output.extraMessages);
+
+			this.toolResponseMessage = null;
+		} catch (e) {
+			console.error("Failed to record cancelled tool execution", e);
+		}
+	};
+
+	/**
+	 * Splice the backend's hidden (invisible) input/response pair(s) into the
+	 * tree in conversation order, parented under `parent`. They aren't rendered,
+	 * but joining the tree keeps `tail` — and thus the next message's parent —
+	 * aligned with the backend's provider history.
+	 */
+	private spliceHiddenMessages = (
+		parent: AbstractMessageStore,
+		extraMessages: CancelCommitOutput["extraMessages"] | undefined,
+	): void => {
+		let cursor = parent;
+		for (const pair of extraMessages ?? []) {
+			const hiddenInput = createMessageStore(
+				this.room,
+				pair.inputMessage,
+			);
+			const hiddenResponse = createMessageStore(
+				this.room,
+				pair.responseMessage,
+			);
+			cursor.addChild(hiddenInput);
+			hiddenInput.addChild(hiddenResponse);
+			cursor = hiddenResponse;
 		}
 	};
 
@@ -610,6 +677,12 @@ paramValues=[${JSON.stringify({
 	 * Run tools associated with the message
 	 */
 	continueToolExecution = () => {
+		// A stop halts the loop — don't spawn new tool runs once a cancel has
+		// been issued and the in-flight streams are still unwinding.
+		if (this.room.isCancelling) {
+			return;
+		}
+
 		// Find the tools that can be run
 		let numRunningTools: number = 0;
 		const toolsToRun: ToolStore[] = [];
@@ -801,10 +874,12 @@ paramValues=[${JSON.stringify({
 			// per-stream map from tool delta `index` → wire `id` for the post-exec stream
 			const toolStreamIndexToId: Record<number, string> = {};
 
-			// wait for the pixel to run
-			await room.runRoomPixelStreaming<[PartialResponse | TotalResponse]>(
-				`AddPlaygroundToolExecution(
-engine=["${room.model.app_id}"],
+			// Shared param block for this tool-exec turn. On a stop,
+			// recordCancelledToolExecution must replay the exact same params, so
+			// both the live streaming call and the cancel-commit call are built
+			// from this single string — the cancel call just adds responseParts +
+			// hiddenMessage.
+			const toolExecParams = `engine=["${room.model.engine_id}"],
 roomId = ["${room.roomId}"],
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 toolId = ["${tool.id}"],
@@ -812,8 +887,11 @@ toolName=["${tool.json.name}"],
 toolExecutionResponse=["<encode>${toolResponse}</encode>"],
 paramValues=[${JSON.stringify({})}],
 mcpToolStatus=${JSON.stringify(toolStatus)},
-toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
-);`,
+toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]`;
+
+			// wait for the pixel to run
+			await room.runRoomPixelStreaming<[PartialResponse | TotalResponse]>(
+				`AddPlaygroundToolExecution(${toolExecParams});`,
 				{
 					onEmit: (chunk) => {
 						runInAction(() => {
@@ -882,6 +960,13 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 							this.toolResponseMessage = null;
 						}
 					},
+					// The user stopped mid tool-execution response: persist what
+					// streamed, rather than treating it as a result or error.
+					onCancel: () =>
+						this.recordCancelledToolExecution(
+							toolExecParams,
+							responseMessage,
+						),
 				},
 				// If the tool execution succeeds but saving it failed, we will try to save it again with an error status, so dont error the room yet
 				{ setErrorOnFail: toolStatus !== "success" },

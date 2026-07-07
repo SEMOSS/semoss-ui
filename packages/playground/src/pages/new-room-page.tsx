@@ -493,7 +493,9 @@ export const NewRoomPage = observer(() => {
 										return true;
 									}}
 									excludeCommandIds={["compact"]}
-									hideStopButton
+									// The new-room flow has no cancellable turn, so
+									// it's only ever busy (spinner) or idle (send).
+									sendState={isLoading ? "loading" : "send"}
 									onOpenSettings={() =>
 										setIsConfgurationOpen(true)
 									}

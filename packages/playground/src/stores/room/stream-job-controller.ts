@@ -43,19 +43,28 @@ interface StreamJobDeps {
 	setError: (error: Error) => void;
 }
 
+/** A cancellable streaming job in flight — enough to abort it and commit. */
+interface ActiveJob {
+	jobId: string;
+	onCancel: () => void | Promise<void>;
+}
+
 /**
  * Owns the full lifecycle of a streaming pixel job: starts it async, polls for
  * chunks, fetches the settled result, and drives everything through callbacks
  * so callers never branch on a sentinel return value. Also the single source
  * of truth for the room's cancel state — a stop is signalled locally and
- * instantly rather than inferred from backend job status. Only one cancellable
- * job (currently AskPlayground) is tracked at a time.
+ * instantly rather than inferred from backend job status.
+ *
+ * Tracks every cancellable job concurrently in flight (e.g. AskPlayground, plus
+ * the fan-out of AddPlaygroundToolExecution streams during tool execution).
+ * stop() is all-or-nothing, so a single `stopIssued` flag is the cancel signal
+ * every cancellable poll loop watches; the job map only tracks what's needed to
+ * abort each backend job and run its onCancel.
  */
 export class StreamJobController {
-	private jobId: string | null = null;
-	private cancelling = false;
-	/** Cancel handler stashed by run(), invoked by stop() on a user stop. */
-	private onCancel: (() => void | Promise<void>) | null = null;
+	private activeJobs = new Map<string, ActiveJob>();
+	private stopIssued = false;
 
 	private static readonly POLL_INTERVAL_MS = 500;
 
@@ -63,14 +72,14 @@ export class StreamJobController {
 		makeAutoObservable(this);
 	}
 
-	/** A cancellable job is in flight and a cancel hasn't already been issued. */
+	/** A cancellable job is in flight and a stop hasn't already been issued. */
 	get canCancel(): boolean {
-		return this.jobId !== null && !this.cancelling;
+		return this.activeJobs.size > 0 && !this.stopIssued;
 	}
 
-	/** A stop has been issued and the job is still unwinding. */
+	/** A stop has been issued and jobs are still unwinding. */
 	get isCancelling(): boolean {
-		return this.cancelling;
+		return this.stopIssued;
 	}
 
 	/**
@@ -85,6 +94,9 @@ export class StreamJobController {
 		const { onEmit, onResult, onCancel } = handlers;
 		const { showLoading = true, setErrorOnFail = true } = options;
 		const cancellable = onCancel !== undefined;
+
+		// Key of this run's entry in activeJobs, set once cancellable + started.
+		let trackedJobId: string | null = null;
 
 		try {
 			if (showLoading) {
@@ -101,9 +113,8 @@ export class StreamJobController {
 			}
 
 			if (cancellable) {
-				this.jobId = jobId;
-				this.cancelling = false;
-				this.onCancel = onCancel;
+				trackedJobId = jobId;
+				this.activeJobs.set(jobId, { jobId, onCancel });
 			}
 
 			let isPolling = true;
@@ -112,7 +123,8 @@ export class StreamJobController {
 				// A user-initiated stop short-circuits before the next poll so the
 				// stream stops instantly. The unwind is silent: stop() owns firing
 				// onCancel, so run just stops emitting and never reports a result.
-				if (this.cancelling) {
+				// Only cancellable runs honor the flag — untracked streams finish.
+				if (cancellable && this.stopIssued) {
 					return;
 				}
 
@@ -135,7 +147,7 @@ export class StreamJobController {
 					// The job is gone from the server. If we stopped it, unwind
 					// silently and let stop() fire onCancel; otherwise it vanished
 					// unexpectedly and there's nothing to fetch.
-					if (this.cancelling) {
+					if (cancellable && this.stopIssued) {
 						return;
 					}
 					throw new Error("Streaming job no longer exists");
@@ -161,7 +173,7 @@ export class StreamJobController {
 		} catch (e) {
 			// A stop that lands while a request is in flight surfaces here — unwind
 			// silently and let stop() fire onCancel, not the room error path.
-			if (this.cancelling) {
+			if (cancellable && this.stopIssued) {
 				return;
 			}
 
@@ -176,33 +188,39 @@ export class StreamJobController {
 			if (showLoading) {
 				this.deps.setLoading(false);
 			}
-			if (cancellable) {
-				this.jobId = null;
-				this.cancelling = false;
-				this.onCancel = null;
+			if (trackedJobId !== null) {
+				this.activeJobs.delete(trackedJobId);
+				// Once the last cancellable job drains, clear the stop flag so a
+				// fresh turn starts clean.
+				if (this.activeJobs.size === 0) {
+					this.stopIssued = false;
+				}
 			}
 		}
 	};
 
 	/**
-	 * Stop the active cancellable job: flag the poll loop to break (which makes
-	 * run() unwind silently), fire StopPixelExecution to abort the backend
-	 * stream, then run the stashed onCancel. No-op when nothing cancellable is
-	 * in flight.
+	 * Stop every cancellable job in flight: flag the poll loops to break (which
+	 * makes run() unwind silently), fire StopPixelExecution to abort each backend
+	 * stream, then run each stashed onCancel. No-op when nothing cancellable is
+	 * in flight or a stop is already underway.
 	 */
 	stop = async (): Promise<void> => {
-		const jobId = this.jobId;
-		if (jobId === null || this.cancelling) {
+		if (this.activeJobs.size === 0 || this.stopIssued) {
 			return;
 		}
-		// Capture before any await: run()'s finally may clear onCancel once the
-		// poll loop sees cancelling and unwinds.
-		const onCancel = this.onCancel;
-		this.cancelling = true;
-		await runPixel(
-			`StopPixelExecution(id=["${jobId}"]);`,
-			this.deps.getInsightId(),
+		this.stopIssued = true;
+		// Snapshot before awaits: run()'s finally mutates activeJobs as loops
+		// unwind.
+		const jobs = [...this.activeJobs.values()];
+		await Promise.all(
+			jobs.map(async ({ jobId, onCancel }) => {
+				await runPixel(
+					`StopPixelExecution(id=["${jobId}"]);`,
+					this.deps.getInsightId(),
+				);
+				await onCancel();
+			}),
 		);
-		await onCancel?.();
 	};
 }

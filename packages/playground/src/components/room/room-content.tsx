@@ -521,7 +521,13 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					hasOutstandingTools={
 						room.latestResponseMessage.hasUnfinishedTools
 					}
-					isCancelling={room.isCancelling}
+					sendState={
+						room.isCancelling
+							? "loading"
+							: room.canCancel || showLoadingState
+								? "stop"
+								: "send"
+					}
 					onStop={room.cancelActiveJob}
 					tokensUsed={room.tokensUsed}
 					tokensMax={chat.models.contextWindow}

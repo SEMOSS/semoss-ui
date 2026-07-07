@@ -99,6 +99,18 @@ const formatTokens = (tokens: number | undefined) => {
 // TypeScript Interfaces
 // ============================================================================
 
+/**
+ * Appearance of the send/stop button, computed by the parent from the turn +
+ * cancel state:
+ *  - "send"    — idle; submit the prompt (disabled while empty / tools pending)
+ *  - "stop"    — a turn is in flight (model streaming, or tools executing); the
+ *                button cancels it. Cancelling tool execution is a no-op today
+ *                but the affordance stays so it lights up once that's wired.
+ *  - "loading" — a spinner: stop was pressed and is unwinding, or the context is
+ *                busy but has nothing to cancel (the new-room flow).
+ */
+export type SendButtonState = "send" | "stop" | "loading";
+
 interface RoomInputProps {
 	/** Classes to override */
 	className?: string;
@@ -145,17 +157,12 @@ interface RoomInputProps {
 	/** Has outstanding tools */
 	hasOutstandingTools?: boolean;
 
-	/** A stop has been issued for the active turn and it's still unwinding. */
-	isCancelling?: boolean;
+	/** Appearance of the send/stop button. Defaults to "send". */
+	sendState?: SendButtonState;
 
-	/** Stop the in-flight turn. While loading, the send button becomes a stop
-	 *  button that invokes this. */
+	/** Cancel the in-flight turn — invoked when the button is in its "stop"
+	 *  state. */
 	onStop?: () => void;
-
-	/** Suppress the stop affordance. While loading, the send button shows a
-	 *  plain spinner instead of a stop button (e.g. the new-room flow, which
-	 *  has no in-flight turn to cancel). */
-	hideStopButton?: boolean;
 
 	/** Content to render in the footer */
 	footer?: React.ReactNode;
@@ -211,10 +218,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		onMcpChange,
 		onWorkspaceChange,
 		hasOutstandingTools = false,
-		isCancelling = false,
+		sendState = "send",
 		footer = null,
 		onStop,
-		hideStopButton = false,
 		predefinedPrompts = [],
 		initialValue,
 		tokensUsed,
@@ -576,35 +582,27 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			}
 		};
 
-		// While loading the send button becomes a stop button for the in-flight
-		// turn; once stop is pressed it's disabled until the turn unwinds. Stop
-		// only takes effect during a cancellable run today — it's a harmless
-		// no-op otherwise (e.g. while tools execute). Callers with no turn to
-		// cancel (the new-room flow) pass hideStopButton to show a plain spinner
-		// instead.
-		const showStop = isLoading && !hideStopButton;
-		const showSpinner = isLoading && hideStopButton;
-		const sendDisabled = isLoading
-			? showStop
-				? isCancelling
-				: true
-			: isEmpty || hasOutstandingTools;
+		// Button appearance is fully decided by sendState (computed by the
+		// parent from the turn + cancel state); only the idle "send" case needs
+		// the local editor/tool signals to decide enablement + tooltip.
+		const sendDisabled =
+			sendState === "loading" ||
+			(sendState === "send" && (isEmpty || hasOutstandingTools));
 		const handleSendClick = () => {
-			if (showStop) {
+			if (sendState === "stop") {
 				onStop?.();
-			} else if (!isLoading) {
+			} else if (sendState === "send") {
 				promptModel();
 			}
 		};
-		const sendTooltip = showStop
-			? isCancelling
-				? t("input.stoppingTooltip")
-				: t("input.stopTooltip")
-			: isEmpty
-				? t("input.enterQuestion")
-				: hasOutstandingTools
-					? t("input.completeTool")
-					: t("input.ask");
+		const sendTooltip =
+			sendState === "stop"
+				? t("input.stopTooltip")
+				: isEmpty
+					? t("input.enterQuestion")
+					: hasOutstandingTools
+						? t("input.completeTool")
+						: t("input.ask");
 
 		// ========================================================================
 		// Render
@@ -1026,7 +1024,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													variant="default"
 													size="icon-sm"
 													aria-label={
-														showStop
+														sendState === "stop"
 															? t(
 																	"input.stopLabel",
 																)
@@ -1037,12 +1035,13 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													disabled={sendDisabled}
 													onClick={handleSendClick}
 												>
-													{showStop ? (
+													{sendState === "stop" ? (
 														<Square
 															className="size-3"
 															fill="currentColor"
 														/>
-													) : showSpinner ? (
+													) : sendState ===
+														"loading" ? (
 														<Spinner />
 													) : (
 														<SendIcon />
