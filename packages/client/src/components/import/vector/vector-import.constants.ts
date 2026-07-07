@@ -2352,7 +2352,7 @@ export const VECTOR_CONNECTIONS = {
 					disabled: false,
 					required: false,
 					helperText:
-						"Combine BM25 sparse + dense vectors with Prefetch/RRF or DBSF fusion. Runs in-process; BM25 IDF is approximated by the embedded engine.",
+						"Combine BM25 sparse + dense vectors with Prefetch/RRF or DBSF fusion (runs in-process; BM25 IDF is approximated). Note: when enabled, the QdrantAddPoints tool rejects vector-only points — every point must include text so the sparse side can be generated. Leave off if your pipeline ingests pre-embedded vectors without text.",
 				},
 				{
 					key: "QDRANT_FUSION",
@@ -2442,6 +2442,9 @@ export const VECTOR_CONNECTIONS = {
 					type: "textarea",
 					disabled: false,
 					required: false,
+					rules: {
+						jsonArray: true,
+					},
 					helperText:
 						'Optional JSON array of {field, schema} entries, e.g. [{"field":"Source","schema":"keyword"}]. Defaults to indexing \'Source\' as keyword.',
 				},
