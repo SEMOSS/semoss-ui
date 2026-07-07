@@ -23,6 +23,7 @@ import {
 import { useRootStore, useWorkspace } from "@/hooks";
 import type { MonolithStore } from "@/stores";
 import { mcpToPlatformUrl, promptToPlatformUrl } from "@/utility";
+import { AgentSdkUsage } from "./agent-sdk-usage";
 import {
 	nextSubAgentKey,
 	SubAgentEditor,
@@ -440,6 +441,10 @@ export const AgentEditor = () => {
 								)}
 							/>
 						</div>
+
+						<Separator />
+
+						<AgentSdkUsage workspaceId={workspace.appId} />
 					</form>
 				)}
 			</div>
