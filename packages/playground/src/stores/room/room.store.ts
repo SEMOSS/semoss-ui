@@ -8,6 +8,7 @@ import {
 	uploadInsight,
 } from "@semoss/sdk/react";
 import { FlexLayout, type ThemeMap } from "@semoss/shared";
+import { toast } from "@semoss/ui/next";
 import {
 	STREAMING_PLACEHOLDER_ID,
 	TEMPERATURE,
@@ -979,6 +980,21 @@ export class RoomStore {
 
 				const uploaded = response.data;
 
+				// If files were sent but the server returned nothing, the files
+				// couldn't be read — most likely locked by another program (e.g.
+				// a .docx open in Word). Surface this as an UploadError so the
+				// caller can show a "file is in use" message instead of silently
+				// proceeding with no attachment.
+				if (uploaded.length === 0) {
+					const uploadError = new Error(
+						"File is in use by another program. Close the file and try again.",
+					);
+					uploadError.name = "UploadError";
+					(uploadError as Error & { fileNames: string[] }).fileNames =
+						files.map((f) => f.name);
+					throw uploadError;
+				}
+
 				const normalizeExt = (value: string) =>
 					value.trim().toLowerCase().replace(/^\./, "");
 
@@ -1022,6 +1038,29 @@ export class RoomStore {
 				uploadPlaceholder.isThinking = false;
 			});
 			parentMessage.removeChild(inputMessage);
+
+			// Show the "file is in use" toast here — in the store — so it fires
+			// regardless of whether askMessage was awaited or fire-and-forgot
+			// (new-room flow calls it without await and swallows the thrown error).
+			const errMsg = (e as Error)?.message ?? "";
+			const isNetworkOrUploadFailure =
+				errMsg.includes("Failed to fetch") ||
+				errMsg.includes("ERR_FAILED") ||
+				errMsg.includes("File is in use") ||
+				errMsg.includes("NetworkError");
+
+			if (isNetworkOrUploadFailure || e instanceof TypeError) {
+				toast.error(
+					"This file is in use. Close the file in the other program and try again.",
+				);
+				// Tag and re-throw so awaited callers can also react if needed
+				const uploadError = new Error((e as Error).message);
+				uploadError.name = "UploadError";
+				(uploadError as Error & { fileNames: string[] }).fileNames =
+					files.map((f) => f.name);
+				throw uploadError;
+			}
+
 			throw e;
 		}
 
