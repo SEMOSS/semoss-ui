@@ -2167,7 +2167,7 @@ export const VECTOR_CONNECTIONS = {
 			disable: false,
 			icon: QDRANT,
 			description:
-				"A high-performance open-source vector database with server-side filtering, sparse/dense hybrid search, quantization, and a native recommendation API.",
+				"An in-process, in-memory Qdrant vector store. Runs entirely inside SEMOSS with server-side filtering, sparse+dense hybrid search, quantization, and a native recommendation API — no external server required. State is ephemeral and resets on restart.",
 			link: "https://qdrant.tech/documentation/",
 			fields: [
 				{
@@ -2218,49 +2218,6 @@ export const VECTOR_CONNECTIONS = {
 					disabled: false,
 					required: false,
 					category: "General",
-				},
-				{
-					key: "QDRANT_URL",
-					label: "Server URL",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: false,
-					helperText:
-						"Optional. URL of a Qdrant server (e.g. http://localhost:6333). Leave empty to run embedded/in-memory. Hybrid search requires a real server.",
-					category: "Credentials",
-				},
-				{
-					key: "QDRANT_API_KEY",
-					label: "API Key",
-					value: "",
-					type: "password",
-					disabled: false,
-					required: false,
-					helperText:
-						"Only required for authenticated Qdrant Cloud or servers configured with an API key.",
-					category: "Credentials",
-				},
-				{
-					key: "QDRANT_LOCATION",
-					label: "Local Storage",
-					value: "AUTO",
-					type: "select",
-					options: [
-						{
-							display: "Auto (persist under engine folder)",
-							value: "AUTO",
-						},
-						{
-							display: "In-memory (ephemeral)",
-							value: "MEMORY",
-						},
-					],
-					disabled: false,
-					required: true,
-					helperText:
-						"Applies only when Server URL is empty. AUTO persists to disk between restarts; MEMORY is ephemeral.",
-					category: "Credentials",
 				},
 				{
 					key: "EMBEDDER_ENGINE_ID",
@@ -2395,7 +2352,7 @@ export const VECTOR_CONNECTIONS = {
 					disabled: false,
 					required: false,
 					helperText:
-						"Combine BM25 sparse + dense vectors with Prefetch/RRF or DBSF fusion. Requires a real Qdrant server (Server URL set).",
+						"Combine BM25 sparse + dense vectors with Prefetch/RRF or DBSF fusion. Runs in-process; BM25 IDF is approximated by the embedded engine.",
 				},
 				{
 					key: "QDRANT_FUSION",
@@ -2426,20 +2383,6 @@ export const VECTOR_CONNECTIONS = {
 					required: false,
 					helperText:
 						"fastembed-compatible BM25 sparse model. Default is the Qdrant-official BM25 pack.",
-				},
-				{
-					key: "QDRANT_PREFER_GRPC",
-					label: "Prefer gRPC",
-					value: "false",
-					type: "select",
-					options: [
-						{ display: "false", value: "false" },
-						{ display: "true", value: "true" },
-					],
-					disabled: false,
-					required: false,
-					helperText:
-						"When a Server URL is provided, prefer the gRPC transport for lower-latency streaming.",
 				},
 				{
 					key: "QDRANT_QUANTIZATION",
