@@ -8,7 +8,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/next/tooltip";
 function Table({
 	className,
 	wrapperClassName,
-	showExportButton,
+	showExportButton = false,
 	...props
 }: React.ComponentProps<"table"> & {
 	wrapperClassName?: string;
