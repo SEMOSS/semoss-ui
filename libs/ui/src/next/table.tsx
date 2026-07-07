@@ -5,15 +5,22 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/next/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/next/tooltip";
 
-interface TableProps extends React.ComponentProps<"table"> {
+function Table({
+	className,
+	wrapperClassName,
+	showExportButton,
+	...props
+}: React.ComponentProps<"table"> & {
+	wrapperClassName?: string;
 	showExportButton?: boolean;
-}
-
-function Table({ className, showExportButton = false, ...props }: TableProps) {
+}) {
 	const id = `table-${Math.random() * 1000}`;
 
 	return (
-		<div>
+		<div
+			data-slot="table-container"
+			className={cn("relative w-full overflow-x-auto", wrapperClassName)}
+		>
 			{showExportButton && (
 				<div>
 					<Tooltip>
@@ -161,7 +168,6 @@ function TableCaption({
 	);
 }
 
-export type { TableProps };
 export {
 	Table,
 	TableHeader,
