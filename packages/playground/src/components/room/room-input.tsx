@@ -179,6 +179,12 @@ interface RoomInputProps {
 
 	/** Callback to open the room settings/configuration panel */
 	onOpenSettings?: () => void;
+
+	/**
+	 * Total tokens used in this conversation. Passed to the model dropdown so
+	 * engines whose context window is smaller than this value are greyed out.
+	 */
+	conversationTokensUsed?: number;
 }
 
 // ============================================================================
@@ -220,6 +226,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		onCompact,
 		excludeCommandIds,
 		onOpenSettings,
+		conversationTokensUsed,
 	}) => {
 		// ========================================================================
 		// Hooks & State
@@ -909,6 +916,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													tokensMax={tokensMax}
 													contextTooltipContent={
 														contextTooltipContent
+													}
+													conversationTokensUsed={
+														conversationTokensUsed
 													}
 												/>
 											)}

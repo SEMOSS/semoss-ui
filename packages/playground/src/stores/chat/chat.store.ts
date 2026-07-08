@@ -1,5 +1,5 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import { type Insight, runPixel } from "@semoss/sdk/react";
+import { Env, type Insight, post, runPixel } from "@semoss/sdk/react";
 import type { ThemeMap } from "@semoss/shared";
 import type { Engine, MCPConfig, Workspace } from "@/types";
 import { RoomStore } from "../room";
@@ -516,6 +516,63 @@ export class ChatStore {
 		} catch (e) {
 			console.error(e);
 		}
+	};
+
+	/**
+	 * Find the first available model whose context window can still hold
+	 * `tokensUsed` tokens. Returns null if none is found.
+	 *
+	 * Used by RoomContent to auto-switch away from an exhausted model.
+	 */
+	findFirstAvailableModel = async (
+		tokensUsed: number,
+	): Promise<Engine | null> => {
+		const { pixelReturn } = await this._actions.run<[Engine[]]>(
+			`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
+		);
+
+		const engines: Engine[] = pixelReturn[0].output || [];
+		const currentId = this._store.models.selected?.engine_id;
+
+		// Fetch context windows in parallel
+		const results = await Promise.allSettled(
+			engines.map(async (engine) => {
+				const { pixelReturn: cwReturn } = await this._actions.run<
+					[number | undefined]
+				>(
+					`META | GetContextWindow(${JSON.stringify(engine.engine_id)});`,
+				);
+				return { engine, contextWindow: cwReturn[0].output };
+			}),
+		);
+
+		for (const result of results) {
+			if (result.status !== "fulfilled") continue;
+			const { engine, contextWindow } = result.value;
+			// Skip the currently selected (exhausted) model
+			if (engine.engine_id === currentId) continue;
+			// Pick the first one whose context window fits the conversation
+			if (contextWindow !== undefined && contextWindow > tokensUsed) {
+				return engine;
+			}
+		}
+
+		return null;
+	};
+
+	/**
+	 * Persist the user's profile default text-generation model server-side.
+	 * This is the same API call made by Settings > My Profile.
+	 */
+	setProfileDefaultModel = async (engineId: string): Promise<void> => {
+		await post<boolean>(
+			`${Env.MODULE}/api/auth/user/setUserMetadata`,
+			{ metaKey: "text-generation-model", metaValue: engineId },
+			{},
+		);
+		runInAction(() => {
+			this._store.profileDefaultModelId = engineId;
+		});
 	};
 
 	/**

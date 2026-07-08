@@ -1,7 +1,7 @@
 import { CheckIcon, ChevronDown } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useIteratorPixel } from "@semoss/sdk/react";
+import { runPixel, useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Command,
@@ -15,6 +15,10 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
@@ -64,6 +68,13 @@ interface EngineSelectProps {
 
 	/** Show the engine subtype icon next to each option. Defaults to true. */
 	showEngineIcon?: boolean;
+
+	/**
+	 * Current token usage of the conversation. When provided alongside
+	 * tokensUsed, engines whose context window is smaller than this value
+	 * will be greyed out and unselectable.
+	 */
+	conversationTokensUsed?: number;
 }
 
 // ============================================================================
@@ -94,6 +105,7 @@ export const EngineSelect = ({
 	contextTooltipContent,
 	showEngineId,
 	showEngineIcon = true,
+	conversationTokensUsed,
 }: EngineSelectProps) => {
 	// ========================================================================
 	// State & Hooks
@@ -101,6 +113,10 @@ export const EngineSelect = ({
 
 	const [open, setOpen] = useState(false);
 	const [search, setSearch] = useState("");
+	/** engineId -> context window size (fetched lazily when dropdown opens) */
+	const [contextWindows, setContextWindows] = useState<
+		Record<string, number>
+	>({});
 	const [contextOpen, setContextOpen] = useState(false);
 	const contextCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(
 		null,
@@ -181,6 +197,40 @@ export const EngineSelect = ({
 			JSON.stringify(metaFilters),
 		],
 	);
+
+	// ========================================================================
+	// Context Window Fetching (per engine, lazy — only when dropdown is open)
+	// ========================================================================
+
+	useEffect(() => {
+		if (!open || conversationTokensUsed === undefined) return;
+
+		// Only fetch for engines we haven't fetched yet
+		const unfetched = getEngines.data
+			.map((e) => e.engine_id)
+			.filter((id) => !(id in contextWindows));
+
+		if (unfetched.length === 0) return;
+
+		// Fire individual GetContextWindow calls in parallel
+		unfetched.forEach((engineId) => {
+			runPixel<[number | undefined]>(
+				`META | GetContextWindow(${JSON.stringify(engineId)});`,
+			)
+				.then(({ pixelReturn }) => {
+					const cw = pixelReturn[0].output;
+					if (cw !== undefined && cw !== null) {
+						setContextWindows((prev) => ({
+							...prev,
+							[engineId]: cw,
+						}));
+					}
+				})
+				.catch(() => {
+					// ignore — engine simply won't be greyed out if fetch fails
+				});
+		});
+	}, [open, getEngines.data, conversationTokensUsed, contextWindows]);
 
 	// ========================================================================
 	// Infinite Scroll Setup
@@ -372,17 +422,30 @@ export const EngineSelect = ({
 									engine.engine_name;
 								const engineId = engine.engine_id;
 
-								return (
+								// Grey out if we know this engine's context window
+								// and the conversation already exceeds it
+								const engineContextWindow =
+									contextWindows[engineId];
+								const isExhausted =
+									conversationTokensUsed !== undefined &&
+									engineContextWindow !== undefined &&
+									conversationTokensUsed >=
+										engineContextWindow;
+
+								const item = (
 									<CommandItem
 										key={engineId}
 										value={engineId}
 										onSelect={() => {
+											if (isExhausted) return;
 											onChange(engine);
 											setOpen(false);
 										}}
 										className={cn(
 											value === engineId &&
 												"bg-primary/10 data-[selected=true]:bg-primary/15",
+											isExhausted &&
+												"cursor-not-allowed opacity-50 aria-selected:bg-transparent",
 										)}
 									>
 										{showEngineIcon && (
@@ -427,6 +490,42 @@ export const EngineSelect = ({
 											/>
 										)}
 									</CommandItem>
+								);
+
+								if (!isExhausted) return item;
+
+								// Wrap exhausted items in a tooltip.
+								// We block pointer events on the inner CommandItem and catch
+								// them on the outer div so the tooltip still triggers but
+								// clicks never reach the item's onSelect handler.
+								return (
+									<TooltipProvider key={engineId}>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<div
+													onClickCapture={(e) =>
+														e.stopPropagation()
+													}
+													onPointerDownCapture={(e) =>
+														e.stopPropagation()
+													}
+													className="pointer-events-auto cursor-not-allowed"
+												>
+													<div className="pointer-events-none">
+														{item}
+													</div>
+												</div>
+											</TooltipTrigger>
+											<TooltipContent
+												side="left"
+												className="max-w-48 text-xs"
+											>
+												Context window full (
+												{engineContextWindow.toLocaleString()}{" "}
+												tokens max)
+											</TooltipContent>
+										</Tooltip>
+									</TooltipProvider>
 								);
 							})}
 							{/* Loading spinner shown at bottom while fetching next page */}

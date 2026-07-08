@@ -6,7 +6,7 @@ import {
 	TriangleAlertIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
@@ -54,6 +54,68 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const [showScrollup, setShowScrollup] = useState(false);
 	const [showScrolldown, setShowScrolldown] = useState(false);
 	const [isScrollLocked, setIsScrollLocked] = useState(false);
+
+	/**
+	 * Auto-switch model when the current model's context window is exceeded.
+	 *
+	 * chat.models.contextWindow is the context window for the *selected* model.
+	 * When tokensUsed >= that value, we find the first available model (from
+	 * the engine dropdown's cached list) whose context window is larger, switch
+	 * to it, and notify the user via a toast.
+	 *
+	 * We track the last engine ID we auto-switched away from so we only fire
+	 * the toast once per exhaustion event (not on every render).
+	 */
+	const lastAutoSwitchedFromRef = useRef<string | null>(null);
+
+	useEffect(() => {
+		// TODO: remove — demo override to simulate an exhausted context window
+		const tokensUsed = 999999;
+		const contextWindow = chat.models.contextWindow;
+		const selectedModel = chat.models.selected;
+
+		if (!contextWindow || !selectedModel || tokensUsed < contextWindow) {
+			// Current model is not exhausted — reset the tracking ref
+			lastAutoSwitchedFromRef.current = null;
+			return;
+		}
+
+		// Already handled this exhaustion event
+		if (lastAutoSwitchedFromRef.current === selectedModel.engine_id) {
+			return;
+		}
+
+		// Fetch all available text-generation models and pick the first one
+		// whose context window can still hold the conversation
+		chat.findFirstAvailableModel(tokensUsed).then((nextModel) => {
+			if (!nextModel) return;
+
+			const fromName =
+				selectedModel.engine_display_name ||
+				selectedModel.engine_name ||
+				selectedModel.engine_id;
+			const toName =
+				nextModel.engine_display_name ||
+				nextModel.engine_name ||
+				nextModel.engine_id;
+
+			lastAutoSwitchedFromRef.current = selectedModel.engine_id;
+			room.setModel(nextModel);
+			chat.setSelectedModel(nextModel);
+			// Persist as the new profile default so future sessions start here
+			chat.setProfileDefaultModel(nextModel.engine_id);
+
+			toast.info(
+				`"${fromName}" has reached its context limit. Switched to "${toName}" and updated your default model.`,
+			);
+		});
+	}, [
+		room.tokensUsed,
+		chat.models.contextWindow,
+		chat.models.selected,
+		room,
+		chat,
+	]);
 
 	/**
 	 * Functions
@@ -528,6 +590,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					}
 					tokensUsed={room.tokensUsed}
 					tokensMax={chat.models.contextWindow}
+					// TODO: remove — demo override to simulate a large conversation
+					conversationTokensUsed={999999}
 					onCompact={handleCompactMessages}
 					onOpenSettings={handleOpenSettings}
 					excludeCommandIds={["agent", "workspace"]}
