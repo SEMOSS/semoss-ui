@@ -30,6 +30,9 @@ export const RoomFileEditor: React.FC<RoomFileEditorProps> = observer(
 				path={config.path}
 				platformUrl={PLATFORM_URL}
 				notebookInitialTab={config.initialTab}
+				onNotebookRowSelectionChange={(selection) => {
+					room.setSelectedNotebookRow(selection);
+				}}
 				onChange={(_content, isModified) => {
 					const updated = isModified
 						? `${config.name}*`

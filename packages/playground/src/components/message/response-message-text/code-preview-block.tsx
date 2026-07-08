@@ -26,6 +26,7 @@ import {
 	createNotebookFilePath,
 	formatExecuteOutput,
 	MAX_EXECUTE_LOG_CHARS,
+	replaceNotebookCell,
 	unwrapPixelOutput,
 } from "./constants";
 
@@ -156,10 +157,14 @@ export const CodePreviewBlock = ({
 		room.sidebar.model.visitNodes((node) => {
 			if (existingFilePath) return; // already found one
 			const id = node.getId();
+			const isVisible =
+				"isVisible" in node &&
+				typeof node.isVisible === "function" &&
+				node.isVisible();
 			if (
 				id.startsWith("FILE--save-notebook-response-") &&
 				id.endsWith(".notebook.json") &&
-				node.isVisible?.() // only count visible (open) nodes
+				isVisible // only count visible (open) nodes
 			) {
 				existingFilePath = id.slice("FILE--".length);
 			}
@@ -167,6 +172,54 @@ export const CodePreviewBlock = ({
 
 		try {
 			setIsSavingToNotebook(true);
+
+			const selectedNotebookRow = room.selectedNotebookRow;
+			if (selectedNotebookRow?.path) {
+				const notebookPath = selectedNotebookRow.path;
+				const loadResponse = await room.runRoomPixel<[string]>(
+					`GetInsightAssets(filePath=[${JSON.stringify(notebookPath)}]);`,
+					false,
+					false,
+				);
+				const existingContent =
+					loadResponse.pixelReturn[0]?.output ?? "";
+				const replacedContent = replaceNotebookCell(
+					existingContent,
+					selectedNotebookRow.queryId,
+					selectedNotebookRow.cellId,
+					code,
+					langStr,
+				);
+
+				if (replacedContent) {
+					await room.runRoomPixel(
+						`SaveInsightAssets(filePath=[${JSON.stringify(notebookPath)}], content=["<encode>${replacedContent}</encode>"]);`,
+						false,
+						false,
+					);
+					notifyFileEditorRefresh(
+						notebookPath,
+						`INSIGHT:${room.insightId}`,
+					);
+					const fileName =
+						notebookPath.split("/").pop() ?? notebookPath;
+					toast.success(
+						`Updated row ${selectedNotebookRow.rowNumber} in notebook ${fileName}`,
+					);
+					room.addSidebarNode(`FILE--${notebookPath}`, {
+						type: "tab",
+						name: fileName,
+						component: "room-file-editor",
+						config: {
+							name: fileName,
+							path: notebookPath,
+							initialTab: "preview",
+						},
+						enableClose: true,
+					});
+					return;
+				}
+			}
 
 			if (existingFilePath) {
 				// Load the existing notebook, append the new cell, and save back.

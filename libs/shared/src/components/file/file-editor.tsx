@@ -3,6 +3,7 @@ import { FileCodeEditor } from "./file-code-editor";
 import { FileDownloadView } from "./file-download-view";
 import { FileImageViewer } from "./file-image-viewer";
 import { FileMarkdownEditor } from "./file-markdown-editor";
+import type { NotebookRowSelection } from "./file-notebook-editor";
 import { FileNotebookEditor } from "./file-notebook-editor";
 import { FilePdfViewer } from "./file-pdf-viewer";
 
@@ -40,6 +41,11 @@ interface FileEditorProps {
 
 	/** Which tab a notebook (.notebook.json) file should open on. */
 	notebookInitialTab?: "edit" | "preview";
+
+	/** Called when a row is selected in notebook preview. */
+	onNotebookRowSelectionChange?: (
+		selection: NotebookRowSelection | null,
+	) => void;
 }
 
 export const FileEditor: React.FC<FileEditorProps> = ({
@@ -50,6 +56,7 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 	leadingToolbar,
 	platformUrl,
 	notebookInitialTab,
+	onNotebookRowSelectionChange,
 }) => {
 	const ext = path.split(".").pop()?.toLowerCase() || "";
 
@@ -95,6 +102,7 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 					onChange={onChange}
 					platformUrl={platformUrl}
 					initialTab={notebookInitialTab}
+					onNotebookRowSelectionChange={onNotebookRowSelectionChange}
 				/>
 			)}
 			{!isImage &&

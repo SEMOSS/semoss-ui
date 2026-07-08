@@ -7,7 +7,11 @@ import {
 	runPixelAsync,
 	uploadInsight,
 } from "@semoss/sdk/react";
-import { FlexLayout, type ThemeMap } from "@semoss/shared";
+import {
+	FlexLayout,
+	type NotebookRowSelection,
+	type ThemeMap,
+} from "@semoss/shared";
 import {
 	STREAMING_PLACEHOLDER_ID,
 	TEMPERATURE,
@@ -91,6 +95,9 @@ interface RoomStoreInterface {
 	 */
 	model: Engine;
 
+	/** Last selected notebook row in preview mode. */
+	selectedNotebookRow: NotebookRowSelection | null;
+
 	/*
 	 * Options that is passed to the model
 	 */
@@ -170,6 +177,7 @@ export class RoomStore {
 			dateCreated: "",
 		},
 		model: null as unknown as Engine,
+		selectedNotebookRow: null,
 		root: null as unknown as ResponseMessageStore,
 		tools: {},
 		options: {
@@ -273,6 +281,50 @@ export class RoomStore {
 	 */
 	get model() {
 		return this._store.model;
+	}
+
+	/** Currently selected notebook row context, if available. */
+	get selectedNotebookRow() {
+		return this._store.selectedNotebookRow;
+	}
+
+	/**
+	 * Context block appended to AskPlayground context so the model can
+	 * understand exactly which notebook row the user is referring to.
+	 */
+	get selectedNotebookRowContext() {
+		const selection = this._store.selectedNotebookRow;
+		if (!selection) {
+			return "";
+		}
+
+		const lines = [
+			"Notebook row context:",
+			`File path: ${selection.path}`,
+			`Row number: ${selection.rowNumber}`,
+			`Query ID: ${selection.queryId}`,
+			`Cell ID: ${selection.cellId}`,
+		];
+
+		if (selection.widget) {
+			lines.push(`Widget: ${selection.widget}`);
+		}
+
+		if (selection.cellType) {
+			lines.push(`Cell type: ${selection.cellType}`);
+		}
+
+		if (selection.code) {
+			const maxCodeChars = 4000;
+			const clippedCode =
+				selection.code.length > maxCodeChars
+					? `${selection.code.slice(0, maxCodeChars)}\n...[truncated]`
+					: selection.code;
+			lines.push("Current row code:");
+			lines.push(clippedCode);
+		}
+
+		return lines.join("\n");
 	}
 
 	/**
@@ -427,6 +479,20 @@ export class RoomStore {
 	 */
 	setModel = (model: Engine) => {
 		this._store.model = model;
+	};
+
+	setSelectedNotebookRow = (selection: NotebookRowSelection | null) => {
+		if (!selection) {
+			this._store.selectedNotebookRow = null;
+			return;
+		}
+
+		// Keep only current-room notebook selections.
+		if (selection.insightId !== this._store.insightId) {
+			return;
+		}
+
+		this._store.selectedNotebookRow = selection;
 	};
 
 	/**

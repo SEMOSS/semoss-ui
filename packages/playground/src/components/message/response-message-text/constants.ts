@@ -277,6 +277,65 @@ export const appendCellToNotebook = (
 };
 
 /**
+ * Replace a specific notebook cell's code by query/cell id.
+ * Returns updated JSON, or null when the target cell is not found.
+ */
+export const replaceNotebookCell = (
+	existingJson: string,
+	queryId: string,
+	cellId: string,
+	code: string,
+	lang: string,
+): string | null => {
+	try {
+		const notebook = JSON.parse(existingJson) as {
+			queries: Record<
+				string,
+				{
+					id: string;
+					cells: Array<Record<string, unknown>>;
+				}
+			>;
+		};
+
+		const query = notebook.queries?.[queryId];
+		if (!query || !Array.isArray(query.cells)) {
+			return null;
+		}
+
+		const targetIndex = query.cells.findIndex(
+			(cell) => String(cell.id ?? "") === cellId,
+		);
+		if (targetIndex === -1) {
+			return null;
+		}
+
+		const existingCell = query.cells[targetIndex] ?? {};
+		const existingParams =
+			existingCell.parameters &&
+			typeof existingCell.parameters === "object" &&
+			!Array.isArray(existingCell.parameters)
+				? (existingCell.parameters as Record<string, unknown>)
+				: {};
+
+		query.cells[targetIndex] = {
+			...existingCell,
+			id: cellId,
+			widget: "code",
+			parameters: {
+				...existingParams,
+				code,
+				type: toNotebookCellType(lang),
+			},
+		};
+
+		return JSON.stringify(notebook, null, 2);
+	} catch {
+		return null;
+	}
+};
+
+/**
  * Build a runnable pixel expression for a code block, or null when the
  * language is not something we can execute server-side. Python runs through
  * the Py reactor, R through the R reactor, and pixel is sent as-is.

@@ -1,5 +1,5 @@
-﻿import { DownloadIcon, RefreshCwIcon, SaveIcon } from "lucide-react";
-import { useRef, useState } from "react";
+﻿import { DownloadIcon, RefreshCwIcon, SaveIcon, XIcon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Env } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import { Button, Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
@@ -10,6 +10,31 @@ import {
 	getFileEditorPathScope,
 	useFileEditorRefreshListener,
 } from "./file-editor-path-events";
+
+const NOTEBOOK_ROW_SELECTED_EVENT = "SEMOSS_NOTEBOOK_ROW_SELECTED";
+
+export interface NotebookRowSelection {
+	insightId: string;
+	path: string;
+	queryId: string;
+	cellId: string;
+	rowNumber: number;
+	widget?: string;
+	cellType?: string;
+	code?: string;
+}
+
+interface NotebookRowSelectedMessage {
+	type: string;
+	payload?: {
+		queryId?: string;
+		cellId?: string;
+		rowNumber?: number;
+		widget?: string;
+		cellType?: string;
+		code?: string;
+	};
+}
 
 interface FileNotebookEditorProps {
 	/** Mode of file editor */
@@ -30,6 +55,11 @@ interface FileNotebookEditorProps {
 
 	/** Which tab to show initially. Falls back to \"edit\" when not provided. */
 	initialTab?: "edit" | "preview";
+
+	/** Called whenever a row is selected in the Preview notebook iframe. */
+	onNotebookRowSelectionChange?: (
+		selection: NotebookRowSelection | null,
+	) => void;
 }
 
 export const FileNotebookEditor: React.FC<FileNotebookEditorProps> = ({
@@ -38,11 +68,16 @@ export const FileNotebookEditor: React.FC<FileNotebookEditorProps> = ({
 	onChange = () => null,
 	platformUrl,
 	initialTab = "edit",
+	onNotebookRowSelectionChange,
 }) => {
 	const insight = useInsight();
 	const [tab, setTab] = useState<"edit" | "preview">(initialTab);
 	const [previewRefreshKey, setPreviewRefreshKey] = useState(0);
+	const [selectedRowNumber, setSelectedRowNumber] = useState<number | null>(
+		null,
+	);
 	const editorActionsRef = useRef<FileCodeEditorActions | null>(null);
+	const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
 	const targetInsightId =
 		mode.type === "INSIGHT"
@@ -69,6 +104,70 @@ export const FileNotebookEditor: React.FC<FileNotebookEditorProps> = ({
 		editorActionsRef.current?.refresh();
 		setPreviewRefreshKey((value) => value + 1);
 	});
+
+	useEffect(() => {
+		setSelectedRowNumber(null);
+		onNotebookRowSelectionChange?.(null);
+	}, [path, onNotebookRowSelectionChange]);
+
+	useEffect(() => {
+		const handleNotebookRowSelection = (event: MessageEvent) => {
+			if (!targetInsightId) {
+				return;
+			}
+
+			if (!iframeRef.current?.contentWindow) {
+				return;
+			}
+
+			if (event.source !== iframeRef.current.contentWindow) {
+				return;
+			}
+
+			const data = event.data as NotebookRowSelectedMessage;
+			if (!data || data.type !== NOTEBOOK_ROW_SELECTED_EVENT) {
+				return;
+			}
+
+			const queryId = data.payload?.queryId;
+			const cellId = data.payload?.cellId;
+			const rowNumber = data.payload?.rowNumber;
+			if (
+				!queryId ||
+				!cellId ||
+				!Number.isFinite(rowNumber) ||
+				(rowNumber ?? 0) <= 0
+			) {
+				return;
+			}
+
+			const rowSelection: NotebookRowSelection = {
+				insightId: targetInsightId,
+				path,
+				queryId,
+				cellId,
+				rowNumber: rowNumber || 0,
+				widget: data.payload?.widget,
+				cellType: data.payload?.cellType,
+				code: data.payload?.code,
+			};
+
+			setSelectedRowNumber(rowSelection.rowNumber);
+			onNotebookRowSelectionChange?.(rowSelection);
+		};
+
+		window.addEventListener("message", handleNotebookRowSelection);
+		return () => {
+			window.removeEventListener("message", handleNotebookRowSelection);
+		};
+	}, [path, targetInsightId, onNotebookRowSelectionChange]);
+
+	const notebookName = path.split("/").pop() ?? path;
+
+	const clearSelection = () => {
+		setSelectedRowNumber(null);
+		onNotebookRowSelectionChange?.(null);
+	};
 
 	return (
 		<div className="relative flex h-full w-full flex-col overflow-hidden bg-background">
@@ -112,11 +211,30 @@ export const FileNotebookEditor: React.FC<FileNotebookEditorProps> = ({
 				)}
 			</div>
 
+			{selectedRowNumber !== null && (
+				<div className="flex w-full items-center justify-between gap-2 border-border border-b bg-primary/5 px-3 py-2 text-primary text-xs">
+					<span className="font-medium">
+						Row {selectedRowNumber} selected in notebook{" "}
+						{notebookName}
+					</span>
+					<Button
+						variant="ghost"
+						size="sm"
+						className="h-6 gap-1 px-2 text-primary text-xs hover:text-primary"
+						onClick={clearSelection}
+					>
+						<XIcon className="size-3.5" />
+						Unselect
+					</Button>
+				</div>
+			)}
+
 			<div
+				style={{ top: selectedRowNumber !== null ? 82 : 48 }}
 				className={
 					tab === "edit"
-						? "absolute inset-0 top-[48px]"
-						: "pointer-events-none invisible absolute inset-0 top-[48px]"
+						? "absolute inset-x-0 bottom-0"
+						: "pointer-events-none invisible absolute inset-x-0 bottom-0"
 				}
 			>
 				<FileCodeEditor
@@ -132,6 +250,7 @@ export const FileNotebookEditor: React.FC<FileNotebookEditorProps> = ({
 				<div className="flex-1 overflow-hidden">
 					{previewUrl ? (
 						<iframe
+							ref={iframeRef}
 							key={previewRefreshKey}
 							src={previewUrl}
 							className="h-full w-full border-0"

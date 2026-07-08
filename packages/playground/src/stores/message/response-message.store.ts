@@ -205,11 +205,25 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			} as ResponsePixelMessage);
 
 		try {
-			// build the context if it is there
-			let context = "";
+			// Keep room-level instructions in context.
+			const contextParts: string[] = [];
 			if (room.options?.instructions) {
-				context = room.options?.instructions;
+				contextParts.push(room.options.instructions);
 			}
+			const context = contextParts.join("\n\n");
+
+			// Put selected notebook row details directly in the command under a
+			// dedicated block so the model treats it as the exact edit target.
+			const notebookUpdateBlock = room.selectedNotebookRowContext
+				? [
+						"Selected notebook for updation:",
+						room.selectedNotebookRowContext,
+						"Apply requested changes to this selected notebook row.",
+					].join("\n")
+				: "";
+			const safeContext = context
+				.replace(/\\/g, "\\\\")
+				.replace(/"/g, '\\"');
 
 			if (!existingResponse) {
 				// connect to the parent
@@ -230,6 +244,13 @@ export class ResponseMessageStore extends AbstractMessageStore {
 
 				return acc;
 			}, "");
+
+			const command = notebookUpdateBlock
+				? `${text}\n\n${notebookUpdateBlock}`
+				: text;
+			const safeCommand = command
+				.replace(/\\/g, "\\\\")
+				.replace(/"/g, '\\"');
 
 			const media = inputMessage.parts.reduce((acc, part) => {
 				if (part.type === "MEDIA") {
@@ -255,8 +276,8 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				`AskPlayground(
 engine=["${room.model.engine_id}"],
 roomId=["${room.roomId}"],
-command=["<encode>${text}</encode>"],
-${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
+command=["<encode>${safeCommand}</encode>"],
+${context ? `context=["<encode>${safeContext}</encode>"],` : `context=[],`}
 ${media.length ? `image=${JSON.stringify(media)},` : "image=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 paramValues=[${JSON.stringify({

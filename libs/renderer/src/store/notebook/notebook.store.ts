@@ -1,6 +1,8 @@
 import { makeAutoObservable } from "mobx";
 import type { StateStore } from "../state";
 
+const NOTEBOOK_ROW_SELECTED_EVENT = "SEMOSS_NOTEBOOK_ROW_SELECTED";
+
 export interface NotebookStoreInterface {
 	/** Current selected query */
 	selectedQueryId: string;
@@ -105,6 +107,41 @@ export class NotebookStore {
 	selectCell(queryId: string, cellId: string) {
 		this._store.selectedQueryId = queryId;
 		this._store.selectedCells[queryId] = cellId;
+
+		if (
+			typeof window !== "undefined" &&
+			window.parent &&
+			window.parent !== window
+		) {
+			const query = this._state.notebooks[queryId];
+			const cell = query?.getCell(cellId);
+			const rowNumber = query ? query.list.indexOf(cellId) + 1 : 0;
+			const parameters =
+				cell?.parameters && typeof cell.parameters === "object"
+					? (cell.parameters as Record<string, unknown>)
+					: null;
+
+			window.parent.postMessage(
+				{
+					type: NOTEBOOK_ROW_SELECTED_EVENT,
+					payload: {
+						queryId,
+						cellId,
+						rowNumber,
+						widget: cell?.widget,
+						cellType:
+							typeof parameters?.type === "string"
+								? parameters.type
+								: undefined,
+						code:
+							typeof parameters?.code === "string"
+								? parameters.code
+								: undefined,
+					},
+				},
+				"*",
+			);
+		}
 	}
 
 	/**
