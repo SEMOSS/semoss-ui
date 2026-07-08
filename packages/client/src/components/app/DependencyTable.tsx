@@ -46,7 +46,7 @@ export const DependencyTable = (props: PropsDependencyTable) => {
 					>
 						<TableCell>
 							<a
-								href={`./#/engine/${dep.type}/${dep.id}`}
+								href={`./#/${dep.type}/${dep.id}`}
 								className="text-primary underline-offset-4 hover:underline"
 							>
 								<span className="text-sm">{dep.name}</span>
