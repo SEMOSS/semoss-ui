@@ -130,8 +130,17 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 			isLast && (message.isThinking || typewriter.isTyping);
 
 		const components = useMemo(
-			() => createMarkdownComponents(message.room, isPreviewLoading),
-			[message.room, isPreviewLoading],
+			() =>
+				createMarkdownComponents(
+					message.room,
+					isPreviewLoading,
+					!!root.theme.featureFlags?.enableTableExport,
+				),
+			[
+				message.room,
+				isPreviewLoading,
+				root.theme.featureFlags?.enableTableExport,
+			],
 		);
 
 		// ── Effects ──────────────────────────────────────────────────────────────
