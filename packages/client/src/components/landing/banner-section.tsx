@@ -34,7 +34,7 @@ export const BannerSection = (props: BannerSectionProps) => {
 	const { tagline, imageUrl, darkImageUrl, description, link } = props;
 
 	return (
-		<div className="relative flex min-h-[180px] w-full flex-col items-start overflow-hidden rounded-[24px] bg-[#f3f7ff] px-5 py-8 md:min-h-[272px] md:px-6 md:py-14 dark:bg-[#111827]">
+		<div className="relative flex min-h-[180px] w-full flex-col items-start overflow-hidden rounded-[24px] bg-card px-5 py-8 md:min-h-[272px] md:px-6 md:py-14">
 			<div
 				aria-hidden="true"
 				className="absolute inset-0 bg-cover bg-right dark:hidden"
@@ -53,7 +53,7 @@ export const BannerSection = (props: BannerSectionProps) => {
 			) : null}
 			<div
 				aria-hidden="true"
-				className="absolute inset-0 bg-[linear-gradient(270deg,rgba(255,255,255,0)_19.7%,rgba(255,255,255,0.3)_81.54%,rgba(219,214,249,0.6)_106.35%)] dark:bg-[linear-gradient(90deg,#111827_0%,rgba(17,24,39,0.96)_33%,rgba(17,24,39,0.68)_58%,rgba(17,24,39,0.18)_100%)]"
+				className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/70 to-background/10"
 			/>
 			<div className="relative z-10 flex h-full max-w-[780px] flex-1 flex-col items-start">
 				<H3 className="font-bold text-foreground leading-[133.4%]">

@@ -1,15 +1,15 @@
 import { observer } from "mobx-react-lite";
 import { useParams } from "react-router-dom";
 import { InsightProvider } from "@semoss/sdk/react";
+import type { Project } from "@semoss/shared";
 import { Workspace } from "@/components/workspace";
 import { usePage } from "@/hooks";
-import type { CatalogType } from "./catalog-page";
 
-interface EditPageProps {
-	type: CatalogType;
+interface ProjectEditProps {
+	type: Project["project_type"];
 }
 
-export const EditPage = observer(({ type: _type }: EditPageProps) => {
+export const ProjectEdit = observer(({ type: _type }: ProjectEditProps) => {
 	const { appId } = useParams();
 
 	usePage({

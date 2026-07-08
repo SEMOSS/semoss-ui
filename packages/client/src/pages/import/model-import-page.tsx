@@ -336,7 +336,7 @@ export const ModelImportPage: React.FC = () => {
 
 		toast.success("Model uploaded successfully!");
 
-		navigate(`/engine/model/${output.database_id}`);
+		navigate(`/model/${output.database_id}`);
 		setFormLoading(false);
 		return;
 	};
