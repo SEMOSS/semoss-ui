@@ -987,7 +987,7 @@ export class RoomStore {
 				// proceeding with no attachment.
 				if (uploaded.length === 0) {
 					const uploadError = new Error(
-						"File is in use by another program. Close the file and try again.",
+						"Uploaded file(s) currently in use by another program. Close the program and re-upload the file(s) in a new chat.",
 					);
 					uploadError.name = "UploadError";
 					(uploadError as Error & { fileNames: string[] }).fileNames =
@@ -1051,7 +1051,7 @@ export class RoomStore {
 
 			if (isNetworkOrUploadFailure || e instanceof TypeError) {
 				toast.error(
-					"This file is in use. Close the file in the other program and try again.",
+					"Uploaded file(s) currently in use by another program. Close the program and re-upload the file(s) in a new chat.",
 				);
 				// Tag and re-throw so awaited callers can also react if needed
 				const uploadError = new Error((e as Error).message);
