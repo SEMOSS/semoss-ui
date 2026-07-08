@@ -552,10 +552,10 @@ export class ChatStore {
 			const profileDefaultModelId = this._store.profileDefaultModelId;
 			let isSelected = false;
 
-			// 1. theme/admin-enforced default
-			if (defaultModelId) {
+			// 1. user's profile default — explicitly set by the user, highest personal priority
+			if (profileDefaultModelId) {
 				for (const m of output) {
-					if (m.engine_id === defaultModelId) {
+					if (m.engine_id === profileDefaultModelId) {
 						this.setSelectedModel(m);
 						isSelected = true;
 						break;
@@ -592,10 +592,10 @@ export class ChatStore {
 				} catch {}
 			}
 
-			// 3. user's profile default — used on fresh login when no session model exists
-			if (!isSelected && profileDefaultModelId) {
+			// 3. theme/admin-suggested default — used as a fallback when the user has no preference
+			if (!isSelected && defaultModelId) {
 				for (const m of output) {
-					if (m.engine_id === profileDefaultModelId) {
+					if (m.engine_id === defaultModelId) {
 						this.setSelectedModel(m);
 						isSelected = true;
 						break;
