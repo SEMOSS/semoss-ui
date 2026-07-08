@@ -32,6 +32,20 @@ import {
 } from "./file-editor-path-events";
 import { getFileOperationErrorMessage } from "./file-explorer.utils";
 
+// Several ids in MONACO_EXT_LANGUAGE_MAPPING (e.g. "react", "sh", "bash") are
+// custom — Monaco doesn't ship a LanguageConfiguration for them, so comment
+// toggling (Cmd+/) has nothing to read and silently no-ops. Even the real
+// languages we skin with a custom Monarch tokenizer (java, python) are worth
+// pinning here so the behavior doesn't depend on the basic-languages bundle
+// happening to be loaded. Ids with no comment syntax (text/csv/tsv) are omitted.
+const LANGUAGE_COMMENT_CONFIG: Record<string, monaco.languages.CommentRule> = {
+	react: { lineComment: "//", blockComment: ["/*", "*/"] },
+	java: { lineComment: "//", blockComment: ["/*", "*/"] },
+	python: { lineComment: "#" },
+	sh: { lineComment: "#" },
+	bash: { lineComment: "#" },
+};
+
 export interface FileCodeEditorActions {
 	save: () => Promise<void>;
 	refresh: () => void;
@@ -202,6 +216,23 @@ export const FileCodeEditor = forwardRef<
 						config.theme,
 					);
 				}
+			}
+
+			// Ensure comment toggling (Cmd+/, Cmd+K chords) has a comment rule
+			// for the language. Register the id first if Monaco doesn't already
+			// know it (custom ids like "react"/"sh"), otherwise just layer the
+			// comment config onto the existing built-in language.
+			const commentRule = LANGUAGE_COMMENT_CONFIG[language];
+			if (commentRule) {
+				const isKnown = monaco.languages
+					.getLanguages()
+					.some((l) => l.id === language);
+				if (!isKnown) {
+					monaco.languages.register({ id: language });
+				}
+				monaco.languages.setLanguageConfiguration(language, {
+					comments: commentRule,
+				});
 			}
 
 			monaco.editor.setTheme(computeMonacoTheme(!!config?.theme));
