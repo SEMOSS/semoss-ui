@@ -219,8 +219,11 @@ export const EngineSelect = ({
 			? (tokensUsed / tokensMax) * 100
 			: undefined;
 
+	// Always show the indicator slot when the caller passes tokensUsed/tokensMax
+	// props, even before the context window has loaded. This keeps the button
+	// width stable so neighbouring icons (e.g. the bar chart) never shift.
 	const showContextIndicator =
-		contextUsedPercent !== undefined && contextUsedPercent > 0;
+		tokensUsed !== undefined || tokensMax !== undefined;
 
 	// Calculate pie chart geometry
 	const roundedPercent =
@@ -321,7 +324,7 @@ export const EngineSelect = ({
 									<PopoverContent
 										side="top"
 										align="start"
-										className="w-80 text-wrap text-sm"
+										className="w-[24rem] text-wrap text-sm"
 										onMouseEnter={openContext}
 										onMouseLeave={scheduleContextClose}
 										onClick={(e) => e.stopPropagation()}
