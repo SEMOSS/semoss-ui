@@ -275,7 +275,10 @@ export const TerminalConsole = ({
 				if (errors.length > 0) {
 					updateStep(stepIdx, {
 						type: "ERROR",
-						output: errors.join("\n"),
+						output: errors
+							.map((e) => extractErrorMessage(e))
+							.filter(Boolean)
+							.join("\n"),
 						messages: collected.slice(),
 						lastStatus,
 						pending: false,
@@ -858,11 +861,42 @@ const unwrapPixelOutput = (last: {
 	if (op.indexOf("FORMATTED_DATA_SET") > -1) return out?.[0];
 	if (op.indexOf("CODE_EXECUTION") > -1) return out?.[0]?.output;
 	if (op.indexOf("CODE") > -1) return out?.[0]?.value?.[0];
-	if (op.indexOf("ERROR") > -1) return out?.[0];
+	// error payloads come back either as `[message]` or as a dict such as
+	// `{ success: false, errorMessage: "..." }` — hand the whole thing to
+	// extractErrorMessage rather than blindly indexing `[0]`.
+	if (op.indexOf("ERROR") > -1) return Array.isArray(out) ? out[0] : out;
 	if (op.indexOf("CONST_STRING") > -1) return out?.[0];
 	if (op.indexOf("INVALID_SYNTAX") > -1) return out?.[0];
 	if (op.indexOf("VECTOR") > -1) return out?.[0];
 	return out;
+};
+
+/**
+ * Error payloads are not always strings. The backend returns them as a bare
+ * string, as `[message]`, or as a dict like
+ * `{ success: false, errorMessage: "..." }`. Pull out the human-readable
+ * message so we never render "[object Object]".
+ */
+const extractErrorMessage = (value: unknown): string => {
+	if (value === undefined || value === null) return "";
+	if (typeof value === "string") return value;
+	if (typeof value === "number" || typeof value === "boolean")
+		return String(value);
+	if (Array.isArray(value)) {
+		return value
+			.map((v) => extractErrorMessage(v))
+			.filter(Boolean)
+			.join("\n");
+	}
+	if (typeof value === "object") {
+		const obj = value as Record<string, unknown>;
+		const msg = obj.errorMessage ?? obj.message ?? obj.error ?? obj.reason;
+		if (typeof msg === "string") return msg;
+		// no recognized message field — fall back to readable JSON rather
+		// than "[object Object]"
+		return JSON.stringify(value, null, 2);
+	}
+	return String(value);
 };
 
 const formatOutputForDisplay = (
@@ -875,9 +909,12 @@ const formatOutputForDisplay = (
 		if (typeof value === "string") return value;
 		return JSON.stringify(value, null, 2);
 	}
+	if (opType === "ERROR" || opType === "INVALID_SYNTAX") {
+		const label = opType === "ERROR" ? "Error" : "Invalid Syntax";
+		const msg = extractErrorMessage(value);
+		return msg ? `${label}: ${msg}` : label;
+	}
 	if (typeof value === "string") {
-		if (opType === "ERROR") return `Error: ${value}`;
-		if (opType === "INVALID_SYNTAX") return `Invalid Syntax: ${value}`;
 		return value;
 	}
 	if (typeof value === "number" || typeof value === "boolean") {
