@@ -99,7 +99,7 @@ export const StorageForm = ({
 			}
 			toast.success(`Successfully added new storage to catalog`);
 			navigate(
-				`/engine/storage/${pixelOutput.engine_id || pixelOutput.database_id}`,
+				`/storage/${pixelOutput.engine_id || pixelOutput.database_id}`,
 			);
 			setLoading(false);
 		});

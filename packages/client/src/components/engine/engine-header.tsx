@@ -197,7 +197,7 @@ export const EngineHeader: React.FC = () => {
 										aria-label="Edit"
 										onClick={() => {
 											navigate(
-												`/engine/${type.toLowerCase()}/${active.id}/edit`,
+												`/${type.toLowerCase()}/${active.id}/edit`,
 											);
 										}}
 										data-testid={formatToDataTestId(

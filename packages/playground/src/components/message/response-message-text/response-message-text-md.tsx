@@ -52,8 +52,17 @@ export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
 		// ── Markdown components ───────────────────────────────────────────────────
 		const isPreviewLoading = status !== "done";
 		const components = useMemo(
-			() => createMarkdownComponents(message.room, isPreviewLoading),
-			[message.room, isPreviewLoading],
+			() =>
+				createMarkdownComponents(
+					message.room,
+					isPreviewLoading,
+					!!root.theme.featureFlags?.enableTableExport,
+				),
+			[
+				message.room,
+				isPreviewLoading,
+				root.theme.featureFlags?.enableTableExport,
+			],
 		);
 
 		// ── URL transform ─────────────────────────────────────────────────────────

@@ -178,7 +178,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 				}
 				toast.success("Successfully Created Database");
 				navigate(
-					`/engine/database/${(output as { database_id?: string }).database_id}`,
+					`/database/${(output as { database_id?: string }).database_id}`,
 				);
 			}
 		} catch {
