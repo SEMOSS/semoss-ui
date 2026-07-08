@@ -81,6 +81,22 @@ export const TerminalConsole = ({
 	const insightIdRef = useRef(insightId);
 	insightIdRef.current = insightId;
 
+	// Publish this console's insight to the terminal context (keyed by tab id)
+	// so the file explorer can scope INSIGHT-mode browsing/upload to whichever
+	// terminal is active. Guarded on a real id — the provider reports "" until
+	// the insight is initialized. Depends on the stable `setConsoleInsight`
+	// (not the whole context) so switching tabs doesn't re-register every
+	// console and churn the anchor ordering.
+	const { setConsoleInsight } = terminal;
+	useEffect(() => {
+		if (insightId) setConsoleInsight(consoleId, insightId);
+	}, [setConsoleInsight, consoleId, insightId]);
+	// Retract on unmount so a closed tab's insight stops being a candidate.
+	useEffect(
+		() => () => setConsoleInsight(consoleId, null),
+		[setConsoleInsight, consoleId],
+	);
+
 	// Track the resolved theme (light/dark) so Monaco picks the right
 	// editor theme when the user is on "system" and toggles their OS theme.
 	const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(() =>
