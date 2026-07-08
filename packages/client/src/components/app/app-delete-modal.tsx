@@ -2,7 +2,6 @@ import { useState } from "react";
 import { toast } from "@semoss/ui/next";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { useRootStore } from "@/hooks";
-import type { AppTileCardEntityType } from "./app-tile-card";
 
 interface AppDeleteModalProps {
 	isOpen: boolean;
@@ -10,7 +9,7 @@ interface AppDeleteModalProps {
 	appId: string;
 	appName?: string;
 	onDelete?: () => void;
-	entityType?: AppTileCardEntityType;
+	entityType?: "app" | "skill" | "agent";
 }
 
 export const AppDeleteModal = (props: AppDeleteModalProps) => {
@@ -92,8 +91,8 @@ export const AppDeleteModal = (props: AppDeleteModalProps) => {
 					onClose();
 				}
 			}}
-			entityType={entityLabel}
-			entityName={appName}
+			entityLabel={entityLabel}
+			entityName={appName || ""}
 			entityId={appId}
 			onConfirm={deleteApp}
 			isLoading={loading}

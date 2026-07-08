@@ -269,7 +269,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
 				case "function":
 				case "storage":
 				case "vector":
-					appPath = `/engine/${notificationSource}/${n.catalog_id}/access-control`;
+					appPath = `/${notificationSource}/${n.catalog_id}/access-control`;
 					break;
 				default:
 					return null; // unsupported source
