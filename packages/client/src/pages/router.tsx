@@ -4,17 +4,18 @@ import { Navigate, Route, Routes, useParams } from "react-router-dom";
 import { Spinner } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import { APP_DETAIL_TABS } from "./app/app-detail.constants";
+import { CookieNoticePage } from "./cookie-notice-page";
+import { ENGINE_ROUTES, EngineRedirect, EngineRouter } from "./engine";
+import { LandingPage } from "./landing-page";
+import { PrivacyNoticePage } from "./privacy-notice-page";
 
 const AppIdRedirect = () => {
 	const { appId } = useParams();
 	return <Navigate to={`/app/${appId}`} replace />;
 };
 
-const AuthenticatedLayout = lazy(() =>
-	import("./AuthenticatedLayout").then((m) => ({
-		default: m.AuthenticatedLayout,
-	})),
-);
+import { AuthenticatedLayout } from "./authenticated-layout";
+
 const PageLayout = lazy(() =>
 	import("./PageLayout").then((m) => ({ default: m.PageLayout })),
 );
@@ -39,8 +40,8 @@ const CreateAppPage = lazy(() =>
 		default: m.CreateAppPage,
 	})),
 );
-const EditAppPage = lazy(() =>
-	import("./app/edit-app-page").then((m) => ({ default: m.EditAppPage })),
+const AppEditPage = lazy(() =>
+	import("./app/app-edit-page").then((m) => ({ default: m.AppEditPage })),
 );
 const NewPromptBuilderAppPage = lazy(() =>
 	import("./app/NewPromptBuilderAppPage").then((m) => ({
@@ -50,20 +51,7 @@ const NewPromptBuilderAppPage = lazy(() =>
 const ViewAppPage = lazy(() =>
 	import("./app/view-app-page").then((m) => ({ default: m.ViewAppPage })),
 );
-const EngineRouter = lazy(() =>
-	import("./engine/engine-router").then((m) => ({ default: m.EngineRouter })),
-);
-const LandingPage = lazy(() =>
-	import("./landing-page").then((m) => ({ default: m.LandingPage })),
-);
-const CookieNotice = lazy(() =>
-	import("./legal/cookie-notice").then((m) => ({ default: m.CookieNotice })),
-);
-const PrivacyNotice = lazy(() =>
-	import("./legal/privacy-notice").then((m) => ({
-		default: m.PrivacyNotice,
-	})),
-);
+
 const PromptRouter = lazy(() =>
 	import("./prompt/PromptRouter").then((m) => ({ default: m.PromptRouter })),
 );
@@ -101,9 +89,8 @@ const AgentEditPage = lazy(() =>
 const SharePage = lazy(() =>
 	import("./share-page").then((m) => ({ default: m.SharePage })),
 );
-const LoginPage = lazy(() =>
-	import("./login-page").then((m) => ({ default: m.LoginPage })),
-);
+
+import { LoginPage } from "./login-page";
 
 const PageSpinner = () => (
 	<div className="flex h-screen w-screen items-center justify-center">
@@ -175,10 +162,18 @@ export const Router = observer(() => {
 							/>
 							<Route
 								path=":appId/edit/*"
-								element={<EditAppPage />}
+								element={<AppEditPage />}
 							/>
 						</Route>
-						<Route path="engine/*" element={<EngineRouter />} />
+						<Route path="engine/*" element={<EngineRedirect />} />
+						{/* Top-level engine routes - generated from ENGINE_ROUTES */}
+						{ENGINE_ROUTES.map((route) => (
+							<Route
+								key={route.path}
+								path={`${route.path}/*`}
+								element={<EngineRouter route={route} />}
+							/>
+						))}
 						<Route path="prompt/*" element={<PromptRouter />} />
 						<Route path="settings/*" element={<SettingsRouter />} />
 						<Route path="skill/*">
@@ -209,10 +204,16 @@ export const Router = observer(() => {
 					</Route>
 				</Route>
 				{showCookieNotice && (
-					<Route path="/cookie-notice" element={<CookieNotice />} />
+					<Route
+						path="/cookie-notice"
+						element={<CookieNoticePage />}
+					/>
 				)}
 				{showPrivacyNotice && (
-					<Route path="/privacy-notice" element={<PrivacyNotice />} />
+					<Route
+						path="/privacy-notice"
+						element={<PrivacyNoticePage />}
+					/>
 				)}
 				<Route path="/login" element={<LoginPage />} />
 			</Routes>

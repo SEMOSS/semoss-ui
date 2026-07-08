@@ -7,7 +7,7 @@ import {
 	useResolvedPath,
 } from "react-router-dom";
 import { usePixel } from "@semoss/sdk/react";
-import { Spinner, Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
+import { Muted, Spinner, Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import { ResourceNotFound } from "@/components/common/resource-not-found";
 import { EngineHeader } from "@/components/engine";
 import { EngineContext } from "@/contexts";
@@ -233,22 +233,12 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 
 	// if the engine ID is missing, navigate to the list
 	if (!engineId) {
-		return (
-			<ResourceNotFound
-				catalogPath={route.path}
-				catalogLabel={`${route.name} Catalog`}
-			/>
-		);
+		return <ResourceNotFound path={route.path} />;
 	}
 
 	// for non-discoverable users show not-found when access is denied
 	if (!isDiscoverableAccess && getUserEnginePermission.status === "ERROR") {
-		return (
-			<ResourceNotFound
-				catalogPath={route.path}
-				catalogLabel={`${route.name} Catalog`}
-			/>
-		);
+		return <ResourceNotFound path={route.path} />;
 	}
 
 	// show a loading screen while checking access (not yet settled and not a known error)
@@ -257,9 +247,9 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		getUserEnginePermission.status !== "ERROR"
 	) {
 		return (
-			<div>
-				<Spinner className="size-8" />
-				<p className="text-muted-foreground">Checking Access</p>
+			<div className="flex h-full min-h-[60vh] flex-col items-center justify-center gap-4">
+				<Spinner className="size-4" />
+				<Muted>Checking Access</Muted>
 			</div>
 		);
 	}
@@ -268,9 +258,9 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 	// for discoverable users we proceed even when metadata errors (limited view)
 	if (!isDiscoverableAccess && getEngineMetadata.status !== "SUCCESS") {
 		return (
-			<div>
-				<Spinner className="size-8" />
-				<p className="text-muted-foreground">Opening Engine</p>
+			<div className="flex h-full min-h-[60vh] flex-col items-center justify-center gap-4">
+				<Spinner className="size-4" />
+				<Muted>Opening</Muted>
 			</div>
 		);
 	}
@@ -282,9 +272,9 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 			getEngineMetadata.status === "INITIAL")
 	) {
 		return (
-			<div>
-				<Spinner className="size-8" />
-				<p className="text-muted-foreground">Opening Engine</p>
+			<div className="flex h-full min-h-[60vh] flex-col items-center justify-center gap-4">
+				<Spinner className="size-4" />
+				<Muted>Opening</Muted>
 			</div>
 		);
 	}
@@ -296,9 +286,9 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		getDatabaseCategory.status !== "SUCCESS"
 	) {
 		return (
-			<div>
-				<Spinner className="size-8" />
-				<p className="text-muted-foreground">Loading Database Info</p>
+			<div className="flex h-full min-h-[60vh] flex-col items-center justify-center gap-4">
+				<Spinner className="size-4" />
+				<Muted>Loading Metadata</Muted>
 			</div>
 		);
 	}

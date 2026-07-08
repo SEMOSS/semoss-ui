@@ -1,25 +1,31 @@
 import { observer } from "mobx-react-lite";
 import { createElement, useEffect, useState } from "react";
-import { Navigate, Outlet, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import { Help } from "@/components/help";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
 import { ImportPage } from "../import";
-import { ENGINE_ROUTES } from "./engine.constants";
+import type { ENGINE_ROUTES } from "./engine.constants";
 import { EngineEditPage } from "./engine-edit-page";
 import { EngineIndexPage } from "./engine-index-page";
 import { EngineLayout } from "./engine-layout";
 
-export const EngineRouter = observer(() => {
+const getStoredAdminMode = () => {
+	if (typeof window === "undefined") {
+		return false;
+	}
+	return window.localStorage.getItem("semoss.adminMode") === "true";
+};
+
+interface EngineRouterProps {
+	/** Filter to a specific engine type by path (e.g., "model", "database") */
+	route: (typeof ENGINE_ROUTES)[number];
+}
+
+export const EngineRouter = observer(({ route }: EngineRouterProps) => {
 	const { configStore } = useRootStore();
-	const ADMIN_MODE_STORAGE_KEY = "semoss.adminMode";
-	const getStoredAdminMode = () => {
-		if (typeof window === "undefined") {
-			return false;
-		}
-		return window.localStorage.getItem(ADMIN_MODE_STORAGE_KEY) === "true";
-	};
+
 	const [adminMode, setAdminMode] = useState(getStoredAdminMode());
 
 	useEffect(() => {
@@ -38,40 +44,27 @@ export const EngineRouter = observer(() => {
 
 			<SettingsContext.Provider value={{ adminMode }}>
 				<Routes>
-					{ENGINE_ROUTES.map((r) => (
-						<Route key={r.path} path={r.path} element={<Outlet />}>
+					<Route index element={<EngineIndexPage route={route} />} />
+					<Route
+						path="new"
+						element={
+							<ImportPage name={route.name} type={route.type} />
+						}
+					/>
+					<Route
+						path=":engineId"
+						element={<EngineLayout route={route} />}
+					>
+						{route.specific.map((s) => (
 							<Route
-								index
-								element={<EngineIndexPage route={r} />}
+								key={s.path}
+								path={s.path}
+								element={createElement(s.component, {})}
 							/>
-							<Route
-								path="new"
-								element={
-									<ImportPage name={r.name} type={r.type} />
-								}
-							/>
-							<Route
-								path=":engineId"
-								element={<EngineLayout route={r} />}
-							>
-								{r.specific.map((s) => (
-									<Route
-										key={s.path}
-										path={s.path}
-										element={createElement(s.component, {})}
-									/>
-								))}
-								<Route
-									path="edit"
-									element={<EngineEditPage />}
-								/>
-							</Route>
-							<Route
-								path="*"
-								element={<Navigate to="." replace />}
-							/>
-						</Route>
-					))}
+						))}
+						<Route path="edit" element={<EngineEditPage />} />
+					</Route>
+					<Route path="*" element={<Navigate to="." replace />} />
 				</Routes>
 			</SettingsContext.Provider>
 

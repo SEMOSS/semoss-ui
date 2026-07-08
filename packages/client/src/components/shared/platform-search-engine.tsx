@@ -84,9 +84,7 @@ export const PlatformSearchEngine = ({
 						className="group rounded-md px-2 py-2.5"
 						onSelect={() => {
 							// manually navigate since it doesn't propagate with a link
-							navigate(
-								`/engine/${type.toLowerCase()}/${engineId}`,
-							);
+							navigate(`/${type.toLowerCase()}/${engineId}`);
 
 							// close it
 							onSelect(engine);
@@ -114,7 +112,7 @@ export const PlatformSearchEngine = ({
 						<a
 							className="rounded-sm p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
 							target="_blank"
-							href={`./#/engine/${type.toLowerCase()}/${engineId}`}
+							href={`./#/${type.toLowerCase()}/${engineId}`}
 							onClick={(e) => {
 								e.stopPropagation();
 							}}
