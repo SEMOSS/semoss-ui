@@ -7,6 +7,7 @@ import {
 	getProjectUsersNoCredentials,
 	type PostUser,
 	type Role,
+	type User,
 } from "@semoss/shared";
 import {
 	Button,
@@ -30,8 +31,10 @@ import {
 	toast,
 	useDebouncedValue,
 } from "@semoss/ui/next";
-import type { User } from "@/types";
-import { PermissionDropdown } from "./permission-dropdown";
+import {
+	type PermissionChange,
+	PermissionDropdown,
+} from "./permission-dropdown";
 import { WorkspaceMemberRow } from "./workspace-member-row";
 
 export interface WorkspaceSharingModalProps {
@@ -55,7 +58,8 @@ export const WorkspaceSharingModal = ({
 	 * State
 	 */
 	const [search, setSearch] = useState("");
-	const [selectedPermission, setSelectedPermission] = useState("READ_ONLY");
+	const [selectedPermission, setSelectedPermission] =
+		useState<Role>("READ_ONLY");
 	const [pendingUsers, setPendingUsers] = useState<
 		Record<
 			string,
@@ -158,7 +162,7 @@ export const WorkspaceSharingModal = ({
 	 */
 	const handleUpdatePermission = (
 		userIdToUpdate: string,
-		newPermission: string,
+		newPermission: PermissionChange,
 	) => {
 		if (newPermission === "delete") {
 			handleRemoveUser(userIdToUpdate);
@@ -187,7 +191,7 @@ export const WorkspaceSharingModal = ({
 		try {
 			const usersToAdd: PostUser[] = pendingUsersList.map((u) => ({
 				userid: u.id,
-				permission: u.permission as Role,
+				permission: u.permission,
 			}));
 
 			await addProjectUserPermissions(workspaceId, usersToAdd);
@@ -363,9 +367,14 @@ export const WorkspaceSharingModal = ({
 								<PermissionDropdown
 									activeUserPermission={activeUserPermission}
 									permission={selectedPermission}
-									handlePermissionChange={
-										setSelectedPermission
-									}
+									// hideDeleteOption means "delete" can't be emitted here
+									handlePermissionChange={(newPermission) => {
+										if (newPermission !== "delete") {
+											setSelectedPermission(
+												newPermission,
+											);
+										}
+									}}
 									hideDeleteOption
 								/>
 							</div>
