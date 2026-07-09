@@ -37,6 +37,9 @@ interface ChatStoreInterface {
 
 		/** The current context window */
 		contextWindow?: number;
+
+		/** All available models fetched from the backend */
+		available: Engine[];
 	};
 
 	/**
@@ -100,6 +103,7 @@ export class ChatStore {
 		models: {
 			selected: null as unknown as Engine,
 			contextWindow: undefined,
+			available: [],
 		},
 		rooms: {},
 		optimisticRooms: {},
@@ -479,6 +483,52 @@ export class ChatStore {
 	};
 
 	/**
+	 * Re-fetch the user's profile default text-generation model from the backend
+	 * and update the selected model if it has changed. Called when the new-room
+	 * page mounts so any change made in the token-usage page (embed) is picked
+	 * up without requiring a logout/login cycle.
+	 */
+	refreshProfileDefaultModel = async (): Promise<void> => {
+		try {
+			const result = await this._actions.run<
+				[Record<string, { meta?: Record<string, unknown> }>]
+			>(`META | GetUserInfo();`);
+
+			const providerData = Object.values(result.pixelReturn[0].output)[0];
+			if (!providerData) return;
+
+			const metaValue = providerData.meta?.["text-generation-model"];
+			const newModelId = Array.isArray(metaValue)
+				? (metaValue[0] as string) || ""
+				: typeof metaValue === "string"
+					? metaValue
+					: "";
+
+			// Only update if the default has actually changed
+			if (
+				!newModelId ||
+				newModelId === this._store.profileDefaultModelId
+			) {
+				return;
+			}
+
+			runInAction(() => {
+				this._store.profileDefaultModelId = newModelId;
+			});
+
+			const match = this._store.models.available.find(
+				(m) => m.engine_id === newModelId,
+			);
+
+			if (match) {
+				this.setSelectedModel(match);
+			}
+		} catch (e) {
+			console.error("[ChatStore] refreshProfileDefaultModel failed:", e);
+		}
+	};
+
+	/**
 	 * Set the selected model
 	 */
 	setSelectedModel = (model: Engine): void => {
@@ -616,6 +666,10 @@ export class ChatStore {
 
 		runInAction(() => {
 			const { output } = pixelReturn[0];
+
+			// Cache the full list so setProfileDefaultModel() can resolve an id to an Engine later
+			this._store.models.available = output;
+
 			// profileDefaultModelId is already set by getUser(), which runs before this
 			const profileDefaultModelId = this._store.profileDefaultModelId;
 			let isSelected = false;
