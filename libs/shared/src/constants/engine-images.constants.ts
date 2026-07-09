@@ -110,6 +110,7 @@ export const ENGINE_IMAGES: Record<string, EngineImageEntry[]> = {
 		{ name: "PGVECTOR", icon: "POSTGRES.svg" },
 		{ name: "PINECONE", icon: "PINECONE.png" },
 		{ name: "PROXY", icon: "REST-API.svg" },
+		{ name: "QDRANT", icon: "QDRANT.svg" },
 		{ name: "WEAVIATE", icon: "WEVIATE.png" },
 		{ name: "ZIP", icon: "ZIP.svg" },
 	],

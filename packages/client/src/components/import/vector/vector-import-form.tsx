@@ -28,6 +28,7 @@ import {
 	SelectValue,
 	Separator,
 	Spinner,
+	Textarea,
 	toast,
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
@@ -740,6 +741,71 @@ export const VectorForm = ({
 									<FieldDescription>
 										{val.helperText}
 									</FieldDescription>
+								)}
+							</Field>
+						);
+
+					case "textarea":
+						return (
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+								data-testid={`vector-form-field-${val.key}`}
+							>
+								<FieldLabel htmlFor={val.key}>
+									{val.label}
+									{val?.required && (
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<Textarea
+									{...field}
+									id={val.key}
+									rows={4}
+									disabled={val.disabled}
+									data-testid={`vector-form-input-${val.key}`}
+									onChange={(e) => {
+										field.onChange(e);
+										if (val.rules?.jsonArray) {
+											const raw = e.target.value.trim();
+											if (!raw) {
+												clearErrors(val.key);
+												return;
+											}
+											try {
+												const parsed = JSON.parse(raw);
+												if (!Array.isArray(parsed)) {
+													setError(val.key, {
+														message:
+															"Must be a JSON array.",
+													});
+												} else {
+													clearErrors(val.key);
+												}
+											} catch {
+												setError(val.key, {
+													message: "Invalid JSON.",
+												});
+											}
+										}
+									}}
+								/>
+								{error ? (
+									<FieldDescription className="text-destructive">
+										{error.message ||
+											(val.rules?.pattern?.message ??
+												val.helperText)}
+									</FieldDescription>
+								) : (
+									val.helperText && (
+										<FieldDescription>
+											{val.helperText}
+										</FieldDescription>
+									)
 								)}
 							</Field>
 						);
