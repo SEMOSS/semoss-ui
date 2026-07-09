@@ -30,6 +30,7 @@ import type {
 	VectorEngineConfig,
 	WorkflowNode,
 } from "@/pages/workflow/workflow.types";
+import { EngineSelect } from "../../workflow-form-editor/forms/shared";
 import { buildPixelPreview } from "../workflow-utils";
 
 // ─── variable binding helper ──────────────────────────────────────────────────
@@ -91,38 +92,6 @@ function BoundInput({
 					</div>
 				)}
 			</div>
-		</Field>
-	);
-}
-
-function EngineSelect({
-	label,
-	value,
-	engines,
-	onChange,
-}: {
-	label: string;
-	value: string;
-	engines: EngineOption[];
-	onChange: (v: string) => void;
-}) {
-	return (
-		<Field>
-			<FieldLabel>{label}</FieldLabel>
-			<Select value={value} onValueChange={onChange}>
-				<SelectTrigger>
-					<SelectValue
-						placeholder={`Select ${label.toLowerCase()}…`}
-					/>
-				</SelectTrigger>
-				<SelectContent>
-					{engines.map((e) => (
-						<SelectItem key={e.engine_id} value={e.engine_id}>
-							{e.engine_display_name ?? e.engine_name}
-						</SelectItem>
-					))}
-				</SelectContent>
-			</Select>
 		</Field>
 	);
 }
@@ -202,6 +171,8 @@ function DatabaseEngineForm({
 				value={config.engineId}
 				engines={engines}
 				onChange={(v) => onChange({ ...config, engineId: v })}
+				triggerClassName=""
+				labelClassName=""
 			/>
 			<Field>
 				<FieldLabel>Operation</FieldLabel>
@@ -219,14 +190,14 @@ function DatabaseEngineForm({
 					</SelectTrigger>
 					<SelectContent>
 						<SelectItem value="query">Query (SELECT)</SelectItem>
-						<SelectItem value="insert">Insert</SelectItem>
-						<SelectItem value="update">Update</SelectItem>
-						<SelectItem value="delete">Delete</SelectItem>
+						<SelectItem value="write">
+							Write (INSERT/UPDATE/DELETE)
+						</SelectItem>
 					</SelectContent>
 				</Select>
 			</Field>
 			<BoundInput
-				label="SQL / Pixel Expression"
+				label="SQL Expression"
 				value={config.expression}
 				placeholder="SELECT * FROM table WHERE id = '${id}'"
 				onChange={(v) => onChange({ ...config, expression: v })}
@@ -235,32 +206,19 @@ function DatabaseEngineForm({
 			/>
 			{config.operation === "query" && (
 				<Field>
-					<FieldLabel>Output Shape</FieldLabel>
-					<Select
-						value={config.outputShape}
-						onValueChange={(v) =>
+					<FieldLabel>Row Limit</FieldLabel>
+					<Input
+						type="number"
+						min={1}
+						value={config.limit ?? 50}
+						onChange={(e) =>
 							onChange({
 								...config,
-								outputShape:
-									v as DatabaseEngineConfig["outputShape"],
+								limit: Number(e.target.value),
 							})
 						}
-					>
-						<SelectTrigger>
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="rows">
-								Rows (array of objects)
-							</SelectItem>
-							<SelectItem value="count">
-								Count (number)
-							</SelectItem>
-							<SelectItem value="scalar">
-								Scalar (single value)
-							</SelectItem>
-						</SelectContent>
-					</Select>
+						placeholder="50"
+					/>
 				</Field>
 			)}
 		</div>
@@ -285,6 +243,8 @@ function StorageEngineForm({
 				value={config.engineId}
 				engines={engines}
 				onChange={(v) => onChange({ ...config, engineId: v })}
+				triggerClassName=""
+				labelClassName=""
 			/>
 			<Field>
 				<FieldLabel>Operation</FieldLabel>
@@ -302,19 +262,42 @@ function StorageEngineForm({
 					</SelectTrigger>
 					<SelectContent>
 						<SelectItem value="list">List</SelectItem>
-						<SelectItem value="read">Read (download)</SelectItem>
-						<SelectItem value="put">Put (upload)</SelectItem>
+						<SelectItem value="download">Download</SelectItem>
+						<SelectItem value="upload">Upload</SelectItem>
 						<SelectItem value="delete">Delete</SelectItem>
+						<SelectItem value="read-base64">
+							Read as Base64
+						</SelectItem>
 					</SelectContent>
 				</Select>
 			</Field>
 			<BoundInput
-				label="Path"
-				value={config.path}
+				label="Storage Path"
+				value={config.storagePath}
 				placeholder="/documents/${folder}"
-				onChange={(v) => onChange({ ...config, path: v })}
+				onChange={(v) => onChange({ ...config, storagePath: v })}
 				upstreamVars={upstreamVars}
 			/>
+			{(config.operation === "download" ||
+				config.operation === "upload") && (
+				<BoundInput
+					label="Local File Path"
+					value={config.filePath}
+					placeholder="/tmp/output.csv"
+					onChange={(v) => onChange({ ...config, filePath: v })}
+					upstreamVars={upstreamVars}
+				/>
+			)}
+			{config.operation === "upload" && (
+				<BoundInput
+					label="Metadata (JSON, optional)"
+					value={config.metadata}
+					placeholder='{"key": "value"}'
+					onChange={(v) => onChange({ ...config, metadata: v })}
+					upstreamVars={upstreamVars}
+					mono
+				/>
+			)}
 		</div>
 	);
 }
@@ -337,6 +320,8 @@ function VectorEngineForm({
 				value={config.engineId}
 				engines={engines}
 				onChange={(v) => onChange({ ...config, engineId: v })}
+				triggerClassName=""
+				labelClassName=""
 			/>
 			<Field>
 				<FieldLabel>Operation</FieldLabel>
@@ -353,25 +338,26 @@ function VectorEngineForm({
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value="add">Add Documents</SelectItem>
-						<SelectItem value="remove">Remove Documents</SelectItem>
+						<SelectItem value="search">
+							Search (semantic)
+						</SelectItem>
+						<SelectItem value="add-file">Add File</SelectItem>
+						<SelectItem value="add-csv">Add CSV</SelectItem>
 						<SelectItem value="list">List Documents</SelectItem>
-						<SelectItem value="query">
-							Query (semantic search)
+						<SelectItem value="delete">Delete Documents</SelectItem>
+						<SelectItem value="download">
+							Download Document
 						</SelectItem>
 					</SelectContent>
 				</Select>
 			</Field>
-			<Separator />
-			{config.operation === "query" ? (
+			{config.operation === "search" && (
 				<>
 					<BoundInput
 						label="Search Query"
-						value={config.searchQuery}
+						value={config.command}
 						placeholder="find documents about ${topic}"
-						onChange={(v) =>
-							onChange({ ...config, searchQuery: v })
-						}
+						onChange={(v) => onChange({ ...config, command: v })}
 						upstreamVars={upstreamVars}
 					/>
 					<Field>
@@ -389,61 +375,71 @@ function VectorEngineForm({
 							placeholder="5"
 						/>
 					</Field>
-				</>
-			) : (
-				<>
-					<div className="grid grid-cols-2 gap-3">
-						<Field>
-							<FieldLabel>Chunk Size</FieldLabel>
-							<Input
-								type="number"
-								min={0}
-								value={config.chunkSize || ""}
-								onChange={(e) =>
-									onChange({
-										...config,
-										chunkSize: Number(e.target.value),
-									})
-								}
-								placeholder="512"
-							/>
-						</Field>
-						<Field>
-							<FieldLabel>Overlap</FieldLabel>
-							<Input
-								type="number"
-								min={0}
-								value={config.chunkOverlap || ""}
-								onChange={(e) =>
-									onChange({
-										...config,
-										chunkOverlap: Number(e.target.value),
-									})
-								}
-								placeholder="0"
-							/>
-						</Field>
-					</div>
 					<BoundInput
-						label="Allowed Extensions"
-						value={config.allowedExtensions}
-						placeholder="pdf, docx, txt"
-						onChange={(v) =>
-							onChange({ ...config, allowedExtensions: v })
-						}
+						label="Filters (JSON, optional)"
+						value={config.filters}
+						placeholder='{"category": "reports"}'
+						onChange={(v) => onChange({ ...config, filters: v })}
+						upstreamVars={upstreamVars}
+						mono
+					/>
+				</>
+			)}
+			{config.operation === "add-file" && (
+				<>
+					<BoundInput
+						label="File Path"
+						value={config.filePath}
+						placeholder="/path/to/file.pdf"
+						onChange={(v) => onChange({ ...config, filePath: v })}
 						upstreamVars={upstreamVars}
 					/>
 					<BoundInput
-						label="Metadata Template (JSON)"
-						value={config.metadataTemplate}
-						placeholder='{"id": "${item_id}"}'
+						label="Source (optional)"
+						value={config.source}
+						placeholder="internal-docs"
+						onChange={(v) => onChange({ ...config, source: v })}
+						upstreamVars={upstreamVars}
+					/>
+					<BoundInput
+						label="Space (optional)"
+						value={config.space}
+						placeholder="finance"
+						onChange={(v) => onChange({ ...config, space: v })}
+						upstreamVars={upstreamVars}
+					/>
+				</>
+			)}
+			{config.operation === "add-csv" && (
+				<>
+					<BoundInput
+						label="File Paths (comma-separated)"
+						value={config.filePaths}
+						placeholder="/data/embeddings.csv"
+						onChange={(v) => onChange({ ...config, filePaths: v })}
+						upstreamVars={upstreamVars}
+					/>
+					<BoundInput
+						label="Param Values (JSON, optional)"
+						value={config.paramValues}
+						placeholder='{"delimiter": ","}'
 						onChange={(v) =>
-							onChange({ ...config, metadataTemplate: v })
+							onChange({ ...config, paramValues: v })
 						}
 						upstreamVars={upstreamVars}
 						mono
 					/>
 				</>
+			)}
+			{(config.operation === "delete" ||
+				config.operation === "download") && (
+				<BoundInput
+					label="File Names (comma-separated)"
+					value={config.fileNames}
+					placeholder="doc1.pdf, doc2.docx"
+					onChange={(v) => onChange({ ...config, fileNames: v })}
+					upstreamVars={upstreamVars}
+				/>
 			)}
 		</div>
 	);
@@ -467,15 +463,109 @@ function ModelEngineForm({
 				value={config.engineId}
 				engines={engines}
 				onChange={(v) => onChange({ ...config, engineId: v })}
+				triggerClassName=""
+				labelClassName=""
 			/>
-			<BoundInput
-				label="Prompt Template"
-				value={config.promptTemplate}
-				placeholder="Summarize: ${text}"
-				onChange={(v) => onChange({ ...config, promptTemplate: v })}
-				upstreamVars={upstreamVars}
-				mono
-			/>
+			<Field>
+				<FieldLabel>Operation</FieldLabel>
+				<Select
+					value={config.operation}
+					onValueChange={(v) =>
+						onChange({
+							...config,
+							operation: v as ModelEngineConfig["operation"],
+						})
+					}
+				>
+					<SelectTrigger>
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="llm">LLM (chat)</SelectItem>
+						<SelectItem value="embeddings">Embeddings</SelectItem>
+						<SelectItem value="vision">Vision</SelectItem>
+						<SelectItem value="ner">NER</SelectItem>
+					</SelectContent>
+				</Select>
+			</Field>
+			{config.operation === "llm" && (
+				<>
+					<BoundInput
+						label="Prompt"
+						value={config.command}
+						placeholder="Summarize: ${text}"
+						onChange={(v) => onChange({ ...config, command: v })}
+						upstreamVars={upstreamVars}
+						mono
+					/>
+					<BoundInput
+						label="Context (optional)"
+						value={config.context}
+						placeholder="You are a helpful assistant."
+						onChange={(v) => onChange({ ...config, context: v })}
+						upstreamVars={upstreamVars}
+						mono
+					/>
+					<BoundInput
+						label="Param Values (JSON, optional)"
+						value={config.paramValues}
+						placeholder='{"temperature": 0.7, "maxTokens": 1000}'
+						onChange={(v) =>
+							onChange({ ...config, paramValues: v })
+						}
+						upstreamVars={upstreamVars}
+						mono
+					/>
+				</>
+			)}
+			{config.operation === "embeddings" && (
+				<BoundInput
+					label="Values"
+					value={config.values}
+					placeholder="${text_to_embed}"
+					onChange={(v) => onChange({ ...config, values: v })}
+					upstreamVars={upstreamVars}
+				/>
+			)}
+			{config.operation === "vision" && (
+				<>
+					<BoundInput
+						label="Command"
+						value={config.command}
+						placeholder="Describe what you see in this image."
+						onChange={(v) => onChange({ ...config, command: v })}
+						upstreamVars={upstreamVars}
+						mono
+					/>
+					<BoundInput
+						label="Image URL / Path"
+						value={config.image}
+						placeholder="${image_url}"
+						onChange={(v) => onChange({ ...config, image: v })}
+						upstreamVars={upstreamVars}
+					/>
+				</>
+			)}
+			{config.operation === "ner" && (
+				<>
+					<BoundInput
+						label="Prompt"
+						value={config.prompt}
+						placeholder="Extract entities from: ${text}"
+						onChange={(v) => onChange({ ...config, prompt: v })}
+						upstreamVars={upstreamVars}
+						mono
+					/>
+					<BoundInput
+						label="Entities (JSON)"
+						value={config.entities}
+						placeholder='["PERSON", "ORG", "DATE"]'
+						onChange={(v) => onChange({ ...config, entities: v })}
+						upstreamVars={upstreamVars}
+						mono
+					/>
+				</>
+			)}
 		</div>
 	);
 }
@@ -498,12 +588,34 @@ function FunctionEngineForm({
 				value={config.engineId}
 				engines={engines}
 				onChange={(v) => onChange({ ...config, engineId: v })}
+				triggerClassName=""
+				labelClassName=""
 			/>
+			<Field>
+				<FieldLabel>Operation</FieldLabel>
+				<Select
+					value={config.operation}
+					onValueChange={(v) =>
+						onChange({
+							...config,
+							operation: v as FunctionEngineConfig["operation"],
+						})
+					}
+				>
+					<SelectTrigger>
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="execute">Execute</SelectItem>
+						<SelectItem value="streaming">Streaming</SelectItem>
+					</SelectContent>
+				</Select>
+			</Field>
 			<BoundInput
-				label="Parameters (JSON / expression)"
-				value={config.paramsExpression}
+				label="Parameters (JSON)"
+				value={config.params}
 				placeholder='{"input": "${files}"}'
-				onChange={(v) => onChange({ ...config, paramsExpression: v })}
+				onChange={(v) => onChange({ ...config, params: v })}
 				upstreamVars={upstreamVars}
 				mono
 			/>
@@ -531,9 +643,9 @@ function AppNodeForm({
 			/>
 			<BoundInput
 				label="Pixel Expression"
-				value={config.pixelExpression}
+				value={config.pixel}
 				placeholder="RunSomeReactor(input='${data}')"
-				onChange={(v) => onChange({ ...config, pixelExpression: v })}
+				onChange={(v) => onChange({ ...config, pixel: v })}
 				upstreamVars={upstreamVars}
 				mono
 			/>
@@ -694,14 +806,17 @@ function TransformForm({
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
+						<SelectItem value="convert-to-objects">
+							Convert to Objects
+						</SelectItem>
+						<SelectItem value="extract-field">
+							Extract Field
+						</SelectItem>
 						<SelectItem value="map">
 							Map (transform each item)
 						</SelectItem>
 						<SelectItem value="filter">
 							Filter (keep matching items)
-						</SelectItem>
-						<SelectItem value="reduce">
-							Reduce (collapse to single value)
 						</SelectItem>
 						<SelectItem value="flatten">
 							Flatten (merge nested arrays)
@@ -710,7 +825,14 @@ function TransformForm({
 				</Select>
 			</Field>
 			<BoundInput
-				label="Expression (per item = ${item})"
+				label="Input Variable"
+				value={config.inputVar}
+				placeholder="source_data"
+				onChange={(v) => onChange({ ...config, inputVar: v })}
+				upstreamVars={upstreamVars}
+			/>
+			<BoundInput
+				label="Expression"
 				value={config.expression}
 				placeholder="${item.name}.toLowerCase()"
 				onChange={(v) => onChange({ ...config, expression: v })}

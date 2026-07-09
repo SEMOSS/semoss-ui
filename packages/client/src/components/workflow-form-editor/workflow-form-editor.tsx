@@ -40,7 +40,6 @@ import {
 import { useRootStore } from "@/hooks";
 import type {
 	EngineOption,
-	OutputTransform,
 	ProjectOption,
 	RunStatus,
 	StepRunStatus,
@@ -57,7 +56,10 @@ import {
 	applyOutputTransform,
 	buildPixelPreview,
 	extractVarRefs,
+	formatDurationMs,
 	substituteVars,
+	TRANSFORM_ENABLED,
+	TRANSFORM_MODES,
 } from "../workflow-workspace/workflow-utils";
 import { StepForm } from "./step-form";
 
@@ -161,24 +163,6 @@ const STEP_TYPES: {
 	},
 ];
 
-const TRANSFORM_MODES: { value: OutputTransform["mode"]; label: string }[] = [
-	{ value: "raw", label: "Raw" },
-	{ value: "rows-as-objects", label: "Rows → Objects" },
-	{ value: "first-row", label: "First Row" },
-	{ value: "column", label: "Column" },
-	{ value: "jsonpath", label: "JSONPath" },
-];
-
-const TRANSFORM_ENABLED: Set<WorkflowNodeType> = new Set([
-	"database-engine",
-	"model-engine",
-	"vector-engine",
-	"storage-engine",
-	"function-engine",
-	"app",
-	"custom-pixel",
-]);
-
 const STATUS_STYLES: Record<string, string> = {
 	PENDING: "bg-muted text-muted-foreground",
 	RUNNING: "bg-primary/10 text-primary",
@@ -254,13 +238,6 @@ function formatTimestamp(iso: string): string {
 	} catch {
 		return iso;
 	}
-}
-
-function formatDurationMs(durationMs?: number | null): string {
-	if (durationMs == null) return "—";
-	if (durationMs < 1000) return `${durationMs}ms`;
-	if (durationMs < 60000) return `${(durationMs / 1000).toFixed(1)}s`;
-	return `${Math.floor(durationMs / 60000)}m ${Math.floor((durationMs % 60000) / 1000)}s`;
 }
 
 function formatRunDuration(
@@ -1115,7 +1092,7 @@ export function WorkflowFormEditor({ appId }: WorkflowFormEditorProps) {
 	const fetchRuns = useCallback(() => {
 		setHistoryLoading(true);
 		monolithStore
-			.runQuery(`ListWorkflowRuns(app=["${appId}"], limit=[25]);`)
+			.runQuery(`ListWorkflowRuns(project=["${appId}"], limit=[25]);`)
 			.then((response) => {
 				const list =
 					(response.pixelReturn[0].output as WorkflowRunSummary[]) ??
@@ -1339,7 +1316,7 @@ export function WorkflowFormEditor({ appId }: WorkflowFormEditorProps) {
 
 				try {
 					const response = await monolithStore.runQuery(
-						`GetWorkflowRun(app=["${appId}"], runId=["${runId}"]);`,
+						`GetWorkflowRun(project=["${appId}"], runId=["${runId}"]);`,
 					);
 					const runData = response.pixelReturn?.[0]
 						?.output as WorkflowRunData | null;
@@ -1479,7 +1456,7 @@ export function WorkflowFormEditor({ appId }: WorkflowFormEditorProps) {
 
 			try {
 				const response = await monolithStore.runQuery(
-					`GetWorkflowRun(app=["${appId}"], runId=["${runId}"]);`,
+					`GetWorkflowRun(project=["${appId}"], runId=["${runId}"]);`,
 				);
 				setExpandedHistoryRun(
 					response.pixelReturn[0].output as WorkflowRunDetail,

@@ -1,35 +1,10 @@
-import {
-	Activity,
-	AppWindow,
-	Brain,
-	Code2,
-	Database,
-	GitBranch,
-	Layers,
-	Play,
-	Server,
-	Shuffle,
-	Zap,
-} from "lucide-react";
+import { Code2 } from "lucide-react";
 import { useState } from "react";
 import {
 	NODE_TYPE_META,
 	type NodeTypeMeta,
 } from "@/pages/workflow/workflow.types";
-
-const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
-	trigger: Play,
-	"database-engine": Database,
-	"storage-engine": Server,
-	"vector-engine": Brain,
-	"model-engine": Activity,
-	"function-engine": Zap,
-	app: AppWindow,
-	"custom-pixel": Code2,
-	"fan-out": Layers,
-	conditional: GitBranch,
-	transform: Shuffle,
-};
+import { NODE_ICONS } from "../workflow-node-meta";
 
 const CATEGORY_LABELS: Record<NodeTypeMeta["category"], string> = {
 	trigger: "Trigger",
@@ -39,7 +14,7 @@ const CATEGORY_LABELS: Record<NodeTypeMeta["category"], string> = {
 };
 
 function PaletteItem({ meta }: { meta: NodeTypeMeta }) {
-	const Icon = ICONS[meta.type] ?? Code2;
+	const Icon = NODE_ICONS[meta.type] ?? Code2;
 
 	const onDragStart = (e: React.DragEvent) => {
 		e.dataTransfer.setData("application/workflow-node-type", meta.type);

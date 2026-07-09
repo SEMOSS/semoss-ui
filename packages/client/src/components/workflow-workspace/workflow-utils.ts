@@ -6,6 +6,36 @@ import type {
 } from "@/pages/workflow/workflow.types";
 import type { WorkflowNodeData } from "./nodes/node-card";
 
+// ─── shared constants ─────────────────────────────────────────────────────────
+
+export const TRANSFORM_MODES: {
+	value: OutputTransform["mode"];
+	label: string;
+}[] = [
+	{ value: "raw", label: "Raw" },
+	{ value: "rows-as-objects", label: "Rows → Objects" },
+	{ value: "first-row", label: "First Row" },
+	{ value: "column", label: "Column" },
+	{ value: "jsonpath", label: "JSONPath" },
+];
+
+export const TRANSFORM_ENABLED: Set<WorkflowNodeType> = new Set([
+	"database-engine",
+	"model-engine",
+	"vector-engine",
+	"storage-engine",
+	"function-engine",
+	"app",
+	"custom-pixel",
+]);
+
+export function formatDurationMs(ms?: number | null): string {
+	if (ms == null) return "—";
+	if (ms < 1000) return `${ms}ms`;
+	if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
+	return `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`;
+}
+
 export function toRFNode(
 	wn: WorkflowNode,
 	onSettings: (id: string) => void,

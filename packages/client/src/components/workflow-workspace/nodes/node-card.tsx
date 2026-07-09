@@ -1,21 +1,11 @@
 import { Handle, type NodeProps, Position } from "@xyflow/react";
 import {
-	Activity,
-	AppWindow,
-	Brain,
 	ChevronRight,
 	Code2,
-	Database,
 	ExternalLink,
-	GitBranch,
-	Layers,
 	Loader2,
 	Play,
-	Server,
-	Shuffle,
 	Trash2,
-	Workflow,
-	Zap,
 } from "lucide-react";
 import { memo, useState } from "react";
 import {
@@ -47,47 +37,14 @@ import type {
 	WorkflowNode,
 	WorkflowNodeType,
 } from "@/pages/workflow/workflow.types";
+import { EngineSelect } from "../../workflow-form-editor/forms/shared";
+import { NODE_COLORS, NODE_ICONS } from "../workflow-node-meta";
 import {
 	buildPixelPreview,
 	extractVarRefs,
 	substituteVars,
 } from "../workflow-utils";
 import { useWorkflowWorkspaceContext } from "../workflow-workspace-context";
-
-// ─── icon + color maps ────────────────────────────────────────────────────────
-
-const NODE_ICONS: Record<
-	WorkflowNodeType,
-	React.ComponentType<{ className?: string }>
-> = {
-	trigger: Play,
-	"database-engine": Database,
-	"storage-engine": Server,
-	"vector-engine": Brain,
-	"model-engine": Activity,
-	"function-engine": Zap,
-	app: AppWindow,
-	"custom-pixel": Code2,
-	"fan-out": Layers,
-	conditional: GitBranch,
-	transform: Shuffle,
-	"sub-workflow": Workflow,
-};
-
-const NODE_COLORS: Record<WorkflowNodeType, string> = {
-	trigger: "bg-emerald-500",
-	"database-engine": "bg-blue-500",
-	"storage-engine": "bg-orange-500",
-	"vector-engine": "bg-purple-500",
-	"model-engine": "bg-pink-500",
-	"function-engine": "bg-yellow-500",
-	app: "bg-cyan-500",
-	"custom-pixel": "bg-slate-500",
-	"fan-out": "bg-indigo-500",
-	conditional: "bg-amber-500",
-	transform: "bg-teal-500",
-	"sub-workflow": "bg-teal-600",
-};
 
 // ─── data shape flowing through ReactFlow ────────────────────────────────────
 
@@ -97,56 +54,6 @@ export interface WorkflowNodeData extends Record<string, unknown> {
 	outputVar: string;
 	config: Record<string, unknown>;
 	onSettings?: (id: string) => void;
-}
-
-// ─── inline engine select ─────────────────────────────────────────────────────
-
-function InlineEngineSelect({
-	label,
-	engineType,
-	value,
-	engines,
-	onChange,
-}: {
-	label: string;
-	engineType: string;
-	value: string;
-	engines: EngineOption[];
-	onChange: (v: string) => void;
-}) {
-	return (
-		<Field>
-			<FieldLabel className="text-[11px]">{label}</FieldLabel>
-			<Select value={value} onValueChange={onChange}>
-				<SelectTrigger className="nodrag nopan h-7 text-xs">
-					<SelectValue
-						placeholder={
-							engines.length === 0
-								? `No ${engineType} engines found`
-								: `Select ${label.toLowerCase()}…`
-						}
-					/>
-				</SelectTrigger>
-				<SelectContent>
-					{engines.length === 0 ? (
-						<div className="px-2 py-1.5 text-muted-foreground text-xs">
-							No engines available
-						</div>
-					) : (
-						engines.map((e) => (
-							<SelectItem
-								key={e.engine_id}
-								value={e.engine_id}
-								className="text-xs"
-							>
-								{e.engine_display_name ?? e.engine_name}
-							</SelectItem>
-						))
-					)}
-				</SelectContent>
-			</Select>
-		</Field>
-	);
 }
 
 // ─── per-type inline quick-config forms ───────────────────────────────────────
@@ -219,12 +126,13 @@ function InlineDatabaseForm({
 		onUpdate({ ...node, config: c });
 	return (
 		<div className="flex flex-col gap-2">
-			<InlineEngineSelect
+			<EngineSelect
 				label="Database Engine"
-				engineType="DATABASE"
 				value={config.engineId}
 				engines={engines}
 				onChange={(v) => update({ ...config, engineId: v })}
+				triggerClassName="nodrag nopan h-7 text-xs"
+				labelClassName="text-[11px]"
 			/>
 			<Field>
 				<FieldLabel className="text-[11px]">Operation</FieldLabel>
@@ -244,14 +152,8 @@ function InlineDatabaseForm({
 						<SelectItem value="query" className="text-xs">
 							Query (SELECT)
 						</SelectItem>
-						<SelectItem value="insert" className="text-xs">
-							Insert
-						</SelectItem>
-						<SelectItem value="update" className="text-xs">
-							Update
-						</SelectItem>
-						<SelectItem value="delete" className="text-xs">
-							Delete
+						<SelectItem value="write" className="text-xs">
+							Write (INSERT/UPDATE/DELETE)
 						</SelectItem>
 					</SelectContent>
 				</Select>
@@ -287,12 +189,13 @@ function InlineStorageForm({
 	const update = (c: StorageEngineConfig) => onUpdate({ ...node, config: c });
 	return (
 		<div className="flex flex-col gap-2">
-			<InlineEngineSelect
+			<EngineSelect
 				label="Storage Engine"
-				engineType="STORAGE"
 				value={config.engineId}
 				engines={engines}
 				onChange={(v) => update({ ...config, engineId: v })}
+				triggerClassName="nodrag nopan h-7 text-xs"
+				labelClassName="text-[11px]"
 			/>
 			<Field>
 				<FieldLabel className="text-[11px]">Operation</FieldLabel>
@@ -312,29 +215,48 @@ function InlineStorageForm({
 						<SelectItem value="list" className="text-xs">
 							List
 						</SelectItem>
-						<SelectItem value="read" className="text-xs">
-							Read (download)
+						<SelectItem value="download" className="text-xs">
+							Download
 						</SelectItem>
-						<SelectItem value="put" className="text-xs">
-							Put (upload)
+						<SelectItem value="upload" className="text-xs">
+							Upload
 						</SelectItem>
 						<SelectItem value="delete" className="text-xs">
 							Delete
+						</SelectItem>
+						<SelectItem value="read-base64" className="text-xs">
+							Read as Base64
 						</SelectItem>
 					</SelectContent>
 				</Select>
 			</Field>
 			<Field>
-				<FieldLabel className="text-[11px]">Path</FieldLabel>
+				<FieldLabel className="text-[11px]">Storage Path</FieldLabel>
 				<Input
 					className="nodrag nopan h-7 text-xs"
-					value={config.path}
+					value={config.storagePath}
 					onChange={(e) =>
-						update({ ...config, path: e.target.value })
+						update({ ...config, storagePath: e.target.value })
 					}
 					placeholder="/documents/${folder}"
 				/>
 			</Field>
+			{(config.operation === "download" ||
+				config.operation === "upload") && (
+				<Field>
+					<FieldLabel className="text-[11px]">
+						Local File Path
+					</FieldLabel>
+					<Input
+						className="nodrag nopan h-7 text-xs"
+						value={config.filePath}
+						onChange={(e) =>
+							update({ ...config, filePath: e.target.value })
+						}
+						placeholder="/tmp/output.csv"
+					/>
+				</Field>
+			)}
 		</div>
 	);
 }
@@ -352,12 +274,13 @@ function InlineVectorForm({
 	const update = (c: VectorEngineConfig) => onUpdate({ ...node, config: c });
 	return (
 		<div className="flex flex-col gap-2">
-			<InlineEngineSelect
+			<EngineSelect
 				label="Vector Engine"
-				engineType="VECTOR"
 				value={config.engineId}
 				engines={engines}
 				onChange={(v) => update({ ...config, engineId: v })}
+				triggerClassName="nodrag nopan h-7 text-xs"
+				labelClassName="text-[11px]"
 			/>
 			<Field>
 				<FieldLabel className="text-[11px]">Operation</FieldLabel>
@@ -374,22 +297,28 @@ function InlineVectorForm({
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value="add" className="text-xs">
-							Add Documents
+						<SelectItem value="search" className="text-xs">
+							Search (semantic)
 						</SelectItem>
-						<SelectItem value="remove" className="text-xs">
-							Remove Documents
+						<SelectItem value="add-file" className="text-xs">
+							Add File
+						</SelectItem>
+						<SelectItem value="add-csv" className="text-xs">
+							Add CSV
 						</SelectItem>
 						<SelectItem value="list" className="text-xs">
 							List Documents
 						</SelectItem>
-						<SelectItem value="query" className="text-xs">
-							Query (semantic search)
+						<SelectItem value="delete" className="text-xs">
+							Delete Documents
+						</SelectItem>
+						<SelectItem value="download" className="text-xs">
+							Download Document
 						</SelectItem>
 					</SelectContent>
 				</Select>
 			</Field>
-			{config.operation === "query" ? (
+			{config.operation === "search" && (
 				<>
 					<Field>
 						<FieldLabel className="text-[11px]">
@@ -397,12 +326,9 @@ function InlineVectorForm({
 						</FieldLabel>
 						<Input
 							className="nodrag nopan h-7 text-xs"
-							value={config.searchQuery}
+							value={config.command}
 							onChange={(e) =>
-								update({
-									...config,
-									searchQuery: e.target.value,
-								})
+								update({ ...config, command: e.target.value })
 							}
 							placeholder="find documents about ${topic}"
 						/>
@@ -426,43 +352,46 @@ function InlineVectorForm({
 						/>
 					</Field>
 				</>
-			) : (
-				<>
-					<Field>
-						<FieldLabel className="text-[11px]">
-							Chunk Size
-						</FieldLabel>
-						<Input
-							type="number"
-							min={0}
-							className="nodrag nopan h-7 text-xs"
-							value={config.chunkSize || ""}
-							onChange={(e) =>
-								update({
-									...config,
-									chunkSize: Number(e.target.value),
-								})
-							}
-							placeholder="512"
-						/>
-					</Field>
-					<Field>
-						<FieldLabel className="text-[11px]">Overlap</FieldLabel>
-						<Input
-							type="number"
-							min={0}
-							className="nodrag nopan h-7 text-xs"
-							value={config.chunkOverlap || ""}
-							onChange={(e) =>
-								update({
-									...config,
-									chunkOverlap: Number(e.target.value),
-								})
-							}
-							placeholder="0"
-						/>
-					</Field>
-				</>
+			)}
+			{config.operation === "add-file" && (
+				<Field>
+					<FieldLabel className="text-[11px]">File Path</FieldLabel>
+					<Input
+						className="nodrag nopan h-7 text-xs"
+						value={config.filePath}
+						onChange={(e) =>
+							update({ ...config, filePath: e.target.value })
+						}
+						placeholder="/path/to/file.pdf"
+					/>
+				</Field>
+			)}
+			{config.operation === "add-csv" && (
+				<Field>
+					<FieldLabel className="text-[11px]">File Paths</FieldLabel>
+					<Input
+						className="nodrag nopan h-7 text-xs"
+						value={config.filePaths}
+						onChange={(e) =>
+							update({ ...config, filePaths: e.target.value })
+						}
+						placeholder="/data/embeddings.csv"
+					/>
+				</Field>
+			)}
+			{(config.operation === "delete" ||
+				config.operation === "download") && (
+				<Field>
+					<FieldLabel className="text-[11px]">File Names</FieldLabel>
+					<Input
+						className="nodrag nopan h-7 text-xs"
+						value={config.fileNames}
+						onChange={(e) =>
+							update({ ...config, fileNames: e.target.value })
+						}
+						placeholder="doc1.pdf, doc2.docx"
+					/>
+				</Field>
 			)}
 		</div>
 	);
@@ -481,21 +410,22 @@ function InlineModelForm({
 	const update = (c: ModelEngineConfig) => onUpdate({ ...node, config: c });
 	return (
 		<div className="flex flex-col gap-2">
-			<InlineEngineSelect
+			<EngineSelect
 				label="Model Engine"
-				engineType="MODEL"
 				value={config.engineId}
 				engines={engines}
 				onChange={(v) => update({ ...config, engineId: v })}
+				triggerClassName="nodrag nopan h-7 text-xs"
+				labelClassName="text-[11px]"
 			/>
 			<Field>
-				<FieldLabel className="text-[11px]">Prompt Template</FieldLabel>
+				<FieldLabel className="text-[11px]">Prompt</FieldLabel>
 				<Textarea
 					className="nodrag nopan font-mono text-[11px]"
 					rows={3}
-					value={config.promptTemplate}
+					value={config.command}
 					onChange={(e) =>
-						update({ ...config, promptTemplate: e.target.value })
+						update({ ...config, command: e.target.value })
 					}
 					placeholder="Summarize: ${text}"
 				/>
@@ -518,12 +448,13 @@ function InlineFunctionForm({
 		onUpdate({ ...node, config: c });
 	return (
 		<div className="flex flex-col gap-2">
-			<InlineEngineSelect
+			<EngineSelect
 				label="Function Engine"
-				engineType="FUNCTION"
 				value={config.engineId}
 				engines={engines}
 				onChange={(v) => update({ ...config, engineId: v })}
+				triggerClassName="nodrag nopan h-7 text-xs"
+				labelClassName="text-[11px]"
 			/>
 			<Field>
 				<FieldLabel className="text-[11px]">
@@ -532,9 +463,9 @@ function InlineFunctionForm({
 				<Textarea
 					className="nodrag nopan font-mono text-[11px]"
 					rows={2}
-					value={config.paramsExpression}
+					value={config.params}
 					onChange={(e) =>
-						update({ ...config, paramsExpression: e.target.value })
+						update({ ...config, params: e.target.value })
 					}
 					placeholder='{"input": "${files}"}'
 				/>
@@ -574,9 +505,9 @@ function InlineAppForm({
 				<Textarea
 					className="nodrag nopan font-mono text-[11px]"
 					rows={3}
-					value={config.pixelExpression}
+					value={config.pixel}
 					onChange={(e) =>
-						update({ ...config, pixelExpression: e.target.value })
+						update({ ...config, pixel: e.target.value })
 					}
 					placeholder="RunSomeReactor(input='${data}')"
 				/>

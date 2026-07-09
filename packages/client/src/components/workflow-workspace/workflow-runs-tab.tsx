@@ -15,6 +15,7 @@ import type {
 	WorkflowRunDetail,
 	WorkflowRunSummary,
 } from "@/pages/workflow/workflow.types";
+import { formatDurationMs } from "./workflow-utils";
 
 function RunStatusBadge({ status }: { status: string }) {
 	if (status === "SUCCESS")
@@ -62,14 +63,14 @@ function NodeResultRow({ r }: { r: WorkflowNodeResult }) {
 			<RunStatusBadge status={r.STATUS} />
 			<span className="flex-1 text-xs">{r.NODE_LABEL}</span>
 			<span className="text-[10px] text-muted-foreground">
-				{durationStr(r.STARTED_AT, r.COMPLETED_AT)}
+				{formatDurationMs(r.DURATION_MS)}
 			</span>
-			{r.ERROR && (
+			{r.ERROR_MESSAGE && (
 				<span
 					className="max-w-[200px] truncate text-[10px] text-red-500"
-					title={r.ERROR}
+					title={r.ERROR_MESSAGE}
 				>
-					{r.ERROR}
+					{r.ERROR_MESSAGE}
 				</span>
 			)}
 		</div>
@@ -87,7 +88,7 @@ function RunRow({ run, appId }: { run: WorkflowRunSummary; appId: string }) {
 		setLoadingDetail(true);
 		monolithStore
 			.runQuery<[WorkflowRunDetail]>(
-				`GetWorkflowRun(app="${appId}", runId="${run.RUN_ID}")`,
+				`GetWorkflowRun(project=["${appId}"], runId=["${run.RUN_ID}"])`,
 			)
 			.then((res) =>
 				setDetail(res.pixelReturn[0].output as WorkflowRunDetail),
@@ -170,7 +171,7 @@ export function WorkflowRunsTab({
 	const load = useCallback(() => {
 		monolithStore
 			.runQuery<[WorkflowRunSummary[]]>(
-				`ListWorkflowRuns(app="${appId}", limit=["25"])`,
+				`ListWorkflowRuns(project=["${appId}"], limit=["25"])`,
 			)
 			.then((res) => {
 				const out = res.pixelReturn[0].output;

@@ -29,7 +29,7 @@ export function StepForm({
 	upstreamVars,
 	onUpdate,
 }: StepFormProps) {
-	switch (step.type) {
+	switch (step.type as string) {
 		case "database-engine":
 			return (
 				<DatabaseStepForm

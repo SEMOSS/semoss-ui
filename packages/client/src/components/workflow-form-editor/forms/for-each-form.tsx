@@ -33,7 +33,7 @@ export function ForEachStepForm({
 	upstreamVars,
 	onUpdate,
 }: ForEachStepFormProps) {
-	const config: ForEachConfig = (step.config as ForEachConfig) ?? {
+	const config: ForEachConfig = (step.config as unknown as ForEachConfig) ?? {
 		sourceVar: "",
 		iteratorVar: "row",
 		rowKeyField: "",
@@ -44,7 +44,10 @@ export function ForEachStepForm({
 		(partial: Partial<ForEachConfig>) => {
 			onUpdate({
 				...step,
-				config: { ...config, ...partial },
+				config: {
+					...config,
+					...partial,
+				} as unknown as import("@/pages/workflow/workflow.types").NodeConfig,
 			});
 		},
 		[step, config, onUpdate],
@@ -54,6 +57,7 @@ export function ForEachStepForm({
 		const newNode: WorkflowNode = {
 			id: `inner-${Date.now()}`,
 			type: "custom-pixel",
+			position: { x: 0, y: 0 },
 			label: `Step ${(config.nodes?.length ?? 0) + 1}`,
 			outputVar: `inner_out_${(config.nodes?.length ?? 0) + 1}`,
 			config: { pixel: "" },

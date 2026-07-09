@@ -1,106 +1,36 @@
 import {
-	Activity,
-	AppWindow,
-	Brain,
 	CheckCircle2,
 	ChevronDown,
 	ChevronUp,
 	Code2,
-	Database,
 	Loader2,
 	Play,
-	Server,
-	Shuffle,
 	Trash2,
-	Workflow,
 	XCircle,
-	Zap,
 } from "lucide-react";
 import { useState } from "react";
 import { Button, Field, FieldLabel, Input } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import type {
 	EngineOption,
-	OutputTransform,
 	ProjectOption,
 	StepRunStatus,
 	WorkflowNode,
-	WorkflowNodeType,
 } from "@/pages/workflow/workflow.types";
+import {
+	NODE_COLORS,
+	NODE_ICONS,
+	NODE_LABELS,
+} from "../workflow-workspace/workflow-node-meta";
 import {
 	applyOutputTransform,
 	buildPixelPreview,
 	extractVarRefs,
 	substituteVars,
+	TRANSFORM_ENABLED,
+	TRANSFORM_MODES,
 } from "../workflow-workspace/workflow-utils";
 import { StepForm } from "./step-form";
-
-const TYPE_ICONS: Record<
-	WorkflowNodeType,
-	React.ComponentType<{ className?: string }>
-> = {
-	trigger: Play,
-	"database-engine": Database,
-	"storage-engine": Server,
-	"vector-engine": Brain,
-	"model-engine": Activity,
-	"function-engine": Zap,
-	app: AppWindow,
-	"custom-pixel": Code2,
-	"fan-out": Activity,
-	conditional: Activity,
-	transform: Shuffle,
-	"sub-workflow": Workflow,
-};
-
-const TYPE_COLORS: Record<WorkflowNodeType, string> = {
-	trigger: "bg-emerald-500",
-	"database-engine": "bg-blue-500",
-	"storage-engine": "bg-orange-500",
-	"vector-engine": "bg-purple-500",
-	"model-engine": "bg-pink-500",
-	"function-engine": "bg-yellow-500",
-	app: "bg-cyan-500",
-	"custom-pixel": "bg-slate-500",
-	"fan-out": "bg-indigo-500",
-	conditional: "bg-amber-500",
-	transform: "bg-teal-500",
-	"sub-workflow": "bg-teal-600",
-};
-
-const TYPE_LABELS: Record<WorkflowNodeType, string> = {
-	trigger: "Trigger",
-	"database-engine": "Database",
-	"storage-engine": "Storage",
-	"vector-engine": "Vector",
-	"model-engine": "Model",
-	"function-engine": "Function",
-	app: "App",
-	"custom-pixel": "Custom Pixel",
-	"fan-out": "Fan-Out",
-	conditional: "Conditional",
-	transform: "Transform",
-	"sub-workflow": "Sub-Workflow",
-};
-
-const TRANSFORM_MODES: { value: OutputTransform["mode"]; label: string }[] = [
-	{ value: "raw", label: "Raw" },
-	{ value: "rows-as-objects", label: "Rows → Objects" },
-	{ value: "first-row", label: "First Row" },
-	{ value: "column", label: "Column" },
-	{ value: "jsonpath", label: "JSONPath" },
-];
-
-// Node types that return data and benefit from an output transform.
-const TRANSFORM_ENABLED: Set<WorkflowNodeType> = new Set([
-	"database-engine",
-	"model-engine",
-	"vector-engine",
-	"storage-engine",
-	"function-engine",
-	"app",
-	"custom-pixel",
-]);
 
 interface StepCardProps {
 	step: WorkflowNode;
@@ -146,9 +76,9 @@ export function StepCard({
 	const [runOutput, setRunOutput] = useState<string | null>(null);
 	const [mockValues, setMockValues] = useState<Record<string, string>>({});
 
-	const Icon = TYPE_ICONS[step.type] ?? Code2;
-	const color = TYPE_COLORS[step.type] ?? "bg-slate-500";
-	const typeLabel = TYPE_LABELS[step.type] ?? step.type;
+	const Icon = NODE_ICONS[step.type] ?? Code2;
+	const color = NODE_COLORS[step.type] ?? "bg-slate-500";
+	const typeLabel = NODE_LABELS[step.type] ?? step.type;
 
 	const pixelPreview = buildPixelPreview(step);
 	const varRefs = extractVarRefs(pixelPreview);

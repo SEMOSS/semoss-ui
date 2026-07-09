@@ -13,46 +13,7 @@ import type {
 	VectorEngineConfig,
 	WorkflowNode,
 } from "@/pages/workflow/workflow.types";
-
-function EngineSelect({
-	label,
-	engines,
-	value,
-	onChange,
-}: {
-	label: string;
-	engines: EngineOption[];
-	value: string;
-	onChange: (v: string) => void;
-}) {
-	return (
-		<Field>
-			<FieldLabel className="text-xs">{label}</FieldLabel>
-			<Select value={value} onValueChange={onChange}>
-				<SelectTrigger className="h-8 text-xs">
-					<SelectValue
-						placeholder={
-							engines.length
-								? `Select ${label.toLowerCase()}…`
-								: "No engines available"
-						}
-					/>
-				</SelectTrigger>
-				<SelectContent>
-					{engines.map((e) => (
-						<SelectItem
-							key={e.engine_id}
-							value={e.engine_id}
-							className="text-xs"
-						>
-							{e.engine_display_name ?? e.engine_name}
-						</SelectItem>
-					))}
-				</SelectContent>
-			</Select>
-		</Field>
-	);
-}
+import { EngineSelect } from "./shared";
 
 interface VectorStepFormProps {
 	step: WorkflowNode;
