@@ -27,7 +27,7 @@ export const EngineSettingsPage = () => {
 						name={name}
 						direction="row"
 						onDelete={() => {
-							navigate(`/engine/${path}`);
+							navigate(`/${path}`);
 						}}
 					/>
 				</section>

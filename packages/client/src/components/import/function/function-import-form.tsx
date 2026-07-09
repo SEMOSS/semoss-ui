@@ -174,7 +174,7 @@ export const FunctionForm = ({
 					engine_id?: string;
 					database_id?: string;
 				};
-				navigate(`/engine/function/${o.engine_id || o.database_id}`);
+				navigate(`/function/${o.engine_id || o.database_id}`);
 			}
 			setLoading(false);
 		});
