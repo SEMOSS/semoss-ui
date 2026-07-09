@@ -1,4 +1,4 @@
-import { SaveIcon } from "lucide-react";
+import { AlertTriangleIcon, SaveIcon } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
@@ -51,19 +51,45 @@ type GetWorkspaceResponse = {
 	config_json?: unknown;
 };
 
-const parseConfigJson = (raw: unknown): { subagents?: unknown } | null => {
-	if (raw == null) return null;
+type ConfigJsonResult =
+	| { status: "absent" }
+	| { status: "ok"; value: { subagents?: unknown } }
+	| { status: "malformed"; reason: string };
+
+const parseConfigJson = (raw: unknown): ConfigJsonResult => {
+	if (raw == null) return { status: "absent" };
 	if (typeof raw === "string") {
+		if (raw.trim().length === 0) return { status: "absent" };
 		try {
 			const parsed = JSON.parse(raw);
-			return parsed && typeof parsed === "object"
-				? (parsed as { subagents?: unknown })
-				: null;
-		} catch {
-			return null;
+			if (
+				parsed &&
+				typeof parsed === "object" &&
+				!Array.isArray(parsed)
+			) {
+				return {
+					status: "ok",
+					value: parsed as { subagents?: unknown },
+				};
+			}
+			return {
+				status: "malformed",
+				reason: "config_json parsed but is not a JSON object.",
+			};
+		} catch (e) {
+			return {
+				status: "malformed",
+				reason: (e as Error).message || "invalid JSON",
+			};
 		}
 	}
-	return typeof raw === "object" ? (raw as { subagents?: unknown }) : null;
+	if (typeof raw === "object" && !Array.isArray(raw)) {
+		return { status: "ok", value: raw as { subagents?: unknown } };
+	}
+	return {
+		status: "malformed",
+		reason: `config_json has unexpected type ${typeof raw}`,
+	};
 };
 
 const coerceSubAgentEntries = (raw: unknown): SubAgentEntry[] => {
@@ -90,44 +116,86 @@ type WorkspaceNameRow = {
 	project_display_name?: string;
 };
 
+type NameLookupResult = {
+	names: Map<string, string>;
+	lookupFailed: boolean;
+};
+
 const fetchWorkspaceNames = async (
 	monolithStore: MonolithStore,
 	ids: string[],
-): Promise<Map<string, string>> => {
-	const nameById = new Map<string, string>();
-	if (ids.length === 0) return nameById;
+): Promise<NameLookupResult> => {
+	const names = new Map<string, string>();
+	if (ids.length === 0) return { names, lookupFailed: false };
 	try {
 		const { errors, pixelReturn } = await monolithStore.runQuery<
 			[WorkspaceNameRow[]]
 		>(
 			`META | MyProjects(project=${JSON.stringify(ids)}, noMeta=[true], limit=[${ids.length}], offset=[0]);`,
 		);
-		if (errors.length > 0) return nameById;
+		if (errors.length > 0) {
+			console.warn("fetchWorkspaceNames: pixel errors", errors);
+			return { names, lookupFailed: true };
+		}
 		const rows = pixelReturn[0]?.output ?? [];
 		for (const row of rows) {
 			if (row?.project_id) {
-				nameById.set(
+				names.set(
 					row.project_id,
 					row.project_display_name || row.project_name || "",
 				);
 			}
 		}
-	} catch {
-		// ignore — picker still shows the UUID with a warning icon
+		return { names, lookupFailed: false };
+	} catch (e) {
+		console.warn("fetchWorkspaceNames: threw", e);
+		return { names, lookupFailed: true };
 	}
-	return nameById;
 };
 
-const sanitizeSubAgentsForSave = (
+const ALIAS_PATTERN = /^[A-Za-z][A-Za-z0-9_]*$/;
+
+type SubAgentValidation =
+	| { ok: true; sanitized: SubAgentEntry[] }
+	| { ok: false; message: string };
+
+const validateSubAgentsForSave = (
 	entries: SubAgentEntry[],
-): SubAgentEntry[] => {
-	const seen = new Set<string>();
+): SubAgentValidation => {
+	const seenAliases = new Set<string>();
 	const out: SubAgentEntry[] = [];
-	for (const entry of entries) {
+	for (let i = 0; i < entries.length; i++) {
+		const entry = entries[i];
 		const alias = entry.alias.trim();
 		const workspaceId = entry.workspaceId.trim();
-		if (!alias || !workspaceId || seen.has(alias)) continue;
-		seen.add(alias);
+		if (!alias && !workspaceId && !entry.description?.trim()) {
+			continue;
+		}
+		if (!alias) {
+			return {
+				ok: false,
+				message: `Subagent row ${i + 1}: alias is required.`,
+			};
+		}
+		if (!ALIAS_PATTERN.test(alias)) {
+			return {
+				ok: false,
+				message: `Subagent alias "${alias}" must start with a letter and contain only letters, numbers, or underscores.`,
+			};
+		}
+		if (!workspaceId) {
+			return {
+				ok: false,
+				message: `Subagent "${alias}" is missing a target workspace.`,
+			};
+		}
+		if (seenAliases.has(alias)) {
+			return {
+				ok: false,
+				message: `Duplicate subagent alias "${alias}" — each alias must be unique.`,
+			};
+		}
+		seenAliases.add(alias);
 		const description = entry.description?.trim();
 		out.push({
 			alias,
@@ -135,7 +203,7 @@ const sanitizeSubAgentsForSave = (
 			...(description ? { description } : {}),
 		});
 	}
-	return out;
+	return { ok: true, sanitized: out };
 };
 
 export const AgentEditor = () => {
@@ -143,6 +211,9 @@ export const AgentEditor = () => {
 	const { monolithStore } = useRootStore();
 	const [isLoading, setIsLoading] = useState(false);
 	const [isFetching, setIsFetching] = useState(true);
+	const [loadError, setLoadError] = useState<string | null>(null);
+	const [nameLookupFailed, setNameLookupFailed] = useState(false);
+	const [reloadKey, setReloadKey] = useState(0);
 
 	const descId = useId();
 	const instructionsId = useId();
@@ -160,27 +231,39 @@ export const AgentEditor = () => {
 		},
 	});
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: reloadKey is an intentional retry trigger
 	useEffect(() => {
 		const load = async () => {
 			try {
 				setIsFetching(true);
+				setLoadError(null);
+				setNameLookupFailed(false);
 				const { errors, pixelReturn } = await monolithStore.runQuery<
 					[GetWorkspaceResponse]
 				>(`GetWorkspace(workspaceId=["${workspace.appId}"]);`);
 				if (errors.length > 0) throw new Error(errors.join(", "));
 				const data = pixelReturn[0].output;
 				const allMcps = data.mcp ?? [];
-				const configJson = parseConfigJson(data.config_json);
-				const subagents = coerceSubAgentEntries(configJson?.subagents);
+				const configResult = parseConfigJson(data.config_json);
+				if (configResult.status === "malformed") {
+					throw new Error(
+						`Workspace CONFIG_JSON is malformed (${configResult.reason}). ` +
+							"Refusing to load — saving from a partial state would wipe subagent settings on the server.",
+					);
+				}
+				const configJson =
+					configResult.status === "ok" ? configResult.value : {};
+				const subagents = coerceSubAgentEntries(configJson.subagents);
 				const nameIds = subagents
 					.map((s) => s.workspaceId.trim())
 					.filter((id, i, arr) => id && arr.indexOf(id) === i);
-				const nameById = await fetchWorkspaceNames(
+				const nameLookup = await fetchWorkspaceNames(
 					monolithStore,
 					nameIds,
 				);
+				setNameLookupFailed(nameLookup.lookupFailed);
 				for (const entry of subagents) {
-					const name = nameById.get(entry.workspaceId.trim());
+					const name = nameLookup.names.get(entry.workspaceId.trim());
 					if (name) entry.workspaceName = name;
 				}
 				reset({
@@ -195,15 +278,30 @@ export const AgentEditor = () => {
 				});
 			} catch (e) {
 				console.error(e);
-				toast.error("Failed to load agent data");
+				const message =
+					(e as Error).message || "Failed to load agent data";
+				setLoadError(message);
+				toast.error(message);
 			} finally {
 				setIsFetching(false);
 			}
 		};
 		if (workspace.appId) load();
-	}, [workspace.appId, monolithStore, reset]);
+	}, [workspace.appId, monolithStore, reset, reloadKey]);
 
 	const onSave = handleSubmit(async (data) => {
+		if (loadError) {
+			toast.error(
+				"Cannot save — the workspace failed to load. Reload before editing to avoid overwriting the current server state.",
+			);
+			return;
+		}
+		const validation = validateSubAgentsForSave(data.subagents);
+		if (!validation.ok) {
+			toast.error(validation.message);
+			return;
+		}
+		let workspaceSaved = false;
 		try {
 			setIsLoading(true);
 			const mcp = [...data.knowledge, ...data.toolboxes];
@@ -212,10 +310,10 @@ export const AgentEditor = () => {
 				`EditWorkspace(workspaceId=["${workspace.appId}"], name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)});`,
 			);
 			if (errors.length > 0) throw new Error(errors.join(", "));
+			workspaceSaved = true;
 
-			const subagents = sanitizeSubAgentsForSave(data.subagents);
 			const { errors: subagentErrors } = await monolithStore.runQuery(
-				`SetSubAgents(workspaceId=["${workspace.appId}"], subagents=${JSON.stringify(subagents)});`,
+				`SetSubAgents(workspaceId=["${workspace.appId}"], subagents=${JSON.stringify(validation.sanitized)});`,
 			);
 			if (subagentErrors.length > 0) {
 				throw new Error(subagentErrors.join(", "));
@@ -224,7 +322,15 @@ export const AgentEditor = () => {
 			toast.success("Agent saved");
 		} catch (e) {
 			console.error(e);
-			toast.error((e as Error).message || "Failed to save agent");
+			const err = (e as Error).message || "Failed to save agent";
+			if (workspaceSaved) {
+				toast.error(
+					`Workspace fields saved, but subagents failed: ${err}. Reload before retrying to avoid overwriting other state.`,
+				);
+				setLoadError("Subagents save failed — reload before retrying.");
+			} else {
+				toast.error(err);
+			}
 		} finally {
 			setIsLoading(false);
 		}
@@ -237,7 +343,7 @@ export const AgentEditor = () => {
 				<Button
 					variant="outline"
 					size="sm"
-					disabled={isLoading || isFetching}
+					disabled={isLoading || isFetching || !!loadError}
 					onClick={onSave}
 				>
 					{isLoading ? (
@@ -248,6 +354,40 @@ export const AgentEditor = () => {
 					Save
 				</Button>
 			</div>
+
+			{loadError ? (
+				<div className="flex shrink-0 items-start gap-3 border-destructive/40 border-b bg-destructive/10 px-6 py-3">
+					<AlertTriangleIcon className="mt-0.5 size-4 shrink-0 text-destructive" />
+					<div className="flex flex-1 flex-col gap-1">
+						<span className="font-medium text-destructive text-sm">
+							Could not load this agent
+						</span>
+						<Muted className="text-muted-foreground text-xs leading-5">
+							{loadError} Saving is disabled to prevent
+							overwriting the current server state.
+						</Muted>
+					</div>
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => setReloadKey((k) => k + 1)}
+					>
+						Reload
+					</Button>
+				</div>
+			) : null}
+
+			{nameLookupFailed ? (
+				<div className="flex shrink-0 items-start gap-3 border-amber-500/40 border-b bg-amber-500/10 px-6 py-2">
+					<AlertTriangleIcon className="mt-0.5 size-4 shrink-0 text-amber-600" />
+					<Muted className="flex-1 text-muted-foreground text-xs leading-5">
+						Some subagent workspace names could not be resolved.
+						They may be inaccessible to you rather than missing —
+						avoid deleting rows marked "Unknown workspace" without
+						checking with the workspace owner first.
+					</Muted>
+				</div>
+			) : null}
 
 			{/* Form */}
 			<div className="flex-1 overflow-y-auto">
