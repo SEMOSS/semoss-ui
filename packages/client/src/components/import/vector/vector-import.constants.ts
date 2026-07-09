@@ -1,3 +1,4 @@
+import APACHE_JENA from "@/assets/img/APACHE_JENA.svg";
 import CHROMADB from "@/assets/img/CHROMADB.png";
 import ELASTIC_SEARCH from "@/assets/img/ELASTIC_SEARCH.svg";
 import META from "@/assets/img/META_COLOR.svg";
@@ -1065,6 +1066,247 @@ export const VECTOR_CONNECTIONS = {
 					required: false,
 
 					helperText: "",
+				},
+			],
+		},
+		{
+			name: "Jena Graph RAG",
+			disable: false,
+			icon: APACHE_JENA,
+			description:
+				"An Apache Jena / Fuseki–backed GraphRAG store. Stores a knowledge graph as RDF in a TDB2 dataset, queried via SPARQL 1.1. Pairs cleanly with any SEMOSS vector engine for hybrid retrieval (graph traversal + chunked-prose semantic search).",
+			link: "https://jena.apache.org/documentation/fuseki2/",
+			fields: [
+				{
+					key: "NAME",
+					label: "Catalog Name",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+					category: "General",
+				},
+				{
+					key: "VECTOR_TYPE",
+					label: "Type",
+					value: "JENA_GRAPH_RAG",
+					type: "text",
+					disabled: true,
+					hidden: true,
+					required: true,
+					category: "General",
+				},
+				{
+					key: "DESCRIPTION",
+					label: "Description",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					category: "General",
+				},
+				{
+					key: "TAGS",
+					label: "Tags",
+					value: "",
+					type: "tags",
+					disabled: false,
+					required: false,
+					category: "General",
+				},
+				{
+					key: "FUSEKI_URL",
+					label: "Fuseki URL",
+					value: "http://fuseki:3030",
+					type: "text",
+					disabled: false,
+					required: true,
+					helperText:
+						"Base URL of the Fuseki server. Use 'http://fuseki:3030' when running the bundled Fuseki container in the SEMOSS docker-compose stack. External Fuseki works too — just point at its URL.",
+					category: "Credentials",
+				},
+				{
+					key: "FUSEKI_DATASET",
+					label: "Dataset Name",
+					value: "kb",
+					type: "text",
+					disabled: false,
+					required: true,
+					helperText:
+						"Dataset name inside the Fuseki server (e.g. 'kb'). The bundled Fuseki auto-provisions a dataset named 'kb' on first boot.",
+					category: "Credentials",
+				},
+				{
+					key: "FUSEKI_USER",
+					label: "Fuseki User",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Optional. Only needed if the Fuseki server is configured with basic auth.",
+					category: "Credentials",
+				},
+				{
+					key: "FUSEKI_PASSWORD",
+					label: "Fuseki Password",
+					value: "",
+					type: "password",
+					disabled: false,
+					required: false,
+					helperText:
+						"Optional. Only needed if the Fuseki server is configured with basic auth.",
+					category: "Credentials",
+				},
+				{
+					key: "EMBEDDER_ENGINE_ID",
+					label: "Embedder",
+					value: "",
+					type: "select",
+					options: [],
+					optionRule: {
+						pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
+						optionDisplay: "engine_name",
+						optionValue: "engine_id",
+					},
+					disabled: false,
+					required: true,
+					helperText:
+						"The model engine used to embed chunked prose. Required even when a paired vector engine handles the vector side — it's used for entity-linking boost queries against label vectors.",
+					category: "Settings",
+				},
+				{
+					key: "INDEX_CLASSES",
+					label: "Index Classes",
+					value: "default",
+					type: "text",
+					disabled: true,
+					hidden: true,
+					required: true,
+					category: "Settings",
+				},
+				{
+					key: "CHUNKING_STRATEGY",
+					label: "Chunking Strategy",
+					value: "ALL",
+					type: "select",
+					options: [
+						{ display: "Token", value: "ALL" },
+						{ display: "Page by page", value: "PAGE_BY_PAGE" },
+						{ display: "Markdown", value: "MARKDOWN" },
+					],
+					disabled: false,
+					hidden: false,
+					required: true,
+					displayRules: {
+						hideOtherFields: [
+							{
+								key: "CONTENT_LENGTH",
+								value: ["PAGE_BY_PAGE", "MARKDOWN"],
+							},
+						],
+					},
+					category: "Settings",
+				},
+				{
+					key: "CONTENT_LENGTH",
+					label: "Content Length",
+					value: "512",
+					type: "number",
+					disabled: false,
+					required: true,
+					min: 0,
+					helperText:
+						"Upper bound of tokens per chunk during ingest.",
+					category: "Settings",
+				},
+				{
+					key: "CONTENT_OVERLAP",
+					label: "Content Overlap",
+					value: "20",
+					type: "number",
+					disabled: false,
+					required: true,
+					min: 0,
+					helperText: "Tokens carried over between adjacent chunks.",
+					category: "Settings",
+				},
+				{
+					key: "KEEP_INPUT_OUTPUT",
+					label: "Record Questions and Responses",
+					value: "true",
+					type: "select",
+					options: [
+						{ display: "true", value: "true" },
+						{ display: "false", value: "false" },
+					],
+					disabled: false,
+					required: true,
+					category: "Settings",
+				},
+			],
+			advanced: [
+				{
+					key: "FUSEKI_PAIRED_VECTOR_ENGINE_ID",
+					label: "Paired Vector Engine (optional)",
+					value: "",
+					type: "select",
+					options: [],
+					optionRule: {
+						pixel: `MyEngines ( metaKeys = [] , engineTypes = [ 'VECTOR' ] ) ;`,
+						optionDisplay: "engine_name",
+						optionValue: "engine_id",
+					},
+					disabled: false,
+					required: false,
+					helperText:
+						"Optional. Another SEMOSS vector engine (FAISS, Qdrant, Weaviate, pgvector, ...) to use for chunk retrieval during hybrid queries. Leave blank to fall back to entity-only retrieval — you can add a paired engine later.",
+				},
+				{
+					key: "GRAPHRAG_ROW_CAP",
+					label: "SPARQL Row Cap",
+					value: "500",
+					type: "number",
+					disabled: false,
+					required: false,
+					min: 1,
+					helperText:
+						"Default LIMIT injected onto unbounded SELECT queries by the SPARQL guard. Prevents runaway result sets from an LLM-authored query.",
+				},
+				{
+					key: "GRAPHRAG_QUERY_TIMEOUT_MS",
+					label: "Query Timeout (ms)",
+					value: "15000,30000",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Two comma-separated values: first-result timeout, overall timeout. Forwarded to Fuseki.",
+				},
+				{
+					key: "GRAPHRAG_ONTOLOGY_TTL",
+					label: "Ontology (TTL, optional)",
+					value: "",
+					type: "textarea",
+					disabled: false,
+					required: false,
+					rules: {
+						jsonArray: false,
+					},
+					helperText:
+						"Optional TTL/OWL text. PREFIX declarations from it get auto-injected into every guarded query so the LLM doesn't have to remember them. If empty, only the standard RDF/RDFS/OWL/XSD/SKOS/DC/FOAF/PROV/smss prefixes are available.",
 				},
 			],
 		},

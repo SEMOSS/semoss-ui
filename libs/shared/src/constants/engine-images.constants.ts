@@ -104,6 +104,7 @@ export const ENGINE_IMAGES: Record<string, EngineImageEntry[]> = {
 		{ name: "CHROMA", icon: "CHROMADB.png" },
 		{ name: "ELASTIC_SEARCH", icon: "ELASTIC_SEARCH.svg" },
 		{ name: "FAISS", icon: "META_COLOR.svg" },
+		{ name: "JENA_GRAPH_RAG", icon: "APACHE_JENA.svg" },
 		{ name: "MILVUS", icon: "MILVUS.png" },
 		{ name: "OPEN_SEARCH", icon: "OPEN_SEARCH.png" },
 		{ name: "PGVECTOR", icon: "POSTGRES.svg" },
