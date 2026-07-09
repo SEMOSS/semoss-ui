@@ -123,7 +123,7 @@ export const WorkspaceMembersList = ({
 						: ""),
 			);
 		}
-	}, [workspaceId]);
+	}, [workspaceId, t]);
 
 	/**
 	 * Fetches the list of workspace members with pagination.

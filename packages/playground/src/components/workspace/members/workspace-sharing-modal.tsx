@@ -122,7 +122,7 @@ export const WorkspaceSharingModal = ({
 		} finally {
 			setIsLoadingDropdownUsers(false);
 		}
-	}, [debouncedSearch, workspaceId]);
+	}, [debouncedSearch, workspaceId, t]);
 
 	/**
 	 * Add a user to the pending list
