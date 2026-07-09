@@ -399,6 +399,35 @@ export class RoomStore {
 	}
 
 	/**
+	 * Get the tokens used in the most recent message
+	 */
+	get lastMessageTokens(): number {
+		// Walk back from tail to find the most recent message with tokens
+		let currMessage = this.tail as AbstractMessageStore;
+		while (currMessage) {
+			if (currMessage.tokens && currMessage.tokens > 0) {
+				return currMessage.tokens;
+			}
+			currMessage = currMessage.parent;
+		}
+		return 0;
+	}
+
+	/**
+	 * Get the total tokens consumed across ALL messages in the conversation
+	 * (not context window - this is the actual sum of all input + output tokens)
+	 */
+	get totalTokensConsumed(): number {
+		let total = 0;
+		for (const message of this.history) {
+			if (message.tokens) {
+				total += message.tokens;
+			}
+		}
+		return total;
+	}
+
+	/**
 	 * Get the options of the room
 	 */
 	get options() {
@@ -471,6 +500,7 @@ export class RoomStore {
 				.output as PixelMessage[];
 			const optionsOutput = response.pixelReturn[1].output as {
 				OPTIONS?: RoomStoreInterface["options"];
+				ROOM_NAME?: string;
 			};
 
 			// sync the insight ID
@@ -620,6 +650,12 @@ export class RoomStore {
 			runInAction(() => {
 				// set the options based on the history
 				this.setOptions(newOptions);
+
+				// Restore the persisted room name so the breadcrumb shows it on
+				// load/refresh (GetPlaygroundMessages doesn't carry the name).
+				if (optionsOutput.ROOM_NAME) {
+					this.setMetadata({ name: optionsOutput.ROOM_NAME });
+				}
 
 				// Restore agent-harness mode from the persisted options so a
 				// reloaded agent room keeps sending messages via RunAgent. Only

@@ -158,7 +158,7 @@ export const VectorForm = ({
 				}
 			}
 			navigate(
-				`/engine/vector/${pixelOutput.engine_id || pixelOutput.database_id}`,
+				`/vector/${pixelOutput.engine_id || pixelOutput.database_id}`,
 			);
 			setLoading(false);
 		});
