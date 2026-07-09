@@ -154,9 +154,6 @@ interface RoomInputProps {
 	/** Hide the pause-on-next-tool button */
 	hidePauseButton?: boolean;
 
-	/** Content to render in the footer */
-	footer?: React.ReactNode;
-
 	/** Predefined prompts shown in prompt library */
 	predefinedPrompts?: PromptLibraryItem[];
 
@@ -167,6 +164,9 @@ interface RoomInputProps {
 
 	/** Maximum token capacity for context window */
 	tokensMax?: number;
+
+	/** Total tokens consumed across the entire chat */
+	totalTokens?: number;
 
 	/** Room store for prompt optimizer */
 	room: RoomStore;
@@ -180,6 +180,53 @@ interface RoomInputProps {
 	/** Callback to open the room settings/configuration panel */
 	onOpenSettings?: () => void;
 }
+
+// ============================================================================
+// CompactButton
+// ============================================================================
+
+const CompactButton: React.FC<{
+	disabled: boolean;
+	tooltipText: string;
+	onClick: (e: React.MouseEvent) => void;
+}> = ({ disabled, tooltipText, onClick }) => {
+	const [tooltipOpen, setTooltipOpen] = useState(false);
+	const isHovering = useRef(false);
+
+	const handleMouseEnter = () => {
+		isHovering.current = true;
+		setTooltipOpen(true);
+	};
+
+	const handleMouseLeave = () => {
+		isHovering.current = false;
+		setTooltipOpen(false);
+	};
+
+	return (
+		<Tooltip open={tooltipOpen}>
+			<TooltipTrigger asChild>
+				{/* biome-ignore lint/a11y/noStaticElementInteractions: span wraps a disabled button to capture hover for tooltip */}
+				<span
+					className="mt-2 w-full"
+					onMouseEnter={handleMouseEnter}
+					onMouseLeave={handleMouseLeave}
+				>
+					<Button
+						size="sm"
+						variant="outline"
+						className="w-full text-foreground"
+						disabled={disabled}
+						onClick={onClick}
+					>
+						Compact Conversation
+					</Button>
+				</span>
+			</TooltipTrigger>
+			<TooltipContent>{tooltipText}</TooltipContent>
+		</Tooltip>
+	);
+};
 
 // ============================================================================
 // Main Component
@@ -210,12 +257,12 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		hasOutstandingTools = false,
 		hasToolsPaused = false,
 		toggleToolsPaused,
-		footer = null,
 		hidePauseButton = false,
 		predefinedPrompts = [],
 		initialValue,
 		tokensUsed,
 		tokensMax,
+		totalTokens,
 		room,
 		onCompact,
 		excludeCommandIds,
@@ -338,56 +385,53 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			return (
 				<div className="w-full space-y-1">
 					{contextUsedPercent !== undefined && descriptionKey && (
-						<>
-							<p className="w-full">{t(descriptionKey)}</p>
-							<p className="flex w-full items-baseline justify-between gap-3">
-								<span>
-									{t("contextWindow.memoryUsedTitle")}
-								</span>
-								<span className="whitespace-nowrap text-end tabular-nums">
-									{t("contextWindow.memoryUsedValue", {
-										used: formatTokens(tokensUsed),
-										total: formatTokens(tokensMax),
-										percent: contextUsedPercent.toFixed(1),
-									})}
-								</span>
-							</p>
-						</>
+						<p className="w-full">{t(descriptionKey)}</p>
+					)}
+					{(contextUsedPercent !== undefined ||
+						totalTokens !== undefined) && (
+						<div className="mt-1 space-y-1 border-t pt-1">
+							{contextUsedPercent !== undefined && (
+								<p className="tabular-nums">
+									<span className="font-bold">
+										Last Message:
+									</span>{" "}
+									{tokensUsed?.toLocaleString()} /{" "}
+									{formatTokens(tokensMax)} Context Window (
+									{contextUsedPercent.toFixed(1)}%)
+								</p>
+							)}
+							{totalTokens !== undefined && (
+								<p className="tabular-nums">
+									<span className="font-bold">
+										Chat Total:
+									</span>{" "}
+									{totalTokens.toLocaleString()} tokens
+								</p>
+							)}
+						</div>
 					)}
 					{onCompact && (
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<span className="mt-2 w-full">
-									<Button
-										size="sm"
-										variant="outline"
-										className="w-full text-foreground"
-										disabled={
-											isLoading || hasOutstandingTools
-										}
-										onClick={(e) => {
-											e.stopPropagation();
-											onCompact();
-										}}
-									>
-										{t("settings.compact")}
-									</Button>
-								</span>
-							</TooltipTrigger>
-							{(isLoading || hasOutstandingTools) && (
-								<TooltipContent>
-									{isLoading
-										? t("input.thinkingTooltip")
-										: t("input.completeTool")}
-								</TooltipContent>
-							)}
-						</Tooltip>
+						<CompactButton
+							disabled={isLoading || hasOutstandingTools}
+							tooltipText={
+								isLoading
+									? t("input.thinkingTooltip")
+									: hasOutstandingTools
+										? t("input.completeTool")
+										: "Compress your conversation to save tokens. Your previous messages stay as is."
+							}
+							onClick={(e) => {
+								e.stopPropagation();
+								onCompact();
+							}}
+						/>
 					)}
 				</div>
 			);
 		}, [
 			tokensUsed,
 			tokensMax,
+			totalTokens,
 			onCompact,
 			t,
 			isLoading,
@@ -877,7 +921,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											</button>
 										)}
 									</div>
-									{footer}
 									{/* Middle controls — sit at natural width on the right
 								    until chips-region collapses; then clip from the
 								    left (justify-end + overflow-hidden). */}
