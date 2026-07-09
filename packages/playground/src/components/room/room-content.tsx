@@ -349,24 +349,17 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 								if (
 									m.type === "OUTPUT" &&
 									!m.hasVisibleContent &&
-									!m.isThinking
-								) {
-									let ancestor = m.parent;
-									while (ancestor && !ancestor.visible) {
-										ancestor = ancestor.parent;
-									}
-									if (ancestor?.type !== "INPUT") {
-										return null;
-									}
-								}
+									!m.isThinking &&
+									m.findAncestor((a) => a.visible)?.type ===
+										"OUTPUT"
+								)
+									return null;
 
 								const showModelName = (() => {
 									// find the most recent ancestor that actually has a model
-									let ancestor = m.parent;
-									while (ancestor) {
-										if (ancestor.modelId) break;
-										ancestor = ancestor.parent;
-									}
+									const ancestor = m.findAncestor(
+										(a) => !!a.modelId,
+									);
 									// If no ancestor has a model, show the model name for this message
 									if (!ancestor) return true;
 									// Only show the model name if it's different from the ancestor's model to reduce clutter
