@@ -159,43 +159,15 @@ export const NewRoomPage = observer(() => {
 				await Promise.allSettled(
 					allEngineIds.map(async (engineId) => {
 						try {
-							const { pixelReturn: rr } = await actions.run<
-								[unknown]
-							>(
+							await actions.run(
 								`GetUserModelUsageRestrictions(engine=["${engineId}"]);`,
 							);
-							// The pixel returns an ERROR operationType when the
-							// limit is exceeded — treat that as exhausted.
-							const opType = (
-								rr[0] as { operationType?: string[] }
-							).operationType;
-							console.log(
-								"[quota] engine:",
-								engineId,
-								"opType:",
-								opType,
-								"output:",
-								(rr[0] as { output?: unknown }).output,
-							);
-							if (
-								Array.isArray(opType) &&
-								opType.includes("ERROR")
-							) {
-								exhausted.push(engineId);
-							}
-						} catch (e) {
+						} catch {
 							// actions.run throws when the pixel returns ERROR — mark as exhausted
-							console.log(
-								"[quota] engine:",
-								engineId,
-								"threw:",
-								e,
-							);
 							exhausted.push(engineId);
 						}
 					}),
 				);
-				console.log("[quota] exhausted:", exhausted);
 
 				if (!cancelled) setQuotaExhaustedIds(exhausted);
 			} catch {
