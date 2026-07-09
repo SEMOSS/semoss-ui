@@ -1,7 +1,7 @@
 import { CheckIcon, ChevronDown } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useIteratorPixel } from "@semoss/sdk/react";
+import { runPixel, useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Command,
@@ -15,6 +15,10 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
@@ -64,6 +68,18 @@ interface EngineSelectProps {
 
 	/** Show the engine subtype icon next to each option. Defaults to true. */
 	showEngineIcon?: boolean;
+
+	/**
+	 * Total tokens used in the current conversation. When provided, engines
+	 * whose context window is smaller than this value are greyed out.
+	 */
+	conversationTokensUsed?: number;
+
+	/**
+	 * Engine IDs that should be greyed out and unselectable regardless of
+	 * context window (e.g. monthly token quota exceeded).
+	 */
+	disabledEngineIds?: string[];
 }
 
 // ============================================================================
@@ -79,6 +95,7 @@ interface EngineSelectProps {
  * - Infinite scroll for large datasets
  * - Filter by engine type and metadata
  * - Displays engine name and description
+ * - Greys out engines that exceed monthly quota or conversation context window
  */
 export const EngineSelect = ({
 	className,
@@ -94,6 +111,8 @@ export const EngineSelect = ({
 	contextTooltipContent,
 	showEngineId,
 	showEngineIcon = true,
+	conversationTokensUsed,
+	disabledEngineIds = [],
 }: EngineSelectProps) => {
 	// ========================================================================
 	// State & Hooks
@@ -106,6 +125,11 @@ export const EngineSelect = ({
 		null,
 	);
 	const isHoveringContext = useRef(false);
+
+	/** engineId -> context window size (fetched lazily when dropdown opens) */
+	const [contextWindows, setContextWindows] = useState<
+		Record<string, number>
+	>({});
 
 	const openContext = () => {
 		isHoveringContext.current = true;
@@ -181,6 +205,40 @@ export const EngineSelect = ({
 			JSON.stringify(metaFilters),
 		],
 	);
+
+	// ========================================================================
+	// Context Window Fetching (per engine, lazy — only when dropdown is open
+	// and conversationTokensUsed is provided)
+	// ========================================================================
+
+	useEffect(() => {
+		if (!open || conversationTokensUsed === undefined) return;
+
+		// Only fetch for engines we haven't fetched yet
+		const unfetched = getEngines.data
+			.map((e) => e.engine_id)
+			.filter((id) => !(id in contextWindows));
+
+		if (unfetched.length === 0) return;
+
+		unfetched.forEach((engineId) => {
+			runPixel<[number | undefined]>(
+				`META | GetContextWindow(${JSON.stringify(engineId)});`,
+			)
+				.then(({ pixelReturn }) => {
+					const cw = pixelReturn[0].output;
+					if (cw !== undefined && cw !== null) {
+						setContextWindows((prev) => ({
+							...prev,
+							[engineId]: cw,
+						}));
+					}
+				})
+				.catch(() => {
+					// ignore — engine simply won't be greyed out if fetch fails
+				});
+		});
+	}, [open, getEngines.data, conversationTokensUsed, contextWindows]);
 
 	// ========================================================================
 	// Infinite Scroll Setup
@@ -370,19 +428,47 @@ export const EngineSelect = ({
 								const displayName =
 									engine.engine_display_name ||
 									engine.engine_name;
-								const engineId = engine.engine_id;
+								// MyEngines returns app_id as the canonical ID in
+								// some contexts; fall back to engine_id if absent.
+								const engineId =
+									engine.app_id || engine.engine_id;
 
-								return (
+								// Greyed out if explicitly disabled (monthly quota)
+								const isQuotaExhausted =
+									disabledEngineIds.includes(engineId);
+
+								// Greyed out if conversation exceeds context window
+								const engineContextWindow =
+									contextWindows[engineId];
+								const isContextExhausted =
+									conversationTokensUsed !== undefined &&
+									engineContextWindow !== undefined &&
+									conversationTokensUsed >=
+										engineContextWindow;
+
+								const isExhausted =
+									isQuotaExhausted || isContextExhausted;
+
+								const tooltipText = isQuotaExhausted
+									? "Monthly token limit reached"
+									: isContextExhausted
+										? `Conversation exceeds this model's context window (${engineContextWindow?.toLocaleString()} tokens)`
+										: null;
+
+								const item = (
 									<CommandItem
 										key={engineId}
 										value={engineId}
 										onSelect={() => {
+											if (isExhausted) return;
 											onChange(engine);
 											setOpen(false);
 										}}
 										className={cn(
 											value === engineId &&
 												"bg-primary/10 data-[selected=true]:bg-primary/15",
+											isExhausted &&
+												"cursor-not-allowed opacity-50 aria-selected:bg-transparent",
 										)}
 									>
 										{showEngineIcon && (
@@ -427,6 +513,39 @@ export const EngineSelect = ({
 											/>
 										)}
 									</CommandItem>
+								);
+
+								if (!isExhausted) return item;
+
+								// Wrap exhausted items in a tooltip.
+								// The outer div is pointer-interactive for the tooltip,
+								// the inner div blocks all pointer events to prevent selection.
+								return (
+									<TooltipProvider key={engineId}>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<div
+													onClickCapture={(e) =>
+														e.stopPropagation()
+													}
+													onPointerDownCapture={(e) =>
+														e.stopPropagation()
+													}
+													className="cursor-not-allowed"
+												>
+													<div className="pointer-events-none">
+														{item}
+													</div>
+												</div>
+											</TooltipTrigger>
+											<TooltipContent
+												side="left"
+												className="max-w-48 text-xs"
+											>
+												{tooltipText}
+											</TooltipContent>
+										</Tooltip>
+									</TooltipProvider>
 								);
 							})}
 							{/* Loading spinner shown at bottom while fetching next page */}

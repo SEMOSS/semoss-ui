@@ -10,7 +10,7 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
-import { InsightProvider, usePixel } from "@semoss/sdk/react";
+import { InsightProvider, useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	DropdownMenuItem,
@@ -52,6 +52,7 @@ export const NewRoomPage = observer(() => {
 	const { t } = useTranslation(["room", "workspace", "common", "chat"]);
 	const { root } = useRoot();
 	const { theme: colorMode } = useTheme();
+	const { actions } = useInsight();
 
 	const isDark =
 		colorMode === "dark" ||
@@ -104,6 +105,108 @@ export const NewRoomPage = observer(() => {
 	}, [root.theme.banner]);
 
 	const [isLoading, setIsLoading] = useState(false);
+	/** Engine IDs whose monthly token quota is at or over the limit */
+	const [quotaExhaustedIds, setQuotaExhaustedIds] = useState<string[]>([]);
+
+	// On mount, fetch all text-generation models and check each one's monthly
+	// usage restriction. Any model at or over its limit is added to quotaExhaustedIds
+	// so it is greyed out in the model dropdown.
+	useEffect(() => {
+		let cancelled = false;
+		async function checkQuotas() {
+			try {
+				// 1. Get all text-generation models
+				const { pixelReturn } = await actions.run<
+					[{ app_id: string }[]]
+				>(
+					`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
+				);
+				const engines = pixelReturn[0].output ?? [];
+				if (cancelled) return;
+
+				// 2. Get current month's usage for all engines in one call
+				const now = new Date();
+				const startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+					.toISOString()
+					.slice(0, 10);
+				const endDate = now.toISOString().slice(0, 10);
+				const ids = engines.map((e) => e.app_id);
+
+				const { pixelReturn: usageReturn } = await actions.run<
+					[{ ENGINE_ID: string; TOTAL_TOKENS: number }[]]
+				>(
+					`GetUserModelUsage(engine=[${ids.map((id) => `"${id}"`).join(", ")}], startDate=["${startDate}"], endDate=["${endDate}"]);`,
+				);
+				if (cancelled) return;
+
+				const usageById = Object.fromEntries(
+					(usageReturn[0].output ?? []).map((r) => [
+						r.ENGINE_ID,
+						r.TOTAL_TOKENS,
+					]),
+				);
+
+				// 3. Check restrictions for every engine that has usage data
+				// (GetUserModelUsage may return engines not in MyEngines)
+				const allEngineIds = [
+					...new Set([
+						...engines.map((e) => e.app_id),
+						...Object.keys(usageById),
+					]),
+				];
+
+				const exhausted: string[] = [];
+				await Promise.allSettled(
+					allEngineIds.map(async (engineId) => {
+						try {
+							const { pixelReturn: rr } = await actions.run<
+								[unknown]
+							>(
+								`GetUserModelUsageRestrictions(engine=["${engineId}"]);`,
+							);
+							// The pixel returns an ERROR operationType when the
+							// limit is exceeded — treat that as exhausted.
+							const opType = (
+								rr[0] as { operationType?: string[] }
+							).operationType;
+							console.log(
+								"[quota] engine:",
+								engineId,
+								"opType:",
+								opType,
+								"output:",
+								(rr[0] as { output?: unknown }).output,
+							);
+							if (
+								Array.isArray(opType) &&
+								opType.includes("ERROR")
+							) {
+								exhausted.push(engineId);
+							}
+						} catch (e) {
+							// actions.run throws when the pixel returns ERROR — mark as exhausted
+							console.log(
+								"[quota] engine:",
+								engineId,
+								"threw:",
+								e,
+							);
+							exhausted.push(engineId);
+						}
+					}),
+				);
+				console.log("[quota] exhausted:", exhausted);
+
+				if (!cancelled) setQuotaExhaustedIds(exhausted);
+			} catch {
+				// ignore
+			}
+		}
+		checkQuotas();
+		return () => {
+			cancelled = true;
+		};
+	}, [actions]);
 	const [isConfigurationOpen, setIsConfgurationOpen] = useState(false);
 	const [preCreatedRoom, setPreCreatedRoom] = useState<RoomStore | null>(
 		null,
@@ -471,6 +574,7 @@ export const NewRoomPage = observer(() => {
 									isLoading={isLoading}
 									initialValue={initialPrompt}
 									model={chat.models.selected}
+									disabledModelIds={quotaExhaustedIds}
 									room={tempRoomStore}
 									setModel={(m) => {
 										chat.setSelectedModel(m);

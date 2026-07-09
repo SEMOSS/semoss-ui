@@ -179,6 +179,18 @@ interface RoomInputProps {
 
 	/** Callback to open the room settings/configuration panel */
 	onOpenSettings?: () => void;
+
+	/**
+	 * Engine IDs that should appear disabled in the model dropdown
+	 * (e.g. monthly token quota exceeded).
+	 */
+	disabledModelIds?: string[];
+
+	/**
+	 * Total tokens used in this conversation. Passed to the model dropdown so
+	 * engines whose context window is smaller than this value are greyed out.
+	 */
+	conversationTokensUsed?: number;
 }
 
 // ============================================================================
@@ -220,6 +232,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		onCompact,
 		excludeCommandIds,
 		onOpenSettings,
+		disabledModelIds = [],
+		conversationTokensUsed,
 	}) => {
 		// ========================================================================
 		// Hooks & State
@@ -909,6 +923,12 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													tokensMax={tokensMax}
 													contextTooltipContent={
 														contextTooltipContent
+													}
+													disabledEngineIds={
+														disabledModelIds
+													}
+													conversationTokensUsed={
+														conversationTokensUsed
 													}
 												/>
 											)}
