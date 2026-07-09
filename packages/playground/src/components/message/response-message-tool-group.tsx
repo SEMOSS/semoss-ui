@@ -1,7 +1,6 @@
 import {
 	CheckIcon,
 	ChevronDownIcon,
-	CirclePause,
 	HammerIcon,
 	XCircleIcon,
 } from "lucide-react";
@@ -23,9 +22,6 @@ const groupStatusConfig = {
 	CANCELLED: {
 		icon: <XCircleIcon className="size-5" />,
 	},
-	PAUSED: {
-		icon: <CirclePause className="size-5" />,
-	},
 	SUCCESS: {
 		icon: <CheckIcon className="size-5" />,
 	},
@@ -37,7 +33,6 @@ const analyzeTools = (tools: ToolStore[]) => {
 		LOADING: 0,
 		ERROR: 0,
 		CANCELLED: 0,
-		PAUSED: 0,
 		INITIAL: 0,
 	};
 	const loadingOptions: string[] = [];
@@ -61,7 +56,6 @@ const analyzeTools = (tools: ToolStore[]) => {
 	let status: keyof typeof groupStatusConfig = "SUCCESS";
 	if (counts.LOADING > 0) status = "LOADING";
 	else if (counts.ERROR > 0) status = "ERROR";
-	else if (counts.PAUSED > 0) status = "PAUSED";
 	else if (counts.CANCELLED === tools.length) status = "CANCELLED";
 
 	return { status, counts, loadingOptions, isResolving };
@@ -97,8 +91,6 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 				t("group.summaryError", { count: counts.ERROR }),
 			counts.CANCELLED > 0 &&
 				t("group.summaryCancelled", { count: counts.CANCELLED }),
-			counts.PAUSED > 0 &&
-				t("group.summaryPaused", { count: counts.PAUSED }),
 		].filter((s): s is string => Boolean(s));
 
 		return (

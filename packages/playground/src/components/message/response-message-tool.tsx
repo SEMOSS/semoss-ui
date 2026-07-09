@@ -1,4 +1,4 @@
-import { CheckIcon, CirclePause, HammerIcon, XCircleIcon } from "lucide-react";
+import { CheckIcon, HammerIcon, XCircleIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { useTranslation } from "@semoss/i18n";
@@ -16,8 +16,7 @@ const getToolState = (
 ) => {
 	switch (tool.status) {
 		case "ERROR":
-		case "CANCELLED":
-		case "PAUSED": {
+		case "CANCELLED": {
 			const config = {
 				ERROR: {
 					icon: <XCircleIcon className="size-5" />,
@@ -30,13 +29,6 @@ const getToolState = (
 					icon: <XCircleIcon className="size-5" />,
 					badge: {
 						text: t("status.cancelled"),
-						variant: "muted" as const,
-					},
-				},
-				PAUSED: {
-					icon: <CirclePause className="size-5" />,
-					badge: {
-						text: t("status.paused"),
 						variant: "muted" as const,
 					},
 				},

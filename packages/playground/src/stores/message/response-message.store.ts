@@ -12,7 +12,6 @@ import {
 	TOOL_CANCELLATION_PROMPT,
 	TOOL_ERROR_PROMPT,
 	TOOL_OUTPUT_UNREADABLE_PROMPT,
-	TOOL_PAUSE_PROMPT,
 	TURN_CANCELLATION_PROMPT,
 } from "@/constants";
 import type { ToolStore } from "@/stores";
@@ -92,11 +91,6 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	};
 
 	/**
-	 * Whether the user has indicated to pause running tools
-	 */
-	isPaused: boolean = false;
-
-	/**
 	 * Whether this conversation is compacted above this message
 	 */
 	conversationCompactedAbove: boolean = false;
@@ -119,7 +113,6 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			isThinking: observable,
 			parts: observable,
 			feedback: observable,
-			isPaused: observable,
 			conversationCompactedAbove: observable,
 			isCompacting: observable,
 			runMessage: action,
@@ -131,7 +124,6 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			saveToolExecution: action,
 			setConversationCompactedAbove: action,
 			setIsCompacting: action,
-			toggleIsPaused: action,
 		});
 
 		// sync the message
@@ -500,35 +492,6 @@ paramValues=[${JSON.stringify({
 	};
 
 	/**
-	 * Toggle the stopped tools flag
-	 */
-	toggleIsPaused = () => {
-		if (!this.isPaused) {
-			this.isPaused = true;
-			// If we are currently running tools, then we want to stop them. So we should mark any loading or initial tools as paused
-			for (const part of this.parts) {
-				if (part.type === "TOOL_CALL") {
-					const tool = this.room.getTool(part.toolCall.id);
-					if (
-						tool.status === "LOADING" ||
-						tool.status === "INITIAL"
-					) {
-						this.saveToolExecution(
-							tool,
-							"",
-							"paused",
-							tool.parameters,
-							false,
-						);
-					}
-				}
-			}
-		} else {
-			this.isPaused = false;
-		}
-	};
-
-	/**
 	 * Record Feedback
 	 * @param rating
 	 * @param feedbackText
@@ -722,18 +685,6 @@ paramValues=[${JSON.stringify({
 			return;
 		}
 
-		if (this.isPaused) {
-			// If the user has indicated to pause running tools, mark this tool as cancelled and save the response without running the tool
-			await this.saveToolExecution(
-				tool,
-				"",
-				"paused",
-				tool.parameters,
-				false,
-			);
-			return;
-		}
-
 		// mark as loading
 		runInAction(() => {
 			tool.status = "LOADING";
@@ -783,7 +734,7 @@ paramValues=[${JSON.stringify({
 	saveToolExecution = async (
 		tool: ToolStore,
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled" | "paused" = "success",
+		toolStatus: "success" | "error" | "cancelled" = "success",
 		executedParameters: Record<string, unknown>,
 		errorDuringSaving: boolean = false,
 	): Promise<void> => {
@@ -794,15 +745,12 @@ paramValues=[${JSON.stringify({
 			toolResponse = `${errorDuringSaving ? TOOL_OUTPUT_UNREADABLE_PROMPT : TOOL_ERROR_PROMPT}${toolResponse ? `\n\nError Details: ${toolResponse}` : ""}`;
 		} else if (toolStatus === "cancelled") {
 			toolResponse = `${TOOL_CANCELLATION_PROMPT}${toolResponse ? `\n\nCancellation Details: ${toolResponse}` : ""}`;
-		} else if (toolStatus === "paused") {
-			toolResponse = `${TOOL_PAUSE_PROMPT}${toolResponse ? `\n\nDetails: ${toolResponse}` : ""}`;
 		}
 
 		// skip if the tool is already completed
 		if (
 			tool.status === "SUCCESS" ||
 			tool.status === "CANCELLED" ||
-			tool.status === "PAUSED" ||
 			tool.status === "ERROR"
 		) {
 			// this must be an outdated call, skip
@@ -819,8 +767,6 @@ paramValues=[${JSON.stringify({
 				tool.status = "CANCELLED";
 			} else if (toolStatus === "error") {
 				tool.status = "ERROR";
-			} else if (toolStatus === "paused") {
-				tool.status = "PAUSED";
 			}
 		});
 
@@ -944,14 +890,6 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]`;
 							runInAction(() => {
 								this.tokens = inputMessage.tokens;
 							});
-
-							// edge case handling: it's possible that the user paused tools while this tool was running
-							// mark the new response as paused if that is the case
-							if (this.isPaused) {
-								runInAction(() => {
-									responseMessage.isPaused = true;
-								});
-							}
 
 							// start running tools if there are any
 							responseMessage.continueToolExecution();

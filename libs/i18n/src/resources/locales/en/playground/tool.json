@@ -5,7 +5,6 @@
 		"completed": "Completed",
 		"ready": "Ready",
 		"autoExecute": "Auto-executing",
-		"paused": "Paused",
 		"queued": "In queue to auto-execute",
 		"loadingTool": "Loading tool…",
 		"waitingForArguments": "Waiting for arguments…"
@@ -25,8 +24,7 @@
 		"labelStreaming_other": "Loading {{count}} tools…",
 		"summaryCompleted": "{{count}} completed",
 		"summaryError": "{{count}} failed",
-		"summaryCancelled": "{{count}} cancelled",
-		"summaryPaused": "{{count}} paused"
+		"summaryCancelled": "{{count}} cancelled"
 	},
 	"form": {
 		"result": "Result",

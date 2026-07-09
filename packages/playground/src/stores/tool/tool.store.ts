@@ -63,13 +63,8 @@ export class ToolStore {
 	/**
 	 * Status for the tool
 	 */
-	status:
-		| "INITIAL"
-		| "LOADING"
-		| "CANCELLED"
-		| "SUCCESS"
-		| "ERROR"
-		| "PAUSED" = "INITIAL";
+	status: "INITIAL" | "LOADING" | "CANCELLED" | "SUCCESS" | "ERROR" =
+		"INITIAL";
 
 	/**
 	 * Parameters for the tool
@@ -232,10 +227,13 @@ export class ToolStore {
 			// emitted on success, so default to SUCCESS in that case.
 			if (part.toolResult.toolStatus === "error") {
 				this.status = "ERROR";
-			} else if (part.toolResult.toolStatus === "cancelled") {
+			} else if (
+				part.toolResult.toolStatus === "cancelled" ||
+				// "paused" is a legacy status, retired in favor of cancelled;
+				// surface any persisted paused tools as cancelled.
+				part.toolResult.toolStatus === "paused"
+			) {
 				this.status = "CANCELLED";
-			} else if (part.toolResult.toolStatus === "paused") {
-				this.status = "PAUSED";
 			} else {
 				this.status = "SUCCESS";
 			}
