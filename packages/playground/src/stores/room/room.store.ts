@@ -260,16 +260,28 @@ export class RoomStore {
 	}
 
 	/**
-	 * Whether a cancellable streaming call (e.g. AskPlayground) is in flight and
-	 * can still be stopped by the user.
+	 * A tool-phase stop is committing (cancelling the remaining tool calls). The
+	 * stream cancel state lives in the controller; this covers the tool phase,
+	 * where there's no stream job to track.
+	 */
+	private cancellingTools = false;
+
+	/**
+	 * Whether there's something the user can still stop: a cancellable streaming
+	 * call (e.g. AskPlayground / the post-tool response), or a turn parked on
+	 * unfinished tool calls — and a stop isn't already underway.
 	 */
 	get canCancel() {
-		return this.streamJob.canCancel;
+		return (
+			this.streamJob.canCancel ||
+			(!this.cancellingTools &&
+				Boolean(this.latestResponseMessage?.hasUnfinishedTools))
+		);
 	}
 
-	/** A stop has been issued for the active job and it's still unwinding. */
+	/** A stop has been issued and it's still unwinding. */
 	get isCancelling() {
-		return this.streamJob.isCancelling;
+		return this.streamJob.isCancelling || this.cancellingTools;
 	}
 
 	/**
@@ -1278,12 +1290,31 @@ export class RoomStore {
 	): Promise<void> => this.streamJob.run<O>(pixel, handlers, options);
 
 	/**
-	 * Stop the in-flight cancellable streaming call (e.g. AskPlayground).
-	 * No-op when nothing cancellable is running, so it's safe to wire to a
-	 * button that's always visible.
+	 * Stop whatever the current turn is doing. A live cancellable stream (e.g.
+	 * AskPlayground / the post-tool response) takes priority; otherwise, if the
+	 * turn is parked on unfinished tool calls, hard-stop the tool phase. No-op
+	 * when nothing is cancellable, so it's safe to wire to an always-visible
+	 * button.
 	 */
 	cancelActiveJob = async (): Promise<void> => {
-		await this.streamJob.stop();
+		if (this.streamJob.canCancel) {
+			await this.streamJob.stop();
+			return;
+		}
+
+		const message = this.latestResponseMessage;
+		if (message?.hasUnfinishedTools && !this.cancellingTools) {
+			runInAction(() => {
+				this.cancellingTools = true;
+			});
+			try {
+				await message.cancelPendingTools();
+			} finally {
+				runInAction(() => {
+					this.cancellingTools = false;
+				});
+			}
+		}
 	};
 
 	/**

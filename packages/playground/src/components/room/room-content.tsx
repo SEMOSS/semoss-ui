@@ -190,7 +190,10 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					tool.message,
 					tool.id,
 					tool.response,
-					tool.tool_status,
+					// "paused" is retired — fold any legacy iframe status into cancelled
+					tool.tool_status === "paused"
+						? "cancelled"
+						: tool.tool_status,
 					tool.executedParameters ?? {},
 				);
 			} catch {
@@ -334,6 +337,27 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							{room.history.map((m) => {
 								if (!m.visible) {
 									return null;
+								}
+
+								// A settled empty response is only meaningful as a
+								// direct reply to a user turn. When its nearest
+								// non-hidden ancestor is another response — e.g. the
+								// empty assistant message the backend commits after
+								// a stopped tool phase — it's just noise, so skip
+								// it. (Still-thinking placeholders are left alone so
+								// a streaming post-tool reply isn't hidden.)
+								if (
+									m.type === "OUTPUT" &&
+									!m.hasVisibleContent &&
+									!m.isThinking
+								) {
+									let ancestor = m.parent;
+									while (ancestor && !ancestor.visible) {
+										ancestor = ancestor.parent;
+									}
+									if (ancestor?.type !== "INPUT") {
+										return null;
+									}
 								}
 
 								const showModelName = (() => {

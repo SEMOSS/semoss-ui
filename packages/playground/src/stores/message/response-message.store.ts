@@ -119,9 +119,11 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			savePart: action,
 			recordFeedback: action,
 			rewriteMessage: action,
+			hasVisibleContent: computed,
 			hasUnfinishedTools: computed,
 			continueToolExecution: action,
 			saveToolExecution: action,
+			cancelPendingTools: action,
 			setConversationCompactedAbove: action,
 			setIsCompacting: action,
 		});
@@ -447,6 +449,101 @@ paramValues=[${JSON.stringify({
 	};
 
 	/**
+	 * Hard-stop the tool phase: cancel every still-pending tool for this
+	 * response without running it, and close the turn out with no model
+	 * follow-up. Each outstanding tool is marked CANCELLED up front — beyond the
+	 * UI, that trips saveToolExecution's completed-status guard, so an in-flight
+	 * RunMCPTool result that lands after the stop is dropped. Then one pixel
+	 * records a cancelled result per tool (statements run in order server-side);
+	 * the last carries responseParts=[] + hiddenMessage so the reactor takes the
+	 * prebuilt/no-LLM branch and notes the stop for the next turn.
+	 */
+	cancelPendingTools = async (): Promise<void> => {
+		const room = this.room;
+
+		const pending: ToolStore[] = [];
+		for (const part of this.parts) {
+			if (part.type === "TOOL_CALL") {
+				const tool = room.getTool(part.toolCall.id);
+				if (
+					tool &&
+					(tool.status === "INITIAL" || tool.status === "LOADING")
+				) {
+					pending.push(tool);
+				}
+			}
+		}
+		if (pending.length === 0) {
+			return;
+		}
+
+		runInAction(() => {
+			for (const tool of pending) {
+				tool.response = TOOL_CANCELLATION_PROMPT;
+				tool.status = "CANCELLED";
+			}
+		});
+
+		const toolStatement = (tool: ToolStore, extra: string) =>
+			`AddPlaygroundToolExecution(engine=["${room.model.app_id}"],
+roomId=["${room.roomId}"],
+${this.id ? `parentMessageId=["${this.id}"],` : ""}
+toolId=["${tool.id}"],
+toolName=["${tool.json.name}"],
+toolExecutionResponse=["<encode>${TOOL_CANCELLATION_PROMPT}</encode>"],
+paramValues=[${JSON.stringify({})}],
+mcpToolStatus="cancelled",
+toolParameterValues=[${JSON.stringify({})}]${extra});`;
+
+		const pixel = pending
+			.map((tool, i) =>
+				toolStatement(
+					tool,
+					i === pending.length - 1
+						? `, responseParts=[], hiddenMessage=["<encode>${TURN_CANCELLATION_PROMPT}</encode>"]`
+						: "",
+				),
+			)
+			.join("\n");
+
+		try {
+			const response =
+				await room.runRoomPixel<CancelCommitOutput[]>(pixel);
+			const { output } =
+				response.pixelReturn[response.pixelReturn.length - 1];
+
+			// Represent the committed (empty) follow-up + hidden pair in the tree
+			// so tail — and the next message's parent — stays aligned with the
+			// backend's provider history.
+			const followUp =
+				this.toolResponseMessage ??
+				new ResponseMessageStore(room, {
+					io: "OUTPUT",
+					messageId: STREAMING_PLACEHOLDER_ID,
+					visible: true,
+					platform_generated: true,
+					modelId: room.model.app_id,
+					dateCreated: new Date().toISOString(),
+					parts: [],
+					tokens: 0,
+					ornaments: {
+						modelName:
+							room.model.engine_display_name ||
+							room.model.app_name,
+					},
+				} as ResponsePixelMessage);
+			if (!this.toolResponseMessage) {
+				this.addChild(followUp);
+			}
+			followUp.sync(output.responseMessage);
+			this.spliceHiddenMessages(followUp, output.extraMessages);
+			this.toolResponseMessage = null;
+		} catch (e) {
+			console.error("Failed to cancel pending tools", e);
+		}
+	};
+
+	/**
 	 * Append a message part during streaming
 	 *
 	 * Merges consecutive parts of the same type (TEXT or THINKING) or adds
@@ -612,6 +709,22 @@ paramValues=[${JSON.stringify({
 
 		grandParentMessage.runMessage(rewrittenMessage);
 	};
+
+	/**
+	 * Whether the message has anything worth rendering — non-whitespace text,
+	 * media, or a tool call. An empty response (e.g. the placeholder the backend
+	 * commits after a stopped tool phase) has none.
+	 */
+	get hasVisibleContent(): boolean {
+		return this.parts.some(
+			(part) =>
+				(part.type === "TEXT" &&
+					part.text.replace(/[\s\u00AD\u200B-\u200D\u2060]/g, "")
+						.length > 0) ||
+				part.type === "MEDIA" ||
+				part.type === "TOOL_CALL",
+		);
+	}
 
 	/**
 	 * Execution
