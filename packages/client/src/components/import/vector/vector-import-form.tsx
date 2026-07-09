@@ -61,6 +61,7 @@ export const VectorForm = ({
 }) => {
 	const [openAdvanced, setOpenAdvanced] = useState(false);
 	const [resolvedFields, setResolvedFields] = useState(fields);
+	const [resolvedAdvanced, setResolvedAdvanced] = useState(advanced ?? []);
 	const [isValidDatabaseName, setIsValidDatabaseName] =
 		useState<boolean>(false);
 	const debounceTimeoutsRef = useRef<
@@ -89,7 +90,7 @@ export const VectorForm = ({
 	const { monolithStore, configStore } = useRootStore();
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
-	const advancedFields = advanced;
+	const advancedFields = resolvedAdvanced;
 	const categoryDescriptions = categoryDescription;
 	const [loading, setLoading] = useState(false);
 
@@ -165,7 +166,10 @@ export const VectorForm = ({
 	};
 
 	useEffect(() => {
-		resolvedFields.forEach((f) => {
+		// Iterate over BOTH general and advanced fields — otherwise an
+		// advanced-section dropdown never gets its options populated from
+		// its optionRule.pixel (e.g. Paired Vector Engine).
+		[...resolvedFields, ...resolvedAdvanced].forEach((f) => {
 			let pixel = f.pixel;
 			let optionsPixel = f.optionRule?.pixel;
 
@@ -224,24 +228,21 @@ export const VectorForm = ({
 		}
 
 		if (type === "options") {
-			setResolvedFields((prev) =>
-				prev.map((f) =>
-					f.key === key
-						? {
-								...f,
-								options: Array.isArray(output)
-									? output.map((opt) => ({
-											display:
-												opt[f.optionRule.optionDisplay],
-											value: opt[
-												f.optionRule.optionValue
-											],
-										}))
-									: [],
-							}
-						: f,
-				),
-			);
+			const mapField = (f) =>
+				f.key === key
+					? {
+							...f,
+							options: Array.isArray(output)
+								? output.map((opt) => ({
+										display:
+											opt[f.optionRule.optionDisplay],
+										value: opt[f.optionRule.optionValue],
+									}))
+								: [],
+						}
+					: f;
+			setResolvedFields((prev) => prev.map(mapField));
+			setResolvedAdvanced((prev) => prev.map(mapField));
 		}
 	};
 
