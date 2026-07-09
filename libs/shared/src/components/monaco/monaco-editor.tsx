@@ -39,6 +39,7 @@ const ensureMonacoSetup = async () => {
 				import(
 					"monaco-editor/esm/vs/language/typescript/ts.worker?worker"
 				),
+				import("monaco-editor/esm/vs/editor/editor.main"),
 			]);
 
 			const monacoGlobal = globalThis as typeof globalThis & {

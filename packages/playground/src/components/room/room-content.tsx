@@ -531,6 +531,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					onStop={room.cancelActiveJob}
 					tokensUsed={room.tokensUsed}
 					tokensMax={chat.models.contextWindow}
+					totalTokens={room.totalTokensConsumed}
 					onCompact={handleCompactMessages}
 					onOpenSettings={handleOpenSettings}
 					excludeCommandIds={["agent", "workspace"]}
