@@ -12,6 +12,8 @@ import {
 } from "./file-editor-path-events";
 
 const NOTEBOOK_ROW_SELECTED_EVENT = "SEMOSS_NOTEBOOK_ROW_SELECTED";
+const NOTEBOOK_ROW_CLEAR_SELECTION_EVENT =
+	"SEMOSS_NOTEBOOK_ROW_CLEAR_SELECTION";
 
 export interface NotebookRowSelection {
 	insightId: string;
@@ -33,6 +35,13 @@ interface NotebookRowSelectedMessage {
 		widget?: string;
 		cellType?: string;
 		code?: string;
+	};
+}
+
+interface NotebookRowClearSelectionMessage {
+	type: string;
+	payload?: {
+		path?: string;
 	};
 }
 
@@ -161,6 +170,36 @@ export const FileNotebookEditor: React.FC<FileNotebookEditorProps> = ({
 			window.removeEventListener("message", handleNotebookRowSelection);
 		};
 	}, [path, targetInsightId, onNotebookRowSelectionChange]);
+
+	useEffect(() => {
+		const handleClearSelection = (event: Event) => {
+			const detail = (
+				event as CustomEvent<NotebookRowClearSelectionMessage>
+			).detail;
+			if (!detail || detail.type !== NOTEBOOK_ROW_CLEAR_SELECTION_EVENT) {
+				return;
+			}
+
+			const targetPath = detail.payload?.path;
+			if (!targetPath || targetPath !== path) {
+				return;
+			}
+
+			clearSelection();
+		};
+
+		window.addEventListener(
+			NOTEBOOK_ROW_CLEAR_SELECTION_EVENT,
+			handleClearSelection,
+		);
+
+		return () => {
+			window.removeEventListener(
+				NOTEBOOK_ROW_CLEAR_SELECTION_EVENT,
+				handleClearSelection,
+			);
+		};
+	}, [path]);
 
 	const notebookName = path.split("/").pop() ?? path;
 

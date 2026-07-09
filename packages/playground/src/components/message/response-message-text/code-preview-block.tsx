@@ -203,6 +203,22 @@ export const CodePreviewBlock = ({
 					);
 					const fileName =
 						notebookPath.split("/").pop() ?? notebookPath;
+					room.setSelectedNotebookRow(null);
+					if (typeof window !== "undefined") {
+						window.dispatchEvent(
+							new CustomEvent(
+								"SEMOSS_NOTEBOOK_ROW_CLEAR_SELECTION",
+								{
+									detail: {
+										type: "SEMOSS_NOTEBOOK_ROW_CLEAR_SELECTION",
+										payload: {
+											path: notebookPath,
+										},
+									},
+								},
+							),
+						);
+					}
 					toast.success(
 						`Updated row ${selectedNotebookRow.rowNumber} in notebook ${fileName}`,
 					);
