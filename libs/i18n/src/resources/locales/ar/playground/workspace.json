@@ -160,7 +160,12 @@
 		"viewDescription": "موجه النظام الذي يوجِّه سلوك هذا الوكيل.",
 		"editTitle": "تعديل التعليمات",
 		"editDescription": "تحديث موجه النظام الذي يوجِّه سلوك هذا الوكيل.",
-		"charCount": "{{count}} حرفًا"
+		"charCount_zero": "{{count, number}} حرف",
+		"charCount_one": "{{count, number}} حرف",
+		"charCount_two": "{{count, number}} حرفان",
+		"charCount_few": "{{count, number}} أحرف",
+		"charCount_many": "{{count, number}} حرفًا",
+		"charCount_other": "{{count, number}} حرف"
 	},
 	"skills": {
 		"noSkills": "لم تتم إضافة أي مهارات"
