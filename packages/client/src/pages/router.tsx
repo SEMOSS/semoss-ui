@@ -86,6 +86,11 @@ const AgentEditPage = lazy(() =>
 		default: m.AgentEditPage,
 	})),
 );
+const FeaturesRouter = lazy(() =>
+	import("./features/FeaturesRouter").then((m) => ({
+		default: m.FeaturesRouter,
+	})),
+);
 const SharePage = lazy(() =>
 	import("./share-page").then((m) => ({ default: m.SharePage })),
 );
@@ -200,6 +205,7 @@ export const Router = observer(() => {
 								element={<AppIdRedirect />}
 							/>
 						</Route>
+						<Route path="features/*" element={<FeaturesRouter />} />
 						<Route path="*" element={<Navigate to="/" replace />} />
 					</Route>
 				</Route>
