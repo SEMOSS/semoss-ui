@@ -11,5 +11,4 @@ export * from "./edit-dependencies-modal";
 export * from "./edit-details-modal";
 export * from "./NewAppModal";
 export * from "./NewAppStep";
-export * from "./save-app";
 export * from "./system-app-grid-item";

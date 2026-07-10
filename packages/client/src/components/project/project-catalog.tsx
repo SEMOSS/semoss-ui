@@ -1,6 +1,7 @@
 import { Plus } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import {
@@ -24,7 +25,6 @@ import { CatalogFilterBox } from "@/components/catalog/catalog-filter-box";
 import { Help } from "@/components/help";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { useRootStore } from "@/hooks";
-import { useNavigate } from "@/hooks/useNavigate";
 import { getProjectLabel, isOwnerPermission } from "@/utility/catalog";
 import { NavbarHeader, NavbarLeft } from "../shared";
 import { ProjectGridItem } from "./project-grid-item";
@@ -100,7 +100,6 @@ export const ProjectCatalog = observer(
 	({ type }: ProjectCatalogProps): JSX.Element => {
 		const config = CATALOG_CONFIG[type as keyof typeof CATALOG_CONFIG];
 		const { configStore } = useRootStore();
-		const navigate = useNavigate();
 
 		// get metakeys of the ones we want
 		const metaKeys = configStore.store.config.projectMetaKeys
@@ -359,12 +358,14 @@ export const ProjectCatalog = observer(
 						) ? (
 							<Button
 								variant="default"
-								onClick={() => navigate(config.createPath)}
 								aria-label={`Add ${config.name}`}
 								data-testid="ProjectPage-create-new-app-btn"
+								asChild
 							>
-								<Plus className="size-4" />
-								Add {config.name}
+								<Link to={config.createPath}>
+									<Plus className="size-4" />
+									Add {config.name}
+								</Link>
 							</Button>
 						) : null
 					}

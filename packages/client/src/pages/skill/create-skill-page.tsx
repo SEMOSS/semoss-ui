@@ -1,6 +1,5 @@
 import { ChevronRight, UploadIcon, X } from "lucide-react";
 import { useId, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
 import {
 	Badge,
@@ -13,7 +12,6 @@ import {
 	Button,
 	Field,
 	FieldLabel,
-	H2,
 	H4,
 	Input,
 	Muted,
@@ -23,7 +21,8 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
-import { AddAppModal } from "@/components/app";
+import { MarkdownEditor } from "@/components/common/MarkdownEditor";
+import { UploadProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
@@ -42,33 +41,31 @@ export const CreateSkillPage = () => {
 	const [isUploadOpen, setIsUploadOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const [tagInput, setTagInput] = useState("");
+	const [form, setForm] = useState<CreateSkillForm>({
+		name: "",
+		description: "",
+		tags: [],
+		agentDescription: "",
+		skillContent: "",
+	});
+
 	const nameId = useId();
 	const descId = useId();
 	const tagId = useId();
 	const agentDescId = useId();
 	const skillContentId = useId();
 
-	const {
-		control,
-		handleSubmit,
-		formState: { isValid },
-	} = useForm<CreateSkillForm>({
-		mode: "onChange",
-		defaultValues: {
-			name: "",
-			description: "",
-			tags: [],
-			agentDescription: "",
-			skillContent: "",
-		},
-	});
+	const isValid =
+		form.name.trim().length > 0 &&
+		form.agentDescription.trim().length > 0 &&
+		form.skillContent.trim().length > 0;
 
 	const navigateSkill = (appId: string) => {
 		if (!appId) return;
 		navigate(`/skill/${appId}/edit`);
 	};
 
-	const onSubmit = async (data: CreateSkillForm) => {
+	const onSubmit = async () => {
 		try {
 			setIsLoading(true);
 
@@ -77,7 +74,7 @@ export const CreateSkillPage = () => {
 					project_id: string;
 				}[]
 			>(
-				`CreateSkill(skillContent=[${JSON.stringify(data.skillContent)}], name=[${JSON.stringify(data.name)}], description=[${JSON.stringify(data.agentDescription)}]);`,
+				`CreateSkill(skillContent=[${JSON.stringify(form.skillContent)}], name=[${JSON.stringify(form.name)}], description=[${JSON.stringify(form.agentDescription)}]);`,
 			);
 
 			if (errors.length > 0) throw new Error(errors.join(","));
@@ -85,12 +82,12 @@ export const CreateSkillPage = () => {
 			const appId = pixelReturn[0].output.project_id;
 			if (!appId) throw new Error("Error creating skill");
 
-			const hasMeta = data.tags.length > 0 || !!data.description;
+			const hasMeta = form.tags.length > 0 || !!form.description;
 			if (hasMeta) {
 				const { pixelReturn: metaReturn } =
 					await monolithStore.runQuery(
 						`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
-							{ tag: data.tags, description: data.description },
+							{ tag: form.tags, description: form.description },
 						)}])`,
 					);
 
@@ -115,13 +112,13 @@ export const CreateSkillPage = () => {
 			<NavbarLeft>
 				<NavbarHeader />
 			</NavbarLeft>
-			<div className="flex w-full flex-col items-start gap-6">
-				<Breadcrumb>
+			<div className="flex flex-col gap-1">
+				<Breadcrumb className="mb-4">
 					<BreadcrumbList>
 						<BreadcrumbItem>
 							<BreadcrumbLink asChild>
 								<Link to="../" className="text-inherit">
-									Skills
+									Skill Catalog
 								</Link>
 							</BreadcrumbLink>
 						</BreadcrumbItem>
@@ -133,14 +130,8 @@ export const CreateSkillPage = () => {
 						</BreadcrumbItem>
 					</BreadcrumbList>
 				</Breadcrumb>
-
-				<div className="flex w-full flex-row items-start justify-between gap-4">
-					<div className="flex flex-col gap-1">
-						<H2>Create Skill</H2>
-						<P className="text-muted-foreground">
-							Define a reusable skill that agents can call
-						</P>
-					</div>
+				<div className="flex flex-row items-center justify-between gap-2">
+					<H4>New Skill</H4>
 					<Button
 						variant="outline"
 						onClick={() => setIsUploadOpen(true)}
@@ -149,24 +140,24 @@ export const CreateSkillPage = () => {
 						Upload
 					</Button>
 				</div>
-
-				{isUploadOpen && (
-					<AddAppModal
-						type="skill"
-						open={isUploadOpen}
-						handleClose={(appId) => {
-							if (appId) navigateSkill(appId);
-							setIsUploadOpen(false);
-						}}
-					/>
-				)}
-
+				<P className="mb-3 text-muted-foreground">
+					In a platform where intelligent automation drives results,
+					skills are the building blocks that power your agents.
+					Whether you&apos;re a developer, data engineer, or product
+					owner, this page helps you define, organize, and publish
+					reusable capabilities - giving agents the precise
+					instructions they need to take action reliably and
+					consistently across your workflows.
+				</P>
 				<form
-					className="w-full"
-					onSubmit={handleSubmit(onSubmit)}
+					className="my-4 w-full"
+					onSubmit={(e) => {
+						e.preventDefault();
+						if (!isValid || isLoading) return;
+						onSubmit();
+					}}
 					autoComplete="off"
 				>
-					{/* Details */}
 					<div className="mb-4 flex flex-col gap-4">
 						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 							<div className="flex flex-1 flex-col gap-1">
@@ -177,122 +168,109 @@ export const CreateSkillPage = () => {
 									How this skill appears in the catalog
 								</Muted>
 							</div>
-
 							<div className="flex flex-2 flex-col gap-3">
-								<Controller
-									name="name"
-									control={control}
-									rules={{ required: true }}
-									render={({ field }) => (
-										<Field>
-											<FieldLabel htmlFor={nameId}>
-												Name{" "}
-												<span className="text-destructive">
-													*
-												</span>
-											</FieldLabel>
-											<Input
-												id={nameId}
-												placeholder="My Skill"
-												{...field}
-											/>
-										</Field>
-									)}
-								/>
-
-								<Controller
-									name="description"
-									control={control}
-									render={({ field }) => (
-										<Field>
-											<FieldLabel htmlFor={descId}>
-												Description
-											</FieldLabel>
-											<Textarea
-												id={descId}
-												placeholder="A short description shown in the catalog..."
-												rows={3}
-												className="max-h-40"
-												{...field}
-											/>
-										</Field>
-									)}
-								/>
-
-								<Controller
-									name="tags"
-									control={control}
-									render={({ field }) => (
-										<Field>
-											<FieldLabel htmlFor={tagId}>
-												Tags
-											</FieldLabel>
-											<Input
-												id={tagId}
-												placeholder='Press "Enter" to add tag'
-												value={tagInput}
-												onChange={(e) =>
-													setTagInput(e.target.value)
+								<Field>
+									<FieldLabel htmlFor={nameId}>
+										Name{" "}
+										<span className="text-destructive">
+											*
+										</span>
+									</FieldLabel>
+									<Input
+										id={nameId}
+										placeholder="My Skill"
+										value={form.name}
+										onChange={(e) =>
+											setForm((prev) => ({
+												...prev,
+												name: e.target.value,
+											}))
+										}
+									/>
+								</Field>
+								<Field>
+									<FieldLabel htmlFor={descId}>
+										Description
+									</FieldLabel>
+									<Textarea
+										id={descId}
+										placeholder="A short description shown in the catalog..."
+										rows={3}
+										className="max-h-40"
+										value={form.description}
+										onChange={(e) =>
+											setForm((prev) => ({
+												...prev,
+												description: e.target.value,
+											}))
+										}
+									/>
+								</Field>
+								<Field>
+									<FieldLabel htmlFor={tagId}>
+										Tags
+									</FieldLabel>
+									<Input
+										id={tagId}
+										placeholder='Press "Enter" to add tag'
+										value={tagInput}
+										onChange={(e) =>
+											setTagInput(e.target.value)
+										}
+										onKeyDown={(e) => {
+											if (e.key === "Enter") {
+												e.preventDefault();
+												const trimmed = tagInput.trim();
+												if (
+													trimmed &&
+													!form.tags.includes(trimmed)
+												) {
+													setForm((prev) => ({
+														...prev,
+														tags: [
+															...prev.tags,
+															trimmed,
+														],
+													}));
 												}
-												onKeyDown={(e) => {
-													if (e.key === "Enter") {
-														e.preventDefault();
-														const trimmed =
-															tagInput.trim();
-														if (
-															trimmed &&
-															!field.value.includes(
-																trimmed,
-															)
-														) {
-															field.onChange([
-																...field.value,
-																trimmed,
-															]);
+												setTagInput("");
+											}
+										}}
+									/>
+									{form.tags.length > 0 && (
+										<div className="flex flex-wrap gap-1">
+											{form.tags.map((tag) => (
+												<Badge
+													key={tag}
+													variant="secondary"
+													className="gap-1"
+												>
+													{tag}
+													<button
+														type="button"
+														onClick={() =>
+															setForm((prev) => ({
+																...prev,
+																tags: prev.tags.filter(
+																	(t) =>
+																		t !==
+																		tag,
+																),
+															}))
 														}
-														setTagInput("");
-													}
-												}}
-											/>
-											{field.value.length > 0 && (
-												<div className="flex flex-wrap gap-1">
-													{field.value.map((tag) => (
-														<Badge
-															key={tag}
-															variant="secondary"
-															className="gap-1"
-														>
-															{tag}
-															<button
-																type="button"
-																onClick={() =>
-																	field.onChange(
-																		field.value.filter(
-																			(
-																				t,
-																			) =>
-																				t !==
-																				tag,
-																		),
-																	)
-																}
-																className="hover:text-destructive"
-															>
-																<X className="size-3" />
-															</button>
-														</Badge>
-													))}
-												</div>
-											)}
-										</Field>
+														className="hover:text-destructive"
+													>
+														<X className="size-3" />
+													</button>
+												</Badge>
+											))}
+										</div>
 									)}
-								/>
+								</Field>
 							</div>
 						</div>
 						<Separator />
 					</div>
-
-					{/* Skill Definition */}
 					<div className="mb-4 flex flex-col gap-4">
 						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 							<div className="flex flex-1 flex-col gap-1">
@@ -304,72 +282,74 @@ export const CreateSkillPage = () => {
 									this skill
 								</Muted>
 							</div>
-
 							<div className="flex flex-2 flex-col gap-3">
-								<Controller
-									name="agentDescription"
-									control={control}
-									rules={{ required: true }}
-									render={({ field }) => (
-										<Field>
-											<FieldLabel htmlFor={agentDescId}>
-												Agent Description{" "}
-												<span className="text-destructive">
-													*
-												</span>
-											</FieldLabel>
-											<Textarea
-												id={agentDescId}
-												placeholder="What does this skill do and when should an agent use it?"
-												rows={3}
-												className="max-h-40"
-												{...field}
-											/>
-										</Field>
-									)}
-								/>
-
-								<Controller
-									name="skillContent"
-									control={control}
-									rules={{ required: true }}
-									render={({ field }) => (
-										<Field>
-											<FieldLabel
-												htmlFor={skillContentId}
-											>
-												Content{" "}
-												<span className="text-destructive">
-													*
-												</span>
-											</FieldLabel>
-											<Textarea
-												id={skillContentId}
-												placeholder="Full skill definition in Markdown..."
-												rows={8}
-												className="max-h-96"
-												{...field}
-											/>
-										</Field>
-									)}
-								/>
+								<Field>
+									<FieldLabel htmlFor={agentDescId}>
+										Use{" "}
+										<span className="text-destructive">
+											*
+										</span>
+									</FieldLabel>
+									<Textarea
+										id={agentDescId}
+										placeholder="What does this skill do and when should an agent use it?"
+										rows={2}
+										className="max-h-40"
+										value={form.agentDescription}
+										onChange={(e) =>
+											setForm((prev) => ({
+												...prev,
+												agentDescription:
+													e.target.value,
+											}))
+										}
+									/>
+								</Field>
+								<Field>
+									<FieldLabel htmlFor={skillContentId}>
+										Definition{" "}
+										<span className="text-destructive">
+											*
+										</span>
+									</FieldLabel>
+									<MarkdownEditor
+										id={skillContentId}
+										value={form.skillContent}
+										className="h-[80vh]"
+										onChange={(value) =>
+											setForm((prev) => ({
+												...prev,
+												skillContent: value,
+											}))
+										}
+									/>
+								</Field>
 							</div>
 						</div>
 						<Separator />
 					</div>
-
 					<div className="flex justify-end">
 						<Button
 							type="submit"
 							disabled={!isValid || isLoading}
 							className="w-full sm:w-auto"
 						>
-							Create Skill
+							Create
 						</Button>
 					</div>
 					{isLoading && <Progress className="h-1" />}
 				</form>
 			</div>
+			{isUploadOpen && (
+				<UploadProjectDialog
+					type="SKILL"
+					open={isUploadOpen}
+					handleClose={(appId) => {
+						if (appId) navigateSkill(appId);
+						setIsUploadOpen(false);
+					}}
+				/>
+			)}
 		</>
 	);
 };
