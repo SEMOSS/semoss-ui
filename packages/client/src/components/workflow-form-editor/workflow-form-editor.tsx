@@ -10,6 +10,7 @@ import {
 	Clock3,
 	Code,
 	Database,
+	GitBranch,
 	Loader2,
 	type LucideIcon,
 	Play,
@@ -161,6 +162,13 @@ const STEP_TYPES: {
 		icon: Workflow,
 		color: "text-teal-600",
 	},
+	{
+		type: "conditional",
+		label: "Conditional",
+		description: "Branch on a JS expression — run TRUE or FALSE steps",
+		icon: GitBranch,
+		color: "text-amber-600",
+	},
 ];
 
 const STATUS_STYLES: Record<string, string> = {
@@ -219,12 +227,7 @@ const TYPE_DISPLAY_META: Record<
 		runtimeType: "fan-out",
 	},
 	"sub-workflow": STEP_TYPES[9],
-	conditional: {
-		label: "Conditional",
-		description: "Branch the workflow based on an expression",
-		icon: Zap,
-		color: "text-amber-600",
-	},
+	conditional: STEP_TYPES[10],
 };
 
 let idCounter = Date.now();

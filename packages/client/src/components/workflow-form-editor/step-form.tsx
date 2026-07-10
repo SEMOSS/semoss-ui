@@ -4,6 +4,7 @@ import type {
 	WorkflowNode,
 } from "@/pages/workflow/workflow.types";
 import { AppStepForm } from "./forms/app-form";
+import { ConditionalStepForm } from "./forms/conditional-form";
 import { CustomPixelStepForm } from "./forms/custom-pixel-form";
 import { DatabaseStepForm } from "./forms/database-form";
 import { ForEachStepForm } from "./forms/for-each-form";
@@ -114,6 +115,16 @@ export function StepForm({
 					projects={projects}
 					onUpdate={onUpdate}
 					upstreamVars={upstreamVars}
+				/>
+			);
+		case "conditional":
+			return (
+				<ConditionalStepForm
+					step={step}
+					enginesByType={enginesByType}
+					projects={projects}
+					upstreamVars={upstreamVars}
+					onUpdate={onUpdate}
 				/>
 			);
 		default:

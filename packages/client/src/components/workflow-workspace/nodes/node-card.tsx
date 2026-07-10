@@ -581,27 +581,56 @@ function InlineFanOutForm({
 function InlineConditionalForm({
 	node,
 	onUpdate,
+	onOpenSettings,
 }: {
 	node: WorkflowNode;
 	onUpdate: (n: WorkflowNode) => void;
+	onOpenSettings?: () => void;
 }) {
 	const config = node.config as ConditionalConfig;
+	const trueCount = config.trueGraph?.nodes?.length ?? 0;
+	const falseCount = config.falseGraph?.nodes?.length ?? 0;
 	const update = (c: ConditionalConfig) => onUpdate({ ...node, config: c });
 	return (
-		<Field>
-			<FieldLabel className="text-[11px]">
-				Condition Expression
-			</FieldLabel>
-			<Textarea
-				className="nodrag nopan font-mono text-[11px]"
-				rows={3}
-				value={config.condition}
-				onChange={(e) =>
-					update({ ...config, condition: e.target.value })
-				}
-				placeholder="${monthly_engine} != null"
-			/>
-		</Field>
+		<div className="flex flex-col gap-2">
+			<Field>
+				<FieldLabel className="text-[11px]">Condition</FieldLabel>
+				<Textarea
+					className="nodrag nopan font-mono text-[11px]"
+					rows={2}
+					value={config.condition ?? ""}
+					onChange={(e) =>
+						update({ ...config, condition: e.target.value })
+					}
+					placeholder="${score} > 0.8"
+				/>
+			</Field>
+			<div className="flex items-center justify-between rounded border bg-muted/30 px-2 py-1.5">
+				<div className="flex gap-3 text-[11px] text-muted-foreground">
+					<span>
+						<span className="font-medium text-emerald-600">
+							TRUE
+						</span>{" "}
+						{trueCount} {trueCount === 1 ? "step" : "steps"}
+					</span>
+					<span>
+						<span className="font-medium text-destructive">
+							FALSE
+						</span>{" "}
+						{falseCount} {falseCount === 1 ? "step" : "steps"}
+					</span>
+				</div>
+				{onOpenSettings && (
+					<button
+						type="button"
+						className="nodrag nopan text-[11px] text-primary underline-offset-2 hover:underline"
+						onClick={onOpenSettings}
+					>
+						Edit branches
+					</button>
+				)}
+			</div>
+		</div>
 	);
 }
 
@@ -668,10 +697,12 @@ function InlineNodeForm({
 	node,
 	enginesByType,
 	onUpdate,
+	onOpenSettings,
 }: {
 	node: WorkflowNode;
 	enginesByType: Record<string, EngineOption[]>;
 	onUpdate: (n: WorkflowNode) => void;
+	onOpenSettings?: () => void;
 }) {
 	switch (node.type) {
 		case "trigger":
@@ -723,7 +754,13 @@ function InlineNodeForm({
 		case "fan-out":
 			return <InlineFanOutForm node={node} onUpdate={onUpdate} />;
 		case "conditional":
-			return <InlineConditionalForm node={node} onUpdate={onUpdate} />;
+			return (
+				<InlineConditionalForm
+					node={node}
+					onUpdate={onUpdate}
+					onOpenSettings={onOpenSettings}
+				/>
+			);
 		case "transform":
 			return <InlineTransformForm node={node} onUpdate={onUpdate} />;
 		default:
@@ -906,6 +943,7 @@ export const WorkflowNodeCard = memo(({ id, data }: NodeProps) => {
 							node={fullNode}
 							enginesByType={enginesByType}
 							onUpdate={onNodeUpdate}
+							onOpenSettings={() => openSettings(id)}
 						/>
 
 						{/* ── per-node test run ── */}

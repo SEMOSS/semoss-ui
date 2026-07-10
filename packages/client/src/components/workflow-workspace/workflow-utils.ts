@@ -202,6 +202,14 @@ export function buildPixelPreview(node: WorkflowNode): string {
 		case "transform":
 			return `// Transform (${str(c.operation, "convert-to-objects")}): ${str(c.inputVar)} → ${str(node.outputVar)}`;
 
+		case "conditional": {
+			const cc =
+				c as unknown as import("@/pages/workflow/workflow.types").ConditionalConfig;
+			const trueBranch = cc.trueGraph?.nodes?.length ?? 0;
+			const falseBranch = cc.falseGraph?.nodes?.length ?? 0;
+			return `// If ${str(c.condition)} → TRUE (${trueBranch} steps) | FALSE (${falseBranch} steps)`;
+		}
+
 		default:
 			return `// ${node.type}`;
 	}

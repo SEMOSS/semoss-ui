@@ -30,6 +30,7 @@ import type {
 	VectorEngineConfig,
 	WorkflowNode,
 } from "@/pages/workflow/workflow.types";
+import { ConditionalStepForm } from "../../workflow-form-editor/forms/conditional-form";
 import { EngineSelect } from "../../workflow-form-editor/forms/shared";
 import { buildPixelPreview } from "../workflow-utils";
 
@@ -669,10 +670,12 @@ function CustomPixelForm({
 				<p className="mb-1 text-muted-foreground text-xs">
 					Use{" "}
 					<code className="rounded bg-muted px-1">
+						{/* biome-ignore lint/suspicious/noTemplateCurlyInString: literal example */}
 						{"${varName}"}
 					</code>{" "}
 					to reference upstream outputs or{" "}
 					<code className="rounded bg-muted px-1">
+						{/* biome-ignore lint/suspicious/noTemplateCurlyInString: literal example */}
 						{"${config.KEY}"}
 					</code>{" "}
 					for SMSS config.
@@ -748,33 +751,6 @@ function FanOutForm({
 			<div className="rounded-md border border-border border-dashed p-3 text-center text-muted-foreground text-xs">
 				Sub-graph editing opens in the canvas. Double-click the Fan-out
 				node on the canvas to expand.
-			</div>
-		</div>
-	);
-}
-
-function ConditionalForm({
-	config,
-	upstreamVars,
-	onChange,
-}: {
-	config: ConditionalConfig;
-	upstreamVars: string[];
-	onChange: (c: ConditionalConfig) => void;
-}) {
-	return (
-		<div className="flex flex-col gap-4">
-			<BoundInput
-				label="Condition Expression"
-				value={config.condition}
-				placeholder="${monthly_engine} != null"
-				onChange={(v) => onChange({ ...config, condition: v })}
-				upstreamVars={upstreamVars}
-				mono
-			/>
-			<div className="rounded-md border border-border border-dashed p-3 text-center text-muted-foreground text-xs">
-				True / False sub-graphs open in the canvas. Double-click the
-				Conditional node to expand.
 			</div>
 		</div>
 	);
@@ -1007,10 +983,14 @@ export function NodeSettingsPanel({
 					/>
 				)}
 				{node.type === "conditional" && (
-					<ConditionalForm
-						config={node.config as ConditionalConfig}
+					<ConditionalStepForm
+						step={node}
+						enginesByType={enginesByType}
+						projects={[]}
 						upstreamVars={upstreamVars}
-						onChange={update}
+						onUpdate={(updated) =>
+							update(updated.config as ConditionalConfig)
+						}
 					/>
 				)}
 				{node.type === "transform" && (
