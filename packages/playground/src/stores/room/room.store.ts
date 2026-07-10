@@ -399,21 +399,6 @@ export class RoomStore {
 	}
 
 	/**
-	 * Get the tokens used in the most recent message
-	 */
-	get lastMessageTokens(): number {
-		// Walk back from tail to find the most recent message with tokens
-		let currMessage = this.tail as AbstractMessageStore;
-		while (currMessage) {
-			if (currMessage.tokens && currMessage.tokens > 0) {
-				return currMessage.tokens;
-			}
-			currMessage = currMessage.parent;
-		}
-		return 0;
-	}
-
-	/**
 	 * Get the total tokens consumed across ALL messages in the conversation
 	 * (not context window - this is the actual sum of all input + output tokens)
 	 */
