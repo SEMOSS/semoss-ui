@@ -320,7 +320,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			<div className="relative w-full flex-1 overflow-hidden">
 				<ScrollArea
 					// Force Radix's table-display viewport wrapper to block so wide content can't push the column past the viewport width
-					className="[&_[data-slot=scroll-area-viewport]>div]:!block h-full w-full overflow-hidden"
+					className="[&_[data-slot=scroll-area-viewport]>div]:block! h-full w-full overflow-hidden"
 					viewportRef={(ele) => {
 						setScrollEle(ele);
 					}}
@@ -331,7 +331,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						}}
 					>
 						<div className="mx-auto flex w-full max-w-[1120px] flex-col gap-2 px-4 py-6 sm:px-8 lg:px-16">
-							{room.history.map((m, mIdx) => {
+							{room.history.map((m) => {
 								if (!m.visible) {
 									return null;
 								}
@@ -385,7 +385,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							)}
 						</div>
 						{room.error ? (
-							<div className="mx-auto flex w-screen max-w-[1120px] items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
+							<div className="mx-auto flex w-full max-w-[1120px] items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
 								<div className="flex h-10 w-10 items-center justify-center rounded-full">
 									<TriangleAlertIcon className="h-6 w-6" />
 								</div>
@@ -528,6 +528,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					}
 					tokensUsed={room.tokensUsed}
 					tokensMax={chat.models.contextWindow}
+					totalTokens={room.totalTokensConsumed}
 					onCompact={handleCompactMessages}
 					onOpenSettings={handleOpenSettings}
 					excludeCommandIds={["agent", "workspace"]}

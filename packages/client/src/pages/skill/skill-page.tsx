@@ -1,3 +1,3 @@
-import { CatalogPage } from "../app/catalog-page";
+import { ProjectCatalog } from "@/components/project";
 
-export const SkillPage = () => <CatalogPage type="skill" />;
+export const SkillPage = () => <ProjectCatalog type="SKILL" />;
