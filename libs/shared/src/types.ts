@@ -315,6 +315,7 @@ export interface ThemeMap {
 			/** Whether to enable the server-side agent harness mode (RunAgent) in the chat input. */
 			enableAgentHarness?: boolean;
 			enableRewrite?: boolean;
+			enableEdit?: boolean;
 			enableDarkMode?: boolean;
 			enablePromptOptimizer?: boolean;
 			/** Whether to hide tools when the app is rendered inside an iframe. */

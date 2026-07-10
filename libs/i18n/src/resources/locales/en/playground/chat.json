@@ -28,7 +28,10 @@
 		"emptyResponse": "Empty response."
 	},
 	"input": {
-		"copyMessage": "Copy Message"
+		"copyMessage": "Copy Message",
+		"editMessage": "Edit Message",
+		"saveAndSubmit": "Save & Submit",
+		"cancel": "Cancel"
 	},
 	"plan": {
 		"heading": "Here is the plan that I have created. Feel free to modify it as needed.",
