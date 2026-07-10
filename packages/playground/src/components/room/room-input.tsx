@@ -200,28 +200,12 @@ const CompactButton: React.FC<{
 	tooltipText: string;
 	onClick: (e: React.MouseEvent) => void;
 }> = ({ disabled, tooltipText, onClick }) => {
-	const [tooltipOpen, setTooltipOpen] = useState(false);
-	const isHovering = useRef(false);
-
-	const handleMouseEnter = () => {
-		isHovering.current = true;
-		setTooltipOpen(true);
-	};
-
-	const handleMouseLeave = () => {
-		isHovering.current = false;
-		setTooltipOpen(false);
-	};
+	const { t } = useTranslation("room");
 
 	return (
-		<Tooltip open={tooltipOpen}>
+		<Tooltip>
 			<TooltipTrigger asChild>
-				{/* biome-ignore lint/a11y/noStaticElementInteractions: span wraps a disabled button to capture hover for tooltip */}
-				<span
-					className="mt-2 w-full"
-					onMouseEnter={handleMouseEnter}
-					onMouseLeave={handleMouseLeave}
-				>
+				<span className="w-full">
 					<Button
 						size="sm"
 						variant="outline"
@@ -229,7 +213,7 @@ const CompactButton: React.FC<{
 						disabled={disabled}
 						onClick={onClick}
 					>
-						Compact Conversation
+						{t("settings.compact")}
 					</Button>
 				</span>
 			</TooltipTrigger>
@@ -396,28 +380,27 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					{contextUsedPercent !== undefined && descriptionKey && (
 						<p className="w-full">{t(descriptionKey)}</p>
 					)}
-					{(contextUsedPercent !== undefined ||
-						totalTokens !== undefined) && (
-						<div className="mt-1 space-y-1 border-t pt-1">
-							{contextUsedPercent !== undefined && (
-								<p className="tabular-nums">
-									<span className="font-bold">
-										Last Message:
-									</span>{" "}
-									{tokensUsed?.toLocaleString()} /{" "}
-									{formatTokens(tokensMax)} Context Window (
-									{contextUsedPercent.toFixed(1)}%)
-								</p>
-							)}
-							{totalTokens !== undefined && (
-								<p className="tabular-nums">
-									<span className="font-bold">
-										Chat Total:
-									</span>{" "}
-									{totalTokens.toLocaleString()} tokens
-								</p>
-							)}
-						</div>
+					{contextUsedPercent !== undefined && (
+						<p className="flex w-full items-baseline justify-between gap-3">
+							<span>{t("contextWindow.memoryUsedTitle")}</span>
+							<span className="whitespace-nowrap text-end tabular-nums">
+								{t("contextWindow.memoryUsedValue", {
+									used: formatTokens(tokensUsed),
+									total: formatTokens(tokensMax),
+									percent: contextUsedPercent.toFixed(1),
+								})}
+							</span>
+						</p>
+					)}
+					{totalTokens !== undefined && (
+						<p className="flex w-full items-baseline justify-between gap-3">
+							<span>{t("contextWindow.totalUsedTitle")}</span>
+							<span className="whitespace-nowrap text-end tabular-nums">
+								{t("contextWindow.totalUsedValue", {
+									total: formatTokens(totalTokens),
+								})}
+							</span>
+						</p>
 					)}
 					{onCompact && (
 						<CompactButton
@@ -427,7 +410,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									? t("input.thinkingTooltip")
 									: hasOutstandingTools
 										? t("input.completeTool")
-										: "Compress your conversation to save tokens. Your previous messages stay as is."
+										: t("settings.compactTooltip")
 							}
 							onClick={(e) => {
 								e.stopPropagation();
