@@ -5,6 +5,7 @@ import {
 	type PlaywrightScript,
 	ScriptExecutor,
 } from "../services/scriptExecutor";
+import { escapePixelString, SemossClient } from "../services/semossClient";
 import { RecordingPanel } from "./components/RecordingPanel";
 import { WelcomeState } from "./components/WelcomeState";
 
@@ -193,8 +194,9 @@ const PanelApp: React.FC = () => {
 					);
 
 					// Parse and set the script
-					let content = scriptContent;
-
+					let content = scriptContent as {
+						steps?: string | unknown[];
+					};
 					// Parse if it's a string
 					if (typeof content === "string") {
 						try {
@@ -263,32 +265,11 @@ const PanelApp: React.FC = () => {
 					// Use async IIFE to handle async operations
 					(async () => {
 						try {
-							// Get the SEMOSS module path (usually /Monolith)
-							const MODULE = "/Monolith";
-							const SEMOSS_URL = window.location.origin + MODULE;
-
 							// First get a session ID
-							const sessionResponse = await fetch(
-								`${SEMOSS_URL}/api/engine/runPixel`,
-								{
-									method: "POST",
-									headers: {
-										"Content-Type": "application/json",
-									},
-									credentials: "include",
-									body: JSON.stringify({
-										expression: "Session();",
-									}),
-								},
-							);
-
-							if (!sessionResponse.ok) {
-								throw new Error("Failed to get session ID");
-							}
-
-							const sessionData = await sessionResponse.json();
 							const sessionId =
-								sessionData.pixelReturn?.[0]?.output;
+								await SemossClient.runPixel<string>(
+									"Session();",
+								);
 
 							if (!sessionId) {
 								throw new Error("No session ID returned");
@@ -297,29 +278,9 @@ const PanelApp: React.FC = () => {
 							console.log("[PANEL] 📋 Session ID:", sessionId);
 
 							// Now fetch the script using GetAllSteps
-							const scriptResponse = await fetch(
-								`${SEMOSS_URL}/api/engine/runPixel`,
-								{
-									method: "POST",
-									headers: {
-										"Content-Type": "application/json",
-									},
-									credentials: "include",
-									body: JSON.stringify({
-										expression: `GetAllSteps(project=["${projectID}"], sessionId=["${sessionId}"], fileName=["${fileName}"]);`,
-									}),
-								},
+							const scriptContent = await SemossClient.runPixel(
+								`GetAllSteps(project=["${escapePixelString(projectID)}"], sessionId=["${escapePixelString(sessionId)}"], fileName=["${escapePixelString(fileName)}"]);`,
 							);
-
-							if (!scriptResponse.ok) {
-								throw new Error(
-									"Failed to fetch script content",
-								);
-							}
-
-							const scriptData = await scriptResponse.json();
-							const scriptContent =
-								scriptData.pixelReturn?.[0]?.output;
 
 							if (!scriptContent) {
 								throw new Error("No script content returned");
@@ -344,7 +305,9 @@ const PanelApp: React.FC = () => {
 							);
 
 							// Parse and set the script
-							let content = scriptContent;
+							let content = scriptContent as {
+								steps?: string | unknown[];
+							};
 							if (typeof content === "string") {
 								try {
 									content = JSON.parse(content);
@@ -429,29 +392,9 @@ const PanelApp: React.FC = () => {
 				// Use async IIFE to handle async operations
 				(async () => {
 					try {
-						// Get the SEMOSS module path (usually /Monolith)
-						const MODULE = "/Monolith";
-						const SEMOSS_URL = window.location.origin + MODULE;
-
 						// First get a session ID
-						const sessionResponse = await fetch(
-							`${SEMOSS_URL}/api/engine/runPixel`,
-							{
-								method: "POST",
-								headers: { "Content-Type": "application/json" },
-								credentials: "include",
-								body: JSON.stringify({
-									expression: "Session();",
-								}),
-							},
-						);
-
-						if (!sessionResponse.ok) {
-							throw new Error("Failed to get session ID");
-						}
-
-						const sessionData = await sessionResponse.json();
-						const sessionId = sessionData.pixelReturn?.[0]?.output;
+						const sessionId =
+							await SemossClient.runPixel<string>("Session();");
 
 						if (!sessionId) {
 							throw new Error("No session ID returned");
@@ -460,25 +403,9 @@ const PanelApp: React.FC = () => {
 						console.log("[PANEL] 📋 Session ID:", sessionId);
 
 						// Now fetch the script using GetAllSteps
-						const scriptResponse = await fetch(
-							`${SEMOSS_URL}/api/engine/runPixel`,
-							{
-								method: "POST",
-								headers: { "Content-Type": "application/json" },
-								credentials: "include",
-								body: JSON.stringify({
-									expression: `GetAllSteps(project=["${script.projectId}"], sessionId=["${sessionId}"], fileName=["${script.fileName}"]);`,
-								}),
-							},
+						const scriptContent = await SemossClient.runPixel(
+							`GetAllSteps(project=["${escapePixelString(script.projectId)}"], sessionId=["${escapePixelString(sessionId)}"], fileName=["${escapePixelString(script.fileName)}"]);`,
 						);
-
-						if (!scriptResponse.ok) {
-							throw new Error("Failed to fetch script content");
-						}
-
-						const scriptData = await scriptResponse.json();
-						const scriptContent =
-							scriptData.pixelReturn?.[0]?.output;
 
 						if (!scriptContent) {
 							throw new Error("No script content returned");
@@ -495,11 +422,12 @@ const PanelApp: React.FC = () => {
 							);
 							throw new Error(`Backend error: ${scriptContent}`);
 						}
-
-						console.log("[PANEL] ✅ Script fetched successfully");
+						console.log("[PANEL] ? Script fetched successfully");
 
 						// Parse and set the script
-						let content = scriptContent;
+						let content = scriptContent as {
+							steps?: string | unknown[];
+						};
 						if (typeof content === "string") {
 							try {
 								content = JSON.parse(content);
@@ -514,18 +442,9 @@ const PanelApp: React.FC = () => {
 							}
 						}
 
-						if (
-							content &&
-							typeof (content as unknown as { steps?: unknown })
-								.steps === "string"
-						) {
+						if (content && typeof content.steps === "string") {
 							try {
-								(
-									content as unknown as { steps: unknown }
-								).steps = JSON.parse(
-									(content as unknown as { steps: string })
-										.steps,
-								);
+								content.steps = JSON.parse(content.steps);
 							} catch (e) {
 								console.error(
 									"[PANEL] ❌ Failed to parse steps:",

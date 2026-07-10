@@ -1,11 +1,13 @@
 <!doctype html>
 <html>
- <head>
-  <script id="semoss-env" type="application/json">{"APP": "b12d7bd5-7338-445d-9b11-ef1f3322d52b","MODULE": "/Monolith"}</script>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Playwright Recorded Scripts</title>
-  <style>
+
+<head>
+    <script id="semoss-env"
+        type="application/json">{"APP": "b12d7bd5-7338-445d-9b11-ef1f3322d52b","MODULE": "/Monolith"}</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Playwright Recorded Scripts</title>
+    <style>
         * {
             margin: 0;
             padding: 0;
@@ -369,73 +371,79 @@
             background: #3182ce;
         }
     </style>
- </head>
- <body>
-  <div class="container">
-   <!-- Header -->
-   <div class="header">
-    <h1>Playwright Recorded Scripts</h1>
-    <p>Select and execute browser automation scripts</p>
-   </div><!-- Script Details Card -->
-   <div class="card">
-    <h2>Script Details</h2><!-- Script Selector -->
-    <div class="form-group">
-     <label for="scriptSelector">Select Script</label> <select id="scriptSelector" disabled> <option value="">Loading scripts...</option> </select>
-    </div><!-- Success Message (shown after completion) -->
-    <div id="successMessage" class="success-message hidden">
-     Successfully fetched Playwright script: <span id="successScriptName"></span>
-    </div><!-- Error Message (shown after failure) -->
-    <div id="errorMessage" class="error-message hidden">
-     <span id="errorScriptName"></span> failed due to some error. Check the execution log.
-    </div><!-- Script Info Display -->
-    <div id="scriptInfo" class="script-info hidden">
-     <div class="info-row">
-      <span class="info-label">Title:</span> <span class="info-value" id="scriptTitle">-</span>
-     </div>
-     <div class="info-row">
-      <span class="info-label">Project ID:</span> <span class="info-value" id="scriptProjectId">-</span>
-     </div>
-     <div class="info-row">
-      <span class="info-label">Recorded File:</span> <span class="info-value" id="scriptFileName">-</span>
-     </div>
-    </div><!-- Execute Button -->
-    <button id="executeBtn" class="btn btn-primary" disabled>Execute Tool</button>
-   </div>
-  </div><!-- Browser Extension Required Modal -->
-  <div id="extensionModal" class="modal-overlay hidden">
-   <div class="modal">
-    <div class="modal-header">
-     <div class="modal-title-wrapper">
-      <div class="modal-icon">
-       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10" stroke="#e53e3e"></circle> <line x1="12" y1="8" x2="12" y2="12" stroke="#e53e3e"></line> <line x1="12" y1="16" x2="12.01" y2="16" stroke="#e53e3e"></line>
-       </svg>
-      </div>
-      <h3 class="modal-title">Browser Extension Required</h3>
-     </div>
-     <button class="modal-close" id="modalClose">×</button>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Playwright Recorded Scripts</h1>
+            <p>Select and execute browser automation scripts</p>
+        </div><!-- Script Details Card -->
+        <div class="card">
+            <h2>Script Details</h2><!-- Script Selector -->
+            <div class="form-group">
+                <label for="scriptSelector">Select Script</label> <select id="scriptSelector" disabled>
+                    <option value="">Loading scripts...</option>
+                </select>
+            </div><!-- Success Message (shown after completion) -->
+            <div id="successMessage" class="success-message hidden">
+                Successfully fetched Playwright script: <span id="successScriptName"></span>
+            </div><!-- Error Message (shown after failure) -->
+            <div id="errorMessage" class="error-message hidden">
+                <span id="errorScriptName"></span> failed due to some error. Check the execution log.
+            </div><!-- Script Info Display -->
+            <div id="scriptInfo" class="script-info hidden">
+                <div class="info-row">
+                    <span class="info-label">Title:</span> <span class="info-value" id="scriptTitle">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Project ID:</span> <span class="info-value" id="scriptProjectId">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Recorded File:</span> <span class="info-value" id="scriptFileName">-</span>
+                </div>
+            </div><!-- Execute Button -->
+            <button id="executeBtn" class="btn btn-primary" disabled>Execute Tool</button>
+        </div>
+    </div><!-- Browser Extension Required Modal -->
+    <div id="extensionModal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title-wrapper">
+                    <div class="modal-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" stroke="#e53e3e"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12" stroke="#e53e3e"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16" stroke="#e53e3e"></line>
+                        </svg>
+                    </div>
+                    <h3 class="modal-title">Browser Extension Required</h3>
+                </div>
+                <button class="modal-close" id="modalClose">×</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-message">The browser extension is not responding. To execute Playwright scripts, please
+                    ensure the SEMOSS Chrome Extension is installed and the side panel is open.</p>
+                <div class="modal-steps">
+                    <div class="modal-steps-title">
+                        Steps to open the extension:
+                    </div>
+                    <ol>
+                        <li>Look for the SEMOSS extension icon in your browser toolbar (puzzle piece icon)</li>
+                        <li>Click the extension icon to open the side panel</li>
+                        <li>Wait for the panel to load completely</li>
+                        <li>Click "Retry" below to continue</li>
+                    </ol>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-cancel" id="modalCancel">Cancel</button>
+                <button class="modal-btn modal-btn-primary" id="modalRetry">Retry</button>
+            </div>
+        </div>
     </div>
-    <div class="modal-body">
-     <p class="modal-message">The browser extension is not responding. To execute Playwright scripts, please ensure the SEMOSS Chrome Extension is installed and the side panel is open.</p>
-     <div class="modal-steps">
-      <div class="modal-steps-title">
-       Steps to open the extension:
-      </div>
-      <ol>
-       <li>Look for the SEMOSS extension icon in your browser toolbar (puzzle piece icon)</li>
-       <li>Click the extension icon to open the side panel</li>
-       <li>Wait for the panel to load completely</li>
-       <li>Click "Retry" below to continue</li>
-      </ol>
-     </div>
-    </div>
-    <div class="modal-footer">
-     <button class="modal-btn modal-btn-cancel" id="modalCancel">Cancel</button>
-     <button class="modal-btn modal-btn-primary" id="modalRetry">Retry</button>
-    </div>
-   </div>
-  </div>
-  <script>
+    <script>
         try {
             // ── Config ────────────────────────────────────────────────────────────
             const semossEnv = JSON.parse(document.getElementById('semoss-env').textContent);
@@ -799,23 +807,10 @@
 
                 try {
                     // Fetch script content from backend using GetAllSteps
-                    const SEMOSS_URL = window.location.origin + MODULE;
-
                     console.log('[PORTAL] 🔄 Getting session ID...');
 
-                    // First get a session ID
-                    const sessionResponse = await fetch(SEMOSS_URL + '/api/engine/runPixel', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify({ expression: 'Session();' })
-                    });
-
-                    if (!sessionResponse.ok) {
-                        throw new Error('Failed to get session ID');
-                    }
-
-                    const sessionData = await sessionResponse.json();
+                    // First get a session ID (using runPixel helper to include insightId)
+                    const sessionData = await runPixel('Session();');
                     const sessionId = sessionData.pixelReturn?.[0]?.output;
 
                     if (!sessionId) {
@@ -827,21 +822,8 @@
 
                     elements.executeBtn.innerHTML = '<span class="loading"></span>Loading script...';
 
-                    // Now fetch the script using GetAllSteps
-                    const scriptResponse = await fetch(SEMOSS_URL + '/api/engine/runPixel', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify({
-                            expression: 'GetAllSteps(project=["' + state.selectedScript.projectID + '"], sessionId=["' + sessionId + '"], fileName=["' + state.selectedScript.fileName + '"]);'
-                        })
-                    });
-
-                    if (!scriptResponse.ok) {
-                        throw new Error('Failed to fetch script content');
-                    }
-
-                    const scriptData = await scriptResponse.json();
+                    // Now fetch the script using GetAllSteps (using runPixel helper to include insightId)
+                    const scriptData = await runPixel('GetAllSteps(project=["' + state.selectedScript.projectID + '"], sessionId=["' + sessionId + '"], fileName=["' + state.selectedScript.fileName + '"]);');
                     console.log('[PORTAL] 📋 GetAllSteps response:', scriptData);
 
                     let scriptContent = scriptData.pixelReturn?.[0]?.output;
@@ -953,5 +935,6 @@
                 '<h1>Error Loading Application</h1><p>' + error.message + '</p></div>';
         }
     </script>
- </body>
+</body>
+
 </html>

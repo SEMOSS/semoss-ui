@@ -3,6 +3,8 @@
  * Handles Google OAuth authentication only
  */
 
+import { escapePixelString, SemossClient } from "./semossClient";
+
 /**
  * Base SEMOSS server URL (including the module path) used for the OAuth
  * session login. This mirrors the codebase OAuth flow in
@@ -10,7 +12,6 @@
  * The extension is not served from the SEMOSS host, so an absolute URL is
  * required here.
  */
-const SEMOSS_OAUTH_BASE = "http://localhost:9090/Monolith";
 
 export interface OAuthUserInfo {
 	name?: string;
@@ -56,12 +57,8 @@ export class AuthService {
 		provider: string,
 	): Promise<OAuthUserInfo | null> {
 		try {
-			const response = await fetch(
-				`${SEMOSS_OAUTH_BASE}/api/auth/userinfo/${provider}`,
-				{
-					method: "GET",
-					credentials: "include",
-				},
+			const response = await SemossClient.request(
+				`/api/auth/userinfo/${provider}`,
 			);
 
 			if (!response.ok) {
@@ -98,7 +95,8 @@ export class AuthService {
 		}
 
 		// Open the backend login endpoint in a popup window.
-		const url = `${SEMOSS_OAUTH_BASE}/api/auth/login/${provider}`;
+		const baseUrl = await SemossClient.getBaseUrl();
+		const url = `${baseUrl}/api/auth/login/${provider}`;
 		const popup = window.open(
 			url,
 			"_blank",
@@ -145,11 +143,8 @@ export class AuthService {
 	/**
 	 * Log in with native SEMOSS credentials (username/password).
 	 *
-	 * Follows the same pattern as loginWithOAuth(), but opens a native login
-	 * form instead of an external OAuth provider. The form is served by the
-	 * backend at /api/auth/login/native, POSTs to /api/auth/login, and on
-	 * success redirects. The extension polls /api/auth/userinfo/native to
-	 * detect when authentication completes.
+	 * Opens the normal SEMOSS login UI, then polls /api/auth/userinfo/native
+	 * to detect when authentication completes.
 	 */
 	static async loginWithNative(): Promise<boolean> {
 		// Already logged in?
@@ -159,8 +154,9 @@ export class AuthService {
 			return true;
 		}
 
-		// Open the backend login form in a popup window.
-		const url = `${SEMOSS_OAUTH_BASE}/api/auth/login/native`;
+		// Open the SEMOSS login UI instead of /api/auth/login/native. Native
+		// username/password login is a POST to /api/auth/login.
+		const url = await SemossClient.getUiLoginUrl();
 		const popup = window.open(
 			url,
 			"_blank",
@@ -233,8 +229,6 @@ export class AuthService {
 	 * Fetch user's accessible projects from SEMOSS (uses OAuth session)
 	 */
 	static async fetchProjectsFromSemoss(): Promise<Project[]> {
-		const cleanUrl = SEMOSS_OAUTH_BASE.replace(/\/$/, "");
-
 		// Use MyProjects() which is the standard reactor for getting user's projects
 		const expression = `MyProjects();`;
 
@@ -243,38 +237,15 @@ export class AuthService {
 				"[fetchProjectsFromSemoss] Calling MyProjects reactor...",
 			);
 
-			const response = await fetch(`${cleanUrl}/api/engine/runPixel`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/x-www-form-urlencoded",
-				},
-				credentials: "include", // Use OAuth session cookie
-				body: new URLSearchParams({
-					expression: expression,
-				}),
-			});
-
-			if (!response.ok) {
-				throw new Error(
-					`Failed to fetch projects: ${response.status} ${response.statusText}`,
-				);
-			}
-
-			const rawData = await response.json();
-			console.log("[fetchProjectsFromSemoss] Raw response:", rawData);
-
-			// Extract data from Pixel engine response wrapper
-			let projectsData: MyProjectsResponse[] = [];
-			if (
-				rawData.pixelReturn &&
-				Array.isArray(rawData.pixelReturn) &&
-				rawData.pixelReturn.length > 0
-			) {
-				const output = rawData.pixelReturn[0].output;
-				projectsData = Array.isArray(output) ? output : [];
-			} else if (Array.isArray(rawData)) {
-				projectsData = rawData;
-			}
+			const projectsOutput =
+				await SemossClient.runPixel<MyProjectsResponse[]>(expression);
+			const projectsData = Array.isArray(projectsOutput)
+				? projectsOutput
+				: [];
+			console.log(
+				"[fetchProjectsFromSemoss] Raw response:",
+				projectsData,
+			);
 
 			console.log(
 				`[fetchProjectsFromSemoss] Found ${projectsData.length} projects:`,
@@ -365,48 +336,34 @@ export class AuthService {
 		]);
 	}
 
+	static async refreshAuthState(): Promise<boolean> {
+		const data = await chrome.storage.local.get(["authProvider"]);
+		const provider = data.authProvider || "native";
+		const info = await AuthService.getOAuthUserInfo(provider);
+		if (!info?.name) {
+			await AuthService.clearCredentials();
+			return false;
+		}
+
+		await AuthService.saveOAuthSession(provider, info);
+		return true;
+	}
+
 	/**
 	 * Create a new CODE project with portals enabled (uses OAuth session)
 	 */
 	static async createProject(projectName: string): Promise<string> {
-		const cleanUrl = SEMOSS_OAUTH_BASE.replace(/\/$/, "");
-
 		// CreateProjectReactor parameters: project name, type=CODE, global=true, hasPortal=true
-		const expression = `CreateProject(project=["${projectName}"], projectType=["CODE"], global=[true], portal=[true]);`;
+		const expression = `CreateProject(project=["${escapePixelString(projectName)}"], projectType=["CODE"], global=[true], portal=[true]);`;
 
 		try {
-			const response = await fetch(`${cleanUrl}/api/engine/runPixel`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/x-www-form-urlencoded",
-				},
-				credentials: "include", // Use OAuth session cookie
-				body: new URLSearchParams({
-					expression: expression,
-				}),
-			});
-
-			if (!response.ok) {
-				throw new Error(
-					`Project creation failed: ${response.status} ${response.statusText}`,
-				);
-			}
-
-			const rawData = await response.json();
-
-			// Extract project ID from response
-			let projectId: string;
-			if (
-				rawData.pixelReturn &&
-				Array.isArray(rawData.pixelReturn) &&
-				rawData.pixelReturn.length > 0
-			) {
-				const output = rawData.pixelReturn[0].output;
-				// CreateProject returns a map with project_id
-				projectId = output.project_id || output.projectId || output.id;
-			} else {
-				throw new Error("Invalid response from CreateProject");
-			}
+			const output = await SemossClient.runPixel<{
+				project_id?: string;
+				projectId?: string;
+				id?: string;
+			}>(expression);
+			const projectId =
+				output.project_id || output.projectId || output.id;
 
 			if (!projectId) {
 				throw new Error("No project ID returned from CreateProject");
@@ -422,56 +379,34 @@ export class AuthService {
 	}
 
 	/**
-	 * Clone portal template from GitHub to the project (uses OAuth session)
-	 * Note: Uses 'browser-extension-recorder' branch for portal templates
+	 * Create portal from bundled template (no external dependencies).
+	 * Sends the portal HTML directly to SEMOSS to avoid git cloning issues.
 	 */
-	static async clonePortalsToProject(projectId: string): Promise<void> {
-		const cleanUrl = SEMOSS_OAUTH_BASE.replace(/\/$/, "");
+	static async createPortalFromTemplate(projectId: string): Promise<void> {
+		// Fetch the bundled portal template
+		const portalHtmlUrl = chrome.runtime.getURL("src/portals/index.html");
+		const response = await fetch(portalHtmlUrl);
+		const portalHtml = await response.text();
 
-		// GitCloneIntoProjectPortalsReactor parameters - using browser-extension-recorder branch
-		const expression = `GitCloneIntoProjectPortals(project=["${projectId}"], repo=["https://github.com/SEMOSS/semoss-ui.git"], branch=["browser-extension-recorder"], subdirectory=["packages/chrome-extension/src/portals"]);`;
+		// Replace the placeholder APP ID with the actual project ID
+		const updatedHtml = portalHtml.replace(
+			/"APP":\s*"[^"]*"/,
+			`"APP": "${projectId}"`,
+		);
+
+		// Send to SEMOSS using a new reactor that saves portal HTML directly
+		const expression = `CreateProjectPortalFromTemplate(project=["${escapePixelString(projectId)}"], htmlContent=["${escapePixelString(updatedHtml)}"]);`;
 
 		try {
-			const response = await fetch(`${cleanUrl}/api/engine/runPixel`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/x-www-form-urlencoded",
-				},
-				credentials: "include", // Use OAuth session cookie
-				body: new URLSearchParams({
-					expression: expression,
-				}),
-			});
-
-			if (!response.ok) {
-				throw new Error(
-					`Portal cloning failed: ${response.status} ${response.statusText}`,
-				);
-			}
-
-			const rawData = await response.json();
-			console.log("[clonePortalsToProject] Response:", rawData);
-
-			// Check for error in response
-			if (
-				rawData.pixelReturn &&
-				Array.isArray(rawData.pixelReturn) &&
-				rawData.pixelReturn.length > 0
-			) {
-				const output = rawData.pixelReturn[0];
-				if (output.operationType === "ERROR") {
-					console.error(
-						"[clonePortalsToProject] Error from reactor:",
-						output,
-					);
-					throw new Error(output.output || "Portal cloning failed");
-				}
-			}
+			await SemossClient.runPixel(expression);
+			console.log(
+				"[createPortalFromTemplate] Portal created successfully",
+			);
 		} catch (error) {
 			if (error instanceof Error) {
-				throw new Error(`Portal cloning error: ${error.message}`);
+				throw new Error(`Portal creation error: ${error.message}`);
 			}
-			throw new Error("Portal cloning failed: Unknown error");
+			throw new Error("Portal creation failed: Unknown error");
 		}
 	}
 
@@ -479,42 +414,11 @@ export class AuthService {
 	 * Add MCP and PLAYWRIGHT tags to a project so it shows up in playground (uses OAuth session)
 	 */
 	static async addPlaywrightTags(projectId: string): Promise<void> {
-		const cleanUrl = SEMOSS_OAUTH_BASE.replace(/\/$/, "");
-
 		// Use SetProjectMetadata reactor to add tags
-		const expression = `SetProjectMetadata(project=["${projectId}"], meta=[{"tag":["MCP", "PLAYWRIGHT"]}]);`;
+		const expression = `SetProjectMetadata(project=["${escapePixelString(projectId)}"], meta=[{"tag":["MCP", "PLAYWRIGHT"]}]);`;
 
 		try {
-			const response = await fetch(`${cleanUrl}/api/engine/runPixel`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/x-www-form-urlencoded",
-				},
-				credentials: "include", // Use OAuth session cookie
-				body: new URLSearchParams({
-					expression: expression,
-				}),
-			});
-
-			if (!response.ok) {
-				throw new Error(
-					`Failed to add tags: ${response.status} ${response.statusText}`,
-				);
-			}
-
-			const rawData = await response.json();
-
-			// Check for error in response
-			if (
-				rawData.pixelReturn &&
-				Array.isArray(rawData.pixelReturn) &&
-				rawData.pixelReturn.length > 0
-			) {
-				const output = rawData.pixelReturn[0];
-				if (output.operationType === "ERROR") {
-					throw new Error(output.output || "Failed to add tags");
-				}
-			}
+			await SemossClient.runPixel(expression);
 
 			console.log("Added MCP and PLAYWRIGHT tags to project:", projectId);
 		} catch (error) {

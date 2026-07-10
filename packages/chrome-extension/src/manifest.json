@@ -42,7 +42,7 @@
 	],
 	"web_accessible_resources": [
 		{
-			"resources": ["main-bridge.js"],
+			"resources": ["main-bridge.js", "src/portals/index.html"],
 			"matches": ["<all_urls>"]
 		}
 	],
