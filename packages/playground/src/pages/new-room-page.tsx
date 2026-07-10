@@ -203,11 +203,25 @@ export const NewRoomPage = observer(() => {
 				preCreatedRoom.setMode(mode === "agent" ? "agent" : "chat");
 				preCreatedRoom.setMetadata({ name: prompt.substring(0, 15) });
 				await preCreatedRoom.updateRoomOptions(options);
-				preCreatedRoom.askMessage(prompt, files).then(() => {
-					runInAction(() => {
-						chat.keys.roomCounter++;
-					});
+				// Optimistically surface the room in the nav — GetPlaygroundRooms
+				// won't return it until its first message has data.
+				chat.addOptimisticRoom({
+					ROOM_ID: preCreatedRoom.roomId,
+					ROOM_NAME: prompt.substring(0, 100),
+					DATE_CREATED: new Date().toISOString(),
+					WORKSPACE_ID: options.workspace?.workspace_id,
 				});
+				// Fire-and-forget so we navigate without waiting on the response.
+				(async () => {
+					try {
+						await preCreatedRoom.askMessage(prompt, files);
+						runInAction(() => {
+							chat.keys.roomCounter++;
+						});
+					} catch {
+						chat.removeOptimisticRoom(preCreatedRoom.roomId);
+					}
+				})();
 				submittedRef.current = true;
 				navigate(`/room/${preCreatedRoom.roomId}`);
 			} else {

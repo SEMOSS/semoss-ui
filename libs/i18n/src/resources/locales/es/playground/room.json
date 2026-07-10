@@ -8,7 +8,8 @@
 		"edit": "Editar configuración",
 		"compact": "Compactar mensajes de herramientas",
 		"compactSuccess": "Mensajes de herramientas compactados correctamente",
-		"compactError": "Error al compactar los mensajes de herramientas"
+		"compactError": "Error al compactar los mensajes de herramientas",
+		"compactTooltip": "Compacta tu conversación para ahorrar tokens. Tus mensajes anteriores permanecen igual."
 	},
 	"form": {
 		"modelLabel": "Modelo",
@@ -100,7 +101,9 @@
 		"descriptionHigh": "Esta conversación está casi llena. El modelo pronto comenzará a olvidar mensajes anteriores. Compacta esta conversación o inicia un nuevo chat para continuar con el contexto completo.",
 		"descriptionExceeded": "Esta conversación ha superado su límite. El modelo ahora está olvidando mensajes anteriores. Compacta esta conversación o inicia un nuevo chat para obtener mejores resultados.",
 		"memoryUsedTitle": "Memoria usada:",
-		"memoryUsedValue": "{{used}} / {{total}} tokens ({{percent}}%)"
+		"memoryUsedValue": "{{used}} / {{total}} tokens ({{percent}}%)",
+		"totalUsedTitle": "Total del chat:",
+		"totalUsedValue": "{{total}} tokens"
 	},
 	"menuMcp": {
 		"searchPlaceholder": "Buscar conocimiento y cajas de herramientas",

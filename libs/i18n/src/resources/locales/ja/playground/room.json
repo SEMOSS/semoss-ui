@@ -5,7 +5,8 @@
 		"description": "ルーム設定を更新し、チャットの動作を変更します",
 		"open": "ルーム設定を開く",
 		"close": "ルーム設定を閉じる",
-		"edit": "ルーム設定を編集"
+		"edit": "ルーム設定を編集",
+		"compactTooltip": "会話を圧縮してトークンを節約します。これまでのメッセージはそのまま残ります。"
 	},
 	"form": {
 		"modelLabel": "モデル",
@@ -97,7 +98,9 @@
 		"descriptionHigh": "この会話はほぼ満杯です。モデルはまもなく以前のメッセージを忘れ始めます。完全なコンテキストで続けるには、この会話を圧縮するか新しいチャットを始めてください。",
 		"descriptionExceeded": "この会話は上限を超えました。モデルは現在、以前のメッセージを忘れています。最良の結果を得るには、この会話を圧縮するか新しいチャットを開始してください。",
 		"memoryUsedTitle": "使用メモリ:",
-		"memoryUsedValue": "{{used}} / {{total}} トークン ({{percent}}%)"
+		"memoryUsedValue": "{{used}} / {{total}} トークン ({{percent}}%)",
+		"totalUsedTitle": "チャット合計:",
+		"totalUsedValue": "{{total}} トークン"
 	},
 	"menuMcp": {
 		"searchPlaceholder": "ナレッジとツールボックスを検索",

@@ -512,7 +512,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 					<DeleteEntityDialog
 						open={deleteModal}
 						onOpenChange={setDeleteModal}
-						entityType={entityLabel}
+						entityLabel={entityLabel}
 						entityName={deleteTargetName}
 						entityId={id}
 						onConfirm={deleteWorkflow}
@@ -669,7 +669,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 							<DeleteEntityDialog
 								open={deleteModal}
 								onOpenChange={setDeleteModal}
-								entityType={entityLabel}
+								entityLabel={entityLabel}
 								entityName={deleteTargetName}
 								entityId={id}
 								onConfirm={deleteWorkflow}

@@ -1,3 +1,3 @@
-import { EditPage } from "../app/edit-page";
+import { ProjectEdit } from "@/components/project";
 
-export const SkillEditPage = () => <EditPage type="skill" />;
+export const SkillEditPage = () => <ProjectEdit type="SKILL" />;
