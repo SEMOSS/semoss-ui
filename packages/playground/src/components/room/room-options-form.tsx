@@ -538,7 +538,9 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 									min={0}
 									max={1}
 									step={0.01}
-									value={[options.autoCompactThreshold]}
+									value={[
+										options.autoCompactThreshold ?? 0.5,
+									]}
 									onValueChange={(value) =>
 										onOptionsChange({
 											autoCompactThreshold: value[0],

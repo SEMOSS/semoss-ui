@@ -193,6 +193,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		const willAutoCompact =
 			room.contextWindow !== undefined &&
 			room.contextWindow > 0 &&
+			room.tokensUsed !== undefined &&
 			room.tokensUsed / room.contextWindow >=
 				room.options.autoCompactThreshold;
 		// In agent-harness mode the message is run server-side via RunAgent
