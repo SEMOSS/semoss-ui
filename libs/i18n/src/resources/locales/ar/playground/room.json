@@ -50,8 +50,9 @@
 		"completeTool": "يرجى إكمال الأداة (الأدوات) للمتابعة",
 		"ask": "اسأل",
 		"errorProcessing": "خطأ في معالجة الدردشة",
-		"pauseTools": "إيقاف الأدوات مؤقتاً",
-		"pauseToolsTooltip": "إيقاف تنفيذ جميع الأدوات مؤقتاً حتى بعد الرسالة التالية"
+		"stopLabel": "إيقاف الرد",
+		"stopTooltip": "إيقاف",
+		"stoppingTooltip": "جارٍ الإيقاف"
 	},
 	"content": {
 		"scrollToTop": "انتقل إلى الأعلى",

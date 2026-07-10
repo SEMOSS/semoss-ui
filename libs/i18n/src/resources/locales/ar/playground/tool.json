@@ -5,7 +5,6 @@
 		"completed": "مكتمل",
 		"ready": "جاهز",
 		"autoExecute": "جارٍ التنفيذ التلقائي",
-		"paused": "متوقف مؤقتاً",
 		"queued": "في قائمة الانتظار للتنفيذ التلقائي"
 	},
 	"actions": {
@@ -19,10 +18,11 @@
 	"group": {
 		"labelClosed": "{{toolName}} + {{count}} أخرى",
 		"labelOpen": "الأدوات المنفذة ({{count}})",
+		"labelStreaming_one": "جارٍ تحميل {{count}} أداة…",
+		"labelStreaming_other": "جارٍ تحميل {{count}} أدوات…",
 		"summaryCompleted": "{{count}} مكتمل",
 		"summaryError": "{{count}} فشل",
-		"summaryCancelled": "{{count}} ملغى",
-		"summaryPaused": "{{count}} متوقف مؤقتاً"
+		"summaryCancelled": "{{count}} ملغى"
 	},
 	"form": {
 		"result": "النتيجة",

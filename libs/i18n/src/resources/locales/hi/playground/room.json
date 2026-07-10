@@ -50,8 +50,9 @@
 		"completeTool": "कृपया आगे बढ़ने के लिए टूल पूरा करें",
 		"ask": "पूछें",
 		"errorProcessing": "चैट प्रोसेस करने में त्रुटि",
-		"pauseTools": "टूल रोकें",
-		"pauseToolsTooltip": "अगले संदेश के बाद तक सभी टूल निष्पादन रोकें"
+		"stopLabel": "प्रतिक्रिया रोकें",
+		"stopTooltip": "रोकें",
+		"stoppingTooltip": "रोक रहा है"
 	},
 	"content": {
 		"scrollToTop": "शीर्ष पर स्क्रॉल करें",

@@ -50,8 +50,9 @@
 		"completeTool": "Veuillez compléter le(s) outil(s) pour continuer",
 		"ask": "Demander",
 		"errorProcessing": "Erreur de traitement du chat",
-		"pauseTools": "Suspendre les outils",
-		"pauseToolsTooltip": "Suspendre toute l'exécution des outils jusqu'après le prochain message"
+		"stopLabel": "Arrêter la réponse",
+		"stopTooltip": "Arrêter",
+		"stoppingTooltip": "Arrêt en cours"
 	},
 	"content": {
 		"scrollToTop": "Défiler vers le haut",

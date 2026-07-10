@@ -53,8 +53,9 @@
 		"completeTool": "Por favor, completa las herramientas para continuar",
 		"ask": "Preguntar",
 		"errorProcessing": "Error al procesar el chat",
-		"pauseTools": "Pausar herramientas",
-		"pauseToolsTooltip": "Pausar toda la ejecución de herramientas hasta después del siguiente mensaje"
+		"stopLabel": "Detener la respuesta",
+		"stopTooltip": "Detener",
+		"stoppingTooltip": "Deteniendo"
 	},
 	"content": {
 		"scrollToTop": "Ir al inicio",

@@ -57,8 +57,9 @@
 		"completeTool": "Voltooi de tool(s) om door te gaan",
 		"ask": "Vragen",
 		"errorProcessing": "Fout bij het verwerken van de chat",
-		"pauseTools": "Tools pauzeren",
-		"pauseToolsTooltip": "Pauzeer alle tooluitvoering tot na het volgende bericht"
+		"stopLabel": "Het antwoord stoppen",
+		"stopTooltip": "Stoppen",
+		"stoppingTooltip": "Bezig met stoppen"
 	},
 	"content": {
 		"scrollToTop": "Scroll naar boven",
