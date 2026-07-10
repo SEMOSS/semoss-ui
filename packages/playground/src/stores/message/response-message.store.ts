@@ -536,6 +536,9 @@ toolParameterValues=[${JSON.stringify({})}]${extra});`;
 				this.addChild(followUp);
 			}
 			followUp.sync(output.responseMessage);
+			runInAction(() => {
+				followUp.isThinking = false;
+			});
 			this.spliceHiddenMessages(followUp, output.extraMessages);
 			this.toolResponseMessage = null;
 		} catch (e) {

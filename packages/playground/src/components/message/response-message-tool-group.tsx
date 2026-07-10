@@ -55,8 +55,8 @@ const analyzeTools = (tools: ToolStore[]) => {
 
 	let status: keyof typeof groupStatusConfig = "SUCCESS";
 	if (counts.LOADING > 0) status = "LOADING";
+	else if (counts.CANCELLED > 0) status = "CANCELLED";
 	else if (counts.ERROR > 0) status = "ERROR";
-	else if (counts.CANCELLED === tools.length) status = "CANCELLED";
 
 	return { status, counts, loadingOptions, isResolving };
 };
