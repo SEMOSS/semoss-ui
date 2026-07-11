@@ -188,8 +188,8 @@ export const PromptBuilder = () => {
 
 	return (
 		<div className="flex flex-col gap-6">
-			<div className="grid grid-cols-[1fr_3fr]">
-				<div className="m-[4px_0] rounded-md bg-background p-4 shadow-sm">
+			<div className="grid grid-cols-[1fr_3fr] gap-x-6">
+				<div className="my-1 rounded-md border bg-background p-4 shadow-sm">
 					<PromptBuilderSummary
 						builder={builder}
 						currentBuilderStep={currentBuilderStep}
@@ -206,7 +206,10 @@ export const PromptBuilder = () => {
 			</div>
 			<div className="mt-4 mr-1 flex justify-end gap-2">
 				{currentBuilderStep !== PROMPT_BUILDER_CONTEXT_STEP && (
-					<Button variant="ghost" onClick={backButtonAction}>
+					<Button
+						variant="ghost"
+						onClick={backButtonAction}
+					>
 						Back
 					</Button>
 				)}
