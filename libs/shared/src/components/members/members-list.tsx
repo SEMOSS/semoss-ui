@@ -1,5 +1,5 @@
 import { ChevronDown, Pencil, Star, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Env, get, post } from "@semoss/sdk";
 import {
 	Avatar,
@@ -225,6 +225,8 @@ export const MembersList = ({
 			setUserData((prev) =>
 				prev.map((u) => (u.id === user.id ? { ...u, permission } : u)),
 			);
+			setUsersToDelete([]);
+			setSelectedIds(new Set());
 			toast.success("User permission updated successfully.");
 		}
 	};
@@ -269,13 +271,21 @@ export const MembersList = ({
 					return true;
 				})
 			: userData;
-
 	const canActOnOwners = adminMode || isOwner;
 	const canShowOwnerOption = adminMode || isOwner;
 	const canEditMembers =
 		adminMode || myPermission === "OWNER" || myPermission === "EDIT";
+	const totalOwnerUsers = userData
+		.filter((u) => u.permission === "OWNER")
+		.map((u) => u.id);
+	const isMultipleOwnerUserAvailable = totalOwnerUsers.length > 1;
 	const selectableUsers = userDataFiltered.filter(
-		(u) => (u.permission !== "OWNER" || canActOnOwners) && canEditMembers,
+		(u) =>
+			(u.permission !== "OWNER" || canActOnOwners) &&
+			canEditMembers &&
+			(u.permission === "OWNER"
+				? u.id !== currentUserId && isMultipleOwnerUserAvailable
+				: true),
 	);
 	const allSelected =
 		selectableUsers.length > 0 &&
@@ -293,14 +303,29 @@ export const MembersList = ({
 		}
 	}
 
-	function toggleSelectUser(user: MemberUser) {
-		setSelectedIds((prev) => {
-			const next = new Set(prev);
-			if (next.has(user.id)) next.delete(user.id);
-			else next.add(user.id);
-			return next;
-		});
-	}
+	const toggleSelectUser = useCallback(
+		(user: MemberUser) => {
+			const totalOwners = [...selectedIds, user.id];
+			const allOwnersSelected = totalOwnerUsers.every((id) =>
+				totalOwners.includes(id),
+			);
+			//detect if all owner users are selected, if so then remove current logged in user from selected
+			if (allOwnersSelected) {
+				const usersOtherThanCurrentUser = totalOwners.filter(
+					(id) => id !== currentUserId,
+				);
+				setSelectedIds(new Set(usersOtherThanCurrentUser));
+			} else {
+				setSelectedIds((prev) => {
+					const next = new Set(prev);
+					if (next.has(user.id)) next.delete(user.id);
+					else next.add(user.id);
+					return next;
+				});
+			}
+		},
+		[selectedIds, totalOwnerUsers, currentUserId],
+	);
 
 	return (
 		<>
@@ -317,7 +342,13 @@ export const MembersList = ({
 							size="sm"
 							onClick={() => {
 								const users = userDataFiltered.filter((u) =>
-									selectedIds.has(u.id),
+									isMultipleOwnerUserAvailable
+										? currentUserId === u.id
+											? false
+											: selectedIds.has(u.id)
+										: u.permission === "OWNER"
+											? false
+											: selectedIds.has(u.id),
 								);
 								setUsersToDelete(users);
 							}}
@@ -385,18 +416,33 @@ export const MembersList = ({
 										{showSelectionAndActions && (
 											<TableCell className="w-10">
 												<Checkbox
-													checked={selectedIds.has(
-														user.id,
-													)}
+													checked={
+														selectedIds.has(
+															user.id,
+														) &&
+														!(
+															allSelected &&
+															user.permission ===
+																"OWNER" &&
+															user.id ===
+																currentUserId
+														)
+													}
 													disabled={
 														!canEditMembers ||
 														(user.permission ===
 															"OWNER" &&
-															!canActOnOwners)
+															(!canActOnOwners ||
+																!isMultipleOwnerUserAvailable)) ||
+														(allSelected &&
+															user.permission ===
+																"OWNER" &&
+															user.id ===
+																currentUserId)
 													}
-													onCheckedChange={() =>
-														toggleSelectUser(user)
-													}
+													onCheckedChange={() => {
+														toggleSelectUser(user);
+													}}
 													aria-label={`Select ${user.name}`}
 												/>
 											</TableCell>
@@ -447,7 +493,13 @@ export const MembersList = ({
 															!canEditMembers ||
 															(user.permission ===
 																"OWNER" &&
-																!canActOnOwners)
+																(!canActOnOwners ||
+																!isMultipleOwnerUserAvailable)) ||
+														(allSelected &&
+															user.permission ===
+																"OWNER" &&
+															user.id ===
+																currentUserId)
 														}
 													>
 														<Button
@@ -459,7 +511,13 @@ export const MembersList = ({
 																!canEditMembers ||
 																(user.permission ===
 																	"OWNER" &&
-																	!canActOnOwners)
+																	(!canActOnOwners ||
+																	!isMultipleOwnerUserAvailable)) ||
+															(allSelected &&
+																user.permission ===
+																	"OWNER" &&
+																user.id ===
+																	currentUserId)
 															}
 														>
 															<span>
@@ -579,7 +637,13 @@ export const MembersList = ({
 															!canEditMembers ||
 															(user.permission ===
 																"OWNER" &&
-																!canActOnOwners)
+																(!canActOnOwners ||
+																	!isMultipleOwnerUserAvailable)) ||
+															(allSelected &&
+																user.permission ===
+																	"OWNER" &&
+																user.id ===
+																	currentUserId)
 														}
 														onClick={() =>
 															onEdit?.(user)
@@ -596,7 +660,13 @@ export const MembersList = ({
 															!canEditMembers ||
 															(user.permission ===
 																"OWNER" &&
-																!canActOnOwners)
+																(!canActOnOwners ||
+																	!isMultipleOwnerUserAvailable)) ||
+															(allSelected &&
+																user.permission ===
+																	"OWNER" &&
+																user.id ===
+																	currentUserId)
 														}
 														onClick={() =>
 															setUsersToDelete(
