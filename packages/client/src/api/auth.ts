@@ -439,26 +439,21 @@ export const addInsightUserPermissions = async (
 	projectId: string,
 ) => {
 	let url = `${Env.MODULE}/api/auth/`;
-
-	const postData = {
-		projectId: projectId,
-		insightId: id,
-		userpermissions: JSON.stringify(users),
-	};
 	if (admin) {
 		url += "admin/";
 	}
 	url += "insight/addInsightUserPermissions";
 
+	const postData = {
+		projectId: projectId,
+		insightId: id,
+		userpermissions: users,
+	};
+
 	const response = await post<{
 		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
+	}>(url, postData, {});
 	return response;
-	// figure out whether we want to do .catch here
 };
 
 export const editInsightUserPermissions = async (
@@ -468,25 +463,45 @@ export const editInsightUserPermissions = async (
 	projectId: string,
 ) => {
 	let url = `${Env.MODULE}/api/auth/`;
-	const postData = {
-		projectId: projectId,
-		insightId: id,
-		userpermissions: JSON.stringify(users),
-	};
 	if (admin) {
 		url += "admin/";
 	}
 	url += "insight/editInsightUserPermissions";
 
+	const postData = {
+		projectId: projectId,
+		insightId: id,
+		userpermissions: users,
+	};
+
 	const response = await post<{
 		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
+	}>(url, postData, {});
 	return response;
-	// figure out whether we want to do .catch here
+};
+
+export const removeInsightUserPermissions = async (
+	admin: boolean,
+	id: string,
+	userIds: string[],
+	projectId: string,
+) => {
+	let url = `${Env.MODULE}/api/auth/`;
+	if (admin) {
+		url += "admin/";
+	}
+	url += "insight/removeInsightUserPermissions";
+
+	const postData = {
+		projectId: projectId,
+		insightId: id,
+		ids: userIds,
+	};
+
+	const response = await post<{
+		success: boolean;
+	}>(url, postData, {});
+	return response;
 };
 
 export const editProjectUserPermission = async (
@@ -833,6 +848,28 @@ export const deleteMember = async (
 	url += "user/deleteUser";
 
 	const response = await post<boolean>(url, postData, {});
+	return response;
+};
+
+export const setUserLocked = async (
+	admin: boolean,
+	userId: string,
+	type: string,
+	isLocked: boolean,
+) => {
+	let url = `${Env.MODULE}/api/auth/`;
+	if (admin) {
+		url += "admin/";
+	}
+	url += "user/setUserLocked";
+
+	const response = await post<{ success: boolean }>(
+		url,
+		{ userId, type, isLocked },
+		{},
+	).catch((e) => {
+		throw Error(e);
+	});
 	return response;
 };
 

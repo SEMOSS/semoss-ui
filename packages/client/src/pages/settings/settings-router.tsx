@@ -9,7 +9,7 @@ import { EngineSettingsDetailPage } from "./engine-settings-detail-page";
 import { EngineSettingsIndexPage } from "./engine-settings-index-page";
 import { GitHubAppPage } from "./github-app-page";
 import { LLMFeedbackPage } from "./llm-feedback-page";
-import { MemberSettingsPage } from "./MemberSettingsPage";
+import { MemberSettingsPage } from "./member-settings-page";
 import { MyProfilePage } from "./my-profile-page";
 import { PlatformProfileDetailPage } from "./platform-profile-detail-page";
 import { PlatformProfilesPage } from "./platform-profiles-page";

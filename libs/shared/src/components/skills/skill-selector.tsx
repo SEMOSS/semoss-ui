@@ -61,7 +61,7 @@ export const SkillSelector: React.FC<SkillSelectorProps> = ({
 	 */
 	const getSkills = useIteratorPixel<App[], App>(
 		(limit, offset) =>
-			`META | MyProjects(${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}type = "SKILL", limit=[${limit}], offset=[${offset}])`,
+			`META | MyProjects(${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}projectType=["SKILL"], limit=[${limit}], offset=[${offset}])`,
 		(response) => (response.length < 25 ? -1 : Infinity),
 		(response) => response,
 		{ limit: 25 },
