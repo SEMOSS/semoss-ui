@@ -132,6 +132,8 @@ export const getProjects = async (
 			project_global: boolean;
 			project_id: string;
 			project_name: string;
+			project_display_name?: string;
+			project_type?: string;
 			project_permission: string;
 			project_visibility: boolean;
 		}[]

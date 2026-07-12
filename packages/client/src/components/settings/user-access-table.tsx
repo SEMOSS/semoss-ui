@@ -37,12 +37,16 @@ export const permissionLabel = (permission: string): string =>
 export interface UserAccessTableProps {
 	/** Resources the selected user currently has access to */
 	rows: UserResourceAccess[];
-	/** Show a Type column (used for engines) */
+	/** Show a Type column (used for engines and apps) */
 	showType?: boolean;
 	/** Loading state for the initial fetch */
 	loading?: boolean;
+	/** A further page is being fetched via infinite scroll (bottom spinner) */
+	loadingMore?: boolean;
 	/** Disable controls while a mutation is in-flight */
 	busy?: boolean;
+	/** Attaches the infinite-scroll listener to the scrollable body */
+	scrollRef?: (node: HTMLDivElement | null) => void;
 	/** Optional leading logo/icon for each row */
 	renderIcon?: (row: UserResourceAccess) => ReactNode;
 	/** Change a resource's permission level */
@@ -62,7 +66,9 @@ export const UserAccessTable = ({
 	rows,
 	showType = false,
 	loading = false,
+	loadingMore = false,
 	busy = false,
+	scrollRef,
 	renderIcon,
 	onEdit,
 	onRemove,
@@ -71,9 +77,12 @@ export const UserAccessTable = ({
 	const columnCount = showType ? 4 : 3;
 
 	return (
-		<div className="rounded-md border border-border/60">
+		<div
+			ref={scrollRef}
+			className="max-h-[360px] overflow-y-auto rounded-md border border-border/60"
+		>
 			<Table className="[&_td]:py-1.5 [&_th]:h-9">
-				<TableHeader>
+				<TableHeader className="sticky top-0 z-10 bg-background">
 					<TableRow>
 						<TableHead>Name</TableHead>
 						{showType ? <TableHead>Type</TableHead> : null}
@@ -174,6 +183,15 @@ export const UserAccessTable = ({
 							</TableRow>
 						))
 					)}
+					{loadingMore && rows.length > 0 ? (
+						<TableRow>
+							<TableCell colSpan={columnCount}>
+								<div className="flex items-center justify-center py-2">
+									<Spinner className="size-4" />
+								</div>
+							</TableCell>
+						</TableRow>
+					) : null}
 				</TableBody>
 			</Table>
 		</div>
