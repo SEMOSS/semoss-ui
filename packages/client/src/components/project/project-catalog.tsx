@@ -37,7 +37,7 @@ const CATALOG_CONFIG = {
 		createPath: "/app/new",
 		basePath: "/app",
 		itemSubPath: "view",
-		pixelFilter: 'projectType=["CODE"]',
+		pixelFilter: 'projectType=["CODE", "BLOCKS"]',
 		showSystemTab: true,
 	},
 	SKILL: {
