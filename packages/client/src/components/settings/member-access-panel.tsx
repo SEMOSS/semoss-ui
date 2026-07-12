@@ -195,15 +195,17 @@ export const MemberAccessPanel = ({
 				</TabsList>
 			</Tabs>
 
-			<div className="min-h-0 flex-1 overflow-y-auto">
+			<div className="flex min-h-0 flex-1 flex-col">
 				{view === "PROFILE" ? (
-					<MemberProfileForm
-						user={member}
-						onSaved={(updated) => {
-							setMember(updated);
-							onUserChanged();
-						}}
-					/>
+					<div className="min-h-0 flex-1 overflow-y-auto">
+						<MemberProfileForm
+							user={member}
+							onSaved={(updated) => {
+								setMember(updated);
+								onUserChanged();
+							}}
+						/>
+					</div>
 				) : null}
 
 				{view === "APP" ? (
@@ -215,8 +217,8 @@ export const MemberAccessPanel = ({
 				) : null}
 
 				{view === "INSIGHT" ? (
-					<div className="flex flex-col gap-3">
-						<div className="flex flex-col gap-1.5">
+					<div className="flex min-h-0 flex-1 flex-col gap-3">
+						<div className="flex shrink-0 flex-col gap-1.5">
 							<Label className="text-muted-foreground text-sm">
 								App
 							</Label>

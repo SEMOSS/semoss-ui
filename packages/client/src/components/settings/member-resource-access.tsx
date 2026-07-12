@@ -218,13 +218,20 @@ export const MemberResourceAccess = ({
 	const runMutation = async (
 		action: () => Promise<boolean>,
 		successMessage: string,
+		// Applied on success instead of a full refetch, so edits/removals keep the
+		// current scroll position and accumulated pages. Falls back to refresh().
+		onLocalSuccess?: () => void,
 	) => {
 		setBusy(true);
 		try {
 			const ok = await action();
 			if (ok) {
 				toast.success(successMessage);
-				refresh();
+				if (onLocalSuccess) {
+					onLocalSuccess();
+				} else {
+					refresh();
+				}
 			} else {
 				toast.error("The request did not succeed");
 			}
@@ -232,6 +239,36 @@ export const MemberResourceAccess = ({
 			toast.error(String(error));
 		} finally {
 			setBusy(false);
+		}
+	};
+
+	// Patch a single loaded row in place after a confirmed mutation — no refetch,
+	// so the list does not jump back to the top. Insights live in useAPI; apps
+	// and engines live in the paginated iterator.
+	const patchRow = (
+		id: string,
+		change: (row: UserResourceAccess) => UserResourceAccess | null,
+	) => {
+		if (isInsight) {
+			insightsApi.update(
+				insights.flatMap((row) => {
+					if (row.id !== id) {
+						return [row];
+					}
+					const next = change(row);
+					return next ? [next as UserInsightAccess] : [];
+				}),
+			);
+		} else {
+			tableIterator.update((rows) =>
+				rows.flatMap((row) => {
+					if (row.id !== id) {
+						return [row];
+					}
+					const next = change(row);
+					return next ? [next] : [];
+				}),
+			);
 		}
 	};
 
@@ -245,6 +282,7 @@ export const MemberResourceAccess = ({
 					permission,
 				),
 			"Permission updated",
+			() => patchRow(row.id, (current) => ({ ...current, permission })),
 		);
 	};
 
@@ -257,6 +295,7 @@ export const MemberResourceAccess = ({
 					projectId,
 				}),
 			"Access removed",
+			() => patchRow(row.id, () => null),
 		);
 	};
 
@@ -342,7 +381,7 @@ export const MemberResourceAccess = ({
 	);
 
 	return (
-		<div className="flex flex-col gap-3">
+		<div className="flex min-h-0 flex-1 flex-col gap-3">
 			<div className="flex flex-wrap items-center justify-between gap-2">
 				<div className="flex items-center gap-2">
 					{isInsight

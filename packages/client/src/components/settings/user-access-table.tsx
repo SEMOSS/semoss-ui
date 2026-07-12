@@ -79,7 +79,12 @@ export const UserAccessTable = ({
 	return (
 		<div
 			ref={scrollRef}
-			className="max-h-[360px] overflow-y-auto rounded-md border border-border/60"
+			// Fills to the bottom on lg+ (the detail pane has a definite height
+			// there). Below lg the whole ancestor chain is content-height, so a
+			// bare flex-1 would never establish a scroll port and useInfiniteScroll
+			// would cascade-load the entire catalog — the max-h keeps it a bounded
+			// scroll container there.
+			className="max-h-[360px] min-h-0 flex-1 overflow-y-auto rounded-md border border-border/60 lg:max-h-none"
 		>
 			<Table className="[&_td]:py-1.5 [&_th]:h-9">
 				<TableHeader className="sticky top-0 z-10 bg-background">
