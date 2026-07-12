@@ -1,4 +1,4 @@
-import { Env, post } from "@semoss/sdk/react";
+import { Env, get, post } from "@semoss/sdk/react";
 import {
 	addProjectUserPermissions,
 	editProjectUserPermissions,
@@ -21,16 +21,31 @@ import {
  *
  * The rest of the app is resource-centric (given an engine/project, list its
  * users). These wrappers are the inverse — given a user, list the resources
- * they can access — mirroring the endpoints the legacy AngularJS BI app uses
- * against the same SEMOSS backend:
- *   - project/getAllUserProjects        (body: userId)
- *   - engine/getAllUserEngines          (body: userId)
- *   - insight/getAllProjectInsightUsers (body: projectId, userId)
+ * they can access:
+ *   - project/getAllUserProjects        (GET: userId, projectTypes, searchTerm, limit, offset)
+ *   - engine/getAllUserEngines          (GET: userId, engineTypes, searchTerm, limit, offset)
+ *   - insight/getAllProjectInsightUsers (POST: projectId, userId)
  *
- * Backend field names vary (legacy returned app_, project_ and insight_
- * prefixed keys), so responses are normalized here into a single shape. If the
- * live backend returns different keys, adjust the `pick(...)` lists below only.
+ * The catalog lists are paginated (limit/offset) and drive infinite scroll via
+ * useIteratorApi — unbounded fetches here were crashing the backend containers
+ * on large-catalog tenants.
+ *
+ * Backend field names vary (app_, project_ and insight_ prefixed keys), so
+ * responses are normalized here into a single shape. If the live backend
+ * returns different keys, adjust the `pick(...)` lists below only.
  */
+
+/** Paging + filter options shared by the user-access catalog wrappers. */
+export interface UserAccessPageOptions {
+	/** Restrict to these resource types (engine types / project types). */
+	types?: string[];
+	/** Server-side search across id / name / display name. */
+	searchTerm?: string;
+	/** Page size. */
+	limit?: number;
+	/** Page offset. */
+	offset?: number;
+}
 
 export interface UserResourceAccess {
 	/** Resource id (project / engine) */
@@ -67,16 +82,48 @@ const authBase = (admin: boolean): string =>
 	`${Env.MODULE}/api/auth/${admin ? "admin/" : ""}`;
 
 /**
- * List the projects (apps) a given user can access, with their permission.
+ * Build the query string for the paginated user-access endpoints. The type
+ * filter is sent as repeated params (`projectTypes=CODE&projectTypes=BLOCKS`)
+ * to match the backend `@QueryParam List<String>` binding.
+ */
+const accessQuery = (
+	userId: string,
+	typesParam: "engineTypes" | "projectTypes",
+	{ types, searchTerm, limit, offset }: UserAccessPageOptions,
+): string => {
+	const params = new URLSearchParams({ userId });
+	if (searchTerm) {
+		params.set("searchTerm", searchTerm);
+	}
+	if (limit != null) {
+		params.set("limit", String(limit));
+	}
+	if (offset != null) {
+		params.set("offset", String(offset));
+	}
+	for (const type of types ?? []) {
+		if (type) {
+			params.append(typesParam, type);
+		}
+	}
+	return params.toString();
+};
+
+/**
+ * List a page of the projects (apps) a given user can access, with their
+ * permission and project type. Paginated via `limit`/`offset`.
  */
 export const getAllUserProjects = async (
 	admin: boolean,
 	userId: string,
+	options: UserAccessPageOptions = {},
 ): Promise<UserResourceAccess[]> => {
-	const response = await post<Record<string, unknown>[]>(
-		`${authBase(admin)}project/getAllUserProjects`,
-		{ userId },
-		{},
+	const response = await get<Record<string, unknown>[]>(
+		`${authBase(admin)}project/getAllUserProjects?${accessQuery(
+			userId,
+			"projectTypes",
+			options,
+		)}`,
 	).catch((error) => {
 		throw Error(error);
 	});
@@ -87,7 +134,8 @@ export const getAllUserProjects = async (
 
 	return (response.data ?? []).map((row) => ({
 		id: str(pick(row, ["project_id", "id"])),
-		name: str(pick(row, ["project_name", "name"])),
+		name: str(pick(row, ["project_display_name", "project_name", "name"])),
+		type: str(pick(row, ["project_type", "type"])) || undefined,
 		permission: str(
 			pick(row, ["project_permission", "permission"]),
 		) as Role,
@@ -95,17 +143,21 @@ export const getAllUserProjects = async (
 };
 
 /**
- * List the engines (databases, models, vectors, ...) a given user can access,
- * with their permission and engine type.
+ * List a page of the engines (databases, models, vectors, ...) a given user can
+ * access, with their permission, engine type and subtype. Paginated via
+ * `limit`/`offset`.
  */
 export const getAllUserEngines = async (
 	admin: boolean,
 	userId: string,
+	options: UserAccessPageOptions = {},
 ): Promise<UserResourceAccess[]> => {
-	const response = await post<Record<string, unknown>[]>(
-		`${authBase(admin)}engine/getAllUserEngines`,
-		{ userId },
-		{},
+	const response = await get<Record<string, unknown>[]>(
+		`${authBase(admin)}engine/getAllUserEngines?${accessQuery(
+			userId,
+			"engineTypes",
+			options,
+		)}`,
 	).catch((error) => {
 		throw Error(error);
 	});
@@ -116,7 +168,15 @@ export const getAllUserEngines = async (
 
 	return (response.data ?? []).map((row) => ({
 		id: str(pick(row, ["engine_id", "app_id", "id"])),
-		name: str(pick(row, ["engine_name", "app_name", "name"])),
+		name: str(
+			pick(row, [
+				"engine_display_name",
+				"engine_name",
+				"app_display_name",
+				"app_name",
+				"name",
+			]),
+		),
 		type: str(pick(row, ["engine_type", "app_type", "type"])) || undefined,
 		subtype: str(pick(row, ["engine_subtype", "app_subtype"])) || undefined,
 		permission: str(
@@ -126,27 +186,21 @@ export const getAllUserEngines = async (
 };
 
 /**
- * List the engines a given user does NOT have access to (inverse of
+ * List a page of the engines a given user does NOT have access to (inverse of
  * getAllUserEngines). Used by admins to grant new engine access — the backend
  * excludes engines the user already has, so no client-side diff is needed.
  */
 export const getUserEnginesNoCredentials = async (
 	admin: boolean,
 	userId: string,
-	engineType?: string,
-	searchTerm?: string,
+	options: UserAccessPageOptions = {},
 ): Promise<{ id: string; name: string; type?: string; subtype?: string }[]> => {
-	const body: Record<string, unknown> = { userId };
-	if (engineType) {
-		body.engineTypes = [engineType];
-	}
-	if (searchTerm) {
-		body.searchTerm = searchTerm;
-	}
-	const response = await post<Record<string, unknown>[]>(
-		`${authBase(admin)}engine/getUserEnginesNoCredentials`,
-		body,
-		{},
+	const response = await get<Record<string, unknown>[]>(
+		`${authBase(admin)}engine/getUserEnginesNoCredentials?${accessQuery(
+			userId,
+			"engineTypes",
+			options,
+		)}`,
 	).catch((error) => {
 		throw Error(error);
 	});
@@ -157,30 +211,37 @@ export const getUserEnginesNoCredentials = async (
 
 	return (response.data ?? []).map((row) => ({
 		id: str(pick(row, ["engine_id", "app_id", "id"])),
-		name: str(pick(row, ["engine_name", "app_name", "name"])),
+		name: str(
+			pick(row, [
+				"engine_display_name",
+				"engine_name",
+				"app_display_name",
+				"app_name",
+				"name",
+			]),
+		),
 		type: str(pick(row, ["engine_type", "app_type", "type"])) || undefined,
 		subtype: str(pick(row, ["engine_subtype", "app_subtype"])) || undefined,
 	}));
 };
 
 /**
- * List the projects (apps) a given user does NOT have access to (inverse of
- * getAllUserProjects). Used by admins to grant new app access — the backend
- * excludes projects the user already has, so no client-side diff is needed.
+ * List a page of the projects (apps) a given user does NOT have access to
+ * (inverse of getAllUserProjects). Used by admins to grant new app access — the
+ * backend excludes projects the user already has, so no client-side diff is
+ * needed. Returns the project type so the grant list can badge it.
  */
 export const getUserProjectsNoCredentials = async (
 	admin: boolean,
 	userId: string,
-	searchTerm?: string,
-): Promise<{ id: string; name: string }[]> => {
-	const body: Record<string, string> = { userId };
-	if (searchTerm) {
-		body.searchTerm = searchTerm;
-	}
-	const response = await post<Record<string, unknown>[]>(
-		`${authBase(admin)}project/getUserProjectsNoCredentials`,
-		body,
-		{},
+	options: UserAccessPageOptions = {},
+): Promise<{ id: string; name: string; type?: string }[]> => {
+	const response = await get<Record<string, unknown>[]>(
+		`${authBase(admin)}project/getUserProjectsNoCredentials?${accessQuery(
+			userId,
+			"projectTypes",
+			options,
+		)}`,
 	).catch((error) => {
 		throw Error(error);
 	});
@@ -191,7 +252,8 @@ export const getUserProjectsNoCredentials = async (
 
 	return (response.data ?? []).map((row) => ({
 		id: str(pick(row, ["project_id", "id"])),
-		name: str(pick(row, ["project_name", "name"])),
+		name: str(pick(row, ["project_display_name", "project_name", "name"])),
+		type: str(pick(row, ["project_type", "type"])) || undefined,
 	}));
 };
 

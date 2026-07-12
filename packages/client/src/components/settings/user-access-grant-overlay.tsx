@@ -34,15 +34,19 @@ export interface UserAccessGrantOverlayProps {
 	open: boolean;
 	title: string;
 	description?: string;
-	/** Resources the user does NOT yet have access to */
+	/** Resources the user does NOT yet have access to (loaded page(s) only) */
 	candidates: GrantCandidate[];
 	loading?: boolean;
+	/** A further page is being fetched via infinite scroll (bottom spinner) */
+	loadingMore?: boolean;
 	busy?: boolean;
-	/** Controlled search term (parent decides client- vs server-side filtering) */
+	/** Controlled search term — the parent runs it server-side and re-pages */
 	search: string;
 	onSearchChange: (value: string) => void;
 	/** Extra controls rendered in the header, e.g. an engine-type selector */
 	headerControls?: ReactNode;
+	/** Attaches the infinite-scroll listener to the scrollable candidate list */
+	scrollRef?: (node: HTMLDivElement | null) => void;
 	/** Render a leading logo/icon for a candidate row */
 	renderIcon?: (candidate: GrantCandidate) => ReactNode;
 	onClose: () => void;
@@ -60,10 +64,12 @@ export const UserAccessGrantOverlay = ({
 	description,
 	candidates,
 	loading = false,
+	loadingMore = false,
 	busy = false,
 	search,
 	onSearchChange,
 	headerControls,
+	scrollRef,
 	renderIcon,
 	onClose,
 	onGrant,
@@ -148,6 +154,7 @@ export const UserAccessGrantOverlay = ({
 						type="button"
 						className="flex items-center gap-2 text-sm disabled:opacity-50"
 						disabled={candidates.length === 0}
+						title="Selects the results loaded so far — scroll to load more"
 						onClick={toggleAll}
 					>
 						<Checkbox
@@ -158,17 +165,20 @@ export const UserAccessGrantOverlay = ({
 										? "indeterminate"
 										: false
 							}
-							aria-label="Select all"
+							aria-label="Select all loaded"
 							onClick={(e) => e.preventDefault()}
 						/>
-						Select all
+						Select all loaded
 					</button>
 					<span className="text-muted-foreground text-xs">
 						{selectedCandidates.length} selected
 					</span>
 				</div>
 
-				<div className="min-h-40 flex-1 overflow-y-auto rounded-md border border-border/60">
+				<div
+					ref={scrollRef}
+					className="min-h-40 flex-1 overflow-y-auto rounded-md border border-border/60"
+				>
 					{loading ? (
 						<div className="flex h-40 items-center justify-center">
 							<Spinner className="size-5" />
@@ -209,6 +219,11 @@ export const UserAccessGrantOverlay = ({
 							);
 						})
 					)}
+					{loadingMore && candidates.length > 0 ? (
+						<div className="flex items-center justify-center py-2">
+							<Spinner className="size-4" />
+						</div>
+					) : null}
 				</div>
 
 				<DialogFooter className="flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

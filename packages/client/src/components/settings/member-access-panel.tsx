@@ -1,28 +1,40 @@
-import { Lock } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ChevronDown, Lock } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AppCatalogAvatar } from "@semoss/shared";
 import {
 	Avatar,
 	AvatarFallback,
+	Badge,
 	Button,
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+	cn,
 	Label,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+	Spinner,
 	Tabs,
 	TabsList,
 	TabsTrigger,
 	toast,
+	useDebouncedValue,
+	useInfiniteScroll,
 } from "@semoss/ui/next";
-import { setUserLocked } from "@/api";
-import { useAPI, useSettings } from "@/hooks";
+import { getProjects, setUserLocked } from "@/api";
+import { useIteratorApi, useSettings } from "@/hooks";
 import { MemberProfileForm } from "./member-profile-form";
 import { MemberResourceAccess } from "./member-resource-access";
 import type { SETTINGS_MEMBER } from "./settings.types";
 
 type VIEW = "PROFILE" | "APP" | "ENGINE" | "INSIGHT";
+
+/** Page size for the Insights app combobox. */
+const APP_PAGE_SIZE = 25;
 
 export interface MemberAccessPanelProps {
 	/** The selected user whose access is being managed */
@@ -46,24 +58,59 @@ export const MemberAccessPanel = ({
 	const [insightProjectId, setInsightProjectId] = useState<string>("");
 	const [unlocking, setUnlocking] = useState(false);
 
+	// Insights app picker (combobox): the project catalog is large, so it is
+	// searched + paged server-side via infinite scroll instead of a plain
+	// Select that would load every project at once.
+	const [appOpen, setAppOpen] = useState(false);
+	const [appSearch, setAppSearch] = useState("");
+	const debouncedAppSearch = useDebouncedValue(appSearch);
+	const [selectedApp, setSelectedApp] = useState<{
+		id: string;
+		name: string;
+	} | null>(null);
+
 	// Keep the local copy in sync and reset transient state when the selection changes
 	useEffect(() => {
 		setMember(user);
 		setInsightProjectId("");
+		setSelectedApp(null);
+		setAppOpen(false);
+		setAppSearch("");
 		setView("PROFILE");
 	}, [user]);
 
-	// Projects to choose from for the Insights tab (only fetched on that tab)
-	const projectsApi = useAPI(
-		(view === "INSIGHT" ? ["getProjects", adminMode] : []) as unknown as [
-			"getProjects",
-			boolean,
-		],
+	const appsIterator = useIteratorApi(
+		(limit, offset) =>
+			getProjects(
+				adminMode,
+				debouncedAppSearch || undefined,
+				offset,
+				limit,
+			),
+		{ enabled: appOpen, limit: APP_PAGE_SIZE },
+		[adminMode, debouncedAppSearch],
 	);
-	const projectOptions =
-		(projectsApi.data as
-			| { project_id: string; project_name: string }[]
-			| undefined) ?? [];
+
+	// Stable onNext so useInfiniteScroll keeps its listener across load-state changes.
+	const appNextRef = useRef(appsIterator.next);
+	useEffect(() => {
+		appNextRef.current = appsIterator.next;
+	}, [appsIterator.next]);
+	const handleAppNext = useCallback(() => appNextRef.current(), []);
+
+	const { setScroll: setAppScroll } = useInfiniteScroll({
+		disabled: !appOpen || appsIterator.isLoading || !appsIterator.hasMore,
+		onNext: handleAppNext,
+	});
+
+	const openAppPicker = () => {
+		appsIterator.reset();
+		setAppOpen(true);
+	};
+	const closeAppPicker = () => {
+		setAppOpen(false);
+		setAppSearch("");
+	};
 
 	const displayName = member.name || member.id || "Unknown";
 
@@ -131,7 +178,7 @@ export const MemberAccessPanel = ({
 						disabled={unlocking}
 						onClick={handleUnlock}
 					>
-						{unlocking ? "Unlocking..." : "Unlock user"}
+						{unlocking ? "Unlocking..." : "Unlock User"}
 					</Button>
 				</div>
 			) : null}
@@ -173,41 +220,142 @@ export const MemberAccessPanel = ({
 							<Label className="text-muted-foreground text-sm">
 								App
 							</Label>
-							<Select
-								value={insightProjectId}
-								onValueChange={setInsightProjectId}
+							<Popover
+								open={appOpen}
+								onOpenChange={(isOpen) =>
+									isOpen ? openAppPicker() : closeAppPicker()
+								}
 							>
-								<SelectTrigger className="h-auto w-full max-w-sm py-2 text-left *:data-[slot=select-value]:line-clamp-none *:data-[slot=select-value]:w-full">
-									<SelectValue placeholder="Select an app to manage its insights" />
-								</SelectTrigger>
-								<SelectContent>
-									{projectOptions.map((project) => (
-										<SelectItem
-											key={project.project_id}
-											value={project.project_id}
-										>
-											<div className="flex w-full items-center gap-2">
+								<PopoverTrigger asChild>
+									<Button
+										variant="outline"
+										role="combobox"
+										aria-expanded={appOpen}
+										className="h-auto w-full max-w-sm justify-start py-2 text-left"
+									>
+										{selectedApp ? (
+											<div className="flex w-full min-w-0 items-center gap-2">
 												<AppCatalogAvatar
-													name={
-														project.project_name ||
-														project.project_id
-													}
+													name={selectedApp.name}
 													className="size-8 shrink-0 rounded-md text-xs"
 												/>
 												<div className="flex min-w-0 flex-col text-left">
 													<span className="truncate font-medium">
-														{project.project_name ||
-															project.project_id}
+														{selectedApp.name}
 													</span>
 													<span className="truncate text-muted-foreground text-xs">
-														id: {project.project_id}
+														id: {selectedApp.id}
 													</span>
 												</div>
+												<ChevronDown className="ms-auto size-4 shrink-0 opacity-70" />
 											</div>
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
+										) : (
+											<span className="flex w-full items-center text-muted-foreground">
+												Select an app to manage its
+												insights
+												<ChevronDown className="ms-auto size-4 shrink-0 opacity-70" />
+											</span>
+										)}
+									</Button>
+								</PopoverTrigger>
+								<PopoverContent
+									align="start"
+									className="w-[var(--radix-popover-trigger-width)] min-w-72 p-0"
+								>
+									<Command shouldFilter={false}>
+										<CommandInput
+											placeholder="Search apps"
+											value={appSearch}
+											onValueChange={setAppSearch}
+										/>
+										<CommandList ref={setAppScroll}>
+											<CommandEmpty>
+												{appsIterator.isLoading &&
+												appsIterator.data.length ===
+													0 ? (
+													<div className="flex items-center justify-center py-4">
+														<Spinner />
+													</div>
+												) : (
+													"No apps found"
+												)}
+											</CommandEmpty>
+											<CommandGroup>
+												{appsIterator.data.map(
+													(project) => {
+														const name =
+															project.project_display_name ||
+															project.project_name ||
+															project.project_id;
+														const isSelected =
+															insightProjectId ===
+															project.project_id;
+														return (
+															<CommandItem
+																key={
+																	project.project_id
+																}
+																value={
+																	project.project_id
+																}
+																onSelect={() => {
+																	setInsightProjectId(
+																		project.project_id,
+																	);
+																	setSelectedApp(
+																		{
+																			id: project.project_id,
+																			name,
+																		},
+																	);
+																	closeAppPicker();
+																}}
+																className={cn(
+																	isSelected &&
+																		"bg-primary/10 data-[selected=true]:bg-primary/15",
+																)}
+															>
+																<AppCatalogAvatar
+																	name={name}
+																	className="me-2 size-8 shrink-0 rounded-md text-xs"
+																/>
+																<div className="flex min-w-0 flex-1 flex-col">
+																	<span className="truncate font-medium">
+																		{name}
+																	</span>
+																	<span className="truncate text-muted-foreground text-xs">
+																		id:{" "}
+																		{
+																			project.project_id
+																		}
+																	</span>
+																</div>
+																{project.project_type ? (
+																	<Badge
+																		variant="secondary"
+																		className="ms-2 shrink-0 rounded-full"
+																	>
+																		{
+																			project.project_type
+																		}
+																	</Badge>
+																) : null}
+															</CommandItem>
+														);
+													},
+												)}
+												{appsIterator.isLoading &&
+													appsIterator.data.length >
+														0 && (
+														<div className="flex items-center justify-center py-2">
+															<Spinner className="size-4" />
+														</div>
+													)}
+											</CommandGroup>
+										</CommandList>
+									</Command>
+								</PopoverContent>
+							</Popover>
 						</div>
 						{insightProjectId ? (
 							<MemberResourceAccess
