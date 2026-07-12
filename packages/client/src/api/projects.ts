@@ -180,31 +180,6 @@ export const setProjectVisiblity = async (admin, appId, visible) => {
 	return response;
 };
 
-export const setProjectPortal = async (
-	_admin: boolean,
-	projectId: string,
-	hasPortal: boolean,
-	portalName?: string,
-) => {
-	let url = `${Env.MODULE}/api/auth/`;
-	// if (admin) {
-	//     url += 'admin/';
-	// }
-	url += `project/setProjectPortal`;
-
-	if (portalName) {
-		// url += "&projectId=" + encodeURIComponent(portalName);
-	}
-	const postData = {
-		projectId: projectId,
-		hasPortal: hasPortal,
-	};
-	const response = await post<{
-		success: boolean;
-	}>(url, processPostData(postData), {});
-	return response;
-};
-
 export const uploadImage = async (
 	files: File[],
 	projectId: string | null,
