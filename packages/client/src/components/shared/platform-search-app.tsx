@@ -29,7 +29,7 @@ export const PlatformSearchApp = ({
 	 */
 	const getApps = useIteratorPixel<App[], App>(
 		(limit, offset) => {
-			return `MyProjects(${search ? `filterWord=["${search}"], ` : ""} limit=[${limit}], offset=[${offset}]);`;
+			return `MyProjects(${search ? `filterWord=["${search}"], ` : ""} projectType=["CODE"], limit=[${limit}], offset=[${offset}]);`;
 		},
 		(response) => {
 			// if its less than the limit, we know its the end

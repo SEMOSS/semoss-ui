@@ -160,7 +160,7 @@ export const EditDependenciesModal = ({
 	const getProjects = useIteratorPixel<MyProjectRow[], Dependency>(
 		(limit, offset) =>
 			source === "APP"
-				? `MyProjects(${filterClause}limit=[${limit}], offset=[${offset}]);`
+				? `MyProjects(${filterClause}projectType=["CODE"], limit=[${limit}], offset=[${offset}]);`
 				: "",
 		(response) => (response.length < PAGE_LIMIT ? -1 : Infinity),
 		(response) =>

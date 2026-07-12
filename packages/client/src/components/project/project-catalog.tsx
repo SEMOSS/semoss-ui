@@ -37,7 +37,7 @@ const CATALOG_CONFIG = {
 		createPath: "/app/new",
 		basePath: "/app",
 		itemSubPath: "view",
-		pixelFilter: "onlyPortals=[true]",
+		pixelFilter: 'projectType=["CODE"]',
 		showSystemTab: true,
 	},
 	SKILL: {
@@ -47,7 +47,7 @@ const CATALOG_CONFIG = {
 		createPath: "/skill/new",
 		basePath: "/skill",
 		itemSubPath: "edit",
-		pixelFilter: 'type="SKILL"',
+		pixelFilter: 'projectType=["SKILL"]',
 		showSystemTab: false,
 	},
 	WORKSPACE: {
@@ -57,7 +57,7 @@ const CATALOG_CONFIG = {
 		createPath: "/agent/new",
 		basePath: "/agent",
 		itemSubPath: "edit",
-		pixelFilter: 'type="WORKSPACE"',
+		pixelFilter: 'projectType=["WORKSPACE"]',
 
 		showSystemTab: false,
 	},
