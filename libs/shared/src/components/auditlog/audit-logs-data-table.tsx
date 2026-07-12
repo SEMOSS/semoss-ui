@@ -8,6 +8,7 @@ import {
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
+	Badge,
 	Button,
 	Select,
 	SelectContent,
@@ -45,7 +46,7 @@ const GROUP_MODE_LABEL_KEYS: Record<RowGroupMode, string> = {
 	span: "table.grouping.span",
 	request: "table.grouping.request",
 };
-const TABLE_COLUMN_COUNT = 11;
+const TABLE_COLUMN_COUNT = 16;
 //Matches the timeline: success is truthy and not the string "false".
 const isSuccess = (status: EventData["status"]) =>
 	Boolean(status) && status !== "false";
@@ -194,7 +195,36 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 				<span className="text-sm">{event.tokens}</span>
 			</TableCell>
 			<TableCell>
+				<span className="text-sm">{event.promptTokens}</span>
+			</TableCell>
+			<TableCell>
+				<span className="text-sm">{event.responseTokens}</span>
+			</TableCell>
+			<TableCell>
+				<span className="text-sm">{event.cacheReadTokens}</span>
+			</TableCell>
+			<TableCell>
+				<span className="text-sm">{event.cacheCreationTokens}</span>
+			</TableCell>
+			<TableCell>
 				<span className="text-xs">{`${TimeDateFormatter(event.startTime).time} - ${TimeDateFormatter(event.endTime).time}`}</span>
+			</TableCell>
+			<TableCell>
+				{event.guardrailAction ? (
+					<Badge
+						variant={
+							event.guardrailAction === "BLOCK"
+								? "destructive"
+								: "secondary"
+						}
+					>
+						{t(`table.guardrailActions.${event.guardrailAction}`, {
+							defaultValue: event.guardrailAction,
+						})}
+					</Badge>
+				) : (
+					<span className="text-gray-400 text-sm">—</span>
+				)}
 			</TableCell>
 			<TableCell className="text-center">
 				{isSuccess(event.status) ? (
@@ -309,7 +339,34 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 								</TableHead>
 								<TableHead>
 									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
+										{t("table.columns.promptTokens")}
+									</span>
+								</TableHead>
+								<TableHead>
+									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
+										{t("table.columns.responseTokens")}
+									</span>
+								</TableHead>
+								<TableHead>
+									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
+										{t("table.columns.cacheRead")}
+									</span>
+								</TableHead>
+								<TableHead>
+									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
+										{t("table.columns.cacheWrite")}
+									</span>
+								</TableHead>
+								<TableHead>
+									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
 										{t("table.columns.timestamp")}
+									</span>
+								</TableHead>
+								<TableHead>
+									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
+										{t("table.columns.guardrailAction", {
+											defaultValue: "Guardrail",
+										})}
 									</span>
 								</TableHead>
 								<TableHead>
@@ -469,14 +526,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 				</div>
 			</div>
 
-			<div className="flex items-center justify-between border-b bg-gray-50 px-4 py-2">
-				<span className="text-gray-500 text-sm">
-					{t("table.showingResults", {
-						shown: logs.length,
-						total: totalCount,
-					})}
-				</span>
-			</div>
 			{/** sheet open/close when user clicks on the row in auditlog table */}
 			<Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
 				<SheetContent
