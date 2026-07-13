@@ -6,7 +6,7 @@ import {
 	TriangleAlertIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
@@ -54,6 +54,110 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const [showScrollup, setShowScrollup] = useState(false);
 	const [showScrolldown, setShowScrolldown] = useState(false);
 	const [isScrollLocked, setIsScrollLocked] = useState(false);
+
+	/** Engine IDs whose monthly token quota is exhausted for the current user */
+	const [quotaExhaustedIds, setQuotaExhaustedIds] = useState<string[]>([]);
+
+	/**
+	 * Re-check every model's monthly quota and refresh quotaExhaustedIds.
+	 * Called on mount and after each assistant response so the dropdown stays
+	 * up to date as the user consumes tokens.
+	 */
+	const refreshQuotaExhaustedIds = useCallback(async () => {
+		try {
+			const exhausted = await chat.getQuotaExhaustedIds();
+			setQuotaExhaustedIds(exhausted);
+		} catch {
+			// ignore — dropdown just won't show greys
+		}
+	}, [chat]);
+
+	/**
+	 * Auto-switch model when the current model's monthly quota is exceeded.
+	 *
+	 * Watches room.error: when an error appears and it originates from the
+	 * currently selected model having its quota exhausted, we look for the
+	 * first model that still has quota, switch to it, persist it as the user's
+	 * profile default, and notify via toast.
+	 *
+	 * We track the exact error *object* we already handled (not the model ID).
+	 * This prevents an infinite loop: switching models changes chat.models.selected
+	 * which re-triggers the effect, but room.error is still the same object
+	 * instance so the guard catches it immediately.
+	 */
+	const lastHandledQuotaErrorRef = useRef<Error | null>(null);
+
+	useEffect(() => {
+		const currentError = room.error;
+		const selectedModel = chat.models.selected;
+
+		if (!currentError || !selectedModel) {
+			lastHandledQuotaErrorRef.current = null;
+			return;
+		}
+
+		// Only act on quota-style errors (the backend returns these keywords)
+		const msg = currentError.message || "";
+		const isQuotaError =
+			msg.toLowerCase().includes("usage restriction") ||
+			msg.toLowerCase().includes("quota") ||
+			msg.toLowerCase().includes("monthly limit") ||
+			msg.toLowerCase().includes("token limit exceeded");
+
+		if (!isQuotaError) return;
+
+		// Already handled this exact error instance — guards against the effect
+		// re-firing when chat.models.selected changes after the switch
+		if (lastHandledQuotaErrorRef.current === currentError) return;
+
+		lastHandledQuotaErrorRef.current = currentError;
+
+		chat.findFirstAvailableModelByQuota().then((nextModel) => {
+			if (!nextModel) return;
+
+			const fromName =
+				selectedModel.engine_display_name ||
+				selectedModel.engine_name ||
+				selectedModel.engine_id;
+			const toName =
+				nextModel.engine_display_name ||
+				nextModel.engine_name ||
+				nextModel.engine_id;
+
+			room.setModel(nextModel);
+			chat.setSelectedModel(nextModel);
+			chat.setProfileDefaultModel(
+				nextModel.engine_id || nextModel.app_id || "",
+			);
+
+			toast.info(
+				`"${fromName}" has reached its monthly usage limit. Switched to "${toName}" and updated your default model.`,
+			);
+
+			// Refresh the disabled model list now that we've switched
+			refreshQuotaExhaustedIds();
+		});
+	}, [
+		room.error,
+		chat.models.selected,
+		room,
+		chat,
+		refreshQuotaExhaustedIds,
+	]);
+
+	// Check quotas on mount so the model dropdown is accurate from the start
+	// biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount
+	useEffect(() => {
+		refreshQuotaExhaustedIds();
+	}, []);
+
+	// Re-check quotas after each message completes (history grows)
+	// biome-ignore lint/correctness/useExhaustiveDependencies: room.history.length is the trigger
+	useEffect(() => {
+		if (room.history.length > 0 && !room.isLoading) {
+			refreshQuotaExhaustedIds();
+		}
+	}, [room.history.length, room.isLoading]);
 
 	/**
 	 * Functions
@@ -532,6 +636,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					onCompact={handleCompactMessages}
 					onOpenSettings={handleOpenSettings}
 					excludeCommandIds={["agent", "workspace"]}
+					disabledModelIds={quotaExhaustedIds}
 				/>
 			</div>
 		</div>

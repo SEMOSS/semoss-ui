@@ -115,7 +115,7 @@ export const NewRoomPage = observer(() => {
 		let cancelled = false;
 		async function checkQuotas() {
 			try {
-				// 1. Get all text-generation models
+				// 1. Get all text-generation models the user has access to
 				const { pixelReturn } = await actions.run<
 					[{ app_id: string }[]]
 				>(
@@ -124,46 +124,23 @@ export const NewRoomPage = observer(() => {
 				const engines = pixelReturn[0].output ?? [];
 				if (cancelled) return;
 
-				// 2. Get current month's usage for all engines in one call
-				const now = new Date();
-				const startDate = new Date(now.getFullYear(), now.getMonth(), 1)
-					.toISOString()
-					.slice(0, 10);
-				const endDate = now.toISOString().slice(0, 10);
-				const ids = engines.map((e) => e.app_id);
-
-				const { pixelReturn: usageReturn } = await actions.run<
-					[{ ENGINE_ID: string; TOTAL_TOKENS: number }[]]
-				>(
-					`GetUserModelUsage(engine=[${ids.map((id) => `"${id}"`).join(", ")}], startDate=["${startDate}"], endDate=["${endDate}"]);`,
-				);
-				if (cancelled) return;
-
-				const usageById = Object.fromEntries(
-					(usageReturn[0].output ?? []).map((r) => [
-						r.ENGINE_ID,
-						r.TOTAL_TOKENS,
-					]),
-				);
-
-				// 3. Check restrictions for every engine that has usage data
-				// (GetUserModelUsage may return engines not in MyEngines)
-				const allEngineIds = [
-					...new Set([
-						...engines.map((e) => e.app_id),
-						...Object.keys(usageById),
-					]),
-				];
-
+				// 2. Check the monthly usage restriction for each engine.
+				//    We use only the app_id from MyEngines — adding ENGINE_IDs
+				//    from a usage call risks ID-format mismatches that cause
+				//    false positives (models grayed out when quota isn't hit).
+				//    GetUserModelUsageRestrictions throws a pixel ERROR only
+				//    when the quota is actually exceeded.
 				const exhausted: string[] = [];
 				await Promise.allSettled(
-					allEngineIds.map(async (engineId) => {
+					engines.map(async (engine) => {
+						const engineId = engine.app_id;
+						if (!engineId) return;
 						try {
 							await actions.run(
 								`GetUserModelUsageRestrictions(engine=["${engineId}"]);`,
 							);
 						} catch {
-							// actions.run throws when the pixel returns ERROR — mark as exhausted
+							// Pixel threw → quota exceeded — mark as exhausted
 							exhausted.push(engineId);
 						}
 					}),

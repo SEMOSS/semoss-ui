@@ -1,5 +1,5 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import { type Insight, runPixel } from "@semoss/sdk/react";
+import { Env, type Insight, post, runPixel } from "@semoss/sdk/react";
 import type { ThemeMap } from "@semoss/shared";
 import type { Engine, MCPConfig, Workspace } from "@/types";
 import { RoomStore } from "../room";
@@ -584,6 +584,89 @@ export class ChatStore {
 		} catch (e) {
 			console.error(e);
 		}
+	};
+
+	/**
+	 * Return the engine IDs of all text-generation models whose monthly quota
+	 * is currently exhausted for the current user.
+	 *
+	 * Calls `GetUserModelUsageRestrictions` for each model; a pixel ERROR means
+	 * the quota is exceeded. Used by RoomContent to keep the model dropdown
+	 * up-to-date during an active conversation.
+	 */
+	getQuotaExhaustedIds = async (): Promise<string[]> => {
+		const { pixelReturn } = await this._actions.run<[Engine[]]>(
+			`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
+		);
+		const engines: Engine[] = pixelReturn[0].output || [];
+		const exhausted: string[] = [];
+
+		await Promise.allSettled(
+			engines.map(async (engine) => {
+				const engineId = engine.app_id || engine.engine_id;
+				if (!engineId) return;
+				try {
+					await this._actions.run(
+						`GetUserModelUsageRestrictions(engine=["${engineId}"]);`,
+					);
+				} catch {
+					exhausted.push(engineId);
+				}
+			}),
+		);
+
+		return exhausted;
+	};
+
+	/**
+	 * Find the first available model that is NOT monthly-quota-exhausted for
+	 * the current user, skipping the currently selected model.
+	 *
+	 * Uses the same `GetUserModelUsageRestrictions` pattern as new-room-page:
+	 * the pixel throws (pixel ERROR) when the quota is exceeded, so a
+	 * successful call means the model is still available.
+	 *
+	 * Returns null when every other model is also exhausted.
+	 */
+	findFirstAvailableModelByQuota = async (): Promise<Engine | null> => {
+		const { pixelReturn } = await this._actions.run<[Engine[]]>(
+			`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
+		);
+
+		const engines: Engine[] = pixelReturn[0].output || [];
+		const currentId = this._store.models.selected?.engine_id;
+
+		for (const engine of engines) {
+			const engineId = engine.app_id || engine.engine_id;
+			if (engineId === currentId) continue;
+
+			try {
+				await this._actions.run(
+					`GetUserModelUsageRestrictions(engine=["${engineId}"]);`,
+				);
+				// Pixel succeeded → model is within quota
+				return engine;
+			} catch {
+				// Pixel threw → this engine is also quota-exhausted, keep looking
+			}
+		}
+
+		return null;
+	};
+
+	/**
+	 * Persist the user's profile default text-generation model server-side.
+	 * This is the same API call made by Settings > My Profile.
+	 */
+	setProfileDefaultModel = async (engineId: string): Promise<void> => {
+		await post<boolean>(
+			`${Env.MODULE}/api/auth/user/setUserMetadata`,
+			{ metaKey: "text-generation-model", metaValue: engineId },
+			{},
+		);
+		runInAction(() => {
+			this._store.profileDefaultModelId = engineId;
+		});
 	};
 
 	/**
