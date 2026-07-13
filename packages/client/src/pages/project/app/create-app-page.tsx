@@ -42,7 +42,7 @@ import {
 	BASE_APP_QUERIES,
 	BASE_APP_VARIABLES,
 	BASE_PAGE_BLOCKS,
-} from "./app.constants";
+} from "../../app/app.constants";
 
 export const CreateAppPage = () => {
 	const navigate = useNavigate();

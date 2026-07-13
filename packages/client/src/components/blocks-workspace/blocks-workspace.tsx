@@ -16,7 +16,7 @@ import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
 import { FlexLayout } from "@/components/flex-layout";
 import { useWorkspace } from "@/hooks";
-import { AppDetailPage } from "@/pages/app";
+import { ProjectDetailLayout } from "@/pages/app/app-detail-layout";
 import { DesignerStore, type WorkspaceOptions } from "@/stores";
 import { WorkspaceManager } from "../../components/workspace";
 import { WorkspaceTerminal } from "../../components/workspace/panels";
@@ -377,7 +377,32 @@ export const BlocksWorkspace: React.FC = observer(() => {
 		} else if (component === "graph") {
 			return <GraphPanel />;
 		} else if (component === "settingsPanel") {
-			return <AppDetailPage showNav={false} />;
+			return (
+				<ProjectDetailLayout
+					tabs={[
+						{ name: "Overview", path: "" },
+						{
+							name: "Commits",
+							path: "commits",
+							restrict: ["OWNER", "EDIT"],
+						},
+						{ name: "GitHub", path: "github", restrict: ["OWNER"] },
+						{
+							name: "Settings",
+							path: "settings",
+							restrict: ["OWNER"],
+						},
+						{
+							name: "Access Control",
+							path: "access-control",
+							restrict: ["OWNER", "EDIT"],
+						},
+						{ name: "SMSS", path: "smss", restrict: ["OWNER"] },
+					]}
+					showNav={false}
+					embedded={true}
+				/>
+			);
 		} else if (component === "export-button") {
 			return <ExportButtonPanel />;
 		}

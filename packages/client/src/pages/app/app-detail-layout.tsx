@@ -13,7 +13,6 @@ import {
 	useMemo,
 	useState,
 } from "react";
-import { useForm } from "react-hook-form";
 import {
 	Link,
 	matchPath,
@@ -50,8 +49,6 @@ import {
 } from "@semoss/ui/next";
 import { uploadImage } from "@/api";
 import {
-	type AppDetailsFormTypes,
-	AppDetailsFormValues,
 	type appDependency,
 	ChangeAccessModal,
 	type DetailsForm,
@@ -71,7 +68,44 @@ import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import type { Role } from "@/types";
 import { getTagBadgeStyle } from "@/utility";
-import { APP_DETAIL_TABS } from "./app-detail.constants";
+import { AppAccessControlPage } from "./app-access-control-page";
+import { AppActivityPage } from "./app-activity-page";
+import { AppCommitsPage } from "./app-commits-page";
+import { AppDependenciesPage } from "./app-dependencies-page";
+import { AppFilesPage } from "./app-files-page";
+import { AppGithubPage } from "./app-github-page";
+import { AppMcpUsagePage } from "./app-mcp-usage-page";
+import { AppOverviewPage } from "./app-overview-page";
+import { AppSettingsPage } from "./app-settings-page";
+import { AppSmssPage } from "./app-smss-page";
+
+const DEFAULT_DETAILS_FORM: DetailsForm = {
+	markdown: "",
+	tag: [],
+	appImage: "",
+};
+
+type ProjectInfo = {
+	project_display_name?: string;
+	project_name?: string;
+	description?: string;
+	project_created_by?: string;
+	project_date_created?: string;
+	[key: string]: unknown;
+};
+
+const EMBEDDED_TAB_COMPONENTS: Record<string, React.FunctionComponent> = {
+	"": AppOverviewPage,
+	dependencies: AppDependenciesPage,
+	"mcp-usage": AppMcpUsagePage,
+	activity: AppActivityPage,
+	commits: AppCommitsPage,
+	github: AppGithubPage,
+	settings: AppSettingsPage,
+	"access-control": AppAccessControlPage,
+	files: AppFilesPage,
+	smss: AppSmssPage,
+};
 
 const modelDependencies = (
 	dependencies: appDependency[],
@@ -84,33 +118,41 @@ const modelDependencies = (
 		userPermission: dep.permission_name as Role,
 		isPublic: !!dep.engine_global,
 		isDiscoverable: !!dep.engine_discoverable,
-		description: dep.description,
-		access_permission: dep.access_permission,
+		description: dep.description || "",
+		access_permission: dep.access_permission || 0,
 		can_view_dependencies: dep.can_view_dependencies,
 	}));
 };
 
-interface AppDetailLayoutProps {
-	/** When true, render tabs via local state (no URL changes, no Outlet). Used for editor workspace embeds. */
+interface ProjectDetailLayoutProps {
+	tabs: {
+		name: string;
+		path: string;
+		restrict?: Role[];
+	}[];
 	embedded?: boolean;
-	/** Whether to render the navbar chrome and breadcrumb. Hidden when embedded inside the workspace editor. */
 	showNav?: boolean;
-	/** Tab path segments to hide (e.g. ["dependencies", "mcp-usage"]). */
-	excludeTabs?: string[];
 }
 
-export const AppDetailLayout = ({
+export const ProjectDetailLayout = ({
+	tabs,
 	embedded = false,
 	showNav = true,
-	excludeTabs = [],
-}: AppDetailLayoutProps) => {
-	const { control, setValue, getValues, watch, handleSubmit } =
-		useForm<AppDetailsFormTypes>({ defaultValues: AppDetailsFormValues });
-
-	const tags = watch("tag");
-	const appInfo = watch("appInfo");
-	const permission = watch("permission");
-	const dependencies = watch("dependencies");
+}: ProjectDetailLayoutProps) => {
+	const [appInfo, setAppInfo] = useState<ProjectInfo | null>(null);
+	const [userRole, setUserRole] = useState<Role | "">("");
+	const [permission, setPermission] = useState<
+		"author" | "editor" | "readOnly" | "discoverable" | ""
+	>("");
+	const [requestedPermission, setRequestedPermission] = useState<
+		"OWNER" | "EDIT" | "READ_ONLY" | ""
+	>("");
+	const [roleChangeComment, setRoleChangeComment] = useState("");
+	const [dependencies, setDependencies] = useState<modelledDependency[]>([]);
+	const [detailsForm, setDetailsForm] =
+		useState<DetailsForm>(DEFAULT_DETAILS_FORM);
+	const [savedDetailsForm, setSavedDetailsForm] =
+		useState<DetailsForm>(DEFAULT_DETAILS_FORM);
 
 	const [isShareOverlayOpen, setIsShareOverlayOpen] = useState(false);
 	const [isChangeAccessModalOpen, setIsChangeAccessModalOpen] =
@@ -119,13 +161,20 @@ export const AppDetailLayout = ({
 	const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
 		useState(false);
 	const [responseStatus, setResponseStatus] = useState(false);
-	const [values, setValues] = useState<DetailsForm>(
-		AppDetailsFormValues.detailsForm,
-	);
 	const [pendingRequest, setPendingRequest] = useState(false);
 	const [permissionError, setPermissionError] = useState(false);
 	const [exportLoading, setExportLoading] = useState(false);
 	const [selectedTabName, setSelectedTabName] = useState("Overview");
+
+	const tags = useMemo(() => {
+		if (Array.isArray(detailsForm.tag)) {
+			return detailsForm.tag;
+		}
+		if (typeof detailsForm.tag === "string" && detailsForm.tag) {
+			return [detailsForm.tag];
+		}
+		return [];
+	}, [detailsForm.tag]);
 
 	const { monolithStore, configStore } = useRootStore();
 	const { appId } = useParams();
@@ -140,46 +189,39 @@ export const AppDetailLayout = ({
 		else toast.success(message);
 	}, []);
 
+	const mapRequestedPermission = useCallback(
+		(nextPermission: "author" | "editor" | "readOnly" | "discoverable") => {
+			if (nextPermission === "author") return "OWNER";
+			if (nextPermission === "editor") return "EDIT";
+			return "READ_ONLY";
+		},
+		[],
+	);
+
 	const getPermission = useCallback(async () => {
 		try {
+			if (!appId) return null;
 			const role = await getUserProjectPermission(appId);
-
-			setValue("userRole", role);
+			setUserRole(role);
 			const nextPermission = determineUserPermission(role);
-			setValue("permission", nextPermission);
-
-			if (nextPermission === "author")
-				setValue("requestedPermission", "OWNER");
-			if (nextPermission === "editor")
-				setValue("requestedPermission", "EDIT");
-			if (
-				nextPermission === "readOnly" ||
-				nextPermission === "discoverable"
-			)
-				setValue("requestedPermission", "READ_ONLY");
+			setPermission(nextPermission);
+			if (nextPermission) {
+				setRequestedPermission(mapRequestedPermission(nextPermission));
+			}
+			return nextPermission;
 		} catch {
 			setPermissionError(true);
+			return null;
 		}
-	}, [appId, setValue]);
-
-	const fetchSimilarApps = useCallback(() => {
-		// TODO
-	}, []);
+	}, [appId, mapRequestedPermission]);
 
 	const fetchUserSpecificData = useCallback(async () => {
-		const currPermission = getValues("permission");
 		await getPermission();
-		const newPermission = getValues("permission");
-
-		if (newPermission !== currPermission && newPermission === "readOnly") {
-			fetchSimilarApps();
-		}
-	}, [fetchSimilarApps, getPermission, getValues]);
+	}, [getPermission]);
 
 	const fetchAppData = useCallback(
 		async (id: string) => {
-			await getPermission();
-			const currentPermission = getValues("permission");
+			const currentPermission = await getPermission();
 			const promises = [
 				fetchAppInfo(
 					monolithStore,
@@ -190,139 +232,125 @@ export const AppDetailLayout = ({
 				),
 				fetchMainUses(monolithStore, id),
 			];
+
 			if (currentPermission !== "discoverable") {
 				promises.push(fetchDependencies(configStore, id));
 			}
+
 			const results = await Promise.allSettled(promises);
 			results.forEach((res, idx) => {
 				if (res.status === "rejected") {
 					emitMessage(true, res.reason);
-				} else {
-					if (idx === 0) {
-						if (res.value.type === "error") {
-							emitMessage(true, res.value.output);
-						} else {
-							setValue("appInfo", res.value.output);
-							const output = res.value.output;
+					return;
+				}
 
-							const projectMetaKeys =
-								configStore.store.config.projectMetaKeys;
-							const parsedMeta = projectMetaKeys
-								.map((k) => k.metakey)
-								.reduce((prev, curr) => {
-									const found = projectMetaKeys.find(
-										(obj) => obj.metakey === curr,
-									);
-
-									if (curr === "tag") {
-										if (typeof output[curr] === "string") {
-											prev[curr] = [output[curr]];
-										} else {
-											prev[curr] = output[curr];
-										}
-									} else if (
-										found.display_options ===
-											"single-typeahead" ||
-										found.display_options ===
-											"select-box" ||
-										found.display_options ===
-											"multi-typeahead"
-									) {
-										if (typeof output[curr] === "string") {
-											prev[curr] = [output[curr]];
-										} else {
-											prev[curr] = output[curr];
-										}
-									} else {
-										prev[curr] = output[curr];
-									}
-
-									return prev;
-								}, {}) as AppDetailsFormTypes["detailsForm"];
-
-							setValue("detailsForm", parsedMeta);
-							setValue("tag", parsedMeta.tag);
-							setValue("markdown", parsedMeta.markdown);
-							setValue(
-								"detailsForm.markdown",
-								parsedMeta.markdown,
-							);
-							setValues((prev) => ({
-								...prev,
-								markdown: parsedMeta.markdown || "",
-							}));
-							setValues((prev) => ({ ...prev, ...parsedMeta }));
-						}
-					} else if (idx === 1) {
-						if (res.value.type === "error") {
-							emitMessage(true, res.value.output);
-						} else {
-							if (res.value.output !== null) {
-								setValue("markdown", res.value.output);
-								setValue(
-									"detailsForm.markdown",
-									res.value.output,
-								);
-								setValues((prev) => ({
-									...prev,
-									markdown: res.value.output || "",
-								}));
-							}
-						}
-					} else if (idx === 2) {
-						if (res.value.type === "error") {
-							emitMessage(true, res.value.output);
-						} else {
-							const modelled = modelDependencies(
-								res.value.output,
-							);
-							setValue("dependencies", modelled);
-						}
+				if (idx === 0) {
+					if (res.value.type === "error") {
+						emitMessage(true, res.value.output);
+						return;
 					}
+
+					setAppInfo(res.value.output as ProjectInfo);
+					const output = res.value.output;
+					const projectMetaKeys =
+						configStore.store.config.projectMetaKeys;
+					const parsedMeta = projectMetaKeys
+						.map((k) => k.metakey)
+						.reduce((prev, curr) => {
+							const found = projectMetaKeys.find(
+								(obj) => obj.metakey === curr,
+							);
+							if (!found) return prev;
+
+							if (curr === "tag") {
+								if (typeof output[curr] === "string") {
+									prev[curr] = [output[curr]];
+								} else {
+									prev[curr] = output[curr];
+								}
+							} else if (
+								found.display_options === "single-typeahead" ||
+								found.display_options === "select-box" ||
+								found.display_options === "multi-typeahead"
+							) {
+								if (typeof output[curr] === "string") {
+									prev[curr] = [output[curr]];
+								} else {
+									prev[curr] = output[curr];
+								}
+							} else {
+								prev[curr] = output[curr];
+							}
+
+							return prev;
+						}, {} as DetailsForm);
+
+					const nextDetails = {
+						...parsedMeta,
+						markdown: parsedMeta.markdown || "",
+					};
+					setDetailsForm(nextDetails);
+					setSavedDetailsForm(nextDetails);
+					return;
+				}
+
+				if (idx === 1) {
+					if (res.value.type === "error") {
+						emitMessage(true, res.value.output);
+						return;
+					}
+					if (res.value.output !== null) {
+						setDetailsForm((prev) => ({
+							...prev,
+							markdown: res.value.output || "",
+						}));
+						setSavedDetailsForm((prev) => ({
+							...prev,
+							markdown: res.value.output || "",
+						}));
+					}
+					return;
+				}
+
+				if (idx === 2) {
+					if (res.value.type === "error") {
+						emitMessage(true, res.value.output);
+						return;
+					}
+					setDependencies(modelDependencies(res.value.output));
 				}
 			});
 		},
-		[
-			configStore,
-			emitMessage,
-			getPermission,
-			getValues,
-			monolithStore,
-			setValue,
-		],
+		[configStore, emitMessage, getPermission, monolithStore],
 	);
 
 	useEffect(() => {
 		setSelectedTabName("Overview");
 		setPermissionError(false);
-		setValue("appId", appId);
 		fetchUserSpecificData();
 		if (appId) {
 			fetchAppData(appId);
 		}
-	}, [appId, fetchAppData, fetchUserSpecificData, setValue]);
+	}, [appId, fetchAppData, fetchUserSpecificData]);
 
 	useEffect(() => {
-		if (appId) {
-			const requested = `GetProjectUserAccessRequest(project='${appId}', isSpecificUser=true)`;
-
-			monolithStore
-				.runQuery(requested)
-				.then((response) => {
-					const output = response?.pixelReturn?.[0]?.output;
-					if (Array.isArray(output) && output.length > 0) {
-						setPendingRequest(true);
-					} else {
-						setPendingRequest(false);
-					}
-				})
-				.catch(() => {
+		if (!appId) return;
+		const requested = `GetProjectUserAccessRequest(project='${appId}', isSpecificUser=true)`;
+		monolithStore
+			.runQuery(requested)
+			.then((response) => {
+				const output = response?.pixelReturn?.[0]?.output;
+				if (Array.isArray(output) && output.length > 0) {
+					setPendingRequest(true);
+				} else {
 					setPendingRequest(false);
-				});
-		}
+				}
+			})
+			.catch(() => {
+				setPendingRequest(false);
+			});
 	}, [appId, monolithStore]);
 
-	// Backward compat: ?tab=accesscontrol → /app/:appId/access-control (or set state in embedded mode)
 	useEffect(() => {
 		if (tabQueryParam !== "accesscontrol") return;
 		if (embedded) {
@@ -335,20 +363,15 @@ export const AppDetailLayout = ({
 	const handleCloseChangeAccessModal = (refresh?: boolean) => {
 		if (refresh) {
 			getPermission();
-		} else {
-			if (permission === "author")
-				setValue("requestedPermission", "OWNER");
-			if (permission === "editor")
-				setValue("requestedPermission", "EDIT");
-			if (permission === "readOnly")
-				setValue("requestedPermission", "READ_ONLY");
+		} else if (permission) {
+			setRequestedPermission(mapRequestedPermission(permission));
 		}
 		setIsChangeAccessModalOpen(false);
 	};
 
 	const handleCloseEditDetailsModal = (isReset?: boolean) => {
 		if (isReset) {
-			setValue("detailsForm", values);
+			setDetailsForm(savedDetailsForm);
 		}
 		setIsEditDetailsModalOpen(false);
 	};
@@ -356,23 +379,23 @@ export const AppDetailLayout = ({
 	const exportApp = () => {
 		setExportLoading(true);
 		const pixel = `ExportProjectApp(project=["${appId}"]);`;
-
-		monolithStore.runQuery(pixel).then((response) => {
-			const output = response.pixelReturn[0].output,
-				insightId = response.insightId;
-
-			monolithStore.download(insightId, output as string);
-		});
-		setExportLoading(false);
+		monolithStore
+			.runQuery(pixel)
+			.then((response) => {
+				const output = response.pixelReturn[0].output;
+				const insightId = response.insightId;
+				monolithStore.download(insightId, output as string);
+			})
+			.finally(() => {
+				setExportLoading(false);
+			});
 	};
 
 	const handleCloseDependenciesModal = async (refreshData: boolean) => {
-		if (refreshData) {
-			const currentAppId = getValues("appId");
-			const res = await fetchDependencies(configStore, currentAppId);
+		if (refreshData && appId) {
+			const res = await fetchDependencies(configStore, appId);
 			if (res.type === "success") {
-				const modelled = modelDependencies(res.output);
-				setValue("dependencies", modelled);
+				setDependencies(modelDependencies(res.output));
 			} else {
 				toast.error(res.output);
 			}
@@ -380,20 +403,16 @@ export const AppDetailLayout = ({
 		setIsEditDependenciesModalOpen(false);
 	};
 
-	const onSubmit = handleSubmit((data: AppDetailsFormTypes) => {
-		const meta = {} as AppDetailsFormTypes["detailsForm"];
-		let imageMeta = [] as File[];
-		if (data?.detailsForm) {
-			for (const key in data?.detailsForm) {
-				if (
-					data?.detailsForm[key] !== undefined &&
-					key !== "appImage"
-				) {
-					meta[key] = data?.detailsForm[key];
-				}
-				if (key === "appImage") {
-					imageMeta = data?.detailsForm[key] as File[];
-				}
+	const onSubmit = () => {
+		const meta = {} as DetailsForm;
+		let imageMeta: File | File[] | undefined;
+
+		for (const key in detailsForm) {
+			if (detailsForm[key] !== undefined && key !== "appImage") {
+				meta[key] = detailsForm[key];
+			}
+			if (key === "appImage") {
+				imageMeta = detailsForm[key] as File | File[];
 			}
 		}
 
@@ -416,15 +435,14 @@ export const AppDetailLayout = ({
 					toast.error(output as string);
 					return;
 				}
-				if (
-					((Array.isArray(imageMeta) &&
-						imageMeta[0] instanceof File) ||
-						imageMeta instanceof File) &&
-					appId
-				) {
-					const filesToUpload = Array.isArray(imageMeta)
-						? imageMeta
-						: [imageMeta];
+
+				const filesToUpload = Array.isArray(imageMeta)
+					? imageMeta
+					: imageMeta instanceof File
+						? [imageMeta]
+						: [];
+
+				if (filesToUpload.length > 0 && appId) {
 					await uploadImage(
 						filesToUpload,
 						appId,
@@ -433,33 +451,32 @@ export const AppDetailLayout = ({
 				}
 
 				toast.success(additionalOutput[0].output);
-				fetchAppData(appId);
+				if (appId) {
+					fetchAppData(appId);
+				}
 				handleCloseEditDetailsModal();
 			})
 			.catch((error) => {
 				toast.error(error.message);
 			});
-	});
+	};
 
 	const handleAccessRequested = () => {
 		setResponseStatus(true);
 	};
 
-	// Filter tabs by permission + chrome requirements
 	const visibleTabs = useMemo(() => {
-		return APP_DETAIL_TABS.filter((tab) => {
-			if (tab.requiresNav && !showNav) return false;
-			if (excludeTabs.includes(tab.path)) return false;
-			if (!tab.restrict) return true;
-			if (!permission) return false;
-			return tab.restrict.includes(
-				permission as Exclude<typeof permission, "">,
-			);
+		return tabs.filter((tab) => {
+			if (!tab.restrict || tab.restrict.length === 0) {
+				return true;
+			}
+			if (!userRole) {
+				return false;
+			}
+			return tab.restrict.includes(userRole);
 		});
-	}, [permission, showNav, excludeTabs]);
+	}, [tabs, userRole]);
 
-	// Determine active tab. In route mode, derive from URL via matchPath.
-	// In embedded mode, derive from selectedTabName local state.
 	const activeTabIdx = useMemo(() => {
 		if (embedded) {
 			const idx = visibleTabs.findIndex(
@@ -485,7 +502,7 @@ export const AppDetailLayout = ({
 			appInfo,
 			permission,
 			dependencies,
-			tags: tags || [],
+			tags,
 			showNav,
 			fetchUserSpecificData,
 			openEditDependenciesModal: () =>
@@ -515,16 +532,10 @@ export const AppDetailLayout = ({
 		);
 	}
 
-	const handleTabClick = (tab: (typeof visibleTabs)[number]) => {
-		if (embedded) {
-			setSelectedTabName(tab.name);
-			return;
-		}
-		// In route mode, navigate to the tab's sub-path. Empty path = index (Overview).
-		navigate(tab.path ? tab.path : ".");
-	};
-
 	const activeTab = activeTabIdx >= 0 ? visibleTabs[activeTabIdx] : undefined;
+	const embeddedComponent = activeTab
+		? EMBEDDED_TAB_COMPONENTS[activeTab.path]
+		: undefined;
 
 	return (
 		<AppDetailContext.Provider value={contextValue}>
@@ -644,12 +655,10 @@ export const AppDetailLayout = ({
 													appInfo?.project_display_name ||
 													appInfo?.project_name ||
 													"this app";
-												setValue(
-													"requestedPermission",
+												setRequestedPermission(
 													"READ_ONLY",
 												);
-												setValue(
-													"roleChangeComment",
+												setRoleChangeComment(
 													`I am requesting access to ${appName} for [please provide a reason]`,
 												);
 												setIsChangeAccessModalOpen(
@@ -773,9 +782,19 @@ export const AppDetailLayout = ({
 											<TabsTrigger
 												key={tab.name}
 												value={tab.path}
-												onClick={() =>
-													handleTabClick(tab)
-												}
+												onClick={() => {
+													if (embedded) {
+														setSelectedTabName(
+															tab.name,
+														);
+														return;
+													}
+													navigate(
+														tab.path
+															? tab.path
+															: ".",
+													);
+												}}
 												data-testid={`appDetail-${tab.name}-tab`}
 											>
 												{tab.name}
@@ -787,8 +806,9 @@ export const AppDetailLayout = ({
 						)}
 						<div className="w-full bg-card p-3 md:p-4">
 							{embedded ? (
-								activeTab &&
-								createElement(activeTab.component, {})
+								embeddedComponent ? (
+									createElement(embeddedComponent, {})
+								) : null
 							) : (
 								<Outlet />
 							)}
@@ -802,7 +822,7 @@ export const AppDetailLayout = ({
 				>
 					<DialogContent className="max-w-lg p-0">
 						<ShareOverlay
-							appId={appId}
+							appId={appId || ""}
 							diffs={false}
 							onClose={() => setIsShareOverlayOpen(false)}
 						/>
@@ -812,8 +832,11 @@ export const AppDetailLayout = ({
 				<ChangeAccessModal
 					open={isChangeAccessModalOpen}
 					onClose={handleCloseChangeAccessModal}
-					control={control}
-					getValues={getValues}
+					appId={appId || ""}
+					requestedPermission={requestedPermission}
+					roleChangeComment={roleChangeComment}
+					onRequestedPermissionChange={setRequestedPermission}
+					onRoleChangeCommentChange={setRoleChangeComment}
 					dependencies={dependencies}
 					onSuccess={handleAccessRequested}
 					permission={permission}
@@ -822,7 +845,10 @@ export const AppDetailLayout = ({
 				<EditDetailsModal
 					isOpen={isEditDetailsModalOpen}
 					onClose={handleCloseEditDetailsModal}
-					control={control}
+					detailsForm={detailsForm}
+					onDetailsFormChange={(updater) => {
+						setDetailsForm((prev) => updater(prev));
+					}}
 					onSubmit={onSubmit}
 				/>
 
@@ -830,7 +856,7 @@ export const AppDetailLayout = ({
 					currentDependencies={dependencies}
 					isOpen={isEditDependenciesModalOpen}
 					onClose={handleCloseDependenciesModal}
-					appId={appId}
+					appId={appId || ""}
 				/>
 			</div>
 		</AppDetailContext.Provider>

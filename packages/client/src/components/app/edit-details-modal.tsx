@@ -1,6 +1,5 @@
 import { X } from "lucide-react";
 import { useEffect, useId, useMemo, useState } from "react";
-import { Controller } from "react-hook-form";
 import {
 	Button,
 	Dialog,
@@ -13,6 +12,7 @@ import {
 } from "@semoss/ui/next";
 import { usePixel, useRootStore } from "@/hooks";
 import { MarkdownEditor } from "../common";
+import type { DetailsForm } from "./app-details.utility";
 
 interface TagInputProps {
 	value: string[] | string | undefined;
@@ -90,12 +90,14 @@ const TagInput = ({
 interface EditDetailsModalProps {
 	isOpen: boolean;
 	onClose: (reset?: boolean) => void;
-	control;
-	onSubmit;
+	detailsForm: DetailsForm;
+	onDetailsFormChange: (updater: (prev: DetailsForm) => DetailsForm) => void;
+	onSubmit: () => void;
 }
 
 export const EditDetailsModal = (props: EditDetailsModalProps) => {
-	const { isOpen, onClose, control, onSubmit } = props;
+	const { isOpen, onClose, detailsForm, onDetailsFormChange, onSubmit } =
+		props;
 	const { configStore } = useRootStore();
 	const descriptionId = useId();
 
@@ -103,7 +105,6 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 		onSubmit();
 	};
 
-	// filter metakeys to the ones we want
 	const projectMetaKeys = useMemo(() => {
 		return configStore.store.config.projectMetaKeys.filter((k) => {
 			return (
@@ -115,18 +116,18 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 		});
 	}, [configStore.store.config.projectMetaKeys]);
 
-	// track the options
 	const [filterOptions, setFilterOptions] = useState<
 		Record<string, string[]>
 	>(() => {
-		return projectMetaKeys.reduce((prev, current) => {
-			prev[current.metakey] = [];
-
-			return prev;
-		}, {});
+		return projectMetaKeys.reduce<Record<string, string[]>>(
+			(prev, current) => {
+				prev[current.metakey] = [];
+				return prev;
+			},
+			{},
+		);
 	});
 
-	// get the values
 	const projectMetaValues = usePixel<
 		{
 			METAKEY: string;
@@ -136,40 +137,42 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 	>(`META | GetProjectMetaValues ( metaKeys = ['tag'] ) ;`);
 
 	useEffect(() => {
-		if (projectMetaValues.status !== "SUCCESS") {
+		if (projectMetaValues.status !== "SUCCESS" || !projectMetaValues.data) {
 			return;
 		}
 
-		// format the engine meta into a map
-		const updated = projectMetaValues.data.reduce((prev, current) => {
-			if (!prev[current.METAKEY]) {
-				prev[current.METAKEY] = [];
-			}
+		const updated = projectMetaValues.data.reduce<Record<string, string[]>>(
+			(prev, current) => {
+				if (!prev[current.METAKEY]) {
+					prev[current.METAKEY] = [];
+				}
+				prev[current.METAKEY].push(current.METAVALUE);
+				return prev;
+			},
+			{},
+		);
 
-			prev[current.METAKEY].push(current.METAVALUE);
-
-			return prev;
-		}, {});
-
-		// add metakeys that don't get options from projects/engines but stored in config call
 		const metaKeysWithOpts = projectMetaKeys.filter((k) => {
 			return k.display_options === "select-box";
 		});
 
 		metaKeysWithOpts.forEach((filter) => {
 			if (filter.display_values) {
-				const split = filter.display_values.split(",");
-				const formatted = [];
-				split.forEach((val) => {
-					formatted.push(val);
-				});
-
-				updated[filter.metakey] = formatted;
+				updated[filter.metakey] = filter.display_values.split(",");
 			}
 		});
 
 		setFilterOptions(updated);
 	}, [projectMetaKeys, projectMetaValues.status, projectMetaValues.data]);
+
+	const getDetailValue = (key: string): unknown => detailsForm[key];
+
+	const setDetailValue = (key: string, value: unknown) => {
+		onDetailsFormChange((prev) => ({
+			...prev,
+			[key]: value,
+		}));
+	};
 
 	return (
 		<Dialog
@@ -189,76 +192,66 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 				</DialogHeader>
 
 				<div className="flex-1 space-y-6 overflow-y-auto">
-					<Controller
-						name="detailsForm.description"
-						control={control}
-						render={({ field }) => (
-							<div className="space-y-2">
-								<Label htmlFor={descriptionId}>
-									Description
-								</Label>
-								<textarea
-									id={descriptionId}
-									className="flex max-h-[72px] min-h-[72px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
-									value={field.value ?? ""}
-									onChange={(event) =>
-										field.onChange(event.target.value)
-									}
-									placeholder="Please provide a description for this app to help others find it and understand how to use it."
-									data-testid="description"
-								/>
-							</div>
-						)}
+					<div className="space-y-2">
+						<Label htmlFor={descriptionId}>Description</Label>
+						<textarea
+							id={descriptionId}
+							className="flex max-h-[72px] min-h-[72px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+							value={
+								(getDetailValue("description") as string) ?? ""
+							}
+							onChange={(event) =>
+								setDetailValue(
+									"description",
+									event.target.value,
+								)
+							}
+							placeholder="Please provide a description for this app to help others find it and understand how to use it."
+							data-testid="description"
+						/>
+					</div>
+
+					<div className="space-y-2">
+						<Label>Main Uses</Label>
+						<MarkdownEditor
+							className="h-[200px]"
+							value={(getDetailValue("markdown") as string) || ""}
+							onChange={(value) =>
+								setDetailValue("markdown", value)
+							}
+							data-testid="markdown"
+						/>
+					</div>
+
+					<TagInput
+						value={
+							(getDetailValue("tag") as
+								| string[]
+								| string
+								| undefined) || []
+						}
+						onChange={(value) => setDetailValue("tag", value)}
+						label="Tags"
+						placeholder="Press enter to add tags"
+						testId="tags"
 					/>
-					<Controller
-						name="detailsForm.markdown"
-						control={control}
-						render={({ field }) => (
-							<div className="space-y-2">
-								<Label>Main Uses</Label>
-								<MarkdownEditor
-									value={(field.value as string) || ""}
-									onChange={(value) => field.onChange(value)}
-									data-testid="markdown"
-								/>
-							</div>
-						)}
-					/>
-					<Controller
-						name="detailsForm.tag"
-						control={control}
-						render={({ field }) => (
-							<TagInput
-								value={field.value}
-								onChange={(value) => field.onChange(value)}
-								label="Tags"
-								placeholder="Press enter to add tags"
-								testId="tags"
-							/>
-						)}
-					/>
-					<Controller
-						name="detailsForm.appImage"
-						control={control}
-						render={({ field }) => (
-							<div className="space-y-2">
-								<Label>Image</Label>
-								<Input
-									type="file"
-									accept="image/*"
-									onChange={(event) => {
-										const value = (
-											event.target as HTMLInputElement
-										).files;
-										if (value && value.length > 0) {
-											field.onChange(value[0]);
-										}
-									}}
-									data-testid="app-image"
-								/>
-							</div>
-						)}
-					/>
+
+					<div className="space-y-2">
+						<Label>Image</Label>
+						<Input
+							type="file"
+							accept="image/*"
+							onChange={(event) => {
+								const value = (event.target as HTMLInputElement)
+									.files;
+								if (value && value.length > 0) {
+									setDetailValue("appImage", value[0]);
+								}
+							}}
+							data-testid="app-image"
+						/>
+					</div>
+
 					{projectMetaKeys.map((key) => {
 						const { metakey, display_options } = key;
 						const label =
@@ -268,21 +261,16 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 						if (display_options === "markdown") {
 							return (
 								<div key={metakey} className="mb-1">
-									<Controller
-										name={`detailsForm.${metakey}`}
-										control={control}
-										render={({ field }) => (
-											<MarkdownEditor
-												value={
-													(field.value as string) ||
-													""
-												}
-												onChange={(value) =>
-													field.onChange(value)
-												}
-												data-testid="markdown-editor"
-											/>
-										)}
+									<MarkdownEditor
+										value={
+											(getDetailValue(
+												metakey,
+											) as string) || ""
+										}
+										onChange={(value) =>
+											setDetailValue(metakey, value)
+										}
+										data-testid="markdown-editor"
 									/>
 								</div>
 							);
@@ -290,185 +278,148 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 
 						if (display_options === "textarea") {
 							return (
-								<Controller
-									key={metakey}
-									name={`detailsForm.${metakey}`}
-									control={control}
-									render={({ field }) => (
-										<div className="space-y-2">
-											<Label htmlFor={metakey}>
-												{label}
-											</Label>
-											<textarea
-												id={metakey}
-												className="flex max-h-[72px] min-h-[72px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
-												value={
-													(field.value as string) ||
-													""
-												}
-												onChange={(event) =>
-													field.onChange(
-														event.target.value,
-													)
-												}
-											/>
-										</div>
-									)}
-								/>
+								<div key={metakey} className="space-y-2">
+									<Label htmlFor={metakey}>{label}</Label>
+									<textarea
+										id={metakey}
+										className="flex max-h-[72px] min-h-[72px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+										value={
+											(getDetailValue(
+												metakey,
+											) as string) || ""
+										}
+										onChange={(event) =>
+											setDetailValue(
+												metakey,
+												event.target.value,
+											)
+										}
+									/>
+								</div>
 							);
 						}
 
 						if (display_options === "single-typeahead") {
 							return (
-								<Controller
-									key={metakey}
-									name={`detailsForm.${metakey}`}
-									control={control}
-									render={({ field }) => (
-										<div className="space-y-2">
-											<Label htmlFor={metakey}>
-												{label}
-											</Label>
-											<div className="relative">
-												<input
-													id={metakey}
-													type="text"
-													className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-base placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
-													placeholder={`Select ${label.toLowerCase()}...`}
-													value={
-														(field.value as string) ||
-														""
-													}
-													onChange={(event) => {
-														field.onChange(
-															event.target.value,
-														);
-													}}
-													list={`${metakey}-list`}
-												/>
-												<datalist
-													id={`${metakey}-list`}
-												>
-													{(
-														filterOptions[
-															metakey
-														] || []
-													).map((option) => (
-														<option
-															key={option}
-															value={option}
-														/>
-													))}
-												</datalist>
-											</div>
-										</div>
-									)}
-								/>
+								<div key={metakey} className="space-y-2">
+									<Label htmlFor={metakey}>{label}</Label>
+									<div className="relative">
+										<input
+											id={metakey}
+											type="text"
+											className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-base placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+											placeholder={`Select ${label.toLowerCase()}...`}
+											value={
+												(getDetailValue(
+													metakey,
+												) as string) || ""
+											}
+											onChange={(event) =>
+												setDetailValue(
+													metakey,
+													event.target.value,
+												)
+											}
+											list={`${metakey}-list`}
+										/>
+										<datalist id={`${metakey}-list`}>
+											{(filterOptions[metakey] || []).map(
+												(option) => (
+													<option
+														key={option}
+														value={option}
+													/>
+												),
+											)}
+										</datalist>
+									</div>
+								</div>
 							);
 						}
 
 						if (display_options === "multi-typeahead") {
 							return (
-								<Controller
+								<TagInput
 									key={metakey}
-									name={`detailsForm.${metakey}`}
-									control={control}
-									render={({ field }) => (
-										<TagInput
-											value={
-												(field.value as string[]) || []
-											}
-											onChange={(value) =>
-												field.onChange(value)
-											}
-											label={label}
-											placeholder={`Press enter to add ${metakey}`}
-										/>
-									)}
+									value={
+										(getDetailValue(metakey) as string[]) ||
+										[]
+									}
+									onChange={(value) =>
+										setDetailValue(metakey, value)
+									}
+									label={label}
+									placeholder={`Press enter to add ${metakey}`}
 								/>
 							);
 						}
 
 						if (display_options === "select-box") {
 							return (
-								<Controller
-									key={metakey}
-									name={`detailsForm.${metakey}`}
-									control={control}
-									render={({ field }) => {
-										const formattedValue =
-											typeof field.value === "string"
-												? [field.value]
-												: field.value;
+								<div key={metakey} className="space-y-2">
+									<Label htmlFor={metakey}>{label}</Label>
+									<div className="flex flex-wrap gap-2 rounded-md border border-input bg-transparent p-2">
+										{(filterOptions[metakey] || []).map(
+											(option) => {
+												const rawValue =
+													getDetailValue(metakey);
+												const formattedValue =
+													typeof rawValue === "string"
+														? [rawValue]
+														: rawValue;
+												const selectedValues = (
+													Array.isArray(
+														formattedValue,
+													)
+														? formattedValue
+														: []
+												) as string[];
+												const checked =
+													selectedValues.includes(
+														option,
+													);
 
-										return (
-											<div className="space-y-2">
-												<Label htmlFor={metakey}>
-													{label}
-												</Label>
-												<div className="flex flex-wrap gap-2 rounded-md border border-input bg-transparent p-2">
-													{(
-														filterOptions[
-															metakey
-														] || []
-													).map((option) => {
-														const selectedValues = (
-															Array.isArray(
-																formattedValue,
-															)
-																? formattedValue
-																: []
-														) as string[];
-														const checked =
-															selectedValues.includes(
-																option,
-															);
-
-														return (
-															<label
-																key={option}
-																className="flex cursor-pointer items-center gap-2"
-															>
-																<input
-																	type="checkbox"
-																	checked={
-																		checked
-																	}
-																	onChange={() => {
-																		if (
-																			checked
-																		) {
-																			field.onChange(
-																				selectedValues.filter(
-																					(
-																						v,
-																					) =>
-																						v !==
-																						option,
-																				),
-																			);
-																		} else {
-																			field.onChange(
-																				[
-																					...selectedValues,
-																					option,
-																				],
-																			);
-																		}
-																	}}
-																	className="rounded border-input"
-																/>
-																<span className="text-sm">
-																	{option}
-																</span>
-															</label>
-														);
-													})}
-												</div>
-											</div>
-										);
-									}}
-								/>
+												return (
+													<label
+														key={option}
+														className="flex cursor-pointer items-center gap-2"
+													>
+														<input
+															type="checkbox"
+															checked={checked}
+															onChange={() => {
+																if (checked) {
+																	setDetailValue(
+																		metakey,
+																		selectedValues.filter(
+																			(
+																				v,
+																			) =>
+																				v !==
+																				option,
+																		),
+																	);
+																} else {
+																	setDetailValue(
+																		metakey,
+																		[
+																			...selectedValues,
+																			option,
+																		],
+																	);
+																}
+															}}
+															className="rounded border-input"
+														/>
+														<span className="text-sm">
+															{option}
+														</span>
+													</label>
+												);
+											},
+										)}
+									</div>
+								</div>
 							);
 						}
 

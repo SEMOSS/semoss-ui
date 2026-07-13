@@ -1,6 +1,5 @@
 import { Ban, Eye, Pencil, User } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
-import { type Control, Controller } from "react-hook-form";
 import { Link } from "react-router-dom";
 import {
 	Badge,
@@ -28,13 +27,17 @@ import OPEN_AI from "@/assets/img/OPEN_AI.svg";
 import type { modelledDependency } from "@/components/app";
 import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
 import { useRootStore } from "@/hooks";
-import type { AppDetailsFormTypes } from "./app-details.utility";
 
 interface ChangeAccessModalProps {
 	open: boolean;
 	onClose: (refresh?: boolean) => void;
-	control: Control<AppDetailsFormTypes>;
-	getValues;
+	appId: string;
+	requestedPermission: "OWNER" | "EDIT" | "READ_ONLY" | "";
+	roleChangeComment: string;
+	onRequestedPermissionChange: (
+		permission: "OWNER" | "EDIT" | "READ_ONLY" | "",
+	) => void;
+	onRoleChangeCommentChange: (comment: string) => void;
 	dependencies: modelledDependency[];
 	onSuccess: () => void;
 	permission: string;
@@ -99,8 +102,11 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 	const {
 		open,
 		onClose,
-		control,
-		getValues,
+		appId,
+		requestedPermission,
+		roleChangeComment,
+		onRequestedPermissionChange,
+		onRoleChangeCommentChange,
 		dependencies,
 		onSuccess,
 		permission,
@@ -137,10 +143,10 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 	};
 
 	const handleChangeAccess = async () => {
-		const current = getValues("permission");
-		const requested = getValues("requestedPermission");
-		const comment = getValues("roleChangeComment");
-		const id = getValues("appId");
+		const current = permission;
+		const requested = requestedPermission;
+		const comment = roleChangeComment;
+		const id = appId;
 
 		if (requested === current || requested === "") {
 			toast.error(
@@ -179,10 +185,10 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 	const handleRequestAllAccess = async () => {
 		setIsRequestAllLoading(true);
 		try {
-			const requestedRole = getValues("requestedPermission");
-			const comment = getValues("roleChangeComment");
+			const requestedRole = requestedPermission;
+			const comment = roleChangeComment;
 
-			if (!requestedRole || requestedRole === "") {
+			if (!requestedRole) {
 				toast.error(
 					"Please select a permission role on the first tab before requesting access.",
 				);
@@ -226,10 +232,10 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 
 	// Handle single dependency request button click
 	const handleSingleDependencyRequest = async (depId: string) => {
-		const requestedRole = getValues("requestedPermission");
-		const comment = getValues("roleChangeComment");
+		const requestedRole = requestedPermission;
+		const comment = roleChangeComment;
 
-		if (!requestedRole || requestedRole === "") {
+		if (!requestedRole) {
 			toast.error(
 				"Please select a permission role on the first tab before requesting access.",
 			);
@@ -265,7 +271,7 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 			<DialogContent className="max-h-[90vh] overflow-auto sm:max-w-2xl">
 				<DialogHeader>
 					<DialogTitle>
-						{getValues("requestedPermission") === "discoverable"
+						{permission === "discoverable"
 							? "Request Access"
 							: "Change Access"}
 					</DialogTitle>
@@ -284,58 +290,50 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 					) : null}
 
 					<TabsContent value="permissions" className="space-y-4">
-						<Controller
-							name="requestedPermission"
-							control={control}
-							render={({ field }) => (
-								<RadioGroup
-									value={field.value}
-									onValueChange={field.onChange}
-									className="space-y-2"
-								>
-									<PermissionCard
-										icon={<User className="size-4" />}
-										title="Author"
-										description={
-											permissionDescriptions.author
-										}
-										value="OWNER"
-									/>
-									<PermissionCard
-										icon={<Pencil className="size-4" />}
-										title="Editor"
-										description={
-											permissionDescriptions.editor
-										}
-										value="EDIT"
-									/>
-									<PermissionCard
-										icon={<Eye className="size-4" />}
-										title="Read-Only"
-										description={
-											permissionDescriptions.readonly
-										}
-										value="READ_ONLY"
-									/>
-								</RadioGroup>
-							)}
-						/>
+						<RadioGroup
+							value={requestedPermission}
+							onValueChange={(value) =>
+								onRequestedPermissionChange(
+									value as
+										| "OWNER"
+										| "EDIT"
+										| "READ_ONLY"
+										| "",
+								)
+							}
+							className="space-y-2"
+						>
+							<PermissionCard
+								icon={<User className="size-4" />}
+								title="Author"
+								description={permissionDescriptions.author}
+								value="OWNER"
+							/>
+							<PermissionCard
+								icon={<Pencil className="size-4" />}
+								title="Editor"
+								description={permissionDescriptions.editor}
+								value="EDIT"
+							/>
+							<PermissionCard
+								icon={<Eye className="size-4" />}
+								title="Read-Only"
+								description={permissionDescriptions.readonly}
+								value="READ_ONLY"
+							/>
+						</RadioGroup>
 
 						<div className="space-y-2">
 							<Label>Reason For Access</Label>
-							<Controller
-								name="roleChangeComment"
-								control={control}
-								render={({ field }) => (
-									<Textarea
-										rows={3}
-										placeholder="Optional"
-										value={field.value ?? ""}
-										onChange={(event) =>
-											field.onChange(event.target.value)
-										}
-									/>
-								)}
+							<Textarea
+								rows={3}
+								placeholder="Optional"
+								value={roleChangeComment ?? ""}
+								onChange={(event) =>
+									onRoleChangeCommentChange(
+										event.target.value,
+									)
+								}
 							/>
 						</div>
 
