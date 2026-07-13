@@ -34,7 +34,9 @@
 		"errors": "エラー",
 		"p50": "P50",
 		"p95": "P95",
-		"tokens": "トークン",
+		"tokens": "合計トークン",
+		"cacheRead": "キャッシュ読み取り",
+		"cacheWrite": "キャッシュ作成",
 		"currentPage": "現在のページ",
 		"currentPageHint": "レイテンシ、エラー、トークンは現在のページのイベントを対象に計算されます。"
 	},
@@ -54,9 +56,18 @@
 			"engineType": "エンジンタイプ",
 			"engineName": "エンジン名",
 			"latency": "レイテンシ",
-			"tokens": "トークン",
+			"tokens": "合計トークン",
+			"promptTokens": "プロンプトトークン",
+			"responseTokens": "レスポンストークン",
+			"cacheRead": "キャッシュ読み取り",
+			"cacheWrite": "キャッシュ作成",
 			"timestamp": "タイムスタンプ",
-			"status": "ステータス"
+			"status": "ステータス",
+			"guardrailAction": "ガードレール"
+		},
+		"guardrailActions": {
+			"MASK": "マスク済み",
+			"BLOCK": "ブロック済み"
 		},
 		"groupRequest": "リクエスト",
 		"groupSpan": "スパン",
@@ -88,7 +99,7 @@
 			"engine": "エンジン",
 			"user": "ユーザー",
 			"latency": "レイテンシ",
-			"tokens": "トークン",
+			"tokens": "合計トークン",
 			"start": "開始",
 			"end": "終了",
 			"span": "スパン",
@@ -108,7 +119,11 @@
 		"collapseAll": "すべて折りたたむ",
 		"fields": {
 			"latency": "レイテンシ",
-			"tokens": "トークン",
+			"tokens": "合計トークン",
+			"promptTokens": "プロンプトトークン",
+			"responseTokens": "レスポンストークン",
+			"cacheRead": "キャッシュ読み取り",
+			"cacheWrite": "キャッシュ作成",
 			"user": "ユーザー",
 			"userId": "ユーザーID",
 			"start": "開始",

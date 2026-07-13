@@ -1,4 +1,4 @@
-import { ChevronDown, Lock } from "lucide-react";
+import { ChevronDown, Copy, Lock } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppCatalogAvatar } from "@semoss/shared";
 import {
@@ -114,6 +114,28 @@ export const MemberAccessPanel = ({
 
 	const displayName = member.name || member.id || "Unknown";
 
+	const handleCopy = (value: string) => {
+		navigator.clipboard.writeText(value);
+		toast.success("Copied to clipboard");
+	};
+
+	// A muted "label: value" line with a ghost copy button (mirrors user-popover).
+	const copyableField = (label: string, value: string) => (
+		<div className="flex min-w-0 items-center gap-1 text-muted-foreground text-sm">
+			<span className="shrink-0">{label}:</span>
+			<span className="truncate">{value}</span>
+			<Button
+				variant="ghost"
+				size="icon-sm"
+				className="size-5 shrink-0"
+				aria-label={`Copy ${label}`}
+				onClick={() => handleCopy(value)}
+			>
+				<Copy className="size-3" />
+			</Button>
+		</div>
+	);
+
 	const handleUnlock = async () => {
 		setUnlocking(true);
 		try {
@@ -150,11 +172,8 @@ export const MemberAccessPanel = ({
 					<span className="truncate font-semibold text-base">
 						{displayName}
 					</span>
-					<span className="truncate text-muted-foreground text-sm">
-						{member.email
-							? `${member.email} · id: ${member.id}`
-							: `id: ${member.id}`}
-					</span>
+					{copyableField("id", member.id)}
+					{member.email ? copyableField("email", member.email) : null}
 				</div>
 			</div>
 
