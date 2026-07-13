@@ -8,24 +8,21 @@ export const LandscapeRestriction = () => {
 	const [isLandscape, setIsLandscape] = useState(false);
 
 	useEffect(() => {
-		const checkOrientation = (): void => {
-			// Only apply restriction on mobile devices (max-width: 768px)
-			const isMobile = window.innerWidth <= 768;
-			const isLandscapeMode = window.innerHeight < window.innerWidth;
+		const landscapeQuery = window.matchMedia("(orientation: landscape)");
+		// coarse pointer = touchscreen (mobile/tablet), fine pointer = mouse (desktop/laptop)
+		const touchQuery = window.matchMedia("(pointer: coarse)");
 
-			setIsLandscape(isMobile && isLandscapeMode);
+		const check = () => {
+			setIsLandscape(touchQuery.matches && landscapeQuery.matches);
 		};
 
-		// Check on mount
-		checkOrientation();
-
-		// Listen for orientation and resize changes
-		window.addEventListener("resize", checkOrientation);
-		window.addEventListener("orientationchange", checkOrientation);
+		check();
+		landscapeQuery.addEventListener("change", check);
+		touchQuery.addEventListener("change", check);
 
 		return () => {
-			window.removeEventListener("resize", checkOrientation);
-			window.removeEventListener("orientationchange", checkOrientation);
+			landscapeQuery.removeEventListener("change", check);
+			touchQuery.removeEventListener("change", check);
 		};
 	}, []);
 
