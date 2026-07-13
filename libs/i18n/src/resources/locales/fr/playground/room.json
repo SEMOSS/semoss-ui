@@ -14,8 +14,7 @@
 		"agentLabel": "Agent",
 		"knowledgeLabel": "Connaissances",
 		"toolboxLabel": "Boîtes à outils",
-		"maxTokenLabel": "Jeton maximum",
-		"temperatureLabel": "Température"
+		"maxTokenLabel": "Jeton maximum"
 	},
 	"modes": {
 		"ask": "Demander",

@@ -14,8 +14,7 @@
 		"agentLabel": "الوكيل",
 		"knowledgeLabel": "المعرفة",
 		"toolboxLabel": "صناديق الأدوات",
-		"maxTokenLabel": "الحد الأقصى للرموز",
-		"temperatureLabel": "درجة الحرارة"
+		"maxTokenLabel": "الحد الأقصى للرموز"
 	},
 	"modes": {
 		"ask": "اسأل",

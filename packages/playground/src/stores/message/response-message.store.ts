@@ -261,7 +261,6 @@ ${media.length ? `image=${JSON.stringify(media)},` : "image=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 paramValues=[${JSON.stringify({
 					max_new_tokens: room.options.tokenLength,
-					temperature: room.options.temperature,
 				})}]
 );`,
 				(chunk) => {

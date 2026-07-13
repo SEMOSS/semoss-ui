@@ -158,7 +158,6 @@ const defaultProps = {
 		instructions: "",
 		mcp: [],
 		tokenLength: 4096,
-		temperature: 0.5,
 		workspace: null,
 		predefinedPrompts: [],
 	},

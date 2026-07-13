@@ -37,7 +37,7 @@ import {
 	RoomSidebar,
 } from "@/components";
 import { RoomOptionsForm } from "@/components/room/room-options-form";
-import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
+import { TOKEN_LENGTH } from "@/constants";
 import { FileDragProvider } from "@/contexts";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { RoomStore } from "@/stores";
@@ -155,8 +155,6 @@ export const NewRoomPage = observer(() => {
 			mcp: [...(root.theme.defaultTools || [])],
 			tokenLength:
 				root.theme.defaultRoomSettings?.tokenLength || TOKEN_LENGTH,
-			temperature:
-				root.theme?.defaultRoomSettings?.temperature || TEMPERATURE,
 			workspace: undefined,
 			predefinedPrompts: [],
 		});
@@ -384,7 +382,6 @@ export const NewRoomPage = observer(() => {
 			tempRoomStore.setOptions({
 				...tempRoomStore.options,
 				instructions: "",
-				temperature: root.theme.defaultRoomSettings?.temperature,
 				tokenLength: root.theme.defaultRoomSettings?.tokenLength,
 				mcp: [...(root.theme.defaultTools || [])], // Remove workspace MCPs
 			});

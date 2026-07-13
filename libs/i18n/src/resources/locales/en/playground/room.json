@@ -21,8 +21,7 @@
 		"agentLabel": "Agent",
 		"knowledgeLabel": "Knowledge",
 		"toolboxLabel": "Toolboxes",
-		"maxTokenLabel": "Max Token",
-		"temperatureLabel": "Temperature"
+		"maxTokenLabel": "Max Token"
 	},
 	"modes": {
 		"ask": "Ask",

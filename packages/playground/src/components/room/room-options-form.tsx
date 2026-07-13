@@ -15,7 +15,6 @@ import {
 	FieldSeparator,
 	FieldSet,
 	Input,
-	Slider,
 	Textarea,
 	Tooltip,
 	TooltipContent,
@@ -508,24 +507,6 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 									}
 									min={0}
 									className="w-full"
-								/>
-							</Field>
-
-							<Field>
-								<FieldLabel>
-									{t("room:form.temperatureLabel")} (
-									{options.temperature?.toFixed(2)})
-								</FieldLabel>
-								<Slider
-									min={0}
-									max={1}
-									step={0.01}
-									value={[options.temperature]}
-									onValueChange={(value) =>
-										onOptionsChange({
-											temperature: value[0],
-										})
-									}
 								/>
 							</Field>
 						</FieldGroup>

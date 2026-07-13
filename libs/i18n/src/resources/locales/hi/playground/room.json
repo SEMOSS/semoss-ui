@@ -14,8 +14,7 @@
 		"agentLabel": "एजेंट",
 		"knowledgeLabel": "ज्ञान",
 		"toolboxLabel": "टूलबॉक्स",
-		"maxTokenLabel": "अधिकतम टोकन",
-		"temperatureLabel": "टेम्परेचर"
+		"maxTokenLabel": "अधिकतम टोकन"
 	},
 	"modes": {
 		"ask": "पूछें",
