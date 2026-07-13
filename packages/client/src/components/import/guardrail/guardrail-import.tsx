@@ -108,7 +108,7 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 					return;
 				}
 				toast.success("Successfully Created Guardrail Database");
-				navigate(`/engine/guardrail/${output.database_id}`);
+				navigate(`/guardrail/${output.database_id}`);
 			}
 		} catch {
 			toast.error("Upload failed or returned invalid response.");

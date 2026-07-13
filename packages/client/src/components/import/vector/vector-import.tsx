@@ -132,7 +132,7 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 				}
 				toast.success("Successfully Created Vector Database");
 				const databaseId = output.database_id;
-				navigate(`/engine/vector/${databaseId}`);
+				navigate(`/vector/${databaseId}`);
 			}
 		} catch {
 			toast.error("Upload failed or returned invalid response.");

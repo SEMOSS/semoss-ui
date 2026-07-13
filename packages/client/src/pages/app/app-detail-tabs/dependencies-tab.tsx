@@ -95,7 +95,7 @@ export const Dependencies = ({
 											href={
 												dep.type === "PROJECT"
 													? `./#/app/${dep.id}`
-													: `./#/engine/${dep.type}/${dep.id}`
+													: `./#/${dep.type}/${dep.id}`
 											}
 											className="flex items-center gap-1 text-primary hover:underline"
 										>

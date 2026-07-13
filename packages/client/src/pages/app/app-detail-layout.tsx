@@ -510,10 +510,7 @@ export const AppDetailLayout = ({
 						<NavbarHeader />
 					</NavbarLeft>
 				)}
-				<ResourceNotFound
-					catalogPath="/app"
-					catalogLabel="App Catalog"
-				/>
+				<ResourceNotFound path="/app" />
 			</>
 		);
 	}

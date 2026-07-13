@@ -150,23 +150,6 @@ export const SETTINGS_ROUTES: {
 		history: ["vector", "vector/<id>"],
 	},
 	{
-		title: "Insight Settings",
-		path: "insight",
-		description: "View and edit settings for app insights",
-		icon: mdiClipboardTextOutline,
-		history: ["insight"],
-		hidden: true,
-	},
-	{
-		title: "Insight Settings",
-		path: "insight/:id/:projectId",
-		description:
-			"View member permissions, pending requests, and all other viewable settings pertaining to the app",
-		icon: mdiClipboardTextOutline,
-		history: ["insight", "insight/<id>/<projectId>"],
-		hidden: true,
-	},
-	{
 		title: "Jobs",
 		path: "jobs",
 		description: "Manage and schedule cron jobs for the platform",

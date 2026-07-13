@@ -160,7 +160,9 @@
 		"viewDescription": "L'invite système qui guide le comportement de cet agent.",
 		"editTitle": "Modifier les instructions",
 		"editDescription": "Mettez à jour l'invite système qui guide le comportement de cet agent.",
-		"charCount": "{{count}} caractères"
+		"charCount_one": "{{count, number}} caractère",
+		"charCount_many": "{{count, number}} caractères",
+		"charCount_other": "{{count, number}} caractères"
 	},
 	"skills": {
 		"noSkills": "Aucune compétence ajoutée"
