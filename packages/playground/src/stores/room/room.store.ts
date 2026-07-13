@@ -399,6 +399,20 @@ export class RoomStore {
 	}
 
 	/**
+	 * Get the total tokens consumed across ALL messages in the conversation
+	 * (not context window - this is the actual sum of all input + output tokens)
+	 */
+	get totalTokensConsumed(): number {
+		let total = 0;
+		for (const message of this.history) {
+			if (message.tokens) {
+				total += message.tokens;
+			}
+		}
+		return total;
+	}
+
+	/**
 	 * Get the options of the room
 	 */
 	get options() {
@@ -941,7 +955,10 @@ export class RoomStore {
 			pruneToolsAbove: false,
 		});
 
-		const parentMessage = this.tail;
+		// Anchor to the latest REAL response. this.tail can be an un-synced
+		// STREAMING_PLACEHOLDER_ID node left behind by a turn that errored mid-stream;
+		// latestResponseMessage skips those (and INPUT_TOOL_EXEC nodes).
+		const parentMessage = this.latestResponseMessage ?? this.tail;
 		if (parentMessage instanceof InputMessageStore) {
 			throw new Error("Cannot respond to input messages");
 		}
