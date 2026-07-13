@@ -15,7 +15,6 @@
 		"type": "タイプ",
 		"model": "モデル",
 		"instructions": "指示",
-		"temperature": "温度",
 		"maxToken": "最大トークン"
 	},
 	"placeholders": {

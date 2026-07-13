@@ -15,7 +15,6 @@
 		"type": "Tipo",
 		"model": "Modelo",
 		"instructions": "Instrucciones",
-		"temperature": "Temperatura",
 		"maxToken": "Token máximo"
 	},
 	"placeholders": {

@@ -15,7 +15,6 @@
 		"type": "प्रकार",
 		"model": "मॉडल",
 		"instructions": "निर्देश",
-		"temperature": "टेम्परेचर",
 		"maxToken": "अधिकतम टोकन"
 	},
 	"placeholders": {
