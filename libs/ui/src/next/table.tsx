@@ -12,10 +12,7 @@ function Table({
 	...props
 }: React.ComponentProps<"table"> & {
 	wrapperClassName?: string;
-	showExportButton?: boolean;
 }) {
-	const id = `table-${Math.random() * 1000}`;
-
 	return (
 		<div
 			data-slot="table-container"
