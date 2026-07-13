@@ -16,7 +16,6 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
-import type { AppTileCardEntityType } from "../app-tile-card";
 
 interface AddAppProps {
 	/** Track if the model is open */
@@ -24,7 +23,7 @@ interface AddAppProps {
 	appId: string;
 	/** Callback that is triggered on close */
 	handleClose: (appId?: string) => void;
-	entityType?: AppTileCardEntityType;
+	entityType?: "app" | "skill" | "agent";
 }
 
 export const AddAppCloneModal = (props: AddAppProps) => {

@@ -30,7 +30,8 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
 		mouseY: number;
 		value: unknown;
 	} | null>(null);
-	let resultData: unknown = {};
+	// biome-ignore lint/suspicious/noExplicitAny: echart option structure is dynamic
+	let resultData: Record<string, any> = {};
 
 	/**
 	 * Builds a dynamic query string based on the provided input data.
@@ -116,7 +117,8 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
 	 */
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	const formatDataPoints = useCallback(
-		(resultData: unknown) => {
+		// biome-ignore lint/suspicious/noExplicitAny: echart option structure is dynamic
+		(resultData: Record<string, any>) => {
 			if (frame.data.values.length > 0) {
 				const valuesDataSet = JSON.parse(
 					JSON.stringify(frame.data.values),

@@ -2,7 +2,13 @@ export interface Engine {
 	engine_id: string;
 	engine_name: string;
 	engine_display_name?: string;
-	engine_type: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
+	engine_type:
+		| "MODEL"
+		| "STORAGE"
+		| "DATABASE"
+		| "FUNCTION"
+		| "VECTOR"
+		| "GUARDRAIL";
 	engine_subtype?: string;
 	engine_favorite?: number;
 	engine_global?: boolean;
@@ -10,16 +16,55 @@ export interface Engine {
 	engine_user_permission?: number;
 	engine_group_permission?: number;
 	engine_date_created?: string;
+	engine_date_last_edited?: string;
 	engine_cost?: string;
 	low_engine_name?: string;
 	description?: string;
+	tag?: string;
 
 	/** @deprecated legacy keys from MyEngines */
 	app_id?: string;
 	/** @deprecated legacy keys from MyEngines */
 	app_name?: string;
 	/** @deprecated legacy keys from MyEngines */
-	app_type?: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
+	app_type?:
+		| "MODEL"
+		| "STORAGE"
+		| "DATABASE"
+		| "FUNCTION"
+		| "VECTOR"
+		| "GUARDRAIL";
+}
+
+export interface Project {
+	project_id: string;
+	project_name: string;
+	project_display_name?: string;
+	project_type: "SKILL" | "WORKSPACE" | "BLOCKS" | "CODE" | "INSIGHT";
+	project_cost?: string;
+	project_global?: string;
+	project_created_by?: string;
+	project_created_by_type?: string;
+	project_date_created?: string;
+	project_date_last_edited?: string;
+	/** @deprecated  */
+	project_has_portal?: boolean;
+	/** @deprecated  */
+	project_portal_name?: string;
+	/** @deprecated  */
+	project_portal_published_date?: string;
+	project_published_user?: string;
+	project_published_user_type?: string;
+	project_reactors_compiled_date?: string;
+	project_reactors_compiled_user?: string;
+	project_reactors_compiled_user_type?: string;
+	project_favorite?: number; // 1 for favorite, 0 for not favorite
+	user_permission?: number;
+	group_permission?: string;
+	"data classification"?: string[];
+	"data restrictions"?: string[];
+	tag?: string | string[];
+	description?: string;
 }
 
 export interface App {
@@ -288,6 +333,8 @@ export interface ThemeMap {
 			showPlatformLinks?: boolean;
 			/** Whether to show a text input for feedback comments when rating a response. Defaults to false. */
 			enableFeedbackText?: boolean;
+			/** Whether to show an export button on tables rendered in chat responses. Defaults to false. */
+			enableTableExport?: boolean;
 		};
 	};
 }
@@ -324,7 +371,14 @@ export interface UserAccessRequest {
 
 export interface MCP {
 	/** Type of the mcp */
-	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION" | "MODEL" | "VECTOR";
+	type:
+		| "PROJECT"
+		| "STORAGE"
+		| "DATABASE"
+		| "FUNCTION"
+		| "MODEL"
+		| "VECTOR"
+		| "GUARDRAIL";
 	/** Id of the mcp */
 	id: string;
 	/** Name of the mcp */
@@ -342,6 +396,25 @@ export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {
 	/** Flag to indicate if this MCP comes from a workspace */
 	fromWorkspace?: boolean;
 };
+
+export interface Skill {
+	/** Id of the skill (project id) */
+	id: string;
+	/** Display name of the skill */
+	name: string;
+	/** Type discriminator — always SKILL */
+	type: "SKILL";
+	/** URL-friendly identifier */
+	slug: string;
+}
+
+/**
+ * The shape carried in form state and selectors. Mirrors MCPConfig — the
+ * name travels with the value so selectors can render chips without a
+ * separate lookup. Reduced to IDs only at the EditWorkspace/AddWorkspace
+ * pixel boundary.
+ */
+export type SkillConfig = Pick<Skill, "id" | "name">;
 
 export interface ProjectDependency {
 	engine_type:

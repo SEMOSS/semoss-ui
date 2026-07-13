@@ -1,5 +1,6 @@
 import type React from "react";
 import { Fragment, useMemo } from "react";
+import { useTranslation } from "@semoss/i18n";
 import type { EventData } from "./common";
 
 interface AuditLogsSummaryProps {
@@ -41,6 +42,7 @@ export const AuditLogsSummary: React.FC<AuditLogsSummaryProps> = ({
 	logs,
 	totalCount,
 }) => {
+	const { t } = useTranslation("auditlog");
 	const stats = useMemo(() => {
 		const latencies = logs
 			.map((log) => Number(log.latency))
@@ -50,11 +52,21 @@ export const AuditLogsSummary: React.FC<AuditLogsSummaryProps> = ({
 			(sum, log) => sum + (Number(log.tokens) || 0),
 			0,
 		);
+		const cacheReadTokens = logs.reduce(
+			(sum, log) => sum + (Number(log.cacheReadTokens) || 0),
+			0,
+		);
+		const cacheCreationTokens = logs.reduce(
+			(sum, log) => sum + (Number(log.cacheCreationTokens) || 0),
+			0,
+		);
 		const failures = logs.filter((log) => !isSuccess(log.status)).length;
 		return {
 			p50: percentile(latencies, 50),
 			p95: percentile(latencies, 95),
 			tokens,
+			cacheReadTokens,
+			cacheCreationTokens,
 			failures,
 		};
 	}, [logs]);
@@ -70,23 +82,70 @@ export const AuditLogsSummary: React.FC<AuditLogsSummaryProps> = ({
 	const metrics: { key: string; node: React.ReactNode }[] = [
 		{
 			key: "events",
-			node: <>{value(totalCount.toLocaleString())} Events</>,
+			node: (
+				<>
+					{value(totalCount.toLocaleString())} {t("summary.events")}
+				</>
+			),
 		},
 		{
 			key: "shown",
-			node: <>{value(logs.length.toLocaleString())} Shown</>,
+			node: (
+				<>
+					{value(logs.length.toLocaleString())} {t("summary.shown")}
+				</>
+			),
 		},
 		{
 			key: "errors",
 			node: (
-				<>{value(String(stats.failures), stats.failures > 0)} Errors</>
+				<>
+					{value(String(stats.failures), stats.failures > 0)}{" "}
+					{t("summary.errors")}
+				</>
 			),
 		},
-		{ key: "p50", node: <>P50 {value(formatLatency(stats.p50))}</> },
-		{ key: "p95", node: <>P95 {value(formatLatency(stats.p95))}</> },
+		{
+			key: "p50",
+			node: (
+				<>
+					{t("summary.p50")} {value(formatLatency(stats.p50))}
+				</>
+			),
+		},
+		{
+			key: "p95",
+			node: (
+				<>
+					{t("summary.p95")} {value(formatLatency(stats.p95))}
+				</>
+			),
+		},
 		{
 			key: "tokens",
-			node: <>{value(formatCompact(stats.tokens))} Tokens</>,
+			node: (
+				<>
+					{value(formatCompact(stats.tokens))} {t("summary.tokens")}
+				</>
+			),
+		},
+		{
+			key: "cacheRead",
+			node: (
+				<>
+					{value(formatCompact(stats.cacheReadTokens))}{" "}
+					{t("summary.cacheRead")}
+				</>
+			),
+		},
+		{
+			key: "cacheWrite",
+			node: (
+				<>
+					{value(formatCompact(stats.cacheCreationTokens))}{" "}
+					{t("summary.cacheWrite")}
+				</>
+			),
 		},
 	];
 
@@ -102,9 +161,9 @@ export const AuditLogsSummary: React.FC<AuditLogsSummaryProps> = ({
 			))}
 			<span
 				className="ms-auto text-muted-foreground/70 text-xs"
-				title="Latency, errors and tokens are calculated across the events on the current page."
+				title={t("summary.currentPageHint")}
 			>
-				current page
+				{t("summary.currentPage")}
 			</span>
 		</div>
 	);

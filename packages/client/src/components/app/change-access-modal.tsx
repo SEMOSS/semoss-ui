@@ -402,7 +402,7 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 												/>
 												<div className="space-y-1">
 													<Link
-														to={`/engine/${dep.type}/${dep.id}`}
+														to={`/${dep.type}/${dep.id}`}
 														className="text-primary"
 													>
 														<p className="font-medium text-sm">

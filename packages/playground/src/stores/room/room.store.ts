@@ -1,6 +1,7 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import {
 	getPixelAsyncResult,
+	console as getPixelConsole,
 	getPixelJobStreaming,
 	runPixel,
 	runPixelAsync,
@@ -398,6 +399,20 @@ export class RoomStore {
 	}
 
 	/**
+	 * Get the total tokens consumed across ALL messages in the conversation
+	 * (not context window - this is the actual sum of all input + output tokens)
+	 */
+	get totalTokensConsumed(): number {
+		let total = 0;
+		for (const message of this.history) {
+			if (message.tokens) {
+				total += message.tokens;
+			}
+		}
+		return total;
+	}
+
+	/**
 	 * Get the options of the room
 	 */
 	get options() {
@@ -470,6 +485,7 @@ export class RoomStore {
 				.output as PixelMessage[];
 			const optionsOutput = response.pixelReturn[1].output as {
 				OPTIONS?: RoomStoreInterface["options"];
+				ROOM_NAME?: string;
 			};
 
 			// sync the insight ID
@@ -619,6 +635,12 @@ export class RoomStore {
 			runInAction(() => {
 				// set the options based on the history
 				this.setOptions(newOptions);
+
+				// Restore the persisted room name so the breadcrumb shows it on
+				// load/refresh (GetPlaygroundMessages doesn't carry the name).
+				if (optionsOutput.ROOM_NAME) {
+					this.setMetadata({ name: optionsOutput.ROOM_NAME });
+				}
 
 				// Restore agent-harness mode from the persisted options so a
 				// reloaded agent room keeps sending messages via RunAgent. Only
@@ -1121,6 +1143,86 @@ export class RoomStore {
 				this.setIsLoading(false);
 			}
 		}
+	};
+
+	/**
+	 * Run a pixel asynchronously and collect stdout/stderr console output while
+	 * it runs — mirrors the terminal REPL (terminal-console.tsx) so callers get
+	 * the same logs + raw pixel results to process and render. Used by the
+	 * playground code-block "Execute" action.
+	 * @param pixel - pixel to execute
+	 * @param onConsole - called with the cumulative console logs after each poll
+	 * @param maxLogChars - cap on total console chars; once exceeded we stop
+	 *   accumulating and append a truncation marker so the UI can't be flooded
+	 *   by a runaway / very chatty job. 0 or undefined disables the cap.
+	 */
+	runRoomPixelWithConsole = async (
+		pixel: string,
+		onConsole?: (logs: string[]) => void,
+		maxLogChars?: number,
+	) => {
+		// Launch the async job.
+		const { jobId } = await runPixelAsync(pixel, this._store.insightId);
+		if (!jobId) {
+			throw new Error("No job id returned for pixel execution");
+		}
+
+		// Poll the console for stdout/stderr emitted while the job runs. The
+		// endpoint drains its buffer per call, so we accumulate the messages,
+		// bounded by `maxLogChars` to keep memory and render size in check.
+		const logs: string[] = [];
+		let logChars = 0;
+		let logsTruncated = false;
+		const appendLogs = (incoming: string[]) => {
+			if (logsTruncated) return;
+			for (const line of incoming) {
+				if (maxLogChars && logChars >= maxLogChars) {
+					logs.push(
+						`… logs truncated (exceeded ${maxLogChars.toLocaleString()} characters)`,
+					);
+					logsTruncated = true;
+					break;
+				}
+				logs.push(line);
+				logChars += line.length;
+			}
+		};
+
+		let polling = true;
+		while (polling) {
+			try {
+				const { message, status } = await getPixelConsole(jobId);
+				if (message?.length) {
+					appendLogs(message);
+					onConsole?.(logs.slice());
+				}
+				if (
+					status === "Complete" ||
+					status === "ProgressComplete" ||
+					status === "Streaming"
+				) {
+					polling = false;
+				} else {
+					await new Promise((r) => setTimeout(r, 1000));
+				}
+			} catch {
+				polling = false;
+			}
+		}
+
+		// Final flush for logs written between the last poll and completion.
+		try {
+			const { message } = await getPixelConsole(jobId);
+			if (message?.length) {
+				appendLogs(message);
+				onConsole?.(logs.slice());
+			}
+		} catch {
+			// ignore
+		}
+
+		const { errors, results } = await getPixelAsyncResult(jobId);
+		return { errors, results, logs };
 	};
 
 	/**

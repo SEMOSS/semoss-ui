@@ -1,11 +1,10 @@
-export * from "./AppCards";
 export * from "./AppFilter";
 export * from "./app.types";
+export * from "./app-cards";
 export * from "./app-delete-modal";
 export * from "./app-details.utility";
 export * from "./app-landscape-card";
 export * from "./app-settings";
-export * from "./app-tile-card";
 export * from "./change-access-modal";
 export * from "./DependencyTable";
 export * from "./edit-dependencies-modal";
@@ -13,3 +12,4 @@ export * from "./edit-details-modal";
 export * from "./NewAppModal";
 export * from "./NewAppStep";
 export * from "./save-app";
+export * from "./system-app-grid-item";

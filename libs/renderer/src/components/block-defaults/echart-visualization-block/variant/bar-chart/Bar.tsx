@@ -28,7 +28,8 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 		mouseY: number; //y axis position for the click/brush event
 		value: unknown; //value can be of object or string or number type
 	} | null>(null);
-	let resultData: unknown = {};
+	// biome-ignore lint/suspicious/noExplicitAny: echart option structure is dynamic
+	let resultData: Record<string, any> = {};
 
 	/**
 	 * Builds a dynamic query string based on the provided input data.
@@ -116,7 +117,8 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 	//update frame values to the series data when frame values are changed
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dependency on frameData.data.values only
 	const receiveValueswithCorrections = useCallback(
-		(resultData: unknown) => {
+		// biome-ignore lint/suspicious/noExplicitAny: echart option structure is dynamic
+		(resultData: Record<string, any>) => {
 			let frameDataIndex = 0;
 
 			// Check if xAxis name exists
