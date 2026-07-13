@@ -786,7 +786,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 
 	if (rows.length === 0) {
 		return (
-			<div className="rounded-[8px] bg-white p-0 pb-2 shadow-lg">
+			<div className="rounded-lg border bg-white p-0 pb-2 shadow">
 				{header}
 				<div className="p-4 text-center">
 					<span className="font-normal text-[14px] text-gray-500">
@@ -799,7 +799,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 
 	return (
 		<>
-			<div className="rounded-[8px] bg-white p-0 pb-2 shadow-lg">
+			<div className="rounded-lg border bg-white p-0 pb-2 shadow">
 				{header}
 				<div className="w-full px-2 pb-2">
 					<div
