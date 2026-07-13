@@ -8,21 +8,43 @@ export const LandscapeRestriction = () => {
 	const [isLandscape, setIsLandscape] = useState(false);
 
 	useEffect(() => {
-		const landscapeQuery = window.matchMedia("(orientation: landscape)");
-		// coarse pointer = touchscreen (mobile/tablet), fine pointer = mouse (desktop/laptop)
-		const touchQuery = window.matchMedia("(pointer: coarse)");
+		// userAgent is the most reliable signal for excluding desktops —
+		// no real desktop browser includes Mobi/Android/iPhone/iPad/iPod.
+		// Devtools device emulation also spoofs the UA, so this works for testing too.
+		const isMobileDevice = /Mobi|Android|iPhone|iPad|iPod/i.test(
+			navigator.userAgent,
+		);
 
-		const check = () => {
-			setIsLandscape(touchQuery.matches && landscapeQuery.matches);
+		// innerWidth > innerHeight is the simplest cross-browser orientation check
+		// and is always accurate once the browser has finished resizing.
+		const checkOrientation = () => {
+			setIsLandscape(
+				isMobileDevice && window.innerWidth > window.innerHeight,
+			);
 		};
 
-		check();
-		landscapeQuery.addEventListener("change", check);
-		touchQuery.addEventListener("change", check);
+		// orientationchange fires before the browser has updated its dimensions
+		// on many devices (iOS, some Android). Delaying 100ms lets them settle.
+		const handleOrientationChange = () => {
+			setTimeout(checkOrientation, 100);
+		};
+
+		checkOrientation();
+		// resize is always fired after dimensions update, so no delay needed.
+		window.addEventListener("resize", checkOrientation);
+		window.addEventListener("orientationchange", handleOrientationChange);
+		screen.orientation?.addEventListener("change", handleOrientationChange);
 
 		return () => {
-			landscapeQuery.removeEventListener("change", check);
-			touchQuery.removeEventListener("change", check);
+			window.removeEventListener("resize", checkOrientation);
+			window.removeEventListener(
+				"orientationchange",
+				handleOrientationChange,
+			);
+			screen.orientation?.removeEventListener(
+				"change",
+				handleOrientationChange,
+			);
 		};
 	}, []);
 
