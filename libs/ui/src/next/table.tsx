@@ -1,88 +1,27 @@
-import { Download } from "lucide-react";
 import type * as React from "react";
-import * as XLSX from "xlsx";
 import { cn } from "@/lib/utils";
-import { Button } from "@/next/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/next/tooltip";
 
 function Table({
 	className,
 	wrapperClassName,
-	showExportButton = false,
 	...props
 }: React.ComponentProps<"table"> & {
 	wrapperClassName?: string;
-	showExportButton?: boolean;
 }) {
-	const id = `table-${Math.random() * 1000}`;
-
 	return (
 		<div
 			data-slot="table-container"
 			className={cn("relative w-full overflow-x-auto", wrapperClassName)}
 		>
-			{showExportButton && (
-				<div>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								onClick={() => {
-									const today = new Date();
-									const formattedDate = today
-										.toISOString()
-										.slice(0, 10);
-									const fileName = `table_response_${formattedDate}.xlsx`;
-									exportTableByIdToExcel(id, fileName);
-								}}
-								aria-label="Export to Excel"
-								title="Export to Excel"
-								className="rounded-md bg-background"
-							>
-								<Download fontSize="medium" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent
-							side="left"
-							className="bg-black text-white"
-						>
-							Export to Excel
-						</TooltipContent>
-					</Tooltip>
-				</div>
-			)}
-			<div
-				data-slot="table-container"
-				className="relative w-full overflow-x-auto"
-				style={{ clear: "both" }} // Ensures table appears below the buttons
-			>
-				<table
-					id={id}
-					data-slot="table"
-					className={cn("w-full caption-bottom text-sm", className)}
-					{...props}
-				/>
-			</div>
+			<table
+				data-slot="table"
+				className={cn("w-full caption-bottom text-sm", className)}
+				{...props}
+			/>
 		</div>
 	);
 }
 
-function exportTableByIdToExcel(id: string, filename: string): void {
-	const table = document.getElementById(id);
-	if (!table) {
-		console.error(`Table with id "${id}" not found`);
-		return;
-	}
-	try {
-		const wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
-		XLSX.writeFile(wb, filename);
-	} catch (error) {
-		console.error("Error exporting table:", error);
-	}
-}
-
-// ... rest of your component functions remain the same
 function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
 	return (
 		<thead
