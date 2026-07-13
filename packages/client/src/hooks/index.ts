@@ -1,5 +1,6 @@
 import { useQueryEditor } from "./use-database-query-editor";
 import { useQueryResults } from "./use-database-query-results";
+import { useIteratorApi } from "./use-iterator-api";
 import { usePixel } from "./use-pixel";
 import { useSparqlQueryExecution } from "./use-sparql-query-execution";
 import { useSqlQueryExecution } from "./use-sql-query-execution";
@@ -29,6 +30,7 @@ export {
 	useDatabaseStructure,
 	useDesigner,
 	useEngine,
+	useIteratorApi,
 	useLLM,
 	useMetamodel,
 	usePage,

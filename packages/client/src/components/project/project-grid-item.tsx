@@ -68,10 +68,7 @@ export const ProjectGridItem: React.FC<ProjectGridItemProps> = ({
 	onDelete,
 	onClone,
 }) => {
-	const displayName =
-		project.project_display_name ||
-		project.project_portal_name ||
-		project.project_name;
+	const displayName = project.project_display_name || project.project_name;
 	const projectTags = normalizeTagArray(project.tag);
 
 	const menuItems: {

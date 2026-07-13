@@ -4,9 +4,7 @@ import {
 	ChevronUp,
 	Link2 as InsertLink,
 	User as Person,
-	Upload as Publish,
 	BadgeCheck as PublishedWithChanges,
-	ToggleLeft as ToggleOff,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -20,16 +18,14 @@ import {
 	FileDropzone,
 	Input,
 	Large,
-	Separator,
 	Spinner,
-	Switch,
 	Table,
 	TableBody,
 	TableCell,
 	TableRow,
 	toast,
 } from "@semoss/ui/next";
-import { setProjectPortal, uploadFile as uploadFileAPI } from "@/api";
+import { uploadFile as uploadFileAPI } from "@/api";
 import { Java } from "@/assets/img/Java";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
 import { McpUsage } from "../shared/mcp-usage";
@@ -56,8 +52,6 @@ export const AppSettings = (props: AppSettingsProps) => {
 
 	const uploadFile = watch("PROJECT_UPLOAD");
 
-	const admin = configStore.store.user.admin;
-
 	const [portalReactors, setPortalReactors] = useState<{
 		reactors: string[];
 		lastCompiled?: string;
@@ -65,28 +59,16 @@ export const AppSettings = (props: AppSettingsProps) => {
 	}>({ lastCompiled: "", reactors: [], compiledBy: "" });
 
 	const [portalDetails, setPortalDetails] = useState<{
-		url?: string;
-		hasPortal?: boolean;
-		project_has_portal: boolean;
+		project_is_published: boolean;
 		project_portal_url?: string;
-		lastCompiled?: string;
-		compiledBy?: string;
 	}>({
-		url: "",
-		hasPortal: false,
-		project_has_portal: false,
+		project_is_published: false,
 		project_portal_url: "",
-		lastCompiled: "12/25/2022",
-		compiledBy: "J.Smith",
 	});
 
 	const getPortalDetails = usePixel<{
-		url?: string;
-		hasPortal?: boolean;
-		project_has_portal: boolean;
+		project_is_published: boolean;
 		project_portal_url?: string;
-		lastCompiled?: string;
-		compiledBy?: string;
 	}>(
 		adminMode
 			? `AdminGetProjectPortalDetails('${id}');`
@@ -97,7 +79,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 	useEffect(() => {
 		if (getPortalDetails.status !== "SUCCESS") return;
 		setPortalDetails({ ...getPortalDetails.data });
-		if (getPortalDetails.data.project_has_portal) getPortalReactors();
+		getPortalReactors();
 	}, [getPortalDetails.status, getPortalDetails.data]);
 
 	if (getPortalDetails.status !== "SUCCESS") {
@@ -166,37 +148,10 @@ export const AppSettings = (props: AppSettingsProps) => {
 				}
 				setPortalDetails({
 					...portalDetails,
+					project_is_published: true,
 					project_portal_url: output,
 				});
 				toast.success("Successfully published");
-			})
-			.catch((error) => toast.error(error));
-	};
-
-	const enablePublishing = () => {
-		setProjectPortal(admin, id, !portalDetails.project_has_portal)
-			.then((resp) => {
-				if (resp.data) {
-					setPortalDetails({
-						...portalDetails,
-						project_has_portal: !portalDetails.project_has_portal,
-					});
-					toast.success(
-						`Successfully ${
-							!portalDetails.project_has_portal
-								? "enabled"
-								: "disabled"
-						} portal`,
-					);
-				} else {
-					toast.error(
-						`Unsuccessfully ${
-							!portalDetails.project_has_portal
-								? "disabled"
-								: "enabled"
-						} portal`,
-					);
-				}
 			})
 			.catch((error) => toast.error(error));
 	};
@@ -220,7 +175,6 @@ export const AppSettings = (props: AppSettingsProps) => {
 			await monolithStore.runQuery(
 				`ReloadInsightClasses(project='${id}', release=true);`,
 			);
-			await setProjectPortal(false, id, true, "public");
 			await monolithStore.runQuery(
 				`PublishProject(project='${id}', release=true);`,
 			);
@@ -241,26 +195,6 @@ export const AppSettings = (props: AppSettingsProps) => {
 					<div className="w-full">
 						<div className="flex items-center justify-between">
 							<div className="flex items-center gap-2">
-								<Publish className="size-4 text-muted-foreground" />
-								<span className="font-medium text-sm">
-									Enable Publishing
-								</span>
-							</div>
-							<Switch
-								checked={portalDetails.project_has_portal}
-								onCheckedChange={() => enablePublishing()}
-							/>
-						</div>
-						<p className="mt-1 ml-6 text-muted-foreground text-sm">
-							Enable the publishing of the portal.
-						</p>
-					</div>
-
-					<Separator />
-
-					<div className="w-full">
-						<div className="flex items-center justify-between">
-							<div className="flex items-center gap-2">
 								<Cached className="size-4 text-muted-foreground" />
 								<span className="font-medium text-sm">
 									Publish Portal
@@ -269,7 +203,6 @@ export const AppSettings = (props: AppSettingsProps) => {
 							<Button
 								variant="outline"
 								size="sm"
-								disabled={!portalDetails.project_has_portal}
 								onClick={() => publish()}
 							>
 								Publish
@@ -284,10 +217,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 								<Input
 									className="pl-9"
 									value={
-										portalDetails.project_has_portal
-											? (portalDetails.project_portal_url ??
-												"")
-											: ""
+										portalDetails.project_portal_url ?? ""
 									}
 									readOnly
 								/>
@@ -306,53 +236,8 @@ export const AppSettings = (props: AppSettingsProps) => {
 				<div className="flex gap-4 p-4">
 					<div className="flex w-1/2 flex-col gap-4">
 						<h6 className="font-semibold text-base">Portals</h6>
-						{portalDetails.lastCompiled && (
-							<div className="flex items-center gap-2">
-								<span className="text-muted-foreground text-sm">
-									Last compiled by:
-								</span>
-								<Avatar className="size-6">
-									<AvatarFallback>
-										<Person className="size-3" />
-									</AvatarFallback>
-								</Avatar>
-								<span className="text-sm">
-									{portalDetails.compiledBy}
-								</span>
-								<span className="text-muted-foreground text-sm">
-									on
-								</span>
-								<span className="text-sm">
-									{portalDetails.lastCompiled}
-								</span>
-							</div>
-						)}
 					</div>
 					<div className="flex w-1/2 flex-col gap-4">
-						<div>
-							<div className="mb-1 flex items-center gap-2">
-								<ToggleOff className="size-4 text-muted-foreground" />
-								<span className="font-medium text-sm">
-									Enable Publishing
-								</span>
-							</div>
-							<div className="mb-2 text-muted-foreground text-sm">
-								Enable the publishing of the portal.
-							</div>
-							<Switch
-								checked={portalDetails.project_has_portal}
-								onCheckedChange={() => enablePublishing()}
-								disabled={
-									!configStore.isEngineOperationAvailable(
-										"PROJECT",
-										"access",
-									)
-								}
-							/>
-						</div>
-
-						<Separator />
-
 						<div>
 							<div className="mb-1 flex items-center gap-2">
 								<Cached className="size-4 text-muted-foreground" />
@@ -367,7 +252,6 @@ export const AppSettings = (props: AppSettingsProps) => {
 								variant="outline"
 								size="sm"
 								disabled={
-									!portalDetails.project_has_portal ||
 									!configStore.isEngineOperationAvailable(
 										"PROJECT",
 										"access",
@@ -383,10 +267,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 								<Input
 									className="pl-9"
 									value={
-										portalDetails.project_has_portal
-											? (portalDetails.project_portal_url ??
-												"")
-											: ""
+										portalDetails.project_portal_url ?? ""
 									}
 									readOnly
 								/>

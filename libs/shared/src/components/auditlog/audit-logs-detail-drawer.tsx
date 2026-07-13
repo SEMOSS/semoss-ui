@@ -348,6 +348,22 @@ export const AuditLogsDetailDrawer = (props) => {
 							value={logDetails.tokens}
 						/>
 						<DetailField
+							label={t("detail.fields.promptTokens")}
+							value={logDetails.promptTokens}
+						/>
+						<DetailField
+							label={t("detail.fields.responseTokens")}
+							value={logDetails.responseTokens}
+						/>
+						<DetailField
+							label={t("detail.fields.cacheRead")}
+							value={logDetails.cacheReadTokens}
+						/>
+						<DetailField
+							label={t("detail.fields.cacheWrite")}
+							value={logDetails.cacheCreationTokens}
+						/>
+						<DetailField
 							label={t("detail.fields.user")}
 							value={logDetails.userName}
 						/>

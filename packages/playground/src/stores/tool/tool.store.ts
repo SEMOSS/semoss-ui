@@ -108,7 +108,7 @@ export class ToolStore {
 		// If the real part has arrived (has a title), use it. Otherwise (placeholder
 		// pushed during streaming, or no part at all) synthesize from streamingName
 		// so the pill renders the wire name until the final sync swaps it.
-		if (part && part.title) {
+		if (part?.title) {
 			return part;
 		}
 		const name = this.streamingName;

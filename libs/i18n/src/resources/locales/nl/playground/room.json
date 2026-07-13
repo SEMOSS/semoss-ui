@@ -12,7 +12,8 @@
 		"compactError": "Comprimeren van gesprek mislukt",
 		"compacting": "Gesprek comprimeren...",
 		"compactedAbove": "Gesprek gecomprimeerd",
-		"compactedAboveTooltip": "Eerdere berichten zijn samengevat om de contextgrootte te verkleinen"
+		"compactedAboveTooltip": "Eerdere berichten zijn samengevat om de contextgrootte te verkleinen",
+		"compactTooltip": "Comprimeer je gesprek om tokens te besparen. Je eerdere berichten blijven ongewijzigd."
 	},
 	"form": {
 		"modelLabel": "Model",
@@ -103,7 +104,9 @@
 		"descriptionHigh": "Dit gesprek is bijna vol. Het model begint binnenkort eerdere berichten te vergeten. Comprimeer dit gesprek of start een nieuwe chat om met volledige context door te gaan.",
 		"descriptionExceeded": "Dit gesprek heeft zijn limiet overschreden. Het model vergeet nu eerdere berichten. Comprimeer dit gesprek of start een nieuwe chat voor de beste resultaten.",
 		"memoryUsedTitle": "Gebruikt geheugen:",
-		"memoryUsedValue": "{{used}} / {{total}} tokens ({{percent}}%)"
+		"memoryUsedValue": "{{used}} / {{total}} tokens ({{percent}}%)",
+		"totalUsedTitle": "Gesprek totaal:",
+		"totalUsedValue": "{{total}} tokens"
 	},
 	"menuMcp": {
 		"searchPlaceholder": "Kennis en toolboxes zoeken",
