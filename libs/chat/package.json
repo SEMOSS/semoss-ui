@@ -1,0 +1,70 @@
+{
+    "name": "@semoss/chat",
+    "version": "0.1.0",
+    "description": "Shared chat components and headless chat logic for SEMOSS apps",
+    "type": "module",
+    "main": "./dist/index.mjs",
+    "module": "./dist/index.mjs",
+    "types": "./dist/types/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/types/index.d.ts",
+            "default": "./dist/index.mjs"
+        },
+        "./components": {
+            "types": "./dist/types/components/index.d.ts",
+            "default": "./dist/components.mjs"
+        }
+    },
+    "scripts": {
+        "dev": "rollup -w -c",
+        "build": "rollup -c --environment NODE_ENV:production",
+        "build:dev": "rollup -c",
+        "test": "vitest run",
+        "test:watch": "vitest --watch",
+        "type-check": "tsc --pretty --noEmit -p tsconfig.typecheck.json",
+        "sandbox": "vite"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@codesandbox/sandpack-react": "^2.20.0",
+        "clsx": "^2.1.1",
+        "dayjs": "1.11.8",
+        "lucide-react": "^0.545.0",
+        "mermaid": "^11.15.0",
+        "mobx": "6.3.7",
+        "tailwind-merge": "^3.3.1"
+    },
+    "devDependencies": {
+        "@rollup/plugin-commonjs": "28.0.6",
+        "@semoss/sdk": "workspace:*",
+        "@semoss/ui": "workspace:*",
+        "@rollup/plugin-json": "^6.1.0",
+        "@rollup/plugin-node-resolve": "16.0.1",
+        "@rollup/plugin-terser": "^0.4.4",
+        "@rollup/plugin-typescript": "12.1.4",
+        "@tailwindcss/vite": "^4.1.14",
+        "@testing-library/jest-dom": "^6.6.3",
+        "@testing-library/react": "^16.2.0",
+        "@testing-library/user-event": "^14.4.3",
+        "@types/react": "18.3.1",
+        "@types/react-dom": "18.3.0",
+        "@vitejs/plugin-react": "^4.6.0",
+        "jsdom": "~22.1.0",
+        "rollup": "4.59.0",
+        "rollup-plugin-delete": "3.0.1",
+        "tailwindcss": "^4.1.14",
+        "tslib": "2.5.3",
+        "typescript": "~5.5.2",
+        "vite": "^7.0.0",
+        "vitest": "^4.1.6"
+    },
+    "peerDependencies": {
+        "@semoss/sdk": ">=1.0.0-beta.20",
+        "@semoss/ui": "1.0.0-beta.3",
+        "react": "18.3.1",
+        "react-dom": "18.3.1"
+    }
+}

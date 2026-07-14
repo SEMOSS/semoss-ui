@@ -1,0 +1,8 @@
+@import "@semoss/ui/globals.css";
+
+/* Explicit @source so Tailwind reliably scans our own component source
+   (bg-accent, bg-card, etc. used in src/components/*) — not just @semoss/ui's
+   own, and not relying on auto-detection behaving a particular way with a
+   nested Vite `root`. */
+@source "../src/**/*.{ts,tsx}";
+@source "./**/*.{ts,tsx}";

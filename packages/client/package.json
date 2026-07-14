@@ -17,6 +17,7 @@
         "@dnd-kit/utilities": "^3.2.2",
         "@hello-pangea/dnd": "^18.0.1",
         "@mdi/js": "^6.9.96",
+        "@semoss/chat": "workspace:*",
         "@semoss/i18n": "workspace:*",
         "@semoss/renderer": "workspace:*",
         "@semoss/sdk": "workspace:*",

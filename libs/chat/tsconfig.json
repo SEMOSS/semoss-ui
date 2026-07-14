@@ -1,0 +1,33 @@
+{
+	"compilerOptions": {
+		/* Lang and Env */
+		"lib": ["ES2022", "dom"],
+		"target": "es6",
+		"jsx": "react-jsx",
+
+		/* Modules */
+		"module": "esnext",
+		"moduleResolution": "bundler",
+		"allowSyntheticDefaultImports": true,
+		"resolveJsonModule": true,
+
+		/* Emit */
+		"declaration": true,
+		"outDir": "./dist",
+		"declarationDir": "./dist/types",
+		"emitDeclarationOnly": true,
+
+		/* Skip */
+		"skipLibCheck": true,
+		"allowJs": true,
+		"esModuleInterop": true,
+		"isolatedModules": true,
+
+		/* Lang and Env */
+		"paths": {
+			"@/*": ["./src/*"]
+		}
+	},
+	"include": ["src/**/*"],
+	"exclude": ["dist", "node_modules", "**/*.test.ts", "**/*.test.tsx"]
+}
