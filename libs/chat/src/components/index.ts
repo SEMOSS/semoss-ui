@@ -15,7 +15,6 @@ export * from "./mcp-overlay";
 export * from "./message-bubble";
 export * from "./message-feedback-toolbar";
 export * from "./message-list";
-export * from "./prompt-library-dialog";
 export * from "./prompt-optimizer";
 export * from "./room-sidebar";
 export * from "./tool-call-view";

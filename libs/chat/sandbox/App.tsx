@@ -4,38 +4,10 @@ import {
 	ChatInput,
 	MessageBubble,
 	MessageList,
-	PromptLibraryDialog,
-	type PromptLibraryItem,
 	ToolCallView,
 	TypingIndicator,
 } from "../src/components";
 import type { ChatMessage } from "../src/types";
-
-const SAMPLE_PROMPTS: PromptLibraryItem[] = [
-	{
-		id: "p1",
-		title: "Summarize a claim",
-		context: "Summarize the status and next steps for a given claim id.",
-		tags: ["claims"],
-	},
-	{
-		id: "p2",
-		title: "Draft a benefits letter",
-		context: "Draft a benefits eligibility letter for a member.",
-		tags: ["benefits", "letters"],
-	},
-	{
-		id: "p3",
-		title: "Explain a denial",
-		context: "Explain why a claim was denied in plain language.",
-		tags: ["claims"],
-	},
-	{
-		id: "p4",
-		title: "General greeting",
-		context: "Say hello and ask how you can help today.",
-	},
-];
 
 const SAMPLE_MESSAGES: ChatMessage[] = [
 	{
@@ -217,9 +189,6 @@ export function App() {
 	const [sentMessages, setSentMessages] = useState<
 		{ id: string; text: string }[]
 	>([]);
-	const [isPromptLibraryOpen, setIsPromptLibraryOpen] = useState(false);
-	const [selectedPrompt, setSelectedPrompt] =
-		useState<PromptLibraryItem | null>(null);
 	const [feedbackDemoMessage, setFeedbackDemoMessage] = useState<ChatMessage>(
 		FEEDBACK_DEMO_MESSAGE,
 	);
@@ -363,31 +332,6 @@ export function App() {
 							setTimeout(resolve, 800);
 						})
 					}
-				/>
-			</Section>
-
-			<Section
-				title="PromptLibraryDialog"
-				description="pure-props, like RoomSidebar/EngineSelect — the host app fetches its own prompts and passes them in; searchable/tag-filterable, grouped by tag (a multi-tag prompt appears once per tag group, matching playground)."
-			>
-				<Button
-					type="button"
-					variant="outline"
-					size="sm"
-					onClick={() => setIsPromptLibraryOpen(true)}
-				>
-					Open prompt library
-				</Button>
-				{selectedPrompt ? (
-					<p className="text-muted-foreground text-sm">
-						→ selected: {selectedPrompt.title}
-					</p>
-				) : null}
-				<PromptLibraryDialog
-					open={isPromptLibraryOpen}
-					onOpenChange={setIsPromptLibraryOpen}
-					prompts={SAMPLE_PROMPTS}
-					onSelectPrompt={setSelectedPrompt}
 				/>
 			</Section>
 
