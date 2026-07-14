@@ -945,6 +945,9 @@ export class RoomStore {
 	 */
 	closeSidebar = async (): Promise<void> => {
 		this._store.sidebar.isOpen = false;
+		// No notebook is visible — clear any row selection so subsequent
+		// "Add to Notebook" calls don't silently overwrite a stale row.
+		this._store.selectedNotebookRow = null;
 	};
 
 	/**
@@ -958,6 +961,16 @@ export class RoomStore {
 			const tool = this.getToolByNodeId(action.data.node);
 			if (tool) {
 				tool.setIsOpen(false);
+			}
+
+			// If the closed tab is the notebook file that owns the current row
+			// selection, clear that selection so stale row state doesn't persist.
+			const nodeId: string = action.data.node ?? "";
+			if (nodeId.startsWith("FILE--")) {
+				const closedPath = nodeId.slice("FILE--".length);
+				if (this._store.selectedNotebookRow?.path === closedPath) {
+					this._store.selectedNotebookRow = null;
+				}
 			}
 		}
 
