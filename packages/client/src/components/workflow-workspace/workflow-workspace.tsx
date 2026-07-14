@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { WorkflowFormEditor } from "../workflow-form-editor";
+import { WorkflowCanvas } from "../workflow-canvas/workflow-canvas";
 
 // ─── main component ───────────────────────────────────────────────────────────
 
@@ -29,9 +29,8 @@ export function WorkflowWorkspace() {
 				</div>
 			</NavbarLeft>
 
-			{/* WorkflowFormEditor owns save, run, history, and all step UI */}
 			<div className="flex-1 overflow-hidden">
-				<WorkflowFormEditor appId={appId} />
+				<WorkflowCanvas appId={appId} />
 			</div>
 		</div>
 	);

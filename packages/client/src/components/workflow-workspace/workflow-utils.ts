@@ -25,7 +25,6 @@ export const TRANSFORM_ENABLED: Set<WorkflowNodeType> = new Set([
 	"vector-engine",
 	"storage-engine",
 	"function-engine",
-	"app",
 	"custom-pixel",
 ]);
 
@@ -44,6 +43,7 @@ export function toRFNode(
 		id: wn.id,
 		type: "workflowNode",
 		position: wn.position,
+		deletable: wn.type !== "trigger",
 		data: {
 			nodeType:
 				(wn as WorkflowNode & { nodeType?: WorkflowNodeType })
@@ -65,7 +65,7 @@ export function toRFEdge(e: {
 		id: e.id,
 		source: e.source,
 		target: e.target,
-		type: "smoothstep",
+		type: "workflowEdge",
 		animated: false,
 		style: { strokeWidth: 1.5 },
 	};
@@ -178,29 +178,23 @@ export function buildPixelPreview(node: WorkflowNode): string {
 			return `ExecuteFunctionEngine(engine=["${eid}"], map=["${map.replace(/"/g, '\\"')}"]);`;
 		}
 
-		case "app": {
-			const appId = str(c.appId);
-			let pixel = str(
+		case "custom-pixel": {
+			const pixel = str(
 				(c.pixel as string | undefined) ??
 					(c.pixelExpression as string | undefined),
 			);
-			// Wrap parameter values containing ${varName} in <encode> tags
-			// so the pixel parser doesn't break on substituted JSON
-			pixel = pixel.replace(
-				/\["([^"]*\$\{[^"]*)"]/g,
-				'["<encode>$1</encode>"]',
-			);
+			const appId = str(c.appId as string | undefined);
 			return appId ? `LoadApp(project=["${appId}"]); ${pixel}` : pixel;
 		}
 
-		case "custom-pixel":
-			return str(
-				(c.pixel as string | undefined) ??
-					(c.pixelExpression as string | undefined),
-			);
+		case "sub-workflow": {
+			const projectId = str(c.targetProjectId as string | undefined);
+			const mapping = str(c.inputMapping as string | undefined, "{}");
+			return `TriggerWorkflow(project=["${projectId}"], inputMapping=["<encode>${mapping}</encode>"]);`;
+		}
 
-		case "transform":
-			return `// Transform (${str(c.operation, "convert-to-objects")}): ${str(c.inputVar)} → ${str(node.outputVar)}`;
+		case "for-each":
+			return ""; // backend dispatches by type, not builtPixel
 
 		case "conditional": {
 			const cc =
@@ -210,8 +204,118 @@ export function buildPixelPreview(node: WorkflowNode): string {
 			return `// If ${str(c.condition)} → TRUE (${trueBranch} steps) | FALSE (${falseBranch} steps)`;
 		}
 
+		case "trigger":
+			return "";
+
+		case "email": {
+			const to = str(c.to as string);
+			const subject = str(c.subject as string);
+			const body = str(c.body as string);
+			const cc = str(c.cc as string);
+			const bcc = str(c.bcc as string);
+			const isHtml = Boolean(c.isHtml);
+			const buildAddr = (addr: string) =>
+				addr
+					.split(/\s*,\s*/)
+					.filter(Boolean)
+					.map((a) => `"${a.trim()}"`)
+					.join(", ");
+			// Match the backend's URL-encoding approach for the message body
+			const encodedBody = encodeURIComponent(body).replace(/%20/g, "+");
+			const parts: string[] = [`to=[${buildAddr(to)}]`];
+			if (cc) parts.push(`cc=[${buildAddr(cc)}]`);
+			if (bcc) parts.push(`bcc=[${buildAddr(bcc)}]`);
+			parts.push(`subject=["${subject.replace(/"/g, '\\"')}"]`);
+			parts.push(`message=["<encode>${encodedBody}</encode>"]`);
+			if (isHtml) parts.push(`html=["true"]`);
+			return `SendEmail(${parts.join(", ")});`;
+		}
+
+		case "while-loop":
+		case "try-catch":
+		case "wait":
+		case "set-variable":
+		case "http-request":
+		case "notification":
+		case "switch":
+		case "retry":
+		case "parallel":
+			return ""; // backend dispatches by type, not builtPixel
+
 		default:
 			return `// ${node.type}`;
+	}
+}
+
+/** Returns true when a node has all required fields to produce a runnable pixel. */
+export function isNodeReady(node: WorkflowNode): boolean {
+	const c = node.config as unknown as Record<string, unknown>;
+	const has = (v: unknown) => v != null && v !== "";
+
+	switch (node.type) {
+		case "database-engine":
+			return has(c.engineId) && has(c.expression);
+		case "model-engine": {
+			if (!has(c.engineId)) return false;
+			const op = c.operation ?? "llm";
+			if (op === "embeddings") return has(c.values);
+			if (op === "vision" || op === "llm") return has(c.command);
+			if (op === "ner") return has(c.prompt);
+			return true;
+		}
+		case "vector-engine": {
+			if (!has(c.engineId)) return false;
+			const op = c.operation ?? "search";
+			if (op === "search") return has(c.command);
+			if (op === "add-file") return has(c.filePath);
+			if (op === "add-csv") return has(c.filePaths);
+			if (op === "delete" || op === "download") return has(c.fileNames);
+			return true;
+		}
+		case "storage-engine": {
+			if (!has(c.engineId)) return false;
+			const op = c.operation ?? "list";
+			if (op === "download" || op === "upload")
+				return has(c.storagePath) && has(c.filePath);
+			if (op === "delete" || op === "read-base64")
+				return has(c.storagePath);
+			return true;
+		}
+		case "function-engine":
+			return has(c.engineId);
+		case "custom-pixel": {
+			const pixel =
+				(c.pixel as string | undefined) ??
+				(c.pixelExpression as string | undefined);
+			return has(pixel);
+		}
+		case "sub-workflow":
+			return has(c.targetProjectId);
+		case "for-each":
+			return has(c.sourceVar) && has(c.iteratorVar);
+		case "conditional":
+			return has(c.condition);
+		case "while-loop":
+			return has(c.condition);
+		case "wait":
+			return has(c.seconds);
+		case "try-catch":
+		case "set-variable":
+			return true;
+		case "email":
+			return has(c.to) && has(c.subject) && has(c.body);
+		case "http-request":
+			return has(c.url);
+		case "notification":
+			return has(c.recipientId) && has(c.title) && has(c.message);
+		case "switch":
+			return has(c.switchVar);
+		case "retry":
+		case "parallel":
+			return true;
+		// trigger never blocks a run
+		default:
+			return true;
 	}
 }
 

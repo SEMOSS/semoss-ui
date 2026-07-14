@@ -47,9 +47,16 @@ export function EngineSelect({
 						<SelectItem
 							key={e.engine_id}
 							value={e.engine_id}
-							className="text-xs"
+							className="py-1.5 text-xs"
 						>
-							{e.engine_display_name ?? e.engine_name}
+							<span className="flex flex-col gap-0.5">
+								<span>
+									{e.engine_display_name ?? e.engine_name}
+								</span>
+								<span className="font-mono text-[10px] text-muted-foreground">
+									{e.engine_id}
+								</span>
+							</span>
 						</SelectItem>
 					))}
 				</SelectContent>
