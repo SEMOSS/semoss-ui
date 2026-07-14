@@ -29,7 +29,7 @@ import {
 	RoomInputMenuUpload,
 } from "@/components";
 import { useChat, useGracefulErrors } from "@/hooks";
-import type { RoomStore } from "@/stores";
+import { ResponseMessageStore, type RoomStore } from "@/stores";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomSuggestions } from "./room-suggestions";
 
@@ -321,18 +321,67 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		});
 	}, [scrollEle]);
 
-	// Auto-scroll to bottom when messages are added or content grows (streaming), unless user has scrolled away
-	// biome-ignore lint/correctness/useExhaustiveDependencies: room.history.length and contentHeight are used as triggers
+	const isAnyMessageStreaming = room.history.some(
+		(msg) => msg instanceof ResponseMessageStore && msg.isThinking,
+	);
+
+	// Track whether streaming has ever been active this session so the
+	// completion smooth-scroll doesn't fire on initial room open (where
+	// isAnyMessageStreaming starts false and never transitions true → false).
+	const hasStreamedRef = React.useRef(false);
+	if (isAnyMessageStreaming) {
+		hasStreamedRef.current = true;
+	}
+
+	// Track whether we need to smooth-scroll to bottom after the typewriter
+	// dumps its remaining content when streaming ends.
+	// Set to true the moment streaming ends; cleared once the smooth scroll fires.
+	const pendingScrollToBottomRef = React.useRef(false);
+
+	useEffect(() => {
+		if (!isAnyMessageStreaming && hasStreamedRef.current) {
+			pendingScrollToBottomRef.current = true;
+		}
+	}, [isAnyMessageStreaming]);
+
+	// Auto-scroll to bottom when content grows (streaming), unless user has scrolled away intentionally
+	// biome-ignore lint/correctness/useExhaustiveDependencies: contentHeight is used as a trigger
 	useEffect(() => {
 		if (!scrollEle || isScrollLocked) {
+			return;
+		}
+
+		// If a smooth-scroll-to-bottom is pending (streaming just ended and the
+		// typewriter is still dumping content), let the smooth-scroll effect below
+		// handle it — don't clobber it with an instant jump.
+		if (pendingScrollToBottomRef.current) {
+			return;
+		}
+
+		// Only auto-scroll if actively streaming to avoid jumping after completion
+		if (!isAnyMessageStreaming) {
 			return;
 		}
 
 		requestAnimationFrame(() => {
 			scrollEle.scrollTop = scrollEle.scrollHeight;
 		});
-	}, [scrollEle, isScrollLocked, room.history.length, contentHeight]);
+	}, [scrollEle, isScrollLocked, contentHeight, isAnyMessageStreaming]);
 
+	// Whenever contentHeight changes and a smooth-scroll is pending, fire it.
+	// This fires after the ResizeObserver detects the post-dump layout change,
+	// so scrollHeight is accurate and the instant-jump path above is gated off.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional
+	useEffect(() => {
+		if (pendingScrollToBottomRef.current && scrollEle) {
+			pendingScrollToBottomRef.current = false;
+			setIsScrollLocked(false);
+			scrollEle.scrollTo({
+				top: scrollEle.scrollHeight,
+				behavior: "smooth",
+			});
+		}
+	}, [contentHeight, scrollEle]);
 	/**
 	 * Set up scroll event listener
 	 */

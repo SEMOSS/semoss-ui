@@ -1,312 +1,111 @@
-import { SkipForwardIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useTranslation } from "@semoss/i18n";
-import {
-	Button,
-	Markdown,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@semoss/ui/next";
-import { useRoot } from "@/hooks";
-import { useMarkdownTypewriter } from "@/hooks/use-markdown-typewriter";
+import type React from "react";
+import { useMemo } from "react";
+import { type ChunkStatus, useActiveIndex } from "@/hooks";
 import type { ResponseMessageStore } from "@/stores";
 import type { PixelMessageTextPart } from "@/types";
-import { FENCED_HTML_RE } from "./response-message-text/constants";
-import { createMarkdownComponents } from "./response-message-text/create-markdown-components";
-import { HtmlPreviewBlock } from "./response-message-text/html-preview-block";
+import { parseChunks } from "./response-message-text/parse-chunks";
+import { ResponseMessageTextHtml } from "./response-message-text/response-message-text-html";
+import { ResponseMessageTextMd } from "./response-message-text/response-message-text-md";
 
 interface ResponseMessageTextProps {
 	/** Message to render */
 	message: ResponseMessageStore;
 
-	/** Thinking to render */
+	/** Text part to render */
 	part: PixelMessageTextPart;
 
-	/** Is it the last part */
-	isLast: boolean;
+	/**
+	 * Animation status for this part, controlled by the parent message queue.
+	 * - "active": this part may animate; its internal chunk queue runs
+	 * - "done": the message moved past this part — all chunks render in full
+	 *
+	 * The parent never renders a "not_started" text part.
+	 */
+	status: ChunkStatus;
+
+	/**
+	 * Called when this part has caught up to its current content so the parent
+	 * message queue can advance. Fires whenever the internal chunk queue's last
+	 * chunk catches up — the parent's guard decides whether to actually advance
+	 * (it holds while this is the last part and the message is still streaming).
+	 */
+	onComplete: () => void;
+
+	/**
+	 * First time the user is seeing this message stream (vs returning to one
+	 * already in progress). On a first view chunks animate from 0; on a return
+	 * the chunk queue seeds at the latest chunk and the typewriter at the latest
+	 * content, so we jump to the frontier instead of replaying.
+	 */
+	isFirstView: boolean;
 }
 
+/**
+ * Orchestrates sequential chunk animation for a single text part, and reports
+ * upward to the parent message queue when it has caught up.
+ *
+ * Parses `part.text` into ordered segments of `md` and `html` chunks on every
+ * render. Chunks animate one at a time while this part is "active"; once the
+ * parent marks it "done", every chunk renders its full content directly.
+ */
 export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
-	({ message, part, isLast }) => {
-		const { t } = useTranslation("chat");
-		const { root } = useRoot();
+	({ message, part, status, onComplete, isFirstView }) => {
+		// This part feeds its internal chunk queue only while it's the active
+		// part. Once "done", the internal queue snaps every chunk to full content.
+		const isActive = status === "active";
 
-		// ── Standalone-HTML detection ────────────────────────────────────────────
-		// Sticky: once the response opens with <!DOCTYPE (no code fence), stay in
-		// standalone-HTML mode for the lifetime of this message.
-		const isHtmlResponseRef = useRef(false);
-		if (!isHtmlResponseRef.current) {
-			const trimmed = part.text.trimStart();
-			if (!trimmed.includes("```") && /^<!DOCTYPE\s/i.test(trimmed)) {
-				isHtmlResponseRef.current = true;
-			}
-		}
-		const isHtmlResponse = isHtmlResponseRef.current;
-
-		// ── Code-fenced HTML detection ───────────────────────────────────────────
-		// Detect the first ```html…``` block directly in part.text so that
-		// HtmlPreviewBlock mounts as soon as the fence appears during streaming.
-		const fencedHtmlData = useMemo(() => {
-			if (isHtmlResponse) return null;
-			const m = FENCED_HTML_RE.exec(part.text);
-			if (!m) return null;
-			const isClosed = m[0].endsWith("```");
-			const postStart = isClosed ? m.index + m[0].length : -1;
-			return {
-				preFenceProse: part.text.slice(0, m.index),
-				fencedHtmlContent: m[1],
-				fencedHtmlClosed: isClosed,
-				postFenceProse:
-					postStart !== -1
-						? part.text.slice(postStart).trimStart()
-						: "",
-			};
-		}, [isHtmlResponse, part.text]);
-		const hasFencedHtml = !!fencedHtmlData;
-
-		// ── Standalone-HTML split ────────────────────────────────────────────────
-		const htmlEndMatch = isHtmlResponse
-			? /(<\/html\s*>)/i.exec(part.text)
-			: null;
-		const htmlPart = isHtmlResponse
-			? htmlEndMatch
-				? part.text.slice(
-						0,
-						htmlEndMatch.index + htmlEndMatch[0].length,
-					)
-				: part.text
-			: "";
-		const standaloneHtml = isHtmlResponse ? htmlPart.trim() : null;
-
-		// ── Post-block prose ─────────────────────────────────────────────────────
-		// Unified: after </html> for standalone, after closing ``` for fenced.
-		const postHtmlProse =
-			isHtmlResponse && htmlEndMatch
-				? part.text
-						.slice(htmlEndMatch.index + htmlEndMatch[0].length)
-						.trimStart()
-				: "";
-		const postBlockProse = isHtmlResponse
-			? postHtmlProse
-			: (fencedHtmlData?.postFenceProse ?? "");
-
-		// ── Typewriters ──────────────────────────────────────────────────────────
-		const typewriter = useMarkdownTypewriter(part.text);
-		const renderedText = typewriter.isTyping
-			? typewriter.rendered
-			: part.text;
-
-		const postTypewriter = useMarkdownTypewriter(postBlockProse);
-		const [postProseStarted, setPostProseStarted] = useState(false);
-
-		// ── isPreviewLoading for code-fenced HTML ────────────────────────────────
-		const inlineScriptInFenced =
-			hasFencedHtml &&
-			/<script(?![^>]*\bsrc\s*=)[^>]*>[\s\S]*?<\/script\s*>/i.test(
-				fencedHtmlData?.fencedHtmlContent ?? "",
-			);
-		const fencedIsPreviewLoading =
-			isLast &&
-			message.isThinking &&
-			!(fencedHtmlData?.fencedHtmlClosed ?? false) &&
-			!inlineScriptInFenced;
-
-		// ── isPreviewLoading for standalone HTML ─────────────────────────────────
-		const inlineScriptComplete =
-			isHtmlResponse &&
-			/<script(?![^>]*\bsrc\s*=)[^>]*>[\s\S]*?<\/script\s*>/i.test(
-				part.text,
-			);
-		const standaloneIsPreviewLoading =
-			isLast &&
-			message.isThinking &&
-			!htmlEndMatch &&
-			!inlineScriptComplete;
-
-		// isPreviewLoading passed to Markdown components (for non-HTML code blocks).
-		const isPreviewLoading =
-			isLast && (message.isThinking || typewriter.isTyping);
-
-		const components = useMemo(
-			() =>
-				createMarkdownComponents(
-					message.room,
-					isPreviewLoading,
-					!!root.theme.featureFlags?.enableTableExport,
-				),
-			[
-				message.room,
-				isPreviewLoading,
-				root.theme.featureFlags?.enableTableExport,
-			],
+		// Parse text into ordered md/html chunks. Memoized on the text so a
+		// streaming message (which re-renders per token) doesn't re-scan the full
+		// string every render. The hook bubbles `onComplete` to the parent message
+		// queue when the last chunk catches up, so this part reports its own
+		// completion without extra wiring. On a return view, seed at the latest
+		// chunk to jump to the frontier.
+		const chunks = useMemo(() => parseChunks(part.text), [part.text]);
+		const { chunkCallbacks, getChunkStatus } = useActiveIndex(
+			chunks.length,
+			isActive,
+			onComplete,
+			!isFirstView,
 		);
 
-		// ── Effects ──────────────────────────────────────────────────────────────
-		useEffect(() => {
-			if (message.isThinking && isLast) typewriter.start();
-		}, [message.isThinking, typewriter.start, isLast]);
-
-		// No text to animate for standalone-HTML responses.
-		useEffect(() => {
-			if (isHtmlResponse) typewriter.skipToEnd();
-		}, [isHtmlResponse, typewriter.skipToEnd]);
-
-		useEffect(() => {
-			if (!isLast) typewriter.skipToEnd();
-		}, [isLast, typewriter.skipToEnd]);
-
-		// Start post-block prose animation when it first appears during a live stream.
-		// Historical messages (isThinking=false) must NOT start the typewriter.
-		useEffect(() => {
-			if (
-				isLast &&
-				message.isThinking &&
-				(isHtmlResponse || hasFencedHtml) &&
-				postBlockProse &&
-				!postProseStarted
-			) {
-				setPostProseStarted(true);
-				postTypewriter.start();
+		// An empty text part has nothing to animate — report complete so the
+		// parent can advance. While this is the last part and still streaming the
+		// parent's guard holds it, so this is a no-op until content arrives or a
+		// later part seals it.
+		if (chunks.length === 0) {
+			if (isActive) {
+				onComplete();
 			}
-		}, [
-			isLast,
-			message.isThinking,
-			isHtmlResponse,
-			hasFencedHtml,
-			postBlockProse,
-			postProseStarted,
-			postTypewriter.start,
-		]);
-
-		useEffect(() => {
-			if (!isLast) postTypewriter.skipToEnd();
-		}, [isLast, postTypewriter.skipToEnd]);
-
-		const isAnyTyping =
-			(typewriter.isTyping || postTypewriter.isTyping) &&
-			!message.isThinking &&
-			isLast;
-
-		const urlTransform = (url: string) => {
-			if (url.startsWith("room://")) return url;
-			if (
-				root.theme.allowedUrlPrefixes?.some((prefix) =>
-					url.startsWith(prefix),
-				)
-			)
-				return url;
-			if (/^(https?:|mailto:|#)/.test(url)) return url;
-			return "";
-		};
+			return null;
+		}
 
 		return (
 			<>
-				{standaloneHtml ? (
-					<>
-						<HtmlPreviewBlock
-							html={standaloneHtml}
-							room={message.room}
-							isLoading={standaloneIsPreviewLoading}
-							copyTooltip="Copy"
-							copySuccessMessage={t("notifications.copySuccess")}
-							copyLabel="Copy"
+				{chunks.map((chunk, idx) => {
+					if (chunk.type === "html") {
+						return (
+							<ResponseMessageTextHtml
+								key={chunk.key}
+								html={chunk.content}
+								status={getChunkStatus(idx)}
+								room={message.room}
+								onComplete={chunkCallbacks[idx]}
+							/>
+						);
+					}
+
+					return (
+						<ResponseMessageTextMd
+							key={chunk.key}
+							content={chunk.content}
+							status={getChunkStatus(idx)}
+							message={message}
+							onComplete={chunkCallbacks[idx]}
+							isFirstView={isFirstView}
 						/>
-						{postBlockProse &&
-							(postProseStarted ||
-								!isLast ||
-								!message.isThinking) && (
-								<Markdown
-									dir="auto"
-									components={components}
-									// wrap-anywhere: breaks long tokens and collapses min-width so they don't overflow the scroll area
-									className="wrap-anywhere [&>*:first-child]:mt-0"
-									urlTransform={urlTransform}
-								>
-									{postTypewriter.isTyping
-										? postTypewriter.rendered
-										: postBlockProse}
-								</Markdown>
-							)}
-					</>
-				) : hasFencedHtml ? (
-					<>
-						{fencedHtmlData?.preFenceProse && (
-							<Markdown
-								dir="auto"
-								components={components}
-								// wrap-anywhere: breaks long tokens and collapses min-width so they don't overflow the scroll area
-								className="wrap-anywhere [&>*:first-child]:mt-0"
-								urlTransform={urlTransform}
-							>
-								{typewriter.isTyping &&
-								typewriter.rendered.length <
-									(fencedHtmlData?.preFenceProse.length ?? 0)
-									? typewriter.rendered
-									: fencedHtmlData?.preFenceProse}
-							</Markdown>
-						)}
-						<HtmlPreviewBlock
-							html={fencedHtmlData?.fencedHtmlContent ?? ""}
-							room={message.room}
-							isLoading={fencedIsPreviewLoading}
-							copyTooltip="Copy"
-							copySuccessMessage={t("notifications.copySuccess")}
-							copyLabel="Copy"
-						/>
-						{postBlockProse &&
-							(postProseStarted ||
-								!isLast ||
-								!message.isThinking) && (
-								<Markdown
-									dir="auto"
-									components={components}
-									// wrap-anywhere: breaks long tokens and collapses min-width so they don't overflow the scroll area
-									className="wrap-anywhere [&>*:first-child]:mt-0"
-									urlTransform={urlTransform}
-								>
-									{postTypewriter.isTyping
-										? postTypewriter.rendered
-										: postBlockProse}
-								</Markdown>
-							)}
-					</>
-				) : (
-					<Markdown
-						dir="auto"
-						components={components}
-						// wrap-anywhere: breaks long tokens and collapses min-width so they don't overflow the scroll area
-						className="wrap-anywhere [&>*:first-child]:mt-0"
-						urlTransform={urlTransform}
-					>
-						{renderedText}
-					</Markdown>
-				)}
-				{isAnyTyping && (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<span className="absolute end-4 bottom-4 z-50">
-								<Button
-									size="icon-sm"
-									variant={"outline"}
-									disabled={!part.text}
-									onClick={() => {
-										typewriter.skipToEnd();
-										postTypewriter.skipToEnd();
-									}}
-									aria-label="Fast Forward to End"
-									className="shadow-lg"
-								>
-									<SkipForwardIcon />
-								</Button>
-							</span>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">
-							{t("response.fastForwardToEnd")}
-						</TooltipContent>
-					</Tooltip>
-				)}
+					);
+				})}
 			</>
 		);
 	},
