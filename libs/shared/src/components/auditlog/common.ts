@@ -17,6 +17,11 @@ export interface EventData {
 	userId: string;
 	sessionId: string;
 	spanId: string;
+	guardrailAction?: string | null;
+	cacheReadTokens?: number;
+	cacheCreationTokens?: number;
+	promptTokens?: number;
+	responseTokens?: number;
 }
 /**
  * Format an audit-log timestamp into separate date and time strings for display.

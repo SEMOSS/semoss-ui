@@ -34,7 +34,9 @@
 		"errors": "Errores",
 		"p50": "P50",
 		"p95": "P95",
-		"tokens": "Tokens",
+		"tokens": "Total de tokens",
+		"cacheRead": "Lectura de caché",
+		"cacheWrite": "Escritura de caché",
 		"currentPage": "página actual",
 		"currentPageHint": "La latencia, los errores y los tokens se calculan sobre los eventos de la página actual."
 	},
@@ -54,9 +56,18 @@
 			"engineType": "Tipo de motor",
 			"engineName": "Nombre del motor",
 			"latency": "Latencia",
-			"tokens": "Tokens",
+			"tokens": "Total de tokens",
+			"promptTokens": "Tokens de prompt",
+			"responseTokens": "Tokens de respuesta",
+			"cacheRead": "Lectura de caché",
+			"cacheWrite": "Escritura de caché",
 			"timestamp": "Marca de tiempo",
-			"status": "Estado"
+			"status": "Estado",
+			"guardrailAction": "Barrera"
+		},
+		"guardrailActions": {
+			"MASK": "Enmascarado",
+			"BLOCK": "Bloqueado"
 		},
 		"groupRequest": "Petición",
 		"groupSpan": "Span",
@@ -88,7 +99,7 @@
 			"engine": "Motor",
 			"user": "Usuario",
 			"latency": "Latencia",
-			"tokens": "Tokens",
+			"tokens": "Total de tokens",
 			"start": "Inicio",
 			"end": "Fin",
 			"span": "Span",
@@ -108,7 +119,11 @@
 		"collapseAll": "Contraer todo",
 		"fields": {
 			"latency": "Latencia",
-			"tokens": "Tokens",
+			"tokens": "Total de tokens",
+			"promptTokens": "Tokens de prompt",
+			"responseTokens": "Tokens de respuesta",
+			"cacheRead": "Lectura de caché",
+			"cacheWrite": "Escritura de caché",
 			"user": "Usuario",
 			"userId": "ID de usuario",
 			"start": "Inicio",
