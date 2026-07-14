@@ -1,7 +1,6 @@
 import { Download } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import { useRef, useState } from "react";
-import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	type Code,
@@ -20,7 +19,6 @@ import type { RoomStore } from "@/stores";
 import { BlockHeader } from "./block-header";
 import { CodePreviewBlock } from "./code-preview-block";
 import { KNOWN_SHIKI_LANGS } from "./constants";
-import { HtmlPreviewBlock } from "./html-preview-block";
 import { MermaidBlock } from "./mermaid-block";
 
 type MarkdownComponents = NonNullable<
@@ -205,7 +203,6 @@ export const createMarkdownComponents = (
 		);
 	},
 	code: ({ children, className, ...props }) => {
-		const { t } = useTranslation("chat");
 		// react-markdown sets className to "language-<lang>" on fenced code blocks.
 		// Inline code (single backtick) has no className, so match will be null.
 		const match = /language-(\w+)/.exec(className || "");
@@ -238,19 +235,6 @@ export const createMarkdownComponents = (
 					code={code}
 					isLoading={isHtmlPreviewLoading}
 					room={room}
-				/>
-			);
-		}
-
-		if (lang === "html") {
-			return (
-				<HtmlPreviewBlock
-					html={code}
-					room={room}
-					isLoading={isHtmlPreviewLoading}
-					copyTooltip="Copy"
-					copySuccessMessage={t("notifications.copySuccess")}
-					copyLabel="Copy"
 				/>
 			);
 		}
