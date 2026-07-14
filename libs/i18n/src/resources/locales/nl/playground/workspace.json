@@ -160,7 +160,8 @@
 		"viewDescription": "De systeemprompt die het gedrag van deze agent stuurt.",
 		"editTitle": "Instructies bewerken",
 		"editDescription": "Werk de systeemprompt bij die het gedrag van deze agent stuurt.",
-		"charCount": "{{count}} tekens"
+		"charCount_one": "{{count, number}} teken",
+		"charCount_other": "{{count, number}} tekens"
 	},
 	"skills": {
 		"noSkills": "Geen vaardigheden toegevoegd"

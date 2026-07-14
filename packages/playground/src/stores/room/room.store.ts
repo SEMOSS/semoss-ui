@@ -399,21 +399,6 @@ export class RoomStore {
 	}
 
 	/**
-	 * Get the tokens used in the most recent message
-	 */
-	get lastMessageTokens(): number {
-		// Walk back from tail to find the most recent message with tokens
-		let currMessage = this.tail as AbstractMessageStore;
-		while (currMessage) {
-			if (currMessage.tokens && currMessage.tokens > 0) {
-				return currMessage.tokens;
-			}
-			currMessage = currMessage.parent;
-		}
-		return 0;
-	}
-
-	/**
 	 * Get the total tokens consumed across ALL messages in the conversation
 	 * (not context window - this is the actual sum of all input + output tokens)
 	 */
@@ -970,7 +955,10 @@ export class RoomStore {
 			pruneToolsAbove: false,
 		});
 
-		const parentMessage = this.tail;
+		// Anchor to the latest REAL response. this.tail can be an un-synced
+		// STREAMING_PLACEHOLDER_ID node left behind by a turn that errored mid-stream;
+		// latestResponseMessage skips those (and INPUT_TOOL_EXEC nodes).
+		const parentMessage = this.latestResponseMessage ?? this.tail;
 		if (parentMessage instanceof InputMessageStore) {
 			throw new Error("Cannot respond to input messages");
 		}
@@ -1270,7 +1258,7 @@ export class RoomStore {
 			// Poll for streaming content
 			let isPolling = true;
 
-			const pollingInterval = 300; // 300ms for responsive streaming
+			const pollingInterval = 500; // 500ms between streaming polls
 
 			while (isPolling) {
 				try {
