@@ -160,7 +160,9 @@
 		"viewDescription": "La indicación del sistema que guía el comportamiento de este agente.",
 		"editTitle": "Editar instrucciones",
 		"editDescription": "Actualiza la indicación del sistema que guía el comportamiento de este agente.",
-		"charCount": "{{count}} caracteres"
+		"charCount_one": "{{count, number}} carácter",
+		"charCount_many": "{{count, number}} caracteres",
+		"charCount_other": "{{count, number}} caracteres"
 	},
 	"skills": {
 		"noSkills": "No se han añadido habilidades"

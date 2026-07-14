@@ -99,7 +99,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 					return;
 				}
 				toast.success("Successfully Created Storage Database");
-				navigate(`/engine/storage/${output.database_id}`);
+				navigate(`/storage/${output.database_id}`);
 			}
 		} catch {
 			toast.error("Upload failed or returned invalid response.");

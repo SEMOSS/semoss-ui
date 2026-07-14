@@ -34,7 +34,9 @@
 		"errors": "त्रुटियाँ",
 		"p50": "P50",
 		"p95": "P95",
-		"tokens": "टोकन",
+		"tokens": "कुल टोकन",
+		"cacheRead": "कैश रीड",
+		"cacheWrite": "कैश राइट",
 		"currentPage": "वर्तमान पृष्ठ",
 		"currentPageHint": "लेटेंसी, त्रुटियाँ और टोकन वर्तमान पृष्ठ के इवेंट पर गणना किए जाते हैं।"
 	},
@@ -54,9 +56,18 @@
 			"engineType": "इंजन प्रकार",
 			"engineName": "इंजन नाम",
 			"latency": "लेटेंसी",
-			"tokens": "टोकन",
+			"tokens": "कुल टोकन",
+			"promptTokens": "प्रॉम्प्ट टोकन",
+			"responseTokens": "प्रतिक्रिया टोकन",
+			"cacheRead": "कैश रीड",
+			"cacheWrite": "कैश राइट",
 			"timestamp": "टाइमस्टैम्प",
-			"status": "स्थिति"
+			"status": "स्थिति",
+			"guardrailAction": "गार्डरेल"
+		},
+		"guardrailActions": {
+			"MASK": "मास्क किया गया",
+			"BLOCK": "अवरुद्ध"
 		},
 		"groupRequest": "अनुरोध",
 		"groupSpan": "स्पैन",
@@ -88,7 +99,7 @@
 			"engine": "इंजन",
 			"user": "उपयोगकर्ता",
 			"latency": "लेटेंसी",
-			"tokens": "टोकन",
+			"tokens": "कुल टोकन",
 			"start": "प्रारंभ",
 			"end": "समाप्त",
 			"span": "स्पैन",
@@ -108,7 +119,11 @@
 		"collapseAll": "सभी संक्षिप्त करें",
 		"fields": {
 			"latency": "लेटेंसी",
-			"tokens": "टोकन",
+			"tokens": "कुल टोकन",
+			"promptTokens": "प्रॉम्प्ट टोकन",
+			"responseTokens": "प्रतिक्रिया टोकन",
+			"cacheRead": "कैश रीड",
+			"cacheWrite": "कैश राइट",
 			"user": "उपयोगकर्ता",
 			"userId": "उपयोगकर्ता आईडी",
 			"start": "प्रारंभ",

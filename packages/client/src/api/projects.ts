@@ -132,6 +132,8 @@ export const getProjects = async (
 			project_global: boolean;
 			project_id: string;
 			project_name: string;
+			project_display_name?: string;
+			project_type?: string;
 			project_permission: string;
 			project_visibility: boolean;
 		}[]
@@ -177,31 +179,6 @@ export const setProjectVisiblity = async (admin, appId, visible) => {
 	const response = await post<{
 		success: boolean;
 	}>(url, postData, {});
-	return response;
-};
-
-export const setProjectPortal = async (
-	_admin: boolean,
-	projectId: string,
-	hasPortal: boolean,
-	portalName?: string,
-) => {
-	let url = `${Env.MODULE}/api/auth/`;
-	// if (admin) {
-	//     url += 'admin/';
-	// }
-	url += `project/setProjectPortal`;
-
-	if (portalName) {
-		// url += "&projectId=" + encodeURIComponent(portalName);
-	}
-	const postData = {
-		projectId: projectId,
-		hasPortal: hasPortal,
-	};
-	const response = await post<{
-		success: boolean;
-	}>(url, processPostData(postData), {});
 	return response;
 };
 
