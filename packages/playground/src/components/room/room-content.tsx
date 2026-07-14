@@ -1,6 +1,7 @@
 import {
 	MoveDownIcon,
 	MoveUpIcon,
+	ScrollTextIcon,
 	Settings2Icon,
 	TriangleAlertIcon,
 } from "lucide-react";
@@ -28,8 +29,7 @@ import {
 	RoomInputMenuUpload,
 } from "@/components";
 import { useChat, useGracefulErrors } from "@/hooks";
-import type { RoomStore } from "@/stores";
-import type { MCPConfig } from "@/types";
+import { ResponseMessageStore, type RoomStore } from "@/stores";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomSuggestions } from "./room-suggestions";
 
@@ -73,6 +73,32 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	};
 
 	/**
+	 * Open the room configuration sidebar tab
+	 */
+	const handleOpenSettings = useCallback(() => {
+		room.addSidebarNode(ROOM_CONFIGURATION_ID, {
+			type: "tab",
+			name: "Configuration",
+			component: "room-configuration",
+			config: {},
+			enableClose: true,
+		});
+	}, [room]);
+
+	/**
+	 * Open the audit logs dashboard for this room in the right side panel.
+	 */
+	const handleOpenActivityLog = useCallback(() => {
+		room.addSidebarNode("room-activity-log", {
+			type: "tab",
+			name: "Activity Log",
+			component: "audit-log-report",
+			config: {},
+			enableClose: true,
+		});
+	}, [room]);
+
+	/**
 	 * Compact messages in the room
 	 */
 	const handleCompactMessages = async () => {
@@ -86,31 +112,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		} catch {
 			toast.error(t("settings.compactError"));
 		}
-	};
-
-	/**
-	 * Handle tool add (add-only for slash menu)
-	 * @param tool - selected tool
-	 */
-	const handleToolAdd = (tool: MCPConfig) => {
-		// Add tool to options (skip if already present)
-		const tools = room.options.mcp.reduce(
-			(acc, curr) => {
-				acc[curr.id] = curr;
-				return acc;
-			},
-			{} as Record<string, typeof tool>,
-		);
-
-		// Only add if not already present
-		if (!Object.hasOwn(tools, tool.id)) {
-			tools[tool.id] = tool;
-		}
-
-		room.setOptions({
-			...room.options,
-			mcp: Object.values(tools),
-		});
 	};
 
 	/**
@@ -216,18 +217,67 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		});
 	}, [scrollEle]);
 
-	// Auto-scroll to bottom when messages are added or content grows (streaming), unless user has scrolled away
-	// biome-ignore lint/correctness/useExhaustiveDependencies: room.history.length and contentHeight are used as triggers
+	const isAnyMessageStreaming = room.history.some(
+		(msg) => msg instanceof ResponseMessageStore && msg.isThinking,
+	);
+
+	// Track whether streaming has ever been active this session so the
+	// completion smooth-scroll doesn't fire on initial room open (where
+	// isAnyMessageStreaming starts false and never transitions true → false).
+	const hasStreamedRef = React.useRef(false);
+	if (isAnyMessageStreaming) {
+		hasStreamedRef.current = true;
+	}
+
+	// Track whether we need to smooth-scroll to bottom after the typewriter
+	// dumps its remaining content when streaming ends.
+	// Set to true the moment streaming ends; cleared once the smooth scroll fires.
+	const pendingScrollToBottomRef = React.useRef(false);
+
+	useEffect(() => {
+		if (!isAnyMessageStreaming && hasStreamedRef.current) {
+			pendingScrollToBottomRef.current = true;
+		}
+	}, [isAnyMessageStreaming]);
+
+	// Auto-scroll to bottom when content grows (streaming), unless user has scrolled away intentionally
+	// biome-ignore lint/correctness/useExhaustiveDependencies: contentHeight is used as a trigger
 	useEffect(() => {
 		if (!scrollEle || isScrollLocked) {
+			return;
+		}
+
+		// If a smooth-scroll-to-bottom is pending (streaming just ended and the
+		// typewriter is still dumping content), let the smooth-scroll effect below
+		// handle it — don't clobber it with an instant jump.
+		if (pendingScrollToBottomRef.current) {
+			return;
+		}
+
+		// Only auto-scroll if actively streaming to avoid jumping after completion
+		if (!isAnyMessageStreaming) {
 			return;
 		}
 
 		requestAnimationFrame(() => {
 			scrollEle.scrollTop = scrollEle.scrollHeight;
 		});
-	}, [scrollEle, isScrollLocked, room.history.length, contentHeight]);
+	}, [scrollEle, isScrollLocked, contentHeight, isAnyMessageStreaming]);
 
+	// Whenever contentHeight changes and a smooth-scroll is pending, fire it.
+	// This fires after the ResizeObserver detects the post-dump layout change,
+	// so scrollHeight is accurate and the instant-jump path above is gated off.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional
+	useEffect(() => {
+		if (pendingScrollToBottomRef.current && scrollEle) {
+			pendingScrollToBottomRef.current = false;
+			setIsScrollLocked(false);
+			scrollEle.scrollTo({
+				top: scrollEle.scrollHeight,
+				behavior: "smooth",
+			});
+		}
+	}, [contentHeight, scrollEle]);
 	/**
 	 * Set up scroll event listener
 	 */
@@ -318,7 +368,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		<div className="flex h-full w-full flex-col bg-background transition-all duration-200 ease-in-out">
 			<div className="relative w-full flex-1 overflow-hidden">
 				<ScrollArea
-					className="h-full w-full overflow-hidden"
+					// Force Radix's table-display viewport wrapper to block so wide content can't push the column past the viewport width
+					className="[&_[data-slot=scroll-area-viewport]>div]:block! h-full w-full overflow-hidden"
 					viewportRef={(ele) => {
 						setScrollEle(ele);
 					}}
@@ -329,7 +380,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						}}
 					>
 						<div className="mx-auto flex w-full max-w-[1120px] flex-col gap-2 px-4 py-6 sm:px-8 lg:px-16">
-							{room.history.map((m, mIdx) => {
+							{room.history.map((m) => {
 								if (!m.visible) {
 									return null;
 								}
@@ -383,7 +434,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							)}
 						</div>
 						{room.error ? (
-							<div className="mx-auto flex w-screen max-w-[1120px] items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
+							<div className="mx-auto flex w-full max-w-[1120px] items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
 								<div className="flex h-10 w-10 items-center justify-center rounded-full">
 									<TriangleAlertIcon className="h-6 w-6" />
 								</div>
@@ -452,7 +503,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						chat.setSelectedModel(model);
 					}}
 					options={room.options}
-					onMcpSelect={handleToolAdd}
 					onMcpChange={(mcp) =>
 						room.setOptions({
 							...room.options,
@@ -487,21 +537,25 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									room={room}
 									onSelect={() => onOpenChange(false)}
 								/>
+								{room.theme.featureFlags?.showActivityLog !==
+									false && (
+									<DropdownMenuItem
+										onSelect={(e) => {
+											e.preventDefault();
+											handleOpenActivityLog();
+											onOpenChange(false);
+										}}
+									>
+										<ScrollTextIcon />
+										<span className="flex-1">
+											Activity Log
+										</span>
+									</DropdownMenuItem>
+								)}
 								<DropdownMenuItem
 									onSelect={(e) => {
 										e.preventDefault();
-
-										// add to the sidebar
-										room.addSidebarNode(
-											ROOM_CONFIGURATION_ID,
-											{
-												type: "tab",
-												name: "Configuration",
-												component: "room-configuration",
-												config: {},
-												enableClose: true,
-											},
-										);
+										handleOpenSettings();
 										onOpenChange(false);
 									}}
 								>
@@ -523,7 +577,10 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					}
 					tokensUsed={room.tokensUsed}
 					tokensMax={chat.models.contextWindow}
+					totalTokens={room.totalTokensConsumed}
 					onCompact={handleCompactMessages}
+					onOpenSettings={handleOpenSettings}
+					excludeCommandIds={["agent", "workspace"]}
 				/>
 			</div>
 		</div>

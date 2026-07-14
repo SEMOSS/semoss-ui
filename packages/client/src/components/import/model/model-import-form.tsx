@@ -183,7 +183,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 
 			toast.success("Successfully added LLM to catalog");
 			// engine_id is the current key; database_id is the legacy fallback
-			navigate(`/engine/model/${output.engine_id || output.database_id}`);
+			navigate(`/model/${output.engine_id || output.database_id}`);
 		});
 
 		if (onComplete) onComplete(data);

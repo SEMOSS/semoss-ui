@@ -2,7 +2,8 @@
 	"branding": "Terminal",
 	"tabs": {
 		"files": "Archivos",
-		"terminal": "Terminal"
+		"terminal": "Terminal",
+		"newTerminal": "Nueva terminal"
 	},
 	"views": {
 		"inline": "En línea",

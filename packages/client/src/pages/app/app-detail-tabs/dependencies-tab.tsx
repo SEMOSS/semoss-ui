@@ -1,5 +1,16 @@
-import { Ban, Edit, Eye, Pencil, TriangleAlert, User } from "lucide-react";
-import { Env } from "@semoss/sdk";
+import {
+	Ban,
+	Check,
+	Copy,
+	Edit,
+	ExternalLink,
+	Eye,
+	Pencil,
+	TriangleAlert,
+	User,
+} from "lucide-react";
+import { useState } from "react";
+import { AppCatalogAvatar, EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Badge,
 	Button,
@@ -30,9 +41,20 @@ export const Dependencies = ({
 }: {
 	dependencies: modelledDependency[];
 }) => {
+	const [copiedId, setCopiedId] = useState<string | null>(null);
+
 	const toCapitalized = (word: string): string => {
 		if (!word) return "";
 		return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+	};
+
+	const handleCopyId = (id: string) => {
+		navigator.clipboard.writeText(id).then(() => {
+			setCopiedId(id);
+			setTimeout(() => {
+				setCopiedId((current) => (current === id ? null : current));
+			}, 1500);
+		});
 	};
 
 	return (
@@ -52,28 +74,35 @@ export const Dependencies = ({
 							className="flex w-full flex-col gap-2 rounded-xl border border-border bg-card p-2"
 						>
 							<div className="flex items-center gap-3">
-								<img
-									src={
-										dep.type === "PROJECT"
-											? `${Env.MODULE}/api/project-${dep.id}/projectImage/download`
-											: `${Env.MODULE}/api/e-${dep.id}/image/download`
-									}
-									alt={dep.name}
-									className="h-12 w-12 shrink-0 rounded-lg object-cover"
-								/>
+								{dep.type === "PROJECT" ? (
+									<AppCatalogAvatar
+										name={dep.name}
+										className="size-12 shrink-0 rounded-lg text-base"
+									/>
+								) : (
+									<div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg p-1.5">
+										<EngineSubtypeIcon
+											engineType={dep.type}
+											engineSubtype={dep.subtype}
+											alt={dep.name}
+											className="size-full object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.08)]"
+										/>
+									</div>
+								)}
 								<div className="flex min-w-0 flex-col">
 									<div className="flex items-center gap-1.5">
 										<a
 											href={
 												dep.type === "PROJECT"
 													? `./#/app/${dep.id}`
-													: `./#/engine/${dep.type}/${dep.id}`
+													: `./#/${dep.type}/${dep.id}`
 											}
-											className="text-primary hover:underline"
+											className="flex items-center gap-1 text-primary hover:underline"
 										>
 											<P className="truncate">
 												{dep.name}
 											</P>
+											<ExternalLink className="size-3.5 shrink-0" />
 										</a>
 										{missingSubDependencies && (
 											<Tooltip>
@@ -87,15 +116,42 @@ export const Dependencies = ({
 										)}
 									</div>
 									<div className="flex items-center gap-1">
-										{PERMISSION_ICONS[permissionKey]}
-										<Muted className="text-xs">
-											{toCapitalized(
-												dep.userPermission || "NONE",
-											)}
+										<Muted className="truncate font-mono text-xs">
+											{dep.id}
 										</Muted>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<Button
+													variant="ghost"
+													size="icon"
+													className="h-5 w-5 shrink-0"
+													onClick={() =>
+														handleCopyId(dep.id)
+													}
+													aria-label="Copy ID"
+												>
+													{copiedId === dep.id ? (
+														<Check className="h-3 w-3 text-emerald-500" />
+													) : (
+														<Copy className="h-3 w-3" />
+													)}
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent>
+												{copiedId === dep.id
+													? "Copied!"
+													: "Copy ID"}
+											</TooltipContent>
+										</Tooltip>
 									</div>
 								</div>
 								<div className="ml-auto flex shrink-0 items-center gap-2">
+									<Badge variant="outline" className="gap-1">
+										{PERMISSION_ICONS[permissionKey]}
+										{toCapitalized(
+											dep.userPermission || "NONE",
+										)}
+									</Badge>
 									{dep.isPublic && (
 										<Badge variant="outline">Public</Badge>
 									)}
@@ -136,12 +192,12 @@ export const Dependencies = ({
 								</div>
 							</div>
 
-							<Muted className="ml-15 text-muted-foreground text-sm">
-								{dep.description &&
-								dep.description.trim() !== ""
-									? dep.description
-									: "No Description Available"}
-							</Muted>
+							{dep.description &&
+								dep.description.trim() !== "" && (
+									<Muted className="ml-15 text-muted-foreground text-sm">
+										{dep.description}
+									</Muted>
+								)}
 						</div>
 					);
 				})

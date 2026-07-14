@@ -1,7 +1,13 @@
 import { SaveIcon } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { type MCPConfig, MCPSelector, PromptSelector } from "@semoss/shared";
+import {
+	type MCPConfig,
+	MCPSelector,
+	PromptSelector,
+	type SkillConfig,
+	SkillSelector,
+} from "@semoss/shared";
 import {
 	Button,
 	Field,
@@ -23,6 +29,7 @@ type AgentForm = {
 	instructions: string;
 	knowledge: MCPConfig[];
 	toolboxes: MCPConfig[];
+	skills: SkillConfig[];
 	prompts: string[];
 };
 
@@ -31,6 +38,7 @@ type GetWorkspaceResponse = {
 	description: string;
 	system_prompt: string;
 	mcp: MCPConfig[];
+	skills: SkillConfig[];
 	prompts: { id: string; name: string; type: string }[];
 };
 
@@ -50,6 +58,7 @@ export const AgentEditor = () => {
 			instructions: "",
 			knowledge: [],
 			toolboxes: [],
+			skills: [],
 			prompts: [],
 		},
 	});
@@ -70,6 +79,7 @@ export const AgentEditor = () => {
 					instructions: data.system_prompt ?? "",
 					knowledge: allMcps.filter((m) => m.type === "VECTOR"),
 					toolboxes: allMcps.filter((m) => m.type !== "VECTOR"),
+					skills: data.skills ?? [],
 					prompts: (data.prompts ?? []).map((p) => p.id),
 				});
 			} catch (e) {
@@ -86,8 +96,9 @@ export const AgentEditor = () => {
 		try {
 			setIsLoading(true);
 			const mcp = [...data.knowledge, ...data.toolboxes];
+			const skills = data.skills.map((s) => s.id);
 			const { errors } = await monolithStore.runQuery(
-				`EditWorkspace(workspaceId=["${workspace.appId}"], name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, prompts=${JSON.stringify(data.prompts)});`,
+				`EditWorkspace(workspaceId=["${workspace.appId}"], name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)});`,
 			);
 			if (errors.length > 0) throw new Error(errors.join(", "));
 			toast.success("Agent saved");
@@ -229,6 +240,31 @@ export const AgentEditor = () => {
 										enableKnowledgeMCP={true}
 										getPlatformUrl={mcpToPlatformUrl}
 										workspaceId={workspace.appId}
+									/>
+								)}
+							/>
+						</div>
+
+						<Separator />
+
+						{/* Skills */}
+						<div className="flex flex-col gap-3">
+							<div>
+								<H4 className="font-semibold text-base tracking-tight">
+									Skills
+								</H4>
+								<Muted className="text-muted-foreground text-sm leading-6">
+									Add reusable skills to your agent
+								</Muted>
+							</div>
+							<Controller
+								name="skills"
+								control={control}
+								render={({ field }) => (
+									<SkillSelector
+										values={field.value}
+										onChange={field.onChange}
+										className="h-112"
 									/>
 								)}
 							/>

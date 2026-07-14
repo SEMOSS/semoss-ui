@@ -169,7 +169,9 @@ const EMPTY_PLAYGROUND: ThemeMap["playground"] = {
 		allowEmbeddingOptions: true,
 		showKnowledgeMenu: true,
 		showToolboxMenu: true,
+		showActivityLog: true,
 		showPlatformLinks: true,
+		enableTableExport: false,
 	},
 };
 
@@ -193,8 +195,10 @@ const FEATURE_FLAGS: {
 	{ key: "allowEmbeddingOptions", label: "Allow Embedding Options" },
 	{ key: "showKnowledgeMenu", label: "Show Knowledge Menu" },
 	{ key: "showToolboxMenu", label: "Show Toolbox Menu" },
+	{ key: "showActivityLog", label: "Show Activity Log" },
 	{ key: "showPlatformLinks", label: "Show Platform Links" },
 	{ key: "enableFeedbackText", label: "Enable Feedback Text" },
+	{ key: "enableTableExport", label: "Enable Table Export" },
 ];
 
 const IMAGE_FIELDS: {

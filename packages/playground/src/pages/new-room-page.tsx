@@ -1,7 +1,6 @@
 import {
 	BotIcon,
 	CheckIcon,
-	ComputerIcon,
 	MessageCircleIcon,
 	Settings2Icon,
 	XIcon,
@@ -164,31 +163,6 @@ export const NewRoomPage = observer(() => {
 	}, [tempRoomStore, root.theme]);
 
 	/**
-	 * Handle tool add (add-only for slash menu)
-	 * @param tool - selected tool
-	 */
-	const handleToolAdd = (tool: MCPConfig) => {
-		// Add tool to options (skip if already present)
-		const tools = tempRoomStore.options.mcp.reduce(
-			(acc, curr) => {
-				acc[curr.id] = curr;
-				return acc;
-			},
-			{} as Record<string, MCPConfig>,
-		);
-
-		// Only add if not already present
-		if (!Object.hasOwn(tools, tool.id)) {
-			tools[tool.id] = tool;
-		}
-
-		tempRoomStore.setOptions({
-			...tempRoomStore.options,
-			mcp: Object.values(tools),
-		});
-	};
-
-	/**
 	 * Create a new room and ask the model
 	 *
 	 * @param prompt The prompt to ask
@@ -228,11 +202,25 @@ export const NewRoomPage = observer(() => {
 				preCreatedRoom.setMode(mode === "agent" ? "agent" : "chat");
 				preCreatedRoom.setMetadata({ name: prompt.substring(0, 15) });
 				await preCreatedRoom.updateRoomOptions(options);
-				preCreatedRoom.askMessage(prompt, files).then(() => {
-					runInAction(() => {
-						chat.keys.roomCounter++;
-					});
+				// Optimistically surface the room in the nav — GetPlaygroundRooms
+				// won't return it until its first message has data.
+				chat.addOptimisticRoom({
+					ROOM_ID: preCreatedRoom.roomId,
+					ROOM_NAME: prompt.substring(0, 100),
+					DATE_CREATED: new Date().toISOString(),
+					WORKSPACE_ID: options.workspace?.workspace_id,
 				});
+				// Fire-and-forget so we navigate without waiting on the response.
+				(async () => {
+					try {
+						await preCreatedRoom.askMessage(prompt, files);
+						runInAction(() => {
+							chat.keys.roomCounter++;
+						});
+					} catch {
+						chat.removeOptimisticRoom(preCreatedRoom.roomId);
+					}
+				})();
 				submittedRef.current = true;
 				navigate(`/room/${preCreatedRoom.roomId}`);
 			} else {
@@ -488,7 +476,6 @@ export const NewRoomPage = observer(() => {
 										chat.setSelectedModel(m);
 									}}
 									options={tempRoomStore.options}
-									onMcpSelect={handleToolAdd}
 									onMcpChange={(mcp) =>
 										tempRoomStore.setOptions({
 											...tempRoomStore.options,
@@ -520,6 +507,10 @@ export const NewRoomPage = observer(() => {
 										return true;
 									}}
 									hidePauseButton
+									excludeCommandIds={["compact"]}
+									onOpenSettings={() =>
+										setIsConfgurationOpen(true)
+									}
 									MenuComponent={observer(
 										({
 											onOpenChange,
@@ -589,7 +580,7 @@ export const NewRoomPage = observer(() => {
 														onOpenChange(false);
 													}}
 												>
-													<ComputerIcon />
+													<BotIcon />
 													<span className="flex-1">
 														{t(
 															"room:menuWorkspace.selectAgent",

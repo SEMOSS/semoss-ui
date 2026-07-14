@@ -8,6 +8,7 @@ import {
 	mdiCog,
 	mdiDatabase,
 	mdiDatabaseSearch,
+	mdiGithub,
 	mdiPalette,
 	mdiTabletCellphone,
 } from "@mdi/js";
@@ -149,23 +150,6 @@ export const SETTINGS_ROUTES: {
 		history: ["vector", "vector/<id>"],
 	},
 	{
-		title: "Insight Settings",
-		path: "insight",
-		description: "View and edit settings for app insights",
-		icon: mdiClipboardTextOutline,
-		history: ["insight"],
-		hidden: true,
-	},
-	{
-		title: "Insight Settings",
-		path: "insight/:id/:projectId",
-		description:
-			"View member permissions, pending requests, and all other viewable settings pertaining to the app",
-		icon: mdiClipboardTextOutline,
-		history: ["insight", "insight/<id>/<projectId>"],
-		hidden: true,
-	},
-	{
 		title: "Jobs",
 		path: "jobs",
 		description: "Manage and schedule cron jobs for the platform",
@@ -212,6 +196,15 @@ export const SETTINGS_ROUTES: {
 		path: "social-properties",
 		description: "Use this portal to change login configuration settings.",
 		icon: mdiTabletCellphone,
+		history: ["settings/"],
+		admin: true,
+	},
+	{
+		title: "GitHub App",
+		path: "github-app",
+		description:
+			"Create and manage the GitHub App used for project linking and webhooks.",
+		icon: mdiGithub,
 		history: ["settings/"],
 		admin: true,
 	},

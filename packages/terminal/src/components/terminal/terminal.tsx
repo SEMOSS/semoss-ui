@@ -1,4 +1,4 @@
-import { HelpCircle, XIcon } from "lucide-react";
+import { HelpCircle, Plus, XIcon } from "lucide-react";
 import {
 	lazy,
 	Suspense,
@@ -9,8 +9,9 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { getLanguageDirection, useTranslation } from "@semoss/i18n";
+import { InsightProvider } from "@semoss/sdk/react";
 import { FileExplorer, FlexLayout, getFileIconComponent } from "@semoss/shared";
-import type { SelectedFile } from "../../types";
+import type { FileMode, SelectedFile } from "../../types";
 import { modeKey } from "../../utility/file-mode";
 import {
 	type FileEditorTabConfig,
@@ -53,7 +54,53 @@ const PaneLoader = () => (
 	</div>
 );
 
+/**
+ * Binds a file pane (explorer or editor) to an *existing* terminal-tab insight
+ * instead of the ambient app-level one, so browsing/uploading and REPL commands
+ * share a single workspace. Passing `insightId` makes the SDK attach to the
+ * already-live insight rather than spin up a new one, and `destroyOnUnmount`
+ * is off so unmounting this pane never drops the insight the terminal owns.
+ *
+ * While no console has attached yet (`insightId` null) we show the loader —
+ * rendering a provider with an empty id would create a throwaway third insight
+ * and reintroduce the very split this fixes.
+ */
+const AdoptingInsight = ({
+	insightId,
+	children,
+}: {
+	insightId: string | null;
+	children: React.ReactNode;
+}) => {
+	if (!insightId) return <PaneLoader />;
+	return (
+		<InsightProvider options={{ insightId }} destroyOnUnmount={false}>
+			{children}
+		</InsightProvider>
+	);
+};
+
 const REPL_TABSET_ID = "REPL_TABSET";
+
+// The original REPL tabset is no longer guaranteed to exist (it can be closed
+// or emptied), so resolve a live terminal tabset to dock file editors against.
+// The min-one-terminal rule guarantees at least one terminal tab — and thus one
+// terminal tabset — always exists.
+const findReplTabsetId = (model: FlexLayout.Model): string => {
+	if (model.getNodeById(REPL_TABSET_ID)) return REPL_TABSET_ID;
+	let found: string | null = null;
+	model.visitNodes((node) => {
+		if (
+			!found &&
+			node instanceof FlexLayout.TabNode &&
+			node.getComponent() === "repl"
+		) {
+			const parent = node.getParent();
+			if (parent instanceof FlexLayout.TabSetNode) found = parent.getId();
+		}
+	});
+	return found ?? REPL_TABSET_ID;
+};
 
 /**
  * Initial layout: left border for the file explorer (starts collapsed —
@@ -105,19 +152,22 @@ const buildInitialModel = (
 				type: "tabset",
 				id: REPL_TABSET_ID,
 				weight: 100,
-				// REPL is the anchor pane — it has only the (un-closable,
-				// un-draggable) REPL tab, so even with the global
-				// enableDeleteWhenEmpty it can't end up empty.
-				enableDeleteWhenEmpty: false,
+				// Removed once empty (e.g. its terminals are split out or closed);
+				// the min-one-terminal rule guarantees a terminal still lives
+				// somewhere and file opens re-target the live terminal tabset.
+				enableDeleteWhenEmpty: true,
 				children: [
 					{
 						id: "REPL",
 						type: "tab",
-						name: t("tabs.terminal"),
+						name: `${t("tabs.terminal")} 1`,
 						component: "repl",
+						// Closable like any terminal; onModelChange flips this off
+						// when only one terminal remains (you can't close the last).
+						// `n` drives both the label and its re-localization.
 						enableClose: false,
 						enableDrag: false,
-						config: {},
+						config: { n: 1 },
 					},
 				],
 			},
@@ -179,7 +229,18 @@ const SidebarFooter = ({ onHelpClick }: SidebarFooterProps) => {
 	);
 };
 
-export const Terminal = () => {
+export interface TerminalProps {
+	/**
+	 * Allow opening more than one terminal tab (a "+" affordance plus
+	 * closable/draggable tabs). Set to `false` to embed a single fixed
+	 * terminal. Defaults to `true`.
+	 */
+	allowMultipleTerminals?: boolean;
+}
+
+export const Terminal = ({
+	allowMultipleTerminals = true,
+}: TerminalProps = {}) => {
 	const terminal = useTerminal();
 	const { t, i18n } = useTranslation("chrome");
 	// FlexLayout-react ships LTR-only positioning and splitter drag math
@@ -220,9 +281,10 @@ export const Terminal = () => {
 		});
 	}, [paneDir]);
 
-	// Keep the static tab labels in sync with the active language. File-editor
-	// tabs are renamed elsewhere (their name is the on-disk filename and isn't
-	// localized), so we only touch the two anchor tabs here.
+	// Keep tab labels in sync with the active language. The Files tab plus every
+	// terminal tab are localized here ("Terminal 1", "Terminal 2", …) using each
+	// terminal's stored `n`. File-editor tabs are renamed elsewhere (their name
+	// is the on-disk filename and isn't localized).
 	useEffect(() => {
 		const rename = (id: string, name: string) => {
 			const node = model.getNodeById(id);
@@ -231,7 +293,15 @@ export const Terminal = () => {
 			}
 		};
 		rename("FILE_EXPLORER", t("tabs.files"));
-		rename("REPL", t("tabs.terminal"));
+		model.visitNodes((node) => {
+			if (
+				node instanceof FlexLayout.TabNode &&
+				node.getComponent() === "repl"
+			) {
+				const n = (node.getConfig() as { n?: number })?.n ?? 1;
+				rename(node.getId(), `${t("tabs.terminal")} ${n}`);
+			}
+		});
 	}, [model, t]);
 
 	// Track the most-recent file-editor tabset id so subsequent file opens
@@ -326,7 +396,7 @@ export const Terminal = () => {
 				model.doAction(
 					FlexLayout.Actions.addNode(
 						tabJson,
-						REPL_TABSET_ID,
+						findReplTabsetId(model),
 						FlexLayout.DockLocation.TOP,
 						-1,
 						true,
@@ -396,6 +466,118 @@ export const Terminal = () => {
 
 	const openHelp = useCallback(() => setHelpOpen(true), []);
 
+	// Display number for spawned tabs. The anchor is "Terminal 1"; spawned tabs
+	// continue "Terminal 2", "Terminal 3", … The number is stored in each tab's
+	// config so the rename effect can re-localize it on language change.
+	const replCounterRef = useRef(1);
+
+	// Add a new, independent terminal tab into the given tabset and focus it.
+	const addReplTab = useCallback(
+		(targetTabsetId: string) => {
+			replCounterRef.current += 1;
+			const n = replCounterRef.current;
+			model.doAction(
+				FlexLayout.Actions.addNode(
+					{
+						id: `REPL--${n}`,
+						type: "tab",
+						name: `${t("tabs.terminal")} ${n}`,
+						component: "repl",
+						enableClose: true,
+						enableDrag: true,
+						config: { n },
+					},
+					targetTabsetId,
+					FlexLayout.DockLocation.CENTER,
+					-1,
+					true, // select the freshly added tab
+				),
+			);
+		},
+		[model, t],
+	);
+
+	// Enforce "always at least one terminal": a terminal tab is closable only
+	// while more than one exists. When the count drops to one, that tab's close
+	// affordance disappears (mirrors the panel hiding its × on the last tab).
+	const enforceMinOneTerminal = useCallback((current: FlexLayout.Model) => {
+		const replTabs: FlexLayout.TabNode[] = [];
+		current.visitNodes((node) => {
+			if (
+				node instanceof FlexLayout.TabNode &&
+				node.getComponent() === "repl"
+			) {
+				replTabs.push(node);
+			}
+		});
+		const closable = replTabs.length > 1;
+		for (const tab of replTabs) {
+			if (tab.isEnableClose() !== closable) {
+				current.doAction(
+					FlexLayout.Actions.updateNodeAttributes(tab.getId(), {
+						enableClose: closable,
+					}),
+				);
+			}
+		}
+	}, []);
+
+	// Keep the file editor's "Run" target pointed at the terminal the user last
+	// focused. Only repl selections update it — focusing a file tab leaves the
+	// previously active terminal in place. Also re-checks the min-one rule.
+	const handleModelChange = useCallback(
+		(current: FlexLayout.Model) => {
+			const selected = current.getActiveTabset()?.getSelectedNode();
+			if (
+				selected instanceof FlexLayout.TabNode &&
+				selected.getComponent() === "repl"
+			) {
+				terminal.setActiveConsoleId(selected.getId());
+			}
+			enforceMinOneTerminal(current);
+		},
+		[terminal, enforceMinOneTerminal],
+	);
+
+	// No initial seed needed: while activeConsoleId is null, submitToConsole
+	// falls back to the first-registered (anchor) console — so "Run" works
+	// before the user has focused any terminal tab.
+
+	// Render a "+" on every tabset that holds terminal tabs so users can spawn
+	// more (and split them side-by-side via drag). Skipped entirely when the
+	// embedder opts into a single terminal.
+	const onRenderTabSet = useCallback(
+		(
+			tabSetNode: FlexLayout.TabSetNode | FlexLayout.BorderNode,
+			renderValues: { stickyButtons: React.ReactNode[] },
+		) => {
+			if (!allowMultipleTerminals) return;
+			if (!(tabSetNode instanceof FlexLayout.TabSetNode)) return;
+			const hasRepl = tabSetNode
+				.getChildren()
+				.some(
+					(child) =>
+						child instanceof FlexLayout.TabNode &&
+						child.getComponent() === "repl",
+				);
+			if (!hasRepl) return;
+			const tabsetId = tabSetNode.getId();
+			renderValues.stickyButtons.push(
+				<button
+					key="add-repl"
+					type="button"
+					title={t("tabs.newTerminal")}
+					aria-label={t("tabs.newTerminal")}
+					className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+					onClick={() => addReplTab(tabsetId)}
+				>
+					<Plus className="size-4" />
+				</button>,
+			);
+		},
+		[addReplTab, allowMultipleTerminals, t],
+	);
+
 	const factory = useCallback(
 		(node: FlexLayout.TabNode) => {
 			const component = node.getComponent();
@@ -409,30 +591,64 @@ export const Terminal = () => {
 				</div>
 			);
 			if (component === "file-explorer") {
+				// Follows the *live* active terminal: switching tabs re-points
+				// the explorer (and its uploads) at that tab's insight.
 				return wrap(
-					<FileExplorerPane
-						mode={terminal.fileMode}
-						onItemSelect={handleItemSelect}
-					/>,
+					<AdoptingInsight insightId={terminal.activeInsightId}>
+						<FileExplorerPane
+							mode={terminal.fileMode}
+							onItemSelect={handleItemSelect}
+						/>
+					</AdoptingInsight>,
 				);
 			}
 			if (component === "file-editor") {
+				// Bind to the insight the file was opened against (snapshotted
+				// into the tab's mode) so an open editor keeps reading/saving
+				// the right workspace even after the user switches terminals —
+				// the "scope changed" overlay in TerminalFile fences edits when
+				// that snapshot no longer matches the active tab. APP/USER/…
+				// files are insight-independent, so they fall back to the
+				// active insight.
+				const cfg = node.getConfig() as { mode?: FileMode } | undefined;
+				const snapshotInsightId =
+					cfg?.mode?.type === "INSIGHT"
+						? cfg.mode.insightId
+						: undefined;
 				return wrap(
-					<Suspense fallback={<PaneLoader />}>
-						<TerminalFile node={node} />
-					</Suspense>,
+					<AdoptingInsight
+						insightId={
+							snapshotInsightId ?? terminal.activeInsightId
+						}
+					>
+						<Suspense fallback={<PaneLoader />}>
+							<TerminalFile node={node} />
+						</Suspense>
+					</AdoptingInsight>,
 				);
 			}
 			if (component === "repl") {
+				// Each terminal tab gets its own insight so sessions are
+				// independent (separate R/Python/variable state). consoleId ties
+				// this console to its tab for the file editor's "Run" routing.
+				const id = node.getId();
 				return wrap(
 					<Suspense fallback={<PaneLoader />}>
-						<TerminalConsole />
+						<InsightProvider>
+							<TerminalConsole consoleId={id} />
+						</InsightProvider>
 					</Suspense>,
 				);
 			}
 			return null;
 		},
-		[handleItemSelect, openHelp, paneDir, terminal.fileMode],
+		[
+			handleItemSelect,
+			openHelp,
+			paneDir,
+			terminal.fileMode,
+			terminal.activeInsightId,
+		],
 	);
 
 	if (!terminal.open) return null;
@@ -505,6 +721,8 @@ export const Terminal = () => {
 					<FlexLayout.Layout
 						model={model}
 						factory={factory}
+						onModelChange={handleModelChange}
+						onRenderTabSet={onRenderTabSet}
 						onRenderTab={(node, renderValues) => {
 							const component = node.getComponent();
 							if (component === "file-editor") {

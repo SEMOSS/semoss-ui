@@ -18,7 +18,7 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
-import type { Engine } from "@/types";
+import type { Engine } from "../../types";
 import { EngineSubtypeIcon } from "../engine-subtype-icon";
 
 // ============================================================================
@@ -220,12 +220,12 @@ export const EngineSelect = ({
 			: undefined;
 
 	const showContextIndicator =
-		contextUsedPercent !== undefined && contextUsedPercent >= 12.5;
+		contextUsedPercent !== undefined && contextUsedPercent > 0;
 
 	// Calculate pie chart geometry
 	const roundedPercent =
-		contextUsedPercent !== undefined
-			? Math.round(contextUsedPercent / 12.5) * 12.5
+		contextUsedPercent !== undefined && contextUsedPercent > 0
+			? Math.max(12.5, Math.round(contextUsedPercent / 12.5) * 12.5)
 			: 0;
 	const radius = 8;
 	const cx = 9;
@@ -321,10 +321,13 @@ export const EngineSelect = ({
 									<PopoverContent
 										side="top"
 										align="start"
-										className="w-80 text-wrap text-sm"
+										className="w-[24rem] text-wrap text-sm"
 										onMouseEnter={openContext}
 										onMouseLeave={scheduleContextClose}
 										onClick={(e) => e.stopPropagation()}
+										onOpenAutoFocus={(e) =>
+											e.preventDefault()
+										}
 									>
 										{contextTooltipContent}
 									</PopoverContent>

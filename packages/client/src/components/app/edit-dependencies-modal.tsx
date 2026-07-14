@@ -1,24 +1,21 @@
-import { Check, X } from "lucide-react";
+import { Check, Copy, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Env, useDebouncedValue, usePixel } from "@semoss/sdk/react";
+import { useDebouncedValue, useIteratorPixel } from "@semoss/sdk/react";
+import { AppCatalogAvatar, EngineSubtypeIcon } from "@semoss/shared";
 import {
-	Badge,
 	Button,
-	Command,
-	CommandEmpty,
-	CommandGroup,
-	CommandInput,
-	CommandItem,
-	CommandList,
 	Dialog,
 	DialogContent,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
 	Spinner,
+	Tabs,
+	TabsList,
+	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
@@ -34,32 +31,67 @@ interface EditDependenciesModalProps {
 	currentDependencies: modelledDependency[];
 }
 
-interface MyEngineProjectEngine {
-	app_id: string;
-	app_name: string;
-	app_type: string;
+interface MyEngineRow {
+	engine_id: string;
+	engine_name: string;
+	engine_display_name?: string;
+	engine_type: string;
+	engine_subtype?: string;
 }
 
-interface MyEngineProjectProject {
+interface MyProjectRow {
 	project_id: string;
 	project_name: string;
+	project_display_name?: string;
 }
 
 interface Dependency {
 	id: string;
 	name: string;
 	type: string;
+	subtype?: string;
 }
 
+/** Which reactor populates the dropdown. */
+type DependencySource = "ENGINE" | "APP";
+
+/** Page size for the paginated reactors. */
+const PAGE_LIMIT = 25;
+
 /**
- * Capitalizes the first letter of each word in a string
+ * Renders a dependency's icon: the app's generated avatar for projects,
+ * otherwise the shared engine subtype icon (matches the app/engine catalogs
+ * and team selectors).
  */
-const capitalizeType = (type: string): string => {
-	return type
-		.toLowerCase()
-		.split("_")
-		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-		.join(" ");
+const DependencyIcon = ({
+	type,
+	subtype,
+	name,
+	sizeClass,
+	textClass,
+}: {
+	type: string;
+	subtype?: string;
+	name: string;
+	sizeClass: string;
+	textClass: string;
+}) => {
+	if (type === "PROJECT") {
+		return (
+			<AppCatalogAvatar
+				name={name}
+				className={`shrink-0 rounded ${sizeClass} ${textClass}`}
+			/>
+		);
+	}
+	return (
+		<EngineSubtypeIcon
+			engineType={type}
+			engineSubtype={subtype}
+			alt={name}
+			className={`shrink-0 object-contain ${sizeClass}`}
+		/>
+	);
 };
 
 /**
@@ -76,24 +108,88 @@ export const EditDependenciesModal = ({
 	/**
 	 * State
 	 */
-	const [allDeps, setAllDeps] = useState<Dependency[]>([]);
 	const [selectedDeps, setSelectedDeps] =
 		useState<Dependency[]>(currentDependencies);
 	const [search, setSearch] = useState<string>("");
-	const [open, setOpen] = useState(false);
+	const [source, setSource] = useState<DependencySource>("ENGINE");
+	const [copiedId, setCopiedId] = useState<string | null>(null);
+
+	const handleCopyId = (id: string) => {
+		navigator.clipboard.writeText(id).then(() => {
+			setCopiedId(id);
+			setTimeout(() => {
+				setCopiedId((current) => (current === id ? null : current));
+			}, 1500);
+		});
+	};
 
 	/**
 	 * Library Hooks
+	 *
+	 * Engines and projects are fetched from their own paginated reactors
+	 * (MyEngines / MyProjects), each with its own iterator so they paginate
+	 * independently and stably. Only the active source runs — the inactive one
+	 * is passed an empty pixel.
 	 */
 	const { configStore } = useRootStore();
-	const debouncedSearch = useDebouncedValue(search);
-	const getEngines = usePixel<
-		(MyEngineProjectEngine | MyEngineProjectProject)[]
-	>(
-		`MyEngineProject(filterWord=${JSON.stringify(debouncedSearch ?? "")});`,
-		undefined,
-		configStore.store.insightID,
+	// Coalesce to "" so the initial undefined -> "" debounce transition doesn't
+	// reset the iterator (which clears its data but can't refetch an unchanged
+	// query), which would blank the list until the source is toggled.
+	const debouncedSearch = useDebouncedValue(search) ?? "";
+	const filterClause = debouncedSearch
+		? `filterWord=${JSON.stringify(debouncedSearch)}, `
+		: "";
+
+	const getEngines = useIteratorPixel<MyEngineRow[], Dependency>(
+		(limit, offset) =>
+			source === "ENGINE"
+				? `MyEngines(${filterClause}limit=[${limit}], offset=[${offset}]);`
+				: "",
+		(response) => (response.length < PAGE_LIMIT ? -1 : Infinity),
+		(response) =>
+			response.map((eng) => ({
+				id: eng.engine_id,
+				name: eng.engine_display_name || eng.engine_name,
+				type: eng.engine_type,
+				subtype: eng.engine_subtype,
+			})),
+		{ limit: PAGE_LIMIT },
+		[debouncedSearch, source],
 	);
+
+	const getProjects = useIteratorPixel<MyProjectRow[], Dependency>(
+		(limit, offset) =>
+			source === "APP"
+				? `MyProjects(${filterClause}projectType=["CODE", "BLOCKS"], limit=[${limit}], offset=[${offset}]);`
+				: "",
+		(response) => (response.length < PAGE_LIMIT ? -1 : Infinity),
+		(response) =>
+			response.map((proj) => ({
+				id: proj.project_id,
+				name: proj.project_display_name || proj.project_name,
+				type: "PROJECT",
+			})),
+		{ limit: PAGE_LIMIT },
+		[debouncedSearch, source],
+	);
+
+	const activeSource = source === "ENGINE" ? getEngines : getProjects;
+	const options = activeSource.data;
+	const isLoading = activeSource.isLoading;
+
+	/**
+	 * Advance the active source when the list is scrolled near the bottom.
+	 * A native overflow container is used (instead of a Radix ScrollArea) so
+	 * mouse-wheel scrolling works reliably inside the popover.
+	 */
+	const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
+		const el = event.currentTarget;
+		const nearBottom =
+			el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+		if (nearBottom && !isLoading && activeSource.hasMore) {
+			activeSource.next();
+		}
+	};
 
 	/**
 	 * Functions
@@ -136,45 +232,50 @@ export const EditDependenciesModal = ({
 		setSelectedDeps((prev) => [...prev, dep]);
 	};
 
+	const renderOption = (option: Dependency) => {
+		const isSelected = selectedDeps.some(
+			(selected) => selected.id === option.id,
+		);
+		return (
+			<button
+				type="button"
+				key={option.id}
+				onClick={() => toggleDependency(option)}
+				className="flex w-full items-center justify-between gap-3 rounded-md p-2 text-left hover:bg-muted/50"
+			>
+				<div className="flex min-w-0 items-center gap-3">
+					<DependencyIcon
+						type={option.type}
+						subtype={option.subtype}
+						name={option.name}
+						sizeClass="size-8"
+						textClass="text-xs"
+					/>
+					<div className="flex min-w-0 flex-col">
+						<span className="truncate font-medium text-sm">
+							{option.name}
+						</span>
+						<span className="truncate text-muted-foreground text-xs">
+							ID: {option.id}
+						</span>
+					</div>
+				</div>
+				{isSelected && (
+					<Check className="size-4 shrink-0 text-primary" />
+				)}
+			</button>
+		);
+	};
+
 	/**
 	 * Effects
 	 */
-	useEffect(() => {
-		if (getEngines.status !== "SUCCESS") {
-			return;
-		}
-
-		setAllDeps(
-			getEngines.data
-				.map((engineProject) => {
-					const eng = engineProject as MyEngineProjectEngine;
-					const proj = engineProject as MyEngineProjectProject;
-					if (eng.app_id) {
-						return {
-							id: eng.app_id,
-							name: eng.app_name,
-							type: eng.app_type,
-						};
-					}
-					if (proj.project_id) {
-						return {
-							id: proj.project_id,
-							name: proj.project_name,
-							type: "PROJECT",
-						};
-					}
-					return null;
-				})
-				.filter(Boolean) as Dependency[],
-		);
-	}, [getEngines.status, getEngines.data]);
-
 	useEffect(() => {
 		// Reset state when modal opens
 		if (isOpen) {
 			setSelectedDeps(currentDependencies);
 			setSearch("");
-			setOpen(false);
+			setSource("ENGINE");
 		}
 	}, [isOpen, currentDependencies]);
 
@@ -195,82 +296,66 @@ export const EditDependenciesModal = ({
 				<div className="space-y-4">
 					<p className="font-medium text-sm">Linked Dependencies</p>
 
-					<Popover open={open} onOpenChange={setOpen}>
-						<PopoverTrigger asChild>
-							<Button
-								variant="outline"
-								role="combobox"
-								className="w-full justify-between"
-							>
-								{selectedDeps.length === 0
-									? "Search dependencies"
-									: selectedDeps.length === 1
-										? selectedDeps[0].name
-										: `${selectedDeps.length} dependencies selected`}
-							</Button>
-						</PopoverTrigger>
-						<PopoverContent className="w-[600px] p-0">
-							<Command shouldFilter={false}>
-								<CommandInput
-									placeholder="Search dependencies..."
-									value={search}
-									onValueChange={(value) => {
-										setSearch(value);
-									}}
-								/>
-								<CommandList>
-									{getEngines.status !== "SUCCESS" ? (
-										<div className="flex items-center justify-center p-4">
+					<div className="flex flex-col gap-2 rounded-md border p-2">
+						<Tabs
+							value={source}
+							onValueChange={(value) =>
+								setSource(value as DependencySource)
+							}
+						>
+							<TabsList className="w-full">
+								<TabsTrigger value="ENGINE" className="flex-1">
+									Engines
+								</TabsTrigger>
+								<TabsTrigger value="APP" className="flex-1">
+									Apps
+								</TabsTrigger>
+							</TabsList>
+						</Tabs>
+
+						<InputGroup>
+							<InputGroupAddon>
+								<Search className="size-4" />
+							</InputGroupAddon>
+							<InputGroupInput
+								placeholder={
+									source === "ENGINE"
+										? "Search engines..."
+										: "Search apps..."
+								}
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+							/>
+						</InputGroup>
+
+						<div
+							className="h-[300px] overflow-y-auto"
+							onScroll={handleScroll}
+						>
+							{isLoading && options.length === 0 ? (
+								<div className="flex h-[300px] items-center justify-center">
+									<Spinner />
+								</div>
+							) : options.length === 0 ? (
+								<div className="flex h-[300px] items-center justify-center">
+									<p className="text-muted-foreground text-sm">
+										{source === "ENGINE"
+											? "No engines found."
+											: "No apps found."}
+									</p>
+								</div>
+							) : (
+								<div className="flex flex-col gap-0.5">
+									{options.map(renderOption)}
+									{isLoading && (
+										<div className="flex items-center justify-center py-2">
 											<Spinner />
 										</div>
-									) : (
-										<>
-											<CommandEmpty>
-												No dependencies found.
-											</CommandEmpty>
-											<CommandGroup>
-												{allDeps.map((option) => {
-													const isSelected =
-														selectedDeps.some(
-															(selected) =>
-																selected.id ===
-																option.id,
-														);
-													return (
-														<CommandItem
-															key={option.id}
-															onSelect={() => {
-																toggleDependency(
-																	option,
-																);
-															}}
-															className="justify-between"
-														>
-															<div className="flex items-center gap-2">
-																<Badge variant="outline">
-																	{capitalizeType(
-																		option.type,
-																	)}
-																</Badge>
-																<span className="text-sm">
-																	{
-																		option.name
-																	}
-																</span>
-															</div>
-															{isSelected && (
-																<Check className="size-4 text-primary" />
-															)}
-														</CommandItem>
-													);
-												})}
-											</CommandGroup>
-										</>
 									)}
-								</CommandList>
-							</Command>
-						</PopoverContent>
-					</Popover>
+								</div>
+							)}
+						</div>
+					</div>
 
 					<div className="space-y-3">
 						{selectedDeps.map((dep, idx: number) => {
@@ -279,22 +364,38 @@ export const EditDependenciesModal = ({
 									key={`${dep.id}-${idx}`}
 									className="grid grid-cols-[auto_1fr_auto] items-center gap-4 rounded-lg border p-3"
 								>
-									<img
-										className="h-12 w-12 rounded-lg object-cover"
-										src={
-											dep.type === "PROJECT"
-												? `${Env.MODULE}/api/project-${dep.id}/projectImage/download`
-												: `${Env.MODULE}/api/e-${dep.id}/image/download`
-										}
-										alt={dep.name}
+									<DependencyIcon
+										type={dep.type}
+										subtype={dep.subtype}
+										name={dep.name}
+										sizeClass="size-12 rounded-lg"
+										textClass="text-sm"
 									/>
-									<div>
-										<p className="font-medium text-sm">
+									<div className="min-w-0">
+										<p className="truncate font-medium text-sm">
 											{dep.name}
 										</p>
-										<p className="text-muted-foreground text-xs">
-											{`${capitalizeType(dep.type)} | Engine ID: ${dep.id}`}
-										</p>
+										<div className="flex items-center gap-1">
+											<p className="truncate text-muted-foreground text-xs">
+												ID: {dep.id}
+											</p>
+											<Button
+												variant="ghost"
+												size="icon"
+												className="size-5 shrink-0"
+												onClick={() =>
+													handleCopyId(dep.id)
+												}
+												title="Copy ID"
+												aria-label="Copy ID"
+											>
+												{copiedId === dep.id ? (
+													<Check className="size-3 text-emerald-500" />
+												) : (
+													<Copy className="size-3" />
+												)}
+											</Button>
+										</div>
 									</div>
 									<Button
 										variant="ghost"

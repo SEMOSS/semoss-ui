@@ -7,7 +7,8 @@
 		"instructionsLabel": "指示",
 		"knowledgeLabel": "ナレッジ",
 		"toolboxLabel": "ツールボックス",
-		"promptsLabel": "プロンプトライブラリ"
+		"promptsLabel": "プロンプトライブラリ",
+		"skillsLabel": "スキル"
 	},
 	"actions": {
 		"create": "作成",
@@ -77,10 +78,7 @@
 		"pin": "お気に入りに追加",
 		"unpin": "お気に入りから削除",
 		"pinFailed": "お気に入りの登録に失敗しました",
-		"unpinFailed": "お気に入りの解除に失敗しました",
-		"dayToday": "今日",
-		"dayYesterday": "昨日",
-		"daysAgo": "{{count}}日前"
+		"unpinFailed": "お気に入りの解除に失敗しました"
 	},
 	"images": {
 		"agentIllustration": "エージェントのイラスト"
@@ -113,7 +111,8 @@
 			"knowledge": "ナレッジ",
 			"toolbox": "ツールボックス",
 			"prompts": "プロンプト",
-			"members": "メンバー"
+			"members": "メンバー",
+			"skills": "スキル"
 		},
 		"about": {
 			"title": "概要",
@@ -144,6 +143,8 @@
 		"title": "すべてのチャット",
 		"subtitle": "チャットの閲覧・検索・整理ができます。",
 		"selectAll": "すべて選択",
+		"deselectAll": "すべて選択解除",
+		"favorites": "お気に入り",
 		"selectChat": "チャット「{{name}}」を選択",
 		"selectedCount": "{{count}} 件選択",
 		"totalCount": "{{count}} 件のチャット",
@@ -159,6 +160,9 @@
 		"viewDescription": "このエージェントの動作を導くシステムプロンプト。",
 		"editTitle": "指示を編集",
 		"editDescription": "このエージェントの動作を導くシステムプロンプトを更新します。",
-		"charCount": "{{count}} 文字"
+		"charCount_other": "{{count, number}} 文字"
+	},
+	"skills": {
+		"noSkills": "スキルが追加されていません"
 	}
 }

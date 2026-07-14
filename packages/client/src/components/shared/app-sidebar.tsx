@@ -3,7 +3,7 @@ import {
 	Bolt,
 	Bot,
 	CircleUserRound,
-	Computer,
+	Cpu,
 	Database,
 	Home,
 	LayoutGrid,
@@ -45,32 +45,32 @@ const CATALOG_ROUTES = [
 	},
 	{
 		text: "Model",
-		icon: <Bot className="size-4" />,
-		route: "/engine/model",
+		icon: <Cpu className="size-4" />,
+		route: "/model",
 	},
 	{
 		text: "Database",
 		icon: <Database className="size-4" />,
-		route: "/engine/database",
+		route: "/database",
 	},
 	{
 		text: "Vector",
 		icon: <Bolt className="size-4" />,
-		route: "/engine/vector",
+		route: "/vector",
 	},
 	{
 		text: "Function",
 		icon: <Sigma className="size-4" />,
-		route: "/engine/function",
+		route: "/function",
 	},
 	{
 		text: "Storage",
 		icon: <Archive className="size-4" />,
-		route: "/engine/storage",
+		route: "/storage",
 	},
 	{
 		text: "Agents",
-		icon: <Computer className="size-4" />,
+		icon: <Bot className="size-4" />,
 		route: "/agent",
 	},
 	{
@@ -81,7 +81,7 @@ const CATALOG_ROUTES = [
 	{
 		text: "Guardrail",
 		icon: <ShieldCheck className="size-4" />,
-		route: "/engine/guardrail",
+		route: "/guardrail",
 	},
 ];
 

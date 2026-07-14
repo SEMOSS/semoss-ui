@@ -1,34 +1,35 @@
 import {
 	Archive,
 	Bolt,
-	Bot,
 	Briefcase,
 	ChartBar,
 	CircleUserRound,
+	Cpu,
 	Database,
 	DatabaseZap,
 	FileText,
+	Github,
 	KeyRound,
 	LayoutGrid,
 	Link2,
 	Palette,
-	Search,
+	SearchIcon,
 	Settings,
 	ShieldCheck,
 	ShieldUser,
 	Sigma,
 	Users2,
+	X,
 } from "lucide-react";
 import type { MouseEvent, ReactNode } from "react";
 import { useMemo, useState } from "react";
 import {
 	Card,
-	Input,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
+	CardContent,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupButton,
+	InputGroupInput,
 } from "@semoss/ui/next";
 import { useSettings } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
@@ -49,7 +50,7 @@ const CardMapper: Record<string, CardConfig> = {
 		color: "#00A593",
 	},
 	"Model Settings": {
-		icon: <Bot className={ICON_CLASS} />,
+		icon: <Cpu className={ICON_CLASS} />,
 		color: "#0471F0",
 	},
 	"Storage Settings": {
@@ -73,10 +74,6 @@ const CardMapper: Record<string, CardConfig> = {
 		icon: <ShieldCheck className={ICON_CLASS} />,
 		color: "#0471F0",
 	},
-	"Insight Settings": {
-		icon: <FileText className={ICON_CLASS} />,
-		color: "#0094FF",
-	},
 	"Member Settings": {
 		icon: <Users2 className={ICON_CLASS} />,
 		color: "#FFB400",
@@ -84,6 +81,10 @@ const CardMapper: Record<string, CardConfig> = {
 	Configuration: {
 		icon: <Settings className={ICON_CLASS} />,
 		color: "#ED2F77",
+	},
+	"GitHub App": {
+		icon: <Github className={ICON_CLASS} />,
+		color: "#111827",
 	},
 	"Admin Query": {
 		icon: <DatabaseZap className={ICON_CLASS} />,
@@ -188,35 +189,33 @@ export const SettingsIndexPage = () => {
 
 	return (
 		<div className="flex w-full flex-col gap-6">
-			<div className="flex w-full flex-col gap-3 sm:flex-row sm:items-end">
-				<div className="relative w-full flex-1">
-					<Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 size-4 text-muted-foreground" />
-					<Input
+			<div className="flex w-full min-w-0 flex-wrap items-end gap-2 md:flex-nowrap">
+				<InputGroup className="flex-1">
+					<InputGroupAddon>
+						<SearchIcon className="size-4 text-muted-foreground" />
+					</InputGroupAddon>
+					<InputGroupInput
+						placeholder={"Search"}
 						value={search}
-						onChange={(e) => {
-							setSearch(e.target.value);
-						}}
-						placeholder="Search"
+						onChange={(e) => setSearch(e.target.value)}
 						data-testid={"settingsIndexPage-searchBar"}
-						className="h-11 pl-9"
 					/>
-				</div>
-				<div className="w-full sm:w-[180px]">
-					<p className="mb-1 text-muted-foreground text-xs">Sort</p>
-					<Select value={"DEFAULT"} onValueChange={() => {}}>
-						<SelectTrigger
-							data-testid={"settingsIndexPage-sort-select"}
-						>
-							<SelectValue placeholder="Sort" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="DEFAULT">Default</SelectItem>
-						</SelectContent>
-					</Select>
-				</div>
+					{search && (
+						<InputGroupAddon align="inline-end">
+							<InputGroupButton
+								size="icon-xs"
+								variant="ghost"
+								onClick={() => setSearch("")}
+								aria-label="Clear search"
+							>
+								<X className="size-4" />
+							</InputGroupButton>
+						</InputGroupAddon>
+					)}
+				</InputGroup>
 			</div>
 
-			<div className="grid w-full grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+			<div className="grid w-full grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
 				{cards.map((c, i) => {
 					return (
 						<Card
@@ -229,30 +228,34 @@ export const SettingsIndexPage = () => {
 							data-testid={formatToDataTestId(
 								`settingsIndexPage-${c.title}-card`,
 							)}
-							className="w-full cursor-pointer rounded-xl border bg-card shadow-sm transition-shadow hover:shadow-md"
+							className="w-full cursor-pointer gap-4 py-4 hover:shadow-md"
 						>
-							<div className="flex flex-col gap-2 px-3.5">
-								<div className="flex items-center gap-2">
-									{CardMapper[c.title] ? (
-										<div
-											className="flex shrink-0 items-center justify-center rounded-md p-1.5 [&_svg]:size-4"
-											style={{
-												backgroundColor: `${CardMapper[c.title].color}1a`,
-												color: CardMapper[c.title]
-													.color,
-											}}
-										>
-											{CardMapper[c.title].icon}
-										</div>
-									) : null}
-									<span className="line-clamp-2 font-semibold text-sm leading-tight tracking-tight">
-										{CardMapper[c.title]?.label ?? c.title}
-									</span>
+							<CardContent>
+								<div className="flex flex-col items-start gap-3">
+									<div className="fle-row flex items-center gap-2">
+										{CardMapper[c.title] ? (
+											<div
+												className="flex size-8 shrink-0 items-center justify-center rounded-md p-1"
+												style={{
+													backgroundColor: `${CardMapper[c.title].color}1a`,
+													color: CardMapper[c.title]
+														.color,
+												}}
+											>
+												{CardMapper[c.title].icon}
+											</div>
+										) : null}
+										<span>
+											{CardMapper[c.title]?.label ??
+												c.title}
+										</span>
+									</div>
+
+									<p className="font-normal text-muted-foreground text-sm leading-5">
+										{c.description}
+									</p>
 								</div>
-								<p className="line-clamp-2 text-foreground text-xs leading-snug">
-									{c.description}
-								</p>
-							</div>
+							</CardContent>
 						</Card>
 					);
 				})}

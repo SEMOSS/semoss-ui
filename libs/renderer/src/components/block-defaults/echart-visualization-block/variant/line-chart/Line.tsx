@@ -19,7 +19,8 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 		mouseY: number;
 		value: unknown;
 	} | null>(null);
-	let resultData: unknown = {};
+	// biome-ignore lint/suspicious/noExplicitAny: echart option structure is dynamic
+	let resultData: Record<string, any> = {};
 	// get the frame
 	function _getVisualizationBlockSelector(id: string) {
 		if (id) {
@@ -118,7 +119,8 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 	//format the frame option data for echart
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dependency on frame.data.values only
 	const formatDataPoints = useCallback(
-		(resultData: unknown) => {
+		// biome-ignore lint/suspicious/noExplicitAny: echart option structure is dynamic
+		(resultData: Record<string, any>) => {
 			if (frame.data.values.length > 0) {
 				const valuesDataSet = JSON.parse(
 					JSON.stringify(frame.data.values),

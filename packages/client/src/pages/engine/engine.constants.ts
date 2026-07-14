@@ -1,7 +1,9 @@
 import { Boxes, Braces, Coins } from "lucide-react";
+import type { Engine } from "@semoss/shared";
 import { Database } from "@/assets/img/Database";
 import { ModelBrain } from "@/assets/img/ModelBrain";
-import type { ENGINE_TYPES, Role } from "@/types";
+import type { Role } from "@/types";
+import { EngineActivityPage } from "./engine-activity-page";
 import { EngineCommitsPage } from "./engine-commits-page";
 import { EngineFileManagerPage } from "./engine-file-manager-page";
 import { EngineFilePage } from "./engine-file-page";
@@ -10,7 +12,7 @@ import { EngineMetadataPage } from "./engine-metadata-page";
 import { EngineModelChatPage } from "./engine-model-chat-page";
 import { EngineOverviewPage } from "./engine-overview-page";
 import { EngineQAPage } from "./engine-qa-page";
-import { EngineSettingsPage } from "./engine-settingsPage";
+import { EngineSettingsPage } from "./engine-settings-page";
 import { EngineSmssPage } from "./engine-smss-page";
 import { EngineSparqlQueryPage } from "./engine-sparql-query-page";
 import { EngineSqlQueryPage } from "./engine-sql-query-page";
@@ -28,7 +30,7 @@ export const ENGINE_ROUTES: {
 	icon: React.FunctionComponent;
 
 	/** Type of the engine */
-	type: ENGINE_TYPES;
+	type: Engine["engine_type"];
 
 	/** Description of the engine*/
 	description: string;
@@ -72,6 +74,12 @@ export const ENGINE_ROUTES: {
 				name: "MCP Usage",
 				path: "mcp-usage",
 				component: EngineMcpUsagePage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "Activity Log",
+				path: "activity",
+				component: EngineActivityPage,
 				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
@@ -127,6 +135,12 @@ export const ENGINE_ROUTES: {
 				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
+				name: "Activity Log",
+				path: "activity",
+				component: EngineActivityPage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
 				name: "Chat",
 				path: "chat",
 				component: EngineModelChatPage,
@@ -176,6 +190,12 @@ export const ENGINE_ROUTES: {
 				name: "MCP Usage",
 				path: "mcp-usage",
 				component: EngineMcpUsagePage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "Activity Log",
+				path: "activity",
+				component: EngineActivityPage,
 				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
@@ -243,6 +263,12 @@ export const ENGINE_ROUTES: {
 				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
+				name: "Activity Log",
+				path: "activity",
+				component: EngineActivityPage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
 				name: "Documents",
 				path: "documents",
 				component: EngineFilePage,
@@ -301,6 +327,12 @@ export const ENGINE_ROUTES: {
 				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
+				name: "Activity Log",
+				path: "activity",
+				component: EngineActivityPage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
 				name: "Storage Viewer",
 				path: "storage-viewer",
 				component: EngineStorageViewerPage,
@@ -344,6 +376,12 @@ export const ENGINE_ROUTES: {
 				name: "Usage",
 				path: "usage",
 				component: EngineUsagePage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "Activity Log",
+				path: "activity",
+				component: EngineActivityPage,
 				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{

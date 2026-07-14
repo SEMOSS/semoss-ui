@@ -18,3 +18,4 @@ export * from "./members";
 export * from "./monaco";
 export * from "./paired-file-upload";
 export * from "./prompts";
+export * from "./skills";
