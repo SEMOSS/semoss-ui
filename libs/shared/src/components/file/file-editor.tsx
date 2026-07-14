@@ -73,6 +73,8 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 	const isNotRendered = NON_RENDERED_EXTENSIONS.has(ext);
 	const isMarkdown = ext === "md" || ext === "markdown";
 	const isNotebookJson = path.toLowerCase().endsWith(".notebook.json");
+	const isNotebookIpynb = path.toLowerCase().endsWith(".ipynb");
+	const isNotebook = isNotebookJson || isNotebookIpynb;
 
 	return (
 		<div className="relative flex h-full w-full flex-col overflow-hidden bg-background py-1">
@@ -94,7 +96,7 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 					onChange={onChange}
 				/>
 			)}
-			{isNotebookJson && (
+			{isNotebook && (
 				<FileNotebookEditor
 					key={path}
 					mode={mode}
@@ -109,7 +111,7 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 				!isPdf &&
 				!isNotRendered &&
 				!isMarkdown &&
-				!isNotebookJson && (
+				!isNotebook && (
 					<FileCodeEditor
 						key={path}
 						mode={mode}

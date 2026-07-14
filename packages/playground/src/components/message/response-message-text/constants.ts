@@ -193,143 +193,433 @@ export const createCodeFilePath = (lang: string): string => {
 };
 
 export const createNotebookFilePath = (): string => {
-	return `save-notebook-response-${Date.now()}.notebook.json`;
+	return `save-notebook-response-${Date.now()}.ipynb`;
 };
 
-const toNotebookCellType = (lang: string): string => {
-	const normalized = lang.toLowerCase();
-	if (normalized === "sql") return "sql";
-	if (normalized === "r") return "r";
-	return "py";
+const DEFAULT_NBFORMAT = 4;
+const DEFAULT_NBFORMAT_MINOR = 4;
+
+type NotebookCellOutput = {
+	output_type: "stream";
+	name: "stdout" | "stderr";
+	text: string[];
+};
+
+export type NotebookExecutionData = {
+	executionCount?: number | null;
+	outputs?: NotebookCellOutput[];
+};
+
+export type NotebookMetadataData = {
+	languageVersion?: string;
+};
+
+export type NotebookExecutionResultInput = {
+	output: string;
+	logs: string[];
+	isError: boolean;
+	pending: boolean;
+};
+
+type NotebookCellConfig = {
+	cellType: "code" | "markdown";
+	language: string;
+	kernelDisplayName: string;
+	kernelLanguage: string;
+	kernelName: string;
+	languageInfoName: string;
+	languageInfoMimetype: string;
+	languageInfoFileExtension: string;
+	languageInfoPygmentsLexer?: string;
+	languageInfoNbconvertExporter?: string;
+};
+
+const getNotebookCellConfig = (lang: string): NotebookCellConfig => {
+	const normalized = (lang || "").toLowerCase();
+
+	if (normalized === "md" || normalized === "markdown") {
+		return {
+			cellType: "markdown",
+			language: "markdown",
+			kernelDisplayName: "Python 3",
+			kernelLanguage: "python",
+			kernelName: "python3",
+			languageInfoName: "markdown",
+			languageInfoMimetype: "text/markdown",
+			languageInfoFileExtension: ".md",
+		};
+	}
+
+	if (normalized === "r") {
+		return {
+			cellType: "code",
+			language: "r",
+			kernelDisplayName: "R",
+			kernelLanguage: "R",
+			kernelName: "ir",
+			languageInfoName: "r",
+			languageInfoMimetype: "text/x-rsrc",
+			languageInfoFileExtension: ".r",
+			languageInfoPygmentsLexer: "r",
+			languageInfoNbconvertExporter: "script",
+		};
+	}
+
+	if (normalized === "sql") {
+		return {
+			cellType: "code",
+			language: "sql",
+			kernelDisplayName: "Python 3",
+			kernelLanguage: "python",
+			kernelName: "python3",
+			languageInfoName: "sql",
+			languageInfoMimetype: "text/x-sql",
+			languageInfoFileExtension: ".sql",
+			languageInfoPygmentsLexer: "sql",
+			languageInfoNbconvertExporter: "script",
+		};
+	}
+
+	return {
+		cellType: "code",
+		language: "python",
+		kernelDisplayName: "Python 3",
+		kernelLanguage: "python",
+		kernelName: "python3",
+		languageInfoName: "python",
+		languageInfoMimetype: "text/x-python",
+		languageInfoFileExtension: ".py",
+		languageInfoPygmentsLexer: "ipython3",
+		languageInfoNbconvertExporter: "python",
+	};
+};
+
+const createNotebookCell = (
+	code: string,
+	lang: string,
+	options?: NotebookExecutionData,
+) => {
+	const config = getNotebookCellConfig(lang);
+
+	if (config.cellType === "markdown") {
+		return {
+			cell_type: "markdown",
+			metadata: {
+				language: config.language,
+			},
+			source: normalizeSourceToArray(code),
+		};
+	}
+
+	return {
+		cell_type: "code",
+		execution_count: options?.executionCount ?? null,
+		metadata: {
+			language: config.language,
+		},
+		outputs: options?.outputs ?? [],
+		source: normalizeSourceToArray(code),
+	};
+};
+
+const getNextExecutionCount = (ipynb: {
+	cells?: Array<{ [key: string]: unknown }>;
+}): number => {
+	if (!Array.isArray(ipynb.cells)) return 1;
+
+	let maxCount = 0;
+	for (const cell of ipynb.cells) {
+		if (!cell || typeof cell !== "object") continue;
+		if (cell.cell_type !== "code") continue;
+		const value = cell.execution_count;
+		if (typeof value === "number" && Number.isFinite(value)) {
+			maxCount = Math.max(maxCount, value);
+		}
+	}
+
+	return maxCount + 1;
+};
+
+const ensureNotebookVersion = (ipynb: { [key: string]: unknown }) => {
+	if (typeof ipynb.nbformat !== "number") {
+		ipynb.nbformat = DEFAULT_NBFORMAT;
+	}
+	if (typeof ipynb.nbformat_minor !== "number") {
+		ipynb.nbformat_minor = DEFAULT_NBFORMAT_MINOR;
+	}
+};
+
+const applyNotebookLanguageMetadata = (
+	ipynb: { [key: string]: unknown },
+	lang: string,
+	preserveExisting: boolean,
+	metadataData?: NotebookMetadataData,
+) => {
+	const config = getNotebookCellConfig(lang);
+	const existingMetadata =
+		typeof ipynb.metadata === "object" && ipynb.metadata !== null
+			? (ipynb.metadata as { [key: string]: unknown })
+			: {};
+	const existingKernelSpec =
+		typeof existingMetadata.kernelspec === "object" &&
+		existingMetadata.kernelspec !== null
+			? (existingMetadata.kernelspec as { [key: string]: unknown })
+			: {};
+	const existingLanguageInfo =
+		typeof existingMetadata.language_info === "object" &&
+		existingMetadata.language_info !== null
+			? (existingMetadata.language_info as { [key: string]: unknown })
+			: {};
+
+	const kernelspec = preserveExisting
+		? {
+				display_name:
+					typeof existingKernelSpec.display_name === "string"
+						? existingKernelSpec.display_name
+						: config.kernelDisplayName,
+				language:
+					typeof existingKernelSpec.language === "string"
+						? existingKernelSpec.language
+						: config.kernelLanguage,
+				name:
+					typeof existingKernelSpec.name === "string"
+						? existingKernelSpec.name
+						: config.kernelName,
+			}
+		: {
+				display_name: config.kernelDisplayName,
+				language: config.kernelLanguage,
+				name: config.kernelName,
+			};
+
+	const languageInfo = preserveExisting
+		? {
+				name:
+					typeof existingLanguageInfo.name === "string"
+						? existingLanguageInfo.name
+						: config.languageInfoName,
+				mimetype:
+					typeof existingLanguageInfo.mimetype === "string"
+						? existingLanguageInfo.mimetype
+						: config.languageInfoMimetype,
+				file_extension:
+					typeof existingLanguageInfo.file_extension === "string"
+						? existingLanguageInfo.file_extension
+						: config.languageInfoFileExtension,
+				...(metadataData?.languageVersion
+					? { version: metadataData.languageVersion }
+					: typeof existingLanguageInfo.version === "string"
+						? { version: existingLanguageInfo.version }
+						: {}),
+				...(typeof existingLanguageInfo.pygments_lexer === "string"
+					? { pygments_lexer: existingLanguageInfo.pygments_lexer }
+					: config.languageInfoPygmentsLexer
+						? { pygments_lexer: config.languageInfoPygmentsLexer }
+						: {}),
+				...(typeof existingLanguageInfo.nbconvert_exporter === "string"
+					? {
+							nbconvert_exporter:
+								existingLanguageInfo.nbconvert_exporter,
+						}
+					: config.languageInfoNbconvertExporter
+						? {
+								nbconvert_exporter:
+									config.languageInfoNbconvertExporter,
+							}
+						: {}),
+			}
+		: {
+				name: config.languageInfoName,
+				mimetype: config.languageInfoMimetype,
+				file_extension: config.languageInfoFileExtension,
+				...(metadataData?.languageVersion
+					? { version: metadataData.languageVersion }
+					: {}),
+				...(config.languageInfoPygmentsLexer
+					? { pygments_lexer: config.languageInfoPygmentsLexer }
+					: {}),
+				...(config.languageInfoNbconvertExporter
+					? {
+							nbconvert_exporter:
+								config.languageInfoNbconvertExporter,
+						}
+					: {}),
+			};
+
+	ipynb.metadata = {
+		...existingMetadata,
+		kernelspec,
+		language_info: languageInfo,
+	};
+};
+
+export const toNotebookExecutionData = (
+	result: NotebookExecutionResultInput | null,
+): NotebookExecutionData | undefined => {
+	if (!result || result.pending) return undefined;
+
+	const outputs: NotebookCellOutput[] = [];
+
+	if (result.logs.length > 0) {
+		outputs.push({
+			output_type: "stream",
+			name: "stdout",
+			text: normalizeSourceToArray(result.logs.join("\n")),
+		});
+	}
+
+	const trimmed = result.output.trim();
+	if (trimmed && trimmed !== "Success (no output)") {
+		outputs.push({
+			output_type: "stream",
+			name: result.isError ? "stderr" : "stdout",
+			text: normalizeSourceToArray(result.output),
+		});
+	}
+
+	return {
+		outputs,
+	};
+};
+
+// Normalize source to Jupyter array format
+const normalizeSourceToArray = (source: string): string[] => {
+	if (!source) return [];
+	const lines = source.split("\n");
+	return lines.map((line, idx) => {
+		return idx === lines.length - 1 ? line : `${line}\n`;
+	});
 };
 
 export const createNotebookFileContent = (
 	code: string,
 	lang: string,
+	executionData?: NotebookExecutionData,
+	metadataData?: NotebookMetadataData,
 ): string => {
-	const notebookId = "notebook 1";
-	const content = {
-		version: "1",
-		queries: {
-			[notebookId]: {
-				id: notebookId,
-				cells: [
-					{
-						id: "1",
-						widget: "code",
-						parameters: {
-							code,
-							type: toNotebookCellType(lang),
-						},
-					},
-				],
-			},
-		},
-		blocks: {},
-		variables: {},
-		executionOrder: [],
+	const content: { [key: string]: unknown } = {
+		nbformat: DEFAULT_NBFORMAT,
+		nbformat_minor: DEFAULT_NBFORMAT_MINOR,
+		cells: [
+			createNotebookCell(code, lang, {
+				executionCount:
+					typeof executionData?.executionCount === "number" ||
+					executionData?.executionCount === null
+						? executionData.executionCount
+						: executionData
+							? 1
+							: null,
+				outputs: executionData?.outputs,
+			}),
+		],
 	};
+
+	applyNotebookLanguageMetadata(content, lang, false, metadataData);
 
 	return JSON.stringify(content, null, 2);
 };
 
 /**
- * Append a new code cell to an existing notebook JSON string.
+ * Append a new code cell to an existing .ipynb notebook JSON string.
  * Returns the updated JSON string, or null if the existing content
  * cannot be parsed as a valid notebook.
  */
 export const appendCellToNotebook = (
-	existingJson: string,
+	existingIpynbJson: string,
 	code: string,
 	lang: string,
+	executionData?: NotebookExecutionData,
+	metadataData?: NotebookMetadataData,
 ): string | null => {
 	try {
-		const notebook = JSON.parse(existingJson) as {
-			queries: Record<
-				string,
-				{
-					id: string;
-					cells: Array<{ id: string; [key: string]: unknown }>;
-				}
-			>;
+		const ipynb = JSON.parse(existingIpynbJson) as {
+			cells?: Array<{ [key: string]: unknown }>;
+			[key: string]: unknown;
 		};
-		const queryIds = Object.keys(notebook.queries);
-		if (queryIds.length === 0) return null;
-		const query = notebook.queries[queryIds[0]];
-		const maxId = query.cells.reduce((max, cell) => {
-			const numericId = Number(cell.id);
-			return Number.isFinite(numericId) && numericId > max
-				? numericId
-				: max;
-		}, 0);
-		query.cells.push({
-			id: String(maxId + 1),
-			widget: "code",
-			parameters: {
-				code,
-				type: toNotebookCellType(lang),
-			},
+
+		ensureNotebookVersion(ipynb);
+		applyNotebookLanguageMetadata(ipynb, lang, true, metadataData);
+		if (!Array.isArray(ipynb.cells)) {
+			ipynb.cells = [];
+		}
+
+		const resolvedExecutionCount =
+			typeof executionData?.executionCount === "number" ||
+			executionData?.executionCount === null
+				? executionData.executionCount
+				: executionData
+					? getNextExecutionCount(ipynb)
+					: null;
+
+		const newCell = createNotebookCell(code, lang, {
+			executionCount: resolvedExecutionCount,
+			outputs: executionData?.outputs,
 		});
-		return JSON.stringify(notebook, null, 2);
+
+		ipynb.cells.push(newCell);
+		return JSON.stringify(ipynb, null, 2);
 	} catch {
 		return null;
 	}
 };
 
 /**
- * Replace a specific notebook cell's code by query/cell id.
+ * Replace a specific cell in .ipynb format by row number.
+ * The rowNumber maps directly to the cell index (1-based row → 0-based array index).
  * Returns updated JSON, or null when the target cell is not found.
  */
 export const replaceNotebookCell = (
-	existingJson: string,
-	queryId: string,
-	cellId: string,
+	existingIpynbJson: string,
+	rowNumber: number,
 	code: string,
 	lang: string,
+	executionData?: NotebookExecutionData,
+	metadataData?: NotebookMetadataData,
 ): string | null => {
 	try {
-		const notebook = JSON.parse(existingJson) as {
-			queries: Record<
-				string,
-				{
-					id: string;
-					cells: Array<Record<string, unknown>>;
-				}
-			>;
+		const ipynb = JSON.parse(existingIpynbJson) as {
+			cells?: Array<{ [key: string]: unknown }>;
+			[key: string]: unknown;
 		};
 
-		const query = notebook.queries?.[queryId];
-		if (!query || !Array.isArray(query.cells)) {
+		ensureNotebookVersion(ipynb);
+		applyNotebookLanguageMetadata(ipynb, lang, true, metadataData);
+
+		if (!Array.isArray(ipynb.cells)) {
 			return null;
 		}
 
-		const targetIndex = query.cells.findIndex(
-			(cell) => String(cell.id ?? "") === cellId,
-		);
-		if (targetIndex === -1) {
+		// rowNumber is 1-based, convert to 0-based array index
+		const cellIndex = rowNumber - 1;
+
+		if (cellIndex < 0 || cellIndex >= ipynb.cells.length) {
 			return null;
 		}
 
-		const existingCell = query.cells[targetIndex] ?? {};
-		const existingParams =
-			existingCell.parameters &&
-			typeof existingCell.parameters === "object" &&
-			!Array.isArray(existingCell.parameters)
-				? (existingCell.parameters as Record<string, unknown>)
-				: {};
+		const existingCell = ipynb.cells[cellIndex];
+		if (!existingCell || typeof existingCell !== "object") {
+			return null;
+		}
 
-		query.cells[targetIndex] = {
-			...existingCell,
-			id: cellId,
-			widget: "code",
-			parameters: {
-				...existingParams,
-				code,
-				type: toNotebookCellType(lang),
-			},
-		};
+		const existingExecutionCount =
+			"execution_count" in existingCell
+				? (existingCell.execution_count as number | null)
+				: null;
 
-		return JSON.stringify(notebook, null, 2);
+		const resolvedExecutionCount =
+			typeof executionData?.executionCount === "number" ||
+			executionData?.executionCount === null
+				? executionData.executionCount
+				: executionData
+					? getNextExecutionCount(ipynb)
+					: existingExecutionCount;
+
+		ipynb.cells[cellIndex] = createNotebookCell(code, lang, {
+			executionCount: resolvedExecutionCount,
+			outputs: executionData?.outputs,
+		});
+
+		return JSON.stringify(ipynb, null, 2);
 	} catch {
 		return null;
 	}

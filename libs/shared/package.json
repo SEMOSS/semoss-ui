@@ -7,6 +7,7 @@
     "./flexlayout.css": "./src/components/flex-layout/flexlayout.css",
     ".": "./src/index.ts",
     "./api": "./src/api/index.ts",
+    "./notebook": "./src/notebook/index.ts",
     "./assets/img/*": "./src/assets/img/*"
   },
   "license": "MIT",

@@ -1,5 +1,5 @@
 import { CopyIcon, PlayIcon } from "lucide-react";
-import { type ComponentProps, useState } from "react";
+import { type ComponentProps, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { CellOutputBlock, notifyFileEditorRefresh } from "@semoss/shared";
 import {
@@ -26,7 +26,9 @@ import {
 	createNotebookFilePath,
 	formatExecuteOutput,
 	MAX_EXECUTE_LOG_CHARS,
+	type NotebookMetadataData,
 	replaceNotebookCell,
+	toNotebookExecutionData,
 	unwrapPixelOutput,
 } from "./constants";
 
@@ -61,6 +63,7 @@ export const CodePreviewBlock = ({
 	const [executeResult, setExecuteResult] = useState<ExecuteResult | null>(
 		null,
 	);
+	const runtimeVersionCacheRef = useRef<Record<string, string>>({});
 
 	// Prefer rawLanguage for display/filename so custom tokens like "pixel"
 	// show their proper label even though Shiki falls back to "txt" for rendering.
@@ -149,8 +152,62 @@ export const CodePreviewBlock = ({
 
 	const saveAsNotebook = async () => {
 		if (!room || !code) return;
+		const notebookExecutionData = toNotebookExecutionData(executeResult);
 
-		// Check if a save-notebook-response-*.notebook.json is already open in
+		const resolveRuntimeLanguageMetadata = async (): Promise<
+			NotebookMetadataData | undefined
+		> => {
+			const normalized = (langStr ?? "").toLowerCase();
+			if (
+				normalized !== "py" &&
+				normalized !== "python" &&
+				normalized !== "r"
+			) {
+				return undefined;
+			}
+
+			const languageKey = normalized === "r" ? "r" : "python";
+			const cachedVersion = runtimeVersionCacheRef.current[languageKey];
+			if (cachedVersion) {
+				return { languageVersion: cachedVersion };
+			}
+
+			try {
+				const versionPixel =
+					normalized === "r"
+						? 'R("<encode>as.character(getRversion())</encode>");'
+						: 'Py("<encode>import platform\\nplatform.python_version()</encode>");';
+
+				const versionResponse = await room.runRoomPixel<unknown[]>(
+					versionPixel,
+					false,
+					false,
+				);
+				const last = versionResponse.pixelReturn.at(-1);
+				const opType = last?.operationType?.[0] ?? "";
+				const rawValue = unwrapPixelOutput(last ?? {});
+				const formatted = formatExecuteOutput(rawValue, opType).trim();
+				const normalizedVersion = formatted.replace(/^['"]|['"]$/g, "");
+
+				if (
+					/^\d+\.\d+(\.\d+)?([A-Za-z0-9.+-]+)?$/.test(
+						normalizedVersion,
+					)
+				) {
+					runtimeVersionCacheRef.current[languageKey] =
+						normalizedVersion;
+					return { languageVersion: normalizedVersion };
+				}
+			} catch {
+				// best-effort only; fall back to metadata without runtime version
+			}
+
+			return undefined;
+		};
+
+		const notebookMetadataData = await resolveRuntimeLanguageMetadata();
+
+		// Check if a save-notebook-response-*.ipynb is already open in
 		// the sidebar. If so, append a new cell to it instead of creating a
 		// brand-new file each time ("rough sheet" behaviour).
 		let existingFilePath: string | null = null;
@@ -163,7 +220,7 @@ export const CodePreviewBlock = ({
 				node.isVisible();
 			if (
 				id.startsWith("FILE--save-notebook-response-") &&
-				id.endsWith(".notebook.json") &&
+				id.endsWith(".ipynb") &&
 				isVisible // only count visible (open) nodes
 			) {
 				existingFilePath = id.slice("FILE--".length);
@@ -185,10 +242,11 @@ export const CodePreviewBlock = ({
 					loadResponse.pixelReturn[0]?.output ?? "";
 				const replacedContent = replaceNotebookCell(
 					existingContent,
-					selectedNotebookRow.queryId,
-					selectedNotebookRow.cellId,
+					selectedNotebookRow.rowNumber,
 					code,
 					langStr,
+					notebookExecutionData,
+					notebookMetadataData,
 				);
 
 				if (replacedContent) {
@@ -248,8 +306,19 @@ export const CodePreviewBlock = ({
 				const existingContent =
 					loadResponse.pixelReturn[0]?.output ?? "";
 				const updatedContent =
-					appendCellToNotebook(existingContent, code, langStr) ??
-					createNotebookFileContent(code, langStr);
+					appendCellToNotebook(
+						existingContent,
+						code,
+						langStr,
+						notebookExecutionData,
+						notebookMetadataData,
+					) ??
+					createNotebookFileContent(
+						code,
+						langStr,
+						notebookExecutionData,
+						notebookMetadataData,
+					);
 				await room.runRoomPixel(
 					`SaveInsightAssets(filePath=[${JSON.stringify(notebookPath)}], content=["<encode>${updatedContent}</encode>"]);`,
 					false,
@@ -280,6 +349,8 @@ export const CodePreviewBlock = ({
 				const notebookContent = createNotebookFileContent(
 					code,
 					langStr,
+					notebookExecutionData,
+					notebookMetadataData,
 				);
 				await room.runRoomPixel(
 					`SaveInsightAssets(filePath=[${JSON.stringify(filePath)}], content=["<encode>${notebookContent}</encode>"]);`,
