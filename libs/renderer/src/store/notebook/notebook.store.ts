@@ -2,6 +2,8 @@ import { makeAutoObservable } from "mobx";
 import type { StateStore } from "../state";
 
 const NOTEBOOK_ROW_SELECTED_EVENT = "SEMOSS_NOTEBOOK_ROW_SELECTED";
+const NOTEBOOK_ROW_CLEAR_SELECTION_EVENT =
+	"SEMOSS_NOTEBOOK_ROW_CLEAR_SELECTION";
 
 export interface NotebookStoreInterface {
 	/** Current selected query */
@@ -138,6 +140,32 @@ export class NotebookStore {
 								? parameters.code
 								: undefined,
 					},
+				},
+				"*",
+			);
+		}
+	}
+
+	/**
+	 * Clear the selected cell in a query.
+	 */
+	clearSelectedCell(queryId: string) {
+		if (this._store.selectedCells[queryId]) {
+			delete this._store.selectedCells[queryId];
+		}
+
+		if (this._store.selectedQueryId === queryId) {
+			this._store.selectedQueryId = "";
+		}
+
+		if (
+			typeof window !== "undefined" &&
+			window.parent &&
+			window.parent !== window
+		) {
+			window.parent.postMessage(
+				{
+					type: NOTEBOOK_ROW_CLEAR_SELECTION_EVENT,
 				},
 				"*",
 			);

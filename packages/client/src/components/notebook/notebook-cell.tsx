@@ -785,9 +785,14 @@ export const NotebookCell = observer(
 						{/* Checkbox — click to select/deselect this row for Add-to-Notebook */}
 						<Checkbox
 							checked={isCellSelected}
-							onCheckedChange={() =>
-								notebook.selectCell(cell.query.id, cell.id)
-							}
+							onCheckedChange={(checked) => {
+								if (checked) {
+									notebook.selectCell(cell.query.id, cell.id);
+									return;
+								}
+
+								notebook.clearSelectedCell(cell.query.id);
+							}}
 							title="Select row for Add-to-Notebook"
 							className="size-3.5"
 						/>

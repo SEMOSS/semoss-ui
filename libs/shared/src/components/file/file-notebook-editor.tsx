@@ -112,7 +112,6 @@ export const FileNotebookEditor: React.FC<FileNotebookEditorProps> = ({
 	});
 
 	useEffect(() => {
-		setSelectedRowNumber(null);
 		onNotebookRowSelectionChange?.(null);
 	}, [path, onNotebookRowSelectionChange]);
 
@@ -131,7 +130,16 @@ export const FileNotebookEditor: React.FC<FileNotebookEditorProps> = ({
 			}
 
 			const data = event.data as NotebookRowSelectedMessage;
-			if (!data || data.type !== NOTEBOOK_ROW_SELECTED_EVENT) {
+			if (!data) {
+				return;
+			}
+
+			if (data.type === NOTEBOOK_ROW_CLEAR_SELECTION_EVENT) {
+				onNotebookRowSelectionChange?.(null);
+				return;
+			}
+
+			if (data.type !== NOTEBOOK_ROW_SELECTED_EVENT) {
 				return;
 			}
 
@@ -181,7 +189,7 @@ export const FileNotebookEditor: React.FC<FileNotebookEditorProps> = ({
 				return;
 			}
 
-			clearSelection();
+			onNotebookRowSelectionChange?.(null);
 		};
 
 		window.addEventListener(
@@ -195,11 +203,7 @@ export const FileNotebookEditor: React.FC<FileNotebookEditorProps> = ({
 				handleClearSelection,
 			);
 		};
-	}, [path]);
-
-	const clearSelection = () => {
-		onNotebookRowSelectionChange?.(null);
-	};
+	}, [path, onNotebookRowSelectionChange]);
 
 	return (
 		<div className="relative flex h-full w-full flex-col overflow-hidden bg-background">
