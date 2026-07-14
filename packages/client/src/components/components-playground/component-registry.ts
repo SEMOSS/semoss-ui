@@ -7,7 +7,6 @@ import { McpOverlayDoc } from "./docs/mcp-overlay-doc";
 import { MessageBubbleDoc } from "./docs/message-bubble-doc";
 import { MessageFeedbackToolbarDoc } from "./docs/message-feedback-toolbar-doc";
 import { MessageListDoc } from "./docs/message-list-doc";
-import { PromptLibraryDialogDoc } from "./docs/prompt-library-dialog-doc";
 import { PromptOptimizerDoc } from "./docs/prompt-optimizer-doc";
 import { RoomSidebarDoc } from "./docs/room-sidebar-doc";
 import { ToolCallViewDoc } from "./docs/tool-call-view-doc";
@@ -108,11 +107,5 @@ export const COMPONENT_REGISTRY: ComponentDocEntry[] = [
 		title: "RoomSidebar",
 		group: "Rooms",
 		Doc: RoomSidebarDoc,
-	},
-	{
-		slug: "prompt-library-dialog",
-		title: "PromptLibraryDialog",
-		group: "Dialogs",
-		Doc: PromptLibraryDialogDoc,
 	},
 ];
