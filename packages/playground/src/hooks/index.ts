@@ -1,3 +1,4 @@
+export * from "./use-active-index";
 export * from "./use-chat";
 export * from "./use-global-breadcrumbs";
 export * from "./use-graceful-errors";
