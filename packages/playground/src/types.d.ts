@@ -2,7 +2,13 @@ export interface Engine {
 	engine_id: string;
 	engine_name: string;
 	engine_display_name?: string;
-	engine_type: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
+	engine_type:
+		| "MODEL"
+		| "STORAGE"
+		| "DATABASE"
+		| "FUNCTION"
+		| "VECTOR"
+		| "GUARDRAIL";
 	engine_subtype?: string;
 	engine_favorite?: number;
 	engine_global?: boolean;
@@ -19,7 +25,13 @@ export interface Engine {
 	/** @deprecated legacy keys from MyEngines */
 	app_name?: string;
 	/** @deprecated legacy keys from MyEngines */
-	app_type?: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
+	app_type?:
+		| "MODEL"
+		| "STORAGE"
+		| "DATABASE"
+		| "FUNCTION"
+		| "VECTOR"
+		| "GUARDRAIL";
 }
 
 export interface App {

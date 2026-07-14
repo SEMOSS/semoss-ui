@@ -5,7 +5,9 @@ import {
 	editProjectUserPermissions,
 	getProjectUsers,
 	getUserProjectPermission,
+	type Role,
 	removeProjectUserPermissions,
+	type User,
 } from "@semoss/shared";
 import {
 	Button,
@@ -20,7 +22,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useChat } from "@/hooks";
-import type { User } from "@/types";
+import type { PermissionChange } from "./permission-dropdown";
 import { WorkspaceMemberRow } from "./workspace-member-row";
 import { WorkspaceSharingModal } from "./workspace-sharing-modal";
 
@@ -94,8 +96,8 @@ export const WorkspaceMembersList = ({
 			| {
 					type: "permission";
 					userId: string;
-					newPermission: string;
-					oldPermission: string;
+					newPermission: Role;
+					oldPermission: Role;
 			  }
 			| null;
 	}>({
@@ -121,7 +123,7 @@ export const WorkspaceMembersList = ({
 						: ""),
 			);
 		}
-	}, [workspaceId]);
+	}, [workspaceId, t]);
 
 	/**
 	 * Fetches the list of workspace members with pagination.
@@ -183,7 +185,7 @@ export const WorkspaceMembersList = ({
 	 */
 	const handlePermissionChange = async (
 		userId: string,
-		newPermission: string,
+		newPermission: PermissionChange,
 	) => {
 		// Handle delete action separately (routed through the dropdown)
 		if (newPermission === "delete") {

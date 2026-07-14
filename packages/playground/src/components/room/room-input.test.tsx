@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
 import { beforeEach, expect, test, vi } from "vitest";
 import { toast } from "@semoss/ui/next";
+import type { RoomStore } from "@/stores";
 import { RoomInput } from "./room-input";
 
 // ---------------------------------------------------------------------------
@@ -15,7 +16,7 @@ let triggerOnChange: (() => void) | null = null;
 // ---------------------------------------------------------------------------
 
 vi.mock("@semoss/i18n", async (importOriginal) => {
-	const actual = await importOriginal();
+	const actual = await importOriginal<typeof import("@semoss/i18n")>();
 	return {
 		...actual,
 		useTranslation: () => ({
@@ -34,7 +35,7 @@ vi.mock("@semoss/i18n", async (importOriginal) => {
 });
 
 vi.mock("@/contexts", async (importOriginal) => {
-	const actual = await importOriginal();
+	const actual = await importOriginal<typeof import("@/contexts")>();
 	return {
 		...actual,
 		useFileDrag: () => ({
@@ -53,7 +54,7 @@ vi.mock("@/contexts", async (importOriginal) => {
 });
 
 vi.mock("@/hooks", async (importOriginal) => {
-	const actual = await importOriginal();
+	const actual = await importOriginal<typeof import("@/hooks")>();
 	return {
 		...actual,
 		useRoot: () => ({ root: { theme: { featureFlags: {} } } }),
@@ -65,7 +66,7 @@ vi.mock("@/hooks", async (importOriginal) => {
 
 // Mock $getRoot so promptModel can read fakeEditorText
 vi.mock("lexical", async (importOriginal) => {
-	const actual = await importOriginal();
+	const actual = await importOriginal<typeof import("lexical")>();
 	return {
 		...actual,
 		$getRoot: vi.fn(() => ({
@@ -159,7 +160,10 @@ const defaultProps = {
 		tokenLength: 4096,
 		temperature: 0.5,
 		workspace: null,
+		predefinedPrompts: [],
 	},
+	// RoomInput only forwards `room` to a child; a minimal stub satisfies the type.
+	room: {} as unknown as RoomStore,
 };
 
 /** Set fake editor text and trigger the OnChangePlugin callback to update isEmpty */
