@@ -23,6 +23,7 @@ import { useTranslation } from "@semoss/i18n";
 import { runPixel, useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
+	cn,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
@@ -246,6 +247,20 @@ export const GlobalNav = observer(() => {
 	}, [getRooms.reset, getPinnedRooms.reset, chat.keys.roomCounter]);
 
 	/**
+	 * Once the refetch returns a room we were showing optimistically, drop the
+	 * optimistic entry so the store's map doesn't grow unbounded across a
+	 * session. The render-time filter already hides it, so this is housekeeping.
+	 */
+	useEffect(() => {
+		const fetchedIds = new Set(getRooms.data.map((r) => r.ROOM_ID));
+		Object.keys(chat.optimisticRooms).forEach((roomId) => {
+			if (fetchedIds.has(roomId)) {
+				chat.removeOptimisticRoom(roomId);
+			}
+		});
+	}, [getRooms.data, chat]);
+
+	/**
 	 * Save and restore scroll position when sidebar opens/closes
 	 */
 	useEffect(() => {
@@ -281,7 +296,20 @@ export const GlobalNav = observer(() => {
 	 */
 	const pinnedRoomIds = new Set(getPinnedRooms.data.map((r) => r.ROOM_ID));
 
-	const bucketedRooms = getRooms.data.reduce(
+	// Rooms optimistically shown before their first message has persisted.
+	// Drop any that the server has since returned (real data wins), and skip
+	// them entirely while searching so they don't pollute filtered results.
+	const fetchedRoomIds = new Set([
+		...getRooms.data.map((r) => r.ROOM_ID),
+		...pinnedRoomIds,
+	]);
+	const optimisticRooms = debouncedSearch
+		? []
+		: Object.values(chat.optimisticRooms).filter(
+				(r) => !fetchedRoomIds.has(r.ROOM_ID),
+			);
+
+	const bucketedRooms = [...optimisticRooms, ...getRooms.data].reduce(
 		(acc, val) => {
 			// Skip rooms handled by the dedicated pinned query
 			if (val.PINNED || pinnedRoomIds.has(val.ROOM_ID)) return acc;
@@ -508,7 +536,8 @@ export const GlobalNav = observer(() => {
 						)}
 					{isVisible &&
 						!getRooms.isLoading &&
-						getRooms.data.length === 0 && (
+						getRooms.data.length === 0 &&
+						optimisticRooms.length === 0 && (
 							<div className="px-2 py-4 text-center">
 								<Muted>{t("messages.noRoomsFound")}</Muted>
 							</div>
@@ -609,7 +638,11 @@ export const GlobalNav = observer(() => {
 																}
 															>
 																<Link
-																	className={`flex h-auto flex-col items-start p-2 ${date ? "gap-1" : ""}`}
+																	className={cn(
+																		"flex h-auto flex-col items-start p-2",
+																		date &&
+																			"gap-1",
+																	)}
 																	to={`/room/${roomId}`}
 																	aria-label={
 																		"Select room"
@@ -669,11 +702,11 @@ export const GlobalNav = observer(() => {
 																		}}
 																	>
 																		<StarIcon
-																			className={`me-2 size-4 ${
-																				isFavorite
-																					? "fill-yellow-500 text-yellow-500"
-																					: ""
-																			}`}
+																			className={cn(
+																				"me-2 size-4",
+																				isFavorite &&
+																					"fill-yellow-500 text-yellow-500",
+																			)}
 																		/>
 																		{isFavorite
 																			? t(

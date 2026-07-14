@@ -321,10 +321,13 @@ export const EngineSelect = ({
 									<PopoverContent
 										side="top"
 										align="start"
-										className="w-80 text-wrap text-sm"
+										className="w-[24rem] text-wrap text-sm"
 										onMouseEnter={openContext}
 										onMouseLeave={scheduleContextClose}
 										onClick={(e) => e.stopPropagation()}
+										onOpenAutoFocus={(e) =>
+											e.preventDefault()
+										}
 									>
 										{contextTooltipContent}
 									</PopoverContent>

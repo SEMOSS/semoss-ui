@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { Muted } from "@semoss/ui/next";
 import ErrorSvg from "@/assets/img/Error.svg";
 import { useNavigate } from "@/hooks/useNavigate";
 
@@ -36,15 +37,15 @@ export const ErrorPage = () => {
 		<div className="flex h-screen w-screen flex-col items-center justify-center gap-2">
 			<img src={ErrorSvg} className="h-[25%] max-h-[200px]" alt="Error" />
 			<h2 className="font-semibold text-xl">Something went wrong!</h2>
-			<p className="text-muted-foreground text-sm">
+			<Muted>
 				We&apos;re working hard to fix it. If the issue persists, please
 				reach out and let us know.
-			</p>
+			</Muted>
 			{!isOnHomepage && (
-				<p className="text-muted-foreground text-sm">
+				<Muted>
 					Taking you back to the home page in {countdown} second
 					{countdown === 1 ? "" : "s"}...
-				</p>
+				</Muted>
 			)}
 		</div>
 	);
