@@ -45,6 +45,5 @@
 			"resources": ["main-bridge.js", "src/portals/index.html"],
 			"matches": ["<all_urls>"]
 		}
-	],
-	"devtools_page": "src/devtools/index.html"
+	]
 }

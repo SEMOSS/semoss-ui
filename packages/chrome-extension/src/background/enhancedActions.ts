@@ -2,8 +2,6 @@
  * Enhanced DOM actions using Chrome Debugger API
  */
 
-import { callRPC } from "../content/rpc";
-
 // Delay constants
 const DELAY_BETWEEN_CLICKS = 500; // ms
 const DELAY_BETWEEN_KEYSTROKES = 50; // ms
@@ -153,13 +151,6 @@ async function clickAtPosition(
 	y: number,
 	clickCount = 1,
 ): Promise<void> {
-	// Show ripple effect for visual feedback
-	try {
-		await callRPC("ripple", [x, y], 1);
-	} catch (err) {
-		console.warn("Could not show ripple effect:", err);
-	}
-
 	// Mouse down
 	await sendCommand(tabId, "Input.dispatchMouseEvent", {
 		type: "mousePressed",

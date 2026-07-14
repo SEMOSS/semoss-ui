@@ -3,11 +3,7 @@ import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import type { EventRecorder } from "../recorder/EventRecorder";
 import { createEventRecorder } from "../recorder/EventRecorder";
-import { initializeRPC } from "./rpc";
-import { getDOMStats, getSimplifiedDOM } from "./simplifyDOM";
 
-// Initialize RPC system for communication
-initializeRPC();
 let annotatedElements: HTMLElement[] = [];
 const elementIdToUniqueId: Map<number, string> = new Map();
 
@@ -302,28 +298,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 	}
 
 	switch (message.type) {
-		case "GET_ANNOTATED_DOM":
-			try {
-				const result = getSimplifiedDOMFromPage();
-				// Also send the element ID mapping
-				const mapping: Record<string, string> = {};
-				elementIdToUniqueId.forEach((uniqueId, elementId) => {
-					mapping[elementId.toString()] = uniqueId;
-				});
-				sendResponse({
-					success: true,
-					...result,
-					elementMapping: mapping,
-				});
-			} catch (error) {
-				sendResponse({
-					success: false,
-					error:
-						error instanceof Error ? error.message : String(error),
-				});
-			}
-			break;
-
 		case "GET_ELEMENT_BY_UNIQUE_ID":
 			try {
 				const element = document.querySelector(
@@ -716,37 +690,6 @@ function stopFieldMonitoring() {
 	}
 	monitoredField = null;
 	fieldMonitoringListeners = null;
-}
-
-/**
- * Get simplified DOM optimized for LLM consumption
- */
-function getSimplifiedDOMFromPage() {
-	const _startTime = performance.now();
-
-	// First, get annotated DOM with visibility and interactivity info
-	// This populates annotatedElements array with ALL original page elements
-	annotatedElements = [];
-	const annotatedHTML = getAnnotatedDOM();
-
-	// IMPORTANT: Save reference to ALL elements (don't overwrite!)
-	const allPageElements = annotatedElements;
-
-	// Then use filtering approach to get simplified HTML
-	const result = getSimplifiedDOM(annotatedHTML);
-
-	// Keep the FULL annotatedElements array (not the filtered one)
-	// This ensures elementId references work correctly
-	annotatedElements = allPageElements;
-
-	// Get full stats from the HTML
-	const stats = getDOMStats(result.html);
-
-	return {
-		html: result.html,
-		stats,
-		elementCount: allPageElements.length, // Total elements, not just interactive
-	};
 }
 
 /**
