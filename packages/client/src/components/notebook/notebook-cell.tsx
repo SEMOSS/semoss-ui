@@ -29,6 +29,7 @@ import { runPixel } from "@semoss/sdk";
 import {
 	Button,
 	ButtonGroup,
+	Checkbox,
 	Dialog,
 	DialogClose,
 	DialogContent,
@@ -781,7 +782,15 @@ export const NotebookCell = observer(
 				<div className="flex w-full flex-row items-start gap-1">
 					{/* Left rail: drag handle, play, [n] */}
 					<div className="flex w-10 shrink-0 flex-col items-center gap-2 pt-2">
-						{/* biome-ignore lint/a11y/noStaticElementInteractions: drag handle, drag attrs come from dnd-kit */}
+						{/* Checkbox — click to select/deselect this row for Add-to-Notebook */}
+						<Checkbox
+							checked={isCellSelected}
+							onCheckedChange={() =>
+								notebook.selectCell(cell.query.id, cell.id)
+							}
+							title="Select row for Add-to-Notebook"
+							className="size-3.5"
+						/>
 						<div
 							{...dragHandleProps}
 							title="Drag to reorder"
@@ -795,7 +804,6 @@ export const NotebookCell = observer(
 							disabled={cell.isLoading}
 							className="group/run flex flex-col items-center gap-1 disabled:opacity-70"
 							onMouseDown={() => {
-								notebook.selectCell(cell.query.id, cell.id);
 								state.dispatch({
 									message: ActionMessages.RUN_CELL,
 									payload: {
@@ -833,17 +841,12 @@ export const NotebookCell = observer(
 					</div>
 
 					{/* Card */}
-					{/* biome-ignore lint/a11y/noStaticElementInteractions: card container, selecting cell on click */}
-					{/* biome-ignore lint/a11y/useKeyWithClickEvents: card container, keyboard nav handled by inner buttons */}
 					<div
-						className={`@container min-w-0 flex-grow cursor-pointer overflow-visible rounded-sm border-l-[3px] transition-colors ${
+						className={`@container min-w-0 flex-grow overflow-visible rounded-sm border-l-[3px] transition-colors ${
 							isCellSelected
 								? "border border-primary border-l-primary bg-background ring-1 ring-primary/30"
 								: "border border-border/40 border-l-transparent bg-background hover:bg-muted/30"
 						}`}
-						onClick={() =>
-							notebook.selectCell(cell.query.id, cell.id)
-						}
 					>
 						{/* Header row */}
 						<div className="flex items-center justify-between gap-2 border-border/40 border-b px-3 py-1.5">

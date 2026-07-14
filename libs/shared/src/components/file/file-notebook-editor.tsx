@@ -1,4 +1,4 @@
-﻿import { DownloadIcon, RefreshCwIcon, SaveIcon, XIcon } from "lucide-react";
+﻿import { DownloadIcon, RefreshCwIcon, SaveIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Env } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
@@ -82,9 +82,6 @@ export const FileNotebookEditor: React.FC<FileNotebookEditorProps> = ({
 	const insight = useInsight();
 	const [tab, setTab] = useState<"edit" | "preview">(initialTab);
 	const [previewRefreshKey, setPreviewRefreshKey] = useState(0);
-	const [selectedRowNumber, setSelectedRowNumber] = useState<number | null>(
-		null,
-	);
 	const editorActionsRef = useRef<FileCodeEditorActions | null>(null);
 	const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
@@ -161,7 +158,6 @@ export const FileNotebookEditor: React.FC<FileNotebookEditorProps> = ({
 				code: data.payload?.code,
 			};
 
-			setSelectedRowNumber(rowSelection.rowNumber);
 			onNotebookRowSelectionChange?.(rowSelection);
 		};
 
@@ -201,10 +197,7 @@ export const FileNotebookEditor: React.FC<FileNotebookEditorProps> = ({
 		};
 	}, [path]);
 
-	const notebookName = path.split("/").pop() ?? path;
-
 	const clearSelection = () => {
-		setSelectedRowNumber(null);
 		onNotebookRowSelectionChange?.(null);
 	};
 
@@ -250,26 +243,8 @@ export const FileNotebookEditor: React.FC<FileNotebookEditorProps> = ({
 				)}
 			</div>
 
-			{selectedRowNumber !== null && (
-				<div className="flex w-full items-center justify-between gap-2 border-border border-b bg-primary/5 px-3 py-2 text-primary text-xs">
-					<span className="font-medium">
-						Row {selectedRowNumber} selected in notebook{" "}
-						{notebookName}
-					</span>
-					<Button
-						variant="ghost"
-						size="sm"
-						className="h-6 gap-1 px-2 text-primary text-xs hover:text-primary"
-						onClick={clearSelection}
-					>
-						<XIcon className="size-3.5" />
-						Unselect
-					</Button>
-				</div>
-			)}
-
 			<div
-				style={{ top: selectedRowNumber !== null ? 82 : 48 }}
+				style={{ top: 48 }}
 				className={
 					tab === "edit"
 						? "absolute inset-x-0 bottom-0"
