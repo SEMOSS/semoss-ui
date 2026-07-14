@@ -1,6 +1,9 @@
+import { Download } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
+	Button,
 	type Code,
 	H1,
 	H2,
@@ -9,9 +12,12 @@ import {
 	type Markdown,
 	P,
 	ScrollArea,
-	Table,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
+import { BlockHeader } from "./block-header";
 import { CodePreviewBlock } from "./code-preview-block";
 import { KNOWN_SHIKI_LANGS } from "./constants";
 import { HtmlPreviewBlock } from "./html-preview-block";
@@ -258,18 +264,80 @@ export const createMarkdownComponents = (
 			/>
 		);
 	},
-	table: ({ className, ...props }) => (
-		<ScrollArea className="w-full" scrollOrientation="horizontal">
-			{/* <table
-				data-slot="table"
-				className={`min-w-full caption-bottom text-sm${className ? ` ${className}` : ""}`}
-				{...props}
-			/> */}
-			<Table
-				className={`min-w-full caption-bottom text-sm${className ? ` ${className}` : ""}`}
-				{...props}
-				showExportButton={enableTableExport}
-			></Table>
-		</ScrollArea>
-	),
+	table: ({ className, ...props }) => {
+		const tableRef = useRef<HTMLTableElement>(null);
+		const [isCollapsed, setIsCollapsed] = useState(false);
+
+		const exportCsv = () => {
+			const table = tableRef.current;
+			if (!table) return;
+
+			const rows = Array.from(table.querySelectorAll("tr"));
+			const csv = rows
+				.map((row) =>
+					Array.from(row.querySelectorAll("th, td"))
+						.map((cell) => {
+							const text = (cell.textContent ?? "").replace(
+								/"/g,
+								'""',
+							);
+							return `"${text}"`;
+						})
+						.join(","),
+				)
+				.join("\n");
+
+			const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+			const url = URL.createObjectURL(blob);
+			const date = new Date().toISOString().slice(0, 10);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = `table_response_${date}.csv`;
+			a.click();
+			URL.revokeObjectURL(url);
+		};
+
+		return (
+			<div className="overflow-hidden rounded-md border border-border bg-background">
+				<BlockHeader
+					label="Table"
+					isCollapsed={isCollapsed}
+					onToggleCollapse={() => setIsCollapsed((v) => !v)}
+				>
+					{enableTableExport && (
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
+									variant="ghost"
+									size="sm"
+									aria-label="Export to CSV"
+									onClick={exportCsv}
+								>
+									<Download className="size-3.5" />
+									Export CSV
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent side="left">
+								Download as CSV
+							</TooltipContent>
+						</Tooltip>
+					)}
+				</BlockHeader>
+				{!isCollapsed && (
+					<ScrollArea
+						className="w-full"
+						scrollOrientation="horizontal"
+					>
+						<table
+							ref={tableRef}
+							data-slot="table"
+							className={`min-w-full caption-bottom text-sm${className ? ` ${className}` : ""}`}
+							{...props}
+						/>
+					</ScrollArea>
+				)}
+			</div>
+		);
+	},
 });

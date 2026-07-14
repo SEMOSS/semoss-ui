@@ -992,7 +992,10 @@ export class RoomStore {
 			pruneToolsAbove: false,
 		});
 
-		const parentMessage = this.tail;
+		// Anchor to the latest REAL response. this.tail can be an un-synced
+		// STREAMING_PLACEHOLDER_ID node left behind by a turn that errored mid-stream;
+		// latestResponseMessage skips those (and INPUT_TOOL_EXEC nodes).
+		const parentMessage = this.latestResponseMessage ?? this.tail;
 		if (parentMessage instanceof InputMessageStore) {
 			throw new Error("Cannot respond to input messages");
 		}
