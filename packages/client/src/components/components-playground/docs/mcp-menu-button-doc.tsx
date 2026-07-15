@@ -34,8 +34,10 @@ export const McpMenuButtonDoc = () => {
 			<DemoSection
 				preview={<McpMenuButton mcp={mcp} onChange={setMcp} />}
 				code={`import { McpMenuButton } from "@semoss/chat/components";
+import { useChatContext } from "@semoss/chat";
 
-const { mcp, setMcp } = useChat({ engineId, roomId });
+// Inside a <ChatProvider options={{ engineId, roomId }}>
+const { mcp, setMcp } = useChatContext();
 
 <McpMenuButton mcp={mcp} onChange={setMcp} />`}
 			/>

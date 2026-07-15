@@ -79,7 +79,7 @@ export const RoomSidebarDoc = () => {
 	return (
 		<DocPage
 			title="RoomSidebar"
-			description="A date-bucketed room list with rename/pin/delete and infinite scroll — pure props, pairs with useChatRooms()."
+			description="A date-bucketed room list with rename/pin/delete and infinite scroll — pure props, pairs with useChatRoomsContext()."
 		>
 			<DemoSection
 				preview={
@@ -120,9 +120,15 @@ export const RoomSidebarDoc = () => {
 					</div>
 				}
 				code={`import { RoomSidebar } from "@semoss/chat/components";
-import { useChatRooms } from "@semoss/chat";
+import { ChatRoomsProvider, useChatRoomsContext } from "@semoss/chat";
 
-const roomsList = useChatRooms();
+// Wrap your app (or sidebar subtree) in ChatRoomsProvider:
+<ChatRoomsProvider>
+  <MyRoomSidebar />
+</ChatRoomsProvider>
+
+// Inside MyRoomSidebar:
+const roomsList = useChatRoomsContext();
 
 <RoomSidebar
   pinnedRooms={roomsList.pinnedRooms}

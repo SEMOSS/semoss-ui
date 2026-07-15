@@ -11,7 +11,7 @@ const PROPS: PropDoc[] = [
 		type: "ChatOptions",
 		required: true,
 		description:
-			"Passed straight through to useChat() — { engineId, roomId?, defaultRoomSettings?, toolAutoExecutionLimit?, gracefulErrors? }.",
+			"Passed straight through to ChatProvider — { engineId, roomId?, defaultRoomSettings?, toolAutoExecutionLimit?, gracefulErrors? }.",
 	},
 	{ name: "className", type: "string", description: "" },
 	{ name: "placeholder", type: "string", description: "" },
@@ -37,7 +37,7 @@ export const ChatPanelDoc = () => {
 	return (
 		<DocPage
 			title="ChatPanel"
-			description="The batteries-included drop-in: calls useChat() itself and wires the result straight into MessageList + ChatInput. Deliberately single-mode — always calls useChat() itself, no controlled variant. Anyone needing engine/MCP composition already has the escape hatch of composing MessageList/ChatInput directly with their own useChat() call, same as chat-playground does."
+			description="The batteries-included drop-in: wraps a ChatProvider and wires useChatContext() straight into MessageList + ChatInput. Deliberately single-mode — always owns its own ChatProvider, no controlled variant. Anyone needing engine/MCP composition already has the escape hatch of composing MessageList/ChatInput directly inside their own ChatProvider, same as chat-playground does."
 		>
 			<DemoSection
 				description="A real, live conversation against your connected engine — this is a genuinely working chat, not a mock."

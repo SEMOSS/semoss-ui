@@ -173,7 +173,7 @@ export function App() {
 					<li>
 						<strong>5. Headless escape hatch</strong> —{" "}
 						<code className="rounded bg-muted px-1 py-0.5">
-							useChat()
+							useChatContext()
 						</code>{" "}
 						is exported completely independent of any UI. A host
 						wanting a genuinely different look throws away every

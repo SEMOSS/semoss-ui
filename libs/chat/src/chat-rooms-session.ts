@@ -1,4 +1,4 @@
-import { makeAutoObservable, runInAction } from "mobx";
+import { createStore, type StoreApi } from "zustand/vanilla";
 import type { InsightActions } from "./transport/pixel-calls";
 import {
 	deletePlaygroundRoom,
@@ -12,11 +12,28 @@ import type { RoomSummary } from "./types";
 const DEFAULT_PAGE_SIZE = 25;
 
 /**
- * Headless engine behind useChatRooms() — a separate concern from
+ * Observable state held in the Zustand store — the public shape
+ * consumers read via `store.getState()` or `useStore()`.
+ */
+export interface ChatRoomsSessionState {
+	pinnedRooms: RoomSummary[];
+	rooms: RoomSummary[];
+	search: string;
+	isLoading: boolean;
+	isLoadingMore: boolean;
+	hasMore: boolean;
+	error: string | null;
+}
+
+/**
+ * Headless engine behind the room-list store — a separate concern from
  * ChatSession (one room's messages), matching playground's own ChatStore
  * (room list) vs RoomStore (one room) split. Owns listing/searching
  * (paged + a separate always-visible favorites list, matching real
  * playground's GlobalNav) and renaming/pinning/deleting rooms.
+ *
+ * All reactive state lives in a vanilla Zustand store (`this.store`).
+ * No MobX.
  *
  * Deliberately no createRoom(): "New Chat" stays pure client-side
  * navigation with zero pixel calls until the first real message, exactly
@@ -24,15 +41,7 @@ const DEFAULT_PAGE_SIZE = 25;
  * playground's /new route — see docs/chat-components/PLAN.md.
  */
 export class ChatRoomsSession {
-	pinnedRooms: RoomSummary[] = [];
-	rooms: RoomSummary[] = [];
-	search = "";
-	isLoading = false;
-	isLoadingMore = false;
-	hasMore = true;
-	error: string | null = null;
-	/** Bumped on any in-place patch (rename) that doesn't change list length, so useChatRooms()'s autorun bridge re-renders for it. */
-	revision = 0;
+	readonly store: StoreApi<ChatRoomsSessionState>;
 
 	private offset = 0;
 	/**
@@ -47,16 +56,60 @@ export class ChatRoomsSession {
 		private readonly actions: InsightActions,
 		private readonly pageSize: number = DEFAULT_PAGE_SIZE,
 	) {
-		makeAutoObservable(this, {}, { autoBind: true });
+		this.store = createStore<ChatRoomsSessionState>(() => ({
+			pinnedRooms: [],
+			rooms: [],
+			search: "",
+			isLoading: false,
+			isLoadingMore: false,
+			hasMore: true,
+			error: null,
+		}));
+
+		// Bind public methods so they work when destructured.
+		this.setSearch = this.setSearch.bind(this);
+		this.loadMore = this.loadMore.bind(this);
+		this.renameRoom = this.renameRoom.bind(this);
+		this.pinRoom = this.pinRoom.bind(this);
+		this.deleteRoom = this.deleteRoom.bind(this);
+
 		void this.loadPinned();
 		void this.loadPage(true);
+	}
+
+	// -- Convenience getters so tests can read `session.rooms` etc. --
+
+	get pinnedRooms(): RoomSummary[] {
+		return this.store.getState().pinnedRooms;
+	}
+	get rooms(): RoomSummary[] {
+		return this.store.getState().rooms;
+	}
+	get search(): string {
+		return this.store.getState().search;
+	}
+	get isLoading(): boolean {
+		return this.store.getState().isLoading;
+	}
+	get isLoadingMore(): boolean {
+		return this.store.getState().isLoadingMore;
+	}
+	get hasMore(): boolean {
+		return this.store.getState().hasMore;
+	}
+	get error(): string | null {
+		return this.store.getState().error;
+	}
+
+	private setState(partial: Partial<ChatRoomsSessionState>): void {
+		this.store.setState(partial);
 	}
 
 	setSearch(value: string): void {
 		if (value === this.search) {
 			return;
 		}
-		this.search = value;
+		this.setState({ search: value });
 		this.searchGeneration += 1;
 		void this.loadPage(true);
 	}
@@ -70,16 +123,15 @@ export class ChatRoomsSession {
 
 	async renameRoom(roomId: string, name: string): Promise<void> {
 		await renamePlaygroundRoom(this.actions, { roomId, name });
-		runInAction(() => {
-			for (const list of [this.pinnedRooms, this.rooms]) {
-				const room = list.find(
-					(candidate) => candidate.roomId === roomId,
-				);
-				if (room) {
-					room.name = name;
-				}
+		for (const list of [this.pinnedRooms, this.rooms]) {
+			const room = list.find((candidate) => candidate.roomId === roomId);
+			if (room) {
+				room.name = name;
 			}
-			this.revision += 1;
+		}
+		this.setState({
+			pinnedRooms: [...this.pinnedRooms],
+			rooms: [...this.rooms],
 		});
 	}
 
@@ -92,24 +144,21 @@ export class ChatRoomsSession {
 
 	async deleteRoom(roomId: string): Promise<void> {
 		await deletePlaygroundRoom(this.actions, roomId);
-		runInAction(() => {
-			this.pinnedRooms = this.pinnedRooms.filter(
+		this.setState({
+			pinnedRooms: this.pinnedRooms.filter(
 				(room) => room.roomId !== roomId,
-			);
-			this.rooms = this.rooms.filter((room) => room.roomId !== roomId);
-			this.revision += 1;
+			),
+			rooms: this.rooms.filter((room) => room.roomId !== roomId),
 		});
 	}
 
 	private async loadPinned(): Promise<void> {
 		try {
 			const rooms = await listPinnedPlaygroundRooms(this.actions);
-			runInAction(() => {
-				this.pinnedRooms = rooms;
-			});
+			this.setState({ pinnedRooms: rooms });
 		} catch (err) {
-			runInAction(() => {
-				this.error = err instanceof Error ? err.message : String(err);
+			this.setState({
+				error: err instanceof Error ? err.message : String(err),
 			});
 		}
 	}
@@ -118,14 +167,11 @@ export class ChatRoomsSession {
 		const generation = this.searchGeneration;
 		const offset = reset ? 0 : this.offset;
 
-		runInAction(() => {
-			if (reset) {
-				this.isLoading = true;
-			} else {
-				this.isLoadingMore = true;
-			}
-			this.error = null;
-		});
+		if (reset) {
+			this.setState({ isLoading: true, error: null });
+		} else {
+			this.setState({ isLoadingMore: true, error: null });
+		}
 
 		try {
 			const page = await listPlaygroundRooms(this.actions, {
@@ -138,23 +184,25 @@ export class ChatRoomsSession {
 				// flight — drop the stale result rather than show it.
 				return;
 			}
-			runInAction(() => {
-				this.rooms = reset ? page : [...this.rooms, ...page];
-				this.offset = offset + page.length;
-				this.hasMore = page.length === this.pageSize;
+			this.setState({
+				rooms: reset ? page : [...this.rooms, ...page],
+			});
+			this.offset = offset + page.length;
+			this.setState({
+				hasMore: page.length === this.pageSize,
 			});
 		} catch (err) {
 			if (generation !== this.searchGeneration) {
 				return;
 			}
-			runInAction(() => {
-				this.error = err instanceof Error ? err.message : String(err);
+			this.setState({
+				error: err instanceof Error ? err.message : String(err),
 			});
 		} finally {
 			if (generation === this.searchGeneration) {
-				runInAction(() => {
-					this.isLoading = false;
-					this.isLoadingMore = false;
+				this.setState({
+					isLoading: false,
+					isLoadingMore: false,
 				});
 			}
 		}

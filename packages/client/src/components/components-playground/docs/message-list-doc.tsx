@@ -82,8 +82,10 @@ export const MessageListDoc = () => {
 					</div>
 				}
 				code={`import { MessageList } from "@semoss/chat/components";
+import { useChatContext } from "@semoss/chat";
 
-const { messages, isTyping } = useChat({ engineId, roomId });
+// Inside a <ChatProvider options={{ engineId, roomId }}>
+const { messages, isTyping } = useChatContext();
 
 <MessageList messages={messages} isTyping={isTyping} className="h-full" />`}
 			/>

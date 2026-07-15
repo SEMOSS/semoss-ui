@@ -82,8 +82,10 @@ export const ChatInputDoc = () => {
 					</div>
 				}
 				code={`import { ChatInput } from "@semoss/chat/components";
+import { useChatContext } from "@semoss/chat";
 
-const { isTyping, sendMessage } = useChat({ engineId, roomId });
+// Inside a <ChatProvider options={{ engineId, roomId }}>
+const { isTyping, sendMessage } = useChatContext();
 
 <ChatInput
   onSend={sendMessage}

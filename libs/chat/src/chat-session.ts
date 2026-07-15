@@ -1,4 +1,4 @@
-import { makeAutoObservable, runInAction } from "mobx";
+import { createStore, type StoreApi } from "zustand/vanilla";
 import type { ChatOptions } from "./chat-options";
 import { DEFAULT_TOOL_AUTO_EXECUTION_LIMIT } from "./chat-options";
 import { normalizeRoomHistory } from "./history";
@@ -66,8 +66,7 @@ function resolveResponseText(response: ResponseMessage): string | undefined {
  * append onto a trailing part of the same type, else push a new one. Tool
  * chunks are live-display only here — the id/name/arguments actually used
  * to run a tool always come from the final structured result
- * (reconcileToolCall), never reconstructed from these deltas. Must be
- * called inside a MobX runInAction.
+ * (reconcileToolCall), never reconstructed from these deltas.
  */
 function applyStreamChunk(
 	message: ChatMessage,
@@ -141,7 +140,7 @@ function applyStreamChunk(
  * Replaces/creates the authoritative tool_call part for a turn once the
  * final structured result is known — overwrites whatever placeholder
  * streaming produced (incomplete name, no real arguments) with the real
- * id/name/arguments. Must be called inside a MobX runInAction.
+ * id/name/arguments. Must be called inside a setState batch.
  */
 function reconcileToolCall(
 	message: ChatMessage,
@@ -166,44 +165,31 @@ function reconcileToolCall(
 }
 
 /**
- * The headless engine behind useChat(). Generalized from playground's
+ * Observable state held in the Zustand store — the public shape
+ * consumers read via `store.getState()` or `useStore()`.
+ */
+export interface ChatSessionState {
+	messages: ChatMessage[];
+	isTyping: boolean;
+	error: string | null;
+	roomId: string | null;
+	engineId: string;
+	isLoadingHistory: boolean;
+	mcp: MCPConfig[];
+}
+
+/**
+ * The headless engine behind the chat. Generalized from playground's
  * RoomStore + provider-portal-hpp's HomeChatBot.tsx, deliberately linear
  * (no message tree/branching — see docs/chat-components/PLAN.md, Phase 1).
  * Streams real token-by-token responses via streamPixel, matching
  * RoomStore.runRoomPixelStreaming's actual polling pattern.
+ *
+ * All reactive state lives in a vanilla Zustand store (`this.store`).
+ * No MobX.
  */
 export class ChatSession {
-	messages: ChatMessage[] = [];
-	isTyping = false;
-	error: string | null = null;
-	roomId: string | null = null;
-	/** Mutable — unlike the rest of ChatOptions, the engine can change mid-session (e.g. an EngineSelect next to ChatInput). Initialized from options.engineId. */
-	engineId: string;
-
-	/**
-	 * True while a resumed room's history is loading (options.roomId was
-	 * set). Never true for a fresh session — there's nothing to load until
-	 * the first sendMessage() lazily creates a room.
-	 */
-	isLoadingHistory = false;
-
-	/**
-	 * Knowledge/toolbox sources currently attached to this room — mutable
-	 * mid-conversation via setMcp(), same shape as playground's real
-	 * `RoomStore.options.mcp` (see McpOverlay/MCPSelector in
-	 * @semoss/shared). Restored from a resumed room's saved options on
-	 * load; starts empty for a fresh session (nothing attached until the
-	 * user opens the MCP overlay and saves).
-	 */
-	mcp: MCPConfig[] = [];
-
-	/**
-	 * Bumped on every in-place mutation to a message's parts (e.g.
-	 * appending streamed text). useChat()'s autorun bridge reads this
-	 * alongside messages.length so it re-renders correctly even for
-	 * mutations that don't change the array's length.
-	 */
-	revision = 0;
+	readonly store: StoreApi<ChatSessionState>;
 
 	private parentMessageId: string | undefined;
 	private roomOptionsSynced = false;
@@ -213,22 +199,55 @@ export class ChatSession {
 		private readonly insightId: string,
 		private readonly options: ChatOptions,
 	) {
-		this.engineId = options.engineId;
+		this.store = createStore<ChatSessionState>(() => ({
+			messages: [],
+			isTyping: false,
+			error: null,
+			roomId: options.roomId ?? null,
+			engineId: options.engineId,
+			isLoadingHistory: !!options.roomId,
+			mcp: [],
+		}));
+
 		if (options.roomId) {
-			// Short-circuits ensureRoom()'s CreatePlaygroundRoom call — this
-			// room already exists — and skips ever pushing
-			// defaultRoomSettings over a resumed room's own saved options.
-			this.roomId = options.roomId;
 			this.roomOptionsSynced = true;
-			this.isLoadingHistory = true;
-		}
-		makeAutoObservable(this, {}, { autoBind: true });
-		if (options.roomId) {
-			// Fire-and-forget: state mutations happen inside runInAction
-			// callbacks that run on a later microtask, well after this
-			// constructor (and makeAutoObservable above) has returned.
 			void this.loadHistory(options.roomId);
 		}
+
+		// Bind public methods so they work when destructured.
+		this.setEngineId = this.setEngineId.bind(this);
+		this.sendMessage = this.sendMessage.bind(this);
+		this.setMcp = this.setMcp.bind(this);
+		this.recordFeedback = this.recordFeedback.bind(this);
+		this.downloadMessage = this.downloadMessage.bind(this);
+	}
+
+	// -- Convenience getters so tests can read `session.messages` etc. --
+
+	get messages(): ChatMessage[] {
+		return this.store.getState().messages;
+	}
+	get isTyping(): boolean {
+		return this.store.getState().isTyping;
+	}
+	get error(): string | null {
+		return this.store.getState().error;
+	}
+	get roomId(): string | null {
+		return this.store.getState().roomId;
+	}
+	get engineId(): string {
+		return this.store.getState().engineId;
+	}
+	get isLoadingHistory(): boolean {
+		return this.store.getState().isLoadingHistory;
+	}
+	get mcp(): MCPConfig[] {
+		return this.store.getState().mcp;
+	}
+
+	private setState(partial: Partial<ChatSessionState>): void {
+		this.store.setState(partial);
 	}
 
 	private async loadHistory(roomId: string): Promise<void> {
@@ -236,30 +255,29 @@ export class ChatSession {
 			const raw = await getPlaygroundRoomHistory(this.actions, roomId);
 			const { messages, parentMessageId, lastModelId } =
 				normalizeRoomHistory(raw.messages);
-			runInAction(() => {
-				// Guard: if the user already started typing/sending before
-				// history resolved, don't clobber their in-flight message.
-				if (this.messages.length === 0) {
-					this.messages = messages;
-				}
-				this.parentMessageId = parentMessageId;
-				if (lastModelId) {
-					this.engineId = lastModelId;
-				}
-				this.mcp = raw.mcp;
-				this.isLoadingHistory = false;
+			const current = this.store.getState();
+			// Guard: if the user already started typing/sending before
+			// history resolved, don't clobber their in-flight message.
+			if (current.messages.length === 0) {
+				this.setState({ messages });
+			}
+			this.parentMessageId = parentMessageId;
+			this.setState({
+				engineId: lastModelId ?? current.engineId,
+				mcp: raw.mcp,
+				isLoadingHistory: false,
 			});
 		} catch (err) {
 			const friendlyMessage = this.toFriendlyMessage(err);
-			runInAction(() => {
-				this.error = friendlyMessage;
-				this.isLoadingHistory = false;
+			this.setState({
+				error: friendlyMessage,
+				isLoadingHistory: false,
 			});
 		}
 	}
 
 	setEngineId(engineId: string): void {
-		this.engineId = engineId;
+		this.setState({ engineId });
 	}
 
 	/**
@@ -274,9 +292,7 @@ export class ChatSession {
 	 */
 	async setMcp(mcp: MCPConfig[]): Promise<void> {
 		const previous = this.mcp;
-		runInAction(() => {
-			this.mcp = mcp;
-		});
+		this.setState({ mcp });
 		if (!this.roomId) {
 			return;
 		}
@@ -288,9 +304,9 @@ export class ChatSession {
 				mcp,
 			});
 		} catch (err) {
-			runInAction(() => {
-				this.mcp = previous;
-				this.error = this.toFriendlyMessage(err);
+			this.setState({
+				mcp: previous,
+				error: this.toFriendlyMessage(err),
 			});
 		}
 	}
@@ -319,10 +335,8 @@ export class ChatSession {
 		const isClearing = previous?.rating === rating;
 		const nextRating = isClearing ? null : rating;
 
-		runInAction(() => {
-			message.feedback = isClearing ? undefined : { rating };
-			this.revision += 1;
-		});
+		message.feedback = isClearing ? undefined : { rating };
+		this.setState({ messages: [...this.messages] });
 
 		try {
 			await submitFeedback(this.actions, {
@@ -331,10 +345,10 @@ export class ChatSession {
 				rating: nextRating,
 			});
 		} catch (err) {
-			runInAction(() => {
-				message.feedback = previous;
-				this.error = this.toFriendlyMessage(err);
-				this.revision += 1;
+			message.feedback = previous;
+			this.setState({
+				messages: [...this.messages],
+				error: this.toFriendlyMessage(err),
 			});
 		}
 	}
@@ -373,37 +387,42 @@ export class ChatSession {
 
 		const assistantMessageId = nextMessageId("assistant");
 
-		runInAction(() => {
-			this.messages.push({
+		const messages = [
+			...this.messages,
+			{
 				id: nextMessageId("user"),
-				role: "user",
+				role: "user" as const,
 				parts: [
-					{ type: "text", id: nextPartId("text"), text: trimmed },
+					{
+						type: "text" as const,
+						id: nextPartId("text"),
+						text: trimmed,
+					},
 				],
-				status: "complete",
+				status: "complete" as const,
 				timestamp: new Date(),
-			});
-			this.messages.push({
+			},
+			{
 				id: assistantMessageId,
-				role: "assistant",
+				role: "assistant" as const,
 				parts: [],
-				status: "streaming",
+				status: "streaming" as const,
 				timestamp: new Date(),
-			});
-			this.isTyping = true;
-			this.error = null;
-			this.revision += 1;
+			},
+		];
+		this.setState({
+			messages,
+			isTyping: true,
+			error: null,
 		});
 
 		const toolIndexToId: Record<number, string> = {};
 		const onChunk = (chunk: StreamChunk) => {
-			runInAction(() => {
-				const message = this.getMessage(assistantMessageId);
-				if (message) {
-					applyStreamChunk(message, chunk, toolIndexToId);
-					this.revision += 1;
-				}
-			});
+			const message = this.getMessage(assistantMessageId);
+			if (message) {
+				applyStreamChunk(message, chunk, toolIndexToId);
+				this.setState({ messages: [...this.messages] });
+			}
 		};
 
 		try {
@@ -444,11 +463,8 @@ export class ChatSession {
 				);
 			}
 
-			runInAction(() => {
-				const message = this.getMessage(assistantMessageId);
-				if (!message) {
-					return;
-				}
+			const message = this.getMessage(assistantMessageId);
+			if (message) {
 				this.parentMessageId =
 					response.messageId ?? this.parentMessageId;
 				const hasTextPart = message.parts.some(
@@ -465,27 +481,25 @@ export class ChatSession {
 					}
 				}
 				message.status = "complete";
-				this.revision += 1;
-			});
+				this.setState({ messages: [...this.messages] });
+			}
 		} catch (err) {
 			const friendlyMessage = this.toFriendlyMessage(err);
-			runInAction(() => {
-				this.error = friendlyMessage;
-				const message = this.getMessage(assistantMessageId);
-				if (message) {
-					message.parts.push({
-						type: "text",
-						id: nextPartId("text"),
-						text: friendlyMessage,
-					});
-					message.status = "error";
-				}
-				this.revision += 1;
+			const message = this.getMessage(assistantMessageId);
+			if (message) {
+				message.parts.push({
+					type: "text",
+					id: nextPartId("text"),
+					text: friendlyMessage,
+				});
+				message.status = "error";
+			}
+			this.setState({
+				error: friendlyMessage,
+				messages: [...this.messages],
 			});
 		} finally {
-			runInAction(() => {
-				this.isTyping = false;
-			});
+			this.setState({ isTyping: false });
 		}
 	}
 
@@ -494,9 +508,7 @@ export class ChatSession {
 			return this.roomId;
 		}
 		const { roomId } = await createPlaygroundRoom(this.actions);
-		runInAction(() => {
-			this.roomId = roomId;
-		});
+		this.setState({ roomId });
 		return roomId;
 	}
 
@@ -520,9 +532,7 @@ export class ChatSession {
 			temperature: this.options.defaultRoomSettings?.temperature,
 			mcp: this.mcp,
 		});
-		runInAction(() => {
-			this.roomOptionsSynced = true;
-		});
+		this.roomOptionsSynced = true;
 	}
 
 	private async executeToolRound(
@@ -541,13 +551,11 @@ export class ChatSession {
 			throw new Error("Tool call is missing its project id");
 		}
 
-		runInAction(() => {
-			const message = this.getMessage(assistantMessageId);
-			if (message) {
-				reconcileToolCall(message, toolCall);
-				this.revision += 1;
-			}
-		});
+		const reconcileMessage = this.getMessage(assistantMessageId);
+		if (reconcileMessage) {
+			reconcileToolCall(reconcileMessage, toolCall);
+			this.setState({ messages: [...this.messages] });
+		}
 
 		let toolResult: unknown;
 		try {
@@ -557,36 +565,31 @@ export class ChatSession {
 				paramValues: toolCall.arguments,
 			});
 		} catch (err) {
-			runInAction(() => {
-				const message = this.getMessage(assistantMessageId);
-				if (message) {
-					message.parts.push({
-						type: "tool_result",
-						id: nextPartId("tool_result"),
-						toolCallId: toolCall.id,
-						output:
-							err instanceof Error ? err.message : String(err),
-						status: "error",
-					});
-					this.revision += 1;
-				}
-			});
-			throw err;
-		}
-
-		runInAction(() => {
-			const message = this.getMessage(assistantMessageId);
-			if (message) {
-				message.parts.push({
+			const errMessage = this.getMessage(assistantMessageId);
+			if (errMessage) {
+				errMessage.parts.push({
 					type: "tool_result",
 					id: nextPartId("tool_result"),
 					toolCallId: toolCall.id,
-					output: JSON.stringify(toolResult),
-					status: "success",
+					output: err instanceof Error ? err.message : String(err),
+					status: "error",
 				});
-				this.revision += 1;
+				this.setState({ messages: [...this.messages] });
 			}
-		});
+			throw err;
+		}
+
+		const successMessage = this.getMessage(assistantMessageId);
+		if (successMessage) {
+			successMessage.parts.push({
+				type: "tool_result",
+				id: nextPartId("tool_result"),
+				toolCallId: toolCall.id,
+				output: JSON.stringify(toolResult),
+				status: "success",
+			});
+			this.setState({ messages: [...this.messages] });
+		}
 
 		return addPlaygroundToolExecution(
 			this.insightId,

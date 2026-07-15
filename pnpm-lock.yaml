@@ -66,9 +66,6 @@ importers:
       mermaid:
         specifier: ^11.15.0
         version: 11.15.0
-      mobx:
-        specifier: 6.3.7
-        version: 6.3.7
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -78,6 +75,9 @@ importers:
       tailwind-merge:
         specifier: ^3.3.1
         version: 3.4.0
+      zustand:
+        specifier: ^5.0.0
+        version: 5.0.14(@types/react@18.3.1)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))
     devDependencies:
       '@rollup/plugin-commonjs':
         specifier: 28.0.6
@@ -9232,6 +9232,24 @@ packages:
       immer:
         optional: true
       react:
+        optional: true
+
+  zustand@5.0.14:
+    resolution: {integrity: sha512-/8tAspM5LMPr28b3fwLYrtdj77ECpfZviaP75CMTnwO8ISyaE4GDIG/9rDDYq/cH9D2Xw2A2RXglLInmVBQB/g==}
+    engines: {node: '>=12.20.0'}
+    peerDependencies:
+      '@types/react': '>=18.0.0'
+      immer: '>=9.0.6'
+      react: '>=18.0.0'
+      use-sync-external-store: '>=1.2.0'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      immer:
+        optional: true
+      react:
+        optional: true
+      use-sync-external-store:
         optional: true
 
   zwitch@2.0.4:
@@ -18525,5 +18543,11 @@ snapshots:
     optionalDependencies:
       '@types/react': 18.3.1
       react: 18.3.1
+
+  zustand@5.0.14(@types/react@18.3.1)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1)):
+    optionalDependencies:
+      '@types/react': 18.3.1
+      react: 18.3.1
+      use-sync-external-store: 1.6.0(react@18.3.1)
 
   zwitch@2.0.4: {}

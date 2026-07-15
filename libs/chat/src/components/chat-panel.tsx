@@ -1,13 +1,13 @@
 import type { ReactNode } from "react";
 import type { ChatOptions } from "../chat-options";
+import { ChatProvider, useChatContext } from "../chat-provider";
 import { cn } from "../lib/utils";
 import type { ChatMessage } from "../types";
-import { useChat } from "../use-chat";
 import { ChatInput } from "./chat-input";
 import { MessageList } from "./message-list";
 
 export interface ChatPanelProps {
-	/** Passed straight through to useChat() — this component owns the chat session. */
+	/** Passed straight through to ChatProvider — this component owns the chat session. */
 	options: ChatOptions;
 	className?: string;
 	placeholder?: string;
@@ -16,11 +16,12 @@ export interface ChatPanelProps {
 }
 
 /**
- * Batteries-included: wires useChat() straight into MessageList + ChatInput
- * for apps that don't want to think about composition at all. For anything
- * more custom (a header showing room info, a different layout), compose
- * MessageList/ChatInput yourself with your own useChat() call instead —
- * that escape hatch is the point of keeping them as separate exports.
+ * Batteries-included: wraps a ChatProvider and wires useChatContext()
+ * straight into MessageList + ChatInput for apps that don't want to
+ * think about composition at all. For anything more custom (a header
+ * showing room info, a different layout), compose MessageList/ChatInput
+ * yourself inside your own ChatProvider instead — that escape hatch is
+ * the point of keeping them as separate exports.
  */
 export function ChatPanel({
 	options,
@@ -29,7 +30,25 @@ export function ChatPanel({
 	emptyState,
 	renderMessage,
 }: ChatPanelProps) {
-	const { messages, isTyping, sendMessage } = useChat(options);
+	return (
+		<ChatProvider options={options}>
+			<ChatPanelInner
+				className={className}
+				placeholder={placeholder}
+				emptyState={emptyState}
+				renderMessage={renderMessage}
+			/>
+		</ChatProvider>
+	);
+}
+
+function ChatPanelInner({
+	className,
+	placeholder,
+	emptyState,
+	renderMessage,
+}: Omit<ChatPanelProps, "options">) {
+	const { messages, isTyping, sendMessage } = useChatContext();
 
 	return (
 		<div

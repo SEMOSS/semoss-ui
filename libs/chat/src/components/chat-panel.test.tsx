@@ -4,20 +4,29 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ChatOptions } from "../chat-options";
 import { ChatPanel } from "./chat-panel";
 
-const { useChat } = vi.hoisted(() => ({ useChat: vi.fn() }));
+const { useChatContext } = vi.hoisted(() => ({ useChatContext: vi.fn() }));
 
-vi.mock("../use-chat", () => ({ useChat }));
+vi.mock("../chat-provider", async (importOriginal) => {
+	const original = await importOriginal<typeof import("../chat-provider")>();
+	return {
+		...original,
+		ChatProvider: ({ children }: { children: React.ReactNode }) => (
+			<>{children}</>
+		),
+		useChatContext,
+	};
+});
 
 const options: ChatOptions = { engineId: "test-engine" };
 
 beforeEach(() => {
-	useChat.mockReset();
+	useChatContext.mockReset();
 });
 
 describe("ChatPanel", () => {
-	it("renders messages from useChat and sends new ones through it", async () => {
+	it("renders messages from useChatContext and sends new ones through it", async () => {
 		const sendMessage = vi.fn();
-		useChat.mockReturnValue({
+		useChatContext.mockReturnValue({
 			messages: [
 				{
 					id: "1",
@@ -45,7 +54,7 @@ describe("ChatPanel", () => {
 	});
 
 	it("shows the typing indicator and disables input while isTyping", () => {
-		useChat.mockReturnValue({
+		useChatContext.mockReturnValue({
 			messages: [],
 			isTyping: true,
 			error: null,
@@ -60,7 +69,7 @@ describe("ChatPanel", () => {
 	});
 
 	it("passes emptyState through to MessageList", () => {
-		useChat.mockReturnValue({
+		useChatContext.mockReturnValue({
 			messages: [],
 			isTyping: false,
 			error: null,
@@ -76,7 +85,7 @@ describe("ChatPanel", () => {
 	});
 
 	it("renders an inline tool_call from a message's parts via MessageBubble", () => {
-		useChat.mockReturnValue({
+		useChatContext.mockReturnValue({
 			messages: [
 				{
 					id: "1",
@@ -107,7 +116,7 @@ describe("ChatPanel", () => {
 	});
 
 	it("passes a custom placeholder through to ChatInput", () => {
-		useChat.mockReturnValue({
+		useChatContext.mockReturnValue({
 			messages: [],
 			isTyping: false,
 			error: null,
