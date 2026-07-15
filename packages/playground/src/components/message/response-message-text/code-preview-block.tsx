@@ -40,6 +40,7 @@ interface ExecuteResult {
 	logs: string[];
 	isError: boolean;
 	pending: boolean;
+	rawOutput?: unknown;
 }
 
 interface CodePreviewBlockProps {
@@ -94,6 +95,7 @@ export const CodePreviewBlock = ({
 			logs: [],
 			isError: false,
 			pending: true,
+			rawOutput: undefined,
 		});
 		try {
 			const { errors, results, logs } =
@@ -112,6 +114,7 @@ export const CodePreviewBlock = ({
 					logs,
 					isError: true,
 					pending: false,
+					rawOutput: errors.join("\n"),
 				});
 				return;
 			}
@@ -129,13 +132,20 @@ export const CodePreviewBlock = ({
 			const output =
 				!formatted && !isError ? "Success (no output)" : formatted;
 
-			setExecuteResult({ output, logs, isError, pending: false });
+			setExecuteResult({
+				output,
+				logs,
+				isError,
+				pending: false,
+				rawOutput: value,
+			});
 		} catch (error) {
 			setExecuteResult({
 				output: getErrorMessage(error),
 				logs: [],
 				isError: true,
 				pending: false,
+				rawOutput: getErrorMessage(error),
 			});
 		} finally {
 			setIsExecuting(false);

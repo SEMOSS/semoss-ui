@@ -1,3 +1,8 @@
+import {
+	type JupyterCellOutput,
+	runtimeOutputToJupyterOutputs,
+} from "@semoss/shared/notebook";
+
 export const FENCED_HTML_RE = /```html[ \t]*\n([\s\S]*?)(?:\n```|$)/i;
 
 export const KNOWN_SHIKI_LANGS = new Set([
@@ -217,15 +222,9 @@ export const createNotebookFilePath = (requestedName?: string): string => {
 const DEFAULT_NBFORMAT = 4;
 const DEFAULT_NBFORMAT_MINOR = 4;
 
-type NotebookCellOutput = {
-	output_type: "stream";
-	name: "stdout" | "stderr";
-	text: string[];
-};
-
 export type NotebookExecutionData = {
 	executionCount?: number | null;
-	outputs?: NotebookCellOutput[];
+	outputs?: JupyterCellOutput[];
 };
 
 export type NotebookMetadataData = {
@@ -237,6 +236,7 @@ export type NotebookExecutionResultInput = {
 	logs: string[];
 	isError: boolean;
 	pending: boolean;
+	rawOutput?: unknown;
 };
 
 type NotebookCellConfig = {
@@ -476,7 +476,7 @@ export const toNotebookExecutionData = (
 ): NotebookExecutionData | undefined => {
 	if (!result || result.pending) return undefined;
 
-	const outputs: NotebookCellOutput[] = [];
+	const outputs: JupyterCellOutput[] = [];
 
 	if (result.logs.length > 0) {
 		outputs.push({
@@ -486,14 +486,14 @@ export const toNotebookExecutionData = (
 		});
 	}
 
-	const trimmed = result.output.trim();
-	if (trimmed && trimmed !== "Success (no output)") {
-		outputs.push({
-			output_type: "stream",
-			name: result.isError ? "stderr" : "stdout",
-			text: normalizeSourceToArray(result.output),
-		});
-	}
+	const runtimeOutputs = runtimeOutputToJupyterOutputs(
+		result.rawOutput ?? result.output,
+		{
+			isError: result.isError,
+		},
+	);
+
+	outputs.push(...runtimeOutputs);
 
 	return {
 		outputs,

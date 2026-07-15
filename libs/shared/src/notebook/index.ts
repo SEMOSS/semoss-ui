@@ -63,6 +63,247 @@ const normalizeSource = (source: string | string[]): string[] => {
 	});
 };
 
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+	return typeof value === "object" && value !== null;
+};
+
+const toTextPlain = (value: unknown): string => {
+	if (typeof value === "string") return value;
+	if (typeof value === "number" || typeof value === "boolean") {
+		return String(value);
+	}
+	try {
+		return JSON.stringify(value, null, 2);
+	} catch {
+		return String(value);
+	}
+};
+
+const stripHtml = (html: string): string => {
+	return html
+		.replace(/<[^>]+>/g, " ")
+		.replace(/\s+/g, " ")
+		.trim();
+};
+
+const buildDisplayDataOutput = (
+	data: Record<string, unknown>,
+): JupyterCellOutput => {
+	return {
+		output_type: "display_data",
+		metadata: {},
+		data,
+	};
+};
+
+const isPlotlySpec = (value: unknown): boolean => {
+	if (!isRecord(value)) return false;
+	return (
+		Array.isArray(value.data) &&
+		("layout" in value || "frames" in value || "config" in value)
+	);
+};
+
+const isAltairSpec = (value: unknown): boolean => {
+	if (!isRecord(value)) return false;
+	if (
+		typeof value.$schema === "string" &&
+		value.$schema.toLowerCase().includes("vega-lite")
+	) {
+		return true;
+	}
+	return "mark" in value && "encoding" in value;
+};
+
+const toErrorOutput = (output: unknown): JupyterCellOutput => {
+	const asText = toTextPlain(output);
+	const lines = asText.split("\n");
+	const first = lines[0]?.trim() ?? "";
+	const match = first.match(/^([A-Za-z_][A-Za-z0-9_.]*)\s*:\s*(.*)$/);
+
+	return {
+		output_type: "error",
+		ename: match?.[1] ?? "Error",
+		evalue: match?.[2] ?? asText,
+		traceback: normalizeSource(asText),
+	};
+};
+
+const toMimeBundleFromOutput = (
+	output: unknown,
+): Record<string, unknown> | null => {
+	if (typeof output === "string") {
+		const text = output.trim();
+		if (!text) return null;
+
+		const dataUrlMatch = text.match(
+			/^data:(image\/png|image\/jpe?g);base64,(.+)$/i,
+		);
+		if (dataUrlMatch) {
+			const mime = dataUrlMatch[1].toLowerCase();
+			return {
+				[mime]: dataUrlMatch[2],
+				"text/plain": `[${mime} output]`,
+			};
+		}
+
+		// Common raw base64 image payloads produced by Python libs (without
+		// data URL prefix). Use conservative signatures to avoid false positives.
+		const compact = text.replace(/\s+/g, "");
+		if (/^iVBOR[0-9A-Za-z+/=]+$/.test(compact)) {
+			return {
+				"image/png": compact,
+				"text/plain": "[image/png output]",
+			};
+		}
+		if (/^\/9j\/[0-9A-Za-z+/=]+$/.test(compact)) {
+			return {
+				"image/jpeg": compact,
+				"text/plain": "[image/jpeg output]",
+			};
+		}
+
+		if (text.startsWith("<svg") && text.includes("</svg>")) {
+			return {
+				"image/svg+xml": output,
+				"text/plain": "[svg output]",
+			};
+		}
+
+		const lower = text.toLowerCase();
+		if (
+			lower.includes("<table") ||
+			lower.includes("<html") ||
+			lower.includes("<body") ||
+			lower.includes("<div")
+		) {
+			return {
+				"text/html": output,
+				"text/plain": stripHtml(output),
+			};
+		}
+
+		try {
+			const parsed = JSON.parse(text);
+			return toMimeBundleFromOutput(parsed);
+		} catch {
+			return null;
+		}
+	}
+
+	if (isPlotlySpec(output)) {
+		return {
+			"application/vnd.plotly.v1+json": output,
+			"text/plain": toTextPlain(output),
+		};
+	}
+
+	if (isAltairSpec(output)) {
+		return {
+			"application/vnd.vegalite.v5+json": output,
+			"text/plain": toTextPlain(output),
+		};
+	}
+
+	if (isRecord(output)) {
+		const mimeKeys = Object.keys(output).filter((key) => key.includes("/"));
+		if (mimeKeys.length > 0) {
+			return {
+				...output,
+				"text/plain":
+					typeof output["text/plain"] === "string"
+						? output["text/plain"]
+						: toTextPlain(output),
+			};
+		}
+
+		if (typeof output.svg === "string") {
+			return {
+				"image/svg+xml": output.svg,
+				"text/plain": "[svg output]",
+			};
+		}
+
+		if (typeof output.html === "string") {
+			return {
+				"text/html": output.html,
+				"text/plain": stripHtml(output.html),
+			};
+		}
+	}
+
+	return null;
+};
+
+export const runtimeOutputToJupyterOutputs = (
+	output: unknown,
+	options?: {
+		isError?: boolean;
+		executionCount?: number | null;
+	},
+): JupyterCellOutput[] => {
+	if (options?.isError) {
+		return [toErrorOutput(output)];
+	}
+
+	if (output === undefined || output === null) {
+		return [];
+	}
+
+	if (Array.isArray(output)) {
+		const asTypedOutputs = output.filter((item) => {
+			return (
+				isRecord(item) &&
+				typeof item.output_type === "string" &&
+				(item.output_type === "stream" ||
+					item.output_type === "display_data" ||
+					item.output_type === "execute_result" ||
+					item.output_type === "error")
+			);
+		});
+
+		if (
+			asTypedOutputs.length === output.length &&
+			asTypedOutputs.length > 0
+		) {
+			return asTypedOutputs as JupyterCellOutput[];
+		}
+	}
+
+	const mimeData = toMimeBundleFromOutput(output);
+	if (mimeData) {
+		return [buildDisplayDataOutput(mimeData)];
+	}
+
+	const textPlain = toTextPlain(output);
+	if (!textPlain.trim()) {
+		return [];
+	}
+
+	const executionCount = options?.executionCount;
+	if (typeof executionCount === "number") {
+		return [
+			{
+				output_type: "execute_result",
+				execution_count: executionCount,
+				metadata: {},
+				data: {
+					"text/plain": textPlain,
+					...(isRecord(output) || Array.isArray(output)
+						? { "application/json": output }
+						: {}),
+				},
+			},
+		];
+	}
+
+	return [
+		buildDisplayDataOutput({
+			"text/plain": textPlain,
+		}),
+	];
+};
+
 /**
  * Convert SEMOSS notebook format to Jupyter .ipynb format.
  * Derives notebook-level metadata (kernelspec, language_info) from the
@@ -203,48 +444,30 @@ export const stateToIpynb = (
 				if (cell.isExecuted) {
 					outputs.length = 0;
 
-					if (providedExecutionCount === null) {
+					let resolvedExecutionCount =
+						providedExecutionCount ?? existingExecutionCount;
+					if (resolvedExecutionCount === null) {
 						executionCounter++;
-					}
-
-					if (cell.isError) {
-						outputs.push({
-							output_type: "stream",
-							name: "stderr",
-							text: normalizeSource(
-								typeof cell.output === "string"
-									? cell.output
-									: JSON.stringify(cell.output),
-							),
-						});
-					} else if (
-						cell.output !== undefined &&
-						cell.output !== null
-					) {
-						const text =
-							typeof cell.output === "string"
-								? cell.output
-								: JSON.stringify(cell.output, null, 2);
-
-						if (text.trim()) {
-							outputs.push({
-								output_type: "stream",
-								name: "stdout",
-								text: normalizeSource(text),
-							});
-						}
+						resolvedExecutionCount = executionCounter;
 					}
 
 					if (cell.messages && cell.messages.length > 0) {
 						const joined = cell.messages.join("");
 						if (joined.trim()) {
-							outputs.unshift({
+							outputs.push({
 								output_type: "stream",
 								name: "stdout",
 								text: normalizeSource(joined),
 							});
 						}
 					}
+
+					outputs.push(
+						...runtimeOutputToJupyterOutputs(cell.output, {
+							isError: cell.isError,
+							executionCount: resolvedExecutionCount,
+						}),
+					);
 				}
 
 				return {
