@@ -48,7 +48,7 @@ export default defineConfig({
 	external: [
 		/@semoss\/sdk/,
 		/@semoss\/ui/,
-		"@semoss/shared",
+		/@semoss\/shared/,
 		"mobx",
 		"mobx-react-lite",
 		"react",

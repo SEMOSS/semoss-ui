@@ -5,6 +5,15 @@ import { useEffect, useState } from "react";
 import { useBlocks } from "@semoss/renderer";
 import { runPixel } from "@semoss/sdk/react";
 import {
+	ipynbToSemoss,
+	type JupyterNotebook,
+	type LiveCellState,
+	type LiveNotebookState,
+	type SemossNotebook,
+	semossToIpynb,
+	stateToIpynb,
+} from "@semoss/shared/notebook";
+import {
 	Button,
 	Dialog,
 	DialogContent,
@@ -16,6 +25,7 @@ import {
 import { ShareOverlay } from "@/components/ui";
 import { PreviewOverlay } from "@/components/workspace";
 import { useRootStore, useWorkspace } from "@/hooks";
+import { DEFAULT_NOTEBOOK_ID, NOTEBOOK_APP_TAG } from "../app/templates";
 import { LLMSelectOverlay } from "../llms";
 
 export const BlocksWorkspaceActions = observer(() => {
@@ -130,12 +140,80 @@ export const BlocksWorkspaceActions = observer(() => {
 				}
 			}
 		});
+
+		// Check if this is a notebook app
+		const tag = workspace.metadata?.tag;
+		const tags = Array.isArray(tag) ? tag : tag ? [tag] : [];
+		const isNotebookApp = tags.some((t) => String(t) === NOTEBOOK_APP_TAG);
+
+		// For notebook apps, convert to Jupyter .ipynb format, preserving
+		// live execution outputs (not just cell source) for cells run in this session,
+		// and falling back to the last-saved outputs for cells that were not re-run.
+		let jsonPayload: string;
+		if (isNotebookApp) {
+			// Baseline to preserve outputs of cells that are not re-executed
+			// in this session (defaults to a fresh, structure-only conversion).
+			let existingIpynb: JupyterNotebook = semossToIpynb(
+				json as unknown as SemossNotebook,
+			);
+			try {
+				const { pixelReturn: getReturn, errors: getErrors } =
+					await monolithStore.runQuery<[JupyterNotebook]>(
+						`GetAppBlocksJson(project=["${workspace.appId}"]);`,
+					);
+				if (getErrors.length === 0) {
+					const existing = getReturn[0]?.output;
+					if (
+						existing &&
+						typeof existing === "object" &&
+						(existing as JupyterNotebook).nbformat === 4
+					) {
+						existingIpynb = existing as unknown as JupyterNotebook;
+					}
+				}
+			} catch (e) {
+				console.error(e);
+				// best-effort — fall back to the structure-only baseline
+			}
+
+			const notebook = state.getNotebook(DEFAULT_NOTEBOOK_ID);
+			const liveCells: Record<string, LiveCellState> = {};
+			const list = notebook ? notebook.list : [];
+			if (notebook) {
+				for (const id of notebook.list) {
+					const cell = notebook.cells[id];
+					if (!cell) continue;
+					liveCells[id] = {
+						id: cell.id,
+						widget: cell.widget,
+						isExecuted: cell.isExecuted,
+						executionCount: null,
+						isError: cell.isError,
+						operation: cell.operation,
+						output: cell.output,
+						messages: cell.messages,
+						parameters: cell.parameters,
+					};
+				}
+			}
+
+			const liveNotebookState: LiveNotebookState = {
+				id: DEFAULT_NOTEBOOK_ID,
+				list,
+				cells: liveCells,
+			};
+
+			jsonPayload = stateToIpynb(liveNotebookState, existingIpynb);
+		} else {
+			jsonPayload = JSON.stringify(json);
+		}
+
 		try {
 			// save the json
 			const { errors } = await monolithStore.runQuery<[true]>(
 				`SaveAppBlocksJson(project=["${
 					workspace.appId
-				}"], json=["<encode>${JSON.stringify(json)}</encode>"]);`,
+				}"], json=["<encode>${jsonPayload}</encode>"], isNotebook=[${isNotebookApp}]);`,
 			);
 
 			if (errors.length > 0) {
@@ -176,9 +254,23 @@ export const BlocksWorkspaceActions = observer(() => {
 
 				const { output } = pixelReturn[0];
 
+				// Convert ipynb format to SEMOSS format for comparison if needed
+				let savedState = output;
+				if (
+					output &&
+					typeof output === "object" &&
+					"nbformat" in output &&
+					(output as JupyterNotebook).nbformat === 4
+				) {
+					savedState = ipynbToSemoss(
+						output as unknown as JupyterNotebook,
+					);
+				}
+
 				// TODO: Do we want a better way to check if it is changed
 				isChanged =
-					JSON.stringify(output) !== JSON.stringify(state.toJSON());
+					JSON.stringify(savedState) !==
+					JSON.stringify(state.toJSON());
 			}
 
 			setShareDiffs(isChanged);

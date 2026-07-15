@@ -74,7 +74,10 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 	const isMarkdown = ext === "md" || ext === "markdown";
 	const isNotebookJson = path.toLowerCase().endsWith(".notebook.json");
 	const isNotebookIpynb = path.toLowerCase().endsWith(".ipynb");
-	const isNotebook = isNotebookJson || isNotebookIpynb;
+	const isBlocksIpynb =
+		path.toLowerCase().endsWith("/blocks.ipynb") ||
+		path.toLowerCase() === "blocks.ipynb";
+	const isNotebook = (isNotebookJson || isNotebookIpynb) && !isBlocksIpynb;
 
 	return (
 		<div className="relative flex h-full w-full flex-col overflow-hidden bg-background py-1">

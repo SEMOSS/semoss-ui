@@ -2,6 +2,7 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Env, runPixel } from "@semoss/sdk/react";
+import { ipynbToSemoss, type JupyterNotebook } from "@semoss/shared/notebook";
 import { Spinner, Toaster } from "@semoss/ui/next";
 import { DefaultBlocks } from "./components/block-defaults";
 import { Blocks, RendererEngine } from "./components/blocks";
@@ -81,7 +82,24 @@ export const Renderer = observer((props: RendererProps) => {
 				// set the state
 				let s: SerializedState;
 				if (appId) {
-					s = pixelReturn[0].output;
+					const raw = pixelReturn[0].output;
+					// Convert Jupyter .ipynb format to SEMOSS format if needed
+					if (
+						raw &&
+						typeof raw === "object" &&
+						"nbformat" in raw &&
+						(raw as unknown as JupyterNotebook).nbformat === 4
+					) {
+						const semossState = ipynbToSemoss(
+							raw as unknown as JupyterNotebook,
+						);
+						s = {
+							...semossState,
+							version: STATE_VERSION,
+						} as unknown as SerializedState;
+					} else {
+						s = raw;
+					}
 				} else if (state) {
 					s = state;
 				} else {

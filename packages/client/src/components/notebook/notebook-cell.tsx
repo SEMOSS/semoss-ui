@@ -26,6 +26,7 @@ import {
 	useBlocks,
 } from "@semoss/renderer";
 import { runPixel } from "@semoss/sdk";
+import { type SemossNotebook, semossToIpynb } from "@semoss/shared/notebook";
 import {
 	Button,
 	ButtonGroup,
@@ -52,6 +53,7 @@ import { MCP_NOTEBOOK_NAME } from "@/pages/app/app.constants";
 import { copyTextToClipboard, isOutputJSON } from "@/utility";
 import { replaceInBlocks } from "@/utility/dependency-replacer";
 import { getDependentBlocks } from "@/utility/dependency-scanner";
+import { NOTEBOOK_APP_TAG } from "../app/templates";
 import { DependencyPromptModal } from "../blocks-workspace";
 import { AddVariableModal } from "./AddVariableModal";
 import { NotebookAddCell } from "./notebook-add-cell";
@@ -377,9 +379,29 @@ export const NotebookCell = observer(
 		const makeCellMCP = async () => {
 			try {
 				workspace.setLoading(true);
+
+				// Check if this is a notebook app
+				const tag = workspace.metadata?.tag;
+				const tags = Array.isArray(tag) ? tag : tag ? [tag] : [];
+				const isNotebookApp = tags.some(
+					(t) => String(t) === NOTEBOOK_APP_TAG,
+				);
+
+				// For notebook apps, convert to Jupyter .ipynb format
+				const json = state.toJSON();
+				let jsonPayload: string;
+				if (isNotebookApp) {
+					const ipynb = semossToIpynb(
+						json as unknown as SemossNotebook,
+					);
+					jsonPayload = JSON.stringify(ipynb);
+				} else {
+					jsonPayload = JSON.stringify(json);
+				}
+
 				// Save current app state before making MCP tool
 				await runPixel(
-					`SaveAppBlocksJson(project=["${workspace.appId}"], json=["<encode>${JSON.stringify(state.toJSON())}</encode>"]);`,
+					`SaveAppBlocksJson(project=["${workspace.appId}"], json=["<encode>${jsonPayload}</encode>"], isNotebook=[${isNotebookApp}]);`,
 				);
 				// Make pixel call to generate MCP tool
 				const { errors, pixelReturn } = await runPixel(

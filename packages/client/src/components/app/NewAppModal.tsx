@@ -2,6 +2,7 @@ import { X } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import type { SerializedState } from "@semoss/renderer";
+import { type SemossNotebook, semossToIpynb } from "@semoss/shared/notebook";
 import {
 	Badge,
 	Button,
@@ -19,6 +20,7 @@ import {
 import { uploadImage } from "@/api";
 import { useRootStore } from "@/hooks";
 import type { AppMetadata } from "./app.types";
+import { NOTEBOOK_APP_TAG } from "./templates";
 
 type NewAppForm = {
 	APP_NAME: string;
@@ -29,7 +31,9 @@ type NewAppForm = {
 
 interface NewAppModalProps {
 	open: boolean;
-	options: { type: "blocks"; state: SerializedState } | { type: "code" };
+	options:
+		| { type: "blocks"; state: SerializedState; tags?: string[] }
+		| { type: "code" };
 	onClose: (appId?: string) => void;
 }
 
@@ -67,12 +71,26 @@ export const NewAppModal = (props: NewAppModalProps) => {
 				if (!state)
 					throw new Error("State is missing from the blocks app");
 
+				// Check if this is a notebook app
+				const isNotebookApp = options.tags?.includes(NOTEBOOK_APP_TAG);
+
+				// For notebook apps, convert to Jupyter .ipynb format
+				let jsonPayload: string;
+				if (isNotebookApp) {
+					const ipynb = semossToIpynb(
+						state as unknown as SemossNotebook,
+					);
+					jsonPayload = JSON.stringify(ipynb);
+				} else {
+					jsonPayload = JSON.stringify(state);
+				}
+
 				const { errors, pixelReturn } = await monolithStore.runQuery<
 					[AppMetadata]
 				>(
 					`CreateAppFromBlocks ( project = [ "${
 						data.APP_NAME
-					}" ] , json =[${JSON.stringify(state)}]  ) ;`,
+					}" ] , json =[${jsonPayload}], isNotebook=[${isNotebookApp}]  ) ;`,
 				);
 
 				if (errors.length > 0) throw new Error(errors.join(","));
@@ -87,12 +105,17 @@ export const NewAppModal = (props: NewAppModalProps) => {
 					);
 				}
 
-				if (data.APP_TAGS.length || data.APP_DESCRIPTION) {
+				// merge any template-provided tags with the user-entered tags
+				const blocksTags = Array.from(
+					new Set([...(options.tags ?? []), ...data.APP_TAGS]),
+				);
+
+				if (blocksTags.length || data.APP_DESCRIPTION) {
 					const setProjectMetadataResponse =
 						await monolithStore.runQuery(
 							`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
 								{
-									tag: data.APP_TAGS,
+									tag: blocksTags,
 									description: data.APP_DESCRIPTION,
 								},
 							)}])`,
