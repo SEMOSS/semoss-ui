@@ -1,32 +1,50 @@
-import React from 'react';
-import type { ConnectionState } from '../types/browserEvents';
-import { Chip } from '@mui/material';
-import WifiIcon from '@mui/icons-material/Wifi';
-import WifiOffIcon from '@mui/icons-material/WifiOff';
-import CircleIcon from '@mui/icons-material/Circle';
+import type { ConnectionState } from "../types/browserEvents";
 
 interface ConnectionStatusProps {
-  state: ConnectionState;
+	state: ConnectionState;
 }
 
-const STATE_CONFIG: Record<ConnectionState, { label: string; color: 'success' | 'warning' | 'error' | 'default' }> = {
-  idle: { label: 'Idle', color: 'default' },
-  connecting: { label: 'Connecting…', color: 'warning' },
-  connected: { label: 'Live', color: 'success' },
-  error: { label: 'Error', color: 'error' },
-  closed: { label: 'Disconnected', color: 'default' },
+const STATE_CONFIG: Record<
+	ConnectionState,
+	{ label: string; dot: string; tone: string }
+> = {
+	idle: {
+		label: "Idle",
+		dot: "bg-slate-500",
+		tone: "border-line text-muted",
+	},
+	connecting: {
+		label: "Connecting",
+		dot: "bg-warning animate-pulse",
+		tone: "border-warning/40 text-warning",
+	},
+	connected: {
+		label: "Live",
+		dot: "bg-accent",
+		tone: "border-accent/40 text-accent",
+	},
+	error: {
+		label: "Error",
+		dot: "bg-danger",
+		tone: "border-danger/40 text-danger",
+	},
+	closed: {
+		label: "Disconnected",
+		dot: "bg-slate-500",
+		tone: "border-line text-muted",
+	},
 };
 
-export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({ state }) => {
-  const { label, color } = STATE_CONFIG[state];
-  return (
-    <Chip
-      size="small"
-      icon={state === 'connected' ? <WifiIcon /> : state === 'error' ? <WifiOffIcon /> : <CircleIcon />}
-      label={label}
-      color={color}
-      variant="outlined"
-      sx={{ fontWeight: 600 }}
-    />
-  );
+export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
+	state,
+}) => {
+	const { label, dot, tone } = STATE_CONFIG[state];
+	return (
+		<div
+			className={`flex h-8 items-center gap-2 rounded-md border px-2.5 font-semibold text-xs ${tone}`}
+		>
+			<span className={`h-2 w-2 rounded-full ${dot}`} />
+			{label}
+		</div>
+	);
 };

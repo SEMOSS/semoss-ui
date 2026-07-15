@@ -1,7 +1,36 @@
-# Build output
-portals/
+# Dependencies
+node_modules/
 
-# Local env files
-*.local
+# Environment files (contain secrets)
 .env
-.env.*
+.env.local
+.env.*.local
+
+# Vite cache
+.vite/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Lock files (keep package-lock.json, ignore others)
+pnpm-lock.yaml
+yarn.lock
+
+# Generated SEMOSS portal bundles
+portals/
+portals*.zip
