@@ -192,8 +192,26 @@ export const createCodeFilePath = (lang: string): string => {
 	return `save-code-response-${Date.now()}.${ext}`;
 };
 
-export const createNotebookFilePath = (): string => {
-	return `save-notebook-response-${Date.now()}.ipynb`;
+export const createNotebookFilePath = (requestedName?: string): string => {
+	if (!requestedName || !requestedName.trim()) {
+		return `save-notebook-response-${Date.now()}.ipynb`;
+	}
+
+	const sanitizedBase = requestedName
+		.trim()
+		.replace(/[\\/:*?"<>|]/g, "-")
+		.replace(/\s+/g, "-")
+		.replace(/-+/g, "-")
+		.replace(/^-|-$/g, "");
+
+	const normalizedBase =
+		sanitizedBase || `save-notebook-response-${Date.now()}`;
+
+	if (normalizedBase.toLowerCase().endsWith(".ipynb")) {
+		return normalizedBase;
+	}
+
+	return `${normalizedBase}.ipynb`;
 };
 
 const DEFAULT_NBFORMAT = 4;

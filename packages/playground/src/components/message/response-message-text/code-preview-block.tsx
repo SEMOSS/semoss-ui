@@ -7,8 +7,10 @@ import {
 	Code,
 	Dialog,
 	DialogContent,
+	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	Input,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -26,6 +28,7 @@ import {
 	createNotebookFilePath,
 	formatExecuteOutput,
 	MAX_EXECUTE_LOG_CHARS,
+	type NotebookExecutionData,
 	type NotebookMetadataData,
 	replaceNotebookCell,
 	toNotebookExecutionData,
@@ -58,12 +61,19 @@ export const CodePreviewBlock = ({
 	const [isFullViewOpen, setIsFullViewOpen] = useState(false);
 	const [isSavingToRoom, setIsSavingToRoom] = useState(false);
 	const [isSavingToNotebook, setIsSavingToNotebook] = useState(false);
+	const [isNotebookNameDialogOpen, setIsNotebookNameDialogOpen] =
+		useState(false);
+	const [newNotebookName, setNewNotebookName] = useState("");
 	const [isCollapsed, setIsCollapsed] = useState(false);
 	const [isExecuting, setIsExecuting] = useState(false);
 	const [executeResult, setExecuteResult] = useState<ExecuteResult | null>(
 		null,
 	);
 	const runtimeVersionCacheRef = useRef<Record<string, string>>({});
+	const pendingNotebookCreateRef = useRef<{
+		executionData?: NotebookExecutionData;
+		metadataData?: NotebookMetadataData;
+	} | null>(null);
 
 	// Prefer rawLanguage for display/filename so custom tokens like "pixel"
 	// show their proper label even though Shiki falls back to "txt" for rendering.
@@ -214,16 +224,32 @@ export const CodePreviewBlock = ({
 		room.sidebar.model.visitNodes((node) => {
 			if (existingFilePath) return; // already found one
 			const id = node.getId();
+			const component =
+				"getComponent" in node &&
+				typeof node.getComponent === "function"
+					? node.getComponent()
+					: "";
+			const config =
+				"getConfig" in node && typeof node.getConfig === "function"
+					? (node.getConfig() as { path?: string })
+					: undefined;
+			const pathFromConfig = config?.path;
+			const candidatePath =
+				typeof pathFromConfig === "string" && pathFromConfig
+					? pathFromConfig
+					: id.startsWith("FILE--")
+						? id.slice("FILE--".length)
+						: "";
 			const isVisible =
 				"isVisible" in node &&
 				typeof node.isVisible === "function" &&
 				node.isVisible();
 			if (
-				id.startsWith("FILE--save-notebook-response-") &&
-				id.endsWith(".ipynb") &&
+				component === "room-file-editor" &&
+				candidatePath.endsWith(".ipynb") &&
 				isVisible // only count visible (open) nodes
 			) {
-				existingFilePath = id.slice("FILE--".length);
+				existingFilePath = candidatePath;
 			}
 		});
 
@@ -344,36 +370,58 @@ export const CodePreviewBlock = ({
 					enableClose: true,
 				});
 			} else {
-				// No open notebook found — create a new one (original behaviour).
-				const filePath = createNotebookFilePath();
-				const notebookContent = createNotebookFileContent(
-					code,
-					langStr,
-					notebookExecutionData,
-					notebookMetadataData,
-				);
-				await room.runRoomPixel(
-					`SaveInsightAssets(filePath=[${JSON.stringify(filePath)}], content=["<encode>${notebookContent}</encode>"]);`,
-					false,
-					false,
-				);
-				notifyFileEditorRefresh(filePath, `INSIGHT:${room.insightId}`);
-				const fileName = filePath.split("/").pop() ?? filePath;
-				toast.success(`Added to notebook as ${fileName}`);
-				// Open the saved notebook in the sidebar's file editor, defaulting
-				// to the Preview tab so the interactive notebook shows immediately.
-				room.addSidebarNode(`FILE--${filePath}`, {
-					type: "tab",
-					name: fileName,
-					component: "room-file-editor",
-					config: {
-						name: fileName,
-						path: filePath,
-						initialTab: "preview",
-					},
-					enableClose: true,
-				});
+				// No open notebook found — ask for a name, then create it.
+				pendingNotebookCreateRef.current = {
+					executionData: notebookExecutionData,
+					metadataData: notebookMetadataData,
+				};
+				setIsNotebookNameDialogOpen(true);
+				return;
 			}
+		} catch (error) {
+			toast.error(getErrorMessage(error));
+		} finally {
+			setIsSavingToNotebook(false);
+		}
+	};
+
+	const confirmCreateNotebookWithName = async () => {
+		if (!room || !code) return;
+
+		const pending = pendingNotebookCreateRef.current;
+		if (!pending) return;
+
+		try {
+			setIsSavingToNotebook(true);
+			const filePath = createNotebookFilePath(newNotebookName);
+			const notebookContent = createNotebookFileContent(
+				code,
+				langStr,
+				pending.executionData,
+				pending.metadataData,
+			);
+			await room.runRoomPixel(
+				`SaveInsightAssets(filePath=[${JSON.stringify(filePath)}], content=["<encode>${notebookContent}</encode>"]);`,
+				false,
+				false,
+			);
+			notifyFileEditorRefresh(filePath, `INSIGHT:${room.insightId}`);
+			const fileName = filePath.split("/").pop() ?? filePath;
+			toast.success(`Added to notebook as ${fileName}`);
+			room.addSidebarNode(`FILE--${filePath}`, {
+				type: "tab",
+				name: fileName,
+				component: "room-file-editor",
+				config: {
+					name: fileName,
+					path: filePath,
+					initialTab: "preview",
+				},
+				enableClose: true,
+			});
+			setIsNotebookNameDialogOpen(false);
+			setNewNotebookName("");
+			pendingNotebookCreateRef.current = null;
 		} catch (error) {
 			toast.error(getErrorMessage(error));
 		} finally {
@@ -502,6 +550,54 @@ export const CodePreviewBlock = ({
 					<div className="relative h-full min-h-0 overflow-auto">
 						<Code code={code} language={language ?? "txt"} />
 					</div>
+				</DialogContent>
+			</Dialog>
+			<Dialog
+				open={isNotebookNameDialogOpen}
+				onOpenChange={(open) => {
+					setIsNotebookNameDialogOpen(open);
+					if (!open) {
+						pendingNotebookCreateRef.current = null;
+						setNewNotebookName("");
+					}
+				}}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Name Your New Notebook</DialogTitle>
+					</DialogHeader>
+					<Input
+						autoFocus
+						value={newNotebookName}
+						onChange={(e) => setNewNotebookName(e.target.value)}
+						placeholder="my-notebook"
+						onKeyDown={(e) => {
+							if (e.key === "Enter") {
+								e.preventDefault();
+								void confirmCreateNotebookWithName();
+							}
+						}}
+					/>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => {
+								setIsNotebookNameDialogOpen(false);
+								pendingNotebookCreateRef.current = null;
+								setNewNotebookName("");
+							}}
+						>
+							Cancel
+						</Button>
+						<Button
+							disabled={isSavingToNotebook}
+							onClick={() => void confirmCreateNotebookWithName()}
+						>
+							{isSavingToNotebook
+								? "Creating..."
+								: "Create Notebook"}
+						</Button>
+					</DialogFooter>
 				</DialogContent>
 			</Dialog>
 		</>
