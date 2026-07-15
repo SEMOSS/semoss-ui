@@ -12,6 +12,10 @@ import {
 } from "@semoss/renderer";
 import { runPixel, useInsight } from "@semoss/sdk/react";
 import { Spinner, toast } from "@semoss/ui/next";
+import {
+	DEFAULT_NOTEBOOK_ID,
+	NOTEBOOK_APP_TAG,
+} from "@/components/app/templates";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
 import { FlexLayout } from "@/components/flex-layout";
@@ -191,6 +195,82 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 };
 
 const ACTIVE = "page-1";
+
+// Layout for notebook-only apps (created from the Notebook template)
+const NOTEBOOK_OPTIONS: WorkspaceOptions = {
+	version: "",
+
+	layout: {
+		global: { tabEnableClose: false, tabEnableRename: false },
+		borders: [
+			{
+				type: "border",
+				location: "left",
+				size: DEFAULT_BORDER_SIZE,
+				children: [
+					{
+						type: "tab",
+						id: "notebook-explorer",
+						name: "Notebooks",
+						component: "notebook-explorer",
+						config: {},
+						helpText: "Notebooks",
+					},
+					{
+						type: "tab",
+						id: "filexplorer",
+						name: "Files",
+						component: "app-file-explorer",
+						config: {},
+						helpText: "Files",
+					},
+					{
+						type: "tab",
+						id: "settings",
+						name: "Settings",
+						component: "settingsPanel",
+						config: {},
+						helpText: "Settings",
+						enableDrag: false,
+					},
+				],
+			},
+		],
+		layout: {
+			type: "row",
+			weight: 0,
+			children: [
+				{
+					type: "tabset",
+					id: "main-tabset",
+					weight: 100,
+					selected: 0,
+					enableMaximize: true,
+					children: [
+						{
+							type: "tab",
+							name: DEFAULT_NOTEBOOK_ID,
+							component: "notebook-viewer",
+							config: {
+								id: DEFAULT_NOTEBOOK_ID,
+							},
+							enableClose: true,
+						},
+					],
+				},
+			],
+		},
+	},
+};
+
+/**
+ * Determine whether the loaded app is a notebook-only app based on its tags.
+ */
+const isNotebookOnlyApp = (tag: string | string[] | undefined): boolean => {
+	if (!tag) return false;
+	const tags = Array.isArray(tag) ? tag : [tag];
+	return tags.some((t) => String(t) === NOTEBOOK_APP_TAG);
+};
 
 /**
  * Render the Blocks worksapce
@@ -449,7 +529,11 @@ export const BlocksWorkspace: React.FC = observer(() => {
 			>
 				<WorkspaceManager
 					navbarActions={<BlocksWorkspaceActions />}
-					options={DEFAULT_OPTIONS}
+					options={
+						isNotebookOnlyApp(workspace.metadata?.tag)
+							? NOTEBOOK_OPTIONS
+							: DEFAULT_OPTIONS
+					}
 					factory={FACTORY}
 					onAction={handleAction}
 				/>

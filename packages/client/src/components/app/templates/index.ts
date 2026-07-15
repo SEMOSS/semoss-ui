@@ -8,6 +8,15 @@ import { GmailTemplate } from "./GmailTemplate";
 import { LandingPageTemplate } from "./LandingPageTemplate";
 import { MultiPageTemplate } from "./MultiPageTemplate";
 import { NLPToGridTemplate } from "./NLPToGridTemplate";
+import {
+	DEFAULT_NOTEBOOK_ID,
+	NOTEBOOK_APP_TAG,
+	NotebookTemplate,
+} from "./NotebookTemplate";
+import {
+	buildSeedNotebookMcpAssetsPixel,
+	MCP_APP_TAG,
+} from "./notebook-mcp-assets";
 import { RowToNotebookTemplate } from "./RowToNotebookTemplate";
 import { ReadDiabetesRecordTemplate } from "./read-diabetes-record-template";
 import type { Template } from "./templates.types";
@@ -25,9 +34,16 @@ export const TEMPLATES: Template[] = [
 	LandingPageTemplate,
 	MultiPageTemplate,
 	NLPToGridTemplate,
+	NotebookTemplate,
 	ReadDiabetesRecordTemplate,
 	RowToNotebookTemplate,
 	UpdateDiabetesRecordTemplate,
 	VisualizeCSVTemplate,
 ];
 export type { Template };
+export {
+	DEFAULT_NOTEBOOK_ID,
+	NOTEBOOK_APP_TAG,
+	MCP_APP_TAG,
+	buildSeedNotebookMcpAssetsPixel,
+};

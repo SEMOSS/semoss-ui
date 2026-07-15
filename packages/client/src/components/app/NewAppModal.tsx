@@ -17,6 +17,11 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { uploadImage } from "@/api";
+import {
+	buildSeedNotebookMcpAssetsPixel,
+	MCP_APP_TAG,
+	NOTEBOOK_APP_TAG,
+} from "@/components/app/templates";
 import { useRootStore } from "@/hooks";
 import type { AppMetadata } from "./app.types";
 
@@ -29,7 +34,9 @@ type NewAppForm = {
 
 interface NewAppModalProps {
 	open: boolean;
-	options: { type: "blocks"; state: SerializedState } | { type: "code" };
+	options:
+		| { type: "blocks"; state: SerializedState; tags?: string[] }
+		| { type: "code" };
 	onClose: (appId?: string) => void;
 }
 
@@ -87,12 +94,46 @@ export const NewAppModal = (props: NewAppModalProps) => {
 					);
 				}
 
-				if (data.APP_TAGS.length || data.APP_DESCRIPTION) {
+				// Notebook-template apps double as MCP servers: seed the MCP
+				// driver + manifest so the read/write tools are available in
+				// the playground, and tag the app with the "MCP" tag.
+				const isNotebookApp =
+					!!options.tags?.includes(NOTEBOOK_APP_TAG);
+
+				if (isNotebookApp && appId) {
+					const seedMcpResponse = await monolithStore.runQuery(
+						buildSeedNotebookMcpAssetsPixel(appId, data.APP_NAME),
+					);
+
+					const failedSeed = seedMcpResponse.pixelReturn.find(
+						(ret) =>
+							Array.isArray(ret.operationType)
+								? ret.operationType.some((op) =>
+										op.includes("ERROR"),
+									)
+								: false,
+					);
+
+					if (failedSeed) {
+						toast.error(failedSeed.output as string);
+					}
+				}
+
+				// merge any template-provided tags with the user-entered tags
+				const blocksTags = Array.from(
+					new Set([
+						...(options.tags ?? []),
+						...(isNotebookApp ? [MCP_APP_TAG] : []),
+						...data.APP_TAGS,
+					]),
+				);
+
+				if (blocksTags.length || data.APP_DESCRIPTION) {
 					const setProjectMetadataResponse =
 						await monolithStore.runQuery(
 							`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
 								{
-									tag: data.APP_TAGS,
+									tag: blocksTags,
 									description: data.APP_DESCRIPTION,
 								},
 							)}])`,

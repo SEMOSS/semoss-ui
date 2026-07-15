@@ -51,7 +51,7 @@ import { MCP_NOTEBOOK_NAME } from "@/pages/app/app.constants";
 import { copyTextToClipboard, isOutputJSON } from "@/utility";
 import { replaceInBlocks } from "@/utility/dependency-replacer";
 import { getDependentBlocks } from "@/utility/dependency-scanner";
-import { DependencyPromptModal } from "../blocks-workspace";
+import { DependencyPromptModal } from "../blocks-workspace/modals/DependencyPromptModal";
 import { AddVariableModal } from "./AddVariableModal";
 import { NotebookAddCell } from "./notebook-add-cell";
 import { NotebookCellConsole } from "./notebook-cell-console";

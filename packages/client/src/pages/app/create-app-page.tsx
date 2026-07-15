@@ -31,7 +31,7 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { AddAppModal, NewAppModal } from "@/components/app";
-import type { Template } from "@/components/app/templates";
+import { NOTEBOOK_APP_TAG, type Template } from "@/components/app/templates";
 import { LandingHeader } from "@/components/landing";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
@@ -271,10 +271,14 @@ export const CreateAppPage = () => {
 												size="sm"
 												onClick={(e) => {
 													e.stopPropagation();
-
 													setNewAppOptions({
 														type: "blocks",
 														state: template.state,
+														tags: template.tags?.includes(
+															NOTEBOOK_APP_TAG,
+														)
+															? [NOTEBOOK_APP_TAG]
+															: undefined,
 													});
 												}}
 											>
