@@ -1,5 +1,6 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import {
+	download,
 	getPixelAsyncResult,
 	console as getPixelConsole,
 	getPixelJobStreaming,
@@ -25,6 +26,7 @@ import type {
 	InputPixelMessage,
 	MCPConfig,
 	PixelMessage,
+	PixelMessageTextPart,
 	PixelMessageToolCallPart,
 	PixelMessageToolResultPart,
 	Prompt,
@@ -1405,6 +1407,74 @@ export class RoomStore {
 			return "compacted" as const;
 		} finally {
 			curResponse.setIsCompacting(false);
+		}
+	};
+
+	/**
+	 * Download the entire conversation as a Word or PDF document
+	 * @param format - format to download (word or pdf)
+	 */
+	downloadConversation = async (format: "word" | "pdf"): Promise<void> => {
+		try {
+			// Get the whole conversation from history
+			const messages = this.history
+				.map((message) => {
+					if (message instanceof InputMessageStore) {
+						const text = message.parts
+							.filter(
+								(p): p is PixelMessageTextPart =>
+									p?.type === "TEXT",
+							)
+							.map((p) => p.text)
+							.join("");
+						return `**You:** ${text}`;
+					}
+
+					if (message instanceof ResponseMessageStore) {
+						const text = message.parts
+							.filter(
+								(p): p is PixelMessageTextPart =>
+									p?.type === "TEXT",
+							)
+							.map((p) => p.text)
+							.join("");
+						return `**Assistant:**\n\n${text}`;
+					}
+
+					return null;
+				})
+				.filter(Boolean)
+				.join("\n\n---\n\n");
+
+			if (!messages) {
+				throw new Error("No conversation content to download");
+			}
+
+			// Build the pixel command based on format
+			const pixelCommand =
+				format === "word"
+					? `ToDocx(markdown=["<encode>${messages}</encode>"], fileName="${this.roomId}");`
+					: `ToPdf(markdown=["<encode>${messages}</encode>"], fileName="${this.roomId}");`;
+
+			const resp = await this.runRoomPixel<[string]>(pixelCommand, false);
+
+			if (resp?.pixelReturn?.[0]) {
+				const { operationType, output } = resp.pixelReturn[0];
+
+				if (operationType?.includes("FILE_DOWNLOAD")) {
+					download(this.insightId, output);
+				} else {
+					throw new Error(
+						`Failed to generate ${format.toUpperCase()} file`,
+					);
+				}
+			} else {
+				throw new Error("No response received from server");
+			}
+		} catch (e) {
+			throw new Error(
+				(e as Error).message || "Failed to download conversation",
+			);
 		}
 	};
 }
