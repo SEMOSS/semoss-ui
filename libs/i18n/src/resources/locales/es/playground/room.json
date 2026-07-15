@@ -91,7 +91,8 @@
 		"close": "Cerrar Explorador de Archivos"
 	},
 	"errors": {
-		"createRoom": "Ocurrió un error al crear la sala. Error: {{message}}"
+		"createRoom": "Ocurrió un error al crear la sala. Error: {{message}}",
+		"fileInUse": "El/los archivo(s) cargado(s) está(n) siendo usados por otro programa. Cierre el programa y vuelva a cargarlos en un nuevo chat."
 	},
 	"contextWindow": {
 		"descriptionLow": "Todas las conversaciones tienen un límite. Las conversaciones muy largas eventualmente harán que el modelo olvide mensajes anteriores.",

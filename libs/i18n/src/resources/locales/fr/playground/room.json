@@ -88,7 +88,8 @@
 		"close": "Fermer l'explorateur de fichiers"
 	},
 	"errors": {
-		"createRoom": "Une erreur s'est produite lors de la création de la salle. Erreur : {{message}}"
+		"createRoom": "Une erreur s'est produite lors de la création de la salle. Erreur : {{message}}",
+		"fileInUse": "Le(s) fichier(s) téléversé(s) est/sont actuellement utilisé(s) par un autre programme. Fermez le programme et retéléversez le(s) fichier(s) dans un nouveau chat."
 	},
 	"contextWindow": {
 		"descriptionLow": "Toutes les conversations ont une limite. Les conversations très longues finiront par faire oublier les messages précédents au modèle.",

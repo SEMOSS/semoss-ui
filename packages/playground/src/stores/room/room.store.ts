@@ -1,4 +1,5 @@
 import { makeAutoObservable, runInAction } from "mobx";
+import { getI18n } from "@semoss/i18n";
 import {
 	getPixelAsyncResult,
 	console as getPixelConsole,
@@ -987,7 +988,7 @@ export class RoomStore {
 				// proceeding with no attachment.
 				if (uploaded.length === 0) {
 					const uploadError = new Error(
-						"Uploaded file(s) currently in use by another program. Close the program and re-upload the file(s) in a new chat.",
+						getI18n().t("room:errors.fileInUse"),
 					);
 					uploadError.name = "UploadError";
 					(uploadError as Error & { fileNames: string[] }).fileNames =
@@ -1050,9 +1051,7 @@ export class RoomStore {
 				errMsg.includes("NetworkError");
 
 			if (isNetworkOrUploadFailure || e instanceof TypeError) {
-				toast.error(
-					"Uploaded file(s) currently in use by another program. Close the program and re-upload the file(s) in a new chat.",
-				);
+				toast.error(getI18n().t("room:errors.fileInUse"));
 				// Tag and re-throw so awaited callers can also react if needed
 				const uploadError = new Error((e as Error).message);
 				uploadError.name = "UploadError";
