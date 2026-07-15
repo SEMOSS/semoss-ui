@@ -160,7 +160,8 @@
 		"viewDescription": "The system prompt that guides this agent's behavior.",
 		"editTitle": "Edit Instructions",
 		"editDescription": "Update the system prompt that guides this agent's behavior.",
-		"charCount": "{{count}} characters"
+		"charCount_one": "{{count, number}} character",
+		"charCount_other": "{{count, number}} characters"
 	},
 	"skills": {
 		"noSkills": "No skills added"
