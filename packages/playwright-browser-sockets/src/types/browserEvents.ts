@@ -125,6 +125,8 @@ export interface McpToolContext {
   originalName: string;
   message: string;
   roomId: string;
+  /** SMSS_PROJECT_ID from the tool’s _meta — the playwright app project ID for the sidebar URL. */
+  projectId: string;
   parameters: Record<string, unknown>;
   toolResponse?: unknown;
   executedParameters?: Record<string, unknown>;
