@@ -3,12 +3,17 @@ import { useInsight } from "@semoss/sdk/react";
 import { Terminal } from "../terminal/terminal";
 import { TerminalProvider } from "../terminal/terminal-context";
 
-interface EmbedTerminalProps {
+export interface EmbedTerminalProps {
 	/**
 	 * Where the terminal is mounted. Mirrors the legacy `location` binding.
 	 * Defaults to "panel" so the workspace dock/close chrome stays hidden.
 	 */
 	location?: "workspace" | "panel" | "popup" | "pipeline";
+	/**
+	 * Allow opening more than one terminal tab. Set to `false` for a single
+	 * fixed terminal. Defaults to `true`.
+	 */
+	allowMultipleTerminals?: boolean;
 }
 
 /**
@@ -24,7 +29,10 @@ interface EmbedTerminalProps {
  * background side-effect so any backend listeners keyed off SetPanelView keep
  * working — but we don't block the UI on it.
  */
-export const EmbedTerminal = ({ location = "panel" }: EmbedTerminalProps) => {
+export const EmbedTerminal = ({
+	location = "panel",
+	allowMultipleTerminals = true,
+}: EmbedTerminalProps) => {
 	const { isReady, actions } = useInsight();
 
 	useEffect(() => {
@@ -46,7 +54,7 @@ Panel(0) | SetPanelView("terminal");`,
 
 	return (
 		<TerminalProvider location={location}>
-			<Terminal />
+			<Terminal allowMultipleTerminals={allowMultipleTerminals} />
 		</TerminalProvider>
 	);
 };

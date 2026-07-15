@@ -159,6 +159,15 @@
 			"branchLabel": "Branch to track",
 			"branchHelp": "Only pushes to this branch sync the project."
 		},
+		"subdir": {
+			"label": "Subdirectory",
+			"optional": "(optional)",
+			"placeholder": "apps/my-app",
+			"help": "Leave blank to sync the entire repository. Use for monorepos where the app lives in a subfolder.",
+			"display": "Subdirectory",
+			"errorLeadingSlash": "Path must not start with a slash.",
+			"errorDotDot": "Path must not contain \"..\"."
+		},
 		"selectRepo": {
 			"title": "Select a repository",
 			"description": "The installation can access multiple repositories. Choose the one this project should use.",

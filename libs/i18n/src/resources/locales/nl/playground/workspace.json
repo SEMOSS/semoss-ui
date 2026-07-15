@@ -7,7 +7,8 @@
 		"instructionsLabel": "Instructies",
 		"knowledgeLabel": "Kennis",
 		"toolboxLabel": "Toolboxes",
-		"promptsLabel": "Promptbibliotheek"
+		"promptsLabel": "Promptbibliotheek",
+		"skillsLabel": "Vaardigheden"
 	},
 	"actions": {
 		"create": "Aanmaken",
@@ -77,10 +78,7 @@
 		"pin": "Favoriet",
 		"unpin": "Favoriet verwijderen",
 		"pinFailed": "Chat als favoriet markeren mislukt",
-		"unpinFailed": "Favoriet verwijderen van chat mislukt",
-		"dayToday": "Vandaag",
-		"dayYesterday": "Gisteren",
-		"daysAgo": "{{count}} dagen geleden"
+		"unpinFailed": "Favoriet verwijderen van chat mislukt"
 	},
 	"images": {
 		"agentIllustration": "Agentillustratie"
@@ -113,7 +111,8 @@
 			"knowledge": "Kennis",
 			"toolbox": "Toolboxes",
 			"prompts": "Prompts",
-			"members": "Leden"
+			"members": "Leden",
+			"skills": "Vaardigheden"
 		},
 		"about": {
 			"title": "Over",
@@ -144,6 +143,8 @@
 		"title": "Alle chats",
 		"subtitle": "Blader door, zoek en ruim uw chats op.",
 		"selectAll": "Alles selecteren",
+		"deselectAll": "Alles deselecteren",
+		"favorites": "Favorieten",
 		"selectChat": "Chat {{name}} selecteren",
 		"selectedCount": "{{count}} geselecteerd",
 		"totalCount": "{{count}} chats",
@@ -159,6 +160,10 @@
 		"viewDescription": "De systeemprompt die het gedrag van deze agent stuurt.",
 		"editTitle": "Instructies bewerken",
 		"editDescription": "Werk de systeemprompt bij die het gedrag van deze agent stuurt.",
-		"charCount": "{{count}} tekens"
+		"charCount_one": "{{count, number}} teken",
+		"charCount_other": "{{count, number}} tekens"
+	},
+	"skills": {
+		"noSkills": "Geen vaardigheden toegevoegd"
 	}
 }

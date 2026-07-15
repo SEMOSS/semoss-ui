@@ -42,8 +42,9 @@ export const getMcpTypeIcon = (type: MCPConfig["type"]): LucideIcon => {
 };
 
 /**
- * MyEngineProjects returns responses in a strange format where Engines and Apps have different structures.
- * This function normalizes them into a common MCP format.
+ * Engines (from MyEngines) and Apps (from MyProjects) come back with different
+ * field shapes — `engine_*` vs `project_*`. This normalizes either one into the
+ * common MCP format.
  * @param tool The engine or app to convert
  * @returns The normalized MCP object
  */

@@ -24,6 +24,11 @@ export interface SubmitToConsoleOptions {
 	context: ConsoleContext;
 }
 
+export type SubmitToConsoleFn = (
+	pixel: string,
+	opts: SubmitToConsoleOptions,
+) => void;
+
 interface SaveModalState {
 	open: boolean;
 	name: string;
@@ -73,9 +78,37 @@ interface TerminalContextValue {
 	 * "Run" button so output lands in the same transcript as REPL submissions.
 	 */
 	submitToConsole: (pixel: string, opts: SubmitToConsoleOptions) => void;
-	registerSubmitToConsole: (
-		fn: (pixel: string, opts: SubmitToConsoleOptions) => void,
-	) => void;
+	/**
+	 * Register (or, with `fn === null`, unregister) a console's submit handler
+	 * keyed by its id. Multiple consoles can be mounted at once (one per
+	 * terminal tab); `submitToConsole` dispatches to whichever is active — see
+	 * `activeConsoleId`.
+	 */
+	registerSubmitToConsole: (id: string, fn: SubmitToConsoleFn | null) => void;
+
+	/**
+	 * Id of the terminal tab that currently owns the file editor's "Run"
+	 * target. Set as the user focuses terminal tabs; `null` falls back to the
+	 * first (anchor) console.
+	 */
+	activeConsoleId: string | null;
+	setActiveConsoleId: (id: string | null) => void;
+
+	/**
+	 * Publish (or, with `insightId === null`, retract) the insight a console
+	 * has attached to, keyed by its console/tab id. Each terminal tab owns an
+	 * independent insight (separate R/Python/variable + asset space); this
+	 * registry lets the file explorer point at the *active* tab's insight so
+	 * uploads and REPL commands share one workspace. See `activeInsightId`.
+	 */
+	setConsoleInsight: (id: string, insightId: string | null) => void;
+	/**
+	 * The insightId of the active terminal tab (or the anchor console when
+	 * nothing is focused yet) — `null` until at least one console has attached.
+	 * The file explorer scopes INSIGHT-mode asset browsing/upload to this so it
+	 * always mirrors the terminal the user is running commands in.
+	 */
+	activeInsightId: string | null;
 
 	/**
 	 * Current file scope — which Pixel reactor family the file explorer
@@ -83,6 +116,11 @@ interface TerminalContextValue {
 	 * `GetInsightAssets` etc.; APP-scoped uses `GetAppAssets(project=...)`.
 	 * Tabs snapshot this value when opened, so switching scope here doesn't
 	 * change the scope of files already open.
+	 *
+	 * For INSIGHT scope this is *resolved* to carry `insightId: activeInsightId`
+	 * so the explorer and newly opened file tabs bind to the active terminal
+	 * tab's insight rather than the ambient app-level one. `setFileMode` only
+	 * sets the scope intent; the insightId is injected here.
 	 */
 	fileMode: FileMode;
 	setFileMode: (mode: FileMode) => void;
@@ -152,12 +190,63 @@ export const TerminalProvider = ({
 	const openFileRef = useRef<(file: SelectedFile) => void>(noop);
 	const updateFileRef = useRef<(file: Partial<SelectedFile>) => void>(noop);
 	const selectFileRef = useRef<(file: SelectedFile) => void>(noop);
-	const submitToConsoleRef =
-		useRef<(pixel: string, opts: SubmitToConsoleOptions) => void>(noop);
+	// One submit handler per mounted console, keyed by console/tab id. The
+	// file editor's "Run" dispatches to the active console (see below).
+	const submitToConsoleMapRef = useRef(new Map<string, SubmitToConsoleFn>());
+	const [activeConsoleId, setActiveConsoleId] = useState<string | null>(null);
 
-	const [fileMode, setFileMode] = useState<FileMode>({ type: "INSIGHT" });
+	// consoleId -> insightId for every mounted terminal tab. Insertion order is
+	// preserved, so the first entry is the anchor console — the fallback the
+	// file explorer (and `submitToConsole`) use before the user focuses a tab.
+	const [consoleInsights, setConsoleInsights] = useState<
+		Record<string, string>
+	>({});
+
+	// Scope *intent* set by the ScopePicker; the exposed `fileMode` below
+	// resolves this with the active insightId for INSIGHT scope.
+	const [fileModeIntent, setFileModeIntent] = useState<FileMode>({
+		type: "INSIGHT",
+	});
 	const [selectedApp, setSelectedApp] = useState<AppRef | undefined>(
 		undefined,
+	);
+
+	const setConsoleInsight = useCallback(
+		(id: string, insightId: string | null) => {
+			setConsoleInsights((prev) => {
+				if (insightId === null) {
+					if (!(id in prev)) return prev;
+					const next = { ...prev };
+					delete next[id];
+					return next;
+				}
+				if (prev[id] === insightId) return prev;
+				return { ...prev, [id]: insightId };
+			});
+		},
+		[],
+	);
+
+	// Active tab's insight, falling back to the anchor (first-registered)
+	// console so the explorer is scoped correctly before any tab is focused —
+	// mirroring the `submitToConsole` fallback.
+	const activeInsightId = useMemo<string | null>(() => {
+		if (activeConsoleId && consoleInsights[activeConsoleId]) {
+			return consoleInsights[activeConsoleId];
+		}
+		const [first] = Object.values(consoleInsights);
+		return first ?? null;
+	}, [activeConsoleId, consoleInsights]);
+
+	// Inject the active insightId into INSIGHT scope so the explorer + newly
+	// opened file tabs target the active terminal's insight. Other scopes
+	// (APP/USER/…) are insight-independent and pass through untouched.
+	const fileMode = useMemo<FileMode>(
+		() =>
+			fileModeIntent.type === "INSIGHT"
+				? { type: "INSIGHT", insightId: activeInsightId ?? undefined }
+				: fileModeIntent,
+		[fileModeIntent, activeInsightId],
 	);
 
 	const browserPathRef = useRef<string>("");
@@ -246,14 +335,28 @@ export const TerminalProvider = ({
 				selectFileRef.current = fn;
 			},
 
-			submitToConsole: (pixel, opts) =>
-				submitToConsoleRef.current(pixel, opts),
-			registerSubmitToConsole: (fn) => {
-				submitToConsoleRef.current = fn;
+			submitToConsole: (pixel, opts) => {
+				const map = submitToConsoleMapRef.current;
+				// Prefer the active console; fall back to the first registered
+				// (insertion order → the anchor terminal) if it's gone stale.
+				const fn =
+					(activeConsoleId && map.get(activeConsoleId)) ||
+					map.values().next().value;
+				fn?.(pixel, opts);
+			},
+			registerSubmitToConsole: (id, fn) => {
+				if (fn) submitToConsoleMapRef.current.set(id, fn);
+				else submitToConsoleMapRef.current.delete(id);
 			},
 
+			activeConsoleId,
+			setActiveConsoleId,
+
+			setConsoleInsight,
+			activeInsightId,
+
 			fileMode,
-			setFileMode,
+			setFileMode: setFileModeIntent,
 			selectedApp,
 			setSelectedApp,
 
@@ -285,6 +388,9 @@ export const TerminalProvider = ({
 			openUpload,
 			closeUpload,
 			setUpload,
+			activeConsoleId,
+			setConsoleInsight,
+			activeInsightId,
 			fileMode,
 			selectedApp,
 			browserRenderToken,
