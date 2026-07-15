@@ -34,7 +34,9 @@
 		"errors": "Errors",
 		"p50": "P50",
 		"p95": "P95",
-		"tokens": "Tokens",
+		"tokens": "Total Tokens",
+		"cacheRead": "Cache Read",
+		"cacheWrite": "Cache Write",
 		"currentPage": "current page",
 		"currentPageHint": "Latency, errors and tokens are calculated across the events on the current page."
 	},
@@ -54,9 +56,18 @@
 			"engineType": "Engine Type",
 			"engineName": "Engine Name",
 			"latency": "Latency",
-			"tokens": "Tokens",
+			"tokens": "Total Tokens",
+			"promptTokens": "Prompt Tokens",
+			"responseTokens": "Response Tokens",
+			"cacheRead": "Cache Read",
+			"cacheWrite": "Cache Write",
 			"timestamp": "Timestamp",
-			"status": "Status"
+			"status": "Status",
+			"guardrailAction": "Guardrail"
+		},
+		"guardrailActions": {
+			"MASK": "Masked",
+			"BLOCK": "Blocked"
 		},
 		"groupRequest": "Request",
 		"groupSpan": "Span",
@@ -88,7 +99,7 @@
 			"engine": "Engine",
 			"user": "User",
 			"latency": "Latency",
-			"tokens": "Tokens",
+			"tokens": "Total Tokens",
 			"start": "Start",
 			"end": "End",
 			"span": "Span",
@@ -108,7 +119,11 @@
 		"collapseAll": "Collapse All",
 		"fields": {
 			"latency": "Latency",
-			"tokens": "Tokens",
+			"tokens": "Total Tokens",
+			"promptTokens": "Prompt Tokens",
+			"responseTokens": "Response Tokens",
+			"cacheRead": "Cache Read",
+			"cacheWrite": "Cache Write",
 			"user": "User",
 			"userId": "User Id",
 			"start": "Start",

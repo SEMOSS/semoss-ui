@@ -4,29 +4,61 @@ import { expect, test, vi } from "vitest";
 import type { RoomStore } from "@/stores";
 import { RoomSidebar } from "./room-sidebar";
 
-// Mock shared FlexLayout to avoid heavy implementation in tests
+vi.mock("@semoss/sdk/react", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@semoss/sdk/react")>();
+	return {
+		...actual,
+		useInsight: () => ({
+			actions: {
+				run: vi.fn(),
+			},
+		}),
+	};
+});
+
+// Mock @semoss/shared to avoid flexlayout-react instanceof issues in jsdom
 vi.mock("@semoss/shared", () => {
+	class TabNode {}
+	class TabSetNode {}
 	return {
 		FlexLayout: {
-			Layout: () => {
-				// Render a simple placeholder for layout
-				return React.createElement(
+			Layout: () =>
+				React.createElement(
 					"div",
 					{ "data-testid": "flexlayout" },
 					null,
-				);
-			},
+				),
+			TabNode,
+			TabSetNode,
 		},
+		getFileIconComponent: vi.fn(() => null),
+		useTabBarScroll: vi.fn(() => ({
+			ref: { current: null },
+			onScroll: vi.fn(),
+		})),
+		createMcpPlatformUrl: vi.fn(() => vi.fn()),
+		createPromptPlatformUrl: vi.fn(() => vi.fn()),
 	};
 });
 
 const createMockRoom = () => ({
 	closeSidebar: vi.fn(),
-	sidebar: { model: {}, isOpen: true },
+	removeSidebarNode: vi.fn(),
+	addSidebarNode: vi.fn(),
+	getToolByNodeId: vi.fn(() => null),
+	sidebar: {
+		isOpen: true,
+		counter: 0,
+		model: {
+			getActiveTabset: vi.fn(() => null),
+			getNodeById: vi.fn(() => null),
+		},
+	},
 });
 
 test("renders sidebar and close button triggers closeSidebar", () => {
-	const room: RoomStore = createMockRoom();
+	// Partial stub — only the members RoomSidebar touches are mocked.
+	const room = createMockRoom() as unknown as RoomStore;
 
 	render(<RoomSidebar room={room} />);
 

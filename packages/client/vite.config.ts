@@ -35,6 +35,13 @@ export default defineConfig(({ mode }) => {
 					replacement: `${resolve(__dirname, "../../libs/shared/src/assets/loginProviders")}/`,
 				},
 				{ find: "@", replacement: resolve(__dirname, "./src") },
+				{
+					find: /^monaco-editor$/,
+					replacement: resolve(
+						__dirname,
+						"../../libs/shared/node_modules/monaco-editor/esm/vs/editor/editor.api",
+					),
+				},
 			],
 		},
 		define: {
