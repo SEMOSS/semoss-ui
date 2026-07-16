@@ -132,7 +132,7 @@ export const ViewSkillPage = observer(() => {
 					</Button>
 				)}
 			</NavbarRight>
-			<div className="">
+			<div className="w-full pb-2">
 				<InsightProvider
 					options={{ insightId: workspace.insightId }}
 					destroyOnUnmount={false}
