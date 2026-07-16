@@ -67,7 +67,7 @@ function ChatPanelInner({
 				emptyState={emptyState}
 			/>
 			<ChatInput
-				onSend={sendMessage}
+				onSubmit={sendMessage}
 				disabled={isTyping}
 				placeholder={placeholder}
 			/>

@@ -6,7 +6,7 @@ import { type PropDoc, PropsTable } from "../props-table";
 
 const PROPS: PropDoc[] = [
 	{
-		name: "onSend",
+		name: "onSubmit",
 		type: "(text: string) => void",
 		required: true,
 		description: "Enter sends, Shift+Enter inserts a newline.",
@@ -56,7 +56,7 @@ export const ChatInputDoc = () => {
 				preview={
 					<div className="flex flex-col gap-2">
 						<ChatInput
-							onSend={(text) =>
+							onSubmit={(text) =>
 								setSent((prev) => [...prev, text])
 							}
 							isGenerating={isGenerating}
@@ -88,7 +88,7 @@ import { useChatContext } from "@semoss/chat";
 const { isTyping, sendMessage } = useChatContext();
 
 <ChatInput
-  onSend={sendMessage}
+  onSubmit={sendMessage}
   isGenerating={isTyping}
   enableVoiceInput
 />`}

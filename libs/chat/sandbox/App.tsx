@@ -341,7 +341,7 @@ export function App() {
 					{isTyping ? "Stop typing" : "Start typing"}
 				</Button>
 				<ChatInput
-					onSend={(text) =>
+					onSubmit={(text) =>
 						setSentMessages((prev) => [
 							...prev,
 							{ id: crypto.randomUUID(), text },
@@ -395,7 +395,7 @@ export function App() {
 				description="Pass custom icon components to customize the send button, mic button, and slash command icons."
 			>
 				<ChatInput
-					onSend={(text) =>
+					onSubmit={(text) =>
 						setSentMessages((prev) => [
 							...prev,
 							{ id: crypto.randomUUID(), text },

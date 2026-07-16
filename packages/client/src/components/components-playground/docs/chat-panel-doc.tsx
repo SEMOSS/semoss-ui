@@ -13,12 +13,18 @@ const PROPS: PropDoc[] = [
 		description:
 			"Passed straight through to ChatProvider — { engineId, roomId?, defaultRoomSettings?, toolAutoExecutionLimit?, gracefulErrors? }.",
 	},
+	{
+		name: "isActive",
+		type: "boolean",
+		description:
+			"Passed to ChatProvider to control global imperative targeting.",
+	},
 	{ name: "className", type: "string", description: "" },
 	{ name: "placeholder", type: "string", description: "" },
 	{ name: "emptyState", type: "ReactNode", description: "" },
 	{
 		name: "renderMessage",
-		type: "(message: ChatMessage) => ReactNode",
+		type: "(message: ChatMessage, helpers: MessageRenderHelpers) => ReactNode",
 		description: "Override the per-message renderer.",
 	},
 ];
@@ -48,7 +54,7 @@ export const ChatPanelDoc = () => {
 				}
 				code={`import { ChatPanel } from "@semoss/chat/components";
 
-<ChatPanel options={{ engineId }} />`}
+<ChatPanel options={{ engineId }} isActive />`}
 			/>
 			<PropsTable props={PROPS} />
 		</DocPage>

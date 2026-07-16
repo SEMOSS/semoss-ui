@@ -309,7 +309,7 @@ function getTextareaCaretPosition(textarea: HTMLTextAreaElement): {
 }
 
 export interface ChatInputProps {
-	onSend: (text: string) => void;
+	onSubmit: (text: string) => void;
 	/** Enables built-in slash command workflow. */
 	useSlashCommands?: boolean;
 	disabled?: boolean;
@@ -401,7 +401,7 @@ export interface ChatInputProps {
  * trying to approximate.
  */
 export function ChatInput({
-	onSend,
+	onSubmit,
 	useSlashCommands = true,
 	disabled = false,
 	isGenerating = false,
@@ -534,7 +534,7 @@ export function ChatInput({
 		if (!trimmed || disabled) {
 			return;
 		}
-		onSend(trimmed);
+		onSubmit(trimmed);
 		setValue("");
 	}
 

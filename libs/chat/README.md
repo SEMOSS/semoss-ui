@@ -180,7 +180,7 @@ function MyChatWidget() {
 	return (
 		<div className="flex h-full flex-col gap-2">
 			<MessageList messages={messages} isTyping={isTyping} className="flex-1" />
-			<ChatInput onSend={sendMessage} disabled={isTyping} />
+			<ChatInput onSubmit={sendMessage} disabled={isTyping} />
 		</div>
 	);
 }
