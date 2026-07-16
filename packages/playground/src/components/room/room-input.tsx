@@ -494,28 +494,27 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					{contextUsedPercent !== undefined && descriptionKey && (
 						<p className="w-full">{t(descriptionKey)}</p>
 					)}
-					{(contextUsedPercent !== undefined ||
-						totalTokens !== undefined) && (
-						<div className="mt-1 space-y-1 border-t pt-1">
-							{contextUsedPercent !== undefined && (
-								<p className="tabular-nums">
-									<span className="font-bold">
-										Last Message:
-									</span>{" "}
-									{tokensUsed?.toLocaleString()} /{" "}
-									{formatTokens(tokensMax)} Context Window (
-									{contextUsedPercent.toFixed(1)}%)
-								</p>
-							)}
-							{totalTokens !== undefined && (
-								<p className="tabular-nums">
-									<span className="font-bold">
-										Chat Total:
-									</span>{" "}
-									{totalTokens.toLocaleString()} tokens
-								</p>
-							)}
-						</div>
+					{contextUsedPercent !== undefined && (
+						<p className="flex w-full items-baseline justify-between gap-3">
+							<span>{t("contextWindow.memoryUsedTitle")}</span>
+							<span className="whitespace-nowrap text-end tabular-nums">
+								{t("contextWindow.memoryUsedValue", {
+									used: formatTokens(tokensUsed),
+									total: formatTokens(tokensMax),
+									percent: contextUsedPercent.toFixed(1),
+								})}
+							</span>
+						</p>
+					)}
+					{totalTokens !== undefined && (
+						<p className="flex w-full items-baseline justify-between gap-3">
+							<span>{t("contextWindow.totalUsedTitle")}</span>
+							<span className="whitespace-nowrap text-end tabular-nums">
+								{t("contextWindow.totalUsedValue", {
+									total: formatTokens(totalTokens),
+								})}
+							</span>
+						</p>
 					)}
 					{onCompact && (
 						<CompactStrategyPicker
