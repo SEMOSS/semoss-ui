@@ -5,17 +5,14 @@ import type { MCPConfig } from "../types";
 import { McpMenuButton } from "./mcp-menu-button";
 
 // Same rationale as mcp-overlay.test.tsx: MCPSelector needs a real
-// InsightProvider, so mock the ported primitives module directly rather
-// than exercising the real pixel-calling component.
-vi.mock("./primitives/mcp-utils", () => ({
+// InsightProvider, so mock @semoss/shared directly rather than exercising
+// the real pixel-calling component.
+vi.mock("@semoss/shared", () => ({
 	isKnowledgeMcp: (mcp: { type: string }) => mcp.type === "VECTOR",
 	splitMcpByType: (mcp: MCPConfig[]) => ({
 		knowledge: mcp.filter((m) => m.type === "VECTOR"),
 		toolbox: mcp.filter((m) => m.type !== "VECTOR"),
 	}),
-}));
-
-vi.mock("./primitives/mcp-selector", () => ({
 	MCPSelector: ({ type }: { type: "KNOWLEDGE" | "TOOLBOX" }) => (
 		<div data-testid={`selector-${type}`} />
 	),

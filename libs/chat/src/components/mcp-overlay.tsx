@@ -1,5 +1,6 @@
 import { BookOpenIcon, HammerIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { MCPSelector, splitMcpByType } from "@semoss/shared";
 import {
 	Badge,
 	Button,
@@ -15,8 +16,6 @@ import {
 	TabsTrigger,
 } from "@semoss/ui/next";
 import type { MCPConfig } from "../types";
-import { MCPSelector } from "./primitives/mcp-selector";
-import { splitMcpByType } from "./primitives/mcp-utils";
 
 type Tab = "KNOWLEDGE" | "TOOLBOX";
 

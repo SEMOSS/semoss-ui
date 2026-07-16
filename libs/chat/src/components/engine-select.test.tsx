@@ -8,8 +8,8 @@ const { SharedEngineSelect } = vi.hoisted(() => ({
 	)),
 }));
 
-vi.mock("./primitives/engine-select", () => ({
-	EngineSelectPrimitive: SharedEngineSelect,
+vi.mock("@semoss/shared", () => ({
+	EngineSelect: SharedEngineSelect,
 }));
 
 describe("EngineSelect", () => {

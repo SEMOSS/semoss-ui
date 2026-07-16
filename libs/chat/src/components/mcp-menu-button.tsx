@@ -1,5 +1,6 @@
 import { BookOpenIcon, HammerIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
+import { isKnowledgeMcp } from "@semoss/shared";
 import {
 	Badge,
 	Button,
@@ -10,7 +11,6 @@ import {
 } from "@semoss/ui/next";
 import type { MCPConfig } from "../types";
 import { McpOverlay } from "./mcp-overlay";
-import { isKnowledgeMcp } from "./primitives/mcp-utils";
 
 export interface McpMenuButtonProps {
 	/** Full MCP list (both types) currently attached to this room. */

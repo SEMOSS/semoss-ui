@@ -41,6 +41,7 @@
         "@rollup/plugin-commonjs": "28.0.6",
         "@semoss/sdk": "workspace:*",
         "@semoss/ui": "workspace:*",
+        "@semoss/shared": "workspace:*",
         "@rollup/plugin-json": "^6.1.0",
         "@rollup/plugin-node-resolve": "16.0.1",
         "@rollup/plugin-terser": "^0.4.4",
@@ -63,6 +64,7 @@
     },
     "peerDependencies": {
         "@semoss/sdk": ">=1.0.0-beta.20",
+        "@semoss/shared": "1.0.0-beta.1",
         "@semoss/ui": "1.0.0-beta.3",
         "react": "18.3.1",
         "react-dom": "18.3.1"
