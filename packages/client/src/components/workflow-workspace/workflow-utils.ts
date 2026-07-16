@@ -146,7 +146,7 @@ export function buildPixelPreview(node: WorkflowNode): string {
 			if (op === "download") {
 				return `VectorFileDownload(engine=["${eid}"], fileNames=["${str(c.fileNames)}"]);`;
 			}
-			return `VectorDatabaseQuery(engine=["${eid}"], command=["${str(c.command)}"], limit=[${num(c.limit, 5)}]);`;
+			return `VectorDatabaseQuery(engine=["${eid}"], command=["<encode>${str(c.command)}</encode>"], limit=[${num(c.limit, 5)}]);`;
 		}
 
 		case "storage-engine": {
