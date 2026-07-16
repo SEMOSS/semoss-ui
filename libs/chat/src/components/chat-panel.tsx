@@ -4,7 +4,7 @@ import { ChatProvider, useChatContext } from "../chat-provider";
 import { cn } from "../lib/utils";
 import type { ChatMessage } from "../types";
 import { ChatInput } from "./chat-input";
-import { MessageList } from "./message-list";
+import { MessageList, type MessageRenderHelpers } from "./message-list";
 
 export interface ChatPanelProps {
 	/** Passed straight through to ChatProvider — this component owns the chat session. */
@@ -14,7 +14,10 @@ export interface ChatPanelProps {
 	className?: string;
 	placeholder?: string;
 	emptyState?: ReactNode;
-	renderMessage?: (message: ChatMessage) => ReactNode;
+	renderMessage?: (
+		message: ChatMessage,
+		helpers: MessageRenderHelpers,
+	) => ReactNode;
 }
 
 /**
@@ -51,7 +54,7 @@ function ChatPanelInner({
 	emptyState,
 	renderMessage,
 }: Omit<ChatPanelProps, "options">) {
-	const { messages, isTyping, sendMessage } = useChatContext();
+	const { isTyping, sendMessage } = useChatContext();
 
 	return (
 		<div
@@ -59,8 +62,6 @@ function ChatPanelInner({
 			className={cn("flex h-full min-h-0 flex-col gap-2", className)}
 		>
 			<MessageList
-				messages={messages}
-				isTyping={isTyping}
 				className="min-h-0 flex-1"
 				renderMessage={renderMessage}
 				emptyState={emptyState}

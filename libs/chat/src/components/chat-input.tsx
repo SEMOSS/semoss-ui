@@ -381,6 +381,14 @@ export interface ChatInputProps {
 	 * `defaultSlashCommandActions` is provided.
 	 */
 	disableDefaultSlashCommands?: boolean;
+	/**
+	 * Custom icon for the send button. Defaults to SendIcon from lucide-react.
+	 */
+	submitIcon?: ComponentType<{ className?: string }>;
+	/**
+	 * Custom icon for the voice input button. Defaults to MicIcon from lucide-react.
+	 */
+	voiceIcon?: ComponentType<{ className?: string }>;
 }
 
 /**
@@ -408,6 +416,8 @@ export function ChatInput({
 	defaultSlashCommandActions,
 	disableDefaultSlashCommandIds,
 	disableDefaultSlashCommands = false,
+	submitIcon,
+	voiceIcon,
 }: ChatInputProps) {
 	const isControlled = controlledValue !== undefined;
 	const [internalValue, setInternalValue] = useState("");
@@ -1004,12 +1014,18 @@ export function ChatInput({
 								}
 								onClick={toggleListening}
 							>
-								<MicIcon
-									className={cn(
-										isListening &&
-											"animate-pulse text-destructive",
-									)}
-								/>
+								{(() => {
+									const MicIconComponent =
+										voiceIcon || MicIcon;
+									return (
+										<MicIconComponent
+											className={cn(
+												isListening &&
+													"animate-pulse text-destructive",
+											)}
+										/>
+									);
+								})()}
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent>
@@ -1026,7 +1042,14 @@ export function ChatInput({
 					aria-label={isGenerating ? "Generating response" : "Send"}
 					disabled={disabled || !value.trim()}
 				>
-					{isGenerating ? <Spinner /> : <SendIcon />}
+					{isGenerating ? (
+						<Spinner />
+					) : (
+						(() => {
+							const SendIconComponent = submitIcon || SendIcon;
+							return <SendIconComponent />;
+						})()
+					)}
 				</Button>
 			</div>
 		</form>

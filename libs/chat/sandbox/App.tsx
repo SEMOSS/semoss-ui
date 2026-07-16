@@ -1,3 +1,4 @@
+import { ArrowUpIcon, Mic } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { Button } from "@semoss/ui/next";
 import {
@@ -193,10 +194,6 @@ export function App() {
 		FEEDBACK_DEMO_MESSAGE,
 	);
 
-	const messageListMessages = showToolCallMessage
-		? [...SAMPLE_MESSAGES, TOOL_CALL_MESSAGE]
-		: SAMPLE_MESSAGES;
-
 	return (
 		<div className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 bg-background p-8">
 			<header>
@@ -278,11 +275,7 @@ export function App() {
 					</Button>
 				</div>
 				<div className="h-56 rounded-md border border-border">
-					<MessageList
-						messages={messageListMessages}
-						isTyping={isTyping}
-						className="h-full p-3"
-					/>
+					<MessageList className="h-full p-3" />
 				</div>
 			</Section>
 
@@ -394,6 +387,30 @@ export function App() {
 					See <code>packages/chat-playground</code> for the live
 					composed version (in <code>ChatInput</code>'s{" "}
 					<code>trailingActions</code>).
+				</p>
+			</Section>
+
+			<Section
+				title="ChatInput with Custom Icons"
+				description="Pass custom icon components to customize the send button, mic button, and slash command icons."
+			>
+				<ChatInput
+					onSend={(text) =>
+						setSentMessages((prev) => [
+							...prev,
+							{ id: crypto.randomUUID(), text },
+						])
+					}
+					disabled={isTyping}
+					isGenerating={isTyping}
+					enableVoiceInput
+					submitIcon={ArrowUpIcon}
+					voiceIcon={Mic}
+				/>
+				<p className="text-muted-foreground text-xs">
+					Note: This ChatInput uses <code>ArrowUpIcon</code> for send
+					and <code>MicrophoneIcon</code> for voice. The slash command
+					icons can also be customized via the remaining icon props.
 				</p>
 			</Section>
 
