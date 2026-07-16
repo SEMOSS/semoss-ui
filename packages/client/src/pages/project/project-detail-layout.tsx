@@ -324,9 +324,11 @@ export const ProjectDetailLayout = ({
 											className="gap-2"
 											data-testid="appDetail-open-btn"
 										>
-											<Link to={`/app/${appId}/view`}>
+											<Link
+												to={`${config.basePath}/${appId}/view`}
+											>
 												<SquareArrowOutUpRight className="size-4" />
-												Open App
+												Open {config.name}
 											</Link>
 										</Button>
 									)}

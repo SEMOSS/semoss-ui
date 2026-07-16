@@ -46,7 +46,7 @@ const CATALOG_CONFIG = {
 			"Create reusable capabilities for your agents. Skills package tools, integrations, and workflows so you can automate tasks, connect external systems, and scale proven patterns across teams.",
 		createPath: "/skill/new",
 		basePath: "/skill",
-		itemSubPath: "edit",
+		itemSubPath: "view",
 		pixelFilter: 'projectType=["SKILL"]',
 		showSystemTab: false,
 	},

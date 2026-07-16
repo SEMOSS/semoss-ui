@@ -18,6 +18,7 @@ import { CreateAppPage } from "./app/create-app-page";
 import { ProjectDependenciesPage } from "./project-dependencies-page";
 import { ProjectDetailLayout } from "./project-detail-layout";
 import { CreateSkillPage } from "./skill/create-skill-page";
+import { ViewSkillPage } from "./skill/view-skill-page";
 
 export const PROJECT_ROUTES: {
 	/** Name of the specific path */
@@ -159,6 +160,10 @@ export const PROJECT_ROUTES: {
 			{
 				path: ":appId/edit",
 				element: <ProjectEdit type="SKILL" />,
+			},
+			{
+				path: ":appId/view",
+				element: <ViewSkillPage />,
 			},
 			{
 				path: ":appId",

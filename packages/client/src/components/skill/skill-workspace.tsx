@@ -95,7 +95,7 @@ export const SkillWorkspace: React.FC = observer(() => {
 					type: "tab",
 					name: "SKILL.md",
 					component: "app-file-editor",
-					config: { name: "SKILL.md", path: "/skill/SKILL.md" },
+					config: { name: "SKILL.md", path: "/public/SKILL.md" },
 					enableClose: false,
 				},
 				tabsetId,
@@ -119,7 +119,6 @@ export const SkillWorkspace: React.FC = observer(() => {
 					node={node}
 					layout={layout}
 					app={workspace.appId}
-					initialPath="/skill"
 					onOpenStateChange={workspace.setFileBrowserOpen}
 					onVisibleAssetPathsChange={({ path, paths }) => {
 						workspace.setFileBrowserVisiblePaths(path, paths);
