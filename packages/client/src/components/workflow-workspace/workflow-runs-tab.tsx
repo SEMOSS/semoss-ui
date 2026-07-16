@@ -1,5 +1,6 @@
 import {
 	AlertCircle,
+	Ban,
 	CalendarClock,
 	CheckCircle2,
 	ChevronDown,
@@ -15,7 +16,7 @@ import {
 	Zap,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button } from "@semoss/ui/next";
+import { Button, toast } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import type {
 	WhileIteration,
@@ -101,7 +102,19 @@ function TriggerBadge({ type }: { type?: WorkflowTriggerType }) {
 
 // ─── run status badge ─────────────────────────────────────────────────────────
 
-function RunStatusBadge({ status }: { status: string }) {
+function RunStatusBadge({
+	status,
+	cancelRequested,
+}: {
+	status: string;
+	cancelRequested?: boolean;
+}) {
+	if (status === "RUNNING" && cancelRequested)
+		return (
+			<span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 font-medium text-[10px] text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+				<Loader2 className="h-2.5 w-2.5 animate-spin" /> Cancelling…
+			</span>
+		);
 	if (status === "SUCCESS")
 		return (
 			<span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 font-medium text-[10px] text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
@@ -268,6 +281,8 @@ function RunRow({ run, appId }: { run: WorkflowRunSummary; appId: string }) {
 	const [expanded, setExpanded] = useState(false);
 	const [detail, setDetail] = useState<WorkflowRunDetail | null>(null);
 	const [loadingDetail, setLoadingDetail] = useState(false);
+	const [cancelRequested, setCancelRequested] = useState(false);
+	const [cancelling, setCancelling] = useState(false);
 
 	const loadDetail = useCallback(() => {
 		if (detail) return;
@@ -287,6 +302,30 @@ function RunRow({ run, appId }: { run: WorkflowRunSummary; appId: string }) {
 		if (!expanded) loadDetail();
 	};
 
+	// Cancellation takes effect between nodes, not instantly - CancelWorkflowRun only requests
+	// it (sets a flag the executing pod/thread polls). Reflect that as "Cancelling…" rather than
+	// implying it already happened; the run's actual STATUS transitions on its own once the
+	// executor observes the request, which the run-history poll (see WorkflowRunsTab) picks up.
+	const handleCancel = useCallback(
+		(e: React.MouseEvent) => {
+			e.stopPropagation();
+			if (cancelling || cancelRequested) return;
+			setCancelling(true);
+			monolithStore
+				.runQuery(
+					`CancelWorkflowRun(project=["${appId}"], runId=["${run.RUN_ID}"]);`,
+				)
+				.then(() => setCancelRequested(true))
+				.catch((error) =>
+					toast.error(
+						`Failed to cancel run: ${(error as Error).message ?? "Unknown error"}`,
+					),
+				)
+				.finally(() => setCancelling(false));
+		},
+		[appId, run.RUN_ID, monolithStore, cancelling, cancelRequested],
+	);
+
 	const startDate = new Date(run.STARTED_AT);
 
 	return (
@@ -301,7 +340,10 @@ function RunRow({ run, appId }: { run: WorkflowRunSummary; appId: string }) {
 				) : (
 					<ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
 				)}
-				<RunStatusBadge status={run.STATUS} />
+				<RunStatusBadge
+					status={run.STATUS}
+					cancelRequested={cancelRequested}
+				/>
 				<TriggerBadge type={run.TRIGGER_TYPE} />
 				<span className="flex-1 text-muted-foreground text-xs">
 					{startDate.toLocaleString(undefined, {
@@ -314,6 +356,25 @@ function RunRow({ run, appId }: { run: WorkflowRunSummary; appId: string }) {
 				<span className="shrink-0 text-muted-foreground text-xs">
 					{durationStr(run.STARTED_AT, run.COMPLETED_AT)}
 				</span>
+				{run.STATUS === "RUNNING" && (
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						onClick={handleCancel}
+						disabled={cancelling || cancelRequested}
+						title={
+							cancelRequested
+								? "Cancellation requested"
+								: "Cancel this run"
+						}
+					>
+						{cancelling ? (
+							<Loader2 className="h-3.5 w-3.5 animate-spin" />
+						) : (
+							<Ban className="h-3.5 w-3.5" />
+						)}
+					</Button>
+				)}
 			</button>
 
 			{expanded && (
