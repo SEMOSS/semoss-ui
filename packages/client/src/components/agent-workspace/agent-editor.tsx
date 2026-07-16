@@ -34,6 +34,11 @@ type AgentForm = {
 	description: string;
 	instructions: string;
 	modelId: string;
+	maxTurns: string;
+	maxReflections: string;
+	maxSubagentDepth: string;
+	maxSubagentsPerRun: string;
+	maxSpawnsPerTurn: string;
 	knowledge: MCPConfig[];
 	toolboxes: MCPConfig[];
 	skills: SkillConfig[];
@@ -49,6 +54,15 @@ type GetWorkspaceResponse = {
 	prompts: { id: string; name: string; type: string }[];
 	config_json?: {
 		model_id?: string;
+		budgets?: {
+			max_turns?: number;
+			max_reflections?: number;
+		};
+		spawn_policy?: {
+			max_subagent_depth?: number;
+			max_subagents_per_run?: number;
+			max_spawns_per_turn?: number;
+		};
 	};
 };
 
@@ -63,6 +77,11 @@ export const AgentEditor = () => {
 	const descId = useId();
 	const instructionsId = useId();
 	const modelFieldId = useId();
+	const maxTurnsId = useId();
+	const maxReflectionsId = useId();
+	const maxSubagentDepthId = useId();
+	const maxSubagentsPerRunId = useId();
+	const maxSpawnsPerTurnId = useId();
 
 	const { control, handleSubmit, reset } = useForm<AgentForm>({
 		defaultValues: {
@@ -70,6 +89,11 @@ export const AgentEditor = () => {
 			description: "",
 			instructions: "",
 			modelId: "",
+			maxTurns: "",
+			maxReflections: "",
+			maxSubagentDepth: "",
+			maxSubagentsPerRun: "",
+			maxSpawnsPerTurn: "",
 			knowledge: [],
 			toolboxes: [],
 			skills: [],
@@ -98,6 +122,20 @@ export const AgentEditor = () => {
 					description: data.description ?? "",
 					instructions: data.system_prompt ?? "",
 					modelId: data.config_json?.model_id ?? "",
+					maxTurns:
+						data.config_json?.budgets?.max_turns?.toString() ?? "",
+					maxReflections:
+						data.config_json?.budgets?.max_reflections?.toString() ??
+						"",
+					maxSubagentDepth:
+						data.config_json?.spawn_policy?.max_subagent_depth?.toString() ??
+						"",
+					maxSubagentsPerRun:
+						data.config_json?.spawn_policy?.max_subagents_per_run?.toString() ??
+						"",
+					maxSpawnsPerTurn:
+						data.config_json?.spawn_policy?.max_spawns_per_turn?.toString() ??
+						"",
 					knowledge: allMcps.filter((m) => m.type === "VECTOR"),
 					toolboxes: allMcps.filter((m) => m.type !== "VECTOR"),
 					skills: data.skills ?? [],
@@ -119,7 +157,7 @@ export const AgentEditor = () => {
 			const mcp = [...data.knowledge, ...data.toolboxes];
 			const skills = data.skills.map((s) => s.id);
 			const { errors } = await monolithStore.runQuery(
-				`EditWorkspace(workspaceId=["${workspace.appId}"], name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)}, modelId=${JSON.stringify(data.modelId)});`,
+				`EditWorkspace(workspaceId=["${workspace.appId}"], name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)}, modelId=${JSON.stringify(data.modelId)}, maxTurns=${JSON.stringify(data.maxTurns)}, maxReflections=${JSON.stringify(data.maxReflections)}, maxSubagentDepth=${JSON.stringify(data.maxSubagentDepth)}, maxSubagentsPerRun=${JSON.stringify(data.maxSubagentsPerRun)}, maxSpawnsPerTurn=${JSON.stringify(data.maxSpawnsPerTurn)});`,
 			);
 			if (errors.length > 0) throw new Error(errors.join(", "));
 			toast.success("Agent saved");
@@ -352,6 +390,118 @@ export const AgentEditor = () => {
 										className="h-112"
 										getPlatformUrl={promptToPlatformUrl}
 									/>
+								)}
+							/>
+						</div>
+
+						<Separator />
+
+						{/* Execution Limits */}
+						<div className="flex flex-col gap-3">
+							<div>
+								<H4 className="font-semibold text-base tracking-tight">
+									Execution limits
+								</H4>
+								<Muted className="text-muted-foreground text-sm leading-6">
+									Runtime caps for the agent's tool loop and
+									subagent delegation. Leave a field blank to
+									fall back to its default.
+								</Muted>
+							</div>
+							<Controller
+								name="maxTurns"
+								control={control}
+								render={({ field }) => (
+									<Field>
+										<FieldLabel htmlFor={maxTurnsId}>
+											Max turns
+										</FieldLabel>
+										<Input
+											id={maxTurnsId}
+											type="number"
+											min={1}
+											placeholder="30 (default)"
+											{...field}
+										/>
+									</Field>
+								)}
+							/>
+							<Controller
+								name="maxReflections"
+								control={control}
+								render={({ field }) => (
+									<Field>
+										<FieldLabel htmlFor={maxReflectionsId}>
+											Max reflections
+										</FieldLabel>
+										<Input
+											id={maxReflectionsId}
+											type="number"
+											min={0}
+											placeholder="0 (default, off)"
+											{...field}
+										/>
+									</Field>
+								)}
+							/>
+							<Controller
+								name="maxSubagentDepth"
+								control={control}
+								render={({ field }) => (
+									<Field>
+										<FieldLabel
+											htmlFor={maxSubagentDepthId}
+										>
+											Max subagent depth
+										</FieldLabel>
+										<Input
+											id={maxSubagentDepthId}
+											type="number"
+											min={0}
+											placeholder="1 (default; 0 disables subagents)"
+											{...field}
+										/>
+									</Field>
+								)}
+							/>
+							<Controller
+								name="maxSubagentsPerRun"
+								control={control}
+								render={({ field }) => (
+									<Field>
+										<FieldLabel
+											htmlFor={maxSubagentsPerRunId}
+										>
+											Max subagents per run
+										</FieldLabel>
+										<Input
+											id={maxSubagentsPerRunId}
+											type="number"
+											min={0}
+											placeholder="10 (default)"
+											{...field}
+										/>
+									</Field>
+								)}
+							/>
+							<Controller
+								name="maxSpawnsPerTurn"
+								control={control}
+								render={({ field }) => (
+									<Field>
+										<FieldLabel
+											htmlFor={maxSpawnsPerTurnId}
+										>
+											Max spawns per turn
+										</FieldLabel>
+										<Input
+											id={maxSpawnsPerTurnId}
+											type="number"
+											min={0}
+											placeholder="5 (default)"
+											{...field}
+										/>
+									</Field>
 								)}
 							/>
 						</div>
