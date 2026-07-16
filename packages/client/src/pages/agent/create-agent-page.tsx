@@ -1,15 +1,8 @@
 import { ChevronRight, UploadIcon } from "lucide-react";
-import { useId, useMemo, useState } from "react";
+import { useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
-import { usePixel } from "@semoss/sdk/react";
-import {
-	type MCPConfig,
-	MCPSelector,
-	PromptSelector,
-	type SkillConfig,
-	SkillSelector,
-} from "@semoss/shared";
+import { MCPSelector, PromptSelector, SkillSelector } from "@semoss/shared";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -21,43 +14,26 @@ import {
 	Field,
 	FieldLabel,
 	H2,
-	H4,
 	Input,
-	Muted,
 	P,
 	Progress,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-	Separator,
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
+import {
+	AGENT_FORM_DEFAULT_VALUES,
+	AgentExecutionLimitsFields,
+	AgentFormSection,
+	type AgentFormValues,
+	AgentModelField,
+	AgentSubagentsField,
+	buildEditWorkspacePixel,
+} from "@/components/agent-workspace/agent-form";
 import { AddAppModal } from "@/components/app";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { mcpToPlatformUrl, promptToPlatformUrl } from "@/utility";
-
-type ModelEngine = { engine_id: string; engine_name: string; tag: string };
-
-type CreateAgentForm = {
-	name: string;
-	description: string;
-	instructions: string;
-	modelId: string;
-	maxTurns: string;
-	maxReflections: string;
-	maxSubagentDepth: string;
-	maxSubagentsPerRun: string;
-	maxSpawnsPerTurn: string;
-	knowledge: MCPConfig[];
-	toolboxes: MCPConfig[];
-	skills: SkillConfig[];
-	prompts: string[];
-};
 
 export const CreateAgentPage = () => {
 	const navigate = useNavigate();
@@ -67,48 +43,22 @@ export const CreateAgentPage = () => {
 	const nameId = useId();
 	const descId = useId();
 	const instructionsId = useId();
-	const modelFieldId = useId();
-	const maxTurnsId = useId();
-	const maxReflectionsId = useId();
-	const maxSubagentDepthId = useId();
-	const maxSubagentsPerRunId = useId();
-	const maxSpawnsPerTurnId = useId();
 
 	const {
 		control,
 		handleSubmit,
 		formState: { isValid },
-	} = useForm<CreateAgentForm>({
+	} = useForm<AgentFormValues>({
 		mode: "onChange",
-		defaultValues: {
-			name: "",
-			description: "",
-			instructions: "",
-			modelId: "",
-			maxTurns: "",
-			maxReflections: "",
-			maxSubagentDepth: "",
-			maxSubagentsPerRun: "",
-			maxSpawnsPerTurn: "",
-			knowledge: [],
-			toolboxes: [],
-			skills: [],
-			prompts: [],
-		},
+		defaultValues: AGENT_FORM_DEFAULT_VALUES,
 	});
-
-	const models = usePixel<ModelEngine[]>(`MyEngines(engineTypes=['MODEL']);`);
-	const modelOptions = useMemo(
-		() => (models.data ?? []).filter((m) => m.tag !== "embeddings"),
-		[models.data],
-	);
 
 	const navigateAgent = (appId: string) => {
 		if (!appId) return;
 		navigate(`/agent/${appId}/edit`);
 	};
 
-	const onSubmit = async (data: CreateAgentForm) => {
+	const onSubmit = async (data: AgentFormValues) => {
 		try {
 			setIsLoading(true);
 
@@ -128,20 +78,22 @@ export const CreateAgentPage = () => {
 			const agentId = pixelReturn[0].output;
 			if (!agentId) throw new Error("Error creating agent");
 
-			// AddWorkspace does not accept a default model or execution limits, so
-			// set them with a follow-up edit call once the agent exists. Resend
-			// everything AddWorkspace already saved since EditWorkspace treats
-			// omitted mcp/skills/prompts as empty and would otherwise wipe them.
+			// AddWorkspace does not accept a default model, execution limits, or
+			// subagents, so set them with a follow-up edit call once the agent
+			// exists. buildEditWorkspacePixel resends everything AddWorkspace
+			// already saved since EditWorkspace treats omitted mcp/skills/prompts
+			// as empty and would otherwise wipe them.
 			const hasExecutionSettings =
 				data.modelId ||
 				data.maxTurns ||
 				data.maxReflections ||
 				data.maxSubagentDepth ||
 				data.maxSubagentsPerRun ||
-				data.maxSpawnsPerTurn;
+				data.maxSpawnsPerTurn ||
+				data.subagents.some((s) => s.alias || s.workspaceId);
 			if (hasExecutionSettings) {
 				const { errors: settingsErrors } = await monolithStore.runQuery(
-					`EditWorkspace(workspaceId=["${agentId}"], name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)}, modelId=${JSON.stringify(data.modelId)}, maxTurns=${JSON.stringify(data.maxTurns)}, maxReflections=${JSON.stringify(data.maxReflections)}, maxSubagentDepth=${JSON.stringify(data.maxSubagentDepth)}, maxSubagentsPerRun=${JSON.stringify(data.maxSubagentsPerRun)}, maxSpawnsPerTurn=${JSON.stringify(data.maxSpawnsPerTurn)});`,
+					buildEditWorkspacePixel(agentId, data),
 				);
 				if (settingsErrors.length > 0) {
 					console.error(settingsErrors.join(","));
@@ -216,364 +168,165 @@ export const CreateAgentPage = () => {
 					onSubmit={handleSubmit(onSubmit)}
 					autoComplete="off"
 				>
-					{/* About Section */}
-					<div className="mb-4 flex flex-col gap-4">
-						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
-							<div className="flex flex-1 flex-col gap-1">
-								<H4 className="font-semibold text-base tracking-tight">
-									About
-								</H4>
-								<Muted className="text-muted-foreground text-sm leading-6">
-									Basic information about your agent
-								</Muted>
-							</div>
+					<AgentFormSection
+						layout="columns"
+						title="About"
+						description="Basic information about your agent"
+					>
+						<Controller
+							name="name"
+							control={control}
+							rules={{ required: true }}
+							render={({ field }) => (
+								<Field>
+									<FieldLabel htmlFor={nameId}>
+										Name{" "}
+										<span className="text-destructive">
+											*
+										</span>
+									</FieldLabel>
+									<Input
+										id={nameId}
+										placeholder="Enter agent name"
+										{...field}
+									/>
+								</Field>
+							)}
+						/>
 
-							<div className="flex flex-2 flex-col gap-3">
-								<Controller
-									name="name"
-									control={control}
-									rules={{ required: true }}
-									render={({ field }) => (
-										<Field>
-											<FieldLabel htmlFor={nameId}>
-												Name{" "}
-												<span className="text-destructive">
-													*
-												</span>
-											</FieldLabel>
-											<Input
-												id={nameId}
-												placeholder="Enter agent name"
-												{...field}
-											/>
-										</Field>
-									)}
+						<Controller
+							name="description"
+							control={control}
+							render={({ field }) => (
+								<Field>
+									<FieldLabel htmlFor={descId}>
+										Description
+									</FieldLabel>
+									<Input
+										id={descId}
+										placeholder="Enter description"
+										{...field}
+									/>
+								</Field>
+							)}
+						/>
+
+						<Controller
+							name="instructions"
+							control={control}
+							render={({ field }) => (
+								<Field>
+									<FieldLabel htmlFor={instructionsId}>
+										Instructions
+									</FieldLabel>
+									<Textarea
+										id={instructionsId}
+										placeholder="Define the agent's behavior, role, and instructions"
+										rows={6}
+										className="max-h-96"
+										{...field}
+									/>
+								</Field>
+							)}
+						/>
+
+						<AgentModelField control={control} />
+					</AgentFormSection>
+
+					<AgentFormSection
+						layout="columns"
+						title="Knowledge"
+						description="Add knowledge sources for your agent"
+					>
+						<Controller
+							name="knowledge"
+							control={control}
+							render={({ field }) => (
+								<MCPSelector
+									type="KNOWLEDGE"
+									values={field.value}
+									onChange={field.onChange}
+									className="h-112"
+									enableKnowledgeMCP={true}
+									getPlatformUrl={mcpToPlatformUrl}
 								/>
+							)}
+						/>
+					</AgentFormSection>
 
-								<Controller
-									name="description"
-									control={control}
-									render={({ field }) => (
-										<Field>
-											<FieldLabel htmlFor={descId}>
-												Description
-											</FieldLabel>
-											<Input
-												id={descId}
-												placeholder="Enter description"
-												{...field}
-											/>
-										</Field>
-									)}
+					<AgentFormSection
+						layout="columns"
+						title="Toolboxes"
+						description="Add tools and capabilities to your agent"
+					>
+						<Controller
+							name="toolboxes"
+							control={control}
+							render={({ field }) => (
+								<MCPSelector
+									type="TOOLBOX"
+									values={field.value}
+									onChange={field.onChange}
+									className="h-112"
+									enableKnowledgeMCP={true}
+									getPlatformUrl={mcpToPlatformUrl}
 								/>
+							)}
+						/>
+					</AgentFormSection>
 
-								<Controller
-									name="instructions"
-									control={control}
-									render={({ field }) => (
-										<Field>
-											<FieldLabel
-												htmlFor={instructionsId}
-											>
-												Instructions
-											</FieldLabel>
-											<Textarea
-												id={instructionsId}
-												placeholder="Define the agent's behavior, role, and instructions"
-												rows={6}
-												className="max-h-96"
-												{...field}
-											/>
-										</Field>
-									)}
+					<AgentFormSection
+						layout="columns"
+						title="Skills"
+						description="Add reusable skills to your agent"
+					>
+						<Controller
+							name="skills"
+							control={control}
+							render={({ field }) => (
+								<SkillSelector
+									values={field.value}
+									onChange={field.onChange}
+									className="h-112"
 								/>
+							)}
+						/>
+					</AgentFormSection>
 
-								<Controller
-									name="modelId"
-									control={control}
-									render={({ field }) => (
-										<Field>
-											<FieldLabel htmlFor={modelFieldId}>
-												Default model
-											</FieldLabel>
-											<Select
-												value={field.value}
-												onValueChange={field.onChange}
-												disabled={
-													models.status === "LOADING"
-												}
-											>
-												<SelectTrigger
-													id={modelFieldId}
-												>
-													<SelectValue
-														placeholder={
-															models.status ===
-															"LOADING"
-																? "Loading..."
-																: "Use room model"
-														}
-													/>
-												</SelectTrigger>
-												<SelectContent>
-													{modelOptions.map((m) => (
-														<SelectItem
-															key={m.engine_id}
-															value={m.engine_id}
-														>
-															{m.engine_name}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										</Field>
-									)}
+					<AgentFormSection
+						layout="columns"
+						title="Prompts"
+						description="Pre-configured prompts for your agent"
+					>
+						<Controller
+							name="prompts"
+							control={control}
+							render={({ field }) => (
+								<PromptSelector
+									values={field.value}
+									onChange={field.onChange}
+									className="h-112"
+									getPlatformUrl={promptToPlatformUrl}
 								/>
-							</div>
-						</div>
-						<Separator />
-					</div>
+							)}
+						/>
+					</AgentFormSection>
 
-					{/* Knowledge Section */}
-					<div className="mb-4 flex flex-col gap-4">
-						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
-							<div className="flex flex-1 flex-col gap-1">
-								<H4 className="font-semibold text-base tracking-tight">
-									Knowledge
-								</H4>
-								<Muted className="text-muted-foreground text-sm leading-6">
-									Add knowledge sources for your agent
-								</Muted>
-							</div>
+					<AgentFormSection
+						layout="columns"
+						title="Subagents"
+						description="Delegate to other agents as callable tools. Each alias becomes a tool name the agent can invoke."
+					>
+						<AgentSubagentsField control={control} />
+					</AgentFormSection>
 
-							<div className="flex flex-2 flex-col gap-3">
-								<Controller
-									name="knowledge"
-									control={control}
-									render={({ field }) => (
-										<MCPSelector
-											type="KNOWLEDGE"
-											values={field.value}
-											onChange={field.onChange}
-											className="h-112"
-											enableKnowledgeMCP={true}
-											getPlatformUrl={mcpToPlatformUrl}
-										/>
-									)}
-								/>
-							</div>
-						</div>
-						<Separator />
-					</div>
-
-					{/* Toolboxes Section */}
-					<div className="mb-4 flex flex-col gap-4">
-						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
-							<div className="flex flex-1 flex-col gap-1">
-								<H4 className="font-semibold text-base tracking-tight">
-									Toolboxes
-								</H4>
-								<Muted className="text-muted-foreground text-sm leading-6">
-									Add tools and capabilities to your agent
-								</Muted>
-							</div>
-
-							<div className="flex flex-2 flex-col gap-3">
-								<Controller
-									name="toolboxes"
-									control={control}
-									render={({ field }) => (
-										<MCPSelector
-											type="TOOLBOX"
-											values={field.value}
-											onChange={field.onChange}
-											className="h-112"
-											enableKnowledgeMCP={true}
-											getPlatformUrl={mcpToPlatformUrl}
-										/>
-									)}
-								/>
-							</div>
-						</div>
-						<Separator />
-					</div>
-
-					{/* Skills Section */}
-					<div className="mb-4 flex flex-col gap-4">
-						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
-							<div className="flex flex-1 flex-col gap-1">
-								<H4 className="font-semibold text-base tracking-tight">
-									Skills
-								</H4>
-								<Muted className="text-muted-foreground text-sm leading-6">
-									Add reusable skills to your agent
-								</Muted>
-							</div>
-
-							<div className="flex flex-2 flex-col gap-3">
-								<Controller
-									name="skills"
-									control={control}
-									render={({ field }) => (
-										<SkillSelector
-											values={field.value}
-											onChange={field.onChange}
-											className="h-112"
-										/>
-									)}
-								/>
-							</div>
-						</div>
-						<Separator />
-					</div>
-
-					{/* Prompts Section */}
-					<div className="mb-4 flex flex-col gap-4">
-						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
-							<div className="flex flex-1 flex-col gap-1">
-								<H4 className="font-semibold text-base tracking-tight">
-									Prompts
-								</H4>
-								<Muted className="text-muted-foreground text-sm leading-6">
-									Pre-configured prompts for your agent
-								</Muted>
-							</div>
-
-							<div className="flex flex-2 flex-col gap-3">
-								<Controller
-									name="prompts"
-									control={control}
-									render={({ field }) => (
-										<PromptSelector
-											values={field.value}
-											onChange={field.onChange}
-											className="h-112"
-											getPlatformUrl={promptToPlatformUrl}
-										/>
-									)}
-								/>
-							</div>
-						</div>
-						<Separator />
-					</div>
-
-					{/* Execution Limits Section */}
-					<div className="mb-4 flex flex-col gap-4">
-						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
-							<div className="flex flex-1 flex-col gap-1">
-								<H4 className="font-semibold text-base tracking-tight">
-									Execution limits
-								</H4>
-								<Muted className="text-muted-foreground text-sm leading-6">
-									Runtime caps for the agent's tool loop and
-									subagent delegation. Leave a field blank to
-									fall back to its default.
-								</Muted>
-							</div>
-
-							<div className="flex flex-2 flex-col gap-3">
-								<Controller
-									name="maxTurns"
-									control={control}
-									render={({ field }) => (
-										<Field>
-											<FieldLabel htmlFor={maxTurnsId}>
-												Max turns
-											</FieldLabel>
-											<Input
-												id={maxTurnsId}
-												type="number"
-												min={1}
-												placeholder="30 (default)"
-												{...field}
-											/>
-										</Field>
-									)}
-								/>
-								<Controller
-									name="maxReflections"
-									control={control}
-									render={({ field }) => (
-										<Field>
-											<FieldLabel
-												htmlFor={maxReflectionsId}
-											>
-												Max reflections
-											</FieldLabel>
-											<Input
-												id={maxReflectionsId}
-												type="number"
-												min={0}
-												placeholder="0 (default, off)"
-												{...field}
-											/>
-										</Field>
-									)}
-								/>
-								<Controller
-									name="maxSubagentDepth"
-									control={control}
-									render={({ field }) => (
-										<Field>
-											<FieldLabel
-												htmlFor={maxSubagentDepthId}
-											>
-												Max subagent depth
-											</FieldLabel>
-											<Input
-												id={maxSubagentDepthId}
-												type="number"
-												min={0}
-												placeholder="1 (default; 0 disables subagents)"
-												{...field}
-											/>
-										</Field>
-									)}
-								/>
-								<Controller
-									name="maxSubagentsPerRun"
-									control={control}
-									render={({ field }) => (
-										<Field>
-											<FieldLabel
-												htmlFor={maxSubagentsPerRunId}
-											>
-												Max subagents per run
-											</FieldLabel>
-											<Input
-												id={maxSubagentsPerRunId}
-												type="number"
-												min={0}
-												placeholder="10 (default)"
-												{...field}
-											/>
-										</Field>
-									)}
-								/>
-								<Controller
-									name="maxSpawnsPerTurn"
-									control={control}
-									render={({ field }) => (
-										<Field>
-											<FieldLabel
-												htmlFor={maxSpawnsPerTurnId}
-											>
-												Max spawns per turn
-											</FieldLabel>
-											<Input
-												id={maxSpawnsPerTurnId}
-												type="number"
-												min={0}
-												placeholder="5 (default)"
-												{...field}
-											/>
-										</Field>
-									)}
-								/>
-							</div>
-						</div>
-						<Separator />
-					</div>
+					<AgentFormSection
+						layout="columns"
+						title="Execution limits"
+						description="Runtime caps for the agent's tool loop and subagent delegation. Leave a field blank to fall back to its default."
+					>
+						<AgentExecutionLimitsFields control={control} />
+					</AgentFormSection>
 
 					<div className="flex justify-end">
 						<Button

@@ -1,11 +1,9 @@
-import { Plus, SaveIcon, Trash2 } from "lucide-react";
-import { useEffect, useId, useMemo, useState } from "react";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
-import { usePixel } from "@semoss/sdk/react";
+import { SaveIcon } from "lucide-react";
+import { useEffect, useId, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import {
 	type MCPConfig,
 	MCPSelector,
-	type Project,
 	PromptSelector,
 	type SkillConfig,
 	SkillSelector,
@@ -14,44 +12,23 @@ import {
 	Button,
 	Field,
 	FieldLabel,
-	H4,
 	Input,
-	Muted,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
 	Separator,
 	Spinner,
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
+import {
+	AGENT_FORM_DEFAULT_VALUES,
+	AgentExecutionLimitsFields,
+	AgentFormSection,
+	type AgentFormValues,
+	AgentModelField,
+	AgentSubagentsField,
+	buildEditWorkspacePixel,
+} from "@/components/agent-workspace/agent-form";
 import { useRootStore, useWorkspace } from "@/hooks";
 import { mcpToPlatformUrl, promptToPlatformUrl } from "@/utility";
-
-type SubagentEntry = {
-	alias: string;
-	workspaceId: string;
-	description: string;
-};
-
-type AgentForm = {
-	name: string;
-	description: string;
-	instructions: string;
-	modelId: string;
-	maxTurns: string;
-	maxReflections: string;
-	maxSubagentDepth: string;
-	maxSubagentsPerRun: string;
-	maxSpawnsPerTurn: string;
-	knowledge: MCPConfig[];
-	toolboxes: MCPConfig[];
-	skills: SkillConfig[];
-	prompts: string[];
-	subagents: SubagentEntry[];
-};
 
 type GetWorkspaceResponse = {
 	name: string;
@@ -79,8 +56,6 @@ type GetWorkspaceResponse = {
 	};
 };
 
-type ModelEngine = { engine_id: string; engine_name: string; tag: string };
-
 export const AgentEditor = () => {
 	const { workspace } = useWorkspace();
 	const { monolithStore } = useRootStore();
@@ -89,54 +64,10 @@ export const AgentEditor = () => {
 
 	const descId = useId();
 	const instructionsId = useId();
-	const modelFieldId = useId();
-	const maxTurnsId = useId();
-	const maxReflectionsId = useId();
-	const maxSubagentDepthId = useId();
-	const maxSubagentsPerRunId = useId();
-	const maxSpawnsPerTurnId = useId();
 
-	const { control, handleSubmit, reset } = useForm<AgentForm>({
-		defaultValues: {
-			name: "",
-			description: "",
-			instructions: "",
-			modelId: "",
-			maxTurns: "",
-			maxReflections: "",
-			maxSubagentDepth: "",
-			maxSubagentsPerRun: "",
-			maxSpawnsPerTurn: "",
-			knowledge: [],
-			toolboxes: [],
-			skills: [],
-			prompts: [],
-			subagents: [],
-		},
+	const { control, handleSubmit, reset } = useForm<AgentFormValues>({
+		defaultValues: AGENT_FORM_DEFAULT_VALUES,
 	});
-
-	const {
-		fields: subagentFields,
-		append: appendSubagent,
-		remove: removeSubagent,
-	} = useFieldArray({ control, name: "subagents" });
-
-	const models = usePixel<ModelEngine[]>(`MyEngines(engineTypes=['MODEL']);`);
-	const modelOptions = useMemo(
-		() => (models.data ?? []).filter((m) => m.tag !== "embeddings"),
-		[models.data],
-	);
-
-	const agentWorkspaces = usePixel<Project[]>(
-		`MyProjects(projectType=["WORKSPACE"]);`,
-	);
-	const subagentWorkspaceOptions = useMemo(
-		() =>
-			(agentWorkspaces.data ?? []).filter(
-				(p) => p.project_id !== workspace.appId,
-			),
-		[agentWorkspaces.data, workspace.appId],
-	);
 
 	useEffect(() => {
 		const load = async () => {
@@ -190,21 +121,8 @@ export const AgentEditor = () => {
 	const onSave = handleSubmit(async (data) => {
 		try {
 			setIsLoading(true);
-			const mcp = [...data.knowledge, ...data.toolboxes];
-			const skills = data.skills.map((s) => s.id);
-			// Drop rows that are still fully empty (just-added, never filled in);
-			// a partially-filled row is left as-is so the backend's validation
-			// error ("missing alias/workspaceId") surfaces instead of silently
-			// discarding what the user meant to keep.
-			const subagents = data.subagents
-				.filter((s) => s.alias || s.workspaceId)
-				.map((s) => ({
-					alias: s.alias,
-					workspaceId: s.workspaceId,
-					...(s.description ? { description: s.description } : {}),
-				}));
 			const { errors } = await monolithStore.runQuery(
-				`EditWorkspace(workspaceId=["${workspace.appId}"], name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)}, modelId=${JSON.stringify(data.modelId)}, maxTurns=${JSON.stringify(data.maxTurns)}, maxReflections=${JSON.stringify(data.maxReflections)}, maxSubagentDepth=${JSON.stringify(data.maxSubagentDepth)}, maxSubagentsPerRun=${JSON.stringify(data.maxSubagentsPerRun)}, maxSpawnsPerTurn=${JSON.stringify(data.maxSpawnsPerTurn)}, subagents=${JSON.stringify(subagents)});`,
+				buildEditWorkspacePixel(workspace.appId, data),
 			);
 			if (errors.length > 0) throw new Error(errors.join(", "));
 			toast.success("Agent saved");
@@ -247,16 +165,10 @@ export const AgentEditor = () => {
 						onSubmit={onSave}
 						autoComplete="off"
 					>
-						{/* About */}
-						<div className="flex flex-col gap-3">
-							<div>
-								<H4 className="font-semibold text-base tracking-tight">
-									About
-								</H4>
-								<Muted className="text-muted-foreground text-sm leading-6">
-									Basic information about your agent
-								</Muted>
-							</div>
+						<AgentFormSection
+							title="About"
+							description="Basic information about your agent"
+						>
 							<Controller
 								name="description"
 								control={control}
@@ -291,59 +203,15 @@ export const AgentEditor = () => {
 									</Field>
 								)}
 							/>
-							<Controller
-								name="modelId"
-								control={control}
-								render={({ field }) => (
-									<Field>
-										<FieldLabel htmlFor={modelFieldId}>
-											Default model
-										</FieldLabel>
-										<Select
-											value={field.value}
-											onValueChange={field.onChange}
-											disabled={
-												models.status === "LOADING"
-											}
-										>
-											<SelectTrigger id={modelFieldId}>
-												<SelectValue
-													placeholder={
-														models.status ===
-														"LOADING"
-															? "Loading..."
-															: "Use room model"
-													}
-												/>
-											</SelectTrigger>
-											<SelectContent>
-												{modelOptions.map((m) => (
-													<SelectItem
-														key={m.engine_id}
-														value={m.engine_id}
-													>
-														{m.engine_name}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</Field>
-								)}
-							/>
-						</div>
+							<AgentModelField control={control} />
+						</AgentFormSection>
 
 						<Separator />
 
-						{/* Knowledge */}
-						<div className="flex flex-col gap-3">
-							<div>
-								<H4 className="font-semibold text-base tracking-tight">
-									Knowledge
-								</H4>
-								<Muted className="text-muted-foreground text-sm leading-6">
-									Add knowledge sources for your agent
-								</Muted>
-							</div>
+						<AgentFormSection
+							title="Knowledge"
+							description="Add knowledge sources for your agent"
+						>
 							<Controller
 								name="knowledge"
 								control={control}
@@ -359,20 +227,14 @@ export const AgentEditor = () => {
 									/>
 								)}
 							/>
-						</div>
+						</AgentFormSection>
 
 						<Separator />
 
-						{/* Toolboxes */}
-						<div className="flex flex-col gap-3">
-							<div>
-								<H4 className="font-semibold text-base tracking-tight">
-									Toolboxes
-								</H4>
-								<Muted className="text-muted-foreground text-sm leading-6">
-									Add tools and capabilities to your agent
-								</Muted>
-							</div>
+						<AgentFormSection
+							title="Toolboxes"
+							description="Add tools and capabilities to your agent"
+						>
 							<Controller
 								name="toolboxes"
 								control={control}
@@ -388,20 +250,14 @@ export const AgentEditor = () => {
 									/>
 								)}
 							/>
-						</div>
+						</AgentFormSection>
 
 						<Separator />
 
-						{/* Skills */}
-						<div className="flex flex-col gap-3">
-							<div>
-								<H4 className="font-semibold text-base tracking-tight">
-									Skills
-								</H4>
-								<Muted className="text-muted-foreground text-sm leading-6">
-									Add reusable skills to your agent
-								</Muted>
-							</div>
+						<AgentFormSection
+							title="Skills"
+							description="Add reusable skills to your agent"
+						>
 							<Controller
 								name="skills"
 								control={control}
@@ -413,20 +269,14 @@ export const AgentEditor = () => {
 									/>
 								)}
 							/>
-						</div>
+						</AgentFormSection>
 
 						<Separator />
 
-						{/* Prompts */}
-						<div className="flex flex-col gap-3">
-							<div>
-								<H4 className="font-semibold text-base tracking-tight">
-									Prompts
-								</H4>
-								<Muted className="text-muted-foreground text-sm leading-6">
-									Pre-configured prompts for your agent
-								</Muted>
-							</div>
+						<AgentFormSection
+							title="Prompts"
+							description="Pre-configured prompts for your agent"
+						>
 							<Controller
 								name="prompts"
 								control={control}
@@ -439,250 +289,28 @@ export const AgentEditor = () => {
 									/>
 								)}
 							/>
-						</div>
+						</AgentFormSection>
 
 						<Separator />
 
-						{/* Subagents */}
-						<div className="flex flex-col gap-3">
-							<div>
-								<H4 className="font-semibold text-base tracking-tight">
-									Subagents
-								</H4>
-								<Muted className="text-muted-foreground text-sm leading-6">
-									Delegate to other agents as callable tools.
-									Each alias becomes a tool name the agent can
-									invoke.
-								</Muted>
-							</div>
-							<div className="flex max-h-80 flex-col gap-3 overflow-y-auto rounded-md border border-border p-3">
-								{subagentFields.length === 0 && (
-									<Muted className="text-muted-foreground text-sm">
-										No subagents added yet.
-									</Muted>
-								)}
-								{subagentFields.map((subagentField, index) => (
-									<div
-										key={subagentField.id}
-										className="flex flex-col gap-2 border-border border-b pb-3 last:border-b-0 last:pb-0"
-									>
-										<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-											<Controller
-												name={`subagents.${index}.workspaceId`}
-												control={control}
-												render={({ field }) => (
-													<Select
-														value={field.value}
-														onValueChange={
-															field.onChange
-														}
-														disabled={
-															agentWorkspaces.status ===
-															"LOADING"
-														}
-													>
-														<SelectTrigger
-															aria-label="Target agent"
-															className="sm:flex-1"
-														>
-															<SelectValue
-																placeholder={
-																	agentWorkspaces.status ===
-																	"LOADING"
-																		? "Loading..."
-																		: "Select an agent"
-																}
-															/>
-														</SelectTrigger>
-														<SelectContent>
-															{subagentWorkspaceOptions.map(
-																(p) => (
-																	<SelectItem
-																		key={
-																			p.project_id
-																		}
-																		value={
-																			p.project_id
-																		}
-																	>
-																		{
-																			p.project_name
-																		}
-																	</SelectItem>
-																),
-															)}
-														</SelectContent>
-													</Select>
-												)}
-											/>
-											<Controller
-												name={`subagents.${index}.alias`}
-												control={control}
-												render={({ field }) => (
-													<Input
-														aria-label="Alias"
-														placeholder="Alias, e.g. researcher"
-														className="sm:flex-1"
-														{...field}
-													/>
-												)}
-											/>
-											<Button
-												variant="ghost"
-												size="icon"
-												type="button"
-												className="shrink-0"
-												onClick={() =>
-													removeSubagent(index)
-												}
-											>
-												<Trash2 className="size-4" />
-											</Button>
-										</div>
-										<Controller
-											name={`subagents.${index}.description`}
-											control={control}
-											render={({ field }) => (
-												<Textarea
-													aria-label="Description"
-													placeholder="When should the agent delegate to this subagent?"
-													className="max-h-[7.5rem]"
-													{...field}
-												/>
-											)}
-										/>
-									</div>
-								))}
-							</div>
-							<Button
-								variant="outline"
-								size="sm"
-								type="button"
-								className="w-fit"
-								onClick={() =>
-									appendSubagent({
-										alias: "",
-										workspaceId: "",
-										description: "",
-									})
-								}
-							>
-								<Plus className="size-4" />
-								Add subagent
-							</Button>
-						</div>
+						<AgentFormSection
+							title="Subagents"
+							description="Delegate to other agents as callable tools. Each alias becomes a tool name the agent can invoke."
+						>
+							<AgentSubagentsField
+								control={control}
+								excludeWorkspaceId={workspace.appId}
+							/>
+						</AgentFormSection>
 
 						<Separator />
 
-						{/* Execution Limits */}
-						<div className="flex flex-col gap-3">
-							<div>
-								<H4 className="font-semibold text-base tracking-tight">
-									Execution limits
-								</H4>
-								<Muted className="text-muted-foreground text-sm leading-6">
-									Runtime caps for the agent's tool loop and
-									subagent delegation. Leave a field blank to
-									fall back to its default.
-								</Muted>
-							</div>
-							<Controller
-								name="maxTurns"
-								control={control}
-								render={({ field }) => (
-									<Field>
-										<FieldLabel htmlFor={maxTurnsId}>
-											Max turns
-										</FieldLabel>
-										<Input
-											id={maxTurnsId}
-											type="number"
-											min={1}
-											placeholder="30 (default)"
-											{...field}
-										/>
-									</Field>
-								)}
-							/>
-							<Controller
-								name="maxReflections"
-								control={control}
-								render={({ field }) => (
-									<Field>
-										<FieldLabel htmlFor={maxReflectionsId}>
-											Max reflections
-										</FieldLabel>
-										<Input
-											id={maxReflectionsId}
-											type="number"
-											min={0}
-											placeholder="0 (default, off)"
-											{...field}
-										/>
-									</Field>
-								)}
-							/>
-							<Controller
-								name="maxSubagentDepth"
-								control={control}
-								render={({ field }) => (
-									<Field>
-										<FieldLabel
-											htmlFor={maxSubagentDepthId}
-										>
-											Max subagent depth
-										</FieldLabel>
-										<Input
-											id={maxSubagentDepthId}
-											type="number"
-											min={0}
-											placeholder="1 (default; 0 disables subagents)"
-											{...field}
-										/>
-									</Field>
-								)}
-							/>
-							<Controller
-								name="maxSubagentsPerRun"
-								control={control}
-								render={({ field }) => (
-									<Field>
-										<FieldLabel
-											htmlFor={maxSubagentsPerRunId}
-										>
-											Max subagents per run
-										</FieldLabel>
-										<Input
-											id={maxSubagentsPerRunId}
-											type="number"
-											min={0}
-											placeholder="10 (default)"
-											{...field}
-										/>
-									</Field>
-								)}
-							/>
-							<Controller
-								name="maxSpawnsPerTurn"
-								control={control}
-								render={({ field }) => (
-									<Field>
-										<FieldLabel
-											htmlFor={maxSpawnsPerTurnId}
-										>
-											Max spawns per turn
-										</FieldLabel>
-										<Input
-											id={maxSpawnsPerTurnId}
-											type="number"
-											min={0}
-											placeholder="5 (default)"
-											{...field}
-										/>
-									</Field>
-								)}
-							/>
-						</div>
+						<AgentFormSection
+							title="Execution limits"
+							description="Runtime caps for the agent's tool loop and subagent delegation. Leave a field blank to fall back to its default."
+						>
+							<AgentExecutionLimitsFields control={control} />
+						</AgentFormSection>
 					</form>
 				)}
 			</div>
