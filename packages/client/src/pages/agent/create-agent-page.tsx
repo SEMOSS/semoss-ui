@@ -1,7 +1,8 @@
 import { ChevronRight, UploadIcon } from "lucide-react";
-import { useId, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	type MCPConfig,
 	MCPSelector,
@@ -25,6 +26,11 @@ import {
 	Muted,
 	P,
 	Progress,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Separator,
 	Textarea,
 	toast,
@@ -35,10 +41,13 @@ import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { mcpToPlatformUrl, promptToPlatformUrl } from "@/utility";
 
+type ModelEngine = { engine_id: string; engine_name: string; tag: string };
+
 type CreateAgentForm = {
 	name: string;
 	description: string;
 	instructions: string;
+	modelId: string;
 	knowledge: MCPConfig[];
 	toolboxes: MCPConfig[];
 	skills: SkillConfig[];
@@ -53,6 +62,7 @@ export const CreateAgentPage = () => {
 	const nameId = useId();
 	const descId = useId();
 	const instructionsId = useId();
+	const modelFieldId = useId();
 
 	const {
 		control,
@@ -64,12 +74,19 @@ export const CreateAgentPage = () => {
 			name: "",
 			description: "",
 			instructions: "",
+			modelId: "",
 			knowledge: [],
 			toolboxes: [],
 			skills: [],
 			prompts: [],
 		},
 	});
+
+	const models = usePixel<ModelEngine[]>(`MyEngines(engineTypes=['MODEL']);`);
+	const modelOptions = useMemo(
+		() => (models.data ?? []).filter((m) => m.tag !== "embeddings"),
+		[models.data],
+	);
 
 	const navigateAgent = (appId: string) => {
 		if (!appId) return;
@@ -95,6 +112,22 @@ export const CreateAgentPage = () => {
 
 			const agentId = pixelReturn[0].output;
 			if (!agentId) throw new Error("Error creating agent");
+
+			// AddWorkspace does not accept a default model, so set it with a
+			// follow-up edit call once the agent exists. Resend everything
+			// AddWorkspace already saved since EditWorkspace treats omitted
+			// mcp/skills/prompts as empty and would otherwise wipe them.
+			if (data.modelId) {
+				const { errors: modelErrors } = await monolithStore.runQuery(
+					`EditWorkspace(workspaceId=["${agentId}"], name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)}, modelId=${JSON.stringify(data.modelId)});`,
+				);
+				if (modelErrors.length > 0) {
+					console.error(modelErrors.join(","));
+					toast.error(
+						"Agent created, but failed to set default model",
+					);
+				}
+			}
 
 			navigateAgent(agentId);
 		} catch (e) {
@@ -229,6 +262,48 @@ export const CreateAgentPage = () => {
 												className="max-h-96"
 												{...field}
 											/>
+										</Field>
+									)}
+								/>
+
+								<Controller
+									name="modelId"
+									control={control}
+									render={({ field }) => (
+										<Field>
+											<FieldLabel htmlFor={modelFieldId}>
+												Default model
+											</FieldLabel>
+											<Select
+												value={field.value}
+												onValueChange={field.onChange}
+												disabled={
+													models.status === "LOADING"
+												}
+											>
+												<SelectTrigger
+													id={modelFieldId}
+												>
+													<SelectValue
+														placeholder={
+															models.status ===
+															"LOADING"
+																? "Loading..."
+																: "Use room model"
+														}
+													/>
+												</SelectTrigger>
+												<SelectContent>
+													{modelOptions.map((m) => (
+														<SelectItem
+															key={m.engine_id}
+															value={m.engine_id}
+														>
+															{m.engine_name}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
 										</Field>
 									)}
 								/>

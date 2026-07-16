@@ -1,6 +1,7 @@
 import { SaveIcon } from "lucide-react";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	type MCPConfig,
 	MCPSelector,
@@ -15,6 +16,11 @@ import {
 	H4,
 	Input,
 	Muted,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Separator,
 	Spinner,
 	Textarea,
@@ -27,6 +33,7 @@ type AgentForm = {
 	name: string;
 	description: string;
 	instructions: string;
+	modelId: string;
 	knowledge: MCPConfig[];
 	toolboxes: MCPConfig[];
 	skills: SkillConfig[];
@@ -40,7 +47,12 @@ type GetWorkspaceResponse = {
 	mcp: MCPConfig[];
 	skills: SkillConfig[];
 	prompts: { id: string; name: string; type: string }[];
+	config_json?: {
+		model_id?: string;
+	};
 };
+
+type ModelEngine = { engine_id: string; engine_name: string; tag: string };
 
 export const AgentEditor = () => {
 	const { workspace } = useWorkspace();
@@ -50,18 +62,26 @@ export const AgentEditor = () => {
 
 	const descId = useId();
 	const instructionsId = useId();
+	const modelFieldId = useId();
 
 	const { control, handleSubmit, reset } = useForm<AgentForm>({
 		defaultValues: {
 			name: "",
 			description: "",
 			instructions: "",
+			modelId: "",
 			knowledge: [],
 			toolboxes: [],
 			skills: [],
 			prompts: [],
 		},
 	});
+
+	const models = usePixel<ModelEngine[]>(`MyEngines(engineTypes=['MODEL']);`);
+	const modelOptions = useMemo(
+		() => (models.data ?? []).filter((m) => m.tag !== "embeddings"),
+		[models.data],
+	);
 
 	useEffect(() => {
 		const load = async () => {
@@ -77,6 +97,7 @@ export const AgentEditor = () => {
 					name: data.name ?? "",
 					description: data.description ?? "",
 					instructions: data.system_prompt ?? "",
+					modelId: data.config_json?.model_id ?? "",
 					knowledge: allMcps.filter((m) => m.type === "VECTOR"),
 					toolboxes: allMcps.filter((m) => m.type !== "VECTOR"),
 					skills: data.skills ?? [],
@@ -98,7 +119,7 @@ export const AgentEditor = () => {
 			const mcp = [...data.knowledge, ...data.toolboxes];
 			const skills = data.skills.map((s) => s.id);
 			const { errors } = await monolithStore.runQuery(
-				`EditWorkspace(workspaceId=["${workspace.appId}"], name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)});`,
+				`EditWorkspace(workspaceId=["${workspace.appId}"], name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)}, modelId=${JSON.stringify(data.modelId)});`,
 			);
 			if (errors.length > 0) throw new Error(errors.join(", "));
 			toast.success("Agent saved");
@@ -182,6 +203,45 @@ export const AgentEditor = () => {
 											className="max-h-96"
 											{...field}
 										/>
+									</Field>
+								)}
+							/>
+							<Controller
+								name="modelId"
+								control={control}
+								render={({ field }) => (
+									<Field>
+										<FieldLabel htmlFor={modelFieldId}>
+											Default model
+										</FieldLabel>
+										<Select
+											value={field.value}
+											onValueChange={field.onChange}
+											disabled={
+												models.status === "LOADING"
+											}
+										>
+											<SelectTrigger id={modelFieldId}>
+												<SelectValue
+													placeholder={
+														models.status ===
+														"LOADING"
+															? "Loading..."
+															: "Use room model"
+													}
+												/>
+											</SelectTrigger>
+											<SelectContent>
+												{modelOptions.map((m) => (
+													<SelectItem
+														key={m.engine_id}
+														value={m.engine_id}
+													>
+														{m.engine_name}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
 									</Field>
 								)}
 							/>
