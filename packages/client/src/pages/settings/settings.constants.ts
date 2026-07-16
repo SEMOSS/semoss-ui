@@ -10,10 +10,9 @@ import {
 	mdiDatabaseSearch,
 	mdiGithub,
 	mdiPalette,
+	mdiShieldAccount,
 	mdiTabletCellphone,
 } from "@mdi/js";
-
-console.log(mdiPalette);
 
 export const SETTINGS_ROUTES: {
 	/*** Title of the page */
@@ -249,6 +248,24 @@ export const SETTINGS_ROUTES: {
 		admin: true,
 	},
 	{
+		title: "Platform Profiles",
+		path: "platform-profiles",
+		description:
+			"Restrict which top-level navigation sections (App Catalog, Skills, Settings, Engines) are visible per user. Assign a profile and only the enabled sections appear in their sidebar.",
+		icon: mdiShieldAccount,
+		history: ["settings/"],
+		admin: true,
+	},
+	{
+		title: "Platform Profile",
+		path: "platform-profiles/:profileId",
+		description: "View and edit a platform profile — features and members.",
+		icon: mdiShieldAccount,
+		history: ["platform-profiles", "platform-profiles/<profileId>"],
+		admin: true,
+		hidden: true,
+	},
+	{
 		title: "Add Jobs",
 		path: "jobs/add-new-job",
 		description:
@@ -265,5 +282,36 @@ export const SETTINGS_ROUTES: {
 		icon: mdiClipboardTextOutline,
 		history: ["jobs", "edit-job/:id"],
 		admin: true,
+	},
+];
+
+export const PLATFORM_FEATURES: {
+	key: string;
+	label: string;
+	description: string;
+}[] = [
+	{
+		key: "nav.app-catalog",
+		label: "App Catalog",
+		description:
+			"Access the main app catalog to browse and launch published apps.",
+	},
+	{
+		key: "nav.skills",
+		label: "Skills",
+		description:
+			"Browse and run Skills — reusable LLM-powered task templates.",
+	},
+	{
+		key: "nav.settings",
+		label: "Settings",
+		description:
+			"Access platform settings including members, engines, and configuration.",
+	},
+	{
+		key: "nav.engine",
+		label: "Engines",
+		description:
+			"Connect, manage, and query databases, models, and storage engines.",
 	},
 ];

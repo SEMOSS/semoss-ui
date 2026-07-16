@@ -11,6 +11,8 @@ import { GitHubAppPage } from "./github-app-page";
 import { LLMFeedbackPage } from "./llm-feedback-page";
 import { MemberSettingsPage } from "./member-settings-page";
 import { MyProfilePage } from "./my-profile-page";
+import { PlatformProfileDetailPage } from "./platform-profile-detail-page";
+import { PlatformProfilesPage } from "./platform-profiles-page";
 import { ProjectSettingsDetailsPage } from "./project-settings-details-page";
 import { ProjectSettingsIndexPage } from "./project-settings-index-page";
 import { RDFMapPage } from "./rdf-map-page";
@@ -40,6 +42,8 @@ const SETTINGS_COMPONETS = {
 	"team-permissions/:type/:id": TeamSettingsDetailPage,
 	"view-rdf-map": RDFMapPage,
 	"llm-feedback": LLMFeedbackPage,
+	"platform-profiles": PlatformProfilesPage,
+	"platform-profiles/:profileId": PlatformProfileDetailPage,
 
 	// engine
 	database: () => <EngineSettingsIndexPage type="DATABASE" />,

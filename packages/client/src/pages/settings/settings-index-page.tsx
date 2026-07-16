@@ -8,6 +8,7 @@ import {
 	Database,
 	DatabaseZap,
 	FileText,
+	Flag,
 	Github,
 	KeyRound,
 	LayoutGrid,
@@ -129,6 +130,10 @@ const CardMapper: Record<string, CardConfig> = {
 	"LLM Feedback": {
 		icon: <ChartBar className={ICON_CLASS} />,
 		color: "#0471F0",
+	},
+	"Platform Profiles": {
+		icon: <Flag className={ICON_CLASS} />,
+		color: "#F97316",
 	},
 };
 
