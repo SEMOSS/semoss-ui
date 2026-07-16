@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
+import { cn } from "@semoss/ui/next";
 
 /**
- * Component that displays a full-screen overlay when the device is in landscape mode on mobile
- * Prevents users from using the app in landscape orientation
+ * Component that displays a full-screen overlay when the device is in landscape mode on mobile.
+ * Prevents users from using the app in landscape orientation.
+ * Has no effect on desktop browsers.
  */
 export const LandscapeRestriction = () => {
+	const { t } = useTranslation("mobile");
 	const [isLandscape, setIsLandscape] = useState(false);
 
 	useEffect(() => {
@@ -54,64 +58,31 @@ export const LandscapeRestriction = () => {
 
 	return (
 		<div
-			style={{
-				position: "fixed",
-				top: 0,
-				left: 0,
-				right: 0,
-				bottom: 0,
-				backgroundColor: "white",
-				zIndex: 9999,
-				display: "flex",
-				flexDirection: "column",
-				alignItems: "center",
-				justifyContent: "center",
-				padding: "2rem",
-				textAlign: "center",
-			}}
+			data-testid="landscape-restriction-overlay"
+			className={cn(
+				"fixed inset-0 z-[9999]",
+				"flex flex-col items-center justify-center",
+				"bg-white px-8 text-center",
+			)}
 		>
-			<div
-				style={{
-					fontSize: "3rem",
-					marginBottom: "1rem",
-					animation: "rotate 2s ease-in-out infinite",
-				}}
+			<span
+				data-testid="landscape-restriction-icon"
+				className="mb-4 animate-spin text-5xl"
 			>
 				📱
-			</div>
+			</span>
 			<h1
-				style={{
-					fontSize: "1.5rem",
-					fontWeight: "bold",
-					marginBottom: "1rem",
-					color: "#1f2937",
-				}}
+				data-testid="landscape-restriction-heading"
+				className="mb-4 font-bold text-2xl text-gray-800"
 			>
-				Please Rotate Your Device
+				{t("messages.rotateDevice")}
 			</h1>
 			<p
-				style={{
-					fontSize: "1rem",
-					color: "#6b7280",
-					maxWidth: "400px",
-					lineHeight: "1.5",
-				}}
+				data-testid="landscape-restriction-message"
+				className="max-w-sm text-base text-gray-500 leading-relaxed"
 			>
-				We don't support landscape mode yet. Please go back to portrait
-				mode for the best experience.
+				{t("messages.noLandscapeMode")}
 			</p>
-			<style>
-				{`
-					@keyframes rotate {
-						0%, 100% {
-							transform: rotate(0deg);
-						}
-						50% {
-							transform: rotate(90deg);
-						}
-					}
-				`}
-			</style>
 		</div>
 	);
 };

@@ -19,6 +19,7 @@ export const playgroundResources: LazyResources = {
 		"tool",
 		"tour",
 		"workspace",
+		"mobile",
 	],
 	load: {
 		// core
@@ -37,5 +38,6 @@ export const playgroundResources: LazyResources = {
 		tool: (l) => import(`./locales/${l}/playground/tool.json`),
 		tour: (l) => import(`./locales/${l}/playground/tour.json`),
 		workspace: (l) => import(`./locales/${l}/playground/workspace.json`),
+		mobile: (l) => import(`./locales/${l}/playground/mobile.json`),
 	},
 };
