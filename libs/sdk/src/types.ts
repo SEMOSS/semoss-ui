@@ -37,6 +37,7 @@ export interface MCPToolRequest {
 	original_name: string;
 	tool_response?: string;
 	executedParameters?: Record<string, unknown>;
+	_meta?: Record<string, unknown>;
 }
 
 export interface MCPToolResponse {

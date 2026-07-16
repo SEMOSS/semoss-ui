@@ -1,5 +1,10 @@
 import { useCallback, useRef, useState } from "react";
-import { fetchWithCsrf, MODULE_PATH, runPixel } from "../semoss/pixel";
+import {
+	assertPixelSuccess,
+	fetchWithCsrf,
+	MODULE_PATH,
+	runPixel,
+} from "../semoss/pixel";
 import type {
 	LoadedRecording,
 	RecordingProjectOption,
@@ -67,6 +72,7 @@ interface UseRemoteBrowserSessionReturn {
 		fileName: string,
 		envelope: StepsEnvelope,
 		roomId?: string,
+		projectId?: string,
 	) => Promise<void>;
 }
 
@@ -544,21 +550,18 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 			_fileName: string,
 			_envelope: StepsEnvelope,
 			roomId?: string,
+			projectId?: string,
 		): Promise<void> => {
 			if (!insightId) return;
-			try {
-				// Pass roomId so the reactor can auto-discover the playwright project ID
-				// from the room's existing MCP list (more reliable than the frontend supplying it).
-				const roomParam = roomId
-					? `, roomId=["${roomId.replace(/"/g, '\\"')}"]`
-					: "";
-				await runPixel(
-					`MakeRoomPlaywrightMCP(${roomParam});`,
-					insightId,
-				);
-			} catch {
-				// Non-critical — don't surface MCP generation errors to the user
-			}
+			const args = [
+				roomId ? `roomId=${JSON.stringify(roomId)}` : "",
+				projectId ? `projectId=${JSON.stringify(projectId)}` : "",
+			].filter(Boolean);
+			const response = await runPixel(
+				`MakeRoomPlaywrightMCP(${args.join(", ")});`,
+				insightId,
+			);
+			assertPixelSuccess(response, "Room MCP generation");
 		},
 		[],
 	);

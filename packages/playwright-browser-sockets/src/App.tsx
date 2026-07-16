@@ -43,6 +43,7 @@ import { BrowserViewer } from "./components/BrowserViewer";
 import { ConnectionStatus } from "./components/ConnectionStatus";
 import { useBrowserSocket } from "./hooks/useBrowserSocket";
 import { useRemoteBrowserSession } from "./hooks/useRemoteBrowserSession";
+import { assertPixelSuccess, runPixel } from "./semoss/pixel";
 import {
 	bindSemossInsightToRoom,
 	getSemossInsightId,
@@ -1305,24 +1306,23 @@ export default function App() {
 				);
 			}
 
-			// Regenerate mcp/pixel_mcp.json from all room recordings (best-effort)
+			// Regenerate mcp/pixel_mcp.json from all room recordings. This is part
+			// of a successful Return to Playground operation, not a best-effort step.
 			await saveRoomMcpEntry(
 				roomBoundInsightId,
 				saved.fileName,
 				enrichedEnvelope,
 				toolContext.roomId,
+				toolContext.projectId,
 			);
 
 			// Safely add the __insight__ MCP entry to the room's tool list so the
 			// LLM sees recording-specific tools on the next message (read-modify-write).
-			try {
-				await runPixel(
-					`AddInsightMCPToRoom(roomId=${JSON.stringify(toolContext.roomId)});`,
-					roomBoundInsightId,
-				);
-			} catch {
-				// Non-critical — room will still work, tools just won't be auto-added
-			}
+			const addMcpResponse = await runPixel(
+				`AddInsightMCPToRoom(roomId=${JSON.stringify(toolContext.roomId)});`,
+				roomBoundInsightId,
+			);
+			assertPixelSuccess(addMcpResponse, "Room MCP registration");
 
 			sendMcpResponseToPlayground(
 				{

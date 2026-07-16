@@ -603,7 +603,7 @@ paramValues=[${JSON.stringify({
 			try {
 				// wait for the pixel to run
 				const response = await this.room.runRoomPixel<[unknown]>(
-					`RunMCPTool(project = [ "${tool.json._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
+					`RunMCPTool(project = [ "${tool.json._meta.SMSS_ENGINE_ID || tool.json._meta.SMSS_PROJECT_ID}" ], roomId=${JSON.stringify(this.room.roomId)}, function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
 					false,
 					false,
 				);

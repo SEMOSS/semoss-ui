@@ -79,6 +79,7 @@ export const ToolsView = observer(
 						original_name: tool?.original_name || "",
 						tool_response: toolResponse,
 						executedParameters: toJS(toolParameters || {}),
+						_meta: toJS(tool?._meta || {}),
 					} satisfies MCPToolRequest,
 				},
 				targetOrigin,
