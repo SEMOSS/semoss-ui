@@ -1,6 +1,6 @@
+import { EngineSelect as EngineSelectPrimitive } from "@semoss/shared";
 import { cn } from "../lib/utils";
 import type { Engine } from "../types";
-import { EngineSelectPrimitive } from "./primitives/engine-select";
 
 export interface EngineSelectProps {
 	/** Display name of the selected engine. */

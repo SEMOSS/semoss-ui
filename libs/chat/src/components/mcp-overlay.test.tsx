@@ -6,18 +6,15 @@ import { McpOverlay } from "./mcp-overlay";
 
 // MCPSelector calls usePixel/useIteratorPixel internally (real SDK hooks
 // needing a real InsightProvider) — not worth exercising here, same reason
-// EngineSelect's own test mocks EngineSelectPrimitive rather than rendering
+// EngineSelect's own test mocks the shared EngineSelect rather than rendering
 // the real thing. This file's job is McpOverlay's own orchestration (tabs,
 // badge counts, save/cancel), not MCPSelector's. splitMcpByType is simple
 // enough to reimplement directly instead of importing the real one.
-vi.mock("./primitives/mcp-utils", () => ({
+vi.mock("@semoss/shared", () => ({
 	splitMcpByType: (mcp: MCPConfig[]) => ({
 		knowledge: mcp.filter((m) => m.type === "VECTOR"),
 		toolbox: mcp.filter((m) => m.type !== "VECTOR"),
 	}),
-}));
-
-vi.mock("./primitives/mcp-selector", () => ({
 	MCPSelector: ({
 		type,
 		values,

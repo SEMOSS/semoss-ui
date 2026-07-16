@@ -1,12 +1,8 @@
 import {
-	BookOpenIcon,
-	BotIcon,
 	ChevronsDownUpIcon,
-	HammerIcon,
 	MicIcon,
 	PaperclipIcon,
 	SendIcon,
-	Settings2Icon,
 } from "lucide-react";
 import {
 	type ComponentType,
@@ -23,18 +19,16 @@ import {
 	Command,
 	CommandEmpty,
 	CommandGroup,
-	CommandInput,
 	CommandItem,
 	CommandList,
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuTrigger,
 	Spinner,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { FileDragProvider, useFileDrag } from "../contexts/file-drag-context";
 import { cn } from "../lib/utils";
+import { FileDragOverlay } from "./file-drag-overlay";
 
 export interface ChatInputSlashCommand {
 	/** Stable identifier used for filtering and callbacks (matches playground). */
@@ -79,105 +73,49 @@ export interface ChatInputDefaultSlashCommandActions {
 	onOpenSettings: () => void;
 }
 
-const NOOP = () => {};
-
 /**
  * Playground-matching built-in slash commands for apps that want the same
  * core command workflow in ChatInput.
  */
 export function createDefaultSlashCommands(
-	actions?: ChatInputDefaultSlashCommandActions,
+	actions: Partial<ChatInputDefaultSlashCommandActions>,
 ): ChatInputSlashCommand[] {
-	const resolvedActions = {
-		onOpenMcpOverlay: actions?.onOpenMcpOverlay ?? ((_tab) => {}),
-		onCompact: actions?.onCompact ?? NOOP,
-		onAttachDocument: actions?.onAttachDocument ?? NOOP,
-		onOpenSettings: actions?.onOpenSettings ?? NOOP,
-	};
+	const commands: ChatInputSlashCommand[] = [];
 
-	return [
-		{
-			id: "knowledge",
-			label: "/knowledge",
-			description: "Add knowledge sources to this conversation",
-			icon: BookOpenIcon,
-			noChip: true,
-			onExecute: () => resolvedActions.onOpenMcpOverlay("KNOWLEDGE"),
-		},
-		{
-			id: "toolbox",
-			label: "/toolbox",
-			description: "Add toolboxes to this conversation",
-			icon: HammerIcon,
-			noChip: true,
-			onExecute: () => resolvedActions.onOpenMcpOverlay("TOOLBOX"),
-		},
-		{
-			id: "mcp",
-			label: "/mcp",
-			icon: HammerIcon,
-			hiddenInMenu: true,
-			noChip: true,
-			onExecute: () => resolvedActions.onOpenMcpOverlay("TOOLBOX"),
-		},
-		{
-			id: "agent",
-			label: "/agent",
-			description: "Select an agent for this conversation",
-			icon: BotIcon,
-			noChip: true,
-			onExecute: () => resolvedActions.onOpenMcpOverlay("AGENT"),
-		},
-		{
-			id: "workspace",
-			label: "/workspace",
-			icon: BotIcon,
-			hiddenInMenu: true,
-			noChip: true,
-			onExecute: () => resolvedActions.onOpenMcpOverlay("AGENT"),
-		},
-		{
+	if (actions.onCompact) {
+		commands.push({
 			id: "compact",
 			label: "/compact",
 			description: "Summarize conversation history to free up context",
 			icon: ChevronsDownUpIcon,
 			noChip: true,
 			disableDuringLoading: true,
-			onExecute: resolvedActions.onCompact,
-		},
-		{
-			id: "document",
-			label: "/document",
-			description: "Attach a document to this message",
-			icon: PaperclipIcon,
-			noChip: true,
-			onExecute: resolvedActions.onAttachDocument,
-		},
-		{
-			id: "file",
-			label: "/file",
-			icon: PaperclipIcon,
-			hiddenInMenu: true,
-			noChip: true,
-			onExecute: resolvedActions.onAttachDocument,
-		},
-		{
-			id: "settings",
-			label: "/settings",
-			description: "Open room configuration",
-			icon: Settings2Icon,
-			noChip: true,
-			onExecute: resolvedActions.onOpenSettings,
-		},
-		{
-			id: "room-options",
-			label: "/room-options",
-			icon: Settings2Icon,
-			hiddenInMenu: true,
-			noChip: true,
-			onExecute: resolvedActions.onOpenSettings,
-		},
-	];
+			onExecute: actions.onCompact,
+		});
+	}
+
+	if (actions.onAttachDocument) {
+		commands.push(
+			{
+				id: "document",
+				label: "/document",
+				description: "Attach a document to this message",
+				icon: PaperclipIcon,
+				noChip: true,
+				onExecute: actions.onAttachDocument,
+			},
+			{
+				id: "file",
+				label: "/file",
+				icon: PaperclipIcon,
+				hiddenInMenu: true,
+				noChip: true,
+				onExecute: actions.onAttachDocument,
+			},
+		);
+	}
+
+	return commands;
 }
 
 function mergeSlashCommands(
@@ -370,7 +308,7 @@ export interface ChatInputProps {
 	 * default commands are created from these handlers and merged with
 	 * `slashCommands` (same id = override, new id = append).
 	 */
-	defaultSlashCommandActions?: ChatInputDefaultSlashCommandActions;
+	defaultSlashCommandActions?: Partial<ChatInputDefaultSlashCommandActions>;
 	/**
 	 * Disable specific built-in playground commands without redefining
 	 * them via `slashCommands` overrides.
@@ -400,7 +338,15 @@ export interface ChatInputProps {
  * prompt library) — that's out of scope, not something this component is
  * trying to approximate.
  */
-export function ChatInput({
+export function ChatInput({ ...props }: ChatInputProps) {
+	return (
+		<FileDragProvider>
+			<ChatInputInner {...props} />
+		</FileDragProvider>
+	);
+}
+
+function ChatInputInner({
 	onSubmit,
 	useSlashCommands = true,
 	disabled = false,
@@ -419,6 +365,14 @@ export function ChatInput({
 	submitIcon,
 	voiceIcon,
 }: ChatInputProps) {
+	const {
+		files,
+		addFiles,
+		clearFiles,
+		containerRef,
+		setShouldStayOpen,
+		handleContainerDragOver,
+	} = useFileDrag();
 	const isControlled = controlledValue !== undefined;
 	const [internalValue, setInternalValue] = useState("");
 	const value = isControlled ? controlledValue : internalValue;
@@ -433,9 +387,6 @@ export function ChatInput({
 	const [canListen, setCanListen] = useState(false);
 	const [isListening, setIsListening] = useState(false);
 	const [isSlashMenuOpen, setIsSlashMenuOpen] = useState(false);
-	const [slashMenuTrigger, setSlashMenuTrigger] = useState<
-		"button" | "typing" | null
-	>(null);
 	const [slashQuery, setSlashQuery] = useState("");
 	const [selectedSlashIndex, setSelectedSlashIndex] = useState(0);
 	const [typedMenuPosition, setTypedMenuPosition] = useState<{
@@ -443,10 +394,9 @@ export function ChatInput({
 		top: number;
 		openUpward: boolean;
 	} | null>(null);
-	const formRef = useRef<HTMLFormElement>(null);
+	const formRef = useRef<HTMLFormElement | null>(null);
 	const recognitionRef = useRef<SpeechRecognition | null>(null);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
-	const commandInputRef = useRef<HTMLInputElement>(null);
 	// Mirrors value/setValue for the mic effect below, which only sets up
 	// its onresult handler once (per enableVoiceInput toggle) — reading
 	// through refs instead of closing over value/setValue directly avoids
@@ -456,9 +406,27 @@ export function ChatInput({
 	const setValueRef = useRef(setValue);
 	setValueRef.current = setValue;
 
+	const handleCompact = useCallback(() => {
+		onSubmit("/compact");
+	}, [onSubmit]);
+
+	const handleAttachDocument = useCallback(() => {
+		setShouldStayOpen(true);
+	}, [setShouldStayOpen]);
+
+	const builtInDefaultSlashActions: Partial<ChatInputDefaultSlashCommandActions> =
+		{
+			onCompact: handleCompact,
+			onAttachDocument: handleAttachDocument,
+		};
+
 	const defaultSlashCommands =
 		useSlashCommands && !disableDefaultSlashCommands
-			? createDefaultSlashCommands(defaultSlashCommandActions)
+			? createDefaultSlashCommands(
+					defaultSlashCommandActions
+						? defaultSlashCommandActions
+						: builtInDefaultSlashActions,
+				)
 			: [];
 	const effectiveDefaultSlashCommands = markDisabledDefaultSlashCommands(
 		defaultSlashCommands,
@@ -523,19 +491,19 @@ export function ChatInput({
 		};
 	}, [enableVoiceInput]);
 
-	useEffect(() => {
-		if (isSlashMenuOpen && slashMenuTrigger === "button") {
-			commandInputRef.current?.focus();
-		}
-	}, [isSlashMenuOpen, slashMenuTrigger]);
-
 	function submit() {
 		const trimmed = value.trim();
-		if (!trimmed || disabled) {
+		if ((!trimmed && files.length === 0) || disabled) {
 			return;
 		}
-		onSubmit(trimmed);
+		const attachmentNote = files.length
+			? `Attached files: ${files.map((file) => file.name).join(", ")}`
+			: "";
+		const message = [trimmed, attachmentNote].filter(Boolean).join("\n\n");
+		onSubmit(message);
 		setValue("");
+		clearFiles();
+		setShouldStayOpen(false);
 	}
 
 	const updateTypedSlashMenuPosition = useCallback(() => {
@@ -561,7 +529,7 @@ export function ChatInput({
 		const viewportTop = openUpward
 			? caretViewportTop - estimatedMenuHeight - menuGap
 			: caretViewportBottom + menuGap;
-		const top = viewportTop - formRect.top;
+		const top = Math.max(8, viewportTop - formRect.top);
 		const left = Math.max(
 			8,
 			Math.min(
@@ -578,7 +546,7 @@ export function ChatInput({
 	}, []);
 
 	useEffect(() => {
-		if (!isSlashMenuOpen || slashMenuTrigger !== "typing") {
+		if (!isSlashMenuOpen) {
 			return;
 		}
 
@@ -591,12 +559,11 @@ export function ChatInput({
 			window.removeEventListener("resize", syncPosition);
 			window.removeEventListener("scroll", syncPosition, true);
 		};
-	}, [isSlashMenuOpen, slashMenuTrigger, updateTypedSlashMenuPosition]);
+	}, [isSlashMenuOpen, updateTypedSlashMenuPosition]);
 
 	function syncSlashMenuFromComposer(nextValue: string) {
 		if (effectiveSlashCommands.length === 0 || disabled) {
 			setIsSlashMenuOpen(false);
-			setSlashMenuTrigger(null);
 			setSlashQuery("");
 			setSelectedSlashIndex(0);
 			setTypedMenuPosition(null);
@@ -605,17 +572,13 @@ export function ChatInput({
 
 		const trailingSlashQuery = getTrailingSlashQuery(nextValue);
 		if (trailingSlashQuery === null) {
-			if (slashMenuTrigger === "typing") {
-				setIsSlashMenuOpen(false);
-				setSlashMenuTrigger(null);
-				setSlashQuery("");
-				setSelectedSlashIndex(0);
-				setTypedMenuPosition(null);
-			}
+			setIsSlashMenuOpen(false);
+			setSlashQuery("");
+			setSelectedSlashIndex(0);
+			setTypedMenuPosition(null);
 			return;
 		}
 
-		setSlashMenuTrigger("typing");
 		setIsSlashMenuOpen(true);
 		setSlashQuery(trailingSlashQuery);
 		setSelectedSlashIndex(0);
@@ -628,13 +591,13 @@ export function ChatInput({
 	}
 
 	function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-		if (isSlashMenuOpen && slashMenuTrigger === "typing") {
+		if (isSlashMenuOpen) {
 			if (event.key === "Escape") {
 				event.preventDefault();
 				setIsSlashMenuOpen(false);
-				setSlashMenuTrigger(null);
 				setSlashQuery("");
 				setSelectedSlashIndex(0);
+				setTypedMenuPosition(null);
 				return;
 			}
 
@@ -695,17 +658,12 @@ export function ChatInput({
 	function replaceTrailingSlashCommand(selected: ChatInputSlashCommand) {
 		const normalized = getCommandToken(selected);
 		const current = valueRef.current;
-		if (slashMenuTrigger !== "typing") {
-			insertSlashCommand(selected);
-			return;
-		}
-
 		const next = current.replace(
 			/(^|\s)\/[^\s/]*$/,
 			(_, separator: string) => `${separator}${normalized} `,
 		);
 		updateComposerValue(
-			next === current ? `${current}${normalized} ` : next,
+			next === current ? `${current} ${normalized} ` : next,
 		);
 		onSlashCommandSelect?.(selected);
 		textareaRef.current?.focus();
@@ -713,25 +671,8 @@ export function ChatInput({
 
 	function clearTrailingSlashQuery() {
 		const current = valueRef.current;
-		if (slashMenuTrigger !== "typing") {
-			return;
-		}
 		const next = current.replace(/(^|\s)\/[^\s/]*$/, "$1");
 		updateComposerValue(next);
-	}
-
-	function insertSlashCommand(selected: ChatInputSlashCommand) {
-		const normalized = getCommandToken(selected);
-		const current = valueRef.current;
-		const next = !current.trim()
-			? `${normalized} `
-			: current.endsWith(" ") || current.endsWith("\n")
-				? `${current}${normalized} `
-				: `${current} ${normalized} `;
-
-		setValueRef.current(next);
-		onSlashCommandSelect?.(selected);
-		textareaRef.current?.focus();
 	}
 
 	const filteredSlashCommands = filterSlashCommands(
@@ -760,7 +701,6 @@ export function ChatInput({
 			selected.onExecute?.();
 			onSlashCommandSelect?.(selected);
 			setIsSlashMenuOpen(false);
-			setSlashMenuTrigger(null);
 			setSlashQuery("");
 			setSelectedSlashIndex(0);
 			setTypedMenuPosition(null);
@@ -770,7 +710,6 @@ export function ChatInput({
 
 		replaceTrailingSlashCommand(selected);
 		setIsSlashMenuOpen(false);
-		setSlashMenuTrigger(null);
 		setSlashQuery("");
 		setSelectedSlashIndex(0);
 		setTypedMenuPosition(null);
@@ -778,9 +717,13 @@ export function ChatInput({
 
 	return (
 		<form
-			ref={formRef}
+			ref={(node) => {
+				formRef.current = node;
+				containerRef.current = node;
+			}}
 			data-slot="chat-input"
 			onSubmit={handleSubmit}
+			onDragOver={handleContainerDragOver}
 			className={cn(
 				"relative flex flex-col rounded-md border border-input bg-card shadow-lg transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
 				className,
@@ -791,215 +734,100 @@ export function ChatInput({
 				data-slot="chat-input-textarea"
 				value={value}
 				onChange={(event) => updateComposerValue(event.target.value)}
+				onPaste={(event) => {
+					const pastedFiles = Array.from(event.clipboardData.files);
+					if (pastedFiles.length === 0) {
+						return;
+					}
+
+					event.preventDefault();
+					addFiles(pastedFiles);
+					setShouldStayOpen(true);
+				}}
 				onKeyDown={handleKeyDown}
 				disabled={disabled}
 				placeholder={placeholder}
 				rows={1}
 				className="max-h-40 resize-none bg-transparent px-4 pt-4 pb-4 text-foreground text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
 			/>
-			{isSlashMenuOpen &&
-				slashMenuTrigger === "typing" &&
-				typedMenuPosition && (
-					<div
-						className="absolute z-50 w-72 overflow-hidden rounded-md border border-border bg-popover shadow-md"
-						style={{
-							left: typedMenuPosition.left,
-							top: typedMenuPosition.top,
-						}}
-						data-open-direction={
-							typedMenuPosition.openUpward ? "up" : "down"
+			{isSlashMenuOpen && typedMenuPosition && (
+				<div
+					className="absolute z-50 w-72 overflow-hidden rounded-md border border-border bg-popover shadow-md"
+					style={{
+						left: typedMenuPosition.left,
+						top: typedMenuPosition.top,
+					}}
+					data-open-direction={
+						typedMenuPosition.openUpward ? "up" : "down"
+					}
+				>
+					<Command
+						shouldFilter={false}
+						value={
+							filteredSlashCommands[selectedSlashIndex]?.id ?? ""
 						}
-					>
-						<Command
-							shouldFilter={false}
-							value={
-								filteredSlashCommands[selectedSlashIndex]?.id ??
-								""
-							}
-							onValueChange={(value) => {
-								const nextIndex =
-									filteredSlashCommands.findIndex(
-										(command) => command.id === value,
-									);
-								if (nextIndex !== -1) {
-									setSelectedSlashIndex(nextIndex);
-								}
-							}}
-							className="w-full"
-						>
-							<CommandList>
-								{filteredSlashCommands.length === 0 ? (
-									<CommandEmpty>
-										No commands found
-									</CommandEmpty>
-								) : (
-									<CommandGroup>
-										{filteredSlashCommands.map(
-											(slashCommand) => {
-												const Icon = slashCommand.icon;
-												const isDisabled = !!(
-													slashCommand.disabled ||
-													(slashCommand.disableDuringLoading &&
-														isGenerating)
-												);
-												return (
-													<CommandItem
-														key={slashCommand.id}
-														value={slashCommand.id}
-														disabled={isDisabled}
-														onSelect={() =>
-															handleSlashCommandSelect(
-																slashCommand,
-															)
-														}
-													>
-														{Icon && (
-															<Icon className="mr-2 size-4 shrink-0" />
-														)}
-														<div className="flex min-w-0 flex-col gap-0.5">
-															<span className="font-medium text-sm">
-																{getCommandToken(
-																	slashCommand,
-																)}
-															</span>
-															{slashCommand.description && (
-																<span className="text-muted-foreground text-xs">
-																	{
-																		slashCommand.description
-																	}
-																</span>
-															)}
-														</div>
-													</CommandItem>
-												);
-											},
-										)}
-									</CommandGroup>
-								)}
-							</CommandList>
-						</Command>
-					</div>
-				)}
-			<div className="flex items-center justify-end gap-2 bg-card p-2">
-				{effectiveSlashCommands.length > 0 && (
-					<DropdownMenu
-						modal={false}
-						open={isSlashMenuOpen && slashMenuTrigger === "button"}
-						onOpenChange={(open) => {
-							setIsSlashMenuOpen(open);
-							setSlashMenuTrigger(open ? "button" : null);
-							if (!open) {
-								setSlashQuery("");
-								setSelectedSlashIndex(0);
-								setTypedMenuPosition(null);
-							} else {
-								setSlashQuery("");
-								setSelectedSlashIndex(0);
+						onValueChange={(value) => {
+							const nextIndex = filteredSlashCommands.findIndex(
+								(command) => command.id === value,
+							);
+							if (nextIndex !== -1) {
+								setSelectedSlashIndex(nextIndex);
 							}
 						}}
+						className="w-full"
 					>
-						<DropdownMenuTrigger asChild>
-							<Button
-								data-slot="chat-input-slash"
-								type="button"
-								variant="ghost"
-								size="icon-sm"
-								disabled={disabled}
-								aria-label="Slash commands"
-							>
-								/
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end" className="w-72 p-0">
-							<Command
-								shouldFilter={false}
-								value={
-									filteredSlashCommands[selectedSlashIndex]
-										?.id ?? ""
-								}
-								onValueChange={(value) => {
-									const nextIndex =
-										filteredSlashCommands.findIndex(
-											(command) => command.id === value,
-										);
-									if (nextIndex !== -1) {
-										setSelectedSlashIndex(nextIndex);
-									}
-								}}
-								className="w-full"
-							>
-								{slashMenuTrigger === "button" && (
-									<CommandInput
-										ref={commandInputRef}
-										placeholder="Type a command..."
-										value={slashQuery}
-										onValueChange={(nextValue) => {
-											setSlashQuery(nextValue);
-											setSelectedSlashIndex(0);
-										}}
-									/>
-								)}
-								<CommandList>
-									{filteredSlashCommands.length === 0 ? (
-										<CommandEmpty>
-											No commands found
-										</CommandEmpty>
-									) : (
-										<CommandGroup>
-											{filteredSlashCommands.map(
-												(slashCommand) => {
-													const Icon =
-														slashCommand.icon;
-													const isDisabled = !!(
-														slashCommand.disabled ||
-														(slashCommand.disableDuringLoading &&
-															isGenerating)
-													);
-													return (
-														<CommandItem
-															key={
-																slashCommand.id
-															}
-															value={
-																slashCommand.id
-															}
-															disabled={
-																isDisabled
-															}
-															onSelect={() =>
-																handleSlashCommandSelect(
-																	slashCommand,
-																)
-															}
-														>
-															{Icon && (
-																<Icon className="mr-2 size-4 shrink-0" />
+						<CommandList>
+							{filteredSlashCommands.length === 0 ? (
+								<CommandEmpty>No commands found</CommandEmpty>
+							) : (
+								<CommandGroup>
+									{filteredSlashCommands.map(
+										(slashCommand) => {
+											const Icon = slashCommand.icon;
+											const isDisabled = !!(
+												slashCommand.disabled ||
+												(slashCommand.disableDuringLoading &&
+													isGenerating)
+											);
+											return (
+												<CommandItem
+													key={slashCommand.id}
+													value={slashCommand.id}
+													disabled={isDisabled}
+													onSelect={() =>
+														handleSlashCommandSelect(
+															slashCommand,
+														)
+													}
+												>
+													{Icon && (
+														<Icon className="mr-2 size-4 shrink-0" />
+													)}
+													<div className="flex min-w-0 flex-col gap-0.5">
+														<span className="font-medium text-sm">
+															{getCommandToken(
+																slashCommand,
 															)}
-															<div className="flex min-w-0 flex-col gap-0.5">
-																<span className="font-medium text-sm">
-																	{getCommandToken(
-																		slashCommand,
-																	)}
-																</span>
-																{slashCommand.description && (
-																	<span className="text-muted-foreground text-xs">
-																		{
-																			slashCommand.description
-																		}
-																	</span>
-																)}
-															</div>
-														</CommandItem>
-													);
-												},
-											)}
-										</CommandGroup>
+														</span>
+														{slashCommand.description && (
+															<span className="text-muted-foreground text-xs">
+																{
+																	slashCommand.description
+																}
+															</span>
+														)}
+													</div>
+												</CommandItem>
+											);
+										},
 									)}
-								</CommandList>
-							</Command>
-						</DropdownMenuContent>
-					</DropdownMenu>
-				)}
+								</CommandGroup>
+							)}
+						</CommandList>
+					</Command>
+				</div>
+			)}
+			<div className="flex items-center justify-end gap-2 bg-card p-2">
 				{enableVoiceInput && canListen && (
 					<Tooltip>
 						<TooltipTrigger asChild>
@@ -1052,6 +880,7 @@ export function ChatInput({
 					)}
 				</Button>
 			</div>
+			<FileDragOverlay />
 		</form>
 	);
 }

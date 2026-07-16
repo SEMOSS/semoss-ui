@@ -97,6 +97,9 @@ importers:
       '@semoss/sdk':
         specifier: workspace:*
         version: link:../sdk
+      '@semoss/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@semoss/ui':
         specifier: workspace:*
         version: link:../ui
