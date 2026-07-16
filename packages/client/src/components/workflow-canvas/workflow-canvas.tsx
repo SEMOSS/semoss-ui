@@ -350,7 +350,8 @@ export function WorkflowCanvas({ appId }: WorkflowCanvasProps) {
 			const visited = new Set<string>();
 			const queue = [targetId];
 			while (queue.length > 0) {
-				const curr = queue.shift()!;
+				const curr = queue.shift();
+				if (curr === undefined) break;
 				if (curr === sourceId) return true;
 				if (visited.has(curr)) continue;
 				visited.add(curr);
@@ -503,46 +504,40 @@ export function WorkflowCanvas({ appId }: WorkflowCanvasProps) {
 		return ancestors;
 	};
 
-	const upstreamVarsFor = useCallback(
-		(nodeId: string): string[] => {
-			const ancestors = buildAncestorSet(nodeId);
-			const vars: string[] = [];
-			for (const n of wfNodesRef.current) {
-				if (!ancestors.has(n.id)) continue;
-				if (n.outputVar) vars.push(n.outputVar);
-				// set-variable nodes expose their declared names directly into scope
-				if (n.type === "set-variable") {
-					const declared =
-						(n.config as { variables?: Record<string, string> })
-							?.variables ?? {};
-					vars.push(...Object.keys(declared).filter(Boolean));
-				}
-			}
-			return [...new Set(vars)];
-		},
-		// biome-ignore lint/correctness/useExhaustiveDependencies: using ref
-		[wfEdges],
-	);
-
-	/** Variable names declared by upstream set-variable nodes — used as key picker in SetVariableForm. */
-	const upstreamSetVarNamesFor = useCallback(
-		(nodeId: string): string[] => {
-			const ancestors = buildAncestorSet(nodeId);
-			const names = new Set<string>();
-			for (const n of wfNodesRef.current) {
-				if (!ancestors.has(n.id) || n.type !== "set-variable") continue;
-				const vars =
+	// biome-ignore lint/correctness/useExhaustiveDependencies: buildAncestorSet reads wfEdgesRef (stable ref — no reactive dep needed)
+	const upstreamVarsFor = useCallback((nodeId: string): string[] => {
+		const ancestors = buildAncestorSet(nodeId);
+		const vars: string[] = [];
+		for (const n of wfNodesRef.current) {
+			if (!ancestors.has(n.id)) continue;
+			if (n.outputVar) vars.push(n.outputVar);
+			// set-variable nodes expose their declared names directly into scope
+			if (n.type === "set-variable") {
+				const declared =
 					(n.config as { variables?: Record<string, string> })
 						?.variables ?? {};
-				for (const k of Object.keys(vars)) {
-					if (k) names.add(k);
-				}
+				vars.push(...Object.keys(declared).filter(Boolean));
 			}
-			return [...names];
-		},
-		// biome-ignore lint/correctness/useExhaustiveDependencies: using ref
-		[wfEdges],
-	);
+		}
+		return [...new Set(vars)];
+	}, []);
+
+	/** Variable names declared by upstream set-variable nodes — used as key picker in SetVariableForm. */
+	// biome-ignore lint/correctness/useExhaustiveDependencies: buildAncestorSet reads wfEdgesRef (stable ref — no reactive dep needed)
+	const upstreamSetVarNamesFor = useCallback((nodeId: string): string[] => {
+		const ancestors = buildAncestorSet(nodeId);
+		const names = new Set<string>();
+		for (const n of wfNodesRef.current) {
+			if (!ancestors.has(n.id) || n.type !== "set-variable") continue;
+			const vars =
+				(n.config as { variables?: Record<string, string> })
+					?.variables ?? {};
+			for (const k of Object.keys(vars)) {
+				if (k) names.add(k);
+			}
+		}
+		return [...names];
+	}, []);
 
 	// ─── save ─────────────────────────────────────────────────────────────────────
 	const save = useCallback(async () => {
@@ -593,7 +588,7 @@ export function WorkflowCanvas({ appId }: WorkflowCanvasProps) {
 			if (autoSaveTimerRef.current)
 				clearTimeout(autoSaveTimerRef.current);
 		};
-	}, [wfNodes, wfEdges, isDirty, saving, save]);
+	}, [isDirty, saving, save]);
 
 	useEffect(() => {
 		if (!isDirty) return;
@@ -673,7 +668,8 @@ export function WorkflowCanvas({ appId }: WorkflowCanvasProps) {
 		const reachable = new Set<string>();
 		const queue = [trigger.id];
 		while (queue.length > 0) {
-			const curr = queue.shift()!;
+			const curr = queue.shift();
+			if (curr === undefined) break;
 			if (reachable.has(curr)) continue;
 			reachable.add(curr);
 			for (const next of outMap.get(curr) ?? []) queue.push(next);
@@ -685,6 +681,10 @@ export function WorkflowCanvas({ appId }: WorkflowCanvasProps) {
 		}
 		return floating;
 	}, [wfNodes, wfEdges]);
+	// Ref mirrors floatingNodeIds so run() can read the latest value without
+	// being added to its useCallback dep array (same pattern as wfNodesRef).
+	const floatingNodeIdsRef = useRef<Set<string>>(new Set());
+	floatingNodeIdsRef.current = floatingNodeIds;
 
 	// Directly stamp floatingWarning into the Zustand store so ReactFlow re-renders cards
 	useEffect(() => {
@@ -709,37 +709,18 @@ export function WorkflowCanvas({ appId }: WorkflowCanvasProps) {
 
 	const run = useCallback(async () => {
 		if (wfNodesRef.current.length === 0) return;
-		// Check floating nodes first so they always get highlighted regardless of config state
-		const triggerNode = wfNodesRef.current.find(
-			(n) => n.type === "trigger",
-		);
-		if (triggerNode) {
-			const outMap = new Map<string, string[]>();
-			for (const e of wfEdgesRef.current) {
-				if (!outMap.has(e.source)) outMap.set(e.source, []);
-				outMap.get(e.source)?.push(e.target);
-			}
-			const reachable = new Set<string>([triggerNode.id]);
-			const queue = [triggerNode.id];
-			while (queue.length > 0) {
-				const curr = queue.shift()!;
-				for (const next of outMap.get(curr) ?? []) {
-					if (!reachable.has(next)) {
-						reachable.add(next);
-						queue.push(next);
-					}
-				}
-			}
-			const floating = wfNodesRef.current.filter(
-				(n) => n.type !== "trigger" && !reachable.has(n.id),
+		// Check floating nodes first so they always get highlighted regardless of config state.
+		// floatingNodeIdsRef mirrors the floatingNodeIds memo (same wfNodes/wfEdges source of truth)
+		// and is always up-to-date at call time without needing to be in the dep array.
+		if (floatingNodeIdsRef.current.size > 0) {
+			const floatingNodes = wfNodesRef.current.filter((n) =>
+				floatingNodeIdsRef.current.has(n.id),
 			);
-			if (floating.length > 0) {
-				setShowFloatingWarnings(true);
-				toast.error(
-					`Disconnected from trigger: ${floating.map((n) => `"${n.label}"`).join(", ")}`,
-				);
-				return;
-			}
+			setShowFloatingWarnings(true);
+			toast.error(
+				`Disconnected from trigger: ${floatingNodes.map((n) => `"${n.label}"`).join(", ")}`,
+			);
+			return;
 		}
 		const unready = wfNodesRef.current
 			.filter((n) => n.type !== "trigger")

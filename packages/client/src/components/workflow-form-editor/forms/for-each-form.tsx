@@ -14,6 +14,7 @@ import {
 } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import type { WorkflowNode } from "@/pages/workflow/workflow.types";
+import { BoundInput } from "./shared";
 
 interface ForEachStepFormProps {
 	step: WorkflowNode;
@@ -370,6 +371,66 @@ function TestForEachSection({ config }: { config: ForEachConfig }) {
 					</pre>
 				</div>
 			)}
+		</div>
+	);
+}
+
+// ─── simple config form (used by node-settings-panel) ────────────────────────
+
+/** Minimal form bound to the global ForEachConfig (sourceVar + iteratorVar). */
+export function ForEachForm({
+	config,
+	upstreamVars,
+	onChange,
+}: {
+	config: { sourceVar: string; iteratorVar: string } & Record<
+		string,
+		unknown
+	>;
+	upstreamVars: string[];
+	onChange: (
+		c: { sourceVar: string; iteratorVar: string } & Record<string, unknown>,
+	) => void;
+}) {
+	return (
+		<div className="flex flex-col gap-4">
+			<BoundInput
+				label="Source Array Variable"
+				value={config.sourceVar}
+				placeholder="db_out"
+				onChange={(v) => onChange({ ...config, sourceVar: v })}
+				upstreamVars={upstreamVars}
+			/>
+			<Field>
+				<FieldLabel>Iterator Variable Name</FieldLabel>
+				<Input
+					value={config.iteratorVar}
+					onChange={(e) =>
+						onChange({ ...config, iteratorVar: e.target.value })
+					}
+					placeholder="row"
+				/>
+				<p className="mt-1 text-muted-foreground text-xs">
+					Each element is available as{" "}
+					<code className="rounded bg-muted px-1">{`\${${config.iteratorVar || "row"}.fieldName}`}</code>{" "}
+					in inner nodes.
+				</p>
+			</Field>
+			<div className="space-y-1.5 rounded-md border border-border border-dashed p-3 text-muted-foreground text-xs">
+				<p className="font-medium text-foreground text-xs">
+					How For Each works
+				</p>
+				<p>
+					Iterates over each object in{" "}
+					<code className="rounded bg-muted px-1">{`\${${config.sourceVar || "sourceVar"}}`}</code>{" "}
+					and runs the inner pipeline for each one. Results collect
+					into the output variable as an array.
+				</p>
+				<p>
+					Example: A database query returns 50 records → For Each
+					enriches each via an LLM call → 50 enriched results.
+				</p>
+			</div>
 		</div>
 	);
 }

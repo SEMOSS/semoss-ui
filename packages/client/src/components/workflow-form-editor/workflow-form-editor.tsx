@@ -1,31 +1,17 @@
 import {
-	AppWindow,
-	Archive,
-	Bolt,
 	Bot,
-	CheckCircle2,
 	ChevronDown,
 	ChevronRight,
-	ClipboardCopy,
-	Clock3,
-	Code,
 	Database,
-	GitBranch,
 	Loader2,
-	type LucideIcon,
 	Play,
 	Plus,
 	RefreshCw,
-	Repeat,
 	Save,
-	Shuffle,
-	Sigma,
-	Trash2,
 	Workflow,
-	XCircle,
 	Zap,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	Button,
 	Field,
@@ -53,991 +39,23 @@ import type {
 	WorkflowRunSummary,
 } from "@/pages/workflow/workflow.types";
 import { NODE_TYPE_META } from "@/pages/workflow/workflow.types";
+import { buildPixelPreview } from "../workflow-workspace/workflow-utils";
+import { NodeResultList } from "./node-result-list";
+import type { WorkflowRunData } from "./workflow-editor-utils";
 import {
-	applyOutputTransform,
-	buildPixelPreview,
-	extractVarRefs,
-	formatDurationMs,
-	substituteVars,
-	TRANSFORM_ENABLED,
-	TRANSFORM_MODES,
-} from "../workflow-workspace/workflow-utils";
-import { StepForm } from "./step-form";
+	FOR_EACH_TYPE,
+	formatRunDuration,
+	formatTimestamp,
+	getDisplayMeta,
+	newStepId,
+	RUN_POLL_INTERVAL_MS,
+	STEP_TYPES,
+} from "./workflow-editor-utils";
+import { StatusBadge } from "./workflow-status";
+import { WorkflowStepEditorCard } from "./workflow-step-editor-card";
 
 interface WorkflowFormEditorProps {
 	appId: string;
-}
-
-const FOR_EACH_TYPE = "for-each" as WorkflowNodeType;
-
-// Manual runs execute in the background now (see TriggerWorkflowReactor) — the FE polls
-// GetWorkflowRun on this interval until the run leaves RUNNING status.
-const RUN_POLL_INTERVAL_MS = 3000;
-
-interface WorkflowRunData {
-	STATUS: RunStatus;
-	RUN_ID?: string;
-	TOTAL_NODES?: number;
-	COMPLETED_NODES?: number;
-	FAILED_NODE_ID?: string;
-	nodeResults?: WorkflowNodeResult[];
-	ERROR_MESSAGE?: string;
-}
-
-const STEP_TYPES: {
-	type: WorkflowNodeType;
-	label: string;
-	description: string;
-	icon: LucideIcon;
-	color: string;
-}[] = [
-	{
-		type: "database-engine",
-		label: "Database Query",
-		description: "Run SQL against a database engine",
-		icon: Database,
-		color: "text-blue-600",
-	},
-	{
-		type: "model-engine",
-		label: "AI Model",
-		description: "Call an LLM, get embeddings, or run vision",
-		icon: Bot,
-		color: "text-purple-600",
-	},
-	{
-		type: "vector-engine",
-		label: "Vector Search",
-		description: "Query a vector database for similar content",
-		icon: Bolt,
-		color: "text-amber-600",
-	},
-	{
-		type: "storage-engine",
-		label: "Storage",
-		description: "Upload or download from cloud storage",
-		icon: Archive,
-		color: "text-emerald-600",
-	},
-	{
-		type: "function-engine",
-		label: "Function / API",
-		description: "Call an external API or function engine",
-		icon: Sigma,
-		color: "text-cyan-600",
-	},
-	{
-		type: "app",
-		label: "Run App",
-		description: "Execute another app's pixel recipe",
-		icon: AppWindow,
-		color: "text-pink-600",
-	},
-	{
-		type: "custom-pixel",
-		label: "Custom Pixel",
-		description: "Write and execute raw Pixel code",
-		icon: Code,
-		color: "text-slate-600",
-	},
-	{
-		type: "transform",
-		label: "Transform",
-		description: "Reshape data between steps",
-		icon: Shuffle,
-		color: "text-orange-600",
-	},
-	{
-		type: "for-each" as WorkflowNodeType,
-		label: "For Each",
-		description: "Iterate over rows and run steps per item",
-		icon: Repeat,
-		color: "text-indigo-600",
-	},
-	{
-		type: "sub-workflow",
-		label: "Sub-Workflow",
-		description:
-			"Run another project's saved workflow and wait for its result",
-		icon: Workflow,
-		color: "text-teal-600",
-	},
-	{
-		type: "conditional",
-		label: "Conditional",
-		description: "Branch on a JS expression — run TRUE or FALSE steps",
-		icon: GitBranch,
-		color: "text-amber-600",
-	},
-];
-
-const STATUS_STYLES: Record<string, string> = {
-	PENDING: "bg-muted text-muted-foreground",
-	RUNNING: "bg-primary/10 text-primary",
-	SUCCESS: "bg-emerald-500/10 text-emerald-700",
-	FAILED: "bg-destructive/10 text-destructive",
-	SKIPPED:
-		"bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
-	INTERRUPTED: "bg-amber-500/10 text-amber-700",
-	CANCELLED:
-		"bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
-	error: "bg-destructive/10 text-destructive",
-	success: "bg-emerald-500/10 text-emerald-700",
-	running: "bg-primary/10 text-primary",
-	idle: "bg-muted text-muted-foreground",
-};
-
-const STEP_STATUS_BORDER: Record<string, string> = {
-	error: "border-destructive/40",
-	success: "border-emerald-500/40",
-	running: "border-primary/40",
-	idle: "border-border",
-};
-
-const TYPE_DISPLAY_META: Record<
-	string,
-	{
-		label: string;
-		description: string;
-		icon: LucideIcon;
-		color: string;
-		runtimeType?: WorkflowNodeType;
-	}
-> = {
-	trigger: {
-		label: "Trigger",
-		description: "Start the workflow manually or on a schedule",
-		icon: Zap,
-		color: "text-yellow-600",
-	},
-	"database-engine": STEP_TYPES[0],
-	"model-engine": STEP_TYPES[1],
-	"vector-engine": STEP_TYPES[2],
-	"storage-engine": STEP_TYPES[3],
-	"function-engine": STEP_TYPES[4],
-	app: STEP_TYPES[5],
-	"custom-pixel": STEP_TYPES[6],
-	transform: STEP_TYPES[7],
-	"for-each": {
-		...STEP_TYPES[8],
-		runtimeType: "fan-out",
-	},
-	"fan-out": {
-		...STEP_TYPES[8],
-		runtimeType: "fan-out",
-	},
-	"sub-workflow": STEP_TYPES[9],
-	conditional: STEP_TYPES[10],
-};
-
-let idCounter = Date.now();
-function newStepId(type: WorkflowNodeType) {
-	return `${type}-${idCounter++}`;
-}
-
-function formatTimestamp(iso: string): string {
-	try {
-		return new Date(iso).toLocaleString();
-	} catch {
-		return iso;
-	}
-}
-
-function formatRunDuration(
-	startedAt: string,
-	completedAt: string | null,
-): string {
-	if (!completedAt) return "—";
-	try {
-		const durationMs =
-			new Date(completedAt).getTime() - new Date(startedAt).getTime();
-		return formatDurationMs(durationMs);
-	} catch {
-		return "—";
-	}
-}
-
-function getStatusClasses(status: string) {
-	return STATUS_STYLES[status] ?? STATUS_STYLES.PENDING;
-}
-
-function getDisplayMeta(type: WorkflowNodeType) {
-	return TYPE_DISPLAY_META[type] ?? TYPE_DISPLAY_META["custom-pixel"];
-}
-
-function getStepHeaderLabel(step: WorkflowNode) {
-	const meta = getDisplayMeta(step.type);
-	return step.label || meta.label;
-}
-
-function StatusIcon({
-	status,
-	className,
-}: {
-	status: string;
-	className?: string;
-}) {
-	if (status === "RUNNING" || status === "running") {
-		return <Loader2 className={`animate-spin ${className ?? ""}`} />;
-	}
-
-	if (
-		status === "FAILED" ||
-		status === "INTERRUPTED" ||
-		status === "CANCELLED" ||
-		status === "error"
-	) {
-		return <XCircle className={className} />;
-	}
-
-	if (status === "SUCCESS" || status === "success") {
-		return <CheckCircle2 className={className} />;
-	}
-
-	return <Clock3 className={className} />;
-}
-
-function StatusBadge({ status }: { status: string }) {
-	return (
-		<span
-			className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-medium text-[11px] ${getStatusClasses(status)}`}
-		>
-			<StatusIcon status={status} className="h-3 w-3" />
-			{status}
-		</span>
-	);
-}
-
-function OutputPreview({
-	value,
-	expanded,
-	onToggle,
-	nodeType,
-}: {
-	value: string;
-	expanded: boolean;
-	onToggle: () => void;
-	nodeType?: string;
-}) {
-	const preview = value.length > 180 ? `${value.slice(0, 180)}…` : value;
-
-	// Parse once for structured rendering
-	const parsed = useMemo(() => {
-		try {
-			return JSON.parse(value);
-		} catch {
-			return null;
-		}
-	}, [value]);
-
-	// Determine render mode
-	const renderMode = useMemo(() => {
-		if (nodeType === "model-engine") return "markdown";
-		if (nodeType === "vector-engine" && Array.isArray(parsed))
-			return "vector-results";
-		if (
-			Array.isArray(parsed) &&
-			parsed.length > 0 &&
-			typeof parsed[0] === "object"
-		)
-			return "table";
-		return "text";
-	}, [nodeType, parsed]);
-
-	const renderExpanded = () => {
-		if (renderMode === "markdown") {
-			// LLM response — render as styled text with whitespace preserved
-			return (
-				<div className="prose prose-sm dark:prose-invert max-h-64 max-w-none overflow-auto pr-8 text-[12px]">
-					{value.split("\n").map((line, i) => {
-						if (line.startsWith("# "))
-							return (
-								<h3
-									// biome-ignore lint/suspicious/noArrayIndexKey: static text preview rebuilt whole from `value` each render, never reordered
-									key={i}
-									className="mt-2 mb-1 font-bold text-sm"
-								>
-									{line.slice(2)}
-								</h3>
-							);
-						if (line.startsWith("## "))
-							return (
-								<h4
-									// biome-ignore lint/suspicious/noArrayIndexKey: static text preview rebuilt whole from `value` each render, never reordered
-									key={i}
-									className="mt-2 mb-1 font-semibold text-xs"
-								>
-									{line.slice(3)}
-								</h4>
-							);
-						if (line.startsWith("- "))
-							return (
-								<li
-									// biome-ignore lint/suspicious/noArrayIndexKey: static text preview rebuilt whole from `value` each render, never reordered
-									key={i}
-									className="ml-4 list-disc text-foreground"
-								>
-									{line.slice(2)}
-								</li>
-							);
-						if (line.startsWith("**") && line.endsWith("**"))
-							return (
-								<p
-									// biome-ignore lint/suspicious/noArrayIndexKey: static text preview rebuilt whole from `value` each render, never reordered
-									key={i}
-									className="font-semibold text-foreground"
-								>
-									{line.slice(2, -2)}
-								</p>
-							);
-						if (line.trim() === "")
-							// biome-ignore lint/suspicious/noArrayIndexKey: static text preview rebuilt whole from `value` each render, never reordered
-							return <br key={i} />;
-						return (
-							<p
-								// biome-ignore lint/suspicious/noArrayIndexKey: static text preview rebuilt whole from `value` each render, never reordered
-								key={i}
-								className="text-foreground"
-							>
-								{line}
-							</p>
-						);
-					})}
-				</div>
-			);
-		}
-
-		if (renderMode === "vector-results" && Array.isArray(parsed)) {
-			// Vector search results — ranked cards with score
-			return (
-				<div className="max-h-64 space-y-2 overflow-auto pr-8">
-					{parsed.map(
-						(result: Record<string, unknown>, i: number) => (
-							<div
-								// biome-ignore lint/suspicious/noArrayIndexKey: results are rebuilt whole from a single run's output each render, never reordered
-								key={i}
-								className="rounded-md border bg-background p-2.5"
-							>
-								<div className="flex items-center justify-between">
-									<span className="font-semibold text-foreground text-xs">
-										#{i + 1}{" "}
-										{result.Source
-											? String(result.Source)
-											: ""}
-									</span>
-									{result.Score != null && (
-										<span className="rounded-full bg-primary/10 px-2 py-0.5 font-mono text-[10px] text-primary">
-											{Number(result.Score).toFixed(3)}
-										</span>
-									)}
-								</div>
-								{result.Content && (
-									<p className="mt-1 line-clamp-3 text-[11px] text-muted-foreground">
-										{String(result.Content).slice(0, 200)}
-									</p>
-								)}
-							</div>
-						),
-					)}
-				</div>
-			);
-		}
-
-		if (renderMode === "table" && Array.isArray(parsed)) {
-			const keys = Object.keys(parsed[0] as Record<string, unknown>);
-			return (
-				<div className="max-h-64 overflow-auto pr-8">
-					<table className="w-full border-collapse text-[11px]">
-						<thead>
-							<tr className="border-b bg-muted/50">
-								{keys.map((key) => (
-									<th
-										key={key}
-										className="px-2 py-1.5 text-left font-semibold text-foreground"
-									>
-										{key}
-									</th>
-								))}
-							</tr>
-						</thead>
-						<tbody>
-							{(parsed as Record<string, unknown>[]).map(
-								(row, i) => (
-									<tr
-										// biome-ignore lint/suspicious/noArrayIndexKey: rows are rebuilt whole from a single run's output each render, never reordered
-										key={i}
-										className="border-muted/50 border-b last:border-0"
-									>
-										{keys.map((key) => (
-											<td
-												key={key}
-												className="px-2 py-1 text-foreground"
-											>
-												{row[key] != null
-													? String(row[key])
-													: "—"}
-											</td>
-										))}
-									</tr>
-								),
-							)}
-						</tbody>
-					</table>
-				</div>
-			);
-		}
-
-		// Default: raw text
-		return (
-			<pre className="max-h-64 overflow-auto whitespace-pre-wrap break-all pr-8 text-[11px] text-foreground">
-				{value}
-			</pre>
-		);
-	};
-
-	return (
-		<div className="space-y-2">
-			<div className="relative rounded-md border bg-muted/30 px-3 py-2 font-mono text-[11px] text-muted-foreground">
-				<button
-					type="button"
-					className="absolute top-2 right-2 z-10 rounded-md border bg-background p-1 text-muted-foreground hover:text-foreground"
-					onClick={() => {
-						navigator.clipboard.writeText(value);
-						toast.success("Copied to clipboard");
-					}}
-				>
-					<ClipboardCopy className="h-3 w-3" />
-				</button>
-				{expanded ? (
-					renderExpanded()
-				) : (
-					<p className="whitespace-pre-wrap break-all pr-8">
-						{preview}
-					</p>
-				)}
-			</div>
-			{value.length > 180 && (
-				<button
-					type="button"
-					onClick={onToggle}
-					className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
-				>
-					{expanded
-						? "Hide"
-						: renderMode === "table"
-							? "Show table"
-							: renderMode === "vector-results"
-								? "Show results"
-								: "Expand"}
-					{expanded ? (
-						<ChevronDown className="h-3 w-3" />
-					) : (
-						<ChevronRight className="h-3 w-3" />
-					)}
-				</button>
-			)}
-		</div>
-	);
-}
-
-function NodeResultList({
-	steps,
-	results,
-	expandedNodes,
-	onToggleNode,
-}: {
-	steps: WorkflowNode[];
-	results: WorkflowNodeResult[];
-	expandedNodes: Set<string>;
-	onToggleNode: (nodeId: string) => void;
-}) {
-	const stepMap = useMemo(
-		() => new Map(steps.map((step) => [step.id, step])),
-		[steps],
-	);
-
-	if (results.length === 0) {
-		return (
-			<div className="rounded-xl border border-dashed bg-card/60 px-6 py-12 text-center text-muted-foreground text-sm">
-				No node results available yet.
-			</div>
-		);
-	}
-
-	return (
-		<div className="space-y-3">
-			{results.map((result, index) => {
-				const step = stepMap.get(result.NODE_ID);
-				const meta = getDisplayMeta(step?.type ?? "custom-pixel");
-				const Icon = meta.icon;
-				const isExpanded = expandedNodes.has(result.NODE_ID);
-
-				return (
-					<div
-						key={`${result.NODE_ID}-${index}`}
-						className="rounded-xl border bg-card shadow-sm"
-					>
-						<div className="flex flex-col gap-4 px-4 py-4 lg:flex-row lg:items-start lg:justify-between">
-							<div className="flex min-w-0 flex-1 items-start gap-3">
-								<span
-									className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted ${meta.color}`}
-								>
-									<Icon className="h-5 w-5" />
-								</span>
-								<div className="min-w-0 flex-1 space-y-2">
-									<div className="flex flex-wrap items-center gap-2">
-										<span className="font-medium text-sm">
-											{result.NODE_LABEL ||
-												step?.label ||
-												meta.label}
-										</span>
-										<StatusBadge status={result.STATUS} />
-									</div>
-									{result.ERROR_MESSAGE && (
-										<div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 font-mono text-[11px] text-destructive">
-											{result.ERROR_MESSAGE}
-										</div>
-									)}
-									{result.OUTPUT_PREVIEW && (
-										<OutputPreview
-											value={result.OUTPUT_PREVIEW}
-											expanded={isExpanded}
-											onToggle={() =>
-												onToggleNode(result.NODE_ID)
-											}
-											nodeType={step?.type}
-										/>
-									)}
-								</div>
-							</div>
-							<div className="flex shrink-0 items-center gap-2 text-[11px] text-muted-foreground lg:pl-4">
-								<Clock3 className="h-3.5 w-3.5" />
-								{formatDurationMs(result.DURATION_MS)}
-							</div>
-						</div>
-					</div>
-				);
-			})}
-		</div>
-	);
-}
-
-interface WorkflowStepEditorCardProps {
-	step: WorkflowNode;
-	index: number;
-	isExpanded: boolean;
-	isFirst: boolean;
-	isLast: boolean;
-	enginesByType: Record<string, EngineOption[]>;
-	projects: ProjectOption[];
-	upstreamVars: string[];
-	nodeOutputs: Record<string, string>;
-	runStatus?: StepRunStatus;
-	runError?: string;
-	runDuration?: number;
-	onToggle: () => void;
-	onUpdate: (step: WorkflowNode) => void;
-	onDelete: () => void;
-	onMoveUp: () => void;
-	onMoveDown: () => void;
-	onSetOutput: (outputVar: string, value: string) => void;
-}
-
-function WorkflowStepEditorCard({
-	step,
-	index,
-	isExpanded,
-	isFirst,
-	isLast,
-	enginesByType,
-	projects,
-	upstreamVars,
-	nodeOutputs,
-	runStatus,
-	runError,
-	runDuration,
-	onToggle,
-	onUpdate,
-	onDelete,
-	onMoveUp,
-	onMoveDown,
-	onSetOutput,
-}: WorkflowStepEditorCardProps) {
-	const { monolithStore } = useRootStore();
-	const [runningStepTest, setRunningStepTest] = useState(false);
-	const [runOutput, setRunOutput] = useState<string | null>(null);
-	const [mockValues, setMockValues] = useState<Record<string, string>>({});
-	const meta = getDisplayMeta(step.type);
-	const Icon = meta.icon;
-	const pixelPreview = buildPixelPreview(step);
-	const varRefs = extractVarRefs(pixelPreview);
-	const unresolvedVars = varRefs.filter((value) => !nodeOutputs[value]);
-	const borderClass =
-		STEP_STATUS_BORDER[runStatus ?? "idle"] ?? STEP_STATUS_BORDER.idle;
-
-	const handleRunStep = async () => {
-		if (!pixelPreview || pixelPreview.startsWith("//")) return;
-
-		const allValues = { ...nodeOutputs, ...mockValues };
-		const pixel = substituteVars(pixelPreview, allValues);
-		setRunningStepTest(true);
-		setRunOutput(null);
-
-		try {
-			const result = await monolithStore.runQuery(pixel);
-			// For multi-statement pixels (e.g., "LoadApp(...); Reactor(...)"),
-			// the meaningful result is the last one
-			const pixelReturns = result.pixelReturn ?? [];
-			const lastReturn = pixelReturns[pixelReturns.length - 1];
-			const output = lastReturn?.output;
-			const rawOutput =
-				typeof output === "string"
-					? output
-					: JSON.stringify(output, null, 2);
-			const transformed = applyOutputTransform(
-				rawOutput,
-				step.outputTransform,
-			);
-			setRunOutput(transformed);
-			if (step.outputVar) {
-				onSetOutput(step.outputVar, transformed);
-			}
-		} catch (error) {
-			setRunOutput(`Error: ${(error as Error).message}`);
-		} finally {
-			setRunningStepTest(false);
-		}
-	};
-
-	return (
-		<div className={`rounded-2xl border bg-card shadow-sm ${borderClass}`}>
-			<div className="flex items-center gap-2 px-4 py-4">
-				<button
-					type="button"
-					onClick={onToggle}
-					className="flex min-w-0 flex-1 items-center gap-3 text-left transition-colors hover:text-foreground"
-				>
-					<span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-[11px] text-muted-foreground">
-						{index + 1}
-					</span>
-					<span
-						className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted ${meta.color}`}
-					>
-						<Icon className="h-5 w-5" />
-					</span>
-					<div className="min-w-0 flex-1">
-						<div className="flex flex-wrap items-center gap-2">
-							<span className="font-medium text-sm">
-								{getStepHeaderLabel(step)}
-							</span>
-							{step.outputVar && (
-								<span className="rounded-full bg-muted px-2.5 py-1 font-mono text-[10px] text-muted-foreground">
-									{step.outputVar}
-								</span>
-							)}
-						</div>
-						<div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-							<span>{meta.label}</span>
-							{varRefs.length > 0 && (
-								<span className="inline-flex flex-wrap items-center gap-1">
-									<span className="text-muted-foreground/60">
-										←
-									</span>
-									{varRefs.map((v) => (
-										<span
-											key={v}
-											className="rounded bg-blue-500/10 px-1.5 py-0.5 font-mono text-[9px] text-blue-600 dark:text-blue-400"
-										>
-											${"{"}
-											{v}
-											{"}"}
-										</span>
-									))}
-								</span>
-							)}
-							{runStatus && runStatus !== "idle" && (
-								<span className="inline-flex items-center gap-1">
-									<StatusIcon
-										status={runStatus}
-										className="h-3 w-3"
-									/>
-									{runStatus === "success"
-										? `${runDuration != null ? formatDurationMs(runDuration) : "done"}`
-										: runStatus === "error"
-											? `failed${runDuration != null ? ` · ${formatDurationMs(runDuration)}` : ""}`
-											: "Running"}
-								</span>
-							)}
-						</div>
-					</div>
-					{isExpanded ? (
-						<ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-					) : (
-						<ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-					)}
-				</button>
-				<div className="flex shrink-0 items-center gap-1">
-					<Button
-						size="sm"
-						variant="ghost"
-						className="h-8 px-2 text-xs"
-						onClick={onMoveUp}
-						disabled={isFirst}
-					>
-						↑
-					</Button>
-					<Button
-						size="sm"
-						variant="ghost"
-						className="h-8 px-2 text-xs"
-						onClick={onMoveDown}
-						disabled={isLast}
-					>
-						↓
-					</Button>
-					<Button
-						size="sm"
-						variant="ghost"
-						className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-						onClick={onDelete}
-					>
-						<Trash2 className="h-3.5 w-3.5" />
-					</Button>
-				</div>
-			</div>
-
-			{isExpanded && (
-				<div className="border-t px-4 pt-4 pb-5">
-					{runStatus === "error" && runError && (
-						<div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 font-mono text-[11px] text-destructive">
-							{runError}
-						</div>
-					)}
-
-					<div className="mb-4 grid gap-3 md:grid-cols-2">
-						<Field>
-							<FieldLabel className="text-xs">Label</FieldLabel>
-							<Input
-								className="h-9 text-sm"
-								value={step.label}
-								onChange={(event) =>
-									onUpdate({
-										...step,
-										label: event.target.value,
-									})
-								}
-								placeholder="Step label"
-							/>
-						</Field>
-						<Field>
-							<FieldLabel className="text-xs">
-								Output variable
-							</FieldLabel>
-							<Input
-								className="h-9 font-mono text-sm"
-								value={step.outputVar}
-								onChange={(event) =>
-									onUpdate({
-										...step,
-										outputVar: event.target.value,
-									})
-								}
-								placeholder="outputVar"
-							/>
-						</Field>
-					</div>
-
-					<StepForm
-						step={step}
-						enginesByType={enginesByType}
-						projects={projects}
-						upstreamVars={upstreamVars}
-						onUpdate={onUpdate}
-					/>
-
-					{pixelPreview && !pixelPreview.startsWith("//") && (
-						<div className="mt-4 space-y-4">
-							<div>
-								<p className="mb-1 font-medium text-[11px] text-muted-foreground">
-									Pixel preview
-								</p>
-								<pre className="whitespace-pre-wrap break-all rounded-lg border bg-muted/40 px-3 py-2 font-mono text-[11px]">
-									{pixelPreview}
-								</pre>
-							</div>
-
-							{TRANSFORM_ENABLED.has(step.type) && (
-								<div>
-									<p className="mb-2 font-medium text-[11px] text-muted-foreground">
-										Store in{" "}
-										<code className="font-mono">{`\${${step.outputVar || "out"}}`}</code>{" "}
-										as:
-									</p>
-									<div className="flex flex-wrap gap-2">
-										{TRANSFORM_MODES.map((mode) => {
-											const isActive =
-												(step.outputTransform?.mode ??
-													"raw") === mode.value;
-
-											return (
-												<button
-													key={mode.value}
-													type="button"
-													onClick={() =>
-														onUpdate({
-															...step,
-															outputTransform: {
-																...(step.outputTransform ?? {
-																	mode: "raw" as const,
-																}),
-																mode: mode.value,
-															},
-														})
-													}
-													className={`rounded-full border px-3 py-1 text-[11px] transition-colors ${
-														isActive
-															? "border-primary bg-primary/10 font-medium text-primary"
-															: "hover:border-primary/40"
-													}`}
-												>
-													{mode.label}
-												</button>
-											);
-										})}
-									</div>
-									{step.outputTransform?.mode ===
-										"column" && (
-										<Input
-											className="mt-2 h-8 text-xs"
-											placeholder="Column name e.g. NAME"
-											value={
-												step.outputTransform.column ??
-												""
-											}
-											onChange={(event) =>
-												onUpdate({
-													...step,
-													outputTransform: {
-														...step.outputTransform,
-														column: event.target
-															.value,
-													},
-												})
-											}
-										/>
-									)}
-									{step.outputTransform?.mode ===
-										"jsonpath" && (
-										<Input
-											className="mt-2 h-8 font-mono text-xs"
-											placeholder="$.data.values"
-											value={
-												step.outputTransform.path ?? ""
-											}
-											onChange={(event) =>
-												onUpdate({
-													...step,
-													outputTransform: {
-														...step.outputTransform,
-														path: event.target
-															.value,
-													},
-												})
-											}
-										/>
-									)}
-								</div>
-							)}
-
-							<div className="rounded-xl border border-dashed p-4">
-								<div className="flex items-center justify-between gap-3">
-									<div>
-										<p className="font-medium text-sm">
-											Test this step
-										</p>
-										<p className="text-[11px] text-muted-foreground">
-											Execute the generated Pixel with
-											optional mock inputs.
-										</p>
-									</div>
-									<Button
-										size="sm"
-										variant="outline"
-										className="h-8 px-3 text-xs"
-										onClick={handleRunStep}
-										disabled={runningStepTest}
-									>
-										{runningStepTest ? (
-											<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-										) : (
-											<Play className="mr-1.5 h-3.5 w-3.5" />
-										)}
-										Run
-									</Button>
-								</div>
-
-								{unresolvedVars.length > 0 && (
-									<div className="mt-3 space-y-2">
-										<p className="text-[11px] text-muted-foreground">
-											Mock values for unresolved
-											references:
-										</p>
-										{unresolvedVars.map((value) => (
-											<div
-												key={value}
-												className="flex flex-col gap-2 md:flex-row md:items-center"
-											>
-												<code className="w-full font-mono text-[11px] text-muted-foreground md:w-32">{`\${${value}}`}</code>
-												<Input
-													className="h-8 flex-1 text-xs"
-													placeholder="mock value…"
-													value={
-														mockValues[value] ?? ""
-													}
-													onChange={(event) =>
-														setMockValues(
-															(previous) => ({
-																...previous,
-																[value]:
-																	event.target
-																		.value,
-															}),
-														)
-													}
-												/>
-											</div>
-										))}
-									</div>
-								)}
-
-								{runOutput !== null && (
-									<div className="relative mt-3">
-										<button
-											type="button"
-											className="absolute top-2 right-2 rounded-md border bg-background p-1 text-muted-foreground hover:text-foreground"
-											onClick={() => {
-												navigator.clipboard.writeText(
-													runOutput,
-												);
-												toast.success(
-													"Copied to clipboard",
-												);
-											}}
-										>
-											<ClipboardCopy className="h-3.5 w-3.5" />
-										</button>
-										<pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all rounded-lg border bg-muted/40 p-3 pr-10 font-mono text-[11px]">
-											{runOutput}
-										</pre>
-									</div>
-								)}
-							</div>
-						</div>
-					)}
-				</div>
-			)}
-		</div>
-	);
 }
 
 export function WorkflowFormEditor({ appId }: WorkflowFormEditorProps) {
@@ -1101,6 +119,11 @@ export function WorkflowFormEditor({ appId }: WorkflowFormEditorProps) {
 					(response.pixelReturn[0].output as WorkflowRunSummary[]) ??
 					[];
 				setRuns(list);
+			})
+			.catch((error: Error) => {
+				toast.error(
+					`Failed to load run history: ${error.message ?? "Unknown error"}`,
+				);
 			})
 			.finally(() => setHistoryLoading(false));
 	}, [appId, monolithStore]);
@@ -1206,7 +229,7 @@ export function WorkflowFormEditor({ appId }: WorkflowFormEditorProps) {
 		});
 	}, []);
 
-	const save = useCallback(async () => {
+	const save = useCallback(async (): Promise<boolean> => {
 		setSaving(true);
 		const jobId = `workflow_${appId}`;
 		try {
@@ -1237,8 +260,10 @@ export function WorkflowFormEditor({ appId }: WorkflowFormEditorProps) {
 					.catch(() => {});
 				toast.success("Workflow saved");
 			}
+			return true;
 		} catch {
 			toast.error("Save failed");
+			return false;
 		} finally {
 			setSaving(false);
 		}
@@ -1281,6 +306,10 @@ export function WorkflowFormEditor({ appId }: WorkflowFormEditorProps) {
 					newStatuses[step.id] = "running";
 				} else if (nodeResult.STATUS === "FAILED") {
 					newStatuses[step.id] = "error";
+				} else if (nodeResult.STATUS === "CANCELLED") {
+					newStatuses[step.id] = "error";
+				} else if (nodeResult.STATUS === "INTERRUPTED") {
+					newStatuses[step.id] = "error";
 				}
 
 				if (nodeResult.ERROR_MESSAGE) {
@@ -1306,6 +335,14 @@ export function WorkflowFormEditor({ appId }: WorkflowFormEditorProps) {
 		[steps],
 	);
 
+	// Always holds the latest applyRunData so pollRun can call it without capturing
+	// a stale closure — the poll loop starts once and must not be restarted every
+	// time steps changes.
+	const applyRunDataRef = useRef(applyRunData);
+	useEffect(() => {
+		applyRunDataRef.current = applyRunData;
+	}, [applyRunData]);
+
 	// Polls GetWorkflowRun until the run leaves RUNNING status. TriggerWorkflow now returns
 	// immediately (execution happens on a background thread server-side), so this is the only
 	// way the FE learns about progress/completion for a manual run.
@@ -1325,7 +362,7 @@ export function WorkflowFormEditor({ appId }: WorkflowFormEditorProps) {
 						?.output as WorkflowRunData | null;
 					if (!runData || token.cancelled) continue;
 
-					applyRunData(runData);
+					applyRunDataRef.current(runData);
 
 					if (runData.STATUS !== "RUNNING") {
 						if (runData.STATUS === "SUCCESS") {
@@ -1353,11 +390,13 @@ export function WorkflowFormEditor({ appId }: WorkflowFormEditorProps) {
 				}
 			}
 		},
-		[appId, applyRunData, fetchRuns, monolithStore],
+		[appId, fetchRuns, monolithStore],
 	);
 
 	const run = useCallback(async () => {
 		if (steps.length === 0) return;
+		const saved = await save();
+		if (!saved) return;
 		if (pollTokenRef.current) {
 			pollTokenRef.current.cancelled = true;
 		}
@@ -1407,7 +446,7 @@ export function WorkflowFormEditor({ appId }: WorkflowFormEditorProps) {
 			);
 			setRunning(false);
 		}
-	}, [appId, applyRunData, fetchRuns, pollRun, steps, monolithStore]);
+	}, [appId, applyRunData, fetchRuns, pollRun, save, steps, monolithStore]);
 
 	const upstreamVarsFor = useCallback(
 		(index: number) => {

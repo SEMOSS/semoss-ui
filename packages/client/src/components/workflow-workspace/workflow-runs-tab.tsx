@@ -255,14 +255,6 @@ function NodeResultRow({ r }: { r: WorkflowNodeResult }) {
 
 // ─── run row ──────────────────────────────────────────────────────────────────
 
-function durationStr(start: string, end: string | null) {
-	if (!end) return "—";
-	const ms = new Date(end).getTime() - new Date(start).getTime();
-	if (ms < 0) return "—";
-	const s = Math.floor(ms / 1000);
-	return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`;
-}
-
 function RunRow({ run, appId }: { run: WorkflowRunSummary; appId: string }) {
 	const { monolithStore } = useRootStore();
 	const [expanded, setExpanded] = useState(false);
@@ -312,7 +304,13 @@ function RunRow({ run, appId }: { run: WorkflowRunSummary; appId: string }) {
 					})}
 				</span>
 				<span className="shrink-0 text-muted-foreground text-xs">
-					{durationStr(run.STARTED_AT, run.COMPLETED_AT)}
+					{formatDurationMs(
+						run.COMPLETED_AT
+							? new Date(run.COMPLETED_AT).getTime() -
+									new Date(run.STARTED_AT).getTime()
+							: null,
+						0,
+					)}
 				</span>
 			</button>
 
