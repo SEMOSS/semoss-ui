@@ -76,10 +76,8 @@ export const formatPermission = (permission: Role | ""): string => {
 		case "OWNER":
 			return "Author";
 		case "EDIT":
-		case "EDITOR":
 			return "Editor";
 		case "READ_ONLY":
-		case "VIEWER":
 			return "Read-Only";
 		case "DISCOVERABLE":
 			return "Discoverable";
