@@ -681,6 +681,16 @@ paramValues=[${JSON.stringify({
 			}
 		});
 
+		// Sync room options after any "ask" tool completes so that changes made
+		// by the tool (e.g. AddInsightMCPToRoom adding __insight__ to options.mcp)
+		// are immediately reflected in the MCP indicator and available for the
+		// next AskPlayground call — without requiring a full page refresh.
+		if (toolStatus === "success" || toolStatus === "cancelled") {
+			room.syncRoomOptions().catch(() => {
+				// Non-critical — the UI will stay slightly stale but function normally.
+			});
+		}
+
 		// if there is no responseMessage create it. This will hold it.
 		let responseMessage = this.toolResponseMessage;
 		if (!responseMessage) {
