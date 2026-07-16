@@ -3,6 +3,16 @@
  * Presentational components live under the "@semoss/chat/components"
  * subpath, so a consumer can use this entry alone with its own UI.
  */
+
+export {
+	type ChatStoreRegistration,
+	getActiveChatRoomId,
+	registerChatStore,
+	sendToActiveChat,
+	sendToActiveRoom,
+	setActiveChatRoom,
+	setActiveChatStore,
+} from "./chat-imperative";
 export type { ChatDefaultRoomSettings, ChatOptions } from "./chat-options";
 export { ChatProvider, useChatContext, useChatStore } from "./chat-provider";
 export {

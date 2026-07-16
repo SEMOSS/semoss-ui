@@ -9,6 +9,8 @@ import { MessageList } from "./message-list";
 export interface ChatPanelProps {
 	/** Passed straight through to ChatProvider — this component owns the chat session. */
 	options: ChatOptions;
+	/** Passed to ChatProvider to control global imperative targeting. */
+	isActive?: boolean;
 	className?: string;
 	placeholder?: string;
 	emptyState?: ReactNode;
@@ -25,13 +27,14 @@ export interface ChatPanelProps {
  */
 export function ChatPanel({
 	options,
+	isActive,
 	className,
 	placeholder,
 	emptyState,
 	renderMessage,
 }: ChatPanelProps) {
 	return (
-		<ChatProvider options={options}>
+		<ChatProvider options={options} isActive={isActive}>
 			<ChatPanelInner
 				className={className}
 				placeholder={placeholder}

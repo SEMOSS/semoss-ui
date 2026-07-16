@@ -228,4 +228,343 @@ describe("ChatInput", () => {
 			screen.getByRole("button", { name: "Send" }),
 		).toBeInTheDocument();
 	});
+
+	it("renders a slash-command trigger only when slashCommands are provided", () => {
+		render(<ChatInput onSend={vi.fn()} />);
+		expect(
+			screen.queryByRole("button", { name: "Slash commands" }),
+		).not.toBeInTheDocument();
+
+		render(
+			<ChatInput
+				onSend={vi.fn()}
+				useSlashCommands
+				slashCommands={[
+					{
+						id: "summarize",
+						label: "/summarize",
+					},
+				]}
+			/>,
+		);
+
+		expect(
+			screen.getByRole("button", { name: "Slash commands" }),
+		).toBeInTheDocument();
+	});
+
+	it("inserts a selected slash command into an empty composer", async () => {
+		const user = userEvent.setup();
+		render(
+			<ChatInput
+				onSend={vi.fn()}
+				useSlashCommands
+				slashCommands={[
+					{
+						id: "summarize",
+						label: "Summarize",
+						command: "/summarize",
+						description: "Summarize selected data",
+					},
+				]}
+			/>,
+		);
+
+		await user.click(
+			screen.getByRole("button", { name: "Slash commands" }),
+		);
+		await user.click(screen.getByText("/summarize"));
+
+		expect(screen.getByPlaceholderText("Message...")).toHaveValue(
+			"/summarize ",
+		);
+	});
+
+	it("appends slash commands to existing composer text with spacing", async () => {
+		const user = userEvent.setup();
+		render(
+			<ChatInput
+				onSend={vi.fn()}
+				useSlashCommands
+				slashCommands={[{ id: "fix", label: "/fix", command: "fix" }]}
+			/>,
+		);
+
+		const textarea = screen.getByPlaceholderText("Message...");
+		await user.type(textarea, "please");
+		await user.click(
+			screen.getByRole("button", { name: "Slash commands" }),
+		);
+		await user.click(screen.getByText("/fix"));
+
+		expect(textarea).toHaveValue("please /fix ");
+	});
+
+	it("fires onSlashCommandSelect after inserting a slash command", async () => {
+		const user = userEvent.setup();
+		const onSlashCommandSelect = vi.fn();
+		render(
+			<ChatInput
+				onSend={vi.fn()}
+				useSlashCommands
+				onSlashCommandSelect={onSlashCommandSelect}
+				slashCommands={[
+					{ id: "help", label: "/help", command: "/help" },
+				]}
+			/>,
+		);
+
+		await user.click(
+			screen.getByRole("button", { name: "Slash commands" }),
+		);
+		await user.click(screen.getByText("/help"));
+
+		expect(onSlashCommandSelect).toHaveBeenCalledWith({
+			id: "help",
+			label: "/help",
+			command: "/help",
+		});
+	});
+
+	it("hides hiddenInMenu commands until a query is typed", async () => {
+		const user = userEvent.setup();
+		render(
+			<ChatInput
+				onSend={vi.fn()}
+				useSlashCommands
+				slashCommands={[
+					{ id: "knowledge", label: "/knowledge" },
+					{
+						id: "mcp",
+						label: "/mcp",
+						hiddenInMenu: true,
+					},
+				]}
+			/>,
+		);
+
+		await user.click(
+			screen.getByRole("button", { name: "Slash commands" }),
+		);
+		expect(screen.getByText("/knowledge")).toBeInTheDocument();
+		expect(screen.queryByText("/mcp")).not.toBeInTheDocument();
+
+		await user.type(screen.getByPlaceholderText("Type a command..."), "m");
+		expect(screen.getByText("/mcp")).toBeInTheDocument();
+	});
+
+	it("executes noChip commands immediately without inserting text", async () => {
+		const user = userEvent.setup();
+		const onExecute = vi.fn();
+		render(
+			<ChatInput
+				onSend={vi.fn()}
+				useSlashCommands
+				slashCommands={[
+					{
+						id: "settings",
+						label: "/settings",
+						noChip: true,
+						onExecute,
+					},
+				]}
+			/>,
+		);
+
+		await user.click(
+			screen.getByRole("button", { name: "Slash commands" }),
+		);
+		await user.click(screen.getByText("/settings"));
+
+		expect(onExecute).toHaveBeenCalledTimes(1);
+		expect(screen.getByPlaceholderText("Message...")).toHaveValue("");
+	});
+
+	it("opens the slash menu while typing a trailing slash query", async () => {
+		const user = userEvent.setup();
+		render(
+			<ChatInput
+				onSend={vi.fn()}
+				useSlashCommands
+				slashCommands={[
+					{ id: "knowledge", label: "/knowledge" },
+					{ id: "toolbox", label: "/toolbox" },
+				]}
+			/>,
+		);
+
+		const textarea = screen.getByPlaceholderText("Message...");
+		await user.type(textarea, "/k");
+
+		expect(screen.getByText("/knowledge")).toBeInTheDocument();
+		expect(screen.queryByText("/toolbox")).not.toBeInTheDocument();
+		expect(
+			screen.queryByPlaceholderText("Type a command..."),
+		).not.toBeInTheDocument();
+		expect(document.activeElement).toBe(textarea);
+	});
+
+	it("replaces a typed slash query when selecting with Enter", async () => {
+		const user = userEvent.setup();
+		render(
+			<ChatInput
+				onSend={vi.fn()}
+				useSlashCommands
+				slashCommands={[
+					{ id: "knowledge", label: "/knowledge" },
+					{ id: "toolbox", label: "/toolbox" },
+				]}
+			/>,
+		);
+
+		const textarea = screen.getByPlaceholderText("Message...");
+		await user.type(textarea, "please /kn");
+		await user.keyboard("{Enter}");
+
+		expect(textarea).toHaveValue("please /knowledge ");
+	});
+
+	it("executes typed noChip commands on Enter without inserting text", async () => {
+		const user = userEvent.setup();
+		const onExecute = vi.fn();
+		render(
+			<ChatInput
+				onSend={vi.fn()}
+				useSlashCommands
+				slashCommands={[
+					{
+						id: "settings",
+						label: "/settings",
+						noChip: true,
+						onExecute,
+					},
+				]}
+			/>,
+		);
+
+		const textarea = screen.getByPlaceholderText("Message...");
+		await user.type(textarea, "/s");
+		await user.keyboard("{Enter}");
+
+		expect(onExecute).toHaveBeenCalledTimes(1);
+		expect(textarea).toHaveValue("");
+	});
+
+	it("enables the playground default command set when defaultSlashCommandActions is provided", async () => {
+		const user = userEvent.setup();
+		const onOpenMcpOverlay = vi.fn();
+		const onCompact = vi.fn();
+		const onAttachDocument = vi.fn();
+		const onOpenSettings = vi.fn();
+
+		render(
+			<ChatInput
+				onSend={vi.fn()}
+				useSlashCommands
+				defaultSlashCommandActions={{
+					onOpenMcpOverlay,
+					onCompact,
+					onAttachDocument,
+					onOpenSettings,
+				}}
+			/>,
+		);
+
+		await user.click(
+			screen.getByRole("button", { name: "Slash commands" }),
+		);
+		await user.click(screen.getByText("/knowledge"));
+
+		expect(onOpenMcpOverlay).toHaveBeenCalledWith("KNOWLEDGE");
+		expect(screen.getByPlaceholderText("Message...")).toHaveValue("");
+	});
+
+	it("merges custom slashCommands with defaults by id and appends new ids", async () => {
+		const user = userEvent.setup();
+		const onOpenMcpOverlay = vi.fn();
+		const onCompact = vi.fn();
+		const onAttachDocument = vi.fn();
+		const onOpenSettings = vi.fn();
+		const onCustomCompact = vi.fn();
+
+		render(
+			<ChatInput
+				onSend={vi.fn()}
+				useSlashCommands
+				defaultSlashCommandActions={{
+					onOpenMcpOverlay,
+					onCompact,
+					onAttachDocument,
+					onOpenSettings,
+				}}
+				slashCommands={[
+					{
+						id: "compact",
+						label: "/compact",
+						noChip: true,
+						onExecute: onCustomCompact,
+					},
+					{ id: "custom", label: "/custom", noChip: true },
+				]}
+			/>,
+		);
+
+		await user.click(
+			screen.getByRole("button", { name: "Slash commands" }),
+		);
+		expect(screen.getByText("/custom")).toBeInTheDocument();
+
+		await user.click(screen.getByText("/compact"));
+
+		expect(onCustomCompact).toHaveBeenCalledTimes(1);
+		expect(onCompact).not.toHaveBeenCalled();
+	});
+
+	it("can disable specific default commands without redefining them", async () => {
+		const user = userEvent.setup();
+		const onOpenMcpOverlay = vi.fn();
+		const onCompact = vi.fn();
+		const onAttachDocument = vi.fn();
+		const onOpenSettings = vi.fn();
+
+		render(
+			<ChatInput
+				onSend={vi.fn()}
+				useSlashCommands
+				defaultSlashCommandActions={{
+					onOpenMcpOverlay,
+					onCompact,
+					onAttachDocument,
+					onOpenSettings,
+				}}
+				disableDefaultSlashCommandIds={["agent"]}
+			/>,
+		);
+
+		await user.click(
+			screen.getByRole("button", { name: "Slash commands" }),
+		);
+
+		expect(screen.getByText("/agent")).toBeInTheDocument();
+		const agentItem = screen.getByText("/agent").closest("[cmdk-item]");
+		expect(agentItem).not.toBeNull();
+		if (agentItem) {
+			expect(agentItem).toHaveAttribute("data-disabled", "true");
+		}
+
+		await user.click(screen.getByText("/agent"));
+		expect(onOpenMcpOverlay).not.toHaveBeenCalledWith("AGENT");
+	});
+
+	it("shows built-in defaults when useSlashCommands is true even without action handlers", async () => {
+		const user = userEvent.setup();
+		render(<ChatInput onSend={vi.fn()} useSlashCommands />);
+
+		await user.click(
+			screen.getByRole("button", { name: "Slash commands" }),
+		);
+
+		expect(screen.getByText("/knowledge")).toBeInTheDocument();
+		expect(screen.getByText("/toolbox")).toBeInTheDocument();
+	});
 });

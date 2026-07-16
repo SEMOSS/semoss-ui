@@ -47,7 +47,7 @@ export function ChatRoomsProvider({
 	const { store, session } = handleRef.current;
 
 	// Read the raw search value from the store and debounce it before
-	// forwarding to the MobX session (which triggers the actual fetch).
+	// forwarding to the session (which triggers the actual fetch).
 	const rawSearch = useStore(store, (s) => s.search);
 	const debouncedSearch = useDebouncedValue(rawSearch);
 	useEffect(() => {
