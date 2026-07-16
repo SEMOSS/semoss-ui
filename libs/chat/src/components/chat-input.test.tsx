@@ -229,12 +229,7 @@ describe("ChatInput", () => {
 		).toBeInTheDocument();
 	});
 
-	it("renders a slash-command trigger only when slashCommands are provided", () => {
-		render(<ChatInput onSend={vi.fn()} />);
-		expect(
-			screen.queryByRole("button", { name: "Slash commands" }),
-		).not.toBeInTheDocument();
-
+	it("does not render a slash-command button trigger", () => {
 		render(
 			<ChatInput
 				onSend={vi.fn()}
@@ -249,8 +244,8 @@ describe("ChatInput", () => {
 		);
 
 		expect(
-			screen.getByRole("button", { name: "Slash commands" }),
-		).toBeInTheDocument();
+			screen.queryByRole("button", { name: "Slash commands" }),
+		).not.toBeInTheDocument();
 	});
 
 	it("inserts a selected slash command into an empty composer", async () => {
@@ -270,14 +265,11 @@ describe("ChatInput", () => {
 			/>,
 		);
 
-		await user.click(
-			screen.getByRole("button", { name: "Slash commands" }),
-		);
+		const textarea = screen.getByPlaceholderText("Message...");
+		await user.type(textarea, "/s");
 		await user.click(screen.getByText("/summarize"));
 
-		expect(screen.getByPlaceholderText("Message...")).toHaveValue(
-			"/summarize ",
-		);
+		expect(textarea).toHaveValue("/summarize ");
 	});
 
 	it("appends slash commands to existing composer text with spacing", async () => {
@@ -291,10 +283,7 @@ describe("ChatInput", () => {
 		);
 
 		const textarea = screen.getByPlaceholderText("Message...");
-		await user.type(textarea, "please");
-		await user.click(
-			screen.getByRole("button", { name: "Slash commands" }),
-		);
+		await user.type(textarea, "please /f");
 		await user.click(screen.getByText("/fix"));
 
 		expect(textarea).toHaveValue("please /fix ");
@@ -314,9 +303,7 @@ describe("ChatInput", () => {
 			/>,
 		);
 
-		await user.click(
-			screen.getByRole("button", { name: "Slash commands" }),
-		);
+		await user.type(screen.getByPlaceholderText("Message..."), "/h");
 		await user.click(screen.getByText("/help"));
 
 		expect(onSlashCommandSelect).toHaveBeenCalledWith({
@@ -343,13 +330,12 @@ describe("ChatInput", () => {
 			/>,
 		);
 
-		await user.click(
-			screen.getByRole("button", { name: "Slash commands" }),
-		);
+		const textarea = screen.getByPlaceholderText("Message...");
+		await user.type(textarea, "/");
 		expect(screen.getByText("/knowledge")).toBeInTheDocument();
 		expect(screen.queryByText("/mcp")).not.toBeInTheDocument();
 
-		await user.type(screen.getByPlaceholderText("Type a command..."), "m");
+		await user.type(textarea, "m");
 		expect(screen.getByText("/mcp")).toBeInTheDocument();
 	});
 
@@ -371,9 +357,7 @@ describe("ChatInput", () => {
 			/>,
 		);
 
-		await user.click(
-			screen.getByRole("button", { name: "Slash commands" }),
-		);
+		await user.type(screen.getByPlaceholderText("Message..."), "/s");
 		await user.click(screen.getByText("/settings"));
 
 		expect(onExecute).toHaveBeenCalledTimes(1);
@@ -470,9 +454,7 @@ describe("ChatInput", () => {
 			/>,
 		);
 
-		await user.click(
-			screen.getByRole("button", { name: "Slash commands" }),
-		);
+		await user.type(screen.getByPlaceholderText("Message..."), "/k");
 		await user.click(screen.getByText("/knowledge"));
 
 		expect(onOpenMcpOverlay).toHaveBeenCalledWith("KNOWLEDGE");
@@ -509,9 +491,7 @@ describe("ChatInput", () => {
 			/>,
 		);
 
-		await user.click(
-			screen.getByRole("button", { name: "Slash commands" }),
-		);
+		await user.type(screen.getByPlaceholderText("Message..."), "/c");
 		expect(screen.getByText("/custom")).toBeInTheDocument();
 
 		await user.click(screen.getByText("/compact"));
@@ -541,9 +521,7 @@ describe("ChatInput", () => {
 			/>,
 		);
 
-		await user.click(
-			screen.getByRole("button", { name: "Slash commands" }),
-		);
+		await user.type(screen.getByPlaceholderText("Message..."), "/a");
 
 		expect(screen.getByText("/agent")).toBeInTheDocument();
 		const agentItem = screen.getByText("/agent").closest("[cmdk-item]");
@@ -556,15 +534,14 @@ describe("ChatInput", () => {
 		expect(onOpenMcpOverlay).not.toHaveBeenCalledWith("AGENT");
 	});
 
-	it("shows built-in defaults when useSlashCommands is true even without action handlers", async () => {
+	it("shows built-in defaults when useSlashCommands is true", async () => {
 		const user = userEvent.setup();
 		render(<ChatInput onSend={vi.fn()} useSlashCommands />);
 
-		await user.click(
-			screen.getByRole("button", { name: "Slash commands" }),
-		);
+		const textarea = screen.getByPlaceholderText("Message...");
+		await user.type(textarea, "/");
 
-		expect(screen.getByText("/knowledge")).toBeInTheDocument();
-		expect(screen.getByText("/toolbox")).toBeInTheDocument();
+		expect(screen.getByText("/compact")).toBeInTheDocument();
+		expect(screen.getByText("/document")).toBeInTheDocument();
 	});
 });
