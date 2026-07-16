@@ -102,6 +102,13 @@ export const ToolsView = observer(
 
 		useEffect(() => {
 			const chooseUrl = async () => {
+				// Platform tools have no project — skip ProjectInfo and go straight to default view
+				if (!app) {
+					setUrl("");
+					setIsLoading(false);
+					return;
+				}
+
 				// Finish loading
 				if (
 					getAppInfo.status === "INITIAL" ||
@@ -111,7 +118,7 @@ export const ToolsView = observer(
 				}
 
 				// Ignore if no tool
-				if (!app || !tool || getAppInfo.status === "ERROR") {
+				if (!tool || getAppInfo.status === "ERROR") {
 					setUrl("");
 					setIsLoading(false);
 					return;

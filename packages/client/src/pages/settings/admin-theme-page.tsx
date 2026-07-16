@@ -155,6 +155,7 @@ const EMPTY_PLAYGROUND: ThemeMap["playground"] = {
 	},
 	toolAutoExecutionLimit: undefined,
 	defaultTools: [],
+	platformTools: [],
 	gracefulErrors: [],
 	featureFlags: {
 		enableAgent: true,

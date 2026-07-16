@@ -601,18 +601,26 @@ paramValues=[${JSON.stringify({
 			let toolError = false;
 
 			try {
-				// wait for the pixel to run
+				const projectId = tool.json._meta.SMSS_PROJECT_ID ?? null;
+				const pixel = `RunMCPTool(project=[${JSON.stringify(projectId)}], function=[${JSON.stringify(tool.json.name)}], paramValues=[${JSON.stringify(tool.parameters)}]);`;
 				const response = await this.room.runRoomPixel<[unknown]>(
-					`RunMCPTool(project = [ "${tool.json._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
+					pixel,
 					false,
 					false,
 				);
 
-				const rawOutput = response.pixelReturn[0].output;
+				const { output: rawOutput, operationType } =
+					response.pixelReturn[0];
 				output =
 					typeof rawOutput === "string"
 						? rawOutput
 						: JSON.stringify(rawOutput);
+				if (
+					Array.isArray(operationType) &&
+					operationType.includes("ERROR")
+				) {
+					toolError = true;
+				}
 			} catch (e) {
 				// If RunMCPTool fails, we want to save the error message as the tool response, and set the tool status to error
 				output = (e as Error).message;

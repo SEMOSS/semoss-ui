@@ -152,7 +152,7 @@ export const NewRoomPage = observer(() => {
 	useEffect(() => {
 		tempRoomStore.setOptions({
 			instructions: "",
-			mcp: [...(root.theme.defaultTools || [])],
+			mcp: root.theme.defaultTools || [],
 			tokenLength:
 				root.theme.defaultRoomSettings?.tokenLength || TOKEN_LENGTH,
 			temperature:
@@ -386,7 +386,7 @@ export const NewRoomPage = observer(() => {
 				instructions: "",
 				temperature: root.theme.defaultRoomSettings?.temperature,
 				tokenLength: root.theme.defaultRoomSettings?.tokenLength,
-				mcp: [...(root.theme.defaultTools || [])], // Remove workspace MCPs
+				mcp: root.theme.defaultTools || [], // Remove workspace MCPs; platform default tools are discovered by the backend
 			});
 		}
 	}, [

@@ -60,7 +60,7 @@ export const ToolsDefaultView = observer(
 					required: string[];
 				};
 			}[];
-		}>(`GetMCPTools(project=["${app}"]);`, {
+		}>(app ? `GetMCPTools(project=["${app}"]);` : "", {
 			data: {
 				tools: [
 					{
@@ -254,11 +254,12 @@ export const ToolsDefaultView = observer(
 					output = `Successfully fetched Playwright script: ${scriptForBrowserAutomation}`;
 					success = true;
 				} else {
-					// Normal MCP tool execution for non-Playwright tools
+					// Platform tools have no app in context — pass null and the
+					// backend short-circuits before the engine lookup.
+					const projectId = app ?? null;
+					const pixel = `RunMCPTool(project=[${JSON.stringify(projectId)}], function=[${JSON.stringify(tool?.json.name)}], paramValues=[${JSON.stringify(data)}]);`;
 					const response = await room.runRoomPixel<[unknown]>(
-						`RunMCPTool(project = [ "${app}" ], function=[ "${
-							tool?.json.name
-						}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
+						pixel,
 						false,
 						false,
 					);
@@ -385,7 +386,7 @@ export const ToolsDefaultView = observer(
 								</p>
 							</div>
 						</div>
-					) : getMCP.status === "SUCCESS" ? (
+					) : getMCP.status === "SUCCESS" || !app ? (
 						showResponse ? (
 							Object.keys(properties).length > 0 && (
 								<>

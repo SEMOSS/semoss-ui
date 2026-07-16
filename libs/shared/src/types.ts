@@ -207,7 +207,7 @@ export interface ThemeMap {
 		defaultEmbedderId?: string;
 
 		/**
-		 * Default tools to show in the room
+		 * Default MCP servers to load into the room
 		 */
 		defaultTools: {
 			/** Type of the mcp */
@@ -225,6 +225,11 @@ export interface ThemeMap {
 			/** Name of the mcp */
 			name: string;
 		}[];
+
+		/**
+		 * Default platform reactor tool identifiers to enable in the room
+		 */
+		platformTools: string[];
 
 		/**
 		 * Optional tour customization. When present, custom steps are appended

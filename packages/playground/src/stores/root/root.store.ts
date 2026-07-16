@@ -88,6 +88,7 @@ export class RootStore {
 			allowedFileTypes: [],
 			allowedUrlPrefixes: [],
 			defaultTools: [],
+			platformTools: [],
 			gracefulErrors: [],
 			featureFlags: {
 				// These will be the defaults, used when the user has no theme
@@ -321,6 +322,12 @@ export class RootStore {
 						...(theme?.defaultTools || []),
 					].map((tool) => [tool.id, tool]),
 				).values(),
+			],
+			platformTools: [
+				...new Set([
+					...this._store.theme.platformTools,
+					...(theme?.platformTools || []),
+				]),
 			],
 			gracefulErrors: [
 				...this._store.theme.gracefulErrors,
