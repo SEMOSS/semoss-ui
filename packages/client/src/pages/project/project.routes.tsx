@@ -3,7 +3,6 @@ import { ProjectCatalog, ProjectEdit } from "@/components/project";
 import {
 	AppAccessControlPage,
 	AppCommitsPage,
-	AppDependenciesPage,
 	AppFilesPage,
 	AppGithubPage,
 	AppGithubSelectRepoPage,
@@ -12,11 +11,12 @@ import {
 	AppSettingsPage,
 	AppSmssPage,
 	NewPromptBuilderAppPage,
-	ProjectDetailLayout,
 	ViewAppPage,
 } from "../app";
 import { CreateAgentPage } from "./agent/create-agent-page";
 import { CreateAppPage } from "./app/create-app-page";
+import { ProjectDependenciesPage } from "./project-dependencies-page";
+import { ProjectDetailLayout } from "./project-detail-layout";
 import { CreateSkillPage } from "./skill/create-skill-page";
 
 export const PROJECT_ROUTES: {
@@ -57,6 +57,7 @@ export const PROJECT_ROUTES: {
 				path: ":appId",
 				element: (
 					<ProjectDetailLayout
+						type="CODE"
 						tabs={[
 							{ name: "Overview", path: "" },
 							{
@@ -96,8 +97,6 @@ export const PROJECT_ROUTES: {
 							},
 							{ name: "SMSS", path: "smss", restrict: ["OWNER"] },
 						]}
-						embedded={false}
-						showNav={true}
 					/>
 				),
 				children: [
@@ -107,7 +106,7 @@ export const PROJECT_ROUTES: {
 					},
 					{
 						path: "dependencies",
-						element: <AppDependenciesPage />,
+						element: <ProjectDependenciesPage />,
 					},
 					{
 						path: "mcp-usage",
@@ -165,6 +164,7 @@ export const PROJECT_ROUTES: {
 				path: ":appId",
 				element: (
 					<ProjectDetailLayout
+						type="SKILL"
 						tabs={[
 							{ name: "Overview", path: "" },
 							{
@@ -184,8 +184,6 @@ export const PROJECT_ROUTES: {
 							},
 							{ name: "SMSS", path: "smss", restrict: ["OWNER"] },
 						]}
-						embedded={false}
-						showNav={true}
 					/>
 				),
 				children: [
@@ -239,6 +237,7 @@ export const PROJECT_ROUTES: {
 				path: ":appId",
 				element: (
 					<ProjectDetailLayout
+						type="WORKSPACE"
 						tabs={[
 							{ name: "Overview", path: "" },
 							{
@@ -258,8 +257,6 @@ export const PROJECT_ROUTES: {
 							},
 							{ name: "SMSS", path: "smss", restrict: ["OWNER"] },
 						]}
-						embedded={false}
-						showNav={true}
 					/>
 				),
 				children: [

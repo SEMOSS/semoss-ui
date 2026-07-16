@@ -1,7 +1,7 @@
-import { useAppDetail } from "@/contexts";
+import { useProject } from "@/hooks";
 import { Overview } from "./app-detail-tabs/overview-tab";
 
 export const AppOverviewPage = () => {
-	const { appInfo } = useAppDetail();
-	return <Overview appInfo={appInfo} />;
+	const { project } = useProject();
+	return <Overview project={project} />;
 };

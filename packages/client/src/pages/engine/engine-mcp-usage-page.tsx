@@ -66,10 +66,7 @@ export const EngineMcpUsagePage = () => {
 	const [mcpToolsError, setMcpToolsError] = useState("");
 	const [generatingMCP, setGeneratingMCP] = useState(false);
 	const [openGenerateMcpDialog, setOpenGenerateMcpDialog] = useState(false);
-	const canGenerateMCP =
-		active.role === "OWNER" ||
-		active.role === "EDIT" ||
-		active.role === "EDITOR";
+	const canGenerateMCP = active.role === "OWNER" || active.role === "EDIT";
 
 	const fetchMcpTools = useCallback(
 		async (engineId: string) => {

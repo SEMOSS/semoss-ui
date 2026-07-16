@@ -15,8 +15,8 @@ import { Spinner, toast } from "@semoss/ui/next";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
 import { FlexLayout } from "@/components/flex-layout";
+import { ProjectDetailTabs } from "@/components/project";
 import { useWorkspace } from "@/hooks";
-import { ProjectDetailLayout } from "@/pages/app/app-detail-layout";
 import { DesignerStore, type WorkspaceOptions } from "@/stores";
 import { WorkspaceManager } from "../../components/workspace";
 import { WorkspaceTerminal } from "../../components/workspace/panels";
@@ -378,7 +378,8 @@ export const BlocksWorkspace: React.FC = observer(() => {
 			return <GraphPanel />;
 		} else if (component === "settingsPanel") {
 			return (
-				<ProjectDetailLayout
+				<ProjectDetailTabs
+					type="CODE"
 					tabs={[
 						{ name: "Overview", path: "" },
 						{
@@ -399,8 +400,6 @@ export const BlocksWorkspace: React.FC = observer(() => {
 						},
 						{ name: "SMSS", path: "smss", restrict: ["OWNER"] },
 					]}
-					showNav={false}
-					embedded={true}
 				/>
 			);
 		} else if (component === "export-button") {

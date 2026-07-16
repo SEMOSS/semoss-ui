@@ -1,18 +1,24 @@
 import { X } from "lucide-react";
 import { useEffect, useId, useMemo, useState } from "react";
+import { usePixel } from "@semoss/sdk/react";
+import type { Project } from "@semoss/shared";
 import {
 	Button,
+	Checkbox,
 	Dialog,
 	DialogContent,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	Field,
+	FieldLabel,
 	Input,
-	Label,
+	Spinner,
+	Textarea,
+	toast,
 } from "@semoss/ui/next";
-import { usePixel, useRootStore } from "@/hooks";
-import { MarkdownEditor } from "../common";
-import type { DetailsForm } from "./app-details.utility";
+import { MarkdownEditor } from "@/components/common";
+import { useRootStore } from "@/hooks";
 
 interface TagInputProps {
 	value: string[] | string | undefined;
@@ -47,8 +53,8 @@ const TagInput = ({
 	};
 
 	return (
-		<div className="space-y-2">
-			<Label>{label}</Label>
+		<Field>
+			<FieldLabel>{label}</FieldLabel>
 			<div className="flex flex-wrap gap-2 rounded-md border border-input bg-transparent p-2">
 				{selectedTags.map((tag) => (
 					<span
@@ -83,27 +89,45 @@ const TagInput = ({
 					data-testid={testId}
 				/>
 			</div>
-		</div>
+		</Field>
 	);
 };
 
-interface EditDetailsModalProps {
-	isOpen: boolean;
-	onClose: (reset?: boolean) => void;
-	detailsForm: DetailsForm;
-	onDetailsFormChange: (updater: (prev: DetailsForm) => DetailsForm) => void;
-	onSubmit: () => void;
+interface EditProjectDetailModalProps {
+	open: boolean;
+	project: Project;
+	onClose: (success: boolean) => void;
 }
 
-export const EditDetailsModal = (props: EditDetailsModalProps) => {
-	const { isOpen, onClose, detailsForm, onDetailsFormChange, onSubmit } =
-		props;
+export const EditProjectDetailDialog = ({
+	open,
+	project,
+	onClose,
+}: EditProjectDetailModalProps) => {
 	const { configStore } = useRootStore();
 	const descriptionId = useId();
 
-	const handleEditAppDetails = () => {
-		onSubmit();
-	};
+	const [isLoading, setIsLoading] = useState(false);
+	const [form, setForm] = useState<
+		{
+			description: string;
+			markdown: string;
+			tag: string | string[];
+		} & Record<string, unknown>
+	>({
+		description: "",
+		markdown: "",
+		tag: [],
+	});
+
+	useEffect(() => {
+		setForm({
+			description: project.description || "",
+			markdown: project.markdown || "",
+			tag: [],
+			...project,
+		});
+	}, [project]);
 
 	const projectMetaKeys = useMemo(() => {
 		return configStore.store.config.projectMetaKeys.filter((k) => {
@@ -128,7 +152,7 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 		);
 	});
 
-	const projectMetaValues = usePixel<
+	const getProjectMetaValues = usePixel<
 		{
 			METAKEY: string;
 			METAVALUE: string;
@@ -137,20 +161,22 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 	>(`META | GetProjectMetaValues ( metaKeys = ['tag'] ) ;`);
 
 	useEffect(() => {
-		if (projectMetaValues.status !== "SUCCESS" || !projectMetaValues.data) {
+		if (
+			getProjectMetaValues.status !== "SUCCESS" ||
+			!getProjectMetaValues.data
+		) {
 			return;
 		}
 
-		const updated = projectMetaValues.data.reduce<Record<string, string[]>>(
-			(prev, current) => {
-				if (!prev[current.METAKEY]) {
-					prev[current.METAKEY] = [];
-				}
-				prev[current.METAKEY].push(current.METAVALUE);
-				return prev;
-			},
-			{},
-		);
+		const updated = getProjectMetaValues.data.reduce<
+			Record<string, string[]>
+		>((prev, current) => {
+			if (!prev[current.METAKEY]) {
+				prev[current.METAKEY] = [];
+			}
+			prev[current.METAKEY].push(current.METAVALUE);
+			return prev;
+		}, {});
 
 		const metaKeysWithOpts = projectMetaKeys.filter((k) => {
 			return k.display_options === "select-box";
@@ -163,22 +189,44 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 		});
 
 		setFilterOptions(updated);
-	}, [projectMetaKeys, projectMetaValues.status, projectMetaValues.data]);
+	}, [
+		projectMetaKeys,
+		getProjectMetaValues.status,
+		getProjectMetaValues.data,
+	]);
 
-	const getDetailValue = (key: string): unknown => detailsForm[key];
+	/**
+	 *
+	 */
+	const handleSubmit = async () => {
+		try {
+			setIsLoading(true);
 
-	const setDetailValue = (key: string, value: unknown) => {
-		onDetailsFormChange((prev) => ({
-			...prev,
-			[key]: value,
-		}));
+			// update the metadata for the project
+			await configStore.runPixel(
+				`SetProjectMetadata(project=["${project.project_id}"], meta=[${JSON.stringify(
+					form,
+				)}])`,
+			);
+
+			// mark as successful and close
+			onClose(true);
+		} catch (error) {
+			toast.error(
+				error instanceof Error
+					? error.message
+					: "Error updating details",
+			);
+		} finally {
+			setIsLoading(false);
+		}
 	};
 
 	return (
 		<Dialog
-			open={isOpen}
-			onOpenChange={(nextOpen) => {
-				if (!nextOpen) {
+			open={open}
+			onOpenChange={(open) => {
+				if (!open) {
 					onClose(false);
 				}
 			}}
@@ -188,69 +236,52 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 				data-testid="edit-app-details-modal"
 			>
 				<DialogHeader>
-					<DialogTitle>Edit App Details</DialogTitle>
+					<DialogTitle>Edit Details</DialogTitle>
 				</DialogHeader>
 
 				<div className="flex-1 space-y-6 overflow-y-auto">
-					<div className="space-y-2">
-						<Label htmlFor={descriptionId}>Description</Label>
-						<textarea
+					<Field>
+						<FieldLabel htmlFor={descriptionId}>
+							Description
+						</FieldLabel>
+						<Textarea
 							id={descriptionId}
-							className="flex max-h-[72px] min-h-[72px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
-							value={
-								(getDetailValue("description") as string) ?? ""
-							}
+							value={form.description}
 							onChange={(event) =>
-								setDetailValue(
-									"description",
-									event.target.value,
-								)
+								setForm((prev) => ({
+									...prev,
+									description: event.target.value,
+								}))
 							}
 							placeholder="Please provide a description for this app to help others find it and understand how to use it."
 							data-testid="description"
 						/>
-					</div>
+					</Field>
 
-					<div className="space-y-2">
-						<Label>Main Uses</Label>
+					<Field>
+						<FieldLabel>Main Uses</FieldLabel>
 						<MarkdownEditor
 							className="h-[200px]"
-							value={(getDetailValue("markdown") as string) || ""}
+							value={form.markdown}
 							onChange={(value) =>
-								setDetailValue("markdown", value)
+								setForm((prev) => ({
+									...prev,
+									markdown: value,
+								}))
 							}
 							data-testid="markdown"
 						/>
-					</div>
+					</Field>
 
 					<TagInput
-						value={
-							(getDetailValue("tag") as
-								| string[]
-								| string
-								| undefined) || []
+						value={form.tag || []}
+						onChange={(value) =>
+							setForm((prev) => ({ ...prev, tag: value }))
 						}
-						onChange={(value) => setDetailValue("tag", value)}
 						label="Tags"
 						placeholder="Press enter to add tags"
 						testId="tags"
 					/>
-
-					<div className="space-y-2">
-						<Label>Image</Label>
-						<Input
-							type="file"
-							accept="image/*"
-							onChange={(event) => {
-								const value = (event.target as HTMLInputElement)
-									.files;
-								if (value && value.length > 0) {
-									setDetailValue("appImage", value[0]);
-								}
-							}}
-							data-testid="app-image"
-						/>
-					</div>
 
 					{projectMetaKeys.map((key) => {
 						const { metakey, display_options } = key;
@@ -260,65 +291,62 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 
 						if (display_options === "markdown") {
 							return (
-								<div key={metakey} className="mb-1">
+								<Field key={metakey} className="mb-1">
+									<FieldLabel>{label}</FieldLabel>
 									<MarkdownEditor
-										value={
-											(getDetailValue(
-												metakey,
-											) as string) || ""
-										}
+										value={(form[metakey] as string) || ""}
 										onChange={(value) =>
-											setDetailValue(metakey, value)
+											setForm((prev) => ({
+												...prev,
+												[metakey]: value,
+											}))
 										}
 										data-testid="markdown-editor"
 									/>
-								</div>
+								</Field>
 							);
 						}
 
 						if (display_options === "textarea") {
 							return (
-								<div key={metakey} className="space-y-2">
-									<Label htmlFor={metakey}>{label}</Label>
-									<textarea
+								<Field key={metakey}>
+									<FieldLabel htmlFor={metakey}>
+										{label}
+									</FieldLabel>
+									<Textarea
 										id={metakey}
-										className="flex max-h-[72px] min-h-[72px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
-										value={
-											(getDetailValue(
-												metakey,
-											) as string) || ""
-										}
+										value={(form[metakey] as string) || ""}
 										onChange={(event) =>
-											setDetailValue(
-												metakey,
-												event.target.value,
-											)
+											setForm((prev) => ({
+												...prev,
+												[metakey]: event.target.value,
+											}))
 										}
 									/>
-								</div>
+								</Field>
 							);
 						}
 
 						if (display_options === "single-typeahead") {
 							return (
-								<div key={metakey} className="space-y-2">
-									<Label htmlFor={metakey}>{label}</Label>
+								<Field key={metakey}>
+									<FieldLabel htmlFor={metakey}>
+										{label}
+									</FieldLabel>
 									<div className="relative">
-										<input
+										<Input
 											id={metakey}
 											type="text"
-											className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-base placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
 											placeholder={`Select ${label.toLowerCase()}...`}
 											value={
-												(getDetailValue(
-													metakey,
-												) as string) || ""
+												(form[metakey] as string) || ""
 											}
 											onChange={(event) =>
-												setDetailValue(
-													metakey,
-													event.target.value,
-												)
+												setForm((prev) => ({
+													...prev,
+													[metakey]:
+														event.target.value,
+												}))
 											}
 											list={`${metakey}-list`}
 										/>
@@ -333,7 +361,7 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 											)}
 										</datalist>
 									</div>
-								</div>
+								</Field>
 							);
 						}
 
@@ -341,12 +369,12 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 							return (
 								<TagInput
 									key={metakey}
-									value={
-										(getDetailValue(metakey) as string[]) ||
-										[]
-									}
+									value={(form[metakey] as string[]) || []}
 									onChange={(value) =>
-										setDetailValue(metakey, value)
+										setForm((prev) => ({
+											...prev,
+											[metakey]: value,
+										}))
 									}
 									label={label}
 									placeholder={`Press enter to add ${metakey}`}
@@ -356,13 +384,14 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 
 						if (display_options === "select-box") {
 							return (
-								<div key={metakey} className="space-y-2">
-									<Label htmlFor={metakey}>{label}</Label>
+								<Field key={metakey}>
+									<FieldLabel htmlFor={metakey}>
+										{label}
+									</FieldLabel>
 									<div className="flex flex-wrap gap-2 rounded-md border border-input bg-transparent p-2">
 										{(filterOptions[metakey] || []).map(
 											(option) => {
-												const rawValue =
-													getDetailValue(metakey);
+												const rawValue = form[metakey];
 												const formattedValue =
 													typeof rawValue === "string"
 														? [rawValue]
@@ -380,46 +409,78 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 													);
 
 												return (
-													<label
+													<div
 														key={option}
 														className="flex cursor-pointer items-center gap-2"
 													>
-														<input
-															type="checkbox"
+														<Checkbox
 															checked={checked}
-															onChange={() => {
+															onCheckedChange={(
+																isChecked,
+															) => {
+																if (
+																	isChecked !==
+																	true
+																) {
+																	setForm(
+																		(
+																			prev,
+																		) => ({
+																			...prev,
+																			[metakey]:
+																				selectedValues.filter(
+																					(
+																						v,
+																					) =>
+																						v !==
+																						option,
+																				),
+																		}),
+																	);
+																	return;
+																}
+
 																if (checked) {
-																	setDetailValue(
-																		metakey,
-																		selectedValues.filter(
-																			(
-																				v,
-																			) =>
-																				v !==
-																				option,
-																		),
+																	setForm(
+																		(
+																			prev,
+																		) => ({
+																			...prev,
+																			[metakey]:
+																				selectedValues.filter(
+																					(
+																						v,
+																					) =>
+																						v !==
+																						option,
+																				),
+																		}),
 																	);
 																} else {
-																	setDetailValue(
-																		metakey,
-																		[
-																			...selectedValues,
-																			option,
-																		],
+																	setForm(
+																		(
+																			prev,
+																		) => ({
+																			...prev,
+																			[metakey]:
+																				[
+																					...selectedValues,
+																					option,
+																				],
+																		}),
 																	);
 																}
 															}}
-															className="rounded border-input"
 														/>
 														<span className="text-sm">
 															{option}
 														</span>
-													</label>
+													</div>
 												);
 											},
 										)}
 									</div>
-								</div>
+								</Field>
 							);
 						}
 
@@ -430,13 +491,20 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 				<DialogFooter data-testid="edit-app-details-modal-actions">
 					<Button
 						variant="outline"
-						onClick={() => onClose(true)}
+						onClick={() => onClose(false)}
 						data-testid="cancel"
 					>
 						Close
 					</Button>
-					<Button onClick={handleEditAppDetails} data-testid="save">
-						Submit
+					<Button
+						disabled={
+							isLoading ||
+							getProjectMetaValues.status !== "SUCCESS"
+						}
+						onClick={() => handleSubmit()}
+						data-testid="save"
+					>
+						{isLoading ? <Spinner className="size-4" /> : "Save"}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

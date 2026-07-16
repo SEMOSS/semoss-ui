@@ -5,8 +5,8 @@ import { FileExplorer, FlexLayout } from "@semoss/shared";
 import { Spinner } from "@semoss/ui/next";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
+import { ProjectDetailTabs } from "@/components/project";
 import { useWorkspace } from "@/hooks";
-import { ProjectDetailLayout } from "@/pages/app/app-detail-layout";
 import { WorkspaceManager } from "../../components/workspace";
 import { WorkspaceTerminal } from "../../components/workspace/panels";
 import type { WorkspaceOptions } from "../../stores";
@@ -186,7 +186,8 @@ export const CodeWorkspace: React.FC = observer(() => {
 			return <RendererPanel />;
 		} else if (component === "settingsPanel") {
 			return (
-				<ProjectDetailLayout
+				<ProjectDetailTabs
+					type="CODE"
 					tabs={[
 						{ name: "Overview", path: "" },
 						{
@@ -207,8 +208,6 @@ export const CodeWorkspace: React.FC = observer(() => {
 						},
 						{ name: "SMSS", path: "smss", restrict: ["OWNER"] },
 					]}
-					showNav={false}
-					embedded={true}
 				/>
 			);
 		} else if (component === "insight-explorer") {

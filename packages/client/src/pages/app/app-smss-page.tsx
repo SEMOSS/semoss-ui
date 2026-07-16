@@ -1,8 +1,9 @@
 import { UpdateSMSS } from "@/components/settings";
-import { SettingsContext, useAppDetail } from "@/contexts";
+import { SettingsContext } from "@/contexts";
+import { useProject } from "@/hooks";
 
 export const AppSmssPage = () => {
-	const { appId } = useAppDetail();
+	const { appId } = useProject();
 	return (
 		<SettingsContext.Provider value={{ adminMode: false }}>
 			<UpdateSMSS type="PROJECT" id={appId} />

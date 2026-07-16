@@ -1,6 +1,8 @@
 import { Ban, Eye, Pencil, User } from "lucide-react";
-import { type ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { usePixel } from "@semoss/sdk/react";
+import type { Project, ProjectDependency, Role } from "@semoss/shared";
 import {
 	Badge,
 	Button,
@@ -13,7 +15,8 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	Label,
+	Field,
+	FieldLabel,
 	RadioGroup,
 	RadioGroupItem,
 	Tabs,
@@ -24,23 +27,21 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import OPEN_AI from "@/assets/img/OPEN_AI.svg";
-import type { modelledDependency } from "@/components/app";
-import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
+import { PERMISSION_DESCRIPTION_MAP, TYPE_TO_ROUTE } from "@/constants";
 import { useRootStore } from "@/hooks";
 
-interface ChangeAccessModalProps {
+interface ProjectAccessRequestDialogProps {
+	/** Project details */
+	project: Project;
+
+	/** Current role of the user */
+	permission: Role;
+
+	/** Track if the dialog is open */
 	open: boolean;
-	onClose: (refresh?: boolean) => void;
-	appId: string;
-	requestedPermission: "OWNER" | "EDIT" | "READ_ONLY" | "";
-	roleChangeComment: string;
-	onRequestedPermissionChange: (
-		permission: "OWNER" | "EDIT" | "READ_ONLY" | "",
-	) => void;
-	onRoleChangeCommentChange: (comment: string) => void;
-	dependencies: modelledDependency[];
-	onSuccess: () => void;
-	permission: string;
+
+	/** Callback that is fired on close */
+	onClose: (success: boolean) => void;
 }
 
 const PermissionCard = ({
@@ -98,55 +99,156 @@ const PermissionBadge = ({ permission }: { permission?: string }) => {
 	);
 };
 
-export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
-	const {
-		open,
-		onClose,
-		appId,
-		requestedPermission,
-		roleChangeComment,
-		onRequestedPermissionChange,
-		onRoleChangeCommentChange,
-		dependencies,
-		onSuccess,
-		permission,
-	} = props;
-	const permissionDescriptions = PERMISSION_DESCRIPTION_MAP.PROJECT;
-	const { monolithStore } = useRootStore();
+export const ProjectAccessRequestDialog = ({
+	project,
+	permission,
+	open,
+	onClose,
+}: ProjectAccessRequestDialogProps) => {
+	const { configStore } = useRootStore();
 	const [tabValue, setTabValue] = useState("permissions");
 	const [requestedDeps, setRequestedDeps] = useState<Set<string>>(new Set());
+	const [requestedPermission, setRequestedPermission] = useState<Role | "">(
+		"",
+	);
+	const [roleChangeComment, setRoleChangeComment] = useState("");
+	const [isLoading, setIsLoading] = useState(false);
 
-	const requestAccessForDependency = async (
-		depId: string,
-		requestedRole: string,
-		comment?: string,
-	) => {
+	const getDependencies = usePixel<{
+		engines: ProjectDependency[];
+		dependencies: string[];
+	}>(open ? `GetProjectDependencies(project="${project.project_id}")` : "", {
+		data: {
+			engines: [],
+			dependencies: [],
+		},
+	});
+
+	const isAllRequested = useMemo(() => {
+		return getDependencies.data.engines.every((dep) =>
+			requestedDeps.has(dep.engine_id),
+		);
+	}, [getDependencies.data.engines, requestedDeps]);
+
+	/**
+	 * Request access for a single dependency.
+	 * @param depId
+	 * @returns
+	 */
+	const handleSingleDependencyRequest = async (depId: string) => {
 		try {
-			const res = await monolithStore.runQuery(
-				`META | RequestEngine(engine=['${depId}'], permission=['${requestedRole}']${
-					comment ? `, comment=['${comment}']` : ""
+			setIsLoading(true);
+
+			if (!requestedPermission) {
+				toast.error(
+					"Please select a permission role on the first tab before requesting access.",
+				);
+				setTabValue("permissions");
+				return;
+			}
+
+			const response = await configStore.runPixel(
+				`META | RequestEngine(engine=['${depId}'], permission=['${requestedPermission}']${
+					roleChangeComment
+						? `, comment=['${roleChangeComment}']`
+						: ""
 				})`,
 			);
-			const { operationType, output } = res.pixelReturn[0];
-			if (operationType.indexOf("ERROR") > -1) {
-				return { depId, success: false, message: output };
+
+			const { pixelReturn } = response;
+			const r = pixelReturn[0];
+			if (r.operationType.indexOf("ERROR") === -1) {
+				setRequestedDeps((prev) => new Set(prev).add(depId));
+				toast.success(`Dependency ${depId}: ${r.output}`);
 			} else {
-				return { depId, success: true, message: output };
+				toast.error(`Dependency ${depId}: ${r.output}`);
 			}
-		} catch (error) {
-			return {
-				depId,
-				success: false,
-				message: (error as Error).message,
-			};
+		} catch (e) {
+			toast.error(
+				e instanceof Error
+					? e.message
+					: "Request failed for the dependency.",
+			);
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
+	/**
+	 * Request access for all dependencies that do not have the requested permission and have not been requested yet.
+	 * @returns
+	 */
+	const handleRequestAllAccess = async () => {
+		setIsLoading(true);
+
+		try {
+			if (!requestedPermission) {
+				toast.error(
+					"Please select a permission role on the first tab before requesting access.",
+				);
+				setTabValue("permissions");
+				return;
+			}
+
+			const dependenciesToRequest = getDependencies.data.engines.filter(
+				(dep) =>
+					dep.permission_name !== requestedPermission &&
+					!requestedDeps.has(dep.engine_id),
+			);
+
+			if (dependenciesToRequest.length === 0) {
+				toast.info("No new dependencies require access request.");
+				return;
+			}
+
+			let pixel = ``;
+			for (const dep of dependenciesToRequest) {
+				pixel += `META | RequestEngine(engine=['${dep.engine_id}'], permission=['${requestedPermission}']${
+					roleChangeComment
+						? `, comment=['${roleChangeComment}']`
+						: ""
+				})`;
+			}
+
+			const response = await configStore.runPixel(pixel);
+			const { pixelReturn } = response;
+
+			for (const [rIdx, r] of pixelReturn.entries()) {
+				if (r.operationType.indexOf("ERROR") === -1) {
+					setRequestedDeps((prev) =>
+						new Set(prev).add(
+							dependenciesToRequest[rIdx].engine_id,
+						),
+					);
+					toast.success(
+						`Dependency ${dependenciesToRequest[rIdx].engine_id}: ${r.output}`,
+					);
+				} else {
+					toast.error(
+						`Dependency ${dependenciesToRequest[rIdx].engine_id}: ${r.output}`,
+					);
+				}
+			}
+		} catch (e) {
+			toast.error(
+				e instanceof Error
+					? e.message
+					: "Request failed for the dependency.",
+			);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	/**
+	 * Change access for the project.
+	 * @returns
+	 */
 	const handleChangeAccess = async () => {
 		const current = permission;
 		const requested = requestedPermission;
 		const comment = roleChangeComment;
-		const id = appId;
+		const id = project.project_id;
 
 		if (requested === current || requested === "") {
 			toast.error(
@@ -156,113 +258,46 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 		}
 
 		try {
-			const res = await monolithStore.runQuery(
+			setIsLoading(true);
+
+			const response = await configStore.runPixel(
 				`RequestProject(project=['${id}'], permission=['${requested}'], comment=['${comment}'])`,
 			);
 
-			const { operationType, output } = res.pixelReturn[0];
-
+			const { operationType, output } = response.pixelReturn[0];
 			if (operationType.indexOf("ERROR") > -1) {
 				toast.error(String(output));
 				return;
 			}
 
 			toast.success(String(output));
-
-			onSuccess();
-			onClose(true); // Close modal after successful RequestProject call
+			onClose(true);
 		} catch (_e) {
 			toast.error("Request failed.");
-		}
-	};
-
-	const [isRequestAllLoading, setIsRequestAllLoading] = useState(false);
-
-	const isAllRequested = useMemo(() => {
-		return dependencies.every((dep) => requestedDeps.has(dep.id));
-	}, [dependencies, requestedDeps]);
-
-	const handleRequestAllAccess = async () => {
-		setIsRequestAllLoading(true);
-		try {
-			const requestedRole = requestedPermission;
-			const comment = roleChangeComment;
-
-			if (!requestedRole) {
-				toast.error(
-					"Please select a permission role on the first tab before requesting access.",
-				);
-				setTabValue("permissions");
-				return;
-			}
-
-			const dependenciesToRequest = dependencies.filter(
-				(dep) =>
-					dep.userPermission !== requestedRole &&
-					!requestedDeps.has(dep.id),
-			);
-
-			if (dependenciesToRequest.length === 0) {
-				toast.info("No new dependencies require access request.");
-				return;
-			}
-
-			const promises = dependenciesToRequest.map((dep) =>
-				requestAccessForDependency(dep.id, requestedRole, comment),
-			);
-
-			const results = await Promise.allSettled(promises);
-			results.forEach((result) => {
-				if (result.status === "fulfilled") {
-					const { depId, success, message } = result.value;
-					if (success) {
-						setRequestedDeps((prev) => new Set(prev).add(depId));
-						toast.success(`Dependency ${depId}: ${message}`);
-					} else {
-						toast.error(`Dependency ${depId}: ${message}`);
-					}
-				} else {
-					toast.error("Request failed for a dependency.");
-				}
-			});
+			onClose(false);
 		} finally {
-			setIsRequestAllLoading(false);
+			setIsLoading(false);
 		}
 	};
 
-	// Handle single dependency request button click
-	const handleSingleDependencyRequest = async (depId: string) => {
-		const requestedRole = requestedPermission;
-		const comment = roleChangeComment;
-
-		if (!requestedRole) {
-			toast.error(
-				"Please select a permission role on the first tab before requesting access.",
-			);
-			setTabValue("permissions");
+	useEffect(() => {
+		if (!open) {
 			return;
 		}
 
-		const { success, message } = await requestAccessForDependency(
-			depId,
-			requestedRole,
-			comment,
+		setRequestedPermission(permission);
+		setRoleChangeComment(
+			`I am requesting access to for [please provide a reason]`,
 		);
-
-		if (success) {
-			setRequestedDeps((prev) => new Set(prev).add(depId));
-			toast.success(`Dependency ${depId}: ${message}`);
-			// onSuccess();
-		} else {
-			toast.error(`Dependency ${depId}: ${message}`);
-		}
-	};
+		setRequestedDeps(new Set());
+		setTabValue("permissions");
+	}, [open, permission]);
 
 	return (
 		<Dialog
 			open={open}
-			onOpenChange={(nextOpen) => {
-				if (!nextOpen) {
+			onOpenChange={(open) => {
+				if (!open) {
 					onClose(false);
 					setTabValue("permissions");
 				}
@@ -271,14 +306,14 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 			<DialogContent className="max-h-[90vh] overflow-auto sm:max-w-2xl">
 				<DialogHeader>
 					<DialogTitle>
-						{permission === "discoverable"
+						{permission === "DISCOVERABLE"
 							? "Request Access"
 							: "Change Access"}
 					</DialogTitle>
 				</DialogHeader>
 
 				<Tabs value={tabValue} onValueChange={setTabValue}>
-					{permission !== "discoverable" ? (
+					{permission !== "DISCOVERABLE" ? (
 						<TabsList className="mb-4">
 							<TabsTrigger value="permissions">
 								App Permissions
@@ -292,50 +327,54 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 					<TabsContent value="permissions" className="space-y-4">
 						<RadioGroup
 							value={requestedPermission}
-							onValueChange={(value) =>
-								onRequestedPermissionChange(
+							onValueChange={(value) => {
+								setRequestedPermission(
 									value as
 										| "OWNER"
 										| "EDIT"
 										| "READ_ONLY"
 										| "",
-								)
-							}
+								);
+							}}
 							className="space-y-2"
 						>
 							<PermissionCard
 								icon={<User className="size-4" />}
 								title="Author"
-								description={permissionDescriptions.author}
+								description={
+									PERMISSION_DESCRIPTION_MAP.PROJECT.author
+								}
 								value="OWNER"
 							/>
 							<PermissionCard
 								icon={<Pencil className="size-4" />}
 								title="Editor"
-								description={permissionDescriptions.editor}
+								description={
+									PERMISSION_DESCRIPTION_MAP.PROJECT.editor
+								}
 								value="EDIT"
 							/>
 							<PermissionCard
 								icon={<Eye className="size-4" />}
 								title="Read-Only"
-								description={permissionDescriptions.readonly}
+								description={
+									PERMISSION_DESCRIPTION_MAP.PROJECT.readonly
+								}
 								value="READ_ONLY"
 							/>
 						</RadioGroup>
 
-						<div className="space-y-2">
-							<Label>Reason For Access</Label>
+						<Field>
+							<FieldLabel>Request Comment (Optional)</FieldLabel>
 							<Textarea
 								rows={3}
 								placeholder="Optional"
 								value={roleChangeComment ?? ""}
-								onChange={(event) =>
-									onRoleChangeCommentChange(
-										event.target.value,
-									)
-								}
+								onChange={(event) => {
+									setRoleChangeComment(event.target.value);
+								}}
 							/>
-						</div>
+						</Field>
 
 						<DialogFooter>
 							<Button
@@ -344,7 +383,7 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 							>
 								Cancel
 							</Button>
-							{permission !== "discoverable" ? (
+							{permission !== "DISCOVERABLE" ? (
 								<Button
 									onClick={() => setTabValue("dependencies")}
 								>
@@ -358,7 +397,7 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 						</DialogFooter>
 					</TabsContent>
 
-					{permission !== "discoverable" ? (
+					{permission !== "DISCOVERABLE" ? (
 						<TabsContent value="dependencies" className="space-y-4">
 							<p className="text-muted-foreground text-sm">
 								The app will not work for you without having at
@@ -373,54 +412,54 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 									onClick={handleRequestAllAccess}
 									disabled={
 										isAllRequested ||
-										isRequestAllLoading ||
-										dependencies.some(
+										isLoading ||
+										getDependencies.data.engines.some(
 											(dep) => dep.access_permission,
 										)
 									}
 								>
-									{isRequestAllLoading
+									{isLoading
 										? "Requesting..."
 										: "Request All Access"}
 								</Button>
 							</div>
 
 							<div className="space-y-3">
-								{dependencies.map((dep) => (
+								{getDependencies.data.engines.map((dep) => (
 									<div
-										key={dep.id}
+										key={dep.engine_id}
 										className="flex flex-col gap-3 rounded-xl border bg-background p-4"
 									>
 										<div className="flex flex-wrap items-start justify-between gap-4">
 											<div className="flex items-start gap-4">
 												<img
 													src={OPEN_AI}
-													alt={dep.name}
+													alt={dep.engine_name}
 													className="h-12 w-12 rounded-lg object-cover"
 												/>
 												<div className="space-y-1">
 													<Link
-														to={`/${dep.type}/${dep.id}`}
+														to={`${TYPE_TO_ROUTE[dep.engine_type as keyof typeof TYPE_TO_ROUTE]}/${dep.engine_id}`}
 														className="text-primary"
 													>
 														<p className="font-medium text-sm">
-															{dep.name}
+															{dep.engine_name}
 														</p>
 													</Link>
 													<PermissionBadge
 														permission={
-															dep.userPermission
+															dep.permission_name
 														}
 													/>
 												</div>
 											</div>
 
 											<div className="flex flex-wrap items-center gap-2">
-												{dep.isPublic ? (
+												{dep.engine_global ? (
 													<Badge variant="outline">
 														Public
 													</Badge>
-												) : dep.isDiscoverable ? (
+												) : dep.engine_discoverable ? (
 													<Badge variant="outline">
 														Discoverable
 													</Badge>
@@ -435,7 +474,7 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 													</>
 												)}
 												<Badge variant="outline">
-													{dep.type}
+													{dep.engine_type}
 												</Badge>
 											</div>
 										</div>
@@ -448,19 +487,19 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 
 										<div className="flex justify-end">
 											{dep.access_permission ||
-											requestedDeps.has(dep.id) ? (
+											requestedDeps.has(dep.engine_id) ? (
 												<Button
 													variant="outline"
 													disabled
 												>
 													Pending Access
 												</Button>
-											) : !dep.userPermission ? (
+											) : !dep.permission_name ? (
 												<Button
 													variant="outline"
 													onClick={() =>
 														handleSingleDependencyRequest(
-															dep.id,
+															dep.engine_id,
 														)
 													}
 												>
@@ -471,7 +510,7 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 													variant="outline"
 													onClick={() =>
 														handleSingleDependencyRequest(
-															dep.id,
+															dep.engine_id,
 														)
 													}
 												>

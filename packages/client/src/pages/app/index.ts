@@ -1,8 +1,6 @@
 import { AppAccessControlPage } from "./app-access-control-page";
 import { AppActivityPage } from "./app-activity-page";
 import { AppCommitsPage } from "./app-commits-page";
-import { AppDependenciesPage } from "./app-dependencies-page";
-import { ProjectDetailLayout } from "./app-detail-layout";
 import { AppEditPage } from "./app-edit-page";
 import { AppFilesPage } from "./app-files-page";
 import { AppGithubPage } from "./app-github-page";
@@ -22,12 +20,10 @@ export {
 	AppAccessControlPage,
 	AppActivityPage,
 	AppCommitsPage,
-	AppDependenciesPage,
 	AppFilesPage,
 	AppGithubPage,
 	AppMcpUsagePage,
 	AppOverviewPage,
 	AppSettingsPage,
 	AppSmssPage,
-	ProjectDetailLayout,
 };

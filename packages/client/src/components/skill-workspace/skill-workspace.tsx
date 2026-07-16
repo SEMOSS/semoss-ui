@@ -4,8 +4,8 @@ import { useInsight } from "@semoss/sdk/react";
 import { FlexLayout } from "@semoss/shared";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
+import { ProjectDetailTabs } from "@/components/project";
 import { useWorkspace } from "@/hooks";
-import { ProjectDetailLayout } from "@/pages/app/app-detail-layout";
 import type { WorkspaceOptions } from "../../stores";
 import { CodeWorkspaceActions } from "../code-workspace/code-workspace-actions";
 import { MCPJsonEditor } from "../shared";
@@ -132,7 +132,8 @@ export const SkillWorkspace: React.FC = observer(() => {
 			return <MCPJsonEditor dataMap={config.data} />;
 		} else if (component === "settingsPanel") {
 			return (
-				<ProjectDetailLayout
+				<ProjectDetailTabs
+					type="SKILL"
 					tabs={[
 						{ name: "Overview", path: "" },
 						{
@@ -153,8 +154,6 @@ export const SkillWorkspace: React.FC = observer(() => {
 						},
 						{ name: "SMSS", path: "smss", restrict: ["OWNER"] },
 					]}
-					showNav={false}
-					embedded={true}
 				/>
 			);
 		} else if (component === "terminal") {
