@@ -1,10 +1,11 @@
-import { SaveIcon } from "lucide-react";
+import { Plus, SaveIcon, Trash2 } from "lucide-react";
 import { useEffect, useId, useMemo, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	type MCPConfig,
 	MCPSelector,
+	type Project,
 	PromptSelector,
 	type SkillConfig,
 	SkillSelector,
@@ -29,6 +30,12 @@ import {
 import { useRootStore, useWorkspace } from "@/hooks";
 import { mcpToPlatformUrl, promptToPlatformUrl } from "@/utility";
 
+type SubagentEntry = {
+	alias: string;
+	workspaceId: string;
+	description: string;
+};
+
 type AgentForm = {
 	name: string;
 	description: string;
@@ -43,6 +50,7 @@ type AgentForm = {
 	toolboxes: MCPConfig[];
 	skills: SkillConfig[];
 	prompts: string[];
+	subagents: SubagentEntry[];
 };
 
 type GetWorkspaceResponse = {
@@ -63,6 +71,11 @@ type GetWorkspaceResponse = {
 			max_subagents_per_run?: number;
 			max_spawns_per_turn?: number;
 		};
+		subagents?: {
+			alias: string;
+			workspaceId: string;
+			description?: string;
+		}[];
 	};
 };
 
@@ -98,13 +111,31 @@ export const AgentEditor = () => {
 			toolboxes: [],
 			skills: [],
 			prompts: [],
+			subagents: [],
 		},
 	});
+
+	const {
+		fields: subagentFields,
+		append: appendSubagent,
+		remove: removeSubagent,
+	} = useFieldArray({ control, name: "subagents" });
 
 	const models = usePixel<ModelEngine[]>(`MyEngines(engineTypes=['MODEL']);`);
 	const modelOptions = useMemo(
 		() => (models.data ?? []).filter((m) => m.tag !== "embeddings"),
 		[models.data],
+	);
+
+	const agentWorkspaces = usePixel<Project[]>(
+		`MyProjects(projectType=["WORKSPACE"]);`,
+	);
+	const subagentWorkspaceOptions = useMemo(
+		() =>
+			(agentWorkspaces.data ?? []).filter(
+				(p) => p.project_id !== workspace.appId,
+			),
+		[agentWorkspaces.data, workspace.appId],
 	);
 
 	useEffect(() => {
@@ -140,6 +171,11 @@ export const AgentEditor = () => {
 					toolboxes: allMcps.filter((m) => m.type !== "VECTOR"),
 					skills: data.skills ?? [],
 					prompts: (data.prompts ?? []).map((p) => p.id),
+					subagents: (data.config_json?.subagents ?? []).map((s) => ({
+						alias: s.alias,
+						workspaceId: s.workspaceId,
+						description: s.description ?? "",
+					})),
 				});
 			} catch (e) {
 				console.error(e);
@@ -156,8 +192,19 @@ export const AgentEditor = () => {
 			setIsLoading(true);
 			const mcp = [...data.knowledge, ...data.toolboxes];
 			const skills = data.skills.map((s) => s.id);
+			// Drop rows that are still fully empty (just-added, never filled in);
+			// a partially-filled row is left as-is so the backend's validation
+			// error ("missing alias/workspaceId") surfaces instead of silently
+			// discarding what the user meant to keep.
+			const subagents = data.subagents
+				.filter((s) => s.alias || s.workspaceId)
+				.map((s) => ({
+					alias: s.alias,
+					workspaceId: s.workspaceId,
+					...(s.description ? { description: s.description } : {}),
+				}));
 			const { errors } = await monolithStore.runQuery(
-				`EditWorkspace(workspaceId=["${workspace.appId}"], name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)}, modelId=${JSON.stringify(data.modelId)}, maxTurns=${JSON.stringify(data.maxTurns)}, maxReflections=${JSON.stringify(data.maxReflections)}, maxSubagentDepth=${JSON.stringify(data.maxSubagentDepth)}, maxSubagentsPerRun=${JSON.stringify(data.maxSubagentsPerRun)}, maxSpawnsPerTurn=${JSON.stringify(data.maxSpawnsPerTurn)});`,
+				`EditWorkspace(workspaceId=["${workspace.appId}"], name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)}, modelId=${JSON.stringify(data.modelId)}, maxTurns=${JSON.stringify(data.maxTurns)}, maxReflections=${JSON.stringify(data.maxReflections)}, maxSubagentDepth=${JSON.stringify(data.maxSubagentDepth)}, maxSubagentsPerRun=${JSON.stringify(data.maxSubagentsPerRun)}, maxSpawnsPerTurn=${JSON.stringify(data.maxSpawnsPerTurn)}, subagents=${JSON.stringify(subagents)});`,
 			);
 			if (errors.length > 0) throw new Error(errors.join(", "));
 			toast.success("Agent saved");
@@ -392,6 +439,137 @@ export const AgentEditor = () => {
 									/>
 								)}
 							/>
+						</div>
+
+						<Separator />
+
+						{/* Subagents */}
+						<div className="flex flex-col gap-3">
+							<div>
+								<H4 className="font-semibold text-base tracking-tight">
+									Subagents
+								</H4>
+								<Muted className="text-muted-foreground text-sm leading-6">
+									Delegate to other agents as callable tools.
+									Each alias becomes a tool name the agent can
+									invoke.
+								</Muted>
+							</div>
+							<div className="flex max-h-80 flex-col gap-3 overflow-y-auto rounded-md border border-border p-3">
+								{subagentFields.length === 0 && (
+									<Muted className="text-muted-foreground text-sm">
+										No subagents added yet.
+									</Muted>
+								)}
+								{subagentFields.map((subagentField, index) => (
+									<div
+										key={subagentField.id}
+										className="flex flex-col gap-2 border-border border-b pb-3 last:border-b-0 last:pb-0"
+									>
+										<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+											<Controller
+												name={`subagents.${index}.workspaceId`}
+												control={control}
+												render={({ field }) => (
+													<Select
+														value={field.value}
+														onValueChange={
+															field.onChange
+														}
+														disabled={
+															agentWorkspaces.status ===
+															"LOADING"
+														}
+													>
+														<SelectTrigger
+															aria-label="Target agent"
+															className="sm:flex-1"
+														>
+															<SelectValue
+																placeholder={
+																	agentWorkspaces.status ===
+																	"LOADING"
+																		? "Loading..."
+																		: "Select an agent"
+																}
+															/>
+														</SelectTrigger>
+														<SelectContent>
+															{subagentWorkspaceOptions.map(
+																(p) => (
+																	<SelectItem
+																		key={
+																			p.project_id
+																		}
+																		value={
+																			p.project_id
+																		}
+																	>
+																		{
+																			p.project_name
+																		}
+																	</SelectItem>
+																),
+															)}
+														</SelectContent>
+													</Select>
+												)}
+											/>
+											<Controller
+												name={`subagents.${index}.alias`}
+												control={control}
+												render={({ field }) => (
+													<Input
+														aria-label="Alias"
+														placeholder="Alias, e.g. researcher"
+														className="sm:flex-1"
+														{...field}
+													/>
+												)}
+											/>
+											<Button
+												variant="ghost"
+												size="icon"
+												type="button"
+												className="shrink-0"
+												onClick={() =>
+													removeSubagent(index)
+												}
+											>
+												<Trash2 className="size-4" />
+											</Button>
+										</div>
+										<Controller
+											name={`subagents.${index}.description`}
+											control={control}
+											render={({ field }) => (
+												<Textarea
+													aria-label="Description"
+													placeholder="When should the agent delegate to this subagent?"
+													className="max-h-[7.5rem]"
+													{...field}
+												/>
+											)}
+										/>
+									</div>
+								))}
+							</div>
+							<Button
+								variant="outline"
+								size="sm"
+								type="button"
+								className="w-fit"
+								onClick={() =>
+									appendSubagent({
+										alias: "",
+										workspaceId: "",
+										description: "",
+									})
+								}
+							>
+								<Plus className="size-4" />
+								Add subagent
+							</Button>
 						</div>
 
 						<Separator />
