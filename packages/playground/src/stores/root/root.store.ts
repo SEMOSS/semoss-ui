@@ -305,6 +305,12 @@ export class RootStore {
 			toolAutoExecutionLimit:
 				theme?.toolAutoExecutionLimit ||
 				this._store.theme.toolAutoExecutionLimit,
+			compactionThreshold:
+				theme?.compactionThreshold ??
+				this._store.theme.compactionThreshold,
+			defaultCompactionStrategy:
+				theme?.defaultCompactionStrategy ??
+				this._store.theme.defaultCompactionStrategy,
 			allowedFileTypes:
 				theme?.allowedFileTypes ||
 				this._store.theme.allowedFileTypes ||

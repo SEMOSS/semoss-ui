@@ -191,6 +191,19 @@ export interface ThemeMap {
 		toolAutoExecutionLimit?: number | null;
 
 		/**
+		 * Context window usage percentage (0–100) at which the chat input is
+		 * disabled and the user must compact before continuing. Omit to never
+		 * auto-block.
+		 */
+		compactionThreshold?: number;
+
+		/**
+		 * Default compaction strategy shown in the compact UI. When omitted the
+		 * backend auto-detects the best strategy ("AUTO" behaviour).
+		 */
+		defaultCompactionStrategy?: "TOOL_PRUNE" | "SUMMARY" | "AUTO";
+
+		/**
 		 * The uploaded files that should be added to the file tool in the room
 		 */
 		allowedFileTypes?: string[];

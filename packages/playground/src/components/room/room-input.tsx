@@ -1,4 +1,4 @@
-import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
+﻿import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { EditorRefPlugin } from "@lexical/react/LexicalEditorRefPlugin";
@@ -16,13 +16,16 @@ import {
 import {
 	BookOpenIcon,
 	Bot,
+	ChevronDownIcon,
 	ExternalLinkIcon,
 	HammerIcon,
+	InfoIcon,
 	MicIcon,
 	PlusIcon,
 	SendIcon,
 	SparklesIcon,
 	Square,
+	TriangleAlertIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
@@ -174,6 +177,18 @@ interface RoomInputProps {
 	/** Callback to compact conversation; passed through to EngineSelect context tooltip */
 	onCompact?: () => void;
 
+	/** Currently selected compaction strategy */
+	compactionStrategy?: "TOOL_PRUNE" | "SUMMARY" | "AUTO";
+
+	/** Called when the user changes the compaction strategy in the picker */
+	onStrategyChange?: (strategy: "TOOL_PRUNE" | "SUMMARY" | "AUTO") => void;
+
+	/** When true, the chat input is blocked and the user must compact first */
+	isCompactionRequired?: boolean;
+
+	/** Warning shown in the token counter popover when the user is on their last buffer message */
+	bufferWarning?: string;
+
 	/** Command IDs to suppress from the slash menu */
 	excludeCommandIds?: string[];
 
@@ -182,49 +197,112 @@ interface RoomInputProps {
 }
 
 // ============================================================================
-// CompactButton
+// CompactStrategyPicker
+// Single "Compact" button with a collapsible "Advanced Options" section.
+// Stays within the parent DOM (no portals) so it doesn't close the token popover.
 // ============================================================================
 
-const CompactButton: React.FC<{
+type CompactionStrategy = "TOOL_PRUNE" | "SUMMARY" | "AUTO";
+
+const STRATEGY_INFO: Record<
+	CompactionStrategy,
+	{ label: string; tooltip: string }
+> = {
+	SUMMARY: {
+		label: "Summarize",
+		tooltip:
+			"Replaces older messages with an AI-generated summary. Preserves the overall context of the conversation while freeing up token space.",
+	},
+	TOOL_PRUNE: {
+		label: "Prune Tools",
+		tooltip:
+			"Removes verbose tool call results from the conversation history. Best when tool outputs are large and the details are no longer needed.",
+	},
+	AUTO: {
+		label: "Auto",
+		tooltip:
+			"Will select summarization or tool pruning based on the current conversation.",
+	},
+};
+
+const CompactStrategyPicker: React.FC<{
 	disabled: boolean;
-	tooltipText: string;
-	onClick: (e: React.MouseEvent) => void;
-}> = ({ disabled, tooltipText, onClick }) => {
-	const [tooltipOpen, setTooltipOpen] = useState(false);
-	const isHovering = useRef(false);
-
-	const handleMouseEnter = () => {
-		isHovering.current = true;
-		setTooltipOpen(true);
-	};
-
-	const handleMouseLeave = () => {
-		isHovering.current = false;
-		setTooltipOpen(false);
-	};
+	strategy: CompactionStrategy;
+	onPickStrategy: (s: CompactionStrategy) => void;
+	onCompact: () => void;
+}> = ({ disabled, strategy, onPickStrategy, onCompact }) => {
+	const [expanded, setExpanded] = useState(false);
+	const activeStrategy = strategy;
 
 	return (
-		<Tooltip open={tooltipOpen}>
-			<TooltipTrigger asChild>
-				{/* biome-ignore lint/a11y/noStaticElementInteractions: span wraps a disabled button to capture hover for tooltip */}
-				<span
-					className="mt-2 w-full"
-					onMouseEnter={handleMouseEnter}
-					onMouseLeave={handleMouseLeave}
-				>
-					<Button
-						size="sm"
-						variant="outline"
-						className="w-full text-foreground"
-						disabled={disabled}
-						onClick={onClick}
-					>
-						Compact Conversation
-					</Button>
-				</span>
-			</TooltipTrigger>
-			<TooltipContent>{tooltipText}</TooltipContent>
-		</Tooltip>
+		<div className="mt-2 space-y-2 border-t pt-2">
+			<Button
+				type="button"
+				size="sm"
+				variant="default"
+				className="w-full"
+				disabled={disabled}
+				onClick={() => {
+					onPickStrategy(activeStrategy);
+					onCompact();
+				}}
+			>
+				Compact
+			</Button>
+			<button
+				type="button"
+				className="flex w-full items-center gap-1 text-muted-foreground text-xs hover:text-foreground"
+				onClick={() => setExpanded((v) => !v)}
+			>
+				<ChevronDownIcon
+					className={cn(
+						"size-3 transition-transform",
+						expanded && "rotate-180",
+					)}
+				/>
+				{expanded ? "Compaction Options" : "Advanced Options"}
+			</button>
+			{expanded && (
+				<div className="space-y-1 pl-1">
+					{(
+						[
+							"SUMMARY",
+							"TOOL_PRUNE",
+							"AUTO",
+						] as CompactionStrategy[]
+					).map((s) => {
+						const { label, tooltip } = STRATEGY_INFO[s];
+						return (
+							<label
+								key={s}
+								className="flex cursor-pointer items-center gap-2 rounded-sm px-1 py-0.5 text-sm hover:bg-accent"
+							>
+								<input
+									type="radio"
+									name="compaction-strategy"
+									value={s}
+									checked={activeStrategy === s}
+									onChange={() => onPickStrategy(s)}
+									className="accent-primary"
+								/>
+								<span className="flex-1">{label}</span>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<InfoIcon className="size-3.5 shrink-0 text-muted-foreground" />
+									</TooltipTrigger>
+									<TooltipContent
+										side="left"
+										className="max-w-52 text-wrap text-xs"
+									>
+										{tooltip}
+									</TooltipContent>
+								</Tooltip>
+							</label>
+						);
+					})}
+				</div>
+			)}
+		</div>
 	);
 };
 
@@ -265,6 +343,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		totalTokens,
 		room,
 		onCompact,
+		compactionStrategy,
+		onStrategyChange,
+		isCompactionRequired = false,
+		bufferWarning,
 		excludeCommandIds,
 		onOpenSettings,
 	}) => {
@@ -278,6 +360,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// Editor state
 		const [isEmpty, setIsEmpty] = useState(true);
 		const [menuOpen, setMenuOpen] = useState(false);
+		const [forceCompactOpen, setForceCompactOpen] = useState(false);
+		const [contextAutoOpen, setContextAutoOpen] = useState(false);
 		const [isScrollable, setIsScrollable] = useState(false);
 		const [inputText, setInputText] = useState("");
 		const { root } = useRoot();
@@ -302,6 +386,18 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// Agent chip indicates a current selection. The Agent tab inside the
 		// modal is always visible; editability is gated on `onWorkspaceChange`.
 		const agentChipWorkspace = options.workspace ?? null;
+
+		// Auto-open the token counter popover once when the buffer warning first appears
+		const hadBufferWarning = useRef(false);
+		useEffect(() => {
+			if (bufferWarning && !hadBufferWarning.current) {
+				hadBufferWarning.current = true;
+				setContextAutoOpen(true);
+			}
+			if (!bufferWarning) {
+				hadBufferWarning.current = false;
+			}
+		}, [bufferWarning]);
 
 		// Refs for DOM elements and Lexical editor
 		const ref = useRef<HTMLDivElement>(null);
@@ -369,7 +465,12 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					? (tokensUsed / tokensMax) * 100
 					: undefined;
 
-			if (contextUsedPercent === undefined && !onCompact) return null;
+			if (
+				contextUsedPercent === undefined &&
+				!onCompact &&
+				!bufferWarning
+			)
+				return null;
 
 			const descriptionKey =
 				contextUsedPercent !== undefined
@@ -384,6 +485,12 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 			return (
 				<div className="w-full space-y-1">
+					{bufferWarning && (
+						<div className="flex items-start gap-2 rounded-md border border-amber-400/40 bg-amber-50 p-2 text-amber-900 text-sm dark:bg-amber-950/40 dark:text-amber-200">
+							<TriangleAlertIcon className="mt-0.5 size-4 shrink-0 text-amber-500" />
+							<p>{bufferWarning}</p>
+						</div>
+					)}
 					{contextUsedPercent !== undefined && descriptionKey && (
 						<p className="w-full">{t(descriptionKey)}</p>
 					)}
@@ -411,19 +518,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						</div>
 					)}
 					{onCompact && (
-						<CompactButton
+						<CompactStrategyPicker
 							disabled={isLoading || hasOutstandingTools}
-							tooltipText={
-								isLoading
-									? t("input.thinkingTooltip")
-									: hasOutstandingTools
-										? t("input.completeTool")
-										: "Compress your conversation to save tokens. Your previous messages stay as is."
-							}
-							onClick={(e) => {
-								e.stopPropagation();
-								onCompact();
-							}}
+							strategy={compactionStrategy ?? "AUTO"}
+							onPickStrategy={(s) => onStrategyChange?.(s)}
+							onCompact={onCompact}
 						/>
 					)}
 				</div>
@@ -433,6 +532,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			tokensMax,
 			totalTokens,
 			onCompact,
+			compactionStrategy,
+			onStrategyChange,
+			bufferWarning,
 			t,
 			isLoading,
 			hasOutstandingTools,
@@ -724,21 +826,43 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											{isEmpty && (
 												<div
 													className={cn(
-														"pointer-events-none col-start-1 row-start-1 select-none px-4 pb-4 text-muted-foreground text-sm",
+														"pointer-events-none col-start-1 row-start-1 select-none px-4 pb-4 text-sm",
 														files.length > 0
 															? "pt-0"
 															: "pt-4",
+														isCompactionRequired
+															? "text-destructive"
+															: "text-muted-foreground",
 													)}
 												>
-													{/* Inline-block + align-middle makes the icon
+													{isCompactionRequired ? (
+														<>
+															<TriangleAlertIcon className="-translate-y-px me-1 inline-block size-4 align-middle" />
+															Context window limit
+															reached for this
+															chat. You may
+															compact this
+															conversation to
+															continue or start a
+															new chat.
+														</>
+													) : (
+														<>
+															{/* Inline-block + align-middle makes the icon
 											    flow with text: when the placeholder wraps,
 											    only the text after the icon wraps to the
 											    next line, instead of the whole text
 											    jumping below the icon. */}
-													<SparklesIcon className="-translate-y-px me-1 inline-block size-4 align-middle" />
-													{isLoading
-														? t("input.thinking")
-														: t("input.menuPrompt")}
+															<SparklesIcon className="-translate-y-px me-1 inline-block size-4 align-middle" />
+															{isLoading
+																? t(
+																		"input.thinking",
+																	)
+																: t(
+																		"input.menuPrompt",
+																	)}
+														</>
+													)}
 												</div>
 											)}
 										</div>
@@ -953,6 +1077,18 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													contextTooltipContent={
 														contextTooltipContent
 													}
+													forceContextOpen={
+														forceCompactOpen ||
+														contextAutoOpen
+													}
+													onForceContextClose={() => {
+														setForceCompactOpen(
+															false,
+														);
+														setContextAutoOpen(
+															false,
+														);
+													}}
 												/>
 											)}
 										</div>
@@ -1027,80 +1163,97 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										)}
 									</div>
 								</div>
-								{/* Send button — pinned bottom-right, sibling of body */}
+								{/* Send / compact — pinned bottom-right, sibling of body */}
 								<div className="shrink-0">
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<span data-tour="tour-send">
-												<Button
-													variant="default"
-													size="icon-sm"
-													aria-label={
-														isLoading
+									{isCompactionRequired && onCompact ? (
+										<Button
+											type="button"
+											size="sm"
+											variant="default"
+											disabled={
+												isLoading || hasOutstandingTools
+											}
+											onClick={() =>
+												setForceCompactOpen(true)
+											}
+										>
+											Compact
+										</Button>
+									) : (
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<span data-tour="tour-send">
+													<Button
+														variant="default"
+														size="icon-sm"
+														aria-label={
+															isLoading
+																? t(
+																		"input.pauseToolsTooltip",
+																	)
+																: t(
+																		"input.askLabel",
+																	)
+														}
+														disabled={
+															isLoading
+																? hasToolsPaused ||
+																	hidePauseButton
+																: isEmpty ||
+																	hasOutstandingTools ||
+																	isCompactionRequired
+														}
+														onClick={() => {
+															if (isLoading) {
+																toggleToolsPaused?.();
+															} else {
+																promptModel();
+															}
+														}}
+													>
+														{isLoading ? (
+															hasToolsPaused ||
+															hidePauseButton ? (
+																<Spinner />
+															) : (
+																<Square
+																	className="size-3"
+																	fill="currentColor"
+																/>
+															)
+														) : (
+															<SendIcon />
+														)}
+													</Button>
+												</span>
+											</TooltipTrigger>
+											<TooltipContent>
+												{(() => {
+													if (isLoading) {
+														return hasToolsPaused ||
+															hidePauseButton
 															? t(
-																	"input.pauseToolsTooltip",
+																	"input.thinkingTooltip",
 																)
 															: t(
-																	"input.askLabel",
-																)
+																	"input.pauseToolsTooltip",
+																);
+													} else if (isEmpty) {
+														return t(
+															"input.enterQuestion",
+														);
+													} else if (
+														hasOutstandingTools
+													) {
+														return t(
+															"input.completeTool",
+														);
 													}
-													disabled={
-														isLoading
-															? hasToolsPaused ||
-																hidePauseButton
-															: isEmpty ||
-																hasOutstandingTools
-													}
-													onClick={() => {
-														if (isLoading) {
-															toggleToolsPaused?.();
-														} else {
-															promptModel();
-														}
-													}}
-												>
-													{isLoading ? (
-														hasToolsPaused ||
-														hidePauseButton ? (
-															<Spinner />
-														) : (
-															<Square
-																className="size-3"
-																fill="currentColor"
-															/>
-														)
-													) : (
-														<SendIcon />
-													)}
-												</Button>
-											</span>
-										</TooltipTrigger>
-										<TooltipContent>
-											{(() => {
-												if (isLoading) {
-													return hasToolsPaused ||
-														hidePauseButton
-														? t(
-																"input.thinkingTooltip",
-															)
-														: t(
-																"input.pauseToolsTooltip",
-															);
-												} else if (isEmpty) {
-													return t(
-														"input.enterQuestion",
-													);
-												} else if (
-													hasOutstandingTools
-												) {
-													return t(
-														"input.completeTool",
-													);
-												}
-												return t("input.ask");
-											})()}
-										</TooltipContent>
-									</Tooltip>
+													return t("input.ask");
+												})()}
+											</TooltipContent>
+										</Tooltip>
+									)}
 								</div>
 							</div>
 						</div>

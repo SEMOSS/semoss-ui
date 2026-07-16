@@ -28,7 +28,7 @@ import {
 	RoomInputMenuMCP,
 	RoomInputMenuUpload,
 } from "@/components";
-import { useChat, useGracefulErrors } from "@/hooks";
+import { useChat, useGracefulErrors, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomSuggestions } from "./room-suggestions";
@@ -46,6 +46,7 @@ interface RoomContentProps {
  */
 export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const { chat } = useChat();
+	const { root } = useRoot();
 	const { t } = useTranslation("room");
 	const { getGracefulErrorMessage } = useGracefulErrors();
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
@@ -54,11 +55,46 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const [showScrollup, setShowScrollup] = useState(false);
 	const [showScrolldown, setShowScrolldown] = useState(false);
 	const [isScrollLocked, setIsScrollLocked] = useState(false);
+	const [compactionStrategy, setCompactionStrategy] = useState<
+		"TOOL_PRUNE" | "SUMMARY" | "AUTO"
+	>(root.theme.defaultCompactionStrategy ?? "AUTO");
+
+	// 'none'   — threshold not yet crossed
+	// 'warned' — threshold crossed, warning shown, one buffer message remaining
+	// 'used'   — buffer message sent, chat is now blocked until compaction
+	const [bufferState, setBufferState] = useState<"none" | "warned" | "used">(
+		"none",
+	);
+
+	const isCompactionRequired = bufferState === "used";
+
+	// Fire the one-message buffer warning the first time the threshold is crossed
+	useEffect(() => {
+		if (bufferState !== "none") return;
+		const threshold = root.theme.compactionThreshold;
+		if (threshold === undefined) return;
+		const used = room.tokensUsed;
+		const max = chat.models.contextWindow;
+		if (used === undefined || !max) return;
+		if ((used / max) * 100 >= threshold) {
+			setBufferState("warned");
+		}
+	}, [
+		room.tokensUsed,
+		chat.models.contextWindow,
+		root.theme.compactionThreshold,
+		bufferState,
+	]);
 
 	/**
 	 * Functions
 	 */
 	const handlePrompt = async (prompt: string, files: File[]) => {
+		// If the user is on their buffer message, block further sends after this one
+		if (bufferState === "warned") {
+			setBufferState("used");
+		}
+
 		// update the options
 		await room.updateRoomOptions(room.options);
 
@@ -103,11 +139,12 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	 */
 	const handleCompactMessages = async () => {
 		try {
-			const result = await room.compactMessages();
+			const result = await room.compactMessages(compactionStrategy);
 			if (result === "skipped") {
 				toast.info(t("settings.compactSkipped"));
 			} else {
 				toast.success(t("settings.compactSuccess"));
+				setBufferState("none");
 			}
 		} catch {
 			toast.error(t("settings.compactError"));
@@ -530,6 +567,14 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					tokensMax={chat.models.contextWindow}
 					totalTokens={room.totalTokensConsumed}
 					onCompact={handleCompactMessages}
+					compactionStrategy={compactionStrategy}
+					onStrategyChange={setCompactionStrategy}
+					isCompactionRequired={isCompactionRequired}
+					bufferWarning={
+						bufferState === "warned"
+							? "You have one message remaining before you must compact this conversation. It may be beneficial to give any instructions on details to maintain during the compaction process, but it is not necessary."
+							: undefined
+					}
 					onOpenSettings={handleOpenSettings}
 					excludeCommandIds={["agent", "workspace"]}
 				/>
