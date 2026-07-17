@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type {
 	ClientToServerEvent,
 	ConnectionState,
+	SelectedTextContext,
+	SelectionBounds,
 	ServerToClientEvent,
 } from "../types/browserEvents";
 
@@ -18,10 +20,19 @@ interface UseBrowserSocketReturn {
 	sendReplayEvent: (
 		event: ClientToServerEvent & { requestId: string },
 	) => Promise<void>;
+	captureSelectedText: (
+		bounds: SelectionBounds,
+	) => Promise<SelectedTextContext>;
 }
 
 interface PendingReplay {
 	resolve: () => void;
+	reject: (error: Error) => void;
+	timeout: ReturnType<typeof setTimeout>;
+}
+
+interface PendingSelectedText {
+	resolve: (context: SelectedTextContext) => void;
 	reject: (error: Error) => void;
 	timeout: ReturnType<typeof setTimeout>;
 }
@@ -43,6 +54,9 @@ export function useBrowserSocket({
 	const wsRef = useRef<WebSocket | null>(null);
 	const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const pendingReplayRef = useRef<Map<string, PendingReplay>>(new Map());
+	const pendingSelectedTextRef = useRef<Map<string, PendingSelectedText>>(
+		new Map(),
+	);
 
 	// Build the full WS URL from the relative path returned by the REST API
 	const buildFullWsUrl = useCallback((path: string): string => {
@@ -102,6 +116,24 @@ export function useBrowserSocket({
 						}
 						break;
 					}
+					case "selected-text-context-result": {
+						const pending = pendingSelectedTextRef.current.get(
+							msg.requestId,
+						);
+						if (!pending) break;
+						window.clearTimeout(pending.timeout);
+						pendingSelectedTextRef.current.delete(msg.requestId);
+						if (msg.success && msg.context) {
+							pending.resolve(msg.context);
+						} else {
+							pending.reject(
+								new Error(
+									msg.error || "Selected text capture failed",
+								),
+							);
+						}
+						break;
+					}
 					case "error":
 						onError(msg.message);
 						break;
@@ -121,6 +153,15 @@ export function useBrowserSocket({
 				);
 			});
 			pendingReplayRef.current.clear();
+			pendingSelectedTextRef.current.forEach((pending) => {
+				window.clearTimeout(pending.timeout);
+				pending.reject(
+					new Error(
+						"Browser connection closed during selected text capture",
+					),
+				);
+			});
+			pendingSelectedTextRef.current.clear();
 		};
 
 		ws.onerror = () => {
@@ -168,5 +209,50 @@ export function useBrowserSocket({
 		[],
 	);
 
-	return { connectionState, sendEvent, sendReplayEvent };
+	const captureSelectedText = useCallback(
+		(bounds: SelectionBounds): Promise<SelectedTextContext> => {
+			const ws = wsRef.current;
+			if (!ws || ws.readyState !== WebSocket.OPEN) {
+				return Promise.reject(
+					new Error(
+						"Browser connection is not ready for selected text capture",
+					),
+				);
+			}
+			const requestId = crypto.randomUUID();
+			return new Promise<SelectedTextContext>((resolve, reject) => {
+				const timeout = window.setTimeout(() => {
+					pendingSelectedTextRef.current.delete(requestId);
+					reject(
+						new Error(
+							"Timed out while capturing selected website text",
+						),
+					);
+				}, 20_000);
+				pendingSelectedTextRef.current.set(requestId, {
+					resolve,
+					reject,
+					timeout,
+				});
+				ws.send(
+					JSON.stringify({
+						type: "selected-text-context",
+						requestId,
+						x: bounds.startX,
+						y: bounds.startY,
+						endX: bounds.endX,
+						endY: bounds.endY,
+					}),
+				);
+			});
+		},
+		[],
+	);
+
+	return {
+		connectionState,
+		sendEvent,
+		sendReplayEvent,
+		captureSelectedText,
+	};
 }
