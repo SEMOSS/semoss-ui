@@ -21,18 +21,20 @@ import {
 	CardFooter,
 	CardHeader,
 	CardTitle,
-	H2,
+	H4,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
 	Large,
+	P,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { AddAppModal, NewAppModal } from "@/components/app";
+import { NewAppModal } from "@/components/app";
 import type { Template } from "@/components/app/templates";
 import { LandingHeader } from "@/components/landing";
+import { UploadProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
@@ -40,7 +42,7 @@ import {
 	BASE_APP_QUERIES,
 	BASE_APP_VARIABLES,
 	BASE_PAGE_BLOCKS,
-} from "./app.constants";
+} from "../../app/app.constants";
 
 export const CreateAppPage = () => {
 	const navigate = useNavigate();
@@ -118,8 +120,8 @@ export const CreateAppPage = () => {
 			<NavbarLeft>
 				<NavbarHeader />
 			</NavbarLeft>
-			<div className="flex w-full flex-col items-start gap-2">
-				<Breadcrumb>
+			<div className="flex flex-col gap-1">
+				<Breadcrumb className="mb-4">
 					<BreadcrumbList>
 						<BreadcrumbItem>
 							<BreadcrumbLink asChild>
@@ -137,15 +139,13 @@ export const CreateAppPage = () => {
 					</BreadcrumbList>
 				</Breadcrumb>
 				{isUploadOpen ? (
-					<AddAppModal
+					<UploadProjectDialog
 						open={isUploadOpen}
+						type="APP"
 						handleClose={(appId) => {
-							// if there is an appId navigate to it
 							if (appId) {
 								navigateApp(appId);
 							}
-
-							// close it
 							setIsUploadOpen(false);
 						}}
 					/>
@@ -166,18 +166,26 @@ export const CreateAppPage = () => {
 					/>
 				) : null}
 
+				<div className="flex flex-row items-center justify-between gap-2">
+					<H4>New App</H4>
+					<Button
+						variant="outline"
+						data-testid={"createAppSection-upload-btn"}
+						onClick={() => setIsUploadOpen(true)}
+					>
+						<UploadIcon />
+						Upload
+					</Button>
+				</div>
+				<P className="mb-3 text-muted-foreground">
+					In a platform where data drives decisions, apps are how data
+					come to life. Whether you're a developer, data engineer, or
+					product owner, this page helps you build, organize, and
+					share interactive experiences — from drag-and-drop layouts
+					to custom code and agent-powered workflows — so your team
+					can turn data into action.
+				</P>
 				<div className="flex w-full flex-col gap-4">
-					<div className="flex flex-row items-center justify-between gap-2">
-						<H2>Create App</H2>
-						<Button
-							data-testid={"createAppSection-upload-btn"}
-							onClick={() => setIsUploadOpen(true)}
-						>
-							<UploadIcon />
-							Upload
-						</Button>
-					</div>
-
 					<LandingHeader
 						onCreate={(type) => {
 							if (type === "blocks") {
