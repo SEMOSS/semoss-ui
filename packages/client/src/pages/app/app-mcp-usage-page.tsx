@@ -2,8 +2,8 @@ import { Wrench } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Badge, H4, Spinner, toast } from "@semoss/ui/next";
 import { McpUsage } from "@/components/shared/mcp-usage";
-import { SettingsContext, useAppDetail } from "@/contexts";
-import { useRootStore } from "@/hooks";
+import { SettingsContext } from "@/contexts";
+import { useProject, useRootStore } from "@/hooks";
 
 interface MCPToolInputProperty {
 	title?: string;
@@ -43,7 +43,7 @@ const hasPixelError = (operationType?: string[] | string): boolean => {
 };
 
 export const AppMcpUsagePage = () => {
-	const { appId, appInfo } = useAppDetail();
+	const { appId, project } = useProject();
 	const { monolithStore } = useRootStore();
 
 	const [mcpTools, setMcpTools] = useState<MCPToolDefinition[]>([]);
@@ -236,7 +236,7 @@ export const AppMcpUsagePage = () => {
 				<McpUsage
 					id={appId}
 					name={
-						appInfo?.project_display_name || appInfo?.project_name
+						project?.project_display_name || project?.project_name
 					}
 				/>
 			</div>

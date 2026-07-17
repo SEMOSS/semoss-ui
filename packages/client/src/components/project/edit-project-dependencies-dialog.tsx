@@ -1,11 +1,19 @@
 import { Check, Copy, Search, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { type UIEvent, useEffect, useState } from "react";
 import { useDebouncedValue, useIteratorPixel } from "@semoss/sdk/react";
-import { AppCatalogAvatar, EngineSubtypeIcon } from "@semoss/shared";
 import {
+	AppCatalogAvatar,
+	type Engine,
+	EngineSubtypeIcon,
+	type Project,
+	type ProjectDependency,
+} from "@semoss/shared";
+import {
+	Badge,
 	Button,
 	Dialog,
 	DialogContent,
+	DialogDescription,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
@@ -19,37 +27,13 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
-import {
-	type modelledDependency,
-	SetProjectDependencies,
-} from "./app-details.utility";
+import { isProjectType } from "@/utility/catalog";
 
-interface EditDependenciesModalProps {
-	isOpen: boolean;
+interface EditProjectDependenciesDialogProps {
+	open: boolean;
 	onClose: (refresh: boolean) => void;
 	appId: string;
-	currentDependencies: modelledDependency[];
-}
-
-interface MyEngineRow {
-	engine_id: string;
-	engine_name: string;
-	engine_display_name?: string;
-	engine_type: string;
-	engine_subtype?: string;
-}
-
-interface MyProjectRow {
-	project_id: string;
-	project_name: string;
-	project_display_name?: string;
-}
-
-interface Dependency {
-	id: string;
-	name: string;
-	type: string;
-	subtype?: string;
+	dependencies: ProjectDependency[];
 }
 
 /** Which reactor populates the dropdown. */
@@ -59,68 +43,58 @@ type DependencySource = "ENGINE" | "APP";
 const PAGE_LIMIT = 25;
 
 /**
- * Renders a dependency's icon: the app's generated avatar for projects,
- * otherwise the shared engine subtype icon (matches the app/engine catalogs
- * and team selectors).
+ * Renders a dialog to edit dependencies for a project.
  */
-const DependencyIcon = ({
-	type,
-	subtype,
-	name,
-	sizeClass,
-	textClass,
-}: {
-	type: string;
-	subtype?: string;
-	name: string;
-	sizeClass: string;
-	textClass: string;
-}) => {
-	if (type === "PROJECT") {
-		return (
-			<AppCatalogAvatar
-				name={name}
-				className={`shrink-0 rounded ${sizeClass} ${textClass}`}
-			/>
-		);
-	}
-	return (
-		<EngineSubtypeIcon
-			engineType={type}
-			engineSubtype={subtype}
-			alt={name}
-			className={`shrink-0 object-contain ${sizeClass}`}
-		/>
-	);
-};
-
-/**
- * Renders a modal to edit dependencies for an application.
- *
- * @component
- */
-export const EditDependenciesModal = ({
-	isOpen,
+export const EditProjectDependenciesDialog = ({
+	open,
 	onClose,
 	appId,
-	currentDependencies,
-}: EditDependenciesModalProps) => {
+	dependencies,
+}: EditProjectDependenciesDialogProps) => {
+	const renderDependencyIcon = (
+		dep: ProjectDependency,
+		sizeClass: string,
+		textClass: string,
+	) => {
+		if (isProjectType(dep.engine_type)) {
+			return (
+				<AppCatalogAvatar
+					name={dep.engine_name}
+					className={`shrink-0 rounded ${sizeClass} ${textClass}`}
+				/>
+			);
+		}
+		return (
+			<EngineSubtypeIcon
+				engineType={dep.engine_type}
+				engineSubtype={dep.engine_subtype}
+				alt={dep.engine_name}
+				className={`shrink-0 object-contain ${sizeClass}`}
+			/>
+		);
+	};
+
 	/**
 	 * State
 	 */
-	const [selectedDeps, setSelectedDeps] =
-		useState<Dependency[]>(currentDependencies);
+	const [selectedDeps, setSelectedDeps] = useState<ProjectDependency[]>([]);
 	const [search, setSearch] = useState<string>("");
 	const [source, setSource] = useState<DependencySource>("ENGINE");
 	const [copiedId, setCopiedId] = useState<string | null>(null);
+	const [isSaving, setIsSaving] = useState(false);
 
 	const handleCopyId = (id: string) => {
-		navigator.clipboard.writeText(id).then(() => {
-			setCopiedId(id);
-			setTimeout(() => {
-				setCopiedId((current) => (current === id ? null : current));
-			}, 1500);
-		});
+		navigator.clipboard
+			.writeText(id)
+			.then(() => {
+				setCopiedId(id);
+				setTimeout(() => {
+					setCopiedId((current) => (current === id ? null : current));
+				}, 1500);
+			})
+			.catch(() => {
+				toast.error("Failed to copy ID");
+			});
 	};
 
 	/**
@@ -140,7 +114,7 @@ export const EditDependenciesModal = ({
 		? `filterWord=${JSON.stringify(debouncedSearch)}, `
 		: "";
 
-	const getEngines = useIteratorPixel<MyEngineRow[], Dependency>(
+	const getEngines = useIteratorPixel<Engine[], ProjectDependency>(
 		(limit, offset) =>
 			source === "ENGINE"
 				? `MyEngines(${filterClause}limit=[${limit}], offset=[${offset}]);`
@@ -148,16 +122,16 @@ export const EditDependenciesModal = ({
 		(response) => (response.length < PAGE_LIMIT ? -1 : Infinity),
 		(response) =>
 			response.map((eng) => ({
-				id: eng.engine_id,
-				name: eng.engine_display_name || eng.engine_name,
-				type: eng.engine_type,
-				subtype: eng.engine_subtype,
+				engine_id: eng.engine_id,
+				engine_name: eng.engine_display_name || eng.engine_name,
+				engine_type: eng.engine_type,
+				engine_subtype: eng.engine_subtype,
 			})),
 		{ limit: PAGE_LIMIT },
 		[debouncedSearch, source],
 	);
 
-	const getProjects = useIteratorPixel<MyProjectRow[], Dependency>(
+	const getProjects = useIteratorPixel<Project[], ProjectDependency>(
 		(limit, offset) =>
 			source === "APP"
 				? `MyProjects(${filterClause}projectType=["CODE", "BLOCKS"], limit=[${limit}], offset=[${offset}]);`
@@ -165,9 +139,9 @@ export const EditDependenciesModal = ({
 		(response) => (response.length < PAGE_LIMIT ? -1 : Infinity),
 		(response) =>
 			response.map((proj) => ({
-				id: proj.project_id,
-				name: proj.project_display_name || proj.project_name,
-				type: "PROJECT",
+				engine_id: proj.project_id,
+				engine_name: proj.project_display_name || proj.project_name,
+				engine_type: proj.project_type,
 			})),
 		{ limit: PAGE_LIMIT },
 		[debouncedSearch, source],
@@ -182,7 +156,7 @@ export const EditDependenciesModal = ({
 	 * A native overflow container is used (instead of a Radix ScrollArea) so
 	 * mouse-wheel scrolling works reliably inside the popover.
 	 */
-	const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
+	const handleScroll = (event: UIEvent<HTMLDivElement>) => {
 		const el = event.currentTarget;
 		const nearBottom =
 			el.scrollHeight - el.scrollTop - el.clientHeight < 80;
@@ -195,68 +169,76 @@ export const EditDependenciesModal = ({
 	 * Functions
 	 */
 	const handleUpdateDependencies = async () => {
-		const res = await SetProjectDependencies(
-			configStore,
-			appId,
-			selectedDeps.map((dep: modelledDependency) => ({
-				id: dep.id,
-				type: dep.type,
-			})),
-		);
+		try {
+			setIsSaving(true);
 
-		if (res.type === "success") {
+			const response = await configStore.runPixel<string[]>(
+				`SetProjectDependencies(project="${appId}", dependencies=${JSON.stringify(
+					selectedDeps.map((dep) => ({
+						id: dep.engine_id,
+						type: isProjectType(dep.engine_type)
+							? "PROJECT"
+							: dep.engine_type,
+					})),
+				)})`,
+			);
+
+			if (response.errors.length > 0) {
+				throw new Error(response.errors.join(""));
+			}
+
 			toast.success("Successfully updated dependencies");
 			onClose(true);
-		} else {
-			toast.error(res.output);
+		} catch (e) {
+			toast.error(
+				e instanceof Error
+					? e.message
+					: "Failed to update dependencies",
+			);
+		} finally {
+			setIsSaving(false);
 		}
 	};
 
 	const handleRemoveDependency = (id: string) => {
 		const newDependencies = selectedDeps.filter(
-			(dep: modelledDependency) => dep.id !== id,
+			(dep) => dep.engine_id !== id,
 		);
 		setSelectedDeps(newDependencies);
 	};
 
-	const toggleDependency = (dep: Dependency) => {
+	const toggleDependency = (dep: ProjectDependency) => {
 		const isSelected = selectedDeps.some(
-			(selected) => selected.id === dep.id,
+			(selected) => selected.engine_id === dep.engine_id,
 		);
 		if (isSelected) {
 			setSelectedDeps((prev) =>
-				prev.filter((selected) => selected.id !== dep.id),
+				prev.filter((selected) => selected.engine_id !== dep.engine_id),
 			);
 			return;
 		}
 		setSelectedDeps((prev) => [...prev, dep]);
 	};
 
-	const renderOption = (option: Dependency) => {
+	const renderOption = (option: ProjectDependency) => {
 		const isSelected = selectedDeps.some(
-			(selected) => selected.id === option.id,
+			(selected) => selected.engine_id === option.engine_id,
 		);
 		return (
 			<button
 				type="button"
-				key={option.id}
+				key={option.engine_id}
 				onClick={() => toggleDependency(option)}
 				className="flex w-full items-center justify-between gap-3 rounded-md p-2 text-left hover:bg-muted/50"
 			>
 				<div className="flex min-w-0 items-center gap-3">
-					<DependencyIcon
-						type={option.type}
-						subtype={option.subtype}
-						name={option.name}
-						sizeClass="size-8"
-						textClass="text-xs"
-					/>
+					{renderDependencyIcon(option, "size-8", "text-xs")}
 					<div className="flex min-w-0 flex-col">
 						<span className="truncate font-medium text-sm">
-							{option.name}
+							{option.engine_name}
 						</span>
 						<span className="truncate text-muted-foreground text-xs">
-							ID: {option.id}
+							ID: {option.engine_id}
 						</span>
 					</div>
 				</div>
@@ -272,28 +254,31 @@ export const EditDependenciesModal = ({
 	 */
 	useEffect(() => {
 		// Reset state when modal opens
-		if (isOpen) {
-			setSelectedDeps(currentDependencies);
+		if (open) {
+			setSelectedDeps(dependencies);
 			setSearch("");
 			setSource("ENGINE");
 		}
-	}, [isOpen, currentDependencies]);
+	}, [open, dependencies]);
 
 	return (
 		<Dialog
-			open={isOpen}
+			open={open}
 			onOpenChange={(nextOpen) => {
-				if (!nextOpen) {
+				if (!nextOpen && !isSaving) {
 					onClose(false);
 				}
 			}}
 		>
-			<DialogContent className="max-h-[90vh] overflow-auto sm:max-w-2xl">
+			<DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-2xl">
 				<DialogHeader>
-					<DialogTitle>Add and Edit Dependencies</DialogTitle>
+					<DialogTitle>Edit Project Dependencies</DialogTitle>
+					<DialogDescription>
+						Add or remove engines and apps required by this project.
+					</DialogDescription>
 				</DialogHeader>
 
-				<div className="space-y-4">
+				<div className="space-y-4 overflow-y-auto pr-1">
 					<p className="font-medium text-sm">Linked Dependencies</p>
 
 					<div className="flex flex-col gap-2 rounded-md border p-2">
@@ -357,66 +342,100 @@ export const EditDependenciesModal = ({
 						</div>
 					</div>
 
-					<div className="space-y-3">
-						{selectedDeps.map((dep, idx: number) => {
-							return (
-								<div
-									key={`${dep.id}-${idx}`}
-									className="grid grid-cols-[auto_1fr_auto] items-center gap-4 rounded-lg border p-3"
-								>
-									<DependencyIcon
-										type={dep.type}
-										subtype={dep.subtype}
-										name={dep.name}
-										sizeClass="size-12 rounded-lg"
-										textClass="text-sm"
-									/>
-									<div className="min-w-0">
-										<p className="truncate font-medium text-sm">
-											{dep.name}
-										</p>
-										<div className="flex items-center gap-1">
-											<p className="truncate text-muted-foreground text-xs">
-												ID: {dep.id}
-											</p>
+					<div className="space-y-2">
+						<div className="flex items-center justify-between">
+							<p className="font-medium text-sm">Selected</p>
+							<Badge variant="outline">
+								{selectedDeps.length}
+							</Badge>
+						</div>
+						{selectedDeps.length === 0 ? (
+							<div className="rounded-lg border border-dashed p-4 text-center text-muted-foreground text-sm">
+								No dependencies selected yet.
+							</div>
+						) : (
+							<div className="space-y-3">
+								{selectedDeps.map((dep, idx: number) => {
+									return (
+										<div
+											key={`${dep.engine_id}-${idx}`}
+											className="grid grid-cols-[auto_1fr_auto] items-center gap-4 rounded-lg border p-3"
+										>
+											{renderDependencyIcon(
+												dep,
+												"size-12 rounded-lg",
+												"text-sm",
+											)}
+											<div className="min-w-0">
+												<p className="truncate font-medium text-sm">
+													{dep.engine_name}
+												</p>
+												<div className="flex items-center gap-1">
+													<p className="truncate text-muted-foreground text-xs">
+														ID: {dep.engine_id}
+													</p>
+													<Button
+														variant="ghost"
+														size="icon"
+														className="size-5 shrink-0"
+														onClick={() =>
+															handleCopyId(
+																dep.engine_id,
+															)
+														}
+														title="Copy ID"
+														aria-label="Copy ID"
+													>
+														{copiedId ===
+														dep.engine_id ? (
+															<Check className="size-3 text-emerald-500" />
+														) : (
+															<Copy className="size-3" />
+														)}
+													</Button>
+												</div>
+											</div>
 											<Button
 												variant="ghost"
-												size="icon"
-												className="size-5 shrink-0"
+												size="icon-sm"
 												onClick={() =>
-													handleCopyId(dep.id)
+													handleRemoveDependency(
+														dep.engine_id,
+													)
 												}
-												title="Copy ID"
-												aria-label="Copy ID"
+												disabled={isSaving}
 											>
-												{copiedId === dep.id ? (
-													<Check className="size-3 text-emerald-500" />
-												) : (
-													<Copy className="size-3" />
-												)}
+												<X className="size-4" />
 											</Button>
 										</div>
-									</div>
-									<Button
-										variant="ghost"
-										size="icon-sm"
-										onClick={() =>
-											handleRemoveDependency(dep.id)
-										}
-									>
-										<X className="size-4" />
-									</Button>
-								</div>
-							);
-						})}
+									);
+								})}
+							</div>
+						)}
 					</div>
 				</div>
 
-				<DialogFooter>
-					<Button variant="outline" onClick={() => onClose(false)}>
+				<DialogFooter className="flex items-center justify-end gap-2">
+					<Button
+						variant="outline"
+						onClick={() => onClose(false)}
+						disabled={isSaving}
+					>
 						Cancel
 					</Button>
-					<Button onClick={handleUpdateDependencies}>Save</Button>
+					<Button
+						onClick={handleUpdateDependencies}
+						disabled={isSaving}
+					>
+						{isSaving ? (
+							<span className="flex items-center gap-2">
+								<Spinner className="size-4" />
+								Saving...
+							</span>
+						) : (
+							"Save"
+						)}
+					</Button>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>

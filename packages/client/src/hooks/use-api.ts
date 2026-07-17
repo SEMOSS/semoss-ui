@@ -42,7 +42,7 @@ interface useAPI<A extends keyof ApiType> extends APIState<A> {
  * @returns Information about the api response
  */
 export function useAPI<A extends keyof ApiType>(
-	api: [A, ...Parameters<ApiType[A]>],
+	api: [A, ...Parameters<ApiType[A]>] | null,
 	config?: Partial<APIConfig<A>>,
 ): useAPI<A> {
 	// Memoize the initial data
@@ -141,25 +141,36 @@ export function useAPI<A extends keyof ApiType>(
 					return;
 				}
 
+				const wrappedResponse = response as Awaited<
+					ReturnType<ApiType[A]>
+				>;
+
 				// set as success
 				setState({
 					status: "SUCCESS",
-					data: response,
+					data: wrappedResponse,
 				});
 
-				callbacksRef.current.onSuccess(response);
+				callbacksRef.current.onSuccess(wrappedResponse);
 			} catch (error) {
 				// ignore if its cancelled
 				if (isCancelled) {
 					return;
 				}
 
+				let wrappedError: Error;
+				if (!(error instanceof Error)) {
+					wrappedError = new Error(String(error));
+				} else {
+					wrappedError = error;
+				}
+
 				setState({
 					status: "ERROR",
-					error: error,
+					error: wrappedError,
 				});
 
-				callbacksRef.current.onError(initialData, error);
+				callbacksRef.current.onError(initialData, wrappedError);
 			} finally {
 				// ignore if its cancelled
 				if (!isCancelled) {
