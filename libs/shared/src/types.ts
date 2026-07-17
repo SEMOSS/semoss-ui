@@ -65,6 +65,7 @@ export interface Project {
 	"data restrictions"?: string[];
 	tag?: string | string[];
 	description?: string;
+	markdown?: string;
 }
 
 export interface App {
@@ -352,7 +353,7 @@ export interface ThemeMap {
 	};
 }
 
-export type Role = "OWNER" | "EDIT" | "READ_ONLY";
+export type Role = "OWNER" | "EDIT" | "READ_ONLY" | "DISCOVERABLE";
 
 /**
  * User permission entry for adding/editing permissions
@@ -430,19 +431,13 @@ export interface Skill {
 export type SkillConfig = Pick<Skill, "id" | "name">;
 
 export interface ProjectDependency {
-	engine_type:
-		| "PROJECT"
-		| "STORAGE"
-		| "DATABASE"
-		| "FUNCTION"
-		| "MODEL"
-		| "VECTOR";
+	engine_type: Project["project_type"] | Engine["engine_type"];
 	engine_id: string;
 	engine_name: string;
 	engine_subtype?: string;
 	description?: string;
 	engine_discoverable?: boolean;
-	permission_name?: "READ_ONLY" | "EDIT" | "OWNER";
+	permission_name?: Role;
 	engine_global?: boolean;
 	access_permission?: number;
 	tags?: string;

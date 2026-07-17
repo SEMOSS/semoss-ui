@@ -4,8 +4,8 @@ import { useInsight } from "@semoss/sdk/react";
 import { FlexLayout } from "@semoss/shared";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
+import { ProjectDetailTabs } from "@/components/project";
 import { useWorkspace } from "@/hooks";
-import { AppDetailPage } from "@/pages/app/app-detail-page";
 import type { WorkspaceOptions } from "../../stores";
 import { CodeWorkspaceActions } from "../code-workspace/code-workspace-actions";
 import { MCPJsonEditor } from "../shared";
@@ -95,7 +95,7 @@ export const SkillWorkspace: React.FC = observer(() => {
 					type: "tab",
 					name: "SKILL.md",
 					component: "app-file-editor",
-					config: { name: "SKILL.md", path: "/skill/SKILL.md" },
+					config: { name: "SKILL.md", path: "/public/SKILL.md" },
 					enableClose: false,
 				},
 				tabsetId,
@@ -119,7 +119,6 @@ export const SkillWorkspace: React.FC = observer(() => {
 					node={node}
 					layout={layout}
 					app={workspace.appId}
-					initialPath="/skill"
 					onOpenStateChange={workspace.setFileBrowserOpen}
 					onVisibleAssetPathsChange={({ path, paths }) => {
 						workspace.setFileBrowserVisiblePaths(path, paths);
@@ -132,9 +131,28 @@ export const SkillWorkspace: React.FC = observer(() => {
 			return <MCPJsonEditor dataMap={config.data} />;
 		} else if (component === "settingsPanel") {
 			return (
-				<AppDetailPage
-					showNav={false}
-					excludeTabs={["dependencies", "mcp-usage"]}
+				<ProjectDetailTabs
+					type="SKILL"
+					tabs={[
+						{ name: "Overview", path: "" },
+						{
+							name: "Commits",
+							path: "commits",
+							restrict: ["OWNER", "EDIT"],
+						},
+						{ name: "GitHub", path: "github", restrict: ["OWNER"] },
+						{
+							name: "Settings",
+							path: "settings",
+							restrict: ["OWNER"],
+						},
+						{
+							name: "Access Control",
+							path: "access-control",
+							restrict: ["OWNER", "EDIT"],
+						},
+						{ name: "SMSS", path: "smss", restrict: ["OWNER"] },
+					]}
 				/>
 			);
 		} else if (component === "terminal") {
@@ -204,7 +222,6 @@ export const SkillWorkspace: React.FC = observer(() => {
 		<WorkspaceManager
 			navbarActions={<CodeWorkspaceActions />}
 			options={DEFAULT_OPTIONS}
-			settingsTabName="Skill Settings"
 			factory={FACTORY}
 			onAction={handleAction}
 		/>
