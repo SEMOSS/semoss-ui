@@ -50,6 +50,28 @@ beforeEach(() => {
 });
 
 describe("createChatRoomsStore", () => {
+	it("supports deferred loading when autoload is disabled", async () => {
+		listPinnedPlaygroundRooms.mockResolvedValue([
+			room({ roomId: "pinned-1", pinned: true }),
+		]);
+		listPlaygroundRooms.mockResolvedValue([room({ roomId: "room-1" })]);
+
+		const { store, session, dispose } = createChatRoomsStore(actions, 25, {
+			autoload: false,
+		});
+		await flushMicrotasks();
+
+		expect(store.getState().rooms).toEqual([]);
+		expect(listPlaygroundRooms).not.toHaveBeenCalled();
+
+		await session.start();
+
+		expect(store.getState().rooms).toHaveLength(1);
+		expect(store.getState().pinnedRooms).toHaveLength(1);
+
+		dispose();
+	});
+
 	it("loads pinned rooms and first page on construction, reflected in store", async () => {
 		listPinnedPlaygroundRooms.mockResolvedValue([
 			room({ roomId: "pinned-1", pinned: true }),

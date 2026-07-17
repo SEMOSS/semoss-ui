@@ -42,6 +42,7 @@ export interface ChatRoomsSessionState {
  */
 export class ChatRoomsSession {
 	readonly store: StoreApi<ChatRoomsSessionState>;
+	private started = false;
 
 	private offset = 0;
 	/**
@@ -55,6 +56,7 @@ export class ChatRoomsSession {
 	constructor(
 		private readonly actions: InsightActions,
 		private readonly pageSize: number = DEFAULT_PAGE_SIZE,
+		autoload: boolean = true,
 	) {
 		this.store = createStore<ChatRoomsSessionState>(() => ({
 			pinnedRooms: [],
@@ -73,8 +75,9 @@ export class ChatRoomsSession {
 		this.pinRoom = this.pinRoom.bind(this);
 		this.deleteRoom = this.deleteRoom.bind(this);
 
-		void this.loadPinned();
-		void this.loadPage(true);
+		if (autoload) {
+			void this.start();
+		}
 	}
 
 	// -- Convenience getters so tests can read `session.rooms` etc. --
@@ -105,11 +108,22 @@ export class ChatRoomsSession {
 		this.store.setState(partial);
 	}
 
+	async start(): Promise<void> {
+		if (this.started) {
+			return;
+		}
+		this.started = true;
+		await Promise.all([this.loadPinned(), this.loadPage(true)]);
+	}
+
 	setSearch(value: string): void {
 		if (value === this.search) {
 			return;
 		}
 		this.setState({ search: value });
+		if (!this.started) {
+			return;
+		}
 		this.searchGeneration += 1;
 		void this.loadPage(true);
 	}

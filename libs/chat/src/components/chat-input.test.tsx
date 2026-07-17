@@ -6,63 +6,63 @@ import { ChatInput } from "./chat-input";
 describe("ChatInput", () => {
 	it("sends the trimmed text on Enter and clears the field", async () => {
 		const user = userEvent.setup();
-		const onSend = vi.fn();
-		render(<ChatInput onSend={onSend} />);
+		const onSubmit = vi.fn();
+		render(<ChatInput onSubmit={onSubmit} />);
 
 		const textarea = screen.getByPlaceholderText("Message...");
 		await user.type(textarea, "  hello  ");
 		await user.keyboard("{Enter}");
 
-		expect(onSend).toHaveBeenCalledWith("hello");
+		expect(onSubmit).toHaveBeenCalledWith("hello");
 		expect(textarea).toHaveValue("");
 	});
 
 	it("inserts a newline on Shift+Enter instead of sending", async () => {
 		const user = userEvent.setup();
-		const onSend = vi.fn();
-		render(<ChatInput onSend={onSend} />);
+		const onSubmit = vi.fn();
+		render(<ChatInput onSubmit={onSubmit} />);
 
 		const textarea = screen.getByPlaceholderText("Message...");
 		await user.type(textarea, "line one");
 		await user.keyboard("{Shift>}{Enter}{/Shift}");
 		await user.type(textarea, "line two");
 
-		expect(onSend).not.toHaveBeenCalled();
+		expect(onSubmit).not.toHaveBeenCalled();
 		expect(textarea).toHaveValue("line one\nline two");
 	});
 
 	it("sends on clicking the Send button", async () => {
 		const user = userEvent.setup();
-		const onSend = vi.fn();
-		render(<ChatInput onSend={onSend} />);
+		const onSubmit = vi.fn();
+		render(<ChatInput onSubmit={onSubmit} />);
 
 		await user.type(screen.getByPlaceholderText("Message..."), "hi");
 		await user.click(screen.getByRole("button", { name: "Send" }));
 
-		expect(onSend).toHaveBeenCalledWith("hi");
+		expect(onSubmit).toHaveBeenCalledWith("hi");
 	});
 
 	it("does not send empty or whitespace-only input", async () => {
 		const user = userEvent.setup();
-		const onSend = vi.fn();
-		render(<ChatInput onSend={onSend} />);
+		const onSubmit = vi.fn();
+		render(<ChatInput onSubmit={onSubmit} />);
 
 		await user.type(screen.getByPlaceholderText("Message..."), "   ");
 		await user.keyboard("{Enter}");
 
-		expect(onSend).not.toHaveBeenCalled();
+		expect(onSubmit).not.toHaveBeenCalled();
 	});
 
 	it("disables the textarea and button, and blocks sending, when disabled", async () => {
 		const user = userEvent.setup();
-		const onSend = vi.fn();
-		render(<ChatInput onSend={onSend} disabled />);
+		const onSubmit = vi.fn();
+		render(<ChatInput onSubmit={onSubmit} disabled />);
 
 		expect(screen.getByPlaceholderText("Message...")).toBeDisabled();
 		expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
 
 		await user.keyboard("{Enter}");
-		expect(onSend).not.toHaveBeenCalled();
+		expect(onSubmit).not.toHaveBeenCalled();
 	});
 
 	it("supports controlled value/onValueChange for composing with a PromptOptimizer", async () => {
@@ -70,7 +70,7 @@ describe("ChatInput", () => {
 		const onValueChange = vi.fn();
 		const { rerender } = render(
 			<ChatInput
-				onSend={vi.fn()}
+				onSubmit={vi.fn()}
 				value="seeded text"
 				onValueChange={onValueChange}
 			/>,
@@ -87,7 +87,7 @@ describe("ChatInput", () => {
 		// until the host feeds the new value back in.
 		rerender(
 			<ChatInput
-				onSend={vi.fn()}
+				onSubmit={vi.fn()}
 				value="seeded text!"
 				onValueChange={onValueChange}
 			/>,
@@ -99,11 +99,11 @@ describe("ChatInput", () => {
 
 	it("clears a controlled value via onValueChange after sending", async () => {
 		const user = userEvent.setup();
-		const onSend = vi.fn();
+		const onSubmit = vi.fn();
 		const onValueChange = vi.fn();
 		render(
 			<ChatInput
-				onSend={onSend}
+				onSubmit={onSubmit}
 				value="hi"
 				onValueChange={onValueChange}
 			/>,
@@ -111,12 +111,12 @@ describe("ChatInput", () => {
 
 		await user.click(screen.getByRole("button", { name: "Send" }));
 
-		expect(onSend).toHaveBeenCalledWith("hi");
+		expect(onSubmit).toHaveBeenCalledWith("hi");
 		expect(onValueChange).toHaveBeenLastCalledWith("");
 	});
 
 	it("shows a spinner instead of the Send icon while isGenerating", () => {
-		render(<ChatInput onSend={vi.fn()} disabled isGenerating />);
+		render(<ChatInput onSubmit={vi.fn()} disabled isGenerating />);
 		const button = screen.getByRole("button", {
 			name: "Generating response",
 		});
@@ -124,14 +124,14 @@ describe("ChatInput", () => {
 	});
 
 	it("does not render a mic button when enableVoiceInput is left off", () => {
-		render(<ChatInput onSend={vi.fn()} />);
+		render(<ChatInput onSubmit={vi.fn()} />);
 		expect(
 			screen.queryByRole("button", { name: "Record" }),
 		).not.toBeInTheDocument();
 	});
 
 	it("does not render a mic button when the browser has no SpeechRecognition support", () => {
-		render(<ChatInput onSend={vi.fn()} enableVoiceInput />);
+		render(<ChatInput onSubmit={vi.fn()} enableVoiceInput />);
 		expect(
 			screen.queryByRole("button", { name: "Record" }),
 		).not.toBeInTheDocument();
@@ -167,7 +167,7 @@ describe("ChatInput", () => {
 
 		it("renders a mic button and starts listening on click", async () => {
 			const user = userEvent.setup();
-			render(<ChatInput onSend={vi.fn()} enableVoiceInput />);
+			render(<ChatInput onSubmit={vi.fn()} enableVoiceInput />);
 
 			await user.click(screen.getByRole("button", { name: "Record" }));
 
@@ -179,7 +179,7 @@ describe("ChatInput", () => {
 
 		it("appends a finalized transcript to the textarea", async () => {
 			const user = userEvent.setup();
-			render(<ChatInput onSend={vi.fn()} enableVoiceInput />);
+			render(<ChatInput onSubmit={vi.fn()} enableVoiceInput />);
 
 			await user.click(screen.getByRole("button", { name: "Record" }));
 			await act(async () => {
@@ -198,7 +198,7 @@ describe("ChatInput", () => {
 
 		it("stops listening on a second click", async () => {
 			const user = userEvent.setup();
-			render(<ChatInput onSend={vi.fn()} enableVoiceInput />);
+			render(<ChatInput onSubmit={vi.fn()} enableVoiceInput />);
 
 			const button = screen.getByRole("button", { name: "Record" });
 			await user.click(button);
@@ -216,7 +216,7 @@ describe("ChatInput", () => {
 	it("renders trailingActions in the control row alongside Send", () => {
 		render(
 			<ChatInput
-				onSend={vi.fn()}
+				onSubmit={vi.fn()}
 				trailingActions={<button type="button">Pick engine</button>}
 			/>,
 		);
@@ -232,7 +232,7 @@ describe("ChatInput", () => {
 	it("does not render a slash-command button trigger", () => {
 		render(
 			<ChatInput
-				onSend={vi.fn()}
+				onSubmit={vi.fn()}
 				useSlashCommands
 				slashCommands={[
 					{
@@ -252,7 +252,7 @@ describe("ChatInput", () => {
 		const user = userEvent.setup();
 		render(
 			<ChatInput
-				onSend={vi.fn()}
+				onSubmit={vi.fn()}
 				useSlashCommands
 				slashCommands={[
 					{
@@ -276,7 +276,7 @@ describe("ChatInput", () => {
 		const user = userEvent.setup();
 		render(
 			<ChatInput
-				onSend={vi.fn()}
+				onSubmit={vi.fn()}
 				useSlashCommands
 				slashCommands={[{ id: "fix", label: "/fix", command: "fix" }]}
 			/>,
@@ -294,7 +294,7 @@ describe("ChatInput", () => {
 		const onSlashCommandSelect = vi.fn();
 		render(
 			<ChatInput
-				onSend={vi.fn()}
+				onSubmit={vi.fn()}
 				useSlashCommands
 				onSlashCommandSelect={onSlashCommandSelect}
 				slashCommands={[
@@ -317,7 +317,7 @@ describe("ChatInput", () => {
 		const user = userEvent.setup();
 		render(
 			<ChatInput
-				onSend={vi.fn()}
+				onSubmit={vi.fn()}
 				useSlashCommands
 				slashCommands={[
 					{ id: "knowledge", label: "/knowledge" },
@@ -344,7 +344,7 @@ describe("ChatInput", () => {
 		const onExecute = vi.fn();
 		render(
 			<ChatInput
-				onSend={vi.fn()}
+				onSubmit={vi.fn()}
 				useSlashCommands
 				slashCommands={[
 					{
@@ -368,7 +368,7 @@ describe("ChatInput", () => {
 		const user = userEvent.setup();
 		render(
 			<ChatInput
-				onSend={vi.fn()}
+				onSubmit={vi.fn()}
 				useSlashCommands
 				slashCommands={[
 					{ id: "knowledge", label: "/knowledge" },
@@ -392,7 +392,7 @@ describe("ChatInput", () => {
 		const user = userEvent.setup();
 		render(
 			<ChatInput
-				onSend={vi.fn()}
+				onSubmit={vi.fn()}
 				useSlashCommands
 				slashCommands={[
 					{ id: "knowledge", label: "/knowledge" },
@@ -413,7 +413,7 @@ describe("ChatInput", () => {
 		const onExecute = vi.fn();
 		render(
 			<ChatInput
-				onSend={vi.fn()}
+				onSubmit={vi.fn()}
 				useSlashCommands
 				slashCommands={[
 					{
@@ -443,7 +443,7 @@ describe("ChatInput", () => {
 
 		render(
 			<ChatInput
-				onSend={vi.fn()}
+				onSubmit={vi.fn()}
 				useSlashCommands
 				defaultSlashCommandActions={{
 					onOpenMcpOverlay,
@@ -471,7 +471,7 @@ describe("ChatInput", () => {
 
 		render(
 			<ChatInput
-				onSend={vi.fn()}
+				onSubmit={vi.fn()}
 				useSlashCommands
 				defaultSlashCommandActions={{
 					onOpenMcpOverlay,
@@ -509,7 +509,7 @@ describe("ChatInput", () => {
 
 		render(
 			<ChatInput
-				onSend={vi.fn()}
+				onSubmit={vi.fn()}
 				useSlashCommands
 				defaultSlashCommandActions={{
 					onOpenMcpOverlay,
@@ -536,7 +536,7 @@ describe("ChatInput", () => {
 
 	it("shows built-in defaults when useSlashCommands is true", async () => {
 		const user = userEvent.setup();
-		render(<ChatInput onSend={vi.fn()} useSlashCommands />);
+		render(<ChatInput onSubmit={vi.fn()} useSlashCommands />);
 
 		const textarea = screen.getByPlaceholderText("Message...");
 		await user.type(textarea, "/");

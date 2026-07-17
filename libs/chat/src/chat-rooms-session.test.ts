@@ -50,6 +50,41 @@ beforeEach(() => {
 });
 
 describe("ChatRoomsSession", () => {
+	it("does not load rooms on construction when autoload is disabled", async () => {
+		const session = new ChatRoomsSession(actions, 25, false);
+		await flushMicrotasks();
+
+		expect(session.rooms).toEqual([]);
+		expect(session.pinnedRooms).toEqual([]);
+		expect(listPinnedPlaygroundRooms).not.toHaveBeenCalled();
+		expect(listPlaygroundRooms).not.toHaveBeenCalled();
+	});
+
+	it("loads rooms after start() when autoload is disabled", async () => {
+		listPinnedPlaygroundRooms.mockResolvedValue([
+			room({ roomId: "pinned-1", pinned: true }),
+		]);
+		listPlaygroundRooms.mockResolvedValue([room({ roomId: "room-1" })]);
+
+		const session = new ChatRoomsSession(actions, 25, false);
+		await session.start();
+
+		expect(session.pinnedRooms).toHaveLength(1);
+		expect(session.rooms).toHaveLength(1);
+		expect(listPinnedPlaygroundRooms).toHaveBeenCalledTimes(1);
+		expect(listPlaygroundRooms).toHaveBeenCalledTimes(1);
+	});
+
+	it("start() is idempotent", async () => {
+		listPlaygroundRooms.mockResolvedValue([room({ roomId: "room-1" })]);
+
+		const session = new ChatRoomsSession(actions, 25, false);
+		await session.start();
+		await session.start();
+
+		expect(listPlaygroundRooms).toHaveBeenCalledTimes(1);
+	});
+
 	it("loads pinned rooms and the first page on construction", async () => {
 		listPinnedPlaygroundRooms.mockResolvedValue([
 			room({ roomId: "pinned-1", pinned: true }),
