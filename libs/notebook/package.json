@@ -1,0 +1,26 @@
+{
+    "name": "@semoss/notebook",
+    "version": "1.0.0-beta.1",
+    "description": "Native Jupyter notebook components",
+    "exports": {
+        ".": "./src/index.ts"
+    },
+    "license": "MIT",
+    "dependencies": {
+        "@semoss/sdk": "workspace:*",
+        "@semoss/ui": "workspace:*",
+        "lucide-react": "^0.545.0",
+        "marked": "^16.2.1",
+        "plotly.js-dist-min": "^3.1.2",
+        "react": "18.3.1",
+        "vega-embed": "^7.0.2"
+    },
+    "peerDependencies": {
+        "react-dom": "18.3.1"
+    },
+    "devDependencies": {
+        "@types/react": "18.3.1",
+        "@types/react-dom": "18.3.0",
+        "typescript": "~5.5.2"
+    }
+}

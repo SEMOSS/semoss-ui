@@ -15,6 +15,7 @@
         "@codesandbox/sandpack-react": "^2.20.0",
         "@lexical/react": "^0.39.0",
         "@semoss/i18n": "workspace:*",
+        "@semoss/notebook": "workspace:*",
         "@semoss/sdk": "workspace:*",
         "@semoss/shared": "workspace:*",
         "@semoss/ui": "workspace:*",

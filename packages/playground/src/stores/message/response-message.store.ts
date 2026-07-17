@@ -231,6 +231,26 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				return acc;
 			}, "");
 
+			const selectedNotebookRow = room.selectedNotebookRow;
+			const commandText = selectedNotebookRow?.path
+				? [
+						text,
+						"",
+						"Notebook editing context:",
+						`- Target notebook path: ${selectedNotebookRow.path}`,
+						`- Target row number: ${selectedNotebookRow.rowNumber}`,
+						selectedNotebookRow.cellType
+							? `- Target cell type: ${selectedNotebookRow.cellType}`
+							: null,
+						selectedNotebookRow.code
+							? `- Current cell source:\n${selectedNotebookRow.code.slice(0, 8000)}`
+							: null,
+						"Use this context to produce an update for that selected notebook row when appropriate.",
+					]
+						.filter(Boolean)
+						.join("\n")
+				: text;
+
 			const media = inputMessage.parts.reduce((acc, part) => {
 				if (part.type === "MEDIA") {
 					acc.push(part.mediaInfo.fileLocation as string);
@@ -255,7 +275,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				`AskPlayground(
 engine=["${room.model.engine_id}"],
 roomId=["${room.roomId}"],
-command=["<encode>${text}</encode>"],
+command=["<encode>${commandText}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
 ${media.length ? `image=${JSON.stringify(media)},` : "image=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}

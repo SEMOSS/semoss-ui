@@ -1,14 +1,27 @@
 import { CopyIcon, PlayIcon } from "lucide-react";
 import { type ComponentProps, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
+import {
+	appendCellToNotebook,
+	buildExecutePixel,
+	createNotebookFileContent,
+	createNotebookFilePath,
+	notifyNotebookFileRefresh,
+	notifyNotebookRowClearSelection,
+	replaceNotebookCell,
+	toNotebookExecutionData,
+	unwrapPixelOutput,
+} from "@semoss/notebook";
 import { CellOutputBlock } from "@semoss/shared";
 import {
 	Button,
 	Code,
 	Dialog,
 	DialogContent,
+	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	Input,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -18,12 +31,10 @@ import type { RoomStore } from "@/stores";
 import { BlockHeader } from "./block-header";
 import { copyToClipboard, getErrorMessage } from "./clipboard";
 import {
-	buildExecutePixel,
 	CODE_LANG_LABELS,
 	createCodeFilePath,
 	formatExecuteOutput,
 	MAX_EXECUTE_LOG_CHARS,
-	unwrapPixelOutput,
 } from "./constants";
 
 interface ExecuteResult {
@@ -31,6 +42,7 @@ interface ExecuteResult {
 	logs: string[];
 	isError: boolean;
 	pending: boolean;
+	rawOutput?: unknown;
 }
 
 interface CodePreviewBlockProps {
@@ -51,31 +63,30 @@ export const CodePreviewBlock = ({
 	const { t } = useTranslation("chat");
 	const [isFullViewOpen, setIsFullViewOpen] = useState(false);
 	const [isSavingToRoom, setIsSavingToRoom] = useState(false);
+	const [isSavingToNotebook, setIsSavingToNotebook] = useState(false);
+	const [isNotebookNameDialogOpen, setIsNotebookNameDialogOpen] =
+		useState(false);
+	const [newNotebookName, setNewNotebookName] = useState("");
 	const [isCollapsed, setIsCollapsed] = useState(false);
 	const [isExecuting, setIsExecuting] = useState(false);
 	const [executeResult, setExecuteResult] = useState<ExecuteResult | null>(
 		null,
 	);
 
-	// Prefer rawLanguage for display/filename so custom tokens like "pixel"
-	// show their proper label even though Shiki falls back to "txt" for rendering.
 	const langStr = rawLanguage ?? language ?? "txt";
 	const langLabel = CODE_LANG_LABELS[langStr] ?? langStr.toUpperCase();
-
-	// Only Python, R, and Pixel blocks can be run server-side.
 	const executePixel = buildExecutePixel(langStr, code);
 	const canExecute = executePixel !== null;
 
 	const execute = async () => {
 		if (!room || !executePixel) return;
 		setIsExecuting(true);
-		// Seed a pending row so the result panel shows the running spinner and
-		// streams console logs in, just like the terminal transcript.
 		setExecuteResult({
 			output: "",
 			logs: [],
 			isError: false,
 			pending: true,
+			rawOutput: undefined,
 		});
 		try {
 			const { errors, results, logs } =
@@ -94,30 +105,34 @@ export const CodePreviewBlock = ({
 					logs,
 					isError: true,
 					pending: false,
+					rawOutput: errors.join("\n"),
 				});
 				return;
 			}
 
-			// Pixel reactors can return multiple outputs; process the last one
-			// the same way the terminal REPL does (unwrap by operationType,
-			// then format for display).
 			const last = results.at(-1);
 			const opType = last?.operationType?.[0] ?? "";
 			const value = unwrapPixelOutput(last ?? {});
 			const formatted = formatExecuteOutput(value, opType);
 			const isError = opType === "ERROR" || opType === "INVALID_SYNTAX";
-			// A CODE_EXECUTION pixel (Py/R) with no return value renders nothing,
-			// which reads like it never ran — show a success marker instead.
 			const output =
 				!formatted && !isError ? "Success (no output)" : formatted;
 
-			setExecuteResult({ output, logs, isError, pending: false });
-		} catch (error) {
 			setExecuteResult({
-				output: getErrorMessage(error),
+				output,
+				logs,
+				isError,
+				pending: false,
+				rawOutput: value,
+			});
+		} catch (error) {
+			const message = getErrorMessage(error);
+			setExecuteResult({
+				output: message,
 				logs: [],
 				isError: true,
 				pending: false,
+				rawOutput: message,
 			});
 		} finally {
 			setIsExecuting(false);
@@ -142,6 +157,143 @@ export const CodePreviewBlock = ({
 		}
 	};
 
+	const openNotebookTab = (path: string) => {
+		if (!room) return;
+		const fileName = path.split("/").pop() ?? path;
+		room.addSidebarNode(`FILE--${path}`, {
+			type: "tab",
+			name: fileName,
+			component: "room-file-editor",
+			config: {
+				name: fileName,
+				path,
+				initialTab: "preview",
+			},
+			enableClose: true,
+		});
+	};
+
+	const saveToNotebookPath = async (path: string, content: string) => {
+		if (!room) return;
+		await room.runRoomPixel(
+			`SaveInsightAssets(filePath=[${JSON.stringify(path)}], content=["<encode>${content}</encode>"]);`,
+			false,
+			false,
+		);
+		notifyNotebookFileRefresh(path);
+		openNotebookTab(path);
+	};
+
+	const saveAsNotebook = async () => {
+		if (!room || !code) return;
+
+		const notebookExecutionData = toNotebookExecutionData(executeResult);
+		const selectedNotebookRow = room.selectedNotebookRow;
+
+		try {
+			setIsSavingToNotebook(true);
+
+			if (selectedNotebookRow?.path) {
+				const notebookPath = selectedNotebookRow.path;
+				const loadResponse = await room.runRoomPixel<[string]>(
+					`GetInsightAssets(filePath=[${JSON.stringify(notebookPath)}]);`,
+					false,
+					false,
+				);
+				const existingContent =
+					loadResponse.pixelReturn[0]?.output ?? "";
+				const replacedContent = replaceNotebookCell(
+					existingContent,
+					selectedNotebookRow.rowNumber,
+					code,
+					langStr,
+					notebookExecutionData,
+				);
+
+				if (!replacedContent) {
+					toast.error("Failed to update notebook row");
+					return;
+				}
+
+				await saveToNotebookPath(notebookPath, replacedContent);
+				room.setSelectedNotebookRow(null);
+				notifyNotebookRowClearSelection(notebookPath);
+				toast.success(
+					`Updated row ${selectedNotebookRow.rowNumber} in ${
+						notebookPath.split("/").pop() ?? notebookPath
+					}`,
+				);
+				return;
+			}
+
+			const existingOpenNotebookPath = room.openNotebookFilePath;
+
+			if (existingOpenNotebookPath) {
+				const notebookPath = existingOpenNotebookPath;
+				const loadResponse = await room.runRoomPixel<[string]>(
+					`GetInsightAssets(filePath=[${JSON.stringify(notebookPath)}]);`,
+					false,
+					false,
+				);
+				const existingContent =
+					loadResponse.pixelReturn[0]?.output ?? "";
+				const appendedContent = appendCellToNotebook(
+					existingContent,
+					code,
+					langStr,
+					notebookExecutionData,
+				);
+
+				if (!appendedContent) {
+					toast.error("Failed to append notebook cell");
+					return;
+				}
+
+				await saveToNotebookPath(notebookPath, appendedContent);
+				toast.success(
+					`Appended to ${
+						notebookPath.split("/").pop() ?? notebookPath
+					}`,
+				);
+				return;
+			}
+
+			setIsNotebookNameDialogOpen(true);
+		} catch (error) {
+			toast.error(getErrorMessage(error));
+		} finally {
+			setIsSavingToNotebook(false);
+		}
+	};
+
+	const confirmCreateNotebookWithName = async () => {
+		if (!room || !code) return;
+		try {
+			setIsSavingToNotebook(true);
+			const notebookExecutionData =
+				toNotebookExecutionData(executeResult);
+			const notebookPath = createNotebookFilePath(newNotebookName);
+			const content = createNotebookFileContent(
+				code,
+				langStr,
+				notebookExecutionData,
+			);
+
+			await saveToNotebookPath(notebookPath, content);
+			setIsNotebookNameDialogOpen(false);
+			setNewNotebookName("");
+			toast.success(
+				`Created notebook ${
+					notebookPath.split("/").pop() ?? notebookPath
+				}`,
+			);
+		} catch (error) {
+			toast.error(getErrorMessage(error));
+		} finally {
+			setIsSavingToNotebook(false);
+		}
+	};
+
 	return (
 		<>
 			<div className="relative overflow-hidden rounded-md border border-border bg-background">
@@ -163,6 +315,15 @@ export const CodePreviewBlock = ({
 							{isExecuting ? "Running..." : "Execute"}
 						</Button>
 					)}
+					<Button
+						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
+						variant="ghost"
+						size="sm"
+						disabled={!room || !code || isSavingToNotebook}
+						onClick={() => void saveAsNotebook()}
+					>
+						{isSavingToNotebook ? "Saving..." : "Add To Notebook"}
+					</Button>
 					<Button
 						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
 						variant="ghost"
@@ -231,10 +392,6 @@ export const CodePreviewBlock = ({
 								Clear
 							</Button>
 						</div>
-						{/* Cap the rendered height so a really large response
-						    scrolls within the block instead of stretching the
-						    whole chat message. CellOutputBlock's popout still
-						    opens the full result in a viewport-sized modal. */}
 						<div className="max-h-96 overflow-auto">
 							<CellOutputBlock
 								output={executeResult.output}
@@ -246,6 +403,7 @@ export const CodePreviewBlock = ({
 					</div>
 				)}
 			</div>
+
 			<Dialog open={isFullViewOpen} onOpenChange={setIsFullViewOpen}>
 				<DialogContent className="h-[100dvh] max-h-[100dvh] w-[100dvw] max-w-[100dvw] grid-rows-[auto_1fr] overflow-hidden rounded-none border-0 p-3 sm:w-[100dvw] sm:max-w-[100dvw]">
 					<DialogHeader>
@@ -254,6 +412,50 @@ export const CodePreviewBlock = ({
 					<div className="relative h-full min-h-0 overflow-auto">
 						<Code code={code} language={language ?? "txt"} />
 					</div>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog
+				open={isNotebookNameDialogOpen}
+				onOpenChange={setIsNotebookNameDialogOpen}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Create Notebook</DialogTitle>
+					</DialogHeader>
+					<div className="space-y-2">
+						<div className="text-muted-foreground text-sm">
+							Enter notebook file name (.ipynb will be appended
+							automatically)
+						</div>
+						<Input
+							value={newNotebookName}
+							onChange={(event) =>
+								setNewNotebookName(event.target.value)
+							}
+							placeholder="my-notebook"
+							onKeyDown={(event) => {
+								if (event.key === "Enter") {
+									event.preventDefault();
+									void confirmCreateNotebookWithName();
+								}
+							}}
+						/>
+					</div>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setIsNotebookNameDialogOpen(false)}
+						>
+							Cancel
+						</Button>
+						<Button
+							onClick={() => void confirmCreateNotebookWithName()}
+							disabled={isSavingToNotebook}
+						>
+							{isSavingToNotebook ? "Creating..." : "Create"}
+						</Button>
+					</DialogFooter>
 				</DialogContent>
 			</Dialog>
 		</>

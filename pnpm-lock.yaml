@@ -71,6 +71,43 @@ importers:
         specifier: ~5.5.2
         version: 5.5.4
 
+  libs/notebook:
+    dependencies:
+      '@semoss/sdk':
+        specifier: workspace:*
+        version: link:../sdk
+      '@semoss/ui':
+        specifier: workspace:*
+        version: link:../ui
+      lucide-react:
+        specifier: ^0.545.0
+        version: 0.545.0(react@18.3.1)
+      marked:
+        specifier: ^16.2.1
+        version: 16.4.2
+      plotly.js-dist-min:
+        specifier: ^3.1.2
+        version: 3.7.0
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: 18.3.1
+        version: 18.3.1(react@18.3.1)
+      vega-embed:
+        specifier: ^7.0.2
+        version: 7.1.0(vega-lite@6.4.1(vega@6.2.0))(vega@6.2.0)
+    devDependencies:
+      '@types/react':
+        specifier: 18.3.1
+        version: 18.3.1
+      '@types/react-dom':
+        specifier: 18.3.0
+        version: 18.3.0
+      typescript:
+        specifier: ~5.5.2
+        version: 5.5.4
+
   libs/renderer:
     dependencies:
       '@semoss/sdk':
@@ -803,6 +840,9 @@ importers:
       '@semoss/i18n':
         specifier: workspace:*
         version: link:../../libs/i18n
+      '@semoss/notebook':
+        specifier: workspace:*
+        version: link:../../libs/notebook
       '@semoss/sdk':
         specifier: workspace:*
         version: link:../../libs/sdk
@@ -7299,6 +7339,9 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
+  plotly.js-dist-min@3.7.0:
+    resolution: {integrity: sha512-IRWNnBJZmKss3URDnicBK2nvt/VTSi/MD1GnUscAYFjwSuN6g/CTde5R1UC0RYtblehj8rkT4BL8r05e/c8j5Q==}
+
   pngjs@7.0.0:
     resolution: {integrity: sha512-LKWqWJRhstyYo9pGvgor/ivk2w94eSjE3RGVuzLGlr3NmD8bf7RcYGze1mNdEHRP6TRP6rMuDHk5t44hnTRyow==}
     engines: {node: '>=14.19.0'}
@@ -8666,6 +8709,12 @@ packages:
       vega: ^5.8.0
       vega-lite: '*'
 
+  vega-embed@7.1.0:
+    resolution: {integrity: sha512-ZmEIn5XJrQt7fSh2lwtSdXG/9uf3yIqZnvXFEwBJRppiBgrEWZcZbj6VK3xn8sNTFQ+sQDXW5sl/6kmbAW3s5A==}
+    peerDependencies:
+      vega: '*'
+      vega-lite: '*'
+
   vega-encode@5.1.0:
     resolution: {integrity: sha512-q26oI7B+MBQYcTQcr5/c1AMsX3FvjZLQOBi7yI0vV+GEn93fElDgvhQiYrgeYSD4Exi/jBPeUXuN6p4bLz16kA==}
 
@@ -8689,6 +8738,9 @@ packages:
 
   vega-hierarchy@5.1.0:
     resolution: {integrity: sha512-rZlU8QJNETlB6o73lGCPybZtw2fBBsRIRuFE77aCLFHdGsh6wIifhplVarqE9icBqjUHRRUOmcEYfzwVIPr65g==}
+
+  vega-interpreter@2.2.1:
+    resolution: {integrity: sha512-o+4ZEme2mdFLewlpF76dwPWW2VkZ3TAF3DMcq75/NzA5KPvnN4wnlCM8At2FVawbaHRyGdVkJSS5ROF5KwpHPQ==}
 
   vega-label@2.1.0:
     resolution: {integrity: sha512-/hgf+zoA3FViDBehrQT42Lta3t8In6YwtMnwjYlh72zNn1p3c7E3YUBwqmAqTM1x+tudgzMRGLYig+bX1ewZxQ==}
@@ -8724,6 +8776,9 @@ packages:
   vega-schema-url-parser@1.1.0:
     resolution: {integrity: sha512-Tc85J2ofMZZOsxiqDM9sbvfsa+Vdo3GwNLjEEsPOsCDeYqsUHKAlc1IpbbhPLZ6jusyM9Lk0e1izF64GGklFDg==}
 
+  vega-schema-url-parser@3.0.2:
+    resolution: {integrity: sha512-xAnR7KAvNPYewI3O0l5QGdT8Tv0+GCZQjqfP39cW/hbe/b3aYMAQ39vm8O2wfXUHzm04xTe7nolcsx8WQNVLRQ==}
+
   vega-selections@6.1.2:
     resolution: {integrity: sha512-xJ+V4qdd46nk2RBdwIRrQm2iSTMHdlu/omhLz1pqRL3jZDrkqNBXimrisci2kIKpH2WBpA1YVagwuZEKBmF2Qw==}
 
@@ -8736,11 +8791,20 @@ packages:
       vega: '*'
       vega-lite: '*'
 
+  vega-themes@3.0.0:
+    resolution: {integrity: sha512-1iFiI3BNmW9FrsLnDLx0ZKEddsCitRY3XmUAwp6qmp+p+IXyJYc9pfjlVj9E6KXBPfm4cQyU++s0smKNiWzO4g==}
+    peerDependencies:
+      vega: '*'
+      vega-lite: '*'
+
   vega-time@3.1.0:
     resolution: {integrity: sha512-G93mWzPwNa6UYQRkr8Ujur9uqxbBDjDT/WpXjbDY0yygdSkRT+zXF+Sb4gjhW0nPaqdiwkn0R6kZcSPMj1bMNA==}
 
   vega-tooltip@0.22.1:
     resolution: {integrity: sha512-mPmzxwvi6+2ZgbZ/+mNC7XbSu5I6Ckon8zdgUfH9neb+vV7CKlV/FYypMdVN/9iDMFUqGzybYdqNOiSPPIxFEQ==}
+
+  vega-tooltip@1.0.0:
+    resolution: {integrity: sha512-P1R0JP29v0qnTuwzCQ0SPJlkjAzr6qeyj+H4VgUFSykHmHc1OBxda//XBaFDl/bZgIscEMvjKSjZpXd84x3aZQ==}
 
   vega-transforms@5.1.0:
     resolution: {integrity: sha512-mj/sO2tSuzzpiXX8JSl4DDlhEmVwM/46MTAzTNQUQzJPMI/n4ChCjr/SdEbfEyzlD4DPm1bjohZGjLc010yuMg==}
@@ -9707,7 +9771,7 @@ snapshots:
   '@commitlint/is-ignored@19.8.1':
     dependencies:
       '@commitlint/types': 19.8.1
-      semver: 7.7.3
+      semver: 7.8.4
 
   '@commitlint/lint@19.8.1':
     dependencies:
@@ -16293,6 +16357,8 @@ snapshots:
     optionalDependencies:
       fsevents: 2.3.2
 
+  plotly.js-dist-min@3.7.0: {}
+
   pngjs@7.0.0: {}
 
   points-on-curve@0.2.0: {}
@@ -17867,6 +17933,19 @@ snapshots:
       vega-themes: 2.15.0(vega-lite@6.4.1(vega@6.2.0))(vega@6.2.0)
       vega-tooltip: 0.22.1
 
+  vega-embed@7.1.0(vega-lite@6.4.1(vega@6.2.0))(vega@6.2.0):
+    dependencies:
+      fast-json-patch: 3.1.1
+      json-stringify-pretty-compact: 4.0.0
+      semver: 7.8.4
+      tslib: 2.8.1
+      vega: 6.2.0
+      vega-interpreter: 2.2.1
+      vega-lite: 6.4.1(vega@6.2.0)
+      vega-schema-url-parser: 3.0.2
+      vega-themes: 3.0.0(vega-lite@6.4.1(vega@6.2.0))(vega@6.2.0)
+      vega-tooltip: 1.0.0
+
   vega-encode@5.1.0:
     dependencies:
       d3-array: 3.2.4
@@ -17925,6 +18004,10 @@ snapshots:
     dependencies:
       d3-hierarchy: 3.1.2
       vega-dataflow: 6.1.0
+      vega-util: 2.1.0
+
+  vega-interpreter@2.2.1:
+    dependencies:
       vega-util: 2.1.0
 
   vega-label@2.1.0:
@@ -17997,6 +18080,8 @@ snapshots:
 
   vega-schema-url-parser@1.1.0: {}
 
+  vega-schema-url-parser@3.0.2: {}
+
   vega-selections@6.1.2:
     dependencies:
       d3-array: 3.2.4
@@ -18012,6 +18097,11 @@ snapshots:
       vega: 6.2.0
       vega-lite: 6.4.1(vega@6.2.0)
 
+  vega-themes@3.0.0(vega-lite@6.4.1(vega@6.2.0))(vega@6.2.0):
+    dependencies:
+      vega: 6.2.0
+      vega-lite: 6.4.1(vega@6.2.0)
+
   vega-time@3.1.0:
     dependencies:
       d3-array: 3.2.4
@@ -18021,6 +18111,10 @@ snapshots:
   vega-tooltip@0.22.1:
     dependencies:
       vega-util: 1.17.4
+
+  vega-tooltip@1.0.0:
+    dependencies:
+      vega-util: 2.1.0
 
   vega-transforms@5.1.0:
     dependencies:

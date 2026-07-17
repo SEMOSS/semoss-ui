@@ -32,6 +32,16 @@ import type {
 	Workspace,
 } from "@/types";
 
+export interface NotebookRowSelection {
+	insightId: string;
+	path: string;
+	queryId: string;
+	cellId: string;
+	rowNumber: number;
+	cellType?: string;
+	code?: string;
+}
+
 interface RoomStoreInterface {
 	/**
 	 * ID of the room
@@ -153,6 +163,8 @@ interface RoomStoreInterface {
 		 */
 		counter: number;
 	};
+
+	selectedNotebookRow: NotebookRowSelection | null;
 }
 
 /**
@@ -195,6 +207,7 @@ export class RoomStore {
 			}),
 			counter: 0,
 		},
+		selectedNotebookRow: null,
 	};
 
 	constructor(
@@ -426,6 +439,60 @@ export class RoomStore {
 		return this._store.sidebar;
 	}
 
+	get selectedNotebookRow() {
+		return this._store.selectedNotebookRow;
+	}
+
+	get activeFileEditorPath() {
+		const activeNode = this._store.sidebar.model
+			.getActiveTabset()
+			?.getSelectedNode();
+
+		if (!(activeNode instanceof FlexLayout.TabNode)) {
+			return null;
+		}
+
+		if (activeNode.getComponent() !== "room-file-editor") {
+			return null;
+		}
+
+		const config = activeNode.getConfig() as { path?: unknown };
+
+		return typeof config.path === "string" ? config.path : null;
+	}
+
+	get activeNotebookFilePath() {
+		const activePath = this.activeFileEditorPath;
+		if (!activePath) {
+			return null;
+		}
+
+		return activePath.toLowerCase().endsWith(".ipynb") ? activePath : null;
+	}
+
+	get openNotebookFilePath(): string | null {
+		if (!this._store.sidebar.isOpen) {
+			return null;
+		}
+
+		let foundPath: string | null = null;
+
+		this._store.sidebar.model.visitNodes((node) => {
+			if (foundPath) return;
+			if (!(node instanceof FlexLayout.TabNode)) return;
+			if (node.getComponent() !== "room-file-editor") return;
+
+			const config = node.getConfig() as { path?: unknown };
+			const path = typeof config?.path === "string" ? config.path : null;
+
+			if (path && path.toLowerCase().endsWith(".ipynb")) {
+				foundPath = path;
+			}
+		});
+
+		return foundPath;
+	}
+
 	/** Setters */
 	/**
 	 * Set the mode
@@ -463,6 +530,10 @@ export class RoomStore {
 			...this._store.metadata,
 			...metadata,
 		};
+	};
+
+	setSelectedNotebookRow = (selection: NotebookRowSelection | null) => {
+		this._store.selectedNotebookRow = selection;
 	};
 	/** Actions */
 	/**
@@ -892,6 +963,16 @@ export class RoomStore {
 			const tool = this.getToolByNodeId(action.data.node);
 			if (tool) {
 				tool.setIsOpen(false);
+			}
+
+			if (typeof action.data.node === "string") {
+				const deletedNodeId = action.data.node;
+				if (deletedNodeId.startsWith("FILE--")) {
+					const deletedPath = deletedNodeId.replace("FILE--", "");
+					if (this._store.selectedNotebookRow?.path === deletedPath) {
+						this._store.selectedNotebookRow = null;
+					}
+				}
 			}
 		}
 

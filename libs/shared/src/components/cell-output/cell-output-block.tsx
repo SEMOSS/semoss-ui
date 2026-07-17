@@ -12,6 +12,108 @@ import { useTranslation } from "@semoss/i18n";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import { JsonViewer } from "./json-viewer";
 
+const detectAndRenderMime = (output: string): ReactNode | null => {
+	if (!output || typeof output !== "string") return null;
+	const trimmed = output.trim();
+
+	// Base64 PNG (iVBOR signature)
+	if (/^iVBOR[0-9A-Za-z+/=]+$/.test(trimmed.replace(/\s+/g, ""))) {
+		return (
+			<img
+				src={`data:image/png;base64,${trimmed}`}
+				alt="Cell output visualization"
+				className="max-h-96 max-w-full rounded border"
+			/>
+		);
+	}
+
+	// Base64 JPEG (/9j/ signature)
+	if (/^\/9j\/[0-9A-Za-z+/=]+$/.test(trimmed.replace(/\s+/g, ""))) {
+		return (
+			<img
+				src={`data:image/jpeg;base64,${trimmed}`}
+				alt="Cell output visualization"
+				className="max-h-96 max-w-full rounded border"
+			/>
+		);
+	}
+
+	// SVG
+	if (trimmed.startsWith("<svg") && trimmed.includes("</svg>")) {
+		return (
+			<div
+				className="max-h-96 max-w-full overflow-auto rounded border bg-background p-2"
+				// biome-ignore lint/security/noDangerouslySetInnerHtml: SVG output trusted from execution
+				dangerouslySetInnerHTML={{ __html: trimmed }}
+			/>
+		);
+	}
+
+	// HTML (div, table, etc.)
+	const lower = trimmed.toLowerCase();
+	if (
+		(lower.startsWith("<div") ||
+			lower.startsWith("<table") ||
+			lower.startsWith("<html")) &&
+		(trimmed.includes("</div>") ||
+			trimmed.includes("</table>") ||
+			trimmed.includes("</html>"))
+	) {
+		return (
+			<div
+				className="max-h-96 max-w-full overflow-auto rounded border bg-background p-2"
+				// biome-ignore lint/security/noDangerouslySetInnerHtml: HTML output trusted from execution
+				dangerouslySetInnerHTML={{ __html: trimmed }}
+			/>
+		);
+	}
+
+	// Plotly/Altair JSON specs
+	try {
+		const parsed = JSON.parse(trimmed);
+		if (
+			typeof parsed === "object" &&
+			parsed !== null &&
+			Array.isArray(parsed.data) &&
+			typeof parsed.layout === "object"
+		) {
+			return (
+				<div className="max-w-full text-xs">
+					<div className="mb-1 text-muted-foreground">
+						[Plotly visualization]
+					</div>
+					<div className="max-h-48 overflow-auto">
+						<JsonViewer value={parsed} />
+					</div>
+				</div>
+			);
+		}
+
+		if (
+			typeof parsed === "object" &&
+			parsed !== null &&
+			((typeof parsed.$schema === "string" &&
+				parsed.$schema.toLowerCase().includes("vega-lite")) ||
+				("mark" in parsed && "encoding" in parsed))
+		) {
+			return (
+				<div className="max-w-full text-xs">
+					<div className="mb-1 text-muted-foreground">
+						[Altair/Vega-Lite visualization]
+					</div>
+					<div className="max-h-48 overflow-auto">
+						<JsonViewer value={parsed} />
+					</div>
+				</div>
+			);
+		}
+	} catch {
+		// Not JSON, fall through to text
+	}
+
+	return null;
+};
+
 export interface CellOutputBlockProps {
 	/**
 	 * The input "prompt" row. `icon` shows on the left (persona logo,
@@ -101,6 +203,8 @@ export const CellOutputBlock = ({
 		typeof outputValue === "object" &&
 		!error &&
 		!rawOutput;
+	const mimeContent =
+		!error && !rawOutput && output ? detectAndRenderMime(output) : null;
 
 	return (
 		<div className={`py-2 ${error ? "bg-destructive/5" : ""}`}>
@@ -180,12 +284,15 @@ export const CellOutputBlock = ({
 						<div className="flex flex-col gap-0.5 text-foreground">
 							{messageLines.map((line, i) => {
 								const structured = tryParseStructured(line);
+								const mime = detectAndRenderMime(line);
 								return (
 									<div
 										key={`fmt-${i}-${line.length}-${line.slice(0, 16)}`}
 									>
-										{structured !== null &&
-										typeof structured === "object" ? (
+										{mime ? (
+											mime
+										) : structured !== null &&
+											typeof structured === "object" ? (
 											// Per-line JSON tree — used when a
 											// `print(dict)` or similar dumps a
 											// structured value to stdout.
@@ -256,7 +363,9 @@ export const CellOutputBlock = ({
 						</>
 					}
 				>
-					{isObjectOutput ? (
+					{mimeContent ? (
+						mimeContent
+					) : isObjectOutput ? (
 						<JsonViewer
 							value={outputValue}
 							forceVersion={expandRev}
@@ -325,12 +434,15 @@ export const CellOutputBlock = ({
 						<div className="flex flex-col gap-0.5 font-mono text-foreground text-sm">
 							{messageLines.map((line, i) => {
 								const structured = tryParseStructured(line);
+								const mime = detectAndRenderMime(line);
 								return (
 									<div
 										key={`popout-fmt-${i}-${line.length}-${line.slice(0, 16)}`}
 									>
-										{structured !== null &&
-										typeof structured === "object" ? (
+										{mime ? (
+											mime
+										) : structured !== null &&
+											typeof structured === "object" ? (
 											<JsonViewer
 												value={structured}
 												forceVersion={expandRev}

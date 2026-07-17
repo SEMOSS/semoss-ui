@@ -193,29 +193,6 @@ export const createCodeFilePath = (lang: string): string => {
 };
 
 /**
- * Build a runnable pixel expression for a code block, or null when the
- * language is not something we can execute server-side. Python runs through
- * the Py reactor, R through the R reactor, and pixel is sent as-is.
- */
-export const buildExecutePixel = (
-	lang: string | undefined,
-	code: string,
-): string | null => {
-	if (!code.trim()) return null;
-	switch ((lang ?? "").toLowerCase()) {
-		case "py":
-		case "python":
-			return `Py("<encode>${code}</encode>");`;
-		case "r":
-			return `R("<encode>${code}</encode>");`;
-		case "pixel":
-			return code;
-		default:
-			return null;
-	}
-};
-
-/**
  * Memory/perf safety cap on the cumulative console (stdout/stderr) stream while
  * a job is polled — a runaway or very chatty job would otherwise grow the
  * buffer (and the per-poll re-render payload) without bound. This is not a
@@ -223,31 +200,6 @@ export const buildExecutePixel = (
  * the component, so normal large responses stay fully visible.
  */
 export const MAX_EXECUTE_LOG_CHARS = 100_000;
-
-/**
- * Mirror of the terminal REPL's output unwrap (terminal-console.tsx), which in
- * turn mirrors cell.state.ts in libs/renderer. Each operationType stores its
- * payload in a slightly different shape; pick the right slot so the value we
- * render is the user-facing result rather than the envelope.
- */
-export const unwrapPixelOutput = (last: {
-	operationType?: string[];
-	output?: unknown;
-}): unknown => {
-	if (!last) return undefined;
-	const op = last.operationType ?? [];
-	// biome-ignore lint/suspicious/noExplicitAny: pixel envelope shapes
-	const out: any = last.output;
-	if (op.indexOf("CUSTOM_DATA_STRUCTURE") > -1) return out;
-	if (op.indexOf("FORMATTED_DATA_SET") > -1) return out?.[0];
-	if (op.indexOf("CODE_EXECUTION") > -1) return out?.[0]?.output;
-	if (op.indexOf("CODE") > -1) return out?.[0]?.value?.[0];
-	if (op.indexOf("ERROR") > -1) return out?.[0];
-	if (op.indexOf("CONST_STRING") > -1) return out?.[0];
-	if (op.indexOf("INVALID_SYNTAX") > -1) return out?.[0];
-	if (op.indexOf("VECTOR") > -1) return out?.[0];
-	return out;
-};
 
 /**
  * Mirror of the terminal REPL's formatOutputForDisplay. Coerces an unwrapped
