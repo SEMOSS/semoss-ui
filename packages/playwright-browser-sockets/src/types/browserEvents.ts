@@ -21,7 +21,7 @@ export type ClientToServerEvent =
   | ({ type: 'mouse-up'; x: number; y: number; button: 'left' | 'right' | 'middle'; record?: boolean } & ReplayMetadata)
   | ({ type: 'wheel'; x: number; y: number; deltaX: number; deltaY: number; record?: boolean } & ReplayMetadata)
   | ({ type: 'type-text'; text: string; x?: number; y?: number; record?: boolean } & ReplayMetadata)
-  | ({
+  | {
       type: 'key';
       key: string;
       code?: string;
@@ -34,7 +34,6 @@ export type ClientToServerEvent =
   | ({ type: 'reload'; record?: boolean } & ReplayMetadata)
   | { type: 'recording-control'; recording: boolean; discard?: boolean }
   | { type: 'recording'; recording: boolean; discard?: boolean }
-  | { type: 'context-snapshot'; requestId: string }
   | { type: 'close-session' };
 
 // ─── Events sent from Java backend → React ───────────────────────────────────
@@ -48,33 +47,7 @@ export type ServerToClientEvent =
   | { type: 'loading'; isLoading: boolean }
   | { type: 'navigated'; url: string }
   | { type: 'replay-step-result'; requestId: string; success: boolean; url?: string; error?: string }
-  | { type: 'context-snapshot-result'; requestId: string; success: boolean; snapshot?: ContextSnapshot; error?: string }
   | { type: 'error'; message: string };
-
-export interface ContextSnapshot {
-  version: string;
-  id: string;
-  label?: string;
-  capturedAt: number;
-  url: string;
-  title: string;
-  throughStepId: number;
-  history: Array<Record<string, unknown>>;
-  page: {
-    headings?: Array<Record<string, unknown>>;
-    landmarks?: Array<Record<string, unknown>>;
-    elements?: Array<Record<string, unknown>>;
-    omissions?: Array<Record<string, unknown>>;
-    [key: string]: unknown;
-  };
-  text: string;
-  stats: {
-    candidateCount: number;
-    includedElementCount: number;
-    characterCount: number;
-    truncated: boolean;
-  };
-}
 
 // ─── Session info returned by the REST API ───────────────────────────────────
 

@@ -1,6 +1,5 @@
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import CloseIcon from "@mui/icons-material/Close";
-import DataObjectIcon from "@mui/icons-material/DataObject";
 import DoneIcon from "@mui/icons-material/Done";
 import EditIcon from "@mui/icons-material/Edit";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -31,14 +30,20 @@ import {
 	Tooltip,
 	Typography,
 } from "@mui/material";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { useInsight } from "@semoss/sdk-react";
 import { BrowserToolbar } from "./components/BrowserToolbar";
 import { BrowserViewer } from "./components/BrowserViewer";
 import { ConnectionStatus } from "./components/ConnectionStatus";
-import { ContextSnapshotsPanel } from "./components/ContextSnapshotsPanel";
 import { useBrowserSocket } from "./hooks/useBrowserSocket";
 import { useRemoteBrowserSession } from "./hooks/useRemoteBrowserSession";
+import { assertPixelSuccess, runPixel } from "./semoss/pixel";
 import {
 	bindSemossInsightToRoom,
 	getSemossInsightId,
@@ -47,11 +52,9 @@ import {
 	sendMcpResponseToPlayground,
 	subscribeToMcpToolContext,
 } from "./semoss/client";
-import { assertPixelSuccess, runPixel } from "./semoss/pixel";
 import type {
 	BrowserSelector,
 	ClientToServerEvent,
-	ContextSnapshot,
 	LoadedRecording,
 	LoadedRecordingStep,
 	McpToolContext,
@@ -77,37 +80,6 @@ type ResolvePlaywrightRecordingResponse = {
 };
 
 type PlaybackRecordingSource = "project" | "room";
-
-const MAX_CONTEXT_SNAPSHOTS = 10;
-const MAX_RETURNED_CONTEXT_CHARS = 24_000;
-
-function appendBoundedContextSnapshot(
-	current: ContextSnapshot[],
-	snapshot: ContextSnapshot,
-): ContextSnapshot[] {
-	const next = [...current, snapshot].slice(-MAX_CONTEXT_SNAPSHOTS);
-	while (
-		next.length > 1 &&
-		next.reduce((total, item) => total + item.text.length, 0) >
-			MAX_RETURNED_CONTEXT_CHARS
-	) {
-		next.shift();
-	}
-	return next;
-}
-
-function contextsForPlayground(snapshots: ContextSnapshot[]) {
-	return snapshots.map((snapshot) => ({
-		id: snapshot.id,
-		label: snapshot.label,
-		url: snapshot.url,
-		title: snapshot.title,
-		capturedAt: snapshot.capturedAt,
-		throughStepId: snapshot.throughStepId,
-		text: snapshot.text,
-		stats: snapshot.stats,
-	}));
-}
 
 function flattenEnvelopeSteps(
 	envelope: StepsEnvelope,
@@ -465,11 +437,6 @@ export default function App() {
 	const [recordedSteps, setRecordedSteps] = useState<
 		RemoteBrowserRecordedStep[]
 	>([]);
-	const [contextSnapshots, setContextSnapshots] = useState<ContextSnapshot[]>(
-		[],
-	);
-	const [contextSnapshotsOpen, setContextSnapshotsOpen] = useState(false);
-	const [isCapturingContext, setIsCapturingContext] = useState(false);
 	const [isLoadingPlaybackProjects, setIsLoadingPlaybackProjects] =
 		useState(false);
 	const [isLoadingRecordingFiles, setIsLoadingRecordingFiles] =
@@ -493,7 +460,6 @@ export default function App() {
 	const autoPlaybackErrorSentRef = useRef(false);
 	const returningToPlaygroundRef = useRef(false);
 	const pauseRequestedRef = useRef(false);
-	const contextSequenceRef = useRef(0);
 
 	const isPlaygroundMode = !!toolContext;
 	const isMcpPlaybackMode = isPlayRecordingTool(toolContext);
@@ -532,9 +498,7 @@ export default function App() {
 			const flat = maybeNested.flatMap((item) =>
 				Array.isArray(item) ? item : [item],
 			);
-			flat.forEach((step, index) => {
-				rows.push({ tabId, step, index });
-			});
+			flat.forEach((step, index) => rows.push({ tabId, step, index }));
 		});
 		return rows;
 	}, [loadedRecording]);
@@ -597,13 +561,12 @@ export default function App() {
 		setSnackError(msg);
 	}, []);
 
-	const { connectionState, sendEvent, sendReplayEvent, captureContext } =
-		useBrowserSocket({
-			wsUrl: session?.webSocketUrl ?? null,
-			onFrame: handleFrame,
-			onNavigated: handleNavigated,
-			onError: handleSocketError,
-		});
+	const { connectionState, sendEvent, sendReplayEvent } = useBrowserSocket({
+		wsUrl: session?.webSocketUrl ?? null,
+		onFrame: handleFrame,
+		onNavigated: handleNavigated,
+		onError: handleSocketError,
+	});
 
 	const defaultRecordingName = useMemo(() => {
 		const title = saveTitle.trim() || "remote-browser-recording";
@@ -1012,66 +975,12 @@ export default function App() {
 		[isRunningRecording],
 	);
 
-	const handleCaptureContext = useCallback(async () => {
-		if (connectionState !== "connected" || isCapturingContext) return;
-		setIsCapturingContext(true);
-		try {
-			const snapshot = await captureContext();
-			contextSequenceRef.current += 1;
-			const title = (snapshot.title || "Browser page")
-				.trim()
-				.slice(0, 72);
-			const labeledSnapshot: ContextSnapshot = {
-				...snapshot,
-				label: `${title} · Context ${contextSequenceRef.current}`,
-			};
-			setContextSnapshots((current) =>
-				appendBoundedContextSnapshot(current, labeledSnapshot),
-			);
-			setContextSnapshotsOpen(true);
-			setSnackMessage(
-				`Captured context with ${snapshot.stats.includedElementCount} actionable elements`,
-			);
-		} catch (error) {
-			setSnackError(
-				error instanceof Error
-					? error.message
-					: "Failed to capture browser context",
-			);
-		} finally {
-			setIsCapturingContext(false);
-		}
-	}, [captureContext, connectionState, isCapturingContext]);
-
-	const handleCopyContext = useCallback(async (snapshot: ContextSnapshot) => {
-		try {
-			await navigator.clipboard.writeText(snapshot.text);
-			setSnackMessage("Context copied");
-		} catch {
-			setSnackError("Could not copy context to the clipboard");
-		}
-	}, []);
-
-	const handleDeleteContext = useCallback(
-		(snapshotId: string) => {
-			const next = contextSnapshots.filter(
-				(snapshot) => snapshot.id !== snapshotId,
-			);
-			setContextSnapshots(next);
-			if (next.length === 0) setContextSnapshotsOpen(false);
-		},
-		[contextSnapshots],
-	);
-
 	// ─── Toolbar handlers ───────────────────────────────────────────────────
 	const handleStart = useCallback(
 		async (url: string) => {
 			const normalizedUrl = normalizeBrowserUrl(url);
 			const info = await createSession(normalizedUrl);
 			if (info) {
-				setContextSnapshots([]);
-				setContextSnapshotsOpen(false);
-				contextSequenceRef.current = 0;
 				setCurrentUrl(info.currentUrl || normalizedUrl);
 				setLatestFrame(null);
 				setIsRecording(false);
@@ -1097,9 +1006,6 @@ export default function App() {
 		}
 
 		setCurrentUrl(info.currentUrl || targetUrl);
-		setContextSnapshots([]);
-		setContextSnapshotsOpen(false);
-		contextSequenceRef.current = 0;
 		setLatestFrame(null);
 		setIsRecording(false);
 	}, [createSession, mcpStartUrlInput]);
@@ -1431,8 +1337,6 @@ export default function App() {
 					),
 					title: enrichedEnvelope.meta?.title,
 					description: enrichedEnvelope.meta?.description,
-					contextCount: contextSnapshots.length,
-					contexts: contextsForPlayground(contextSnapshots),
 				},
 				"success",
 				toolContext.parameters,
@@ -1464,7 +1368,6 @@ export default function App() {
 		}
 	}, [
 		closeSession,
-		contextSnapshots,
 		getRecordingEnvelope,
 		effectiveInsightId,
 		isRecording,
@@ -1805,43 +1708,6 @@ export default function App() {
 				/>
 				<ConnectionStatus state={connectionState} />
 				<Box sx={{ flex: 1 }} />
-				{session && (
-					<Button
-						size="small"
-						variant="outlined"
-						disabled={
-							connectionState !== "connected" ||
-							isCapturingContext ||
-							isReturningToPlayground
-						}
-						onClick={handleCaptureContext}
-						startIcon={
-							isCapturingContext ? (
-								<CircularProgress size={14} />
-							) : (
-								<DataObjectIcon fontSize="small" />
-							)
-						}
-						sx={{ whiteSpace: "nowrap", minWidth: 0, px: 1 }}
-					>
-						{isCapturingContext
-							? "Capturing context…"
-							: "Capture Context"}
-					</Button>
-				)}
-				{contextSnapshots.length > 0 && (
-					<Button
-						size="small"
-						variant={
-							contextSnapshotsOpen ? "contained" : "outlined"
-						}
-						startIcon={<DataObjectIcon fontSize="small" />}
-						onClick={() => setContextSnapshotsOpen((open) => !open)}
-						sx={{ whiteSpace: "nowrap", minWidth: 0, px: 1 }}
-					>
-						Contexts ({contextSnapshots.length})
-					</Button>
-				)}
 				{isPlaygroundMode && session && (
 					<Button
 						size="small"
@@ -1986,8 +1852,7 @@ export default function App() {
 						width:
 							playbackControlsOpen ||
 							loadedRecordingOpen ||
-							recordedStepsOpen ||
-							contextSnapshotsOpen
+							recordedStepsOpen
 								? 340
 								: 0,
 						borderLeft: "1px solid",
@@ -2155,17 +2020,6 @@ export default function App() {
 								</Stack>
 							</Stack>
 						</Collapse>
-
-						<Divider />
-						<ContextSnapshotsPanel
-							open={contextSnapshotsOpen}
-							snapshots={contextSnapshots}
-							onToggle={() =>
-								setContextSnapshotsOpen((open) => !open)
-							}
-							onCopy={handleCopyContext}
-							onDelete={handleDeleteContext}
-						/>
 
 						<Divider />
 						<Box

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type {
 	ClientToServerEvent,
 	ConnectionState,
-	ContextSnapshot,
 	ServerToClientEvent,
 } from "../types/browserEvents";
 
@@ -19,17 +18,10 @@ interface UseBrowserSocketReturn {
 	sendReplayEvent: (
 		event: ClientToServerEvent & { requestId: string },
 	) => Promise<void>;
-	captureContext: () => Promise<ContextSnapshot>;
 }
 
 interface PendingReplay {
 	resolve: () => void;
-	reject: (error: Error) => void;
-	timeout: ReturnType<typeof setTimeout>;
-}
-
-interface PendingContextSnapshot {
-	resolve: (snapshot: ContextSnapshot) => void;
 	reject: (error: Error) => void;
 	timeout: ReturnType<typeof setTimeout>;
 }
@@ -51,9 +43,6 @@ export function useBrowserSocket({
 	const wsRef = useRef<WebSocket | null>(null);
 	const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const pendingReplayRef = useRef<Map<string, PendingReplay>>(new Map());
-	const pendingContextSnapshotRef = useRef<
-		Map<string, PendingContextSnapshot>
-	>(new Map());
 
 	// Build the full WS URL from the relative path returned by the REST API
 	const buildFullWsUrl = useCallback((path: string): string => {
@@ -113,24 +102,6 @@ export function useBrowserSocket({
 						}
 						break;
 					}
-					case "context-snapshot-result": {
-						const pending = pendingContextSnapshotRef.current.get(
-							msg.requestId,
-						);
-						if (!pending) break;
-						window.clearTimeout(pending.timeout);
-						pendingContextSnapshotRef.current.delete(msg.requestId);
-						if (msg.success && msg.snapshot) {
-							pending.resolve(msg.snapshot);
-						} else {
-							pending.reject(
-								new Error(
-									msg.error || "Context capture failed",
-								),
-							);
-						}
-						break;
-					}
 					case "error":
 						onError(msg.message);
 						break;
@@ -150,15 +121,6 @@ export function useBrowserSocket({
 				);
 			});
 			pendingReplayRef.current.clear();
-			pendingContextSnapshotRef.current.forEach((pending) => {
-				window.clearTimeout(pending.timeout);
-				pending.reject(
-					new Error(
-						"Browser connection closed during context capture",
-					),
-				);
-			});
-			pendingContextSnapshotRef.current.clear();
 		};
 
 		ws.onerror = () => {
@@ -206,29 +168,5 @@ export function useBrowserSocket({
 		[],
 	);
 
-	const captureContext = useCallback((): Promise<ContextSnapshot> => {
-		const ws = wsRef.current;
-		if (!ws || ws.readyState !== WebSocket.OPEN) {
-			return Promise.reject(
-				new Error(
-					"Browser connection is not ready for context capture",
-				),
-			);
-		}
-		const requestId = crypto.randomUUID();
-		return new Promise<ContextSnapshot>((resolve, reject) => {
-			const timeout = window.setTimeout(() => {
-				pendingContextSnapshotRef.current.delete(requestId);
-				reject(new Error("Timed out while capturing browser context"));
-			}, 20_000);
-			pendingContextSnapshotRef.current.set(requestId, {
-				resolve,
-				reject,
-				timeout,
-			});
-			ws.send(JSON.stringify({ type: "context-snapshot", requestId }));
-		});
-	}, []);
-
-	return { connectionState, sendEvent, sendReplayEvent, captureContext };
+	return { connectionState, sendEvent, sendReplayEvent };
 }
