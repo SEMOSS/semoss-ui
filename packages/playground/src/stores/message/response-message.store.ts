@@ -53,12 +53,13 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	isThinking: boolean = false;
 
 	/**
-	 * Guards the tool-execution cancel commit: every in-flight tool stream
-	 * carries an onCancel, but only the first should persist the stopped turn.
-	 * Scoped to this response (each turn is its own store), so it never leaks
-	 * across turns.
+	 * Guards the final tool-continuation cancel commit so a stopped turn is only
+	 * persisted once. Scoped to this response, so it never leaks across turns.
 	 */
 	private cancelCommitted: boolean = false;
+
+	/** Orders room-history writes while allowing the tools themselves to run concurrently. */
+	private toolExecutionSaveQueue: Promise<void> = Promise.resolve();
 
 	/**
 	 * Response to an execution
@@ -380,13 +381,11 @@ paramValues=[${JSON.stringify({
 	};
 
 	/**
-	 * Commit a stopped tool-execution turn. Every in-flight
-	 * AddPlaygroundToolExecution stream carries this onCancel, but only one
-	 * should persist — the single-commit guard ensures the first to fire wins
-	 * (in practice the sole streaming job, since the backend only streams once
-	 * every tool result is recorded). Replays the same params plus responseParts
-	 * (what streamed) and a hiddenMessage note; commits an empty response when
-	 * the user stopped before anything streamed.
+	 * Commit a stopped tool-execution turn. Only the final queued
+	 * AddPlaygroundToolExecution can invoke the model and carries this callback;
+	 * the single-commit guard protects against duplicate stop delivery. Replays
+	 * the same params plus responseParts (what streamed) and a hiddenMessage note;
+	 * commits an empty response when the user stopped before anything streamed.
 	 */
 	private recordCancelledToolExecution = async (
 		toolExecParams: string,
@@ -483,6 +482,10 @@ paramValues=[${JSON.stringify({
 				tool.status = "CANCELLED";
 			}
 		});
+
+		// Let the current room-history write finish. Queued results for the tools
+		// marked above will see CANCELLED and return without overwriting the stop.
+		await this.toolExecutionSaveQueue;
 
 		const toolStatement = (tool: ToolStore, extra: string) =>
 			`AddPlaygroundToolExecution(engine=["${room.model.app_id}"],
@@ -842,17 +845,35 @@ toolParameterValues=[${JSON.stringify({})}]${extra});`;
 	};
 
 	/**
-	 * Save a tool execution response
-	 * @param tool - tool to save
-	 * @param toolResponse - response of the tool
-	 * @param toolStatus - status of the tool
+	 * Queue a tool execution response for persistence. Tool execution remains
+	 * concurrent; only the room-history mutation is serialized.
 	 */
-	saveToolExecution = async (
+	saveToolExecution = (
 		tool: ToolStore,
 		toolResponse: string,
 		toolStatus: "success" | "error" | "cancelled" = "success",
 		executedParameters: Record<string, unknown>,
 		errorDuringSaving: boolean = false,
+	): Promise<void> => {
+		const save = this.toolExecutionSaveQueue.then(() =>
+			this.saveToolExecutionNow(
+				tool,
+				toolResponse,
+				toolStatus,
+				executedParameters,
+				errorDuringSaving,
+			),
+		);
+		this.toolExecutionSaveQueue = save.catch(() => undefined);
+		return save;
+	};
+
+	private saveToolExecutionNow = async (
+		tool: ToolStore,
+		toolResponse: string,
+		toolStatus: "success" | "error" | "cancelled",
+		executedParameters: Record<string, unknown>,
+		errorDuringSaving: boolean,
 	): Promise<void> => {
 		const room = this.room;
 
@@ -885,6 +906,7 @@ toolParameterValues=[${JSON.stringify({})}]${extra});`;
 				tool.status = "ERROR";
 			}
 		});
+		const isFinalToolExecution = !this.hasUnfinishedTools;
 
 		// if there is no responseMessage create it. This will hold it.
 		let responseMessage = this.toolResponseMessage;
@@ -896,17 +918,15 @@ toolParameterValues=[${JSON.stringify({})}]${extra});`;
 				platform_generated: true,
 				modelId: this.room.model.app_id,
 				dateCreated: new Date().toISOString(),
-				// Add blank thinking part for loading if this is the last tool
-				// We've already updated this tool's status optimistically, so can check
-				// hasUnfinishedTools to see if it was the last tool
-				parts: this.hasUnfinishedTools
-					? []
-					: [
+				// Add blank thinking part for loading if this is the last tool.
+				parts: isFinalToolExecution
+					? [
 							{
 								type: "THINKING",
 								thinking: "",
 							},
-						],
+						]
+					: [],
 				tokens: 0,
 				ornaments: {
 					modelName:
@@ -1014,13 +1034,17 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]`;
 							this.toolResponseMessage = null;
 						}
 					},
-					// The user stopped mid tool-execution response: persist what
-					// streamed, rather than treating it as a result or error.
-					onCancel: () =>
-						this.recordCancelledToolExecution(
-							toolExecParams,
-							responseMessage,
-						),
+					...(isFinalToolExecution
+						? {
+								// Only the final result can invoke the model. Intermediate
+								// persistence must finish instead of becoming a cancel replay.
+								onCancel: () =>
+									this.recordCancelledToolExecution(
+										toolExecParams,
+										responseMessage,
+									),
+							}
+						: {}),
 				},
 				// If the tool execution succeeds but saving it failed, we will try to save it again with an error status, so dont error the room yet
 				{ setErrorOnFail: toolStatus !== "success" },
@@ -1034,7 +1058,7 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]`;
 					tool.status = "LOADING";
 				});
 
-				await this.saveToolExecution(
+				await this.saveToolExecutionNow(
 					tool,
 					`Failed to save tool response: ${e}`,
 					"error",
