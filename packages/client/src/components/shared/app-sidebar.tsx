@@ -3,10 +3,12 @@ import {
 	Bolt,
 	Bot,
 	CircleUserRound,
+	Cpu,
 	Database,
 	Home,
 	LayoutGrid,
 	PanelLeftOpen,
+	Puzzle,
 	Settings,
 	ShieldCheck,
 	Sigma,
@@ -43,33 +45,43 @@ const CATALOG_ROUTES = [
 	},
 	{
 		text: "Model",
-		icon: <Bot className="size-4" />,
-		route: "/engine/model",
+		icon: <Cpu className="size-4" />,
+		route: "/model",
 	},
 	{
 		text: "Database",
 		icon: <Database className="size-4" />,
-		route: "/engine/database",
+		route: "/database",
 	},
 	{
 		text: "Vector",
 		icon: <Bolt className="size-4" />,
-		route: "/engine/vector",
+		route: "/vector",
 	},
 	{
 		text: "Function",
 		icon: <Sigma className="size-4" />,
-		route: "/engine/function",
+		route: "/function",
 	},
 	{
 		text: "Storage",
 		icon: <Archive className="size-4" />,
-		route: "/engine/storage",
+		route: "/storage",
+	},
+	{
+		text: "Agents",
+		icon: <Bot className="size-4" />,
+		route: "/agent",
+	},
+	{
+		text: "Skills",
+		icon: <Puzzle className="size-4" />,
+		route: "/skill",
 	},
 	{
 		text: "Guardrail",
 		icon: <ShieldCheck className="size-4" />,
-		route: "/engine/guardrail",
+		route: "/guardrail",
 	},
 ];
 

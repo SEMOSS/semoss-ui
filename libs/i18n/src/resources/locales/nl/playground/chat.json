@@ -1,0 +1,56 @@
+{
+	"messages": {
+		"placeholder": "Typ een bericht...",
+		"sending": "Bezig met verzenden...",
+		"error": "Verzenden van bericht mislukt"
+	},
+	"attachments": {
+		"addFile": "Bestand toevoegen",
+		"removeFile": "Bestand verwijderen"
+	},
+	"response": {
+		"agent": "Agent",
+		"previousMessage": "Vorig bericht",
+		"nextMessage": "Volgend bericht",
+		"rewriteMessage": "Bericht herschrijven",
+		"goodResponse": "Goed antwoord",
+		"poorResponse": "Slecht antwoord",
+		"copyResponse": "Antwoord kopiëren",
+		"copyCode": "Code kopiëren",
+		"feedbackPlaceholder": "Voeg een opmerking toe (optioneel)",
+		"feedbackCancel": "Annuleren",
+		"feedbackSubmit": "Verzenden",
+		"fastForwardToEnd": "Snel doorspoelen naar het einde",
+		"completeToolsAsk_one": "Voltooi de tool om door te gaan.",
+		"completeToolsAsk_other": "Voltooi de tools om door te gaan.",
+		"completeToolsAuto_one": "Wacht tot de tool is voltooid.",
+		"completeToolsAuto_other": "Wacht tot de tools zijn voltooid.",
+		"emptyResponse": "Leeg antwoord."
+	},
+	"input": {
+		"copyMessage": "Bericht kopiëren"
+	},
+	"plan": {
+		"heading": "Dit is het plan dat ik heb gemaakt. Pas het gerust naar wens aan.",
+		"fixStep": "Stap herstellen",
+		"edit": "Bewerken",
+		"delete": "Verwijderen",
+		"addTask": "Taak toevoegen",
+		"confirmPlan": "Plan bevestigen"
+	},
+	"notifications": {
+		"feedbackSuccess": "Feedback succesvol verzonden",
+		"rewriteSuccess": "Bericht succesvol herschreven",
+		"copySuccess": "Succesvol gekopieerd naar klembord",
+		"noCopyContent": "Geen inhoud om te kopiëren",
+		"planStepRemoved": "Stap {{stepNumber}} succesvol uit plan verwijderd"
+	},
+	"gracefulErrors": {
+		"errorDefault": "Kan verzoek niet verwerken. Controleer uw verbinding, kopieer uw bericht en vernieuw de pagina.",
+		"tokenLimit": "Uw chat was te lang om te verwerken. Start een nieuwe chat met een kortere prompt of upload minder documentinhoud.",
+		"overloaded": "Dit model is op dit moment niet beschikbaar. Probeer een ander model.",
+		"resourceExhausted": "Dit model heeft op dit moment een hoge belasting. Probeer een ander model.",
+		"inactivity": "Uw sessie is verlopen door inactiviteit. Vernieuw de pagina om de chat te blijven gebruiken.",
+		"modelNoLongerAvailable": "Dit model is niet meer beschikbaar. Kopieer/plak indien nodig het huidige gesprek in een nieuwe chat om door te gaan."
+	}
+}

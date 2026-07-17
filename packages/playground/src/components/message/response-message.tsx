@@ -23,7 +23,7 @@ import {
 	ThumbsUpIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { Fragment, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
@@ -39,7 +39,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { STREAMING_PLACEHOLDER_ID } from "@/constants";
-import { useRoot } from "@/hooks";
+import { useActiveIndex, useRoot } from "@/hooks";
 import {
 	InputMessageStore,
 	type ResponseMessageStore,
@@ -88,6 +88,22 @@ const getExtIcon = (fileName: string) => {
 	return { Icon: FileIcon, ext };
 };
 
+/**
+ * Whether the message has streamed any real content yet. A freshly-created
+ * streaming message is seeded with a single empty THINKING part, so an empty
+ * thinking string with no other parts means nothing has streamed. Used to tell
+ * a first view (start animations from 0) apart from a return view (jump to the
+ * latest part/chunk/content).
+ */
+const hasStreamedContent = (message: ResponseMessageStore) =>
+	message.parts.some(
+		(part) =>
+			(part.type === "TEXT" && part.text.length > 0) ||
+			(part.type === "THINKING" && part.thinking.length > 0) ||
+			part.type === "TOOL_CALL" ||
+			part.type === "MEDIA",
+	);
+
 interface ResponseMessageProps {
 	/** Room */
 	room: RoomStore;
@@ -122,6 +138,43 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			null,
 		);
 		const feedbackTextRef = useRef<HTMLTextAreaElement>(null);
+
+		// Captured once at mount: was this the first time we saw this message
+		// stream (it had no content yet), or are we returning to one already in
+		// progress? Drives whether animations play from 0 or jump to the latest
+		// part/chunk/content. Anchored here at the message level so a late-
+		// mounting part (e.g. text revealed after thinking) still inherits the
+		// correct decision instead of inferring it from its own mount.
+		const [isFirstView] = useState(() => !hasStreamedContent(message));
+
+		// Sequential reveal queue: parts animate in order, each waiting for the
+		// part above to finish. Text parts type via their own nested typewriter;
+		// thinking/media/tool parts snap to their final state but still wait their
+		// turn. Once the message stops streaming, every part renders in full. On a
+		// return view, seed at the latest part to jump straight to the frontier.
+		const { chunkCallbacks, getChunkStatus } = useActiveIndex(
+			message.parts.length,
+			message.isThinking,
+			undefined,
+			!isFirstView,
+		);
+
+		// Non-text parts (thinking, media, tools) snap to their final state, so
+		// advance the queue past the active one the moment it's reached — the next
+		// part can then reveal. Text parts report their own completion once their
+		// typewriter catches up, so they're skipped here. Runs after every render
+		// (no dep array): each advance re-renders, which re-runs this and cascades
+		// to the next part until it lands on a text part or a part the hook holds
+		// (the last one while streaming), where the advance call bails harmlessly.
+		useEffect(() => {
+			for (let i = 0; i < message.parts.length; i++) {
+				if (getChunkStatus(i) !== "active") continue;
+				if (message.parts[i].type !== "TEXT") {
+					chunkCallbacks[i]();
+				}
+				break;
+			}
+		});
 
 		// get the parent input message
 		let inputMessage: InputMessageStore | null = null;
@@ -311,7 +364,12 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 				<div className="mb-0 flex w-full flex-col gap-2 pe-3 sm:pe-10">
 					{message.parts.map((p, pIdx) => {
 						const key = `message-part-${pIdx}`;
-						const isLast = pIdx === message.parts.length - 1;
+						const status = getChunkStatus(pIdx);
+
+						// Not this part's turn yet — wait for the part above to finish.
+						if (status === "not_started") {
+							return null;
+						}
 
 						if (p.type === "TEXT") {
 							return (
@@ -319,7 +377,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									key={key}
 									message={message}
 									part={p}
-									isLast={isLast}
+									status={status}
+									onComplete={chunkCallbacks[pIdx]}
+									isFirstView={isFirstView}
 								/>
 							);
 						} else if (p.type === "MEDIA") {
@@ -446,7 +506,8 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									key={key}
 									message={message}
 									part={p}
-									isStreaming={isLast && message.isThinking}
+									status={status}
+									isFirstView={isFirstView}
 								/>
 							);
 						} else if (p.type === "TOOL_CALL") {
@@ -489,7 +550,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 
 						return null;
 					})}
-					{message.hasUnfinishedTools && (
+					{message.hasUnfinishedTools && !message.isThinking && (
 						<p className="mt-2 flex items-center gap-2 text-muted-foreground text-sm">
 							<CircleAlert className="size-4" />
 							{hasAskTools
@@ -510,7 +571,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 				</div>
 
 				{message.id !== STREAMING_PLACEHOLDER_ID && (
-					<div className="flex flex-row items-center gap-0.5 pt-2 opacity-0 transition-opacity group-hover:opacity-100">
+					<div className="flex flex-row items-center gap-0.5 pt-2">
 						{inputMessage?.siblings.length &&
 							inputMessage?.siblings.length > 1 && (
 								<div className="flex flex-row items-center gap-0.5">
@@ -578,9 +639,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									<TooltipTrigger asChild>
 										<Button
 											disabled={
-												!inputMessage?.parent?.parent ||
-												message.room.mode ===
-													"executing"
+												!inputMessage?.parent?.parent
 											}
 											variant="ghost"
 											size="icon"

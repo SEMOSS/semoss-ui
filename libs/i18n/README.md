@@ -42,7 +42,7 @@ Translations used across **all** packages:
 ### Tier 2: Package-Specific
 Translations specific to individual packages:
 - `playground/` - Playground app translations (chat, room, sidebar, knowledge, workspace, mcp)
-- Future: `client/` - Client app translations (will be added when needed)
+- `client/` - Client app translations (for example `githubApp`)
 
 ## Usage
 
@@ -67,28 +67,17 @@ function MyComponent() {
 }
 ```
 
-### In Client Package
+### In an App
 
-Create a custom i18next instance using client resources:
+Create the instance via `I18nBuilder`, passing the app's lazy resource config. Languages load on demand (one chunk per language) — await `ready` before the first render.
 
 ```typescript
-// packages/client/src/i18n/config.ts
-import i18n from "i18next";
-import LanguageDetector from "i18next-browser-languagedetector";
-import { initReactI18next } from "react-i18next";
-import { clientResources } from "@semoss/i18n";
+// packages/client/src/App.tsx
+import { I18nBuilder, clientResources } from "@semoss/i18n";
 
-i18n
-    .use(LanguageDetector)
-    .use(initReactI18next)
-    .init({
-        resources: clientResources,
-        fallbackLng: "en",
-        defaultNS: "common",
-        // ... other config
-    });
-
-export default i18n;
+const builder = new I18nBuilder(clientResources, { lockToEnglish: true });
+export const i18n = builder.i18n;
+export const i18nReady = builder.ready; // await in main.tsx before render
 ```
 
 Then use it in components:
@@ -102,41 +91,36 @@ function ClientComponent() {
     // Core shared translations
     t('common:buttons.save')           // "Save"
 
-    // Client-specific (add namespaces as needed)
-    t('dashboard:welcome')              // "Welcome to your dashboard"
+    // Client-specific
+    t('githubApp:header.title')         // "GitHub App"
 }
 ```
 
 ## Adding New Translations
 
+> Languages are loaded lazily (one chunk per language) via a dynamic-import
+> backend. The locale JSON is never in the main bundle. See `AGENTS.md` →
+> "Lazy loading architecture".
+
 ### Adding a Core Shared Translation
 
-1. Add to `locales/en/common.json` (or validation/notifications)
-2. Add to `locales/es/common.json`
-3. Add to `locales/fr/common.json`
-4. No config changes needed - automatically available to all packages
+1. Add the key to `locales/<lng>/common.json` (or validation/notifications) for every language.
+2. No config changes needed — `common`/`validation`/`notifications` are already in every app's loader map.
 
 ### Adding a Package-Specific Translation
 
-1. Create/update file in appropriate package folder (e.g., `locales/en/playground/sidebar.json`)
-2. Add the same for other languages
-3. Import and add to the package config file (e.g., `playground.ts`)
-
-Example:
+1. Create/update the namespace file for every language (e.g., `locales/<lng>/playground/sidebar.json`).
+2. Add a lazy `load` entry (and an `ns` entry if it should preload) to the package config.
 
 ```typescript
-// libs/i18n/src/playground.ts
-import sidebarEN from "./locales/en/playground/sidebar.json";
-import sidebarES from "./locales/es/playground/sidebar.json";
-import sidebarFR from "./locales/fr/playground/sidebar.json";
-
-export const playgroundResources = {
-    en: {
-        ...coreResources.en,
-        sidebar: sidebarEN,  // Add here
+// libs/i18n/src/resources/playground.ts
+export const playgroundResources: LazyResources = {
+    ns: ["common", "sidebar" /* , ... */],
+    load: {
+        common: (l) => import(`./locales/${l}/common.json`),
+        sidebar: (l) => import(`./locales/${l}/playground/sidebar.json`), // Add here
         // ... other namespaces
     },
-    // ... repeat for es and fr
 };
 ```
 
@@ -148,6 +132,7 @@ export const playgroundResources = {
 - Hindi (`hi`)
 - Arabic (`ar`)
 - Japanese (`ja`)
+- Dutch (`nl`)
 
 ## Type Safety
 

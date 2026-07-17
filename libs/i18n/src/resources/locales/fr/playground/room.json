@@ -5,7 +5,8 @@
 		"description": "Mettez à jour les paramètres de la salle et modifiez le comportement du chat",
 		"open": "Ouvrir les paramètres de la salle",
 		"close": "Fermer les paramètres de la salle",
-		"edit": "Modifier les paramètres de la salle"
+		"edit": "Modifier les paramètres de la salle",
+		"compactTooltip": "Compactez votre conversation pour économiser des jetons. Vos messages précédents restent inchangés."
 	},
 	"form": {
 		"modelLabel": "Modèle",
@@ -18,7 +19,7 @@
 	},
 	"modes": {
 		"ask": "Demander",
-		"plan": "Planifier"
+		"agent": "Harnais d'agent"
 	},
 	"workspace": {
 		"publishTooltip": "Publier en tant qu'agent",
@@ -92,11 +93,13 @@
 	},
 	"contextWindow": {
 		"descriptionLow": "Toutes les conversations ont une limite. Les conversations très longues finiront par faire oublier les messages précédents au modèle.",
-		"descriptionMedium": "Cette conversation devient longue. Si elle continue, le modèle commencera à oublier les messages précédents. Envisagez de démarrer un nouveau chat bientôt.",
-		"descriptionHigh": "Cette conversation est presque pleine. Le modèle commencera bientôt à oublier les messages précédents. Envisagez de démarrer un nouveau chat.",
-		"descriptionExceeded": "Cette conversation a dépassé sa limite. Le modèle oublie maintenant les messages précédents lors de la génération des réponses. Démarrez un nouveau chat pour de meilleurs résultats.",
+		"descriptionMedium": "Cette conversation devient longue. Si elle continue, le modèle commencera à oublier les messages précédents. Envisagez de compacter cette conversation ou de démarrer un nouveau chat bientôt.",
+		"descriptionHigh": "Cette conversation est presque pleine. Le modèle commencera bientôt à oublier les messages précédents. Compactez cette conversation ou démarrez un nouveau chat pour continuer avec le contexte complet.",
+		"descriptionExceeded": "Cette conversation a dépassé sa limite. Le modèle oublie maintenant les messages précédents. Compactez cette conversation ou démarrez un nouveau chat pour de meilleurs résultats.",
 		"memoryUsedTitle": "Mémoire utilisée :",
-		"memoryUsedValue": "{{used}} / {{total}} jetons ({{percent}}%)"
+		"memoryUsedValue": "{{used}} / {{total}} jetons ({{percent}}%)",
+		"totalUsedTitle": "Total du chat :",
+		"totalUsedValue": "{{total}} jetons"
 	},
 	"menuMcp": {
 		"searchPlaceholder": "Rechercher des connaissances et des boîtes à outils",

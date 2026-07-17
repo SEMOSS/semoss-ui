@@ -1,6 +1,11 @@
 export * from "./engine-model-test-sidebar";
 export * from "./engine-qa-sidebar";
 export * from "./file-table";
+export {
+	MemberAccessPanel,
+	type MemberAccessPanelProps,
+} from "./member-access-panel";
+export { MemberList, type MemberListProps } from "./member-list";
 export * from "./members-table";
 export * from "./pending-members-table";
 export * from "./service-accounts-table";

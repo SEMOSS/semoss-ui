@@ -39,7 +39,7 @@ export interface WorkspaceStoreInterface {
 	/**
 	 * Type of the app
 	 */
-	type: "BLOCKS" | "CODE";
+	type: "BLOCKS" | "CODE" | "SKILL" | "WORKSPACE";
 
 	/**
 	 * Model associated with the layout
@@ -99,6 +99,14 @@ export interface WorkspaceStoreInterface {
 		 */
 		visiblePaths: string[];
 	};
+
+	/**
+	 * insightId of the active terminal tab. Each terminal tab owns its own
+	 * insight; the "Insight" file explorer binds to this so INSIGHT-scoped
+	 * browsing/upload targets the same insight the user runs commands in.
+	 * `null` until a terminal tab's insight is ready.
+	 */
+	activeTerminalInsightId: string | null;
 }
 
 export interface WorkspaceConfigInterface {
@@ -120,7 +128,7 @@ export interface WorkspaceConfigInterface {
 	/**
 	 * Type of the app
 	 */
-	type: "BLOCKS" | "CODE";
+	type: "BLOCKS" | "CODE" | "SKILL" | "WORKSPACE";
 
 	/**
 	 * Metadata associated with the loaded app
@@ -166,6 +174,7 @@ export class WorkspaceStore {
 			path: "/",
 			visiblePaths: [],
 		},
+		activeTerminalInsightId: null,
 	};
 
 	constructor(root: RootStore, config: WorkspaceConfigInterface) {
@@ -253,6 +262,15 @@ export class WorkspaceStore {
 	 */
 	get fileBrowser() {
 		return this._store.fileBrowser;
+	}
+
+	/**
+	 * insightId of the active terminal tab (or null before one is ready). The
+	 * Insight file explorer binds to this so its listing/upload stay in sync
+	 * with the terminal the user is running commands in.
+	 */
+	get activeTerminalInsightId() {
+		return this._store.activeTerminalInsightId;
 	}
 
 	/**
@@ -416,5 +434,14 @@ export class WorkspaceStore {
 
 		this._store.fileBrowser.path = path || "/";
 		this._store.fileBrowser.visiblePaths = normalized;
+	};
+
+	/**
+	 * Record the insightId of the active terminal tab so the Insight file
+	 * explorer can bind to it. Called by the terminal panel as tabs are
+	 * focused/opened/closed.
+	 */
+	setActiveTerminalInsightId = (insightId: string | null) => {
+		this._store.activeTerminalInsightId = insightId;
 	};
 }

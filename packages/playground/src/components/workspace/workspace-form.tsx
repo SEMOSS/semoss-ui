@@ -1,6 +1,13 @@
 import { useEffect, useId, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
+	type MCPConfig,
+	MCPSelector,
+	PromptSelector,
+	type SkillConfig,
+	SkillSelector,
+} from "@semoss/shared";
+import {
 	Button,
 	Field,
 	FieldGroup,
@@ -10,9 +17,13 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
-import { MCPSelector, PromptSelector, splitMcpByType } from "@/components";
-import { useChat } from "@/hooks";
-import type { MCPConfig, Workspace } from "@/types";
+import { useChat, useRoot } from "@/hooks";
+import type { Workspace } from "@/types";
+import {
+	mcpToPlatformUrl,
+	promptToPlatformUrl,
+	splitMcpByType,
+} from "@/utility/mcp-utils";
 
 interface WorkspaceFormProps {
 	/**
@@ -51,6 +62,7 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 	const [instructions, setInstructions] = useState<string>("");
 	const [toolbox, setToolbox] = useState<MCPConfig[]>([]);
 	const [knowledge, setKnowledge] = useState<MCPConfig[]>([]);
+	const [skills, setSkills] = useState<SkillConfig[]>([]);
 
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -58,6 +70,7 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 	 * Library Hooks
 	 */
 	const { chat } = useChat();
+	const { root } = useRoot();
 
 	// Initialize form data from workspace prop
 	useEffect(() => {
@@ -69,6 +82,7 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 			splitMcpByType(values?.mcp ?? []);
 		setKnowledge(nextKnowledge);
 		setToolbox(nextToolbox);
+		setSkills(values?.skills ?? []);
 	}, [values]);
 
 	/**
@@ -81,12 +95,16 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 			// start the loading screen
 			setIsLoading(true);
 
-			const updated: Omit<Workspace, "workspace_id" | "date_created"> = {
+			const updated: Omit<
+				Workspace,
+				"workspace_id" | "date_created" | "skills"
+			> & { skills: SkillConfig[] } = {
 				name: name,
 				system_prompt: instructions,
 				description: description,
 				prompts: prompts,
 				mcp: [...knowledge, ...toolbox],
+				skills: skills,
 			};
 
 			let output = "";
@@ -171,6 +189,14 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 						disabled={isLoading}
 						onChange={(knowledge) => setKnowledge(knowledge)}
 						className="h-112"
+						enableKnowledgeMCP={
+							root.theme.featureFlags?.enableKnowledgeMCP
+						}
+						getPlatformUrl={
+							root.theme.featureFlags?.showPlatformLinks
+								? mcpToPlatformUrl
+								: undefined
+						}
 					/>
 				</Field>
 				<Field>
@@ -180,6 +206,23 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 						values={toolbox}
 						disabled={isLoading}
 						onChange={(mcps) => setToolbox(mcps)}
+						className="h-112"
+						enableKnowledgeMCP={
+							root.theme.featureFlags?.enableKnowledgeMCP
+						}
+						getPlatformUrl={
+							root.theme.featureFlags?.showPlatformLinks
+								? mcpToPlatformUrl
+								: undefined
+						}
+					/>
+				</Field>
+				<Field>
+					<FieldLabel>{t("workspace:form.skillsLabel")}</FieldLabel>
+					<SkillSelector
+						values={skills}
+						disabled={isLoading}
+						onChange={(next) => setSkills(next)}
 						className="h-112"
 					/>
 				</Field>
@@ -192,6 +235,11 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 						disabled={isLoading}
 						onChange={(values) => setPrompts(values)}
 						className="h-112"
+						getPlatformUrl={
+							root.theme.featureFlags?.showPlatformLinks
+								? promptToPlatformUrl
+								: undefined
+						}
 					/>
 				</Field>
 			</FieldGroup>

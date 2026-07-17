@@ -1,12 +1,26 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import { type Insight, runPixel } from "@semoss/sdk/react";
 import type { ThemeMap } from "@semoss/shared";
-import { MODEL_KEY } from "@/constants";
 import type { Engine, MCPConfig, Workspace } from "@/types";
 import { RoomStore } from "../room";
 
 const DEFAUlT_MODEL_ID = import.meta.env.VITE_DEFAUlT_MODEL_ID || "";
 const DEFAUlT_MODEL_NAME = import.meta.env.VITE_DEFAUlT_MODEL_NAME || "";
+
+const SESSION_MODEL_KEY = "smss-playground-session-model";
+
+/**
+ * Shape of a room row as rendered in the nav list. Matches the columns
+ * returned by GetPlaygroundRooms so optimistic rooms can be merged into the
+ * fetched list seamlessly.
+ */
+export interface OptimisticRoom {
+	ROOM_ID: string;
+	ROOM_NAME: string;
+	DATE_CREATED: string;
+	WORKSPACE_ID?: string;
+	PINNED?: boolean;
+}
 
 interface ChatStoreInterface {
 	/**
@@ -26,9 +40,24 @@ interface ChatStoreInterface {
 	};
 
 	/**
+	 * Engine ID of the model set as default in the user's profile (Settings > My Profile).
+	 * Empty string if no profile default is set.
+	 */
+	profileDefaultModelId: string;
+
+	/**
 	 * Cached rooms
 	 */
 	rooms: Record<string, RoomStore>;
+
+	/**
+	 * Rooms shown in the nav before their first message has persisted.
+	 * GetPlaygroundRooms only returns rooms that already have a message with
+	 * data, so a freshly created room is invisible to the refetch until its
+	 * first response lands. These bridge that gap and are removed once the
+	 * real room shows up in the fetched list. Keyed by room id.
+	 */
+	optimisticRooms: Record<string, OptimisticRoom>;
 
 	/**
 	 * Options related to the navbar
@@ -56,6 +85,7 @@ interface ChatStoreInterface {
 	user: {
 		id: string;
 		name: string;
+		lastLogin?: string;
 	};
 }
 
@@ -68,13 +98,11 @@ export class ChatStore {
 	private _store: ChatStoreInterface = {
 		isInitialized: false,
 		models: {
-			selected: {
-				engine_id: DEFAUlT_MODEL_ID,
-				engine_name: DEFAUlT_MODEL_NAME,
-			} as Engine,
+			selected: null as unknown as Engine,
 			contextWindow: undefined,
 		},
 		rooms: {},
+		optimisticRooms: {},
 		keys: {
 			roomCounter: 0,
 		},
@@ -83,6 +111,7 @@ export class ChatStore {
 			name: "",
 		},
 		embeddedPageMap: {},
+		profileDefaultModelId: "",
 	};
 
 	constructor(theme: ThemeMap["playground"], actions: Insight["actions"]) {
@@ -148,36 +177,77 @@ export class ChatStore {
 	}
 
 	/**
+	 * Get the engine ID of the user's profile default model
+	 */
+	get profileDefaultModelId() {
+		return this._store.profileDefaultModelId;
+	}
+
+	/**
+	 * Get the rooms optimistically shown in the nav
+	 */
+	get optimisticRooms() {
+		return this._store.optimisticRooms;
+	}
+
+	/**
 	 * Initialize the store
 	 */
 	initialize = async (): Promise<void> => {
 		try {
-			Promise.all([this.getDefaultModel(), this.getUser()]).finally(
-				() => {
-					runInAction(() => {
-						this._store.isInitialized = true;
-					});
-				},
-			);
+			// getUser must complete first so profileDefaultModelId is set
+			// before getDefaultModel runs its model selection logic
+			await this.getUser();
+			await this.getDefaultModel();
 		} catch (e) {
 			console.error(e);
+		} finally {
+			runInAction(() => {
+				this._store.isInitialized = true;
+			});
 		}
 	};
 
 	getUser = async (): Promise<void> => {
 		try {
 			const result = await this._actions.run<
-				[Record<string, { id: string; name: string }>]
+				[
+					Record<
+						string,
+						{
+							id: string;
+							name: string;
+							lastLogin?: string;
+							meta?: Record<string, unknown>;
+						}
+					>,
+				]
 			>(`META | GetUserInfo();`);
 
 			if (!result) return;
 
-			const user = Object.values(result.pixelReturn[0].output)[0];
-			if (user) {
-				runInAction(() => {
-					this._store.user = { id: user.id, name: user.name };
-				});
-			}
+			const providerData = Object.values(result.pixelReturn[0].output)[0];
+			if (!providerData) return;
+
+			runInAction(() => {
+				this._store.user = {
+					id: providerData.id,
+					name: providerData.name,
+					lastLogin: providerData.lastLogin,
+				};
+			});
+
+			// extract the profile default text-generation model set via Settings > My Profile
+			const metaValue = providerData.meta?.["text-generation-model"];
+			const profileDefaultModelId = Array.isArray(metaValue)
+				? (metaValue[0] as string) || ""
+				: typeof metaValue === "string"
+					? metaValue
+					: "";
+
+			runInAction(() => {
+				this._store.profileDefaultModelId = profileDefaultModelId;
+			});
 		} catch (e) {
 			console.error(e);
 		}
@@ -196,10 +266,31 @@ export class ChatStore {
 	};
 
 	/**
+	 * Optimistically surface a room in the nav before its first message has
+	 * persisted. Shown until the real room is returned by GetPlaygroundRooms
+	 * (see {@link removeOptimisticRoom}).
+	 */
+	addOptimisticRoom = (room: OptimisticRoom): void => {
+		runInAction(() => {
+			this._store.optimisticRooms[room.ROOM_ID] = room;
+		});
+	};
+
+	/**
+	 * Drop an optimistic room, once the real room has been fetched or its
+	 * first message failed to send.
+	 */
+	removeOptimisticRoom = (roomId: string): void => {
+		runInAction(() => {
+			delete this._store.optimisticRooms[roomId];
+		});
+	};
+
+	/**
 	 * Create a new room
 	 */
 	createRoom = async (
-		mode: "planning" | "chat",
+		mode: "agent" | "chat",
 		prompt: string,
 		files: File[],
 		options: RoomStore["options"],
@@ -250,17 +341,34 @@ export class ChatStore {
 			// save it to the cache
 			this._store.rooms[roomId] = room;
 
+			// optimistically surface the room in the nav — GetPlaygroundRooms
+			// won't return it until its first message has data
+			this._store.optimisticRooms[roomId] = {
+				ROOM_ID: roomId,
+				ROOM_NAME: prompt.substring(0, 100),
+				DATE_CREATED: new Date().toISOString(),
+				WORKSPACE_ID: workspaceId,
+			};
+
 			// increment the roomCounter to force re-render of the nav
 			this._store.keys.roomCounter++;
 		});
 
-		// ask the room
-		room.askMessage(prompt, files).then(() => {
-			runInAction(() => {
-				// increment the roomCounter to force re-render of the nav
-				this._store.keys.roomCounter++;
-			});
-		});
+		// ask the room — fire-and-forget so we return (and navigate) without
+		// waiting on the response
+		(async () => {
+			try {
+				await room.askMessage(prompt, files);
+				runInAction(() => {
+					// increment the roomCounter to force re-render of the nav
+					this._store.keys.roomCounter++;
+				});
+			} catch {
+				// First message never landed — the room has no data and won't
+				// be returned by the refetch, so drop the optimistic entry.
+				this.removeOptimisticRoom(roomId);
+			}
+		})();
 
 		// return the room
 		return room;
@@ -324,6 +432,20 @@ export class ChatStore {
 	};
 
 	/**
+	 * Pin or unpin a room. Runs the PinRoom pixel and bumps the
+	 * roomCounter so any room lists elsewhere in the app (sidebar,
+	 * chats page, per-agent timeline) refetch and stay in sync.
+	 */
+	pinRoom = async (roomId: string, pinned: boolean): Promise<void> => {
+		await this._actions.run<[boolean]>(
+			`PinRoom(roomId=["${roomId}"], pinned=[${pinned}]);`,
+		);
+		runInAction(() => {
+			this._store.keys.roomCounter++;
+		});
+	};
+
+	/**
 	 * Load a room from the store or create a new one
 	 * @param roomId - Room to remove
 	 */
@@ -364,13 +486,10 @@ export class ChatStore {
 			this._store.models.selected = model;
 		});
 
-		// save to local storage
-		if (localStorage) {
-			localStorage.setItem(
-				MODEL_KEY,
-				JSON.stringify(this.models.selected),
-			);
-		}
+		sessionStorage.setItem(
+			SESSION_MODEL_KEY,
+			JSON.stringify({ model, lastLogin: this._store.user.lastLogin }),
+		);
 
 		this.loadEngineContextWindow(model.engine_id);
 	};
@@ -397,15 +516,21 @@ export class ChatStore {
 	addWorkspace = async (
 		data: Pick<
 			Workspace,
-			"name" | "system_prompt" | "description" | "mcp" | "prompts"
+			| "name"
+			| "system_prompt"
+			| "description"
+			| "mcp"
+			| "skills"
+			| "prompts"
 		>,
 	): Promise<string> => {
 		try {
 			const mcp = data.mcp.map(
 				({ name, id, type }): MCPConfig => ({ name, id, type }),
 			);
+			const skills = data.skills.map((s) => s.id);
 
-			const pixel = `AddWorkspace(name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, prompts=${JSON.stringify(data.prompts)})`;
+			const pixel = `AddWorkspace(name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
 			return pixelReturn[0].output;
@@ -421,15 +546,21 @@ export class ChatStore {
 		workspaceId: string,
 		data: Pick<
 			Workspace,
-			"name" | "system_prompt" | "description" | "mcp" | "prompts"
+			| "name"
+			| "system_prompt"
+			| "description"
+			| "mcp"
+			| "skills"
+			| "prompts"
 		>,
 	): Promise<string> => {
 		try {
 			const mcp = data.mcp.map(
 				({ name, id, type }): MCPConfig => ({ name, id, type }),
 			);
+			const skills = data.skills.map((s) => s.id);
 
-			const pixel = `EditWorkspace(workspaceId=${JSON.stringify(workspaceId)}, name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, prompts=${JSON.stringify(data.prompts)})`;
+			const pixel = `EditWorkspace(workspaceId=${JSON.stringify(workspaceId)}, name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
 			// throw errors
@@ -479,20 +610,58 @@ export class ChatStore {
 			return;
 		}
 
-		// initially limit to 10 models
 		const { pixelReturn } = await this._actions.run<[Engine[]]>(
 			`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
 		);
 
 		runInAction(() => {
-			// get the output
 			const { output } = pixelReturn[0];
-
-			// track if it was set from one of the options
+			// profileDefaultModelId is already set by getUser(), which runs before this
+			const profileDefaultModelId = this._store.profileDefaultModelId;
 			let isSelected = false;
 
-			// set to default if it is an option
-			if (defaultModelId) {
+			// 1. user's profile default — explicitly set by the user, highest personal priority
+			if (profileDefaultModelId) {
+				for (const m of output) {
+					if (m.engine_id === profileDefaultModelId) {
+						this.setSelectedModel(m);
+						isSelected = true;
+						break;
+					}
+				}
+			}
+
+			// 2. last model selected in this login session (survives refresh, resets on new login)
+			if (!isSelected) {
+				try {
+					const sessionItem =
+						sessionStorage.getItem(SESSION_MODEL_KEY);
+					if (sessionItem) {
+						const { model: sessionModel, lastLogin: storedLogin } =
+							JSON.parse(sessionItem) as {
+								model: Engine;
+								lastLogin?: string;
+							};
+						const currentLogin = this._store.user.lastLogin;
+						if (
+							storedLogin &&
+							currentLogin &&
+							storedLogin === currentLogin
+						) {
+							for (const m of output) {
+								if (m.engine_id === sessionModel.engine_id) {
+									this.setSelectedModel(m);
+									isSelected = true;
+									break;
+								}
+							}
+						}
+					}
+				} catch {}
+			}
+
+			// 3. theme/admin-suggested default — used as a fallback when the user has no preference
+			if (!isSelected && defaultModelId) {
 				for (const m of output) {
 					if (m.engine_id === defaultModelId) {
 						this.setSelectedModel(m);
@@ -502,34 +671,9 @@ export class ChatStore {
 				}
 			}
 
-			// check with local storage and try to set if it is one of them
-			try {
-				if (!isSelected) {
-					if (localStorage) {
-						const storedItem = localStorage.getItem(MODEL_KEY);
-						if (storedItem) {
-							const storedModel = JSON.parse(storedItem) as
-								| string
-								| Engine;
-							const storedModelId =
-								typeof storedModel === "string"
-									? storedModel
-									: storedModel?.engine_id || "";
-							for (const m of output) {
-								if (storedModelId === m.engine_id) {
-									this.setSelectedModel(m);
-									isSelected = true;
-									break;
-								}
-							}
-						}
-					}
-				}
-			} catch {}
-
+			// 4. first available model
 			if (!isSelected && output.length > 0) {
 				this.setSelectedModel(output[0]);
-				isSelected = true;
 			}
 		});
 	};

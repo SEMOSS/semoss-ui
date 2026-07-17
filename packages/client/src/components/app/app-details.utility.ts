@@ -1,5 +1,3 @@
-import type { ReactNode } from "react";
-import type { ConfigStore } from "@/stores";
 import type { Role } from "@/types";
 
 /**
@@ -7,34 +5,6 @@ import type { Role } from "@/types";
  * TYPES -----------------------------------------------------------------
  * -----------------------------------------------------------------------
  */
-
-export interface appDependency {
-	engine_discoverable: boolean;
-	engine_global: boolean;
-	engine_id: string;
-	engine_name: string;
-	engine_subtype: string;
-	engine_type: string;
-	permission_name: string;
-	description?: string;
-	access_permission?: number; // the permission that the user has requested
-	can_view_dependencies?: boolean;
-	tags?: string;
-	engine_date_created?: string;
-	dependencies?: string[]; // Array of dependency engine IDs
-}
-
-export interface modelledDependency {
-	name: string;
-	id: string;
-	type: string;
-	userPermission: Role | "";
-	isPublic: boolean;
-	isDiscoverable: boolean;
-	description: string;
-	access_permission: number;
-	can_view_dependencies?: boolean;
-}
 
 export interface engine {
 	app_cost: string;
@@ -58,217 +28,6 @@ export interface engine {
 	access_permission: number;
 }
 
-export interface AppDetailsRef {
-	metakey: string;
-	single_multi: string;
-	display_values?: string;
-	display: string;
-	display_options:
-		| "input"
-		| "textarea"
-		| "markdown"
-		| "single-checklist"
-		| "multi-checklist"
-		| "single-select"
-		| "multi-select"
-		| "single-typeahead"
-		| "multi-typeahead"
-		| "select-box";
-	ref: React.MutableRefObject<HTMLElement>;
-}
-
-/**
- * -----------------------------------------------------------------------
- * react-hook-form -----------------------------------------------------------
- * -----------------------------------------------------------------------
- */
-export interface DetailsForm extends Record<string, unknown> {
-	markdown: string;
-	tag: string[];
-}
-
-export interface AppDetailsFormTypes {
-	appId: string;
-	appInfo;
-	userRole: Role | "";
-	permission: "author" | "editor" | "readOnly" | "discoverable" | "";
-
-	description: string;
-	markdown: string;
-	tag: string[];
-	detailsForm: DetailsForm;
-	dependencies: modelledDependency[];
-
-	requestedPermission: "OWNER" | "EDIT" | "READ_ONLY" | "";
-	roleChangeComment: string | ReactNode;
-}
-
-export const AppDetailsFormValues: AppDetailsFormTypes = {
-	appId: "",
-	appInfo: null,
-	userRole: "",
-	permission: "",
-	description: "",
-	markdown: "",
-	tag: [],
-	detailsForm: {
-		markdown: "",
-		tag: [],
-		appImage: "",
-	},
-
-	dependencies: [],
-
-	requestedPermission: "",
-	roleChangeComment: "",
-};
-
-/**
- * -----------------------------------------------------------------------
- * PIXEL CALLS -----------------------------------------------------------
- * -----------------------------------------------------------------------
- */
-export const fetchAppInfo = async (
-	monolithStore,
-	appId: string,
-	metaKeys: string[],
-) => {
-	const res = await monolithStore.runQuery(
-		`GetProjectMetadata(project="${appId}", metaKeys=${JSON.stringify([
-			metaKeys,
-		])})`,
-	);
-
-	const type = res.pixelReturn[0].operationType;
-	const output = res.pixelReturn[0].output;
-
-	if (type.indexOf("ERROR") === -1) {
-		return {
-			type: "success",
-			output,
-		};
-	} else {
-		return {
-			type: "error",
-			output,
-		};
-	}
-};
-
-export const fetchMainUses = async (monolithStore, appId: string) => {
-	const res = await monolithStore.runQuery(
-		`GetProjectMarkdown(project="${appId}")`,
-	);
-
-	const type = res.pixelReturn[0].operationType;
-	const output = res.pixelReturn[0].output;
-
-	if (type.indexOf("ERROR") === -1) {
-		return {
-			type: "success",
-			output,
-		};
-	} else {
-		return {
-			type: "error",
-			output,
-		};
-	}
-};
-
-export const fetchDependencies = async (
-	configStore: ConfigStore,
-	appId: string,
-): Promise<
-	| {
-			type: "success";
-			output: appDependency[];
-	  }
-	| {
-			type: "error";
-			output: string;
-	  }
-> => {
-	const res = await configStore.runPixel<
-		[
-			{
-				engines: appDependency[];
-				dependencies: string[]; // Top-level dependency IDs
-			},
-		]
-	>(`GetProjectDependencies(project="${appId}")`);
-
-	const type = res.pixelReturn[0].operationType;
-	const output = res.pixelReturn[0].output;
-
-	if (type.indexOf("ERROR") === -1) {
-		// Filter engines to return only top-level dependencies
-		const topLevelDeps =
-			output.engines?.filter((engine) =>
-				output.dependencies?.includes(engine.engine_id),
-			) || [];
-		return {
-			type: "success",
-			output: topLevelDeps,
-		};
-	} else {
-		return {
-			type: "error",
-			output: output as unknown as string,
-		};
-	}
-};
-
-export const updateProjectDetails = async (
-	monolithStore,
-	appId: string,
-	data: object,
-) => {
-	// copy over the defined keys
-	const meta = {};
-	if (data) {
-		for (const key in data) {
-			if (data[key] !== undefined) {
-				meta[key] = data[key];
-			}
-		}
-	}
-	const res = await monolithStore.runQuery(
-		`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
-			meta,
-		)}])`,
-	);
-
-	const type = res.pixelReturn[0].operationType;
-	const output = res.pixelReturn[0].output;
-
-	return {
-		type: type.indexOf("ERROR") === -1 ? "success" : "error",
-		output,
-	};
-};
-
-export const SetProjectDependencies = async (
-	configStore: ConfigStore,
-	appId: string,
-	dependencies: {
-		id: string;
-		type: string;
-	}[],
-) => {
-	const res = await configStore.runPixel<string[]>(
-		`SetProjectDependencies(project="${appId}", dependencies=${JSON.stringify(dependencies)})`,
-	);
-
-	const type = res.pixelReturn[0].operationType;
-	const output = res.pixelReturn[0].output;
-
-	return {
-		type: type.indexOf("ERROR") === -1 ? "success" : "error",
-		output,
-	};
-};
-
 /**
  * -----------------------------------------------------------------------
  * OTHER UTILITY FUNCTIONS -----------------------------------------------
@@ -280,9 +39,9 @@ export const determineUserPermission = (role: Role): AppPermission => {
 
 	if (role === "OWNER") {
 		permission = "author";
-	} else if (role === "EDIT" || role === "EDITOR") {
+	} else if (role === "EDIT") {
 		permission = "editor";
-	} else if (role === "READ_ONLY" || role === "VIEWER") {
+	} else if (role === "READ_ONLY") {
 		permission = "readOnly";
 	} else if (role === "DISCOVERABLE") {
 		permission = "discoverable";

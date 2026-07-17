@@ -1,0 +1,25 @@
+{
+	"selector": {
+		"search": "Search",
+		"createKnowledgeSource": "Create Knowledge Store",
+		"viewDetails": "View Details",
+		"noToolboxesFound": "No toolboxes found",
+		"noKnowledgeFound": "No knowledge found",
+		"noAgentsFound": "No agents found",
+		"noSkillsFound": "スキルが見つかりません"
+	},
+	"permission": {
+		"owner": "Owner",
+		"editor": "Editor",
+		"readOnly": "Read-only",
+		"accessRequested": "Access requested",
+		"requestAccess": "Request access",
+		"noAccess": "No access",
+		"requestAccessButton": "Request Access",
+		"tooltipNoAccess": "You don't have access to this {{type}}. Please request access from the owner.",
+		"tooltipMissingDependencies": "You don't have access to all dependencies of this {{type}}, so functionality may be limited. Open in the platform for more information.",
+		"tooltipOpen": "Open this {{type}} in the platform",
+		"typeToolbox": "toolbox",
+		"typeKnowledge": "knowledge store"
+	}
+}

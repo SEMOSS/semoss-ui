@@ -1,7 +1,13 @@
 /**
  * Different types of apps
  */
-export type AppType = "BLOCKS" | "CODE" | "INSIGHT" | "";
+export type AppType =
+	| "BLOCKS"
+	| "CODE"
+	| "INSIGHT"
+	| "SKILL"
+	| "WORKSPACE"
+	| "";
 
 /**
  * Metadata associated with the app
@@ -17,8 +23,6 @@ export interface AppMetadata {
 	project_created_by_type: string;
 	project_date_created: string;
 	project_date_last_edited: string;
-	project_has_portal?: boolean;
-	project_portal_name?: string;
 	project_portal_published_date?: string;
 	project_published_user?: string;
 	project_published_user_type?: string;

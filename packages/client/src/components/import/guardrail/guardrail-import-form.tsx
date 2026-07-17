@@ -217,7 +217,7 @@ export const GuardrailForm = ({
 					engine_id?: string;
 					database_id?: string;
 				};
-				navigate(`/engine/guardrail/${o.engine_id || o.database_id}`);
+				navigate(`/guardrail/${o.engine_id || o.database_id}`);
 			}
 			setLoading(false);
 		});

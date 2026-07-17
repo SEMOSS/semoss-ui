@@ -1,0 +1,41 @@
+{
+	"branding": "Terminal",
+	"tabs": {
+		"files": "Bestanden",
+		"terminal": "Terminal",
+		"newTerminal": "Nieuwe terminal"
+	},
+	"views": {
+		"inline": "Inline",
+		"overlay": "Overlay",
+		"side": "Zijkant",
+		"popup": "Uitklappen"
+	},
+	"actions": {
+		"closeTerminal": "Terminal sluiten",
+		"help": "Help"
+	},
+	"scope": {
+		"insight": "Insight",
+		"app": "App",
+		"user": "Gebruiker",
+		"selectProject": "Selecteer een project…",
+		"searchProjects": "Projecten zoeken…",
+		"loadingProjects": "Projecten laden…",
+		"loadingMore": "Meer laden…",
+		"endOfList": "Einde van de lijst",
+		"noProjectsMatch": "Geen projecten komen overeen met \"{{query}}\"",
+		"noProjectsFound": "Geen projecten gevonden"
+	},
+	"userMenu": {
+		"accountAria": "Account",
+		"loggingOut": "Bezig met afmelden",
+		"defaultUser": "Gebruiker",
+		"theme": {
+			"light": "Licht",
+			"dark": "Donker",
+			"system": "Systeem"
+		},
+		"logOut": "Afmelden"
+	}
+}

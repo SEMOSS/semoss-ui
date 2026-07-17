@@ -21,17 +21,15 @@ import {
 	H4,
 	Input,
 	P,
-	Separator,
 	Small,
 	Spinner,
-	Switch,
 	Table,
 	TableBody,
 	TableCell,
 	TableRow,
 	toast,
 } from "@semoss/ui/next";
-import { setProjectPortal, uploadFile as uploadFileAPI } from "@/api";
+import { uploadFile as uploadFileAPI } from "@/api";
 import { Java } from "@/assets/img/Java";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
 
@@ -58,8 +56,6 @@ export const SettingsTab = (props: AppSettingsProps) => {
 
 	const uploadFile = watch("PROJECT_UPLOAD");
 
-	const admin = configStore.store.user.admin;
-
 	const [portalReactors, setPortalReactors] = useState<{
 		reactors: string[];
 		lastCompiled?: string;
@@ -71,34 +67,23 @@ export const SettingsTab = (props: AppSettingsProps) => {
 	});
 
 	const [portalDetails, setPortalDetails] = useState<{
-		url?: string;
-		hasPortal?: boolean;
-		project_has_portal: boolean;
+		project_is_published: boolean;
 		project_portal_url?: string;
-		lastCompiled?: string;
-		compiledBy?: string;
 	}>({
-		url: "",
-		hasPortal: false,
-		project_has_portal: false,
+		project_is_published: false,
 		project_portal_url: "",
-		lastCompiled: "12/25/2022",
-		compiledBy: "J.Smith",
 	});
 
 	const getPortalDetails = usePixel<{
-		url?: string;
-		hasPortal?: boolean;
-		project_has_portal: boolean;
+		project_is_published: boolean;
 		project_portal_url?: string;
-		lastCompiled?: string;
-		compiledBy?: string;
 	}>(
 		adminMode
 			? `AdminGetProjectPortalDetails('${id}');`
 			: `GetProjectPortalDetails('${id}');`,
 	);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: getPortalReactors is defined after this hook
 	useEffect(() => {
 		if (getPortalDetails.status !== "SUCCESS") {
 			return;
@@ -109,10 +94,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 			...getPortalDetails.data,
 		});
 
-		// Get the portal reactors if we have a portal
-		if (getPortalDetails.data.project_has_portal) {
-			getPortalReactors();
-		}
+		getPortalReactors();
 	}, [getPortalDetails.status, getPortalDetails.data]);
 
 	/** LOADING */
@@ -206,42 +188,10 @@ export const SettingsTab = (props: AppSettingsProps) => {
 
 				setPortalDetails({
 					...portalDetails,
+					project_is_published: true,
 					project_portal_url: output,
 				});
 				toast.success("Successfully published");
-			})
-			.catch((error) => {
-				toast.error(error);
-			});
-	};
-
-	/**
-	 * @name enablePublishing
-	 */
-	const enablePublishing = () => {
-		setProjectPortal(admin, id, !portalDetails.project_has_portal)
-			.then((resp) => {
-				if (resp.data) {
-					setPortalDetails({
-						...portalDetails,
-						project_has_portal: !portalDetails.project_has_portal,
-					});
-					toast.success(
-						`Successfully ${
-							!portalDetails.project_has_portal
-								? "enabled"
-								: "disabled"
-						} portal`,
-					);
-				} else {
-					toast.error(
-						`Unsuccessfully ${
-							!portalDetails.project_has_portal
-								? "disabled"
-								: "enabled"
-						} portal`,
-					);
-				}
 			})
 			.catch((error) => {
 				toast.error(error);
@@ -280,9 +230,6 @@ export const SettingsTab = (props: AppSettingsProps) => {
 			await monolithStore.runQuery(
 				`ReloadInsightClasses(project='${id}', release=true);`,
 			);
-
-			// set the app portal
-			await setProjectPortal(false, id, true, "public");
 
 			// Publish the app the insight classes
 			await monolithStore.runQuery(
@@ -323,47 +270,10 @@ export const SettingsTab = (props: AppSettingsProps) => {
 							<CardTitle>
 								<H3>Portals</H3>
 							</CardTitle>
-							{portalDetails.lastCompiled && (
-								<div className="flex items-center gap-2">
-									<Small className="text-muted-foreground">
-										Last compiled by:
-									</Small>
-									<Avatar className="size-6">
-										<AvatarFallback>
-											<User className="size-3" />
-										</AvatarFallback>
-									</Avatar>
-									<Small>{portalDetails.compiledBy}</Small>
-									<Small>on</Small>
-									<Small>{portalDetails.lastCompiled}</Small>
-								</div>
-							)}
 						</div>
 					</div>
 				</CardHeader>
 				<CardContent className="flex flex-col gap-3 px-0">
-					{/* Enable Publishing */}
-					<div className="flex items-center justify-between gap-4">
-						<div className="flex flex-col gap-1">
-							<H4>Enable Publishing</H4>
-							<P className="text-muted-foreground">
-								Enable the publishing of the portal.
-							</P>
-						</div>
-
-						<Switch
-							checked={portalDetails.project_has_portal}
-							onCheckedChange={enablePublishing}
-							disabled={
-								!configStore.isEngineOperationAvailable(
-									"PROJECT",
-									"access",
-								)
-							}
-						/>
-					</div>
-
-					<Separator />
 					{/* Publish Portal */}
 					<div className="flex flex-col gap-0">
 						<div className="flex items-center justify-between gap-4">
@@ -377,7 +287,6 @@ export const SettingsTab = (props: AppSettingsProps) => {
 							<Button
 								variant="outline"
 								disabled={
-									!portalDetails.project_has_portal ||
 									!configStore.isEngineOperationAvailable(
 										"PROJECT",
 										"access",
@@ -398,9 +307,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 								</div>
 								<Input
 									value={
-										portalDetails.project_has_portal
-											? portalDetails.project_portal_url
-											: ""
+										portalDetails.project_portal_url ?? ""
 									}
 									readOnly
 									className="pr-10 pl-9"
@@ -410,9 +317,12 @@ export const SettingsTab = (props: AppSettingsProps) => {
 									size="icon-sm"
 									className="-translate-y-1/2 absolute top-1/2 right-1"
 									onClick={() =>
-										copy(portalDetails.project_portal_url)
+										copy(
+											portalDetails.project_portal_url ??
+												"",
+										)
 									}
-									disabled={!portalDetails.project_has_portal}
+									disabled={!portalDetails.project_portal_url}
 								>
 									<Copy className="size-4" />
 								</Button>

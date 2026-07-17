@@ -1,0 +1,116 @@
+{
+	"welcome": "Welkom, {{name}}",
+	"settings": {
+		"title": "Kamerinstellingen",
+		"description": "Werk de kamerinstellingen bij en pas het gedrag van de chat aan",
+		"open": "Instellingen openen",
+		"close": "Sluiten",
+		"edit": "Instellingen bewerken",
+		"compact": "Gesprek comprimeren",
+		"compactSuccess": "Gesprek succesvol gecomprimeerd",
+		"compactSkipped": "Niets te comprimeren — het gesprek is al beknopt",
+		"compactError": "Comprimeren van gesprek mislukt",
+		"compacting": "Gesprek comprimeren...",
+		"compactedAbove": "Gesprek gecomprimeerd",
+		"compactedAboveTooltip": "Eerdere berichten zijn samengevat om de contextgrootte te verkleinen",
+		"compactTooltip": "Comprimeer je gesprek om tokens te besparen. Je eerdere berichten blijven ongewijzigd."
+	},
+	"form": {
+		"modelLabel": "Model",
+		"instructionsLabel": "Instructies",
+		"agentLabel": "Agent",
+		"knowledgeLabel": "Kennis",
+		"toolboxLabel": "Toolboxes",
+		"maxTokenLabel": "Max. tokens",
+		"temperatureLabel": "Temperatuur"
+	},
+	"modes": {
+		"ask": "Vragen",
+		"agent": "Agent Harness"
+	},
+	"workspace": {
+		"publishTooltip": "Publiceren als agent",
+		"publishTitle": "Agent publiceren",
+		"publishDescription": "Publiceer een nieuwe agent met de huidige kamerconfiguratie, inclusief instructies en MCP's.",
+		"nameLabel": "Naam *",
+		"namePlaceholder": "Voer agentnaam in",
+		"descriptionLabel": "Beschrijving",
+		"descriptionPlaceholder": "Voer agentbeschrijving in",
+		"cancelButton": "Annuleren",
+		"publishingButton": "Publiceren...",
+		"publishButton": "Agent publiceren",
+		"nameRequired": "Agentnaam is verplicht",
+		"publishSuccess": "Agent succesvol aangemaakt",
+		"publishError": "Aanmaken van agent mislukt: {{error}}"
+	},
+	"input": {
+		"ariaPlaceholder": "Voer tekst in",
+		"thinking": "Bezig met denken...",
+		"menuPrompt": "Hoe kan ik je vandaag helpen?",
+		"openSettings": "Bestanden, agents en meer toevoegen",
+		"recordLabel": "Het model opnemen",
+		"stopRecording": "Opname stoppen",
+		"record": "Opnemen",
+		"askLabel": "Vraag het de AI",
+		"thinkingTooltip": "Bezig met denken",
+		"enterQuestion": "Voer een vraag in",
+		"completeTool": "Voltooi de tool(s) om door te gaan",
+		"ask": "Vragen",
+		"errorProcessing": "Fout bij het verwerken van de chat",
+		"pauseTools": "Tools pauzeren",
+		"pauseToolsTooltip": "Pauzeer alle tooluitvoering tot na het volgende bericht"
+	},
+	"content": {
+		"scrollToTop": "Scroll naar boven",
+		"scrollToBottom": "Scroll naar beneden"
+	},
+	"inlineTool": {
+		"openInSidebar": "Openen in zijbalk",
+		"minimize": "Minimaliseren",
+		"maximize": "Maximaliseren",
+		"close": "Sluiten"
+	},
+	"fileExplorer": {
+		"copyPath": "Pad kopiëren",
+		"download": "Downloaden",
+		"delete": "Verwijderen",
+		"copyFailed": "Kopiëren naar klembord mislukt"
+	},
+	"menuToolbox": {
+		"addToolbox": "Toolboxes toevoegen"
+	},
+	"menuKnowledge": {
+		"addKnowledge": "Kennis toevoegen"
+	},
+	"menuWorkspace": {
+		"selectAgent": "Agent selecteren",
+		"searchPlaceholder": "Agents zoeken",
+		"notFound": "Niet gevonden"
+	},
+	"menuUpload": {
+		"attachDocument": "Documenten toevoegen"
+	},
+	"menuFileExplorer": {
+		"name": "Bestandsverkenner",
+		"open": "Bestandsverkenner openen",
+		"close": "Bestandsverkenner sluiten"
+	},
+	"errors": {
+		"createRoom": "Er is een fout opgetreden bij het aanmaken van de kamer. Fout: {{message}}"
+	},
+	"contextWindow": {
+		"descriptionLow": "Alle gesprekken hebben een limiet. Bij zeer lange gesprekken zal het model uiteindelijk eerdere berichten vergeten.",
+		"descriptionMedium": "Dit gesprek wordt lang. Als het doorgaat, begint het model eerdere berichten te vergeten. Overweeg dit gesprek te comprimeren of binnenkort een nieuwe chat te starten.",
+		"descriptionHigh": "Dit gesprek is bijna vol. Het model begint binnenkort eerdere berichten te vergeten. Comprimeer dit gesprek of start een nieuwe chat om met volledige context door te gaan.",
+		"descriptionExceeded": "Dit gesprek heeft zijn limiet overschreden. Het model vergeet nu eerdere berichten. Comprimeer dit gesprek of start een nieuwe chat voor de beste resultaten.",
+		"memoryUsedTitle": "Gebruikt geheugen:",
+		"memoryUsedValue": "{{used}} / {{total}} tokens ({{percent}}%)",
+		"totalUsedTitle": "Gesprek totaal:",
+		"totalUsedValue": "{{total}} tokens"
+	},
+	"menuMcp": {
+		"searchPlaceholder": "Kennis en toolboxes zoeken",
+		"noResults": "Geen overeenkomende items gevonden",
+		"noItemsAvailable": "Geen kennis of toolboxes beschikbaar"
+	}
+}

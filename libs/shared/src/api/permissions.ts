@@ -1,5 +1,5 @@
 import { Env, get, post } from "@semoss/sdk/react";
-import type { PostUser, Role, User, UserAccessRequest } from "@/types";
+import type { PostUser, Role, User, UserAccessRequest } from "../types";
 
 /**
  * Get the current user's permission for a project
@@ -16,6 +16,33 @@ export const getUserProjectPermission = async (
 		url += "admin/";
 	}
 	url += `project/getUserProjectPermission?projectId=${projectId}`;
+
+	const response = await get<{ permission: Role }>(url).catch((error) => {
+		throw Error(error);
+	});
+
+	if (!response) {
+		throw Error("No Response to get permission");
+	}
+
+	return response.data.permission;
+};
+
+/**
+ * Get the current user's permission for an engine
+ * @param engineId - The engine ID
+ * @param admin - Whether to use admin endpoint
+ * @returns The user's permission level
+ */
+export const getUserEnginePermission = async (
+	engineId: string,
+	admin = false,
+): Promise<Role> => {
+	let url = `${Env.MODULE}/api/auth/`;
+	if (admin) {
+		url += "admin/";
+	}
+	url += `engine/getUserEnginePermission?engineId=${engineId}`;
 
 	const response = await get<{ permission: Role }>(url).catch((error) => {
 		throw Error(error);

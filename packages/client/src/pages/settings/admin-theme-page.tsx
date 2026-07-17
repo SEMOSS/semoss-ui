@@ -159,7 +159,7 @@ const EMPTY_PLAYGROUND: ThemeMap["playground"] = {
 	featureFlags: {
 		enableAgent: true,
 		enableModelSelect: true,
-		enablePlan: false,
+		enableAgentHarness: false,
 		enableSuggestions: false,
 		enableRewrite: true,
 		enableDarkMode: true,
@@ -169,7 +169,9 @@ const EMPTY_PLAYGROUND: ThemeMap["playground"] = {
 		allowEmbeddingOptions: true,
 		showKnowledgeMenu: true,
 		showToolboxMenu: true,
+		showActivityLog: true,
 		showPlatformLinks: true,
+		enableTableExport: false,
 	},
 };
 
@@ -183,7 +185,7 @@ const FEATURE_FLAGS: {
 }[] = [
 	{ key: "enableAgent", label: "Enable Agent" },
 	{ key: "enableModelSelect", label: "Enable Model Select" },
-	{ key: "enablePlan", label: "Enable Plan" },
+	{ key: "enableAgentHarness", label: "Enable Agent Harness" },
 	{ key: "enableSuggestions", label: "Enable Suggestions" },
 	{ key: "enableRewrite", label: "Enable Rewrite" },
 	{ key: "enableDarkMode", label: "Enable Dark Mode" },
@@ -193,8 +195,10 @@ const FEATURE_FLAGS: {
 	{ key: "allowEmbeddingOptions", label: "Allow Embedding Options" },
 	{ key: "showKnowledgeMenu", label: "Show Knowledge Menu" },
 	{ key: "showToolboxMenu", label: "Show Toolbox Menu" },
+	{ key: "showActivityLog", label: "Show Activity Log" },
 	{ key: "showPlatformLinks", label: "Show Platform Links" },
 	{ key: "enableFeedbackText", label: "Enable Feedback Text" },
+	{ key: "enableTableExport", label: "Enable Table Export" },
 ];
 
 const IMAGE_FIELDS: {

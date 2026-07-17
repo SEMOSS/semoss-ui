@@ -19,6 +19,7 @@ import {
 	AppCatalogAvatar,
 	EngineSubtypeIcon,
 	EntityHeader,
+	type Project,
 } from "@semoss/shared";
 import {
 	Badge,
@@ -34,6 +35,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 	P,
+	Spinner,
 	toast,
 } from "@semoss/ui/next";
 import { deleteTeam, getGroupDetails } from "@/api";
@@ -47,6 +49,8 @@ import { SETTINGS_ROUTES } from "./settings.constants";
 
 const ENGINE_CATALOG_SETTINGS_PATHS = new Set([
 	"app",
+	"agents",
+	"skills",
 	"database",
 	"function",
 	"guardrail",
@@ -58,7 +62,7 @@ const ENGINE_CATALOG_SETTINGS_PATHS = new Set([
 export const SettingsLayout = observer(() => {
 	const { configStore } = useRootStore();
 	const { id, type } = useParams();
-	const { pathname, search, state } = useLocation();
+	const { pathname, search } = useLocation();
 	const navigate = useNavigate();
 	const [privacyCenterOpen, setPrivacyCenterOpen] = useState(false);
 
@@ -192,6 +196,7 @@ export const SettingsLayout = observer(() => {
 			? ["getUserProjectPermission", id]
 			: []) as unknown as ["getUserProjectPermission", string],
 	);
+
 	const hasCatalogAccess = useMemo(() => {
 		if (engineDetailType && id) {
 			const permission = (
@@ -217,26 +222,51 @@ export const SettingsLayout = observer(() => {
 		userProjectPermissionApi.status,
 		userProjectPermissionApi.data,
 	]);
-	const catalogUrl =
-		engineDetailType && id
-			? `/engine/${engineDetailType.toLowerCase()}/${id}`
-			: isAppDetail && id
-				? `/app/${id}`
-				: null;
 
-	const stateName =
-		state && typeof state === "object" && "name" in state
-			? (state as { name?: string }).name
-			: undefined;
+	// Only fetch project info if we have catalog access (button will be shown)
+	const projectInfoPixel = usePixel<Project>(
+		isAppDetail && id && hasCatalogAccess
+			? adminMode
+				? `AdminProjectInfo(project='${id}');`
+				: `ProjectInfo(project='${id}');`
+			: "",
+		{ data: undefined },
+	);
+
+	const catalogUrl = useMemo(() => {
+		if (engineDetailType && id) {
+			return `/${engineDetailType.toLowerCase()}/${id}`;
+		}
+		if (isAppDetail && id) {
+			const projectType = projectInfoPixel.data?.project_type;
+			if (projectType === "WORKSPACE") {
+				return `/agent/${id}/edit`;
+			}
+			if (projectType === "SKILL") {
+				return `/skill/${id}/edit`;
+			}
+			return `/app/${id}`;
+		}
+		return null;
+	}, [
+		engineDetailType,
+		isAppDetail,
+		id,
+		projectInfoPixel.data?.project_type,
+	]);
+
 	// Resolve a friendly display name for the current engine/app detail page;
 	// used both as the breadcrumb label and the h1 (with raw id falling back below).
 	const detailDisplayName = engineDetailType
 		? (engineInfoPixel.data?.engine_display_name as string | undefined) ||
-			(engineInfoPixel.data?.engine_name as string | undefined) ||
-			stateName
+			(engineInfoPixel.data?.engine_name as string | undefined)
 		: isAppDetail
-			? stateName
+			? (projectInfoPixel.data?.project_display_name as
+					| string
+					| undefined) ||
+				(projectInfoPixel.data?.project_name as string | undefined)
 			: undefined;
+
 	const teamId = id ? decodeURIComponent(id) : undefined;
 	const teamType = type ? decodeURIComponent(type) : undefined;
 	const [teamDescription, setTeamDescription] = useState<
@@ -330,6 +360,8 @@ export const SettingsLayout = observer(() => {
 		return null;
 	}
 
+	const routeHistory = matchedRoute.history ?? [];
+
 	const descriptionText =
 		!adminMode || matchedRoute.path !== ""
 			? matchedRoute.description
@@ -364,95 +396,74 @@ export const SettingsLayout = observer(() => {
 												</RouterLink>
 											</BreadcrumbLink>
 										</BreadcrumbItem>
-										{matchedRoute.history.map(
-											(link, idx) => {
-												const linkRoute =
-													SETTINGS_ROUTES.find(
-														(r) =>
-															r.path === link ||
-															r.path ===
-																link.replace(
-																	"/<id>",
-																	"/:id",
-																),
-													);
+										{routeHistory.map((link, idx) => {
+											const linkRoute =
+												SETTINGS_ROUTES.find(
+													(r) =>
+														r.path === link ||
+														r.path ===
+															link.replace(
+																"/<id>",
+																"/:id",
+															),
+												);
 
-												const isLastItem =
-													matchedRoute.history
-														.length -
-														1 ===
-													idx;
-												const label = link.includes(
-													"<id>",
+											const isLastItem =
+												routeHistory.length - 1 === idx;
+											const label = link.includes("<id>")
+												? detailDisplayName || id
+												: isLastItem
+													? matchedRoute.title
+													: linkRoute?.title || link;
+
+											const to = link.replace(
+												"<id>",
+												id ?? "",
+											);
+											const toRoot = to.split("/")[0];
+											const breadcrumbTo =
+												shouldPreserveEngineCatalogSearch &&
+												ENGINE_CATALOG_SETTINGS_PATHS.has(
+													toRoot,
 												)
-													? detailDisplayName || id
-													: isLastItem
-														? matchedRoute.title
-														: linkRoute?.title ||
-															link;
+													? {
+															pathname: to,
+															search,
+														}
+													: to;
 
-												const to = link.replace(
-													"<id>",
-													id ?? "",
-												);
-												const toRoot = to.split("/")[0];
-												const breadcrumbTo =
-													shouldPreserveEngineCatalogSearch &&
-													ENGINE_CATALOG_SETTINGS_PATHS.has(
-														toRoot,
-													)
-														? {
-																pathname: to,
-																search,
-															}
-														: to;
-
-												return (
-													<Fragment key={idx + link}>
-														<BreadcrumbSeparator />
-														<BreadcrumbItem>
-															{isLastItem ? (
-																<BreadcrumbPage>
-																	{label}
-																</BreadcrumbPage>
-															) : (
-																<BreadcrumbLink
-																	asChild
+											return (
+												<Fragment key={idx + link}>
+													<BreadcrumbSeparator />
+													<BreadcrumbItem>
+														{isLastItem ? (
+															<BreadcrumbPage>
+																{label}
+															</BreadcrumbPage>
+														) : (
+															<BreadcrumbLink
+																asChild
+															>
+																<RouterLink
+																	to={
+																		breadcrumbTo
+																	}
 																>
-																	<RouterLink
-																		to={
-																			breadcrumbTo
-																		}
-																		state={
-																			state &&
-																			typeof state ===
-																				"object"
-																				? {
-																						...state,
-																					}
-																				: undefined
-																		}
-																	>
-																		{label}
-																	</RouterLink>
-																</BreadcrumbLink>
-															)}
-														</BreadcrumbItem>
-													</Fragment>
-												);
-											},
-										)}
+																	{label}
+																</RouterLink>
+															</BreadcrumbLink>
+														)}
+													</BreadcrumbItem>
+												</Fragment>
+											);
+										})}
 									</BreadcrumbList>
 								</Breadcrumb>
 							</div>
 						)}
-						<div className="z-[1]">
+						<div className="z-1">
 							{(() => {
-								const fallbackTitle =
-									matchedRoute.history &&
-									matchedRoute.history.length < 2
-										? matchedRoute.title
-										: stateName || matchedRoute.title;
+								const fallbackTitle = matchedRoute.title;
 								const headerActions = (
 									<>
 										{showPrivacyCenter && (
@@ -530,6 +541,16 @@ export const SettingsLayout = observer(() => {
 								}
 
 								if (engineDetailType && id) {
+									if (
+										engineInfoPixel.status === "INITIAL" ||
+										engineInfoPixel.status === "LOADING"
+									) {
+										return (
+											<div className="flex items-center gap-2 py-2">
+												<Spinner className="size-5" />
+											</div>
+										);
+									}
 									return (
 										<EntityHeader
 											icon={
@@ -556,6 +577,23 @@ export const SettingsLayout = observer(() => {
 								}
 
 								if (isAppDetail && id) {
+									const isAppLoading =
+										userProjectPermissionApi.status ===
+											"INITIAL" ||
+										userProjectPermissionApi.status ===
+											"LOADING" ||
+										(hasCatalogAccess &&
+											(projectInfoPixel.status ===
+												"INITIAL" ||
+												projectInfoPixel.status ===
+													"LOADING"));
+									if (isAppLoading) {
+										return (
+											<div className="flex items-center gap-2 py-2">
+												<Spinner className="size-5" />
+											</div>
+										);
+									}
 									const appName = detailDisplayName || id;
 									return (
 										<EntityHeader

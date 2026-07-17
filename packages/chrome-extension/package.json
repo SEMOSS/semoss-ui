@@ -15,8 +15,8 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@crxjs/vite-plugin": "^2.0.0-beta.25",
     "@tailwindcss/vite": "^4.1.14",
+    "@crxjs/vite-plugin": "^2.4.0",
     "@types/chrome": "^0.0.202",
     "@types/react": "18.3.1",
     "@types/react-dom": "18.3.0",

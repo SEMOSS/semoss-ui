@@ -1,6 +1,6 @@
 import {
+	Bot,
 	CheckIcon,
-	ComputerIcon,
 	PlusIcon,
 	SearchIcon,
 	SquareArrowOutUpRightIcon,
@@ -51,7 +51,7 @@ export const AgentSelector = observer(
 
 		const getWorkspaces = useIteratorPixel<App[], App>(
 			(limit, offset) =>
-				`META | MyProjects(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""}type = "WORKSPACE", limit=[${limit}], offset=[${offset}])`,
+				`META | MyProjects(${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}projectType=["WORKSPACE"], limit=[${limit}], offset=[${offset}])`,
 			(response) => (response.length < 25 ? -1 : Infinity),
 			(response) => response,
 			{ limit: 25 },
@@ -254,7 +254,7 @@ export const AgentSelector = observer(
 																w.project_name}
 														</div>
 														<div className="flex items-center gap-1.5 text-muted-foreground text-xs">
-															<ComputerIcon className="size-3.5 shrink-0" />
+															<Bot className="size-3.5 shrink-0" />
 															<span>
 																{t(
 																	"agent.typeLabel",

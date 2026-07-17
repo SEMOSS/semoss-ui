@@ -35,6 +35,13 @@ export default defineConfig(({ mode }) => {
 					replacement: `${resolve(__dirname, "../../libs/shared/src/assets/loginProviders")}/`,
 				},
 				{ find: "@", replacement: resolve(__dirname, "./src") },
+				{
+					find: /^monaco-editor$/,
+					replacement: resolve(
+						__dirname,
+						"../../libs/shared/node_modules/monaco-editor/esm/vs/editor/editor.api",
+					),
+				},
 			],
 		},
 		define: {
@@ -46,6 +53,13 @@ export default defineConfig(({ mode }) => {
 			rollupOptions: {
 				output: {
 					manualChunks(id: string) {
+						// Group each language's translation JSON into a single
+						// lazy chunk so loading/switching a language is one request
+						// and new languages never bloat the main bundle.
+						const locale = id.match(/\/locales\/([^/]+)\/.*\.json/);
+						if (locale) {
+							return `locale-${locale[1]}`;
+						}
 						if (
 							id.includes("/src/pages/import/import.constants.ts")
 						) {
@@ -102,6 +116,7 @@ export default defineConfig(({ mode }) => {
 		},
 		server: {
 			port: 5173,
+			allowedHosts: [".ngrok-free.dev", ".pinggy-free.link"],
 			proxy: {
 				[MODULE]: {
 					target: ENDPOINT,
