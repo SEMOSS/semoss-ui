@@ -2,7 +2,7 @@ import { SearchIcon, StarIcon, Trash2Icon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
+import { runPixel, useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -84,6 +84,54 @@ export const ChatsPage = observer(() => {
 		},
 	});
 
+	// Content-match rooms from SearchRoomMessages — rooms whose message text
+	// matches the keyword but whose name may not.
+	const [contentMatchRooms, setContentMatchRooms] = useState<RoomItem[]>([]);
+
+	useEffect(() => {
+		if (!debouncedSearch) {
+			setContentMatchRooms([]);
+			return;
+		}
+		let cancelled = false;
+		runPixel<
+			[
+				{
+					room_id: string;
+					message_id: string;
+					room_name: string;
+					date_created: string;
+				}[],
+			]
+		>(
+			`META | SearchRoomMessages(search="<encode>${debouncedSearch}</encode>", limit=50, includeMessageText=false);`,
+		)
+			.then((res) => {
+				if (cancelled) return;
+				const rows = res.pixelReturn?.[0]?.output ?? [];
+				const seen = new Set<string>();
+				setContentMatchRooms(
+					rows
+						.filter(
+							(r) =>
+								r.room_id &&
+								seen.size !== seen.add(r.room_id).size,
+						)
+						.map((r) => ({
+							ROOM_ID: r.room_id,
+							ROOM_NAME: r.room_name ?? "",
+							DATE_CREATED: r.date_created ?? "",
+						})),
+				);
+			})
+			.catch(() => {
+				if (!cancelled) setContentMatchRooms([]);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [debouncedSearch]);
+
 	// Seed pinned ids from the dedicated pinned query. Toggles update
 	// `pinnedIds` optimistically and never refetch this query, so this
 	// effect won't clobber an in-flight optimistic change.
@@ -101,10 +149,16 @@ export const ChatsPage = observer(() => {
 		return map;
 	}, [getPinnedRooms.data, getRooms.data]);
 
-	const visibleRooms = useMemo(
-		() => getRooms.data.filter((r) => !deletedSet.has(r.ROOM_ID)),
-		[getRooms.data, deletedSet],
-	);
+	const visibleRooms = useMemo(() => {
+		const nameMatchIds = new Set(getRooms.data.map((r) => r.ROOM_ID));
+		const extra = contentMatchRooms.filter(
+			(r) => !nameMatchIds.has(r.ROOM_ID) && !deletedSet.has(r.ROOM_ID),
+		);
+		return [
+			...getRooms.data.filter((r) => !deletedSet.has(r.ROOM_ID)),
+			...extra,
+		];
+	}, [getRooms.data, contentMatchRooms, deletedSet]);
 
 	// While searching, drop the dedicated pinned section so results aren't
 	// split confusingly — matches still show their star inline.
