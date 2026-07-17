@@ -15,6 +15,7 @@ interface UseBrowserSocketOptions {
 	onError: (message: string) => void;
 	onTabsChanged: (tabs: BrowserTabInfo[], activeTabId: string) => void;
 	onTabActivated: (tabId: string) => void;
+	onCursorChanged: (cursor: string) => void;
 }
 
 interface UseBrowserSocketReturn {
@@ -62,6 +63,7 @@ export function useBrowserSocket({
 	onError,
 	onTabsChanged,
 	onTabActivated,
+	onCursorChanged,
 }: UseBrowserSocketOptions): UseBrowserSocketReturn {
 	const [connectionState, setConnectionState] =
 		useState<ConnectionState>("idle");
@@ -125,6 +127,9 @@ export function useBrowserSocket({
 						break;
 					case "tab-opened":
 						// The backend follows this notification with the complete tab state.
+						break;
+					case "cursor-changed":
+						onCursorChanged(msg.cursor);
 						break;
 					case "tab-control-result": {
 						const pending = pendingTabControlRef.current.get(
@@ -227,6 +232,7 @@ export function useBrowserSocket({
 		onError,
 		onTabsChanged,
 		onTabActivated,
+		onCursorChanged,
 	]);
 
 	const sendEvent = useCallback((event: ClientToServerEvent) => {

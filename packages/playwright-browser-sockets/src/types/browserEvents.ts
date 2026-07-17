@@ -113,6 +113,7 @@ export type ServerToClientEvent =
 	| { type: "tab-opened"; tabId: string; title: string; url: string }
 	| { type: "tab-activated"; tabId: string }
 	| { type: "tabs-state"; activeTabId: string; tabs: BrowserTabInfo[] }
+	| { type: "cursor-changed"; cursor: string }
 	| {
 			type: "tab-control-result";
 			requestId: string;

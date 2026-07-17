@@ -11,6 +11,7 @@ interface BrowserViewerProps {
 	remoteWidth: number;
 	remoteHeight: number;
 	latestFrame: string | null;
+	browserCursor?: string;
 	sendEvent: (event: ClientToServerEvent) => void;
 	onUserInput?: () => void;
 	selectionMode?: boolean;
@@ -38,6 +39,7 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 	remoteWidth,
 	remoteHeight,
 	latestFrame,
+	browserCursor = "default",
 	sendEvent,
 	onUserInput,
 	selectionMode = false,
@@ -363,7 +365,7 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 		<div
 			ref={containerRef}
 			className="relative flex min-w-0 flex-1 items-center justify-center overflow-hidden bg-canvas p-4"
-			style={{ cursor: isConnected ? "crosshair" : "default" }}
+			style={{ cursor: "default" }}
 		>
 			<div className="pointer-events-none absolute inset-0 opacity-20 [background-image:linear-gradient(rgba(54,199,176,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(54,199,176,0.08)_1px,transparent_1px)] [background-size:24px_24px]" />
 			{connectionState === "idle" && (
@@ -400,7 +402,10 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 					ref={canvasRef}
 					tabIndex={0}
 					className="relative block h-full w-full rounded-sm bg-black shadow-2xl shadow-black/50 outline-none ring-1 ring-white/10"
-					style={{ objectFit: "contain" }}
+					style={{
+						objectFit: "contain",
+						cursor: isConnected ? browserCursor : "default",
+					}}
 					onMouseDown={handleMouseDown}
 					onMouseUp={handleMouseUp}
 					onClick={handleClick}
@@ -426,7 +431,7 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 							}
 						}}
 					>
-						<div className="pointer-events-none absolute top-2 left-1/2 -translate-x-1/2 rounded-md bg-black/80 px-3 py-1.5 font-medium text-white text-xs shadow-lg">
+						<div className="-translate-x-1/2 pointer-events-none absolute top-2 left-1/2 rounded-md bg-black/80 px-3 py-1.5 font-medium text-white text-xs shadow-lg">
 							Drag over website text · Esc to cancel
 						</div>
 						{selectionRectangle && (

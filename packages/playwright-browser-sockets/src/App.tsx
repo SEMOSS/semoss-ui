@@ -451,6 +451,7 @@ export default function App() {
 	} = useRemoteBrowserSession();
 	const [latestFrame, setLatestFrame] = useState<string | null>(null);
 	const [currentUrl, setCurrentUrl] = useState("");
+	const [browserCursor, setBrowserCursor] = useState("default");
 	const [browserTabs, setBrowserTabs] = useState<BrowserTabInfo[]>([]);
 	const [activeBrowserTabId, setActiveBrowserTabId] = useState("tab-1");
 	const browserTabsRef = useRef<BrowserTabInfo[]>([]);
@@ -657,6 +658,10 @@ export default function App() {
 		setLatestFrame(null);
 	}, []);
 
+	useEffect(() => {
+		setBrowserCursor("default");
+	}, [session?.sessionId]);
+
 	const {
 		connectionState,
 		sendEvent,
@@ -670,6 +675,7 @@ export default function App() {
 		onError: handleSocketError,
 		onTabsChanged: handleTabsChanged,
 		onTabActivated: handleTabActivated,
+		onCursorChanged: setBrowserCursor,
 	});
 
 	const defaultRecordingName = useMemo(() => {
@@ -2302,6 +2308,7 @@ export default function App() {
 					remoteWidth={remoteWidth}
 					remoteHeight={remoteHeight}
 					latestFrame={latestFrame}
+					browserCursor={browserCursor}
 					sendEvent={sendEvent as (e: ClientToServerEvent) => void}
 					selectionMode={selectionMode}
 					onSelectionComplete={handleSelectedTextCapture}
