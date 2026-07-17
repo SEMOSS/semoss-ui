@@ -261,7 +261,6 @@ export interface ReplayStepResult {
 export interface RemoteBrowserRecordedStep {
 	type?: string;
 	url?: string;
-	deltaY?: number;
 	selector?: string;
 	text?: string;
 	role?: string;

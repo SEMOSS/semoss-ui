@@ -2971,15 +2971,6 @@ export default function App() {
 														{step.text
 															? ` · "${step.text}"`
 															: ""}
-														{String(
-															step.type || "",
-														).toLowerCase() ===
-															"wheel" &&
-														Number.isFinite(
-															step.deltaY,
-														)
-															? ` · ${Math.round(step.deltaY ?? 0)} px`
-															: ""}
 														{step.coordinates
 															? ` · (${Math.round(
 																	step
