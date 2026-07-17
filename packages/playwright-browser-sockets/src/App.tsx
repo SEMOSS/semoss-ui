@@ -50,6 +50,7 @@ import {
 import { assertPixelSuccess, runPixel } from "./semoss/pixel";
 import type {
 	BrowserSelector,
+	BrowserTabInfo,
 	ClientToServerEvent,
 	ContextSnapshot,
 	LoadedRecording,
@@ -187,7 +188,7 @@ function ensureRequestedNavigation(
 			});
 			return [tabId, nextTabSteps];
 		}),
-	);
+	) as StepsEnvelope["steps"];
 
 	if (!replaced) {
 		const tabId = Object.keys(steps)[0] || "tab-1";
@@ -200,7 +201,14 @@ function ensureRequestedNavigation(
 			required: false,
 			timestamp: Date.now(),
 		};
-		steps[tabId] = [[navigation], ...(steps[tabId] || [])];
+		const existing = steps[tabId] || [];
+		const nestedExisting: LoadedRecordingStep[][] =
+			existing.length > 0 && Array.isArray(existing[0])
+				? (existing as LoadedRecordingStep[][])
+				: existing.length > 0
+					? [existing as LoadedRecordingStep[]]
+					: [];
+		steps[tabId] = [[navigation], ...nestedExisting];
 	}
 
 	return { ...envelope, steps };
@@ -420,6 +428,9 @@ export default function App() {
 	} = useRemoteBrowserSession();
 	const [latestFrame, setLatestFrame] = useState<string | null>(null);
 	const [currentUrl, setCurrentUrl] = useState("");
+	const [browserTabs, setBrowserTabs] = useState<BrowserTabInfo[]>([]);
+	const [activeBrowserTabId, setActiveBrowserTabId] = useState("tab-1");
+	const browserTabsRef = useRef<BrowserTabInfo[]>([]);
 	const [snackError, setSnackError] = useState<string | null>(null);
 	const [snackMessage, setSnackMessage] = useState<string | null>(null);
 	const [isRecording, setIsRecording] = useState(false);
@@ -493,6 +504,7 @@ export default function App() {
 	const autoPlaybackErrorSentRef = useRef(false);
 	const returningToPlaygroundRef = useRef(false);
 	const pauseRequestedRef = useRef(false);
+	const replayPreparedRef = useRef(false);
 	const contextSequenceRef = useRef(0);
 
 	const isPlaygroundMode = !!toolContext;
@@ -560,6 +572,7 @@ export default function App() {
 			setIsPlaybackPaused(false);
 			setValueRequiredStepId(null);
 			pauseRequestedRef.current = false;
+			replayPreparedRef.current = false;
 			const initialValues: Record<number, string> = {};
 			Object.values(recording.steps).forEach((tabSteps) => {
 				const maybeNested = tabSteps as Array<
@@ -597,13 +610,40 @@ export default function App() {
 		setSnackError(msg);
 	}, []);
 
-	const { connectionState, sendEvent, sendReplayEvent, captureContext } =
-		useBrowserSocket({
-			wsUrl: session?.webSocketUrl ?? null,
-			onFrame: handleFrame,
-			onNavigated: handleNavigated,
-			onError: handleSocketError,
-		});
+	const handleTabsChanged = useCallback(
+		(tabs: BrowserTabInfo[], activeTabId: string) => {
+			browserTabsRef.current = tabs;
+			setBrowserTabs(tabs);
+			setActiveBrowserTabId(activeTabId);
+			const activeTab = tabs.find((tab) => tab.tabId === activeTabId);
+			if (activeTab?.url) setCurrentUrl(activeTab.url);
+		},
+		[],
+	);
+
+	const handleTabActivated = useCallback((tabId: string) => {
+		setActiveBrowserTabId(tabId);
+		const activeTab = browserTabsRef.current.find(
+			(tab) => tab.tabId === tabId,
+		);
+		if (activeTab?.url) setCurrentUrl(activeTab.url);
+		setLatestFrame(null);
+	}, []);
+
+	const {
+		connectionState,
+		sendEvent,
+		sendReplayEvent,
+		sendTabControlEvent,
+		captureContext,
+	} = useBrowserSocket({
+		wsUrl: session?.webSocketUrl ?? null,
+		onFrame: handleFrame,
+		onNavigated: handleNavigated,
+		onError: handleSocketError,
+		onTabsChanged: handleTabsChanged,
+		onTabActivated: handleTabActivated,
+	});
 
 	const defaultRecordingName = useMemo(() => {
 		const title = saveTitle.trim() || "remote-browser-recording";
@@ -1074,6 +1114,10 @@ export default function App() {
 				contextSequenceRef.current = 0;
 				setCurrentUrl(info.currentUrl || normalizedUrl);
 				setLatestFrame(null);
+				setBrowserTabs([]);
+				browserTabsRef.current = [];
+				setActiveBrowserTabId("tab-1");
+				replayPreparedRef.current = false;
 				setIsRecording(false);
 			}
 		},
@@ -1101,6 +1145,10 @@ export default function App() {
 		setContextSnapshotsOpen(false);
 		contextSequenceRef.current = 0;
 		setLatestFrame(null);
+		setBrowserTabs([]);
+		browserTabsRef.current = [];
+		setActiveBrowserTabId("tab-1");
+		replayPreparedRef.current = false;
 		setIsRecording(false);
 	}, [createSession, mcpStartUrlInput]);
 
@@ -1109,6 +1157,14 @@ export default function App() {
 			const type = String(step.type || "").toUpperCase();
 			const coords = getStepCoords(step);
 			const selector = getStepSelector(step);
+			const trigger =
+				step.isTriggerNewTab && typeof step.isTriggerNewTab === "object"
+					? (step.isTriggerNewTab as Record<string, unknown>)
+					: null;
+			const replayTriggerTabId =
+				trigger?.isTrue === true && typeof trigger.tabId === "string"
+					? trigger.tabId
+					: undefined;
 			const replay = (event: ClientToServerEvent) =>
 				sendReplayEvent({ ...event, requestId: crypto.randomUUID() });
 
@@ -1144,6 +1200,7 @@ export default function App() {
 							button: "left",
 							record: false,
 							selector,
+							replayTriggerTabId,
 							waitAfterMs: getReplayWaitAfterMs(step, 400),
 						});
 						return true;
@@ -1238,10 +1295,61 @@ export default function App() {
 		await closeSession();
 		setLatestFrame(null);
 		setCurrentUrl("");
+		setBrowserTabs([]);
+		browserTabsRef.current = [];
+		setActiveBrowserTabId("tab-1");
+		replayPreparedRef.current = false;
 		setIsRecording(false);
 		setSaveDialogOpen(false);
 		setStopRecordingDialogOpen(false);
 	}, [isRecording, sendEvent, closeSession]);
+
+	const handleSwitchBrowserTab = useCallback(
+		async (tabId: string) => {
+			if (tabId === activeBrowserTabId) return;
+			setLatestFrame(null);
+			setActiveBrowserTabId(tabId);
+			const tab = browserTabsRef.current.find(
+				(candidate) => candidate.tabId === tabId,
+			);
+			if (tab?.url) setCurrentUrl(tab.url);
+			try {
+				await sendTabControlEvent({
+					type: "switch-tab",
+					targetTabId: tabId,
+					requestId: crypto.randomUUID(),
+				});
+			} catch (error) {
+				setSnackError(
+					error instanceof Error
+						? error.message
+						: "Could not switch browser tab",
+				);
+			}
+		},
+		[activeBrowserTabId, sendTabControlEvent],
+	);
+
+	const handleCloseBrowserTab = useCallback(
+		async (tabId: string) => {
+			if (isRecording || browserTabsRef.current.length <= 1) return;
+			requestPlaybackPause("Playback will pause after closing a tab");
+			try {
+				await sendTabControlEvent({
+					type: "close-tab",
+					targetTabId: tabId,
+					requestId: crypto.randomUUID(),
+				});
+			} catch (error) {
+				setSnackError(
+					error instanceof Error
+						? error.message
+						: "Could not close browser tab",
+				);
+			}
+		},
+		[isRecording, requestPlaybackPause, sendTabControlEvent],
+	);
 
 	const handleNavigate = useCallback(
 		(url: string) => {
@@ -1266,6 +1374,7 @@ export default function App() {
 	const handleToggleRecording = useCallback(() => {
 		if (!isRecording) {
 			sendEvent({ type: "recording-control", recording: true });
+			replayPreparedRef.current = false;
 			setIsRecording(true);
 			setSnackMessage("Recording started");
 			return;
@@ -1550,6 +1659,35 @@ export default function App() {
 
 			setValueRequiredStepId(null);
 			setRunningStepId(step.id);
+			try {
+				if (!replayPreparedRef.current) {
+					const firstRunnableStep = flattenedSteps.find(
+						(row) => row.step.shouldRun !== false,
+					)?.step;
+					await sendTabControlEvent({
+						type: "prepare-replay",
+						reuseActiveTab:
+							String(
+								firstRunnableStep?.type || "",
+							).toUpperCase() !== "NAVIGATE",
+						requestId: crypto.randomUUID(),
+					});
+					replayPreparedRef.current = true;
+				}
+				await sendTabControlEvent({
+					type: "switch-replay-tab",
+					targetTabId: tabId,
+					requestId: crypto.randomUUID(),
+				});
+			} catch (error) {
+				setRunningStepId(null);
+				setSnackError(
+					error instanceof Error
+						? error.message
+						: `Could not prepare ${tabId} for playback`,
+				);
+				return false;
+			}
 
 			if (playbackRecordingSource === "room") {
 				const success = await replayRoomStepViaSocket(step);
@@ -1604,10 +1742,12 @@ export default function App() {
 		[
 			editedTypeValues,
 			effectiveInsightId,
+			flattenedSteps,
 			playbackProject,
 			playbackRecordingSource,
 			replaySingleStep,
 			replayRoomStepViaSocket,
+			sendTabControlEvent,
 			selectedRecording,
 		],
 	);
@@ -1791,6 +1931,7 @@ export default function App() {
 					currentUrl={currentUrl}
 					connectionState={connectionState}
 					isCreating={isCreating}
+					isLoading={isRunningRecording}
 					onStart={handleStart}
 					onStop={handleStop}
 					onNavigate={handleNavigate}
@@ -1911,6 +2052,94 @@ export default function App() {
 					/>
 				)}
 			</Box>
+
+			{browserTabs.length > 0 && (
+				<Box
+					sx={{
+						order: -1,
+						display: "flex",
+						alignItems: "flex-end",
+						gap: 0.25,
+						px: 0.5,
+						pt: 0.5,
+						overflowX: "auto",
+						bgcolor: "action.hover",
+						borderBottom: "1px solid",
+						borderColor: "divider",
+					}}
+				>
+					{browserTabs.map((tab) => {
+						const active = tab.tabId === activeBrowserTabId;
+						const label = tab.title.trim() || tab.url || tab.tabId;
+						return (
+							<Box
+								key={tab.tabId}
+								sx={{
+									display: "flex",
+									alignItems: "center",
+									flexShrink: 0,
+									maxWidth: 210,
+									borderRadius: "8px 8px 0 0",
+									bgcolor: active
+										? "background.paper"
+										: "transparent",
+									border: "1px solid",
+									borderColor: active
+										? "divider"
+										: "transparent",
+									borderBottomColor: active
+										? "background.paper"
+										: "transparent",
+									mb: "-1px",
+								}}
+							>
+								<Tooltip title={tab.url || label}>
+									<Button
+										size="small"
+										variant="text"
+										onClick={() =>
+											handleSwitchBrowserTab(tab.tabId)
+										}
+										sx={{
+											minWidth: 0,
+											maxWidth: 175,
+											px: 1,
+											py: 0.5,
+											color: "text.primary",
+											textTransform: "none",
+											whiteSpace: "nowrap",
+											overflow: "hidden",
+											textOverflow: "ellipsis",
+										}}
+									>
+										{label}
+									</Button>
+								</Tooltip>
+								{active &&
+									!isRecording &&
+									browserTabs.length > 1 && (
+										<Tooltip title="Close tab">
+											<IconButton
+												size="small"
+												aria-label={`Close ${label}`}
+												onClick={() =>
+													handleCloseBrowserTab(
+														tab.tabId,
+													)
+												}
+												sx={{ mr: 0.5, p: 0.25 }}
+											>
+												<CloseIcon
+													sx={{ fontSize: 15 }}
+												/>
+											</IconButton>
+										</Tooltip>
+									)}
+							</Box>
+						);
+					})}
+				</Box>
+			)}
 
 			{/* Session creation error banner */}
 			{sessionError && (

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
+	BrowserTabInfo,
 	ClientToServerEvent,
 	ConnectionState,
 	ContextSnapshot,
@@ -11,6 +12,8 @@ interface UseBrowserSocketOptions {
 	onFrame: (data: string, width: number, height: number) => void;
 	onNavigated: (url: string) => void;
 	onError: (message: string) => void;
+	onTabsChanged: (tabs: BrowserTabInfo[], activeTabId: string) => void;
+	onTabActivated: (tabId: string) => void;
 }
 
 interface UseBrowserSocketReturn {
@@ -19,19 +22,28 @@ interface UseBrowserSocketReturn {
 	sendReplayEvent: (
 		event: ClientToServerEvent & { requestId: string },
 	) => Promise<void>;
+	sendTabControlEvent: (
+		event: ClientToServerEvent & { requestId: string },
+	) => Promise<void>;
 	captureContext: () => Promise<ContextSnapshot>;
 }
 
 interface PendingReplay {
 	resolve: () => void;
 	reject: (error: Error) => void;
-	timeout: ReturnType<typeof setTimeout>;
+	timeout: number;
 }
 
 interface PendingContextSnapshot {
 	resolve: (snapshot: ContextSnapshot) => void;
 	reject: (error: Error) => void;
-	timeout: ReturnType<typeof setTimeout>;
+	timeout: number;
+}
+
+interface PendingTabControl {
+	resolve: () => void;
+	reject: (error: Error) => void;
+	timeout: number;
 }
 
 const MODULE_PATH = process.env.MODULE || "/Monolith";
@@ -45,6 +57,8 @@ export function useBrowserSocket({
 	onFrame,
 	onNavigated,
 	onError,
+	onTabsChanged,
+	onTabActivated,
 }: UseBrowserSocketOptions): UseBrowserSocketReturn {
 	const [connectionState, setConnectionState] =
 		useState<ConnectionState>("idle");
@@ -54,6 +68,9 @@ export function useBrowserSocket({
 	const pendingContextSnapshotRef = useRef<
 		Map<string, PendingContextSnapshot>
 	>(new Map());
+	const pendingTabControlRef = useRef<Map<string, PendingTabControl>>(
+		new Map(),
+	);
 
 	// Build the full WS URL from the relative path returned by the REST API
 	const buildFullWsUrl = useCallback((path: string): string => {
@@ -97,6 +114,29 @@ export function useBrowserSocket({
 					case "navigated":
 						onNavigated(msg.url);
 						break;
+					case "tab-activated":
+						onTabActivated(msg.tabId);
+						break;
+					case "tabs-state":
+						onTabsChanged(msg.tabs, msg.activeTabId);
+						break;
+					case "tab-opened":
+						// A complete tabs-state message follows this notification.
+						break;
+					case "tab-control-result": {
+						const pending = pendingTabControlRef.current.get(
+							msg.requestId,
+						);
+						if (!pending) break;
+						window.clearTimeout(pending.timeout);
+						pendingTabControlRef.current.delete(msg.requestId);
+						if (msg.success) pending.resolve();
+						else
+							pending.reject(
+								new Error(msg.error || "Tab action failed"),
+							);
+						break;
+					}
 					case "replay-step-result": {
 						const pending = pendingReplayRef.current.get(
 							msg.requestId,
@@ -159,6 +199,13 @@ export function useBrowserSocket({
 				);
 			});
 			pendingContextSnapshotRef.current.clear();
+			pendingTabControlRef.current.forEach((pending) => {
+				window.clearTimeout(pending.timeout);
+				pending.reject(
+					new Error("Browser connection closed during tab action"),
+				);
+			});
+			pendingTabControlRef.current.clear();
 		};
 
 		ws.onerror = () => {
@@ -169,7 +216,15 @@ export function useBrowserSocket({
 			if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
 			ws.close();
 		};
-	}, [wsUrl, buildFullWsUrl, onFrame, onNavigated, onError]);
+	}, [
+		wsUrl,
+		buildFullWsUrl,
+		onFrame,
+		onNavigated,
+		onError,
+		onTabsChanged,
+		onTabActivated,
+	]);
 
 	const sendEvent = useCallback((event: ClientToServerEvent) => {
 		const ws = wsRef.current;
@@ -230,5 +285,37 @@ export function useBrowserSocket({
 		});
 	}, []);
 
-	return { connectionState, sendEvent, sendReplayEvent, captureContext };
+	const sendTabControlEvent = useCallback(
+		(event: ClientToServerEvent & { requestId: string }): Promise<void> => {
+			const ws = wsRef.current;
+			if (!ws || ws.readyState !== WebSocket.OPEN) {
+				return Promise.reject(
+					new Error("Browser connection is not ready"),
+				);
+			}
+			return new Promise<void>((resolve, reject) => {
+				const timeout = window.setTimeout(() => {
+					pendingTabControlRef.current.delete(event.requestId);
+					reject(
+						new Error("Timed out waiting for browser tab action"),
+					);
+				}, 10_000);
+				pendingTabControlRef.current.set(event.requestId, {
+					resolve,
+					reject,
+					timeout,
+				});
+				ws.send(JSON.stringify(event));
+			});
+		},
+		[],
+	);
+
+	return {
+		connectionState,
+		sendEvent,
+		sendReplayEvent,
+		sendTabControlEvent,
+		captureContext,
+	};
 }
