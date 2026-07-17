@@ -19,7 +19,6 @@ import {
 	Button,
 	Field,
 	FieldLabel,
-	H2,
 	H4,
 	Input,
 	Muted,
@@ -29,7 +28,7 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
-import { AddAppModal } from "@/components/app";
+import { UploadProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
@@ -110,13 +109,13 @@ export const CreateAgentPage = () => {
 			<NavbarLeft>
 				<NavbarHeader />
 			</NavbarLeft>
-			<div className="flex w-full flex-col items-start gap-6 pb-8">
-				<Breadcrumb>
+			<div className="flex flex-col gap-1">
+				<Breadcrumb className="mb-4">
 					<BreadcrumbList>
 						<BreadcrumbItem>
 							<BreadcrumbLink asChild>
 								<Link to="../" className="text-inherit">
-									Agents
+									Agent Catalog
 								</Link>
 							</BreadcrumbLink>
 						</BreadcrumbItem>
@@ -128,14 +127,8 @@ export const CreateAgentPage = () => {
 						</BreadcrumbItem>
 					</BreadcrumbList>
 				</Breadcrumb>
-
-				<div className="flex w-full flex-row items-start justify-between gap-4">
-					<div className="flex flex-col gap-1">
-						<H2>Create Agent</H2>
-						<P className="text-muted-foreground">
-							Define a reusable agent with specific capabilities
-						</P>
-					</div>
+				<div className="flex flex-row items-center justify-between gap-2">
+					<H4>New Agent</H4>
 					<Button
 						variant="outline"
 						onClick={() => setIsUploadOpen(true)}
@@ -144,20 +137,17 @@ export const CreateAgentPage = () => {
 						Upload
 					</Button>
 				</div>
-
-				{isUploadOpen && (
-					<AddAppModal
-						type="agent"
-						open={isUploadOpen}
-						handleClose={(appId) => {
-							if (appId) navigateAgent(appId);
-							setIsUploadOpen(false);
-						}}
-					/>
-				)}
-
+				<P className="mb-3 text-muted-foreground">
+					In a platform where intelligent automation drives results,
+					agents are autonomous workers that turn data into decisions.
+					Whether you're a developer, data engineer, or product owner,
+					this page helps you configure, orchestrate, and deploy smart
+					agents — equipping them with knowledge, tools, skills, and
+					guidance so they can act reliably and intelligently across
+					your most critical workflows.
+				</P>
 				<form
-					className="w-full"
+					className="my-4 w-full"
 					onSubmit={handleSubmit(onSubmit)}
 					autoComplete="off"
 				>
@@ -366,11 +356,21 @@ export const CreateAgentPage = () => {
 							disabled={!isValid || isLoading}
 							className="w-full sm:w-auto"
 						>
-							Create Agent
+							Create
 						</Button>
 					</div>
 					{isLoading && <Progress className="h-1" />}
 				</form>
+				{isUploadOpen && (
+					<UploadProjectDialog
+						type="AGENT"
+						open={isUploadOpen}
+						handleClose={(appId) => {
+							if (appId) navigateAgent(appId);
+							setIsUploadOpen(false);
+						}}
+					/>
+				)}
 			</div>
 		</>
 	);

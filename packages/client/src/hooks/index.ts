@@ -1,11 +1,12 @@
+import { useAPI } from "./use-api";
 import { useQueryEditor } from "./use-database-query-editor";
 import { useQueryResults } from "./use-database-query-results";
 import { useIteratorApi } from "./use-iterator-api";
 import { usePixel } from "./use-pixel";
+import { useProject } from "./use-project";
 import { useSparqlQueryExecution } from "./use-sparql-query-execution";
 import { useSqlQueryExecution } from "./use-sql-query-execution";
 import { useTabBarScroll } from "./use-tab-bar-scroll";
-import { useAPI } from "./useAPI";
 import { useCacheState } from "./useCacheState";
 import { useDatabaseStructure } from "./useDatabaseStructure";
 import { useDesigner } from "./useDesigner";
@@ -44,4 +45,5 @@ export {
 	useStepper,
 	useTabBarScroll,
 	useWorkspace,
+	useProject,
 };

@@ -25,6 +25,8 @@
 	"results": {
 		"successNoOutput": "✓ सफलतापूर्वक चला (कोई आउटपुट नहीं)",
 		"insightNotReady": "अंतर्दृष्टि तैयार नहीं है",
-		"unknownError": "अज्ञात त्रुटि"
+		"unknownError": "अज्ञात त्रुटि",
+		"fileDownloadStarted": "✓ फ़ाइल डाउनलोड शुरू हो गया",
+		"downloadFailed": "फ़ाइल डाउनलोड करने में विफल"
 	}
 }
