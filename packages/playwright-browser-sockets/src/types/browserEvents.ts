@@ -6,12 +6,19 @@ export interface BrowserSelector {
 	frameSelector?: string | null;
 }
 
+export interface BrowserTabInfo {
+	tabId: string;
+	title: string;
+	url: string;
+}
+
 type ReplayMetadata = {
 	requestId?: string;
 	waitAfterMs?: number;
 	selector?: BrowserSelector;
 	recordedViewportWidth?: number;
 	recordedViewportHeight?: number;
+	replayTriggerTabId?: string;
 };
 
 export type ClientToServerEvent =
@@ -83,6 +90,10 @@ export type ClientToServerEvent =
 			endX: number;
 			endY: number;
 	  }
+	| { type: "switch-tab"; targetTabId: string; requestId?: string }
+	| { type: "switch-replay-tab"; targetTabId: string; requestId?: string }
+	| { type: "prepare-replay"; requestId?: string; reuseActiveTab?: boolean }
+	| { type: "close-tab"; targetTabId: string; requestId?: string }
 	| { type: "close-session" };
 
 // ─── Events sent from Java backend → React ───────────────────────────────────
@@ -98,7 +109,17 @@ export type ServerToClientEvent =
 			};
 	  }
 	| { type: "loading"; isLoading: boolean }
-	| { type: "navigated"; url: string }
+	| { type: "navigated"; url: string; tabId?: string }
+	| { type: "tab-opened"; tabId: string; title: string; url: string }
+	| { type: "tab-activated"; tabId: string }
+	| { type: "tabs-state"; activeTabId: string; tabs: BrowserTabInfo[] }
+	| {
+			type: "tab-control-result";
+			requestId: string;
+			success: boolean;
+			activeTabId?: string;
+			error?: string;
+	  }
 	| {
 			type: "replay-step-result";
 			requestId: string;
