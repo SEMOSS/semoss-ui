@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
 	ClientToServerEvent,
 	ConnectionState,
+	SelectionBounds,
 } from "../types/browserEvents";
 
 interface BrowserViewerProps {
@@ -12,6 +13,16 @@ interface BrowserViewerProps {
 	latestFrame: string | null;
 	sendEvent: (event: ClientToServerEvent) => void;
 	onUserInput?: () => void;
+	selectionMode?: boolean;
+	onSelectionComplete?: (bounds: SelectionBounds) => void;
+	onSelectionCancel?: () => void;
+}
+
+interface SelectionPoint {
+	localX: number;
+	localY: number;
+	remoteX: number;
+	remoteY: number;
 }
 
 function getMouseButton(event: React.MouseEvent): "left" | "right" | "middle" {
@@ -29,10 +40,20 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 	latestFrame,
 	sendEvent,
 	onUserInput,
+	selectionMode = false,
+	onSelectionComplete,
+	onSelectionCancel,
 }) => {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
+	const selectionLayerRef = useRef<HTMLButtonElement>(null);
 	const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+	const [selectionStart, setSelectionStart] = useState<SelectionPoint | null>(
+		null,
+	);
+	const [selectionEnd, setSelectionEnd] = useState<SelectionPoint | null>(
+		null,
+	);
 
 	useEffect(() => {
 		if (!containerRef.current) return;
@@ -80,6 +101,15 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 		image.src = `data:image/jpeg;base64,${latestFrame}`;
 	}, [latestFrame]);
 
+	useEffect(() => {
+		if (!selectionMode) {
+			setSelectionStart(null);
+			setSelectionEnd(null);
+			return;
+		}
+		selectionLayerRef.current?.focus();
+	}, [selectionMode]);
+
 	const toRemoteCoords = useCallback(
 		(clientX: number, clientY: number) => {
 			const canvas = canvasRef.current;
@@ -105,6 +135,98 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 		[remoteHeight, remoteWidth],
 	);
 
+	const toSelectionPoint = useCallback(
+		(clientX: number, clientY: number): SelectionPoint => {
+			const layer = selectionLayerRef.current;
+			if (!layer) {
+				const remote = toRemoteCoords(clientX, clientY);
+				return {
+					localX: 0,
+					localY: 0,
+					remoteX: remote.x,
+					remoteY: remote.y,
+				};
+			}
+			const rect = layer.getBoundingClientRect();
+			const localX = Math.max(
+				0,
+				Math.min(clientX - rect.left, rect.width),
+			);
+			const localY = Math.max(
+				0,
+				Math.min(clientY - rect.top, rect.height),
+			);
+			const remote = toRemoteCoords(clientX, clientY);
+			return {
+				localX,
+				localY,
+				remoteX: remote.x,
+				remoteY: remote.y,
+			};
+		},
+		[toRemoteCoords],
+	);
+
+	const handleSelectionPointerDown = useCallback(
+		(event: React.PointerEvent<HTMLButtonElement>) => {
+			if (event.button !== 0) return;
+			event.preventDefault();
+			event.currentTarget.setPointerCapture(event.pointerId);
+			const point = toSelectionPoint(event.clientX, event.clientY);
+			setSelectionStart(point);
+			setSelectionEnd(point);
+		},
+		[toSelectionPoint],
+	);
+
+	const handleSelectionPointerMove = useCallback(
+		(event: React.PointerEvent<HTMLButtonElement>) => {
+			if (
+				!selectionStart ||
+				!event.currentTarget.hasPointerCapture(event.pointerId)
+			)
+				return;
+			setSelectionEnd(toSelectionPoint(event.clientX, event.clientY));
+		},
+		[selectionStart, toSelectionPoint],
+	);
+
+	const handleSelectionPointerUp = useCallback(
+		(event: React.PointerEvent<HTMLButtonElement>) => {
+			if (!selectionStart) return;
+			const end = toSelectionPoint(event.clientX, event.clientY);
+			if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+				event.currentTarget.releasePointerCapture(event.pointerId);
+			}
+			const width = Math.abs(end.localX - selectionStart.localX);
+			const height = Math.abs(end.localY - selectionStart.localY);
+			if (width < 5 && height < 5) {
+				setSelectionStart(null);
+				setSelectionEnd(null);
+				return;
+			}
+			onSelectionComplete?.({
+				startX: selectionStart.remoteX,
+				startY: selectionStart.remoteY,
+				endX: end.remoteX,
+				endY: end.remoteY,
+			});
+			setSelectionStart(null);
+			setSelectionEnd(null);
+		},
+		[onSelectionComplete, selectionStart, toSelectionPoint],
+	);
+
+	const selectionRectangle = useMemo(() => {
+		if (!selectionStart || !selectionEnd) return null;
+		return {
+			left: Math.min(selectionStart.localX, selectionEnd.localX),
+			top: Math.min(selectionStart.localY, selectionEnd.localY),
+			width: Math.abs(selectionEnd.localX - selectionStart.localX),
+			height: Math.abs(selectionEnd.localY - selectionStart.localY),
+		};
+	}, [selectionEnd, selectionStart]);
+
 	// Drag detection: only send mouse-click for clean clicks; send
 	// mouse-down/mouse-up only for real drags. Without this, mousedown+mouseup
 	// fires an implicit browser click AND the explicit mouse-click event fires
@@ -128,7 +250,11 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 			onUserInput?.();
 			const point = toRemoteCoords(event.clientX, event.clientY);
 			if (isDraggingRef.current) {
-				sendEvent({ type: "mouse-up", ...point, button: getMouseButton(event) });
+				sendEvent({
+					type: "mouse-up",
+					...point,
+					button: getMouseButton(event),
+				});
 			}
 			isDraggingRef.current = false;
 			dragDownPosRef.current = null;
@@ -143,7 +269,11 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 				return;
 			}
 			const point = toRemoteCoords(event.clientX, event.clientY);
-			sendEvent({ type: "mouse-click", ...point, button: getMouseButton(event) });
+			sendEvent({
+				type: "mouse-click",
+				...point,
+				button: getMouseButton(event),
+			});
 		},
 		[onUserInput, sendEvent, toRemoteCoords],
 	);
@@ -161,7 +291,11 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 				const dy = Math.abs(point.y - dragDownPosRef.current.y);
 				if (dx > DRAG_THRESHOLD_PX || dy > DRAG_THRESHOLD_PX) {
 					isDraggingRef.current = true;
-					sendEvent({ type: "mouse-down", ...dragDownPosRef.current, button: "left" });
+					sendEvent({
+						type: "mouse-down",
+						...dragDownPosRef.current,
+						button: "left",
+					});
 				}
 			}
 
@@ -254,24 +388,56 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 					Connection failed. Restart the browser session.
 				</div>
 			)}
-			<canvas
-				ref={canvasRef}
-				tabIndex={0}
-				className="relative block max-h-full max-w-full rounded-sm bg-black shadow-2xl shadow-black/50 outline-none ring-1 ring-white/10"
+			<div
+				className="relative max-h-full max-w-full"
 				style={{
 					display: isConnected || latestFrame ? "block" : "none",
 					width: fittedCanvasSize.width,
 					height: fittedCanvasSize.height,
-					objectFit: "contain",
 				}}
-				onMouseDown={handleMouseDown}
-				onMouseUp={handleMouseUp}
-				onClick={handleClick}
-				onMouseMove={handleMouseMove}
-				onContextMenu={(event) => event.preventDefault()}
-				onWheel={handleWheel}
-				onKeyDown={handleKeyDown}
-			/>
+			>
+				<canvas
+					ref={canvasRef}
+					tabIndex={0}
+					className="relative block h-full w-full rounded-sm bg-black shadow-2xl shadow-black/50 outline-none ring-1 ring-white/10"
+					style={{ objectFit: "contain" }}
+					onMouseDown={handleMouseDown}
+					onMouseUp={handleMouseUp}
+					onClick={handleClick}
+					onMouseMove={handleMouseMove}
+					onContextMenu={(event) => event.preventDefault()}
+					onWheel={handleWheel}
+					onKeyDown={handleKeyDown}
+				/>
+				{selectionMode && (
+					<button
+						type="button"
+						ref={selectionLayerRef}
+						aria-label="Select website text. Drag over text or press Escape to cancel."
+						className="absolute inset-0 z-20 cursor-text rounded-sm border-0 bg-transparent p-0 text-left outline-none"
+						style={{ touchAction: "none" }}
+						onPointerDown={handleSelectionPointerDown}
+						onPointerMove={handleSelectionPointerMove}
+						onPointerUp={handleSelectionPointerUp}
+						onKeyDown={(event) => {
+							if (event.key === "Escape") {
+								event.preventDefault();
+								onSelectionCancel?.();
+							}
+						}}
+					>
+						<div className="pointer-events-none absolute top-2 left-1/2 -translate-x-1/2 rounded-md bg-black/80 px-3 py-1.5 font-medium text-white text-xs shadow-lg">
+							Drag over website text · Esc to cancel
+						</div>
+						{selectionRectangle && (
+							<div
+								className="pointer-events-none absolute border-2 border-accent bg-accent/20 shadow-[0_0_0_9999px_rgba(0,0,0,0.18)]"
+								style={selectionRectangle}
+							/>
+						)}
+					</button>
+				)}
+			</div>
 		</div>
 	);
 };
