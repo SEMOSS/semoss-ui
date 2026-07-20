@@ -25,6 +25,8 @@
 	"results": {
 		"successNoOutput": "✓ Ran successfully (no output)",
 		"insightNotReady": "Insight not ready",
-		"unknownError": "Unknown error"
+		"unknownError": "Unknown error",
+		"fileDownloadStarted": "✓ File download started",
+		"downloadFailed": "Failed to download file"
 	}
 }
