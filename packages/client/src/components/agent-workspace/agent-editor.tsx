@@ -23,6 +23,7 @@ import {
 	AgentExecutionLimitsFields,
 	AgentFormSection,
 	type AgentFormValues,
+	AgentHooksField,
 	AgentModelField,
 	AgentSubagentsField,
 	buildEditWorkspacePixel,
@@ -37,6 +38,7 @@ type GetWorkspaceResponse = {
 	mcp: MCPConfig[];
 	skills: SkillConfig[];
 	prompts: { id: string; name: string; type: string }[];
+	known_hook_kinds?: string[];
 	config_json?: {
 		model_id?: string;
 		budgets?: {
@@ -53,6 +55,11 @@ type GetWorkspaceResponse = {
 			workspaceId: string;
 			description?: string;
 		}[];
+		hooks?: {
+			kind: string;
+			pixel?: string;
+			events?: string[];
+		}[];
 	};
 };
 
@@ -61,6 +68,7 @@ export const AgentEditor = () => {
 	const { monolithStore } = useRootStore();
 	const [isLoading, setIsLoading] = useState(false);
 	const [isFetching, setIsFetching] = useState(true);
+	const [knownHookKinds, setKnownHookKinds] = useState<string[]>([]);
 
 	const descId = useId();
 	const instructionsId = useId();
@@ -79,6 +87,7 @@ export const AgentEditor = () => {
 				if (errors.length > 0) throw new Error(errors.join(", "));
 				const data = pixelReturn[0].output;
 				const allMcps = data.mcp ?? [];
+				setKnownHookKinds(data.known_hook_kinds ?? []);
 				reset({
 					name: data.name ?? "",
 					description: data.description ?? "",
@@ -107,6 +116,7 @@ export const AgentEditor = () => {
 						workspaceId: s.workspaceId,
 						description: s.description ?? "",
 					})),
+					hooks: data.config_json?.hooks ?? [],
 				});
 			} catch (e) {
 				console.error(e);
@@ -310,6 +320,18 @@ export const AgentEditor = () => {
 							description="Runtime caps for the agent's tool loop and subagent delegation. Leave a field blank to fall back to its default."
 						>
 							<AgentExecutionLimitsFields control={control} />
+						</AgentFormSection>
+
+						<Separator />
+
+						<AgentFormSection
+							title="Hooks"
+							description="Run custom behavior at agent lifecycle points."
+						>
+							<AgentHooksField
+								control={control}
+								knownKinds={knownHookKinds}
+							/>
 						</AgentFormSection>
 					</form>
 				)}
