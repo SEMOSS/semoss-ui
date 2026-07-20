@@ -1,6 +1,12 @@
-import { ChevronDown, ChevronUp, Quote } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+	type ComponentProps,
+	useEffect,
+	useLayoutEffect,
+	useRef,
+	useState,
+} from "react";
 import {
 	H1,
 	H2,
@@ -11,12 +17,16 @@ import {
 	ScrollArea,
 	Separator,
 } from "@semoss/ui/next";
-import { useLoadingMessage } from "@/hooks";
+import { type ChunkStatus, useLoadingMessage } from "@/hooks";
 import { useMarkdownTypewriter } from "@/hooks/use-markdown-typewriter";
 import type { ResponseMessageStore } from "@/stores";
 import type { PixelMessageThinkingPart } from "@/types";
 
-const THINKING_MARKDOWN_COMPONENTS = {
+type MarkdownComponents = NonNullable<
+	ComponentProps<typeof Markdown>["components"]
+>;
+
+const THINKING_MARKDOWN_COMPONENTS: MarkdownComponents = {
 	h1: ({ children, ...props }) => (
 		<H1 className="text-inherit text-sm" {...props}>
 			{children}
@@ -91,9 +101,12 @@ const THINKING_MARKDOWN_COMPONENTS = {
 		</li>
 	),
 	blockquote: ({ children, ...props }) => (
-		<Quote className="mt-1" {...props}>
+		<blockquote
+			className="mt-1 border-border border-s-2 ps-3 text-inherit text-sm italic"
+			{...props}
+		>
 			{children}
-		</Quote>
+		</blockquote>
 	),
 	hr: ({ ...props }) => <Separator className="mt-2 mb-1" {...props} />,
 };
@@ -105,8 +118,20 @@ interface ResponseMessageThinkingProps {
 	/** Thinking to render */
 	part: PixelMessageThinkingPart;
 
-	/** Is the message currently streaming */
-	isStreaming: boolean;
+	/**
+	 * Animation status for this part, controlled by the parent message queue.
+	 * - "not_started": waiting for the part above to finish — renders nothing
+	 * - "active": currently streaming — types live and stays expanded
+	 * - "done": message moved past this part — snaps to full content
+	 */
+	status: ChunkStatus;
+
+	/**
+	 * First time the user is seeing this message stream. On a first view the
+	 * typewriter animates thinking from 0; on a return it baselines at the
+	 * thinking present on mount, jumping to the latest then typing new tokens.
+	 */
+	isFirstView: boolean;
 }
 
 /**
@@ -119,16 +144,23 @@ interface ResponseMessageThinkingProps {
  * - Smooth CSS transitions for expand/collapse
  */
 export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
-	observer(({ part, isStreaming }) => {
+	observer(({ part, status, isFirstView }) => {
+		// This part is actively streaming only while the parent has it "active".
+		// "done" means the message moved on (next part arrived or streaming ended).
+		const isStreaming = status === "active";
 		const [isExpanded, setIsExpanded] = useState(false);
 		const [isOverflowing, setIsOverflowing] = useState(false);
-		const typewriter = useMarkdownTypewriter(part.thinking);
+		// On a return view, baseline at the thinking present on mount so we jump to
+		// the latest then type new tokens, instead of replaying from the start.
+		const typewriter = useMarkdownTypewriter(part.thinking, !isFirstView);
 		const contentRef = useRef<HTMLDivElement | null>(null);
 		const hasUserScrolledRef = useRef(false);
 		const isProgrammaticScrollRef = useRef(false);
 		const { loadingMessage } = useLoadingMessage(isStreaming, undefined, 1);
 
-		const displayedThinking = typewriter.isTyping
+		// While streaming, show what the typewriter has revealed (baseline + typed
+		// net-new); otherwise render the full thinking directly.
+		const displayedThinking = isStreaming
 			? typewriter.rendered
 			: part.thinking;
 		// While actively thinking, the card is always expanded and cannot be collapsed.
@@ -205,6 +237,11 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 				contentRef.current.scrollTop = 0;
 			}
 		}, [effectiveExpanded]);
+
+		// Waiting for the part above to finish typing — render nothing until active.
+		if (status === "not_started") {
+			return null;
+		}
 
 		return (
 			<div
