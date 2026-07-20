@@ -29,7 +29,7 @@ import {
 	RoomInputMenuUpload,
 } from "@/components";
 import { useChat, useGracefulErrors } from "@/hooks";
-import type { RoomStore } from "@/stores";
+import { ResponseMessageStore, type RoomStore } from "@/stores";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomSuggestions } from "./room-suggestions";
 
@@ -217,18 +217,67 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		});
 	}, [scrollEle]);
 
-	// Auto-scroll to bottom when messages are added or content grows (streaming), unless user has scrolled away
-	// biome-ignore lint/correctness/useExhaustiveDependencies: room.history.length and contentHeight are used as triggers
+	const isAnyMessageStreaming = room.history.some(
+		(msg) => msg instanceof ResponseMessageStore && msg.isThinking,
+	);
+
+	// Track whether streaming has ever been active this session so the
+	// completion smooth-scroll doesn't fire on initial room open (where
+	// isAnyMessageStreaming starts false and never transitions true → false).
+	const hasStreamedRef = React.useRef(false);
+	if (isAnyMessageStreaming) {
+		hasStreamedRef.current = true;
+	}
+
+	// Track whether we need to smooth-scroll to bottom after the typewriter
+	// dumps its remaining content when streaming ends.
+	// Set to true the moment streaming ends; cleared once the smooth scroll fires.
+	const pendingScrollToBottomRef = React.useRef(false);
+
+	useEffect(() => {
+		if (!isAnyMessageStreaming && hasStreamedRef.current) {
+			pendingScrollToBottomRef.current = true;
+		}
+	}, [isAnyMessageStreaming]);
+
+	// Auto-scroll to bottom when content grows (streaming), unless user has scrolled away intentionally
+	// biome-ignore lint/correctness/useExhaustiveDependencies: contentHeight is used as a trigger
 	useEffect(() => {
 		if (!scrollEle || isScrollLocked) {
+			return;
+		}
+
+		// If a smooth-scroll-to-bottom is pending (streaming just ended and the
+		// typewriter is still dumping content), let the smooth-scroll effect below
+		// handle it — don't clobber it with an instant jump.
+		if (pendingScrollToBottomRef.current) {
+			return;
+		}
+
+		// Only auto-scroll if actively streaming to avoid jumping after completion
+		if (!isAnyMessageStreaming) {
 			return;
 		}
 
 		requestAnimationFrame(() => {
 			scrollEle.scrollTop = scrollEle.scrollHeight;
 		});
-	}, [scrollEle, isScrollLocked, room.history.length, contentHeight]);
+	}, [scrollEle, isScrollLocked, contentHeight, isAnyMessageStreaming]);
 
+	// Whenever contentHeight changes and a smooth-scroll is pending, fire it.
+	// This fires after the ResizeObserver detects the post-dump layout change,
+	// so scrollHeight is accurate and the instant-jump path above is gated off.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional
+	useEffect(() => {
+		if (pendingScrollToBottomRef.current && scrollEle) {
+			pendingScrollToBottomRef.current = false;
+			setIsScrollLocked(false);
+			scrollEle.scrollTo({
+				top: scrollEle.scrollHeight,
+				behavior: "smooth",
+			});
+		}
+	}, [contentHeight, scrollEle]);
 	/**
 	 * Set up scroll event listener
 	 */
@@ -320,7 +369,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			<div className="relative w-full flex-1 overflow-hidden">
 				<ScrollArea
 					// Force Radix's table-display viewport wrapper to block so wide content can't push the column past the viewport width
-					className="[&_[data-slot=scroll-area-viewport]>div]:!block h-full w-full overflow-hidden"
+					className="[&_[data-slot=scroll-area-viewport]>div]:block! h-full w-full overflow-hidden"
 					viewportRef={(ele) => {
 						setScrollEle(ele);
 					}}
@@ -331,7 +380,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						}}
 					>
 						<div className="mx-auto flex w-full max-w-[1120px] flex-col gap-2 px-4 py-6 sm:px-8 lg:px-16">
-							{room.history.map((m, mIdx) => {
+							{room.history.map((m) => {
 								if (!m.visible) {
 									return null;
 								}
@@ -385,7 +434,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							)}
 						</div>
 						{room.error ? (
-							<div className="mx-auto flex w-screen max-w-[1120px] items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
+							<div className="mx-auto flex w-full max-w-[1120px] items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
 								<div className="flex h-10 w-10 items-center justify-center rounded-full">
 									<TriangleAlertIcon className="h-6 w-6" />
 								</div>
@@ -528,6 +577,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					}
 					tokensUsed={room.tokensUsed}
 					tokensMax={chat.models.contextWindow}
+					totalTokens={room.totalTokensConsumed}
 					onCompact={handleCompactMessages}
 					onOpenSettings={handleOpenSettings}
 					excludeCommandIds={["agent", "workspace"]}

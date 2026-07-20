@@ -65,6 +65,7 @@ export interface Project {
 	"data restrictions"?: string[];
 	tag?: string | string[];
 	description?: string;
+	markdown?: string;
 }
 
 export interface App {
@@ -333,11 +334,13 @@ export interface ThemeMap {
 			showPlatformLinks?: boolean;
 			/** Whether to show a text input for feedback comments when rating a response. Defaults to false. */
 			enableFeedbackText?: boolean;
+			/** Whether to show an export button on tables rendered in chat responses. Defaults to false. */
+			enableTableExport?: boolean;
 		};
 	};
 }
 
-export type Role = "OWNER" | "EDIT" | "READ_ONLY";
+export type Role = "OWNER" | "EDIT" | "READ_ONLY" | "DISCOVERABLE";
 
 /**
  * User permission entry for adding/editing permissions
@@ -369,7 +372,14 @@ export interface UserAccessRequest {
 
 export interface MCP {
 	/** Type of the mcp */
-	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION" | "MODEL" | "VECTOR";
+	type:
+		| "PROJECT"
+		| "STORAGE"
+		| "DATABASE"
+		| "FUNCTION"
+		| "MODEL"
+		| "VECTOR"
+		| "GUARDRAIL";
 	/** Id of the mcp */
 	id: string;
 	/** Name of the mcp */
@@ -408,19 +418,13 @@ export interface Skill {
 export type SkillConfig = Pick<Skill, "id" | "name">;
 
 export interface ProjectDependency {
-	engine_type:
-		| "PROJECT"
-		| "STORAGE"
-		| "DATABASE"
-		| "FUNCTION"
-		| "MODEL"
-		| "VECTOR";
+	engine_type: Project["project_type"] | Engine["engine_type"];
 	engine_id: string;
 	engine_name: string;
 	engine_subtype?: string;
 	description?: string;
 	engine_discoverable?: boolean;
-	permission_name?: "READ_ONLY" | "EDIT" | "OWNER";
+	permission_name?: Role;
 	engine_global?: boolean;
 	access_permission?: number;
 	tags?: string;

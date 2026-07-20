@@ -1,7 +1,9 @@
+import { useAPI } from "./use-api";
 import { useQueryResults } from "./use-database-query-results";
+import { useIteratorApi } from "./use-iterator-api";
 import { usePixel } from "./use-pixel";
+import { useProject } from "./use-project";
 import { useTabBarScroll } from "./use-tab-bar-scroll";
-import { useAPI } from "./useAPI";
 import { useCacheState } from "./useCacheState";
 import { useDesigner } from "./useDesigner";
 import { useEngine } from "./useEngine";
@@ -23,6 +25,7 @@ export {
 	useCacheState,
 	useDesigner,
 	useEngine,
+	useIteratorApi,
 	useLLM,
 	useMetamodel,
 	usePage,
@@ -34,4 +37,5 @@ export {
 	useStepper,
 	useTabBarScroll,
 	useWorkspace,
+	useProject,
 };

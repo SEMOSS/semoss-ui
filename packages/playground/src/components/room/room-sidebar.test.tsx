@@ -5,7 +5,7 @@ import type { RoomStore } from "@/stores";
 import { RoomSidebar } from "./room-sidebar";
 
 vi.mock("@semoss/sdk/react", async (importOriginal) => {
-	const actual = await importOriginal();
+	const actual = await importOriginal<typeof import("@semoss/sdk/react")>();
 	return {
 		...actual,
 		useInsight: () => ({
@@ -57,7 +57,8 @@ const createMockRoom = () => ({
 });
 
 test("renders sidebar and close button triggers closeSidebar", () => {
-	const room: RoomStore = createMockRoom();
+	// Partial stub — only the members RoomSidebar touches are mocked.
+	const room = createMockRoom() as unknown as RoomStore;
 
 	render(<RoomSidebar room={room} />);
 

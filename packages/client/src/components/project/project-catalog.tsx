@@ -1,6 +1,7 @@
 import { Plus } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import {
@@ -24,7 +25,6 @@ import { CatalogFilterBox } from "@/components/catalog/catalog-filter-box";
 import { Help } from "@/components/help";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { useRootStore } from "@/hooks";
-import { useNavigate } from "@/hooks/useNavigate";
 import { getProjectLabel, isOwnerPermission } from "@/utility/catalog";
 import { NavbarHeader, NavbarLeft } from "../shared";
 import { ProjectGridItem } from "./project-grid-item";
@@ -37,7 +37,7 @@ const CATALOG_CONFIG = {
 		createPath: "/app/new",
 		basePath: "/app",
 		itemSubPath: "view",
-		pixelFilter: "onlyPortals=[true]",
+		pixelFilter: 'projectType=["CODE", "BLOCKS"]',
 		showSystemTab: true,
 	},
 	SKILL: {
@@ -46,8 +46,8 @@ const CATALOG_CONFIG = {
 			"Create reusable capabilities for your agents. Skills package tools, integrations, and workflows so you can automate tasks, connect external systems, and scale proven patterns across teams.",
 		createPath: "/skill/new",
 		basePath: "/skill",
-		itemSubPath: "edit",
-		pixelFilter: 'type="SKILL"',
+		itemSubPath: "view",
+		pixelFilter: 'projectType=["SKILL"]',
 		showSystemTab: false,
 	},
 	WORKSPACE: {
@@ -57,7 +57,7 @@ const CATALOG_CONFIG = {
 		createPath: "/agent/new",
 		basePath: "/agent",
 		itemSubPath: "edit",
-		pixelFilter: 'type="WORKSPACE"',
+		pixelFilter: 'projectType=["WORKSPACE"]',
 
 		showSystemTab: false,
 	},
@@ -100,7 +100,6 @@ export const ProjectCatalog = observer(
 	({ type }: ProjectCatalogProps): JSX.Element => {
 		const config = CATALOG_CONFIG[type as keyof typeof CATALOG_CONFIG];
 		const { configStore } = useRootStore();
-		const navigate = useNavigate();
 
 		// get metakeys of the ones we want
 		const metaKeys = configStore.store.config.projectMetaKeys
@@ -359,12 +358,14 @@ export const ProjectCatalog = observer(
 						) ? (
 							<Button
 								variant="default"
-								onClick={() => navigate(config.createPath)}
 								aria-label={`Add ${config.name}`}
 								data-testid="ProjectPage-create-new-app-btn"
+								asChild
 							>
-								<Plus className="size-4" />
-								Add {config.name}
+								<Link to={config.createPath}>
+									<Plus className="size-4" />
+									Add {config.name}
+								</Link>
 							</Button>
 						) : null
 					}
