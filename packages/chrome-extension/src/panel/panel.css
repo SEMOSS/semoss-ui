@@ -21,9 +21,16 @@ body {
   background: #ffffff;
 }
 
+.panel-container--floating {
+  height: 100%;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
 .panel-header {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
   padding: 14px 24px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -32,11 +39,77 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.panel-header h1 {
+.panel-header--draggable {
+  cursor: grab;
+  user-select: none;
+}
+
+.panel-header--draggable:active {
+  cursor: grabbing;
+}
+
+.panel-title {
   font-size: 18px;
   font-weight: 600;
   margin: 0;
   letter-spacing: 0.3px;
+}
+
+.panel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-icon-btn,
+.panel-reset-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  background: rgba(255, 255, 255, 0.16) !important;
+  color: white !important;
+  line-height: 1 !important;
+}
+
+.panel-icon-btn:hover,
+.panel-reset-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.26) !important;
+}
+
+.panel-icon-btn:disabled,
+.panel-reset-btn:disabled {
+  cursor: not-allowed !important;
+  opacity: 0.45 !important;
+}
+
+.panel-reset-btn,
+.panel-icon-btn {
+  width: 30px !important;
+  min-width: 30px !important;
+  height: 30px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+}
+
+.panel-reset-icon {
+  display: block;
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.panel-icon-btn {
+  font-size: 20px !important;
+}
+
+.panel-close-btn {
+  font-size: 17px !important;
 }
 
 .settings-btn {
@@ -63,6 +136,99 @@ body {
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
+}
+
+.panel-container--floating .panel-content {
+  padding: 14px;
+}
+
+.floating-launcher {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  background: #2563eb;
+  cursor: grab;
+  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.24);
+  transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.floating-launcher:active {
+  cursor: grabbing;
+}
+
+.floating-launcher:hover {
+  transform: translateY(-1px);
+  background: #1d4ed8;
+  box-shadow: 0 16px 38px rgba(15, 23, 42, 0.32);
+}
+
+.floating-launcher-icon,
+.floating-launcher-icon svg {
+  width: 34px;
+  height: 34px;
+}
+
+.floating-launcher-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.floating-launcher-icon svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.floating-launcher--busy .floating-launcher-icon {
+  opacity: 0;
+}
+
+.floating-launcher-spinner {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(255, 255, 255, 0.32);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: semoss-spin 0.8s linear infinite;
+}
+
+.floating-launcher-badge {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  background: #ef4444;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.floating-launcher--needs-input {
+  background: #7c3aed;
+}
+
+@keyframes semoss-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Custom Tabs Styling (replaces @semoss/ui/next Tabs that need Tailwind) */

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./panel.css";
-import { Button, Card, H1, H3, H4, Input, P } from "@semoss/ui/next";
+import { Button, Card, cn, H1, H3, H4, Input, P } from "@semoss/ui/next";
 import {
 	type PlaywrightScript,
 	ScriptExecutor,
@@ -11,9 +11,18 @@ import { WelcomeState } from "./components/WelcomeState";
 
 type PanelMode = "execution" | "recording";
 
+type AutomationRunState = {
+	active: boolean;
+	status: "idle" | "running" | "needs-input" | "complete" | "failed";
+	message?: string;
+	history: string[];
+	updatedAt: number;
+};
+
 interface ChromeMessage {
 	type: string;
 	timestamp?: number;
+	sourceTabId?: number;
 	script?: {
 		fileName: string;
 		projectId: string;
@@ -29,10 +38,19 @@ interface ChromeMessage {
 }
 
 const PanelApp: React.FC = () => {
+	const searchParams = new URLSearchParams(window.location.search);
+	const isFloatingPanel = searchParams.get("floating") === "1";
+	const hostTabId = Number(searchParams.get("tabId"));
+	const hasHostTabId =
+		searchParams.has("tabId") && Number.isFinite(hostTabId);
+
 	const [mode, setMode] = useState<PanelMode>("execution");
 	const [isLoading, setIsLoading] = useState(true);
 	const [isRunning, setIsRunning] = useState(false);
 	const [isPaused, setIsPaused] = useState(false);
+	const [isCollapsed, setIsCollapsed] = useState(isFloatingPanel);
+	const [sharedRunState, setSharedRunState] =
+		useState<AutomationRunState | null>(null);
 	const [actionHistory, setActionHistory] = useState<string[]>([]);
 	const [waitingForUserInput, setWaitingForUserInput] = useState(false);
 	const [userInputPrompt, setUserInputPrompt] = useState("");
@@ -66,6 +84,79 @@ const PanelApp: React.FC = () => {
 	const [currentSelector, setCurrentSelector] = useState<string | null>(null);
 	const [currentTabId, setCurrentTabId] = useState<number | null>(null);
 	const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const dragStateRef = useRef<{
+		pointerId: number;
+		lastX: number;
+		lastY: number;
+		hasMoved: boolean;
+	} | null>(null);
+	const suppressNextClickRef = useRef(false);
+
+	const startFloatingDrag = (event: React.PointerEvent<HTMLElement>) => {
+		if (!isFloatingPanel || event.button !== 0) return;
+
+		dragStateRef.current = {
+			pointerId: event.pointerId,
+			lastX: event.screenX,
+			lastY: event.screenY,
+			hasMoved: false,
+		};
+		event.currentTarget.setPointerCapture(event.pointerId);
+	};
+
+	const moveFloatingPanel = (event: React.PointerEvent<HTMLElement>) => {
+		const dragState = dragStateRef.current;
+		if (!dragState || dragState.pointerId !== event.pointerId) return;
+
+		const deltaX = event.screenX - dragState.lastX;
+		const deltaY = event.screenY - dragState.lastY;
+		if (Math.abs(deltaX) < 1 && Math.abs(deltaY) < 1) return;
+
+		dragState.hasMoved = true;
+		dragState.lastX = event.screenX;
+		dragState.lastY = event.screenY;
+		window.parent.postMessage(
+			{ type: "SMSS_FLOATING_PANEL_DRAG", deltaX, deltaY },
+			"*",
+		);
+	};
+
+	const finishFloatingDrag = (event: React.PointerEvent<HTMLElement>) => {
+		const dragState = dragStateRef.current;
+		if (!dragState || dragState.pointerId !== event.pointerId) return;
+
+		if (dragState.hasMoved) suppressNextClickRef.current = true;
+		dragStateRef.current = null;
+		event.currentTarget.releasePointerCapture(event.pointerId);
+		window.parent.postMessage(
+			{ type: "SMSS_FLOATING_PANEL_DRAG_END" },
+			"*",
+		);
+	};
+
+	const closeFloatingPanel = () => {
+		if (!isFloatingPanel) return;
+		window.parent.postMessage({ type: "SMSS_FLOATING_PANEL_CLOSE" }, "*");
+	};
+
+	const resetAutomationStatus = () => {
+		if (isRunning || waitingForUserInput) return;
+		setIsPaused(false);
+		setWaitingForUserInput(false);
+		setUserInputPrompt("");
+		setUserInputValue("");
+		setIsPasswordInput(false);
+		setUserInputCallback(null);
+		setCurrentSelector(null);
+		setCurrentTabId(null);
+		setActionHistory([]);
+		setSharedRunState(null);
+		chrome.runtime
+			.sendMessage({ type: "RESET_AUTOMATION_RUN_STATE" })
+			.catch(() => {
+				// Resetting shared state is best effort.
+			});
+	};
 
 	// Auto-scroll to bottom when action history updates
 	React.useEffect(() => {
@@ -77,6 +168,95 @@ const PanelApp: React.FC = () => {
 	useEffect(() => {
 		setIsLoading(false);
 	}, []);
+
+	useEffect(() => {
+		if (!isFloatingPanel) return;
+		window.parent.postMessage(
+			{ type: "SMSS_FLOATING_PANEL_RESIZE", expanded: !isCollapsed },
+			"*",
+		);
+	}, [isCollapsed, isFloatingPanel]);
+
+	useEffect(() => {
+		chrome.runtime
+			.sendMessage({ type: "GET_AUTOMATION_RUN_STATE" })
+			.then((response) => {
+				if (response?.state?.updatedAt)
+					setSharedRunState(response.state);
+			})
+			.catch(() => {
+				// The panel remains functional without a shared state snapshot.
+			});
+
+		const handleSharedRunState = (message: {
+			type?: string;
+			state?: AutomationRunState;
+		}) => {
+			if (
+				message.type === "AUTOMATION_RUN_STATE_UPDATED" &&
+				message.state
+			) {
+				setSharedRunState(message.state);
+			}
+		};
+
+		chrome.runtime.onMessage.addListener(handleSharedRunState);
+		return () =>
+			chrome.runtime.onMessage.removeListener(handleSharedRunState);
+	}, []);
+
+	useEffect(() => {
+		if (!isRunning && !waitingForUserInput && actionHistory.length === 0) {
+			return;
+		}
+
+		const lastMessage = actionHistory[actionHistory.length - 1];
+		const status: AutomationRunState["status"] = waitingForUserInput
+			? "needs-input"
+			: isRunning
+				? "running"
+				: lastMessage?.startsWith("❌")
+					? "failed"
+					: "complete";
+
+		chrome.runtime
+			.sendMessage({
+				type: "UPDATE_AUTOMATION_RUN_STATE",
+				state: {
+					active: status === "running" || status === "needs-input",
+					status,
+					message: lastMessage,
+					history: actionHistory.slice(-80),
+				},
+			})
+			.catch(() => {
+				// Cross-tab status is best effort and must not stop execution.
+			});
+	}, [actionHistory, isRunning, waitingForUserInput]);
+
+	useEffect(() => {
+		if (!isFloatingPanel) return;
+
+		const handleFloatingMessage = (event: MessageEvent) => {
+			if (event.source !== window.parent) return;
+			if (event.data?.type === "SMSS_FLOATING_PANEL_TOGGLE") {
+				setIsCollapsed((previous) => !previous);
+			}
+			if (event.data?.type === "SMSS_FLOATING_PANEL_REQUEST_STATE") {
+				window.parent.postMessage(
+					{
+						type: "SMSS_FLOATING_PANEL_RESIZE",
+						expanded: !isCollapsed,
+					},
+					"*",
+				);
+			}
+		};
+
+		window.addEventListener("message", handleFloatingMessage);
+		return () =>
+			window.removeEventListener("message", handleFloatingMessage);
+	}, [isCollapsed, isFloatingPanel]);
 
 	useEffect(() => {
 		console.log("[PANEL] ✅ Panel mounted, announcing presence");
@@ -116,6 +296,18 @@ const PanelApp: React.FC = () => {
 			sendResponse: (response?: { alive?: boolean }) => void,
 		) => {
 			console.log("[PANEL] 📨 Received message:", message.type, message);
+
+			const sourceTabId = message.sourceTabId ?? sender.tab?.id;
+			if (
+				isFloatingPanel &&
+				hasHostTabId &&
+				sourceTabId &&
+				sourceTabId !== hostTabId &&
+				(message.type === "EXECUTE_PLAYWRIGHT_SCRIPT" ||
+					message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT")
+			) {
+				return;
+			}
 
 			// Respond to panel ping checks IMMEDIATELY (even if listener not fully ready)
 			// This prevents "Extension Required" popup from showing
@@ -177,6 +369,7 @@ const PanelApp: React.FC = () => {
 					projectID,
 					title,
 				});
+				setIsCollapsed(false);
 
 				// Set ref IMMEDIATELY to block duplicate messages
 				isRunningRef.current = true;
@@ -376,6 +569,7 @@ const PanelApp: React.FC = () => {
 				}
 
 				console.log("[PANEL] 📨 Playground execution request:", script);
+				setIsCollapsed(false);
 
 				setActionHistory([
 					`🎬 Received script from Playground: ${script.fileName}`,
@@ -1123,6 +1317,66 @@ const PanelApp: React.FC = () => {
 		}
 	};
 
+	const effectiveNeedsInput =
+		waitingForUserInput || sharedRunState?.status === "needs-input";
+	const effectiveRunning = isRunning || sharedRunState?.status === "running";
+	const launcherStatus = effectiveNeedsInput
+		? "Input required"
+		: effectiveRunning
+			? sharedRunState?.message || "Running automation"
+			: "Browser Automation";
+	const canResetAutomationStatus =
+		!effectiveRunning &&
+		!effectiveNeedsInput &&
+		(actionHistory.length > 0 || !!sharedRunState?.updatedAt);
+
+	if (isFloatingPanel && isCollapsed) {
+		return (
+			<button
+				type="button"
+				className={cn(
+					"floating-launcher",
+					effectiveRunning && "floating-launcher--busy",
+					effectiveNeedsInput && "floating-launcher--needs-input",
+				)}
+				onClick={() => {
+					if (suppressNextClickRef.current) {
+						suppressNextClickRef.current = false;
+						return;
+					}
+					setIsCollapsed(false);
+				}}
+				onPointerDown={startFloatingDrag}
+				onPointerMove={moveFloatingPanel}
+				onPointerUp={finishFloatingDrag}
+				onPointerCancel={finishFloatingDrag}
+				aria-label={launcherStatus}
+				title={launcherStatus}
+			>
+				<span className="floating-launcher-icon" aria-hidden="true">
+					<svg viewBox="0 0 28 28">
+						<title>Browser automation</title>
+						<rect x="4" y="5" width="20" height="16" rx="3" />
+						<path d="M4 10h20" />
+						<path d="M9 8h.01" />
+						<path d="M13 8h.01" />
+						<path d="M12 15l4 2-3 2.5 1.5 3" />
+						<path d="M17.5 17.5l2 2" />
+					</svg>
+				</span>
+				{effectiveRunning && (
+					<span
+						className="floating-launcher-spinner"
+						aria-hidden="true"
+					/>
+				)}
+				{effectiveNeedsInput && (
+					<span className="floating-launcher-badge">1</span>
+				)}
+			</button>
+		);
+	}
+
 	if (isLoading) {
 		return (
 			<div className="panel-container">
@@ -1142,9 +1396,65 @@ const PanelApp: React.FC = () => {
 	}
 
 	return (
-		<div className="panel-container">
-			<div className="panel-header">
-				<H1>Browser Automation</H1>
+		<div
+			className={cn(
+				"panel-container",
+				isFloatingPanel && "panel-container--floating",
+			)}
+		>
+			<div
+				className={cn(
+					"panel-header",
+					isFloatingPanel && "panel-header--draggable",
+				)}
+				onPointerDown={startFloatingDrag}
+				onPointerMove={moveFloatingPanel}
+				onPointerUp={finishFloatingDrag}
+				onPointerCancel={finishFloatingDrag}
+			>
+				<H1 className="panel-title">Browser Automation</H1>
+				{isFloatingPanel && (
+					<div className="panel-header-actions">
+						<Button
+							type="button"
+							className="panel-reset-btn"
+							onPointerDown={(event) => event.stopPropagation()}
+							onClick={resetAutomationStatus}
+							disabled={!canResetAutomationStatus}
+							aria-label="Reset automation status"
+							title="Reset automation status"
+						>
+							<svg
+								className="panel-reset-icon"
+								viewBox="0 0 24 24"
+								aria-hidden="true"
+							>
+								<path d="M3 12a9 9 0 1 0 3-6.7" />
+								<path d="M3 4v5h5" />
+							</svg>
+						</Button>
+						<Button
+							type="button"
+							className="panel-icon-btn panel-collapse-btn"
+							onPointerDown={(event) => event.stopPropagation()}
+							onClick={() => setIsCollapsed(true)}
+							aria-label="Collapse Browser Automation"
+							title="Collapse"
+						>
+							-
+						</Button>
+						<Button
+							type="button"
+							className="panel-icon-btn panel-close-btn"
+							onPointerDown={(event) => event.stopPropagation()}
+							onClick={closeFloatingPanel}
+							aria-label="Close Browser Automation"
+							title="Close"
+						>
+							x
+						</Button>
+					</div>
+				)}
 			</div>
 
 			<div className="custom-tabs">

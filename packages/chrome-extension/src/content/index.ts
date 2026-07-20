@@ -4,6 +4,19 @@ import { createRoot } from "react-dom/client";
 import type { EventRecorder } from "../recorder/EventRecorder";
 import { createEventRecorder } from "../recorder/EventRecorder";
 
+const FLOATING_PANEL_WRAPPER_ID = "semoss-browser-automation-frame";
+const FLOATING_PANEL_COLLAPSED_SIZE = 72;
+const FLOATING_PANEL_EXPANDED_WIDTH = 380;
+const FLOATING_PANEL_EXPANDED_HEIGHT = 620;
+const FLOATING_PANEL_MARGIN = 16;
+const FLOATING_PANEL_POSITION_STORAGE_KEY =
+	"semoss-browser-automation-panel-position";
+
+type FloatingPanelPosition = {
+	left: number;
+	top: number;
+};
+
 let annotatedElements: HTMLElement[] = [];
 const elementIdToUniqueId: Map<number, string> = new Map();
 
@@ -18,6 +31,212 @@ let eventRecorder: EventRecorder | null = null;
 let _isRecording = false;
 let overlayRoot: Root | null = null;
 let overlayContainer: HTMLDivElement | null = null;
+let floatingPanelFrame: HTMLIFrameElement | null = null;
+let floatingPanelPosition: FloatingPanelPosition | null = null;
+let floatingPanelHidden = false;
+
+async function getHostTabId(): Promise<number | undefined> {
+	try {
+		const response = await chrome.runtime.sendMessage({
+			type: "GET_HOST_TAB_ID",
+		});
+		return response?.tabId;
+	} catch {
+		return undefined;
+	}
+}
+
+function getFloatingPanelSize() {
+	return {
+		width: floatingPanelFrame?.offsetWidth || FLOATING_PANEL_COLLAPSED_SIZE,
+		height:
+			floatingPanelFrame?.offsetHeight || FLOATING_PANEL_COLLAPSED_SIZE,
+	};
+}
+
+function getDefaultFloatingPanelPosition(): FloatingPanelPosition {
+	const { width, height } = getFloatingPanelSize();
+
+	return {
+		left: window.innerWidth - width - FLOATING_PANEL_MARGIN,
+		top: window.innerHeight - height - FLOATING_PANEL_MARGIN,
+	};
+}
+
+function clampFloatingPanelPosition(
+	position: FloatingPanelPosition,
+): FloatingPanelPosition {
+	const { width, height } = getFloatingPanelSize();
+	const maxLeft = Math.max(8, window.innerWidth - width - 8);
+	const maxTop = Math.max(8, window.innerHeight - height - 8);
+
+	return {
+		left: Math.min(Math.max(8, position.left), maxLeft),
+		top: Math.min(Math.max(8, position.top), maxTop),
+	};
+}
+
+function applyFloatingPanelPosition(position: FloatingPanelPosition | null) {
+	if (!floatingPanelFrame) return;
+
+	floatingPanelPosition = clampFloatingPanelPosition(
+		position ?? getDefaultFloatingPanelPosition(),
+	);
+	floatingPanelFrame.style.left = `${floatingPanelPosition.left}px`;
+	floatingPanelFrame.style.top = `${floatingPanelPosition.top}px`;
+	floatingPanelFrame.style.right = "auto";
+	floatingPanelFrame.style.bottom = "auto";
+}
+
+function sizeFloatingPanel(expanded: boolean) {
+	if (!floatingPanelFrame) return;
+
+	const width = expanded
+		? Math.min(FLOATING_PANEL_EXPANDED_WIDTH, window.innerWidth - 24)
+		: FLOATING_PANEL_COLLAPSED_SIZE;
+	const height = expanded
+		? Math.min(FLOATING_PANEL_EXPANDED_HEIGHT, window.innerHeight - 24)
+		: FLOATING_PANEL_COLLAPSED_SIZE;
+
+	floatingPanelFrame.style.width = `${Math.max(width, FLOATING_PANEL_COLLAPSED_SIZE)}px`;
+	floatingPanelFrame.style.height = `${Math.max(height, FLOATING_PANEL_COLLAPSED_SIZE)}px`;
+	applyFloatingPanelPosition(floatingPanelPosition);
+}
+
+function showFloatingPanel() {
+	if (!floatingPanelFrame) return;
+
+	floatingPanelHidden = false;
+	floatingPanelFrame.style.display = "block";
+	floatingPanelFrame.contentWindow?.postMessage(
+		{ type: "SMSS_FLOATING_PANEL_REQUEST_STATE" },
+		"*",
+	);
+}
+
+function hideFloatingPanel() {
+	if (!floatingPanelFrame) return;
+
+	floatingPanelHidden = true;
+	floatingPanelFrame.style.display = "none";
+}
+
+function saveFloatingPanelPosition() {
+	if (!floatingPanelPosition || !isExtensionContextValid()) return;
+
+	chrome.storage.local
+		.set({
+			[FLOATING_PANEL_POSITION_STORAGE_KEY]: floatingPanelPosition,
+		})
+		.catch(() => {
+			// Persisting the position is best effort only.
+		});
+}
+
+async function loadFloatingPanelPosition() {
+	if (!isExtensionContextValid()) return;
+
+	try {
+		const stored = await chrome.storage.local.get(
+			FLOATING_PANEL_POSITION_STORAGE_KEY,
+		);
+		const value = stored[FLOATING_PANEL_POSITION_STORAGE_KEY];
+
+		if (
+			value &&
+			typeof value.left === "number" &&
+			typeof value.top === "number"
+		) {
+			applyFloatingPanelPosition(value);
+		}
+	} catch {
+		// Keep the default position if storage is unavailable.
+	}
+}
+
+async function ensureFloatingPanel() {
+	if (floatingPanelFrame) {
+		showFloatingPanel();
+		return;
+	}
+	if (!isExtensionContextValid() || !document.documentElement) return;
+
+	const hostTabId = await getHostTabId();
+	const panelUrl = new URL(chrome.runtime.getURL("src/panel/index.html"));
+	panelUrl.searchParams.set("floating", "1");
+	if (typeof hostTabId === "number") {
+		panelUrl.searchParams.set("tabId", String(hostTabId));
+	}
+
+	const frame = document.createElement("iframe");
+	frame.id = FLOATING_PANEL_WRAPPER_ID;
+	frame.title = "SEMOSS Browser Automation";
+	frame.src = panelUrl.toString();
+	frame.setAttribute("allow", "clipboard-read; clipboard-write");
+	frame.style.position = "fixed";
+	frame.style.width = `${FLOATING_PANEL_COLLAPSED_SIZE}px`;
+	frame.style.height = `${FLOATING_PANEL_COLLAPSED_SIZE}px`;
+	frame.style.border = "0";
+	frame.style.borderRadius = `${FLOATING_PANEL_COLLAPSED_SIZE / 2}px`;
+	frame.style.background = "transparent";
+	frame.style.boxShadow = "0 12px 36px rgba(15, 23, 42, 0.24)";
+	frame.style.zIndex = "2147483647";
+	frame.style.overflow = "hidden";
+	frame.style.transition =
+		"width 180ms ease, height 180ms ease, border-radius 180ms ease, box-shadow 180ms ease";
+
+	document.documentElement.appendChild(frame);
+	floatingPanelFrame = frame;
+	floatingPanelHidden = false;
+	applyFloatingPanelPosition(null);
+	void loadFloatingPanelPosition();
+}
+
+window.addEventListener("resize", () => {
+	if (!floatingPanelFrame) return;
+	applyFloatingPanelPosition(floatingPanelPosition);
+	floatingPanelFrame.contentWindow?.postMessage(
+		{ type: "SMSS_FLOATING_PANEL_REQUEST_STATE" },
+		"*",
+	);
+});
+
+window.addEventListener("message", (event) => {
+	if (
+		!floatingPanelFrame ||
+		event.source !== floatingPanelFrame.contentWindow
+	) {
+		return;
+	}
+
+	if (event.data?.type === "SMSS_FLOATING_PANEL_RESIZE") {
+		const expanded = event.data.expanded === true;
+		sizeFloatingPanel(expanded);
+		floatingPanelFrame.style.borderRadius = expanded ? "14px" : "36px";
+		floatingPanelFrame.style.boxShadow = expanded
+			? "0 18px 54px rgba(15, 23, 42, 0.28)"
+			: "0 12px 36px rgba(15, 23, 42, 0.24)";
+	}
+
+	if (event.data?.type === "SMSS_FLOATING_PANEL_DRAG") {
+		const nextPosition =
+			floatingPanelPosition ?? getDefaultFloatingPanelPosition();
+		applyFloatingPanelPosition({
+			left: nextPosition.left + (Number(event.data.deltaX) || 0),
+			top: nextPosition.top + (Number(event.data.deltaY) || 0),
+		});
+	}
+
+	if (event.data?.type === "SMSS_FLOATING_PANEL_DRAG_END") {
+		saveFloatingPanelPosition();
+	}
+
+	if (event.data?.type === "SMSS_FLOATING_PANEL_CLOSE") {
+		hideFloatingPanel();
+	}
+});
+
+void ensureFloatingPanel();
 
 // Inject MAIN world bridge script
 const script = document.createElement("script");
@@ -241,6 +460,22 @@ new MutationObserver(() => {
 
 // Listen for messages from popup/background
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+	if (message.type === "TOGGLE_FLOATING_PANEL") {
+		const wasFloatingPanelHidden = floatingPanelHidden;
+		void ensureFloatingPanel().then(() => {
+			if (wasFloatingPanelHidden) {
+				showFloatingPanel();
+			} else {
+				floatingPanelFrame?.contentWindow?.postMessage(
+					{ type: "SMSS_FLOATING_PANEL_TOGGLE" },
+					"*",
+				);
+			}
+			sendResponse({ success: true });
+		});
+		return true;
+	}
+
 	// Forward completion messages back to portal via bridge
 	if (message.type === "SCRIPT_EXECUTION_COMPLETE") {
 		console.log("[CONTENT] ✅ Execution complete, forwarding to portal");

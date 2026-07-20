@@ -9,8 +9,70 @@ import type {
 import { escapePixelString, SemossClient } from "../services/semossClient";
 import { enhancedClick, enhancedSetValue } from "./enhancedActions";
 
+const AUTOMATION_RUN_STATE_STORAGE_KEY = "semoss-automation-run-state";
+
+type AutomationRunState = {
+	active: boolean;
+	status: "idle" | "running" | "needs-input" | "complete" | "failed";
+	message?: string;
+	history: string[];
+	updatedAt: number;
+};
+
 // Track which tabs have debuggers attached
 const attachedDebuggers = new Set<number>();
+let automationRunState: AutomationRunState = {
+	active: false,
+	status: "idle",
+	history: [],
+	updatedAt: Date.now(),
+};
+
+chrome.storage.local
+	.get(AUTOMATION_RUN_STATE_STORAGE_KEY)
+	.then((stored) => {
+		const value = stored[AUTOMATION_RUN_STATE_STORAGE_KEY];
+		if (value?.updatedAt) automationRunState = value;
+	})
+	.catch(() => {
+		// Shared run state can start fresh if storage is unavailable.
+	});
+
+function persistAndBroadcastAutomationRunState() {
+	chrome.storage.local
+		.set({ [AUTOMATION_RUN_STATE_STORAGE_KEY]: automationRunState })
+		.catch(() => {
+			// Runtime broadcasts still work if persistence is unavailable.
+		});
+	chrome.runtime
+		.sendMessage({
+			type: "AUTOMATION_RUN_STATE_UPDATED",
+			state: automationRunState,
+		})
+		.catch(() => {
+			// There may be no visible panel listening yet.
+		});
+}
+
+function updateAutomationRunState(state: Partial<AutomationRunState>) {
+	automationRunState = {
+		...automationRunState,
+		...state,
+		history: state.history ?? automationRunState.history,
+		updatedAt: Date.now(),
+	};
+	persistAndBroadcastAutomationRunState();
+}
+
+function resetAutomationRunState() {
+	automationRunState = {
+		active: false,
+		status: "idle",
+		history: [],
+		updatedAt: Date.now(),
+	};
+	persistAndBroadcastAutomationRunState();
+}
 
 // Track the tab that initiated script execution (to send completion back to it)
 let executionSourceTabId: number | null = null;
@@ -50,12 +112,14 @@ let pendingBlurEvent: {
 	timeout: number;
 } | null = null;
 
-// Handle extension icon click to open side panel
+// Handle extension icon click to toggle the floating on-page panel.
 chrome.action.onClicked.addListener((tab) => {
 	if (tab.id) {
-		chrome.sidePanel.open({ tabId: tab.id }).catch(() => {
-			// Side panel opening failed
-		});
+		chrome.tabs
+			.sendMessage(tab.id, { type: "TOGGLE_FLOATING_PANEL" })
+			.catch(() => {
+				// Content scripts are unavailable on browser/internal pages.
+			});
 	}
 });
 
@@ -383,6 +447,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	}
 
 	switch (message.type) {
+		case "GET_AUTOMATION_RUN_STATE":
+			sendResponse({ state: automationRunState });
+			return true;
+
+		case "UPDATE_AUTOMATION_RUN_STATE":
+			updateAutomationRunState(message.state || {});
+			sendResponse({ success: true, state: automationRunState });
+			return true;
+
+		case "RESET_AUTOMATION_RUN_STATE":
+			resetAutomationRunState();
+			sendResponse({ success: true, state: automationRunState });
+			return true;
+
+		case "GET_HOST_TAB_ID":
+			sendResponse({ tabId: sender.tab?.id });
+			return true;
+
 		case "GET_CURRENT_TAB":
 			chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
 				sendResponse({ tabId: tabs[0]?.id });

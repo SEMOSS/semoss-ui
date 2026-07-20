@@ -3,8 +3,8 @@
  * Floating toolbar displayed during recording with action count and controls
  */
 
-import type React from "react";
-import { useEffect, useState } from "react";
+// biome-ignore lint/style/useImportType: the package uses the classic JSX transform.
+import React, { useEffect, useState } from "react";
 import type { ChromeMessage } from "../../recorder/types";
 
 export const RecorderToolbar: React.FC = () => {

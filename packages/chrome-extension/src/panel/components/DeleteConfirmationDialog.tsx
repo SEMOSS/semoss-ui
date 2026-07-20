@@ -3,7 +3,8 @@
  * Shows impact analysis when deleting a step with dependencies
  */
 
-import type { FC } from "react";
+// biome-ignore lint/correctness/noUnusedImports: the package uses the classic JSX transform.
+import React, { type FC } from "react";
 import {
 	Button,
 	cn,
