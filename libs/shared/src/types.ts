@@ -105,7 +105,9 @@ export interface ThemeMap {
 		/** Images throughout app */
 		images: {
 			app: string;
+			appDark?: string;
 			logo: string;
+			logoDark?: string;
 			login: string;
 			landing: string;
 			tabIcon: string;
@@ -153,6 +155,7 @@ export interface ThemeMap {
 			headerItems: {
 				name: string;
 				icon: string;
+				iconDark?: string;
 				path: string;
 				url: string;
 				embed: boolean;
@@ -161,6 +164,7 @@ export interface ThemeMap {
 			footerItems: {
 				name: string;
 				icon: string;
+				iconDark?: string;
 				path: string;
 				url: string;
 				embed: boolean;

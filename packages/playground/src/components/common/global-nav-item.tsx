@@ -1,6 +1,6 @@
 import { Link, matchPath, useLocation } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
-import { SidebarMenuButton, SidebarMenuItem } from "@semoss/ui/next";
+import { SidebarMenuButton, SidebarMenuItem, useTheme } from "@semoss/ui/next";
 
 interface GlobalNavItemProps {
 	/** Name of the item */
@@ -8,6 +8,9 @@ interface GlobalNavItemProps {
 
 	/** Icon for the item */
 	icon: string;
+
+	/** Dark mode icon for the item */
+	iconDark?: string;
 
 	/** Path for the item */
 	path: string;
@@ -40,6 +43,7 @@ const KNOWN_TOOLTIP_KEYS: Record<string, string> = {
 export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 	name,
 	icon,
+	iconDark,
 	path,
 	url,
 	embed,
@@ -47,6 +51,12 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 }) => {
 	const { pathname } = useLocation();
 	const { t } = useTranslation("sidebar");
+	const { theme: colorMode } = useTheme();
+	const isDark =
+		colorMode === "dark" ||
+		(colorMode === "system" &&
+			window.matchMedia("(prefers-color-scheme: dark)").matches);
+	const resolvedIcon = (isDark && iconDark) || icon;
 
 	// Priority: 1) tooltip prop from theme, 2) i18n translation, 3) fallback to name
 	const tooltipKey = KNOWN_TOOLTIP_KEYS[name];
@@ -69,7 +79,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 						{icon ? (
 							<img
 								className="size-4 select-none"
-								src={icon}
+								src={resolvedIcon}
 								alt={name}
 							/>
 						) : null}
@@ -94,7 +104,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 						{icon ? (
 							<img
 								className="size-4 select-none"
-								src={icon}
+								src={resolvedIcon}
 								alt={name}
 							/>
 						) : null}
@@ -120,7 +130,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 					{icon ? (
 						<img
 							className="size-4 select-none"
-							src={icon}
+							src={resolvedIcon}
 							alt={name}
 						/>
 					) : null}
