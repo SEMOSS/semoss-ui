@@ -39,14 +39,14 @@ const BUCKET_LABELS: Record<DateBucket, string> = {
 export interface RoomSidebarProps {
 	pinnedRooms: RoomSummary[];
 	rooms: RoomSummary[];
-	activeRoomId: string | null;
+	activeRoomId?: string | null;
 	search: string;
 	onSearchChange: (value: string) => void;
 	isLoading?: boolean;
 	isLoadingMore?: boolean;
 	hasMore?: boolean;
 	onLoadMore: () => void;
-	onSelectRoom: (roomId: string) => void;
+	onSelectRoom?: (roomId: string) => void;
 	onNewChat: () => void;
 	onRenameRoom: (roomId: string, name: string) => void;
 	onPinRoom: (roomId: string, pinned: boolean) => void;
@@ -191,7 +191,7 @@ function RoomRow({
 export function RoomSidebar({
 	pinnedRooms,
 	rooms,
-	activeRoomId,
+	activeRoomId: controlledActiveRoomId,
 	search,
 	onSearchChange,
 	isLoading = false,
@@ -205,6 +205,21 @@ export function RoomSidebar({
 	onDeleteRoom,
 	className,
 }: RoomSidebarProps) {
+	const [internalActiveRoomId, setInternalActiveRoomId] = useState<
+		string | null
+	>(null);
+	const activeRoomId = controlledActiveRoomId ?? internalActiveRoomId;
+
+	function handleSelectRoom(roomId: string) {
+		setInternalActiveRoomId(roomId);
+		onSelectRoom?.(roomId);
+	}
+
+	function handleNewChat() {
+		setInternalActiveRoomId(null);
+		onNewChat();
+	}
+
 	const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
 	const [editingName, setEditingName] = useState("");
 
@@ -260,7 +275,7 @@ export function RoomSidebar({
 				onStartRename={() => startRename(room)}
 				onCommitRename={commitRename}
 				onCancelRename={cancelRename}
-				onSelect={() => onSelectRoom(room.roomId)}
+				onSelect={() => handleSelectRoom(room.roomId)}
 				onPin={() => onPinRoom(room.roomId, !room.pinned)}
 				onDelete={() => onDeleteRoom(room.roomId)}
 			/>
@@ -289,7 +304,7 @@ export function RoomSidebar({
 				<Button
 					variant="ghost"
 					className="justify-start gap-2"
-					onClick={onNewChat}
+					onClick={handleNewChat}
 				>
 					<SquarePenIcon className="size-4" />
 					New Chat

@@ -34,6 +34,12 @@ export const ComponentsPlaygroundLayout = () => {
 						>
 							Overview
 						</NavLink>
+						<NavLink
+							to="/components/playground/chat-demo"
+							className={navLinkClass}
+						>
+							Chat Demo
+						</NavLink>
 						{COMPONENT_GROUPS.map((group) => {
 							const entries = COMPONENT_REGISTRY.filter(
 								(e) => e.group === group,

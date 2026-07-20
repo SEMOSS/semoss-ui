@@ -23,6 +23,7 @@ export interface ChatRoomsSessionState {
 	isLoadingMore: boolean;
 	hasMore: boolean;
 	error: string | null;
+	activeRoomId: string | null;
 }
 
 /**
@@ -66,6 +67,7 @@ export class ChatRoomsSession {
 			isLoadingMore: false,
 			hasMore: true,
 			error: null,
+			activeRoomId: null,
 		}));
 
 		// Bind public methods so they work when destructured.
@@ -74,6 +76,8 @@ export class ChatRoomsSession {
 		this.renameRoom = this.renameRoom.bind(this);
 		this.pinRoom = this.pinRoom.bind(this);
 		this.deleteRoom = this.deleteRoom.bind(this);
+		this.setActiveRoom = this.setActiveRoom.bind(this);
+		this.newChat = this.newChat.bind(this);
 
 		if (autoload) {
 			void this.start();
@@ -102,6 +106,19 @@ export class ChatRoomsSession {
 	}
 	get error(): string | null {
 		return this.store.getState().error;
+	}
+	get activeRoomId(): string | null {
+		return this.store.getState().activeRoomId;
+	}
+
+	/** Set the active room (e.g. when user clicks a room in the sidebar). */
+	setActiveRoom(roomId: string): void {
+		this.setState({ activeRoomId: roomId });
+	}
+
+	/** Start a new chat — clears activeRoomId so ChatProvider creates a fresh session. */
+	newChat(): void {
+		this.setState({ activeRoomId: null });
 	}
 
 	private setState(partial: Partial<ChatRoomsSessionState>): void {
@@ -158,12 +175,16 @@ export class ChatRoomsSession {
 
 	async deleteRoom(roomId: string): Promise<void> {
 		await deletePlaygroundRoom(this.actions, roomId);
-		this.setState({
+		const patch: Partial<ChatRoomsSessionState> = {
 			pinnedRooms: this.pinnedRooms.filter(
 				(room) => room.roomId !== roomId,
 			),
 			rooms: this.rooms.filter((room) => room.roomId !== roomId),
-		});
+		};
+		if (this.activeRoomId === roomId) {
+			patch.activeRoomId = null;
+		}
+		this.setState(patch);
 	}
 
 	private async loadPinned(): Promise<void> {

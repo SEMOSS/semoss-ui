@@ -11,6 +11,8 @@ export interface ChatRoomsStoreState extends ChatRoomsSessionState {
 	renameRoom: (roomId: string, name: string) => Promise<void>;
 	pinRoom: (roomId: string, pinned: boolean) => Promise<void>;
 	deleteRoom: (roomId: string) => Promise<void>;
+	setActiveRoom: (roomId: string) => void;
+	newChat: () => void;
 }
 
 export interface ChatRoomsStoreHandle {
@@ -54,6 +56,8 @@ export function createChatRoomsStore(
 		renameRoom: session.renameRoom,
 		pinRoom: session.pinRoom,
 		deleteRoom: session.deleteRoom,
+		setActiveRoom: session.setActiveRoom,
+		newChat: session.newChat,
 	}));
 
 	const unsubscribe = session.store.subscribe((sessionState) => {
