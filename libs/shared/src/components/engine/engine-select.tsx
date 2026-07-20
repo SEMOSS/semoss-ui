@@ -59,12 +59,6 @@ interface EngineSelectProps {
 	/** Optional tooltip content to show when hovering context percentage */
 	contextTooltipContent?: React.ReactNode;
 
-	/** When true, force the context popover open (user can still dismiss manually) */
-	forceContextOpen?: boolean;
-
-	/** Called when the forced-open context popover is dismissed by the user */
-	onForceContextClose?: () => void;
-
 	/** Show the engine ID under the engine name instead of the description */
 	showEngineId?: boolean;
 
@@ -98,8 +92,6 @@ export const EngineSelect = ({
 	tokensUsed,
 	tokensMax,
 	contextTooltipContent,
-	forceContextOpen,
-	onForceContextClose,
 	showEngineId,
 	showEngineIcon = true,
 }: EngineSelectProps) => {
@@ -264,11 +256,10 @@ export const EngineSelect = ({
 					<div className="flex w-full min-w-0 items-center gap-2 overflow-hidden">
 						{showContextIndicator && (
 							<Popover
-								open={contextOpen || forceContextOpen}
+								open={contextOpen}
 								onOpenChange={(o) => {
 									if (!o && isHoveringContext.current) return;
 									setContextOpen(o);
-									if (!o) onForceContextClose?.();
 								}}
 							>
 								<PopoverTrigger asChild>

@@ -192,11 +192,6 @@ export interface ThemeMap {
 
 		/**
 		 * Context window usage percentage (0–100) at which the chat input is
-		 * disabled and the user must compact before continuing. Omit to never
-		 * auto-block.
-		 */
-		compactionThreshold?: number;
-
 		/**
 		 * Default compaction strategy shown in the compact UI. When omitted the
 		 * backend auto-detects the best strategy ("AUTO" behaviour).

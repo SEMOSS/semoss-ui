@@ -25,7 +25,6 @@ import {
 	SendIcon,
 	SparklesIcon,
 	Square,
-	TriangleAlertIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
@@ -183,12 +182,6 @@ interface RoomInputProps {
 	/** Called when the user changes the compaction strategy in the picker */
 	onStrategyChange?: (strategy: "TOOL_PRUNE" | "SUMMARY" | "AUTO") => void;
 
-	/** When true, the chat input is blocked and the user must compact first */
-	isCompactionRequired?: boolean;
-
-	/** Warning shown in the token counter popover when the user is on their last buffer message */
-	bufferWarning?: string;
-
 	/** Command IDs to suppress from the slash menu */
 	excludeCommandIds?: string[];
 
@@ -345,8 +338,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		onCompact,
 		compactionStrategy,
 		onStrategyChange,
-		isCompactionRequired = false,
-		bufferWarning,
 		excludeCommandIds,
 		onOpenSettings,
 	}) => {
@@ -360,8 +351,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// Editor state
 		const [isEmpty, setIsEmpty] = useState(true);
 		const [menuOpen, setMenuOpen] = useState(false);
-		const [forceCompactOpen, setForceCompactOpen] = useState(false);
-		const [contextAutoOpen, setContextAutoOpen] = useState(false);
 		const [isScrollable, setIsScrollable] = useState(false);
 		const [inputText, setInputText] = useState("");
 		const { root } = useRoot();
@@ -386,18 +375,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// Agent chip indicates a current selection. The Agent tab inside the
 		// modal is always visible; editability is gated on `onWorkspaceChange`.
 		const agentChipWorkspace = options.workspace ?? null;
-
-		// Auto-open the token counter popover once when the buffer warning first appears
-		const hadBufferWarning = useRef(false);
-		useEffect(() => {
-			if (bufferWarning && !hadBufferWarning.current) {
-				hadBufferWarning.current = true;
-				setContextAutoOpen(true);
-			}
-			if (!bufferWarning) {
-				hadBufferWarning.current = false;
-			}
-		}, [bufferWarning]);
 
 		// Refs for DOM elements and Lexical editor
 		const ref = useRef<HTMLDivElement>(null);
@@ -465,12 +442,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					? (tokensUsed / tokensMax) * 100
 					: undefined;
 
-			if (
-				contextUsedPercent === undefined &&
-				!onCompact &&
-				!bufferWarning
-			)
-				return null;
+			if (contextUsedPercent === undefined && !onCompact) return null;
 
 			const descriptionKey =
 				contextUsedPercent !== undefined
@@ -485,12 +457,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 			return (
 				<div className="w-full space-y-1">
-					{bufferWarning && (
-						<div className="flex items-start gap-2 rounded-md border border-amber-400/40 bg-amber-50 p-2 text-amber-900 text-sm dark:bg-amber-950/40 dark:text-amber-200">
-							<TriangleAlertIcon className="mt-0.5 size-4 shrink-0 text-amber-500" />
-							<p>{bufferWarning}</p>
-						</div>
-					)}
 					{contextUsedPercent !== undefined && descriptionKey && (
 						<p className="w-full">{t(descriptionKey)}</p>
 					)}
@@ -533,7 +499,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			onCompact,
 			compactionStrategy,
 			onStrategyChange,
-			bufferWarning,
 			t,
 			isLoading,
 			hasOutstandingTools,
@@ -825,43 +790,21 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											{isEmpty && (
 												<div
 													className={cn(
-														"pointer-events-none col-start-1 row-start-1 select-none px-4 pb-4 text-sm",
+														"pointer-events-none col-start-1 row-start-1 select-none px-4 pb-4 text-muted-foreground text-sm",
 														files.length > 0
 															? "pt-0"
 															: "pt-4",
-														isCompactionRequired
-															? "text-destructive"
-															: "text-muted-foreground",
 													)}
 												>
-													{isCompactionRequired ? (
-														<>
-															<TriangleAlertIcon className="-translate-y-px me-1 inline-block size-4 align-middle" />
-															Context window limit
-															reached for this
-															chat. You may
-															compact this
-															conversation to
-															continue or start a
-															new chat.
-														</>
-													) : (
-														<>
-															{/* Inline-block + align-middle makes the icon
-											    flow with text: when the placeholder wraps,
-											    only the text after the icon wraps to the
-											    next line, instead of the whole text
-											    jumping below the icon. */}
-															<SparklesIcon className="-translate-y-px me-1 inline-block size-4 align-middle" />
-															{isLoading
-																? t(
-																		"input.thinking",
-																	)
-																: t(
-																		"input.menuPrompt",
-																	)}
-														</>
-													)}
+													{/* Inline-block + align-middle makes the icon
+													    flow with text: when the placeholder wraps,
+													    only the text after the icon wraps to the
+													    next line, instead of the whole text
+													    jumping below the icon. */}
+													<SparklesIcon className="-translate-y-px me-1 inline-block size-4 align-middle" />
+													{isLoading
+														? t("input.thinking")
+														: t("input.menuPrompt")}
 												</div>
 											)}
 										</div>
@@ -1076,18 +1019,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													contextTooltipContent={
 														contextTooltipContent
 													}
-													forceContextOpen={
-														forceCompactOpen ||
-														contextAutoOpen
-													}
-													onForceContextClose={() => {
-														setForceCompactOpen(
-															false,
-														);
-														setContextAutoOpen(
-															false,
-														);
-													}}
 												/>
 											)}
 										</div>
@@ -1164,95 +1095,78 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								</div>
 								{/* Send / compact — pinned bottom-right, sibling of body */}
 								<div className="shrink-0">
-									{isCompactionRequired && onCompact ? (
-										<Button
-											type="button"
-											size="sm"
-											variant="default"
-											disabled={
-												isLoading || hasOutstandingTools
-											}
-											onClick={() =>
-												setForceCompactOpen(true)
-											}
-										>
-											Compact
-										</Button>
-									) : (
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<span data-tour="tour-send">
-													<Button
-														variant="default"
-														size="icon-sm"
-														aria-label={
-															isLoading
-																? t(
-																		"input.pauseToolsTooltip",
-																	)
-																: t(
-																		"input.askLabel",
-																	)
-														}
-														disabled={
-															isLoading
-																? hasToolsPaused ||
-																	hidePauseButton
-																: isEmpty ||
-																	hasOutstandingTools ||
-																	isCompactionRequired
-														}
-														onClick={() => {
-															if (isLoading) {
-																toggleToolsPaused?.();
-															} else {
-																promptModel();
-															}
-														}}
-													>
-														{isLoading ? (
-															hasToolsPaused ||
-															hidePauseButton ? (
-																<Spinner />
-															) : (
-																<Square
-																	className="size-3"
-																	fill="currentColor"
-																/>
-															)
-														) : (
-															<SendIcon />
-														)}
-													</Button>
-												</span>
-											</TooltipTrigger>
-											<TooltipContent>
-												{(() => {
-													if (isLoading) {
-														return hasToolsPaused ||
-															hidePauseButton
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<span data-tour="tour-send">
+												<Button
+													variant="default"
+													size="icon-sm"
+													aria-label={
+														isLoading
 															? t(
-																	"input.thinkingTooltip",
+																	"input.pauseToolsTooltip",
 																)
 															: t(
-																	"input.pauseToolsTooltip",
-																);
-													} else if (isEmpty) {
-														return t(
-															"input.enterQuestion",
-														);
-													} else if (
-														hasOutstandingTools
-													) {
-														return t(
-															"input.completeTool",
-														);
+																	"input.askLabel",
+																)
 													}
-													return t("input.ask");
-												})()}
-											</TooltipContent>
-										</Tooltip>
-									)}
+													disabled={
+														isLoading
+															? hasToolsPaused ||
+																hidePauseButton
+															: isEmpty ||
+																hasOutstandingTools
+													}
+													onClick={() => {
+														if (isLoading) {
+															toggleToolsPaused?.();
+														} else {
+															promptModel();
+														}
+													}}
+												>
+													{isLoading ? (
+														hasToolsPaused ||
+														hidePauseButton ? (
+															<Spinner />
+														) : (
+															<Square
+																className="size-3"
+																fill="currentColor"
+															/>
+														)
+													) : (
+														<SendIcon />
+													)}
+												</Button>
+											</span>
+										</TooltipTrigger>
+										<TooltipContent>
+											{(() => {
+												if (isLoading) {
+													return hasToolsPaused ||
+														hidePauseButton
+														? t(
+																"input.thinkingTooltip",
+															)
+														: t(
+																"input.pauseToolsTooltip",
+															);
+												} else if (isEmpty) {
+													return t(
+														"input.enterQuestion",
+													);
+												} else if (
+													hasOutstandingTools
+												) {
+													return t(
+														"input.completeTool",
+													);
+												}
+												return t("input.ask");
+											})()}
+										</TooltipContent>
+									</Tooltip>
 								</div>
 							</div>
 						</div>
