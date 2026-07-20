@@ -1,5 +1,4 @@
 import { useAPI } from "./use-api";
-import { useQueryResults } from "./use-database-query-results";
 import { useIteratorApi } from "./use-iterator-api";
 import { usePixel } from "./use-pixel";
 import { useProject } from "./use-project";
@@ -30,7 +29,6 @@ export {
 	useMetamodel,
 	usePage,
 	usePixel,
-	useQueryResults,
 	useRootStore,
 	useServerPagination,
 	useSettings,

@@ -1,4 +1,5 @@
 import {
+	AlertCircleIcon,
 	ChevronDown,
 	ChevronLeft,
 	ChevronRight,
@@ -18,6 +19,9 @@ import {
 } from "@semoss/sdk/react";
 import { ColumnMetadataModal, type LogicalDataType } from "@semoss/shared";
 import {
+	Alert,
+	AlertDescription,
+	AlertTitle,
 	Badge,
 	Button,
 	Card,
@@ -33,6 +37,7 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
+	Spinner,
 	Table,
 	TableBody,
 	TableCell,
@@ -48,7 +53,6 @@ import { SyncExternalDatabaseOverlay } from "@/components/database";
 import { Metamodel, type MetamodelNodeType } from "@/components/metamodel";
 import { Section } from "@/components/ui";
 import { useEngine, useRootStore } from "@/hooks";
-import { useQueryResults } from "@/hooks/use-database-query-results";
 
 const normalizeSearchValue = (value: string) =>
 	value.toLowerCase().replace(/[\s_]+/g, "");
@@ -197,8 +201,6 @@ export const EngineMetadataPage = observer(() => {
 	const [openColumnDetails, setOpenColumnDetails] = useState(false);
 	const [selectedColumnDetails, setSelectedColumnDetails] =
 		useState<ColumnDetails | null>(null);
-
-	const renderQueryResults = useQueryResults();
 
 	const getDatabaseMetamodel = usePixel<{
 		dataTypes: Record<string, string>;
@@ -1649,28 +1651,79 @@ Error ${e.message || "Unknown error"}
 							<div className="min-h-0 flex-1 overflow-hidden">
 								{getData.status === "SUCCESS" &&
 								metadataPreviewData ? (
-									renderQueryResults(
-										metadataPreviewData,
-										100,
-										true,
-									)
+									<div className="h-full w-full overflow-hidden px-4 py-1.5">
+										<Table wrapperClassName="h-full w-full rounded-md border border-border overflow-auto">
+											<TableHeader className="sticky top-0 z-10 bg-secondary">
+												<TableRow>
+													{metadataPreviewData.output.data.headers.map(
+														(header) => (
+															<TableHead
+																key={header}
+															>
+																{header}
+															</TableHead>
+														),
+													)}
+												</TableRow>
+											</TableHeader>
+											<TableBody>
+												{metadataPreviewData.output.data.values.map(
+													(row, rowIdx) => (
+														// biome-ignore lint/suspicious/noArrayIndexKey: table rows have no natural unique key
+														<TableRow key={rowIdx}>
+															{(
+																row as unknown[]
+															).map(
+																(
+																	cell,
+																	cellIdx,
+																) => (
+																	<TableCell
+																		key={
+																			metadataPreviewData
+																				.output
+																				.data
+																				.headers[
+																				cellIdx
+																			]
+																		}
+																	>
+																		{String(
+																			cell ??
+																				"",
+																		)}
+																	</TableCell>
+																),
+															)}
+														</TableRow>
+													),
+												)}
+											</TableBody>
+										</Table>
+									</div>
 								) : getData.status === "LOADING" ? (
 									<div className="flex h-full items-center justify-center p-8">
-										<P className="text-muted-foreground text-sm">
-											Loading data preview...
-										</P>
+										<Spinner />
 									</div>
 								) : getData.status === "ERROR" ? (
-									<div className="flex h-full items-center justify-center p-8">
-										<P className="text-muted-foreground text-sm">
-											Unable to load data preview.
-										</P>
+									<div className="flex h-full w-full items-center justify-center">
+										<Alert
+											variant="destructive"
+											className="max-w-md"
+										>
+											<AlertCircleIcon />
+											<AlertTitle>Error</AlertTitle>
+											<AlertDescription>
+												{getData.error?.message ||
+													"Error"}
+											</AlertDescription>
+										</Alert>
 									</div>
 								) : (
 									<div className="flex h-full items-center justify-center p-8">
-										<P className="text-muted-foreground text-sm">
+										<Muted>
 											Select a table to view data.
-										</P>
+										</Muted>
 									</div>
 								)}
 							</div>
@@ -1696,7 +1749,7 @@ Error ${e.message || "Unknown error"}
 					views={concepts} // for RDBMS, tables and views are the same in terms of metadata, so we can just pass the concepts as both
 					open={showSyncDatabase}
 					onClose={async (success, data) => {
-						if (success) {
+						if (success && data) {
 							await syncDatabase(data.tables, data.views);
 						}
 
