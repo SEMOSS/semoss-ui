@@ -8,7 +8,7 @@ import {
 	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { type ColumnInterface, runPixel, usePixel } from "@semoss/sdk/react";
 import { FlexLayout } from "@semoss/shared";
 import {
@@ -17,20 +17,10 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { QueryResultsPanel } from "@/components/database";
-import {
-	hasTabularData,
-	isErrorResponse,
-	type QueryResult,
-} from "@/hooks/use-database-query-execution";
 import { QueryEditorPanel } from "./query-editor-panel";
+import { QueryResultsPanel } from "./query-results-panel";
+import type { QueryWorkspaceMode } from "./query-script-templates";
 import { QueryStructureBrowser } from "./query-structure-browser";
-
-/** Query language handled by the workspace */
-export type QueryWorkspaceMode = "SQL" | "SPARQL";
-
-/** Data-access variant handled by the workspace */
-export type QueryWorkspaceVariant = "engine" | "admin";
 
 /** FlexLayout component identifiers for the query workspace panels */
 export const QUERY_WORKSPACE_COMPONENT = {
@@ -62,15 +52,13 @@ interface QueryWorkspaceProps {
 	 * Data-access variant (defaults to "engine"). "admin" targets a privileged
 	 * system database using AdminSqlQuery and AdminGetSystemDatabaseSchema.
 	 */
-	variant?: QueryWorkspaceVariant;
+	variant?: "engine" | "admin";
 }
 
 export const QueryWorkspace: React.FC<QueryWorkspaceProps> = observer(
 	({ engine, mode = "SQL", variant = "engine" }) => {
 		const [isMaximized, setIsMaximized] = useState(false);
-		const [activeResultPanelId, setActiveResultPanelId] = useState<
-			string | null
-		>(null);
+
 		const panelCounterRef = useRef(1);
 
 		const model = useMemo(() => {
@@ -224,15 +212,11 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = observer(
 			}));
 		}, [getDatabaseStructure.status, getDatabaseStructure.data, variant]);
 
-		const [previewData, setPreviewData] = useState<QueryResult | null>(
-			null,
-		);
 		const [isRunning, setIsRunning] = useState(false);
-		const [pixelQuery, setPixelQuery] = useState<string | null>(null);
-
-		const clearResults = () => {
-			setPreviewData(null);
-		};
+		const [result, setResult] =
+			useState<React.ComponentProps<typeof QueryResultsPanel>["result"]>(
+				null,
+			);
 
 		/**
 		 * Execute a query and display the results in the results panel.
@@ -247,116 +231,152 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = observer(
 				return;
 			}
 
-			setActiveResultPanelId(panelId);
 			setIsRunning(true);
 
-			// only select if active
-			const resultsTab = model.getNodeById(QUERY_WORKSPACE_TAB.RESULTS);
-			const isResultsSelected =
-				resultsTab instanceof FlexLayout.TabNode &&
-				resultsTab.isVisible();
-
-			if (!isResultsSelected) {
-				model.doAction(
-					FlexLayout.Actions.selectTab(QUERY_WORKSPACE_TAB.RESULTS),
-				);
-			}
-
 			try {
+				// only select if not selected
+				const resultsTab = model.getNodeById(
+					QUERY_WORKSPACE_TAB.RESULTS,
+				);
+				const isResultsSelected =
+					resultsTab instanceof FlexLayout.TabNode &&
+					resultsTab.isVisible();
+				if (!isResultsSelected) {
+					model.doAction(
+						FlexLayout.Actions.selectTab(
+							QUERY_WORKSPACE_TAB.RESULTS,
+						),
+					);
+				}
+
 				let pixel: string;
 				if (variant === "admin") {
-					const cleaned = q.replaceAll("`", "");
-					pixel = `AdminSqlQuery(database=["${engine}"], query=["<encode>${cleaned}</encode>"], commit=[true]);`;
+					pixel = `AdminSqlQuery(database=["${engine}"], query=["<encode>${q}</encode>"], commit=[true]);`;
 				} else if (mode === "SPARQL") {
 					pixel = `SparqlQuery(database=["${engine}"], query=["<encode>${q}</encode>"], raw=[${raw}], commit=[true]);`;
 				} else {
 					pixel = `SqlQuery(database=["${engine}"], query=["<encode>${q}</encode>"], commit=[true]);`;
 				}
-				setPixelQuery(pixel);
 
+				// run the pixel and store the results
 				const response = await runPixel(pixel);
 
-				let resultToStore: QueryResult;
-				if (response?.pixelReturn && response.pixelReturn.length > 0) {
-					resultToStore = {
-						...response.pixelReturn[0],
-						queryType: "OTHER",
-						queryText: q,
+				// store the result for the results panel
+				let result: React.ComponentProps<
+					typeof QueryResultsPanel
+				>["result"] = null;
+
+				const output = response.pixelReturn[0].output;
+				const timeToRun = response.pixelReturn[0].timeToRun;
+
+				if (response.errors.length > 0) {
+					result = {
+						type: "ERROR",
+						query: q,
+						raw: raw, // for sparql queries, indicates if the result is raw or not
+						sourcePanel: panelId,
+						message: response.errors.join("\n"),
+						timeToRun: timeToRun,
+					};
+				} else if (
+					output &&
+					typeof output === "object" &&
+					"data" in output &&
+					typeof output.data === "object" &&
+					output.data !== null &&
+					"headers" in output.data &&
+					"values" in output.data
+				) {
+					result = {
+						type: "TABLE",
+						query: q,
+						raw: raw, // for sparql queries, indicates if the result is raw or not
+						sourcePanel: panelId,
+						output: output.data as {
+							headers: string[];
+							values: unknown[][];
+						},
+						timeToRun: timeToRun,
+					};
+				} else if (output && typeof output === "string") {
+					result = {
+						type: "MESSAGE",
+						query: q,
+						raw: raw, // for sparql queries, indicates if the result is raw or not
+						sourcePanel: panelId,
+						message: String(output ?? ""),
+						timeToRun: timeToRun,
 					};
 				} else {
-					resultToStore = {
-						output: response,
-						queryType: "OTHER",
-						timeToRun: 0,
-						queryText: q,
+					result = {
+						type: "JSON",
+						query: q,
+						raw: raw, // for sparql queries, indicates if the result is raw or not
+						sourcePanel: panelId,
+						output: output,
+						timeToRun: timeToRun,
 					};
 				}
 
-				resultToStore.queryType = hasTabularData(resultToStore)
-					? "SELECT"
-					: "OTHER";
+				setResult(result);
 
-				setPreviewData(resultToStore);
-
-				if (
-					!isErrorResponse(resultToStore) &&
-					!hasTabularData(resultToStore)
-				) {
+				// refresh the database structure if the query was a message
+				if (result?.type !== "TABLE") {
 					getDatabaseStructure.refresh();
 				}
 			} catch (err: unknown) {
 				const message =
 					err instanceof Error ? err.message : "Unknown error";
 
-				setPreviewData({
-					error: true,
-					output: `Error: ${message}`,
-					operationType: ["ERROR"],
-					queryType: "OTHER",
-					queryText: q,
+				setResult({
+					type: "ERROR",
+					query: q,
+					raw: false,
+					sourcePanel: panelId,
+					message: message,
+					timeToRun: 0,
 				});
 			} finally {
 				setIsRunning(false);
 			}
 		};
 
-		const addQueryPanel = useCallback(
-			(initialQuery: string, name: string) => {
-				const tabsetNode = model.getNodeById(
-					QUERY_WORKSPACE_TABSET.EDITOR,
-				);
-				const targetTabsetId =
-					tabsetNode?.getId() ??
-					model.getActiveTabset()?.getId() ??
-					"";
+		/**
+		 * Add a query panel to the workspace with the given initial query and name.
+		 * @param initialQuery
+		 * @param name
+		 * @returns
+		 */
+		const addQueryPanel = (initialQuery: string, name: string) => {
+			const tabsetNode = model.getNodeById(QUERY_WORKSPACE_TABSET.EDITOR);
+			const targetTabsetId =
+				tabsetNode?.getId() ?? model.getActiveTabset()?.getId() ?? "";
 
-				if (!targetTabsetId) {
-					return;
-				}
+			if (!targetTabsetId) {
+				return;
+			}
 
-				panelCounterRef.current += 1;
-				const panelId = `${QUERY_WORKSPACE_TAB.EDITOR}_${Date.now()}_${panelCounterRef.current}`;
+			// increment
+			panelCounterRef.current += 1;
 
-				model.doAction(
-					FlexLayout.Actions.addNode(
-						{
-							type: "tab",
-							id: panelId,
-							name,
-							component: QUERY_WORKSPACE_COMPONENT.EDITOR,
-							config: { initialQuery },
-							enableClose: true,
-							enableRename: true,
-						},
-						targetTabsetId,
-						FlexLayout.DockLocation.CENTER,
-						-1,
-						true,
-					),
-				);
-			},
-			[model],
-		);
+			model.doAction(
+				FlexLayout.Actions.addNode(
+					{
+						type: "tab",
+						id: `${QUERY_WORKSPACE_TAB.EDITOR}_${panelCounterRef.current}`,
+						name,
+						component: QUERY_WORKSPACE_COMPONENT.EDITOR,
+						config: { initialQuery },
+						enableClose: true,
+						enableRename: true,
+					},
+					targetTabsetId,
+					FlexLayout.DockLocation.CENTER,
+					-1,
+					true,
+				),
+			);
+		};
 
 		return (
 			<div className="relative h-full w-full overflow-hidden">
@@ -519,28 +539,15 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = observer(
 										component ===
 										QUERY_WORKSPACE_COMPONENT.RESULTS
 									) {
-										const sourceNode = activeResultPanelId
-											? model.getNodeById(
-													activeResultPanelId,
-												)
-											: undefined;
-										const sourcePanelName =
-											sourceNode instanceof
-											FlexLayout.TabNode
-												? sourceNode.getName()
-												: undefined;
 										return (
 											<div className="h-full w-full overflow-hidden">
 												<QueryResultsPanel
-													previewData={previewData}
-													previewLoading={isRunning}
-													clearResults={clearResults}
-													pixelQuery={
-														pixelQuery ?? undefined
-													}
-													sourcePanelName={
-														sourcePanelName
-													}
+													engine={engine}
+													mode={mode}
+													variant={variant}
+													model={model}
+													isRunning={isRunning}
+													result={result}
 												/>
 											</div>
 										);

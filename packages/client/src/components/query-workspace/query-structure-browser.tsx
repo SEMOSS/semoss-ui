@@ -1,4 +1,5 @@
 import {
+	AlertCircleIcon,
 	ChevronDown,
 	ChevronsUpDown,
 	RefreshCw,
@@ -13,6 +14,7 @@ import { DataTypeIcon } from "@semoss/shared";
 import {
 	Alert,
 	AlertDescription,
+	AlertTitle,
 	Button,
 	Collapsible,
 	CollapsibleContent,
@@ -277,19 +279,19 @@ export const QueryStructureBrowser: React.FC<QueryStructureBrowserProps> = ({
 
 				<div className="flex-1 overflow-auto p-0">
 					{isLoading && (
-						<div className="flex flex-col items-center justify-center py-6">
+						<div className="flex h-full w-full items-center justify-center">
 							<Spinner className="size-4" />
 						</div>
 					)}
 
 					{error && (
-						<Alert
-							variant="destructive"
-							className="m-3"
-							data-testid="query-structure-error"
-						>
-							<AlertDescription>{error}</AlertDescription>
-						</Alert>
+						<div className="flex h-full w-full items-center justify-center">
+							<Alert variant="destructive" className="max-w-md">
+								<AlertCircleIcon />
+								<AlertTitle>Error</AlertTitle>
+								<AlertDescription>{error}</AlertDescription>
+							</Alert>
+						</div>
 					)}
 
 					{!isLoading && !error && (

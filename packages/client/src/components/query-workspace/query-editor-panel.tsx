@@ -4,6 +4,8 @@ import type { ColumnInterface } from "@semoss/sdk";
 import {
 	type FlexLayout,
 	MonacoEditor,
+	type monaco,
+	type OnMount,
 	registerSparqlLanguage,
 	SPARQL_THEME_LIGHT,
 } from "@semoss/shared";
@@ -42,111 +44,6 @@ const SQL_KEYWORDS = [
 	"DELETE",
 ];
 
-type MonacoPosition = {
-	lineNumber: number;
-	column: number;
-};
-
-type MonacoWord = {
-	startColumn: number;
-	endColumn: number;
-};
-
-type MonacoModel = {
-	getWordUntilPosition: (position: MonacoPosition) => MonacoWord;
-};
-
-type MonacoCompletionItem = {
-	label: string;
-	kind: number;
-	insertText: string;
-	detail?: string;
-	sortText?: string;
-	range?: unknown;
-};
-
-type MonacoCompletionProvider = {
-	triggerCharacters?: string[];
-	provideCompletionItems: (
-		model: MonacoModel,
-		position: MonacoPosition,
-	) => { suggestions: MonacoCompletionItem[] };
-};
-
-type MonacoDisposable = {
-	dispose: () => void;
-};
-
-type MonacoRangeCtor = new (
-	startLineNumber: number,
-	startColumn: number,
-	endLineNumber: number,
-	endColumn: number,
-) => unknown;
-
-type MonacoApi = {
-	languages: {
-		registerCompletionItemProvider: (
-			languageId: string,
-			provider: MonacoCompletionProvider,
-		) => MonacoDisposable;
-		CompletionItemKind: {
-			Keyword: number;
-			Class: number;
-			Field: number;
-		};
-	};
-	editor: {
-		setTheme: (theme: string) => void;
-	};
-	Range: MonacoRangeCtor;
-	KeyMod: {
-		CtrlCmd: number;
-	};
-	KeyCode: {
-		Enter: number;
-	};
-};
-
-type MonacoEditorInstance = {
-	addAction: (action: {
-		contextMenuGroupId?: string;
-		contextMenuOrder?: number;
-		id: string;
-		label: string;
-		keybindings?: number[];
-		run: () => void;
-	}) => void;
-	setValue: (value: string) => void;
-	getValue: () => string;
-};
-
-const isMonacoApi = (value: unknown): value is MonacoApi => {
-	if (!value || typeof value !== "object") {
-		return false;
-	}
-
-	const api = value as MonacoApi;
-	return (
-		typeof api.Range === "function" &&
-		typeof api.languages?.registerCompletionItemProvider === "function" &&
-		typeof api.editor?.setTheme === "function"
-	);
-};
-
-const isMonacoEditor = (value: unknown): value is MonacoEditorInstance => {
-	if (!value || typeof value !== "object") {
-		return false;
-	}
-
-	const editor = value as MonacoEditorInstance;
-	return (
-		typeof editor.addAction === "function" &&
-		typeof editor.getValue === "function" &&
-		typeof editor.setValue === "function"
-	);
-};
-
 interface QueryEditorPanelProps {
 	/** The FlexLayout tab node backing this editor panel */
 	node: FlexLayout.TabNode;
@@ -183,9 +80,9 @@ export const QueryEditorPanel: React.FC<QueryEditorPanelProps> = ({
 
 	const [query, setQuery] = useState(initialQuery);
 	const [sparqlRaw, setSparqlRaw] = useState(true);
-	const editorRef = useRef<MonacoEditorInstance | null>(null);
-	const monacoRef = useRef<MonacoApi | null>(null);
-	const completionProviderRef = useRef<MonacoDisposable | null>(null);
+	const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+	const monacoRef = useRef<typeof monaco | null>(null);
+	const completionProviderRef = useRef<monaco.IDisposable | null>(null);
 
 	const registerCompletionProvider = useCallback(() => {
 		if (!monacoRef.current) {
@@ -196,34 +93,32 @@ export const QueryEditorPanel: React.FC<QueryEditorPanelProps> = ({
 
 		completionProviderRef.current?.dispose();
 
-		const schemaSuggestions: MonacoCompletionItem[] = structure.flatMap(
-			(table) => {
-				const tableSuggestion: MonacoCompletionItem = {
-					label: table.table,
-					kind: monaco.languages.CompletionItemKind.Class,
-					insertText: table.table,
-					detail: mode === "SPARQL" ? "Graph/Table" : "Table",
-					sortText: `1_${table.table}`,
+		const schemaSuggestions = structure.flatMap((table) => {
+			const tableSuggestion = {
+				label: table.table,
+				kind: monaco.languages.CompletionItemKind.Class,
+				insertText: table.table,
+				detail: mode === "SPARQL" ? "Graph/Table" : "Table",
+				sortText: `1_${table.table}`,
+			};
+
+			const columnSuggestions = table.columns.map((column) => {
+				const columnType = column.type;
+				return {
+					label: column.column,
+					kind: monaco.languages.CompletionItemKind.Field,
+					insertText: column.column,
+					detail: columnType
+						? `Column (${table.table}) • ${columnType}`
+						: `Column (${table.table})`,
+					sortText: `2_${table.table}_${column.column}`,
 				};
+			});
 
-				const columnSuggestions = table.columns.map((column) => {
-					const columnType = column.type;
-					return {
-						label: column.column,
-						kind: monaco.languages.CompletionItemKind.Field,
-						insertText: column.column,
-						detail: columnType
-							? `Column (${table.table}) • ${columnType}`
-							: `Column (${table.table})`,
-						sortText: `2_${table.table}_${column.column}`,
-					};
-				});
+			return [tableSuggestion, ...columnSuggestions];
+		});
 
-				return [tableSuggestion, ...columnSuggestions];
-			},
-		);
-
-		const baseSuggestions: MonacoCompletionItem[] =
+		const baseSuggestions =
 			mode === "SQL"
 				? [
 						...SQL_KEYWORDS.map((keyword) => ({
@@ -245,10 +140,7 @@ export const QueryEditorPanel: React.FC<QueryEditorPanelProps> = ({
 						mode === "SPARQL"
 							? [" ", ".", "_", "?", ":"]
 							: [" ", ".", "_"],
-					provideCompletionItems: (
-						model: MonacoModel,
-						position: MonacoPosition,
-					) => {
+					provideCompletionItems: (model, position) => {
 						const word = model.getWordUntilPosition(position);
 						const range = new monaco.Range(
 							position.lineNumber,
@@ -277,11 +169,7 @@ export const QueryEditorPanel: React.FC<QueryEditorPanelProps> = ({
 		};
 	}, [registerCompletionProvider]);
 
-	const handleEditorMount = (editor: unknown, monaco: unknown) => {
-		if (!isMonacoEditor(editor) || !isMonacoApi(monaco)) {
-			return;
-		}
-
+	const handleEditorMount: OnMount = (editor, monaco) => {
 		editorRef.current = editor;
 		monacoRef.current = monaco;
 
@@ -322,6 +210,9 @@ export const QueryEditorPanel: React.FC<QueryEditorPanelProps> = ({
 			if (initialQuery) {
 				editor.setValue(initialQuery);
 			}
+
+			// focus on it
+			editor.focus();
 		} catch (error) {
 			console.error("Error setting up editor:", error);
 		}

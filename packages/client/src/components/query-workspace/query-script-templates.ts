@@ -65,24 +65,15 @@ export const getTableActionGroups = (
 			label: "Query",
 			actions: [
 				{
-					label: "Select all rows",
-					description: "Select every row from the chosen table.",
-					query: (table) => `SELECT * FROM ${table};`,
-				},
-				{
 					label: "Select top 100 rows",
 					description:
 						"Preview the first 100 rows from the chosen table.",
 					query: (table) => `SELECT * FROM ${table}\nLIMIT 100;`,
 				},
 				{
-					label: "Select bottom 100 rows",
-					description:
-						"Select the last 100 rows using the first available column for ordering.",
-					query: (table, columns) => {
-						const orderColumn = columns[0] ?? "1";
-						return `SELECT * FROM ${table}\nORDER BY ${orderColumn} DESC\nLIMIT 100;`;
-					},
+					label: "Select all rows",
+					description: "Select every row from the chosen table.",
+					query: (table) => `SELECT * FROM ${table};`,
 				},
 				{
 					label: "Count rows",
