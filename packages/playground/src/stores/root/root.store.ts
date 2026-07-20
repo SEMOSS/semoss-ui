@@ -1,7 +1,6 @@
 import { configure, makeAutoObservable } from "mobx";
 import type React from "react";
 import type { ThemeMap } from "@semoss/shared";
-import { TOKEN_LENGTH } from "@/constants";
 
 configure({
 	enforceActions: "always",
@@ -82,7 +81,6 @@ export class RootStore {
 			toolAutoExecutionLimit: null,
 			defaultRoomSettings: {
 				model: undefined,
-				tokenLength: TOKEN_LENGTH,
 			},
 			allowedFileTypes: [],
 			allowedUrlPrefixes: [],

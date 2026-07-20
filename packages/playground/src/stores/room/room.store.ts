@@ -8,7 +8,7 @@ import {
 	uploadInsight,
 } from "@semoss/sdk/react";
 import { FlexLayout, type ThemeMap } from "@semoss/shared";
-import { STREAMING_PLACEHOLDER_ID, TOKEN_LENGTH } from "@/constants";
+import { STREAMING_PLACEHOLDER_ID } from "@/constants";
 import {
 	type AbstractMessageStore,
 	createMessageStore,
@@ -102,11 +102,6 @@ interface RoomStoreInterface {
 		mcp: MCPConfig[];
 
 		/*
-		 * Length of the token
-		 */
-		tokenLength: number;
-
-		/*
 		 * Workspace associated with the room
 		 */
 		workspace?: {
@@ -167,7 +162,6 @@ export class RoomStore {
 			predefinedPrompts: [],
 			instructions: "",
 			mcp: [],
-			tokenLength: TOKEN_LENGTH,
 		},
 		sidebar: {
 			isOpen: false,

@@ -13,8 +13,7 @@
 		"instructionsLabel": "التعليمات",
 		"agentLabel": "الوكيل",
 		"knowledgeLabel": "المعرفة",
-		"toolboxLabel": "صناديق الأدوات",
-		"maxTokenLabel": "الحد الأقصى للرموز"
+		"toolboxLabel": "صناديق الأدوات"
 	},
 	"modes": {
 		"ask": "اسأل",

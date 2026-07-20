@@ -1,7 +1,5 @@
 export const MODEL_KEY = "SMSS-SELECTED-MODEL-V3";
 
-export const TOKEN_LENGTH: number = undefined as unknown as number; // token length is determined at runtime based on the model, so we initialize it as undefined and set it later
-
 export const MCP_EXECUTION_AUTO = "auto";
 export const MCP_EXECUTION_ASK = "ask";
 

@@ -22,7 +22,6 @@
 		"enterDescription": "Voer beschrijving in",
 		"enterInstructions": "Voer instructies in",
 		"updateInstructions": "Instructies bijwerken",
-		"updateTokenLength": "Tokenlengte bijwerken",
 		"uploadFiles": "Bestanden uploaden",
 		"search": "Zoeken...",
 		"enterPromptLibraryTag": "Voer prompt library-tag in"

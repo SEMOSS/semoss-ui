@@ -22,7 +22,6 @@
 		"enterDescription": "Ingrese la descripción",
 		"enterInstructions": "Ingrese las instrucciones",
 		"updateInstructions": "Actualizar instrucciones",
-		"updateTokenLength": "Actualizar longitud del token",
 		"uploadFiles": "Subir archivos",
 		"search": "Buscar...",
 		"enterPromptLibraryTag": "Ingresar etiqueta de biblioteca de indicaciones"

@@ -20,8 +20,7 @@
 		"instructionsLabel": "Instructions",
 		"agentLabel": "Agent",
 		"knowledgeLabel": "Knowledge",
-		"toolboxLabel": "Toolboxes",
-		"maxTokenLabel": "Max Token"
+		"toolboxLabel": "Toolboxes"
 	},
 	"modes": {
 		"ask": "Ask",

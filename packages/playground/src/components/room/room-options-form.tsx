@@ -12,9 +12,7 @@ import {
 	FieldGroup,
 	FieldLabel,
 	FieldLegend,
-	FieldSeparator,
 	FieldSet,
-	Input,
 	Textarea,
 	Tooltip,
 	TooltipContent,
@@ -484,31 +482,6 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 									});
 								}}
 							/>
-						</FieldGroup>
-					</FieldSet>
-					<FieldSeparator />
-					<FieldSet>
-						<FieldGroup>
-							<Field>
-								<FieldLabel>
-									{t("room:form.maxTokenLabel")}
-								</FieldLabel>
-								<Input
-									type="number"
-									placeholder={t(
-										"common:placeholders.updateTokenLength",
-									)}
-									value={options.tokenLength}
-									onChange={(e) =>
-										onOptionsChange({
-											tokenLength:
-												Number(e.target.value) || 0,
-										})
-									}
-									min={0}
-									className="w-full"
-								/>
-							</Field>
 						</FieldGroup>
 					</FieldSet>
 				</FieldGroup>

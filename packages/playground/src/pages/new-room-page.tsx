@@ -37,7 +37,6 @@ import {
 	RoomSidebar,
 } from "@/components";
 import { RoomOptionsForm } from "@/components/room/room-options-form";
-import { TOKEN_LENGTH } from "@/constants";
 import { FileDragProvider } from "@/contexts";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { RoomStore } from "@/stores";
@@ -153,8 +152,6 @@ export const NewRoomPage = observer(() => {
 		tempRoomStore.setOptions({
 			instructions: "",
 			mcp: [...(root.theme.defaultTools || [])],
-			tokenLength:
-				root.theme.defaultRoomSettings?.tokenLength || TOKEN_LENGTH,
 			workspace: undefined,
 			predefinedPrompts: [],
 		});
@@ -382,16 +379,10 @@ export const NewRoomPage = observer(() => {
 			tempRoomStore.setOptions({
 				...tempRoomStore.options,
 				instructions: "",
-				tokenLength: root.theme.defaultRoomSettings?.tokenLength,
 				mcp: [...(root.theme.defaultTools || [])], // Remove workspace MCPs
 			});
 		}
-	}, [
-		mode,
-		root.theme.defaultTools,
-		root.theme.defaultRoomSettings,
-		tempRoomStore,
-	]);
+	}, [mode, root.theme.defaultTools, tempRoomStore]);
 
 	// Close the configuration panel when the file-explorer sidebar opens.
 	useEffect(() => {

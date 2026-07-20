@@ -157,7 +157,6 @@ const defaultProps = {
 	options: {
 		instructions: "",
 		mcp: [],
-		tokenLength: 4096,
 		workspace: null,
 		predefinedPrompts: [],
 	},

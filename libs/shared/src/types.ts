@@ -182,7 +182,6 @@ export interface ThemeMap {
 		 */
 		defaultRoomSettings?: {
 			model?: Engine;
-			tokenLength?: number;
 		};
 
 		/**
