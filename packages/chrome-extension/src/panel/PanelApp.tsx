@@ -11,11 +11,20 @@ import { WelcomeState } from "./components/WelcomeState";
 
 type PanelMode = "execution" | "recording";
 
+type AutomationInputRequest = {
+	id: string;
+	prompt: string;
+	isPassword: boolean;
+	selector?: string;
+	targetTabId: number;
+};
+
 type AutomationRunState = {
 	active: boolean;
 	status: "idle" | "running" | "needs-input" | "complete" | "failed";
 	message?: string;
 	history: string[];
+	pendingInput?: AutomationInputRequest;
 	updatedAt: number;
 };
 
@@ -35,6 +44,7 @@ interface ChromeMessage {
 	};
 	value?: string;
 	isPassword?: boolean;
+	requestId?: string;
 }
 
 const PanelApp: React.FC = () => {
@@ -68,6 +78,7 @@ const PanelApp: React.FC = () => {
 	const isPausedRef = useRef<boolean>(false);
 	// Ref to track userInputCallback without causing useEffect re-runs
 	const userInputCallbackRef = useRef(userInputCallback);
+	const pendingInputRequestIdRef = useRef<string | null>(null);
 	// Ref to track execution tab for cleanup detection
 	const executionTabIdRef = useRef<number | null>(null);
 	const tabRemovalListenerRef = useRef<((tabId: number) => void) | null>(
@@ -205,6 +216,24 @@ const PanelApp: React.FC = () => {
 			chrome.runtime.onMessage.removeListener(handleSharedRunState);
 	}, []);
 
+	const sharedInputRequest = sharedRunState?.pendingInput;
+	const remoteInputRequest =
+		isFloatingPanel &&
+		hasHostTabId &&
+		sharedInputRequest?.targetTabId === hostTabId &&
+		sharedInputRequest.id !== pendingInputRequestIdRef.current
+			? sharedInputRequest
+			: null;
+	const remoteInputRequestId = remoteInputRequest?.id;
+
+	useEffect(() => {
+		if (!remoteInputRequestId) return;
+
+		setMode("execution");
+		setIsCollapsed(false);
+		setUserInputValue("");
+	}, [remoteInputRequestId]);
+
 	useEffect(() => {
 		if (!isRunning && !waitingForUserInput && actionHistory.length === 0) {
 			return;
@@ -295,6 +324,17 @@ const PanelApp: React.FC = () => {
 			sender: chrome.runtime.MessageSender,
 			sendResponse: (response?: { alive?: boolean }) => void,
 		) => {
+			if (message.type === "AUTOMATION_INPUT_SUBMITTED") {
+				// Never log credential-bearing messages.
+				if (
+					message.requestId === pendingInputRequestIdRef.current &&
+					typeof message.value === "string"
+				) {
+					userInputCallbackRef.current?.(message.value);
+				}
+				return;
+			}
+
 			console.log("[PANEL] 📨 Received message:", message.type, message);
 
 			const sourceTabId = message.sourceTabId ?? sender.tab?.id;
@@ -680,7 +720,10 @@ const PanelApp: React.FC = () => {
 			// Handle field input detected from webpage
 			if (message.type === "FIELD_INPUT_DETECTED") {
 				// If we're waiting for user input, auto-submit with the detected value
-				if (waitingForUserInput && userInputCallbackRef.current) {
+				if (
+					pendingInputRequestIdRef.current &&
+					userInputCallbackRef.current
+				) {
 					const valueToUse = message.isPassword
 						? "••••••••"
 						: message.value || "";
@@ -1081,9 +1124,10 @@ const PanelApp: React.FC = () => {
 					targetTabId?: number,
 				): Promise<string> => {
 					return new Promise<string>((resolve) => {
-						setUserInputPrompt(
-							`${isPassword ? "🔒 " : ""}${label}`,
-						);
+						const prompt = `${isPassword ? "🔒 " : ""}${label}`;
+						const requestId = crypto.randomUUID();
+						pendingInputRequestIdRef.current = requestId;
+						setUserInputPrompt(prompt);
 						setIsPasswordInput(isPassword);
 						setWaitingForUserInput(true);
 
@@ -1125,7 +1169,8 @@ const PanelApp: React.FC = () => {
 								});
 						}
 
-						setUserInputCallback(() => (value: string) => {
+						const resolveUserInput = (value: string) => {
+							pendingInputRequestIdRef.current = null;
 							// Remove highlight when input is received
 							if (selector && targetTabId) {
 								chrome.runtime
@@ -1166,8 +1211,33 @@ const PanelApp: React.FC = () => {
 							setIsPasswordInput(false);
 							setUserInputCallback(null);
 							addToHistory("✓ User provided input");
+							chrome.runtime
+								.sendMessage({
+									type: "RESOLVE_AUTOMATION_INPUT_REQUEST",
+									requestId,
+								})
+								.catch(() => {
+									// Shared request cleanup is best effort.
+								});
 							resolve(value);
-						});
+						};
+						userInputCallbackRef.current = resolveUserInput;
+						setUserInputCallback(() => resolveUserInput);
+
+						chrome.runtime
+							.sendMessage({
+								type: "REGISTER_AUTOMATION_INPUT_REQUEST",
+								request: {
+									id: requestId,
+									prompt,
+									isPassword,
+									selector,
+									targetTabId,
+								},
+							})
+							.catch(() => {
+								// The local panel remains usable if sharing fails.
+							});
 					});
 				};
 
@@ -1329,6 +1399,43 @@ const PanelApp: React.FC = () => {
 		!effectiveRunning &&
 		!effectiveNeedsInput &&
 		(actionHistory.length > 0 || !!sharedRunState?.updatedAt);
+	const displayedInputRequest = remoteInputRequest
+		? remoteInputRequest
+		: waitingForUserInput
+			? {
+					id: pendingInputRequestIdRef.current || "local",
+					prompt: userInputPrompt,
+					isPassword: isPasswordInput,
+					selector: currentSelector || undefined,
+					targetTabId: currentTabId || 0,
+				}
+			: null;
+	const isRemoteInput = !!remoteInputRequest;
+	const inputIsPaused = !isRemoteInput && isPaused;
+	const submitDisplayedInput = () => {
+		if (!displayedInputRequest || !userInputValue.trim()) return;
+
+		if (isRemoteInput) {
+			chrome.runtime
+				.sendMessage({
+					type: "SUBMIT_AUTOMATION_INPUT",
+					requestId: displayedInputRequest.id,
+					value: userInputValue,
+				})
+				.then((response) => {
+					if (response?.success) setUserInputValue("");
+				})
+				.catch((error) => {
+					console.error(
+						"[PANEL] ❌ Failed to submit automation input:",
+						error,
+					);
+				});
+			return;
+		}
+
+		userInputCallback?.(userInputValue);
+	};
 
 	if (isFloatingPanel && isCollapsed) {
 		return (
@@ -1592,25 +1699,25 @@ const PanelApp: React.FC = () => {
 						)}
 
 						{/* User Input Dialog */}
-						{waitingForUserInput && (
+						{displayedInputRequest && (
 							<div className="user-input-overlay">
 								<div className="user-input-dialog">
 									<H3>Input Required</H3>
-									<P>{userInputPrompt}</P>
+									<P>{displayedInputRequest.prompt}</P>
 									<Input
 										type={
-											isPasswordInput
+											displayedInputRequest.isPassword
 												? "password"
 												: "text"
 										}
 										value={userInputValue}
-										disabled={isPaused}
+										disabled={inputIsPaused}
 										onChange={(e) => {
 											const newValue = e.target.value;
 											setUserInputValue(newValue);
 											if (
-												currentSelector &&
-												currentTabId
+												displayedInputRequest.selector &&
+												displayedInputRequest.targetTabId
 											) {
 												// Clear existing debounce timer
 												if (debounceTimerRef.current) {
@@ -1625,9 +1732,9 @@ const PanelApp: React.FC = () => {
 														chrome.runtime
 															.sendMessage({
 																type: "UPDATE_FIELD_VALUE",
-																tabId: currentTabId,
+																tabId: displayedInputRequest.targetTabId,
 																selector:
-																	currentSelector,
+																	displayedInputRequest.selector,
 																value: newValue,
 															})
 															.catch((err) => {
@@ -1646,30 +1753,17 @@ const PanelApp: React.FC = () => {
 												userInputValue.trim()
 											) {
 												e.preventDefault();
-												if (userInputCallback) {
-													userInputCallback(
-														userInputValue,
-													);
-												}
+												submitDisplayedInput();
 											}
 										}}
 									/>
 									<div className="user-input-buttons">
 										<Button
 											variant="default"
-											onClick={() => {
-												if (
-													userInputCallback &&
-													userInputValue.trim()
-												) {
-													userInputCallback(
-														userInputValue,
-													);
-												}
-											}}
+											onClick={submitDisplayedInput}
 											disabled={
 												!userInputValue.trim() ||
-												isPaused
+												inputIsPaused
 											}
 											className="rounded-xl bg-blue-600 px-8 py-3 font-semibold text-base text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:opacity-60"
 										>

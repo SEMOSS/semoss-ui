@@ -11,11 +11,20 @@ import { enhancedClick, enhancedSetValue } from "./enhancedActions";
 
 const AUTOMATION_RUN_STATE_STORAGE_KEY = "semoss-automation-run-state";
 
+type AutomationInputRequest = {
+	id: string;
+	prompt: string;
+	isPassword: boolean;
+	selector?: string;
+	targetTabId: number;
+};
+
 type AutomationRunState = {
 	active: boolean;
 	status: "idle" | "running" | "needs-input" | "complete" | "failed";
 	message?: string;
 	history: string[];
+	pendingInput?: AutomationInputRequest;
 	updatedAt: number;
 };
 
@@ -72,6 +81,21 @@ function resetAutomationRunState() {
 		updatedAt: Date.now(),
 	};
 	persistAndBroadcastAutomationRunState();
+}
+
+function clearPendingAutomationInput(requestId: string): boolean {
+	if (automationRunState.pendingInput?.id !== requestId) return false;
+
+	const { pendingInput: _pendingInput, ...runState } = automationRunState;
+	automationRunState = {
+		...runState,
+		active: true,
+		status: "running",
+		message: "Resuming automation",
+		updatedAt: Date.now(),
+	};
+	persistAndBroadcastAutomationRunState();
+	return true;
 }
 
 // Track the tab that initiated script execution (to send completion back to it)
@@ -459,6 +483,66 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		case "RESET_AUTOMATION_RUN_STATE":
 			resetAutomationRunState();
 			sendResponse({ success: true, state: automationRunState });
+			return true;
+
+		case "REGISTER_AUTOMATION_INPUT_REQUEST": {
+			const request = message.request as
+				| AutomationInputRequest
+				| undefined;
+			if (
+				!request?.id ||
+				!request.prompt ||
+				typeof request.targetTabId !== "number"
+			) {
+				sendResponse({
+					success: false,
+					error: "Invalid automation input request",
+				});
+				return true;
+			}
+
+			updateAutomationRunState({
+				active: true,
+				status: "needs-input",
+				message: request.prompt,
+				pendingInput: request,
+			});
+			sendResponse({ success: true });
+			return true;
+		}
+
+		case "SUBMIT_AUTOMATION_INPUT": {
+			if (
+				typeof message.requestId !== "string" ||
+				typeof message.value !== "string" ||
+				!clearPendingAutomationInput(message.requestId)
+			) {
+				sendResponse({
+					success: false,
+					error: "Automation input request is no longer active",
+				});
+				return true;
+			}
+
+			// Credential values stay transient: they are never written to storage.
+			chrome.runtime
+				.sendMessage({
+					type: "AUTOMATION_INPUT_SUBMITTED",
+					requestId: message.requestId,
+					value: message.value,
+				})
+				.catch(() => {
+					// The owning panel may have closed before input was submitted.
+				});
+			sendResponse({ success: true });
+			return true;
+		}
+
+		case "RESOLVE_AUTOMATION_INPUT_REQUEST":
+			if (typeof message.requestId === "string") {
+				clearPendingAutomationInput(message.requestId);
+			}
+			sendResponse({ success: true });
 			return true;
 
 		case "GET_HOST_TAB_ID":
