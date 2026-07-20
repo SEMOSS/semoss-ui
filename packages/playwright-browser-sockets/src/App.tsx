@@ -514,6 +514,8 @@ export default function App() {
 		useState(false);
 	const [isLoadingRecording, setIsLoadingRecording] = useState(false);
 	const [isRunningRecording, setIsRunningRecording] = useState(false);
+	const [pendingBrowserActionCount, setPendingBrowserActionCount] =
+		useState(0);
 	const [isPlaybackPaused, setIsPlaybackPaused] = useState(false);
 	const [playbackControlsOpen, setPlaybackControlsOpen] = useState(true);
 	const [loadedRecordingOpen, setLoadedRecordingOpen] = useState(false);
@@ -677,6 +679,40 @@ export default function App() {
 		onTabActivated: handleTabActivated,
 		onCursorChanged: setBrowserCursor,
 	});
+
+	const runBrowserAction = useCallback(
+		async (event: ClientToServerEvent) => {
+			setPendingBrowserActionCount((count) => count + 1);
+			try {
+				await sendReplayEvent({
+					...event,
+					requestId: crypto.randomUUID(),
+				});
+			} catch (error) {
+				setSnackError(
+					error instanceof Error
+						? error.message
+						: "Browser action failed",
+				);
+			} finally {
+				setPendingBrowserActionCount((count) => Math.max(0, count - 1));
+			}
+		},
+		[sendReplayEvent],
+	);
+
+	const sendViewerEvent = useCallback(
+		(event: ClientToServerEvent) => {
+			// Pointer movement stays fire-and-forget so cursor motion does not
+			// continuously trigger the toolbar activity indicator.
+			if (event.type === "mouse-move") {
+				sendEvent(event);
+				return;
+			}
+			void runBrowserAction(event);
+		},
+		[runBrowserAction, sendEvent],
+	);
 
 	const defaultRecordingName = useMemo(() => {
 		const title = saveTitle.trim() || "remote-browser-recording";
@@ -1439,22 +1475,31 @@ export default function App() {
 
 	const handleNavigate = useCallback(
 		(url: string) => {
-			sendEvent({ type: "navigate", url: normalizeBrowserUrl(url) });
+			void runBrowserAction({
+				type: "navigate",
+				url: normalizeBrowserUrl(url),
+				waitAfterMs: 1200,
+			});
 		},
-		[sendEvent],
+		[runBrowserAction],
 	);
 
 	const handleBack = useCallback(
-		() => sendEvent({ type: "navigate-back" }),
-		[sendEvent],
+		() =>
+			void runBrowserAction({ type: "navigate-back", waitAfterMs: 800 }),
+		[runBrowserAction],
 	);
 	const handleForward = useCallback(
-		() => sendEvent({ type: "navigate-forward" }),
-		[sendEvent],
+		() =>
+			void runBrowserAction({
+				type: "navigate-forward",
+				waitAfterMs: 800,
+			}),
+		[runBrowserAction],
 	);
 	const handleReload = useCallback(
-		() => sendEvent({ type: "reload" }),
-		[sendEvent],
+		() => void runBrowserAction({ type: "reload", waitAfterMs: 800 }),
+		[runBrowserAction],
 	);
 
 	const handleToggleRecording = useCallback(() => {
@@ -1989,6 +2034,8 @@ export default function App() {
 
 	const remoteWidth = session?.viewport.width ?? 1365;
 	const remoteHeight = session?.viewport.height ?? 768;
+	const isBrowserLoading =
+		isCreating || pendingBrowserActionCount > 0 || runningStepId !== null;
 
 	return (
 		<Box
@@ -2018,7 +2065,7 @@ export default function App() {
 					currentUrl={currentUrl}
 					connectionState={connectionState}
 					isCreating={isCreating}
-					isLoading={isRunningRecording}
+					isLoading={isBrowserLoading}
 					onStart={handleStart}
 					onStop={handleStop}
 					onNavigate={handleNavigate}
@@ -2309,7 +2356,7 @@ export default function App() {
 					remoteHeight={remoteHeight}
 					latestFrame={latestFrame}
 					browserCursor={browserCursor}
-					sendEvent={sendEvent as (e: ClientToServerEvent) => void}
+					sendEvent={sendViewerEvent}
 					selectionMode={selectionMode}
 					onSelectionComplete={handleSelectedTextCapture}
 					onSelectionCancel={() => setSelectionMode(false)}
