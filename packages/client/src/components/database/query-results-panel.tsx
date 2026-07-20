@@ -25,6 +25,8 @@ interface QueryResultsPanelProps {
 	clearResults: () => void;
 	onExpandChange?: (expanded: boolean) => void;
 	pixelQuery?: string;
+	/** Name of the query panel whose results are shown */
+	sourcePanelName?: string;
 }
 
 export const QueryResultsPanel: React.FC<QueryResultsPanelProps> = ({
@@ -32,6 +34,7 @@ export const QueryResultsPanel: React.FC<QueryResultsPanelProps> = ({
 	previewLoading,
 	onExpandChange,
 	pixelQuery,
+	sourcePanelName,
 }) => {
 	const previewLimit = 50;
 	const renderResults = useQueryResults();
@@ -102,12 +105,22 @@ export const QueryResultsPanel: React.FC<QueryResultsPanelProps> = ({
 		>
 			{/* Header */}
 			<div className="flex flex-shrink-0 items-center justify-between border-border/50 border-b bg-gradient-to-r from-accent/50 via-accent/40 to-accent/30 px-4 py-2.5">
-				<h3
-					className="font-semibold text-foreground text-sm"
-					data-testid="query-results-title"
-				>
-					Query Results
-				</h3>
+				<div className="flex items-center gap-2">
+					<h3
+						className="font-semibold text-foreground text-sm"
+						data-testid="query-results-title"
+					>
+						Query Results
+					</h3>
+					{sourcePanelName && (
+						<span
+							className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary text-xs"
+							data-testid="query-results-source"
+						>
+							{sourcePanelName}
+						</span>
+					)}
+				</div>
 				<div className="flex items-center gap-2">
 					{previewData && (
 						<Tooltip>
