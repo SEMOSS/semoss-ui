@@ -11,7 +11,7 @@ import {
 	TrashIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	Link,
 	matchPath,
@@ -188,63 +188,6 @@ export const GlobalNav = observer(() => {
 	);
 
 	/**
-	 * Content-match rooms from SearchRoomMessages — room IDs that contain
-	 * the keyword in message text but may not match by room name.
-	 */
-	type RoomEntry = {
-		ROOM_ID: string;
-		ROOM_NAME: string;
-		DATE_CREATED: string;
-		WORKSPACE_ID?: string;
-		PINNED?: boolean;
-	};
-	const [contentMatchRooms, setContentMatchRooms] = useState<RoomEntry[]>([]);
-
-	useEffect(() => {
-		if (!debouncedSearch) {
-			setContentMatchRooms([]);
-			return;
-		}
-		let cancelled = false;
-		runPixel<
-			[
-				{
-					room_id: string;
-					message_id: string;
-					room_name: string;
-					date_created: string;
-				}[],
-			]
-		>(
-			`META | SearchRoomMessages(search="<encode>${debouncedSearch}</encode>", limit=50, includeMessageText=false);`,
-		)
-			.then((res) => {
-				if (cancelled) return;
-				const rows = res.pixelReturn?.[0]?.output ?? [];
-				const seen = new Set<string>();
-				setContentMatchRooms(
-					rows
-						.filter(
-							(r) =>
-								r.room_id &&
-								seen.size !== seen.add(r.room_id).size,
-						)
-						.map((r) => ({
-							ROOM_ID: r.room_id,
-							ROOM_NAME: r.room_name ?? "",
-							DATE_CREATED: r.date_created ?? "",
-						})),
-				);
-			})
-			.catch(() => {
-				if (!cancelled) setContentMatchRooms([]);
-			});
-		return () => {
-			cancelled = true;
-		};
-	}, [debouncedSearch]);
-
-	/**
 	 * Setup infinite scroll for the command list
 	 */
 	const { setScroll } = useInfiniteScroll({
@@ -366,16 +309,7 @@ export const GlobalNav = observer(() => {
 				(r) => !fetchedRoomIds.has(r.ROOM_ID),
 			);
 
-	// Merge content-match rooms not already surfaced by the name search
-	const mergedRooms = useMemo(() => {
-		const nameMatchIds = new Set(getRooms.data.map((r) => r.ROOM_ID));
-		const extra = contentMatchRooms.filter(
-			(r) => !nameMatchIds.has(r.ROOM_ID),
-		);
-		return [...optimisticRooms, ...getRooms.data, ...extra];
-	}, [getRooms.data, contentMatchRooms, optimisticRooms]);
-
-	const bucketedRooms = mergedRooms.reduce(
+	const bucketedRooms = [...optimisticRooms, ...getRooms.data].reduce(
 		(acc, val) => {
 			// Skip rooms handled by the dedicated pinned query
 			if (val.PINNED || pinnedRoomIds.has(val.ROOM_ID)) return acc;
@@ -602,7 +536,8 @@ export const GlobalNav = observer(() => {
 						)}
 					{isVisible &&
 						!getRooms.isLoading &&
-						mergedRooms.length === 0 && (
+						getRooms.data.length === 0 &&
+						optimisticRooms.length === 0 && (
 							<div className="px-2 py-4 text-center">
 								<Muted>{t("messages.noRoomsFound")}</Muted>
 							</div>
