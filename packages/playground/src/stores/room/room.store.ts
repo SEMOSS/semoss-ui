@@ -1321,7 +1321,7 @@ export class RoomStore {
 			// Poll for streaming content
 			let isPolling = true;
 
-			const pollingInterval = 300; // 300ms for responsive streaming
+			const pollingInterval = 500; // 500ms between streaming polls
 
 			while (isPolling) {
 				try {
