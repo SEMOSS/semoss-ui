@@ -78,6 +78,13 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	conversationCompactedAbove: boolean = false;
 
 	/**
+	 * True when this response carries the persisted auto-compaction chip.
+	 * Used by the room-load dedup pass to suppress the duplicate chip on the
+	 * prior branch leaf (chip text is identical for manual and auto).
+	 */
+	autoCompactedAbove: boolean = false;
+
+	/**
 	 * Whether this message's conversation is currently being compacted
 	 */
 	isCompacting: boolean = false;
@@ -88,15 +95,13 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	) {
 		super(room, message);
 
-		// if prune, compaction happened
-		this.conversationCompactedAbove ||= message.pruneToolsAbove;
-
 		makeObservable(this, {
 			isThinking: observable,
 			parts: observable,
 			feedback: observable,
 			isPaused: observable,
 			conversationCompactedAbove: observable,
+			autoCompactedAbove: observable,
 			isCompacting: observable,
 			runMessage: action,
 			savePart: action,
@@ -110,7 +115,8 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			toggleIsPaused: action,
 		});
 
-		// sync the message
+		// Sync the message. Also re-seeds compaction flags from the wire payload
+		// because the constructor only saw the streaming placeholder.
 		this.sync(message);
 	}
 
@@ -125,6 +131,14 @@ export class ResponseMessageStore extends AbstractMessageStore {
 
 		// set the parts
 		this.parts = message.parts;
+
+		// Seed compaction-chip flags from the wire payload. Use ||= so prior
+		// explicit FE state (e.g. manual /compact) is preserved across re-syncs
+		// and so the chip can appear on a streaming placeholder after its final
+		// sync delivers autoCompacted.
+		this.conversationCompactedAbove ||=
+			message.pruneToolsAbove || !!message.autoCompacted;
+		this.autoCompactedAbove ||= !!message.autoCompacted;
 
 		// sync the tools — server tools (e.g. provider-side web_search) deliver
 		// both the call and result in the same response message, so we sync both
@@ -172,6 +186,16 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	) => {
 		const room = this.room;
 
+		// Best-effort predictor for the backend auto-compaction trigger so the
+		// FE can show the live "Compacting..." indicator before the first
+		// stream chunk. Backend remains the source of truth and flags the
+		// persisted chip via autoCompacted on the response.
+		const willAutoCompact =
+			room.contextWindow !== undefined &&
+			room.contextWindow > 0 &&
+			room.tokensUsed !== undefined &&
+			room.tokensUsed / room.contextWindow >=
+				room.options.autoCompactThreshold;
 		// In agent-harness mode the message is run server-side via RunAgent
 		// instead of the streaming AskPlayground flow. See ./agent-harness.
 		if (room.mode === "agent") {
@@ -222,6 +246,12 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			// turn on thinking
 			responseMessage.isThinking = true;
 
+			// Show the live compaction indicator if predicted; cleared on the
+			// first stream chunk below.
+			if (willAutoCompact) {
+				responseMessage.setIsCompacting(true);
+			}
+
 			// get the text
 			const text = inputMessage.parts.reduce((acc, part) => {
 				if (part.type === "TEXT") {
@@ -262,10 +292,17 @@ ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 paramValues=[${JSON.stringify({
 					max_new_tokens: room.options.tokenLength,
 					temperature: room.options.temperature,
+					auto_compact_threshold: room.options.autoCompactThreshold,
 				})}]
 );`,
 				(chunk) => {
 					runInAction(() => {
+						// First chunk arrived — any backend compaction has finished.
+						// Idempotent: no-op after the first clear.
+						if (responseMessage.isCompacting) {
+							responseMessage.setIsCompacting(false);
+						}
+
 						if (chunk.stream_type === "content") {
 							if (chunk.data.content) {
 								responseMessage.savePart({

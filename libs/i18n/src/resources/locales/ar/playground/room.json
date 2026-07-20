@@ -15,7 +15,8 @@
 		"knowledgeLabel": "المعرفة",
 		"toolboxLabel": "صناديق الأدوات",
 		"maxTokenLabel": "الحد الأقصى للرموز",
-		"temperatureLabel": "درجة الحرارة"
+		"temperatureLabel": "درجة الحرارة",
+		"autoCompactThresholdLabel": "حد الضغط التلقائي"
 	},
 	"modes": {
 		"ask": "اسأل",

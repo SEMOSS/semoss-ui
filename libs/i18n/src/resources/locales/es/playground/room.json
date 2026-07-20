@@ -18,7 +18,8 @@
 		"knowledgeLabel": "Conocimiento",
 		"toolboxLabel": "Cajas de herramientas",
 		"maxTokenLabel": "Token máximo",
-		"temperatureLabel": "Temperatura"
+		"temperatureLabel": "Temperatura",
+		"autoCompactThresholdLabel": "Umbral de compactación automática"
 	},
 	"modes": {
 		"ask": "Preguntar",

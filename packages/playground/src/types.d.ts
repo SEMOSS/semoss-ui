@@ -136,6 +136,12 @@ export interface ResponsePixelMessage extends AbstractPixelMessage {
 		messageType: "RESPONSE_TEXT";
 		feedbackDate: string; // YYYY-MM-DD HH:MM:SS
 	};
+	/**
+	 * Set by the backend on the assistant response whose turn triggered
+	 * auto-compaction. Lets the FE render the persisted compaction chip
+	 * and dedup it on reload so a single event doesn't surface twice.
+	 */
+	autoCompacted?: boolean;
 }
 
 export interface PixelMessageThinkingPart {

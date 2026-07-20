@@ -219,18 +219,21 @@ export const EngineSelect = ({
 			? (tokensUsed / tokensMax) * 100
 			: undefined;
 
-	const showContextIndicator =
-		contextUsedPercent !== undefined && contextUsedPercent > 0;
+	const showContextIndicator = 
+    contextUsedPercent !== undefined && contextUsedPercent > 0;
 
-	// Calculate pie chart geometry
-	const roundedPercent =
-		contextUsedPercent !== undefined && contextUsedPercent > 0
-			? Math.max(12.5, Math.round(contextUsedPercent / 12.5) * 12.5)
+	// Pie-chart geometry — fills smoothly from 0%. Clamp to [0, 100] so the
+	// wedge never overshoots when usage briefly exceeds the window.
+	const fillPercent =
+		contextUsedPercent !== undefined
+			? Math.min(100, Math.max(0, contextUsedPercent))
 			: 0;
+  
+	const isDestructive = fillPercent >= 75;
 	const radius = 8;
 	const cx = 9;
 	const cy = 9;
-	const angle = (roundedPercent / 100) * 360;
+	const angle = (fillPercent / 100) * 360;
 	const radians = (angle * Math.PI) / 180;
 	const x = cx + radius * Math.cos(radians - Math.PI / 2);
 	const y = cy + radius * Math.sin(radians - Math.PI / 2);
@@ -283,7 +286,7 @@ export const EngineSelect = ({
 												r={radius}
 												fill="none"
 												className={
-													roundedPercent >= 75
+													isDestructive
 														? "stroke-destructive"
 														: "stroke-muted-foreground"
 												}
@@ -291,13 +294,13 @@ export const EngineSelect = ({
 												opacity={0.3}
 											/>
 											{/* Inner fill showing percentage */}
-											{roundedPercent >= 100 ? (
+											{fillPercent >= 100 ? (
 												<circle
 													cx={cx}
 													cy={cy}
 													r={radius - 1}
 													className={
-														roundedPercent >= 75
+														isDestructive
 															? "fill-destructive"
 															: "fill-muted-foreground"
 													}
@@ -307,7 +310,7 @@ export const EngineSelect = ({
 												<path
 													d={`M ${cx} ${cy} L ${cx} ${cy - (radius - 1)} A ${radius - 1} ${radius - 1} 0 ${largeArc} 1 ${x * 0.875 + cx * 0.125} ${y * 0.875 + cy * 0.125} Z`}
 													className={
-														roundedPercent >= 75
+														isDestructive
 															? "fill-destructive"
 															: "fill-muted-foreground"
 													}

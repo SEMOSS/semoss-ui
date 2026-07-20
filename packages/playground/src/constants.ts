@@ -12,6 +12,9 @@ export const MCP_DISPLAY_HIDDEN = "hidden";
 
 export const STREAMING_PLACEHOLDER_ID = "STREAMING_PLACEHOLDER_ID";
 
+/** Initial slider value for the per-room auto-compaction threshold. */
+export const AUTO_COMPACT_THRESHOLD = 0.5;
+
 export const LOADING_MESSAGES = [
 	"Thinking through it...",
 	"Working on that...",
