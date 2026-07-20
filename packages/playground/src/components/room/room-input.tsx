@@ -197,35 +197,14 @@ interface RoomInputProps {
 
 type CompactionStrategy = "TOOL_PRUNE" | "SUMMARY" | "AUTO";
 
-const STRATEGY_INFO: Record<
-	CompactionStrategy,
-	{ label: string; tooltip: string }
-> = {
-	SUMMARY: {
-		label: "Summarize",
-		tooltip:
-			"Replaces older messages with an AI-generated summary. Preserves the overall context of the conversation while freeing up token space.",
-	},
-	TOOL_PRUNE: {
-		label: "Prune Tools",
-		tooltip:
-			"Removes verbose tool call results from the conversation history. Best when tool outputs are large and the details are no longer needed.",
-	},
-	AUTO: {
-		label: "Auto",
-		tooltip:
-			"Will select summarization or tool pruning based on the current conversation.",
-	},
-};
-
 const CompactStrategyPicker: React.FC<{
 	disabled: boolean;
 	strategy: CompactionStrategy;
 	onPickStrategy: (s: CompactionStrategy) => void;
 	onCompact: () => void;
 }> = ({ disabled, strategy, onPickStrategy, onCompact }) => {
+	const { t } = useTranslation("room");
 	const [expanded, setExpanded] = useState(false);
-	const activeStrategy = strategy;
 
 	return (
 		<div className="mt-2 space-y-2 border-t pt-2">
@@ -236,11 +215,11 @@ const CompactStrategyPicker: React.FC<{
 				className="w-full"
 				disabled={disabled}
 				onClick={() => {
-					onPickStrategy(activeStrategy);
+					onPickStrategy(strategy);
 					onCompact();
 				}}
 			>
-				Compact
+				{t("settings.compactButton")}
 			</Button>
 			<button
 				type="button"
@@ -253,7 +232,9 @@ const CompactStrategyPicker: React.FC<{
 						expanded && "rotate-180",
 					)}
 				/>
-				{expanded ? "Compaction Options" : "Advanced Options"}
+				{expanded
+					? t("settings.compactionOptions")
+					: t("settings.advancedOptions")}
 			</button>
 			{expanded && (
 				<div className="space-y-1 pl-1">
@@ -263,36 +244,35 @@ const CompactStrategyPicker: React.FC<{
 							"TOOL_PRUNE",
 							"AUTO",
 						] as CompactionStrategy[]
-					).map((s) => {
-						const { label, tooltip } = STRATEGY_INFO[s];
-						return (
-							<label
-								key={s}
-								className="flex cursor-pointer items-center gap-2 rounded-sm px-1 py-0.5 text-sm hover:bg-accent"
-							>
-								<input
-									type="radio"
-									name="compaction-strategy"
-									value={s}
-									checked={activeStrategy === s}
-									onChange={() => onPickStrategy(s)}
-									className="accent-primary"
-								/>
-								<span className="flex-1">{label}</span>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<InfoIcon className="size-3.5 shrink-0 text-muted-foreground" />
-									</TooltipTrigger>
-									<TooltipContent
-										side="left"
-										className="max-w-52 text-wrap text-xs"
-									>
-										{tooltip}
-									</TooltipContent>
-								</Tooltip>
-							</label>
-						);
-					})}
+					).map((s) => (
+						<label
+							key={s}
+							className="flex cursor-pointer items-center gap-2 rounded-sm px-1 py-0.5 text-sm hover:bg-accent"
+						>
+							<input
+								type="radio"
+								name="compaction-strategy"
+								value={s}
+								checked={strategy === s}
+								onChange={() => onPickStrategy(s)}
+								className="accent-primary"
+							/>
+							<span className="flex-1">
+								{t(`settings.strategyLabel.${s}`)}
+							</span>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<InfoIcon className="size-3.5 shrink-0 text-muted-foreground" />
+								</TooltipTrigger>
+								<TooltipContent
+									side="left"
+									className="max-w-52 text-wrap text-xs"
+								>
+									{t(`settings.strategyTooltip.${s}`)}
+								</TooltipContent>
+							</Tooltip>
+						</label>
+					))}
 				</div>
 			)}
 		</div>

@@ -6,7 +6,20 @@
 		"open": "ルーム設定を開く",
 		"close": "ルーム設定を閉じる",
 		"edit": "ルーム設定を編集",
-		"compactTooltip": "会話を圧縮してトークンを節約します。これまでのメッセージはそのまま残ります。"
+		"compactTooltip": "会話を圧縮してトークンを節約します。これまでのメッセージはそのまま残ります。",
+		"compactButton": "Compact",
+		"compactionOptions": "Compaction Options",
+		"advancedOptions": "Advanced Options",
+		"strategyLabel": {
+			"SUMMARY": "Summarize",
+			"TOOL_PRUNE": "Prune Tools",
+			"AUTO": "Auto"
+		},
+		"strategyTooltip": {
+			"SUMMARY": "Replaces older messages with an AI-generated summary. Preserves the overall context of the conversation while freeing up token space.",
+			"TOOL_PRUNE": "Removes verbose tool call results from the conversation history. Best when tool outputs are large and the details are no longer needed.",
+			"AUTO": "Will select summarization or tool pruning based on the current conversation."
+		}
 	},
 	"form": {
 		"modelLabel": "モデル",

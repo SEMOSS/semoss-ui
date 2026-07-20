@@ -191,12 +191,6 @@ export interface ThemeMap {
 		 */
 		toolAutoExecutionLimit?: number | null;
 
-		/**
-		 * Context window usage percentage (0–100) at which the chat input is
-		/**
-		 * Default compaction strategy shown in the compact UI. When omitted the
-		 * backend auto-detects the best strategy ("AUTO" behaviour).
-		 */
 		defaultCompactionStrategy?: "TOOL_PRUNE" | "SUMMARY" | "AUTO";
 
 		/**
