@@ -41,8 +41,7 @@ import {
 	selectRepo,
 	setProjectBranch,
 } from "@/api/github";
-import { useAppDetail } from "@/contexts";
-import { useRootStore } from "@/hooks";
+import { useProject, useRootStore } from "@/hooks";
 import { GithubBranchSelect } from "./app-detail-tabs/github-branch-select";
 import { GithubInstallationPicker } from "./app-detail-tabs/github-installation-picker";
 import { GithubRepoPicker } from "./app-detail-tabs/github-repo-picker";
@@ -61,7 +60,7 @@ const DELIVERY_LIMIT = 20;
  */
 export const AppGithubPage = () => {
 	const { t } = useTranslation("githubApp");
-	const { appId } = useAppDetail();
+	const { appId } = useProject();
 	const { monolithStore } = useRootStore();
 	const location = useLocation();
 

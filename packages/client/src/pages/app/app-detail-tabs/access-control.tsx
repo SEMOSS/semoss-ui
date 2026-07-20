@@ -1,4 +1,4 @@
-import { MembersTable } from "@semoss/shared";
+import { MembersTable, type Project } from "@semoss/shared";
 import { H2 } from "@semoss/ui/next";
 import { PendingMembersTable, SettingsTiles } from "@/components/settings";
 import { TeamsTable } from "@/components/settings/teams-table";
@@ -7,16 +7,17 @@ import { useNavigate } from "@/hooks/useNavigate";
 
 // Component props
 interface AccessProps {
-	appInfo: {
-		project_name?: string;
-	};
+	project: Pick<
+		Project,
+		"project_display_name" | "project_name" | "project_type"
+	>;
 	appId: string;
 	fetchUserSpecificData: () => void;
 	permission: string;
 }
 
 export const AccessControl = ({
-	appInfo,
+	project,
 	appId,
 	fetchUserSpecificData,
 	permission,
@@ -38,7 +39,11 @@ export const AccessControl = ({
 						<SettingsTiles
 							type="PROJECT"
 							direction="row"
-							name={appInfo?.project_name || "app"}
+							name={
+								project?.project_display_name ||
+								project?.project_name ||
+								"app"
+							}
 							id={appId}
 							onDelete={() => {
 								navigate("/app");
