@@ -369,7 +369,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 					overflowY: "auto",
 					overflowX: "hidden",
 				}}
-				className="pb-4"
+				className="h-full pb-4"
 			>
 				{renderedItems.length ? (
 					renderedItems.map((sectionItems, index) => (

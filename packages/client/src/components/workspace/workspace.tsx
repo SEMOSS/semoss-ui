@@ -15,7 +15,7 @@ const CodeWorkspace = lazy(() =>
 	})),
 );
 const SkillWorkspace = lazy(() =>
-	import("@/components/skill-workspace").then((m) => ({
+	import("@/components/skill").then((m) => ({
 		default: m.SkillWorkspace,
 	})),
 );
