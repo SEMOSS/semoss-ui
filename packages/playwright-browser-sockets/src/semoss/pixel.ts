@@ -1,4 +1,8 @@
-export const MODULE_PATH = process.env.MODULE || "/Monolith";
+import { Env } from "@semoss/sdk";
+
+export function getModulePath(): string {
+  return Env.MODULE || process.env.MODULE || "/Monolith";
+}
 
 export type PixelReturn<T = unknown> = {
   insightID?: string;
@@ -31,7 +35,7 @@ async function getCsrfToken(): Promise<string> {
     return csrfToken;
   }
 
-  const response = await fetch(`${MODULE_PATH}/api/config/fetchCsrf`, {
+  const response = await fetch(`${getModulePath()}/api/config/fetchCsrf`, {
     credentials: "include",
     headers: {
       "X-CSRF-Token": "fetch",
@@ -77,7 +81,7 @@ export async function runPixel<T = unknown>(
   }
   body.set("tz", Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
 
-  const response = await fetchWithCsrf(`${MODULE_PATH}/api/engine/runPixel`, {
+  const response = await fetchWithCsrf(`${getModulePath()}/api/engine/runPixel`, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",

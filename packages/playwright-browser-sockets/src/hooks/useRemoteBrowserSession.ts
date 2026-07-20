@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import {
 	assertPixelSuccess,
 	fetchWithCsrf,
-	MODULE_PATH,
+	getModulePath,
 	runPixel,
 } from "../semoss/pixel";
 import type {
@@ -17,7 +17,7 @@ import type {
 	StepsEnvelope,
 } from "../types/browserEvents";
 
-const API_BASE = `${MODULE_PATH}/api/browser-sessions`;
+const getApiBase = () => `${getModulePath()}/api/browser-sessions`;
 
 interface UseRemoteBrowserSessionReturn {
 	session: RemoteBrowserSessionInfo | null;
@@ -99,7 +99,7 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 			setIsCreating(true);
 			setError(null);
 			try {
-				const res = await fetchWithCsrf(API_BASE, {
+				const res = await fetchWithCsrf(getApiBase(), {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({
@@ -137,7 +137,7 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 		const s = sessionRef.current;
 		if (!s) return;
 		try {
-			await fetchWithCsrf(`${API_BASE}/${s.sessionId}`, {
+			await fetchWithCsrf(`${getApiBase()}/${s.sessionId}`, {
 				method: "DELETE",
 			});
 		} catch {
@@ -161,7 +161,7 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 			setError(null);
 			try {
 				const res = await fetchWithCsrf(
-					`${API_BASE}/${s.sessionId}/recording/save`,
+					`${getApiBase()}/${s.sessionId}/recording/save`,
 					{
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
@@ -200,7 +200,7 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 			setError(null);
 			try {
 				const res = await fetch(
-					`${API_BASE}/${s.sessionId}/recording`,
+					`${getApiBase()}/${s.sessionId}/recording`,
 					{
 						method: "GET",
 						credentials: "include",
@@ -525,7 +525,7 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 		const s = sessionRef.current;
 		if (!s) return [];
 		try {
-			const res = await fetch(`${API_BASE}/${s.sessionId}/steps`, {
+			const res = await fetch(`${getApiBase()}/${s.sessionId}/steps`, {
 				method: "GET",
 				credentials: "include",
 			});
