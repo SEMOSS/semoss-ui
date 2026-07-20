@@ -51,6 +51,21 @@ export const PERMISSION_DESCRIPTION_MAP: Record<
 	},
 };
 
+export const TYPE_TO_ROUTE = {
+	PROJECT: "/app",
+	CODE: "/app",
+	BLOCKS: "/app",
+	INSIGHT: "/app",
+	SKILL: "/skill",
+	WORKSPACE: "/agent",
+	FUNCTION: "/function",
+	MODEL: "/model",
+	DATABASE: "/database",
+	VECTOR: "/vector",
+	STORAGE: "/storage",
+	GUARDRAIL: "/guardrail",
+} as const;
+
 export const MCP = {
 	DRIVER_PATHS: ["/py/mcp_driver.py"],
 	JSON_PATHS: ["/mcp/py_mcp.json", "/mcp/pixel_mcp.json"],

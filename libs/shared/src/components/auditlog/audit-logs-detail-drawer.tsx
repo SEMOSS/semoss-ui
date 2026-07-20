@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { Button, toast } from "@semoss/ui/next";
 import { TimeDateFormatter } from "./common";
 
@@ -175,6 +176,7 @@ const DetailField = ({ label, value, mono = false }: DetailFieldProps) => (
  */
 export const AuditLogsDetailDrawer = (props) => {
 	const { logDetails } = props;
+	const { t } = useTranslation("auditlog");
 	const [_width, setWidth] = useState(500);
 	const [promptExpandAll, setPromptExpandAll] = useState<boolean | undefined>(
 		undefined,
@@ -232,11 +234,11 @@ export const AuditLogsDetailDrawer = (props) => {
 			await navigator.clipboard.writeText(
 				JSON.stringify(logDetails, null, 2),
 			);
-			toast.success("Copied audit log as JSON");
+			toast.success(t("detail.copySuccess"));
 		} catch (error) {
-			toast.error(`Failed to copy: ${error}`);
+			toast.error(t("detail.copyFailed", { error: String(error) }));
 		}
-	}, [logDetails]);
+	}, [logDetails, t]);
 
 	/**
 	 * Attempts to parse the request of an audit log into a JSON object.
@@ -274,7 +276,7 @@ export const AuditLogsDetailDrawer = (props) => {
 	if (!logDetails)
 		return (
 			<span className="font-normal text-sm leading-[1.43] tracking-normal">
-				No details available
+				{t("detail.noDetails")}
 			</span>
 		);
 	return (
@@ -284,16 +286,16 @@ export const AuditLogsDetailDrawer = (props) => {
 		>
 			<div className="flex items-center justify-between gap-2 border-b bg-[#F5F9FE] py-2 ps-3 pe-12">
 				<span className="font-normal text-base text-primary leading-normal">
-					Audit Details
+					{t("detail.title")}
 				</span>
 				<Button
 					size="sm"
 					variant="outline"
 					onClick={handleCopyJson}
-					title="Copy this record as JSON"
+					title={t("detail.copyJsonTooltip")}
 				>
 					<CopyIcon className="h-4 w-4" />
-					Copy JSON
+					{t("detail.copyJson")}
 				</Button>
 			</div>
 
@@ -305,7 +307,7 @@ export const AuditLogsDetailDrawer = (props) => {
 							<span className="break-all font-semibold text-base text-gray-900 leading-snug">
 								{logDetails.methodName ||
 									logDetails.engineName ||
-									"Event"}
+									t("common.event")}
 							</span>
 							<span className="text-gray-500 text-sm">
 								{logDetails.engineName}
@@ -327,33 +329,55 @@ export const AuditLogsDetailDrawer = (props) => {
 								<Cancel className="h-3.5 w-3.5" />
 							)}
 							{isSuccessStatus(logDetails.status)
-								? "Success"
-								: "Failed"}
+								? t("common.success")
+								: t("common.failed")}
 						</span>
 					</div>
 
 					{/* Metrics, user, timing */}
 					<div className="grid grid-cols-2 gap-x-4 gap-y-3 border-b px-4 py-3">
 						<DetailField
-							label="Latency"
+							label={t("detail.fields.latency")}
 							value={`${logDetails.latency}ms`}
 						/>
-						<DetailField label="Tokens" value={logDetails.tokens} />
-						<DetailField label="User" value={logDetails.userName} />
 						<DetailField
-							label="User Id"
+							label={t("detail.fields.tokens")}
+							value={logDetails.tokens}
+						/>
+						<DetailField
+							label={t("detail.fields.promptTokens")}
+							value={logDetails.promptTokens}
+						/>
+						<DetailField
+							label={t("detail.fields.responseTokens")}
+							value={logDetails.responseTokens}
+						/>
+						<DetailField
+							label={t("detail.fields.cacheRead")}
+							value={logDetails.cacheReadTokens}
+						/>
+						<DetailField
+							label={t("detail.fields.cacheWrite")}
+							value={logDetails.cacheCreationTokens}
+						/>
+						<DetailField
+							label={t("detail.fields.user")}
+							value={logDetails.userName}
+						/>
+						<DetailField
+							label={t("detail.fields.userId")}
 							value={logDetails.userId}
 						/>
 						<DetailField
-							label="Start"
+							label={t("detail.fields.start")}
 							value={`${TimeDateFormatter(logDetails.startTime).date} ${TimeDateFormatter(logDetails.startTime).time}`}
 						/>
 						<DetailField
-							label="End"
+							label={t("detail.fields.end")}
 							value={`${TimeDateFormatter(logDetails.endTime).date} ${TimeDateFormatter(logDetails.endTime).time}`}
 						/>
 						<DetailField
-							label="Log Timestamp"
+							label={t("detail.fields.logTimestamp")}
 							value={`${TimeDateFormatter(logDetails.logTimestamp).date} ${TimeDateFormatter(logDetails.logTimestamp).time}`}
 						/>
 					</div>
@@ -361,17 +385,17 @@ export const AuditLogsDetailDrawer = (props) => {
 					{/* Trace identifiers (full width, monospace for easy comparison) */}
 					<div className="flex flex-col gap-3 border-b px-4 py-3">
 						<DetailField
-							label="Session Id"
+							label={t("detail.fields.sessionId")}
 							value={logDetails.sessionId}
 							mono
 						/>
 						<DetailField
-							label="Request Id"
+							label={t("detail.fields.requestId")}
 							value={logDetails.requestId}
 							mono
 						/>
 						<DetailField
-							label="Span Id"
+							label={t("detail.fields.spanId")}
 							value={logDetails.spanId}
 							mono
 						/>
@@ -381,7 +405,7 @@ export const AuditLogsDetailDrawer = (props) => {
 					<div className="px-4 py-3">
 						<div className="mb-1.5 flex items-center justify-between">
 							<span className="font-semibold text-gray-900">
-								Request
+								{t("detail.fields.request")}
 							</span>
 							{showPromptExpandButton && (
 								<Button
@@ -395,8 +419,8 @@ export const AuditLogsDetailDrawer = (props) => {
 										<UnfoldMoreIcon />
 									)}
 									{promptExpandAll
-										? "Collapse All"
-										: "Expand All"}
+										? t("detail.collapseAll")
+										: t("detail.expandAll")}
 								</Button>
 							)}
 						</div>
@@ -416,7 +440,7 @@ export const AuditLogsDetailDrawer = (props) => {
 						</div>
 						<div className="mb-1.5 flex items-center justify-between">
 							<span className="font-semibold text-gray-900">
-								Response
+								{t("detail.fields.response")}
 							</span>
 							{showResponseExpandButton && (
 								<Button
@@ -430,8 +454,8 @@ export const AuditLogsDetailDrawer = (props) => {
 										<UnfoldMoreIcon />
 									)}
 									{responseExpandAll
-										? "Collapse All"
-										: "Expand All"}
+										? t("detail.collapseAll")
+										: t("detail.expandAll")}
 								</Button>
 							)}
 						</div>

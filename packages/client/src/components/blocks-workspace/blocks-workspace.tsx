@@ -15,10 +15,11 @@ import { Spinner, toast } from "@semoss/ui/next";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
 import { FlexLayout } from "@/components/flex-layout";
+import { ProjectDetailTabs } from "@/components/project";
 import { useWorkspace } from "@/hooks";
-import { AppDetailPage } from "@/pages/app";
 import { DesignerStore, type WorkspaceOptions } from "@/stores";
-import { TerminalPanel, WorkspaceManager } from "../../components/workspace";
+import { WorkspaceManager } from "../../components/workspace";
+import { WorkspaceTerminal } from "../../components/workspace/panels";
 import { DesignerContext } from "../../contexts";
 import { MCPJsonEditor } from "../shared";
 import { GraphPanel } from "../workspace/panels/graph-panel";
@@ -372,11 +373,35 @@ export const BlocksWorkspace: React.FC = observer(() => {
 		} else if (component === "notebook-viewer") {
 			return <NotebookViewerPanel id={config.id} />;
 		} else if (component === "terminal") {
-			return <TerminalPanel />;
+			return <WorkspaceTerminal appId={workspace.appId} />;
 		} else if (component === "graph") {
 			return <GraphPanel />;
 		} else if (component === "settingsPanel") {
-			return <AppDetailPage showNav={false} />;
+			return (
+				<ProjectDetailTabs
+					type="CODE"
+					tabs={[
+						{ name: "Overview", path: "" },
+						{
+							name: "Commits",
+							path: "commits",
+							restrict: ["OWNER", "EDIT"],
+						},
+						{ name: "GitHub", path: "github", restrict: ["OWNER"] },
+						{
+							name: "Settings",
+							path: "settings",
+							restrict: ["OWNER"],
+						},
+						{
+							name: "Access Control",
+							path: "access-control",
+							restrict: ["OWNER", "EDIT"],
+						},
+						{ name: "SMSS", path: "smss", restrict: ["OWNER"] },
+					]}
+				/>
+			);
 		} else if (component === "export-button") {
 			return <ExportButtonPanel />;
 		}

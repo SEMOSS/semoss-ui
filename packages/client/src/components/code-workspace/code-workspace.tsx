@@ -1,11 +1,14 @@
 import { observer } from "mobx-react-lite";
-import { useInsight } from "@semoss/sdk/react";
-import { FlexLayout } from "@semoss/shared";
+import { useEffect } from "react";
+import { InsightProvider, useInsight } from "@semoss/sdk/react";
+import { FileExplorer, FlexLayout } from "@semoss/shared";
+import { Spinner } from "@semoss/ui/next";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
+import { ProjectDetailTabs } from "@/components/project";
 import { useWorkspace } from "@/hooks";
-import { AppDetailPage } from "@/pages/app/app-detail-page";
-import { TerminalPanel, WorkspaceManager } from "../../components/workspace";
+import { WorkspaceManager } from "../../components/workspace";
+import { WorkspaceTerminal } from "../../components/workspace/panels";
 import type { WorkspaceOptions } from "../../stores";
 import { MCPJsonEditor } from "../shared";
 import { CodeWorkspaceActions } from "./code-workspace-actions";
@@ -40,6 +43,14 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						type: "tab",
 						name: "Settings",
 						component: "settingsPanel",
+						config: {},
+					},
+					{
+						id: "insight-explorer",
+						type: "tab",
+						name: "Insight",
+						component: "insight-explorer",
+						enableClose: false,
 						config: {},
 					},
 				],
@@ -85,11 +96,68 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 };
 
 /**
+ * The "Insight" file explorer. Each terminal tab owns its own insight, so this
+ * binds to the *active* terminal tab's insight (published to the store by the
+ * terminal panel) via an adopting InsightProvider — `mode.INSIGHT` browsing and
+ * uploads then land in the same workspace the terminal sees. `destroyOnUnmount`
+ * is off so this pane never drops the insight the terminal owns. Its own
+ * observer so it re-binds when the active terminal changes; shows a spinner
+ * until a terminal insight is ready.
+ */
+const InsightFilesPanel = observer(() => {
+	const { workspace } = useWorkspace();
+	const insightId = workspace.activeTerminalInsightId;
+
+	if (!insightId) {
+		return (
+			<div className="flex h-full w-full items-center justify-center bg-background">
+				<Spinner className="size-4" />
+			</div>
+		);
+	}
+
+	return (
+		<InsightProvider options={{ insightId }} destroyOnUnmount={false}>
+			<FileExplorer mode={{ type: "INSIGHT" }} onItemSelect={() => {}} />
+		</InsightProvider>
+	);
+});
+
+/**
  * Render the code workspace
  */
 export const CodeWorkspace: React.FC = observer(() => {
 	const { workspace } = useWorkspace();
 	const insight = useInsight();
+
+	// Inject the Insight tab into the left border if it was loaded from a
+	// cached layout that pre-dates this tab. Runs once after the model loads.
+	useEffect(() => {
+		const model = workspace.model;
+		if (!model) return;
+		if (model.getNodeById("insight-explorer")) return; // already there
+
+		// Find the left border via the always-present file-explorer tab
+		const fileExplorerNode = model.getNodeById("file-explorer");
+		const leftBorder = fileExplorerNode?.getParent();
+		if (!leftBorder) return;
+
+		model.doAction(
+			FlexLayout.Actions.addNode(
+				{
+					id: "insight-explorer",
+					type: "tab",
+					name: "Insight",
+					component: "insight-explorer",
+					enableClose: false,
+					config: {},
+				},
+				leftBorder.getId(),
+				FlexLayout.DockLocation.CENTER,
+				-1,
+			),
+		);
+	}, [workspace.model]);
 
 	const FACTORY: React.ComponentProps<typeof WorkspaceManager>["factory"] = (
 		node,
@@ -117,9 +185,40 @@ export const CodeWorkspace: React.FC = observer(() => {
 		} else if (component === "renderer") {
 			return <RendererPanel />;
 		} else if (component === "settingsPanel") {
-			return <AppDetailPage showNav={false} />;
+			return (
+				<ProjectDetailTabs
+					type="CODE"
+					tabs={[
+						{ name: "Overview", path: "" },
+						{
+							name: "Commits",
+							path: "commits",
+							restrict: ["OWNER", "EDIT"],
+						},
+						{ name: "GitHub", path: "github", restrict: ["OWNER"] },
+						{
+							name: "Settings",
+							path: "settings",
+							restrict: ["OWNER"],
+						},
+						{
+							name: "Access Control",
+							path: "access-control",
+							restrict: ["OWNER", "EDIT"],
+						},
+						{ name: "SMSS", path: "smss", restrict: ["OWNER"] },
+					]}
+				/>
+			);
+		} else if (component === "insight-explorer") {
+			return <InsightFilesPanel />;
 		} else if (component === "terminal") {
-			return <TerminalPanel />;
+			return (
+				<WorkspaceTerminal
+					appId={workspace.appId}
+					onActiveInsightChange={workspace.setActiveTerminalInsightId}
+				/>
+			);
 		}
 
 		return <>{component}</>;

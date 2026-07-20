@@ -1,6 +1,7 @@
 import {
 	Clock,
 	ExternalLink,
+	FolderOpen,
 	GitBranch,
 	Github,
 	RefreshCw,
@@ -40,8 +41,7 @@ import {
 	selectRepo,
 	setProjectBranch,
 } from "@/api/github";
-import { useAppDetail } from "@/contexts";
-import { useRootStore } from "@/hooks";
+import { useProject, useRootStore } from "@/hooks";
 import { GithubBranchSelect } from "./app-detail-tabs/github-branch-select";
 import { GithubInstallationPicker } from "./app-detail-tabs/github-installation-picker";
 import { GithubRepoPicker } from "./app-detail-tabs/github-repo-picker";
@@ -60,7 +60,7 @@ const DELIVERY_LIMIT = 20;
  */
 export const AppGithubPage = () => {
 	const { t } = useTranslation("githubApp");
-	const { appId } = useAppDetail();
+	const { appId } = useProject();
 	const { monolithStore } = useRootStore();
 	const location = useLocation();
 
@@ -233,7 +233,11 @@ export const AppGithubPage = () => {
 		return Number.isNaN(parsed.getTime()) ? iso : parsed.toLocaleString();
 	};
 
-	const changeRepo = async (repo: GithubRepo, branch: string) => {
+	const changeRepo = async (
+		repo: GithubRepo,
+		branch: string,
+		subdir: string,
+	) => {
 		if (!link?.installationId) {
 			return;
 		}
@@ -244,12 +248,14 @@ export const AppGithubPage = () => {
 				installationId: link.installationId,
 				repoId: repo.id,
 				branch,
+				subdir,
 			});
 			setLink({
 				...link,
 				repoId: repo.id,
 				repoFullName: result.repoFullName,
 				branch,
+				subdir: subdir || undefined,
 				htmlUrl: repoHtmlUrl(result.repoFullName),
 			});
 			setIsChangeOpen(false);
@@ -272,6 +278,7 @@ export const AppGithubPage = () => {
 		installation: GithubInstallation,
 		repo: GithubRepo,
 		branch: string,
+		subdir: string,
 	) => {
 		setIsSubmitting(true);
 		try {
@@ -280,6 +287,7 @@ export const AppGithubPage = () => {
 				installationId: installation.installationId,
 				repoId: repo.id,
 				branch,
+				subdir,
 			});
 			const fresh = await getProjectLink(appId);
 			setLink(fresh.linked ? fresh : null);
@@ -389,6 +397,15 @@ export const AppGithubPage = () => {
 									{t("project.branch.change")}
 								</Button>
 							</span>
+							{link.subdir ? (
+								<span className="mt-1 flex flex-wrap items-center gap-1.5 text-muted-foreground text-sm">
+									<FolderOpen className="size-3.5" />
+									<span>{t("project.subdir.display")}</span>
+									<code className="font-medium text-foreground text-xs">
+										{link.subdir}
+									</code>
+								</span>
+							) : null}
 							{installationValid === true ? (
 								<span className="mt-1 flex items-center gap-1.5 text-green-600 text-xs dark:text-green-500">
 									<ShieldCheck className="size-3.5" />
@@ -597,6 +614,7 @@ export const AppGithubPage = () => {
 							projectId={appId}
 							installationId={String(link.installationId)}
 							currentRepoId={link.repoId}
+							currentSubdir={link.subdir}
 							isSubmitting={isSubmitting}
 							confirmLabel={t("project.changeDialog.confirm")}
 							onConfirm={changeRepo}

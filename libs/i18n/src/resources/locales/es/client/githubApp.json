@@ -159,6 +159,15 @@
 			"branchLabel": "Rama a seguir",
 			"branchHelp": "Solo los pushes a esta rama sincronizan el proyecto."
 		},
+		"subdir": {
+			"label": "Subdirectorio",
+			"optional": "(opcional)",
+			"placeholder": "apps/my-app",
+			"help": "Déjalo en blanco para sincronizar todo el repositorio. Úsalo en monorepos donde la app está en una subcarpeta.",
+			"display": "Subdirectorio",
+			"errorLeadingSlash": "La ruta no debe comenzar con una barra.",
+			"errorDotDot": "La ruta no debe contener \"..\"."
+		},
 		"selectRepo": {
 			"title": "Selecciona un repositorio",
 			"description": "La instalación puede acceder a varios repositorios. Elige el que debe usar este proyecto.",

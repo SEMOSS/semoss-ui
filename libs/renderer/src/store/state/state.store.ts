@@ -885,7 +885,7 @@ export class StateStore {
 				path,
 				variable.cellId,
 				variable.type !== "cell" && variable.value
-					? variable.value
+					? (variable.value as string)
 					: null,
 			);
 
@@ -1101,7 +1101,7 @@ export class StateStore {
 		// add the listeners
 		block.listeners = json.listeners;
 
-		if (!json.parent && parent) {
+		if (!(json as BlockJSON & { parent?: string }).parent && parent) {
 			block.parent = parent;
 		}
 
@@ -1112,7 +1112,11 @@ export class StateStore {
 					name: slot,
 					children: (Array.isArray(json.slots[slot])
 						? json.slots[slot]
-						: json.slots[slot].children
+						: (
+								json.slots[slot] as unknown as {
+									children: BlockJSON[];
+								}
+							).children
 					).map((child) => {
 						// form the parent object
 						const parent = { id: id, slot: slot };
@@ -2136,7 +2140,12 @@ export class StateStore {
 			return false;
 		}
 
-		const token = { type };
+		const token: {
+			type: VariableType;
+			to?: string;
+			cellId?: string;
+			value?: unknown;
+		} = { type };
 
 		if (to) {
 			token.to = to;
@@ -2481,7 +2490,8 @@ export class StateStore {
 					payload: {
 						id: variable.id,
 						from: variable,
-						to: newVar,
+						// biome-ignore lint/suspicious/noExplicitAny: VariableWithId value type is wider than action payload expects
+						to: newVar as any,
 					},
 				});
 			} catch (error) {

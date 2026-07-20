@@ -1,0 +1,154 @@
+{
+	"common": {
+		"success": "成功",
+		"failed": "失敗",
+		"event": "イベント",
+		"noLogs": "利用可能なログがありません。"
+	},
+	"filter": {
+		"searchPlaceholder": "ログを検索...",
+		"selectEngineType": "エンジンタイプを選択",
+		"selectEngine": "エンジンを選択",
+		"roomId": "ルームID",
+		"allRooms": "すべてのルーム",
+		"methodName": "メソッド名",
+		"engineType": "エンジンタイプ",
+		"allUsers": "すべてのユーザー",
+		"loading": "読み込み中…",
+		"noOptions": "選択肢がありません",
+		"clear": "クリア",
+		"clearFilters": "フィルターをクリア",
+		"close": "閉じる",
+		"apply": "適用",
+		"countSummary": "{{label}}（{{count}}）",
+		"dateRange": {
+			"today": "今日",
+			"last7Days": "過去7日間",
+			"last30Days": "過去30日間",
+			"custom": "カスタム"
+		}
+	},
+	"summary": {
+		"events": "イベント",
+		"shown": "表示中",
+		"errors": "エラー",
+		"p50": "P50",
+		"p95": "P95",
+		"tokens": "合計トークン",
+		"cacheRead": "キャッシュ読み取り",
+		"cacheWrite": "キャッシュ作成",
+		"currentPage": "現在のページ",
+		"currentPageHint": "レイテンシ、エラー、トークンは現在のページのイベントを対象に計算されます。"
+	},
+	"table": {
+		"title": "リクエストとレスポンスのタイムライン",
+		"grouping": {
+			"none": "グループ化なし",
+			"span": "スパンでグループ化",
+			"request": "リクエストでグループ化"
+		},
+		"columns": {
+			"user": "ユーザー",
+			"sessionId": "セッションID",
+			"request": "リクエスト",
+			"response": "レスポンス",
+			"method": "メソッド",
+			"engineType": "エンジンタイプ",
+			"engineName": "エンジン名",
+			"latency": "レイテンシ",
+			"tokens": "合計トークン",
+			"promptTokens": "プロンプトトークン",
+			"responseTokens": "レスポンストークン",
+			"cacheRead": "キャッシュ読み取り",
+			"cacheWrite": "キャッシュ作成",
+			"timestamp": "タイムスタンプ",
+			"status": "ステータス",
+			"guardrailAction": "ガードレール"
+		},
+		"guardrailActions": {
+			"MASK": "マスク済み",
+			"BLOCK": "ブロック済み"
+		},
+		"groupRequest": "リクエスト",
+		"groupSpan": "スパン",
+		"event_one": "{{count}} 件のイベント",
+		"event_other": "{{count}} 件のイベント",
+		"groupMeta": "{{latency}}ms · {{tokens}} トークン",
+		"rowsPerPage": "ページあたりの行数:",
+		"pageRange": "{{total}} 件中 {{first}} - {{last}}",
+		"showingResults": "{{total}} 件中 {{shown}} 件の結果を表示"
+	},
+	"timeline": {
+		"title": "イベント履歴",
+		"rowMode": {
+			"event": "行: イベントごと",
+			"span": "行: スパンごと",
+			"request": "行: リクエストごと"
+		},
+		"axisMode": {
+			"time": "時刻",
+			"datetime": "日時",
+			"date": "日付",
+			"month": "月"
+		},
+		"highlightZoom": "拡大する領域を選択してください",
+		"zoomIn": "拡大",
+		"zoomOut": "縮小",
+		"resetZoom": "ズームをリセット",
+		"tooltip": {
+			"engine": "エンジン",
+			"user": "ユーザー",
+			"latency": "レイテンシ",
+			"tokens": "合計トークン",
+			"start": "開始",
+			"end": "終了",
+			"span": "スパン",
+			"session": "セッション",
+			"request": "リクエスト",
+			"response": "レスポンス"
+		}
+	},
+	"detail": {
+		"title": "監査の詳細",
+		"copyJson": "JSONをコピー",
+		"copyJsonTooltip": "このレコードをJSONとしてコピー",
+		"copySuccess": "監査ログをJSONとしてコピーしました",
+		"copyFailed": "コピーに失敗しました: {{error}}",
+		"noDetails": "詳細はありません",
+		"expandAll": "すべて展開",
+		"collapseAll": "すべて折りたたむ",
+		"fields": {
+			"latency": "レイテンシ",
+			"tokens": "合計トークン",
+			"promptTokens": "プロンプトトークン",
+			"responseTokens": "レスポンストークン",
+			"cacheRead": "キャッシュ読み取り",
+			"cacheWrite": "キャッシュ作成",
+			"user": "ユーザー",
+			"userId": "ユーザーID",
+			"start": "開始",
+			"end": "終了",
+			"logTimestamp": "ログのタイムスタンプ",
+			"sessionId": "セッションID",
+			"requestId": "リクエストID",
+			"spanId": "スパンID",
+			"request": "リクエスト",
+			"response": "レスポンス"
+		}
+	},
+	"page": {
+		"dashboardTitle": "{{catalogName}} インサイトダッシュボード",
+		"export": "エクスポート",
+		"exportCsv": "CSVとしてエクスポート",
+		"exportPdf": "PDFとしてエクスポート",
+		"refresh": "更新",
+		"selectToFetch": "ログを取得するにはエンジンタイプとエンジンを選択してください",
+		"selectBeforeExport": "ログをエクスポートする前にエンジンを選択してください。",
+		"errorFetching": "ログの取得中にエラーが発生しました: {{error}}",
+		"errorExporting": "ログのエクスポート中にエラーが発生しました: {{error}}"
+	},
+	"layout": {
+		"appName": "監査ログ",
+		"appDescription": "監査ログアプリ"
+	}
+}

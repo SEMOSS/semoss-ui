@@ -55,6 +55,12 @@ export interface MCPCardProps {
 	 * When provided, an external link icon is shown in the card header.
 	 */
 	getPlatformUrl?: (mcp: MCP) => string;
+	/**
+	 * Optional override for the type label shown under the name. Defaults to
+	 * the sentence-cased MCP type (e.g. "Project"). Lets the same card render
+	 * for skills, which are projects but should read "Skill".
+	 */
+	typeLabel?: string;
 }
 
 export const MCPCard = ({
@@ -67,6 +73,7 @@ export const MCPCard = ({
 	selected,
 	fromWorkspace,
 	getPlatformUrl,
+	typeLabel,
 }: MCPCardProps) => {
 	const { t } = useTranslation(["mcp", "common", "workspace"]);
 	const effectiveOnClick = fromWorkspace ? undefined : onClick;
@@ -257,7 +264,7 @@ export const MCPCard = ({
 						</div>
 						<div className="flex items-center gap-1.5 text-muted-foreground text-xs">
 							<TypeIcon className="size-3.5 shrink-0" />
-							<span>{toSentenceCase(m.type)}</span>
+							<span>{typeLabel ?? toSentenceCase(m.type)}</span>
 						</div>
 					</div>
 

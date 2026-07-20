@@ -1,4 +1,3 @@
-import dayjs from "dayjs";
 import {
 	Bot,
 	HelpCircle,
@@ -21,9 +20,10 @@ import {
 	useParams,
 } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
-import { runPixel, useInsight, useIteratorPixel } from "@semoss/sdk/react";
+import { runPixel, useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
+	cn,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
@@ -53,6 +53,7 @@ import {
 	useSidebar,
 } from "@semoss/ui/next";
 import { useChat, useRoot, useTour } from "@/hooks";
+import { getDateBucket, normalizeTimestamp } from "@/utility";
 import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
@@ -70,7 +71,6 @@ try {
  * @component
  */
 export const GlobalNav = observer(() => {
-	const { system } = useInsight();
 	const { t } = useTranslation("sidebar");
 
 	const BUCKETS = [
@@ -113,8 +113,6 @@ export const GlobalNav = observer(() => {
 	const [editingName, setEditingName] = useState("");
 
 	const [deletedSet, setDeletedSet] = useState(new Set<string>());
-
-	const systemDate = dayjs(`${system.config.systemDate}Z`);
 
 	const navigate = useNavigate();
 
@@ -249,6 +247,20 @@ export const GlobalNav = observer(() => {
 	}, [getRooms.reset, getPinnedRooms.reset, chat.keys.roomCounter]);
 
 	/**
+	 * Once the refetch returns a room we were showing optimistically, drop the
+	 * optimistic entry so the store's map doesn't grow unbounded across a
+	 * session. The render-time filter already hides it, so this is housekeeping.
+	 */
+	useEffect(() => {
+		const fetchedIds = new Set(getRooms.data.map((r) => r.ROOM_ID));
+		Object.keys(chat.optimisticRooms).forEach((roomId) => {
+			if (fetchedIds.has(roomId)) {
+				chat.removeOptimisticRoom(roomId);
+			}
+		});
+	}, [getRooms.data, chat]);
+
+	/**
 	 * Save and restore scroll position when sidebar opens/closes
 	 */
 	useEffect(() => {
@@ -284,28 +296,27 @@ export const GlobalNav = observer(() => {
 	 */
 	const pinnedRoomIds = new Set(getPinnedRooms.data.map((r) => r.ROOM_ID));
 
-	const bucketedRooms = getRooms.data.reduce(
+	// Rooms optimistically shown before their first message has persisted.
+	// Drop any that the server has since returned (real data wins), and skip
+	// them entirely while searching so they don't pollute filtered results.
+	const fetchedRoomIds = new Set([
+		...getRooms.data.map((r) => r.ROOM_ID),
+		...pinnedRoomIds,
+	]);
+	const optimisticRooms = debouncedSearch
+		? []
+		: Object.values(chat.optimisticRooms).filter(
+				(r) => !fetchedRoomIds.has(r.ROOM_ID),
+			);
+
+	const bucketedRooms = [...optimisticRooms, ...getRooms.data].reduce(
 		(acc, val) => {
 			// Skip rooms handled by the dedicated pinned query
 			if (val.PINNED || pinnedRoomIds.has(val.ROOM_ID)) return acc;
 
-			const d = dayjs(`${val.DATE_CREATED}Z`);
-
-			if (systemDate.isSame(d, "day")) {
-				acc[t("buckets.today")].push(val);
-			} else if (systemDate.subtract(1, "day").isSame(d, "day")) {
-				acc[t("buckets.yesterday")].push(val);
-			} else if (d.isAfter(systemDate.subtract(3, "day"))) {
-				acc[t("buckets.fewDaysAgo")].push(val);
-			} else if (d.isAfter(systemDate.subtract(7, "day"))) {
-				acc[t("buckets.lastWeek")].push(val);
-			} else if (systemDate.isSame(d, "month")) {
-				acc[t("buckets.thisMonth")].push(val);
-			} else if (systemDate.subtract(1, "month").isSame(d, "month")) {
-				acc[t("buckets.lastMonth")].push(val);
-			} else {
-				acc[t("buckets.older")].push(val);
-			}
+			const d = normalizeTimestamp(val.DATE_CREATED);
+			const bucket = getDateBucket(d);
+			acc[t(`buckets.${bucket}`)].push(val);
 
 			return acc;
 		},
@@ -329,13 +340,10 @@ export const GlobalNav = observer(() => {
 		isFavorite: boolean,
 	) => {
 		try {
-			await runPixel(
-				`PinRoom(roomId=["${roomId}"], pinned=[${!isFavorite}]);`,
-			);
-
-			// Refetch rooms after toggling favorite
-			getRooms.reset();
-			getPinnedRooms.reset();
+			// pinRoom bumps roomCounter, which the effect above watches to
+			// refetch both room queries here — and keeps the chats page in
+			// sync, so pinning is bidirectional across the two views.
+			await chat.pinRoom(roomId, !isFavorite);
 		} catch {
 			toast.error(
 				isFavorite
@@ -528,7 +536,8 @@ export const GlobalNav = observer(() => {
 						)}
 					{isVisible &&
 						!getRooms.isLoading &&
-						getRooms.data.length === 0 && (
+						getRooms.data.length === 0 &&
+						optimisticRooms.length === 0 && (
 							<div className="px-2 py-4 text-center">
 								<Muted>{t("messages.noRoomsFound")}</Muted>
 							</div>
@@ -556,19 +565,21 @@ export const GlobalNav = observer(() => {
 												t("messages.untitled");
 											const date = root.theme.sidebar
 												.chatHistoryDate
-												? new Date(
-														`${room.DATE_CREATED}Z`,
-													).toLocaleString(
-														undefined,
-														{
-															month: "numeric",
-															day: "numeric",
-															year: "numeric",
-															hour: "numeric",
-															minute: "2-digit",
-															hour12: true,
-														},
+												? normalizeTimestamp(
+														room.DATE_CREATED,
 													)
+														.toDate()
+														.toLocaleString(
+															undefined,
+															{
+																month: "numeric",
+																day: "numeric",
+																year: "numeric",
+																hour: "numeric",
+																minute: "2-digit",
+																hour12: true,
+															},
+														)
 												: null;
 											const isFavorite =
 												room.PINNED || false;
@@ -583,7 +594,7 @@ export const GlobalNav = observer(() => {
 											return (
 												<SidebarMenuItem
 													key={roomId}
-													className="group/room relative flex"
+													className="group relative flex"
 												>
 													{isEditing ? (
 														<Input
@@ -627,7 +638,11 @@ export const GlobalNav = observer(() => {
 																}
 															>
 																<Link
-																	className={`flex h-auto flex-col items-start p-2 ${date ? "gap-1" : ""}`}
+																	className={cn(
+																		"flex h-auto flex-col items-start p-2",
+																		date &&
+																			"gap-1",
+																	)}
 																	to={`/room/${roomId}`}
 																	aria-label={
 																		"Select room"
@@ -657,7 +672,7 @@ export const GlobalNav = observer(() => {
 																	<Button
 																		variant="ghost"
 																		size="icon-sm"
-																		className="invisible group-hover/room:visible"
+																		className=""
 																		onClick={(
 																			e,
 																		) => {
@@ -687,11 +702,11 @@ export const GlobalNav = observer(() => {
 																		}}
 																	>
 																		<StarIcon
-																			className={`me-2 size-4 ${
-																				isFavorite
-																					? "fill-yellow-500 text-yellow-500"
-																					: ""
-																			}`}
+																			className={cn(
+																				"me-2 size-4",
+																				isFavorite &&
+																					"fill-yellow-500 text-yellow-500",
+																			)}
 																		/>
 																		{isFavorite
 																			? t(

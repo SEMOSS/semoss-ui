@@ -9,6 +9,19 @@ const DEFAUlT_MODEL_NAME = import.meta.env.VITE_DEFAUlT_MODEL_NAME || "";
 
 const SESSION_MODEL_KEY = "smss-playground-session-model";
 
+/**
+ * Shape of a room row as rendered in the nav list. Matches the columns
+ * returned by GetPlaygroundRooms so optimistic rooms can be merged into the
+ * fetched list seamlessly.
+ */
+export interface OptimisticRoom {
+	ROOM_ID: string;
+	ROOM_NAME: string;
+	DATE_CREATED: string;
+	WORKSPACE_ID?: string;
+	PINNED?: boolean;
+}
+
 interface ChatStoreInterface {
 	/**
 	 *  Track if the chat is initialized
@@ -36,6 +49,15 @@ interface ChatStoreInterface {
 	 * Cached rooms
 	 */
 	rooms: Record<string, RoomStore>;
+
+	/**
+	 * Rooms shown in the nav before their first message has persisted.
+	 * GetPlaygroundRooms only returns rooms that already have a message with
+	 * data, so a freshly created room is invisible to the refetch until its
+	 * first response lands. These bridge that gap and are removed once the
+	 * real room shows up in the fetched list. Keyed by room id.
+	 */
+	optimisticRooms: Record<string, OptimisticRoom>;
 
 	/**
 	 * Options related to the navbar
@@ -80,6 +102,7 @@ export class ChatStore {
 			contextWindow: undefined,
 		},
 		rooms: {},
+		optimisticRooms: {},
 		keys: {
 			roomCounter: 0,
 		},
@@ -161,6 +184,13 @@ export class ChatStore {
 	}
 
 	/**
+	 * Get the rooms optimistically shown in the nav
+	 */
+	get optimisticRooms() {
+		return this._store.optimisticRooms;
+	}
+
+	/**
 	 * Initialize the store
 	 */
 	initialize = async (): Promise<void> => {
@@ -236,6 +266,27 @@ export class ChatStore {
 	};
 
 	/**
+	 * Optimistically surface a room in the nav before its first message has
+	 * persisted. Shown until the real room is returned by GetPlaygroundRooms
+	 * (see {@link removeOptimisticRoom}).
+	 */
+	addOptimisticRoom = (room: OptimisticRoom): void => {
+		runInAction(() => {
+			this._store.optimisticRooms[room.ROOM_ID] = room;
+		});
+	};
+
+	/**
+	 * Drop an optimistic room, once the real room has been fetched or its
+	 * first message failed to send.
+	 */
+	removeOptimisticRoom = (roomId: string): void => {
+		runInAction(() => {
+			delete this._store.optimisticRooms[roomId];
+		});
+	};
+
+	/**
 	 * Create a new room
 	 */
 	createRoom = async (
@@ -290,17 +341,34 @@ export class ChatStore {
 			// save it to the cache
 			this._store.rooms[roomId] = room;
 
+			// optimistically surface the room in the nav — GetPlaygroundRooms
+			// won't return it until its first message has data
+			this._store.optimisticRooms[roomId] = {
+				ROOM_ID: roomId,
+				ROOM_NAME: prompt.substring(0, 100),
+				DATE_CREATED: new Date().toISOString(),
+				WORKSPACE_ID: workspaceId,
+			};
+
 			// increment the roomCounter to force re-render of the nav
 			this._store.keys.roomCounter++;
 		});
 
-		// ask the room
-		room.askMessage(prompt, files).then(() => {
-			runInAction(() => {
-				// increment the roomCounter to force re-render of the nav
-				this._store.keys.roomCounter++;
-			});
-		});
+		// ask the room — fire-and-forget so we return (and navigate) without
+		// waiting on the response
+		(async () => {
+			try {
+				await room.askMessage(prompt, files);
+				runInAction(() => {
+					// increment the roomCounter to force re-render of the nav
+					this._store.keys.roomCounter++;
+				});
+			} catch {
+				// First message never landed — the room has no data and won't
+				// be returned by the refetch, so drop the optimistic entry.
+				this.removeOptimisticRoom(roomId);
+			}
+		})();
 
 		// return the room
 		return room;
@@ -359,6 +427,20 @@ export class ChatStore {
 			if (cached) {
 				cached.setMetadata({ name: trimmed });
 			}
+			this._store.keys.roomCounter++;
+		});
+	};
+
+	/**
+	 * Pin or unpin a room. Runs the PinRoom pixel and bumps the
+	 * roomCounter so any room lists elsewhere in the app (sidebar,
+	 * chats page, per-agent timeline) refetch and stay in sync.
+	 */
+	pinRoom = async (roomId: string, pinned: boolean): Promise<void> => {
+		await this._actions.run<[boolean]>(
+			`PinRoom(roomId=["${roomId}"], pinned=[${pinned}]);`,
+		);
+		runInAction(() => {
 			this._store.keys.roomCounter++;
 		});
 	};
@@ -434,15 +516,21 @@ export class ChatStore {
 	addWorkspace = async (
 		data: Pick<
 			Workspace,
-			"name" | "system_prompt" | "description" | "mcp" | "prompts"
+			| "name"
+			| "system_prompt"
+			| "description"
+			| "mcp"
+			| "skills"
+			| "prompts"
 		>,
 	): Promise<string> => {
 		try {
 			const mcp = data.mcp.map(
 				({ name, id, type }): MCPConfig => ({ name, id, type }),
 			);
+			const skills = data.skills.map((s) => s.id);
 
-			const pixel = `AddWorkspace(name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, prompts=${JSON.stringify(data.prompts)})`;
+			const pixel = `AddWorkspace(name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
 			return pixelReturn[0].output;
@@ -458,15 +546,21 @@ export class ChatStore {
 		workspaceId: string,
 		data: Pick<
 			Workspace,
-			"name" | "system_prompt" | "description" | "mcp" | "prompts"
+			| "name"
+			| "system_prompt"
+			| "description"
+			| "mcp"
+			| "skills"
+			| "prompts"
 		>,
 	): Promise<string> => {
 		try {
 			const mcp = data.mcp.map(
 				({ name, id, type }): MCPConfig => ({ name, id, type }),
 			);
+			const skills = data.skills.map((s) => s.id);
 
-			const pixel = `EditWorkspace(workspaceId=${JSON.stringify(workspaceId)}, name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, prompts=${JSON.stringify(data.prompts)})`;
+			const pixel = `EditWorkspace(workspaceId=${JSON.stringify(workspaceId)}, name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
 			// throw errors
@@ -526,10 +620,10 @@ export class ChatStore {
 			const profileDefaultModelId = this._store.profileDefaultModelId;
 			let isSelected = false;
 
-			// 1. theme/admin-enforced default
-			if (defaultModelId) {
+			// 1. user's profile default — explicitly set by the user, highest personal priority
+			if (profileDefaultModelId) {
 				for (const m of output) {
-					if (m.engine_id === defaultModelId) {
+					if (m.engine_id === profileDefaultModelId) {
 						this.setSelectedModel(m);
 						isSelected = true;
 						break;
@@ -566,10 +660,10 @@ export class ChatStore {
 				} catch {}
 			}
 
-			// 3. user's profile default — used on fresh login when no session model exists
-			if (!isSelected && profileDefaultModelId) {
+			// 3. theme/admin-suggested default — used as a fallback when the user has no preference
+			if (!isSelected && defaultModelId) {
 				for (const m of output) {
-					if (m.engine_id === profileDefaultModelId) {
+					if (m.engine_id === defaultModelId) {
 						this.setSelectedModel(m);
 						isSelected = true;
 						break;
