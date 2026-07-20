@@ -173,25 +173,24 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
 				`META | ${selectedFrame} | FrameHeaders();`,
 			);
 			if (headerResponse) {
-				const headers =
-					headerResponse.pixelReturn[0].output.headerInfo.headers.map(
-						(element) => ({
-							name: element.displayName,
-							type: element.dataType,
-						}),
-					);
+				// biome-ignore lint/suspicious/noExplicitAny: pixel response output type is unknown
+				const hOut = headerResponse.pixelReturn[0].output as any;
+				const headers = hOut.headerInfo.headers.map((element) => ({
+					name: element.displayName,
+					type: element.dataType,
+				}));
 				setSelectedFrameHeaders(headers);
 			}
 			const response = await state.runSideEffect(
 				`META | Frame("${selectedFrame}") | QueryAll()| Limit(1000) | CollectAll()`,
 			);
-			const responseData = response.pixelReturn[0].output.data;
-			const headers = response.pixelReturn[0].output.headerInfo.map(
-				(element) => ({
-					name: element.header,
-					type: element.dataType,
-				}),
-			);
+			// biome-ignore lint/suspicious/noExplicitAny: pixel response output type is unknown
+			const responseOutput = response.pixelReturn[0].output as any;
+			const responseData = responseOutput.data;
+			const headers = responseOutput.headerInfo.map((element) => ({
+				name: element.header,
+				type: element.dataType,
+			}));
 			// biome-ignore lint/suspicious/noExplicitAny: external API type
 			const fieldToValues: Record<string, any[]> = {};
 			headers.forEach((name, index) => {

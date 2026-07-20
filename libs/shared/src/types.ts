@@ -2,7 +2,13 @@ export interface Engine {
 	engine_id: string;
 	engine_name: string;
 	engine_display_name?: string;
-	engine_type: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
+	engine_type:
+		| "MODEL"
+		| "STORAGE"
+		| "DATABASE"
+		| "FUNCTION"
+		| "VECTOR"
+		| "GUARDRAIL";
 	engine_subtype?: string;
 	engine_favorite?: number;
 	engine_global?: boolean;
@@ -10,16 +16,56 @@ export interface Engine {
 	engine_user_permission?: number;
 	engine_group_permission?: number;
 	engine_date_created?: string;
+	engine_date_last_edited?: string;
 	engine_cost?: string;
 	low_engine_name?: string;
 	description?: string;
+	tag?: string;
 
 	/** @deprecated legacy keys from MyEngines */
 	app_id?: string;
 	/** @deprecated legacy keys from MyEngines */
 	app_name?: string;
 	/** @deprecated legacy keys from MyEngines */
-	app_type?: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
+	app_type?:
+		| "MODEL"
+		| "STORAGE"
+		| "DATABASE"
+		| "FUNCTION"
+		| "VECTOR"
+		| "GUARDRAIL";
+}
+
+export interface Project {
+	project_id: string;
+	project_name: string;
+	project_display_name?: string;
+	project_type: "SKILL" | "WORKSPACE" | "BLOCKS" | "CODE" | "INSIGHT";
+	project_cost?: string;
+	project_global?: string;
+	project_created_by?: string;
+	project_created_by_type?: string;
+	project_date_created?: string;
+	project_date_last_edited?: string;
+	/** @deprecated  */
+	project_has_portal?: boolean;
+	/** @deprecated  */
+	project_portal_name?: string;
+	/** @deprecated  */
+	project_portal_published_date?: string;
+	project_published_user?: string;
+	project_published_user_type?: string;
+	project_reactors_compiled_date?: string;
+	project_reactors_compiled_user?: string;
+	project_reactors_compiled_user_type?: string;
+	project_favorite?: number; // 1 for favorite, 0 for not favorite
+	user_permission?: number;
+	group_permission?: string;
+	"data classification"?: string[];
+	"data restrictions"?: string[];
+	tag?: string | string[];
+	description?: string;
+	markdown?: string;
 }
 
 export interface App {
@@ -288,11 +334,13 @@ export interface ThemeMap {
 			showPlatformLinks?: boolean;
 			/** Whether to show a text input for feedback comments when rating a response. Defaults to false. */
 			enableFeedbackText?: boolean;
+			/** Whether to show an export button on tables rendered in chat responses. Defaults to false. */
+			enableTableExport?: boolean;
 		};
 	};
 }
 
-export type Role = "OWNER" | "EDIT" | "READ_ONLY";
+export type Role = "OWNER" | "EDIT" | "READ_ONLY" | "DISCOVERABLE";
 
 /**
  * User permission entry for adding/editing permissions
@@ -324,7 +372,14 @@ export interface UserAccessRequest {
 
 export interface MCP {
 	/** Type of the mcp */
-	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION" | "MODEL" | "VECTOR";
+	type:
+		| "PROJECT"
+		| "STORAGE"
+		| "DATABASE"
+		| "FUNCTION"
+		| "MODEL"
+		| "VECTOR"
+		| "GUARDRAIL";
 	/** Id of the mcp */
 	id: string;
 	/** Name of the mcp */
@@ -363,19 +418,13 @@ export interface Skill {
 export type SkillConfig = Pick<Skill, "id" | "name">;
 
 export interface ProjectDependency {
-	engine_type:
-		| "PROJECT"
-		| "STORAGE"
-		| "DATABASE"
-		| "FUNCTION"
-		| "MODEL"
-		| "VECTOR";
+	engine_type: Project["project_type"] | Engine["engine_type"];
 	engine_id: string;
 	engine_name: string;
 	engine_subtype?: string;
 	description?: string;
 	engine_discoverable?: boolean;
-	permission_name?: "READ_ONLY" | "EDIT" | "OWNER";
+	permission_name?: Role;
 	engine_global?: boolean;
 	access_permission?: number;
 	tags?: string;

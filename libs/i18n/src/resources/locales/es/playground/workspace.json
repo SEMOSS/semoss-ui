@@ -78,10 +78,7 @@
 		"pin": "Marcar como favorito",
 		"unpin": "Quitar de favoritos",
 		"pinFailed": "Error al marcar como favorito",
-		"unpinFailed": "Error al quitar de favoritos",
-		"dayToday": "Hoy",
-		"dayYesterday": "Ayer",
-		"daysAgo": "Hace {{count}} días"
+		"unpinFailed": "Error al quitar de favoritos"
 	},
 	"images": {
 		"agentIllustration": "Ilustración del agente"
@@ -146,6 +143,8 @@
 		"title": "Todos los chats",
 		"subtitle": "Explora, busca y limpia tus chats.",
 		"selectAll": "Seleccionar todo",
+		"deselectAll": "Deseleccionar todo",
+		"favorites": "Favoritos",
 		"selectChat": "Seleccionar chat {{name}}",
 		"selectedCount": "{{count}} seleccionados",
 		"totalCount": "{{count}} chats",
@@ -161,7 +160,9 @@
 		"viewDescription": "La indicación del sistema que guía el comportamiento de este agente.",
 		"editTitle": "Editar instrucciones",
 		"editDescription": "Actualiza la indicación del sistema que guía el comportamiento de este agente.",
-		"charCount": "{{count}} caracteres"
+		"charCount_one": "{{count, number}} carácter",
+		"charCount_many": "{{count, number}} caracteres",
+		"charCount_other": "{{count, number}} caracteres"
 	},
 	"skills": {
 		"noSkills": "No se han añadido habilidades"

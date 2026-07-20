@@ -78,10 +78,7 @@
 		"pin": "Ajouter aux favoris",
 		"unpin": "Retirer des favoris",
 		"pinFailed": "Échec de l'ajout aux favoris",
-		"unpinFailed": "Échec du retrait des favoris",
-		"dayToday": "Aujourd'hui",
-		"dayYesterday": "Hier",
-		"daysAgo": "Il y a {{count}} jours"
+		"unpinFailed": "Échec du retrait des favoris"
 	},
 	"images": {
 		"agentIllustration": "Illustration de l'agent"
@@ -146,6 +143,8 @@
 		"title": "Toutes les discussions",
 		"subtitle": "Parcourez, recherchez et nettoyez vos discussions.",
 		"selectAll": "Tout sélectionner",
+		"deselectAll": "Tout désélectionner",
+		"favorites": "Favoris",
 		"selectChat": "Sélectionner la discussion {{name}}",
 		"selectedCount": "{{count}} sélectionnée(s)",
 		"totalCount": "{{count}} discussions",
@@ -161,7 +160,9 @@
 		"viewDescription": "L'invite système qui guide le comportement de cet agent.",
 		"editTitle": "Modifier les instructions",
 		"editDescription": "Mettez à jour l'invite système qui guide le comportement de cet agent.",
-		"charCount": "{{count}} caractères"
+		"charCount_one": "{{count, number}} caractère",
+		"charCount_many": "{{count, number}} caractères",
+		"charCount_other": "{{count, number}} caractères"
 	},
 	"skills": {
 		"noSkills": "Aucune compétence ajoutée"

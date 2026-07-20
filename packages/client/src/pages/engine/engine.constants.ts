@@ -1,7 +1,5 @@
-import { Boxes, Braces, Coins } from "lucide-react";
-import { Database } from "@/assets/img/Database";
-import { ModelBrain } from "@/assets/img/ModelBrain";
-import type { ENGINE_TYPES, Role } from "@/types";
+import type { Engine } from "@semoss/shared";
+import type { Role } from "@/types";
 import { EngineActivityPage } from "./engine-activity-page";
 import { EngineCommitsPage } from "./engine-commits-page";
 import { EngineFileManagerPage } from "./engine-file-manager-page";
@@ -11,25 +9,22 @@ import { EngineMetadataPage } from "./engine-metadata-page";
 import { EngineModelChatPage } from "./engine-model-chat-page";
 import { EngineOverviewPage } from "./engine-overview-page";
 import { EngineQAPage } from "./engine-qa-page";
-import { EngineSettingsPage } from "./engine-settingsPage";
+import { EngineSettingsPage } from "./engine-settings-page";
 import { EngineSmssPage } from "./engine-smss-page";
 import { EngineSparqlQueryPage } from "./engine-sparql-query-page";
 import { EngineSqlQueryPage } from "./engine-sql-query-page";
 import { EngineStorageViewerPage } from "./engine-storage-viewer-page";
 import { EngineUsagePage } from "./engine-usage-page";
 
-const ENGINE_ROUTES_BASE: {
+export const ENGINE_ROUTES: {
 	/** Name of the route */
 	name: string;
 
 	/** Path of the page */
 	path: string;
 
-	/** Icon to render in the page */
-	icon: React.FunctionComponent;
-
 	/** Type of the engine */
-	type: ENGINE_TYPES;
+	type: Engine["engine_type"];
 
 	/** Description of the engine*/
 	description: string;
@@ -55,7 +50,6 @@ const ENGINE_ROUTES_BASE: {
 		type: "FUNCTION",
 		description:
 			"Expose and reuse LLM functionality in the form of functions to promote efficiency across app development. These functions include LLM Guard scanners to ensure the secure use of LLMs. ",
-		icon: Braces,
 		specific: [
 			{
 				name: "Overview",
@@ -73,6 +67,12 @@ const ENGINE_ROUTES_BASE: {
 				name: "MCP Usage",
 				path: "mcp-usage",
 				component: EngineMcpUsagePage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "Activity Log",
+				path: "activity",
+				component: EngineActivityPage,
 				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
@@ -107,7 +107,6 @@ const ENGINE_ROUTES_BASE: {
 		type: "MODEL",
 		description:
 			"Models are diverse, with particular strengths and weaknesses specific to each use case. Our model catalog exposes these models in an abstracted fashion, allowing data scientists to hand-select and/or swap models as desired.",
-		icon: ModelBrain as React.FunctionComponent,
 		specific: [
 			{
 				name: "Overview",
@@ -125,6 +124,12 @@ const ENGINE_ROUTES_BASE: {
 				name: "MCP Usage",
 				path: "mcp-usage",
 				component: EngineMcpUsagePage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "Activity Log",
+				path: "activity",
+				component: EngineActivityPage,
 				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
@@ -159,7 +164,6 @@ const ENGINE_ROUTES_BASE: {
 		type: "DATABASE",
 		description:
 			"Database catalog is an integrated data nexus connecting to diverse databases and serving as a springboard for unified data orchestration, innovation, and insights. Access structured data sources like relational database management systems (RDBMS), Triplestore/RDF, graph databases, Excel/CSVs, and data exposed via API.  ",
-		icon: Database as React.FunctionComponent,
 		specific: [
 			{
 				name: "Overview",
@@ -177,6 +181,12 @@ const ENGINE_ROUTES_BASE: {
 				name: "MCP Usage",
 				path: "mcp-usage",
 				component: EngineMcpUsagePage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "Activity Log",
+				path: "activity",
+				component: EngineActivityPage,
 				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
@@ -223,7 +233,6 @@ const ENGINE_ROUTES_BASE: {
 		type: "VECTOR",
 		description:
 			"Knowledge repositories, also known as vector databases, enable fast retrieval of information and semantic search. Create knowledge repositories on the fly and connect them for simplified reuse across apps.  ",
-		icon: Coins,
 		specific: [
 			{
 				name: "Overview",
@@ -241,6 +250,12 @@ const ENGINE_ROUTES_BASE: {
 				name: "MCP Usage",
 				path: "mcp-usage",
 				component: EngineMcpUsagePage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "Activity Log",
+				path: "activity",
+				component: EngineActivityPage,
 				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
@@ -281,7 +296,6 @@ const ENGINE_ROUTES_BASE: {
 		type: "STORAGE",
 		description:
 			"Tapping into unstructured data (e.g., audio, video, images, code) is critical when training and using AI solutions. Our storage catalog enables integration with many industry-leading cloud storage solutions to effortlessly access a project's unstructured data.",
-		icon: Boxes,
 		specific: [
 			{
 				name: "Overview",
@@ -299,6 +313,12 @@ const ENGINE_ROUTES_BASE: {
 				name: "MCP Usage",
 				path: "mcp-usage",
 				component: EngineMcpUsagePage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "Activity Log",
+				path: "activity",
+				component: EngineActivityPage,
 				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
@@ -333,7 +353,6 @@ const ENGINE_ROUTES_BASE: {
 		type: "GUARDRAIL",
 		description:
 			"Guardrail Catalog is a centralized hub for managing and deploying guardrails that ensure safety, compliance, and reliability across the platform. It provides ready-to-use options like Gliner and Detoxify, and supports custom guardrail uploads via ZIP files, enabling consistent, secure, and scalable interactions.",
-		icon: Boxes,
 		specific: [
 			{
 				name: "Overview",
@@ -345,6 +364,12 @@ const ENGINE_ROUTES_BASE: {
 				name: "Usage",
 				path: "usage",
 				component: EngineUsagePage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "Activity Log",
+				path: "activity",
+				component: EngineActivityPage,
 				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
@@ -368,23 +393,3 @@ const ENGINE_ROUTES_BASE: {
 		],
 	},
 ];
-
-//The audit-logs dashboard, shown as an "Activity Log" tab on every engine type.
-//Inserted right after each engine's "MCP Usage" tab (falling back to "Usage", then
-//the Overview tab). Visible to anyone with access; the backend role-scopes the rows.
-const ENGINE_ACTIVITY_TAB = {
-	name: "Activity Log",
-	path: "activity",
-	component: EngineActivityPage,
-	restrict: ["READ_ONLY", "EDIT", "OWNER"] as Role[],
-};
-
-export const ENGINE_ROUTES = ENGINE_ROUTES_BASE.map((route) => {
-	const specific = [...route.specific];
-	const mcpIndex = specific.findIndex((tab) => tab.path === "mcp-usage");
-	const usageIndex = specific.findIndex((tab) => tab.path === "usage");
-	const insertAt =
-		mcpIndex >= 0 ? mcpIndex + 1 : usageIndex >= 0 ? usageIndex + 1 : 1;
-	specific.splice(insertAt, 0, ENGINE_ACTIVITY_TAB);
-	return { ...route, specific };
-});

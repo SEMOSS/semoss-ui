@@ -3,6 +3,7 @@
 
 import { ChevronRight, SearchIcon, UploadIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Breadcrumb,
@@ -336,7 +337,7 @@ export const ModelImportPage: React.FC = () => {
 
 		toast.success("Model uploaded successfully!");
 
-		navigate(`/engine/model/${output.database_id}`);
+		navigate(`/model/${output.database_id}`);
 		setFormLoading(false);
 		return;
 	};
@@ -589,17 +590,10 @@ export const ModelImportPage: React.FC = () => {
 				<Breadcrumb className="mb-4">
 					<BreadcrumbList>
 						<BreadcrumbItem>
-							<BreadcrumbLink
-								className="cursor-pointer"
-								onClick={() => {
-									if (window.history.length > 1) {
-										navigate(-1);
-									} else {
-										navigate("/");
-									}
-								}}
-							>
-								Model Catalog
+							<BreadcrumbLink asChild>
+								<Link to="../" className="text-inherit">
+									Model Catalog
+								</Link>
 							</BreadcrumbLink>
 						</BreadcrumbItem>
 						<BreadcrumbSeparator>

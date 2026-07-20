@@ -32,6 +32,20 @@ import {
 } from "./file-editor-path-events";
 import { getFileOperationErrorMessage } from "./file-explorer.utils";
 
+// Several ids in MONACO_EXT_LANGUAGE_MAPPING (e.g. "react", "sh", "bash") are
+// custom — Monaco doesn't ship a LanguageConfiguration for them, so comment
+// toggling (Cmd+/) has nothing to read and silently no-ops. Even the real
+// languages we skin with a custom Monarch tokenizer (java, python) are worth
+// pinning here so the behavior doesn't depend on the basic-languages bundle
+// happening to be loaded. Ids with no comment syntax (text/csv/tsv) are omitted.
+const LANGUAGE_COMMENT_CONFIG: Record<string, monaco.languages.CommentRule> = {
+	react: { lineComment: "//", blockComment: ["/*", "*/"] },
+	java: { lineComment: "//", blockComment: ["/*", "*/"] },
+	python: { lineComment: "#" },
+	sh: { lineComment: "#" },
+	bash: { lineComment: "#" },
+};
+
 export interface FileCodeEditorActions {
 	save: () => Promise<void>;
 	refresh: () => void;
@@ -64,6 +78,11 @@ interface FileCodeEditorProps {
 	/** When true, the built-in toolbar (Refresh/Save/Download) is not rendered.
 	 *  Use this when the parent renders its own unified toolbar. */
 	hideToolbar?: boolean;
+
+	/** When true, the editor is rendered in a read-only, view-only mode:
+	 *  content cannot be edited, the Save action/keybinding is not wired up,
+	 *  and the toolbar's Save button is hidden. Defaults to false. */
+	readOnly?: boolean;
 }
 
 export const FileCodeEditor = forwardRef<
@@ -78,6 +97,7 @@ export const FileCodeEditor = forwardRef<
 			leadingToolbar,
 			onRun,
 			hideToolbar = false,
+			readOnly = false,
 		},
 		actionsRef,
 	) => {
@@ -204,88 +224,43 @@ export const FileCodeEditor = forwardRef<
 				}
 			}
 
+			// Ensure comment toggling (Cmd+/, Cmd+K chords) has a comment rule
+			// for the language. Register the id first if Monaco doesn't already
+			// know it (custom ids like "react"/"sh"), otherwise just layer the
+			// comment config onto the existing built-in language.
+			const commentRule = LANGUAGE_COMMENT_CONFIG[language];
+			if (commentRule) {
+				const isKnown = monaco.languages
+					.getLanguages()
+					.some((l) => l.id === language);
+				if (!isKnown) {
+					monaco.languages.register({ id: language });
+				}
+				monaco.languages.setLanguageConfiguration(language, {
+					comments: commentRule,
+				});
+			}
+
 			monaco.editor.setTheme(computeMonacoTheme(!!config?.theme));
-
-			// editor.addAction({
-			// 	contextMenuGroupId: "1_modification",
-			// 	contextMenuOrder: 1,
-			// 	id: "prompt-LLM",
-			// 	label: "Generate Code",
-			// 	keybindings: [
-			// 		monaco.KeyMod.CtrlCmd |
-			// 			monaco.KeyMod.Shift |
-			// 			monaco.KeyCode.KeyG,
-			// 	],
-
-			// 	run: async (editor) => {
-			// 		const selection = editor.getSelection();
-			// 		const selectedText = editor
-			// 			.getModel()
-			// 			.getValueInRange(selection);
-
-			// 		const content = editor.getValue();
-
-			// 		const command = `
-			// 			You are a ${ext} assistant. Respond to the user prompt: "${selectedText}"
-
-			// 			Based on the following data:
-
-			// 			file: ${path}
-			// 			content: ${content}
-
-			// 			Do not include any explanations, only provide the code.
-			// 			`;
-
-			// 		const { pixelReturn } = await insight.actions.run<
-			// 			[{ response: string }]
-			// 		>(
-			// 			`LLM(engine = "", command = "<encode>${command}</encode>", paramValues = [ {} ] );`,
-			// 		);
-
-			// 		const response = pixelReturn[0].output.response;
-
-			// 		// adds LLM response after response
-			// 		editor.executeEdits("custom-action", [
-			// 			{
-			// 				range: new monaco.Range(
-			// 					selection.endLineNumber + 2,
-			// 					1,
-			// 					selection.endLineNumber + 2,
-			// 					1,
-			// 				),
-			// 				text: `\n\n${response}\n`,
-			// 				forceMoveMarkers: true,
-			// 			},
-			// 		]);
-
-			// 		// highligts LLM response after response
-			// 		editor.setSelection(
-			// 			new monaco.Range(
-			// 				selection.endLineNumber + 3,
-			// 				1,
-			// 				selection.endLineNumber +
-			// 					3 +
-			// 					response.split("\n").length,
-			// 				1,
-			// 			),
-			// 		);
-			// 	},
-			// });
 
 			// Ctrl/Cmd+Enter → run the file. Only registered when the consumer
 			// opts in via onRun (e.g. the terminal's file tab). addAction scopes
 			// the keybinding to this editor, so it never leaks to other editors.
-			if (onRunRef.current) {
-				editor.addAction({
-					contextMenuGroupId: "1_modification",
-					contextMenuOrder: 0,
-					id: "run",
-					label: "Run",
-					keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
-					run: () => {
-						onRunRef.current?.();
-					},
-				});
+			if (!readOnly) {
+				if (onRunRef.current) {
+					editor.addAction({
+						contextMenuGroupId: "1_modification",
+						contextMenuOrder: 0,
+						id: "run",
+						label: "Run",
+						keybindings: [
+							monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
+						],
+						run: () => {
+							onRunRef.current?.();
+						},
+					});
+				}
 			}
 
 			editor.addAction({
@@ -299,16 +274,18 @@ export const FileCodeEditor = forwardRef<
 				},
 			});
 
-			editor.addAction({
-				contextMenuGroupId: "1_modification",
-				contextMenuOrder: 1,
-				id: "save",
-				label: "Save",
-				keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS],
-				run: async () => {
-					saveFile();
-				},
-			});
+			if (!readOnly) {
+				editor.addAction({
+					contextMenuGroupId: "1_modification",
+					contextMenuOrder: 1,
+					id: "save",
+					label: "Save",
+					keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS],
+					run: async () => {
+						saveFile();
+					},
+				});
+			}
 
 			editor.addAction({
 				contextMenuGroupId: "1_modification",
@@ -554,17 +531,20 @@ export const FileCodeEditor = forwardRef<
 								<RefreshCwIcon className="size-4" />
 								Refresh
 							</Button>
-							<Button
-								variant="outline"
-								size="sm"
-								disabled={
-									isLoading || getFile.status !== "SUCCESS"
-								}
-								onClick={() => saveFile()}
-							>
-								<SaveIcon className="size-4" />
-								Save
-							</Button>
+							{!readOnly && (
+								<Button
+									variant="outline"
+									size="sm"
+									disabled={
+										isLoading ||
+										getFile.status !== "SUCCESS"
+									}
+									onClick={() => saveFile()}
+								>
+									<SaveIcon className="size-4" />
+									Save
+								</Button>
+							)}
 							<Button
 								variant="outline"
 								size="sm"
@@ -608,7 +588,8 @@ export const FileCodeEditor = forwardRef<
 							}
 							language={language}
 							options={{
-								readOnly: getFile.status !== "SUCCESS",
+								readOnly:
+									readOnly || getFile.status !== "SUCCESS",
 								accessibilitySupport: "off",
 								padding: { top: 12 },
 								scrollBeyondLastLine: false,

@@ -2,6 +2,7 @@ import type * as monacoType from "monaco-editor";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
+	download,
 	getPixelAsyncResult,
 	console as getPixelConsole,
 	runPixelAsync,
@@ -80,6 +81,22 @@ export const TerminalConsole = ({
 	const { t } = useTranslation("console");
 	const insightIdRef = useRef(insightId);
 	insightIdRef.current = insightId;
+
+	// Publish this console's insight to the terminal context (keyed by tab id)
+	// so the file explorer can scope INSIGHT-mode browsing/upload to whichever
+	// terminal is active. Guarded on a real id — the provider reports "" until
+	// the insight is initialized. Depends on the stable `setConsoleInsight`
+	// (not the whole context) so switching tabs doesn't re-register every
+	// console and churn the anchor ordering.
+	const { setConsoleInsight } = terminal;
+	useEffect(() => {
+		if (insightId) setConsoleInsight(consoleId, insightId);
+	}, [setConsoleInsight, consoleId, insightId]);
+	// Retract on unmount so a closed tab's insight stops being a candidate.
+	useEffect(
+		() => () => setConsoleInsight(consoleId, null),
+		[setConsoleInsight, consoleId],
+	);
 
 	// Track the resolved theme (light/dark) so Monaco picks the right
 	// editor theme when the user is on "system" and toggles their OS theme.
@@ -275,7 +292,10 @@ export const TerminalConsole = ({
 				if (errors.length > 0) {
 					updateStep(stepIdx, {
 						type: "ERROR",
-						output: errors.join("\n"),
+						output: errors
+							.map((e) => extractErrorMessage(e))
+							.filter(Boolean)
+							.join("\n"),
 						messages: collected.slice(),
 						lastStatus,
 						pending: false,
@@ -286,6 +306,45 @@ export const TerminalConsole = ({
 				const last = results[results.length - 1];
 				const opType = (last?.operationType?.[0] as string) || "";
 				const output = unwrapPixelOutput(last);
+
+				// FILE_DOWNLOAD pixels (DownloadInsightAsset, ToCsv, ToPdf, ...)
+				// don't return displayable output — their `output` is a file key
+				// that must be handed to a secondary downloadFile call to stream
+				// the bytes to the browser (mirrors the file explorer + renderer
+				// side-effect handling). Trigger the download here so REPL/editor
+				// submissions that produce a file behave the same, and show a
+				// friendly line instead of the opaque key.
+				if (opType === "FILE_DOWNLOAD") {
+					const fileKey =
+						typeof output === "string"
+							? output
+							: String(output ?? "");
+					try {
+						if (fileKey) {
+							await download(targetInsightId, fileKey);
+						}
+						updateStep(stepIdx, {
+							type: opType,
+							output: t("results.fileDownloadStarted"),
+							messages: collected.slice(),
+							lastStatus,
+							pending: false,
+						});
+					} catch (e) {
+						updateStep(stepIdx, {
+							type: "ERROR",
+							output:
+								e instanceof Error
+									? e.message
+									: t("results.downloadFailed"),
+							messages: collected.slice(),
+							lastStatus,
+							pending: false,
+						});
+					}
+					return;
+				}
+
 				const formatted = formatOutputForDisplay(
 					output,
 					opType,
@@ -858,11 +917,42 @@ const unwrapPixelOutput = (last: {
 	if (op.indexOf("FORMATTED_DATA_SET") > -1) return out?.[0];
 	if (op.indexOf("CODE_EXECUTION") > -1) return out?.[0]?.output;
 	if (op.indexOf("CODE") > -1) return out?.[0]?.value?.[0];
-	if (op.indexOf("ERROR") > -1) return out?.[0];
+	// error payloads come back either as `[message]` or as a dict such as
+	// `{ success: false, errorMessage: "..." }` — hand the whole thing to
+	// extractErrorMessage rather than blindly indexing `[0]`.
+	if (op.indexOf("ERROR") > -1) return Array.isArray(out) ? out[0] : out;
 	if (op.indexOf("CONST_STRING") > -1) return out?.[0];
 	if (op.indexOf("INVALID_SYNTAX") > -1) return out?.[0];
 	if (op.indexOf("VECTOR") > -1) return out?.[0];
 	return out;
+};
+
+/**
+ * Error payloads are not always strings. The backend returns them as a bare
+ * string, as `[message]`, or as a dict like
+ * `{ success: false, errorMessage: "..." }`. Pull out the human-readable
+ * message so we never render "[object Object]".
+ */
+const extractErrorMessage = (value: unknown): string => {
+	if (value === undefined || value === null) return "";
+	if (typeof value === "string") return value;
+	if (typeof value === "number" || typeof value === "boolean")
+		return String(value);
+	if (Array.isArray(value)) {
+		return value
+			.map((v) => extractErrorMessage(v))
+			.filter(Boolean)
+			.join("\n");
+	}
+	if (typeof value === "object") {
+		const obj = value as Record<string, unknown>;
+		const msg = obj.errorMessage ?? obj.message ?? obj.error ?? obj.reason;
+		if (typeof msg === "string") return msg;
+		// no recognized message field — fall back to readable JSON rather
+		// than "[object Object]"
+		return JSON.stringify(value, null, 2);
+	}
+	return String(value);
 };
 
 const formatOutputForDisplay = (
@@ -875,9 +965,12 @@ const formatOutputForDisplay = (
 		if (typeof value === "string") return value;
 		return JSON.stringify(value, null, 2);
 	}
+	if (opType === "ERROR" || opType === "INVALID_SYNTAX") {
+		const label = opType === "ERROR" ? "Error" : "Invalid Syntax";
+		const msg = extractErrorMessage(value);
+		return msg ? `${label}: ${msg}` : label;
+	}
 	if (typeof value === "string") {
-		if (opType === "ERROR") return `Error: ${value}`;
-		if (opType === "INVALID_SYNTAX") return `Invalid Syntax: ${value}`;
 		return value;
 	}
 	if (typeof value === "number" || typeof value === "boolean") {
