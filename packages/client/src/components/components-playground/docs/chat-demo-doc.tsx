@@ -9,15 +9,43 @@ import {
 } from "@semoss/chat";
 import {
 	ChatInput,
+	ChatRoomsPage,
 	McpMenuButton,
 	MessageBubble,
 	MessageList,
+	type PromptLibraryItem,
 	PromptOptimizer,
 	RoomSidebar,
 	SelectionChatButton,
 } from "@semoss/chat/components";
 import { DocPage } from "../doc-page";
 import { useEngineConnect } from "../engine-connect-context";
+
+const SAMPLE_PROMPTS: PromptLibraryItem[] = [
+	{
+		id: "p1",
+		title: "Summarize a claim",
+		context: "Summarize the status and next steps for a given claim id.",
+		tags: ["claims"],
+	},
+	{
+		id: "p2",
+		title: "Draft a benefits letter",
+		context: "Draft a benefits eligibility letter for a member.",
+		tags: ["benefits", "letters"],
+	},
+	{
+		id: "p3",
+		title: "Explain a denial",
+		context: "Explain why a claim was denied in plain language.",
+		tags: ["claims"],
+	},
+	{
+		id: "p4",
+		title: "General greeting",
+		context: "Say hello and ask how you can help today.",
+	},
+];
 
 const skin = {
 	key: "rose-test",
@@ -56,7 +84,17 @@ const skin = {
 	} as CSSProperties,
 };
 
-function ChatDemoInner() {
+function ChatDemoInner({
+	viewMode,
+	onSelectRoom,
+	onNewChat,
+	onAllChats,
+}: {
+	viewMode: "chat" | "allChats";
+	onSelectRoom: (roomId: string) => void;
+	onNewChat: () => void;
+	onAllChats: () => void;
+}) {
 	const { isTyping, sendMessage, mcp, setMcp } = useChatContext();
 	const { engine } = useEngineConnect();
 	const [draft, setDraft] = useState("");
@@ -73,8 +111,6 @@ function ChatDemoInner() {
 		pinRoom,
 		deleteRoom,
 		activeRoomId,
-		setActiveRoom,
-		newChat,
 	} = useChatRoomsContext();
 
 	return (
@@ -82,93 +118,107 @@ function ChatDemoInner() {
 			<div
 				className={`${skin.panelClassName} ${skin.fontClassName} flex overflow-hidden`}
 			>
-				{/* Chat Panel */}
-				<div className="flex min-w-0 flex-1 flex-col">
-					{/* Header */}
-					<div
-						className={`flex items-center gap-3 px-5 py-3 ${skin.header.className}`}
-					>
-						<div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white/25 font-semibold text-sm">
-							RA
-						</div>
-						<div className="flex min-w-0 flex-col">
-							<span className="truncate font-semibold text-sm">
-								{skin.header.title}
-							</span>
-							<span className="flex items-center gap-1.5 text-xs opacity-90">
-								<span className="size-1.5 animate-pulse rounded-full bg-green-400" />
-								{skin.header.subtitle}
-							</span>
-						</div>
-					</div>
+				{viewMode === "allChats" ? (
+					<ChatRoomsPage
+						className="h-full w-full p-4"
+						onSelectRoom={onSelectRoom}
+						onNewChat={onNewChat}
+						onAllChats={onAllChats}
+					/>
+				) : (
+					<>
+						{/* Chat Panel */}
+						<div className="flex min-w-0 flex-1 flex-col">
+							{/* Header */}
+							<div
+								className={`flex items-center gap-3 px-5 py-3 ${skin.header.className}`}
+							>
+								<div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white/25 font-semibold text-sm">
+									RA
+								</div>
+								<div className="flex min-w-0 flex-col">
+									<span className="truncate font-semibold text-sm">
+										{skin.header.title}
+									</span>
+									<span className="flex items-center gap-1.5 text-xs opacity-90">
+										<span className="size-1.5 animate-pulse rounded-full bg-green-400" />
+										{skin.header.subtitle}
+									</span>
+								</div>
+							</div>
 
-					{/* Messages */}
-					<div className="flex min-h-0 flex-1 flex-col p-4">
-						<MessageList
-							className={`min-h-0 flex-1 ${skin.messagesClassName}`}
-							renderMessage={(message, helpers) => (
-								<MessageBubble
-									message={message}
-									onRate={
-										message.role === "assistant"
-											? helpers.onRate
-											: undefined
-									}
-									onDownload={
-										message.role === "assistant"
-											? helpers.onDownload
-											: undefined
-									}
+							{/* Messages */}
+							<div className="flex min-h-0 flex-1 flex-col p-4">
+								<MessageList
+									className={`min-h-0 flex-1 ${skin.messagesClassName}`}
+									renderMessage={(message, helpers) => (
+										<MessageBubble
+											message={message}
+											// onOpenToolResponse={helpers.openToolResponse}
+											onRate={
+												message.role === "assistant"
+													? helpers.onRate
+													: undefined
+											}
+											onDownload={
+												message.role === "assistant"
+													? helpers.onDownload
+													: undefined
+											}
+										/>
+									)}
 								/>
-							)}
-						/>
-					</div>
+							</div>
 
-					{/* Composer */}
-					<div className="px-4 pb-4">
-						<ChatInput
-							onSubmit={sendMessage}
-							disabled={isTyping}
-							isGenerating={isTyping}
-							value={draft}
-							onValueChange={setDraft}
-							placeholder="Type a message"
-							submitIcon={skin.submitIcon}
-							trailingActions={
-								<>
-									<McpMenuButton
-										mcp={mcp}
-										onChange={setMcp}
-									/>
-									<PromptOptimizer
-										input={draft}
-										setInput={setDraft}
-										disabled={isTyping}
-										modelId={engine?.engineId}
-									/>
-								</>
-							}
-						/>
-					</div>
-				</div>
+							{/* Composer */}
+							<div className="px-4 pb-4">
+								<ChatInput
+									onSubmit={sendMessage}
+									disabled={isTyping}
+									isGenerating={isTyping}
+									value={draft}
+									onValueChange={setDraft}
+									placeholder="Type a message"
+									submitIcon={skin.submitIcon}
+									trailingActions={
+										<>
+											<McpMenuButton
+												mcp={mcp}
+												onChange={setMcp}
+											/>
+											<PromptOptimizer
+												input={draft}
+												setInput={setDraft}
+												disabled={isTyping}
+												modelId={engine?.engineId}
+											/>
+										</>
+									}
+									predefinedPrompts={SAMPLE_PROMPTS}
+								/>
+							</div>
+						</div>
 
-				<RoomSidebar
-					className="w-64 shrink-0 border-border border-r"
-					pinnedRooms={pinnedRooms}
-					rooms={rooms}
-					activeRoomId={activeRoomId}
-					search={search}
-					onSearchChange={setSearch}
-					isLoading={isLoading}
-					isLoadingMore={isLoadingMore}
-					hasMore={hasMore}
-					onLoadMore={loadMore}
-					onSelectRoom={setActiveRoom}
-					onNewChat={newChat}
-					onRenameRoom={renameRoom}
-					onPinRoom={pinRoom}
-					onDeleteRoom={deleteRoom}
-				/>
+						<RoomSidebar
+							className="w-64 shrink-0 border-border border-r"
+							pinnedRooms={pinnedRooms}
+							rooms={rooms}
+							activeRoomId={activeRoomId}
+							search={search}
+							onSearchChange={setSearch}
+							isLoading={isLoading}
+							isLoadingMore={isLoadingMore}
+							hasMore={hasMore}
+							onLoadMore={loadMore}
+							onSelectRoom={onSelectRoom}
+							onNewChat={onNewChat}
+							onAllChats={onAllChats}
+							onRenameRoom={renameRoom}
+							onPinRoom={pinRoom}
+							onDeleteRoom={deleteRoom}
+						/>
+					</>
+				)}
 			</div>
 		</div>
 	);
@@ -177,10 +227,25 @@ function ChatDemoInner() {
 /** Bridge component inside ChatRoomsProvider that reads activeRoomId
  * from the store and renders a keyed ChatProvider for the active room. */
 export function ChatDemoBridge({ engineId }: { engineId: string }) {
-	const { activeRoomId } = useChatRoomsContext();
+	const [viewMode, setViewMode] = useState<"chat" | "allChats">("chat");
+	const { activeRoomId, setActiveRoom, newChat } = useChatRoomsContext();
 	const sessionKey = activeRoomId
 		? `room:${activeRoomId}`
 		: `new:${engineId}`;
+
+	const handleSelectRoom = (roomId: string) => {
+		setActiveRoom(roomId);
+		setViewMode("chat");
+	};
+
+	const handleNewChat = () => {
+		newChat();
+		setViewMode("chat");
+	};
+
+	const handleAllChats = () => {
+		setViewMode("allChats");
+	};
 
 	return (
 		<ChatProvider
@@ -191,7 +256,12 @@ export function ChatDemoBridge({ engineId }: { engineId: string }) {
 			}}
 			isActive
 		>
-			<ChatDemoInner />
+			<ChatDemoInner
+				viewMode={viewMode}
+				onSelectRoom={handleSelectRoom}
+				onNewChat={handleNewChat}
+				onAllChats={handleAllChats}
+			/>
 		</ChatProvider>
 	);
 }
