@@ -15,10 +15,12 @@ import { ConnectionsPage } from "./connections-page";
 
 const THEME_OPTIONS: Theme[] = ["light", "dark", "system"];
 
+export type SettingsTab = "appearance" | "connections";
+
 export interface SettingsDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	defaultTab?: "appearance" | "connections";
+	defaultTab?: SettingsTab;
 }
 
 export const SettingsDialog = ({

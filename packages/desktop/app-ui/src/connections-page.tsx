@@ -1,15 +1,20 @@
 import { Trash2Icon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Button, Input, Label } from "@semoss/ui/next";
-import type { ConnectionRecord } from "../../electron/connections/types";
+import type {
+	ConnectionAuthMode,
+	ConnectionRecord,
+} from "../../electron/connections/types";
 import { SemossIcon } from "./semoss-icon";
 
-type AuthMode = "keys" | "browser";
+// SEMOSS's own default module path — a starting point in the form, not a
+// requirement (see also DEFAULT_MODULE_PATH's use in EMPTY_FORM below).
+const DEFAULT_MODULE_PATH = "/Monolith";
 
 const EMPTY_FORM = {
 	alias: "",
 	instanceUrl: "",
-	modulePath: "/Monolith",
+	modulePath: DEFAULT_MODULE_PATH,
 	accessKey: "",
 	secretKey: "",
 };
@@ -30,7 +35,7 @@ export const ConnectionsPage = ({ variant = "full" }: ConnectionsPageProps) => {
 	const [connections, setConnections] = useState<ConnectionRecord[]>([]);
 	const [currentId, setCurrentId] = useState<string | null>(null);
 	const [showForm, setShowForm] = useState(false);
-	const [authMode, setAuthMode] = useState<AuthMode>("keys");
+	const [authMode, setAuthMode] = useState<ConnectionAuthMode>("keys");
 	const [form, setForm] = useState(EMPTY_FORM);
 	const [busyId, setBusyId] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
@@ -294,7 +299,7 @@ export const ConnectionsPage = ({ variant = "full" }: ConnectionsPageProps) => {
 						<Field
 							label="Module"
 							value={form.modulePath}
-							placeholder="/Monolith"
+							placeholder={DEFAULT_MODULE_PATH}
 							disabled={browserLoginId !== null}
 							onChange={(modulePath) =>
 								setForm({ ...form, modulePath })
@@ -341,8 +346,9 @@ export const ConnectionsPage = ({ variant = "full" }: ConnectionsPageProps) => {
 								<p className="text-muted-foreground text-sm">
 									A sign-in window opened — it supports both
 									username/password and any SSO providers this
-									instance offers. Finish signing in there,
-									then come back and click Continue.
+									instance offers. This connects automatically
+									once you're signed in; if it doesn't after a
+									few seconds, click Continue.
 								</p>
 								<div className="flex justify-end gap-2">
 									<Button

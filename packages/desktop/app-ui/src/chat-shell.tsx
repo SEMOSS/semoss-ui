@@ -24,6 +24,10 @@ export interface ChatShellProps {
 	onOpenSettings: () => void;
 }
 
+/** How often to check for a lazily-created room id while in "new chat" mode
+ * — see the effect below for why polling is what we've got. */
+const NEW_ROOM_POLL_INTERVAL_MS = 700;
+
 export const ChatShell = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => (
 	<ChatRoomsProvider>
 		<ChatShellInner
@@ -76,10 +80,15 @@ const ChatShellInner = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => {
 			const createdRoomId = getActiveChatRoomId();
 			if (createdRoomId) {
 				setActiveRoomId(createdRoomId);
+				// roomsList only refetches when its search term actually
+				// changes — there's no standalone "refetch" call in
+				// useChatRoomsContext's public API, so toggling search to a
+				// different value and back is what forces the new room to
+				// appear in the sidebar's list.
 				setSearch(" ");
 				setSearch("");
 			}
-		}, 700);
+		}, NEW_ROOM_POLL_INTERVAL_MS);
 		return () => clearInterval(interval);
 	}, [activeRoomId, setSearch]);
 
@@ -159,6 +168,11 @@ const RoomContent = ({
 
 	const userInfo =
 		usePixel<Record<string, { name?: string }>>("GetUserInfo();");
+	// GetUserInfo() keys its response by auth provider (e.g. "SAML",
+	// "NATIVE", an OAuth provider name) — there's exactly one key for
+	// however this connection is authenticated, so SAML/NATIVE are just the
+	// two most common cases to check by name before falling back to
+	// whatever key is actually present.
 	const userRecord = userInfo.data
 		? (userInfo.data.SAML ??
 			userInfo.data.NATIVE ??

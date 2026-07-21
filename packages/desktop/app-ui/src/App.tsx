@@ -3,7 +3,7 @@ import { Env, InsightProvider } from "@semoss/sdk/react";
 import type { ConnectionRecord } from "../../electron/connections/types";
 import { ChatShell } from "./chat-shell";
 import { ConnectionsPage } from "./connections-page";
-import { SettingsDialog } from "./settings-dialog";
+import { SettingsDialog, type SettingsTab } from "./settings-dialog";
 import { TitleBar } from "./title-bar";
 
 export const App = () => {
@@ -11,9 +11,7 @@ export const App = () => {
 	const [connection, setConnection] = useState<ConnectionRecord | null>(null);
 	const [sidebarOpen, setSidebarOpen] = useState(true);
 	const [settingsOpen, setSettingsOpen] = useState(false);
-	const [settingsTab, setSettingsTab] = useState<
-		"appearance" | "connections"
-	>("appearance");
+	const [settingsTab, setSettingsTab] = useState<SettingsTab>("appearance");
 
 	useEffect(() => {
 		void (async () => {
@@ -26,7 +24,7 @@ export const App = () => {
 		})();
 	}, []);
 
-	const openSettings = (tab: "appearance" | "connections") => {
+	const openSettings = (tab: SettingsTab) => {
 		setSettingsTab(tab);
 		setSettingsOpen(true);
 	};

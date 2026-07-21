@@ -3,8 +3,21 @@ import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import { createServer, request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
 import { extname, join, normalize } from "node:path";
+import {
+	DEFAULT_HTTP_PORT,
+	DEFAULT_HTTPS_PORT,
+	LOCAL_SERVER_HOST,
+} from "../app-info";
 import { instanceBasePath } from "../connections/instance-url";
 import type { ConnectionRecord, ConnectionSecrets } from "../connections/types";
+
+const HTTP_STATUS = {
+	ok: 200,
+	forbidden: 403,
+	notFound: 404,
+	internalServerError: 500,
+	badGateway: 502,
+} as const;
 
 const MIME_TYPES: Record<string, string> = {
 	".html": "text/html; charset=utf-8",
@@ -77,7 +90,9 @@ export function startLocalServer(
 			// in-flight request, including the initial index.html load) down
 			// with it.
 			if (!res.headersSent) {
-				res.writeHead(500, { "content-type": "text/plain" });
+				res.writeHead(HTTP_STATUS.internalServerError, {
+					"content-type": "text/plain",
+				});
 			}
 			res.end(
 				`Local server error: ${err instanceof Error ? err.message : String(err)}`,
@@ -95,7 +110,7 @@ export function startLocalServer(
 
 	return new Promise((resolve, reject) => {
 		server.once("error", reject);
-		server.listen(0, "127.0.0.1", () => {
+		server.listen(0, LOCAL_SERVER_HOST, () => {
 			const address = server.address();
 			if (!address || typeof address !== "object") {
 				reject(new Error("Failed to determine local server port"));
@@ -113,6 +128,13 @@ export function startLocalServer(
 	});
 }
 
+/**
+ * Forwards one request to the connection's real instance, attaching auth
+ * itself so the credential never passes through app-ui's JS (see this
+ * file's own top-level doc comment). Every response, including error
+ * statuses from the real instance, is piped straight through unchanged —
+ * this is a transparent proxy, not an API client that interprets responses.
+ */
 function proxyToInstance(
 	req: IncomingMessage,
 	res: ServerResponse,
@@ -142,7 +164,9 @@ function proxyToInstance(
 		{
 			protocol: target.protocol,
 			hostname: target.hostname,
-			port: target.port || (isHttps ? 443 : 80),
+			port:
+				target.port ||
+				(isHttps ? DEFAULT_HTTPS_PORT : DEFAULT_HTTP_PORT),
 			path: `${basePath}${req.url}`,
 			method: req.method,
 			headers,
@@ -155,14 +179,19 @@ function proxyToInstance(
 			rejectUnauthorized: false,
 		},
 		(proxyRes) => {
-			res.writeHead(proxyRes.statusCode ?? 502, proxyRes.headers);
+			res.writeHead(
+				proxyRes.statusCode ?? HTTP_STATUS.badGateway,
+				proxyRes.headers,
+			);
 			proxyRes.pipe(res);
 		},
 	);
 
 	proxyReq.on("error", (err) => {
 		if (!res.headersSent) {
-			res.writeHead(502, { "content-type": "text/plain" });
+			res.writeHead(HTTP_STATUS.badGateway, {
+				"content-type": "text/plain",
+			});
 		}
 		res.end(
 			`Proxy error reaching ${connection.instanceUrl}: ${err.message}`,
@@ -172,6 +201,13 @@ function proxyToInstance(
 	req.pipe(proxyReq);
 }
 
+/**
+ * Serves one file out of app-ui's built dist/, defaulting "/" to
+ * index.html for the SPA's client-side router. `filePath.startsWith(resolvedDist)`
+ * is the load-bearing check here — it's what stops a request path
+ * containing "../" segments from escaping distPath onto the rest of the
+ * filesystem.
+ */
 async function serveStatic(
 	req: IncomingMessage,
 	res: ServerResponse,
@@ -186,7 +222,7 @@ async function serveStatic(
 	const resolvedDist = normalize(distPath);
 	const filePath = normalize(join(distPath, pathname));
 	if (!filePath.startsWith(resolvedDist)) {
-		res.writeHead(403);
+		res.writeHead(HTTP_STATUS.forbidden);
 		res.end("Forbidden");
 		return;
 	}
@@ -195,10 +231,10 @@ async function serveStatic(
 		const data = await readFile(filePath);
 		const contentType =
 			MIME_TYPES[extname(filePath)] ?? "application/octet-stream";
-		res.writeHead(200, { "content-type": contentType });
+		res.writeHead(HTTP_STATUS.ok, { "content-type": contentType });
 		res.end(data);
 	} catch {
-		res.writeHead(404);
+		res.writeHead(HTTP_STATUS.notFound);
 		res.end("Not found");
 	}
 }

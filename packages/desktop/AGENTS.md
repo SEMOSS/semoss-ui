@@ -109,6 +109,16 @@ dev-time proxy — hence the local proxy server.
     native username/password *and* OAuth/SSO, unified into one "Sign in via
     browser" flow. See the "Auth model" assumption below for why this was
     the only viable approach and how it actually works.
+13. **Auto-detected sign-in completion** — the first version of browser
+    sign-in required the user to notice they'd finished in the popup window
+    and click a "Continue" button back in the app; live testing showed this
+    doesn't read as "working" (a login page that succeeds via an in-page
+    XHR, without ever navigating away, gave no visible signal at all).
+    `beginBrowserLogin` now polls (`AUTO_DETECT_POLL_INTERVAL_MS`, plus
+    `did-navigate`/`did-navigate-in-page` for a snappier check on an actual
+    redirect) and connects automatically the moment sign-in is verified —
+    the popup closes itself and the app reloads into the new connection
+    with no click required. "Continue" still exists as a manual fallback.
 
 ## Assumptions made (flag if any of these turn out wrong)
 

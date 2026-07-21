@@ -21,6 +21,15 @@ interface ConnectionsFile {
 
 const EMPTY_FILE: ConnectionsFile = { connections: [], currentId: null };
 
+const CONNECTIONS_FILE_NAME = "connections.json";
+const SECRETS_DIR_NAME = "connection-secrets";
+const SECRET_FILE_EXTENSION = ".enc";
+
+const ENCRYPTION_UNAVAILABLE_MESSAGE =
+	"OS-level credential encryption is unavailable on this machine " +
+	"(no keychain/keyring backend found). Connection secrets cannot " +
+	"be stored securely, so saving a connection has been blocked.";
+
 /**
  * Persists named SEMOSS environments (mirrors the alias/instance model in
  * packages/vscode-extension/src/utils/secrets.js, re-implemented on top of
@@ -35,8 +44,8 @@ export class ConnectionsStore {
 	private readonly secretsDirPath: string;
 
 	constructor(userDataPath: string) {
-		this.connectionsFilePath = join(userDataPath, "connections.json");
-		this.secretsDirPath = join(userDataPath, "connection-secrets");
+		this.connectionsFilePath = join(userDataPath, CONNECTIONS_FILE_NAME);
+		this.secretsDirPath = join(userDataPath, SECRETS_DIR_NAME);
 		mkdirSync(this.secretsDirPath, { recursive: true });
 	}
 
@@ -56,16 +65,12 @@ export class ConnectionsStore {
 	}
 
 	private secretsPath(id: string): string {
-		return join(this.secretsDirPath, `${id}.enc`);
+		return join(this.secretsDirPath, `${id}${SECRET_FILE_EXTENSION}`);
 	}
 
 	private assertEncryptionAvailable(): void {
 		if (!safeStorage.isEncryptionAvailable()) {
-			throw new Error(
-				"OS-level credential encryption is unavailable on this machine " +
-					"(no keychain/keyring backend found). Connection secrets cannot " +
-					"be stored securely, so saving a connection has been blocked.",
-			);
+			throw new Error(ENCRYPTION_UNAVAILABLE_MESSAGE);
 		}
 	}
 
