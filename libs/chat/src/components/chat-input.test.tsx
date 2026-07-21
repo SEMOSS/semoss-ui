@@ -3,6 +3,21 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ChatInput } from "./chat-input";
 
+const SAMPLE_PROMPTS = [
+	{
+		id: "prompt-1",
+		title: "Summarize claim",
+		context: "Summarize claim #482 in two bullet points.",
+		tags: ["claims"],
+	},
+	{
+		id: "prompt-2",
+		title: "Draft follow-up",
+		context: "Draft a short follow-up email to the member.",
+		tags: ["email"],
+	},
+];
+
 describe("ChatInput", () => {
 	it("sends the trimmed text on Enter and clears the field", async () => {
 		const user = userEvent.setup();
@@ -244,6 +259,51 @@ describe("ChatInput", () => {
 		expect(
 			screen.getByRole("button", { name: "Send" }),
 		).toBeInTheDocument();
+	});
+
+	it("renders a Prompt Library button in the trailing control cluster when predefinedPrompts are provided", () => {
+		render(
+			<ChatInput onSubmit={vi.fn()} predefinedPrompts={SAMPLE_PROMPTS} />,
+		);
+
+		expect(
+			screen.getByRole("button", { name: "Open prompt library" }),
+		).toBeInTheDocument();
+	});
+
+	it("inserts selected prompt context into the composer by default", async () => {
+		const user = userEvent.setup();
+		render(
+			<ChatInput onSubmit={vi.fn()} predefinedPrompts={SAMPLE_PROMPTS} />,
+		);
+
+		await user.click(
+			screen.getByRole("button", { name: "Open prompt library" }),
+		);
+		await user.click(screen.getByText("Summarize claim"));
+
+		expect(screen.getByPlaceholderText("Message...")).toHaveValue(
+			"Summarize claim #482 in two bullet points.",
+		);
+	});
+
+	it("calls onPromptLibrarySelect when provided", async () => {
+		const user = userEvent.setup();
+		const onPromptLibrarySelect = vi.fn();
+		render(
+			<ChatInput
+				onSubmit={vi.fn()}
+				predefinedPrompts={SAMPLE_PROMPTS}
+				onPromptLibrarySelect={onPromptLibrarySelect}
+			/>,
+		);
+
+		await user.click(
+			screen.getByRole("button", { name: "Open prompt library" }),
+		);
+		await user.click(screen.getByText("Draft follow-up"));
+
+		expect(onPromptLibrarySelect).toHaveBeenCalledWith(SAMPLE_PROMPTS[1]);
 	});
 
 	it("does not render a slash-command button trigger", () => {
