@@ -9,7 +9,10 @@ import {
 	LOCAL_SERVER_HOST,
 } from "../app-info";
 import { instanceBasePath } from "../connections/instance-url";
-import type { ConnectionRecord, ConnectionSecrets } from "../connections/types";
+import type {
+	ConnectionSecrets,
+	EnvironmentConfig,
+} from "../connections/types";
 
 const HTTP_STATUS = {
 	ok: 200,
@@ -41,44 +44,42 @@ export interface LocalServerHandle {
 }
 
 /**
- * Serves app-ui's built dist/ over plain HTTP, and — when a connection is
- * active — reverse proxies its MODULE path prefix to its real ENDPOINT,
+ * Serves app-ui's built dist/ over plain HTTP, and — once signed in —
+ * reverse proxies ENVIRONMENT's MODULE path prefix to its real ENDPOINT,
  * exactly what Vite's dev-server proxy does, re-implemented here because
- * packaged Electron has no dev server. Auth is attached here, not in the
- * renderer, so app-ui's own JS never carries Access/Secret Key or a session
- * cookie: `authMode: "keys"` attaches Basic auth, `authMode: "browser"`
- * (see electron/connections/browser-login.ts) attaches the session cookie
- * captured during sign-in.
- * TODO: neither mode currently detects/recovers from the credential
- * expiring mid-session (an expired cookie would just start getting
- * redirected-to-login responses proxied straight through) — worth a
- * clearer "your session expired, sign in again" surface eventually.
+ * packaged Electron has no dev server. The session cookie captured during
+ * browser sign-in (see electron/connections/browser-login.ts) is attached
+ * here, not in the renderer, so app-ui's own JS never carries it.
+ * TODO: doesn't yet detect/recover from the cookie expiring mid-session
+ * (an expired cookie would just start getting redirected-to-login
+ * responses proxied straight through) — worth a clearer "your session
+ * expired, sign in again" surface eventually.
  *
  * Running same-origin (the SPA and the proxied API share this server's
  * origin) means no CORS story to solve, unlike loading over file:// and
  * hitting the real instance URL directly from the renderer.
  *
- * `connection`/`secrets` are null when no connection is selected yet (first
- * run) — app-ui's own connections page doesn't need the proxy at all, since
- * it talks to the main process over IPC, not HTTP.
+ * `environment`/`secrets` are null when not signed in yet — app-ui's own
+ * sign-in screen doesn't need the proxy at all, since it talks to the main
+ * process over IPC, not HTTP.
  */
 export function startLocalServer(
 	distPath: string,
-	connection: ConnectionRecord | null,
+	environment: EnvironmentConfig | null,
 	secrets: ConnectionSecrets | null,
 ): Promise<LocalServerHandle> {
 	const server = createServer((req, res) => {
 		try {
 			const url = req.url ?? "/";
-			const modulePrefix = connection?.modulePath;
+			const modulePrefix = environment?.modulePath;
 			if (
 				modulePrefix &&
-				secrets &&
+				secrets?.cookie &&
 				(url === modulePrefix ||
 					url.startsWith(`${modulePrefix}/`) ||
 					url.startsWith(`${modulePrefix}?`))
 			) {
-				proxyToInstance(req, res, connection, secrets);
+				proxyToInstance(req, res, environment, secrets.cookie);
 				return;
 			}
 			void serveStatic(req, res, distPath);
@@ -129,36 +130,29 @@ export function startLocalServer(
 }
 
 /**
- * Forwards one request to the connection's real instance, attaching auth
- * itself so the credential never passes through app-ui's JS (see this
- * file's own top-level doc comment). Every response, including error
+ * Forwards one request to ENVIRONMENT's real instance, attaching the
+ * signed-in session cookie so it never passes through app-ui's JS (see
+ * this file's own top-level doc comment). Every response, including error
  * statuses from the real instance, is piped straight through unchanged —
  * this is a transparent proxy, not an API client that interprets responses.
  */
 function proxyToInstance(
 	req: IncomingMessage,
 	res: ServerResponse,
-	connection: ConnectionRecord,
-	secrets: ConnectionSecrets,
+	environment: EnvironmentConfig,
+	cookie: string,
 ): void {
-	const target = new URL(connection.instanceUrl);
+	const target = new URL(environment.instanceUrl);
 	const isHttps = target.protocol === "https:";
 	const requestFn = isHttps ? httpsRequest : httpRequest;
 	// instanceUrl isn't always a bare origin — real deployments often live
 	// under a base path (e.g. ".../cfg-ai-dev"), which `target.hostname`
 	// alone would otherwise silently drop.
-	const basePath = instanceBasePath(connection.instanceUrl);
+	const basePath = instanceBasePath(environment.instanceUrl);
 
 	const headers = { ...req.headers };
 	delete headers.host;
-	delete headers.cookie;
-	if (connection.authMode === "browser" && secrets.cookie) {
-		headers.cookie = secrets.cookie;
-	} else if (secrets.accessKey && secrets.secretKey) {
-		headers.authorization = `Basic ${Buffer.from(
-			`${secrets.accessKey}:${secrets.secretKey}`,
-		).toString("base64")}`;
-	}
+	headers.cookie = cookie;
 
 	const proxyReq = requestFn(
 		{
@@ -194,7 +188,7 @@ function proxyToInstance(
 			});
 		}
 		res.end(
-			`Proxy error reaching ${connection.instanceUrl}: ${err.message}`,
+			`Proxy error reaching ${environment.instanceUrl}: ${err.message}`,
 		);
 	});
 

@@ -7,12 +7,10 @@
  * change a channel name, update both.
  */
 export const CONNECTIONS_IPC_CHANNELS = {
-	list: "connections:list",
-	getCurrentId: "connections:getCurrentId",
-	add: "connections:add",
-	remove: "connections:remove",
-	select: "connections:select",
+	getEnvironment: "connections:getEnvironment",
+	isSignedIn: "connections:isSignedIn",
 	beginBrowserLogin: "connections:beginBrowserLogin",
 	completeBrowserLogin: "connections:completeBrowserLogin",
 	cancelBrowserLogin: "connections:cancelBrowserLogin",
+	signOut: "connections:signOut",
 } as const;

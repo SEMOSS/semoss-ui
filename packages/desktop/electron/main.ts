@@ -17,7 +17,6 @@ import {
 } from "./connections/browser-login";
 import { CONNECTIONS_IPC_CHANNELS } from "./connections/ipc-channels";
 import { ConnectionsStore } from "./connections/store";
-import type { NewKeysConnectionInput } from "./connections/types";
 import { getIconPath } from "./icon-path";
 import {
 	type LocalServerHandle,
@@ -34,7 +33,7 @@ const CHROME_ERR_ABORTED = -3;
  * of sync with a reordered buttons list. */
 const LOAD_FAILURE_DIALOG_BUTTONS = {
 	retry: 0,
-	manageConnections: 1,
+	signOut: 1,
 	quit: 2,
 } as const;
 
@@ -51,10 +50,10 @@ function getAppUiDistPath(): string {
 }
 
 /**
- * (Re)starts the local server for whichever connection is current (or none,
- * on first run) and points the single main window at it — reloading it in
- * place if it already exists, so switching connections from the in-app
- * connections page never opens a second window.
+ * (Re)starts the local server for ENVIRONMENT (see
+ * electron/config/environment.json) — signed in or not — and points the
+ * single main window at it, reloading it in place if it already exists, so
+ * finishing sign-in or signing out never opens a second window.
  */
 async function launchCurrentConnection(): Promise<void> {
 	const distPath = getAppUiDistPath();
@@ -64,22 +63,22 @@ async function launchCurrentConnection(): Promise<void> {
 		);
 	}
 
-	const currentId = connectionsStore.getCurrentId();
-	const connection = currentId
-		? (connectionsStore.list().find((c) => c.id === currentId) ?? null)
-		: null;
-	const secrets = connection
-		? connectionsStore.getSecrets(connection.id)
-		: null;
+	const environment = connectionsStore.getEnvironment();
+	const signedIn = connectionsStore.isSignedIn();
+	const secrets = signedIn ? connectionsStore.getSecrets() : null;
 
 	if (localServer) {
 		await localServer.close();
 		localServer = null;
 	}
-	localServer = await startLocalServer(distPath, connection, secrets);
+	localServer = await startLocalServer(
+		distPath,
+		signedIn ? environment : null,
+		secrets,
+	);
 
-	const url = connection
-		? `http://${LOCAL_SERVER_HOST}:${localServer.port}/index.html?module=${encodeURIComponent(connection.modulePath)}`
+	const url = signedIn
+		? `http://${LOCAL_SERVER_HOST}:${localServer.port}/index.html?module=${encodeURIComponent(environment.modulePath)}`
 		: `http://${LOCAL_SERVER_HOST}:${localServer.port}/index.html`;
 
 	if (mainWindow && !mainWindow.isDestroyed()) {
@@ -123,10 +122,10 @@ async function handleLoadFailure(reason: string): Promise<void> {
 		type: "error",
 		title: "Couldn't connect",
 		message: "This SEMOSS environment couldn't be reached.",
-		detail: `${reason}\n\nYou can retry, or manage your saved connections.`,
-		buttons: ["Retry", "Manage Connections", "Quit"],
+		detail: `${reason}\n\nYou can retry, or sign out and start over.`,
+		buttons: ["Retry", "Sign Out", "Quit"],
 		defaultId: LOAD_FAILURE_DIALOG_BUTTONS.retry,
-		cancelId: LOAD_FAILURE_DIALOG_BUTTONS.manageConnections,
+		cancelId: LOAD_FAILURE_DIALOG_BUTTONS.signOut,
 	});
 
 	if (response === LOAD_FAILURE_DIALOG_BUTTONS.retry) {
@@ -137,8 +136,8 @@ async function handleLoadFailure(reason: string): Promise<void> {
 				error instanceof Error ? error.message : String(error),
 			);
 		}
-	} else if (response === LOAD_FAILURE_DIALOG_BUTTONS.manageConnections) {
-		connectionsStore.deselect();
+	} else if (response === LOAD_FAILURE_DIALOG_BUTTONS.signOut) {
+		connectionsStore.signOut();
 		try {
 			await launchCurrentConnection();
 		} catch (error) {
@@ -152,67 +151,38 @@ async function handleLoadFailure(reason: string): Promise<void> {
 }
 
 function registerIpcHandlers(): void {
-	ipcMain.handle(CONNECTIONS_IPC_CHANNELS.list, () =>
-		connectionsStore.list(),
+	ipcMain.handle(CONNECTIONS_IPC_CHANNELS.getEnvironment, () =>
+		connectionsStore.getEnvironment(),
 	);
-	ipcMain.handle(CONNECTIONS_IPC_CHANNELS.getCurrentId, () =>
-		connectionsStore.getCurrentId(),
+	ipcMain.handle(CONNECTIONS_IPC_CHANNELS.isSignedIn, () =>
+		connectionsStore.isSignedIn(),
 	);
-	ipcMain.handle(
-		CONNECTIONS_IPC_CHANNELS.add,
-		(_event, input: NewKeysConnectionInput) =>
-			connectionsStore.addWithKeys(input),
-	);
-	ipcMain.handle(CONNECTIONS_IPC_CHANNELS.remove, (_event, id: string) =>
-		connectionsStore.remove(id),
-	);
-	ipcMain.handle(CONNECTIONS_IPC_CHANNELS.select, (_event, id: string) =>
-		launchCurrentConnectionFor(id),
-	);
-	ipcMain.handle(
-		CONNECTIONS_IPC_CHANNELS.beginBrowserLogin,
-		(
-			_event,
-			input: { alias: string; instanceUrl: string; modulePath: string },
-		) =>
-			beginBrowserLogin(
-				input.alias,
-				input.instanceUrl,
-				input.modulePath,
-				(result) => {
-					// Fires as soon as sign-in is auto-detected (see
-					// browser-login.ts) — connects immediately, same as the
-					// manual "Continue" path below, without waiting for the
-					// user to click anything.
-					const record = connectionsStore.addWithCookie(result);
-					void launchCurrentConnectionFor(record.id);
-				},
-			),
+	ipcMain.handle(CONNECTIONS_IPC_CHANNELS.beginBrowserLogin, () =>
+		beginBrowserLogin((result) => {
+			// Fires as soon as sign-in is auto-detected (see
+			// browser-login.ts) — connects immediately, same as the manual
+			// "Continue" path below, without waiting for the user to click
+			// anything.
+			connectionsStore.saveCookie(result.cookie);
+			void launchCurrentConnection();
+		}),
 	);
 	ipcMain.handle(
 		CONNECTIONS_IPC_CHANNELS.completeBrowserLogin,
 		async (_event, loginId: string) => {
 			const result = await completeBrowserLogin(loginId);
-			const record = connectionsStore.addWithCookie(result);
-			await launchCurrentConnectionFor(record.id);
-			return record;
+			connectionsStore.saveCookie(result.cookie);
+			await launchCurrentConnection();
 		},
 	);
 	ipcMain.handle(
 		CONNECTIONS_IPC_CHANNELS.cancelBrowserLogin,
 		(_event, loginId: string) => cancelBrowserLogin(loginId),
 	);
-}
-
-async function launchCurrentConnectionFor(id: string): Promise<void> {
-	connectionsStore.select(id);
-	try {
+	ipcMain.handle(CONNECTIONS_IPC_CHANNELS.signOut, async () => {
+		connectionsStore.signOut();
 		await launchCurrentConnection();
-	} catch (error) {
-		await handleLoadFailure(
-			error instanceof Error ? error.message : String(error),
-		);
-	}
+	});
 }
 
 function buildAppMenu(): void {

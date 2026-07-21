@@ -48,8 +48,8 @@ electron (this package) — the only thing genuinely new here that neither
                           local HTTP server (electron/server/static-server.ts)
                           serves app-ui's build and reverse-proxies
                           @semoss/sdk's relative API calls to the real
-                          SEMOSS instance, injecting Basic auth itself so
-                          credentials never reach app-ui's JS.
+                          SEMOSS instance, injecting the signed-in session
+                          cookie itself so it never reaches app-ui's JS.
 ```
 
 The one real technical wrinkle unique to Electron (not present when
@@ -67,6 +67,8 @@ dev-time proxy — hence the local proxy server.
    `app-ui`'s output.
 2. **Multi-environment connections** — `ConnectionsStore` (`safeStorage` +
    JSON), mirroring `packages/vscode-extension`'s alias/instance model.
+   **Superseded by item 14** — this whole model (user-managed list, Access
+   Key mode) was later replaced with one build-time-configured environment.
 3. **App icon** — rasterized from the existing SEMOSS mark
    (`libs/shared/src/assets/img/SEMOSS.tsx`), not a new design.
 4. **Cross-platform packaging** — `electron-builder`, mac (x64+arm64 dmg)
@@ -104,7 +106,7 @@ dev-time proxy — hence the local proxy server.
     it), and a failed load left the user stuck on a dead Chromium error
     page. Fixed both: `electron/server/static-server.ts` now can't crash
     from a bad request, and `electron/main.ts` listens for `did-fail-load`
-    on the main frame and offers Retry/Manage Connections/Quit instead.
+    on the main frame and offers a Retry/Sign Out/Quit choice instead.
 12. **Browser-based sign-in** (`electron/connections/browser-login.ts`) —
     native username/password *and* OAuth/SSO, unified into one "Sign in via
     browser" flow. See the "Auth model" assumption below for why this was
@@ -119,23 +121,55 @@ dev-time proxy — hence the local proxy server.
     redirect) and connects automatically the moment sign-in is verified —
     the popup closes itself and the app reloads into the new connection
     with no click required. "Continue" still exists as a manual fallback.
+14. **Config-driven single environment, Access Key removed** — a deliberate
+    pivot away from the whole "user manages a list of named environments,
+    picks Access Key or browser sign-in per one" model. Now:
+    `electron/config/environment.json` is the one build-time-configured
+    SEMOSS environment (currently "Workshop"); `ConnectionsStore` shrank
+    from a connections-list-plus-secrets-directory to a single encrypted
+    session file (`isSignedIn()`/`saveCookie()`/`signOut()`); Access
+    Key/Secret Key auth was removed everywhere, not just hidden in the UI
+    (gone from `types.ts`, `store.ts`, and `static-server.ts`'s proxy — the
+    session cookie is the only credential this app ever handles now).
+    `connections-page.tsx` became a sign-in gate (`variant="full"`) plus a
+    signed-in/Sign-Out row (`variant="compact"`), styled after the real
+    client/playground login pages — reusing their actual illustration asset
+    (`packages/playground/src/assets/img/login.svg`/`login-darkmode.png`,
+    copied into `app-ui/src/assets/img/`) rather than a placeholder. Also
+    fixed a real bug this surfaced: `beginBrowserLogin` originally pointed
+    the sign-in window at the bare module path (e.g. ".../Monolith") on
+    the assumption it would 302-redirect to login; live testing hit a
+    Tomcat 404 instead (nothing's mapped to that bare path) — fixed by
+    pointing at `AUTH_PROBE_PATH` (".../Monolith/api/engine/runPixel"),
+    the same endpoint `probeAuthenticated()` already used and had actually
+    confirmed redirects correctly when unauthenticated.
 
 ## Assumptions made (flag if any of these turn out wrong)
 
-- **Auth model**: two modes, both real, chosen per connection —
-  `authMode: "keys"` (Access/Secret Key Basic-auth, matching
-  `packages/playground`/`vba-futures` today) and `authMode: "browser"`
-  (a real sign-in window against the instance's actual origin, capturing
-  the resulting session cookie). The two were **not** built as separate
-  "native" and "OAuth" flows — confirmed by reading `libs/sdk/src/api/auth.ts`
-  and by inspecting a real instance's login page, the actual login page
-  already offers both native username/password and OAuth/SSO provider
-  buttons (e.g. "Microsoft") in one form, and login either way results in
-  the same thing (a session cookie) — so "Sign in via browser" covers both
-  without this app needing to know which the user picked. See
-  `electron/connections/browser-login.ts` and `ROADMAP.md`'s auth section
-  for the full reasoning, including why a portable-token approach was ruled
-  out (no code path in `@semoss/sdk` ever produces one from a login).
+- **Auth model**: one real mode — a real sign-in window against
+  ENVIRONMENT's actual origin, capturing the resulting session cookie.
+  Access/Secret Key Basic-auth existed early on (matching
+  `packages/playground`/`vba-futures`) and was deliberately removed later,
+  not just hidden — the user didn't want this app's auth story to be
+  something a user configures at all. Native username/password and
+  OAuth/SSO were **not** built as separate flows — confirmed by reading
+  `libs/sdk/src/api/auth.ts` and by inspecting a real instance's login
+  page, the actual login page already offers both native username/password
+  and OAuth/SSO provider buttons (e.g. "Microsoft") in one form, and login
+  either way results in the same thing (a session cookie) — so one
+  sign-in window covers both without this app needing to know which the
+  user picked. See `electron/connections/browser-login.ts` and
+  `ROADMAP.md`'s auth section for the full reasoning, including why a
+  portable-token approach was ruled out (no code path in `@semoss/sdk`
+  ever produces one from a login).
+- **Which environment, not just how to auth, is also build-time config**:
+  `electron/config/environment.json` is the single source of truth for
+  alias/instance URL/module path. There's exactly one entry today
+  ("Workshop") — this was an explicit, requested simplification, not a
+  temporary stand-in for a missing multi-environment picker. If a second
+  environment is ever needed, extending `environment.json` to a list plus
+  a small picker in `connections-page.tsx` is straightforward (an earlier
+  design pass already worked out that UI); don't build it preemptively.
 - **Remote-only, never a bundled backend**: this app is a shell around a
   SEMOSS instance you already have running somewhere; it never launches or
   manages a SEMOSS/Tomcat process itself.
@@ -145,11 +179,12 @@ dev-time proxy — hence the local proxy server.
   a whole class of state-sync bugs between windows, and matches the
   Claude/ChatGPT Desktop reference more closely than a multi-window app
   would.
-- **Credentials never reach the renderer** — the local proxy injects the
-  Authorization header server-side. This means `Env.ACCESS_KEY`/`SECRET_KEY`
-  are *never* set in `app-ui`; only `Env.MODULE` is. If a future feature
-  needs the renderer to know credentials exist (not their values), that's
-  a deliberate boundary to think through before crossing.
+- **The session cookie never reaches the renderer** — the local proxy
+  injects the `Cookie` header server-side. `app-ui` only ever gets
+  `Env.MODULE` via `Env.update(...)`; no credential of any kind is set
+  there. If a future feature needs the renderer to know a session exists
+  (not its value), that's a deliberate boundary to think through before
+  crossing.
 - **Self-signed certs are trusted** (`rejectUnauthorized: false` on the
   proxy's outbound requests) — matches `packages/playground`'s own dev
   proxy trust level today. Not appropriate once this targets anything
@@ -183,6 +218,9 @@ dev-time proxy — hence the local proxy server.
   — they're load-bearing (see that file's own comment and `app-ui/README.md`).
 - Don't add a second `BrowserWindow` for settings/connections — extend the
   existing `SettingsDialog` tabs instead.
-- Don't set `Env.ACCESS_KEY`/`Env.SECRET_KEY` in `app-ui` — credentials
-  belong only in the main process. If you're tempted to, the local proxy
-  is very likely the better place for whatever you're trying to do.
+- Don't bring back Access Key/Secret Key or a user-facing "add environment"
+  form without checking first — both were deliberately removed (see item
+  14 above and the "Auth model" assumption), not left out for lack of time.
+- Don't set any credential in `app-ui` via `Env.update(...)` — the session
+  cookie belongs only in the main process. If you're tempted to, the local
+  proxy is very likely the better place for whatever you're trying to do.

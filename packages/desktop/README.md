@@ -1,8 +1,9 @@
 # @semoss/desktop — AI Core Playground
 
 An Electron desktop app built directly on `@semoss/chat`'s components and
-`@semoss/sdk`, connected to a remote SEMOSS instance you configure at
-runtime. It matches playground's visual design (via `@semoss/chat/components`
+`@semoss/sdk`, connected to the one remote SEMOSS instance this build is
+configured for (`electron/config/environment.json` — a build-time decision,
+not something a user enters). It matches playground's visual design (via `@semoss/chat/components`
 and `@semoss/ui`) and looks/behaves like a native desktop chat app (Claude
 Desktop / ChatGPT Desktop) — collapsible sidebar, settings at the bottom,
 seamless title bar. It does **not** embed or wrap playground's own build.
@@ -19,10 +20,9 @@ See also:
 ## How it works
 
 - **One window.** `app-ui/` (a React+Vite app) is the only window
-  (`electron/windows/create-main-window.ts`). It shows either the
-  connections page (no environment selected yet) or the chat shell —
-  decided at runtime by asking the main process which connection is
-  current.
+  (`electron/windows/create-main-window.ts`). It shows either the sign-in
+  screen (not signed in yet) or the chat shell — decided at runtime by
+  asking the main process whether a session exists.
 - **A custom, seamless title bar.** Per
   [Electron's custom-title-bar guide](https://www.electronjs.org/docs/latest/tutorial/custom-title-bar):
   `titleBarStyle: "hidden"` + `trafficLightPosition` on macOS,
@@ -33,10 +33,9 @@ See also:
   same origin as the SEMOSS server. Electron has neither a shared origin nor
   a dev-time proxy, so `electron/server/static-server.ts` runs a small local
   HTTP server that serves `app-ui`'s built `dist-app-ui/` and reverse-proxies
-  the current connection's `MODULE` path prefix to its real `ENDPOINT`,
-  attaching `Authorization: Basic base64(ACCESS_KEY:SECRET_KEY)` itself,
-  server-side — so **credentials never reach app-ui's JS**, only the main
-  process ever sees them.
+  ENVIRONMENT's `MODULE` path prefix to its real `ENDPOINT`, attaching the
+  signed-in session cookie itself, server-side — so **the cookie never
+  reaches app-ui's JS**, only the main process ever sees it.
 - **Chat UI is composed by hand**, not `@semoss/chat/components`'s
   batteries-included `ChatPanel` — `ChatProvider` + `useChatContext` +
   `MessageList` + `ChatInput` directly, since that's what's needed for both
@@ -45,37 +44,36 @@ See also:
   yet. See `app-ui/src/chat-shell.tsx`.
 - **Sidebar is collapsible**, with a Settings entry pinned at its bottom
   (Claude/ChatGPT-Desktop pattern) opening a tabbed dialog (Appearance +
-  Connections). See `app-ui/src/sidebar-footer.tsx` and
+  Account). See `app-ui/src/sidebar-footer.tsx` and
   `app-ui/src/settings-dialog.tsx`.
 
-## Connections (multi-environment config)
+## Environment (build-time config, not user input)
 
-Rather than baking one server's config into the build (like
-`packages/playground`'s own `.env` does), this app lets you save multiple
-named SEMOSS environments at runtime — mirroring the alias/instance model
-already used by `packages/vscode-extension`'s "Authorize/Select/Remove
-Instance" commands (`packages/vscode-extension/src/utils/secrets.js`), just
-re-implemented on Electron's `safeStorage` (OS keychain encryption) instead
-of VS Code's `SecretStorage`.
+Which SEMOSS instance this app talks to — alias, instance URL, module path —
+is a **build-time decision**: `electron/config/environment.json`, imported
+by `electron/config/environment.ts` as the single `ENVIRONMENT` constant
+every other main-process module reads from. There is exactly one entry
+today; nothing in the UI lets a user add, remove, or edit an environment.
+(Earlier versions of this app let a user save multiple named environments
+at runtime, mirroring `packages/vscode-extension`'s alias/instance model —
+that was deliberately replaced with this config-driven model; see
+`AGENTS.md`'s "Auth model" assumption for why.)
 
-- Non-secret fields (alias, instance URL, module path, auth mode) live in
-  `connections.json` under Electron's `userData` directory.
-- Two ways to authenticate a connection, both encrypted at rest via
-  `safeStorage` and only ever decrypted inside the main process
-  (`electron/connections/store.ts`):
-  - **Access Key / Secret Key** — Basic-auth, same as `packages/playground`.
-  - **Sign in via browser** — opens a real sign-in window pointed at the
-    instance's actual origin; the server's own redirect takes it to
-    whatever login page that instance is configured with, so native
-    username/password *and* any OAuth/SSO provider button both just work
-    without this app needing to know which one you used. The resulting
-    session cookie is captured and verified before the connection is saved
-    (`electron/connections/browser-login.ts`).
-- `app-ui/src/connections-page.tsx` is the in-app connections page — shown
-  full-screen on first run (no connection yet), and inside the Settings
-  dialog's "Connections" tab any time after (opened either from the
-  sidebar's Settings entry or the title bar's connection-status button).
-  Selecting a different connection reloads the same window against it —
+- **Access Key/Secret Key is gone** — the only way to authenticate is
+  "Sign In," which opens a real sign-in window pointed at
+  `ENVIRONMENT.instanceUrl`; the instance's own redirect takes it to
+  whatever login page that instance is configured with, so native
+  username/password *and* any OAuth/SSO provider button both just work
+  without this app needing to know which one you used
+  (`electron/connections/browser-login.ts`).
+- The resulting session cookie is the only credential this app ever
+  stores, encrypted at rest via `safeStorage` (OS keychain encryption) and
+  only ever decrypted inside the main process (`electron/connections/store.ts`).
+- `app-ui/src/connections-page.tsx` is the sign-in gate — shown full-screen
+  before a session exists, and as a simple "signed in as {alias}" + Sign Out
+  row inside the Settings dialog's "Account" tab once signed in (opened
+  either from the sidebar's Settings entry or the title bar's
+  connection-status button). Signing in or out reloads the same window —
   there's never a second window.
 
 ## Development
@@ -93,9 +91,10 @@ pnpm --filter @semoss/desktop dev
 
 `pnpm dev` is a full-restart watch mode, not HMR — every change quits and
 relaunches the whole Electron process (a couple seconds), not just the
-renderer. On first launch (no saved connections yet), the connections page
-opens automatically. Add an environment (alias, instance URL, module path,
-Access Key, Secret Key) — saving connects immediately.
+renderer. On first launch (no session yet), the sign-in screen opens
+automatically against `electron/config/environment.json`'s environment —
+click Sign In, finish signing in in the window that opens, and it connects
+automatically.
 
 **If you add or change a `@source` line in `app-ui/src/index.css`** (see
 that file's own comment for why it exists at all), do a clean rebuild —
@@ -108,11 +107,9 @@ under-scanned CSS across an ordinary incremental rebuild.
 Since this is a native app, exercise it by hand against a real SEMOSS
 instance before calling a change done:
 
-- [ ] Add a connection with Access Key/Secret Key, confirm the chat shell
-      loads and an engine auto-selects
-- [ ] Add a connection with "Sign in via browser," complete sign-in (native
-      username/password or an SSO provider button) in the window that
-      opens, click Continue, confirm it saves and connects
+- [ ] Sign in, complete sign-in (native username/password or an SSO
+      provider button) in the window that opens, confirm it connects
+      automatically with no click needed, and an engine auto-selects
 - [ ] Click Continue *before* finishing sign-in — confirm it shows a clear
       "still not signed in" message rather than silently succeeding or
       crashing
@@ -122,12 +119,12 @@ instance before calling a change done:
 - [ ] Rate a response (thumbs), copy it, download it
 - [ ] Collapse/expand the sidebar via the title-bar toggle
 - [ ] Open Settings from the sidebar footer (Appearance tab) and from the
-      title bar's connection button (Connections tab); switch theme
+      title bar's connection button (Account tab); switch theme
       Light/Dark/System
-- [ ] Add a second connection, switch between them (same window reloads in
-      place, no second window)
-- [ ] Quit and relaunch — the last-selected connection should reconnect
-      automatically without showing the connections page
+- [ ] Sign Out from the Account tab, confirm it returns to the sign-in
+      screen, then sign back in
+- [ ] Quit and relaunch while signed in — should reconnect automatically
+      without showing the sign-in screen
 
 ## Packaging
 

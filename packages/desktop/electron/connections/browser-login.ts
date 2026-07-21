@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
 import { DEFAULT_HTTP_PORT, DEFAULT_HTTPS_PORT } from "../app-info";
+import { ENVIRONMENT } from "../config/environment";
 import { instanceBasePath, joinInstanceUrl } from "./instance-url";
 
 const SIGN_IN_WINDOW_WIDTH = 480;
@@ -11,12 +12,12 @@ const SIGN_IN_WINDOW_TITLE = "Sign in";
 const SESSION_PARTITION_PREFIX = "sso-login-";
 
 /**
- * How often we re-check whether sign-in has completed while the window is
+ * How often to re-check whether sign-in has completed while the window is
  * open. A poll (rather than relying only on navigation events) is what
- * makes this work regardless of how a given instance's login page is built
- * — a real page redirect fires `did-navigate`, but a React SPA that logs in
- * via an XHR call and swaps view state client-side, without ever changing
- * the URL, would never fire a navigation event at all.
+ * makes this work regardless of how the login page is built — a real page
+ * redirect fires `did-navigate`, but a React SPA that logs in via an XHR
+ * call and swaps view state client-side, without ever changing the URL,
+ * would never fire a navigation event at all.
  */
 const AUTO_DETECT_POLL_INTERVAL_MS = 1500;
 
@@ -40,9 +41,6 @@ const SIGN_IN_CHECK_ALREADY_IN_PROGRESS_MESSAGE =
 	"Already checking this sign-in attempt — try again in a moment.";
 
 interface PendingLogin {
-	alias: string;
-	instanceUrl: string;
-	modulePath: string;
 	window: BrowserWindow;
 	sessionPartition: string;
 	pollTimer: ReturnType<typeof setInterval>;
@@ -56,9 +54,6 @@ interface PendingLogin {
 }
 
 export interface BrowserLoginResult {
-	alias: string;
-	instanceUrl: string;
-	modulePath: string;
 	cookie: string;
 }
 
@@ -69,11 +64,16 @@ type VerifyOutcome =
 const pending = new Map<string, PendingLogin>();
 
 /**
- * Opens a real, visible sign-in window pointed at the instance itself (not
- * a hardcoded login-page path — deployments name their web client
- * differently, e.g. this repo's own "semoss-ui" vs. "SemossWeb" elsewhere).
- * The server's own redirect takes the window to whatever login page it's
- * actually configured with, and the user signs in there however they
+ * Opens a real, visible sign-in window pointed at ENVIRONMENT's
+ * AUTH_PROBE_PATH (the one build-time-configured SEMOSS instance — not
+ * something this app asks the user for). This has to be a path we've
+ * actually confirmed requires auth and 302-redirects when it doesn't have
+ * it — the bare module path (e.g. ".../Monolith" with nothing after it)
+ * isn't necessarily mapped to anything at all and can 404 instead of
+ * redirecting, which is exactly what AUTH_PROBE_PATH avoids since
+ * probeAuthenticated() already relies on the same endpoint. From there,
+ * the instance's own redirect takes the window to whatever login page
+ * it's actually configured with, and the user signs in there however they
  * normally would — native username/password or an OAuth provider button —
  * exactly like `libs/sdk/src/api/auth.ts`'s real `login()`/`oauth()` do,
  * just without us needing to know which method they'll pick. A dedicated,
@@ -87,9 +87,6 @@ const pending = new Map<string, PendingLogin>();
  * case where polling hasn't caught up yet.
  */
 export function beginBrowserLogin(
-	alias: string,
-	instanceUrl: string,
-	modulePath: string,
 	onAutoSignIn: (result: BrowserLoginResult) => void,
 ): string {
 	const id = randomUUID();
@@ -125,12 +122,14 @@ export function beginBrowserLogin(
 		void tryAutoComplete(id, onAutoSignIn);
 	});
 
-	void win.loadURL(joinInstanceUrl(instanceUrl, modulePath));
+	void win.loadURL(
+		joinInstanceUrl(
+			ENVIRONMENT.instanceUrl,
+			`${ENVIRONMENT.modulePath}${AUTH_PROBE_PATH}`,
+		),
+	);
 
 	pending.set(id, {
-		alias,
-		instanceUrl,
-		modulePath,
 		window: win,
 		sessionPartition,
 		pollTimer,
@@ -224,50 +223,34 @@ function finalizePending(id: string, entry: PendingLogin): void {
 }
 
 /**
- * Reads whatever cookies the sign-in window's session picked up for the
- * instance, then verifies them with a real request (not just "cookies
+ * Reads whatever cookies the sign-in window's session picked up for
+ * ENVIRONMENT, then verifies them with a real request (not just "cookies
  * exist" — the unauthenticated redirect itself already sets infra-level
  * cookies, e.g. a load-balancer affinity cookie, so their mere presence
  * isn't proof of a real session).
  */
 async function verify(entry: PendingLogin): Promise<VerifyOutcome> {
 	const sess = electronSession.fromPartition(entry.sessionPartition);
-	const cookies = await sess.cookies.get({ url: entry.instanceUrl });
+	const cookies = await sess.cookies.get({ url: ENVIRONMENT.instanceUrl });
 	if (cookies.length === 0) {
 		return { ok: false, reason: "no-cookies" };
 	}
 	const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join("; ");
 
-	const authenticated = await probeAuthenticated(
-		entry.instanceUrl,
-		entry.modulePath,
-		cookieHeader,
-	);
+	const authenticated = await probeAuthenticated(cookieHeader);
 	if (!authenticated) {
 		return { ok: false, reason: "not-authenticated" };
 	}
 
-	return {
-		ok: true,
-		result: {
-			alias: entry.alias,
-			instanceUrl: entry.instanceUrl,
-			modulePath: entry.modulePath,
-			cookie: cookieHeader,
-		},
-	};
+	return { ok: true, result: { cookie: cookieHeader } };
 }
 
-function probeAuthenticated(
-	instanceUrl: string,
-	modulePath: string,
-	cookieHeader: string,
-): Promise<boolean> {
+function probeAuthenticated(cookieHeader: string): Promise<boolean> {
 	return new Promise((resolve) => {
-		const target = new URL(instanceUrl);
+		const target = new URL(ENVIRONMENT.instanceUrl);
 		const isHttps = target.protocol === "https:";
 		const requestFn = isHttps ? httpsRequest : httpRequest;
-		const basePath = instanceBasePath(instanceUrl);
+		const basePath = instanceBasePath(ENVIRONMENT.instanceUrl);
 
 		const req = requestFn(
 			{
@@ -276,7 +259,7 @@ function probeAuthenticated(
 				port:
 					target.port ||
 					(isHttps ? DEFAULT_HTTPS_PORT : DEFAULT_HTTP_PORT),
-				path: `${basePath}${modulePath}${AUTH_PROBE_PATH}`,
+				path: `${basePath}${ENVIRONMENT.modulePath}${AUTH_PROBE_PATH}`,
 				method: "GET",
 				headers: { cookie: cookieHeader },
 				// Matches static-server.ts's proxy — internal instances often

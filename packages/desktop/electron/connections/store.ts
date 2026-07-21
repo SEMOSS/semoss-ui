@@ -1,185 +1,65 @@
 import { safeStorage } from "electron";
-import { randomUUID } from "node:crypto";
-import {
-	existsSync,
-	mkdirSync,
-	readFileSync,
-	unlinkSync,
-	writeFileSync,
-} from "node:fs";
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type {
-	ConnectionRecord,
-	ConnectionSecrets,
-	NewKeysConnectionInput,
-} from "./types";
+import { ENVIRONMENT } from "../config/environment";
+import type { ConnectionSecrets, EnvironmentConfig } from "./types";
 
-interface ConnectionsFile {
-	connections: ConnectionRecord[];
-	currentId: string | null;
-}
-
-const EMPTY_FILE: ConnectionsFile = { connections: [], currentId: null };
-
-const CONNECTIONS_FILE_NAME = "connections.json";
-const SECRETS_DIR_NAME = "connection-secrets";
-const SECRET_FILE_EXTENSION = ".enc";
+const SESSION_FILE_NAME = "session.enc";
 
 const ENCRYPTION_UNAVAILABLE_MESSAGE =
 	"OS-level credential encryption is unavailable on this machine " +
-	"(no keychain/keyring backend found). Connection secrets cannot " +
-	"be stored securely, so saving a connection has been blocked.";
+	"(no keychain/keyring backend found). Your session cannot be stored " +
+	"securely, so signing in has been blocked.";
 
 /**
- * Persists named SEMOSS environments (mirrors the alias/instance model in
- * packages/vscode-extension/src/utils/secrets.js, re-implemented on top of
- * Electron's safeStorage instead of VS Code's SecretStorage).
- *
- * Non-secret fields live in a plain JSON file; Access/Secret Key are
- * encrypted at rest via the OS keychain (safeStorage) and only ever
- * decrypted here, in the main process — the renderer never sees them.
+ * Tracks whether the user is signed in to ENVIRONMENT (the one build-time
+ * environment, see electron/config/environment.json) and holds the
+ * resulting session cookie, encrypted at rest via the OS keychain
+ * (safeStorage) and only ever decrypted here, in the main process — the
+ * renderer never sees it.
  */
 export class ConnectionsStore {
-	private readonly connectionsFilePath: string;
-	private readonly secretsDirPath: string;
+	private readonly sessionFilePath: string;
 
 	constructor(userDataPath: string) {
-		this.connectionsFilePath = join(userDataPath, CONNECTIONS_FILE_NAME);
-		this.secretsDirPath = join(userDataPath, SECRETS_DIR_NAME);
-		mkdirSync(this.secretsDirPath, { recursive: true });
+		this.sessionFilePath = join(userDataPath, SESSION_FILE_NAME);
 	}
 
-	private readFile(): ConnectionsFile {
-		if (!existsSync(this.connectionsFilePath)) {
-			return { ...EMPTY_FILE };
+	getEnvironment(): EnvironmentConfig {
+		return ENVIRONMENT;
+	}
+
+	isSignedIn(): boolean {
+		return existsSync(this.sessionFilePath);
+	}
+
+	getSecrets(): ConnectionSecrets | null {
+		if (!existsSync(this.sessionFilePath)) {
+			return null;
 		}
-		try {
-			return JSON.parse(readFileSync(this.connectionsFilePath, "utf-8"));
-		} catch {
-			return { ...EMPTY_FILE };
+		this.assertEncryptionAvailable();
+		const encrypted = readFileSync(this.sessionFilePath);
+		return JSON.parse(safeStorage.decryptString(encrypted));
+	}
+
+	saveCookie(cookie: string): void {
+		this.assertEncryptionAvailable();
+		const secrets: ConnectionSecrets = { cookie };
+		const encrypted = safeStorage.encryptString(JSON.stringify(secrets));
+		writeFileSync(this.sessionFilePath, encrypted);
+	}
+
+	/** Clears the stored session — used for both an explicit "Sign Out" and
+	 * the load-failure recovery dialog's way back to the sign-in screen. */
+	signOut(): void {
+		if (existsSync(this.sessionFilePath)) {
+			unlinkSync(this.sessionFilePath);
 		}
-	}
-
-	private writeFile(data: ConnectionsFile): void {
-		writeFileSync(this.connectionsFilePath, JSON.stringify(data, null, 2));
-	}
-
-	private secretsPath(id: string): string {
-		return join(this.secretsDirPath, `${id}${SECRET_FILE_EXTENSION}`);
 	}
 
 	private assertEncryptionAvailable(): void {
 		if (!safeStorage.isEncryptionAvailable()) {
 			throw new Error(ENCRYPTION_UNAVAILABLE_MESSAGE);
 		}
-	}
-
-	list(): ConnectionRecord[] {
-		return this.readFile().connections;
-	}
-
-	getCurrentId(): string | null {
-		return this.readFile().currentId;
-	}
-
-	getCurrent(): ConnectionRecord | null {
-		const file = this.readFile();
-		return file.connections.find((c) => c.id === file.currentId) ?? null;
-	}
-
-	getSecrets(id: string): ConnectionSecrets {
-		this.assertEncryptionAvailable();
-		const path = this.secretsPath(id);
-		if (!existsSync(path)) {
-			throw new Error(`No stored secrets for connection "${id}"`);
-		}
-		const encrypted = readFileSync(path);
-		const decrypted = safeStorage.decryptString(encrypted);
-		return JSON.parse(decrypted);
-	}
-
-	addWithKeys(input: NewKeysConnectionInput): ConnectionRecord {
-		return this.addRecord(
-			{
-				alias: input.alias,
-				instanceUrl: input.instanceUrl,
-				modulePath: input.modulePath,
-				authMode: "keys",
-			},
-			{ accessKey: input.accessKey, secretKey: input.secretKey },
-		);
-	}
-
-	/** Used after a successful browser-based sign-in — see browser-login.ts. */
-	addWithCookie(input: {
-		alias: string;
-		instanceUrl: string;
-		modulePath: string;
-		cookie: string;
-	}): ConnectionRecord {
-		return this.addRecord(
-			{
-				alias: input.alias,
-				instanceUrl: input.instanceUrl,
-				modulePath: input.modulePath,
-				authMode: "browser",
-			},
-			{ cookie: input.cookie },
-		);
-	}
-
-	private addRecord(
-		fields: Omit<ConnectionRecord, "id">,
-		secrets: ConnectionSecrets,
-	): ConnectionRecord {
-		this.assertEncryptionAvailable();
-
-		const record: ConnectionRecord = { id: randomUUID(), ...fields };
-
-		const encrypted = safeStorage.encryptString(JSON.stringify(secrets));
-		writeFileSync(this.secretsPath(record.id), encrypted);
-
-		const file = this.readFile();
-		file.connections.push(record);
-		if (!file.currentId) {
-			file.currentId = record.id;
-		}
-		this.writeFile(file);
-
-		return record;
-	}
-
-	remove(id: string): void {
-		const file = this.readFile();
-		file.connections = file.connections.filter((c) => c.id !== id);
-		if (file.currentId === id) {
-			file.currentId = null;
-		}
-		this.writeFile(file);
-
-		const path = this.secretsPath(id);
-		if (existsSync(path)) {
-			unlinkSync(path);
-		}
-	}
-
-	select(id: string): void {
-		const file = this.readFile();
-		if (!file.connections.some((c) => c.id === id)) {
-			throw new Error(`Unknown connection "${id}"`);
-		}
-		file.currentId = id;
-		this.writeFile(file);
-	}
-
-	/**
-	 * Clears the current selection without deleting anything — used when a
-	 * connection turns out to be unreachable and the user needs a way back
-	 * to the connections page rather than being stuck on a failed load.
-	 */
-	deselect(): void {
-		const file = this.readFile();
-		file.currentId = null;
-		this.writeFile(file);
 	}
 }

@@ -19,17 +19,30 @@ the reasoning behind each; this file is the flat punch-list version.
       guessed), then reads the resulting session cookie out of Electron's
       `session.cookies` API and verifies it with a real probe request before
       saving. `electron/server/static-server.ts`'s proxy forwards that
-      cookie (`Cookie: ...`) instead of Basic-auth for `authMode: "browser"`
-      connections. This is why "native username/password" and "OAuth/SSO"
-      collapsed into one "Sign in via browser" option in the connections UI
-      rather than two separate flows — the real login page already handles
-      that distinction itself; this app doesn't need to know which the user
-      picked.
-- [ ] **Session/cookie expiry isn't handled** — an expired `authMode:
-      "browser"` cookie just starts getting redirected-to-login responses
-      proxied straight through (surfaces as a confusing pixel-call error in
-      app-ui, not a clear "sign in again" prompt). No refresh mechanism
-      exists. Worth a clearer surface once this sees real usage.
+      cookie (`Cookie: ...`) — the only credential this app handles since
+      Access Key/Secret Key was removed (see `AGENTS.md`'s "Auth model").
+- [x] ~~Access Key/Secret Key auth~~ — removed entirely, not just hidden:
+      the user didn't want this app's auth story to be something a user
+      configures. Browser sign-in against the one build-configured
+      environment (`electron/config/environment.json`) is the only path
+      now.
+- [ ] **Sign-out → sign-in round trip needs real-use testing/polish.**
+      Sign Out exists (Settings → Account tab → `signOut()` IPC → returns
+      to the sign-in screen), but hasn't been exercised much beyond the
+      initial implementation — confirm it behaves well when signing back
+      in immediately after, and that stale UI state (e.g. an open Settings
+      dialog, an in-flight chat request) doesn't linger oddly across the
+      transition.
+- [ ] **Session/cookie expiry isn't handled, and how long a session
+      actually lasts isn't well understood yet.** An expired session
+      cookie just starts getting redirected-to-login responses proxied
+      straight through (surfaces as a confusing pixel-call error in
+      app-ui, not a clear "sign in again" prompt) — no refresh mechanism
+      and no expiry detection exist. Before building a fix, figure out:
+      how long the real instance's session cookie is actually valid for
+      (idle timeout vs. absolute expiry), whether it's renewed by ordinary
+      API traffic or only by a fresh login, and what a clear "your session
+      expired, sign in again" surface should look like once that's known.
 - [ ] Stop trusting self-signed certs (`rejectUnauthorized: false` in the
       proxy and in the browser-login probe) once this targets anything
       beyond internal instances.
@@ -38,6 +51,18 @@ the reasoning behind each; this file is the flat punch-list version.
 - [ ] Code-signing for Windows builds (`electron-builder.yml`'s
       `signAndEditExecutable: false`) — unsigned builds trigger SmartScreen
       warnings today.
+
+## Environments
+
+- [ ] **Only one build-configured environment exists today** ("Workshop,"
+      `electron/config/environment.json`) — deliberately, per explicit
+      request, not a placeholder for a missing feature. If a second
+      environment is ever needed: extend `environment.json` to a list, add
+      a small picker back into `connections-page.tsx` (an earlier design
+      pass already worked out that UI — segmented pills above the Sign In
+      button), and thread the picked environment's id through
+      `ConnectionsStore`'s single-session model, which currently assumes
+      exactly one.
 
 ## Distribution / CI
 

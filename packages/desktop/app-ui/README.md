@@ -20,10 +20,10 @@ not by Vite's own dev server; there is no dev server in this app).
   half-styled, this file — and a clean rebuild (`rm -rf dist-app-ui
   node_modules/.vite`) — is the first thing to check.**
 - **`App.tsx`** — the top-level router. On mount, asks the main process
-  (via `preload.ts`'s bridge) whether a connection is currently selected:
-  - No connection → renders `ConnectionsPage` full-screen.
-  - Connection present → calls `Env.update({ MODULE })`, wraps everything
-    in `<InsightProvider>`, and renders `TitleBar` + `ChatShell`. Also owns
+  (via `preload.ts`'s bridge) for `getEnvironment()`/`isSignedIn()`:
+  - Not signed in → renders `ConnectionsPage` full-screen (the sign-in gate).
+  - Signed in → calls `Env.update({ MODULE })`, wraps everything in
+    `<InsightProvider>`, and renders `TitleBar` + `ChatShell`. Also owns
     `sidebarOpen` and the `SettingsDialog`'s open/tab state, since both the
     title bar and the sidebar footer need to reach it.
 - **`chat-shell.tsx`** — the actual chat UI. Deliberately composed by hand
@@ -41,8 +41,7 @@ not by Vite's own dev server; there is no dev server in this app).
     via `usePixel("GetUserInfo();")`.
 - **`title-bar.tsx`** — the single draggable strip (see the root README's
   "custom, seamless title bar" section). Holds the sidebar-collapse toggle
-  and the current-connection button (opens Settings on the Connections
-  tab).
+  and the current-connection button (opens Settings on the Account tab).
 - **`sidebar-footer.tsx`** — the "Settings" entry pinned under
   `RoomSidebar`, Claude/ChatGPT-Desktop style. `RoomSidebar` itself bakes in
   its own width/border/search-box/new-chat-button, so this — and
@@ -52,14 +51,18 @@ not by Vite's own dev server; there is no dev server in this app).
   its `className` prop (tailwind-merge resolves the conflict in the
   caller's favor).
 - **`settings-dialog.tsx`** — Appearance (Light/Dark/System via
-  `@semoss/ui/next`'s `useTheme`) + Connections (reuses `connections-page.tsx`
-  in its compact variant) tabs.
-- **`connections-page.tsx`** — add/remove/switch saved SEMOSS environments.
-  Rendered full-screen on first run and inside the Settings dialog
-  otherwise (`variant="full" | "compact"`). Talks to the main process only
-  via `window.semossDesktop.connections.*` (see `preload.ts`) — never
-  touches `@semoss/sdk` directly, since it doesn't need a connection to
-  exist yet.
+  `@semoss/ui/next`'s `useTheme`) + Account (reuses `connections-page.tsx`
+  in its compact variant — alias + Sign Out) tabs.
+- **`connections-page.tsx`** — the sign-in gate. `variant="full"`
+  (full-screen, before a session exists) is the split-layout sign-in screen
+  — "AI Core" mark, "Welcome back," a single Sign In button, the real
+  playground login illustration (`assets/img/login.svg`/`login-darkmode.png`)
+  on a decorative cycling-prompt card. `variant="compact"` (inside the
+  Settings dialog, already signed in) is just the environment alias + a
+  Sign Out button — there's nothing to add/remove/switch since there's only
+  one build-configured environment. Talks to the main process only via
+  `window.semossDesktop.connections.*` (see `preload.ts`) — never touches
+  `@semoss/sdk` directly, since it doesn't need a session to exist yet.
 - **`semoss-icon.tsx`** — the SEMOSS mark, vendored as a local component
   rather than imported from `@semoss/shared`'s `"./assets/img/*"` export,
   because that export maps to an extensionless source path Vite resolves
@@ -70,7 +73,7 @@ not by Vite's own dev server; there is no dev server in this app).
 ## Cross-package imports you'll notice
 
 Several files here `import` directly from `../../electron/*` (e.g.
-`ConnectionRecord` from `electron/connections/types.ts`, `APP_NAME` from
+`EnvironmentConfig` from `electron/connections/types.ts`, `APP_NAME` from
 `electron/app-info.ts`). That's intentional — both tsconfigs (`tsconfig.json`
 for this Vite build, `tsconfig.electron.json` for the Node build) include
 those specific files, so it's real, type-checked sharing across the

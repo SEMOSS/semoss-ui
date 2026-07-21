@@ -15,7 +15,7 @@ import { ConnectionsPage } from "./connections-page";
 
 const THEME_OPTIONS: Theme[] = ["light", "dark", "system"];
 
-export type SettingsTab = "appearance" | "connections";
+export type SettingsTab = "appearance" | "account";
 
 export interface SettingsDialogProps {
 	open: boolean;
@@ -39,9 +39,7 @@ export const SettingsDialog = ({
 				<Tabs defaultValue={defaultTab}>
 					<TabsList>
 						<TabsTrigger value="appearance">Appearance</TabsTrigger>
-						<TabsTrigger value="connections">
-							Connections
-						</TabsTrigger>
+						<TabsTrigger value="account">Account</TabsTrigger>
 					</TabsList>
 					<TabsContent
 						value="appearance"
@@ -73,7 +71,7 @@ export const SettingsDialog = ({
 							</div>
 						</div>
 					</TabsContent>
-					<TabsContent value="connections" className="pt-2">
+					<TabsContent value="account" className="pt-2">
 						<ConnectionsPage variant="compact" />
 					</TabsContent>
 				</Tabs>

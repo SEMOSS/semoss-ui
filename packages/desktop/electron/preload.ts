@@ -1,8 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
-import type {
-	ConnectionRecord,
-	NewKeysConnectionInput,
-} from "./connections/types";
+import type { EnvironmentConfig } from "./connections/types";
 
 /**
  * Deliberately NOT imported from ./connections/ipc-channels.ts (main.ts's
@@ -17,46 +14,35 @@ import type {
  * registrations by hand.
  */
 const CONNECTIONS_IPC_CHANNELS = {
-	list: "connections:list",
-	getCurrentId: "connections:getCurrentId",
-	add: "connections:add",
-	remove: "connections:remove",
-	select: "connections:select",
+	getEnvironment: "connections:getEnvironment",
+	isSignedIn: "connections:isSignedIn",
 	beginBrowserLogin: "connections:beginBrowserLogin",
 	completeBrowserLogin: "connections:completeBrowserLogin",
 	cancelBrowserLogin: "connections:cancelBrowserLogin",
+	signOut: "connections:signOut",
 } as const;
 
 export interface DesktopBridge {
 	connections: {
-		list(): Promise<ConnectionRecord[]>;
-		getCurrentId(): Promise<string | null>;
-		add(input: NewKeysConnectionInput): Promise<ConnectionRecord>;
-		remove(id: string): Promise<void>;
-		select(id: string): Promise<void>;
-		beginBrowserLogin(input: {
-			alias: string;
-			instanceUrl: string;
-			modulePath: string;
-		}): Promise<string>;
-		completeBrowserLogin(loginId: string): Promise<ConnectionRecord>;
+		/** The one build-configured SEMOSS environment (alias/instanceUrl/
+		 * modulePath) — read-only, nothing here is user-editable. */
+		getEnvironment(): Promise<EnvironmentConfig>;
+		isSignedIn(): Promise<boolean>;
+		beginBrowserLogin(): Promise<string>;
+		completeBrowserLogin(loginId: string): Promise<void>;
 		cancelBrowserLogin(loginId: string): Promise<void>;
+		signOut(): Promise<void>;
 	};
 }
 
 const api: DesktopBridge = {
 	connections: {
-		list: () => ipcRenderer.invoke(CONNECTIONS_IPC_CHANNELS.list),
-		getCurrentId: () =>
-			ipcRenderer.invoke(CONNECTIONS_IPC_CHANNELS.getCurrentId),
-		add: (input) => ipcRenderer.invoke(CONNECTIONS_IPC_CHANNELS.add, input),
-		remove: (id) => ipcRenderer.invoke(CONNECTIONS_IPC_CHANNELS.remove, id),
-		select: (id) => ipcRenderer.invoke(CONNECTIONS_IPC_CHANNELS.select, id),
-		beginBrowserLogin: (input) =>
-			ipcRenderer.invoke(
-				CONNECTIONS_IPC_CHANNELS.beginBrowserLogin,
-				input,
-			),
+		getEnvironment: () =>
+			ipcRenderer.invoke(CONNECTIONS_IPC_CHANNELS.getEnvironment),
+		isSignedIn: () =>
+			ipcRenderer.invoke(CONNECTIONS_IPC_CHANNELS.isSignedIn),
+		beginBrowserLogin: () =>
+			ipcRenderer.invoke(CONNECTIONS_IPC_CHANNELS.beginBrowserLogin),
 		completeBrowserLogin: (loginId) =>
 			ipcRenderer.invoke(
 				CONNECTIONS_IPC_CHANNELS.completeBrowserLogin,
@@ -67,6 +53,7 @@ const api: DesktopBridge = {
 				CONNECTIONS_IPC_CHANNELS.cancelBrowserLogin,
 				loginId,
 			),
+		signOut: () => ipcRenderer.invoke(CONNECTIONS_IPC_CHANNELS.signOut),
 	},
 };
 
