@@ -229,3 +229,173 @@ PLAN.md for the exact values pulled from `response-message.tsx`,
 `lucide-react` (already a dependency of `@semoss/ui`, so nothing new to the
 monorepo) supplies icons (`Spinner`'s `Loader2Icon`, `ChatInput`'s
 `SendIcon`).
+
+## Imperative API
+
+The imperative API lets you send messages and target chat sessions from
+**completely outside React** — no hooks, no `useChatContext`, no component
+tree. The common use cases are:
+
+- A background task (file upload complete, workflow step finished) wants to
+  notify the active chat session
+- A non-React part of your app (a vanilla JS widget, a browser extension
+  content script) needs to post a message
+- An E2E test wants to drive the chat without simulating UI events
+
+```ts
+import {
+  sendToActiveChat,
+  sendToActiveRoom,
+  getActiveChatRoomId,
+  registerChatStore,
+  setActiveChatStore,
+  setActiveChatRoom,
+} from "@semoss/chat";
+```
+
+`ChatProvider` (and `ChatPanel`, which wraps one) **automatically registers
+its store and marks it as active** when it mounts — you don't need to call
+`registerChatStore` yourself for the normal case. Just mount the provider
+and call the imperatives:
+
+```tsx
+// 1. Mount a provider somewhere in your app
+<ChatProvider options={{ engineId: "your-engine-id" }}>
+  <App />
+</ChatProvider>
+
+// 2. Call from anywhere — no React context needed
+import { sendToActiveChat } from "@semoss/chat";
+
+button.addEventListener("click", async () => {
+  await sendToActiveChat("Summarise the selected text");
+});
+```
+
+### Managing multiple sessions
+
+When several `ChatProvider` instances are mounted at once (e.g. a sidebar
+session and an inline assistant), the **last one to mount with
+`isActive={true}` (the default)** becomes the active target. You can take
+manual control:
+
+```ts
+import { setActiveChatRoom, sendToActiveRoom } from "@semoss/chat";
+
+// Target a specific room by its ID
+setActiveChatRoom(roomId);
+await sendToActiveChat("Hello from outside React");
+
+// Or send directly without changing the global active store
+await sendToActiveRoom(roomId, "Hello from outside React");
+```
+
+### Polling the active room ID
+
+```ts
+import { getActiveChatRoomId } from "@semoss/chat";
+
+const id = getActiveChatRoomId(); // null until the first message is sent
+```
+
+---
+
+## Integration patterns
+
+These patterns are deliberately **not exported** from the package — they're
+opinionated about app-level layout and every host app will want to adapt
+them. Copy, modify, and own them.
+
+### Global chat sidebar
+
+A layout wrapper that adds a persistent chat panel as a real flex sibling
+(not an overlay) so it pushes content rather than covering it. Wires
+`useChatContext` for the live message feed and auto-opens whenever a new
+message arrives — so calling `sendToActiveChat` from anywhere in the app
+pops the panel open automatically.
+
+```tsx
+// components/global-chat-layout.tsx
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import { useChatContext } from "@semoss/chat";
+import { ChatInput, MessageList } from "@semoss/chat/components";
+
+export const GlobalChatLayout = ({ children }: { children: ReactNode }) => {
+  const { messages, isTyping, sendMessage } = useChatContext();
+  const [open, setOpen] = useState(false);
+  const prevCountRef = useRef(messages.length);
+
+  // Auto-open when a new message arrives (e.g. via sendToActiveChat)
+  useEffect(() => {
+    if (messages.length > prevCountRef.current) setOpen(true);
+    prevCountRef.current = messages.length;
+  }, [messages.length]);
+
+  useEffect(() => {
+    if (isTyping) setOpen(true);
+  }, [isTyping]);
+
+  return (
+    <div className="flex min-h-screen">
+      {open && (
+        <div className="sticky top-0 flex h-screen w-80 shrink-0 flex-col border-r">
+          <div className="flex items-center justify-between border-b px-4 py-3">
+            <span className="font-semibold text-sm">Chat</span>
+            <button onClick={() => setOpen(false)}>✕</button>
+          </div>
+          <MessageList className="min-h-0 flex-1 p-3" />
+          <div className="border-t p-3">
+            <ChatInput onSubmit={sendMessage} isGenerating={isTyping} />
+          </div>
+        </div>
+      )}
+      <div className="min-w-0 flex-1">{children}</div>
+    </div>
+  );
+};
+
+// App.tsx — wrap your router
+<ChatProvider options={{ engineId }}>
+  <GlobalChatLayout>
+    <Router />
+  </GlobalChatLayout>
+</ChatProvider>
+```
+
+Things you'll likely adapt: panel side (left vs right), width, header
+content, open/close trigger, animation.
+
+### Selection-to-chat button
+
+`SelectionChatButton` **is exported** from `@semoss/chat/components` — it
+requires no layout coupling and works as a drop-in anywhere:
+
+```tsx
+import { SelectionChatButton } from "@semoss/chat/components";
+
+// Drop inside your ChatProvider — no other wiring needed
+<ChatProvider options={{ engineId }}>
+  <SelectionChatButton />   {/* highlight any text → pill button appears */}
+  <App />
+</ChatProvider>
+```
+
+When the user highlights text anywhere on the page, a floating pill button
+appears above the selection. Clicking it calls `sendToActiveChat` with the
+selected text and clears the selection. The button disappears automatically
+when the selection is cleared.
+
+**Props** — all optional:
+
+```tsx
+<SelectionChatButton
+  label="Ask AI about this"        // default: "Send to chat"
+  icon={<SparklesIcon />}           // default: MessageSquareTextIcon; pass null to hide
+  className="bg-primary text-primary-foreground border-primary"  // merged onto pill
+  zIndex={9999}                     // default: 9999
+/>
+```
+
+The button uses `onMouseDown` + `preventDefault` internally so the selection
+is never cleared before the text is captured — no special handling needed on
+your side.
