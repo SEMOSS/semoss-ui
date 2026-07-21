@@ -13,7 +13,11 @@ export {
 	setActiveChatRoom,
 	setActiveChatStore,
 } from "./chat-imperative";
-export type { ChatDefaultRoomSettings, ChatOptions } from "./chat-options";
+export type {
+	ChatDefaultRoomSettings,
+	ChatOptions,
+	LocalToolResult,
+} from "./chat-options";
 export { ChatProvider, useChatContext, useChatStore } from "./chat-provider";
 export {
 	ChatRoomsProvider,
@@ -48,4 +52,5 @@ export type {
 	MCPConfig,
 	ProjectDependency,
 	RoomSummary,
+	ToolCall,
 } from "./types";

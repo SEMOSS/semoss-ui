@@ -318,6 +318,62 @@ describe("ChatSession.sendMessage", () => {
 		).toMatchObject({ status: "error", output: "tool boom" });
 	});
 
+	it("resolves a tool call via localToolExecutor and skips runMcpTool when handled", async () => {
+		askPlayground.mockImplementation(streamed([], toolCallResponse()));
+		addPlaygroundToolExecution.mockImplementation(
+			streamed(
+				[contentChunk("local result")],
+				textResponse("local result", "msg-2"),
+			),
+		);
+		const localToolExecutor = vi
+			.fn()
+			.mockResolvedValue({ handled: true, result: { local: true } });
+		const session = new ChatSession(actions, insightId, {
+			...baseOptions,
+			localToolExecutor,
+		});
+
+		await session.sendMessage("do the thing");
+
+		expect(localToolExecutor).toHaveBeenCalledWith(
+			expect.objectContaining({ id: "tool-1", name: "doThing" }),
+		);
+		expect(runMcpTool).not.toHaveBeenCalled();
+		expect(addPlaygroundToolExecution).toHaveBeenCalledWith(
+			insightId,
+			expect.objectContaining({
+				toolExecutionResponse: JSON.stringify({ local: true }),
+			}),
+			expect.any(Function),
+		);
+		const assistantMessage = session.messages.at(-1);
+		expect(assistantMessage?.parts[1]).toMatchObject({
+			type: "tool_result",
+			status: "success",
+		});
+	});
+
+	it("falls through to runMcpTool when localToolExecutor reports handled: false", async () => {
+		askPlayground.mockImplementation(streamed([], toolCallResponse()));
+		addPlaygroundToolExecution.mockImplementation(
+			streamed([], textResponse("done", "msg-2")),
+		);
+		const localToolExecutor = vi.fn().mockResolvedValue({ handled: false });
+		const session = new ChatSession(actions, insightId, {
+			...baseOptions,
+			localToolExecutor,
+		});
+
+		await session.sendMessage("do the thing");
+
+		expect(localToolExecutor).toHaveBeenCalledTimes(1);
+		expect(runMcpTool).toHaveBeenCalledWith(
+			actions,
+			expect.objectContaining({ projectId: "project-1" }),
+		);
+	});
+
 	it("stops after toolAutoExecutionLimit rounds and marks the message as error", async () => {
 		askPlayground.mockImplementation(streamed([], toolCallResponse()));
 		addPlaygroundToolExecution.mockImplementation(

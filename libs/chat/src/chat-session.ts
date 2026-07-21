@@ -565,11 +565,15 @@ export class ChatSession {
 
 		let toolResult: unknown;
 		try {
-			toolResult = await runMcpTool(this.actions, {
-				projectId,
-				functionName: toolCall.name,
-				paramValues: toolCall.arguments,
-			});
+			const localOutcome =
+				await this.options.localToolExecutor?.(toolCall);
+			toolResult = localOutcome?.handled
+				? localOutcome.result
+				: await runMcpTool(this.actions, {
+						projectId,
+						functionName: toolCall.name,
+						paramValues: toolCall.arguments,
+					});
 		} catch (err) {
 			const errMessage = this.getMessage(assistantMessageId);
 			if (errMessage) {

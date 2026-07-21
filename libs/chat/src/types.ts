@@ -217,6 +217,9 @@ export interface PixelMessageToolCallPart {
 	};
 }
 
+/** The `toolCall` payload of a PixelMessageToolCallPart, pulled out as its own name so callers (e.g. ChatOptions.localToolExecutor) don't have to index through the part type. */
+export type ToolCall = PixelMessageToolCallPart["toolCall"];
+
 export interface PixelMessageOtherPart {
 	type: string;
 }

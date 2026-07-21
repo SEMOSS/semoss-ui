@@ -12,10 +12,11 @@ import {
 	useTheme,
 } from "@semoss/ui/next";
 import { ConnectionsPage } from "./connections-page";
+import { LocalFilesSettings } from "./local-fs/local-files-settings";
 
 const THEME_OPTIONS: Theme[] = ["light", "dark", "system"];
 
-export type SettingsTab = "appearance" | "account";
+export type SettingsTab = "appearance" | "localFiles" | "account";
 
 export interface SettingsDialogProps {
 	open: boolean;
@@ -39,6 +40,9 @@ export const SettingsDialog = ({
 				<Tabs defaultValue={defaultTab}>
 					<TabsList>
 						<TabsTrigger value="appearance">Appearance</TabsTrigger>
+						<TabsTrigger value="localFiles">
+							Local Files
+						</TabsTrigger>
 						<TabsTrigger value="account">Account</TabsTrigger>
 					</TabsList>
 					<TabsContent
@@ -70,6 +74,9 @@ export const SettingsDialog = ({
 								))}
 							</div>
 						</div>
+					</TabsContent>
+					<TabsContent value="localFiles">
+						<LocalFilesSettings />
 					</TabsContent>
 					<TabsContent value="account" className="pt-2">
 						<ConnectionsPage variant="compact" />

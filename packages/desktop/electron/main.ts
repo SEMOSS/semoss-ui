@@ -18,6 +18,14 @@ import {
 import { CONNECTIONS_IPC_CHANNELS } from "./connections/ipc-channels";
 import { ConnectionsStore } from "./connections/store";
 import { getIconPath } from "./icon-path";
+import { AllowlistStore } from "./local-fs/allowlist-store";
+import { LOCAL_FS_IPC_CHANNELS } from "./local-fs/ipc-channels";
+import {
+	isPathAllowed,
+	resolveContainingDirectory,
+} from "./local-fs/path-guard";
+import { executeLocalFsTool } from "./local-fs/tools";
+import type { LocalFsToolName } from "./local-fs/types";
 import {
 	type LocalServerHandle,
 	startLocalServer,
@@ -38,6 +46,7 @@ const LOAD_FAILURE_DIALOG_BUTTONS = {
 } as const;
 
 let connectionsStore: ConnectionsStore;
+let allowlistStore: AllowlistStore;
 let mainWindow: BrowserWindow | null = null;
 let localServer: LocalServerHandle | null = null;
 
@@ -183,6 +192,39 @@ function registerIpcHandlers(): void {
 		connectionsStore.signOut();
 		await launchCurrentConnection();
 	});
+
+	ipcMain.handle(LOCAL_FS_IPC_CHANNELS.listAllowedDirectories, () =>
+		allowlistStore.list(),
+	);
+	ipcMain.handle(LOCAL_FS_IPC_CHANNELS.addAllowedDirectory, async () => {
+		if (!mainWindow) {
+			return allowlistStore.list();
+		}
+		const { canceled, filePaths } = await dialog.showOpenDialog(
+			mainWindow,
+			{ properties: ["openDirectory", "createDirectory"] },
+		);
+		if (canceled || !filePaths[0]) {
+			return allowlistStore.list();
+		}
+		return allowlistStore.add(filePaths[0]);
+	});
+	ipcMain.handle(
+		LOCAL_FS_IPC_CHANNELS.removeAllowedDirectory,
+		(_event, directoryPath: string) => allowlistStore.remove(directoryPath),
+	);
+	ipcMain.handle(
+		LOCAL_FS_IPC_CHANNELS.executeTool,
+		(_event, tool: LocalFsToolName, args: Record<string, unknown>) =>
+			executeLocalFsTool(tool, args, allowlistStore.list()),
+	);
+	ipcMain.handle(
+		LOCAL_FS_IPC_CHANNELS.isPathAllowed,
+		(_event, path: string) => isPathAllowed(path, allowlistStore.list()),
+	);
+	ipcMain.handle(LOCAL_FS_IPC_CHANNELS.allowPath, (_event, path: string) =>
+		allowlistStore.add(resolveContainingDirectory(path)),
+	);
 }
 
 function buildAppMenu(): void {
@@ -202,6 +244,7 @@ app.setName(APP_NAME);
 
 app.whenReady().then(async () => {
 	connectionsStore = new ConnectionsStore(app.getPath("userData"));
+	allowlistStore = new AllowlistStore(app.getPath("userData"));
 	registerIpcHandlers();
 	buildAppMenu();
 

@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	ChatProvider,
 	ChatRoomsProvider,
 	type Engine,
 	getActiveChatRoomId,
+	type MCPConfig,
 	useChatContext,
 	useChatRoomsContext,
 } from "@semoss/chat";
@@ -17,7 +18,16 @@ import {
 } from "@semoss/chat/components";
 import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import { Spinner } from "@semoss/ui/next";
+import { useLocalFsPermissionGate } from "./local-fs/permission-gate";
+import { createLocalFsToolExecutor } from "./local-fs/tool-executor";
 import { SidebarFooter } from "./sidebar-footer";
+
+/** engine_type this app's provisioned "Local Filesystem" MCP toolbox is
+ * expected to be registered as — see electron/connections/types.ts's
+ * `localFilesystemToolboxProjectId` doc comment for what "provisioned"
+ * means here. */
+const LOCAL_FILESYSTEM_TOOLBOX_TYPE: MCPConfig["type"] = "FUNCTION";
+const LOCAL_FILESYSTEM_TOOLBOX_NAME = "Local Filesystem";
 
 export interface ChatShellProps {
 	sidebarOpen: boolean;
@@ -49,8 +59,32 @@ const ChatShellInner = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => {
 	// in-flight local state — which is exactly what made the first message
 	// appear to vanish until a second send forced a fresh render.
 	const [liveRoomId, setLiveRoomId] = useState<string | null>(null);
+	const [toolboxProjectId, setToolboxProjectId] = useState<
+		string | undefined
+	>(undefined);
 	const roomsList = useChatRoomsContext();
 	const { setSearch } = roomsList;
+	const permissionGate = useLocalFsPermissionGate();
+
+	// Fetched once per app session, not per room — this is a one-time,
+	// per-instance provisioning value (see electron/connections/types.ts's
+	// `localFilesystemToolboxProjectId` doc comment), never user-editable.
+	useEffect(() => {
+		void window.semossDesktop.connections
+			.getEnvironment()
+			.then((env) =>
+				setToolboxProjectId(env.localFilesystemToolboxProjectId),
+			);
+	}, []);
+
+	const localToolExecutor = useMemo(
+		() =>
+			createLocalFsToolExecutor(
+				toolboxProjectId,
+				permissionGate.requestPermission,
+			),
+		[toolboxProjectId, permissionGate.requestPermission],
+	);
 
 	// Same MyEngines query EngineSelect itself runs under the hood (see
 	// libs/shared/src/components/engine/engine-select.tsx), called directly
@@ -144,11 +178,13 @@ const ChatShellInner = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => {
 						options={{
 							engineId: engine.engine_id,
 							roomId: activeRoomId ?? undefined,
+							localToolExecutor,
 						}}
 					>
 						<RoomContent
 							engine={engine}
 							onEngineChange={setEngine}
+							toolboxProjectId={toolboxProjectId}
 						/>
 					</ChatProvider>
 				) : enginesErrored ? (
@@ -171,6 +207,7 @@ const ChatShellInner = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => {
 					</div>
 				)}
 			</main>
+			{permissionGate.dialog}
 		</div>
 	);
 };
@@ -178,9 +215,11 @@ const ChatShellInner = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => {
 const RoomContent = ({
 	engine,
 	onEngineChange,
+	toolboxProjectId,
 }: {
 	engine: Engine;
 	onEngineChange: (engine: Engine) => void;
+	toolboxProjectId: string | undefined;
 }) => {
 	const { messages, isTyping, isLoadingHistory, mcp, setMcp, sendMessage } =
 		useChatContext();
@@ -198,6 +237,31 @@ const RoomContent = ({
 			userInfo.data.NATIVE ??
 			Object.values(userInfo.data)[0])
 		: undefined;
+
+	// Pre-attaches the Local Filesystem toolbox to every room automatically
+	// — the user shouldn't have to open the MCP menu and add it by hand in
+	// every single room for a capability the app itself provides. Waits for
+	// isLoadingHistory to clear so a resumed room's real saved mcp list
+	// (not yet loaded) can't be raced/clobbered; guards on the toolbox
+	// entry already being present so this only ever appends once per room,
+	// never loops (setMcp updates `mcp`, the effect re-runs, sees the entry
+	// and returns).
+	useEffect(() => {
+		if (isLoadingHistory || !toolboxProjectId) {
+			return;
+		}
+		if (mcp.some((entry) => entry.id === toolboxProjectId)) {
+			return;
+		}
+		void setMcp([
+			...mcp,
+			{
+				type: LOCAL_FILESYSTEM_TOOLBOX_TYPE,
+				id: toolboxProjectId,
+				name: LOCAL_FILESYSTEM_TOOLBOX_NAME,
+			},
+		]);
+	}, [isLoadingHistory, toolboxProjectId, mcp, setMcp]);
 
 	const handleSubmit = (text: string) => {
 		setComposerValue("");

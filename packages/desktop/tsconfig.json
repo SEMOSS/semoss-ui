@@ -21,7 +21,8 @@
 	"include": [
 		"app-ui/src",
 		"electron/connections/types.ts",
-		"electron/app-info.ts"
+		"electron/app-info.ts",
+		"electron/local-fs/types.ts"
 	],
 	"exclude": ["dist-app-ui", "dist-electron", "node_modules"]
 }
