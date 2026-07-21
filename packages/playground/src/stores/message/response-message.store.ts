@@ -9,9 +9,6 @@ import { download } from "@semoss/sdk/react";
 import {
 	MCP_EXECUTION_AUTO,
 	STREAMING_PLACEHOLDER_ID,
-	TOOL_CANCELLATION_PROMPT,
-	TOOL_ERROR_PROMPT,
-	TOOL_OUTPUT_UNREADABLE_PROMPT,
 	TURN_CANCELLATION_PROMPT,
 } from "@/constants";
 import type { ToolStore } from "@/stores";
@@ -19,22 +16,9 @@ import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
 import { AbstractMessageStore } from "./abstract-message.store";
 import { runAgentMessage } from "./agent-harness";
 import { InputMessageStore } from "./input-message.store";
+import { ToolSaveController } from "./tool-save-controller";
 import { applyToolStreamChunk } from "./tool-stream";
-import { createMessageStore } from "./utility";
-
-/**
- * Shape returned by the cancel-commit pixels (AskPlayground /
- * AddPlaygroundToolExecution with `responseParts`): the visible pair plus any
- * hidden (invisible) input/response pairs the backend appended alongside it.
- */
-interface CancelCommitOutput {
-	inputMessage: InputPixelMessage;
-	responseMessage: ResponsePixelMessage;
-	extraMessages: {
-		inputMessage: InputPixelMessage;
-		responseMessage: ResponsePixelMessage;
-	}[];
-}
+import { type CancelCommitOutput, spliceHiddenMessages } from "./utility";
 
 /**
  * Response Message Store
@@ -53,12 +37,10 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	isThinking: boolean = false;
 
 	/**
-	 * Guards the tool-execution cancel commit: every in-flight tool stream
-	 * carries an onCancel, but only the first should persist the stopped turn.
-	 * Scoped to this response (each turn is its own store), so it never leaks
-	 * across turns.
+	 * Serializes and coalesces this response's tool-result writes (and owns the
+	 * tool-phase stop). Extracted for size; see {@link ToolSaveController}.
 	 */
-	private cancelCommitted: boolean = false;
+	private readonly toolSaves = new ToolSaveController(this);
 
 	/**
 	 * Response to an execution
@@ -373,178 +355,17 @@ paramValues=[${JSON.stringify({
 			inputMessage.sync(output.inputMessage);
 			responseMessage.sync(output.responseMessage);
 
-			this.spliceHiddenMessages(responseMessage, output.extraMessages);
+			spliceHiddenMessages(responseMessage, output.extraMessages);
 		} catch (e) {
 			console.error("Failed to record cancelled turn", e);
 		}
 	};
 
 	/**
-	 * Commit a stopped tool-execution turn. Every in-flight
-	 * AddPlaygroundToolExecution stream carries this onCancel, but only one
-	 * should persist — the single-commit guard ensures the first to fire wins
-	 * (in practice the sole streaming job, since the backend only streams once
-	 * every tool result is recorded). Replays the same params plus responseParts
-	 * (what streamed) and a hiddenMessage note; commits an empty response when
-	 * the user stopped before anything streamed.
+	 * Hard-stop the tool phase — see {@link ToolSaveController.cancelPending}.
+	 * Called by the room when the user stops with tool calls still outstanding.
 	 */
-	private recordCancelledToolExecution = async (
-		toolExecParams: string,
-		responseMessage: ResponseMessageStore,
-	): Promise<void> => {
-		if (this.cancelCommitted) {
-			return;
-		}
-		this.cancelCommitted = true;
-
-		const room = this.room;
-
-		try {
-			const response = await room.runRoomPixel<[CancelCommitOutput]>(
-				`AddPlaygroundToolExecution(${toolExecParams}, responseParts=${JSON.stringify(responseMessage.parts)}, hiddenMessage=["<encode>${TURN_CANCELLATION_PROMPT}</encode>"]);`,
-			);
-
-			const { output } = response.pixelReturn[0];
-
-			responseMessage.sync(output.responseMessage);
-			// No INPUT_TOOL_EXEC message store exists; stamp the server's
-			// cumulative input token count onto this response as a proxy (matches
-			// the live tool-exec onResult path).
-			runInAction(() => {
-				this.tokens = output.inputMessage.tokens;
-			});
-
-			this.spliceHiddenMessages(responseMessage, output.extraMessages);
-
-			this.toolResponseMessage = null;
-		} catch (e) {
-			console.error("Failed to record cancelled tool execution", e);
-		}
-	};
-
-	/**
-	 * Splice the backend's hidden (invisible) input/response pair(s) into the
-	 * tree in conversation order, parented under `parent`. They aren't rendered,
-	 * but joining the tree keeps `tail` — and thus the next message's parent —
-	 * aligned with the backend's provider history.
-	 */
-	private spliceHiddenMessages = (
-		parent: AbstractMessageStore,
-		extraMessages: CancelCommitOutput["extraMessages"] | undefined,
-	): void => {
-		let cursor = parent;
-		for (const pair of extraMessages ?? []) {
-			const hiddenInput = createMessageStore(
-				this.room,
-				pair.inputMessage,
-			);
-			const hiddenResponse = createMessageStore(
-				this.room,
-				pair.responseMessage,
-			);
-			cursor.addChild(hiddenInput);
-			hiddenInput.addChild(hiddenResponse);
-			cursor = hiddenResponse;
-		}
-	};
-
-	/**
-	 * Hard-stop the tool phase: cancel every still-pending tool for this
-	 * response without running it, and close the turn out with no model
-	 * follow-up. Each outstanding tool is marked CANCELLED up front — beyond the
-	 * UI, that trips saveToolExecution's completed-status guard, so an in-flight
-	 * RunMCPTool result that lands after the stop is dropped. Then one pixel
-	 * records a cancelled result per tool (statements run in order server-side);
-	 * the last carries responseParts=[] + hiddenMessage so the reactor takes the
-	 * prebuilt/no-LLM branch and notes the stop for the next turn.
-	 */
-	cancelPendingTools = async (): Promise<void> => {
-		const room = this.room;
-
-		const pending: ToolStore[] = [];
-		for (const part of this.parts) {
-			if (part.type === "TOOL_CALL") {
-				const tool = room.getTool(part.toolCall.id);
-				if (
-					tool &&
-					(tool.status === "INITIAL" || tool.status === "LOADING")
-				) {
-					pending.push(tool);
-				}
-			}
-		}
-		if (pending.length === 0) {
-			return;
-		}
-
-		runInAction(() => {
-			for (const tool of pending) {
-				tool.response = TOOL_CANCELLATION_PROMPT;
-				tool.status = "CANCELLED";
-			}
-		});
-
-		const toolStatement = (tool: ToolStore, extra: string) =>
-			`AddPlaygroundToolExecution(engine=["${room.model.app_id}"],
-roomId=["${room.roomId}"],
-${this.id ? `parentMessageId=["${this.id}"],` : ""}
-toolId=["${tool.id}"],
-toolName=["${tool.json.name}"],
-toolExecutionResponse=["<encode>${TOOL_CANCELLATION_PROMPT}</encode>"],
-paramValues=[${JSON.stringify({})}],
-mcpToolStatus="cancelled",
-toolParameterValues=[${JSON.stringify({})}]${extra});`;
-
-		const pixel = pending
-			.map((tool, i) =>
-				toolStatement(
-					tool,
-					i === pending.length - 1
-						? `, responseParts=[], hiddenMessage=["<encode>${TURN_CANCELLATION_PROMPT}</encode>"]`
-						: "",
-				),
-			)
-			.join("\n");
-
-		try {
-			const response =
-				await room.runRoomPixel<CancelCommitOutput[]>(pixel);
-			const { output } =
-				response.pixelReturn[response.pixelReturn.length - 1];
-
-			// Represent the committed (empty) follow-up + hidden pair in the tree
-			// so tail — and the next message's parent — stays aligned with the
-			// backend's provider history.
-			const followUp =
-				this.toolResponseMessage ??
-				new ResponseMessageStore(room, {
-					io: "OUTPUT",
-					messageId: STREAMING_PLACEHOLDER_ID,
-					visible: true,
-					platform_generated: true,
-					modelId: room.model.app_id,
-					dateCreated: new Date().toISOString(),
-					parts: [],
-					tokens: 0,
-					ornaments: {
-						modelName:
-							room.model.engine_display_name ||
-							room.model.app_name,
-					},
-				} as ResponsePixelMessage);
-			if (!this.toolResponseMessage) {
-				this.addChild(followUp);
-			}
-			followUp.sync(output.responseMessage);
-			runInAction(() => {
-				followUp.isThinking = false;
-			});
-			this.spliceHiddenMessages(followUp, output.extraMessages);
-			this.toolResponseMessage = null;
-		} catch (e) {
-			console.error("Failed to cancel pending tools", e);
-		}
-	};
+	cancelPendingTools = (): Promise<void> => this.toolSaves.cancelPending();
 
 	/**
 	 * Append a message part during streaming
@@ -842,236 +663,23 @@ toolParameterValues=[${JSON.stringify({})}]${extra});`;
 	};
 
 	/**
-	 * Save a tool execution response
-	 * @param tool - tool to save
-	 * @param toolResponse - response of the tool
-	 * @param toolStatus - status of the tool
+	 * Queue a tool result to be written to room history — delegated to the
+	 * {@link ToolSaveController}, which serializes and coalesces the writes and
+	 * streams the final (model-invoking) one. Resolves when the batch carrying
+	 * this result settles.
 	 */
-	saveToolExecution = async (
+	saveToolExecution = (
 		tool: ToolStore,
 		toolResponse: string,
 		toolStatus: "success" | "error" | "cancelled" = "success",
 		executedParameters: Record<string, unknown>,
 		errorDuringSaving: boolean = false,
-	): Promise<void> => {
-		const room = this.room;
-
-		// wrap the message
-		if (toolStatus === "error") {
-			toolResponse = `${errorDuringSaving ? TOOL_OUTPUT_UNREADABLE_PROMPT : TOOL_ERROR_PROMPT}${toolResponse ? `\n\nError Details: ${toolResponse}` : ""}`;
-		} else if (toolStatus === "cancelled") {
-			toolResponse = `${TOOL_CANCELLATION_PROMPT}${toolResponse ? `\n\nCancellation Details: ${toolResponse}` : ""}`;
-		}
-
-		// skip if the tool is already completed
-		if (
-			tool.status === "SUCCESS" ||
-			tool.status === "CANCELLED" ||
-			tool.status === "ERROR"
-		) {
-			// this must be an outdated call, skip
-			return;
-		}
-
-		// save the response
-		runInAction(() => {
-			tool.response = toolResponse;
-			tool.parameters = executedParameters;
-			if (toolStatus === "success") {
-				tool.status = "SUCCESS";
-			} else if (toolStatus === "cancelled") {
-				tool.status = "CANCELLED";
-			} else if (toolStatus === "error") {
-				tool.status = "ERROR";
-			}
-		});
-
-		// if there is no responseMessage create it. This will hold it.
-		let responseMessage = this.toolResponseMessage;
-		if (!responseMessage) {
-			this.toolResponseMessage = new ResponseMessageStore(room, {
-				io: "OUTPUT",
-				messageId: STREAMING_PLACEHOLDER_ID,
-				visible: true,
-				platform_generated: true,
-				modelId: this.room.model.app_id,
-				dateCreated: new Date().toISOString(),
-				// Add blank thinking part for loading if this is the last tool
-				// We've already updated this tool's status optimistically, so can check
-				// hasUnfinishedTools to see if it was the last tool
-				parts: this.hasUnfinishedTools
-					? []
-					: [
-							{
-								type: "THINKING",
-								thinking: "",
-							},
-						],
-				tokens: 0,
-				ornaments: {
-					modelName:
-						room.model.engine_display_name || room.model.app_name,
-				},
-			} as ResponsePixelMessage);
-
-			// add as a child
-			this.addChild(this.toolResponseMessage);
-
-			// save it
-			responseMessage = this.toolResponseMessage;
-		}
-
-		type PartialResponse = {
-			responseMessage: string;
-		};
-		type TotalResponse = {
-			responseMessage: ResponsePixelMessage;
-			inputMessage: InputPixelMessage;
-		};
-
-		try {
-			// turn on thinking
-			responseMessage.isThinking = true;
-
-			// per-stream map from tool delta `index` → wire `id` for the post-exec stream
-			const toolStreamIndexToId: Record<number, string> = {};
-
-			// Shared param block for this tool-exec turn. On a stop,
-			// recordCancelledToolExecution must replay the exact same params, so
-			// both the live streaming call and the cancel-commit call are built
-			// from this single string — the cancel call just adds responseParts +
-			// hiddenMessage.
-			const toolExecParams = `engine=["${room.model.engine_id}"],
-roomId = ["${room.roomId}"],
-${this.id ? `parentMessageId=["${this.id}"],` : ""}
-toolId = ["${tool.id}"],
-toolName=["${tool.json.name}"],
-toolExecutionResponse=["<encode>${toolResponse}</encode>"],
-paramValues=[${JSON.stringify({})}],
-mcpToolStatus=${JSON.stringify(toolStatus)},
-toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]`;
-
-			// wait for the pixel to run
-			await room.runRoomPixelStreaming<[PartialResponse | TotalResponse]>(
-				`AddPlaygroundToolExecution(${toolExecParams});`,
-				{
-					onEmit: (chunk) => {
-						runInAction(() => {
-							if (chunk.stream_type === "content") {
-								if (chunk.data.content) {
-									responseMessage.savePart({
-										type: "TEXT",
-										text: chunk.data.content,
-										uiText: chunk.data.content,
-									});
-								}
-							} else if (chunk.stream_type === "thinking") {
-								if (chunk.data.thinking) {
-									responseMessage.savePart({
-										type: "THINKING",
-										thinking: chunk.data.thinking,
-									});
-								}
-							} else if (chunk.stream_type === "tool") {
-								applyToolStreamChunk(
-									responseMessage,
-									toolStreamIndexToId,
-									chunk.data,
-								);
-							} else {
-								console.error(`Unknown stream type`, chunk);
-							}
-						});
-					},
-					onResult: ({ results }) => {
-						const { output } = results[0];
-
-						// If the output is a string (as opposed to a tool response message), continue tool execution. Otherwise, create the response message
-						if (
-							typeof output === "string" ||
-							typeof output.responseMessage === "string"
-						) {
-							// Keep executing tools
-							this.continueToolExecution();
-						} else {
-							const inputMessage = (output as TotalResponse)
-								.inputMessage;
-
-							// create the response and link to the message
-							responseMessage.sync(output.responseMessage);
-
-							// We don't create INPUT_TOOL_EXEC messages, so stamp the server's cumulative
-							// input token count onto this response message as a proxy. tokensUsed() in
-							// room.store relies on finding a (cumulative, incremental) pair when walking back.
-							runInAction(() => {
-								this.tokens = inputMessage.tokens;
-							});
-
-							// start running tools if there are any
-							responseMessage.continueToolExecution();
-
-							// clear it
-							this.toolResponseMessage = null;
-						}
-					},
-					// The user stopped mid tool-execution response: persist what
-					// streamed, rather than treating it as a result or error.
-					onCancel: () =>
-						this.recordCancelledToolExecution(
-							toolExecParams,
-							responseMessage,
-						),
-				},
-				// If the tool execution succeeds but saving it failed, we will try to save it again with an error status, so dont error the room yet
-				{ setErrorOnFail: toolStatus !== "success" },
-			);
-		} catch (e) {
-			if (toolStatus === "success") {
-				// Attempt to save the error response
-
-				// set status back to loading so that the error response can be saved
-				runInAction(() => {
-					tool.status = "LOADING";
-				});
-
-				await this.saveToolExecution(
-					tool,
-					`Failed to save tool response: ${e}`,
-					"error",
-					executedParameters,
-					true,
-				);
-			} else {
-				// set error status
-				runInAction(() => {
-					tool.status = "ERROR";
-				});
-
-				// remove as a child
-				this.removeChild(responseMessage);
-
-				// clear it
-				this.toolResponseMessage = null;
-			}
-
-			throw e;
-		} finally {
-			// turn off thinking unless there are other tools still running
-			let hasOtherRunningTools = false;
-			for (const part of this.parts) {
-				if (part.type === "TOOL_CALL") {
-					const tool = this.room.getTool(part.toolCall.id);
-					if (tool && tool.status === "LOADING") {
-						hasOtherRunningTools = true;
-						break;
-					}
-				}
-			}
-			if (!hasOtherRunningTools) {
-				runInAction(() => {
-					responseMessage.isThinking = false;
-				});
-			}
-		}
-	};
+	): Promise<void> =>
+		this.toolSaves.save(
+			tool,
+			toolResponse,
+			toolStatus,
+			executedParameters,
+			errorDuringSaving,
+		);
 }

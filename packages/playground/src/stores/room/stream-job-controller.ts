@@ -35,6 +35,13 @@ export interface StreamOptions {
 	showLoading?: boolean;
 	/** Surface failures on the room rather than only throwing. Defaults true. */
 	setErrorOnFail?: boolean;
+	/**
+	 * When true (default), throw if the settled result carries statement errors.
+	 * Pass false for multi-statement pixels where the caller inspects the
+	 * per-statement `results` in onResult rather than getting an all-or-nothing
+	 * throw.
+	 */
+	throwOnError?: boolean;
 }
 
 interface StreamJobDeps {
@@ -92,7 +99,11 @@ export class StreamJobController {
 		options: StreamOptions = {},
 	): Promise<void> => {
 		const { onEmit, onResult, onCancel } = handlers;
-		const { showLoading = true, setErrorOnFail = true } = options;
+		const {
+			showLoading = true,
+			setErrorOnFail = true,
+			throwOnError = true,
+		} = options;
 		const cancellable = onCancel !== undefined;
 
 		// Key of this run's entry in activeJobs, set once cancellable + started.
@@ -165,7 +176,7 @@ export class StreamJobController {
 
 			const result = await getPixelAsyncResult<O>(jobId);
 
-			if (result.errors.length > 0) {
+			if (throwOnError && result.errors.length > 0) {
 				throw new Error(result.errors.join(""));
 			}
 

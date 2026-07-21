@@ -1136,11 +1136,18 @@ export class RoomStore {
 	/**
 	 * Run a pixel
 	 * @param pixel - pixel
+	 * @param showLoading - toggle the room's loading state around the run
+	 * @param setErrorOnFail - surface a thrown failure on the room's error state
+	 * @param throwOnError - when true (default), throw if any statement returns
+	 *   an error. Pass false for multi-statement pixels where the caller wants to
+	 *   inspect per-statement outcomes (each `pixelReturn` entry's `operationType`
+	 *   contains "ERROR" on failure) rather than get an all-or-nothing throw.
 	 */
 	runRoomPixel = async <O extends [] | unknown[]>(
 		pixel: string,
 		showLoading: boolean = true,
 		setErrorOnFail: boolean = true,
+		throwOnError: boolean = true,
 	): Promise<{
 		errors: string[];
 		insightId: string;
@@ -1162,7 +1169,7 @@ export class RoomStore {
 			// get the response
 			const response = await runPixel<O>(pixel, this._store.insightId);
 
-			if (response.errors.length > 0) {
+			if (throwOnError && response.errors.length > 0) {
 				throw new Error(response.errors.join(""));
 			}
 
