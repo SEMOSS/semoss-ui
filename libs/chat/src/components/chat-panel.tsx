@@ -1,10 +1,17 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
+import {
+	ResizableHandle,
+	ResizablePanel,
+	ResizablePanelGroup,
+} from "@semoss/ui/next";
 import type { ChatOptions } from "../chat-options";
 import { ChatProvider, useChatContext } from "../chat-provider";
 import { cn } from "../lib/utils";
 import type { ChatMessage } from "../types";
 import { ChatInput } from "./chat-input";
+import type { ToolResponseDetails } from "./message-bubble";
 import { MessageList, type MessageRenderHelpers } from "./message-list";
+import { ToolResponseSidebar } from "./tool-response-sidebar";
 
 export interface ChatPanelProps {
 	/** Passed straight through to ChatProvider — this component owns the chat session. */
@@ -54,23 +61,56 @@ function ChatPanelInner({
 	emptyState,
 	renderMessage,
 }: Omit<ChatPanelProps, "options">) {
-	const { isTyping, sendMessage } = useChatContext();
+	const { messages, isTyping, roomId, sendMessage } = useChatContext();
+	const [activeToolResponse, setActiveToolResponse] =
+		useState<ToolResponseDetails | null>(null);
 
 	return (
 		<div
 			data-slot="chat-panel"
-			className={cn("flex h-full min-h-0 flex-col gap-2", className)}
+			className={cn(
+				"flex h-full min-h-0 flex-col overflow-hidden",
+				className,
+			)}
 		>
-			<MessageList
-				className="min-h-0 flex-1"
-				renderMessage={renderMessage}
-				emptyState={emptyState}
-			/>
-			<ChatInput
-				onSubmit={sendMessage}
-				disabled={isTyping}
-				placeholder={placeholder}
-			/>
+			<ResizablePanelGroup
+				direction="horizontal"
+				className="h-full min-h-0 w-full flex-1 overflow-hidden"
+			>
+				<ResizablePanel className="min-w-0">
+					<div className="flex h-full min-h-0 flex-col gap-2">
+						<MessageList
+							messages={messages}
+							isTyping={isTyping}
+							roomId={roomId}
+							className="min-h-0 flex-1"
+							renderMessage={renderMessage}
+							emptyState={emptyState}
+							onOpenToolResponse={setActiveToolResponse}
+						/>
+						<ChatInput
+							onSubmit={sendMessage}
+							disabled={isTyping}
+							placeholder={placeholder}
+						/>
+					</div>
+				</ResizablePanel>
+				{activeToolResponse && (
+					<>
+						<ResizableHandle withHandle />
+						<ResizablePanel
+							defaultSize={40}
+							minSize={20}
+							className="min-w-0 p-2 ps-0"
+						>
+							<ToolResponseSidebar
+								tool={activeToolResponse}
+								onClose={() => setActiveToolResponse(null)}
+							/>
+						</ResizablePanel>
+					</>
+				)}
+			</ResizablePanelGroup>
 		</div>
 	);
 }

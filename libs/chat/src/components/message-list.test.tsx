@@ -144,4 +144,20 @@ describe("MessageList", () => {
 		expect(recordFeedback).toHaveBeenCalledWith("2", true);
 		expect(downloadMessage).toHaveBeenCalledWith("2", "pdf");
 	});
+
+	it("passes openToolResponse helper into custom renderMessage", () => {
+		let helpersProvided = false;
+		render(
+			<MessageList
+				messages={makeMessages()}
+				renderMessage={(_message, helpers) => {
+					helpersProvided =
+						typeof helpers.openToolResponse === "function";
+					return <div>custom</div>;
+				}}
+			/>,
+		);
+
+		expect(helpersProvided).toBe(true);
+	});
 });

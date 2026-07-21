@@ -3,6 +3,7 @@ import {
 	MicIcon,
 	PaperclipIcon,
 	SendIcon,
+	XIcon,
 } from "lucide-react";
 import {
 	type ComponentType,
@@ -368,6 +369,7 @@ function ChatInputInner({
 	const {
 		files,
 		addFiles,
+		removeFile,
 		clearFiles,
 		containerRef,
 		setShouldStayOpen,
@@ -750,6 +752,29 @@ function ChatInputInner({
 				rows={1}
 				className="max-h-40 resize-none bg-transparent px-4 pt-4 pb-4 text-foreground text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
 			/>
+			{files.length > 0 && (
+				<div className="flex flex-wrap gap-2 px-4 pb-2">
+					{files.map((file, index) => (
+						<div
+							key={`${file.name}-${file.size}-${index}`}
+							className="inline-flex max-w-full items-center gap-1.5 rounded-md border border-border bg-muted px-2.5 py-1 text-xs"
+						>
+							<PaperclipIcon className="size-3 shrink-0 text-muted-foreground" />
+							<span className="max-w-52 truncate">
+								{file.name}
+							</span>
+							<button
+								type="button"
+								onClick={() => removeFile(index)}
+								aria-label={`Remove ${file.name}`}
+								className="text-muted-foreground hover:text-foreground"
+							>
+								<XIcon className="size-3" />
+							</button>
+						</div>
+					))}
+				</div>
+			)}
 			{isSlashMenuOpen && typedMenuPosition && (
 				<div
 					className="absolute z-50 w-72 overflow-hidden rounded-md border border-border bg-popover shadow-md"

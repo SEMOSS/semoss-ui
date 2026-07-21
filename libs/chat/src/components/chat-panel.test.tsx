@@ -123,6 +123,52 @@ describe("ChatPanel", () => {
 		).toBeInTheDocument();
 	});
 
+	it("opens a resizable right sidebar panel for tool response details", async () => {
+		const user = userEvent.setup();
+		useChatContext.mockReturnValue({
+			messages: [
+				{
+					id: "1",
+					role: "assistant",
+					parts: [
+						{
+							type: "tool_call",
+							id: "tool-1",
+							name: "lookupAccount",
+							arguments: { id: "482" },
+						},
+						{
+							type: "tool_result",
+							id: "result-1",
+							toolCallId: "tool-1",
+							output: "ok",
+							status: "success",
+						},
+					],
+					status: "complete",
+					timestamp: new Date(),
+				},
+			],
+			isTyping: false,
+			error: null,
+			roomId: null,
+			sendMessage: vi.fn(),
+		});
+
+		render(<ChatPanel options={options} />);
+
+		await user.click(
+			screen.getByRole("button", {
+				name: "Open lookupAccount in sidebar",
+			}),
+		);
+
+		expect(
+			document.querySelector('[data-slot="tool-response-sidebar"]'),
+		).toBeInTheDocument();
+		expect(screen.getByText("Viewing lookupAccount")).toBeInTheDocument();
+	});
+
 	it("passes a custom placeholder through to ChatInput", () => {
 		useChatContext.mockReturnValue({
 			messages: [],
