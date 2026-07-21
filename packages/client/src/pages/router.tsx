@@ -1,56 +1,14 @@
 import { observer } from "mobx-react-lite";
-import { createElement, lazy, Suspense } from "react";
-import { Navigate, Route, Routes, useParams } from "react-router-dom";
+import { lazy, Suspense } from "react";
+import { Navigate, Route, Routes } from "react-router-dom";
 import { Spinner } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
-import { APP_DETAIL_TABS } from "./app/app-detail.constants";
+import { AuthenticatedLayout } from "./authenticated-layout";
 import { CookieNoticePage } from "./cookie-notice-page";
 import { ENGINE_ROUTES, EngineRedirect, EngineRouter } from "./engine";
 import { LandingPage } from "./landing-page";
+import { PageLayout } from "./page-layout";
 import { PrivacyNoticePage } from "./privacy-notice-page";
-
-const AppIdRedirect = () => {
-	const { appId } = useParams();
-	return <Navigate to={`/app/${appId}`} replace />;
-};
-
-import { AuthenticatedLayout } from "./authenticated-layout";
-
-const PageLayout = lazy(() =>
-	import("./PageLayout").then((m) => ({ default: m.PageLayout })),
-);
-
-const AppCatalogPage = lazy(() =>
-	import("./app/app-catalog-page").then((m) => ({
-		default: m.AppCatalogPage,
-	})),
-);
-const AppGithubSelectRepoPage = lazy(() =>
-	import("./app/app-github-select-repo-page").then((m) => ({
-		default: m.AppGithubSelectRepoPage,
-	})),
-);
-const AppDetailLayout = lazy(() =>
-	import("./app/app-detail-layout").then((m) => ({
-		default: m.AppDetailLayout,
-	})),
-);
-const CreateAppPage = lazy(() =>
-	import("./app/create-app-page").then((m) => ({
-		default: m.CreateAppPage,
-	})),
-);
-const AppEditPage = lazy(() =>
-	import("./app/app-edit-page").then((m) => ({ default: m.AppEditPage })),
-);
-const NewPromptBuilderAppPage = lazy(() =>
-	import("./app/NewPromptBuilderAppPage").then((m) => ({
-		default: m.NewPromptBuilderAppPage,
-	})),
-);
-const ViewAppPage = lazy(() =>
-	import("./app/view-app-page").then((m) => ({ default: m.ViewAppPage })),
-);
 
 const PromptRouter = lazy(() =>
 	import("./prompt/PromptRouter").then((m) => ({ default: m.PromptRouter })),
@@ -60,42 +18,40 @@ const SettingsRouter = lazy(() =>
 		default: m.SettingsRouter,
 	})),
 );
-const SkillPage = lazy(() =>
-	import("./skill/skill-page").then((m) => ({ default: m.SkillPage })),
-);
-const CreateSkillPage = lazy(() =>
-	import("./skill/create-skill-page").then((m) => ({
-		default: m.CreateSkillPage,
-	})),
-);
-const SkillEditPage = lazy(() =>
-	import("./skill/skill-edit-page").then((m) => ({
-		default: m.SkillEditPage,
-	})),
-);
-const AgentPage = lazy(() =>
-	import("./agent/agent-page").then((m) => ({ default: m.AgentPage })),
-);
 const ComponentsPlaygroundRouter = lazy(() =>
 	import("./components-playground/components-playground-router").then(
 		(m) => ({ default: m.ComponentsPlaygroundRouter }),
 	),
-);
-const CreateAgentPage = lazy(() =>
-	import("./agent/create-agent-page").then((m) => ({
-		default: m.CreateAgentPage,
-	})),
-);
-const AgentEditPage = lazy(() =>
-	import("./agent/agent-edit-page").then((m) => ({
-		default: m.AgentEditPage,
-	})),
 );
 const SharePage = lazy(() =>
 	import("./share-page").then((m) => ({ default: m.SharePage })),
 );
 
 import { LoginPage } from "./login-page";
+import { PROJECT_ROUTES } from "./project";
+
+type RouteConfig = {
+	/** Name of the specific path */
+	path: string;
+
+	/** Element to render */
+	element: React.ReactNode;
+
+	/** Child routes */
+	children?: (typeof PROJECT_ROUTES)[number][];
+};
+
+export const renderRoute = (route: RouteConfig): React.ReactElement => {
+	if (route.path === "") {
+		return <Route key="index" index element={route.element} />;
+	}
+
+	return (
+		<Route key={route.path} path={route.path} element={route.element}>
+			{route.children?.map(renderRoute)}
+		</Route>
+	);
+};
 
 const PageSpinner = () => (
 	<div className="flex h-screen w-screen items-center justify-center">
@@ -120,56 +76,8 @@ export const Router = observer(() => {
 					<Route path="s/:appId/*" element={<SharePage />} />
 					<Route path="*" element={<PageLayout />}>
 						<Route index element={<LandingPage />} />
-						<Route path="app/*">
-							<Route index element={<AppCatalogPage />} />
-							<Route path="new" element={<CreateAppPage />} />
-							<Route
-								path="new/prompt"
-								element={<NewPromptBuilderAppPage />}
-							/>
-							<Route path=":appId" element={<AppDetailLayout />}>
-								{APP_DETAIL_TABS.map((tab) =>
-									tab.path === "" ? (
-										<Route
-											key="index"
-											index
-											element={createElement(
-												tab.component,
-												{},
-											)}
-										/>
-									) : (
-										<Route
-											key={tab.path}
-											path={tab.path}
-											element={createElement(
-												tab.component,
-												{},
-											)}
-										/>
-									),
-								)}
-								{/* Post-install repo picker. Sub-route of the
-								    GitHub tab; the install callback redirects here
-								    when multiple repos were granted. */}
-								<Route
-									path="github/select-repo"
-									element={createElement(
-										AppGithubSelectRepoPage,
-										{},
-									)}
-								/>
-								<Route path="*" element={<AppIdRedirect />} />
-							</Route>
-							<Route
-								path=":appId/view/*"
-								element={<ViewAppPage />}
-							/>
-							<Route
-								path=":appId/edit/*"
-								element={<AppEditPage />}
-							/>
-						</Route>
+
+						{PROJECT_ROUTES.map(renderRoute)}
 						<Route path="engine/*" element={<EngineRedirect />} />
 						{/* Top-level engine routes - generated from ENGINE_ROUTES */}
 						{ENGINE_ROUTES.map((route) => (
@@ -185,30 +93,6 @@ export const Router = observer(() => {
 							element={<ComponentsPlaygroundRouter />}
 						/>
 						<Route path="settings/*" element={<SettingsRouter />} />
-						<Route path="skill/*">
-							<Route index element={<SkillPage />} />
-							<Route path="new" element={<CreateSkillPage />} />
-							<Route
-								path=":appId/edit/*"
-								element={<SkillEditPage />}
-							/>
-							<Route
-								path=":appId/*"
-								element={<AppIdRedirect />}
-							/>
-						</Route>
-						<Route path="agent/*">
-							<Route index element={<AgentPage />} />
-							<Route path="new" element={<CreateAgentPage />} />
-							<Route
-								path=":appId/edit/*"
-								element={<AgentEditPage />}
-							/>
-							<Route
-								path=":appId/*"
-								element={<AppIdRedirect />}
-							/>
-						</Route>
 						<Route path="*" element={<Navigate to="/" replace />} />
 					</Route>
 				</Route>

@@ -1,8 +1,3 @@
-import {
-	AppDetailContext,
-	type AppDetailContextType,
-	useAppDetail,
-} from "./AppDetailContext";
 import { DesignerContext, type DesignerContextType } from "./DesignerContext";
 import { EngineContext, type EngineContextType } from "./EngineContext";
 import { LLMContext, type LLMContextType } from "./LLMContext";
@@ -11,6 +6,7 @@ import {
 	type MetamodelContextType,
 } from "./MetamodelContext";
 import { PageContext, type PageContextType } from "./PageContext";
+import { ProjectContext, type ProjectContextType } from "./project-context";
 import {
 	RootStoreContext,
 	type RootStoreContextType,
@@ -23,7 +19,7 @@ import {
 } from "./WorkspaceContext";
 
 export type {
-	AppDetailContextType,
+	ProjectContextType,
 	DesignerContextType,
 	EngineContextType,
 	LLMContextType,
@@ -36,7 +32,7 @@ export type {
 };
 
 export {
-	AppDetailContext,
+	ProjectContext,
 	DesignerContext,
 	EngineContext,
 	LLMContext,
@@ -46,5 +42,4 @@ export {
 	StepperContext,
 	PageContext,
 	WorkspaceContext,
-	useAppDetail,
 };

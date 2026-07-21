@@ -15,7 +15,6 @@
 		"type": "النوع",
 		"model": "النموذج",
 		"instructions": "التعليمات",
-		"temperature": "درجة الحرارة",
 		"maxToken": "الحد الأقصى للرموز"
 	},
 	"placeholders": {
@@ -23,7 +22,6 @@
 		"enterDescription": "أدخل الوصف",
 		"enterInstructions": "أدخل التعليمات",
 		"updateInstructions": "تحديث التعليمات",
-		"updateTokenLength": "تحديث طول الرموز",
 		"uploadFiles": "رفع الملفات",
 		"search": "بحث...",
 		"enterPromptLibraryTag": "أدخل علامة مكتبة الموجهات"

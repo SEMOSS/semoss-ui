@@ -40,6 +40,15 @@ export const ChatShell = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => (
 const ChatShellInner = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => {
 	const [engine, setEngine] = useState<Engine | null>(null);
 	const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
+	// Set once a "new chat" session's first send lazily creates a room
+	// server-side — used only to highlight the right row in the sidebar.
+	// Deliberately kept separate from activeRoomId: activeRoomId is also
+	// ChatProvider's `key` below, so folding this into it would remount the
+	// whole chat session mid-send, tearing down the very ChatProvider
+	// instance that just sent the first message and discarding its
+	// in-flight local state — which is exactly what made the first message
+	// appear to vanish until a second send forced a fresh render.
+	const [liveRoomId, setLiveRoomId] = useState<string | null>(null);
 	const roomsList = useChatRoomsContext();
 	const { setSearch } = roomsList;
 
@@ -70,8 +79,9 @@ const ChatShellInner = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => {
 	// ChatInput creates a room lazily on its first send — there's no
 	// "room created" callback in @semoss/chat's public API yet, so this
 	// polls the imperative registry (getActiveChatRoomId(), already public)
-	// while sitting in "new chat" mode, then adopts the id once it appears
-	// and nudges the room list to refetch so the new room shows up.
+	// while sitting in "new chat" mode, then records the id (for sidebar
+	// highlighting only — see liveRoomId above, NOT activeRoomId) and
+	// nudges the room list to refetch so the new room shows up.
 	useEffect(() => {
 		if (activeRoomId !== null) {
 			return;
@@ -79,7 +89,7 @@ const ChatShellInner = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => {
 		const interval = setInterval(() => {
 			const createdRoomId = getActiveChatRoomId();
 			if (createdRoomId) {
-				setActiveRoomId(createdRoomId);
+				setLiveRoomId(createdRoomId);
 				// roomsList only refetches when its search term actually
 				// changes — there's no standalone "refetch" call in
 				// useChatRoomsContext's public API, so toggling search to a
@@ -92,6 +102,16 @@ const ChatShellInner = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => {
 		return () => clearInterval(interval);
 	}, [activeRoomId, setSearch]);
 
+	const handleSelectRoom = (roomId: string) => {
+		setLiveRoomId(null);
+		setActiveRoomId(roomId);
+	};
+
+	const handleNewChat = () => {
+		setLiveRoomId(null);
+		setActiveRoomId(null);
+	};
+
 	return (
 		<div className="flex h-full min-h-0">
 			{sidebarOpen ? (
@@ -100,15 +120,15 @@ const ChatShellInner = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => {
 						className="min-h-0 w-full flex-1 border-none"
 						pinnedRooms={roomsList.pinnedRooms}
 						rooms={roomsList.rooms}
-						activeRoomId={activeRoomId}
+						activeRoomId={activeRoomId ?? liveRoomId}
 						search={roomsList.search}
 						onSearchChange={roomsList.setSearch}
 						isLoading={roomsList.isLoading}
 						isLoadingMore={roomsList.isLoadingMore}
 						hasMore={roomsList.hasMore}
 						onLoadMore={roomsList.loadMore}
-						onSelectRoom={setActiveRoomId}
-						onNewChat={() => setActiveRoomId(null)}
+						onSelectRoom={handleSelectRoom}
+						onNewChat={handleNewChat}
 						onRenameRoom={roomsList.renameRoom}
 						onPinRoom={roomsList.pinRoom}
 						onDeleteRoom={roomsList.deleteRoom}

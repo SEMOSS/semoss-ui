@@ -1,14 +1,13 @@
-import { useAppDetail } from "@/contexts";
+import { useProject } from "@/hooks";
 import { AccessControl } from "./app-detail-tabs/access-control";
 
 export const AppAccessControlPage = () => {
-	const { appId, appInfo, permission, fetchUserSpecificData } =
-		useAppDetail();
+	const { appId, project, permission, refresh } = useProject();
 	return (
 		<AccessControl
-			appInfo={appInfo}
+			project={project}
 			appId={appId}
-			fetchUserSpecificData={fetchUserSpecificData}
+			fetchUserSpecificData={refresh}
 			permission={permission}
 		/>
 	);
