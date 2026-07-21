@@ -109,4 +109,20 @@ describe("MessageList", () => {
 		expect(screen.getByTestId("custom-1")).toHaveTextContent("hi");
 		expect(screen.getByTestId("custom-2")).toHaveTextContent("hello back");
 	});
+
+	it("passes openToolResponse helper into custom renderMessage", () => {
+		let helpersProvided = false;
+		render(
+			<MessageList
+				messages={makeMessages()}
+				renderMessage={(_message, helpers) => {
+					helpersProvided =
+						typeof helpers.openToolResponse === "function";
+					return <div>custom</div>;
+				}}
+			/>,
+		);
+
+		expect(helpersProvided).toBe(true);
+	});
 });

@@ -119,6 +119,14 @@ export interface ChatToolCallPart {
 	id: string;
 	name: string;
 	arguments: Record<string, unknown>;
+	originalName?: string;
+	title?: string;
+	_meta?: {
+		SMSS_PROJECT_ID?: string;
+		SMSS_ENGINE_TYPE?: string;
+		SMSS_MCP_UI?: { resourceURI?: string; [key: string]: unknown };
+		[key: string]: unknown;
+	};
 }
 
 export interface ChatToolResultPart {
@@ -200,7 +208,12 @@ export interface PixelMessageToolCallPart {
 		title?: string;
 		original_name?: string;
 		arguments: Record<string, unknown>;
-		_meta?: { SMSS_PROJECT_ID?: string; [key: string]: unknown };
+		_meta?: {
+			SMSS_PROJECT_ID?: string;
+			SMSS_ENGINE_TYPE?: string;
+			SMSS_MCP_UI?: { resourceURI?: string; [key: string]: unknown };
+			[key: string]: unknown;
+		};
 	};
 }
 

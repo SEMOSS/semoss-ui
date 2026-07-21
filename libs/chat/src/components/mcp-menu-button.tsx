@@ -10,13 +10,15 @@ import {
 	DropdownMenuTrigger,
 } from "@semoss/ui/next";
 import type { MCPConfig } from "../types";
-import { McpOverlay } from "./mcp-overlay";
+import { McpOverlay, type McpOverlayOpenMode } from "./mcp-overlay";
 
 export interface McpMenuButtonProps {
 	/** Full MCP list (both types) currently attached to this room. */
 	mcp: MCPConfig[];
 	/** Fired with the combined next list once the user saves the overlay. */
 	onChange: (mcp: MCPConfig[]) => void;
+	/** MCP selector presentation mode. Defaults to side panel. */
+	overlayOpenMode?: McpOverlayOpenMode;
 	disabled?: boolean;
 }
 
@@ -32,7 +34,12 @@ export interface McpMenuButtonProps {
  * host, same pattern as `EngineSelect`/`PromptOptimizer` — not baked into
  * `ChatInput`'s core.
  */
-export function McpMenuButton({ mcp, onChange, disabled }: McpMenuButtonProps) {
+export function McpMenuButton({
+	mcp,
+	onChange,
+	overlayOpenMode = "side",
+	disabled,
+}: McpMenuButtonProps) {
 	const [overlayTab, setOverlayTab] = useState<
 		"KNOWLEDGE" | "TOOLBOX" | null
 	>(null);
@@ -76,6 +83,7 @@ export function McpMenuButton({ mcp, onChange, disabled }: McpMenuButtonProps) {
 			<McpOverlay
 				open={overlayTab !== null}
 				defaultTab={overlayTab ?? "KNOWLEDGE"}
+				openMode={overlayOpenMode}
 				values={mcp}
 				onSave={onChange}
 				onOpenChange={(open) => {

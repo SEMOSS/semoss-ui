@@ -91,6 +91,47 @@ describe("MessageBubble", () => {
 		expect(screen.getByText("Ran lookupAccount")).toBeInTheDocument();
 	});
 
+	it("emits tool details when open-in-sidebar is clicked", async () => {
+		const user = userEvent.setup();
+		const onOpenToolResponse = vi.fn();
+		const parts: ChatMessagePart[] = [
+			{
+				type: "tool_call",
+				id: "tool-1",
+				name: "lookupAccount",
+				arguments: { id: "482" },
+			},
+			{
+				type: "tool_result",
+				id: "r1",
+				toolCallId: "tool-1",
+				output: '{"ok":true}',
+				status: "success",
+			},
+		];
+
+		render(
+			<MessageBubble
+				message={makeMessage({ parts })}
+				onOpenToolResponse={onOpenToolResponse}
+			/>,
+		);
+
+		await user.click(
+			screen.getByRole("button", {
+				name: "Open lookupAccount in sidebar",
+			}),
+		);
+
+		expect(onOpenToolResponse).toHaveBeenCalledWith({
+			id: "tool-1",
+			name: "lookupAccount",
+			status: "success",
+			arguments: { id: "482" },
+			output: '{"ok":true}',
+		});
+	});
+
 	it("exposes role and status as data attributes", () => {
 		render(<MessageBubble message={makeMessage({ role: "user" })} />);
 		const bubble = screen

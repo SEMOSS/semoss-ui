@@ -18,7 +18,7 @@ const PROPS: PropDoc[] = [
 	{ name: "emptyState", type: "ReactNode", description: "" },
 	{
 		name: "renderMessage",
-		type: "(message: ChatMessage) => ReactNode",
+		type: "(message: ChatMessage, helpers: MessageRenderHelpers) => ReactNode",
 		description: "Override the per-message renderer.",
 	},
 ];

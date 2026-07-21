@@ -25,7 +25,7 @@ const PROPS: PropDoc[] = [
 	},
 	{
 		name: "renderMessage",
-		type: "(message: ChatMessage) => ReactNode",
+		type: "(message: ChatMessage, helpers: MessageRenderHelpers) => ReactNode",
 		description:
 			"Override the per-message renderer instead of the default MessageBubble.",
 	},

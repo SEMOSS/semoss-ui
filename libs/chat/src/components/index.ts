@@ -18,4 +18,5 @@ export * from "./message-list";
 export * from "./prompt-optimizer";
 export * from "./room-sidebar";
 export * from "./tool-call-view";
+export * from "./tool-response-sidebar";
 export * from "./typing-indicator";
