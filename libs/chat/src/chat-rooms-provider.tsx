@@ -41,17 +41,21 @@ export function ChatRoomsProvider({
 }: ChatRoomsProviderProps) {
 	const { actions, isAuthorized, isReady } = useInsight();
 
-	const handleRef = useRef<ChatRoomsStoreHandle>(
-		createChatRoomsStore(actions, pageSize, { autoload: false }),
-	);
-	const { store, session } = handleRef.current;
+	const handleRef = useRef<ChatRoomsStoreHandle | null>(null);
+	if (!handleRef.current) {
+		handleRef.current = createChatRoomsStore(actions, pageSize, {
+			autoload: false,
+		});
+	}
+	const handle = handleRef.current;
+	const { store, session } = handle;
 
 	useEffect(() => {
 		if (!isReady || !isAuthorized) {
 			return;
 		}
-		void session.start();
-	}, [isReady, isAuthorized, session]);
+		void handle.start();
+	}, [handle, isReady, isAuthorized]);
 
 	// Read the raw search value from the store and debounce it before
 	// forwarding to the session (which triggers the actual fetch).
@@ -63,9 +67,9 @@ export function ChatRoomsProvider({
 
 	useEffect(() => {
 		return () => {
-			handleRef.current.dispose();
+			handle.dispose();
 		};
-	}, []);
+	}, [handle]);
 
 	return (
 		<ChatRoomsStoreContext.Provider value={store}>

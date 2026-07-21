@@ -17,7 +17,12 @@ export interface ChatStoreState extends ChatSessionState {
 
 export interface ChatStoreHandle {
 	store: StoreApi<ChatStoreState>;
+	start: () => Promise<void>;
 	dispose: () => void;
+}
+
+export interface ChatStoreOptions {
+	autoload?: boolean;
 }
 
 /**
@@ -39,8 +44,9 @@ export function createChatStore(
 	actions: InsightActions,
 	insightId: string,
 	options: ChatOptions,
+	storeOptions?: ChatStoreOptions,
 ): ChatStoreHandle {
-	const session = new ChatSession(actions, insightId, options);
+	const session = new ChatSession(actions, insightId, options, false);
 
 	const actionSlice = {
 		setEngineId: session.setEngineId,
@@ -55,12 +61,28 @@ export function createChatStore(
 		...actionSlice,
 	}));
 
-	const unsubscribe = session.store.subscribe((sessionState) => {
-		store.setState(sessionState);
-	});
+	let unsubscribe: (() => void) | null = null;
+	const start = async () => {
+		if (!unsubscribe) {
+			unsubscribe = session.store.subscribe((sessionState) => {
+				store.setState(sessionState);
+			});
+			store.setState(session.store.getState());
+		}
+		await session.start();
+	};
+	const dispose = () => {
+		unsubscribe?.();
+		unsubscribe = null;
+	};
+
+	if (storeOptions?.autoload ?? true) {
+		void start();
+	}
 
 	return {
 		store,
-		dispose: unsubscribe,
+		start,
+		dispose,
 	};
 }

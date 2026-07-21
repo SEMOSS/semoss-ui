@@ -40,30 +40,37 @@ export function ChatProvider({
 }: ChatProviderProps) {
 	const { actions, insightId } = useInsight();
 
-	const handleRef = useRef(createChatStore(actions, insightId, options));
+	const handleRef = useRef<ReturnType<typeof createChatStore> | null>(null);
+	if (!handleRef.current) {
+		handleRef.current = createChatStore(actions, insightId, options, {
+			autoload: false,
+		});
+	}
+	const handle = handleRef.current;
 	const registrationRef = useRef<ChatStoreRegistration | null>(null);
 
 	useEffect(() => {
-		registrationRef.current = registerChatStore(handleRef.current.store);
+		void handle.start();
+		registrationRef.current = registerChatStore(handle.store);
 		return () => {
 			registrationRef.current?.dispose();
 		};
-	}, []);
+	}, [handle]);
 
 	useEffect(() => {
 		if (isActive) {
-			setActiveChatStore(handleRef.current.store);
+			setActiveChatStore(handle.store);
 		}
-	}, [isActive]);
+	}, [handle, isActive]);
 
 	useEffect(() => {
 		return () => {
-			handleRef.current.dispose();
+			handle.dispose();
 		};
-	}, []);
+	}, [handle]);
 
 	return (
-		<ChatStoreContext.Provider value={handleRef.current.store}>
+		<ChatStoreContext.Provider value={handle.store}>
 			{children}
 		</ChatStoreContext.Provider>
 	);

@@ -21,6 +21,9 @@ export interface ChatOptions {
 	 */
 	roomId?: string;
 
+	/** Associate a newly-created room with this workspace. */
+	workspaceId?: string;
+
 	/** Applied once per room via UpdateRoomOptions before the first ask. */
 	defaultRoomSettings?: ChatDefaultRoomSettings;
 

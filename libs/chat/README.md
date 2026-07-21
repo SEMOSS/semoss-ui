@@ -123,8 +123,9 @@ Deliberately out of scope for this first pass: message branching/editing
 linear-only, matching what `provider-portal-hpp`'s hand-rolled chatbot
 already does — see `docs/chat-components/PLAN.md`).
 
-- `src/chat-options.ts` — the `ChatOptions` contract (`engineId`,
-  `defaultRoomSettings`, `toolAutoExecutionLimit`, `gracefulErrors`).
+- `src/chat-options.ts` — the `ChatOptions` contract (`engineId`, `roomId`,
+  `workspaceId`, `defaultRoomSettings`, `toolAutoExecutionLimit`,
+  `gracefulErrors`).
 - `src/chat-session.ts` — `ChatSession`, the MobX store that actually drives
   the ask → stream chunks into the message's parts → tool-call-loop →
   finalize flow. Not exported publicly; `useChat` is the supported entry
@@ -160,7 +161,10 @@ import { ChatPanel } from "@semoss/chat/components";
 function MyChatWidget() {
 	return (
 		<ChatPanel
-			options={{ engineId: "your-engine-id" }}
+			options={{
+				engineId: "your-engine-id",
+				workspaceId: "optional-workspace-id",
+			}}
 			className="h-96"
 			placeholder="Ask me anything..."
 		/>

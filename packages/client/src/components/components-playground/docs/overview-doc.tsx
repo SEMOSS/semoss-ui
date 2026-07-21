@@ -60,11 +60,12 @@ export const OverviewDoc = () => {
 					<code className="rounded bg-muted px-1 py-0.5">
 						@semoss/chat
 					</code>{" "}
-					is headless (hooks, transport, types) — no JSX, no{" "}
+					exposes state, providers, transport, and types without
+					styled components. It still uses{" "}
 					<code className="rounded bg-muted px-1 py-0.5">
 						@semoss/ui
 					</code>{" "}
-					dependency required to import it.{" "}
+					for provider utilities such as debouncing.{" "}
 					<code className="rounded bg-muted px-1 py-0.5">
 						@semoss/chat/components
 					</code>{" "}
@@ -96,16 +97,25 @@ export const OverviewDoc = () => {
 import { InsightProvider } from "@semoss/sdk/react";
 import { ThemeProvider } from "@semoss/ui/next";
 
-export function App() {
+export function App({ engineId }: { engineId: string }) {
   return (
     <InsightProvider>
       <ThemeProvider defaultTheme="light">
-        <ChatPanel options={{ engineId: "your-engine-id" }} />
+				<ChatPanel
+					key={engineId}
+					options={{ engineId }}
+				/>
       </ThemeProvider>
     </InsightProvider>
   );
 }`}
 				/>
+				<p className="text-muted-foreground text-sm">
+					Provider options initialize a chat session. Key a new-chat
+					provider by the selected engine when that default changes,
+					and key resumed sessions by room ID. Resumed room history
+					restores the model saved with that room.
+				</p>
 			</section>
 
 			<section className="flex flex-col gap-3">

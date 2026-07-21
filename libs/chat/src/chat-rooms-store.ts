@@ -11,11 +11,14 @@ export interface ChatRoomsStoreState extends ChatRoomsSessionState {
 	renameRoom: (roomId: string, name: string) => Promise<void>;
 	pinRoom: (roomId: string, pinned: boolean) => Promise<void>;
 	deleteRoom: (roomId: string) => Promise<void>;
+	setActiveRoom: (roomId: string) => void;
+	newChat: () => void;
 }
 
 export interface ChatRoomsStoreHandle {
 	store: StoreApi<ChatRoomsStoreState>;
 	session: ChatRoomsSession;
+	start: () => Promise<void>;
 	dispose: () => void;
 }
 
@@ -54,15 +57,33 @@ export function createChatRoomsStore(
 		renameRoom: session.renameRoom,
 		pinRoom: session.pinRoom,
 		deleteRoom: session.deleteRoom,
+		setActiveRoom: session.setActiveRoom,
+		newChat: session.newChat,
 	}));
 
-	const unsubscribe = session.store.subscribe((sessionState) => {
-		store.setState(sessionState);
-	});
+	let unsubscribe: (() => void) | null = null;
+	const start = async () => {
+		if (!unsubscribe) {
+			unsubscribe = session.store.subscribe((sessionState) => {
+				store.setState(sessionState);
+			});
+			store.setState(session.store.getState());
+		}
+		await session.start();
+	};
+	const dispose = () => {
+		unsubscribe?.();
+		unsubscribe = null;
+	};
+
+	if (options?.autoload ?? true) {
+		void start();
+	}
 
 	return {
 		store,
 		session,
-		dispose: unsubscribe,
+		start,
+		dispose,
 	};
 }
