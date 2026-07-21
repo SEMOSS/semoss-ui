@@ -40,6 +40,8 @@ describe("ChatPanel", () => {
 			error: null,
 			roomId: "room-1",
 			sendMessage,
+			recordFeedback: vi.fn(),
+			downloadMessage: vi.fn(),
 		});
 
 		const user = userEvent.setup();
@@ -60,6 +62,8 @@ describe("ChatPanel", () => {
 			error: null,
 			roomId: null,
 			sendMessage: vi.fn(),
+			recordFeedback: vi.fn(),
+			downloadMessage: vi.fn(),
 		});
 
 		render(<ChatPanel options={options} />);
@@ -75,6 +79,8 @@ describe("ChatPanel", () => {
 			error: null,
 			roomId: null,
 			sendMessage: vi.fn(),
+			recordFeedback: vi.fn(),
+			downloadMessage: vi.fn(),
 		});
 
 		render(
@@ -106,6 +112,8 @@ describe("ChatPanel", () => {
 			error: null,
 			roomId: null,
 			sendMessage: vi.fn(),
+			recordFeedback: vi.fn(),
+			downloadMessage: vi.fn(),
 		});
 
 		render(<ChatPanel options={options} />);
@@ -168,6 +176,8 @@ describe("ChatPanel", () => {
 			error: null,
 			roomId: null,
 			sendMessage: vi.fn(),
+			recordFeedback: vi.fn(),
+			downloadMessage: vi.fn(),
 		});
 
 		render(<ChatPanel options={options} placeholder="Ask me anything" />);

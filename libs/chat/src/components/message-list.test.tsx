@@ -1,7 +1,17 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ChatMessage } from "../types";
 import { MessageList } from "./message-list";
+
+const { useChatContext } = vi.hoisted(() => ({ useChatContext: vi.fn() }));
+
+vi.mock("../chat-provider", async (importOriginal) => {
+	const original = await importOriginal<typeof import("../chat-provider")>();
+	return {
+		...original,
+		useChatContext,
+	};
+});
 
 function makeMessages(): ChatMessage[] {
 	return [
@@ -22,15 +32,31 @@ function makeMessages(): ChatMessage[] {
 	];
 }
 
+function mockContext(overrides: Record<string, unknown> = {}) {
+	useChatContext.mockReturnValue({
+		messages: [],
+		isTyping: false,
+		recordFeedback: vi.fn(),
+		downloadMessage: vi.fn(),
+		...overrides,
+	});
+}
+
+beforeEach(() => {
+	useChatContext.mockReset();
+});
+
 describe("MessageList", () => {
 	it("renders every message via the default MessageBubble", () => {
-		render(<MessageList messages={makeMessages()} />);
+		mockContext({ messages: makeMessages() });
+		render(<MessageList />);
 		expect(screen.getByText("hi")).toBeInTheDocument();
 		expect(screen.getByText("hello back")).toBeInTheDocument();
 	});
 
 	it("shows the generic typing indicator when isTyping and there are no messages yet", () => {
-		render(<MessageList messages={[]} isTyping />);
+		mockContext({ messages: [], isTyping: true });
+		render(<MessageList />);
 		expect(
 			screen.getByRole("status", { name: "Thinking through it..." }),
 		).toBeInTheDocument();
@@ -47,7 +73,8 @@ describe("MessageList", () => {
 				timestamp: new Date(),
 			},
 		];
-		render(<MessageList messages={messages} isTyping />);
+		mockContext({ messages, isTyping: true });
+		render(<MessageList />);
 		expect(
 			screen.getByRole("status", { name: "Thinking through it..." }),
 		).toBeInTheDocument();
@@ -64,29 +91,21 @@ describe("MessageList", () => {
 				timestamp: new Date(),
 			},
 		];
-		render(<MessageList messages={messages} isTyping />);
+		mockContext({ messages, isTyping: true });
+		render(<MessageList />);
 		expect(screen.queryByRole("status")).not.toBeInTheDocument();
 		expect(screen.getByText("partial")).toBeInTheDocument();
 	});
 
 	it("shows the emptyState when there are no messages and nothing is typing", () => {
-		render(
-			<MessageList
-				messages={[]}
-				emptyState={<p>Say hello to start</p>}
-			/>,
-		);
+		mockContext({ messages: [], isTyping: false });
+		render(<MessageList emptyState={<p>Say hello to start</p>} />);
 		expect(screen.getByText("Say hello to start")).toBeInTheDocument();
 	});
 
 	it("does not show the emptyState while typing even with zero messages", () => {
-		render(
-			<MessageList
-				messages={[]}
-				isTyping
-				emptyState={<p>Say hello to start</p>}
-			/>,
-		);
+		mockContext({ messages: [], isTyping: true });
+		render(<MessageList emptyState={<p>Say hello to start</p>} />);
 		expect(
 			screen.queryByText("Say hello to start"),
 		).not.toBeInTheDocument();
@@ -94,20 +113,36 @@ describe("MessageList", () => {
 	});
 
 	it("uses renderMessage to fully override per-message rendering", () => {
+		const recordFeedback = vi.fn();
+		const downloadMessage = vi.fn().mockResolvedValue(undefined);
+		mockContext({
+			messages: makeMessages(),
+			recordFeedback,
+			downloadMessage,
+		});
 		render(
 			<MessageList
-				messages={makeMessages()}
-				renderMessage={(message) => (
-					<div data-testid={`custom-${message.id}`}>
+				renderMessage={(message, helpers) => (
+					<button
+						type="button"
+						data-testid={`custom-${message.id}`}
+						onClick={() => {
+							helpers.onRate(true);
+							void helpers.onDownload("pdf");
+						}}
+					>
 						{message.parts.map((part) =>
 							part.type === "text" ? part.text : null,
 						)}
-					</div>
+					</button>
 				)}
 			/>,
 		);
 		expect(screen.getByTestId("custom-1")).toHaveTextContent("hi");
 		expect(screen.getByTestId("custom-2")).toHaveTextContent("hello back");
+		screen.getByTestId("custom-2").click();
+		expect(recordFeedback).toHaveBeenCalledWith("2", true);
+		expect(downloadMessage).toHaveBeenCalledWith("2", "pdf");
 	});
 
 	it("passes openToolResponse helper into custom renderMessage", () => {

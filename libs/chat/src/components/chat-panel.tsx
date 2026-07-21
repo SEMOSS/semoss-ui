@@ -89,7 +89,7 @@ function ChatPanelInner({
 							onOpenToolResponse={setActiveToolResponse}
 						/>
 						<ChatInput
-							onSend={sendMessage}
+							onSubmit={sendMessage}
 							disabled={isTyping}
 							placeholder={placeholder}
 						/>

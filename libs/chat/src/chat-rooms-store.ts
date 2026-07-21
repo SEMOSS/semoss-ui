@@ -19,6 +19,10 @@ export interface ChatRoomsStoreHandle {
 	dispose: () => void;
 }
 
+export interface ChatRoomsStoreOptions {
+	autoload?: boolean;
+}
+
 /**
  * Creates a Zustand store for the paginated room list. The
  * `ChatRoomsSession` class owns state internally via its own vanilla
@@ -33,8 +37,13 @@ export interface ChatRoomsStoreHandle {
 export function createChatRoomsStore(
 	actions: InsightActions,
 	pageSize?: number,
+	options?: ChatRoomsStoreOptions,
 ): ChatRoomsStoreHandle {
-	const session = new ChatRoomsSession(actions, pageSize);
+	const session = new ChatRoomsSession(
+		actions,
+		pageSize,
+		options?.autoload ?? true,
+	);
 
 	const store = createStore<ChatRoomsStoreState>(() => ({
 		...session.store.getState(),

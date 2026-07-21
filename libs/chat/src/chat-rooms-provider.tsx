@@ -39,12 +39,19 @@ export function ChatRoomsProvider({
 	pageSize,
 	children,
 }: ChatRoomsProviderProps) {
-	const { actions } = useInsight();
+	const { actions, isAuthorized, isReady } = useInsight();
 
 	const handleRef = useRef<ChatRoomsStoreHandle>(
-		createChatRoomsStore(actions, pageSize),
+		createChatRoomsStore(actions, pageSize, { autoload: false }),
 	);
 	const { store, session } = handleRef.current;
+
+	useEffect(() => {
+		if (!isReady || !isAuthorized) {
+			return;
+		}
+		void session.start();
+	}, [isReady, isAuthorized, session]);
 
 	// Read the raw search value from the store and debounce it before
 	// forwarding to the session (which triggers the actual fetch).

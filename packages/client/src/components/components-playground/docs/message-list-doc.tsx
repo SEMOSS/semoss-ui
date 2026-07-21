@@ -1,23 +1,14 @@
 import { useState } from "react";
-import { MessageList } from "@semoss/chat/components";
+import { ChatProvider, useChatContext } from "@semoss/chat";
+import { ChatInput, MessageBubble, MessageList } from "@semoss/chat/components";
 import { Button } from "@semoss/ui/next";
 import { DemoSection } from "../demo-section";
 import { DocPage } from "../doc-page";
-import { SAMPLE_MESSAGES, TOOL_CALL_MESSAGE } from "../fixtures";
+import { useEngineConnect } from "../engine-connect-context";
 import { type PropDoc, PropsTable } from "../props-table";
+import { RequiresEngine } from "../requires-engine";
 
 const PROPS: PropDoc[] = [
-	{
-		name: "messages",
-		type: "ChatMessage[]",
-		required: true,
-		description: "Rendered in order via MessageBubble by default.",
-	},
-	{
-		name: "isTyping",
-		type: "boolean",
-		description: "Shows a TypingIndicator below the last message.",
-	},
 	{
 		name: "className",
 		type: "string",
@@ -32,22 +23,56 @@ const PROPS: PropDoc[] = [
 	{
 		name: "emptyState",
 		type: "ReactNode",
-		description: "Shown when messages is empty.",
+		description:
+			"Shown when there are no messages and nothing is streaming.",
 	},
 ];
 
-export const MessageListDoc = () => {
-	const [isTyping, setIsTyping] = useState(false);
-	const [showToolCall, setShowToolCall] = useState(false);
+const MessageListDemo = ({
+	useCustomRenderer,
+}: {
+	useCustomRenderer: boolean;
+}) => {
+	const { isTyping, sendMessage } = useChatContext();
 
-	const messages = showToolCall
-		? [...SAMPLE_MESSAGES, TOOL_CALL_MESSAGE]
-		: SAMPLE_MESSAGES;
+	return (
+		<div className="flex h-72 flex-col rounded-md border border-border">
+			<MessageList
+				className="min-h-0 flex-1 p-3"
+				emptyState={
+					<div className="py-6 text-center text-muted-foreground text-sm">
+						Send a message to start the conversation.
+					</div>
+				}
+				renderMessage={
+					useCustomRenderer
+						? (message, helpers) => (
+								<div className="rounded-md border border-border/60 p-2">
+									<MessageBubble
+										message={message}
+										onRate={helpers.onRate}
+										onDownload={helpers.onDownload}
+									/>
+								</div>
+							)
+						: undefined
+				}
+			/>
+			<div className="border-border border-t p-2">
+				<ChatInput onSubmit={sendMessage} isGenerating={isTyping} />
+			</div>
+		</div>
+	);
+};
+
+export const MessageListDoc = () => {
+	const { engine } = useEngineConnect();
+	const [useCustomRenderer, setUseCustomRenderer] = useState(false);
 
 	return (
 		<DocPage
 			title="MessageList"
-			description="Composes MessageBubble + a TypingIndicator for the gap before any content arrives. Tool calls render inline via each message's parts — no separate floating tool indicator."
+			description="Reads messages and typing state from the nearest ChatProvider, then renders MessageBubble by default (or your custom renderMessage callback) with auto-scroll and typing-indicator behavior built in."
 		>
 			<DemoSection
 				preview={
@@ -57,37 +82,32 @@ export const MessageListDoc = () => {
 								type="button"
 								variant="outline"
 								size="sm"
-								onClick={() => setIsTyping((v) => !v)}
+								onClick={() => setUseCustomRenderer((v) => !v)}
 							>
-								{isTyping ? "Stop typing" : "Start typing"}
-							</Button>
-							<Button
-								type="button"
-								variant="outline"
-								size="sm"
-								onClick={() => setShowToolCall((v) => !v)}
-							>
-								{showToolCall
-									? "Hide tool call"
-									: "Show tool call"}
+								{useCustomRenderer
+									? "Use default renderer"
+									: "Use custom renderer"}
 							</Button>
 						</div>
-						<div className="h-72 rounded-md border border-border">
-							<MessageList
-								messages={messages}
-								isTyping={isTyping}
-								className="h-full p-3"
-							/>
-						</div>
+						<RequiresEngine>
+							<ChatProvider
+								options={{ engineId: engine?.engineId ?? "" }}
+							>
+								<MessageListDemo
+									useCustomRenderer={useCustomRenderer}
+								/>
+							</ChatProvider>
+						</RequiresEngine>
 					</div>
 				}
-				code={`import { MessageList } from "@semoss/chat/components";
-import { useChatContext } from "@semoss/chat";
+				code={`import { ChatProvider, useChatContext } from "@semoss/chat";
+import { ChatInput, MessageList } from "@semoss/chat/components";
 
 // Inside a <ChatProvider options={{ engineId, roomId }}>
-const { messages, isTyping } = useChatContext();
+const { isTyping, sendMessage } = useChatContext();
 
-<MessageList messages={messages} isTyping={isTyping} className="h-full" />`}
+<MessageList className="flex-1" />
+<ChatInput onSubmit={sendMessage} isGenerating={isTyping} />`}
 			/>
 			<PropsTable props={PROPS} />
 		</DocPage>

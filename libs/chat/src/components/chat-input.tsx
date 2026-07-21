@@ -247,7 +247,7 @@ function getTextareaCaretPosition(textarea: HTMLTextAreaElement): {
 }
 
 export interface ChatInputProps {
-	onSend: (text: string) => void;
+	onSubmit: (text: string) => void;
 	/** Enables built-in slash command workflow. */
 	useSlashCommands?: boolean;
 	disabled?: boolean;
@@ -319,6 +319,14 @@ export interface ChatInputProps {
 	 * `defaultSlashCommandActions` is provided.
 	 */
 	disableDefaultSlashCommands?: boolean;
+	/**
+	 * Custom icon for the send button. Defaults to SendIcon from lucide-react.
+	 */
+	submitIcon?: ComponentType<{ className?: string }>;
+	/**
+	 * Custom icon for the voice input button. Defaults to MicIcon from lucide-react.
+	 */
+	voiceIcon?: ComponentType<{ className?: string }>;
 }
 
 /**
@@ -339,7 +347,7 @@ export function ChatInput({ ...props }: ChatInputProps) {
 }
 
 function ChatInputInner({
-	onSend,
+	onSubmit,
 	useSlashCommands = true,
 	disabled = false,
 	isGenerating = false,
@@ -354,6 +362,8 @@ function ChatInputInner({
 	defaultSlashCommandActions,
 	disableDefaultSlashCommandIds,
 	disableDefaultSlashCommands = false,
+	submitIcon,
+	voiceIcon,
 }: ChatInputProps) {
 	const {
 		files,
@@ -397,8 +407,8 @@ function ChatInputInner({
 	setValueRef.current = setValue;
 
 	const handleCompact = useCallback(() => {
-		onSend("/compact");
-	}, [onSend]);
+		onSubmit("/compact");
+	}, [onSubmit]);
 
 	const handleAttachDocument = useCallback(() => {
 		setShouldStayOpen(true);
@@ -490,7 +500,7 @@ function ChatInputInner({
 			? `Attached files: ${files.map((file) => file.name).join(", ")}`
 			: "";
 		const message = [trimmed, attachmentNote].filter(Boolean).join("\n\n");
-		onSend(message);
+		onSubmit(message);
 		setValue("");
 		clearFiles();
 		setShouldStayOpen(false);
@@ -832,12 +842,18 @@ function ChatInputInner({
 								}
 								onClick={toggleListening}
 							>
-								<MicIcon
-									className={cn(
-										isListening &&
-											"animate-pulse text-destructive",
-									)}
-								/>
+								{(() => {
+									const MicIconComponent =
+										voiceIcon || MicIcon;
+									return (
+										<MicIconComponent
+											className={cn(
+												isListening &&
+													"animate-pulse text-destructive",
+											)}
+										/>
+									);
+								})()}
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent>
@@ -854,7 +870,14 @@ function ChatInputInner({
 					aria-label={isGenerating ? "Generating response" : "Send"}
 					disabled={disabled || !value.trim()}
 				>
-					{isGenerating ? <Spinner /> : <SendIcon />}
+					{isGenerating ? (
+						<Spinner />
+					) : (
+						(() => {
+							const SendIconComponent = submitIcon || SendIcon;
+							return <SendIconComponent />;
+						})()
+					)}
 				</Button>
 			</div>
 			<FileDragOverlay />

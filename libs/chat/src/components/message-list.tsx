@@ -1,9 +1,16 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import {
+	type ReactNode,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import {
 	ResizableHandle,
 	ResizablePanel,
 	ResizablePanelGroup,
 } from "@semoss/ui/next";
+import { useChatContext } from "../chat-provider";
 import { cn } from "../lib/utils";
 import type { ChatMessage } from "../types";
 import { MessageBubble, type ToolResponseDetails } from "./message-bubble";
@@ -12,14 +19,16 @@ import { TypingIndicator } from "./typing-indicator";
 
 export interface MessageRenderHelpers {
 	openToolResponse: (tool: ToolResponseDetails) => void;
+	/** Call with true (thumbs up) or false (thumbs down) to rate this message. */
+	onRate: (rating: boolean) => void;
+	/** Download the message content as Word or PDF. */
+	onDownload: (format: "word" | "pdf") => Promise<void>;
 }
 
 export interface MessageListProps {
-	messages: ChatMessage[];
-	isTyping?: boolean;
 	className?: string;
 	roomId?: string | null;
-	/** Override how each message renders — omit to use the default MessageBubble. */
+	/** Override how each message renders — omit to use the default MessageBubble with feedback toolbar. */
 	renderMessage?: (
 		message: ChatMessage,
 		helpers: MessageRenderHelpers,
@@ -43,23 +52,21 @@ function totalStreamedChars(messages: ChatMessage[]): number {
 }
 
 /**
- * Composes MessageBubble + a generic TypingIndicator for the gap before
- * any content has streamed in, and auto-scrolls to the latest message.
- * Tool-call state renders inline within each message via MessageBubble
- * now (see ChatMessage's parts model) — there's no separate
- * floating ToolCallView/activeTool concept anymore. For a fully custom
- * message look, pass `renderMessage` instead of swapping out this whole
- * component.
+ * Reads messages and typing state from the nearest `ChatProvider` context
+ * and renders them via MessageBubble (with feedback toolbar wired up) or
+ * a custom `renderMessage` callback. Auto-scrolls to the latest message.
+ *
+ * Must be rendered inside a `<ChatProvider>`.
  */
 export function MessageList({
-	messages,
-	isTyping = false,
 	className,
 	roomId,
 	renderMessage,
 	emptyState,
 	onOpenToolResponse,
 }: MessageListProps) {
+	const { messages, isTyping, recordFeedback, downloadMessage } =
+		useChatContext();
 	const bottomRef = useRef<HTMLDivElement>(null);
 	const [localToolResponse, setLocalToolResponse] =
 		useState<ToolResponseDetails | null>(null);
@@ -80,6 +87,17 @@ export function MessageList({
 			lastMessage.parts.length === 0);
 	const isEmpty = messages.length === 0 && !isTyping;
 
+	const buildHelpers = useCallback(
+		(message: ChatMessage): MessageRenderHelpers => ({
+			openToolResponse: (tool) => openToolResponse(tool),
+			onRate: (rating: boolean) =>
+				void recordFeedback(message.id, rating),
+			onDownload: (format: "word" | "pdf") =>
+				downloadMessage(message.id, format),
+		}),
+		[recordFeedback, downloadMessage],
+	);
+
 	return (
 		<ResizablePanelGroup
 			direction="horizontal"
@@ -95,26 +113,29 @@ export function MessageList({
 				>
 					{isEmpty
 						? emptyState
-						: messages.map((message) => (
-								<div
-									key={message.id}
-									data-slot="message-list-item"
-								>
-									{renderMessage ? (
-										renderMessage(message, {
-											openToolResponse,
-										})
-									) : (
-										<MessageBubble
-											message={message}
-											roomId={roomId}
-											onOpenToolResponse={
-												openToolResponse
-											}
-										/>
-									)}
-								</div>
-							))}
+						: messages.map((message) => {
+								const helpers = buildHelpers(message);
+								return (
+									<div
+										key={message.id}
+										data-slot="message-list-item"
+									>
+										{renderMessage ? (
+											renderMessage(message, helpers)
+										) : (
+											<MessageBubble
+												message={message}
+												roomId={roomId}
+												onOpenToolResponse={
+													helpers.openToolResponse
+												}
+												onRate={helpers.onRate}
+												onDownload={helpers.onDownload}
+											/>
+										)}
+									</div>
+								);
+							})}
 					{isWaitingForFirstChunk ? <TypingIndicator /> : null}
 					<div data-slot="message-list-anchor" ref={bottomRef} />
 				</div>
