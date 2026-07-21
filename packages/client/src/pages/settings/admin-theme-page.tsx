@@ -38,6 +38,7 @@ import {
 	TabsTrigger,
 	Textarea,
 	toast,
+	useTheme,
 } from "@semoss/ui/next";
 import {
 	createAdminTheme,
@@ -255,6 +256,7 @@ const isMonacoFoldingEditor = (
 };
 
 export const AdminThemePage: React.FC = () => {
+	const { resolvedTheme } = useTheme();
 	const { adminMode } = useSettings();
 
 	const getThemes = useAPI(["getAdminThemes", 0, -1], {
@@ -742,6 +744,11 @@ export const AdminThemePage: React.FC = () => {
 												}}
 												value={themeValue}
 												language={"json"}
+												theme={
+													resolvedTheme === "dark"
+														? "vs-dark"
+														: "vs-light"
+												}
 												onChange={(newValue) => {
 													setThemeValue(
 														(newValue as string) ??

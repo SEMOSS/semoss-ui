@@ -8,6 +8,7 @@ import {
 	TabsContent,
 	TabsList,
 	TabsTrigger,
+	useTheme,
 } from "@semoss/ui/next";
 
 interface MarkdownEditorProps
@@ -24,6 +25,8 @@ export const MarkdownEditor = ({
 	className,
 	...otherProps
 }: MarkdownEditorProps) => {
+	const { resolvedTheme } = useTheme();
+
 	const [view, setView] = useState<"edit" | "view">("edit");
 
 	return (
@@ -73,6 +76,11 @@ export const MarkdownEditor = ({
 							width="100%"
 							value={value}
 							language="markdown"
+							theme={
+								resolvedTheme === "dark"
+									? "vs-dark"
+									: "vs-light"
+							}
 							onChange={(newValue) => onChange(newValue || "")}
 							options={{
 								minimap: { enabled: false },
