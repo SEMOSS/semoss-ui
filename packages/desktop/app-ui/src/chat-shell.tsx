@@ -15,6 +15,7 @@ import {
 	MessageList,
 	PromptOptimizer,
 	RoomSidebar,
+	SelectionChatButton,
 } from "@semoss/chat/components";
 import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import { Spinner } from "@semoss/ui/next";
@@ -163,6 +164,7 @@ const ChatShellInner = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => {
 							roomId: activeRoomId ?? undefined,
 						}}
 					>
+						<SelectionChatButton label="Send to Chat" />
 						<RoomContent
 							engine={engine}
 							onEngineChange={setEngine}
