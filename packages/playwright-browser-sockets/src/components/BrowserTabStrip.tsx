@@ -44,7 +44,8 @@ export function BrowserTabStrip({
 							display: "flex",
 							alignItems: "center",
 							flexShrink: 0,
-							maxWidth: 210,
+							width: 210,
+							maxWidth: "min(210px, 80vw)",
 							borderRadius: "8px 8px 0 0",
 							bgcolor: active
 								? "background.paper"
@@ -64,7 +65,7 @@ export function BrowserTabStrip({
 								onClick={() => onSwitch(tab.tabId)}
 								sx={{
 									minWidth: 0,
-									maxWidth: 175,
+									flex: 1,
 									px: 1,
 									py: 0.5,
 									color: "text.primary",
@@ -77,16 +78,25 @@ export function BrowserTabStrip({
 								{label}
 							</Button>
 						</Tooltip>
-						{active && !isRecording && tabs.length > 1 && (
-							<Tooltip title="Close tab">
-								<IconButton
-									size="small"
-									aria-label={`Close ${label}`}
-									onClick={() => onClose(tab.tabId)}
-									sx={{ mr: 0.5, p: 0.25 }}
-								>
-									<CloseIcon sx={{ fontSize: 15 }} />
-								</IconButton>
+						{tabs.length > 1 && (
+							<Tooltip
+								title={
+									isRecording
+										? "Stop recording before closing tabs"
+										: "Close tab"
+								}
+							>
+								<span>
+									<IconButton
+										size="small"
+										aria-label={`Close ${label}`}
+										disabled={isRecording}
+										onClick={() => onClose(tab.tabId)}
+										sx={{ mr: 0.5, p: 0.25, flexShrink: 0 }}
+									>
+										<CloseIcon sx={{ fontSize: 15 }} />
+									</IconButton>
+								</span>
 							</Tooltip>
 						)}
 					</Box>

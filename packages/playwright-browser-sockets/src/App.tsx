@@ -113,7 +113,6 @@ export default function App() {
 	const [saveDialogOpen, setSaveDialogOpen] = useState(false);
 	const [stopRecordingDialogOpen, setStopRecordingDialogOpen] =
 		useState(false);
-	const [saveAfterStop, setSaveAfterStop] = useState(false);
 	const [isSavingRecording, setIsSavingRecording] = useState(false);
 	const [saveProject, setSaveProject] = useState<{
 		label: string;
@@ -456,6 +455,52 @@ export default function App() {
 					"Playground room ID is required to resolve a room recording",
 				);
 			}
+
+			const directProject =
+				(mcpPlaybackProjectId &&
+					playback.projects.find(
+						(project) => project.value === mcpPlaybackProjectId,
+					)) ||
+				playback.project ||
+				playback.projects[0] ||
+				null;
+			const exactFileName = mcpRecordingFile
+				.split(/[\\/]/)
+				.filter(Boolean)
+				.pop();
+
+			if (exactFileName && directProject) {
+				const directRoomPath = `/playwright/${exactFileName}`;
+				for (let attempt = 0; attempt < 2; attempt += 1) {
+					const envelope = await getRoomRecordingEnvelope(
+						roomInsightId,
+						directRoomPath,
+					);
+					if (cancelled) return;
+					if (envelope) {
+						playback.configureResolvedRecording({
+							source: "room",
+							project: directProject,
+							fileName: exactFileName,
+							startUrl:
+								mcpStartUrl ||
+								getRecordingStartUrl(envelope) ||
+								"https://example.com",
+							recording: envelope,
+						});
+						setSnackMessage(
+							`Matched room recording ${directRoomPath} (exact filename)`,
+						);
+						return;
+					}
+					if (attempt === 0) {
+						await new Promise((resolve) =>
+							window.setTimeout(resolve, 400),
+						);
+					}
+				}
+			}
+
 			const resolved =
 				await resolvePlaywrightRoomRecording<ResolvePlaywrightRecordingResponse>(
 					toolContext.roomId,
@@ -774,14 +819,7 @@ export default function App() {
 		setIsRecording(false);
 	}, [createSession, mcpStartUrlInput, playback.resetReplayPreparation]);
 
-	const handleStop = useCallback(async () => {
-		if (isRecording) {
-			sendEvent({
-				type: "recording-control",
-				recording: false,
-				discard: true,
-			});
-		}
+	const closeBrowserSession = useCallback(async () => {
 		sendEvent({ type: "close-session" });
 		await closeSession();
 		setLatestFrame(null);
@@ -794,7 +832,18 @@ export default function App() {
 		setSelectionMode(false);
 		setSaveDialogOpen(false);
 		setStopRecordingDialogOpen(false);
-	}, [closeSession, isRecording, playback.resetReplayPreparation, sendEvent]);
+	}, [closeSession, playback.resetReplayPreparation, sendEvent]);
+
+	const handleStop = useCallback(async () => {
+		if (isRecording) {
+			sendEvent({
+				type: "recording-control",
+				recording: false,
+				discard: true,
+			});
+		}
+		await closeBrowserSession();
+	}, [closeBrowserSession, isRecording, sendEvent]);
 
 	const handleSwitchBrowserTab = useCallback(
 		async (tabId: string) => {
@@ -892,12 +941,10 @@ export default function App() {
 		setIsRecording(false);
 		setStopRecordingDialogOpen(false);
 		setSaveDialogOpen(false);
-		setSaveAfterStop(false);
 		setSnackMessage("Recording discarded");
 	}, [sendEvent]);
 
 	const handleSaveAndStopRecording = useCallback(() => {
-		setSaveAfterStop(true);
 		setStopRecordingDialogOpen(false);
 		setSaveDialogOpen(true);
 	}, []);
@@ -940,24 +987,8 @@ export default function App() {
 			}
 
 			playback.selectSavedRecording(saveProject, saved.fileName);
-			if (!saveAfterStop) {
-				try {
-					await sendRecordingControlEvent({
-						type: "recording-control",
-						recording: true,
-						requestId: crypto.randomUUID(),
-					});
-					setIsRecording(true);
-				} catch (error) {
-					setSnackError(
-						error instanceof Error
-							? `Recording saved, but recording could not resume: ${error.message}`
-							: "Recording saved, but recording could not resume",
-					);
-				}
-			}
 			setSaveDialogOpen(false);
-			setSaveAfterStop(false);
+			await closeBrowserSession();
 			setSnackMessage(`Saved recording: ${saved.fileName}`);
 		} catch (error) {
 			if (recordingStopped) {
@@ -981,8 +1012,8 @@ export default function App() {
 			setIsSavingRecording(false);
 		}
 	}, [
+		closeBrowserSession,
 		defaultRecordingName,
-		saveAfterStop,
 		saveDescription,
 		saveIntent,
 		saveProject,
@@ -993,7 +1024,6 @@ export default function App() {
 	]);
 
 	const handleOpenSaveRecording = useCallback(() => {
-		setSaveAfterStop(false);
 		setSaveDialogOpen(true);
 	}, []);
 
@@ -1003,6 +1033,7 @@ export default function App() {
 		setIsReturningToPlayground(true);
 
 		let recordingStopped = false;
+		let browserClosed = false;
 		try {
 			if (!toolContext) {
 				throw new Error("No Playground tool context is available");
@@ -1082,6 +1113,9 @@ export default function App() {
 			);
 			assertPixelSuccess(addMcpResponse, "Room MCP registration");
 
+			await closeBrowserSession();
+			browserClosed = true;
+
 			sendMcpResponseToPlayground(
 				{
 					saved: true,
@@ -1102,14 +1136,10 @@ export default function App() {
 				"success",
 				toolContext.parameters,
 			);
-			sendEvent({ type: "close-session" });
-			await closeSession();
-			setLatestFrame(null);
-			setCurrentUrl("");
 			setRecordedSteps([]);
 			setSnackMessage(`Saved recording: ${saved.roomPath}`);
 		} catch (error) {
-			if (recordingStopped) {
+			if (recordingStopped && !browserClosed) {
 				try {
 					await sendRecordingControlEvent({
 						type: "recording-control",
@@ -1140,7 +1170,7 @@ export default function App() {
 			returningToPlaygroundRef.current = false;
 		}
 	}, [
-		closeSession,
+		closeBrowserSession,
 		getRecordingEnvelope,
 		effectiveInsightId,
 		isRecording,
@@ -1149,7 +1179,6 @@ export default function App() {
 		saveRoomMcpEntry,
 		saveRoomRecording,
 		selectedTextContexts,
-		sendEvent,
 		sendRecordingControlEvent,
 		session,
 		toolContext,
@@ -1195,6 +1224,9 @@ export default function App() {
 				if (!result) {
 					throw new Error("Playback did not start");
 				}
+				if (result.completed) {
+					await closeBrowserSession();
+				}
 
 				sendMcpResponseToPlayground(
 					{
@@ -1227,7 +1259,14 @@ export default function App() {
 				}
 			}
 		})();
-	}, [connectionState, isMcpPlaybackMode, playback, session, toolContext]);
+	}, [
+		closeBrowserSession,
+		connectionState,
+		isMcpPlaybackMode,
+		playback,
+		session,
+		toolContext,
+	]);
 
 	const remoteWidth = session?.viewport.width ?? 1365;
 	const remoteHeight = session?.viewport.height ?? 768;
@@ -1251,7 +1290,9 @@ export default function App() {
 				sx={{
 					display: "flex",
 					alignItems: "center",
+					flexWrap: "wrap",
 					gap: 0.5,
+					rowGap: 0.5,
 					px: 0.5,
 					py: 0.25,
 					bgcolor: "background.paper",
@@ -1277,140 +1318,159 @@ export default function App() {
 					onToggleRecording={handleToggleRecording}
 					onOpenSaveRecording={handleOpenSaveRecording}
 				/>
-				<ConnectionStatus state={connectionState} />
-				<Box sx={{ flex: 1 }} />
-				{session && (
-					<Button
-						size="small"
-						variant={selectionMode ? "contained" : "outlined"}
-						color={selectionMode ? "warning" : "primary"}
-						disabled={
-							connectionState !== "connected" ||
-							isCapturingSelectedText ||
-							isReturningToPlayground
-						}
-						onClick={() => {
-							if (selectionMode) {
-								setSelectionMode(false);
-								return;
+				<Box
+					sx={{
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "flex-end",
+						flexWrap: "wrap",
+						gap: 0.5,
+						ml: "auto",
+						maxWidth: "100%",
+					}}
+				>
+					<ConnectionStatus state={connectionState} />
+					{session && (
+						<Button
+							size="small"
+							variant={selectionMode ? "contained" : "outlined"}
+							color={selectionMode ? "warning" : "primary"}
+							disabled={
+								connectionState !== "connected" ||
+								isCapturingSelectedText ||
+								isReturningToPlayground
 							}
-							playback.requestPause(
-								"Playback paused for context selection",
-							);
-							setSelectionMode(true);
-						}}
-						startIcon={
-							isCapturingSelectedText ? (
-								<CircularProgress size={14} />
-							) : (
-								<CropFreeIcon fontSize="small" />
-							)
-						}
-						sx={{ whiteSpace: "nowrap", minWidth: 0, px: 1 }}
-					>
-						{isCapturingSelectedText
-							? "Extracting…"
-							: selectionMode
-								? "Cancel Capture"
-								: "Capture Context"}
-					</Button>
-				)}
-				{selectedTextContexts.length > 0 && (
+							onClick={() => {
+								if (selectionMode) {
+									setSelectionMode(false);
+									return;
+								}
+								playback.requestPause(
+									"Playback paused for context selection",
+								);
+								setSelectionMode(true);
+							}}
+							startIcon={
+								isCapturingSelectedText ? (
+									<CircularProgress size={14} />
+								) : (
+									<CropFreeIcon fontSize="small" />
+								)
+							}
+							sx={{ whiteSpace: "nowrap", minWidth: 0, px: 1 }}
+						>
+							{isCapturingSelectedText
+								? "Extracting…"
+								: selectionMode
+									? "Cancel Capture"
+									: "Add context"}
+						</Button>
+					)}
+					{selectedTextContexts.length > 0 && (
+						<Button
+							size="small"
+							variant={
+								selectedTextContextsOpen
+									? "contained"
+									: "outlined"
+							}
+							startIcon={<CropFreeIcon fontSize="small" />}
+							onClick={() =>
+								setSelectedTextContextsOpen((open) => !open)
+							}
+							sx={{ whiteSpace: "nowrap", minWidth: 0, px: 1 }}
+						>
+							Contexts ({selectedTextContexts.length})
+						</Button>
+					)}
+					{isPlaygroundMode && session && (
+						<Button
+							size="small"
+							variant="contained"
+							color="primary"
+							disabled={
+								isReturningToPlayground ||
+								isSaving ||
+								isSavingRecording ||
+								isCapturingSelectedText ||
+								selectionMode
+							}
+							onClick={handleReturnToPlayground}
+							startIcon={
+								isReturningToPlayground ||
+								isSaving ||
+								isSavingRecording ? (
+									<CircularProgress
+										size={14}
+										color="inherit"
+									/>
+								) : (
+									<DoneIcon fontSize="small" />
+								)
+							}
+							sx={{ whiteSpace: "nowrap", minWidth: 0, px: 1 }}
+						>
+							{isReturningToPlayground ||
+							isSaving ||
+							isSavingRecording
+								? "Returning"
+								: "Return to Playground"}
+						</Button>
+					)}
 					<Button
 						size="small"
 						variant={
-							selectedTextContextsOpen ? "contained" : "outlined"
+							playback.controlsOpen ||
+							playback.loadedRecordingOpen
+								? "contained"
+								: "outlined"
 						}
-						startIcon={<CropFreeIcon fontSize="small" />}
-						onClick={() =>
-							setSelectedTextContextsOpen((open) => !open)
-						}
-						sx={{ whiteSpace: "nowrap", minWidth: 0, px: 1 }}
-					>
-						Contexts ({selectedTextContexts.length})
-					</Button>
-				)}
-				{isPlaygroundMode && session && (
-					<Button
-						size="small"
-						variant="contained"
-						color="primary"
-						disabled={
-							isReturningToPlayground ||
-							isSaving ||
-							isSavingRecording ||
-							isCapturingSelectedText ||
-							selectionMode
-						}
-						onClick={handleReturnToPlayground}
 						startIcon={
-							isReturningToPlayground ||
-							isSaving ||
-							isSavingRecording ? (
-								<CircularProgress size={14} color="inherit" />
+							playback.controlsOpen ||
+							playback.loadedRecordingOpen ? (
+								<ExpandMoreIcon />
 							) : (
-								<DoneIcon fontSize="small" />
+								<ChevronRightIcon />
 							)
 						}
+						onClick={() => {
+							playback.setControlsOpen(!playback.controlsOpen);
+							if (playback.loadedRecording) {
+								playback.setLoadedRecordingOpen(true);
+							}
+						}}
 						sx={{ whiteSpace: "nowrap", minWidth: 0, px: 1 }}
 					>
-						{isReturningToPlayground ||
-						isSaving ||
-						isSavingRecording
-							? "Returning"
-							: "Return to Playground"}
+						Replay
 					</Button>
-				)}
-				<Button
-					size="small"
-					variant={
-						playback.controlsOpen || playback.loadedRecordingOpen
-							? "contained"
-							: "outlined"
-					}
-					startIcon={
-						playback.controlsOpen ||
-						playback.loadedRecordingOpen ? (
-							<ExpandMoreIcon />
-						) : (
-							<ChevronRightIcon />
-						)
-					}
-					onClick={() => {
-						playback.setControlsOpen(!playback.controlsOpen);
-						if (playback.loadedRecording) {
-							playback.setLoadedRecordingOpen(true);
-						}
-					}}
-					sx={{ whiteSpace: "nowrap", minWidth: 0, px: 1 }}
-				>
-					Replay
-				</Button>
-				<Button
-					size="small"
-					variant={recordedStepsOpen ? "contained" : "outlined"}
-					startIcon={
-						<FiberManualRecordIcon
-							color={isRecording ? "error" : "inherit"}
-						/>
-					}
-					disabled={!isRecording && recordedSteps.length === 0}
-					onClick={() => setRecordedStepsOpen((open) => !open)}
-					sx={{ whiteSpace: "nowrap", minWidth: 0, px: 1 }}
-				>
-					Recorded{" "}
-					{recordedSteps.length ? `(${recordedSteps.length})` : ""}
-				</Button>
-				{playback.isPaused && (
-					<Chip size="small" color="warning" label="Paused" />
-				)}
-				{playback.isRunning && (
-					<Chip
+					<Button
 						size="small"
-						color="primary"
-						label={`Step ${playback.runningStepId ?? ""}`}
-					/>
-				)}
+						variant={recordedStepsOpen ? "contained" : "outlined"}
+						startIcon={
+							<FiberManualRecordIcon
+								color={isRecording ? "error" : "inherit"}
+							/>
+						}
+						disabled={!isRecording && recordedSteps.length === 0}
+						onClick={() => setRecordedStepsOpen((open) => !open)}
+						sx={{ whiteSpace: "nowrap", minWidth: 0, px: 1 }}
+					>
+						Recorded{" "}
+						{recordedSteps.length
+							? `(${recordedSteps.length})`
+							: ""}
+					</Button>
+					{playback.isPaused && (
+						<Chip size="small" color="warning" label="Paused" />
+					)}
+					{playback.isRunning && (
+						<Chip
+							size="small"
+							color="primary"
+							label={`Step ${playback.runningStepId ?? ""}`}
+						/>
+					)}
+				</Box>
 			</Box>
 
 			<BrowserTabStrip

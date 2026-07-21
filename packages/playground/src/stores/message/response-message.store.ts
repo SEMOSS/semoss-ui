@@ -686,9 +686,7 @@ paramValues=[${JSON.stringify({
 		// are immediately reflected in the MCP indicator and available for the
 		// next AskPlayground call — without requiring a full page refresh.
 		if (toolStatus === "success" || toolStatus === "cancelled") {
-			room.syncRoomOptions().catch(() => {
-				// Non-critical — the UI will stay slightly stale but function normally.
-			});
+			await room.syncRoomOptions();
 		}
 
 		// if there is no responseMessage create it. This will hold it.

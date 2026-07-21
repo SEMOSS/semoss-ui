@@ -65,7 +65,7 @@ export const BrowserToolbar: React.FC<BrowserToolbarProps> = ({
 	}, [currentUrl]);
 
 	return (
-		<div className="flex w-full min-w-0 flex-wrap items-center gap-1.5 lg:w-auto lg:flex-1 lg:flex-nowrap">
+		<div className="flex w-full min-w-0 flex-wrap items-center gap-1.5 xl:w-auto xl:flex-1 xl:flex-nowrap">
 			<div className="flex shrink-0 items-center gap-0.5 rounded-md border border-line bg-surface-raised/70 p-0.5">
 				<Tooltip title="Back">
 					<span>
