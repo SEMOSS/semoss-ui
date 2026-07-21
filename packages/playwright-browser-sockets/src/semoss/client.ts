@@ -1,6 +1,10 @@
 import { Env, Insight } from "@semoss/sdk";
-import type { McpToolContext } from "../types/browserEvents";
-import { runPixel } from "./pixel";
+import type {
+	GeneratedRecordingMetadata,
+	McpToolContext,
+	RecordingMetadataModelOption,
+} from "../types/browserEvents";
+import { assertPixelSuccess, runPixel } from "./pixel";
 
 type EnvWithTool = typeof Env & { TOOL?: unknown };
 type McpToolStatus = "success" | "error" | "cancelled" | "paused";
@@ -151,6 +155,79 @@ export function getMcpToolContext(): McpToolContext | null {
 
 export function getSemossInsightId(): string {
 	return boundInsightId || insight.insightId;
+}
+
+export async function listRecordingMetadataModels(
+	insightId?: string,
+): Promise<RecordingMetadataModelOption[]> {
+	const response = await runPixel<unknown>(
+		'META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);',
+		insightId,
+	);
+	assertPixelSuccess(response, "Recording metadata model lookup");
+	const output = response.pixelReturn?.[0]?.output;
+	const engines = Array.isArray(output)
+		? (output as Array<Record<string, unknown>>)
+		: [];
+	return engines.flatMap((engine) => {
+		const value =
+			typeof engine.engine_id === "string" ? engine.engine_id : "";
+		if (!value) return [];
+		const label =
+			(typeof engine.engine_display_name === "string" &&
+				engine.engine_display_name) ||
+			(typeof engine.engine_name === "string" && engine.engine_name) ||
+			value;
+		return [{ label, value }];
+	});
+}
+
+export async function generatePlaywrightRecordingMetadata(parameters: {
+	sessionId: string;
+	roomId?: string;
+	recordingNameHint?: string;
+	insightId?: string;
+	engineId?: string;
+	historyLimit?: number;
+}): Promise<GeneratedRecordingMetadata> {
+	try {
+		// A Playground room already owns its selected model. Standalone recording
+		// mode needs an accessible-model fallback from the current user instead.
+		let fallbackEngineId = parameters.engineId || "";
+		if (!parameters.roomId && !fallbackEngineId) {
+			fallbackEngineId =
+				(await listRecordingMetadataModels(parameters.insightId))[0]
+					?.value || "";
+		}
+		const expression = `GeneratePlaywrightRecordingMetadata(sessionId=${JSON.stringify(
+			parameters.sessionId,
+		)}, roomId=${JSON.stringify(parameters.roomId || "")}, engine=${JSON.stringify(
+			fallbackEngineId,
+		)}, recording_name_hint=${JSON.stringify(
+			parameters.recordingNameHint || "",
+		)}, limit=${Math.max(0, Math.min(20, parameters.historyLimit ?? 8))});`;
+		const response = await runPixel<unknown>(
+			expression,
+			parameters.insightId,
+		);
+		assertPixelSuccess(response, "Recording metadata generation");
+		const output = response.pixelReturn?.[0]?.output;
+		if (typeof output === "string") {
+			return JSON.parse(output) as GeneratedRecordingMetadata;
+		}
+		if (output && typeof output === "object") {
+			return output as GeneratedRecordingMetadata;
+		}
+		return { success: false, error: "Metadata reactor returned no result" };
+	} catch (error) {
+		return {
+			success: false,
+			error:
+				error instanceof Error
+					? error.message
+					: "Unable to generate recording metadata",
+		};
+	}
 }
 
 export async function resolvePlaywrightRoomRecording<T = unknown>(

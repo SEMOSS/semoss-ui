@@ -214,6 +214,22 @@ export interface RecordingMeta {
 	source?: string;
 }
 
+export interface GeneratedRecordingMetadata {
+	success: boolean;
+	title?: string;
+	description?: string;
+	intent?: string;
+	suggestedFileName?: string;
+	confidence?: number;
+	engineId?: string;
+	error?: string;
+}
+
+export interface RecordingMetadataModelOption {
+	label: string;
+	value: string;
+}
+
 export interface RecordingProjectOption {
 	label: string;
 	value: string;

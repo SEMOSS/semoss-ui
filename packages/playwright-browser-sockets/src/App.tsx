@@ -23,6 +23,7 @@ import { PlaygroundStartPrompt } from "./components/PlaygroundStartPrompt";
 import { ReplaySidebar } from "./components/replay/ReplaySidebar";
 import { normalizeBrowserUrl } from "./domain/browser-url";
 import {
+	applyGeneratedRecordingMetadata,
 	buildRecordingFileName,
 	enrichEnvelopeForRoomSave,
 	getRecordingStartUrl,
@@ -42,8 +43,10 @@ import { usePlaybackController } from "./hooks/usePlaybackController";
 import { useRemoteBrowserSession } from "./hooks/useRemoteBrowserSession";
 import {
 	bindSemossInsightToRoom,
+	generatePlaywrightRecordingMetadata,
 	getSemossInsightId,
 	initSemoss,
+	listRecordingMetadataModels,
 	resolvePlaywrightRoomRecording,
 	sendMcpResponseToPlayground,
 	subscribeToMcpToolContext,
@@ -53,6 +56,7 @@ import type {
 	BrowserTabInfo,
 	ClientToServerEvent,
 	McpToolContext,
+	RecordingMetadataModelOption,
 	RemoteBrowserRecordedStep,
 	SelectedTextContext,
 	SelectionBounds,
@@ -110,6 +114,15 @@ export default function App() {
 	const [mcpStartUrlInput, setMcpStartUrlInput] = useState("");
 	const [isReturningToPlayground, setIsReturningToPlayground] =
 		useState(false);
+	const [isGeneratingRecordingMetadata, setIsGeneratingRecordingMetadata] =
+		useState(false);
+	const [isLoadingMetadataModels, setIsLoadingMetadataModels] =
+		useState(false);
+	const [metadataModels, setMetadataModels] = useState<
+		RecordingMetadataModelOption[]
+	>([]);
+	const [metadataModel, setMetadataModel] =
+		useState<RecordingMetadataModelOption | null>(null);
 	const [saveDialogOpen, setSaveDialogOpen] = useState(false);
 	const [stopRecordingDialogOpen, setStopRecordingDialogOpen] =
 		useState(false);
@@ -925,6 +938,9 @@ export default function App() {
 		if (!isRecording) {
 			sendEvent({ type: "recording-control", recording: true });
 			playback.resetReplayPreparation();
+			setSaveTitle("");
+			setSaveDescription("");
+			setSaveIntent("");
 			setIsRecording(true);
 			setSnackMessage("Recording started");
 			return;
@@ -944,15 +960,73 @@ export default function App() {
 		setSnackMessage("Recording discarded");
 	}, [sendEvent]);
 
-	const handleSaveAndStopRecording = useCallback(() => {
+	const prepareSaveDialog = useCallback(async () => {
 		setStopRecordingDialogOpen(false);
 		setSaveDialogOpen(true);
-	}, []);
+		if (metadataModels.length > 0) {
+			setMetadataModel((current) => current || metadataModels[0]);
+			return;
+		}
+		setIsLoadingMetadataModels(true);
+		try {
+			const models =
+				await listRecordingMetadataModels(effectiveInsightId);
+			setMetadataModels(models);
+			setMetadataModel(models[0] || null);
+			if (models.length === 0) {
+				setSnackMessage(
+					"No accessible text-generation model is available. Metadata can still be entered manually.",
+				);
+			}
+		} catch {
+			setSnackMessage(
+				"Models could not be loaded. Metadata can still be entered manually.",
+			);
+		} finally {
+			setIsLoadingMetadataModels(false);
+		}
+	}, [effectiveInsightId, metadataModels]);
+
+	const handleGenerateSaveMetadata = useCallback(async () => {
+		if (!session || !metadataModel) return;
+		setIsGeneratingRecordingMetadata(true);
+		try {
+			const metadata = await generatePlaywrightRecordingMetadata({
+				sessionId: session.sessionId,
+				engineId: metadataModel.value,
+				recordingNameHint: mcpRecordingNameHint,
+				insightId: effectiveInsightId,
+				historyLimit: 0,
+			});
+			if (!metadata.success) {
+				setSnackError(
+					metadata.error || "Unable to generate recording metadata",
+				);
+				return;
+			}
+			setSaveTitle(metadata.title || "");
+			setSaveDescription(metadata.description || "");
+			setSaveIntent(metadata.intent || "");
+			setSnackMessage("Recording details generated");
+		} finally {
+			setIsGeneratingRecordingMetadata(false);
+		}
+	}, [effectiveInsightId, mcpRecordingNameHint, metadataModel, session]);
+
+	const handleSaveAndStopRecording = useCallback(() => {
+		void prepareSaveDialog();
+	}, [prepareSaveDialog]);
 
 	const handleSaveRecording = useCallback(async () => {
 		const title = saveTitle.trim();
+		const description = saveDescription.trim();
+		const intent = saveIntent.trim();
 		if (!saveProject) {
 			setSnackError("Project is required to save the recording");
+			return;
+		}
+		if (!title || !description || !intent) {
+			setSnackError("Title, description, and intent are required");
 			return;
 		}
 
@@ -972,8 +1046,8 @@ export default function App() {
 				project: saveProject.value,
 				name: defaultRecordingName,
 				title,
-				description: saveDescription.trim(),
-				intent: saveIntent.trim(),
+				description,
+				intent,
 			});
 
 			if (!saved) {
@@ -1024,8 +1098,8 @@ export default function App() {
 	]);
 
 	const handleOpenSaveRecording = useCallback(() => {
-		setSaveDialogOpen(true);
-	}, []);
+		void prepareSaveDialog();
+	}, [prepareSaveDialog]);
 
 	const handleReturnToPlayground = useCallback(async () => {
 		if (returningToPlaygroundRef.current) return;
@@ -1073,16 +1147,29 @@ export default function App() {
 				throw new Error("No recording envelope is available");
 			}
 
-			const enrichedEnvelope = enrichEnvelopeForRoomSave(
-				envelope,
-				session.sessionId,
-				mcpRecordingNameHint,
-				mcpStartUrl,
+			const generatedMetadata = await generatePlaywrightRecordingMetadata(
+				{
+					sessionId: session.sessionId,
+					roomId: toolContext.roomId,
+					recordingNameHint: mcpRecordingNameHint,
+					insightId: roomBoundInsightId,
+					historyLimit: 8,
+				},
+			);
+			const enrichedEnvelope = applyGeneratedRecordingMetadata(
+				enrichEnvelopeForRoomSave(
+					envelope,
+					session.sessionId,
+					mcpRecordingNameHint,
+					mcpStartUrl,
+				),
+				generatedMetadata,
 			);
 			const fileName = buildRecordingFileName(
 				enrichedEnvelope,
 				mcpRecordingNameHint,
 				mcpStartUrl,
+				enrichedEnvelope.meta?.title || "",
 			);
 			const saved = await saveRoomRecording(
 				roomBoundInsightId,
@@ -1550,18 +1637,24 @@ export default function App() {
 				open={saveDialogOpen}
 				projects={playback.projects}
 				project={saveProject}
+				models={metadataModels}
+				model={metadataModel}
 				title={saveTitle}
 				fileName={defaultRecordingName}
 				description={saveDescription}
 				intent={saveIntent}
 				isLoadingProjects={isLoadingProjects}
+				isLoadingModels={isLoadingMetadataModels}
+				isGeneratingMetadata={isGeneratingRecordingMetadata}
 				isSaving={isSaving || isSavingRecording}
 				canSave={!!session && isRecording}
 				onClose={() => setSaveDialogOpen(false)}
 				onProjectChange={setSaveProject}
+				onModelChange={setMetadataModel}
 				onTitleChange={setSaveTitle}
 				onDescriptionChange={setSaveDescription}
 				onIntentChange={setSaveIntent}
+				onGenerateMetadata={() => void handleGenerateSaveMetadata()}
 				onSave={handleSaveRecording}
 			/>
 

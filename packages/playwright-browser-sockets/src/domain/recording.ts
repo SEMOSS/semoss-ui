@@ -1,11 +1,12 @@
 import type {
+	GeneratedRecordingMetadata,
 	LoadedRecordingStep,
 	StepsEnvelope,
 } from "../types/browserEvents";
 import { normalizeBrowserUrl } from "./browser-url";
 
 export function flattenEnvelopeSteps(
-	envelope: StepsEnvelope,
+	envelope: Pick<StepsEnvelope, "steps">,
 ): Array<Record<string, unknown>> {
 	return Object.values(envelope.steps ?? {}).flatMap((tabSteps) => {
 		const maybeNested = tabSteps as Array<
@@ -34,7 +35,7 @@ function isMeaningfulRecordingUrl(value: unknown): value is string {
 }
 
 export function getRecordingStartUrl(
-	envelope: StepsEnvelope,
+	envelope: Pick<StepsEnvelope, "steps">,
 	requestedStartUrl = "",
 ): string {
 	const steps = flattenEnvelopeSteps(envelope);
@@ -112,6 +113,7 @@ export function buildRecordingFileName(
 	envelope: StepsEnvelope,
 	hint = "",
 	requestedStartUrl = "",
+	preferredBase = "",
 ): string {
 	const firstUrl = getRecordingStartUrl(envelope, requestedStartUrl);
 	let host = "browser";
@@ -127,6 +129,7 @@ export function buildRecordingFileName(
 	}
 
 	const base =
+		sanitizeFilePart(preferredBase) ||
 		sanitizeFilePart([hint, host].filter(Boolean).join(" ")) ||
 		"playwright-recording";
 	const stamp = new Date()
@@ -135,6 +138,28 @@ export function buildRecordingFileName(
 		.replace(/\..+$/, "")
 		.replace("T", "-");
 	return `${base}-${stamp}.json`;
+}
+
+export function applyGeneratedRecordingMetadata(
+	envelope: StepsEnvelope,
+	metadata: GeneratedRecordingMetadata | null,
+): StepsEnvelope {
+	if (!metadata?.success) return envelope;
+	const title = metadata.title?.trim();
+	const description = metadata.description?.trim();
+	const intent = metadata.intent?.trim();
+	if (!title || !description || !intent) return envelope;
+
+	return {
+		...envelope,
+		meta: {
+			...envelope.meta,
+			title,
+			description,
+			intent,
+			updatedAt: Date.now(),
+		},
+	};
 }
 
 function buildRecordingTitle(
