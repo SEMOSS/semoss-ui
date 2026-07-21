@@ -7,9 +7,10 @@ import {
 	type monaco,
 	type OnMount,
 	registerSparqlLanguage,
+	SPARQL_THEME_DARK,
 	SPARQL_THEME_LIGHT,
 } from "@semoss/shared";
-import { Button, Spinner } from "@semoss/ui/next";
+import { Button, Spinner, useTheme } from "@semoss/ui/next";
 import type { QueryWorkspaceMode } from "./query-script-templates";
 
 const SQL_KEYWORDS = [
@@ -73,10 +74,19 @@ export const QueryEditorPanel: React.FC<QueryEditorPanelProps> = ({
 	isRunning,
 	onRun,
 }) => {
+	const { resolvedTheme } = useTheme();
 	const panelId = node.getId();
 	const initialQuery =
 		(node.getConfig() as { initialQuery?: string } | undefined)
 			?.initialQuery ?? "";
+	const editorTheme =
+		mode === "SPARQL"
+			? resolvedTheme === "dark"
+				? SPARQL_THEME_DARK
+				: SPARQL_THEME_LIGHT
+			: resolvedTheme === "dark"
+				? "vs-dark"
+				: "vs";
 
 	const [query, setQuery] = useState(initialQuery);
 	const [sparqlRaw, setSparqlRaw] = useState(true);
@@ -169,6 +179,20 @@ export const QueryEditorPanel: React.FC<QueryEditorPanelProps> = ({
 		};
 	}, [registerCompletionProvider]);
 
+	useEffect(() => {
+		if (!monacoRef.current) {
+			return;
+		}
+
+		const monaco = monacoRef.current;
+
+		if (mode === "SPARQL") {
+			registerSparqlLanguage(monaco);
+		}
+
+		monaco.editor.setTheme(editorTheme);
+	}, [editorTheme, mode]);
+
 	const handleEditorMount: OnMount = (editor, monaco) => {
 		editorRef.current = editor;
 		monacoRef.current = monaco;
@@ -176,8 +200,9 @@ export const QueryEditorPanel: React.FC<QueryEditorPanelProps> = ({
 		try {
 			if (mode === "SPARQL") {
 				registerSparqlLanguage(monaco);
-				monaco.editor.setTheme(SPARQL_THEME_LIGHT);
 			}
+
+			monaco.editor.setTheme(editorTheme);
 
 			registerCompletionProvider();
 
@@ -237,6 +262,7 @@ export const QueryEditorPanel: React.FC<QueryEditorPanelProps> = ({
 						height={"100%"}
 						value={query}
 						language={mode === "SPARQL" ? "sparql" : "sql"}
+						theme={editorTheme}
 						options={{
 							fixedOverflowWidgets: mode === "SQL",
 							scrollbar: {
