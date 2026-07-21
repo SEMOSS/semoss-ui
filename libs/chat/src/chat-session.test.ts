@@ -113,6 +113,25 @@ beforeEach(() => {
 });
 
 describe("ChatSession.sendMessage", () => {
+	it("defers resumed-room history and starts it only once", async () => {
+		const session = new ChatSession(
+			actions,
+			insightId,
+			{ ...baseOptions, roomId: "room-1" },
+			false,
+		);
+
+		expect(getPlaygroundRoomHistory).not.toHaveBeenCalled();
+
+		await Promise.all([session.start(), session.start()]);
+
+		expect(getPlaygroundRoomHistory).toHaveBeenCalledTimes(1);
+		expect(getPlaygroundRoomHistory).toHaveBeenCalledWith(
+			actions,
+			"room-1",
+		);
+	});
+
 	it("streams content chunks into a single merged text part and marks the message complete", async () => {
 		askPlayground.mockImplementation(
 			streamed(
@@ -191,6 +210,29 @@ describe("ChatSession.sendMessage", () => {
 
 		expect(createPlaygroundRoom).toHaveBeenCalledTimes(1);
 		expect(session.roomId).toBe("room-1");
+	});
+
+	it("creates a new room in the configured workspace", async () => {
+		askPlayground.mockImplementation(streamed([], textResponse("ok")));
+		const session = new ChatSession(actions, insightId, {
+			...baseOptions,
+			workspaceId: "workspace-1",
+			defaultRoomSettings: { instructions: "workspace instructions" },
+		});
+
+		await session.sendMessage("hello workspace");
+
+		expect(createPlaygroundRoom).toHaveBeenCalledWith(
+			actions,
+			"workspace-1",
+		);
+		expect(updateRoomOptions).toHaveBeenCalledWith(
+			actions,
+			expect.objectContaining({
+				roomId: "room-1",
+				workspaceId: "workspace-1",
+			}),
+		);
 	});
 
 	it("syncs room options once when defaultRoomSettings is provided", async () => {
@@ -666,6 +708,7 @@ describe("ChatSession.setMcp", () => {
 		const session = new ChatSession(actions, insightId, {
 			...baseOptions,
 			roomId: "room-1",
+			workspaceId: "workspace-1",
 		});
 		await flushMicrotasks();
 
@@ -674,6 +717,7 @@ describe("ChatSession.setMcp", () => {
 		expect(session.mcp).toEqual([knowledgeMcp]);
 		expect(updateRoomOptions).toHaveBeenCalledWith(actions, {
 			roomId: "room-1",
+			workspaceId: "workspace-1",
 			instructions: undefined,
 			temperature: undefined,
 			mcp: [knowledgeMcp],
@@ -711,6 +755,7 @@ describe("ChatSession.setMcp", () => {
 		// silently persist an empty mcp array and wipe the attachment.
 		expect(updateRoomOptions).toHaveBeenCalledWith(actions, {
 			roomId: "room-1",
+			workspaceId: undefined,
 			instructions: undefined,
 			temperature: undefined,
 			mcp: [knowledgeMcp],

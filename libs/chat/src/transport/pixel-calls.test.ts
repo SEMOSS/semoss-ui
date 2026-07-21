@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { RawPixelMessage, RawPlaygroundRoom } from "../types";
 import {
+	createPlaygroundRoom,
 	deletePlaygroundRoom,
 	getPlaygroundRoomHistory,
 	listPinnedPlaygroundRooms,
 	listPlaygroundRooms,
 	pinPlaygroundRoom,
 	renamePlaygroundRoom,
+	updateRoomOptions,
 } from "./pixel-calls";
 
 function fakeActions(output: unknown) {
@@ -26,6 +28,41 @@ function rawRoom(
 		...overrides,
 	};
 }
+
+describe("createPlaygroundRoom", () => {
+	it("associates a new room with a workspace", async () => {
+		const actions = fakeActions({ roomId: "room-1" });
+
+		await createPlaygroundRoom(actions, "workspace-1");
+
+		expect(actions.run).toHaveBeenCalledWith(
+			'CreatePlaygroundRoom(workspaceId="workspace-1")',
+		);
+	});
+
+	it("preserves the unscoped room pixel when no workspace is provided", async () => {
+		const actions = fakeActions({ roomId: "room-1" });
+
+		await createPlaygroundRoom(actions);
+
+		expect(actions.run).toHaveBeenCalledWith("CreatePlaygroundRoom()");
+	});
+});
+
+describe("updateRoomOptions", () => {
+	it("preserves the room workspace in persisted options", async () => {
+		const actions = fakeActions(undefined);
+
+		await updateRoomOptions(actions, {
+			roomId: "room-1",
+			workspaceId: "workspace-1",
+		});
+
+		expect(actions.run).toHaveBeenCalledWith(
+			'UpdateRoomOptions(roomId="room-1", roomOptions=[{"instructions":"","mcp":[],"temperature":0.7,"workspace":{"workspace_id":"workspace-1"}}])',
+		);
+	});
+});
 
 describe("listPinnedPlaygroundRooms", () => {
 	it("runs the exact pinned-rooms pixel and maps to RoomSummary", async () => {

@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { COMPONENT_REGISTRY } from "@/components/components-playground/component-registry";
 import { ComponentsPlaygroundLayout } from "@/components/components-playground/components-playground-layout";
+import { ChatDemoDoc } from "@/components/components-playground/docs/chat-demo-doc";
 import { OverviewDoc } from "@/components/components-playground/docs/overview-doc";
 
 /** /components/playground — a shadcn/ui-style reference site for
@@ -12,6 +13,7 @@ export const ComponentsPlaygroundRouter = () => {
 		<Routes>
 			<Route path="/" element={<ComponentsPlaygroundLayout />}>
 				<Route index element={<OverviewDoc />} />
+				<Route path="chat-demo" element={<ChatDemoDoc />} />
 				{COMPONENT_REGISTRY.map((entry) => (
 					<Route
 						key={entry.slug}

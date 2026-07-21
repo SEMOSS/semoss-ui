@@ -103,9 +103,6 @@ importers:
       '@semoss/ui':
         specifier: workspace:*
         version: link:../ui
-      '@tailwindcss/vite':
-        specifier: ^4.1.14
-        version: 4.1.17(vite@7.2.4(@types/node@25.9.3)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.48.0))
       '@testing-library/jest-dom':
         specifier: ^6.6.3
         version: 6.9.1
@@ -133,9 +130,6 @@ importers:
       rollup-plugin-delete:
         specifier: 3.0.1
         version: 3.0.1(rollup@4.59.0)
-      tailwindcss:
-        specifier: ^4.1.14
-        version: 4.1.17
       tslib:
         specifier: 2.5.3
         version: 2.5.3

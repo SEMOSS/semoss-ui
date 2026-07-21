@@ -22,8 +22,7 @@
         "build:dev": "rollup -c",
         "test": "vitest run",
         "test:watch": "vitest --watch",
-        "type-check": "tsc --pretty --noEmit -p tsconfig.typecheck.json",
-        "sandbox": "vite"
+        "type-check": "tsc --pretty --noEmit -p tsconfig.typecheck.json"
     },
     "keywords": [],
     "author": "",
@@ -46,7 +45,6 @@
         "@rollup/plugin-node-resolve": "16.0.1",
         "@rollup/plugin-terser": "^0.4.4",
         "@rollup/plugin-typescript": "12.1.4",
-        "@tailwindcss/vite": "^4.1.14",
         "@testing-library/jest-dom": "^6.6.3",
         "@testing-library/react": "^16.2.0",
         "@testing-library/user-event": "^14.4.3",
@@ -56,7 +54,6 @@
         "jsdom": "~22.1.0",
         "rollup": "4.59.0",
         "rollup-plugin-delete": "3.0.1",
-        "tailwindcss": "^4.1.14",
         "tslib": "2.5.3",
         "typescript": "~5.5.2",
         "vite": "^7.0.0",

@@ -116,9 +116,13 @@ export async function streamPixel(
 
 export async function createPlaygroundRoom(
 	actions: InsightActions,
+	workspaceId?: string,
 ): Promise<{ roomId: string }> {
+	const workspaceParam = workspaceId
+		? `workspaceId=${JSON.stringify(workspaceId)}`
+		: "";
 	const result = await actions.run<Record<string, unknown>[]>(
-		"CreatePlaygroundRoom()",
+		`CreatePlaygroundRoom(${workspaceParam})`,
 	);
 	const data = unwrapOutput(result) as { roomId?: string };
 	if (!data.roomId) {
@@ -131,6 +135,7 @@ export async function updateRoomOptions(
 	actions: InsightActions,
 	params: {
 		roomId: string;
+		workspaceId?: string;
 		instructions?: string;
 		temperature?: number;
 		/**
@@ -151,7 +156,7 @@ export async function updateRoomOptions(
 		instructions: params.instructions ?? "",
 		mcp: params.mcp ?? [],
 		temperature: params.temperature ?? 0.7,
-		workspace: { workspace_id: null },
+		workspace: { workspace_id: params.workspaceId ?? null },
 	};
 	const pixel = `UpdateRoomOptions(roomId="${params.roomId}", roomOptions=[${JSON.stringify(roomOptions)}])`;
 	await actions.run<Record<string, unknown>[]>(pixel);

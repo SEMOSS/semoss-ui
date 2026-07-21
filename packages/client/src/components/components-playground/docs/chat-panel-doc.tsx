@@ -11,7 +11,7 @@ const PROPS: PropDoc[] = [
 		type: "ChatOptions",
 		required: true,
 		description:
-			"Passed straight through to ChatProvider — { engineId, roomId?, defaultRoomSettings?, toolAutoExecutionLimit?, gracefulErrors? }.",
+			"Passed straight through to ChatProvider — { engineId, roomId?, workspaceId?, defaultRoomSettings?, toolAutoExecutionLimit?, gracefulErrors? }.",
 	},
 	{
 		name: "isActive",
@@ -34,7 +34,10 @@ const ChatPanelDemo = () => {
 
 	return (
 		<div className="h-[32rem]">
-			<ChatPanel options={{ engineId: engine?.engineId ?? "" }} />
+			<ChatPanel
+				key={engine?.engineId}
+				options={{ engineId: engine?.engineId ?? "" }}
+			/>
 		</div>
 	);
 };
@@ -43,7 +46,7 @@ export const ChatPanelDoc = () => {
 	return (
 		<DocPage
 			title="ChatPanel"
-			description="The batteries-included drop-in: wraps a ChatProvider and wires useChatContext() straight into MessageList + ChatInput. Deliberately single-mode — always owns its own ChatProvider, no controlled variant. Anyone needing engine/MCP composition already has the escape hatch of composing MessageList/ChatInput directly inside their own ChatProvider, same as chat-playground does."
+			description="The batteries-included drop-in: wraps a ChatProvider and wires useChatContext() straight into MessageList + ChatInput. Options initialize its session, so key the panel when a new chat's engine changes. Anyone needing engine/MCP composition can compose MessageList and ChatInput inside their own ChatProvider."
 		>
 			<DemoSection
 				description="A real, live conversation against your connected engine — this is a genuinely working chat, not a mock."
@@ -54,7 +57,7 @@ export const ChatPanelDoc = () => {
 				}
 				code={`import { ChatPanel } from "@semoss/chat/components";
 
-<ChatPanel options={{ engineId }} isActive />`}
+<ChatPanel key={engineId} options={{ engineId }} isActive />`}
 			/>
 			<PropsTable props={PROPS} />
 		</DocPage>

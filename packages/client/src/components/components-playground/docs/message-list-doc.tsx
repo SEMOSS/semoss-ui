@@ -91,6 +91,7 @@ export const MessageListDoc = () => {
 						</div>
 						<RequiresEngine>
 							<ChatProvider
+								key={engine?.engineId}
 								options={{ engineId: engine?.engineId ?? "" }}
 							>
 								<MessageListDemo
@@ -103,11 +104,13 @@ export const MessageListDoc = () => {
 				code={`import { ChatProvider, useChatContext } from "@semoss/chat";
 import { ChatInput, MessageList } from "@semoss/chat/components";
 
-// Inside a <ChatProvider options={{ engineId, roomId }}>
+// Key new chats by engineId; key resumed chats by roomId.
 const { isTyping, sendMessage } = useChatContext();
 
-<MessageList className="flex-1" />
-<ChatInput onSubmit={sendMessage} isGenerating={isTyping} />`}
+<ChatProvider key={roomId ?? engineId} options={{ engineId, roomId }}>
+	<MessageList className="flex-1" />
+	<ChatInput onSubmit={sendMessage} isGenerating={isTyping} />
+</ChatProvider>`}
 			/>
 			<PropsTable props={PROPS} />
 		</DocPage>
