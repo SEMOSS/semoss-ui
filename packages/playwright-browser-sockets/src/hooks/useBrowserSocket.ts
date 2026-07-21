@@ -28,6 +28,9 @@ interface UseBrowserSocketReturn {
 	sendTabControlEvent: (
 		event: ClientToServerEvent & { requestId: string },
 	) => Promise<void>;
+	sendRecordingControlEvent: (
+		event: ClientToServerEvent & { requestId: string },
+	) => Promise<void>;
 	captureSelectedText: (
 		bounds: SelectionBounds,
 	) => Promise<SelectedTextContext>;
@@ -46,6 +49,12 @@ interface PendingSelectedText {
 }
 
 interface PendingTabControl {
+	resolve: () => void;
+	reject: (error: Error) => void;
+	timeout: number;
+}
+
+interface PendingRecordingControl {
 	resolve: () => void;
 	reject: (error: Error) => void;
 	timeout: number;
@@ -77,6 +86,9 @@ export function useBrowserSocket({
 	const pendingTabControlRef = useRef<Map<string, PendingTabControl>>(
 		new Map(),
 	);
+	const pendingRecordingControlRef = useRef<
+		Map<string, PendingRecordingControl>
+	>(new Map());
 
 	// Build the full WS URL from the relative path returned by the REST API
 	const buildFullWsUrl = useCallback((path: string): string => {
@@ -143,6 +155,25 @@ export function useBrowserSocket({
 						else
 							pending.reject(
 								new Error(msg.error || "Tab action failed"),
+							);
+						break;
+					}
+					case "recording-control-result": {
+						const pending = pendingRecordingControlRef.current.get(
+							msg.requestId,
+						);
+						if (!pending) break;
+						window.clearTimeout(pending.timeout);
+						pendingRecordingControlRef.current.delete(
+							msg.requestId,
+						);
+						if (msg.success) pending.resolve();
+						else
+							pending.reject(
+								new Error(
+									msg.error ||
+										"Recording state update failed",
+								),
 							);
 						break;
 					}
@@ -215,6 +246,15 @@ export function useBrowserSocket({
 				);
 			});
 			pendingTabControlRef.current.clear();
+			pendingRecordingControlRef.current.forEach((pending) => {
+				window.clearTimeout(pending.timeout);
+				pending.reject(
+					new Error(
+						"Browser connection closed during recording state update",
+					),
+				);
+			});
+			pendingRecordingControlRef.current.clear();
 		};
 
 		ws.onerror = () => {
@@ -337,11 +377,40 @@ export function useBrowserSocket({
 		[],
 	);
 
+	const sendRecordingControlEvent = useCallback(
+		(event: ClientToServerEvent & { requestId: string }): Promise<void> => {
+			const ws = wsRef.current;
+			if (!ws || ws.readyState !== WebSocket.OPEN) {
+				return Promise.reject(
+					new Error("Browser connection is not ready"),
+				);
+			}
+			return new Promise<void>((resolve, reject) => {
+				const timeout = window.setTimeout(() => {
+					pendingRecordingControlRef.current.delete(event.requestId);
+					reject(
+						new Error(
+							"Timed out waiting for recording state update",
+						),
+					);
+				}, 10_000);
+				pendingRecordingControlRef.current.set(event.requestId, {
+					resolve,
+					reject,
+					timeout,
+				});
+				ws.send(JSON.stringify(event));
+			});
+		},
+		[],
+	);
+
 	return {
 		connectionState,
 		sendEvent,
 		sendReplayEvent,
 		sendTabControlEvent,
+		sendRecordingControlEvent,
 		captureSelectedText,
 	};
 }

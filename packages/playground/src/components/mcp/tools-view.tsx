@@ -1,6 +1,6 @@
 import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Env, type MCPToolRequest, usePixel } from "@semoss/sdk/react";
 import { Skeleton } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
@@ -37,6 +37,7 @@ export const ToolsView = observer(
 		 * State
 		 */
 		const iframeRef = useRef<HTMLIFrameElement>(null);
+		const iframeReadyRef = useRef(false);
 		const [isLoading, setIsLoading] = useState<boolean>(true);
 		const [url, setUrl] = useState("");
 
@@ -71,7 +72,7 @@ export const ToolsView = observer(
 		/**
 		 * Process iframe on load
 		 */
-		const handleOnLoad = () => {
+		const sendToolContext = useCallback(() => {
 			const targetOrigin = url
 				? new URL(url, window.location.origin).origin
 				: window.location.origin;
@@ -95,6 +96,11 @@ export const ToolsView = observer(
 				},
 				targetOrigin,
 			);
+		}, [message, room.roomId, tool, toolParameters, toolResponse, url]);
+
+		const handleOnLoad = () => {
+			iframeReadyRef.current = true;
+			sendToolContext();
 		};
 
 		/**
@@ -178,6 +184,12 @@ export const ToolsView = observer(
 
 			chooseUrl();
 		}, [app, tool, toolResponse, getAppInfo.status, getAppInfo.data]);
+
+		useEffect(() => {
+			if (iframeReadyRef.current) {
+				sendToolContext();
+			}
+		}, [sendToolContext]);
 
 		if (!tool) {
 			return null;

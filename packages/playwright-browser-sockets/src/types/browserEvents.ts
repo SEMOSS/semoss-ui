@@ -80,7 +80,12 @@ export type ClientToServerEvent =
 	| ({ type: "navigate-back"; record?: boolean } & ReplayMetadata)
 	| ({ type: "navigate-forward"; record?: boolean } & ReplayMetadata)
 	| ({ type: "reload"; record?: boolean } & ReplayMetadata)
-	| { type: "recording-control"; recording: boolean; discard?: boolean }
+	| {
+			type: "recording-control";
+			recording: boolean;
+			discard?: boolean;
+			requestId?: string;
+	  }
 	| { type: "recording"; recording: boolean; discard?: boolean }
 	| {
 			type: "selected-text-context";
@@ -119,6 +124,12 @@ export type ServerToClientEvent =
 			requestId: string;
 			success: boolean;
 			activeTabId?: string;
+			error?: string;
+	  }
+	| {
+			type: "recording-control-result";
+			requestId: string;
+			success: boolean;
 			error?: string;
 	  }
 	| {

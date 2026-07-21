@@ -114,6 +114,7 @@ export default function App() {
 	const [stopRecordingDialogOpen, setStopRecordingDialogOpen] =
 		useState(false);
 	const [saveAfterStop, setSaveAfterStop] = useState(false);
+	const [isSavingRecording, setIsSavingRecording] = useState(false);
 	const [saveProject, setSaveProject] = useState<{
 		label: string;
 		value: string;
@@ -144,6 +145,7 @@ export default function App() {
 	const autoPlaybackErrorSentRef = useRef(false);
 	const returningToPlaygroundRef = useRef(false);
 	const selectedContextSequenceRef = useRef(0);
+	const activeToolExecutionRef = useRef("");
 
 	const isPlaygroundMode = !!toolContext;
 	const isMcpPlaybackMode = isPlayRecordingTool(toolContext);
@@ -207,6 +209,7 @@ export default function App() {
 		sendEvent,
 		sendReplayEvent,
 		sendTabControlEvent,
+		sendRecordingControlEvent,
 		captureSelectedText,
 	} = useBrowserSocket({
 		wsUrl: session?.webSocketUrl ?? null,
@@ -230,6 +233,40 @@ export default function App() {
 		onError: setSnackError,
 		onMessage: setSnackMessage,
 	});
+
+	const toolExecutionKey = toolContext
+		? [
+				toolContext.roomId,
+				toolContext.message,
+				toolContext.id,
+				toolContext.originalName,
+				JSON.stringify(
+					toolContext.executedParameters ?? toolContext.parameters,
+				),
+			].join("\u001f")
+		: "";
+
+	useEffect(() => {
+		if (
+			!toolExecutionKey ||
+			activeToolExecutionRef.current === toolExecutionKey
+		) {
+			return;
+		}
+		activeToolExecutionRef.current = toolExecutionKey;
+		autoStartedRef.current = false;
+		autoRecordingStartedRef.current = false;
+		autoPlaybackProjectSelectedRef.current = false;
+		autoPlaybackRecordingSelectedRef.current = false;
+		autoPlaybackLoadStartedRef.current = false;
+		autoPlaybackRunStartedRef.current = false;
+		autoPlaybackErrorSentRef.current = false;
+		returningToPlaygroundRef.current = false;
+		setIsReturningToPlayground(false);
+		setSelectedTextContexts([]);
+		setRecordedSteps([]);
+		playback.resetExecution();
+	}, [playback.resetExecution, toolExecutionKey]);
 
 	const runBrowserAction = useCallback(
 		async (event: ClientToServerEvent) => {
@@ -872,26 +909,76 @@ export default function App() {
 			return;
 		}
 
-		const saved = await saveRecording({
-			project: saveProject.value,
-			name: defaultRecordingName,
-			title,
-			description: saveDescription.trim(),
-			intent: saveIntent.trim(),
-		});
+		setIsSavingRecording(true);
+		let recordingStopped = false;
+		try {
+			await sendRecordingControlEvent({
+				type: "recording-control",
+				recording: false,
+				discard: false,
+				requestId: crypto.randomUUID(),
+			});
+			recordingStopped = true;
+			setIsRecording(false);
 
-		if (saved) {
-			setSaveDialogOpen(false);
-			if (saveAfterStop) {
-				sendEvent({
+			const saved = await saveRecording({
+				project: saveProject.value,
+				name: defaultRecordingName,
+				title,
+				description: saveDescription.trim(),
+				intent: saveIntent.trim(),
+			});
+
+			if (!saved) {
+				await sendRecordingControlEvent({
 					type: "recording-control",
-					recording: false,
-					discard: true,
+					recording: true,
+					requestId: crypto.randomUUID(),
 				});
-				setIsRecording(false);
-				setSaveAfterStop(false);
+				setIsRecording(true);
+				return;
 			}
+
+			playback.selectSavedRecording(saveProject, saved.fileName);
+			if (!saveAfterStop) {
+				try {
+					await sendRecordingControlEvent({
+						type: "recording-control",
+						recording: true,
+						requestId: crypto.randomUUID(),
+					});
+					setIsRecording(true);
+				} catch (error) {
+					setSnackError(
+						error instanceof Error
+							? `Recording saved, but recording could not resume: ${error.message}`
+							: "Recording saved, but recording could not resume",
+					);
+				}
+			}
+			setSaveDialogOpen(false);
+			setSaveAfterStop(false);
 			setSnackMessage(`Saved recording: ${saved.fileName}`);
+		} catch (error) {
+			if (recordingStopped) {
+				try {
+					await sendRecordingControlEvent({
+						type: "recording-control",
+						recording: true,
+						requestId: crypto.randomUUID(),
+					});
+					setIsRecording(true);
+				} catch {
+					// Preserve the original save error below.
+				}
+			}
+			setSnackError(
+				error instanceof Error
+					? error.message
+					: "Failed to save recording",
+			);
+		} finally {
+			setIsSavingRecording(false);
 		}
 	}, [
 		defaultRecordingName,
@@ -901,7 +988,8 @@ export default function App() {
 		saveProject,
 		saveRecording,
 		saveTitle,
-		sendEvent,
+		sendRecordingControlEvent,
+		playback.selectSavedRecording,
 	]);
 
 	const handleOpenSaveRecording = useCallback(() => {
@@ -914,6 +1002,7 @@ export default function App() {
 		returningToPlaygroundRef.current = true;
 		setIsReturningToPlayground(true);
 
+		let recordingStopped = false;
 		try {
 			if (!toolContext) {
 				throw new Error("No Playground tool context is available");
@@ -938,11 +1027,13 @@ export default function App() {
 			}
 
 			if (isRecording) {
-				sendEvent({
+				await sendRecordingControlEvent({
 					type: "recording-control",
 					recording: false,
 					discard: false,
+					requestId: crypto.randomUUID(),
 				});
+				recordingStopped = true;
 				setIsRecording(false);
 			}
 
@@ -1018,6 +1109,18 @@ export default function App() {
 			setRecordedSteps([]);
 			setSnackMessage(`Saved recording: ${saved.roomPath}`);
 		} catch (error) {
+			if (recordingStopped) {
+				try {
+					await sendRecordingControlEvent({
+						type: "recording-control",
+						recording: true,
+						requestId: crypto.randomUUID(),
+					});
+					setIsRecording(true);
+				} catch {
+					// Report the Return to Playground failure below.
+				}
+			}
 			const message =
 				error instanceof Error
 					? error.message
@@ -1047,6 +1150,7 @@ export default function App() {
 		saveRoomRecording,
 		selectedTextContexts,
 		sendEvent,
+		sendRecordingControlEvent,
 		session,
 		toolContext,
 	]);
@@ -1168,7 +1272,7 @@ export default function App() {
 					onForward={handleForward}
 					onReload={handleReload}
 					isRecording={isRecording}
-					isSaving={isSaving}
+					isSaving={isSaving || isSavingRecording}
 					canSaveRecording={!!session && isRecording}
 					onToggleRecording={handleToggleRecording}
 					onOpenSaveRecording={handleOpenSaveRecording}
@@ -1234,12 +1338,15 @@ export default function App() {
 						disabled={
 							isReturningToPlayground ||
 							isSaving ||
+							isSavingRecording ||
 							isCapturingSelectedText ||
 							selectionMode
 						}
 						onClick={handleReturnToPlayground}
 						startIcon={
-							isReturningToPlayground || isSaving ? (
+							isReturningToPlayground ||
+							isSaving ||
+							isSavingRecording ? (
 								<CircularProgress size={14} color="inherit" />
 							) : (
 								<DoneIcon fontSize="small" />
@@ -1247,7 +1354,9 @@ export default function App() {
 						}
 						sx={{ whiteSpace: "nowrap", minWidth: 0, px: 1 }}
 					>
-						{isReturningToPlayground || isSaving
+						{isReturningToPlayground ||
+						isSaving ||
+						isSavingRecording
 							? "Returning"
 							: "Return to Playground"}
 					</Button>
@@ -1386,7 +1495,7 @@ export default function App() {
 				description={saveDescription}
 				intent={saveIntent}
 				isLoadingProjects={isLoadingProjects}
-				isSaving={isSaving}
+				isSaving={isSaving || isSavingRecording}
 				canSave={!!session && isRecording}
 				onClose={() => setSaveDialogOpen(false)}
 				onProjectChange={setSaveProject}

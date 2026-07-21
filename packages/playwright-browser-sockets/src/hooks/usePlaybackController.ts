@@ -114,6 +114,10 @@ export function usePlaybackController({
 	>(null);
 	const pauseRequestedRef = useRef(false);
 	const replayPreparedRef = useRef(false);
+	const [savedRecordingSelection, setSavedRecordingSelection] = useState<{
+		projectValue: string;
+		fileName: string;
+	} | null>(null);
 
 	const flattenedSteps = useMemo<FlattenedRecordingStep[]>(() => {
 		if (!loadedRecording?.steps) return [];
@@ -215,7 +219,16 @@ export function usePlaybackController({
 			.then((recordingFiles) => {
 				if (cancelled) return;
 				setFiles(recordingFiles);
-				if (!isMcpPlaybackMode) {
+				const preferredRecording =
+					savedRecordingSelection?.projectValue === project.value
+						? savedRecordingSelection.fileName
+						: null;
+				if (
+					preferredRecording &&
+					recordingFiles.includes(preferredRecording)
+				) {
+					setSelectedRecording(preferredRecording);
+				} else if (!isMcpPlaybackMode) {
 					setSelectedRecording(recordingFiles[0] ?? null);
 				}
 			})
@@ -226,10 +239,18 @@ export function usePlaybackController({
 		return () => {
 			cancelled = true;
 		};
-	}, [insightId, isMcpPlaybackMode, listRecordingFiles, project, source]);
+	}, [
+		insightId,
+		isMcpPlaybackMode,
+		listRecordingFiles,
+		project,
+		savedRecordingSelection,
+		source,
+	]);
 
 	const selectProject = useCallback((next: PlaybackProject | null) => {
 		setSource("project");
+		setSavedRecordingSelection(null);
 		setProject(next);
 	}, []);
 
@@ -240,6 +261,21 @@ export function usePlaybackController({
 		setLoadedRecordingOpen(false);
 		setEditingStepId(null);
 	}, []);
+
+	const selectSavedRecording = useCallback(
+		(nextProject: PlaybackProject, fileName: string) => {
+			setSavedRecordingSelection({
+				projectValue: nextProject.value,
+				fileName,
+			});
+			setSource("project");
+			setProject(nextProject);
+			setLoadedRecording(null);
+			setLoadedRecordingOpen(false);
+			setEditingStepId(null);
+		},
+		[],
+	);
 
 	const configureResolvedRecording = useCallback(
 		(selection: ResolvedRecordingSelection) => {
@@ -259,6 +295,24 @@ export function usePlaybackController({
 
 	const resetReplayPreparation = useCallback(() => {
 		replayPreparedRef.current = false;
+	}, []);
+
+	const resetExecution = useCallback(() => {
+		pauseRequestedRef.current = false;
+		replayPreparedRef.current = false;
+		setSavedRecordingSelection(null);
+		setStartUrl("");
+		setSource("project");
+		setSelectedRecording(null);
+		setLoadedRecording(null);
+		setRunningStepId(null);
+		setExecutedStepIds(new Set());
+		setEditedTypeValues({});
+		setIsRunning(false);
+		setIsPaused(false);
+		setLoadedRecordingOpen(false);
+		setEditingStepId(null);
+		setValueRequiredStepId(null);
 	}, []);
 
 	const requestPause = useCallback(
@@ -653,9 +707,11 @@ export function usePlaybackController({
 		refreshProjects,
 		selectProject,
 		selectRecording,
+		selectSavedRecording,
 		configureResolvedRecording,
 		initializeLoadedRecording,
 		resetReplayPreparation,
+		resetExecution,
 		requestPause,
 		load,
 		runStep,
