@@ -39,7 +39,8 @@ const PROPS: PropDoc[] = [
 	{
 		name: "trailingActions",
 		type: "ReactNode",
-		description: "Slot rendered before the Send button.",
+		description:
+			"Slot rendered before the Send button — EngineSelect/McpMenuButton/PromptOptimizer compose in here.",
 	},
 ];
 
@@ -50,7 +51,7 @@ export const ChatInputDoc = () => {
 	return (
 		<DocPage
 			title="ChatInput"
-			description="The composer textarea. Enter sends, Shift+Enter inserts a newline. isGenerating swaps Send for a Spinner. EngineSelect/McpMenuButton/MCPOverlay are no longer suggested compositions here — the simplified direction is slash commands inside the composer instead (see #3394)."
+			description="The composer textarea. Enter sends, Shift+Enter inserts a newline. isGenerating swaps Send for a Spinner. ChatInput itself knows nothing about engines, MCP, or prompts — those compose into its trailingActions slot, same pattern as any other composed control."
 		>
 			<DemoSection
 				preview={
@@ -91,6 +92,7 @@ const { isTyping, sendMessage } = useChatContext();
   onSubmit={sendMessage}
   isGenerating={isTyping}
   enableVoiceInput
+  trailingActions={<EngineSelect ... />}
 />`}
 			/>
 			<PropsTable props={PROPS} />
