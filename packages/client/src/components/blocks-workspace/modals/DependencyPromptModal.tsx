@@ -150,7 +150,7 @@ export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
 					{/* Warning Alert */}
 					<div className="mb-4 flex items-start gap-2 rounded border border-orange-300 bg-orange-50 p-3">
 						<AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-orange-600" />
-						<p className="text-gray-800 text-sm leading-relaxed">
+						<p className="text-foreground text-sm leading-relaxed">
 							{cosmetics.desc}
 						</p>
 					</div>
@@ -162,13 +162,13 @@ export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
 						className="mb-4"
 					>
 						<CollapsibleTrigger className="flex w-full items-center justify-between py-2 hover:no-underline">
-							<p className="font-normal text-gray-700 text-sm">
+							<p className="font-normal text-muted-foreground text-sm">
 								{`This ${type.toLowerCase()} is used in :`}
 							</p>
 							{isUsageExpanded ? (
-								<ChevronUp className="h-4 w-4 text-gray-500" />
+								<ChevronUp className="h-4 w-4 text-muted-foreground" />
 							) : (
-								<ChevronDown className="h-4 w-4 text-gray-500" />
+								<ChevronDown className="h-4 w-4 text-muted-foreground" />
 							)}
 						</CollapsibleTrigger>
 						<CollapsibleContent>
@@ -180,7 +180,7 @@ export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
 									<Badge
 										key={usage}
 										variant="outline"
-										className="border-gray-300 bg-white font-normal text-gray-700 text-xs hover:bg-white"
+										className="border-border bg-card font-normal text-card-foreground text-xs hover:bg-card"
 										data-testid={`delete-${type.toLowerCase()}-modal-usage-${usage}`}
 									>
 										{usage}
@@ -193,7 +193,7 @@ export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
 					{/* Conditional Replace Options Section */}
 					{showReplaceOptions && onReplace && (
 						<div className="mb-4">
-							<p className="mb-3 font-normal text-gray-700 text-sm">
+							<p className="mb-3 font-normal text-muted-foreground text-sm">
 								You can replace the links below before
 								continuing.
 							</p>
@@ -211,7 +211,7 @@ export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
 									/>
 									<Label
 										htmlFor={replaceAllId}
-										className="cursor-pointer font-normal text-gray-900 text-sm"
+										className="cursor-pointer font-normal text-foreground text-sm"
 									>
 										Replace all
 									</Label>
@@ -224,7 +224,7 @@ export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
 									/>
 									<Label
 										htmlFor={replaceIndividualId}
-										className="cursor-pointer font-normal text-gray-900 text-sm"
+										className="cursor-pointer font-normal text-foreground text-sm"
 									>
 										Replace individual
 									</Label>
@@ -240,11 +240,11 @@ export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
 							<div className="mt-4 space-y-3">
 								<Label
 									htmlFor={selectAllId}
-									className="block font-normal text-gray-700 text-sm"
+									className="block font-normal text-muted-foreground text-sm"
 								>
 									Replace With
 								</Label>
-								<div className="w-full rounded-md border border-gray-300 bg-white">
+								<div className="w-full rounded-md border border-border bg-card">
 									<Select
 										value={selectedReplacement}
 										onValueChange={setSelectedReplacement}
@@ -270,7 +270,7 @@ export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
 														<SelectItem
 															key={option}
 															value={option}
-															className="text-gray-700 text-sm"
+															className="text-card-foreground text-sm"
 														>
 															{option}
 														</SelectItem>
@@ -288,38 +288,38 @@ export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
 						onReplace &&
 						replaceOption === "replaceIndividual" && (
 							<div className="mt-4 space-y-3">
-								<div className="max-h-[256px] overflow-hidden overflow-y-auto rounded-md border border-gray-200">
+								<div className="max-h-[256px] overflow-hidden overflow-y-auto rounded-md border border-border">
 									<Table className="table-fixed">
 										<colgroup>
 											<col style={{ width: "30%" }} />
 											<col style={{ width: "30%" }} />
 											<col style={{ width: "40%" }} />
 										</colgroup>
-										<TableHeader className="sticky top-0 z-10 bg-gray-50">
-											<TableRow className="border-gray-200 border-b">
-												<TableHead className="px-4 py-3 text-left font-medium text-gray-700 text-sm">
+										<TableHeader className="sticky top-0 z-10 bg-muted">
+											<TableRow className="border-border border-b">
+												<TableHead className="px-4 py-3 text-left font-medium text-muted-foreground text-sm">
 													Block Type
 												</TableHead>
-												<TableHead className="px-4 py-3 text-left font-medium text-gray-700 text-sm">
+												<TableHead className="px-4 py-3 text-left font-medium text-muted-foreground text-sm">
 													Block ID
 												</TableHead>
-												<TableHead className="px-4 py-3 text-left font-medium text-gray-700 text-sm">
+												<TableHead className="px-4 py-3 text-left font-medium text-muted-foreground text-sm">
 													Replace With
 												</TableHead>
 											</TableRow>
 										</TableHeader>
-										<TableBody className="bg-white">
+										<TableBody className="bg-card">
 											{dependentBlocks.map((block) => {
 												const selectId = `${radioGroupId}-select-${block.blockId}`;
 												return (
 													<TableRow
 														key={block.blockId}
-														className="border-gray-200 border-b"
+														className="border-border border-b"
 													>
-														<TableCell className="px-4 py-3 text-gray-900 text-sm">
+														<TableCell className="px-4 py-3 text-foreground text-sm">
 															{block.blockType}
 														</TableCell>
-														<TableCell className="px-4 py-3 text-gray-900 text-sm">
+														<TableCell className="px-4 py-3 text-foreground text-sm">
 															{block.blockId}
 														</TableCell>
 														<TableCell className="px-4 py-3">
@@ -344,7 +344,7 @@ export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
 																		id={
 																			selectId
 																		}
-																		className="w-full min-w-0 border-gray-300"
+																		className="w-full min-w-0 border-border"
 																		data-testid={`delete-${type.toLowerCase()}-modal-replacement-${block.blockId}`}
 																	>
 																		<SelectValue placeholder="Select" />
@@ -372,7 +372,7 @@ export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
 																						value={
 																							option
 																						}
-																						className="text-gray-700 text-sm"
+																						className="text-card-foreground text-sm"
 																					>
 																						{
 																							option
@@ -400,7 +400,7 @@ export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
 					<Button
 						variant="ghost"
 						onClick={handleClose}
-						className="text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+						className="text-muted-foreground hover:bg-accent hover:text-accent-foreground"
 						data-testid={`delete-${type.toLocaleLowerCase()}-modal-cancel`}
 					>
 						Cancel
@@ -410,7 +410,7 @@ export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
 							<Button
 								onClick={handleReplaceAndDelete}
 								disabled={isReplaceAndDeleteDisabled()}
-								className="bg-blue-600 text-white hover:bg-blue-700"
+								className="bg-primary text-primary-foreground hover:bg-primary/90"
 								data-testid={`delete-${type.toLocaleLowerCase()}-modal-replace-and-delete`}
 								title={`This will replace the selected instances and delete the ${type.toLocaleLowerCase()}`}
 							>
@@ -420,7 +420,7 @@ export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
 						<Button
 							variant="destructive"
 							onClick={handleDeleteAnyway}
-							className="bg-red-600 text-white hover:bg-red-700"
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 							data-testid={`delete-${type.toLocaleLowerCase()}-modal-delete-anyway`}
 						>
 							Delete Anyway
