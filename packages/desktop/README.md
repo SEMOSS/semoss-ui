@@ -58,10 +58,19 @@ Instance" commands (`packages/vscode-extension/src/utils/secrets.js`), just
 re-implemented on Electron's `safeStorage` (OS keychain encryption) instead
 of VS Code's `SecretStorage`.
 
-- Non-secret fields (alias, instance URL, module path) live in
+- Non-secret fields (alias, instance URL, module path, auth mode) live in
   `connections.json` under Electron's `userData` directory.
-- Access/Secret Key are encrypted at rest via `safeStorage` and only ever
-  decrypted inside the main process (`electron/connections/store.ts`).
+- Two ways to authenticate a connection, both encrypted at rest via
+  `safeStorage` and only ever decrypted inside the main process
+  (`electron/connections/store.ts`):
+  - **Access Key / Secret Key** — Basic-auth, same as `packages/playground`.
+  - **Sign in via browser** — opens a real sign-in window pointed at the
+    instance's actual origin; the server's own redirect takes it to
+    whatever login page that instance is configured with, so native
+    username/password *and* any OAuth/SSO provider button both just work
+    without this app needing to know which one you used. The resulting
+    session cookie is captured and verified before the connection is saved
+    (`electron/connections/browser-login.ts`).
 - `app-ui/src/connections-page.tsx` is the in-app connections page — shown
   full-screen on first run (no connection yet), and inside the Settings
   dialog's "Connections" tab any time after (opened either from the
@@ -99,8 +108,14 @@ under-scanned CSS across an ordinary incremental rebuild.
 Since this is a native app, exercise it by hand against a real SEMOSS
 instance before calling a change done:
 
-- [ ] Add a connection, confirm the chat shell loads and an engine
-      auto-selects
+- [ ] Add a connection with Access Key/Secret Key, confirm the chat shell
+      loads and an engine auto-selects
+- [ ] Add a connection with "Sign in via browser," complete sign-in (native
+      username/password or an SSO provider button) in the window that
+      opens, click Continue, confirm it saves and connects
+- [ ] Click Continue *before* finishing sign-in — confirm it shows a clear
+      "still not signed in" message rather than silently succeeding or
+      crashing
 - [ ] Send a chat message from the empty "Welcome" state, confirm streaming
       works through the local proxy and a room appears in the sidebar
 - [ ] Attach knowledge/tools via the composer's "+" menu

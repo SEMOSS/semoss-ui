@@ -11,7 +11,7 @@ import { join } from "node:path";
 import type {
 	ConnectionRecord,
 	ConnectionSecrets,
-	NewConnectionInput,
+	NewKeysConnectionInput,
 } from "./types";
 
 interface ConnectionsFile {
@@ -93,20 +93,44 @@ export class ConnectionsStore {
 		return JSON.parse(decrypted);
 	}
 
-	add(input: NewConnectionInput): ConnectionRecord {
+	addWithKeys(input: NewKeysConnectionInput): ConnectionRecord {
+		return this.addRecord(
+			{
+				alias: input.alias,
+				instanceUrl: input.instanceUrl,
+				modulePath: input.modulePath,
+				authMode: "keys",
+			},
+			{ accessKey: input.accessKey, secretKey: input.secretKey },
+		);
+	}
+
+	/** Used after a successful browser-based sign-in — see browser-login.ts. */
+	addWithCookie(input: {
+		alias: string;
+		instanceUrl: string;
+		modulePath: string;
+		cookie: string;
+	}): ConnectionRecord {
+		return this.addRecord(
+			{
+				alias: input.alias,
+				instanceUrl: input.instanceUrl,
+				modulePath: input.modulePath,
+				authMode: "browser",
+			},
+			{ cookie: input.cookie },
+		);
+	}
+
+	private addRecord(
+		fields: Omit<ConnectionRecord, "id">,
+		secrets: ConnectionSecrets,
+	): ConnectionRecord {
 		this.assertEncryptionAvailable();
 
-		const record: ConnectionRecord = {
-			id: randomUUID(),
-			alias: input.alias,
-			instanceUrl: input.instanceUrl,
-			modulePath: input.modulePath,
-		};
+		const record: ConnectionRecord = { id: randomUUID(), ...fields };
 
-		const secrets: ConnectionSecrets = {
-			accessKey: input.accessKey,
-			secretKey: input.secretKey,
-		};
 		const encrypted = safeStorage.encryptString(JSON.stringify(secrets));
 		writeFileSync(this.secretsPath(record.id), encrypted);
 
@@ -140,6 +164,17 @@ export class ConnectionsStore {
 			throw new Error(`Unknown connection "${id}"`);
 		}
 		file.currentId = id;
+		this.writeFile(file);
+	}
+
+	/**
+	 * Clears the current selection without deleting anything — used when a
+	 * connection turns out to be unreachable and the user needs a way back
+	 * to the connections page rather than being stuck on a failed load.
+	 */
+	deselect(): void {
+		const file = this.readFile();
+		file.currentId = null;
 		this.writeFile(file);
 	}
 }

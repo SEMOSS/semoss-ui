@@ -4,6 +4,8 @@ import { Button, Input, Label } from "@semoss/ui/next";
 import type { ConnectionRecord } from "../../electron/connections/types";
 import { SemossIcon } from "./semoss-icon";
 
+type AuthMode = "keys" | "browser";
+
 const EMPTY_FORM = {
 	alias: "",
 	instanceUrl: "",
@@ -27,10 +29,16 @@ export interface ConnectionsPageProps {
 export const ConnectionsPage = ({ variant = "full" }: ConnectionsPageProps) => {
 	const [connections, setConnections] = useState<ConnectionRecord[]>([]);
 	const [currentId, setCurrentId] = useState<string | null>(null);
-	const [form, setForm] = useState(EMPTY_FORM);
 	const [showForm, setShowForm] = useState(false);
+	const [authMode, setAuthMode] = useState<AuthMode>("keys");
+	const [form, setForm] = useState(EMPTY_FORM);
 	const [busyId, setBusyId] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
+
+	// Set once beginBrowserLogin succeeds — while non-null, the sign-in
+	// window is open and we're waiting for the user to finish there.
+	const [browserLoginId, setBrowserLoginId] = useState<string | null>(null);
+	const [browserLoginBusy, setBrowserLoginBusy] = useState(false);
 
 	const refresh = useCallback(async () => {
 		const [list, current] = await Promise.all([
@@ -44,6 +52,15 @@ export const ConnectionsPage = ({ variant = "full" }: ConnectionsPageProps) => {
 	useEffect(() => {
 		void refresh();
 	}, [refresh]);
+
+	const resetForm = () => {
+		setShowForm(false);
+		setForm(EMPTY_FORM);
+		setAuthMode("keys");
+		setBrowserLoginId(null);
+		setBrowserLoginBusy(false);
+		setError(null);
+	};
 
 	const handleConnect = async (id: string) => {
 		setError(null);
@@ -63,7 +80,7 @@ export const ConnectionsPage = ({ variant = "full" }: ConnectionsPageProps) => {
 		await refresh();
 	};
 
-	const handleSave = async () => {
+	const handleSaveKeys = async () => {
 		setError(null);
 		if (
 			!form.alias ||
@@ -78,13 +95,63 @@ export const ConnectionsPage = ({ variant = "full" }: ConnectionsPageProps) => {
 		}
 		try {
 			const record = await window.semossDesktop.connections.add(form);
-			setForm(EMPTY_FORM);
-			setShowForm(false);
+			resetForm();
 			await refresh();
 			await handleConnect(record.id);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : String(err));
 		}
+	};
+
+	const handleBeginBrowserLogin = async () => {
+		setError(null);
+		if (!form.alias || !form.instanceUrl) {
+			setError("Alias and instance URL are required.");
+			return;
+		}
+		try {
+			const loginId =
+				await window.semossDesktop.connections.beginBrowserLogin({
+					alias: form.alias,
+					instanceUrl: form.instanceUrl,
+					modulePath: form.modulePath,
+				});
+			setBrowserLoginId(loginId);
+		} catch (err) {
+			setError(err instanceof Error ? err.message : String(err));
+		}
+	};
+
+	const handleCompleteBrowserLogin = async () => {
+		if (!browserLoginId) {
+			return;
+		}
+		setError(null);
+		setBrowserLoginBusy(true);
+		try {
+			// On success the main process also selects and (re)loads this
+			// connection — this whole window is about to reload, so there's
+			// nothing further to do here beyond resetting local state.
+			await window.semossDesktop.connections.completeBrowserLogin(
+				browserLoginId,
+			);
+			resetForm();
+			await refresh();
+		} catch (err) {
+			setError(err instanceof Error ? err.message : String(err));
+		} finally {
+			setBrowserLoginBusy(false);
+		}
+	};
+
+	const handleCancelBrowserLogin = async () => {
+		if (browserLoginId) {
+			await window.semossDesktop.connections.cancelBrowserLogin(
+				browserLoginId,
+			);
+		}
+		setBrowserLoginId(null);
+		setError(null);
 	};
 
 	return (
@@ -137,6 +204,11 @@ export const ConnectionsPage = ({ variant = "full" }: ConnectionsPageProps) => {
 												Current
 											</span>
 										) : null}
+										<span className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground uppercase tracking-wide">
+											{connection.authMode === "browser"
+												? "Signed in"
+												: "Keys"}
+										</span>
 									</div>
 									<p className="truncate text-muted-foreground text-xs">
 										{connection.instanceUrl}
@@ -178,16 +250,43 @@ export const ConnectionsPage = ({ variant = "full" }: ConnectionsPageProps) => {
 
 				{showForm ? (
 					<div className="flex flex-col gap-3 rounded-md border border-border bg-card p-4">
+						<div className="flex gap-1 rounded-md border border-border p-1">
+							<Button
+								size="sm"
+								className="flex-1"
+								variant={
+									authMode === "keys" ? "default" : "ghost"
+								}
+								disabled={browserLoginId !== null}
+								onClick={() => setAuthMode("keys")}
+							>
+								Access Key
+							</Button>
+							<Button
+								size="sm"
+								className="flex-1"
+								variant={
+									authMode === "browser" ? "default" : "ghost"
+								}
+								disabled={browserLoginId !== null}
+								onClick={() => setAuthMode("browser")}
+							>
+								Sign in via browser
+							</Button>
+						</div>
+
 						<Field
 							label="Alias"
 							value={form.alias}
 							placeholder="e.g. Production, Development"
+							disabled={browserLoginId !== null}
 							onChange={(alias) => setForm({ ...form, alias })}
 						/>
 						<Field
 							label="Instance URL"
 							value={form.instanceUrl}
 							placeholder="https://your-semoss-instance.com"
+							disabled={browserLoginId !== null}
 							onChange={(instanceUrl) =>
 								setForm({ ...form, instanceUrl })
 							}
@@ -196,39 +295,74 @@ export const ConnectionsPage = ({ variant = "full" }: ConnectionsPageProps) => {
 							label="Module"
 							value={form.modulePath}
 							placeholder="/Monolith"
+							disabled={browserLoginId !== null}
 							onChange={(modulePath) =>
 								setForm({ ...form, modulePath })
 							}
 						/>
-						<Field
-							label="Access Key"
-							value={form.accessKey}
-							onChange={(accessKey) =>
-								setForm({ ...form, accessKey })
-							}
-						/>
-						<Field
-							label="Secret Key"
-							value={form.secretKey}
-							type="password"
-							onChange={(secretKey) =>
-								setForm({ ...form, secretKey })
-							}
-						/>
-						<div className="flex justify-end gap-2">
-							<Button
-								variant="ghost"
-								onClick={() => {
-									setShowForm(false);
-									setForm(EMPTY_FORM);
-								}}
-							>
-								Cancel
-							</Button>
-							<Button onClick={handleSave}>
-								Save &amp; Connect
-							</Button>
-						</div>
+
+						{authMode === "keys" ? (
+							<>
+								<Field
+									label="Access Key"
+									value={form.accessKey}
+									onChange={(accessKey) =>
+										setForm({ ...form, accessKey })
+									}
+								/>
+								<Field
+									label="Secret Key"
+									value={form.secretKey}
+									type="password"
+									onChange={(secretKey) =>
+										setForm({ ...form, secretKey })
+									}
+								/>
+								<div className="flex justify-end gap-2">
+									<Button variant="ghost" onClick={resetForm}>
+										Cancel
+									</Button>
+									<Button onClick={handleSaveKeys}>
+										Save &amp; Connect
+									</Button>
+								</div>
+							</>
+						) : browserLoginId === null ? (
+							<div className="flex justify-end gap-2">
+								<Button variant="ghost" onClick={resetForm}>
+									Cancel
+								</Button>
+								<Button onClick={handleBeginBrowserLogin}>
+									Sign In
+								</Button>
+							</div>
+						) : (
+							<>
+								<p className="text-muted-foreground text-sm">
+									A sign-in window opened — it supports both
+									username/password and any SSO providers this
+									instance offers. Finish signing in there,
+									then come back and click Continue.
+								</p>
+								<div className="flex justify-end gap-2">
+									<Button
+										variant="ghost"
+										disabled={browserLoginBusy}
+										onClick={handleCancelBrowserLogin}
+									>
+										Cancel
+									</Button>
+									<Button
+										disabled={browserLoginBusy}
+										onClick={handleCompleteBrowserLogin}
+									>
+										{browserLoginBusy
+											? "Checking…"
+											: "Continue"}
+									</Button>
+								</div>
+							</>
+						)}
 					</div>
 				) : (
 					<Button
@@ -250,12 +384,14 @@ const Field = ({
 	onChange,
 	placeholder,
 	type = "text",
+	disabled = false,
 }: {
 	label: string;
 	value: string;
 	onChange: (value: string) => void;
 	placeholder?: string;
 	type?: string;
+	disabled?: boolean;
 }) => (
 	<div className="flex flex-col gap-1">
 		<Label>{label}</Label>
@@ -263,6 +399,7 @@ const Field = ({
 			type={type}
 			value={value}
 			placeholder={placeholder}
+			disabled={disabled}
 			onChange={(e) => onChange(e.target.value)}
 		/>
 	</div>

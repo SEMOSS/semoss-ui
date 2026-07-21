@@ -98,12 +98,34 @@ dev-time proxy — hence the local proxy server.
     built CSS (see `app-ui/README.md`'s `index.css` section) — not a
     dark-mode-specific issue, a scanning-config issue affecting most custom
     styling from both libraries.
+11. **Local server hardening + load-failure recovery** — the request
+    handler had no top-level `try/catch` (a synchronous throw could crash
+    the whole local server, taking the initial `index.html` load down with
+    it), and a failed load left the user stuck on a dead Chromium error
+    page. Fixed both: `electron/server/static-server.ts` now can't crash
+    from a bad request, and `electron/main.ts` listens for `did-fail-load`
+    on the main frame and offers Retry/Manage Connections/Quit instead.
+12. **Browser-based sign-in** (`electron/connections/browser-login.ts`) —
+    native username/password *and* OAuth/SSO, unified into one "Sign in via
+    browser" flow. See the "Auth model" assumption below for why this was
+    the only viable approach and how it actually works.
 
 ## Assumptions made (flag if any of these turn out wrong)
 
-- **Auth model**: Access/Secret Key Basic-auth is the intended model for
-  this app, matching `packages/playground` and `vba-futures` apps today —
-  not real SSO/OAuth. Explicitly deferred, see `ROADMAP.md`.
+- **Auth model**: two modes, both real, chosen per connection —
+  `authMode: "keys"` (Access/Secret Key Basic-auth, matching
+  `packages/playground`/`vba-futures` today) and `authMode: "browser"`
+  (a real sign-in window against the instance's actual origin, capturing
+  the resulting session cookie). The two were **not** built as separate
+  "native" and "OAuth" flows — confirmed by reading `libs/sdk/src/api/auth.ts`
+  and by inspecting a real instance's login page, the actual login page
+  already offers both native username/password and OAuth/SSO provider
+  buttons (e.g. "Microsoft") in one form, and login either way results in
+  the same thing (a session cookie) — so "Sign in via browser" covers both
+  without this app needing to know which the user picked. See
+  `electron/connections/browser-login.ts` and `ROADMAP.md`'s auth section
+  for the full reasoning, including why a portable-token approach was ruled
+  out (no code path in `@semoss/sdk` ever produces one from a login).
 - **Remote-only, never a bundled backend**: this app is a shell around a
   SEMOSS instance you already have running somewhere; it never launches or
   manages a SEMOSS/Tomcat process itself.

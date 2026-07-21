@@ -5,11 +5,34 @@ the reasoning behind each; this file is the flat punch-list version.
 
 ## Auth & security
 
-- [ ] Replace Access/Secret Key Basic-auth with real SSO/OAuth once this
-      moves beyond local/internal distribution
-      (`electron/server/static-server.ts` has the `// TODO`).
+- [x] ~~SSO/OAuth support~~ — done, via a different mechanism than a typical
+      "OAuth" implementation: `libs/sdk/src/api/auth.ts`'s real login flow
+      is popup-based and same-origin/cookie-dependent (no code path anywhere
+      ever produces a portable bearer token from a login — confirmed by
+      reading it, not assumed), so a token-based approach was never viable
+      for a renderer living at `http://127.0.0.1:<local-proxy-port>` instead
+      of the instance's real origin. Instead: `electron/connections/browser-login.ts`
+      opens a real (child) `BrowserWindow` pointed at the instance's actual
+      origin, lets the user sign in however that instance is configured
+      (native username/password *and* any OAuth/SSO provider button, e.g.
+      "Microsoft" — confirmed against a real instance's login page, not
+      guessed), then reads the resulting session cookie out of Electron's
+      `session.cookies` API and verifies it with a real probe request before
+      saving. `electron/server/static-server.ts`'s proxy forwards that
+      cookie (`Cookie: ...`) instead of Basic-auth for `authMode: "browser"`
+      connections. This is why "native username/password" and "OAuth/SSO"
+      collapsed into one "Sign in via browser" option in the connections UI
+      rather than two separate flows — the real login page already handles
+      that distinction itself; this app doesn't need to know which the user
+      picked.
+- [ ] **Session/cookie expiry isn't handled** — an expired `authMode:
+      "browser"` cookie just starts getting redirected-to-login responses
+      proxied straight through (surfaces as a confusing pixel-call error in
+      app-ui, not a clear "sign in again" prompt). No refresh mechanism
+      exists. Worth a clearer surface once this sees real usage.
 - [ ] Stop trusting self-signed certs (`rejectUnauthorized: false` in the
-      proxy) once this targets anything beyond internal instances.
+      proxy and in the browser-login probe) once this targets anything
+      beyond internal instances.
 - [ ] Code-signing + notarization for macOS builds
       (`electron-builder.yml`'s `identity: null`).
 - [ ] Code-signing for Windows builds (`electron-builder.yml`'s

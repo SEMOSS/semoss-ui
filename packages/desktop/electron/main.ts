@@ -10,8 +10,13 @@ import {
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { APP_NAME } from "./app-info";
+import {
+	beginBrowserLogin,
+	cancelBrowserLogin,
+	completeBrowserLogin,
+} from "./connections/browser-login";
 import { ConnectionsStore } from "./connections/store";
-import type { NewConnectionInput } from "./connections/types";
+import type { NewKeysConnectionInput } from "./connections/types";
 import {
 	type LocalServerHandle,
 	startLocalServer,
@@ -72,7 +77,64 @@ async function launchCurrentConnection(): Promise<void> {
 		mainWindow.on("closed", () => {
 			mainWindow = null;
 		});
+		attachLoadFailureRecovery(mainWindow);
 		await mainWindow.loadURL(url);
+	}
+}
+
+/**
+ * Surfaces a genuine load failure (the window navigated to our local
+ * server's URL and the request itself failed — e.g. the local server
+ * crashed, or a transient startup race) as a real recovery choice instead
+ * of leaving the user staring at a browser-style error page with no way
+ * forward.
+ */
+function attachLoadFailureRecovery(win: BrowserWindow): void {
+	win.webContents.on(
+		"did-fail-load",
+		(_event, errorCode, errorDescription, _validatedUrl, isMainFrame) => {
+			// ERR_ABORTED (-3) fires for perfectly ordinary navigation
+			// cancellations (e.g. our own loadURL superseding a previous,
+			// still-in-flight one when switching connections quickly) — not
+			// a real failure.
+			if (!isMainFrame || errorCode === -3) {
+				return;
+			}
+			void handleLoadFailure(errorDescription || `Error ${errorCode}`);
+		},
+	);
+}
+
+async function handleLoadFailure(reason: string): Promise<void> {
+	const { response } = await dialog.showMessageBox({
+		type: "error",
+		title: "Couldn't connect",
+		message: "This SEMOSS environment couldn't be reached.",
+		detail: `${reason}\n\nYou can retry, or manage your saved connections.`,
+		buttons: ["Retry", "Manage Connections", "Quit"],
+		defaultId: 0,
+		cancelId: 1,
+	});
+
+	if (response === 0) {
+		try {
+			await launchCurrentConnection();
+		} catch (error) {
+			await handleLoadFailure(
+				error instanceof Error ? error.message : String(error),
+			);
+		}
+	} else if (response === 1) {
+		connectionsStore.deselect();
+		try {
+			await launchCurrentConnection();
+		} catch (error) {
+			await handleLoadFailure(
+				error instanceof Error ? error.message : String(error),
+			);
+		}
+	} else {
+		app.quit();
 	}
 }
 
@@ -81,23 +143,47 @@ function registerIpcHandlers(): void {
 	ipcMain.handle("connections:getCurrentId", () =>
 		connectionsStore.getCurrentId(),
 	);
-	ipcMain.handle("connections:add", (_event, input: NewConnectionInput) =>
-		connectionsStore.add(input),
+	ipcMain.handle("connections:add", (_event, input: NewKeysConnectionInput) =>
+		connectionsStore.addWithKeys(input),
 	);
 	ipcMain.handle("connections:remove", (_event, id: string) =>
 		connectionsStore.remove(id),
 	);
-	ipcMain.handle("connections:select", async (_event, id: string) => {
-		connectionsStore.select(id);
-		try {
-			await launchCurrentConnection();
-		} catch (error) {
-			dialog.showErrorBox(
-				"Couldn't connect",
-				error instanceof Error ? error.message : String(error),
-			);
-		}
-	});
+	ipcMain.handle("connections:select", (_event, id: string) =>
+		launchCurrentConnectionFor(id),
+	);
+	ipcMain.handle(
+		"connections:beginBrowserLogin",
+		(
+			_event,
+			input: { alias: string; instanceUrl: string; modulePath: string },
+		) =>
+			beginBrowserLogin(input.alias, input.instanceUrl, input.modulePath),
+	);
+	ipcMain.handle(
+		"connections:completeBrowserLogin",
+		async (_event, loginId: string) => {
+			const result = await completeBrowserLogin(loginId);
+			const record = connectionsStore.addWithCookie(result);
+			await launchCurrentConnectionFor(record.id);
+			return record;
+		},
+	);
+	ipcMain.handle(
+		"connections:cancelBrowserLogin",
+		(_event, loginId: string) => cancelBrowserLogin(loginId),
+	);
+}
+
+async function launchCurrentConnectionFor(id: string): Promise<void> {
+	connectionsStore.select(id);
+	try {
+		await launchCurrentConnection();
+	} catch (error) {
+		await handleLoadFailure(
+			error instanceof Error ? error.message : String(error),
+		);
+	}
 }
 
 function buildAppMenu(): void {
@@ -127,8 +213,7 @@ app.whenReady().then(async () => {
 	try {
 		await launchCurrentConnection();
 	} catch (error) {
-		dialog.showErrorBox(
-			"Couldn't start",
+		await handleLoadFailure(
 			error instanceof Error ? error.message : String(error),
 		);
 	}

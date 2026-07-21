@@ -3,6 +3,7 @@ import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import { createServer, request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
 import { extname, join, normalize } from "node:path";
+import { instanceBasePath } from "../connections/instance-url";
 import type { ConnectionRecord, ConnectionSecrets } from "../connections/types";
 
 const MIME_TYPES: Record<string, string> = {
@@ -30,9 +31,15 @@ export interface LocalServerHandle {
  * Serves app-ui's built dist/ over plain HTTP, and — when a connection is
  * active — reverse proxies its MODULE path prefix to its real ENDPOINT,
  * exactly what Vite's dev-server proxy does, re-implemented here because
- * packaged Electron has no dev server. The Authorization header is
- * attached here, not in the renderer, so app-ui's own JS never carries
- * Access/Secret Key.
+ * packaged Electron has no dev server. Auth is attached here, not in the
+ * renderer, so app-ui's own JS never carries Access/Secret Key or a session
+ * cookie: `authMode: "keys"` attaches Basic auth, `authMode: "browser"`
+ * (see electron/connections/browser-login.ts) attaches the session cookie
+ * captured during sign-in.
+ * TODO: neither mode currently detects/recovers from the credential
+ * expiring mid-session (an expired cookie would just start getting
+ * redirected-to-login responses proxied straight through) — worth a
+ * clearer "your session expired, sign in again" surface eventually.
  *
  * Running same-origin (the SPA and the proxied API share this server's
  * origin) means no CORS story to solve, unlike loading over file:// and
@@ -48,19 +55,42 @@ export function startLocalServer(
 	secrets: ConnectionSecrets | null,
 ): Promise<LocalServerHandle> {
 	const server = createServer((req, res) => {
-		const url = req.url ?? "/";
-		const modulePrefix = connection?.modulePath;
-		if (
-			modulePrefix &&
-			secrets &&
-			(url === modulePrefix ||
-				url.startsWith(`${modulePrefix}/`) ||
-				url.startsWith(`${modulePrefix}?`))
-		) {
-			proxyToInstance(req, res, connection, secrets);
-			return;
+		try {
+			const url = req.url ?? "/";
+			const modulePrefix = connection?.modulePath;
+			if (
+				modulePrefix &&
+				secrets &&
+				(url === modulePrefix ||
+					url.startsWith(`${modulePrefix}/`) ||
+					url.startsWith(`${modulePrefix}?`))
+			) {
+				proxyToInstance(req, res, connection, secrets);
+				return;
+			}
+			void serveStatic(req, res, distPath);
+		} catch (err) {
+			// A synchronous throw here (e.g. a malformed instanceUrl) would
+			// otherwise propagate out of this request handler — Node's http
+			// server doesn't guard against that itself, and an uncaught
+			// exception here can take the whole server (and every other
+			// in-flight request, including the initial index.html load) down
+			// with it.
+			if (!res.headersSent) {
+				res.writeHead(500, { "content-type": "text/plain" });
+			}
+			res.end(
+				`Local server error: ${err instanceof Error ? err.message : String(err)}`,
+			);
 		}
-		void serveStatic(req, res, distPath);
+	});
+
+	// A runtime socket error (e.g. ECONNRESET from a client disconnecting
+	// mid-request) would otherwise be an unhandled "error" event, which node
+	// treats as fatal and crashes the process. This keeps the server (and
+	// the rest of the app) alive across it.
+	server.on("error", (err) => {
+		console.error("Local server error:", err);
 	});
 
 	return new Promise((resolve, reject) => {
@@ -92,19 +122,28 @@ function proxyToInstance(
 	const target = new URL(connection.instanceUrl);
 	const isHttps = target.protocol === "https:";
 	const requestFn = isHttps ? httpsRequest : httpRequest;
+	// instanceUrl isn't always a bare origin — real deployments often live
+	// under a base path (e.g. ".../cfg-ai-dev"), which `target.hostname`
+	// alone would otherwise silently drop.
+	const basePath = instanceBasePath(connection.instanceUrl);
 
 	const headers = { ...req.headers };
 	delete headers.host;
-	headers.authorization = `Basic ${Buffer.from(
-		`${secrets.accessKey}:${secrets.secretKey}`,
-	).toString("base64")}`;
+	delete headers.cookie;
+	if (connection.authMode === "browser" && secrets.cookie) {
+		headers.cookie = secrets.cookie;
+	} else if (secrets.accessKey && secrets.secretKey) {
+		headers.authorization = `Basic ${Buffer.from(
+			`${secrets.accessKey}:${secrets.secretKey}`,
+		).toString("base64")}`;
+	}
 
 	const proxyReq = requestFn(
 		{
 			protocol: target.protocol,
 			hostname: target.hostname,
 			port: target.port || (isHttps ? 443 : 80),
-			path: req.url,
+			path: `${basePath}${req.url}`,
 			method: req.method,
 			headers,
 			// Internal SEMOSS instances often run on self-signed certs for
