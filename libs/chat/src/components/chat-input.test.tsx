@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ChatInput } from "./chat-input";
@@ -51,6 +51,23 @@ describe("ChatInput", () => {
 		await user.keyboard("{Enter}");
 
 		expect(onSubmit).not.toHaveBeenCalled();
+	});
+
+	it("shows attached file chips in the composer", () => {
+		render(<ChatInput onSubmit={vi.fn()} />);
+
+		const textarea = screen.getByPlaceholderText("Message...");
+		const file = new File(["hello"], "receipt.pdf", {
+			type: "application/pdf",
+		});
+
+		fireEvent.paste(textarea, {
+			clipboardData: {
+				files: [file],
+			},
+		});
+
+		expect(screen.getByText("receipt.pdf")).toBeInTheDocument();
 	});
 
 	it("disables the textarea and button, and blocks sending, when disabled", async () => {
