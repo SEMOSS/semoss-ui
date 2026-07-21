@@ -318,6 +318,7 @@ export class ChatSession {
 		try {
 			await updateRoomOptions(this.actions, {
 				roomId: this.roomId,
+				workspaceId: this.options.workspaceId,
 				instructions: this.options.defaultRoomSettings?.instructions,
 				temperature: this.options.defaultRoomSettings?.temperature,
 				mcp,
@@ -526,7 +527,10 @@ export class ChatSession {
 		if (this.roomId) {
 			return this.roomId;
 		}
-		const { roomId } = await createPlaygroundRoom(this.actions);
+		const { roomId } = await createPlaygroundRoom(
+			this.actions,
+			this.options.workspaceId,
+		);
 		this.setState({ roomId });
 		return roomId;
 	}
@@ -547,6 +551,7 @@ export class ChatSession {
 		}
 		await updateRoomOptions(this.actions, {
 			roomId,
+			workspaceId: this.options.workspaceId,
 			instructions: this.options.defaultRoomSettings?.instructions,
 			temperature: this.options.defaultRoomSettings?.temperature,
 			mcp: this.mcp,

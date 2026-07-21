@@ -11,7 +11,7 @@ const PROPS: PropDoc[] = [
 		type: "ChatOptions",
 		required: true,
 		description:
-			"Passed straight through to ChatProvider — { engineId, roomId?, defaultRoomSettings?, toolAutoExecutionLimit?, gracefulErrors? }.",
+			"Passed straight through to ChatProvider — { engineId, roomId?, workspaceId?, defaultRoomSettings?, toolAutoExecutionLimit?, gracefulErrors? }.",
 	},
 	{
 		name: "isActive",

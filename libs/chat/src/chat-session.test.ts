@@ -212,6 +212,29 @@ describe("ChatSession.sendMessage", () => {
 		expect(session.roomId).toBe("room-1");
 	});
 
+	it("creates a new room in the configured workspace", async () => {
+		askPlayground.mockImplementation(streamed([], textResponse("ok")));
+		const session = new ChatSession(actions, insightId, {
+			...baseOptions,
+			workspaceId: "workspace-1",
+			defaultRoomSettings: { instructions: "workspace instructions" },
+		});
+
+		await session.sendMessage("hello workspace");
+
+		expect(createPlaygroundRoom).toHaveBeenCalledWith(
+			actions,
+			"workspace-1",
+		);
+		expect(updateRoomOptions).toHaveBeenCalledWith(
+			actions,
+			expect.objectContaining({
+				roomId: "room-1",
+				workspaceId: "workspace-1",
+			}),
+		);
+	});
+
 	it("syncs room options once when defaultRoomSettings is provided", async () => {
 		askPlayground.mockImplementation(streamed([], textResponse("ok")));
 		const session = new ChatSession(actions, insightId, {
@@ -685,6 +708,7 @@ describe("ChatSession.setMcp", () => {
 		const session = new ChatSession(actions, insightId, {
 			...baseOptions,
 			roomId: "room-1",
+			workspaceId: "workspace-1",
 		});
 		await flushMicrotasks();
 
@@ -693,6 +717,7 @@ describe("ChatSession.setMcp", () => {
 		expect(session.mcp).toEqual([knowledgeMcp]);
 		expect(updateRoomOptions).toHaveBeenCalledWith(actions, {
 			roomId: "room-1",
+			workspaceId: "workspace-1",
 			instructions: undefined,
 			temperature: undefined,
 			mcp: [knowledgeMcp],
@@ -730,6 +755,7 @@ describe("ChatSession.setMcp", () => {
 		// silently persist an empty mcp array and wipe the attachment.
 		expect(updateRoomOptions).toHaveBeenCalledWith(actions, {
 			roomId: "room-1",
+			workspaceId: undefined,
 			instructions: undefined,
 			temperature: undefined,
 			mcp: [knowledgeMcp],
