@@ -15,7 +15,6 @@
 		"type": "Type",
 		"model": "Modèle",
 		"instructions": "Instructions",
-		"temperature": "Température",
 		"maxToken": "Jeton maximum"
 	},
 	"placeholders": {
@@ -23,7 +22,6 @@
 		"enterDescription": "Entrer la description",
 		"enterInstructions": "Entrer les instructions",
 		"updateInstructions": "Mettre à jour les instructions",
-		"updateTokenLength": "Mettre à jour la longueur du jeton",
 		"uploadFiles": "Téléverser des fichiers",
 		"search": "Rechercher...",
 		"enterPromptLibraryTag": "Entrer l'étiquette de la bibliothèque d'invites"

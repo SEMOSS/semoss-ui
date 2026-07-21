@@ -21,6 +21,7 @@ export * from "./checkbox";
 export * from "./code";
 export * from "./collapsible";
 export * from "./command";
+export * from "./context-menu";
 export * from "./dialog";
 export * from "./drawer";
 export * from "./dropdown-menu";

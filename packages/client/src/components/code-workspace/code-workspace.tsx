@@ -5,8 +5,8 @@ import { FileExplorer, FlexLayout } from "@semoss/shared";
 import { Spinner } from "@semoss/ui/next";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
+import { ProjectDetailTabs } from "@/components/project";
 import { useWorkspace } from "@/hooks";
-import { AppDetailPage } from "@/pages/app/app-detail-page";
 import { WorkspaceManager } from "../../components/workspace";
 import { WorkspaceTerminal } from "../../components/workspace/panels";
 import type { WorkspaceOptions } from "../../stores";
@@ -185,7 +185,31 @@ export const CodeWorkspace: React.FC = observer(() => {
 		} else if (component === "renderer") {
 			return <RendererPanel />;
 		} else if (component === "settingsPanel") {
-			return <AppDetailPage showNav={false} />;
+			return (
+				<ProjectDetailTabs
+					type="CODE"
+					tabs={[
+						{ name: "Overview", path: "" },
+						{
+							name: "Commits",
+							path: "commits",
+							restrict: ["OWNER", "EDIT"],
+						},
+						{ name: "GitHub", path: "github", restrict: ["OWNER"] },
+						{
+							name: "Settings",
+							path: "settings",
+							restrict: ["OWNER"],
+						},
+						{
+							name: "Access Control",
+							path: "access-control",
+							restrict: ["OWNER", "EDIT"],
+						},
+						{ name: "SMSS", path: "smss", restrict: ["OWNER"] },
+					]}
+				/>
+			);
 		} else if (component === "insight-explorer") {
 			return <InsightFilesPanel />;
 		} else if (component === "terminal") {
