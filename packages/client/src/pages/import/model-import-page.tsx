@@ -3,6 +3,7 @@
 
 import { ChevronRight, SearchIcon, UploadIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Breadcrumb,
@@ -91,7 +92,7 @@ const ProviderIcon: React.FC<{ provider: string }> = ({ provider }) => {
 	return (
 		<div
 			className="flex size-5 shrink-0 items-center justify-center rounded-[4px] font-semibold text-[10px] text-white"
-			style={{ backgroundColor: "#8aa0b4" }}
+			style={{ backgroundColor: "var(--muted-foreground)" }}
 		>
 			{getInitials(provider)}
 		</div>
@@ -589,17 +590,10 @@ export const ModelImportPage: React.FC = () => {
 				<Breadcrumb className="mb-4">
 					<BreadcrumbList>
 						<BreadcrumbItem>
-							<BreadcrumbLink
-								className="cursor-pointer"
-								onClick={() => {
-									if (window.history.length > 1) {
-										navigate(-1);
-									} else {
-										navigate("/");
-									}
-								}}
-							>
-								Model Catalog
+							<BreadcrumbLink asChild>
+								<Link to="../" className="text-inherit">
+									Model Catalog
+								</Link>
 							</BreadcrumbLink>
 						</BreadcrumbItem>
 						<BreadcrumbSeparator>

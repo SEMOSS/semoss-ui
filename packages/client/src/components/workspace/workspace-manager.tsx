@@ -52,9 +52,6 @@ type WorkspaceManagerProps = {
 	/** Options to load into the workspace */
 	options: WorkspaceOptions;
 
-	/** Label for the settings tab opened in the center panel */
-	settingsTabName?: string;
-
 	/** Factor method */
 	factory: (
 		node: FlexLayout.TabNode,
@@ -66,13 +63,7 @@ type WorkspaceManagerProps = {
 };
 
 export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
-	({
-		navbarActions,
-		options,
-		settingsTabName = "App Settings",
-		factory = () => null,
-		onAction,
-	}) => {
+	({ navbarActions, options, factory = () => null, onAction }) => {
 		const { workspace } = useWorkspace();
 		const layoutRef = useRef<FlexLayout.Layout | null>(null);
 		const containerRef = useRef<HTMLDivElement | null>(null);
@@ -241,7 +232,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 						settingsNode?.getConfig()?.isSettingsActive;
 
 					if (isAlreadyActive) {
-						const existingId = findTabIdByName(settingsTabName);
+						const existingId = findTabIdByName("Settings");
 						if (existingId) {
 							model.doAction(
 								FlexLayout.Actions.selectTab(existingId),
@@ -258,14 +249,14 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 						model.getRoot().getChildren()[0]?.getId() ||
 						"";
 
-					let existingId = findTabIdByName(settingsTabName);
+					let existingId = findTabIdByName("Settings");
 
 					if (!existingId) {
 						model.doAction(
 							FlexLayout.Actions.addNode(
 								{
 									type: "tab",
-									name: settingsTabName,
+									name: "Settings",
 									component: "settingsPanel",
 									config: {},
 									enableClose: true,
@@ -276,7 +267,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 								true,
 							),
 						);
-						existingId = findTabIdByName(settingsTabName);
+						existingId = findTabIdByName("Settings");
 					}
 
 					if (existingId) {
@@ -502,14 +493,30 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 												const iconSrc = isSelected
 													? imgIcon.active
 													: imgIcon.default;
-												renderValues.content = (
-													<img
-														src={iconSrc}
-														alt={tabNode.getName()}
-														ref={DynamicDataTestId}
-														className="m-auto block h-[40px] w-[50px] max-w-none transition-all duration-200"
-													/>
-												);
+												renderValues.content =
+													isSelected ? (
+														<img
+															src={iconSrc}
+															alt={tabNode.getName()}
+															ref={
+																DynamicDataTestId
+															}
+															className="m-auto block h-[40px] w-[50px] max-w-none transition-all duration-200"
+														/>
+													) : (
+														<span
+															ref={
+																DynamicDataTestId
+															}
+															role="img"
+															aria-label={tabNode.getName()}
+															className="m-auto block h-[40px] w-[50px] max-w-none bg-muted-foreground transition-colors duration-200"
+															style={{
+																WebkitMask: `url("${iconSrc}") center / contain no-repeat`,
+																mask: `url("${iconSrc}") center / contain no-repeat`,
+															}}
+														/>
+													);
 											}
 											return renderValues;
 										}}
