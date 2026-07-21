@@ -1,0 +1,17 @@
+@import "@semoss/ui/globals.css";
+
+/*
+ * @semoss/ui/globals.css ships uncompiled (it still contains its own
+ * `@import "tailwindcss"` + `@source "../**\/*.{ts,tsx}"`, scanning only
+ * libs/ui's own source, relative to wherever that file resolves) — but that
+ * relative @source does NOT reliably resolve through this monorepo's pnpm
+ * workspace symlinks (verified: classes like touch-none/bg-border/
+ * rounded-full from libs/ui/src/next/scroll-area.tsx were missing from our
+ * generated CSS even though the file is @import-ed). Pointing @source at
+ * the real repo paths directly, bypassing node_modules entirely, is what
+ * actually works — same fix semoss-component-showcase's client/src/index.css
+ * already uses for libs/chat.
+ */
+@source "./**/*.{ts,tsx}";
+@source "../../../../libs/chat/src/**/*.{ts,tsx}";
+@source "../../../../libs/ui/src/**/*.{ts,tsx}";

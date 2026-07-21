@@ -1,0 +1,48 @@
+{
+    "name": "@semoss/desktop",
+    "private": true,
+    "version": "0.1.0",
+    "description": "Electron desktop shell for the SEMOSS Playground app",
+    "main": "dist-electron/main.js",
+    "author": "",
+    "scripts": {
+        "build:main": "tsc -p tsconfig.electron.json",
+        "build:app-ui": "vite build --config app-ui/vite.config.ts",
+        "build": "pnpm run build:main && pnpm run build:app-ui",
+        "build:dev": "pnpm run build",
+        "generate-icon": "node scripts/generate-icon.mjs",
+        "watch:main": "tsc -p tsconfig.electron.json --watch --preserveWatchOutput",
+        "watch:app-ui": "vite build --config app-ui/vite.config.ts --watch",
+        "watch:electron": "nodemon --watch dist-electron --watch dist-app-ui --ext js,html,css,svg --delay 300ms --exec \"electron .\"",
+        "dev": "pnpm run build && concurrently -k -n main,app,electron -c blue,yellow,magenta \"pnpm run watch:main\" \"pnpm run watch:app-ui\" \"pnpm run watch:electron\"",
+        "start": "electron .",
+        "package": "pnpm run build && electron-builder -mwl",
+        "package:mac": "pnpm run build && electron-builder --mac",
+        "package:win": "pnpm run build && electron-builder --win",
+        "type-check": "tsc --noEmit -p tsconfig.electron.json && tsc --noEmit -p tsconfig.json"
+    },
+    "dependencies": {
+        "@semoss/chat": "workspace:*",
+        "@semoss/sdk": "workspace:*",
+        "@semoss/shared": "workspace:*",
+        "@semoss/ui": "workspace:*",
+        "lucide-react": "^0.545.0",
+        "react": "18.3.1",
+        "react-dom": "18.3.1"
+    },
+    "devDependencies": {
+        "@tailwindcss/vite": "^4.1.14",
+        "@types/node": "^24.0.0",
+        "@types/react": "18.3.1",
+        "@types/react-dom": "18.3.0",
+        "@vitejs/plugin-react": "^4.6.0",
+        "concurrently": "^9.1.0",
+        "electron": "^33.0.0",
+        "electron-builder": "^25.1.8",
+        "nodemon": "^3.1.7",
+        "sharp": "^0.33.5",
+        "tailwindcss": "^4.1.14",
+        "typescript": "~5.5.2",
+        "vite": "^7.0.0"
+    }
+}

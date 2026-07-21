@@ -1,0 +1,53 @@
+appId: com.semoss.desktop
+productName: AI Core Playground
+directories:
+    output: release
+    buildResources: build
+
+# This app has no native (compiled) runtime dependencies — electron and
+# sharp are devDependencies only, not shipped — so there's nothing for
+# @electron/rebuild to rebuild. Skipping it also sidesteps a pnpm
+# workspace/node_modules-layout bug where the rebuild step throws trying to
+# stat a bogus path.
+npmRebuild: false
+
+files:
+    - dist-electron/**
+    - dist-app-ui/**
+    - package.json
+
+# electron-builder derives .icns/.ico automatically from build/icon.png
+# (see scripts/generate-icon.mjs).
+mac:
+    category: public.app-category.productivity
+    target:
+        - target: dmg
+          arch:
+              - x64
+              - arm64
+    # electron-builder's default dmg naming omits the arch for x64 but not
+    # arm64 — spell both out explicitly so it's unambiguous which is which.
+    artifactName: "${productName}-${version}-${arch}.${ext}"
+    # Local/internal distribution only for now — this build is neither
+    # signed nor notarized, so Gatekeeper will require an explicit bypass
+    # on first launch.
+    # TODO: add code-signing + notarization before distributing this
+    # outside local/internal use.
+    identity: null
+
+win:
+    target:
+        - target: nsis
+          arch:
+              - x64
+              - arm64
+    # One combined installer that works on both x64 and arm64 Windows,
+    # rather than publishing two separate downloads.
+    # TODO: add code-signing before distributing this outside local/internal
+    # use — unsigned builds will trigger SmartScreen warnings.
+    signAndEditExecutable: false
+
+linux:
+    target:
+        - AppImage
+    category: Development

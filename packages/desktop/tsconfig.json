@@ -1,0 +1,27 @@
+{
+	"compilerOptions": {
+		"lib": ["ES2022", "dom"],
+		"target": "es6",
+		"jsx": "react-jsx",
+
+		"module": "esnext",
+		"moduleResolution": "bundler",
+		"allowSyntheticDefaultImports": true,
+		"resolveJsonModule": true,
+
+		"skipLibCheck": true,
+		"esModuleInterop": true,
+		"isolatedModules": true,
+		"strict": true,
+
+		"paths": {
+			"@/*": ["./app-ui/src/*"]
+		}
+	},
+	"include": [
+		"app-ui/src",
+		"electron/connections/types.ts",
+		"electron/app-info.ts"
+	],
+	"exclude": ["dist-app-ui", "dist-electron", "node_modules"]
+}
