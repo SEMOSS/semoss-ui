@@ -71,6 +71,7 @@ function ChatDemoInner() {
 		renameRoom,
 		pinRoom,
 		deleteRoom,
+		activeRoomId,
 		setActiveRoom,
 		newChat,
 	} = useChatRoomsContext();
@@ -154,6 +155,7 @@ function ChatDemoInner() {
 					className="w-64 shrink-0 border-border border-r"
 					pinnedRooms={pinnedRooms}
 					rooms={rooms}
+					activeRoomId={activeRoomId}
 					search={search}
 					onSearchChange={setSearch}
 					isLoading={isLoading}
@@ -173,12 +175,15 @@ function ChatDemoInner() {
 
 /** Bridge component inside ChatRoomsProvider that reads activeRoomId
  * from the store and renders a keyed ChatProvider for the active room. */
-function ChatDemoBridge({ engineId }: { engineId: string }) {
+export function ChatDemoBridge({ engineId }: { engineId: string }) {
 	const { activeRoomId } = useChatRoomsContext();
+	const sessionKey = activeRoomId
+		? `room:${activeRoomId}`
+		: `new:${engineId}`;
 
 	return (
 		<ChatProvider
-			key={activeRoomId ?? "new"}
+			key={sessionKey}
 			options={{
 				engineId,
 				roomId: activeRoomId ?? undefined,

@@ -18,6 +18,7 @@ export interface ChatRoomsStoreState extends ChatRoomsSessionState {
 export interface ChatRoomsStoreHandle {
 	store: StoreApi<ChatRoomsStoreState>;
 	session: ChatRoomsSession;
+	start: () => Promise<void>;
 	dispose: () => void;
 }
 
@@ -60,13 +61,29 @@ export function createChatRoomsStore(
 		newChat: session.newChat,
 	}));
 
-	const unsubscribe = session.store.subscribe((sessionState) => {
-		store.setState(sessionState);
-	});
+	let unsubscribe: (() => void) | null = null;
+	const start = async () => {
+		if (!unsubscribe) {
+			unsubscribe = session.store.subscribe((sessionState) => {
+				store.setState(sessionState);
+			});
+			store.setState(session.store.getState());
+		}
+		await session.start();
+	};
+	const dispose = () => {
+		unsubscribe?.();
+		unsubscribe = null;
+	};
+
+	if (options?.autoload ?? true) {
+		void start();
+	}
 
 	return {
 		store,
 		session,
-		dispose: unsubscribe,
+		start,
+		dispose,
 	};
 }

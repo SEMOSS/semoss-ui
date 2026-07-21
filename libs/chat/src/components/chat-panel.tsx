@@ -61,7 +61,7 @@ function ChatPanelInner({
 	emptyState,
 	renderMessage,
 }: Omit<ChatPanelProps, "options">) {
-	const { messages, isTyping, roomId, sendMessage } = useChatContext();
+	const { isTyping, roomId, sendMessage } = useChatContext();
 	const [activeToolResponse, setActiveToolResponse] =
 		useState<ToolResponseDetails | null>(null);
 
@@ -80,8 +80,6 @@ function ChatPanelInner({
 				<ResizablePanel className="min-w-0">
 					<div className="flex h-full min-h-0 flex-col gap-2">
 						<MessageList
-							messages={messages}
-							isTyping={isTyping}
 							roomId={roomId}
 							className="min-h-0 flex-1"
 							renderMessage={renderMessage}

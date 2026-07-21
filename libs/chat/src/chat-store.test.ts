@@ -94,6 +94,23 @@ beforeEach(() => {
 });
 
 describe("createChatStore", () => {
+	it("can defer startup for a resumed room", async () => {
+		const { start, dispose } = createChatStore(
+			actions,
+			insightId,
+			{ ...baseOptions, roomId: "existing-room" },
+			{ autoload: false },
+		);
+
+		expect(getPlaygroundRoomHistory).not.toHaveBeenCalled();
+
+		await start();
+		await start();
+
+		expect(getPlaygroundRoomHistory).toHaveBeenCalledTimes(1);
+		dispose();
+	});
+
 	it("returns a store whose initial state reflects the ChatSession defaults", () => {
 		const { store, dispose } = createChatStore(
 			actions,
@@ -232,7 +249,7 @@ describe("createChatStore", () => {
 
 	it("dispose tears down the subscription — no further syncs", async () => {
 		askPlayground.mockImplementation(streamed([], textResponse("ok")));
-		const { store, dispose } = createChatStore(
+		const { store, start, dispose } = createChatStore(
 			actions,
 			insightId,
 			baseOptions,
@@ -252,5 +269,9 @@ describe("createChatStore", () => {
 		await flushMicrotasks();
 
 		expect(store.getState().messages).toEqual(stateBeforeSend.messages);
+
+		await start();
+		expect(store.getState().messages).toHaveLength(2);
+		dispose();
 	});
 });

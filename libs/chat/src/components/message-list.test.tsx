@@ -147,9 +147,9 @@ describe("MessageList", () => {
 
 	it("passes openToolResponse helper into custom renderMessage", () => {
 		let helpersProvided = false;
+		mockContext({ messages: makeMessages() });
 		render(
 			<MessageList
-				messages={makeMessages()}
 				renderMessage={(_message, helpers) => {
 					helpersProvided =
 						typeof helpers.openToolResponse === "function";

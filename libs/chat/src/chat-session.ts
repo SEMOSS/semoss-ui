@@ -197,6 +197,7 @@ export interface ChatSessionState {
 export class ChatSession {
 	readonly store: StoreApi<ChatSessionState>;
 
+	private started = false;
 	private parentMessageId: string | undefined;
 	private roomOptionsSynced = false;
 
@@ -204,6 +205,7 @@ export class ChatSession {
 		private readonly actions: InsightActions,
 		private readonly insightId: string,
 		private readonly options: ChatOptions,
+		autoload: boolean = true,
 	) {
 		this.store = createStore<ChatSessionState>(() => ({
 			messages: [],
@@ -215,17 +217,17 @@ export class ChatSession {
 			mcp: [],
 		}));
 
-		if (options.roomId) {
-			this.roomOptionsSynced = true;
-			void this.loadHistory(options.roomId);
-		}
-
 		// Bind public methods so they work when destructured.
+		this.start = this.start.bind(this);
 		this.setEngineId = this.setEngineId.bind(this);
 		this.sendMessage = this.sendMessage.bind(this);
 		this.setMcp = this.setMcp.bind(this);
 		this.recordFeedback = this.recordFeedback.bind(this);
 		this.downloadMessage = this.downloadMessage.bind(this);
+
+		if (autoload) {
+			void this.start();
+		}
 	}
 
 	// -- Convenience getters so tests can read `session.messages` etc. --
@@ -254,6 +256,17 @@ export class ChatSession {
 
 	private setState(partial: Partial<ChatSessionState>): void {
 		this.store.setState(partial);
+	}
+
+	async start(): Promise<void> {
+		if (this.started) {
+			return;
+		}
+		this.started = true;
+		if (this.options.roomId) {
+			this.roomOptionsSynced = true;
+			await this.loadHistory(this.options.roomId);
+		}
 	}
 
 	private async loadHistory(roomId: string): Promise<void> {

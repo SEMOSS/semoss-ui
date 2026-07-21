@@ -113,6 +113,25 @@ beforeEach(() => {
 });
 
 describe("ChatSession.sendMessage", () => {
+	it("defers resumed-room history and starts it only once", async () => {
+		const session = new ChatSession(
+			actions,
+			insightId,
+			{ ...baseOptions, roomId: "room-1" },
+			false,
+		);
+
+		expect(getPlaygroundRoomHistory).not.toHaveBeenCalled();
+
+		await Promise.all([session.start(), session.start()]);
+
+		expect(getPlaygroundRoomHistory).toHaveBeenCalledTimes(1);
+		expect(getPlaygroundRoomHistory).toHaveBeenCalledWith(
+			actions,
+			"room-1",
+		);
+	});
+
 	it("streams content chunks into a single merged text part and marks the message complete", async () => {
 		askPlayground.mockImplementation(
 			streamed(
