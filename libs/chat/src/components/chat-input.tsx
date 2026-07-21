@@ -1,4 +1,5 @@
 import {
+	BookOpenIcon,
 	ChevronsDownUpIcon,
 	MicIcon,
 	PaperclipIcon,
@@ -30,6 +31,10 @@ import {
 import { FileDragProvider, useFileDrag } from "../contexts/file-drag-context";
 import { cn } from "../lib/utils";
 import { FileDragOverlay } from "./file-drag-overlay";
+import {
+	PromptLibraryDialog,
+	type PromptLibraryItem,
+} from "./prompt-library-dialog";
 
 export interface ChatInputSlashCommand {
 	/** Stable identifier used for filtering and callbacks (matches playground). */
@@ -287,16 +292,28 @@ export interface ChatInputProps {
 	placeholder?: string;
 	className?: string;
 	/**
-	 * Rendered in the bottom-right control cluster, immediately before the
-	 * send button — e.g. an EngineSelect, matching playground's own
-	 * bottom-right cluster (model picker, mic, sparkles, send all grouped
-	 * together). Named "trailing" because it renders at the end of the
-	 * control row, next to Send — not the start. Deliberately a slot rather
+	 * Rendered in the bottom-right control cluster before the built-in
+	 * prompt-library and mic buttons — e.g. an EngineSelect, matching
+	 * playground's right-side control ordering. Deliberately a slot rather
 	 * than a baked-in engine picker: ChatInput doesn't know about
 	 * engines/models at all, so any composable control can go here. See
 	 * docs/chat-components/PLAN.md.
 	 */
 	trailingActions?: ReactNode;
+	/**
+	 * Optional predefined prompts for a built-in Prompt Library trigger.
+	 * When provided, ChatInput renders a prompt-library button in the same
+	 * right-side control cluster placement as playground (between
+	 * trailingActions and the mic button).
+	 */
+	predefinedPrompts?: PromptLibraryItem[];
+	/** Disables prompt selection while the list is being refreshed. */
+	isPromptLibraryLoading?: boolean;
+	/**
+	 * Optional handler for prompt-library selection. When omitted,
+	 * selecting a prompt inserts its context into the composer.
+	 */
+	onPromptLibrarySelect?: (prompt: PromptLibraryItem) => void;
 	/**
 	 * Optional slash-command shortcuts rendered as a menu in the control
 	 * row. Selecting one inserts the command into the composer.
@@ -335,9 +352,9 @@ export interface ChatInputProps {
  * bg-card, shadow-lg, rounded-md, focus ring) and send button
  * (@semoss/ui's Button, variant="default" size="icon-sm") — see
  * docs/chat-components/PLAN.md. Deliberately still a plain <textarea>,
- * not playground's Lexical rich-text editor (file attach, MCP menu,
- * prompt library) — that's out of scope, not something this component is
- * trying to approximate.
+ * not playground's Lexical rich-text editor — but it now includes the
+ * prompt-library trigger in the same right-side control cluster position
+ * as playground for composition parity.
  */
 export function ChatInput({ ...props }: ChatInputProps) {
 	return (
@@ -358,6 +375,9 @@ function ChatInputInner({
 	placeholder = "Message...",
 	className,
 	trailingActions,
+	predefinedPrompts = [],
+	isPromptLibraryLoading = false,
+	onPromptLibrarySelect,
 	slashCommands,
 	onSlashCommandSelect,
 	defaultSlashCommandActions,
@@ -388,6 +408,7 @@ function ChatInputInner({
 	};
 	const [canListen, setCanListen] = useState(false);
 	const [isListening, setIsListening] = useState(false);
+	const [isPromptLibraryOpen, setIsPromptLibraryOpen] = useState(false);
 	const [isSlashMenuOpen, setIsSlashMenuOpen] = useState(false);
 	const [slashQuery, setSlashQuery] = useState("");
 	const [selectedSlashIndex, setSelectedSlashIndex] = useState(0);
@@ -677,6 +698,15 @@ function ChatInputInner({
 		updateComposerValue(next);
 	}
 
+	function handlePromptLibrarySelect(prompt: PromptLibraryItem) {
+		onPromptLibrarySelect?.(prompt);
+		if (!onPromptLibrarySelect) {
+			updateComposerValue(prompt.context);
+		}
+		setIsPromptLibraryOpen(false);
+		textareaRef.current?.focus();
+	}
+
 	const filteredSlashCommands = filterSlashCommands(
 		effectiveSlashCommands,
 		slashQuery,
@@ -853,6 +883,26 @@ function ChatInputInner({
 				</div>
 			)}
 			<div className="flex items-center justify-end gap-2 bg-card p-2">
+				{trailingActions}
+				{predefinedPrompts.length > 0 && (
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								data-slot="chat-input-prompt-library"
+								type="button"
+								variant="ghost"
+								size="icon-sm"
+								className="bg-background"
+								disabled={disabled || isGenerating}
+								aria-label="Open prompt library"
+								onClick={() => setIsPromptLibraryOpen(true)}
+							>
+								<BookOpenIcon />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>Prompt Library</TooltipContent>
+					</Tooltip>
+				)}
 				{enableVoiceInput && canListen && (
 					<Tooltip>
 						<TooltipTrigger asChild>
@@ -886,7 +936,6 @@ function ChatInputInner({
 						</TooltipContent>
 					</Tooltip>
 				)}
-				{trailingActions}
 				<Button
 					data-slot="chat-input-send"
 					type="submit"
@@ -905,6 +954,13 @@ function ChatInputInner({
 					)}
 				</Button>
 			</div>
+			<PromptLibraryDialog
+				open={isPromptLibraryOpen}
+				onOpenChange={setIsPromptLibraryOpen}
+				prompts={predefinedPrompts}
+				isLoading={isPromptLibraryLoading}
+				onSelectPrompt={handlePromptLibrarySelect}
+			/>
 			<FileDragOverlay />
 		</form>
 	);

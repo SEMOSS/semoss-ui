@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import {
+	MessagesSquareIcon,
 	MoreVerticalIcon,
 	PencilIcon,
 	SearchIcon,
@@ -48,6 +49,7 @@ export interface RoomSidebarProps {
 	onLoadMore: () => void;
 	onSelectRoom?: (roomId: string) => void;
 	onNewChat: () => void;
+	onAllChats?: () => void;
 	onRenameRoom: (roomId: string, name: string) => void;
 	onPinRoom: (roomId: string, pinned: boolean) => void;
 	onDeleteRoom: (roomId: string) => void;
@@ -200,6 +202,7 @@ export function RoomSidebar({
 	onLoadMore,
 	onSelectRoom,
 	onNewChat,
+	onAllChats,
 	onRenameRoom,
 	onPinRoom,
 	onDeleteRoom,
@@ -218,6 +221,11 @@ export function RoomSidebar({
 	function handleNewChat() {
 		setInternalActiveRoomId(null);
 		onNewChat();
+	}
+
+	function handleAllChats() {
+		setInternalActiveRoomId(null);
+		onAllChats?.();
 	}
 
 	const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
@@ -308,6 +316,14 @@ export function RoomSidebar({
 				>
 					<SquarePenIcon className="size-4" />
 					New Chat
+				</Button>
+				<Button
+					variant="ghost"
+					className="justify-start gap-2"
+					onClick={handleAllChats}
+				>
+					<MessagesSquareIcon className="size-4" />
+					All Chats
 				</Button>
 			</div>
 			<ScrollArea

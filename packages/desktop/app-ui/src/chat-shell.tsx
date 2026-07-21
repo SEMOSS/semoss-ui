@@ -9,6 +9,7 @@ import {
 } from "@semoss/chat";
 import {
 	ChatInput,
+	ChatRoomsPage,
 	EngineSelect,
 	McpMenuButton,
 	MessageList,
@@ -41,6 +42,7 @@ export const ChatShell = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => (
 const ChatShellInner = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => {
 	const [engine, setEngine] = useState<Engine | null>(null);
 	const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
+	const [viewMode, setViewMode] = useState<"chat" | "allChats">("chat");
 	// Set once a "new chat" session's first send lazily creates a room
 	// server-side — used only to highlight the right row in the sidebar.
 	// Deliberately kept separate from activeRoomId: activeRoomId is also
@@ -106,16 +108,23 @@ const ChatShellInner = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => {
 	const handleSelectRoom = (roomId: string) => {
 		setLiveRoomId(null);
 		setActiveRoomId(roomId);
+		setViewMode("chat");
 	};
 
 	const handleNewChat = () => {
 		setLiveRoomId(null);
 		setActiveRoomId(null);
+		setViewMode("chat");
+	};
+
+	const handleAllChats = () => {
+		setLiveRoomId(null);
+		setViewMode("allChats");
 	};
 
 	return (
 		<div className="flex h-full min-h-0">
-			{sidebarOpen ? (
+			{sidebarOpen && viewMode === "chat" ? (
 				<div className="flex w-64 shrink-0 flex-col border-border border-e">
 					<RoomSidebar
 						className="min-h-0 w-full flex-1 border-none"
@@ -130,6 +139,7 @@ const ChatShellInner = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => {
 						onLoadMore={roomsList.loadMore}
 						onSelectRoom={handleSelectRoom}
 						onNewChat={handleNewChat}
+						onAllChats={handleAllChats}
 						onRenameRoom={roomsList.renameRoom}
 						onPinRoom={roomsList.pinRoom}
 						onDeleteRoom={roomsList.deleteRoom}
@@ -138,7 +148,14 @@ const ChatShellInner = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => {
 				</div>
 			) : null}
 			<main className="flex min-h-0 flex-1 flex-col">
-				{engine ? (
+				{viewMode === "allChats" ? (
+					<ChatRoomsPage
+						className="p-4"
+						onSelectRoom={handleSelectRoom}
+						onNewChat={handleNewChat}
+						onAllChats={handleAllChats}
+					/>
+				) : engine ? (
 					<ChatProvider
 						key={activeRoomId ?? "new"}
 						isActive

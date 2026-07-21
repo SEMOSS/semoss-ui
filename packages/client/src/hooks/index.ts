@@ -13,6 +13,7 @@ import { useRootStore } from "./useRootStore";
 import { useServerPagination } from "./useServerPagination";
 import { useSettings } from "./useSettings";
 import { useStepper } from "./useStepper";
+import { useThemeLogo } from "./useThemeLogo";
 import { useWorkspace } from "./useWorkspace";
 
 // NOTE: Do not export `useBlockSettings` from this barrel.
@@ -34,6 +35,7 @@ export {
 	useSettings,
 	useStepper,
 	useTabBarScroll,
+	useThemeLogo,
 	useWorkspace,
 	useProject,
 };

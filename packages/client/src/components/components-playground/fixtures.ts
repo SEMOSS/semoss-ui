@@ -1,4 +1,5 @@
 import type { ChatMessage, MCPConfig, RoomSummary } from "@semoss/chat";
+import type { PromptLibraryItem } from "@semoss/chat/components";
 
 /**
  * Shared sample data for every doc page's live previews. Reuses the same
@@ -77,6 +78,32 @@ export const FEEDBACK_DEMO_MESSAGE: ChatMessage = {
 	status: "complete",
 	timestamp: new Date(),
 };
+
+export const SAMPLE_PROMPTS: PromptLibraryItem[] = [
+	{
+		id: "p1",
+		title: "Summarize a claim",
+		context: "Summarize the status and next steps for a given claim id.",
+		tags: ["claims"],
+	},
+	{
+		id: "p2",
+		title: "Draft a benefits letter",
+		context: "Draft a benefits eligibility letter for a member.",
+		tags: ["benefits", "letters"],
+	},
+	{
+		id: "p3",
+		title: "Explain a denial",
+		context: "Explain why a claim was denied in plain language.",
+		tags: ["claims"],
+	},
+	{
+		id: "p4",
+		title: "General greeting",
+		context: "Say hello and ask how you can help today.",
+	},
+];
 
 export const SAMPLE_MCP: MCPConfig[] = [
 	{ type: "VECTOR", id: "kb-1", name: "Claims Knowledge Base" },

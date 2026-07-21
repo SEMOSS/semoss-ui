@@ -24,6 +24,7 @@ function baseProps() {
 		onLoadMore: vi.fn(),
 		onSelectRoom: vi.fn(),
 		onNewChat: vi.fn(),
+		onAllChats: vi.fn(),
 		onRenameRoom: vi.fn(),
 		onPinRoom: vi.fn(),
 		onDeleteRoom: vi.fn(),
@@ -81,6 +82,16 @@ describe("RoomSidebar", () => {
 		await user.click(screen.getByRole("button", { name: "New Chat" }));
 
 		expect(onNewChat).toHaveBeenCalled();
+	});
+
+	it("calls onAllChats when All Chats is clicked", async () => {
+		const user = userEvent.setup();
+		const onAllChats = vi.fn();
+		render(<RoomSidebar {...baseProps()} onAllChats={onAllChats} />);
+
+		await user.click(screen.getByRole("button", { name: "All Chats" }));
+
+		expect(onAllChats).toHaveBeenCalled();
 	});
 
 	it("calls onSelectRoom with the room's id when a row is clicked", async () => {

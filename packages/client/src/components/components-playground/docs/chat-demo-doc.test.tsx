@@ -51,6 +51,7 @@ vi.mock("@semoss/chat", async () => {
 
 vi.mock("@semoss/chat/components", () => ({
 	ChatInput: () => <div />,
+	ChatRoomsPage: () => <div data-testid="chat-rooms-page" />,
 	McpMenuButton: () => <div />,
 	MessageBubble: () => <div />,
 	MessageList: () => <div />,

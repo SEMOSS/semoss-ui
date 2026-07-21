@@ -9,12 +9,15 @@
  */
 export * from "./chat-input";
 export * from "./chat-panel";
+export * from "./chat-rooms-page";
+export * from "./chat-rooms-shell";
 export * from "./engine-select";
 export * from "./mcp-menu-button";
 export * from "./mcp-overlay";
 export * from "./message-bubble";
 export * from "./message-feedback-toolbar";
 export * from "./message-list";
+export * from "./prompt-library-dialog";
 export * from "./prompt-optimizer";
 export * from "./room-sidebar";
 export * from "./selection-chat-button";
