@@ -253,10 +253,7 @@ command=["<encode>${text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
 ${media.length ? `image=${JSON.stringify(media)},` : "image=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
-paramValues=[${JSON.stringify({
-				max_new_tokens: room.options.tokenLength,
-				temperature: room.options.temperature,
-			})}]`;
+paramValues=[{}]`;
 
 			// wait for the pixel to run with streaming
 			await room.runRoomPixelStreaming<

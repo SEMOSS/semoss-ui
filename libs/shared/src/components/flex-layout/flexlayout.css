@@ -11,17 +11,17 @@
  * consume one stable stylesheet in production builds.
  */
 .flexlayout__layout {
-    --color-text: black;
-    --color-background: white;
-    --color-base: white;
-    --color-1: rgb(247.35, 247.35, 247.35);
-    --color-2: rgb(239.7, 239.7, 239.7);
-    --color-3: rgb(232.05, 232.05, 232.05);
-    --color-4: rgb(224.4, 224.4, 224.4);
-    --color-5: rgb(216.75, 216.75, 216.75);
-    --color-6: rgb(209.1, 209.1, 209.1);
-    --color-overflow: gray;
-    --color-icon: gray;
+    --color-text: var(--foreground);
+    --color-background: var(--background);
+    --color-base: var(--card);
+    --color-1: var(--muted);
+    --color-2: var(--secondary);
+    --color-3: var(--accent);
+    --color-4: var(--border);
+    --color-5: var(--input);
+    --color-6: var(--border);
+    --color-overflow: var(--muted-foreground);
+    --color-icon: var(--foreground);
     --color-tabset-background: var(--color-background);
     --color-tabset-background-selected: var(--color-1);
     --color-tabset-background-maximized: var(--color-2);
@@ -50,7 +50,7 @@
     --color-drag-rect: var(--color-text);
     --color-popup-border: var(--color-6);
     --color-popup-unselected: var(--color-text);
-    --color-popup-unselected-background: white;
+    --color-popup-unselected-background: var(--popover);
     --color-popup-selected: var(--color-text);
     --color-popup-selected-background: var(--color-3);
     --color-edge-marker: #aaa;
@@ -398,11 +398,11 @@
 }
 
 .flexlayout__theme_smss .flexlayout__border_button {
-    @apply flex h-8 px-2 py-3 justify-center items-center gap-2 rounded-md bg-background;
+    @apply flex h-8 px-2 py-3 border border-transparent justify-center items-center gap-2 rounded-md bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground;
 }
 
 .flexlayout__theme_smss .flexlayout__border_button--selected {
-    @apply dark:bg-input/30 shadow-xs border border-input;
+    @apply dark:bg-input/30 shadow-xs border border-input text-foreground;
 }
 
 .flexlayout__theme_smss .flexlayout__border_button--selected .flexlayout__border_button_leading {

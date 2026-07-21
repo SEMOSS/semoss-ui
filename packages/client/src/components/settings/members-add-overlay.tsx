@@ -740,7 +740,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 											<div className="flex items-center justify-between">
 												<div className="flex items-center gap-3">
 													<Avatar className="h-5 w-5 font-bold text-xs">
-														<AvatarFallback className="bg-black/50 text-white">
+														<AvatarFallback className="bg-muted text-foreground">
 															A
 														</AvatarFallback>
 													</Avatar>
@@ -777,7 +777,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 										<div className="flex flex-col gap-2">
 											<div className="flex items-center justify-between">
 												<div className="flex items-center gap-3">
-													<div className="flex h-6 w-6 items-center justify-center text-black/50">
+													<div className="flex h-6 w-6 items-center justify-center text-muted-foreground">
 														<Edit className="h-5 w-5" />
 													</div>
 													<CardTitle
@@ -813,7 +813,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 										<div className="flex flex-col gap-2">
 											<div className="flex items-center justify-between">
 												<div className="flex items-center gap-3">
-													<div className="flex h-6 w-6 items-center justify-center text-black/50">
+													<div className="flex h-6 w-6 items-center justify-center text-muted-foreground">
 														<Eye className="h-5 w-5" />
 													</div>
 													<CardTitle

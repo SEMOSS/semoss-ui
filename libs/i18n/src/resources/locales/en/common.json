@@ -15,7 +15,6 @@
 		"type": "Type",
 		"model": "Model",
 		"instructions": "Instructions",
-		"temperature": "Temperature",
 		"maxToken": "Max Token"
 	},
 	"placeholders": {
@@ -23,7 +22,6 @@
 		"enterDescription": "Enter Description",
 		"enterInstructions": "Enter Instructions",
 		"updateInstructions": "Update Instructions",
-		"updateTokenLength": "Update token length",
 		"uploadFiles": "Upload Files",
 		"search": "Search...",
 		"enterPromptLibraryTag": "Enter Prompt Library Tag"

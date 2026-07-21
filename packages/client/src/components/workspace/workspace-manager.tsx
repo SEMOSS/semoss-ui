@@ -493,14 +493,30 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 												const iconSrc = isSelected
 													? imgIcon.active
 													: imgIcon.default;
-												renderValues.content = (
-													<img
-														src={iconSrc}
-														alt={tabNode.getName()}
-														ref={DynamicDataTestId}
-														className="m-auto block h-[40px] w-[50px] max-w-none transition-all duration-200"
-													/>
-												);
+												renderValues.content =
+													isSelected ? (
+														<img
+															src={iconSrc}
+															alt={tabNode.getName()}
+															ref={
+																DynamicDataTestId
+															}
+															className="m-auto block h-[40px] w-[50px] max-w-none transition-all duration-200"
+														/>
+													) : (
+														<span
+															ref={
+																DynamicDataTestId
+															}
+															role="img"
+															aria-label={tabNode.getName()}
+															className="m-auto block h-[40px] w-[50px] max-w-none bg-muted-foreground transition-colors duration-200"
+															style={{
+																WebkitMask: `url("${iconSrc}") center / contain no-repeat`,
+																mask: `url("${iconSrc}") center / contain no-repeat`,
+															}}
+														/>
+													);
 											}
 											return renderValues;
 										}}
