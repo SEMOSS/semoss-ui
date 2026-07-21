@@ -173,6 +173,41 @@ const runMCPTool = (name, parameters,)  => {
 };
 ```
 
+## Testing
+
+This package uses [Vitest](https://vitest.dev/) for unit tests.
+
+### Running Tests
+
+```sh
+# run all tests
+npx vitest
+
+# run in watch mode
+npx vitest --watch
+
+# run with coverage
+npx vitest --coverage
+```
+
+### What's Tested
+
+| Area | Files | Notes |
+|---|---|---|
+| Utilities | `src/utility/fetch.ts`, `src/utility/error.ts`, `src/utility/embed-auth.ts` | HTTP wrappers, custom errors, embed auth flow |
+| Environment | `src/env.ts` | Singleton getters and `update()` |
+| API wrappers | `src/api/base.ts`, `src/api/auth.ts`, `src/api/file.ts`, and others | Fetch is mocked via `vi.stubGlobal` |
+| React hooks | `src/js-frameworks/react/hooks/` | Rendered with `@testing-library/react`; timers use `vi.useFakeTimers()` |
+
+### Writing Tests
+
+Place test files next to the source file they cover, e.g.:
+
+```
+src/utility/fetch.ts
+src/utility/fetch.test.ts
+```
+
 ## 🔄 Migration Guide
 
 ### For Users Migrating from @semoss/sdk-react
