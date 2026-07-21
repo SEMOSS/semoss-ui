@@ -10,6 +10,7 @@ import { escapePixelString, SemossClient } from "../services/semossClient";
 import { enhancedClick, enhancedSetValue } from "./enhancedActions";
 
 const AUTOMATION_RUN_STATE_STORAGE_KEY = "semoss-automation-run-state";
+const EXECUTION_SOURCE_TAB_STORAGE_KEY = "semoss-execution-source-tab-id";
 
 type AutomationInputRequest = {
 	id: string;
@@ -101,6 +102,83 @@ function clearPendingAutomationInput(requestId: string): boolean {
 // Track the tab that initiated script execution (to send completion back to it)
 let executionSourceTabId: number | null = null;
 
+async function rememberExecutionSourceTab(tabId: number): Promise<void> {
+	executionSourceTabId = tabId;
+	try {
+		await chrome.storage.session.set({
+			[EXECUTION_SOURCE_TAB_STORAGE_KEY]: tabId,
+		});
+	} catch (error) {
+		console.warn(
+			"[BACKGROUND] Could not persist execution source tab:",
+			error,
+		);
+	}
+}
+
+async function getExecutionSourceTab(): Promise<number | null> {
+	if (executionSourceTabId !== null) return executionSourceTabId;
+
+	try {
+		const stored = await chrome.storage.session.get(
+			EXECUTION_SOURCE_TAB_STORAGE_KEY,
+		);
+		const storedTabId = stored[EXECUTION_SOURCE_TAB_STORAGE_KEY];
+		if (typeof storedTabId === "number") {
+			executionSourceTabId = storedTabId;
+			return storedTabId;
+		}
+	} catch (error) {
+		console.warn(
+			"[BACKGROUND] Could not restore execution source tab:",
+			error,
+		);
+	}
+
+	return null;
+}
+
+async function clearExecutionSourceTab(): Promise<void> {
+	executionSourceTabId = null;
+	try {
+		await chrome.storage.session.remove(EXECUTION_SOURCE_TAB_STORAGE_KEY);
+	} catch (error) {
+		console.warn(
+			"[BACKGROUND] Could not clear execution source tab:",
+			error,
+		);
+	}
+}
+
+async function forwardExecutionCompletion(
+	message: unknown,
+	senderTabId?: number,
+): Promise<number> {
+	const registeredTabId = await getExecutionSourceTab();
+	const candidateTabIds = [registeredTabId, senderTabId].filter(
+		(tabId, index, all): tabId is number =>
+			typeof tabId === "number" && all.indexOf(tabId) === index,
+	);
+
+	if (candidateTabIds.length === 0) {
+		throw new Error("No source tab registered for script completion");
+	}
+
+	let lastError: unknown;
+	for (const tabId of candidateTabIds) {
+		try {
+			await chrome.tabs.sendMessage(tabId, message);
+			return tabId;
+		} catch (error) {
+			lastError = error;
+		}
+	}
+
+	throw lastError instanceof Error
+		? lastError
+		: new Error("Could not deliver script completion to its source tab");
+}
+
 // Track panel state for content script queries
 let _isPanelOpen = false;
 
@@ -171,12 +249,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		(message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT" ||
 			message.type === "EXECUTE_PLAYWRIGHT_SCRIPT")
 	) {
-		executionSourceTabId = sender.tab.id;
+		const sourceTabId = sender.tab.id;
 		console.log(
 			"[BACKGROUND] 📍 Stored execution source tab:",
-			executionSourceTabId,
+			sourceTabId,
 		);
-		sendResponse({ success: true });
+		void rememberExecutionSourceTab(sourceTabId).then(() => {
+			sendResponse({ success: true });
+		});
 		return true;
 	}
 
@@ -200,38 +280,35 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		return true;
 	}
 
-	// Forward script execution completion from extension (panel) back to the originating tab ONLY
-	// This prevents infinite loops caused by sending to all tabs (including newly opened ones)
-	if (!sender.tab && message.type === "SCRIPT_EXECUTION_COMPLETE") {
-		// Send ONLY to the tab that initiated execution, not all tabs
-		if (executionSourceTabId) {
-			console.log(
-				"[BACKGROUND] 📤 Sending completion to source tab:",
-				executionSourceTabId,
-			);
-			chrome.tabs
-				.sendMessage(executionSourceTabId, message)
-				.then(() => {
-					console.log(
-						"[BACKGROUND] ✅ Sent completion to source tab:",
-						executionSourceTabId,
-					);
-					executionSourceTabId = null; // Clear after sending
-				})
-				.catch((error) => {
-					console.error(
-						"[BACKGROUND] ❌ Failed to send completion:",
-						error,
-					);
-					executionSourceTabId = null;
-				});
-		} else {
-			console.warn(
-				"[BACKGROUND] ⚠️ No source tab stored, cannot send completion",
-			);
-		}
+	// Floating panels are extension iframes hosted by a tab, so sender.tab may be
+	// present. Route every completion to the registered source tab instead of
+	// restricting handling to native extension pages.
+	if (message.type === "SCRIPT_EXECUTION_COMPLETE") {
+		void (async () => {
+			let response: { success: boolean; error?: string };
+			try {
+				const destinationTabId = await forwardExecutionCompletion(
+					message,
+					sender.tab?.id,
+				);
+				console.log(
+					"[BACKGROUND] ✅ Sent completion to source tab:",
+					destinationTabId,
+				);
+				response = { success: true };
+			} catch (error) {
+				const errorMessage =
+					error instanceof Error ? error.message : String(error);
+				console.error(
+					"[BACKGROUND] ❌ Failed to send completion:",
+					errorMessage,
+				);
+				response = { success: false, error: errorMessage };
+			}
 
-		sendResponse({ success: true });
+			await clearExecutionSourceTab();
+			sendResponse(response);
+		})();
 		return true;
 	}
 
