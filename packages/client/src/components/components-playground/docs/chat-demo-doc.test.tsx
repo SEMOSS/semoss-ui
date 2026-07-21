@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ChatDemoBridge } from "./chat-demo-doc";
+import { ChatDemoBridge, ChatDemoDoc } from "./chat-demo-doc";
 
 const mocks = vi.hoisted(() => ({
 	activeRoomId: null as string | null,
@@ -58,6 +58,9 @@ vi.mock("@semoss/chat/components", () => ({
 	RoomSidebar: ({ activeRoomId }: { activeRoomId?: string | null }) => (
 		<div data-testid="room-sidebar" data-active-room={activeRoomId ?? ""} />
 	),
+	SelectionChatButton: () => (
+		<button type="button">Send selection to chat</button>
+	),
 }));
 
 vi.mock("../doc-page", () => ({
@@ -76,6 +79,18 @@ beforeEach(() => {
 });
 
 describe("ChatDemoBridge", () => {
+	it("renders the imperative selection control outside ChatProvider", () => {
+		render(<ChatDemoDoc />);
+
+		const imperativeButton = screen.getByRole("button", {
+			name: "Send selection to chat",
+		});
+		expect(imperativeButton).toBeInTheDocument();
+		expect(
+			screen.getByTestId("chat-provider").contains(imperativeButton),
+		).toBe(false);
+	});
+
 	it("remounts new chats by engine and keeps saved rooms keyed by room", () => {
 		const { rerender } = render(<ChatDemoBridge engineId="engine-a" />);
 

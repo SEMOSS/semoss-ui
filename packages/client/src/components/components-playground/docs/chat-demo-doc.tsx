@@ -14,6 +14,7 @@ import {
 	MessageList,
 	PromptOptimizer,
 	RoomSidebar,
+	SelectionChatButton,
 } from "@semoss/chat/components";
 import { DocPage } from "../doc-page";
 import { useEngineConnect } from "../engine-connect-context";
@@ -201,10 +202,11 @@ export const ChatDemoDoc = () => {
 	return (
 		<DocPage
 			title="Chat Demo"
-			description="A live end-to-end demo of the @semoss/chat components wired together."
+			description="A live end-to-end demo of the @semoss/chat components. Highlight text anywhere on this page to send it through the active chat's imperative API."
 		>
 			{engine ? (
 				<ChatRoomsProvider>
+					<SelectionChatButton label="Send selection to chat" />
 					<ChatDemoBridge engineId={engine.engineId} />
 				</ChatRoomsProvider>
 			) : (
