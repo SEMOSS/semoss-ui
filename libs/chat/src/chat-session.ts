@@ -154,6 +154,9 @@ function reconcileToolCall(
 	if (existing) {
 		existing.name = displayName;
 		existing.arguments = toolCall.arguments;
+		existing.originalName = toolCall.original_name;
+		existing.title = toolCall.title;
+		existing._meta = toolCall._meta;
 		return;
 	}
 	message.parts.push({
@@ -161,6 +164,9 @@ function reconcileToolCall(
 		id: toolCall.id,
 		name: displayName,
 		arguments: toolCall.arguments,
+		originalName: toolCall.original_name,
+		title: toolCall.title,
+		_meta: toolCall._meta,
 	});
 }
 

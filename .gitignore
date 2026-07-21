@@ -32,5 +32,11 @@ packages/playground/theme.local.json
 # Ignore legacy
 packages/legacy
 
+# Desktop app build/packaging output (dist/ above already covers the rest)
+packages/desktop/dist-electron
+packages/desktop/dist-app-ui
+packages/desktop/release/*
+!packages/desktop/release/README.md
+
 # Claude
 CLAUDE.md

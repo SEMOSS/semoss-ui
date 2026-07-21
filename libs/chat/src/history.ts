@@ -68,6 +68,9 @@ function toChatMessagePart(
 			id: part.toolCall.id,
 			name: toolCallDisplayName(part.toolCall),
 			arguments: part.toolCall.arguments,
+			originalName: part.toolCall.original_name,
+			title: part.toolCall.title,
+			_meta: part.toolCall._meta,
 		};
 	}
 	if (isToolResultPart(part)) {

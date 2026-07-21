@@ -4,15 +4,30 @@ import { cn } from "../lib/utils";
 import type {
 	ChatMessage,
 	ChatMessagePart,
+	ChatToolCallPart,
 	ChatToolResultPart,
 } from "../types";
 import { createMarkdownComponents } from "./markdown-components";
 import { MessageFeedbackToolbar } from "./message-feedback-toolbar";
 import { ToolCallView } from "./tool-call-view";
 
+export interface ToolResponseDetails {
+	id: string;
+	messageId?: string;
+	roomId?: string | null;
+	name: string;
+	status: "running" | "success" | "error";
+	arguments?: Record<string, unknown>;
+	output?: string;
+	originalName?: string;
+	title?: string;
+	_meta?: ChatToolCallPart["_meta"];
+}
+
 export interface MessageBubbleProps {
 	message: ChatMessage;
 	className?: string;
+	roomId?: string | null;
 	/**
 	 * Thumbs up/down/copy/download action row under a completed assistant
 	 * response — omit `onRate` to leave the row off entirely (e.g. a host
@@ -22,6 +37,7 @@ export interface MessageBubbleProps {
 	 */
 	onRate?: (rating: boolean) => void;
 	onDownload?: (format: "word" | "pdf") => Promise<void>;
+	onOpenToolResponse?: (tool: ToolResponseDetails) => void;
 }
 
 function findToolResult(
@@ -48,8 +64,10 @@ function findToolResult(
 export function MessageBubble({
 	message,
 	className,
+	roomId,
 	onRate,
 	onDownload,
+	onOpenToolResponse,
 }: MessageBubbleProps) {
 	const isUser = message.role === "user";
 	const isError = message.status === "error";
@@ -96,13 +114,41 @@ export function MessageBubble({
 				}
 				if (part.type === "tool_call") {
 					const result = findToolResult(message.parts, part.id);
+					const status = result?.status ?? "running";
 					return (
 						<ToolCallView
 							key={part.id}
 							toolName={part.name || "tool"}
-							status={result?.status ?? "running"}
+							status={status}
 							arguments={part.arguments}
 							output={result?.output}
+							onOpenInSidebar={
+								onOpenToolResponse
+									? () => {
+											onOpenToolResponse({
+												id: part.id,
+												messageId: message.id,
+												roomId,
+												name: part.name || "tool",
+												status,
+												arguments: part.arguments,
+												output: result?.output,
+												...(part.originalName
+													? {
+															originalName:
+																part.originalName,
+														}
+													: {}),
+												...(part.title
+													? { title: part.title }
+													: {}),
+												...(part._meta
+													? { _meta: part._meta }
+													: {}),
+											});
+										}
+									: undefined
+							}
 						/>
 					);
 				}
