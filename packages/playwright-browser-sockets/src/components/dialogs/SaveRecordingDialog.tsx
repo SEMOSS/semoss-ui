@@ -29,6 +29,8 @@ interface SaveRecordingDialogProps {
 	isGeneratingMetadata: boolean;
 	isSaving: boolean;
 	canSave: boolean;
+	dialogTitle?: string;
+	saveLabel?: string;
 	onClose: () => void;
 	onProjectChange: (project: RecordingProjectOption | null) => void;
 	onModelChange: (model: RecordingMetadataModelOption | null) => void;
@@ -54,6 +56,8 @@ export function SaveRecordingDialog({
 	isGeneratingMetadata,
 	isSaving,
 	canSave,
+	dialogTitle = "Save recording",
+	saveLabel = "Save",
 	onClose,
 	onProjectChange,
 	onModelChange,
@@ -70,7 +74,7 @@ export function SaveRecordingDialog({
 
 	return (
 		<Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-			<DialogTitle>Save recording</DialogTitle>
+			<DialogTitle>{dialogTitle}</DialogTitle>
 			<DialogContent>
 				<Stack spacing={2} sx={{ pt: 1 }}>
 					<Autocomplete
@@ -181,7 +185,7 @@ export function SaveRecordingDialog({
 						!hasRequiredMetadata
 					}
 				>
-					{isSaving ? "Saving…" : "Save"}
+					{isSaving ? "Saving…" : saveLabel}
 				</Button>
 			</DialogActions>
 		</Dialog>
