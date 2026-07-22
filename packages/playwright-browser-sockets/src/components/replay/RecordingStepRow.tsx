@@ -1,18 +1,14 @@
-import CloseIcon from "@mui/icons-material/Close";
-import DoneIcon from "@mui/icons-material/Done";
-import EditIcon from "@mui/icons-material/Edit";
+import { Check, Pencil, RotateCcw } from "lucide-react";
 import {
-	Box,
-	Chip,
-	CircularProgress,
-	IconButton,
-	ListItemButton,
-	ListItemText,
-	Stack,
-	TextField,
+	Badge,
+	Button,
+	Input,
+	Label,
+	Spinner,
 	Tooltip,
-	Typography,
-} from "@mui/material";
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 import type { PlaybackController } from "../../hooks/usePlaybackController";
 import type { LoadedRecordingStep } from "../../types/browserEvents";
 
@@ -41,153 +37,128 @@ export function RecordingStepRow({
 			: (step.text ?? "");
 	const isEditing = isType && playback.editingStepId === stepId;
 	const needsValue = isType && playback.valueRequiredStepId === stepId;
-
 	return (
-		<Box
-			sx={{
-				borderBottom: "1px solid",
-				borderColor: needsValue ? "warning.main" : "divider",
-				bgcolor: needsValue ? "rgba(237, 108, 2, 0.08)" : "transparent",
-			}}
+		<div
+			className={`border-line border-b ${needsValue ? "border-warning bg-warning/10" : ""}`}
 		>
-			<ListItemButton
-				disabled={disabled}
-				selected={isRunning}
-				onClick={() => playback.runStep(tabId, step)}
-				sx={{
-					alignItems: "flex-start",
-					py: 0.5,
-					px: 1,
-					pr: isType ? 0.25 : 1,
-				}}
-			>
-				<ListItemText
-					primary={
-						<Stack direction="row" spacing={1} alignItems="center">
-							<Typography
-								variant="body2"
-								sx={{ fontWeight: 600 }}
+			<div className="flex items-start gap-2 p-2">
+				<button
+					type="button"
+					disabled={disabled}
+					onClick={() => void playback.runStep(tabId, step)}
+					className={`min-w-0 flex-1 rounded p-1 text-left hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-60 ${isRunning ? "bg-primary/10" : ""}`}
+				>
+					<div className="flex flex-wrap items-center gap-2 font-semibold text-sm">
+						#{stepId ?? index + 1} {step.type || "STEP"}
+						{isRunning && <Spinner />}
+						{isDone && <Badge className="bg-success">done</Badge>}
+						{step.shouldRun === false && (
+							<Badge variant="secondary">skipped</Badge>
+						)}
+						{needsValue && (
+							<Badge
+								variant="outline"
+								className="border-warning text-warning"
 							>
-								#{stepId ?? index + 1} {step.type || "STEP"}
-							</Typography>
-							{isRunning && <CircularProgress size={12} />}
-							{isDone && (
-								<Chip
-									size="small"
-									color="success"
-									label="done"
-								/>
-							)}
-							{step.shouldRun === false && (
-								<Chip size="small" label="skipped" />
-							)}
-							{needsValue && (
-								<Chip
-									size="small"
-									color="warning"
-									label="value required"
-								/>
-							)}
-						</Stack>
-					}
-					secondary={
-						<Typography
-							variant="caption"
-							color="text.secondary"
-							component="span"
-						>
-							{tabId}
-							{typeof step.label === "string" && step.label
-								? ` · ${step.label}`
-								: ""}
-							{typeof displayValue === "string" && displayValue
-								? ` · "${displayValue}"`
-								: ""}
-						</Typography>
-					}
-				/>
+								value required
+							</Badge>
+						)}
+					</div>
+					<div className="mt-1 break-words text-muted-foreground text-xs">
+						{tabId}
+						{typeof step.label === "string" && step.label
+							? ` · ${step.label}`
+							: ""}
+						{typeof displayValue === "string" && displayValue
+							? ` · "${displayValue}"`
+							: ""}
+					</div>
+				</button>
 				{isType && (
-					<Tooltip title="Edit typed value">
-						<span>
-							<IconButton
-								size="small"
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								size="icon-sm"
+								variant="ghost"
 								disabled={playback.isRunning}
-								sx={{ p: 0.5 }}
-								onClick={(event) => {
-									event.preventDefault();
-									event.stopPropagation();
+								onClick={() =>
 									playback.setEditingStepId(
 										playback.editingStepId === stepId
 											? null
 											: stepId,
-									);
-								}}
+									)
+								}
 							>
-								<EditIcon fontSize="small" />
-							</IconButton>
-						</span>
+								<Pencil />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>Edit typed value</TooltipContent>
 					</Tooltip>
 				)}
-			</ListItemButton>
+			</div>
 			{isEditing && stepId !== undefined && (
-				<Box
-					sx={{ px: 1, pb: 0.75 }}
-					onClick={(event) => event.stopPropagation()}
-					onMouseDown={(event) => event.stopPropagation()}
-				>
-					<TextField
-						size="small"
-						fullWidth
-						autoFocus={needsValue}
-						label={
-							typeof step.label === "string" && step.label
-								? step.label
-								: `Step ${stepId} value`
-						}
-						type={step.isPassword === true ? "password" : "text"}
-						value={playback.editedTypeValues[stepId] ?? ""}
-						error={needsValue}
-						onChange={(event) =>
-							playback.updateTypeValue(stepId, event.target.value)
-						}
-						helperText={
+				<div className="grid gap-2 px-3 pb-3">
+					<Label htmlFor={`step-${stepId}`}>
+						{typeof step.label === "string" && step.label
+							? step.label
+							: `Step ${stepId} value`}
+					</Label>
+					<div className="flex gap-1">
+						<Input
+							id={`step-${stepId}`}
+							autoFocus={needsValue}
+							type={
+								step.isPassword === true ? "password" : "text"
+							}
+							value={playback.editedTypeValues[stepId] ?? ""}
+							aria-invalid={needsValue}
+							onChange={(event) =>
+								playback.updateTypeValue(
+									stepId,
+									event.target.value,
+								)
+							}
+						/>
+						<Button
+							size="icon"
+							variant="outline"
+							onClick={() => playback.setEditingStepId(null)}
+							aria-label="Apply value"
+						>
+							<Check />
+						</Button>
+						<Button
+							size="icon"
+							variant="outline"
+							onClick={() =>
+								playback.resetTypeValue(
+									stepId,
+									typeof step.text === "string"
+										? step.text
+										: "",
+								)
+							}
+							aria-label="Reset value"
+						>
+							<RotateCcw />
+						</Button>
+					</div>
+					<p
+						className={
 							needsValue
-								? "Enter a value, then click Run/Resume to continue."
-								: typeof step.description === "string" &&
-										step.description
-									? step.description
-									: "This value is used when replaying this TYPE step."
+								? "text-warning text-xs"
+								: "text-muted-foreground text-xs"
 						}
-						InputProps={{
-							endAdornment: (
-								<Stack direction="row" spacing={0.25}>
-									<IconButton
-										size="small"
-										onClick={() =>
-											playback.setEditingStepId(null)
-										}
-									>
-										<DoneIcon fontSize="small" />
-									</IconButton>
-									<IconButton
-										size="small"
-										onClick={() =>
-											playback.resetTypeValue(
-												stepId,
-												typeof step.text === "string"
-													? step.text
-													: "",
-											)
-										}
-									>
-										<CloseIcon fontSize="small" />
-									</IconButton>
-								</Stack>
-							),
-						}}
-					/>
-				</Box>
+					>
+						{needsValue
+							? "Enter a value, then click Run/Resume to continue."
+							: typeof step.description === "string" &&
+									step.description
+								? step.description
+								: "This value is used when replaying this TYPE step."}
+					</p>
+				</div>
 			)}
-		</Box>
+		</div>
 	);
 }

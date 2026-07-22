@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import "@semoss/ui/globals.css";
 
 @theme {
   --color-canvas: #0b1118;
@@ -7,7 +7,7 @@
   --color-surface-hover: #1d2c3b;
   --color-line: #2a3a4a;
   --color-ink: #e7edf4;
-  --color-muted: #93a4b8;
+  --color-ink-muted: #93a4b8;
   --color-accent: #36c7b0;
   --color-accent-strong: #20a58f;
   --color-danger: #f05267;

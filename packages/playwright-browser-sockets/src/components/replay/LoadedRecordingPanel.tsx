@@ -1,13 +1,5 @@
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import {
-	Box,
-	Chip,
-	Collapse,
-	IconButton,
-	List,
-	Typography,
-} from "@mui/material";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import { Badge, Button } from "@semoss/ui/next";
 import type { PlaybackController } from "../../hooks/usePlaybackController";
 import { RecordingStepRow } from "./RecordingStepRow";
 
@@ -17,67 +9,51 @@ export function LoadedRecordingPanel({
 	playback: PlaybackController;
 }) {
 	return (
-		<>
-			<Box
-				sx={{
-					px: 0.75,
-					py: 0.4,
-					display: "flex",
-					alignItems: "center",
-					gap: 0.5,
-					borderBottom: playback.loadedRecordingOpen
-						? "1px solid"
-						: 0,
-					borderColor: "divider",
-				}}
-			>
-				<IconButton
-					size="small"
+		<section className="border-line border-b">
+			<div className="flex items-center gap-2 px-2 py-1.5">
+				<Button
+					size="icon-sm"
+					variant="ghost"
 					disabled={!playback.loadedRecording}
 					onClick={() =>
 						playback.setLoadedRecordingOpen(
 							!playback.loadedRecordingOpen,
 						)
 					}
-					sx={{ p: 0.25 }}
 				>
 					{playback.loadedRecordingOpen ? (
-						<ExpandMoreIcon />
+						<ChevronDown />
 					) : (
-						<ChevronRightIcon />
+						<ChevronRight />
 					)}
-				</IconButton>
-				<Box sx={{ flex: 1 }}>
-					<Typography variant="subtitle2">
+				</Button>
+				<div className="min-w-0 flex-1">
+					<div className="font-semibold text-sm">
 						Loaded recording
-					</Typography>
-					<Typography variant="caption" color="text.secondary">
+					</div>
+					<div className="truncate text-muted-foreground text-xs">
 						{playback.loadedRecording
 							? playback.selectedRecording
 							: "Load a recording to inspect and replay steps"}
-					</Typography>
-				</Box>
+					</div>
+				</div>
 				{playback.loadedRecording && (
-					<Chip
-						size="small"
-						label={`${playback.loadedStepCount} steps`}
-					/>
+					<Badge variant="secondary">
+						{playback.loadedStepCount} steps
+					</Badge>
 				)}
 				{playback.typeStepCount > 0 && (
-					<Chip
-						size="small"
-						label={`${playback.typeStepCount} inputs`}
-					/>
+					<Badge variant="outline">
+						{playback.typeStepCount} inputs
+					</Badge>
 				)}
-			</Box>
-			<Collapse in={playback.loadedRecordingOpen}>
-				<List dense disablePadding>
+			</div>
+			{playback.loadedRecordingOpen && (
+				<div className="border-line border-t">
 					{playback.flattenedSteps.length === 0 ? (
-						<Box sx={{ p: 2 }}>
-							<Typography variant="body2" color="text.secondary">
-								Load a recording to see its steps here.
-							</Typography>
-						</Box>
+						<p className="p-4 text-muted-foreground text-sm">
+							Load a recording to see its steps here.
+						</p>
 					) : (
 						playback.flattenedSteps.map(
 							({ tabId, step, index }) => (
@@ -91,8 +67,8 @@ export function LoadedRecordingPanel({
 							),
 						)
 					)}
-				</List>
-			</Collapse>
-		</>
+				</div>
+			)}
+		</section>
 	);
 }

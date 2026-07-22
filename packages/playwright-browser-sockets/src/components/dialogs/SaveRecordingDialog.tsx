@@ -1,17 +1,22 @@
+import { useId } from "react";
 import {
-	Autocomplete,
-	Box,
 	Button,
-	CircularProgress,
 	Dialog,
-	DialogActions,
 	DialogContent,
+	DialogFooter,
+	DialogHeader,
 	DialogTitle,
-	LinearProgress,
-	Stack,
-	TextField,
-} from "@mui/material";
-import { alpha } from "@mui/material/styles";
+	Input,
+	Label,
+	Progress,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Spinner,
+	Textarea,
+} from "@semoss/ui/next";
 import type {
 	RecordingMetadataModelOption,
 	RecordingProjectOption,
@@ -42,190 +47,201 @@ interface SaveRecordingDialogProps {
 	onSave: () => void;
 }
 
-export function SaveRecordingDialog({
-	open,
-	projects,
-	project,
-	models,
-	model,
-	title,
-	fileName,
-	description,
-	intent,
-	isLoadingProjects,
-	isLoadingModels,
-	isGeneratingMetadata,
-	isSaving,
-	canSave,
-	onClose,
-	onProjectChange,
-	onModelChange,
-	onTitleChange,
-	onDescriptionChange,
-	onIntentChange,
-	onGenerateMetadata,
-	onSave,
-}: SaveRecordingDialogProps) {
+export function SaveRecordingDialog(props: SaveRecordingDialogProps) {
+	const titleId = useId();
+	const fileId = useId();
+	const descriptionId = useId();
+	const intentId = useId();
 	const hasRequiredMetadata =
-		title.trim().length > 0 &&
-		description.trim().length > 0 &&
-		intent.trim().length > 0;
-
+		!!props.title.trim() &&
+		!!props.description.trim() &&
+		!!props.intent.trim();
+	const selectProject = (value: string) =>
+		props.onProjectChange(
+			props.projects.find((item) => item.value === value) ?? null,
+		);
+	const selectModel = (value: string) =>
+		props.onModelChange(
+			props.models.find((item) => item.value === value) ?? null,
+		);
 	return (
-		<Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-			<DialogTitle>Save recording</DialogTitle>
-			<DialogContent>
-				<Stack spacing={2} sx={{ pt: 1 }}>
-					<Autocomplete
-						options={projects}
-						value={project}
-						onChange={(_, value) => onProjectChange(value)}
-						loading={isLoadingProjects}
-						getOptionLabel={(option) => option.label}
-						isOptionEqualToValue={(option, value) =>
-							option.value === value.value
-						}
-						renderInput={(params) => (
-							<TextField
-								{...params}
-								label="Project"
-								required
-								autoFocus
-								helperText="Only Playwright-tagged portal projects are shown."
-							/>
-						)}
-					/>
-					<Autocomplete
-						options={models}
-						value={model}
-						onChange={(_, value) => onModelChange(value)}
-						loading={isLoadingModels}
-						disabled={isGeneratingMetadata}
-						getOptionLabel={(option) => option.label}
-						isOptionEqualToValue={(option, value) =>
-							option.value === value.value
-						}
-						renderInput={(params) => (
-							<TextField
-								{...params}
-								label="AI model"
-								helperText="Used only when generating recording metadata."
-							/>
-						)}
-					/>
-					<Box
-						sx={{
-							display: "flex",
-							justifyContent: "flex-end",
-							mt: -1,
-						}}
-					>
-						<Button
-							variant="text"
-							size="small"
-							onClick={onGenerateMetadata}
-							disabled={!model || isGeneratingMetadata}
-							sx={{
-								minWidth: 0,
-								px: 0.5,
-								fontSize: "0.76rem",
-								textDecoration: "underline",
-							}}
+		<Dialog
+			open={props.open}
+			onOpenChange={(next) => !next && !props.isSaving && props.onClose()}
+		>
+			<DialogContent
+				className="sm:max-w-xl"
+				showCloseButton={!props.isSaving}
+			>
+				<DialogHeader>
+					<DialogTitle>Save recording</DialogTitle>
+				</DialogHeader>
+				<div className="flex flex-col gap-4">
+					<div className="grid gap-2">
+						<Label>Project</Label>
+						<Select
+							value={props.project?.value ?? ""}
+							onValueChange={selectProject}
+							disabled={props.isLoadingProjects}
 						>
-							{isGeneratingMetadata
-								? "Generating recording details…"
-								: "Generate recording details with AI"}
-						</Button>
-					</Box>
-					<Box sx={{ position: "relative" }}>
-						<Stack spacing={2}>
-							<TextField
-								label="Title"
-								value={title}
-								onChange={(event) =>
-									onTitleChange(event.target.value)
-								}
-								placeholder="e.g., Submit a customer support request"
-								disabled={isGeneratingMetadata}
-								required
-							/>
-							<TextField
-								label="File name"
-								value={fileName}
-								disabled
-								helperText="Generated from title and today's date."
-							/>
-							<TextField
-								label="Description"
-								value={description}
-								onChange={(event) =>
-									onDescriptionChange(event.target.value)
-								}
-								placeholder="Describe the business workflow performed by this recording."
-								disabled={isGeneratingMetadata}
-								required
-								multiline
-								minRows={2}
-							/>
-							<TextField
-								label="Intent"
-								value={intent}
-								onChange={(event) =>
-									onIntentChange(event.target.value)
-								}
-								placeholder="Explain the business goal this recording achieves."
-								disabled={isGeneratingMetadata}
-								required
-								multiline
-								minRows={2}
-							/>
-						</Stack>
-						{isGeneratingMetadata && (
-							<Box
-								sx={{
-									position: "absolute",
-									inset: 0,
-									zIndex: 1,
-									display: "flex",
-									alignItems: "center",
-									justifyContent: "center",
-									bgcolor: (theme) =>
-										alpha(
-											theme.palette.background.paper,
-											0.72,
-										),
-								}}
-							>
-								<LinearProgress
-									sx={{
-										position: "absolute",
-										top: 0,
-										left: 0,
-										right: 0,
-									}}
+							<SelectTrigger className="w-full">
+								<SelectValue
+									placeholder={
+										props.isLoadingProjects
+											? "Loading projects..."
+											: "Select a project"
+									}
 								/>
-								<CircularProgress size={28} />
-							</Box>
+							</SelectTrigger>
+							<SelectContent>
+								{props.projects.map((item) => (
+									<SelectItem
+										key={item.value}
+										value={item.value}
+									>
+										{item.label}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						<p className="text-muted-foreground text-xs">
+							Only Playwright-tagged portal projects are shown.
+						</p>
+					</div>
+					<div className="grid gap-2">
+						<Label>AI model</Label>
+						<Select
+							value={props.model?.value ?? ""}
+							onValueChange={selectModel}
+							disabled={
+								props.isLoadingModels ||
+								props.isGeneratingMetadata
+							}
+						>
+							<SelectTrigger className="w-full">
+								<SelectValue
+									placeholder={
+										props.isLoadingModels
+											? "Loading models..."
+											: "Select a model"
+									}
+								/>
+							</SelectTrigger>
+							<SelectContent>
+								{props.models.map((item) => (
+									<SelectItem
+										key={item.value}
+										value={item.value}
+									>
+										{item.label}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						<div className="flex items-center justify-between gap-2">
+							<p className="text-muted-foreground text-xs">
+								Used only when generating recording metadata.
+							</p>
+							<Button
+								variant="link"
+								size="sm"
+								onClick={props.onGenerateMetadata}
+								disabled={
+									!props.model || props.isGeneratingMetadata
+								}
+							>
+								{props.isGeneratingMetadata
+									? "Generating details..."
+									: "Generate details with AI"}
+							</Button>
+						</div>
+					</div>
+					<div className="relative grid gap-4">
+						<div className="grid gap-2">
+							<Label htmlFor={titleId}>Title</Label>
+							<Input
+								id={titleId}
+								value={props.title}
+								onChange={(event) =>
+									props.onTitleChange(event.target.value)
+								}
+								disabled={props.isGeneratingMetadata}
+								placeholder="e.g., Submit a customer support request"
+							/>
+						</div>
+						<div className="grid gap-2">
+							<Label htmlFor={fileId}>File name</Label>
+							<Input
+								id={fileId}
+								value={props.fileName}
+								disabled
+							/>
+							<p className="text-muted-foreground text-xs">
+								Generated from title and today's date.
+							</p>
+						</div>
+						<div className="grid gap-2">
+							<Label htmlFor={descriptionId}>Description</Label>
+							<Textarea
+								id={descriptionId}
+								value={props.description}
+								onChange={(event) =>
+									props.onDescriptionChange(
+										event.target.value,
+									)
+								}
+								disabled={props.isGeneratingMetadata}
+								rows={3}
+								placeholder="Describe the business workflow performed by this recording."
+							/>
+						</div>
+						<div className="grid gap-2">
+							<Label htmlFor={intentId}>Intent</Label>
+							<Textarea
+								id={intentId}
+								value={props.intent}
+								onChange={(event) =>
+									props.onIntentChange(event.target.value)
+								}
+								disabled={props.isGeneratingMetadata}
+								rows={3}
+								placeholder="Explain the business goal this recording achieves."
+							/>
+						</div>
+						{props.isGeneratingMetadata && (
+							<div className="absolute inset-0 z-10 flex items-center justify-center bg-background/75">
+								<Progress
+									value={60}
+									className="absolute top-0"
+								/>
+								<Spinner className="size-7" />
+							</div>
 						)}
-					</Box>
-				</Stack>
+					</div>
+				</div>
+				<DialogFooter>
+					<Button
+						variant="outline"
+						onClick={props.onClose}
+						disabled={props.isSaving}
+					>
+						Cancel
+					</Button>
+					<Button
+						onClick={props.onSave}
+						disabled={
+							props.isSaving ||
+							props.isGeneratingMetadata ||
+							!props.canSave ||
+							!props.project ||
+							!hasRequiredMetadata
+						}
+					>
+						{props.isSaving && <Spinner />}
+						{props.isSaving ? "Saving..." : "Save"}
+					</Button>
+				</DialogFooter>
 			</DialogContent>
-			<DialogActions>
-				<Button onClick={onClose}>Cancel</Button>
-				<Button
-					variant="contained"
-					onClick={onSave}
-					disabled={
-						isSaving ||
-						isGeneratingMetadata ||
-						!canSave ||
-						!project ||
-						!hasRequiredMetadata
-					}
-				>
-					{isSaving ? "Saving…" : "Save"}
-				</Button>
-			</DialogActions>
 		</Dialog>
 	);
 }

@@ -1,4 +1,3 @@
-import { Box, Divider } from "@mui/material";
 import type { PlaybackController } from "../../hooks/usePlaybackController";
 import type {
 	RemoteBrowserRecordedStep,
@@ -30,31 +29,12 @@ export function ReplaySidebar(props: ReplaySidebarProps) {
 		props.playback.loadedRecordingOpen ||
 		props.recordedStepsOpen ||
 		props.selectedTextContextsOpen;
-
 	return (
-		<Box
-			sx={{
-				position: "absolute",
-				top: 0,
-				right: 0,
-				bottom: 0,
-				zIndex: 5,
-				width: isOpen ? 340 : 0,
-				maxWidth: "min(340px, 100%)",
-				borderLeft: "1px solid",
-				borderColor: "divider",
-				bgcolor: "background.paper",
-				display: "flex",
-				flexDirection: "column",
-				minHeight: 0,
-				overflow: "hidden",
-				boxShadow: isOpen ? 3 : 0,
-				transition: "width 160ms ease",
-			}}
+		<aside
+			className={`absolute inset-y-0 right-0 z-20 flex max-w-full flex-col overflow-hidden border-line border-l bg-surface shadow-xl transition-[width] duration-150 ${isOpen ? "w-[340px]" : "w-0 border-l-0"}`}
 		>
-			<Box sx={{ overflow: "auto", minHeight: 0 }}>
+			<div className="min-h-0 overflow-auto">
 				<ReplayControlsPanel playback={props.playback} />
-				<Divider />
 				<SelectedTextContextsPanel
 					open={props.selectedTextContextsOpen}
 					contexts={props.selectedTextContexts}
@@ -63,9 +43,7 @@ export function ReplaySidebar(props: ReplaySidebarProps) {
 					onDelete={props.onDeleteSelectedContext}
 					onSave={props.onSaveSelectedContext}
 				/>
-				<Divider />
 				<LoadedRecordingPanel playback={props.playback} />
-				<Divider />
 				<RecordedStepsPanel
 					open={props.recordedStepsOpen}
 					isRecording={props.isRecording}
@@ -73,7 +51,7 @@ export function ReplaySidebar(props: ReplaySidebarProps) {
 					onToggle={props.onToggleRecordedSteps}
 					onSave={props.onSaveRecording}
 				/>
-			</Box>
-		</Box>
+			</div>
+		</aside>
 	);
 }

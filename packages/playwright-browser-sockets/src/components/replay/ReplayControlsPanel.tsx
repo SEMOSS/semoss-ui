@@ -1,20 +1,20 @@
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import FolderOpenIcon from "@mui/icons-material/FolderOpen";
-import PauseIcon from "@mui/icons-material/Pause";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import {
-	Autocomplete,
-	Box,
+	ChevronDown,
+	ChevronRight,
+	FolderOpen,
+	Pause,
+	Play,
+} from "lucide-react";
+import {
+	Badge,
 	Button,
-	Chip,
-	CircularProgress,
-	Collapse,
-	IconButton,
-	Stack,
-	TextField,
-	Typography,
-} from "@mui/material";
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Spinner,
+} from "@semoss/ui/next";
 import type { PlaybackController } from "../../hooks/usePlaybackController";
 
 export function ReplayControlsPanel({
@@ -23,112 +23,112 @@ export function ReplayControlsPanel({
 	playback: PlaybackController;
 }) {
 	return (
-		<>
-			<Box
-				sx={{
-					px: 0.75,
-					py: 0.4,
-					borderBottom: "1px solid",
-					borderColor: "divider",
-					display: "flex",
-					alignItems: "center",
-					gap: 0.5,
-				}}
-			>
-				<IconButton
-					size="small"
+		<section className="border-line border-b">
+			<div className="flex items-center gap-2 px-2 py-1.5">
+				<Button
+					size="icon-sm"
+					variant="ghost"
 					onClick={() =>
 						playback.setControlsOpen(!playback.controlsOpen)
 					}
-					sx={{ p: 0.25 }}
+					aria-label="Toggle replay controls"
 				>
-					{playback.controlsOpen ? (
-						<ExpandMoreIcon />
-					) : (
-						<ChevronRightIcon />
-					)}
-				</IconButton>
-				<Typography variant="subtitle2" sx={{ flex: 1 }}>
+					{playback.controlsOpen ? <ChevronDown /> : <ChevronRight />}
+				</Button>
+				<span className="flex-1 font-semibold text-sm">
 					Replay controls
-				</Typography>
+				</span>
 				{playback.isPaused && (
-					<Chip size="small" color="warning" label="Paused" />
+					<Badge
+						variant="outline"
+						className="border-warning text-warning"
+					>
+						Paused
+					</Badge>
 				)}
-				{playback.isRunning && (
-					<Chip size="small" color="primary" label="Running" />
-				)}
-			</Box>
-			<Collapse in={playback.controlsOpen}>
-				<Stack spacing={0.75} sx={{ p: 0.75 }}>
-					<Autocomplete
-						size="small"
-						options={playback.projects}
-						value={playback.project}
-						onChange={(_, value) => playback.selectProject(value)}
-						loading={playback.isLoadingProjects}
-						getOptionLabel={(option) => option.label}
-						isOptionEqualToValue={(option, value) =>
-							option.value === value.value
+				{playback.isRunning && <Badge>Running</Badge>}
+			</div>
+			{playback.controlsOpen && (
+				<div className="flex flex-col gap-2 border-line border-t p-2">
+					<Select
+						value={playback.project?.value ?? ""}
+						onValueChange={(value) =>
+							playback.selectProject(
+								playback.projects.find(
+									(item) => item.value === value,
+								) ?? null,
+							)
 						}
-						renderInput={(params) => (
-							<TextField {...params} label="Project" />
-						)}
-						slotProps={{ paper: { sx: { fontSize: 13 } } }}
-					/>
-					<Autocomplete
-						size="small"
-						options={playback.files}
-						value={playback.selectedRecording}
-						onChange={(_, value) => playback.selectRecording(value)}
-						loading={playback.isLoadingFiles}
-						getOptionLabel={(option) => option}
-						renderInput={(params) => (
-							<TextField {...params} label="Recording file" />
-						)}
-						noOptionsText={
-							playback.project
-								? "No recordings found"
-								: "Select a project first"
-						}
-					/>
-					<Stack direction="row" spacing={0.75}>
+						disabled={playback.isLoadingProjects}
+					>
+						<SelectTrigger className="w-full">
+							<SelectValue
+								placeholder={
+									playback.isLoadingProjects
+										? "Loading projects..."
+										: "Select project"
+								}
+							/>
+						</SelectTrigger>
+						<SelectContent>
+							{playback.projects.map((item) => (
+								<SelectItem key={item.value} value={item.value}>
+									{item.label}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+					<Select
+						value={playback.selectedRecording ?? ""}
+						onValueChange={playback.selectRecording}
+						disabled={!playback.project || playback.isLoadingFiles}
+					>
+						<SelectTrigger className="w-full">
+							<SelectValue
+								placeholder={
+									playback.isLoadingFiles
+										? "Loading recordings..."
+										: playback.project
+											? "Select recording"
+											: "Select a project first"
+								}
+							/>
+						</SelectTrigger>
+						<SelectContent>
+							{playback.files.map((file) => (
+								<SelectItem key={file} value={file}>
+									{file}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+					<div className="grid grid-cols-[1fr_1fr_auto] gap-2">
 						<Button
-							size="small"
-							variant="outlined"
+							size="sm"
+							variant="outline"
 							disabled={
 								!playback.hasSession ||
 								!playback.selectedRecording ||
 								playback.isLoadingRecording ||
 								playback.isRunning
 							}
-							onClick={playback.load}
-							startIcon={
-								playback.isLoadingRecording ? (
-									<CircularProgress size={14} />
-								) : (
-									<FolderOpenIcon />
-								)
-							}
-							fullWidth
+							onClick={() => void playback.load()}
 						>
+							{playback.isLoadingRecording ? (
+								<Spinner />
+							) : (
+								<FolderOpen />
+							)}
 							Load
 						</Button>
 						<Button
-							size="small"
-							variant="contained"
+							size="sm"
 							disabled={
 								!playback.loadedRecording || playback.isRunning
 							}
-							onClick={playback.run}
-							startIcon={
-								playback.isRunning ? (
-									<CircularProgress size={14} />
-								) : (
-									<PlayArrowIcon />
-								)
-							}
-							fullWidth
+							onClick={() => void playback.run()}
 						>
+							{playback.isRunning ? <Spinner /> : <Play />}
 							{playback.isPaused
 								? "Resume"
 								: playback.loadedRecording
@@ -136,22 +136,21 @@ export function ReplayControlsPanel({
 									: "Run"}
 						</Button>
 						<Button
-							size="small"
-							color="warning"
-							variant="outlined"
+							size="icon-sm"
+							variant="outline"
 							disabled={!playback.isRunning}
 							onClick={() =>
 								playback.requestPause(
 									"Playback pause requested",
 								)
 							}
-							startIcon={<PauseIcon />}
+							aria-label="Pause replay"
 						>
-							Pause
+							<Pause />
 						</Button>
-					</Stack>
-				</Stack>
-			</Collapse>
-		</>
+					</div>
+				</div>
+			)}
+		</section>
 	);
 }

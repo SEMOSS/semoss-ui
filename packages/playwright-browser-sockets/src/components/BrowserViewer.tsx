@@ -373,14 +373,14 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 					<div className="mb-3 font-semibold text-ink text-sm">
 						Remote Browser
 					</div>
-					<p className="text-muted text-sm leading-6">
+					<p className="text-ink-muted text-sm leading-6">
 						Enter a URL above to start a secure remote browser
 						session.
 					</p>
 				</div>
 			)}
 			{connectionState === "connecting" && (
-				<div className="relative flex items-center gap-3 text-muted text-sm">
+				<div className="relative flex items-center gap-3 text-ink-muted text-sm">
 					<span className="h-5 w-5 animate-spin rounded-full border-2 border-accent border-t-transparent" />
 					Connecting to browser
 				</div>

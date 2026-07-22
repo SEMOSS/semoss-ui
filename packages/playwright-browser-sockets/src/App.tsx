@@ -1,18 +1,20 @@
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import CropFreeIcon from "@mui/icons-material/CropFree";
-import DoneIcon from "@mui/icons-material/Done";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import {
-	Alert,
-	Box,
-	Button,
-	Chip,
-	CircularProgress,
-	Snackbar,
-} from "@mui/material";
+	Check,
+	ChevronDown,
+	ChevronRight,
+	Circle,
+	ScanLine,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useInsight } from "@semoss/sdk-react";
+import {
+	Alert,
+	AlertDescription,
+	Badge,
+	Button,
+	Spinner,
+	toast,
+} from "@semoss/ui/next";
 import { BrowserTabStrip } from "./components/BrowserTabStrip";
 import { BrowserToolbar } from "./components/BrowserToolbar";
 import { BrowserViewer } from "./components/BrowserViewer";
@@ -169,6 +171,18 @@ export default function App() {
 	const returningToPlaygroundRef = useRef(false);
 	const selectedContextSequenceRef = useRef(0);
 	const activeToolExecutionRef = useRef("");
+
+	useEffect(() => {
+		if (!snackError) return;
+		toast.error(snackError);
+		setSnackError(null);
+	}, [snackError]);
+
+	useEffect(() => {
+		if (!snackMessage) return;
+		toast(snackMessage);
+		setSnackMessage(null);
+	}, [snackMessage]);
 
 	const isPlaygroundMode = !!toolContext;
 	const isMcpPlaybackMode = isPlayRecordingTool(toolContext);
@@ -1427,31 +1441,9 @@ export default function App() {
 		playback.controlsOpen || playback.loadedRecordingOpen;
 
 	return (
-		<Box
-			sx={{
-				display: "flex",
-				flexDirection: "column",
-				height: "100vh",
-				bgcolor: "background.default",
-				overflow: "hidden",
-			}}
-		>
+		<div className="flex h-screen flex-col overflow-hidden bg-canvas text-ink">
 			{/* Toolbar row */}
-			<Box
-				sx={{
-					display: "flex",
-					alignItems: "center",
-					flexWrap: "wrap",
-					gap: 0.5,
-					rowGap: 0.5,
-					px: 0.5,
-					py: 0.25,
-					bgcolor: "background.paper",
-					borderBottom: "1px solid",
-					borderColor: "divider",
-					minHeight: 38,
-				}}
-			>
+			<div className="flex min-h-[38px] flex-wrap items-center gap-1 border-line border-b bg-surface px-1 py-0.5">
 				<BrowserToolbar
 					currentUrl={currentUrl}
 					connectionState={connectionState}
@@ -1469,23 +1461,17 @@ export default function App() {
 					onToggleRecording={handleToggleRecording}
 					onOpenSaveRecording={handleOpenSaveRecording}
 				/>
-				<Box
-					sx={{
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "flex-end",
-						flexWrap: "wrap",
-						gap: 0.5,
-						ml: "auto",
-						maxWidth: "100%",
-					}}
-				>
+				<div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-1">
 					<ConnectionStatus state={connectionState} />
 					{session && (
 						<Button
-							size="small"
-							variant={selectionMode ? "contained" : "outlined"}
-							color={selectionMode ? "warning" : "primary"}
+							size="sm"
+							variant={selectionMode ? "default" : "outline"}
+							className={
+								selectionMode
+									? "bg-warning text-canvas hover:bg-warning/90"
+									: ""
+							}
 							disabled={
 								connectionState !== "connected" ||
 								isCapturingSelectedText ||
@@ -1501,15 +1487,12 @@ export default function App() {
 								);
 								setSelectionMode(true);
 							}}
-							startIcon={
-								isCapturingSelectedText ? (
-									<CircularProgress size={14} />
-								) : (
-									<CropFreeIcon fontSize="small" />
-								)
-							}
-							sx={{ whiteSpace: "nowrap", minWidth: 0, px: 1 }}
 						>
+							{isCapturingSelectedText ? (
+								<Spinner />
+							) : (
+								<ScanLine />
+							)}
 							{isCapturingSelectedText
 								? "Extracting…"
 								: selectionMode
@@ -1519,26 +1502,21 @@ export default function App() {
 					)}
 					{selectedTextContexts.length > 0 && (
 						<Button
-							size="small"
+							size="sm"
 							variant={
-								selectedTextContextsOpen
-									? "contained"
-									: "outlined"
+								selectedTextContextsOpen ? "default" : "outline"
 							}
-							startIcon={<CropFreeIcon fontSize="small" />}
 							onClick={() =>
 								setSelectedTextContextsOpen((open) => !open)
 							}
-							sx={{ whiteSpace: "nowrap", minWidth: 0, px: 1 }}
 						>
+							<ScanLine />
 							Contexts ({selectedTextContexts.length})
 						</Button>
 					)}
 					{isPlaygroundMode && session && (
 						<Button
-							size="small"
-							variant="contained"
-							color="primary"
+							size="sm"
 							disabled={
 								isReturningToPlayground ||
 								isSaving ||
@@ -1547,20 +1525,14 @@ export default function App() {
 								selectionMode
 							}
 							onClick={() => void handleOpenReturnDialog()}
-							startIcon={
-								isReturningToPlayground ||
-								isSaving ||
-								isSavingRecording ? (
-									<CircularProgress
-										size={14}
-										color="inherit"
-									/>
-								) : (
-									<DoneIcon fontSize="small" />
-								)
-							}
-							sx={{ whiteSpace: "nowrap", minWidth: 0, px: 1 }}
 						>
+							{isReturningToPlayground ||
+							isSaving ||
+							isSavingRecording ? (
+								<Spinner />
+							) : (
+								<Check />
+							)}
 							{isReturningToPlayground ||
 							isSaving ||
 							isSavingRecording
@@ -1569,54 +1541,47 @@ export default function App() {
 						</Button>
 					)}
 					<Button
-						size="small"
-						variant={replayMenuOpen ? "contained" : "outlined"}
-						startIcon={
-							replayMenuOpen ? (
-								<ExpandMoreIcon />
-							) : (
-								<ChevronRightIcon />
-							)
-						}
+						size="sm"
+						variant={replayMenuOpen ? "default" : "outline"}
 						onClick={() => {
 							playback.setControlsOpen(!replayMenuOpen);
 							playback.setLoadedRecordingOpen(
 								!replayMenuOpen && !!playback.loadedRecording,
 							);
 						}}
-						sx={{ whiteSpace: "nowrap", minWidth: 0, px: 1 }}
 					>
+						{replayMenuOpen ? <ChevronDown /> : <ChevronRight />}
 						Replay
 					</Button>
 					<Button
-						size="small"
-						variant={recordedStepsOpen ? "contained" : "outlined"}
-						startIcon={
-							<FiberManualRecordIcon
-								color={isRecording ? "error" : "inherit"}
-							/>
-						}
+						size="sm"
+						variant={recordedStepsOpen ? "default" : "outline"}
 						disabled={!isRecording && recordedSteps.length === 0}
 						onClick={() => setRecordedStepsOpen((open) => !open)}
-						sx={{ whiteSpace: "nowrap", minWidth: 0, px: 1 }}
 					>
+						<Circle
+							className={
+								isRecording ? "fill-danger text-danger" : ""
+							}
+						/>
 						Recorded{" "}
 						{recordedSteps.length
 							? `(${recordedSteps.length})`
 							: ""}
 					</Button>
 					{playback.isPaused && (
-						<Chip size="small" color="warning" label="Paused" />
+						<Badge
+							variant="outline"
+							className="border-warning text-warning"
+						>
+							Paused
+						</Badge>
 					)}
 					{playback.isRunning && (
-						<Chip
-							size="small"
-							color="primary"
-							label={`Step ${playback.runningStepId ?? ""}`}
-						/>
+						<Badge>Step {playback.runningStepId ?? ""}</Badge>
 					)}
-				</Box>
-			</Box>
+				</div>
+			</div>
 
 			<BrowserTabStrip
 				tabs={browserTabs}
@@ -1628,8 +1593,8 @@ export default function App() {
 
 			{/* Session creation error banner */}
 			{sessionError && (
-				<Alert severity="error" sx={{ mx: 0.5, mt: 0.5, py: 0 }}>
-					{sessionError}
+				<Alert variant="destructive" className="mx-1 mt-1 w-auto py-2">
+					<AlertDescription>{sessionError}</AlertDescription>
 				</Alert>
 			)}
 
@@ -1645,15 +1610,7 @@ export default function App() {
 					/>
 				)}
 
-			<Box
-				sx={{
-					display: "flex",
-					position: "relative",
-					flex: 1,
-					minHeight: 0,
-					overflow: "hidden",
-				}}
-			>
+			<div className="relative flex min-h-0 flex-1 overflow-hidden">
 				{/* Browser canvas */}
 				<BrowserViewer
 					connectionState={connectionState}
@@ -1690,7 +1647,7 @@ export default function App() {
 					onDeleteSelectedContext={handleDeleteSelectedContext}
 					onSaveSelectedContext={handleSaveSelectedContext}
 				/>
-			</Box>
+			</div>
 
 			<ReturnToPlaygroundDialog
 				open={returnDialogOpen}
@@ -1738,20 +1695,6 @@ export default function App() {
 				onGenerateMetadata={() => void handleGenerateSaveMetadata()}
 				onSave={handleSaveRecording}
 			/>
-
-			{/* WebSocket error toast */}
-			<Snackbar
-				open={!!snackError}
-				autoHideDuration={4000}
-				onClose={() => setSnackError(null)}
-				message={snackError}
-			/>
-			<Snackbar
-				open={!!snackMessage}
-				autoHideDuration={3000}
-				onClose={() => setSnackMessage(null)}
-				message={snackMessage}
-			/>
-		</Box>
+		</div>
 	);
 }

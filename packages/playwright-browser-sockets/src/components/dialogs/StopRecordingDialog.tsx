@@ -1,10 +1,12 @@
 import {
 	Button,
 	Dialog,
-	DialogActions,
 	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
 	DialogTitle,
-} from "@mui/material";
+} from "@semoss/ui/next";
 
 interface StopRecordingDialogProps {
 	open: boolean;
@@ -20,20 +22,22 @@ export function StopRecordingDialog({
 	onSave,
 }: StopRecordingDialogProps) {
 	return (
-		<Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-			<DialogTitle>Stop recording?</DialogTitle>
-			<DialogContent>
-				Do you want to save the steps recorded in this recording window,
-				or discard them?
+		<Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+			<DialogContent className="sm:max-w-sm">
+				<DialogHeader>
+					<DialogTitle>Stop recording?</DialogTitle>
+					<DialogDescription>
+						Do you want to save the steps recorded in this recording
+						window, or discard them?
+					</DialogDescription>
+				</DialogHeader>
+				<DialogFooter>
+					<Button variant="destructive" onClick={onDiscard}>
+						Discard
+					</Button>
+					<Button onClick={onSave}>Save steps</Button>
+				</DialogFooter>
 			</DialogContent>
-			<DialogActions>
-				<Button color="error" onClick={onDiscard}>
-					Discard
-				</Button>
-				<Button variant="contained" onClick={onSave}>
-					Save steps
-				</Button>
-			</DialogActions>
 		</Dialog>
 	);
 }

@@ -1,23 +1,21 @@
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import EditIcon from "@mui/icons-material/Edit";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
-	Accordion,
-	AccordionDetails,
-	AccordionSummary,
-	Box,
-	Button,
-	Chip,
-	Collapse,
-	IconButton,
-	Stack,
-	TextField,
-	Typography,
-} from "@mui/material";
+	ChevronDown,
+	ChevronRight,
+	Clipboard,
+	Pencil,
+	Trash2,
+} from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
+	Badge,
+	Button,
+	Textarea,
+} from "@semoss/ui/next";
 import type { SelectedTextContext } from "../types/browserEvents";
 
 interface SelectedTextContextsPanelProps {
@@ -28,7 +26,6 @@ interface SelectedTextContextsPanelProps {
 	onDelete: (contextId: string) => void;
 	onSave: (contextId: string, content: string) => void;
 }
-
 function contextLabel(context: SelectedTextContext, index: number): string {
 	if (context.label?.trim()) return context.label;
 	if (context.title?.trim())
@@ -41,7 +38,6 @@ export const SelectedTextContextsPanel: React.FC<
 > = ({ open, contexts, onToggle, onCopy, onDelete, onSave }) => {
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [draft, setDraft] = useState("");
-
 	useEffect(() => {
 		if (
 			editingId &&
@@ -51,241 +47,190 @@ export const SelectedTextContextsPanel: React.FC<
 			setDraft("");
 		}
 	}, [contexts, editingId]);
-
 	return (
-		<>
-			<Box
-				sx={{
-					px: 0.75,
-					py: 0.4,
-					display: "flex",
-					alignItems: "center",
-					gap: 0.5,
-					borderBottom: open ? "1px solid" : 0,
-					borderColor: "divider",
-				}}
-			>
-				<IconButton
-					size="small"
+		<section className="border-line border-b">
+			<div className="flex items-center gap-2 px-2 py-1.5">
+				<Button
+					size="icon-sm"
+					variant="ghost"
 					disabled={contexts.length === 0}
 					onClick={onToggle}
-					sx={{ p: 0.25 }}
 					aria-label={
 						open
 							? "Collapse captured contexts"
 							: "Expand captured contexts"
 					}
 				>
-					{open ? <ExpandMoreIcon /> : <ChevronRightIcon />}
-				</IconButton>
-				<Box sx={{ flex: 1, minWidth: 0 }}>
-					<Typography variant="subtitle2">
+					{open ? <ChevronDown /> : <ChevronRight />}
+				</Button>
+				<div className="min-w-0 flex-1">
+					<div className="font-semibold text-sm">
 						Captured contexts
-					</Typography>
-					<Typography variant="caption" color="text.secondary">
+					</div>
+					<div className="text-muted-foreground text-xs">
 						Selected visible website text
-					</Typography>
-				</Box>
-				<Chip size="small" label={`${contexts.length}`} />
-			</Box>
-			<Collapse in={open}>
-				<Box sx={{ p: 0.75 }}>
+					</div>
+				</div>
+				<Badge variant="secondary">{contexts.length}</Badge>
+			</div>
+			{open && (
+				<div className="border-line border-t p-2">
 					{contexts.length === 0 ? (
-						<Typography variant="body2" color="text.secondary">
+						<p className="text-muted-foreground text-sm">
 							Choose Capture Context, then drag over website text.
-						</Typography>
+						</p>
 					) : (
-						contexts.map((context, index) => {
-							const isEditing = editingId === context.id;
-							return (
-								<Accordion
-									key={context.id}
-									disableGutters
-									elevation={0}
-									sx={{
-										border: "1px solid",
-										borderColor: "divider",
-										mb: 0.75,
-										"&:before": { display: "none" },
-									}}
-								>
-									<AccordionSummary
-										expandIcon={<ExpandMoreIcon />}
+						<Accordion type="multiple" className="space-y-2">
+							{contexts.map((context, index) => {
+								const isEditing = editingId === context.id;
+								return (
+									<AccordionItem
+										key={context.id}
+										value={context.id}
+										className="rounded-md border px-3"
 									>
-										<Box sx={{ minWidth: 0 }}>
-											<Typography
-												variant="body2"
-												fontWeight={700}
-												noWrap
-											>
-												{contextLabel(context, index)}
-											</Typography>
-											<Typography
-												variant="caption"
-												color="text.secondary"
-												noWrap
-											>
-												Step {context.throughStepId} ·{" "}
-												{context.url}
-											</Typography>
-										</Box>
-									</AccordionSummary>
-									<AccordionDetails sx={{ pt: 0 }}>
-										<Stack
-											direction="row"
-											spacing={0.5}
-											flexWrap="wrap"
-											useFlexGap
-											sx={{ mb: 0.75 }}
-										>
-											<Chip
-												size="small"
-												color="primary"
-												label="Selected text"
-											/>
-											<Chip
-												size="small"
-												label={
-													context.extractionMethod ===
+										<AccordionTrigger className="py-3 hover:no-underline">
+											<span className="min-w-0 text-left">
+												<span className="block truncate font-semibold">
+													{contextLabel(
+														context,
+														index,
+													)}
+												</span>
+												<span className="block truncate text-muted-foreground text-xs">
+													Step {context.throughStepId}{" "}
+													· {context.url}
+												</span>
+											</span>
+										</AccordionTrigger>
+										<AccordionContent>
+											<div className="mb-2 flex flex-wrap gap-1">
+												<Badge>Selected text</Badge>
+												<Badge variant="secondary">
+													{context.extractionMethod ===
 													"dom-range"
 														? "Exact range"
-														: "Area text"
-												}
-											/>
-											<Chip
-												size="small"
-												label={`${context.content.length} chars`}
-											/>
-											{context.edited && (
-												<Chip
-													size="small"
-													label="Edited"
-												/>
-											)}
-											{context.stats.truncated && (
-												<Chip
-													size="small"
-													color="warning"
-													label="Bounded"
-												/>
-											)}
-										</Stack>
-										{isEditing ? (
-											<TextField
-												fullWidth
-												multiline
-												minRows={6}
-												maxRows={14}
-												value={draft}
-												onChange={(event) =>
-													setDraft(event.target.value)
-												}
-												label="Selected website text"
-											/>
-										) : (
-											<Box
-												component="pre"
-												sx={{
-													m: 0,
-													maxHeight: 360,
-													overflow: "auto",
-													whiteSpace: "pre-wrap",
-													wordBreak: "break-word",
-													fontFamily: "monospace",
-													fontSize: 11,
-													lineHeight: 1.45,
-													bgcolor:
-														"background.default",
-													border: "1px solid",
-													borderColor: "divider",
-													borderRadius: 1,
-													p: 1,
-												}}
-											>
-												{context.content}
-											</Box>
-										)}
-										<Stack
-											direction="row"
-											spacing={0.5}
-											sx={{ mt: 0.75 }}
-										>
+														: "Area text"}
+												</Badge>
+												<Badge variant="outline">
+													{context.content.length}{" "}
+													chars
+												</Badge>
+												{context.edited && (
+													<Badge variant="outline">
+														Edited
+													</Badge>
+												)}
+												{context.stats.truncated && (
+													<Badge
+														variant="outline"
+														className="border-warning text-warning"
+													>
+														Bounded
+													</Badge>
+												)}
+											</div>
 											{isEditing ? (
-												<>
-													<Button
-														size="small"
-														variant="contained"
-														disabled={!draft.trim()}
-														onClick={() => {
-															onSave(
-																context.id,
-																draft.trim(),
-															);
-															setEditingId(null);
-															setDraft("");
-														}}
-													>
-														Save
-													</Button>
-													<Button
-														size="small"
-														onClick={() => {
-															setEditingId(null);
-															setDraft("");
-														}}
-													>
-														Cancel
-													</Button>
-												</>
+												<Textarea
+													value={draft}
+													onChange={(event) =>
+														setDraft(
+															event.target.value,
+														)
+													}
+													rows={8}
+													aria-label="Selected website text"
+												/>
 											) : (
-												<>
-													<Button
-														size="small"
-														startIcon={<EditIcon />}
-														onClick={() => {
-															setEditingId(
-																context.id,
-															);
-															setDraft(
-																context.content,
-															);
-														}}
-													>
-														Edit
-													</Button>
-													<Button
-														size="small"
-														startIcon={
-															<ContentCopyIcon />
-														}
-														onClick={() =>
-															onCopy(context)
-														}
-													>
-														Copy
-													</Button>
-													<Button
-														size="small"
-														color="error"
-														startIcon={
-															<DeleteOutlineIcon />
-														}
-														onClick={() =>
-															onDelete(context.id)
-														}
-													>
-														Delete
-													</Button>
-												</>
+												<pre className="max-h-[360px] overflow-auto whitespace-pre-wrap break-words rounded-md border bg-canvas p-2 font-mono text-xs">
+													{context.content}
+												</pre>
 											)}
-										</Stack>
-									</AccordionDetails>
-								</Accordion>
-							);
-						})
+											<div className="mt-2 flex gap-1">
+												{isEditing ? (
+													<>
+														<Button
+															size="sm"
+															disabled={
+																!draft.trim()
+															}
+															onClick={() => {
+																onSave(
+																	context.id,
+																	draft.trim(),
+																);
+																setEditingId(
+																	null,
+																);
+																setDraft("");
+															}}
+														>
+															Save
+														</Button>
+														<Button
+															size="sm"
+															variant="outline"
+															onClick={() => {
+																setEditingId(
+																	null,
+																);
+																setDraft("");
+															}}
+														>
+															Cancel
+														</Button>
+													</>
+												) : (
+													<>
+														<Button
+															size="sm"
+															variant="ghost"
+															onClick={() => {
+																setEditingId(
+																	context.id,
+																);
+																setDraft(
+																	context.content,
+																);
+															}}
+														>
+															<Pencil />
+															Edit
+														</Button>
+														<Button
+															size="sm"
+															variant="ghost"
+															onClick={() =>
+																onCopy(context)
+															}
+														>
+															<Clipboard />
+															Copy
+														</Button>
+														<Button
+															size="sm"
+															variant="ghost"
+															className="text-destructive"
+															onClick={() =>
+																onDelete(
+																	context.id,
+																)
+															}
+														>
+															<Trash2 />
+															Delete
+														</Button>
+													</>
+												)}
+											</div>
+										</AccordionContent>
+									</AccordionItem>
+								);
+							})}
+						</Accordion>
 					)}
-				</Box>
-			</Collapse>
-		</>
+				</div>
+			)}
+		</section>
 	);
 };

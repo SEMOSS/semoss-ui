@@ -1,16 +1,5 @@
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import {
-	Box,
-	Button,
-	Chip,
-	Collapse,
-	IconButton,
-	List,
-	ListItemButton,
-	ListItemText,
-	Typography,
-} from "@mui/material";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import { Badge, Button } from "@semoss/ui/next";
 import type { RemoteBrowserRecordedStep } from "../../types/browserEvents";
 
 interface RecordedStepsPanelProps {
@@ -29,86 +18,63 @@ export function RecordedStepsPanel({
 	onSave,
 }: RecordedStepsPanelProps) {
 	return (
-		<>
-			<Box
-				sx={{
-					px: 0.75,
-					py: 0.4,
-					display: "flex",
-					alignItems: "center",
-					gap: 0.5,
-					borderBottom: open ? "1px solid" : 0,
-					borderColor: "divider",
-				}}
-			>
-				<IconButton
-					size="small"
+		<section className="border-line border-b">
+			<div className="flex items-center gap-2 px-2 py-1.5">
+				<Button
+					size="icon-sm"
+					variant="ghost"
 					disabled={!isRecording && steps.length === 0}
 					onClick={onToggle}
-					sx={{ p: 0.25 }}
 				>
-					{open ? <ExpandMoreIcon /> : <ChevronRightIcon />}
-				</IconButton>
-				<Box sx={{ flex: 1 }}>
-					<Typography variant="subtitle2">Recorded steps</Typography>
-					<Typography variant="caption" color="text.secondary">
+					{open ? <ChevronDown /> : <ChevronRight />}
+				</Button>
+				<div className="min-w-0 flex-1">
+					<div className="font-semibold text-sm">Recorded steps</div>
+					<div className="text-muted-foreground text-xs">
 						Current unsaved recording window
-					</Typography>
-				</Box>
-				<Chip size="small" label={`${steps.length}`} />
-				<Button size="small" disabled={!isRecording} onClick={onSave}>
+					</div>
+				</div>
+				<Badge variant="secondary">{steps.length}</Badge>
+				<Button
+					size="sm"
+					variant="ghost"
+					disabled={!isRecording}
+					onClick={onSave}
+				>
 					Save
 				</Button>
-			</Box>
-			<Collapse in={open}>
-				<List dense disablePadding>
+			</div>
+			{open && (
+				<div className="border-line border-t">
 					{steps.length === 0 ? (
-						<Box sx={{ p: 2 }}>
-							<Typography variant="body2" color="text.secondary">
-								{isRecording
-									? "Interact with the browser to see recorded steps."
-									: "Start recording to preview captured steps."}
-							</Typography>
-						</Box>
+						<p className="p-4 text-muted-foreground text-sm">
+							{isRecording
+								? "Interact with the browser to see recorded steps."
+								: "Start recording to preview captured steps."}
+						</p>
 					) : (
 						steps.map((step, index) => (
-							<ListItemButton
+							<div
 								key={`${step.timestamp ?? index}-${index}`}
-								disabled
-								sx={{ py: 0.5, px: 1 }}
+								className="border-line border-b px-3 py-2 last:border-b-0"
 							>
-								<ListItemText
-									primary={
-										<Typography
-											variant="body2"
-											sx={{ fontWeight: 600 }}
-										>
-											#{index + 1} {step.type || "STEP"}
-										</Typography>
-									}
-									secondary={
-										<Typography
-											variant="caption"
-											color="text.secondary"
-											component="span"
-										>
-											{step.selector
-												? `${step.role || "selector"}: ${step.selector}`
-												: ""}
-											{step.text
-												? ` · "${step.text}"`
-												: ""}
-											{step.coordinates
-												? ` · (${Math.round(step.coordinates.x)}, ${Math.round(step.coordinates.y)})`
-												: ""}
-										</Typography>
-									}
-								/>
-							</ListItemButton>
+								<div className="font-semibold text-sm">
+									#{index + 1} {step.type || "STEP"}
+								</div>
+								<div className="break-words text-muted-foreground text-xs">
+									{step.selector
+										? `${step.role || "selector"}: ${step.selector}`
+										: ""}
+									{step.text ? ` · "${step.text}"` : ""}
+									{step.coordinates
+										? ` · (${Math.round(step.coordinates.x)}, ${Math.round(step.coordinates.y)})`
+										: ""}
+								</div>
+							</div>
 						))
 					)}
-				</List>
-			</Collapse>
-		</>
+				</div>
+			)}
+		</section>
 	);
 }

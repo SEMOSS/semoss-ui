@@ -1,4 +1,10 @@
-import { Alert, Button, Stack, TextField, Typography } from "@mui/material";
+import {
+	Alert,
+	AlertDescription,
+	Button,
+	Input,
+	Spinner,
+} from "@semoss/ui/next";
 
 interface PlaygroundStartPromptProps {
 	value: string;
@@ -14,40 +20,27 @@ export function PlaygroundStartPrompt({
 	onOpen,
 }: PlaygroundStartPromptProps) {
 	return (
-		<Alert
-			severity="info"
-			sx={{ mx: 0.5, mt: 0.5, py: 0.5, alignItems: "center" }}
-			action={
-				<Button
-					size="small"
-					variant="contained"
-					disabled={isCreating || !value.trim()}
-					onClick={onOpen}
-				>
-					Open
-				</Button>
-			}
-		>
-			<Stack
-				direction="row"
-				spacing={1}
-				alignItems="center"
-				sx={{ minWidth: 360 }}
-			>
-				<Typography variant="body2">
+		<div className="mx-auto flex w-full max-w-xl flex-col gap-4 p-6">
+			<Alert>
+				<AlertDescription>
 					Enter a URL to start recording.
-				</Typography>
-				<TextField
-					size="small"
+				</AlertDescription>
+			</Alert>
+			<div className="flex gap-2">
+				<Input
 					value={value}
 					onChange={(event) => onChange(event.target.value)}
 					onKeyDown={(event) => {
-						if (event.key === "Enter") onOpen();
+						if (event.key === "Enter" && value.trim()) onOpen();
 					}}
-					placeholder="https://google.com"
-					sx={{ minWidth: 240 }}
+					placeholder="https://example.com"
+					autoFocus
 				/>
-			</Stack>
-		</Alert>
+				<Button disabled={!value.trim() || isCreating} onClick={onOpen}>
+					{isCreating && <Spinner />}
+					Open
+				</Button>
+			</div>
+		</div>
 	);
 }
