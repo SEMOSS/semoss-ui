@@ -3,6 +3,7 @@ import {
 	STREAMING_PLACEHOLDER_ID,
 	TOOL_CANCELLATION_PROMPT,
 	TOOL_ERROR_PROMPT,
+	TOOL_INTERRUPTED_PROMPT,
 	TOOL_OUTPUT_UNREADABLE_PROMPT,
 	TURN_CANCELLATION_PROMPT,
 } from "@/constants";
@@ -160,11 +161,11 @@ export class ToolSaveController {
 					tool &&
 					(tool.status === "INITIAL" || tool.status === "LOADING")
 				) {
-					tool.response = TOOL_CANCELLATION_PROMPT;
+					tool.response = TOOL_INTERRUPTED_PROMPT;
 					tool.status = "CANCELLED";
 					entries.push({
 						tool,
-						toolResponse: TOOL_CANCELLATION_PROMPT,
+						toolResponse: TOOL_INTERRUPTED_PROMPT,
 						toolStatus: "cancelled",
 						executedParameters: {},
 						resolve: () => {},
