@@ -51,8 +51,202 @@ export const normalizeSource = (source: string | string[]): string => {
 	return source ?? "";
 };
 
+const INLINE_IMAGE_BEGIN_PREFIX = "__SEMOSS_IPYNB_IMAGE_BEGIN__:";
+const INLINE_IMAGE_CHUNK_PREFIX = "__SEMOSS_IPYNB_IMAGE_CHUNK__:";
+const INLINE_IMAGE_END_MARKER = "__SEMOSS_IPYNB_IMAGE_END__";
+
+export const isPythonCellLanguage = (language: string): boolean => {
+	return language === "python" || language === "py";
+};
+
+export const buildNotebookExecutionSource = (
+	language: string,
+	source: string,
+): string => {
+	if (!isPythonCellLanguage(language)) {
+		return source;
+	}
+
+	const preamble = `\ntry:\n    import io as __semoss_io\n    import base64 as __semoss_base64\n    import matplotlib as __semoss_matplotlib\n    __semoss_matplotlib.use("Agg", force=True)\n    import matplotlib.pyplot as __semoss_plt\n    try:\n        __semoss_plt.switch_backend("Agg")\n    except Exception:\n        pass\n    __semoss_plt.ioff()\n\n    __semoss_inline_chunk_size = 1000\n    __semoss_initial_fig_nums = set(__semoss_plt.get_fignums())\n    __semoss_capture_state = {"did_show": False}\n\n    def __semoss_emit_figures():\n        __semoss_all_fig_nums = list(__semoss_plt.get_fignums())\n        __semoss_fig_nums = [__n for __n in __semoss_all_fig_nums if __n not in __semoss_initial_fig_nums]\n        if not __semoss_fig_nums:\n            __semoss_fig_nums = __semoss_all_fig_nums\n\n        for __semoss_fig_num in __semoss_fig_nums:\n            __semoss_fig = __semoss_plt.figure(__semoss_fig_num)\n            __semoss_buf = __semoss_io.BytesIO()\n            __semoss_fig.savefig(__semoss_buf, format="png", bbox_inches="tight")\n            __semoss_buf.seek(0)\n            __semoss_png = __semoss_base64.b64encode(__semoss_buf.getvalue()).decode("ascii")\n            print("${INLINE_IMAGE_BEGIN_PREFIX}image/png")\n            for __semoss_idx in range(0, len(__semoss_png), __semoss_inline_chunk_size):\n                print("${INLINE_IMAGE_CHUNK_PREFIX}" + __semoss_png[__semoss_idx:__semoss_idx + __semoss_inline_chunk_size])\n            print("${INLINE_IMAGE_END_MARKER}")\n            __semoss_buf.close()\n            __semoss_plt.close(__semoss_fig)\n\n    def __semoss_show_wrapper(*args, **kwargs):\n        __semoss_capture_state["did_show"] = True\n        __semoss_emit_figures()\n        return None\n\n    __semoss_plt.show = __semoss_show_wrapper\nexcept Exception:\n    pass\n`;
+
+	const suffix = `\n\ntry:\n    if not __semoss_capture_state.get("did_show", False):\n        __semoss_emit_figures()\nexcept Exception:\n    pass\n`;
+	return `${preamble}\n${source}${suffix}`;
+};
+
+export const extractNotebookInlineImageOutputsFromLogs = (logs: string[]) => {
+	const cleanedLogLines: string[] = [];
+	const imageOutputs: JupyterCellOutput[] = [];
+	let collectingImage = false;
+	let currentMimeType = "image/png";
+	let currentBase64Chunks: string[] = [];
+
+	const flushImage = () => {
+		if (!collectingImage) {
+			return;
+		}
+
+		const base64Data = currentBase64Chunks.join("").replace(/\s+/g, "");
+		if (base64Data) {
+			imageOutputs.push({
+				output_type: "display_data",
+				data: {
+					[currentMimeType]: base64Data,
+					"text/plain": `data:${currentMimeType};base64,${base64Data}`,
+				},
+				metadata: {},
+			});
+		}
+
+		collectingImage = false;
+		currentMimeType = "image/png";
+		currentBase64Chunks = [];
+	};
+
+	for (const chunk of logs) {
+		for (const line of chunk.split(/\r?\n/)) {
+			if (line.startsWith(INLINE_IMAGE_BEGIN_PREFIX)) {
+				flushImage();
+				collectingImage = true;
+				currentMimeType =
+					line.slice(INLINE_IMAGE_BEGIN_PREFIX.length).trim() ||
+					"image/png";
+				currentBase64Chunks = [];
+				continue;
+			}
+
+			if (line.startsWith(INLINE_IMAGE_CHUNK_PREFIX)) {
+				if (collectingImage) {
+					currentBase64Chunks.push(
+						line.slice(INLINE_IMAGE_CHUNK_PREFIX.length).trim(),
+					);
+				}
+				continue;
+			}
+
+			if (line.trim() === INLINE_IMAGE_END_MARKER) {
+				flushImage();
+				continue;
+			}
+
+			cleanedLogLines.push(line);
+		}
+	}
+
+	flushImage();
+
+	const hasCapturedImages = imageOutputs.length > 0;
+	const filteredLogLines = hasCapturedImages
+		? cleanedLogLines.filter((line) => {
+				const trimmed = line.trim();
+				if (/^Figure\(\d+x\d+\)\s*$/.test(trimmed)) {
+					return false;
+				}
+
+				if (
+					trimmed.includes(
+						"UserWarning: Starting a Matplotlib GUI outside of the main thread will likely fail.",
+					)
+				) {
+					return false;
+				}
+
+				return true;
+			})
+		: cleanedLogLines;
+
+	return {
+		cleanedLogs: filteredLogLines,
+		imageOutputs,
+	};
+};
+
 const stripHtml = (value: string): string => {
 	return value.replace(/<[^>]*>/g, "").trim();
+};
+
+const escapeHtmlAttribute = (value: string): string => {
+	return value
+		.replace(/&/g, "&amp;")
+		.replace(/"/g, "&quot;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;");
+};
+
+const isLikelyUrlOrPath = (value: string): boolean => {
+	return /^(https?:\/\/|\/|\.\.?\/)/i.test(value);
+};
+
+const IMAGE_EXT_RE = /\.(png|jpe?g|gif|webp|svg|bmp)(\?.*)?$/i;
+
+const isLikelyImageSource = (value: string): boolean => {
+	return (
+		value.startsWith("data:image/") ||
+		IMAGE_EXT_RE.test(value) ||
+		(value.startsWith("http") && value.toLowerCase().includes("image"))
+	);
+};
+
+const getRecordString = (
+	record: Record<string, unknown>,
+	keys: string[],
+): string | null => {
+	for (const key of keys) {
+		const value = record[key];
+		if (typeof value === "string" && value.trim().length > 0) {
+			return value;
+		}
+	}
+
+	return null;
+};
+
+const toImageMimeBundle = (
+	source: string,
+	mimeType?: string,
+): Record<string, unknown> => {
+	if (source.startsWith("data:image/")) {
+		const match = source.match(
+			/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/,
+		);
+		if (match) {
+			return {
+				[match[1]]: match[2].replace(/\s+/g, ""),
+				"text/plain": source,
+			};
+		}
+	}
+
+	if (/^iVBOR[0-9A-Za-z+/=]+$/.test(source.replace(/\s+/g, ""))) {
+		return {
+			"image/png": source.replace(/\s+/g, ""),
+			"text/plain": source,
+		};
+	}
+
+	if (/^\/9j\/[0-9A-Za-z+/=]+$/.test(source.replace(/\s+/g, ""))) {
+		return {
+			"image/jpeg": source.replace(/\s+/g, ""),
+			"text/plain": source,
+		};
+	}
+
+	if (isLikelyImageSource(source) && isLikelyUrlOrPath(source)) {
+		return {
+			"text/html": `<img src="${escapeHtmlAttribute(source)}" alt="Generated output" />`,
+			"text/plain": source,
+		};
+	}
+
+	if (mimeType && mimeType.startsWith("image/")) {
+		return {
+			[mimeType]: source.replace(/\s+/g, ""),
+			"text/plain": source,
+		};
+	}
+
+	return {
+		"text/plain": source,
+	};
 };
 
 const isPlotlySpec = (value: unknown): value is Record<string, unknown> => {
@@ -131,9 +325,35 @@ const toErrorOutput = (output: unknown): JupyterErrorOutput => {
 	};
 };
 
-const toMimeBundleFromOutput = (output: unknown): Record<string, unknown> => {
+const toMimeBundleFromOutput = (
+	output: unknown,
+	operationType?: string | string[],
+): Record<string, unknown> => {
+	const operationTypes = Array.isArray(operationType)
+		? operationType
+		: typeof operationType === "string"
+			? [operationType]
+			: [];
+	const isFileDownload = operationTypes.includes("FILE_DOWNLOAD");
+
 	if (typeof output === "string") {
 		const trimmed = output.trim();
+
+		const markdownImageMatch = trimmed.match(/^!\[[^\]]*\]\(([^)]+)\)$/);
+		if (markdownImageMatch && markdownImageMatch[1]) {
+			return toImageMimeBundle(markdownImageMatch[1]);
+		}
+
+		if (
+			trimmed.startsWith("<img") ||
+			trimmed.includes("<img ") ||
+			trimmed.includes("<img\n")
+		) {
+			return {
+				"text/html": output,
+				"text/plain": stripHtml(output) || output,
+			};
+		}
 
 		if (trimmed.startsWith("<svg") && trimmed.includes("</svg>")) {
 			return {
@@ -182,6 +402,22 @@ const toMimeBundleFromOutput = (output: unknown): Record<string, unknown> => {
 			};
 		}
 
+		if (isLikelyImageSource(trimmed) && isLikelyUrlOrPath(trimmed)) {
+			return {
+				"text/html": `<img src="${escapeHtmlAttribute(trimmed)}" alt="Generated output" />`,
+				"text/plain": output,
+			};
+		}
+
+		if (isFileDownload && isLikelyUrlOrPath(trimmed)) {
+			const href = escapeHtmlAttribute(trimmed);
+			return {
+				"text/markdown": `[Download generated file](${trimmed})`,
+				"text/html": `<a href="${href}" target="_blank" rel="noopener noreferrer">Download generated file</a>`,
+				"text/plain": output,
+			};
+		}
+
 		try {
 			const parsed = JSON.parse(trimmed);
 			if (isPlotlySpec(parsed)) {
@@ -217,6 +453,41 @@ const toMimeBundleFromOutput = (output: unknown): Record<string, unknown> => {
 		const maybeBundle = output as {
 			data?: unknown;
 		};
+		const asRecord = output as Record<string, unknown>;
+		const maybeImageData = getRecordString(asRecord, [
+			"base64",
+			"base64Data",
+			"imageBase64",
+			"b64",
+		]);
+		const maybeImageSource = getRecordString(asRecord, [
+			"image",
+			"imageUrl",
+			"url",
+			"src",
+			"path",
+		]);
+		const maybeImageMime = getRecordString(asRecord, [
+			"mimeType",
+			"contentType",
+			"mime",
+		]);
+
+		if (maybeImageData) {
+			const normalizedMime =
+				typeof maybeImageMime === "string" &&
+				maybeImageMime.startsWith("image/")
+					? maybeImageMime
+					: "image/png";
+			return toImageMimeBundle(maybeImageData, normalizedMime);
+		}
+
+		if (maybeImageSource && isLikelyImageSource(maybeImageSource)) {
+			return toImageMimeBundle(
+				maybeImageSource,
+				maybeImageMime ?? undefined,
+			);
+		}
 
 		if (typeof maybeBundle.data === "object" && maybeBundle.data !== null) {
 			return maybeBundle.data as Record<string, unknown>;
@@ -249,7 +520,7 @@ const toMimeBundleFromOutput = (output: unknown): Record<string, unknown> => {
 
 export const runtimeOutputToJupyterOutputs = (
 	output: unknown,
-	options?: { isError?: boolean },
+	options?: { isError?: boolean; operationType?: string | string[] },
 ): JupyterCellOutput[] => {
 	if (output === undefined || output === null) {
 		return [];
@@ -266,7 +537,7 @@ export const runtimeOutputToJupyterOutputs = (
 		return [toErrorOutput(output)];
 	}
 
-	const data = toMimeBundleFromOutput(output);
+	const data = toMimeBundleFromOutput(output, options?.operationType);
 	return [
 		{
 			output_type: "display_data",
@@ -446,7 +717,7 @@ const ensureNotebookVersion = (ipynb: {
 	}
 };
 
-const getNextExecutionCount = (ipynb: {
+export const getNextNotebookExecutionCount = (ipynb: {
 	cells?: Array<{ cell_type?: string; execution_count?: unknown }>;
 }): number => {
 	if (!Array.isArray(ipynb.cells)) return 1;
@@ -535,7 +806,7 @@ export const appendCellToNotebook = (
 			executionData?.executionCount === null
 				? executionData.executionCount
 				: executionData
-					? getNextExecutionCount(ipynb)
+					? getNextNotebookExecutionCount(ipynb)
 					: null;
 
 		ipynb.cells.push(

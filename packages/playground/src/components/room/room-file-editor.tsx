@@ -1,6 +1,9 @@
 import { observer } from "mobx-react-lite";
 import {
 	buildExecutePixel,
+	buildNotebookExecutionSource,
+	extractNotebookInlineImageOutputsFromLogs,
+	getNextNotebookExecutionCount,
 	IpynbViewer,
 	type JupyterCellOutput,
 	type RunIpynbCellRequest,
@@ -28,26 +31,6 @@ export const RoomFileEditor: React.FC<RoomFileEditorProps> = observer(
 		const isIpynb = config.path.toLowerCase().endsWith(".ipynb");
 
 		if (isIpynb) {
-			const getNextExecutionCount = (notebook: {
-				cells: Array<{ cell_type: string; execution_count?: unknown }>;
-			}): number => {
-				let maxCount = 0;
-				for (const notebookCell of notebook.cells) {
-					if (
-						notebookCell.cell_type === "code" &&
-						typeof notebookCell.execution_count === "number" &&
-						Number.isFinite(notebookCell.execution_count)
-					) {
-						maxCount = Math.max(
-							maxCount,
-							notebookCell.execution_count,
-						);
-					}
-				}
-
-				return maxCount + 1;
-			};
-
 			return (
 				<IpynbViewer
 					insightId={room.insightId}
@@ -66,9 +49,13 @@ export const RoomFileEditor: React.FC<RoomFileEditorProps> = observer(
 									?.name ??
 								"python",
 						).toLowerCase();
-						const executePixel = buildExecutePixel(
+						const sourceForExecution = buildNotebookExecutionSource(
 							language,
 							source,
+						);
+						const executePixel = buildExecutePixel(
+							language,
+							sourceForExecution,
 						);
 
 						if (!executePixel) {
@@ -87,12 +74,19 @@ export const RoomFileEditor: React.FC<RoomFileEditorProps> = observer(
 								);
 
 							const outputList: JupyterCellOutput[] = [];
-							if (logs.length > 0) {
+							const { cleanedLogs, imageOutputs } =
+								extractNotebookInlineImageOutputsFromLogs(logs);
+
+							if (cleanedLogs.length > 0) {
 								outputList.push({
 									output_type: "stream",
 									name: "stdout",
-									text: logs.join("\n"),
+									text: cleanedLogs.join("\n"),
 								});
+							}
+
+							if (imageOutputs.length > 0) {
+								outputList.push(...imageOutputs);
 							}
 
 							if (errors.length > 0) {
@@ -104,27 +98,51 @@ export const RoomFileEditor: React.FC<RoomFileEditorProps> = observer(
 											{ isError: true },
 										),
 									],
-									executionCount: getNextExecutionCount(
-										request.notebook,
-									),
+									executionCount:
+										getNextNotebookExecutionCount(
+											request.notebook,
+										),
 								};
 							}
 
-							const last = results.at(-1);
-							const opType = last?.operationType?.[0] ?? "";
-							const value = unwrapPixelOutput(last ?? {});
-							const isError =
-								opType === "ERROR" ||
-								opType === "INVALID_SYNTAX";
-							outputList.push(
-								...runtimeOutputToJupyterOutputs(value, {
-									isError,
-								}),
-							);
+							for (const result of results) {
+								const operationTypes =
+									result.operationType ?? [];
+								const isError =
+									operationTypes.includes("ERROR") ||
+									operationTypes.includes("INVALID_SYNTAX");
+								const value = unwrapPixelOutput(result ?? {});
+
+								if (value === undefined || value === null) {
+									continue;
+								}
+
+								if (
+									typeof value === "string" &&
+									value.trim().length === 0
+								) {
+									continue;
+								}
+
+								outputList.push(
+									...runtimeOutputToJupyterOutputs(value, {
+										isError,
+										operationType: operationTypes,
+									}),
+								);
+							}
+
+							if (outputList.length === 0) {
+								outputList.push(
+									...runtimeOutputToJupyterOutputs(
+										"Success (no output)",
+									),
+								);
+							}
 
 							return {
 								outputs: outputList,
-								executionCount: getNextExecutionCount(
+								executionCount: getNextNotebookExecutionCount(
 									request.notebook,
 								),
 							};

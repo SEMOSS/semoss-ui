@@ -21,8 +21,12 @@ export type {
 export {
 	appendCellToNotebook,
 	buildExecutePixel,
+	buildNotebookExecutionSource,
 	createNotebookFileContent,
 	createNotebookFilePath,
+	extractNotebookInlineImageOutputsFromLogs,
+	getNextNotebookExecutionCount,
+	isPythonCellLanguage,
 	normalizeSource,
 	parseNotebookJson,
 	replaceNotebookCell,
