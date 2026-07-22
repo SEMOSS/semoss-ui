@@ -1,5 +1,4 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useRef } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import { FlexLayout } from "@semoss/shared";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
@@ -10,6 +9,8 @@ import type { WorkspaceOptions } from "../../stores";
 import { CodeWorkspaceActions } from "../code-workspace/code-workspace-actions";
 import { MCPJsonEditor } from "../shared";
 import { WorkspaceManager, WorkspaceTerminal } from "../workspace";
+
+const SKILL_MD_TAB_ID = "SKILL_MD";
 
 const DEFAULT_BORDER_SIZE = 300;
 
@@ -35,13 +36,6 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						enableClose: false,
 						config: {},
 					},
-					{
-						id: "settings",
-						type: "tab",
-						name: "Settings",
-						component: "settingsPanel",
-						config: {},
-					},
 				],
 			},
 			{
@@ -57,54 +51,51 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						enableClose: false,
 						config: {},
 					},
+					{
+						id: "settings",
+						type: "tab",
+						name: "Settings",
+						component: "settings-panel",
+						config: {},
+						enableClose: false,
+						borderWidth: 800,
+						borderHeight: 600,
+					},
 				],
 			},
 		],
 		layout: {
 			type: "row",
 			weight: 100,
-			children: [],
+			children: [
+				{
+					type: "tabset",
+					id: "main-tabset",
+					weight: 100,
+					selected: 0,
+					enableMaximize: true,
+					children: [
+						{
+							id: SKILL_MD_TAB_ID,
+							type: "tab",
+							name: "SKILL.md",
+							component: "app-file-editor",
+							config: {
+								name: "SKILL.md",
+								path: "/public/SKILL.md",
+							},
+							enableClose: false,
+						},
+					],
+				},
+			],
 		},
 	},
 };
 
-const SKILL_MD_TAB_ID = "SKILL_MD";
-
 export const SkillWorkspace: React.FC = observer(() => {
 	const { workspace } = useWorkspace();
 	const insight = useInsight();
-	const skillMdOpened = useRef(false);
-
-	useEffect(() => {
-		const model = workspace.model;
-		if (!model || skillMdOpened.current) return;
-		skillMdOpened.current = true;
-
-		if (model.getNodeById(SKILL_MD_TAB_ID)) return;
-
-		const tabsetId =
-			model.getActiveTabset()?.getId() ??
-			model.getRoot().getChildren()[0]?.getId() ??
-			"";
-		if (!tabsetId) return;
-
-		model.doAction(
-			FlexLayout.Actions.addNode(
-				{
-					id: SKILL_MD_TAB_ID,
-					type: "tab",
-					name: "SKILL.md",
-					component: "app-file-editor",
-					config: { name: "SKILL.md", path: "/public/SKILL.md" },
-					enableClose: false,
-				},
-				tabsetId,
-				FlexLayout.DockLocation.CENTER,
-				-1,
-				true,
-			),
-		);
-	}, [workspace.model]);
 
 	const FACTORY: React.ComponentProps<typeof WorkspaceManager>["factory"] = (
 		node,
@@ -129,7 +120,7 @@ export const SkillWorkspace: React.FC = observer(() => {
 			return <AppFileEditor node={node} app={workspace.appId} />;
 		} else if (component === "mcpJsonEditor") {
 			return <MCPJsonEditor dataMap={config.data} />;
-		} else if (component === "settingsPanel") {
+		} else if (component === "settings-panel") {
 			return (
 				<ProjectDetailTabs
 					type="SKILL"
@@ -141,11 +132,6 @@ export const SkillWorkspace: React.FC = observer(() => {
 							restrict: ["OWNER", "EDIT"],
 						},
 						{ name: "GitHub", path: "github", restrict: ["OWNER"] },
-						{
-							name: "Settings",
-							path: "settings",
-							restrict: ["OWNER"],
-						},
 						{
 							name: "Access Control",
 							path: "access-control",

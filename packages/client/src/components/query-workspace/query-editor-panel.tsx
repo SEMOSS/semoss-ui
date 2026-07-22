@@ -86,7 +86,7 @@ export const QueryEditorPanel: React.FC<QueryEditorPanelProps> = ({
 				: SPARQL_THEME_LIGHT
 			: resolvedTheme === "dark"
 				? "vs-dark"
-				: "vs";
+				: "vs-light";
 
 	const [query, setQuery] = useState(initialQuery);
 	const [sparqlRaw, setSparqlRaw] = useState(true);

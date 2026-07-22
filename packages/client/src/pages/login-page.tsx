@@ -81,8 +81,13 @@ export const LoginPage = observer(() => {
 		Record<string, string>
 	>({});
 	const [heroImage, setHeroImage] = useState<string>(loginHero);
+	const customLightHeroImage = configStore.theme.loginHeroImage.trim();
+	const customDarkHeroImage = configStore.theme.loginHeroImageDark.trim();
+	const includeNameWithLogo = configStore.theme.includeNameWithLogo;
 	const isDarkMode = resolvedTheme === "dark";
-	const activeHeroImage = isDarkMode ? loginDarkHero : heroImage;
+	const activeHeroImage = isDarkMode
+		? customDarkHeroImage || customLightHeroImage || loginDarkHero
+		: customLightHeroImage || heroImage;
 
 	const {
 		control,
@@ -214,7 +219,7 @@ export const LoginPage = observer(() => {
 	}, [oauthProvidersSignature]);
 
 	useEffect(() => {
-		if (isDarkMode) return;
+		if (isDarkMode || customLightHeroImage) return;
 
 		const timeoutId = window.setTimeout(() => {
 			import("@/assets/img/login-gif.gif")
@@ -223,7 +228,7 @@ export const LoginPage = observer(() => {
 		}, 1200);
 
 		return () => window.clearTimeout(timeoutId);
-	}, [isDarkMode]);
+	}, [isDarkMode, customLightHeroImage]);
 
 	const login = handleSubmit(async (data: TypeUserLogin): Promise<void> => {
 		setIsLoading(true);
@@ -475,9 +480,11 @@ export const LoginPage = observer(() => {
 											}
 										/>
 									) : null}
-									<span className="font-bold text-xl">
-										{configStore.theme.name}
-									</span>
+									{includeNameWithLogo ? (
+										<span className="font-bold text-xl">
+											{configStore.theme.name}
+										</span>
+									) : null}
 								</div>
 								<h4 className="mb-2 min-h-[2.2rem] scroll-m-20 font-semibold text-2xl tracking-tight md:min-h-[2.6rem] md:text-3xl">
 									{register

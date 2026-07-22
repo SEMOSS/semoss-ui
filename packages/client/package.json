@@ -29,7 +29,6 @@
         "dayjs": "1.11.8",
         "echarts": "^5.6.0",
         "echarts-for-react": "^3.0.2",
-        "flexlayout-react": "^0.8.1",
         "lucide-react": "^0.545.0",
         "mobx": "6.3.7",
         "mobx-react-lite": "^3.4.0",
