@@ -9,7 +9,6 @@ import {
 } from "@semoss/chat";
 import {
 	ChatInput,
-	ChatRoomsPage,
 	EngineSelect,
 	McpMenuButton,
 	MessageList,
@@ -117,11 +116,6 @@ const ChatShellInner = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => {
 		setViewMode("chat");
 	};
 
-	const handleAllChats = () => {
-		setLiveRoomId(null);
-		setViewMode("allChats");
-	};
-
 	return (
 		<div className="flex h-full min-h-0">
 			{sidebarOpen && viewMode === "chat" ? (
@@ -139,7 +133,6 @@ const ChatShellInner = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => {
 						onLoadMore={roomsList.loadMore}
 						onSelectRoom={handleSelectRoom}
 						onNewChat={handleNewChat}
-						onAllChats={handleAllChats}
 						onRenameRoom={roomsList.renameRoom}
 						onPinRoom={roomsList.pinRoom}
 						onDeleteRoom={roomsList.deleteRoom}
@@ -148,14 +141,7 @@ const ChatShellInner = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => {
 				</div>
 			) : null}
 			<main className="flex min-h-0 flex-1 flex-col">
-				{viewMode === "allChats" ? (
-					<ChatRoomsPage
-						className="p-4"
-						onSelectRoom={handleSelectRoom}
-						onNewChat={handleNewChat}
-						onAllChats={handleAllChats}
-					/>
-				) : engine ? (
+				{engine ? (
 					<ChatProvider
 						key={activeRoomId ?? "new"}
 						isActive

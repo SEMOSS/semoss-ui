@@ -1,6 +1,6 @@
 import { Shell } from "lucide-react";
 import type { CSSProperties } from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	ChatProvider,
 	ChatRoomsProvider,
@@ -13,39 +13,13 @@ import {
 	McpMenuButton,
 	MessageBubble,
 	MessageList,
-	type PromptLibraryItem,
 	PromptOptimizer,
 	RoomSidebar,
 	SelectionChatButton,
 } from "@semoss/chat/components";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@semoss/ui/next";
 import { DocPage } from "../doc-page";
 import { useEngineConnect } from "../engine-connect-context";
-
-const SAMPLE_PROMPTS: PromptLibraryItem[] = [
-	{
-		id: "p1",
-		title: "Summarize a claim",
-		context: "Summarize the status and next steps for a given claim id.",
-		tags: ["claims"],
-	},
-	{
-		id: "p2",
-		title: "Draft a benefits letter",
-		context: "Draft a benefits eligibility letter for a member.",
-		tags: ["benefits", "letters"],
-	},
-	{
-		id: "p3",
-		title: "Explain a denial",
-		context: "Explain why a claim was denied in plain language.",
-		tags: ["claims"],
-	},
-	{
-		id: "p4",
-		title: "General greeting",
-		context: "Say hello and ask how you can help today.",
-	},
-];
 
 const skin = {
 	key: "rose-test",
@@ -63,10 +37,10 @@ const skin = {
 			"bg-[linear-gradient(135deg,rgba(255,110,170,1)_0%,rgba(255,148,194,1)_38%,rgba(124,214,255,1)_100%)] text-white",
 	},
 	stageClassName:
-		"flex items-center justify-center bg-[radial-gradient(circle_at_18%_20%,rgba(255,183,221,0.55)_0%,rgba(255,183,221,0)_36%),radial-gradient(circle_at_82%_12%,rgba(139,225,255,0.45)_0%,rgba(139,225,255,0)_40%),linear-gradient(160deg,rgba(255,245,252,1)_0%,rgba(240,251,255,1)_52%,rgba(229,242,255,1)_100%)] p-10",
+		"flex items-center justify-center bg-[radial-gradient(circle_at_18%_20%,rgba(255,183,221,0.55)_0%,rgba(255,183,221,0)_36%),radial-gradient(circle_at_82%_12%,rgba(139,225,255,0.45)_0%,rgba(139,225,255,0)_40%),linear-gradient(160deg,rgba(255,245,252,1)_0%,rgba(240,251,255,1)_52%,rgba(229,242,255,1)_100%)] p-3 sm:p-6 lg:p-10",
 	submitIcon: Shell,
 	panelClassName:
-		"h-[40rem] w-full max-w-2xl rounded-[30px] border border-[rgba(255,133,188,0.45)] bg-[linear-gradient(180deg,rgba(255,255,255,0.82)_0%,rgba(255,244,251,0.88)_58%,rgba(241,251,255,0.9)_100%)] shadow-[0_24px_70px_rgba(231,104,168,0.26)] backdrop-blur-sm",
+		"relative h-[min(40rem,calc(100dvh-1.5rem))] w-full max-w-[58rem] rounded-[30px] border border-[rgba(255,133,188,0.45)] bg-[linear-gradient(180deg,rgba(255,255,255,0.82)_0%,rgba(255,244,251,0.88)_58%,rgba(241,251,255,0.9)_100%)] shadow-[0_24px_70px_rgba(231,104,168,0.26)] backdrop-blur-sm sm:h-[min(40rem,calc(100dvh-3rem))] lg:h-[min(40rem,calc(100dvh-5rem))]",
 	messagesClassName: "gap-2 text-[14px] leading-relaxed",
 	vars: {
 		"--background": "rgba(255, 249, 253, 0.97)",
@@ -120,105 +94,102 @@ function ChatDemoInner({
 			>
 				{viewMode === "allChats" ? (
 					<ChatRoomsPage
-						className="h-full w-full p-4"
+						className="min-w-0 flex-1 overflow-y-auto p-4"
 						onSelectRoom={onSelectRoom}
 						onNewChat={onNewChat}
 						onAllChats={onAllChats}
 					/>
 				) : (
-					<>
-						{/* Chat Panel */}
-						<div className="flex min-w-0 flex-1 flex-col">
-							{/* Header */}
-							<div
-								className={`flex items-center gap-3 px-5 py-3 ${skin.header.className}`}
-							>
-								<div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white/25 font-semibold text-sm">
-									RA
-								</div>
-								<div className="flex min-w-0 flex-col">
-									<span className="truncate font-semibold text-sm">
-										{skin.header.title}
-									</span>
-									<span className="flex items-center gap-1.5 text-xs opacity-90">
-										<span className="size-1.5 animate-pulse rounded-full bg-green-400" />
-										{skin.header.subtitle}
-									</span>
-								</div>
+					/* Chat Panel */
+					<div className="flex min-w-0 flex-1 flex-col">
+						{/* Header */}
+						<div
+							className={`flex items-center gap-3 px-5 py-3 ${skin.header.className}`}
+						>
+							<div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white/25 font-semibold text-sm">
+								RA
 							</div>
-
-							{/* Messages */}
-							<div className="flex min-h-0 flex-1 flex-col p-4">
-								<MessageList
-									className={`min-h-0 flex-1 ${skin.messagesClassName}`}
-									renderMessage={(message, helpers) => (
-										<MessageBubble
-											message={message}
-											// onOpenToolResponse={helpers.openToolResponse}
-											onRate={
-												message.role === "assistant"
-													? helpers.onRate
-													: undefined
-											}
-											onDownload={
-												message.role === "assistant"
-													? helpers.onDownload
-													: undefined
-											}
-										/>
-									)}
-								/>
-							</div>
-
-							{/* Composer */}
-							<div className="px-4 pb-4">
-								<ChatInput
-									onSubmit={sendMessage}
-									disabled={isTyping}
-									isGenerating={isTyping}
-									value={draft}
-									onValueChange={setDraft}
-									placeholder="Type a message"
-									submitIcon={skin.submitIcon}
-									trailingActions={
-										<>
-											<McpMenuButton
-												mcp={mcp}
-												onChange={setMcp}
-											/>
-											<PromptOptimizer
-												input={draft}
-												setInput={setDraft}
-												disabled={isTyping}
-												modelId={engine?.engineId}
-											/>
-										</>
-									}
-									predefinedPrompts={SAMPLE_PROMPTS}
-								/>
+							<div className="flex min-w-0 flex-col">
+								<span className="truncate font-semibold text-sm">
+									{skin.header.title}
+								</span>
+								<span className="flex items-center gap-1.5 text-xs opacity-90">
+									<span className="size-1.5 animate-pulse rounded-full bg-green-400" />
+									{skin.header.subtitle}
+								</span>
 							</div>
 						</div>
 
-						<RoomSidebar
-							className="w-64 shrink-0 border-border border-r"
-							pinnedRooms={pinnedRooms}
-							rooms={rooms}
-							activeRoomId={activeRoomId}
-							search={search}
-							onSearchChange={setSearch}
-							isLoading={isLoading}
-							isLoadingMore={isLoadingMore}
-							hasMore={hasMore}
-							onLoadMore={loadMore}
-							onSelectRoom={onSelectRoom}
-							onNewChat={onNewChat}
-							onAllChats={onAllChats}
-							onRenameRoom={renameRoom}
-							onPinRoom={pinRoom}
-							onDeleteRoom={deleteRoom}
-						/>
-					</>
+						{/* Messages */}
+						<div className="flex min-h-0 flex-1 flex-col p-4">
+							<MessageList
+								className={`min-h-0 flex-1 ${skin.messagesClassName}`}
+								renderMessage={(message, helpers) => (
+									<MessageBubble
+										message={message}
+										// onOpenToolResponse={helpers.openToolResponse}
+										onRate={
+											message.role === "assistant"
+												? helpers.onRate
+												: undefined
+										}
+										onDownload={
+											message.role === "assistant"
+												? helpers.onDownload
+												: undefined
+										}
+									/>
+								)}
+							/>
+						</div>
+
+						{/* Composer */}
+						<div className="px-4 pb-4">
+							<ChatInput
+								onSubmit={sendMessage}
+								disabled={isTyping}
+								isGenerating={isTyping}
+								value={draft}
+								onValueChange={setDraft}
+								placeholder="Type a message"
+								submitIcon={skin.submitIcon}
+								trailingActions={
+									<>
+										<McpMenuButton
+											mcp={mcp}
+											onChange={setMcp}
+										/>
+										<PromptOptimizer
+											input={draft}
+											setInput={setDraft}
+											disabled={isTyping}
+											modelId={engine?.engineId}
+										/>
+									</>
+								}
+							/>
+						</div>
+					</div>
 				)}
+
+				<RoomSidebar
+					className="absolute inset-y-0 end-0 z-10 w-[min(16rem,calc(100%-3rem))] shrink-0 border-border border-r shadow-lg sm:static sm:w-64 sm:shadow-none"
+					pinnedRooms={pinnedRooms}
+					rooms={rooms}
+					activeRoomId={activeRoomId}
+					search={search}
+					onSearchChange={setSearch}
+					isLoading={isLoading}
+					isLoadingMore={isLoadingMore}
+					hasMore={hasMore}
+					onLoadMore={loadMore}
+					onSelectRoom={onSelectRoom}
+					onNewChat={onNewChat}
+					onAllChats={onAllChats}
+					onRenameRoom={renameRoom}
+					onPinRoom={pinRoom}
+					onDeleteRoom={deleteRoom}
+				/>
 			</div>
 		</div>
 	);
@@ -266,18 +237,111 @@ export function ChatDemoBridge({ engineId }: { engineId: string }) {
 	);
 }
 
+function SelectionChatDrawerInner({ selectedText }: { selectedText: string }) {
+	const { isTyping, sendMessage } = useChatContext();
+	const sentSelection = useRef(false);
+
+	useEffect(() => {
+		if (sentSelection.current) {
+			return;
+		}
+
+		sentSelection.current = true;
+		void sendMessage(selectedText);
+	}, [selectedText, sendMessage]);
+
+	return (
+		<div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pb-4">
+			<MessageList
+				className="min-h-0 flex-1"
+				renderMessage={(message, helpers) => (
+					<MessageBubble
+						message={message}
+						onRate={
+							message.role === "assistant"
+								? helpers.onRate
+								: undefined
+						}
+						onDownload={
+							message.role === "assistant"
+								? helpers.onDownload
+								: undefined
+						}
+					/>
+				)}
+			/>
+			<ChatInput
+				onSubmit={sendMessage}
+				disabled={isTyping}
+				isGenerating={isTyping}
+				placeholder="Continue the conversation"
+			/>
+		</div>
+	);
+}
+
+function SelectionChatDemo({ engineId }: { engineId: string }) {
+	const selectionCounter = useRef(0);
+	const [selection, setSelection] = useState<{
+		id: number;
+		text: string;
+	} | null>(null);
+
+	const handleSelection = (text: string) => {
+		selectionCounter.current += 1;
+		setSelection({ id: selectionCounter.current, text });
+	};
+
+	return (
+		<>
+			<SelectionChatButton
+				label="Send selection to chat"
+				onSelect={handleSelection}
+			/>
+			<ChatDemoBridge engineId={engineId} />
+			<Sheet
+				open={selection !== null}
+				onOpenChange={(open) => {
+					if (!open) {
+						setSelection(null);
+					}
+				}}
+			>
+				{selection ? (
+					<SheetContent
+						side="left"
+						className="w-full max-w-md gap-0 p-0 sm:max-w-md"
+					>
+						<SheetHeader className="border-border border-b pe-12">
+							<SheetTitle>New chat from selection</SheetTitle>
+						</SheetHeader>
+						<ChatProvider
+							key={selection.id}
+							options={{ engineId }}
+							isActive
+						>
+							<SelectionChatDrawerInner
+								selectedText={selection.text}
+							/>
+						</ChatProvider>
+					</SheetContent>
+				) : null}
+			</Sheet>
+		</>
+	);
+}
+
 export const ChatDemoDoc = () => {
 	const { engine } = useEngineConnect();
 
 	return (
 		<DocPage
 			title="Chat Demo"
-			description="A live end-to-end demo of the @semoss/chat components. Highlight text anywhere on this page to send it through the active chat's imperative API."
+			description="A live end-to-end demo of the @semoss/chat components. Highlight text anywhere on this page to start a new chat in the left drawer."
 		>
 			{engine ? (
 				<ChatRoomsProvider>
-					<SelectionChatButton label="Send selection to chat" />
-					<ChatDemoBridge engineId={engine.engineId} />
+					<SelectionChatDemo engineId={engine.engineId} />
 				</ChatRoomsProvider>
 			) : (
 				<p className="text-muted-foreground text-sm">
