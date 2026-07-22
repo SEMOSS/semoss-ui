@@ -2,13 +2,16 @@ import {
 	Autocomplete,
 	Box,
 	Button,
+	CircularProgress,
 	Dialog,
 	DialogActions,
 	DialogContent,
 	DialogTitle,
+	LinearProgress,
 	Stack,
 	TextField,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import type {
 	RecordingMetadataModelOption,
 	RecordingProjectOption,
@@ -29,8 +32,6 @@ interface SaveRecordingDialogProps {
 	isGeneratingMetadata: boolean;
 	isSaving: boolean;
 	canSave: boolean;
-	dialogTitle?: string;
-	saveLabel?: string;
 	onClose: () => void;
 	onProjectChange: (project: RecordingProjectOption | null) => void;
 	onModelChange: (model: RecordingMetadataModelOption | null) => void;
@@ -56,8 +57,6 @@ export function SaveRecordingDialog({
 	isGeneratingMetadata,
 	isSaving,
 	canSave,
-	dialogTitle = "Save recording",
-	saveLabel = "Save",
 	onClose,
 	onProjectChange,
 	onModelChange,
@@ -74,7 +73,7 @@ export function SaveRecordingDialog({
 
 	return (
 		<Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-			<DialogTitle>{dialogTitle}</DialogTitle>
+			<DialogTitle>Save recording</DialogTitle>
 			<DialogContent>
 				<Stack spacing={2} sx={{ pt: 1 }}>
 					<Autocomplete
@@ -101,6 +100,7 @@ export function SaveRecordingDialog({
 						value={model}
 						onChange={(_, value) => onModelChange(value)}
 						loading={isLoadingModels}
+						disabled={isGeneratingMetadata}
 						getOptionLabel={(option) => option.label}
 						isOptionEqualToValue={(option, value) =>
 							option.value === value.value
@@ -137,39 +137,77 @@ export function SaveRecordingDialog({
 								: "Generate recording details with AI"}
 						</Button>
 					</Box>
-					<TextField
-						label="Title"
-						value={title}
-						onChange={(event) => onTitleChange(event.target.value)}
-						placeholder="e.g., Submit a customer support request"
-						required
-					/>
-					<TextField
-						label="File name"
-						value={fileName}
-						disabled
-						helperText="Generated from title and today's date."
-					/>
-					<TextField
-						label="Description"
-						value={description}
-						onChange={(event) =>
-							onDescriptionChange(event.target.value)
-						}
-						placeholder="Describe the business workflow performed by this recording."
-						required
-						multiline
-						minRows={2}
-					/>
-					<TextField
-						label="Intent"
-						value={intent}
-						onChange={(event) => onIntentChange(event.target.value)}
-						placeholder="Explain the business goal this recording achieves."
-						required
-						multiline
-						minRows={2}
-					/>
+					<Box sx={{ position: "relative" }}>
+						<Stack spacing={2}>
+							<TextField
+								label="Title"
+								value={title}
+								onChange={(event) =>
+									onTitleChange(event.target.value)
+								}
+								placeholder="e.g., Submit a customer support request"
+								disabled={isGeneratingMetadata}
+								required
+							/>
+							<TextField
+								label="File name"
+								value={fileName}
+								disabled
+								helperText="Generated from title and today's date."
+							/>
+							<TextField
+								label="Description"
+								value={description}
+								onChange={(event) =>
+									onDescriptionChange(event.target.value)
+								}
+								placeholder="Describe the business workflow performed by this recording."
+								disabled={isGeneratingMetadata}
+								required
+								multiline
+								minRows={2}
+							/>
+							<TextField
+								label="Intent"
+								value={intent}
+								onChange={(event) =>
+									onIntentChange(event.target.value)
+								}
+								placeholder="Explain the business goal this recording achieves."
+								disabled={isGeneratingMetadata}
+								required
+								multiline
+								minRows={2}
+							/>
+						</Stack>
+						{isGeneratingMetadata && (
+							<Box
+								sx={{
+									position: "absolute",
+									inset: 0,
+									zIndex: 1,
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									bgcolor: (theme) =>
+										alpha(
+											theme.palette.background.paper,
+											0.72,
+										),
+								}}
+							>
+								<LinearProgress
+									sx={{
+										position: "absolute",
+										top: 0,
+										left: 0,
+										right: 0,
+									}}
+								/>
+								<CircularProgress size={28} />
+							</Box>
+						)}
+					</Box>
 				</Stack>
 			</DialogContent>
 			<DialogActions>
@@ -185,7 +223,7 @@ export function SaveRecordingDialog({
 						!hasRequiredMetadata
 					}
 				>
-					{isSaving ? "Saving…" : saveLabel}
+					{isSaving ? "Saving…" : "Save"}
 				</Button>
 			</DialogActions>
 		</Dialog>

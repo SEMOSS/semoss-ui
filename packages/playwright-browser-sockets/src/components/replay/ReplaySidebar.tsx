@@ -34,7 +34,13 @@ export function ReplaySidebar(props: ReplaySidebarProps) {
 	return (
 		<Box
 			sx={{
+				position: "absolute",
+				top: 0,
+				right: 0,
+				bottom: 0,
+				zIndex: 5,
 				width: isOpen ? 340 : 0,
+				maxWidth: "min(340px, 100%)",
 				borderLeft: "1px solid",
 				borderColor: "divider",
 				bgcolor: "background.paper",
@@ -42,6 +48,7 @@ export function ReplaySidebar(props: ReplaySidebarProps) {
 				flexDirection: "column",
 				minHeight: 0,
 				overflow: "hidden",
+				boxShadow: isOpen ? 3 : 0,
 				transition: "width 160ms ease",
 			}}
 		>

@@ -58,6 +58,7 @@ import type {
 	ClientToServerEvent,
 	McpToolContext,
 	RecordingMetadataModelOption,
+	RecordingProjectOption,
 	RemoteBrowserRecordedStep,
 	SelectedTextContext,
 	SelectionBounds,
@@ -80,8 +81,6 @@ type ResolvePlaywrightRecordingResponse = {
 	searchedRoomRecordings: number;
 };
 
-type SaveDialogPurpose = "standalone" | "playground";
-
 export default function App() {
 	const { insightId } = useInsight();
 	const {
@@ -96,6 +95,7 @@ export default function App() {
 		getRecordingEnvelope,
 		saveRoomRecording,
 		listRecordingProjects,
+		listMcpProjects,
 		listRecordingFiles,
 		getRoomRecordingEnvelope,
 		loadRecording,
@@ -118,6 +118,13 @@ export default function App() {
 	const [isReturningToPlayground, setIsReturningToPlayground] =
 		useState(false);
 	const [returnDialogOpen, setReturnDialogOpen] = useState(false);
+	const [returnProjects, setReturnProjects] = useState<
+		RecordingProjectOption[]
+	>([]);
+	const [returnProject, setReturnProject] =
+		useState<RecordingProjectOption | null>(null);
+	const [isLoadingReturnProjects, setIsLoadingReturnProjects] =
+		useState(false);
 	const [isGeneratingRecordingMetadata, setIsGeneratingRecordingMetadata] =
 		useState(false);
 	const [isLoadingMetadataModels, setIsLoadingMetadataModels] =
@@ -128,8 +135,6 @@ export default function App() {
 	const [metadataModel, setMetadataModel] =
 		useState<RecordingMetadataModelOption | null>(null);
 	const [saveDialogOpen, setSaveDialogOpen] = useState(false);
-	const [saveDialogPurpose, setSaveDialogPurpose] =
-		useState<SaveDialogPurpose>("standalone");
 	const [stopRecordingDialogOpen, setStopRecordingDialogOpen] =
 		useState(false);
 	const [isSavingRecording, setIsSavingRecording] = useState(false);
@@ -283,7 +288,6 @@ export default function App() {
 		setIsReturningToPlayground(false);
 		setReturnDialogOpen(false);
 		setSaveDialogOpen(false);
-		setSaveDialogPurpose("standalone");
 		setSelectedTextContexts([]);
 		setRecordedSteps([]);
 		playback.resetExecution();
@@ -1023,7 +1027,6 @@ export default function App() {
 	}, [effectiveInsightId, mcpRecordingNameHint, metadataModel, session]);
 
 	const handleSaveAndStopRecording = useCallback(() => {
-		setSaveDialogPurpose("standalone");
 		void prepareSaveDialog();
 	}, [prepareSaveDialog]);
 
@@ -1031,7 +1034,6 @@ export default function App() {
 		const title = saveTitle.trim();
 		const description = saveDescription.trim();
 		const intent = saveIntent.trim();
-		const returningToPlayground = saveDialogPurpose === "playground";
 		if (!saveProject) {
 			setSnackError("Project is required to save the recording");
 			return;
@@ -1044,16 +1046,6 @@ export default function App() {
 			setSnackError("No active browser session is available to save");
 			return;
 		}
-		if (returningToPlayground && !toolContext) {
-			setSnackError("No Playground tool context is available");
-			return;
-		}
-		if (returningToPlayground && returningToPlaygroundRef.current) return;
-		if (returningToPlayground) {
-			returningToPlaygroundRef.current = true;
-			setIsReturningToPlayground(true);
-		}
-
 		setIsSavingRecording(true);
 		let recordingStopped = false;
 		let browserClosed = false;
@@ -1066,13 +1058,6 @@ export default function App() {
 			});
 			recordingStopped = true;
 			setIsRecording(false);
-			const envelope = returningToPlayground
-				? await getRecordingEnvelope()
-				: null;
-			if (returningToPlayground && !envelope) {
-				throw new Error("No recording envelope is available");
-			}
-
 			const saved = await saveRecording({
 				project: saveProject.value,
 				name: defaultRecordingName,
@@ -1092,32 +1077,7 @@ export default function App() {
 			await closeBrowserSession();
 			browserClosed = true;
 
-			if (returningToPlayground && toolContext && envelope) {
-				sendMcpResponseToPlayground(
-					{
-						saved: true,
-						destination: "project",
-						projectId: saved.project,
-						fileName: saved.fileName,
-						sessionId: session.sessionId,
-						roomId: toolContext.roomId,
-						startUrl: getRecordingStartUrl(envelope, mcpStartUrl),
-						title,
-						description,
-						contextCount: selectedTextContexts.length,
-						contexts:
-							selectedContextsForPlayground(selectedTextContexts),
-					},
-					"success",
-					toolContext.parameters,
-				);
-				setRecordedSteps([]);
-				setReturnDialogOpen(false);
-				setSaveDialogPurpose("standalone");
-				setSnackMessage(`Saved recording to ${saveProject.label}`);
-			} else {
-				setSnackMessage(`Saved recording: ${saved.fileName}`);
-			}
+			setSnackMessage(`Saved recording: ${saved.fileName}`);
 		} catch (error) {
 			if (recordingStopped && !browserClosed) {
 				try {
@@ -1136,222 +1096,242 @@ export default function App() {
 					? error.message
 					: "Failed to save recording";
 			setSnackError(message);
-			if (returningToPlayground) {
+		} finally {
+			setIsSavingRecording(false);
+		}
+	}, [
+		closeBrowserSession,
+		defaultRecordingName,
+		saveDescription,
+		saveIntent,
+		saveProject,
+		saveRecording,
+		saveTitle,
+		sendRecordingControlEvent,
+		session,
+		playback.selectSavedRecording,
+	]);
+
+	const handleOpenSaveRecording = useCallback(() => {
+		void prepareSaveDialog();
+	}, [prepareSaveDialog]);
+
+	const handleOpenReturnDialog = useCallback(async () => {
+		setReturnDialogOpen(true);
+		setIsLoadingReturnProjects(true);
+		try {
+			const projects = await listMcpProjects(effectiveInsightId);
+			setReturnProjects(projects);
+			setReturnProject(projects[0] ?? null);
+			if (projects.length === 0) {
+				setSnackMessage("No MCP-tagged projects are available");
+			}
+		} finally {
+			setIsLoadingReturnProjects(false);
+		}
+	}, [effectiveInsightId, listMcpProjects]);
+
+	const handleReturnToPlayground = useCallback(
+		async (appProject: RecordingProjectOption | null) => {
+			if (returningToPlaygroundRef.current) return;
+			returningToPlaygroundRef.current = true;
+			setIsReturningToPlayground(true);
+
+			let recordingStopped = false;
+			let browserClosed = false;
+			try {
+				if (!toolContext) {
+					throw new Error("No Playground tool context is available");
+				}
+				if (!toolContext.roomId) {
+					throw new Error(
+						"No Playground room ID is available for room file save",
+					);
+				}
+				await bindSemossInsightToRoom(toolContext.roomId);
+				const roomBoundInsightId =
+					getSemossInsightId() || effectiveInsightId;
+				if (!roomBoundInsightId) {
+					throw new Error(
+						"No SEMOSS insight is available for room file save",
+					);
+				}
+				if (!session) {
+					throw new Error(
+						"No active browser session is available to save",
+					);
+				}
+				if (isRecording) {
+					await sendRecordingControlEvent({
+						type: "recording-control",
+						recording: false,
+						discard: false,
+						requestId: crypto.randomUUID(),
+					});
+					recordingStopped = true;
+					setIsRecording(false);
+				}
+
+				const envelope = await getRecordingEnvelope();
+				if (!envelope) {
+					throw new Error("No recording envelope is available");
+				}
+
+				const generatedMetadata =
+					await generatePlaywrightRecordingMetadata({
+						sessionId: session.sessionId,
+						roomId: toolContext.roomId,
+						recordingNameHint: mcpRecordingNameHint,
+						insightId: roomBoundInsightId,
+						historyLimit: 8,
+					});
+				const enrichedEnvelope = applyGeneratedRecordingMetadata(
+					enrichEnvelopeForRoomSave(
+						envelope,
+						session.sessionId,
+						mcpRecordingNameHint,
+						mcpStartUrl,
+					),
+					generatedMetadata,
+				);
+				const fileName = buildRecordingFileName(
+					enrichedEnvelope,
+					mcpRecordingNameHint,
+					mcpStartUrl,
+					enrichedEnvelope.meta?.title || "",
+				);
+				const saved = await saveRoomRecording(
+					roomBoundInsightId,
+					fileName,
+					enrichedEnvelope,
+				);
+				if (!saved) {
+					throw new Error(
+						"Failed to save recording to the Playground room",
+					);
+				}
+
+				let appRecording: { project: string; fileName: string } | null =
+					null;
+				if (appProject) {
+					const appSaved = await saveRecording({
+						project: appProject.value,
+						name: saved.fileName,
+						title: enrichedEnvelope.meta?.title,
+						description: enrichedEnvelope.meta?.description,
+						intent: enrichedEnvelope.meta?.intent,
+					});
+					if (!appSaved) {
+						throw new Error(
+							"Failed to save recording to the current Playwright app",
+						);
+					}
+					appRecording = {
+						project: appSaved.project,
+						fileName: appSaved.fileName,
+					};
+				}
+
+				// Regenerate mcp/pixel_mcp.json from all room recordings. This is part
+				// of a successful Return to Playground operation, not a best-effort step.
+				await saveRoomMcpEntry(
+					roomBoundInsightId,
+					saved.fileName,
+					enrichedEnvelope,
+					toolContext.roomId,
+					toolContext.projectId,
+				);
+
+				// Safely add the __insight__ MCP entry to the room's tool list so the
+				// LLM sees recording-specific tools on the next message (read-modify-write).
+				const addMcpResponse = await runPixel(
+					`AddInsightMCPToRoom(roomId=${JSON.stringify(toolContext.roomId)});`,
+					roomBoundInsightId,
+				);
+				assertPixelSuccess(addMcpResponse, "Room MCP registration");
+
+				await closeBrowserSession();
+				browserClosed = true;
+
+				sendMcpResponseToPlayground(
+					{
+						saved: true,
+						destination: "room",
+						savedToPlaywrightApp: !!appRecording,
+						appProjectId: appRecording?.project ?? null,
+						appFileName: appRecording?.fileName ?? null,
+						recordingPath: saved.roomPath,
+						fileName: saved.fileName,
+						sessionId: session.sessionId,
+						roomId: toolContext.roomId,
+						startUrl: getRecordingStartUrl(
+							enrichedEnvelope,
+							mcpStartUrl,
+						),
+						title: enrichedEnvelope.meta?.title,
+						description: enrichedEnvelope.meta?.description,
+						contextCount: selectedTextContexts.length,
+						contexts:
+							selectedContextsForPlayground(selectedTextContexts),
+					},
+					"success",
+					toolContext.parameters,
+				);
+				setRecordedSteps([]);
+				setReturnDialogOpen(false);
+				setSnackMessage(
+					appRecording
+						? "Saved recording to Playground and Playwright app"
+						: `Saved recording: ${saved.roomPath}`,
+				);
+			} catch (error) {
+				if (recordingStopped && !browserClosed) {
+					try {
+						await sendRecordingControlEvent({
+							type: "recording-control",
+							recording: true,
+							requestId: crypto.randomUUID(),
+						});
+						setIsRecording(true);
+					} catch {
+						// Report the Return to Playground failure below.
+					}
+				}
+				const message =
+					error instanceof Error
+						? error.message
+						: "Failed to return recording to Playground";
+				setSnackError(message);
 				try {
 					sendMcpResponseToPlayground(
-						{
-							saved: false,
-							destination: "project",
-							error: message,
-						},
+						{ saved: false, destination: "room", error: message },
 						"error",
 						toolContext?.parameters ?? {},
 					);
 				} catch {
 					// Nothing else to do if the iframe cannot notify Playground.
 				}
-			}
-		} finally {
-			setIsSavingRecording(false);
-			if (returningToPlayground) {
+			} finally {
 				setIsReturningToPlayground(false);
 				returningToPlaygroundRef.current = false;
 			}
-		}
-	}, [
-		closeBrowserSession,
-		defaultRecordingName,
-		getRecordingEnvelope,
-		mcpStartUrl,
-		saveDescription,
-		saveDialogPurpose,
-		saveIntent,
-		saveProject,
-		saveRecording,
-		saveTitle,
-		selectedTextContexts,
-		sendRecordingControlEvent,
-		session,
-		toolContext,
-		playback.selectSavedRecording,
-	]);
-
-	const handleOpenSaveRecording = useCallback(() => {
-		setSaveDialogPurpose("standalone");
-		void prepareSaveDialog();
-	}, [prepareSaveDialog]);
-
-	const handleReturnToPlayground = useCallback(async () => {
-		if (returningToPlaygroundRef.current) return;
-		returningToPlaygroundRef.current = true;
-		setIsReturningToPlayground(true);
-
-		let recordingStopped = false;
-		let browserClosed = false;
-		try {
-			if (!toolContext) {
-				throw new Error("No Playground tool context is available");
-			}
-			if (!toolContext.roomId) {
-				throw new Error(
-					"No Playground room ID is available for room file save",
-				);
-			}
-			await bindSemossInsightToRoom(toolContext.roomId);
-			const roomBoundInsightId =
-				getSemossInsightId() || effectiveInsightId;
-			if (!roomBoundInsightId) {
-				throw new Error(
-					"No SEMOSS insight is available for room file save",
-				);
-			}
-			if (!session) {
-				throw new Error(
-					"No active browser session is available to save",
-				);
-			}
-
-			if (isRecording) {
-				await sendRecordingControlEvent({
-					type: "recording-control",
-					recording: false,
-					discard: false,
-					requestId: crypto.randomUUID(),
-				});
-				recordingStopped = true;
-				setIsRecording(false);
-			}
-
-			const envelope = await getRecordingEnvelope();
-			if (!envelope) {
-				throw new Error("No recording envelope is available");
-			}
-
-			const generatedMetadata = await generatePlaywrightRecordingMetadata(
-				{
-					sessionId: session.sessionId,
-					roomId: toolContext.roomId,
-					recordingNameHint: mcpRecordingNameHint,
-					insightId: roomBoundInsightId,
-					historyLimit: 8,
-				},
-			);
-			const enrichedEnvelope = applyGeneratedRecordingMetadata(
-				enrichEnvelopeForRoomSave(
-					envelope,
-					session.sessionId,
-					mcpRecordingNameHint,
-					mcpStartUrl,
-				),
-				generatedMetadata,
-			);
-			const fileName = buildRecordingFileName(
-				enrichedEnvelope,
-				mcpRecordingNameHint,
-				mcpStartUrl,
-				enrichedEnvelope.meta?.title || "",
-			);
-			const saved = await saveRoomRecording(
-				roomBoundInsightId,
-				fileName,
-				enrichedEnvelope,
-			);
-			if (!saved) {
-				throw new Error(
-					"Failed to save recording to the Playground room",
-				);
-			}
-
-			// Regenerate mcp/pixel_mcp.json from all room recordings. This is part
-			// of a successful Return to Playground operation, not a best-effort step.
-			await saveRoomMcpEntry(
-				roomBoundInsightId,
-				saved.fileName,
-				enrichedEnvelope,
-				toolContext.roomId,
-				toolContext.projectId,
-			);
-
-			// Safely add the __insight__ MCP entry to the room's tool list so the
-			// LLM sees recording-specific tools on the next message (read-modify-write).
-			const addMcpResponse = await runPixel(
-				`AddInsightMCPToRoom(roomId=${JSON.stringify(toolContext.roomId)});`,
-				roomBoundInsightId,
-			);
-			assertPixelSuccess(addMcpResponse, "Room MCP registration");
-
-			await closeBrowserSession();
-			browserClosed = true;
-
-			sendMcpResponseToPlayground(
-				{
-					saved: true,
-					destination: "room",
-					recordingPath: saved.roomPath,
-					fileName: saved.fileName,
-					sessionId: session.sessionId,
-					roomId: toolContext.roomId,
-					startUrl: getRecordingStartUrl(
-						enrichedEnvelope,
-						mcpStartUrl,
-					),
-					title: enrichedEnvelope.meta?.title,
-					description: enrichedEnvelope.meta?.description,
-					contextCount: selectedTextContexts.length,
-					contexts:
-						selectedContextsForPlayground(selectedTextContexts),
-				},
-				"success",
-				toolContext.parameters,
-			);
-			setRecordedSteps([]);
-			setReturnDialogOpen(false);
-			setSnackMessage(`Saved recording: ${saved.roomPath}`);
-		} catch (error) {
-			if (recordingStopped && !browserClosed) {
-				try {
-					await sendRecordingControlEvent({
-						type: "recording-control",
-						recording: true,
-						requestId: crypto.randomUUID(),
-					});
-					setIsRecording(true);
-				} catch {
-					// Report the Return to Playground failure below.
-				}
-			}
-			const message =
-				error instanceof Error
-					? error.message
-					: "Failed to return recording to Playground";
-			setSnackError(message);
-			try {
-				sendMcpResponseToPlayground(
-					{ saved: false, destination: "room", error: message },
-					"error",
-					toolContext?.parameters ?? {},
-				);
-			} catch {
-				// Nothing else to do if the iframe cannot notify Playground.
-			}
-		} finally {
-			setIsReturningToPlayground(false);
-			returningToPlaygroundRef.current = false;
-		}
-	}, [
-		closeBrowserSession,
-		getRecordingEnvelope,
-		effectiveInsightId,
-		isRecording,
-		mcpRecordingNameHint,
-		mcpStartUrl,
-		saveRoomMcpEntry,
-		saveRoomRecording,
-		selectedTextContexts,
-		sendRecordingControlEvent,
-		session,
-		toolContext,
-	]);
+		},
+		[
+			closeBrowserSession,
+			getRecordingEnvelope,
+			effectiveInsightId,
+			isRecording,
+			mcpRecordingNameHint,
+			mcpStartUrl,
+			saveRoomMcpEntry,
+			saveRoomRecording,
+			saveRecording,
+			selectedTextContexts,
+			sendRecordingControlEvent,
+			session,
+			toolContext,
+		],
+	);
 
 	useEffect(() => {
 		if (
@@ -1443,6 +1423,8 @@ export default function App() {
 		isCreating ||
 		pendingBrowserActionCount > 0 ||
 		playback.runningStepId !== null;
+	const replayMenuOpen =
+		playback.controlsOpen || playback.loadedRecordingOpen;
 
 	return (
 		<Box
@@ -1564,7 +1546,7 @@ export default function App() {
 								isCapturingSelectedText ||
 								selectionMode
 							}
-							onClick={() => setReturnDialogOpen(true)}
+							onClick={() => void handleOpenReturnDialog()}
 							startIcon={
 								isReturningToPlayground ||
 								isSaving ||
@@ -1588,25 +1570,19 @@ export default function App() {
 					)}
 					<Button
 						size="small"
-						variant={
-							playback.controlsOpen ||
-							playback.loadedRecordingOpen
-								? "contained"
-								: "outlined"
-						}
+						variant={replayMenuOpen ? "contained" : "outlined"}
 						startIcon={
-							playback.controlsOpen ||
-							playback.loadedRecordingOpen ? (
+							replayMenuOpen ? (
 								<ExpandMoreIcon />
 							) : (
 								<ChevronRightIcon />
 							)
 						}
 						onClick={() => {
-							playback.setControlsOpen(!playback.controlsOpen);
-							if (playback.loadedRecording) {
-								playback.setLoadedRecordingOpen(true);
-							}
+							playback.setControlsOpen(!replayMenuOpen);
+							playback.setLoadedRecordingOpen(
+								!replayMenuOpen && !!playback.loadedRecording,
+							);
 						}}
 						sx={{ whiteSpace: "nowrap", minWidth: 0, px: 1 }}
 					>
@@ -1669,7 +1645,15 @@ export default function App() {
 					/>
 				)}
 
-			<Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
+			<Box
+				sx={{
+					display: "flex",
+					position: "relative",
+					flex: 1,
+					minHeight: 0,
+					overflow: "hidden",
+				}}
+			>
 				{/* Browser canvas */}
 				<BrowserViewer
 					connectionState={connectionState}
@@ -1713,15 +1697,13 @@ export default function App() {
 				disabled={
 					isReturningToPlayground || isSaving || isSavingRecording
 				}
+				projects={returnProjects}
+				project={returnProject}
+				isLoadingProjects={isLoadingReturnProjects}
 				onClose={() => setReturnDialogOpen(false)}
-				onSaveToApp={() => {
-					setReturnDialogOpen(false);
-					setSaveDialogPurpose("playground");
-					void prepareSaveDialog();
-				}}
-				onSaveToRoom={() => {
-					setReturnDialogOpen(false);
-					void handleReturnToPlayground();
+				onProjectChange={setReturnProject}
+				onSubmit={(project) => {
+					void handleReturnToPlayground(project);
 				}}
 			/>
 
@@ -1746,27 +1728,8 @@ export default function App() {
 				isLoadingModels={isLoadingMetadataModels}
 				isGeneratingMetadata={isGeneratingRecordingMetadata}
 				isSaving={isSaving || isSavingRecording}
-				canSave={
-					!!session &&
-					(isRecording || saveDialogPurpose === "playground")
-				}
-				dialogTitle={
-					saveDialogPurpose === "playground"
-						? "Save in Playwright app"
-						: "Save recording"
-				}
-				saveLabel={
-					saveDialogPurpose === "playground"
-						? "Save and return"
-						: "Save"
-				}
-				onClose={() => {
-					setSaveDialogOpen(false);
-					if (saveDialogPurpose === "playground") {
-						setSaveDialogPurpose("standalone");
-						setReturnDialogOpen(true);
-					}
-				}}
+				canSave={!!session && isRecording}
+				onClose={() => setSaveDialogOpen(false)}
 				onProjectChange={setSaveProject}
 				onModelChange={setMetadataModel}
 				onTitleChange={setSaveTitle}

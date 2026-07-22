@@ -106,7 +106,7 @@ export function usePlaybackController({
 	const [isLoadingRecording, setIsLoadingRecording] = useState(false);
 	const [isRunning, setIsRunning] = useState(false);
 	const [isPaused, setIsPaused] = useState(false);
-	const [controlsOpen, setControlsOpen] = useState(true);
+	const [controlsOpen, setControlsOpen] = useState(false);
 	const [loadedRecordingOpen, setLoadedRecordingOpen] = useState(false);
 	const [editingStepId, setEditingStepId] = useState<number | null>(null);
 	const [valueRequiredStepId, setValueRequiredStepId] = useState<

@@ -66,9 +66,11 @@ export function BrowserTabStrip({
 								sx={{
 									minWidth: 0,
 									flex: 1,
+									display: "block",
 									px: 1,
 									py: 0.5,
 									color: "text.primary",
+									textAlign: "left",
 									textTransform: "none",
 									whiteSpace: "nowrap",
 									overflow: "hidden",

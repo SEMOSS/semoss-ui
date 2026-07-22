@@ -44,6 +44,7 @@ interface UseRemoteBrowserSessionReturn {
 	listRecordingProjects: (
 		insightId: string,
 	) => Promise<RecordingProjectOption[]>;
+	listMcpProjects: (insightId: string) => Promise<RecordingProjectOption[]>;
 	listRecordingFiles: (
 		insightId: string,
 		projectId: string,
@@ -348,6 +349,55 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 		[],
 	);
 
+	const listMcpProjects = useCallback(
+		async (insightId: string): Promise<RecordingProjectOption[]> => {
+			if (!insightId) {
+				setError("Insight ID is required to list MCP projects");
+				return [];
+			}
+
+			setError(null);
+			try {
+				const pixel = `META | MyProjects(metaKeys=["tag", "description"], metaFilters=[{"tag":["MCP"]}], filterWord=[""]);`;
+				const res = await runPixel(pixel, insightId);
+				const output = res.pixelReturn?.[0]?.output;
+				if (!Array.isArray(output)) return [];
+
+				return output
+					.map(
+						(project: {
+							project_display_name?: string;
+							project_name?: string;
+							project_id?: string;
+						}): RecordingProjectOption | null => {
+							const value = project.project_id;
+							if (!value) return null;
+							return {
+								label:
+									project.project_display_name ||
+									project.project_name ||
+									value,
+								value,
+								project_id: value,
+								project_name: project.project_name,
+							};
+						},
+					)
+					.filter(
+						(option): option is RecordingProjectOption => !!option,
+					);
+			} catch (e: unknown) {
+				setError(
+					e instanceof Error
+						? e.message
+						: "Failed to list MCP projects",
+				);
+				return [];
+			}
+		},
+		[],
+	);
+
 	const listRecordingFiles = useCallback(
 		async (insightId: string, projectId: string): Promise<string[]> => {
 			if (!insightId || !projectId) {
@@ -578,6 +628,7 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 		getRecordingEnvelope,
 		saveRoomRecording,
 		listRecordingProjects,
+		listMcpProjects,
 		listRecordingFiles,
 		getRoomRecordingEnvelope,
 		loadRecording,
