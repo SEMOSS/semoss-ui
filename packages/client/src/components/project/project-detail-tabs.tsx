@@ -83,23 +83,24 @@ export const ProjectDetailTabs = ({
 		dependencies: string[];
 	}>(appId ? `GetProjectDependencies(project=["${appId}"]);` : "");
 
+	// the core metadata keys plus any dynamic ones from the project config
+	const metaKeys = useMemo(() => {
+		const dynamicKeys = configStore.store.config.projectMetaKeys
+			.map((k) => k.metakey)
+			.filter(
+				(key) =>
+					key !== "description" &&
+					key !== "markdown" &&
+					key !== "tag" &&
+					key !== "tags",
+			);
+		return ["description", "markdown", "tag", ...dynamicKeys];
+	}, [configStore.store.config.projectMetaKeys]);
+
 	// get the metadata for the project
 	const getMetadata = usePixel<Project>(
 		appId
-			? `GetProjectMetadata(project=["${appId}"], metaKeys=${JSON.stringify(
-					configStore.store.config.projectMetaKeys
-						.filter((k) => {
-							return (
-								k.metakey !== "description" &&
-								k.metakey !== "markdown" &&
-								k.metakey !== "tag" &&
-								k.metakey !== "tags"
-							);
-						})
-						.map((k) => {
-							return k.metakey;
-						}),
-				)});`
+			? `GetProjectMetadata(project=["${appId}"], metaKeys=${JSON.stringify(metaKeys)});`
 			: "",
 	);
 
