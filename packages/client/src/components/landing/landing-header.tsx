@@ -7,8 +7,11 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@semoss/ui/next";
+import AppagentDark from "@/assets/img/Appagent-dark.svg";
 import Appagent from "@/assets/img/Appagent.svg";
+import AppcodeDark from "@/assets/img/Appcode-dark.svg";
 import Appcode from "@/assets/img/Appcode.svg";
+import AppdragdropDark from "@/assets/img/Appdragdrop-dark.svg";
 import Appdragdrop from "@/assets/img/Appdragdrop.svg";
 
 const CARDS = [
@@ -17,6 +20,7 @@ const CARDS = [
 		description:
 			"Choose a framework or start from scratch—code and preview your app seamlessly in our editor!",
 		image: Appcode,
+		darkImage: AppcodeDark,
 		type: "code",
 		testId: "new-app-code-btn",
 	},
@@ -25,6 +29,7 @@ const CARDS = [
 		description:
 			"Drag and drop UI components to make your app come to life. Customize the design of your app in this low code environment.",
 		image: Appdragdrop,
+		darkImage: AppdragdropDark,
 		type: "blocks",
 		testId: "new-app-drag-btn",
 	},
@@ -33,6 +38,7 @@ const CARDS = [
 		description:
 			"Engineer a prompt to interact with your LLM. Structure the text and design inputs to generate the optimal AI response.",
 		image: Appagent,
+		darkImage: AppagentDark,
 		type: "agent",
 		testId: "new-app-agent-btn",
 	},
@@ -51,7 +57,7 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
 			{CARDS.map((card) => (
 				<Card
 					key={card.title}
-					className="relative h-full w-full gap-2 overflow-hidden py-4"
+					className="relative h-full w-full gap-2 overflow-hidden rounded-xl border-border bg-card py-4"
 				>
 					<CardHeader className="px-4">
 						<CardTitle>{card.title}</CardTitle>
@@ -80,7 +86,12 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
 						<img
 							src={card.image}
 							alt={card.title}
-							className="block h-auto w-full object-contain"
+							className="block h-auto w-full object-contain dark:hidden"
+						/>
+						<img
+							src={card.darkImage}
+							alt={card.title}
+							className="hidden h-auto w-full object-contain dark:block"
 						/>
 					</div>
 				</Card>

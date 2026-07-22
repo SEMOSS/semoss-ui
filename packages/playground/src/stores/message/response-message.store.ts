@@ -279,10 +279,7 @@ command=["<encode>${commandText}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
 ${media.length ? `image=${JSON.stringify(media)},` : "image=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
-paramValues=[${JSON.stringify({
-					max_new_tokens: room.options.tokenLength,
-					temperature: room.options.temperature,
-				})}]
+paramValues=[{}]
 );`,
 				(chunk) => {
 					runInAction(() => {

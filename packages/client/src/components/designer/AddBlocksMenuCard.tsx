@@ -262,7 +262,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 			>
 				{hovered && isCommunity && configStore.store.user.admin && (
 					<div
-						className="-right-6 absolute top-2.5 z-[1000] flex flex-col gap-1 rounded-lg bg-white p-2"
+						className="-right-6 absolute top-2.5 z-[1000] flex flex-col gap-1 rounded-lg border border-border bg-popover p-2"
 						style={{
 							boxShadow:
 								"0px 5px 22px rgba(0, 0, 0, 0.10), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)",
@@ -276,7 +276,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 								handleOnTrashClick(item.id ?? "", item.name);
 							}}
 						>
-							<Trash2 className="size-4 text-[#757575]" />
+							<Trash2 className="size-4 text-muted-foreground" />
 						</button>
 					</div>
 				)}

@@ -38,6 +38,7 @@ import {
 	TabsTrigger,
 	Textarea,
 	toast,
+	useTheme,
 } from "@semoss/ui/next";
 import {
 	createAdminTheme,
@@ -54,6 +55,9 @@ interface ClientTheme {
 	name?: string;
 	landingPageName?: string;
 	logo?: string;
+	includeNameWithLogo?: boolean;
+	loginHeroImage?: string;
+	loginHeroImageDark?: string;
 	isLogoUrl?: boolean;
 
 	helpBannerOrder?: string[];
@@ -74,8 +78,6 @@ interface ClientTheme {
 	termsReact?: string;
 
 	/* BI-only fields (read by packages/legacy/dist). */
-	includeNameWithLogo?: boolean;
-
 	homeIntroObj?: {
 		homeIntroHtml?: string;
 		infoCards?: {
@@ -254,6 +256,7 @@ const isMonacoFoldingEditor = (
 };
 
 export const AdminThemePage: React.FC = () => {
+	const { resolvedTheme } = useTheme();
 	const { adminMode } = useSettings();
 
 	const getThemes = useAPI(["getAdminThemes", 0, -1], {
@@ -741,6 +744,11 @@ export const AdminThemePage: React.FC = () => {
 												}}
 												value={themeValue}
 												language={"json"}
+												theme={
+													resolvedTheme === "dark"
+														? "vs-dark"
+														: "vs-light"
+												}
 												onChange={(newValue) => {
 													setThemeValue(
 														(newValue as string) ??
@@ -909,7 +917,7 @@ const PlaygroundForm: React.FC<FormProps> = ({
 
 				<FormSection
 					title="Images"
-					description="URLs or relative paths used throughout the app."
+					description="URLs, relative paths, or data URIs used throughout the app."
 				>
 					<FieldGroup>
 						{IMAGE_FIELDS.map(({ key, label }) => (
@@ -1079,7 +1087,10 @@ const ClientForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 			</div>
 
 			<div className="flex flex-col gap-6">
-				<FormSection title="Branding">
+				<FormSection
+					title="Branding"
+					description="Image values accept URLs, relative paths, or data URIs (for example: data:image/png;base64,...). Turn off 'Show app name beside logo' when your logo already contains text."
+				>
 					<FieldGroup>
 						<Field>
 							<FieldLabel>Client Name</FieldLabel>
@@ -1129,6 +1140,49 @@ const ClientForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 								})
 							}
 						/>
+						<SwitchField
+							label="Show app name beside logo"
+							checked={client.includeNameWithLogo ?? true}
+							disabled={disabled}
+							onChange={(v) =>
+								updateTheme((d) => {
+									d.includeNameWithLogo = v;
+								})
+							}
+						/>
+					</FieldGroup>
+				</FormSection>
+
+				<FormSection title="Login Hero">
+					<FieldGroup>
+						<Field>
+							<FieldLabel>Login Hero Image</FieldLabel>
+							<Input
+								disabled={disabled}
+								value={client.loginHeroImage ?? ""}
+								placeholder="https://… or data:image/...;base64,..."
+								onChange={(e) =>
+									updateTheme((d) => {
+										d.loginHeroImage = e.target.value;
+									})
+								}
+							/>
+						</Field>
+						<Field>
+							<FieldLabel>
+								Login Hero Image (Dark Mode)
+							</FieldLabel>
+							<Input
+								disabled={disabled}
+								value={client.loginHeroImageDark ?? ""}
+								placeholder="https://… or data:image/...;base64,..."
+								onChange={(e) =>
+									updateTheme((d) => {
+										d.loginHeroImageDark = e.target.value;
+									})
+								}
+							/>
+						</Field>
 					</FieldGroup>
 				</FormSection>
 
@@ -1258,7 +1312,7 @@ const BIForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 					<FieldGroup>
 						<SwitchField
 							label="Include name alongside logo"
-							checked={client.includeNameWithLogo ?? false}
+							checked={client.includeNameWithLogo ?? true}
 							disabled={disabled}
 							onChange={(v) =>
 								updateTheme((d) => {
@@ -1288,7 +1342,10 @@ const BIForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 					</FieldGroup>
 				</FormSection>
 
-				<FormSection title="Images & Backgrounds">
+				<FormSection
+					title="Images & Backgrounds"
+					description="Image values accept URLs, relative paths, or data URIs (for example: data:image/png;base64,...)."
+				>
 					<FieldGroup>
 						<Field>
 							<FieldLabel>Login Image</FieldLabel>
