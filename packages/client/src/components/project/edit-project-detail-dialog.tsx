@@ -202,10 +202,21 @@ export const EditProjectDetailDialog = ({
 		try {
 			setIsLoading(true);
 
+			// only send the fields the backend actually allows as metadata,
+			// not the full form state (which mixes in project_id, permissions, etc.)
+			const meta: Record<string, unknown> = {
+				description: form.description,
+				markdown: form.markdown,
+				tag: form.tag,
+			};
+			for (const { metakey } of projectMetaKeys) {
+				meta[metakey] = form[metakey];
+			}
+
 			// update the metadata for the project
 			await configStore.runPixel(
 				`SetProjectMetadata(project=["${project.project_id}"], meta=[${JSON.stringify(
-					form,
+					meta,
 				)}])`,
 			);
 
