@@ -1899,24 +1899,6 @@ export const IMPORTABLE_MODELS = {
 							category: "General",
 						},
 						{
-							key: "CHAT_TYPE",
-							label: "Chat Type",
-							type: "select",
-							options: ["chat-completion", "completion"],
-							required: true,
-							default: "chat-completion",
-							category: "General",
-						},
-						{
-							key: "DEPLOYMENT_TYPE",
-							label: "Deployment Type",
-							type: "select",
-							options: ["vLLM", "TGI"],
-							required: true,
-							default: "vLLM",
-							category: "General",
-						},
-						{
 							key: "MODEL",
 							label: "Model Name",
 							type: "text",
@@ -1937,6 +1919,13 @@ export const IMPORTABLE_MODELS = {
 							key: "ENDPOINT",
 							label: "Endpoint",
 							type: "url",
+							required: true,
+							category: "Credentials",
+						},
+						{
+							key: "OPEN_AI_KEY",
+							label: "API Key",
+							type: "password",
 							required: true,
 							category: "Credentials",
 						},
@@ -1995,7 +1984,7 @@ export const IMPORTABLE_MODELS = {
 							helperText:
 								"Note: Self Hosted is connected using the OpenAI specification.",
 							default:
-								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', deployment_type = '${DEPLOYMENT_TYPE}', context_window = ${CONTEXT_WINDOW}, max_tokens = ${MAX_TOKENS})",
+								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = '${ENDPOINT}', model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', context_window = ${CONTEXT_WINDOW}, max_tokens = ${MAX_TOKENS})",
 							category: "Settings",
 						},
 					],
