@@ -194,6 +194,73 @@ export const GUARDRAIL_CONNECTION = {
 			],
 		},
 		{
+			name: "Aggressive / Self-Harm",
+			disable: false,
+			icon: Detoxify,
+			description:
+				"Detects aggressive, violent, or self-harm content in user prompts by routing the check through a configured LLM.",
+			fields: [
+				{
+					key: "MODEL_NAME",
+					label: "Catalog Name",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					category: "General",
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom_rules: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+				},
+				{
+					key: "MODEL_ENGINE_ID",
+					label: "Model Engine",
+					value: "",
+					type: "select",
+					options: [],
+					optionRule: {
+						pixel: `MyEngines(engineTypes=['MODEL']);`,
+						optionDisplay: "engine_name",
+						optionValue: "engine_id",
+					},
+					disabled: false,
+					required: true,
+					category: "Settings",
+					helperText:
+						"The LLM used to evaluate whether a prompt contains aggressive or self-harm content.",
+				},
+				{
+					key: "DEFAULT_THRESHOLD",
+					label: "Default Threshold",
+					value: "0.5",
+					type: "number",
+					disabled: false,
+					required: false,
+					category: "Settings",
+					helperText:
+						"Score threshold (0-1) above which a prompt is considered harmful. Defaults to 0.5.",
+				},
+				{
+					key: "GUARDRAIL_TYPE",
+					label: "Guardrail Type",
+					value: "EMBEDDED_AGGRESSIVE_SELF_HARM",
+					type: "text",
+					disabled: true,
+					required: false,
+					category: "Settings",
+				},
+			],
+		},
+		{
 			name: "Perspective API",
 			disable: true,
 			description:
