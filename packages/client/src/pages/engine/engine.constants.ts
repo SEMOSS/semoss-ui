@@ -6,6 +6,7 @@ import { EngineFileManagerPage } from "./engine-file-manager-page";
 import { EngineFilePage } from "./engine-file-page";
 import { EngineMcpUsagePage } from "./engine-mcp-usage-page";
 import { EngineMetadataPage } from "./engine-metadata-page";
+import { EngineMigrationsPage } from "./engine-migrations-page";
 import { EngineModelChatPage } from "./engine-model-chat-page";
 import { EngineOverviewPage } from "./engine-overview-page";
 import { EngineQAPage } from "./engine-qa-page";
@@ -206,6 +207,12 @@ export const ENGINE_ROUTES: {
 				path: "sparql-query",
 				component: EngineSparqlQueryPage,
 				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "Migrations",
+				path: "migrations",
+				component: EngineMigrationsPage,
+				restrict: ["EDIT", "OWNER"],
 			},
 			{
 				name: "Access Control",
