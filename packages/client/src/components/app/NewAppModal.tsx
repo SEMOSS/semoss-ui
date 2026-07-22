@@ -29,7 +29,10 @@ type NewAppForm = {
 
 interface NewAppModalProps {
 	open: boolean;
-	options: { type: "blocks"; state: SerializedState } | { type: "code" };
+	options:
+		| { type: "automation" }
+		| { type: "blocks"; state: SerializedState }
+		| { type: "code" };
 	onClose: (appId?: string) => void;
 }
 
@@ -74,6 +77,45 @@ export const NewAppModal = (props: NewAppModalProps) => {
 						data.APP_NAME
 					}" ] , json =[${JSON.stringify(state)}]  ) ;`,
 				);
+
+				if (errors.length > 0) throw new Error(errors.join(","));
+
+				appId = pixelReturn[0].output.project_id;
+
+				if (data.APP_IMG && appId) {
+					await uploadImage(
+						data.APP_IMG,
+						appId,
+						configStore.store.insightID,
+					);
+				}
+
+				if (data.APP_TAGS.length || data.APP_DESCRIPTION) {
+					const setProjectMetadataResponse =
+						await monolithStore.runQuery(
+							`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
+								{
+									tag: data.APP_TAGS,
+									description: data.APP_DESCRIPTION,
+								},
+							)}])`,
+						);
+
+					const output =
+						setProjectMetadataResponse.pixelReturn[0].output;
+					const operationType =
+						setProjectMetadataResponse.pixelReturn[0]
+							.operationType[0];
+
+					if (operationType.indexOf("ERROR") > -1) {
+						toast.error(output);
+						return;
+					}
+				}
+			} else if (type === "automation") {
+				const pixel = `CreateProject(project=["${data.APP_NAME}"], portal=[true], projectType=["AUTOMATION"]);`;
+				const { errors, pixelReturn } =
+					await monolithStore.runQuery<[AppMetadata]>(pixel);
 
 				if (errors.length > 0) throw new Error(errors.join(","));
 

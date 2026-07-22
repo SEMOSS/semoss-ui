@@ -2,6 +2,7 @@
  * Different types of apps
  */
 export type AppType =
+	| "AUTOMATION"
 	| "BLOCKS"
 	| "CODE"
 	| "INSIGHT"

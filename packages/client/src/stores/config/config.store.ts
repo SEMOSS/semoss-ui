@@ -810,7 +810,9 @@ export class ConfigStore {
 			metadata: metadata,
 		};
 
-		if (metadata.project_type === "BLOCKS") {
+		if (metadata.project_type === "AUTOMATION") {
+			workspace.type = "AUTOMATION";
+		} else if (metadata.project_type === "BLOCKS") {
 			workspace.type = "BLOCKS";
 		} else if (metadata.project_type === "SKILL") {
 			workspace.type = "SKILL";

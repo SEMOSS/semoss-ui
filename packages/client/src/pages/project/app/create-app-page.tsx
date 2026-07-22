@@ -207,8 +207,11 @@ export const CreateAppPage = () => {
 									type: "code",
 								});
 							} else if (type === "agent") {
-								console.log(type);
 								navigate("/app/new/prompt");
+							} else if (type === "automation") {
+								setNewAppOptions({
+									type: "automation",
+								});
 							}
 						}}
 					/>

@@ -36,11 +36,19 @@ const CARDS = [
 		type: "agent",
 		testId: "new-app-agent-btn",
 	},
+	{
+		title: "Build an automation",
+		description:
+			"Connect engines, models, and data sources into repeatable automated workflows. Trigger them manually, on a schedule, or via webhook.",
+		image: Appagent,
+		type: "automation",
+		testId: "new-app-automation-btn",
+	},
 ] as const;
 
 interface LandingHeaderProps {
 	/** Trigger creation of a new app */
-	onCreate: (type: "blocks" | "code" | "agent") => void;
+	onCreate: (type: "blocks" | "code" | "agent" | "automation") => void;
 }
 
 export const LandingHeader: React.FC<LandingHeaderProps> = ({
