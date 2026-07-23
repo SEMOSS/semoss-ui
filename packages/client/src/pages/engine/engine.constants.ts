@@ -38,7 +38,7 @@ export const ENGINE_ROUTES: {
 		path: string;
 
 		/** Restrict to certain roles (set to false to allow all) */
-		restrict: Role[] | false;
+		restrict: Role[];
 
 		/** Component to render */
 		component: React.FunctionComponent;
@@ -55,7 +55,7 @@ export const ENGINE_ROUTES: {
 				name: "Overview",
 				path: "",
 				component: EngineOverviewPage,
-				restrict: false,
+				restrict: ["READ_ONLY", "EDIT", "OWNER", "DISCOVERABLE"],
 			},
 			{
 				name: "Usage",
@@ -112,7 +112,7 @@ export const ENGINE_ROUTES: {
 				name: "Overview",
 				path: "",
 				component: EngineOverviewPage,
-				restrict: false,
+				restrict: ["READ_ONLY", "EDIT", "OWNER", "DISCOVERABLE"],
 			},
 			{
 				name: "Usage",
@@ -169,7 +169,7 @@ export const ENGINE_ROUTES: {
 				name: "Overview",
 				path: "",
 				component: EngineOverviewPage,
-				restrict: false,
+				restrict: ["READ_ONLY", "EDIT", "OWNER", "DISCOVERABLE"],
 			},
 			{
 				name: "Usage",
@@ -238,7 +238,7 @@ export const ENGINE_ROUTES: {
 				name: "Overview",
 				path: "",
 				component: EngineOverviewPage,
-				restrict: false,
+				restrict: ["READ_ONLY", "EDIT", "OWNER", "DISCOVERABLE"],
 			},
 			{
 				name: "Usage",
@@ -301,7 +301,7 @@ export const ENGINE_ROUTES: {
 				name: "Overview",
 				path: "",
 				component: EngineOverviewPage,
-				restrict: false,
+				restrict: ["READ_ONLY", "EDIT", "OWNER", "DISCOVERABLE"],
 			},
 			{
 				name: "Usage",
@@ -325,7 +325,7 @@ export const ENGINE_ROUTES: {
 				name: "Storage Viewer",
 				path: "storage-viewer",
 				component: EngineStorageViewerPage,
-				restrict: false,
+				restrict: ["READ_ONLY", "EDIT", "OWNER", "DISCOVERABLE"],
 			},
 			{
 				name: "Access Control",
@@ -358,7 +358,7 @@ export const ENGINE_ROUTES: {
 				name: "Overview",
 				path: "",
 				component: EngineOverviewPage,
-				restrict: false,
+				restrict: ["READ_ONLY", "EDIT", "OWNER", "DISCOVERABLE"],
 			},
 			{
 				name: "Usage",

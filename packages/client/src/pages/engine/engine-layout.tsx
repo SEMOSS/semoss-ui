@@ -99,8 +99,8 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		const permission = getUserEnginePermission.data;
 
 		// get the routes based on permission
-		let filteredTabs = route.specific.filter((t) =>
-			t.restrict ? t.restrict.indexOf(permission) > -1 : true,
+		let filteredTabs = route.specific.filter(
+			(t) => t.restrict.indexOf(permission) > -1,
 		);
 
 		// additional filtering for DATABASE type engines - hide Query/SPARQL tabs based on category
