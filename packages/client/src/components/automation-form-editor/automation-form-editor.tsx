@@ -112,17 +112,19 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 
 	useEffect(() => {
 		Promise.all([
-			monolithStore.runQuery<[AutomationDocument]>(
-				`GetAutomation(project=["${appId}"])`,
-			),
+			monolithStore
+				.runQuery<[AutomationDocument]>(
+					`GetAutomation(project=["${appId}"])`,
+				)
+				.catch(() => null),
 			monolithStore.runQuery(
 				`MyEngines(engineTypes=["DATABASE","MODEL","VECTOR","STORAGE","FUNCTION"], limit=[100]);`,
 			),
 			monolithStore.runQuery(`MyProjects(limit=[100], offset=[0]);`),
 		])
 			.then(([autoRes, engRes, projRes]) => {
-				const doc = autoRes.pixelReturn[0]
-					.output as AutomationDocument | null;
+				const doc = (autoRes?.pixelReturn?.[0]?.output ??
+					null) as AutomationDocument | null;
 				const graph: AutomationGraph = doc?.graph ?? {
 					nodes: [],
 					edges: [],

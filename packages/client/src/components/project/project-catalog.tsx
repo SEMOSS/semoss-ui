@@ -24,7 +24,7 @@ import {
 import { CatalogFilterBox } from "@/components/catalog/catalog-filter-box";
 import { Help } from "@/components/help";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
-import { useRootStore } from "@/hooks";
+import { useRootStore, useSettings } from "@/hooks";
 import { getProjectLabel, isOwnerPermission } from "@/utility/catalog";
 import { NavbarHeader, NavbarLeft } from "../shared";
 import { ProjectGridItem } from "./project-grid-item";
@@ -100,6 +100,11 @@ export const ProjectCatalog = observer(
 	({ type }: ProjectCatalogProps): JSX.Element => {
 		const config = CATALOG_CONFIG[type as keyof typeof CATALOG_CONFIG];
 		const { configStore } = useRootStore();
+		const { adminMode } = useSettings();
+		const pixelFilter =
+			type === "CODE" && adminMode
+				? 'projectType=["CODE", "BLOCKS", "AUTOMATION"]'
+				: config.pixelFilter;
 
 		// get metakeys of the ones we want
 		const metaKeys = configStore.store.config.projectMetaKeys
@@ -148,7 +153,7 @@ export const ProjectCatalog = observer(
 						metaKeysDescription,
 					)}, metaFilters=[${JSON.stringify(
 						metaFilters,
-					)}], filterWord=["${debouncedSearch}"], sort=[{"${sortValue}" : "${sortOrder}"}], ${config.pixelFilter}, onlyFavorites=[true]);`
+					)}], filterWord=["${debouncedSearch}"], sort=[{"${sortValue}" : "${sortOrder}"}], ${pixelFilter}, onlyFavorites=[true]);`
 				: "",
 			{
 				data: [],
@@ -171,7 +176,7 @@ export const ProjectCatalog = observer(
 					metaKeysDescription,
 				)}, metaFilters=[${JSON.stringify(
 					metaFilters,
-				)}], filterWord=["${debouncedSearch}"], sort=[{"${sortValue}" : "${sortOrder}"}], ${config.pixelFilter}, limit=[${limit}], offset=[${offset}]);`;
+				)}], filterWord=["${debouncedSearch}"], sort=[{"${sortValue}" : "${sortOrder}"}], ${pixelFilter}, limit=[${limit}], offset=[${offset}]);`;
 			},
 			(response) => {
 				// if its less than the limit, we know its the end

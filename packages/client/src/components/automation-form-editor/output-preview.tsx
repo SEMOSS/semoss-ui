@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight, ClipboardCopy } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "@semoss/ui/next";
 
 export function OutputPreview({
@@ -14,6 +14,8 @@ export function OutputPreview({
 	nodeType?: string;
 }) {
 	const preview = value.length > 180 ? `${value.slice(0, 180)}…` : value;
+	// "table" | "json" — only active when renderMode === "table"
+	const [tableView, setTableView] = useState<"table" | "json">("table");
 
 	const parsed = useMemo(() => {
 		try {
@@ -133,43 +135,81 @@ export function OutputPreview({
 		if (renderMode === "table" && Array.isArray(parsed)) {
 			const keys = Object.keys(parsed[0] as Record<string, unknown>);
 			return (
-				<div className="max-h-64 overflow-auto pr-8">
-					<table className="w-full border-collapse text-[11px]">
-						<thead>
-							<tr className="border-b bg-muted/50">
-								{keys.map((key) => (
-									<th
-										key={key}
-										className="px-2 py-1.5 text-left font-semibold text-foreground"
-									>
-										{key}
-									</th>
-								))}
-							</tr>
-						</thead>
-						<tbody>
-							{(parsed as Record<string, unknown>[]).map(
-								(row, i) => (
-									// biome-ignore lint/suspicious/noArrayIndexKey: rows are rebuilt whole from a single run's output each render, never reordered
-									<tr
-										key={i}
-										className="border-muted/50 border-b last:border-0"
-									>
+				<div className="space-y-1.5 pr-8">
+					{/* View toggle: Table / JSON */}
+					<div className="flex items-center gap-1">
+						<button
+							type="button"
+							onClick={() => setTableView("table")}
+							className={`rounded border px-2 py-0.5 text-[10px] transition-colors ${
+								tableView === "table"
+									? "border-primary bg-primary/10 font-medium text-primary"
+									: "border-border text-muted-foreground hover:border-primary/40"
+							}`}
+						>
+							Table
+						</button>
+						<button
+							type="button"
+							onClick={() => setTableView("json")}
+							className={`rounded border px-2 py-0.5 text-[10px] transition-colors ${
+								tableView === "json"
+									? "border-primary bg-primary/10 font-medium text-primary"
+									: "border-border text-muted-foreground hover:border-primary/40"
+							}`}
+						>
+							JSON
+						</button>
+						<span className="ml-auto text-[10px] text-muted-foreground/60">
+							{(parsed as unknown[]).length} row
+							{(parsed as unknown[]).length !== 1 ? "s" : ""}
+						</span>
+					</div>
+
+					{tableView === "table" ? (
+						<div className="max-h-64 overflow-auto rounded border">
+							<table className="w-full border-collapse text-[11px]">
+								<thead>
+									<tr className="border-b bg-muted/50">
 										{keys.map((key) => (
-											<td
+											<th
 												key={key}
-												className="px-2 py-1 text-foreground"
+												className="px-2 py-1.5 text-left font-semibold text-foreground"
 											>
-												{row[key] != null
-													? String(row[key])
-													: "—"}
-											</td>
+												{key}
+											</th>
 										))}
 									</tr>
-								),
-							)}
-						</tbody>
-					</table>
+								</thead>
+								<tbody>
+									{(parsed as Record<string, unknown>[]).map(
+										(row, i) => (
+											// biome-ignore lint/suspicious/noArrayIndexKey: rows are rebuilt whole from a single run's output each render, never reordered
+											<tr
+												key={i}
+												className="border-muted/50 border-b last:border-0"
+											>
+												{keys.map((key) => (
+													<td
+														key={key}
+														className="px-2 py-1 text-foreground"
+													>
+														{row[key] != null
+															? String(row[key])
+															: "—"}
+													</td>
+												))}
+											</tr>
+										),
+									)}
+								</tbody>
+							</table>
+						</div>
+					) : (
+						<pre className="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded border bg-muted/20 p-2 text-[11px] text-foreground">
+							{JSON.stringify(parsed, null, 2)}
+						</pre>
+					)}
 				</div>
 			);
 		}

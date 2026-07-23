@@ -7,7 +7,7 @@ export type AutomationNodeType =
 	| "vector-engine"
 	| "model-engine"
 	| "function-engine"
-	| "custom-pixel"
+	| "app-engine"
 	| "wait";
 
 // ─── node configs (one per node type) ────────────────────────────────────────
@@ -357,12 +357,12 @@ export const NODE_TYPE_META: NodeTypeMeta[] = [
 		defaultOutputVar: "fn_out",
 	},
 	{
-		type: "custom-pixel",
-		label: "Custom Pixel",
+		type: "app-engine",
+		label: "App Engine",
 		description:
 			"Write any SEMOSS pixel expression. Optionally run inside an app context.",
 		tooltip: // biome-ignore lint/suspicious/noTemplateCurlyInString: ${} in tooltip shows example syntax for users
-			'Execute any arbitrary SEMOSS Pixel. Supports ${variable} template substitution from upstream node outputs.\n\nOptionally set an App/Project ID to load that app\'s insight context before running — useful when your pixel calls reactors registered inside a specific app.\n\nExamples:\n• SyncEsrMetadata(apiUrl="${config.MIRTH_API_URL}")\n• RunCustomReport(project=["my-app-id"], params=["${db_out}"])\n• Any pixel you\'d run in the SEMOSS console',
+			'Execute any arbitrary SEMOSS Pixel inside an app engine context. Supports ${variable} template substitution from upstream node outputs.\n\nOptionally set an App/Project ID to load that app\'s insight context before running — useful when your pixel calls reactors registered inside a specific app.\n\nExamples:\n• SyncEsrMetadata(apiUrl="${config.MIRTH_API_URL}")\n• RunCustomReport(project=["my-app-id"], params=["${db_out}"])\n• Any pixel you\'d run in the SEMOSS console',
 		category: "engine",
 		defaultConfig: { pixel: "", appId: "" } as CustomPixelConfig,
 		defaultOutputVar: "pixel_out",

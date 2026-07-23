@@ -10,7 +10,7 @@ import type {
 	VectorEngineConfig,
 	WaitConfig,
 } from "@/pages/automation/automation.types";
-import { CustomPixelForm } from "./forms/custom-pixel-form";
+import { AppEngineForm } from "./forms/app-engine-form";
 import { DatabaseEngineForm } from "./forms/database-engine-form";
 import { FunctionEngineForm } from "./forms/function-engine-form";
 import { ModelEngineForm } from "./forms/model-engine-form";
@@ -85,9 +85,9 @@ export function StepForm({
 					onChange={update}
 				/>
 			);
-		case "custom-pixel":
+		case "app-engine":
 			return (
-				<CustomPixelForm
+				<AppEngineForm
 					config={step.config as CustomPixelConfig}
 					projects={projects}
 					upstreamVars={upstreamVars}

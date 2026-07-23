@@ -76,9 +76,9 @@ export const STEP_TYPES: {
 		color: "text-cyan-600",
 	},
 	{
-		type: "custom-pixel",
-		label: "Custom Pixel",
-		description: "Write and execute raw Pixel code",
+		type: "app-engine",
+		label: "App Engine",
+		description: "Run a Pixel expression inside an app engine context",
 		icon: Code2,
 		color: "text-slate-600",
 	},
@@ -134,7 +134,7 @@ export const TYPE_DISPLAY_META: Record<
 	"vector-engine": STEP_TYPES[2],
 	"storage-engine": STEP_TYPES[3],
 	"function-engine": STEP_TYPES[4],
-	"custom-pixel": STEP_TYPES[5],
+	"app-engine": STEP_TYPES[5],
 	wait: STEP_TYPES[6],
 };
 
@@ -169,7 +169,7 @@ export function getStatusClasses(status: string) {
 }
 
 export function getDisplayMeta(type: AutomationNodeType | string) {
-	return TYPE_DISPLAY_META[type] ?? TYPE_DISPLAY_META["custom-pixel"];
+	return TYPE_DISPLAY_META[type] ?? TYPE_DISPLAY_META["app-engine"];
 }
 
 export function getStepHeaderLabel(step: AutomationNode) {

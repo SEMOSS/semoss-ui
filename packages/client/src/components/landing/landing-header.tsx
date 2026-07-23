@@ -10,8 +10,10 @@ import {
 import Appagent from "@/assets/img/Appagent.svg";
 import Appcode from "@/assets/img/Appcode.svg";
 import Appdragdrop from "@/assets/img/Appdragdrop.svg";
+import Appworkflow from "@/assets/img/Appworkflow.svg";
+import { useRootStore, useSettings } from "@/hooks";
 
-const CARDS = [
+const BASE_CARDS = [
 	{
 		title: "Develop in code",
 		description:
@@ -19,6 +21,7 @@ const CARDS = [
 		image: Appcode,
 		type: "code",
 		testId: "new-app-code-btn",
+		adminOnly: false,
 	},
 	{
 		title: "Drag and drop blocks",
@@ -27,6 +30,7 @@ const CARDS = [
 		image: Appdragdrop,
 		type: "blocks",
 		testId: "new-app-drag-btn",
+		adminOnly: false,
 	},
 	{
 		title: "Construct an agent",
@@ -35,14 +39,16 @@ const CARDS = [
 		image: Appagent,
 		type: "agent",
 		testId: "new-app-agent-btn",
+		adminOnly: false,
 	},
 	{
 		title: "Build an automation",
 		description:
 			"Connect engines, models, and data sources into repeatable automated workflows. Trigger them manually, on a schedule, or via webhook.",
-		image: Appagent,
+		image: Appworkflow,
 		type: "automation",
 		testId: "new-app-automation-btn",
+		adminOnly: true,
 	},
 ] as const;
 
@@ -54,8 +60,11 @@ interface LandingHeaderProps {
 export const LandingHeader: React.FC<LandingHeaderProps> = ({
 	onCreate = () => null,
 }) => {
+	const { adminMode } = useSettings();
+	const CARDS = BASE_CARDS.filter((card) => !card.adminOnly || adminMode);
+
 	return (
-		<div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3">
+		<div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
 			{CARDS.map((card) => (
 				<Card
 					key={card.title}

@@ -25,7 +25,7 @@ export const TRANSFORM_ENABLED: Set<AutomationNodeType> = new Set([
 	"vector-engine",
 	"storage-engine",
 	"function-engine",
-	"custom-pixel",
+	"app-engine",
 ]);
 
 export function formatDurationMs(
@@ -266,7 +266,7 @@ const NODE_DESCRIPTORS: Record<AutomationNodeType, NodeDescriptor> = {
 		},
 	},
 
-	"custom-pixel": {
+	"app-engine": {
 		buildPixel(node) {
 			const c = node.config as unknown as Record<string, unknown>;
 			const str = (v: unknown, fallback = "") =>

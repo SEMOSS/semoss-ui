@@ -37,7 +37,7 @@ export function NodeResultList({
 		<div className="space-y-3">
 			{results.map((result, index) => {
 				const step = stepMap.get(result.NODE_ID);
-				const meta = getDisplayMeta(step?.type ?? "custom-pixel");
+				const meta = getDisplayMeta(step?.type ?? "app-engine");
 				const Icon = meta.icon;
 				const isExpanded = expandedNodes.has(result.NODE_ID);
 

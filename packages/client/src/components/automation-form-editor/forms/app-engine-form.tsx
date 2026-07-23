@@ -14,17 +14,17 @@ import type {
 	ProjectOption,
 } from "@/pages/automation/automation.types";
 
-interface CustomPixelStepFormProps {
+interface AppEngineStepFormProps {
 	step: AutomationNode;
 	upstreamVars: string[];
 	onUpdate: (step: AutomationNode) => void;
 }
 
-export function CustomPixelStepForm({
+export function AppEngineStepForm({
 	step,
 	upstreamVars,
 	onUpdate,
-}: CustomPixelStepFormProps) {
+}: AppEngineStepFormProps) {
 	const c = step.config as unknown as Record<string, unknown>;
 	const varHint =
 		upstreamVars.length > 0
@@ -58,7 +58,7 @@ export function CustomPixelStepForm({
 	);
 }
 
-export function CustomPixelForm({
+export function AppEngineForm({
 	config,
 	projects,
 	upstreamVars,

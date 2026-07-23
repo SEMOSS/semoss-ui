@@ -124,6 +124,10 @@ export const LandingPage: React.FC = observer(() => {
 								});
 							} else if (type === "agent") {
 								navigate("/app/new/prompt");
+							} else if (type === "automation") {
+								setNewAppOptions({
+									type: "automation",
+								});
 							}
 						}}
 					/>
