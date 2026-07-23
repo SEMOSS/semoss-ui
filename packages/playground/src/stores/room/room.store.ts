@@ -1305,16 +1305,10 @@ export class RoomStore {
 	 * Compact the messages in the room
 	 */
 	compactMessages = async () => {
-		// Find the last response message in the chain
-		let cur: AbstractMessageStore | null = this.tail;
-		while (cur !== null) {
-			if (cur instanceof ResponseMessageStore) break;
-			cur = cur.parent;
-		}
+		// Compact into the last real response in the chain.
+		const curResponse = this.latestResponseMessage;
 
-		if (!cur) throw new Error();
-
-		const curResponse = cur as ResponseMessageStore;
+		if (!curResponse) throw new Error("No response message to compact");
 
 		if (curResponse.hasTools) {
 			throw new Error(
@@ -1344,7 +1338,7 @@ export class RoomStore {
 			const response = await this.runRoomPixel<
 				(SummaryResponse | ToolPruneResponse)[][]
 			>(
-				`CompactRoomMessages(roomId=${JSON.stringify(this.roomId)}, parentMessageId=${JSON.stringify(cur.id)});`,
+				`CompactRoomMessages(roomId=${JSON.stringify(this.roomId)}, parentMessageId=${JSON.stringify(curResponse.id)});`,
 				true,
 			);
 
