@@ -1,9 +1,10 @@
-import { Shell } from "lucide-react";
+import { Database, Shell, Wrench } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
 import {
 	ChatProvider,
 	ChatRoomsProvider,
+	type MCPConfig,
 	useChatContext,
 	useChatRoomsContext,
 } from "@semoss/chat";
@@ -58,6 +59,11 @@ const skin = {
 		"--primary-foreground": "rgba(255, 255, 255, 1)",
 	} as CSSProperties,
 };
+
+const HARD_CODED_TOOLS: MCPConfig[] = [
+	{ type: "VECTOR", id: "kb-1", name: "Claims Knowledge Base" },
+	{ type: "FUNCTION", id: "tool-1", name: "LighthouseBenefitsClaims" },
+];
 
 function ChatDemoInner({
 	viewMode,
@@ -332,6 +338,87 @@ function SelectionChatDemo({ engineId }: { engineId: string }) {
 	);
 }
 
+function HardCodedToolsChatInner() {
+	const { isTyping, mcp, sendMessage, setMcp } = useChatContext();
+
+	useEffect(() => {
+		void setMcp(HARD_CODED_TOOLS);
+	}, [setMcp]);
+
+	return (
+		<div className="flex h-full min-h-0 flex-col">
+			<div className="border-border border-b px-5 py-4">
+				<h3 className="font-semibold text-base">Claims assistant</h3>
+				<div className="mt-3 flex flex-wrap gap-2">
+					{mcp.map((tool) => {
+						const Icon = tool.type === "VECTOR" ? Database : Wrench;
+						return (
+							<div
+								key={`${tool.type}:${tool.id}`}
+								className="flex items-center gap-2 rounded-md border border-border bg-card px-2.5 py-1.5 text-xs"
+							>
+								<Icon className="size-3.5 text-primary" />
+								<span>{tool.name}</span>
+							</div>
+						);
+					})}
+				</div>
+			</div>
+
+			<div className="flex min-h-0 flex-1 flex-col gap-3 p-4">
+				<MessageList
+					className="min-h-0 flex-1"
+					emptyState={
+						<p className="text-muted-foreground text-sm">
+							Ask about a claim to let the assistant use its fixed
+							knowledge and claims tools.
+						</p>
+					}
+					renderMessage={(message, helpers) => (
+						<MessageBubble
+							message={message}
+							onRate={
+								message.role === "assistant"
+									? helpers.onRate
+									: undefined
+							}
+							onDownload={
+								message.role === "assistant"
+									? helpers.onDownload
+									: undefined
+							}
+						/>
+					)}
+				/>
+				<ChatInput
+					onSubmit={sendMessage}
+					disabled={isTyping}
+					isGenerating={isTyping}
+					placeholder="Ask about claim CLM-1042"
+				/>
+			</div>
+		</div>
+	);
+}
+
+function HardCodedToolsChat({ engineId }: { engineId: string }) {
+	return (
+		<ChatProvider
+			options={{
+				engineId,
+				defaultRoomSettings: {
+					instructions:
+						"Use the attached claims knowledge and claims function tools whenever they are relevant. Do not invent claim details.",
+				},
+				toolAutoExecutionLimit: 3,
+			}}
+			isActive={false}
+		>
+			<HardCodedToolsChatInner />
+		</ChatProvider>
+	);
+}
+
 export const ChatDemoDoc = () => {
 	const { engine } = useEngineConnect();
 
@@ -353,8 +440,7 @@ export const ChatDemoDoc = () => {
 							</p>
 						</div>
 						<ChatRoomsProvider>
-							<SelectionChatButton label="Send selection to chat" />
-							<ChatDemoBridge engineId={engine.engineId} />
+							<SelectionChatDemo engineId={engine.engineId} />
 						</ChatRoomsProvider>
 					</div>
 
@@ -393,6 +479,27 @@ export const ChatDemoDoc = () => {
 									// 		}
 									// 	/>
 									// )}
+								/>
+							</div>
+						</div>
+					</div>
+
+					<div className="flex flex-col gap-3">
+						<div>
+							<h2 className="font-semibold text-lg">
+								Hardcoded Tools
+							</h2>
+							<p className="text-muted-foreground text-sm">
+								A dedicated chat with a fixed knowledge source
+								and claims tool attached in code.
+							</p>
+						</div>
+						<div className={skin.stageClassName} style={skin.vars}>
+							<div
+								className={`${skin.panelClassName} overflow-hidden`}
+							>
+								<HardCodedToolsChat
+									engineId={engine.engineId}
 								/>
 							</div>
 						</div>

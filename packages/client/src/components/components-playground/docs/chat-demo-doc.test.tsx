@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
 	activeRoomId: null as string | null,
 	mountedEngines: [] as string[],
 	sendMessage: vi.fn(),
+	setMcp: vi.fn(),
 }));
 
 vi.mock("@semoss/chat", async () => {
@@ -29,7 +30,7 @@ vi.mock("@semoss/chat", async () => {
 			isTyping: false,
 			sendMessage: mocks.sendMessage,
 			mcp: [],
-			setMcp: vi.fn(),
+			setMcp: mocks.setMcp,
 		}),
 		useChatRoomsContext: () => ({
 			pinnedRooms: [],
@@ -53,6 +54,7 @@ vi.mock("@semoss/chat", async () => {
 vi.mock("@semoss/chat/components", () => ({
 	ChatInput: () => <div />,
 	ChatRoomsPage: () => <div data-testid="chat-rooms-page" />,
+	ChatRoomsShell: () => <div data-testid="chat-rooms-shell" />,
 	McpMenuButton: () => <div />,
 	MessageBubble: () => <div />,
 	MessageList: () => <div />,
@@ -85,6 +87,7 @@ beforeEach(() => {
 	mocks.activeRoomId = null;
 	mocks.mountedEngines.length = 0;
 	mocks.sendMessage.mockReset();
+	mocks.setMcp.mockReset();
 });
 
 describe("ChatDemoBridge", () => {
@@ -96,8 +99,23 @@ describe("ChatDemoBridge", () => {
 		});
 		expect(imperativeButton).toBeInTheDocument();
 		expect(
-			screen.getByTestId("chat-provider").contains(imperativeButton),
+			screen
+				.getAllByTestId("chat-provider")
+				.some((provider) => provider.contains(imperativeButton)),
 		).toBe(false);
+	});
+
+	it("configures the tools chat with fixed MCP attachments", () => {
+		render(<ChatDemoDoc />);
+
+		expect(mocks.setMcp).toHaveBeenCalledWith([
+			{ type: "VECTOR", id: "kb-1", name: "Claims Knowledge Base" },
+			{
+				type: "FUNCTION",
+				id: "tool-1",
+				name: "LighthouseBenefitsClaims",
+			},
+		]);
 	});
 
 	it("opens a fresh chat drawer and sends the selected text", () => {
@@ -110,7 +128,11 @@ describe("ChatDemoBridge", () => {
 		expect(
 			screen.getByRole("heading", { name: "New chat from selection" }),
 		).toBeInTheDocument();
-		expect(mocks.mountedEngines).toEqual(["engine-a", "engine-a"]);
+		expect(mocks.mountedEngines).toEqual([
+			"engine-a",
+			"engine-a",
+			"engine-a",
+		]);
 		expect(mocks.sendMessage).toHaveBeenCalledOnce();
 		expect(mocks.sendMessage).toHaveBeenCalledWith("selected text");
 	});
