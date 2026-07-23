@@ -176,6 +176,25 @@ describe("createChatRoomsStore", () => {
 		dispose();
 	});
 
+	it("refetch reloads pinned + first page and is reflected in the store", async () => {
+		listPlaygroundRooms.mockResolvedValue([room({ roomId: "room-1" })]);
+
+		const { store, dispose } = createChatRoomsStore(actions);
+		await flushMicrotasks();
+
+		listPinnedPlaygroundRooms.mockResolvedValue([
+			room({ roomId: "pinned-1", pinned: true }),
+		]);
+		listPlaygroundRooms.mockResolvedValue([room({ roomId: "room-2" })]);
+
+		await store.getState().refetch();
+
+		expect(store.getState().pinnedRooms).toHaveLength(1);
+		expect(store.getState().rooms.map((r) => r.roomId)).toEqual(["room-2"]);
+
+		dispose();
+	});
+
 	it("setSearch updates store.search immediately (debouncing is provider's job)", () => {
 		const { store, dispose } = createChatRoomsStore(actions);
 

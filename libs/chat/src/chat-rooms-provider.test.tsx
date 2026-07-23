@@ -36,6 +36,7 @@ function createHandle() {
 		deleteRoom: vi.fn(async () => undefined),
 		setActiveRoom: vi.fn(),
 		newChat: vi.fn(),
+		refetch: vi.fn(async () => undefined),
 	}));
 	return {
 		store,
