@@ -127,6 +127,11 @@ export const SkillWorkspace: React.FC = observer(() => {
 					tabs={[
 						{ name: "Overview", component: "project-overview" },
 						{
+							name: "MCP",
+							component: "mcp-usage",
+							restrict: ["OWNER", "EDIT", "READ_ONLY"],
+						},
+						{
 							name: "Commits",
 							component: "commits",
 							restrict: ["OWNER", "EDIT"],
