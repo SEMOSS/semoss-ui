@@ -28,6 +28,7 @@ import { cn } from "../lib/utils";
 import type { ChatMessage } from "../types";
 import { ChatInput } from "./chat-input";
 import { FileEditorSidebar } from "./file-editor-sidebar";
+import type { McpOverlayAgent, McpOverlayWorkspaceRef } from "./mcp-overlay";
 import type { ToolResponseDetails } from "./message-bubble";
 import { MessageList, type MessageRenderHelpers } from "./message-list";
 import { RoomSettingsSidebar } from "./room-settings-sidebar";
@@ -70,6 +71,8 @@ export interface ChatPanelProps {
 	className?: string;
 	placeholder?: string;
 	emptyState?: ReactNode;
+	/** Fixed agents users may attach to the conversation. */
+	agents?: readonly McpOverlayAgent[];
 	renderMessage?: (
 		message: ChatMessage,
 		helpers: MessageRenderHelpers,
@@ -90,6 +93,7 @@ export function ChatPanel({
 	className,
 	placeholder,
 	emptyState,
+	agents,
 	renderMessage,
 }: ChatPanelProps) {
 	return (
@@ -98,6 +102,7 @@ export function ChatPanel({
 				className={className}
 				placeholder={placeholder}
 				emptyState={emptyState}
+				agents={agents}
 				renderMessage={renderMessage}
 			/>
 		</ChatProvider>
@@ -108,9 +113,29 @@ function ChatPanelInner({
 	className,
 	placeholder,
 	emptyState,
+	agents,
 	renderMessage,
 }: Omit<ChatPanelProps, "options">) {
-	const { isTyping, mcp, roomId, sendMessage, setMcp } = useChatContext();
+	const {
+		isTyping,
+		mcp,
+		roomId,
+		sendMessage,
+		setMcp,
+		setWorkspaceId,
+		workspaceId,
+	} = useChatContext();
+	const selectedAgent = agents?.find(
+		(agent) => agent.workspace_id === workspaceId,
+	);
+	const workspace: McpOverlayWorkspaceRef | null = workspaceId
+		? { workspace_id: workspaceId, name: selectedAgent?.name }
+		: null;
+	const handleWorkspaceChange = (
+		nextWorkspace: McpOverlayWorkspaceRef | null,
+	) => {
+		void setWorkspaceId(nextWorkspace?.workspace_id ?? null);
+	};
 	const sidebarTabsRef = useRef<HTMLDivElement | null>(null);
 	const [sidebarTabs, setSidebarTabs] = useState<SidebarTab[]>([]);
 	const [activeSidebarTabId, setActiveSidebarTabId] = useState<string | null>(
@@ -249,6 +274,9 @@ function ChatPanelInner({
 		) : (
 			<RoomSettingsSidebar
 				mcp={mcp}
+				agents={agents}
+				workspace={workspace}
+				onWorkspaceChange={handleWorkspaceChange}
 				onMcpChange={(nextMcp) => {
 					void setMcp(nextMcp);
 				}}
@@ -315,6 +343,9 @@ function ChatPanelInner({
 								disabled={isTyping}
 								placeholder={placeholder}
 								mcp={mcp}
+								agents={agents}
+								workspace={workspace}
+								onWorkspaceChange={handleWorkspaceChange}
 								onMcpChange={(nextMcp) => {
 									void setMcp(nextMcp);
 								}}

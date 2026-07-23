@@ -4,6 +4,15 @@ import { describe, expect, it, vi } from "vitest";
 import type { MCPConfig } from "../types";
 import { McpOverlay } from "./mcp-overlay";
 
+vi.mock("@semoss/sdk/react", () => ({
+	useIteratorPixel: () => ({
+		data: [],
+		isLoading: false,
+		hasMore: false,
+		next: vi.fn(),
+	}),
+}));
+
 // MCPSelector calls usePixel/useIteratorPixel internally (real SDK hooks
 // needing a real InsightProvider) — not worth exercising here, same reason
 // EngineSelect's own test mocks the shared EngineSelect rather than rendering
@@ -11,6 +20,9 @@ import { McpOverlay } from "./mcp-overlay";
 // badge counts, save/cancel), not MCPSelector's. splitMcpByType is simple
 // enough to reimplement directly instead of importing the real one.
 vi.mock("@semoss/shared", () => ({
+	AppCatalogAvatar: ({ name }: { name: string }) => (
+		<div>{name.slice(0, 1)}</div>
+	),
 	splitMcpByType: (mcp: MCPConfig[]) => ({
 		knowledge: mcp.filter((m) => m.type === "VECTOR"),
 		toolbox: mcp.filter((m) => m.type !== "VECTOR"),
@@ -148,5 +160,36 @@ describe("McpOverlay", () => {
 
 		expect(onSave).not.toHaveBeenCalled();
 		expect(onOpenChange).toHaveBeenCalledWith(false);
+	});
+
+	it("allows selecting a hardcoded agent", async () => {
+		const user = userEvent.setup();
+		const onSaveWorkspace = vi.fn();
+		render(
+			<McpOverlay
+				open
+				defaultTab="AGENT"
+				agentEditable
+				agents={[
+					{
+						workspace_id: "agent-1",
+						name: "Support Agent",
+						description: "Answers support questions",
+					},
+				]}
+				values={[]}
+				onSave={vi.fn()}
+				onSaveWorkspace={onSaveWorkspace}
+				onOpenChange={vi.fn()}
+			/>,
+		);
+
+		await user.click(screen.getByText("Support Agent"));
+		await user.click(screen.getByRole("button", { name: "Save" }));
+
+		expect(onSaveWorkspace).toHaveBeenCalledWith({
+			workspace_id: "agent-1",
+			name: "Support Agent",
+		});
 	});
 });

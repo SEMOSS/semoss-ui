@@ -2,7 +2,7 @@ import { XIcon } from "lucide-react";
 import { useState } from "react";
 import { Button, ScrollArea } from "@semoss/ui/next";
 import type { Engine, MCPConfig } from "../types";
-import type { McpOverlayWorkspaceRef } from "./mcp-overlay";
+import type { McpOverlayAgent, McpOverlayWorkspaceRef } from "./mcp-overlay";
 import { RoomOptionsForm } from "./room-options-form";
 
 export interface RoomSettingsSidebarProps {
@@ -10,6 +10,9 @@ export interface RoomSettingsSidebarProps {
 	onMcpChange: (mcp: MCPConfig[]) => void;
 	model?: Engine | null;
 	onModelChange?: (model: Engine) => void;
+	agents?: readonly McpOverlayAgent[];
+	workspace?: McpOverlayWorkspaceRef | null;
+	onWorkspaceChange?: (workspace: McpOverlayWorkspaceRef | null) => void;
 	onClose?: () => void;
 	showCloseButton?: boolean;
 }
@@ -23,11 +26,19 @@ export function RoomSettingsSidebar({
 	onMcpChange,
 	model,
 	onModelChange,
+	agents,
+	workspace: controlledWorkspace,
+	onWorkspaceChange,
 	onClose,
 	showCloseButton = true,
 }: RoomSettingsSidebarProps) {
-	const [workspace, setWorkspace] = useState<McpOverlayWorkspaceRef>();
+	const [internalWorkspace, setInternalWorkspace] =
+		useState<McpOverlayWorkspaceRef>();
 	const [instructions, setInstructions] = useState("");
+	const workspace =
+		controlledWorkspace !== undefined
+			? (controlledWorkspace ?? undefined)
+			: internalWorkspace;
 
 	return (
 		<div
@@ -57,6 +68,7 @@ export function RoomSettingsSidebar({
 				<RoomOptionsForm
 					model={model}
 					onModelChange={onModelChange}
+					agents={agents}
 					options={{
 						instructions,
 						mcp,
@@ -66,8 +78,12 @@ export function RoomSettingsSidebar({
 						if (next.instructions !== undefined) {
 							setInstructions(next.instructions);
 						}
-						if (next.workspace !== undefined) {
-							setWorkspace(next.workspace);
+						if ("workspace" in next) {
+							if (onWorkspaceChange) {
+								onWorkspaceChange(next.workspace ?? null);
+							} else {
+								setInternalWorkspace(next.workspace);
+							}
 						}
 						if (next.mcp) {
 							onMcpChange(next.mcp);

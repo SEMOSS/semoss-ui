@@ -246,6 +246,7 @@ export interface ChatSessionState {
 	error: string | null;
 	roomId: string | null;
 	engineId: string;
+	workspaceId: string | null;
 	isLoadingHistory: boolean;
 	mcp: MCPConfig[];
 }
@@ -279,6 +280,7 @@ export class ChatSession {
 			error: null,
 			roomId: options.roomId ?? null,
 			engineId: options.engineId,
+			workspaceId: options.workspaceId ?? null,
 			isLoadingHistory: !!options.roomId,
 			mcp: [],
 		}));
@@ -286,6 +288,7 @@ export class ChatSession {
 		// Bind public methods so they work when destructured.
 		this.start = this.start.bind(this);
 		this.setEngineId = this.setEngineId.bind(this);
+		this.setWorkspaceId = this.setWorkspaceId.bind(this);
 		this.sendMessage = this.sendMessage.bind(this);
 		this.setMcp = this.setMcp.bind(this);
 		this.recordFeedback = this.recordFeedback.bind(this);
@@ -312,6 +315,9 @@ export class ChatSession {
 	}
 	get engineId(): string {
 		return this.store.getState().engineId;
+	}
+	get workspaceId(): string | null {
+		return this.store.getState().workspaceId;
 	}
 	get isLoadingHistory(): boolean {
 		return this.store.getState().isLoadingHistory;
@@ -365,6 +371,28 @@ export class ChatSession {
 		this.setState({ engineId });
 	}
 
+	async setWorkspaceId(workspaceId: string | null): Promise<void> {
+		const previous = this.workspaceId;
+		this.setState({ workspaceId });
+		if (!this.roomId) {
+			return;
+		}
+		try {
+			await updateRoomOptions(this.actions, {
+				roomId: this.roomId,
+				workspaceId: workspaceId ?? undefined,
+				instructions: this.options.defaultRoomSettings?.instructions,
+				temperature: this.options.defaultRoomSettings?.temperature,
+				mcp: this.mcp,
+			});
+		} catch (err) {
+			this.setState({
+				workspaceId: previous,
+				error: this.toFriendlyMessage(err),
+			});
+		}
+	}
+
 	/**
 	 * Attach/detach knowledge sources or toolbox tools for this room —
 	 * updates local state immediately and persists via the real
@@ -384,7 +412,7 @@ export class ChatSession {
 		try {
 			await updateRoomOptions(this.actions, {
 				roomId: this.roomId,
-				workspaceId: this.options.workspaceId,
+				workspaceId: this.workspaceId ?? undefined,
 				instructions: this.options.defaultRoomSettings?.instructions,
 				temperature: this.options.defaultRoomSettings?.temperature,
 				mcp,
@@ -641,7 +669,7 @@ export class ChatSession {
 		}
 		const { roomId } = await createPlaygroundRoom(
 			this.actions,
-			this.options.workspaceId,
+			this.workspaceId ?? undefined,
 		);
 		this.setState({ roomId });
 		return roomId;
@@ -663,7 +691,7 @@ export class ChatSession {
 		}
 		await updateRoomOptions(this.actions, {
 			roomId,
-			workspaceId: this.options.workspaceId,
+			workspaceId: this.workspaceId ?? undefined,
 			instructions: this.options.defaultRoomSettings?.instructions,
 			temperature: this.options.defaultRoomSettings?.temperature,
 			mcp: this.mcp,

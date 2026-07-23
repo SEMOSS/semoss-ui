@@ -49,12 +49,20 @@ export interface McpOverlayWorkspaceRef {
 	name?: string;
 }
 
+export interface McpOverlayAgent extends McpOverlayWorkspaceRef {
+	name: string;
+	description?: string;
+	permission?: "OWNER" | "EDIT" | "READ_ONLY";
+}
+
 function AgentSelector({
 	value,
 	onChange,
+	agents,
 }: {
 	value: McpOverlayWorkspaceRef | null;
 	onChange: (next: McpOverlayWorkspaceRef | null) => void;
+	agents: readonly McpOverlayAgent[];
 }) {
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);
@@ -75,22 +83,51 @@ function AgentSelector({
 		},
 	});
 
-	function selectWorkspace(workspace: App) {
-		const next: McpOverlayWorkspaceRef = {
+	const normalizedSearch = search.trim().toLowerCase();
+	const fixedAgents = agents.filter((agent) =>
+		`${agent.name} ${agent.description ?? ""}`
+			.toLowerCase()
+			.includes(normalizedSearch),
+	);
+	const discoveredAgents: McpOverlayAgent[] = getWorkspaces.data.map(
+		(workspace) => ({
 			workspace_id: workspace.project_id,
 			name: workspace.project_display_name || workspace.project_name,
+			description: workspace.description,
+			permission:
+				workspace.user_permission === 1
+					? "OWNER"
+					: workspace.user_permission === 2
+						? "EDIT"
+						: "READ_ONLY",
+		}),
+	);
+	const fixedAgentIds = new Set(
+		fixedAgents.map((agent) => agent.workspace_id),
+	);
+	const visibleAgents = [
+		...fixedAgents,
+		...discoveredAgents.filter(
+			(agent) => !fixedAgentIds.has(agent.workspace_id),
+		),
+	];
+
+	function selectWorkspace(agent: McpOverlayAgent) {
+		const next: McpOverlayWorkspaceRef = {
+			workspace_id: agent.workspace_id,
+			name: agent.name,
 		};
 		onChange(value?.workspace_id === next.workspace_id ? null : next);
 	}
 
-	function getPermissionLabel(permission: number | undefined) {
-		if (permission === 1) {
+	function getPermissionLabel(permission: McpOverlayAgent["permission"]) {
+		if (permission === "OWNER") {
 			return "Owner";
 		}
-		if (permission === 2) {
+		if (permission === "EDIT") {
 			return "Editor";
 		}
-		return "Read-only";
+		return permission === "READ_ONLY" ? "Read-only" : "";
 	}
 
 	return (
@@ -131,33 +168,30 @@ function AgentSelector({
 				className="min-h-0 w-full flex-1"
 				viewportRef={(element) => setScroll(element)}
 			>
-				{getWorkspaces.isLoading && getWorkspaces.data.length === 0 ? (
+				{getWorkspaces.isLoading && visibleAgents.length === 0 ? (
 					<div className="flex h-64 w-full items-center justify-center">
 						<Spinner />
 					</div>
 				) : null}
-				{!getWorkspaces.isLoading && getWorkspaces.data.length === 0 ? (
+				{!getWorkspaces.isLoading && visibleAgents.length === 0 ? (
 					<div className="flex h-64 w-full items-center justify-center">
 						<Muted>No agents found</Muted>
 					</div>
 				) : null}
-				{getWorkspaces.data.length !== 0 ? (
+				{visibleAgents.length !== 0 ? (
 					<>
-						<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-3">
-							{getWorkspaces.data.map((workspace) => {
+						<div className="grid grid-cols-[repeat(auto-fit,minmax(min(14rem,100%),1fr))] gap-4 p-4">
+							{visibleAgents.map((agent) => {
 								const isSelected =
-									value?.workspace_id ===
-									workspace.project_id;
+									value?.workspace_id === agent.workspace_id;
 								const permissionLabel = getPermissionLabel(
-									workspace.user_permission,
+									agent.permission,
 								);
 
 								return (
 									<Card
-										key={workspace.project_id}
-										onClick={() =>
-											selectWorkspace(workspace)
-										}
+										key={agent.workspace_id}
+										onClick={() => selectWorkspace(agent)}
 										className={cn(
 											"cursor-pointer p-0 transition-colors hover:bg-muted/30",
 											isSelected && "border-primary",
@@ -169,14 +203,14 @@ function AgentSelector({
 													<Tooltip>
 														<TooltipTrigger asChild>
 															<a
-																href={`#/agent/${workspace.project_id}`}
+																href={`#/agent/${agent.workspace_id}`}
 																onClick={(
 																	event,
 																) => {
 																	event.preventDefault();
 																	event.stopPropagation();
 																	window.open(
-																		`#/agent/${workspace.project_id}`,
+																		`#/agent/${agent.workspace_id}`,
 																		"_blank",
 																	);
 																}}
@@ -216,16 +250,12 @@ function AgentSelector({
 
 											<div className="flex items-start gap-2">
 												<AppCatalogAvatar
-													name={
-														workspace.project_display_name ||
-														workspace.project_name
-													}
+													name={agent.name}
 													className="size-10 shrink-0 rounded-md text-sm"
 												/>
 												<div className="flex min-w-0 flex-1 flex-col gap-0.5">
 													<div className="wrap-break-word line-clamp-2 font-medium text-sm leading-tight">
-														{workspace.project_display_name ||
-															workspace.project_name}
+														{agent.name}
 													</div>
 													<div className="flex items-center gap-1.5 text-muted-foreground text-xs">
 														<Bot className="size-3.5 shrink-0" />
@@ -234,9 +264,9 @@ function AgentSelector({
 												</div>
 											</div>
 
-											{workspace.description ? (
+											{agent.description ? (
 												<div className="wrap-break-words line-clamp-4 text-muted-foreground text-xs">
-													{workspace.description}
+													{agent.description}
 												</div>
 											) : (
 												<div
@@ -273,6 +303,8 @@ export interface McpOverlayProps {
 	workspace?: McpOverlayWorkspaceRef | null;
 	/** Enables AGENT tab and workspace selection when true. */
 	agentEditable?: boolean;
+	/** Fixed agents shown before agents discovered from MyProjects. */
+	agents?: readonly McpOverlayAgent[];
 	/** Fired on Save with the combined next list; not fired on Cancel/dismiss. */
 	onSave: (mcp: MCPConfig[]) => void;
 	/** Optional callback fired on Save with the selected workspace/agent. */
@@ -294,6 +326,7 @@ export function McpOverlay({
 	values,
 	workspace,
 	agentEditable = false,
+	agents = [],
 	onSave,
 	onSaveWorkspace,
 	onOpenChange,
@@ -370,6 +403,7 @@ export function McpOverlay({
 							<AgentSelector
 								value={workspaceDraft}
 								onChange={setWorkspaceDraft}
+								agents={agents}
 							/>
 						) : null}
 					</TabsContent>

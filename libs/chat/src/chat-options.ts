@@ -27,6 +27,9 @@ export interface ChatOptions {
 	/** Applied once per room via UpdateRoomOptions before the first ask. */
 	defaultRoomSettings?: ChatDefaultRoomSettings;
 
+	/** Allowed tool list */
+	allowedTools?: string[];
+
 	/**
 	 * Caps how many auto tool-call rounds a single sendMessage() will run
 	 * before giving up, so a misbehaving tool loop can't run forever.
