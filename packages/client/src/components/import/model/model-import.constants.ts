@@ -1369,6 +1369,16 @@ export const IMPORTABLE_MODELS = {
 							default: "true",
 							category: "Settings",
 						},
+						{
+							key: "INIT_MODEL_ENGINE",
+							label: "Init Script",
+							type: "text",
+							required: true,
+							disabled: true,
+							default:
+								"import genai_client;${VAR_NAME} = genai_client.GoogleGenAiEmbedder(model_name = '${MODEL}', region='${GCP_REGION}', project='${PROJECT}', service_account_credentials = ${SERVICE_ACCOUNT_CREDENTIALS})",
+							category: "Settings",
+						},
 					],
 				},
 			],
@@ -3018,6 +3028,44 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			description:
 				"Production-ready image model for fast, high-quality asset generation.",
 			formConfig: withModelTokenLimits(undefined, 32768, 65536),
+		},
+		{
+			name: "gemini-embedding-001",
+			display: "Gemini Embedding 001",
+			icon: "/src/assets/img/GEMINI_COLOR.svg",
+			modelBrand: "GEMINI",
+			embedding: true,
+			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings",
+			description:
+				"Google's unified text embedding model on Vertex AI for semantic search, clustering, and retrieval.",
+		},
+		{
+			name: "text-embedding-005",
+			display: "Text Embedding 005",
+			icon: "/src/assets/img/GEMINI_COLOR.svg",
+			modelBrand: "GEMINI",
+			embedding: true,
+			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings",
+			description:
+				"Vertex AI English text and code embedding model optimized for retrieval and similarity tasks.",
+		},
+		{
+			name: "other-google-gemini-embedding-model",
+			display: "Other Google Embedding Model",
+			icon: "/src/assets/img/GEMINI_COLOR.svg",
+			modelBrand: "GEMINI",
+			embedding: true,
+			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings",
+			description:
+				"Configure any Vertex-hosted Google embedding model by entering a custom model ID.",
+			formConfig: {
+				fieldOverrides: [
+					{
+						key: "MODEL",
+						patch: { default: "", value: "", disabled: false },
+					},
+				],
+			},
 		},
 		{
 			name: "other-google-gemini-model",
