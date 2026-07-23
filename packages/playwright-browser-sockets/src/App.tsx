@@ -103,7 +103,7 @@ export default function App() {
 		loadRecording,
 		replaySingleStep,
 		getRecordedSteps,
-		saveRoomMcpEntry,
+		generateRecordingsMcp,
 	} = useRemoteBrowserSession();
 	const [latestFrame, setLatestFrame] = useState<string | null>(null);
 	const [currentUrl, setCurrentUrl] = useState("");
@@ -200,7 +200,8 @@ export default function App() {
 		getToolStringParameter(toolContext, "fileName");
 	const mcpPlaybackProjectId =
 		getToolStringParameter(toolContext, "project_id") ||
-		getToolStringParameter(toolContext, "projectId");
+		getToolStringParameter(toolContext, "projectId") ||
+		(!toolContext?.roomId ? toolContext?.projectId || "" : "");
 	const effectiveInsightId = getSemossInsightId() || insightId;
 
 	// Frame callback - stable reference so it doesn't re-trigger the socket effect
@@ -490,12 +491,6 @@ export default function App() {
 			}
 			const roomInsightId = getSemossInsightId() || effectiveInsightId;
 
-			if (!toolContext?.roomId) {
-				throw new Error(
-					"Playground room ID is required to resolve a room recording",
-				);
-			}
-
 			const directProject =
 				(mcpPlaybackProjectId &&
 					playback.projects.find(
@@ -509,8 +504,24 @@ export default function App() {
 				.filter(Boolean)
 				.pop();
 
+			if (!toolContext?.roomId) {
+				if (!exactFileName || !directProject) {
+					throw new Error(
+						"Project and recording_file are required for app playback",
+					);
+				}
+				playback.configureResolvedRecording({
+					source: "project",
+					project: directProject,
+					fileName: exactFileName,
+					startUrl: mcpStartUrl || "https://example.com",
+				});
+				setSnackMessage(`Loading app recording ${exactFileName}`);
+				return;
+			}
+
 			if (exactFileName && directProject) {
-				const directRoomPath = `/playwright/${exactFileName}`;
+				const directRoomPath = `/playwright/recordings/${exactFileName}`;
 				for (let attempt = 0; attempt < 2; attempt += 1) {
 					const envelope = await getRoomRecordingEnvelope(
 						roomInsightId,
@@ -1087,6 +1098,9 @@ export default function App() {
 			}
 
 			playback.selectSavedRecording(saveProject, saved.fileName);
+			await generateRecordingsMcp(effectiveInsightId, {
+				projectId: saved.project,
+			});
 			setSaveDialogOpen(false);
 			await closeBrowserSession();
 			browserClosed = true;
@@ -1116,6 +1130,8 @@ export default function App() {
 	}, [
 		closeBrowserSession,
 		defaultRecordingName,
+		effectiveInsightId,
+		generateRecordingsMcp,
 		saveDescription,
 		saveIntent,
 		saveProject,
@@ -1244,17 +1260,15 @@ export default function App() {
 						project: appSaved.project,
 						fileName: appSaved.fileName,
 					};
+					await generateRecordingsMcp(roomBoundInsightId, {
+						projectId: appSaved.project,
+					});
 				}
 
-				// Regenerate mcp/pixel_mcp.json from all room recordings. This is part
-				// of a successful Return to Playground operation, not a best-effort step.
-				await saveRoomMcpEntry(
-					roomBoundInsightId,
-					saved.fileName,
-					enrichedEnvelope,
-					toolContext.roomId,
-					toolContext.projectId,
-				);
+				await generateRecordingsMcp(roomBoundInsightId, {
+					roomId: toolContext.roomId,
+					projectId: toolContext.projectId,
+				});
 
 				// Safely add the __insight__ MCP entry to the room's tool list so the
 				// LLM sees recording-specific tools on the next message (read-modify-write).
@@ -1337,7 +1351,7 @@ export default function App() {
 			isRecording,
 			mcpRecordingNameHint,
 			mcpStartUrl,
-			saveRoomMcpEntry,
+			generateRecordingsMcp,
 			saveRoomRecording,
 			saveRecording,
 			selectedTextContexts,

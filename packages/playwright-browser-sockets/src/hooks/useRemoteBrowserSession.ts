@@ -67,13 +67,10 @@ interface UseRemoteBrowserSessionReturn {
 		paramValues?: Record<string, string>,
 	) => Promise<ReplayStepResult>;
 	getRecordedSteps: () => Promise<RemoteBrowserRecordedStep[]>;
-	/** Calls MakeRoomPlaywrightMCP() to regenerate mcp/pixel_mcp.json from all room recordings. */
-	saveRoomMcpEntry: (
+	/** Regenerates mcp/pixel_mcp.json from all room or project recordings. */
+	generateRecordingsMcp: (
 		insightId: string,
-		fileName: string,
-		envelope: StepsEnvelope,
-		roomId?: string,
-		projectId?: string,
+		target: { roomId?: string; projectId: string },
 	) => Promise<void>;
 }
 
@@ -252,7 +249,7 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 			const normalizedName = fileName.endsWith(".json")
 				? fileName
 				: `${fileName}.json`;
-			const relativePath = `playwright/${normalizedName}`;
+			const relativePath = `playwright/recordings/${normalizedName}`;
 			const content = JSON.stringify(envelope, null, 2);
 
 			setIsSaving(true);
@@ -589,29 +586,28 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 		}
 	}, []);
 
-	/**
-	 * Reads the room's `mcp/pixel_mcp.json` insight asset (if present), merges a
-	 * playback tool entry for the given recording file, then saves it back.  The
-	 * saved format matches the project-level `pixel_mcp.json` read by InternalMCP.
-	 */
-	const saveRoomMcpEntry = useCallback(
+	const generateRecordingsMcp = useCallback(
 		async (
 			insightId: string,
-			_fileName: string,
-			_envelope: StepsEnvelope,
-			roomId?: string,
-			projectId?: string,
+			target: { roomId?: string; projectId: string },
 		): Promise<void> => {
 			if (!insightId) return;
-			const args = [
-				roomId ? `roomId=${JSON.stringify(roomId)}` : "",
-				projectId ? `projectId=${JSON.stringify(projectId)}` : "",
-			].filter(Boolean);
+			const args = target.roomId
+				? [
+						`roomId=${JSON.stringify(target.roomId)}`,
+						target.projectId
+							? `projectId=${JSON.stringify(target.projectId)}`
+							: "",
+					].filter(Boolean)
+				: [`project=${JSON.stringify(target.projectId)}`];
 			const response = await runPixel(
-				`MakeRoomPlaywrightMCP(${args.join(", ")});`,
+				`MakePlaywrightRecordingsMCP(${args.join(", ")});`,
 				insightId,
 			);
-			assertPixelSuccess(response, "Room MCP generation");
+			assertPixelSuccess(
+				response,
+				"Playwright recordings MCP generation",
+			);
 		},
 		[],
 	);
@@ -634,6 +630,6 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 		loadRecording,
 		replaySingleStep,
 		getRecordedSteps,
-		saveRoomMcpEntry,
+		generateRecordingsMcp,
 	};
 }
