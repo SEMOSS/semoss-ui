@@ -25,7 +25,6 @@ import type {
 	StepRunStatus,
 } from "@/pages/automation/automation.types";
 import { NODE_TYPE_META } from "@/pages/automation/automation.types";
-import { buildPixelPreview } from "../automation-workspace/automation-utils";
 import type { AutomationRunData } from "./automation-editor-utils";
 import {
 	formatRunDuration,
@@ -177,55 +176,6 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		}));
 	}, []);
 
-	const handleScheduleActivate = useCallback(
-		async (
-			cron: string,
-			timezone: string,
-			recipe: string,
-		): Promise<string | null> => {
-			const jobName = `auto_${appId}_${Date.now()}`;
-			const pixel = `ScheduleJob(jobGroup=["AUTOMATION_TRIGGERS"], jobName=["${jobName}"], cronExpression=["${cron}"], recipe=["${recipe.replace(/"/g, '\\"')}"], frequency=["cron"], timeZone=["${timezone}"]);`;
-			try {
-				const result = await monolithStore.runQuery(pixel);
-				const output = result.pixelReturn?.[0]?.output as
-					| Record<string, unknown>
-					| undefined;
-				return (output?.["-jobId"] as string) ?? jobName;
-			} catch {
-				return null;
-			}
-		},
-		[appId, monolithStore],
-	);
-
-	const handleScheduleDeactivate = useCallback(
-		async (jobId: string): Promise<void> => {
-			const pixel = `RemoveJobFromDB(jobId=["${jobId}"], jobGroup=["AUTOMATION_TRIGGERS"]);`;
-			try {
-				await monolithStore.runQuery(pixel);
-			} catch {
-				// best-effort
-			}
-		},
-		[monolithStore],
-	);
-
-	const handleGenerateWebhookSecret = useCallback(async (): Promise<
-		string | null
-	> => {
-		try {
-			const result = await monolithStore.runQuery(
-				`GenerateAutomationWebhookSecret(project=["${appId}"]);`,
-			);
-			const output = result.pixelReturn?.[0]?.output as
-				| Record<string, unknown>
-				| undefined;
-			return (output?.secret as string) ?? null;
-		} catch {
-			return null;
-		}
-	}, [appId, monolithStore]);
-
 	const addStep = useCallback(
 		(type: AutomationNodeType) => {
 			const meta = NODE_TYPE_META.find((item) => item.type === type);
@@ -280,13 +230,9 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 	const save = useCallback(async (): Promise<boolean> => {
 		setSaving(true);
 		try {
-			const stepsWithPixel = steps.map((step) => ({
-				...step,
-				builtPixel: buildPixelPreview(step),
-			}));
 			const doc: AutomationDocument = {
 				version: 1,
-				graph: { nodes: stepsWithPixel, edges: [] },
+				graph: { nodes: steps, edges: [] },
 			};
 			const json = encodeURIComponent(JSON.stringify(doc));
 			await monolithStore.runQuery(
@@ -638,7 +584,6 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 										isExpanded={
 											expandedId === triggerStep.id
 										}
-										enginesByType={enginesByType}
 										appId={appId}
 										onToggle={() =>
 											setExpandedId((previous) =>
@@ -646,16 +591,6 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 													? null
 													: triggerStep.id,
 											)
-										}
-										onUpdate={updateStep}
-										onScheduleActivate={
-											handleScheduleActivate
-										}
-										onScheduleDeactivate={
-											handleScheduleDeactivate
-										}
-										onGenerateWebhookSecret={
-											handleGenerateWebhookSecret
 										}
 									/>
 								))}

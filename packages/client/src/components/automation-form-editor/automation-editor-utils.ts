@@ -3,7 +3,6 @@ import {
 	Archive,
 	Brain,
 	Clock,
-	Code2,
 	Database,
 	type LucideIcon,
 	Play,
@@ -76,13 +75,6 @@ export const STEP_TYPES: {
 		color: "text-cyan-600",
 	},
 	{
-		type: "app-engine",
-		label: "App Engine",
-		description: "Run a Pixel expression inside an app engine context",
-		icon: Code2,
-		color: "text-slate-600",
-	},
-	{
 		type: "wait",
 		label: "Wait / Delay",
 		description: "Pause execution for a fixed number of seconds",
@@ -134,8 +126,7 @@ export const TYPE_DISPLAY_META: Record<
 	"vector-engine": STEP_TYPES[2],
 	"storage-engine": STEP_TYPES[3],
 	"function-engine": STEP_TYPES[4],
-	"app-engine": STEP_TYPES[5],
-	wait: STEP_TYPES[6],
+	wait: STEP_TYPES[5],
 };
 
 export function newStepId(type: AutomationNodeType) {
@@ -169,7 +160,7 @@ export function getStatusClasses(status: string) {
 }
 
 export function getDisplayMeta(type: AutomationNodeType | string) {
-	return TYPE_DISPLAY_META[type] ?? TYPE_DISPLAY_META["app-engine"];
+	return TYPE_DISPLAY_META[type] ?? TYPE_DISPLAY_META["database-engine"];
 }
 
 export function getStepHeaderLabel(step: AutomationNode) {

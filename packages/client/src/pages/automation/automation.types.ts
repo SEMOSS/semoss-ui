@@ -7,36 +7,14 @@ export type AutomationNodeType =
 	| "vector-engine"
 	| "model-engine"
 	| "function-engine"
-	| "app-engine"
 	| "wait";
 
 // ─── node configs (one per node type) ────────────────────────────────────────
 
-export type TriggerMode =
-	| "manual"
-	| "schedule"
-	| "webhook"
-	| "storage-poll"
-	| "db-poll";
+export type TriggerMode = "manual";
 
 export interface TriggerConfig {
 	mode: TriggerMode;
-	// schedule
-	cronExpression: string;
-	quartzJobId?: string;
-	cronTimezone?: string;
-	// webhook
-	webhookSecret?: string;
-	// storage poll
-	storagePollEngineId?: string;
-	storagePollPath?: string;
-	storagePollIntervalCron?: string;
-	storagePollJobId?: string;
-	// db poll
-	dbPollEngineId?: string;
-	dbPollQuery?: string;
-	dbPollIntervalCron?: string;
-	dbPollJobId?: string;
 }
 
 export interface DatabaseEngineConfig {
@@ -94,11 +72,6 @@ export interface FunctionEngineConfig {
 	params: string;
 }
 
-export interface CustomPixelConfig {
-	pixel: string;
-	appId?: string;
-}
-
 export interface WaitConfig {
 	seconds: string;
 }
@@ -110,7 +83,6 @@ export type NodeConfig =
 	| VectorEngineConfig
 	| ModelEngineConfig
 	| FunctionEngineConfig
-	| CustomPixelConfig
 	| WaitConfig;
 
 // ─── graph primitives ─────────────────────────────────────────────────────────
@@ -129,7 +101,6 @@ export interface AutomationNode {
 	outputVar: string;
 	config: NodeConfig;
 	outputTransform?: OutputTransform;
-	builtPixel?: string;
 }
 
 export interface AutomationEdge {
@@ -172,15 +143,7 @@ export type NodeStatus =
 	| "FAILED"
 	| "SKIPPED";
 
-export type AutomationTriggerType =
-	| "MANUAL"
-	| "SCHEDULED"
-	| "WEBHOOK"
-	| "STORAGE_POLL"
-	| "DB_POLL"
-	| "SUB_WORKFLOW"
-	| "RESUME"
-	| string;
+export type AutomationTriggerType = "MANUAL" | string;
 
 export interface AutomationRunSummary {
 	RUN_ID: string;
@@ -203,7 +166,6 @@ export interface AutomationNodeResult {
 	DURATION_MS: number;
 	OUTPUT_PREVIEW: string | null;
 	ERROR_MESSAGE: string | null;
-	ROW_COUNT?: number;
 }
 
 export interface AutomationRunDetail extends AutomationRunSummary {
@@ -252,14 +214,12 @@ export const NODE_TYPE_META: NodeTypeMeta[] = [
 	{
 		type: "trigger",
 		label: "Trigger",
-		description: "Starts the automation manually or on a schedule.",
+		description: "Starts the automation manually via UI or pixel call.",
 		tooltip:
-			"Every automation begins with exactly one Trigger node. Choose Manual to run it on demand, or Schedule to use a Quartz cron expression.\n\nExamples:\n• Nightly report at 6 AM: 0 0 6 * * ?\n• Every weekday at 9 AM: 0 0 9 ? * MON-FRI",
+			'Every automation begins with exactly one Trigger node. Run it on demand via the UI or call TriggerAutomation(project=["<appId>"]) from any pixel.',
 		category: "trigger",
 		defaultConfig: {
 			mode: "manual",
-			cronExpression: "0 0 6 * * ?",
-			cronTimezone: "UTC",
 		} as TriggerConfig,
 		defaultOutputVar: "trigger_out",
 	},
@@ -355,17 +315,6 @@ export const NODE_TYPE_META: NodeTypeMeta[] = [
 			params: "",
 		} as FunctionEngineConfig,
 		defaultOutputVar: "fn_out",
-	},
-	{
-		type: "app-engine",
-		label: "App Engine",
-		description:
-			"Write any SEMOSS pixel expression. Optionally run inside an app context.",
-		tooltip: // biome-ignore lint/suspicious/noTemplateCurlyInString: ${} in tooltip shows example syntax for users
-			'Execute any arbitrary SEMOSS Pixel inside an app engine context. Supports ${variable} template substitution from upstream node outputs.\n\nOptionally set an App/Project ID to load that app\'s insight context before running — useful when your pixel calls reactors registered inside a specific app.\n\nExamples:\n• SyncEsrMetadata(apiUrl="${config.MIRTH_API_URL}")\n• RunCustomReport(project=["my-app-id"], params=["${db_out}"])\n• Any pixel you\'d run in the SEMOSS console',
-		category: "engine",
-		defaultConfig: { pixel: "", appId: "" } as CustomPixelConfig,
-		defaultOutputVar: "pixel_out",
 	},
 	{
 		type: "wait",
