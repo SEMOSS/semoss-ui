@@ -538,6 +538,84 @@ describe("ChatInput", () => {
 		expect(screen.getByPlaceholderText("Message...")).toHaveValue("");
 	});
 
+	it("includes all playground default slash commands when handlers are provided", async () => {
+		const user = userEvent.setup();
+		const onOpenMcpOverlay = vi.fn();
+		const onCompact = vi.fn();
+		const onAttachDocument = vi.fn();
+		const onOpenSettings = vi.fn();
+
+		render(
+			<ChatInput
+				onSubmit={vi.fn()}
+				useSlashCommands
+				defaultSlashCommandActions={{
+					onOpenMcpOverlay,
+					onCompact,
+					onAttachDocument,
+					onOpenSettings,
+				}}
+			/>,
+		);
+
+		const textarea = screen.getByPlaceholderText("Message...");
+		await user.type(textarea, "/");
+
+		expect(screen.getByText("/knowledge")).toBeInTheDocument();
+		expect(screen.getByText("/toolbox")).toBeInTheDocument();
+		expect(screen.getByText("/agent")).toBeInTheDocument();
+		expect(screen.getByText("/compact")).toBeInTheDocument();
+		expect(screen.getByText("/document")).toBeInTheDocument();
+		expect(screen.getByText("/settings")).toBeInTheDocument();
+
+		expect(screen.queryByText("/mcp")).not.toBeInTheDocument();
+		expect(screen.queryByText("/workspace")).not.toBeInTheDocument();
+		expect(screen.queryByText("/file")).not.toBeInTheDocument();
+		expect(screen.queryByText("/room-options")).not.toBeInTheDocument();
+
+		await user.clear(textarea);
+		await user.type(textarea, "/m");
+		expect(screen.getByText("/mcp")).toBeInTheDocument();
+
+		await user.clear(textarea);
+		await user.type(textarea, "/w");
+		expect(screen.getByText("/workspace")).toBeInTheDocument();
+
+		await user.clear(textarea);
+		await user.type(textarea, "/f");
+		expect(screen.getByText("/file")).toBeInTheDocument();
+
+		await user.clear(textarea);
+		await user.type(textarea, "/r");
+		expect(screen.getByText("/room-options")).toBeInTheDocument();
+	});
+
+	it("merges partial defaultSlashCommandActions with built-in defaults", async () => {
+		const user = userEvent.setup();
+		const onCompact = vi.fn();
+
+		render(
+			<ChatInput
+				onSubmit={vi.fn()}
+				useSlashCommands
+				defaultSlashCommandActions={{
+					onCompact,
+				}}
+			/>,
+		);
+
+		const textarea = screen.getByPlaceholderText("Message...");
+		await user.type(textarea, "/");
+
+		expect(screen.getByText("/knowledge")).toBeInTheDocument();
+		expect(screen.getByText("/toolbox")).toBeInTheDocument();
+		expect(screen.getByText("/agent")).toBeInTheDocument();
+		expect(screen.getByText("/settings")).toBeInTheDocument();
+
+		await user.click(screen.getByText("/compact"));
+		expect(onCompact).toHaveBeenCalledTimes(1);
+	});
+
 	it("merges custom slashCommands with defaults by id and appends new ids", async () => {
 		const user = userEvent.setup();
 		const onOpenMcpOverlay = vi.fn();
@@ -618,7 +696,16 @@ describe("ChatInput", () => {
 		const textarea = screen.getByPlaceholderText("Message...");
 		await user.type(textarea, "/");
 
+		expect(screen.getByText("/knowledge")).toBeInTheDocument();
+		expect(screen.getByText("/toolbox")).toBeInTheDocument();
+		expect(screen.getByText("/agent")).toBeInTheDocument();
 		expect(screen.getByText("/compact")).toBeInTheDocument();
 		expect(screen.getByText("/document")).toBeInTheDocument();
+		expect(screen.getByText("/settings")).toBeInTheDocument();
+
+		expect(screen.queryByText("/mcp")).not.toBeInTheDocument();
+		expect(screen.queryByText("/workspace")).not.toBeInTheDocument();
+		expect(screen.queryByText("/file")).not.toBeInTheDocument();
+		expect(screen.queryByText("/room-options")).not.toBeInTheDocument();
 	});
 });

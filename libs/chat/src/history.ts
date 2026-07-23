@@ -3,6 +3,7 @@ import { toolCallDisplayName } from "./lib/utils";
 import type {
 	ChatMessage,
 	ChatMessagePart,
+	PixelMessageMediaPart,
 	PixelMessageTextPart,
 	PixelMessageThinkingPart,
 	PixelMessageToolCallPart,
@@ -43,6 +44,10 @@ function isToolResultPart(
 	return part.type === "TOOL_RESULT" && "toolResult" in part;
 }
 
+function isMediaPart(part: RawMessagePart): part is PixelMessageMediaPart {
+	return part.type === "MEDIA" && "mediaInfo" in part;
+}
+
 function toChatMessagePart(
 	messageId: string,
 	index: number,
@@ -60,6 +65,30 @@ function toChatMessagePart(
 			type: "thinking",
 			id: `${messageId}-part-${index}`,
 			text: part.thinking,
+		};
+	}
+	if (isMediaPart(part)) {
+		return {
+			type: "media",
+			id: `${messageId}-part-${index}`,
+			mediaInfo: {
+				fileName: part.mediaInfo.fileName,
+				...(part.mediaInfo.fileLocation
+					? { fileLocation: part.mediaInfo.fileLocation }
+					: {}),
+				...(part.mediaInfo.base64Data
+					? { base64Data: part.mediaInfo.base64Data }
+					: {}),
+				...(part.mediaInfo.mimeType
+					? { mimeType: part.mediaInfo.mimeType }
+					: {}),
+				...(part.mediaInfo.fileFormat
+					? { fileFormat: part.mediaInfo.fileFormat }
+					: {}),
+				...(part.mediaInfo.mediaInputType
+					? { mediaInputType: part.mediaInfo.mediaInputType }
+					: {}),
+			},
 		};
 	}
 	if (isToolCallPart(part)) {
@@ -89,8 +118,7 @@ function toChatMessagePart(
 				part.toolResult.toolStatus === "success" ? "success" : "error",
 		};
 	}
-	// MEDIA and anything unrecognized — no ChatMessagePart variant for
-	// media yet (pre-existing scope cut, not new here).
+	// Anything unrecognized.
 	return null;
 }
 

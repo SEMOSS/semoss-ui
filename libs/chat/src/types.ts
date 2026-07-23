@@ -114,6 +114,19 @@ export interface ChatThinkingPart {
 	text: string;
 }
 
+export interface ChatMediaPart {
+	type: "media";
+	id: string;
+	mediaInfo: {
+		fileName: string;
+		fileLocation?: string;
+		base64Data?: string;
+		mimeType?: string;
+		fileFormat?: string;
+		mediaInputType?: string;
+	};
+}
+
 export interface ChatToolCallPart {
 	type: "tool_call";
 	id: string;
@@ -140,6 +153,7 @@ export interface ChatToolResultPart {
 export type ChatMessagePart =
 	| ChatTextPart
 	| ChatThinkingPart
+	| ChatMediaPart
 	| ChatToolCallPart
 	| ChatToolResultPart;
 
@@ -223,7 +237,10 @@ export interface PixelMessageOtherPart {
 
 export type ResponsePart =
 	| PixelMessageTextPart
+	| PixelMessageThinkingPart
+	| PixelMessageMediaPart
 	| PixelMessageToolCallPart
+	| PixelMessageToolResultPart
 	| PixelMessageOtherPart;
 
 export interface ResponseMessage {
@@ -255,9 +272,22 @@ export interface PixelMessageToolResultPart {
 	};
 }
 
+export interface PixelMessageMediaPart {
+	type: "MEDIA";
+	mediaInfo: {
+		fileName: string;
+		fileLocation?: string;
+		base64Data?: string;
+		mimeType?: string;
+		fileFormat?: string;
+		mediaInputType?: string;
+	};
+}
+
 export type RawMessagePart =
 	| PixelMessageTextPart
 	| PixelMessageThinkingPart
+	| PixelMessageMediaPart
 	| PixelMessageToolCallPart
 	| PixelMessageToolResultPart
 	| PixelMessageOtherPart;

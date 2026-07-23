@@ -1,5 +1,7 @@
+import { PanelLeftIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Button } from "@semoss/ui/next";
 import type { ChatDefaultRoomSettings } from "../chat-options";
 import { ChatRoomsProvider, useChatRoomsContext } from "../chat-rooms-provider";
 import { cn } from "../lib/utils";
@@ -24,6 +26,8 @@ export interface ChatRoomsShellProps {
 	isActive?: boolean;
 	/** Toggle sidebar visibility for chat view. */
 	sidebarOpen?: boolean;
+	/** Sidebar placement for chat view. */
+	sidebarSide?: "left" | "right";
 	className?: string;
 	sidebarClassName?: string;
 	chatClassName?: string;
@@ -61,6 +65,7 @@ function ChatRoomsShellInner({
 	gracefulErrors,
 	isActive,
 	sidebarOpen = true,
+	sidebarSide = "left",
 	className,
 	sidebarClassName,
 	chatClassName,
@@ -73,6 +78,7 @@ function ChatRoomsShellInner({
 	onAllChats,
 }: ChatRoomsShellProps) {
 	const [viewMode, setViewMode] = useState<"chat" | "allChats">("chat");
+	const [isSidebarOpen, setIsSidebarOpen] = useState(sidebarOpen);
 	const {
 		pinnedRooms,
 		rooms,
@@ -113,6 +119,10 @@ function ChatRoomsShellInner({
 		? `room:${activeRoomId}`
 		: `new:${engineId}`;
 
+	useEffect(() => {
+		setIsSidebarOpen(sidebarOpen);
+	}, [sidebarOpen]);
+
 	function handleSelectRoom(roomId: string) {
 		setActiveRoom(roomId);
 		setViewMode("chat");
@@ -130,52 +140,139 @@ function ChatRoomsShellInner({
 		onAllChats?.();
 	}
 
+	function toggleSidebar() {
+		setIsSidebarOpen((open) => !open);
+	}
+
+	const showSidebar = viewMode === "chat" && isSidebarOpen;
+
 	return (
 		<div
 			data-slot="chat-rooms-shell"
-			className={cn("flex h-full min-h-0 w-full", className)}
+			className={cn(
+				"flex h-full max-h-full min-h-0 w-full overflow-hidden",
+				className,
+			)}
 		>
-			{sidebarOpen && viewMode === "chat" ? (
-				<RoomSidebar
-					className={cn("min-h-0 border-none", sidebarClassName)}
-					pinnedRooms={pinnedRooms}
-					rooms={rooms}
-					activeRoomId={activeRoomId}
-					search={search}
-					onSearchChange={setSearch}
-					isLoading={isLoading}
-					isLoadingMore={isLoadingMore}
-					hasMore={hasMore}
-					onLoadMore={loadMore}
-					onSelectRoom={handleSelectRoom}
-					onNewChat={handleNewChat}
-					onAllChats={handleAllChats}
-					onRenameRoom={renameRoom}
-					onPinRoom={pinRoom}
-					onDeleteRoom={deleteRoom}
-				/>
+			{sidebarSide === "left" && viewMode === "chat" ? (
+				<div
+					className={cn(
+						"h-full min-h-0 overflow-hidden transition-[width] duration-200 ease-linear",
+						showSidebar ? "w-64" : "w-0",
+					)}
+				>
+					<div
+						className={cn(
+							"h-full min-h-0 w-64 shrink-0 transition-all duration-200 ease-linear",
+							showSidebar
+								? "translate-x-0 opacity-100"
+								: "-translate-x-2 pointer-events-none opacity-0",
+						)}
+					>
+						<RoomSidebar
+							className={cn(
+								"min-h-0 w-64 border-none",
+								sidebarClassName,
+							)}
+							pinnedRooms={pinnedRooms}
+							rooms={rooms}
+							activeRoomId={activeRoomId}
+							search={search}
+							onSearchChange={setSearch}
+							isLoading={isLoading}
+							isLoadingMore={isLoadingMore}
+							hasMore={hasMore}
+							onLoadMore={loadMore}
+							onSelectRoom={handleSelectRoom}
+							onNewChat={handleNewChat}
+							onAllChats={handleAllChats}
+							onRenameRoom={renameRoom}
+							onPinRoom={pinRoom}
+							onDeleteRoom={deleteRoom}
+						/>
+					</div>
+				</div>
 			) : null}
 
-			<main className="min-h-0 flex-1">
-				{viewMode === "allChats" ? (
+			<main className="flex max-h-full min-h-0 flex-1 flex-col overflow-hidden">
+				{viewMode === "chat" ? (
+					<div className="relative flex h-full max-h-full min-h-0 flex-col overflow-hidden">
+						<div className="absolute inset-x-0 top-0 z-20 flex h-11 items-center gap-2 border-border border-b bg-background px-2 py-1.5">
+							<Button
+								variant="ghost"
+								size="icon"
+								onClick={toggleSidebar}
+								aria-label={
+									isSidebarOpen
+										? "Hide sidebar"
+										: "Show sidebar"
+								}
+							>
+								<PanelLeftIcon className="size-4" />
+							</Button>
+						</div>
+						<ChatPanel
+							key={sessionKey}
+							options={chatOptions}
+							isActive={isActive}
+							className={cn(
+								"min-h-0 flex-1 px-4 pt-12",
+								chatClassName,
+							)}
+							placeholder={chatPlaceholder}
+							emptyState={emptyState}
+							renderMessage={renderMessage}
+						/>
+					</div>
+				) : (
 					<ChatRoomsPage
 						className={cn("h-full p-4", allChatsClassName)}
 						onSelectRoom={handleSelectRoom}
 						onNewChat={handleNewChat}
 						onAllChats={handleAllChats}
 					/>
-				) : (
-					<ChatPanel
-						key={sessionKey}
-						options={chatOptions}
-						isActive={isActive}
-						className={cn("h-full", chatClassName)}
-						placeholder={chatPlaceholder}
-						emptyState={emptyState}
-						renderMessage={renderMessage}
-					/>
 				)}
 			</main>
+
+			{sidebarSide === "right" && viewMode === "chat" ? (
+				<div
+					className={cn(
+						"h-full min-h-0 overflow-hidden transition-[width] duration-200 ease-linear",
+						showSidebar ? "w-64" : "w-0",
+					)}
+				>
+					<div
+						className={cn(
+							"h-full min-h-0 w-64 shrink-0 transition-all duration-200 ease-linear",
+							showSidebar
+								? "translate-x-0 opacity-100"
+								: "pointer-events-none translate-x-2 opacity-0",
+						)}
+					>
+						<RoomSidebar
+							className={cn(
+								"min-h-0 w-64 border-none",
+								sidebarClassName,
+							)}
+							pinnedRooms={pinnedRooms}
+							rooms={rooms}
+							activeRoomId={activeRoomId}
+							search={search}
+							onSearchChange={setSearch}
+							isLoading={isLoading}
+							isLoadingMore={isLoadingMore}
+							hasMore={hasMore}
+							onLoadMore={loadMore}
+							onSelectRoom={handleSelectRoom}
+							onNewChat={handleNewChat}
+							onAllChats={handleAllChats}
+							onRenameRoom={renameRoom}
+							onPinRoom={pinRoom}
+							onDeleteRoom={deleteRoom}
+						/>
+					</div>
+				</div>
+			) : null}
 		</div>
 	);
 }

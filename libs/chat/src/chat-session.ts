@@ -13,11 +13,14 @@ import {
 	runMcpTool,
 	submitFeedback,
 	updateRoomOptions,
+	uploadPlaygroundFiles,
 } from "./transport/pixel-calls";
 import type {
 	ChatMessage,
+	ChatMessagePart,
 	ChatToolCallPart,
 	MCPConfig,
+	PixelMessageMediaPart,
 	PixelMessageTextPart,
 	PixelMessageToolCallPart,
 	ResponseMessage,
@@ -58,6 +61,69 @@ function resolveResponseText(response: ResponseMessage): string | undefined {
 		response.parts?.find(isTextPart)?.text ??
 		response.content
 	);
+}
+
+function isMediaPart(part: { type: string }): part is PixelMessageMediaPart {
+	return part.type === "MEDIA";
+}
+
+function createMediaInfoFromFile(file: File): {
+	fileName: string;
+	fileFormat?: string;
+	mimeType?: string;
+	mediaInputType: string;
+} {
+	const extension = file.name.split(".").pop()?.toLowerCase();
+	return {
+		fileName: file.name,
+		...(extension ? { fileFormat: extension } : {}),
+		...(file.type ? { mimeType: file.type } : {}),
+		mediaInputType: "FILE",
+	};
+}
+
+function appendResponseMediaParts(
+	message: ChatMessage,
+	response: ResponseMessage,
+): void {
+	for (const part of response.parts ?? []) {
+		if (!isMediaPart(part)) {
+			continue;
+		}
+		const alreadyExists = message.parts.some(
+			(existing) =>
+				existing.type === "media" &&
+				existing.mediaInfo.fileName === part.mediaInfo.fileName &&
+				existing.mediaInfo.fileLocation ===
+					part.mediaInfo.fileLocation &&
+				existing.mediaInfo.base64Data === part.mediaInfo.base64Data,
+		);
+		if (alreadyExists) {
+			continue;
+		}
+		message.parts.push({
+			type: "media",
+			id: nextPartId("media"),
+			mediaInfo: {
+				fileName: part.mediaInfo.fileName,
+				...(part.mediaInfo.fileLocation
+					? { fileLocation: part.mediaInfo.fileLocation }
+					: {}),
+				...(part.mediaInfo.base64Data
+					? { base64Data: part.mediaInfo.base64Data }
+					: {}),
+				...(part.mediaInfo.mimeType
+					? { mimeType: part.mediaInfo.mimeType }
+					: {}),
+				...(part.mediaInfo.fileFormat
+					? { fileFormat: part.mediaInfo.fileFormat }
+					: {}),
+				...(part.mediaInfo.mediaInputType
+					? { mediaInputType: part.mediaInfo.mediaInputType }
+					: {}),
+			},
+		});
+	}
 }
 
 /**
@@ -399,26 +465,36 @@ export class ChatSession {
 		});
 	}
 
-	async sendMessage(text: string): Promise<void> {
+	async sendMessage(text: string, files: File[] = []): Promise<void> {
 		const trimmed = text.trim();
-		if (!trimmed) {
+		if (!trimmed && files.length === 0) {
 			return;
 		}
 
 		const assistantMessageId = nextMessageId("assistant");
+		const userMessageId = nextMessageId("user");
+		const userParts: ChatMessagePart[] = [];
+		if (trimmed) {
+			userParts.push({
+				type: "text",
+				id: nextPartId("text"),
+				text: trimmed,
+			});
+		}
+		for (const file of files) {
+			userParts.push({
+				type: "media",
+				id: nextPartId("media"),
+				mediaInfo: createMediaInfoFromFile(file),
+			});
+		}
 
 		const messages = [
 			...this.messages,
 			{
-				id: nextMessageId("user"),
+				id: userMessageId,
 				role: "user" as const,
-				parts: [
-					{
-						type: "text" as const,
-						id: nextPartId("text"),
-						text: trimmed,
-					},
-				],
+				parts: userParts,
 				status: "complete" as const,
 				timestamp: new Date(),
 			},
@@ -448,6 +524,40 @@ export class ChatSession {
 		try {
 			const roomId = await this.ensureRoom();
 			await this.syncRoomOptionsOnce(roomId);
+			let image: string[] | undefined;
+			if (files.length > 0) {
+				const uploaded = await uploadPlaygroundFiles(
+					this.insightId,
+					files,
+				);
+				image = uploaded.map((file) => file.fileLocation);
+				if (uploaded.length > 0) {
+					const message = this.getMessage(userMessageId);
+					if (message) {
+						const locationsByName = new Map<string, string[]>();
+						for (const file of uploaded) {
+							const queue =
+								locationsByName.get(file.fileName) ?? [];
+							queue.push(file.fileLocation);
+							locationsByName.set(file.fileName, queue);
+						}
+						for (const part of message.parts) {
+							if (part.type !== "media") {
+								continue;
+							}
+							const queue =
+								locationsByName.get(part.mediaInfo.fileName) ??
+								[];
+							const nextLocation = queue.shift();
+							if (nextLocation) {
+								part.mediaInfo.fileLocation = nextLocation;
+							}
+							locationsByName.set(part.mediaInfo.fileName, queue);
+						}
+						this.setState({ messages: [...this.messages] });
+					}
+				}
+			}
 
 			let response = await askPlayground(
 				this.insightId,
@@ -455,6 +565,7 @@ export class ChatSession {
 					engineId: this.engineId,
 					roomId,
 					command: trimmed,
+					image,
 					temperature: this.options.defaultRoomSettings?.temperature,
 					parentMessageId: this.parentMessageId,
 				},
@@ -487,6 +598,7 @@ export class ChatSession {
 			if (message) {
 				this.parentMessageId =
 					response.messageId ?? this.parentMessageId;
+				appendResponseMediaParts(message, response);
 				const hasTextPart = message.parts.some(
 					(part) => part.type === "text",
 				);

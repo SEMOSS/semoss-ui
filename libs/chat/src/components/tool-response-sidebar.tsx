@@ -237,7 +237,8 @@ function McpToolFrame({ tool, projectId, resourceUri }: McpToolFrameProps) {
 
 export interface ToolResponseSidebarProps {
 	tool: ToolResponseDetails;
-	onClose: () => void;
+	onClose?: () => void;
+	showCloseButton?: boolean;
 }
 
 /**
@@ -247,6 +248,7 @@ export interface ToolResponseSidebarProps {
 export function ToolResponseSidebar({
 	tool,
 	onClose,
+	showCloseButton = true,
 }: ToolResponseSidebarProps) {
 	const projectId = tool._meta?.SMSS_PROJECT_ID;
 	const getMcpTools = useProjectToolDefinition(projectId);
@@ -352,15 +354,17 @@ export function ToolResponseSidebar({
 					</div>
 				</div>
 				<Badge variant="outline">{tool.status}</Badge>
-				<Button
-					type="button"
-					variant="ghost"
-					size="icon-sm"
-					onClick={onClose}
-					aria-label="Close tool response sidebar"
-				>
-					<XIcon className="size-4" />
-				</Button>
+				{showCloseButton && onClose ? (
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon-sm"
+						onClick={onClose}
+						aria-label="Close tool response sidebar"
+					>
+						<XIcon className="size-4" />
+					</Button>
+				) : null}
 			</div>
 			{canRenderMcpFrame && projectId ? (
 				<div className="min-h-0 flex-1 overflow-hidden">

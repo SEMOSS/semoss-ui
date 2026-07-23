@@ -1,0 +1,5 @@
+@import "../../ui/src/styles/globals.css";
+@import "../../shared/src/styles/globals.css";
+@import "../../shared/src/components/flex-layout/flexlayout.css";
+
+@source "./**/*.{ts,tsx}";

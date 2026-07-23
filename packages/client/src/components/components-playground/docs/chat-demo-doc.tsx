@@ -10,6 +10,7 @@ import {
 import {
 	ChatInput,
 	ChatRoomsPage,
+	ChatRoomsShell,
 	McpMenuButton,
 	MessageBubble,
 	MessageList,
@@ -275,10 +276,63 @@ export const ChatDemoDoc = () => {
 			description="A live end-to-end demo of the @semoss/chat components. Highlight text anywhere on this page to send it through the active chat's imperative API."
 		>
 			{engine ? (
-				<ChatRoomsProvider>
-					<SelectionChatButton label="Send selection to chat" />
-					<ChatDemoBridge engineId={engine.engineId} />
-				</ChatRoomsProvider>
+				<div className="flex flex-col gap-8">
+					<div className="flex flex-col gap-3">
+						<div>
+							<h2 className="font-semibold text-lg">
+								Custom Composition
+							</h2>
+							<p className="text-muted-foreground text-sm">
+								Manually composed with ChatProvider,
+								RoomSidebar, MessageList, and ChatInput.
+							</p>
+						</div>
+						<ChatRoomsProvider>
+							<SelectionChatButton label="Send selection to chat" />
+							<ChatDemoBridge engineId={engine.engineId} />
+						</ChatRoomsProvider>
+					</div>
+
+					<div className="flex flex-col gap-3">
+						<div>
+							<h2 className="font-semibold text-lg">
+								ChatRoomsShell
+							</h2>
+							<p className="text-muted-foreground text-sm">
+								Built-in room shell with collapsible sidebar and
+								All Chats view switching.
+							</p>
+						</div>
+						<div className={skin.stageClassName} style={skin.vars}>
+							<div
+								className={`${skin.panelClassName} overflow-hidden`}
+							>
+								<ChatRoomsShell
+									engineId={engine.engineId}
+									className="h-full w-full"
+									chatClassName="h-full"
+									allChatsClassName="h-full"
+									chatPlaceholder="Type a message"
+									// renderMessage={(message, helpers) => (
+									// 	<MessageBubble
+									// 		message={message}
+									// 		onRate={
+									// 			message.role === "assistant"
+									// 				? helpers.onRate
+									// 				: undefined
+									// 		}
+									// 		onDownload={
+									// 			message.role === "assistant"
+									// 				? helpers.onDownload
+									// 				: undefined
+									// 		}
+									// 	/>
+									// )}
+								/>
+							</div>
+						</div>
+					</div>
+				</div>
 			) : (
 				<p className="text-muted-foreground text-sm">
 					Select an engine above to start chatting.

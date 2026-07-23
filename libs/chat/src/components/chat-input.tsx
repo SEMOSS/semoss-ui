@@ -1,9 +1,12 @@
 import {
 	BookOpenIcon,
+	BotIcon,
 	ChevronsDownUpIcon,
+	HammerIcon,
 	MicIcon,
 	PaperclipIcon,
 	SendIcon,
+	Settings2Icon,
 	XIcon,
 } from "lucide-react";
 import {
@@ -16,6 +19,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { createPortal } from "react-dom";
 import {
 	Button,
 	Command,
@@ -23,6 +27,12 @@ import {
 	CommandGroup,
 	CommandItem,
 	CommandList,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+	ScrollArea,
 	Spinner,
 	Tooltip,
 	TooltipContent,
@@ -30,11 +40,18 @@ import {
 } from "@semoss/ui/next";
 import { FileDragProvider, useFileDrag } from "../contexts/file-drag-context";
 import { cn } from "../lib/utils";
+import type { Engine, MCPConfig } from "../types";
 import { FileDragOverlay } from "./file-drag-overlay";
+import {
+	McpOverlay,
+	type McpOverlayOpenMode,
+	type McpOverlayWorkspaceRef,
+} from "./mcp-overlay";
 import {
 	PromptLibraryDialog,
 	type PromptLibraryItem,
 } from "./prompt-library-dialog";
+import { RoomOptionsForm } from "./room-options-form";
 
 export interface ChatInputSlashCommand {
 	/** Stable identifier used for filtering and callbacks (matches playground). */
@@ -88,6 +105,51 @@ export function createDefaultSlashCommands(
 ): ChatInputSlashCommand[] {
 	const commands: ChatInputSlashCommand[] = [];
 
+	if (actions.onOpenMcpOverlay) {
+		commands.push(
+			{
+				id: "knowledge",
+				label: "/knowledge",
+				description: "Add knowledge sources to this conversation",
+				icon: BookOpenIcon,
+				noChip: true,
+				onExecute: () => actions.onOpenMcpOverlay?.("KNOWLEDGE"),
+			},
+			{
+				id: "toolbox",
+				label: "/toolbox",
+				description: "Add toolboxes to this conversation",
+				icon: HammerIcon,
+				noChip: true,
+				onExecute: () => actions.onOpenMcpOverlay?.("TOOLBOX"),
+			},
+			{
+				id: "mcp",
+				label: "/mcp",
+				icon: HammerIcon,
+				hiddenInMenu: true,
+				noChip: true,
+				onExecute: () => actions.onOpenMcpOverlay?.("TOOLBOX"),
+			},
+			{
+				id: "agent",
+				label: "/agent",
+				description: "Select an agent for this conversation",
+				icon: BotIcon,
+				noChip: true,
+				onExecute: () => actions.onOpenMcpOverlay?.("AGENT"),
+			},
+			{
+				id: "workspace",
+				label: "/workspace",
+				icon: BotIcon,
+				hiddenInMenu: true,
+				noChip: true,
+				onExecute: () => actions.onOpenMcpOverlay?.("AGENT"),
+			},
+		);
+	}
+
 	if (actions.onCompact) {
 		commands.push({
 			id: "compact",
@@ -117,6 +179,27 @@ export function createDefaultSlashCommands(
 				hiddenInMenu: true,
 				noChip: true,
 				onExecute: actions.onAttachDocument,
+			},
+		);
+	}
+
+	if (actions.onOpenSettings) {
+		commands.push(
+			{
+				id: "settings",
+				label: "/settings",
+				description: "Open room configuration",
+				icon: Settings2Icon,
+				noChip: true,
+				onExecute: actions.onOpenSettings,
+			},
+			{
+				id: "room-options",
+				label: "/room-options",
+				icon: Settings2Icon,
+				hiddenInMenu: true,
+				noChip: true,
+				onExecute: actions.onOpenSettings,
 			},
 		);
 	}
@@ -252,8 +335,56 @@ function getTextareaCaretPosition(textarea: HTMLTextAreaElement): {
 	return { left, top, lineHeight };
 }
 
+interface SlashMenuPosition {
+	top: number;
+	bottom: number;
+	left: number;
+}
+
+function SlashMenuPortal({
+	menuPosition,
+	onClose,
+	children,
+}: {
+	menuPosition: SlashMenuPosition;
+	onClose: () => void;
+	children: ReactNode;
+}) {
+	const ref = useRef<HTMLDivElement>(null);
+	const onCloseRef = useRef(onClose);
+	onCloseRef.current = onClose;
+
+	useEffect(() => {
+		const handler = (event: PointerEvent) => {
+			if (!ref.current?.contains(event.target as Node)) {
+				onCloseRef.current();
+			}
+		};
+		document.addEventListener("pointerdown", handler, true);
+		return () => document.removeEventListener("pointerdown", handler, true);
+	}, []);
+
+	return createPortal(
+		<div
+			ref={ref}
+			style={{
+				position: "fixed",
+				...(window.innerHeight - menuPosition.bottom < 300
+					? { bottom: window.innerHeight - menuPosition.top + 4 }
+					: { top: menuPosition.bottom + 4 }),
+				left: menuPosition.left,
+				zIndex: 50,
+			}}
+			className="w-64 overflow-hidden rounded-md border border-border bg-popover shadow-md"
+		>
+			{children}
+		</div>,
+		document.body,
+	);
+}
+
 export interface ChatInputProps {
-	onSubmit: (text: string) => void;
+	onSubmit: (text: string, files?: File[]) => void;
 	/** Enables built-in slash command workflow. */
 	useSlashCommands?: boolean;
 	disabled?: boolean;
@@ -309,6 +440,25 @@ export interface ChatInputProps {
 	predefinedPrompts?: PromptLibraryItem[];
 	/** Disables prompt selection while the list is being refreshed. */
 	isPromptLibraryLoading?: boolean;
+	/** Optional MCP list used by the fallback slash command overlay behavior. */
+	mcp?: MCPConfig[];
+	/** Fired when the fallback MCP overlay saves updates. */
+	onMcpChange?: (mcp: MCPConfig[]) => void;
+	/** Fallback MCP overlay presentation mode. */
+	mcpOverlayOpenMode?: McpOverlayOpenMode;
+	/** Optional selected workspace/agent for MCP overlay's agent tab. */
+	workspace?: McpOverlayWorkspaceRef | null;
+	/** Fired when workspace/agent selection changes in MCP overlay. */
+	onWorkspaceChange?: (workspace: McpOverlayWorkspaceRef | null) => void;
+	/** Optional room settings consumed by built-in settings dialog fallback. */
+	roomSettings?: {
+		instructions?: string;
+	};
+	/** Fired when room settings are saved from the built-in settings dialog. */
+	onRoomSettingsChange?: (settings: { instructions?: string }) => void;
+	/** Optional model shown in the playground-style settings page. */
+	model?: Engine | null;
+	onModelChange?: (model: Engine) => void;
 	/**
 	 * Optional handler for prompt-library selection. When omitted,
 	 * selecting a prompt inserts its context into the composer.
@@ -377,6 +527,15 @@ function ChatInputInner({
 	trailingActions,
 	predefinedPrompts = [],
 	isPromptLibraryLoading = false,
+	mcp,
+	onMcpChange,
+	mcpOverlayOpenMode = "side",
+	workspace,
+	onWorkspaceChange,
+	roomSettings,
+	onRoomSettingsChange,
+	model,
+	onModelChange,
 	onPromptLibrarySelect,
 	slashCommands,
 	onSlashCommandSelect,
@@ -409,14 +568,21 @@ function ChatInputInner({
 	const [canListen, setCanListen] = useState(false);
 	const [isListening, setIsListening] = useState(false);
 	const [isPromptLibraryOpen, setIsPromptLibraryOpen] = useState(false);
+	const [internalMcp, setInternalMcp] = useState<MCPConfig[]>([]);
+	const [mcpOverlayTab, setMcpOverlayTab] = useState<
+		"AGENT" | "KNOWLEDGE" | "TOOLBOX" | null
+	>(null);
+	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+	const [internalWorkspace, setInternalWorkspace] =
+		useState<McpOverlayWorkspaceRef | null>(null);
+	const [internalRoomSettings, setInternalRoomSettings] = useState<{
+		instructions?: string;
+	}>({});
 	const [isSlashMenuOpen, setIsSlashMenuOpen] = useState(false);
 	const [slashQuery, setSlashQuery] = useState("");
 	const [selectedSlashIndex, setSelectedSlashIndex] = useState(0);
-	const [typedMenuPosition, setTypedMenuPosition] = useState<{
-		left: number;
-		top: number;
-		openUpward: boolean;
-	} | null>(null);
+	const [typedMenuPosition, setTypedMenuPosition] =
+		useState<SlashMenuPosition | null>(null);
 	const formRef = useRef<HTMLFormElement | null>(null);
 	const recognitionRef = useRef<SpeechRecognition | null>(null);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -437,19 +603,56 @@ function ChatInputInner({
 		setShouldStayOpen(true);
 	}, [setShouldStayOpen]);
 
+	const effectiveMcp = mcp ?? internalMcp;
+	const effectiveWorkspace = workspace ?? internalWorkspace;
+	const effectiveRoomSettings = roomSettings ?? internalRoomSettings;
+
+	const handleSaveMcp = useCallback(
+		(nextMcp: MCPConfig[]) => {
+			if (onMcpChange) {
+				onMcpChange(nextMcp);
+				return;
+			}
+			setInternalMcp(nextMcp);
+		},
+		[onMcpChange],
+	);
+
+	const handleSaveWorkspace = useCallback(
+		(nextWorkspace: McpOverlayWorkspaceRef | null) => {
+			if (onWorkspaceChange) {
+				onWorkspaceChange(nextWorkspace);
+				return;
+			}
+			setInternalWorkspace(nextWorkspace);
+		},
+		[onWorkspaceChange],
+	);
+
+	const handleOpenMcpOverlay = useCallback((tab: ChatInputMcpTab) => {
+		setMcpOverlayTab(tab);
+	}, []);
+
+	const handleOpenSettings = useCallback(() => {
+		setIsSettingsOpen(true);
+	}, []);
+
 	const builtInDefaultSlashActions: Partial<ChatInputDefaultSlashCommandActions> =
 		{
+			onOpenMcpOverlay: handleOpenMcpOverlay,
 			onCompact: handleCompact,
 			onAttachDocument: handleAttachDocument,
+			onOpenSettings: handleOpenSettings,
+		};
+	const resolvedDefaultSlashActions: Partial<ChatInputDefaultSlashCommandActions> =
+		{
+			...builtInDefaultSlashActions,
+			...defaultSlashCommandActions,
 		};
 
 	const defaultSlashCommands =
 		useSlashCommands && !disableDefaultSlashCommands
-			? createDefaultSlashCommands(
-					defaultSlashCommandActions
-						? defaultSlashCommandActions
-						: builtInDefaultSlashActions,
-				)
+			? createDefaultSlashCommands(resolvedDefaultSlashActions)
 			: [];
 	const effectiveDefaultSlashCommands = markDisabledDefaultSlashCommands(
 		defaultSlashCommands,
@@ -519,52 +722,36 @@ function ChatInputInner({
 		if ((!trimmed && files.length === 0) || disabled) {
 			return;
 		}
-		const attachmentNote = files.length
-			? `Attached files: ${files.map((file) => file.name).join(", ")}`
-			: "";
-		const message = [trimmed, attachmentNote].filter(Boolean).join("\n\n");
-		onSubmit(message);
+		onSubmit(trimmed, [...files]);
 		setValue("");
 		clearFiles();
 		setShouldStayOpen(false);
 	}
 
 	const updateTypedSlashMenuPosition = useCallback(() => {
-		if (!textareaRef.current || !formRef.current) {
+		if (!textareaRef.current) {
 			setTypedMenuPosition(null);
 			return;
 		}
 
 		const caret = getTextareaCaretPosition(textareaRef.current);
 		const textareaRect = textareaRef.current.getBoundingClientRect();
-		const formRect = formRef.current.getBoundingClientRect();
 
-		const menuWidth = 288;
-		const estimatedMenuHeight = 280;
-		const menuGap = 6;
+		const menuWidth = 256;
 		const caretViewportTop = textareaRect.top + caret.top;
 		const caretViewportBottom = caretViewportTop + caret.lineHeight;
-		const spaceBelow = window.innerHeight - caretViewportBottom;
-		const spaceAbove = caretViewportTop;
-		const openUpward =
-			spaceBelow < estimatedMenuHeight + menuGap &&
-			spaceAbove > estimatedMenuHeight + menuGap;
-		const viewportTop = openUpward
-			? caretViewportTop - estimatedMenuHeight - menuGap
-			: caretViewportBottom + menuGap;
-		const top = Math.max(8, viewportTop - formRect.top);
 		const left = Math.max(
 			8,
 			Math.min(
-				textareaRect.left - formRect.left + caret.left,
-				formRect.width - menuWidth - 8,
+				textareaRect.left + caret.left,
+				window.innerWidth - menuWidth - 8,
 			),
 		);
 
 		setTypedMenuPosition({
+			top: caretViewportTop,
+			bottom: caretViewportBottom,
 			left,
-			top,
-			openUpward,
 		});
 	}, []);
 
@@ -747,6 +934,13 @@ function ChatInputInner({
 		setTypedMenuPosition(null);
 	}
 
+	const closeSlashMenu = useCallback(() => {
+		setIsSlashMenuOpen(false);
+		setSlashQuery("");
+		setSelectedSlashIndex(0);
+		setTypedMenuPosition(null);
+	}, []);
+
 	return (
 		<form
 			ref={(node) => {
@@ -806,15 +1000,9 @@ function ChatInputInner({
 				</div>
 			)}
 			{isSlashMenuOpen && typedMenuPosition && (
-				<div
-					className="absolute z-50 w-72 overflow-hidden rounded-md border border-border bg-popover shadow-md"
-					style={{
-						left: typedMenuPosition.left,
-						top: typedMenuPosition.top,
-					}}
-					data-open-direction={
-						typedMenuPosition.openUpward ? "up" : "down"
-					}
+				<SlashMenuPortal
+					menuPosition={typedMenuPosition}
+					onClose={closeSlashMenu}
 				>
 					<Command
 						shouldFilter={false}
@@ -880,7 +1068,7 @@ function ChatInputInner({
 							)}
 						</CommandList>
 					</Command>
-				</div>
+				</SlashMenuPortal>
 			)}
 			<div className="flex items-center justify-end gap-2 bg-card p-2">
 				{trailingActions}
@@ -961,6 +1149,68 @@ function ChatInputInner({
 				isLoading={isPromptLibraryLoading}
 				onSelectPrompt={handlePromptLibrarySelect}
 			/>
+			<McpOverlay
+				open={mcpOverlayTab !== null}
+				defaultTab={mcpOverlayTab ?? "KNOWLEDGE"}
+				openMode={mcpOverlayOpenMode}
+				values={effectiveMcp}
+				workspace={effectiveWorkspace}
+				agentEditable
+				onSave={handleSaveMcp}
+				onSaveWorkspace={handleSaveWorkspace}
+				onOpenChange={(open) => {
+					if (!open) {
+						setMcpOverlayTab(null);
+					}
+				}}
+			/>
+			<Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+				<DialogContent className="flex h-[80vh] max-h-160 w-full flex-col gap-4 sm:max-w-4xl">
+					<DialogHeader>
+						<DialogTitle>Room Settings</DialogTitle>
+						<DialogDescription>
+							Configure room options.
+						</DialogDescription>
+					</DialogHeader>
+					<ScrollArea className="min-h-0 flex-1">
+						<RoomOptionsForm
+							model={model}
+							onModelChange={onModelChange}
+							options={{
+								instructions:
+									effectiveRoomSettings.instructions,
+								mcp: effectiveMcp,
+								workspace: effectiveWorkspace ?? undefined,
+							}}
+							onOptionsChange={(nextOptions) => {
+								if (nextOptions.instructions !== undefined) {
+									if (onRoomSettingsChange) {
+										onRoomSettingsChange({
+											instructions:
+												nextOptions.instructions,
+										});
+									} else {
+										setInternalRoomSettings((prev) => ({
+											...prev,
+											instructions:
+												nextOptions.instructions,
+										}));
+									}
+								}
+								if (nextOptions.mcp) {
+									handleSaveMcp(nextOptions.mcp);
+								}
+								if ("workspace" in nextOptions) {
+									handleSaveWorkspace(
+										nextOptions.workspace ?? null,
+									);
+								}
+							}}
+							agentEditable
+						/>
+					</ScrollArea>
+				</DialogContent>
+			</Dialog>
 			<FileDragOverlay />
 		</form>
 	);
