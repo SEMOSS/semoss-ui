@@ -1,7 +1,6 @@
 {
 	"_meta": {
 		"last_modified_date": "2026-07-09",
-		"source_file": "assets/py/mcp_driver.py",
 		"generated_by": "manual"
 	},
 	"tools": [
@@ -33,9 +32,8 @@
 					"displayLocation": "sidebar",
 					"resourceURI": "/"
 				},
-				"SMSS_FUNCTION_NAME": "open_playwright_sockets"
-			},
-			"_type": "python"
+				"SMSS_FUNCTION_NAME": "OpenPlaywrightSocketsRoomRecording"
+			}
 		}
 	]
 }

@@ -301,6 +301,7 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 			try {
 				const pixel = `MyProjects(metaFilters=[{"tag":["PLAYWRIGHT"]}], filterWord=[""], onlyPortals=[true]);`;
 				const res = await runPixel(pixel, insightId);
+				assertPixelSuccess(res, "Recording project lookup");
 				const output = res.pixelReturn?.[0]?.output;
 				if (!Array.isArray(output)) {
 					return [];
@@ -357,6 +358,7 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 			try {
 				const pixel = `META | MyProjects(metaKeys=["tag", "description"], metaFilters=[{"tag":["MCP"]}], filterWord=[""]);`;
 				const res = await runPixel(pixel, insightId);
+				assertPixelSuccess(res, "MCP project lookup");
 				const output = res.pixelReturn?.[0]?.output;
 				if (!Array.isArray(output)) return [];
 
@@ -405,6 +407,7 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 			try {
 				const pixel = `ListPlaywrightScripts(project="${escapePixelString(projectId)}");`;
 				const res = await runPixel(pixel, insightId);
+				assertPixelSuccess(res, "Recording file lookup");
 				const output = res.pixelReturn?.[0]?.output;
 				return Array.isArray(output)
 					? output.filter(
@@ -436,6 +439,7 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 			try {
 				const pixel = `GetInsightAssets(filePath=[${JSON.stringify(roomPath)}]);`;
 				const res = await runPixel(pixel, insightId);
+				assertPixelSuccess(res, "Room recording load");
 				const output = res.pixelReturn?.[0]?.output;
 				if (typeof output !== "string") {
 					return null;
@@ -450,7 +454,12 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 					return parsed as LoadedRecording;
 				}
 				return null;
-			} catch {
+			} catch (e: unknown) {
+				const msg =
+					e instanceof Error
+						? e.message
+						: "Failed to load room recording";
+				setError(msg);
 				return null;
 			}
 		},
@@ -479,6 +488,7 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 			try {
 				const pixel = `GetAllSteps(sessionId="${escapePixelString(s.sessionId)}", fileName="${escapePixelString(fileName)}", project="${escapePixelString(projectId)}");`;
 				const res = await runPixel(pixel, insightId);
+				assertPixelSuccess(res, "Recording load");
 				const output = res.pixelReturn?.[0]?.output;
 				if (
 					output &&
@@ -523,6 +533,7 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 						: "";
 				const pixel = `ReplaySingleStep(sessionId="${escapePixelString(s.sessionId)}", fileName="${escapePixelString(fileName)}", stepId=${stepId}, tabId="${escapePixelString(tabId)}"${paramValuesPixel}, project="${escapePixelString(projectId)}");`;
 				const res = await runPixel(pixel, insightId);
+				assertPixelSuccess(res, `Replay step ${stepId}`);
 				const output = res.pixelReturn?.[0]?.output as
 					| {
 							status?: string;

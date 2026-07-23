@@ -114,6 +114,9 @@ export function usePlaybackController({
 	>(null);
 	const pauseRequestedRef = useRef(false);
 	const replayPreparedRef = useRef(false);
+	const runInFlightRef = useRef<Promise<PlaybackRunResult | null> | null>(
+		null,
+	);
 	const [savedRecordingSelection, setSavedRecordingSelection] = useState<{
 		projectValue: string;
 		fileName: string;
@@ -621,37 +624,65 @@ export function usePlaybackController({
 		],
 	);
 
-	const run = useCallback(async (): Promise<PlaybackRunResult | null> => {
-		if (!insightId || !project || !selectedRecording || !loadedRecording) {
-			onError("Load a recording before running it");
-			return null;
+	const run = useCallback((): Promise<PlaybackRunResult | null> => {
+		if (runInFlightRef.current) {
+			return runInFlightRef.current;
 		}
-		setIsRunning(true);
-		setIsPaused(false);
-		setValueRequiredStepId(null);
-		pauseRequestedRef.current = false;
-		let stepsRun = 0;
-		try {
-			for (const { tabId, step } of flattenedSteps) {
-				if (step.shouldRun === false || typeof step.id !== "number")
-					continue;
-				if (executedStepIds.has(step.id)) continue;
-				const shouldContinue = await runStep(tabId, step);
-				if (shouldContinue) stepsRun += 1;
-				if (!shouldContinue) {
-					return {
-						completed: false,
-						stepsRun,
-						pausedAtStepId: step.id,
-					};
-				}
+
+		const execution = (async (): Promise<PlaybackRunResult | null> => {
+			if (
+				!insightId ||
+				!project ||
+				!selectedRecording ||
+				!loadedRecording
+			) {
+				onError("Load a recording before running it");
+				return null;
 			}
-			onMessage(`Finished playback: ${selectedRecording}`);
+			setIsRunning(true);
 			setIsPaused(false);
-			return { completed: true, stepsRun };
-		} finally {
-			setIsRunning(false);
-		}
+			setValueRequiredStepId(null);
+			pauseRequestedRef.current = false;
+			const completedStepIds = new Set(executedStepIds);
+			let stepsRun = 0;
+			try {
+				for (const { tabId, step } of flattenedSteps) {
+					if (
+						step.shouldRun === false ||
+						typeof step.id !== "number" ||
+						completedStepIds.has(step.id)
+					) {
+						continue;
+					}
+					const shouldContinue = await runStep(tabId, step);
+					if (shouldContinue) {
+						completedStepIds.add(step.id);
+						stepsRun += 1;
+					}
+					if (!shouldContinue) {
+						return {
+							completed: false,
+							stepsRun,
+							pausedAtStepId: step.id,
+						};
+					}
+				}
+				onMessage(`Finished playback: ${selectedRecording}`);
+				setIsPaused(false);
+				return { completed: true, stepsRun };
+			} finally {
+				setIsRunning(false);
+			}
+		})();
+
+		runInFlightRef.current = execution;
+		const clearExecution = () => {
+			if (runInFlightRef.current === execution) {
+				runInFlightRef.current = null;
+			}
+		};
+		void execution.then(clearExecution, clearExecution);
+		return execution;
 	}, [
 		executedStepIds,
 		flattenedSteps,

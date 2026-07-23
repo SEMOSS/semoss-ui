@@ -83,6 +83,20 @@ type ResolvePlaywrightRecordingResponse = {
 	searchedRoomRecordings: number;
 };
 
+const sortJsonValue = (value: unknown): unknown => {
+	if (Array.isArray(value)) {
+		return value.map(sortJsonValue);
+	}
+	if (value && typeof value === "object") {
+		return Object.fromEntries(
+			Object.entries(value as Record<string, unknown>)
+				.sort(([left], [right]) => left.localeCompare(right))
+				.map(([key, child]) => [key, sortJsonValue(child)]),
+		);
+	}
+	return value;
+};
+
 export default function App() {
 	const { insightId } = useInsight();
 	const {
@@ -183,6 +197,11 @@ export default function App() {
 		toast.error(snackError);
 		setSnackError(null);
 	}, [snackError]);
+
+	useEffect(() => {
+		if (!sessionError) return;
+		toast.error(sessionError);
+	}, [sessionError]);
 
 	useEffect(() => {
 		if (!snackMessage) return;
@@ -296,15 +315,7 @@ export default function App() {
 	});
 
 	const toolExecutionKey = toolContext
-		? [
-				toolContext.roomId,
-				toolContext.message,
-				toolContext.id,
-				toolContext.originalName,
-				JSON.stringify(
-					toolContext.executedParameters ?? toolContext.parameters,
-				),
-			].join("\u001f")
+		? JSON.stringify(sortJsonValue(toolContext.parameters))
 		: "";
 
 	useEffect(() => {
@@ -1484,9 +1495,6 @@ export default function App() {
 				if (!result) {
 					throw new Error("Playback did not start");
 				}
-				if (result.completed) {
-					await closeBrowserSession();
-				}
 
 				sendMcpResponseToPlayground(
 					{
@@ -1519,14 +1527,7 @@ export default function App() {
 				}
 			}
 		})();
-	}, [
-		closeBrowserSession,
-		connectionState,
-		isMcpPlaybackMode,
-		playback,
-		session,
-		toolContext,
-	]);
+	}, [connectionState, isMcpPlaybackMode, playback, session, toolContext]);
 
 	const remoteWidth = session?.viewport.width ?? 1365;
 	const remoteHeight = session?.viewport.height ?? 768;
