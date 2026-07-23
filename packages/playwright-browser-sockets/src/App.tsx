@@ -113,6 +113,9 @@ export default function App() {
 	const browserTabsRef = useRef<BrowserTabInfo[]>([]);
 	const [snackError, setSnackError] = useState<string | null>(null);
 	const [snackMessage, setSnackMessage] = useState<string | null>(null);
+	const [mcpUpdateMessage, setMcpUpdateMessage] = useState<string | null>(
+		null,
+	);
 	const [isRecording, setIsRecording] = useState(false);
 	const [toolContext, setToolContext] = useState<McpToolContext | null>(null);
 	const [semossContextReady, setSemossContextReady] = useState(false);
@@ -203,6 +206,23 @@ export default function App() {
 		getToolStringParameter(toolContext, "projectId") ||
 		(!toolContext?.roomId ? toolContext?.projectId || "" : "");
 	const effectiveInsightId = getSemossInsightId() || insightId;
+	const updateRecordingsMcp = useCallback(
+		async (
+			targetInsightId: string,
+			target: { roomId?: string; projectId: string },
+			label: string,
+		) => {
+			setMcpUpdateMessage(`Updating ${label} MCP…`);
+			try {
+				await generateRecordingsMcp(targetInsightId, target);
+				toast(`${label} MCP updated`);
+				await new Promise((resolve) => window.setTimeout(resolve, 350));
+			} finally {
+				setMcpUpdateMessage(null);
+			}
+		},
+		[generateRecordingsMcp],
+	);
 
 	// Frame callback - stable reference so it doesn't re-trigger the socket effect
 	const handleFrame = useCallback((data: string, _w: number, _h: number) => {
@@ -1098,9 +1118,11 @@ export default function App() {
 			}
 
 			playback.selectSavedRecording(saveProject, saved.fileName);
-			await generateRecordingsMcp(effectiveInsightId, {
-				projectId: saved.project,
-			});
+			await updateRecordingsMcp(
+				effectiveInsightId,
+				{ projectId: saved.project },
+				"Playwright app",
+			);
 			setSaveDialogOpen(false);
 			await closeBrowserSession();
 			browserClosed = true;
@@ -1131,7 +1153,7 @@ export default function App() {
 		closeBrowserSession,
 		defaultRecordingName,
 		effectiveInsightId,
-		generateRecordingsMcp,
+		updateRecordingsMcp,
 		saveDescription,
 		saveIntent,
 		saveProject,
@@ -1260,15 +1282,21 @@ export default function App() {
 						project: appSaved.project,
 						fileName: appSaved.fileName,
 					};
-					await generateRecordingsMcp(roomBoundInsightId, {
-						projectId: appSaved.project,
-					});
+					await updateRecordingsMcp(
+						roomBoundInsightId,
+						{ projectId: appSaved.project },
+						"Playwright app",
+					);
 				}
 
-				await generateRecordingsMcp(roomBoundInsightId, {
-					roomId: toolContext.roomId,
-					projectId: toolContext.projectId,
-				});
+				await updateRecordingsMcp(
+					roomBoundInsightId,
+					{
+						roomId: toolContext.roomId,
+						projectId: toolContext.projectId,
+					},
+					"Playground room",
+				);
 
 				// Safely add the __insight__ MCP entry to the room's tool list so the
 				// LLM sees recording-specific tools on the next message (read-modify-write).
@@ -1351,7 +1379,7 @@ export default function App() {
 			isRecording,
 			mcpRecordingNameHint,
 			mcpStartUrl,
-			generateRecordingsMcp,
+			updateRecordingsMcp,
 			saveRoomRecording,
 			saveRecording,
 			selectedTextContexts,
@@ -1476,6 +1504,15 @@ export default function App() {
 					onOpenSaveRecording={handleOpenSaveRecording}
 				/>
 				<div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-1">
+					{mcpUpdateMessage && (
+						<output
+							aria-live="polite"
+							className="flex h-7 items-center gap-1.5 rounded border border-line bg-canvas px-2 text-ink-muted text-xs"
+						>
+							<Spinner />
+							<span>{mcpUpdateMessage}</span>
+						</output>
+					)}
 					<ConnectionStatus state={connectionState} />
 					{session && (
 						<Button
