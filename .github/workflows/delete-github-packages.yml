@@ -21,6 +21,7 @@ on:
 
 permissions:
     contents: read
+    packages: write
 
 concurrency:
     group: delete-github-packages-${{ inputs.branch }}-${{ inputs.channel }}
@@ -36,25 +37,46 @@ jobs:
             PUBLISH_CHANNEL: ${{ inputs.channel }}
             DRY_RUN: ${{ inputs.dry_run }}
             PACKAGE_ADMIN_TOKEN: ${{ secrets.SEMOSS_GITHUB_PAT }}
+            FALLBACK_GITHUB_TOKEN: ${{ github.token }}
             GITHUB_OWNER: ${{ github.repository_owner }}
         steps:
             - name: Delete matching package versions
               run: |
                   node <<'NODE'
+                  const owner = process.env.GITHUB_OWNER;
+                  const ownerScope = `@${(owner || "").toLowerCase()}`;
                   const packages = [
-                      "@semoss/i18n",
-                      "@semoss/sdk",
-                      "@semoss/ui",
-                      "@semoss/shared",
-                      "@semoss/renderer",
-                      "@semoss/chat",
+                      {
+                          displayName: `${ownerScope}/i18n`,
+                          apiName: "i18n",
+                      },
+                      {
+                          displayName: `${ownerScope}/sdk`,
+                          apiName: "sdk",
+                      },
+                      {
+                          displayName: `${ownerScope}/ui`,
+                          apiName: "ui",
+                      },
+                      {
+                          displayName: `${ownerScope}/shared`,
+                          apiName: "shared",
+                      },
+                      {
+                          displayName: `${ownerScope}/renderer`,
+                          apiName: "renderer",
+                      },
+                      {
+                          displayName: `${ownerScope}/chat`,
+                          apiName: "chat",
+                      },
                   ];
 
-                  const token = process.env.PACKAGE_ADMIN_TOKEN;
-                  const owner = process.env.GITHUB_OWNER;
+                  const token =
+                      process.env.PACKAGE_ADMIN_TOKEN || process.env.FALLBACK_GITHUB_TOKEN;
 
                   if (!token) {
-                      throw new Error("Missing SEMOSS_GITHUB_PAT secret for package deletion.");
+                      throw new Error("Missing token for package deletion. Provide SEMOSS_GITHUB_PAT or allow github.token.");
                   }
 
                   const sanitize = (value) =>
@@ -94,18 +116,23 @@ jobs:
                           ? `https://api.github.com/orgs/${owner}/packages/npm`
                           : `https://api.github.com/users/${owner}/packages/npm`;
 
-                  const listVersions = async (packageName) => {
+                  const listVersions = async ({ displayName, apiName }) => {
                       const versions = [];
 
                       for (let page = 1; page <= 10; page += 1) {
                           const response = await fetch(
-                              `${packageBaseUrl}/${encodeURIComponent(packageName)}/versions?per_page=100&page=${page}`,
+                              `${packageBaseUrl}/${encodeURIComponent(apiName)}/versions?per_page=100&page=${page}`,
                               { headers },
                           );
 
+                          if (response.status === 404) {
+                              console.log(`Package not found, skipping: ${displayName}`);
+                              return [];
+                          }
+
                           if (!response.ok) {
                               throw new Error(
-                                  `Failed to list versions for ${packageName}: ${response.status}`,
+                                  `Failed to list versions for ${displayName}: ${response.status}`,
                               );
                           }
 
@@ -120,9 +147,9 @@ jobs:
                       return versions;
                   };
 
-                  const deleteVersion = async (packageName, versionId) => {
+                  const deleteVersion = async ({ displayName, apiName }, versionId) => {
                       const response = await fetch(
-                          `${packageBaseUrl}/${encodeURIComponent(packageName)}/versions/${versionId}`,
+                          `${packageBaseUrl}/${encodeURIComponent(apiName)}/versions/${versionId}`,
                           {
                               method: "DELETE",
                               headers,
@@ -131,19 +158,20 @@ jobs:
 
                       if (!response.ok) {
                           throw new Error(
-                              `Failed to delete ${packageName} version id ${versionId}: ${response.status}`,
+                              `Failed to delete ${displayName} version id ${versionId}: ${response.status}`,
                           );
                       }
                   };
 
                   const matches = [];
 
-                  for (const packageName of packages) {
-                      const versions = await listVersions(packageName);
+                  for (const pkg of packages) {
+                      const versions = await listVersions(pkg);
                       const matchedVersions = versions
                           .filter((version) => version.name.includes(versionFragment))
                           .map((version) => ({
-                              packageName,
+                              packageName: pkg.displayName,
+                              packageApiName: pkg.apiName,
                               versionId: version.id,
                               versionName: version.name,
                           }));
@@ -164,6 +192,12 @@ jobs:
 
                   for (const match of matches) {
                       console.log(`Deleting ${match.packageName}@${match.versionName}`);
-                      await deleteVersion(match.packageName, match.versionId);
+                      await deleteVersion(
+                          {
+                              displayName: match.packageName,
+                              apiName: match.packageApiName,
+                          },
+                          match.versionId,
+                      );
                   }
                   NODE
