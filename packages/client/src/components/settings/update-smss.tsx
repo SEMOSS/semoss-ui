@@ -204,11 +204,14 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 							scrollBeyondLastLine: false,
 							readOnly: readOnly,
 							contextmenu: false,
+							scrollbar: {
+								alwaysConsumeMouseWheel: false,
+							},
 						}}
 						value={value}
 						language={"plaintext"}
 						onChange={(newValue) => {
-							setValue(newValue);
+							setValue(newValue || "");
 						}}
 						data-test-id="SMSS-editor"
 					/>
