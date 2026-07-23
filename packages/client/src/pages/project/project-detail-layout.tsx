@@ -1,4 +1,4 @@
-import { ChevronRight, Pencil, SquareArrowOutUpRight } from "lucide-react";
+import { ChevronRight, SquareArrowOutUpRight } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import {
 	Link,
@@ -13,7 +13,6 @@ import { usePixel } from "@semoss/sdk/react";
 import type { Project, ProjectDependency, Role } from "@semoss/shared";
 import { AppCatalogAvatar, EntityHeader } from "@semoss/shared";
 import {
-	Badge,
 	Breadcrumb,
 	BreadcrumbItem,
 	BreadcrumbLink,
@@ -27,23 +26,15 @@ import {
 	Tabs,
 	TabsList,
 	TabsTrigger,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 } from "@semoss/ui/next";
 import { ResourceNotFound } from "@/components/common/resource-not-found";
-import {
-	EditProjectDetailDialog,
-	ProjectAccessRequestButton,
-	ProjectExportButton,
-} from "@/components/project";
+import { ProjectAccessRequestButton } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { ShareOverlay } from "@/components/ui";
 import { ProjectContext } from "@/contexts";
 import { useAPI, useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
-import { getTagBadgeStyle, normalizeTagArray } from "@/utility";
-import { formatDateToLocal } from "@/utility/date";
+import { normalizeTagArray } from "@/utility";
 
 const DETAIL_CONFIG = {
 	CODE: {
@@ -85,10 +76,9 @@ export const ProjectDetailLayout = ({
 	const resolvedPath = useResolvedPath("");
 
 	const [isShareOverlayOpen, setIsShareOverlayOpen] = useState(false);
-	const [isEditDetailsModalOpen, setIsEditDetailsModalOpen] = useState(false);
 
 	// get a user's permission
-	const getUserEnginePermission = useAPI(
+	const getUserProjectPermission = useAPI(
 		appId ? ["getUserProjectPermission", appId] : null,
 		{
 			data: undefined,
@@ -125,13 +115,13 @@ export const ProjectDetailLayout = ({
 	/**
 	 * Refresh the project data
 	 */
-	const refresh = useCallback(async () => {
+	const refresh = useCallback(() => {
 		getDependencies.refresh();
-		getUserEnginePermission.refresh();
+		getUserProjectPermission.refresh();
 		getMetadata.refresh();
 	}, [
 		getDependencies.refresh,
-		getUserEnginePermission.refresh,
+		getUserProjectPermission.refresh,
 		getMetadata.refresh,
 	]);
 
@@ -146,12 +136,12 @@ export const ProjectDetailLayout = ({
 			if (!tab.restrict || tab.restrict.length === 0) {
 				return true;
 			}
-			if (!getUserEnginePermission.data) {
+			if (!getUserProjectPermission.data) {
 				return false;
 			}
-			return tab.restrict.includes(getUserEnginePermission.data);
+			return tab.restrict.includes(getUserProjectPermission.data);
 		});
-	}, [tabs, getUserEnginePermission.data]);
+	}, [tabs, getUserProjectPermission.data]);
 
 	// the current active tab index based on the current pathname
 	const activeTabIdx = useMemo(() => {
@@ -168,7 +158,7 @@ export const ProjectDetailLayout = ({
 	}, [visibleTabs, resolvedPath, pathname]);
 
 	if (
-		getUserEnginePermission.status === "ERROR" ||
+		getUserProjectPermission.status === "ERROR" ||
 		getDependencies.status === "ERROR" ||
 		getMetadata.status === "ERROR"
 	) {
@@ -183,8 +173,8 @@ export const ProjectDetailLayout = ({
 	}
 
 	if (
-		getUserEnginePermission.status !== "SUCCESS" ||
-		!getUserEnginePermission.data ||
+		getUserProjectPermission.status !== "SUCCESS" ||
+		!getUserProjectPermission.data ||
 		getDependencies.status !== "SUCCESS" ||
 		getMetadata.status !== "SUCCESS"
 	) {
@@ -207,7 +197,7 @@ export const ProjectDetailLayout = ({
 			value={{
 				appId: getMetadata.data.project_id || "",
 				project: getMetadata.data,
-				permission: getUserEnginePermission.data,
+				permission: getUserProjectPermission.data,
 				dependencies: getDependencies.data?.engines || [],
 				tags,
 				refresh,
@@ -272,52 +262,23 @@ export const ProjectDetailLayout = ({
 								""
 							}
 							id={appId}
-							copyLabel="Copy App ID"
+							copyLabel="Copy ID"
 							idTestId="appDetail-id"
 							actions={
 								<>
-									{getUserEnginePermission.data ===
-									"OWNER" ? (
-										<ProjectExportButton
-											project={getMetadata.data}
-										/>
-									) : (
+									{getUserProjectPermission.data !==
+										"OWNER" && (
 										<ProjectAccessRequestButton
 											project={getMetadata.data}
 											permission={
-												getUserEnginePermission.data
+												getUserProjectPermission.data
 											}
 											onSuccess={() => {
 												refresh();
 											}}
 										/>
 									)}
-									{getUserEnginePermission.data !==
-										"DISCOVERABLE" &&
-										getUserEnginePermission.data !==
-											"READ_ONLY" && (
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<Button
-														variant="outline"
-														size="icon"
-														aria-label="Edit"
-														onClick={() => {
-															setIsEditDetailsModalOpen(
-																true,
-															);
-														}}
-														data-testid="appDetail-edit-btn"
-													>
-														<Pencil className="size-4" />
-													</Button>
-												</TooltipTrigger>
-												<TooltipContent>
-													Edit
-												</TooltipContent>
-											</Tooltip>
-										)}
-									{getUserEnginePermission.data !==
+									{getUserProjectPermission.data !==
 										"DISCOVERABLE" && (
 										<Button
 											asChild
@@ -336,49 +297,6 @@ export const ProjectDetailLayout = ({
 								</>
 							}
 						/>
-
-						<div className="mt-4 flex w-full flex-col gap-4 md:flex-row md:justify-between">
-							<div className="flex flex-1 flex-col gap-4">
-								<p className="text-muted-foreground text-sm">
-									{getMetadata.data?.description ||
-										"No description available"}
-								</p>
-								{tags?.length ? (
-									<div className="flex flex-row flex-wrap gap-2 pb-2">
-										{tags.map((tag) => {
-											if (!tag) return null;
-											return (
-												<Badge
-													key={`tag-${tag}-${tag}`}
-													variant="outline"
-													style={getTagBadgeStyle(
-														tag,
-													)}
-												>
-													{tag}
-												</Badge>
-											);
-										})}
-									</div>
-								) : null}
-							</div>
-							<div className="flex flex-col items-start gap-1 text-left text-muted-foreground text-sm md:items-end md:text-right">
-								<span>
-									Published by:{" "}
-									{getMetadata.data?.project_created_by ||
-										"Unknown"}
-								</span>
-								<span>
-									Updated{" "}
-									{getMetadata.data?.project_date_created
-										? formatDateToLocal(
-												getMetadata.data
-													?.project_date_created,
-											)
-										: "N/A"}
-								</span>
-							</div>
-						</div>
 					</div>
 
 					<div className="flex flex-col rounded-lg bg-muted">
@@ -427,18 +345,6 @@ export const ProjectDetailLayout = ({
 						/>
 					</DialogContent>
 				</Dialog>
-
-				<EditProjectDetailDialog
-					open={isEditDetailsModalOpen}
-					project={getMetadata.data}
-					onClose={(success) => {
-						if (success) {
-							refresh();
-						}
-
-						setIsEditDetailsModalOpen(false);
-					}}
-				/>
 			</div>
 		</ProjectContext.Provider>
 	);

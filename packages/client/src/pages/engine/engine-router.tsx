@@ -7,7 +7,6 @@ import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
 import { ImportPage } from "../import";
 import type { ENGINE_ROUTES } from "./engine.constants";
-import { EngineEditPage } from "./engine-edit-page";
 import { EngineIndexPage } from "./engine-index-page";
 import { EngineLayout } from "./engine-layout";
 
@@ -62,7 +61,6 @@ export const EngineRouter = observer(({ route }: EngineRouterProps) => {
 								element={createElement(s.component, {})}
 							/>
 						))}
-						<Route path="edit" element={<EngineEditPage />} />
 					</Route>
 					<Route path="*" element={<Navigate to="." replace />} />
 				</Routes>

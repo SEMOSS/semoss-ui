@@ -1,5 +1,6 @@
 import { createContext } from "react";
-import type { ENGINE_TYPES, Role } from "@/types";
+import type { Engine, Role } from "@semoss/shared";
+import type { ENGINE_TYPES } from "@/types";
 
 /**
  * Value
@@ -14,32 +15,19 @@ export type EngineContextType = {
 	/** Path of the type */
 	path: string;
 
-	/** Active engine information */
-	active: {
-		/** ID of the engine to load */
-		id: string;
+	/** Current Engine */
+	engine: Engine;
 
-		/** User's role associated with the engine */
-		role: Role;
+	/** Current Permission */
+	permission: Role;
 
-		/** Name of the engine */
-		name: string;
-
-		/** metadata to show on detail pages */
-		metadata: Record<string, unknown>;
-		engine_subtype?: string;
-
-		/** refreshes metadata for the active engine */
-		refresh: () => void;
-
-		/** Additional metadata fields */
-		engine_created_by?: string;
-		engine_date_created?: string;
-		last_updated?: string;
-	};
+	/** refreshes metadata for the active engine */
+	refresh: () => void;
 };
 
 /**
  * Context
  */
-export const EngineContext = createContext<EngineContextType>(undefined);
+export const EngineContext = createContext<EngineContextType | undefined>(
+	undefined,
+);

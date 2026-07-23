@@ -4,7 +4,7 @@ import { useEngine } from "@/hooks";
 
 export const EngineFilePage = () => {
 	//Grabbing Engine Id for document creation
-	const { active } = useEngine();
+	const { engine } = useEngine();
 
 	return (
 		<div className="flex w-full flex-col items-start gap-4 self-stretch">
@@ -12,7 +12,7 @@ export const EngineFilePage = () => {
 				<H3>File Explorer</H3>
 			</div>
 
-			<FileTable id={active.id} />
+			<FileTable id={engine.engine_id} />
 		</div>
 	);
 };

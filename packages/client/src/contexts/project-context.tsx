@@ -7,7 +7,7 @@ export type ProjectContextType = {
 	permission: Role;
 	dependencies: ProjectDependency[];
 	tags: string[];
-	refresh: () => Promise<void>;
+	refresh: () => void;
 };
 
 export const ProjectContext = createContext<ProjectContextType | undefined>(

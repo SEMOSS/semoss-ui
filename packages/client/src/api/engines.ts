@@ -1,5 +1,4 @@
 import { Env, get, post } from "@semoss/sdk/react";
-import type { Role } from "@/types";
 
 export const getEngines = async (
 	admin: boolean,
@@ -26,21 +25,6 @@ export const getEngines = async (
 	// there was no response, that is an error
 	if (!response) {
 		throw Error("No Response to get Apps");
-	}
-	return response.data;
-};
-
-export const getUserEnginePermission = async (id: string) => {
-	const response = await get<{
-		permission: Role;
-	}>(
-		`${Env.MODULE}/api/auth/engine/getUserEnginePermission?engineId=${id}`,
-	).catch((error) => {
-		throw Error(error);
-	});
-	// there was no response, that is an error
-	if (!response) {
-		throw Error("No roles for the app user");
 	}
 	return response.data;
 };

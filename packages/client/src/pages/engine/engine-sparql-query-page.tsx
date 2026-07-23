@@ -3,12 +3,11 @@ import { QueryWorkspace } from "@/components/query-workspace/query-workspace";
 import { useEngine } from "@/hooks";
 
 export const EngineSparqlQueryPage = observer(() => {
-	const { active } = useEngine();
-	const engineId = active.id || "";
+	const { engine } = useEngine();
 
 	return (
 		<div className="h-[calc(100vh-200px)] w-full overflow-hidden">
-			<QueryWorkspace engine={engineId} mode="SPARQL" />
+			<QueryWorkspace engine={engine.engine_id} mode="SPARQL" />
 		</div>
 	);
 });

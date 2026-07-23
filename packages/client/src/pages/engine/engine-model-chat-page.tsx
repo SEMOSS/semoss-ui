@@ -42,13 +42,13 @@ interface LLMOutput {
 }
 
 export const EngineModelChatPage = () => {
-	const { active } = useEngine();
+	const { engine } = useEngine();
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState("");
 	const [messages, setMessages] = useState<Message[]>([]);
 
 	const [selectedModel, setSelectedModel] = useState<Model>({
-		model_id: active.id,
+		model_id: engine.engine_id,
 		model_name: "",
 	});
 	const [maxTokens, setMaxTokens] = useState<number>(2000);
@@ -80,12 +80,12 @@ export const EngineModelChatPage = () => {
 
 	useEffect(() => {
 		setSelectedModel({
-			model_id: active.id,
+			model_id: engine.engine_id,
 			model_name: "",
 		});
 		setMessages([]);
 		createNewInsight(); // Get a new insightId from backend
-	}, [active.id, createNewInsight]);
+	}, [engine.engine_id, createNewInsight]);
 
 	useEffect(() => {
 		const el = messagesContainerRef.current;

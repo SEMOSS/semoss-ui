@@ -42,7 +42,7 @@ interface LLMOutput {
 }
 
 export const EngineQAPage = () => {
-	const { active } = useEngine();
+	const { engine } = useEngine();
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState("");
 	const [isAnswered, setIsAnswered] = useState(false);
@@ -81,7 +81,7 @@ export const EngineQAPage = () => {
 		}
 		try {
 			let pixel = `
-            VectorDatabaseQuery(engine="${active.id}" , command='<encode>${data.QUESTION}</encode>', limit=${limit});
+            VectorDatabaseQuery(engine="${engine.engine_id}" , command='<encode>${data.QUESTION}</encode>', limit=${limit});
             `;
 
 			const response = await monolithStore.runQuery(pixel);

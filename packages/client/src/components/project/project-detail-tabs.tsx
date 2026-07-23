@@ -1,22 +1,17 @@
-import { Pencil } from "lucide-react";
-import { createElement, useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { usePixel } from "@semoss/sdk/react";
 import type { Project, ProjectDependency, Role } from "@semoss/shared";
 import {
-	Button,
 	Dialog,
 	DialogContent,
 	Spinner,
 	Tabs,
 	TabsList,
 	TabsTrigger,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 } from "@semoss/ui/next";
 import { ResourceNotFound } from "@/components/common/resource-not-found";
-import { EditProjectDetailDialog } from "@/components/project";
+import { ProjectOverview } from "@/components/project";
 import { ShareOverlay } from "@/components/ui";
 import { ProjectContext } from "@/contexts";
 import { useAPI, useRootStore } from "@/hooks";
@@ -26,24 +21,10 @@ import { AppCommitsPage } from "@/pages/app/app-commits-page";
 import { AppFilesPage } from "@/pages/app/app-files-page";
 import { AppGithubPage } from "@/pages/app/app-github-page";
 import { AppMcpUsagePage } from "@/pages/app/app-mcp-usage-page";
-import { AppOverviewPage } from "@/pages/app/app-overview-page";
 import { AppSettingsPage } from "@/pages/app/app-settings-page";
 import { AppSmssPage } from "@/pages/app/app-smss-page";
 import { ProjectDependenciesPage } from "@/pages/project/project-dependencies-page";
 import { normalizeTagArray } from "@/utility";
-
-const EMBEDDED_TAB_COMPONENTS: Record<string, React.FunctionComponent> = {
-	"": AppOverviewPage,
-	dependencies: ProjectDependenciesPage,
-	"mcp-usage": AppMcpUsagePage,
-	activity: AppActivityPage,
-	commits: AppCommitsPage,
-	github: AppGithubPage,
-	settings: AppSettingsPage,
-	"access-control": AppAccessControlPage,
-	files: AppFilesPage,
-	smss: AppSmssPage,
-};
 
 interface ProjectDetailTabsProps {
 	/** Type of the route */
@@ -52,7 +33,17 @@ interface ProjectDetailTabsProps {
 	/** Tabs to show */
 	tabs: {
 		name: string;
-		path: string;
+		component:
+			| "project-overview"
+			| "project-dependencies"
+			| "mcp-usage"
+			| "activity"
+			| "commits"
+			| "github"
+			| "settings"
+			| "access-control"
+			| "files"
+			| "smss";
 		restrict?: Role[];
 	}[];
 }
@@ -67,10 +58,9 @@ export const ProjectDetailTabs = ({
 
 	const [selectedTabName, setSelectedTabName] = useState<string>("Overview");
 	const [isShareOverlayOpen, setIsShareOverlayOpen] = useState(false);
-	const [isEditDetailsModalOpen, setIsEditDetailsModalOpen] = useState(false);
 
 	// get a user's permission
-	const getUserEnginePermission = useAPI(
+	const getUserProjectPermission = useAPI(
 		appId ? ["getUserProjectPermission", appId] : null,
 		{
 			data: undefined,
@@ -107,13 +97,13 @@ export const ProjectDetailTabs = ({
 	/**
 	 * Refresh the project data
 	 */
-	const refresh = useCallback(async () => {
+	const refresh = useCallback(() => {
 		getDependencies.refresh();
-		getUserEnginePermission.refresh();
+		getUserProjectPermission.refresh();
 		getMetadata.refresh();
 	}, [
 		getDependencies.refresh,
-		getUserEnginePermission.refresh,
+		getUserProjectPermission.refresh,
 		getMetadata.refresh,
 	]);
 
@@ -128,12 +118,12 @@ export const ProjectDetailTabs = ({
 			if (!tab.restrict || tab.restrict.length === 0) {
 				return true;
 			}
-			if (!getUserEnginePermission.data) {
+			if (!getUserProjectPermission.data) {
 				return false;
 			}
-			return tab.restrict.includes(getUserEnginePermission.data);
+			return tab.restrict.includes(getUserProjectPermission.data);
 		});
-	}, [tabs, getUserEnginePermission.data]);
+	}, [tabs, getUserProjectPermission.data]);
 
 	// the current active tab index based on the current pathname
 	const activeTabIdx = useMemo(() => {
@@ -142,7 +132,7 @@ export const ProjectDetailTabs = ({
 	}, [visibleTabs, selectedTabName]);
 
 	if (
-		getUserEnginePermission.status === "ERROR" ||
+		getUserProjectPermission.status === "ERROR" ||
 		getDependencies.status === "ERROR" ||
 		getMetadata.status === "ERROR"
 	) {
@@ -150,8 +140,8 @@ export const ProjectDetailTabs = ({
 	}
 
 	if (
-		getUserEnginePermission.status !== "SUCCESS" ||
-		!getUserEnginePermission.data ||
+		getUserProjectPermission.status !== "SUCCESS" ||
+		!getUserProjectPermission.data ||
 		getDependencies.status !== "SUCCESS" ||
 		getMetadata.status !== "SUCCESS"
 	) {
@@ -163,16 +153,13 @@ export const ProjectDetailTabs = ({
 	}
 
 	const activeTab = activeTabIdx >= 0 ? visibleTabs[activeTabIdx] : undefined;
-	const embeddedComponent = activeTab
-		? EMBEDDED_TAB_COMPONENTS[activeTab.path]
-		: undefined;
 
 	return (
 		<ProjectContext.Provider
 			value={{
 				appId: getMetadata.data.project_id || "",
 				project: getMetadata.data,
-				permission: getUserEnginePermission.data,
+				permission: getUserProjectPermission.data,
 				dependencies: getDependencies.data?.engines || [],
 				tags,
 				refresh,
@@ -182,13 +169,13 @@ export const ProjectDetailTabs = ({
 				className={`flex h-full w-full flex-col gap-2 overflow-hidden p-2`}
 			>
 				{visibleTabs.length > 0 && (
-					<Tabs value={activeTab?.path ?? ""}>
+					<Tabs value={activeTab?.component ?? ""}>
 						<div className="w-full overflow-x-auto">
 							<TabsList className="w-max flex-nowrap gap-2">
 								{visibleTabs.map((tab) => (
 									<TabsTrigger
 										key={tab.name}
-										value={tab.path}
+										value={tab.component}
 										onClick={() => {
 											setSelectedTabName(tab.name);
 										}}
@@ -202,31 +189,29 @@ export const ProjectDetailTabs = ({
 					</Tabs>
 				)}
 				<div className="w-full flex-1 overflow-auto bg-card p-2">
-					{activeTab?.path === "" &&
-						getUserEnginePermission.data !== "DISCOVERABLE" &&
-						getUserEnginePermission.data !== "READ_ONLY" && (
-							<div className="flex justify-end">
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											variant="outline"
-											size="icon"
-											aria-label="Edit"
-											onClick={() => {
-												setIsEditDetailsModalOpen(true);
-											}}
-											data-testid="appDetail-edit-btn"
-										>
-											<Pencil className="size-4" />
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent>Edit</TooltipContent>
-								</Tooltip>
-							</div>
-						)}
-					{embeddedComponent
-						? createElement(embeddedComponent, {})
-						: null}
+					{/** TODO: should not be loading in Page. Load in the component directly */}
+					{activeTab?.component === "project-overview" && (
+						<ProjectOverview
+							project={getMetadata.data}
+							permission={getUserProjectPermission.data}
+							refresh={refresh}
+						/>
+					)}
+					{activeTab?.component === "project-dependencies" && (
+						<ProjectDependenciesPage />
+					)}
+					{activeTab?.component === "mcp-usage" && (
+						<AppMcpUsagePage />
+					)}
+					{activeTab?.component === "activity" && <AppActivityPage />}
+					{activeTab?.component === "commits" && <AppCommitsPage />}
+					{activeTab?.component === "github" && <AppGithubPage />}
+					{activeTab?.component === "settings" && <AppSettingsPage />}
+					{activeTab?.component === "access-control" && (
+						<AppAccessControlPage />
+					)}
+					{activeTab?.component === "files" && <AppFilesPage />}
+					{activeTab?.component === "smss" && <AppSmssPage />}
 				</div>
 			</div>
 
@@ -242,18 +227,6 @@ export const ProjectDetailTabs = ({
 					/>
 				</DialogContent>
 			</Dialog>
-
-			<EditProjectDetailDialog
-				open={isEditDetailsModalOpen}
-				project={getMetadata.data}
-				onClose={(success) => {
-					if (success) {
-						refresh();
-					}
-
-					setIsEditDetailsModalOpen(false);
-				}}
-			/>
 		</ProjectContext.Provider>
 	);
 };

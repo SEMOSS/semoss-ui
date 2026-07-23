@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Env } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
-import type { Role } from "@/types";
 
 /**
  * @desc splits a string at the period
@@ -47,7 +46,7 @@ export const capitalizeFirstLetter = (str) => {
  * @desc capitalizes every word that is spaced
  * "hello world" --> "Hello World"
  */
-export const toTitleCase = (str) => {
+export const toTitleCase = (str: string) => {
 	return str.replace(/\w\S*/g, (txt) => {
 		return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
 	});
@@ -63,27 +62,6 @@ export const removeUnderscores = (str: string) => {
 		frags[i] = frags[i].charAt(0).toUpperCase() + frags[i].slice(1);
 	}
 	return frags.join(" ");
-};
-
-export const formatPermission = (permission: Role | ""): string => {
-	const errorString = "No permission found";
-
-	if (!permission) {
-		return errorString;
-	}
-
-	switch (permission) {
-		case "OWNER":
-			return "Author";
-		case "EDIT":
-			return "Editor";
-		case "READ_ONLY":
-			return "Read-Only";
-		case "DISCOVERABLE":
-			return "Discoverable";
-		default:
-			return errorString;
-	}
 };
 
 /**

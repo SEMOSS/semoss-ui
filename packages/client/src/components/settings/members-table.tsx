@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
 import {
 	editProjectUserPermissions,
+	type getUserEnginePermission,
 	type getUserProjectPermission,
 } from "@semoss/shared";
 import {
@@ -36,7 +37,7 @@ import {
 	TableRow,
 	toast,
 } from "@semoss/ui/next";
-import { editEngineUserPermissions, type getUserEnginePermission } from "@/api";
+import { editEngineUserPermissions } from "@/api";
 import {
 	useAPI,
 	useRootStore,
@@ -234,9 +235,7 @@ export const MembersTable = (props: MembersTableProps) => {
 	const userDetailsResponse = useAPI(getUserDataApi);
 	const userDetails = adminMode
 		? {
-				data: {
-					permission: "OWNER",
-				},
+				data: "OWNER",
 				status: "SUCCESS",
 				refresh: () => null,
 			}
@@ -296,11 +295,9 @@ export const MembersTable = (props: MembersTableProps) => {
 				? (userDetails.data as Awaited<
 						ReturnType<typeof getUserProjectPermission>
 					>)
-				: (
-						userDetails.data as Awaited<
-							ReturnType<typeof getUserEnginePermission>
-						>
-					).permission;
+				: (userDetails.data as Awaited<
+						ReturnType<typeof getUserEnginePermission>
+					>);
 
 		if (adminMode) {
 			const adminPermissionPriority = "Author";

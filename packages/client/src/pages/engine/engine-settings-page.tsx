@@ -7,7 +7,7 @@ import { useEngine } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
 export const EngineSettingsPage = () => {
-	const { name, path, type, active } = useEngine();
+	const { name, path, type, engine } = useEngine();
 	const navigate = useNavigate();
 
 	return (
@@ -23,7 +23,7 @@ export const EngineSettingsPage = () => {
 					</H2>
 					<SettingsTiles
 						type={type}
-						id={active.id}
+						id={engine.engine_id}
 						name={name}
 						direction="row"
 						onDelete={() => {
@@ -36,10 +36,13 @@ export const EngineSettingsPage = () => {
 						Member Permissions
 					</H2>
 					<div className="flex flex-col gap-4">
-						<PendingMembersTable type={type} id={active.id} />
-						<MembersTable type={type} id={active.id} />
+						<PendingMembersTable
+							type={type}
+							id={engine.engine_id}
+						/>
+						<MembersTable type={type} id={engine.engine_id} />
 						<div className="mt-6">
-							<TeamsTable type="ENGINE" id={active.id} />
+							<TeamsTable type="ENGINE" id={engine.engine_id} />
 						</div>
 					</div>
 				</section>

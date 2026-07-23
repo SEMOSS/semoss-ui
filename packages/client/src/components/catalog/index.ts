@@ -16,6 +16,7 @@ export {
 } from "./catalog-grid-item";
 // Utilities
 export { CatalogLayout, type CatalogLayoutProps } from "./catalog-layout";
+export { CatalogOverview, type CatalogOverviewProps } from "./catalog-overview";
 export {
 	CatalogSearchBar,
 	type CatalogSearchBarProps,

@@ -138,19 +138,27 @@ export const AgentWorkspace: React.FC = observer(() => {
 				<ProjectDetailTabs
 					type="WORKSPACE"
 					tabs={[
-						{ name: "Overview", path: "" },
+						{ name: "Overview", component: "project-overview" },
 						{
 							name: "Commits",
-							path: "commits",
+							component: "commits",
 							restrict: ["OWNER", "EDIT"],
 						},
-						{ name: "GitHub", path: "github", restrict: ["OWNER"] },
+						{
+							name: "GitHub",
+							component: "github",
+							restrict: ["OWNER"],
+						},
 						{
 							name: "Access Control",
-							path: "access-control",
+							component: "access-control",
 							restrict: ["OWNER", "EDIT"],
 						},
-						{ name: "SMSS", path: "smss", restrict: ["OWNER"] },
+						{
+							name: "SMSS",
+							component: "smss",
+							restrict: ["OWNER"],
+						},
 					]}
 				/>
 			);

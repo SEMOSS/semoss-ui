@@ -1,10 +1,9 @@
-import { ChevronRight, Download, Pencil } from "lucide-react";
+import { ChevronRight, Download } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { EngineSubtypeIcon, EntityHeader } from "@semoss/shared";
 import {
-	Badge,
 	Breadcrumb,
 	BreadcrumbItem,
 	BreadcrumbLink,
@@ -25,8 +24,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useEngine, useRootStore } from "@/hooks";
-import { useNavigate } from "@/hooks/useNavigate";
-import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
+import { formatToDataTestId } from "@/utility";
 import { EngineAccessButton } from ".";
 
 /**
@@ -34,10 +32,7 @@ import { EngineAccessButton } from ".";
  */
 export const EngineHeader: React.FC = () => {
 	// get the engine information
-	const { name, active, type } = useEngine();
-
-	// navigation
-	const navigate = useNavigate();
+	const { name, engine, permission, type } = useEngine();
 
 	// Service for Axios calls
 	const { monolithStore } = useRootStore();
@@ -47,32 +42,6 @@ export const EngineHeader: React.FC = () => {
 	// export loading state
 	const [exportLoading, setExportLoading] = useState(false);
 
-	const canEdit = active.role === "OWNER" || active.role === "EDITOR";
-
-	const formatEngineTimestamp = (rawValue?: string) => {
-		if (!rawValue) {
-			return "N/A";
-		}
-
-		const normalizedValue = rawValue.includes("T")
-			? rawValue
-			: rawValue.replace(" ", "T");
-		const parsedDate = new Date(normalizedValue);
-
-		if (Number.isNaN(parsedDate.getTime())) {
-			return rawValue;
-		}
-
-		return parsedDate.toLocaleString("en-US", {
-			month: "long",
-			day: "2-digit",
-			year: "numeric",
-			hour: "numeric",
-			minute: "2-digit",
-			hour12: true,
-		});
-	};
-
 	/**
 	 * @name exportDB
 	 * @desc export DB pixel
@@ -80,7 +49,7 @@ export const EngineHeader: React.FC = () => {
 	const exportDB = (includeData: boolean) => {
 		setExportLoading(true);
 		const pixel = `META | ExportEngine(engine=["${
-			active.id
+			engine.engine_id
 		}"], includeData="${includeData ? "true" : "false"}" );`;
 
 		monolithStore.runQuery(pixel).then((response) => {
@@ -127,7 +96,7 @@ export const EngineHeader: React.FC = () => {
 					</BreadcrumbSeparator>
 					<BreadcrumbItem>
 						<BreadcrumbPage className="inline-flex items-center leading-none">
-							{active.name}
+							{engine.engine_display_name || engine.engine_name}
 						</BreadcrumbPage>
 					</BreadcrumbItem>
 				</BreadcrumbList>
@@ -137,17 +106,13 @@ export const EngineHeader: React.FC = () => {
 				icon={
 					<EngineSubtypeIcon
 						engineType={type}
-						engineSubtype={
-							(active.engine_subtype ||
-								(active.metadata
-									.engine_subtype as string)) as string
-						}
+						engineSubtype={engine.engine_subtype}
 						alt={name}
 						className="size-full object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.08)]"
 					/>
 				}
-				name={active.name}
-				id={active.id}
+				name={engine.engine_display_name || engine.engine_name}
+				id={engine.engine_id}
 				copyLabel={`Copy ${name} ID`}
 				nameTestId="Title"
 				idTestId={`engineHeader-${name}-id`}
@@ -155,7 +120,7 @@ export const EngineHeader: React.FC = () => {
 				actions={
 					<>
 						<EngineAccessButton />
-						{active.role === "OWNER" && (
+						{permission === "OWNER" && (
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<Button
@@ -168,9 +133,7 @@ export const EngineHeader: React.FC = () => {
 										)}
 										onClick={() => {
 											const engineType =
-												active.engine_subtype ||
-												(active.metadata
-													.engine_subtype as string);
+												engine.engine_subtype;
 											if (engineType === "H2_DB") {
 												setOpenExportModal(true);
 											} else {
@@ -186,28 +149,6 @@ export const EngineHeader: React.FC = () => {
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent>Export</TooltipContent>
-							</Tooltip>
-						)}
-						{canEdit && (
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										variant="outline"
-										size="icon"
-										aria-label="Edit"
-										onClick={() => {
-											navigate(
-												`/${type.toLowerCase()}/${active.id}/edit`,
-											);
-										}}
-										data-testid={formatToDataTestId(
-											`editEngineDetails-${name}-edit-btn`,
-										)}
-									>
-										<Pencil className="size-4" />
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent>Edit</TooltipContent>
 							</Tooltip>
 						)}
 					</>
@@ -243,55 +184,6 @@ export const EngineHeader: React.FC = () => {
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
-
-			<div className="mt-4 flex w-full flex-col gap-4 md:flex-row md:justify-between">
-				<div className="flex flex-1 flex-col gap-4">
-					<p
-						className="overflow-hidden whitespace-normal text-muted-foreground"
-						data-testid="Description"
-					>
-						{(active.metadata.description as unknown as string) ||
-							""}
-					</p>
-
-					<div className="flex flex-row flex-wrap gap-2">
-						{active.metadata?.tag &&
-							(active.metadata?.tag as string[]).map((tag) => {
-								if (tag === "") return null;
-								return (
-									<Badge
-										key={tag}
-										variant="outline"
-										style={getTagBadgeStyle(tag)}
-										data-testid="tag-chip"
-									>
-										{tag}
-									</Badge>
-								);
-							})}
-					</div>
-				</div>
-				<div className="flex flex-col items-start gap-1 text-left md:items-end md:text-right">
-					<span
-						className="text-muted-foreground text-sm"
-						data-testid="CreatedBy"
-					>
-						Created by: {active.engine_created_by || "Unknown"}
-					</span>
-					{(active.last_updated || active.engine_date_created) && (
-						<span
-							className="text-muted-foreground text-sm"
-							data-testid="DateAdded"
-						>
-							Updated{" "}
-							{formatEngineTimestamp(
-								active.last_updated ||
-									active.engine_date_created,
-							)}
-						</span>
-					)}
-				</div>
-			</div>
 		</div>
 	);
 };

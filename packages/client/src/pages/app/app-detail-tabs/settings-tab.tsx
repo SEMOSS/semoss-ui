@@ -1,11 +1,8 @@
-import {
-	Copy,
-	Link as LinkIcon,
-	Upload as UploadIcon,
-	User,
-} from "lucide-react";
+import { Copy, DownloadIcon, Link as LinkIcon, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { download, usePixel } from "@semoss/sdk/react";
+import type { Project } from "@semoss/shared";
 import {
 	Avatar,
 	AvatarFallback,
@@ -31,22 +28,23 @@ import {
 } from "@semoss/ui/next";
 import { uploadFile as uploadFileAPI } from "@/api";
 import { Java } from "@/assets/img/Java";
-import { usePixel, useRootStore, useSettings } from "@/hooks";
+import { useRootStore, useSettings } from "@/hooks";
 
 interface AppSettingsProps {
-	id: string;
-	condensed?: boolean;
+	/** Project details */
+	project: Project;
 }
 
 type EditAppForm = {
-	PROJECT_UPLOAD: File;
+	PROJECT_UPLOAD: File | null;
 };
 
 export const SettingsTab = (props: AppSettingsProps) => {
-	const { id } = props;
+	const { project } = props;
 	const { monolithStore, configStore } = useRootStore();
 	const { adminMode } = useSettings();
 	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [isExporting, setIsExporting] = useState(false);
 
 	const { handleSubmit, control, reset, watch } = useForm<EditAppForm>({
 		defaultValues: {
@@ -79,8 +77,8 @@ export const SettingsTab = (props: AppSettingsProps) => {
 		project_portal_url?: string;
 	}>(
 		adminMode
-			? `AdminGetProjectPortalDetails('${id}');`
-			: `GetProjectPortalDetails('${id}');`,
+			? `AdminGetProjectPortalDetails('${project.project_id}');`
+			: `GetProjectPortalDetails('${project.project_id}');`,
 	);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: getPortalReactors is defined after this hook
@@ -111,8 +109,8 @@ export const SettingsTab = (props: AppSettingsProps) => {
 	 */
 	const getPortalReactors = () => {
 		const pixelString = adminMode
-			? `AdminGetProjectAvailableReactors(project=['${id}']);`
-			: `GetProjectAvailableReactors(project=['${id}']);`;
+			? `AdminGetProjectAvailableReactors(project=['${project.project_id}']);`
+			: `GetProjectAvailableReactors(project=['${project.project_id}']);`;
 
 		monolithStore
 			.runQuery(pixelString)
@@ -143,9 +141,9 @@ export const SettingsTab = (props: AppSettingsProps) => {
 	const recompileReactors = ({ release }) => {
 		let pixelString: string;
 		if (release == null) {
-			pixelString = `ReloadInsightClasses(project='${id}');`;
+			pixelString = `ReloadInsightClasses(project='${project.project_id}');`;
 		} else {
-			pixelString = `ReloadInsightClasses(project='${id}', release=true);`;
+			pixelString = `ReloadInsightClasses(project='${project.project_id}', release=true);`;
 		}
 
 		monolithStore
@@ -175,7 +173,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 	 * @desc Publishes Portal
 	 */
 	const publish = () => {
-		const pixelString = `PublishProject(project='${id}', release=true);`;
+		const pixelString = `PublishProject(project='${project.project_id}', release=true);`;
 		monolithStore
 			.runQuery(pixelString)
 			.then((response) => {
@@ -206,41 +204,51 @@ export const SettingsTab = (props: AppSettingsProps) => {
 		setIsLoading(true);
 
 		try {
+			if (!data.PROJECT_UPLOAD) {
+				throw new Error(
+					"No file selected for upload. Please select a file and try again.",
+				);
+			}
+
 			const path = "version/assets/";
 
 			// unzip the file in the new app
 			await monolithStore.runQuery(
-				`DeleteAsset(filePath=["${path}"], space=["${id}"]);`,
+				`DeleteAsset(filePath=["${path}"], space=["${project.project_id}"]);`,
 			);
 
 			// upload the file
 			const upload = await uploadFileAPI(
 				[data.PROJECT_UPLOAD],
 				configStore.store.insightID,
-				id,
+				project.project_id,
 				path,
 			);
 
 			// upnzip the file in the new app
 			await monolithStore.runQuery(
-				`UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${id}"]);`,
+				`UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${project.project_id}"]);`,
 			);
 
 			// Load the insight classes
 			await monolithStore.runQuery(
-				`ReloadInsightClasses(project='${id}', release=true);`,
+				`ReloadInsightClasses(project='${project.project_id}', release=true);`,
 			);
 
 			// Publish the app the insight classes
 			await monolithStore.runQuery(
-				`PublishProject(project='${id}', release=true);`,
+				`PublishProject(project='${project.project_id}', release=true);`,
 			);
 			toast.success("Succesfully Updated Project");
 
 			reset();
 		} catch (e) {
 			console.error(e);
-			toast.error(e.message);
+			toast.error(
+				e instanceof Error
+					? e.message
+					: "An unexpected error occurred.",
+			);
 		} finally {
 			// turn of loading
 			setIsLoading(false);
@@ -257,6 +265,32 @@ export const SettingsTab = (props: AppSettingsProps) => {
 			toast.success("Successfully copied to clipboard");
 		} catch (_e) {
 			toast.error("Unable to copy to clipboard");
+		}
+	};
+
+	/**
+	 * Export the project
+	 */
+	const exportProject = async () => {
+		try {
+			setIsExporting(true);
+
+			const response = await configStore.runPixel(
+				`ExportProjectApp(project=["${project.project_id}"]);`,
+			);
+
+			await download(
+				response.insightId,
+				response.pixelReturn[0].output as string,
+			);
+		} catch (error) {
+			toast.error(
+				error instanceof Error
+					? error.message
+					: "Failed to export project. Please try again.",
+			);
+		} finally {
+			setIsExporting(false);
 		}
 	};
 
@@ -442,17 +476,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 								onChange={(newValues) =>
 									field.onChange(newValues)
 								}
-							>
-								<div className="flex flex-col items-center gap-2">
-									<UploadIcon className="size-8 text-primary" />
-									<P className="font-medium text-primary">
-										Browse
-									</P>
-									<Small className="text-muted-foreground">
-										or drop file to upload
-									</Small>
-								</div>
-							</FileDropzone>
+							></FileDropzone>
 						)}
 					/>
 					<div className="flex justify-start">
@@ -464,6 +488,31 @@ export const SettingsTab = (props: AppSettingsProps) => {
 							Update
 						</Button>
 					</div>
+				</CardContent>
+			</Card>
+
+			{/* Export Project Section */}
+			<Card className="gap-1 p-4">
+				<CardHeader className="px-0">
+					<CardTitle>
+						<H3>Export Project</H3>
+					</CardTitle>
+				</CardHeader>
+				<CardContent className="flex flex-col gap-4 px-0">
+					<Button
+						disabled={isLoading}
+						variant="outline"
+						size="icon"
+						aria-label="Export"
+						onClick={() => exportProject()}
+						data-testid={"appDetail-export-btn"}
+					>
+						{isExporting ? (
+							<Spinner className="size-4" />
+						) : (
+							<DownloadIcon className="size-4" />
+						)}
+					</Button>
 				</CardContent>
 			</Card>
 		</div>

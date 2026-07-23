@@ -199,11 +199,7 @@ export const SettingsLayout = observer(() => {
 
 	const hasCatalogAccess = useMemo(() => {
 		if (engineDetailType && id) {
-			const permission = (
-				userEnginePermissionApi.data as
-					| { permission?: string }
-					| undefined
-			)?.permission;
+			const permission = userEnginePermissionApi.data;
 			return userEnginePermissionApi.status === "SUCCESS" && !!permission;
 		}
 		if (isAppDetail && id) {

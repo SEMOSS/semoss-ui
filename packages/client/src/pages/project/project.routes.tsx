@@ -7,7 +7,6 @@ import {
 	AppGithubPage,
 	AppGithubSelectRepoPage,
 	AppMcpUsagePage,
-	AppOverviewPage,
 	AppSettingsPage,
 	AppSmssPage,
 	NewPromptBuilderAppPage,
@@ -17,6 +16,7 @@ import { CreateAgentPage } from "./agent/create-agent-page";
 import { CreateAppPage } from "./app/create-app-page";
 import { ProjectDependenciesPage } from "./project-dependencies-page";
 import { ProjectDetailLayout } from "./project-detail-layout";
+import { ProjectOverviewPage } from "./project-overview-page";
 import { CreateSkillPage } from "./skill/create-skill-page";
 import { ViewSkillPage } from "./skill/view-skill-page";
 
@@ -103,7 +103,7 @@ export const PROJECT_ROUTES: {
 				children: [
 					{
 						path: "",
-						element: <AppOverviewPage />,
+						element: <ProjectOverviewPage />,
 					},
 					{
 						path: "dependencies",
@@ -194,7 +194,7 @@ export const PROJECT_ROUTES: {
 				children: [
 					{
 						path: "",
-						element: <AppOverviewPage />,
+						element: <ProjectOverviewPage />,
 					},
 
 					{
@@ -267,7 +267,7 @@ export const PROJECT_ROUTES: {
 				children: [
 					{
 						path: "",
-						element: <AppOverviewPage />,
+						element: <ProjectOverviewPage />,
 					},
 
 					{

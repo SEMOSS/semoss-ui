@@ -1,6 +1,6 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 
-import { PencilIcon, SettingsIcon } from "lucide-react";
+import { InfoIcon, PencilIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
@@ -115,7 +115,7 @@ export const ViewSkillPage = observer(() => {
 							onClick={() => navigate(`/skill/${appId}`)}
 							data-testid={"settings"}
 						>
-							<SettingsIcon className="size-4" />
+							<InfoIcon className="size-4" />
 						</Button>
 					</TooltipTrigger>
 					<TooltipContent>Settings</TooltipContent>

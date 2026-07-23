@@ -1,6 +1,6 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 
-import { Bookmark, Pencil, Settings, Share2 } from "lucide-react";
+import { Bookmark, InfoIcon, Pencil, Share2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
@@ -34,7 +34,7 @@ import { NavbarHeader, NavbarLeft, NavbarRight } from "../../components/shared";
 const AppViewLoadingState = () => {
 	return (
 		<div className="absolute inset-0 z-[1501] flex items-center justify-center bg-background/50">
-			<Spinner className="size-6" />
+			<Spinner className="size-4" />
 		</div>
 	);
 };
@@ -119,10 +119,10 @@ export const ViewAppPage = observer(() => {
 							onClick={() => navigate(`/app/${appId}`)}
 							data-testid={"settings"}
 						>
-							<Settings className="size-4" />
+							<InfoIcon className="size-4" />
 						</Button>
 					</TooltipTrigger>
-					<TooltipContent>Settings</TooltipContent>
+					<TooltipContent>Details</TooltipContent>
 				</Tooltip>
 				<Tooltip>
 					<TooltipTrigger asChild>
