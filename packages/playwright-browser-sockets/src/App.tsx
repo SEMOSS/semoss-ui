@@ -128,6 +128,9 @@ export default function App() {
 	>([]);
 	const [returnProject, setReturnProject] =
 		useState<RecordingProjectOption | null>(null);
+	const [returnTitle, setReturnTitle] = useState("");
+	const [returnDescription, setReturnDescription] = useState("");
+	const [returnIntent, setReturnIntent] = useState("");
 	const [isLoadingReturnProjects, setIsLoadingReturnProjects] =
 		useState(false);
 	const [isGeneratingRecordingMetadata, setIsGeneratingRecordingMetadata] =
@@ -1018,9 +1021,7 @@ export default function App() {
 		setSnackMessage("Recording discarded");
 	}, [sendEvent]);
 
-	const prepareSaveDialog = useCallback(async () => {
-		setStopRecordingDialogOpen(false);
-		setSaveDialogOpen(true);
+	const ensureMetadataModels = useCallback(async () => {
 		if (metadataModels.length > 0) {
 			setMetadataModel((current) => current || metadataModels[0]);
 			return;
@@ -1044,6 +1045,12 @@ export default function App() {
 			setIsLoadingMetadataModels(false);
 		}
 	}, [effectiveInsightId, metadataModels]);
+
+	const prepareSaveDialog = useCallback(async () => {
+		setStopRecordingDialogOpen(false);
+		setSaveDialogOpen(true);
+		await ensureMetadataModels();
+	}, [ensureMetadataModels]);
 
 	const handleGenerateSaveMetadata = useCallback(async () => {
 		if (!session || !metadataModel) return;
@@ -1170,21 +1177,69 @@ export default function App() {
 
 	const handleOpenReturnDialog = useCallback(async () => {
 		setReturnDialogOpen(true);
+		setReturnTitle("");
+		setReturnDescription("");
+		setReturnIntent("");
 		setIsLoadingReturnProjects(true);
 		try {
-			const projects = await listMcpProjects(effectiveInsightId);
-			setReturnProjects(projects);
-			setReturnProject(projects[0] ?? null);
-			if (projects.length === 0) {
-				setSnackMessage("No MCP-tagged projects are available");
-			}
+			await Promise.all([
+				(async () => {
+					const projects = await listMcpProjects(effectiveInsightId);
+					setReturnProjects(projects);
+					setReturnProject(projects[0] ?? null);
+					if (projects.length === 0) {
+						setSnackMessage("No MCP-tagged projects are available");
+					}
+				})(),
+				ensureMetadataModels(),
+			]);
 		} finally {
 			setIsLoadingReturnProjects(false);
 		}
-	}, [effectiveInsightId, listMcpProjects]);
+	}, [effectiveInsightId, ensureMetadataModels, listMcpProjects]);
+
+	const handleGenerateReturnMetadata = useCallback(async () => {
+		if (!session || !metadataModel) return;
+		setIsGeneratingRecordingMetadata(true);
+		try {
+			const metadata = await generatePlaywrightRecordingMetadata({
+				sessionId: session.sessionId,
+				roomId: toolContext?.roomId,
+				engineId: metadataModel.value,
+				recordingNameHint: mcpRecordingNameHint,
+				insightId: effectiveInsightId,
+				historyLimit: 8,
+			});
+			if (!metadata.success) {
+				setSnackError(
+					metadata.error || "Unable to generate recording metadata",
+				);
+				return;
+			}
+			setReturnTitle(metadata.title || "");
+			setReturnDescription(metadata.description || "");
+			setReturnIntent(metadata.intent || "");
+			setSnackMessage("Recording details generated");
+		} finally {
+			setIsGeneratingRecordingMetadata(false);
+		}
+	}, [
+		effectiveInsightId,
+		mcpRecordingNameHint,
+		metadataModel,
+		session,
+		toolContext?.roomId,
+	]);
 
 	const handleReturnToPlayground = useCallback(
 		async (appProject: RecordingProjectOption | null) => {
+			const title = returnTitle.trim();
+			const description = returnDescription.trim();
+			const intent = returnIntent.trim();
+			if (!title || !description || !intent) {
+				setSnackError("Title, description, and intent are required");
+				return;
+			}
 			if (returningToPlaygroundRef.current) return;
 			returningToPlaygroundRef.current = true;
 			setIsReturningToPlayground(true);
@@ -1229,14 +1284,6 @@ export default function App() {
 					throw new Error("No recording envelope is available");
 				}
 
-				const generatedMetadata =
-					await generatePlaywrightRecordingMetadata({
-						sessionId: session.sessionId,
-						roomId: toolContext.roomId,
-						recordingNameHint: mcpRecordingNameHint,
-						insightId: roomBoundInsightId,
-						historyLimit: 8,
-					});
 				const enrichedEnvelope = applyGeneratedRecordingMetadata(
 					enrichEnvelopeForRoomSave(
 						envelope,
@@ -1244,7 +1291,12 @@ export default function App() {
 						mcpRecordingNameHint,
 						mcpStartUrl,
 					),
-					generatedMetadata,
+					{
+						success: true,
+						title,
+						description,
+						intent,
+					},
 				);
 				const fileName = buildRecordingFileName(
 					enrichedEnvelope,
@@ -1379,6 +1431,9 @@ export default function App() {
 			isRecording,
 			mcpRecordingNameHint,
 			mcpStartUrl,
+			returnDescription,
+			returnIntent,
+			returnTitle,
 			updateRecordingsMcp,
 			saveRoomRecording,
 			saveRecording,
@@ -1707,9 +1762,21 @@ export default function App() {
 				}
 				projects={returnProjects}
 				project={returnProject}
+				models={metadataModels}
+				model={metadataModel}
+				title={returnTitle}
+				description={returnDescription}
+				intent={returnIntent}
 				isLoadingProjects={isLoadingReturnProjects}
+				isLoadingModels={isLoadingMetadataModels}
+				isGeneratingMetadata={isGeneratingRecordingMetadata}
 				onClose={() => setReturnDialogOpen(false)}
 				onProjectChange={setReturnProject}
+				onModelChange={setMetadataModel}
+				onTitleChange={setReturnTitle}
+				onDescriptionChange={setReturnDescription}
+				onIntentChange={setReturnIntent}
+				onGenerateMetadata={() => void handleGenerateReturnMetadata()}
 				onSubmit={(project) => {
 					void handleReturnToPlayground(project);
 				}}

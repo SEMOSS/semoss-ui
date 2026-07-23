@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import {
 	Button,
 	Dialog,
@@ -7,7 +7,9 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	Input,
 	Label,
+	Progress,
 	RadioGroup,
 	RadioGroupItem,
 	Select,
@@ -16,8 +18,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Spinner,
+	Textarea,
 } from "@semoss/ui/next";
-import type { RecordingProjectOption } from "../../types/browserEvents";
+import type {
+	RecordingMetadataModelOption,
+	RecordingProjectOption,
+} from "../../types/browserEvents";
 
 type RecordingDestination = "playground" | "playground-and-app";
 
@@ -26,9 +32,21 @@ interface ReturnToPlaygroundDialogProps {
 	disabled: boolean;
 	projects: RecordingProjectOption[];
 	project: RecordingProjectOption | null;
+	models: RecordingMetadataModelOption[];
+	model: RecordingMetadataModelOption | null;
+	title: string;
+	description: string;
+	intent: string;
 	isLoadingProjects: boolean;
+	isLoadingModels: boolean;
+	isGeneratingMetadata: boolean;
 	onClose: () => void;
 	onProjectChange: (project: RecordingProjectOption | null) => void;
+	onModelChange: (model: RecordingMetadataModelOption | null) => void;
+	onTitleChange: (value: string) => void;
+	onDescriptionChange: (value: string) => void;
+	onIntentChange: (value: string) => void;
+	onGenerateMetadata: () => void;
 	onSubmit: (project: RecordingProjectOption | null) => void;
 }
 
@@ -37,24 +55,44 @@ export function ReturnToPlaygroundDialog({
 	disabled,
 	projects,
 	project,
+	models,
+	model,
+	title,
+	description,
+	intent,
 	isLoadingProjects,
+	isLoadingModels,
+	isGeneratingMetadata,
 	onClose,
 	onProjectChange,
+	onModelChange,
+	onTitleChange,
+	onDescriptionChange,
+	onIntentChange,
+	onGenerateMetadata,
 	onSubmit,
 }: ReturnToPlaygroundDialogProps) {
+	const titleId = useId();
+	const descriptionId = useId();
+	const intentId = useId();
 	const [destination, setDestination] =
 		useState<RecordingDestination>("playground");
 	useEffect(() => {
 		if (open) setDestination("playground");
 	}, [open]);
 	const savingToApp = destination === "playground-and-app";
+	const hasRequiredMetadata =
+		!!title.trim() && !!description.trim() && !!intent.trim();
 
 	return (
 		<Dialog
 			open={open}
 			onOpenChange={(next) => !next && !disabled && onClose()}
 		>
-			<DialogContent className="sm:max-w-xl" showCloseButton={!disabled}>
+			<DialogContent
+				className="max-h-[90vh] overflow-y-auto sm:max-w-xl"
+				showCloseButton={!disabled}
+			>
 				<DialogHeader>
 					<DialogTitle>Send to Playground</DialogTitle>
 					<DialogDescription>
@@ -142,6 +180,101 @@ export function ReturnToPlaygroundDialog({
 						</span>
 					</Label>
 				</RadioGroup>
+				<div className="grid gap-2">
+					<Label>AI model</Label>
+					<Select
+						value={model?.value ?? ""}
+						onValueChange={(value) =>
+							onModelChange(
+								models.find((item) => item.value === value) ??
+									null,
+							)
+						}
+						disabled={
+							disabled || isLoadingModels || isGeneratingMetadata
+						}
+					>
+						<SelectTrigger className="w-full">
+							<SelectValue
+								placeholder={
+									isLoadingModels
+										? "Loading models..."
+										: "Select a model"
+								}
+							/>
+						</SelectTrigger>
+						<SelectContent>
+							{models.map((item) => (
+								<SelectItem key={item.value} value={item.value}>
+									{item.label}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+					<div className="flex items-center justify-between gap-2">
+						<p className="text-muted-foreground text-xs">
+							Used only when generating recording metadata.
+						</p>
+						<Button
+							variant="link"
+							size="sm"
+							onClick={onGenerateMetadata}
+							disabled={
+								disabled || !model || isGeneratingMetadata
+							}
+						>
+							{isGeneratingMetadata
+								? "Generating details..."
+								: "Generate details with AI"}
+						</Button>
+					</div>
+				</div>
+				<div className="relative grid gap-4">
+					<div className="grid gap-2">
+						<Label htmlFor={titleId}>Title</Label>
+						<Input
+							id={titleId}
+							value={title}
+							onChange={(event) =>
+								onTitleChange(event.target.value)
+							}
+							disabled={disabled || isGeneratingMetadata}
+							placeholder="e.g., Submit a customer support request"
+						/>
+					</div>
+					<div className="grid gap-2">
+						<Label htmlFor={descriptionId}>Description</Label>
+						<Textarea
+							id={descriptionId}
+							value={description}
+							onChange={(event) =>
+								onDescriptionChange(event.target.value)
+							}
+							disabled={disabled || isGeneratingMetadata}
+							rows={3}
+							placeholder="Describe the workflow performed by this recording."
+						/>
+					</div>
+					<div className="grid gap-2">
+						<Label htmlFor={intentId}>Intent</Label>
+						<Textarea
+							id={intentId}
+							value={intent}
+							onChange={(event) =>
+								onIntentChange(event.target.value)
+							}
+							disabled={disabled || isGeneratingMetadata}
+							rows={3}
+							placeholder="Explain the goal this recording achieves."
+						/>
+					</div>
+					{isGeneratingMetadata && (
+						<div className="absolute inset-0 z-10 flex items-center justify-center bg-background/75">
+							<Progress value={60} className="absolute top-0" />
+							<Spinner className="size-7" />
+						</div>
+					)}
+				</div>
 				<DialogFooter>
 					<Button
 						variant="outline"
@@ -154,6 +287,8 @@ export function ReturnToPlaygroundDialog({
 						onClick={() => onSubmit(savingToApp ? project : null)}
 						disabled={
 							disabled ||
+							isGeneratingMetadata ||
+							!hasRequiredMetadata ||
 							(savingToApp && (isLoadingProjects || !project))
 						}
 					>
