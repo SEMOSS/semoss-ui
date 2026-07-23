@@ -2,7 +2,7 @@ import { SearchIcon, StarIcon, Trash2Icon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { runPixel, useIteratorPixel, usePixel } from "@semoss/sdk/react";
+import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -85,52 +85,37 @@ export const ChatsPage = observer(() => {
 	});
 
 	// Content-match rooms from SearchRoomMessages — rooms whose message text
-	// matches the keyword but whose name may not.
-	const [contentMatchRooms, setContentMatchRooms] = useState<RoomItem[]>([]);
-
-	useEffect(() => {
-		if (!debouncedSearch) {
-			setContentMatchRooms([]);
-			return;
-		}
-		let cancelled = false;
-		runPixel<
-			[
-				{
-					room_id: string;
-					message_id: string;
-					room_name: string;
-					date_created: string;
-				}[],
-			]
-		>(
-			`META | SearchRoomMessages(search="<encode>${debouncedSearch}</encode>", limit=50, includeMessageText=false);`,
-		)
-			.then((res) => {
-				if (cancelled) return;
-				const rows = res.pixelReturn?.[0]?.output ?? [];
-				const seen = new Set<string>();
-				setContentMatchRooms(
-					rows
-						.filter(
-							(r) =>
-								r.room_id &&
-								seen.size !== seen.add(r.room_id).size,
-						)
-						.map((r) => ({
-							ROOM_ID: r.room_id,
-							ROOM_NAME: r.room_name ?? "",
-							DATE_CREATED: r.date_created ?? "",
-						})),
-				);
-			})
-			.catch(() => {
-				if (!cancelled) setContentMatchRooms([]);
-			});
-		return () => {
-			cancelled = true;
-		};
-	}, [debouncedSearch]);
+	// matches the keyword but whose name may not. Refetches on roomCounter
+	// change so renames/creates/deletes don't leave stale results.
+	const getContentMatches = useIteratorPixel<
+		{
+			room_id: string;
+			message_id: string;
+			room_name: string;
+			date_created: string;
+		}[],
+		RoomItem
+	>(
+		() =>
+			debouncedSearch
+				? `META | SearchRoomMessages(search="<encode>${debouncedSearch}</encode>", limit=50, includeMessageText=false);`
+				: `META | Return(value=[]);`,
+		() => -1,
+		(rows) => {
+			const seen = new Set<string>();
+			return rows
+				.filter(
+					(r) => r.room_id && seen.size !== seen.add(r.room_id).size,
+				)
+				.map((r) => ({
+					ROOM_ID: r.room_id,
+					ROOM_NAME: r.room_name ?? "",
+					DATE_CREATED: r.date_created ?? "",
+				}));
+		},
+		{ limit: 50 },
+		[debouncedSearch, chat.keys.roomCounter],
+	);
 
 	// Seed pinned ids from the dedicated pinned query. Toggles update
 	// `pinnedIds` optimistically and never refetch this query, so this
@@ -151,14 +136,22 @@ export const ChatsPage = observer(() => {
 
 	const visibleRooms = useMemo(() => {
 		const nameMatchIds = new Set(getRooms.data.map((r) => r.ROOM_ID));
-		const extra = contentMatchRooms.filter(
-			(r) => !nameMatchIds.has(r.ROOM_ID) && !deletedSet.has(r.ROOM_ID),
-		);
+		const extra = debouncedSearch
+			? getContentMatches.data.filter(
+					(r) =>
+						!nameMatchIds.has(r.ROOM_ID) &&
+						!deletedSet.has(r.ROOM_ID),
+				)
+			: [];
 		return [
 			...getRooms.data.filter((r) => !deletedSet.has(r.ROOM_ID)),
 			...extra,
-		];
-	}, [getRooms.data, contentMatchRooms, deletedSet]);
+		].sort(
+			(a, b) =>
+				normalizeTimestamp(b.DATE_CREATED).valueOf() -
+				normalizeTimestamp(a.DATE_CREATED).valueOf(),
+		);
+	}, [getRooms.data, getContentMatches.data, deletedSet, debouncedSearch]);
 
 	// While searching, drop the dedicated pinned section so results aren't
 	// split confusingly — matches still show their star inline.
