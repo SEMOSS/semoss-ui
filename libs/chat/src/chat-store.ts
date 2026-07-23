@@ -6,6 +6,7 @@ import type { MCPConfig } from "./types";
 
 export interface ChatStoreState extends ChatSessionState {
 	setEngineId: (engineId: string) => void;
+	setWorkspaceId: (workspaceId: string | null) => Promise<void>;
 	sendMessage: (text: string, files?: File[]) => Promise<void>;
 	recordFeedback: (messageId: string, rating: boolean) => Promise<void>;
 	downloadMessage: (
@@ -50,6 +51,7 @@ export function createChatStore(
 
 	const actionSlice = {
 		setEngineId: session.setEngineId,
+		setWorkspaceId: session.setWorkspaceId,
 		sendMessage: session.sendMessage,
 		recordFeedback: session.recordFeedback,
 		downloadMessage: session.downloadMessage,

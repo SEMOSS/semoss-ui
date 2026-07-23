@@ -27,13 +27,18 @@ export interface SelectionChatButtonProps {
 	className?: string;
 	/** z-index for the floating button. @default 9999 */
 	zIndex?: number;
+	/**
+	 * Handles the selected text instead of sending it to the active chat.
+	 * Useful when the consumer needs to open or create a chat first.
+	 */
+	onSelect?: (text: string) => void | Promise<void>;
 }
 
 /**
  * Drop this anywhere inside your app (it needs no context). Whenever the
  * user highlights text on the page a floating button appears above the
- * selection. Clicking it calls `sendToActiveChat` — the active ChatProvider's
- * session receives the message.
+ * selection. Clicking it calls `onSelect` when provided; otherwise the active
+ * ChatProvider's session receives the message through `sendToActiveChat`.
  *
  * Uses `onMouseDown` + `preventDefault` so the selection isn't cleared by
  * the click before the text is captured.
@@ -43,6 +48,7 @@ export const SelectionChatButton = ({
 	icon = <MessageSquareTextIcon className="size-3.5" />,
 	className,
 	zIndex = 9999,
+	onSelect,
 }: SelectionChatButtonProps) => {
 	const [anchor, setAnchor] = useState<SelectionAnchor | null>(null);
 
@@ -84,7 +90,7 @@ export const SelectionChatButton = ({
 		const text = anchor.text;
 		setAnchor(null);
 		window.getSelection()?.removeAllRanges();
-		void sendToActiveChat(text);
+		void (onSelect ? onSelect(text) : sendToActiveChat(text));
 	};
 
 	return (

@@ -10,7 +10,6 @@ import {
 } from "@semoss/chat";
 import {
 	ChatInput,
-	ChatRoomsPage,
 	EngineSelect,
 	McpMenuButton,
 	MessageList,
@@ -142,7 +141,6 @@ const ChatShellInner = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => {
 						onLoadMore={roomsList.loadMore}
 						onSelectRoom={handleSelectRoom}
 						onNewChat={handleNewChat}
-						onAllChats={handleAllChats}
 						onRenameRoom={roomsList.renameRoom}
 						onPinRoom={roomsList.pinRoom}
 						onDeleteRoom={roomsList.deleteRoom}

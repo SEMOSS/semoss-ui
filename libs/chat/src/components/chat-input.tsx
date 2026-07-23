@@ -44,6 +44,7 @@ import type { Engine, MCPConfig } from "../types";
 import { FileDragOverlay } from "./file-drag-overlay";
 import {
 	McpOverlay,
+	type McpOverlayAgent,
 	type McpOverlayOpenMode,
 	type McpOverlayWorkspaceRef,
 } from "./mcp-overlay";
@@ -448,6 +449,8 @@ export interface ChatInputProps {
 	mcpOverlayOpenMode?: McpOverlayOpenMode;
 	/** Optional selected workspace/agent for MCP overlay's agent tab. */
 	workspace?: McpOverlayWorkspaceRef | null;
+	/** Fixed agents shown before agents discovered from MyProjects. */
+	agents?: readonly McpOverlayAgent[];
 	/** Fired when workspace/agent selection changes in MCP overlay. */
 	onWorkspaceChange?: (workspace: McpOverlayWorkspaceRef | null) => void;
 	/** Optional room settings consumed by built-in settings dialog fallback. */
@@ -531,6 +534,7 @@ function ChatInputInner({
 	onMcpChange,
 	mcpOverlayOpenMode = "side",
 	workspace,
+	agents,
 	onWorkspaceChange,
 	roomSettings,
 	onRoomSettingsChange,
@@ -1156,6 +1160,7 @@ function ChatInputInner({
 				values={effectiveMcp}
 				workspace={effectiveWorkspace}
 				agentEditable
+				agents={agents}
 				onSave={handleSaveMcp}
 				onSaveWorkspace={handleSaveWorkspace}
 				onOpenChange={(open) => {
@@ -1182,6 +1187,7 @@ function ChatInputInner({
 								mcp: effectiveMcp,
 								workspace: effectiveWorkspace ?? undefined,
 							}}
+							agents={agents}
 							onOptionsChange={(nextOptions) => {
 								if (nextOptions.instructions !== undefined) {
 									if (onRoomSettingsChange) {

@@ -1,8 +1,8 @@
 # @semoss/chat
 
-Shared chat components and headless chat logic for SEMOSS apps. See
-[`docs/chat-components/PLAN.md`](../../docs/chat-components/PLAN.md) at the
-repo root for the architecture/plan this package implements.
+Shared chat state, transport, and React components for SEMOSS applications.
+The package exports headless APIs from `@semoss/chat` and styled components
+from `@semoss/chat/components`.
 
 This is a **library**, not an app — there's nothing to "open in a browser"
 here. You build it, and other packages (like `@semoss/playground`, once it
@@ -68,47 +68,50 @@ pnpm type-check
 Checks for TypeScript errors without emitting any files. Good to run before
 opening a PR.
 
-## Preview the components (`pnpm sandbox`)
-
-```bash
-pnpm --filter @semoss/chat sandbox
-```
-
-Opens a local-only Vite dev page at `http://localhost:4300` rendering every
-component with sample data — no backend, no `InsightProvider` needed. Loads
-`@semoss/ui/globals.css` and wraps everything in `@semoss/ui/next`'s
-`ThemeProvider` (`defaultTheme="light"`) so it renders with the real theme,
-not an invented one. Edit anything under `src/components/` or
-`sandbox/App.tsx` and it hot-reloads.
-
-This exists instead of Storybook — see `docs/chat-components/PLAN.md`
-("Storybook — investigated, decided against") for why: it was already
-tried on `libs/ui` and removed wholesale across the whole monorepo. This
-sandbox is a throwaway dev tool, not shipped, and not part of `pnpm build`.
-
 ## What's here right now
 
-**Headless (`@semoss/chat`, Phase 1 — done)**
+**Headless (`@semoss/chat`)**
 
 ```tsx
-import { useChat } from "@semoss/chat";
+import { ChatProvider, useChatContext } from "@semoss/chat";
+
+function ChatContent() {
+  const { messages, isTyping, error, roomId, sendMessage } = useChatContext();
+
+  return (
+    <div>
+      <button
+        type="button"
+        disabled={isTyping}
+        onClick={() => void sendMessage("Hello")}
+      >
+        Send
+      </button>
+      <div>Room: {roomId ?? "Not created yet"}</div>
+      <div>Messages: {messages.length}</div>
+      {error && <div>{error}</div>}
+    </div>
+  );
+}
 
 function MyChatWidget() {
-	const { messages, isTyping, error, sendMessage } = useChat({
-		engineId: "your-engine-id",
-		defaultRoomSettings: { instructions: "Be concise.", temperature: 0.3 },
-	});
-
-	// render messages/isTyping/error however you want — this hook has no
-	// opinion on UI at all. Call sendMessage(text) on submit. Each message
-	// is `{ id, role, parts, status, timestamp }` — `parts` is a sequence of
-	// typed pieces (text/thinking/tool_call/tool_result), not flat text, so
-	// a single assistant turn can think, call a tool, and answer as one
-	// message — matching playground's real structure.
+  return (
+    <ChatProvider
+      options={{
+        engineId: "your-engine-id",
+        defaultRoomSettings: {
+          instructions: "Be concise.",
+          temperature: 0.3,
+        },
+      }}
+    >
+      <ChatContent />
+    </ChatProvider>
+  );
 }
 ```
 
-`useChat(options)` creates a chat room on first send, asks the model, and
+`ChatProvider` creates a chat room on first send, asks the model, and
 **streams the response in token by token** — the same real streaming
 mechanism playground's `RoomStore` uses (`runPixelAsync` +
 `getPixelJobStreaming` polling every 300ms, then a final
@@ -118,36 +121,86 @@ default 3) before resolving. It requires the host app to already have
 `@semoss/sdk/react`'s `<InsightProvider>` set up somewhere above it —
 that's a hard prerequisite, not something this package provides.
 
-Deliberately out of scope for this first pass: message branching/editing
-(playground's `RoomStore` supports this via a message tree; this hook is
-linear-only, matching what `provider-portal-hpp`'s hand-rolled chatbot
-already does — see `docs/chat-components/PLAN.md`).
+The session is linear and does not expose playground's message branching or
+editing behavior.
 
 - `src/chat-options.ts` — the `ChatOptions` contract (`engineId`, `roomId`,
-  `workspaceId`, `defaultRoomSettings`, `toolAutoExecutionLimit`,
-  `gracefulErrors`).
-- `src/chat-session.ts` — `ChatSession`, the MobX store that actually drives
-  the ask → stream chunks into the message's parts → tool-call-loop →
-  finalize flow. Not exported publicly; `useChat` is the supported entry
-  point.
+  `workspaceId`, `defaultRoomSettings`, `allowedTools`,
+  `toolAutoExecutionLimit`, `gracefulErrors`).
+- `src/chat-session.ts` — `ChatSession`, the vanilla Zustand-backed session
+  that drives room creation, uploads, streaming, tool execution, feedback,
+  downloads, and room synchronization.
+- `src/chat-store.ts` — combines session state and bound actions into the
+  public single-room Zustand store.
+- `src/chat-provider.tsx` — exposes the store through `ChatProvider`,
+  `useChatContext`, and `useChatStore`.
 - `src/transport/pixel-calls.ts` — the underlying `AskPlayground`/
   `CreatePlaygroundRoom`/`RunMCPTool`/`AddPlaygroundToolExecution`/
-  `UpdateRoomOptions` pixel calls (`askPlayground`/
-  `addPlaygroundToolExecution` stream; the rest are one-shot), generalized
-  from `provider-portal-hpp`'s hand-rolled `ChatBotPixelCall.ts` and
-  playground's real `RoomStore.runRoomPixelStreaming`.
-- `src/use-chat.ts` — bridges the MobX store to plain React re-renders
-  (including in-place mutations like appending streamed text, via a
-  `revision` counter — not just `messages.length`), so a consumer never
-  needs to know MobX is involved or wrap in `observer()`.
+  `UpdateRoomOptions` pixel calls and related room, upload, feedback, and
+  download operations.
+- `src/chat-imperative.ts` — tracks registered stores for non-React callers.
+- `src/chat-rooms-*` — room listing, selection, search, rename, pin, and
+  deletion state.
 
-**Presentational (`@semoss/chat/components`, Phase 2 — done, Phase 3 — done)**
+### Chat options
+
+`ChatProvider` and `ChatPanel` accept a `ChatOptions` object:
+
+| Option | Description |
+| --- | --- |
+| `engineId` | Required model engine used by `AskPlayground`. |
+| `roomId` | Existing room to load. When omitted, a room is created on first send. |
+| `workspaceId` | Workspace associated with a newly created room. |
+| `defaultRoomSettings` | Initial `instructions` and `temperature`, persisted before the first ask. |
+| `toolAutoExecutionLimit` | Maximum tool-call rounds for one message. Defaults to `3`. |
+| `gracefulErrors` | Maps substrings from backend errors to user-facing messages. |
+
+`allowedTools` currently exists in the `ChatOptions` type but is not enforced
+by `ChatSession`. Tool availability is determined by the MCP sources attached
+to the room and by backend tool discovery.
+
+### Session state
+
+`useChatContext()` exposes the current session state and actions:
+
+```ts
+const {
+  messages,
+  isTyping,
+  error,
+  roomId,
+  engineId,
+  isLoadingHistory,
+  mcp,
+  setEngineId,
+  sendMessage,
+  setMcp,
+  recordFeedback,
+  downloadMessage,
+} = useChatContext();
+```
+
+Use a selector when a component needs only part of the store:
+
+```ts
+const isTyping = useChatContext((state) => state.isTyping);
+```
+
+`sendMessage(text, files?)` accepts text, files, or both. Files are uploaded
+to the current insight and represented by `media` parts in the user message.
+Other message part types are `text`, `thinking`, `tool_call`, and
+`tool_result`.
+
+`setMcp()` attaches knowledge sources and toolbox projects to the room. The
+attachments are persisted through `UpdateRoomOptions` and used by the backend
+when handling `AskPlayground`. When the model returns a tool call, the session
+executes `RunMCPTool`, records the result, and sends it through
+`AddPlaygroundToolExecution` so the model can continue.
+
+**Presentational (`@semoss/chat/components`)**
 
 **These components depend on `@semoss/ui` directly** — that's a deliberate
-reversal of an earlier decision (self-contained, no `@semoss/ui` dependency)
-once matching playground's actual visual design became the goal; see
-`docs/chat-components/PLAN.md`'s "Design approach" section for the full
-reasoning. Practically, this means the host app must already have
+choice to match playground's visual design. The host app must already have
 `@semoss/ui/globals.css` imported (and typically a `<ThemeProvider>` from
 `@semoss/ui/next` above it) — this package ships **no CSS of its own**.
 
@@ -165,6 +218,14 @@ function MyChatWidget() {
 				engineId: "your-engine-id",
 				workspaceId: "optional-workspace-id",
 			}}
+      agents={[
+        {
+          workspace_id: "support-agent-project-id",
+          name: "Support Agent",
+          description: "Answers product support questions",
+          permission: "READ_ONLY",
+        },
+      ]}
 			className="h-96"
 			placeholder="Ask me anything..."
 		/>
@@ -172,27 +233,44 @@ function MyChatWidget() {
 }
 ```
 
+The optional `agents` prop adds fixed choices to the Agent tab. Fixed agents
+are shown before agents discovered from `MyProjects`, are searchable, and are
+deduplicated by `workspace_id`. Selecting one updates the active room's
+workspace; if the room has not been created yet, that workspace is used when
+the first message creates it.
+
 Or compose the pieces yourself if you need something `ChatPanel` doesn't do
 (a header showing room info, a different layout):
 
 ```tsx
 import { ChatInput, MessageList } from "@semoss/chat/components";
-import { useChat } from "@semoss/chat";
+import { ChatProvider, useChatContext } from "@semoss/chat";
 
-function MyChatWidget() {
-	const { messages, isTyping, sendMessage } = useChat({ engineId: "..." });
+function ChatContent() {
+  const { isTyping, sendMessage } = useChatContext();
+
 	return (
-		<div className="flex h-full flex-col gap-2">
-			<MessageList messages={messages} isTyping={isTyping} className="flex-1" />
-			<ChatInput onSubmit={sendMessage} disabled={isTyping} />
+    <div className="flex h-full min-h-0 flex-col gap-2">
+      <MessageList className="min-h-0 flex-1" />
+      <ChatInput
+        onSubmit={sendMessage}
+        disabled={isTyping}
+        isGenerating={isTyping}
+      />
 		</div>
 	);
 }
+
+function MyChatWidget() {
+  return (
+    <ChatProvider options={{ engineId: "your-engine-id" }}>
+      <ChatContent />
+    </ChatProvider>
+  );
+}
 ```
 
-Shipped, matching playground's real design (not an invented one — see
-PLAN.md for the exact values pulled from `response-message.tsx`,
-`input-message.tsx`, `response-message-tool*.tsx`, `room-input.tsx`):
+Shipped components match playground's message and composer patterns:
 
 - `MessageBubble` — renders a message's `parts` in order. User messages are
   a bubble (`bg-accent`); **assistant messages are not a bubble at all** —
@@ -220,11 +298,11 @@ PLAN.md for the exact values pulled from `response-message.tsx`,
 - `ChatInput` — composer chrome matches `room-input.tsx` (`border-input`,
   `bg-card`, `shadow-lg`, `rounded-md`, focus ring) with `@semoss/ui`'s
   `Button` (`variant="default" size="icon-sm"`) as the send button.
-  **Deliberately still a plain `<textarea>`**, not playground's Lexical
-  rich-text editor (file attach, MCP menu, prompt library) — that's out of
-  scope, not something this component approximates.
-- `ChatPanel` — batteries-included: calls `useChat()` itself and wires
-  `MessageList` + `ChatInput` together.
+  It uses a plain `<textarea>` and supports file attachment, prompt library,
+  voice input, slash commands, MCP selection, room settings, and custom
+  trailing actions.
+- `ChatPanel` — batteries-included: creates a `ChatProvider` and wires
+  `MessageList`, `ChatInput`, tool response details, and file editing together.
 
 `lucide-react` (already a dependency of `@semoss/ui`, so nothing new to the
 monorepo) supplies icons (`Spinner`'s `Loader2Icon`, `ChatInput`'s
@@ -299,6 +377,32 @@ const id = getActiveChatRoomId(); // null until the first message is sent
 ```
 
 ---
+
+## Room management
+
+`ChatRoomsProvider` and `useChatRoomsContext` expose paginated room state and
+actions for searching, loading more, selecting, renaming, pinning, deleting,
+refetching, and starting a new chat.
+
+```tsx
+import { ChatRoomsProvider, useChatRoomsContext } from "@semoss/chat";
+
+function RoomCount() {
+  const rooms = useChatRoomsContext((state) => state.rooms);
+  return <span>{rooms.length} rooms</span>;
+}
+
+function Rooms() {
+  return (
+    <ChatRoomsProvider>
+      <RoomCount />
+    </ChatRoomsProvider>
+  );
+}
+```
+
+`ChatRoomsPage` and `ChatRoomsShell` from `@semoss/chat/components` provide
+ready-made room navigation and chat layouts.
 
 ## Integration patterns
 

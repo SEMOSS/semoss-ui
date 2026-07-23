@@ -17,7 +17,11 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import type { Engine, MCPConfig } from "../types";
-import { McpOverlay, type McpOverlayWorkspaceRef } from "./mcp-overlay";
+import {
+	McpOverlay,
+	type McpOverlayAgent,
+	type McpOverlayWorkspaceRef,
+} from "./mcp-overlay";
 
 export interface RoomOptionsFormProps {
 	model?: Engine | null;
@@ -33,6 +37,7 @@ export interface RoomOptionsFormProps {
 		workspace?: McpOverlayWorkspaceRef;
 	}) => void;
 	agentEditable?: boolean;
+	agents?: readonly McpOverlayAgent[];
 }
 
 function splitMcpByType(mcp: MCPConfig[]) {
@@ -48,6 +53,7 @@ export function RoomOptionsForm({
 	options,
 	onOptionsChange,
 	agentEditable = true,
+	agents,
 }: RoomOptionsFormProps) {
 	const [mcpOverlay, setMcpOverlay] = useState<{
 		type: "AGENT" | "KNOWLEDGE" | "TOOLBOX";
@@ -367,6 +373,7 @@ export function RoomOptionsForm({
 							values={options.mcp ?? []}
 							workspace={options.workspace ?? null}
 							agentEditable={agentEditable}
+							agents={agents}
 							onSave={(nextMcp) => {
 								onOptionsChange({ mcp: nextMcp });
 							}}

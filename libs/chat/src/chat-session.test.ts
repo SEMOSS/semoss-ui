@@ -762,3 +762,35 @@ describe("ChatSession.setMcp", () => {
 		});
 	});
 });
+
+describe("ChatSession.setWorkspaceId", () => {
+	it("uses a selected agent when creating the room", async () => {
+		askPlayground.mockImplementation(streamed([], textResponse("hi back")));
+		const session = new ChatSession(actions, insightId, baseOptions);
+
+		await session.setWorkspaceId("agent-1");
+		await session.sendMessage("hi");
+
+		expect(session.workspaceId).toBe("agent-1");
+		expect(createPlaygroundRoom).toHaveBeenCalledWith(actions, "agent-1");
+	});
+
+	it("persists a selected agent for an existing room", async () => {
+		const session = new ChatSession(actions, insightId, {
+			...baseOptions,
+			roomId: "room-1",
+		});
+		await flushMicrotasks();
+
+		await session.setWorkspaceId("agent-1");
+
+		expect(session.workspaceId).toBe("agent-1");
+		expect(updateRoomOptions).toHaveBeenCalledWith(actions, {
+			roomId: "room-1",
+			workspaceId: "agent-1",
+			instructions: undefined,
+			temperature: undefined,
+			mcp: [],
+		});
+	});
+});
