@@ -169,7 +169,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		getUserEnginePermission.status !== "SUCCESS" ||
 		!getUserEnginePermission.data ||
 		getEngineMetadata.status !== "SUCCESS" ||
-		getDatabaseCategory.status !== "SUCCESS"
+		getDatabaseCategory.status === "LOADING"
 	) {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
