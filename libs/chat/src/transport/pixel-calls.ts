@@ -3,6 +3,7 @@ import {
 	getPixelAsyncResult,
 	getPixelJobStreaming,
 	runPixelAsync,
+	uploadInsight,
 	type useInsight,
 } from "@semoss/sdk/react";
 import { normalizeTimestamp } from "../lib/date";
@@ -168,6 +169,7 @@ export async function askPlayground(
 		engineId: string;
 		roomId: string;
 		command: string;
+		image?: string[];
 		temperature?: number;
 		parentMessageId?: string;
 	},
@@ -182,7 +184,10 @@ export async function askPlayground(
 	const parentMessageIdParam = params.parentMessageId
 		? `, parentMessageId=["${params.parentMessageId}"]`
 		: "";
-	const pixel = `AskPlayground(engine=["${params.engineId}"], roomId=["${params.roomId}"], command=["<encode>${params.command}</encode>"], context=[], image=[], paramValues=[{"temperature":${params.temperature ?? 0.7}}]${parentMessageIdParam})`;
+	const imageParam = params.image?.length
+		? JSON.stringify(params.image)
+		: "[]";
+	const pixel = `AskPlayground(engine=["${params.engineId}"], roomId=["${params.roomId}"], command=["<encode>${params.command}</encode>"], context=[], image=${imageParam}, paramValues=[{"temperature":${params.temperature ?? 0.7}}]${parentMessageIdParam})`;
 	const data = await streamPixel(insightId, pixel, onChunk);
 	const responseMessage = extractResponseMessage(data);
 	if (!responseMessage) {
@@ -192,6 +197,39 @@ export async function askPlayground(
 	return responseMessage;
 }
 
+export async function uploadPlaygroundFiles(
+	insightId: string,
+	files: File[],
+): Promise<Array<{ fileName: string; fileLocation: string }>> {
+	if (files.length === 0) {
+		return [];
+	}
+	const response = await uploadInsight(insightId, "", files);
+	const uploaded = (response as { data?: unknown }).data;
+	if (!Array.isArray(uploaded)) {
+		return [];
+	}
+	return uploaded
+		.map((file) => {
+			if (
+				typeof file === "object" &&
+				file !== null &&
+				"fileName" in file &&
+				"fileLocation" in file
+			) {
+				return {
+					fileName: String((file as { fileName: unknown }).fileName),
+					fileLocation: String(
+						(file as { fileLocation: unknown }).fileLocation,
+					),
+				};
+			}
+			return null;
+		})
+		.filter((file): file is { fileName: string; fileLocation: string } => {
+			return file !== null && file.fileName.length > 0;
+		});
+}
 export async function runMcpTool(
 	actions: InsightActions,
 	params: { projectId: string; functionName: string; paramValues: unknown },

@@ -1,3 +1,4 @@
+import { ArrowLeftIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
 	ChatProvider,
@@ -17,7 +18,7 @@ import {
 	SelectionChatButton,
 } from "@semoss/chat/components";
 import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
-import { Spinner } from "@semoss/ui/next";
+import { Button, Spinner } from "@semoss/ui/next";
 import { SidebarFooter } from "./sidebar-footer";
 
 export interface ChatShellProps {
@@ -52,7 +53,7 @@ const ChatShellInner = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => {
 	// appear to vanish until a second send forced a fresh render.
 	const [liveRoomId, setLiveRoomId] = useState<string | null>(null);
 	const roomsList = useChatRoomsContext();
-	const { setSearch } = roomsList;
+	const { refetch } = roomsList;
 
 	// Same MyEngines query EngineSelect itself runs under the hood (see
 	// libs/shared/src/components/engine/engine-select.tsx), called directly
@@ -83,7 +84,7 @@ const ChatShellInner = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => {
 	// polls the imperative registry (getActiveChatRoomId(), already public)
 	// while sitting in "new chat" mode, then records the id (for sidebar
 	// highlighting only — see liveRoomId above, NOT activeRoomId) and
-	// nudges the room list to refetch so the new room shows up.
+	// refetches the room list so the new room shows up.
 	useEffect(() => {
 		if (activeRoomId !== null) {
 			return;
@@ -92,17 +93,11 @@ const ChatShellInner = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => {
 			const createdRoomId = getActiveChatRoomId();
 			if (createdRoomId) {
 				setLiveRoomId(createdRoomId);
-				// roomsList only refetches when its search term actually
-				// changes — there's no standalone "refetch" call in
-				// useChatRoomsContext's public API, so toggling search to a
-				// different value and back is what forces the new room to
-				// appear in the sidebar's list.
-				setSearch(" ");
-				setSearch("");
+				void refetch();
 			}
 		}, NEW_ROOM_POLL_INTERVAL_MS);
 		return () => clearInterval(interval);
-	}, [activeRoomId, setSearch]);
+	}, [activeRoomId, refetch]);
 
 	const handleSelectRoom = (roomId: string) => {
 		setLiveRoomId(null);
@@ -113,6 +108,19 @@ const ChatShellInner = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => {
 	const handleNewChat = () => {
 		setLiveRoomId(null);
 		setActiveRoomId(null);
+		setViewMode("chat");
+	};
+
+	const handleAllChats = () => {
+		setLiveRoomId(null);
+		setViewMode("allChats");
+	};
+
+	// activeRoomId is untouched by handleAllChats, so returning to "chat"
+	// mode re-mounts the same ChatProvider the user was in before — this
+	// is the only way back, since ChatRoomsPage has no onBack/onClose in
+	// its own props.
+	const handleBackFromAllChats = () => {
 		setViewMode("chat");
 	};
 
@@ -141,7 +149,26 @@ const ChatShellInner = ({ sidebarOpen, onOpenSettings }: ChatShellProps) => {
 				</div>
 			) : null}
 			<main className="flex min-h-0 flex-1 flex-col">
-				{engine ? (
+				{viewMode === "allChats" ? (
+					<div className="flex min-h-0 flex-1 flex-col">
+						<div className="flex items-center gap-2 p-4 pb-0">
+							<Button
+								variant="ghost"
+								size="icon"
+								aria-label="Back"
+								onClick={handleBackFromAllChats}
+							>
+								<ArrowLeftIcon className="size-4" />
+							</Button>
+						</div>
+						<ChatRoomsPage
+							className="min-h-0 flex-1 p-4"
+							onSelectRoom={handleSelectRoom}
+							onNewChat={handleNewChat}
+							onAllChats={handleAllChats}
+						/>
+					</div>
+				) : engine ? (
 					<ChatProvider
 						key={activeRoomId ?? "new"}
 						isActive
@@ -263,16 +290,22 @@ const RoomContent = ({
 	}
 
 	return (
-		<div className="flex h-full min-h-0 flex-col gap-2 p-4">
-			<MessageList className="min-h-0 flex-1" />
-			<ChatInput
-				value={composerValue}
-				onValueChange={setComposerValue}
-				onSubmit={handleSubmit}
-				disabled={isTyping}
-				trailingActions={trailingActions}
-				placeholder="Ask a follow-up…"
-			/>
+		<div className="flex h-full min-h-0 flex-col">
+			{/* Centered max-w-[1120px] reading column with generous padding
+			 * — matches packages/playground's room-content.tsx exactly.
+			 * Without it, messages ran edge-to-edge with only a flat p-4,
+			 * which read as cramped/flat next to real playground. */}
+			<MessageList className="mx-auto min-h-0 w-full max-w-[1120px] flex-1 px-4 py-6 sm:px-8 lg:px-16" />
+			<div className="mx-auto flex w-full max-w-[1120px] shrink-0 flex-col px-4 py-4 sm:px-8 lg:px-16">
+				<ChatInput
+					value={composerValue}
+					onValueChange={setComposerValue}
+					onSubmit={handleSubmit}
+					disabled={isTyping}
+					trailingActions={trailingActions}
+					placeholder="Ask a follow-up…"
+				/>
+			</div>
 		</div>
 	);
 };

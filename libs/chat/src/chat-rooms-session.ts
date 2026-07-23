@@ -78,6 +78,7 @@ export class ChatRoomsSession {
 		this.deleteRoom = this.deleteRoom.bind(this);
 		this.setActiveRoom = this.setActiveRoom.bind(this);
 		this.newChat = this.newChat.bind(this);
+		this.refetch = this.refetch.bind(this);
 
 		if (autoload) {
 			void this.start();
@@ -150,6 +151,16 @@ export class ChatRoomsSession {
 			return;
 		}
 		await this.loadPage(false);
+	}
+
+	/**
+	 * Unconditionally reloads pinned rooms + the first page under the
+	 * current search term — for callers that know the list is stale (e.g.
+	 * a room was just created out-of-band) but have no search-term change
+	 * to trigger a refetch through, unlike `setSearch`.
+	 */
+	async refetch(): Promise<void> {
+		await Promise.all([this.loadPinned(), this.loadPage(true)]);
 	}
 
 	async renameRoom(roomId: string, name: string): Promise<void> {

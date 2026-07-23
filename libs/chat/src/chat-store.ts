@@ -6,7 +6,7 @@ import type { MCPConfig } from "./types";
 
 export interface ChatStoreState extends ChatSessionState {
 	setEngineId: (engineId: string) => void;
-	sendMessage: (text: string) => Promise<void>;
+	sendMessage: (text: string, files?: File[]) => Promise<void>;
 	recordFeedback: (messageId: string, rating: boolean) => Promise<void>;
 	downloadMessage: (
 		messageId: string,

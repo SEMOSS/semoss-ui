@@ -238,6 +238,30 @@ describe("ChatRoomsSession", () => {
 		expect(listPlaygroundRooms).toHaveBeenCalledTimes(1);
 	});
 
+	it("refetch reloads both lists unconditionally under the current search", async () => {
+		const session = new ChatRoomsSession(actions);
+		await flushMicrotasks();
+		session.setSearch("claim");
+		await flushMicrotasks();
+		listPinnedPlaygroundRooms.mockClear();
+		listPlaygroundRooms.mockClear();
+		listPinnedPlaygroundRooms.mockResolvedValue([
+			room({ roomId: "pinned-1", pinned: true }),
+		]);
+		listPlaygroundRooms.mockResolvedValue([room({ roomId: "room-1" })]);
+
+		await session.refetch();
+
+		expect(listPinnedPlaygroundRooms).toHaveBeenCalledTimes(1);
+		expect(listPlaygroundRooms).toHaveBeenCalledWith(actions, {
+			search: "claim",
+			limit: 25,
+			offset: 0,
+		});
+		expect(session.pinnedRooms).toHaveLength(1);
+		expect(session.rooms).toHaveLength(1);
+	});
+
 	it("deleteRoom filters the room out of both lists", async () => {
 		listPinnedPlaygroundRooms.mockResolvedValue([
 			room({ roomId: "room-1", pinned: true }),

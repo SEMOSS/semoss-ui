@@ -9,6 +9,7 @@ import {
 	ResizableHandle,
 	ResizablePanel,
 	ResizablePanelGroup,
+	ScrollArea,
 } from "@semoss/ui/next";
 import { useChatContext } from "../chat-provider";
 import { cn } from "../lib/utils";
@@ -19,6 +20,7 @@ import { TypingIndicator } from "./typing-indicator";
 
 export interface MessageRenderHelpers {
 	openToolResponse: (tool: ToolResponseDetails) => void;
+	openFile: (file: { fileName: string; path: string }) => void;
 	/** Call with true (thumbs up) or false (thumbs down) to rate this message. */
 	onRate: (rating: boolean) => void;
 	/** Download the message content as Word or PDF. */
@@ -37,6 +39,8 @@ export interface MessageListProps {
 	emptyState?: ReactNode;
 	/** Optional handler to open a selected tool response in a side panel. */
 	onOpenToolResponse?: (tool: ToolResponseDetails) => void;
+	/** Optional handler to open an attached file in a side panel. */
+	onOpenFile?: (file: { fileName: string; path: string }) => void;
 }
 
 function totalStreamedChars(messages: ChatMessage[]): number {
@@ -64,6 +68,7 @@ export function MessageList({
 	renderMessage,
 	emptyState,
 	onOpenToolResponse,
+	onOpenFile,
 }: MessageListProps) {
 	const { messages, isTyping, recordFeedback, downloadMessage } =
 		useChatContext();
@@ -90,12 +95,13 @@ export function MessageList({
 	const buildHelpers = useCallback(
 		(message: ChatMessage): MessageRenderHelpers => ({
 			openToolResponse: (tool) => openToolResponse(tool),
+			openFile: (file) => onOpenFile?.(file),
 			onRate: (rating: boolean) =>
 				void recordFeedback(message.id, rating),
 			onDownload: (format: "word" | "pdf") =>
 				downloadMessage(message.id, format),
 		}),
-		[recordFeedback, downloadMessage],
+		[downloadMessage, onOpenFile, openToolResponse, recordFeedback],
 	);
 
 	return (
@@ -104,41 +110,48 @@ export function MessageList({
 			className="h-full min-h-0 w-full overflow-hidden"
 		>
 			<ResizablePanel className="min-w-0">
-				<div
+				<ScrollArea
 					data-slot="message-list"
 					className={cn(
-						"flex h-full flex-col gap-2 overflow-y-auto",
+						"[&_[data-slot=scroll-area-viewport]>div]:block! h-full w-full overflow-hidden",
 						className,
 					)}
 				>
-					{isEmpty
-						? emptyState
-						: messages.map((message) => {
-								const helpers = buildHelpers(message);
-								return (
-									<div
-										key={message.id}
-										data-slot="message-list-item"
-									>
-										{renderMessage ? (
-											renderMessage(message, helpers)
-										) : (
-											<MessageBubble
-												message={message}
-												roomId={roomId}
-												onOpenToolResponse={
-													helpers.openToolResponse
-												}
-												onRate={helpers.onRate}
-												onDownload={helpers.onDownload}
-											/>
-										)}
-									</div>
-								);
-							})}
-					{isWaitingForFirstChunk ? <TypingIndicator /> : null}
-					<div data-slot="message-list-anchor" ref={bottomRef} />
-				</div>
+					<div className="flex min-h-full flex-col gap-2">
+						{isEmpty
+							? emptyState
+							: messages.map((message) => {
+									const helpers = buildHelpers(message);
+									return (
+										<div
+											key={message.id}
+											data-slot="message-list-item"
+										>
+											{renderMessage ? (
+												renderMessage(message, helpers)
+											) : (
+												<MessageBubble
+													message={message}
+													roomId={roomId}
+													onOpenToolResponse={
+														helpers.openToolResponse
+													}
+													onOpenFile={
+														helpers.openFile
+													}
+													onRate={helpers.onRate}
+													onDownload={
+														helpers.onDownload
+													}
+												/>
+											)}
+										</div>
+									);
+								})}
+						{isWaitingForFirstChunk ? <TypingIndicator /> : null}
+						<div data-slot="message-list-anchor" ref={bottomRef} />
+					</div>
+				</ScrollArea>
 			</ResizablePanel>
 			{sidebarTool && (
 				<>

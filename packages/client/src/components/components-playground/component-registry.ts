@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import { ChatInputDoc } from "./docs/chat-input-doc";
 import { ChatPanelDoc } from "./docs/chat-panel-doc";
+import { ChatRoomsShellDoc } from "./docs/chat-rooms-shell-doc";
 import { EngineSelectDoc } from "./docs/engine-select-doc";
 import { McpMenuButtonDoc } from "./docs/mcp-menu-button-doc";
 import { McpOverlayDoc } from "./docs/mcp-overlay-doc";
@@ -42,6 +43,12 @@ export const COMPONENT_REGISTRY: ComponentDocEntry[] = [
 		title: "ChatPanel",
 		group: "Layout",
 		Doc: ChatPanelDoc,
+	},
+	{
+		slug: "chat-rooms-shell",
+		title: "ChatRoomsShell",
+		group: "Layout",
+		Doc: ChatRoomsShellDoc,
 	},
 	{
 		slug: "chat-input",
