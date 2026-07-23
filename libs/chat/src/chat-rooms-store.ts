@@ -13,6 +13,7 @@ export interface ChatRoomsStoreState extends ChatRoomsSessionState {
 	deleteRoom: (roomId: string) => Promise<void>;
 	setActiveRoom: (roomId: string) => void;
 	newChat: () => void;
+	refetch: () => Promise<void>;
 }
 
 export interface ChatRoomsStoreHandle {
@@ -59,6 +60,7 @@ export function createChatRoomsStore(
 		deleteRoom: session.deleteRoom,
 		setActiveRoom: session.setActiveRoom,
 		newChat: session.newChat,
+		refetch: session.refetch,
 	}));
 
 	let unsubscribe: (() => void) | null = null;
