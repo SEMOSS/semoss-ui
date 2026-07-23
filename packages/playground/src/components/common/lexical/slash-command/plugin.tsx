@@ -80,7 +80,8 @@ const MenuPortal: React.FC<{
 export const SlashMentionPlugin: React.FC<{
 	disabled?: boolean;
 	isLoading?: boolean;
-}> = ({ disabled, isLoading }) => {
+	hasTools?: boolean;
+}> = ({ disabled, isLoading, hasTools }) => {
 	const { root } = useRoot();
 	const { commands } = useSlashCommands();
 
@@ -94,7 +95,7 @@ export const SlashMentionPlugin: React.FC<{
 				const filtered = filterSlashCommands(commands, query);
 				const match = filtered[selectedIndex] ?? filtered[0];
 				if (!match) return;
-				if (match.disableDuringLoading && isLoading) return;
+				if (match.disableWithTools && (isLoading || hasTools)) return;
 				if (!match.noChip) {
 					addNode(() =>
 						$createSlashCommandNode(match.id, match.label),
@@ -130,8 +131,12 @@ export const SlashMentionPlugin: React.FC<{
 							setSelectedIndex={setSelectedIndex}
 							onRequestClose={onRequestClose}
 							isLoading={isLoading}
+							hasTools={hasTools}
 							onCommandSelect={(cmd) => {
-								if (cmd.disableDuringLoading && isLoading)
+								if (
+									cmd.disableWithTools &&
+									(isLoading || hasTools)
+								)
 									return;
 								if (cmd.noChip) {
 									cmd.onExecute();
