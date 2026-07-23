@@ -1,59 +1,61 @@
 import { Suspense, useState } from "react";
 import { MonacoEditor } from "@semoss/shared";
 import {
+	cn,
 	Markdown,
+	ScrollArea,
 	Tabs,
 	TabsContent,
 	TabsList,
 	TabsTrigger,
+	useTheme,
 } from "@semoss/ui/next";
 
-interface MarkdownEditorProps {
+interface MarkdownEditorProps
+	extends Omit<React.ComponentPropsWithoutRef<"div">, "value" | "onChange"> {
 	/** Value of the input */
 	value: string;
 	/** Callback that is triggered when the value changes */
-	onChange?: (value: string) => void;
+	onChange: (value: string) => void;
 }
 
-export const MarkdownEditor = (props: MarkdownEditorProps) => {
-	const { value, onChange = () => null } = props;
+export const MarkdownEditor = ({
+	value,
+	onChange,
+	className,
+	...otherProps
+}: MarkdownEditorProps) => {
+	const { resolvedTheme } = useTheme();
+
 	const [view, setView] = useState<"edit" | "view">("edit");
 
 	return (
-		<div className="w-full overflow-hidden rounded-lg border border-border bg-background">
+		<div
+			className={cn(
+				"flex h-full min-h-0 w-full flex-col overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm",
+				className,
+			)}
+			{...otherProps}
+		>
 			<Tabs
 				value={view}
 				onValueChange={(val) => setView(val as "edit" | "view")}
-				className="w-full gap-0"
+				className="flex h-full w-full flex-col gap-0 overflow-hidden"
 			>
-				{/* ── Tab bar — label left, tabs right, all in one row ── */}
-				<div className="flex items-center justify-between border-border border-b bg-muted/40 px-3 py-1.5">
-					{/* Left: descriptive label with Markdown link */}
-					<span className="text-muted-foreground text-sm">
-						Add details as{" "}
-						<a
-							href="https://handbook.gitlab.com/docs/markdown-guide/"
-							target="_blank"
-							rel="noopener noreferrer"
-							className="font-medium text-primary underline-offset-2 hover:underline"
-						>
-							Markdown
-						</a>
-					</span>
-
-					{/* Right: Edit / View pill tabs */}
-					<TabsList className="h-8 rounded-md bg-muted p-0.5">
+				<div className="flex w-full shrink-0 flex-row items-center gap-2 border-border border-b bg-muted p-4">
+					<div className="flex-1 truncate text-sm leading-none">
+						Enter as Markdown
+					</div>
+					<TabsList>
 						<TabsTrigger
 							value="edit"
 							data-testid="markdownEditor-Edit-toggle"
-							className="h-7 rounded-sm px-4 text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm"
 						>
 							Edit
 						</TabsTrigger>
 						<TabsTrigger
 							value="view"
 							data-testid="markdownEditor-View-toggle"
-							className="h-7 rounded-sm px-4 text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm"
 						>
 							View
 						</TabsTrigger>
@@ -61,42 +63,47 @@ export const MarkdownEditor = (props: MarkdownEditorProps) => {
 				</div>
 
 				{/* ── Editor / Preview content area ── */}
-				<div className="h-64 w-full overflow-hidden bg-background">
-					<TabsContent value="edit" className="m-0 h-full p-0">
-						<Suspense
-							fallback={
-								<div className="p-4 text-muted-foreground text-sm">
-									Loading editor...
-								</div>
+				<TabsContent value="edit" className="w-full">
+					<Suspense
+						fallback={
+							<div className="p-4 text-muted-foreground text-sm">
+								Loading editor...
+							</div>
+						}
+					>
+						<MonacoEditor
+							height="100%"
+							width="100%"
+							value={value}
+							language="markdown"
+							theme={
+								resolvedTheme === "dark"
+									? "vs-dark"
+									: "vs-light"
 							}
-						>
-							<MonacoEditor
-								height="100%"
-								width="100%"
-								defaultValue={value}
-								value={value}
-								language="markdown"
-								onChange={(newValue) =>
-									onChange(newValue || "")
-								}
-								options={{
-									minimap: { enabled: false },
-									fontSize: 14,
-									lineNumbers: "on",
-									scrollBeyondLastLine: false,
-									wordWrap: "off",
-								}}
-							/>
-						</Suspense>
-					</TabsContent>
+							onChange={(newValue) => onChange(newValue || "")}
+							options={{
+								minimap: { enabled: false },
+								fontSize: 14,
+								lineNumbers: "on",
+								scrollBeyondLastLine: false,
+								wordWrap: "off",
+							}}
+						/>
+					</Suspense>
+				</TabsContent>
 
-					<TabsContent
-						value="view"
-						className="m-0 h-full overflow-auto p-4"
+				<TabsContent
+					value="view"
+					className="min-h-0 w-full overflow-hidden"
+				>
+					<ScrollArea
+						scrollOrientation={"both"}
+						className="h-full w-full flex-1 px-6 py-4"
 					>
 						<Markdown>{value}</Markdown>
-					</TabsContent>
-				</div>
+					</ScrollArea>
+				</TabsContent>
 			</Tabs>
 		</div>
 	);

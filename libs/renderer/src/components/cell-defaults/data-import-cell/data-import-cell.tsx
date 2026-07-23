@@ -24,6 +24,14 @@ import { DataImportFormModal } from "../../shared/data-import-form-modal";
 
 const EDITOR_LINE_HEIGHT = 19;
 const EDITOR_MAX_HEIGHT = 500;
+const NOTEBOOK_PIXEL_THEME_LIGHT = "notebook-pixel-theme-light";
+const NOTEBOOK_PIXEL_THEME_DARK = "notebook-pixel-theme-dark";
+
+const getNotebookPixelTheme = () =>
+	typeof document !== "undefined" &&
+	document.documentElement.classList.contains("dark")
+		? NOTEBOOK_PIXEL_THEME_DARK
+		: NOTEBOOK_PIXEL_THEME_LIGHT;
 
 interface JoinObject {
 	id: string;
@@ -54,6 +62,8 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 	(props) => {
 		// biome-ignore lint/suspicious/noExplicitAny: external API type
 		const editorRef = useRef<any>(null);
+		// biome-ignore lint/suspicious/noExplicitAny: external API type
+		const monacoRef = useRef<any>(null);
 		const [showStyledView, setShowStyledView] = useState(true);
 		const { cell, isExpanded } = props;
 		const { state } = useBlocks();
@@ -147,6 +157,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 		// biome-ignore lint/suspicious/noExplicitAny: external API type
 		const handleEditorMount = (editor: any, monaco: any) => {
 			editorRef.current = editor;
+			monacoRef.current = monaco;
 			let ignoreResize = false;
 			editor.onDidContentSizeChange(() => {
 				try {
@@ -181,15 +192,44 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 				},
 			});
 
-			monaco.editor.defineTheme("notebook-pixel-theme", {
+			monaco.editor.defineTheme(NOTEBOOK_PIXEL_THEME_LIGHT, {
 				base: "vs",
 				inherit: true,
 				rules: [],
 				colors: { "editor.background": "#FAFAFA" },
 			});
-			monaco.editor.setTheme("notebook-pixel-theme");
+			monaco.editor.defineTheme(NOTEBOOK_PIXEL_THEME_DARK, {
+				base: "vs-dark",
+				inherit: true,
+				rules: [],
+				colors: { "editor.background": "#171717" },
+			});
+			monaco.editor.setTheme(getNotebookPixelTheme());
 			resizeEditor();
 		};
+
+		useEffect(() => {
+			const root =
+				typeof document !== "undefined"
+					? document.documentElement
+					: null;
+			if (!root) return;
+
+			const applyTheme = () => {
+				const monaco = monacoRef.current;
+				if (!monaco) return;
+				monaco.editor.setTheme(getNotebookPixelTheme());
+			};
+
+			applyTheme();
+			const observer = new MutationObserver(applyTheme);
+			observer.observe(root, {
+				attributes: true,
+				attributeFilter: ["class"],
+			});
+
+			return () => observer.disconnect();
+		}, []);
 
 		const resizeEditor = () => {
 			if (!editorRef.current) return;

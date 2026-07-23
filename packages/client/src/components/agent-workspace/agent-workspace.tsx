@@ -4,8 +4,8 @@ import { useInsight } from "@semoss/sdk/react";
 import { FlexLayout } from "@semoss/shared";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
+import { ProjectDetailTabs } from "@/components/project";
 import { useWorkspace } from "@/hooks";
-import { AppDetailPage } from "@/pages/app/app-detail-page";
 import type { WorkspaceOptions } from "../../stores";
 import { CodeWorkspaceActions } from "../code-workspace/code-workspace-actions";
 import { MCPJsonEditor } from "../shared";
@@ -36,13 +36,6 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						enableClose: false,
 						config: {},
 					},
-					{
-						id: "settings",
-						type: "tab",
-						name: "Settings",
-						component: "settingsPanel",
-						config: {},
-					},
 				],
 			},
 			{
@@ -57,6 +50,16 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						component: "terminal",
 						enableClose: false,
 						config: {},
+					},
+					{
+						id: "settings",
+						type: "tab",
+						name: "Settings",
+						component: "settings-panel",
+						config: {},
+						enableClose: false,
+						borderWidth: 800,
+						borderHeight: 600,
 					},
 				],
 			},
@@ -130,9 +133,26 @@ export const AgentWorkspace: React.FC = observer(() => {
 			return <AppFileEditor node={node} app={workspace.appId} />;
 		} else if (component === "mcpJsonEditor") {
 			return <MCPJsonEditor dataMap={config.data} />;
-		} else if (component === "settingsPanel") {
+		} else if (component === "settings-panel") {
 			return (
-				<AppDetailPage showNav={false} excludeTabs={["mcp-usage"]} />
+				<ProjectDetailTabs
+					type="WORKSPACE"
+					tabs={[
+						{ name: "Overview", path: "" },
+						{
+							name: "Commits",
+							path: "commits",
+							restrict: ["OWNER", "EDIT"],
+						},
+						{ name: "GitHub", path: "github", restrict: ["OWNER"] },
+						{
+							name: "Access Control",
+							path: "access-control",
+							restrict: ["OWNER", "EDIT"],
+						},
+						{ name: "SMSS", path: "smss", restrict: ["OWNER"] },
+					]}
+				/>
 			);
 		} else if (component === "terminal") {
 			return <WorkspaceTerminal appId={workspace.appId} />;
@@ -201,7 +221,6 @@ export const AgentWorkspace: React.FC = observer(() => {
 		<WorkspaceManager
 			navbarActions={<CodeWorkspaceActions />}
 			options={DEFAULT_OPTIONS}
-			settingsTabName="Agent Settings"
 			factory={FACTORY}
 			onAction={handleAction}
 		/>

@@ -588,6 +588,7 @@ export const EngineEditPage: React.FC = observer(() => {
 						control={control}
 						render={({ field }) => (
 							<MarkdownEditor
+								className="h-[40vh]"
 								value={(field.value as string) || ""}
 								onChange={field.onChange}
 							/>

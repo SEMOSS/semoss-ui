@@ -25,6 +25,8 @@
 	"results": {
 		"successNoOutput": "✓ 正常に実行されました（出力なし）",
 		"insightNotReady": "インサイトの準備ができていません",
-		"unknownError": "不明なエラー"
+		"unknownError": "不明なエラー",
+		"fileDownloadStarted": "✓ ファイルのダウンロードを開始しました",
+		"downloadFailed": "ファイルのダウンロードに失敗しました"
 	}
 }

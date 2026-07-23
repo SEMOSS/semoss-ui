@@ -15,7 +15,7 @@ const CodeWorkspace = lazy(() =>
 	})),
 );
 const SkillWorkspace = lazy(() =>
-	import("@/components/skill-workspace").then((m) => ({
+	import("@/components/skill").then((m) => ({
 		default: m.SkillWorkspace,
 	})),
 );
@@ -35,13 +35,7 @@ interface WorkspaceProps {
 
 const WorkspaceLoadingState = () => {
 	return (
-		<div
-			className="absolute inset-0 flex items-center justify-center"
-			style={{
-				background: "rgba(255, 255, 255, 0.5)",
-				zIndex: 1501,
-			}}
-		>
+		<div className="absolute inset-0 z-[1501] flex items-center justify-center bg-background/50">
 			<Spinner className="size-6" />
 		</div>
 	);

@@ -1,7 +1,4 @@
-import { Boxes, Braces, Coins } from "lucide-react";
 import type { Engine } from "@semoss/shared";
-import { Database } from "@/assets/img/Database";
-import { ModelBrain } from "@/assets/img/ModelBrain";
 import type { Role } from "@/types";
 import { EngineActivityPage } from "./engine-activity-page";
 import { EngineCommitsPage } from "./engine-commits-page";
@@ -25,9 +22,6 @@ export const ENGINE_ROUTES: {
 
 	/** Path of the page */
 	path: string;
-
-	/** Icon to render in the page */
-	icon: React.FunctionComponent;
 
 	/** Type of the engine */
 	type: Engine["engine_type"];
@@ -56,7 +50,6 @@ export const ENGINE_ROUTES: {
 		type: "FUNCTION",
 		description:
 			"Expose and reuse LLM functionality in the form of functions to promote efficiency across app development. These functions include LLM Guard scanners to ensure the secure use of LLMs. ",
-		icon: Braces,
 		specific: [
 			{
 				name: "Overview",
@@ -114,7 +107,6 @@ export const ENGINE_ROUTES: {
 		type: "MODEL",
 		description:
 			"Models are diverse, with particular strengths and weaknesses specific to each use case. Our model catalog exposes these models in an abstracted fashion, allowing data scientists to hand-select and/or swap models as desired.",
-		icon: ModelBrain as React.FunctionComponent,
 		specific: [
 			{
 				name: "Overview",
@@ -172,7 +164,6 @@ export const ENGINE_ROUTES: {
 		type: "DATABASE",
 		description:
 			"Database catalog is an integrated data nexus connecting to diverse databases and serving as a springboard for unified data orchestration, innovation, and insights. Access structured data sources like relational database management systems (RDBMS), Triplestore/RDF, graph databases, Excel/CSVs, and data exposed via API.  ",
-		icon: Database as React.FunctionComponent,
 		specific: [
 			{
 				name: "Overview",
@@ -242,7 +233,6 @@ export const ENGINE_ROUTES: {
 		type: "VECTOR",
 		description:
 			"Knowledge repositories, also known as vector databases, enable fast retrieval of information and semantic search. Create knowledge repositories on the fly and connect them for simplified reuse across apps.  ",
-		icon: Coins,
 		specific: [
 			{
 				name: "Overview",
@@ -306,7 +296,6 @@ export const ENGINE_ROUTES: {
 		type: "STORAGE",
 		description:
 			"Tapping into unstructured data (e.g., audio, video, images, code) is critical when training and using AI solutions. Our storage catalog enables integration with many industry-leading cloud storage solutions to effortlessly access a project's unstructured data.",
-		icon: Boxes,
 		specific: [
 			{
 				name: "Overview",
@@ -364,7 +353,6 @@ export const ENGINE_ROUTES: {
 		type: "GUARDRAIL",
 		description:
 			"Guardrail Catalog is a centralized hub for managing and deploying guardrails that ensure safety, compliance, and reliability across the platform. It provides ready-to-use options like Gliner and Detoxify, and supports custom guardrail uploads via ZIP files, enabling consistent, secure, and scalable interactions.",
-		icon: Boxes,
 		specific: [
 			{
 				name: "Overview",

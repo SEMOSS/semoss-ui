@@ -11,12 +11,12 @@ import {
 	StateStore,
 } from "@semoss/renderer";
 import { runPixel, useInsight } from "@semoss/sdk/react";
+import { FlexLayout } from "@semoss/shared";
 import { Spinner, toast } from "@semoss/ui/next";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
-import { FlexLayout } from "@/components/flex-layout";
+import { ProjectDetailTabs } from "@/components/project";
 import { useWorkspace } from "@/hooks";
-import { AppDetailPage } from "@/pages/app";
 import { DesignerStore, type WorkspaceOptions } from "@/stores";
 import { WorkspaceManager } from "../../components/workspace";
 import { WorkspaceTerminal } from "../../components/workspace/panels";
@@ -91,16 +91,6 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						config: {},
 						helpText: "Files",
 					},
-					{
-						type: "tab",
-						id: "settings",
-						name: "Settings",
-						component: "settingsPanel",
-						config: {},
-						// maxWidth: 1,
-						helpText: "Settings",
-						enableDrag: false,
-					},
 				],
 			},
 			{
@@ -143,6 +133,18 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						component: "terminal",
 						enableClose: false,
 						config: {},
+					},
+					{
+						type: "tab",
+						id: "settings",
+						name: "Settings",
+						component: "settings-panel",
+						config: {},
+						// maxWidth: 1,
+						helpText: "Settings",
+						enableClose: false,
+						borderWidth: 800,
+						borderHeight: 600,
 					},
 				],
 			},
@@ -376,8 +378,32 @@ export const BlocksWorkspace: React.FC = observer(() => {
 			return <WorkspaceTerminal appId={workspace.appId} />;
 		} else if (component === "graph") {
 			return <GraphPanel />;
-		} else if (component === "settingsPanel") {
-			return <AppDetailPage showNav={false} />;
+		} else if (component === "settings-panel") {
+			return (
+				<ProjectDetailTabs
+					type="CODE"
+					tabs={[
+						{ name: "Overview", path: "" },
+						{
+							name: "Commits",
+							path: "commits",
+							restrict: ["OWNER", "EDIT"],
+						},
+						{ name: "GitHub", path: "github", restrict: ["OWNER"] },
+						{
+							name: "Settings",
+							path: "settings",
+							restrict: ["OWNER"],
+						},
+						{
+							name: "Access Control",
+							path: "access-control",
+							restrict: ["OWNER", "EDIT"],
+						},
+						{ name: "SMSS", path: "smss", restrict: ["OWNER"] },
+					]}
+				/>
+			);
 		} else if (component === "export-button") {
 			return <ExportButtonPanel />;
 		}

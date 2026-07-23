@@ -14,8 +14,8 @@ import {
 } from "@semoss/ui/next";
 
 export interface Model {
-	database_name?: string;
-	database_id?: string;
+	engine_name?: string;
+	engine_id?: string;
 }
 
 interface EngineQASidebarProps {
@@ -24,8 +24,6 @@ interface EngineQASidebarProps {
 	setSelectedModel: (model: Model) => void;
 	limit: number;
 	setLimit: (limit: number) => void;
-	temperature: number;
-	setTemperature: (temperature: number) => void;
 }
 
 export const EngineQASidebar = ({
@@ -34,11 +32,9 @@ export const EngineQASidebar = ({
 	setSelectedModel,
 	limit,
 	setLimit,
-	temperature,
-	setTemperature,
 }: EngineQASidebarProps) => {
 	const getModelValue = (model: Model) =>
-		model.database_id ?? model.database_name ?? "";
+		model.engine_id ?? model.engine_name ?? "";
 	const selectedModelValue = getModelValue(selectedModel);
 
 	const onModelChange = (value: string) => {
@@ -54,12 +50,6 @@ export const EngineQASidebar = ({
 	This will change the amount of chunks pulled from 
 	a vector database. Pulling too many chunks can potentially cause your engine's
 	token limit to be exceeded!
-	`;
-
-	const temperatureTooltipText = `
-	This changes the randomness of the LLM's output. 
-	The higher the temperature the more creative and imaginative your
-	answer will be.
 	`;
 
 	return (
@@ -95,9 +85,9 @@ export const EngineQASidebar = ({
 							<SelectItem key={value} value={value}>
 								<span
 									className="block max-w-full truncate"
-									title={option.database_name}
+									title={option.engine_name}
 								>
-									{option.database_name}
+									{option.engine_name}
 								</span>
 							</SelectItem>
 						);
@@ -131,33 +121,6 @@ export const EngineQASidebar = ({
 				max={10}
 				step={1}
 				onValueChange={(value) => setLimit(value[0])}
-				className="cursor-pointer"
-			/>
-
-			{/* Temperature */}
-			<div className="mt-4 flex items-center gap-2">
-				<p className="font-medium text-sm">Set Temperature:</p>
-				<span className="ml-auto rounded bg-accent px-2 py-0.5 font-semibold text-xs">
-					{temperature}
-				</span>
-				<TooltipProvider>
-					<Tooltip>
-						<TooltipTrigger>
-							<HelpCircle className="h-4 w-4 text-primary" />
-						</TooltipTrigger>
-						<TooltipContent className="max-w-xs text-xs">
-							{temperatureTooltipText}
-						</TooltipContent>
-					</Tooltip>
-				</TooltipProvider>
-			</div>
-
-			<Slider
-				value={[temperature]}
-				min={0.1}
-				max={1}
-				step={0.1}
-				onValueChange={(value) => setTemperature(value[0])}
 				className="cursor-pointer"
 			/>
 		</Card>
