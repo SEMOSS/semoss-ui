@@ -95,25 +95,16 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({
 
 	// get the visible tabs based on permission and database type
 	const visibleTabs = useMemo(() => {
-		// for discoverable users only show unrestricted tabs (Overview)
-		if (getUserEnginePermission.data === "DISCOVERABLE") {
-			return tabs.filter((t) => !t.restrict);
-		}
-
-		if (
-			getUserEnginePermission.status !== "SUCCESS" ||
-			!getUserEnginePermission.data
-		) {
-			return [];
-		}
-
-		// check the permission
-		const permission = getUserEnginePermission.data;
-
 		// get the routes based on permission
-		let filteredTabs = tabs.filter(
-			(t) => t.restrict.indexOf(permission) > -1,
-		);
+		let filteredTabs = tabs.filter((tab) => {
+			if (!tab.restrict || tab.restrict.length === 0) {
+				return true;
+			}
+			if (!getUserEnginePermission.data) {
+				return false;
+			}
+			return tab.restrict.includes(getUserEnginePermission.data);
+		});
 
 		// additional filtering for DATABASE type engines - hide Query/SPARQL tabs based on category
 		if (route.type === "DATABASE") {
@@ -133,7 +124,6 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({
 	}, [
 		tabs,
 		route.type,
-		getUserEnginePermission.status,
 		getUserEnginePermission.data,
 		getDatabaseCategory.data,
 	]);
