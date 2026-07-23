@@ -7,24 +7,41 @@ import {
 	useResolvedPath,
 } from "react-router-dom";
 import { usePixel } from "@semoss/sdk/react";
-import type { Engine } from "@semoss/shared";
+import type { Engine, Role } from "@semoss/shared";
 import { Spinner, Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import { ResourceNotFound } from "@/components/common/resource-not-found";
 import { EngineHeader } from "@/components/engine";
+import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { EngineContext } from "@/contexts";
 import { useAPI, useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
-import type { ENGINE_ROUTES } from "./engine.constants";
 
 interface EngineLayoutProps {
-	/** Rotue to render */
-	route: (typeof ENGINE_ROUTES)[number];
+	name: string;
+	path: string;
+	type: Engine["engine_type"];
+	tabs: {
+		/** Name of the specific page */
+		name: string;
+
+		/** Path of the specific page */
+		path: string;
+
+		/** Restrict to certain roles */
+		restrict: Role[];
+	}[];
 }
 
 /**
  * Wrap the engine routes and add additional funcitonality
  */
-export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
+export const EngineLayout: React.FC<EngineLayoutProps> = ({
+	name,
+	path,
+	type,
+	tabs,
+}) => {
+	const route = { name, path, type };
 	const { engineId } = useParams();
 	const { configStore } = useRootStore();
 	const resolvedPath = useResolvedPath("");
@@ -76,16 +93,11 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		},
 	);
 
-	// get the tabs based on permission and database type
-	const tabs = useMemo(() => {
-		// must be valid
-		if (!route) {
-			return [];
-		}
-
+	// get the visible tabs based on permission and database type
+	const visibleTabs = useMemo(() => {
 		// for discoverable users only show unrestricted tabs (Overview)
 		if (getUserEnginePermission.data === "DISCOVERABLE") {
-			return route.specific.filter((t) => !t.restrict);
+			return tabs.filter((t) => !t.restrict);
 		}
 
 		if (
@@ -99,7 +111,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		const permission = getUserEnginePermission.data;
 
 		// get the routes based on permission
-		let filteredTabs = route.specific.filter(
+		let filteredTabs = tabs.filter(
 			(t) => t.restrict.indexOf(permission) > -1,
 		);
 
@@ -119,7 +131,8 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 
 		return filteredTabs;
 	}, [
-		route,
+		tabs,
+		route.type,
 		getUserEnginePermission.status,
 		getUserEnginePermission.data,
 		getDatabaseCategory.data,
@@ -130,14 +143,14 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 	 * @returns index of selectedTab
 	 */
 	const activeTabIdx: number = useMemo(() => {
-		if (!route) {
-			return -1;
-		}
-
-		for (let tabIdx = 0, tabLen = tabs.length; tabIdx < tabLen; tabIdx++) {
+		for (
+			let tabIdx = 0, tabLen = visibleTabs.length;
+			tabIdx < tabLen;
+			tabIdx++
+		) {
 			if (
 				matchPath(
-					`${resolvedPath.pathname}/${tabs[tabIdx].path}`,
+					`${resolvedPath.pathname}/${visibleTabs[tabIdx].path}`,
 					pathname,
 				)
 			) {
@@ -146,7 +159,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		}
 
 		return -1;
-	}, [route, tabs, resolvedPath, pathname]);
+	}, [visibleTabs, resolvedPath, pathname]);
 
 	// whether we're on the edit route for this engine
 	const isEdit = Boolean(
@@ -155,14 +168,28 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 
 	// if the engine ID is missing, navigate to the list
 	if (!engineId) {
-		return <ResourceNotFound path={route.path} />;
+		return (
+			<>
+				<NavbarLeft>
+					<NavbarHeader />
+				</NavbarLeft>
+				<ResourceNotFound path={route.path} />
+			</>
+		);
 	}
 
 	if (
 		getUserEnginePermission.status === "ERROR" ||
 		getEngineMetadata.status === "ERROR"
 	) {
-		return <ResourceNotFound path={route.path} />;
+		return (
+			<>
+				<NavbarLeft>
+					<NavbarHeader />
+				</NavbarLeft>
+				<ResourceNotFound path={route.path} />
+			</>
+		);
 	}
 
 	if (
@@ -179,57 +206,64 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 	}
 
 	return (
-		<EngineContext.Provider
-			value={{
-				type: route.type,
-				path: route.path,
-				name: route.name,
-				engine: getEngineMetadata.data,
-				permission: getUserEnginePermission.data,
-				refresh: getEngineMetadata.refresh,
-			}}
-		>
-			{!isEdit ? (
-				<div className="flex flex-col gap-4">
-					<EngineHeader />
-					<div className="flex flex-col rounded-lg bg-(--muted)">
-						{tabs.length > 0 && (
-							<div>
-								<Tabs
-									value={
-										activeTabIdx !== -1
-											? tabs[activeTabIdx].path
-											: undefined
-									}
-									className="gap-0 bg-transparent"
-								>
-									<div className="w-full overflow-x-auto md:w-[80%]">
-										<TabsList className="w-max flex-nowrap gap-2">
-											{tabs.map((t) => (
-												<TabsTrigger
-													key={t.path}
-													value={t.path}
-													onClick={() =>
-														navigate(`${t.path}`)
-													}
-													data-testid={`engineLayout-${t.name}-tab`}
-												>
-													{t.name}
-												</TabsTrigger>
-											))}
-										</TabsList>
-									</div>
-								</Tabs>
+		<>
+			<NavbarLeft>
+				<NavbarHeader />
+			</NavbarLeft>
+			<EngineContext.Provider
+				value={{
+					type: route.type,
+					path: route.path,
+					name: route.name,
+					engine: getEngineMetadata.data,
+					permission: getUserEnginePermission.data,
+					refresh: getEngineMetadata.refresh,
+				}}
+			>
+				{!isEdit ? (
+					<div className="flex flex-col gap-4">
+						<EngineHeader />
+						<div className="flex flex-col rounded-lg bg-(--muted)">
+							{visibleTabs.length > 0 && (
+								<div>
+									<Tabs
+										value={
+											activeTabIdx !== -1
+												? visibleTabs[activeTabIdx].path
+												: undefined
+										}
+										className="gap-0 bg-transparent"
+									>
+										<div className="w-full overflow-x-auto md:w-[80%]">
+											<TabsList className="w-max flex-nowrap gap-2">
+												{visibleTabs.map((t) => (
+													<TabsTrigger
+														key={t.path}
+														value={t.path}
+														onClick={() =>
+															navigate(
+																`${t.path}`,
+															)
+														}
+														data-testid={`engineLayout-${t.name}-tab`}
+													>
+														{t.name}
+													</TabsTrigger>
+												))}
+											</TabsList>
+										</div>
+									</Tabs>
+								</div>
+							)}
+							<div className="w-full bg-(--card) p-4">
+								<Outlet />
 							</div>
-						)}
-						<div className="w-full bg-(--card) p-4">
-							<Outlet />
 						</div>
 					</div>
-				</div>
-			) : (
-				<Outlet />
-			)}
-		</EngineContext.Provider>
+				) : (
+					<Outlet />
+				)}
+			</EngineContext.Provider>
+		</>
 	);
 };

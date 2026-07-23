@@ -51,7 +51,7 @@ const DETAIL_CONFIG = {
 	},
 } as const;
 
-interface ProjectDetailLayoutProps {
+interface ProjectLayoutProps {
 	/** Type of the route */
 	type: Project["project_type"];
 
@@ -63,10 +63,7 @@ interface ProjectDetailLayoutProps {
 	}[];
 }
 
-export const ProjectDetailLayout = ({
-	type,
-	tabs,
-}: ProjectDetailLayoutProps) => {
+export const ProjectLayout = ({ type, tabs }: ProjectLayoutProps) => {
 	const config = DETAIL_CONFIG[type as keyof typeof DETAIL_CONFIG];
 	const { appId } = useParams();
 

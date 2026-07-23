@@ -21,16 +21,18 @@ import {
 	CatalogTabs,
 } from "@/components/catalog";
 import { EngineGridItem } from "@/components/engine";
+import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId } from "@/utility";
 import { getEngineLabel, isOwnerPermission } from "@/utility/catalog";
-import type { ENGINE_ROUTES } from "./engine.constants";
 
 interface EngineIndexPageProps {
-	/** Route to render */
-	route: (typeof ENGINE_ROUTES)[number];
+	name: string;
+	path: string;
+	type: Engine["engine_type"];
+	description: string;
 }
 
 /**
@@ -38,7 +40,8 @@ interface EngineIndexPageProps {
  * Landing page to view the available engines
  */
 export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
-	({ route }): JSX.Element => {
+	({ name, path, type, description }): JSX.Element => {
+		const route = { name, path, type, description };
 		const { configStore } = useRootStore();
 		const navigate = useNavigate();
 
@@ -273,101 +276,150 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		);
 
 		return (
-			<CatalogLayout
-				title={`${route.name} Catalog`}
-				description={route.description}
-				headerActions={
-					<Button
-						variant="default"
-						onClick={() => {
-							navigate(`/${route.type.toLowerCase()}/new`);
-						}}
-						aria-label={`Add ${route.name}`}
-						data-testid={formatToDataTestId(
-							`engineIndex-add-${route.name}-btn`,
-						)}
-					>
-						<Plus className="size-4" />
-						Add {route.name}
-					</Button>
-				}
-				searchBar={
-					<CatalogSearchBar
-						search={search}
-						onSearchChange={setSearch}
-						placeholder="Search"
-						sortValue={sortValue}
-						sortOrder={sortOrder}
-						sortOptions={[
-							{ value: "ENGINENAME", label: "Name" },
-							{ value: "DATECREATED", label: "Date Created" },
-						]}
-						onSortChange={(value, order) => {
-							if (sortOrder === value && sortValue === order) {
-								return;
-							}
+			<>
+				<NavbarLeft>
+					<NavbarHeader />
+				</NavbarLeft>
+				<CatalogLayout
+					title={`${route.name} Catalog`}
+					description={route.description}
+					headerActions={
+						<Button
+							variant="default"
+							onClick={() => {
+								navigate(`/${route.type.toLowerCase()}/new`);
+							}}
+							aria-label={`Add ${route.name}`}
+							data-testid={formatToDataTestId(
+								`engineIndex-add-${route.name}-btn`,
+							)}
+						>
+							<Plus className="size-4" />
+							Add {route.name}
+						</Button>
+					}
+					searchBar={
+						<CatalogSearchBar
+							search={search}
+							onSearchChange={setSearch}
+							placeholder="Search"
+							sortValue={sortValue}
+							sortOrder={sortOrder}
+							sortOptions={[
+								{ value: "ENGINENAME", label: "Name" },
+								{ value: "DATECREATED", label: "Date Created" },
+							]}
+							onSortChange={(value, order) => {
+								if (
+									sortOrder === value &&
+									sortValue === order
+								) {
+									return;
+								}
 
-							setSortValue(value);
-							setSortOrder(order);
-							resetScroll();
-							getEngines.reset();
-						}}
-						showGridStyle={true}
-						gridStyle={gridStyle}
-						onGridStyleChange={(v) => setGridStyle(v)}
-					/>
-				}
-				tabs={
-					<CatalogTabs
-						value={tab}
-						onValueChange={(val) => setTab(val)}
-						tabs={[
-							{
-								value: "Mine",
-								label: `My ${route.name}s`,
-								dataTestId: `engineIndexPage-${route.name}s-my-switch`,
-							},
-							{
-								value: "Discoverable",
-								label: `Discoverable ${route.name}s`,
-								dataTestId: `engineIndexPage-${route.name}s-discoverable-switch`,
-							},
-						]}
-					/>
-				}
-				filterBox={
-					<CatalogFilterBox
-						key={filterKey}
-						type={route.type}
-						filters={metaFilters as Record<string, string[]>}
-						onChange={(filters) => setMetaFilters(filters)}
-					/>
-				}
-			>
-				{tab === "Mine" && (
-					<>
-						{/* Loading State */}
-						{getFavoritedEngines.status === "LOADING" &&
-						getEngines.isLoading ? (
-							<div className="flex flex-col items-center justify-center py-6">
-								<Spinner className="size-4" />
-							</div>
-						) : null}
+								setSortValue(value);
+								setSortOrder(order);
+								resetScroll();
+								getEngines.reset();
+							}}
+							showGridStyle={true}
+							gridStyle={gridStyle}
+							onGridStyleChange={(v) => setGridStyle(v)}
+						/>
+					}
+					tabs={
+						<CatalogTabs
+							value={tab}
+							onValueChange={(val) => setTab(val)}
+							tabs={[
+								{
+									value: "Mine",
+									label: `My ${route.name}s`,
+									dataTestId: `engineIndexPage-${route.name}s-my-switch`,
+								},
+								{
+									value: "Discoverable",
+									label: `Discoverable ${route.name}s`,
+									dataTestId: `engineIndexPage-${route.name}s-discoverable-switch`,
+								},
+							]}
+						/>
+					}
+					filterBox={
+						<CatalogFilterBox
+							key={filterKey}
+							type={route.type}
+							filters={metaFilters as Record<string, string[]>}
+							onChange={(filters) => setMetaFilters(filters)}
+						/>
+					}
+				>
+					{tab === "Mine" && (
+						<>
+							{/* Loading State */}
+							{getFavoritedEngines.status === "LOADING" &&
+							getEngines.isLoading ? (
+								<div className="flex flex-col items-center justify-center py-6">
+									<Spinner className="size-4" />
+								</div>
+							) : null}
 
-						{/* Bookmarked Section */}
-						{getFavoritedEngines.data.length > 0 && (
-							<>
-								<p className="font-medium text-sm">
-									Bookmarked
-								</p>
-								<CatalogGrid variant={gridStyle}>
-									{getFavoritedEngines.data.map((engine) => (
+							{/* Bookmarked Section */}
+							{getFavoritedEngines.data.length > 0 && (
+								<>
+									<p className="font-medium text-sm">
+										Bookmarked
+									</p>
+									<CatalogGrid variant={gridStyle}>
+										{getFavoritedEngines.data.map(
+											(engine) => (
+												<EngineGridItem
+													key={engine.engine_id}
+													variant={gridStyle}
+													path={`/${route.path}/${engine.engine_id}`}
+													engine={engine}
+													isFavorited={true}
+													showFavorite={true}
+													showGlobal={true}
+													showDelete={isOwnerPermission(
+														engine.engine_user_permission,
+													)}
+													onFavorite={setFavorite}
+													onGlobalToggle={setGlobal}
+													onDelete={
+														handleDeleteRequest
+													}
+												/>
+											),
+										)}
+									</CatalogGrid>
+								</>
+							)}
+
+							{/* All Section Label */}
+							{Object.entries(metaFilters).length === 0 &&
+								nonBookmarked.length > 0 && (
+									<p className="font-medium text-sm">
+										All {route.name}s
+									</p>
+								)}
+
+							{/* All Items */}
+							{nonBookmarked.length > 0 && (
+								<CatalogGrid
+									isLoading={getEngines.isLoading}
+									showLoadingMore={nonBookmarked.length > 0}
+									variant={gridStyle}
+								>
+									{nonBookmarked.map((engine) => (
 										<EngineGridItem
 											key={engine.engine_id}
 											variant={gridStyle}
 											path={`/${route.path}/${engine.engine_id}`}
 											engine={engine}
-											isFavorited={true}
+											isFavorited={
+												engine.engine_favorite === 1
+											} // should be false
 											showFavorite={true}
 											showGlobal={true}
 											showDelete={isOwnerPermission(
@@ -379,127 +431,92 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 										/>
 									))}
 								</CatalogGrid>
-							</>
-						)}
-
-						{/* All Section Label */}
-						{Object.entries(metaFilters).length === 0 &&
-							nonBookmarked.length > 0 && (
-								<p className="font-medium text-sm">
-									All {route.name}s
-								</p>
 							)}
 
-						{/* All Items */}
-						{nonBookmarked.length > 0 && (
-							<CatalogGrid
-								isLoading={getEngines.isLoading}
-								showLoadingMore={nonBookmarked.length > 0}
-								variant={gridStyle}
-							>
-								{nonBookmarked.map((engine) => (
-									<EngineGridItem
-										key={engine.engine_id}
-										variant={gridStyle}
-										path={`/${route.path}/${engine.engine_id}`}
-										engine={engine}
-										isFavorited={
-											engine.engine_favorite === 1
-										} // should be false
-										showFavorite={true}
-										showGlobal={true}
-										showDelete={isOwnerPermission(
-											engine.engine_user_permission,
-										)}
-										onFavorite={setFavorite}
-										onGlobalToggle={setGlobal}
-										onDelete={handleDeleteRequest}
-									/>
-								))}
-							</CatalogGrid>
-						)}
-
-						{/* Empty State */}
-						{!getEngines.isLoading &&
-							getFavoritedEngines.status !== "LOADING" &&
-							nonBookmarked.length === 0 &&
-							getFavoritedEngines.data.length === 0 && (
-								<div className="w-full px-2 py-4 text-center">
-									<Muted>No results found</Muted>
+							{/* Empty State */}
+							{!getEngines.isLoading &&
+								getFavoritedEngines.status !== "LOADING" &&
+								nonBookmarked.length === 0 &&
+								getFavoritedEngines.data.length === 0 && (
+									<div className="w-full px-2 py-4 text-center">
+										<Muted>No results found</Muted>
+									</div>
+								)}
+						</>
+					)}
+					{tab === "Discoverable" && (
+						<>
+							{/* Loading State */}
+							{getEngines.isLoading ? (
+								<div className="flex flex-col items-center justify-center py-6">
+									<Spinner className="size-4" />
 								</div>
-							)}
-					</>
-				)}
-				{tab === "Discoverable" && (
-					<>
-						{/* Loading State */}
-						{getEngines.isLoading ? (
-							<div className="flex flex-col items-center justify-center py-6">
-								<Spinner className="size-4" />
-							</div>
-						) : null}
+							) : null}
 
-						{/* All Items */}
-						{getEngines.data.length > 0 && (
-							<CatalogGrid
-								isLoading={getEngines.isLoading}
-								showLoadingMore={getEngines.data.length > 0}
-								variant={gridStyle}
-							>
-								{getEngines.data.map((engine) => (
-									<EngineGridItem
-										key={engine.engine_id}
-										variant={gridStyle}
-										path={`/${route.path}/${engine.engine_id}`}
-										engine={engine}
-										isFavorited={
-											engine.engine_favorite === 1
-										}
-										showFavorite={isOwnerPermission(
-											engine.engine_user_permission,
-										)}
-										showGlobal={isOwnerPermission(
-											engine.engine_user_permission,
-										)}
-										showDelete={isOwnerPermission(
-											engine.engine_user_permission,
-										)}
-										onFavorite={setFavorite}
-										onGlobalToggle={setGlobal}
-										onDelete={handleDeleteRequest}
-									/>
-								))}
-							</CatalogGrid>
+							{/* All Items */}
+							{getEngines.data.length > 0 && (
+								<CatalogGrid
+									isLoading={getEngines.isLoading}
+									showLoadingMore={getEngines.data.length > 0}
+									variant={gridStyle}
+								>
+									{getEngines.data.map((engine) => (
+										<EngineGridItem
+											key={engine.engine_id}
+											variant={gridStyle}
+											path={`/${route.path}/${engine.engine_id}`}
+											engine={engine}
+											isFavorited={
+												engine.engine_favorite === 1
+											}
+											showFavorite={isOwnerPermission(
+												engine.engine_user_permission,
+											)}
+											showGlobal={isOwnerPermission(
+												engine.engine_user_permission,
+											)}
+											showDelete={isOwnerPermission(
+												engine.engine_user_permission,
+											)}
+											onFavorite={setFavorite}
+											onGlobalToggle={setGlobal}
+											onDelete={handleDeleteRequest}
+										/>
+									))}
+								</CatalogGrid>
+							)}
+
+							{/* Empty State */}
+							{!getEngines.isLoading &&
+								getEngines.data.length === 0 && (
+									<div className="w-full px-2 py-4 text-center">
+										<Muted>No results found</Muted>
+									</div>
+								)}
+						</>
+					)}
+
+					<DeleteEntityDialog
+						open={Boolean(engineToDelete)}
+						onOpenChange={(open) => {
+							if (!open) {
+								setEngineToDelete(null);
+							}
+						}}
+						entityLabel={getEngineLabel(
+							engineToDelete?.engine_type,
 						)}
-
-						{/* Empty State */}
-						{!getEngines.isLoading &&
-							getEngines.data.length === 0 && (
-								<div className="w-full px-2 py-4 text-center">
-									<Muted>No results found</Muted>
-								</div>
-							)}
-					</>
-				)}
-
-				<DeleteEntityDialog
-					open={Boolean(engineToDelete)}
-					onOpenChange={(open) => {
-						if (!open) {
-							setEngineToDelete(null);
+						entityName={
+							engineToDelete?.engine_display_name ||
+							engineToDelete?.engine_name ||
+							"Engine"
 						}
-					}}
-					entityLabel={getEngineLabel(engineToDelete?.engine_type)}
-					entityName={
-						engineToDelete?.engine_display_name ||
-						engineToDelete?.engine_name ||
-						"Engine"
-					}
-					entityId={engineToDelete?.engine_id || ""}
-					onConfirm={deleteEngine}
-					isLoading={isDeletingEngine}
-				/>
-			</CatalogLayout>
+						entityId={engineToDelete?.engine_id || ""}
+						onConfirm={deleteEngine}
+						isLoading={isDeletingEngine}
+					/>
+				</CatalogLayout>
+			</>
 		);
 	},
 );

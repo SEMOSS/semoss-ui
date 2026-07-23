@@ -4,6 +4,7 @@ import { FunctionImport } from "@/components/import/function/function-import";
 import { GuardrailImport } from "@/components/import/guardrail/guardrail-import";
 import { StorageImport } from "@/components/import/storage/storage-import";
 import { VectorImport } from "@/components/import/vector/vector-import";
+import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import type { ENGINE_TYPES } from "@/types";
 import { ImportLayout } from "./import-layout";
 import { ModelImportPage } from "./model-import-page";
@@ -41,5 +42,12 @@ export const ImportPage: React.FC<ImportPageProps> = ({ name, type }) => {
 		}
 	}, [name, type]);
 
-	return <ImportLayout>{EngineImportFlow}</ImportLayout>;
+	return (
+		<>
+			<NavbarLeft>
+				<NavbarHeader />
+			</NavbarLeft>
+			<ImportLayout>{EngineImportFlow}</ImportLayout>
+		</>
+	);
 };

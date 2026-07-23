@@ -15,7 +15,7 @@ import {
 import { CreateAgentPage } from "./agent/create-agent-page";
 import { CreateAppPage } from "./app/create-app-page";
 import { ProjectDependenciesPage } from "./project-dependencies-page";
-import { ProjectDetailLayout } from "./project-detail-layout";
+import { ProjectLayout } from "./project-layout";
 import { ProjectOverviewPage } from "./project-overview-page";
 import { CreateSkillPage } from "./skill/create-skill-page";
 import { ViewSkillPage } from "./skill/view-skill-page";
@@ -57,7 +57,7 @@ export const PROJECT_ROUTES: {
 			{
 				path: ":appId",
 				element: (
-					<ProjectDetailLayout
+					<ProjectLayout
 						type="CODE"
 						tabs={[
 							{ name: "Overview", path: "" },
@@ -67,7 +67,7 @@ export const PROJECT_ROUTES: {
 								restrict: ["OWNER", "EDIT", "READ_ONLY"],
 							},
 							{
-								name: "MCP Usage",
+								name: "MCP",
 								path: "mcp-usage",
 								restrict: ["OWNER", "EDIT", "READ_ONLY"],
 							},
@@ -168,7 +168,7 @@ export const PROJECT_ROUTES: {
 			{
 				path: ":appId",
 				element: (
-					<ProjectDetailLayout
+					<ProjectLayout
 						type="SKILL"
 						tabs={[
 							{ name: "Overview", path: "" },
@@ -241,7 +241,7 @@ export const PROJECT_ROUTES: {
 			{
 				path: ":appId",
 				element: (
-					<ProjectDetailLayout
+					<ProjectLayout
 						type="WORKSPACE"
 						tabs={[
 							{ name: "Overview", path: "" },
