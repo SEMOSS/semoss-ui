@@ -11,7 +11,7 @@ import Appagent from "@/assets/img/Appagent.svg";
 import Appcode from "@/assets/img/Appcode.svg";
 import Appdragdrop from "@/assets/img/Appdragdrop.svg";
 import Appworkflow from "@/assets/img/Appworkflow.svg";
-import { useRootStore, useSettings } from "@/hooks";
+import { useRootStore } from "@/hooks";
 
 const BASE_CARDS = [
 	{
@@ -60,7 +60,8 @@ interface LandingHeaderProps {
 export const LandingHeader: React.FC<LandingHeaderProps> = ({
 	onCreate = () => null,
 }) => {
-	const { adminMode } = useSettings();
+	const adminMode =
+		window.localStorage.getItem("semoss.adminMode") === "true";
 	const CARDS = BASE_CARDS.filter((card) => !card.adminOnly || adminMode);
 
 	return (

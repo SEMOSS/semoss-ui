@@ -58,19 +58,20 @@ export function DatabaseEngineForm({
 				`META|GetDatabaseTableStructure(database=["${config.engineId}"]);`,
 			)
 			.then((res) => {
-				const rows = res.pixelReturn?.[0]?.output as
-					| Record<string, unknown>[]
-					| null;
-				if (!rows) return;
+				const rows = res.pixelReturn?.[0]?.output as unknown[][] | null;
+				if (!Array.isArray(rows)) return;
 				const byTable: Record<
 					string,
 					{ column: string; type: string }[]
 				> = {};
 				for (const row of rows) {
-					const t = String(row.TABLE_NAME ?? "");
-					const c = String(row.COLUMN_NAME ?? "");
-					const type = String(row.TYPE ?? "");
-					if (!t) continue;
+					if (!Array.isArray(row) || row.length < 3) continue;
+					// Response format: [tableAlias, colAlias, type, isPk, physColName, physTableName]
+					const t = String(row[5] ?? row[0] ?? "").trim();
+					const c = String(row[4] ?? row[1] ?? "").trim();
+					const type =
+						String(row[2] ?? "UNKNOWN").trim() || "UNKNOWN";
+					if (!t || !c) continue;
 					if (!byTable[t]) byTable[t] = [];
 					byTable[t].push({ column: c, type });
 				}

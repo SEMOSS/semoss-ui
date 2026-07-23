@@ -793,6 +793,29 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 												status={latestRunStatus}
 											/>
 										)}
+										{running && latestRunId && (
+											<Button
+												size="sm"
+												variant="destructive"
+												className="ml-auto h-7 px-2 text-xs"
+												onClick={async () => {
+													try {
+														await monolithStore.runQuery(
+															`CancelAutomationRun(project=["${appId}"], runId=["${latestRunId}"]);`,
+														);
+														toast.success(
+															"Cancel requested",
+														);
+													} catch {
+														toast.error(
+															"Failed to send cancel request",
+														);
+													}
+												}}
+											>
+												Cancel Run
+											</Button>
+										)}
 									</div>
 									<p className="mt-1 text-[11px] text-muted-foreground">
 										{latestRunId

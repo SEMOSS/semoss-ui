@@ -24,7 +24,7 @@ import {
 import { CatalogFilterBox } from "@/components/catalog/catalog-filter-box";
 import { Help } from "@/components/help";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
-import { useRootStore, useSettings } from "@/hooks";
+import { useRootStore } from "@/hooks";
 import { getProjectLabel, isOwnerPermission } from "@/utility/catalog";
 import { NavbarHeader, NavbarLeft } from "../shared";
 import { ProjectGridItem } from "./project-grid-item";
@@ -100,7 +100,8 @@ export const ProjectCatalog = observer(
 	({ type }: ProjectCatalogProps): JSX.Element => {
 		const config = CATALOG_CONFIG[type as keyof typeof CATALOG_CONFIG];
 		const { configStore } = useRootStore();
-		const { adminMode } = useSettings();
+		const adminMode =
+			window.localStorage.getItem("semoss.adminMode") === "true";
 		const pixelFilter =
 			type === "CODE" && adminMode
 				? 'projectType=["CODE", "BLOCKS", "AUTOMATION"]'

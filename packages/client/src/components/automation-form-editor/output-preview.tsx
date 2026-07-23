@@ -25,18 +25,47 @@ export function OutputPreview({
 		}
 	}, [value]);
 
+	// Normalise DB output into {headers, rows} regardless of whether the BE stored
+	// raw SEMOSS format ({data:{headers,values}}) or rows-as-objects ([{col:val}]).
+	const dbDataset = useMemo<{
+		headers: string[];
+		rows: unknown[][];
+	} | null>(() => {
+		if (!parsed) return null;
+		// rows-as-objects format: [{col1: val, col2: val}, ...]
+		if (
+			Array.isArray(parsed) &&
+			parsed.length > 0 &&
+			typeof parsed[0] === "object" &&
+			!Array.isArray(parsed[0])
+		) {
+			const keys = Object.keys(parsed[0] as Record<string, unknown>);
+			return {
+				headers: keys,
+				rows: (parsed as Record<string, unknown>[]).map((r) =>
+					keys.map((k) => r[k]),
+				),
+			};
+		}
+		// SEMOSS raw format: {data: {headers, values}} or {headers, values}
+		const inner = (parsed as Record<string, unknown>)?.data ?? parsed;
+		if (inner && typeof inner === "object" && !Array.isArray(inner)) {
+			const h = (inner as Record<string, unknown>).headers;
+			const v = (inner as Record<string, unknown>).values;
+			if (Array.isArray(h) && Array.isArray(v)) {
+				return { headers: h as string[], rows: v as unknown[][] };
+			}
+		}
+		return null;
+	}, [parsed]);
+
 	const renderMode = useMemo(() => {
 		if (nodeType === "model-engine") return "markdown";
 		if (nodeType === "vector-engine" && Array.isArray(parsed))
 			return "vector-results";
-		if (
-			Array.isArray(parsed) &&
-			parsed.length > 0 &&
-			typeof parsed[0] === "object"
-		)
-			return "table";
+		if (dbDataset) return "table";
 		return "text";
-	}, [nodeType, parsed]);
+	}, [nodeType, parsed, dbDataset]);
 
 	const renderExpanded = () => {
 		if (renderMode === "markdown") {
@@ -132,8 +161,8 @@ export function OutputPreview({
 			);
 		}
 
-		if (renderMode === "table" && Array.isArray(parsed)) {
-			const keys = Object.keys(parsed[0] as Record<string, unknown>);
+		if (renderMode === "table" && dbDataset) {
+			const { headers, rows } = dbDataset;
 			return (
 				<div className="space-y-1.5 pr-8">
 					{/* View toggle: Table / JSON */}
@@ -161,8 +190,7 @@ export function OutputPreview({
 							JSON
 						</button>
 						<span className="ml-auto text-[10px] text-muted-foreground/60">
-							{(parsed as unknown[]).length} row
-							{(parsed as unknown[]).length !== 1 ? "s" : ""}
+							{rows.length} row{rows.length !== 1 ? "s" : ""}
 						</span>
 					</div>
 
@@ -171,37 +199,35 @@ export function OutputPreview({
 							<table className="w-full border-collapse text-[11px]">
 								<thead>
 									<tr className="border-b bg-muted/50">
-										{keys.map((key) => (
+										{headers.map((h) => (
 											<th
-												key={key}
+												key={h}
 												className="px-2 py-1.5 text-left font-semibold text-foreground"
 											>
-												{key}
+												{h}
 											</th>
 										))}
 									</tr>
 								</thead>
 								<tbody>
-									{(parsed as Record<string, unknown>[]).map(
-										(row, i) => (
-											// biome-ignore lint/suspicious/noArrayIndexKey: rows are rebuilt whole from a single run's output each render, never reordered
-											<tr
-												key={i}
-												className="border-muted/50 border-b last:border-0"
-											>
-												{keys.map((key) => (
-													<td
-														key={key}
-														className="px-2 py-1 text-foreground"
-													>
-														{row[key] != null
-															? String(row[key])
-															: "—"}
-													</td>
-												))}
-											</tr>
-										),
-									)}
+									{rows.map((row, i) => (
+										// biome-ignore lint/suspicious/noArrayIndexKey: rows rebuilt from a single run each render
+										<tr
+											key={i}
+											className="border-muted/50 border-b last:border-0"
+										>
+											{headers.map((h, j) => (
+												<td
+													key={h}
+													className="px-2 py-1 text-foreground"
+												>
+													{row[j] != null
+														? String(row[j])
+														: "—"}
+												</td>
+											))}
+										</tr>
+									))}
 								</tbody>
 							</table>
 						</div>
