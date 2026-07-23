@@ -352,6 +352,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		};
 		const recognitionRef = useRef<SpeechRecognition | null>(null);
 
+		// Whether the latest response has any tool calls — compaction can't
+		// touch a response until it's done growing new tool-result messages
+		const latestResponseHasTools =
+			room.latestResponseMessage?.hasTools ?? false;
+
 		// ========================================================================
 		// Context Window Tooltip
 		// ========================================================================
@@ -404,11 +409,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					)}
 					{onCompact && (
 						<CompactButton
-							disabled={isLoading || hasOutstandingTools}
+							disabled={isLoading || latestResponseHasTools}
 							tooltipText={
 								isLoading
 									? t("input.thinkingTooltip")
-									: hasOutstandingTools
+									: latestResponseHasTools
 										? t("input.completeTool")
 										: t("settings.compactTooltip")
 							}
@@ -427,7 +432,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			onCompact,
 			t,
 			isLoading,
-			hasOutstandingTools,
+			latestResponseHasTools,
 		]);
 
 		// ========================================================================
@@ -1126,7 +1131,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						<AutoScrollOnPastePlugin
 							scrollContainerRef={scrollViewportRef}
 						/>
-						<SlashMentionPlugin isLoading={isLoading} />
+						<SlashMentionPlugin
+							isLoading={isLoading}
+							hasTools={latestResponseHasTools}
+						/>
 						<PromptLibraryDialog
 							open={isPromptLibraryOpen}
 							onOpenChange={setIsPromptLibraryOpen}

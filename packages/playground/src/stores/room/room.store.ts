@@ -1311,6 +1311,12 @@ export class RoomStore {
 
 		const curResponse = cur as ResponseMessageStore;
 
+		if (curResponse.hasTools) {
+			throw new Error(
+				"Cannot compact a response that includes tool calls",
+			);
+		}
+
 		curResponse.setIsCompacting(true);
 
 		type SummaryResponse = {
