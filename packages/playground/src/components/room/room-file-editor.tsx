@@ -78,20 +78,16 @@ export const RoomFileEditor: React.FC<RoomFileEditorProps> = observer(
 								);
 
 							const outputList: JupyterCellOutput[] = [];
-							const { logSegments, displayOutputs } =
+							const { cleanedLogs, displayOutputs } =
 								extractNotebookInlineDisplayOutputsFromLogs(
 									logs,
 								);
 
-							// Each segment is a run of consecutive same-channel
-							// lines, in original order, so stdout/stderr
-							// interleaving renders as separate stream outputs
-							// instead of always being merged into one "stdout".
-							for (const segment of logSegments) {
+							if (cleanedLogs.length > 0) {
 								outputList.push({
 									output_type: "stream",
-									name: segment.channel,
-									text: segment.text,
+									name: "stdout",
+									text: cleanedLogs.join("\n"),
 								});
 							}
 
