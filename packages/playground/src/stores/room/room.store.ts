@@ -428,6 +428,14 @@ export class RoomStore {
 	}
 
 	get activeFileEditorPath() {
+		// The sidebar's "X" button only hides the panel (sidebar.isOpen =
+		// false) - it doesn't touch the FlexLayout model, so the notebook tab
+		// underneath would otherwise still look "active" and get silently
+		// targeted. Nothing counts as active while the panel itself is closed.
+		if (!this._store.sidebar.isOpen) {
+			return null;
+		}
+
 		// Use the actively selected file-editor tab first so actions can target
 		// the notebook the user is currently interacting with.
 		const activeNode = this._store.sidebar.model
