@@ -121,7 +121,7 @@ export const GUARDRAIL_CONNECTION = {
 			icon: Python,
 			description:
 				"Run a custom local Python guardrail function that returns pass/fail, an optional modified prompt, and optional detailed metadata.",
-			notice: "After creating this guardrail engine, upload your Python file and any supporting files via the Files tab on the guardrail details page. The function named in 'Guardrail Function Name' must return a dict with 'pass' (boolean), plus optional 'returnPrompt' (string) if masking is supported and optional 'fullDetails' (object).",
+			notice: "After creating this guardrail engine, upload your Python file and any supporting files from the guardrail Edit page. The function named in 'Guardrail Function Name' must return a dict with 'pass' (boolean), plus optional 'returnPrompt' (string) if masking is supported and optional 'fullDetails' (object).",
 			fields: [
 				{
 					key: "MODEL_NAME",
@@ -161,7 +161,7 @@ export const GUARDRAIL_CONNECTION = {
 					disabled: false,
 					required: true,
 					helperText:
-						"Enter only the file name (e.g., my_guardrail.py). Upload the file itself via the Files tab after the engine is created.",
+						"Enter only the file name (e.g., my_guardrail.py). Upload the file itself from the guardrail Edit page after the engine is created.",
 					category: "Settings",
 				},
 				{

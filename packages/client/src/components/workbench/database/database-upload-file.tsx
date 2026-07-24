@@ -35,7 +35,7 @@ import { useRootStore } from "@/hooks";
 
 const NEW_DATABASE = "TABLE";
 
-interface QueryUploadCsvProps {
+interface DatabaseUploadFileProps {
 	/** Engine (database) id to query */
 	engine: string;
 
@@ -55,13 +55,13 @@ interface QueryUploadCsvProps {
 	onClose: (success: boolean) => void;
 }
 
-export const QueryUploadCsv = ({
+export const DatabaseUploadCsv = ({
 	engine,
 	structure,
 	table,
 	open,
 	onClose,
-}: QueryUploadCsvProps) => {
+}: DatabaseUploadFileProps) => {
 	const { configStore } = useRootStore();
 
 	const targetTableId = useId();

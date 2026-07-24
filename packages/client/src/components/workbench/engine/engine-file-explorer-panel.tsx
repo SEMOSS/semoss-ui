@@ -13,10 +13,11 @@ import {
 } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
 import { MCP } from "@/constants";
+import { WORKBENCH_COMPONENTS } from "../workbench.contants";
 
-interface EngineFileExplorerProps {
+interface EngineFileExplorerPanelProps {
 	/** Node */
-	layout: FlexLayout.Layout | null;
+	layout: FlexLayout.Layout;
 
 	/** Node */
 	node: FlexLayout.TabNode;
@@ -25,8 +26,8 @@ interface EngineFileExplorerProps {
 	engine: string;
 }
 
-export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
-	({ layout, node, engine }) => {
+export const EngineFileExplorerPanel: React.FC<EngineFileExplorerPanelProps> =
+	observer(({ layout, node, engine }) => {
 		const insight = useInsight();
 		const [searchParams, setSearchParams] = useSearchParams();
 		const [refreshKey, setRefreshKey] = useState(0);
@@ -263,10 +264,10 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 			const mcpParam = searchParams.get("mcp");
 			if (mcpParam === "Generate") {
 				const mcpFilePath = "/mcp/pixel_mcp.json";
-				addNode(`ENGINE_MCP_EDITOR--${mcpFilePath}`, {
+				addNode(`${WORKBENCH_COMPONENTS.MCP_EDITOR}--${mcpFilePath}`, {
 					type: "tab",
 					name: `Toolbox Editor - pixel_mcp.json`,
-					component: "engine-mcp-editor",
+					component: WORKBENCH_COMPONENTS.MCP_EDITOR,
 					config: {
 						name: "pixel_mcp.json",
 						path: mcpFilePath,
@@ -319,7 +320,8 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 									{
 										type: "tab",
 										name: item.name,
-										component: "engine-file-editor",
+										component:
+											WORKBENCH_COMPONENTS.FILE_EDITOR,
 										config: {
 											name: item.name,
 											path: insightFilePath,
@@ -345,16 +347,19 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 					}
 
 					// this will select if there or open if not
-					addNode(`ENGINE_FILE--${item.path}`, {
-						type: "tab",
-						name: item.name,
-						component: "engine-file-editor",
-						config: {
+					addNode(
+						`${WORKBENCH_COMPONENTS.FILE_EDITOR}--${item.path}`,
+						{
+							type: "tab",
 							name: item.name,
-							path: item.path,
+							component: WORKBENCH_COMPONENTS.FILE_EDITOR,
+							config: {
+								name: item.name,
+								path: item.path,
+							},
+							enableClose: true,
 						},
-						enableClose: true,
-					});
+					);
 				}}
 				onItemsMoved={migrateMovedTabs}
 				onItemsDeleted={(items) => {
@@ -387,11 +392,12 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 
 									// open the editor for the created file (always, even if MakePythonMCP fails)
 									addNode(
-										`ENGINE_MCP_EDITOR--/mcp/py_mcp.json`,
+										`${WORKBENCH_COMPONENTS.MCP_EDITOR}--/mcp/py_mcp.json`,
 										{
 											type: "tab",
 											name: `Toolbox Editor - py_mcp.json`,
-											component: "engine-mcp-editor",
+											component:
+												WORKBENCH_COMPONENTS.MCP_EDITOR,
 											config: {
 												name: "py_mcp.json",
 												path: "/mcp/py_mcp.json",
@@ -415,16 +421,20 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 								tooltip: "Edit Toolbox",
 								action: async (item) => {
 									// this will select if there or open if not
-									addNode(`ENGINE_MCP_EDITOR--${item.path}`, {
-										type: "tab",
-										name: `Toolbox Editor - ${item.name}`,
-										component: "engine-mcp-editor",
-										config: {
-											name: item.name,
-											path: item.path,
+									addNode(
+										`${WORKBENCH_COMPONENTS.MCP_EDITOR}--${item.path}`,
+										{
+											type: "tab",
+											name: `Toolbox Editor - ${item.name}`,
+											component:
+												WORKBENCH_COMPONENTS.MCP_EDITOR,
+											config: {
+												name: item.name,
+												path: item.path,
+											},
+											enableClose: true,
 										},
-										enableClose: true,
-									});
+									);
 								},
 							});
 						}
@@ -507,7 +517,8 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 									{
 										type: "tab",
 										name: item.name,
-										component: "engine-file-editor",
+										component:
+											WORKBENCH_COMPONENTS.FILE_EDITOR,
 										config: {
 											name: item.name,
 											path: item.path,
@@ -531,13 +542,20 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 								const newName =
 									newPath.split("/").filter(Boolean).pop() ??
 									newPath;
-								addNode(`ENGINE_FILE--${newPath}`, {
-									type: "tab",
-									name: newName,
-									component: "engine-file-editor",
-									config: { name: newName, path: newPath },
-									enableClose: true,
-								});
+								addNode(
+									`${WORKBENCH_COMPONENTS.FILE_EDITOR}--${newPath}`,
+									{
+										type: "tab",
+										name: newName,
+										component:
+											WORKBENCH_COMPONENTS.FILE_EDITOR,
+										config: {
+											name: newName,
+											path: newPath,
+										},
+										enableClose: true,
+									},
+								);
 							}}
 							{...otherProps}
 							actions={actions}
@@ -547,5 +565,4 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 				}}
 			/>
 		);
-	},
-);
+	});

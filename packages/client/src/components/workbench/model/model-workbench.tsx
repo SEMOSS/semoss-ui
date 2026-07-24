@@ -1,0 +1,109 @@
+import { FolderTreeIcon, MessageSquareIcon } from "lucide-react";
+import { useMemo } from "react";
+import { FlexLayout, getFileIconComponent } from "@semoss/shared";
+import {
+	EngineFileEditorPanel,
+	EngineFileExplorerPanel,
+	EngineMcpEditorPanel,
+} from "../engine";
+import { Workbench } from "../workbench";
+import { WORKBENCH_COMPONENTS } from "../workbench.contants";
+import { ModelChatPanel } from "./model-chat-panel";
+
+interface ModelWorkbenchProps {
+	/** Engine (model) id to edit */
+	engine: string;
+}
+
+/**
+ * Model workbench that combines a chat panel with the shared file explorer,
+ * editor, and MCP editor. Rendered inside an InsightProvider by the page so
+ * the chat and file operations share a single insight.
+ */
+export const ModelWorkbench: React.FC<ModelWorkbenchProps> = ({ engine }) => {
+	const model = useMemo(() => {
+		return FlexLayout.Model.fromJson({
+			global: {
+				tabSetEnableDeleteWhenEmpty: true,
+				tabEnableRename: false,
+			},
+			borders: [
+				{
+					type: "border",
+					location: "left",
+					size: 300,
+					children: [
+						{
+							type: "tab",
+							id: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+							name: "Files",
+							component: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+							config: {},
+							helpText: "File Explorer",
+							enableClose: false,
+						},
+					],
+				},
+			],
+			layout: {
+				type: "row",
+				weight: 100,
+				children: [
+					{
+						type: "tabset",
+						weight: 100,
+						enableDeleteWhenEmpty: false,
+						children: [
+							{
+								type: "tab",
+								id: WORKBENCH_COMPONENTS.MODEL_CHAT,
+								name: "Chat",
+								component: WORKBENCH_COMPONENTS.MODEL_CHAT,
+								enableClose: false,
+							},
+						],
+					},
+				],
+			},
+		});
+	}, []);
+
+	const components = {
+		[WORKBENCH_COMPONENTS.FILE_EXPLORER]: {
+			tab: () => <FolderTreeIcon className="size-4" />,
+			panel: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => {
+				return (
+					<EngineFileExplorerPanel
+						layout={layout}
+						node={node}
+						engine={engine}
+					/>
+				);
+			},
+		},
+		[WORKBENCH_COMPONENTS.FILE_EDITOR]: {
+			tab: (node: FlexLayout.TabNode) => {
+				const Icon = getFileIconComponent(node.getName());
+				return <Icon className="size-4" />;
+			},
+			panel: (node: FlexLayout.TabNode) => {
+				return <EngineFileEditorPanel node={node} engine={engine} />;
+			},
+		},
+		[WORKBENCH_COMPONENTS.MCP_EDITOR]: {
+			tab: (node: FlexLayout.TabNode) => {
+				const Icon = getFileIconComponent(node.getName());
+				return <Icon className="size-4" />;
+			},
+			panel: (node: FlexLayout.TabNode) => {
+				return <EngineMcpEditorPanel node={node} engine={engine} />;
+			},
+		},
+		[WORKBENCH_COMPONENTS.MODEL_CHAT]: {
+			tab: () => <MessageSquareIcon className="size-4" />,
+			panel: () => <ModelChatPanel engine={engine} />,
+		},
+	};
+
+	return <Workbench model={model} components={components} />;
+};

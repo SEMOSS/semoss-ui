@@ -75,16 +75,6 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({
 			: "",
 	);
 
-	// get the database category to check if it's SQL (only for DATABASE type engines)
-	const getDatabaseCategory = usePixel<string>(
-		engineId && route.type === "DATABASE"
-			? `GetDatabaseCategory(engine=["${engineId}"]);`
-			: "",
-		{
-			data: "",
-		},
-	);
-
 	// get the user's role
 	const getUserEnginePermission = useAPI(
 		engineId ? ["getUserEnginePermission", engineId] : null,
@@ -93,10 +83,10 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({
 		},
 	);
 
-	// get the visible tabs based on permission and database type
+	// get the visible tabs based on permission
 	const visibleTabs = useMemo(() => {
 		// get the routes based on permission
-		let filteredTabs = tabs.filter((tab) => {
+		return tabs.filter((tab) => {
 			if (!tab.restrict || tab.restrict.length === 0) {
 				return true;
 			}
@@ -105,28 +95,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({
 			}
 			return tab.restrict.includes(getUserEnginePermission.data);
 		});
-
-		// additional filtering for DATABASE type engines - hide Query/SPARQL tabs based on category
-		if (route.type === "DATABASE") {
-			const databaseCategory = getDatabaseCategory.data;
-			filteredTabs = filteredTabs.filter((t) => {
-				if (t.path === "query") {
-					return databaseCategory === "SQL";
-				}
-				if (t.path === "sparql-query") {
-					return databaseCategory === "RDF";
-				}
-				return true;
-			});
-		}
-
-		return filteredTabs;
-	}, [
-		tabs,
-		route.type,
-		getUserEnginePermission.data,
-		getDatabaseCategory.data,
-	]);
+	}, [tabs, getUserEnginePermission.data]);
 
 	/**
 	 * Gets active tab
@@ -150,11 +119,6 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({
 
 		return -1;
 	}, [visibleTabs, resolvedPath, pathname]);
-
-	// whether we're on the edit route for this engine
-	const isEdit = Boolean(
-		matchPath(`${resolvedPath.pathname}/edit`, pathname),
-	);
 
 	// if the engine ID is missing, navigate to the list
 	if (!engineId) {
@@ -185,8 +149,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({
 	if (
 		getUserEnginePermission.status !== "SUCCESS" ||
 		!getUserEnginePermission.data ||
-		getEngineMetadata.status !== "SUCCESS" ||
-		getDatabaseCategory.status === "LOADING"
+		getEngineMetadata.status !== "SUCCESS"
 	) {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
@@ -210,49 +173,43 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({
 					refresh: getEngineMetadata.refresh,
 				}}
 			>
-				{!isEdit ? (
-					<div className="flex flex-col gap-4">
-						<EngineHeader />
-						<div className="flex flex-col rounded-lg bg-(--muted)">
-							{visibleTabs.length > 0 && (
-								<div>
-									<Tabs
-										value={
-											activeTabIdx !== -1
-												? visibleTabs[activeTabIdx].path
-												: undefined
-										}
-										className="gap-0 bg-transparent"
-									>
-										<div className="w-full overflow-x-auto md:w-[80%]">
-											<TabsList className="w-max flex-nowrap gap-2">
-												{visibleTabs.map((t) => (
-													<TabsTrigger
-														key={t.path}
-														value={t.path}
-														onClick={() =>
-															navigate(
-																`${t.path}`,
-															)
-														}
-														data-testid={`engineLayout-${t.name}-tab`}
-													>
-														{t.name}
-													</TabsTrigger>
-												))}
-											</TabsList>
-										</div>
-									</Tabs>
-								</div>
-							)}
-							<div className="w-full bg-(--card) p-4">
-								<Outlet />
+				<div className="flex flex-col gap-4">
+					<EngineHeader />
+					<div className="flex flex-col rounded-lg bg-(--muted)">
+						{visibleTabs.length > 0 && (
+							<div>
+								<Tabs
+									value={
+										activeTabIdx !== -1
+											? visibleTabs[activeTabIdx].path
+											: undefined
+									}
+									className="gap-0 bg-transparent"
+								>
+									<div className="w-full overflow-x-auto md:w-[80%]">
+										<TabsList className="w-max flex-nowrap gap-2">
+											{visibleTabs.map((t) => (
+												<TabsTrigger
+													key={t.path}
+													value={t.path}
+													onClick={() =>
+														navigate(`${t.path}`)
+													}
+													data-testid={`engineLayout-${t.name}-tab`}
+												>
+													{t.name}
+												</TabsTrigger>
+											))}
+										</TabsList>
+									</div>
+								</Tabs>
 							</div>
+						)}
+						<div className="w-full bg-(--card) p-4">
+							<Outlet />
 						</div>
 					</div>
-				) : (
-					<Outlet />
-				)}
+				</div>
 			</EngineContext.Provider>
 		</>
 	);

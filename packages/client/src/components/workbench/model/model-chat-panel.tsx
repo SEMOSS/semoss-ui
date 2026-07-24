@@ -1,7 +1,7 @@
 import { Bot, Copy, Pencil, RefreshCw, Send, User } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { runPixel } from "@semoss/sdk/react";
+import { runPixel, useInsight } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -19,7 +19,6 @@ import {
 } from "@semoss/ui/next";
 import { FeedbackButtons } from "@/components/engine/FeedbackButtons";
 import { EngineModelTestSidebar } from "@/components/settings";
-import { useEngine } from "@/hooks";
 
 interface Message {
 	id: string;
@@ -41,19 +40,28 @@ interface LLMOutput {
 	numberOfTokensInResponse?: number;
 }
 
-export const EngineModelChatPage = () => {
-	const { engine } = useEngine();
+interface ModelChatPanelProps {
+	/** Engine (model) id to chat with */
+	engine: string;
+}
+
+/**
+ * Model chat workbench panel. Lets the user test and interact with the model
+ * engine. Runs pixels against the workbench's existing insight (via useInsight)
+ * rather than creating a dedicated chat insight.
+ */
+export const ModelChatPanel = ({ engine }: ModelChatPanelProps) => {
+	const insight = useInsight();
+
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState("");
 	const [messages, setMessages] = useState<Message[]>([]);
 
 	const [selectedModel, setSelectedModel] = useState<Model>({
-		model_id: engine.engine_id,
+		model_id: engine,
 		model_name: "",
 	});
 	const [maxTokens, setMaxTokens] = useState<number>(2000);
-	const [insightId, setInsightId] = useState<string>("");
-	const [isInsightLoading, setIsInsightLoading] = useState<boolean>(true);
 
 	const { control, handleSubmit, reset, watch } = useForm({
 		defaultValues: {
@@ -65,27 +73,14 @@ export const EngineModelChatPage = () => {
 	const messagesContainerRef = useRef<HTMLDivElement>(null);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-	// Helper to create a new insight from backend
-	const createNewInsight = useCallback(async () => {
-		setIsInsightLoading(true);
-		try {
-			const { insightId: newId } = await runPixel("1+1;", "new");
-			setInsightId(newId);
-		} catch (e) {
-			setError(e.message || "Failed to create new chat session.");
-		} finally {
-			setIsInsightLoading(false);
-		}
-	}, []);
-
+	// Reset the conversation when the target engine changes.
 	useEffect(() => {
 		setSelectedModel({
-			model_id: engine.engine_id,
+			model_id: engine,
 			model_name: "",
 		});
 		setMessages([]);
-		createNewInsight(); // Get a new insightId from backend
-	}, [engine.engine_id, createNewInsight]);
+	}, [engine]);
 
 	useEffect(() => {
 		const el = messagesContainerRef.current;
@@ -108,7 +103,7 @@ export const EngineModelChatPage = () => {
 		setMessages((prev) => [...prev, userMessage]);
 		try {
 			const pixel = `LLM(engine="${selectedModel.model_id}", command=["<encode>${data.prompt}</encode>"], paramValues=[{"max_tokens":${maxTokens}}])`;
-			const response = await runPixel(pixel, insightId);
+			const response = await runPixel(pixel, insight.insightId);
 			const { output, operationType } = response.pixelReturn[0];
 			const llmOutput = output as LLMOutput;
 			if (operationType.indexOf("ERROR") > -1) {
@@ -118,7 +113,7 @@ export const EngineModelChatPage = () => {
 				throw new Error(errorMessage);
 			}
 			const assistantMessage: Message = {
-				id: llmOutput.messageId,
+				id: llmOutput.messageId ?? `assistant-${Date.now()}`,
 				content: llmOutput.response || "No response received",
 				isUser: false,
 				timestamp: new Date(),
@@ -144,9 +139,9 @@ export const EngineModelChatPage = () => {
 
 	//Call LLM Feedback reactor to save user's feedback on a message
 	const sendFeedback = async (messageId: string, rating: string) => {
-		const pixel = `SubmitLlmFeedback(messageId="${messageId}", feedbackText="", rating="${rating}", roomId=${JSON.stringify(insightId)})`;
+		const pixel = `SubmitLlmFeedback(messageId="${messageId}", feedbackText="", rating="${rating}", roomId=${JSON.stringify(insight.insightId)})`;
 		try {
-			const response = await runPixel(pixel);
+			const response = await runPixel(pixel, insight.insightId);
 			const { output, operationType } = response.pixelReturn[0];
 			if (operationType.indexOf("ERROR") > -1) {
 				const errorMessage =
@@ -177,7 +172,7 @@ export const EngineModelChatPage = () => {
 		if (e.key === "Enter" && !e.shiftKey) {
 			// Plain Enter → submit
 			e.preventDefault();
-			if (!isLoading && !isInsightLoading && promptValue?.trim()) {
+			if (!isLoading && insight.isReady && promptValue?.trim()) {
 				handleSubmit(sendMessage)();
 			}
 		}
@@ -200,10 +195,10 @@ export const EngineModelChatPage = () => {
 		}
 	};
 
-	const isEmptyState = !isInsightLoading && messages.length === 0;
+	const isEmptyState = insight.isReady && messages.length === 0;
 
 	return (
-		<div className="flex min-h-0 flex-col gap-2 md:h-[calc(100vh-340px)] md:max-h-[728px] md:min-h-[565px] md:flex-row md:items-stretch">
+		<div className="flex h-full min-h-0 w-full flex-col gap-2 md:flex-row md:items-stretch">
 			<EngineModelTestSidebar
 				selectedModel={selectedModel}
 				setSelectedModel={setSelectedModel}
@@ -251,9 +246,8 @@ export const EngineModelChatPage = () => {
 										size="sm"
 										onClick={() => {
 											setMessages([]);
-											createNewInsight();
 										}}
-										disabled={isLoading || isInsightLoading}
+										disabled={isLoading || !insight.isReady}
 									>
 										<RefreshCw className="size-4" />
 										Clear Chat
@@ -268,7 +262,7 @@ export const EngineModelChatPage = () => {
 										: "flex min-h-[280px] flex-1 flex-col overflow-y-auto md:min-h-0"
 								}
 							>
-								{isInsightLoading ? (
+								{!insight.isReady ? (
 									<Muted className="mt-4 block text-center">
 										Initializing chat session...
 									</Muted>
@@ -336,7 +330,7 @@ export const EngineModelChatPage = () => {
 																}
 																disabled={
 																	isLoading ||
-																	isInsightLoading
+																	!insight.isReady
 																}
 																className="h-6 px-2 text-muted-foreground text-xs"
 															>
@@ -413,7 +407,7 @@ export const EngineModelChatPage = () => {
 												placeholder="Ask a question"
 												disabled={
 													isLoading ||
-													isInsightLoading
+													!insight.isReady
 												}
 												className="max-h-32 min-h-[44px] w-full resize-none py-[11px] pr-12"
 												onKeyDown={handleKeyDown}
@@ -425,7 +419,7 @@ export const EngineModelChatPage = () => {
 												disabled={
 													isLoading ||
 													!promptValue?.trim() ||
-													isInsightLoading
+													!insight.isReady
 												}
 												aria-label="Send message"
 												className="absolute right-2 bottom-2 hover:bg-transparent hover:text-primary"

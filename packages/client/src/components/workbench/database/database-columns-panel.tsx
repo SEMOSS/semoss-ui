@@ -40,13 +40,13 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import {
+	type DatabaseColumnAction,
+	type DatabaseTableAction,
+	type DatabaseType,
 	getColumnActionGroups,
 	getTableActionGroups,
-	type QueryColumnAction,
-	type QueryTableAction,
-	type QueryWorkspaceMode,
-} from "@/components/query-workspace/query-script-templates";
-import { QueryUploadCsv } from "@/components/query-workspace/query-upload-csv";
+} from "./database-script-templates";
+import { DatabaseUploadCsv } from "./database-upload-file";
 
 function getActionKey(action: { label: string }): string {
 	return action.label
@@ -55,12 +55,12 @@ function getActionKey(action: { label: string }): string {
 		.replace(/^-+|-+$/g, "");
 }
 
-interface QueryStructureBrowserProps {
+interface DatabaseColumnPanelProps {
 	/** Engine (database) id to query */
 	engine: string;
 
 	/** Mode of the engine */
-	mode: QueryWorkspaceMode;
+	mode: DatabaseType;
 
 	/** Track loading state of the database structure */
 	isLoading: boolean;
@@ -78,10 +78,10 @@ interface QueryStructureBrowserProps {
 	}[];
 
 	/** Opens a new query panel with generated script text */
-	onCreateQueryPanel: (initialQuery: string, name: string) => void;
+	onCreateQueryPanel: (query: string, name: string) => void;
 }
 
-export const QueryStructureBrowser: React.FC<QueryStructureBrowserProps> = ({
+export const DatabaseColumnsPanel: React.FC<DatabaseColumnPanelProps> = ({
 	engine,
 	mode,
 	isLoading,
@@ -170,7 +170,7 @@ export const QueryStructureBrowser: React.FC<QueryStructureBrowserProps> = ({
 	// Generates a script from the selected table action and opens it in a new query panel.
 	// Looks up the full column list from the unfiltered structure so all columns are available.
 	const handleTableAction = useCallback(
-		(tableName: string, action: QueryTableAction) => {
+		(tableName: string, action: DatabaseTableAction) => {
 			const columns =
 				structure
 					.find((table) => table.table === tableName)
@@ -184,7 +184,11 @@ export const QueryStructureBrowser: React.FC<QueryStructureBrowserProps> = ({
 
 	// Generates a script from the selected column action and opens it in a new query panel.
 	const handleColumnAction = useCallback(
-		(tableName: string, columnName: string, action: QueryColumnAction) => {
+		(
+			tableName: string,
+			columnName: string,
+			action: DatabaseColumnAction,
+		) => {
 			const script = action.query(tableName, columnName);
 			onCreateQueryPanel(script, `${action.label} ${columnName}`);
 		},
@@ -206,7 +210,7 @@ export const QueryStructureBrowser: React.FC<QueryStructureBrowserProps> = ({
 		<>
 			<div
 				className="flex h-full flex-col overflow-hidden bg-card text-card-foreground"
-				data-testid="query-structure-browser"
+				data-testid="database-columns--browser"
 			>
 				<div className="flex w-full shrink-0 flex-row gap-2 p-2">
 					<InputGroup className="flex-1 bg-background">
@@ -217,7 +221,7 @@ export const QueryStructureBrowser: React.FC<QueryStructureBrowserProps> = ({
 							placeholder={"Search columns"}
 							value={searchTerm}
 							onChange={(e) => setSearchTerm(e.target.value)}
-							data-testid="query-structure-search-input"
+							data-testid="database-columns--search-input"
 						/>
 						{searchTerm && (
 							<InputGroupAddon align="inline-end">
@@ -226,7 +230,7 @@ export const QueryStructureBrowser: React.FC<QueryStructureBrowserProps> = ({
 									variant="ghost"
 									onClick={() => setSearchTerm("")}
 									aria-label="Clear search"
-									data-testid="query-structure-search-clear-btn"
+									data-testid="database-columns--search-clear-btn"
 								>
 									<X className="size-4" />
 								</InputGroupButton>
@@ -245,7 +249,7 @@ export const QueryStructureBrowser: React.FC<QueryStructureBrowserProps> = ({
 											? "Collapse all"
 											: "Expand all"
 									}
-									data-testid="query-structure-toggle-all-btn"
+									data-testid="database-columns--toggle-all-btn"
 								>
 									<ChevronsUpDown />
 								</Button>
@@ -261,7 +265,7 @@ export const QueryStructureBrowser: React.FC<QueryStructureBrowserProps> = ({
 									size="icon-sm"
 									onClick={() => refresh()}
 									disabled={isLoading}
-									data-testid="query-structure-refresh-btn"
+									data-testid="database-columns--refresh-btn"
 								>
 									<RefreshCw
 										className={
@@ -314,7 +318,7 @@ export const QueryStructureBrowser: React.FC<QueryStructureBrowserProps> = ({
 										>
 											<div
 												className="overflow-hidden rounded-md border border-border bg-background shadow-sm"
-												data-testid={`query-structure-table-${table.table}`}
+												data-testid={`database-columns--table-${table.table}`}
 											>
 												<ContextMenu>
 													<ContextMenuTrigger asChild>
@@ -325,7 +329,7 @@ export const QueryStructureBrowser: React.FC<QueryStructureBrowserProps> = ({
 																variant="secondary"
 																className="w-full justify-between rounded-none has-[>svg]:px-3"
 																title="Right-click for table actions"
-																data-testid={`query-structure-table-header-${table.table}`}
+																data-testid={`database-columns--table-header-${table.table}`}
 															>
 																<span className="flex min-w-0 items-center gap-2">
 																	<Table className="size-4 text-muted-foreground" />
@@ -358,7 +362,7 @@ export const QueryStructureBrowser: React.FC<QueryStructureBrowserProps> = ({
 														</CollapsibleTrigger>
 													</ContextMenuTrigger>
 													<ContextMenuContent
-														data-testid={`query-structure-table-menu-${table.table}`}
+														data-testid={`database-columns--table-menu-${table.table}`}
 													>
 														{mode === "SQL" && (
 															<>
@@ -374,7 +378,7 @@ export const QueryStructureBrowser: React.FC<QueryStructureBrowserProps> = ({
 																			true,
 																		);
 																	}}
-																	data-testid={`query-structure-table-action-${table.table}-upload-csv}`}
+																	data-testid={`database-columns--table-action-${table.table}-upload-csv}`}
 																>
 																	Upload
 																</ContextMenuItem>
@@ -415,7 +419,7 @@ export const QueryStructureBrowser: React.FC<QueryStructureBrowserProps> = ({
 																							action,
 																						)
 																					}
-																					data-testid={`query-structure-table-action-${table.table}-${getActionKey(action)}`}
+																					data-testid={`database-columns--table-action-${table.table}-${getActionKey(action)}`}
 																				>
 																					{
 																						action.label
@@ -443,7 +447,7 @@ export const QueryStructureBrowser: React.FC<QueryStructureBrowserProps> = ({
 																		<div
 																			className="flex items-center gap-2 rounded-sm px-2 py-1.5 hover:bg-muted/50"
 																			title="Right-click for column actions"
-																			data-testid={`query-structure-column-${table.table}-${column.column}`}
+																			data-testid={`database-columns--column-${table.table}-${column.column}`}
 																		>
 																			<DataTypeIcon
 																				type={
@@ -458,7 +462,7 @@ export const QueryStructureBrowser: React.FC<QueryStructureBrowserProps> = ({
 																		</div>
 																	</ContextMenuTrigger>
 																	<ContextMenuContent
-																		data-testid={`query-structure-column-menu-${table.table}-${column.column}`}
+																		data-testid={`database-columns--column-menu-${table.table}-${column.column}`}
 																	>
 																		{columnActionGroups.map(
 																			(
@@ -497,7 +501,7 @@ export const QueryStructureBrowser: React.FC<QueryStructureBrowserProps> = ({
 																											action,
 																										)
 																									}
-																									data-testid={`query-structure-column-action-${table.table}-${column.column}-${getActionKey(action)}`}
+																									data-testid={`database-columns--column-action-${table.table}-${column.column}-${getActionKey(action)}`}
 																								>
 																									{
 																										action.label
@@ -531,7 +535,7 @@ export const QueryStructureBrowser: React.FC<QueryStructureBrowserProps> = ({
 				</div>
 			</div>
 
-			<QueryUploadCsv
+			<DatabaseUploadCsv
 				engine={engine}
 				structure={structure}
 				table={uploadTargetTable}

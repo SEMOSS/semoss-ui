@@ -1,7 +1,7 @@
 /** Query language handled by the workspace */
-export type QueryWorkspaceMode = "SQL" | "SPARQL";
+export type DatabaseType = "SQL" | "SPARQL";
 
-export type QueryTableAction = {
+export type DatabaseTableAction = {
 	/** Label of the action */
 	label: string;
 	/** Description of the action */
@@ -10,7 +10,7 @@ export type QueryTableAction = {
 	query: (table: string, columns: string[]) => string;
 };
 
-export type QueryColumnAction = {
+export type DatabaseColumnAction = {
 	/** Label of the action */
 	label: string;
 	/** Description of the action */
@@ -23,8 +23,8 @@ export type QueryColumnAction = {
  * Grouped context-menu actions for a table (SQL) / concept (SPARQL).
  */
 export const getTableActionGroups = (
-	mode: QueryWorkspaceMode,
-): { label: string; actions: QueryTableAction[] }[] => {
+	mode: DatabaseType,
+): { label: string; actions: DatabaseTableAction[] }[] => {
 	if (mode === "SPARQL") {
 		return [
 			{
@@ -145,8 +145,8 @@ export const getTableActionGroups = (
  * Grouped context-menu actions for a column (SQL) / property (SPARQL).
  **/
 export const getColumnActionGroups = (
-	mode: QueryWorkspaceMode,
-): { label: string; actions: QueryColumnAction[] }[] => {
+	mode: DatabaseType,
+): { label: string; actions: DatabaseColumnAction[] }[] => {
 	if (mode === "SPARQL") {
 		return [
 			{

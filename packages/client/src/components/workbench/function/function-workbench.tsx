@@ -1,0 +1,99 @@
+import { FolderTreeIcon } from "lucide-react";
+import { useMemo } from "react";
+import { FlexLayout, getFileIconComponent } from "@semoss/shared";
+import {
+	EngineFileEditorPanel,
+	EngineFileExplorerPanel,
+	EngineMcpEditorPanel,
+} from "../engine";
+import { Workbench } from "../workbench";
+import { WORKBENCH_COMPONENTS } from "../workbench.contants";
+
+interface FunctionWorkbenchProps {
+	/** Engine (function) id to edit */
+	engine: string;
+}
+
+/**
+ * Function workbench that exposes the engine's files through the shared file
+ * explorer, editor, and MCP editor. Rendered inside an InsightProvider by the
+ * page so its file operations share a single insight.
+ */
+export const FunctionWorkbench: React.FC<FunctionWorkbenchProps> = ({
+	engine,
+}) => {
+	const model = useMemo(() => {
+		return FlexLayout.Model.fromJson({
+			global: {
+				tabSetEnableDeleteWhenEmpty: true,
+				tabEnableRename: false,
+			},
+			borders: [
+				{
+					type: "border",
+					location: "left",
+					size: 300,
+					selected: 0,
+					children: [
+						{
+							type: "tab",
+							id: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+							name: "Files",
+							component: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+							config: {},
+							helpText: "File Explorer",
+							enableClose: false,
+						},
+					],
+				},
+			],
+			layout: {
+				type: "row",
+				weight: 100,
+				children: [
+					{
+						type: "tabset",
+						weight: 100,
+						enableDeleteWhenEmpty: false,
+						children: [],
+					},
+				],
+			},
+		});
+	}, []);
+
+	const components = {
+		[WORKBENCH_COMPONENTS.FILE_EXPLORER]: {
+			tab: () => <FolderTreeIcon className="size-4" />,
+			panel: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => {
+				return (
+					<EngineFileExplorerPanel
+						layout={layout}
+						node={node}
+						engine={engine}
+					/>
+				);
+			},
+		},
+		[WORKBENCH_COMPONENTS.FILE_EDITOR]: {
+			tab: (node: FlexLayout.TabNode) => {
+				const Icon = getFileIconComponent(node.getName());
+				return <Icon className="size-4" />;
+			},
+			panel: (node: FlexLayout.TabNode) => {
+				return <EngineFileEditorPanel node={node} engine={engine} />;
+			},
+		},
+		[WORKBENCH_COMPONENTS.MCP_EDITOR]: {
+			tab: (node: FlexLayout.TabNode) => {
+				const Icon = getFileIconComponent(node.getName());
+				return <Icon className="size-4" />;
+			},
+			panel: (node: FlexLayout.TabNode) => {
+				return <EngineMcpEditorPanel node={node} engine={engine} />;
+			},
+		},
+	};
+
+	return <Workbench model={model} components={components} />;
+};

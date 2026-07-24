@@ -25,14 +25,14 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
-import type { QueryWorkspaceMode } from "./query-script-templates";
+import type { DatabaseType } from "./database-script-templates";
 
-interface QueryResultsPanelProps {
+interface DatabaseQueryResultsPanelProps {
 	/** Engine (database) id to query */
 	engine: string;
 
 	/** Query language mode (defaults to SQL) */
-	mode: QueryWorkspaceMode;
+	mode: DatabaseType;
 
 	/**
 	 * Data-access variant (defaults to "engine"). "admin" targets a privileged
@@ -86,14 +86,9 @@ interface QueryResultsPanelProps {
 		| null;
 }
 
-export const QueryResultsPanel: React.FC<QueryResultsPanelProps> = ({
-	engine,
-	mode,
-	variant,
-	model,
-	isRunning,
-	result,
-}) => {
+export const DatabaseQueryResultsPanel: React.FC<
+	DatabaseQueryResultsPanelProps
+> = ({ engine, mode, variant, model, isRunning, result }) => {
 	const { configStore } = useRootStore();
 
 	const [isExporting, setIsExporting] = useState(false);
@@ -198,7 +193,9 @@ export const QueryResultsPanel: React.FC<QueryResultsPanelProps> = ({
 							>
 								<AlertCircleIcon />
 								<AlertDescription className="whitespace-pre-wrap">
-									{result?.message}
+									{result?.type === "ERROR"
+										? result.message
+										: null}
 								</AlertDescription>
 							</Alert>
 						</div>

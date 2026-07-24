@@ -11,7 +11,7 @@ import {
 	SPARQL_THEME_LIGHT,
 } from "@semoss/shared";
 import { Button, Spinner, useTheme } from "@semoss/ui/next";
-import type { QueryWorkspaceMode } from "./query-script-templates";
+import type { DatabaseType } from "./database-script-templates";
 
 const SQL_KEYWORDS = [
 	"SELECT",
@@ -45,11 +45,11 @@ const SQL_KEYWORDS = [
 	"DELETE",
 ];
 
-interface QueryEditorPanelProps {
+interface DatabaseQueryPanelProps {
 	/** The FlexLayout tab node backing this editor panel */
 	node: FlexLayout.TabNode;
 	/** Query language for this workspace */
-	mode: QueryWorkspaceMode;
+	mode: DatabaseType;
 	/** Structure */
 	structure: {
 		table: string;
@@ -67,7 +67,7 @@ interface QueryEditorPanelProps {
  * owns its own query text and (for SPARQL) raw toggle, seeded from the tab
  * config, so multiple panels can coexist without sharing editor state.
  */
-export const QueryEditorPanel: React.FC<QueryEditorPanelProps> = ({
+export const DatabaseQueryPanel: React.FC<DatabaseQueryPanelProps> = ({
 	node,
 	mode,
 	structure,

@@ -2,21 +2,23 @@ import { Navigate, Outlet } from "react-router-dom";
 import { ImportPage } from "../import";
 import { EngineActivityPage } from "./engine-activity-page";
 import { EngineCommitsPage } from "./engine-commits-page";
-import { EngineFileManagerPage } from "./engine-file-manager-page";
+import { EngineDatabaseWorkbenchPage } from "./engine-database-workbench-page";
 import { EngineFilePage } from "./engine-file-page";
+import { EngineFunctionWorkbenchPage } from "./engine-function-workbench-page";
+import { EngineGuardrailWorkbenchPage } from "./engine-guardrail-workbench-page";
 import { EngineIndexPage } from "./engine-index-page";
 import { EngineLayout } from "./engine-layout";
 import { EngineMcpUsagePage } from "./engine-mcp-usage-page";
 import { EngineMetadataPage } from "./engine-metadata-page";
-import { EngineModelChatPage } from "./engine-model-chat-page";
+import { EngineModelWorkbenchPage } from "./engine-model-workbench-page";
 import { EngineOverviewPage } from "./engine-overview-page";
 import { EngineQAPage } from "./engine-qa-page";
 import { EngineSettingsPage } from "./engine-settings-page";
 import { EngineSmssPage } from "./engine-smss-page";
-import { EngineSparqlQueryPage } from "./engine-sparql-query-page";
-import { EngineSqlQueryPage } from "./engine-sql-query-page";
 import { EngineStorageViewerPage } from "./engine-storage-viewer-page";
+import { EngineStorageWorkbenchPage } from "./engine-storage-workbench-page";
 import { EngineUsagePage } from "./engine-usage-page";
+import { EngineVectorWorkbenchPage } from "./engine-vector-workbench-page";
 
 export const ENGINE_ROUTES: {
 	/** Name of the specific path */
@@ -49,6 +51,10 @@ export const ENGINE_ROUTES: {
 				element: <ImportPage name="Function" type="FUNCTION" />,
 			},
 			{
+				path: ":engineId/workbench",
+				element: <EngineFunctionWorkbenchPage />,
+			},
+			{
 				path: ":engineId",
 				element: (
 					<EngineLayout
@@ -87,11 +93,6 @@ export const ENGINE_ROUTES: {
 								restrict: ["EDIT", "OWNER"],
 							},
 							{
-								name: "Files",
-								path: "files",
-								restrict: ["EDIT", "OWNER"],
-							},
-							{
 								name: "Commits",
 								path: "commits",
 								restrict: ["EDIT", "OWNER"],
@@ -110,7 +111,6 @@ export const ENGINE_ROUTES: {
 					{ path: "mcp-usage", element: <EngineMcpUsagePage /> },
 					{ path: "activity", element: <EngineActivityPage /> },
 					{ path: "access-control", element: <EngineSettingsPage /> },
-					{ path: "files", element: <EngineFileManagerPage /> },
 					{ path: "commits", element: <EngineCommitsPage /> },
 					{ path: "smss", element: <EngineSmssPage /> },
 					{ path: "*", element: <Navigate to="." replace /> },
@@ -138,6 +138,10 @@ export const ENGINE_ROUTES: {
 			{
 				path: "new",
 				element: <ImportPage name="Model" type="MODEL" />,
+			},
+			{
+				path: ":engineId/workbench",
+				element: <EngineModelWorkbenchPage />,
 			},
 			{
 				path: ":engineId",
@@ -173,18 +177,8 @@ export const ENGINE_ROUTES: {
 								restrict: ["READ_ONLY", "EDIT", "OWNER"],
 							},
 							{
-								name: "Chat",
-								path: "chat",
-								restrict: ["READ_ONLY", "EDIT", "OWNER"],
-							},
-							{
 								name: "Access Control",
 								path: "access-control",
-								restrict: ["EDIT", "OWNER"],
-							},
-							{
-								name: "Files",
-								path: "files",
 								restrict: ["EDIT", "OWNER"],
 							},
 							{
@@ -200,9 +194,7 @@ export const ENGINE_ROUTES: {
 					{ path: "usage", element: <EngineUsagePage /> },
 					{ path: "mcp-usage", element: <EngineMcpUsagePage /> },
 					{ path: "activity", element: <EngineActivityPage /> },
-					{ path: "chat", element: <EngineModelChatPage /> },
 					{ path: "access-control", element: <EngineSettingsPage /> },
-					{ path: "files", element: <EngineFileManagerPage /> },
 					{ path: "smss", element: <EngineSmssPage /> },
 					{ path: "*", element: <Navigate to="." replace /> },
 				],
@@ -229,6 +221,10 @@ export const ENGINE_ROUTES: {
 			{
 				path: "new",
 				element: <ImportPage name="Database" type="DATABASE" />,
+			},
+			{
+				path: ":engineId/workbench",
+				element: <EngineDatabaseWorkbenchPage />,
 			},
 			{
 				path: ":engineId",
@@ -269,23 +265,8 @@ export const ENGINE_ROUTES: {
 								restrict: ["READ_ONLY", "EDIT", "OWNER"],
 							},
 							{
-								name: "Query",
-								path: "query",
-								restrict: ["READ_ONLY", "EDIT", "OWNER"],
-							},
-							{
-								name: "Query",
-								path: "sparql-query",
-								restrict: ["READ_ONLY", "EDIT", "OWNER"],
-							},
-							{
 								name: "Access Control",
 								path: "access-control",
-								restrict: ["EDIT", "OWNER"],
-							},
-							{
-								name: "Files",
-								path: "files",
 								restrict: ["EDIT", "OWNER"],
 							},
 							{
@@ -302,13 +283,7 @@ export const ENGINE_ROUTES: {
 					{ path: "mcp-usage", element: <EngineMcpUsagePage /> },
 					{ path: "activity", element: <EngineActivityPage /> },
 					{ path: "metadata", element: <EngineMetadataPage /> },
-					{ path: "query", element: <EngineSqlQueryPage /> },
-					{
-						path: "sparql-query",
-						element: <EngineSparqlQueryPage />,
-					},
 					{ path: "access-control", element: <EngineSettingsPage /> },
-					{ path: "files", element: <EngineFileManagerPage /> },
 					{ path: "smss", element: <EngineSmssPage /> },
 					{ path: "*", element: <Navigate to="." replace /> },
 				],
@@ -335,6 +310,10 @@ export const ENGINE_ROUTES: {
 			{
 				path: "new",
 				element: <ImportPage name="Vector" type="VECTOR" />,
+			},
+			{
+				path: ":engineId/workbench",
+				element: <EngineVectorWorkbenchPage />,
 			},
 			{
 				path: ":engineId",
@@ -385,11 +364,6 @@ export const ENGINE_ROUTES: {
 								restrict: ["EDIT", "OWNER"],
 							},
 							{
-								name: "Files",
-								path: "files",
-								restrict: ["EDIT", "OWNER"],
-							},
-							{
 								name: "SMSS",
 								path: "smss",
 								restrict: ["OWNER"],
@@ -405,7 +379,6 @@ export const ENGINE_ROUTES: {
 					{ path: "documents", element: <EngineFilePage /> },
 					{ path: "qa", element: <EngineQAPage /> },
 					{ path: "access-control", element: <EngineSettingsPage /> },
-					{ path: "files", element: <EngineFileManagerPage /> },
 					{ path: "smss", element: <EngineSmssPage /> },
 					{ path: "*", element: <Navigate to="." replace /> },
 				],
@@ -432,6 +405,10 @@ export const ENGINE_ROUTES: {
 			{
 				path: "new",
 				element: <ImportPage name="Storage" type="STORAGE" />,
+			},
+			{
+				path: ":engineId/workbench",
+				element: <EngineStorageWorkbenchPage />,
 			},
 			{
 				path: ":engineId",
@@ -482,11 +459,6 @@ export const ENGINE_ROUTES: {
 								restrict: ["EDIT", "OWNER"],
 							},
 							{
-								name: "Files",
-								path: "files",
-								restrict: ["EDIT", "OWNER"],
-							},
-							{
 								name: "SMSS",
 								path: "smss",
 								restrict: ["OWNER"],
@@ -504,7 +476,6 @@ export const ENGINE_ROUTES: {
 						element: <EngineStorageViewerPage />,
 					},
 					{ path: "access-control", element: <EngineSettingsPage /> },
-					{ path: "files", element: <EngineFileManagerPage /> },
 					{ path: "smss", element: <EngineSmssPage /> },
 					{ path: "*", element: <Navigate to="." replace /> },
 				],
@@ -531,6 +502,10 @@ export const ENGINE_ROUTES: {
 			{
 				path: "new",
 				element: <ImportPage name="Guardrail" type="GUARDRAIL" />,
+			},
+			{
+				path: ":engineId/workbench",
+				element: <EngineGuardrailWorkbenchPage />,
 			},
 			{
 				path: ":engineId",
@@ -566,11 +541,6 @@ export const ENGINE_ROUTES: {
 								restrict: ["EDIT", "OWNER"],
 							},
 							{
-								name: "Files",
-								path: "files",
-								restrict: ["EDIT", "OWNER"],
-							},
-							{
 								name: "SMSS",
 								path: "smss",
 								restrict: ["OWNER"],
@@ -583,7 +553,6 @@ export const ENGINE_ROUTES: {
 					{ path: "usage", element: <EngineUsagePage /> },
 					{ path: "activity", element: <EngineActivityPage /> },
 					{ path: "access-control", element: <EngineSettingsPage /> },
-					{ path: "files", element: <EngineFileManagerPage /> },
 					{ path: "smss", element: <EngineSmssPage /> },
 					{ path: "*", element: <Navigate to="." replace /> },
 				],

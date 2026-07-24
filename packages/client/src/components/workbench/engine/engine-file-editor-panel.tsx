@@ -3,7 +3,7 @@ import { FileEditor, FlexLayout } from "@semoss/shared";
 import { MetadataHelpDialog } from "@/components/shared";
 import { MCP } from "@/constants";
 
-interface EngineFileEditorProps {
+interface EngineFileEditorPanelProps {
 	/** Node */
 	node: FlexLayout.TabNode;
 
@@ -11,8 +11,8 @@ interface EngineFileEditorProps {
 	engine: string;
 }
 
-export const EngineFileEditor: React.FC<EngineFileEditorProps> = observer(
-	({ node, engine }) => {
+export const EngineFileEditorPanel: React.FC<EngineFileEditorPanelProps> =
+	observer(({ node, engine }) => {
 		const config: {
 			name: string;
 			path: string;
@@ -68,5 +68,4 @@ export const EngineFileEditor: React.FC<EngineFileEditorProps> = observer(
 				}}
 			/>
 		);
-	},
-);
+	});

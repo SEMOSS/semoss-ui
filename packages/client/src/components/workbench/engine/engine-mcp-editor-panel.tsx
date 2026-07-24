@@ -3,9 +3,9 @@ import { useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import type { FlexLayout } from "@semoss/shared";
 import { Muted, Spinner, toast } from "@semoss/ui/next";
-import { MCPJsonEditor } from "../shared";
+import { MCPJsonEditor } from "../../shared";
 
-interface EngineMcpEditorProps {
+interface EngineMcpEditorPanelProps {
 	/** Node */
 	node: FlexLayout.TabNode;
 
@@ -13,8 +13,8 @@ interface EngineMcpEditorProps {
 	engine: string;
 }
 
-export const EngineMcpEditor: React.FC<EngineMcpEditorProps> = observer(
-	({ node, engine }) => {
+export const EngineMcpEditorPanel: React.FC<EngineMcpEditorPanelProps> =
+	observer(({ node, engine }) => {
 		const insight = useInsight();
 		const config: {
 			name: string;
@@ -130,5 +130,4 @@ export const EngineMcpEditor: React.FC<EngineMcpEditorProps> = observer(
 				)}
 			</div>
 		);
-	},
-);
+	});
