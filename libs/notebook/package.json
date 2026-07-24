@@ -9,7 +9,9 @@
     "dependencies": {
         "@semoss/sdk": "workspace:*",
         "@semoss/ui": "workspace:*",
+        "anser": "^2.3.5",
         "dompurify": "^3.4.7",
+        "katex": "^0.16.47",
         "lucide-react": "^0.545.0",
         "marked": "^16.2.1",
         "plotly.js-dist-min": "^3.7.0",

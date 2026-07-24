@@ -1,8 +1,13 @@
 import DOMPurify from "dompurify";
-import { marked } from "marked";
 import { useEffect, useRef, useState } from "react";
+import { ansiToSafeHtml, hasAnsiCodes } from "../ansi";
+import { renderLatexToHtml, renderMarkdownToHtml } from "../markdown";
 import type { JupyterCellOutput } from "../types";
-import { normalizeSource } from "../utils";
+import {
+	MAX_TEXT_OUTPUT_LENGTH,
+	normalizeSource,
+	truncateTextOutput,
+} from "../utils";
 
 const getMimeString = (
 	data: Record<string, unknown>,
@@ -284,29 +289,67 @@ const VegaOutput: React.FC<{ spec: Record<string, unknown> }> = ({ spec }) => {
 	);
 };
 
+// Shared renderer for plain-text-ish outputs (stream, error, text/plain
+// fallback): converts ANSI color codes to HTML when present (colorama/rich/
+// pytest output), and caps runaway-length output with a visible truncation
+// notice, mirroring Jupyter's own output size guard.
+const TextOutputBlock: React.FC<{ text: string; className: string }> = ({
+	text,
+	className,
+}) => {
+	const {
+		text: displayText,
+		truncated,
+		originalLength,
+	} = truncateTextOutput(text);
+	const ansi = hasAnsiCodes(displayText);
+
+	return (
+		<div className={className}>
+			{ansi ? (
+				<pre
+					className="whitespace-pre-wrap"
+					// biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via DOMPurify in ansiToSafeHtml
+					dangerouslySetInnerHTML={{
+						__html: ansiToSafeHtml(displayText),
+					}}
+				/>
+			) : (
+				<pre className="whitespace-pre-wrap">{displayText}</pre>
+			)}
+			{truncated && (
+				<div className="mt-2 text-muted-foreground italic">
+					Output truncated ({MAX_TEXT_OUTPUT_LENGTH.toLocaleString()}{" "}
+					of {originalLength.toLocaleString()} characters shown)
+				</div>
+			)}
+		</div>
+	);
+};
+
 export const IpynbOutput: React.FC<IpynbOutputProps> = ({ output }) => {
 	if (output.output_type === "stream") {
 		return (
-			<pre
-				className={`whitespace-pre-wrap rounded border p-3 text-xs ${
+			<TextOutputBlock
+				text={normalizeSource(output.text)}
+				className={`rounded border p-3 text-xs ${
 					output.name === "stderr"
 						? "text-destructive"
 						: "text-foreground"
 				}`}
-			>
-				{normalizeSource(output.text)}
-			</pre>
+			/>
 		);
 	}
 
 	if (output.output_type === "error") {
 		return (
-			<pre className="whitespace-pre-wrap rounded border border-destructive/50 bg-destructive/5 p-3 text-destructive text-xs">
-				{[
+			<TextOutputBlock
+				text={[
 					`${output.ename}: ${output.evalue}`,
 					...output.traceback,
 				].join("\n")}
-			</pre>
+				className="rounded border border-destructive/50 bg-destructive/5 p-3 text-destructive text-xs"
+			/>
 		);
 	}
 
@@ -376,6 +419,17 @@ const renderMimeBundleOutput = (
 		);
 	}
 
+	const bmp = getMimeString(data, "image/bmp");
+	if (bmp) {
+		return (
+			<img
+				src={`data:image/bmp;base64,${bmp.replace(/\s+/g, "")}`}
+				alt="Notebook output"
+				className="max-h-[28rem] max-w-full rounded border"
+			/>
+		);
+	}
+
 	const svg = getMimeString(data, "image/svg+xml");
 	if (svg) {
 		return (
@@ -410,12 +464,11 @@ const renderMimeBundleOutput = (
 		return (
 			<div
 				className="prose prose-sm max-w-none overflow-auto rounded border bg-background p-3"
-				// Same untrusted-content concern as SVG above: sanitize rendered markdown.
-				// biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via DOMPurify above
+				// Same untrusted-content concern as SVG above: renderMarkdownToHtml
+				// sanitizes via DOMPurify and renders $..$/$$..$$ math via KaTeX.
+				// biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via DOMPurify in renderMarkdownToHtml
 				dangerouslySetInnerHTML={{
-					__html: DOMPurify.sanitize(
-						marked.parse(markdown) as string,
-					),
+					__html: renderMarkdownToHtml(markdown),
 				}}
 			/>
 		);
@@ -424,9 +477,11 @@ const renderMimeBundleOutput = (
 	const latex = getMimeString(data, "text/latex");
 	if (latex) {
 		return (
-			<pre className="whitespace-pre-wrap rounded border bg-muted/30 p-3 text-foreground text-xs">
-				{latex}
-			</pre>
+			<div
+				className="overflow-auto rounded border bg-muted/30 p-3 text-foreground text-xs"
+				// biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via DOMPurify in renderLatexToHtml
+				dangerouslySetInnerHTML={{ __html: renderLatexToHtml(latex) }}
+			/>
 		);
 	}
 
@@ -505,8 +560,9 @@ const renderMimeBundleOutput = (
 		getMimeString(data, "text/plain") ?? JSON.stringify(data, null, 2);
 
 	return (
-		<pre className="whitespace-pre-wrap rounded border p-3 text-foreground text-xs">
-			{text}
-		</pre>
+		<TextOutputBlock
+			text={text}
+			className="rounded border p-3 text-foreground text-xs"
+		/>
 	);
 };

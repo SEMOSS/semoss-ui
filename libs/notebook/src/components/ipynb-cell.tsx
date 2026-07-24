@@ -1,9 +1,8 @@
-import DOMPurify from "dompurify";
 import { PlayIcon } from "lucide-react";
-import { marked } from "marked";
 import { Button } from "@semoss/ui/next";
+import { renderMarkdownToHtml } from "../markdown";
 import type { JupyterCell } from "../types";
-import { normalizeSource } from "../utils";
+import { normalizeSource, resolveMarkdownAttachments } from "../utils";
 import { IpynbOutput } from "./ipynb-output";
 
 interface IpynbCellProps {
@@ -44,11 +43,17 @@ export const IpynbCell: React.FC<IpynbCellProps> = ({
 				<div
 					className="prose prose-sm max-w-none"
 					// .ipynb files can come from untrusted sources (shared/uploaded), and
-					// markdown may embed raw HTML/script; sanitize before injecting.
-					// biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via DOMPurify above
+					// markdown may embed raw HTML/script; renderMarkdownToHtml sanitizes
+					// via DOMPurify and renders $..$/$$..$$ math via KaTeX.
+					// biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via DOMPurify in renderMarkdownToHtml
 					dangerouslySetInnerHTML={{
-						__html: DOMPurify.sanitize(
-							marked.parse(source) as string,
+						__html: renderMarkdownToHtml(
+							resolveMarkdownAttachments(
+								source,
+								cell.cell_type === "markdown"
+									? cell.attachments
+									: undefined,
+							),
 						),
 					}}
 				/>

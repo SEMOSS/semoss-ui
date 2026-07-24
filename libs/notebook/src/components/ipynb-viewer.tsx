@@ -72,8 +72,6 @@ export const IpynbViewer: React.FC<IpynbViewerProps> = ({
 			const content = String(response.pixelReturn[0]?.output ?? "");
 			setRawContent(content);
 			setIsModified(false);
-			setSelectedRowNumber(null);
-			onRowSelectionChange?.(null);
 		} catch (error) {
 			// Surface load failures inline instead of throwing, so a bad/missing
 			// file leaves the toolbar (Refresh/Download) usable rather than
@@ -86,11 +84,25 @@ export const IpynbViewer: React.FC<IpynbViewerProps> = ({
 		} finally {
 			setIsLoading(false);
 		}
-	}, [insightId, onRowSelectionChange, path]);
+	}, [insightId, path]);
 
 	useEffect(() => {
 		void refresh();
 	}, [refresh]);
+
+	// A refresh can be triggered by an unrelated save to this same file (e.g.
+	// another code block appending a cell elsewhere), which must NOT blow away
+	// an in-progress row selection - the select row -> prompt -> "Add to
+	// Notebook" workflow depends on it surviving intermediate reloads. Only
+	// clear it if the row it pointed at no longer exists after the reload.
+	useEffect(() => {
+		if (selectedRowNumber === null) return;
+		const cellCount = parsed.notebook?.cells.length ?? 0;
+		if (selectedRowNumber > cellCount) {
+			setSelectedRowNumber(null);
+			onRowSelectionChange?.(null);
+		}
+	}, [parsed.notebook, selectedRowNumber, onRowSelectionChange]);
 
 	useEffect(() => {
 		const onRefresh = (event: Event) => {

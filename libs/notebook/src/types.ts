@@ -36,6 +36,9 @@ export interface JupyterMarkdownCell {
 	cell_type: "markdown";
 	metadata: Record<string, unknown>;
 	source: string | string[];
+	// Maps an attachment name (referenced from markdown as
+	// `attachment:name.png`) to a MIME-type -> base64 data map, per nbformat.
+	attachments?: Record<string, Record<string, string>>;
 }
 
 export interface JupyterRawCell {

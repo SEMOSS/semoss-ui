@@ -122,6 +122,59 @@ export const normalizeSource = (source: string | string[]): string => {
 	return source ?? "";
 };
 
+const ATTACHMENT_IMAGE_RE = /(!\[[^\]]*\]\()attachment:([^)\s]+)(\))/g;
+
+/**
+ * nbformat markdown cells can embed images via `![alt](attachment:name.png)`
+ * plus a `cell.attachments` map of name -> mimeType -> base64, instead of an
+ * inline data URI or external link. Markdown renderers don't know about that
+ * convention, so this rewrites each attachment: reference to a real data URI
+ * before the source is handed to marked.
+ */
+export const resolveMarkdownAttachments = (
+	source: string,
+	attachments?: Record<string, Record<string, string>>,
+): string => {
+	if (!attachments) return source;
+
+	return source.replace(
+		ATTACHMENT_IMAGE_RE,
+		(match, prefix: string, name: string, suffix: string) => {
+			const mimeMap = attachments[name];
+			if (!isRecordObject(mimeMap)) return match;
+
+			const mimeType = Object.keys(mimeMap)[0];
+			const data = mimeType ? mimeMap[mimeType] : undefined;
+			if (!mimeType || typeof data !== "string") return match;
+
+			return `${prefix}data:${mimeType};base64,${data}${suffix}`;
+		},
+	);
+};
+
+// A runaway print loop or a huge printed object can produce output that
+// would otherwise render as a multi-megabyte <pre> block; capping it (with a
+// visible notice) mirrors Jupyter's own "output exceeds size limit" guard.
+export const MAX_TEXT_OUTPUT_LENGTH = 20_000;
+
+export interface TruncatedText {
+	text: string;
+	truncated: boolean;
+	originalLength: number;
+}
+
+export const truncateTextOutput = (text: string): TruncatedText => {
+	if (text.length <= MAX_TEXT_OUTPUT_LENGTH) {
+		return { text, truncated: false, originalLength: text.length };
+	}
+
+	return {
+		text: text.slice(0, MAX_TEXT_OUTPUT_LENGTH),
+		truncated: true,
+		originalLength: text.length,
+	};
+};
+
 const INLINE_IMAGE_BEGIN_PREFIX = "__SEMOSS_IPYNB_IMAGE_BEGIN__:";
 const INLINE_IMAGE_CHUNK_PREFIX = "__SEMOSS_IPYNB_IMAGE_CHUNK__:";
 const INLINE_IMAGE_END_MARKER = "__SEMOSS_IPYNB_IMAGE_END__";
