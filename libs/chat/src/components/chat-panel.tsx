@@ -23,7 +23,7 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import type { ChatOptions } from "../chat-options";
-import { ChatProvider, useChatContext } from "../chat-provider";
+import { ChatProvider, useChatContext } from "../contexts/chat-provider";
 import { cn } from "../lib/utils";
 import type { ChatMessage } from "../types";
 import { ChatInput } from "./chat-input";

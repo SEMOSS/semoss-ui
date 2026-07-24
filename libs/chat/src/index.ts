@@ -14,17 +14,14 @@ export {
 	setActiveChatStore,
 } from "./chat-imperative";
 export type { ChatDefaultRoomSettings, ChatOptions } from "./chat-options";
-export { ChatProvider, useChatContext, useChatStore } from "./chat-provider";
 export {
+	ChatProvider,
 	ChatRoomsProvider,
+	useChatContext,
 	useChatRoomsContext,
 	useChatRoomsStore,
-} from "./chat-rooms-provider";
-export {
-	type ChatRoomsStoreState,
-	createChatRoomsStore,
-} from "./chat-rooms-store";
-export { type ChatStoreState, createChatStore } from "./chat-store";
+	useChatStore,
+} from "./contexts";
 export type { NormalizedRoomHistory } from "./history";
 export { normalizeRoomHistory } from "./history";
 export type { DateBucket } from "./lib/date";
@@ -33,6 +30,12 @@ export {
 	getDateBucket,
 	normalizeTimestamp,
 } from "./lib/date";
+export {
+	type ChatRoomsStoreState,
+	type ChatStoreState,
+	createChatRoomsStore,
+	createChatStore,
+} from "./stores";
 export type {
 	App,
 	ChatMessage,

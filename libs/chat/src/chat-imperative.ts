@@ -1,5 +1,5 @@
 import type { StoreApi } from "zustand";
-import type { ChatStoreState } from "./chat-store";
+import type { ChatStoreState } from "./stores/chat/chat-store";
 
 interface RegisteredChatStore {
 	id: string;

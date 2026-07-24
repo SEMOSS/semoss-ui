@@ -11,7 +11,7 @@ import {
 	ResizablePanelGroup,
 	ScrollArea,
 } from "@semoss/ui/next";
-import { useChatContext } from "../chat-provider";
+import { useChatContext } from "../contexts/chat-provider";
 import { cn } from "../lib/utils";
 import type { ChatMessage } from "../types";
 import { MessageBubble, type ToolResponseDetails } from "./message-bubble";

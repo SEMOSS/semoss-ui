@@ -7,7 +7,7 @@ import {
 	setActiveChatRoom,
 	setActiveChatStore,
 } from "./chat-imperative";
-import type { ChatStoreState } from "./chat-store";
+import type { ChatStoreState } from "./stores/chat/chat-store";
 
 interface FakeChatStore {
 	store: StoreApi<ChatStoreState>;

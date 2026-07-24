@@ -130,17 +130,36 @@ editing behavior.
 - `src/chat-session.ts` — `ChatSession`, the vanilla Zustand-backed session
   that drives room creation, uploads, streaming, tool execution, feedback,
   downloads, and room synchronization.
-- `src/chat-store.ts` — combines session state and bound actions into the
-  public single-room Zustand store.
-- `src/chat-provider.tsx` — exposes the store through `ChatProvider`,
+- `src/stores/chat/chat-store.ts` — combines session state and bound actions
+  into the public single-room Zustand store.
+- `src/contexts/chat-provider.tsx` — exposes the store through `ChatProvider`,
   `useChatContext`, and `useChatStore`.
 - `src/transport/pixel-calls.ts` — the underlying `AskPlayground`/
   `CreatePlaygroundRoom`/`RunMCPTool`/`AddPlaygroundToolExecution`/
   `UpdateRoomOptions` pixel calls and related room, upload, feedback, and
   download operations.
 - `src/chat-imperative.ts` — tracks registered stores for non-React callers.
-- `src/chat-rooms-*` — room listing, selection, search, rename, pin, and
-  deletion state.
+- `src/chat-rooms-session.ts`, `src/stores/chat-rooms/chat-rooms-store.ts`,
+  `src/contexts/chat-rooms-provider.tsx` — room listing, selection, search,
+  rename, pin, and deletion state.
+
+### Project structure
+
+```
+src/
+├── components/   UI components (see components/README.md)
+├── contexts/     React providers + their hooks (see contexts/README.md)
+├── stores/       Headless Zustand stores (see stores/README.md)
+├── transport/    Pixel call wrappers used by stores/sessions
+├── lib/          Small framework-agnostic utilities (date, clipboard, etc.)
+├── chat-session.ts, chat-rooms-session.ts   Session state machines
+├── chat-imperative.ts, chat-options.ts, history.ts, types.ts   Core contracts
+└── index.ts, index.css   Package entry points
+```
+
+Each folder above with its own README documents what belongs there and the
+naming convention to follow when adding new files — check it before adding a
+new store, context, or component so new code lands in the right place.
 
 ### Chat options
 

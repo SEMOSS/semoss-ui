@@ -3,7 +3,10 @@ import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@semoss/ui/next";
 import type { ChatDefaultRoomSettings } from "../chat-options";
-import { ChatRoomsProvider, useChatRoomsContext } from "../chat-rooms-provider";
+import {
+	ChatRoomsProvider,
+	useChatRoomsContext,
+} from "../contexts/chat-rooms-provider";
 import { cn } from "../lib/utils";
 import type { ChatMessage } from "../types";
 import { ChatPanel } from "./chat-panel";

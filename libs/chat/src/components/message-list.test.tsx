@@ -5,8 +5,9 @@ import { MessageList } from "./message-list";
 
 const { useChatContext } = vi.hoisted(() => ({ useChatContext: vi.fn() }));
 
-vi.mock("../chat-provider", async (importOriginal) => {
-	const original = await importOriginal<typeof import("../chat-provider")>();
+vi.mock("../contexts/chat-provider", async (importOriginal) => {
+	const original =
+		await importOriginal<typeof import("../contexts/chat-provider")>();
 	return {
 		...original,
 		useChatContext,

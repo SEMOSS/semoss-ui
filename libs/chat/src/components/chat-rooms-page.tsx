@@ -26,7 +26,7 @@ import {
 	Spinner,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
-import { useChatRoomsContext } from "../chat-rooms-provider";
+import { useChatRoomsContext } from "../contexts/chat-rooms-provider";
 import {
 	DATE_BUCKET_ORDER,
 	type DateBucket,

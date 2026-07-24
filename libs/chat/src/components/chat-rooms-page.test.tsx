@@ -8,7 +8,7 @@ const { useChatRoomsContext } = vi.hoisted(() => ({
 	useChatRoomsContext: vi.fn(),
 }));
 
-vi.mock("../chat-rooms-provider", () => ({
+vi.mock("../contexts/chat-rooms-provider", () => ({
 	useChatRoomsContext,
 }));
 

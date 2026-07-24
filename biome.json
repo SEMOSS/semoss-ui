@@ -16,15 +16,11 @@
 			"**/*.json",
 			"**/*.css",
 			"!**/package.json",
-			"!**/pnpm-lock.json",
-			"!**/dist-*",
-			"!**/release"
+			"!**/pnpm-lock.json"
 		],
 		"experimentalScannerIgnores": [
 			"node_modules/**",
 			"dist/**",
-			"**/dist-*/**",
-			"**/release/**",
 			"build/**",
 			".next/**",
 			".turbo/**",

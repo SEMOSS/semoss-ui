@@ -2,7 +2,3 @@ packages:
     - 'packages/*'
     - 'libs/*'
     - 'packages/vscode-extension/src/webviews/*'
-
-onlyBuiltDependencies:
-    - electron
-    - sharp

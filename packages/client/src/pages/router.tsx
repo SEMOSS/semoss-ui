@@ -18,11 +18,6 @@ const SettingsRouter = lazy(() =>
 		default: m.SettingsRouter,
 	})),
 );
-const ComponentsPlaygroundRouter = lazy(() =>
-	import("./components-playground/components-playground-router").then(
-		(m) => ({ default: m.ComponentsPlaygroundRouter }),
-	),
-);
 const SharePage = lazy(() =>
 	import("./share-page").then((m) => ({ default: m.SharePage })),
 );
@@ -88,10 +83,6 @@ export const Router = observer(() => {
 							/>
 						))}
 						<Route path="prompt/*" element={<PromptRouter />} />
-						<Route
-							path="components/playground/*"
-							element={<ComponentsPlaygroundRouter />}
-						/>
 						<Route path="settings/*" element={<SettingsRouter />} />
 						<Route path="*" element={<Navigate to="/" replace />} />
 					</Route>
