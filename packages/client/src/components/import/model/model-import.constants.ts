@@ -1356,7 +1356,7 @@ export const IMPORTABLE_MODELS = {
 						{
 							key: "SERVICE_ACCOUNT_CREDENTIALS",
 							label: "Service Account (JSON)",
-							type: "textarea",
+							type: "text",
 							required: true,
 							category: "Credentials",
 						},
@@ -3028,6 +3028,18 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			description:
 				"Production-ready image model for fast, high-quality asset generation.",
 			formConfig: withModelTokenLimits(undefined, 32768, 65536),
+		},
+		{
+			name: "gemini-embedding-2",
+			display: "Gemini Embedding 2",
+			icon: "/src/assets/img/GEMINI_COLOR.svg",
+			modelBrand: "GEMINI",
+			embedding: true,
+			image: true,
+			audio: true,
+			link: "https://ai.google.dev/gemini-api/docs/models/gemini-embedding-2",
+			description:
+				"Google's first natively multimodal embedding model - unifies text, image, video, audio, and document inputs in a single embedding space for cross-modal search and retrieval.",
 		},
 		{
 			name: "gemini-embedding-001",
