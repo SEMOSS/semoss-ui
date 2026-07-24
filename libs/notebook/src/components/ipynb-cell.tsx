@@ -108,8 +108,11 @@ export const IpynbCell: React.FC<IpynbCellProps> = ({
 				{source}
 			</pre>
 			<div className="flex flex-col gap-2">
-				{cell.outputs.map((output) => (
-					<IpynbOutput key={JSON.stringify(output)} output={output} />
+				{cell.outputs.map((output, outputIndex) => (
+					<IpynbOutput
+						key={`${output.output_type}-${outputIndex}`}
+						output={output}
+					/>
 				))}
 			</div>
 		</div>

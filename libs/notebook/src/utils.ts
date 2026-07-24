@@ -12,6 +12,18 @@ import type {
 const DEFAULT_NBFORMAT = 4;
 const DEFAULT_NBFORMAT_MINOR = 5;
 
+const isRecordObject = (value: unknown): value is Record<string, unknown> => {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+};
+
+const toSafeJsonString = (value: unknown): string => {
+	try {
+		return JSON.stringify(value, null, 2);
+	} catch {
+		return String(value);
+	}
+};
+
 const createCellId = (): string => {
 	return `cell-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 };
@@ -27,11 +39,54 @@ const ensureCellMetadataId = (
 	return nextMetadata;
 };
 
-const ensureNotebookCellMetadataIds = (cells: JupyterCell[]): JupyterCell[] => {
+const getNotebookLanguageFromMetadata = (
+	metadata: Record<string, unknown> | undefined,
+): string | undefined => {
+	if (!metadata) return undefined;
+	const languageInfo = metadata.language_info;
+	if (!isRecordObject(languageInfo)) return undefined;
+	const language = languageInfo.name;
+	if (typeof language !== "string" || !language.trim()) return undefined;
+	return language.trim().toLowerCase();
+};
+
+const getCellLanguage = (
+	cellType: JupyterCell["cell_type"],
+	metadata: Record<string, unknown>,
+	notebookLanguage?: string,
+): string => {
+	if (cellType === "markdown") return "markdown";
+	if (cellType === "raw") return "raw";
+
+	const metadataLanguage = metadata.language;
+	if (typeof metadataLanguage === "string" && metadataLanguage.trim()) {
+		return metadataLanguage.trim().toLowerCase();
+	}
+
+	return notebookLanguage && notebookLanguage.trim()
+		? notebookLanguage.trim().toLowerCase()
+		: "python";
+};
+
+const ensureCellMetadata = (
+	cell: JupyterCell,
+	notebookLanguage?: string,
+): Record<string, unknown> => {
+	const metadata = ensureCellMetadataId(cell.metadata);
+	return {
+		...metadata,
+		language: getCellLanguage(cell.cell_type, metadata, notebookLanguage),
+	};
+};
+
+const ensureNotebookCellMetadataIds = (
+	cells: JupyterCell[],
+	notebookLanguage?: string,
+): JupyterCell[] => {
 	return cells.map((cell) => {
 		return {
 			...cell,
-			metadata: ensureCellMetadataId(cell.metadata),
+			metadata: ensureCellMetadata(cell, notebookLanguage),
 		};
 	});
 };
@@ -42,6 +97,22 @@ const normalizeSourceToArray = (source: string): string[] => {
 	return lines.map((line, idx) => {
 		return idx === lines.length - 1 ? line : `${line}\n`;
 	});
+};
+
+const normalizeUnknownSourceToArray = (source: unknown): string[] => {
+	if (Array.isArray(source)) {
+		return source.map((line) => String(line));
+	}
+
+	if (typeof source === "string") {
+		return normalizeSourceToArray(source);
+	}
+
+	if (source === undefined || source === null) {
+		return [];
+	}
+
+	return normalizeSourceToArray(String(source));
 };
 
 export const normalizeSource = (source: string | string[]): string => {
@@ -67,6 +138,9 @@ export const buildNotebookExecutionSource = (
 		return source;
 	}
 
+	// Playground executes Python through Pixel; this shim captures matplotlib
+	// figures and emits them through stdout markers so we can rebuild proper
+	// Jupyter display_data image outputs on the client side.
 	const preamble = `\ntry:\n    import io as __semoss_io\n    import base64 as __semoss_base64\n    import matplotlib as __semoss_matplotlib\n    __semoss_matplotlib.use("Agg", force=True)\n    import matplotlib.pyplot as __semoss_plt\n    try:\n        __semoss_plt.switch_backend("Agg")\n    except Exception:\n        pass\n    __semoss_plt.ioff()\n\n    __semoss_inline_chunk_size = 1000\n    __semoss_initial_fig_nums = set(__semoss_plt.get_fignums())\n    __semoss_capture_state = {"did_show": False}\n\n    def __semoss_emit_figures():\n        __semoss_all_fig_nums = list(__semoss_plt.get_fignums())\n        __semoss_fig_nums = [__n for __n in __semoss_all_fig_nums if __n not in __semoss_initial_fig_nums]\n        if not __semoss_fig_nums:\n            __semoss_fig_nums = __semoss_all_fig_nums\n\n        for __semoss_fig_num in __semoss_fig_nums:\n            __semoss_fig = __semoss_plt.figure(__semoss_fig_num)\n            __semoss_buf = __semoss_io.BytesIO()\n            __semoss_fig.savefig(__semoss_buf, format="png", bbox_inches="tight")\n            __semoss_buf.seek(0)\n            __semoss_png = __semoss_base64.b64encode(__semoss_buf.getvalue()).decode("ascii")\n            print("${INLINE_IMAGE_BEGIN_PREFIX}image/png")\n            for __semoss_idx in range(0, len(__semoss_png), __semoss_inline_chunk_size):\n                print("${INLINE_IMAGE_CHUNK_PREFIX}" + __semoss_png[__semoss_idx:__semoss_idx + __semoss_inline_chunk_size])\n            print("${INLINE_IMAGE_END_MARKER}")\n            __semoss_buf.close()\n            __semoss_plt.close(__semoss_fig)\n\n    def __semoss_show_wrapper(*args, **kwargs):\n        __semoss_capture_state["did_show"] = True\n        __semoss_emit_figures()\n        return None\n\n    __semoss_plt.show = __semoss_show_wrapper\nexcept Exception:\n    pass\n`;
 
 	const suffix = `\n\ntry:\n    if not __semoss_capture_state.get("did_show", False):\n        __semoss_emit_figures()\nexcept Exception:\n    pass\n`;
@@ -85,6 +159,8 @@ export const extractNotebookInlineImageOutputsFromLogs = (logs: string[]) => {
 			return;
 		}
 
+		// Marker-delimited chunks are stitched back into a MIME bundle so the
+		// output lands in a standard display_data cell output.
 		const base64Data = currentBase64Chunks.join("").replace(/\s+/g, "");
 		if (base64Data) {
 			imageOutputs.push({
@@ -325,6 +401,158 @@ const toErrorOutput = (output: unknown): JupyterErrorOutput => {
 	};
 };
 
+const sanitizeOutputData = (value: unknown): Record<string, unknown> => {
+	if (isRecordObject(value)) {
+		return value;
+	}
+
+	const text = value === undefined || value === null ? "" : String(value);
+	return {
+		"text/plain": text,
+	};
+};
+
+const sanitizeJupyterOutput = (output: unknown): JupyterCellOutput => {
+	if (!isRecordObject(output)) {
+		return {
+			output_type: "display_data",
+			data: {
+				"text/plain": toSafeJsonString(output),
+			},
+			metadata: {},
+		};
+	}
+
+	const outputType = output.output_type;
+	if (outputType === "stream") {
+		return {
+			output_type: "stream",
+			name: output.name === "stderr" ? "stderr" : "stdout",
+			text: normalizeUnknownSourceToArray(output.text),
+		};
+	}
+
+	if (outputType === "error") {
+		const ename =
+			typeof output.ename === "string" && output.ename
+				? output.ename
+				: "Error";
+		const evalue =
+			typeof output.evalue === "string" ? output.evalue : "Unknown error";
+		const traceback = Array.isArray(output.traceback)
+			? output.traceback.map((entry) => String(entry))
+			: [evalue];
+
+		return {
+			output_type: "error",
+			ename,
+			evalue,
+			traceback,
+		};
+	}
+
+	if (outputType === "execute_result") {
+		return {
+			output_type: "execute_result",
+			data: sanitizeOutputData(output.data),
+			metadata: isRecordObject(output.metadata) ? output.metadata : {},
+			execution_count:
+				typeof output.execution_count === "number" &&
+				Number.isFinite(output.execution_count)
+					? output.execution_count
+					: null,
+		};
+	}
+
+	if (outputType === "update_display_data") {
+		return {
+			output_type: "update_display_data",
+			data: sanitizeOutputData(output.data),
+			metadata: isRecordObject(output.metadata) ? output.metadata : {},
+			transient: isRecordObject(output.transient)
+				? output.transient
+				: undefined,
+		};
+	}
+
+	if (outputType === "display_data") {
+		return {
+			output_type: "display_data",
+			data: sanitizeOutputData(output.data),
+			metadata: isRecordObject(output.metadata) ? output.metadata : {},
+		};
+	}
+
+	return {
+		output_type: "display_data",
+		data: {
+			"text/plain": toSafeJsonString(output),
+		},
+		metadata: {},
+	};
+};
+
+const sanitizeJupyterOutputs = (outputs: unknown): JupyterCellOutput[] => {
+	if (!Array.isArray(outputs)) {
+		return [];
+	}
+
+	return outputs.map((entry) => sanitizeJupyterOutput(entry));
+};
+
+const sanitizeNotebookCell = (
+	cell: unknown,
+	notebookLanguage?: string,
+): JupyterCell => {
+	if (!isRecordObject(cell)) {
+		return {
+			cell_type: "raw",
+			metadata: ensureCellMetadataId({ language: "raw" }),
+			source: [],
+		};
+	}
+
+	const cellType =
+		cell.cell_type === "code" ||
+		cell.cell_type === "markdown" ||
+		cell.cell_type === "raw"
+			? cell.cell_type
+			: "raw";
+	const metadata = ensureCellMetadataId(
+		isRecordObject(cell.metadata) ? cell.metadata : {},
+	);
+	metadata.language = getCellLanguage(cellType, metadata, notebookLanguage);
+	const source = normalizeUnknownSourceToArray(cell.source);
+
+	if (cellType === "code") {
+		return {
+			cell_type: "code",
+			execution_count:
+				typeof cell.execution_count === "number" &&
+				Number.isFinite(cell.execution_count)
+					? cell.execution_count
+					: null,
+			metadata,
+			outputs: sanitizeJupyterOutputs(cell.outputs),
+			source,
+		};
+	}
+
+	if (cellType === "markdown") {
+		return {
+			cell_type: "markdown",
+			metadata,
+			source,
+		};
+	}
+
+	return {
+		cell_type: "raw",
+		metadata,
+		source,
+	};
+};
+
 const toMimeBundleFromOutput = (
 	output: unknown,
 	operationType?: string | string[],
@@ -337,6 +565,8 @@ const toMimeBundleFromOutput = (
 	const isFileDownload = operationTypes.includes("FILE_DOWNLOAD");
 
 	if (typeof output === "string") {
+		// Prefer rich Jupyter MIME payloads when we can infer the content type;
+		// fall back to text/plain so every output remains readable.
 		const trimmed = output.trim();
 
 		const markdownImageMatch = trimmed.match(/^!\[[^\]]*\]\(([^)]+)\)$/);
@@ -529,7 +759,7 @@ export const runtimeOutputToJupyterOutputs = (
 	if (Array.isArray(output)) {
 		const asOutputs = output as Array<{ output_type?: unknown }>;
 		if (asOutputs.every((item) => typeof item?.output_type === "string")) {
-			return output as JupyterCellOutput[];
+			return sanitizeJupyterOutputs(output);
 		}
 	}
 
@@ -594,9 +824,9 @@ const getNotebookCellConfig = (lang: string): NotebookCellConfig => {
 			kernelDisplayName: "Python 3",
 			kernelLanguage: "python",
 			kernelName: "python3",
-			languageInfoName: "markdown",
-			languageInfoMimetype: "text/markdown",
-			languageInfoFileExtension: ".md",
+			languageInfoName: "python",
+			languageInfoMimetype: "text/x-python",
+			languageInfoFileExtension: ".py",
 		};
 	}
 
@@ -677,6 +907,8 @@ const applyNotebookLanguageMetadata = (
 
 	ipynb.metadata = {
 		...currentMetadata,
+		// Keep existing kernelspec/language_info when editing an existing file,
+		// but still backfill required fields for newly created notebooks.
 		kernelspec:
 			options?.preserveExisting && hasKernelSpec
 				? (currentMetadata.kernelspec as Record<string, unknown>)
@@ -770,7 +1002,10 @@ export const createNotebookFileContent = (
 	};
 
 	applyNotebookLanguageMetadata(content, lang, metadataData);
-	content.cells = ensureNotebookCellMetadataIds(content.cells);
+	content.cells = ensureNotebookCellMetadataIds(
+		content.cells,
+		getNotebookLanguageFromMetadata(content.metadata),
+	);
 
 	return JSON.stringify(content, null, 2);
 };
@@ -799,7 +1034,17 @@ export const appendCellToNotebook = (
 			ipynb.cells = [];
 		}
 
-		ipynb.cells = ensureNotebookCellMetadataIds(ipynb.cells);
+		const notebookLanguage = getNotebookLanguageFromMetadata(
+			ipynb.metadata,
+		);
+		ipynb.cells = ipynb.cells.map((cell) =>
+			sanitizeNotebookCell(cell, notebookLanguage),
+		);
+
+		ipynb.cells = ensureNotebookCellMetadataIds(
+			ipynb.cells,
+			notebookLanguage,
+		);
 
 		const resolvedExecutionCount =
 			typeof executionData?.executionCount === "number" ||
@@ -847,7 +1092,16 @@ export const replaceNotebookCell = (
 		applyNotebookLanguageMetadata(ipynb, lang, metadataData, {
 			preserveExisting: true,
 		});
-		ipynb.cells = ensureNotebookCellMetadataIds(ipynb.cells);
+		const notebookLanguage = getNotebookLanguageFromMetadata(
+			ipynb.metadata,
+		);
+		ipynb.cells = ipynb.cells.map((cell) =>
+			sanitizeNotebookCell(cell, notebookLanguage),
+		);
+		ipynb.cells = ensureNotebookCellMetadataIds(
+			ipynb.cells,
+			notebookLanguage,
+		);
 
 		const index = rowNumber - 1;
 		if (index < 0 || index >= ipynb.cells.length) {
@@ -930,18 +1184,37 @@ export const parseNotebookJson = (
 	raw: string,
 ): { notebook: JupyterNotebook | null; error: string | null } => {
 	try {
-		const parsed = JSON.parse(raw) as JupyterNotebook;
-		if (!parsed || parsed.nbformat !== 4 || !Array.isArray(parsed.cells)) {
+		const parsed = JSON.parse(raw) as unknown;
+		if (!isRecordObject(parsed) || parsed.nbformat !== 4) {
 			return {
 				notebook: null,
 				error: "Invalid .ipynb content",
 			};
 		}
 
+		if (!Array.isArray(parsed.cells)) {
+			return {
+				notebook: null,
+				error: "Invalid .ipynb content",
+			};
+		}
+
+		const metadata = isRecordObject(parsed.metadata) ? parsed.metadata : {};
+		const notebookLanguage = getNotebookLanguageFromMetadata(metadata);
+		const cells = parsed.cells.map((cell) =>
+			sanitizeNotebookCell(cell, notebookLanguage),
+		);
+
 		return {
 			notebook: {
 				...parsed,
-				cells: ensureNotebookCellMetadataIds(parsed.cells),
+				nbformat: DEFAULT_NBFORMAT,
+				nbformat_minor:
+					typeof parsed.nbformat_minor === "number"
+						? parsed.nbformat_minor
+						: DEFAULT_NBFORMAT_MINOR,
+				metadata,
+				cells: ensureNotebookCellMetadataIds(cells, notebookLanguage),
 			},
 			error: null,
 		};

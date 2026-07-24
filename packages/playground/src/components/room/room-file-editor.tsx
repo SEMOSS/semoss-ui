@@ -40,6 +40,8 @@ export const RoomFileEditor: React.FC<RoomFileEditorProps> = observer(
 						room.setSelectedNotebookRow(selection);
 					}}
 					onRunCell={async (request: RunIpynbCellRequest) => {
+						// Notebook cells are executed through Pixel, then mapped back
+						// into Jupyter-style outputs for .ipynb compatibility.
 						const source = Array.isArray(request.cell.source)
 							? request.cell.source.join("")
 							: request.cell.source;
@@ -53,6 +55,8 @@ export const RoomFileEditor: React.FC<RoomFileEditorProps> = observer(
 							language,
 							source,
 						);
+						// Unsupported languages still return a notebook error output so
+						// execution state remains visible inside the cell.
 						const executePixel = buildExecutePixel(
 							language,
 							sourceForExecution,
@@ -106,6 +110,8 @@ export const RoomFileEditor: React.FC<RoomFileEditorProps> = observer(
 							}
 
 							for (const result of results) {
+								// Pixel can emit multiple operation frames; keep each frame
+								// as a separate notebook output in execution order.
 								const operationTypes =
 									result.operationType ?? [];
 								const isError =

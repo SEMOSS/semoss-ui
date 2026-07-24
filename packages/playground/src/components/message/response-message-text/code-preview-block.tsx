@@ -187,12 +187,15 @@ export const CodePreviewBlock = ({
 	const saveAsNotebook = async () => {
 		if (!room || !code) return;
 
+		// Persist the last execution outcome (logs + rich output) into the
+		// generated notebook cell so exported content matches what the user saw.
 		const notebookExecutionData = toNotebookExecutionData(executeResult);
 		const selectedNotebookRow = room.selectedNotebookRow;
 
 		try {
 			setIsSavingToNotebook(true);
 
+			// Priority 1: explicit row-selection update from notebook preview.
 			if (selectedNotebookRow?.path) {
 				const notebookPath = selectedNotebookRow.path;
 				const loadResponse = await room.runRoomPixel<[string]>(
@@ -228,6 +231,7 @@ export const CodePreviewBlock = ({
 
 			const existingOpenNotebookPath = room.openNotebookFilePath;
 
+			// Priority 2: append to currently open notebook tab if available.
 			if (existingOpenNotebookPath) {
 				const notebookPath = existingOpenNotebookPath;
 				const loadResponse = await room.runRoomPixel<[string]>(
@@ -258,6 +262,7 @@ export const CodePreviewBlock = ({
 				return;
 			}
 
+			// Priority 3: create a brand-new notebook when no target exists yet.
 			setIsNotebookNameDialogOpen(true);
 		} catch (error) {
 			toast.error(getErrorMessage(error));

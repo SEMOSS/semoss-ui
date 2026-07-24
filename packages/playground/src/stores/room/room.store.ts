@@ -428,6 +428,8 @@ export class RoomStore {
 	}
 
 	get activeFileEditorPath() {
+		// Use the actively selected file-editor tab first so actions can target
+		// the notebook the user is currently interacting with.
 		const activeNode = this._store.sidebar.model
 			.getActiveTabset()
 			?.getSelectedNode();
@@ -459,6 +461,8 @@ export class RoomStore {
 			return null;
 		}
 
+		// Fallback scanner: find any open notebook tab when no explicit active
+		// notebook path is available from current focus.
 		let foundPath: string | null = null;
 
 		this._store.sidebar.model.visitNodes((node) => {

@@ -78,14 +78,21 @@ const PlotlyOutput: React.FC<{ figure: PlotlyFigure }> = ({ figure }) => {
 
 	useEffect(() => {
 		let isMounted = true;
+		let plotlyInstance: {
+			purge: (root: HTMLElement) => void;
+		} | null = null;
 
 		const render = async () => {
 			try {
+				// Lazy-load heavy plotting runtime only when a plotly MIME output is present.
 				const plotlyModule = await import("plotly.js-dist-min");
 				const plotly =
 					"default" in plotlyModule
 						? plotlyModule.default
 						: plotlyModule;
+				plotlyInstance = plotly as {
+					purge: (root: HTMLElement) => void;
+				};
 
 				if (!isMounted || !containerRef.current) {
 					return;
@@ -118,6 +125,9 @@ const PlotlyOutput: React.FC<{ figure: PlotlyFigure }> = ({ figure }) => {
 		return () => {
 			isMounted = false;
 			if (containerRef.current) {
+				if (plotlyInstance?.purge) {
+					plotlyInstance.purge(containerRef.current);
+				}
 				containerRef.current.replaceChildren();
 			}
 		};
@@ -145,9 +155,11 @@ const VegaOutput: React.FC<{ spec: Record<string, unknown> }> = ({ spec }) => {
 
 	useEffect(() => {
 		let isMounted = true;
+		let cleanupView: (() => void) | null = null;
 
 		const render = async () => {
 			try {
+				// Vega-Lite rendering is optional at runtime and loaded on demand.
 				const vegaEmbedModule = await import("vega-embed");
 				const vegaEmbed =
 					"default" in vegaEmbedModule
@@ -158,10 +170,17 @@ const VegaOutput: React.FC<{ spec: Record<string, unknown> }> = ({ spec }) => {
 					return;
 				}
 
-				await vegaEmbed(containerRef.current, spec, {
-					actions: false,
-					renderer: "canvas",
-				});
+				const embedResult = await vegaEmbed(
+					containerRef.current,
+					spec,
+					{
+						actions: false,
+						renderer: "canvas",
+					},
+				);
+				cleanupView = () => {
+					embedResult.view.finalize();
+				};
 				setRenderError(null);
 			} catch (error) {
 				if (!isMounted) {
@@ -179,6 +198,9 @@ const VegaOutput: React.FC<{ spec: Record<string, unknown> }> = ({ spec }) => {
 
 		return () => {
 			isMounted = false;
+			if (cleanupView) {
+				cleanupView();
+			}
 			if (containerRef.current) {
 				containerRef.current.replaceChildren();
 			}

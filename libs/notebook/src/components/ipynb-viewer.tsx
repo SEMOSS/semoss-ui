@@ -50,6 +50,7 @@ export const IpynbViewer: React.FC<IpynbViewerProps> = ({
 		null,
 	);
 	const [isRunningAllCells, setIsRunningAllCells] = useState(false);
+	const [ioError, setIoError] = useState<string | null>(null);
 
 	const parsed = useMemo(() => parseNotebookJson(rawContent), [rawContent]);
 
@@ -57,6 +58,7 @@ export const IpynbViewer: React.FC<IpynbViewerProps> = ({
 		if (!insightId || !path) return;
 
 		setIsLoading(true);
+		setIoError(null);
 		try {
 			const response = await runPixel<[string]>(
 				`GetInsightAssets(filePath=[${JSON.stringify(path)}]);`,
@@ -72,6 +74,12 @@ export const IpynbViewer: React.FC<IpynbViewerProps> = ({
 			setIsModified(false);
 			setSelectedRowNumber(null);
 			onRowSelectionChange?.(null);
+		} catch (error) {
+			setIoError(
+				error instanceof Error
+					? error.message
+					: "Failed to load notebook file",
+			);
 		} finally {
 			setIsLoading(false);
 		}
@@ -113,12 +121,24 @@ export const IpynbViewer: React.FC<IpynbViewerProps> = ({
 	const save = useCallback(async () => {
 		if (!path) return;
 		setIsSaving(true);
+		setIoError(null);
 		try {
-			await runPixel(
+			const response = await runPixel(
 				`SaveInsightAssets(filePath=[${JSON.stringify(path)}], content=["<encode>${rawContent}</encode>"]);`,
 				insightId,
 			);
+
+			if (response.errors.length > 0) {
+				throw new Error(response.errors.join(", "));
+			}
+
 			setIsModified(false);
+		} catch (error) {
+			setIoError(
+				error instanceof Error
+					? error.message
+					: "Failed to save notebook file",
+			);
 		} finally {
 			setIsSaving(false);
 		}
@@ -176,6 +196,12 @@ export const IpynbViewer: React.FC<IpynbViewerProps> = ({
 
 			setRawContent(JSON.stringify(nextNotebook, null, 2));
 			setIsModified(true);
+		} catch (error) {
+			setIoError(
+				error instanceof Error
+					? error.message
+					: "Failed to run notebook cell",
+			);
 		} finally {
 			setRunningCellIndex(null);
 		}
@@ -187,6 +213,7 @@ export const IpynbViewer: React.FC<IpynbViewerProps> = ({
 		}
 
 		setIsRunningAllCells(true);
+		setIoError(null);
 		let workingNotebook = parsed.notebook;
 
 		try {
@@ -222,6 +249,12 @@ export const IpynbViewer: React.FC<IpynbViewerProps> = ({
 
 			setRawContent(JSON.stringify(workingNotebook, null, 2));
 			setIsModified(true);
+		} catch (error) {
+			setIoError(
+				error instanceof Error
+					? error.message
+					: "Failed to run all notebook cells",
+			);
 		} finally {
 			setRunningCellIndex(null);
 			setIsRunningAllCells(false);
@@ -303,6 +336,13 @@ export const IpynbViewer: React.FC<IpynbViewerProps> = ({
 			</div>
 
 			<div className="min-h-0 flex-1 overflow-auto p-3">
+				{ioError && (
+					<div className="mb-3 flex items-start gap-2 rounded border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm">
+						<TriangleAlertIcon className="mt-0.5 size-4" />
+						<span>{ioError}</span>
+					</div>
+				)}
+
 				{tab === "edit" && (
 					<textarea
 						value={rawContent}

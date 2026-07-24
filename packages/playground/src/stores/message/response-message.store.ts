@@ -233,6 +233,9 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			}, "");
 
 			const selectedNotebookRow = room.selectedNotebookRow;
+			// When a notebook row is selected in preview, append explicit editing
+			// context so the model can generate cell-local updates instead of
+			// broad free-form responses.
 			const commandText = selectedNotebookRow?.path
 				? [
 						text,
