@@ -241,7 +241,7 @@ export const DatabaseColumnsPanel: React.FC<DatabaseColumnPanelProps> = ({
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<Button
-									variant="outline"
+									variant="ghost"
 									size="icon-sm"
 									onClick={toggleAllTables}
 									aria-label={
@@ -251,7 +251,7 @@ export const DatabaseColumnsPanel: React.FC<DatabaseColumnPanelProps> = ({
 									}
 									data-testid="database-columns--toggle-all-btn"
 								>
-									<ChevronsUpDown />
+									<ChevronsUpDown className="size-3" />
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent>
@@ -261,16 +261,17 @@ export const DatabaseColumnsPanel: React.FC<DatabaseColumnPanelProps> = ({
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<Button
-									variant="outline"
+									variant="ghost"
 									size="icon-sm"
 									onClick={() => refresh()}
 									disabled={isLoading}
 									data-testid="database-columns--refresh-btn"
 								>
 									<RefreshCw
-										className={
-											isLoading ? "animate-spin" : ""
-										}
+										className={cn(
+											"size-3",
+											isLoading && "animate-spin",
+										)}
 									/>
 								</Button>
 							</TooltipTrigger>

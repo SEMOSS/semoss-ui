@@ -1,13 +1,15 @@
-import { FolderTreeIcon } from "lucide-react";
+import { FolderTreeIcon, MessageSquareIcon, SettingsIcon } from "lucide-react";
 import { useMemo } from "react";
 import { FlexLayout, getFileIconComponent } from "@semoss/shared";
 import {
 	EngineFileEditorPanel,
 	EngineFileExplorerPanel,
 	EngineMcpEditorPanel,
+	EngineSettingsPanel,
 } from "../engine";
 import { Workbench } from "../workbench";
 import { WORKBENCH_COMPONENTS } from "../workbench.contants";
+import { VectorChatPanel } from "./vector-chat-panel";
 
 interface VectorWorkbenchProps {
 	/** Engine (vector) id to edit */
@@ -44,6 +46,25 @@ export const VectorWorkbench: React.FC<VectorWorkbenchProps> = ({ engine }) => {
 						},
 					],
 				},
+				{
+					type: "border",
+					location: "bottom",
+					size: 400,
+					selected: -1,
+					children: [
+						{
+							type: "tab",
+							id: WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
+							name: "Settings",
+							component: WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
+							config: {},
+							helpText: "Settings",
+							enableClose: false,
+							borderWidth: 800,
+							borderHeight: 1200,
+						},
+					],
+				},
 			],
 			layout: {
 				type: "row",
@@ -53,7 +74,15 @@ export const VectorWorkbench: React.FC<VectorWorkbenchProps> = ({ engine }) => {
 						type: "tabset",
 						weight: 100,
 						enableDeleteWhenEmpty: false,
-						children: [],
+						children: [
+							{
+								type: "tab",
+								id: WORKBENCH_COMPONENTS.VECTOR_CHAT,
+								name: "Q&A",
+								component: WORKBENCH_COMPONENTS.VECTOR_CHAT,
+								enableClose: false,
+							},
+						],
 					},
 				],
 			},
@@ -90,6 +119,54 @@ export const VectorWorkbench: React.FC<VectorWorkbenchProps> = ({ engine }) => {
 			panel: (node: FlexLayout.TabNode) => {
 				return <EngineMcpEditorPanel node={node} engine={engine} />;
 			},
+		},
+		[WORKBENCH_COMPONENTS.VECTOR_CHAT]: {
+			tab: () => <MessageSquareIcon className="size-4" />,
+			panel: () => <VectorChatPanel engine={engine} />,
+		},
+		[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: {
+			tab: () => <SettingsIcon className="size-4" />,
+			panel: () => (
+				<EngineSettingsPanel
+					tabs={[
+						{
+							name: "Overview",
+							component: "overview",
+							restrict: [
+								"READ_ONLY",
+								"EDIT",
+								"OWNER",
+								"DISCOVERABLE",
+							],
+						},
+						{
+							name: "Usage",
+							component: "usage",
+							restrict: ["READ_ONLY", "EDIT", "OWNER"],
+						},
+						{
+							name: "MCP",
+							component: "mcp-usage",
+							restrict: ["READ_ONLY", "EDIT", "OWNER"],
+						},
+						{
+							name: "Activity Log",
+							component: "activity",
+							restrict: ["READ_ONLY", "EDIT", "OWNER"],
+						},
+						{
+							name: "Access Control",
+							component: "access-control",
+							restrict: ["EDIT", "OWNER"],
+						},
+						{
+							name: "SMSS",
+							component: "smss",
+							restrict: ["OWNER"],
+						},
+					]}
+				/>
+			),
 		},
 	};
 

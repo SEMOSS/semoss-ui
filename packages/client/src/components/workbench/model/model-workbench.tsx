@@ -1,10 +1,11 @@
-import { FolderTreeIcon, MessageSquareIcon } from "lucide-react";
+import { FolderTreeIcon, MessageSquareIcon, SettingsIcon } from "lucide-react";
 import { useMemo } from "react";
 import { FlexLayout, getFileIconComponent } from "@semoss/shared";
 import {
 	EngineFileEditorPanel,
 	EngineFileExplorerPanel,
 	EngineMcpEditorPanel,
+	EngineSettingsPanel,
 } from "../engine";
 import { Workbench } from "../workbench";
 import { WORKBENCH_COMPONENTS } from "../workbench.contants";
@@ -41,6 +42,25 @@ export const ModelWorkbench: React.FC<ModelWorkbenchProps> = ({ engine }) => {
 							config: {},
 							helpText: "File Explorer",
 							enableClose: false,
+						},
+					],
+				},
+				{
+					type: "border",
+					location: "bottom",
+					size: 400,
+					selected: -1,
+					children: [
+						{
+							type: "tab",
+							id: WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
+							name: "Settings",
+							component: WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
+							config: {},
+							helpText: "Settings",
+							enableClose: false,
+							borderWidth: 800,
+							borderHeight: 1200,
 						},
 					],
 				},
@@ -102,6 +122,50 @@ export const ModelWorkbench: React.FC<ModelWorkbenchProps> = ({ engine }) => {
 		[WORKBENCH_COMPONENTS.MODEL_CHAT]: {
 			tab: () => <MessageSquareIcon className="size-4" />,
 			panel: () => <ModelChatPanel engine={engine} />,
+		},
+		[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: {
+			tab: () => <SettingsIcon className="size-4" />,
+			panel: () => (
+				<EngineSettingsPanel
+					tabs={[
+						{
+							name: "Overview",
+							component: "overview",
+							restrict: [
+								"READ_ONLY",
+								"EDIT",
+								"OWNER",
+								"DISCOVERABLE",
+							],
+						},
+						{
+							name: "Usage",
+							component: "usage",
+							restrict: ["READ_ONLY", "EDIT", "OWNER"],
+						},
+						{
+							name: "MCP",
+							component: "mcp-usage",
+							restrict: ["READ_ONLY", "EDIT", "OWNER"],
+						},
+						{
+							name: "Activity Log",
+							component: "activity",
+							restrict: ["READ_ONLY", "EDIT", "OWNER"],
+						},
+						{
+							name: "Access Control",
+							component: "access-control",
+							restrict: ["EDIT", "OWNER"],
+						},
+						{
+							name: "SMSS",
+							component: "smss",
+							restrict: ["OWNER"],
+						},
+					]}
+				/>
+			),
 		},
 	};
 

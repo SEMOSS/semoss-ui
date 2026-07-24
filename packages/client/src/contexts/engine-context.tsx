@@ -9,11 +9,14 @@ export type EngineContextType = {
 	/** Type of the engine */
 	type: ENGINE_TYPES;
 
-	/** Name of the type */
-	name: string;
+	/** Catalog information */
+	catalog: {
+		/** Name of the catalog */
+		name: string;
 
-	/** Path of the type */
-	path: string;
+		/** Path to the catalog */
+		path: string;
+	};
 
 	/** Current Engine */
 	engine: Engine;

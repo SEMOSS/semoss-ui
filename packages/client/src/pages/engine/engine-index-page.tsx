@@ -476,7 +476,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 										<EngineGridItem
 											key={engine.engine_id}
 											variant={gridStyle}
-											path={`/${route.path}/${engine.engine_id}/workbench`}
+											path={`/${route.path}/${engine.engine_id}`}
 											engine={engine}
 											isFavorited={
 												engine.engine_favorite === 1
@@ -487,7 +487,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 											showGlobal={isOwnerPermission(
 												engine.engine_user_permission,
 											)}
-											showInfo={true}
+											showInfo={false}
 											showDelete={isOwnerPermission(
 												engine.engine_user_permission,
 											)}

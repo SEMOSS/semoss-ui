@@ -12,16 +12,15 @@ import { EngineMcpUsagePage } from "./engine-mcp-usage-page";
 import { EngineMetadataPage } from "./engine-metadata-page";
 import { EngineModelWorkbenchPage } from "./engine-model-workbench-page";
 import { EngineOverviewPage } from "./engine-overview-page";
-import { EngineQAPage } from "./engine-qa-page";
 import { EngineSettingsPage } from "./engine-settings-page";
 import { EngineSmssPage } from "./engine-smss-page";
-import { EngineStorageViewerPage } from "./engine-storage-viewer-page";
 import { EngineStorageWorkbenchPage } from "./engine-storage-workbench-page";
+import { EngineTabsLayout } from "./engine-tabs-layout";
 import { EngineUsagePage } from "./engine-usage-page";
 import { EngineVectorWorkbenchPage } from "./engine-vector-workbench-page";
 
 export const ENGINE_ROUTES: {
-	/** Name of the specific path */
+	/** Name of the specific path (omitted for pathless layout routes) */
 	path: string;
 
 	/** Element to render */
@@ -51,69 +50,101 @@ export const ENGINE_ROUTES: {
 				element: <ImportPage name="Function" type="FUNCTION" />,
 			},
 			{
-				path: ":engineId/workbench",
-				element: <EngineFunctionWorkbenchPage />,
-			},
-			{
-				path: ":engineId",
 				element: (
 					<EngineLayout
-						name="Function"
-						path="function"
+						catalog={{
+							name: "Function",
+							path: "/function",
+						}}
 						type="FUNCTION"
-						tabs={[
-							{
-								name: "Overview",
-								path: "",
-								restrict: [
-									"READ_ONLY",
-									"EDIT",
-									"OWNER",
-									"DISCOVERABLE",
-								],
-							},
-							{
-								name: "Usage",
-								path: "usage",
-								restrict: ["READ_ONLY", "EDIT", "OWNER"],
-							},
-							{
-								name: "MCP",
-								path: "mcp-usage",
-								restrict: ["READ_ONLY", "EDIT", "OWNER"],
-							},
-							{
-								name: "Activity Log",
-								path: "activity",
-								restrict: ["READ_ONLY", "EDIT", "OWNER"],
-							},
-							{
-								name: "Access Control",
-								path: "access-control",
-								restrict: ["EDIT", "OWNER"],
-							},
-							{
-								name: "Commits",
-								path: "commits",
-								restrict: ["EDIT", "OWNER"],
-							},
-							{
-								name: "SMSS",
-								path: "smss",
-								restrict: ["OWNER"],
-							},
-						]}
 					/>
 				),
+				path: ":engineId",
 				children: [
-					{ path: "", element: <EngineOverviewPage /> },
-					{ path: "usage", element: <EngineUsagePage /> },
-					{ path: "mcp-usage", element: <EngineMcpUsagePage /> },
-					{ path: "activity", element: <EngineActivityPage /> },
-					{ path: "access-control", element: <EngineSettingsPage /> },
-					{ path: "commits", element: <EngineCommitsPage /> },
-					{ path: "smss", element: <EngineSmssPage /> },
-					{ path: "*", element: <Navigate to="." replace /> },
+					{
+						path: "workbench",
+						element: <EngineFunctionWorkbenchPage />,
+					},
+					{
+						path: "*",
+						element: (
+							<EngineTabsLayout
+								tabs={[
+									{
+										name: "Overview",
+										path: "",
+										restrict: [
+											"READ_ONLY",
+											"EDIT",
+											"OWNER",
+											"DISCOVERABLE",
+										],
+									},
+									{
+										name: "Usage",
+										path: "usage",
+										restrict: [
+											"READ_ONLY",
+											"EDIT",
+											"OWNER",
+										],
+									},
+									{
+										name: "MCP",
+										path: "mcp-usage",
+										restrict: [
+											"READ_ONLY",
+											"EDIT",
+											"OWNER",
+										],
+									},
+									{
+										name: "Activity Log",
+										path: "activity",
+										restrict: [
+											"READ_ONLY",
+											"EDIT",
+											"OWNER",
+										],
+									},
+									{
+										name: "Access Control",
+										path: "access-control",
+										restrict: ["EDIT", "OWNER"],
+									},
+									{
+										name: "Commits",
+										path: "commits",
+										restrict: ["EDIT", "OWNER"],
+									},
+									{
+										name: "SMSS",
+										path: "smss",
+										restrict: ["OWNER"],
+									},
+								]}
+							/>
+						),
+						children: [
+							{ path: "", element: <EngineOverviewPage /> },
+							{ path: "usage", element: <EngineUsagePage /> },
+							{
+								path: "mcp-usage",
+								element: <EngineMcpUsagePage />,
+							},
+							{
+								path: "activity",
+								element: <EngineActivityPage />,
+							},
+							{
+								path: "access-control",
+								element: <EngineSettingsPage />,
+							},
+							{ path: "commits", element: <EngineCommitsPage /> },
+							{ path: "smss", element: <EngineSmssPage /> },
+							{ path: "*", element: <Navigate to="." replace /> },
+						],
+					},
 				],
 			},
 			{ path: "*", element: <Navigate to="." replace /> },
@@ -140,63 +171,95 @@ export const ENGINE_ROUTES: {
 				element: <ImportPage name="Model" type="MODEL" />,
 			},
 			{
-				path: ":engineId/workbench",
-				element: <EngineModelWorkbenchPage />,
-			},
-			{
-				path: ":engineId",
 				element: (
 					<EngineLayout
-						name="Model"
-						path="model"
+						catalog={{
+							name: "Model",
+							path: "/model",
+						}}
 						type="MODEL"
-						tabs={[
-							{
-								name: "Overview",
-								path: "",
-								restrict: [
-									"READ_ONLY",
-									"EDIT",
-									"OWNER",
-									"DISCOVERABLE",
-								],
-							},
-							{
-								name: "Usage",
-								path: "usage",
-								restrict: ["READ_ONLY", "EDIT", "OWNER"],
-							},
-							{
-								name: "MCP",
-								path: "mcp-usage",
-								restrict: ["READ_ONLY", "EDIT", "OWNER"],
-							},
-							{
-								name: "Activity Log",
-								path: "activity",
-								restrict: ["READ_ONLY", "EDIT", "OWNER"],
-							},
-							{
-								name: "Access Control",
-								path: "access-control",
-								restrict: ["EDIT", "OWNER"],
-							},
-							{
-								name: "SMSS",
-								path: "smss",
-								restrict: ["OWNER"],
-							},
-						]}
 					/>
 				),
+				path: ":engineId",
 				children: [
-					{ path: "", element: <EngineOverviewPage /> },
-					{ path: "usage", element: <EngineUsagePage /> },
-					{ path: "mcp-usage", element: <EngineMcpUsagePage /> },
-					{ path: "activity", element: <EngineActivityPage /> },
-					{ path: "access-control", element: <EngineSettingsPage /> },
-					{ path: "smss", element: <EngineSmssPage /> },
-					{ path: "*", element: <Navigate to="." replace /> },
+					{
+						path: "workbench",
+						element: <EngineModelWorkbenchPage />,
+					},
+					{
+						path: "*",
+						element: (
+							<EngineTabsLayout
+								tabs={[
+									{
+										name: "Overview",
+										path: "",
+										restrict: [
+											"READ_ONLY",
+											"EDIT",
+											"OWNER",
+											"DISCOVERABLE",
+										],
+									},
+									{
+										name: "Usage",
+										path: "usage",
+										restrict: [
+											"READ_ONLY",
+											"EDIT",
+											"OWNER",
+										],
+									},
+									{
+										name: "MCP",
+										path: "mcp-usage",
+										restrict: [
+											"READ_ONLY",
+											"EDIT",
+											"OWNER",
+										],
+									},
+									{
+										name: "Activity Log",
+										path: "activity",
+										restrict: [
+											"READ_ONLY",
+											"EDIT",
+											"OWNER",
+										],
+									},
+									{
+										name: "Access Control",
+										path: "access-control",
+										restrict: ["EDIT", "OWNER"],
+									},
+									{
+										name: "SMSS",
+										path: "smss",
+										restrict: ["OWNER"],
+									},
+								]}
+							/>
+						),
+						children: [
+							{ path: "", element: <EngineOverviewPage /> },
+							{ path: "usage", element: <EngineUsagePage /> },
+							{
+								path: "mcp-usage",
+								element: <EngineMcpUsagePage />,
+							},
+							{
+								path: "activity",
+								element: <EngineActivityPage />,
+							},
+							{
+								path: "access-control",
+								element: <EngineSettingsPage />,
+							},
+							{ path: "smss", element: <EngineSmssPage /> },
+							{ path: "*", element: <Navigate to="." replace /> },
+						],
+					},
 				],
 			},
 			{ path: "*", element: <Navigate to="." replace /> },
@@ -223,69 +286,108 @@ export const ENGINE_ROUTES: {
 				element: <ImportPage name="Database" type="DATABASE" />,
 			},
 			{
-				path: ":engineId/workbench",
-				element: <EngineDatabaseWorkbenchPage />,
-			},
-			{
-				path: ":engineId",
 				element: (
 					<EngineLayout
-						name="Database"
-						path="database"
+						catalog={{
+							name: "Database",
+							path: "/database",
+						}}
 						type="DATABASE"
-						tabs={[
-							{
-								name: "Overview",
-								path: "",
-								restrict: [
-									"READ_ONLY",
-									"EDIT",
-									"OWNER",
-									"DISCOVERABLE",
-								],
-							},
-							{
-								name: "Usage",
-								path: "usage",
-								restrict: ["READ_ONLY", "EDIT", "OWNER"],
-							},
-							{
-								name: "MCP",
-								path: "mcp-usage",
-								restrict: ["READ_ONLY", "EDIT", "OWNER"],
-							},
-							{
-								name: "Activity Log",
-								path: "activity",
-								restrict: ["READ_ONLY", "EDIT", "OWNER"],
-							},
-							{
-								name: "Metadata",
-								path: "metadata",
-								restrict: ["READ_ONLY", "EDIT", "OWNER"],
-							},
-							{
-								name: "Access Control",
-								path: "access-control",
-								restrict: ["EDIT", "OWNER"],
-							},
-							{
-								name: "SMSS",
-								path: "smss",
-								restrict: ["OWNER"],
-							},
-						]}
 					/>
 				),
+				path: ":engineId",
 				children: [
-					{ path: "", element: <EngineOverviewPage /> },
-					{ path: "usage", element: <EngineUsagePage /> },
-					{ path: "mcp-usage", element: <EngineMcpUsagePage /> },
-					{ path: "activity", element: <EngineActivityPage /> },
-					{ path: "metadata", element: <EngineMetadataPage /> },
-					{ path: "access-control", element: <EngineSettingsPage /> },
-					{ path: "smss", element: <EngineSmssPage /> },
-					{ path: "*", element: <Navigate to="." replace /> },
+					{
+						path: "workbench",
+						element: <EngineDatabaseWorkbenchPage />,
+					},
+					{
+						path: "*",
+						element: (
+							<EngineTabsLayout
+								tabs={[
+									{
+										name: "Overview",
+										path: "",
+										restrict: [
+											"READ_ONLY",
+											"EDIT",
+											"OWNER",
+											"DISCOVERABLE",
+										],
+									},
+									{
+										name: "Usage",
+										path: "usage",
+										restrict: [
+											"READ_ONLY",
+											"EDIT",
+											"OWNER",
+										],
+									},
+									{
+										name: "MCP",
+										path: "mcp-usage",
+										restrict: [
+											"READ_ONLY",
+											"EDIT",
+											"OWNER",
+										],
+									},
+									{
+										name: "Activity Log",
+										path: "activity",
+										restrict: [
+											"READ_ONLY",
+											"EDIT",
+											"OWNER",
+										],
+									},
+									{
+										name: "Metadata",
+										path: "metadata",
+										restrict: [
+											"READ_ONLY",
+											"EDIT",
+											"OWNER",
+										],
+									},
+									{
+										name: "Access Control",
+										path: "access-control",
+										restrict: ["EDIT", "OWNER"],
+									},
+									{
+										name: "SMSS",
+										path: "smss",
+										restrict: ["OWNER"],
+									},
+								]}
+							/>
+						),
+						children: [
+							{ path: "", element: <EngineOverviewPage /> },
+							{ path: "usage", element: <EngineUsagePage /> },
+							{
+								path: "mcp-usage",
+								element: <EngineMcpUsagePage />,
+							},
+							{
+								path: "activity",
+								element: <EngineActivityPage />,
+							},
+							{
+								path: "metadata",
+								element: <EngineMetadataPage />,
+							},
+							{
+								path: "access-control",
+								element: <EngineSettingsPage />,
+							},
+							{ path: "smss", element: <EngineSmssPage /> },
+							{ path: "*", element: <Navigate to="." replace /> },
+						],
+					},
 				],
 			},
 			{ path: "*", element: <Navigate to="." replace /> },
@@ -312,75 +414,105 @@ export const ENGINE_ROUTES: {
 				element: <ImportPage name="Vector" type="VECTOR" />,
 			},
 			{
-				path: ":engineId/workbench",
-				element: <EngineVectorWorkbenchPage />,
-			},
-			{
-				path: ":engineId",
 				element: (
 					<EngineLayout
-						name="Vector"
-						path="vector"
+						catalog={{
+							name: "Vector",
+							path: "/vector",
+						}}
 						type="VECTOR"
-						tabs={[
-							{
-								name: "Overview",
-								path: "",
-								restrict: [
-									"READ_ONLY",
-									"EDIT",
-									"OWNER",
-									"DISCOVERABLE",
-								],
-							},
-							{
-								name: "Usage",
-								path: "usage",
-								restrict: ["READ_ONLY", "EDIT", "OWNER"],
-							},
-							{
-								name: "MCP",
-								path: "mcp-usage",
-								restrict: ["READ_ONLY", "EDIT", "OWNER"],
-							},
-							{
-								name: "Activity Log",
-								path: "activity",
-								restrict: ["READ_ONLY", "EDIT", "OWNER"],
-							},
-							{
-								name: "Documents",
-								path: "documents",
-								restrict: ["READ_ONLY", "EDIT", "OWNER"],
-							},
-							{
-								name: "Q&A",
-								path: "qa",
-								restrict: ["READ_ONLY", "EDIT", "OWNER"],
-							},
-							{
-								name: "Access Control",
-								path: "access-control",
-								restrict: ["EDIT", "OWNER"],
-							},
-							{
-								name: "SMSS",
-								path: "smss",
-								restrict: ["OWNER"],
-							},
-						]}
 					/>
 				),
+				path: ":engineId",
 				children: [
-					{ path: "", element: <EngineOverviewPage /> },
-					{ path: "usage", element: <EngineUsagePage /> },
-					{ path: "mcp-usage", element: <EngineMcpUsagePage /> },
-					{ path: "activity", element: <EngineActivityPage /> },
-					{ path: "documents", element: <EngineFilePage /> },
-					{ path: "qa", element: <EngineQAPage /> },
-					{ path: "access-control", element: <EngineSettingsPage /> },
-					{ path: "smss", element: <EngineSmssPage /> },
-					{ path: "*", element: <Navigate to="." replace /> },
+					{
+						path: "workbench",
+						element: <EngineVectorWorkbenchPage />,
+					},
+					{
+						path: "*",
+						element: (
+							<EngineTabsLayout
+								tabs={[
+									{
+										name: "Overview",
+										path: "",
+										restrict: [
+											"READ_ONLY",
+											"EDIT",
+											"OWNER",
+											"DISCOVERABLE",
+										],
+									},
+									{
+										name: "Usage",
+										path: "usage",
+										restrict: [
+											"READ_ONLY",
+											"EDIT",
+											"OWNER",
+										],
+									},
+									{
+										name: "MCP",
+										path: "mcp-usage",
+										restrict: [
+											"READ_ONLY",
+											"EDIT",
+											"OWNER",
+										],
+									},
+									{
+										name: "Activity Log",
+										path: "activity",
+										restrict: [
+											"READ_ONLY",
+											"EDIT",
+											"OWNER",
+										],
+									},
+									{
+										name: "Documents",
+										path: "documents",
+										restrict: [
+											"READ_ONLY",
+											"EDIT",
+											"OWNER",
+										],
+									},
+									{
+										name: "Access Control",
+										path: "access-control",
+										restrict: ["EDIT", "OWNER"],
+									},
+									{
+										name: "SMSS",
+										path: "smss",
+										restrict: ["OWNER"],
+									},
+								]}
+							/>
+						),
+						children: [
+							{ path: "", element: <EngineOverviewPage /> },
+							{ path: "usage", element: <EngineUsagePage /> },
+							{
+								path: "mcp-usage",
+								element: <EngineMcpUsagePage />,
+							},
+							{
+								path: "activity",
+								element: <EngineActivityPage />,
+							},
+							{ path: "documents", element: <EngineFilePage /> },
+							{
+								path: "access-control",
+								element: <EngineSettingsPage />,
+							},
+							{ path: "smss", element: <EngineSmssPage /> },
+							{ path: "*", element: <Navigate to="." replace /> },
+						],
+					},
 				],
 			},
 			{ path: "*", element: <Navigate to="." replace /> },
@@ -407,77 +539,105 @@ export const ENGINE_ROUTES: {
 				element: <ImportPage name="Storage" type="STORAGE" />,
 			},
 			{
-				path: ":engineId/workbench",
-				element: <EngineStorageWorkbenchPage />,
-			},
-			{
-				path: ":engineId",
 				element: (
 					<EngineLayout
-						name="Storage"
-						path="storage"
+						catalog={{
+							name: "Storage",
+							path: "/storage",
+						}}
 						type="STORAGE"
-						tabs={[
-							{
-								name: "Overview",
-								path: "",
-								restrict: [
-									"READ_ONLY",
-									"EDIT",
-									"OWNER",
-									"DISCOVERABLE",
-								],
-							},
-							{
-								name: "Usage",
-								path: "usage",
-								restrict: ["READ_ONLY", "EDIT", "OWNER"],
-							},
-							{
-								name: "MCP",
-								path: "mcp-usage",
-								restrict: ["READ_ONLY", "EDIT", "OWNER"],
-							},
-							{
-								name: "Activity Log",
-								path: "activity",
-								restrict: ["READ_ONLY", "EDIT", "OWNER"],
-							},
-							{
-								name: "Storage Viewer",
-								path: "storage-viewer",
-								restrict: [
-									"READ_ONLY",
-									"EDIT",
-									"OWNER",
-									"DISCOVERABLE",
-								],
-							},
-							{
-								name: "Access Control",
-								path: "access-control",
-								restrict: ["EDIT", "OWNER"],
-							},
-							{
-								name: "SMSS",
-								path: "smss",
-								restrict: ["OWNER"],
-							},
-						]}
 					/>
 				),
+				path: ":engineId",
 				children: [
-					{ path: "", element: <EngineOverviewPage /> },
-					{ path: "usage", element: <EngineUsagePage /> },
-					{ path: "mcp-usage", element: <EngineMcpUsagePage /> },
-					{ path: "activity", element: <EngineActivityPage /> },
 					{
-						path: "storage-viewer",
-						element: <EngineStorageViewerPage />,
+						path: "workbench",
+						element: <EngineStorageWorkbenchPage />,
 					},
-					{ path: "access-control", element: <EngineSettingsPage /> },
-					{ path: "smss", element: <EngineSmssPage /> },
-					{ path: "*", element: <Navigate to="." replace /> },
+					{
+						path: "*",
+						element: (
+							<EngineTabsLayout
+								tabs={[
+									{
+										name: "Overview",
+										path: "",
+										restrict: [
+											"READ_ONLY",
+											"EDIT",
+											"OWNER",
+											"DISCOVERABLE",
+										],
+									},
+									{
+										name: "Usage",
+										path: "usage",
+										restrict: [
+											"READ_ONLY",
+											"EDIT",
+											"OWNER",
+										],
+									},
+									{
+										name: "MCP",
+										path: "mcp-usage",
+										restrict: [
+											"READ_ONLY",
+											"EDIT",
+											"OWNER",
+										],
+									},
+									{
+										name: "Activity Log",
+										path: "activity",
+										restrict: [
+											"READ_ONLY",
+											"EDIT",
+											"OWNER",
+										],
+									},
+									{
+										name: "Storage Viewer",
+										path: "storage-viewer",
+										restrict: [
+											"READ_ONLY",
+											"EDIT",
+											"OWNER",
+											"DISCOVERABLE",
+										],
+									},
+									{
+										name: "Access Control",
+										path: "access-control",
+										restrict: ["EDIT", "OWNER"],
+									},
+									{
+										name: "SMSS",
+										path: "smss",
+										restrict: ["OWNER"],
+									},
+								]}
+							/>
+						),
+						children: [
+							{ path: "", element: <EngineOverviewPage /> },
+							{ path: "usage", element: <EngineUsagePage /> },
+							{
+								path: "mcp-usage",
+								element: <EngineMcpUsagePage />,
+							},
+							{
+								path: "activity",
+								element: <EngineActivityPage />,
+							},
+							{
+								path: "access-control",
+								element: <EngineSettingsPage />,
+							},
+							{ path: "smss", element: <EngineSmssPage /> },
+							{ path: "*", element: <Navigate to="." replace /> },
+						],
+					},
 				],
 			},
 			{ path: "*", element: <Navigate to="." replace /> },
@@ -504,57 +664,82 @@ export const ENGINE_ROUTES: {
 				element: <ImportPage name="Guardrail" type="GUARDRAIL" />,
 			},
 			{
-				path: ":engineId/workbench",
-				element: <EngineGuardrailWorkbenchPage />,
-			},
-			{
-				path: ":engineId",
 				element: (
 					<EngineLayout
-						name="Guardrail"
-						path="guardrail"
+						catalog={{
+							name: "Guardrail",
+							path: "/guardrail",
+						}}
 						type="GUARDRAIL"
-						tabs={[
-							{
-								name: "Overview",
-								path: "",
-								restrict: [
-									"READ_ONLY",
-									"EDIT",
-									"OWNER",
-									"DISCOVERABLE",
-								],
-							},
-							{
-								name: "Usage",
-								path: "usage",
-								restrict: ["READ_ONLY", "EDIT", "OWNER"],
-							},
-							{
-								name: "Activity Log",
-								path: "activity",
-								restrict: ["READ_ONLY", "EDIT", "OWNER"],
-							},
-							{
-								name: "Access Control",
-								path: "access-control",
-								restrict: ["EDIT", "OWNER"],
-							},
-							{
-								name: "SMSS",
-								path: "smss",
-								restrict: ["OWNER"],
-							},
-						]}
 					/>
 				),
+				path: ":engineId",
 				children: [
-					{ path: "", element: <EngineOverviewPage /> },
-					{ path: "usage", element: <EngineUsagePage /> },
-					{ path: "activity", element: <EngineActivityPage /> },
-					{ path: "access-control", element: <EngineSettingsPage /> },
-					{ path: "smss", element: <EngineSmssPage /> },
-					{ path: "*", element: <Navigate to="." replace /> },
+					{
+						path: "workbench",
+						element: <EngineGuardrailWorkbenchPage />,
+					},
+					{
+						path: "*",
+						element: (
+							<EngineTabsLayout
+								tabs={[
+									{
+										name: "Overview",
+										path: "",
+										restrict: [
+											"READ_ONLY",
+											"EDIT",
+											"OWNER",
+											"DISCOVERABLE",
+										],
+									},
+									{
+										name: "Usage",
+										path: "usage",
+										restrict: [
+											"READ_ONLY",
+											"EDIT",
+											"OWNER",
+										],
+									},
+									{
+										name: "Activity Log",
+										path: "activity",
+										restrict: [
+											"READ_ONLY",
+											"EDIT",
+											"OWNER",
+										],
+									},
+									{
+										name: "Access Control",
+										path: "access-control",
+										restrict: ["EDIT", "OWNER"],
+									},
+									{
+										name: "SMSS",
+										path: "smss",
+										restrict: ["OWNER"],
+									},
+								]}
+							/>
+						),
+						children: [
+							{ path: "", element: <EngineOverviewPage /> },
+							{ path: "usage", element: <EngineUsagePage /> },
+							{
+								path: "activity",
+								element: <EngineActivityPage />,
+							},
+							{
+								path: "access-control",
+								element: <EngineSettingsPage />,
+							},
+							{ path: "smss", element: <EngineSmssPage /> },
+							{ path: "*", element: <Navigate to="." replace /> },
+						],
+					},
 				],
 			},
 			{ path: "*", element: <Navigate to="." replace /> },

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { runPixel, useInsight } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -14,21 +15,10 @@ import {
 	Spinner,
 	Textarea,
 } from "@semoss/ui/next";
-import { EngineQASidebar } from "@/components/settings";
-import { useEngine, useRootStore } from "@/hooks";
-
-export interface Model {
-	engine_name?: string;
-	engine_id?: string;
-}
-
-export interface VectorContext {
-	score: string;
-	doc_index: string;
-	tokens: string;
-	content: string;
-	url: string;
-}
+import {
+	type Model,
+	VectorChatPanelSidebar,
+} from "./vector-chat-panel-sidebar";
 
 interface VectorQueryRow {
 	content?: string;
@@ -41,19 +31,24 @@ interface LLMOutput {
 	response?: string;
 }
 
-export const EngineQAPage = () => {
-	const { engine } = useEngine();
+interface VectorChatPanelProps {
+	/** Engine (vector) id to query */
+	engine: string;
+}
+
+export const VectorChatPanel = ({ engine }: VectorChatPanelProps) => {
+	const insight = useInsight();
+
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState("");
 	const [isAnswered, setIsAnswered] = useState(false);
-	//From the LLM
 	const [answer, setAnswer] = useState<Record<string, string>>({
 		question: "",
 		conclusion: "",
 	});
-	// Model Catalog and first model in dropdown
-	const [modelOptions, setModelOptions] = useState([]);
+	const [modelOptions, setModelOptions] = useState<Model[]>([]);
 	const [selectedModel, setSelectedModel] = useState<Model>({});
+	const [limit, setLimit] = useState<number>(3);
 
 	const { control, handleSubmit } = useForm({
 		defaultValues: {
@@ -61,15 +56,7 @@ export const EngineQAPage = () => {
 		},
 	});
 
-	const [limit, setLimit] = useState<number>(3);
-
-	const { monolithStore } = useRootStore();
-
-	/**
-	 * Allow the user to ask a question
-	 */
 	const ask = handleSubmit(async (data: { QUESTION: string }) => {
-		// turn on loading
 		setError("");
 		setIsLoading(true);
 		setIsAnswered(false);
@@ -81,10 +68,10 @@ export const EngineQAPage = () => {
 		}
 		try {
 			let pixel = `
-            VectorDatabaseQuery(engine="${engine.engine_id}" , command='<encode>${data.QUESTION}</encode>', limit=${limit});
+            VectorDatabaseQuery(engine="${engine}" , command='<encode>${data.QUESTION}</encode>', limit=${limit});
             `;
 
-			const response = await monolithStore.runQuery(pixel);
+			const response = await runPixel(pixel, insight.insightId);
 
 			const { output, operationType } = response.pixelReturn[0];
 
@@ -93,7 +80,6 @@ export const EngineQAPage = () => {
 
 			const rows = output as VectorQueryRow[];
 
-			//Looping through Vector Database Query and forming a content string with name, page, and content
 			for (let i = 0; i <= rows.length - 1; i++) {
 				const content = rows[i].content || rows[i].Content;
 				finalContent += `\\n* Document Name: ${rows[i].Source}, Page Number: ${rows[i].Divider}, ${content} `;
@@ -104,7 +90,7 @@ export const EngineQAPage = () => {
 			pixel = `
             LLM(engine="${selectedModel.engine_id}" , command=["<encode>You are an intelligent AI designed to answer queries based on provided documents. If an answer cannot be determined based on the provided documents, inform the user. Answer as truthfully as possible at all times and tell the user if you do not know the answer. Please be concise and get to the point. Here is the question: ${data.QUESTION}. Here are the documents: ${contextDocs}</encode>"])            `;
 
-			const LLMresponse = await monolithStore.runQuery(pixel);
+			const LLMresponse = await runPixel(pixel, insight.insightId);
 
 			const { output: llmOutput, operationType: LLMOperationType } =
 				LLMresponse.pixelReturn[0];
@@ -119,7 +105,6 @@ export const EngineQAPage = () => {
 				conclusion = llmResult.response;
 			}
 
-			// set answer based on data
 			setAnswer({
 				question: data.QUESTION,
 				conclusion: conclusion,
@@ -134,27 +119,31 @@ export const EngineQAPage = () => {
 	});
 
 	useEffect(() => {
+		if (!insight.isReady) return;
+
 		setIsLoading(true);
-		//Grabbing all the Models that are in CfG
 		const pixel = `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "text-generation" }] , engineTypes=["MODEL"]);`;
 
-		monolithStore.runQuery(pixel).then((response) => {
-			const { output, operationType } = response.pixelReturn[0];
+		runPixel(pixel, insight.insightId)
+			.then((response) => {
+				const { output, operationType } = response.pixelReturn[0];
 
-			if (operationType.indexOf("ERROR") > -1) {
-				throw new Error(output as string);
-			}
-			if (Array.isArray(output)) {
-				setModelOptions(output);
-				setSelectedModel(output[0]);
-			}
-		});
-		setIsLoading(false);
-	}, [monolithStore]);
+				if (operationType.indexOf("ERROR") > -1) {
+					throw new Error(output as unknown as string);
+				}
+				if (Array.isArray(output)) {
+					setModelOptions(output as Model[]);
+					setSelectedModel((output as Model[])[0]);
+				}
+			})
+			.finally(() => {
+				setIsLoading(false);
+			});
+	}, [insight.isReady, insight.insightId]);
 
 	return (
-		<div className="flex flex-col gap-4 md:flex-row md:items-start">
-			<EngineQASidebar
+		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4 md:flex-row md:items-start">
+			<VectorChatPanelSidebar
 				modelOptions={modelOptions}
 				selectedModel={selectedModel}
 				setSelectedModel={setSelectedModel}
@@ -193,7 +182,6 @@ export const EngineQAPage = () => {
 										className="w-full"
 										value={field.value ? field.value : ""}
 										onChange={(e) =>
-											// set the value
 											field.onChange(e.target.value)
 										}
 										onKeyDown={(e) => {

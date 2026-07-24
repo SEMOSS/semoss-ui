@@ -7,7 +7,7 @@ import { useEngine } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
 export const EngineSettingsPage = () => {
-	const { name, path, type, engine } = useEngine();
+	const { catalog, type, engine } = useEngine();
 	const navigate = useNavigate();
 
 	return (
@@ -24,10 +24,10 @@ export const EngineSettingsPage = () => {
 					<SettingsTiles
 						type={type}
 						id={engine.engine_id}
-						name={name}
+						name={catalog.name}
 						direction="row"
 						onDelete={() => {
-							navigate(`/${path}`);
+							navigate(catalog.path);
 						}}
 					/>
 				</section>

@@ -1,8 +1,7 @@
-import { HammerIcon, PencilIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { download, useInsight } from "@semoss/sdk/react";
+import { runPixel, useInsight } from "@semoss/sdk/react";
 import {
 	FileExplorer,
 	FileExplorerItem,
@@ -12,10 +11,9 @@ import {
 	notifyFileEditorPathMoved,
 } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
-import { MCP } from "@/constants";
 import { WORKBENCH_COMPONENTS } from "../workbench.contants";
 
-interface EngineFileExplorerPanelProps {
+interface StorageFileExplorerPanelProps {
 	/** Node */
 	layout: FlexLayout.Layout;
 
@@ -26,7 +24,7 @@ interface EngineFileExplorerPanelProps {
 	engine: string;
 }
 
-export const EngineFileExplorerPanel: React.FC<EngineFileExplorerPanelProps> =
+export const StorageFileExplorerPanel: React.FC<StorageFileExplorerPanelProps> =
 	observer(({ layout, node, engine }) => {
 		const insight = useInsight();
 		const [searchParams, setSearchParams] = useSearchParams();
@@ -281,29 +279,48 @@ export const EngineFileExplorerPanel: React.FC<EngineFileExplorerPanelProps> =
 			<FileExplorer
 				key={refreshKey}
 				mode={{
-					type: "ENGINE",
-					engine: engine,
+					type: "STORAGE",
+					storage: engine,
 				}}
 				onItemSelect={(item) => {
-					// don't open directories
 					if (item.type === "directory") {
 						return;
 					}
 
-					// this will select if there or open if not
-					addNode(
-						`${WORKBENCH_COMPONENTS.FILE_EDITOR}--${item.path}`,
-						{
-							type: "tab",
-							name: item.name,
-							component: WORKBENCH_COMPONENTS.FILE_EDITOR,
-							config: {
-								name: item.name,
-								path: item.path,
-							},
-							enableClose: true,
-						},
-					);
+					const fileName =
+						item.name.split("/").filter(Boolean).pop() || item.name;
+					const insightFilePath = `/${fileName}`;
+
+					runPixel<[string]>(
+						`PullFromStorage(storage=["${engine}"], storagePath=["${item.path}"], filePath="/");`,
+						"new",
+					)
+						.then((response) => {
+							if (response.errors.length > 0) {
+								throw new Error(response.errors[0]);
+							}
+
+							addNode(
+								`STORAGE_FILE--${response.insightId}--${insightFilePath}`,
+								{
+									type: "tab",
+									name: item.name,
+									component: WORKBENCH_COMPONENTS.FILE_EDITOR,
+									config: {
+										name: item.name,
+										path: insightFilePath,
+										fileMode: "INSIGHT",
+										insightId: response.insightId,
+									},
+									enableClose: true,
+								},
+							);
+						})
+						.catch((e) => {
+							toast.error(
+								e?.message || "Failed to load storage file",
+							);
+						});
 				}}
 				onItemsMoved={migrateMovedTabs}
 				onItemsDeleted={(items) => {
@@ -312,75 +329,6 @@ export const EngineFileExplorerPanel: React.FC<EngineFileExplorerPanelProps> =
 					});
 				}}
 				ItemComponent={({ item, refresh, ...otherProps }) => {
-					const isDriverFile =
-						item.type !== "directory" &&
-						MCP.DRIVER_PATHS.some((f) => item.path === f);
-					const actions = [];
-
-					if (isDriverFile) {
-						actions.push({
-							name: "Create",
-							icon: <HammerIcon />,
-							tooltip: "Create Toolbox",
-							action: async () => {
-								try {
-									await insight.actions.run(
-										`MakePythonMCP(engine=["${engine}"]);`,
-									);
-
-									// refresh the explorer
-									refresh();
-								} catch (e) {
-									toast.error(`Error: ${e}`);
-								}
-
-								// open the editor for the created file (always, even if MakePythonMCP fails)
-								addNode(
-									`${WORKBENCH_COMPONENTS.MCP_EDITOR}--/mcp/py_mcp.json`,
-									{
-										type: "tab",
-										name: `Toolbox Editor - py_mcp.json`,
-										component:
-											WORKBENCH_COMPONENTS.MCP_EDITOR,
-										config: {
-											name: "py_mcp.json",
-											path: "/mcp/py_mcp.json",
-										},
-										enableClose: true,
-									},
-								);
-							},
-						});
-					}
-
-					if (
-						MCP.JSON_PATHS.some((f) => item.path.startsWith(f)) &&
-						item.type !== "directory"
-					) {
-						actions.push({
-							name: "Edit",
-							icon: <PencilIcon />,
-							tooltip: "Edit Toolbox",
-							action: async (item) => {
-								// this will select if there or open if not
-								addNode(
-									`${WORKBENCH_COMPONENTS.MCP_EDITOR}--${item.path}`,
-									{
-										type: "tab",
-										name: `Toolbox Editor - ${item.name}`,
-										component:
-											WORKBENCH_COMPONENTS.MCP_EDITOR,
-										config: {
-											name: item.name,
-											path: item.path,
-										},
-										enableClose: true,
-									},
-								);
-							},
-						});
-					}
-
 					const secondaryActions = [
 						{
 							name: "Copy Path",
@@ -398,68 +346,11 @@ export const EngineFileExplorerPanel: React.FC<EngineFileExplorerPanelProps> =
 						},
 					];
 
-					if (item.type !== "directory") {
-						secondaryActions.push({
-							name: "Download",
-							action: async (item) => {
-								// save it
-								const { pixelReturn } =
-									await insight.actions.run<[string]>(
-										`DownloadEngineAsset(engine=["${engine}"], filePath=["${item.path}"]);`,
-									);
-
-								// get the file key
-								const fileKey = pixelReturn[0].output;
-
-								// download the file
-								await download(insight.insightId, fileKey);
-
-								refresh();
-							},
-						});
-					}
-
-					secondaryActions.push({
-						name: "Delete",
-						action: async (item) => {
-							await insight.actions.run(
-								`DeleteEngineAssets(engine=["${engine}"], filePath=["${item.path}"]);`,
-							);
-							removeDeletedTabs(
-								item.path,
-								item.type === "directory",
-							);
-							refresh();
-						},
-					});
-
 					return (
 						<FileExplorerItem
-							draggable={item.type !== "directory"}
+							draggable={false}
 							item={item}
 							refresh={refresh}
-							onDragStart={(e) => {
-								// cannot drag directories
-								if (item.type === "directory") {
-									return;
-								}
-
-								// add to layout
-								layout.addTabWithDragAndDrop(
-									e as unknown as DragEvent,
-									{
-										type: "tab",
-										name: item.name,
-										component:
-											WORKBENCH_COMPONENTS.FILE_EDITOR,
-										config: {
-											name: item.name,
-											path: item.path,
-										},
-										enableClose: true,
-									},
-								);
-							}}
 							onAfterRename={(oldPath, newPath) => {
 								const migrated = migrateMovedTabs([
 									{
@@ -491,7 +382,7 @@ export const EngineFileExplorerPanel: React.FC<EngineFileExplorerPanelProps> =
 								);
 							}}
 							{...otherProps}
-							actions={actions}
+							actions={[]}
 							secondaryActions={secondaryActions}
 						/>
 					);

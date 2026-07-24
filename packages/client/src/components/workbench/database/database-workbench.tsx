@@ -2,6 +2,7 @@ import {
 	CodeIcon,
 	DatabaseIcon,
 	FolderTreeIcon,
+	SettingsIcon,
 	Table2Icon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
@@ -12,6 +13,7 @@ import {
 	EngineFileEditorPanel,
 	EngineFileExplorerPanel,
 	EngineMcpEditorPanel,
+	EngineSettingsPanel,
 } from "../engine";
 import { Workbench } from "../workbench";
 import { WORKBENCH_COMPONENTS } from "../workbench.contants";
@@ -147,6 +149,15 @@ export const DatabaseWorkbench: React.FC<DatabaseWorkbenchProps> = observer(
 								component:
 									WORKBENCH_COMPONENTS.DATABASE_RESULTS,
 								enableClose: false,
+							},
+							{
+								type: "tab",
+								id: WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
+								name: "Settings",
+								component: WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
+								enableClose: false,
+								borderWidth: 800,
+								borderHeight: 1200,
 							},
 						],
 					},
@@ -422,6 +433,55 @@ export const DatabaseWorkbench: React.FC<DatabaseWorkbenchProps> = observer(
 						</div>
 					);
 				},
+			},
+			[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: {
+				tab: () => <SettingsIcon className="size-4" />,
+				panel: () => (
+					<EngineSettingsPanel
+						tabs={[
+							{
+								name: "Overview",
+								component: "overview",
+								restrict: [
+									"READ_ONLY",
+									"EDIT",
+									"OWNER",
+									"DISCOVERABLE",
+								],
+							},
+							{
+								name: "Usage",
+								component: "usage",
+								restrict: ["READ_ONLY", "EDIT", "OWNER"],
+							},
+							{
+								name: "MCP",
+								component: "mcp-usage",
+								restrict: ["READ_ONLY", "EDIT", "OWNER"],
+							},
+							{
+								name: "Activity Log",
+								component: "activity",
+								restrict: ["READ_ONLY", "EDIT", "OWNER"],
+							},
+							{
+								name: "Metadata",
+								component: "metadata",
+								restrict: ["READ_ONLY", "EDIT", "OWNER"],
+							},
+							{
+								name: "Access Control",
+								component: "access-control",
+								restrict: ["EDIT", "OWNER"],
+							},
+							{
+								name: "SMSS",
+								component: "smss",
+								restrict: ["OWNER"],
+							},
+						]}
+					/>
+				),
 			},
 		};
 

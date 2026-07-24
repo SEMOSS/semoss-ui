@@ -1,5 +1,5 @@
 import { DesignerContext, type DesignerContextType } from "./DesignerContext";
-import { EngineContext, type EngineContextType } from "./EngineContext";
+import { EngineContext, type EngineContextType } from "./engine-context";
 import { LLMContext, type LLMContextType } from "./LLMContext";
 import {
 	MetamodelContext,

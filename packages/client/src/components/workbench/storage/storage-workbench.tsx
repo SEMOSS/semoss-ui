@@ -1,13 +1,15 @@
-import { FolderTreeIcon } from "lucide-react";
+import { CloudIcon, FolderTreeIcon, SettingsIcon } from "lucide-react";
 import { useMemo } from "react";
 import { FlexLayout, getFileIconComponent } from "@semoss/shared";
 import {
 	EngineFileEditorPanel,
 	EngineFileExplorerPanel,
 	EngineMcpEditorPanel,
+	EngineSettingsPanel,
 } from "../engine";
 import { Workbench } from "../workbench";
 import { WORKBENCH_COMPONENTS } from "../workbench.contants";
+import { StorageFileExplorerPanel } from "./storage-file-explorer-panel";
 
 interface StorageWorkbenchProps {
 	/** Engine (storage) id to edit */
@@ -37,12 +39,40 @@ export const StorageWorkbench: React.FC<StorageWorkbenchProps> = ({
 					children: [
 						{
 							type: "tab",
+							id: WORKBENCH_COMPONENTS.STORAGE_EXPLORER,
+							name: "Storage",
+							component: WORKBENCH_COMPONENTS.STORAGE_EXPLORER,
+							config: {},
+							helpText: "Storage File Explorer",
+							enableClose: false,
+						},
+						{
+							type: "tab",
 							id: WORKBENCH_COMPONENTS.FILE_EXPLORER,
 							name: "Files",
 							component: WORKBENCH_COMPONENTS.FILE_EXPLORER,
 							config: {},
 							helpText: "File Explorer",
 							enableClose: false,
+						},
+					],
+				},
+				{
+					type: "border",
+					location: "bottom",
+					size: 400,
+					selected: -1,
+					children: [
+						{
+							type: "tab",
+							id: WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
+							name: "Settings",
+							component: WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
+							config: {},
+							helpText: "Settings",
+							enableClose: false,
+							borderWidth: 800,
+							borderHeight: 1200,
 						},
 					],
 				},
@@ -92,6 +122,62 @@ export const StorageWorkbench: React.FC<StorageWorkbenchProps> = ({
 			panel: (node: FlexLayout.TabNode) => {
 				return <EngineMcpEditorPanel node={node} engine={engine} />;
 			},
+		},
+		[WORKBENCH_COMPONENTS.STORAGE_EXPLORER]: {
+			tab: () => <CloudIcon className="size-4" />,
+			panel: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => {
+				return (
+					<StorageFileExplorerPanel
+						layout={layout}
+						node={node}
+						engine={engine}
+					/>
+				);
+			},
+		},
+		[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: {
+			tab: () => <SettingsIcon className="size-4" />,
+			panel: () => (
+				<EngineSettingsPanel
+					tabs={[
+						{
+							name: "Overview",
+							component: "overview",
+							restrict: [
+								"READ_ONLY",
+								"EDIT",
+								"OWNER",
+								"DISCOVERABLE",
+							],
+						},
+						{
+							name: "Usage",
+							component: "usage",
+							restrict: ["READ_ONLY", "EDIT", "OWNER"],
+						},
+						{
+							name: "MCP",
+							component: "mcp-usage",
+							restrict: ["READ_ONLY", "EDIT", "OWNER"],
+						},
+						{
+							name: "Activity Log",
+							component: "activity",
+							restrict: ["READ_ONLY", "EDIT", "OWNER"],
+						},
+						{
+							name: "Access Control",
+							component: "access-control",
+							restrict: ["EDIT", "OWNER"],
+						},
+						{
+							name: "SMSS",
+							component: "smss",
+							restrict: ["OWNER"],
+						},
+					]}
+				/>
+			),
 		},
 	};
 

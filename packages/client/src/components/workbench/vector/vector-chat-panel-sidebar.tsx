@@ -18,7 +18,7 @@ export interface Model {
 	engine_id?: string;
 }
 
-interface EngineQASidebarProps {
+interface VectorChatPanelSidebarProps {
 	modelOptions: Model[];
 	selectedModel: Model;
 	setSelectedModel: (model: Model) => void;
@@ -26,13 +26,13 @@ interface EngineQASidebarProps {
 	setLimit: (limit: number) => void;
 }
 
-export const EngineQASidebar = ({
+export const VectorChatPanelSidebar = ({
 	modelOptions,
 	selectedModel,
 	setSelectedModel,
 	limit,
 	setLimit,
-}: EngineQASidebarProps) => {
+}: VectorChatPanelSidebarProps) => {
 	const getModelValue = (model: Model) =>
 		model.engine_id ?? model.engine_name ?? "";
 	const selectedModelValue = getModelValue(selectedModel);

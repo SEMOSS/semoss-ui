@@ -3,7 +3,7 @@ import { Button, Muted } from "@semoss/ui/next";
 import ErrorSvg from "@/assets/img/Error.svg";
 
 interface ResourceNotFoundProps {
-	path: string;
+	path?: string;
 }
 
 export const ResourceNotFound = ({ path }: ResourceNotFoundProps) => {
@@ -17,9 +17,11 @@ export const ResourceNotFound = ({ path }: ResourceNotFoundProps) => {
 				The item you are looking for may have been removed or you may
 				not have access to it.
 			</Muted>
-			<Link to={path} className="text-inherit">
-				<Button variant="link">Go Back</Button>
-			</Link>
+			{path && (
+				<Link to={path} className="text-inherit">
+					<Button variant="link">Go Back</Button>
+				</Link>
+			)}
 		</div>
 	);
 };

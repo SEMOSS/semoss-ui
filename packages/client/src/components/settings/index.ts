@@ -1,5 +1,4 @@
 export * from "./engine-model-test-sidebar";
-export * from "./engine-qa-sidebar";
 export * from "./file-table";
 export {
 	MemberAccessPanel,
