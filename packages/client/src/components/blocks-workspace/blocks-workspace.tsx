@@ -144,7 +144,7 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						helpText: "Settings",
 						enableClose: false,
 						borderWidth: 800,
-						borderHeight: 600,
+						borderHeight: 1200,
 					},
 				],
 			},

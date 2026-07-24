@@ -59,7 +59,7 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						config: {},
 						enableClose: false,
 						borderWidth: 800,
-						borderHeight: 600,
+						borderHeight: 1200,
 					},
 				],
 			},
