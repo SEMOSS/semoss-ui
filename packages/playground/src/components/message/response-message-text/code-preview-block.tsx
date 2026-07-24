@@ -229,14 +229,13 @@ export const CodePreviewBlock = ({
 				return;
 			}
 
-			const existingOpenNotebookPath =
-				// Prefer the notebook tab the user is actually focused on; only
-				// fall back to "first open notebook found" when nothing is active
-				// so this doesn't silently target the wrong file with multiple
-				// notebook tabs open.
-				room.activeNotebookFilePath ?? room.openNotebookFilePath;
+			// Priority 2: append to the notebook tab the user is actively
+			// focused on. Deliberately does NOT fall back to "any open
+			// notebook tab" - if nothing is actively in view, a background/
+			// closed notebook shouldn't silently receive the append; a brand
+			// new notebook (Priority 3) is the correct, unambiguous target.
+			const existingOpenNotebookPath = room.activeNotebookFilePath;
 
-			// Priority 2: append to currently open notebook tab if available.
 			if (existingOpenNotebookPath) {
 				const notebookPath = existingOpenNotebookPath;
 				const loadResponse = await room.runRoomPixel<[string]>(

@@ -2,7 +2,7 @@ import { observer } from "mobx-react-lite";
 import {
 	buildExecutePixel,
 	buildNotebookExecutionSource,
-	extractNotebookInlineImageOutputsFromLogs,
+	extractNotebookInlineDisplayOutputsFromLogs,
 	getNextNotebookExecutionCount,
 	IpynbViewer,
 	type JupyterCellOutput,
@@ -78,8 +78,10 @@ export const RoomFileEditor: React.FC<RoomFileEditorProps> = observer(
 								);
 
 							const outputList: JupyterCellOutput[] = [];
-							const { cleanedLogs, imageOutputs } =
-								extractNotebookInlineImageOutputsFromLogs(logs);
+							const { cleanedLogs, displayOutputs } =
+								extractNotebookInlineDisplayOutputsFromLogs(
+									logs,
+								);
 
 							if (cleanedLogs.length > 0) {
 								outputList.push({
@@ -89,8 +91,8 @@ export const RoomFileEditor: React.FC<RoomFileEditorProps> = observer(
 								});
 							}
 
-							if (imageOutputs.length > 0) {
-								outputList.push(...imageOutputs);
+							if (displayOutputs.length > 0) {
+								outputList.push(...displayOutputs);
 							}
 
 							if (errors.length > 0) {

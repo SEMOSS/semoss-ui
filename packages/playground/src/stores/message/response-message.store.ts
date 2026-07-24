@@ -5,7 +5,6 @@ import {
 	observable,
 	runInAction,
 } from "mobx";
-import { notifyNotebookRowClearSelection } from "@semoss/notebook";
 import { download } from "@semoss/sdk/react";
 import {
 	MCP_EXECUTION_AUTO,
@@ -236,7 +235,11 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			const selectedNotebookRow = room.selectedNotebookRow;
 			// When a notebook row is selected in preview, append explicit editing
 			// context so the model can generate cell-local updates instead of
-			// broad free-form responses.
+			// broad free-form responses. The selection is intentionally left in
+			// place after sending - the user's workflow is select row -> prompt
+			// -> "Add to Notebook" to replace that same row, so clearing it here
+			// would break that round-trip. It's only cleared when the row is
+			// actually consumed (replaced) or when its tab is closed.
 			const commandText = selectedNotebookRow?.path
 				? [
 						text,
@@ -255,13 +258,6 @@ export class ResponseMessageStore extends AbstractMessageStore {
 						.filter(Boolean)
 						.join("\n")
 				: text;
-
-			if (selectedNotebookRow?.path) {
-				// One-shot context: consume the selection now so it isn't
-				// re-injected into unrelated follow-up messages in this room.
-				room.setSelectedNotebookRow(null);
-				notifyNotebookRowClearSelection(selectedNotebookRow.path);
-			}
 
 			const media = inputMessage.parts.reduce((acc, part) => {
 				if (part.type === "MEDIA") {

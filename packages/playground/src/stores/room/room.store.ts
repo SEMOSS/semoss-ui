@@ -456,31 +456,6 @@ export class RoomStore {
 		return activePath.toLowerCase().endsWith(".ipynb") ? activePath : null;
 	}
 
-	get openNotebookFilePath(): string | null {
-		if (!this._store.sidebar.isOpen) {
-			return null;
-		}
-
-		// Fallback scanner: find any open notebook tab when no explicit active
-		// notebook path is available from current focus.
-		let foundPath: string | null = null;
-
-		this._store.sidebar.model.visitNodes((node) => {
-			if (foundPath) return;
-			if (!(node instanceof FlexLayout.TabNode)) return;
-			if (node.getComponent() !== "room-file-editor") return;
-
-			const config = node.getConfig() as { path?: unknown };
-			const path = typeof config?.path === "string" ? config.path : null;
-
-			if (path && path.toLowerCase().endsWith(".ipynb")) {
-				foundPath = path;
-			}
-		});
-
-		return foundPath;
-	}
-
 	/** Setters */
 	/**
 	 * Set the mode

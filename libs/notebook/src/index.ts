@@ -24,7 +24,7 @@ export {
 	buildNotebookExecutionSource,
 	createNotebookFileContent,
 	createNotebookFilePath,
-	extractNotebookInlineImageOutputsFromLogs,
+	extractNotebookInlineDisplayOutputsFromLogs,
 	getNextNotebookExecutionCount,
 	isPythonCellLanguage,
 	normalizeSource,
