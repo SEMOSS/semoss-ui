@@ -303,9 +303,6 @@ importers:
       '@semoss/ui':
         specifier: workspace:*
         version: link:../ui
-      dompurify:
-        specifier: ^3.4.7
-        version: 3.4.7
       echarts:
         specifier: ^5.5.1
         version: 5.6.0

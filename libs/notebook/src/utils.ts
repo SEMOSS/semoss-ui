@@ -178,6 +178,7 @@ export const truncateTextOutput = (text: string): TruncatedText => {
 const INLINE_IMAGE_BEGIN_PREFIX = "__SEMOSS_IPYNB_IMAGE_BEGIN__:";
 const INLINE_IMAGE_CHUNK_PREFIX = "__SEMOSS_IPYNB_IMAGE_CHUNK__:";
 const INLINE_IMAGE_END_MARKER = "__SEMOSS_IPYNB_IMAGE_END__";
+const STDERR_LINE_PREFIX = "__SEMOSS_IPYNB_STDERR__:";
 
 export const isPythonCellLanguage = (language: string): boolean => {
 	return language === "python" || language === "py";
@@ -329,6 +330,31 @@ try:
         __semoss_builtins.display = __semoss_display
     except Exception:
         pass
+
+    # Playground's console capture merges stdout/stderr into one buffer with
+    # no channel info, so print(..., file=sys.stderr) can't be told apart
+    # from a normal print() once it reaches the client. Prefixing each
+    # stderr write lets the client split them back into separate stdout/
+    # stderr stream outputs (and render stderr with error styling).
+    try:
+        import sys as __semoss_sys
+
+        __semoss_real_stderr_write = __semoss_sys.stderr.write
+
+        def __semoss_stderr_write(text):
+            if text:
+                __semoss_marked = "\\n".join(
+                    ("${STDERR_LINE_PREFIX}" + __semoss_line)
+                    if __semoss_line
+                    else __semoss_line
+                    for __semoss_line in text.split("\\n")
+                )
+                __semoss_real_stderr_write(__semoss_marked)
+            return len(text)
+
+        __semoss_sys.stderr.write = __semoss_stderr_write
+    except Exception:
+        pass
 except Exception:
     pass
 `;
@@ -375,8 +401,13 @@ else:
 	return `${matplotlibPreamble}${displayPreamble}${executionBlock}${suffix}`;
 };
 
+export interface NotebookLogSegment {
+	channel: "stdout" | "stderr";
+	text: string;
+}
+
 export const extractNotebookInlineDisplayOutputsFromLogs = (logs: string[]) => {
-	const cleanedLogLines: string[] = [];
+	const taggedLines: NotebookLogSegment[] = [];
 	const displayOutputs: JupyterCellOutput[] = [];
 	let collecting = false;
 	let currentMimeType = "image/png";
@@ -388,13 +419,17 @@ export const extractNotebookInlineDisplayOutputsFromLogs = (logs: string[]) => {
 		}
 
 		// Marker-delimited chunks are stitched back into a MIME bundle so the
-		// output lands in a standard display_data cell output. Binary/image
+		// output lands in a standard display_data cell output. Binary image
 		// mimetypes keep the base64 payload as-is (nbformat's own encoding for
-		// image data); text-based mimetypes are base64-decoded back to their
-		// real text/JSON value so they render the same as any other output.
+		// image data); image/svg+xml is XML text, not binary, and text-based
+		// mimetypes need base64-decoding back to their real text/JSON value
+		// so they render the same as any other output.
 		const base64Data = currentBase64Chunks.join("").replace(/\s+/g, "");
 		if (base64Data) {
-			if (currentMimeType.startsWith("image/")) {
+			if (
+				currentMimeType.startsWith("image/") &&
+				currentMimeType !== "image/svg+xml"
+			) {
 				displayOutputs.push({
 					output_type: "display_data",
 					data: {
@@ -465,34 +500,52 @@ export const extractNotebookInlineDisplayOutputsFromLogs = (logs: string[]) => {
 				continue;
 			}
 
-			cleanedLogLines.push(line);
+			// Lines written through sys.stderr are marked (see the
+			// buildNotebookExecutionSource preamble) since Playground's
+			// console capture otherwise merges stdout/stderr with no way to
+			// tell them apart on this side.
+			if (line.startsWith(STDERR_LINE_PREFIX)) {
+				taggedLines.push({
+					channel: "stderr",
+					text: line.slice(STDERR_LINE_PREFIX.length),
+				});
+			} else {
+				taggedLines.push({ channel: "stdout", text: line });
+			}
 		}
 	}
 
 	flush();
 
 	const hasCapturedOutputs = displayOutputs.length > 0;
-	const filteredLogLines = hasCapturedOutputs
-		? cleanedLogLines.filter((line) => {
-				const trimmed = line.trim();
-				if (/^Figure\(\d+x\d+\)\s*$/.test(trimmed)) {
-					return false;
-				}
+	const isNoiseLine = (text: string): boolean => {
+		if (!hasCapturedOutputs) return false;
+		const trimmed = text.trim();
+		if (/^Figure\(\d+x\d+\)\s*$/.test(trimmed)) {
+			return true;
+		}
+		return trimmed.includes(
+			"UserWarning: Starting a Matplotlib GUI outside of the main thread will likely fail.",
+		);
+	};
 
-				if (
-					trimmed.includes(
-						"UserWarning: Starting a Matplotlib GUI outside of the main thread will likely fail.",
-					)
-				) {
-					return false;
-				}
+	// Merge consecutive same-channel lines into one segment per channel run,
+	// preserving relative order, so stdout/stderr interleaving renders as
+	// separate stream outputs the same way a real kernel would emit them.
+	const logSegments: NotebookLogSegment[] = [];
+	for (const { channel, text } of taggedLines) {
+		if (isNoiseLine(text)) continue;
 
-				return true;
-			})
-		: cleanedLogLines;
+		const last = logSegments.at(-1);
+		if (last && last.channel === channel) {
+			last.text += `\n${text}`;
+		} else {
+			logSegments.push({ channel, text });
+		}
+	}
 
 	return {
-		cleanedLogs: filteredLogLines,
+		logSegments,
 		displayOutputs,
 	};
 };

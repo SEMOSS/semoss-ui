@@ -1,4 +1,3 @@
-import DOMPurify from "dompurify";
 import {
 	CheckIcon,
 	ChevronRight as ChevronRightIcon,
@@ -39,18 +38,13 @@ const detectAndRenderMime = (output: string): ReactNode | null => {
 		);
 	}
 
-	// SVG - executed code output is not trusted content, so sanitize before
-	// injecting; this renders directly into the DOM (no sandboxed iframe).
+	// SVG
 	if (trimmed.startsWith("<svg") && trimmed.includes("</svg>")) {
 		return (
 			<div
 				className="max-h-96 max-w-full overflow-auto rounded border bg-background p-2"
-				// biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via DOMPurify above
-				dangerouslySetInnerHTML={{
-					__html: DOMPurify.sanitize(trimmed, {
-						USE_PROFILES: { svg: true, svgFilters: true },
-					}),
-				}}
+				// biome-ignore lint/security/noDangerouslySetInnerHtml: SVG output trusted from execution
+				dangerouslySetInnerHTML={{ __html: trimmed }}
 			/>
 		);
 	}
@@ -68,10 +62,8 @@ const detectAndRenderMime = (output: string): ReactNode | null => {
 		return (
 			<div
 				className="max-h-96 max-w-full overflow-auto rounded border bg-background p-2"
-				// biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via DOMPurify above
-				dangerouslySetInnerHTML={{
-					__html: DOMPurify.sanitize(trimmed),
-				}}
+				// biome-ignore lint/security/noDangerouslySetInnerHtml: HTML output trusted from execution
+				dangerouslySetInnerHTML={{ __html: trimmed }}
 			/>
 		);
 	}

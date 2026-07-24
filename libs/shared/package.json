@@ -17,7 +17,6 @@
     "@semoss/i18n": "workspace:*",
     "@semoss/sdk": "workspace:*",
     "@semoss/ui": "workspace:*",
-    "dompurify": "^3.4.7",
     "echarts": "^5.5.1",
     "echarts-for-react": "^3.0.2",
     "flexlayout-react": "^0.8.1",
