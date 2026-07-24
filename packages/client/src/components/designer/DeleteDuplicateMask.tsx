@@ -53,7 +53,7 @@ const quickMenu = [
 ];
 
 const iconButtonClass =
-	"flex size-8 cursor-pointer items-center justify-center rounded bg-white text-[#757575] hover:bg-gray-50 focus:outline-none";
+	"flex size-8 cursor-pointer items-center justify-center rounded bg-popover text-muted-foreground hover:bg-accent focus:outline-none";
 
 interface DeleteDuplicateMaskProps {
 	/** Element to bind the mask to */
@@ -392,7 +392,7 @@ export const DeleteDuplicateMask = observer(
 			>
 				<TooltipProvider>
 					<div
-						className="flex rounded bg-white"
+						className="flex rounded border border-border bg-popover"
 						style={{
 							boxShadow:
 								"0px 5px 22px 0px rgba(0, 0, 0, 0.10), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)",

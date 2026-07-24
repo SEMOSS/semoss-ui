@@ -97,6 +97,7 @@ export const ENGINE_IMAGES: Record<string, EngineImageEntry[]> = {
 		{ name: "EMBEDDED_PROMPTGUARD_META", icon: "META_COLOR.svg" },
 		{ name: "EMBEDDED_REBUFF", icon: "BRAIN.png" },
 		{ name: "GLINER", icon: "HUGGINGFACE_COLOR.svg" },
+		{ name: "LOCAL_PYTHON", icon: "PYTHON.svg" },
 	],
 	VECTOR: [
 		{ name: "AWS_S3", icon: "AMAZON_S3.png" },

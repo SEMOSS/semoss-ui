@@ -43,14 +43,15 @@ const JSONTreeView = ({
 	 * @returns {React.ReactElement | null} - A JSX element representing the value, or null if the value is unknown.
 	 */
 	const renderValue = (value: unknown) => {
-		if (value === null)
-			return <span style={{ color: "#0471F0" }}>null</span>;
+		if (value === null) return <span className="text-primary">null</span>;
 		if (typeof value === "string")
-			return <span style={{ color: "#DA291C" }}>"{value}"</span>;
+			return (
+				<span className="text-destructive">&quot;{value}&quot;</span>
+			);
 		if (typeof value === "number")
-			return <span style={{ color: "#348700" }}>{value}</span>;
+			return <span className="text-emerald-600">{value}</span>;
 		if (typeof value === "boolean")
-			return <span style={{ color: "#0471F0" }}>{value.toString()}</span>;
+			return <span className="text-primary">{value.toString()}</span>;
 		return null;
 	};
 
@@ -78,9 +79,9 @@ const JSONTreeView = ({
 						)}
 					</div>
 				)}
-				<span style={{ color: "#0471F0" }}>{isArray ? "[" : "{"}</span>
+				<span className="text-primary">{isArray ? "[" : "{"}</span>
 				{!isExpanded && (
-					<span style={{ color: "#0471F0" }}>
+					<span className="text-primary">
 						{isEmpty
 							? isArray
 								? "]"
@@ -97,7 +98,7 @@ const JSONTreeView = ({
 						<div key={key} className="ms-4">
 							{!isArray && (
 								<>
-									<span style={{ color: "#0471F0" }}>
+									<span className="text-primary">
 										"{key}"
 									</span>
 									:{" "}
@@ -113,7 +114,7 @@ const JSONTreeView = ({
 				</div>
 			)}
 			{isExpanded && (
-				<span style={{ color: "#0471F0" }}>{isArray ? "]" : "}"}</span>
+				<span className="text-primary">{isArray ? "]" : "}"}</span>
 			)}
 		</div>
 	);
@@ -154,9 +155,11 @@ interface DetailFieldProps {
 //A single label/value pair in the detail grid.
 const DetailField = ({ label, value, mono = false }: DetailFieldProps) => (
 	<div className="flex min-w-0 flex-col gap-0.5">
-		<span className="text-gray-500 text-xs leading-[1.66]">{label}</span>
+		<span className="text-muted-foreground text-xs leading-[1.66]">
+			{label}
+		</span>
 		<span
-			className={`font-medium text-gray-900 text-sm leading-[1.43] ${
+			className={`font-medium text-foreground text-sm leading-[1.43] ${
 				mono ? "break-all font-mono" : ""
 			}`}
 		>
@@ -282,9 +285,9 @@ export const AuditLogsDetailDrawer = (props) => {
 	return (
 		<div
 			ref={drawerRef}
-			className="end-0 top-20 flex h-full min-w-[500px] flex-col bg-white"
+			className="end-0 top-20 flex h-full min-w-[500px] flex-col bg-card"
 		>
-			<div className="flex items-center justify-between gap-2 border-b bg-[#F5F9FE] py-2 ps-3 pe-12">
+			<div className="flex items-center justify-between gap-2 border-b bg-muted/60 py-2 ps-3 pe-12">
 				<span className="font-normal text-base text-primary leading-normal">
 					{t("detail.title")}
 				</span>
@@ -300,16 +303,16 @@ export const AuditLogsDetailDrawer = (props) => {
 			</div>
 
 			{logDetails && (
-				<div className="flex-1 overflow-y-auto bg-white">
+				<div className="flex-1 overflow-y-auto bg-card">
 					{/* Title + status badge */}
 					<div className="flex items-start justify-between gap-3 border-b px-4 py-3">
 						<div className="flex min-w-0 flex-col">
-							<span className="break-all font-semibold text-base text-gray-900 leading-snug">
+							<span className="break-all font-semibold text-base text-foreground leading-snug">
 								{logDetails.methodName ||
 									logDetails.engineName ||
 									t("common.event")}
 							</span>
-							<span className="text-gray-500 text-sm">
+							<span className="text-muted-foreground text-sm">
 								{logDetails.engineName}
 								{logDetails.engineType
 									? ` · ${logDetails.engineType}`
@@ -319,8 +322,8 @@ export const AuditLogsDetailDrawer = (props) => {
 						<span
 							className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 font-medium text-xs ${
 								isSuccessStatus(logDetails.status)
-									? "bg-green-50 text-green-700"
-									: "bg-red-50 text-red-700"
+									? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+									: "bg-destructive/10 text-destructive"
 							}`}
 						>
 							{isSuccessStatus(logDetails.status) ? (
@@ -404,7 +407,7 @@ export const AuditLogsDetailDrawer = (props) => {
 					{/* Request / Response payloads */}
 					<div className="px-4 py-3">
 						<div className="mb-1.5 flex items-center justify-between">
-							<span className="font-semibold text-gray-900">
+							<span className="font-semibold text-foreground">
 								{t("detail.fields.request")}
 							</span>
 							{showPromptExpandButton && (
@@ -424,22 +427,22 @@ export const AuditLogsDetailDrawer = (props) => {
 								</Button>
 							)}
 						</div>
-						<div className="mb-4 rounded-md border border-gray-300">
+						<div className="mb-4 rounded-md border border-border">
 							{promptData ? (
-								<div className="overflow-x-auto rounded p-2 font-[inter] text-gray-900 text-sm leading-[1.4]">
+								<div className="overflow-x-auto rounded p-2 font-[inter] text-foreground text-sm leading-[1.4]">
 									<JSONTreeView
 										data={promptData}
 										expandAll={promptExpandAll}
 									/>
 								</div>
 							) : (
-								<div className="whitespace-pre-wrap break-words p-2 text-gray-900 text-sm leading-relaxed">
+								<div className="whitespace-pre-wrap break-words p-2 text-foreground text-sm leading-relaxed">
 									{logDetails.request}
 								</div>
 							)}
 						</div>
 						<div className="mb-1.5 flex items-center justify-between">
-							<span className="font-semibold text-gray-900">
+							<span className="font-semibold text-foreground">
 								{t("detail.fields.response")}
 							</span>
 							{showResponseExpandButton && (
@@ -459,16 +462,16 @@ export const AuditLogsDetailDrawer = (props) => {
 								</Button>
 							)}
 						</div>
-						<div className="rounded-md border border-gray-300 bg-[#FAFAFA]">
+						<div className="rounded-md border border-border bg-muted/30">
 							{responseData ? (
-								<div className="overflow-x-auto rounded p-2 font-[inter] text-gray-900 text-sm leading-[1.4]">
+								<div className="overflow-x-auto rounded p-2 font-[inter] text-foreground text-sm leading-[1.4]">
 									<JSONTreeView
 										data={responseData}
 										expandAll={responseExpandAll}
 									/>
 								</div>
 							) : (
-								<div className="whitespace-pre-wrap break-words p-2 text-gray-900 text-sm leading-relaxed">
+								<div className="whitespace-pre-wrap break-words p-2 text-foreground text-sm leading-relaxed">
 									{logDetails.response}
 								</div>
 							)}
