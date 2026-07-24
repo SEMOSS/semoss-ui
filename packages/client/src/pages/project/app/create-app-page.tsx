@@ -187,7 +187,11 @@ export const CreateAppPage = () => {
 				</P>
 				<div className="flex w-full flex-col gap-4">
 					<LandingHeader
-						isAdmin={configStore.store.user.admin}
+						isAdmin={
+							configStore.store.user.admin &&
+							window.localStorage.getItem("semoss.adminMode") ===
+								"true"
+						}
 						onCreate={(type) => {
 							if (type === "blocks") {
 								setNewAppOptions({

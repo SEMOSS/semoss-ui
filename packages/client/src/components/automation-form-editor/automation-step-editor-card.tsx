@@ -1,13 +1,6 @@
-import {
-	ChevronDown,
-	ChevronRight,
-	ClipboardCopy,
-	Loader2,
-	Play,
-	Trash2,
-} from "lucide-react";
+import { ChevronDown, ChevronRight, Loader2, Play, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Button, Field, FieldLabel, Input, toast } from "@semoss/ui/next";
+import { Button, Field, FieldLabel, Input } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import type {
 	AutomationNode,
@@ -30,6 +23,7 @@ import {
 	STEP_STATUS_BORDER,
 } from "./automation-editor-utils";
 import { StatusIcon } from "./automation-status";
+import { OutputPreview } from "./output-preview";
 import { StepForm } from "./step-form";
 
 export interface AutomationStepEditorCardProps {
@@ -76,6 +70,7 @@ export function AutomationStepEditorCard({
 	const { monolithStore } = useRootStore();
 	const [runningStepTest, setRunningStepTest] = useState(false);
 	const [runOutput, setRunOutput] = useState<string | null>(null);
+	const [runOutputExpanded, setRunOutputExpanded] = useState(false);
 	const [mockValues, setMockValues] = useState<Record<string, string>>({});
 	const meta = getDisplayMeta(step.type);
 	const Icon = meta.icon;
@@ -419,24 +414,17 @@ export function AutomationStepEditorCard({
 								)}
 
 								{runOutput !== null && (
-									<div className="relative mt-3">
-										<button
-											type="button"
-											className="absolute top-2 right-2 rounded-md border bg-background p-1 text-muted-foreground hover:text-foreground"
-											onClick={() => {
-												navigator.clipboard.writeText(
-													runOutput,
-												);
-												toast.success(
-													"Copied to clipboard",
-												);
-											}}
-										>
-											<ClipboardCopy className="h-3.5 w-3.5" />
-										</button>
-										<pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all rounded-lg border bg-muted/40 p-3 pr-10 font-mono text-[11px]">
-											{runOutput}
-										</pre>
+									<div className="mt-3">
+										<OutputPreview
+											value={runOutput}
+											expanded={runOutputExpanded}
+											onToggle={() =>
+												setRunOutputExpanded(
+													(prev) => !prev,
+												)
+											}
+											nodeType={step.type}
+										/>
 									</div>
 								)}
 							</div>

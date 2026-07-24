@@ -286,6 +286,39 @@ export function extractVarRefs(pixel: string): string[] {
  * Apply an output transform to a raw pixel result string.
  * Handles FORMATTED_DATA_SET envelope (SqlQuery / vector search).
  */
+// Normalises DB output into {headers, rows} regardless of the three formats the
+// backend may return:
+//   1. Rows-as-objects:  [{col: val, ...}, ...]
+//   2. SEMOSS wrapped:   {data: {headers, values}}
+//   3. SEMOSS direct:    {headers, values}
+function extractDataset(
+	parsed: unknown,
+): { headers: string[]; rows: unknown[][] } | null {
+	if (
+		Array.isArray(parsed) &&
+		parsed.length > 0 &&
+		typeof parsed[0] === "object" &&
+		!Array.isArray(parsed[0])
+	) {
+		const keys = Object.keys(parsed[0] as Record<string, unknown>);
+		return {
+			headers: keys,
+			rows: (parsed as Record<string, unknown>[]).map((r) =>
+				keys.map((k) => r[k]),
+			),
+		};
+	}
+	const inner = (parsed as Record<string, unknown>)?.data ?? parsed;
+	if (inner && typeof inner === "object" && !Array.isArray(inner)) {
+		const h = (inner as Record<string, unknown>).headers;
+		const v = (inner as Record<string, unknown>).values;
+		if (Array.isArray(h) && Array.isArray(v)) {
+			return { headers: h as string[], rows: v as unknown[][] };
+		}
+	}
+	return null;
+}
+
 export function applyOutputTransform(
 	rawStr: string,
 	transform?: OutputTransform,
@@ -299,36 +332,35 @@ export function applyOutputTransform(
 		return rawStr;
 	}
 
-	const ds = parsed as {
-		data?: { headers?: string[]; values?: unknown[][] };
-	};
-	const headers: string[] | undefined = ds?.data?.headers;
-	const values: unknown[][] | undefined = ds?.data?.values;
-
 	switch (transform.mode) {
 		case "rows-as-objects": {
-			if (!headers || !values) return rawStr;
-			const rows = values.map((row) =>
-				Object.fromEntries(headers.map((h, i) => [h, row[i]])),
+			const ds = extractDataset(parsed);
+			if (!ds) return rawStr;
+			const rows = ds.rows.map((row) =>
+				Object.fromEntries(ds.headers.map((h, i) => [h, row[i]])),
 			);
 			return JSON.stringify(rows, null, 2);
 		}
 		case "first-row": {
-			if (!headers || !values) return rawStr;
-			if (values.length === 0) return "{}";
+			const ds = extractDataset(parsed);
+			if (!ds) return rawStr;
+			if (ds.rows.length === 0) return "{}";
 			return JSON.stringify(
-				Object.fromEntries(headers.map((h, i) => [h, values[0][i]])),
+				Object.fromEntries(
+					ds.headers.map((h, i) => [h, ds.rows[0][i]]),
+				),
 				null,
 				2,
 			);
 		}
 		case "column": {
-			if (!headers || !values) return rawStr;
-			const col = transform.column ?? headers[0] ?? "";
-			const idx = headers.indexOf(col);
+			const ds = extractDataset(parsed);
+			if (!ds) return rawStr;
+			const col = transform.column ?? ds.headers[0] ?? "";
+			const idx = ds.headers.indexOf(col);
 			if (idx === -1) return "[]";
 			return JSON.stringify(
-				values.map((row) => row[idx]),
+				ds.rows.map((row) => row[idx]),
 				null,
 				2,
 			);

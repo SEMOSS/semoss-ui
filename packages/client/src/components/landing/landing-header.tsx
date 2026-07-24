@@ -72,7 +72,9 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
 	const CARDS = BASE_CARDS.filter((card) => !card.adminOnly || isAdmin);
 
 	return (
-		<div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+		<div
+			className={`grid w-full grid-cols-1 gap-4 md:grid-cols-2 ${CARDS.length === 3 ? "lg:grid-cols-3" : "lg:grid-cols-4"}`}
+		>
 			{CARDS.map((card) => (
 				<Card
 					key={card.title}

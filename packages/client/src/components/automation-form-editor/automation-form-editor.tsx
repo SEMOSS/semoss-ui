@@ -26,6 +26,7 @@ import type {
 	StepRunStatus,
 } from "@/pages/automation/automation.types";
 import { NODE_TYPE_META } from "@/pages/automation/automation.types";
+import { applyOutputTransform } from "../automation-workspace/automation-utils";
 import { AutomationConfigTab } from "./automation-config-tab";
 import type { AutomationRunData } from "./automation-editor-utils";
 import {
@@ -320,7 +321,10 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 					newDurations[step.id] = nodeResult.DURATION_MS;
 				}
 				if (nodeResult.OUTPUT_PREVIEW && step.outputVar) {
-					newOutputs[step.outputVar] = nodeResult.OUTPUT_PREVIEW;
+					newOutputs[step.outputVar] = applyOutputTransform(
+						nodeResult.OUTPUT_PREVIEW,
+						step.outputTransform,
+					);
 				}
 			}
 
@@ -446,12 +450,14 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 
 	const upstreamVarsFor = useCallback(
 		(index: number) => {
-			return steps
+			const stepVars = steps
 				.slice(0, index)
 				.map((step) => step.outputVar)
 				.filter((v) => v.length > 0);
+			const configVars = config.map((entry) => `config.${entry.key}`);
+			return [...stepVars, ...configVars];
 		},
-		[steps],
+		[steps, config],
 	);
 
 	const toggleResultNode = useCallback((nodeId: string) => {
@@ -949,6 +955,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 										automation's SMSS. Reference them in
 										node fields as{" "}
 										<code className="rounded bg-muted px-1 font-mono">
+											{/* biome-ignore lint/suspicious/noTemplateCurlyInString: intentional literal display */}
 											{"${config.KEY}"}
 										</code>
 										.
