@@ -195,6 +195,11 @@ export const CodeWorkspace: React.FC = observer(() => {
 					tabs={[
 						{ name: "Overview", path: "" },
 						{
+							name: "MCP",
+							path: "mcp-usage",
+							restrict: ["OWNER", "EDIT", "READ_ONLY"],
+						},
+						{
 							name: "Commits",
 							path: "commits",
 							restrict: ["OWNER", "EDIT"],
