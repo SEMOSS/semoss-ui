@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import { PlayIcon } from "lucide-react";
 import { marked } from "marked";
 import { Button } from "@semoss/ui/next";
@@ -42,8 +43,14 @@ export const IpynbCell: React.FC<IpynbCellProps> = ({
 				</div>
 				<div
 					className="prose prose-sm max-w-none"
-					// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted notebook markdown content
-					dangerouslySetInnerHTML={{ __html: marked.parse(source) }}
+					// .ipynb files can come from untrusted sources (shared/uploaded), and
+					// markdown may embed raw HTML/script; sanitize before injecting.
+					// biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via DOMPurify above
+					dangerouslySetInnerHTML={{
+						__html: DOMPurify.sanitize(
+							marked.parse(source) as string,
+						),
+					}}
 				/>
 			</div>
 		);

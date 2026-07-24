@@ -229,7 +229,12 @@ export const CodePreviewBlock = ({
 				return;
 			}
 
-			const existingOpenNotebookPath = room.openNotebookFilePath;
+			const existingOpenNotebookPath =
+				// Prefer the notebook tab the user is actually focused on; only
+				// fall back to "first open notebook found" when nothing is active
+				// so this doesn't silently target the wrong file with multiple
+				// notebook tabs open.
+				room.activeNotebookFilePath ?? room.openNotebookFilePath;
 
 			// Priority 2: append to currently open notebook tab if available.
 			if (existingOpenNotebookPath) {

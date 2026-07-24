@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import { marked } from "marked";
 import { useEffect, useRef, useState } from "react";
 import type { JupyterCellOutput } from "../types";
@@ -51,6 +52,66 @@ interface PlotlyFigure {
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
 	typeof value === "object" && value !== null && !Array.isArray(value);
+
+// Minimal collapsible tree for application/json output. Uses native
+// <details>/<summary> instead of a charting-style library so large JSON
+// payloads (common from pandas/dict dumps) don't render as an unreadable
+// wall of text and don't require a new dependency.
+const JsonTreeValue: React.FC<{ value: unknown; label?: string }> = ({
+	value,
+	label,
+}) => {
+	if (Array.isArray(value)) {
+		return (
+			<details className="ml-2">
+				<summary className="cursor-pointer select-none text-foreground">
+					{label !== undefined ? `${label}: ` : ""}Array(
+					{value.length})
+				</summary>
+				<div className="ml-3 border-border border-l pl-2">
+					{value.map((item, index) => (
+						<JsonTreeValue
+							// biome-ignore lint/suspicious/noArrayIndexKey: array order is stable for a given output
+							key={index}
+							value={item}
+							label={String(index)}
+						/>
+					))}
+				</div>
+			</details>
+		);
+	}
+
+	if (isRecord(value)) {
+		const entries = Object.entries(value);
+		return (
+			<details className="ml-2" open={label === undefined}>
+				<summary className="cursor-pointer select-none text-foreground">
+					{label !== undefined ? `${label}: ` : ""}Object(
+					{entries.length})
+				</summary>
+				<div className="ml-3 border-border border-l pl-2">
+					{entries.map(([key, entryValue]) => (
+						<JsonTreeValue
+							key={key}
+							value={entryValue}
+							label={key}
+						/>
+					))}
+				</div>
+			</details>
+		);
+	}
+
+	return (
+		<div className="ml-2 text-foreground">
+			{label !== undefined ? `${label}: ` : ""}
+			<span className="text-muted-foreground">
+				{JSON.stringify(value)}
+			</span>
+		</div>
+	);
+};
 
 const parsePlotlyFigure = (value: unknown): PlotlyFigure | null => {
 	if (!isRecord(value)) {
@@ -249,8 +310,28 @@ export const IpynbOutput: React.FC<IpynbOutputProps> = ({ output }) => {
 		);
 	}
 
-	const data = output.data;
+	const content = renderMimeBundleOutput(output.data);
 
+	// execute_result is the cell's "return value" (as opposed to display_data,
+	// which is a side-effect print/plot); Jupyter labels it Out[n] using its
+	// own execution_count, distinct from the cell's In[n] count.
+	if (output.output_type === "execute_result") {
+		return (
+			<div className="flex items-start gap-2">
+				<div className="shrink-0 pt-1 font-mono text-muted-foreground text-xs">
+					Out[{output.execution_count ?? " "}]:
+				</div>
+				<div className="min-w-0 flex-1">{content}</div>
+			</div>
+		);
+	}
+
+	return content;
+};
+
+const renderMimeBundleOutput = (
+	data: Record<string, unknown>,
+): React.ReactNode => {
 	const png = getMimeString(data, "image/png");
 	if (png) {
 		return (
@@ -300,8 +381,14 @@ export const IpynbOutput: React.FC<IpynbOutputProps> = ({ output }) => {
 		return (
 			<div
 				className="overflow-auto rounded border bg-background p-2"
-				// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted notebook content
-				dangerouslySetInnerHTML={{ __html: svg }}
+				// SVG output can originate from an untrusted/malformed .ipynb file and
+				// may embed <script>/event-handler payloads; sanitize before injecting.
+				// biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via DOMPurify above
+				dangerouslySetInnerHTML={{
+					__html: DOMPurify.sanitize(svg, {
+						USE_PROFILES: { svg: true, svgFilters: true },
+					}),
+				}}
 			/>
 		);
 	}
@@ -323,8 +410,13 @@ export const IpynbOutput: React.FC<IpynbOutputProps> = ({ output }) => {
 		return (
 			<div
 				className="prose prose-sm max-w-none overflow-auto rounded border bg-background p-3"
-				// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted notebook markdown output
-				dangerouslySetInnerHTML={{ __html: marked.parse(markdown) }}
+				// Same untrusted-content concern as SVG above: sanitize rendered markdown.
+				// biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via DOMPurify above
+				dangerouslySetInnerHTML={{
+					__html: DOMPurify.sanitize(
+						marked.parse(markdown) as string,
+					),
+				}}
 			/>
 		);
 	}
@@ -344,6 +436,9 @@ export const IpynbOutput: React.FC<IpynbOutputProps> = ({ output }) => {
 			<iframe
 				title="Notebook PDF output"
 				className="min-h-72 w-full rounded border bg-background"
+				// Defense-in-depth: block script/plugin execution even though PDFs
+				// are rendered by the browser's built-in viewer, not this document.
+				sandbox=""
 				src={`data:application/pdf;base64,${pdf.replace(/\s+/g, "")}`}
 			/>
 		);
@@ -398,14 +493,11 @@ export const IpynbOutput: React.FC<IpynbOutputProps> = ({ output }) => {
 	}
 
 	const jsonValue = data["application/json"];
-	const json =
-		jsonValue === undefined ? null : JSON.stringify(jsonValue, null, 2);
-
-	if (json) {
+	if (jsonValue !== undefined) {
 		return (
-			<pre className="whitespace-pre-wrap rounded border p-3 text-foreground text-xs">
-				{json}
-			</pre>
+			<div className="overflow-auto rounded border bg-background p-3 font-mono text-xs">
+				<JsonTreeValue value={jsonValue} />
+			</div>
 		);
 	}
 

@@ -75,6 +75,9 @@ export const IpynbViewer: React.FC<IpynbViewerProps> = ({
 			setSelectedRowNumber(null);
 			onRowSelectionChange?.(null);
 		} catch (error) {
+			// Surface load failures inline instead of throwing, so a bad/missing
+			// file leaves the toolbar (Refresh/Download) usable rather than
+			// crashing the whole viewer.
 			setIoError(
 				error instanceof Error
 					? error.message
@@ -134,6 +137,8 @@ export const IpynbViewer: React.FC<IpynbViewerProps> = ({
 
 			setIsModified(false);
 		} catch (error) {
+			// Same rationale as refresh(): keep the editor content and toolbar
+			// intact on failure so the user doesn't lose in-progress edits.
 			setIoError(
 				error instanceof Error
 					? error.message
@@ -197,6 +202,9 @@ export const IpynbViewer: React.FC<IpynbViewerProps> = ({
 			setRawContent(JSON.stringify(nextNotebook, null, 2));
 			setIsModified(true);
 		} catch (error) {
+			// A single cell's execution error (e.g. a network/pixel failure, not a
+			// cell-level Python error - those come back as a normal error output)
+			// is reported via the banner rather than left as a stuck spinner.
 			setIoError(
 				error instanceof Error
 					? error.message
@@ -250,6 +258,11 @@ export const IpynbViewer: React.FC<IpynbViewerProps> = ({
 			setRawContent(JSON.stringify(workingNotebook, null, 2));
 			setIsModified(true);
 		} catch (error) {
+			// Persist whatever cells finished executing before the failure -
+			// workingNotebook already reflects those completed runs, so a mid-run
+			// error only stops the remaining cells instead of discarding progress.
+			setRawContent(JSON.stringify(workingNotebook, null, 2));
+			setIsModified(true);
 			setIoError(
 				error instanceof Error
 					? error.message
@@ -357,14 +370,25 @@ export const IpynbViewer: React.FC<IpynbViewerProps> = ({
 
 				{tab === "preview" && (
 					<div className="flex flex-col gap-3">
-						{parsed.error && (
+						{isLoading && (
+							<div className="rounded border border-border p-6 text-center text-muted-foreground text-sm">
+								Loading notebook...
+							</div>
+						)}
+
+						{/* Suppress the parse-error/empty-state banners while a load is
+						    still in flight - rawContent starts empty on mount, which
+						    would otherwise flash "Notebook file is empty" before the
+						    real content arrives. */}
+						{!isLoading && parsed.error && (
 							<div className="flex items-start gap-2 rounded border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm">
 								<TriangleAlertIcon className="mt-0.5 size-4" />
 								<span>{parsed.error}</span>
 							</div>
 						)}
 
-						{!parsed.error &&
+						{!isLoading &&
+							!parsed.error &&
 							parsed.notebook?.cells.map((cell, cellIndex) => (
 								<IpynbCell
 									key={getCellKey(cell, cellIndex)}
@@ -388,7 +412,8 @@ export const IpynbViewer: React.FC<IpynbViewerProps> = ({
 								/>
 							))}
 
-						{!parsed.error &&
+						{!isLoading &&
+							!parsed.error &&
 							parsed.notebook &&
 							parsed.notebook.cells.length === 0 && (
 								<div className="rounded border border-border border-dashed p-6 text-center text-muted-foreground text-sm">
@@ -396,11 +421,9 @@ export const IpynbViewer: React.FC<IpynbViewerProps> = ({
 								</div>
 							)}
 
-						{!parsed.error && !parsed.notebook && (
+						{!isLoading && !parsed.error && !parsed.notebook && (
 							<div className="rounded border border-border p-6 text-center text-muted-foreground text-sm">
-								{isLoading
-									? "Loading notebook..."
-									: "No notebook content"}
+								No notebook content
 							</div>
 						)}
 					</div>

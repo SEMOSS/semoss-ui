@@ -63,7 +63,7 @@ const getCellLanguage = (
 		return metadataLanguage.trim().toLowerCase();
 	}
 
-	return notebookLanguage && notebookLanguage.trim()
+	return notebookLanguage?.trim()
 		? notebookLanguage.trim().toLowerCase()
 		: "python";
 };
@@ -276,6 +276,50 @@ const getRecordString = (
 	return null;
 };
 
+const BASE64_CHARS =
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+// Encodes raw bytes to base64 in both browser (btoa) and Node/test runners
+// (no global btoa) so IPython-style rich-repr bytes can be embedded as
+// nbformat-compatible base64 strings regardless of runtime. Encodes manually
+// instead of depending on Buffer/@types/node so this stays browser-safe.
+const uint8ArrayToBase64 = (bytes: Uint8Array): string => {
+	if (typeof btoa === "function") {
+		let binary = "";
+		for (let i = 0; i < bytes.length; i += 1) {
+			binary += String.fromCharCode(bytes[i]);
+		}
+		return btoa(binary);
+	}
+
+	let result = "";
+	for (let i = 0; i < bytes.length; i += 3) {
+		const b0 = bytes[i];
+		const b1 = bytes[i + 1];
+		const b2 = bytes[i + 2];
+		const triple = (b0 << 16) | ((b1 ?? 0) << 8) | (b2 ?? 0);
+		result += BASE64_CHARS[(triple >> 18) & 0x3f];
+		result += BASE64_CHARS[(triple >> 12) & 0x3f];
+		result += b1 !== undefined ? BASE64_CHARS[(triple >> 6) & 0x3f] : "=";
+		result += b2 !== undefined ? BASE64_CHARS[triple & 0x3f] : "=";
+	}
+	return result;
+};
+
+// A rich-repr mimebundle may carry raw bytes (e.g. a PNG captured before it
+// crosses the Pixel/JSON boundary); normalize those to base64 strings so the
+// resulting data dict matches what nbformat/JSON.stringify expect.
+const normalizeMimeBundleBytes = (
+	bundle: Record<string, unknown>,
+): Record<string, unknown> => {
+	const normalized: Record<string, unknown> = {};
+	for (const [mimeType, value] of Object.entries(bundle)) {
+		normalized[mimeType] =
+			value instanceof Uint8Array ? uint8ArrayToBase64(value) : value;
+	}
+	return normalized;
+};
+
 const toImageMimeBundle = (
 	source: string,
 	mimeType?: string,
@@ -313,7 +357,7 @@ const toImageMimeBundle = (
 		};
 	}
 
-	if (mimeType && mimeType.startsWith("image/")) {
+	if (mimeType?.startsWith("image/")) {
 		return {
 			[mimeType]: source.replace(/\s+/g, ""),
 			"text/plain": source,
@@ -570,7 +614,7 @@ const toMimeBundleFromOutput = (
 		const trimmed = output.trim();
 
 		const markdownImageMatch = trimmed.match(/^!\[[^\]]*\]\(([^)]+)\)$/);
-		if (markdownImageMatch && markdownImageMatch[1]) {
+		if (markdownImageMatch?.[1]) {
 			return toImageMimeBundle(markdownImageMatch[1]);
 		}
 
@@ -684,6 +728,36 @@ const toMimeBundleFromOutput = (
 			data?: unknown;
 		};
 		const asRecord = output as Record<string, unknown>;
+
+		// Support IPython-style rich-repr objects (_repr_mimebundle_/_repr_png_)
+		// or a plain `mimebundle` bag, in case an execution path hands us a
+		// live/pre-shaped bundle instead of a raw string or JSON payload.
+		if (typeof asRecord._repr_mimebundle_ === "function") {
+			const bundle = (asRecord._repr_mimebundle_ as () => unknown)();
+			if (isRecordObject(bundle)) {
+				return normalizeMimeBundleBytes(bundle);
+			}
+		}
+
+		if (isRecordObject(asRecord.mimebundle)) {
+			return normalizeMimeBundleBytes(
+				asRecord.mimebundle as Record<string, unknown>,
+			);
+		}
+
+		if (typeof asRecord._repr_png_ === "function") {
+			const png = (asRecord._repr_png_ as () => unknown)();
+			if (png instanceof Uint8Array) {
+				return {
+					"image/png": uint8ArrayToBase64(png),
+					"text/plain": "",
+				};
+			}
+			if (typeof png === "string" && png.length > 0) {
+				return { "image/png": png, "text/plain": "" };
+			}
+		}
+
 		const maybeImageData = getRecordString(asRecord, [
 			"base64",
 			"base64Data",
@@ -768,6 +842,15 @@ export const runtimeOutputToJupyterOutputs = (
 	}
 
 	const data = toMimeBundleFromOutput(output, options?.operationType);
+
+	// Guarantee a text/plain fallback regardless of which branch of
+	// toMimeBundleFromOutput produced `data` (e.g. a pre-shaped `{ data }`
+	// envelope may omit it) so every renderer always has something to fall
+	// back to instead of an empty/unrenderable output.
+	if (typeof data["text/plain"] !== "string") {
+		data["text/plain"] = toSafeJsonString(output);
+	}
+
 	return [
 		{
 			output_type: "display_data",
@@ -840,6 +923,24 @@ const getNotebookCellConfig = (lang: string): NotebookCellConfig => {
 			languageInfoName: "r",
 			languageInfoMimetype: "text/x-rsrc",
 			languageInfoFileExtension: ".r",
+		};
+	}
+
+	if (normalized === "pixel") {
+		// Pixel isn't a real Jupyter kernel, but it must stay distinguishable
+		// from python: buildExecutePixel/buildNotebookExecutionSource key off
+		// this exact language string when a saved pixel cell is later re-run
+		// from the notebook viewer, so falling through to the python default
+		// below would silently try to execute raw Pixel syntax as Python.
+		return {
+			cellType: "code",
+			language: "pixel",
+			kernelDisplayName: "Pixel",
+			kernelLanguage: "pixel",
+			kernelName: "pixel",
+			languageInfoName: "pixel",
+			languageInfoMimetype: "text/x-pixel",
+			languageInfoFileExtension: ".pixel",
 		};
 	}
 
@@ -1142,6 +1243,9 @@ export const buildExecutePixel = (
 ): string | null => {
 	if (!code.trim()) return null;
 
+	// Only languages with a server-side Pixel reactor can be executed;
+	// Python/R route through their reactor, raw "pixel" is sent as-is, and
+	// anything else returns null so callers can surface an unsupported-language error.
 	switch ((lang ?? "").toLowerCase()) {
 		case "py":
 		case "python":
@@ -1166,6 +1270,10 @@ export const unwrapPixelOutput = (last: {
 		| Array<Record<string, unknown>>
 		| unknown;
 
+	// Each operationType stores its user-facing payload in a different slot of
+	// the Pixel response envelope; pick the right slot so notebook output
+	// mapping renders the actual value instead of the wrapper. Mirrors the
+	// terminal REPL's unwrap (terminal-console.tsx / cell.state.ts).
 	if (op.indexOf("CUSTOM_DATA_STRUCTURE") > -1) return out;
 	if (op.indexOf("FORMATTED_DATA_SET") > -1)
 		return (out as Array<unknown>)?.[0];
@@ -1183,9 +1291,19 @@ export const unwrapPixelOutput = (last: {
 export const parseNotebookJson = (
 	raw: string,
 ): { notebook: JupyterNotebook | null; error: string | null } => {
+	if (!raw || !raw.trim()) {
+		// An empty response body (new/not-yet-written file, or a transient
+		// load race) is a distinct, expected case - report it plainly instead
+		// of surfacing a raw "Unexpected end of JSON input" parser exception.
+		return {
+			notebook: null,
+			error: "Notebook file is empty",
+		};
+	}
+
 	try {
 		const parsed = JSON.parse(raw) as unknown;
-		if (!isRecordObject(parsed) || parsed.nbformat !== 4) {
+		if (!isRecordObject(parsed)) {
 			return {
 				notebook: null,
 				error: "Invalid .ipynb content",
@@ -1199,6 +1317,10 @@ export const parseNotebookJson = (
 			};
 		}
 
+		// A missing/unexpected nbformat (e.g. an older export, or a hand-edited
+		// file that omits the field) is still recoverable as long as `cells` is
+		// a real array - we coerce nbformat to 4 below instead of rejecting the
+		// whole file. Only reject payloads that aren't shaped like a notebook.
 		const metadata = isRecordObject(parsed.metadata) ? parsed.metadata : {};
 		const notebookLanguage = getNotebookLanguageFromMetadata(metadata);
 		const cells = parsed.cells.map((cell) =>

@@ -79,6 +79,9 @@ importers:
       '@semoss/ui':
         specifier: workspace:*
         version: link:../ui
+      dompurify:
+        specifier: ^3.4.7
+        version: 3.4.7
       lucide-react:
         specifier: ^0.545.0
         version: 0.545.0(react@18.3.1)
@@ -86,7 +89,7 @@ importers:
         specifier: ^16.2.1
         version: 16.4.2
       plotly.js-dist-min:
-        specifier: ^3.1.2
+        specifier: ^3.7.0
         version: 3.7.0
       react:
         specifier: 18.3.1
@@ -95,7 +98,7 @@ importers:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
       vega-embed:
-        specifier: ^7.0.2
+        specifier: ^7.1.0
         version: 7.1.0(vega-lite@6.4.1(vega@6.2.0))(vega@6.2.0)
     devDependencies:
       '@types/react':
@@ -294,6 +297,9 @@ importers:
       '@semoss/ui':
         specifier: workspace:*
         version: link:../ui
+      dompurify:
+        specifier: ^3.4.7
+        version: 3.4.7
       echarts:
         specifier: ^5.5.1
         version: 5.6.0
@@ -17935,7 +17941,7 @@ snapshots:
     dependencies:
       fast-json-patch: 3.1.1
       json-stringify-pretty-compact: 2.0.0
-      semver: 7.7.3
+      semver: 7.8.4
       vega: 6.2.0
       vega-lite: 6.4.1(vega@6.2.0)
       vega-schema-url-parser: 1.1.0

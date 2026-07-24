@@ -9,13 +9,12 @@
     "dependencies": {
         "@semoss/sdk": "workspace:*",
         "@semoss/ui": "workspace:*",
+        "dompurify": "^3.4.7",
         "lucide-react": "^0.545.0",
         "marked": "^16.2.1",
         "plotly.js-dist-min": "^3.7.0",
         "react": "18.3.1",
-        "vega": "^6.2.0",
-        "vega-embed": "^7.1.0",
-        "vega-lite": "^6.2.0"
+        "vega-embed": "^7.1.0"
     },
     "peerDependencies": {
         "react-dom": "18.3.1"
