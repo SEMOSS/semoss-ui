@@ -134,7 +134,7 @@ interface ConfigStoreInterface {
 		adminOnlyProjectSetPublic: boolean;
 		adminOnlyStorageAdd: boolean;
 		adminOnlyStorageAddAccess: boolean;
-		adminOnlyStorageDelete: false;
+		adminOnlyStorageDelete: boolean;
 		adminOnlyStorageSetDiscoverable: boolean;
 		adminOnlyStorageSetPublic: boolean;
 		adminOnlyVectorAdd: boolean;
@@ -154,7 +154,7 @@ interface ConfigStoreInterface {
 }
 
 /**
- * Store that manages instances of the insights and handles applicaiton level querying
+ * Store that manages instances of the insights and handles application level querying
  */
 export class ConfigStore {
 	private _root: RootStore;
@@ -228,8 +228,6 @@ export class ConfigStore {
 			notificationEnabled: false,
 		},
 	};
-	private _generalReactors: Array<string> = [];
-
 	constructor(root: RootStore) {
 		// register the root
 		this._root = root;
@@ -246,13 +244,6 @@ export class ConfigStore {
 	 */
 	get store(): ConfigStoreInterface {
 		return this._store;
-	}
-
-	/**
-	 * Get the list of reactors
-	 */
-	get generalReactors() {
-		return this._generalReactors;
 	}
 
 	/**
@@ -391,9 +382,6 @@ export class ConfigStore {
 
 		// get the user information
 		await this.getUser();
-
-		//set the reactors
-		await this.setGeneralReactors();
 	}
 
 	/**
@@ -564,12 +552,9 @@ export class ConfigStore {
 	async login(username: string, password: string): Promise<boolean> {
 		const { monolithStore } = this._root;
 
-		// try to login
 		await monolithStore.login(username, password);
 
-		// set the response data
 		runInAction(() => {
-			// clear the info and reset the user
 			this._store.user = {
 				loggedIn: true,
 				admin: false,
@@ -580,22 +565,17 @@ export class ConfigStore {
 			};
 		});
 
-		// get the user information
 		await this.getUser();
 
-		// success
 		return true;
 	}
 
 	async loginLDAP(username: string, password: string): Promise<boolean> {
 		const { monolithStore } = this._root;
 
-		// try to login
 		await monolithStore.loginLDAP(username, password);
 
-		// set the response data
 		runInAction(() => {
-			// clear the info and reset the user
 			this._store.user = {
 				loggedIn: true,
 				admin: false,
@@ -606,10 +586,8 @@ export class ConfigStore {
 			};
 		});
 
-		// get the user information
 		await this.getUser();
 
-		// success
 		return true;
 	}
 
@@ -623,15 +601,13 @@ export class ConfigStore {
 	async loginOTP(username: string, password: string): Promise<boolean> {
 		const { monolithStore } = this._root;
 
-		// login that preceeds sending of OTP
 		const response = await monolithStore.loginOTP(username, password);
 
-		// we need to change the password, navigate to the reset screen
+		// caller should redirect to password-reset screen
 		if (response === "change-password") {
 			return false;
 		}
 
-		// success
 		return true;
 	}
 
@@ -644,13 +620,9 @@ export class ConfigStore {
 	async confirmOTP(otp: string): Promise<boolean> {
 		const { monolithStore } = this._root;
 
-		// try to login
 		await monolithStore.confirmOTP(otp);
 
-		// if status is pending OTP
-		// set the response data
 		runInAction(() => {
-			// clear the info and reset the user
 			this._store.user = {
 				loggedIn: true,
 				admin: false,
@@ -661,10 +633,8 @@ export class ConfigStore {
 			};
 		});
 
-		// get the user information
 		await this.getUser();
 
-		// success
 		return true;
 	}
 
@@ -684,9 +654,6 @@ export class ConfigStore {
 		phoneextension: string,
 		countrycode: string,
 	): Promise<boolean> {
-		// const { monolithStore } = this._root;
-
-		// login that preceeds sending of OTP
 		await registerUser(
 			name,
 			username,
@@ -698,7 +665,6 @@ export class ConfigStore {
 		);
 
 		runInAction(() => {
-			// clear the info and reset the user
 			this._store.user = {
 				loggedIn: true,
 				admin: false,
@@ -709,7 +675,6 @@ export class ConfigStore {
 			};
 		});
 
-		// success
 		return true;
 	}
 
@@ -722,12 +687,9 @@ export class ConfigStore {
 	async oauth(provider: string): Promise<boolean> {
 		const { monolithStore } = this._root;
 
-		// try to login
 		await monolithStore.oauth(provider);
 
-		// set the response data
 		runInAction(() => {
-			// clear the info and reset the user
 			this._store.user = {
 				loggedIn: true,
 				admin: false,
@@ -738,10 +700,8 @@ export class ConfigStore {
 			};
 		});
 
-		// get the user information
 		await this.getUser();
 
-		// success
 		return true;
 	}
 
@@ -830,24 +790,5 @@ export class ConfigStore {
 
 		// create the newly loaded workspace
 		return new WorkspaceStore(this._root, workspace);
-	}
-
-	/**
-	 * Set general reactors used for pixel cell suggestions
-	 */
-	async setGeneralReactors() {
-		try {
-			const res = await runPixel("META|HelpJson();");
-
-			runInAction(() => {
-				const generalReactorList = (
-					res.pixelReturn[0].output as { General: string[] }
-				)?.General;
-				this._generalReactors = generalReactorList;
-			});
-		} catch {
-			console.error("Failed response from help pixel");
-			return;
-		}
 	}
 }

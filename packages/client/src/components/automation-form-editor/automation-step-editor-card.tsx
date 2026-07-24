@@ -6,7 +6,7 @@ import {
 	Play,
 	Trash2,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button, Field, FieldLabel, Input, toast } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import type {
@@ -79,8 +79,8 @@ export function AutomationStepEditorCard({
 	const [mockValues, setMockValues] = useState<Record<string, string>>({});
 	const meta = getDisplayMeta(step.type);
 	const Icon = meta.icon;
-	const pixelPreview = buildPixelPreview(step);
-	const varRefs = extractVarRefs(pixelPreview);
+	const pixelPreview = useMemo(() => buildPixelPreview(step), [step]);
+	const varRefs = useMemo(() => extractVarRefs(pixelPreview), [pixelPreview]);
 	const unresolvedVars = varRefs.filter((value) => !nodeOutputs[value]);
 	const borderClass =
 		STEP_STATUS_BORDER[runStatus ?? "idle"] ?? STEP_STATUS_BORDER.idle;

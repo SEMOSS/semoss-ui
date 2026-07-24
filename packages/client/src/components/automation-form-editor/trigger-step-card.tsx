@@ -1,8 +1,5 @@
 import { ChevronDown, ChevronRight, Zap } from "lucide-react";
-import type {
-	AutomationNode,
-	TriggerConfig,
-} from "@/pages/automation/automation.types";
+import type { AutomationNode } from "@/pages/automation/automation.types";
 import { TriggerForm } from "./forms/trigger-form";
 
 interface TriggerStepCardProps {
@@ -18,8 +15,6 @@ export function TriggerStepCard({
 	appId,
 	onToggle,
 }: TriggerStepCardProps) {
-	const config = step.config as TriggerConfig;
-
 	return (
 		<div className="rounded-2xl border bg-card shadow-sm ring-1 ring-primary/20">
 			{/* header */}
@@ -40,7 +35,7 @@ export function TriggerStepCard({
 							Manual
 						</span>
 						<span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-							non-deleteable
+							non-deletable
 						</span>
 					</div>
 					<div className="mt-0.5 text-[11px] text-muted-foreground">
@@ -57,7 +52,7 @@ export function TriggerStepCard({
 			{/* body */}
 			{isExpanded && (
 				<div className="border-t px-4 pt-3 pb-4">
-					<TriggerForm config={config} appId={appId} />
+					<TriggerForm appId={appId} />
 				</div>
 			)}
 		</div>

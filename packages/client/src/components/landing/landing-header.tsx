@@ -7,12 +7,12 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@semoss/ui/next";
-import AppagentDark from "@/assets/img/Appagent-dark.svg";
 import Appagent from "@/assets/img/Appagent.svg";
-import AppcodeDark from "@/assets/img/Appcode-dark.svg";
+import AppagentDark from "@/assets/img/Appagent-dark.svg";
 import Appcode from "@/assets/img/Appcode.svg";
-import AppdragdropDark from "@/assets/img/Appdragdrop-dark.svg";
+import AppcodeDark from "@/assets/img/Appcode-dark.svg";
 import Appdragdrop from "@/assets/img/Appdragdrop.svg";
+import AppdragdropDark from "@/assets/img/Appdragdrop-dark.svg";
 import Appworkflow from "@/assets/img/Appworkflow.svg";
 
 const BASE_CARDS = [
@@ -49,8 +49,9 @@ const BASE_CARDS = [
 	{
 		title: "Build an automation",
 		description:
-			"Connect engines, models, and data sources into repeatable automated workflows. Trigger them manually, on a schedule, or via webhook.",
+			"Connect engines, models, and data sources into repeatable automated workflows, triggered manually.",
 		image: Appworkflow,
+		darkImage: Appworkflow,
 		type: "automation",
 		testId: "new-app-automation-btn",
 		adminOnly: true,

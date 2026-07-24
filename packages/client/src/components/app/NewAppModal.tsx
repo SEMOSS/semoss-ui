@@ -24,7 +24,7 @@ type NewAppForm = {
 	APP_NAME: string;
 	APP_DESCRIPTION: string;
 	APP_TAGS: string[];
-	APP_IMG: File[] | null;
+	APP_IMG: File | null;
 };
 
 interface NewAppModalProps {
@@ -61,6 +61,24 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
 	const onSubmit = handleSubmit(async (data: NewAppForm) => {
 		let appId = "";
+
+		const saveMetadata = async (
+			resolvedAppId: string,
+		): Promise<boolean> => {
+			if (!data.APP_TAGS.length && !data.APP_DESCRIPTION) return true;
+			const { pixelReturn } = await monolithStore.runQuery(
+				`SetProjectMetadata(project=["${resolvedAppId}"], meta=[${JSON.stringify(
+					{ tag: data.APP_TAGS, description: data.APP_DESCRIPTION },
+				)}])`,
+			);
+			const operationType = pixelReturn[0].operationType[0];
+			if (operationType.indexOf("ERROR") > -1) {
+				toast.error(pixelReturn[0].output);
+				return false;
+			}
+			return true;
+		};
+
 		try {
 			setIsLoading(true);
 			const { type } = options;
@@ -90,28 +108,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 					);
 				}
 
-				if (data.APP_TAGS.length || data.APP_DESCRIPTION) {
-					const setProjectMetadataResponse =
-						await monolithStore.runQuery(
-							`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
-								{
-									tag: data.APP_TAGS,
-									description: data.APP_DESCRIPTION,
-								},
-							)}])`,
-						);
-
-					const output =
-						setProjectMetadataResponse.pixelReturn[0].output;
-					const operationType =
-						setProjectMetadataResponse.pixelReturn[0]
-							.operationType[0];
-
-					if (operationType.indexOf("ERROR") > -1) {
-						toast.error(output);
-						return;
-					}
-				}
+				if (!(await saveMetadata(appId))) return;
 			} else if (type === "automation") {
 				const pixel = `CreateProject(project=["${data.APP_NAME}"], portal=[true], projectType=["AUTOMATION"]);`;
 				const { errors, pixelReturn } =
@@ -129,28 +126,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 					);
 				}
 
-				if (data.APP_TAGS.length || data.APP_DESCRIPTION) {
-					const setProjectMetadataResponse =
-						await monolithStore.runQuery(
-							`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
-								{
-									tag: data.APP_TAGS,
-									description: data.APP_DESCRIPTION,
-								},
-							)}])`,
-						);
-
-					const output =
-						setProjectMetadataResponse.pixelReturn[0].output;
-					const operationType =
-						setProjectMetadataResponse.pixelReturn[0]
-							.operationType[0];
-
-					if (operationType.indexOf("ERROR") > -1) {
-						toast.error(output);
-						return;
-					}
-				}
+				if (!(await saveMetadata(appId))) return;
 			} else if (type === "code") {
 				const pixel = `CreateProject(project=["${data.APP_NAME}"], portal=[true], projectType=["CODE"]);`;
 				const { errors, pixelReturn } =
@@ -180,15 +156,15 @@ export const NewAppModal = (props: NewAppModalProps) => {
 					await monolithStore.runQuery(saveIndexFilePixel);
 
 				let output = response.pixelReturn[0].output;
-				let operationType = response.pixelReturn[0].operationType;
+				let operationType = response.pixelReturn[0].operationType[0];
 
 				if (operationType.indexOf("ERROR") > -1) {
 					toast.error(output);
-					return false;
+					return;
 				}
 
 				output = response.pixelReturn[1].output;
-				operationType = response.pixelReturn[1].operationType;
+				operationType = response.pixelReturn[1].operationType[0];
 
 				if (operationType.indexOf("ERROR") > -1) {
 					toast.error(output);
@@ -207,7 +183,8 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
 					output = setProjectMetadataResponse.pixelReturn[0].output;
 					operationType =
-						setProjectMetadataResponse.pixelReturn[0].operationType;
+						setProjectMetadataResponse.pixelReturn[0]
+							.operationType[0];
 
 					if (operationType.indexOf("ERROR") > -1) {
 						toast.error(output);
@@ -257,7 +234,6 @@ export const NewAppModal = (props: NewAppModalProps) => {
 						<Controller
 							name="APP_DESCRIPTION"
 							control={control}
-							rules={{ required: false }}
 							render={({ field }) => (
 								<div className="flex flex-col gap-1.5">
 									<Label htmlFor={descId}>Description</Label>
@@ -276,7 +252,6 @@ export const NewAppModal = (props: NewAppModalProps) => {
 						<Controller
 							name="APP_TAGS"
 							control={control}
-							rules={{}}
 							render={({ field }) => {
 								const tags: string[] = field.value || [];
 								const addTag = () => {
@@ -339,7 +314,6 @@ export const NewAppModal = (props: NewAppModalProps) => {
 						<Controller
 							name="APP_IMG"
 							control={control}
-							rules={{}}
 							render={({ field }) => (
 								<div className="flex flex-col gap-1.5">
 									<Label htmlFor={imgId}>Image</Label>

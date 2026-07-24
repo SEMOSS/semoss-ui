@@ -32,8 +32,6 @@ export function VectorEngineForm({
 				value={config.engineId}
 				engines={engines}
 				onChange={(v) => onChange({ ...config, engineId: v })}
-				triggerClassName=""
-				labelClassName=""
 			/>
 			<Field>
 				<FieldLabel>Operation</FieldLabel>
@@ -77,7 +75,7 @@ export function VectorEngineForm({
 						<Input
 							type="number"
 							min={1}
-							value={config.limit || ""}
+							value={config.limit ?? ""}
 							onChange={(e) =>
 								onChange({
 									...config,

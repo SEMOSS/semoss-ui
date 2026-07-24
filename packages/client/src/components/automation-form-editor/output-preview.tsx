@@ -14,7 +14,6 @@ export function OutputPreview({
 	nodeType?: string;
 }) {
 	const preview = value.length > 180 ? `${value.slice(0, 180)}…` : value;
-	// "table" | "json" — only active when renderMode === "table"
 	const [tableView, setTableView] = useState<"table" | "json">("table");
 
 	const parsed = useMemo(() => {

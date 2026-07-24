@@ -43,7 +43,7 @@ export function NodeResultList({
 
 				return (
 					<div
-						key={`${result.NODE_ID}-${index}`}
+						key={result.NODE_ID}
 						className="rounded-xl border bg-card shadow-sm"
 					>
 						<div className="flex flex-col gap-4 px-4 py-4 lg:flex-row lg:items-start lg:justify-between">

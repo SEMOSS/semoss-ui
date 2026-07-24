@@ -15,9 +15,6 @@ import type {
 	AutomationNodeType,
 	RunStatus,
 } from "@/pages/automation/automation.types";
-import { formatDurationMs } from "../automation-workspace/automation-utils";
-
-export { formatDurationMs };
 
 // Manual runs execute in the background — the FE polls GetAutomationRun on this
 // interval until the run leaves RUNNING status.
@@ -26,9 +23,6 @@ export const RUN_POLL_INTERVAL_MS = 3000;
 export interface AutomationRunData {
 	STATUS: RunStatus;
 	RUN_ID?: string;
-	TOTAL_NODES?: number;
-	COMPLETED_NODES?: number;
-	FAILED_NODE_ID?: string;
 	nodeResults?: AutomationNodeResult[];
 	ERROR_MESSAGE?: string;
 }
@@ -91,6 +85,10 @@ export const STEP_TYPES: {
 	},
 ];
 
+// Two namespaces in one map: UPPERCASE keys match RunStatus/NodeStatus from the
+// backend (PENDING, RUNNING, SUCCESS, FAILED, SKIPPED, INTERRUPTED, CANCELLED);
+// lowercase keys match the FE-only StepRunStatus used during live poll (idle,
+// running, success, error). getStatusClasses() handles both.
 export const STATUS_STYLES: Record<string, string> = {
 	PENDING: "bg-muted text-muted-foreground",
 	RUNNING: "bg-primary/10 text-primary",
@@ -125,7 +123,7 @@ export const TYPE_DISPLAY_META: Record<
 > = {
 	trigger: {
 		label: "Trigger",
-		description: "Start the automation manually or on a schedule",
+		description: "Start the automation manually",
 		icon: Play,
 		color: "text-emerald-600",
 	},

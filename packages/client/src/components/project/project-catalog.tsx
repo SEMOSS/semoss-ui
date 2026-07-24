@@ -102,6 +102,8 @@ export const ProjectCatalog = observer(
 		const { configStore } = useRootStore();
 		const adminMode =
 			window.localStorage.getItem("semoss.adminMode") === "true";
+		// Admin escape hatch: surfacing AUTOMATION apps in CODE catalog for testing.
+		// No AUTOMATION entry in CATALOG_CONFIG; items resolve to CODE paths.
 		const pixelFilter =
 			type === "CODE" && adminMode
 				? 'projectType=["CODE", "BLOCKS", "AUTOMATION"]'
@@ -392,8 +394,8 @@ export const ProjectCatalog = observer(
 							]}
 							onSortChange={(value, order) => {
 								if (
-									sortOrder === value &&
-									sortValue === order
+									sortValue === value &&
+									sortOrder === order
 								) {
 									return;
 								}

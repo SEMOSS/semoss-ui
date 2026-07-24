@@ -31,8 +31,6 @@ export function FunctionEngineForm({
 				value={config.engineId}
 				engines={engines}
 				onChange={(v) => onChange({ ...config, engineId: v })}
-				triggerClassName=""
-				labelClassName=""
 			/>
 			<Field>
 				<FieldLabel>Operation</FieldLabel>

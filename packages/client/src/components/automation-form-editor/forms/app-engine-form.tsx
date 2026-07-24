@@ -89,7 +89,9 @@ export function AppEngineForm({
 					onChange={(e) =>
 						onChange({ ...config, pixel: e.target.value })
 					}
-					placeholder="SyncEsrMetadata(apiUrl=&quot;${config.MIRTH_API_URL}&quot;)"
+					placeholder={
+						'SyncEsrMetadata(apiUrl="${config.MIRTH_API_URL}")'
+					}
 					className="font-mono text-xs"
 					rows={6}
 				/>

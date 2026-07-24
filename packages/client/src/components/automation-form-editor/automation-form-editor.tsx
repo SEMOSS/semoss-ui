@@ -12,6 +12,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Button, toast } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import type {
+	AutomationConfigEntry,
 	AutomationDocument,
 	AutomationGraph,
 	AutomationNode,
@@ -25,6 +26,7 @@ import type {
 	StepRunStatus,
 } from "@/pages/automation/automation.types";
 import { NODE_TYPE_META } from "@/pages/automation/automation.types";
+import { AutomationConfigTab } from "./automation-config-tab";
 import type { AutomationRunData } from "./automation-editor-utils";
 import {
 	formatRunDuration,
@@ -43,13 +45,13 @@ interface AutomationFormEditorProps {
 	appId: string;
 }
 
+type TabId = "steps" | "results" | "history" | "config";
+
 export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 	const { monolithStore } = useRootStore();
 	const [loading, setLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
-	const [activeTab, setActiveTab] = useState<"steps" | "results" | "history">(
-		"steps",
-	);
+	const [activeTab, setActiveTab] = useState<TabId>("steps");
 	const [running, setRunning] = useState(false);
 	const [stepStatuses, setStepStatuses] = useState<
 		Record<string, StepRunStatus>
@@ -63,6 +65,8 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		Record<string, EngineOption[]>
 	>({});
 	const [projects, setProjects] = useState<ProjectOption[]>([]);
+	const [config, setConfig] = useState<AutomationConfigEntry[]>([]);
+	const [savingConfig, setSavingConfig] = useState(false);
 	const [nodeOutputs, setNodeOutputsState] = useState<Record<string, string>>(
 		{},
 	);
@@ -120,8 +124,11 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 				`MyEngines(engineTypes=["DATABASE","MODEL","VECTOR","STORAGE","FUNCTION"], limit=[100]);`,
 			),
 			monolithStore.runQuery(`MyProjects(limit=[100], offset=[0]);`),
+			monolithStore
+				.runQuery(`GetAutomationConfig(project=["${appId}"]);`)
+				.catch(() => null),
 		])
-			.then(([autoRes, engRes, projRes]) => {
+			.then(([autoRes, engRes, projRes, configRes]) => {
 				const doc = (autoRes?.pixelReturn?.[0]?.output ??
 					null) as AutomationDocument | null;
 				const graph: AutomationGraph = doc?.graph ?? {
@@ -163,6 +170,11 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 				const projectList =
 					(projRes.pixelReturn[0].output as ProjectOption[]) ?? [];
 				setProjects(projectList);
+
+				const configList =
+					(configRes?.pixelReturn?.[0]
+						?.output as AutomationConfigEntry[]) ?? [];
+				setConfig(configList);
 			})
 			.finally(() => setLoading(false));
 
@@ -248,6 +260,21 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		}
 	}, [appId, steps, monolithStore]);
 
+	const saveConfig = useCallback(async () => {
+		setSavingConfig(true);
+		try {
+			const json = encodeURIComponent(JSON.stringify(config));
+			await monolithStore.runQuery(
+				`SaveAutomationConfig(project=["${appId}"], config=["${json}"]);`,
+			);
+			toast.success("Config saved");
+		} catch {
+			toast.error("Config save failed");
+		} finally {
+			setSavingConfig(false);
+		}
+	}, [appId, config, monolithStore]);
+
 	const pollTokenRef = useRef<{ cancelled: boolean } | null>(null);
 
 	useEffect(() => {
@@ -309,6 +336,9 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		[steps],
 	);
 
+	// Ref-sync pattern: pollRun captures this ref so it always calls the latest
+	// applyRunData without needing applyRunData in pollRun's own dep array,
+	// which would restart polling every time steps change mid-run.
 	const applyRunDataRef = useRef(applyRunData);
 	useEffect(() => {
 		applyRunDataRef.current = applyRunData;
@@ -419,7 +449,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 			return steps
 				.slice(0, index)
 				.map((step) => step.outputVar)
-				.filter(Boolean);
+				.filter((v) => v.length > 0);
 		},
 		[steps],
 	);
@@ -542,20 +572,14 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 						{ id: "steps", label: "Steps" },
 						{ id: "results", label: "Run Results" },
 						{ id: "history", label: "Automation History" },
+						{ id: "config", label: "Config" },
 					].map((tab) => {
 						const isActive = activeTab === tab.id;
 						return (
 							<button
 								key={tab.id}
 								type="button"
-								onClick={() =>
-									setActiveTab(
-										tab.id as
-											| "steps"
-											| "results"
-											| "history",
-									)
-								}
+								onClick={() => setActiveTab(tab.id as TabId)}
 								className={`rounded-full px-3 py-1.5 font-medium text-sm transition-colors ${
 									isActive
 										? "bg-primary text-primary-foreground"
@@ -908,6 +932,46 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 									</div>
 								</div>
 							)}
+						</div>
+					</div>
+				)}
+
+				{activeTab === "config" && (
+					<div className="h-full overflow-y-auto px-6 py-6">
+						<div className="mx-auto max-w-3xl space-y-4">
+							<div className="flex items-center justify-between gap-3">
+								<div>
+									<h2 className="font-semibold text-sm">
+										Automation Config
+									</h2>
+									<p className="text-[11px] text-muted-foreground">
+										Key-value pairs stored in this
+										automation's SMSS. Reference them in
+										node fields as{" "}
+										<code className="rounded bg-muted px-1 font-mono">
+											{"${config.KEY}"}
+										</code>
+										.
+									</p>
+								</div>
+								<Button
+									size="sm"
+									variant="outline"
+									onClick={saveConfig}
+									disabled={savingConfig}
+								>
+									{savingConfig ? (
+										<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+									) : (
+										<Save className="mr-1.5 h-3.5 w-3.5" />
+									)}
+									Save Config
+								</Button>
+							</div>
+							<AutomationConfigTab
+								config={config}
+								onChange={setConfig}
+							/>
 						</div>
 					</div>
 				)}

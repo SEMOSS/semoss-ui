@@ -28,9 +28,9 @@ export function WaitForm({
 				templates. Maximum 3600 seconds (1 hour). Use{" "}
 				<code className="rounded bg-muted px-1">
 					{/* biome-ignore lint/suspicious/noTemplateCurlyInString: literal */}
-					{"${config.POLL_INTERVAL}"}
+					{"${config.KEY}"}
 				</code>{" "}
-				for configurable delays.
+				to reference a config value.
 			</p>
 		</div>
 	);

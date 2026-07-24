@@ -27,6 +27,7 @@ export function AutomationRenderer({ appId }: AutomationRendererProps) {
 		null,
 	);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: monolithStore is a stable singleton ref
 	useEffect(() => {
 		Promise.all([
 			monolithStore
@@ -55,7 +56,7 @@ export function AutomationRenderer({ appId }: AutomationRendererProps) {
 			setLatestRun(runs[0] ?? null);
 			setLoading(false);
 		});
-	}, [appId, monolithStore]);
+	}, [appId]);
 
 	if (loading) {
 		return (

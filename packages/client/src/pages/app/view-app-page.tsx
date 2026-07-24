@@ -1,5 +1,3 @@
-// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
-
 import { Bookmark, Pencil, Settings, Share2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { lazy, Suspense, useEffect, useState } from "react";
@@ -60,7 +58,7 @@ export const ViewAppPage = observer(() => {
 		setProjectFavorite(appId, status)
 			.then(() => {
 				toast.success(
-					`Project ${bookmarked ? "unbookmarked" : "bookmarked"}`,
+					`Project ${status ? "bookmarked" : "unbookmarked"}`,
 				);
 				return;
 			})
@@ -74,6 +72,7 @@ export const ViewAppPage = observer(() => {
 		showNavbarLogo: false,
 	});
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: configStore and navigate are stable refs
 	useEffect(() => {
 		// clear out the old app
 		setWorkspace(undefined);
@@ -104,13 +103,13 @@ export const ViewAppPage = observer(() => {
 					logo={
 						<div
 							title={
-								workspace?.metadata?.project_display_name ||
-								workspace?.metadata?.project_name
+								workspace.metadata?.project_display_name ||
+								workspace.metadata?.project_name
 							}
 							className="w-[30ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
 						>
-							{workspace?.metadata?.project_display_name ||
-								workspace?.metadata?.project_name}
+							{workspace.metadata?.project_display_name ||
+								workspace.metadata?.project_name}
 						</div>
 					}
 				/>

@@ -233,20 +233,14 @@ const NODE_DESCRIPTORS: Record<AutomationNodeType, NodeDescriptor> = {
 			const c = node.config as unknown as Record<string, unknown>;
 			const str = (v: unknown, fallback = "") =>
 				v != null && v !== "" ? String(v) : fallback;
-			const pixel = str(
-				(c.pixel as string | undefined) ??
-					(c.pixelExpression as string | undefined),
-			);
+			const pixel = str(c.pixel as string | undefined);
 			const appId = str(c.appId as string | undefined);
 			return appId ? `LoadApp(project=["${appId}"]); ${pixel}` : pixel;
 		},
 		isReady(node) {
 			const c = node.config as unknown as Record<string, unknown>;
 			const has = (v: unknown) => v != null && v !== "";
-			const pixel =
-				(c.pixel as string | undefined) ??
-				(c.pixelExpression as string | undefined);
-			return has(pixel);
+			return has(c.pixel);
 		},
 	},
 

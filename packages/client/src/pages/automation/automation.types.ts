@@ -12,10 +12,8 @@ export type AutomationNodeType =
 
 // ─── node configs (one per node type) ────────────────────────────────────────
 
-export type TriggerMode = "manual";
-
 export interface TriggerConfig {
-	mode: TriggerMode;
+	mode: "manual";
 }
 
 export interface DatabaseEngineConfig {
@@ -108,7 +106,6 @@ export interface AutomationNode {
 	outputVar: string;
 	config: NodeConfig;
 	outputTransform?: OutputTransform;
-	builtPixel?: string;
 }
 
 export interface AutomationEdge {
@@ -151,7 +148,7 @@ export type NodeStatus =
 	| "FAILED"
 	| "SKIPPED";
 
-export type AutomationTriggerType = "MANUAL" | string;
+export type AutomationTriggerType = "MANUAL";
 
 export interface AutomationRunSummary {
 	RUN_ID: string;
