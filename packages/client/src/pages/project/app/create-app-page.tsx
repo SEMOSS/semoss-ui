@@ -187,6 +187,7 @@ export const CreateAppPage = () => {
 				</P>
 				<div className="flex w-full flex-col gap-4">
 					<LandingHeader
+						isAdmin={configStore.store.user.admin}
 						onCreate={(type) => {
 							if (type === "blocks") {
 								setNewAppOptions({

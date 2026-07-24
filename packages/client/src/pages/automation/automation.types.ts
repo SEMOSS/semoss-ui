@@ -7,6 +7,7 @@ export type AutomationNodeType =
 	| "vector-engine"
 	| "model-engine"
 	| "function-engine"
+	| "app"
 	| "wait";
 
 // ─── node configs (one per node type) ────────────────────────────────────────
@@ -72,6 +73,11 @@ export interface FunctionEngineConfig {
 	params: string;
 }
 
+export interface AppConfig {
+	pixel: string;
+	appId?: string;
+}
+
 export interface WaitConfig {
 	seconds: string;
 }
@@ -83,6 +89,7 @@ export type NodeConfig =
 	| VectorEngineConfig
 	| ModelEngineConfig
 	| FunctionEngineConfig
+	| AppConfig
 	| WaitConfig;
 
 // ─── graph primitives ─────────────────────────────────────────────────────────
@@ -101,6 +108,7 @@ export interface AutomationNode {
 	outputVar: string;
 	config: NodeConfig;
 	outputTransform?: OutputTransform;
+	builtPixel?: string;
 }
 
 export interface AutomationEdge {
@@ -315,6 +323,17 @@ export const NODE_TYPE_META: NodeTypeMeta[] = [
 			params: "",
 		} as FunctionEngineConfig,
 		defaultOutputVar: "fn_out",
+	},
+	{
+		type: "app",
+		label: "App Engine",
+		description:
+			"Write any SEMOSS pixel expression. Optionally run inside an app context.",
+		tooltip: // biome-ignore lint/suspicious/noTemplateCurlyInString: ${} in tooltip shows example syntax for users
+			'Execute any arbitrary SEMOSS Pixel. Supports ${variable} template substitution from upstream node outputs.\n\nOptionally set an App/Project ID to load that app\'s insight context before running — useful when your pixel calls reactors registered inside a specific app.\n\nExamples:\n• SyncFilesToStorage(path=["/data/"], extension=["txt"], storage=["<id>"], database=["<id>"])\n• RunCustomReport(project=["my-app-id"], params=["${db_out}"])\n• Any pixel you\'d run in the SEMOSS console',
+		category: "engine",
+		defaultConfig: { pixel: "", appId: "" } as AppConfig,
+		defaultOutputVar: "pixel_out",
 	},
 	{
 		type: "wait",

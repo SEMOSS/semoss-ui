@@ -103,6 +103,7 @@ export const LandingPage: React.FC = observer(() => {
 						/>
 					) : null}
 					<LandingHeader
+						isAdmin={configStore.store.user.admin}
 						onCreate={(type) => {
 							if (type === "blocks") {
 								setNewAppOptions({

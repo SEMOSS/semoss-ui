@@ -26,6 +26,11 @@ const CodeRenderer = lazy(() =>
 		default: m.CodeRenderer,
 	})),
 );
+const AutomationRenderer = lazy(() =>
+	import("@/components/automation-workspace").then((m) => ({
+		default: m.AutomationRenderer,
+	})),
+);
 
 import { usePage, useRootStore } from "@/hooks";
 import type { WorkspaceStore } from "@/stores";
@@ -180,6 +185,9 @@ export const ViewAppPage = observer(() => {
 					) : null}
 					{workspace.type === "CODE" ? (
 						<CodeRenderer appId={appId} />
+					) : null}
+					{workspace.type === "AUTOMATION" ? (
+						<AutomationRenderer appId={appId} />
 					) : null}
 				</Suspense>
 			</div>

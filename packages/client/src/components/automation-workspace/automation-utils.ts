@@ -1,10 +1,8 @@
-import type { Edge, Node } from "@xyflow/react";
 import type {
 	AutomationNode,
 	AutomationNodeType,
 	OutputTransform,
 } from "@/pages/automation/automation.types";
-import type { AutomationNodeData } from "./nodes/node-card";
 
 // ─── shared constants ─────────────────────────────────────────────────────────
 
@@ -25,7 +23,7 @@ export const TRANSFORM_ENABLED: Set<AutomationNodeType> = new Set([
 	"vector-engine",
 	"storage-engine",
 	"function-engine",
-	"app-engine",
+	"app",
 ]);
 
 export function formatDurationMs(
@@ -36,42 +34,6 @@ export function formatDurationMs(
 	if (ms < 1000) return `${ms}ms`;
 	if (ms < 60000) return `${(ms / 1000).toFixed(fractionDigits)}s`;
 	return `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`;
-}
-
-export function toRFNode(
-	an: AutomationNode,
-	onSettings: (id: string) => void,
-): Node<AutomationNodeData> {
-	return {
-		id: an.id,
-		type: "automationNode",
-		position: an.position,
-		deletable: an.type !== "trigger",
-		data: {
-			nodeType:
-				(an as AutomationNode & { nodeType?: AutomationNodeType })
-					.nodeType ?? an.type,
-			label: an.label,
-			outputVar: an.outputVar,
-			config: an.config as unknown as Record<string, unknown>,
-			onSettings,
-		},
-	};
-}
-
-export function toRFEdge(e: {
-	id: string;
-	source: string;
-	target: string;
-}): Edge {
-	return {
-		id: e.id,
-		source: e.source,
-		target: e.target,
-		type: "automationEdge",
-		animated: false,
-		style: { strokeWidth: 1.5 },
-	};
 }
 
 // ─── per-node-type descriptor map ────────────────────────────────────────────
@@ -266,7 +228,7 @@ const NODE_DESCRIPTORS: Record<AutomationNodeType, NodeDescriptor> = {
 		},
 	},
 
-	"app-engine": {
+	app: {
 		buildPixel(node) {
 			const c = node.config as unknown as Record<string, unknown>;
 			const str = (v: unknown, fallback = "") =>

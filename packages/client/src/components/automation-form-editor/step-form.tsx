@@ -1,4 +1,5 @@
 import type {
+	AppConfig,
 	AutomationNode,
 	DatabaseEngineConfig,
 	EngineOption,
@@ -9,6 +10,7 @@ import type {
 	VectorEngineConfig,
 	WaitConfig,
 } from "@/pages/automation/automation.types";
+import { AppEngineForm } from "./forms/app-engine-form";
 import { DatabaseEngineForm } from "./forms/database-engine-form";
 import { FunctionEngineForm } from "./forms/function-engine-form";
 import { ModelEngineForm } from "./forms/model-engine-form";
@@ -27,6 +29,7 @@ interface StepFormProps {
 export function StepForm({
 	step,
 	enginesByType,
+	projects,
 	upstreamVars,
 	onUpdate,
 }: StepFormProps) {
@@ -78,6 +81,15 @@ export function StepForm({
 				<FunctionEngineForm
 					config={step.config as FunctionEngineConfig}
 					engines={enginesByType.FUNCTION ?? []}
+					upstreamVars={upstreamVars}
+					onChange={update}
+				/>
+			);
+		case "app":
+			return (
+				<AppEngineForm
+					config={step.config as AppConfig}
+					projects={projects}
 					upstreamVars={upstreamVars}
 					onChange={update}
 				/>

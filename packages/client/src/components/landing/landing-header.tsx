@@ -11,7 +11,6 @@ import Appagent from "@/assets/img/Appagent.svg";
 import Appcode from "@/assets/img/Appcode.svg";
 import Appdragdrop from "@/assets/img/Appdragdrop.svg";
 import Appworkflow from "@/assets/img/Appworkflow.svg";
-import { useRootStore } from "@/hooks";
 
 const BASE_CARDS = [
 	{
@@ -55,14 +54,15 @@ const BASE_CARDS = [
 interface LandingHeaderProps {
 	/** Trigger creation of a new app */
 	onCreate: (type: "blocks" | "code" | "agent" | "automation") => void;
+	/** Whether the current user is an admin — gates admin-only cards */
+	isAdmin: boolean;
 }
 
 export const LandingHeader: React.FC<LandingHeaderProps> = ({
 	onCreate = () => null,
+	isAdmin,
 }) => {
-	const adminMode =
-		window.localStorage.getItem("semoss.adminMode") === "true";
-	const CARDS = BASE_CARDS.filter((card) => !card.adminOnly || adminMode);
+	const CARDS = BASE_CARDS.filter((card) => !card.adminOnly || isAdmin);
 
 	return (
 		<div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">

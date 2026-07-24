@@ -1,12 +1,13 @@
 import {
-	Activity,
 	Archive,
-	Brain,
+	Bolt,
 	Clock,
+	Cpu,
 	Database,
+	LayoutGrid,
 	type LucideIcon,
 	Play,
-	Zap,
+	Sigma,
 } from "lucide-react";
 import type {
 	AutomationNode,
@@ -50,14 +51,14 @@ export const STEP_TYPES: {
 		type: "model-engine",
 		label: "AI Model",
 		description: "Call an LLM, get embeddings, or run vision",
-		icon: Activity,
+		icon: Cpu,
 		color: "text-purple-600",
 	},
 	{
 		type: "vector-engine",
 		label: "Vector Search",
 		description: "Query a vector database for similar content",
-		icon: Brain,
+		icon: Bolt,
 		color: "text-amber-600",
 	},
 	{
@@ -71,8 +72,15 @@ export const STEP_TYPES: {
 		type: "function-engine",
 		label: "Function / API",
 		description: "Call an external API or function engine",
-		icon: Zap,
+		icon: Sigma,
 		color: "text-cyan-600",
+	},
+	{
+		type: "app",
+		label: "App Engine",
+		description: "Run a Pixel expression inside an app engine context",
+		icon: LayoutGrid,
+		color: "text-slate-600",
 	},
 	{
 		type: "wait",
@@ -126,7 +134,8 @@ export const TYPE_DISPLAY_META: Record<
 	"vector-engine": STEP_TYPES[2],
 	"storage-engine": STEP_TYPES[3],
 	"function-engine": STEP_TYPES[4],
-	wait: STEP_TYPES[5],
+	app: STEP_TYPES[5],
+	wait: STEP_TYPES[6],
 };
 
 export function newStepId(type: AutomationNodeType) {
