@@ -352,22 +352,17 @@ export const ProjectCatalog = observer(
 					title={`${config.name} Catalog`}
 					description={config.description}
 					headerActions={
-						configStore.isEngineOperationAvailable(
-							"PROJECT",
-							"add",
-						) ? (
-							<Button
-								variant="default"
-								aria-label={`Add ${config.name}`}
-								data-testid="ProjectPage-create-new-app-btn"
-								asChild
-							>
-								<Link to={config.createPath}>
-									<Plus className="size-4" />
-									Add {config.name}
-								</Link>
-							</Button>
-						) : null
+						<Button
+							variant="default"
+							aria-label={`Add ${config.name}`}
+							data-testid="ProjectPage-create-new-app-btn"
+							asChild
+						>
+							<Link to={config.createPath}>
+								<Plus className="size-4" />
+								Add {config.name}
+							</Link>
+						</Button>
 					}
 					searchBar={
 						<CatalogSearchBar
