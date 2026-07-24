@@ -18,6 +18,7 @@ const SettingsRouter = lazy(() =>
 		default: m.SettingsRouter,
 	})),
 );
+
 const SharePage = lazy(() =>
 	import("./share-page").then((m) => ({ default: m.SharePage })),
 );
