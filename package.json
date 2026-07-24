@@ -4,7 +4,7 @@
   "description": "SEMOSS Analytics Platform",
   "scripts": {
     "prepare": "lefthook install",
-    "dev": "turbo run dev",
+    "dev": "turbo run dev --concurrency=15",
     "dev:client": "turbo run dev --filter=@semoss/client...",
     "dev:playground": "turbo run dev --filter=@semoss/playground...",
     "dev:terminal": "turbo run dev --filter=@semoss/terminal...",

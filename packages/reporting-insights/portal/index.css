@@ -1,0 +1,22 @@
+@import 'tailwindcss';
+@import 'flexlayout-react/style/light.css';
+
+/* Scan portal components AND shared src/ components (VizConfigTabs, VizConfigDropZones, etc.) */
+@source ".";
+@source "./components";
+@source "../src";
+
+/* PHI / PII tabs — red header so reviewers can spot sensitive visualizations.
+   onRenderTab wraps flagged tabs' content in <span data-pii="true">.
+   !important so the red wins over flexlayout's own theme tab-button styling. */
+.flexlayout__tab_button:has([data-pii='true']),
+.flexlayout__tab_button_top:has([data-pii='true']) {
+    background-color: #fee2e2 !important; /* red-100 */
+    color: #b91c1c !important; /* red-700 */
+    box-shadow: inset 0 2px 0 0 #dc2626 !important; /* red-600 top accent */
+}
+.flexlayout__tab_button--selected:has([data-pii='true']),
+.flexlayout__tab_button_top.flexlayout__tab_button--selected:has([data-pii='true']) {
+    background-color: #fef2f2 !important; /* red-50 */
+    color: #991b1b !important; /* red-800 */
+}

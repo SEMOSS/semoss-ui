@@ -14,7 +14,20 @@ import AppcodeDark from "@/assets/img/Appcode-dark.svg";
 import Appdragdrop from "@/assets/img/Appdragdrop.svg";
 import AppdragdropDark from "@/assets/img/Appdragdrop-dark.svg";
 
-const CARDS = [
+interface LandingCard {
+	title: string;
+	description: string;
+	image: string;
+	testId: string;
+	/** App-creation flow (mutually exclusive with `href`). */
+	type?: "blocks" | "code" | "agent";
+	/** External link (e.g. a bundled app served by SemossWeb). Opens in a new tab. */
+	href?: string;
+	/** Button label (defaults to "Get Started"). */
+	cta?: string;
+}
+
+const CARDS: LandingCard[] = [
 	{
 		title: "Develop in code",
 		description:
@@ -42,7 +55,16 @@ const CARDS = [
 		type: "agent",
 		testId: "new-app-agent-btn",
 	},
-] as const;
+	{
+		title: "Build a dashboard",
+		description:
+			"Design interactive dashboards from your databases—charts, KPIs, filters and exports—or let the AI Dashboard Builder generate them from a description.",
+		image: Appdragdrop,
+		href: "../../reporting-insights/dist/",
+		cta: "Launch Reporting Insights",
+		testId: "launch-reporting-insights-btn",
+	},
+];
 
 interface LandingHeaderProps {
 	/** Trigger creation of a new app */
@@ -53,7 +75,7 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
 	onCreate = () => null,
 }) => {
 	return (
-		<div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3">
+		<div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
 			{CARDS.map((card) => (
 				<Card
 					key={card.title}
@@ -66,21 +88,43 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
 						</CardDescription>
 					</CardHeader>
 					<CardFooter className="flex flex-row items-center justify-start gap-1 px-4">
-						<Button
-							variant="ghost"
-							size="default"
-							onClick={(e) => {
-								e.stopPropagation();
+						{card.href ? (
+							<Button
+								asChild
+								variant="ghost"
+								size="default"
+								data-testid={card.testId}
+								className="p-0 text-primary hover:bg-transparent hover:text-primary"
+							>
+								<a
+									href={card.href}
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									<span className="flex items-center gap-1">
+										{card.cta ?? "Get Started"}
+										<ArrowUpRight />
+									</span>
+								</a>
+							</Button>
+						) : (
+							<Button
+								variant="ghost"
+								size="default"
+								data-testid={card.testId}
+								onClick={(e) => {
+									e.stopPropagation();
 
-								onCreate(card.type);
-							}}
-							className="p-0 text-primary hover:bg-transparent hover:text-primary"
-						>
-							<span className="flex items-center gap-1">
-								Get Started
-								<ArrowUpRight />
-							</span>
-						</Button>
+									if (card.type) onCreate(card.type);
+								}}
+								className="p-0 text-primary hover:bg-transparent hover:text-primary"
+							>
+								<span className="flex items-center gap-1">
+									{card.cta ?? "Get Started"}
+									<ArrowUpRight />
+								</span>
+							</Button>
+						)}
 					</CardFooter>
 					<div className="relative w-full px-4">
 						<img

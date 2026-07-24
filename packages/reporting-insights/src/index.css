@@ -1,0 +1,112 @@
+/* Adopt the shared SEMOSS design system (Tailwind v4 + design tokens). This is
+   the single source of tokens/typography, matching @semoss/ui components used
+   throughout the app (see packages/client which imports the same). */
+@import "@semoss/ui/globals.css";
+@import 'flexlayout-react/style/light.css';
+
+/* Compile utility classes used by THIS app's components. */
+@source "./**/*.{ts,tsx}";
+
+/* App-specific theme additions layered on top of the shared tokens. */
+@theme {
+    /* Soft, layered shadows (warm-tinted) — the premium alternative to flat shadow-sm/md */
+    --shadow-soft: 0 1px 2px 0 rgb(28 25 23 / 0.04), 0 2px 8px -2px rgb(28 25 23 / 0.05);
+    --shadow-soft-lg: 0 2px 4px -1px rgb(28 25 23 / 0.05), 0 12px 28px -8px rgb(28 25 23 / 0.12);
+}
+
+@layer base {
+    html,
+    body,
+    #root {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+    }
+    /* Thin, unobtrusive scrollbars — a small but pervasive polish cue */
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: rgb(203 213 225) transparent;
+    }
+    *::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    *::-webkit-scrollbar-thumb {
+        background-color: rgb(203 213 225);
+        border-radius: 9999px;
+    }
+    *::-webkit-scrollbar-thumb:hover {
+        background-color: rgb(148 163 184);
+    }
+    *::-webkit-scrollbar-track {
+        background: transparent;
+    }
+}
+
+/* ── Premium flexlayout theme — warm canvas, panels as soft cards ── */
+.flexlayout__layout {
+    --color-background: transparent;
+    --color-tabset-background: transparent;
+    --color-tabset-background-selected: transparent;
+    --color-tabset-background-maximized: rgb(245 245 244);
+    --color-tab-content: #ffffff;
+    --color-border: rgb(231 229 228);
+    --color-splitter: transparent;
+    --color-splitter-handle: rgb(214 211 209);
+    --color-splitter-hover: rgb(99 102 241 / 0.25);
+    --color-splitter-drag: rgb(99 102 241 / 0.4);
+    --color-tab-selected: rgb(28 25 23);
+    --color-tab-selected-background: #ffffff;
+    --color-tab-unselected: rgb(120 113 108);
+    --color-tab-unselected-background: transparent;
+    --color-icon: rgb(168 162 158);
+}
+/* Each whole panel (header + content) reads as one floating soft card */
+.flexlayout__tabset {
+    background: #ffffff;
+    border: 1px solid rgb(231 229 228 / 0.9);
+    border-radius: 12px;
+    box-shadow: var(--shadow-soft);
+    overflow: hidden;
+}
+.flexlayout__tab {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: #ffffff;
+}
+/* Panel header strip — sits inside the card, with a readable title */
+.flexlayout__tabset_tabbar_outer {
+    background: rgb(250 250 249); /* stone-50 */
+    border-bottom: 1px solid rgb(245 245 244);
+}
+.flexlayout__tab_button {
+    font-weight: 600;
+    font-size: 12px;
+    color: rgb(68 64 60); /* stone-700 — legible */
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
+}
+.flexlayout__tab_button--selected {
+    color: rgb(28 25 23); /* stone-900 */
+}
+/* PHI / PII tabs — red header so reviewers can spot sensitive visualizations.
+   !important so the red wins over flexlayout's own theme tab-button styling. */
+.flexlayout__tab_button:has([data-pii='true']),
+.flexlayout__tab_button_top:has([data-pii='true']) {
+    background-color: #fee2e2 !important; /* red-100 */
+    color: #b91c1c !important; /* red-700 */
+    box-shadow: inset 0 2px 0 0 #dc2626 !important; /* red-600 top accent */
+}
+.flexlayout__tab_button--selected:has([data-pii='true']),
+.flexlayout__tab_button_top.flexlayout__tab_button--selected:has([data-pii='true']) {
+    background-color: #fef2f2 !important; /* red-50 */
+    color: #991b1b !important; /* red-800 */
+}
+.flexlayout__splitter,
+.flexlayout__splitter_border {
+    transition: background-color 0.15s ease;
+}
