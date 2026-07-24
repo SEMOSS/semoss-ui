@@ -358,7 +358,11 @@ export class ChatStore {
 		// waiting on the response
 		(async () => {
 			try {
+				// only depends on the prompt text, so kick it off alongside the
+				// streaming response instead of waiting on it
+				const namePromise = room.generateRoomName(prompt);
 				await room.askMessage(prompt, files);
+				await namePromise;
 				runInAction(() => {
 					// increment the roomCounter to force re-render of the nav
 					this._store.keys.roomCounter++;

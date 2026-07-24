@@ -208,7 +208,12 @@ export const NewRoomPage = observer(() => {
 				// Fire-and-forget so we navigate without waiting on the response.
 				(async () => {
 					try {
+						// only depends on the prompt text, so kick it off alongside
+						// the streaming response instead of waiting on it
+						const namePromise =
+							preCreatedRoom.generateRoomName(prompt);
 						await preCreatedRoom.askMessage(prompt, files);
+						await namePromise;
 						runInAction(() => {
 							chat.keys.roomCounter++;
 						});

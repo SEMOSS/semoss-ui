@@ -1038,6 +1038,31 @@ export class RoomStore {
 	};
 
 	/**
+	 * Generate and persist a room name from the first user prompt. Callers
+	 * kick this off alongside room creation, since it only depends on the
+	 * prompt text and not the streamed response. Best-effort — failures are
+	 * swallowed so naming issues never disrupt the chat.
+	 */
+	generateRoomName = async (prompt: string): Promise<void> => {
+		try {
+			const response = await this.runRoomPixel<[string]>(
+				`GenerateRoomName(roomId=${JSON.stringify(this._store.roomId)}, prompt=["<encode>${prompt}</encode>"], engine=["${this.model.engine_id}"]);`,
+				false,
+				false,
+			);
+
+			const name = response.pixelReturn[0].output;
+			if (name) {
+				runInAction(() => {
+					this.setMetadata({ name });
+				});
+			}
+		} catch (e) {
+			console.warn("Failed to generate room name:", e);
+		}
+	};
+
+	/**
 	 * Process a tool call
 	 * @param messageId - id of the message
 	 * @param toolId - id of the tool
