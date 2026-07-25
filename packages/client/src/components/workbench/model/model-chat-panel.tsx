@@ -1,5 +1,5 @@
 import { Bot, Copy, Pencil, RefreshCw, Send, User } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { type MutableRefObject, useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { runPixel, useInsight } from "@semoss/sdk/react";
 import {
@@ -19,6 +19,7 @@ import {
 } from "@semoss/ui/next";
 import { FeedbackButtons } from "@/components/engine/FeedbackButtons";
 import { EngineModelTestSidebar } from "@/components/settings";
+import { useEngine } from "@/hooks";
 
 interface Message {
 	id: string;
@@ -40,17 +41,13 @@ interface LLMOutput {
 	numberOfTokensInResponse?: number;
 }
 
-interface ModelChatPanelProps {
-	/** Engine (model) id to chat with */
-	engine: string;
-}
-
 /**
  * Model chat workbench panel. Lets the user test and interact with the model
  * engine. Runs pixels against the workbench's existing insight (via useInsight)
  * rather than creating a dedicated chat insight.
  */
-export const ModelChatPanel = ({ engine }: ModelChatPanelProps) => {
+export const ModelChatPanel = () => {
+	const { engine } = useEngine();
 	const insight = useInsight();
 
 	const [isLoading, setIsLoading] = useState(false);
@@ -58,7 +55,7 @@ export const ModelChatPanel = ({ engine }: ModelChatPanelProps) => {
 	const [messages, setMessages] = useState<Message[]>([]);
 
 	const [selectedModel, setSelectedModel] = useState<Model>({
-		model_id: engine,
+		model_id: engine.engine_id,
 		model_name: "",
 	});
 	const [maxTokens, setMaxTokens] = useState<number>(2000);
@@ -71,16 +68,16 @@ export const ModelChatPanel = ({ engine }: ModelChatPanelProps) => {
 
 	const promptValue = watch("prompt");
 	const messagesContainerRef = useRef<HTMLDivElement>(null);
-	const textareaRef = useRef<HTMLTextAreaElement>(null);
+	const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
 	// Reset the conversation when the target engine changes.
 	useEffect(() => {
 		setSelectedModel({
-			model_id: engine,
+			model_id: engine.engine_id,
 			model_name: "",
 		});
 		setMessages([]);
-	}, [engine]);
+	}, [engine.engine_id]);
 
 	useEffect(() => {
 		const el = messagesContainerRef.current;
@@ -400,7 +397,9 @@ export const ModelChatPanel = ({ engine }: ModelChatPanelProps) => {
 											<Textarea
 												{...fieldProps}
 												ref={(el) => {
-													textareaRef.current = el;
+													(
+														textareaRef as MutableRefObject<HTMLTextAreaElement | null>
+													).current = el;
 													fieldRef(el);
 												}}
 												autoFocus

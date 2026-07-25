@@ -39,6 +39,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { useEngine } from "@/hooks/useEngine";
 import {
 	type DatabaseColumnAction,
 	type DatabaseTableAction,
@@ -56,9 +57,6 @@ function getActionKey(action: { label: string }): string {
 }
 
 interface DatabaseColumnPanelProps {
-	/** Engine (database) id to query */
-	engine: string;
-
 	/** Mode of the engine */
 	mode: DatabaseType;
 
@@ -82,7 +80,6 @@ interface DatabaseColumnPanelProps {
 }
 
 export const DatabaseColumnsPanel: React.FC<DatabaseColumnPanelProps> = ({
-	engine,
 	mode,
 	isLoading,
 	error,
@@ -90,6 +87,8 @@ export const DatabaseColumnsPanel: React.FC<DatabaseColumnPanelProps> = ({
 	structure,
 	onCreateQueryPanel,
 }) => {
+	const { permission } = useEngine();
+	const readOnly = !(permission === "OWNER" || permission === "EDIT");
 	const [searchTerm, setSearchTerm] = useState("");
 	const [expandedTables, setExpandedTables] = useState<
 		Record<string, boolean>
@@ -144,9 +143,15 @@ export const DatabaseColumnsPanel: React.FC<DatabaseColumnPanelProps> = ({
 		return searched;
 	}, [structure, searchTerm]);
 
-	// Context-menu action groups vary by query language (SQL vs SPARQL).
-	const tableActionGroups = getTableActionGroups(mode);
-	const columnActionGroups = getColumnActionGroups(mode);
+	// Context-menu action groups vary by query language (SQL vs SPARQL). In
+	// read-only mode only the "Query" group is exposed so users can generate
+	// SELECT-style queries but not data/schema mutations (Insert/Update/DROP…).
+	const tableActionGroups = getTableActionGroups(mode).filter(
+		(group) => !readOnly || group.label === "Query",
+	);
+	const columnActionGroups = getColumnActionGroups(mode).filter(
+		(group) => !readOnly || group.label === "Query",
+	);
 
 	const allExpanded =
 		searchedStructure.length > 0 &&
@@ -365,27 +370,28 @@ export const DatabaseColumnsPanel: React.FC<DatabaseColumnPanelProps> = ({
 													<ContextMenuContent
 														data-testid={`database-columns--table-menu-${table.table}`}
 													>
-														{mode === "SQL" && (
-															<>
-																<ContextMenuItem
-																	title={
-																		"Upload CSV"
-																	}
-																	onSelect={() => {
-																		setUploadTargetTable(
-																			table.table,
-																		);
-																		setUploadDialogOpen(
-																			true,
-																		);
-																	}}
-																	data-testid={`database-columns--table-action-${table.table}-upload-csv}`}
-																>
-																	Upload
-																</ContextMenuItem>
-																<ContextMenuSeparator />
-															</>
-														)}
+														{mode === "SQL" &&
+															!readOnly && (
+																<>
+																	<ContextMenuItem
+																		title={
+																			"Upload CSV"
+																		}
+																		onSelect={() => {
+																			setUploadTargetTable(
+																				table.table,
+																			);
+																			setUploadDialogOpen(
+																				true,
+																			);
+																		}}
+																		data-testid={`database-columns--table-action-${table.table}-upload-csv}`}
+																	>
+																		Upload
+																	</ContextMenuItem>
+																	<ContextMenuSeparator />
+																</>
+															)}
 														{tableActionGroups.map(
 															(group) => (
 																<ContextMenuSub
@@ -537,7 +543,6 @@ export const DatabaseColumnsPanel: React.FC<DatabaseColumnPanelProps> = ({
 			</div>
 
 			<DatabaseUploadCsv
-				engine={engine}
 				structure={structure}
 				table={uploadTargetTable}
 				open={uploadDialogOpen}

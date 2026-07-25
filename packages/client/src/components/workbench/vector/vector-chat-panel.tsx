@@ -15,6 +15,7 @@ import {
 	Spinner,
 	Textarea,
 } from "@semoss/ui/next";
+import { useEngine } from "@/hooks";
 import {
 	type Model,
 	VectorChatPanelSidebar,
@@ -31,12 +32,8 @@ interface LLMOutput {
 	response?: string;
 }
 
-interface VectorChatPanelProps {
-	/** Engine (vector) id to query */
-	engine: string;
-}
-
-export const VectorChatPanel = ({ engine }: VectorChatPanelProps) => {
+export const VectorChatPanel = () => {
+	const { engine } = useEngine();
 	const insight = useInsight();
 
 	const [isLoading, setIsLoading] = useState(false);
@@ -68,7 +65,7 @@ export const VectorChatPanel = ({ engine }: VectorChatPanelProps) => {
 		}
 		try {
 			let pixel = `
-            VectorDatabaseQuery(engine="${engine}" , command='<encode>${data.QUESTION}</encode>', limit=${limit});
+            VectorDatabaseQuery(engine="${engine.engine_id}" , command='<encode>${data.QUESTION}</encode>', limit=${limit});
             `;
 
 			const response = await runPixel(pixel, insight.insightId);

@@ -3,18 +3,18 @@ import { useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import type { FlexLayout } from "@semoss/shared";
 import { Muted, Spinner, toast } from "@semoss/ui/next";
+import { useEngine } from "@/hooks";
 import { MCPJsonEditor } from "../../shared";
 
 interface EngineMcpEditorPanelProps {
 	/** Node */
 	node: FlexLayout.TabNode;
-
-	/** Engine */
-	engine: string;
 }
 
 export const EngineMcpEditorPanel: React.FC<EngineMcpEditorPanelProps> =
-	observer(({ node, engine }) => {
+	observer(({ node }) => {
+		const { engine, permission } = useEngine();
+		const readOnly = !(permission === "OWNER" || permission === "EDIT");
 		const insight = useInsight();
 		const config: {
 			name: string;
@@ -30,7 +30,7 @@ export const EngineMcpEditorPanel: React.FC<EngineMcpEditorPanelProps> =
 		const [isLoading, setIsLoading] = useState(false);
 
 		const getFile = usePixel<string>(
-			`GetEngineAssets(filePath=["${config.path}"], engine=["${engine}"]);`,
+			`GetEngineAssets(filePath=["${config.path}"], engine=["${engine.engine_id}"]);`,
 			{
 				onSuccess: (fileContent) => {
 					let data = {
@@ -85,7 +85,7 @@ export const EngineMcpEditorPanel: React.FC<EngineMcpEditorPanelProps> =
 				setIsLoading(true);
 
 				await insight.actions.run(
-					`SaveEngineAssets(engine=["${engine}"], filePath=["${config.path}"], content=["<encode>${JSON.stringify(
+					`SaveEngineAssets(engine=["${engine.engine_id}"], filePath=["${config.path}"], content=["<encode>${JSON.stringify(
 						data,
 						null,
 						2,
@@ -119,6 +119,7 @@ export const EngineMcpEditorPanel: React.FC<EngineMcpEditorPanelProps> =
 				{getFile.status === "SUCCESS" && data && (
 					<div className="flex h-full w-full flex-1 flex-col overflow-y-auto">
 						<MCPJsonEditor
+							readOnly={readOnly}
 							dataMap={{
 								initialData: data,
 								onSave: (data) => saveFile(data),

@@ -7,6 +7,7 @@ export const WORKBENCH_COMPONENTS = {
 	DATABASE_RESULTS: "database-results",
 	MODEL_CHAT: "model-chat",
 	VECTOR_CHAT: "vector-chat",
+	VECTOR_DOCUMENTS: "vector-documents",
 	STORAGE_EXPLORER: "storage-file-explorer",
 	ENGINE_SETTINGS: "engine-settings",
 } as const;

@@ -11,17 +11,12 @@ import { Workbench } from "../workbench";
 import { WORKBENCH_COMPONENTS } from "../workbench.contants";
 import { ModelChatPanel } from "./model-chat-panel";
 
-interface ModelWorkbenchProps {
-	/** Engine (model) id to edit */
-	engine: string;
-}
-
 /**
  * Model workbench that combines a chat panel with the shared file explorer,
  * editor, and MCP editor. Rendered inside an InsightProvider by the page so
  * the chat and file operations share a single insight.
  */
-export const ModelWorkbench: React.FC<ModelWorkbenchProps> = ({ engine }) => {
+export const ModelWorkbench: React.FC = () => {
 	const model = useMemo(() => {
 		return FlexLayout.Model.fromJson({
 			global: {
@@ -92,13 +87,7 @@ export const ModelWorkbench: React.FC<ModelWorkbenchProps> = ({ engine }) => {
 		[WORKBENCH_COMPONENTS.FILE_EXPLORER]: {
 			tab: () => <FolderTreeIcon className="size-4" />,
 			panel: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => {
-				return (
-					<EngineFileExplorerPanel
-						layout={layout}
-						node={node}
-						engine={engine}
-					/>
-				);
+				return <EngineFileExplorerPanel layout={layout} node={node} />;
 			},
 		},
 		[WORKBENCH_COMPONENTS.FILE_EDITOR]: {
@@ -107,7 +96,7 @@ export const ModelWorkbench: React.FC<ModelWorkbenchProps> = ({ engine }) => {
 				return <Icon className="size-4" />;
 			},
 			panel: (node: FlexLayout.TabNode) => {
-				return <EngineFileEditorPanel node={node} engine={engine} />;
+				return <EngineFileEditorPanel node={node} />;
 			},
 		},
 		[WORKBENCH_COMPONENTS.MCP_EDITOR]: {
@@ -116,12 +105,12 @@ export const ModelWorkbench: React.FC<ModelWorkbenchProps> = ({ engine }) => {
 				return <Icon className="size-4" />;
 			},
 			panel: (node: FlexLayout.TabNode) => {
-				return <EngineMcpEditorPanel node={node} engine={engine} />;
+				return <EngineMcpEditorPanel node={node} />;
 			},
 		},
 		[WORKBENCH_COMPONENTS.MODEL_CHAT]: {
 			tab: () => <MessageSquareIcon className="size-4" />,
-			panel: () => <ModelChatPanel engine={engine} />,
+			panel: () => <ModelChatPanel />,
 		},
 		[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: {
 			tab: () => <SettingsIcon className="size-4" />,

@@ -24,13 +24,10 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import { useEngine, useRootStore } from "@/hooks";
 import type { DatabaseType } from "./database-script-templates";
 
 interface DatabaseQueryResultsPanelProps {
-	/** Engine (database) id to query */
-	engine: string;
-
 	/** Query language mode (defaults to SQL) */
 	mode: DatabaseType;
 
@@ -88,7 +85,8 @@ interface DatabaseQueryResultsPanelProps {
 
 export const DatabaseQueryResultsPanel: React.FC<
 	DatabaseQueryResultsPanelProps
-> = ({ engine, mode, variant, model, isRunning, result }) => {
+> = ({ mode, variant, model, isRunning, result }) => {
+	const { engine } = useEngine();
 	const { configStore } = useRootStore();
 
 	const [isExporting, setIsExporting] = useState(false);
@@ -102,11 +100,11 @@ export const DatabaseQueryResultsPanel: React.FC<
 
 		let pixel: string;
 		if (variant === "admin") {
-			pixel = `AdminSqlQuery(database=["${engine}"], query=["<encode>${result.query}</encode>"], commit=[true], limit=[-1]) | ToCsv();`;
+			pixel = `AdminSqlQuery(database=["${engine.engine_id}"], query=["<encode>${result.query}</encode>"], commit=[true], limit=[-1]) | ToCsv();`;
 		} else if (mode === "SPARQL") {
-			pixel = `SparqlQuery(database=["${engine}"], query=["<encode>${result.query}</encode>"], raw=[${result.raw}], commit=[true], limit=[-1]) | ToCsv();`;
+			pixel = `SparqlQuery(database=["${engine.engine_id}"], query=["<encode>${result.query}</encode>"], raw=[${result.raw}], commit=[true], limit=[-1]) | ToCsv();`;
 		} else {
-			pixel = `SqlQuery(database=["${engine}"], query=["<encode>${result.query}</encode>"], commit=[true], limit=[-1]) | ToCsv();`;
+			pixel = `SqlQuery(database=["${engine.engine_id}"], query=["<encode>${result.query}</encode>"], commit=[true], limit=[-1]) | ToCsv();`;
 		}
 
 		try {

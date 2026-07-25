@@ -31,14 +31,11 @@ import {
 	TableRow,
 	toast,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import { useEngine, useRootStore } from "@/hooks";
 
 const NEW_DATABASE = "TABLE";
 
 interface DatabaseUploadFileProps {
-	/** Engine (database) id to query */
-	engine: string;
-
 	/** usePixel return to get the table structure */
 	structure: {
 		table: string;
@@ -56,12 +53,12 @@ interface DatabaseUploadFileProps {
 }
 
 export const DatabaseUploadCsv = ({
-	engine,
 	structure,
 	table,
 	open,
 	onClose,
 }: DatabaseUploadFileProps) => {
+	const { engine } = useEngine();
 	const { configStore } = useRootStore();
 
 	const targetTableId = useId();
@@ -187,11 +184,6 @@ export const DatabaseUploadCsv = ({
 	 * @returns
 	 */
 	const handleUploadTableData = async () => {
-		if (!engine) {
-			toast.error("No active database selected.");
-			return;
-		}
-
 		// Validate target
 		let resolvedTarget = target;
 		if (target === NEW_DATABASE) {
@@ -221,7 +213,7 @@ export const DatabaseUploadCsv = ({
 			setIsLoading(true);
 
 			// Build the upload pixel using RdbmsUploadTableData pattern
-			const pixel = `FileRead(filePath=[${JSON.stringify(filePath)}], delimiter=[${JSON.stringify(delimiter)}]) | ToDatabase(targetDatabase=[${JSON.stringify(engine)}], targetTable=[${JSON.stringify(resolvedTarget)}], override=[${method === "replace"}]);`;
+			const pixel = `FileRead(filePath=[${JSON.stringify(filePath)}], delimiter=[${JSON.stringify(delimiter)}]) | ToDatabase(targetDatabase=[${JSON.stringify(engine.engine_id)}], targetTable=[${JSON.stringify(resolvedTarget)}], override=[${method === "replace"}]);`;
 
 			const response = await configStore.runPixel(pixel);
 			if (response.errors?.length > 0) {

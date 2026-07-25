@@ -6,26 +6,24 @@ import {
 	FileExplorer,
 	FileExplorerItem,
 	type FileExplorerMovedItem,
+	type FileItem,
 	FlexLayout,
 	getFileEditorPathScope,
 	notifyFileEditorPathMoved,
 } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
+import { useEngine } from "@/hooks";
 import { WORKBENCH_COMPONENTS } from "../workbench.contants";
 
 interface StorageFileExplorerPanelProps {
 	/** Node */
-	layout: FlexLayout.Layout;
-
-	/** Node */
 	node: FlexLayout.TabNode;
-
-	/** Engine */
-	engine: string;
 }
 
 export const StorageFileExplorerPanel: React.FC<StorageFileExplorerPanelProps> =
-	observer(({ layout, node, engine }) => {
+	observer(({ node }) => {
+		const { engine, permission } = useEngine();
+		const readOnly = !(permission === "OWNER" || permission === "EDIT");
 		const insight = useInsight();
 		const [searchParams, setSearchParams] = useSearchParams();
 		const [refreshKey, setRefreshKey] = useState(0);
@@ -78,7 +76,10 @@ export const StorageFileExplorerPanel: React.FC<StorageFileExplorerPanelProps> =
 							},
 							insight.insightId,
 						)
-					: getFileEditorPathScope({ type: "ENGINE", engine });
+					: getFileEditorPathScope({
+							type: "ENGINE",
+							engine: engine.engine_id,
+						});
 			const tabName = tabNode.getName();
 			const displayName = tabName.endsWith("*") ? `${newName}*` : newName;
 
@@ -278,9 +279,10 @@ export const StorageFileExplorerPanel: React.FC<StorageFileExplorerPanelProps> =
 		return (
 			<FileExplorer
 				key={refreshKey}
+				readOnly={readOnly}
 				mode={{
 					type: "STORAGE",
-					storage: engine,
+					storage: engine.engine_id,
 				}}
 				onItemSelect={(item) => {
 					if (item.type === "directory") {
@@ -292,7 +294,7 @@ export const StorageFileExplorerPanel: React.FC<StorageFileExplorerPanelProps> =
 					const insightFilePath = `/${fileName}`;
 
 					runPixel<[string]>(
-						`PullFromStorage(storage=["${engine}"], storagePath=["${item.path}"], filePath="/");`,
+						`PullFromStorage(storage=["${engine.engine_id}"], storagePath=["${item.path}"], filePath="/");`,
 						"new",
 					)
 						.then((response) => {
@@ -329,10 +331,13 @@ export const StorageFileExplorerPanel: React.FC<StorageFileExplorerPanelProps> =
 					});
 				}}
 				ItemComponent={({ item, refresh, ...otherProps }) => {
-					const secondaryActions = [
+					const secondaryActions: Array<{
+						name: string;
+						action: (item: FileItem) => Promise<void>;
+					}> = [
 						{
 							name: "Copy Path",
-							action: async (item) => {
+							action: async (item: FileItem) => {
 								try {
 									await navigator.clipboard.writeText(
 										item.path,

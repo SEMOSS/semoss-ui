@@ -55,6 +55,10 @@ type MCPJsonEditorProps = {
 		path: string;
 		name: string;
 	};
+
+	/** When true, the editor is view-only: Save, Delete, and all field edits
+	 * are disabled. Defaults to false. */
+	readOnly?: boolean;
 };
 
 export type MCPToolProperty = {
@@ -577,6 +581,7 @@ interface PropertyCardProps {
 		propKey: string,
 		newText: string,
 	) => void;
+	readOnly?: boolean;
 }
 
 const PropertyCard: React.FC<PropertyCardProps> = ({
@@ -584,9 +589,10 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 	propKey,
 	property,
 	isRequired,
-	isDeleted,
+	isDeleted: isDeletedProp,
 	jsonError,
 	jsonText,
+	readOnly = false,
 	onUpdateToolProp,
 	onRequiredToggle,
 	onTypeChange,
@@ -596,6 +602,10 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 	onEnumValueDelete,
 	onJsonTextChange,
 }) => {
+	// Treat read-only the same as a pending-deletion card: every editable
+	// control below already keys its disabled state off `isDeleted`, so OR-ing
+	// in `readOnly` disables them all without touching each call site.
+	const isDeleted = isDeletedProp || readOnly;
 	const isEnumType = Array.isArray(property.enum);
 	const enumOptions = isEnumType ? (property.enum ?? []) : [];
 	const displayedType = isEnumType ? ENUM_TYPE_VALUE : property.type;
@@ -1204,6 +1214,7 @@ interface FunctionCardProps {
 	jsonErrors: Record<string, string>;
 	showDelete?: boolean;
 	showRestore?: boolean;
+	readOnly?: boolean;
 }
 
 const FunctionCard = memo<FunctionCardProps>(
@@ -1228,6 +1239,7 @@ const FunctionCard = memo<FunctionCardProps>(
 		jsonErrors,
 		showDelete = true,
 		showRestore = true,
+		readOnly = false,
 	}) => {
 		const propertyEntries = Object.entries(tool.inputSchema.properties);
 		const requiredCount = tool.inputSchema.required?.length ?? 0;
@@ -1377,7 +1389,7 @@ const FunctionCard = memo<FunctionCardProps>(
 										description: e.target.value,
 									})
 								}
-								disabled={isDeleted}
+								disabled={isDeleted || readOnly}
 								rows={2}
 								className={`resize-y text-foreground text-sm ${
 									isDeleted
@@ -1440,6 +1452,7 @@ const FunctionCard = memo<FunctionCardProps>(
 												property={p}
 												isRequired={isRequired}
 												isDeleted={isDeleted}
+												readOnly={readOnly}
 												jsonError={jsonErrors[textKey]}
 												jsonText={getJsonTextValue(
 													actualIdx,
@@ -1478,7 +1491,7 @@ const FunctionCard = memo<FunctionCardProps>(
 							label="Metadata"
 							value={metaText}
 							error={metaError}
-							disabled={isDeleted}
+							disabled={isDeleted || readOnly}
 							emptyValue="{}"
 							placeholder={
 								'{"SMSS_MCP_UI": {"displayLocation": "sidebar"}}'
@@ -1498,7 +1511,10 @@ const FunctionCard = memo<FunctionCardProps>(
 
 FunctionCard.displayName = "FunctionCard";
 
-export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
+export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({
+	dataMap,
+	readOnly = false,
+}) => {
 	const { initialData, onSave, path } = dataMap;
 
 	const [data, setData] = useState<MCPJsonData>(initialData);
@@ -1908,7 +1924,7 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 				searchQuery={searchQuery}
 				debouncedSearch={debouncedSearch}
 				showExpandAll={true}
-				showSave={true}
+				showSave={!readOnly}
 				showSearch={true}
 				hasChanges={hasChanges}
 				onExpandAll={handleExpandAll}
@@ -1960,8 +1976,9 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 						onJsonTextChange={handleJsonTextChange}
 						getJsonTextValue={getJsonTextValue}
 						jsonErrors={jsonErrors}
-						showDelete={true}
-						showRestore={true}
+						readOnly={readOnly}
+						showDelete={!readOnly}
+						showRestore={!readOnly}
 					/>
 				);
 			})}

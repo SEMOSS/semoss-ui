@@ -1,4 +1,9 @@
-import { FolderTreeIcon, MessageSquareIcon, SettingsIcon } from "lucide-react";
+import {
+	FileTextIcon,
+	FolderTreeIcon,
+	MessageSquareIcon,
+	SettingsIcon,
+} from "lucide-react";
 import { useMemo } from "react";
 import { FlexLayout, getFileIconComponent } from "@semoss/shared";
 import {
@@ -10,18 +15,14 @@ import {
 import { Workbench } from "../workbench";
 import { WORKBENCH_COMPONENTS } from "../workbench.contants";
 import { VectorChatPanel } from "./vector-chat-panel";
-
-interface VectorWorkbenchProps {
-	/** Engine (vector) id to edit */
-	engine: string;
-}
+import { VectorDocumentsPanel } from "./vector-documents-panel";
 
 /**
  * Vector workbench that exposes the engine's files through the shared file
  * explorer, editor, and MCP editor. Rendered inside an InsightProvider by the
  * page so its file operations share a single insight.
  */
-export const VectorWorkbench: React.FC<VectorWorkbenchProps> = ({ engine }) => {
+export const VectorWorkbench: React.FC = () => {
 	const model = useMemo(() => {
 		return FlexLayout.Model.fromJson({
 			global: {
@@ -35,6 +36,15 @@ export const VectorWorkbench: React.FC<VectorWorkbenchProps> = ({ engine }) => {
 					size: 300,
 					selected: 0,
 					children: [
+						{
+							type: "tab",
+							id: WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS,
+							name: "Documents",
+							component: WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS,
+							config: {},
+							helpText: "Documents",
+							enableClose: false,
+						},
 						{
 							type: "tab",
 							id: WORKBENCH_COMPONENTS.FILE_EXPLORER,
@@ -93,14 +103,12 @@ export const VectorWorkbench: React.FC<VectorWorkbenchProps> = ({ engine }) => {
 		[WORKBENCH_COMPONENTS.FILE_EXPLORER]: {
 			tab: () => <FolderTreeIcon className="size-4" />,
 			panel: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => {
-				return (
-					<EngineFileExplorerPanel
-						layout={layout}
-						node={node}
-						engine={engine}
-					/>
-				);
+				return <EngineFileExplorerPanel layout={layout} node={node} />;
 			},
+		},
+		[WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS]: {
+			tab: () => <FileTextIcon className="size-4" />,
+			panel: () => <VectorDocumentsPanel />,
 		},
 		[WORKBENCH_COMPONENTS.FILE_EDITOR]: {
 			tab: (node: FlexLayout.TabNode) => {
@@ -108,7 +116,7 @@ export const VectorWorkbench: React.FC<VectorWorkbenchProps> = ({ engine }) => {
 				return <Icon className="size-4" />;
 			},
 			panel: (node: FlexLayout.TabNode) => {
-				return <EngineFileEditorPanel node={node} engine={engine} />;
+				return <EngineFileEditorPanel node={node} />;
 			},
 		},
 		[WORKBENCH_COMPONENTS.MCP_EDITOR]: {
@@ -117,12 +125,12 @@ export const VectorWorkbench: React.FC<VectorWorkbenchProps> = ({ engine }) => {
 				return <Icon className="size-4" />;
 			},
 			panel: (node: FlexLayout.TabNode) => {
-				return <EngineMcpEditorPanel node={node} engine={engine} />;
+				return <EngineMcpEditorPanel node={node} />;
 			},
 		},
 		[WORKBENCH_COMPONENTS.VECTOR_CHAT]: {
 			tab: () => <MessageSquareIcon className="size-4" />,
-			panel: () => <VectorChatPanel engine={engine} />,
+			panel: () => <VectorChatPanel />,
 		},
 		[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: {
 			tab: () => <SettingsIcon className="size-4" />,

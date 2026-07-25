@@ -3,7 +3,6 @@ import { ImportPage } from "../import";
 import { EngineActivityPage } from "./engine-activity-page";
 import { EngineCommitsPage } from "./engine-commits-page";
 import { EngineDatabaseWorkbenchPage } from "./engine-database-workbench-page";
-import { EngineFilePage } from "./engine-file-page";
 import { EngineFunctionWorkbenchPage } from "./engine-function-workbench-page";
 import { EngineGuardrailWorkbenchPage } from "./engine-guardrail-workbench-page";
 import { EngineIndexPage } from "./engine-index-page";
@@ -472,15 +471,6 @@ export const ENGINE_ROUTES: {
 										],
 									},
 									{
-										name: "Documents",
-										path: "documents",
-										restrict: [
-											"READ_ONLY",
-											"EDIT",
-											"OWNER",
-										],
-									},
-									{
 										name: "Access Control",
 										path: "access-control",
 										restrict: ["EDIT", "OWNER"],
@@ -504,7 +494,6 @@ export const ENGINE_ROUTES: {
 								path: "activity",
 								element: <EngineActivityPage />,
 							},
-							{ path: "documents", element: <EngineFilePage /> },
 							{
 								path: "access-control",
 								element: <EngineSettingsPage />,

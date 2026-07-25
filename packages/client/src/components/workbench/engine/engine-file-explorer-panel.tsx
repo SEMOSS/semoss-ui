@@ -7,12 +7,14 @@ import {
 	FileExplorer,
 	FileExplorerItem,
 	type FileExplorerMovedItem,
+	type FileItem,
 	FlexLayout,
 	getFileEditorPathScope,
 	notifyFileEditorPathMoved,
 } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
 import { MCP } from "@/constants";
+import { useEngine } from "@/hooks";
 import { WORKBENCH_COMPONENTS } from "../workbench.contants";
 
 interface EngineFileExplorerPanelProps {
@@ -21,13 +23,14 @@ interface EngineFileExplorerPanelProps {
 
 	/** Node */
 	node: FlexLayout.TabNode;
-
-	/** Engine */
-	engine: string;
 }
 
 export const EngineFileExplorerPanel: React.FC<EngineFileExplorerPanelProps> =
-	observer(({ layout, node, engine }) => {
+	observer(({ layout, node }) => {
+		const { engine, permission } = useEngine();
+		// Only OWNER/EDIT users can mutate engine assets; READ_ONLY users get
+		// browse/open/download behavior without create/delete actions.
+		const readOnly = !(permission === "OWNER" || permission === "EDIT");
 		const insight = useInsight();
 		const [searchParams, setSearchParams] = useSearchParams();
 		const [refreshKey, setRefreshKey] = useState(0);
@@ -80,7 +83,10 @@ export const EngineFileExplorerPanel: React.FC<EngineFileExplorerPanelProps> =
 							},
 							insight.insightId,
 						)
-					: getFileEditorPathScope({ type: "ENGINE", engine });
+					: getFileEditorPathScope({
+							type: "ENGINE",
+							engine: engine.engine_id,
+						});
 			const tabName = tabNode.getName();
 			const displayName = tabName.endsWith("*") ? `${newName}*` : newName;
 
@@ -280,9 +286,10 @@ export const EngineFileExplorerPanel: React.FC<EngineFileExplorerPanelProps> =
 		return (
 			<FileExplorer
 				key={refreshKey}
+				readOnly={readOnly}
 				mode={{
 					type: "ENGINE",
-					engine: engine,
+					engine: engine.engine_id,
 				}}
 				onItemSelect={(item) => {
 					// don't open directories
@@ -317,7 +324,7 @@ export const EngineFileExplorerPanel: React.FC<EngineFileExplorerPanelProps> =
 						MCP.DRIVER_PATHS.some((f) => item.path === f);
 					const actions = [];
 
-					if (isDriverFile) {
+					if (isDriverFile && !readOnly) {
 						actions.push({
 							name: "Create",
 							icon: <HammerIcon />,
@@ -325,7 +332,7 @@ export const EngineFileExplorerPanel: React.FC<EngineFileExplorerPanelProps> =
 							action: async () => {
 								try {
 									await insight.actions.run(
-										`MakePythonMCP(engine=["${engine}"]);`,
+										`MakePythonMCP(engine=["${engine.engine_id}"]);`,
 									);
 
 									// refresh the explorer
@@ -361,7 +368,7 @@ export const EngineFileExplorerPanel: React.FC<EngineFileExplorerPanelProps> =
 							name: "Edit",
 							icon: <PencilIcon />,
 							tooltip: "Edit Toolbox",
-							action: async (item) => {
+							action: async (item: FileItem) => {
 								// this will select if there or open if not
 								addNode(
 									`${WORKBENCH_COMPONENTS.MCP_EDITOR}--${item.path}`,
@@ -384,7 +391,7 @@ export const EngineFileExplorerPanel: React.FC<EngineFileExplorerPanelProps> =
 					const secondaryActions = [
 						{
 							name: "Copy Path",
-							action: async (item) => {
+							action: async (item: FileItem) => {
 								try {
 									await navigator.clipboard.writeText(
 										item.path,
@@ -401,11 +408,11 @@ export const EngineFileExplorerPanel: React.FC<EngineFileExplorerPanelProps> =
 					if (item.type !== "directory") {
 						secondaryActions.push({
 							name: "Download",
-							action: async (item) => {
+							action: async (item: FileItem) => {
 								// save it
 								const { pixelReturn } =
 									await insight.actions.run<[string]>(
-										`DownloadEngineAsset(engine=["${engine}"], filePath=["${item.path}"]);`,
+										`DownloadEngineAsset(engine=["${engine.engine_id}"], filePath=["${item.path}"]);`,
 									);
 
 								// get the file key
@@ -419,19 +426,21 @@ export const EngineFileExplorerPanel: React.FC<EngineFileExplorerPanelProps> =
 						});
 					}
 
-					secondaryActions.push({
-						name: "Delete",
-						action: async (item) => {
-							await insight.actions.run(
-								`DeleteEngineAssets(engine=["${engine}"], filePath=["${item.path}"]);`,
-							);
-							removeDeletedTabs(
-								item.path,
-								item.type === "directory",
-							);
-							refresh();
-						},
-					});
+					if (!readOnly) {
+						secondaryActions.push({
+							name: "Delete",
+							action: async (item: FileItem) => {
+								await insight.actions.run(
+									`DeleteEngineAssets(engine=["${engine.engine_id}"], filePath=["${item.path}"]);`,
+								);
+								removeDeletedTabs(
+									item.path,
+									item.type === "directory",
+								);
+								refresh();
+							},
+						});
+					}
 
 					return (
 						<FileExplorerItem

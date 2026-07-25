@@ -11,19 +11,12 @@ import { Workbench } from "../workbench";
 import { WORKBENCH_COMPONENTS } from "../workbench.contants";
 import { StorageFileExplorerPanel } from "./storage-file-explorer-panel";
 
-interface StorageWorkbenchProps {
-	/** Engine (storage) id to edit */
-	engine: string;
-}
-
 /**
  * Storage workbench that exposes the engine's files through the shared file
  * explorer, editor, and MCP editor. Rendered inside an InsightProvider by the
  * page so its file operations share a single insight.
  */
-export const StorageWorkbench: React.FC<StorageWorkbenchProps> = ({
-	engine,
-}) => {
+export const StorageWorkbench: React.FC = () => {
 	const model = useMemo(() => {
 		return FlexLayout.Model.fromJson({
 			global: {
@@ -96,13 +89,7 @@ export const StorageWorkbench: React.FC<StorageWorkbenchProps> = ({
 		[WORKBENCH_COMPONENTS.FILE_EXPLORER]: {
 			tab: () => <FolderTreeIcon className="size-4" />,
 			panel: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => {
-				return (
-					<EngineFileExplorerPanel
-						layout={layout}
-						node={node}
-						engine={engine}
-					/>
-				);
+				return <EngineFileExplorerPanel layout={layout} node={node} />;
 			},
 		},
 		[WORKBENCH_COMPONENTS.FILE_EDITOR]: {
@@ -111,7 +98,7 @@ export const StorageWorkbench: React.FC<StorageWorkbenchProps> = ({
 				return <Icon className="size-4" />;
 			},
 			panel: (node: FlexLayout.TabNode) => {
-				return <EngineFileEditorPanel node={node} engine={engine} />;
+				return <EngineFileEditorPanel node={node} />;
 			},
 		},
 		[WORKBENCH_COMPONENTS.MCP_EDITOR]: {
@@ -120,19 +107,13 @@ export const StorageWorkbench: React.FC<StorageWorkbenchProps> = ({
 				return <Icon className="size-4" />;
 			},
 			panel: (node: FlexLayout.TabNode) => {
-				return <EngineMcpEditorPanel node={node} engine={engine} />;
+				return <EngineMcpEditorPanel node={node} />;
 			},
 		},
 		[WORKBENCH_COMPONENTS.STORAGE_EXPLORER]: {
 			tab: () => <CloudIcon className="size-4" />,
-			panel: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => {
-				return (
-					<StorageFileExplorerPanel
-						layout={layout}
-						node={node}
-						engine={engine}
-					/>
-				);
+			panel: (node: FlexLayout.TabNode) => {
+				return <StorageFileExplorerPanel node={node} />;
 			},
 		},
 		[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: {

@@ -2,17 +2,18 @@ import { observer } from "mobx-react-lite";
 import { FileEditor, FlexLayout } from "@semoss/shared";
 import { MetadataHelpDialog } from "@/components/shared";
 import { MCP } from "@/constants";
+import { useEngine } from "@/hooks";
 
 interface EngineFileEditorPanelProps {
 	/** Node */
 	node: FlexLayout.TabNode;
-
-	/** Engine */
-	engine: string;
 }
 
 export const EngineFileEditorPanel: React.FC<EngineFileEditorPanelProps> =
-	observer(({ node, engine }) => {
+	observer(({ node }) => {
+		const { engine, permission } = useEngine();
+		const readOnly = !(permission === "OWNER" || permission === "EDIT");
+
 		const config: {
 			name: string;
 			path: string;
@@ -32,6 +33,7 @@ export const EngineFileEditorPanel: React.FC<EngineFileEditorPanelProps> =
 						insightId: config.insightId,
 					}}
 					path={config.path}
+					readOnly={readOnly}
 					onChange={(_content, isModified) => {
 						const updated = isModified
 							? `${config.name}*`
@@ -50,9 +52,10 @@ export const EngineFileEditorPanel: React.FC<EngineFileEditorPanelProps> =
 			<FileEditor
 				mode={{
 					type: "ENGINE",
-					engine: engine,
+					engine: engine.engine_id,
 				}}
 				path={config.path}
+				readOnly={readOnly}
 				leadingToolbar={
 					isDriverFile ? <MetadataHelpDialog compact /> : undefined
 				}

@@ -10,19 +10,12 @@ import {
 import { Workbench } from "../workbench";
 import { WORKBENCH_COMPONENTS } from "../workbench.contants";
 
-interface FunctionWorkbenchProps {
-	/** Engine (function) id to edit */
-	engine: string;
-}
-
 /**
  * Function workbench that exposes the engine's files through the shared file
  * explorer, editor, and MCP editor. Rendered inside an InsightProvider by the
  * page so its file operations share a single insight.
  */
-export const FunctionWorkbench: React.FC<FunctionWorkbenchProps> = ({
-	engine,
-}) => {
+export const FunctionWorkbench: React.FC = () => {
 	const model = useMemo(() => {
 		return FlexLayout.Model.fromJson({
 			global: {
@@ -86,13 +79,7 @@ export const FunctionWorkbench: React.FC<FunctionWorkbenchProps> = ({
 		[WORKBENCH_COMPONENTS.FILE_EXPLORER]: {
 			tab: () => <FolderTreeIcon className="size-4" />,
 			panel: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => {
-				return (
-					<EngineFileExplorerPanel
-						layout={layout}
-						node={node}
-						engine={engine}
-					/>
-				);
+				return <EngineFileExplorerPanel layout={layout} node={node} />;
 			},
 		},
 		[WORKBENCH_COMPONENTS.FILE_EDITOR]: {
@@ -101,7 +88,7 @@ export const FunctionWorkbench: React.FC<FunctionWorkbenchProps> = ({
 				return <Icon className="size-4" />;
 			},
 			panel: (node: FlexLayout.TabNode) => {
-				return <EngineFileEditorPanel node={node} engine={engine} />;
+				return <EngineFileEditorPanel node={node} />;
 			},
 		},
 		[WORKBENCH_COMPONENTS.MCP_EDITOR]: {
@@ -110,7 +97,7 @@ export const FunctionWorkbench: React.FC<FunctionWorkbenchProps> = ({
 				return <Icon className="size-4" />;
 			},
 			panel: (node: FlexLayout.TabNode) => {
-				return <EngineMcpEditorPanel node={node} engine={engine} />;
+				return <EngineMcpEditorPanel node={node} />;
 			},
 		},
 		[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: {
