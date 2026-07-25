@@ -4,8 +4,8 @@ import type React from "react";
 import { useMemo, useState } from "react";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
 import { FlexLayout } from "@semoss/shared";
-import { Button, toast } from "@semoss/ui/next";
-import { NewNotebookOverlay } from "@/components/notebook";
+import { Button, Dialog, DialogContent, toast } from "@semoss/ui/next";
+import { NewNotebookDialog } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
 import { useWorkspace } from "@/hooks";
 import { NotebookExplorerItem } from "./notebook-explorer-panel-item";
@@ -32,6 +32,8 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 
 		// filter word for the search
 		const [filterWord, setFilterWord] = useState<string>("");
+		const [newNotebookDialogOpen, setNewNotebookDialogOpen] =
+			useState(false);
 
 		/**
 		 * Refresh the notebooks
@@ -44,17 +46,7 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 		 * Open the add modal
 		 */
 		const handleOpenCreateNotebook = () => {
-			workspace.openOverlay(() => (
-				<NewNotebookOverlay
-					onClose={(newQueryId?: string) => {
-						if (newQueryId) {
-							createPanel(newQueryId);
-							refreshNotebooks();
-						}
-						workspace.closeOverlay();
-					}}
-				/>
-			));
+			setNewNotebookDialogOpen(true);
 		};
 
 		/**
@@ -346,6 +338,24 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 						);
 					})}
 				</div>
+				<Dialog
+					open={newNotebookDialogOpen}
+					onOpenChange={(open) => {
+						setNewNotebookDialogOpen(open);
+					}}
+				>
+					<DialogContent className="max-w-sm p-0">
+						<NewNotebookDialog
+							onClose={(newQueryId?: string) => {
+								if (newQueryId) {
+									createPanel(newQueryId);
+									refreshNotebooks();
+								}
+								setNewNotebookDialogOpen(false);
+							}}
+						/>
+					</DialogContent>
+				</Dialog>
 			</Panel>
 		);
 	});

@@ -1,7 +1,7 @@
 import { Notebook } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useId, useMemo } from "react";
+import { useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
 import { Button, Input, Label } from "@semoss/ui/next";
@@ -11,9 +11,9 @@ type NewQueryForm = {
 	ID: string;
 };
 
-interface NewNotebookOverlayProps {
+interface NewNotebookDialogProps {
 	/**
-	 * Method called to close overlay
+	 * Method called to close dialog
 	 * @param newQueryId - new query id if successful
 	 */
 	onClose: (newQueryId?: string) => void;
@@ -22,17 +22,15 @@ interface NewNotebookOverlayProps {
 /**
  * Edit or create a new query
  */
-export const NewNotebookOverlay = observer(
-	(props: NewNotebookOverlayProps): React.JSX.Element => {
+export const NewNotebookDialog = observer(
+	(props: NewNotebookDialogProps): React.JSX.Element => {
 		const { onClose = () => null } = props;
 
 		const { state } = useBlocks();
 		const { configStore } = useRootStore();
 		const fieldId = useId();
 
-		// create a new form
 		const {
-			getValues,
 			watch,
 			control,
 			handleSubmit,
@@ -45,26 +43,18 @@ export const NewNotebookOverlay = observer(
 			},
 		});
 
-		const watchAll = watch();
+		const isFormValid = !!watch("ID");
 
-		const isFormValid = useMemo(() => {
-			return !!getValues("ID");
-		}, [watchAll]);
-
-		/**
-		 * Allow the user to login
-		 */
 		const onSubmit = handleSubmit((data: NewQueryForm) => {
 			clearErrors();
 			if (!data.ID) {
 				setError("ID", {
 					type: "manual",
-					message: `Notebook Id is required`,
+					message: "Notebook Id is required",
 				});
 				return;
 			}
 
-			// validate the name if it is new
 			if (state.notebooks[data.ID] || state.blocks[data.ID]) {
 				setError("ID", {
 					type: "manual",
@@ -73,7 +63,6 @@ export const NewNotebookOverlay = observer(
 				return;
 			}
 
-			// create the default based on what is there
 			const defaultCells = [];
 			if (configStore.store.config.python) {
 				defaultCells.push({
@@ -111,7 +100,6 @@ export const NewNotebookOverlay = observer(
 				},
 			});
 
-			// close the overlay
 			onClose(data.ID);
 		});
 

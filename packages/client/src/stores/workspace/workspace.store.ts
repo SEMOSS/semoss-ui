@@ -47,60 +47,6 @@ export interface WorkspaceStoreInterface {
 	model: FlexLayout.Model | null;
 
 	/**
-	 * Overlay information
-	 **/
-	overlay: {
-		/**
-		 * Track if the overlay is open or closed
-		 */
-		open: boolean;
-
-		/**
-		 * Options associated with the overlay
-		 */
-		options: {
-			/**
-			 * Set the maxWidth of the overlay
-			 */
-			maxWidth:
-				| "sm"
-				| "md"
-				| "lg"
-				| "xl"
-				| "2xl"
-				| "3xl"
-				| "4xl"
-				| "5xl"
-				| null;
-		};
-
-		/**
-		 * Content to display in the overlay
-		 */
-		content: () => JSX.Element;
-	};
-
-	/**
-	 * File browser state used to sync asset path suggestions to terminal
-	 */
-	fileBrowser: {
-		/**
-		 * True while the app file browser panel is mounted/open
-		 */
-		isOpen: boolean;
-
-		/**
-		 * Current directory path shown by the browser
-		 */
-		path: string;
-
-		/**
-		 * Visible asset paths currently rendered in the browser tree
-		 */
-		visiblePaths: string[];
-	};
-
-	/**
 	 * insightId of the active terminal tab. Each terminal tab owns its own
 	 * insight; the "Insight" file explorer binds to this so INSIGHT-scoped
 	 * browsing/upload targets the same insight the user runs commands in.
@@ -162,18 +108,6 @@ export class WorkspaceStore {
 			project_date_created: "",
 		},
 		model: null,
-		overlay: {
-			open: false,
-			options: {
-				maxWidth: "sm",
-			},
-			content: () => null,
-		},
-		fileBrowser: {
-			isOpen: false,
-			path: "/",
-			visiblePaths: [],
-		},
 		activeTerminalInsightId: null,
 	};
 
@@ -258,13 +192,6 @@ export class WorkspaceStore {
 	}
 
 	/**
-	 * Get the file browser snapshot used for terminal suggestion sync
-	 */
-	get fileBrowser() {
-		return this._store.fileBrowser;
-	}
-
-	/**
 	 * insightId of the active terminal tab (or null before one is ready). The
 	 * Insight file explorer binds to this so its listing/upload stay in sync
 	 * with the terminal the user is running commands in.
@@ -334,6 +261,10 @@ export class WorkspaceStore {
 	 */
 	saveToCache = (): void => {
 		try {
+			if (!this._store.model) {
+				return;
+			}
+
 			const options: WorkspaceOptions = {
 				version: "",
 				layout: this._store.model.toJson(),
@@ -368,72 +299,10 @@ export class WorkspaceStore {
 	};
 
 	/**
-	 * Open the overlay
-	 */
-	openOverlay = (
-		content: WorkspaceStoreInterface["overlay"]["content"],
-		options: WorkspaceStoreInterface["overlay"]["options"] = {
-			maxWidth: "sm",
-		},
-	) => {
-		// open the overlay
-		this._store.overlay.open = true;
-
-		// set the content
-		this._store.overlay.content = content;
-		this._store.overlay.options = options;
-	};
-
-	/**
-	 * Close the overlay
-	 */
-	closeOverlay = () => {
-		// close the overlay
-		this._store.overlay.open = false;
-
-		// clear the content
-		this._store.overlay.content = null;
-	};
-
-	/**
-	 * Helpers
-	 */
-	/**
-	 * Get overlay information associated with the workspace
-	 */
-	get overlay() {
-		return this._store.overlay;
-	}
-
-	/**
 	 * Set the agentModelEngine
 	 */
 	setAgentModelEngine = (id: string) => {
 		this._store.agentModelEngine = id;
-	};
-
-	/**
-	 * Track whether the app file browser is open/mounted
-	 */
-	setFileBrowserOpen = (isOpen: boolean) => {
-		this._store.fileBrowser.isOpen = isOpen;
-
-		if (!isOpen) {
-			this._store.fileBrowser.path = "/";
-			this._store.fileBrowser.visiblePaths = [];
-		}
-	};
-
-	/**
-	 * Update the latest visible paths from the app file browser
-	 */
-	setFileBrowserVisiblePaths = (path: string, visiblePaths: string[]) => {
-		const normalized = Array.from(
-			new Set(visiblePaths.map((value) => value.trim()).filter(Boolean)),
-		);
-
-		this._store.fileBrowser.path = path || "/";
-		this._store.fileBrowser.visiblePaths = normalized;
 	};
 
 	/**

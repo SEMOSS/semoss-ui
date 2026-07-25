@@ -7,15 +7,15 @@ import {
 	DialogTitle,
 } from "@semoss/ui/next";
 
-interface PreviewOverlayProps {
+interface PreviewDialogProps {
 	/** State to load in the preview */
 	state: SerializedState;
 
-	/** Method called to close overlay  */
+	/** Method called to close dialog */
 	onClose: () => void;
 }
 
-export const PreviewOverlay = observer((props: PreviewOverlayProps) => {
+export const PreviewDialog = observer((props: PreviewDialogProps) => {
 	const { state, onClose = () => null } = props;
 
 	return (

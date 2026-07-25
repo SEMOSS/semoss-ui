@@ -23,7 +23,6 @@ import { useTabBarScroll, useWorkspace } from "@/hooks";
 import type { WorkspaceOptions } from "@/stores";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
 import { WorkspaceLoading } from "./WorkspaceLoading";
-import { WorkspaceOverlay } from "./workspace-overlay";
 
 const TAB_ICON_CLASS_NAME = "size-4";
 
@@ -234,7 +233,6 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 					</div>
 				</NavbarLeft>
 				<NavbarRight>{navbarActions}</NavbarRight>
-				<WorkspaceOverlay />
 				<div className="relative flex h-full w-full flex-col overflow-hidden">
 					<div className="relative mt-2 flex h-full w-full flex-1 overflow-hidden px-3 pt-3 pb-3">
 						<WorkspaceLoading />
@@ -304,7 +302,6 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 						</div>
 					</div>
 				</div>
-				<WorkspaceOverlay />
 			</>
 		);
 	},

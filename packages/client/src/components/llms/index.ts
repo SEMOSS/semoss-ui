@@ -1,1 +1,1 @@
-export * from "./LLMSelectOverlay";
+export * from "./llm-select-dialog";

@@ -9,22 +9,21 @@ import {
 	SelectValue,
 } from "@semoss/ui/next";
 
-interface LLMOverlayProps {
+interface LLMSelectDialogProps {
 	/** List of LLMs to select from */
 	llmList: Record<string, string>[];
 	/** Id of the selected LLM */
 	selectedLLM: string;
 	/** Method called when a LLM is selected */
 	onSelect: (id: string) => void;
-	/** Method called to close overlay  */
+	/** Method called to close dialog */
 	onClose: () => void;
 }
 
 /**
  * TODO: If you dont pass llmList make call to get all models
  */
-
-export const LLMSelectOverlay = observer((props: LLMOverlayProps) => {
+export const LLMSelectDialog = observer((props: LLMSelectDialogProps) => {
 	const {
 		llmList,
 		selectedLLM,
@@ -61,16 +60,16 @@ export const LLMSelectOverlay = observer((props: LLMOverlayProps) => {
 						</SelectValue>
 					</SelectTrigger>
 					<SelectContent>
-						{llmList.map((LLM) => (
+						{llmList.map((llm) => (
 							<SelectItem
-								key={LLM.value}
-								value={LLM.value}
+								key={llm.value}
+								value={llm.value}
 								className="items-start"
 							>
 								<span className="flex flex-col">
-									<span>{LLM.label}</span>
+									<span>{llm.label}</span>
 									<span className="text-muted-foreground text-xs">
-										id: {LLM.value}
+										id: {llm.value}
 									</span>
 								</span>
 							</SelectItem>

@@ -123,10 +123,6 @@ export const AgentWorkspace: React.FC = observer(() => {
 					node={node}
 					layout={layout}
 					app={workspace.appId}
-					onOpenStateChange={workspace.setFileBrowserOpen}
-					onVisibleAssetPathsChange={({ path, paths }) => {
-						workspace.setFileBrowserVisiblePaths(path, paths);
-					}}
 				/>
 			);
 		} else if (component === "app-file-editor") {
@@ -136,17 +132,11 @@ export const AgentWorkspace: React.FC = observer(() => {
 		} else if (component === "settings-panel") {
 			return (
 				<ProjectDetailTabs
-					type="WORKSPACE"
 					tabs={[
 						{ name: "Overview", component: "project-overview" },
 						{
 							name: "MCP",
 							component: "mcp-usage",
-							restrict: ["OWNER", "EDIT", "READ_ONLY"],
-						},
-						{
-							name: "MCP",
-							path: "mcp-usage",
 							restrict: ["OWNER", "EDIT", "READ_ONLY"],
 						},
 						{

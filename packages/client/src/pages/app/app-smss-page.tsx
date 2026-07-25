@@ -3,10 +3,10 @@ import { SettingsContext } from "@/contexts";
 import { useProject } from "@/hooks";
 
 export const AppSmssPage = () => {
-	const { appId } = useProject();
+	const { project } = useProject();
 	return (
 		<SettingsContext.Provider value={{ adminMode: false }}>
-			<UpdateSMSS type="PROJECT" id={appId} />
+			<UpdateSMSS type="PROJECT" id={project.project_id} />
 		</SettingsContext.Provider>
 	);
 };

@@ -1,20 +1,16 @@
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import { usePixel } from "@semoss/sdk/react";
-import type { Project, ProjectDependency, Role } from "@semoss/shared";
+import type { Role } from "@semoss/shared";
 import {
 	Dialog,
 	DialogContent,
-	Spinner,
 	Tabs,
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
-import { ResourceNotFound } from "@/components/common/resource-not-found";
 import { ProjectOverview } from "@/components/project";
 import { ShareOverlay } from "@/components/ui";
-import { ProjectContext } from "@/contexts";
-import { useAPI, useRootStore } from "@/hooks";
+import { useProject } from "@/hooks";
 import { AppAccessControlPage } from "@/pages/app/app-access-control-page";
 import { AppActivityPage } from "@/pages/app/app-activity-page";
 import { AppCommitsPage } from "@/pages/app/app-commits-page";
@@ -24,12 +20,8 @@ import { AppMcpUsagePage } from "@/pages/app/app-mcp-usage-page";
 import { AppSettingsPage } from "@/pages/app/app-settings-page";
 import { AppSmssPage } from "@/pages/app/app-smss-page";
 import { ProjectDependenciesPage } from "@/pages/project/project-dependencies-page";
-import { normalizeTagArray } from "@/utility";
 
 interface ProjectDetailTabsProps {
-	/** Type of the route */
-	type: Project["project_type"];
-
 	/** Tabs to show */
 	tabs: {
 		name: string;
@@ -48,69 +40,13 @@ interface ProjectDetailTabsProps {
 	}[];
 }
 
-export const ProjectDetailTabs = ({
-	type: _type,
-	tabs,
-}: ProjectDetailTabsProps) => {
+export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
 	const { appId } = useParams();
 
-	const { configStore } = useRootStore();
+	const { project, permission, refresh } = useProject();
 
 	const [selectedTabName, setSelectedTabName] = useState<string>("Overview");
 	const [isShareOverlayOpen, setIsShareOverlayOpen] = useState(false);
-
-	// get a user's permission
-	const getUserProjectPermission = useAPI(
-		appId ? ["getUserProjectPermission", appId] : null,
-		{
-			data: undefined,
-		},
-	);
-
-	// get dependencies for the project
-	const getDependencies = usePixel<{
-		engines: ProjectDependency[];
-		dependencies: string[];
-	}>(appId ? `GetProjectDependencies(project=["${appId}"]);` : "");
-
-	// the core metadata keys plus any dynamic ones from the project config
-	const metaKeys = useMemo(() => {
-		const dynamicKeys = configStore.store.config.projectMetaKeys
-			.map((k) => k.metakey)
-			.filter(
-				(key) =>
-					key !== "description" &&
-					key !== "markdown" &&
-					key !== "tag" &&
-					key !== "tags",
-			);
-		return ["description", "markdown", "tag", ...dynamicKeys];
-	}, [configStore.store.config.projectMetaKeys]);
-
-	// get the metadata for the project
-	const getMetadata = usePixel<Project>(
-		appId
-			? `GetProjectMetadata(project=["${appId}"], metaKeys=${JSON.stringify(metaKeys)});`
-			: "",
-	);
-
-	/**
-	 * Refresh the project data
-	 */
-	const refresh = useCallback(() => {
-		getDependencies.refresh();
-		getUserProjectPermission.refresh();
-		getMetadata.refresh();
-	}, [
-		getDependencies.refresh,
-		getUserProjectPermission.refresh,
-		getMetadata.refresh,
-	]);
-
-	const tags = useMemo(
-		() => normalizeTagArray(getMetadata.data?.tag),
-		[getMetadata.data?.tag],
-	);
 
 	// see all the visible tabs
 	const visibleTabs = useMemo(() => {
@@ -118,12 +54,12 @@ export const ProjectDetailTabs = ({
 			if (!tab.restrict || tab.restrict.length === 0) {
 				return true;
 			}
-			if (!getUserProjectPermission.data) {
+			if (!permission) {
 				return false;
 			}
-			return tab.restrict.includes(getUserProjectPermission.data);
+			return tab.restrict.includes(permission);
 		});
-	}, [tabs, getUserProjectPermission.data]);
+	}, [tabs, permission]);
 
 	// the current active tab index based on the current pathname
 	const activeTabIdx = useMemo(() => {
@@ -131,40 +67,10 @@ export const ProjectDetailTabs = ({
 		return idx >= 0 ? idx : 0;
 	}, [visibleTabs, selectedTabName]);
 
-	if (
-		getUserProjectPermission.status === "ERROR" ||
-		getDependencies.status === "ERROR" ||
-		getMetadata.status === "ERROR"
-	) {
-		return <ResourceNotFound path="/app" />;
-	}
-
-	if (
-		getUserProjectPermission.status !== "SUCCESS" ||
-		!getUserProjectPermission.data ||
-		getDependencies.status !== "SUCCESS" ||
-		getMetadata.status !== "SUCCESS"
-	) {
-		return (
-			<div className="flex h-full w-full items-center justify-center">
-				<Spinner />
-			</div>
-		);
-	}
-
 	const activeTab = activeTabIdx >= 0 ? visibleTabs[activeTabIdx] : undefined;
 
 	return (
-		<ProjectContext.Provider
-			value={{
-				appId: getMetadata.data.project_id || "",
-				project: getMetadata.data,
-				permission: getUserProjectPermission.data,
-				dependencies: getDependencies.data?.engines || [],
-				tags,
-				refresh,
-			}}
-		>
+		<>
 			<div
 				className={`flex h-full w-full flex-col gap-2 overflow-hidden bg-card p-2`}
 			>
@@ -192,8 +98,8 @@ export const ProjectDetailTabs = ({
 					{/** TODO: should not be loading in Page. Load in the component directly */}
 					{activeTab?.component === "project-overview" && (
 						<ProjectOverview
-							project={getMetadata.data}
-							permission={getUserProjectPermission.data}
+							project={project}
+							permission={permission}
 							refresh={refresh}
 						/>
 					)}
@@ -227,6 +133,6 @@ export const ProjectDetailTabs = ({
 					/>
 				</DialogContent>
 			</Dialog>
-		</ProjectContext.Provider>
+		</>
 	);
 };
