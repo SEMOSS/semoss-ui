@@ -166,7 +166,7 @@ export const ProjectDetailTabs = ({
 			}}
 		>
 			<div
-				className={`flex h-full w-full flex-col gap-2 overflow-hidden p-2`}
+				className={`flex h-full w-full flex-col gap-2 overflow-hidden bg-card p-2`}
 			>
 				{visibleTabs.length > 0 && (
 					<Tabs value={activeTab?.component ?? ""}>
