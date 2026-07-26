@@ -1,5 +1,4 @@
 import { makeAutoObservable } from "mobx";
-import { runPixel } from "@semoss/sdk/react";
 import { FlexLayout } from "@semoss/shared";
 import type { AppMetadata } from "@/components/app";
 import type { RootStore, WorkspaceOptions } from "@/stores";
@@ -210,14 +209,6 @@ export class WorkspaceStore {
 	/**
 	 * Actions
 	 */
-
-	/**
-	 * runs pixel off of workspace insight
-	 */
-	runWorkspacePixel = async (command: string) => {
-		return await runPixel(command, this._store.insightId);
-	};
-
 	/**
 	 * Load the workspace
 	 * @param options - options to configure the workspace with

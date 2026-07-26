@@ -3,7 +3,6 @@
 import { InfoIcon, PencilIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
 import { InsightProvider } from "@semoss/sdk/react";
 import type { FileItem } from "@semoss/shared";
 import { FileExplorer } from "@semoss/shared";
@@ -17,16 +16,16 @@ import {
 } from "@semoss/ui/next";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "@/components/shared";
 import { SkillFileViewer } from "@/components/skill";
-import { usePage, useRootStore } from "@/hooks";
+import { usePage, useProject, useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import type { WorkspaceStore } from "@/stores";
 
 const PUBLIC_ROOT_PATH = "/public";
 
 export const ViewSkillPage = observer(() => {
-	const { appId } = useParams();
 	const { configStore } = useRootStore();
 	const navigate = useNavigate();
+	const { project, catalog } = useProject();
 
 	const [workspace, setWorkspace] = useState<WorkspaceStore | null>(null);
 	const [selectedPath, setSelectedPath] = useState<string | null>(null);
@@ -37,17 +36,13 @@ export const ViewSkillPage = observer(() => {
 	});
 
 	useEffect(() => {
-		if (!appId) {
-			return;
-		}
-
 		// clear out the old workspace/selection
 		setWorkspace(null);
 		setSelectedPath(null);
 		hasAutoSelectedRef.current = false;
 
 		configStore
-			.createWorkspace(appId)
+			.createWorkspace(project.project_id)
 			.then((loadedWorkspace) => {
 				setWorkspace(loadedWorkspace);
 			})
@@ -55,7 +50,7 @@ export const ViewSkillPage = observer(() => {
 				toast.error(e.message);
 				navigate("/");
 			});
-	}, [appId]);
+	}, [project.project_id]);
 
 	/**
 	 * Auto-select SKILL.md the first time the /public root finishes loading
@@ -80,7 +75,7 @@ export const ViewSkillPage = observer(() => {
 		}
 	};
 
-	if (!workspace || !appId) {
+	if (!workspace || !project.project_id) {
 		return (
 			<div className="absolute inset-0 flex flex-1 items-center justify-center">
 				<Spinner />
@@ -112,7 +107,11 @@ export const ViewSkillPage = observer(() => {
 						<Button
 							variant="ghost"
 							size="icon"
-							onClick={() => navigate(`/skill/${appId}`)}
+							onClick={() =>
+								navigate(
+									`/${catalog.path}/${project.project_id}`,
+								)
+							}
 							data-testid={"settings"}
 						>
 							<InfoIcon className="size-4" />
@@ -124,7 +123,11 @@ export const ViewSkillPage = observer(() => {
 					<Button
 						variant="default"
 						size="sm"
-						onClick={() => navigate(`/skill/${appId}/edit`)}
+						onClick={() =>
+							navigate(
+								`/${catalog.path}/${project.project_id}/edit`,
+							)
+						}
 						data-testid={"viewSkillPage-edit-btn"}
 					>
 						<PencilIcon className="mr-1 size-4" />
@@ -141,7 +144,7 @@ export const ViewSkillPage = observer(() => {
 						<FileExplorer
 							mode={{
 								type: "APP",
-								app: appId,
+								app: project.project_id,
 							}}
 							initialPath={PUBLIC_ROOT_PATH}
 							readOnly
@@ -150,7 +153,7 @@ export const ViewSkillPage = observer(() => {
 						/>
 					</div>
 					<SkillFileViewer
-						projectId={appId}
+						projectId={project.project_id}
 						insightId={workspace.insightId}
 						path={selectedPath}
 					/>

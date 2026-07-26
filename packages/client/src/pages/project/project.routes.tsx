@@ -53,7 +53,7 @@ export const PROJECT_ROUTES: {
 				children: [
 					{
 						path: "edit",
-						element: <ProjectEdit type="CODE" />,
+						element: <ProjectEdit />,
 					},
 					{
 						path: "view",
@@ -181,7 +181,7 @@ export const PROJECT_ROUTES: {
 				children: [
 					{
 						path: "edit",
-						element: <ProjectEdit type="SKILL" />,
+						element: <ProjectEdit />,
 					},
 					{
 						path: "view",
@@ -265,7 +265,7 @@ export const PROJECT_ROUTES: {
 				children: [
 					{
 						path: "edit",
-						element: <ProjectEdit type="WORKSPACE" />,
+						element: <ProjectEdit />,
 					},
 					{
 						path: "*",

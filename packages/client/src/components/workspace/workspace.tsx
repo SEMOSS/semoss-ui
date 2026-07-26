@@ -36,7 +36,7 @@ interface WorkspaceProps {
 const WorkspaceLoadingState = () => {
 	return (
 		<div className="absolute inset-0 z-[1501] flex items-center justify-center bg-background/50">
-			<Spinner className="size-6" />
+			<Spinner />
 		</div>
 	);
 };

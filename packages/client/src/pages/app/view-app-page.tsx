@@ -3,7 +3,6 @@
 import { Bookmark, InfoIcon, Pencil, Share2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { lazy, Suspense, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
 import {
 	Button,
 	Dialog,
@@ -27,7 +26,7 @@ const CodeRenderer = lazy(() =>
 	})),
 );
 
-import { usePage, useRootStore } from "@/hooks";
+import { usePage, useProject, useRootStore } from "@/hooks";
 import type { WorkspaceStore } from "@/stores";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../../components/shared";
 
@@ -41,8 +40,8 @@ const AppViewLoadingState = () => {
 
 export const ViewAppPage = observer(() => {
 	// App ID Needed for pixel calls
-	const { appId } = useParams();
 	const { configStore } = useRootStore();
+	const { project, permission, catalog } = useProject();
 
 	const navigate = useNavigate();
 
@@ -52,7 +51,7 @@ export const ViewAppPage = observer(() => {
 
 	const handleBookmark = (status: boolean) => {
 		setBookmarked(status);
-		setProjectFavorite(appId, status)
+		setProjectFavorite(project.project_id, status)
 			.then(() => {
 				toast.success(
 					`Project ${bookmarked ? "unbookmarked" : "bookmarked"}`,
@@ -74,7 +73,7 @@ export const ViewAppPage = observer(() => {
 		setWorkspace(undefined);
 
 		configStore
-			.createWorkspace(appId)
+			.createWorkspace(project.project_id)
 			.then((loadedWorkspace) => {
 				setWorkspace(loadedWorkspace);
 				setBookmarked(
@@ -85,7 +84,7 @@ export const ViewAppPage = observer(() => {
 				toast.error(e.message);
 				navigate("/");
 			});
-	}, [appId]);
+	}, [project.project_id]);
 
 	// hide the screen while it loads
 	if (!workspace) {
@@ -99,13 +98,13 @@ export const ViewAppPage = observer(() => {
 					logo={
 						<div
 							title={
-								workspace?.metadata?.project_display_name ||
-								workspace?.metadata?.project_name
+								project.project_display_name ||
+								project.project_name
 							}
 							className="w-[30ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
 						>
-							{workspace?.metadata?.project_display_name ||
-								workspace?.metadata?.project_name}
+							{project.project_display_name ||
+								project.project_name}
 						</div>
 					}
 				/>
@@ -116,7 +115,11 @@ export const ViewAppPage = observer(() => {
 						<Button
 							variant="ghost"
 							size="icon"
-							onClick={() => navigate(`/app/${appId}`)}
+							onClick={() =>
+								navigate(
+									`/${catalog.path}/${project.project_id}`,
+								)
+							}
 							data-testid={"settings"}
 						>
 							<InfoIcon className="size-4" />
@@ -152,11 +155,15 @@ export const ViewAppPage = observer(() => {
 					</TooltipTrigger>
 					<TooltipContent>Share App</TooltipContent>
 				</Tooltip>
-				{(workspace.role === "OWNER" || workspace.role === "EDIT") && (
+				{(permission === "OWNER" || permission === "EDIT") && (
 					<Button
 						variant="default"
 						size="sm"
-						onClick={() => navigate(`../../../app/${appId}/edit`)}
+						onClick={() =>
+							navigate(
+								`../../../${catalog.path}}/${project.project_id}/edit`,
+							)
+						}
 						data-testid={"viewAppPage-edit-btn"}
 					>
 						<Pencil className="mr-1 size-4" />
@@ -168,12 +175,12 @@ export const ViewAppPage = observer(() => {
 				<Suspense fallback={<AppViewLoadingState />}>
 					{workspace.type === "BLOCKS" ? (
 						<Renderer
-							appId={appId}
+							appId={project.project_id}
 							insightId={workspace.insightId}
 						/>
 					) : null}
 					{workspace.type === "CODE" ? (
-						<CodeRenderer appId={appId} />
+						<CodeRenderer appId={project.project_id} />
 					) : null}
 				</Suspense>
 			</div>
@@ -184,7 +191,7 @@ export const ViewAppPage = observer(() => {
 			>
 				<DialogContent className="max-w-lg p-0">
 					<ShareOverlay
-						appId={appId}
+						appId={project.project_id}
 						onClose={() => setIsShareOpen(false)}
 					/>
 				</DialogContent>

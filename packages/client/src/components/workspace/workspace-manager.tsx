@@ -19,7 +19,7 @@ import { Link } from "react-router-dom";
 import { FlexLayout, getFileIconComponent } from "@semoss/shared";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import { ClosePage } from "@/assets/img/ClosePage";
-import { useTabBarScroll, useWorkspace } from "@/hooks";
+import { useProject, useTabBarScroll, useWorkspace } from "@/hooks";
 import type { WorkspaceOptions } from "@/stores";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
 import { WorkspaceLoading } from "./WorkspaceLoading";
@@ -76,6 +76,7 @@ type WorkspaceManagerProps = {
 
 export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 	({ navbarActions, options, factory = () => null, onAction }) => {
+		const { catalog, project } = useProject();
 		const { workspace } = useWorkspace();
 		const layoutRef = useRef<FlexLayout.Layout | null>(null);
 		const containerRef = useRef<HTMLDivElement | null>(null);
@@ -210,7 +211,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 							) : (
 								<>
 									<Link
-										to={`/app/${workspace.metadata.project_id}/view`}
+										to={`/${catalog.path}/${project.project_id}/view`}
 										className="flex items-center text-inherit no-underline"
 									>
 										<div
