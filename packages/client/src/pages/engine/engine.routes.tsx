@@ -55,7 +55,6 @@ export const ENGINE_ROUTES: {
 							name: "Function",
 							path: "/function",
 						}}
-						type="FUNCTION"
 					/>
 				),
 				path: ":engineId",
@@ -176,7 +175,6 @@ export const ENGINE_ROUTES: {
 							name: "Model",
 							path: "/model",
 						}}
-						type="MODEL"
 					/>
 				),
 				path: ":engineId",
@@ -291,7 +289,6 @@ export const ENGINE_ROUTES: {
 							name: "Database",
 							path: "/database",
 						}}
-						type="DATABASE"
 					/>
 				),
 				path: ":engineId",
@@ -419,7 +416,6 @@ export const ENGINE_ROUTES: {
 							name: "Vector",
 							path: "/vector",
 						}}
-						type="VECTOR"
 					/>
 				),
 				path: ":engineId",
@@ -534,7 +530,6 @@ export const ENGINE_ROUTES: {
 							name: "Storage",
 							path: "/storage",
 						}}
-						type="STORAGE"
 					/>
 				),
 				path: ":engineId",
@@ -659,7 +654,6 @@ export const ENGINE_ROUTES: {
 							name: "Guardrail",
 							path: "/guardrail",
 						}}
-						type="GUARDRAIL"
 					/>
 				),
 				path: ":engineId",

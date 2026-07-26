@@ -90,29 +90,23 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 						<BreadcrumbList>
 							<BreadcrumbItem>
 								<BreadcrumbLink asChild>
-									<Link
-										to={`${catalog.path}`}
-										className="inline-flex items-center text-inherit leading-none"
-									>
+									<Link to={`${catalog.path}`}>
 										{catalog.name} Catalog
 									</Link>
 								</BreadcrumbLink>
 							</BreadcrumbItem>
-							<BreadcrumbSeparator className="inline-flex items-center [&>svg]:translate-y-[0.5px]">
+							<BreadcrumbSeparator>
 								<ChevronRight />
 							</BreadcrumbSeparator>
 							<BreadcrumbItem>
-								<BreadcrumbPage className="inline-flex items-center leading-none">
-									<span
-										title={
-											project.project_display_name ||
-											project.project_name
-										}
-										className="inline-block max-w-[40ch] truncate text-ellipsis leading-none"
-									>
-										{project.project_display_name ||
-											project.project_name}
-									</span>
+								<BreadcrumbPage
+									title={
+										project.project_display_name ||
+										project.project_name
+									}
+								>
+									{project.project_display_name ||
+										project.project_name}
 								</BreadcrumbPage>
 							</BreadcrumbItem>
 						</BreadcrumbList>

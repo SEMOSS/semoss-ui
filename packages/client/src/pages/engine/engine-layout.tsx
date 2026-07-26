@@ -3,14 +3,10 @@ import { usePixel } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
 import { Spinner } from "@semoss/ui/next";
 import { ResourceNotFound } from "@/components/common/resource-not-found";
-import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { EngineContext } from "@/contexts";
 import { useAPI, useRootStore } from "@/hooks";
 
 interface EngineLayoutProps {
-	/** Type of the engine */
-	type: Engine["engine_type"];
-
 	/** Catalog information */
 	catalog: {
 		/** Name of the engine */
@@ -24,10 +20,7 @@ interface EngineLayoutProps {
 /**
  * Wrap the engine routes and add additional funcitonality
  */
-export const EngineLayout: React.FC<EngineLayoutProps> = ({
-	type,
-	catalog,
-}) => {
+export const EngineLayout: React.FC<EngineLayoutProps> = ({ catalog }) => {
 	const { engineId } = useParams();
 	const { configStore } = useRootStore();
 
@@ -71,14 +64,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({
 		getUserEnginePermission.status === "ERROR" ||
 		getEngineMetadata.status === "ERROR"
 	) {
-		return (
-			<>
-				<NavbarLeft>
-					<NavbarHeader />
-				</NavbarLeft>
-				<ResourceNotFound path={catalog.path} />
-			</>
-		);
+		return <ResourceNotFound path={catalog.path} />;
 	}
 
 	if (
@@ -94,21 +80,16 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({
 	}
 
 	return (
-		<>
-			<NavbarLeft>
-				<NavbarHeader />
-			</NavbarLeft>
-			<EngineContext.Provider
-				value={{
-					type: type,
-					catalog: catalog,
-					engine: getEngineMetadata.data,
-					permission: getUserEnginePermission.data,
-					refresh: getEngineMetadata.refresh,
-				}}
-			>
-				<Outlet />
-			</EngineContext.Provider>
-		</>
+		<EngineContext.Provider
+			value={{
+				type: getEngineMetadata.data.engine_type,
+				catalog: catalog,
+				engine: getEngineMetadata.data,
+				permission: getUserEnginePermission.data,
+				refresh: getEngineMetadata.refresh,
+			}}
+		>
+			<Outlet />
+		</EngineContext.Provider>
 	);
 };
