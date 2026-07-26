@@ -4,7 +4,6 @@ import { usePixel } from "@semoss/sdk/react";
 import type { Project, ProjectDependency } from "@semoss/shared";
 import { Spinner } from "@semoss/ui/next";
 import { ResourceNotFound } from "@/components/common/resource-not-found";
-import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { ProjectContext } from "@/contexts";
 import { useAPI, useRootStore } from "@/hooks";
 
@@ -95,14 +94,7 @@ export const ProjectLayout = ({ type }: ProjectLayoutProps) => {
 		getDependencies.status === "ERROR" ||
 		getMetadata.status === "ERROR"
 	) {
-		return (
-			<>
-				<NavbarLeft>
-					<NavbarHeader />
-				</NavbarLeft>
-				<ResourceNotFound path={catalog.path} />
-			</>
-		);
+		return <ResourceNotFound path={catalog.path} />;
 	}
 
 	if (

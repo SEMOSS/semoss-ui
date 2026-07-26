@@ -118,16 +118,12 @@ export const CreateAppPage = () => {
 	return (
 		<>
 			<NavbarLeft>
-				<NavbarHeader />
-			</NavbarLeft>
-			<div className="flex flex-col gap-1">
-				<Breadcrumb className="mb-4">
+				<NavbarHeader logo={null} />
+				<Breadcrumb>
 					<BreadcrumbList>
 						<BreadcrumbItem>
 							<BreadcrumbLink asChild>
-								<Link to="../" className="text-inherit">
-									App Catalog
-								</Link>
+								<Link to="../">App Catalog</Link>
 							</BreadcrumbLink>
 						</BreadcrumbItem>
 						<BreadcrumbSeparator>
@@ -138,6 +134,8 @@ export const CreateAppPage = () => {
 						</BreadcrumbItem>
 					</BreadcrumbList>
 				</Breadcrumb>
+			</NavbarLeft>
+			<div className="flex flex-col gap-1">
 				{isUploadOpen ? (
 					<UploadProjectDialog
 						open={isUploadOpen}

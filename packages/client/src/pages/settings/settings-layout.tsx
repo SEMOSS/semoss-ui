@@ -369,7 +369,7 @@ export const SettingsLayout = observer(() => {
 	return (
 		<>
 			<NavbarLeft>
-				<NavbarHeader />
+				<NavbarHeader logo={matchedRoute.path ? null : undefined} />
 			</NavbarLeft>
 			<SettingsContext.Provider
 				value={{
@@ -382,7 +382,7 @@ export const SettingsLayout = observer(() => {
 				<div className="flex flex-col gap-2">
 					<div className="flex flex-col gap-2">
 						{matchedRoute.path && (
-							<div className="flex justify-between">
+							<NavbarLeft>
 								<Breadcrumb>
 									<BreadcrumbList>
 										<BreadcrumbItem>
@@ -455,7 +455,7 @@ export const SettingsLayout = observer(() => {
 										})}
 									</BreadcrumbList>
 								</Breadcrumb>
-							</div>
+							</NavbarLeft>
 						)}
 						<div className="z-1">
 							{(() => {

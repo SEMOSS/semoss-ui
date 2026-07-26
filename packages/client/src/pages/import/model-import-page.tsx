@@ -43,6 +43,7 @@ import {
 	ModelEngineIcon,
 	ModelTileCard,
 } from "@/components/import/model/model-tile-card";
+import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId } from "@/utility";
@@ -586,8 +587,9 @@ export const ModelImportPage: React.FC = () => {
 
 	return (
 		<div ref={pageTopRef}>
-			<div className="flex flex-col gap-1">
-				<Breadcrumb className="mb-4">
+			<NavbarLeft>
+				<NavbarHeader logo={null} />
+				<Breadcrumb>
 					<BreadcrumbList>
 						<BreadcrumbItem>
 							<BreadcrumbLink asChild>
@@ -631,7 +633,8 @@ export const ModelImportPage: React.FC = () => {
 						)}
 					</BreadcrumbList>
 				</Breadcrumb>
-
+			</NavbarLeft>
+			<div className="flex flex-col gap-1">
 				{/* File Upload Modal */}
 				<Dialog
 					open={isFileUploadModalOpen}

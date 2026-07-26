@@ -37,6 +37,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import type { Prompt } from "../../components/prompt/prompt.types";
@@ -361,24 +362,28 @@ export const PromptDetailPage = observer(() => {
 
 	return (
 		<div className="flex h-full w-full flex-col gap-3 pb-12">
-			{/* Breadcrumb */}
-			<Breadcrumb>
-				<BreadcrumbList>
-					<BreadcrumbItem>
-						<BreadcrumbLink asChild>
-							<Link to="/prompt" className="text-inherit">
-								Prompts
-							</Link>
-						</BreadcrumbLink>
-					</BreadcrumbItem>
-					<BreadcrumbSeparator>
-						<ChevronRight className="size-3.5" />
-					</BreadcrumbSeparator>
-					<BreadcrumbItem>
-						<BreadcrumbPage>{latestVersion.title}</BreadcrumbPage>
-					</BreadcrumbItem>
-				</BreadcrumbList>
-			</Breadcrumb>
+			<NavbarLeft>
+				<NavbarHeader logo={null} />
+				<Breadcrumb>
+					<BreadcrumbList>
+						<BreadcrumbItem>
+							<BreadcrumbLink asChild>
+								<Link to="/prompt" className="text-inherit">
+									Prompts
+								</Link>
+							</BreadcrumbLink>
+						</BreadcrumbItem>
+						<BreadcrumbSeparator>
+							<ChevronRight className="size-3.5" />
+						</BreadcrumbSeparator>
+						<BreadcrumbItem>
+							<BreadcrumbPage>
+								{latestVersion.title}
+							</BreadcrumbPage>
+						</BreadcrumbItem>
+					</BreadcrumbList>
+				</Breadcrumb>
+			</NavbarLeft>
 
 			{/* Avatar + Title + ID + Action Buttons */}
 			<div className="flex w-full flex-col gap-4 md:flex-row md:items-center">

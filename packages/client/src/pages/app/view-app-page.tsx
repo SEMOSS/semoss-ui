@@ -1,9 +1,22 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 
-import { Bookmark, InfoIcon, Pencil, Share2 } from "lucide-react";
+import {
+	Bookmark,
+	ChevronRightIcon,
+	InfoIcon,
+	Pencil,
+	Share2,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { lazy, Suspense, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
 	Button,
 	Dialog,
 	DialogContent,
@@ -94,20 +107,32 @@ export const ViewAppPage = observer(() => {
 	return (
 		<>
 			<NavbarLeft>
-				<NavbarHeader
-					logo={
-						<div
-							title={
-								project.project_display_name ||
-								project.project_name
-							}
-							className="w-[30ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
-						>
-							{project.project_display_name ||
-								project.project_name}
-						</div>
-					}
-				/>
+				<NavbarHeader logo={null} />
+				<Breadcrumb>
+					<BreadcrumbList>
+						<BreadcrumbItem>
+							<BreadcrumbLink asChild>
+								<Link to={catalog.path}>
+									{catalog.name} Catalog
+								</Link>
+							</BreadcrumbLink>
+						</BreadcrumbItem>
+						<BreadcrumbSeparator>
+							<ChevronRightIcon />
+						</BreadcrumbSeparator>
+						<BreadcrumbItem>
+							<BreadcrumbPage
+								title={
+									project.project_display_name ||
+									project.project_name
+								}
+							>
+								{project.project_display_name ||
+									project.project_name}
+							</BreadcrumbPage>
+						</BreadcrumbItem>
+					</BreadcrumbList>
+				</Breadcrumb>
 			</NavbarLeft>
 			<NavbarRight>
 				<Tooltip>
@@ -115,14 +140,12 @@ export const ViewAppPage = observer(() => {
 						<Button
 							variant="ghost"
 							size="icon"
-							onClick={() =>
-								navigate(
-									`/${catalog.path}/${project.project_id}`,
-								)
-							}
 							data-testid={"settings"}
+							asChild
 						>
-							<InfoIcon className="size-4" />
+							<Link to={`..`}>
+								<InfoIcon className="size-4" />
+							</Link>
 						</Button>
 					</TooltipTrigger>
 					<TooltipContent>Details</TooltipContent>
@@ -159,15 +182,13 @@ export const ViewAppPage = observer(() => {
 					<Button
 						variant="default"
 						size="sm"
-						onClick={() =>
-							navigate(
-								`../../../${catalog.path}}/${project.project_id}/edit`,
-							)
-						}
 						data-testid={"viewAppPage-edit-btn"}
+						asChild
 					>
-						<Pencil className="mr-1 size-4" />
-						Edit
+						<Link to={`../edit`}>
+							<Pencil className="mr-1 size-4" />
+							Edit
+						</Link>
 					</Button>
 				)}
 			</NavbarRight>

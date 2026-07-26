@@ -1,4 +1,4 @@
-import { ChevronRight, SquareArrowOutUpRight } from "lucide-react";
+import { ChevronRightIcon, SquareArrowOutUpRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
 	Link,
@@ -82,35 +82,35 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 	return (
 		<div className="w-full">
 			<NavbarLeft>
-				<NavbarHeader />
+				<NavbarHeader logo={null} />
+				<Breadcrumb>
+					<BreadcrumbList>
+						<BreadcrumbItem>
+							<BreadcrumbLink asChild>
+								<Link to={catalog.path}>
+									{catalog.name} Catalog
+								</Link>
+							</BreadcrumbLink>
+						</BreadcrumbItem>
+						<BreadcrumbSeparator>
+							<ChevronRightIcon />
+						</BreadcrumbSeparator>
+						<BreadcrumbItem>
+							<BreadcrumbPage
+								title={
+									project.project_display_name ||
+									project.project_name
+								}
+							>
+								{project.project_display_name ||
+									project.project_name}
+							</BreadcrumbPage>
+						</BreadcrumbItem>
+					</BreadcrumbList>
+				</Breadcrumb>
 			</NavbarLeft>
 			<div className="flex h-full w-full flex-col justify-center gap-4">
 				<div className={`mx-auto flex h-full w-full flex-col gap-3`}>
-					<Breadcrumb>
-						<BreadcrumbList>
-							<BreadcrumbItem>
-								<BreadcrumbLink asChild>
-									<Link to={`${catalog.path}`}>
-										{catalog.name} Catalog
-									</Link>
-								</BreadcrumbLink>
-							</BreadcrumbItem>
-							<BreadcrumbSeparator>
-								<ChevronRight />
-							</BreadcrumbSeparator>
-							<BreadcrumbItem>
-								<BreadcrumbPage
-									title={
-										project.project_display_name ||
-										project.project_name
-									}
-								>
-									{project.project_display_name ||
-										project.project_name}
-								</BreadcrumbPage>
-							</BreadcrumbItem>
-						</BreadcrumbList>
-					</Breadcrumb>
 					<EntityHeader
 						icon={
 							<AppCatalogAvatar

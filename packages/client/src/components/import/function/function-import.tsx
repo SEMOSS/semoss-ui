@@ -28,6 +28,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
+import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { FUNCTION_CONNECTIONS } from "./function-import.constants";
@@ -116,7 +117,7 @@ export const FunctionImport = ({ name }: { name: string }) => {
 	};
 
 	const renderBreadcrumbs = () => (
-		<Breadcrumb data-testid="breadcrumbs" className="mb-6">
+		<Breadcrumb data-testid="breadcrumbs">
 			<BreadcrumbList>
 				<BreadcrumbItem>
 					<BreadcrumbLink
@@ -211,7 +212,10 @@ export const FunctionImport = ({ name }: { name: string }) => {
 
 	return (
 		<>
-			{renderBreadcrumbs()}
+			<NavbarLeft>
+				<NavbarHeader logo={null} />
+				{renderBreadcrumbs()}
+			</NavbarLeft>
 			<Dialog
 				open={isFileUploadModalOpen}
 				onOpenChange={setIsFileUploadModalOpen}

@@ -1,5 +1,10 @@
 import { Navigate, Outlet } from "react-router-dom";
-import { ImportPage } from "../import";
+import { DatabasePageContent } from "@/components/import/database/database-page-content";
+import { FunctionImport } from "@/components/import/function/function-import";
+import { GuardrailImport } from "@/components/import/guardrail/guardrail-import";
+import { StorageImport } from "@/components/import/storage/storage-import";
+import { VectorImport } from "@/components/import/vector/vector-import";
+import { ImportLayout, ModelImportPage } from "../import";
 import { EngineActivityPage } from "./engine-activity-page";
 import { EngineCommitsPage } from "./engine-commits-page";
 import { EngineIndexPage } from "./engine-index-page";
@@ -41,7 +46,7 @@ export const ENGINE_ROUTES: {
 			},
 			{
 				path: "new",
-				element: <ImportPage name="Function" type="FUNCTION" />,
+				element: <FunctionImport name="Function" />,
 			},
 			{
 				element: (
@@ -161,7 +166,11 @@ export const ENGINE_ROUTES: {
 			},
 			{
 				path: "new",
-				element: <ImportPage name="Model" type="MODEL" />,
+				element: (
+					<ImportLayout>
+						<ModelImportPage />
+					</ImportLayout>
+				),
 			},
 			{
 				element: (
@@ -275,7 +284,7 @@ export const ENGINE_ROUTES: {
 			},
 			{
 				path: "new",
-				element: <ImportPage name="Database" type="DATABASE" />,
+				element: <DatabasePageContent name="Database" />,
 			},
 			{
 				element: (
@@ -402,7 +411,7 @@ export const ENGINE_ROUTES: {
 			},
 			{
 				path: "new",
-				element: <ImportPage name="Vector" type="VECTOR" />,
+				element: <VectorImport name="Vector" />,
 			},
 			{
 				element: (
@@ -516,7 +525,7 @@ export const ENGINE_ROUTES: {
 			},
 			{
 				path: "new",
-				element: <ImportPage name="Storage" type="STORAGE" />,
+				element: <StorageImport name="Storage" />,
 			},
 			{
 				element: (
@@ -640,7 +649,7 @@ export const ENGINE_ROUTES: {
 			},
 			{
 				path: "new",
-				element: <ImportPage name="Guardrail" type="GUARDRAIL" />,
+				element: <GuardrailImport name="Guardrail" />,
 			},
 			{
 				element: (
