@@ -2,21 +2,16 @@ import { Navigate, Outlet } from "react-router-dom";
 import { ImportPage } from "../import";
 import { EngineActivityPage } from "./engine-activity-page";
 import { EngineCommitsPage } from "./engine-commits-page";
-import { EngineDatabaseWorkbenchPage } from "./engine-database-workbench-page";
-import { EngineFunctionWorkbenchPage } from "./engine-function-workbench-page";
-import { EngineGuardrailWorkbenchPage } from "./engine-guardrail-workbench-page";
 import { EngineIndexPage } from "./engine-index-page";
 import { EngineLayout } from "./engine-layout";
 import { EngineMcpUsagePage } from "./engine-mcp-usage-page";
 import { EngineMetadataPage } from "./engine-metadata-page";
-import { EngineModelWorkbenchPage } from "./engine-model-workbench-page";
 import { EngineOverviewPage } from "./engine-overview-page";
 import { EngineSettingsPage } from "./engine-settings-page";
 import { EngineSmssPage } from "./engine-smss-page";
-import { EngineStorageWorkbenchPage } from "./engine-storage-workbench-page";
 import { EngineTabsLayout } from "./engine-tabs-layout";
 import { EngineUsagePage } from "./engine-usage-page";
-import { EngineVectorWorkbenchPage } from "./engine-vector-workbench-page";
+import { EngineWorkbenchPage } from "./engine-workbench-page";
 
 export const ENGINE_ROUTES: {
 	/** Name of the specific path (omitted for pathless layout routes) */
@@ -61,7 +56,7 @@ export const ENGINE_ROUTES: {
 				children: [
 					{
 						path: "workbench",
-						element: <EngineFunctionWorkbenchPage />,
+						element: <EngineWorkbenchPage />,
 					},
 					{
 						path: "*",
@@ -181,7 +176,7 @@ export const ENGINE_ROUTES: {
 				children: [
 					{
 						path: "workbench",
-						element: <EngineModelWorkbenchPage />,
+						element: <EngineWorkbenchPage />,
 					},
 					{
 						path: "*",
@@ -295,7 +290,7 @@ export const ENGINE_ROUTES: {
 				children: [
 					{
 						path: "workbench",
-						element: <EngineDatabaseWorkbenchPage />,
+						element: <EngineWorkbenchPage />,
 					},
 					{
 						path: "*",
@@ -422,7 +417,7 @@ export const ENGINE_ROUTES: {
 				children: [
 					{
 						path: "workbench",
-						element: <EngineVectorWorkbenchPage />,
+						element: <EngineWorkbenchPage />,
 					},
 					{
 						path: "*",
@@ -536,7 +531,7 @@ export const ENGINE_ROUTES: {
 				children: [
 					{
 						path: "workbench",
-						element: <EngineStorageWorkbenchPage />,
+						element: <EngineWorkbenchPage />,
 					},
 					{
 						path: "*",
@@ -660,7 +655,7 @@ export const ENGINE_ROUTES: {
 				children: [
 					{
 						path: "workbench",
-						element: <EngineGuardrailWorkbenchPage />,
+						element: <EngineWorkbenchPage />,
 					},
 					{
 						path: "*",

@@ -10,13 +10,34 @@ import {
 	BreadcrumbSeparator,
 } from "@semoss/ui/next";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { FunctionWorkbench } from "@/components/workbench";
+import {
+	DatabaseWorkbench,
+	FunctionWorkbench,
+	GuardrailWorkbench,
+	ModelWorkbench,
+	StorageWorkbench,
+	VectorWorkbench,
+} from "@/components/workbench";
 import { useEngine } from "@/hooks";
 
-export const EngineFunctionWorkbenchPage = () => {
-	const { engine, permission, catalog } = useEngine();
+const WORKBENCH_MAP = {
+	MODEL: ModelWorkbench,
+	DATABASE: DatabaseWorkbench,
+	VECTOR: VectorWorkbench,
+	STORAGE: StorageWorkbench,
+	FUNCTION: FunctionWorkbench,
+	GUARDRAIL: GuardrailWorkbench,
+} as const;
+
+export const EngineWorkbenchPage = () => {
+	const { engine, permission, catalog, type } = useEngine();
 
 	if (permission === "DISCOVERABLE") {
+		return <Navigate to={`${catalog.path}/${engine.engine_id}`} replace />;
+	}
+
+	const WorkbenchComponent = WORKBENCH_MAP[type];
+	if (!WorkbenchComponent) {
 		return <Navigate to={`${catalog.path}/${engine.engine_id}`} replace />;
 	}
 
@@ -56,7 +77,7 @@ export const EngineFunctionWorkbenchPage = () => {
 				</Breadcrumb>
 			</NavbarLeft>
 			<InsightProvider>
-				<FunctionWorkbench />
+				<WorkbenchComponent />
 			</InsightProvider>
 		</>
 	);
