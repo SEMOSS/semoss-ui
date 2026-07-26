@@ -1,5 +1,5 @@
 import { ChevronRightIcon, SquareArrowOutUpRight } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
 	Link,
 	matchPath,
@@ -17,15 +17,12 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 	Button,
-	Dialog,
-	DialogContent,
 	Tabs,
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
 import { ProjectAccessRequestButton } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { ShareOverlay } from "@/components/ui";
 import { useProject } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
@@ -47,8 +44,6 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 	const navigate = useNavigate();
 	const { pathname } = useLocation();
 	const resolvedPath = useResolvedPath("");
-
-	const [isShareOverlayOpen, setIsShareOverlayOpen] = useState(false);
 
 	// see all the visible tabs
 	const visibleTabs = useMemo(() => {
@@ -192,19 +187,6 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 					</div>
 				</div>
 			</div>
-
-			<Dialog
-				open={isShareOverlayOpen}
-				onOpenChange={(o) => !o && setIsShareOverlayOpen(false)}
-			>
-				<DialogContent className="max-w-lg p-0">
-					<ShareOverlay
-						appId={project.project_id}
-						diffs={false}
-						onClose={() => setIsShareOverlayOpen(false)}
-					/>
-				</DialogContent>
-			</Dialog>
 		</div>
 	);
 };

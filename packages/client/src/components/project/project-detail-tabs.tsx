@@ -1,15 +1,7 @@
 import { useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
 import type { Role } from "@semoss/shared";
-import {
-	Dialog,
-	DialogContent,
-	Tabs,
-	TabsList,
-	TabsTrigger,
-} from "@semoss/ui/next";
+import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import { ProjectOverview } from "@/components/project";
-import { ShareOverlay } from "@/components/ui";
 import { useProject } from "@/hooks";
 import { AppAccessControlPage } from "@/pages/app/app-access-control-page";
 import { AppActivityPage } from "@/pages/app/app-activity-page";
@@ -41,12 +33,9 @@ interface ProjectDetailTabsProps {
 }
 
 export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
-	const { appId } = useParams();
-
 	const { project, permission, refresh } = useProject();
 
 	const [selectedTabName, setSelectedTabName] = useState<string>("Overview");
-	const [isShareOverlayOpen, setIsShareOverlayOpen] = useState(false);
 
 	// see all the visible tabs
 	const visibleTabs = useMemo(() => {
@@ -70,69 +59,52 @@ export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
 	const activeTab = activeTabIdx >= 0 ? visibleTabs[activeTabIdx] : undefined;
 
 	return (
-		<>
-			<div
-				className={`flex h-full w-full flex-col gap-2 overflow-hidden bg-card p-2`}
-			>
-				{visibleTabs.length > 0 && (
-					<Tabs value={activeTab?.component ?? ""}>
-						<div className="w-full overflow-x-auto">
-							<TabsList className="w-max flex-nowrap gap-2">
-								{visibleTabs.map((tab) => (
-									<TabsTrigger
-										key={tab.name}
-										value={tab.component}
-										onClick={() => {
-											setSelectedTabName(tab.name);
-										}}
-										data-testid={`appDetail-${tab.name}-tab`}
-									>
-										{tab.name}
-									</TabsTrigger>
-								))}
-							</TabsList>
-						</div>
-					</Tabs>
-				)}
-				<div className="w-full flex-1 overflow-auto bg-card p-2">
-					{/** TODO: should not be loading in Page. Load in the component directly */}
-					{activeTab?.component === "project-overview" && (
-						<ProjectOverview
-							project={project}
-							permission={permission}
-							refresh={refresh}
-						/>
-					)}
-					{activeTab?.component === "project-dependencies" && (
-						<ProjectDependenciesPage />
-					)}
-					{activeTab?.component === "mcp-usage" && (
-						<AppMcpUsagePage />
-					)}
-					{activeTab?.component === "activity" && <AppActivityPage />}
-					{activeTab?.component === "commits" && <AppCommitsPage />}
-					{activeTab?.component === "github" && <AppGithubPage />}
-					{activeTab?.component === "settings" && <AppSettingsPage />}
-					{activeTab?.component === "access-control" && (
-						<AppAccessControlPage />
-					)}
-					{activeTab?.component === "files" && <AppFilesPage />}
-					{activeTab?.component === "smss" && <AppSmssPage />}
-				</div>
-			</div>
-
-			<Dialog
-				open={isShareOverlayOpen}
-				onOpenChange={(o) => !o && setIsShareOverlayOpen(false)}
-			>
-				<DialogContent className="max-w-lg p-0">
-					<ShareOverlay
-						appId={appId || ""}
-						diffs={false}
-						onClose={() => setIsShareOverlayOpen(false)}
+		<div
+			className={`flex h-full w-full flex-col gap-2 overflow-hidden bg-card p-2`}
+		>
+			{visibleTabs.length > 0 && (
+				<Tabs value={activeTab?.component ?? ""}>
+					<div className="w-full overflow-x-auto">
+						<TabsList className="w-max flex-nowrap gap-2">
+							{visibleTabs.map((tab) => (
+								<TabsTrigger
+									key={tab.name}
+									value={tab.component}
+									onClick={() => {
+										setSelectedTabName(tab.name);
+									}}
+									data-testid={`appDetail-${tab.name}-tab`}
+								>
+									{tab.name}
+								</TabsTrigger>
+							))}
+						</TabsList>
+					</div>
+				</Tabs>
+			)}
+			<div className="w-full flex-1 overflow-auto bg-card p-2">
+				{/** TODO: should not be loading in Page. Load in the component directly */}
+				{activeTab?.component === "project-overview" && (
+					<ProjectOverview
+						project={project}
+						permission={permission}
+						refresh={refresh}
 					/>
-				</DialogContent>
-			</Dialog>
-		</>
+				)}
+				{activeTab?.component === "project-dependencies" && (
+					<ProjectDependenciesPage />
+				)}
+				{activeTab?.component === "mcp-usage" && <AppMcpUsagePage />}
+				{activeTab?.component === "activity" && <AppActivityPage />}
+				{activeTab?.component === "commits" && <AppCommitsPage />}
+				{activeTab?.component === "github" && <AppGithubPage />}
+				{activeTab?.component === "settings" && <AppSettingsPage />}
+				{activeTab?.component === "access-control" && (
+					<AppAccessControlPage />
+				)}
+				{activeTab?.component === "files" && <AppFilesPage />}
+				{activeTab?.component === "smss" && <AppSmssPage />}
+			</div>
+		</div>
 	);
 };
