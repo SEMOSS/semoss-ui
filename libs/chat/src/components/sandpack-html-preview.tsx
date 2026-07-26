@@ -100,3 +100,11 @@ export function SandpackHtmlPreview({
 		</div>
 	);
 }
+
+// Default export only — `@codesandbox/sandpack-react` pulls in a full
+// sandboxed bundler client (~1MB minified), so `html-preview-block.tsx`
+// lazy-loads this module via `React.lazy`, which requires a default export.
+// Not re-exported from `components/index.ts`; import the named export
+// directly (as `html-preview-block.test.tsx` does) if a non-lazy reference
+// is ever needed.
+export default SandpackHtmlPreview;

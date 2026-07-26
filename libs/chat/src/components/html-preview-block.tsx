@@ -1,9 +1,29 @@
-import { useEffect, useState } from "react";
-import { Code } from "@semoss/ui/next";
+import { type CSSProperties, lazy, Suspense, useEffect, useState } from "react";
+import { Code, Spinner } from "@semoss/ui/next";
 import { BlockHeader } from "./block-header";
 import { CopyButton } from "./copy-button";
 import { FullViewDialog } from "./full-view-dialog";
-import { SandpackHtmlPreview } from "./sandpack-html-preview";
+
+/**
+ * Lazy-loaded so `@codesandbox/sandpack-react` (a full sandboxed bundler
+ * client, ~1MB minified — the single largest dependency in this package)
+ * is never in the initial bundle for apps that don't hit this path, same
+ * reasoning as MermaidBlock's `import("mermaid")`. Sandpack is a component
+ * tree rather than a plain async function, so this uses `React.lazy` +
+ * `Suspense` instead of a bare dynamic import.
+ */
+const SandpackHtmlPreview = lazy(() => import("./sandpack-html-preview"));
+
+function SandpackPreviewFallback({ style }: { style?: CSSProperties }) {
+	return (
+		<div
+			className="flex items-center justify-center"
+			style={{ height: "62.5dvh", minHeight: "8rem", ...style }}
+		>
+			<Spinner />
+		</div>
+	);
+}
 
 /**
  * A still-streaming HTML fence can end mid-tag or mid-script/style block —
@@ -87,12 +107,14 @@ export function HtmlPreviewBlock({ html, isLoading }: HtmlPreviewBlockProps) {
 							<Code code={html} language="html" />
 						</div>
 					) : (
-						<SandpackHtmlPreview
-							html={renderedHtml}
-							providerClassName="min-h-0"
-							className="w-full"
-							style={{ height: "62.5dvh", minHeight: "8rem" }}
-						/>
+						<Suspense fallback={<SandpackPreviewFallback />}>
+							<SandpackHtmlPreview
+								html={renderedHtml}
+								providerClassName="min-h-0"
+								className="w-full"
+								style={{ height: "62.5dvh", minHeight: "8rem" }}
+							/>
+						</Suspense>
 					))}
 			</div>
 			<FullViewDialog
@@ -100,13 +122,21 @@ export function HtmlPreviewBlock({ html, isLoading }: HtmlPreviewBlockProps) {
 				open={isFullViewOpen}
 				onOpenChange={setIsFullViewOpen}
 			>
-				<SandpackHtmlPreview
-					html={renderedHtml}
-					providerClassName="h-full min-h-0"
-					className="h-full min-h-0 w-full"
-					style={{ height: "100%", minHeight: 0 }}
-					forceFullHeight
-				/>
+				<Suspense
+					fallback={
+						<SandpackPreviewFallback
+							style={{ height: "100%", minHeight: 0 }}
+						/>
+					}
+				>
+					<SandpackHtmlPreview
+						html={renderedHtml}
+						providerClassName="h-full min-h-0"
+						className="h-full min-h-0 w-full"
+						style={{ height: "100%", minHeight: 0 }}
+						forceFullHeight
+					/>
+				</Suspense>
 			</FullViewDialog>
 		</>
 	);

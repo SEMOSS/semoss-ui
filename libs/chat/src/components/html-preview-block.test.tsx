@@ -5,17 +5,20 @@ import { HtmlPreviewBlock } from "./html-preview-block";
 
 // Sandpack spins up a real sandboxed bundler/iframe — not worth exercising
 // in a unit test. Stub it so HtmlPreviewBlock's own toggle/dialog/streaming
-// logic can be tested in isolation.
+// logic can be tested in isolation. Default export only — HtmlPreviewBlock
+// lazy-loads this module via React.lazy, which resolves the module's
+// `default` (so the stub still surfaces through a Suspense boundary, one
+// microtask after the initial render).
 vi.mock("./sandpack-html-preview", () => ({
-	SandpackHtmlPreview: ({ html }: { html: string }) => (
+	default: ({ html }: { html: string }) => (
 		<div data-testid="sandpack-preview">{html}</div>
 	),
 }));
 
 describe("HtmlPreviewBlock", () => {
-	it("shows the Sandpack preview by default", () => {
+	it("shows the Sandpack preview by default", async () => {
 		render(<HtmlPreviewBlock html="<p>hi</p>" />);
-		expect(screen.getByTestId("sandpack-preview")).toHaveTextContent(
+		expect(await screen.findByTestId("sandpack-preview")).toHaveTextContent(
 			"<p>hi</p>",
 		);
 	});
@@ -23,6 +26,7 @@ describe("HtmlPreviewBlock", () => {
 	it("toggles to raw HTML source and back", async () => {
 		const user = userEvent.setup();
 		render(<HtmlPreviewBlock html="<p>hi</p>" />);
+		await screen.findByTestId("sandpack-preview");
 
 		await user.click(screen.getByRole("button", { name: "Raw" }));
 		expect(
@@ -39,6 +43,7 @@ describe("HtmlPreviewBlock", () => {
 	it("collapses the block", async () => {
 		const user = userEvent.setup();
 		render(<HtmlPreviewBlock html="<p>hi</p>" />);
+		await screen.findByTestId("sandpack-preview");
 		await user.click(
 			screen.getByRole("button", { name: "Collapse HTML Preview" }),
 		);
@@ -47,16 +52,20 @@ describe("HtmlPreviewBlock", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it("withholds an unsafe (mid-tag) streaming chunk from the preview", () => {
+	it("withholds an unsafe (mid-tag) streaming chunk from the preview", async () => {
 		render(<HtmlPreviewBlock html="<p>partial<" isLoading />);
-		expect(screen.getByTestId("sandpack-preview")).toHaveTextContent("");
+		expect(await screen.findByTestId("sandpack-preview")).toHaveTextContent(
+			"",
+		);
 	});
 
-	it("advances the preview once a streaming chunk becomes safe", () => {
+	it("advances the preview once a streaming chunk becomes safe", async () => {
 		const { rerender } = render(
 			<HtmlPreviewBlock html="<p>partial<" isLoading />,
 		);
-		expect(screen.getByTestId("sandpack-preview")).toHaveTextContent("");
+		expect(await screen.findByTestId("sandpack-preview")).toHaveTextContent(
+			"",
+		);
 
 		rerender(<HtmlPreviewBlock html="<p>partial</p>" isLoading />);
 		expect(screen.getByTestId("sandpack-preview")).toHaveTextContent(
@@ -64,10 +73,11 @@ describe("HtmlPreviewBlock", () => {
 		);
 	});
 
-	it("renders the final HTML once streaming completes", () => {
+	it("renders the final HTML once streaming completes", async () => {
 		const { rerender } = render(
 			<HtmlPreviewBlock html="<p>partial<" isLoading />,
 		);
+		await screen.findByTestId("sandpack-preview");
 		rerender(<HtmlPreviewBlock html="<p>done</p>" isLoading={false} />);
 		expect(screen.getByTestId("sandpack-preview")).toHaveTextContent(
 			"<p>done</p>",

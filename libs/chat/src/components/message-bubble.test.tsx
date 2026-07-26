@@ -13,9 +13,10 @@ vi.mock("mermaid", () => ({
 
 // Sandpack spins up a real sandboxed bundler/iframe — not worth exercising
 // here; the dispatch (does an ```html fence reach HtmlPreviewBlock at all)
-// is what this file cares about, not Sandpack's own rendering.
+// is what this file cares about, not Sandpack's own rendering. Default
+// export only — HtmlPreviewBlock lazy-loads this module via React.lazy.
 vi.mock("./sandpack-html-preview", () => ({
-	SandpackHtmlPreview: ({ html }: { html: string }) => (
+	default: ({ html }: { html: string }) => (
 		<div data-testid="sandpack-preview">{html}</div>
 	),
 }));
@@ -220,19 +221,19 @@ describe("MessageBubble", () => {
 		});
 	});
 
-	it("dispatches a ```html fence to the HTML preview block", () => {
+	it("dispatches a ```html fence to the HTML preview block", async () => {
 		render(
 			<MessageBubble
 				message={makeMessage({ text: "```html\n<p>hi</p>\n```" })}
 			/>,
 		);
 		expect(screen.getByText("HTML Preview")).toBeInTheDocument();
-		expect(screen.getByTestId("sandpack-preview")).toHaveTextContent(
+		expect(await screen.findByTestId("sandpack-preview")).toHaveTextContent(
 			"<p>hi</p>",
 		);
 	});
 
-	it("skips rendering an incomplete HTML preview fence while the message is still streaming", () => {
+	it("skips rendering an incomplete HTML preview fence while the message is still streaming", async () => {
 		render(
 			<MessageBubble
 				message={makeMessage({
@@ -241,7 +242,9 @@ describe("MessageBubble", () => {
 				})}
 			/>,
 		);
-		expect(screen.getByTestId("sandpack-preview")).toHaveTextContent("");
+		expect(await screen.findByTestId("sandpack-preview")).toHaveTextContent(
+			"",
+		);
 	});
 
 	it("shows the feedback toolbar for a completed assistant message when onRate is provided", () => {
