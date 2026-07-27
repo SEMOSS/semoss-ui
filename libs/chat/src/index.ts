@@ -7,6 +7,8 @@
 export {
 	type ChatStoreRegistration,
 	getActiveChatRoomId,
+	getActiveChatStore,
+	getChatStoreByRoomId,
 	registerChatStore,
 	sendToActiveChat,
 	sendToActiveRoom,
@@ -21,6 +23,7 @@ export {
 	useChatRoomsContext,
 	useChatRoomsStore,
 	useChatStore,
+	useRoomMessages,
 } from "./contexts";
 export type { NormalizedRoomHistory } from "./history";
 export { normalizeRoomHistory } from "./history";
@@ -36,6 +39,18 @@ export {
 	createChatRoomsStore,
 	createChatStore,
 } from "./stores";
+/**
+ * `runAgent` is exported directly (unlike the rest of `transport/`, which
+ * `ChatSession`/`createChatStore` keep internal) because `ChatSession`
+ * doesn't drive the backend's agent harness yet — see
+ * docs/chat-components/PLAN.md's deferred items. Exporting it here is what
+ * makes it reachable at all today, since `package.json`'s `exports` map
+ * only surfaces `.`/`./components`, not `transport/pixel-calls` directly.
+ * Once `ChatSession` grows a `harnessType` option that calls this
+ * internally, this export can stay (a still-useful escape hatch for
+ * consumers who want the raw stream) or fold away — not decided yet.
+ */
+export { runAgent } from "./transport/pixel-calls";
 export type {
 	App,
 	ChatMessage,
@@ -51,4 +66,5 @@ export type {
 	MCPConfig,
 	ProjectDependency,
 	RoomSummary,
+	RunAgentResult,
 } from "./types";

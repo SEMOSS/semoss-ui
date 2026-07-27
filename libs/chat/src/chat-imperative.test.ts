@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createStore, type StoreApi } from "zustand/vanilla";
 import {
+	getActiveChatStore,
+	getChatStoreByRoomId,
 	registerChatStore,
 	sendToActiveChat,
 	sendToActiveRoom,
@@ -27,7 +29,9 @@ function createFakeStore(initialRoomId: string | null): FakeChatStore {
 		engineId: "engine",
 		isLoadingHistory: false,
 		mcp: [],
+		workspaceId: null,
 		setEngineId: vi.fn(),
+		setWorkspaceId: vi.fn(async () => undefined),
 		sendMessage,
 		recordFeedback: vi.fn(async () => undefined),
 		downloadMessage: vi.fn(async () => undefined),
@@ -102,5 +106,37 @@ describe("chat-imperative", () => {
 		await sendToActiveRoom("room-new", "hello");
 
 		expect(pending.sendMessage).toHaveBeenCalledWith("hello");
+	});
+
+	it("getChatStoreByRoomId returns the registered store for a room, or null", () => {
+		const first = createFakeStore("room-1");
+		const registration = registerChatStore(first.store);
+		registrations.push(registration);
+
+		expect(getChatStoreByRoomId("room-1")).toBe(first.store);
+		expect(getChatStoreByRoomId("room-unknown")).toBeNull();
+	});
+
+	it("getChatStoreByRoomId follows a store whose room id changes", () => {
+		const pending = createFakeStore(null);
+		const registration = registerChatStore(pending.store);
+		registrations.push(registration);
+
+		expect(getChatStoreByRoomId("room-new")).toBeNull();
+		pending.store.setState({ roomId: "room-new" });
+		expect(getChatStoreByRoomId("room-new")).toBe(pending.store);
+	});
+
+	it("getActiveChatStore returns the active store, or null when none is active", () => {
+		expect(getActiveChatStore()).toBeNull();
+
+		const first = createFakeStore("room-1");
+		const second = createFakeStore("room-2");
+		const firstReg = registerChatStore(first.store);
+		const secondReg = registerChatStore(second.store);
+		registrations.push(firstReg, secondReg);
+
+		setActiveChatStore(second.store);
+		expect(getActiveChatStore()).toBe(second.store);
 	});
 });

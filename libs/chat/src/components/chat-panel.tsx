@@ -77,6 +77,9 @@ export interface ChatPanelProps {
 		message: ChatMessage,
 		helpers: MessageRenderHelpers,
 	) => ReactNode;
+	/** Override the waiting-for-first-chunk indicator — same escape hatch as
+	 * `renderMessage`, passed straight through to MessageList. */
+	renderTypingIndicator?: () => ReactNode;
 }
 
 /**
@@ -95,6 +98,7 @@ export function ChatPanel({
 	emptyState,
 	agents,
 	renderMessage,
+	renderTypingIndicator,
 }: ChatPanelProps) {
 	return (
 		<ChatProvider options={options} isActive={isActive}>
@@ -104,6 +108,7 @@ export function ChatPanel({
 				emptyState={emptyState}
 				agents={agents}
 				renderMessage={renderMessage}
+				renderTypingIndicator={renderTypingIndicator}
 			/>
 		</ChatProvider>
 	);
@@ -115,6 +120,7 @@ function ChatPanelInner({
 	emptyState,
 	agents,
 	renderMessage,
+	renderTypingIndicator,
 }: Omit<ChatPanelProps, "options">) {
 	const {
 		isTyping,
@@ -315,6 +321,7 @@ function ChatPanelInner({
 								roomId={roomId}
 								className="h-full min-h-0"
 								renderMessage={renderMessage}
+								renderTypingIndicator={renderTypingIndicator}
 								emptyState={emptyState}
 								onOpenToolResponse={(tool) => {
 									openSidebarTab({

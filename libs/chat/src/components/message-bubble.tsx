@@ -201,7 +201,7 @@ export function MessageBubble({
 				data-role={message.role}
 				data-status={message.status}
 				className={cn(
-					"flex max-w-[750px] flex-col gap-2 text-foreground text-sm leading-normal [&_p+p]:mt-2 [&_p]:m-0",
+					"flex min-w-0 max-w-[750px] flex-col gap-2 text-foreground text-sm leading-normal [&_p+p]:mt-2 [&_p]:m-0",
 					isUser &&
 						"ms-auto self-stretch rounded-lg bg-accent px-4 py-3",
 					!isUser && "mr-auto w-full",

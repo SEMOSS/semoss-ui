@@ -1,5 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { RawPixelMessage, RawPlaygroundRoom } from "../types";
+import type { RawPixelMessage, RawPlaygroundRoom, StreamChunk } from "../types";
+
+const { runPixelAsync, getPixelJobStreaming, getPixelAsyncResult } = vi.hoisted(
+	() => ({
+		runPixelAsync: vi.fn(),
+		getPixelJobStreaming: vi.fn(),
+		getPixelAsyncResult: vi.fn(),
+	}),
+);
+
+// `runAgent`/`askPlayground` stream through these SDK primitives directly
+// (via `streamPixel`) rather than `actions.run`, so they need their own
+// mock instead of `fakeActions` below.
+vi.mock("@semoss/sdk/react", () => ({
+	runPixelAsync,
+	getPixelJobStreaming,
+	getPixelAsyncResult,
+	download: vi.fn(),
+	uploadInsight: vi.fn(),
+}));
+
 import {
 	createPlaygroundRoom,
 	deletePlaygroundRoom,
@@ -8,6 +28,7 @@ import {
 	listPlaygroundRooms,
 	pinPlaygroundRoom,
 	renamePlaygroundRoom,
+	runAgent,
 	updateRoomOptions,
 } from "./pixel-calls";
 
@@ -219,5 +240,138 @@ describe("getPlaygroundRoomHistory", () => {
 		const result = await getPlaygroundRoomHistory(actions, "room-1");
 
 		expect(result).toEqual({ messages, mcp });
+	});
+});
+
+describe("runAgent", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	function mockCompletedRun(
+		result: Record<string, unknown>,
+		chunks: StreamChunk[] = [],
+	) {
+		runPixelAsync.mockResolvedValue({ jobId: "job-1" });
+		getPixelJobStreaming.mockResolvedValue({
+			message: chunks,
+			status: "Complete",
+		});
+		getPixelAsyncResult.mockResolvedValue({
+			errors: [],
+			insightId: "insight-1",
+			results: [{ output: result }],
+		});
+	}
+
+	it("builds the RunAgent pixel and returns the completed run record", async () => {
+		mockCompletedRun({
+			status: "COMPLETED",
+			waitTimedOut: false,
+			finalText: "done",
+		});
+
+		const result = await runAgent(
+			"insight-1",
+			{
+				engineId: "engine-1",
+				roomId: "room-1",
+				command: "hello",
+				harnessType: "semoss",
+			},
+			vi.fn(),
+		);
+
+		expect(runPixelAsync).toHaveBeenCalledWith(
+			'RunAgent(roomId=["room-1"], engine=["engine-1"], command=["<encode>hello</encode>"], harnessType="semoss", wait=true)',
+			"insight-1",
+		);
+		expect(result).toEqual({
+			status: "COMPLETED",
+			waitTimedOut: false,
+			finalText: "done",
+		});
+	});
+
+	it("includes maxTurns and workspaceId when provided", async () => {
+		mockCompletedRun({ status: "COMPLETED", waitTimedOut: false });
+
+		await runAgent(
+			"insight-1",
+			{
+				engineId: "engine-1",
+				roomId: "room-1",
+				command: "hello",
+				harnessType: "claude_code",
+				maxTurns: 10,
+				workspaceId: "workspace-1",
+			},
+			vi.fn(),
+		);
+
+		expect(runPixelAsync).toHaveBeenCalledWith(
+			'RunAgent(roomId=["room-1"], engine=["engine-1"], command=["<encode>hello</encode>"], harnessType="claude_code", maxTurns=10, workspaceId=["workspace-1"], wait=true)',
+			"insight-1",
+		);
+	});
+
+	it("streams content/thinking/tool chunks to onChunk as they arrive", async () => {
+		const chunks: StreamChunk[] = [
+			{ stream_type: "content", data: { content: "hi" } },
+			{ stream_type: "thinking", data: { thinking: "..." } },
+		];
+		mockCompletedRun(
+			{ status: "COMPLETED", waitTimedOut: false, finalText: "hi" },
+			chunks,
+		);
+		const onChunk = vi.fn();
+
+		await runAgent(
+			"insight-1",
+			{
+				engineId: "engine-1",
+				roomId: "room-1",
+				command: "hello",
+				harnessType: "semoss",
+			},
+			onChunk,
+		);
+
+		expect(onChunk).toHaveBeenNthCalledWith(1, chunks[0]);
+		expect(onChunk).toHaveBeenNthCalledWith(2, chunks[1]);
+	});
+
+	it("throws when the run times out before completing", async () => {
+		mockCompletedRun({ status: "RUNNING", waitTimedOut: true });
+
+		await expect(
+			runAgent(
+				"insight-1",
+				{
+					engineId: "engine-1",
+					roomId: "room-1",
+					command: "hello",
+					harnessType: "semoss",
+				},
+				vi.fn(),
+			),
+		).rejects.toThrow("The agent run timed out before completing.");
+	});
+
+	it("throws when the run ends in a non-COMPLETED status", async () => {
+		mockCompletedRun({ status: "FAILED", waitTimedOut: false });
+
+		await expect(
+			runAgent(
+				"insight-1",
+				{
+					engineId: "engine-1",
+					roomId: "room-1",
+					command: "hello",
+					harnessType: "semoss",
+				},
+				vi.fn(),
+			),
+		).rejects.toThrow("The agent run did not complete: FAILED");
 	});
 });

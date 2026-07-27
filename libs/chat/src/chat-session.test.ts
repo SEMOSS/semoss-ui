@@ -5,6 +5,7 @@ import type {
 	ChatMessage,
 	RawPixelMessage,
 	ResponseMessage,
+	RunAgentResult,
 	StreamChunk,
 } from "./types";
 
@@ -16,6 +17,7 @@ const {
 	createPlaygroundRoom,
 	updateRoomOptions,
 	askPlayground,
+	runAgent,
 	runMcpTool,
 	addPlaygroundToolExecution,
 	getPlaygroundRoomHistory,
@@ -25,6 +27,7 @@ const {
 	createPlaygroundRoom: vi.fn(),
 	updateRoomOptions: vi.fn(),
 	askPlayground: vi.fn(),
+	runAgent: vi.fn(),
 	runMcpTool: vi.fn(),
 	addPlaygroundToolExecution: vi.fn(),
 	getPlaygroundRoomHistory: vi.fn(),
@@ -36,6 +39,7 @@ vi.mock("./transport/pixel-calls", () => ({
 	createPlaygroundRoom,
 	updateRoomOptions,
 	askPlayground,
+	runAgent,
 	runMcpTool,
 	addPlaygroundToolExecution,
 	getPlaygroundRoomHistory,
@@ -71,8 +75,8 @@ function toolCallResponse(messageId = "msg-1"): ResponseMessage {
 	};
 }
 
-/** Simulates askPlayground/addPlaygroundToolExecution's real signature: streams chunks, then resolves with the final structured response. */
-function streamed(chunks: StreamChunk[], response: ResponseMessage) {
+/** Simulates askPlayground/addPlaygroundToolExecution/runAgent's shared signature: streams chunks, then resolves with the final result (a ResponseMessage for the first two, a RunAgentResult for runAgent). */
+function streamed<T>(chunks: StreamChunk[], response: T) {
 	return async (
 		_insightId: string,
 		_params: unknown,
@@ -89,6 +93,17 @@ function contentChunk(text: string): StreamChunk {
 	return { stream_type: "content", data: { content: text } };
 }
 
+function agentRunResult(
+	overrides: Partial<RunAgentResult> = {},
+): RunAgentResult {
+	return {
+		status: "COMPLETED",
+		waitTimedOut: false,
+		finalText: "",
+		...overrides,
+	};
+}
+
 function messageText(message: ChatMessage | undefined): string {
 	if (!message) {
 		return "";
@@ -103,6 +118,7 @@ beforeEach(() => {
 	createPlaygroundRoom.mockReset().mockResolvedValue({ roomId: "room-1" });
 	updateRoomOptions.mockReset().mockResolvedValue(undefined);
 	askPlayground.mockReset();
+	runAgent.mockReset();
 	runMcpTool.mockReset().mockResolvedValue({ ok: true });
 	addPlaygroundToolExecution.mockReset();
 	getPlaygroundRoomHistory
@@ -402,6 +418,162 @@ describe("ChatSession.sendMessage", () => {
 
 		expect(session.messages).toHaveLength(0);
 		expect(createPlaygroundRoom).not.toHaveBeenCalled();
+	});
+});
+
+describe("ChatSession.sendMessage with harnessType (RunAgent)", () => {
+	const harnessOptions: ChatOptions = {
+		...baseOptions,
+		harnessType: "semoss",
+	};
+
+	it("calls runAgent instead of askPlayground, and never touches the tool-loop calls", async () => {
+		runAgent.mockImplementation(
+			streamed([], agentRunResult({ finalText: "hello there" })),
+		);
+		const session = new ChatSession(actions, insightId, harnessOptions);
+
+		await session.sendMessage("hi");
+
+		expect(askPlayground).not.toHaveBeenCalled();
+		expect(runMcpTool).not.toHaveBeenCalled();
+		expect(addPlaygroundToolExecution).not.toHaveBeenCalled();
+		expect(runAgent).toHaveBeenCalledTimes(1);
+		expect(session.messages[1]).toMatchObject({
+			role: "assistant",
+			status: "complete",
+		});
+		expect(messageText(session.messages[1])).toBe("hello there");
+	});
+
+	it("passes engineId/roomId/command/harnessType/maxTurns/workspaceId through to runAgent", async () => {
+		runAgent.mockImplementation(streamed([], agentRunResult()));
+		const session = new ChatSession(actions, insightId, {
+			...harnessOptions,
+			maxTurns: 12,
+			workspaceId: "workspace-1",
+		});
+
+		await session.sendMessage("hi");
+
+		expect(runAgent).toHaveBeenCalledWith(
+			insightId,
+			{
+				engineId: "test-engine",
+				roomId: "room-1",
+				command: "hi",
+				harnessType: "semoss",
+				maxTurns: 12,
+				workspaceId: "workspace-1",
+			},
+			expect.any(Function),
+		);
+	});
+
+	it("streams content chunks into the assistant message as they arrive", async () => {
+		runAgent.mockImplementation(
+			streamed(
+				[contentChunk("hello "), contentChunk("there")],
+				agentRunResult({ finalText: "hello there" }),
+			),
+		);
+		const session = new ChatSession(actions, insightId, harnessOptions);
+
+		await session.sendMessage("hi");
+
+		// streamed content wins — finalText is only a fallback, not appended
+		// on top of it (see runAgentTurn's hasTextPart guard).
+		expect(session.messages[1]?.parts).toHaveLength(1);
+		expect(messageText(session.messages[1])).toBe("hello there");
+	});
+
+	it("falls back to finalText when nothing streamed as visible text", async () => {
+		runAgent.mockImplementation(
+			streamed([], agentRunResult({ finalText: "final answer" })),
+		);
+		const session = new ChatSession(actions, insightId, harnessOptions);
+
+		await session.sendMessage("hi");
+
+		expect(messageText(session.messages[1])).toBe("final answer");
+	});
+
+	it("surfaces a rejected run (e.g. non-COMPLETED status) as a message error", async () => {
+		runAgent.mockRejectedValue(
+			new Error("The agent run did not complete: FAILED"),
+		);
+		const session = new ChatSession(actions, insightId, harnessOptions);
+
+		await session.sendMessage("hi");
+
+		expect(session.messages.at(-1)?.status).toBe("error");
+		expect(session.error).toBe("The agent run did not complete: FAILED");
+	});
+
+	it("synthesizes a success tool_result for streamed tool_call parts once the run completes", async () => {
+		// The harness path builds tool_call parts purely from streamed
+		// deltas, with no per-round tool_result to reconcile against (see
+		// runAgentTurn's own doc comment) — without this, MessageBubble's
+		// findToolResult()-based status derivation leaves them stuck showing
+		// "running" forever, even though the run they belong to has already
+		// finished.
+		runAgent.mockImplementation(
+			streamed(
+				[
+					{
+						stream_type: "tool",
+						data: {
+							index: 0,
+							id: "tool-1",
+							function: { name: "doThing" },
+						},
+					},
+				],
+				agentRunResult({ finalText: "done" }),
+			),
+		);
+		const session = new ChatSession(actions, insightId, harnessOptions);
+
+		await session.sendMessage("hi");
+
+		const parts = session.messages.at(-1)?.parts ?? [];
+		expect(parts).toContainEqual(
+			expect.objectContaining({
+				type: "tool_result",
+				toolCallId: "tool-1",
+				status: "success",
+			}),
+		);
+	});
+
+	it("synthesizes an error tool_result for streamed tool_call parts when the run doesn't complete", async () => {
+		runAgent.mockImplementation(
+			streamed(
+				[
+					{
+						stream_type: "tool",
+						data: {
+							index: 0,
+							id: "tool-1",
+							function: { name: "doThing" },
+						},
+					},
+				],
+				agentRunResult({ status: "FAILED" }),
+			),
+		);
+		const session = new ChatSession(actions, insightId, harnessOptions);
+
+		await session.sendMessage("hi");
+
+		const parts = session.messages.at(-1)?.parts ?? [];
+		expect(parts).toContainEqual(
+			expect.objectContaining({
+				type: "tool_result",
+				toolCallId: "tool-1",
+				status: "error",
+			}),
+		);
 	});
 });
 

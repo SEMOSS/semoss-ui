@@ -3,6 +3,7 @@ export {
 	ChatProvider,
 	useChatContext,
 	useChatStore,
+	useRoomMessages,
 } from "./chat-provider";
 export type { ChatRoomsProviderProps } from "./chat-rooms-provider";
 export {

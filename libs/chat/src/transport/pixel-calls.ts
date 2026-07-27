@@ -13,6 +13,7 @@ import type {
 	RawPlaygroundRoom,
 	ResponseMessage,
 	RoomSummary,
+	RunAgentResult,
 	StreamChunk,
 } from "../types";
 
@@ -195,6 +196,55 @@ export async function askPlayground(
 		throw new Error(error ?? "AskPlayground returned no response");
 	}
 	return responseMessage;
+}
+
+/**
+ * Runs a user message through the backend's agent harness (RunAgent) —
+ * distinct from AskPlayground: the server owns the entire tool-execution
+ * loop internally (no client-side RunMCPTool/AddPlaygroundToolExecution
+ * round trip), streaming content/thinking/tool chunks back over the same
+ * job-streaming channel AskPlayground uses. `onChunk` fires with the exact
+ * same StreamChunk shape AskPlayground produces, so callers can feed both
+ * through one `applyStreamChunk`-style reducer.
+ *
+ * `harnessType` selects which agent implementation the backend runs
+ * ("semoss" is the SDK's own harness; a room's other configured harnesses,
+ * e.g. "claude_code", are also valid). `workspaceId`, when set, overlays
+ * that workspace's config (system prompt, MCPs, hooks) onto the room for
+ * the duration of this run only.
+ */
+export async function runAgent(
+	insightId: string,
+	params: {
+		engineId: string;
+		roomId: string;
+		command: string;
+		harnessType: string;
+		maxTurns?: number;
+		workspaceId?: string;
+	},
+	onChunk: (chunk: StreamChunk) => void,
+): Promise<RunAgentResult> {
+	// Same direct-interpolation caveat as askPlayground's `command` above.
+	const maxTurnsParam =
+		params.maxTurns !== undefined ? `, maxTurns=${params.maxTurns}` : "";
+	const workspaceIdParam = params.workspaceId
+		? `, workspaceId=["${params.workspaceId}"]`
+		: "";
+	const pixel = `RunAgent(roomId=["${params.roomId}"], engine=["${params.engineId}"], command=["<encode>${params.command}</encode>"], harnessType="${params.harnessType}"${maxTurnsParam}${workspaceIdParam}, wait=true)`;
+	const data = (await streamPixel(insightId, pixel, onChunk)) as
+		| RunAgentResult
+		| undefined;
+	if (!data || typeof data.status !== "string") {
+		throw new Error("RunAgent returned no result");
+	}
+	if (data.waitTimedOut) {
+		throw new Error("The agent run timed out before completing.");
+	}
+	if (data.status !== "COMPLETED") {
+		throw new Error(`The agent run did not complete: ${data.status}`);
+	}
+	return data;
 }
 
 export async function uploadPlaygroundFiles(

@@ -10,6 +10,7 @@ import {
 	createPlaygroundRoom,
 	downloadMessageAsFile,
 	getPlaygroundRoomHistory,
+	runAgent,
 	runMcpTool,
 	submitFeedback,
 	updateRoomOptions,
@@ -587,61 +588,21 @@ export class ChatSession {
 				}
 			}
 
-			let response = await askPlayground(
-				this.insightId,
-				{
-					engineId: this.engineId,
+			if (this.options.harnessType) {
+				await this.runAgentTurn(
 					roomId,
-					command: trimmed,
-					image,
-					temperature: this.options.defaultRoomSettings?.temperature,
-					parentMessageId: this.parentMessageId,
-				},
-				onChunk,
-			);
-
-			const limit =
-				this.options.toolAutoExecutionLimit ??
-				DEFAULT_TOOL_AUTO_EXECUTION_LIMIT;
-			for (
-				let round = 0;
-				findFinalToolCall(response) && round < limit;
-				round += 1
-			) {
-				response = await this.executeToolRound(
-					roomId,
-					response,
+					trimmed,
 					assistantMessageId,
 					onChunk,
 				);
-			}
-
-			if (findFinalToolCall(response)) {
-				throw new Error(
-					`Reached the tool-call limit (${limit}) without a final response.`,
+			} else {
+				await this.runAskPlaygroundTurn(
+					roomId,
+					trimmed,
+					image,
+					assistantMessageId,
+					onChunk,
 				);
-			}
-
-			const message = this.getMessage(assistantMessageId);
-			if (message) {
-				this.parentMessageId =
-					response.messageId ?? this.parentMessageId;
-				appendResponseMediaParts(message, response);
-				const hasTextPart = message.parts.some(
-					(part) => part.type === "text",
-				);
-				if (!hasTextPart) {
-					const fallbackText = resolveResponseText(response);
-					if (fallbackText) {
-						message.parts.push({
-							type: "text",
-							id: nextPartId("text"),
-							text: fallbackText,
-						});
-					}
-				}
-				message.status = "complete";
-				this.setState({ messages: [...this.messages] });
 			}
 		} catch (err) {
 			const friendlyMessage = this.toFriendlyMessage(err);
@@ -660,6 +621,168 @@ export class ChatSession {
 			});
 		} finally {
 			this.setState({ isTyping: false });
+		}
+	}
+
+	/**
+	 * Default turn strategy: AskPlayground, then a client-driven tool loop
+	 * (RunMCPTool + AddPlaygroundToolExecution per round, up to
+	 * `toolAutoExecutionLimit`) — see `executeToolRound`.
+	 */
+	private async runAskPlaygroundTurn(
+		roomId: string,
+		command: string,
+		image: string[] | undefined,
+		assistantMessageId: string,
+		onChunk: (chunk: StreamChunk) => void,
+	): Promise<void> {
+		let response = await askPlayground(
+			this.insightId,
+			{
+				engineId: this.engineId,
+				roomId,
+				command,
+				image,
+				temperature: this.options.defaultRoomSettings?.temperature,
+				parentMessageId: this.parentMessageId,
+			},
+			onChunk,
+		);
+
+		const limit =
+			this.options.toolAutoExecutionLimit ??
+			DEFAULT_TOOL_AUTO_EXECUTION_LIMIT;
+		for (
+			let round = 0;
+			findFinalToolCall(response) && round < limit;
+			round += 1
+		) {
+			response = await this.executeToolRound(
+				roomId,
+				response,
+				assistantMessageId,
+				onChunk,
+			);
+		}
+
+		if (findFinalToolCall(response)) {
+			throw new Error(
+				`Reached the tool-call limit (${limit}) without a final response.`,
+			);
+		}
+
+		const message = this.getMessage(assistantMessageId);
+		if (message) {
+			this.parentMessageId = response.messageId ?? this.parentMessageId;
+			appendResponseMediaParts(message, response);
+			const hasTextPart = message.parts.some(
+				(part) => part.type === "text",
+			);
+			if (!hasTextPart) {
+				const fallbackText = resolveResponseText(response);
+				if (fallbackText) {
+					message.parts.push({
+						type: "text",
+						id: nextPartId("text"),
+						text: fallbackText,
+					});
+				}
+			}
+			message.status = "complete";
+			this.setState({ messages: [...this.messages] });
+		}
+	}
+
+	/**
+	 * Agent-harness turn strategy (`options.harnessType` set): RunAgent runs
+	 * the entire tool-execution loop server-side and returns one flat
+	 * summary once the run finishes, rather than the per-round
+	 * response/tool-result exchange `runAskPlaygroundTurn` drives. Content/
+	 * thinking/tool chunks stream into `onChunk` exactly like AskPlayground's
+	 * do (same `StreamChunk` shape), so they land in the message the same
+	 * way; only the final reconciliation differs — there's no per-round
+	 * structured tool result to reconcile against here (see
+	 * `reconcileToolCall`), only the run's `finalText` as a fallback if
+	 * nothing streamed as visible text. A tool_call part built purely from
+	 * streamed deltas won't have fully-parsed `arguments` in this mode —
+	 * matches playground's own agent-harness.ts, a known, not-yet-closed
+	 * gap (see docs/chat-components/PLAN.md).
+	 */
+	private async runAgentTurn(
+		roomId: string,
+		command: string,
+		assistantMessageId: string,
+		onChunk: (chunk: StreamChunk) => void,
+	): Promise<void> {
+		const harnessType = this.options.harnessType;
+		if (!harnessType) {
+			return;
+		}
+
+		const result = await runAgent(
+			this.insightId,
+			{
+				engineId: this.engineId,
+				roomId,
+				command,
+				harnessType,
+				maxTurns: this.options.maxTurns,
+				workspaceId: this.workspaceId ?? undefined,
+			},
+			onChunk,
+		);
+
+		const message = this.getMessage(assistantMessageId);
+		if (message) {
+			this.parentMessageId =
+				result.finalOutputMessageId ?? this.parentMessageId;
+			const hasTextPart = message.parts.some(
+				(part) => part.type === "text",
+			);
+			if (!hasTextPart && result.finalText) {
+				message.parts.push({
+					type: "text",
+					id: nextPartId("text"),
+					text: result.finalText,
+				});
+			}
+			// Every tool_call part built from this run's streamed deltas has
+			// no matching tool_result (per this method's own doc comment —
+			// there's no per-round result to reconcile against in harness
+			// mode). MessageBubble derives a tool call's displayed status by
+			// looking for exactly that pairing (see message-bubble.tsx's
+			// findToolResult), defaulting to "running" when none exists — so
+			// without this, every harness-mode tool call shows "running"
+			// forever, even long after the run (and everything inside it)
+			// has actually finished. The run being done means every tool
+			// call within it is done too, so synthesize the missing
+			// tool_result now rather than inventing separate status-tracking
+			// plumbing for this one mode.
+			const resolvedStatus: "success" | "error" =
+				result.status === "COMPLETED" ? "success" : "error";
+			for (const part of message.parts) {
+				if (part.type !== "tool_call") {
+					continue;
+				}
+				const hasResult = message.parts.some(
+					(p) => p.type === "tool_result" && p.toolCallId === part.id,
+				);
+				if (hasResult) {
+					continue;
+				}
+				message.parts.push({
+					type: "tool_result",
+					id: nextPartId("tool_result"),
+					toolCallId: part.id,
+					output:
+						resolvedStatus === "success"
+							? ""
+							: "Run did not complete",
+					status: resolvedStatus,
+				});
+			}
+			message.status = "complete";
+			this.setState({ messages: [...this.messages] });
 		}
 	}
 

@@ -37,6 +37,11 @@ export interface MessageListProps {
 	) => ReactNode;
 	/** Shown when there are no messages yet and nothing is streaming. */
 	emptyState?: ReactNode;
+	/** Override the waiting-for-first-chunk indicator — omit to use the
+	 * default rotating-message TypingIndicator. Same escape hatch as
+	 * `renderMessage`, for consumers whose product needs a different loading
+	 * treatment (e.g. a bouncing-dots style) without forking this component. */
+	renderTypingIndicator?: () => ReactNode;
 	/** Optional handler to open a selected tool response in a side panel. */
 	onOpenToolResponse?: (tool: ToolResponseDetails) => void;
 	/** Optional handler to open an attached file in a side panel. */
@@ -69,6 +74,7 @@ export function MessageList({
 	emptyState,
 	onOpenToolResponse,
 	onOpenFile,
+	renderTypingIndicator,
 }: MessageListProps) {
 	const { messages, isTyping, recordFeedback, downloadMessage } =
 		useChatContext();
@@ -148,7 +154,9 @@ export function MessageList({
 										</div>
 									);
 								})}
-						{isWaitingForFirstChunk ? <TypingIndicator /> : null}
+						{isWaitingForFirstChunk
+							? (renderTypingIndicator?.() ?? <TypingIndicator />)
+							: null}
 						<div data-slot="message-list-anchor" ref={bottomRef} />
 					</div>
 				</ScrollArea>

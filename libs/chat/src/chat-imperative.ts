@@ -147,6 +147,42 @@ export function getActiveChatRoomId(): string | null {
 	return registered.store.getState().roomId;
 }
 
+/**
+ * Returns the raw `StoreApi` for a registered room, so a component
+ * outside that room's `<ChatProvider>` tree — a sibling that only has
+ * the roomId, not a place inside the chat UI's own React tree — can
+ * still read messages/tool calls reactively via `store.subscribe()` or
+ * `store.getState().messages`, the same way `sendToActiveRoom` already
+ * reaches a room's `sendMessage` imperatively. Returns `null` if no
+ * `ChatProvider` for that room is currently mounted (not yet rendered,
+ * already unmounted, or the id is simply wrong) — callers should treat
+ * that as "not available yet" rather than an error.
+ */
+export function getChatStoreByRoomId(
+	roomId: string,
+): StoreApi<ChatStoreState> | null {
+	const storeId = storeIdByRoomId.get(roomId);
+	if (!storeId) {
+		return null;
+	}
+	const registered = storesById.get(storeId);
+	return registered ? registered.store : null;
+}
+
+/**
+ * Returns the raw `StoreApi` for the currently active chat (see
+ * `setActiveChatStore`/`setActiveChatRoom`) — the "active" counterpart
+ * to `getChatStoreByRoomId` for callers that want whichever chat is
+ * currently the imperative target rather than a specific known room.
+ */
+export function getActiveChatStore(): StoreApi<ChatStoreState> | null {
+	if (!activeStoreId) {
+		return null;
+	}
+	const registered = storesById.get(activeStoreId);
+	return registered ? registered.store : null;
+}
+
 export async function sendToActiveChat(text: string): Promise<void> {
 	const store = getActiveStoreOrThrow();
 	await store.getState().sendMessage(text);

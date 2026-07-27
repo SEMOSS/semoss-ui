@@ -4,11 +4,13 @@ import {
 	useContext,
 	useEffect,
 	useRef,
+	useState,
 } from "react";
 import { type StoreApi, useStore } from "zustand";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	type ChatStoreRegistration,
+	getChatStoreByRoomId,
 	registerChatStore,
 	setActiveChatStore,
 } from "../chat-imperative";
@@ -17,6 +19,7 @@ import {
 	type ChatStoreState,
 	createChatStore,
 } from "../stores/chat/chat-store";
+import type { ChatMessage } from "../types";
 
 const ChatStoreContext = createContext<StoreApi<ChatStoreState> | null>(null);
 
@@ -116,4 +119,63 @@ export function useChatContext<T>(
  */
 export function useChatStore(): StoreApi<ChatStoreState> {
 	return useChatStoreFromContext();
+}
+
+/**
+ * Reactively reads a room's messages from *outside* that room's own
+ * `<ChatProvider>` tree — for a sibling component (e.g. one driving
+ * navigation off the latest tool call's `_meta.SMSS_MCP_UI.resourceURI`,
+ * or refreshing other UI when a specific tool call resolves) that isn't
+ * nested inside the chat UI itself, given only the roomId.
+ *
+ * Backed by `getChatStoreByRoomId` — the same room registry
+ * `sendToActiveRoom` already uses — so this needs no prop-drilling or
+ * lifting the chat session above both components. Returns `[]` until a
+ * `<ChatProvider>` for that room mounts and registers (registration
+ * happens in that provider's own mount effect, so there's a brief window
+ * on first render where the store doesn't exist yet); a short poll below
+ * closes that window without requiring callers to coordinate mount order.
+ */
+export function useRoomMessages(roomId: string | null): ChatMessage[] {
+	const [messages, setMessages] = useState<ChatMessage[]>(
+		() =>
+			(roomId && getChatStoreByRoomId(roomId)?.getState().messages) || [],
+	);
+
+	useEffect(() => {
+		if (!roomId) {
+			setMessages([]);
+			return;
+		}
+
+		let unsubscribe: (() => void) | null = null;
+
+		const attach = (store: StoreApi<ChatStoreState>) => {
+			setMessages(store.getState().messages);
+			unsubscribe = store.subscribe((state) => {
+				setMessages(state.messages);
+			});
+		};
+
+		const existing = getChatStoreByRoomId(roomId);
+		if (existing) {
+			attach(existing);
+			return () => unsubscribe?.();
+		}
+
+		const interval = setInterval(() => {
+			const store = getChatStoreByRoomId(roomId);
+			if (store) {
+				clearInterval(interval);
+				attach(store);
+			}
+		}, 200);
+
+		return () => {
+			clearInterval(interval);
+			unsubscribe?.();
+		};
+	}, [roomId]);
+
+	return messages;
 }

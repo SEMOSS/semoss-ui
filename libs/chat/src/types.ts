@@ -253,6 +253,29 @@ export interface ResponseMessage {
 }
 
 /**
+ * The RunAgent reactor's durable run record (its async job's
+ * `getPixelAsyncResult` output). Unlike AskPlayground — which returns a
+ * paired input/response pixel message — RunAgent runs the full agentic
+ * loop server-side (tool calls included) and returns one flat summary once
+ * the run finishes. Matches playground's own `RunAgentOutput`
+ * (`packages/playground/src/stores/message/agent-harness.ts`).
+ */
+export interface RunAgentResult {
+	/** Terminal run status — only "COMPLETED" is a success. */
+	status: string;
+	/** Whether the run exceeded the server's wait window before finishing. */
+	waitTimedOut: boolean;
+	/** The agent's final assistant text. */
+	finalText: string;
+	/** Server message id for the persisted input message. */
+	inputMessageId?: string;
+	/** Server message id for the persisted final response message. */
+	finalOutputMessageId?: string;
+	runId?: string;
+	jobId?: string;
+}
+
+/**
  * Room-history wire shapes — trimmed subsets of playground's real
  * `types.d.ts`/`GlobalNav` contracts (only the fields normalizeRoomHistory
  * and the room-list transport calls actually read).
