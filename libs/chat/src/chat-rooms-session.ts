@@ -112,13 +112,19 @@ export class ChatRoomsSession {
 		return this.store.getState().activeRoomId;
 	}
 
-	/** Set the active room (e.g. when user clicks a room in the sidebar). */
+	/** Set the active room — no-op if a room is already active. */
 	setActiveRoom(roomId: string): void {
+		if (this.activeRoomId !== null) {
+			return;
+		}
 		this.setState({ activeRoomId: roomId });
 	}
 
-	/** Start a new chat — clears activeRoomId so ChatProvider creates a fresh session. */
+	/** Start a new chat — no-op if a room is already active. */
 	newChat(): void {
+		if (this.activeRoomId !== null) {
+			return;
+		}
 		this.setState({ activeRoomId: null });
 	}
 

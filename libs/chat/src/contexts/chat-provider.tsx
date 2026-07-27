@@ -115,7 +115,7 @@ export function useChatContext<T>(
 /**
  * Returns the raw Zustand `StoreApi` from the nearest `ChatProvider` —
  * for imperative access via `getState()` / `subscribe()` outside the
- * React render cycle (e.g. send-to-chat from anywhere, #3432).
+ * React render cycle
  */
 export function useChatStore(): StoreApi<ChatStoreState> {
 	return useChatStoreFromContext();

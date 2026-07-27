@@ -10,7 +10,6 @@
 export * from "./chat-input";
 export * from "./chat-panel";
 export * from "./chat-rooms-page";
-export * from "./chat-rooms-shell";
 export * from "./engine-select";
 export * from "./file-editor-sidebar";
 export * from "./mcp-menu-button";
