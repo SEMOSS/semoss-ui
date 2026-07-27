@@ -63,7 +63,7 @@ function upsertSidebarTab(tabs: SidebarTab[], next: SidebarTab): SidebarTab[] {
 	return tabs.map((tab, index) => (index === existingIndex ? next : tab));
 }
 
-export interface ChatPanelProps {
+export interface ChatProps {
 	/** Passed straight through to ChatProvider — this component owns the chat session. */
 	options: ChatOptions;
 	/** Passed to ChatProvider to control global imperative targeting. */
@@ -90,7 +90,7 @@ export interface ChatPanelProps {
  * yourself inside your own ChatProvider instead — that escape hatch is
  * the point of keeping them as separate exports.
  */
-export function ChatPanel({
+export function Chat({
 	options,
 	isActive,
 	className,
@@ -99,10 +99,10 @@ export function ChatPanel({
 	agents,
 	renderMessage,
 	renderTypingIndicator,
-}: ChatPanelProps) {
+}: ChatProps) {
 	return (
 		<ChatProvider options={options} isActive={isActive}>
-			<ChatPanelInner
+			<ChatInner
 				className={className}
 				placeholder={placeholder}
 				emptyState={emptyState}
@@ -114,14 +114,14 @@ export function ChatPanel({
 	);
 }
 
-function ChatPanelInner({
+function ChatInner({
 	className,
 	placeholder,
 	emptyState,
 	agents,
 	renderMessage,
 	renderTypingIndicator,
-}: Omit<ChatPanelProps, "options">) {
+}: Omit<ChatProps, "options">) {
 	const {
 		isTyping,
 		mcp,
