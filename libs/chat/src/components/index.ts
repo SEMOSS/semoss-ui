@@ -7,21 +7,77 @@
  * `@semoss/ui/globals.css` imported (and typically a `<ThemeProvider>`
  * from `@semoss/ui/next`) — this package ships no CSS of its own.
  */
-export * from "./chat-input";
-export * from "./chat-panel";
-export * from "./chat-rooms-page";
-export * from "./engine-select";
-export * from "./file-editor-sidebar";
-export * from "./mcp-menu-button";
-export * from "./mcp-overlay";
-export * from "./message-bubble";
-export * from "./message-feedback-toolbar";
-export * from "./message-list";
-export * from "./prompt-library-dialog";
-export * from "./prompt-optimizer";
-export * from "./room-settings-sidebar";
-export * from "./room-sidebar";
-export * from "./selection-chat-button";
-export * from "./tool-call-view";
-export * from "./tool-response-sidebar";
-export * from "./typing-indicator";
+
+import { Chat as ChatRoot } from "./chat";
+import { ChatInput, createDefaultSlashCommands } from "./chat-input";
+import { ChatRoomsPage } from "./chat-rooms-page";
+import { EngineSelect } from "./engine-select";
+import { FileEditorSidebar } from "./file-editor-sidebar";
+import { McpMenuButton } from "./mcp-menu-button";
+import { McpOverlay } from "./mcp-overlay";
+import { MessageBubble } from "./message-bubble";
+import { MessageFeedbackToolbar } from "./message-feedback-toolbar";
+import { MessageList } from "./message-list";
+import { PromptLibraryDialog } from "./prompt-library-dialog";
+import { PromptOptimizer } from "./prompt-optimizer";
+import { RoomSettingsSidebar } from "./room-settings-sidebar";
+import { RoomSidebar } from "./room-sidebar";
+import { SelectionChatButton } from "./selection-chat-button";
+import { ToolCallView } from "./tool-call-view";
+import { ToolResponseSidebar } from "./tool-response-sidebar";
+import { TypingIndicator } from "./typing-indicator";
+
+const Chat = Object.assign(ChatRoot, {
+	Input: ChatInput,
+	createDefaultSlashCommands,
+	RoomsPage: ChatRoomsPage,
+	EngineSelect,
+	FileEditorSidebar,
+	McpMenuButton,
+	McpOverlay,
+	MessageBubble,
+	MessageFeedbackToolbar,
+	MessageList,
+	PromptLibraryDialog,
+	PromptOptimizer,
+	RoomSettingsSidebar,
+	RoomSidebar,
+	SelectionChatButton,
+	ToolCallView,
+	ToolResponseSidebar,
+	TypingIndicator,
+});
+
+export { Chat };
+
+// Re-export types for consumers that need them directly.
+export type { ChatProps } from "./chat";
+export type {
+	ChatInputDefaultSlashCommandActions,
+	ChatInputDefaultSlashCommandId,
+	ChatInputMcpTab,
+	ChatInputProps,
+	ChatInputSlashCommand,
+} from "./chat-input";
+export type { ChatRoomsPageProps } from "./chat-rooms-page";
+export type { EngineSelectProps } from "./engine-select";
+export type { FileEditorSidebarProps } from "./file-editor-sidebar";
+export type { McpMenuButtonProps } from "./mcp-menu-button";
+export type {
+	McpOverlayAgent,
+	McpOverlayOpenMode,
+	McpOverlayWorkspaceRef,
+} from "./mcp-overlay";
+export type { MessageBubbleProps, ToolResponseDetails } from "./message-bubble";
+export type { MessageFeedbackToolbarProps } from "./message-feedback-toolbar";
+export type { MessageListProps, MessageRenderHelpers } from "./message-list";
+export type {
+	PromptLibraryDialogProps,
+	PromptLibraryItem,
+} from "./prompt-library-dialog";
+export type { PromptOptimizerProps } from "./prompt-optimizer";
+export type { RoomSettingsSidebarProps } from "./room-settings-sidebar";
+export type { RoomSidebarProps } from "./room-sidebar";
+export type { SelectionChatButtonProps } from "./selection-chat-button";
+export type { ToolCallStatus, ToolCallViewProps } from "./tool-call-view";
+export type { TypingIndicatorProps } from "./typing-indicator";
