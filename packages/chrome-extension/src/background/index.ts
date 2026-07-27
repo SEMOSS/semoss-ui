@@ -20,21 +20,14 @@ type AutomationInputRequest = {
 	targetTabId: number;
 };
 
-type AutomationRunState = {
-	active: boolean;
-	status: "idle" | "running" | "needs-input" | "complete" | "failed";
-	message?: string;
-	history: string[];
+type AutomationInputState = {
 	pendingInput?: AutomationInputRequest;
 	updatedAt: number;
 };
 
 // Track which tabs have debuggers attached
 const attachedDebuggers = new Set<number>();
-let automationRunState: AutomationRunState = {
-	active: false,
-	status: "idle",
-	history: [],
+let automationInputState: AutomationInputState = {
 	updatedAt: Date.now(),
 };
 
@@ -42,60 +35,48 @@ chrome.storage.local
 	.get(AUTOMATION_RUN_STATE_STORAGE_KEY)
 	.then((stored) => {
 		const value = stored[AUTOMATION_RUN_STATE_STORAGE_KEY];
-		if (value?.updatedAt) automationRunState = value;
+		if (value?.updatedAt) {
+			automationInputState = {
+				pendingInput: value.pendingInput,
+				updatedAt: value.updatedAt,
+			};
+		}
 	})
 	.catch(() => {
 		// Shared run state can start fresh if storage is unavailable.
 	});
 
-function persistAndBroadcastAutomationRunState() {
+function persistAndBroadcastAutomationInputState() {
 	chrome.storage.local
-		.set({ [AUTOMATION_RUN_STATE_STORAGE_KEY]: automationRunState })
+		.set({ [AUTOMATION_RUN_STATE_STORAGE_KEY]: automationInputState })
 		.catch(() => {
 			// Runtime broadcasts still work if persistence is unavailable.
 		});
 	chrome.runtime
 		.sendMessage({
 			type: "AUTOMATION_RUN_STATE_UPDATED",
-			state: automationRunState,
+			state: automationInputState,
 		})
 		.catch(() => {
 			// There may be no visible panel listening yet.
 		});
 }
 
-function updateAutomationRunState(state: Partial<AutomationRunState>) {
-	automationRunState = {
-		...automationRunState,
-		...state,
-		history: state.history ?? automationRunState.history,
+function registerAutomationInput(request: AutomationInputRequest) {
+	automationInputState = {
+		pendingInput: request,
 		updatedAt: Date.now(),
 	};
-	persistAndBroadcastAutomationRunState();
-}
-
-function resetAutomationRunState() {
-	automationRunState = {
-		active: false,
-		status: "idle",
-		history: [],
-		updatedAt: Date.now(),
-	};
-	persistAndBroadcastAutomationRunState();
+	persistAndBroadcastAutomationInputState();
 }
 
 function clearPendingAutomationInput(requestId: string): boolean {
-	if (automationRunState.pendingInput?.id !== requestId) return false;
+	if (automationInputState.pendingInput?.id !== requestId) return false;
 
-	const { pendingInput: _pendingInput, ...runState } = automationRunState;
-	automationRunState = {
-		...runState,
-		active: true,
-		status: "running",
-		message: "Resuming automation",
+	automationInputState = {
 		updatedAt: Date.now(),
 	};
-	persistAndBroadcastAutomationRunState();
+	persistAndBroadcastAutomationInputState();
 	return true;
 }
 
@@ -245,18 +226,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	// Store source tab for execution messages (needed for completion routing)
 	// Content script's sendMessage already broadcasts to all extension contexts, no need to re-broadcast
 	if (
-		sender.tab?.id &&
-		(message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT" ||
-			message.type === "EXECUTE_PLAYWRIGHT_SCRIPT")
+		message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT" ||
+		message.type === "EXECUTE_PLAYWRIGHT_SCRIPT"
 	) {
-		const sourceTabId = sender.tab.id;
-		console.log(
-			"[BACKGROUND] 📍 Stored execution source tab:",
-			sourceTabId,
-		);
-		void rememberExecutionSourceTab(sourceTabId).then(() => {
+		// Priority: explicit sourceTabId from message payload, fallback to sender.tab.id
+		const sourceTabId = message.sourceTabId || sender.tab?.id;
+
+		if (sourceTabId) {
+			console.log(
+				"[BACKGROUND] 📍 Stored execution source tab:",
+				sourceTabId,
+				"(from",
+				message.sourceTabId ? "message payload" : "sender.tab.id)",
+			);
+			void rememberExecutionSourceTab(sourceTabId).then(() => {
+				sendResponse({ success: true });
+			});
+		} else {
+			console.warn(
+				"[BACKGROUND] ⚠️ No source tab ID available in message or sender context",
+			);
 			sendResponse({ success: true });
-		});
+		}
 		return true;
 	}
 
@@ -499,7 +490,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	if (
 		!sender.tab &&
 		(message.type === "START_FIELD_MONITORING" ||
-			message.type === "STOP_FIELD_MONITORING")
+			message.type === "STOP_FIELD_MONITORING" ||
+			message.type === "CLEAR_FIELD_VALUE")
 	) {
 		if (message.tabId) {
 			chrome.tabs
@@ -549,17 +541,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 	switch (message.type) {
 		case "GET_AUTOMATION_RUN_STATE":
-			sendResponse({ state: automationRunState });
-			return true;
-
-		case "UPDATE_AUTOMATION_RUN_STATE":
-			updateAutomationRunState(message.state || {});
-			sendResponse({ success: true, state: automationRunState });
-			return true;
-
-		case "RESET_AUTOMATION_RUN_STATE":
-			resetAutomationRunState();
-			sendResponse({ success: true, state: automationRunState });
+			sendResponse({ state: automationInputState });
 			return true;
 
 		case "REGISTER_AUTOMATION_INPUT_REQUEST": {
@@ -578,12 +560,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 				return true;
 			}
 
-			updateAutomationRunState({
-				active: true,
-				status: "needs-input",
-				message: request.prompt,
-				pendingInput: request,
-			});
+			registerAutomationInput(request);
 			sendResponse({ success: true });
 			return true;
 		}
@@ -706,6 +683,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 					}),
 				);
 			return true;
+
 		default:
 		// Unknown message type
 	}
@@ -832,15 +810,17 @@ async function highlightElement(
 					// Store original styles
 					if (!element.dataset.originalBorder) {
 						element.dataset.originalBorder = element.style.border || '';
+						element.dataset.originalOutline = element.style.outline || '';
 						element.dataset.originalBoxShadow = element.style.boxShadow || '';
-						element.dataset.originalBackgroundColor = element.style.backgroundColor || '';
+						element.dataset.originalBorderRadius = element.style.borderRadius || '';
 					}
 					
-					// Apply highlight styles - subtle and professional
-					element.style.border = '2px solid #667eea';
-					element.style.boxShadow = '0 0 12px 0 rgba(102, 126, 234, 0.25), 0 4px 8px -2px rgba(102, 126, 234, 0.15)';
-					element.style.backgroundColor = 'rgba(102, 126, 234, 0.03)';
-					element.style.transition = 'all 0.2s ease-in-out';
+					// Apply modern, professional highlight styles with rounded corners
+					element.style.outline = '2px solid rgba(59, 130, 246, 0.5)';
+					element.style.outlineOffset = '2px';
+					element.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.1)';
+					element.style.borderRadius = element.style.borderRadius || '6px';
+					element.style.transition = 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)';
 					
 					// Scroll into view
 					element.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -891,13 +871,16 @@ async function _removeHighlight(
 					// Restore original styles
 					if (element.dataset.originalBorder !== undefined) {
 						element.style.border = element.dataset.originalBorder;
+						element.style.outline = element.dataset.originalOutline;
+						element.style.outlineOffset = '';
 						element.style.boxShadow = element.dataset.originalBoxShadow;
-						element.style.backgroundColor = element.dataset.originalBackgroundColor;
+						element.style.borderRadius = element.dataset.originalBorderRadius;
 						
 						// Clean up data attributes
 						delete element.dataset.originalBorder;
+						delete element.dataset.originalOutline;
 						delete element.dataset.originalBoxShadow;
-						delete element.dataset.originalBackgroundColor;
+						delete element.dataset.originalBorderRadius;
 					}
 					
 					return { success: true };
@@ -930,6 +913,9 @@ async function _executeScriptAction(
 	switch (action) {
 		case "checkElementReady":
 			return await checkElementReady(tabId, payload.selector as string);
+		case "getFieldValue":
+			return await getFieldValue(tabId, payload.selector as string);
+
 		case "clickBySelector":
 			return await clickBySelector(tabId, payload.selector as string);
 		case "clickByCoords":
@@ -1061,13 +1047,52 @@ async function clickByCoords(
 	});
 }
 
+// Get field value by selector
+async function getFieldValue(
+	tabId: number,
+	selector: string,
+): Promise<{ success: boolean; value?: string; error?: string }> {
+	try {
+		const result = (await sendDebuggerCommand(tabId, "Runtime.evaluate", {
+			expression: `
+					(function() {
+						const element = document.querySelector(${JSON.stringify(selector)});
+						if (!element) {
+							return { success: false, error: 'Element not found' };
+						}
+						return { success: true, value: element.value || '' };
+					})()
+				`,
+			returnByValue: true,
+		})) as {
+			result?: {
+				value?: { success: boolean; value?: string; error?: string };
+			};
+		};
+
+		if (result?.result?.value?.success) {
+			return { success: true, value: result.result.value.value };
+		}
+
+		return {
+			success: false,
+			error: result?.result?.value?.error || "Failed to get field value",
+		};
+	} catch (error) {
+		return {
+			success: false,
+			error: error instanceof Error ? error.message : "Unknown error",
+		};
+	}
+}
+
 // Type text into element by selector
 async function typeBySelector(
 	tabId: number,
 	selector: string,
 	value: string,
 ): Promise<void> {
-	const maxRetries = 3;
+	const maxRetries: number = 3;
 	let lastError: string | undefined;
 
 	for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -1893,6 +1918,37 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 chrome.tabs.onRemoved.addListener((tabId) => {
 	recordingTabs.delete(tabId);
 	attachedDebuggers.delete(tabId);
+
+	// If there's a pending input request for this tab, clear it and notify about failure
+	if (automationInputState.pendingInput?.targetTabId === tabId) {
+		const requestId = automationInputState.pendingInput.id;
+		clearPendingAutomationInput(requestId);
+
+		// Send execution failure to the source tab (playground)
+		if (executionSourceTabId) {
+			const failureMessage = {
+				type: "SCRIPT_EXECUTION_COMPLETE",
+				success: false,
+				message:
+					"Script execution failed: Tab was closed while waiting for input",
+			};
+
+			chrome.tabs
+				.sendMessage(executionSourceTabId, failureMessage)
+				.catch(() => {
+					console.warn(
+						`[Background] Could not send execution failure to tab ${executionSourceTabId}`,
+					);
+				});
+
+			executionSourceTabId = null;
+		}
+	}
+
+	// If this was the execution source tab, clear it
+	if (executionSourceTabId === tabId) {
+		executionSourceTabId = null;
+	}
 });
 
 // Load recording state on startup

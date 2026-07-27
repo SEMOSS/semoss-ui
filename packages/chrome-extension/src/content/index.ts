@@ -26,6 +26,9 @@ let isPanelOpen = false;
 // Track portal iframe for sending completion messages back
 let portalIframeSource: Window | null = null;
 
+// Store current tab ID for message routing
+let currentTabId: number | undefined;
+
 // Recording state
 let eventRecorder: EventRecorder | null = null;
 let _isRecording = false;
@@ -45,6 +48,14 @@ async function getHostTabId(): Promise<number | undefined> {
 		return undefined;
 	}
 }
+
+// Initialize tab ID on content script load
+getHostTabId().then((tabId) => {
+	currentTabId = tabId;
+	if (tabId) {
+		console.log("[CONTENT] 📍 Tab ID initialized:", tabId);
+	}
+});
 
 function getFloatingPanelSize() {
 	return {
@@ -363,11 +374,16 @@ window.addEventListener("message", (event) => {
 		console.log(
 			"[CONTENT] 📤 Received EXECUTE_PLAYWRIGHT_SCRIPT from portal, forwarding to extension",
 		);
+		console.log(
+			"[CONTENT] 📍 Including sourceTabId:",
+			currentTabId || "undefined",
+		);
 
 		const payload = event.data.payload;
 		chrome.runtime
 			.sendMessage({
 				type: "EXECUTE_PLAYWRIGHT_SCRIPT",
+				sourceTabId: currentTabId, // Explicitly include tab ID for reliable routing
 				payload: {
 					fileName: payload.fileName,
 					projectID: payload.projectID,
@@ -482,14 +498,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 		console.log(
 			"[CONTENT] Success:",
 			message.success,
-			"Message:",
+			"| Message:",
 			message.message,
 		);
 
+		// Create appropriate completion message based on success/failure
 		const completionMessage = message.success
 			? {
 					type: "PLAYWRIGHT_SCRIPT_COMPLETED",
-					success: true,
 					message: message.message || "Script executed successfully",
 					fileName: message.fileName,
 				}
@@ -654,6 +670,62 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 			);
 
 			sendResponse({ success: true });
+			break;
+
+		case "CLEAR_FIELD_VALUE":
+			// SECURITY FIX: Clear autofilled values to prevent cached credential bypass
+			try {
+				const field = document.querySelector(message.selector) as
+					| HTMLInputElement
+					| HTMLTextAreaElement
+					| null;
+
+				if (!field) {
+					sendResponse({
+						success: false,
+						error: "Field not found",
+					});
+					break;
+				}
+
+				// Focus the field
+				field.focus();
+
+				// Clear the value
+				field.value = "";
+
+				// Trigger native setter for React/Vue compatibility
+				const descriptor = Object.getOwnPropertyDescriptor(
+					window.HTMLInputElement.prototype,
+					"value",
+				);
+				if (descriptor && descriptor.set) {
+					descriptor.set.call(field, "");
+				}
+
+				// Dispatch events to notify framework
+				field.dispatchEvent(
+					new Event("input", { bubbles: true, cancelable: true }),
+				);
+				field.dispatchEvent(
+					new Event("change", { bubbles: true, cancelable: true }),
+				);
+
+				console.log(
+					"[CONTENT SCRIPT] ✅ Cleared autofilled value from field",
+				);
+				sendResponse({ success: true });
+			} catch (error) {
+				console.error(
+					"[CONTENT SCRIPT] ❌ Error clearing field:",
+					error,
+				);
+				sendResponse({
+					success: false,
+					error:
+						error instanceof Error ? error.message : String(error),
+				});
+			}
 			break;
 
 		case "START_FIELD_MONITORING":

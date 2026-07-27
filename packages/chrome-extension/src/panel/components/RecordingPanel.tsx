@@ -939,12 +939,12 @@ const ActionCard: FC<ActionCardProps> = ({
 						</Button>
 					</div>
 				) : (
-					<div className="mt-4 ml-2 flex items-center gap-2">
+					<div className="flex items-center gap-2">
 						<Button
 							variant="default"
 							size="sm"
 							onClick={handleSave}
-							className="w-20 rounded-md bg-green-600 px-3 py-1 text-white text-xs hover:bg-green-700"
+							className="w-16 rounded-md bg-green-600 px-2 py-1.5 text-white text-xs hover:bg-green-700"
 						>
 							Save
 						</Button>
@@ -952,7 +952,7 @@ const ActionCard: FC<ActionCardProps> = ({
 							variant="outline"
 							size="sm"
 							onClick={handleCancel}
-							className="w-20 rounded-md border border-slate-300 bg-white px-3 py-1 text-slate-700 text-xs hover:bg-slate-50"
+							className="w-16 rounded-md border border-slate-300 bg-white px-2 py-1.5 text-slate-700 text-xs hover:bg-slate-50"
 						>
 							Cancel
 						</Button>

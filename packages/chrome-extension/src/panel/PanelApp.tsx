@@ -19,11 +19,7 @@ type AutomationInputRequest = {
 	targetTabId: number;
 };
 
-type AutomationRunState = {
-	active: boolean;
-	status: "idle" | "running" | "needs-input" | "complete" | "failed";
-	message?: string;
-	history: string[];
+type AutomationInputState = {
 	pendingInput?: AutomationInputRequest;
 	updatedAt: number;
 };
@@ -59,8 +55,8 @@ const PanelApp: React.FC = () => {
 	const [isRunning, setIsRunning] = useState(false);
 	const [isPaused, setIsPaused] = useState(false);
 	const [isCollapsed, setIsCollapsed] = useState(isFloatingPanel);
-	const [sharedRunState, setSharedRunState] =
-		useState<AutomationRunState | null>(null);
+	const [sharedInputState, setSharedInputState] =
+		useState<AutomationInputState | null>(null);
 	const [actionHistory, setActionHistory] = useState<string[]>([]);
 	const [waitingForUserInput, setWaitingForUserInput] = useState(false);
 	const [userInputPrompt, setUserInputPrompt] = useState("");
@@ -152,6 +148,7 @@ const PanelApp: React.FC = () => {
 
 	const resetAutomationStatus = () => {
 		if (isRunning || waitingForUserInput) return;
+		setMode("execution");
 		setIsPaused(false);
 		setWaitingForUserInput(false);
 		setUserInputPrompt("");
@@ -161,12 +158,6 @@ const PanelApp: React.FC = () => {
 		setCurrentSelector(null);
 		setCurrentTabId(null);
 		setActionHistory([]);
-		setSharedRunState(null);
-		chrome.runtime
-			.sendMessage({ type: "RESET_AUTOMATION_RUN_STATE" })
-			.catch(() => {
-				// Resetting shared state is best effort.
-			});
 	};
 
 	// Auto-scroll to bottom when action history updates
@@ -193,7 +184,7 @@ const PanelApp: React.FC = () => {
 			.sendMessage({ type: "GET_AUTOMATION_RUN_STATE" })
 			.then((response) => {
 				if (response?.state?.updatedAt)
-					setSharedRunState(response.state);
+					setSharedInputState(response.state);
 			})
 			.catch(() => {
 				// The panel remains functional without a shared state snapshot.
@@ -201,13 +192,13 @@ const PanelApp: React.FC = () => {
 
 		const handleSharedRunState = (message: {
 			type?: string;
-			state?: AutomationRunState;
+			state?: AutomationInputState;
 		}) => {
 			if (
 				message.type === "AUTOMATION_RUN_STATE_UPDATED" &&
 				message.state
 			) {
-				setSharedRunState(message.state);
+				setSharedInputState(message.state);
 			}
 		};
 
@@ -216,7 +207,7 @@ const PanelApp: React.FC = () => {
 			chrome.runtime.onMessage.removeListener(handleSharedRunState);
 	}, []);
 
-	const sharedInputRequest = sharedRunState?.pendingInput;
+	const sharedInputRequest = sharedInputState?.pendingInput;
 	const remoteInputRequest =
 		isFloatingPanel &&
 		hasHostTabId &&
@@ -233,35 +224,6 @@ const PanelApp: React.FC = () => {
 		setIsCollapsed(false);
 		setUserInputValue("");
 	}, [remoteInputRequestId]);
-
-	useEffect(() => {
-		if (!isRunning && !waitingForUserInput && actionHistory.length === 0) {
-			return;
-		}
-
-		const lastMessage = actionHistory[actionHistory.length - 1];
-		const status: AutomationRunState["status"] = waitingForUserInput
-			? "needs-input"
-			: isRunning
-				? "running"
-				: lastMessage?.startsWith("❌")
-					? "failed"
-					: "complete";
-
-		chrome.runtime
-			.sendMessage({
-				type: "UPDATE_AUTOMATION_RUN_STATE",
-				state: {
-					active: status === "running" || status === "needs-input",
-					status,
-					message: lastMessage,
-					history: actionHistory.slice(-80),
-				},
-			})
-			.catch(() => {
-				// Cross-tab status is best effort and must not stop execution.
-			});
-	}, [actionHistory, isRunning, waitingForUserInput]);
 
 	useEffect(() => {
 		if (!isFloatingPanel) return;
@@ -337,15 +299,20 @@ const PanelApp: React.FC = () => {
 
 			console.log("[PANEL] 📨 Received message:", message.type, message);
 
+			const isExecutionMessage =
+				message.type === "EXECUTE_PLAYWRIGHT_SCRIPT" ||
+				message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT";
 			const sourceTabId = message.sourceTabId ?? sender.tab?.id;
+
 			if (
-				isFloatingPanel &&
-				hasHostTabId &&
-				sourceTabId &&
-				sourceTabId !== hostTabId &&
-				(message.type === "EXECUTE_PLAYWRIGHT_SCRIPT" ||
-					message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT")
+				isExecutionMessage &&
+				((isFloatingPanel &&
+					(!hasHostTabId || sourceTabId !== hostTabId)) ||
+					(!isFloatingPanel && typeof sourceTabId === "number"))
 			) {
+				console.log(
+					"[PANEL] Ignoring execution request in non-owner panel",
+				);
 				return;
 			}
 
@@ -719,16 +686,15 @@ const PanelApp: React.FC = () => {
 
 			// Handle field input detected from webpage
 			if (message.type === "FIELD_INPUT_DETECTED") {
-				// If we're waiting for user input, auto-submit with the detected value
-				if (
-					pendingInputRequestIdRef.current &&
-					userInputCallbackRef.current
-				) {
-					const valueToUse = message.isPassword
-						? "••••••••"
-						: message.value || "";
-					userInputCallbackRef.current(valueToUse);
-				}
+				// SECURITY FIX: Do NOT auto-submit detected values (prevents autofill bypass)
+				// Field detection is informational only - user MUST explicitly confirm input
+				// This ensures test accuracy and prevents cached credentials from bypassing validation
+				console.log(
+					"[PANEL] ℹ️ Field input detected (not auto-submitting):",
+					message.isPassword ? "[password field]" : message.value,
+				);
+				// Future enhancement: Show detected value as suggestion in dialog
+				// For now, user must explicitly submit via dialog button/Enter key
 			}
 		};
 
@@ -836,8 +802,6 @@ const PanelApp: React.FC = () => {
 			}> = await ScriptExecutor.convertToActions(
 				script as PlaywrightScript,
 			);
-			addToHistory(`✓ Found ${actions.length} actions to execute`);
-
 			// Find the first navigate action (might not be the very first action)
 			const firstNavigateAction = actions.find(
 				(a) => a.type === "navigate" && a.url,
@@ -851,7 +815,6 @@ const PanelApp: React.FC = () => {
 			let targetTab: chrome.tabs.Tab;
 			let createdNewTab = false; // Track if we created a new tab
 			if (needsNewTab) {
-				addToHistory("✓ Creating new tab for script execution...");
 				const newTab = await chrome.tabs.create({
 					active: true, // Make it active so user can see it
 					url: initialUrl,
@@ -861,7 +824,6 @@ const PanelApp: React.FC = () => {
 					throw new Error("Failed to create new tab");
 				}
 
-				addToHistory("✓ New tab created");
 				targetTab = newTab;
 				createdNewTab = true; // Mark that we created a tab - prevents additional tabs later
 
@@ -931,9 +893,6 @@ const PanelApp: React.FC = () => {
 							);
 							setIsPaused(false);
 							isPausedRef.current = false;
-							addToHistory(
-								"▶️ Execution resumed - returned to tab",
-							);
 						}
 					} else {
 						// User switched away from the execution tab
@@ -943,9 +902,6 @@ const PanelApp: React.FC = () => {
 							);
 							setIsPaused(true);
 							isPausedRef.current = true;
-							addToHistory(
-								"⏸️ Execution paused - switched away from tab",
-							);
 						}
 					}
 				};
@@ -958,7 +914,6 @@ const PanelApp: React.FC = () => {
 					throw new Error("No active tab available");
 				}
 				targetTab = tab;
-				addToHistory("✓ Using current tab for script execution");
 			}
 
 			// Track tabs: maps tabId (tab-1, tab-2) to Chrome tab ID
@@ -987,9 +942,8 @@ const PanelApp: React.FC = () => {
 					action.type === "navigate" &&
 					action.url === preExecutedNavigateUrl
 				) {
-					addToHistory(
-						`✓ Skipping navigate (already executed): ${action.url}`,
-					);
+					actionCounter++;
+					addToHistory(`${actionCounter}. NAVIGATE`);
 					continue;
 				}
 
@@ -1002,9 +956,6 @@ const PanelApp: React.FC = () => {
 					const targetTabId = tabMap.get(action.tabId);
 
 					if (!targetTabId) {
-						addToHistory(
-							`⚠️ Waiting for new tab: ${action.tabId}...`,
-						);
 						// Wait for the tab to be created (from previous action)
 						await new Promise((resolve) =>
 							setTimeout(resolve, 1500),
@@ -1020,10 +971,6 @@ const PanelApp: React.FC = () => {
 							await chrome.tabs.update(currentTabId, {
 								active: true,
 							});
-
-							addToHistory(
-								`✓ Switched to new tab: ${action.tabId}`,
-							);
 
 							// Attach debugger to the new tab
 							try {
@@ -1070,7 +1017,6 @@ const PanelApp: React.FC = () => {
 						await chrome.tabs.update(currentTabId, {
 							active: true,
 						});
-						addToHistory(`✓ Switched to tab: ${action.tabId}`);
 
 						// Attach debugger to the new tab
 						try {
@@ -1134,6 +1080,23 @@ const PanelApp: React.FC = () => {
 						// Store selector and tabId for real-time mirroring
 						setCurrentSelector(selector || null);
 						setCurrentTabId(targetTabId || null);
+
+						// SECURITY FIX: Clear autofilled values BEFORE prompting to prevent confusion
+						// This ensures user sees empty field and provides explicit input
+						if (selector && targetTabId) {
+							chrome.runtime
+								.sendMessage({
+									type: "CLEAR_FIELD_VALUE",
+									tabId: targetTabId,
+									selector: selector,
+								})
+								.catch((err) => {
+									console.log(
+										"[PANEL] ℹ️ Field clearing unavailable:",
+										err.message,
+									);
+								});
+						}
 
 						// Highlight the field on the webpage while the dialog is open
 						if (selector && targetTabId) {
@@ -1210,7 +1173,6 @@ const PanelApp: React.FC = () => {
 							setUserInputValue("");
 							setIsPasswordInput(false);
 							setUserInputCallback(null);
-							addToHistory("✓ User provided input");
 							chrome.runtime
 								.sendMessage({
 									type: "RESOLVE_AUTOMATION_INPUT_REQUEST",
@@ -1249,9 +1211,6 @@ const PanelApp: React.FC = () => {
 
 				// If this action triggers anew tab, track it (but skip if we already created initial tab)
 				if (action.isTriggerNewTab?.isTrue && !createdNewTab) {
-					addToHistory(
-						`⏳ Waiting for new tab: ${action.isTriggerNewTab.tabId}...`,
-					);
 					// Wait for new tab to be created
 					await new Promise((resolve) => setTimeout(resolve, 1500));
 
@@ -1261,9 +1220,6 @@ const PanelApp: React.FC = () => {
 					if (newestTab?.id) {
 						tabMap.set(action.isTriggerNewTab.tabId, newestTab.id);
 						currentTabId = newestTab.id;
-						addToHistory(
-							`✓ New tab created: ${action.isTriggerNewTab.tabId}`,
-						);
 
 						// Make the new tab active
 						await chrome.tabs.update(currentTabId, {
@@ -1276,7 +1232,6 @@ const PanelApp: React.FC = () => {
 								type: "ATTACH_DEBUGGER",
 								tabId: currentTabId,
 							});
-							addToHistory("✓ Debugger attached to new tab");
 						} catch (error) {
 							console.log("Debugger attach error:", error);
 						}
@@ -1291,7 +1246,6 @@ const PanelApp: React.FC = () => {
 								await new Promise((resolve) =>
 									setTimeout(resolve, 1500),
 								);
-								addToHistory("✓ New tab page loaded");
 								break;
 							}
 							await new Promise((resolve) =>
@@ -1387,18 +1341,15 @@ const PanelApp: React.FC = () => {
 		}
 	};
 
-	const effectiveNeedsInput =
-		waitingForUserInput || sharedRunState?.status === "needs-input";
-	const effectiveRunning = isRunning || sharedRunState?.status === "running";
+	const effectiveNeedsInput = waitingForUserInput || !!remoteInputRequest;
+	const effectiveRunning = isRunning;
 	const launcherStatus = effectiveNeedsInput
 		? "Input required"
 		: effectiveRunning
-			? sharedRunState?.message || "Running automation"
+			? "Running automation"
 			: "Browser Automation";
 	const canResetAutomationStatus =
-		!effectiveRunning &&
-		!effectiveNeedsInput &&
-		(actionHistory.length > 0 || !!sharedRunState?.updatedAt);
+		!effectiveRunning && !effectiveNeedsInput && actionHistory.length > 0;
 	const displayedInputRequest = remoteInputRequest
 		? remoteInputRequest
 		: waitingForUserInput
@@ -1765,7 +1716,7 @@ const PanelApp: React.FC = () => {
 												!userInputValue.trim() ||
 												inputIsPaused
 											}
-											className="rounded-xl bg-blue-600 px-8 py-3 font-semibold text-base text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:opacity-60"
+											className="rounded-xl bg-blue-600 px-16 py-4 font-semibold text-base text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:opacity-60"
 										>
 											Submit
 										</Button>
