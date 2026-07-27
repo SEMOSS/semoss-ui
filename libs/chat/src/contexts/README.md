@@ -11,10 +11,9 @@ importing a store directly.
 ```
 contexts/
 ├── chat-provider.tsx            ChatProvider, useChatContext, useChatStore
-├── chat-provider.test.tsx
 ├── chat-rooms-provider.tsx      ChatRoomsProvider, useChatRoomsContext, useChatRoomsStore
-├── chat-rooms-provider.test.tsx
 ├── file-drag-context.tsx        FileDragProvider, useFileDrag
+├── use-room-messages.tsx        useRoomMessages hook
 └── index.ts                     barrel re-exporting every provider/hook
 ```
 
@@ -34,5 +33,4 @@ contexts/
 1. Create `contexts/<name>-provider.tsx` following `chat-provider.tsx` as the
    template — it wires a `stores/<name>` store into `createContext` +
    `useStore`.
-2. Add `contexts/<name>-provider.test.tsx`.
-3. Re-export from `contexts/index.ts`.
+2. Re-export from `contexts/index.ts`.
