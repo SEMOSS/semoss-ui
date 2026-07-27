@@ -6,7 +6,6 @@ import {
 	AlertDescription,
 	Card,
 	Input,
-	Slider,
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
@@ -29,8 +28,6 @@ interface ModelInfo {
 interface EngineModelTestSidebarProps {
 	selectedModel: Model;
 	setSelectedModel: Dispatch<SetStateAction<Model>>;
-	temperature: number;
-	setTemperature: (temp: number) => void;
 	maxTokens: number;
 	setMaxTokens: (tokens: number) => void;
 }
@@ -38,18 +35,10 @@ interface EngineModelTestSidebarProps {
 export const EngineModelTestSidebar = ({
 	selectedModel,
 	setSelectedModel,
-	temperature,
-	setTemperature,
 	maxTokens,
 	setMaxTokens,
 }: EngineModelTestSidebarProps) => {
 	const [modelInfo, setModelInfo] = useState<ModelInfo | null>(null);
-
-	const temperatureTooltipText = `
-This changes the randomness of the LLM's output.
-Higher temperature = more creative responses.
-Range: 0.0 to 1.0
-`;
 
 	const maxTokensTooltipText = `
 Controls the maximum number of tokens in the response.
@@ -147,41 +136,6 @@ Default: 2000
 			{/* Parameters */}
 			<div className="flex flex-col gap-6">
 				<h3 className="font-semibold text-base">Parameters</h3>
-
-				{/* Temperature */}
-				<div className="flex flex-col gap-2">
-					<div className="flex items-center gap-1">
-						<span className="font-medium text-sm">Temperature</span>
-						<TooltipProvider>
-							<Tooltip>
-								<TooltipTrigger>
-									<HelpCircle className="h-4 w-4 text-primary" />
-								</TooltipTrigger>
-								<TooltipContent className="max-w-xs text-xs">
-									{temperatureTooltipText}
-								</TooltipContent>
-							</Tooltip>
-						</TooltipProvider>
-					</div>
-
-					<Slider
-						value={[temperature]}
-						className="cursor-pointer"
-						min={0}
-						max={1}
-						step={0.1}
-						onValueChange={(v) => setTemperature(v[0])}
-					/>
-					<div className="mt-1 flex justify-between text-muted-foreground text-xs">
-						<span>0</span>
-						<span>0.5</span>
-						<span>1</span>
-					</div>
-
-					<p className="text-muted-foreground text-xs">
-						Current: {temperature}
-					</p>
-				</div>
 
 				{/* Max Tokens */}
 				<div className="flex flex-col gap-2">

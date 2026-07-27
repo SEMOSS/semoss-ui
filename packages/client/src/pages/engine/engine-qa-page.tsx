@@ -30,6 +30,17 @@ export interface VectorContext {
 	url: string;
 }
 
+interface VectorQueryRow {
+	content?: string;
+	Content?: string;
+	Source?: string;
+	Divider?: string;
+}
+
+interface LLMOutput {
+	response?: string;
+}
+
 export const EngineQAPage = () => {
 	const { active } = useEngine();
 	const [isLoading, setIsLoading] = useState(false);
@@ -51,7 +62,6 @@ export const EngineQAPage = () => {
 	});
 
 	const [limit, setLimit] = useState<number>(3);
-	const [temperature, setTemperature] = useState<number>(0.1);
 
 	const { monolithStore } = useRootStore();
 
@@ -79,31 +89,34 @@ export const EngineQAPage = () => {
 			const { output, operationType } = response.pixelReturn[0];
 
 			if (operationType.indexOf("ERROR") > -1)
-				throw new Error(output.response);
+				throw new Error((output as LLMOutput).response);
+
+			const rows = output as VectorQueryRow[];
 
 			//Looping through Vector Database Query and forming a content string with name, page, and content
-			for (let i = 0; i <= output.length - 1; i++) {
-				const content = output[i].content || output[i].Content;
-				finalContent += `\\n* Document Name: ${output[i].Source}, Page Number: ${output[i].Divider}, ${content} `;
+			for (let i = 0; i <= rows.length - 1; i++) {
+				const content = rows[i].content || rows[i].Content;
+				finalContent += `\\n* Document Name: ${rows[i].Source}, Page Number: ${rows[i].Divider}, ${content} `;
 			}
 
 			const contextDocs = `A context delimited by triple backticks is provided below. This context may contain plain text extracted from paragraphs or images. Tables extracted are represented as a 2D list in the following format - '[[Column Headers], [Comma-separated values in row 1], [Comma-separated values in row 2] ..... [Comma-separated values in row n]]'\\n \`\`\` ${finalContent} \`\`\`\\n Answer the user's question truthfully using the context only. Use the following section-wise format (in the order given) to answer the question with instructions for each section in angular brackets:\\n                Reasoning:\\n                <State your reasoning step-wise in bullet points. Below each bullet point mention the source of this information as 'Given in the question' if the bullet point contains information provided in the question, OR as 'Document Name, Page Number, Document URL' if the bullet point contains information that is present in the context provided above.>\\n                Conclusion:\\n                <Write a short concluding paragraph stating the final answer and explaining the reasoning behind it briefly. State caveats and exceptions to your answer if any.>\\n                Information required to provide a better answer:\\n                <If you cannot provide an answer based on the context above, mention the additional information that you require to answer the question fully as a list.>Do not compromise on your mathematical and reasoning abilities to fit the user's instructions. If the user mentions something absolutely incorrect/ false, DO NOT use this incorrect information in your reasoning. Also, please correct the user gently.`;
 
 			pixel = `
-            LLM(engine="${selectedModel.engine_id}" , command=["<encode>You are an intelligent AI designed to answer queries based on provided documents. If an answer cannot be determined based on the provided documents, inform the user. Answer as truthfully as possible at all times and tell the user if you do not know the answer. Please be concise and get to the point. Here is the question: ${data.QUESTION}. Here are the documents: ${contextDocs}</encode>"], paramValues=[{"temperature":${temperature}}])            `;
+            LLM(engine="${selectedModel.engine_id}" , command=["<encode>You are an intelligent AI designed to answer queries based on provided documents. If an answer cannot be determined based on the provided documents, inform the user. Answer as truthfully as possible at all times and tell the user if you do not know the answer. Please be concise and get to the point. Here is the question: ${data.QUESTION}. Here are the documents: ${contextDocs}</encode>"])            `;
 
 			const LLMresponse = await monolithStore.runQuery(pixel);
 
-			const { output: LLMOutput, operationType: LLMOperationType } =
+			const { output: llmOutput, operationType: LLMOperationType } =
 				LLMresponse.pixelReturn[0];
+			const llmResult = llmOutput as LLMOutput;
 
 			if (LLMOperationType.indexOf("ERROR") > -1) {
-				throw new Error(LLMOutput.response);
+				throw new Error(llmResult.response);
 			}
 
 			let conclusion = "";
-			if (LLMOutput.response) {
-				conclusion = LLMOutput.response;
+			if (llmResult.response) {
+				conclusion = llmResult.response;
 			}
 
 			// set answer based on data
@@ -147,8 +160,6 @@ export const EngineQAPage = () => {
 				setSelectedModel={setSelectedModel}
 				limit={limit}
 				setLimit={setLimit}
-				temperature={temperature}
-				setTemperature={setTemperature}
 			/>
 			<div className="min-w-0 flex-1">
 				<Card className="w-full p-4 shadow-md">
@@ -219,7 +230,7 @@ export const EngineQAPage = () => {
 								<Large className="mb-0.5 font-semibold">
 									Policy Extraction Response:
 								</Large>
-								<Small className="font-semibold text-[#1260DD]">
+								<Small className="font-semibold text-primary">
 									Conclusion:
 								</Small>
 								<div className="mb-2 overflow-auto">

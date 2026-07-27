@@ -1356,7 +1356,7 @@ export const IMPORTABLE_MODELS = {
 						{
 							key: "SERVICE_ACCOUNT_CREDENTIALS",
 							label: "Service Account (JSON)",
-							type: "textarea",
+							type: "text",
 							required: true,
 							category: "Credentials",
 						},
@@ -1367,6 +1367,16 @@ export const IMPORTABLE_MODELS = {
 							options: ["true", "false"],
 							required: true,
 							default: "true",
+							category: "Settings",
+						},
+						{
+							key: "INIT_MODEL_ENGINE",
+							label: "Init Script",
+							type: "text",
+							required: true,
+							disabled: true,
+							default:
+								"import genai_client;${VAR_NAME} = genai_client.GoogleGenAiEmbedder(model_name = '${MODEL}', region='${GCP_REGION}', project='${PROJECT}', service_account_credentials = ${SERVICE_ACCOUNT_CREDENTIALS})",
 							category: "Settings",
 						},
 					],
@@ -1899,24 +1909,6 @@ export const IMPORTABLE_MODELS = {
 							category: "General",
 						},
 						{
-							key: "CHAT_TYPE",
-							label: "Chat Type",
-							type: "select",
-							options: ["chat-completion", "completion"],
-							required: true,
-							default: "chat-completion",
-							category: "General",
-						},
-						{
-							key: "DEPLOYMENT_TYPE",
-							label: "Deployment Type",
-							type: "select",
-							options: ["vLLM", "TGI"],
-							required: true,
-							default: "vLLM",
-							category: "General",
-						},
-						{
 							key: "MODEL",
 							label: "Model Name",
 							type: "text",
@@ -1937,6 +1929,13 @@ export const IMPORTABLE_MODELS = {
 							key: "ENDPOINT",
 							label: "Endpoint",
 							type: "url",
+							required: true,
+							category: "Credentials",
+						},
+						{
+							key: "OPEN_AI_KEY",
+							label: "API Key",
+							type: "password",
 							required: true,
 							category: "Credentials",
 						},
@@ -1995,7 +1994,7 @@ export const IMPORTABLE_MODELS = {
 							helperText:
 								"Note: Self Hosted is connected using the OpenAI specification.",
 							default:
-								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', deployment_type = '${DEPLOYMENT_TYPE}', context_window = ${CONTEXT_WINDOW}, max_tokens = ${MAX_TOKENS})",
+								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = '${ENDPOINT}', model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', context_window = ${CONTEXT_WINDOW}, max_tokens = ${MAX_TOKENS})",
 							category: "Settings",
 						},
 					],
@@ -3029,6 +3028,56 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			description:
 				"Production-ready image model for fast, high-quality asset generation.",
 			formConfig: withModelTokenLimits(undefined, 32768, 65536),
+		},
+		{
+			name: "gemini-embedding-2",
+			display: "Gemini Embedding 2",
+			icon: "/src/assets/img/GEMINI_COLOR.svg",
+			modelBrand: "GEMINI",
+			embedding: true,
+			image: true,
+			audio: true,
+			link: "https://ai.google.dev/gemini-api/docs/models/gemini-embedding-2",
+			description:
+				"Google's first natively multimodal embedding model - unifies text, image, video, audio, and document inputs in a single embedding space for cross-modal search and retrieval.",
+		},
+		{
+			name: "gemini-embedding-001",
+			display: "Gemini Embedding 001",
+			icon: "/src/assets/img/GEMINI_COLOR.svg",
+			modelBrand: "GEMINI",
+			embedding: true,
+			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings",
+			description:
+				"Google's unified text embedding model on Vertex AI for semantic search, clustering, and retrieval.",
+		},
+		{
+			name: "text-embedding-005",
+			display: "Text Embedding 005",
+			icon: "/src/assets/img/GEMINI_COLOR.svg",
+			modelBrand: "GEMINI",
+			embedding: true,
+			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings",
+			description:
+				"Vertex AI English text and code embedding model optimized for retrieval and similarity tasks.",
+		},
+		{
+			name: "other-google-gemini-embedding-model",
+			display: "Other Google Embedding Model",
+			icon: "/src/assets/img/GEMINI_COLOR.svg",
+			modelBrand: "GEMINI",
+			embedding: true,
+			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings",
+			description:
+				"Configure any Vertex-hosted Google embedding model by entering a custom model ID.",
+			formConfig: {
+				fieldOverrides: [
+					{
+						key: "MODEL",
+						patch: { default: "", value: "", disabled: false },
+					},
+				],
+			},
 		},
 		{
 			name: "other-google-gemini-model",
