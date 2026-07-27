@@ -36,13 +36,6 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						enableClose: false,
 						config: {},
 					},
-					{
-						id: "settings",
-						type: "tab",
-						name: "Settings",
-						component: "settingsPanel",
-						config: {},
-					},
 				],
 			},
 			{
@@ -57,6 +50,16 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						component: "terminal",
 						enableClose: false,
 						config: {},
+					},
+					{
+						id: "settings",
+						type: "tab",
+						name: "Settings",
+						component: "settings-panel",
+						config: {},
+						enableClose: false,
+						borderWidth: 800,
+						borderHeight: 1200,
 					},
 				],
 			},
@@ -130,23 +133,23 @@ export const AgentWorkspace: React.FC = observer(() => {
 			return <AppFileEditor node={node} app={workspace.appId} />;
 		} else if (component === "mcpJsonEditor") {
 			return <MCPJsonEditor dataMap={config.data} />;
-		} else if (component === "settingsPanel") {
+		} else if (component === "settings-panel") {
 			return (
 				<ProjectDetailTabs
 					type="WORKSPACE"
 					tabs={[
 						{ name: "Overview", path: "" },
 						{
+							name: "MCP",
+							path: "mcp-usage",
+							restrict: ["OWNER", "EDIT", "READ_ONLY"],
+						},
+						{
 							name: "Commits",
 							path: "commits",
 							restrict: ["OWNER", "EDIT"],
 						},
 						{ name: "GitHub", path: "github", restrict: ["OWNER"] },
-						{
-							name: "Settings",
-							path: "settings",
-							restrict: ["OWNER"],
-						},
 						{
 							name: "Access Control",
 							path: "access-control",

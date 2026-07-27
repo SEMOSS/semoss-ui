@@ -83,7 +83,7 @@ export const VariablePreview = observer(
 									display: "flex",
 									justifyContent: "center",
 									alignItems: "center",
-									backgroundColor: "#FAFAFA",
+									backgroundColor: "var(--background)",
 								},
 							},
 							listeners: {
@@ -332,7 +332,7 @@ export const VariablePreview = observer(
 				<Separator />
 				<div className="flex items-center gap-2 px-4 py-2">
 					<img src={PreviewButton} alt="" className="h-5 w-5" />
-					<span className="font-medium text-[#0471F0] text-sm">
+					<span className="font-medium text-primary text-sm">
 						{executed ? "Preview" : "Source (not yet executed)"}
 					</span>
 				</div>

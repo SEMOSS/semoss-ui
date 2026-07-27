@@ -107,7 +107,7 @@ export const CellOutputBlock = ({
 			{prompt && (
 				<div className="flex items-start gap-1.5 px-3">
 					{prompt.icon && (
-						<span className="mt-[2px] inline-flex h-4 w-4 shrink-0 items-center justify-center">
+						<span className="mt-[2px] inline-flex h-4 w-4 shrink-0 select-none items-center justify-center">
 							{prompt.icon}
 						</span>
 					)}
@@ -468,8 +468,10 @@ const Panel = ({
 	};
 	return (
 		<div className={styles.wrapper}>
+			{/* `select-none` keeps the label, byte counter and toolbar out of
+			    any selection that spans the panel. */}
 			<div
-				className={`flex items-center gap-2 px-2.5 py-1 ${
+				className={`flex select-none items-center gap-2 px-2.5 py-1 ${
 					collapsed ? "" : "border-b"
 				} ${styles.header}`}
 			>
@@ -534,7 +536,7 @@ const CopyButton = ({ value, label }: { value: string; label: string }) => {
 			<TooltipTrigger asChild>
 				<button
 					type="button"
-					className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+					className="select-none rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
 					onClick={copy}
 					aria-label={label}
 				>
@@ -705,7 +707,7 @@ const PopoutModal = ({
 					height: "min(90vh, 800px)",
 				}}
 			>
-				<div className="flex items-center gap-2 border-border border-b px-4 py-2">
+				<div className="flex select-none items-center gap-2 border-border border-b px-4 py-2">
 					<div className="font-semibold text-foreground text-sm">
 						{title}
 					</div>

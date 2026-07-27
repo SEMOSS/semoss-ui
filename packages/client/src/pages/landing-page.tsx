@@ -6,8 +6,11 @@ import type { Variable } from "@semoss/renderer";
 import { STATE_VERSION } from "@semoss/renderer/version";
 import { Button, H4, Muted } from "@semoss/ui/next";
 import BI from "@/assets/img/BI.png";
+import BIDark from "@/assets/img/BI-dark.png";
 import DevBanner from "@/assets/img/DevBanner.png";
+import DevBannerDark from "@/assets/img/DevBanner-dark.png";
 import Terminal from "@/assets/img/Terminal.png";
+import TerminalDark from "@/assets/img/Terminal-dark.png";
 import { NewAppModal } from "@/components/app";
 import {
 	BannerSection,
@@ -54,6 +57,7 @@ export const LandingPage: React.FC = observer(() => {
 			<div className="flex w-full flex-col gap-6 pb-8">
 				<BannerSection
 					imageUrl={DevBanner}
+					darkImageUrl={DevBannerDark}
 					tagline={"Experiment with AI in the Playground"}
 					description={
 						"Experience AI that goes beyond chat. Deploy multiple LLMs with powerful tool-calling abilities through MCP integration. Watch AI agents manipulate files, call APIs, and execute real workflows while tackling complex tasks. Turn conversations into actions and ideas into results."
@@ -143,7 +147,8 @@ export const LandingPage: React.FC = observer(() => {
 							name="Playground"
 							description="Test your apps and skills"
 							href="../../playground/dist/"
-							img={BI}
+							img={DevBanner}
+							darkImg={DevBannerDark}
 						/>
 
 						<SystemAppCard
@@ -151,6 +156,7 @@ export const LandingPage: React.FC = observer(() => {
 							description="Execute commands and see a response"
 							href="../../terminal/dist/"
 							img={Terminal}
+							darkImg={TerminalDark}
 						/>
 
 						<SystemAppCard
@@ -158,6 +164,7 @@ export const LandingPage: React.FC = observer(() => {
 							description="Develop dashboards and visualizations to view data"
 							href="../../legacy/dist/"
 							img={BI}
+							darkImg={BIDark}
 						/>
 					</div>
 				</div>

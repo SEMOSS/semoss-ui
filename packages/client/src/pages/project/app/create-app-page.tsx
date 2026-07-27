@@ -215,9 +215,9 @@ export const CreateAppPage = () => {
 
 					<div className="flex flex-col gap-4">
 						<Large>Start build with a template</Large>
-						<div className="flex h-full w-full flex-1 flex-col items-start overflow-hidden rounded-xl border-border bg-card shadow-sm">
-							<div className="flex w-full flex-row gap-2 border-border bg-primary-foreground p-4">
-								<InputGroup className="bg-background">
+						<div className="flex h-full w-full flex-1 flex-col items-start overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+							<div className="flex w-full flex-row gap-2 border-border border-b bg-card p-4">
+								<InputGroup className="border-input bg-background dark:bg-input/30">
 									<InputGroupInput
 										placeholder="Search"
 										value={search}

@@ -9790,6 +9790,10 @@ export const ENGINE_IMAGES = {
 			icon: META,
 		},
 		{
+			name: "LOCAL_PYTHON",
+			icon: PYTHON,
+		},
+		{
 			name: "EMBEDDED_REBUFF",
 			icon: BRAIN,
 		},

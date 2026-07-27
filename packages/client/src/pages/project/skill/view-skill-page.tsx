@@ -137,7 +137,7 @@ export const ViewSkillPage = observer(() => {
 					options={{ insightId: workspace.insightId }}
 					destroyOnUnmount={false}
 				>
-					<div className="mb-6 h-[35vh] min-h-[220px] overflow-hidden rounded-md border border-border">
+					<div className="mb-6 max-h-[35vh] overflow-auto rounded-md border border-border">
 						<FileExplorer
 							mode={{
 								type: "APP",

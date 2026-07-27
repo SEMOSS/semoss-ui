@@ -32,6 +32,7 @@ import {
 	INPUT_BLOCK_TYPES,
 	useBlocks,
 } from "@semoss/renderer";
+import { FlexLayout } from "@semoss/shared";
 import {
 	Button,
 	DropdownMenu,
@@ -49,7 +50,6 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import DuplicateIcon from "@/assets/img/Duplicate.svg";
-import { FlexLayout } from "@/components/flex-layout";
 import { AddVariableModal } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
 import { useDesigner, useWorkspace } from "@/hooks";
@@ -517,7 +517,7 @@ export const LayersPanel = observer(
 									height: "4px",
 									background:
 										dropPosition === "top"
-											? "#1976D2"
+											? "var(--primary)"
 											: "transparent",
 									zIndex: 10,
 								}}
@@ -534,11 +534,11 @@ export const LayersPanel = observer(
 										bottom: "4px",
 										border:
 											dropPosition === "inside"
-												? "2px dashed #E91E63"
+												? "2px dashed var(--primary)"
 												: "none",
 										background:
 											dropPosition === "inside"
-												? "rgba(233, 30, 99, 0.1)"
+												? "color-mix(in srgb, var(--primary) 12%, transparent)"
 												: "transparent",
 										zIndex: 9,
 									}}
@@ -555,7 +555,7 @@ export const LayersPanel = observer(
 									height: isContainer ? "8px" : "4px",
 									background:
 										dropPosition === "bottom"
-											? "#1976D2"
+											? "var(--primary)"
 											: "transparent",
 									zIndex: 10,
 								}}
@@ -714,7 +714,7 @@ export const LayersPanel = observer(
 
 			return (
 				<div className="flex flex-row items-center gap-2 p-2 transition-colors duration-200 hover:[&_[data-onhover]]:block">
-					<span className="flex h-full items-center justify-center text-[#757575]">
+					<span className="flex h-full items-center justify-center text-muted-foreground">
 						<WidgetIcon className="size-4" />
 					</span>
 					<div
@@ -728,7 +728,7 @@ export const LayersPanel = observer(
 								: ""
 						}`}
 					>
-						<span className="block overflow-hidden text-ellipsis whitespace-nowrap font-medium text-[#111827] text-[0.8125rem]">
+						<span className="block overflow-hidden text-ellipsis whitespace-nowrap font-medium text-[0.8125rem] text-foreground">
 							{block.widget.charAt(0).toUpperCase() +
 								block.widget.slice(1)}
 						</span>
@@ -813,7 +813,7 @@ export const LayersPanel = observer(
 									</TooltipProvider>
 								</div>
 							) : (
-								<span className="block overflow-hidden text-ellipsis whitespace-nowrap text-[#6b7280] text-xs">
+								<span className="block overflow-hidden text-ellipsis whitespace-nowrap text-muted-foreground text-xs">
 									{variableName || block.data.id || block.id}
 								</span>
 							)}
@@ -986,7 +986,7 @@ export const LayersPanel = observer(
 				<div
 					key={block.id}
 					className={`flex h-auto w-full cursor-pointer flex-row items-center justify-between px-4 py-2 ${
-						isSelected ? "bg-[#EBF4FE]" : ""
+						isSelected ? "bg-primary/10 text-primary" : ""
 					} ${isSearchMatch ? "text-primary" : ""}`}
 					onClick={(_e) => {
 						handlePageSelection(block);
@@ -997,19 +997,19 @@ export const LayersPanel = observer(
 					<div className="flex items-center">
 						<div className="flex w-6 items-center justify-center">
 							{id === "page-1" && (
-								<span className="flex h-full items-center justify-center text-[#757575]">
+								<span className="flex h-full items-center justify-center text-muted-foreground">
 									<Home className="size-4" />
 								</span>
 							)}
 						</div>
-						<span className="text-[#374151] text-[0.875rem] leading-normal">
+						<span className="text-[0.875rem] leading-normal">
 							{id === "page-1"
 								? "/page-1"
 								: `/${block.data.route as string}`}
 						</span>
 					</div>
 					{id !== "page-1" && pageHovered === block.id && (
-						<span className="flex h-full items-center justify-center text-[#757575]">
+						<span className="flex h-full items-center justify-center text-muted-foreground">
 							<Trash2
 								className="size-4 cursor-pointer"
 								onClick={(e) => {
@@ -1276,8 +1276,10 @@ export const LayersPanel = observer(
 			<Panel
 				actions={
 					<div className="flex w-full flex-col">
-						<div className="flex min-h-12 items-center justify-between px-3 pt-3 pb-2">
-							<p className="m-0 font-semibold text-sm">{title}</p>
+						<div className="mt-2 mb-2 w-fit rounded-2xl bg-primary/10 px-4">
+							<span className="font-normal text-[13px] text-primary leading-[18px] tracking-[0.16px]">
+								{title}
+							</span>
 						</div>
 						<PanelSearch value={search} onChange={setSearch} />
 					</div>
@@ -1296,7 +1298,7 @@ export const LayersPanel = observer(
 						<div className="flex h-full max-h-full w-full flex-col pt-1">
 							<div className="flex w-full flex-col items-center gap-2 px-4 pt-4 pb-4">
 								<div className="flex w-full flex-row items-center justify-between pb-2">
-									<p className="m-0 font-semibold text-[#212121] text-sm leading-6 tracking-[0.01em]">
+									<p className="m-0 font-semibold text-muted-foreground text-sm leading-6 tracking-[0.01em]">
 										Pages
 									</p>
 									<Button
@@ -1339,7 +1341,7 @@ export const LayersPanel = observer(
 							<div className="flex h-full max-h-full w-full flex-col pt-1">
 								<div className="flex w-full flex-col items-center gap-2 px-4 pt-4 pb-2">
 									<div className="flex w-full flex-row items-center justify-between pb-2">
-										<p className="m-0 font-semibold text-[#212121] text-sm leading-6 tracking-[0.01em]">
+										<p className="m-0 font-semibold text-muted-foreground text-sm leading-6 tracking-[0.01em]">
 											Layers
 										</p>
 									</div>
