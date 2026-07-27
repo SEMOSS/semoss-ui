@@ -1,11 +1,29 @@
 /**
  * Enhanced DOM actions using Chrome Debugger API
+ * Provides reliable interaction with web pages through the Chrome DevTools Protocol
  */
 
-// Delay constants
-const DELAY_BETWEEN_CLICKS = 500; // ms
-const DELAY_BETWEEN_KEYSTROKES = 50; // ms
-const DELAY_AFTER_SCROLL = 1000; // ms
+// ============================================================================
+// Timing Constants - Tuned for reliable browser automation
+// ============================================================================
+
+/**
+ * Delay between consecutive click actions (ms)
+ * Allows the page to process the first click before the next one
+ */
+const DELAY_BETWEEN_CLICKS = 500;
+
+/**
+ * Delay between individual keystrokes when typing (ms)
+ * Mimics human typing speed and ensures key events are processed properly
+ */
+const DELAY_BETWEEN_KEYSTROKES = 50;
+
+/**
+ * Delay after scroll actions (ms)
+ * Gives the browser time to complete smooth scrolling and render new content
+ */
+const DELAY_AFTER_SCROLL = 1000;
 
 /**
  * Send command to Chrome Debugger

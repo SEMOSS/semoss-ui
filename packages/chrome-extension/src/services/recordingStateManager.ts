@@ -28,9 +28,7 @@ export function useRecordingState() {
 	const loadState = useCallback(async () => {
 		try {
 			// Always clear state when panel opens to ensure fresh start
-			console.log(
-				"[RecordingStateManager] Clearing all state on panel open",
-			);
+
 			await chrome.storage.local.set({
 				isRecording: false,
 				isPaused: false,

@@ -1,14 +1,43 @@
+/**
+ * Content Script - Injected into web pages
+ *
+ * Manages the floating automation panel, captures user interactions during recording,
+ * and routes messages between the page, background script, and extension panel.
+ *
+ * Key responsibilities:
+ * - Floating panel lifecycle management (positioning, resizing, dragging)
+ * - Event recording via EventRecorder
+ * - Message routing between extension contexts
+ * - Bridge script injection for MAIN world access
+ * - Field monitoring during script execution
+ */
+
 import React from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import type { EventRecorder } from "../recorder/EventRecorder";
 import { createEventRecorder } from "../recorder/EventRecorder";
 
+// ============================================================================
+// Floating Panel Configuration
+// ============================================================================
+
+/**  DOM element ID for the floating panel iframe */
 const FLOATING_PANEL_WRAPPER_ID = "semoss-browser-automation-frame";
+
+/** Collapsed panel size (circular button) */
 const FLOATING_PANEL_COLLAPSED_SIZE = 72;
+
+/** Expanded panel width */
 const FLOATING_PANEL_EXPANDED_WIDTH = 380;
+
+/** Expanded panel height */
 const FLOATING_PANEL_EXPANDED_HEIGHT = 620;
+
+/** Minimum distance from viewport edges */
 const FLOATING_PANEL_MARGIN = 16;
+
+/** Storage key for persisting panel position */
 const FLOATING_PANEL_POSITION_STORAGE_KEY =
 	"semoss-browser-automation-panel-position";
 
@@ -17,11 +46,12 @@ type FloatingPanelPosition = {
 	top: number;
 };
 
-let annotatedElements: HTMLElement[] = [];
-const elementIdToUniqueId: Map<number, string> = new Map();
+// ============================================================================
+// State Management
+// ============================================================================
 
 // Track panel state to only respond to PING when panel is actually open
-let isPanelOpen = false;
+let _isPanelOpen = false;
 
 // Track portal iframe for sending completion messages back
 let portalIframeSource: Window | null = null;
@@ -38,6 +68,14 @@ let floatingPanelFrame: HTMLIFrameElement | null = null;
 let floatingPanelPosition: FloatingPanelPosition | null = null;
 let floatingPanelHidden = false;
 
+// ============================================================================
+// Panel Management Functions
+// ============================================================================
+
+/**
+ * Get the current tab ID from the background script
+ * @returns Tab ID or undefined if not available
+ */
 async function getHostTabId(): Promise<number | undefined> {
 	try {
 		const response = await chrome.runtime.sendMessage({
@@ -53,7 +91,6 @@ async function getHostTabId(): Promise<number | undefined> {
 getHostTabId().then((tabId) => {
 	currentTabId = tabId;
 	if (tabId) {
-		console.log("[CONTENT] 📍 Tab ID initialized:", tabId);
 	}
 });
 
@@ -254,7 +291,6 @@ const script = document.createElement("script");
 script.src = chrome.runtime.getURL("main-bridge.js");
 script.onload = () => {
 	script.remove();
-	console.log("[CONTENT] Bridge script injected into MAIN world");
 };
 (document.head || document.documentElement).appendChild(script);
 
@@ -269,40 +305,23 @@ window.addEventListener("message", (event) => {
 
 	// Debug logging for key messages
 	if (event.data?.type === "EXECUTE_PLAYWRIGHT_SCRIPT") {
-		console.log(
-			"[CONTENT] 🔍 Received EXECUTE_PLAYWRIGHT_SCRIPT from:",
-			event.origin,
-		);
-		console.log(
-			"[CONTENT] 🔍 Has scriptContent:",
-			!!event.data?.payload?.scriptContent,
-		);
 	}
 
 	// Handle PING from portal iframe - respond with PONG back to iframe
 	if (event.data?.type === "SMSS_EXTENSION_PING") {
-		console.log("[CONTENT] 🏓 Received PING from portal iframe");
-		console.log("[CONTENT] Cached isPanelOpen:", isPanelOpen);
-
 		// Always verify with background script for real-time state (don't trust cache)
-		console.log(
-			"[CONTENT] 🔍 Querying background for real-time panel state...",
-		);
+
 		chrome.runtime.sendMessage(
 			{ type: "CHECK_PANEL_STATE" },
 			(response) => {
 				const actualPanelState = response?.isPanelOpen || false;
-				console.log(
-					"[CONTENT] Background confirms panel state:",
-					actualPanelState,
-				);
 
 				// Update cached state
-				isPanelOpen = actualPanelState;
+				_isPanelOpen = actualPanelState;
 
 				if (actualPanelState) {
 					// Send PONG since panel is actually open
-					console.log("[CONTENT] ✅ Sending PONG to portal");
+
 					if (event.source && event.source !== window) {
 						(event.source as Window).postMessage(
 							{
@@ -313,9 +332,6 @@ window.addEventListener("message", (event) => {
 						);
 					}
 				} else {
-					console.log(
-						"[CONTENT] ❌ Panel is closed, not sending PONG",
-					);
 				}
 			},
 		);
@@ -324,7 +340,6 @@ window.addEventListener("message", (event) => {
 	// Bridge relays PING from portal
 
 	if (event.data?.type === "EXTENSION_PING_BRIDGE") {
-		console.log("[CONTENT] 🏓 Received PING from bridge, responding");
 		window.postMessage({ type: "EXTENSION_READY_BRIDGE" }, "*");
 	}
 
@@ -334,10 +349,6 @@ window.addEventListener("message", (event) => {
 			alert("Chrome Extension was reloaded. Please refresh this page.");
 			return;
 		}
-
-		console.log(
-			"[CONTENT] 📤 Received EXECUTE from bridge, forwarding to extension",
-		);
 
 		const payload = event.data.payload;
 		chrome.runtime
@@ -366,18 +377,7 @@ window.addEventListener("message", (event) => {
 		// Store the iframe source to send completion back later
 		if (event.source && event.source !== window) {
 			portalIframeSource = event.source as Window;
-			console.log(
-				"[CONTENT] 📍 Stored portal iframe for completion messages",
-			);
 		}
-
-		console.log(
-			"[CONTENT] 📤 Received EXECUTE_PLAYWRIGHT_SCRIPT from portal, forwarding to extension",
-		);
-		console.log(
-			"[CONTENT] 📍 Including sourceTabId:",
-			currentTabId || "undefined",
-		);
 
 		const payload = event.data.payload;
 		chrome.runtime
@@ -494,14 +494,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
 	// Forward completion messages back to portal via bridge
 	if (message.type === "SCRIPT_EXECUTION_COMPLETE") {
-		console.log("[CONTENT] ✅ Execution complete, forwarding to portal");
-		console.log(
-			"[CONTENT] Success:",
-			message.success,
-			"| Message:",
-			message.message,
-		);
-
 		// Create appropriate completion message based on success/failure
 		const completionMessage = message.success
 			? {
@@ -517,7 +509,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
 		// Send to portal iframe if available, otherwise to window
 		if (portalIframeSource) {
-			console.log("[CONTENT] 📤 Sending completion to portal iframe");
 			portalIframeSource.postMessage(
 				completionMessage,
 				window.location.origin,
@@ -536,7 +527,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
 	// Forward error messages back to portal via bridge
 	if (message.type === "SCRIPT_EXECUTION_ERROR") {
-		console.log("[CONTENT] ❌ Execution error, forwarding to portal");
 		window.postMessage(
 			{
 				type: "PLAYWRIGHT_SCRIPT_ERROR",
@@ -569,45 +559,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 			}
 			break;
 
-		case "GET_ANNOTATED_DOM_LEGACY":
-			try {
-				const html = getAnnotatedDOM();
-				sendResponse({ success: true, html });
-			} catch (error) {
-				sendResponse({
-					success: false,
-					error:
-						error instanceof Error ? error.message : String(error),
-				});
-			}
-			break;
-
-		case "GET_ELEMENT_COORDINATES":
-			try {
-				const coordinates = getElementCoordinates(message.elementId);
-				sendResponse({ success: true, coordinates });
-			} catch (error) {
-				sendResponse({
-					success: false,
-					error:
-						error instanceof Error ? error.message : String(error),
-				});
-			}
-			break;
-
-		case "HIGHLIGHT_ELEMENT":
-			try {
-				highlightElement(message.elementId);
-				sendResponse({ success: true });
-			} catch (error) {
-				sendResponse({
-					success: false,
-					error:
-						error instanceof Error ? error.message : String(error),
-				});
-			}
-			break;
-
 		case "SCRIPT_EXECUTION_COMPLETE":
 			// Post message to page via bridge
 			document.dispatchEvent(
@@ -624,10 +575,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 			break;
 
 		case "SMSS_EXTENSION_PANEL_OPENED":
-			console.log(
-				"[CONTENT] 📢 Panel opened - notifying portal via window.postMessage",
-			);
-			isPanelOpen = true;
+			_isPanelOpen = true;
 			window.postMessage(
 				{
 					type: "SMSS_EXTENSION_OPENED",
@@ -640,10 +588,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 			break;
 
 		case "SMSS_EXTENSION_PANEL_CLOSED":
-			console.log(
-				"[CONTENT] 📢 Panel closed - notifying portal via window.postMessage",
-			);
-			isPanelOpen = false;
+			_isPanelOpen = false;
 			window.postMessage(
 				{
 					type: "SMSS_EXTENSION_CLOSED",
@@ -657,9 +602,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
 		case "SMSS_EXTENSION_PONG":
 			// Forward pong response from background to page via bridge
-			console.log(
-				"[CONTENT] ✅ Received PONG from background - forwarding to page",
-			);
+
 			document.dispatchEvent(
 				new CustomEvent("__semoss_extension_response", {
 					detail: {
@@ -711,9 +654,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 					new Event("change", { bubbles: true, cancelable: true }),
 				);
 
-				console.log(
-					"[CONTENT SCRIPT] ✅ Cleared autofilled value from field",
-				);
 				sendResponse({ success: true });
 			} catch (error) {
 				console.error(
@@ -846,7 +786,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
 		case "START_RECORDING":
 			try {
-				console.log("[CONTENT] 🎬 Starting recording...");
 				if (!eventRecorder) {
 					eventRecorder = createEventRecorder();
 				}
@@ -869,7 +808,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
 		case "STOP_RECORDING":
 			try {
-				console.log("[CONTENT] ⏹️ Stopping recording...");
 				if (eventRecorder) {
 					eventRecorder.cleanup();
 				}
@@ -891,7 +829,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
 		case "PAUSE_RECORDING":
 			try {
-				console.log("[CONTENT] ⏸️ Pausing recording...");
 				// Pause is handled by background script (filters events)
 				sendResponse({ success: true });
 			} catch (error) {
@@ -905,7 +842,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
 		case "RESUME_RECORDING":
 			try {
-				console.log("[CONTENT] ▶️ Resuming recording...");
 				// Resume is handled by background script (accepts events again)
 				sendResponse({ success: true });
 			} catch (error) {
@@ -1000,160 +936,6 @@ function stopFieldMonitoring() {
 }
 
 /**
- * Traverse the DOM and annotate interactive elements (Legacy)
- */
-function getAnnotatedDOM(): string {
-	annotatedElements = [];
-	elementIdToUniqueId.clear(); // Reset mapping
-	const clonedRoot = traverseDOM(document.documentElement, annotatedElements);
-	return (clonedRoot as HTMLElement).outerHTML;
-}
-
-/**
- * Generate unique ID for element (persists across re-renders)
- */
-function generateUniqueId(): string {
-	return `workshop_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-}
-
-/**
- * Recursively traverse and annotate DOM nodes
- */
-function traverseDOM(
-	node: Node,
-	elements: HTMLElement[],
-): HTMLElement | Text | DocumentFragment {
-	const clonedNode = node.cloneNode(false);
-
-	if (node.nodeType === Node.ELEMENT_NODE) {
-		const element = node as HTMLElement;
-		const style = window.getComputedStyle(element);
-		const clonedElement = clonedNode as HTMLElement;
-
-		// Store original element
-		elements.push(element);
-		const elementId = elements.length - 1;
-
-		// Generate or retrieve persistent unique ID
-		let uniqueId = element.getAttribute("data-workshop-node-id");
-		if (!uniqueId) {
-			uniqueId = generateUniqueId();
-			// Store the unique ID on the REAL DOM element (persists across re-renders)
-			element.setAttribute("data-workshop-node-id", uniqueId);
-		}
-
-		// Store mapping for quick lookup later
-		elementIdToUniqueId.set(elementId, uniqueId);
-
-		// Add metadata attributes to the CLONED element for LLM
-		clonedElement.setAttribute("data-id", elementId.toString());
-		clonedElement.setAttribute("data-unique-id", uniqueId);
-		clonedElement.setAttribute(
-			"data-interactive",
-			isInteractive(element, style).toString(),
-		);
-		clonedElement.setAttribute(
-			"data-visible",
-			isVisible(element, style).toString(),
-		);
-
-		// Traverse children
-		node.childNodes.forEach((child) => {
-			const result = traverseDOM(child, elements);
-			clonedElement.appendChild(result);
-		});
-
-		return clonedElement;
-	}
-
-	// Handle text nodes
-	if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
-		return document.createTextNode(node.textContent);
-	}
-
-	// For other nodes, just clone children
-	node.childNodes.forEach((child) => {
-		const result = traverseDOM(child, elements);
-		clonedNode.appendChild(result);
-	});
-
-	return clonedNode as DocumentFragment;
-}
-
-/**
- * Check if element is interactive
- */
-function isInteractive(
-	element: HTMLElement,
-	style: CSSStyleDeclaration,
-): boolean {
-	const interactiveTags = ["A", "BUTTON", "INPUT", "SELECT", "TEXTAREA"];
-	const interactiveAttributes = [
-		"onclick",
-		"onmousedown",
-		"onmouseup",
-		"onkeydown",
-		"onkeyup",
-	];
-
-	return (
-		interactiveTags.includes(element.tagName) ||
-		interactiveAttributes.some((attr) => element.hasAttribute(attr)) ||
-		style.cursor === "pointer" ||
-		element.hasAttribute("role")
-	);
-}
-
-/**
- * Check if element is visible
- */
-function isVisible(element: HTMLElement, style: CSSStyleDeclaration): boolean {
-	return (
-		style.display !== "none" &&
-		style.visibility !== "hidden" &&
-		style.opacity !== "0" &&
-		element.getAttribute("aria-hidden") !== "true"
-	);
-}
-
-/**
- * Get coordinates of an element for clicking
- */
-function getElementCoordinates(elementId: number): { x: number; y: number } {
-	if (elementId >= annotatedElements.length) {
-		throw new Error(`Element with id ${elementId} not found`);
-	}
-
-	const element = annotatedElements[elementId];
-	const rect = element.getBoundingClientRect();
-
-	// Return center coordinates
-	return {
-		x: rect.left + rect.width / 2,
-		y: rect.top + rect.height / 2,
-	};
-}
-
-/**
- * Highlight an element visually (for debugging)
- */
-function highlightElement(elementId: number): void {
-	if (elementId >= annotatedElements.length) {
-		throw new Error(`Element with id ${elementId} not found`);
-	}
-
-	const element = annotatedElements[elementId];
-	const originalBorder = element.style.border;
-
-	element.style.border = "3px solid red";
-	element.scrollIntoView({ behavior: "smooth", block: "center" });
-
-	setTimeout(() => {
-		element.style.border = originalBorder;
-	}, 2000);
-}
-
-/**
  * Mount overlay toolbar for recording
  */
 async function mountOverlay(): Promise<void> {
@@ -1175,8 +957,6 @@ async function mountOverlay(): Promise<void> {
 		// Create React root and render (component manages its own state now)
 		overlayRoot = createRoot(overlayContainer);
 		overlayRoot.render(React.createElement(RecorderToolbar));
-
-		console.log("[CONTENT] ✅ Overlay toolbar mounted");
 	} catch (error) {
 		console.error("[CONTENT] ❌ Failed to mount overlay:", error);
 	}
@@ -1196,8 +976,6 @@ function unmountOverlay(): void {
 			overlayContainer.remove();
 			overlayContainer = null;
 		}
-
-		console.log("[CONTENT] ✅ Overlay toolbar unmounted");
 	} catch (error) {
 		console.error("[CONTENT] ❌ Failed to unmount overlay:", error);
 	}

@@ -233,24 +233,11 @@ export class AuthService {
 		const expression = `MyProjects();`;
 
 		try {
-			console.log(
-				"[fetchProjectsFromSemoss] Calling MyProjects reactor...",
-			);
-
 			const projectsOutput =
 				await SemossClient.runPixel<MyProjectsResponse[]>(expression);
 			const projectsData = Array.isArray(projectsOutput)
 				? projectsOutput
 				: [];
-			console.log(
-				"[fetchProjectsFromSemoss] Raw response:",
-				projectsData,
-			);
-
-			console.log(
-				`[fetchProjectsFromSemoss] Found ${projectsData.length} projects:`,
-				projectsData,
-			);
 
 			// Map to extension's Project interface
 			const projects: Project[] = projectsData.map((p) => {
@@ -275,11 +262,6 @@ export class AuthService {
 					canEdit,
 				};
 			});
-
-			console.log(
-				`[fetchProjectsFromSemoss] Mapped to ${projects.length} projects:`,
-				projects,
-			);
 
 			// Store projects in chrome storage
 			await chrome.storage.local.set({
@@ -399,9 +381,6 @@ export class AuthService {
 
 		try {
 			await SemossClient.runPixel(expression);
-			console.log(
-				"[createPortalFromTemplate] Portal created successfully",
-			);
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(`Portal creation error: ${error.message}`);
@@ -419,8 +398,6 @@ export class AuthService {
 
 		try {
 			await SemossClient.runPixel(expression);
-
-			console.log("Added MCP and PLAYWRIGHT tags to project:", projectId);
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(`Tag addition error: ${error.message}`);

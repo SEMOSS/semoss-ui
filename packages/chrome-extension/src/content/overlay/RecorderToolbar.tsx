@@ -17,7 +17,6 @@ export const RecorderToolbar: React.FC = () => {
 			.sendMessage({ type: "GET_RECORDING_STATE" })
 			.then((response) => {
 				if (response?.state) {
-					console.log("[TOOLBAR] Initial state:", response.state);
 					setActionCount(response.state.actionCounter || 0);
 					setIsPaused(response.state.isPaused || false);
 				}
@@ -29,7 +28,6 @@ export const RecorderToolbar: React.FC = () => {
 		// Listen for state updates from background
 		const handleMessage = (message: ChromeMessage) => {
 			if (message.type === "STATE_UPDATE" && message.state) {
-				console.log("[TOOLBAR] State update received:", message.state);
 				setActionCount(message.state.actionCounter || 0);
 				setIsPaused(message.state.isPaused || false);
 			}
@@ -43,7 +41,6 @@ export const RecorderToolbar: React.FC = () => {
 	}, []);
 
 	const handlePause = async () => {
-		console.log("[TOOLBAR] Pause clicked");
 		try {
 			await chrome.runtime.sendMessage({ type: "PAUSE_RECORDING" });
 		} catch (err) {
@@ -52,7 +49,6 @@ export const RecorderToolbar: React.FC = () => {
 	};
 
 	const handleResume = async () => {
-		console.log("[TOOLBAR] Resume clicked");
 		try {
 			await chrome.runtime.sendMessage({ type: "RESUME_RECORDING" });
 		} catch (err) {
@@ -61,7 +57,6 @@ export const RecorderToolbar: React.FC = () => {
 	};
 
 	const handleStop = async () => {
-		console.log("[TOOLBAR] Stop clicked");
 		try {
 			await chrome.runtime.sendMessage({ type: "STOP_RECORDING" });
 		} catch (err) {

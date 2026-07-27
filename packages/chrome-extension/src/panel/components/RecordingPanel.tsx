@@ -73,9 +73,6 @@ export const RecordingPanel: FC = () => {
 						(p) => p.canEdit,
 					);
 					setProjects(editableProjects);
-					console.log(
-						`Loaded ${editableProjects.length} editable projects from SEMOSS`,
-					);
 				} catch (error) {
 					console.error("Failed to fetch projects on mount:", error);
 					// Fallback to storage if fetch fails
@@ -184,7 +181,6 @@ export const RecordingPanel: FC = () => {
 			const projectsList = await AuthService.fetchProjectsFromSemoss();
 			const editableProjects = projectsList.filter((p) => p.canEdit);
 			setProjects(editableProjects);
-			console.log(`Refreshed ${editableProjects.length} projects`);
 		} catch (error) {
 			console.error("Failed to refresh projects:", error);
 		}
@@ -219,7 +215,6 @@ export const RecordingPanel: FC = () => {
 
 			// Step 1: Create the project
 			const newProjectId = await AuthService.createProject(projectName);
-			console.log("Project created with ID:", newProjectId);
 
 			toast.info("Project created! Setting up...", {
 				duration: 3000,
@@ -228,7 +223,7 @@ export const RecordingPanel: FC = () => {
 			// Step 2: Create portal from bundled template (no external dependencies)
 			try {
 				await AuthService.createPortalFromTemplate(newProjectId);
-				console.log("Portal created successfully");
+
 				toast.info("Portal UI created successfully", {
 					duration: 2000,
 				});
@@ -247,7 +242,6 @@ export const RecordingPanel: FC = () => {
 
 			// Step 3: Add MCP and PLAYWRIGHT tags so project shows in playground
 			await AuthService.addPlaywrightTags(newProjectId);
-			console.log("Tags added successfully");
 
 			toast.info("Tags added! Project created successfully.", {
 				duration: 3000,
@@ -353,8 +347,6 @@ export const RecordingPanel: FC = () => {
 
 			// Build Semoss pixel expression (no credentials needed - uses OAuth session)
 			const expression = `SaveRecordingFromExtension(project=["${escapePixelString(selectedProject)}"], name=["${escapePixelString(name)}"], jsonPayload=["${escapePixelString(jsonString)}"]);`;
-
-			console.log("[RecordingPanel] Saving recording to Semoss...");
 
 			const data =
 				await SemossClient.runPixel<SaveRecordingResponse>(expression);

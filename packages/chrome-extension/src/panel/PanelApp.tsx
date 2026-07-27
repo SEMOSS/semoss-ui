@@ -1,3 +1,19 @@
+/**
+ * PanelApp Component
+ *
+ * Main UI for the browser automation extension panel.
+ * Handles both script execution mode (running Playwright scripts from playground)
+ * and recording mode (capturing user interactions for new scripts).
+ *
+ * Features:
+ * - Dual mode: execution and recording
+ * - Floating panel support with drag/resize
+ * - Real-time script execution monitoring
+ * - User input collection during script execution
+ * - Field value mirroring for script debugging
+ * - Tab lifecycle tracking
+ */
+
 import React, { useEffect, useRef, useState } from "react";
 import "./panel.css";
 import { Button, Card, cn, H1, H3, H4, Input, P } from "@semoss/ui/next";
@@ -8,6 +24,10 @@ import {
 import { escapePixelString, SemossClient } from "../services/semossClient";
 import { RecordingPanel } from "./components/RecordingPanel";
 import { WelcomeState } from "./components/WelcomeState";
+
+// ============================================================================
+// Type Definitions
+// ============================================================================
 
 type PanelMode = "execution" | "recording";
 
@@ -42,6 +62,10 @@ interface ChromeMessage {
 	isPassword?: boolean;
 	requestId?: string;
 }
+
+// ============================================================================
+// PanelApp Component
+// ============================================================================
 
 const PanelApp: React.FC = () => {
 	const searchParams = new URLSearchParams(window.location.search);
@@ -250,8 +274,6 @@ const PanelApp: React.FC = () => {
 	}, [isCollapsed, isFloatingPanel]);
 
 	useEffect(() => {
-		console.log("[PANEL] ✅ Panel mounted, announcing presence");
-
 		chrome.runtime
 			.sendMessage({
 				type: "SMSS_EXTENSION_PANEL_OPENED",
@@ -279,8 +301,6 @@ const PanelApp: React.FC = () => {
 	// Listen for playground chat events from content script
 	// biome-ignore lint/correctness/useExhaustiveDependencies: executeScriptWithContent and waitingForUserInput are intentionally excluded to prevent infinite loops
 	useEffect(() => {
-		console.log("[PANEL] 🎧 Setting up message listener");
-
 		const messageListener = (
 			message: ChromeMessage,
 			sender: chrome.runtime.MessageSender,
@@ -297,8 +317,6 @@ const PanelApp: React.FC = () => {
 				return;
 			}
 
-			console.log("[PANEL] 📨 Received message:", message.type, message);
-
 			const isExecutionMessage =
 				message.type === "EXECUTE_PLAYWRIGHT_SCRIPT" ||
 				message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT";
@@ -310,16 +328,12 @@ const PanelApp: React.FC = () => {
 					(!hasHostTabId || sourceTabId !== hostTabId)) ||
 					(!isFloatingPanel && typeof sourceTabId === "number"))
 			) {
-				console.log(
-					"[PANEL] Ignoring execution request in non-owner panel",
-				);
 				return;
 			}
 
 			// Respond to panel ping checks IMMEDIATELY (even if listener not fully ready)
 			// This prevents "Extension Required" popup from showing
 			if (message.type === "PANEL_PING_CHECK") {
-				console.log("[PANEL] 📨 Received ping check, responding...");
 				sendResponse({ alive: true });
 				return true;
 			}
@@ -341,9 +355,6 @@ const PanelApp: React.FC = () => {
 			// CRITICAL: Only process messages forwarded by background script (sender.tab will be undefined)
 			// Ignore direct messages from content scripts to prevent duplicate execution
 			if (sender.tab && message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT") {
-				console.log(
-					"[PANEL] ⏭️ Ignoring direct message from content script",
-				);
 				return;
 			}
 
@@ -353,9 +364,6 @@ const PanelApp: React.FC = () => {
 					message.type === "EXECUTE_PLAYWRIGHT_SCRIPT") &&
 				isRunningRef.current
 			) {
-				console.log(
-					"[PANEL] ⏸️ Already running, ignoring duplicate execution",
-				);
 				return;
 			}
 
@@ -371,11 +379,6 @@ const PanelApp: React.FC = () => {
 					return;
 				}
 
-				console.log("[PANEL] 📨 Portal execution request:", {
-					fileName,
-					projectID,
-					title,
-				});
 				setIsCollapsed(false);
 
 				// Set ref IMMEDIATELY to block duplicate messages
@@ -389,10 +392,6 @@ const PanelApp: React.FC = () => {
 
 				// Check if script content is provided (new format)
 				if (scriptContent) {
-					console.log(
-						"[PANEL] ✅ Script content received, executing directly",
-					);
-
 					// Parse and set the script
 					let content = scriptContent as {
 						steps?: string | unknown[];
@@ -453,9 +452,6 @@ const PanelApp: React.FC = () => {
 					});
 				} else {
 					// Fallback: fetch script content from backend (for backwards compatibility)
-					console.log(
-						"[PANEL] ⚠️ No script content in payload, fetching from backend",
-					);
 
 					setActionHistory((prev) => [
 						...prev,
@@ -474,8 +470,6 @@ const PanelApp: React.FC = () => {
 							if (!sessionId) {
 								throw new Error("No session ID returned");
 							}
-
-							console.log("[PANEL] 📋 Session ID:", sessionId);
 
 							// Now fetch the script using GetAllSteps
 							const scriptContent = await SemossClient.runPixel(
@@ -499,10 +493,6 @@ const PanelApp: React.FC = () => {
 									`Backend error: ${scriptContent}`,
 								);
 							}
-
-							console.log(
-								"[PANEL] ✅ Script fetched successfully",
-							);
 
 							// Parse and set the script
 							let content = scriptContent as {
@@ -575,7 +565,6 @@ const PanelApp: React.FC = () => {
 					return;
 				}
 
-				console.log("[PANEL] 📨 Playground execution request:", script);
 				setIsCollapsed(false);
 
 				setActionHistory([
@@ -601,8 +590,6 @@ const PanelApp: React.FC = () => {
 							throw new Error("No session ID returned");
 						}
 
-						console.log("[PANEL] 📋 Session ID:", sessionId);
-
 						// Now fetch the script using GetAllSteps
 						const scriptContent = await SemossClient.runPixel(
 							`GetAllSteps(project=["${escapePixelString(script.projectId)}"], sessionId=["${escapePixelString(sessionId)}"], fileName=["${escapePixelString(script.fileName)}"]);`,
@@ -623,7 +610,6 @@ const PanelApp: React.FC = () => {
 							);
 							throw new Error(`Backend error: ${scriptContent}`);
 						}
-						console.log("[PANEL] ? Script fetched successfully");
 
 						// Parse and set the script
 						let content = scriptContent as {
@@ -699,7 +685,6 @@ const PanelApp: React.FC = () => {
 		};
 
 		chrome.runtime.onMessage.addListener(messageListener);
-		console.log("[PANEL] ✅ Message listener registered");
 
 		// Mark listener as ready
 		listenerReadyRef.current = true;
@@ -713,10 +698,6 @@ const PanelApp: React.FC = () => {
 			messageQueueRef.current = [];
 
 			for (const queuedMessage of queuedMessages) {
-				console.log(
-					"[PANEL] ▶️ Processing queued message:",
-					queuedMessage.type,
-				);
 				messageListener(
 					queuedMessage,
 					{} as chrome.runtime.MessageSender,
@@ -726,7 +707,6 @@ const PanelApp: React.FC = () => {
 		}
 
 		return () => {
-			console.log("[PANEL] 🔇 Removing message listener");
 			listenerReadyRef.current = false;
 		};
 	}, []); // No dependencies - listener stays stable throughout component lifecycle
@@ -836,7 +816,6 @@ const PanelApp: React.FC = () => {
 						tabId === executionTabIdRef.current &&
 						isRunningRef.current
 					) {
-						console.log("[PANEL] ⚠️ Execution tab closed abruptly");
 						// Send cancellation message
 						chrome.runtime
 							.sendMessage({
@@ -888,18 +867,12 @@ const PanelApp: React.FC = () => {
 					if (activeInfo.tabId === executionTabIdRef.current) {
 						// User returned to the execution tab
 						if (isPausedRef.current) {
-							console.log(
-								"[PANEL] ▶️ Execution resumed - returned to tab",
-							);
 							setIsPaused(false);
 							isPausedRef.current = false;
 						}
 					} else {
 						// User switched away from the execution tab
 						if (!isPausedRef.current) {
-							console.log(
-								"[PANEL] ⏸️ Execution paused - switched away from tab",
-							);
 							setIsPaused(true);
 							isPausedRef.current = true;
 						}
@@ -1090,12 +1063,7 @@ const PanelApp: React.FC = () => {
 									tabId: targetTabId,
 									selector: selector,
 								})
-								.catch((err) => {
-									console.log(
-										"[PANEL] ℹ️ Field clearing unavailable:",
-										err.message,
-									);
-								});
+								.catch((err) => {});
 						}
 
 						// Highlight the field on the webpage while the dialog is open
@@ -1106,12 +1074,7 @@ const PanelApp: React.FC = () => {
 									tabId: targetTabId,
 									selector: selector,
 								})
-								.catch((err) => {
-									console.log(
-										"[PANEL] ⚠️ Highlight unavailable:",
-										err.message,
-									);
-								});
+								.catch((err) => {});
 						}
 
 						// Start monitoring the field on the webpage
@@ -1125,10 +1088,6 @@ const PanelApp: React.FC = () => {
 								})
 								.catch((err) => {
 									// This is not critical - user can still input via extension dialog
-									console.log(
-										"[PANEL] ℹ️ Field monitoring unavailable:",
-										err.message,
-									);
 								});
 						}
 
@@ -1144,10 +1103,6 @@ const PanelApp: React.FC = () => {
 									})
 									.catch((err) => {
 										// Not critical
-										console.log(
-											"[PANEL] ℹ️ Could not remove highlight:",
-											err.message,
-										);
 									});
 							}
 
@@ -1161,10 +1116,6 @@ const PanelApp: React.FC = () => {
 									})
 									.catch((err) => {
 										// Not critical - monitoring will cleanup on its own
-										console.log(
-											"[PANEL] ℹ️ Could not stop field monitoring:",
-											err.message,
-										);
 									});
 							}
 
@@ -1232,9 +1183,7 @@ const PanelApp: React.FC = () => {
 								type: "ATTACH_DEBUGGER",
 								tabId: currentTabId,
 							});
-						} catch (error) {
-							console.log("Debugger attach error:", error);
-						}
+						} catch (_error) {}
 
 						// Wait for the new tab's page to fully load
 						let loadTimeout = 15; // Max 15 seconds
@@ -1688,12 +1637,7 @@ const PanelApp: React.FC = () => {
 																	displayedInputRequest.selector,
 																value: newValue,
 															})
-															.catch((err) => {
-																console.log(
-																	"[PANEL] ⚠️ Mirroring unavailable:",
-																	err.message,
-																);
-															});
+															.catch((err) => {});
 													}, 75); // 75ms debounce for responsive feel
 											}
 										}}

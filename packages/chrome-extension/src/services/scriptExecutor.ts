@@ -145,10 +145,6 @@ export class ScriptExecutor {
 
 		const actualValue = fieldResult.value || "";
 
-		console.log(
-			`[ScriptExecutor] Verifying ${fieldType}: expected="${expectedValue}", actual="${actualValue}"`,
-		);
-
 		// Check if field is empty when it shouldn't be
 		if (expectedValue && !actualValue) {
 			throw new Error(
@@ -162,8 +158,6 @@ export class ScriptExecutor {
 				`Browser autofill changed the ${fieldType}. Expected "${expectedValue}" but found "${actualValue}". Stopping execution to prevent using wrong credentials.`,
 			);
 		}
-
-		console.log(`[ScriptExecutor] ✓ ${fieldType} verified successfully`);
 	}
 
 	private static async verifyAllIntendedFields(tabId: number): Promise<void> {
@@ -189,10 +183,6 @@ export class ScriptExecutor {
 				fieldData.isPassword,
 			);
 		}
-
-		console.log(
-			`[ScriptExecutor] ✓ All fields verified and corrected if needed`,
-		);
 	}
 
 	/**
@@ -658,10 +648,6 @@ export class ScriptExecutor {
 				throw new Error("waitForNavigation requires expectedUrl");
 			}
 
-			console.log(
-				`[ScriptExecutor] ⏳ Waiting for navigation to: ${expectedUrl}`,
-			);
-
 			// Wait for URL to change to expected URL (or timeout)
 			const startTime = Date.now();
 			const timeout = 10000; // 10 seconds max wait
@@ -680,9 +666,7 @@ export class ScriptExecutor {
 					navigationSucceeded = true;
 					// BUGFIX: Clear tracked field values from previous page
 					ScriptExecutor.clearIntendedFieldValues(tabId);
-					console.log(
-						`[ScriptExecutor] ✅ Successfully navigated to: ${tab.url}`,
-					);
+
 					break;
 				}
 
