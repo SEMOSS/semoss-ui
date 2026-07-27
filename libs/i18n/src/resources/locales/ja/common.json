@@ -208,6 +208,9 @@
 			"formatted": "整形済み",
 			"raw": "生データ"
 		},
+		"image": {
+			"alt": "生成された画像 {{index}}"
+		},
 		"copy": {
 			"command": "コマンドをコピー",
 			"logs": "ログをコピー",
@@ -219,6 +222,8 @@
 		"collapseAll": "すべて折りたたむ",
 		"close": "閉じる",
 		"lines_one": "{{count}} 行",
-		"lines_other": "{{count}} 行"
+		"lines_other": "{{count}} 行",
+		"images_one": "{{count}} 件の画像",
+		"images_other": "{{count}} 件の画像"
 	}
 }
