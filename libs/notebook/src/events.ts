@@ -1,6 +1,6 @@
-export const NOTEBOOK_FILE_REFRESH_EVENT = "SEMOSS_IPYNB_FILE_REFRESH";
+export const NOTEBOOK_FILE_REFRESH_EVENT = "SEMOSS_NOTEBOOK_FILE_REFRESH";
 export const NOTEBOOK_ROW_CLEAR_SELECTION_EVENT =
-	"SEMOSS_IPYNB_ROW_CLEAR_SELECTION";
+	"SEMOSS_NOTEBOOK_ROW_CLEAR_SELECTION";
 
 export const notifyNotebookFileRefresh = (path: string): void => {
 	if (typeof window === "undefined") return;

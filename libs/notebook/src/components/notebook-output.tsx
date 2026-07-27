@@ -45,7 +45,7 @@ const getFirstMimeObject = (
 	return null;
 };
 
-interface IpynbOutputProps {
+interface NotebookOutputProps {
 	output: JupyterCellOutput;
 }
 
@@ -327,7 +327,7 @@ const TextOutputBlock: React.FC<{ text: string; className: string }> = ({
 	);
 };
 
-export const IpynbOutput: React.FC<IpynbOutputProps> = ({ output }) => {
+export const NotebookOutput: React.FC<NotebookOutputProps> = ({ output }) => {
 	if (output.output_type === "stream") {
 		return (
 			<TextOutputBlock

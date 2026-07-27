@@ -12,26 +12,26 @@ import {
 	NOTEBOOK_ROW_CLEAR_SELECTION_EVENT,
 } from "../events";
 import type {
-	IpynbRowSelection,
 	JupyterCodeCell,
 	JupyterNotebook,
-	RunIpynbCellRequest,
-	RunIpynbCellResult,
+	NotebookRowSelection,
+	RunNotebookCellRequest,
+	RunNotebookCellResult,
 } from "../types";
 import { parseNotebookJson, updateNotebookCellExecution } from "../utils";
-import { IpynbCell } from "./ipynb-cell";
+import { NotebookCell } from "./notebook-cell";
 
-interface IpynbViewerProps {
+interface NotebookViewerProps {
 	insightId: string;
 	path: string;
 	initialTab?: "edit" | "preview";
-	onRowSelectionChange?: (selection: IpynbRowSelection | null) => void;
+	onRowSelectionChange?: (selection: NotebookRowSelection | null) => void;
 	onRunCell?: (
-		request: RunIpynbCellRequest,
-	) => Promise<RunIpynbCellResult | null>;
+		request: RunNotebookCellRequest,
+	) => Promise<RunNotebookCellResult | null>;
 }
 
-export const IpynbViewer: React.FC<IpynbViewerProps> = ({
+export const NotebookViewer: React.FC<NotebookViewerProps> = ({
 	insightId,
 	path,
 	initialTab = "edit",
@@ -402,7 +402,7 @@ export const IpynbViewer: React.FC<IpynbViewerProps> = ({
 						{!isLoading &&
 							!parsed.error &&
 							parsed.notebook?.cells.map((cell, cellIndex) => (
-								<IpynbCell
+								<NotebookCell
 									key={getCellKey(cell, cellIndex)}
 									cell={cell}
 									cellIndex={cellIndex}

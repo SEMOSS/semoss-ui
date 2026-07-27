@@ -3,9 +3,9 @@ import { Button } from "@semoss/ui/next";
 import { renderMarkdownToHtml } from "../markdown";
 import type { JupyterCell } from "../types";
 import { normalizeSource, resolveMarkdownAttachments } from "../utils";
-import { IpynbOutput } from "./ipynb-output";
+import { NotebookOutput } from "./notebook-output";
 
-interface IpynbCellProps {
+interface NotebookCellProps {
 	cell: JupyterCell;
 	cellIndex: number;
 	isSelected: boolean;
@@ -14,7 +14,7 @@ interface IpynbCellProps {
 	onRun?: () => Promise<void>;
 }
 
-export const IpynbCell: React.FC<IpynbCellProps> = ({
+export const NotebookCell: React.FC<NotebookCellProps> = ({
 	cell,
 	cellIndex,
 	isSelected,
@@ -121,7 +121,7 @@ export const IpynbCell: React.FC<IpynbCellProps> = ({
 			</pre>
 			<div className="flex flex-col gap-2">
 				{cell.outputs.map((output, outputIndex) => (
-					<IpynbOutput
+					<NotebookOutput
 						key={`${output.output_type}-${outputIndex}`}
 						output={output}
 					/>

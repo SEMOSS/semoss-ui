@@ -1,14 +1,10 @@
 import { observer } from "mobx-react-lite";
 import {
-	buildExecutePixel,
-	buildNotebookExecutionSource,
-	extractNotebookInlineDisplayOutputsFromLogs,
-	getNextNotebookExecutionCount,
-	IpynbViewer,
-	type JupyterCellOutput,
-	type RunIpynbCellRequest,
+	mapNotebookConsoleResultToOutputs,
+	NotebookViewer,
+	prepareNotebookCellExecution,
+	type RunNotebookCellRequest,
 	runtimeOutputToJupyterOutputs,
-	unwrapPixelOutput,
 } from "@semoss/notebook";
 import { FileEditor, FlexLayout } from "@semoss/shared";
 import type { RoomStore } from "@/stores";
@@ -28,39 +24,25 @@ export const RoomFileEditor: React.FC<RoomFileEditorProps> = observer(
 			path: string;
 			initialTab?: "edit" | "preview";
 		} = node.getConfig();
-		const isIpynb = config.path.toLowerCase().endsWith(".ipynb");
+		const isNotebookFile = config.path.toLowerCase().endsWith(".ipynb");
 
-		if (isIpynb) {
+		if (isNotebookFile) {
 			return (
-				<IpynbViewer
+				<NotebookViewer
 					insightId={room.insightId}
 					path={config.path}
 					initialTab={config.initialTab}
 					onRowSelectionChange={(selection) => {
 						room.setSelectedNotebookRow(selection);
 					}}
-					onRunCell={async (request: RunIpynbCellRequest) => {
+					onRunCell={async (request: RunNotebookCellRequest) => {
 						// Notebook cells are executed through Pixel, then mapped back
-						// into Jupyter-style outputs for .ipynb compatibility.
-						const source = Array.isArray(request.cell.source)
-							? request.cell.source.join("")
-							: request.cell.source;
-						const language = String(
-							request.cell.metadata?.language ??
-								request.notebook.metadata?.language_info
-									?.name ??
-								"python",
-						).toLowerCase();
-						const sourceForExecution = buildNotebookExecutionSource(
-							language,
-							source,
-						);
-						// Unsupported languages still return a notebook error output so
-						// execution state remains visible inside the cell.
-						const executePixel = buildExecutePixel(
-							language,
-							sourceForExecution,
-						);
+						// into Jupyter-style outputs for .ipynb compatibility. All of
+						// the notebook-specific preparation/mapping logic lives in
+						// @semoss/notebook; this callback is just the thin bridge to
+						// the Playground-specific Pixel console runner.
+						const { language, executePixel } =
+							prepareNotebookCellExecution(request);
 
 						if (!executePixel) {
 							return {
@@ -72,88 +54,15 @@ export const RoomFileEditor: React.FC<RoomFileEditorProps> = observer(
 						}
 
 						try {
-							const { errors, results, logs } =
+							const consoleResult =
 								await room.runRoomPixelWithConsole(
 									executePixel,
 								);
 
-							const outputList: JupyterCellOutput[] = [];
-							const { cleanedLogs, displayOutputs } =
-								extractNotebookInlineDisplayOutputsFromLogs(
-									logs,
-								);
-
-							if (cleanedLogs.length > 0) {
-								outputList.push({
-									output_type: "stream",
-									name: "stdout",
-									text: cleanedLogs.join("\n"),
-								});
-							}
-
-							if (displayOutputs.length > 0) {
-								outputList.push(...displayOutputs);
-							}
-
-							if (errors.length > 0) {
-								return {
-									outputs: [
-										...outputList,
-										...runtimeOutputToJupyterOutputs(
-											errors.join("\n"),
-											{ isError: true },
-										),
-									],
-									executionCount:
-										getNextNotebookExecutionCount(
-											request.notebook,
-										),
-								};
-							}
-
-							for (const result of results) {
-								// Pixel can emit multiple operation frames; keep each frame
-								// as a separate notebook output in execution order.
-								const operationTypes =
-									result.operationType ?? [];
-								const isError =
-									operationTypes.includes("ERROR") ||
-									operationTypes.includes("INVALID_SYNTAX");
-								const value = unwrapPixelOutput(result ?? {});
-
-								if (value === undefined || value === null) {
-									continue;
-								}
-
-								if (
-									typeof value === "string" &&
-									value.trim().length === 0
-								) {
-									continue;
-								}
-
-								outputList.push(
-									...runtimeOutputToJupyterOutputs(value, {
-										isError,
-										operationType: operationTypes,
-									}),
-								);
-							}
-
-							if (outputList.length === 0) {
-								outputList.push(
-									...runtimeOutputToJupyterOutputs(
-										"Success (no output)",
-									),
-								);
-							}
-
-							return {
-								outputs: outputList,
-								executionCount: getNextNotebookExecutionCount(
-									request.notebook,
-								),
-							};
+							return mapNotebookConsoleResultToOutputs(
+								consoleResult,
+								request.notebook,
+							);
 						} catch (error) {
 							return {
 								outputs: runtimeOutputToJupyterOutputs(

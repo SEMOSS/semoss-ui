@@ -104,7 +104,7 @@ export interface NotebookMetadataData {
 	languageVersion?: string;
 }
 
-export interface IpynbRowSelection {
+export interface NotebookRowSelection {
 	insightId: string;
 	path: string;
 	queryId: string;
@@ -114,14 +114,14 @@ export interface IpynbRowSelection {
 	code?: string;
 }
 
-export interface RunIpynbCellRequest {
+export interface RunNotebookCellRequest {
 	notebook: JupyterNotebook;
 	path: string;
 	cellIndex: number;
 	cell: JupyterCodeCell;
 }
 
-export interface RunIpynbCellResult {
+export interface RunNotebookCellResult {
 	outputs: JupyterCellOutput[];
 	executionCount?: number | null;
 }
