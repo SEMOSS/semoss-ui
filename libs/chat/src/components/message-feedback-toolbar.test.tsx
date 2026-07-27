@@ -1,10 +1,11 @@
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@semoss/shared", () => ({ copyToClipboard: vi.fn() }));
+
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
-import { copyToClipboard } from "../lib/clipboard";
+import { copyToClipboard } from "@semoss/shared";
 import { MessageFeedbackToolbar } from "./message-feedback-toolbar";
-
-vi.mock("../lib/clipboard", () => ({ copyToClipboard: vi.fn() }));
 
 describe("MessageFeedbackToolbar", () => {
 	it("calls onRate(true)/onRate(false) for thumbs up/down", async () => {

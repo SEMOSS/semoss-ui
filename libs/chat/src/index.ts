@@ -4,6 +4,12 @@
  * subpath, so a consumer can use this entry alone with its own UI.
  */
 
+export type { DateBucket } from "@semoss/shared";
+export {
+	DATE_BUCKET_ORDER,
+	getDateBucket,
+	normalizeTimestamp,
+} from "@semoss/shared";
 export {
 	type ChatStoreRegistration,
 	getActiveChatRoomId,
@@ -27,12 +33,6 @@ export {
 } from "./contexts";
 export type { NormalizedRoomHistory } from "./history";
 export { normalizeRoomHistory } from "./history";
-export type { DateBucket } from "./lib/date";
-export {
-	DATE_BUCKET_ORDER,
-	getDateBucket,
-	normalizeTimestamp,
-} from "./lib/date";
 export {
 	type ChatRoomsStoreState,
 	type ChatStoreState,

@@ -6,6 +6,7 @@ import {
 	ThumbsUpIcon,
 } from "lucide-react";
 import { useState } from "react";
+import { copyToClipboard } from "@semoss/shared";
 import {
 	Button,
 	Dialog,
@@ -18,8 +19,6 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { copyToClipboard } from "../lib/clipboard";
-
 export interface MessageFeedbackToolbarProps {
 	/** Current rating, if any — undefined means not yet rated. */
 	rating?: boolean;

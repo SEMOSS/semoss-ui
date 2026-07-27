@@ -1,91 +1,13 @@
-/**
- * Ported verbatim from @semoss/shared (libs/shared/src/types.ts), not
- * re-exported — @semoss/chat no longer depends on @semoss/shared at all
- * (see docs/chat-components/PLAN.md), so the same real shapes playground's
- * own room.store.ts/MCPSelector use are copied here directly. Keep in sync
- * by hand if the backend's MyEngines/MyProjects/GetProjectDependencies
- * response shapes ever change.
- */
-export interface Engine {
-	engine_id: string;
-	engine_name: string;
-	engine_display_name?: string;
-	engine_type:
-		| "MODEL"
-		| "STORAGE"
-		| "DATABASE"
-		| "FUNCTION"
-		| "VECTOR"
-		| "GUARDRAIL";
-	engine_subtype?: string;
-	engine_favorite?: number;
-	engine_global?: boolean;
-	engine_discoverable?: boolean;
-	engine_user_permission?: number;
-	engine_group_permission?: number;
-	engine_date_created?: string;
-	engine_date_last_edited?: string;
-	engine_cost?: string;
-	low_engine_name?: string;
-	description?: string;
-	tag?: string;
-}
+import type {
+	App,
+	Engine,
+	MCP,
+	MCPConfig,
+	ProjectDependency,
+} from "@semoss/shared";
 
-export interface App {
-	project_id: string;
-	project_name: string;
-	project_display_name?: string;
-	description?: string;
-	user_permission?: number;
-}
-
-export interface MCP {
-	/** Type of the mcp */
-	type:
-		| "PROJECT"
-		| "STORAGE"
-		| "DATABASE"
-		| "FUNCTION"
-		| "MODEL"
-		| "VECTOR"
-		| "GUARDRAIL";
-	/** Id of the mcp */
-	id: string;
-	/** Name of the mcp */
-	name: string;
-	/** Engine subtype (e.g. POSTGRES, OPEN_AI) */
-	subtype?: string;
-	/** Description of the mcp */
-	description?: string;
-	/** Tags of the mcp */
-	tags: string[];
-	permission: "READ_ONLY" | "EDIT" | "OWNER";
-}
-
-export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {
-	/** Flag to indicate if this MCP comes from a workspace */
-	fromWorkspace?: boolean;
-};
-
-export interface ProjectDependency {
-	engine_type:
-		| "PROJECT"
-		| "STORAGE"
-		| "DATABASE"
-		| "FUNCTION"
-		| "MODEL"
-		| "VECTOR";
-	engine_id: string;
-	engine_name: string;
-	engine_subtype?: string;
-	description?: string;
-	engine_discoverable?: boolean;
-	permission_name?: "READ_ONLY" | "EDIT" | "OWNER";
-	engine_global?: boolean;
-	access_permission?: number;
-	tags?: string;
-	can_view_dependencies?: boolean;
-}
+// Re-export shared types for backward compatibility
+export type { Engine, App, MCP, MCPConfig, ProjectDependency };
 
 export type ChatRole = "user" | "assistant";
 

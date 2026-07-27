@@ -6,7 +6,7 @@ import {
 	uploadInsight,
 	type useInsight,
 } from "@semoss/sdk/react";
-import { normalizeTimestamp } from "../lib/date";
+import { normalizeTimestamp } from "@semoss/shared";
 import type {
 	MCPConfig,
 	RawPixelMessage,

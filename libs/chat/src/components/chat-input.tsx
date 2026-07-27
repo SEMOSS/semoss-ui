@@ -20,6 +20,7 @@ import {
 	useState,
 } from "react";
 import { createPortal } from "react-dom";
+import { cn } from "@semoss/ui";
 import {
 	Button,
 	Command,
@@ -39,7 +40,6 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { FileDragProvider, useFileDrag } from "../contexts/file-drag-context";
-import { cn } from "../lib/utils";
 import type { Engine, MCPConfig } from "../types";
 import { FileDragOverlay } from "./file-drag-overlay";
 import {

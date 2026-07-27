@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { getFileIconComponent } from "@semoss/shared";
+import { cn } from "@semoss/ui";
 import {
 	Button,
 	DropdownMenu,
@@ -24,7 +25,6 @@ import {
 } from "@semoss/ui/next";
 import type { ChatOptions } from "../chat-options";
 import { ChatProvider, useChatContext } from "../contexts/chat-provider";
-import { cn } from "../lib/utils";
 import type { ChatMessage } from "../types";
 import { ChatInput } from "./chat-input";
 import { FileEditorSidebar } from "./file-editor-sidebar";

@@ -1,6 +1,6 @@
 import { CheckIcon, CopyIcon } from "lucide-react";
 import { useState } from "react";
-import { copyToClipboard } from "../lib/clipboard";
+import { copyToClipboard } from "@semoss/shared";
 
 export interface CopyButtonProps {
 	value: string;

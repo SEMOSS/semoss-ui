@@ -5,6 +5,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { cn } from "@semoss/ui";
 import {
 	ResizableHandle,
 	ResizablePanel,
@@ -12,7 +13,6 @@ import {
 	ScrollArea,
 } from "@semoss/ui/next";
 import { useChatContext } from "../contexts/chat-provider";
-import { cn } from "../lib/utils";
 import type { ChatMessage } from "../types";
 import { MessageBubble, type ToolResponseDetails } from "./message-bubble";
 import { ToolResponseSidebar } from "./tool-response-sidebar";

@@ -351,6 +351,9 @@ importers:
       '@semoss/ui':
         specifier: workspace:*
         version: link:../ui
+      dayjs:
+        specifier: 1.11.8
+        version: 1.11.8
       echarts:
         specifier: ^5.5.1
         version: 5.6.0

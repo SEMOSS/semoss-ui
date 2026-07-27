@@ -7,6 +7,7 @@ import {
 	XCircleIcon,
 } from "lucide-react";
 import { useState } from "react";
+import { cn } from "@semoss/ui";
 import {
 	Button,
 	DropdownMenu,
@@ -16,7 +17,6 @@ import {
 	DropdownMenuTrigger,
 	Spinner,
 } from "@semoss/ui/next";
-import { cn } from "../lib/utils";
 
 export type ToolCallStatus = "running" | "success" | "error";
 

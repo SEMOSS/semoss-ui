@@ -1,13 +1,13 @@
 import { PanelLeftIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
+import { cn } from "@semoss/ui";
 import { Button } from "@semoss/ui/next";
 import type { ChatDefaultRoomSettings } from "../chat-options";
 import {
 	ChatRoomsProvider,
 	useChatRoomsContext,
 } from "../contexts/chat-rooms-provider";
-import { cn } from "../lib/utils";
 import type { ChatMessage } from "../types";
 import { ChatPanel } from "./chat-panel";
 import { ChatRoomsPage } from "./chat-rooms-page";

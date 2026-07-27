@@ -1,7 +1,7 @@
 import { MessageSquareTextIcon } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
+import { cn } from "@semoss/ui";
 import { sendToActiveChat } from "../chat-imperative";
-import { cn } from "../lib/utils";
 
 interface SelectionAnchor {
 	text: string;

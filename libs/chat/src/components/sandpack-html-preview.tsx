@@ -4,7 +4,7 @@ import {
 	SandpackProvider,
 } from "@codesandbox/sandpack-react";
 import { type CSSProperties, useMemo } from "react";
-import { cn } from "../lib/utils";
+import { cn } from "@semoss/ui";
 
 const EMPTY_HTML_DOCUMENT =
 	"<!DOCTYPE html><html><head></head><body></body></html>";

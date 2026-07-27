@@ -13,6 +13,7 @@ import {
 	FileVideoIcon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { cn } from "@semoss/ui";
 import {
 	Dialog,
 	DialogContent,
@@ -23,7 +24,6 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { cn } from "../lib/utils";
 import type {
 	ChatMessage,
 	ChatMessagePart,

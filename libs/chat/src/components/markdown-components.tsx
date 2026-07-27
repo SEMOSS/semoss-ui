@@ -1,12 +1,12 @@
 import { DownloadIcon } from "lucide-react";
 import { type ComponentProps, useRef, useState } from "react";
+import { cn } from "@semoss/ui";
 import {
 	Code,
 	CodeContainer,
 	type Markdown,
 	ScrollArea,
 } from "@semoss/ui/next";
-import { cn } from "../lib/utils";
 import { BlockHeader } from "./block-header";
 import { CopyButton } from "./copy-button";
 import { FullViewDialog } from "./full-view-dialog";

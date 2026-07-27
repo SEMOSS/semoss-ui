@@ -1,4 +1,5 @@
 import { FilePlus2Icon, PaperclipIcon, XIcon } from "lucide-react";
+import { cn } from "@semoss/ui";
 import {
 	Button,
 	Dialog,
@@ -8,7 +9,6 @@ import {
 	DialogTitle,
 } from "@semoss/ui/next";
 import { FILE_DRAG_ATTR, useFileDrag } from "../contexts/file-drag-context";
-import { cn } from "../lib/utils";
 
 export function FileDragOverlay() {
 	const {
