@@ -202,6 +202,9 @@
 			"formatted": "منسّق",
 			"raw": "خام"
 		},
+		"image": {
+			"alt": "صورة معروضة {{index}}"
+		},
 		"copy": {
 			"command": "نسخ الأمر",
 			"logs": "نسخ السجلات",
@@ -213,7 +216,9 @@
 		"collapseAll": "طي الكل",
 		"close": "إغلاق",
 		"lines_one": "{{count}} سطر",
-		"lines_other": "{{count}} أسطر"
+		"lines_other": "{{count}} أسطر",
+		"images_one": "{{count}} صورة",
+		"images_other": "{{count}} صور"
 	},
 	"fileDrag": {
 		"title": "أفلت الملفات هنا لإرفاقها بالرسالة",
