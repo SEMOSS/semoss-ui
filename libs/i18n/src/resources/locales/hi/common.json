@@ -208,6 +208,9 @@
 			"formatted": "स्वरूपित",
 			"raw": "कच्चा"
 		},
+		"image": {
+			"alt": "प्रस्तुत छवि {{index}}"
+		},
 		"copy": {
 			"command": "कमांड कॉपी करें",
 			"logs": "लॉग्स कॉपी करें",
@@ -219,6 +222,8 @@
 		"collapseAll": "सब बंद करें",
 		"close": "बंद करें",
 		"lines_one": "{{count}} पंक्ति",
-		"lines_other": "{{count}} पंक्तियाँ"
+		"lines_other": "{{count}} पंक्तियाँ",
+		"images_one": "{{count}} छवि",
+		"images_other": "{{count}} छवियाँ"
 	}
 }
