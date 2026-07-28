@@ -1,4 +1,4 @@
-import { useId, useMemo } from "react";
+import { useId } from "react";
 import { type Control, Controller } from "react-hook-form";
 import { usePixel } from "@semoss/sdk/react";
 import {
@@ -19,11 +19,10 @@ export interface AgentModelFieldProps {
 export const AgentModelField = ({ control }: AgentModelFieldProps) => {
 	const fieldId = useId();
 
-	const models = usePixel<ModelEngine[]>(`MyEngines(engineTypes=['MODEL']);`);
-	const modelOptions = useMemo(
-		() => (models.data ?? []).filter((m) => m.tag !== "embeddings"),
-		[models.data],
+	const models = usePixel<ModelEngine[]>(
+		`MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
 	);
+	const modelOptions = models.data ?? [];
 
 	return (
 		<Controller
