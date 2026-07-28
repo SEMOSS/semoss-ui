@@ -177,7 +177,6 @@ export const CodePreviewBlock = ({
 			config: {
 				name: fileName,
 				path,
-				initialTab: "preview",
 			},
 			enableClose: true,
 		});

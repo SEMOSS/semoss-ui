@@ -15,7 +15,6 @@ export const RoomFileEditor: React.FC<RoomFileEditorProps> = observer(
 		const config: {
 			name: string;
 			path: string;
-			initialTab?: "edit" | "preview";
 		} = node.getConfig();
 
 		return (
