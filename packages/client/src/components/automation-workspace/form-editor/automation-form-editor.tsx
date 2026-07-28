@@ -9,6 +9,7 @@ import {
 	Zap,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getPixelAsyncResult, runPixelAsync } from "@semoss/sdk";
 import { Button, toast } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import { NODE_TYPE_META } from "../automation.constants";
@@ -413,35 +414,67 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		setLatestRunError(null);
 		setLatestRunResults([]);
 		setExpandedResultNodes(new Set());
+		setActiveTab("results");
 
 		try {
-			const result = await monolithStore.runQuery(
-				`TriggerAutomation(project=["${appId}"], manual=["true"]);`,
+			// Launch on a virtual thread via runPixelAsync — returns immediately
+			// with a jobId while TriggerAutomation runs synchronously on the server.
+			const { jobId } = await runPixelAsync(
+				`TriggerAutomation(project=["${appId}"]);`,
 			);
-			const runData = result.pixelReturn?.[0]
-				?.output as AutomationRunData | null;
 
-			if (!runData) {
-				toast.error("Automation run returned no data");
-				setRunning(false);
-				return;
+			// Poll AUTOMATION_ACTIVE_RUN (populated at claimActiveRun, before
+			// AUTOMATION_RUNS is written) to discover the runId as early as possible.
+			let runId: string | null = null;
+			for (let i = 0; i < 10; i++) {
+				await new Promise<void>((resolve) => setTimeout(resolve, 500));
+				try {
+					const activeRes = await monolithStore.runQuery(
+						`GetActiveAutomationRun(project=["${appId}"]);`,
+					);
+					const activeData = activeRes.pixelReturn?.[0]?.output as {
+						RUN_ID?: string;
+					} | null;
+					if (activeData?.RUN_ID) {
+						runId = activeData.RUN_ID;
+						break;
+					}
+				} catch {
+					// Transient — keep polling
+				}
 			}
 
-			applyRunData(runData);
-			setActiveTab("results");
-
-			if (runData.STATUS === "RUNNING" && runData.RUN_ID) {
+			if (runId) {
+				// Have a runId — stream live per-node progress via GetAutomationRun.
+				// pollRun handles the final toast, setRunning(false), and fetchRuns().
+				setLatestRunId(runId);
 				const token = { cancelled: false };
 				pollTokenRef.current = token;
-				pollRun(runData.RUN_ID, token);
-				return;
+				pollRun(runId, token);
+			} else {
+				// Run finished before we could observe the active slot — fetch the
+				// completed result directly from the async job.
+				const asyncResult = await getPixelAsyncResult(jobId);
+				if (asyncResult.errors.length > 0) {
+					toast.error(asyncResult.errors[0] ?? "Automation failed");
+					setRunning(false);
+					return;
+				}
+				const runData = asyncResult.results[0]
+					?.output as AutomationRunData | null;
+				if (runData) {
+					applyRunData(runData);
+					if (runData.STATUS === "FAILED") {
+						toast.error(
+							runData.ERROR_MESSAGE ?? "Automation failed",
+						);
+					} else {
+						toast.success("Automation completed");
+					}
+				}
+				fetchRuns();
+				setRunning(false);
 			}
-
-			if (runData.STATUS === "FAILED") {
-				toast.error(runData.ERROR_MESSAGE ?? "Automation failed");
-			}
-			fetchRuns();
-			setRunning(false);
 		} catch (error) {
 			toast.error(
 				`Automation failed: ${(error as Error).message ?? "Unknown error"}`,
