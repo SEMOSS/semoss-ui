@@ -272,6 +272,9 @@ export interface McpToolContext {
 	roomId: string;
 	/** SMSS_PROJECT_ID from the tool’s _meta — the playwright app project ID for the sidebar URL. */
 	projectId: string;
+	/** MCP execution identity and type supplied by the backend. */
+	engineId: string;
+	engineType: string;
 	parameters: Record<string, unknown>;
 	toolResponse?: unknown;
 	executedParameters?: Record<string, unknown>;

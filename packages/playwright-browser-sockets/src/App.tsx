@@ -38,6 +38,8 @@ import {
 	selectedContextsForPlayground,
 } from "./domain/selected-text";
 import {
+	getRecordingNameHintFromTool,
+	getToolStringMapParameter,
 	getToolStringParameter,
 	isPlayRecordingTool,
 } from "./domain/tool-context";
@@ -46,6 +48,7 @@ import { usePlaybackController } from "./hooks/usePlaybackController";
 import { useRemoteBrowserSession } from "./hooks/useRemoteBrowserSession";
 import {
 	bindSemossInsightToRoom,
+	findPlaywrightRoomRecordings,
 	generatePlaywrightRecordingMetadata,
 	getSemossInsightId,
 	initSemoss,
@@ -81,6 +84,10 @@ type ResolvePlaywrightRecordingResponse = {
 	candidates: ResolvedPlaywrightRecording[];
 	searchedProjectRecordings: number;
 	searchedRoomRecordings: number;
+};
+
+type RoomRecordingListResponse = {
+	recordings?: Array<{ fileName?: string }>;
 };
 
 const sortJsonValue = (value: unknown): unknown => {
@@ -184,6 +191,7 @@ export default function App() {
 	const autoStartedRef = useRef(false);
 	const autoRecordingStartedRef = useRef(false);
 	const autoPlaybackProjectSelectedRef = useRef(false);
+	const autoPlaybackRoomLoadStartedRef = useRef(false);
 	const autoPlaybackRecordingSelectedRef = useRef(false);
 	const autoPlaybackLoadStartedRef = useRef(false);
 	const autoPlaybackRunStartedRef = useRef(false);
@@ -217,16 +225,31 @@ export default function App() {
 	);
 	const mcpRecordingNameHint =
 		getToolStringParameter(toolContext, "recording_name_hint") ||
-		getToolStringParameter(toolContext, "recordingNameHint");
+		getToolStringParameter(toolContext, "recordingNameHint") ||
+		getRecordingNameHintFromTool(toolContext);
 	const mcpRecordingFile =
 		getToolStringParameter(toolContext, "recording_file") ||
 		getToolStringParameter(toolContext, "recordingFile") ||
 		getToolStringParameter(toolContext, "file_name") ||
 		getToolStringParameter(toolContext, "fileName");
+	const mcpParameterValues = useMemo(
+		() => ({
+			...getToolStringMapParameter(toolContext, "param_values"),
+			...getToolStringMapParameter(toolContext, "paramValues"),
+		}),
+		[toolContext],
+	);
+	const isRoomRecordingSource =
+		toolContext?.engineType?.toUpperCase() === "INTERNAL" ||
+		(!!toolContext?.roomId &&
+			!!toolContext?.engineId &&
+			toolContext.engineId === toolContext.roomId);
+	const preferredPlaybackSource = isRoomRecordingSource ? "room" : "project";
 	const mcpPlaybackProjectId =
 		getToolStringParameter(toolContext, "project_id") ||
 		getToolStringParameter(toolContext, "projectId") ||
-		(!toolContext?.roomId ? toolContext?.projectId || "" : "");
+		toolContext?.projectId ||
+		"";
 	const effectiveInsightId = getSemossInsightId() || insightId;
 	const updateRecordingsMcp = useCallback(
 		async (
@@ -300,6 +323,33 @@ export default function App() {
 		onTabActivated: handleTabActivated,
 		onCursorChanged: setBrowserCursor,
 	});
+	const listRoomRecordingFiles = useCallback(
+		async (_targetInsightId: string, roomId: string) => {
+			await bindSemossInsightToRoom(roomId);
+			const result =
+				await findPlaywrightRoomRecordings<RoomRecordingListResponse>();
+			return Array.from(
+				new Set(
+					(result.recordings ?? [])
+						.map((recording) => recording.fileName?.trim() ?? "")
+						.filter(Boolean),
+				),
+			).sort((left, right) => left.localeCompare(right));
+		},
+		[],
+	);
+	const loadRoomRecording = useCallback(
+		async (targetInsightId: string, fileName: string) => {
+			if (toolContext?.roomId) {
+				await bindSemossInsightToRoom(toolContext.roomId);
+			}
+			return getRoomRecordingEnvelope(
+				targetInsightId,
+				`/playwright/recordings/${fileName}`,
+			);
+		},
+		[getRoomRecordingEnvelope, toolContext?.roomId],
+	);
 	const playback = usePlaybackController({
 		insightId: effectiveInsightId,
 		session,
@@ -307,15 +357,30 @@ export default function App() {
 		listRecordingProjects,
 		listRecordingFiles,
 		loadRecording,
+		roomId: toolContext?.roomId ?? "",
+		listRoomRecordingFiles,
+		loadRoomRecording,
 		replaySingleStep,
 		sendReplayEvent,
 		sendTabControlEvent,
 		onError: setSnackError,
 		onMessage: setSnackMessage,
 	});
+	const appRecordingProjects = useMemo(
+		() => playback.projects.filter((project) => project.source !== "room"),
+		[playback.projects],
+	);
 
 	const toolExecutionKey = toolContext
-		? JSON.stringify(sortJsonValue(toolContext.parameters))
+		? JSON.stringify(
+				sortJsonValue({
+					id: toolContext.id,
+					name: toolContext.originalName || toolContext.name,
+					roomId: toolContext.roomId,
+					parameters: toolContext.parameters,
+					executedParameters: toolContext.executedParameters,
+				}),
+			)
 		: "";
 
 	useEffect(() => {
@@ -329,6 +394,7 @@ export default function App() {
 		autoStartedRef.current = false;
 		autoRecordingStartedRef.current = false;
 		autoPlaybackProjectSelectedRef.current = false;
+		autoPlaybackRoomLoadStartedRef.current = false;
 		autoPlaybackRecordingSelectedRef.current = false;
 		autoPlaybackLoadStartedRef.current = false;
 		autoPlaybackRunStartedRef.current = false;
@@ -474,8 +540,8 @@ export default function App() {
 	]);
 
 	useEffect(() => {
-		setSaveProject((current) => current ?? playback.projects[0] ?? null);
-	}, [playback.projects]);
+		setSaveProject((current) => current ?? appRecordingProjects[0] ?? null);
+	}, [appRecordingProjects]);
 
 	useEffect(() => {
 		if (
@@ -489,9 +555,13 @@ export default function App() {
 		const selectedProject =
 			(mcpPlaybackProjectId &&
 				playback.projects.find(
-					(project) => project.value === mcpPlaybackProjectId,
+					(project) =>
+						project.value === mcpPlaybackProjectId &&
+						project.source === preferredPlaybackSource,
 				)) ||
-			playback.projects[0] ||
+			playback.projects.find(
+				(project) => project.source === preferredPlaybackSource,
+			) ||
 			null;
 
 		if (selectedProject) {
@@ -501,21 +571,137 @@ export default function App() {
 	}, [
 		isMcpPlaybackMode,
 		mcpPlaybackProjectId,
+		preferredPlaybackSource,
 		playback.projects,
 		playback.selectProject,
 	]);
 
 	useEffect(() => {
+		const exactFileName = mcpRecordingFile
+			.split(/[\\/]/)
+			.filter(Boolean)
+			.pop();
 		if (
 			!isMcpPlaybackMode ||
-			autoPlaybackRecordingSelectedRef.current ||
+			!isRoomRecordingSource ||
+			!toolContext?.roomId ||
+			!exactFileName ||
 			!effectiveInsightId ||
-			playback.projects.length === 0
+			autoPlaybackRoomLoadStartedRef.current
 		) {
 			return;
 		}
 
-		autoPlaybackRecordingSelectedRef.current = true;
+		autoPlaybackRoomLoadStartedRef.current = true;
+		const executionKey = toolExecutionKey;
+		setSnackMessage(`Loading Playground recording ${exactFileName}…`);
+
+		(async () => {
+			await bindSemossInsightToRoom(toolContext.roomId);
+			const roomInsightId = getSemossInsightId() || effectiveInsightId;
+			const roomPath = `/playwright/recordings/${exactFileName}`;
+			const envelope = await getRoomRecordingEnvelope(
+				roomInsightId,
+				roomPath,
+			);
+
+			// Ignore an old request if Playground replaced the active tool while
+			// this room asset was being read.
+			if (activeToolExecutionRef.current !== executionKey) {
+				return;
+			}
+			if (!envelope) {
+				throw new Error(
+					`Playground recording ${roomPath} could not be loaded`,
+				);
+			}
+
+			autoPlaybackRecordingSelectedRef.current = true;
+			playback.configureResolvedRecording({
+				source: "room",
+				project: {
+					label: "Playground recordings",
+					value: "__playground_room__",
+					source: "room",
+				},
+				fileName: exactFileName,
+				startUrl:
+					mcpStartUrl ||
+					getRecordingStartUrl(envelope) ||
+					"https://example.com",
+				recording: envelope,
+				parameterValues: mcpParameterValues,
+			});
+			setSnackMessage(`Loaded Playground recording ${exactFileName}`);
+		})().catch((error) => {
+			if (activeToolExecutionRef.current !== executionKey) {
+				return;
+			}
+			const message =
+				error instanceof Error
+					? error.message
+					: `Failed to load Playground recording ${exactFileName}`;
+			setSnackError(message);
+			if (!autoPlaybackErrorSentRef.current && toolContext) {
+				autoPlaybackErrorSentRef.current = true;
+				try {
+					sendMcpResponseToPlayground(
+						{
+							played: false,
+							error: message,
+							recordingFile: exactFileName,
+						},
+						"error",
+						toolContext.parameters,
+					);
+				} catch {
+					// Nothing else to do if the iframe cannot notify Playground.
+				}
+			}
+		});
+	}, [
+		effectiveInsightId,
+		getRoomRecordingEnvelope,
+		isMcpPlaybackMode,
+		isRoomRecordingSource,
+		mcpParameterValues,
+		mcpRecordingFile,
+		mcpStartUrl,
+		playback.configureResolvedRecording,
+		toolContext,
+		toolExecutionKey,
+	]);
+
+	useEffect(() => {
+		const expectedProject =
+			(mcpPlaybackProjectId &&
+				playback.projects.find(
+					(project) =>
+						project.value === mcpPlaybackProjectId &&
+						project.source === preferredPlaybackSource,
+				)) ||
+			playback.projects.find(
+				(project) => project.source === preferredPlaybackSource,
+			) ||
+			null;
+		const exactRequestedFile = mcpRecordingFile
+			.split(/[\\/]/)
+			.filter(Boolean)
+			.pop();
+		if (
+			!isMcpPlaybackMode ||
+			(isRoomRecordingSource && !!exactRequestedFile) ||
+			autoPlaybackRecordingSelectedRef.current ||
+			!effectiveInsightId ||
+			playback.projects.length === 0 ||
+			(!!exactRequestedFile &&
+				(!expectedProject ||
+					playback.project?.value !== expectedProject.value ||
+					playback.project?.source !== expectedProject.source ||
+					!playback.filesReady))
+		) {
+			return;
+		}
 
 		let cancelled = false;
 
@@ -523,22 +709,73 @@ export default function App() {
 			if (toolContext?.roomId) {
 				await bindSemossInsightToRoom(toolContext.roomId);
 			}
+			if (cancelled || autoPlaybackRecordingSelectedRef.current) {
+				return;
+			}
+			// Binding this insight to a Playground room can change the effective
+			// insight ID and restart this effect. Only consume the one-time
+			// resolution attempt after that binding has completed, otherwise the
+			// restarted effect incorrectly believes the recording was handled.
+			autoPlaybackRecordingSelectedRef.current = true;
 			const roomInsightId = getSemossInsightId() || effectiveInsightId;
 
 			const directProject =
 				(mcpPlaybackProjectId &&
 					playback.projects.find(
-						(project) => project.value === mcpPlaybackProjectId,
+						(project) =>
+							project.value === mcpPlaybackProjectId &&
+							project.source === preferredPlaybackSource,
 					)) ||
-				playback.project ||
-				playback.projects[0] ||
+				playback.projects.find(
+					(project) => project.source === preferredPlaybackSource,
+				) ||
 				null;
 			const exactFileName = mcpRecordingFile
 				.split(/[\\/]/)
 				.filter(Boolean)
 				.pop();
 
-			if (!toolContext?.roomId) {
+			if (
+				!isRoomRecordingSource &&
+				exactFileName &&
+				directProject &&
+				playback.files.includes(exactFileName)
+			) {
+				playback.configureResolvedRecording({
+					source: "project",
+					project: directProject,
+					fileName: exactFileName,
+					startUrl: mcpStartUrl || "https://example.com",
+					parameterValues: mcpParameterValues,
+				});
+				setSnackMessage(`Loading app recording ${exactFileName}`);
+				return;
+			}
+
+			if (
+				isRoomRecordingSource &&
+				exactFileName &&
+				directProject &&
+				playback.files.includes(exactFileName)
+			) {
+				playback.configureResolvedRecording({
+					source: "room",
+					project: directProject,
+					fileName: exactFileName,
+					startUrl: mcpStartUrl || "https://example.com",
+					parameterValues: mcpParameterValues,
+				});
+				setSnackMessage(
+					`Loading Playground recording ${exactFileName}`,
+				);
+				return;
+			}
+
+			// Outside Playground, a project tool can load directly from its app.
+			// Inside a Playground room, always check both room and app storage:
+			// an app-published tool may reference a recording that currently
+			// exists only in the room.
+			if (!isRoomRecordingSource && !toolContext?.roomId) {
 				if (!exactFileName || !directProject) {
 					throw new Error(
 						"Project and recording_file are required for app playback",
@@ -549,12 +786,13 @@ export default function App() {
 					project: directProject,
 					fileName: exactFileName,
 					startUrl: mcpStartUrl || "https://example.com",
+					parameterValues: mcpParameterValues,
 				});
 				setSnackMessage(`Loading app recording ${exactFileName}`);
 				return;
 			}
 
-			if (exactFileName && directProject) {
+			if (isRoomRecordingSource && exactFileName && directProject) {
 				const directRoomPath = `/playwright/recordings/${exactFileName}`;
 				for (let attempt = 0; attempt < 2; attempt += 1) {
 					const envelope = await getRoomRecordingEnvelope(
@@ -572,6 +810,7 @@ export default function App() {
 								getRecordingStartUrl(envelope) ||
 								"https://example.com",
 							recording: envelope,
+							parameterValues: mcpParameterValues,
 						});
 						setSnackMessage(
 							`Matched room recording ${directRoomPath} (exact filename)`,
@@ -632,13 +871,16 @@ export default function App() {
 
 			const selectedProject =
 				playback.projects.find(
-					(project) => project.value === selected.projectId,
+					(project) =>
+						project.value === selected.projectId &&
+						project.source === selected.source,
 				) ||
-				(selected.projectId
+				playback.projects.find(
+					(project) => project.source === selected.source,
+				) ||
+				(selected.projectId && selected.source === "project"
 					? { label: selected.projectId, value: selected.projectId }
 					: null) ||
-				playback.project ||
-				playback.projects[0] ||
 				null;
 
 			if (!selectedProject) {
@@ -675,6 +917,7 @@ export default function App() {
 						selected.startUrl ||
 						"https://example.com",
 					recording: envelope,
+					parameterValues: mcpParameterValues,
 				});
 				setSnackMessage(
 					`Matched room recording ${selected.roomPath} (${selected.reason})`,
@@ -688,6 +931,7 @@ export default function App() {
 				fileName: selected.fileName,
 				startUrl:
 					mcpStartUrl || selected.startUrl || "https://example.com",
+				parameterValues: mcpParameterValues,
 			});
 			setSnackMessage(
 				`Matched ${selected.fileName} (${selected.reason})`,
@@ -720,11 +964,16 @@ export default function App() {
 		effectiveInsightId,
 		getRoomRecordingEnvelope,
 		isMcpPlaybackMode,
+		isRoomRecordingSource,
 		mcpRecordingFile,
 		mcpRecordingNameHint,
 		mcpPlaybackProjectId,
+		mcpParameterValues,
 		mcpStartUrl,
+		preferredPlaybackSource,
 		playback.configureResolvedRecording,
+		playback.files,
+		playback.filesReady,
 		playback.project,
 		playback.projects,
 		toolContext,
@@ -1361,13 +1610,16 @@ export default function App() {
 					"Playground room",
 				);
 
-				// Safely add the __insight__ MCP entry to the room's tool list so the
-				// LLM sees recording-specific tools on the next message (read-modify-write).
-				const addMcpResponse = await runPixel(
-					`AddInsightMCPToRoom(roomId=${JSON.stringify(toolContext.roomId)});`,
+				// Keep this idempotent call as a compatibility safeguard while
+				// deployments may contain either version of the MCP generator.
+				const registrationResponse = await runPixel(
+					`AddInternalMCPToRoom(roomId=${JSON.stringify(toolContext.roomId)});`,
 					roomBoundInsightId,
 				);
-				assertPixelSuccess(addMcpResponse, "Room MCP registration");
+				assertPixelSuccess(
+					registrationResponse,
+					"Playground recording MCP registration",
+				);
 
 				await closeBrowserSession();
 				browserClosed = true;
@@ -1792,7 +2044,7 @@ export default function App() {
 
 			<SaveRecordingDialog
 				open={saveDialogOpen}
-				projects={playback.projects}
+				projects={appRecordingProjects}
 				project={saveProject}
 				models={metadataModels}
 				model={metadataModel}

@@ -682,7 +682,7 @@ paramValues=[${JSON.stringify({
 		});
 
 		// Sync room options after any "ask" tool completes so that changes made
-		// by the tool (e.g. AddInsightMCPToRoom adding __insight__ to options.mcp)
+		// by the tool (e.g. registering a room-owned internal MCP)
 		// are immediately reflected in the MCP indicator and available for the
 		// next AskPlayground call — without requiring a full page refresh.
 		if (toolStatus === "success" || toolStatus === "cancelled") {

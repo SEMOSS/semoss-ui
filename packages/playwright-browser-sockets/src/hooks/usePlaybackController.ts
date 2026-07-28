@@ -15,7 +15,11 @@ import type {
 	ReplayStepResult,
 } from "../types/browserEvents";
 
-export type PlaybackProject = { label: string; value: string };
+export type PlaybackProject = {
+	label: string;
+	value: string;
+	source?: PlaybackRecordingSource;
+};
 export type PlaybackRecordingSource = "project" | "room";
 export type FlattenedRecordingStep = {
 	tabId: string;
@@ -45,6 +49,15 @@ interface UsePlaybackControllerOptions {
 		projectId: string,
 		fileName: string,
 	) => Promise<LoadedRecording | null>;
+	roomId?: string;
+	listRoomRecordingFiles?: (
+		insightId: string,
+		roomId: string,
+	) => Promise<string[]>;
+	loadRoomRecording?: (
+		insightId: string,
+		fileName: string,
+	) => Promise<LoadedRecording | null>;
 	replaySingleStep: (
 		insightId: string,
 		projectId: string,
@@ -69,6 +82,34 @@ interface ResolvedRecordingSelection {
 	fileName: string;
 	startUrl: string;
 	recording?: LoadedRecording;
+	parameterValues?: Record<string, string>;
+}
+
+function sanitizeMcpParameterName(value: string): string {
+	const sanitized = value
+		.replace(/[^a-zA-Z0-9\s]/g, "")
+		.trim()
+		.replace(/\s+/g, "_")
+		.toLowerCase();
+	return !sanitized || !/^[a-zA-Z]/.test(sanitized)
+		? `tool_${sanitized}`
+		: sanitized;
+}
+
+function getMcpStepParameterValue(
+	step: LoadedRecordingStep,
+	parameterValues: Record<string, string>,
+): string | undefined {
+	if (typeof step.id !== "number") return undefined;
+	const stepLabel = typeof step.label === "string" ? step.label : "";
+	return (
+		parameterValues[`step_${step.id}`] ??
+		parameterValues[String(step.id)] ??
+		(stepLabel
+			? (parameterValues[stepLabel] ??
+				parameterValues[sanitizeMcpParameterName(stepLabel)])
+			: undefined)
+	);
 }
 
 export function usePlaybackController({
@@ -78,6 +119,9 @@ export function usePlaybackController({
 	listRecordingProjects,
 	listRecordingFiles,
 	loadRecording,
+	roomId = "",
+	listRoomRecordingFiles,
+	loadRoomRecording,
 	replaySingleStep,
 	sendReplayEvent,
 	sendTabControlEvent,
@@ -103,6 +147,7 @@ export function usePlaybackController({
 	>({});
 	const [isLoadingProjects, setIsLoadingProjects] = useState(false);
 	const [isLoadingFiles, setIsLoadingFiles] = useState(false);
+	const [filesSelectionKey, setFilesSelectionKey] = useState("");
 	const [isLoadingRecording, setIsLoadingRecording] = useState(false);
 	const [isRunning, setIsRunning] = useState(false);
 	const [isPaused, setIsPaused] = useState(false);
@@ -114,6 +159,8 @@ export function usePlaybackController({
 	>(null);
 	const pauseRequestedRef = useRef(false);
 	const replayPreparedRef = useRef(false);
+	const resolvedParameterValuesRef = useRef<Record<string, string>>({});
+	const typeValuesRef = useRef<Record<number, string>>({});
 	const runInFlightRef = useRef<Promise<PlaybackRunResult | null> | null>(
 		null,
 	);
@@ -148,7 +195,11 @@ export function usePlaybackController({
 	);
 
 	const initializeLoadedRecording = useCallback(
-		(recording: LoadedRecording, label: string) => {
+		(
+			recording: LoadedRecording,
+			label: string,
+			parameterValues: Record<string, string> = {},
+		) => {
 			setLoadedRecording(recording);
 			setExecutedStepIds(new Set());
 			setRunningStepId(null);
@@ -158,6 +209,7 @@ export function usePlaybackController({
 			pauseRequestedRef.current = false;
 			replayPreparedRef.current = false;
 			const initialValues: Record<number, string> = {};
+			let appliedOverrideCount = 0;
 			Object.values(recording.steps).forEach((tabSteps) => {
 				const nested = tabSteps as Array<
 					LoadedRecordingStep | LoadedRecordingStep[]
@@ -167,16 +219,31 @@ export function usePlaybackController({
 					.forEach((step) => {
 						if (
 							step.type === "TYPE" &&
-							typeof step.id === "number" &&
-							typeof step.text === "string"
+							typeof step.id === "number"
 						) {
-							initialValues[step.id] = step.text;
+							const suppliedValue = getMcpStepParameterValue(
+								step,
+								parameterValues,
+							);
+							if (suppliedValue !== undefined) {
+								appliedOverrideCount += 1;
+							}
+							initialValues[step.id] =
+								suppliedValue ??
+								(typeof step.text === "string"
+									? step.text
+									: "");
 						}
 					});
 			});
+			typeValuesRef.current = initialValues;
 			setEditedTypeValues(initialValues);
 			setLoadedRecordingOpen(true);
-			onMessage(`Loaded ${label}`);
+			onMessage(
+				appliedOverrideCount
+					? `Loaded ${label} with ${appliedOverrideCount} input override${appliedOverrideCount === 1 ? "" : "s"}`
+					: `Loaded ${label}`,
+			);
 		},
 		[onMessage],
 	);
@@ -188,18 +255,29 @@ export function usePlaybackController({
 		}
 		setIsLoadingProjects(true);
 		try {
-			const options = (await listRecordingProjects(insightId))
+			const projectOptions = (await listRecordingProjects(insightId))
 				.map((item) => ({
 					label: item.label || item.project_name || item.value,
 					value: item.value || item.project_id || "",
+					source: "project" as const,
 				}))
 				.filter((item) => item.value);
+			const options: PlaybackProject[] = roomId
+				? [
+						{
+							label: "Playground recordings",
+							value: "__playground_room__",
+							source: "room",
+						},
+						...projectOptions,
+					]
+				: projectOptions;
 			setProjects(options);
 			setProject((current) => current ?? options[0] ?? null);
 		} finally {
 			setIsLoadingProjects(false);
 		}
-	}, [insightId, listRecordingProjects]);
+	}, [insightId, listRecordingProjects, roomId]);
 
 	useEffect(() => {
 		void refreshProjects();
@@ -207,33 +285,59 @@ export function usePlaybackController({
 
 	useEffect(() => {
 		let cancelled = false;
-		if (isMcpPlaybackMode && source === "room") return;
 		setLoadedRecording(null);
-		setSelectedRecording(null);
+		if (!isMcpPlaybackMode) {
+			setSelectedRecording(null);
+		}
 		setLoadedRecordingOpen(false);
 		setEditingStepId(null);
+		setFilesSelectionKey("");
 		if (!insightId || !project?.value) {
 			setFiles([]);
 			return;
 		}
 
 		setIsLoadingFiles(true);
-		listRecordingFiles(insightId, project.value)
+		const filesRequest =
+			project.source === "room"
+				? roomId && listRoomRecordingFiles
+					? listRoomRecordingFiles(insightId, roomId)
+					: Promise.resolve([])
+				: listRecordingFiles(insightId, project.value);
+		filesRequest
 			.then((recordingFiles) => {
 				if (cancelled) return;
 				setFiles(recordingFiles);
+				setFilesSelectionKey(
+					`${project.source ?? "project"}:${project.value}`,
+				);
 				const preferredRecording =
 					savedRecordingSelection?.projectValue === project.value
 						? savedRecordingSelection.fileName
 						: null;
-				if (
-					preferredRecording &&
-					recordingFiles.includes(preferredRecording)
-				) {
-					setSelectedRecording(preferredRecording);
-				} else if (!isMcpPlaybackMode) {
-					setSelectedRecording(recordingFiles[0] ?? null);
-				}
+				setSelectedRecording((current) => {
+					if (current && recordingFiles.includes(current)) {
+						return current;
+					}
+					if (
+						preferredRecording &&
+						recordingFiles.includes(preferredRecording)
+					) {
+						return preferredRecording;
+					}
+					return isMcpPlaybackMode
+						? current
+						: (recordingFiles[0] ?? null);
+				});
+			})
+			.catch((error: unknown) => {
+				if (cancelled) return;
+				setFiles([]);
+				onError(
+					error instanceof Error
+						? error.message
+						: "Failed to list recordings",
+				);
 			})
 			.finally(() => {
 				if (!cancelled) setIsLoadingFiles(false);
@@ -246,27 +350,38 @@ export function usePlaybackController({
 		insightId,
 		isMcpPlaybackMode,
 		listRecordingFiles,
+		listRoomRecordingFiles,
+		onError,
 		project,
+		roomId,
 		savedRecordingSelection,
-		source,
 	]);
 
 	const selectProject = useCallback((next: PlaybackProject | null) => {
-		setSource("project");
+		resolvedParameterValuesRef.current = {};
+		typeValuesRef.current = {};
+		setSource(next?.source ?? "project");
 		setSavedRecordingSelection(null);
 		setProject(next);
 	}, []);
 
-	const selectRecording = useCallback((fileName: string | null) => {
-		setSource("project");
-		setSelectedRecording(fileName);
-		setLoadedRecording(null);
-		setLoadedRecordingOpen(false);
-		setEditingStepId(null);
-	}, []);
+	const selectRecording = useCallback(
+		(fileName: string | null) => {
+			resolvedParameterValuesRef.current = {};
+			typeValuesRef.current = {};
+			setSource(project?.source ?? "project");
+			setSelectedRecording(fileName);
+			setLoadedRecording(null);
+			setLoadedRecordingOpen(false);
+			setEditingStepId(null);
+		},
+		[project?.source],
+	);
 
 	const selectSavedRecording = useCallback(
 		(nextProject: PlaybackProject, fileName: string) => {
+			resolvedParameterValuesRef.current = {};
+			typeValuesRef.current = {};
 			setSavedRecordingSelection({
 				projectValue: nextProject.value,
 				fileName,
@@ -282,18 +397,29 @@ export function usePlaybackController({
 
 	const configureResolvedRecording = useCallback(
 		(selection: ResolvedRecordingSelection) => {
+			resolvedParameterValuesRef.current =
+				selection.parameterValues ?? {};
 			setStartUrl(normalizeBrowserUrl(selection.startUrl));
 			setSource(selection.source);
-			setProject(selection.project);
+			setProject(
+				selection.source === "room"
+					? (projects.find((item) => item.source === "room") ?? {
+							label: "Playground recordings",
+							value: "__playground_room__",
+							source: "room",
+						})
+					: selection.project,
+			);
 			setSelectedRecording(selection.fileName);
 			if (selection.recording) {
 				initializeLoadedRecording(
 					selection.recording,
 					selection.fileName,
+					resolvedParameterValuesRef.current,
 				);
 			}
 		},
-		[initializeLoadedRecording],
+		[initializeLoadedRecording, projects],
 	);
 
 	const resetReplayPreparation = useCallback(() => {
@@ -303,10 +429,13 @@ export function usePlaybackController({
 	const resetExecution = useCallback(() => {
 		pauseRequestedRef.current = false;
 		replayPreparedRef.current = false;
+		resolvedParameterValuesRef.current = {};
+		typeValuesRef.current = {};
 		setSavedRecordingSelection(null);
 		setStartUrl("");
 		setSource("project");
 		setSelectedRecording(null);
+		setFilesSelectionKey("");
 		setLoadedRecording(null);
 		setRunningStepId(null);
 		setExecutedStepIds(new Set());
@@ -382,7 +511,11 @@ export function usePlaybackController({
 					case "TYPE": {
 						const text =
 							typeof step.id === "number"
-								? (editedTypeValues[step.id] ??
+								? (typeValuesRef.current[step.id] ??
+									getMcpStepParameterValue(
+										step,
+										resolvedParameterValuesRef.current,
+									) ??
 									String(step.text || ""))
 								: String(step.text || "");
 						await replay({
@@ -453,7 +586,7 @@ export function usePlaybackController({
 				return false;
 			}
 		},
-		[editedTypeValues, onError, sendReplayEvent],
+		[onError, sendReplayEvent],
 	);
 
 	const load = useCallback(async () => {
@@ -461,7 +594,36 @@ export function usePlaybackController({
 			initializeLoadedRecording(
 				loadedRecording,
 				selectedRecording || "room recording",
+				resolvedParameterValuesRef.current,
 			);
+			return;
+		}
+		if (
+			source === "room" &&
+			insightId &&
+			selectedRecording &&
+			loadRoomRecording
+		) {
+			setIsLoadingRecording(true);
+			try {
+				const recording = await loadRoomRecording(
+					insightId,
+					selectedRecording,
+				);
+				if (recording) {
+					initializeLoadedRecording(
+						recording,
+						selectedRecording,
+						resolvedParameterValuesRef.current,
+					);
+				} else {
+					onError(
+						`Could not load Playground recording ${selectedRecording}`,
+					);
+				}
+			} finally {
+				setIsLoadingRecording(false);
+			}
 			return;
 		}
 		if (!insightId || !project || !selectedRecording) {
@@ -482,7 +644,11 @@ export function usePlaybackController({
 				selectedRecording,
 			);
 			if (recording)
-				initializeLoadedRecording(recording, selectedRecording);
+				initializeLoadedRecording(
+					recording,
+					selectedRecording,
+					resolvedParameterValuesRef.current,
+				);
 		} finally {
 			setIsLoadingRecording(false);
 		}
@@ -490,6 +656,7 @@ export function usePlaybackController({
 		initializeLoadedRecording,
 		insightId,
 		loadRecording,
+		loadRoomRecording,
 		loadedRecording,
 		onError,
 		project,
@@ -511,7 +678,11 @@ export function usePlaybackController({
 			}
 			if (step.type === "TYPE") {
 				const value =
-					editedTypeValues[step.id] ??
+					typeValuesRef.current[step.id] ??
+					getMcpStepParameterValue(
+						step,
+						resolvedParameterValuesRef.current,
+					) ??
 					(typeof step.text === "string" ? step.text : "");
 				if (!value.trim()) {
 					setValueRequiredStepId(step.id);
@@ -573,14 +744,26 @@ export function usePlaybackController({
 				return true;
 			}
 
+			const typeValue =
+				step.type === "TYPE"
+					? (typeValuesRef.current[step.id] ??
+						getMcpStepParameterValue(
+							step,
+							resolvedParameterValuesRef.current,
+						) ??
+						(typeof step.text === "string" ? step.text : ""))
+					: undefined;
 			const paramValues =
-				step.type === "TYPE" && typeof step.label === "string"
+				typeValue !== undefined
 					? {
-							[step.label]:
-								editedTypeValues[step.id] ??
-								(typeof step.text === "string"
-									? step.text
-									: ""),
+							...(typeof step.label === "string"
+								? {
+										[step.label]: typeValue,
+										[sanitizeMcpParameterName(step.label)]:
+											typeValue,
+									}
+								: {}),
+							[`step_${step.id}`]: typeValue,
 						}
 					: undefined;
 			const result = await replaySingleStep(
@@ -610,7 +793,6 @@ export function usePlaybackController({
 			return true;
 		},
 		[
-			editedTypeValues,
 			flattenedSteps,
 			insightId,
 			onError,
@@ -696,6 +878,10 @@ export function usePlaybackController({
 	]);
 
 	const updateTypeValue = useCallback((stepId: number, value: string) => {
+		typeValuesRef.current = {
+			...typeValuesRef.current,
+			[stepId]: value,
+		};
 		setEditedTypeValues((current) => ({ ...current, [stepId]: value }));
 		if (value.trim()) {
 			setValueRequiredStepId((current) =>
@@ -707,6 +893,10 @@ export function usePlaybackController({
 	}, []);
 
 	const resetTypeValue = useCallback((stepId: number, value: string) => {
+		typeValuesRef.current = {
+			...typeValuesRef.current,
+			[stepId]: value,
+		};
 		setEditedTypeValues((current) => ({ ...current, [stepId]: value }));
 		setEditingStepId(null);
 	}, []);
@@ -728,6 +918,10 @@ export function usePlaybackController({
 		editedTypeValues,
 		isLoadingProjects,
 		isLoadingFiles,
+		filesReady:
+			!!project &&
+			filesSelectionKey ===
+				`${project.source ?? "project"}:${project.value}`,
 		isLoadingRecording,
 		isRunning,
 		isPaused,

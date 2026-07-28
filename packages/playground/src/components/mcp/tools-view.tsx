@@ -45,11 +45,13 @@ export const ToolsView = observer(
 		 * Library Hooks
 		 */
 
-		// get the metadata — PROJECT-hosted tools use ProjectInfo, every other
-		// engine type (VECTOR, STORAGE, DATABASE, MODEL, FUNCTION, ...) uses
-		// EngineInfo. Fall back to ProjectInfo when the type is missing.
+		// SMSS_PROJECT_ID explicitly identifies a project-hosted sidebar even when
+		// the tool executes from another scope, such as a room-owned internal MCP.
 		const engineType = tool?._meta?.SMSS_ENGINE_TYPE;
-		const isProjectType = !engineType || engineType === "PROJECT";
+		const isProjectType =
+			!!tool?._meta?.SMSS_PROJECT_ID ||
+			!engineType ||
+			engineType === "PROJECT";
 		const getAppInfo = usePixel<{
 			project_type?: "BLOCKS" | "CODE" | "INSIGHT" | "";
 		}>(

@@ -80,6 +80,14 @@ function normalizeToolContext(rawTool: unknown): McpToolContext | null {
 			: {};
 	const projectId =
 		typeof meta.SMSS_PROJECT_ID === "string" ? meta.SMSS_PROJECT_ID : "";
+	const engineId =
+		typeof meta.SMSS_ENGINE_ID === "string" ? meta.SMSS_ENGINE_ID : "";
+	const engineType =
+		typeof meta.SMSS_ENGINE_TYPE === "string" ? meta.SMSS_ENGINE_TYPE : "";
+	const metadataOriginalName =
+		typeof meta.SMSS_ORIGINAL_TOOL_NAME === "string"
+			? meta.SMSS_ORIGINAL_TOOL_NAME
+			: "";
 
 	return {
 		type: typeof tool.type === "string" ? tool.type : "MCP",
@@ -91,14 +99,17 @@ function normalizeToolContext(rawTool: unknown): McpToolContext | null {
 					? tool.original_name
 					: "",
 		originalName:
-			typeof tool.original_name === "string"
+			metadataOriginalName ||
+			(typeof tool.original_name === "string"
 				? tool.original_name
 				: typeof tool.name === "string"
 					? tool.name
-					: "",
+					: ""),
 		message: typeof tool.message === "string" ? tool.message : "",
 		roomId: typeof tool.roomId === "string" ? tool.roomId : "",
 		projectId,
+		engineId,
+		engineType,
 		parameters,
 		executedParameters,
 		toolResponse: tool.tool_response,
@@ -249,6 +260,18 @@ export async function resolvePlaywrightRoomRecording<T = unknown>(
 		getSemossInsightId(),
 	);
 
+	const output = pixelReturn?.[0]?.output;
+	if (typeof output === "string") {
+		return JSON.parse(output) as T;
+	}
+	return output as T;
+}
+
+export async function findPlaywrightRoomRecordings<T = unknown>(): Promise<T> {
+	const { pixelReturn } = await runPixel<unknown>(
+		'FindPlaywrightRoomRecordings(query="", max_candidates=50);',
+		getSemossInsightId(),
+	);
 	const output = pixelReturn?.[0]?.output;
 	if (typeof output === "string") {
 		return JSON.parse(output) as T;
