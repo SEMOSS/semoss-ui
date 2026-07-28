@@ -140,7 +140,7 @@ export interface WorkspaceConfigInterface {
  * Store that manages instances of the insights and handles applicaiton level querying
  */
 export class WorkspaceStore {
-	// biome-ignore lint/correctness/noUnusedPrivateClassMembers: reserved for cross-store access (e.g. monolithStore) if workspace operations expand
+	// biome-ignore lint/correctness/noUnusedPrivateClassMembers: kept for future use
 	private _root: RootStore;
 	private _store: WorkspaceStoreInterface = {
 		appId: "",
@@ -178,20 +178,24 @@ export class WorkspaceStore {
 	};
 
 	constructor(root: RootStore, config: WorkspaceConfigInterface) {
+		// register the root
 		this._root = root;
 
+		// set the app and insight Id
 		this._store.appId = config.appId;
 		this._store.insightId = config.insightId;
 		this._store.type = config.type;
 
+		// update the data
 		if (config.role) {
 			this._store.role = config.role;
 		}
 
-		if (config.metadata) {
+		if (config.role) {
 			this._store.metadata = config.metadata;
 		}
 
+		// make it observable
 		makeAutoObservable(this);
 	}
 
@@ -308,6 +312,8 @@ export class WorkspaceStore {
 	 * Load from the cache
 	 */
 	loadFromCache = (): boolean => {
+		// TODO::Version Check
+
 		let isLoaded = false;
 		try {
 			const item = localStorage.getItem(this.cacheKey);
@@ -333,6 +339,7 @@ export class WorkspaceStore {
 				layout: this._store.model.toJson(),
 			};
 
+			// save cache
 			localStorage.setItem(this.cacheKey, JSON.stringify(options));
 		} catch (e) {
 			console.error(e);
@@ -369,7 +376,10 @@ export class WorkspaceStore {
 			maxWidth: "sm",
 		},
 	) => {
+		// open the overlay
 		this._store.overlay.open = true;
+
+		// set the content
 		this._store.overlay.content = content;
 		this._store.overlay.options = options;
 	};
@@ -378,7 +388,10 @@ export class WorkspaceStore {
 	 * Close the overlay
 	 */
 	closeOverlay = () => {
+		// close the overlay
 		this._store.overlay.open = false;
+
+		// clear the content
 		this._store.overlay.content = null;
 	};
 

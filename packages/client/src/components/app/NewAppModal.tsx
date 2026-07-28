@@ -156,15 +156,15 @@ export const NewAppModal = (props: NewAppModalProps) => {
 					await monolithStore.runQuery(saveIndexFilePixel);
 
 				let output = response.pixelReturn[0].output;
-				let operationType = response.pixelReturn[0].operationType[0];
+				let operationType = response.pixelReturn[0].operationType;
 
 				if (operationType.indexOf("ERROR") > -1) {
 					toast.error(output);
-					return;
+					return false;
 				}
 
 				output = response.pixelReturn[1].output;
-				operationType = response.pixelReturn[1].operationType[0];
+				operationType = response.pixelReturn[1].operationType;
 
 				if (operationType.indexOf("ERROR") > -1) {
 					toast.error(output);
@@ -183,8 +183,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
 					output = setProjectMetadataResponse.pixelReturn[0].output;
 					operationType =
-						setProjectMetadataResponse.pixelReturn[0]
-							.operationType[0];
+						setProjectMetadataResponse.pixelReturn[0].operationType;
 
 					if (operationType.indexOf("ERROR") > -1) {
 						toast.error(output);
@@ -234,6 +233,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 						<Controller
 							name="APP_DESCRIPTION"
 							control={control}
+							rules={{ required: false }}
 							render={({ field }) => (
 								<div className="flex flex-col gap-1.5">
 									<Label htmlFor={descId}>Description</Label>
@@ -252,6 +252,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 						<Controller
 							name="APP_TAGS"
 							control={control}
+							rules={{}}
 							render={({ field }) => {
 								const tags: string[] = field.value || [];
 								const addTag = () => {
@@ -314,6 +315,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 						<Controller
 							name="APP_IMG"
 							control={control}
+							rules={{}}
 							render={({ field }) => (
 								<div className="flex flex-col gap-1.5">
 									<Label htmlFor={imgId}>Image</Label>

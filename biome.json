@@ -141,16 +141,6 @@
 					}
 				}
 			}
-		},
-		{
-			"includes": ["**/automation-form-editor/output-preview.tsx"],
-			"linter": {
-				"rules": {
-					"suspicious": {
-						"noArrayIndexKey": "off"
-					}
-				}
-			}
 		}
 	]
 }

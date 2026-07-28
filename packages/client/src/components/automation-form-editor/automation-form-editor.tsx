@@ -26,18 +26,6 @@ import type {
 	StepRunStatus,
 } from "@/pages/automation/automation.types";
 import { NODE_TYPE_META } from "@/pages/automation/automation.types";
-import {
-	cancelAutomationRun,
-	getAutomation,
-	getAutomationConfig,
-	getAutomationRun,
-	listAutomationRuns,
-	myEngines,
-	myProjects,
-	saveAutomation,
-	saveAutomationConfig,
-	triggerAutomation,
-} from "@/pixel/automation";
 import { applyOutputTransform } from "../automation-workspace/automation-utils";
 import { AutomationConfigTab } from "./automation-config-tab";
 import type { AutomationRunData } from "./automation-editor-utils";
@@ -111,7 +99,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 	const fetchRuns = useCallback(() => {
 		setHistoryLoading(true);
 		monolithStore
-			.runQuery(listAutomationRuns(appId))
+			.runQuery(`ListAutomationRuns(project=["${appId}"], limit=[25]);`)
 			.then((response) => {
 				const list =
 					(response.pixelReturn[0]
@@ -129,12 +117,16 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 	useEffect(() => {
 		Promise.all([
 			monolithStore
-				.runQuery<[AutomationDocument]>(getAutomation(appId))
+				.runQuery<[AutomationDocument]>(
+					`GetAutomation(project=["${appId}"])`,
+				)
 				.catch(() => null),
-			monolithStore.runQuery(myEngines()),
-			monolithStore.runQuery(myProjects()),
+			monolithStore.runQuery(
+				`MyEngines(engineTypes=["DATABASE","MODEL","VECTOR","STORAGE","FUNCTION"], limit=[100]);`,
+			),
+			monolithStore.runQuery(`MyProjects(limit=[100], offset=[0]);`),
 			monolithStore
-				.runQuery(getAutomationConfig(appId))
+				.runQuery(`GetAutomationConfig(project=["${appId}"]);`)
 				.catch(() => null),
 		])
 			.then(([autoRes, engRes, projRes, configRes]) => {
@@ -256,7 +248,9 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 				graph: { nodes: steps, edges: [] },
 			};
 			const json = encodeURIComponent(JSON.stringify(doc));
-			await monolithStore.runQuery(saveAutomation(appId, json));
+			await monolithStore.runQuery(
+				`SaveAutomation(project=["${appId}"], json=["${json}"]);`,
+			);
 			toast.success("Automation saved");
 			return true;
 		} catch {
@@ -271,7 +265,9 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		setSavingConfig(true);
 		try {
 			const json = encodeURIComponent(JSON.stringify(config));
-			await monolithStore.runQuery(saveAutomationConfig(appId, json));
+			await monolithStore.runQuery(
+				`SaveAutomationConfig(project=["${appId}"], config=["${json}"]);`,
+			);
 			toast.success("Config saved");
 		} catch {
 			toast.error("Config save failed");
@@ -364,7 +360,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 
 				try {
 					const response = await monolithStore.runQuery(
-						getAutomationRun(appId, runId),
+						`GetAutomationRun(project=["${appId}"], runId=["${runId}"]);`,
 					);
 					const runData = response.pixelReturn?.[0]
 						?.output as AutomationRunData | null;
@@ -420,7 +416,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 
 		try {
 			const result = await monolithStore.runQuery(
-				triggerAutomation(appId),
+				`TriggerAutomation(project=["${appId}"], manual=["true"]);`,
 			);
 			const runData = result.pixelReturn?.[0]
 				?.output as AutomationRunData | null;
@@ -507,7 +503,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 
 			try {
 				const response = await monolithStore.runQuery(
-					getAutomationRun(appId, runId),
+					`GetAutomationRun(project=["${appId}"], runId=["${runId}"]);`,
 				);
 				setExpandedHistoryRun(
 					response.pixelReturn[0].output as AutomationRunDetail,
@@ -769,10 +765,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 												onClick={async () => {
 													try {
 														await monolithStore.runQuery(
-															cancelAutomationRun(
-																appId,
-																latestRunId,
-															),
+															`CancelAutomationRun(project=["${appId}"], runId=["${latestRunId}"]);`,
 														);
 														toast.success(
 															"Cancel requested",
