@@ -1,5 +1,4 @@
 import { CheckCircle2, Clock3, Loader2, XCircle } from "lucide-react";
-import { getStatusClasses } from "./automation-editor-utils";
 
 export function StatusIcon({
 	status,
@@ -26,15 +25,4 @@ export function StatusIcon({
 	}
 
 	return <Clock3 className={className} />;
-}
-
-export function StatusBadge({ status }: { status: string }) {
-	return (
-		<span
-			className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-medium text-[11px] ${getStatusClasses(status)}`}
-		>
-			<StatusIcon status={status} className="h-3 w-3" />
-			{status}
-		</span>
-	);
 }

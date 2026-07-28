@@ -22,8 +22,8 @@ import {
 	getStepHeaderLabel,
 	STEP_STATUS_BORDER,
 } from "./automation-editor-utils";
-import { StatusIcon } from "./automation-status";
 import { OutputPreview } from "./output-preview";
+import { StatusIcon } from "./status-icon";
 import { StepForm } from "./step-form";
 
 export interface AutomationStepEditorCardProps {

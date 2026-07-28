@@ -6,8 +6,8 @@ import type {
 } from "@/pages/automation/automation.types";
 import { formatDurationMs } from "../automation-workspace/automation-utils";
 import { getDisplayMeta } from "./automation-editor-utils";
-import { StatusBadge } from "./automation-status";
 import { OutputPreview } from "./output-preview";
+import { StatusBadge } from "./status-badge";
 
 export function NodeResultList({
 	steps,

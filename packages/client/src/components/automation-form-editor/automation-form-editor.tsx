@@ -26,6 +26,18 @@ import type {
 	StepRunStatus,
 } from "@/pages/automation/automation.types";
 import { NODE_TYPE_META } from "@/pages/automation/automation.types";
+import {
+	cancelAutomationRun,
+	getAutomation,
+	getAutomationConfig,
+	getAutomationRun,
+	listAutomationRuns,
+	myEngines,
+	myProjects,
+	saveAutomation,
+	saveAutomationConfig,
+	triggerAutomation,
+} from "@/pixel/automation";
 import { applyOutputTransform } from "../automation-workspace/automation-utils";
 import { AutomationConfigTab } from "./automation-config-tab";
 import type { AutomationRunData } from "./automation-editor-utils";
@@ -37,9 +49,9 @@ import {
 	RUN_POLL_INTERVAL_MS,
 	STEP_TYPES,
 } from "./automation-editor-utils";
-import { StatusBadge } from "./automation-status";
 import { AutomationStepEditorCard } from "./automation-step-editor-card";
 import { NodeResultList } from "./node-result-list";
+import { StatusBadge } from "./status-badge";
 import { TriggerStepCard } from "./trigger-step-card";
 
 interface AutomationFormEditorProps {
@@ -99,7 +111,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 	const fetchRuns = useCallback(() => {
 		setHistoryLoading(true);
 		monolithStore
-			.runQuery(`ListAutomationRuns(project=["${appId}"], limit=[25]);`)
+			.runQuery(listAutomationRuns(appId))
 			.then((response) => {
 				const list =
 					(response.pixelReturn[0]
@@ -117,16 +129,12 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 	useEffect(() => {
 		Promise.all([
 			monolithStore
-				.runQuery<[AutomationDocument]>(
-					`GetAutomation(project=["${appId}"])`,
-				)
+				.runQuery<[AutomationDocument]>(getAutomation(appId))
 				.catch(() => null),
-			monolithStore.runQuery(
-				`MyEngines(engineTypes=["DATABASE","MODEL","VECTOR","STORAGE","FUNCTION"], limit=[100]);`,
-			),
-			monolithStore.runQuery(`MyProjects(limit=[100], offset=[0]);`),
+			monolithStore.runQuery(myEngines()),
+			monolithStore.runQuery(myProjects()),
 			monolithStore
-				.runQuery(`GetAutomationConfig(project=["${appId}"]);`)
+				.runQuery(getAutomationConfig(appId))
 				.catch(() => null),
 		])
 			.then(([autoRes, engRes, projRes, configRes]) => {
@@ -248,9 +256,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 				graph: { nodes: steps, edges: [] },
 			};
 			const json = encodeURIComponent(JSON.stringify(doc));
-			await monolithStore.runQuery(
-				`SaveAutomation(project=["${appId}"], json=["${json}"]);`,
-			);
+			await monolithStore.runQuery(saveAutomation(appId, json));
 			toast.success("Automation saved");
 			return true;
 		} catch {
@@ -265,9 +271,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		setSavingConfig(true);
 		try {
 			const json = encodeURIComponent(JSON.stringify(config));
-			await monolithStore.runQuery(
-				`SaveAutomationConfig(project=["${appId}"], config=["${json}"]);`,
-			);
+			await monolithStore.runQuery(saveAutomationConfig(appId, json));
 			toast.success("Config saved");
 		} catch {
 			toast.error("Config save failed");
@@ -286,6 +290,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		};
 	}, []);
 
+	/** Merges live run data into per-step UI state (statuses, durations, outputs). Called on both initial run response and each poll tick. */
 	const applyRunData = useCallback(
 		(runData: AutomationRunData) => {
 			const nodeResultsMap = new Map(
@@ -348,6 +353,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		applyRunDataRef.current = applyRunData;
 	}, [applyRunData]);
 
+	/** Polls GetAutomationRun on RUN_POLL_INTERVAL_MS until run leaves RUNNING status. Cancellable via token.cancelled. */
 	const pollRun = useCallback(
 		async (runId: string, token: { cancelled: boolean }) => {
 			while (!token.cancelled) {
@@ -358,7 +364,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 
 				try {
 					const response = await monolithStore.runQuery(
-						`GetAutomationRun(project=["${appId}"], runId=["${runId}"]);`,
+						getAutomationRun(appId, runId),
 					);
 					const runData = response.pixelReturn?.[0]
 						?.output as AutomationRunData | null;
@@ -414,7 +420,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 
 		try {
 			const result = await monolithStore.runQuery(
-				`TriggerAutomation(project=["${appId}"], manual=["true"]);`,
+				triggerAutomation(appId),
 			);
 			const runData = result.pixelReturn?.[0]
 				?.output as AutomationRunData | null;
@@ -448,6 +454,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		}
 	}, [appId, applyRunData, fetchRuns, pollRun, save, steps, monolithStore]);
 
+	/** Returns variable names available as inputs to the step at the given index: output vars from preceding steps plus all config keys. */
 	const upstreamVarsFor = useCallback(
 		(index: number) => {
 			const stepVars = steps
@@ -500,7 +507,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 
 			try {
 				const response = await monolithStore.runQuery(
-					`GetAutomationRun(project=["${appId}"], runId=["${runId}"]);`,
+					getAutomationRun(appId, runId),
 				);
 				setExpandedHistoryRun(
 					response.pixelReturn[0].output as AutomationRunDetail,
@@ -562,10 +569,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 						</span>
 						<div className="ml-auto flex items-center gap-2">
 							<div className="h-1.5 w-48 overflow-hidden rounded-full bg-primary/20">
-								<div
-									className="h-full animate-pulse rounded-full bg-primary"
-									style={{ width: "60%" }}
-								/>
+								<div className="h-full w-[60%] animate-pulse rounded-full bg-primary" />
 							</div>
 						</div>
 					</div>
@@ -765,7 +769,10 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 												onClick={async () => {
 													try {
 														await monolithStore.runQuery(
-															`CancelAutomationRun(project=["${appId}"], runId=["${latestRunId}"]);`,
+															cancelAutomationRun(
+																appId,
+																latestRunId,
+															),
 														);
 														toast.success(
 															"Cancel requested",

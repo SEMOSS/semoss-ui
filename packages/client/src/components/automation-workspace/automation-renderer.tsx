@@ -1,7 +1,7 @@
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getDisplayMeta } from "@/components/automation-form-editor/automation-editor-utils";
-import { StatusBadge } from "@/components/automation-form-editor/automation-status";
+import { StatusBadge } from "@/components/automation-form-editor/status-badge";
 import { useRootStore } from "@/hooks";
 import type {
 	AutomationDocument,

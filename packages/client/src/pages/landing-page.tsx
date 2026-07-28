@@ -34,6 +34,8 @@ export const LandingPage: React.FC = observer(() => {
 
 	const { configStore } = useRootStore();
 	const navigate = useNavigate();
+	const adminMode =
+		window.localStorage.getItem("semoss.adminMode") === "true";
 
 	const [newAppOptions, setNewAppOptions] = useState<
 		React.ComponentProps<typeof NewAppModal>["options"] | null
@@ -99,11 +101,7 @@ export const LandingPage: React.FC = observer(() => {
 						/>
 					) : null}
 					<LandingHeader
-						isAdmin={
-							configStore.store.user.admin &&
-							window.localStorage.getItem("semoss.adminMode") ===
-								"true"
-						}
+						isAdmin={configStore.store.user.admin && adminMode}
 						onCreate={(type) => {
 							if (type === "blocks") {
 								setNewAppOptions({
