@@ -86,6 +86,17 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		},
 	);
 
+	// check if ENABLE_MIGRATIONS is set on the engine's smss (only for DATABASE
+	// type engines) -- the Migrations tab only shows when this is true
+	const getMigrationsEnabled = usePixel<boolean>(
+		engineId && route.type === "DATABASE"
+			? `GetEngineMigrationsEnabled(engine=["${engineId}"]);`
+			: "",
+		{
+			data: false,
+		},
+	);
+
 	// convert the data into an object
 	// biome-ignore lint/correctness/useExhaustiveDependencies: pre-existing dep array uses JSON.stringify for stability
 	const values = useMemo(() => {
@@ -178,15 +189,20 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 			t.restrict ? t.restrict.indexOf(permission) > -1 : true,
 		);
 
-		// additional filtering for DATABASE type engines - hide Query/SPARQL tabs based on category
+		// additional filtering for DATABASE type engines - hide Query/SPARQL tabs based on category,
+		// and hide Migrations unless ENABLE_MIGRATIONS is set on the engine's smss
 		if (route.type === "DATABASE") {
 			const databaseCategory = getDatabaseCategory.data;
+			const migrationsEnabled = getMigrationsEnabled.data;
 			filteredTabs = filteredTabs.filter((t) => {
 				if (t.path === "query") {
 					return databaseCategory === "SQL";
 				}
 				if (t.path === "sparql-query") {
 					return databaseCategory === "RDF";
+				}
+				if (t.path === "migrations") {
+					return migrationsEnabled === true;
 				}
 				return true;
 			});
@@ -201,6 +217,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 			? getUserEnginePermission.data.permission
 			: "",
 		getDatabaseCategory.data,
+		getMigrationsEnabled.data,
 	]);
 
 	/**
@@ -283,7 +300,8 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 	if (
 		!isDiscoverableAccess &&
 		route.type === "DATABASE" &&
-		getDatabaseCategory.status !== "SUCCESS"
+		(getDatabaseCategory.status !== "SUCCESS" ||
+			getMigrationsEnabled.status !== "SUCCESS")
 	) {
 		return (
 			<div className="flex h-full min-h-[60vh] flex-col items-center justify-center gap-4">
