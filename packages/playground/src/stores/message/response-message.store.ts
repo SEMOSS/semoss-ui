@@ -103,6 +103,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			recordFeedback: action,
 			rewriteMessage: action,
 			hasUnfinishedTools: computed,
+			hasTools: computed,
 			continueToolExecution: action,
 			saveToolExecution: action,
 			setConversationCompactedAbove: action,
@@ -513,6 +514,13 @@ paramValues=[{}]
 	/**
 	 * Execution
 	 */
+	/**
+	 * Whether this response includes any tool calls, finished or not
+	 */
+	get hasTools() {
+		return this.parts.some((part) => part.type === "TOOL_CALL");
+	}
+
 	/**
 	 * Check if there are any unfinished tools
 	 */
