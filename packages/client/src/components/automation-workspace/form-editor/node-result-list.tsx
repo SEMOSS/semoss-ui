@@ -1,10 +1,7 @@
 import { Clock3 } from "lucide-react";
 import { useMemo } from "react";
-import type {
-	AutomationNode,
-	AutomationNodeResult,
-} from "@/pages/automation/automation.types";
-import { formatDurationMs } from "../automation-workspace/automation-utils";
+import type { AutomationNode, AutomationNodeResult } from "../automation.types";
+import { formatDurationMs } from "../automation-utils";
 import { getDisplayMeta } from "./automation-editor-utils";
 import { OutputPreview } from "./output-preview";
 import { StatusBadge } from "./status-badge";
@@ -35,7 +32,7 @@ export function NodeResultList({
 
 	return (
 		<div className="space-y-3">
-			{results.map((result, index) => {
+			{results.map((result, _index) => {
 				const step = stepMap.get(result.NODE_ID);
 				const meta = getDisplayMeta(step?.type ?? "app-engine");
 				const Icon = meta.icon;

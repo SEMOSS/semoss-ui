@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronRight, ClipboardCopy } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { toast } from "@semoss/ui/next";
+import { extractDataset } from "../automation-utils";
 
 export function OutputPreview({
 	value,
@@ -24,39 +25,10 @@ export function OutputPreview({
 		}
 	}, [value]);
 
-	// Normalise DB output into {headers, rows} regardless of whether the BE stored
-	// raw SEMOSS format ({data:{headers,values}}) or rows-as-objects ([{col:val}]).
-	const dbDataset = useMemo<{
-		headers: string[];
-		rows: unknown[][];
-	} | null>(() => {
-		if (!parsed) return null;
-		// rows-as-objects format: [{col1: val, col2: val}, ...]
-		if (
-			Array.isArray(parsed) &&
-			parsed.length > 0 &&
-			typeof parsed[0] === "object" &&
-			!Array.isArray(parsed[0])
-		) {
-			const keys = Object.keys(parsed[0] as Record<string, unknown>);
-			return {
-				headers: keys,
-				rows: (parsed as Record<string, unknown>[]).map((r) =>
-					keys.map((k) => r[k]),
-				),
-			};
-		}
-		// SEMOSS raw format: {data: {headers, values}} or {headers, values}
-		const inner = (parsed as Record<string, unknown>)?.data ?? parsed;
-		if (inner && typeof inner === "object" && !Array.isArray(inner)) {
-			const h = (inner as Record<string, unknown>).headers;
-			const v = (inner as Record<string, unknown>).values;
-			if (Array.isArray(h) && Array.isArray(v)) {
-				return { headers: h as string[], rows: v as unknown[][] };
-			}
-		}
-		return null;
-	}, [parsed]);
+	const dbDataset = useMemo(
+		() => (parsed ? extractDataset(parsed) : null),
+		[parsed],
+	);
 
 	const renderMode = useMemo(() => {
 		if (nodeType === "model-engine") return "markdown";
@@ -74,42 +46,38 @@ export function OutputPreview({
 						if (line.startsWith("# "))
 							return (
 								// biome-ignore lint/suspicious/noArrayIndexKey: static text preview rebuilt whole from `value` each render, never reordered
-								<h3
-									key={i}
-									className="mt-2 mb-1 font-bold text-sm"
-								>
-									{line.slice(2)}
-								</h3>
+								<Fragment key={i}>
+									<h3 className="mt-2 mb-1 font-bold text-sm">
+										{line.slice(2)}
+									</h3>
+								</Fragment>
 							);
 						if (line.startsWith("## "))
 							return (
 								// biome-ignore lint/suspicious/noArrayIndexKey: static text preview rebuilt whole from `value` each render, never reordered
-								<h4
-									key={i}
-									className="mt-2 mb-1 font-semibold text-xs"
-								>
-									{line.slice(3)}
-								</h4>
+								<Fragment key={i}>
+									<h4 className="mt-2 mb-1 font-semibold text-xs">
+										{line.slice(3)}
+									</h4>
+								</Fragment>
 							);
 						if (line.startsWith("- "))
 							return (
 								// biome-ignore lint/suspicious/noArrayIndexKey: static text preview rebuilt whole from `value` each render, never reordered
-								<li
-									key={i}
-									className="ml-4 list-disc text-foreground"
-								>
-									{line.slice(2)}
-								</li>
+								<Fragment key={i}>
+									<li className="ml-4 list-disc text-foreground">
+										{line.slice(2)}
+									</li>
+								</Fragment>
 							);
 						if (line.startsWith("**") && line.endsWith("**"))
 							return (
 								// biome-ignore lint/suspicious/noArrayIndexKey: static text preview rebuilt whole from `value` each render, never reordered
-								<p
-									key={i}
-									className="font-semibold text-foreground"
-								>
-									{line.slice(2, -2)}
-								</p>
+								<Fragment key={i}>
+									<p className="font-semibold text-foreground">
+										{line.slice(2, -2)}
+									</p>
+								</Fragment>
 							);
 						if (line.trim() === "")
 							// biome-ignore lint/suspicious/noArrayIndexKey: static text preview rebuilt whole from `value` each render, never reordered
@@ -131,29 +99,33 @@ export function OutputPreview({
 					{parsed.map(
 						(result: Record<string, unknown>, i: number) => (
 							// biome-ignore lint/suspicious/noArrayIndexKey: results are rebuilt whole from a single run's output each render, never reordered
-							<div
-								key={i}
-								className="rounded-md border bg-background p-2.5"
-							>
-								<div className="flex items-center justify-between">
-									<span className="font-semibold text-foreground text-xs">
-										#{i + 1}{" "}
-										{result.Source
-											? String(result.Source)
-											: ""}
-									</span>
-									{result.Score != null && (
-										<span className="rounded-full bg-primary/10 px-2 py-0.5 font-mono text-[10px] text-primary">
-											{Number(result.Score).toFixed(3)}
+							<Fragment key={i}>
+								<div className="rounded-md border bg-background p-2.5">
+									<div className="flex items-center justify-between">
+										<span className="font-semibold text-foreground text-xs">
+											#{i + 1}{" "}
+											{result.Source
+												? String(result.Source)
+												: ""}
 										</span>
+										{result.Score != null && (
+											<span className="rounded-full bg-primary/10 px-2 py-0.5 font-mono text-[10px] text-primary">
+												{Number(result.Score).toFixed(
+													3,
+												)}
+											</span>
+										)}
+									</div>
+									{result.Content && (
+										<p className="mt-1 line-clamp-3 text-[11px] text-muted-foreground">
+											{String(result.Content).slice(
+												0,
+												200,
+											)}
+										</p>
 									)}
 								</div>
-								{result.Content && (
-									<p className="mt-1 line-clamp-3 text-[11px] text-muted-foreground">
-										{String(result.Content).slice(0, 200)}
-									</p>
-								)}
-							</div>
+							</Fragment>
 						),
 					)}
 				</div>
@@ -211,21 +183,20 @@ export function OutputPreview({
 								<tbody>
 									{rows.map((row, i) => (
 										// biome-ignore lint/suspicious/noArrayIndexKey: rows rebuilt from a single run each render
-										<tr
-											key={i}
-											className="border-muted/50 border-b last:border-0"
-										>
-											{headers.map((h, j) => (
-												<td
-													key={h}
-													className="px-2 py-1 text-foreground"
-												>
-													{row[j] != null
-														? String(row[j])
-														: "—"}
-												</td>
-											))}
-										</tr>
+										<Fragment key={i}>
+											<tr className="border-muted/50 border-b last:border-0">
+												{headers.map((h, j) => (
+													<td
+														key={h}
+														className="px-2 py-1 text-foreground"
+													>
+														{row[j] != null
+															? String(row[j])
+															: "—"}
+													</td>
+												))}
+											</tr>
+										</Fragment>
 									))}
 								</tbody>
 							</table>

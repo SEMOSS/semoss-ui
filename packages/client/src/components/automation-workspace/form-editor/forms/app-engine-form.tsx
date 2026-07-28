@@ -6,12 +6,9 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-	Textarea,
 } from "@semoss/ui/next";
-import type {
-	AppConfig,
-	ProjectOption,
-} from "@/pages/automation/automation.types";
+import type { AppConfig, ProjectOption } from "../../automation.types";
+import { BoundInput } from "./shared";
 
 export function AppEngineForm({
 	config,
@@ -69,52 +66,27 @@ export function AppEngineForm({
 					When set, the pixel runs inside this app's insight context.
 				</p>
 			</Field>
-			<Field>
-				<FieldLabel>Pixel Expression</FieldLabel>
-				<p className="mb-1 text-muted-foreground text-xs">
-					Use{" "}
-					<code className="rounded bg-muted px-1">
-						{/* biome-ignore lint/suspicious/noTemplateCurlyInString: literal example */}
-						{"${varName}"}
-					</code>{" "}
-					to reference upstream outputs or{" "}
-					<code className="rounded bg-muted px-1">
-						{/* biome-ignore lint/suspicious/noTemplateCurlyInString: literal example */}
-						{"${config.KEY}"}
-					</code>{" "}
-					for SMSS config.
-				</p>
-				<Textarea
-					value={config.pixel}
-					onChange={(e) =>
-						onChange({ ...config, pixel: e.target.value })
-					}
-					placeholder={
-						'SyncEsrMetadata(apiUrl="${config.MIRTH_API_URL}")'
-					}
-					className="font-mono text-xs"
-					rows={6}
-				/>
-				{upstreamVars.length > 0 && (
-					<div className="mt-1 flex flex-wrap gap-1">
-						{upstreamVars.map((v) => (
-							<button
-								key={v}
-								type="button"
-								className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground hover:bg-accent"
-								onClick={() =>
-									onChange({
-										...config,
-										pixel: `${config.pixel}\${${v}}`,
-									})
-								}
-							>
-								{`\${${v}}`}
-							</button>
-						))}
-					</div>
-				)}
-			</Field>
+			<p className="text-muted-foreground text-xs">
+				Use{" "}
+				<code className="rounded bg-muted px-1">
+					{/* biome-ignore lint/suspicious/noTemplateCurlyInString: literal example */}
+					{"${varName}"}
+				</code>{" "}
+				to reference upstream outputs or{" "}
+				<code className="rounded bg-muted px-1">
+					{/* biome-ignore lint/suspicious/noTemplateCurlyInString: literal example */}
+					{"${config.KEY}"}
+				</code>{" "}
+				for SMSS config.
+			</p>
+			<BoundInput
+				label="Pixel Expression"
+				value={config.pixel}
+				placeholder='SyncEsrMetadata(apiUrl="${config.MIRTH_API_URL}")'
+				onChange={(v) => onChange({ ...config, pixel: v })}
+				upstreamVars={upstreamVars}
+				mono
+			/>
 		</div>
 	);
 }

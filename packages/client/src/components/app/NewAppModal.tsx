@@ -24,7 +24,7 @@ type NewAppForm = {
 	APP_NAME: string;
 	APP_DESCRIPTION: string;
 	APP_TAGS: string[];
-	APP_IMG: File | null;
+	APP_IMG: File[] | null;
 };
 
 interface NewAppModalProps {

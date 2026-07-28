@@ -11,7 +11,7 @@ import {
 	SelectValue,
 	Textarea,
 } from "@semoss/ui/next";
-import type { EngineOption } from "@/pages/automation/automation.types";
+import type { EngineOption } from "../../automation.types";
 
 export function BoundInput({
 	label,

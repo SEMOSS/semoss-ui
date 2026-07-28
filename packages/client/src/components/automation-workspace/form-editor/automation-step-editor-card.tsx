@@ -7,7 +7,7 @@ import type {
 	EngineOption,
 	ProjectOption,
 	StepRunStatus,
-} from "@/pages/automation/automation.types";
+} from "../automation.types";
 import {
 	applyOutputTransform,
 	buildPixelPreview,
@@ -16,7 +16,7 @@ import {
 	substituteVars,
 	TRANSFORM_ENABLED,
 	TRANSFORM_MODES,
-} from "../automation-workspace/automation-utils";
+} from "../automation-utils";
 import {
 	getDisplayMeta,
 	getStepHeaderLabel,

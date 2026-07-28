@@ -7,10 +7,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import type {
-	EngineOption,
-	StorageEngineConfig,
-} from "@/pages/automation/automation.types";
+import type { EngineOption, StorageEngineConfig } from "../../automation.types";
 import { BoundInput, EngineSelect } from "./shared";
 
 export function StorageEngineForm({

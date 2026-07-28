@@ -1,7 +1,7 @@
 import { Eye, EyeOff, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Button, Input } from "@semoss/ui/next";
-import type { AutomationConfigEntry } from "@/pages/automation/automation.types";
+import type { AutomationConfigEntry } from "../automation.types";
 
 interface AutomationConfigTabProps {
 	config: AutomationConfigEntry[];
@@ -135,12 +135,14 @@ export function AutomationConfigTab({
 				<ul className="mt-1 space-y-0.5 text-muted-foreground text-xs">
 					<li>
 						<code className="rounded bg-muted px-1">
+							{/* biome-ignore lint/suspicious/noTemplateCurlyInString: shows example syntax for users */}
 							{"${config.MIRTH_API_URL}"}
 						</code>{" "}
 						— resolved at runtime
 					</li>
 					<li>
 						<code className="rounded bg-muted px-1">
+							{/* biome-ignore lint/suspicious/noTemplateCurlyInString: shows example syntax for users */}
 							{"${config.BASE_URL}"}
 						</code>{" "}
 						— resolved at runtime

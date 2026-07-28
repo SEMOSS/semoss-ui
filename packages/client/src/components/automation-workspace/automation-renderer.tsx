@@ -1,14 +1,14 @@
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getDisplayMeta } from "@/components/automation-form-editor/automation-editor-utils";
-import { StatusBadge } from "@/components/automation-form-editor/status-badge";
 import { useRootStore } from "@/hooks";
 import type {
 	AutomationDocument,
 	AutomationGraph,
 	AutomationNode,
 	AutomationRunSummary,
-} from "@/pages/automation/automation.types";
+} from "./automation.types";
+import { getDisplayMeta } from "./form-editor/automation-editor-utils";
+import { StatusBadge } from "./form-editor/status-badge";
 
 interface AutomationRendererProps {
 	appId: string;

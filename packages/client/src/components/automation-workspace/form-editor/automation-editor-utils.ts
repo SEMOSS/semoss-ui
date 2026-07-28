@@ -14,7 +14,8 @@ import type {
 	AutomationNodeResult,
 	AutomationNodeType,
 	RunStatus,
-} from "@/pages/automation/automation.types";
+} from "../automation.types";
+import { formatDurationMs } from "../automation-utils";
 
 // Manual runs execute in the background — the FE polls GetAutomationRun on this
 // interval until the run leaves RUNNING status.
@@ -148,20 +149,6 @@ export function formatTimestamp(iso: string): string {
 	}
 }
 
-export function formatRunDuration(
-	startedAt: string,
-	completedAt: string | null,
-): string {
-	if (!completedAt) return "—";
-	try {
-		const durationMs =
-			new Date(completedAt).getTime() - new Date(startedAt).getTime();
-		return formatDurationMs(durationMs);
-	} catch {
-		return "—";
-	}
-}
-
 export function getStatusClasses(status: string) {
 	return STATUS_STYLES[status] ?? STATUS_STYLES.PENDING;
 }
@@ -173,4 +160,13 @@ export function getDisplayMeta(type: AutomationNodeType | string) {
 export function getStepHeaderLabel(step: AutomationNode) {
 	const meta = getDisplayMeta(step.type);
 	return step.label || meta.label;
+}
+
+export function formatRunDuration(
+	startedAt: string,
+	completedAt: string | null,
+): string {
+	if (!completedAt) return "—";
+	const ms = new Date(completedAt).getTime() - new Date(startedAt).getTime();
+	return formatDurationMs(ms);
 }

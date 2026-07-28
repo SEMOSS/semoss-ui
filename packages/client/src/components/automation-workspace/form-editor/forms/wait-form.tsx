@@ -1,4 +1,4 @@
-import type { WaitConfig } from "@/pages/automation/automation.types";
+import type { WaitConfig } from "../../automation.types";
 import { BoundInput } from "./shared";
 
 export function WaitForm({

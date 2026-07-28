@@ -20,7 +20,7 @@ import { useRootStore } from "@/hooks";
 import type {
 	DatabaseEngineConfig,
 	EngineOption,
-} from "@/pages/automation/automation.types";
+} from "../../automation.types";
 import { BoundInput, EngineSelect } from "./shared";
 
 interface TableStructure {
@@ -42,6 +42,7 @@ export function DatabaseEngineForm({
 	const { monolithStore } = useRootStore();
 	const [structure, setStructure] = useState<TableStructure[]>([]);
 	const [schemaLoading, setSchemaLoading] = useState(false);
+	const [schemaError, setSchemaError] = useState(false);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [expandedTables, setExpandedTables] = useState<
 		Record<string, boolean>
@@ -50,9 +51,11 @@ export function DatabaseEngineForm({
 	useEffect(() => {
 		if (!config.engineId) {
 			setStructure([]);
+			setSchemaError(false);
 			return;
 		}
 		setSchemaLoading(true);
+		setSchemaError(false);
 		monolithStore
 			.runQuery(
 				`META|GetDatabaseTableStructure(database=["${config.engineId}"]);`,
@@ -82,7 +85,10 @@ export function DatabaseEngineForm({
 					})),
 				);
 			})
-			.catch(() => setStructure([]))
+			.catch(() => {
+				setStructure([]);
+				setSchemaError(true);
+			})
 			.finally(() => setSchemaLoading(false));
 	}, [config.engineId, monolithStore]);
 
@@ -194,7 +200,9 @@ export function DatabaseEngineForm({
 							</div>
 						) : searchedStructure.length === 0 ? (
 							<p className="py-4 text-center text-muted-foreground">
-								No tables found
+								{schemaError
+									? "Failed to load schema"
+									: "No tables found"}
 							</p>
 						) : (
 							searchedStructure.map((table) => (

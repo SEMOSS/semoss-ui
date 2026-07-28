@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { AutomationFormEditor } from "../automation-form-editor/automation-form-editor";
+import { AutomationFormEditor } from "./form-editor/automation-form-editor";
 
 export function AutomationWorkspace() {
 	const { workspace } = useWorkspace();

@@ -58,7 +58,7 @@ export const ViewAppPage = observer(() => {
 		setProjectFavorite(appId, status)
 			.then(() => {
 				toast.success(
-					`Project ${status ? "bookmarked" : "unbookmarked"}`,
+					`Project ${bookmarked ? "unbookmarked" : "bookmarked"}`,
 				);
 				return;
 			})
@@ -103,13 +103,13 @@ export const ViewAppPage = observer(() => {
 					logo={
 						<div
 							title={
-								workspace.metadata?.project_display_name ||
-								workspace.metadata?.project_name
+								workspace?.metadata?.project_display_name ||
+								workspace?.metadata?.project_name
 							}
 							className="w-[30ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
 						>
-							{workspace.metadata?.project_display_name ||
-								workspace.metadata?.project_name}
+							{workspace?.metadata?.project_display_name ||
+								workspace?.metadata?.project_name}
 						</div>
 					}
 				/>

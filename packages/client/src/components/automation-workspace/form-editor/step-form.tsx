@@ -9,7 +9,7 @@ import type {
 	StorageEngineConfig,
 	VectorEngineConfig,
 	WaitConfig,
-} from "@/pages/automation/automation.types";
+} from "../automation.types";
 import { AppEngineForm } from "./forms/app-engine-form";
 import { DatabaseEngineForm } from "./forms/database-engine-form";
 import { FunctionEngineForm } from "./forms/function-engine-form";

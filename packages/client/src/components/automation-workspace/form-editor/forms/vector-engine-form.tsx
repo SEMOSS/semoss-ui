@@ -8,10 +8,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import type {
-	EngineOption,
-	VectorEngineConfig,
-} from "@/pages/automation/automation.types";
+import type { EngineOption, VectorEngineConfig } from "../../automation.types";
 import { BoundInput, EngineSelect } from "./shared";
 
 export function VectorEngineForm({
@@ -79,7 +76,9 @@ export function VectorEngineForm({
 							onChange={(e) =>
 								onChange({
 									...config,
-									limit: Number(e.target.value),
+									limit: e.target.value
+										? Number(e.target.value)
+										: undefined,
 								})
 							}
 							placeholder="5"

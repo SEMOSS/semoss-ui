@@ -2,7 +2,7 @@ import type {
 	AutomationNode,
 	AutomationNodeType,
 	OutputTransform,
-} from "@/pages/automation/automation.types";
+} from "./automation.types";
 
 // ─── shared constants ─────────────────────────────────────────────────────────
 
@@ -291,7 +291,7 @@ export function extractVarRefs(pixel: string): string[] {
 //   1. Rows-as-objects:  [{col: val, ...}, ...]
 //   2. SEMOSS wrapped:   {data: {headers, values}}
 //   3. SEMOSS direct:    {headers, values}
-function extractDataset(
+export function extractDataset(
 	parsed: unknown,
 ): { headers: string[]; rows: unknown[][] } | null {
 	if (

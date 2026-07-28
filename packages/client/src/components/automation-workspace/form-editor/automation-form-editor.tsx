@@ -11,6 +11,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button, toast } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
+import { NODE_TYPE_META } from "../automation.constants";
 import type {
 	AutomationConfigEntry,
 	AutomationDocument,
@@ -24,9 +25,8 @@ import type {
 	ProjectOption,
 	RunStatus,
 	StepRunStatus,
-} from "@/pages/automation/automation.types";
-import { NODE_TYPE_META } from "@/pages/automation/automation.types";
-import { applyOutputTransform } from "../automation-workspace/automation-utils";
+} from "../automation.types";
+import { applyOutputTransform } from "../automation-utils";
 import { AutomationConfigTab } from "./automation-config-tab";
 import type { AutomationRunData } from "./automation-editor-utils";
 import {
