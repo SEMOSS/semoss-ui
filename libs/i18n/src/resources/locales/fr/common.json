@@ -208,6 +208,9 @@
 			"formatted": "FORMATÉ",
 			"raw": "BRUT"
 		},
+		"image": {
+			"alt": "Image générée {{index}}"
+		},
 		"copy": {
 			"command": "Copier la commande",
 			"logs": "Copier les journaux",
@@ -219,6 +222,8 @@
 		"collapseAll": "Tout réduire",
 		"close": "Fermer",
 		"lines_one": "{{count}} ligne",
-		"lines_other": "{{count}} lignes"
+		"lines_other": "{{count}} lignes",
+		"images_one": "{{count}} image",
+		"images_other": "{{count}} images"
 	}
 }

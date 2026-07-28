@@ -144,7 +144,7 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						helpText: "Settings",
 						enableClose: false,
 						borderWidth: 800,
-						borderHeight: 600,
+						borderHeight: 1200,
 					},
 				],
 			},
@@ -384,6 +384,11 @@ export const BlocksWorkspace: React.FC = observer(() => {
 					type="CODE"
 					tabs={[
 						{ name: "Overview", path: "" },
+						{
+							name: "MCP",
+							path: "mcp-usage",
+							restrict: ["OWNER", "EDIT", "READ_ONLY"],
+						},
 						{
 							name: "Commits",
 							path: "commits",
