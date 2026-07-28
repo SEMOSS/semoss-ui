@@ -10,6 +10,8 @@ Context for AI coding assistants (and humans) picking up this package cold.
 `@semoss/chat` is a headless chat domain layer (`@semoss/chat`) plus a
 styled component library built on top of it (`@semoss/chat/components`).
 See [`README.md`](./README.md) for the full usage guide and
+[`USAGE_AGENT.md`](./USAGE_AGENT.md) for an agent-friendly implementation
+guide with copy-paste examples,
 [`src/stores/README.md`](./src/stores/README.md) /
 [`src/contexts/README.md`](./src/contexts/README.md) /
 [`src/components/README.md`](./src/components/README.md) for the

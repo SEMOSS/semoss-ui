@@ -376,12 +376,33 @@ importers:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
     devDependencies:
+      '@rollup/plugin-commonjs':
+        specifier: 28.0.6
+        version: 28.0.6(rollup@4.59.0)
+      '@rollup/plugin-node-resolve':
+        specifier: 16.0.1
+        version: 16.0.1(rollup@4.59.0)
+      '@rollup/plugin-terser':
+        specifier: ^1.0.0
+        version: 1.0.0(rollup@4.59.0)
+      '@rollup/plugin-typescript':
+        specifier: 12.1.4
+        version: 12.1.4(rollup@4.59.0)(tslib@2.5.3)(typescript@5.5.4)
       '@types/react':
         specifier: 18.3.1
         version: 18.3.1
       '@types/react-dom':
         specifier: 18.3.0
         version: 18.3.0
+      rollup:
+        specifier: 4.59.0
+        version: 4.59.0
+      rollup-plugin-delete:
+        specifier: 3.0.1
+        version: 3.0.1(rollup@4.59.0)
+      rollup-plugin-postcss:
+        specifier: ^4.0.2
+        version: 4.0.2(postcss@8.5.6)(ts-node@10.9.2(@swc/core@1.15.3)(@types/node@25.9.3)(typescript@5.5.4))
       tslib:
         specifier: 2.5.3
         version: 2.5.3
