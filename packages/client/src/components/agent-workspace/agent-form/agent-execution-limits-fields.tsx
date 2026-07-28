@@ -11,7 +11,6 @@ export const AgentExecutionLimitsFields = ({
 	control,
 }: AgentExecutionLimitsFieldsProps) => {
 	const maxTurnsId = useId();
-	const maxReflectionsId = useId();
 	const maxSubagentDepthId = useId();
 	const maxSubagentsPerRunId = useId();
 	const maxSpawnsPerTurnId = useId();
@@ -29,24 +28,6 @@ export const AgentExecutionLimitsFields = ({
 							type="number"
 							min={1}
 							placeholder="30 (default)"
-							{...field}
-						/>
-					</Field>
-				)}
-			/>
-			<Controller
-				name="maxReflections"
-				control={control}
-				render={({ field }) => (
-					<Field>
-						<FieldLabel htmlFor={maxReflectionsId}>
-							Max reflections
-						</FieldLabel>
-						<Input
-							id={maxReflectionsId}
-							type="number"
-							min={0}
-							placeholder="0 (default, off)"
 							{...field}
 						/>
 					</Field>

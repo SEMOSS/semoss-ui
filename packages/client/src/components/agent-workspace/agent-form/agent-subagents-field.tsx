@@ -5,14 +5,12 @@ import { usePixel } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import {
 	Button,
-	Input,
 	Muted,
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-	Textarea,
 } from "@semoss/ui/next";
 import type { AgentFormValues } from "./types";
 
@@ -56,7 +54,7 @@ export const AgentSubagentsField = ({
 						key={subagentField.id}
 						className="flex flex-col gap-2 border-border border-b pb-3 last:border-b-0 last:pb-0"
 					>
-						<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+						<div className="flex items-center gap-2">
 							<Controller
 								name={`subagents.${index}.workspaceId`}
 								control={control}
@@ -70,7 +68,7 @@ export const AgentSubagentsField = ({
 									>
 										<SelectTrigger
 											aria-label="Target agent"
-											className="sm:flex-1"
+											className="flex-1"
 										>
 											<SelectValue
 												placeholder={
@@ -96,18 +94,6 @@ export const AgentSubagentsField = ({
 									</Select>
 								)}
 							/>
-							<Controller
-								name={`subagents.${index}.alias`}
-								control={control}
-								render={({ field }) => (
-									<Input
-										aria-label="Alias"
-										placeholder="Alias, e.g. researcher"
-										className="sm:flex-1"
-										{...field}
-									/>
-								)}
-							/>
 							<Button
 								variant="ghost"
 								size="icon"
@@ -118,18 +104,6 @@ export const AgentSubagentsField = ({
 								<Trash2 className="size-4" />
 							</Button>
 						</div>
-						<Controller
-							name={`subagents.${index}.description`}
-							control={control}
-							render={({ field }) => (
-								<Textarea
-									aria-label="Description"
-									placeholder="When should the agent delegate to this subagent?"
-									className="max-h-[7.5rem]"
-									{...field}
-								/>
-							)}
-						/>
 					</div>
 				))}
 			</div>
@@ -140,9 +114,7 @@ export const AgentSubagentsField = ({
 				className="w-fit"
 				onClick={() =>
 					appendSubagent({
-						alias: "",
 						workspaceId: "",
-						description: "",
 					})
 				}
 			>

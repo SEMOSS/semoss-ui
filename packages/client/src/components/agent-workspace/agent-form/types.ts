@@ -1,9 +1,7 @@
 import type { MCPConfig, SkillConfig } from "@semoss/shared";
 
 export type SubagentEntry = {
-	alias: string;
 	workspaceId: string;
-	description: string;
 };
 
 export type ModelEngine = {
@@ -64,7 +62,6 @@ export type AgentFormValues = {
 	instructions: string;
 	modelId: string;
 	maxTurns: string;
-	maxReflections: string;
 	maxSubagentDepth: string;
 	maxSubagentsPerRun: string;
 	maxSpawnsPerTurn: string;
@@ -82,7 +79,6 @@ export const AGENT_FORM_DEFAULT_VALUES: AgentFormValues = {
 	instructions: "",
 	modelId: "",
 	maxTurns: "",
-	maxReflections: "",
 	maxSubagentDepth: "",
 	maxSubagentsPerRun: "",
 	maxSpawnsPerTurn: "",

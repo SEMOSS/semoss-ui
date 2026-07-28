@@ -3,11 +3,9 @@ import { PIXEL_HOOK_KIND } from "./types";
 
 const buildSubagentsPayload = (subagents: AgentFormValues["subagents"]) =>
 	subagents
-		.filter((s) => s.alias || s.workspaceId)
+		.filter((s) => s.workspaceId)
 		.map((s) => ({
-			alias: s.alias,
 			workspaceId: s.workspaceId,
-			...(s.description ? { description: s.description } : {}),
 		}));
 
 // Drops a `pixel`-kind hook that has no pixel expression yet (just added, not
@@ -42,5 +40,5 @@ export const buildEditWorkspacePixel = (
 	const subagents = buildSubagentsPayload(data.subagents);
 	const hooks = buildHooksPayload(data.hooks);
 
-	return `EditWorkspace(workspaceId=["${workspaceId}"], name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)}, modelId=${JSON.stringify(data.modelId)}, maxTurns=${JSON.stringify(data.maxTurns)}, maxReflections=${JSON.stringify(data.maxReflections)}, maxSubagentDepth=${JSON.stringify(data.maxSubagentDepth)}, maxSubagentsPerRun=${JSON.stringify(data.maxSubagentsPerRun)}, maxSpawnsPerTurn=${JSON.stringify(data.maxSpawnsPerTurn)}, subagents=${JSON.stringify(subagents)}, hooks=${JSON.stringify(hooks)});`;
+	return `EditWorkspace(workspaceId=["${workspaceId}"], name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)}, modelId=${JSON.stringify(data.modelId)}, maxTurns=${JSON.stringify(data.maxTurns)}, maxSubagentDepth=${JSON.stringify(data.maxSubagentDepth)}, maxSubagentsPerRun=${JSON.stringify(data.maxSubagentsPerRun)}, maxSpawnsPerTurn=${JSON.stringify(data.maxSpawnsPerTurn)}, subagents=${JSON.stringify(subagents)}, hooks=${JSON.stringify(hooks)});`;
 };

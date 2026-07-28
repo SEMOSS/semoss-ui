@@ -86,11 +86,10 @@ export const CreateAgentPage = () => {
 			const hasExecutionSettings =
 				data.modelId ||
 				data.maxTurns ||
-				data.maxReflections ||
 				data.maxSubagentDepth ||
 				data.maxSubagentsPerRun ||
 				data.maxSpawnsPerTurn ||
-				data.subagents.some((s) => s.alias || s.workspaceId);
+				data.subagents.some((s) => s.workspaceId);
 			if (hasExecutionSettings) {
 				const { errors: settingsErrors } = await monolithStore.runQuery(
 					buildEditWorkspacePixel(agentId, data),
@@ -306,7 +305,7 @@ export const CreateAgentPage = () => {
 					<AgentFormSection
 						layout="columns"
 						title="Subagents"
-						description="Delegate to other agents as callable tools. Each alias becomes a tool name the agent can invoke."
+						description="Select other agents this agent can delegate work to. Tool names and descriptions are generated automatically."
 					>
 						<AgentSubagentsField control={control} />
 					</AgentFormSection>

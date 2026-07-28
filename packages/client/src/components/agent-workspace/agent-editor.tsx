@@ -43,7 +43,6 @@ type GetWorkspaceResponse = {
 		model_id?: string;
 		budgets?: {
 			max_turns?: number;
-			max_reflections?: number;
 		};
 		spawn_policy?: {
 			max_subagent_depth?: number;
@@ -51,9 +50,7 @@ type GetWorkspaceResponse = {
 			max_spawns_per_turn?: number;
 		};
 		subagents?: {
-			alias: string;
 			workspaceId: string;
-			description?: string;
 		}[];
 		hooks?: {
 			kind: string;
@@ -95,9 +92,6 @@ export const AgentEditor = () => {
 					modelId: data.config_json?.model_id ?? "",
 					maxTurns:
 						data.config_json?.budgets?.max_turns?.toString() ?? "",
-					maxReflections:
-						data.config_json?.budgets?.max_reflections?.toString() ??
-						"",
 					maxSubagentDepth:
 						data.config_json?.spawn_policy?.max_subagent_depth?.toString() ??
 						"",
@@ -112,9 +106,7 @@ export const AgentEditor = () => {
 					skills: data.skills ?? [],
 					prompts: (data.prompts ?? []).map((p) => p.id),
 					subagents: (data.config_json?.subagents ?? []).map((s) => ({
-						alias: s.alias,
 						workspaceId: s.workspaceId,
-						description: s.description ?? "",
 					})),
 					hooks: data.config_json?.hooks ?? [],
 				});
@@ -305,7 +297,7 @@ export const AgentEditor = () => {
 
 						<AgentFormSection
 							title="Subagents"
-							description="Delegate to other agents as callable tools. Each alias becomes a tool name the agent can invoke."
+							description="Select other agents this agent can delegate work to. Tool names and descriptions are generated automatically."
 						>
 							<AgentSubagentsField
 								control={control}
