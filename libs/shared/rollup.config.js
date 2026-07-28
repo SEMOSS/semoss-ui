@@ -41,6 +41,8 @@ export default defineConfig({
 		"@semoss/sdk",
 		"@semoss/ui",
 		"@semoss/i18n",
+		"monaco-editor",
+		"@monaco-editor/react",
 		/node_modules\/.*worker\.js/,
 	],
 	watch: {
