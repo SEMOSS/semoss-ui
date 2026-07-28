@@ -32,6 +32,11 @@ type McpToolResponse = {
 	};
 };
 
+type RoomMcpUpdatedMessage = {
+	type: "SMSS_ROOM_MCP_UPDATED";
+	roomId: string;
+};
+
 const semossEnvScript = document.getElementById("semoss-env");
 
 if (semossEnvScript?.textContent) {
@@ -317,6 +322,24 @@ export function subscribeToMcpToolContext(
 	subscribers.add(listener);
 	listener(toolContext);
 	return () => subscribers.delete(listener);
+}
+
+export function notifyPlaygroundRoomMcpUpdated(roomId: string): void {
+	const normalizedRoomId = roomId.trim();
+	if (
+		!normalizedRoomId ||
+		typeof window === "undefined" ||
+		!window.parent ||
+		window.parent === window
+	) {
+		return;
+	}
+
+	const message: RoomMcpUpdatedMessage = {
+		type: "SMSS_ROOM_MCP_UPDATED",
+		roomId: normalizedRoomId,
+	};
+	window.parent.postMessage(message, "*");
 }
 
 export function sendMcpResponseToPlayground(

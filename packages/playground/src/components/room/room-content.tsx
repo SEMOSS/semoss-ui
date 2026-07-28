@@ -36,6 +36,11 @@ import { RoomSuggestions } from "./room-suggestions";
 const ROOM_CONFIGURATION_ID = "CONFIGURATION";
 const SCROLL_THRESHOLD = 150;
 
+type RoomMcpUpdatedMessage = {
+	type: "SMSS_ROOM_MCP_UPDATED";
+	roomId: string;
+};
+
 interface RoomContentProps {
 	/** Room to load */
 	room: RoomStore;
@@ -59,6 +64,9 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	 * Functions
 	 */
 	const handlePrompt = async (prompt: string, files: File[]) => {
+		// Pull in server-owned room MCP changes before persisting local options.
+		await room.syncRoomOptions();
+
 		// update the options
 		await room.updateRoomOptions(room.options);
 
@@ -174,19 +182,33 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	// create a listener to process messages from the room
 	useEffect(() => {
 		const handleMessage = async (
-			event: MessageEvent<{
-				type: "SMSS_EXEC_TOOL";
-				tool: MCPToolResponse;
-			}>,
+			event: MessageEvent<
+				| {
+						type: "SMSS_EXEC_TOOL";
+						tool: MCPToolResponse;
+				  }
+				| RoomMcpUpdatedMessage
+			>,
 		) => {
 			try {
-				if (!event.data || event.data.type !== "SMSS_EXEC_TOOL") {
+				if (!event.data) {
+					return;
+				}
+
+				if (event.data.type === "SMSS_ROOM_MCP_UPDATED") {
+					if (event.data.roomId === room.roomId) {
+						await room.syncRoomOptions();
+					}
+					return;
+				}
+
+				if (event.data.type !== "SMSS_EXEC_TOOL") {
 					return;
 				}
 
 				const tool = event.data.tool;
 
-				room.processTool(
+				await room.processTool(
 					tool.message,
 					tool.id,
 					tool.response,

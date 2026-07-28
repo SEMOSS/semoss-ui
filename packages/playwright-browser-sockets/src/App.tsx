@@ -53,6 +53,7 @@ import {
 	getSemossInsightId,
 	initSemoss,
 	listRecordingMetadataModels,
+	notifyPlaygroundRoomMcpUpdated,
 	resolvePlaywrightRoomRecording,
 	sendMcpResponseToPlayground,
 	subscribeToMcpToolContext,
@@ -1527,6 +1528,7 @@ export default function App() {
 					registrationResponse,
 					"Playground recording MCP registration",
 				);
+				notifyPlaygroundRoomMcpUpdated(toolContext.roomId);
 
 				await closeBrowserSession();
 				browserClosed = true;
