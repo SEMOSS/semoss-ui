@@ -14,7 +14,15 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { download, runPixel, useInsight, usePixel } from "@semoss/sdk/react";
+import {
+	download,
+	getPixelAsyncResult,
+	console as getPixelConsole,
+	runPixel,
+	runPixelAsync,
+	useInsight,
+	usePixel,
+} from "@semoss/sdk/react";
 import {
 	Button,
 	ContextMenu,
@@ -44,6 +52,7 @@ import {
 	changeCellType,
 	createCell,
 	deleteCell,
+	extractInlineImageOutputs,
 	insertCell,
 	moveCell,
 	nextExecutionCount,
@@ -53,6 +62,7 @@ import {
 	toErrorOutput,
 	toRuntimeOutputs,
 	unwrapPixelOutput,
+	wrapPythonSourceForImageCapture,
 } from "./notebook.utility";
 import { NotebookCellView } from "./notebook-cell-view";
 import { useNotebookFileRefresh } from "./notebook-events";
@@ -148,6 +158,12 @@ export const Notebook: React.FC<NotebookProps> = ({
 	// Execute a code cell server-side via the Py() reactor and map the Pixel
 	// response into nbformat outputs. Only Python is wired up here; a cell-level
 	// Python error comes back as an nbformat "error" output rather than throwing.
+	//
+	// Uses the async job + console-polling pattern (mirroring the Blocks
+	// workspace's cell.state.ts) rather than a single synchronous Pixel call,
+	// since that's what reliably surfaces a cell's full stdout - required both
+	// for print() output and for the matplotlib image-capture shim below, which
+	// streams captured figures out through marker-prefixed print() lines.
 	const executeCell = async (
 		cell: JupyterCodeCell,
 		executionCount: number,
@@ -157,44 +173,65 @@ export const Notebook: React.FC<NotebookProps> = ({
 			return { executionCount, outputs: [] };
 		}
 
-		const pixel = `Py("<encode>${source}</encode>");`;
+		const pixel = `Py("<encode>${wrapPythonSourceForImageCapture(source)}</encode>");`;
 
 		try {
-			let pixelReturn: Array<{
-				operationType?: string[];
-				output?: unknown;
-			}> = [];
-			let errorMessages: string[] = [];
+			const { jobId } = await runPixelAsync(pixel, targetInsightId);
 
-			if (mode.type === "INSIGHT" && targetInsightId) {
-				const response = await runPixel<[unknown]>(
-					pixel,
-					targetInsightId,
-				);
-				pixelReturn = response.pixelReturn;
-				errorMessages = response.errors;
-			} else {
-				const response = await insight.actions.run<[unknown]>(pixel);
-				pixelReturn = response.pixelReturn;
+			const logs: string[] = [];
+			let isPolling = true;
+			while (isPolling) {
+				const { message: messages, status } =
+					await getPixelConsole(jobId);
+				logs.push(...messages);
+
+				if (
+					status === "ProgressComplete" ||
+					status === "Streaming" ||
+					status === "Complete"
+				) {
+					isPolling = false;
+				} else {
+					await new Promise((resolve) => setTimeout(resolve, 1000));
+				}
 			}
 
-			const last = pixelReturn[pixelReturn.length - 1];
+			// Final flush - pull any logs (including the image-capture
+			// markers) written after the last poll.
+			const { message: finalMessages } = await getPixelConsole(jobId);
+			logs.push(...finalMessages);
+
+			const { errors, results } =
+				await getPixelAsyncResult<[unknown]>(jobId);
+
+			const { cleanedLogs, images } = extractInlineImageOutputs(logs);
+			const last = results[results.length - 1];
 			const operationType = last?.operationType ?? [];
 
-			if (errorMessages.length > 0 || operationType.includes("ERROR")) {
+			if (errors.length > 0 || operationType.includes("ERROR")) {
 				const message =
-					errorMessages.join("\n") ||
+					errors.join("\n") ||
 					String(unwrapPixelOutput(last) ?? "Execution error");
-				return { executionCount, outputs: [toErrorOutput(message)] };
+				return {
+					executionCount,
+					outputs: [...images, toErrorOutput(message)],
+				};
 			}
 
-			return {
-				executionCount,
-				outputs: toRuntimeOutputs(
-					unwrapPixelOutput(last),
-					executionCount,
-				),
-			};
+			const outputs: RunCellResult["outputs"] = [...images];
+			const stdout = cleanedLogs.join("\n").trim();
+			if (stdout) {
+				outputs.push({
+					output_type: "stream",
+					name: "stdout",
+					text: cleanedLogs,
+				});
+			}
+			outputs.push(
+				...toRuntimeOutputs(unwrapPixelOutput(last), executionCount),
+			);
+
+			return { executionCount, outputs };
 		} catch (e) {
 			return {
 				executionCount,

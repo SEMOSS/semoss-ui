@@ -340,6 +340,140 @@ export const buildChatExecutionOutputs = (
 	return outputs;
 };
 
+const IMAGE_CAPTURE_BEGIN_PREFIX = "__SEMOSS_NOTEBOOK_IMAGE_BEGIN__:";
+const IMAGE_CAPTURE_CHUNK_PREFIX = "__SEMOSS_NOTEBOOK_IMAGE_CHUNK__:";
+const IMAGE_CAPTURE_END_MARKER = "__SEMOSS_NOTEBOOK_IMAGE_END__";
+
+/**
+ * Wraps a Python cell's source with a shim that makes matplotlib figures show
+ * up as real image outputs, the same way a real Jupyter kernel does: a
+ * monkey-patched `plt.show()` (and any figure still open at the end, in case
+ * the user never called `show()`) gets captured via `savefig` to an in-memory
+ * PNG and streamed out through marker-prefixed `print()` lines, since Pixel's
+ * console channel only carries plain text. `extractInlineImageOutputs` below
+ * decodes those markers back out of the captured stdout on the client side.
+ */
+export const wrapPythonSourceForImageCapture = (source: string): string => {
+	const preamble = `
+try:
+    import io as __semoss_io
+    import base64 as __semoss_base64
+    import matplotlib as __semoss_matplotlib
+    __semoss_matplotlib.use("Agg", force=True)
+    import matplotlib.pyplot as __semoss_plt
+    try:
+        __semoss_plt.switch_backend("Agg")
+    except Exception:
+        pass
+    __semoss_plt.ioff()
+
+    __semoss_chunk_size = 4000
+    __semoss_shown_fig_nums = set()
+
+    def __semoss_emit_figure(__semoss_fig):
+        __semoss_buf = __semoss_io.BytesIO()
+        __semoss_fig.savefig(__semoss_buf, format="png", bbox_inches="tight")
+        __semoss_buf.seek(0)
+        __semoss_png = __semoss_base64.b64encode(__semoss_buf.getvalue()).decode("ascii")
+        print("${IMAGE_CAPTURE_BEGIN_PREFIX}image/png")
+        for __semoss_idx in range(0, len(__semoss_png), __semoss_chunk_size):
+            print("${IMAGE_CAPTURE_CHUNK_PREFIX}" + __semoss_png[__semoss_idx:__semoss_idx + __semoss_chunk_size])
+        print("${IMAGE_CAPTURE_END_MARKER}")
+        __semoss_buf.close()
+
+    def __semoss_show_wrapper(*args, **kwargs):
+        for __semoss_num in __semoss_plt.get_fignums():
+            __semoss_emit_figure(__semoss_plt.figure(__semoss_num))
+            __semoss_shown_fig_nums.add(__semoss_num)
+        return None
+
+    __semoss_plt.show = __semoss_show_wrapper
+except Exception:
+    pass
+`;
+
+	// A figure the user never explicitly show()-ed (common when the last line
+	// of a cell is just a plotting call, mirroring Jupyter's implicit display)
+	// still gets flushed here, then all figures are closed to free memory.
+	const suffix = `
+try:
+    for __semoss_num in __semoss_plt.get_fignums():
+        if __semoss_num not in __semoss_shown_fig_nums:
+            __semoss_emit_figure(__semoss_plt.figure(__semoss_num))
+    for __semoss_num in list(__semoss_plt.get_fignums()):
+        __semoss_plt.close(__semoss_num)
+except Exception:
+    pass
+`;
+
+	return `${preamble}\n${source}\n${suffix}`;
+};
+
+/**
+ * Recovers the image outputs captured by `wrapPythonSourceForImageCapture`'s
+ * shim from the cell's captured console logs, and strips those marker lines
+ * out so they don't also show up as noisy stream output.
+ */
+export const extractInlineImageOutputs = (
+	logs: string[],
+): { cleanedLogs: string[]; images: JupyterOutput[] } => {
+	const cleanedLogs: string[] = [];
+	const images: JupyterOutput[] = [];
+	let collecting = false;
+	let mimeType = "image/png";
+	let chunks: string[] = [];
+
+	const flush = () => {
+		if (!collecting) return;
+		const base64Data = chunks.join("").replace(/\s+/g, "");
+		if (base64Data) {
+			images.push({
+				output_type: "display_data",
+				data: { [mimeType]: base64Data },
+				metadata: {},
+			});
+		}
+		collecting = false;
+		mimeType = "image/png";
+		chunks = [];
+	};
+
+	for (const rawLine of logs) {
+		// A single console message can occasionally bundle multiple printed
+		// lines together, so split defensively instead of assuming a 1:1
+		// mapping between console messages and print() calls.
+		for (const line of rawLine.split(/\r?\n/)) {
+			if (line.startsWith(IMAGE_CAPTURE_BEGIN_PREFIX)) {
+				flush();
+				collecting = true;
+				mimeType =
+					line.slice(IMAGE_CAPTURE_BEGIN_PREFIX.length).trim() ||
+					"image/png";
+				chunks = [];
+				continue;
+			}
+
+			if (line.startsWith(IMAGE_CAPTURE_CHUNK_PREFIX)) {
+				if (collecting) {
+					chunks.push(line.slice(IMAGE_CAPTURE_CHUNK_PREFIX.length));
+				}
+				continue;
+			}
+
+			if (line.trim() === IMAGE_CAPTURE_END_MARKER) {
+				flush();
+				continue;
+			}
+
+			cleanedLogs.push(line);
+		}
+	}
+
+	flush();
+
+	return { cleanedLogs, images };
+};
+
 /** Replace a single code cell's outputs/execution count, immutably. */
 export const applyRunResult = (
 	notebook: JupyterNotebook,
