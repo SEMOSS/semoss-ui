@@ -6,7 +6,6 @@ export {
 	type MemberAccessPanelProps,
 } from "./member-access-panel";
 export { MemberList, type MemberListProps } from "./member-list";
-export * from "./members-table";
 export * from "./pending-members-table";
 export * from "./service-accounts-table";
 export * from "./settings.types";

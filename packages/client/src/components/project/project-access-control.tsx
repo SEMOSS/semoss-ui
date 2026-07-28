@@ -1,27 +1,14 @@
-import { MembersTable, type Project } from "@semoss/shared";
+import { MembersTable } from "@semoss/shared";
 import { H2 } from "@semoss/ui/next";
 import { PendingMembersTable, SettingsTiles } from "@/components/settings";
 import { TeamsTable } from "@/components/settings/teams-table";
 import { SettingsContext } from "@/contexts";
+import { useProject } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
-// Component props
-interface AccessProps {
-	project: Pick<
-		Project,
-		"project_display_name" | "project_name" | "project_type"
-	>;
-	appId: string;
-	fetchUserSpecificData: () => void;
-	permission: string;
-}
+export const ProjectAccessControl = () => {
+	const { project, permission, refresh } = useProject();
 
-export const AccessControl = ({
-	project,
-	appId,
-	fetchUserSpecificData,
-	permission,
-}: AccessProps) => {
 	const navigate = useNavigate();
 
 	return (
@@ -31,7 +18,7 @@ export const AccessControl = ({
 			}}
 		>
 			<div className="flex w-full flex-col items-start gap-6 self-stretch">
-				{permission === "author" && (
+				{permission === "OWNER" && (
 					<section className="w-full">
 						<H2 className="mb-2 font-medium text-xl">
 							Access Settings
@@ -44,7 +31,7 @@ export const AccessControl = ({
 								project?.project_name ||
 								"app"
 							}
-							id={appId}
+							id={project.project_id}
 							onDelete={() => {
 								navigate("/app");
 							}}
@@ -57,15 +44,22 @@ export const AccessControl = ({
 						Member Permissions
 					</H2>
 					<div className="flex flex-col gap-4">
-						<PendingMembersTable type="PROJECT" id={appId} />
+						<PendingMembersTable
+							type="PROJECT"
+							id={project.project_id}
+						/>
 						<MembersTable
 							type="PROJECT"
-							id={appId}
-							onChange={fetchUserSpecificData}
+							id={project.project_id}
+							onChange={() => refresh()}
 						/>
 						<div className="mt-6">
-							<TeamsTable type="PROJECT" id={appId} />
+							<TeamsTable
+								type="PROJECT"
+								id={project.project_id}
+							/>
 						</div>
+						pn
 					</div>
 				</section>
 			</div>

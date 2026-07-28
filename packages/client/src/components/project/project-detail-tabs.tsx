@@ -1,9 +1,8 @@
 import { useMemo, useState } from "react";
 import type { Role } from "@semoss/shared";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
-import { ProjectOverview } from "@/components/project";
+import { ProjectAccessControl, ProjectOverview } from "@/components/project";
 import { useProject } from "@/hooks";
-import { AppAccessControlPage } from "@/pages/app/app-access-control-page";
 import { AppActivityPage } from "@/pages/app/app-activity-page";
 import { AppCommitsPage } from "@/pages/app/app-commits-page";
 import { AppFilesPage } from "@/pages/app/app-files-page";
@@ -100,7 +99,7 @@ export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
 				{activeTab?.component === "github" && <AppGithubPage />}
 				{activeTab?.component === "settings" && <AppSettingsPage />}
 				{activeTab?.component === "access-control" && (
-					<AppAccessControlPage />
+					<ProjectAccessControl />
 				)}
 				{activeTab?.component === "files" && <AppFilesPage />}
 				{activeTab?.component === "smss" && <AppSmssPage />}

@@ -1,4 +1,5 @@
 export { EditProjectDependenciesDialog } from "./edit-project-dependencies-dialog";
+export { ProjectAccessControl } from "./project-access-control";
 export { ProjectAccessRequestButton } from "./project-access-request-button";
 export { ProjectAccessRequestDialog } from "./project-access-request-dialog";
 export { ProjectCatalog } from "./project-catalog";

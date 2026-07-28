@@ -1,7 +1,10 @@
 import { Outlet } from "react-router-dom";
-import { ProjectCatalog, ProjectEdit } from "@/components/project";
 import {
-	AppAccessControlPage,
+	ProjectAccessControl,
+	ProjectCatalog,
+	ProjectEdit,
+} from "@/components/project";
+import {
 	AppCommitsPage,
 	AppFilesPage,
 	AppGithubPage,
@@ -147,7 +150,7 @@ export const PROJECT_ROUTES: {
 							},
 							{
 								path: "access-control",
-								element: <AppAccessControlPage />,
+								element: <ProjectAccessControl />,
 							},
 							{
 								path: "files",
@@ -235,7 +238,7 @@ export const PROJECT_ROUTES: {
 							},
 							{
 								path: "access-control",
-								element: <AppAccessControlPage />,
+								element: <ProjectAccessControl />,
 							},
 							{
 								path: "smss",
@@ -315,7 +318,7 @@ export const PROJECT_ROUTES: {
 							},
 							{
 								path: "access-control",
-								element: <AppAccessControlPage />,
+								element: <ProjectAccessControl />,
 							},
 							{
 								path: "smss",
