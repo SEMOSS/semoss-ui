@@ -221,3 +221,26 @@ export const formatExecuteOutput = (value: unknown, opType: string): string => {
 	// back into an interactive tree).
 	return JSON.stringify(value, null, 2);
 };
+
+/**
+ * Build a runnable pixel expression for a fenced code block's language, or
+ * null when the language has no server-side reactor to execute it with.
+ */
+export const buildExecutePixel = (
+	lang: string | undefined,
+	code: string,
+): string | null => {
+	if (!code.trim()) return null;
+
+	switch ((lang ?? "").toLowerCase()) {
+		case "py":
+		case "python":
+			return `Py("<encode>${code}</encode>");`;
+		case "r":
+			return `R("<encode>${code}</encode>");`;
+		case "pixel":
+			return code;
+		default:
+			return null;
+	}
+};

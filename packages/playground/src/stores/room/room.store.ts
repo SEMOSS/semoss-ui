@@ -28,16 +28,6 @@ import type {
 	Workspace,
 } from "@/types";
 
-export interface NotebookRowSelection {
-	insightId: string;
-	path: string;
-	queryId: string;
-	cellId: string;
-	rowNumber: number;
-	cellType?: string;
-	code?: string;
-}
-
 interface RoomStoreInterface {
 	/**
 	 * ID of the room
@@ -149,8 +139,6 @@ interface RoomStoreInterface {
 		 */
 		counter: number;
 	};
-
-	selectedNotebookRow: NotebookRowSelection | null;
 }
 
 /**
@@ -191,7 +179,6 @@ export class RoomStore {
 			}),
 			counter: 0,
 		},
-		selectedNotebookRow: null,
 	};
 
 	constructor(
@@ -423,47 +410,6 @@ export class RoomStore {
 		return this._store.sidebar;
 	}
 
-	get selectedNotebookRow() {
-		return this._store.selectedNotebookRow;
-	}
-
-	get activeFileEditorPath() {
-		// The sidebar's "X" button only hides the panel (sidebar.isOpen =
-		// false) - it doesn't touch the FlexLayout model, so the notebook tab
-		// underneath would otherwise still look "active" and get silently
-		// targeted. Nothing counts as active while the panel itself is closed.
-		if (!this._store.sidebar.isOpen) {
-			return null;
-		}
-
-		// Use the actively selected file-editor tab first so actions can target
-		// the notebook the user is currently interacting with.
-		const activeNode = this._store.sidebar.model
-			.getActiveTabset()
-			?.getSelectedNode();
-
-		if (!(activeNode instanceof FlexLayout.TabNode)) {
-			return null;
-		}
-
-		if (activeNode.getComponent() !== "room-file-editor") {
-			return null;
-		}
-
-		const config = activeNode.getConfig() as { path?: unknown };
-
-		return typeof config.path === "string" ? config.path : null;
-	}
-
-	get activeNotebookFilePath() {
-		const activePath = this.activeFileEditorPath;
-		if (!activePath) {
-			return null;
-		}
-
-		return activePath.toLowerCase().endsWith(".ipynb") ? activePath : null;
-	}
-
 	/** Setters */
 	/**
 	 * Set the mode
@@ -503,9 +449,6 @@ export class RoomStore {
 		};
 	};
 
-	setSelectedNotebookRow = (selection: NotebookRowSelection | null) => {
-		this._store.selectedNotebookRow = selection;
-	};
 	/** Actions */
 	/**
 	 * Initialize the room and load messages and options if they are there
@@ -934,16 +877,6 @@ export class RoomStore {
 			const tool = this.getToolByNodeId(action.data.node);
 			if (tool) {
 				tool.setIsOpen(false);
-			}
-
-			if (typeof action.data.node === "string") {
-				const deletedNodeId = action.data.node;
-				if (deletedNodeId.startsWith("FILE--")) {
-					const deletedPath = deletedNodeId.replace("FILE--", "");
-					if (this._store.selectedNotebookRow?.path === deletedPath) {
-						this._store.selectedNotebookRow = null;
-					}
-				}
 			}
 		}
 

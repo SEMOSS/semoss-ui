@@ -55,6 +55,7 @@ import {
 	unwrapPixelOutput,
 } from "./notebook.utility";
 import { NotebookCellView } from "./notebook-cell-view";
+import { useNotebookFileRefresh } from "./notebook-events";
 
 interface NotebookProps {
 	/** Mode of file editor */
@@ -132,6 +133,14 @@ export const Notebook: React.FC<NotebookProps> = ({
 		setNotebook(parsed.notebook);
 		setParseError(parsed.error);
 	}, [getFile.status, getFile.data]);
+
+	// Reload from disk when this exact file is written from outside this editor
+	// (e.g. the chat "Add to Notebook" action), so an already-open tab doesn't
+	// silently go stale.
+	useNotebookFileRefresh(path, () => {
+		seededRawRef.current = null;
+		getFile.refresh();
+	});
 
 	const isBusy =
 		isSaving || isDownloading || isRunningAll || runningCellIndex !== null;

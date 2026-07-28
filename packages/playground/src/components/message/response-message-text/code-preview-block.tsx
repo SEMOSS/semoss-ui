@@ -1,18 +1,20 @@
 import { CopyIcon, PlayIcon } from "lucide-react";
-import { type ComponentProps, useState } from "react";
+import { type ComponentProps, useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
+import { useDebouncedValue } from "@semoss/sdk/react";
 import {
-	appendCellToNotebook,
-	buildExecutePixel,
-	createNotebookFileContent,
+	buildChatExecutionOutputs,
+	CellOutputBlock,
+	createCodeCellFromExecution,
+	createEmptyNotebook,
 	createNotebookFilePath,
+	type FileItem,
+	insertCell,
+	nextExecutionCount,
 	notifyNotebookFileRefresh,
-	notifyNotebookRowClearSelection,
-	replaceNotebookCell,
-	toNotebookExecutionData,
+	parseNotebook,
 	unwrapPixelOutput,
-} from "@semoss/notebook";
-import { CellOutputBlock } from "@semoss/shared";
+} from "@semoss/shared";
 import {
 	Button,
 	Code,
@@ -31,6 +33,7 @@ import type { RoomStore } from "@/stores";
 import { BlockHeader } from "./block-header";
 import { copyToClipboard, getErrorMessage } from "./clipboard";
 import {
+	buildExecutePixel,
 	CODE_LANG_LABELS,
 	createCodeFilePath,
 	formatExecuteOutput,
@@ -64,14 +67,21 @@ export const CodePreviewBlock = ({
 	const [isFullViewOpen, setIsFullViewOpen] = useState(false);
 	const [isSavingToRoom, setIsSavingToRoom] = useState(false);
 	const [isSavingToNotebook, setIsSavingToNotebook] = useState(false);
-	const [isNotebookNameDialogOpen, setIsNotebookNameDialogOpen] =
+	const [isAddToNotebookDialogOpen, setIsAddToNotebookDialogOpen] =
 		useState(false);
+	const [notebookSearch, setNotebookSearch] = useState("");
+	const [isSearchingNotebooks, setIsSearchingNotebooks] = useState(false);
+	const [notebookResults, setNotebookResults] = useState<FileItem[]>([]);
+	const [selectedNotebookPath, setSelectedNotebookPath] = useState<
+		string | null
+	>(null);
 	const [newNotebookName, setNewNotebookName] = useState("");
 	const [isCollapsed, setIsCollapsed] = useState(false);
 	const [isExecuting, setIsExecuting] = useState(false);
 	const [executeResult, setExecuteResult] = useState<ExecuteResult | null>(
 		null,
 	);
+	const debouncedNotebookSearch = useDebouncedValue(notebookSearch, 300);
 
 	const langStr = rawLanguage ?? language ?? "txt";
 	const langLabel = CODE_LANG_LABELS[langStr] ?? langStr.toUpperCase();
@@ -184,117 +194,133 @@ export const CodePreviewBlock = ({
 		openNotebookTab(path);
 	};
 
-	const saveAsNotebook = async () => {
-		if (!room || !code) return;
+	// Search the full file explorer (not just the current directory) for
+	// existing .ipynb files, so the Add to Notebook dialog can offer them as
+	// append targets. Re-runs whenever the dialog is open and the debounced
+	// search term changes; an empty term still searches on ".ipynb" so the
+	// dialog lists notebooks by default.
+	useEffect(() => {
+		if (!isAddToNotebookDialogOpen || !room) return;
+		let cancelled = false;
 
-		// Persist the last execution outcome (logs + rich output) into the
-		// generated notebook cell so exported content matches what the user saw.
-		const notebookExecutionData = toNotebookExecutionData(executeResult);
-		const selectedNotebookRow = room.selectedNotebookRow;
+		const searchTerm = debouncedNotebookSearch.trim() || ".ipynb";
+		setIsSearchingNotebooks(true);
 
-		try {
-			setIsSavingToNotebook(true);
-
-			// Priority 1: explicit row-selection update from notebook preview.
-			if (selectedNotebookRow?.path) {
-				const notebookPath = selectedNotebookRow.path;
-				const loadResponse = await room.runRoomPixel<[string]>(
-					`GetInsightAssets(filePath=[${JSON.stringify(notebookPath)}]);`,
-					false,
-					false,
+		room.runRoomPixel<[FileItem[]]>(
+			`SearchInsightAssets(filePath=[""], search=[${JSON.stringify(searchTerm)}]);`,
+			false,
+			false,
+		)
+			.then((response) => {
+				if (cancelled) return;
+				const rawResults = response.pixelReturn[0]?.output ?? [];
+				setNotebookResults(
+					rawResults.filter(
+						(item) =>
+							item.type !== "directory" &&
+							item.path.toLowerCase().endsWith(".ipynb"),
+					),
 				);
-				const existingContent =
-					loadResponse.pixelReturn[0]?.output ?? "";
-				const replacedContent = replaceNotebookCell(
-					existingContent,
-					selectedNotebookRow.rowNumber,
-					code,
-					langStr,
-					notebookExecutionData,
-				);
+			})
+			.catch(() => {
+				if (!cancelled) setNotebookResults([]);
+			})
+			.finally(() => {
+				if (!cancelled) setIsSearchingNotebooks(false);
+			});
 
-				if (!replacedContent) {
-					toast.error("Failed to update notebook row");
-					return;
-				}
+		return () => {
+			cancelled = true;
+		};
+	}, [isAddToNotebookDialogOpen, debouncedNotebookSearch, room]);
 
-				await saveToNotebookPath(notebookPath, replacedContent);
-				room.setSelectedNotebookRow(null);
-				notifyNotebookRowClearSelection(notebookPath);
-				toast.success(
-					`Updated row ${selectedNotebookRow.rowNumber} in ${
-						notebookPath.split("/").pop() ?? notebookPath
-					}`,
-				);
-				return;
-			}
-
-			// Priority 2: append to the notebook tab the user is actively
-			// focused on. Deliberately does NOT fall back to "any open
-			// notebook tab" - if nothing is actively in view, a background/
-			// closed notebook shouldn't silently receive the append; a brand
-			// new notebook (Priority 3) is the correct, unambiguous target.
-			const existingOpenNotebookPath = room.activeNotebookFilePath;
-
-			if (existingOpenNotebookPath) {
-				const notebookPath = existingOpenNotebookPath;
-				const loadResponse = await room.runRoomPixel<[string]>(
-					`GetInsightAssets(filePath=[${JSON.stringify(notebookPath)}]);`,
-					false,
-					false,
-				);
-				const existingContent =
-					loadResponse.pixelReturn[0]?.output ?? "";
-				const appendedContent = appendCellToNotebook(
-					existingContent,
-					code,
-					langStr,
-					notebookExecutionData,
-				);
-
-				if (!appendedContent) {
-					toast.error("Failed to append notebook cell");
-					return;
-				}
-
-				await saveToNotebookPath(notebookPath, appendedContent);
-				toast.success(
-					`Appended to ${
-						notebookPath.split("/").pop() ?? notebookPath
-					}`,
-				);
-				return;
-			}
-
-			// Priority 3: create a brand-new notebook when no target exists yet.
-			setIsNotebookNameDialogOpen(true);
-		} catch (error) {
-			toast.error(getErrorMessage(error));
-		} finally {
-			setIsSavingToNotebook(false);
-		}
+	const openAddToNotebookDialog = () => {
+		setSelectedNotebookPath(null);
+		setNewNotebookName("");
+		setNotebookSearch("");
+		setNotebookResults([]);
+		setIsAddToNotebookDialogOpen(true);
 	};
 
-	const confirmCreateNotebookWithName = async () => {
+	// Always appends the generated cell - the notebook editor itself lets the
+	// user freely reorder cells, so there's no need for row-targeting here.
+	const confirmAddToNotebook = async () => {
 		if (!room || !code) return;
+		if (!selectedNotebookPath && !newNotebookName.trim()) return;
+
+		const isNewNotebook = !selectedNotebookPath;
+		const targetPath =
+			selectedNotebookPath ?? createNotebookFilePath(newNotebookName);
+
 		try {
 			setIsSavingToNotebook(true);
-			const notebookExecutionData =
-				toNotebookExecutionData(executeResult);
-			const notebookPath = createNotebookFilePath(newNotebookName);
-			const content = createNotebookFileContent(
-				code,
-				langStr,
-				notebookExecutionData,
-			);
 
-			await saveToNotebookPath(notebookPath, content);
-			setIsNotebookNameDialogOpen(false);
-			setNewNotebookName("");
+			let notebook = createEmptyNotebook();
+			if (!isNewNotebook) {
+				// Explicitly selected from the list - must load successfully.
+				const loadResponse = await room.runRoomPixel<[string]>(
+					`GetInsightAssets(filePath=[${JSON.stringify(targetPath)}]);`,
+					false,
+					false,
+				);
+				const existingContent =
+					loadResponse.pixelReturn[0]?.output ?? "";
+				const parsed = parseNotebook(existingContent);
+				if (!parsed.notebook) {
+					toast.error(parsed.error ?? "Failed to parse notebook");
+					return;
+				}
+				notebook = parsed.notebook;
+			} else {
+				// Guard against silently overwriting a file that happens to
+				// already exist under this exact generated name (e.g. the user
+				// typed a name that collides with a notebook not selected from
+				// the list above). A load failure here just means the path is
+				// truly new, which is the expected/common case - not an error.
+				try {
+					const loadResponse = await room.runRoomPixel<[string]>(
+						`GetInsightAssets(filePath=[${JSON.stringify(targetPath)}]);`,
+						false,
+						false,
+					);
+					const existingContent =
+						loadResponse.pixelReturn[0]?.output ?? "";
+					if (existingContent.trim()) {
+						const parsed = parseNotebook(existingContent);
+						if (parsed.notebook) {
+							notebook = parsed.notebook;
+						}
+					}
+				} catch {
+					// Path doesn't exist yet - proceed with a brand-new notebook.
+				}
+			}
+
+			// Persist the last execution outcome (logs + rich output) into the
+			// generated notebook cell so exported content matches what the user
+			// saw.
+			const executionCount = nextExecutionCount(notebook);
+			const outputs = executeResult
+				? buildChatExecutionOutputs(
+						executeResult.logs,
+						executeResult.rawOutput ?? executeResult.output,
+						executeResult.isError,
+						executionCount,
+					)
+				: [];
+			const cell = createCodeCellFromExecution(
+				code,
+				outputs,
+				executionCount,
+			);
+			const content = JSON.stringify(insertCell(notebook, cell), null, 2);
+
+			await saveToNotebookPath(targetPath, content);
+			setIsAddToNotebookDialogOpen(false);
 			toast.success(
-				`Created notebook ${
-					notebookPath.split("/").pop() ?? notebookPath
-				}`,
+				isNewNotebook
+					? `Created notebook ${targetPath.split("/").pop() ?? targetPath}`
+					: `Appended to ${targetPath.split("/").pop() ?? targetPath}`,
 			);
 		} catch (error) {
 			toast.error(getErrorMessage(error));
@@ -329,7 +355,7 @@ export const CodePreviewBlock = ({
 						variant="ghost"
 						size="sm"
 						disabled={!room || !code || isSavingToNotebook}
-						onClick={() => void saveAsNotebook()}
+						onClick={() => openAddToNotebookDialog()}
 					>
 						{isSavingToNotebook ? "Saving..." : "Add To Notebook"}
 					</Button>
@@ -425,44 +451,106 @@ export const CodePreviewBlock = ({
 			</Dialog>
 
 			<Dialog
-				open={isNotebookNameDialogOpen}
-				onOpenChange={setIsNotebookNameDialogOpen}
+				open={isAddToNotebookDialogOpen}
+				onOpenChange={setIsAddToNotebookDialogOpen}
 			>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Create Notebook</DialogTitle>
+						<DialogTitle>Add to Notebook</DialogTitle>
 					</DialogHeader>
-					<div className="space-y-2">
-						<div className="text-muted-foreground text-sm">
-							Enter notebook file name (.ipynb will be appended
-							automatically)
+					<div className="space-y-3">
+						<div className="space-y-1.5">
+							<div className="text-muted-foreground text-sm">
+								Select an existing notebook
+							</div>
+							<Input
+								value={notebookSearch}
+								onChange={(event) => {
+									setNotebookSearch(event.target.value);
+									setSelectedNotebookPath(null);
+								}}
+								placeholder="Search .ipynb files"
+							/>
+							<div className="max-h-48 overflow-y-auto rounded-md border border-border">
+								{isSearchingNotebooks && (
+									<div className="px-3 py-2 text-muted-foreground text-sm">
+										Searching…
+									</div>
+								)}
+								{!isSearchingNotebooks &&
+									notebookResults.length === 0 && (
+										<div className="px-3 py-2 text-muted-foreground text-sm">
+											No notebooks found
+										</div>
+									)}
+								{!isSearchingNotebooks &&
+									notebookResults.map((item) => (
+										<button
+											type="button"
+											key={item.path}
+											className={`block w-full truncate px-3 py-2 text-left text-sm hover:bg-muted ${
+												selectedNotebookPath ===
+												item.path
+													? "bg-muted font-medium"
+													: ""
+											}`}
+											onClick={() => {
+												setSelectedNotebookPath(
+													item.path,
+												);
+												setNewNotebookName("");
+											}}
+										>
+											{item.path}
+										</button>
+									))}
+							</div>
 						</div>
-						<Input
-							value={newNotebookName}
-							onChange={(event) =>
-								setNewNotebookName(event.target.value)
-							}
-							placeholder="my-notebook"
-							onKeyDown={(event) => {
-								if (event.key === "Enter") {
-									event.preventDefault();
-									void confirmCreateNotebookWithName();
-								}
-							}}
-						/>
+						<div className="flex items-center gap-2 text-muted-foreground text-xs">
+							<div className="h-px flex-1 bg-border" />
+							or
+							<div className="h-px flex-1 bg-border" />
+						</div>
+						<div className="space-y-1.5">
+							<div className="text-muted-foreground text-sm">
+								Create a new notebook
+							</div>
+							<Input
+								value={newNotebookName}
+								onChange={(event) => {
+									setNewNotebookName(event.target.value);
+									setSelectedNotebookPath(null);
+								}}
+								placeholder="my-notebook (.ipynb added automatically)"
+								onKeyDown={(event) => {
+									if (event.key === "Enter") {
+										event.preventDefault();
+										void confirmAddToNotebook();
+									}
+								}}
+							/>
+						</div>
 					</div>
 					<DialogFooter>
 						<Button
 							variant="outline"
-							onClick={() => setIsNotebookNameDialogOpen(false)}
+							onClick={() => setIsAddToNotebookDialogOpen(false)}
 						>
 							Cancel
 						</Button>
 						<Button
-							onClick={() => void confirmCreateNotebookWithName()}
-							disabled={isSavingToNotebook}
+							onClick={() => void confirmAddToNotebook()}
+							disabled={
+								isSavingToNotebook ||
+								(!selectedNotebookPath &&
+									!newNotebookName.trim())
+							}
 						>
-							{isSavingToNotebook ? "Creating..." : "Create"}
+							{isSavingToNotebook
+								? "Saving..."
+								: selectedNotebookPath
+									? "Append"
+									: "Create"}
 						</Button>
 					</DialogFooter>
 				</DialogContent>

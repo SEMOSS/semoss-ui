@@ -1,8 +1,8 @@
 /**
  * Minimal, self-contained nbformat (Jupyter .ipynb) types and helpers.
- * Intentionally a lightweight local copy — the `@semoss/notebook` package models
- * the same shape with far heavier rendering deps (plotly/vega/dompurify/katex),
- * which we do not want to pull into `@semoss/shared`.
+ * Intentionally a lightweight, dependency-free local implementation instead of
+ * a heavier renderer (plotly/vega/dompurify/katex), since we do not want to
+ * pull those into `@semoss/shared`.
  */
 
 export type JupyterOutput =
@@ -67,6 +67,38 @@ export interface JupyterNotebook {
 	metadata: Record<string, unknown>;
 	cells: JupyterCell[];
 }
+
+/** Build an empty, ready-to-save notebook shell for a brand-new .ipynb file. */
+export const createEmptyNotebook = (): JupyterNotebook => ({
+	nbformat: 4,
+	nbformat_minor: 5,
+	metadata: {},
+	cells: [],
+});
+
+/**
+ * Build a safe, unique-enough .ipynb file path from a user-supplied name
+ * (sanitizing path-separator/reserved characters), or a timestamped default
+ * when no name is given.
+ */
+export const createNotebookFilePath = (requestedName?: string): string => {
+	if (!requestedName || !requestedName.trim()) {
+		return `notebook-${Date.now()}.ipynb`;
+	}
+
+	const sanitizedBase = requestedName
+		.trim()
+		.replace(/[\\/:*?"<>|]/g, "-")
+		.replace(/\s+/g, "-")
+		.replace(/-+/g, "-")
+		.replace(/^-|-$/g, "");
+
+	const normalizedBase = sanitizedBase || `notebook-${Date.now()}`;
+
+	return normalizedBase.toLowerCase().endsWith(".ipynb")
+		? normalizedBase
+		: `${normalizedBase}.ipynb`;
+};
 
 /** Result of running a single code cell. */
 export interface RunCellResult {
@@ -265,6 +297,47 @@ export const toRuntimeOutputs = (
 			execution_count: executionCount,
 		},
 	];
+};
+
+/** Build a ready-to-insert code cell from an external (e.g. chat) execution. */
+export const createCodeCellFromExecution = (
+	source: string,
+	outputs: JupyterOutput[] = [],
+	executionCount: number | null = null,
+): JupyterCodeCell => ({
+	id: generateCellId(),
+	cell_type: "code",
+	execution_count: executionCount,
+	metadata: {},
+	outputs,
+	source,
+});
+
+/**
+ * Map an external (e.g. chat) execution's console logs + unwrapped Pixel
+ * value into nbformat outputs, mirroring how the Notebook component's own
+ * `executeCell` maps a cell run so both surfaces agree on output shape.
+ */
+export const buildChatExecutionOutputs = (
+	logs: string[],
+	value: unknown,
+	isError: boolean,
+	executionCount: number,
+): JupyterOutput[] => {
+	const outputs: JupyterOutput[] = [];
+	if (logs.length > 0) {
+		outputs.push({ output_type: "stream", name: "stdout", text: logs });
+	}
+	if (isError) {
+		outputs.push(
+			toErrorOutput(
+				typeof value === "string" ? value : String(value ?? ""),
+			),
+		);
+		return outputs;
+	}
+	outputs.push(...toRuntimeOutputs(value, executionCount));
+	return outputs;
 };
 
 /** Replace a single code cell's outputs/execution count, immutably. */

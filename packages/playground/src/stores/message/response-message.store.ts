@@ -232,33 +232,6 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				return acc;
 			}, "");
 
-			const selectedNotebookRow = room.selectedNotebookRow;
-			// When a notebook row is selected in preview, append explicit editing
-			// context so the model can generate cell-local updates instead of
-			// broad free-form responses. The selection is intentionally left in
-			// place after sending - the user's workflow is select row -> prompt
-			// -> "Add to Notebook" to replace that same row, so clearing it here
-			// would break that round-trip. It's only cleared when the row is
-			// actually consumed (replaced) or when its tab is closed.
-			const commandText = selectedNotebookRow?.path
-				? [
-						text,
-						"",
-						"Notebook editing context:",
-						`- Target notebook path: ${selectedNotebookRow.path}`,
-						`- Target row number: ${selectedNotebookRow.rowNumber}`,
-						selectedNotebookRow.cellType
-							? `- Target cell type: ${selectedNotebookRow.cellType}`
-							: null,
-						selectedNotebookRow.code
-							? `- Current cell source:\n${selectedNotebookRow.code.slice(0, 8000)}`
-							: null,
-						"Use this context to produce an update for that selected notebook row when appropriate.",
-					]
-						.filter(Boolean)
-						.join("\n")
-				: text;
-
 			const media = inputMessage.parts.reduce((acc, part) => {
 				if (part.type === "MEDIA") {
 					acc.push(part.mediaInfo.fileLocation as string);
@@ -283,7 +256,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				`AskPlayground(
 engine=["${room.model.engine_id}"],
 roomId=["${room.roomId}"],
-command=["<encode>${commandText}</encode>"],
+command=["<encode>${text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
 ${media.length ? `image=${JSON.stringify(media)},` : "image=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
