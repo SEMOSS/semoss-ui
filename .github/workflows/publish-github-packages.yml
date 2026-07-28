@@ -202,7 +202,7 @@ jobs:
 
             - name: Build packages that emit dist output
               run: |
-                  for package_dir in libs/sdk libs/ui libs/renderer libs/chat; do
+                  for package_dir in libs/sdk libs/ui libs/shared libs/renderer libs/chat; do
                       echo "Building ${package_dir}"
                       cd "${package_dir}"
                       pnpm run --if-present build
