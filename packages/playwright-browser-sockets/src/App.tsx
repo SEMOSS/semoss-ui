@@ -191,7 +191,6 @@ export default function App() {
 	const autoStartedRef = useRef(false);
 	const autoRecordingStartedRef = useRef(false);
 	const autoPlaybackProjectSelectedRef = useRef(false);
-	const autoPlaybackRoomLoadStartedRef = useRef(false);
 	const autoPlaybackRecordingSelectedRef = useRef(false);
 	const autoPlaybackLoadStartedRef = useRef(false);
 	const autoPlaybackRunStartedRef = useRef(false);
@@ -394,7 +393,6 @@ export default function App() {
 		autoStartedRef.current = false;
 		autoRecordingStartedRef.current = false;
 		autoPlaybackProjectSelectedRef.current = false;
-		autoPlaybackRoomLoadStartedRef.current = false;
 		autoPlaybackRecordingSelectedRef.current = false;
 		autoPlaybackLoadStartedRef.current = false;
 		autoPlaybackRunStartedRef.current = false;
@@ -577,102 +575,6 @@ export default function App() {
 	]);
 
 	useEffect(() => {
-		const exactFileName = mcpRecordingFile
-			.split(/[\\/]/)
-			.filter(Boolean)
-			.pop();
-		if (
-			!isMcpPlaybackMode ||
-			!isRoomRecordingSource ||
-			!toolContext?.roomId ||
-			!exactFileName ||
-			!effectiveInsightId ||
-			autoPlaybackRoomLoadStartedRef.current
-		) {
-			return;
-		}
-
-		autoPlaybackRoomLoadStartedRef.current = true;
-		const executionKey = toolExecutionKey;
-		setSnackMessage(`Loading Playground recording ${exactFileName}…`);
-
-		(async () => {
-			await bindSemossInsightToRoom(toolContext.roomId);
-			const roomInsightId = getSemossInsightId() || effectiveInsightId;
-			const roomPath = `/playwright/recordings/${exactFileName}`;
-			const envelope = await getRoomRecordingEnvelope(
-				roomInsightId,
-				roomPath,
-			);
-
-			// Ignore an old request if Playground replaced the active tool while
-			// this room asset was being read.
-			if (activeToolExecutionRef.current !== executionKey) {
-				return;
-			}
-			if (!envelope) {
-				throw new Error(
-					`Playground recording ${roomPath} could not be loaded`,
-				);
-			}
-
-			autoPlaybackRecordingSelectedRef.current = true;
-			playback.configureResolvedRecording({
-				source: "room",
-				project: {
-					label: "Playground recordings",
-					value: "__playground_room__",
-					source: "room",
-				},
-				fileName: exactFileName,
-				startUrl:
-					mcpStartUrl ||
-					getRecordingStartUrl(envelope) ||
-					"https://example.com",
-				recording: envelope,
-				parameterValues: mcpParameterValues,
-			});
-			setSnackMessage(`Loaded Playground recording ${exactFileName}`);
-		})().catch((error) => {
-			if (activeToolExecutionRef.current !== executionKey) {
-				return;
-			}
-			const message =
-				error instanceof Error
-					? error.message
-					: `Failed to load Playground recording ${exactFileName}`;
-			setSnackError(message);
-			if (!autoPlaybackErrorSentRef.current && toolContext) {
-				autoPlaybackErrorSentRef.current = true;
-				try {
-					sendMcpResponseToPlayground(
-						{
-							played: false,
-							error: message,
-							recordingFile: exactFileName,
-						},
-						"error",
-						toolContext.parameters,
-					);
-				} catch {
-					// Nothing else to do if the iframe cannot notify Playground.
-				}
-			}
-		});
-	}, [
-		effectiveInsightId,
-		getRoomRecordingEnvelope,
-		isMcpPlaybackMode,
-		isRoomRecordingSource,
-		mcpParameterValues,
-		mcpRecordingFile,
-		mcpStartUrl,
-		playback.configureResolvedRecording,
-		toolContext,
-		toolExecutionKey,
-	]);
-
-	useEffect(() => {
 		const expectedProject =
 			(mcpPlaybackProjectId &&
 				playback.projects.find(
@@ -690,7 +592,6 @@ export default function App() {
 			.pop();
 		if (
 			!isMcpPlaybackMode ||
-			(isRoomRecordingSource && !!exactRequestedFile) ||
 			autoPlaybackRecordingSelectedRef.current ||
 			!effectiveInsightId ||
 			playback.projects.length === 0 ||
@@ -739,7 +640,10 @@ export default function App() {
 				!isRoomRecordingSource &&
 				exactFileName &&
 				directProject &&
-				playback.files.includes(exactFileName)
+				playback.files.some(
+					(fileName) =>
+						fileName.toLowerCase() === exactFileName.toLowerCase(),
+				)
 			) {
 				playback.configureResolvedRecording({
 					source: "project",
@@ -756,7 +660,10 @@ export default function App() {
 				isRoomRecordingSource &&
 				exactFileName &&
 				directProject &&
-				playback.files.includes(exactFileName)
+				playback.files.some(
+					(fileName) =>
+						fileName.toLowerCase() === exactFileName.toLowerCase(),
+				)
 			) {
 				playback.configureResolvedRecording({
 					source: "room",

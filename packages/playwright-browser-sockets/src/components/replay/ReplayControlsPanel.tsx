@@ -51,53 +51,36 @@ export function ReplayControlsPanel({
 			{playback.controlsOpen && (
 				<div className="flex flex-col gap-2 border-line border-t p-2">
 					<Select
-						value={playback.project?.value ?? ""}
-						onValueChange={(value) =>
-							playback.selectProject(
-								playback.projects.find(
-									(item) => item.value === value,
-								) ?? null,
-							)
-						}
-						disabled={playback.isLoadingProjects}
-					>
-						<SelectTrigger className="w-full">
-							<SelectValue
-								placeholder={
-									playback.isLoadingProjects
-										? "Loading projects..."
-										: "Select project"
-								}
-							/>
-						</SelectTrigger>
-						<SelectContent>
-							{playback.projects.map((item) => (
-								<SelectItem key={item.value} value={item.value}>
-									{item.label}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-					<Select
-						value={playback.selectedRecording ?? ""}
+						value={playback.selectedCatalogKey}
 						onValueChange={playback.selectRecording}
-						disabled={!playback.project || playback.isLoadingFiles}
+						disabled={
+							playback.isLoadingProjects ||
+							playback.isLoadingFiles
+						}
 					>
 						<SelectTrigger className="w-full">
 							<SelectValue
 								placeholder={
+									playback.isLoadingProjects ||
 									playback.isLoadingFiles
 										? "Loading recordings..."
-										: playback.project
-											? "Select recording"
-											: "Select a project first"
+										: "Select recording"
 								}
 							/>
 						</SelectTrigger>
 						<SelectContent>
-							{playback.files.map((file) => (
-								<SelectItem key={file} value={file}>
-									{file}
+							{playback.recordingCatalog.map((item) => (
+								<SelectItem key={item.key} value={item.key}>
+									<span className="flex min-w-0 items-center gap-2">
+										<span className="truncate">
+											{item.fileName}
+										</span>
+										<span className="text-muted-foreground text-xs">
+											{item.source === "room"
+												? "Playground"
+												: item.project.label}
+										</span>
+									</span>
 								</SelectItem>
 							))}
 						</SelectContent>

@@ -21,6 +21,13 @@ export type PlaybackProject = {
 	source?: PlaybackRecordingSource;
 };
 export type PlaybackRecordingSource = "project" | "room";
+export type PlaybackRecordingCatalogItem = {
+	key: string;
+	fileName: string;
+	normalizedFileName: string;
+	source: PlaybackRecordingSource;
+	project: PlaybackProject;
+};
 export type FlattenedRecordingStep = {
 	tabId: string;
 	step: LoadedRecordingStep;
@@ -112,6 +119,21 @@ function getMcpStepParameterValue(
 	);
 }
 
+function normalizeRecordingFileName(fileName: string): string {
+	return (
+		fileName.split(/[\\/]/).filter(Boolean).pop()?.trim().toLowerCase() ??
+		""
+	);
+}
+
+function getRecordingCatalogKey(
+	source: PlaybackRecordingSource,
+	projectValue: string,
+	fileName: string,
+): string {
+	return `${source}:${projectValue}:${normalizeRecordingFileName(fileName)}`;
+}
+
 export function usePlaybackController({
 	insightId,
 	session,
@@ -130,10 +152,14 @@ export function usePlaybackController({
 }: UsePlaybackControllerOptions) {
 	const [projects, setProjects] = useState<PlaybackProject[]>([]);
 	const [project, setProject] = useState<PlaybackProject | null>(null);
+	const [recordingCatalog, setRecordingCatalog] = useState<
+		PlaybackRecordingCatalogItem[]
+	>([]);
 	const [files, setFiles] = useState<string[]>([]);
 	const [selectedRecording, setSelectedRecording] = useState<string | null>(
 		null,
 	);
+	const [selectedCatalogKey, setSelectedCatalogKey] = useState("");
 	const [startUrl, setStartUrl] = useState("");
 	const [source, setSource] = useState<PlaybackRecordingSource>("project");
 	const [loadedRecording, setLoadedRecording] =
@@ -147,7 +173,7 @@ export function usePlaybackController({
 	>({});
 	const [isLoadingProjects, setIsLoadingProjects] = useState(false);
 	const [isLoadingFiles, setIsLoadingFiles] = useState(false);
-	const [filesSelectionKey, setFilesSelectionKey] = useState("");
+	const [filesReady, setFilesReady] = useState(false);
 	const [isLoadingRecording, setIsLoadingRecording] = useState(false);
 	const [isRunning, setIsRunning] = useState(false);
 	const [isPaused, setIsPaused] = useState(false);
@@ -161,6 +187,7 @@ export function usePlaybackController({
 	const replayPreparedRef = useRef(false);
 	const resolvedParameterValuesRef = useRef<Record<string, string>>({});
 	const typeValuesRef = useRef<Record<number, string>>({});
+	const recordingCacheRef = useRef<Map<string, LoadedRecording>>(new Map());
 	const runInFlightRef = useRef<Promise<PlaybackRunResult | null> | null>(
 		null,
 	);
@@ -266,7 +293,7 @@ export function usePlaybackController({
 				? [
 						{
 							label: "Playground recordings",
-							value: "__playground_room__",
+							value: roomId,
 							source: "room",
 						},
 						...projectOptions,
@@ -285,58 +312,101 @@ export function usePlaybackController({
 
 	useEffect(() => {
 		let cancelled = false;
-		setLoadedRecording(null);
-		if (!isMcpPlaybackMode) {
-			setSelectedRecording(null);
-		}
-		setLoadedRecordingOpen(false);
-		setEditingStepId(null);
-		setFilesSelectionKey("");
-		if (!insightId || !project?.value) {
+		setFilesReady(false);
+		if (!insightId || projects.length === 0) {
+			setRecordingCatalog([]);
 			setFiles([]);
+			setFilesReady(true);
+			setIsLoadingFiles(false);
 			return;
 		}
 
 		setIsLoadingFiles(true);
-		const filesRequest =
-			project.source === "room"
-				? roomId && listRoomRecordingFiles
-					? listRoomRecordingFiles(insightId, roomId)
-					: Promise.resolve([])
-				: listRecordingFiles(insightId, project.value);
-		filesRequest
-			.then((recordingFiles) => {
+		const requests = projects.map(async (catalogProject) => {
+			const recordingFiles =
+				catalogProject.source === "room"
+					? roomId && listRoomRecordingFiles
+						? await listRoomRecordingFiles(insightId, roomId)
+						: []
+					: await listRecordingFiles(insightId, catalogProject.value);
+			return recordingFiles.map(
+				(fileName): PlaybackRecordingCatalogItem => ({
+					key: getRecordingCatalogKey(
+						catalogProject.source ?? "project",
+						catalogProject.value,
+						fileName,
+					),
+					fileName,
+					normalizedFileName: normalizeRecordingFileName(fileName),
+					source: catalogProject.source ?? "project",
+					project: catalogProject,
+				}),
+			);
+		});
+
+		Promise.allSettled(requests)
+			.then((results) => {
 				if (cancelled) return;
-				setFiles(recordingFiles);
-				setFilesSelectionKey(
-					`${project.source ?? "project"}:${project.value}`,
+				const failures = results.filter(
+					(result) => result.status === "rejected",
 				);
-				const preferredRecording =
-					savedRecordingSelection?.projectValue === project.value
-						? savedRecordingSelection.fileName
-						: null;
-				setSelectedRecording((current) => {
-					if (current && recordingFiles.includes(current)) {
-						return current;
-					}
-					if (
-						preferredRecording &&
-						recordingFiles.includes(preferredRecording)
-					) {
-						return preferredRecording;
-					}
-					return isMcpPlaybackMode
-						? current
-						: (recordingFiles[0] ?? null);
+				if (failures.length === results.length) {
+					const firstFailure = failures[0] as PromiseRejectedResult;
+					throw firstFailure.reason;
+				}
+
+				// Room entries are processed first and retain ownership of a
+				// filename when the app contains a recording with the same name.
+				const grouped = new Map<
+					string,
+					PlaybackRecordingCatalogItem[]
+				>();
+				results.forEach((result) => {
+					if (result.status !== "fulfilled") return;
+					result.value.forEach((item) => {
+						const existing =
+							grouped.get(item.normalizedFileName) ?? [];
+						if (item.source === "room") {
+							grouped.set(item.normalizedFileName, [item]);
+						} else if (
+							!existing.some(
+								(candidate) => candidate.source === "room",
+							) &&
+							!existing.some(
+								(candidate) => candidate.key === item.key,
+							)
+						) {
+							grouped.set(item.normalizedFileName, [
+								...existing,
+								item,
+							]);
+						}
+					});
 				});
+				const catalog = Array.from(grouped.values())
+					.flat()
+					.sort(
+						(left, right) =>
+							left.fileName.localeCompare(right.fileName) ||
+							left.project.label.localeCompare(
+								right.project.label,
+							),
+					);
+				setRecordingCatalog(catalog);
+				setFiles(
+					Array.from(new Set(catalog.map((item) => item.fileName))),
+				);
+				setFilesReady(true);
 			})
 			.catch((error: unknown) => {
 				if (cancelled) return;
+				setRecordingCatalog([]);
 				setFiles([]);
+				setFilesReady(true);
 				onError(
 					error instanceof Error
 						? error.message
-						: "Failed to list recordings",
+						: "Failed to build the recording catalog",
 				);
 			})
 			.finally(() => {
@@ -348,13 +418,53 @@ export function usePlaybackController({
 		};
 	}, [
 		insightId,
-		isMcpPlaybackMode,
 		listRecordingFiles,
 		listRoomRecordingFiles,
 		onError,
-		project,
+		projects,
 		roomId,
+	]);
+
+	useEffect(() => {
+		if (recordingCatalog.length === 0) return;
+		const selectedByKey = recordingCatalog.find(
+			(item) => item.key === selectedCatalogKey,
+		);
+		const selectedByFile = selectedRecording
+			? recordingCatalog.find(
+					(item) =>
+						item.normalizedFileName ===
+						normalizeRecordingFileName(selectedRecording),
+				)
+			: undefined;
+		const preferred = savedRecordingSelection
+			? recordingCatalog.find(
+					(item) =>
+						item.normalizedFileName ===
+							normalizeRecordingFileName(
+								savedRecordingSelection.fileName,
+							) &&
+						item.project.value ===
+							savedRecordingSelection.projectValue,
+				)
+			: undefined;
+		const selected =
+			selectedByKey ??
+			selectedByFile ??
+			preferred ??
+			(!isMcpPlaybackMode ? recordingCatalog[0] : undefined);
+		if (!selected) return;
+
+		setSelectedCatalogKey(selected.key);
+		setSelectedRecording(selected.fileName);
+		setProject(selected.project);
+		setSource(selected.source);
+	}, [
+		isMcpPlaybackMode,
+		recordingCatalog,
 		savedRecordingSelection,
+		selectedCatalogKey,
+		selectedRecording,
 	]);
 
 	const selectProject = useCallback((next: PlaybackProject | null) => {
@@ -366,16 +476,31 @@ export function usePlaybackController({
 	}, []);
 
 	const selectRecording = useCallback(
-		(fileName: string | null) => {
+		(recordingKeyOrFileName: string | null) => {
 			resolvedParameterValuesRef.current = {};
 			typeValuesRef.current = {};
-			setSource(project?.source ?? "project");
-			setSelectedRecording(fileName);
+			const selected =
+				recordingCatalog.find(
+					(item) => item.key === recordingKeyOrFileName,
+				) ??
+				recordingCatalog.find(
+					(item) =>
+						item.normalizedFileName ===
+						normalizeRecordingFileName(
+							recordingKeyOrFileName ?? "",
+						),
+				);
+			if (selected) {
+				setSource(selected.source);
+				setProject(selected.project);
+			}
+			setSelectedCatalogKey(selected?.key ?? "");
+			setSelectedRecording(selected?.fileName ?? recordingKeyOrFileName);
 			setLoadedRecording(null);
 			setLoadedRecordingOpen(false);
 			setEditingStepId(null);
 		},
-		[project?.source],
+		[recordingCatalog],
 	);
 
 	const selectSavedRecording = useCallback(
@@ -388,6 +513,10 @@ export function usePlaybackController({
 			});
 			setSource("project");
 			setProject(nextProject);
+			setSelectedCatalogKey(
+				getRecordingCatalogKey("project", nextProject.value, fileName),
+			);
+			setSelectedRecording(fileName);
 			setLoadedRecording(null);
 			setLoadedRecordingOpen(false);
 			setEditingStepId(null);
@@ -397,29 +526,51 @@ export function usePlaybackController({
 
 	const configureResolvedRecording = useCallback(
 		(selection: ResolvedRecordingSelection) => {
+			const matchingCatalogItems = recordingCatalog.filter(
+				(item) =>
+					item.normalizedFileName ===
+					normalizeRecordingFileName(selection.fileName),
+			);
+			const catalogItem =
+				matchingCatalogItems.find((item) => item.source === "room") ??
+				matchingCatalogItems.find(
+					(item) => item.project.value === selection.project.value,
+				) ??
+				matchingCatalogItems[0];
+			const selectedSource = catalogItem?.source ?? selection.source;
+			const selectedProject = catalogItem?.project ?? selection.project;
 			resolvedParameterValuesRef.current =
 				selection.parameterValues ?? {};
 			setStartUrl(normalizeBrowserUrl(selection.startUrl));
-			setSource(selection.source);
+			setSource(selectedSource);
 			setProject(
-				selection.source === "room"
+				selectedSource === "room"
 					? (projects.find((item) => item.source === "room") ?? {
 							label: "Playground recordings",
 							value: "__playground_room__",
 							source: "room",
 						})
-					: selection.project,
+					: selectedProject,
 			);
-			setSelectedRecording(selection.fileName);
+			setSelectedCatalogKey(catalogItem?.key ?? "");
+			setSelectedRecording(catalogItem?.fileName ?? selection.fileName);
 			if (selection.recording) {
+				const cacheKey =
+					catalogItem?.key ??
+					getRecordingCatalogKey(
+						selectedSource,
+						selectedProject.value,
+						selection.fileName,
+					);
+				recordingCacheRef.current.set(cacheKey, selection.recording);
 				initializeLoadedRecording(
 					selection.recording,
-					selection.fileName,
+					catalogItem?.fileName ?? selection.fileName,
 					resolvedParameterValuesRef.current,
 				);
 			}
 		},
-		[initializeLoadedRecording, projects],
+		[initializeLoadedRecording, projects, recordingCatalog],
 	);
 
 	const resetReplayPreparation = useCallback(() => {
@@ -434,8 +585,8 @@ export function usePlaybackController({
 		setSavedRecordingSelection(null);
 		setStartUrl("");
 		setSource("project");
+		setSelectedCatalogKey("");
 		setSelectedRecording(null);
-		setFilesSelectionKey("");
 		setLoadedRecording(null);
 		setRunningStepId(null);
 		setExecutedStepIds(new Set());
@@ -590,35 +741,60 @@ export function usePlaybackController({
 	);
 
 	const load = useCallback(async () => {
-		if (source === "room" && loadedRecording) {
+		const catalogItem =
+			recordingCatalog.find((item) => item.key === selectedCatalogKey) ??
+			recordingCatalog.find(
+				(item) =>
+					item.normalizedFileName ===
+					normalizeRecordingFileName(selectedRecording ?? ""),
+			);
+		const selectedSource = catalogItem?.source ?? source;
+		const selectedProject = catalogItem?.project ?? project;
+		const selectedFileName = catalogItem?.fileName ?? selectedRecording;
+		const cacheKey =
+			catalogItem?.key ??
+			(selectedProject && selectedFileName
+				? getRecordingCatalogKey(
+						selectedSource,
+						selectedProject.value,
+						selectedFileName,
+					)
+				: "");
+		const cachedRecording = cacheKey
+			? recordingCacheRef.current.get(cacheKey)
+			: undefined;
+		if (cachedRecording && selectedFileName) {
 			initializeLoadedRecording(
-				loadedRecording,
-				selectedRecording || "room recording",
+				cachedRecording,
+				selectedFileName,
 				resolvedParameterValuesRef.current,
 			);
 			return;
 		}
 		if (
-			source === "room" &&
+			selectedSource === "room" &&
 			insightId &&
-			selectedRecording &&
+			selectedFileName &&
 			loadRoomRecording
 		) {
 			setIsLoadingRecording(true);
 			try {
 				const recording = await loadRoomRecording(
 					insightId,
-					selectedRecording,
+					selectedFileName,
 				);
 				if (recording) {
+					if (cacheKey) {
+						recordingCacheRef.current.set(cacheKey, recording);
+					}
 					initializeLoadedRecording(
 						recording,
-						selectedRecording,
+						selectedFileName,
 						resolvedParameterValuesRef.current,
 					);
 				} else {
 					onError(
-						`Could not load Playground recording ${selectedRecording}`,
+						`Could not load Playground recording ${selectedFileName}`,
 					);
 				}
 			} finally {
@@ -626,7 +802,7 @@ export function usePlaybackController({
 			}
 			return;
 		}
-		if (!insightId || !project || !selectedRecording) {
+		if (!insightId || !selectedProject || !selectedFileName) {
 			onError("Select a project and recording first");
 			return;
 		}
@@ -640,15 +816,19 @@ export function usePlaybackController({
 		try {
 			const recording = await loadRecording(
 				insightId,
-				project.value,
-				selectedRecording,
+				selectedProject.value,
+				selectedFileName,
 			);
-			if (recording)
+			if (recording) {
+				if (cacheKey) {
+					recordingCacheRef.current.set(cacheKey, recording);
+				}
 				initializeLoadedRecording(
 					recording,
-					selectedRecording,
+					selectedFileName,
 					resolvedParameterValuesRef.current,
 				);
+			}
 		} finally {
 			setIsLoadingRecording(false);
 		}
@@ -657,9 +837,10 @@ export function usePlaybackController({
 		insightId,
 		loadRecording,
 		loadRoomRecording,
-		loadedRecording,
 		onError,
 		project,
+		recordingCatalog,
+		selectedCatalogKey,
 		selectedRecording,
 		session,
 		source,
@@ -905,8 +1086,10 @@ export function usePlaybackController({
 		hasSession: session !== null,
 		projects,
 		project,
+		recordingCatalog,
 		files,
 		selectedRecording,
+		selectedCatalogKey,
 		startUrl,
 		source,
 		loadedRecording,
@@ -918,10 +1101,7 @@ export function usePlaybackController({
 		editedTypeValues,
 		isLoadingProjects,
 		isLoadingFiles,
-		filesReady:
-			!!project &&
-			filesSelectionKey ===
-				`${project.source ?? "project"}:${project.value}`,
+		filesReady,
 		isLoadingRecording,
 		isRunning,
 		isPaused,
