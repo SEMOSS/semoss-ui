@@ -10,6 +10,11 @@ import {
 import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
+import {
+	countInlineImages,
+	hasInlineImage,
+	InlineImageSegments,
+} from "./inline-image";
 import { JsonViewer } from "./json-viewer";
 
 export interface CellOutputBlockProps {
@@ -102,12 +107,23 @@ export const CellOutputBlock = ({
 		!error &&
 		!rawOutput;
 
+	// Python executions return rendered figures as inline base64 images. In
+	// FORMATTED mode we show the picture; RAW mode falls through to the plain
+	// text branch so the underlying html stays copyable.
+	const outputImageCount = countInlineImages(output);
+	const showOutputImages =
+		outputImageCount > 0 && !rawOutput && !isObjectOutput;
+	const logsImageCount = logs.reduce(
+		(total, entry) => total + countInlineImages(entry),
+		0,
+	);
+
 	return (
 		<div className={`py-2 ${error ? "bg-destructive/5" : ""}`}>
 			{prompt && (
 				<div className="flex items-start gap-1.5 px-3">
 					{prompt.icon && (
-						<span className="mt-[2px] inline-flex h-4 w-4 shrink-0 items-center justify-center">
+						<span className="mt-[2px] inline-flex h-4 w-4 shrink-0 select-none items-center justify-center">
 							{prompt.icon}
 						</span>
 					)}
@@ -127,9 +143,16 @@ export const CellOutputBlock = ({
 			{messageLines.length > 0 && (
 				<Panel
 					label={t("cellOutput.panels.logs")}
+					// The Logs panel starts collapsed, so call out any images in
+					// the header - otherwise a figure that fell back to the log
+					// channel is invisible until the user expands it.
 					meta={`${t("cellOutput.lines", {
 						count: messageLines.length,
-					})} · ${formatBytes(rawLogsText)}`}
+					})} · ${formatBytes(rawLogsText)}${
+						logsImageCount > 0
+							? ` · ${t("cellOutput.images", { count: logsImageCount })}`
+							: ""
+					}`}
 					accent="zinc"
 					collapsible
 					defaultCollapsed
@@ -177,32 +200,12 @@ export const CellOutputBlock = ({
 							))}
 						</div>
 					) : (
-						<div className="flex flex-col gap-0.5 text-foreground">
-							{messageLines.map((line, i) => {
-								const structured = tryParseStructured(line);
-								return (
-									<div
-										key={`fmt-${i}-${line.length}-${line.slice(0, 16)}`}
-									>
-										{structured !== null &&
-										typeof structured === "object" ? (
-											// Per-line JSON tree — used when a
-											// `print(dict)` or similar dumps a
-											// structured value to stdout.
-											<JsonViewer
-												value={structured}
-												forceVersion={expandRev}
-												forceOpen={expandAllTo}
-											/>
-										) : (
-											<div className="whitespace-pre-wrap break-all">
-												{line || " "}
-											</div>
-										)}
-									</div>
-								);
-							})}
-						</div>
+						<FormattedLines
+							lines={messageLines}
+							expandRev={expandRev}
+							expandAllTo={expandAllTo}
+							className="flex flex-col gap-0.5 text-foreground"
+						/>
 					)}
 				</Panel>
 			)}
@@ -223,17 +226,23 @@ export const CellOutputBlock = ({
 					}
 					meta={`${t("cellOutput.lines", {
 						count: countLines(output),
-					})} · ${formatBytes(output)}`}
+					})} · ${formatBytes(output)}${
+						outputImageCount > 0
+							? ` · ${t("cellOutput.images", { count: outputImageCount })}`
+							: ""
+					}`}
 					accent={error ? "red" : "blue"}
 					collapsible
 					headerExtras={
 						<>
-							{!error && outputValue !== null && (
-								<RawToggle
-									raw={rawOutput}
-									onToggle={() => setRawOutput((v) => !v)}
-								/>
-							)}
+							{!error &&
+								(outputValue !== null ||
+									outputImageCount > 0) && (
+									<RawToggle
+										raw={rawOutput}
+										onToggle={() => setRawOutput((v) => !v)}
+									/>
+								)}
 							{isObjectOutput && (
 								<ExpandAllToggle
 									onExpand={() => {
@@ -261,6 +270,13 @@ export const CellOutputBlock = ({
 							value={outputValue}
 							forceVersion={expandRev}
 							forceOpen={expandAllTo}
+						/>
+					) : showOutputImages ? (
+						<InlineImageSegments
+							text={output}
+							textClassName={`whitespace-pre-wrap break-all ${
+								error ? "text-destructive" : "text-foreground"
+							}`}
 						/>
 					) : (
 						<div
@@ -322,29 +338,14 @@ export const CellOutputBlock = ({
 							))}
 						</div>
 					) : (
-						<div className="flex flex-col gap-0.5 font-mono text-foreground text-sm">
-							{messageLines.map((line, i) => {
-								const structured = tryParseStructured(line);
-								return (
-									<div
-										key={`popout-fmt-${i}-${line.length}-${line.slice(0, 16)}`}
-									>
-										{structured !== null &&
-										typeof structured === "object" ? (
-											<JsonViewer
-												value={structured}
-												forceVersion={expandRev}
-												forceOpen={expandAllTo}
-											/>
-										) : (
-											<div className="whitespace-pre-wrap break-all">
-												{line || " "}
-											</div>
-										)}
-									</div>
-								);
-							})}
-						</div>
+						<FormattedLines
+							lines={messageLines}
+							expandRev={expandRev}
+							expandAllTo={expandAllTo}
+							className="flex flex-col gap-0.5 font-mono text-foreground text-sm"
+							// the modal has room, so show figures at full size
+							imageClassName="max-h-none"
+						/>
 					)}
 				</PopoutModal>
 			)}
@@ -393,6 +394,15 @@ export const CellOutputBlock = ({
 							forceVersion={expandRev}
 							forceOpen={expandAllTo}
 						/>
+					) : showOutputImages ? (
+						<InlineImageSegments
+							text={output}
+							textClassName={`whitespace-pre-wrap break-all font-mono text-sm ${
+								error ? "text-destructive" : "text-foreground"
+							}`}
+							// the modal has room, so show figures at full size
+							imageClassName="max-h-none"
+						/>
 					) : (
 						<pre
 							className={`whitespace-pre-wrap break-all font-mono text-sm ${
@@ -407,6 +417,63 @@ export const CellOutputBlock = ({
 		</div>
 	);
 };
+
+// ---------------------------------------------------------------------------
+// FormattedLines — FORMATTED-mode log body, shared by the panel and its popout
+// ---------------------------------------------------------------------------
+
+interface FormattedLinesProps {
+	lines: string[];
+	expandRev: number;
+	expandAllTo: boolean | undefined;
+	className: string;
+	imageClassName?: string;
+}
+
+/**
+ * Renders each log line as, in priority order: an inline image preview, a
+ * JSON tree, or plain text.
+ */
+const FormattedLines = ({
+	lines,
+	expandRev,
+	expandAllTo,
+	className,
+	imageClassName,
+}: FormattedLinesProps) => (
+	<div className={className}>
+		{lines.map((line, i) => {
+			const key = `fmt-${i}-${line.length}-${line.slice(0, 16)}`;
+			if (hasInlineImage(line)) {
+				return (
+					<InlineImageSegments
+						key={key}
+						text={line}
+						imageClassName={imageClassName}
+					/>
+				);
+			}
+			const structured = tryParseStructured(line);
+			return (
+				<div key={key}>
+					{structured !== null && typeof structured === "object" ? (
+						// Per-line JSON tree — used when a `print(dict)` or
+						// similar dumps a structured value to stdout.
+						<JsonViewer
+							value={structured}
+							forceVersion={expandRev}
+							forceOpen={expandAllTo}
+						/>
+					) : (
+						<div className="whitespace-pre-wrap break-all">
+							{line || " "}
+						</div>
+					)}
+				</div>
+			);
+		})}
+	</div>
+);
 
 // ---------------------------------------------------------------------------
 // Panel — bordered + labeled wrapper used for Logs / Result / Error blocks
@@ -468,8 +535,10 @@ const Panel = ({
 	};
 	return (
 		<div className={styles.wrapper}>
+			{/* `select-none` keeps the label, byte counter and toolbar out of
+			    any selection that spans the panel. */}
 			<div
-				className={`flex items-center gap-2 px-2.5 py-1 ${
+				className={`flex select-none items-center gap-2 px-2.5 py-1 ${
 					collapsed ? "" : "border-b"
 				} ${styles.header}`}
 			>
@@ -534,7 +603,7 @@ const CopyButton = ({ value, label }: { value: string; label: string }) => {
 			<TooltipTrigger asChild>
 				<button
 					type="button"
-					className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+					className="select-none rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
 					onClick={copy}
 					aria-label={label}
 				>
@@ -705,7 +774,7 @@ const PopoutModal = ({
 					height: "min(90vh, 800px)",
 				}}
 			>
-				<div className="flex items-center gap-2 border-border border-b px-4 py-2">
+				<div className="flex select-none items-center gap-2 border-border border-b px-4 py-2">
 					<div className="font-semibold text-foreground text-sm">
 						{title}
 					</div>
