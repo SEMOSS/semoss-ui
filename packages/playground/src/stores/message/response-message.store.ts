@@ -103,6 +103,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			recordFeedback: action,
 			rewriteMessage: action,
 			hasUnfinishedTools: computed,
+			hasTools: computed,
 			continueToolExecution: action,
 			saveToolExecution: action,
 			setConversationCompactedAbove: action,
@@ -259,10 +260,7 @@ command=["<encode>${text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
 ${media.length ? `image=${JSON.stringify(media)},` : "image=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
-paramValues=[${JSON.stringify({
-					max_new_tokens: room.options.tokenLength,
-					temperature: room.options.temperature,
-				})}]
+paramValues=[{}]
 );`,
 				(chunk) => {
 					runInAction(() => {
@@ -516,6 +514,13 @@ paramValues=[${JSON.stringify({
 	/**
 	 * Execution
 	 */
+	/**
+	 * Whether this response includes any tool calls, finished or not
+	 */
+	get hasTools() {
+		return this.parts.some((part) => part.type === "TOOL_CALL");
+	}
+
 	/**
 	 * Check if there are any unfinished tools
 	 */

@@ -22,7 +22,6 @@ import minLight from "@shikijs/themes/min-light";
 import type * as React from "react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { useTheme } from "./theme-provider";
 
 const minLightAccessibleComments = {
 	...minLight,
@@ -44,6 +43,19 @@ const minLightAccessibleComments = {
 let highlighterInstance: Awaited<
 	ReturnType<typeof createHighlighterCore>
 > | null = null;
+const HIGHLIGHTED_HTML_CACHE_LIMIT = 200;
+const highlightedHtmlCache = new Map<string, string>();
+
+const cacheHighlightedHtml = (cacheKey: string, html: string) => {
+	if (highlightedHtmlCache.size >= HIGHLIGHTED_HTML_CACHE_LIMIT) {
+		const oldestCacheKey = highlightedHtmlCache.keys().next().value;
+		if (oldestCacheKey) {
+			highlightedHtmlCache.delete(oldestCacheKey);
+		}
+	}
+
+	highlightedHtmlCache.set(cacheKey, html);
+};
 
 const getHighlighter = async () => {
 	if (highlighterInstance) {
@@ -125,7 +137,6 @@ interface CodeProps extends Omit<React.ComponentProps<"code">, "children"> {
 }
 
 function Code({ code, language, className, ...props }: CodeProps): JSX.Element {
-	const { theme } = useTheme();
 	// store the highlighted coe
 	const [highlightedHtml, setHighlightedHTML] = useState<string>("");
 
@@ -135,32 +146,32 @@ function Code({ code, language, className, ...props }: CodeProps): JSX.Element {
 
 		const highlight = async () => {
 			if (!language) {
+				setHighlightedHTML("");
+				return;
+			}
+
+			const cacheKey = `${language}:${code}`;
+			const cachedHtml = highlightedHtmlCache.get(cacheKey);
+
+			if (cachedHtml) {
+				setHighlightedHTML(cachedHtml);
 				return;
 			}
 
 			// get the highlighter
 			const highlighter = await getHighlighter();
 
-			// set the theme
-			let activeTheme: "light" | "dark" = "dark";
-			if (theme === "system") {
-				// Detect system theme preference
-				activeTheme = window.matchMedia("(prefers-color-scheme: dark)")
-					.matches
-					? "dark"
-					: "light";
-			} else {
-				activeTheme = theme;
-			}
-
 			const html = highlighter.codeToHtml(code, {
-				theme:
-					activeTheme === "light"
-						? "min-light-accessible-comments"
-						: "github-dark",
+				themes: {
+					light: "min-light-accessible-comments",
+					dark: "github-dark",
+				},
+				defaultColor: false,
 				lang: language,
 				structure: "inline",
 			});
+
+			cacheHighlightedHtml(cacheKey, html);
 
 			if (isMounted) {
 				setHighlightedHTML(html);
@@ -172,7 +183,7 @@ function Code({ code, language, className, ...props }: CodeProps): JSX.Element {
 		return () => {
 			isMounted = false;
 		};
-	}, [code, theme, language]);
+	}, [code, language]);
 
 	if (!highlightedHtml) {
 		return (
@@ -184,7 +195,7 @@ function Code({ code, language, className, ...props }: CodeProps): JSX.Element {
 
 	return (
 		<code
-			className={cn("w-full text-sm", className)}
+			className={cn("shiki w-full text-sm", className)}
 			// biome-ignore lint/security/noDangerouslySetInnerHtml: Intended
 			dangerouslySetInnerHTML={{ __html: highlightedHtml }}
 			{...props}

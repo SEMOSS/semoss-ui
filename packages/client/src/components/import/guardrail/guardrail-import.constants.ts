@@ -1,5 +1,5 @@
 import Gliner from "@/assets/img/HUGGINGFACE_COLOR.svg";
-import Detoxify from "@/assets/img/PYTHON.svg";
+import Python from "@/assets/img/PYTHON.svg";
 export const GUARDRAIL_CONNECTION = {
 	description: {
 		General:
@@ -70,7 +70,7 @@ export const GUARDRAIL_CONNECTION = {
 		{
 			name: "Detoxify",
 			disable: false,
-			icon: Detoxify,
+			icon: Python,
 			description:
 				"Utilize Detoxify to enhance your AI systems with robust content moderation capabilities, ensuring safe and responsible interactions by filtering harmful or inappropriate content effectively.",
 			fields: [
@@ -111,6 +111,99 @@ export const GUARDRAIL_CONNECTION = {
 					type: "text",
 					disabled: true,
 					required: false,
+					category: "Settings",
+				},
+			],
+		},
+		{
+			name: "Local Python Guardrail",
+			disable: false,
+			icon: Python,
+			description:
+				"Run a custom local Python guardrail function that returns pass/fail, an optional modified prompt, and optional detailed metadata.",
+			notice: "After creating this guardrail engine, upload your Python file and any supporting files via the Files tab on the guardrail details page. The function named in 'Guardrail Function Name' must return a dict with 'pass' (boolean), plus optional 'returnPrompt' (string) if masking is supported and optional 'fullDetails' (object).",
+			fields: [
+				{
+					key: "MODEL_NAME",
+					label: "Catalog Name",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					category: "General",
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom_rules: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+				},
+				{
+					key: "GUARDRAIL_TYPE",
+					label: "Guardrail Type",
+					value: "LOCAL_PYTHON",
+					type: "text",
+					disabled: true,
+					required: false,
+					category: "Settings",
+				},
+				{
+					key: "PYTHON_FILE_NAME",
+					label: "Python File Name",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					helperText:
+						"Enter only the file name (e.g., my_guardrail.py). Upload the file itself via the Files tab after the engine is created.",
+					category: "Settings",
+				},
+				{
+					key: "FUNCTION_NAME",
+					label: "Guardrail Function Name",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					helperText:
+						"Name of the Python function in your file that will be invoked as the guardrail. It must return a dict with 'pass' plus optional 'returnPrompt' (if masking is supported) and 'fullDetails'.",
+					category: "Settings",
+				},
+				{
+					key: "FUNCTION_DESCRIPTION",
+					label: "Guardrail Function Description (metadata)",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					category: "Settings",
+				},
+				{
+					key: "FUNCTION_PARAMETERS",
+					label: "Guardrail Function Parameters (metadata)",
+					value: [],
+					type: "parameter-list",
+					disabled: false,
+					required: false,
+					helperText:
+						"Define each parameter with a name, type, and description. Add a 'prompt' parameter for prompt-text guardrails.",
+					category: "Settings",
+				},
+				{
+					key: "FUNCTION_REQUIRED_PARAMETERS",
+					label: "Guardrail Function Required Parameters (metadata)",
+					value: [],
+					type: "string-list",
+					disabled: false,
+					required: false,
+					helperText:
+						"List the parameter names above that must be supplied when the guardrail is executed.",
 					category: "Settings",
 				},
 			],
