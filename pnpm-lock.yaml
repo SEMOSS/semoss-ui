@@ -587,6 +587,9 @@ importers:
 
   packages/chrome-extension:
     dependencies:
+      '@medv/finder':
+        specifier: ^2.1.0
+        version: 2.1.0
       '@semoss/sdk':
         specifier: workspace:*
         version: link:../../libs/sdk
@@ -601,6 +604,11 @@ importers:
         version: 18.3.1(react@18.3.1)
     devDependencies:
       '@crxjs/vite-plugin':
+        specifier: ^2.0.0-beta.25
+        version: 2.4.0(vite@7.2.4(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1))
+      '@tailwindcss/vite':
+        specifier: ^4.1.14
+        version: 4.1.17(vite@7.2.4(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1))
         specifier: ^2.4.0
         version: 2.4.0(vite@7.2.4(@types/node@25.9.3)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.48.0))
       '@types/chrome':
@@ -614,6 +622,10 @@ importers:
         version: 18.3.0
       '@vitejs/plugin-react':
         specifier: ^4.6.0
+        version: 4.7.0(vite@7.2.4(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1))
+      tailwindcss:
+        specifier: ^4.1.14
+        version: 4.1.17
         version: 4.7.0(vite@7.2.4(@types/node@25.9.3)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.48.0))
       typescript:
         specifier: ~5.5.2
@@ -2184,6 +2196,9 @@ packages:
 
   '@mdi/js@6.9.96':
     resolution: {integrity: sha512-rK0/vLFaiItYS2W7uVmaKPKnhNQE4XVkylpk5njtVwENnp8elwY5uRL6qvdj2esuvUHG7DwygE4Qu3eKxxuJiQ==}
+
+  '@medv/finder@2.1.0':
+    resolution: {integrity: sha512-Egrg5XO4kLol24b1Kv50HDfi5hW0yQ6aWSsO0Hea1eJ4rogKElIN0M86FdVnGF4XIGYyA7QWx0MgbOzVPA0qkA==}
 
   '@mermaid-js/parser@1.1.1':
     resolution: {integrity: sha512-VuHdsYMK1bT6X2JbcAaWAhugTRvRBRyuZgd+c22swUeI9g/ntaxF7CY7dYarhZovofCbUNO0G7JesfmNtjYOCw==}
@@ -10560,6 +10575,8 @@ snapshots:
   '@marijn/find-cluster-break@1.0.2': {}
 
   '@mdi/js@6.9.96': {}
+
+  '@medv/finder@2.1.0': {}
 
   '@mermaid-js/parser@1.1.1':
     dependencies:

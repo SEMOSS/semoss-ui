@@ -8,17 +8,20 @@
     "start": "vite"
   },
   "dependencies": {
+    "@medv/finder": "^2.1.0",
     "@semoss/sdk": "workspace:*",
     "@semoss/ui": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.1.14",
     "@crxjs/vite-plugin": "^2.4.0",
     "@types/chrome": "^0.0.202",
     "@types/react": "18.3.1",
     "@types/react-dom": "18.3.0",
     "@vitejs/plugin-react": "^4.6.0",
+    "tailwindcss": "^4.1.14",
     "typescript": "~5.5.2",
     "vite": "^7.0.0"
   }

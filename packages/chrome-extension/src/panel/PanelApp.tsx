@@ -1,26 +1,38 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./panel.css";
-import { Button, Card, cn, Input } from "@semoss/ui/next";
+import { Button, Card, H1, H3, H4, Input, P } from "@semoss/ui/next";
 import {
 	type PlaywrightScript,
 	ScriptExecutor,
 } from "../services/scriptExecutor";
+import { escapePixelString, SemossClient } from "../services/semossClient";
+import { RecordingPanel } from "./components/RecordingPanel";
 import { WelcomeState } from "./components/WelcomeState";
 
-type PanelRuntimeMessage = {
+type PanelMode = "execution" | "recording";
+
+interface ChromeMessage {
 	type: string;
 	timestamp?: number;
 	script?: {
-		name?: string;
-		scriptContent?: unknown;
+		fileName: string;
+		projectId: string;
+	};
+	payload?: {
+		fileName: string;
+		projectID: string;
+		title?: string;
+		scriptContent?: string;
 	};
 	value?: string;
 	isPassword?: boolean;
-};
+}
 
 const PanelApp: React.FC = () => {
+	const [mode, setMode] = useState<PanelMode>("execution");
 	const [isLoading, setIsLoading] = useState(true);
 	const [isRunning, setIsRunning] = useState(false);
+	const [isPaused, setIsPaused] = useState(false);
 	const [actionHistory, setActionHistory] = useState<string[]>([]);
 	const [waitingForUserInput, setWaitingForUserInput] = useState(false);
 	const [userInputPrompt, setUserInputPrompt] = useState("");
@@ -29,11 +41,26 @@ const PanelApp: React.FC = () => {
 	const [userInputCallback, setUserInputCallback] = useState<
 		((value: string) => void) | null
 	>(null);
-	const [, setMode] = useState<"script">("script");
-	const [, setScriptJson] = useState("");
-	const [jsonFormat, setJsonFormat] = useState<"playwright">("playwright");
 
 	const historyEndRef = React.useRef<HTMLDivElement>(null);
+
+	// Ref to track isRunning without causing useEffect re-runs
+	const isRunningRef = useRef<boolean>(false);
+	// Ref to track isPaused without causing useEffect re-runs
+	const isPausedRef = useRef<boolean>(false);
+	// Ref to track userInputCallback without causing useEffect re-runs
+	const userInputCallbackRef = useRef(userInputCallback);
+	// Ref to track execution tab for cleanup detection
+	const executionTabIdRef = useRef<number | null>(null);
+	const tabRemovalListenerRef = useRef<((tabId: number) => void) | null>(
+		null,
+	);
+	const tabActivatedListenerRef = useRef<
+		((activeInfo: chrome.tabs.TabActiveInfo) => void) | null
+	>(null);
+	// Message queue for messages received before panel is ready
+	const messageQueueRef = useRef<ChromeMessage[]>([]);
+	const listenerReadyRef = useRef<boolean>(false);
 
 	// Real-time input mirroring state
 	const [currentSelector, setCurrentSelector] = useState<string | null>(null);
@@ -52,6 +79,8 @@ const PanelApp: React.FC = () => {
 	}, []);
 
 	useEffect(() => {
+		console.log("[PANEL] ✅ Panel mounted, announcing presence");
+
 		chrome.runtime
 			.sendMessage({
 				type: "SMSS_EXTENSION_PANEL_OPENED",
@@ -77,150 +106,442 @@ const PanelApp: React.FC = () => {
 	}, []);
 
 	// Listen for playground chat events from content script
+	// biome-ignore lint/correctness/useExhaustiveDependencies: executeScriptWithContent and waitingForUserInput are intentionally excluded to prevent infinite loops
 	useEffect(() => {
+		console.log("[PANEL] 🎧 Setting up message listener");
+
 		const messageListener = (
-			message: PanelRuntimeMessage,
+			message: ChromeMessage,
 			sender: chrome.runtime.MessageSender,
-			_sendResponse: (response?: unknown) => void,
+			sendResponse: (response?: { alive?: boolean }) => void,
 		) => {
+			console.log("[PANEL] 📨 Received message:", message.type, message);
+
+			// Respond to panel ping checks IMMEDIATELY (even if listener not fully ready)
+			// This prevents "Extension Required" popup from showing
+			if (message.type === "PANEL_PING_CHECK") {
+				console.log("[PANEL] 📨 Received ping check, responding...");
+				sendResponse({ alive: true });
+				return true;
+			}
+
+			// If listener isn't ready yet, queue execution messages
+			if (
+				!listenerReadyRef.current &&
+				(message.type === "EXECUTE_PLAYWRIGHT_SCRIPT" ||
+					message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT")
+			) {
+				console.log(
+					"[PANEL] 📥 Queuing message (listener not ready):",
+					message.type,
+				);
+				messageQueueRef.current.push(message);
+				return;
+			}
+
 			// CRITICAL: Only process messages forwarded by background script (sender.tab will be undefined)
 			// Ignore direct messages from content scripts to prevent duplicate execution
 			if (sender.tab && message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT") {
+				console.log(
+					"[PANEL] ⏭️ Ignoring direct message from content script",
+				);
 				return;
 			}
 
-			// CRITICAL: Block script execution if already running
-			if (message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT" && isRunning) {
+			// CRITICAL: Block script execution if already running (use ref to avoid stale closure)
+			if (
+				(message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT" ||
+					message.type === "EXECUTE_PLAYWRIGHT_SCRIPT") &&
+				isRunningRef.current
+			) {
+				console.log(
+					"[PANEL] ⏸️ Already running, ignoring duplicate execution",
+				);
 				return;
 			}
 
-			// Handle ping request from Playground to validate extension is alive
-			if (message.type === "SMSS_EXTENSION_PING") {
-				console.log("[PANEL] 🏓 Received PING - sending PONG");
-				chrome.runtime
-					.sendMessage({
-						type: "SMSS_EXTENSION_PONG",
-						timestamp: Date.now(),
-					})
-					.catch((error) => {
-						console.error("[PANEL] ❌ Failed to send PONG:", error);
+			// Handle portal message format
+			if (message.type === "EXECUTE_PLAYWRIGHT_SCRIPT") {
+				const { fileName, projectID, title, scriptContent } =
+					message.payload || {};
+
+				if (!fileName || !projectID) {
+					console.error(
+						"[PANEL] ❌ Missing fileName or projectID in portal message",
+					);
+					return;
+				}
+
+				console.log("[PANEL] 📨 Portal execution request:", {
+					fileName,
+					projectID,
+					title,
+				});
+
+				// Set ref IMMEDIATELY to block duplicate messages
+				isRunningRef.current = true;
+				setIsRunning(true);
+
+				setActionHistory([
+					`🎬 Received script from Portal: ${title || fileName}`,
+				]);
+				setMode("execution");
+
+				// Check if script content is provided (new format)
+				if (scriptContent) {
+					console.log(
+						"[PANEL] ✅ Script content received, executing directly",
+					);
+
+					// Parse and set the script
+					let content = scriptContent as {
+						steps?: string | unknown[];
+					};
+					// Parse if it's a string
+					if (typeof content === "string") {
+						try {
+							content = JSON.parse(content);
+						} catch (e) {
+							console.error(
+								"[PANEL] ❌ Failed to parse script:",
+								e,
+							);
+						}
+					}
+
+					// Parse nested steps if needed
+					if (
+						content &&
+						typeof (content as unknown as { steps?: unknown })
+							.steps === "string"
+					) {
+						try {
+							(content as unknown as { steps: unknown }).steps =
+								JSON.parse(
+									(content as unknown as { steps: string })
+										.steps,
+								);
+						} catch (e) {
+							console.error(
+								"[PANEL] ❌ Failed to parse steps:",
+								e,
+							);
+						}
+					}
+
+					const finalScriptContent = JSON.stringify(content, null, 2);
+
+					setActionHistory((prev) => [
+						...prev,
+						`✅ Script loaded: ${fileName}`,
+						"▶️ Executing script in new tab...",
+					]);
+
+					// Execute immediately
+					executeScriptWithContent(
+						finalScriptContent,
+						"playwright",
+					).catch((error) => {
+						console.error(
+							"[PANEL] ❌ Error executing script:",
+							error,
+						);
+						setActionHistory((prev) => [
+							...prev,
+							`❌ Failed to execute script: ${error instanceof Error ? error.message : String(error)}`,
+						]);
 					});
-				return;
+				} else {
+					// Fallback: fetch script content from backend (for backwards compatibility)
+					console.log(
+						"[PANEL] ⚠️ No script content in payload, fetching from backend",
+					);
+
+					setActionHistory((prev) => [
+						...prev,
+						`🔄 Fetching script from backend: ${fileName}`,
+					]);
+
+					// Use async IIFE to handle async operations
+					(async () => {
+						try {
+							// First get a session ID
+							const sessionId =
+								await SemossClient.runPixel<string>(
+									"Session();",
+								);
+
+							if (!sessionId) {
+								throw new Error("No session ID returned");
+							}
+
+							console.log("[PANEL] 📋 Session ID:", sessionId);
+
+							// Now fetch the script using GetAllSteps
+							const scriptContent = await SemossClient.runPixel(
+								`GetAllSteps(project=["${escapePixelString(projectID)}"], sessionId=["${escapePixelString(sessionId)}"], fileName=["${escapePixelString(fileName)}"]);`,
+							);
+
+							if (!scriptContent) {
+								throw new Error("No script content returned");
+							}
+
+							// Check if response is an error message instead of valid JSON
+							if (
+								typeof scriptContent === "string" &&
+								scriptContent.startsWith("Failed to")
+							) {
+								console.error(
+									"[PANEL] ⚠️ Backend error:",
+									scriptContent,
+								);
+								throw new Error(
+									`Backend error: ${scriptContent}`,
+								);
+							}
+
+							console.log(
+								"[PANEL] ✅ Script fetched successfully",
+							);
+
+							// Parse and set the script
+							let content = scriptContent as {
+								steps?: string | unknown[];
+							};
+							if (typeof content === "string") {
+								try {
+									content = JSON.parse(content);
+								} catch (e) {
+									console.error(
+										"[PANEL] ❌ Failed to parse script:",
+										e,
+									);
+									throw new Error(
+										`Invalid JSON: ${e instanceof Error ? e.message : String(e)}`,
+									);
+								}
+							}
+
+							if (content && typeof content.steps === "string") {
+								try {
+									content.steps = JSON.parse(content.steps);
+								} catch (e) {
+									console.error(
+										"[PANEL] ❌ Failed to parse steps:",
+										e,
+									);
+								}
+							}
+
+							const finalScriptContent = JSON.stringify(
+								content,
+								null,
+								2,
+							);
+
+							setActionHistory((prev) => [
+								...prev,
+								`✅ Script loaded: ${fileName}`,
+								"▶️ Executing script in new tab...",
+							]);
+
+							// Execute immediately
+							await executeScriptWithContent(
+								finalScriptContent,
+								"playwright",
+							);
+						} catch (error) {
+							console.error(
+								"[PANEL] ❌ Error fetching/executing script:",
+								error,
+							);
+							setActionHistory((prev) => [
+								...prev,
+								`❌ Failed to fetch script: ${error instanceof Error ? error.message : String(error)}`,
+							]);
+						}
+					})();
+				}
 			}
 
 			if (message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT") {
 				// Handle Playwright script execution request from Playground
 				const script = message.script;
 
+				if (!script.fileName || !script.projectId) {
+					console.error(
+						"[PANEL] ❌ Missing fileName or projectId in playground message",
+					);
+					return;
+				}
+
+				console.log("[PANEL] 📨 Playground execution request:", script);
+
 				setActionHistory([
-					`🎬 Received script from Playground: ${script.name}`,
+					`🎬 Received script from Playground: ${script.fileName}`,
 				]);
-				setMode("script");
+				setMode("execution");
+				setIsRunning(true);
 
-				// Check if script content was provided
-				if (script.scriptContent) {
-					let content = script.scriptContent;
+				// Always fetch script content from backend (no longer accepting scriptContent)
+				setActionHistory((prev) => [
+					...prev,
+					`🔄 Fetching script from backend: ${script.fileName}`,
+				]);
 
-					// If scriptContent is a string, parse it first
-					if (typeof content === "string") {
-						try {
-							content = JSON.parse(content);
-						} catch (e) {
-							console.error(
-								"[PANEL] ❌ Failed to parse scriptContent string:",
-								e,
-							);
+				// Use async IIFE to handle async operations
+				(async () => {
+					try {
+						// First get a session ID
+						const sessionId =
+							await SemossClient.runPixel<string>("Session();");
+
+						if (!sessionId) {
+							throw new Error("No session ID returned");
 						}
-					}
 
-					// If steps is a string, parse it too (handle nested stringification)
-					if (content && typeof content.steps === "string") {
-						try {
-							content.steps = JSON.parse(content.steps);
-						} catch (e) {
-							console.error(
-								"[PANEL] ❌ Failed to parse steps string:",
-								e,
-							);
+						console.log("[PANEL] 📋 Session ID:", sessionId);
+
+						// Now fetch the script using GetAllSteps
+						const scriptContent = await SemossClient.runPixel(
+							`GetAllSteps(project=["${escapePixelString(script.projectId)}"], sessionId=["${escapePixelString(sessionId)}"], fileName=["${escapePixelString(script.fileName)}"]);`,
+						);
+
+						if (!scriptContent) {
+							throw new Error("No script content returned");
 						}
-					}
 
-					// Use the provided script content directly
-					const scriptContent = JSON.stringify(content, null, 2);
-					setScriptJson(scriptContent);
-					setJsonFormat("playwright");
-					setActionHistory((prev) => [
-						...prev,
-						`✅ Script loaded: ${script.name}`,
-					]);
+						// Check if response is an error message instead of valid JSON
+						if (
+							typeof scriptContent === "string" &&
+							scriptContent.startsWith("Failed to")
+						) {
+							console.error(
+								"[PANEL] ⚠️ Backend error:",
+								scriptContent,
+							);
+							throw new Error(`Backend error: ${scriptContent}`);
+						}
+						console.log("[PANEL] ? Script fetched successfully");
 
-					// Auto-execute the script
-					setActionHistory((prev) => [
-						...prev,
-						`▶️ Waiting for page to load before executing script...`,
-					]);
-
-					// Wait longer and check if page is loaded before executing
-					setTimeout(async () => {
-						// Wait for current tab to be in complete state
-						const [currentTab] = await chrome.tabs.query({
-							active: true,
-							currentWindow: true,
-						});
-						if (currentTab?.id) {
-							// Wait for tab to be fully loaded
-							let retries = 20; // 10 seconds total
-							while (retries > 0) {
-								const tabs = await chrome.tabs.query({});
-								const tab = tabs.find(
-									(t) => t.id === currentTab.id,
+						// Parse and set the script
+						let content = scriptContent as {
+							steps?: string | unknown[];
+						};
+						if (typeof content === "string") {
+							try {
+								content = JSON.parse(content);
+							} catch (e) {
+								console.error(
+									"[PANEL] ❌ Failed to parse script:",
+									e,
 								);
-								if (tab?.status === "complete") {
-									break;
-								}
-								await new Promise((resolve) =>
-									setTimeout(resolve, 500),
+								throw new Error(
+									`Invalid JSON: ${e instanceof Error ? e.message : String(e)}`,
 								);
-								retries--;
 							}
-							// Additional buffer time after page load
-							await new Promise((resolve) =>
-								setTimeout(resolve, 1500),
-							);
 						}
+
+						if (content && typeof content.steps === "string") {
+							try {
+								content.steps = JSON.parse(content.steps);
+							} catch (e) {
+								console.error(
+									"[PANEL] ❌ Failed to parse steps:",
+									e,
+								);
+							}
+						}
+
+						const finalScriptContent = JSON.stringify(
+							content,
+							null,
+							2,
+						);
+
 						setActionHistory((prev) => [
 							...prev,
-							`▶️ Page loaded, executing script...`,
+							`✅ Script loaded: ${script.fileName}`,
+							"▶️ Executing script in new tab...",
 						]);
+
+						// Execute immediately
 						await executeScriptWithContent(
-							scriptContent,
+							finalScriptContent,
 							"playwright",
 						);
-					}, 1000);
-				}
+					} catch (error) {
+						console.error(
+							"[PANEL] ❌ Error fetching/executing script:",
+							error,
+						);
+						setActionHistory((prev) => [
+							...prev,
+							`❌ Failed to fetch script: ${error instanceof Error ? error.message : String(error)}`,
+						]);
+					}
+				})();
 			}
 
 			// Handle field input detected from webpage
 			if (message.type === "FIELD_INPUT_DETECTED") {
 				// If we're waiting for user input, auto-submit with the detected value
-				if (waitingForUserInput && userInputCallback) {
+				if (waitingForUserInput && userInputCallbackRef.current) {
 					const valueToUse = message.isPassword
 						? "••••••••"
 						: message.value || "";
-					userInputCallback(valueToUse);
+					userInputCallbackRef.current(valueToUse);
 				}
 			}
 		};
 
 		chrome.runtime.onMessage.addListener(messageListener);
+		console.log("[PANEL] ✅ Message listener registered");
+
+		// Mark listener as ready
+		listenerReadyRef.current = true;
+
+		// Process any queued messages
+		if (messageQueueRef.current.length > 0) {
+			console.log(
+				`[PANEL] 📤 Processing ${messageQueueRef.current.length} queued message(s)`,
+			);
+			const queuedMessages = [...messageQueueRef.current];
+			messageQueueRef.current = [];
+
+			for (const queuedMessage of queuedMessages) {
+				console.log(
+					"[PANEL] ▶️ Processing queued message:",
+					queuedMessage.type,
+				);
+				messageListener(
+					queuedMessage,
+					{} as chrome.runtime.MessageSender,
+					() => {},
+				);
+			}
+		}
 
 		return () => {
-			chrome.runtime.onMessage.removeListener(messageListener);
+			console.log("[PANEL] 🔇 Removing message listener");
+			listenerReadyRef.current = false;
 		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [isRunning, waitingForUserInput, userInputCallback]);
+	}, []); // No dependencies - listener stays stable throughout component lifecycle
 
-	// Close dropdown when clicking outside
+	// Sync isRunning state with ref to avoid stale closures in message listener
+	useEffect(() => {
+		isRunningRef.current = isRunning;
+	}, [isRunning]);
+
+	// Sync isPaused state with ref to avoid stale closures
+	useEffect(() => {
+		isPausedRef.current = isPaused;
+	}, [isPaused]);
+
+	// Sync userInputCallback with ref to avoid stale closures in message listener
+	useEffect(() => {
+		userInputCallbackRef.current = userInputCallback;
+	}, [userInputCallback]);
 
 	const executeScriptWithContent = async (
 		content: string,
@@ -239,15 +560,12 @@ const PanelApp: React.FC = () => {
 		setActionHistory([]);
 
 		try {
-			// Use provided format or fall back to state
-			const scriptFormat = format || jsonFormat;
+			// Use provided format or fall back to default
+			const scriptFormat = format || "playwright";
 
 			// Parse script based on format
-			let script: PlaywrightScript;
-			if (scriptFormat === "playwright") {
-				script = ScriptExecutor.parseScript(content);
-			}
-
+			const script: PlaywrightScript =
+				ScriptExecutor.parseScript(content);
 			// Get current tab
 			let tab: chrome.tabs.Tab | undefined;
 			if (chrome.devtools?.inspectedWindow) {
@@ -267,7 +585,7 @@ const PanelApp: React.FC = () => {
 			}
 
 			// Convert script to actions based on format
-			let actions: Array<{
+			const actions: Array<{
 				type: string;
 				url?: string;
 				selector?: string;
@@ -278,12 +596,9 @@ const PanelApp: React.FC = () => {
 				waitAfterMs?: number;
 				tabId?: string;
 				isTriggerNewTab?: { isTrue: boolean; tabId: string };
-			}>;
-			if (scriptFormat === "playwright") {
-				actions = await ScriptExecutor.convertToActions(
-					script as PlaywrightScript,
-				);
-			}
+			}> = await ScriptExecutor.convertToActions(
+				script as PlaywrightScript,
+			);
 			addToHistory(`✓ Found ${actions.length} actions to execute`);
 
 			// Find the first navigate action (might not be the very first action)
@@ -299,7 +614,7 @@ const PanelApp: React.FC = () => {
 			let targetTab: chrome.tabs.Tab;
 			let createdNewTab = false; // Track if we created a new tab
 			if (needsNewTab) {
-				addToHistory(`✓ Creating new tab for script execution...`);
+				addToHistory("✓ Creating new tab for script execution...");
 				const newTab = await chrome.tabs.create({
 					active: true, // Make it active so user can see it
 					url: initialUrl,
@@ -309,37 +624,113 @@ const PanelApp: React.FC = () => {
 					throw new Error("Failed to create new tab");
 				}
 
-				addToHistory(`✓ New tab created`);
+				addToHistory("✓ New tab created");
 				targetTab = newTab;
 				createdNewTab = true; // Mark that we created a tab - prevents additional tabs later
 
-				// Wait for tab to be ready and page to load
-				let loadTimeout = 15;
-				while (loadTimeout > 0) {
-					const tabs = await chrome.tabs.query({});
-					const loadedTab = tabs.find((t) => t.id === newTab.id);
-					if (loadedTab && loadedTab.status === "complete") {
-						await new Promise((resolve) =>
-							setTimeout(resolve, 500),
-						);
-						break;
+				// Track execution tab for cleanup detection
+				executionTabIdRef.current = newTab.id;
+
+				// Listen for tab closure during execution
+				const handleTabRemoved = (tabId: number) => {
+					if (
+						tabId === executionTabIdRef.current &&
+						isRunningRef.current
+					) {
+						console.log("[PANEL] ⚠️ Execution tab closed abruptly");
+						// Send cancellation message
+						chrome.runtime
+							.sendMessage({
+								type: "SCRIPT_EXECUTION_COMPLETE",
+								success: false,
+								message:
+									"Script execution cancelled: Tab was closed",
+							})
+							.catch((err) => {
+								console.error(
+									"[PANEL] ❌ Failed to send cancellation:",
+									err,
+								);
+							});
+						// Reset state
+						setIsRunning(false);
+						isRunningRef.current = false;
+						setIsPaused(false);
+						isPausedRef.current = false;
+						executionTabIdRef.current = null;
+						addToHistory("❌ Execution cancelled: Tab closed");
+						// Remove listeners
+						if (tabRemovalListenerRef.current) {
+							chrome.tabs.onRemoved.removeListener(
+								tabRemovalListenerRef.current,
+							);
+							tabRemovalListenerRef.current = null;
+						}
+						if (tabActivatedListenerRef.current) {
+							chrome.tabs.onActivated.removeListener(
+								tabActivatedListenerRef.current,
+							);
+							tabActivatedListenerRef.current = null;
+						}
 					}
-					await new Promise((resolve) => setTimeout(resolve, 500));
-					loadTimeout--;
-				}
+				};
+
+				tabRemovalListenerRef.current = handleTabRemoved;
+				chrome.tabs.onRemoved.addListener(handleTabRemoved);
+
+				// Listen for tab activation changes to pause/resume execution
+				const handleTabActivated = (
+					activeInfo: chrome.tabs.TabActiveInfo,
+				) => {
+					if (!isRunningRef.current || !executionTabIdRef.current) {
+						return;
+					}
+
+					if (activeInfo.tabId === executionTabIdRef.current) {
+						// User returned to the execution tab
+						if (isPausedRef.current) {
+							console.log(
+								"[PANEL] ▶️ Execution resumed - returned to tab",
+							);
+							setIsPaused(false);
+							isPausedRef.current = false;
+							addToHistory(
+								"▶️ Execution resumed - returned to tab",
+							);
+						}
+					} else {
+						// User switched away from the execution tab
+						if (!isPausedRef.current) {
+							console.log(
+								"[PANEL] ⏸️ Execution paused - switched away from tab",
+							);
+							setIsPaused(true);
+							isPausedRef.current = true;
+							addToHistory(
+								"⏸️ Execution paused - switched away from tab",
+							);
+						}
+					}
+				};
+
+				tabActivatedListenerRef.current = handleTabActivated;
+				chrome.tabs.onActivated.addListener(handleTabActivated);
 			} else {
 				// Use the current tab if no navigate action at start
 				if (!tab || !tab.id) {
 					throw new Error("No active tab available");
 				}
 				targetTab = tab;
-				addToHistory(`✓ Using current tab for script execution`);
+				addToHistory("✓ Using current tab for script execution");
 			}
 
 			// Track tabs: maps tabId (tab-1, tab-2) to Chrome tab ID
 			const tabMap = new Map<string, number>();
-			tabMap.set("tab-1", targetTab.id!); // First tab is the target tab
-			let currentTabId = targetTab.id!;
+			if (!targetTab.id) {
+				throw new Error("Target tab has no ID");
+			}
+			tabMap.set("tab-1", targetTab.id); // First tab is the target tab
+			let currentTabId = targetTab.id;
 
 			// Track which navigate URL we already executed during tab creation
 			const preExecutedNavigateUrl = createdNewTab ? initialUrl : null;
@@ -348,6 +739,11 @@ const PanelApp: React.FC = () => {
 			let actionCounter = 0; // Track actual displayed action numbers
 			for (let i = 0; i < actions.length; i++) {
 				const action = actions[i];
+
+				// Wait while paused
+				while (isPausedRef.current) {
+					await new Promise((resolve) => setTimeout(resolve, 200));
+				}
 
 				// Skip navigate action if we already executed it during tab creation
 				if (
@@ -575,7 +971,7 @@ const PanelApp: React.FC = () => {
 							setUserInputValue("");
 							setIsPasswordInput(false);
 							setUserInputCallback(null);
-							addToHistory(`✓ User provided input`);
+							addToHistory("✓ User provided input");
 							resolve(value);
 						});
 					});
@@ -616,7 +1012,7 @@ const PanelApp: React.FC = () => {
 								type: "ATTACH_DEBUGGER",
 								tabId: currentTabId,
 							});
-							addToHistory(`✓ Debugger attached to new tab`);
+							addToHistory("✓ Debugger attached to new tab");
 						} catch (error) {
 							console.log("Debugger attach error:", error);
 						}
@@ -631,7 +1027,7 @@ const PanelApp: React.FC = () => {
 								await new Promise((resolve) =>
 									setTimeout(resolve, 1500),
 								);
-								addToHistory(`✓ New tab page loaded`);
+								addToHistory("✓ New tab page loaded");
 								break;
 							}
 							await new Promise((resolve) =>
@@ -674,6 +1070,24 @@ const PanelApp: React.FC = () => {
 			}
 		} finally {
 			setIsRunning(false);
+			isRunningRef.current = false;
+			setIsPaused(false);
+			isPausedRef.current = false;
+
+			// Clean up listeners
+			if (tabRemovalListenerRef.current) {
+				chrome.tabs.onRemoved.removeListener(
+					tabRemovalListenerRef.current,
+				);
+				tabRemovalListenerRef.current = null;
+			}
+			if (tabActivatedListenerRef.current) {
+				chrome.tabs.onActivated.removeListener(
+					tabActivatedListenerRef.current,
+				);
+				tabActivatedListenerRef.current = null;
+			}
+			executionTabIdRef.current = null;
 		}
 	};
 
@@ -730,148 +1144,243 @@ const PanelApp: React.FC = () => {
 	return (
 		<div className="panel-container">
 			<div className="panel-header">
-				<h1 className="panel-title">Browser Automation</h1>
+				<H1>Browser Automation</H1>
 			</div>
 
-			<div className="panel-content">
-				{/* Welcome State - shown when no script is running */}
-				{!isRunning && actionHistory.length === 0 && <WelcomeState />}
+			<div className="custom-tabs">
+				<div className="custom-tabs-list">
+					<button
+						type="button"
+						className={
+							mode === "execution"
+								? "custom-tab-trigger active"
+								: "custom-tab-trigger"
+						}
+						onClick={() => setMode("execution")}
+					>
+						⚡ Execute Scripts
+					</button>
+					<button
+						type="button"
+						className={
+							mode === "recording"
+								? "custom-tab-trigger active"
+								: "custom-tab-trigger"
+						}
+						onClick={() => setMode("recording")}
+					>
+						🎬 Record Script
+					</button>
+				</div>
 
-				{/* Action History */}
-				{actionHistory.length > 0 && (
-					<div className="execution-log-wrapper">
-						<Card className="execution-log-card">
-							<h2 className="execution-log-title">
-								Execution Log
-							</h2>
-							<div className="execution-log-list">
-								{actionHistory.map((action, index) => {
-									const isError = action.startsWith("❌");
-									const isSuccess = action.startsWith("✅");
-									const isCheckmark = action.startsWith("✓");
-									const isNumbered = action.match(/^\d+\./);
-									const isUserInput = action.includes(
-										"User provided input",
-									);
-
-									return (
-										<div
-											key={`action-${index}-${action.substring(0, 20)}`}
-											className={cn(
-												"execution-log-item",
-												isError &&
-													"execution-log-item--error",
-												isSuccess &&
-													"execution-log-item--success",
-												!isSuccess &&
-													!isError &&
-													isCheckmark &&
-													"execution-log-item--check",
-												!isSuccess &&
-													!isError &&
-													!isCheckmark &&
-													isUserInput &&
-													"execution-log-item--input",
-											)}
-										>
-											<p
-												className={cn(
-													"execution-log-line",
-													(isNumbered ||
-														isError ||
-														isSuccess) &&
-														"execution-log-line--strong",
-												)}
-											>
-												{action}
-											</p>
-										</div>
-									);
-								})}
-								<div ref={historyEndRef} />
-							</div>
-						</Card>
+				{isPaused && mode === "execution" && (
+					<div
+						style={{
+							marginLeft: "32px",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "12px",
+							borderRadius: "8px",
+							border: "1.5px solid rgba(255, 152, 0, 0.8)",
+							background: "rgba(255, 152, 0, 0.15)",
+							padding: "12px 32px",
+							color: "white",
+							boxShadow: "0 2px 8px rgba(255, 152, 0, 0.3)",
+						}}
+					>
+						<P
+							style={{
+								fontWeight: "bold",
+								fontSize: "0.8125rem",
+								letterSpacing: "0.5px",
+							}}
+						>
+							⏸️ PAUSED
+						</P>
 					</div>
 				)}
 
-				{/* User Input Dialog */}
-				{waitingForUserInput && (
-					<div className="user-input-overlay">
-						<div className="user-input-dialog">
-							<h3>Input Required</h3>
-							<p>{userInputPrompt}</p>
-							<Input
-								type={isPasswordInput ? "password" : "text"}
-								value={userInputValue}
-								onChange={(e) => {
-									const newValue = e.target.value;
-									setUserInputValue(newValue);
+				<div className="panel-content">
+					<div
+						className={
+							mode === "execution"
+								? "custom-tab-content active"
+								: "custom-tab-content"
+						}
+					>
+						{/* Welcome State - shown when no script is running */}
+						{!isRunning && actionHistory.length === 0 && (
+							<WelcomeState />
+						)}
 
-									// Real-time mirroring to webpage (password fields show as dots automatically)
-									if (currentSelector && currentTabId) {
-										// Clear existing debounce timer
-										if (debounceTimerRef.current) {
-											clearTimeout(
-												debounceTimerRef.current,
+						{/* Action History */}
+						{actionHistory.length > 0 && (
+							<div className="w-full">
+								<Card className="w-full border border-border bg-background p-10 shadow-sm">
+									<H4 className="mb-8 font-semibold text-[0.9375rem] text-muted-foreground uppercase tracking-[0.5px]">
+										Execution Log
+									</H4>
+									<div className="flex flex-col gap-3">
+										{actionHistory.map((action, index) => {
+											const isError =
+												action.startsWith("❌");
+											const isSuccess =
+												action.startsWith("✅");
+											const isCheckmark =
+												action.startsWith("✓");
+											const isNumbered =
+												action.match(/^\d+\./);
+											const isUserInput = action.includes(
+												"User provided input",
 											);
-										}
 
-										// Debounce the update to avoid excessive messages
-										debounceTimerRef.current = setTimeout(
-											() => {
-												chrome.runtime
-													.sendMessage({
-														type: "UPDATE_FIELD_VALUE",
-														tabId: currentTabId,
-														selector:
-															currentSelector,
-														value: newValue,
-													})
-													.catch((err) => {
-														console.log(
-															"[PANEL] ⚠️ Mirroring unavailable:",
-															err.message,
-														);
-													});
-											},
-											75,
-										); // 75ms debounce for responsive feel
-									}
-								}}
-								placeholder="Enter value..."
-								className="user-input-field"
-								onKeyDown={(e) => {
-									if (
-										e.key === "Enter" &&
-										userInputValue.trim()
-									) {
-										e.preventDefault();
-										if (userInputCallback) {
-											userInputCallback(userInputValue);
-										}
-									}
-								}}
-							/>
-							<div className="user-input-buttons">
-								<Button
-									type="button"
-									onClick={() => {
-										if (
-											userInputCallback &&
-											userInputValue.trim()
-										) {
-											userInputCallback(userInputValue);
-										}
-									}}
-									disabled={!userInputValue.trim()}
-									className="submit-btn"
-								>
-									Submit
-								</Button>
+											return (
+												<div
+													key={`action-${index}-${action.substring(0, 20)}`}
+													className={`rounded-xl border px-6 py-4 transition-all duration-200 hover:translate-x-0.5 ${
+														isError
+															? "border-red-300 bg-red-50 hover:border-red-500 hover:bg-red-100"
+															: isSuccess
+																? "border-green-300 bg-green-50 hover:border-green-500 hover:bg-green-100"
+																: isCheckmark
+																	? "border-[rgba(76,175,80,0.3)] bg-[rgba(76,175,80,0.04)] hover:border-[rgba(76,175,80,0.5)] hover:bg-[rgba(76,175,80,0.08)]"
+																	: isUserInput
+																		? "border-border bg-[rgba(25,118,210,0.04)] hover:border-blue-300 hover:bg-[rgba(25,118,210,0.08)]"
+																		: "border-border bg-background hover:bg-accent"
+													}`}
+												>
+													<P
+														className={`text-[0.8125rem] leading-relaxed tracking-[0.01em] ${
+															isError
+																? "font-medium text-red-700"
+																: isSuccess
+																	? "font-medium text-green-700"
+																	: isCheckmark
+																		? "font-normal text-green-600"
+																		: "text-foreground"
+														} ${
+															isNumbered ||
+															isError ||
+															isSuccess
+																? "font-medium"
+																: "font-normal"
+														} ${
+															isNumbered
+																? "font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',system-ui]"
+																: ""
+														}`}
+													>
+														{action}
+													</P>
+												</div>
+											);
+										})}
+										<div ref={historyEndRef} />
+									</div>
+								</Card>
 							</div>
-						</div>
+						)}
+
+						{/* User Input Dialog */}
+						{waitingForUserInput && (
+							<div className="user-input-overlay">
+								<div className="user-input-dialog">
+									<H3>Input Required</H3>
+									<P>{userInputPrompt}</P>
+									<Input
+										type={
+											isPasswordInput
+												? "password"
+												: "text"
+										}
+										value={userInputValue}
+										disabled={isPaused}
+										onChange={(e) => {
+											const newValue = e.target.value;
+											setUserInputValue(newValue);
+											if (
+												currentSelector &&
+												currentTabId
+											) {
+												// Clear existing debounce timer
+												if (debounceTimerRef.current) {
+													clearTimeout(
+														debounceTimerRef.current,
+													);
+												}
+
+												// Debounce the update to avoid excessive messages
+												debounceTimerRef.current =
+													setTimeout(() => {
+														chrome.runtime
+															.sendMessage({
+																type: "UPDATE_FIELD_VALUE",
+																tabId: currentTabId,
+																selector:
+																	currentSelector,
+																value: newValue,
+															})
+															.catch((err) => {
+																console.log(
+																	"[PANEL] ⚠️ Mirroring unavailable:",
+																	err.message,
+																);
+															});
+													}, 75); // 75ms debounce for responsive feel
+											}
+										}}
+										placeholder="Enter value..."
+										onKeyDown={(e) => {
+											if (
+												e.key === "Enter" &&
+												userInputValue.trim()
+											) {
+												e.preventDefault();
+												if (userInputCallback) {
+													userInputCallback(
+														userInputValue,
+													);
+												}
+											}
+										}}
+									/>
+									<div className="user-input-buttons">
+										<Button
+											variant="default"
+											onClick={() => {
+												if (
+													userInputCallback &&
+													userInputValue.trim()
+												) {
+													userInputCallback(
+														userInputValue,
+													);
+												}
+											}}
+											disabled={
+												!userInputValue.trim() ||
+												isPaused
+											}
+											className="rounded-xl bg-blue-600 px-8 py-3 font-semibold text-base text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:opacity-60"
+										>
+											Submit
+										</Button>
+									</div>
+								</div>
+							</div>
+						)}
 					</div>
-				)}
+
+					<div
+						className={
+							mode === "recording"
+								? "custom-tab-content active"
+								: "custom-tab-content"
+						}
+					>
+						<RecordingPanel />
+					</div>
+				</div>
 			</div>
 		</div>
 	);
