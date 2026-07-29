@@ -65,7 +65,12 @@ interface UsePlaybackControllerOptions {
 
 interface ResolvedRecordingSelection {
 	source: PlaybackRecordingSource;
-	project: PlaybackProject;
+
+	/**
+	 * Null for room recordings. Those live in the room's own asset folder and are
+	 * loaded and replayed without any project, so there may not be one to name.
+	 */
+	project: PlaybackProject | null;
 	fileName: string;
 	startUrl: string;
 	recording?: LoadedRecording;
@@ -497,9 +502,11 @@ export function usePlaybackController({
 
 	const runStep = useCallback(
 		async (tabId: string, step: LoadedRecordingStep) => {
+			// Room recordings replay through replayRoomStep below, which never
+			// touches project, so only project-sourced recordings require one.
 			if (
 				!insightId ||
-				!project ||
+				(source !== "room" && !project) ||
 				!selectedRecording ||
 				typeof step.id !== "number"
 			) {
@@ -570,6 +577,14 @@ export function usePlaybackController({
 				return true;
 			}
 
+			// Unreachable given the guard above, which only waives the project
+			// requirement for the room source handled by the branch we just left.
+			if (!project) {
+				setRunningStepId(null);
+				onError("Cannot run this step");
+				return false;
+			}
+
 			const paramValues =
 				step.type === "TYPE" && typeof step.label === "string"
 					? {
@@ -622,7 +637,12 @@ export function usePlaybackController({
 	);
 
 	const run = useCallback(async (): Promise<PlaybackRunResult | null> => {
-		if (!insightId || !project || !selectedRecording || !loadedRecording) {
+		if (
+			!insightId ||
+			(source !== "room" && !project) ||
+			!selectedRecording ||
+			!loadedRecording
+		) {
 			onError("Load a recording before running it");
 			return null;
 		}

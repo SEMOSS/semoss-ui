@@ -686,10 +686,11 @@ paramValues=[{}]
 			}
 		});
 
-		// Sync room options after any "ask" tool completes so that changes made
-		// by the tool (e.g. AddInsightMCPToRoom adding __insight__ to options.mcp)
-		// are immediately reflected in the MCP indicator and available for the
-		// next AskPlayground call — without requiring a full page refresh.
+		// Sync room options after any "ask" tool completes so anything the tool
+		// changed shows up in the MCP indicator and is available to the next
+		// AskPlayground call, without a full page refresh. A tool that writes tool
+		// definitions into the room folder surfaces here too, since the backend
+		// reports the room's own toolbox alongside the configured ones.
 		if (toolStatus === "success" || toolStatus === "cancelled") {
 			await room.syncRoomOptions();
 		}

@@ -11,6 +11,28 @@ const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 	? import.meta.env.VITE_PLATFORM_URL
 	: "";
 
+/**
+ * A tool whose UI ships with the web app declares it as
+ * `system://<package>/<path>` instead of pointing at a published project portal.
+ * These load straight from a sibling package's build output, so there is no
+ * project to look up and no `public_home` round trip.
+ */
+const SYSTEM_APP_URI = /^system:\/\/([a-zA-Z0-9._-]+)(\/.*)?$/;
+
+/**
+ * Resolves a `system://` resourceURI to a path relative to this app's own
+ * build output. Returns null when the URI is not a system app URI.
+ */
+const resolveSystemAppUrl = (
+	resourceURI: string | undefined,
+): string | null => {
+	if (!resourceURI) {
+		return null;
+	}
+	const match = SYSTEM_APP_URI.exec(resourceURI);
+	return match ? `../../${match[1]}/dist${match[2] ?? "/"}` : null;
+};
+
 interface ToolsViewProps {
 	/** Room */
 	room: RoomStore;
@@ -45,6 +67,12 @@ export const ToolsView = observer(
 		 * Library Hooks
 		 */
 
+		// A system app UI is resolved entirely from _meta, so skip the metadata
+		// lookup below: there may be no project or engine behind the tool at all.
+		const systemAppUrl = resolveSystemAppUrl(
+			tool?._meta?.SMSS_MCP_UI?.resourceURI,
+		);
+
 		// get the metadata — PROJECT-hosted tools use ProjectInfo, every other
 		// engine type (VECTOR, STORAGE, DATABASE, MODEL, FUNCTION, ...) uses
 		// EngineInfo. Fall back to ProjectInfo when the type is missing.
@@ -53,7 +81,7 @@ export const ToolsView = observer(
 		const getAppInfo = usePixel<{
 			project_type?: "BLOCKS" | "CODE" | "INSIGHT" | "";
 		}>(
-			app
+			app && !systemAppUrl
 				? isProjectType
 					? `ProjectInfo(project=["${app}"]);`
 					: `EngineInfo(engine=["${app}"]);`
@@ -109,6 +137,29 @@ export const ToolsView = observer(
 
 		useEffect(() => {
 			const chooseUrl = async () => {
+				// Ignore if no tool
+				if (!tool) {
+					setUrl("");
+					setIsLoading(false);
+					return;
+				}
+
+				// Auto-executing tool that hasn't completed yet — show default view
+				if (tool._meta.SMSS_MCP_EXECUTION !== "ask" && !toolResponse) {
+					setUrl("");
+					setIsLoading(false);
+					return;
+				}
+
+				// System app UI. Resolved before any metadata gate because no
+				// ProjectInfo/EngineInfo pixel is issued for these tools, so
+				// getAppInfo never leaves INITIAL.
+				if (systemAppUrl) {
+					setUrl(systemAppUrl);
+					setIsLoading(false);
+					return;
+				}
+
 				// Finish loading
 				if (
 					getAppInfo.status === "INITIAL" ||
@@ -117,15 +168,8 @@ export const ToolsView = observer(
 					return;
 				}
 
-				// Ignore if no tool
-				if (!app || !tool || getAppInfo.status === "ERROR") {
-					setUrl("");
-					setIsLoading(false);
-					return;
-				}
-
-				// Auto-executing tool that hasn't completed yet — show default view
-				if (tool._meta.SMSS_MCP_EXECUTION !== "ask" && !toolResponse) {
+				// Ignore if the app metadata could not be resolved
+				if (!app || getAppInfo.status === "ERROR") {
 					setUrl("");
 					setIsLoading(false);
 					return;
@@ -169,6 +213,10 @@ export const ToolsView = observer(
 					if (!resourceURI) {
 						// No UI defined, show form
 						setUrl("");
+					} else if (resourceURI.startsWith("system://")) {
+						// Malformed system URI. Fall back to the form rather than
+						// building a public_home path out of the scheme.
+						setUrl("");
 					} else if (getAppInfo.data.project_type === "BLOCKS") {
 						// Low code app
 						setUrl(`${PLATFORM_URL}/#/s/${app}${resourceURI}`);
@@ -183,7 +231,14 @@ export const ToolsView = observer(
 			};
 
 			chooseUrl();
-		}, [app, tool, toolResponse, getAppInfo.status, getAppInfo.data]);
+		}, [
+			app,
+			tool,
+			toolResponse,
+			systemAppUrl,
+			getAppInfo.status,
+			getAppInfo.data,
+		]);
 
 		useEffect(() => {
 			if (iframeReadyRef.current) {

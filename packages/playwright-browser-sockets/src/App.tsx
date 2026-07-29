@@ -6,7 +6,7 @@ import {
 	ScanLine,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useInsight } from "@semoss/sdk-react";
+import { useInsight } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -19,6 +19,7 @@ import { BrowserTabStrip } from "./components/BrowserTabStrip";
 import { BrowserToolbar } from "./components/BrowserToolbar";
 import { BrowserViewer } from "./components/BrowserViewer";
 import { ConnectionStatus } from "./components/ConnectionStatus";
+import { PlaybackCompleteDialog } from "./components/dialogs/PlaybackCompleteDialog";
 import { ReturnToPlaygroundDialog } from "./components/dialogs/ReturnToPlaygroundDialog";
 import { SaveRecordingDialog } from "./components/dialogs/SaveRecordingDialog";
 import { StopRecordingDialog } from "./components/dialogs/StopRecordingDialog";
@@ -54,7 +55,6 @@ import {
 	sendMcpResponseToPlayground,
 	subscribeToMcpToolContext,
 } from "./semoss/client";
-import { assertPixelSuccess, runPixel } from "./semoss/pixel";
 import type {
 	BrowserTabInfo,
 	ClientToServerEvent,
@@ -65,6 +65,9 @@ import type {
 	SelectedTextContext,
 	SelectionBounds,
 } from "./types/browserEvents";
+
+/** Seconds a finished replay stays on screen before the session is closed. */
+const PLAYBACK_CLOSE_SECONDS = 10;
 
 type ResolvedPlaywrightRecording = {
 	source: "project" | "room";
@@ -161,6 +164,10 @@ export default function App() {
 	const [pendingBrowserActionCount, setPendingBrowserActionCount] =
 		useState(0);
 	const [recordedStepsOpen, setRecordedStepsOpen] = useState(false);
+	const [playbackCloseCountdown, setPlaybackCloseCountdown] = useState<
+		number | null
+	>(null);
+	const [playbackStepsRun, setPlaybackStepsRun] = useState(0);
 	const autoStartedRef = useRef(false);
 	const autoRecordingStartedRef = useRef(false);
 	const autoPlaybackProjectSelectedRef = useRef(false);
@@ -270,6 +277,33 @@ export default function App() {
 		onError: setSnackError,
 		onMessage: setSnackMessage,
 	});
+
+	// The playback resolution effect below is guarded to run once per tool
+	// execution. Reading the project list through refs keeps it out of that
+	// effect's dependencies: the list loads asynchronously, and re-triggering the
+	// effect runs a cleanup that cancels the in-flight recording fetch which the
+	// run-once guard then refuses to retry, leaving playback stuck at idle.
+	const playbackProjectsRef = useRef(playback.projects);
+	playbackProjectsRef.current = playback.projects;
+	const playbackProjectRef = useRef(playback.project);
+	playbackProjectRef.current = playback.project;
+
+	// Same reasoning as the refs above, for the tool context itself. Two paths set
+	// it with equal content but different object identity: the postMessage
+	// subscription and the initSemoss() resolution. Depending on the object would
+	// invalidate the run-once resolution effect mid-flight and cancel the in-flight
+	// recording fetch. The effect keys off the content-based toolExecutionKey and
+	// reads the value through this ref instead.
+	const toolContextRef = useRef(toolContext);
+	toolContextRef.current = toolContext;
+
+	// Also read through a ref, for the same reason. Binding the insight to the room
+	// swaps in a new insight id, so depending on the value would invalidate the
+	// resolution effect at the exact moment its fetch is in flight. The effect
+	// triggers on readiness instead, which only transitions once.
+	const effectiveInsightIdRef = useRef(effectiveInsightId);
+	effectiveInsightIdRef.current = effectiveInsightId;
+	const isInsightReady = !!effectiveInsightId;
 
 	const toolExecutionKey = toolContext
 		? [
@@ -446,7 +480,11 @@ export default function App() {
 		if (
 			!isMcpPlaybackMode ||
 			autoPlaybackProjectSelectedRef.current ||
-			playback.projects.length === 0
+			playback.projects.length === 0 ||
+			// selectProject() resets source to "project". Once a room recording has
+			// been resolved, letting the project list arrive afterwards would flip
+			// source away from "room" and silently break the room replay branch.
+			playback.source === "room"
 		) {
 			return;
 		}
@@ -468,14 +506,17 @@ export default function App() {
 		mcpPlaybackProjectId,
 		playback.projects,
 		playback.selectProject,
+		playback.source,
 	]);
 
 	useEffect(() => {
+		// Deliberately not gated on playback.projects. A room recording is fetched
+		// straight out of the room's asset folder, so waiting on the MCP project
+		// list would strand playback whenever no project happens to be tagged MCP.
 		if (
 			!isMcpPlaybackMode ||
 			autoPlaybackRecordingSelectedRef.current ||
-			!effectiveInsightId ||
-			playback.projects.length === 0
+			!isInsightReady
 		) {
 			return;
 		}
@@ -485,12 +526,14 @@ export default function App() {
 		let cancelled = false;
 
 		(async () => {
-			if (toolContext?.roomId) {
-				await bindSemossInsightToRoom(toolContext.roomId);
+			const roomId = toolContextRef.current?.roomId;
+			if (roomId) {
+				await bindSemossInsightToRoom(roomId);
 			}
-			const roomInsightId = getSemossInsightId() || effectiveInsightId;
+			const roomInsightId =
+				getSemossInsightId() || effectiveInsightIdRef.current;
 
-			if (!toolContext?.roomId) {
+			if (!roomId) {
 				throw new Error(
 					"Playground room ID is required to resolve a room recording",
 				);
@@ -498,18 +541,18 @@ export default function App() {
 
 			const directProject =
 				(mcpPlaybackProjectId &&
-					playback.projects.find(
+					playbackProjectsRef.current.find(
 						(project) => project.value === mcpPlaybackProjectId,
 					)) ||
-				playback.project ||
-				playback.projects[0] ||
+				playbackProjectRef.current ||
+				playbackProjectsRef.current[0] ||
 				null;
 			const exactFileName = mcpRecordingFile
 				.split(/[\\/]/)
 				.filter(Boolean)
 				.pop();
 
-			if (exactFileName && directProject) {
+			if (exactFileName) {
 				const directRoomPath = `/playwright/${exactFileName}`;
 				for (let attempt = 0; attempt < 2; attempt += 1) {
 					const envelope = await getRoomRecordingEnvelope(
@@ -543,13 +586,13 @@ export default function App() {
 
 			const resolved =
 				await resolvePlaywrightRoomRecording<ResolvePlaywrightRecordingResponse>(
-					toolContext.roomId,
+					roomId,
 					{
 						recordingNameHint: mcpRecordingNameHint,
 						recordingFile: mcpRecordingFile,
 						projectId:
 							mcpPlaybackProjectId ||
-							playback.project?.value ||
+							playbackProjectRef.current?.value ||
 							"",
 					},
 				);
@@ -561,7 +604,10 @@ export default function App() {
 			if (!selected) {
 				const message = `No recording matched "${mcpRecordingFile || mcpRecordingNameHint}"`;
 				setSnackError(message);
-				if (!autoPlaybackErrorSentRef.current && toolContext) {
+				if (
+					!autoPlaybackErrorSentRef.current &&
+					toolContextRef.current
+				) {
 					autoPlaybackErrorSentRef.current = true;
 					try {
 						sendMcpResponseToPlayground(
@@ -576,7 +622,7 @@ export default function App() {
 									resolved.searchedRoomRecordings,
 							},
 							"error",
-							toolContext.parameters,
+							toolContextRef.current.parameters,
 						);
 					} catch {
 						// Nothing else to do if the iframe cannot notify Playground.
@@ -586,17 +632,19 @@ export default function App() {
 			}
 
 			const selectedProject =
-				playback.projects.find(
+				playbackProjectsRef.current.find(
 					(project) => project.value === selected.projectId,
 				) ||
 				(selected.projectId
 					? { label: selected.projectId, value: selected.projectId }
 					: null) ||
-				playback.project ||
-				playback.projects[0] ||
+				playbackProjectRef.current ||
+				playbackProjectsRef.current[0] ||
 				null;
 
-			if (!selectedProject) {
+			// Room recordings do not need one; only the project-sourced branch below
+			// dereferences it.
+			if (!selectedProject && selected.source !== "room") {
 				setSnackError(
 					"No Playwright project is available for playback",
 				);
@@ -654,13 +702,13 @@ export default function App() {
 					? error.message
 					: "Failed to resolve Playwright recording";
 			setSnackError(message);
-			if (!autoPlaybackErrorSentRef.current && toolContext) {
+			if (!autoPlaybackErrorSentRef.current && toolContextRef.current) {
 				autoPlaybackErrorSentRef.current = true;
 				try {
 					sendMcpResponseToPlayground(
 						{ played: false, error: message },
 						"error",
-						toolContext.parameters,
+						toolContextRef.current.parameters,
 					);
 				} catch {
 					// Nothing else to do if the iframe cannot notify Playground.
@@ -672,7 +720,7 @@ export default function App() {
 			cancelled = true;
 		};
 	}, [
-		effectiveInsightId,
+		isInsightReady,
 		getRoomRecordingEnvelope,
 		isMcpPlaybackMode,
 		mcpRecordingFile,
@@ -680,9 +728,10 @@ export default function App() {
 		mcpPlaybackProjectId,
 		mcpStartUrl,
 		playback.configureResolvedRecording,
-		playback.project,
-		playback.projects,
-		toolContext,
+		// playback.project / playback.projects are deliberately omitted and read
+		// through refs instead. See the refs above: their async arrival would
+		// cancel this run-once effect's in-flight fetch.
+		toolExecutionKey,
 	]);
 
 	useEffect(() => {
@@ -722,7 +771,7 @@ export default function App() {
 					.slice(0, MAX_SELECTED_CONTEXT_CHARS);
 				const stored: SelectedTextContext = {
 					...context,
-					label: `${title} · Selection ${selectedContextSequenceRef.current}`,
+					label: `${title} - Selection ${selectedContextSequenceRef.current}`,
 					content: boundedContent,
 					text: renderSelectedTextContext({
 						...context,
@@ -808,7 +857,7 @@ export default function App() {
 		[],
 	);
 
-	// ─── Toolbar handlers ───────────────────────────────────────────────────
+	// --- Toolbar handlers ---------------------------------------------------
 	const handleStart = useCallback(
 		async (url: string) => {
 			const normalizedUrl = normalizeBrowserUrl(url);
@@ -873,6 +922,38 @@ export default function App() {
 		setSaveDialogOpen(false);
 		setStopRecordingDialogOpen(false);
 	}, [closeSession, playback.resetReplayPreparation, sendEvent]);
+
+	// Held in a ref so the countdown effect below depends only on the tick value.
+	// Depending on the callback identity would restart the timer on unrelated
+	// re-renders and the countdown would never reach zero.
+	const closeBrowserSessionRef = useRef(closeBrowserSession);
+	closeBrowserSessionRef.current = closeBrowserSession;
+
+	useEffect(() => {
+		if (playbackCloseCountdown === null) {
+			return;
+		}
+		if (playbackCloseCountdown <= 0) {
+			setPlaybackCloseCountdown(null);
+			void closeBrowserSessionRef.current();
+			return;
+		}
+		const timer = window.setTimeout(() => {
+			setPlaybackCloseCountdown((current) =>
+				current === null ? null : current - 1,
+			);
+		}, 1000);
+		return () => window.clearTimeout(timer);
+	}, [playbackCloseCountdown]);
+
+	const handleKeepPlaybackOpen = useCallback(() => {
+		setPlaybackCloseCountdown(null);
+	}, []);
+
+	const handleClosePlaybackNow = useCallback(() => {
+		setPlaybackCloseCountdown(null);
+		void closeBrowserSessionRef.current();
+	}, []);
 
 	const handleStop = useCallback(async () => {
 		if (isRecording) {
@@ -1256,14 +1337,9 @@ export default function App() {
 					toolContext.projectId,
 				);
 
-				// Safely add the __insight__ MCP entry to the room's tool list so the
-				// LLM sees recording-specific tools on the next message (read-modify-write).
-				const addMcpResponse = await runPixel(
-					`AddInsightMCPToRoom(roomId=${JSON.stringify(toolContext.roomId)});`,
-					roomBoundInsightId,
-				);
-				assertPixelSuccess(addMcpResponse, "Room MCP registration");
-
+				// No registration step: the backend picks up a room's
+				// mcp/pixel_mcp.json automatically, so writing the file above is
+				// enough for the LLM to see the new tools on the next message.
 				await closeBrowserSession();
 				browserClosed = true;
 
@@ -1353,7 +1429,10 @@ export default function App() {
 			autoPlaybackLoadStartedRef.current ||
 			connectionState !== "connected" ||
 			!session ||
-			!playback.project ||
+			// Room recordings come straight from the room folder, so requiring a
+			// project here would strand playback whenever the MCP project list has
+			// not resolved yet (or when no project is tagged MCP at all).
+			(playback.source !== "room" && !playback.project) ||
 			!playback.selectedRecording ||
 			playback.isLoadingRecording
 		) {
@@ -1387,8 +1466,13 @@ export default function App() {
 				if (!result) {
 					throw new Error("Playback did not start");
 				}
+
+				// The session stays open briefly so the page can be inspected on the
+				// last executed step, then the countdown closes it to release the
+				// remote browser rather than waiting for the server side TTL.
 				if (result.completed) {
-					await closeBrowserSession();
+					setPlaybackStepsRun(result.stepsRun);
+					setPlaybackCloseCountdown(PLAYBACK_CLOSE_SECONDS);
 				}
 
 				sendMcpResponseToPlayground(
@@ -1422,14 +1506,7 @@ export default function App() {
 				}
 			}
 		})();
-	}, [
-		closeBrowserSession,
-		connectionState,
-		isMcpPlaybackMode,
-		playback,
-		session,
-		toolContext,
-	]);
+	}, [connectionState, isMcpPlaybackMode, playback, session, toolContext]);
 
 	const remoteWidth = session?.viewport.width ?? 1365;
 	const remoteHeight = session?.viewport.height ?? 768;
@@ -1494,7 +1571,7 @@ export default function App() {
 								<ScanLine />
 							)}
 							{isCapturingSelectedText
-								? "Extracting…"
+								? "Extracting..."
 								: selectionMode
 									? "Cancel Capture"
 									: "Add context"}
@@ -1669,6 +1746,13 @@ export default function App() {
 				onClose={() => setStopRecordingDialogOpen(false)}
 				onDiscard={handleDiscardRecording}
 				onSave={handleSaveAndStopRecording}
+			/>
+
+			<PlaybackCompleteDialog
+				secondsRemaining={playbackCloseCountdown}
+				stepsRun={playbackStepsRun}
+				onKeepOpen={handleKeepPlaybackOpen}
+				onCloseNow={handleClosePlaybackNow}
 			/>
 
 			<SaveRecordingDialog
