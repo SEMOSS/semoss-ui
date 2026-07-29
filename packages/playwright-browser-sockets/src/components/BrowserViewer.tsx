@@ -17,6 +17,10 @@ interface BrowserViewerProps {
 	selectionMode?: boolean;
 	onSelectionComplete?: (bounds: SelectionBounds) => void;
 	onSelectionCancel?: () => void;
+	/** When true, clicks emit onAutomationClick in addition to being forwarded. */
+	automationMode?: boolean;
+	/** Called after a click in automation mode with local canvas coordinates. */
+	onAutomationClick?: (localX: number, localY: number) => void;
 }
 
 interface SelectionPoint {
@@ -45,6 +49,8 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 	selectionMode = false,
 	onSelectionComplete,
 	onSelectionCancel,
+	automationMode = false,
+	onAutomationClick,
 }) => {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -276,8 +282,23 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 				...point,
 				button: getMouseButton(event),
 			});
+			// In automation mode, report local canvas position so the popup
+			// can be anchored near the click.
+			if (automationMode && onAutomationClick) {
+				const canvas = canvasRef.current;
+				const rect = canvas?.getBoundingClientRect();
+				const localX = rect ? event.clientX - rect.left : event.clientX;
+				const localY = rect ? event.clientY - rect.top : event.clientY;
+				onAutomationClick(localX, localY);
+			}
 		},
-		[onUserInput, sendEvent, toRemoteCoords],
+		[
+			automationMode,
+			onAutomationClick,
+			onUserInput,
+			sendEvent,
+			toRemoteCoords,
+		],
 	);
 	const lastMoveTime = useRef(0);
 	const handleMouseMove = useCallback(
@@ -404,7 +425,12 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 					className="relative block h-full w-full rounded-sm bg-black shadow-2xl shadow-black/50 outline-none ring-1 ring-white/10"
 					style={{
 						objectFit: "contain",
-						cursor: isConnected ? browserCursor : "default",
+						cursor:
+							automationMode && isConnected
+								? "crosshair"
+								: isConnected
+									? browserCursor
+									: "default",
 					}}
 					onMouseDown={handleMouseDown}
 					onMouseUp={handleMouseUp}
