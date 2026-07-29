@@ -12,26 +12,24 @@ import {
 	Button,
 	Field,
 	FieldLabel,
-	H4,
 	Input,
-	Muted,
 	Separator,
 	Spinner,
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
+import {
+	AGENT_FORM_DEFAULT_VALUES,
+	AgentExecutionLimitsFields,
+	AgentFormSection,
+	type AgentFormValues,
+	AgentHooksField,
+	AgentModelField,
+	AgentSubagentsField,
+	buildEditWorkspacePixel,
+} from "@/components/agent-workspace/agent-form";
 import { useRootStore, useWorkspace } from "@/hooks";
 import { mcpToPlatformUrl, promptToPlatformUrl } from "@/utility";
-
-type AgentForm = {
-	name: string;
-	description: string;
-	instructions: string;
-	knowledge: MCPConfig[];
-	toolboxes: MCPConfig[];
-	skills: SkillConfig[];
-	prompts: string[];
-};
 
 type GetWorkspaceResponse = {
 	name: string;
@@ -40,6 +38,26 @@ type GetWorkspaceResponse = {
 	mcp: MCPConfig[];
 	skills: SkillConfig[];
 	prompts: { id: string; name: string; type: string }[];
+	known_hook_kinds?: string[];
+	config_json?: {
+		model_id?: string;
+		budgets?: {
+			max_turns?: number;
+		};
+		spawn_policy?: {
+			max_subagent_depth?: number;
+			max_subagents_per_run?: number;
+			max_spawns_per_turn?: number;
+		};
+		subagents?: {
+			workspaceId: string;
+		}[];
+		hooks?: {
+			kind: string;
+			pixel?: string;
+			events?: string[];
+		}[];
+	};
 };
 
 export const AgentEditor = () => {
@@ -47,20 +65,13 @@ export const AgentEditor = () => {
 	const { monolithStore } = useRootStore();
 	const [isLoading, setIsLoading] = useState(false);
 	const [isFetching, setIsFetching] = useState(true);
+	const [knownHookKinds, setKnownHookKinds] = useState<string[]>([]);
 
 	const descId = useId();
 	const instructionsId = useId();
 
-	const { control, handleSubmit, reset } = useForm<AgentForm>({
-		defaultValues: {
-			name: "",
-			description: "",
-			instructions: "",
-			knowledge: [],
-			toolboxes: [],
-			skills: [],
-			prompts: [],
-		},
+	const { control, handleSubmit, reset } = useForm<AgentFormValues>({
+		defaultValues: AGENT_FORM_DEFAULT_VALUES,
 	});
 
 	useEffect(() => {
@@ -73,14 +84,31 @@ export const AgentEditor = () => {
 				if (errors.length > 0) throw new Error(errors.join(", "));
 				const data = pixelReturn[0].output;
 				const allMcps = data.mcp ?? [];
+				setKnownHookKinds(data.known_hook_kinds ?? []);
 				reset({
 					name: data.name ?? "",
 					description: data.description ?? "",
 					instructions: data.system_prompt ?? "",
+					modelId: data.config_json?.model_id ?? "",
+					maxTurns:
+						data.config_json?.budgets?.max_turns?.toString() ?? "",
+					maxSubagentDepth:
+						data.config_json?.spawn_policy?.max_subagent_depth?.toString() ??
+						"",
+					maxSubagentsPerRun:
+						data.config_json?.spawn_policy?.max_subagents_per_run?.toString() ??
+						"",
+					maxSpawnsPerTurn:
+						data.config_json?.spawn_policy?.max_spawns_per_turn?.toString() ??
+						"",
 					knowledge: allMcps.filter((m) => m.type === "VECTOR"),
 					toolboxes: allMcps.filter((m) => m.type !== "VECTOR"),
 					skills: data.skills ?? [],
 					prompts: (data.prompts ?? []).map((p) => p.id),
+					subagents: (data.config_json?.subagents ?? []).map((s) => ({
+						workspaceId: s.workspaceId,
+					})),
+					hooks: data.config_json?.hooks ?? [],
 				});
 			} catch (e) {
 				console.error(e);
@@ -95,10 +123,8 @@ export const AgentEditor = () => {
 	const onSave = handleSubmit(async (data) => {
 		try {
 			setIsLoading(true);
-			const mcp = [...data.knowledge, ...data.toolboxes];
-			const skills = data.skills.map((s) => s.id);
 			const { errors } = await monolithStore.runQuery(
-				`EditWorkspace(workspaceId=["${workspace.appId}"], name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)});`,
+				buildEditWorkspacePixel(workspace.appId, data),
 			);
 			if (errors.length > 0) throw new Error(errors.join(", "));
 			toast.success("Agent saved");
@@ -141,16 +167,10 @@ export const AgentEditor = () => {
 						onSubmit={onSave}
 						autoComplete="off"
 					>
-						{/* About */}
-						<div className="flex flex-col gap-3">
-							<div>
-								<H4 className="font-semibold text-base tracking-tight">
-									About
-								</H4>
-								<Muted className="text-muted-foreground text-sm leading-6">
-									Basic information about your agent
-								</Muted>
-							</div>
+						<AgentFormSection
+							title="About"
+							description="Basic information about your agent"
+						>
 							<Controller
 								name="description"
 								control={control}
@@ -185,20 +205,15 @@ export const AgentEditor = () => {
 									</Field>
 								)}
 							/>
-						</div>
+							<AgentModelField control={control} />
+						</AgentFormSection>
 
 						<Separator />
 
-						{/* Knowledge */}
-						<div className="flex flex-col gap-3">
-							<div>
-								<H4 className="font-semibold text-base tracking-tight">
-									Knowledge
-								</H4>
-								<Muted className="text-muted-foreground text-sm leading-6">
-									Add knowledge sources for your agent
-								</Muted>
-							</div>
+						<AgentFormSection
+							title="Knowledge"
+							description="Add knowledge sources for your agent"
+						>
 							<Controller
 								name="knowledge"
 								control={control}
@@ -214,20 +229,14 @@ export const AgentEditor = () => {
 									/>
 								)}
 							/>
-						</div>
+						</AgentFormSection>
 
 						<Separator />
 
-						{/* Toolboxes */}
-						<div className="flex flex-col gap-3">
-							<div>
-								<H4 className="font-semibold text-base tracking-tight">
-									Toolboxes
-								</H4>
-								<Muted className="text-muted-foreground text-sm leading-6">
-									Add tools and capabilities to your agent
-								</Muted>
-							</div>
+						<AgentFormSection
+							title="Toolboxes"
+							description="Add tools and capabilities to your agent"
+						>
 							<Controller
 								name="toolboxes"
 								control={control}
@@ -243,20 +252,14 @@ export const AgentEditor = () => {
 									/>
 								)}
 							/>
-						</div>
+						</AgentFormSection>
 
 						<Separator />
 
-						{/* Skills */}
-						<div className="flex flex-col gap-3">
-							<div>
-								<H4 className="font-semibold text-base tracking-tight">
-									Skills
-								</H4>
-								<Muted className="text-muted-foreground text-sm leading-6">
-									Add reusable skills to your agent
-								</Muted>
-							</div>
+						<AgentFormSection
+							title="Skills"
+							description="Add reusable skills to your agent"
+						>
 							<Controller
 								name="skills"
 								control={control}
@@ -268,20 +271,14 @@ export const AgentEditor = () => {
 									/>
 								)}
 							/>
-						</div>
+						</AgentFormSection>
 
 						<Separator />
 
-						{/* Prompts */}
-						<div className="flex flex-col gap-3">
-							<div>
-								<H4 className="font-semibold text-base tracking-tight">
-									Prompts
-								</H4>
-								<Muted className="text-muted-foreground text-sm leading-6">
-									Pre-configured prompts for your agent
-								</Muted>
-							</div>
+						<AgentFormSection
+							title="Prompts"
+							description="Pre-configured prompts for your agent"
+						>
 							<Controller
 								name="prompts"
 								control={control}
@@ -294,7 +291,40 @@ export const AgentEditor = () => {
 									/>
 								)}
 							/>
-						</div>
+						</AgentFormSection>
+
+						<Separator />
+
+						<AgentFormSection
+							title="Subagents"
+							description="Select other agents this agent can delegate work to. Tool names and descriptions are generated automatically."
+						>
+							<AgentSubagentsField
+								control={control}
+								excludeWorkspaceId={workspace.appId}
+							/>
+						</AgentFormSection>
+
+						<Separator />
+
+						<AgentFormSection
+							title="Execution limits"
+							description="Runtime caps for the agent's tool loop and subagent delegation. Leave a field blank to fall back to its default."
+						>
+							<AgentExecutionLimitsFields control={control} />
+						</AgentFormSection>
+
+						<Separator />
+
+						<AgentFormSection
+							title="Hooks"
+							description="Run custom behavior at agent lifecycle points."
+						>
+							<AgentHooksField
+								control={control}
+								knownKinds={knownHookKinds}
+							/>
+						</AgentFormSection>
 					</form>
 				)}
 			</div>
