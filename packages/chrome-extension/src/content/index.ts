@@ -1,10 +1,404 @@
-import { initializeRPC } from "./rpc";
-import { getDOMStats, getSimplifiedDOM } from "./simplifyDOM";
+/**
+ * Content Script - Injected into web pages
+ *
+ * Manages the floating automation panel, captures user interactions during recording,
+ * and routes messages between the page, background script, and extension panel.
+ *
+ * Key responsibilities:
+ * - Floating panel lifecycle management (positioning, resizing, dragging)
+ * - Event recording via EventRecorder
+ * - Message routing between extension contexts
+ * - Bridge script injection for MAIN world access
+ * - Field monitoring during script execution
+ */
 
-// Initialize RPC system for communication
-initializeRPC();
-let annotatedElements: HTMLElement[] = [];
-const elementIdToUniqueId: Map<number, string> = new Map();
+import React from "react";
+import type { Root } from "react-dom/client";
+import { createRoot } from "react-dom/client";
+import type { EventRecorder } from "../recorder/EventRecorder";
+import { createEventRecorder } from "../recorder/EventRecorder";
+
+// ============================================================================
+// Floating Panel Configuration
+// ============================================================================
+
+/**  DOM element ID for the floating panel iframe */
+const FLOATING_PANEL_WRAPPER_ID = "semoss-browser-automation-frame";
+
+/** Collapsed panel size (circular button) */
+const FLOATING_PANEL_COLLAPSED_SIZE = 72;
+
+/** Expanded panel width */
+const FLOATING_PANEL_EXPANDED_WIDTH = 380;
+
+/** Expanded panel height */
+const FLOATING_PANEL_EXPANDED_HEIGHT = 620;
+
+/** Minimum distance from viewport edges */
+const FLOATING_PANEL_MARGIN = 16;
+
+/** Storage key for persisting panel position */
+const FLOATING_PANEL_POSITION_STORAGE_KEY =
+	"semoss-browser-automation-panel-position";
+
+type FloatingPanelPosition = {
+	left: number;
+	top: number;
+};
+
+// ============================================================================
+// State Management
+// ============================================================================
+
+// Track panel state to only respond to PING when panel is actually open
+let _isPanelOpen = false;
+
+// Track portal iframe for sending completion messages back
+let portalIframeSource: Window | null = null;
+
+// Store current tab ID for message routing
+let currentTabId: number | undefined;
+
+// Recording state
+let eventRecorder: EventRecorder | null = null;
+let _isRecording = false;
+let overlayRoot: Root | null = null;
+let overlayContainer: HTMLDivElement | null = null;
+let floatingPanelFrame: HTMLIFrameElement | null = null;
+let floatingPanelPosition: FloatingPanelPosition | null = null;
+let floatingPanelHidden = false;
+
+// ============================================================================
+// Panel Management Functions
+// ============================================================================
+
+/**
+ * Get the current tab ID from the background script
+ * @returns Tab ID or undefined if not available
+ */
+async function getHostTabId(): Promise<number | undefined> {
+	try {
+		const response = await chrome.runtime.sendMessage({
+			type: "GET_HOST_TAB_ID",
+		});
+		return response?.tabId;
+	} catch {
+		return undefined;
+	}
+}
+
+// Initialize tab ID on content script load
+getHostTabId().then((tabId) => {
+	currentTabId = tabId;
+	if (tabId) {
+	}
+});
+
+function getFloatingPanelSize() {
+	return {
+		width: floatingPanelFrame?.offsetWidth || FLOATING_PANEL_COLLAPSED_SIZE,
+		height:
+			floatingPanelFrame?.offsetHeight || FLOATING_PANEL_COLLAPSED_SIZE,
+	};
+}
+
+function getDefaultFloatingPanelPosition(): FloatingPanelPosition {
+	const { width, height } = getFloatingPanelSize();
+
+	return {
+		left: window.innerWidth - width - FLOATING_PANEL_MARGIN,
+		top: window.innerHeight - height - FLOATING_PANEL_MARGIN,
+	};
+}
+
+function clampFloatingPanelPosition(
+	position: FloatingPanelPosition,
+): FloatingPanelPosition {
+	const { width, height } = getFloatingPanelSize();
+	const maxLeft = Math.max(8, window.innerWidth - width - 8);
+	const maxTop = Math.max(8, window.innerHeight - height - 8);
+
+	return {
+		left: Math.min(Math.max(8, position.left), maxLeft),
+		top: Math.min(Math.max(8, position.top), maxTop),
+	};
+}
+
+function applyFloatingPanelPosition(position: FloatingPanelPosition | null) {
+	if (!floatingPanelFrame) return;
+
+	floatingPanelPosition = clampFloatingPanelPosition(
+		position ?? getDefaultFloatingPanelPosition(),
+	);
+	floatingPanelFrame.style.left = `${floatingPanelPosition.left}px`;
+	floatingPanelFrame.style.top = `${floatingPanelPosition.top}px`;
+	floatingPanelFrame.style.right = "auto";
+	floatingPanelFrame.style.bottom = "auto";
+}
+
+function sizeFloatingPanel(expanded: boolean) {
+	if (!floatingPanelFrame) return;
+
+	const width = expanded
+		? Math.min(FLOATING_PANEL_EXPANDED_WIDTH, window.innerWidth - 24)
+		: FLOATING_PANEL_COLLAPSED_SIZE;
+	const height = expanded
+		? Math.min(FLOATING_PANEL_EXPANDED_HEIGHT, window.innerHeight - 24)
+		: FLOATING_PANEL_COLLAPSED_SIZE;
+
+	floatingPanelFrame.style.width = `${Math.max(width, FLOATING_PANEL_COLLAPSED_SIZE)}px`;
+	floatingPanelFrame.style.height = `${Math.max(height, FLOATING_PANEL_COLLAPSED_SIZE)}px`;
+	applyFloatingPanelPosition(floatingPanelPosition);
+}
+
+function showFloatingPanel() {
+	if (!floatingPanelFrame) return;
+
+	floatingPanelHidden = false;
+	floatingPanelFrame.style.display = "block";
+	floatingPanelFrame.contentWindow?.postMessage(
+		{ type: "SMSS_FLOATING_PANEL_REQUEST_STATE" },
+		"*",
+	);
+}
+
+function hideFloatingPanel() {
+	if (!floatingPanelFrame) return;
+
+	floatingPanelHidden = true;
+	floatingPanelFrame.style.display = "none";
+}
+
+function saveFloatingPanelPosition() {
+	if (!floatingPanelPosition || !isExtensionContextValid()) return;
+
+	chrome.storage.local
+		.set({
+			[FLOATING_PANEL_POSITION_STORAGE_KEY]: floatingPanelPosition,
+		})
+		.catch(() => {
+			// Persisting the position is best effort only.
+		});
+}
+
+async function loadFloatingPanelPosition() {
+	if (!isExtensionContextValid()) return;
+
+	try {
+		const stored = await chrome.storage.local.get(
+			FLOATING_PANEL_POSITION_STORAGE_KEY,
+		);
+		const value = stored[FLOATING_PANEL_POSITION_STORAGE_KEY];
+
+		if (
+			value &&
+			typeof value.left === "number" &&
+			typeof value.top === "number"
+		) {
+			applyFloatingPanelPosition(value);
+		}
+	} catch {
+		// Keep the default position if storage is unavailable.
+	}
+}
+
+async function ensureFloatingPanel() {
+	if (floatingPanelFrame) {
+		showFloatingPanel();
+		return;
+	}
+	if (!isExtensionContextValid() || !document.documentElement) return;
+
+	const hostTabId = await getHostTabId();
+	const panelUrl = new URL(chrome.runtime.getURL("src/panel/index.html"));
+	panelUrl.searchParams.set("floating", "1");
+	if (typeof hostTabId === "number") {
+		panelUrl.searchParams.set("tabId", String(hostTabId));
+	}
+
+	const frame = document.createElement("iframe");
+	frame.id = FLOATING_PANEL_WRAPPER_ID;
+	frame.title = "SEMOSS Browser Automation";
+	frame.src = panelUrl.toString();
+	frame.setAttribute("allow", "clipboard-read; clipboard-write");
+	frame.style.position = "fixed";
+	frame.style.width = `${FLOATING_PANEL_COLLAPSED_SIZE}px`;
+	frame.style.height = `${FLOATING_PANEL_COLLAPSED_SIZE}px`;
+	frame.style.border = "0";
+	frame.style.borderRadius = `${FLOATING_PANEL_COLLAPSED_SIZE / 2}px`;
+	frame.style.background = "transparent";
+	frame.style.boxShadow = "0 12px 36px rgba(15, 23, 42, 0.24)";
+	frame.style.zIndex = "2147483647";
+	frame.style.overflow = "hidden";
+	frame.style.transition =
+		"width 180ms ease, height 180ms ease, border-radius 180ms ease, box-shadow 180ms ease";
+
+	document.documentElement.appendChild(frame);
+	floatingPanelFrame = frame;
+	floatingPanelHidden = false;
+	applyFloatingPanelPosition(null);
+	void loadFloatingPanelPosition();
+}
+
+window.addEventListener("resize", () => {
+	if (!floatingPanelFrame) return;
+	applyFloatingPanelPosition(floatingPanelPosition);
+	floatingPanelFrame.contentWindow?.postMessage(
+		{ type: "SMSS_FLOATING_PANEL_REQUEST_STATE" },
+		"*",
+	);
+});
+
+window.addEventListener("message", (event) => {
+	if (
+		!floatingPanelFrame ||
+		event.source !== floatingPanelFrame.contentWindow
+	) {
+		return;
+	}
+
+	if (event.data?.type === "SMSS_FLOATING_PANEL_RESIZE") {
+		const expanded = event.data.expanded === true;
+		sizeFloatingPanel(expanded);
+		floatingPanelFrame.style.borderRadius = expanded ? "14px" : "36px";
+		floatingPanelFrame.style.boxShadow = expanded
+			? "0 18px 54px rgba(15, 23, 42, 0.28)"
+			: "0 12px 36px rgba(15, 23, 42, 0.24)";
+	}
+
+	if (event.data?.type === "SMSS_FLOATING_PANEL_DRAG") {
+		const nextPosition =
+			floatingPanelPosition ?? getDefaultFloatingPanelPosition();
+		applyFloatingPanelPosition({
+			left: nextPosition.left + (Number(event.data.deltaX) || 0),
+			top: nextPosition.top + (Number(event.data.deltaY) || 0),
+		});
+	}
+
+	if (event.data?.type === "SMSS_FLOATING_PANEL_DRAG_END") {
+		saveFloatingPanelPosition();
+	}
+
+	if (event.data?.type === "SMSS_FLOATING_PANEL_CLOSE") {
+		hideFloatingPanel();
+	}
+});
+
+void ensureFloatingPanel();
+
+// Inject MAIN world bridge script
+const script = document.createElement("script");
+script.src = chrome.runtime.getURL("main-bridge.js");
+script.onload = () => {
+	script.remove();
+};
+(document.head || document.documentElement).appendChild(script);
+
+// Listen for messages from MAIN bridge
+window.addEventListener("message", (event) => {
+	// Accept messages from same origin (allows iframe messages from portal)
+	// Check origin instead of window source to support iframe communication
+	if (event.origin !== window.location.origin) {
+		// Silently ignore messages from other origins
+		return;
+	}
+
+	// Debug logging for key messages
+	if (event.data?.type === "EXECUTE_PLAYWRIGHT_SCRIPT") {
+	}
+
+	// Handle PING from portal iframe - respond with PONG back to iframe
+	if (event.data?.type === "SMSS_EXTENSION_PING") {
+		// Always verify with background script for real-time state (don't trust cache)
+
+		chrome.runtime.sendMessage(
+			{ type: "CHECK_PANEL_STATE" },
+			(response) => {
+				const actualPanelState = response?.isPanelOpen || false;
+
+				// Update cached state
+				_isPanelOpen = actualPanelState;
+
+				if (actualPanelState) {
+					// Send PONG since panel is actually open
+
+					if (event.source && event.source !== window) {
+						(event.source as Window).postMessage(
+							{
+								type: "SMSS_EXTENSION_PONG",
+								timestamp: Date.now(),
+							},
+							event.origin,
+						);
+					}
+				} else {
+				}
+			},
+		);
+	}
+
+	// Bridge relays PING from portal
+
+	if (event.data?.type === "EXTENSION_PING_BRIDGE") {
+		window.postMessage({ type: "EXTENSION_READY_BRIDGE" }, "*");
+	}
+
+	// Bridge relays EXECUTE from portal
+	if (event.data?.type === "EXECUTE_SCRIPT_BRIDGE") {
+		if (!isExtensionContextValid()) {
+			alert("Chrome Extension was reloaded. Please refresh this page.");
+			return;
+		}
+
+		const payload = event.data.payload;
+		chrome.runtime
+			.sendMessage({
+				type: "SMSS_EXEC_PLAYWRIGHT_SCRIPT",
+				script: {
+					projectId: payload.projectID,
+					name: payload.fileName,
+					fileName: payload.fileName,
+					title: payload.title,
+					autoExecute: true,
+				},
+			})
+			.catch((error) => {
+				console.error("[CONTENT] ❌ Failed to forward:", error);
+			});
+	}
+
+	// Direct portal message (new format)
+	if (event.data?.type === "EXECUTE_PLAYWRIGHT_SCRIPT") {
+		if (!isExtensionContextValid()) {
+			alert("Chrome Extension was reloaded. Please refresh this page.");
+			return;
+		}
+
+		// Store the iframe source to send completion back later
+		if (event.source && event.source !== window) {
+			portalIframeSource = event.source as Window;
+		}
+
+		const payload = event.data.payload;
+		chrome.runtime
+			.sendMessage({
+				type: "EXECUTE_PLAYWRIGHT_SCRIPT",
+				sourceTabId: currentTabId, // Explicitly include tab ID for reliable routing
+				payload: {
+					fileName: payload.fileName,
+					projectID: payload.projectID,
+					title: payload.title,
+					scriptContent: payload.scriptContent, // Forward scriptContent if present
+				},
+			})
+			.catch((error) => {
+				console.error(
+					"[CONTENT] ❌ Failed to forward portal message:",
+					error,
+				);
+			});
+	}
+});
 
 // Field monitoring state
 let monitoredField: HTMLInputElement | HTMLTextAreaElement | null = null;
@@ -66,53 +460,6 @@ function setupPlaygroundListeners() {
 			data: event.detail,
 		});
 	}) as EventListener);
-
-	// Listen for Playwright script execution requests from Playground
-	const messageHandler = (event: MessageEvent) => {
-		// Log all messages for debugging
-
-		// Only accept messages from same origin
-		if (event.origin !== window.location.origin) {
-			return;
-		}
-
-		// Handle ping request from playground to extension
-		if (event.data && event.data.type === "SMSS_EXTENSION_PING") {
-			console.log(
-				"[CONTENT] 🏓 Received PING from Playground - forwarding to extension",
-			);
-			chrome.runtime
-				.sendMessage(event.data)
-				.then(() => {
-					// Successfully sent ping to extension
-				})
-				.catch(() => {
-					// Extension not available - no pong will be sent
-					console.warn(
-						"[CONTENT] ❌ Failed to send PING - extension may not be available",
-					);
-				});
-			return;
-		}
-
-		if (event.data && event.data.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT") {
-			if (!isExtensionContextValid()) {
-				console.warn("[CONTENT SCRIPT] Extension context invalidated!");
-				alert(
-					"Chrome Extension was reloaded. Please refresh this page to execute Playwright scripts.",
-				);
-				return;
-			}
-
-			// Forward to extension panel
-			chrome.runtime.sendMessage({
-				type: "SMSS_EXEC_PLAYWRIGHT_SCRIPT",
-				script: event.data.script,
-			});
-		}
-	};
-
-	window.addEventListener("message", messageHandler);
 }
 
 checkIfPlayground();
@@ -129,29 +476,69 @@ new MutationObserver(() => {
 
 // Listen for messages from popup/background
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-	switch (message.type) {
-		case "GET_ANNOTATED_DOM":
-			try {
-				const result = getSimplifiedDOMFromPage();
-				// Also send the element ID mapping
-				const mapping: Record<string, string> = {};
-				elementIdToUniqueId.forEach((uniqueId, elementId) => {
-					mapping[elementId.toString()] = uniqueId;
-				});
-				sendResponse({
-					success: true,
-					...result,
-					elementMapping: mapping,
-				});
-			} catch (error) {
-				sendResponse({
-					success: false,
-					error:
-						error instanceof Error ? error.message : String(error),
-				});
+	if (message.type === "TOGGLE_FLOATING_PANEL") {
+		const wasFloatingPanelHidden = floatingPanelHidden;
+		void ensureFloatingPanel().then(() => {
+			if (wasFloatingPanelHidden) {
+				showFloatingPanel();
+			} else {
+				floatingPanelFrame?.contentWindow?.postMessage(
+					{ type: "SMSS_FLOATING_PANEL_TOGGLE" },
+					"*",
+				);
 			}
-			break;
+			sendResponse({ success: true });
+		});
+		return true;
+	}
 
+	// Forward completion messages back to portal via bridge
+	if (message.type === "SCRIPT_EXECUTION_COMPLETE") {
+		// Create appropriate completion message based on success/failure
+		const completionMessage = message.success
+			? {
+					type: "PLAYWRIGHT_SCRIPT_COMPLETED",
+					message: message.message || "Script executed successfully",
+					fileName: message.fileName,
+				}
+			: {
+					type: "PLAYWRIGHT_SCRIPT_ERROR",
+					error: message.message || "Script execution failed",
+					fileName: message.fileName,
+				};
+
+		// Send to portal iframe if available, otherwise to window
+		if (portalIframeSource) {
+			portalIframeSource.postMessage(
+				completionMessage,
+				window.location.origin,
+			);
+			portalIframeSource = null; // Clear after use
+		} else {
+			console.log(
+				"[CONTENT] 📤 Sending completion to window (no iframe stored)",
+			);
+			window.postMessage(completionMessage, "*");
+		}
+
+		sendResponse({ success: true });
+		return true;
+	}
+
+	// Forward error messages back to portal via bridge
+	if (message.type === "SCRIPT_EXECUTION_ERROR") {
+		window.postMessage(
+			{
+				type: "PLAYWRIGHT_SCRIPT_ERROR",
+				error: message.error,
+			},
+			"*",
+		);
+		sendResponse({ success: true });
+		return true;
+	}
+
+	switch (message.type) {
 		case "GET_ELEMENT_BY_UNIQUE_ID":
 			try {
 				const element = document.querySelector(
@@ -172,94 +559,113 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 			}
 			break;
 
-		case "GET_ANNOTATED_DOM_LEGACY":
-			try {
-				const html = getAnnotatedDOM();
-				sendResponse({ success: true, html });
-			} catch (error) {
-				sendResponse({
-					success: false,
-					error:
-						error instanceof Error ? error.message : String(error),
-				});
-			}
-			break;
-
-		case "GET_ELEMENT_COORDINATES":
-			try {
-				const coordinates = getElementCoordinates(message.elementId);
-				sendResponse({ success: true, coordinates });
-			} catch (error) {
-				sendResponse({
-					success: false,
-					error:
-						error instanceof Error ? error.message : String(error),
-				});
-			}
-			break;
-
-		case "HIGHLIGHT_ELEMENT":
-			try {
-				highlightElement(message.elementId);
-				sendResponse({ success: true });
-			} catch (error) {
-				sendResponse({
-					success: false,
-					error:
-						error instanceof Error ? error.message : String(error),
-				});
-			}
-			break;
-
 		case "SCRIPT_EXECUTION_COMPLETE":
-			// Post message to window so playground can receive it
-			window.postMessage(
-				{
-					type: "SMSS_SCRIPT_EXECUTION_COMPLETE",
-					success: message.success,
-					message: message.message,
-				},
-				window.location.origin,
+			// Post message to page via bridge
+			document.dispatchEvent(
+				new CustomEvent("__semoss_extension_response", {
+					detail: {
+						type: "SMSS_SCRIPT_EXECUTION_COMPLETE",
+						success: message.success,
+						message: message.message,
+					},
+				}),
 			);
 
 			sendResponse({ success: true });
 			break;
 
 		case "SMSS_EXTENSION_PANEL_OPENED":
+			_isPanelOpen = true;
 			window.postMessage(
 				{
 					type: "SMSS_EXTENSION_OPENED",
 					timestamp: Date.now(),
 				},
-				window.location.origin,
+				"*",
 			);
 
 			sendResponse({ success: true });
 			break;
 
 		case "SMSS_EXTENSION_PANEL_CLOSED":
+			_isPanelOpen = false;
 			window.postMessage(
 				{
 					type: "SMSS_EXTENSION_CLOSED",
 					timestamp: Date.now(),
 				},
-				window.location.origin,
+				"*",
 			);
 
 			sendResponse({ success: true });
 			break;
 
 		case "SMSS_EXTENSION_PONG":
-			// Forward pong response from panel to playground window
-			window.postMessage(
-				{
-					type: "SMSS_EXTENSION_PONG",
-					timestamp: message.timestamp || Date.now(),
-				},
-				window.location.origin,
+			// Forward pong response from background to page via bridge
+
+			document.dispatchEvent(
+				new CustomEvent("__semoss_extension_response", {
+					detail: {
+						type: "SMSS_EXTENSION_PONG",
+						timestamp: message.timestamp || Date.now(),
+					},
+				}),
 			);
 
 			sendResponse({ success: true });
+			break;
+
+		case "CLEAR_FIELD_VALUE":
+			// SECURITY FIX: Clear autofilled values to prevent cached credential bypass
+			try {
+				const field = document.querySelector(message.selector) as
+					| HTMLInputElement
+					| HTMLTextAreaElement
+					| null;
+
+				if (!field) {
+					sendResponse({
+						success: false,
+						error: "Field not found",
+					});
+					break;
+				}
+
+				// Focus the field
+				field.focus();
+
+				// Clear the value
+				field.value = "";
+
+				// Trigger native setter for React/Vue compatibility
+				const descriptor = Object.getOwnPropertyDescriptor(
+					window.HTMLInputElement.prototype,
+					"value",
+				);
+				if (descriptor && descriptor.set) {
+					descriptor.set.call(field, "");
+				}
+
+				// Dispatch events to notify framework
+				field.dispatchEvent(
+					new Event("input", { bubbles: true, cancelable: true }),
+				);
+				field.dispatchEvent(
+					new Event("change", { bubbles: true, cancelable: true }),
+				);
+
+				sendResponse({ success: true });
+			} catch (error) {
+				console.error(
+					"[CONTENT SCRIPT] ❌ Error clearing field:",
+					error,
+				);
+				sendResponse({
+					success: false,
+					error:
+						error instanceof Error ? error.message : String(error),
+				});
+			}
 			break;
 
 		case "START_FIELD_MONITORING":
@@ -378,6 +784,75 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 			}
 			break;
 
+		case "START_RECORDING":
+			try {
+				if (!eventRecorder) {
+					eventRecorder = createEventRecorder();
+				}
+				eventRecorder.onInit();
+				_isRecording = true;
+
+				// Mount overlay toolbar
+				mountOverlay();
+
+				sendResponse({ success: true });
+			} catch (error) {
+				console.error("[CONTENT] ❌ Failed to start recording:", error);
+				sendResponse({
+					success: false,
+					error:
+						error instanceof Error ? error.message : String(error),
+				});
+			}
+			break;
+
+		case "STOP_RECORDING":
+			try {
+				if (eventRecorder) {
+					eventRecorder.cleanup();
+				}
+				_isRecording = false;
+
+				// Unmount overlay toolbar
+				unmountOverlay();
+
+				sendResponse({ success: true });
+			} catch (error) {
+				console.error("[CONTENT] ❌ Failed to stop recording:", error);
+				sendResponse({
+					success: false,
+					error:
+						error instanceof Error ? error.message : String(error),
+				});
+			}
+			break;
+
+		case "PAUSE_RECORDING":
+			try {
+				// Pause is handled by background script (filters events)
+				sendResponse({ success: true });
+			} catch (error) {
+				sendResponse({
+					success: false,
+					error:
+						error instanceof Error ? error.message : String(error),
+				});
+			}
+			break;
+
+		case "RESUME_RECORDING":
+			try {
+				// Resume is handled by background script (accepts events again)
+				sendResponse({ success: true });
+			} catch (error) {
+				sendResponse({
+					success: false,
+					error:
+						error instanceof Error ? error.message : String(error),
+				});
+			}
+			break;
+
 		case "UPDATE_FIELD_VALUE":
 			// Handle real-time field value update from panel
 			(async () => {
@@ -461,186 +936,47 @@ function stopFieldMonitoring() {
 }
 
 /**
- * Get simplified DOM optimized for LLM consumption
+ * Mount overlay toolbar for recording
  */
-function getSimplifiedDOMFromPage() {
-	const startTime = performance.now();
-
-	// First, get annotated DOM with visibility and interactivity info
-	// This populates annotatedElements array with ALL original page elements
-	annotatedElements = [];
-	const annotatedHTML = getAnnotatedDOM();
-
-	// IMPORTANT: Save reference to ALL elements (don't overwrite!)
-	const allPageElements = annotatedElements;
-
-	// Then use filtering approach to get simplified HTML
-	const result = getSimplifiedDOM(annotatedHTML);
-
-	// Keep the FULL annotatedElements array (not the filtered one)
-	// This ensures elementId references work correctly
-	annotatedElements = allPageElements;
-
-	// Get full stats from the HTML
-	const stats = getDOMStats(result.html);
-
-	return {
-		html: result.html,
-		stats,
-		elementCount: allPageElements.length, // Total elements, not just interactive
-	};
-}
-
-/**
- * Traverse the DOM and annotate interactive elements (Legacy)
- */
-function getAnnotatedDOM(): string {
-	annotatedElements = [];
-	elementIdToUniqueId.clear(); // Reset mapping
-	const clonedRoot = traverseDOM(document.documentElement, annotatedElements);
-	return (clonedRoot as HTMLElement).outerHTML;
-}
-
-/**
- * Generate unique ID for element (persists across re-renders)
- */
-function generateUniqueId(): string {
-	return `workshop_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-}
-
-/**
- * Recursively traverse and annotate DOM nodes
- */
-function traverseDOM(
-	node: Node,
-	elements: HTMLElement[],
-): HTMLElement | Text | DocumentFragment {
-	const clonedNode = node.cloneNode(false);
-
-	if (node.nodeType === Node.ELEMENT_NODE) {
-		const element = node as HTMLElement;
-		const style = window.getComputedStyle(element);
-		const clonedElement = clonedNode as HTMLElement;
-
-		// Store original element
-		elements.push(element);
-		const elementId = elements.length - 1;
-
-		// Generate or retrieve persistent unique ID
-		let uniqueId = element.getAttribute("data-workshop-node-id");
-		if (!uniqueId) {
-			uniqueId = generateUniqueId();
-			// Store the unique ID on the REAL DOM element (persists across re-renders)
-			element.setAttribute("data-workshop-node-id", uniqueId);
+async function mountOverlay(): Promise<void> {
+	try {
+		// Prevent duplicate mounting
+		if (overlayContainer) {
+			return;
 		}
 
-		// Store mapping for quick lookup later
-		elementIdToUniqueId.set(elementId, uniqueId);
+		// Create container
+		overlayContainer = document.createElement("div");
+		overlayContainer.id = "semoss-recorder-overlay";
+		overlayContainer.setAttribute("data-extension-id", chrome.runtime.id);
+		document.body.appendChild(overlayContainer);
 
-		// Add metadata attributes to the CLONED element for LLM
-		clonedElement.setAttribute("data-id", elementId.toString());
-		clonedElement.setAttribute("data-unique-id", uniqueId);
-		clonedElement.setAttribute(
-			"data-interactive",
-			isInteractive(element, style).toString(),
-		);
-		clonedElement.setAttribute(
-			"data-visible",
-			isVisible(element, style).toString(),
-		);
+		// Dynamically import React component
+		const { RecorderToolbar } = await import("./overlay/RecorderToolbar");
 
-		// Traverse children
-		node.childNodes.forEach((child) => {
-			const result = traverseDOM(child, elements);
-			clonedElement.appendChild(result);
-		});
-
-		return clonedElement;
+		// Create React root and render (component manages its own state now)
+		overlayRoot = createRoot(overlayContainer);
+		overlayRoot.render(React.createElement(RecorderToolbar));
+	} catch (error) {
+		console.error("[CONTENT] ❌ Failed to mount overlay:", error);
 	}
-
-	// Handle text nodes
-	if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
-		return document.createTextNode(node.textContent);
-	}
-
-	// For other nodes, just clone children
-	node.childNodes.forEach((child) => {
-		const result = traverseDOM(child, elements);
-		clonedNode.appendChild(result);
-	});
-
-	return clonedNode as DocumentFragment;
 }
 
 /**
- * Check if element is interactive
+ * Unmount overlay toolbar
  */
-function isInteractive(
-	element: HTMLElement,
-	style: CSSStyleDeclaration,
-): boolean {
-	const interactiveTags = ["A", "BUTTON", "INPUT", "SELECT", "TEXTAREA"];
-	const interactiveAttributes = [
-		"onclick",
-		"onmousedown",
-		"onmouseup",
-		"onkeydown",
-		"onkeyup",
-	];
+function unmountOverlay(): void {
+	try {
+		if (overlayRoot) {
+			overlayRoot.unmount();
+			overlayRoot = null;
+		}
 
-	return (
-		interactiveTags.includes(element.tagName) ||
-		interactiveAttributes.some((attr) => element.hasAttribute(attr)) ||
-		style.cursor === "pointer" ||
-		element.hasAttribute("role")
-	);
-}
-
-/**
- * Check if element is visible
- */
-function isVisible(element: HTMLElement, style: CSSStyleDeclaration): boolean {
-	return (
-		style.display !== "none" &&
-		style.visibility !== "hidden" &&
-		style.opacity !== "0" &&
-		element.getAttribute("aria-hidden") !== "true"
-	);
-}
-
-/**
- * Get coordinates of an element for clicking
- */
-function getElementCoordinates(elementId: number): { x: number; y: number } {
-	if (elementId >= annotatedElements.length) {
-		throw new Error(`Element with id ${elementId} not found`);
+		if (overlayContainer) {
+			overlayContainer.remove();
+			overlayContainer = null;
+		}
+	} catch (error) {
+		console.error("[CONTENT] ❌ Failed to unmount overlay:", error);
 	}
-
-	const element = annotatedElements[elementId];
-	const rect = element.getBoundingClientRect();
-
-	// Return center coordinates
-	return {
-		x: rect.left + rect.width / 2,
-		y: rect.top + rect.height / 2,
-	};
-}
-
-/**
- * Highlight an element visually (for debugging)
- */
-function highlightElement(elementId: number): void {
-	if (elementId >= annotatedElements.length) {
-		throw new Error(`Element with id ${elementId} not found`);
-	}
-
-	const element = annotatedElements[elementId];
-	const originalBorder = element.style.border;
-
-	element.style.border = "3px solid red";
-	element.scrollIntoView({ behavior: "smooth", block: "center" });
-
-	setTimeout(() => {
-		element.style.border = originalBorder;
-	}, 2000);
 }

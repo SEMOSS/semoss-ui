@@ -9,7 +9,8 @@
 		"storage",
 		"debugger",
 		"scripting",
-		"sidePanel"
+		"sidePanel",
+		"downloads"
 	],
 	"host_permissions": ["http://*/*", "https://*/*"],
 	"icons": {
@@ -32,7 +33,6 @@
 	"side_panel": {
 		"default_path": "src/panel/index.html"
 	},
-	"options_page": "src/options/index.html",
 	"content_scripts": [
 		{
 			"matches": ["<all_urls>"],
@@ -40,5 +40,15 @@
 			"run_at": "document_idle"
 		}
 	],
-	"devtools_page": "src/devtools/index.html"
+	"web_accessible_resources": [
+		{
+			"resources": [
+				"main-bridge.js",
+				"src/portals/index.html",
+				"src/panel/index.html",
+				"assets/*"
+			],
+			"matches": ["<all_urls>"]
+		}
+	]
 }

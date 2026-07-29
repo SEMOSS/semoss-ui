@@ -87,6 +87,104 @@ export interface GoogleRecorderScript {
 }
 
 export class ScriptExecutor {
+	// Track intended field values per tab to detect autofill
+	private static intendedFieldValues = new Map<number, Map<string, string>>();
+
+	private static rememberIntendedFieldValue(
+		tabId: number,
+		selector: string,
+		value: string,
+		isPassword: boolean = false,
+	): void {
+		if (!ScriptExecutor.intendedFieldValues.has(tabId)) {
+			ScriptExecutor.intendedFieldValues.set(tabId, new Map());
+		}
+		ScriptExecutor.intendedFieldValues
+			.get(tabId)!
+			.set(selector, JSON.stringify({ value, isPassword }));
+	}
+
+	private static clearIntendedFieldValues(tabId: number): void {
+		ScriptExecutor.intendedFieldValues.delete(tabId);
+	}
+
+	private static async verifyAndCorrectField(
+		tabId: number,
+		selector: string,
+		expectedValue: string,
+		fieldType: string,
+		isPassword: boolean = false,
+	): Promise<void> {
+		// Skip password field verification since browsers block reading password values
+		if (isPassword) {
+			console.log(
+				`[ScriptExecutor] Skipping verification for password field (browser security restriction)`,
+			);
+			return;
+		}
+
+		const verifyResponse = await chrome.runtime.sendMessage({
+			type: "EXECUTE_SCRIPT_ACTION",
+			tabId: tabId,
+			action: "getFieldValue",
+			payload: { selector },
+		});
+
+		const fieldResult = verifyResponse.result as
+			| { success?: boolean; value?: string }
+			| undefined;
+
+		if (!verifyResponse.success || !fieldResult?.success) {
+			console.error(
+				`[ScriptExecutor] Failed to verify field: ${verifyResponse.error || "Unknown error"}`,
+			);
+			throw new Error(
+				`Failed to verify ${fieldType}. Could not read field value.`,
+			);
+		}
+
+		const actualValue = fieldResult.value || "";
+
+		// Check if field is empty when it shouldn't be
+		if (expectedValue && !actualValue) {
+			throw new Error(
+				`${fieldType} is empty! Expected "${expectedValue}" but field was not filled. This may indicate typing failed.`,
+			);
+		}
+
+		// Check if autofill changed the value
+		if (actualValue !== expectedValue) {
+			throw new Error(
+				`Browser autofill changed the ${fieldType}. Expected "${expectedValue}" but found "${actualValue}". Stopping execution to prevent using wrong credentials.`,
+			);
+		}
+	}
+
+	private static async verifyAllIntendedFields(tabId: number): Promise<void> {
+		const tabFields = ScriptExecutor.intendedFieldValues.get(tabId);
+		if (!tabFields || tabFields.size === 0) return;
+
+		console.log(
+			`[ScriptExecutor] Verifying ${tabFields.size} field(s) before form submission...`,
+		);
+
+		for (const [selector, fieldDataJson] of tabFields) {
+			const fieldData = JSON.parse(fieldDataJson) as {
+				value: string;
+				isPassword: boolean;
+			};
+			const fieldType = fieldData.isPassword ? "password" : "field";
+
+			await ScriptExecutor.verifyAndCorrectField(
+				tabId,
+				selector,
+				fieldData.value,
+				fieldType,
+				fieldData.isPassword,
+			);
+		}
+	}
+
 	/**
 	 * Parse Playwright recorder JSON
 	 */
@@ -141,7 +239,9 @@ export class ScriptExecutor {
 			// If it's a single array of steps, wrap it in another array
 			if (stepGroups.length > 0 && !Array.isArray(stepGroups[0])) {
 				// Single array format - wrap it
-				stepGroups = [stepGroups as any] as ScriptStep[][];
+				stepGroups = [
+					stepGroups as unknown as ScriptStep[],
+				] as ScriptStep[][];
 			}
 
 			// Add a "switchTab" action before processing steps for new tabs
@@ -154,12 +254,18 @@ export class ScriptExecutor {
 			}
 
 			// Process each step group
+			let previousStep: ScriptStep | null = null;
 			for (const group of stepGroups) {
 				for (const step of group) {
 					// Skip steps that shouldn't run
 					if (step.shouldRun === false) {
 						continue;
 					}
+
+					// SECURITY FIX: Detect if this NAVIGATE follows a CLICK (likely form submission)
+					const isNavigateAfterClick =
+						step.type === "NAVIGATE" &&
+						previousStep?.type === "CLICK";
 
 					const action: {
 						type: string;
@@ -172,6 +278,7 @@ export class ScriptExecutor {
 						waitAfterMs?: number;
 						tabId?: string;
 						isTriggerNewTab?: { isTrue: boolean; tabId: string };
+						expectedUrl?: string; // For waitForNavigation
 					} = {
 						type: step.type.toLowerCase(),
 						waitAfterMs: step.waitAfterMs || 300,
@@ -179,7 +286,16 @@ export class ScriptExecutor {
 					};
 
 					if (step.type === "NAVIGATE") {
-						action.url = step.url;
+						if (isNavigateAfterClick) {
+							// This is expected navigation (result of form submission)
+							// Convert to waitForNavigation to prevent false positives
+							action.type = "waitForNavigation";
+							action.expectedUrl = step.url;
+							action.waitAfterMs = 5000; // Give more time for server response
+						} else {
+							// This is intentional user navigation
+							action.url = step.url;
+						}
 					} else if (step.type === "TYPE") {
 						action.text = step.text || "";
 						action.label = step.label;
@@ -206,6 +322,9 @@ export class ScriptExecutor {
 					}
 
 					actions.push(action);
+
+					// Track previous step for navigation context detection
+					previousStep = step;
 				}
 			}
 		}
@@ -496,6 +615,9 @@ export class ScriptExecutor {
 			if (!action.url) {
 				throw new Error("Navigate action requires URL");
 			}
+			// Clear intended field values when navigating to a new page
+			ScriptExecutor.clearIntendedFieldValues(tabId);
+
 			// CRITICAL: Use chrome.tabs.update to navigate in the SAME tab
 			// NEVER use chrome.tabs.create here - that would open a new tab
 			await chrome.tabs.update(tabId, { url: action.url });
@@ -517,6 +639,58 @@ export class ScriptExecutor {
 					`[ScriptExecutor] NAVIGATE - Load timeout reached`,
 				);
 			}
+		} else if (action.type === "waitForNavigation") {
+			// SECURITY FIX: Wait for natural navigation instead of forcing it
+			// This prevents false positives when form submission fails (auth, validation, etc.)
+			const expectedUrl = (action as unknown as { expectedUrl?: string })
+				.expectedUrl;
+			if (!expectedUrl) {
+				throw new Error("waitForNavigation requires expectedUrl");
+			}
+
+			// Wait for URL to change to expected URL (or timeout)
+			const startTime = Date.now();
+			const timeout = 10000; // 10 seconds max wait
+			let navigationSucceeded = false;
+
+			while (Date.now() - startTime < timeout) {
+				const tabs = await chrome.tabs.query({});
+				const tab = tabs.find((t) => t.id === tabId);
+
+				// Check if we reached the expected URL
+				if (
+					tab?.url?.includes(
+						expectedUrl.split("/").pop() || expectedUrl,
+					)
+				) {
+					navigationSucceeded = true;
+					// BUGFIX: Clear tracked field values from previous page
+					ScriptExecutor.clearIntendedFieldValues(tabId);
+
+					break;
+				}
+
+				// Wait before checking again
+				await new Promise((resolve) => setTimeout(resolve, 500));
+			}
+
+			if (!navigationSucceeded) {
+				// Check current URL to provide better error message
+				const tabs = await chrome.tabs.query({});
+				const currentTab = tabs.find((t) => t.id === tabId);
+				const currentUrl = currentTab?.url || "unknown";
+
+				// BUGFIX: Clear stale field tracking even on navigation failure
+				ScriptExecutor.clearIntendedFieldValues(tabId);
+
+				throw new Error(
+					`❌ Navigation failed: Expected to reach "${expectedUrl}" but remained at "${currentUrl}". ` +
+						`This indicates authentication failure, validation error, or server issue. Check credentials and page state.`,
+				);
+			}
+
+			// Wait for page to fully load and settle
+			await new Promise((resolve) => setTimeout(resolve, 1000));
 		} else if (action.type === "type") {
 			// If text is empty or it's a password field, ask user
 			let textToType = action.text || "";
@@ -560,6 +734,32 @@ export class ScriptExecutor {
 						response.error || "Failed to type by selector",
 					);
 				}
+
+				// Remember and verify the typed value to detect autofill
+				if (textToType) {
+					ScriptExecutor.rememberIntendedFieldValue(
+						tabId,
+						action.selector,
+						textToType,
+						action.isPassword || false,
+					);
+
+					// Wait for browser to potentially trigger autofill
+					await new Promise((resolve) => setTimeout(resolve, 800));
+
+					const fieldType = action.isPassword ? "password" : "field";
+					await ScriptExecutor.verifyAndCorrectField(
+						tabId,
+						action.selector,
+						textToType,
+						fieldType,
+						action.isPassword || false,
+					);
+				} else {
+					console.warn(
+						`[ScriptExecutor] Warning: No text to type for field with selector "${action.selector}"`,
+					);
+				}
 			} else {
 				console.error(
 					`[ScriptExecutor] TYPE - No selector provided! Selector is required.`,
@@ -568,6 +768,9 @@ export class ScriptExecutor {
 			}
 		} else if (action.type === "click") {
 			if (action.selector) {
+				// Verify all intended field values before clicking (e.g., before form submission)
+				await ScriptExecutor.verifyAllIntendedFields(tabId);
+
 				// clickBySelector handles retry logic internally
 				const response = await chrome.runtime.sendMessage({
 					type: "EXECUTE_SCRIPT_ACTION",
