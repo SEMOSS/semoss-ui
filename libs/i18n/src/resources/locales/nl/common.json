@@ -15,7 +15,6 @@
 		"type": "Type",
 		"model": "Model",
 		"instructions": "Instructies",
-		"temperature": "Temperatuur",
 		"maxToken": "Max. token"
 	},
 	"placeholders": {
@@ -23,7 +22,6 @@
 		"enterDescription": "Voer beschrijving in",
 		"enterInstructions": "Voer instructies in",
 		"updateInstructions": "Instructies bijwerken",
-		"updateTokenLength": "Tokenlengte bijwerken",
 		"uploadFiles": "Bestanden uploaden",
 		"search": "Zoeken...",
 		"enterPromptLibraryTag": "Voer prompt library-tag in"
@@ -210,6 +208,9 @@
 			"formatted": "GEFORMATTEERD",
 			"raw": "ONBEWERKT"
 		},
+		"image": {
+			"alt": "Gegenereerde afbeelding {{index}}"
+		},
 		"copy": {
 			"command": "Opdracht kopiëren",
 			"logs": "Logboeken kopiëren",
@@ -221,6 +222,8 @@
 		"collapseAll": "Alles samenvouwen",
 		"close": "Sluiten",
 		"lines_one": "{{count}} regel",
-		"lines_other": "{{count}} regels"
+		"lines_other": "{{count}} regels",
+		"images_one": "{{count}} afbeelding",
+		"images_other": "{{count}} afbeeldingen"
 	}
 }

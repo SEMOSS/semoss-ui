@@ -85,21 +85,29 @@ interface UsePlaybackControllerOptions {
 
 interface ResolvedRecordingSelection {
 	source: PlaybackRecordingSource;
-	project: PlaybackProject;
+
+	/**
+	 * Null for room recordings. Those live in the room's own asset folder and are
+	 * loaded and replayed without any project, so there may not be one to name.
+	 */
+	project: PlaybackProject | null;
 	fileName: string;
 	startUrl: string;
 	recording?: LoadedRecording;
 	parameterValues?: Record<string, string>;
 }
 
-function sanitizeMcpParameterName(value: string): string {
+function sanitizeMcpParameterName(
+	value: string,
+	fallbackPrefix = "field_",
+): string {
 	const sanitized = value
 		.replace(/[^a-zA-Z0-9\s]/g, "")
 		.trim()
 		.replace(/\s+/g, "_")
 		.toLowerCase();
 	return !sanitized || !/^[a-zA-Z]/.test(sanitized)
-		? `tool_${sanitized}`
+		? `${fallbackPrefix}${sanitized}`
 		: sanitized;
 }
 
@@ -114,7 +122,8 @@ function getMcpStepParameterValue(
 		parameterValues[String(step.id)] ??
 		(stepLabel
 			? (parameterValues[stepLabel] ??
-				parameterValues[sanitizeMcpParameterName(stepLabel)])
+				parameterValues[sanitizeMcpParameterName(stepLabel)] ??
+				parameterValues[sanitizeMcpParameterName(stepLabel, "tool_")])
 			: undefined)
 	);
 }
@@ -534,7 +543,7 @@ export function usePlaybackController({
 			const catalogItem =
 				matchingCatalogItems.find((item) => item.source === "room") ??
 				matchingCatalogItems.find(
-					(item) => item.project.value === selection.project.value,
+					(item) => item.project.value === selection.project?.value,
 				) ??
 				matchingCatalogItems[0];
 			const selectedSource = catalogItem?.source ?? selection.source;
@@ -559,7 +568,7 @@ export function usePlaybackController({
 					catalogItem?.key ??
 					getRecordingCatalogKey(
 						selectedSource,
-						selectedProject.value,
+						selectedProject?.value ?? roomId,
 						selection.fileName,
 					);
 				recordingCacheRef.current.set(cacheKey, selection.recording);
@@ -848,9 +857,11 @@ export function usePlaybackController({
 
 	const runStep = useCallback(
 		async (tabId: string, step: LoadedRecordingStep) => {
+			// Room recordings replay through replayRoomStep below, which never
+			// touches project, so only project-sourced recordings require one.
 			if (
 				!insightId ||
-				!project ||
+				(source !== "room" && !project) ||
 				!selectedRecording ||
 				typeof step.id !== "number"
 			) {
@@ -925,6 +936,12 @@ export function usePlaybackController({
 				return true;
 			}
 
+			if (!project) {
+				setRunningStepId(null);
+				onError("Cannot run this step");
+				return false;
+			}
+
 			const typeValue =
 				step.type === "TYPE"
 					? (typeValuesRef.current[step.id] ??
@@ -942,6 +959,10 @@ export function usePlaybackController({
 										[step.label]: typeValue,
 										[sanitizeMcpParameterName(step.label)]:
 											typeValue,
+										[sanitizeMcpParameterName(
+											step.label,
+											"tool_",
+										)]: typeValue,
 									}
 								: {}),
 							[`step_${step.id}`]: typeValue,
@@ -992,16 +1013,17 @@ export function usePlaybackController({
 			return runInFlightRef.current;
 		}
 
+		if (
+			!insightId ||
+			(source !== "room" && !project) ||
+			!selectedRecording ||
+			!loadedRecording
+		) {
+			onError("Load a recording before running it");
+			return Promise.resolve(null);
+		}
+
 		const execution = (async (): Promise<PlaybackRunResult | null> => {
-			if (
-				!insightId ||
-				!project ||
-				!selectedRecording ||
-				!loadedRecording
-			) {
-				onError("Load a recording before running it");
-				return null;
-			}
 			setIsRunning(true);
 			setIsPaused(false);
 			setValueRequiredStepId(null);
@@ -1056,6 +1078,7 @@ export function usePlaybackController({
 		project,
 		runStep,
 		selectedRecording,
+		source,
 	]);
 
 	const updateTypeValue = useCallback((stepId: number, value: string) => {

@@ -32,11 +32,21 @@ type McpToolResponse = {
 	};
 };
 
-type RoomMcpUpdatedMessage = {
-	type: "SMSS_ROOM_MCP_UPDATED";
-	roomId: string;
-};
+// Baked in at build time. This app is served from the web app, so unlike a
+// published project portal there is no semoss-env script to read these from.
+//
+// APP is deliberately NOT set. The MCP logic for this app lives in the
+// `platform__playwright` project, but only the backend and the Playground need
+// to know that: tool definitions resolve through _meta on the Playground side,
+// and everything this app runs is room or insight scoped. Setting APP would make
+// the SDK prepend SetContext("playwright") to initialize(), which hard-fails the
+// whole app whenever that project is missing or not yet readable by the user.
+Env.update({
+	MODULE: import.meta.env.MODULE || "/Monolith",
+});
 
+// Still honored so the app keeps working if it is ever deployed the old way, as
+// a published project portal with an injected semoss-env payload.
 const semossEnvScript = document.getElementById("semoss-env");
 
 if (semossEnvScript?.textContent) {
@@ -322,24 +332,6 @@ export function subscribeToMcpToolContext(
 	subscribers.add(listener);
 	listener(toolContext);
 	return () => subscribers.delete(listener);
-}
-
-export function notifyPlaygroundRoomMcpUpdated(roomId: string): void {
-	const normalizedRoomId = roomId.trim();
-	if (
-		!normalizedRoomId ||
-		typeof window === "undefined" ||
-		!window.parent ||
-		window.parent === window
-	) {
-		return;
-	}
-
-	const message: RoomMcpUpdatedMessage = {
-		type: "SMSS_ROOM_MCP_UPDATED",
-		roomId: normalizedRoomId,
-	};
-	window.parent.postMessage(message, "*");
 }
 
 export function sendMcpResponseToPlayground(

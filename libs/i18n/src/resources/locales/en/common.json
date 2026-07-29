@@ -15,7 +15,6 @@
 		"type": "Type",
 		"model": "Model",
 		"instructions": "Instructions",
-		"temperature": "Temperature",
 		"maxToken": "Max Token"
 	},
 	"placeholders": {
@@ -23,7 +22,6 @@
 		"enterDescription": "Enter Description",
 		"enterInstructions": "Enter Instructions",
 		"updateInstructions": "Update Instructions",
-		"updateTokenLength": "Update token length",
 		"uploadFiles": "Upload Files",
 		"search": "Search...",
 		"enterPromptLibraryTag": "Enter Prompt Library Tag"
@@ -210,6 +208,9 @@
 			"formatted": "FORMATTED",
 			"raw": "RAW"
 		},
+		"image": {
+			"alt": "Rendered image {{index}}"
+		},
 		"copy": {
 			"command": "Copy command",
 			"logs": "Copy logs",
@@ -221,6 +222,8 @@
 		"collapseAll": "Collapse all",
 		"close": "Close",
 		"lines_one": "{{count}} line",
-		"lines_other": "{{count}} lines"
+		"lines_other": "{{count}} lines",
+		"images_one": "{{count}} image",
+		"images_other": "{{count}} images"
 	}
 }

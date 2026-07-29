@@ -182,8 +182,6 @@ export interface ThemeMap {
 		 */
 		defaultRoomSettings?: {
 			model?: Engine;
-			temperature?: number;
-			tokenLength?: number;
 		};
 
 		/**
@@ -371,7 +369,10 @@ export interface UserAccessRequest {
 }
 
 export interface MCP {
-	/** Type of the mcp */
+	/**
+	 * Type of the mcp. Every value but ROOM is an engine or project catalog type.
+	 * ROOM is the room's own toolbox, which has no catalog entry behind it.
+	 */
 	type:
 		| "PROJECT"
 		| "STORAGE"
@@ -380,7 +381,7 @@ export interface MCP {
 		| "MODEL"
 		| "VECTOR"
 		| "GUARDRAIL"
-		| "INSIGHT";
+		| "ROOM";
 	/** Id of the mcp */
 	id: string;
 	/** Name of the mcp */
@@ -397,6 +398,12 @@ export interface MCP {
 export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {
 	/** Flag to indicate if this MCP comes from a workspace */
 	fromWorkspace?: boolean;
+	/**
+	 * Set by the backend on the room's own toolbox, which is derived from the tool
+	 * definitions in the room folder rather than stored in room options. Not
+	 * persisted.
+	 */
+	fromRoom?: boolean;
 };
 
 export interface Skill {

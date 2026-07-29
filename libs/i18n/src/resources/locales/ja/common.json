@@ -15,7 +15,6 @@
 		"type": "タイプ",
 		"model": "モデル",
 		"instructions": "指示",
-		"temperature": "温度",
 		"maxToken": "最大トークン"
 	},
 	"placeholders": {
@@ -23,7 +22,6 @@
 		"enterDescription": "説明を入力",
 		"enterInstructions": "指示を入力",
 		"updateInstructions": "指示を更新",
-		"updateTokenLength": "トークン長を更新",
 		"uploadFiles": "ファイルをアップロード",
 		"search": "検索...",
 		"enterPromptLibraryTag": "プロンプトライブラリタグを入力"
@@ -210,6 +208,9 @@
 			"formatted": "整形済み",
 			"raw": "生データ"
 		},
+		"image": {
+			"alt": "生成された画像 {{index}}"
+		},
 		"copy": {
 			"command": "コマンドをコピー",
 			"logs": "ログをコピー",
@@ -221,6 +222,8 @@
 		"collapseAll": "すべて折りたたむ",
 		"close": "閉じる",
 		"lines_one": "{{count}} 行",
-		"lines_other": "{{count}} 行"
+		"lines_other": "{{count}} 行",
+		"images_one": "{{count}} 件の画像",
+		"images_other": "{{count}} 件の画像"
 	}
 }

@@ -70,7 +70,7 @@ interface UseRemoteBrowserSessionReturn {
 	/** Regenerates mcp/pixel_mcp.json from all room or project recordings. */
 	generateRecordingsMcp: (
 		insightId: string,
-		target: { roomId?: string; projectId: string },
+		target: { roomId?: string; projectId?: string },
 	) => Promise<void>;
 }
 
@@ -600,21 +600,18 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 	const generateRecordingsMcp = useCallback(
 		async (
 			insightId: string,
-			target: { roomId?: string; projectId: string },
+			target: { roomId?: string; projectId?: string },
 		): Promise<void> => {
 			if (!insightId) return;
-			const args = target.roomId
-				? [
-						`roomId=${JSON.stringify(target.roomId)}`,
-						target.projectId
-							? `projectId=${JSON.stringify(target.projectId)}`
-							: "",
-					].filter(Boolean)
-				: [`project=${JSON.stringify(target.projectId)}`];
-			const response = await runPixel(
-				`MakePlaywrightRecordingsMCP(${args.join(", ")});`,
-				insightId,
-			);
+			if (!target.roomId && !target.projectId) {
+				throw new Error(
+					"A Playground room or Playwright app project is required",
+				);
+			}
+			const pixel = target.roomId
+				? `MakeRoomPlaywrightMCP(roomId=${JSON.stringify(target.roomId)});`
+				: `MakePlaywrightMCP(project=${JSON.stringify(target.projectId)});`;
+			const response = await runPixel(pixel, insightId);
 			assertPixelSuccess(
 				response,
 				"Playwright recordings MCP generation",

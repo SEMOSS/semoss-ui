@@ -245,7 +245,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 								engines={engines}
 								className="size-4"
 							/>
-							<span className="block min-w-0 flex-shrink overflow-hidden text-ellipsis whitespace-nowrap font-normal text-[#202020] text-[14px] leading-[20px]">
+							<span className="block min-w-0 flex-shrink overflow-hidden text-ellipsis whitespace-nowrap font-normal text-[14px] text-foreground leading-[20px]">
 								{id}
 							</span>
 							{constantValueDisplay !== null && (
@@ -262,7 +262,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 						side="right"
 						sideOffset={8}
 						arrow={false}
-						className="bg-white p-0 text-foreground shadow-lg"
+						className="bg-popover p-0 text-popover-foreground shadow-lg"
 					>
 						<VariablePreview
 							variable={variable}

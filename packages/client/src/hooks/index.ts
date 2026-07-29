@@ -1,14 +1,9 @@
 import { useAPI } from "./use-api";
-import { useQueryEditor } from "./use-database-query-editor";
-import { useQueryResults } from "./use-database-query-results";
 import { useIteratorApi } from "./use-iterator-api";
 import { usePixel } from "./use-pixel";
 import { useProject } from "./use-project";
-import { useSparqlQueryExecution } from "./use-sparql-query-execution";
-import { useSqlQueryExecution } from "./use-sql-query-execution";
 import { useTabBarScroll } from "./use-tab-bar-scroll";
 import { useCacheState } from "./useCacheState";
-import { useDatabaseStructure } from "./useDatabaseStructure";
 import { useDesigner } from "./useDesigner";
 import { useEngine } from "./useEngine";
 import { useLLM } from "./useLLM";
@@ -18,6 +13,7 @@ import { useRootStore } from "./useRootStore";
 import { useServerPagination } from "./useServerPagination";
 import { useSettings } from "./useSettings";
 import { useStepper } from "./useStepper";
+import { useThemeLogo } from "./useThemeLogo";
 import { useWorkspace } from "./useWorkspace";
 
 // NOTE: Do not export `useBlockSettings` from this barrel.
@@ -27,7 +23,6 @@ import { useWorkspace } from "./useWorkspace";
 export {
 	useAPI,
 	useCacheState,
-	useDatabaseStructure,
 	useDesigner,
 	useEngine,
 	useIteratorApi,
@@ -35,15 +30,12 @@ export {
 	useMetamodel,
 	usePage,
 	usePixel,
-	useQueryEditor,
-	useSqlQueryExecution,
-	useSparqlQueryExecution,
-	useQueryResults,
 	useRootStore,
 	useServerPagination,
 	useSettings,
 	useStepper,
 	useTabBarScroll,
+	useThemeLogo,
 	useWorkspace,
 	useProject,
 };

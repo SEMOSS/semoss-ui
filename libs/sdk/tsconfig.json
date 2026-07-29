@@ -4,6 +4,7 @@
 		"lib": ["ES2022", "dom"],
 		"target": "es6",
 		"jsx": "react-jsx",
+		"types": ["vitest/globals", "@testing-library/jest-dom/vitest"],
 
 		/* Modules */
 		"module": "esnext",

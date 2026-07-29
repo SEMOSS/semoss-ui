@@ -12,12 +12,16 @@ export default defineConfig(({ mode }) => {
 			emptyOutDir: true,
 		},
 		define: {
-			"process.env.MODULE": JSON.stringify(env.MODULE),
-			"process.env.ENDPOINT": JSON.stringify(env.ENDPOINT),
-			"process.env.APP": JSON.stringify(env.APP),
+			// Baked in at build time. Served from the web app rather than from a
+			// published project portal, so there is no semoss-env script to read
+			// these from at runtime.
+			"import.meta.env.MODULE": JSON.stringify(env.MODULE),
+			"import.meta.env.ENDPOINT": JSON.stringify(env.ENDPOINT),
 		},
 		server: {
-			port: 5174,
+			// 5173 client, 5174 playground, 5175 terminal/auditlog
+			port: 5176,
+			strictPort: true,
 			proxy: {
 				[env.MODULE || "/Monolith"]: {
 					target: env.ENDPOINT || "http://localhost:9090/",
