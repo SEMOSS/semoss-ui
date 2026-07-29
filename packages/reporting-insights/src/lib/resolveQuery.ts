@@ -10,10 +10,9 @@
  * can use them without coupling their two structurally-identical type sets.
  */
 import type {
+	ConditionalOptionBranch,
 	DashboardQuery,
-	JoinSpec,
 	Parameter,
-	QuerySourceLeg,
 } from "@/types/dashboard";
 
 /** The data-source fields a visualization needs to run, wherever they come from. */
@@ -22,10 +21,8 @@ export interface QuerySource {
 	databaseName: string;
 	query: string;
 	parameters: Parameter[];
-	/** Cross-source data product legs (present ⇒ this source is a multi-frame join). */
-	sources?: QuerySourceLeg[];
-	/** Joins that merge the {@link sources} legs. */
-	joins?: JoinSpec[];
+	sources?: import("@/types/dashboard").QuerySourceLeg[];
+	joins?: import("@/types/dashboard").JoinSpec[];
 }
 
 /** Minimal visualization shape the resolver reads. */
@@ -157,6 +154,8 @@ export interface ParamGroup {
 	optionsQuery?: string; // SQL whose first column becomes the option list (first occurrence wins)
 	optionsDatabaseId?: string; // database for optionsQuery (first occurrence wins)
 	databaseIdFallback: string; // databaseId of the first query — fallback when no optionsDatabaseId
+	conditionalOn?: string; // first-occurrence: parent param name driving the branches
+	conditionalBranches?: ConditionalOptionBranch[]; // first-occurrence: per-value option sources
 }
 
 /**
@@ -185,6 +184,8 @@ export function computeParamGroups(queries: DashboardQuery[]): ParamGroup[] {
 					optionsQuery: p.optionsQuery,
 					optionsDatabaseId: p.optionsDatabaseId,
 					databaseIdFallback: q.databaseId,
+					conditionalOn: p.conditionalOn,
+					conditionalBranches: p.conditionalBranches,
 				});
 			}
 		}

@@ -23,6 +23,11 @@ import type {
 	VisualizationType,
 } from "@/types/dashboard";
 
+/** True when the AI builder feature is available. */
+export function aiEnabled(): boolean {
+	return true;
+}
+
 export type RunPixel = (pixel: string) => Promise<any>;
 
 /** A SEMOSS model engine the user can pick for the AI Builder. */

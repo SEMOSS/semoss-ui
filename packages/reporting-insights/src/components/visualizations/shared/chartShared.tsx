@@ -6,7 +6,7 @@
  */
 
 import { formatValue } from "@/lib/formatValue";
-import type { VisualizationConfig } from "@/types/dashboard";
+import type { SymbolType, VisualizationConfig } from "@/types/dashboard";
 
 /** Default categorical chart palette. Re-exported by `DashboardVisualization`. */
 export const CHART_COLORS = [
@@ -284,8 +284,8 @@ export function strokeDashFor(
 	}
 }
 
-/** Human-readable label for an aggregation key (used in default axis titles). */
-const AGGREGATION_LABELS: Record<string, string> = {
+/** Human-readable label for an aggregation key (used in default axis titles and column labels). */
+export const AGGREGATION_LABELS: Record<string, string> = {
 	sum: "Sum",
 	avg: "Average",
 	count: "Count",
@@ -313,4 +313,79 @@ export function buildDefaultYAxisTitle(
 			return label ? `${label} of ${k}` : k;
 		})
 		.join(", ");
+}
+
+/** Renders an SVG symbol shape centered at (cx, cy) with the given radius-equivalent size. */
+export function renderChartSymbol(
+	type: SymbolType,
+	cx: number,
+	cy: number,
+	size: number,
+	fill: string,
+): React.ReactElement | null {
+	switch (type) {
+		case "none":
+			return null;
+		case "circle":
+			return <circle cx={cx} cy={cy} r={size} fill={fill} />;
+		case "diamond":
+			return (
+				<polygon
+					points={`${cx},${cy - size} ${cx + size},${cy} ${cx},${cy + size} ${cx - size},${cy}`}
+					fill={fill}
+				/>
+			);
+		case "triangle":
+			return (
+				<polygon
+					points={`${cx},${cy - size} ${cx + size * 0.866},${cy + size * 0.5} ${cx - size * 0.866},${cy + size * 0.5}`}
+					fill={fill}
+				/>
+			);
+		case "rectangle":
+			return (
+				<rect
+					x={cx - size}
+					y={cy - size}
+					width={size * 2}
+					height={size * 2}
+					fill={fill}
+				/>
+			);
+		case "round":
+			return (
+				<rect
+					x={cx - size}
+					y={cy - size}
+					width={size * 2}
+					height={size * 2}
+					rx={size * 0.45}
+					fill={fill}
+				/>
+			);
+		case "arrow": {
+			const hw = size * 0.38;
+			return (
+				<polygon
+					points={`${cx},${cy - size} ${cx + size},${cy} ${cx + hw},${cy} ${cx + hw},${cy + size} ${cx - hw},${cy + size} ${cx - hw},${cy} ${cx - size},${cy}`}
+					fill={fill}
+				/>
+			);
+		}
+		case "pin": {
+			const r = size * 0.68;
+			const topCy = cy - r * 0.25;
+			return (
+				<g>
+					<circle cx={cx} cy={topCy} r={r} fill={fill} />
+					<polygon
+						points={`${cx - r * 0.5},${topCy + r * 0.35} ${cx + r * 0.5},${topCy + r * 0.35} ${cx},${cy + size}`}
+						fill={fill}
+					/>
+				</g>
+			);
+		}
+		default:
+			return <circle cx={cx} cy={cy} r={size} fill={fill} />;
+	}
 }

@@ -1,6 +1,7 @@
-import { LineChart as LineChartIcon } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+	Area,
 	CartesianGrid,
 	ComposedChart,
 	DefaultZIndexes,
@@ -32,11 +33,10 @@ import {
 	strokeDashFor,
 } from "@/components/visualizations/shared/chartShared";
 import {
+	type AreaStyling,
 	type ColorPalette as ColorPaletteType,
 	type ColorRule,
 	curveTypeToRecharts,
-	DEFAULT_LINE_STYLING,
-	type LineStyling,
 	type VisualizationConfig,
 } from "@/types/dashboard";
 
@@ -311,7 +311,8 @@ const CURSOR_LINE_STYLE = {
 	pointerEvents: "none" as const,
 };
 
-// Line charts use a point scale (zero bandwidth). Derive shadow width from inter-tick spacing.
+// Area/line charts use a point scale, not a band scale, so xScale(label, { position: 'start'/'end' })
+// returns zero-width bands. Instead, derive the shadow width from the spacing between ticks.
 function getShadowHalfWidth(scale: any, ticks: string[]): number {
 	if (ticks.length < 2) return 30;
 	const p0: number | undefined = scale?.(ticks[0]);
@@ -320,7 +321,7 @@ function getShadowHalfWidth(scale: any, ticks: string[]): number {
 	return 30;
 }
 
-function LineCursor({
+function AreaCursor({
 	axisPointerType,
 	flipAxis,
 	xTicks,
@@ -350,6 +351,9 @@ function LineCursor({
 		height: plotHeight,
 	} = plotArea;
 
+	// Shadow: use half the inter-tick spacing as the half-width of the highlight band,
+	// centered on the snapped coordinate (ax / ay). This works for point scales where
+	// the band-scale position approach returns zero width.
 	let shadowRect: React.ReactNode = null;
 	if (flipAxis) {
 		const hw = getShadowHalfWidth(yScale, yTicks);
@@ -430,6 +434,7 @@ function LineCursor({
 }
 
 // ── Total labels — renders per-category totals at fixed top/right margin ─────
+// Uses the same direct-child hook pattern as AreaCursor so axis scales are accessible.
 function TotalLabels({
 	rows,
 	xDataKey,
@@ -495,25 +500,25 @@ function TotalLabels({
 }
 
 // ── Props ─────────────────────────────────────────────────────────────────────
-interface LineChartVizProps {
+interface AreaChartVizProps {
 	data: Record<string, unknown>[];
 	config?: VisualizationConfig;
-	onStylingChange?: (updates: Partial<LineStyling>) => void;
+	onStylingChange?: (updates: Partial<AreaStyling>) => void;
 }
 
-export function Line_Chart({
+export function Area_Chart({
 	data,
 	config,
 	onStylingChange,
-}: LineChartVizProps) {
+}: AreaChartVizProps) {
 	const xKey = config?.xKey ?? "";
 	const yKeys = config?.yKeys ?? [];
-	const s: LineStyling = config?.styling?.line ?? {};
+	const s: AreaStyling = config?.styling?.area ?? {};
 
-	const curveType = s.curveType ?? DEFAULT_LINE_STYLING.curveType;
-	const lineWidth = s.lineWidth ?? DEFAULT_LINE_STYLING.lineWidth;
+	const curveType = s.curveType ?? "smooth";
+	const lineWidth = s.lineWidth ?? 2;
 	const trendlineType = s.trendlineType ?? "none";
-	const showLegend = s.showLegend ?? DEFAULT_LINE_STYLING.showLegend;
+	const showLegend = s.showLegend ?? true;
 	const showAverage = s.showAverage === true;
 	const axisPointerType = s.axisPointer ?? "shadow";
 	const flipAxis = s.flipAxis === true;
@@ -525,9 +530,10 @@ export function Line_Chart({
 	const zoomX = s.zoomX === true;
 	const zoomY = s.zoomY === true;
 	const saveZoom = s.saveZoom === true;
+	const unstacked = s.unstacked === true;
 	const showTotals = s.showTotals === true;
-	const symbolType = s.symbolType ?? "circle";
-	const symbolSize = s.symbolSize ?? 3;
+	const symbolType = s.symbolType ?? "none";
+	const symbolSize = s.symbolSize ?? 4;
 	const xCfg = s.xAxisConfig ?? {};
 	const yCfg = s.yAxisConfig ?? {};
 	const valueLabelCfg = s.valueLabel ?? null;
@@ -572,6 +578,8 @@ export function Line_Chart({
 
 	const effectiveXDataKey = flipSeries ? "__yKey__" : xKey;
 
+	// Category tick labels — used by AreaCursor to compute inter-tick spacing for the shadow band.
+	// Computed from renderData before x-brush slicing so spacing stays stable during zoom.
 	const categoryTicks = useMemo(
 		() => renderData.map((r) => String(r[effectiveXDataKey] ?? "")),
 		[renderData, effectiveXDataKey],
@@ -610,14 +618,14 @@ export function Line_Chart({
 		return renderData.slice(Math.max(0, start), Math.min(n, end + 1));
 	}, [xBrushActive, renderData, xBrushFrac]);
 
-	// Compute data y range for Y brush (per-series max for line charts, no stacking)
+	// Compute data y range for Y brush
 	const { dataYMin, dataYMax } = useMemo(() => {
 		if (!zoomY || !renderData.length || !seriesKeys.length)
 			return { dataYMin: 0, dataYMax: 1 };
 		let maxVal = 0;
 		for (const row of renderData) {
 			const rowMax = seriesKeys.reduce(
-				(m, sk) => Math.max(m, Number(row[sk] ?? 0)),
+				(s, sk) => s + Math.max(0, Number(row[sk] ?? 0)),
 				0,
 			);
 			if (rowMax > maxVal) maxVal = rowMax;
@@ -664,7 +672,9 @@ export function Line_Chart({
 		return { minIdx: minI, maxIdx: maxI };
 	}, [showMinMax, seriesKeys, visibleRenderData]);
 
-	// Trendlines: linear regression per series (no stacking for line charts)
+	// Trendlines: linear regression per series, stored as _trend_<key> fields.
+	// When stacked, regress through the cumulative top-edge values so each
+	// trendline tracks the top of its own visual band, not the raw series value.
 	const trendDataMap = useMemo<Record<string, number[]> | null>(() => {
 		if (
 			trendlineType === "none" ||
@@ -673,8 +683,17 @@ export function Line_Chart({
 		)
 			return null;
 		const result: Record<string, number[]> = {};
+		// running[i] accumulates the stack height at row i across series
+		const running = new Array<number>(visibleRenderData.length).fill(0);
 		for (const sk of seriesKeys) {
-			const vals = visibleRenderData.map((r) => Number(r[sk] ?? 0));
+			const vals = visibleRenderData.map((r, i) => {
+				const v = Number(r[sk] ?? 0);
+				if (!unstacked) {
+					running[i] += v;
+					return running[i];
+				}
+				return v;
+			});
 			const n = vals.length;
 			const sumX = (n * (n - 1)) / 2;
 			const sumX2 = (n * (n - 1) * (2 * n - 1)) / 6;
@@ -686,9 +705,9 @@ export function Line_Chart({
 			result[sk] = vals.map((_, i) => slope * i + intercept);
 		}
 		return result;
-	}, [trendlineType, seriesKeys, visibleRenderData]);
+	}, [trendlineType, seriesKeys, visibleRenderData, unstacked]);
 
-	// Merge _total and _trend_* into final chart data
+	// Merge _total and _trend_* into the final chart data in one pass
 	const renderDataFinal = useMemo(() => {
 		const needsTotal = showTotals;
 		const needsTrend = trendDataMap !== null;
@@ -721,7 +740,7 @@ export function Line_Chart({
 		return (
 			<div className="flex h-full items-center justify-center">
 				<div className="px-6 text-center text-slate-400">
-					<LineChartIcon className="mx-auto mb-3 h-12 w-12 opacity-30" />
+					<TrendingUp className="mx-auto mb-3 h-12 w-12 opacity-30" />
 					<p className="font-medium text-sm">No data configured</p>
 					<p className="mt-1 text-xs">
 						Drag columns to X-Axis and Y-Axis drop zones
@@ -751,20 +770,28 @@ export function Line_Chart({
 		return palette[seriesIndex % palette.length];
 	};
 
-	// Per-series average (raw, no cumulative stacking for line charts)
+	// Pre-compute per-series average for average lines.
+	// Stacked: series i is visually drawn from cumsum(0..i-1) to cumsum(0..i),
+	// so its reference line must sit at the cumulative average Σavg(0..i).
 	const seriesAvg = useMemo(() => {
 		if (!showAverage || !visibleRenderData.length)
 			return {} as Record<string, number>;
-		const avgs: Record<string, number> = {};
+		const rawAvgs: Record<string, number> = {};
 		for (const sk of seriesKeys) {
-			avgs[sk] =
-				visibleRenderData.reduce(
-					(sum, r) => sum + Number(r[sk] ?? 0),
-					0,
-				) / visibleRenderData.length;
+			rawAvgs[sk] =
+				visibleRenderData.reduce((s, r) => s + Number(r[sk] ?? 0), 0) /
+				visibleRenderData.length;
 		}
-		return avgs;
-	}, [showAverage, visibleRenderData, seriesKeys]);
+		if (unstacked) return rawAvgs;
+		// Stacked: build cumulative averages
+		const cumAvgs: Record<string, number> = {};
+		let running = 0;
+		for (const sk of seriesKeys) {
+			running += rawAvgs[sk];
+			cumAvgs[sk] = running;
+		}
+		return cumAvgs;
+	}, [showAverage, visibleRenderData, seriesKeys, unstacked]);
 
 	return (
 		<div
@@ -802,6 +829,29 @@ export function Line_Chart({
 							bottom: 4,
 						}}
 					>
+						<defs>
+							{seriesKeys.map((_, i) => (
+								<linearGradient
+									key={i}
+									id={`area-grad-${i}`}
+									x1="0"
+									y1="0"
+									x2="0"
+									y2="1"
+								>
+									<stop
+										offset="5%"
+										stopColor={palette[i % palette.length]}
+										stopOpacity={0.15}
+									/>
+									<stop
+										offset="95%"
+										stopColor={palette[i % palette.length]}
+										stopOpacity={0}
+									/>
+								</linearGradient>
+							))}
+						</defs>
 						<CartesianGrid
 							{...GRID_STYLE}
 							horizontal={!flipAxis}
@@ -919,168 +969,112 @@ export function Line_Chart({
 							/>
 						)}
 
-						{seriesKeys.map((k, i) => {
-							const lineColor = palette[i % palette.length];
-							return (
-								<Line
-									key={k}
-									type={curveTypeToRecharts(curveType)}
-									dataKey={k}
-									isAnimationActive={false}
-									stroke={lineColor}
-									strokeWidth={lineWidth}
-									strokeDasharray={strokeDashFor(s.lineType)}
-									dot={
-										symbolType === "none"
-											? false
-											: (props: any) => {
-													const {
-														cx,
-														cy,
-														payload,
-														index,
-													} = props;
-													const fill =
-														colorRules.length > 0
-															? colorForSeries(
-																	i,
-																	payload as Record<
-																		string,
-																		unknown
-																	>,
-																	k,
-																)
-															: lineColor;
-													return (
-														<g
-															key={`dot-${k}-${index}`}
-														>
-															{renderChartSymbol(
-																symbolType,
-																cx,
-																cy,
-																symbolSize,
-																fill,
-															)}
-														</g>
-													);
-												}
-									}
-									activeDot={
-										symbolType === "none"
-											? false
-											: {
-													r: symbolSize + 2,
-													strokeWidth: 0,
-													fill: lineColor,
-												}
-									}
-								>
-									{valueLabelCfg?.show === true && (
-										<LabelList
-											dataKey={k}
-											position={
-												valueLabelCfg.position ?? "top"
-											}
-											angle={valueLabelCfg.rotate ?? 0}
-											style={{
-												fontSize:
-													valueLabelCfg.fontSize ??
-													10,
-												fill:
-													valueLabelCfg.color ??
-													"#64748b",
-												fontFamily:
-													valueLabelCfg.fontFamily ??
-													undefined,
-											}}
-											formatter={
-												((v: unknown) =>
-													typeof v === "number"
-														? v.toLocaleString()
-														: String(
-																v ?? "",
-															)) as never
-											}
-										/>
-									)}
-									{showMinMax && (
-										<LabelList
-											dataKey={k}
-											content={(props: any) => {
+						{seriesKeys.map((k, i) => (
+							<Area
+								key={k}
+								type={curveTypeToRecharts(curveType)}
+								dataKey={k}
+								isAnimationActive={false}
+								stackId={unstacked ? undefined : "area"}
+								stroke={colorForSeries(i)}
+								strokeWidth={lineWidth}
+								strokeDasharray={strokeDashFor(s.lineType)}
+								fill={`url(#area-grad-${i})`}
+								dot={
+									symbolType === "none"
+										? false
+										: (props: any) => {
 												const {
+													cx,
+													cy,
+													payload,
 													index,
-													x,
-													y,
-													width,
-													height,
-													value,
 												} = props;
-												const isMax =
-													index === maxIdx[k];
-												const isMin =
-													index === minIdx[k];
-												if (!isMax && !isMin)
-													return null;
-												const color =
-													palette[i % palette.length];
-												const label =
-													typeof value === "number"
-														? value.toLocaleString()
-														: String(value ?? "");
-												const badgeW = Math.max(
-													label.length * 6 + 10,
-													26,
+												const fill = colorForSeries(
+													i,
+													payload as Record<
+														string,
+														unknown
+													>,
+													k,
 												);
-												if (flipAxis) {
-													const cx =
-														(x ?? 0) + (width ?? 0);
-													const cy =
-														(y ?? 0) +
-														(height ?? 0) / 2;
-													return (
-														<g>
-															<circle
-																cx={cx}
-																cy={cy}
-																r={5}
-																fill={color}
-																stroke="#fff"
-																strokeWidth={
-																	1.5
-																}
-															/>
-															<rect
-																x={cx + 8}
-																y={cy - 7}
-																width={badgeW}
-																height={14}
-																rx={4}
-																fill={color}
-															/>
-															<text
-																x={
-																	cx +
-																	8 +
-																	badgeW / 2
-																}
-																y={cy}
-																textAnchor="middle"
-																dominantBaseline="middle"
-																fontSize={9}
-																fontWeight={700}
-																fill="#fff"
-															>
-																{label}
-															</text>
-														</g>
-													);
-												}
+												return (
+													<g
+														key={`dot-${k}-${index}`}
+													>
+														{renderChartSymbol(
+															symbolType,
+															cx,
+															cy,
+															symbolSize,
+															fill,
+														)}
+													</g>
+												);
+											}
+								}
+								activeDot={
+									symbolType === "none"
+										? false
+										: { r: symbolSize + 2, strokeWidth: 0 }
+								}
+							>
+								{valueLabelCfg?.show === true && (
+									<LabelList
+										dataKey={k}
+										position={
+											valueLabelCfg.position ?? "top"
+										}
+										angle={valueLabelCfg.rotate ?? 0}
+										style={{
+											fontSize:
+												valueLabelCfg.fontSize ?? 10,
+											fill:
+												valueLabelCfg.color ??
+												"#64748b",
+											fontFamily:
+												valueLabelCfg.fontFamily ??
+												undefined,
+										}}
+										formatter={
+											((v: unknown) =>
+												typeof v === "number"
+													? v.toLocaleString()
+													: String(v ?? "")) as never
+										}
+									/>
+								)}
+								{showMinMax && (
+									<LabelList
+										dataKey={k}
+										content={(props: any) => {
+											const {
+												index,
+												x,
+												y,
+												width,
+												height,
+												value,
+											} = props;
+											const isMax = index === maxIdx[k];
+											const isMin = index === minIdx[k];
+											if (!isMax && !isMin) return null;
+											const color =
+												palette[i % palette.length];
+											const label =
+												typeof value === "number"
+													? value.toLocaleString()
+													: String(value ?? "");
+											const badgeW = Math.max(
+												label.length * 6 + 10,
+												26,
+											);
+											if (flipAxis) {
 												const cx =
-													(x ?? 0) + (width ?? 0) / 2;
-												const cy = isMax
-													? (y ?? 0)
-													: (y ?? 0) + (height ?? 0);
+													(x ?? 0) + (width ?? 0);
+												const cy =
+													(y ?? 0) +
+													(height ?? 0) / 2;
 												return (
 													<g>
 														<circle
@@ -1092,26 +1086,20 @@ export function Line_Chart({
 															strokeWidth={1.5}
 														/>
 														<rect
-															x={cx - badgeW / 2}
-															y={
-																cy -
-																(isMax
-																	? 23
-																	: -9)
-															}
+															x={cx + 8}
+															y={cy - 7}
 															width={badgeW}
 															height={14}
 															rx={4}
 															fill={color}
 														/>
 														<text
-															x={cx}
-															y={
-																cy -
-																(isMax
-																	? 16
-																	: -16)
+															x={
+																cx +
+																8 +
+																badgeW / 2
 															}
+															y={cy}
 															textAnchor="middle"
 															dominantBaseline="middle"
 															fontSize={9}
@@ -1122,14 +1110,56 @@ export function Line_Chart({
 														</text>
 													</g>
 												);
-											}}
-										/>
-									)}
-								</Line>
-							);
-						})}
+											}
+											const cx =
+												(x ?? 0) + (width ?? 0) / 2;
+											const cy = isMax
+												? (y ?? 0)
+												: (y ?? 0) + (height ?? 0);
+											return (
+												<g>
+													<circle
+														cx={cx}
+														cy={cy}
+														r={5}
+														fill={color}
+														stroke="#fff"
+														strokeWidth={1.5}
+													/>
+													<rect
+														x={cx - badgeW / 2}
+														y={
+															cy -
+															(isMax ? 23 : -9)
+														}
+														width={badgeW}
+														height={14}
+														rx={4}
+														fill={color}
+													/>
+													<text
+														x={cx}
+														y={
+															cy -
+															(isMax ? 16 : -16)
+														}
+														textAnchor="middle"
+														dominantBaseline="middle"
+														fontSize={9}
+														fontWeight={700}
+														fill="#fff"
+													>
+														{label}
+													</text>
+												</g>
+											);
+										}}
+									/>
+								)}
+							</Area>
+						))}
 
-						{/* Display Total labels pinned to the top/right margin */}
+						{/* Display Total — labels pinned to the top/right margin via TotalLabels */}
 						{showTotals && (
 							<TotalLabels
 								rows={renderDataFinal}
@@ -1138,7 +1168,7 @@ export function Line_Chart({
 							/>
 						)}
 
-						{/* Trendlines — one per series */}
+						{/* Trendlines — one per series, colored to match */}
 						{trendDataMap &&
 							trendlineType !== "none" &&
 							seriesKeys.map((sk, i) => (
@@ -1161,7 +1191,8 @@ export function Line_Chart({
 								/>
 							))}
 
-						{/* Average lines — raw per-series averages */}
+						{/* Average lines — cumulative position when stacked so each line
+                            lands inside its own series' visual band */}
 						{showAverage &&
 							seriesKeys.map((sk, i) => {
 								const avg = seriesAvg[sk];
@@ -1234,7 +1265,7 @@ export function Line_Chart({
 							/>
 						))}
 
-						<LineCursor
+						<AreaCursor
 							axisPointerType={axisPointerType}
 							flipAxis={flipAxis}
 							xTicks={categoryTicks}

@@ -13,10 +13,12 @@
  * The parent owns the query textarea, so token insertion is delegated via
  * `onInsertToken`. Parameter state is fully controlled via `parameters`/`onChange`.
  */
+
 import {
 	AlertTriangle,
 	ChevronDown,
 	Database,
+	GitBranch,
 	Loader2,
 	Plus,
 	Trash2,
@@ -26,6 +28,13 @@ import { useEffect, useState } from "react";
 import { Checkbox, Input, Select } from "@/components/ui";
 import { escapeSqlForPixel } from "@/lib/pixel";
 import { ParamControl } from "./ParamControl";
+
+export interface ConditionalBranch {
+	whenValue: string;
+	optionsQuery?: string;
+	optionsDatabaseId?: string;
+	options?: string[];
+}
 
 export interface QueryParam {
 	id: string;
@@ -37,6 +46,8 @@ export interface QueryParam {
 	options?: string[];
 	optionsQuery?: string;
 	optionsDatabaseId?: string;
+	conditionalOn?: string;
+	conditionalBranches?: ConditionalBranch[];
 }
 
 interface Props {
@@ -218,14 +229,23 @@ export function QueryParameters({
 						const inputType = param.inputType ?? "text";
 						const sqlOptions = sqlPreviews[param.id] ?? [];
 						const manualOptions = param.options ?? [];
+						const branchStaticOptions = (
+							param.conditionalBranches ?? []
+						).flatMap((b) => b.options ?? []);
 						const mergedOptions = Array.from(
-							new Set([...sqlOptions, ...manualOptions]),
+							new Set([
+								...sqlOptions,
+								...manualOptions,
+								...branchStaticOptions,
+							]),
 						);
 						const needsOptions =
 							inputType === "dropdown" ||
 							inputType === "multiselect";
 						const hasOptionsSource =
-							mergedOptions.length > 0 || !!param.optionsQuery;
+							mergedOptions.length > 0 ||
+							!!param.optionsQuery ||
+							!!param.conditionalOn;
 						return (
 							<div
 								key={param.id}
@@ -525,6 +545,9 @@ export function QueryParameters({
 												"multiselect") && (
 											<DropdownConfig
 												param={param}
+												allParams={parameters.filter(
+													(p) => p.id !== param.id,
+												)}
 												databaseId={databaseId}
 												databases={databases}
 												runPixel={runPixel}
@@ -562,12 +585,460 @@ export function QueryParameters({
 	);
 }
 
+// Conditional options branch editor
+
+interface BranchDraft {
+	sql: string;
+	loading: boolean;
+	error: string | null;
+	preview: string[] | null;
+	sourceType: "sql" | "static";
+	manualInput: string;
+}
+
+function makeDraft(b: ConditionalBranch): BranchDraft {
+	return {
+		sql: b.optionsQuery ?? "",
+		loading: false,
+		error: null,
+		preview: null,
+		sourceType: b.optionsQuery ? "sql" : "static",
+		manualInput: "",
+	};
+}
+
+function ConditionalConfig({
+	param,
+	allParams,
+	databaseId,
+	databases,
+	runPixel,
+	onPatch,
+	onBranchSqlLoad,
+}: {
+	param: QueryParam;
+	allParams: QueryParam[];
+	databaseId?: string;
+	databases?: { id: string; label: string }[];
+	runPixel?: (pixel: string) => Promise<any>;
+	onPatch: (patch: Partial<QueryParam>) => void;
+	onBranchSqlLoad?: (opts: string[]) => void;
+}) {
+	const branches = param.conditionalBranches ?? [];
+	const [drafts, setDrafts] = useState<BranchDraft[]>(() =>
+		branches.map(makeDraft),
+	);
+
+	const patchBranch = (i: number, patch: Partial<ConditionalBranch>) => {
+		const next = branches.map((b, idx) =>
+			idx === i ? { ...b, ...patch } : b,
+		);
+		onPatch({ conditionalBranches: next });
+	};
+
+	const setDraft = (i: number, patch: Partial<BranchDraft>) =>
+		setDrafts((prev) =>
+			prev.map((d, idx) => (idx === i ? { ...d, ...patch } : d)),
+		);
+
+	const addBranch = () => {
+		const newBranch: ConditionalBranch = { whenValue: "", options: [] };
+		onPatch({ conditionalBranches: [...branches, newBranch] });
+		setDrafts((prev) => [...prev, makeDraft(newBranch)]);
+	};
+
+	const removeBranch = (i: number) => {
+		onPatch({
+			conditionalBranches: branches.filter((_, idx) => idx !== i),
+		});
+		setDrafts((prev) => prev.filter((_, idx) => idx !== i));
+	};
+
+	const loadBranchOptions = async (i: number) => {
+		const branch = branches[i];
+		const sql = drafts[i]?.sql ?? "";
+		const db = branch.optionsDatabaseId || databaseId;
+		if (!runPixel || !db || !sql.trim()) {
+			setDraft(i, {
+				error: !db ? "Pick a database first." : "Enter a query.",
+			});
+			return;
+		}
+		setDraft(i, { loading: true, error: null });
+		try {
+			const out = await runPixel(
+				`Database(database=["${db}"]) | Query("${escapeSqlForPixel(sql.trim())}") | Collect(-1);`,
+			);
+			const vals = firstColumn(out);
+			setDraft(i, { loading: false, preview: vals });
+			patchBranch(i, { optionsQuery: sql.trim(), optionsDatabaseId: db });
+			if (onBranchSqlLoad) {
+				const allSqlOpts = Array.from(
+					new Set(
+						drafts.flatMap((d, idx) =>
+							idx === i ? vals : (d.preview ?? []),
+						),
+					),
+				);
+				onBranchSqlLoad(allSqlOpts);
+			}
+		} catch (e: any) {
+			setDraft(i, {
+				loading: false,
+				error: String(e?.message ?? e ?? "Query failed."),
+			});
+		}
+	};
+
+	const parentParam = allParams.find((p) => p.name === param.conditionalOn);
+
+	return (
+		<div className="space-y-3">
+			{/* Parent selector */}
+			<div className="flex items-center gap-2">
+				<span className="shrink-0 font-medium text-[11px] text-stone-500">
+					Depends on
+				</span>
+				<Select
+					value={param.conditionalOn ?? ""}
+					onChange={(e) =>
+						onPatch({
+							conditionalOn: e.target.value || undefined,
+							conditionalBranches: [],
+						})
+					}
+					className="flex-1 rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-[12px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+				>
+					<option value="">— select a parameter —</option>
+					{allParams.map((p) => (
+						<option key={p.id} value={p.name}>
+							{p.label || p.name} ({p.name})
+						</option>
+					))}
+				</Select>
+			</div>
+
+			{/* Branch list */}
+			{param.conditionalOn && (
+				<div className="space-y-2">
+					{branches.map((branch, i) => {
+						const draft = drafts[i] ?? makeDraft(branch);
+						const sqlDirty =
+							draft.sql.trim() !== "" &&
+							branch.optionsQuery !== draft.sql.trim();
+						return (
+							<div
+								key={i}
+								className="space-y-2 rounded-lg border border-stone-200 bg-stone-50 p-3"
+							>
+								{/* Branch header: whenValue + remove */}
+								<div className="flex items-center gap-2">
+									<span className="shrink-0 font-medium text-[11px] text-stone-500">
+										When{" "}
+										<span className="font-mono text-indigo-600">
+											{parentParam?.label ||
+												param.conditionalOn}
+										</span>{" "}
+										=
+									</span>
+									<Input
+										value={branch.whenValue}
+										onChange={(e) =>
+											patchBranch(i, {
+												whenValue: e.target.value,
+											})
+										}
+										placeholder="exact value"
+										className="min-w-0 flex-1 rounded-md border border-stone-200 bg-white px-2 py-1 text-[12px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+									/>
+									<button
+										type="button"
+										onClick={() => removeBranch(i)}
+										className="shrink-0 text-stone-400 hover:text-red-500"
+										title="Remove branch"
+									>
+										<X className="h-3.5 w-3.5" />
+									</button>
+								</div>
+
+								{/* Source type toggle */}
+								<div className="flex items-center gap-1.5">
+									<span className="text-[11px] text-stone-400">
+										Options from:
+									</span>
+									<div className="inline-flex items-center gap-0.5 rounded-md bg-stone-100 p-0.5">
+										{(["sql", "static"] as const).map(
+											(t) => (
+												<button
+													key={t}
+													type="button"
+													onClick={() =>
+														setDraft(i, {
+															sourceType: t,
+														})
+													}
+													className={`rounded px-2 py-0.5 font-medium text-[11px] transition-colors ${
+														draft.sourceType === t
+															? "bg-white text-stone-800 shadow-sm"
+															: "text-stone-500 hover:text-stone-700"
+													}`}
+												>
+													{t === "sql"
+														? "SQL query"
+														: "Static list"}
+												</button>
+											),
+										)}
+									</div>
+								</div>
+
+								{/* SQL source */}
+								{draft.sourceType === "sql" && (
+									<div className="space-y-1.5">
+										<div className="flex flex-col gap-1.5 sm:flex-row">
+											{databases &&
+												databases.length > 0 && (
+													<Select
+														value={
+															branch.optionsDatabaseId ??
+															databaseId ??
+															""
+														}
+														onChange={(e) =>
+															patchBranch(i, {
+																optionsDatabaseId:
+																	e.target
+																		.value,
+															})
+														}
+														className="rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-[12px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 sm:w-44"
+													>
+														<option value="">
+															{databaseId
+																? "Same as visualization"
+																: "Select a database…"}
+														</option>
+														{databases.map((d) => (
+															<option
+																key={d.id}
+																value={d.id}
+															>
+																{d.label}
+															</option>
+														))}
+													</Select>
+												)}
+											<Input
+												value={draft.sql}
+												onChange={(e) =>
+													setDraft(i, {
+														sql: e.target.value,
+													})
+												}
+												placeholder={`SELECT DISTINCT name FROM table WHERE type = '{{${param.conditionalOn}}}'`}
+												className="min-w-0 flex-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 font-mono text-[12px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+											/>
+											<button
+												type="button"
+												onClick={() =>
+													void loadBranchOptions(i)
+												}
+												disabled={
+													draft.loading ||
+													!draft.sql.trim()
+												}
+												className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 font-semibold text-[12px] text-white hover:bg-indigo-700 disabled:opacity-40"
+											>
+												{draft.loading ? (
+													<Loader2 className="h-3.5 w-3.5 animate-spin" />
+												) : (
+													<Database className="h-3.5 w-3.5" />
+												)}{" "}
+												Load
+											</button>
+										</div>
+										{draft.error && (
+											<p className="text-[12px] text-red-500">
+												{draft.error}
+											</p>
+										)}
+										{!draft.error && sqlDirty && (
+											<p className="text-[11px] text-amber-500">
+												Click Load to save.
+											</p>
+										)}
+										{!draft.error &&
+											!sqlDirty &&
+											draft.preview && (
+												<p className="text-[12px] text-stone-500">
+													{draft.preview.length}{" "}
+													option
+													{draft.preview.length !== 1
+														? "s"
+														: ""}{" "}
+													loaded
+													{draft.preview.length
+														? `: ${draft.preview.slice(0, 5).join(", ")}${draft.preview.length > 5 ? "…" : ""}`
+														: ""}
+												</p>
+											)}
+										{!draft.error &&
+											!sqlDirty &&
+											!draft.preview &&
+											branch.optionsQuery && (
+												<p className="text-[12px] text-emerald-600">
+													Saved — options load at
+													runtime.
+												</p>
+											)}
+									</div>
+								)}
+
+								{/* Static source */}
+								{draft.sourceType === "static" && (
+									<div className="space-y-1.5">
+										<div className="flex gap-1.5">
+											<Input
+												value={draft.manualInput}
+												onChange={(e) =>
+													setDraft(i, {
+														manualInput:
+															e.target.value,
+													})
+												}
+												onKeyDown={(e) => {
+													if (e.key !== "Enter")
+														return;
+													e.preventDefault();
+													const v =
+														draft.manualInput.trim();
+													if (
+														!v ||
+														(
+															branch.options ?? []
+														).includes(v)
+													) {
+														setDraft(i, {
+															manualInput: "",
+														});
+														return;
+													}
+													patchBranch(i, {
+														options: [
+															...(branch.options ??
+																[]),
+															v,
+														],
+													});
+													setDraft(i, {
+														manualInput: "",
+													});
+												}}
+												placeholder="Type a value, press Enter"
+												className="min-w-0 flex-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-[12px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+											/>
+											<button
+												type="button"
+												disabled={
+													!draft.manualInput.trim()
+												}
+												onClick={() => {
+													const v =
+														draft.manualInput.trim();
+													if (
+														!v ||
+														(
+															branch.options ?? []
+														).includes(v)
+													) {
+														setDraft(i, {
+															manualInput: "",
+														});
+														return;
+													}
+													patchBranch(i, {
+														options: [
+															...(branch.options ??
+																[]),
+															v,
+														],
+													});
+													setDraft(i, {
+														manualInput: "",
+													});
+												}}
+												className="shrink-0 rounded-lg border border-stone-200 px-3 font-semibold text-[12px] text-stone-600 hover:bg-stone-50 disabled:opacity-40"
+											>
+												Add
+											</button>
+										</div>
+										{(branch.options ?? []).length > 0 && (
+											<div className="flex flex-wrap gap-1.5">
+												{(branch.options ?? []).map(
+													(o) => (
+														<span
+															key={o}
+															className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-white px-2 py-0.5 text-[12px] text-stone-700"
+														>
+															{o}
+															<button
+																type="button"
+																onClick={() =>
+																	patchBranch(
+																		i,
+																		{
+																			options:
+																				(
+																					branch.options ??
+																					[]
+																				).filter(
+																					(
+																						x,
+																					) =>
+																						x !==
+																						o,
+																				),
+																		},
+																	)
+																}
+																className="text-stone-400 hover:text-red-500"
+															>
+																<X className="h-3 w-3" />
+															</button>
+														</span>
+													),
+												)}
+											</div>
+										)}
+									</div>
+								)}
+							</div>
+						);
+					})}
+
+					<button
+						type="button"
+						onClick={addBranch}
+						className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-stone-300 border-dashed py-1.5 font-medium text-[12px] text-stone-500 transition-colors hover:border-indigo-300 hover:text-indigo-600"
+					>
+						<Plus className="h-3.5 w-3.5" /> Add branch
+					</button>
+				</div>
+			)}
+		</div>
+	);
+}
+
+// ── DropdownConfig ────────────────────────────────────────────────────────────
+
 /**
  * Dropdown options editor: pull options from a SQL query (first column) and/or
- * add manual options. At view time the two lists are merged.
+ * add manual options. At view time the two lists are merged. Optionally configure
+ * conditional branches so a parent param's value drives this param's option source.
  */
 function DropdownConfig({
 	param,
+	allParams,
 	databaseId,
 	databases,
 	runPixel,
@@ -576,6 +1047,7 @@ function DropdownConfig({
 	onPreviewChange,
 }: {
 	param: QueryParam;
+	allParams: QueryParam[];
 	databaseId?: string;
 	databases?: { id: string; label: string }[];
 	runPixel?: (pixel: string) => Promise<any>;
@@ -587,6 +1059,10 @@ function DropdownConfig({
 	const [manual, setManual] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [err, setErr] = useState<string | null>(null);
+
+	const handleBranchSqlLoad = (opts: string[]) => {
+		onPreviewChange(opts.length > 0 ? opts : null);
+	};
 
 	const manualOptions = param.options ?? [];
 
@@ -600,7 +1076,7 @@ function DropdownConfig({
 		setErr(null);
 		try {
 			const out = await runPixel(
-				`Database(database=["${db}"]) | Query("${escapeSqlForPixel(sql.trim())}") | Collect(1000);`,
+				`Database(database=["${db}"]) | Query("${escapeSqlForPixel(sql.trim())}") | Collect(-1);`,
 			);
 			const vals = firstColumn(out);
 			onPreviewChange(vals);
@@ -620,7 +1096,8 @@ function DropdownConfig({
 			param.optionsQuery &&
 			(param.optionsDatabaseId || databaseId) &&
 			runPixel &&
-			!loading
+			!loading &&
+			!param.conditionalOn
 		) {
 			void loadOptions();
 		}
@@ -641,131 +1118,180 @@ function DropdownConfig({
 
 	return (
 		<div className="space-y-3 rounded-lg border border-stone-200 bg-white p-3">
-			{/* SQL-sourced options */}
-			<div className="space-y-1.5">
-				<div className="flex items-center gap-1.5 font-medium text-[11px] text-stone-500">
-					<Database className="h-3.5 w-3.5" /> Options from a query
-					(first column)
-				</div>
-				<div className="flex flex-col gap-1.5 sm:flex-row">
-					{databases && databases.length > 0 && (
-						<Select
-							value={param.optionsDatabaseId ?? databaseId ?? ""}
-							onChange={(e) => {
-								onPatch({ optionsDatabaseId: e.target.value });
-								onPreviewChange(null);
-								setErr(null);
-							}}
-							aria-label="Database to query for options"
-							className="rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-[12px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 sm:w-44"
-						>
-							<option value="">
-								{databaseId
-									? "Same as visualization"
-									: "Select a database…"}
-							</option>
-							{databases.map((d) => (
-								<option key={d.id} value={d.id}>
-									{d.label}
-								</option>
-							))}
-						</Select>
-					)}
-					<Input
-						value={sql}
-						onChange={(e) => setSql(e.target.value)}
-						placeholder="SELECT DISTINCT region FROM sales ORDER BY region"
-						className="min-w-0 flex-1 rounded-lg border border-stone-200 px-2.5 py-1.5 font-mono text-[12px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-					/>
-					<button
-						type="button"
-						onClick={() => void loadOptions()}
-						disabled={loading || !sql.trim()}
-						className="inline-flex shrink-0 items-center justify-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 font-semibold text-[12px] text-white hover:bg-indigo-700 disabled:opacity-40"
-					>
-						{loading ? (
-							<Loader2 className="h-3.5 w-3.5 animate-spin" />
-						) : (
-							<Database className="h-3.5 w-3.5" />
-						)}{" "}
-						Load
-					</button>
-				</div>
-				{err && <p className="text-[12px] text-red-500">{err}</p>}
-				{!err && dirty && (
-					<p className="text-[11px] text-amber-500">
-						Click Load to save these options.
-					</p>
-				)}
-				{!err && !dirty && preview && (
-					<p className="text-[12px] text-stone-500">
-						{preview.length} option{preview.length !== 1 ? "s" : ""}{" "}
-						loaded
-						{preview.length
-							? `: ${preview.slice(0, 6).join(", ")}${preview.length > 6 ? "…" : ""}`
-							: ""}
-					</p>
-				)}
-				{!err && !dirty && !preview && param.optionsQuery && (
-					<p className="text-[12px] text-emerald-600">
-						Saved — options load when the dashboard runs.
-					</p>
-				)}
-			</div>
-
-			{/* Manual options (merged with SQL ones) */}
-			<div className="space-y-1.5 border-stone-100 border-t pt-3">
-				<div className="font-medium text-[11px] text-stone-500">
-					Or add options manually
-				</div>
-				<div className="flex gap-1.5">
-					<Input
-						value={manual}
-						onChange={(e) => setManual(e.target.value)}
-						onKeyDown={(e) => {
-							if (e.key === "Enter") {
-								e.preventDefault();
-								addManual();
-							}
-						}}
-						placeholder="Type a value, press Enter"
-						className="min-w-0 flex-1 rounded-lg border border-stone-200 px-2.5 py-1.5 text-[12px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-					/>
-					<button
-						type="button"
-						onClick={addManual}
-						disabled={!manual.trim()}
-						className="shrink-0 rounded-lg border border-stone-200 px-3 font-semibold text-[12px] text-stone-600 hover:bg-stone-50 disabled:opacity-40"
-					>
-						Add
-					</button>
-				</div>
-				{manualOptions.length > 0 && (
-					<div className="flex flex-wrap gap-1.5 pt-0.5">
-						{manualOptions.map((o) => (
-							<span
-								key={o}
-								className="inline-flex items-center gap-1 rounded-md bg-stone-100 px-2 py-0.5 text-[12px] text-stone-700"
-							>
-								{o}
-								<button
-									type="button"
-									onClick={() =>
-										onPatch({
-											options: manualOptions.filter(
-												(x) => x !== o,
-											),
-										})
-									}
-									className="text-stone-400 hover:text-red-500"
-								>
-									<X className="h-3 w-3" />
-								</button>
-							</span>
-						))}
+			{/* SQL-sourced options (hidden when IF conditions active) */}
+			{!param.conditionalOn && (
+				<div className="space-y-1.5">
+					<div className="flex items-center gap-1.5 font-medium text-[11px] text-stone-500">
+						<Database className="h-3.5 w-3.5" /> Options from a
+						query (first column)
 					</div>
-				)}
-			</div>
+					<div className="flex flex-col gap-1.5 sm:flex-row">
+						{databases && databases.length > 0 && (
+							<Select
+								value={
+									param.optionsDatabaseId ?? databaseId ?? ""
+								}
+								onChange={(e) => {
+									onPatch({
+										optionsDatabaseId: e.target.value,
+									});
+									onPreviewChange(null);
+									setErr(null);
+								}}
+								aria-label="Database to query for options"
+								className="rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-[12px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 sm:w-44"
+							>
+								<option value="">
+									{databaseId
+										? "Same as visualization"
+										: "Select a database…"}
+								</option>
+								{databases.map((d) => (
+									<option key={d.id} value={d.id}>
+										{d.label}
+									</option>
+								))}
+							</Select>
+						)}
+						<Input
+							value={sql}
+							onChange={(e) => setSql(e.target.value)}
+							placeholder="SELECT DISTINCT region FROM sales ORDER BY region"
+							className="min-w-0 flex-1 rounded-lg border border-stone-200 px-2.5 py-1.5 font-mono text-[12px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+						/>
+						<button
+							type="button"
+							onClick={() => void loadOptions()}
+							disabled={loading || !sql.trim()}
+							className="inline-flex shrink-0 items-center justify-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 font-semibold text-[12px] text-white hover:bg-indigo-700 disabled:opacity-40"
+						>
+							{loading ? (
+								<Loader2 className="h-3.5 w-3.5 animate-spin" />
+							) : (
+								<Database className="h-3.5 w-3.5" />
+							)}{" "}
+							Load
+						</button>
+					</div>
+					{err && <p className="text-[12px] text-red-500">{err}</p>}
+					{!err && dirty && (
+						<p className="text-[11px] text-amber-500">
+							Click Load to save these options.
+						</p>
+					)}
+					{!err && !dirty && preview && (
+						<p className="text-[12px] text-stone-500">
+							{preview.length} option
+							{preview.length !== 1 ? "s" : ""} loaded
+							{preview.length
+								? `: ${preview.slice(0, 6).join(", ")}${preview.length > 6 ? "…" : ""}`
+								: ""}
+						</p>
+					)}
+					{!err && !dirty && !preview && param.optionsQuery && (
+						<p className="text-[12px] text-emerald-600">
+							Saved — options load when the dashboard runs.
+						</p>
+					)}
+				</div>
+			)}
+
+			{/* Manual options (hidden when IF conditions active) */}
+			{!param.conditionalOn && (
+				<div className="space-y-1.5 border-stone-100 border-t pt-3">
+					<div className="font-medium text-[11px] text-stone-500">
+						Or add options manually
+					</div>
+					<div className="flex gap-1.5">
+						<Input
+							value={manual}
+							onChange={(e) => setManual(e.target.value)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") {
+									e.preventDefault();
+									addManual();
+								}
+							}}
+							placeholder="Type a value, press Enter"
+							className="min-w-0 flex-1 rounded-lg border border-stone-200 px-2.5 py-1.5 text-[12px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+						/>
+						<button
+							type="button"
+							onClick={addManual}
+							disabled={!manual.trim()}
+							className="shrink-0 rounded-lg border border-stone-200 px-3 font-semibold text-[12px] text-stone-600 hover:bg-stone-50 disabled:opacity-40"
+						>
+							Add
+						</button>
+					</div>
+					{manualOptions.length > 0 && (
+						<div className="flex flex-wrap gap-1.5 pt-0.5">
+							{manualOptions.map((o) => (
+								<span
+									key={o}
+									className="inline-flex items-center gap-1 rounded-md bg-stone-100 px-2 py-0.5 text-[12px] text-stone-700"
+								>
+									{o}
+									<button
+										type="button"
+										onClick={() =>
+											onPatch({
+												options: manualOptions.filter(
+													(x) => x !== o,
+												),
+											})
+										}
+										className="text-stone-400 hover:text-red-500"
+									>
+										<X className="h-3 w-3" />
+									</button>
+								</span>
+							))}
+						</div>
+					)}
+				</div>
+			)}
+
+			{/* Conditional options — branches driven by another param's value */}
+			{allParams.length > 0 && (
+				<div className="space-y-2 border-stone-100 border-t pt-3">
+					<label className="flex cursor-pointer select-none items-center gap-2 font-medium text-[12px] text-stone-600">
+						<Checkbox
+							type="checkbox"
+							checked={!!param.conditionalOn}
+							onChange={(e) => {
+								if (e.target.checked) {
+									onPatch({
+										conditionalOn: allParams[0]?.name ?? "",
+										conditionalBranches: [],
+									});
+									onPreviewChange(null);
+								} else {
+									onPatch({
+										conditionalOn: undefined,
+										conditionalBranches: undefined,
+									});
+									onPreviewChange(null);
+								}
+							}}
+							className="h-4 w-4 rounded border-stone-300 text-indigo-600 focus:ring-indigo-500"
+						/>
+						<GitBranch className="h-3.5 w-3.5 text-stone-400" />
+						Options depend on another parameter (IF conditions)
+					</label>
+					{param.conditionalOn && (
+						<ConditionalConfig
+							param={param}
+							allParams={allParams}
+							databaseId={databaseId}
+							databases={databases}
+							runPixel={runPixel}
+							onPatch={onPatch}
+							onBranchSqlLoad={handleBranchSqlLoad}
+						/>
+					)}
+				</div>
+			)}
 		</div>
 	);
 }

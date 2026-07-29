@@ -237,6 +237,7 @@ const NO_AXIS_LABELS = new Set([
 	"bar",
 	"stackbar",
 	"line",
+	"area",
 	"sunburst",
 	"csvexport",
 	"filter",

@@ -4,8 +4,6 @@
  */
 
 import {
-	Area,
-	AreaChart,
 	CartesianGrid,
 	Legend,
 	PolarAngleAxis,
@@ -20,6 +18,7 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
+import { Area_Chart } from "@/components/visualizations/Area_Chart";
 import { Bar_Chart } from "@/components/visualizations/Bar_Chart";
 import { BoxPlotChart } from "@/components/visualizations/BoxPlotChart";
 import { BubbleChart } from "@/components/visualizations/BubbleChart";
@@ -122,7 +121,7 @@ export function ChartPreview({
 				<div className="min-h-0 flex-1">{chart}</div>
 			</div>
 		) : (
-			<>{chart}</>
+			chart
 		);
 
 	if (vt === "csvexport") {
@@ -340,77 +339,7 @@ export function ChartPreview({
 	}
 
 	if (vt === "area") {
-		return withTitle(
-			<ResponsiveContainer width="100%" height={height}>
-				<AreaChart data={data} margin={margin}>
-					<defs>
-						{yKeys.map((k, i) => (
-							<linearGradient
-								key={k}
-								id={`ag-${i}`}
-								x1="0"
-								y1="0"
-								x2="0"
-								y2="1"
-							>
-								<stop
-									offset="5%"
-									stopColor={PALETTE[i % PALETTE.length]}
-									stopOpacity={0.3}
-								/>
-								<stop
-									offset="95%"
-									stopColor={PALETTE[i % PALETTE.length]}
-									stopOpacity={0}
-								/>
-							</linearGradient>
-						))}
-					</defs>
-					<CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-					<XAxis
-						dataKey={xKey}
-						tick={{ fontSize: 11 }}
-						label={
-							config.xLabel
-								? {
-										value: config.xLabel,
-										position: "insideBottom",
-										offset: -4,
-										fontSize: 11,
-									}
-								: undefined
-						}
-					/>
-					<YAxis
-						tick={{ fontSize: 11 }}
-						label={
-							config.yLabel
-								? {
-										value: config.yLabel,
-										angle: -90,
-										position: "insideLeft",
-										fontSize: 11,
-									}
-								: undefined
-						}
-					/>
-					<Tooltip />
-					<Legend />
-					{yKeys.map((k, i) => (
-						<Area
-							key={k}
-							type="monotone"
-							dataKey={k}
-							isAnimationActive={false}
-							stroke={PALETTE[i % PALETTE.length]}
-							fill={`url(#ag-${i})`}
-							strokeWidth={2}
-							dot={false}
-						/>
-					))}
-				</AreaChart>
-			</ResponsiveContainer>,
-		);
+		return withTitle(<Area_Chart data={data} config={config as any} />);
 	}
 
 	if (vt === "line") {

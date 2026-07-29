@@ -6,7 +6,6 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	Download,
-	Loader2,
 	Radar as RadarIcon,
 	RefreshCw,
 	ScatterChart as ScatterChartIcon,
@@ -16,8 +15,6 @@ import {
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-	Area,
-	AreaChart,
 	CartesianGrid,
 	Legend,
 	PolarAngleAxis,
@@ -37,6 +34,7 @@ import { useInsight } from "@semoss/sdk-react";
 import { formatSqlList } from "@/components/ParamControl";
 import { PhiExportWarningModal } from "@/components/PhiExportWarningModal";
 import { useQueryRunner } from "@/components/QueryRunner";
+import { Area_Chart } from "@/components/visualizations/Area_Chart";
 import { Bar_Chart } from "@/components/visualizations/Bar_Chart";
 import { BoxPlotChart } from "@/components/visualizations/BoxPlotChart";
 import { BubbleChart } from "@/components/visualizations/BubbleChart";
@@ -65,18 +63,17 @@ import {
 	useFilterStore,
 } from "@/lib/dashboardFilters";
 import { escapeSqlForPixel } from "@/lib/pixel";
-import {
-	buildQueryPixel,
-	isDataProduct,
-	lastPixelOutput,
-	sourcesSignature,
-} from "@/lib/queryPixel";
 import type { QuerySource } from "@/lib/resolveQuery";
 import { aggregateTableRows } from "@/lib/tableAggregate";
 import { applyVizFilter } from "@/lib/vizFilter";
 import { contentSizeStyles, hasContentSize } from "@/lib/vizSize";
 import { applyVizSort } from "@/lib/vizSort";
-import type { Visualization } from "@/types/dashboard";
+import type {
+	AreaStyling,
+	LineStyling,
+	StackBarStyling,
+	Visualization,
+} from "@/types/dashboard";
 
 // ── Chart palette ─────────────────────────────────────────────────────────────
 export const CHART_COLORS = [
@@ -91,7 +88,7 @@ export const CHART_COLORS = [
 ];
 
 // ── PERF DIAGNOSTIC flag (temporary) ──────────────────────────────────────────
-const PERF = true;
+// const PERF = true;
 
 // ── Custom tooltip ────────────────────────────────────────────────────────────
 function ChartTooltip({
@@ -190,7 +187,7 @@ const GRID_STYLE = { stroke: "#f1f5f9", strokeDasharray: "0" };
 function downloadCsv(data: any[], filename: string) {
 	if (!data.length) return;
 	const cols = Object.keys(data[0]);
-	const escape = (v: any) => {
+	const escapeCsv = (v: any) => {
 		const s = v != null ? String(v) : "";
 		return s.includes(",") || s.includes('"') || s.includes("\n")
 			? `"${s.replace(/"/g, '""')}"`
@@ -198,7 +195,7 @@ function downloadCsv(data: any[], filename: string) {
 	};
 	const csv = [
 		cols.join(","),
-		...data.map((row) => cols.map((c) => escape(row[c])).join(",")),
+		...data.map((row) => cols.map((c) => escapeCsv(row[c])).join(",")),
 	].join("\n");
 	const a = Object.assign(document.createElement("a"), {
 		href: URL.createObjectURL(
@@ -242,6 +239,18 @@ interface Props {
 	 * so the editor can persist the selection as the default for view mode.
 	 */
 	onFilterDefaultValuesChange?: (vizId: string, values: string[]) => void;
+	/**
+	 * Called when the stackbar chart requests a styling update (e.g. save-zoom on brush release).
+	 */
+	onStackbarStylingChange?: (updates: Partial<StackBarStyling>) => void;
+	/**
+	 * Called when the area chart requests a styling update (e.g. save-zoom on brush release).
+	 */
+	onAreaStylingChange?: (updates: Partial<AreaStyling>) => void;
+	/**
+	 * Called when the line chart requests a styling update (e.g. save-zoom on brush release).
+	 */
+	onLineStylingChange?: (updates: Partial<LineStyling>) => void;
 }
 
 // Facet navigation bar
@@ -287,7 +296,6 @@ function FacetSelect({
 					<div className="-translate-x-1/2 absolute bottom-full left-1/2 z-40 mb-1.5 w-52 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
 						<div className="border-slate-100 border-b p-2">
 							<input
-								autoFocus
 								value={q}
 								onChange={(e) => setQ(e.target.value)}
 								placeholder="Search…"
@@ -404,24 +412,17 @@ export function DashboardVisualization({
 	hasParamSheet = false,
 	loadAfterParams = false,
 	onFilterDefaultValuesChange,
+	onStackbarStylingChange,
+	onAreaStylingChange,
+	onLineStylingChange,
 }: Props) {
-	// ── PERF DIAGNOSTIC (temporary) ───────────────────────────────────────────
-	// Counts how many times THIS viz re-renders. If switching sheets logs a render
-	// for every viz across ALL sheets (not just the active one), the slowness is
-	// "all kept-alive charts re-render on switch" → needs memoization.
-	const __renderCount = useRef(0);
-	__renderCount.current += 1;
-	if (PERF)
-		console.log(
-			`[perf] render #${__renderCount.current}`,
-			visualization.title || visualization.id,
-		);
-
 	const { actions } = useInsight();
 	const sharedRun = useQueryRunner();
 	// Effective data source: the resolved shared query when provided, else the
 	// viz's own embedded query/database/parameters (legacy / not-yet-migrated).
 	const src: QuerySource = dataSource ?? visualization;
+	// Use the shared query's name when available,
+	// falling back to the visualization title for embedded/legacy queries.
 	const [rawData, setRawData] = useState<any[]>(() => preloadedData ?? []);
 	const [showPhiModal, setShowPhiModal] = useState(false);
 	// Cross-frame filters targeting this visualization (re-renders only when its
@@ -545,6 +546,14 @@ export function DashboardVisualization({
 			p.optionsDatabaseId,
 		]),
 	);
+	// True once the SQL options fetch has settled (success or error). The data query
+	// effect waits for this before firing when a multiselect param needs options to
+	// expand an empty "All" value — prevents IN () in the generated SQL.
+	const [paramOptionsReady, setParamOptionsReady] = useState(
+		!(src.parameters ?? []).some(
+			(p) => p.inputType === "multiselect" && p.optionsQuery,
+		),
+	);
 	useEffect(() => {
 		const toFetch = (src.parameters ?? []).filter(
 			(p) =>
@@ -552,7 +561,12 @@ export function DashboardVisualization({
 				p.optionsQuery &&
 				(p.optionsDatabaseId || src.databaseId),
 		);
-		if (!toFetch.length) return;
+
+		if (!toFetch.length) {
+			setParamOptionsReady(true);
+			return;
+		}
+		setParamOptionsReady(false);
 		let cancelled = false;
 		void (async () => {
 			const next: Record<string, string[]> = {};
@@ -563,18 +577,14 @@ export function DashboardVisualization({
 					if (sharedRun) {
 						// Route through the shared cache so charts that reuse the same query
 						// (and thus the same dropdown options) fetch the options list once.
-						const r = await sharedRun(
-							db,
-							p.optionsQuery ?? "",
-							1000,
-						);
+						const r = await sharedRun(db, p.optionsQuery ?? "", -1);
 						outputRaw = r.raw;
 					} else {
 						const q = escapeSqlForPixel(p.optionsQuery ?? "");
 						const { pixelReturn } = await actions.run<
 							[{ output: any; operationType?: string[] }]
 						>(
-							`Database(database=["${db}"]) | Query("${q}") | Collect(1000);`,
+							`Database(database=["${db}"]) | Query("${q}") | Collect(-1);`,
 						);
 						const pr = pixelReturn[0];
 						if (
@@ -585,12 +595,18 @@ export function DashboardVisualization({
 						outputRaw = pr.output;
 					}
 					next[p.id] = firstColumnValues(outputRaw);
-				} catch {
-					/* leave options empty; manual options still apply */
+				} catch (err) {
+					console.warn(
+						`[DashViz] options fetch failed for param "${p.name}"`,
+						err,
+					);
 				}
 			}
-			if (!cancelled && Object.keys(next).length)
-				setParamOptions((prev) => ({ ...prev, ...next }));
+			if (!cancelled) {
+				if (Object.keys(next).length)
+					setParamOptions((prev) => ({ ...prev, ...next }));
+				setParamOptionsReady(true);
+			}
 		})();
 		return () => {
 			cancelled = true;
@@ -648,6 +664,7 @@ export function DashboardVisualization({
 			setWaiting(true);
 			return;
 		}
+
 		setWaiting(false);
 		// runKey is folded into the shared-cache version, so a re-run (bumped runKey)
 		// is already a fresh fetch — and every chart bound to the same query collapses
@@ -657,10 +674,10 @@ export function DashboardVisualization({
 	}, [
 		src.query,
 		src.databaseId,
-		sourcesSignature(src),
 		runKey,
 		visualization.visualizationType,
 		loadAfterParams,
+		paramOptionsReady,
 	]);
 
 	// Tables fetch ONE display page per Collect (next pages continue the task iterator).
@@ -671,10 +688,7 @@ export function DashboardVisualization({
 	const requestedPageRows =
 		typeof pageSize === "number" && pageSize > 0 ? pageSize : 50;
 	const tablePageRows = Math.min(requestedPageRows, MAX_DB_PAGE); // rows fetched per Collect
-	// Data products (multi-source frame merges) can't use the DB task-paging iterator,
-	// so they always collect all rows.
-	const dp = isDataProduct(src);
-	const batchSize = isTablePaged && !dp ? tablePageRows : -1;
+	const batchSize = isTablePaged ? tablePageRows : -1;
 
 	const interpolateQuery = (q: string) => {
 		let r = q;
@@ -687,11 +701,11 @@ export function DashboardVisualization({
 		// IN ({{param}}) matches all rows instead of generating invalid IN ().
 		src.parameters?.forEach((p) => {
 			if (p.inputType !== "multiselect") return;
-			if ((m[p.name] ?? "").trim()) return; // already has selections
-			const allOpts = [
-				...(paramOptions[p.id] ?? []),
-				...(p.options ?? []),
-			];
+			const currentVal = (m[p.name] ?? "").trim();
+			const sqlOpts = paramOptions[p.id] ?? [];
+			const staticOpts = p.options ?? [];
+			const allOpts = [...sqlOpts, ...staticOpts];
+			if (currentVal) return; // already has selections
 			if (allOpts.length > 0) m[p.name] = formatSqlList(allOpts);
 		});
 		Object.entries(m).forEach(([k, v]) => {
@@ -745,21 +759,10 @@ export function DashboardVisualization({
 		setDbHasMore(false);
 		try {
 			const q = interpolateQuery(src.query);
-			// Data product: interpolate each leg's SQL with the same param values.
-			const runSource = dp
-				? {
-						sources: (src.sources ?? []).map((l) => ({
-							...l,
-							query: interpolateQuery(l.query),
-						})),
-						joins: src.joins,
-					}
-				: undefined;
 			// TABLES: run the EXACT query and Collect the first page, capturing the
 			// task id + numCollected so we can page forward via the iterator. We hit
 			// the SDK directly (not the shared cache) because the task is per-card.
-			// (Data products skip paging — they always collect all merged rows.)
-			if (isTablePaged && !dp) {
+			if (isTablePaged) {
 				const n = tablePageRows; // one page (already capped at MAX_DB_PAGE)
 				const pixel = `Database(database=["${src.databaseId}"]) | Query("${escapeSqlForPixel(q)}") | Collect(${n});`;
 				const { pixelReturn } =
@@ -804,28 +807,24 @@ export function DashboardVisualization({
 					q,
 					batchSize,
 					version,
-					runSource,
 				);
 				headers = r.headers;
 				values = r.values;
 				raw = r.raw;
 			} else {
-				const pixel = buildQueryPixel(
-					{
-						databaseId: src.databaseId,
-						query: q,
-						sources: runSource?.sources,
-						joins: runSource?.joins,
-					},
-					{ collect: batchSize },
-				);
+				const pixel = `Database(database=["${src.databaseId}"]) | Query("${escapeSqlForPixel(q)}") | Collect(${batchSize});`;
 				const { pixelReturn } =
 					await actions.run<
 						[{ output: any; operationType?: string[] }]
 					>(pixel);
-				const { output, error } = lastPixelOutput(pixelReturn);
-				if (error) throw new Error(error);
-				raw = output;
+				const pr = pixelReturn[0];
+				if (
+					Array.isArray(pr.operationType) &&
+					pr.operationType.includes("ERROR")
+				) {
+					throw new Error(String(pr.output ?? "Query failed."));
+				}
+				raw = pr.output as any;
 				values = raw?.data?.values ?? raw?.values ?? raw?.data ?? null;
 				headers = raw?.data?.headers ?? raw?.headers ?? null;
 			}
@@ -957,7 +956,9 @@ export function DashboardVisualization({
 		}
 
 		// For numeric aggregations, filter to valid numbers
-		const numVals = values.map((v) => Number(v)).filter((v) => !isNaN(v));
+		const numVals = values
+			.map((v) => Number(v))
+			.filter((v) => !Number.isNaN(v));
 		if (!numVals.length) return 0;
 
 		switch (aggType) {
@@ -1091,7 +1092,27 @@ export function DashboardVisualization({
 		if (loading)
 			return (
 				<div className="flex h-full flex-col items-center justify-center py-8">
-					<Loader2 className="mb-3 h-7 w-7 animate-spin text-blue-500" />
+					{/* Wave bar animation */}
+					<style>{`@keyframes query-wave{0%,100%{transform:scaleY(.2)}50%{transform:scaleY(1)}}`}</style>
+					<div
+						className="flex items-center gap-[3px]"
+						style={{ height: "2.25rem" }}
+					>
+						{[0, 1, 2, 3, 4].map((i) => (
+							<div
+								key={i}
+								className="w-1.5 rounded-full"
+								style={{
+									height: "100%",
+									backgroundColor: "#32b4f5",
+									transformOrigin: "center",
+									animation:
+										"query-wave 1s ease-in-out infinite",
+									animationDelay: `${i * 0.15}s`,
+								}}
+							/>
+						))}
+					</div>
 					<p className="text-slate-400 text-sm">Loading data…</p>
 				</div>
 			);
@@ -1301,7 +1322,13 @@ export function DashboardVisualization({
 
 		// Bar
 		if (vt === "bar") {
-			return <Bar_Chart data={facetData} config={visualization.config} />;
+			return (
+				<Bar_Chart
+					data={facetData}
+					config={visualization.config}
+					onStylingChange={onStackbarStylingChange}
+				/>
+			);
 		}
 
 		// Stacked bar
@@ -1327,6 +1354,7 @@ export function DashboardVisualization({
 					data={facetData}
 					config={visualization.config}
 					stacked
+					onStylingChange={onStackbarStylingChange}
 				/>
 			);
 		}
@@ -1334,7 +1362,11 @@ export function DashboardVisualization({
 		// Line
 		if (vt === "line") {
 			return (
-				<Line_Chart data={facetData} config={visualization.config} />
+				<Line_Chart
+					data={facetData}
+					config={visualization.config}
+					onStylingChange={onLineStylingChange}
+				/>
 			);
 		}
 
@@ -1356,84 +1388,13 @@ export function DashboardVisualization({
 				);
 			}
 			return (
-				<ResponsiveContainer width="100%" height={chartHeight}>
-					<AreaChart
-						data={chartData}
-						margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
-					>
-						<defs>
-							{yKeys.map((_, i) => (
-								<linearGradient
-									key={i}
-									id={`grad-${i}`}
-									x1="0"
-									y1="0"
-									x2="0"
-									y2="1"
-								>
-									<stop
-										offset="5%"
-										stopColor={
-											CHART_COLORS[
-												i % CHART_COLORS.length
-											]
-										}
-										stopOpacity={0.15}
-									/>
-									<stop
-										offset="95%"
-										stopColor={
-											CHART_COLORS[
-												i % CHART_COLORS.length
-											]
-										}
-										stopOpacity={0}
-									/>
-								</linearGradient>
-							))}
-						</defs>
-						<CartesianGrid {...GRID_STYLE} vertical={false} />
-						<XAxis
-							dataKey={xKey}
-							tick={AXIS_STYLE}
-							axisLine={false}
-							tickLine={false}
-						/>
-						<YAxis
-							tick={AXIS_STYLE}
-							axisLine={false}
-							tickLine={false}
-							width={48}
-						/>
-						<Tooltip
-							content={
-								<ChartTooltip config={visualization.config} />
-							}
-						/>
-						{yKeys.length > 1 && (
-							<Legend
-								wrapperStyle={{
-									fontSize: 11,
-									color: "#64748b",
-									paddingTop: 8,
-								}}
-							/>
-						)}
-						{yKeys.map((k, i) => (
-							<Area
-								key={k}
-								type="monotone"
-								dataKey={k}
-								isAnimationActive={false}
-								stroke={CHART_COLORS[i % CHART_COLORS.length]}
-								strokeWidth={2}
-								fill={`url(#grad-${i})`}
-								dot={false}
-								activeDot={{ r: 5, strokeWidth: 0 }}
-							/>
-						))}
-					</AreaChart>
-				</ResponsiveContainer>
+				<div style={{ height: chartHeight, width: "100%" }}>
+					<Area_Chart
+						data={facetData}
+						config={visualization.config}
+						onStylingChange={onAreaStylingChange}
+					/>
+				</div>
 			);
 		}
 
@@ -2122,9 +2083,9 @@ export function DashboardVisualization({
 								className={
 									fillContainer ? "min-h-0 flex-1" : ""
 								}
-								style={styles!.outer}
+								style={styles?.outer}
 							>
-								<div style={styles!.inner}>{content}</div>
+								<div style={styles?.inner}>{content}</div>
 							</div>
 						) : (
 							<div

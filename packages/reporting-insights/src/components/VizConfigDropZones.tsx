@@ -6,8 +6,6 @@ import {
 } from "@hello-pangea/dnd";
 import { GripVertical, Hash, Plus, Search, Type, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Popover, PopoverContent, PopoverTrigger } from "@semoss/ui/next";
-import { Input } from "@/components/ui";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { aggOptionsForType, normalizeDataType } from "@/lib/tableAggregate";
 import type {
@@ -405,11 +403,30 @@ const DROP_ZONES_CONFIG: Record<VisualizationType, DropZone[]> = {
 	],
 	polarbar: [
 		{
+			id: "xAxis",
+			label: "Label (Required)",
+			multiColumn: false,
+			placeholder: "Drag one categorical column",
+		},
+		{
 			id: "yAxis",
 			label: "Values (Required)",
 			multiColumn: true,
 			aggregation: true,
 			placeholder: "Drag one or more numeric columns",
+		},
+		{
+			id: "tooltip",
+			label: "Tooltip (Optional)",
+			multiColumn: true,
+			aggregation: true,
+			placeholder: "Drag one or more dimensions",
+		},
+		{
+			id: "facet",
+			label: "Facet (Optional)",
+			multiColumn: false,
+			placeholder: "Drag a column to slice data by its values",
 		},
 	],
 	cluster: [
@@ -848,7 +865,7 @@ export function VizConfigDropZones({
 							<div className="flex-shrink-0 border-stone-200 border-b p-2">
 								<div className="relative">
 									<Search className="-translate-y-1/2 absolute top-1/2 left-2 h-3.5 w-3.5 text-stone-400" />
-									<Input
+									<input
 										className="w-full rounded border border-stone-200 py-1.5 pr-2 pl-8 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
 										placeholder="Search columns..."
 										value={search}
@@ -950,46 +967,31 @@ export function VizConfigDropZones({
 														<div
 															ref={p.innerRef}
 															{...p.draggableProps}
-															className={`flex flex-col gap-1 rounded-md border px-2 py-1.5 transition-all ${
+															className={`flex items-center gap-1.5 rounded-md border px-2 py-1.5 transition-all ${
 																snap.isDragging
 																	? "border-indigo-400 bg-indigo-50 shadow-lg"
 																	: "border-stone-200 bg-white hover:border-stone-300"
 															}`}
 														>
-															{/* Row 1: name + remove (name always visible) */}
-															<div className="flex items-center gap-1.5">
-																<span
-																	{...p.dragHandleProps}
-																	className="flex-shrink-0 cursor-grab text-stone-300 hover:text-stone-500"
-																	title="Drag to reorder (or back to Available)"
-																>
-																	<GripVertical className="h-4 w-4" />
-																</span>
-																<TypeIcon
-																	dt={
-																		col.dataType
-																	}
-																/>
-																<span
-																	className="min-w-0 flex-1 truncate text-sm text-stone-700"
-																	title={name}
-																>
-																	{name}
-																</span>
-																<button
-																	onClick={() =>
-																		removeOne(
-																			name,
-																		)
-																	}
-																	className="flex-shrink-0 p-0.5 text-stone-400 hover:text-red-500"
-																	title="Remove from table"
-																>
-																	<X className="h-4 w-4" />
-																</button>
-															</div>
-															{/* Row 2: aggregation */}
-															<div className="pl-[22px]">
+															<span
+																{...p.dragHandleProps}
+																className="flex-shrink-0 cursor-grab text-stone-300 hover:text-stone-500"
+																title="Drag to reorder (or back to Available)"
+															>
+																<GripVertical className="h-4 w-4" />
+															</span>
+															<TypeIcon
+																dt={
+																	col.dataType
+																}
+															/>
+															<span
+																className="min-w-0 flex-1 truncate text-sm text-stone-700"
+																title={name}
+															>
+																{name}
+															</span>
+															<div className="w-32 flex-shrink-0">
 																<SearchableSelect
 																	ariaLabel="Aggregation"
 																	value={role}
@@ -1011,9 +1013,20 @@ export function VizConfigDropZones({
 																			label: o.label,
 																		}),
 																	)}
-																	className="flex w-full items-center justify-between gap-1 rounded border border-stone-200 bg-white px-1.5 py-1 text-[11px] text-stone-600 hover:border-stone-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+																	className="flex w-full items-center justify-between gap-1 rounded border border-stone-200 bg-white px-1.5 py-0.5 text-[11px] text-stone-600 hover:border-stone-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
 																/>
 															</div>
+															<button
+																onClick={() =>
+																	removeOne(
+																		name,
+																	)
+																}
+																className="flex-shrink-0 p-0.5 text-stone-400 hover:text-red-500"
+																title="Remove from table"
+															>
+																<X className="h-4 w-4" />
+															</button>
 														</div>
 													)}
 												</Draggable>
@@ -1055,7 +1068,7 @@ export function VizConfigDropZones({
 					<div className="mb-3 px-2">
 						<div className="relative">
 							<Search className="-translate-y-1/2 absolute top-1/2 left-2 h-3.5 w-3.5 text-stone-400" />
-							<Input
+							<input
 								className="w-full rounded border border-stone-200 py-1.5 pr-2 pl-8 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
 								placeholder="Search columns..."
 								value={search}
@@ -1104,97 +1117,100 @@ export function VizConfigDropZones({
 												>
 													{col.name}
 												</span>
-												{zones.length === 1 ? (
-													<button
-														type="button"
-														onClick={() =>
+												<button
+													type="button"
+													onClick={() => {
+														if (zones.length === 1)
 															addColumnToZone(
 																zones[0].id,
 																col.name,
-															)
-														}
-														className="flex-shrink-0 rounded p-0.5 text-stone-400 hover:bg-indigo-50 hover:text-indigo-600"
-														title={`Add to ${zones[0].label}`}
-													>
-														<Plus className="h-3.5 w-3.5" />
-													</button>
-												) : (
-													<Popover
-														open={
-															addColMenu ===
-															col.name
-														}
-														onOpenChange={(o) =>
+															);
+														else
 															setAddColMenu(
-																o
-																	? col.name
-																	: null,
-															)
-														}
-													>
-														<PopoverTrigger asChild>
-															<button
-																type="button"
-																className="flex-shrink-0 rounded p-0.5 text-stone-400 hover:bg-indigo-50 hover:text-indigo-600"
-																title="Add to a zone"
-															>
-																<Plus className="h-3.5 w-3.5" />
-															</button>
-														</PopoverTrigger>
-														<PopoverContent
-															align="end"
-															className="w-44 p-1 py-1"
-														>
-															<p className="px-3 pt-0.5 pb-1 font-semibold text-[10px] text-stone-400 uppercase tracking-wider">
-																Add to
-															</p>
-															{zones.map((z) => {
-																const already =
-																	(
-																		value[
-																			z.id
-																		] || []
-																	).some(
-																		(c) =>
-																			c.name ===
-																			col.name,
-																	);
-																return (
-																	<button
-																		key={
-																			z.id
-																		}
-																		type="button"
-																		disabled={
-																			already
-																		}
-																		onClick={() => {
-																			addColumnToZone(
-																				z.id,
-																				col.name,
+																(c) =>
+																	c ===
+																	col.name
+																		? null
+																		: col.name,
+															);
+													}}
+													className="flex-shrink-0 rounded p-0.5 text-stone-400 hover:bg-indigo-50 hover:text-indigo-600"
+													title={
+														zones.length === 1
+															? `Add to ${zones[0].label}`
+															: "Add to a zone"
+													}
+												>
+													<Plus className="h-3.5 w-3.5" />
+												</button>
+												{addColMenu === col.name &&
+													zones.length > 1 && (
+														<>
+															<div
+																className="fixed inset-0 z-10"
+																onClick={() =>
+																	setAddColMenu(
+																		null,
+																	)
+																}
+															/>
+															<div className="absolute top-7 right-1 z-20 w-44 rounded-lg border border-stone-200 bg-white py-1 shadow-soft-lg">
+																<p className="px-3 pt-0.5 pb-1 font-semibold text-[10px] text-stone-400 uppercase tracking-wider">
+																	Add to
+																</p>
+																{zones.map(
+																	(z) => {
+																		const already =
+																			(
+																				value[
+																					z
+																						.id
+																				] ||
+																				[]
+																			).some(
+																				(
+																					c,
+																				) =>
+																					c.name ===
+																					col.name,
 																			);
-																			setAddColMenu(
-																				null,
-																			);
-																		}}
-																		className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-stone-700 text-xs hover:bg-stone-50 disabled:cursor-default disabled:text-stone-300 disabled:hover:bg-transparent"
-																	>
-																		<span className="truncate">
-																			{
-																				z.label
-																			}
-																		</span>
-																		{already && (
-																			<span className="text-[10px]">
-																				added
-																			</span>
-																		)}
-																	</button>
-																);
-															})}
-														</PopoverContent>
-													</Popover>
-												)}
+																		return (
+																			<button
+																				key={
+																					z.id
+																				}
+																				type="button"
+																				disabled={
+																					already
+																				}
+																				onClick={() => {
+																					addColumnToZone(
+																						z.id,
+																						col.name,
+																					);
+																					setAddColMenu(
+																						null,
+																					);
+																				}}
+																				className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-stone-700 text-xs hover:bg-stone-50 disabled:cursor-default disabled:text-stone-300 disabled:hover:bg-transparent"
+																			>
+																				<span className="truncate">
+																					{
+																						z.label
+																					}
+																				</span>
+																				{already && (
+																					<span className="text-[10px]">
+																						added
+																					</span>
+																				)}
+																			</button>
+																		);
+																	},
+																)}
+															</div>
+														</>
+													)}
 											</div>
 										)}
 									</Draggable>
@@ -1264,43 +1280,27 @@ export function VizConfigDropZones({
 																			chipProvided.innerRef
 																		}
 																		{...chipProvided.draggableProps}
-																		className={`flex flex-col gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs ${chipSnapshot.isDragging ? "opacity-90 shadow-md ring-1 ring-indigo-300" : ""}`}
+																		className={`flex items-center gap-2 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-xs ${chipSnapshot.isDragging ? "opacity-90 shadow-md ring-1 ring-indigo-300" : ""}`}
 																	>
-																		{/* Row 1: column name (+ drag handle) + remove */}
-																		<div className="flex items-center gap-2">
-																			{zone.multiColumn && (
-																				<span
-																					{...chipProvided.dragHandleProps}
-																					className="flex-shrink-0 cursor-grab text-stone-300 hover:text-stone-500"
-																					title="Drag to reorder"
-																				>
-																					<GripVertical className="h-3 w-3" />
-																				</span>
-																			)}
+																		{zone.multiColumn && (
 																			<span
-																				className="flex-1 truncate font-medium text-stone-700"
-																				title={
-																					col.name
-																				}
+																				{...chipProvided.dragHandleProps}
+																				className="flex-shrink-0 cursor-grab text-stone-300 hover:text-stone-500"
+																				title="Drag to reorder"
 																			>
-																				{
-																					col.name
-																				}
+																				<GripVertical className="h-3 w-3" />
 																			</span>
-																			<button
-																				onClick={() =>
-																					handleRemoveColumn(
-																						zone.id,
-																						col.name,
-																					)
-																				}
-																				className="flex-shrink-0 rounded p-0.5 text-stone-400 transition-colors hover:text-red-500"
-																				title="Remove"
-																			>
-																				<X className="h-3 w-3" />
-																			</button>
-																		</div>
-																		{/* Row 2: aggregation dropdown (own line so the name is never squeezed) */}
+																		)}
+																		<span
+																			className="flex-1 truncate font-medium text-stone-700"
+																			title={
+																				col.name
+																			}
+																		>
+																			{
+																				col.name
+																			}
+																		</span>
 																		{zone.aggregation && (
 																			<SearchableSelect
 																				ariaLabel="Aggregation"
@@ -1327,9 +1327,21 @@ export function VizConfigDropZones({
 																						label: o.label,
 																					}),
 																				)}
-																				className="rounded-md border border-stone-200 bg-stone-50 px-2 py-0.5 text-[11px] text-stone-600 hover:border-stone-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+																				className="flex items-center gap-1 rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 text-[11px] text-stone-600 hover:border-stone-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
 																			/>
 																		)}
+																		<button
+																			onClick={() =>
+																				handleRemoveColumn(
+																					zone.id,
+																					col.name,
+																				)
+																			}
+																			className="rounded p-0.5 text-stone-400 transition-colors hover:text-red-500"
+																			title="Remove"
+																		>
+																			<X className="h-3 w-3" />
+																		</button>
 																	</div>
 																)}
 															</Draggable>

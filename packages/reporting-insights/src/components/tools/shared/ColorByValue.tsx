@@ -1,5 +1,4 @@
 import { Plus, Trash2 } from "lucide-react";
-import { Checkbox, Input, Select } from "@/components/ui";
 import type { ColorRule, KpiColorRule } from "@/types/dashboard";
 import { ColorPicker } from "./ColorPicker";
 import { ResetButton } from "./ResetButton";
@@ -15,12 +14,20 @@ interface ColorByValueProps {
 		| "bar"
 		| "line"
 		| "pie"
-		| "puck";
+		| "puck"
+		| "polarbar"
+		| "area";
 	value: ColorRule[] | KpiColorRule[];
 	onChange: (rules: ColorRule[] | KpiColorRule[]) => void;
 	onReset: () => void;
 	/** Unique values per column derived from query rows — drives the value input dropdown suggestions. */
 	columnValues?: Record<string, string[]>;
+	/**
+	 * Display labels for columns — maps raw column key to a human-readable label
+	 * (e.g. `"Number" → "Average of Number"`). The option `value` stays the raw key
+	 * so `rule.valueColumn` resolves correctly against chart data at render time.
+	 */
+	columnLabels?: Record<string, string>;
 	/**
 	 * KPI only: when set, every rule is fixed to this metric column and the
 	 * per-rule metric selector is hidden. Used by the per-card KPI editor so a
@@ -36,6 +43,7 @@ export function ColorByValue({
 	onChange,
 	onReset,
 	columnValues,
+	columnLabels = {},
 	fixedMetricColumn,
 }: ColorByValueProps) {
 	// Pivot, Word Cloud, Bubble, Bar, Line, and Pie reuse the table rule shape
@@ -49,7 +57,9 @@ export function ColorByValue({
 		visualizationType === "bar" ||
 		visualizationType === "line" ||
 		visualizationType === "pie" ||
-		visualizationType === "puck";
+		visualizationType === "puck" ||
+		visualizationType === "polarbar" ||
+		visualizationType === "area";
 	const addRule = () => {
 		if (isTableShape) {
 			const newRule: ColorRule = {
@@ -128,7 +138,7 @@ export function ColorByValue({
 									? "Select Column to Color"
 									: "Select KPI Metric"}
 							</label>
-							<Select
+							<select
 								value={
 									isTable
 										? tableRule!.targetColumn
@@ -146,10 +156,10 @@ export function ColorByValue({
 							>
 								{columns.map((col) => (
 									<option key={col} value={col}>
-										{col}
+										{columnLabels[col] ?? col}
 									</option>
 								))}
-							</Select>
+							</select>
 						</div>
 
 						{/* Color */}
@@ -172,7 +182,7 @@ export function ColorByValue({
 									<label className="mb-1.5 block text-stone-500 text-xs">
 										Select Column of Values
 									</label>
-									<Select
+									<select
 										value={tableRule!.valueColumn}
 										onChange={(e) =>
 											updateRule(rule.id, {
@@ -183,10 +193,10 @@ export function ColorByValue({
 									>
 										{columns.map((col) => (
 											<option key={col} value={col}>
-												{col}
+												{columnLabels[col] ?? col}
 											</option>
 										))}
-									</Select>
+									</select>
 								</div>
 							)}
 
@@ -195,7 +205,7 @@ export function ColorByValue({
 								<label className="mb-1.5 block text-stone-500 text-xs">
 									Select Comparator
 								</label>
-								<Select
+								<select
 									value={rule.comparator}
 									onChange={(e) =>
 										updateRule(rule.id, {
@@ -253,7 +263,7 @@ export function ColorByValue({
 											</option>
 										</>
 									)}
-								</Select>
+								</select>
 							</div>
 
 							{/* Select Value(s) */}
@@ -274,7 +284,7 @@ export function ColorByValue({
 										))}
 									</datalist>
 								) : null}
-								<Input
+								<input
 									type="text"
 									value={rule.value}
 									list={
@@ -315,7 +325,7 @@ export function ColorByValue({
 									<label className="mb-1.5 block text-stone-500 text-xs">
 										Max Value
 									</label>
-									<Input
+									<input
 										type="number"
 										value={kpiRule!.maxValue || 0}
 										onChange={(e) =>
@@ -339,14 +349,17 @@ export function ColorByValue({
 							visualizationType !== "bubble" &&
 							visualizationType !== "bar" &&
 							visualizationType !== "line" &&
-							visualizationType !== "pie" && (
+							visualizationType !== "pie" &&
+							visualizationType !== "polarbar" &&
+							visualizationType !== "area" && (
 								<div className="border-stone-100 border-t pt-2">
 									<label className="mb-2 block font-semibold text-stone-600 text-xs">
 										Apply Color To
 									</label>
 									{isTable ? (
 										<label className="flex cursor-pointer items-center gap-2">
-											<Checkbox
+											<input
+												type="checkbox"
 												checked={
 													tableRule!.colorEntireRow
 												}
@@ -356,6 +369,7 @@ export function ColorByValue({
 															e.target.checked,
 													})
 												}
+												className="h-4 w-4 rounded border-stone-300 text-indigo-600"
 											/>
 											<span className="text-sm text-stone-700">
 												Color entire row

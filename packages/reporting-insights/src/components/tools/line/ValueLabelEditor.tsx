@@ -6,8 +6,8 @@ interface ValueLabelEditorProps {
 	value?: ValueLabelConfig;
 	onChange: (value: ValueLabelConfig) => void;
 	onReset: () => void;
-	/** Subset to expose. `'line'` includes alignment, `'pie'` hides it. */
-	variant?: "line" | "pie";
+	/** Subset to expose. `'line'` includes alignment + weight, `'pie'` hides them, `'bar'` uses bar-specific positions. */
+	variant?: "line" | "pie" | "bar";
 }
 
 const POSITION_OPTIONS_LINE: {
@@ -27,6 +27,17 @@ const POSITION_OPTIONS_PIE: {
 }[] = [
 	{ value: "inside", label: "Inside" },
 	{ value: "outside", label: "Outside" },
+];
+
+const POSITION_OPTIONS_BAR: {
+	value: NonNullable<ValueLabelConfig["position"]>;
+	label: string;
+}[] = [
+	{ value: "center", label: "Center" },
+	{ value: "top", label: "Top" },
+	{ value: "insideTop", label: "Inside Top" },
+	{ value: "insideBottom", label: "Inside Bottom" },
+	{ value: "bottom", label: "Bottom" },
 ];
 
 const FONT_FAMILIES = [
@@ -62,7 +73,11 @@ export function ValueLabelEditor({
 	const set = (updates: Partial<ValueLabelConfig>) =>
 		onChange({ ...cfg, ...updates });
 	const positionOptions =
-		variant === "pie" ? POSITION_OPTIONS_PIE : POSITION_OPTIONS_LINE;
+		variant === "pie"
+			? POSITION_OPTIONS_PIE
+			: variant === "bar"
+				? POSITION_OPTIONS_BAR
+				: POSITION_OPTIONS_LINE;
 
 	return (
 		<div className="space-y-3">
@@ -93,7 +108,12 @@ export function ValueLabelEditor({
 				</label>
 				<Select
 					value={
-						cfg.position ?? (variant === "pie" ? "outside" : "top")
+						cfg.position ??
+						(variant === "pie"
+							? "outside"
+							: variant === "bar"
+								? "center"
+								: "top")
 					}
 					onChange={(e) =>
 						set({
@@ -125,7 +145,7 @@ export function ValueLabelEditor({
 				/>
 			</div>
 
-			{variant !== "pie" && (
+			{variant !== "pie" && variant !== "bar" && (
 				<div>
 					<label className="mb-1 block font-semibold text-stone-600 text-xs">
 						Alignment
@@ -180,7 +200,7 @@ export function ValueLabelEditor({
 				/>
 			</div>
 
-			{variant !== "pie" && (
+			{variant !== "pie" && variant !== "bar" && (
 				<div>
 					<label className="mb-1 block font-semibold text-stone-600 text-xs">
 						Font Weight
@@ -209,7 +229,7 @@ export function ValueLabelEditor({
 					Color
 				</label>
 				<div className="flex items-center gap-2">
-					<input
+					<Input
 						type="color"
 						value={cfg.color ?? "#64748b"}
 						onChange={(e) => set({ color: e.target.value })}

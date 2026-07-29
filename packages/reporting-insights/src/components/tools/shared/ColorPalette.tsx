@@ -1,4 +1,18 @@
-import { ArrowLeft, Check, PaintBucket, Pencil, Trash2, X } from "lucide-react";
+import {
+	DragDropContext,
+	Draggable,
+	Droppable,
+	type DropResult,
+} from "@hello-pangea/dnd";
+import {
+	ArrowLeft,
+	Check,
+	GripVertical,
+	PaintBucket,
+	Pencil,
+	Trash2,
+	X,
+} from "lucide-react";
 import { useState } from "react";
 import { Input } from "@/components/ui";
 import type { ColorPalette as ColorPaletteType } from "@/types/dashboard";
@@ -203,6 +217,72 @@ function PaletteCard({
 	);
 }
 
+function parseBulkHex(
+	raw: string,
+	existing: string[],
+): { valid: string[]; skipped: number } {
+	// Tokenize on commas that are outside parentheses so rgb(r,g,b) stays as one token
+	const tokens: string[] = [];
+	let depth = 0;
+	let current = "";
+	for (const ch of raw) {
+		if (ch === "(") {
+			depth++;
+			current += ch;
+		} else if (ch === ")") {
+			depth--;
+			current += ch;
+		} else if (ch === "," && depth === 0) {
+			const t = current.trim();
+			if (t) tokens.push(t);
+			current = "";
+		} else {
+			current += ch;
+		}
+	}
+	const t = current.trim();
+	if (t) tokens.push(t);
+
+	const seen = new Set(existing.map((c) => c.toLowerCase()));
+	const valid: string[] = [];
+	let skipped = 0;
+
+	for (const token of tokens) {
+		let hex: string | null = null;
+
+		const hexCandidate = token.startsWith("#") ? token : `#${token}`;
+		if (/^#[0-9A-Fa-f]{6}$/.test(hexCandidate)) {
+			hex = hexCandidate;
+		} else {
+			const m = token.match(
+				/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i,
+			);
+			if (m) {
+				const [r, g, b] = [+m[1], +m[2], +m[3]];
+				if (r <= 255 && g <= 255 && b <= 255) {
+					hex =
+						"#" +
+						[r, g, b]
+							.map((v) => v.toString(16).padStart(2, "0"))
+							.join("");
+				}
+			}
+		}
+
+		if (hex) {
+			const lower = hex.toLowerCase();
+			if (!seen.has(lower)) {
+				valid.push(hex);
+				seen.add(lower);
+			}
+		} else {
+			skipped++;
+		}
+	}
+
+	return { valid, skipped };
+}
+
 export function ColorPalette({
 	value,
 	customPalettes = [],
@@ -216,6 +296,9 @@ export function ColorPalette({
 	const [currentColor, setCurrentColor] = useState("#000000");
 	const [showColorPicker, setShowColorPicker] = useState(false);
 	const [editingColorIndex, setEditingColorIndex] = useState(-1);
+	const [bulkInput, setBulkInput] = useState("");
+	const [bulkStep, setBulkStep] = useState<"" | "input" | "confirm">("");
+	const [pendingColors, setPendingColors] = useState<string[]>([]);
 
 	const allPalettes = [...DEFAULT_PALETTES, ...customPalettes];
 	const selectedLabel = value?.label || DEFAULT_PALETTES[0].label;
@@ -241,6 +324,9 @@ export function ColorPalette({
 		setEditingPalette(null);
 		setEditingColorIndex(-1);
 		setShowColorPicker(false);
+		setBulkInput("");
+		setBulkStep("");
+		setPendingColors([]);
 	};
 
 	const handleSave = () => {
@@ -328,8 +414,25 @@ export function ColorPalette({
 		setColors(colors.filter((_, i) => i !== index));
 	};
 
+	const handleColorDragEnd = (result: DropResult) => {
+		if (!result.destination) return;
+		const reordered = [...colors];
+		const [moved] = reordered.splice(result.source.index, 1);
+		reordered.splice(result.destination.index, 0, moved);
+		setColors(reordered);
+	};
+
 	// Editor UI
 	if (mode) {
+		const liveParsed =
+			bulkStep === "input"
+				? parseBulkHex(bulkInput, colors)
+				: { valid: [], skipped: 0 };
+		const confirmSkipped =
+			bulkStep === "confirm"
+				? parseBulkHex(bulkInput, colors).skipped
+				: 0;
+
 		return (
 			<div className="space-y-4">
 				{/* Header */}
@@ -361,122 +464,342 @@ export function ColorPalette({
 					/>
 				</div>
 
-				{/* Color picker */}
-				<div>
-					<label className="mb-1.5 block font-semibold text-stone-600 text-xs">
-						Colors
-					</label>
-					<div className="flex items-center gap-2">
-						<Input
-							type="text"
-							value={currentColor}
-							onChange={(e) => setCurrentColor(e.target.value)}
-							placeholder="#000000"
-							className="flex-1 rounded border border-stone-200 px-3 py-2 font-mono text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-						/>
-						<button
-							type="button"
-							onClick={() => setShowColorPicker(!showColorPicker)}
-							className="rounded border border-stone-200 p-2 transition-colors hover:bg-stone-50"
-						>
-							<PaintBucket className="h-5 w-5 text-stone-600" />
-						</button>
-					</div>
-				</div>
+				{/* View A — normal single-color add path */}
+				{bulkStep === "" && (
+					<>
+						<div>
+							<div className="mb-1.5 flex items-center justify-between">
+								<label className="block font-semibold text-stone-600 text-xs">
+									Colors
+								</label>
+								<button
+									type="button"
+									onClick={() => {
+										setBulkStep("input");
+										setShowColorPicker(false);
+									}}
+									className="font-medium text-indigo-600 text-xs hover:underline"
+								>
+									+ Add multiple
+								</button>
+							</div>
+							<div className="flex items-center gap-2">
+								<Input
+									type="text"
+									value={currentColor}
+									onChange={(e) => {
+										setCurrentColor(e.target.value);
+										setShowColorPicker(true);
+									}}
+									placeholder="#000000"
+									className="flex-1 rounded border border-stone-200 px-3 py-2 font-mono text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+								/>
+								<button
+									type="button"
+									onClick={() =>
+										setShowColorPicker(!showColorPicker)
+									}
+									className="rounded border border-stone-200 p-2 transition-colors hover:bg-stone-50"
+								>
+									<PaintBucket className="h-5 w-5 text-stone-600" />
+								</button>
+							</div>
+						</div>
+						{showColorPicker && (
+							<div className="rounded-lg border border-stone-200 bg-white p-3 shadow-sm">
+								<Input
+									type="color"
+									value={currentColor}
+									onChange={(e) =>
+										setCurrentColor(e.target.value)
+									}
+									className="h-32 w-full cursor-pointer rounded"
+								/>
+								<div className="mt-3 flex justify-end gap-2">
+									<button
+										type="button"
+										onClick={() =>
+											setShowColorPicker(false)
+										}
+										className="p-1 text-stone-400 hover:text-stone-600"
+									>
+										<X className="h-4 w-4" />
+									</button>
+									<button
+										type="button"
+										onClick={addColor}
+										className="p-1 text-indigo-600 hover:text-indigo-700"
+									>
+										<Check className="h-4 w-4" />
+									</button>
+								</div>
+							</div>
+						)}
+					</>
+				)}
 
-				{/* Native color picker */}
-				{showColorPicker && (
-					<div className="rounded-lg border border-stone-200 bg-white p-3 shadow-sm">
-						<input
-							type="color"
-							value={currentColor}
-							onChange={(e) => setCurrentColor(e.target.value)}
-							className="h-32 w-full cursor-pointer rounded"
+				{/* View B — bulk textarea input */}
+				{bulkStep === "input" && (
+					<div className="space-y-2">
+						<label className="block font-semibold text-stone-600 text-xs">
+							Add Multiple Colors
+						</label>
+						<textarea
+							value={bulkInput}
+							onChange={(e) => setBulkInput(e.target.value)}
+							placeholder="#FF0000, rgb(0,255,0), 3B82F6 — hex or rgb(), comma-separated"
+							rows={3}
+							className="w-full resize-none rounded border border-stone-200 px-3 py-2 font-mono text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
 						/>
-						<div className="mt-3 flex justify-end gap-2">
+						{bulkInput.trim() && (
+							<div className="flex min-h-5 flex-wrap gap-1">
+								{liveParsed.valid.map((c, i) => (
+									<div
+										key={i}
+										className="h-5 w-5 flex-shrink-0 rounded border border-stone-200"
+										style={{ backgroundColor: c }}
+										title={c}
+									/>
+								))}
+								{liveParsed.skipped > 0 && (
+									<div
+										className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded border border-stone-300 bg-stone-200 font-bold text-stone-500"
+										style={{ fontSize: 10 }}
+									>
+										?
+									</div>
+								)}
+							</div>
+						)}
+						<div className="flex justify-between pt-1">
 							<button
 								type="button"
-								onClick={() => setShowColorPicker(false)}
-								className="p-1 text-stone-400 hover:text-stone-600"
+								onClick={() => {
+									setBulkStep("");
+									setBulkInput("");
+								}}
+								className="rounded px-3 py-1.5 font-medium text-stone-600 text-xs transition-colors hover:bg-stone-100"
 							>
-								<X className="h-4 w-4" />
+								Cancel
 							</button>
 							<button
 								type="button"
-								onClick={addColor}
-								className="p-1 text-indigo-600 hover:text-indigo-700"
+								disabled={liveParsed.valid.length === 0}
+								onClick={() => {
+									const { valid } = parseBulkHex(
+										bulkInput,
+										colors,
+									);
+									setPendingColors(valid);
+									setBulkStep("confirm");
+								}}
+								className="rounded bg-indigo-600 px-3 py-1.5 font-medium text-white text-xs transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
 							>
-								<Check className="h-4 w-4" />
+								Next →
 							</button>
 						</div>
 					</div>
 				)}
 
-				{/* Color list */}
-				<div className="space-y-2">
-					{colors.map((color, index) => (
-						<div
-							key={index}
-							className="flex items-center gap-3 rounded border border-stone-200 p-2"
-						>
-							<div
-								className="h-8 w-8 rounded"
-								style={{ backgroundColor: color }}
-							/>
-							<span className="flex-1 font-mono text-sm">
-								{color}
-							</span>
-							<button
-								type="button"
-								onClick={() => editColor(index)}
-								className="rounded p-1 hover:bg-stone-100"
-							>
-								<Pencil className="h-4 w-4 text-stone-600" />
-							</button>
-							<button
-								type="button"
-								onClick={() => deleteColor(index)}
-								className="rounded p-1 hover:bg-stone-100"
-							>
-								<Trash2 className="h-4 w-4 text-stone-600" />
-							</button>
-
-							{/* Inline color editor */}
-							{editingColorIndex === index && (
-								<div className="absolute z-10 mt-12 ml-12 rounded-lg border border-stone-200 bg-white p-3 shadow-lg">
-									<input
-										type="color"
-										value={currentColor}
-										onChange={(e) =>
-											setCurrentColor(e.target.value)
-										}
-										className="h-32 w-48 cursor-pointer rounded"
-									/>
-									<div className="mt-3 flex justify-end gap-2">
+				{/* View C — confirm pending colors before committing */}
+				{bulkStep === "confirm" && (
+					<div className="space-y-3">
+						{colors.length > 0 && (
+							<div>
+								<p className="mb-1 font-medium text-stone-500 text-xs">
+									Already in palette ({colors.length})
+								</p>
+								<div className="flex flex-wrap gap-1">
+									{colors.map((c, i) => (
+										<div
+											key={i}
+											className="h-5 w-5 flex-shrink-0 rounded border border-stone-200"
+											style={{ backgroundColor: c }}
+											title={c}
+										/>
+									))}
+								</div>
+							</div>
+						)}
+						<div>
+							<p className="mb-1 font-medium text-stone-500 text-xs">
+								Adding {pendingColors.length} color
+								{pendingColors.length !== 1 ? "s" : ""}
+							</p>
+							<div className="flex flex-wrap gap-1">
+								{pendingColors.map((c, i) => (
+									<div
+										key={i}
+										className="flex items-center gap-0.5 rounded border border-stone-200 bg-white px-1 py-0.5"
+									>
+										<div
+											className="h-4 w-4 flex-shrink-0 rounded"
+											style={{ backgroundColor: c }}
+											title={c}
+										/>
 										<button
 											type="button"
 											onClick={() =>
-												setEditingColorIndex(-1)
+												setPendingColors((prev) =>
+													prev.filter(
+														(_, j) => j !== i,
+													),
+												)
 											}
-											className="p-1 text-stone-400 hover:text-stone-600"
+											className="text-stone-400 leading-none hover:text-stone-600"
 										>
-											<X className="h-4 w-4" />
-										</button>
-										<button
-											type="button"
-											onClick={() =>
-												saveEditedColor(index)
-											}
-											className="p-1 text-indigo-600 hover:text-indigo-700"
-										>
-											<Check className="h-4 w-4" />
+											<X className="h-3 w-3" />
 										</button>
 									</div>
+								))}
+							</div>
+						</div>
+						{confirmSkipped > 0 && (
+							<p className="text-stone-400 text-xs">
+								{confirmSkipped} invalid value
+								{confirmSkipped !== 1 ? "s" : ""} skipped
+							</p>
+						)}
+						<div className="flex justify-between pt-1">
+							<button
+								type="button"
+								onClick={() => setBulkStep("input")}
+								className="rounded px-3 py-1.5 font-medium text-stone-600 text-xs transition-colors hover:bg-stone-100"
+							>
+								← Back
+							</button>
+							<button
+								type="button"
+								disabled={pendingColors.length === 0}
+								onClick={() => {
+									setColors((prev) => [
+										...prev,
+										...pendingColors,
+									]);
+									setBulkStep("");
+									setBulkInput("");
+									setPendingColors([]);
+								}}
+								className="rounded bg-indigo-600 px-3 py-1.5 font-medium text-white text-xs transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
+							>
+								Add {pendingColors.length} Color
+								{pendingColors.length !== 1 ? "s" : ""}
+							</button>
+						</div>
+					</div>
+				)}
+
+				{/* Color list — draggable to reorder; hidden during confirm view */}
+				{bulkStep !== "confirm" && (
+					<DragDropContext onDragEnd={handleColorDragEnd}>
+						<Droppable droppableId="palette-colors">
+							{(provided) => (
+								<div
+									ref={provided.innerRef}
+									{...provided.droppableProps}
+									className="space-y-2"
+								>
+									{colors.map((color, index) => (
+										<Draggable
+											key={`${color}-${index}`}
+											draggableId={`palette-color-${index}`}
+											index={index}
+										>
+											{(provided, snapshot) => (
+												<div
+													ref={provided.innerRef}
+													{...provided.draggableProps}
+													className={`flex items-center gap-3 rounded border border-stone-200 bg-white p-2 ${snapshot.isDragging ? "shadow-md ring-1 ring-indigo-300" : ""}`}
+												>
+													<span
+														{...provided.dragHandleProps}
+														className="flex-shrink-0 cursor-grab text-stone-300 hover:text-stone-500"
+														title="Drag to reorder"
+													>
+														<GripVertical className="h-4 w-4" />
+													</span>
+													<div
+														className="h-8 w-8 flex-shrink-0 rounded"
+														style={{
+															backgroundColor:
+																color,
+														}}
+													/>
+													<span className="flex-1 font-mono text-sm">
+														{color}
+													</span>
+													<button
+														type="button"
+														onClick={() =>
+															editColor(index)
+														}
+														className="rounded p-1 hover:bg-stone-100"
+													>
+														<Pencil className="h-4 w-4 text-stone-600" />
+													</button>
+													<button
+														type="button"
+														onClick={() =>
+															deleteColor(index)
+														}
+														className="rounded p-1 hover:bg-stone-100"
+													>
+														<Trash2 className="h-4 w-4 text-stone-600" />
+													</button>
+
+													{/* Inline color editor */}
+													{editingColorIndex ===
+														index && (
+														<div className="absolute z-10 mt-12 ml-12 rounded-lg border border-stone-200 bg-white p-3 shadow-lg">
+															<Input
+																type="color"
+																value={
+																	currentColor
+																}
+																onChange={(e) =>
+																	setCurrentColor(
+																		e.target
+																			.value,
+																	)
+																}
+																className="h-32 w-48 cursor-pointer rounded"
+															/>
+															<div className="mt-3 flex justify-end gap-2">
+																<button
+																	type="button"
+																	onClick={() =>
+																		setEditingColorIndex(
+																			-1,
+																		)
+																	}
+																	className="p-1 text-stone-400 hover:text-stone-600"
+																>
+																	<X className="h-4 w-4" />
+																</button>
+																<button
+																	type="button"
+																	onClick={() =>
+																		saveEditedColor(
+																			index,
+																		)
+																	}
+																	className="p-1 text-indigo-600 hover:text-indigo-700"
+																>
+																	<Check className="h-4 w-4" />
+																</button>
+															</div>
+														</div>
+													)}
+												</div>
+											)}
+										</Draggable>
+									))}
+									{provided.placeholder}
 								</div>
 							)}
-						</div>
-					))}
-				</div>
+						</Droppable>
+					</DragDropContext>
+				)}
 
 				{/* Actions */}
 				<div className="flex justify-between border-t pt-3">

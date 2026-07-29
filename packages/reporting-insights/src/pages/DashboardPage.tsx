@@ -6,17 +6,18 @@ import {
 	Share2,
 	SlidersHorizontal,
 	Trash2,
+	UploadCloud,
 } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { DashboardVisualization } from "@/components/DashboardVisualization";
-import { isParamSatisfied } from "@/components/ParamControl";
+import { formatSqlList, isParamSatisfied } from "@/components/ParamControl";
 import { ParamSheet } from "@/components/ParamSheet";
 import { QueryRunnerProvider } from "@/components/QueryRunner";
 import { ShareDialog } from "@/components/ShareDialog";
 import { Button, buttonClasses, ConfirmDialog } from "@/components/ui";
+import { useToast } from "@/components/ui/Toast";
 import { DashboardFilterProvider } from "@/lib/dashboardFilters";
-import { isEmbedded } from "@/lib/embed";
 import { fullTimestamp, timeAgo } from "@/lib/format";
 import { publishedPortalUrl } from "@/lib/portalUrl";
 import {
@@ -107,7 +108,6 @@ const SheetCanvas = memo(function SheetCanvas({
 		() => makeSaveModel(sheet.id),
 		[makeSaveModel, sheet.id],
 	);
-	// Color the FlexLayout tab buttons by each viz's tabColor.
 	useTabColors(sheet.visualizations);
 	return (
 		<Layout
@@ -122,14 +122,7 @@ const SheetCanvas = memo(function SheetCanvas({
 				const viz = sheet.visualizations.find((v) => v.id === vizId);
 				if (viz?.phi) {
 					rv.content = (
-						<span
-							data-pii="true"
-							style={{
-								display: "contents",
-								color: "#b91c1c",
-								fontWeight: 700,
-							}}
-						>
+						<span data-pii="true" style={{ display: "contents" }}>
 							{rv.content}
 						</span>
 					);
@@ -154,8 +147,15 @@ const SheetCanvas = memo(function SheetCanvas({
 export function DashboardPage() {
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
-	const { getDashboard, loadDashboard, deleteDashboard, updateDashboard } =
-		useWorkspace();
+	const {
+		getDashboard,
+		loadDashboard,
+		deleteDashboard,
+		updateDashboard,
+		redeployDashboard,
+	} = useWorkspace();
+	const toast = useToast();
+	const [redeploying, setRedeploying] = useState(false);
 
 	// The listing only carries metadata; load the full definition (sheets) here.
 	const meta = id ? getDashboard(id) : undefined;
@@ -177,6 +177,19 @@ export function DashboardPage() {
 		perm === "READ_ONLY" || perm === "VIEWER" || perm === "DISCOVERABLE";
 	const canManage = !isReadOnly;
 	const canEdit = !isReadOnly;
+	// Redeploy is offered to anyone who can manage (same gate as Share/Edit). The
+	// release step is owner-gated server-side and non-fatal for non-owners.
+	const handleRedeploy = async () => {
+		if (!id || redeploying) return;
+		setRedeploying(true);
+		try {
+			await redeployDashboard(id);
+		} catch (e: any) {
+			toast.error(e?.message ?? "Redeploy failed.", "Redeploy failed");
+		} finally {
+			setRedeploying(false);
+		}
+	};
 
 	useEffect(() => {
 		if (id && isReadOnly) window.location.replace(publishedPortalUrl(id));
@@ -187,6 +200,10 @@ export function DashboardPage() {
 		Record<string, Record<string, string>>
 	>({});
 	const [runKeys, setRunKeys] = useState<Record<string, number>>({});
+	// Options loaded by ParamSheet (SQL-fetched + conditional branch), keyed by param name.
+	const [sheetParamOptions, setSheetParamOptions] = useState<
+		Record<string, string[]>
+	>({});
 	const [confirmDelete, setConfirmDelete] = useState(false);
 	const [paramSheetRunning, setParamSheetRunning] = useState(false);
 
@@ -220,6 +237,22 @@ export function DashboardPage() {
 					queries: migratedQueries,
 				});
 				setActiveSheetId(finalSheets[0]?.id ?? "");
+				// Always pre-mount all non-param sheets so their non-gated queries run
+				// immediately — not waiting for the user to click each tab. For param apps,
+				// gated queries (hasParams / loadAfterParams) stay in "waiting" state until
+				// Run All is pressed; only non-gated queries fire now.
+				setVisitedSheetIds(
+					new Set(
+						finalSheets
+							.filter(
+								(s) =>
+									!s.isParamSheet &&
+									s.visualizations.length > 0,
+							)
+							.map((s) => s.id),
+					),
+				);
+
 				// Parameter state is keyed by the SHARED query id (falling back to the viz
 				// id for unbound vizs), so every chart on a query shares one form + one run.
 				const initial: Record<string, Record<string, string>> = {};
@@ -356,6 +389,28 @@ export function DashboardPage() {
 		[paramGroups, sharedParamValues],
 	);
 
+	// Query-execution values: same as paramValues but empty multiselects (value = '')
+	// are pre-expanded to the full option list the ParamSheet has loaded, so the viz
+	// receives a valid SQL list ('a','b',…) instead of '' which produces IN () — a
+	// syntax error. sheetParamOptions covers ALL option sources: static (p.options),
+	// SQL-fetched (optionsQuery), and conditional branch options.
+	const queryParamValues = useMemo(() => {
+		const result: Record<string, Record<string, string>> = {};
+		for (const [qId, vals] of Object.entries(paramValues))
+			result[qId] = { ...vals };
+		for (const g of paramGroups) {
+			if (g.param.inputType !== "multiselect") continue;
+			if ((sharedParamValues[g.name] ?? "") !== "") continue; // already has selections
+			const opts = sheetParamOptions[g.name];
+			if (!opts?.length) continue; // no options loaded yet — leave as '' and let interpolateQuery handle it
+			const expanded = formatSqlList(opts);
+			for (const qId of g.queryIds) {
+				result[qId] = { ...(result[qId] ?? {}), [g.name]: expanded };
+			}
+		}
+		return result;
+	}, [paramValues, paramGroups, sharedParamValues, sheetParamOptions]);
+
 	// Fans a single param-name change out to every query that uses that name.
 	const handleSharedParamChange = useCallback(
 		(paramName: string, val: string) => {
@@ -380,6 +435,7 @@ export function DashboardPage() {
 	// then navigates to the first non-param sheet so the user sees charts loading.
 	const handleRunAll = useCallback(
 		() => {
+			// startLoadingSession();
 			setParamSheetRunning(true);
 			setRunKeys((prev) => {
 				const next = { ...prev };
@@ -390,6 +446,19 @@ export function DashboardPage() {
 				}
 				return next;
 			});
+			// Pre-mount every non-param sheet so their charts can start fetching immediately
+			// instead of waiting for the user to click each tab. React 18 batches this with
+			// setRunKeys above — charts on unvisited sheets see runKey > 0 on their first render.
+			setVisitedSheetIds(
+				new Set(
+					sheets
+						.filter(
+							(s) =>
+								!s.isParamSheet && s.visualizations.length > 0,
+						)
+						.map((s) => s.id),
+				),
+			);
 			const firstNonParam = sheets.find((s) => !s.isParamSheet);
 			setTimeout(() => {
 				if (firstNonParam) setActiveSheetId(firstNonParam.id);
@@ -438,88 +507,95 @@ export function DashboardPage() {
 		0,
 	);
 	const hasVizs = (activeSheet?.visualizations.length ?? 0) > 0;
-	// Playground/iframe embed → read-only preview: hide the management toolbar.
-	const embedded = isEmbedded();
 	// (perm / isReadOnly / canManage / canEdit computed above — read-only users are
 	//  redirected to the deployed portal, so the code below only runs for editors.)
 
 	return (
 		<QueryRunnerProvider>
 			<DashboardFilterProvider>
-				<div className="flex h-full flex-col gap-3 p-3">
-					{/* ── Toolbar — single slim row (hidden in embedded/preview mode) ── */}
-					{!embedded && (
-						<div className="flex h-14 flex-shrink-0 items-center gap-3 rounded-xl border border-stone-200 bg-white px-4 shadow-soft">
-							<Link
-								to="/dashboards"
-								title="Back to dashboards"
-								className="-ml-1 flex-shrink-0 rounded-md p-1.5 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-800"
-							>
-								<ArrowLeft className="h-4 w-4" />
-							</Link>
-							<div className="min-w-0">
-								<h1 className="truncate font-bold text-[15px] text-stone-900 leading-tight tracking-tight">
-									{dashboard.name}
-								</h1>
-								<div className="flex items-center gap-1.5 text-[11px] text-stone-400 leading-tight">
-									<span>
-										{sheets.length} sheet
-										{sheets.length !== 1 ? "s" : ""}
-									</span>
-									<span className="text-stone-300">·</span>
-									<span>
-										{totalVizCount} chart
-										{totalVizCount !== 1 ? "s" : ""}
-									</span>
-									<span className="text-stone-300">·</span>
-									<span
-										title={fullTimestamp(
-											dashboard.updatedAt,
-										)}
-									>
-										updated {timeAgo(dashboard.updatedAt)}
-									</span>
-								</div>
-							</div>
-
-							<div className="flex-1" />
-
-							<div className="flex flex-shrink-0 items-center gap-1.5">
-								{canManage && (
-									<Button
-										variant="secondary"
-										size="sm"
-										onClick={() => setShowShare(true)}
-										title="Manage access & folders"
-									>
-										<Share2 className="h-3.5 w-3.5" /> Share
-									</Button>
-								)}
-								{canEdit && (
-									<Link
-										to={`/dashboard/${dashboard.id}/edit`}
-										className={buttonClasses(
-											"primary",
-											"sm",
-										)}
-									>
-										<Edit className="h-3.5 w-3.5" /> Edit
-									</Link>
-								)}
-								{canManage && (
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={() => setConfirmDelete(true)}
-										className="text-stone-400 hover:bg-red-50 hover:text-red-500"
-										title="Delete dashboard"
-									>
-										<Trash2 className="h-3.5 w-3.5" />
-									</Button>
-								)}
+				<div className="flex h-full flex-col gap-3 bg-stone-100 p-3">
+					{/* ── Toolbar — single slim row ── */}
+					<div className="flex h-14 flex-shrink-0 items-center gap-3 rounded-xl border border-stone-200 bg-white px-4 shadow-soft">
+						<Link
+							to="/dashboards"
+							title="Back to dashboards"
+							className="-ml-1 flex-shrink-0 rounded-md p-1.5 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-800"
+						>
+							<ArrowLeft className="h-4 w-4" />
+						</Link>
+						<div className="min-w-0">
+							<h1 className="truncate font-bold text-[15px] text-stone-900 leading-tight tracking-tight">
+								{dashboard.name}
+							</h1>
+							<div className="flex items-center gap-1.5 text-[11px] text-stone-400 leading-tight">
+								<span>
+									{sheets.length} sheet
+									{sheets.length !== 1 ? "s" : ""}
+								</span>
+								<span className="text-stone-300">·</span>
+								<span>
+									{totalVizCount} chart
+									{totalVizCount !== 1 ? "s" : ""}
+								</span>
+								<span className="text-stone-300">·</span>
+								<span
+									title={fullTimestamp(dashboard.updatedAt)}
+								>
+									updated {timeAgo(dashboard.updatedAt)}
+								</span>
 							</div>
 						</div>
-					)}
+
+						<div className="flex-1" />
+
+						<div className="flex flex-shrink-0 items-center gap-1.5">
+							{canManage && (
+								<Button
+									variant="secondary"
+									size="sm"
+									onClick={() => setShowShare(true)}
+									title="Manage access & folders"
+								>
+									<Share2 className="h-3.5 w-3.5" /> Share
+								</Button>
+							)}
+							{canManage && (
+								<Button
+									variant="secondary"
+									size="sm"
+									onClick={handleRedeploy}
+									disabled={redeploying}
+									title="Rebuild & re-upload this dashboard's portal — use after the app's portal has been updated"
+								>
+									{redeploying ? (
+										<Loader2 className="h-3.5 w-3.5 animate-spin" />
+									) : (
+										<UploadCloud className="h-3.5 w-3.5" />
+									)}
+									{redeploying ? "Redeploying…" : "Redeploy"}
+								</Button>
+							)}
+							{canEdit && (
+								<Link
+									to={`/dashboard/${dashboard.id}/edit`}
+									className={buttonClasses("primary", "sm")}
+								>
+									<Edit className="h-3.5 w-3.5" /> Edit
+								</Link>
+							)}
+							{canManage && (
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={() => setConfirmDelete(true)}
+									className="text-stone-400 hover:bg-red-50 hover:text-red-500"
+									title="Delete dashboard"
+								>
+									<Trash2 className="h-3.5 w-3.5" />
+								</Button>
+							)}
+						</div>
+					</div>
 
 					{/* ── flexlayout-react canvas ── */}
 					<div className="relative min-h-0 flex-1">
@@ -534,6 +610,7 @@ export function DashboardPage() {
 									allSatisfied={allParamsSatisfied}
 									config={activeSheet.paramSheetConfig}
 									isRunning={paramSheetRunning}
+									onParamOptionsChange={setSheetParamOptions}
 								/>
 							</div>
 						)}
@@ -542,9 +619,6 @@ export function DashboardPage() {
 								No visualizations in this sheet
 							</div>
 						)}
-						{/* Keep-alive: skip param sheets (they have no visualizations and use
-                            their own direct renderer above). For all other visited non-empty
-                            sheets, toggle VISIBILITY (not display) so switching is instant. */}
 						{sheets
 							.filter(
 								(s) =>
@@ -575,7 +649,7 @@ export function DashboardPage() {
 											sheet={sheet}
 											model={getModel(sheet)}
 											queries={dashboard.queries ?? []}
-											paramValues={paramValues}
+											paramValues={queryParamValues}
 											runKeys={runKeys}
 											hasParamSheet={hasParamSheet}
 											makeSaveModel={makeSaveModel}

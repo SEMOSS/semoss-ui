@@ -16,8 +16,11 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
-import { ChartTooltip } from "@/components/visualizations/shared/chartShared";
-import type { VisualizationConfig } from "@/types/dashboard";
+import {
+	ChartTooltip,
+	compareColorRule,
+} from "@/components/visualizations/shared/chartShared";
+import type { ColorRule, VisualizationConfig } from "@/types/dashboard";
 
 const PALETTE = [
 	"#6366f1",
@@ -191,6 +194,19 @@ export function MultiLineChart({ data, config }: MultiLineChartProps) {
 		? config.styling.colorPalette.colors
 		: PALETTE;
 
+	const colorRules: ColorRule[] = ml?.colorRules ?? [];
+	const colorForPoint = (
+		row: Record<string, unknown>,
+		catValue: string,
+		idx: number,
+	): string => {
+		for (const rule of colorRules) {
+			if (compareColorRule(rule.comparator, row[catValue], rule.value))
+				return rule.color;
+		}
+		return paletteColors[idx % paletteColors.length];
+	};
+
 	return (
 		<ResponsiveContainer width="100%" height="100%">
 			<LineChart
@@ -242,16 +258,40 @@ export function MultiLineChart({ data, config }: MultiLineChartProps) {
 				<Legend />
 
 				{categories.map((cat, i) => {
-					const color = paletteColors[i % paletteColors.length];
+					const lineColor = paletteColors[i % paletteColors.length];
 					return (
 						<Line
 							key={cat}
 							type={curveType}
 							dataKey={cat}
 							isAnimationActive={false}
-							stroke={color}
+							stroke={lineColor}
 							strokeWidth={2}
-							dot={{ r: 3, fill: color, strokeWidth: 0 }}
+							dot={
+								colorRules.length > 0
+									? (props: any) => {
+											const { cx, cy, payload, index } =
+												props;
+											const c = colorForPoint(
+												payload as Record<
+													string,
+													unknown
+												>,
+												cat,
+												i,
+											);
+											return (
+												<circle
+													key={`${cat}-${index}`}
+													cx={cx}
+													cy={cy}
+													r={3}
+													fill={c}
+												/>
+											);
+										}
+									: { r: 3, fill: lineColor, strokeWidth: 0 }
+							}
 							activeDot={{ r: 5 }}
 							connectNulls
 						>

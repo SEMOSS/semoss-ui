@@ -1,9 +1,14 @@
 import { Layout, type Model, type TabNode } from "flexlayout-react";
 import { SlidersHorizontal } from "lucide-react";
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import {
-	Area,
-	AreaChart,
+	type ReactNode,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
+import {
 	Bar,
 	BarChart,
 	CartesianGrid,
@@ -23,6 +28,8 @@ import {
 import { formatSqlList, isParamSatisfied } from "@/components/ParamControl";
 import { ParamSheet } from "@/components/ParamSheet";
 import { PhiExportWarningModal } from "@/components/PhiExportWarningModal";
+import type { QueryRunFn } from "@/components/QueryRunner";
+import { Area_Chart } from "@/components/visualizations/Area_Chart";
 import { Bar_Chart } from "@/components/visualizations/Bar_Chart";
 import { BoxPlotChart } from "@/components/visualizations/BoxPlotChart";
 import { BubbleChart } from "@/components/visualizations/BubbleChart";
@@ -55,7 +62,6 @@ import {
 	useAppliedFilters,
 	useFilterStore,
 } from "@/lib/dashboardFilters";
-import { isDataProduct } from "@/lib/queryPixel";
 import {
 	computeParamGroups,
 	ensureParamSheet,
@@ -72,9 +78,7 @@ import { runDatabaseQuery } from "../api";
 import { usePortalStore } from "../store";
 import type {
 	DashboardQuery,
-	JoinSpec,
 	QueryResult,
-	QuerySourceLeg,
 	Sheet,
 	Visualization,
 	VisualizationConfig,
@@ -208,6 +212,7 @@ function substituteParams(
 		options?: string[];
 	}[] = [],
 	loadedOptions: Record<string, string[]> = {},
+	sheetOptions: Record<string, string[]> = {},
 ): string {
 	return query.replace(/\{\{(\w+)\}\}/g, (_, name) => {
 		const val = values[name] ?? "";
@@ -215,10 +220,13 @@ function substituteParams(
 		// Empty multiselect = "all options" → substitute every known option so
 		// IN ({{param}}) matches all rows instead of generating invalid IN ().
 		if (param?.inputType === "multiselect" && !val.trim()) {
-			const allOpts = [
+			// sheetOptions (name-keyed, from ParamSheet) covers static + SQL + conditional branches
+			const sheetOpts = sheetOptions[name] ?? [];
+			const legacyOpts = [
 				...(loadedOptions[param.id] ?? []),
 				...(param.options ?? []),
 			];
+			const allOpts = sheetOpts.length > 0 ? sheetOpts : legacyOpts;
 			if (allOpts.length > 0) return formatSqlList(allOpts);
 		}
 		return val;
@@ -305,59 +313,23 @@ export function ViewMode() {
 	const [paramOptions, setParamOptions] = useState<Record<string, string[]>>(
 		{},
 	);
-
-	// External parameter values that drive the dashboard when it's rendered as an
-	// MCP tool: SEMOSS/playground either passes them as URL query params or via a
-	// postMessage (SMSS_INIT_TOOL) when it iframes this portal. Keyed by param name.
-	const [externalParams, setExternalParams] = useState<
-		Record<string, string>
-	>(() => {
-		const out: Record<string, string> = {};
-		try {
-			new URLSearchParams(window.location.search).forEach((v, k) => {
-				if (k) out[k] = v;
-			});
-		} catch {
-			/* no search params */
-		}
-		// Params buffered by the early capture in main.tsx (posted on iframe load,
-		// possibly before this component mounted).
-		const buf = window.__SMSS_TOOL_PARAMS__;
-		if (buf && typeof buf === "object")
-			for (const [k, v] of Object.entries(buf))
-				if (v != null) out[k] = String(v);
-		return out;
-	});
-	// Re-read the early-capture buffer on mount: the SMSS_INIT_TOOL message may have
-	// landed after this component's initial render but before its own listener below
-	// was attached (bundle is large → effects run late).
-	useEffect(() => {
-		const buf = window.__SMSS_TOOL_PARAMS__;
-		if (buf && Object.keys(buf).length)
-			setExternalParams((prev) => ({ ...prev, ...buf }));
-	}, []);
-	useEffect(() => {
-		const onMsg = (e: MessageEvent) => {
-			const d = e.data as {
-				type?: string;
-				tool?: { parameters?: unknown };
-				payload?: { parameters?: unknown };
-				parameters?: unknown;
-			} | null;
-			if (!d || d.type !== "SMSS_INIT_TOOL") return;
-			const raw = (d.tool?.parameters ??
-				d.payload?.parameters ??
-				d.parameters) as Record<string, unknown> | undefined;
-			if (!raw || typeof raw !== "object") return;
-			const norm: Record<string, string> = {};
-			for (const [k, v] of Object.entries(raw))
-				if (v != null) norm[k] = String(v);
-			if (Object.keys(norm).length)
-				setExternalParams((prev) => ({ ...prev, ...norm }));
-		};
-		window.addEventListener("message", onMsg);
-		return () => window.removeEventListener("message", onMsg);
-	}, []);
+	// All options from ParamSheet (static + SQL + conditional branches), keyed by param name.
+	const [sheetParamOptions, setSheetParamOptions] = useState<
+		Record<string, string[]>
+	>({});
+	// Wraps the portal's runDatabaseQuery into the QueryRunFn shape ParamSheet expects,
+	// so its option-fetching effects work without a QueryRunnerProvider in the tree.
+	const portalQueryRunner = useCallback<QueryRunFn>(
+		async (databaseId, query) => {
+			const result = await runDatabaseQuery(databaseId, query, -1);
+			return {
+				headers: result.headers,
+				values: result.values as any[][],
+				raw: result,
+			};
+		},
+		[],
+	);
 
 	// Shared query cache: charts built from the SAME query fetch it once. `force`
 	// bypasses the cache for a manual re-run.
@@ -366,19 +338,13 @@ export function ViewMode() {
 		db: string,
 		query: string,
 		force = false,
-		source?: { sources?: QuerySourceLeg[]; joins?: JoinSpec[] },
 	): Promise<QueryResult> => {
-		const sig = source?.sources?.length
-			? source.sources
-					.map((s) => `${s.databaseId}:${s.query}`)
-					.join("|") + JSON.stringify(source.joins ?? [])
-			: `${db}::${query}`;
-		const key = sig;
+		const key = `${db}::${query}`;
 		if (!force) {
 			const hit = queryCache.current.get(key);
 			if (hit) return hit;
 		}
-		const p = runDatabaseQuery(db, query, -1, source);
+		const p = runDatabaseQuery(db, query);
 		queryCache.current.set(key, p);
 		p.catch(() => queryCache.current.delete(key));
 		return p;
@@ -397,9 +363,7 @@ export function ViewMode() {
 			const src = resolveQuery(viz, queries);
 			const paramValues: Record<string, string> = {};
 			(src.parameters ?? []).forEach((p) => {
-				// External (tool/URL) values take precedence over the param's default.
-				paramValues[p.name] =
-					externalParams[p.name] ?? p.defaultValue ?? "";
+				paramValues[p.name] = p.defaultValue ?? "";
 			});
 			initial[key] = {
 				paramValues,
@@ -448,58 +412,46 @@ export function ViewMode() {
 				});
 		});
 
-		// Auto-run queries. Parameter-less queries run once (unless the bound query is
-		// set to loadAfterParams — then it waits for the Parameters sheet's Run).
-		// Parameterized queries auto-run as soon as every REQUIRED param has a value —
-		// from the param's default or from external tool/URL params — so the dashboard
-		// shows data on load and re-runs with supplied values when opened as an MCP tool.
-		const ranAuto = new Set<string>();
+		// Auto-run each distinct parameter-less, non-loadAfterParams query exactly once.
+		const autoRunItems: Array<{
+			key: string;
+			src: QuerySource;
+			label: string;
+		}> = [];
+		const seenAuto = new Set<string>();
 		allVizs.forEach((viz) => {
 			const key = qKeyOf(viz);
-			if (ranAuto.has(key)) return;
+			if (seenAuto.has(key)) return;
 			const src = resolveQuery(viz, queries);
-			if (!isDataProduct(src) && !(src.databaseId && src.query)) return;
-			// Upstream: a query flagged loadAfterParams waits for the Parameters sheet's Run.
 			const boundQ = queries.find((q) => q.id === viz.queryId);
-			if (boundQ?.loadAfterParams) return;
-			const params = src.parameters ?? [];
-			const values = initial[key]?.paramValues ?? {};
-			if (params.length) {
-				const unmet = params.some(
-					(p) => p.required && !(values[p.name] ?? "").trim(),
-				);
-				if (unmet) return;
-				// Nothing to substitute (no values at all) → wait for the user / Parameters sheet.
-				if (!Object.values(values).some((v) => (v ?? "").trim()))
-					return;
-			}
-			ranAuto.add(key);
-			const q = params.length
-				? substituteParams(src.query, values)
-				: src.query;
-			const dpSrc = isDataProduct(src)
-				? {
-						sources: (src.sources ?? []).map((l) => ({
-							...l,
-							query: params.length
-								? substituteParams(l.query, values)
-								: l.query,
-						})),
-						joins: src.joins,
-					}
-				: undefined;
+			if (
+				!(src.databaseId && src.query) ||
+				(src.parameters ?? []).length ||
+				(boundQ?.loadAfterParams ?? false)
+			)
+				return;
+			seenAuto.add(key);
+			autoRunItems.push({
+				key,
+				src,
+				label:
+					queries.find((q) => q.id === viz.queryId)?.name ?? "query",
+			});
+		});
+
+		autoRunItems.forEach(({ key, src }) => {
 			setQueryStates((prev) => ({
 				...prev,
 				[key]: { ...prev[key], running: true, error: null },
 			}));
-			cachedQuery(src.databaseId, q, false, dpSrc)
-				.then((r) =>
+			cachedQuery(src.databaseId, src.query)
+				.then((r) => {
 					setQueryStates((prev) => ({
 						...prev,
 						[key]: { ...prev[key], result: r, running: false },
-					})),
-				)
-				.catch((e: unknown) =>
+					}));
+				})
+				.catch((e: unknown) => {
 					setQueryStates((prev) => ({
 						...prev,
 						[key]: {
@@ -507,11 +459,11 @@ export function ViewMode() {
 							error: String((e as Error)?.message ?? e),
 							running: false,
 						},
-					})),
-				);
+					}));
+				});
 		});
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [config, externalParams]);
+	}, [config]);
 
 	const setQueryParam = (key: string, name: string, value: string) => {
 		setQueryStates((prev) => ({
@@ -544,22 +496,9 @@ export function ViewMode() {
 				state.paramValues,
 				src.parameters,
 				paramOptions,
+				sheetParamOptions,
 			);
-			const dpSrc = isDataProduct(src)
-				? {
-						sources: (src.sources ?? []).map((l) => ({
-							...l,
-							query: substituteParams(
-								l.query,
-								state.paramValues,
-								src.parameters,
-								paramOptions,
-							),
-						})),
-						joins: src.joins,
-					}
-				: undefined;
-			const r = await cachedQuery(src.databaseId, q, true, dpSrc);
+			const r = await cachedQuery(src.databaseId, q, true);
 			setQueryStates((prev) => ({
 				...prev,
 				[key]: { ...prev[key], result: r, running: false },
@@ -829,8 +768,33 @@ export function ViewMode() {
 									</div>
 								)}
 								{state.running && (
-									<div className="flex h-full items-center justify-center text-gray-500 text-sm">
-										Loading...
+									<div className="flex h-full flex-col items-center justify-center text-gray-500 text-sm">
+										{/* Wave bar animation */}
+										<style>{`@keyframes query-wave{0%,100%{transform:scaleY(.2)}50%{transform:scaleY(1)}}`}</style>
+										<div
+											className="flex items-center gap-[3px]"
+											style={{ height: "2.25rem" }}
+										>
+											{[0, 1, 2, 3, 4].map((i) => (
+												<div
+													key={i}
+													className="w-1.5 rounded-full"
+													style={{
+														height: "100%",
+														backgroundColor:
+															"#32b4f5",
+														transformOrigin:
+															"center",
+														animation:
+															"query-wave 1s ease-in-out infinite",
+														animationDelay: `${i * 0.15}s`,
+													}}
+												/>
+											))}
+										</div>
+										<p className="text-slate-400 text-sm">
+											Loading data
+										</p>
 									</div>
 								)}
 								{!state.running && state.result && (
@@ -873,6 +837,8 @@ export function ViewMode() {
 								allSatisfied={allParamsSatisfied}
 								isRunning={runAllInProgress}
 								config={activeSheet.paramSheetConfig}
+								onParamOptionsChange={setSheetParamOptions}
+								queryRunner={portalQueryRunner}
 							/>
 						</div>
 					) : (
@@ -917,7 +883,6 @@ export function ViewMode() {
 					)}
 				</div>
 
-				{/* Sheet tabs — only when multiple sheets */}
 				{configSheets.length > 1 && (
 					<div
 						className="absolute right-0 bottom-0 left-0 z-10 flex items-stretch overflow-x-auto border-stone-200 border-t bg-white shadow-[0_-2px_6px_rgba(0,0,0,0.06)]"
@@ -1447,44 +1412,31 @@ function ChartOrTable({
 
 	const [xKey, ...valueKeys] = result.headers;
 
+	if (vizType === "area") {
+		return (
+			<div className="h-full w-full">
+				<Area_Chart data={data} config={config as any} />
+			</div>
+		);
+	}
+
 	return (
 		<ResponsiveContainer width="100%" height="100%">
-			{vizType === "area" ? (
-				<AreaChart data={data}>
-					<CartesianGrid strokeDasharray="3 3" />
-					<XAxis dataKey={xKey} tick={{ fontSize: 12 }} />
-					<YAxis tick={{ fontSize: 12 }} />
-					<Tooltip />
-					<Legend />
-					{valueKeys.map((k, i) => (
-						<Area
-							key={k}
-							type="monotone"
-							dataKey={k}
-							isAnimationActive={false}
-							stroke={COLORS[i % COLORS.length]}
-							fill={COLORS[i % COLORS.length]}
-							fillOpacity={0.2}
-						/>
-					))}
-				</AreaChart>
-			) : (
-				<BarChart data={data}>
-					<CartesianGrid strokeDasharray="3 3" />
-					<XAxis dataKey={xKey} tick={{ fontSize: 12 }} />
-					<YAxis tick={{ fontSize: 12 }} />
-					<Tooltip />
-					<Legend />
-					{valueKeys.map((k, i) => (
-						<Bar
-							key={k}
-							dataKey={k}
-							fill={COLORS[i % COLORS.length]}
-							isAnimationActive={false}
-						/>
-					))}
-				</BarChart>
-			)}
+			<BarChart data={data}>
+				<CartesianGrid strokeDasharray="3 3" />
+				<XAxis dataKey={xKey} tick={{ fontSize: 12 }} />
+				<YAxis tick={{ fontSize: 12 }} />
+				<Tooltip />
+				<Legend />
+				{valueKeys.map((k, i) => (
+					<Bar
+						key={k}
+						dataKey={k}
+						fill={COLORS[i % COLORS.length]}
+						isAnimationActive={false}
+					/>
+				))}
+			</BarChart>
 		</ResponsiveContainer>
 	);
 }

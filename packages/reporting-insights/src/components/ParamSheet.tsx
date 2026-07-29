@@ -4,11 +4,12 @@
  * dashboard, deduplicates shared param names, and provides a single "Run All"
  * button that triggers every parameterized (and loadAfterParams) query at once.
  */
+
 import { Loader2, Play, SlidersHorizontal } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { ParamControl } from "@/components/ParamControl";
-import { useQueryRunner } from "@/components/QueryRunner";
+import { type QueryRunFn, useQueryRunner } from "@/components/QueryRunner";
 import type { ParamGroup } from "@/lib/resolveQuery";
 import type { ParamSheetConfig } from "@/types/dashboard";
 
@@ -40,6 +41,10 @@ interface ParamSheetProps {
 	allSatisfied: boolean;
 	config?: ParamSheetConfig;
 	isRunning?: boolean;
+	/** Called whenever the loaded options for any param change (keyed by param name). */
+	onParamOptionsChange?: (opts: Record<string, string[]>) => void;
+	/** Fallback query runner used when no QueryRunnerProvider is in the tree (e.g. portal). */
+	queryRunner?: QueryRunFn;
 }
 
 export function ParamSheet({
@@ -50,16 +55,32 @@ export function ParamSheet({
 	allSatisfied,
 	config,
 	isRunning,
+	onParamOptionsChange,
+	queryRunner,
 }: ParamSheetProps) {
-	const sharedRun = useQueryRunner();
-	// SQL-sourced dropdown options keyed by param name
+	const providerRun = useQueryRunner();
+	const sharedRun = providerRun ?? queryRunner ?? null;
+	// SQL-sourced dropdown options keyed by param name (non-conditional params)
 	const [paramOptions, setParamOptions] = useState<Record<string, string[]>>(
 		{},
 	);
+	// Options for conditional params, re-fetched whenever the parent param value changes
+	const [conditionalParamOptions, setConditionalParamOptions] = useState<
+		Record<string, string[]>
+	>({});
 
+	// Notify parent whenever either options map changes so it can pre-expand empty multiselects
+	useEffect(() => {
+		if (!onParamOptionsChange) return;
+		onParamOptionsChange({ ...paramOptions, ...conditionalParamOptions });
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [paramOptions, conditionalParamOptions]);
+
+	// Effect A: fetch options for non-conditional params once on mount
 	useEffect(() => {
 		const toFetch = paramGroups.filter(
 			(g) =>
+				!g.conditionalOn &&
 				(g.param.inputType === "dropdown" ||
 					g.param.inputType === "multiselect") &&
 				g.optionsQuery &&
@@ -74,11 +95,7 @@ export function ParamSheet({
 					const db = g.optionsDatabaseId || g.databaseIdFallback;
 					let outputRaw: any;
 					if (sharedRun) {
-						const r = await sharedRun(
-							db,
-							g.optionsQuery ?? "",
-							1000,
-						);
+						const r = await sharedRun(db, g.optionsQuery ?? "", -1);
 						outputRaw = r.raw;
 					}
 					if (outputRaw) next[g.name] = firstColumnValues(outputRaw);
@@ -95,7 +112,79 @@ export function ParamSheet({
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [paramGroups.map((g) => g.name).join(","), sharedRun]);
 
+	// Effect B: re-fetch options for conditional params when their parent value changes
+	const conditionalGroups = paramGroups.filter(
+		(g) => g.conditionalOn && g.conditionalBranches?.length,
+	);
+	const conditionalDepKey = conditionalGroups
+		.map((g) => `${g.name}:${values[g.conditionalOn ?? ""] ?? ""}`)
+		.join("|");
+	useEffect(() => {
+		if (!conditionalGroups.length || !sharedRun) return;
+		let cancelled = false;
+		void (async () => {
+			const next: Record<string, string[]> = {};
+			for (const g of conditionalGroups) {
+				const parentVal = values[g.conditionalOn!] ?? "";
+				const branch = (g.conditionalBranches ?? []).find(
+					(b) => b.whenValue === parentVal,
+				);
+				if (!branch) {
+					// No branch matches — fall back to base optionsQuery/options if defined
+					if (g.optionsQuery && sharedRun) {
+						try {
+							const db =
+								g.optionsDatabaseId || g.databaseIdFallback;
+							const r = await sharedRun(db, g.optionsQuery, -1);
+							next[g.name] = [
+								...firstColumnValues(r.raw),
+								...g.mergedOptions,
+							].filter((v, i, a) => a.indexOf(v) === i);
+						} catch {
+							next[g.name] = [...g.mergedOptions];
+						}
+					} else {
+						next[g.name] = [...g.mergedOptions];
+					}
+					continue;
+				}
+				const db =
+					branch.optionsDatabaseId ||
+					g.optionsDatabaseId ||
+					g.databaseIdFallback;
+				const staticOpts = branch.options ?? [];
+				if (branch.optionsQuery && sharedRun) {
+					try {
+						// Substitute the parent param value into the branch SQL if referenced
+						const interpolated = branch.optionsQuery.replaceAll(
+							`{{${g.conditionalOn}}}`,
+							parentVal,
+						);
+						const r = await sharedRun(db, interpolated, -1);
+						const fetched = firstColumnValues(r.raw);
+						next[g.name] = [...fetched, ...staticOpts].filter(
+							(v, i, a) => a.indexOf(v) === i,
+						);
+					} catch {
+						next[g.name] = [...staticOpts];
+					}
+				} else {
+					next[g.name] = [...staticOpts];
+				}
+			}
+			if (!cancelled)
+				setConditionalParamOptions((prev) => ({ ...prev, ...next }));
+		})();
+		return () => {
+			cancelled = true;
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [conditionalDepKey, sharedRun]);
+
 	const optionsFor = (g: ParamGroup): string[] => {
+		if (g.conditionalOn && g.conditionalBranches?.length) {
+			return conditionalParamOptions[g.name] ?? [];
+		}
 		const base = [...(paramOptions[g.name] ?? []), ...g.mergedOptions];
 		if (
 			g.param.defaultValue &&
@@ -104,6 +193,8 @@ export function ParamSheet({
 		) {
 			base.push(g.param.defaultValue);
 		}
+
+		// Results
 		return Array.from(new Set(base));
 	};
 
@@ -248,8 +339,28 @@ export function ParamSheet({
 					</div>
 					{isRunning && (
 						<div className="absolute inset-0 flex items-center justify-center bg-white/70">
-							<div className="flex items-center gap-2 text-slate-600 text-sm">
-								<Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+							<div className="flex flex-col items-center gap-2 text-slate-600 text-sm">
+								{/* Wave bar animation */}
+								<style>{`@keyframes query-wave{0%,100%{transform:scaleY(.2)}50%{transform:scaleY(1)}}`}</style>
+								<div
+									className="flex items-center gap-[3px]"
+									style={{ height: "2.25rem" }}
+								>
+									{[0, 1, 2, 3, 4].map((i) => (
+										<div
+											key={i}
+											className="w-1.5 rounded-full"
+											style={{
+												height: "100%",
+												backgroundColor: "#32b4f5",
+												transformOrigin: "center",
+												animation:
+													"query-wave 1s ease-in-out infinite",
+												animationDelay: `${i * 0.15}s`,
+											}}
+										/>
+									))}
+								</div>
 								Running queries…
 							</div>
 						</div>

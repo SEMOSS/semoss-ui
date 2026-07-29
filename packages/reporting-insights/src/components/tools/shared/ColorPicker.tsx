@@ -1,4 +1,5 @@
-import { useRef } from "react";
+import { Check, PaintBucket, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui";
 
 interface ColorPickerProps {
@@ -8,63 +9,104 @@ interface ColorPickerProps {
 	defaultColor?: string;
 }
 
+const isValidHex = (s: string) => /^#[0-9A-Fa-f]{6}$/.test(s);
+
 export function ColorPicker({
 	label,
 	value,
 	onChange,
 	defaultColor = "#000000",
 }: ColorPickerProps) {
-	const colorInputRef = useRef<HTMLInputElement>(null);
-	const displayColor = value || defaultColor;
+	const confirmed = value || defaultColor;
+	const [inputVal, setInputVal] = useState(confirmed);
+	const [open, setOpen] = useState(false);
+
+	// Sync when the external value changes while the picker is closed (e.g. on reset)
+	useEffect(() => {
+		if (!open) setInputVal(confirmed);
+	}, [confirmed, open]);
+
+	const previewColor = isValidHex(inputVal) ? inputVal : confirmed;
+
+	const openPicker = () => {
+		setInputVal(confirmed);
+		setOpen(true);
+	};
+
+	const confirm = () => {
+		if (isValidHex(inputVal)) onChange(inputVal);
+		else setInputVal(confirmed);
+		setOpen(false);
+	};
+
+	const cancel = () => {
+		setInputVal(confirmed);
+		setOpen(false);
+	};
 
 	return (
 		<div className="space-y-1.5">
 			<label className="block font-semibold text-stone-600 text-xs">
 				{label}
 			</label>
-			<div className="flex items-center gap-2">
-				{/* Color swatch button */}
-				<button
-					type="button"
-					onClick={() => colorInputRef.current?.click()}
-					className="relative h-10 w-10 flex-shrink-0 cursor-pointer overflow-hidden rounded border-2 border-stone-200 transition-colors hover:border-stone-300"
-					style={{ backgroundColor: displayColor }}
-					title={`Current color: ${displayColor}`}
-				>
-					{/* Checkerboard pattern for transparency visualization */}
-					<div
-						className="absolute inset-0 opacity-20"
-						style={{
-							backgroundImage:
-								"repeating-conic-gradient(#94a3b8 0% 25%, transparent 0% 50%) 50% / 8px 8px",
-						}}
-					/>
-				</button>
 
-				{/* Hex input */}
+			{/* Input row */}
+			<div className="flex items-center gap-2">
+				{/* Confirmed color swatch */}
+				<div
+					className="h-7 w-7 flex-shrink-0 rounded border border-stone-200"
+					style={{ backgroundColor: confirmed }}
+				/>
 				<Input
 					type="text"
-					value={displayColor}
+					value={inputVal}
+					onFocus={() => {
+						if (!open) openPicker();
+					}}
 					onChange={(e) => {
-						const val = e.target.value;
-						// Allow # and hex characters
-						if (/^#[0-9A-Fa-f]{0,6}$/.test(val) || val === "") {
-							onChange(val);
-						}
+						setInputVal(e.target.value);
+						if (!open) setOpen(true);
 					}}
 					placeholder="#000000"
 					className="flex-1 rounded border border-stone-200 px-3 py-2 font-mono text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
 				/>
-
-				{/* Hidden native color picker (triggered by swatch button) */}
-				<input
-					ref={colorInputRef}
-					type="color"
-					value={displayColor}
-					onChange={(e) => onChange(e.target.value)}
-					className="sr-only"
-				/>
+				<button
+					type="button"
+					onClick={() => (open ? cancel() : openPicker())}
+					className="rounded border border-stone-200 p-2 transition-colors hover:bg-stone-50"
+				>
+					<PaintBucket className="h-4 w-4 text-stone-600" />
+				</button>
 			</div>
+
+			{/* Picker panel — same layout as the ColorPalette single-color flow */}
+			{open && (
+				<div className="rounded-lg border border-stone-200 bg-white p-3 shadow-sm">
+					<Input
+						type="color"
+						value={previewColor}
+						onChange={(e) => setInputVal(e.target.value)}
+						className="h-32 w-full cursor-pointer rounded"
+					/>
+					<div className="mt-3 flex justify-end gap-2">
+						<button
+							type="button"
+							onClick={cancel}
+							className="p-1 text-stone-400 hover:text-stone-600"
+						>
+							<X className="h-4 w-4" />
+						</button>
+						<button
+							type="button"
+							onClick={confirm}
+							disabled={!isValidHex(inputVal)}
+							className="p-1 text-indigo-600 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
+						>
+							<Check className="h-4 w-4" />
+						</button>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }

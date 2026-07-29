@@ -1,5 +1,16 @@
 import type { VizFilterGroup } from "@/lib/vizFilter";
 
+/**
+ * One branch of a conditional parameter: when the parent param equals `whenValue`,
+ * this branch's SQL query or static list becomes the child param's option source.
+ */
+export interface ConditionalOptionBranch {
+	whenValue: string;
+	optionsQuery?: string;
+	optionsDatabaseId?: string;
+	options?: string[];
+}
+
 export interface Parameter {
 	id: string;
 	name: string; // Used in query as {{name}}
@@ -21,6 +32,13 @@ export interface Parameter {
 	optionsQuery?: string;
 	/** Dropdown/multiselect: database to run `optionsQuery` against (defaults to the visualization's database). */
 	optionsDatabaseId?: string;
+	/**
+	 * Conditional options: name of a sibling param whose value controls which options this
+	 * param shows. When set, `conditionalBranches` defines the per-value option sources and
+	 * the base `optionsQuery`/`options` are used as a fallback when no branch matches.
+	 */
+	conditionalOn?: string;
+	conditionalBranches?: ConditionalOptionBranch[];
 }
 
 export type VisualizationType =
@@ -198,14 +216,32 @@ export type CurveType =
 	| "stepMiddle"
 	| "stepEnd";
 
+/** Data-point symbol shapes for line and area charts. */
+export type SymbolType =
+	| "arrow"
+	| "circle"
+	| "diamond"
+	| "pin"
+	| "rectangle"
+	| "round"
+	| "triangle"
+	| "none";
+
 /**
- * Composite value-label configuration shared by Line and Pie value-label
- * editors. Bar uses a simple boolean toggle (`BarStyling.showValueLabels`).
+ * Composite value-label configuration shared by Line, Pie, StackBar, and Bar
+ * value-label editors.
  */
 export interface ValueLabelConfig {
 	show?: boolean;
 	/** Position relative to the data point. Allowed values vary by chart type. */
-	position?: "top" | "bottom" | "inside" | "outside" | "center";
+	position?:
+		| "top"
+		| "bottom"
+		| "inside"
+		| "outside"
+		| "center"
+		| "insideTop"
+		| "insideBottom";
 	/** Rotation in degrees, e.g. -45 */
 	rotate?: number;
 	align?: "left" | "center" | "right";
@@ -213,6 +249,39 @@ export interface ValueLabelConfig {
 	fontSize?: number;
 	fontWeight?: "normal" | "medium" | "semibold" | "bold";
 	color?: string;
+}
+
+/** Area chart–specific styling configuration */
+export interface AreaStyling {
+	colorRules?: ColorRule[];
+	xAxisConfig?: AxisConfig;
+	yAxisConfig?: AxisConfig;
+	valueLabel?: ValueLabelConfig;
+	showValueLabels?: boolean;
+	curveType?: CurveType;
+	lineType?: "solid" | "dashed" | "dotted";
+	lineWidth?: number;
+	trendlineType?: CurveType | "none";
+	showLegend?: boolean;
+	showAverage?: boolean;
+	axisPointer?: "shadow" | "line" | "cross";
+	flipAxis?: boolean;
+	flipSeries?: boolean;
+	showMinMax?: boolean;
+	reverseYAxis?: boolean;
+	targetAreas?: TargetArea[];
+	targetLines?: TargetLine[];
+	zoomX?: boolean;
+	zoomY?: boolean;
+	saveZoom?: boolean;
+	savedZoomX?: [number, number];
+	savedZoomY?: [number, number];
+	unstacked?: boolean;
+	showTotals?: boolean;
+	/** Symbol shape at each data point. Default 'none' (no visible dots). */
+	symbolType?: SymbolType;
+	/** Symbol radius in px. Default 4. */
+	symbolSize?: number;
 }
 
 /** Multi-line chart–specific styling configuration */
@@ -230,6 +299,8 @@ export interface MultiLineStyling {
 	yAxisConfig?: AxisConfig;
 	showTrendline?: boolean;
 	showTooltip?: boolean;
+	/** Conditional color rules — colors a line whose category name matches the rule value */
+	colorRules?: ColorRule[];
 }
 
 /** Box plot–specific styling configuration */
@@ -311,6 +382,8 @@ export interface VisualizationStyling {
 	polarbar?: PolarBarStyling;
 	/** Cluster chart–specific styling and behavior configuration */
 	cluster?: ClusterStyling;
+	/** Area chart–specific styling and behavior configuration */
+	area?: AreaStyling;
 	/** Multi-line chart–specific styling and behavior configuration */
 	multiline?: MultiLineStyling;
 	/** Word Cloud–specific styling and behavior configuration */
@@ -321,6 +394,8 @@ export interface VisualizationStyling {
 	puck?: PuckStyling;
 	/** Sunburst–specific styling and behavior configuration */
 	sunburst?: SunburstStyling;
+	/** Stacked bar chart–specific styling and behavior configuration */
+	stackbar?: StackBarStyling;
 	/** Bar chart–specific styling and behavior configuration */
 	bar?: BarStyling;
 	/** Line chart–specific styling and behavior configuration */
@@ -550,6 +625,20 @@ export interface PolarBarStyling {
 	showValues?: boolean;
 	/** Fill opacity for bars (0.0–1.0, default 0.7) */
 	fillOpacity?: number;
+	/** Conditional color rules evaluated per bar segment */
+	colorRules?: ColorRule[];
+	/** Whether to render the series legend (default true when multi-series) */
+	showLegend?: boolean;
+	/** Whether to render a hover tooltip (default true) */
+	showTooltip?: boolean;
+	/** Whether to render min/max markers at bar tips (default false) */
+	showMinMax?: boolean;
+	/** When true, series are placed side-by-side within each slice; when false/undefined, bars are stacked radially */
+	unstacked?: boolean;
+	/** Zoom mode: 'none' = off, 'radius' = radial scale slider, 'angle' = category range sliders */
+	zoom?: "none" | "radius" | "angle";
+	/** Cursor highlight style on hover */
+	axisPointer?: "shadow" | "line" | "cross";
 }
 
 export const DEFAULT_WORLDMAP_STYLING: Required<
@@ -690,14 +779,81 @@ export const DEFAULT_PUCK_STYLING: Required<
 	showLegend: true,
 };
 
+/** A colored reference area drawn on the chart between two Y values */
+export interface TargetArea {
+	id: string;
+	name?: string;
+	showName?: boolean;
+	namePosition?: "insideTop" | "insideBottom" | "insideLeft" | "insideRight";
+	fontSize?: number;
+	fontColor?: string;
+	color?: string;
+	opacity?: number;
+	y1?: number;
+	y2?: number;
+}
+
+/** A colored reference line drawn on the chart at a fixed Y value */
+export interface TargetLine {
+	id: string;
+	name?: string;
+	showName?: boolean;
+	namePosition?: "insideTop" | "insideBottom" | "insideLeft" | "insideRight";
+	fontSize?: number;
+	fontColor?: string;
+	color?: string;
+	y?: number;
+}
+
+/** Stacked bar chart–specific styling configuration */
+export interface StackBarStyling {
+	xAxisConfig?: AxisConfig;
+	yAxisConfig?: AxisConfig;
+	showValueLabels?: boolean;
+	valueLabel?: ValueLabelConfig;
+	barWidth?: number;
+	trendlineType?: CurveType | "none";
+	showLegend?: boolean;
+	colorRules?: ColorRule[];
+	showAverage?: boolean;
+	axisPointer?: "shadow" | "cross" | "line";
+	flipAxis?: boolean;
+	flipSeries?: boolean;
+	showMinMax?: boolean;
+	reverseYAxis?: boolean;
+	targetAreas?: TargetArea[];
+	targetLines?: TargetLine[];
+	zoomX?: boolean;
+	zoomY?: boolean;
+	saveZoom?: boolean;
+	savedZoomX?: [number, number];
+	savedZoomY?: [number, number];
+	unstacked?: boolean;
+}
+
+/** Default Stacked Bar styling values */
+export const DEFAULT_STACKBAR_STYLING: Required<
+	Pick<
+		StackBarStyling,
+		"showValueLabels" | "barWidth" | "trendlineType" | "showLegend"
+	>
+> = {
+	showValueLabels: false,
+	barWidth: 60,
+	trendlineType: "none",
+	showLegend: true,
+};
+
 /** Bar chart–specific styling configuration */
 export interface BarStyling {
 	/** X axis editor (title / font / gap / labels / rotate / ticks / flip) */
 	xAxisConfig?: AxisConfig;
 	/** Y axis editor (title / font / gap / labels / rotate / ticks / flip) */
 	yAxisConfig?: AxisConfig;
-	/** Render numeric value labels at the top of each bar (default false) */
+	/** Legacy boolean toggle — superseded by `valueLabel`. Kept for backward compat. */
 	showValueLabels?: boolean;
+	/** Composite value-label config (show / position / rotate / align / font / color). */
+	valueLabel?: ValueLabelConfig;
 	/** Maximum bar width in px, 10–80 (default 60). Maps to recharts `maxBarSize`. */
 	barWidth?: number;
 	/** Trendline curve type. `'none'` hides the trendline. Default `'none'`. */
@@ -737,6 +893,42 @@ export interface LineStyling {
 	lineWidth?: number;
 	/** Whether to render the legend (default true when multi-series) */
 	showLegend?: boolean;
+	/** Conditional color rules — colors a dot whose value matches the rule */
+	colorRules?: ColorRule[];
+	/** Trendline curve type; 'none' disables trendlines (default). */
+	trendlineType?: CurveType | "none";
+	/** Show a dashed average reference line per series. */
+	showAverage?: boolean;
+	/** Axis pointer hover style: shadow band, line, or crosshair. */
+	axisPointer?: "shadow" | "line" | "cross";
+	/** Swap x/y axes (horizontal layout). */
+	flipAxis?: boolean;
+	/** Pivot series keys ↔ x-axis categories. */
+	flipSeries?: boolean;
+	/** Annotate min and max data points per series. */
+	showMinMax?: boolean;
+	/** Reverse the numeric axis direction. */
+	reverseYAxis?: boolean;
+	/** Reference band overlays. */
+	targetAreas?: TargetArea[];
+	/** Reference line overlays. */
+	targetLines?: TargetLine[];
+	/** Enable horizontal (x-axis) range brush. */
+	zoomX?: boolean;
+	/** Enable vertical (y-axis) range brush. */
+	zoomY?: boolean;
+	/** Persist zoom position across sessions. */
+	saveZoom?: boolean;
+	/** Saved x-axis brush fractions [lo, hi]. */
+	savedZoomX?: [number, number];
+	/** Saved y-axis brush fractions [lo, hi]. */
+	savedZoomY?: [number, number];
+	/** Show the sum of all series at the top of each category. */
+	showTotals?: boolean;
+	/** Symbol shape at each data point. Default 'circle'. */
+	symbolType?: SymbolType;
+	/** Symbol radius in px. Default 3. */
+	symbolSize?: number;
 }
 
 /** Default Line chart styling values, applied as fallbacks at render time. */
@@ -808,34 +1000,6 @@ export function curveTypeToRecharts(
  * The `databaseId` / `query` / `parameters` fields mirror the legacy embedded
  * fields on {@link Visualization}; see {@link Visualization} for why both exist.
  */
-/**
- * One leg of a cross-source "data product" query — a SQL query against a single
- * database, materialized into an in-memory frame so it can be joined with other
- * legs (potentially from other databases). See {@link DashboardQuery.sources}.
- */
-export interface QuerySourceLeg {
-	id: string;
-	/** Frame alias (sanitized identifier, unique within the query). Used in join specs. */
-	alias: string;
-	databaseId: string;
-	databaseName: string;
-	/** SQL for this leg. May contain {{param}} tokens. */
-	query: string;
-}
-
-/**
- * A join between two legs of a data product. `leftAlias` must reference a leg that
- * is already part of the accumulated frame; `rightAlias` is the leg being merged in.
- */
-export interface JoinSpec {
-	id: string;
-	leftAlias: string;
-	leftColumn: string;
-	rightAlias: string;
-	rightColumn: string;
-	type: "inner" | "left" | "right";
-}
-
 export interface DashboardQuery {
 	id: string;
 	/** Human-readable label shown in the query picker (e.g. "Sales by region"). */
@@ -851,16 +1015,6 @@ export interface DashboardQuery {
 	 * Only meaningful when the dashboard has a param sheet (isParamSheet sheet).
 	 */
 	loadAfterParams?: boolean;
-	/**
-	 * Cross-source data product: when present with ≥2 legs, this query is executed
-	 * by materializing each leg into a frame and merging them via {@link joins},
-	 * rather than running the single-source `databaseId`/`query` above (those are
-	 * kept for back-compat / a human-readable description). `parameters` remains the
-	 * deduped union across all legs so the param sheet keeps working.
-	 */
-	sources?: QuerySourceLeg[];
-	/** Joins that merge the {@link sources} legs together (one per extra leg). */
-	joins?: JoinSpec[];
 }
 
 export interface Visualization {
@@ -989,6 +1143,29 @@ export interface Database {
 	engine_type: string;
 	engine_subtype: string;
 	engine_date_created: string;
+}
+
+export interface QuerySourceLeg {
+	id: string;
+	/** Frame alias (sanitized identifier, unique within the query). Used in join specs. */
+	alias: string;
+	databaseId: string;
+	databaseName: string;
+	/** SQL for this leg. May contain {{param}} tokens. */
+	query: string;
+}
+
+/**
+ * A join between two legs of a data product. `leftAlias` must reference a leg that
+ * is already part of the accumulated frame; `rightAlias` is the leg being merged in.
+ */
+export interface JoinSpec {
+	id: string;
+	leftAlias: string;
+	leftColumn: string;
+	rightAlias: string;
+	rightColumn: string;
+	type: "inner" | "left" | "right";
 }
 
 export interface QueryResult {

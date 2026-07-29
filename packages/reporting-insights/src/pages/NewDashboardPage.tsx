@@ -762,7 +762,7 @@ export function NewDashboardPage() {
 		let modelHandled = false;
 		try {
 			const model = flexModelCacheRef.current[activeSheetId];
-			if (model && model.getNodeById(`tab-${vizId}`)) {
+			if (model?.getNodeById(`tab-${vizId}`)) {
 				model.doAction(Actions.deleteTab(`tab-${vizId}`));
 				flexModelCacheRef.current[activeSheetId] = model;
 				const flexLayout = model.toJson() as unknown as Record<
@@ -818,7 +818,7 @@ export function NewDashboardPage() {
 			const model = flexModelCacheRef.current[activeSheetId];
 			const node = model?.getNodeById(`tab-${vizId}`);
 			if (node)
-				model!.doAction(
+				model?.doAction(
 					Actions.renameTab(
 						`tab-${vizId}`,
 						updates.title || "Untitled",
@@ -943,17 +943,26 @@ export function NewDashboardPage() {
 				const autoX = textCols[0] ?? headers[0];
 				const autoY = numericCols.filter((h) => h !== autoX);
 
-				updateVisualization(vizId, {
-					config: {
-						...viz.config,
-						columnTypes,
-						// Preserve any existing explicit choice, otherwise set smart default
-						xKey: viz.config?.xKey ?? autoX,
-						yKeys:
-							viz.config?.yKeys ??
-							(autoY.length ? autoY : undefined),
-					},
-				});
+				// Use a functional updater so the config merge reads the CURRENT
+				// state rather than the stale `viz.config` snapshot captured before
+				// the async SQL call. Without this, color rules or other styling
+				// changes made while the query was running would be silently lost.
+				setVisualizations((prev) =>
+					prev.map((v) => {
+						if (v.id !== vizId) return v;
+						return {
+							...v,
+							config: {
+								...v.config,
+								columnTypes,
+								xKey: v.config?.xKey ?? autoX,
+								yKeys:
+									v.config?.yKeys ??
+									(autoY.length ? autoY : undefined),
+							},
+						};
+					}),
+				);
 			}
 		} catch (err: any) {
 			console.error("Test query error:", err);
@@ -1003,8 +1012,8 @@ export function NewDashboardPage() {
 			return false;
 		}
 		for (const [, str] of Object.entries(heightStrings)) {
-			const n = parseInt(str);
-			if (!str.trim() || isNaN(n) || n <= 0) {
+			const n = parseInt(str, 10);
+			if (!str.trim() || Number.isNaN(n) || n <= 0) {
 				alert(
 					"All visualization heights must be a valid positive number.",
 				);
@@ -1722,6 +1731,88 @@ export function NewDashboardPage() {
 																				...v.config,
 																				filterDefaultValues:
 																					values,
+																			},
+																		},
+																	);
+																}}
+																onStackbarStylingChange={(
+																	updates,
+																) => {
+																	updateVisualization(
+																		viz.id,
+																		{
+																			config: {
+																				...viz.config,
+																				styling:
+																					{
+																						...(viz
+																							.config
+																							?.styling ??
+																							{}),
+																						stackbar:
+																							{
+																								...(viz
+																									.config
+																									?.styling
+																									?.stackbar ??
+																									{}),
+																								...updates,
+																							},
+																					},
+																			},
+																		},
+																	);
+																}}
+																onAreaStylingChange={(
+																	updates,
+																) => {
+																	updateVisualization(
+																		viz.id,
+																		{
+																			config: {
+																				...viz.config,
+																				styling:
+																					{
+																						...(viz
+																							.config
+																							?.styling ??
+																							{}),
+																						area: {
+																							...(viz
+																								.config
+																								?.styling
+																								?.area ??
+																								{}),
+																							...updates,
+																						},
+																					},
+																			},
+																		},
+																	);
+																}}
+																onLineStylingChange={(
+																	updates,
+																) => {
+																	updateVisualization(
+																		viz.id,
+																		{
+																			config: {
+																				...viz.config,
+																				styling:
+																					{
+																						...(viz
+																							.config
+																							?.styling ??
+																							{}),
+																						line: {
+																							...(viz
+																								.config
+																								?.styling
+																								?.line ??
+																								{}),
+																							...updates,
+																						},
+																					},
 																			},
 																		},
 																	);

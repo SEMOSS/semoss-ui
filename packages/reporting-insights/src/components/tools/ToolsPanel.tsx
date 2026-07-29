@@ -7,15 +7,18 @@ import {
 	useMemo,
 	useState,
 } from "react";
-import { Input, Select } from "@/components/ui";
-import { buildDefaultYAxisTitle } from "@/components/visualizations/shared/chartShared";
+import {
+	AGGREGATION_LABELS,
+	aggregateChartData,
+	buildDefaultYAxisTitle,
+} from "@/components/visualizations/shared/chartShared";
 import type {
 	VisualizationStyling,
 	VisualizationType,
 } from "@/types/dashboard";
+import { ShowTotals as AreaShowTotals } from "./area/ShowTotals";
 import { BarWidth } from "./bar/BarWidth";
 import { Trendline } from "./bar/Trendline";
-import { ValueLabelToggle as BarValueLabelToggle } from "./bar/ValueLabelToggle";
 import { KpiColorByValue } from "./kpi/KpiColorByValue";
 import { KpiFilterVisualization } from "./kpi/KpiFilterVisualization";
 import { KpiSettings } from "./kpi/KpiSettings";
@@ -24,6 +27,7 @@ import { LineStyle } from "./line/LineStyle";
 import { ValueLabelEditor as LineValueLabelEditor } from "./line/ValueLabelEditor";
 import { DonutToggle } from "./pie/DonutToggle";
 import { ShowTotals } from "./pivot/ShowTotals";
+import { PolarZoom } from "./polarbar/PolarZoom";
 import { AxisSettings } from "./shared/AxisSettings";
 import { ChartTitle } from "./shared/ChartTitle";
 import { ColorByValue } from "./shared/ColorByValue";
@@ -35,7 +39,20 @@ import { ShowLegendToggle } from "./shared/ShowLegendToggle";
 import { ShowTooltipToggle } from "./shared/ShowTooltipToggle";
 import { SizeAndPosition } from "./shared/SizeAndPosition";
 import { SortValues } from "./shared/SortValues";
+import { SymbolStyle } from "./shared/SymbolStyle";
 import { ToolAccordion, ToolSearchContext } from "./shared/ToolAccordion";
+import { AverageToggle } from "./stackbar/AverageToggle";
+import { AxisPointer } from "./stackbar/AxisPointer";
+import { FlipAxis } from "./stackbar/FlipAxis";
+import { FlipSeries } from "./stackbar/FlipSeries";
+import { MinMaxToggle } from "./stackbar/MinMaxToggle";
+import { ReverseYAxis } from "./stackbar/ReverseYAxis";
+import { SaveZoom } from "./stackbar/SaveZoom";
+import { TargetArea } from "./stackbar/TargetArea";
+import { TargetLine } from "./stackbar/TargetLine";
+import { UnstackToggle } from "./stackbar/UnstackToggle";
+import { ZoomXAxis } from "./stackbar/ZoomXAxis";
+import { ZoomYAxis } from "./stackbar/ZoomYAxis";
 import { CellStyling } from "./table/CellStyling";
 import { ExportButton } from "./table/ExportButton";
 import { HeaderStyling } from "./table/HeaderStyling";
@@ -124,6 +141,46 @@ export function ToolsPanel({
 			]),
 		);
 	}, [rows, columns]);
+
+	// Label Y-axis columns with their aggregation for all chart types that have a Y drop zone
+	// (e.g. "Number" → "Average of Number") so ColorByValue shows the friendly name
+	// while still storing the raw column key in rule.valueColumn.
+	const yKeyColumnLabels = useMemo(() => {
+		const labels: Record<string, string> = {};
+		for (const key of yKeys) {
+			const agg = columnAggregations[key];
+			if (agg)
+				labels[key] = `${AGGREGATION_LABELS[agg] ?? agg} of ${key}`;
+		}
+		return labels;
+	}, [yKeys, columnAggregations]);
+
+	// For line / area: replace the raw column value suggestions with the actual
+	// post-aggregation values so "Select Value" datalist shows e.g. "3", "7" for
+	// "Count of Phrase" rather than the original phrase strings.
+	const yKeyAggregatedColumnValues = useMemo(() => {
+		if (!rows.length || !xKey || !yKeys.length) return columnValues;
+		const config = { columnAggregations } as any;
+		const chartData = aggregateChartData(
+			rows as Record<string, unknown>[],
+			xKey,
+			yKeys,
+			config,
+		);
+		const result = { ...columnValues };
+		for (const key of yKeys) {
+			if (columnAggregations[key]) {
+				result[key] = [
+					...new Set(
+						chartData
+							.map((r) => String(r[key] ?? ""))
+							.filter(Boolean),
+					),
+				].sort((a, b) => Number(a) - Number(b) || a.localeCompare(b));
+			}
+		}
+		return result;
+	}, [rows, xKey, yKeys, columnAggregations, columnValues]);
 
 	const updateStyling = (updates: Partial<VisualizationStyling>) => {
 		onChange({ ...styling, ...updates });
@@ -265,6 +322,62 @@ export function ToolsPanel({
 	) => {
 		updateBarStyling({
 			yAxisConfig: { ...styling.bar?.yAxisConfig, ...updates },
+		});
+	};
+
+	const updateStackbarStyling = (
+		updates: Partial<NonNullable<VisualizationStyling["stackbar"]>>,
+	) => {
+		updateStyling({ stackbar: { ...styling.stackbar, ...updates } });
+	};
+	const updateStackbarXAxis = (
+		updates: Partial<
+			NonNullable<
+				NonNullable<VisualizationStyling["stackbar"]>["xAxisConfig"]
+			>
+		>,
+	) => {
+		updateStackbarStyling({
+			xAxisConfig: { ...styling.stackbar?.xAxisConfig, ...updates },
+		});
+	};
+	const updateStackbarYAxis = (
+		updates: Partial<
+			NonNullable<
+				NonNullable<VisualizationStyling["stackbar"]>["yAxisConfig"]
+			>
+		>,
+	) => {
+		updateStackbarStyling({
+			yAxisConfig: { ...styling.stackbar?.yAxisConfig, ...updates },
+		});
+	};
+
+	const updateAreaStyling = (
+		updates: Partial<NonNullable<VisualizationStyling["area"]>>,
+	) => {
+		updateStyling({ area: { ...styling.area, ...updates } });
+	};
+	const updateAreaXAxis = (
+		updates: Partial<
+			NonNullable<
+				NonNullable<VisualizationStyling["area"]>["xAxisConfig"]
+			>
+		>,
+	) => {
+		updateAreaStyling({
+			xAxisConfig: { ...styling.area?.xAxisConfig, ...updates },
+		});
+	};
+	const updateAreaYAxis = (
+		updates: Partial<
+			NonNullable<
+				NonNullable<VisualizationStyling["area"]>["yAxisConfig"]
+			>
+		>,
+	) => {
+		updateAreaStyling({
+			yAxisConfig: { ...styling.area?.yAxisConfig, ...updates },
 		});
 	};
 
@@ -1100,10 +1213,43 @@ export function ToolsPanel({
 	// Box plot–specific tools
 
 	// Polar Bar–specific tools
-	const labelsOn = styling.polarbar?.showLabels !== false;
-	const valuesOn = styling.polarbar?.showValues === true;
+	const pbLabelsOn = styling.polarbar?.showLabels !== false;
+	const pbValuesOn = styling.polarbar?.showValues === true;
 	const polarBarTools = (
 		<>
+			<ToolAccordion title="Axis Pointer">
+				<AxisPointer
+					value={styling.polarbar?.axisPointer}
+					onChange={(axisPointer) =>
+						updatePolarBarStyling({ axisPointer })
+					}
+					onReset={() =>
+						updatePolarBarStyling({ axisPointer: undefined })
+					}
+				/>
+			</ToolAccordion>
+
+			<ToolAccordion title="Color by Value">
+				<ColorByValue
+					columns={columns}
+					visualizationType="polarbar"
+					columnValues={columnValues}
+					value={styling.polarbar?.colorRules || []}
+					onChange={(colorRules) =>
+						updatePolarBarStyling({ colorRules: colorRules as any })
+					}
+					onReset={() => updatePolarBarStyling({ colorRules: [] })}
+				/>
+			</ToolAccordion>
+
+			<ToolAccordion title="Color Palette">
+				<ColorPalette
+					value={styling.colorPalette}
+					customPalettes={styling.customColorPalettes || []}
+					onChange={(patch) => updateStyling(patch)}
+				/>
+			</ToolAccordion>
+
 			<ToolAccordion title="Fill Opacity">
 				<div className="flex flex-col gap-2 px-1 py-1">
 					<div className="flex items-center justify-between">
@@ -1132,43 +1278,107 @@ export function ToolsPanel({
 					/>
 				</div>
 			</ToolAccordion>
+
+			<ToolAccordion title="Legend">
+				<ShowLegendToggle
+					value={styling.polarbar?.showLegend}
+					description="Displays a legend below the chart with one entry per value series."
+					onChange={(showLegend) =>
+						updatePolarBarStyling({ showLegend })
+					}
+					onReset={() =>
+						updatePolarBarStyling({ showLegend: undefined })
+					}
+				/>
+			</ToolAccordion>
+
+			<ToolAccordion title="Min / Max Markers">
+				<MinMaxToggle
+					value={styling.polarbar?.showMinMax}
+					onChange={(showMinMax) =>
+						updatePolarBarStyling({ showMinMax })
+					}
+					onReset={() =>
+						updatePolarBarStyling({ showMinMax: undefined })
+					}
+				/>
+			</ToolAccordion>
+
 			<ToolAccordion title="Show Values">
 				<div className="space-y-2 px-4 py-3">
 					<label className="flex cursor-pointer items-center gap-3">
 						<div
-							className={`relative h-5 w-10 rounded-full transition-colors ${valuesOn ? "bg-indigo-500" : "bg-stone-200"}`}
+							className={`relative h-5 w-10 rounded-full transition-colors ${pbValuesOn ? "bg-indigo-500" : "bg-stone-200"}`}
 							onClick={() =>
-								updatePolarBarStyling({ showValues: !valuesOn })
+								updatePolarBarStyling({
+									showValues: !pbValuesOn,
+								})
 							}
 						>
 							<span
-								className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${valuesOn ? "translate-x-5" : "translate-x-0.5"}`}
+								className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${pbValuesOn ? "translate-x-5" : "translate-x-0.5"}`}
 							/>
 						</div>
 						<span className="text-stone-600 text-xs">
-							{valuesOn ? "Values visible" : "Values hidden"}
+							{pbValuesOn ? "Values visible" : "Values hidden"}
 						</span>
 					</label>
 				</div>
 			</ToolAccordion>
+
+			<ToolAccordion title="Stack / Unstack">
+				<UnstackToggle
+					value={styling.polarbar?.unstacked}
+					onChange={(unstacked) =>
+						updatePolarBarStyling({ unstacked })
+					}
+					onReset={() =>
+						updatePolarBarStyling({ unstacked: undefined })
+					}
+				/>
+			</ToolAccordion>
+
+			<ToolAccordion title="Tooltips">
+				<ShowTooltipToggle
+					value={styling.polarbar?.showTooltip}
+					description="Displays a popover with category name, series values, and any configured Tooltip columns when hovering over a bar."
+					onChange={(showTooltip) =>
+						updatePolarBarStyling({ showTooltip })
+					}
+					onReset={() =>
+						updatePolarBarStyling({ showTooltip: undefined })
+					}
+				/>
+			</ToolAccordion>
+
 			<ToolAccordion title="Value Labels">
 				<div className="space-y-2 px-4 py-3">
 					<label className="flex cursor-pointer items-center gap-3">
 						<div
-							className={`relative h-5 w-10 rounded-full transition-colors ${labelsOn ? "bg-indigo-500" : "bg-stone-200"}`}
+							className={`relative h-5 w-10 rounded-full transition-colors ${pbLabelsOn ? "bg-indigo-500" : "bg-stone-200"}`}
 							onClick={() =>
-								updatePolarBarStyling({ showLabels: !labelsOn })
+								updatePolarBarStyling({
+									showLabels: !pbLabelsOn,
+								})
 							}
 						>
 							<span
-								className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${labelsOn ? "translate-x-5" : "translate-x-0.5"}`}
+								className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${pbLabelsOn ? "translate-x-5" : "translate-x-0.5"}`}
 							/>
 						</div>
 						<span className="text-stone-600 text-xs">
-							{labelsOn ? "Labels visible" : "Labels hidden"}
+							{pbLabelsOn ? "Labels visible" : "Labels hidden"}
 						</span>
 					</label>
 				</div>
+			</ToolAccordion>
+
+			<ToolAccordion title="Zoom">
+				<PolarZoom
+					value={styling.polarbar?.zoom}
+					onChange={(zoom) => updatePolarBarStyling({ zoom })}
+					onReset={() => updatePolarBarStyling({ zoom: undefined })}
+				/>
 			</ToolAccordion>
 		</>
 	);
@@ -1377,6 +1587,22 @@ export function ToolsPanel({
 				</div>
 			</ToolAccordion>
 
+			<ToolAccordion title="Color by Value">
+				<ColorByValue
+					columns={columns}
+					visualizationType="line"
+					columnValues={columnValues}
+					columnLabels={yKeyColumnLabels}
+					value={styling.multiline?.colorRules || []}
+					onChange={(colorRules) =>
+						updateMultilineStyling({
+							colorRules: colorRules as any,
+						})
+					}
+					onReset={() => updateMultilineStyling({ colorRules: [] })}
+				/>
+			</ToolAccordion>
+
 			<ToolAccordion title="Color Palette">
 				<ColorPalette
 					value={styling.colorPalette}
@@ -1387,7 +1613,7 @@ export function ToolsPanel({
 
 			<ToolAccordion title="Curve Type">
 				<div className="px-1 py-1">
-					<Select
+					<select
 						value={mlCurveType}
 						onChange={(e) =>
 							updateMultilineStyling({
@@ -1402,7 +1628,7 @@ export function ToolsPanel({
 						<option value="step">Step</option>
 						<option value="stepAfter">Step After</option>
 						<option value="stepBefore">Step Before</option>
-					</Select>
+					</select>
 				</div>
 			</ToolAccordion>
 
@@ -1439,7 +1665,7 @@ export function ToolsPanel({
 						<label className="mb-1 block font-semibold text-stone-600 text-xs">
 							Axis Title
 						</label>
-						<Input
+						<input
 							type="text"
 							value={mlXCfg.title ?? ""}
 							onChange={(e) =>
@@ -1455,7 +1681,7 @@ export function ToolsPanel({
 						<label className="mb-1 block font-semibold text-stone-600 text-xs">
 							Font Size
 						</label>
-						<Input
+						<input
 							type="number"
 							min={8}
 							max={20}
@@ -1472,7 +1698,7 @@ export function ToolsPanel({
 						<label className="mb-1 block font-semibold text-stone-600 text-xs">
 							Axis Gap
 						</label>
-						<Input
+						<input
 							type="number"
 							value={mlXCfg.axisGap ?? 0}
 							onChange={(e) =>
@@ -1513,7 +1739,7 @@ export function ToolsPanel({
 						<label className="mb-1 block font-semibold text-stone-600 text-xs">
 							Rotate Values (°)
 						</label>
-						<Input
+						<input
 							type="number"
 							min={-90}
 							max={90}
@@ -1561,7 +1787,7 @@ export function ToolsPanel({
 						<label className="mb-1 block font-semibold text-stone-600 text-xs">
 							Axis Title
 						</label>
-						<Input
+						<input
 							type="text"
 							value={mlYCfg.title ?? ""}
 							onChange={(e) =>
@@ -1577,7 +1803,7 @@ export function ToolsPanel({
 						<label className="mb-1 block font-semibold text-stone-600 text-xs">
 							Font Size
 						</label>
-						<Input
+						<input
 							type="number"
 							min={8}
 							max={20}
@@ -1594,7 +1820,7 @@ export function ToolsPanel({
 						<label className="mb-1 block font-semibold text-stone-600 text-xs">
 							Axis Gap
 						</label>
-						<Input
+						<input
 							type="number"
 							value={mlYCfg.axisGap ?? 0}
 							onChange={(e) =>
@@ -1635,7 +1861,7 @@ export function ToolsPanel({
 						<label className="mb-1 block font-semibold text-stone-600 text-xs">
 							Rotate Values (°)
 						</label>
-						<Input
+						<input
 							type="number"
 							min={-90}
 							max={90}
@@ -1733,6 +1959,214 @@ export function ToolsPanel({
 		</>
 	);
 
+	// Stackbar-specific tools
+	const stackbarAxisDefaults = {
+		x: xKey || undefined,
+		y: buildDefaultYAxisTitle(yKeys, columnAggregations) || undefined,
+	};
+	const stackbarTools = (
+		<>
+			<ToolAccordion title="Average Line">
+				<AverageToggle
+					value={styling.stackbar?.showAverage}
+					onChange={(v) => updateStackbarStyling({ showAverage: v })}
+					onReset={() =>
+						updateStackbarStyling({ showAverage: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Axis Pointer">
+				<AxisPointer
+					value={styling.stackbar?.axisPointer}
+					onChange={(v) => updateStackbarStyling({ axisPointer: v })}
+					onReset={() =>
+						updateStackbarStyling({ axisPointer: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Bar Width">
+				<BarWidth
+					value={styling.stackbar?.barWidth}
+					onChange={(v) => updateStackbarStyling({ barWidth: v })}
+					onReset={() =>
+						updateStackbarStyling({ barWidth: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Color by Value">
+				<ColorByValue
+					columns={columns}
+					visualizationType="bar"
+					columnValues={yKeyAggregatedColumnValues}
+					columnLabels={yKeyColumnLabels}
+					value={styling.stackbar?.colorRules || []}
+					onChange={(colorRules) =>
+						updateStackbarStyling({ colorRules: colorRules as any })
+					}
+					onReset={() => updateStackbarStyling({ colorRules: [] })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Color Palette">
+				<ColorPalette
+					value={styling.colorPalette}
+					customPalettes={styling.customColorPalettes || []}
+					onChange={(patch) => updateStyling(patch)}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Flip Axis">
+				<FlipAxis
+					value={styling.stackbar?.flipAxis}
+					onChange={(v) => updateStackbarStyling({ flipAxis: v })}
+					onReset={() =>
+						updateStackbarStyling({ flipAxis: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Flip Series">
+				<FlipSeries
+					value={styling.stackbar?.flipSeries}
+					onChange={(v) => updateStackbarStyling({ flipSeries: v })}
+					onReset={() =>
+						updateStackbarStyling({ flipSeries: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Legend">
+				<ShowLegendToggle
+					value={styling.stackbar?.showLegend}
+					description="Only displayed when more than one series is configured."
+					onChange={(v) => updateStackbarStyling({ showLegend: v })}
+					onReset={() =>
+						updateStackbarStyling({ showLegend: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Min / Max Markers">
+				<MinMaxToggle
+					value={styling.stackbar?.showMinMax}
+					onChange={(v) => updateStackbarStyling({ showMinMax: v })}
+					onReset={() =>
+						updateStackbarStyling({ showMinMax: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Reverse Y Axis">
+				<ReverseYAxis
+					value={styling.stackbar?.reverseYAxis}
+					onChange={(v) => updateStackbarStyling({ reverseYAxis: v })}
+					onReset={() =>
+						updateStackbarStyling({ reverseYAxis: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Target Areas">
+				<TargetArea
+					value={styling.stackbar?.targetAreas}
+					onChange={(areas) =>
+						updateStackbarStyling({ targetAreas: areas })
+					}
+					onReset={() =>
+						updateStackbarStyling({ targetAreas: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Target Lines">
+				<TargetLine
+					value={styling.stackbar?.targetLines}
+					onChange={(lines) =>
+						updateStackbarStyling({ targetLines: lines })
+					}
+					onReset={() =>
+						updateStackbarStyling({ targetLines: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Trendline">
+				<Trendline
+					value={styling.stackbar?.trendlineType}
+					onChange={(v) =>
+						updateStackbarStyling({ trendlineType: v })
+					}
+					onReset={() =>
+						updateStackbarStyling({ trendlineType: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Unstack / Stack">
+				<UnstackToggle
+					value={styling.stackbar?.unstacked}
+					onChange={(v) => updateStackbarStyling({ unstacked: v })}
+					onReset={() =>
+						updateStackbarStyling({ unstacked: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Value Labels">
+				<LineValueLabelEditor
+					value={styling.stackbar?.valueLabel}
+					onChange={(v) => updateStackbarStyling({ valueLabel: v })}
+					onReset={() =>
+						updateStackbarStyling({ valueLabel: undefined })
+					}
+					variant="bar"
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="X Axis Settings">
+				<AxisSettings
+					axis="x"
+					value={styling.stackbar?.xAxisConfig}
+					onChange={(updates) => updateStackbarXAxis(updates)}
+					defaultTitle={stackbarAxisDefaults.x}
+					onReset={() =>
+						updateStackbarStyling({ xAxisConfig: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Y Axis Settings">
+				<AxisSettings
+					axis="y"
+					value={styling.stackbar?.yAxisConfig}
+					onChange={(updates) => updateStackbarYAxis(updates)}
+					defaultTitle={stackbarAxisDefaults.y}
+					onReset={() =>
+						updateStackbarStyling({ yAxisConfig: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Zoom X Axis">
+				<ZoomXAxis
+					value={styling.stackbar?.zoomX}
+					onChange={(v) => updateStackbarStyling({ zoomX: v })}
+					onReset={() => updateStackbarStyling({ zoomX: undefined })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Zoom Y Axis">
+				<ZoomYAxis
+					value={styling.stackbar?.zoomY}
+					onChange={(v) => updateStackbarStyling({ zoomY: v })}
+					onReset={() => updateStackbarStyling({ zoomY: undefined })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Save Zoom">
+				<SaveZoom
+					value={styling.stackbar?.saveZoom}
+					savedZoomX={styling.stackbar?.savedZoomX}
+					savedZoomY={styling.stackbar?.savedZoomY}
+					zoomXEnabled={styling.stackbar?.zoomX}
+					zoomYEnabled={styling.stackbar?.zoomY}
+					onChange={(v) => updateStackbarStyling({ saveZoom: v })}
+					onReset={() =>
+						updateStackbarStyling({
+							saveZoom: undefined,
+							savedZoomX: undefined,
+							savedZoomY: undefined,
+						})
+					}
+				/>
+			</ToolAccordion>
+		</>
+	);
+
 	// Bar-specific tools
 	const barAxisDefaults = {
 		x: xKey || undefined,
@@ -1740,6 +2174,24 @@ export function ToolsPanel({
 	};
 	const barTools = (
 		<>
+			<ToolAccordion title="Average Line">
+				<AverageToggle
+					value={styling.stackbar?.showAverage}
+					onChange={(v) => updateStackbarStyling({ showAverage: v })}
+					onReset={() =>
+						updateStackbarStyling({ showAverage: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Axis Pointer">
+				<AxisPointer
+					value={styling.stackbar?.axisPointer}
+					onChange={(v) => updateStackbarStyling({ axisPointer: v })}
+					onReset={() =>
+						updateStackbarStyling({ axisPointer: undefined })
+					}
+				/>
+			</ToolAccordion>
 			<ToolAccordion title="Bar Width">
 				<BarWidth
 					value={styling.bar?.barWidth}
@@ -1751,7 +2203,8 @@ export function ToolsPanel({
 				<ColorByValue
 					columns={columns}
 					visualizationType="bar"
-					columnValues={columnValues}
+					columnValues={yKeyAggregatedColumnValues}
+					columnLabels={yKeyColumnLabels}
 					value={styling.bar?.colorRules || []}
 					onChange={(colorRules) =>
 						updateBarStyling({ colorRules: colorRules as any })
@@ -1766,12 +2219,70 @@ export function ToolsPanel({
 					onChange={(patch) => updateStyling(patch)}
 				/>
 			</ToolAccordion>
+			<ToolAccordion title="Flip Axis">
+				<FlipAxis
+					value={styling.stackbar?.flipAxis}
+					onChange={(v) => updateStackbarStyling({ flipAxis: v })}
+					onReset={() =>
+						updateStackbarStyling({ flipAxis: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Flip Series">
+				<FlipSeries
+					value={styling.stackbar?.flipSeries}
+					onChange={(v) => updateStackbarStyling({ flipSeries: v })}
+					onReset={() =>
+						updateStackbarStyling({ flipSeries: undefined })
+					}
+				/>
+			</ToolAccordion>
 			<ToolAccordion title="Legend">
 				<ShowLegendToggle
 					value={styling.bar?.showLegend}
 					description="Only displayed when more than one series is configured."
 					onChange={(v) => updateBarStyling({ showLegend: v })}
 					onReset={() => updateBarStyling({ showLegend: undefined })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Min / Max Markers">
+				<MinMaxToggle
+					value={styling.stackbar?.showMinMax}
+					onChange={(v) => updateStackbarStyling({ showMinMax: v })}
+					onReset={() =>
+						updateStackbarStyling({ showMinMax: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Reverse Y Axis">
+				<ReverseYAxis
+					value={styling.stackbar?.reverseYAxis}
+					onChange={(v) => updateStackbarStyling({ reverseYAxis: v })}
+					onReset={() =>
+						updateStackbarStyling({ reverseYAxis: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Target Areas">
+				<TargetArea
+					value={styling.stackbar?.targetAreas}
+					onChange={(areas) =>
+						updateStackbarStyling({ targetAreas: areas })
+					}
+					onReset={() =>
+						updateStackbarStyling({ targetAreas: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Target Lines">
+				<TargetLine
+					value={styling.stackbar?.targetLines}
+					onChange={(lines) =>
+						updateStackbarStyling({ targetLines: lines })
+					}
+					onReset={() =>
+						updateStackbarStyling({ targetLines: undefined })
+					}
 				/>
 			</ToolAccordion>
 			<ToolAccordion title="Trendline">
@@ -1784,12 +2295,11 @@ export function ToolsPanel({
 				/>
 			</ToolAccordion>
 			<ToolAccordion title="Value Labels">
-				<BarValueLabelToggle
-					value={styling.bar?.showValueLabels}
-					onChange={(v) => updateBarStyling({ showValueLabels: v })}
-					onReset={() =>
-						updateBarStyling({ showValueLabels: undefined })
-					}
+				<LineValueLabelEditor
+					value={styling.bar?.valueLabel}
+					onChange={(v) => updateBarStyling({ valueLabel: v })}
+					onReset={() => updateBarStyling({ valueLabel: undefined })}
+					variant="bar"
 				/>
 			</ToolAccordion>
 			<ToolAccordion title="X Axis Settings">
@@ -1810,17 +2320,319 @@ export function ToolsPanel({
 					onReset={() => updateBarStyling({ yAxisConfig: undefined })}
 				/>
 			</ToolAccordion>
+			<ToolAccordion title="Zoom X Axis">
+				<ZoomXAxis
+					value={styling.stackbar?.zoomX}
+					onChange={(v) => updateStackbarStyling({ zoomX: v })}
+					onReset={() => updateStackbarStyling({ zoomX: undefined })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Zoom Y Axis">
+				<ZoomYAxis
+					value={styling.stackbar?.zoomY}
+					onChange={(v) => updateStackbarStyling({ zoomY: v })}
+					onReset={() => updateStackbarStyling({ zoomY: undefined })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Save Zoom">
+				<SaveZoom
+					value={styling.stackbar?.saveZoom}
+					savedZoomX={styling.stackbar?.savedZoomX}
+					savedZoomY={styling.stackbar?.savedZoomY}
+					zoomXEnabled={styling.stackbar?.zoomX}
+					zoomYEnabled={styling.stackbar?.zoomY}
+					onChange={(v) => updateStackbarStyling({ saveZoom: v })}
+					onReset={() =>
+						updateStackbarStyling({
+							saveZoom: undefined,
+							savedZoomX: undefined,
+							savedZoomY: undefined,
+						})
+					}
+				/>
+			</ToolAccordion>
+		</>
+	);
+
+	// Area-specific tools
+	const areaTools = (
+		<>
+			<ToolAccordion title="Average Line">
+				<AverageToggle
+					value={styling.area?.showAverage}
+					onChange={(v) => updateAreaStyling({ showAverage: v })}
+					onReset={() =>
+						updateAreaStyling({ showAverage: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Axis Pointer">
+				<AxisPointer
+					value={styling.area?.axisPointer}
+					onChange={(v) => updateAreaStyling({ axisPointer: v })}
+					onReset={() =>
+						updateAreaStyling({ axisPointer: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Color by Value">
+				<ColorByValue
+					columns={columns}
+					visualizationType="area"
+					columnValues={yKeyAggregatedColumnValues}
+					columnLabels={yKeyColumnLabels}
+					value={styling.area?.colorRules || []}
+					onChange={(colorRules) =>
+						updateAreaStyling({ colorRules: colorRules as any })
+					}
+					onReset={() => updateAreaStyling({ colorRules: [] })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Color Palette">
+				<ColorPalette
+					value={styling.colorPalette}
+					customPalettes={styling.customColorPalettes || []}
+					onChange={(patch) => updateStyling(patch)}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Display Total">
+				<AreaShowTotals
+					value={styling.area?.showTotals}
+					onChange={(v) => updateAreaStyling({ showTotals: v })}
+					onReset={() => updateAreaStyling({ showTotals: undefined })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Flip Axis">
+				<FlipAxis
+					value={styling.area?.flipAxis}
+					onChange={(v) => updateAreaStyling({ flipAxis: v })}
+					onReset={() => updateAreaStyling({ flipAxis: undefined })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Flip Series">
+				<FlipSeries
+					value={styling.area?.flipSeries}
+					onChange={(v) => updateAreaStyling({ flipSeries: v })}
+					onReset={() => updateAreaStyling({ flipSeries: undefined })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Legend">
+				<ShowLegendToggle
+					value={styling.area?.showLegend}
+					description="Only displayed when more than one series is configured."
+					onChange={(v) => updateAreaStyling({ showLegend: v })}
+					onReset={() => updateAreaStyling({ showLegend: undefined })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Line Styling">
+				<LineStyle
+					value={{
+						curveType: styling.area?.curveType,
+						lineType: styling.area?.lineType,
+						lineWidth: styling.area?.lineWidth,
+					}}
+					onChange={(updates) => updateAreaStyling(updates)}
+					onReset={() =>
+						updateAreaStyling({
+							curveType: undefined,
+							lineType: undefined,
+							lineWidth: undefined,
+						})
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Min / Max Markers">
+				<MinMaxToggle
+					value={styling.area?.showMinMax}
+					onChange={(v) => updateAreaStyling({ showMinMax: v })}
+					onReset={() => updateAreaStyling({ showMinMax: undefined })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Reverse Y Axis">
+				<ReverseYAxis
+					value={styling.area?.reverseYAxis}
+					onChange={(v) => updateAreaStyling({ reverseYAxis: v })}
+					onReset={() =>
+						updateAreaStyling({ reverseYAxis: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Save Zoom">
+				<SaveZoom
+					value={styling.area?.saveZoom}
+					savedZoomX={styling.area?.savedZoomX}
+					savedZoomY={styling.area?.savedZoomY}
+					zoomXEnabled={styling.area?.zoomX}
+					zoomYEnabled={styling.area?.zoomY}
+					onChange={(v) => updateAreaStyling({ saveZoom: v })}
+					onReset={() =>
+						updateAreaStyling({
+							saveZoom: undefined,
+							savedZoomX: undefined,
+							savedZoomY: undefined,
+						})
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Stack / Unstack">
+				<UnstackToggle
+					value={styling.area?.unstacked}
+					onChange={(v) => updateAreaStyling({ unstacked: v })}
+					onReset={() => updateAreaStyling({ unstacked: undefined })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Symbol Style">
+				<SymbolStyle
+					symbolType={styling.area?.symbolType}
+					symbolSize={styling.area?.symbolSize}
+					defaultSymbolType="none"
+					onChange={(updates) => updateAreaStyling(updates)}
+					onReset={() =>
+						updateAreaStyling({
+							symbolType: undefined,
+							symbolSize: undefined,
+						})
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Target Areas">
+				<TargetArea
+					value={styling.area?.targetAreas}
+					onChange={(areas) =>
+						updateAreaStyling({ targetAreas: areas })
+					}
+					onReset={() =>
+						updateAreaStyling({ targetAreas: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Target Lines">
+				<TargetLine
+					value={styling.area?.targetLines}
+					onChange={(lines) =>
+						updateAreaStyling({ targetLines: lines })
+					}
+					onReset={() =>
+						updateAreaStyling({ targetLines: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Trendline">
+				<Trendline
+					value={styling.area?.trendlineType}
+					onChange={(v) => updateAreaStyling({ trendlineType: v })}
+					onReset={() =>
+						updateAreaStyling({ trendlineType: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Value Labels">
+				<LineValueLabelEditor
+					value={styling.area?.valueLabel}
+					onChange={(v) => updateAreaStyling({ valueLabel: v })}
+					onReset={() => updateAreaStyling({ valueLabel: undefined })}
+					variant="line"
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Zoom X Axis">
+				<ZoomXAxis
+					value={styling.area?.zoomX}
+					onChange={(v) => updateAreaStyling({ zoomX: v })}
+					onReset={() => updateAreaStyling({ zoomX: undefined })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Zoom Y Axis">
+				<ZoomYAxis
+					value={styling.area?.zoomY}
+					onChange={(v) => updateAreaStyling({ zoomY: v })}
+					onReset={() => updateAreaStyling({ zoomY: undefined })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="X Axis Settings">
+				<AxisSettings
+					axis="x"
+					value={styling.area?.xAxisConfig}
+					onChange={(updates) => updateAreaXAxis(updates)}
+					defaultTitle={barAxisDefaults.x}
+					onReset={() =>
+						updateAreaStyling({ xAxisConfig: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Y Axis Settings">
+				<AxisSettings
+					axis="y"
+					value={styling.area?.yAxisConfig}
+					onChange={(updates) => updateAreaYAxis(updates)}
+					defaultTitle={barAxisDefaults.y}
+					onReset={() =>
+						updateAreaStyling({ yAxisConfig: undefined })
+					}
+				/>
+			</ToolAccordion>
 		</>
 	);
 
 	// Line-specific tools
 	const lineTools = (
 		<>
+			<ToolAccordion title="Average Line">
+				<AverageToggle
+					value={styling.line?.showAverage}
+					onChange={(v) => updateLineStyling({ showAverage: v })}
+					onReset={() =>
+						updateLineStyling({ showAverage: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Axis Pointer">
+				<AxisPointer
+					value={styling.line?.axisPointer}
+					onChange={(v) => updateLineStyling({ axisPointer: v })}
+					onReset={() =>
+						updateLineStyling({ axisPointer: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Color by Value">
+				<ColorByValue
+					columns={columns}
+					visualizationType="line"
+					columnValues={yKeyAggregatedColumnValues}
+					columnLabels={yKeyColumnLabels}
+					value={styling.line?.colorRules || []}
+					onChange={(colorRules) =>
+						updateLineStyling({ colorRules: colorRules as any })
+					}
+					onReset={() => updateLineStyling({ colorRules: [] })}
+				/>
+			</ToolAccordion>
 			<ToolAccordion title="Color Palette">
 				<ColorPalette
 					value={styling.colorPalette}
 					customPalettes={styling.customColorPalettes || []}
 					onChange={(patch) => updateStyling(patch)}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Display Total">
+				<AreaShowTotals
+					value={styling.line?.showTotals}
+					onChange={(v) => updateLineStyling({ showTotals: v })}
+					onReset={() => updateLineStyling({ showTotals: undefined })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Flip Axis">
+				<FlipAxis
+					value={styling.line?.flipAxis}
+					onChange={(v) => updateLineStyling({ flipAxis: v })}
+					onReset={() => updateLineStyling({ flipAxis: undefined })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Flip Series">
+				<FlipSeries
+					value={styling.line?.flipSeries}
+					onChange={(v) => updateLineStyling({ flipSeries: v })}
+					onReset={() => updateLineStyling({ flipSeries: undefined })}
 				/>
 			</ToolAccordion>
 			<ToolAccordion title="Legend">
@@ -1845,6 +2657,82 @@ export function ToolsPanel({
 							lineType: undefined,
 							lineWidth: undefined,
 						})
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Min / Max Markers">
+				<MinMaxToggle
+					value={styling.line?.showMinMax}
+					onChange={(v) => updateLineStyling({ showMinMax: v })}
+					onReset={() => updateLineStyling({ showMinMax: undefined })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Reverse Y Axis">
+				<ReverseYAxis
+					value={styling.line?.reverseYAxis}
+					onChange={(v) => updateLineStyling({ reverseYAxis: v })}
+					onReset={() =>
+						updateLineStyling({ reverseYAxis: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Save Zoom">
+				<SaveZoom
+					value={styling.line?.saveZoom}
+					savedZoomX={styling.line?.savedZoomX}
+					savedZoomY={styling.line?.savedZoomY}
+					zoomXEnabled={styling.line?.zoomX}
+					zoomYEnabled={styling.line?.zoomY}
+					onChange={(v) => updateLineStyling({ saveZoom: v })}
+					onReset={() =>
+						updateLineStyling({
+							saveZoom: undefined,
+							savedZoomX: undefined,
+							savedZoomY: undefined,
+						})
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Symbol Style">
+				<SymbolStyle
+					symbolType={styling.line?.symbolType}
+					symbolSize={styling.line?.symbolSize}
+					defaultSymbolType="circle"
+					onChange={(updates) => updateLineStyling(updates)}
+					onReset={() =>
+						updateLineStyling({
+							symbolType: undefined,
+							symbolSize: undefined,
+						})
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Target Areas">
+				<TargetArea
+					value={styling.line?.targetAreas ?? []}
+					onChange={(v) => updateLineStyling({ targetAreas: v })}
+					onReset={() =>
+						updateLineStyling({ targetAreas: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Target Lines">
+				<TargetLine
+					value={styling.line?.targetLines ?? []}
+					onChange={(v) => updateLineStyling({ targetLines: v })}
+					onReset={() =>
+						updateLineStyling({ targetLines: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Trendline">
+				<Trendline
+					value={styling.line?.trendlineType}
+					onChange={(v) =>
+						updateLineStyling({ trendlineType: v as any })
+					}
+					onReset={() =>
+						updateLineStyling({ trendlineType: undefined })
 					}
 				/>
 			</ToolAccordion>
@@ -1876,6 +2764,20 @@ export function ToolsPanel({
 					onReset={() =>
 						updateLineStyling({ yAxisConfig: undefined })
 					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Zoom X Axis">
+				<ZoomXAxis
+					value={styling.line?.zoomX}
+					onChange={(v) => updateLineStyling({ zoomX: v })}
+					onReset={() => updateLineStyling({ zoomX: undefined })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Zoom Y Axis">
+				<ZoomYAxis
+					value={styling.line?.zoomY}
+					onChange={(v) => updateLineStyling({ zoomY: v })}
+					onReset={() => updateLineStyling({ zoomY: undefined })}
 				/>
 			</ToolAccordion>
 		</>
@@ -1931,7 +2833,7 @@ export function ToolsPanel({
 			<div className="flex h-full flex-col">
 				{/* Search bar */}
 				<div className="sticky top-0 z-10 flex-shrink-0 border-stone-200 border-b bg-white px-4 py-2.5">
-					<Input
+					<input
 						type="text"
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
@@ -1956,7 +2858,10 @@ export function ToolsPanel({
 							)
 								? formatTool
 								: null,
-							visualizationType !== "puck" ? sizeTool : null,
+							visualizationType !== "puck" &&
+							visualizationType !== "stackbar"
+								? sizeTool
+								: null,
 							visualizationType === "table" ? tableTools : null,
 							visualizationType === "kpi" ? kpiTools : null,
 							visualizationType === "heatmap"
@@ -1989,9 +2894,10 @@ export function ToolsPanel({
 							visualizationType === "multiline"
 								? multilineTools
 								: null,
-							visualizationType === "bar" ||
+							visualizationType === "area" ? areaTools : null,
+							visualizationType === "bar" ? barTools : null,
 							visualizationType === "stackbar"
-								? barTools
+								? stackbarTools
 								: null,
 							visualizationType === "line" ? lineTools : null,
 							visualizationType === "pie" ? pieTools : null,
