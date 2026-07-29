@@ -7,12 +7,12 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@semoss/ui/next";
-import AppagentDark from "@/assets/img/Appagent-dark.svg";
 import Appagent from "@/assets/img/Appagent.svg";
-import AppcodeDark from "@/assets/img/Appcode-dark.svg";
+import AppagentDark from "@/assets/img/Appagent-dark.svg";
 import Appcode from "@/assets/img/Appcode.svg";
-import AppdragdropDark from "@/assets/img/Appdragdrop-dark.svg";
+import AppcodeDark from "@/assets/img/Appcode-dark.svg";
 import Appdragdrop from "@/assets/img/Appdragdrop.svg";
+import AppdragdropDark from "@/assets/img/Appdragdrop-dark.svg";
 
 const CARDS = [
 	{
