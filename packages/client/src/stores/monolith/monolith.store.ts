@@ -261,43 +261,33 @@ export class MonolithStore {
 	}
 
 	/**
-	 * Allow the user to login with lin otp
+	 * Allow the user to login with ldap
 	 *
 	 * @param username - username to login with
 	 * @param password - password to login with
 	 * @returns true if successful
 	 */
-	async loginLDAP(
-		username: string,
-		password: string,
-	): Promise<"success" | "change-password"> {
+	async loginLDAP(username: string, password: string): Promise<boolean> {
+		CSRF.token = "";
+
+		// loginLDAP reads username / password, pin is only for linotp
 		const postData = {
 			username: username,
-			pin: password,
+			password: password,
 			disableRedirect: true,
 		};
 
-		// track the status
-		let status: "success" | "change-password" = "success";
-
+		// an expired password comes back as a 401 with the error message,
+		// let it bubble up so the login page can render it
 		await post(`${Env.MODULE}/api/auth/loginLDAP`, postData, {}).catch(
 			(error) => {
-				if (
-					error.response &&
-					error.response.status === 401 &&
-					error.response.data &&
-					error.response.data.requirePwdChange
-				) {
-					status = "change-password";
-					return;
-				}
-
-				// throw the message
-				throw Error(error);
+				throw new Error(
+					error instanceof Error ? error.message : `${error}`,
+				);
 			},
 		);
 
-		return status;
+		return true;
 	}
 
 	/**     *
