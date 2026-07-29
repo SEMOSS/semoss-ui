@@ -64,11 +64,13 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
 		const saveMetadata = async (
 			resolvedAppId: string,
+			extraTags: string[] = [],
 		): Promise<boolean> => {
-			if (!data.APP_TAGS.length && !data.APP_DESCRIPTION) return true;
+			const tags = Array.from(new Set([...data.APP_TAGS, ...extraTags]));
+			if (!tags.length && !data.APP_DESCRIPTION) return true;
 			const { pixelReturn } = await monolithStore.runQuery(
 				`SetProjectMetadata(project=["${resolvedAppId}"], meta=[${JSON.stringify(
-					{ tag: data.APP_TAGS, description: data.APP_DESCRIPTION },
+					{ tag: tags, description: data.APP_DESCRIPTION },
 				)}])`,
 			);
 			const operationType = pixelReturn[0].operationType[0];
@@ -126,7 +128,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 					);
 				}
 
-				if (!(await saveMetadata(appId))) return;
+				if (!(await saveMetadata(appId, ["AUTOMATION"]))) return;
 			} else if (type === "code") {
 				const pixel = `CreateProject(project=["${data.APP_NAME}"], portal=[true], projectType=["CODE"]);`;
 				const { errors, pixelReturn } =
