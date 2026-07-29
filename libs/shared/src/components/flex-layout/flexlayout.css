@@ -311,7 +311,6 @@
 }
 
 .flexlayout__theme_smss .flexlayout__tabset_tabbar_outer_top {
-    padding-right: var(--room-sidebar-controls-width, 85px);
     @apply border-b border-muted;
 }
 
