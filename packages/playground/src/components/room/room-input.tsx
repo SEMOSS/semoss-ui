@@ -412,6 +412,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		};
 		const recognitionRef = useRef<SpeechRecognition | null>(null);
 
+		// Whether the latest response has unfinished tools — compaction can't
+		// touch a response until all tool calls have resolved
+		const latestResponseHasTools =
+			room.latestResponseMessage?.hasUnfinishedTools ?? false;
+
 		// ========================================================================
 		// Context Window Tooltip
 		// ========================================================================
@@ -464,7 +469,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					)}
 					{onCompact && (
 						<CompactStrategyPicker
-							disabled={isLoading || hasOutstandingTools}
+							disabled={isLoading || latestResponseHasTools}
 							strategy={compactionStrategy ?? "AUTO"}
 							onPickStrategy={(s) => onStrategyChange?.(s)}
 							onCompact={onCompact}
@@ -481,7 +486,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			onStrategyChange,
 			t,
 			isLoading,
-			hasOutstandingTools,
+			latestResponseHasTools,
 		]);
 
 		// ========================================================================
