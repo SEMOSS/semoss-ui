@@ -22,6 +22,64 @@ export const login = async (
 };
 
 /**
+ * Allow the user to login with ldap
+ *
+ * @param username - username to login with
+ * @param password - password to login with
+ * @returns true if successful
+ */
+export const loginLDAP = async (
+	username: string,
+	password: string,
+): Promise<boolean> => {
+	// loginLDAP reads username / password, pin is only for linotp
+	await post(`${Env.MODULE}/api/auth/loginLDAP`, {
+		username: username,
+		password: password,
+		disableRedirect: true,
+	});
+
+	return true;
+};
+
+/**
+ * Start a linotp login. This does not create a session, the backend replies
+ * with a challenge and the user still needs to submit the otp via
+ * {@link confirmOTP}.
+ *
+ * @param username - username to login with
+ * @param pin - pin to login with
+ * @returns true if the challenge was accepted
+ */
+export const loginOTP = async (
+	username: string,
+	pin: string,
+): Promise<boolean> => {
+	await post(`${Env.MODULE}/api/auth/loginLinOTP`, {
+		username: username,
+		pin: pin,
+		disableRedirect: true,
+	});
+
+	return true;
+};
+
+/**
+ * Confirm the otp of a linotp login started by {@link loginOTP}
+ *
+ * @param otp - otp to login with
+ * @returns true if successful
+ */
+export const confirmOTP = async (otp: string): Promise<boolean> => {
+	await post(`${Env.MODULE}/api/auth/loginLinOTP`, {
+		otp: otp,
+		disableRedirect: true,
+	});
+
+	return true;
+};
+
+/**
  * Allow the user to login with outh
  *
  * @param provider - provider to login with

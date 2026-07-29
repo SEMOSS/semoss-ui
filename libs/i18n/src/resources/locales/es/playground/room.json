@@ -29,9 +29,7 @@
 		"instructionsLabel": "Instrucciones",
 		"agentLabel": "Agente",
 		"knowledgeLabel": "Conocimiento",
-		"toolboxLabel": "Cajas de herramientas",
-		"maxTokenLabel": "Token máximo",
-		"temperatureLabel": "Temperatura"
+		"toolboxLabel": "Cajas de herramientas"
 	},
 	"modes": {
 		"ask": "Preguntar",

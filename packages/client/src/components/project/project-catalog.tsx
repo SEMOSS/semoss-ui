@@ -90,6 +90,13 @@ const SYSTEM_APPS: {
 		description: "Execute commands and see a response",
 		href: "../../terminal/dist/",
 	},
+	{
+		id: "playwright-system-app",
+		name: "Playwright Browser",
+		description:
+			"Drive a remote browser, record what you do, and replay it later",
+		href: "../../playwright-browser-sockets/dist/",
+	},
 ];
 
 interface ProjectCatalogProps {

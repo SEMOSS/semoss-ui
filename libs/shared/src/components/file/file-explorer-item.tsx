@@ -705,7 +705,6 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 												data-testid={`${itemTestId}-action-${getFileExplorerTestIdSegment(a.name)}`}
 												variant="ghost"
 												size="icon-sm"
-												className="opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
 												onClick={(e) => {
 													e.stopPropagation();
 													a.action(item);

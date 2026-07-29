@@ -1,0 +1,219 @@
+name: Publish GitHub Packages
+
+on:
+    workflow_dispatch:
+        inputs:
+            branch:
+                description: Branch to publish from
+                required: true
+                default: dev
+                type: string
+            channel:
+                description: Prerelease channel and dist-tag to use
+                required: true
+                default: preview
+                type: string
+
+permissions:
+    contents: read
+    packages: write
+
+concurrency:
+    group: publish-github-packages-${{ inputs.branch }}
+    cancel-in-progress: false
+
+jobs:
+    publish_packages:
+        runs-on: codebuild-semoss-github-runner-${{ github.run_id }}-${{ github.run_attempt }}
+        container:
+            image: public.ecr.aws/docker/library/node:24-bullseye
+        env:
+            NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            SOURCE_BRANCH: ${{ inputs.branch }}
+            PUBLISH_CHANNEL: ${{ inputs.channel }}
+            GITHUB_OWNER: ${{ github.repository_owner }}
+        steps:
+            - name: Checkout selected branch
+              uses: actions/checkout@v4
+              with:
+                  ref: ${{ inputs.branch }}
+
+            - name: Set up pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 10.13.1
+
+            - name: Set up Node.js for GitHub Packages
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 24.4.0
+                  registry-url: https://npm.pkg.github.com
+                  scope: '@${{ github.repository_owner }}'
+                  cache: pnpm
+
+            - name: Install workspace dependencies
+              run: pnpm install --ignore-scripts --frozen-lockfile
+
+            - name: Stamp package versions for this branch publish
+              run: |
+                  node <<'NODE'
+                  const fs = require("fs");
+                  const path = require("path");
+
+                  const packageDirs = ["i18n", "sdk", "ui", "shared", "renderer", "chat"];
+                  const ownerScope = `@${(process.env.GITHUB_OWNER || "").toLowerCase()}`;
+                  const sanitize = (value) =>
+                      value
+                          .toLowerCase()
+                          .replace(/[^a-z0-9-]+/g, "-")
+                          .replace(/^-+|-+$/g, "")
+                          .replace(/--+/g, "-") || "snapshot";
+
+                  const branch = sanitize(process.env.SOURCE_BRANCH || "dev");
+                  const channel = sanitize(process.env.PUBLISH_CHANNEL || "preview");
+                  const suffix = `${channel}.${branch}.${process.env.GITHUB_RUN_NUMBER}.${process.env.GITHUB_RUN_ATTEMPT}`;
+
+                  const manifests = packageDirs.map((dir) => {
+                      const manifestPath = path.join(process.cwd(), "libs", dir, "package.json");
+                      const pkg = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+                      const packageBasename = (pkg.name || "").split("/").pop();
+                      const scopedName = `${ownerScope}/${packageBasename}`;
+                      const version = pkg.version.includes("-")
+                          ? `${pkg.version}.${suffix}`
+                          : `${pkg.version}-${suffix}`;
+
+                      return {
+                          dir,
+                          manifestPath,
+                          pkg,
+                          scopedName,
+                          version,
+                      };
+                  });
+
+                  const versionMap = Object.fromEntries(
+                      manifests.map(({ scopedName, version }) => [scopedName, version]),
+                  );
+
+                  const scopedNameMap = Object.fromEntries(
+                      manifests.map(({ pkg, scopedName }) => [pkg.name, scopedName]),
+                  );
+
+                  const rewriteSection = (section) => {
+                      if (!section) {
+                          return;
+                      }
+
+                      for (const dependencyName of Object.keys(section)) {
+                          const rewrittenDependency =
+                              scopedNameMap[dependencyName] || dependencyName;
+
+                          if (rewrittenDependency !== dependencyName) {
+                              section[rewrittenDependency] = section[dependencyName];
+                              delete section[dependencyName];
+                          }
+
+                          if (versionMap[rewrittenDependency]) {
+                              section[rewrittenDependency] = versionMap[rewrittenDependency];
+                          }
+                      }
+                  };
+
+                  const sourceImportReplacements = {
+                      "@semoss/i18n": `${ownerScope}/i18n`,
+                      "@semoss/sdk": `${ownerScope}/sdk`,
+                      "@semoss/ui": `${ownerScope}/ui`,
+                      "@semoss/shared": `${ownerScope}/shared`,
+                      "@semoss/renderer": `${ownerScope}/renderer`,
+                      "@semoss/chat": `${ownerScope}/chat`,
+                  };
+
+                  const rewriteImportsInDir = (dirPath) => {
+                      if (!fs.existsSync(dirPath)) {
+                          return;
+                      }
+
+                      const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+
+                      for (const entry of entries) {
+                          const fullPath = path.join(dirPath, entry.name);
+
+                          if (entry.isDirectory()) {
+                              rewriteImportsInDir(fullPath);
+                              continue;
+                          }
+
+                          if (!entry.isFile() || !/\.(ts|tsx|js|jsx|mjs|cjs)$/.test(entry.name)) {
+                              continue;
+                          }
+
+                          let contents = fs.readFileSync(fullPath, "utf8");
+                          let changed = false;
+
+                          for (const [fromScope, toScope] of Object.entries(sourceImportReplacements)) {
+                              const nextContents = contents.split(fromScope).join(toScope);
+
+                              if (nextContents !== contents) {
+                                  contents = nextContents;
+                                  changed = true;
+                              }
+                          }
+
+                          if (changed) {
+                              fs.writeFileSync(fullPath, contents);
+                          }
+                      }
+                  };
+
+                  for (const manifest of manifests) {
+                      manifest.pkg.name = manifest.scopedName;
+                      manifest.pkg.version = manifest.version;
+                      manifest.pkg.private = false;
+                      rewriteSection(manifest.pkg.dependencies);
+                      rewriteSection(manifest.pkg.devDependencies);
+                      rewriteSection(manifest.pkg.peerDependencies);
+                      rewriteSection(manifest.pkg.optionalDependencies);
+                      manifest.pkg.publishConfig = {
+                          ...(manifest.pkg.publishConfig || {}),
+                          registry: "https://npm.pkg.github.com",
+                      };
+
+                      fs.writeFileSync(
+                          manifest.manifestPath,
+                          `${JSON.stringify(manifest.pkg, null, 4)}\n`,
+                      );
+
+                      rewriteImportsInDir(path.join(process.cwd(), "libs", manifest.dir, "src"));
+                  }
+
+                  const publishPlan = manifests.map(({ dir, pkg }) => ({
+                      dir,
+                      name: pkg.name,
+                      version: pkg.version,
+                  }));
+
+                  fs.writeFileSync(
+                      path.join(process.cwd(), "publish-plan.json"),
+                      `${JSON.stringify(publishPlan, null, 4)}\n`,
+                  );
+
+                  console.log(JSON.stringify(publishPlan, null, 2));
+                  NODE
+
+            - name: Build packages that emit dist output
+              run: |
+                  for package_dir in libs/sdk libs/ui libs/renderer libs/chat; do
+                      echo "Building ${package_dir}"
+                      cd "${package_dir}"
+                      pnpm run --if-present build
+                      cd ../..
+                  done
+
+            - name: Publish packages to GitHub Packages
+              run: |
+                  for package_dir in libs/i18n libs/sdk libs/ui libs/shared libs/renderer libs/chat; do
+                      echo "Publishing ${package_dir}"
+                      cd "${package_dir}"
+                      pnpm publish --no-git-checks --tag "${PUBLISH_CHANNEL}"
+                      cd ../..
+                  done

@@ -1,14 +1,26 @@
-import { CircleUserRound, LogOut } from "lucide-react";
+import {
+	ChevronRight,
+	CircleUserRound,
+	LogOut,
+	Monitor,
+	Moon,
+	Sun,
+} from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import {
 	Avatar,
 	AvatarFallback,
 	Button,
+	DropdownMenu,
+	DropdownMenuCheckboxItem,
+	DropdownMenuContent,
+	DropdownMenuTrigger,
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 	Spinner,
+	useTheme,
 } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 
@@ -23,8 +35,15 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 	const { children, onOpenChange } = props;
 
 	const { configStore } = useRootStore();
+	const { theme, setTheme } = useTheme();
 	const [loggingOut, setLoggingOut] = useState(false);
 	const [open, setOpen] = useState(false);
+	const darkModeEnabled =
+		(
+			configStore.theme as {
+				featureFlags?: { enableDarkMode?: boolean };
+			}
+		).featureFlags?.enableDarkMode ?? true;
 
 	const handleOpenChange = (next: boolean) => {
 		setOpen(next);
@@ -95,6 +114,77 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 								</span>
 							</div>
 						)}
+					{darkModeEnabled && (
+						<div className="border-border border-b px-4 py-2">
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<button
+										type="button"
+										className="flex w-full items-center rounded-md px-2 py-2 text-sm hover:bg-accent"
+									>
+										{theme === "dark" ? (
+											<Moon className="size-4" />
+										) : theme === "system" ? (
+											<Monitor className="size-4" />
+										) : (
+											<Sun className="size-4" />
+										)}
+										<span className="ml-2">
+											{theme === "dark"
+												? "Dark"
+												: theme === "system"
+													? "System"
+													: "Light"}
+										</span>
+										{(theme === "dark" ||
+											theme === "system") && (
+											<span className="ms-1 self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+												BETA
+											</span>
+										)}
+										<ChevronRight className="ml-auto size-4 opacity-70" />
+									</button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent
+									side="right"
+									align="start"
+									sideOffset={8}
+								>
+									<DropdownMenuCheckboxItem
+										checked={theme === "light"}
+										onCheckedChange={() =>
+											setTheme("light")
+										}
+									>
+										<Sun className="size-4" />
+										Light
+									</DropdownMenuCheckboxItem>
+									<DropdownMenuCheckboxItem
+										checked={theme === "dark"}
+										onCheckedChange={() => setTheme("dark")}
+									>
+										<Moon className="size-4" />
+										Dark
+										<span className="ms-auto self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+											BETA
+										</span>
+									</DropdownMenuCheckboxItem>
+									<DropdownMenuCheckboxItem
+										checked={theme === "system"}
+										onCheckedChange={() =>
+											setTheme("system")
+										}
+									>
+										<Monitor className="size-4" />
+										System
+										<span className="ms-auto self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+											BETA
+										</span>
+									</DropdownMenuCheckboxItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
+						</div>
+					)}
 					{/* Logout button row */}
 					<div className="flex items-center justify-center border-border border-b px-4 py-3">
 						<Button

@@ -1199,7 +1199,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						<AutoScrollOnPastePlugin
 							scrollContainerRef={scrollViewportRef}
 						/>
-						<SlashMentionPlugin isLoading={isLoading} />
+						<SlashMentionPlugin
+							isLoading={isLoading}
+							hasTools={latestResponseHasTools}
+						/>
 						<PromptLibraryDialog
 							open={isPromptLibraryOpen}
 							onOpenChange={setIsPromptLibraryOpen}

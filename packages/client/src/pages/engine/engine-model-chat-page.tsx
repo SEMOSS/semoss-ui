@@ -35,6 +35,12 @@ interface Model {
 	tag?: string;
 }
 
+interface LLMOutput {
+	response?: string;
+	messageId?: string;
+	numberOfTokensInResponse?: number;
+}
+
 export const EngineModelChatPage = () => {
 	const { active } = useEngine();
 	const [isLoading, setIsLoading] = useState(false);
@@ -45,7 +51,6 @@ export const EngineModelChatPage = () => {
 		model_id: active.id,
 		model_name: "",
 	});
-	const [temperature, setTemperature] = useState<number>(0.1);
 	const [maxTokens, setMaxTokens] = useState<number>(2000);
 	const [insightId, setInsightId] = useState<string>("");
 	const [isInsightLoading, setIsInsightLoading] = useState<boolean>(true);
@@ -102,22 +107,22 @@ export const EngineModelChatPage = () => {
 		};
 		setMessages((prev) => [...prev, userMessage]);
 		try {
-			const pixel = `LLM(engine="${selectedModel.model_id}", command=["<encode>${data.prompt}</encode>"], paramValues=[{"temperature":${temperature}, "max_tokens":${maxTokens}}])`;
+			const pixel = `LLM(engine="${selectedModel.model_id}", command=["<encode>${data.prompt}</encode>"], paramValues=[{"max_tokens":${maxTokens}}])`;
 			const response = await runPixel(pixel, insightId);
 			const { output, operationType } = response.pixelReturn[0];
+			const llmOutput = output as LLMOutput;
 			if (operationType.indexOf("ERROR") > -1) {
 				const errorMessage =
-					output.response ||
-					output ||
+					llmOutput.response ||
 					"An error occurred while processing your request";
 				throw new Error(errorMessage);
 			}
 			const assistantMessage: Message = {
-				id: output.messageId,
-				content: output.response || "No response received",
+				id: llmOutput.messageId,
+				content: llmOutput.response || "No response received",
 				isUser: false,
 				timestamp: new Date(),
-				tokens: output.numberOfTokensInResponse || 0,
+				tokens: llmOutput.numberOfTokensInResponse || 0,
 			};
 			setMessages((prev) => [...prev, assistantMessage]);
 		} catch (err) {
@@ -202,8 +207,6 @@ export const EngineModelChatPage = () => {
 			<EngineModelTestSidebar
 				selectedModel={selectedModel}
 				setSelectedModel={setSelectedModel}
-				temperature={temperature}
-				setTemperature={setTemperature}
 				maxTokens={maxTokens}
 				setMaxTokens={setMaxTokens}
 			/>
@@ -272,7 +275,7 @@ export const EngineModelChatPage = () => {
 								) : messages.length === 0 ? (
 									<div className="flex w-full max-w-md flex-col items-center gap-4 text-center">
 										<div className="flex h-[40px] w-[40px] items-center justify-center rounded-[10px] bg-(--muted)">
-											<Pencil className="h-6 w-6 text-(--foreground)" />
+											<Pencil className="h-6 w-6 text-foreground" />
 										</div>
 										<Muted className="text-center text-xs">
 											Ask a question to start a
@@ -288,11 +291,11 @@ export const EngineModelChatPage = () => {
 												className="flex items-end justify-end gap-2 px-4 py-2"
 											>
 												<div className="max-w-[90%] rounded-2xl rounded-br-sm bg-primary px-4 py-2.5 text-primary-foreground sm:max-w-[75%]">
-													<p className="whitespace-pre-wrap break-words text-xs">
+													<p className="wrap-break-word whitespace-pre-wrap text-xs">
 														{message.content}
 													</p>
 												</div>
-												<div className="flex size-8 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+												<div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
 													<User className="size-4" />
 												</div>
 											</div>
@@ -302,7 +305,7 @@ export const EngineModelChatPage = () => {
 												key={message.id}
 												className="flex items-end gap-2 px-4 py-2"
 											>
-												<Avatar className="size-8 flex-shrink-0 bg-muted text-muted-foreground">
+												<Avatar className="size-8 shrink-0 bg-muted text-muted-foreground">
 													<AvatarFallback>
 														<Bot className="size-4" />
 													</AvatarFallback>
@@ -375,7 +378,7 @@ export const EngineModelChatPage = () => {
 								)}
 								{isLoading && (
 									<div className="flex items-end gap-2 px-4 py-2">
-										<Avatar className="size-8 flex-shrink-0 bg-muted text-muted-foreground">
+										<Avatar className="size-8 shrink-0 bg-muted text-muted-foreground">
 											<AvatarFallback>
 												<Bot className="size-4" />
 											</AvatarFallback>
