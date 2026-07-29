@@ -311,7 +311,14 @@ export const NewRoomPage = observer(() => {
 				name: getWorkspace.data.name,
 			},
 		});
-	}, [mode, getWorkspace.status, getWorkspace.data, tempRoomStore]);
+
+		// Apply the workspace's default model (highest priority) if configured.
+		// Resolve the full engine object so the model dropdown shows the correct name.
+		const workspaceModelId = getWorkspace.data.config_json?.model_id;
+		if (workspaceModelId) {
+			chat.resolveAndSelectModel(workspaceModelId);
+		}
+	}, [mode, getWorkspace.status, getWorkspace.data, tempRoomStore, chat]);
 
 	// Handle knowledge vector engine from URL parameter
 	useEffect(() => {
@@ -487,6 +494,8 @@ export const NewRoomPage = observer(() => {
 												...tempRoomStore.options,
 												workspace: undefined,
 											});
+											// Restore the user's default model now that no agent is selected
+											chat.restoreDefaultModel();
 										}
 									}}
 									onPrompt={async (prompt, files) => {

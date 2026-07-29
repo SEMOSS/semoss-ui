@@ -53,6 +53,9 @@ export interface Workspace {
 	mcp: MCPConfig[];
 	skills: SkillConfig[];
 	prompts: string[];
+	config_json?: {
+		model_id?: string;
+	};
 }
 
 /**

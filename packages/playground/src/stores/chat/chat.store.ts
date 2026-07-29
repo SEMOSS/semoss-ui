@@ -479,6 +479,30 @@ export class ChatStore {
 	};
 
 	/**
+	 * Restore the user's default model (profile > session > theme > first available).
+	 * Called when an agent is deselected so the model reverts to the user's preference.
+	 */
+	restoreDefaultModel = (): void => {
+		this.getDefaultModel();
+	};
+
+	/**
+	 * Resolve a model by ID from the backend and set it as selected.
+	 * Used when we only have an ID (e.g. workspace default model) and need the full engine object.
+	 */
+	resolveAndSelectModel = async (engineId: string): Promise<void> => {
+		const { pixelReturn } = await this._actions.run<[Engine[]]>(
+			`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"], filterWord=${JSON.stringify(engineId)});`,
+		);
+		const match = pixelReturn[0].output.find(
+			(m) => m.engine_id === engineId,
+		);
+		if (match) {
+			this.setSelectedModel(match);
+		}
+	};
+
+	/**
 	 * Set the selected model
 	 */
 	setSelectedModel = (model: Engine): void => {
@@ -592,7 +616,7 @@ export class ChatStore {
 	/**
 	 * Get available models from the backend
 	 */
-	private getDefaultModel = async (): Promise<void> => {
+	getDefaultModel = async (): Promise<void> => {
 		const defaultModelId =
 			this._theme.defaultRoomSettings?.model?.engine_id ||
 			DEFAUlT_MODEL_ID;
