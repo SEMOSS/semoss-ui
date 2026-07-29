@@ -8,8 +8,9 @@ import {
 	Save,
 	Zap,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getPixelAsyncResult, runPixelAsync } from "@semoss/sdk";
+import { usePixel } from "@semoss/sdk/react";
 import { Button, toast } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import { NODE_TYPE_META } from "../automation.constants";
@@ -49,9 +50,30 @@ interface AutomationFormEditorProps {
 
 type TabId = "steps" | "results" | "history" | "config";
 
+/** Ensures the first node in the graph is always a trigger, injecting a default one if missing. */
+function ensureTriggerNode(nodes: AutomationNode[]): AutomationNode[] {
+	if (nodes.some((n) => n.type === "trigger")) {
+		return nodes;
+	}
+	const triggerMeta = NODE_TYPE_META.find((m) => m.type === "trigger");
+	if (!triggerMeta) {
+		return nodes;
+	}
+	const triggerNode: AutomationNode = {
+		id: `trigger-${crypto.randomUUID()}`,
+		type: "trigger",
+		label: "Start",
+		position: { x: 0, y: 0 },
+		outputVar: triggerMeta.defaultOutputVar,
+		config: { ...triggerMeta.defaultConfig },
+	};
+	return [triggerNode, ...nodes];
+}
+
+const EMPTY_GRAPH: AutomationGraph = { nodes: [], edges: [] };
+
 export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 	const { monolithStore } = useRootStore();
-	const [loading, setLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
 	const [activeTab, setActiveTab] = useState<TabId>("steps");
 	const [running, setRunning] = useState(false);
@@ -86,7 +108,6 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		new Set(),
 	);
 	const [runs, setRuns] = useState<AutomationRunSummary[]>([]);
-	const [historyLoading, setHistoryLoading] = useState(true);
 	const [expandedHistoryRunId, setExpandedHistoryRunId] = useState<
 		string | null
 	>(null);
@@ -97,70 +118,23 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		Set<string>
 	>(new Set());
 
-	const fetchRuns = useCallback(() => {
-		setHistoryLoading(true);
-		monolithStore
-			.runQuery(`ListAutomationRuns(project=["${appId}"], limit=[25]);`)
-			.then((response) => {
-				const list =
-					(response.pixelReturn[0]
-						.output as AutomationRunSummary[]) ?? [];
-				setRuns(list);
-			})
-			.catch((error: Error) => {
-				toast.error(
-					`Failed to load run history: ${error.message ?? "Unknown error"}`,
-				);
-			})
-			.finally(() => setHistoryLoading(false));
-	}, [appId, monolithStore]);
+	const { status: automationStatus } = usePixel<AutomationDocument | null>(
+		`GetAutomation(project=["${appId}"]);`,
+		{
+			data: null,
+			onSuccess: (doc) =>
+				setSteps(ensureTriggerNode((doc?.graph ?? EMPTY_GRAPH).nodes)),
+			onError: () => setSteps(ensureTriggerNode(EMPTY_GRAPH.nodes)),
+		},
+	);
 
-	useEffect(() => {
-		Promise.all([
-			monolithStore
-				.runQuery<[AutomationDocument]>(
-					`GetAutomation(project=["${appId}"])`,
-				)
-				.catch(() => null),
-			monolithStore.runQuery(
-				`MyEngines(engineTypes=["DATABASE","MODEL","VECTOR","STORAGE","FUNCTION"], limit=[100]);`,
-			),
-			monolithStore.runQuery(`MyProjects(limit=[100], offset=[0]);`),
-			monolithStore
-				.runQuery(`GetAutomationConfig(project=["${appId}"]);`)
-				.catch(() => null),
-		])
-			.then(([autoRes, engRes, projRes, configRes]) => {
-				const doc = (autoRes?.pixelReturn?.[0]?.output ??
-					null) as AutomationDocument | null;
-				const graph: AutomationGraph = doc?.graph ?? {
-					nodes: [],
-					edges: [],
-				};
-				// Ensure there is always a trigger node as the first element
-				let nodes = graph.nodes;
-				if (!nodes.some((n) => n.type === "trigger")) {
-					const triggerMeta = NODE_TYPE_META.find(
-						(m) => m.type === "trigger",
-					);
-					if (triggerMeta) {
-						const triggerNode: AutomationNode = {
-							id: `trigger-${crypto.randomUUID()}`,
-							type: "trigger",
-							label: "Start",
-							position: { x: 0, y: 0 },
-							outputVar: triggerMeta.defaultOutputVar,
-							config: { ...triggerMeta.defaultConfig },
-						};
-						nodes = [triggerNode, ...nodes];
-					}
-				}
-				setSteps(nodes);
-
-				const engList =
-					(engRes.pixelReturn[0].output as EngineOption[]) ?? [];
+	const { status: enginesStatus } = usePixel<EngineOption[]>(
+		`MyEngines(engineTypes=["DATABASE","MODEL","VECTOR","STORAGE","FUNCTION"], limit=[100]);`,
+		{
+			data: [],
+			onSuccess: (engList) => {
 				const byType: Record<string, EngineOption[]> = {};
-				for (const engine of engList) {
+				for (const engine of engList ?? []) {
 					const type = (engine.engine_type ?? "").toUpperCase();
 					if (!byType[type]) {
 						byType[type] = [];
@@ -168,20 +142,60 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 					byType[type].push(engine);
 				}
 				setEnginesByType(byType);
+			},
+		},
+	);
 
-				const projectList =
-					(projRes.pixelReturn[0].output as ProjectOption[]) ?? [];
-				setProjects(projectList);
+	const { status: projectsStatus } = usePixel<ProjectOption[]>(
+		`MyProjects(limit=[100], offset=[0]);`,
+		{
+			data: [],
+			onSuccess: (projectList) => setProjects(projectList ?? []),
+		},
+	);
 
-				const configList =
-					(configRes?.pixelReturn?.[0]
-						?.output as AutomationConfigEntry[]) ?? [];
-				setConfig(configList);
-			})
-			.finally(() => setLoading(false));
+	const { status: automationConfigStatus } = usePixel<
+		AutomationConfigEntry[]
+	>(`GetAutomationConfig(project=["${appId}"]);`, {
+		data: [],
+		onSuccess: (configList) => setConfig(configList ?? []),
+	});
 
-		fetchRuns();
-	}, [appId, fetchRuns, monolithStore]);
+	const loading = useMemo(
+		() =>
+			[
+				automationStatus,
+				enginesStatus,
+				projectsStatus,
+				automationConfigStatus,
+			].some((status) => status === "INITIAL" || status === "LOADING"),
+		[
+			automationStatus,
+			enginesStatus,
+			projectsStatus,
+			automationConfigStatus,
+		],
+	);
+
+	const {
+		data: runsData,
+		status: runsStatus,
+		refresh: refreshRuns,
+	} = usePixel<AutomationRunSummary[]>(
+		`ListAutomationRuns(project=["${appId}"], limit=[25]);`,
+		{
+			data: [],
+			onError: (_data, error) =>
+				toast.error(
+					`Failed to load run history: ${error.message ?? "Unknown error"}`,
+				),
+		},
+	);
+	const historyLoading = runsStatus === "INITIAL" || runsStatus === "LOADING";
+
+	useEffect(() => {
+		setRuns(runsData ?? []);
+	}, [runsData]);
 
 	const setNodeOutput = useCallback((outputVar: string, value: string) => {
 		setNodeOutputsState((previous) => ({
@@ -380,7 +394,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 							toast.error("Automation was cancelled");
 						}
 						setRunning(false);
-						fetchRuns();
+						refreshRuns();
 						return;
 					}
 				} catch (error) {
@@ -395,7 +409,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 				}
 			}
 		},
-		[appId, fetchRuns, monolithStore],
+		[appId, refreshRuns, monolithStore],
 	);
 
 	const run = useCallback(async () => {
@@ -446,7 +460,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 
 			if (runId) {
 				// Have a runId — stream live per-node progress via GetAutomationRun.
-				// pollRun handles the final toast, setRunning(false), and fetchRuns().
+				// pollRun handles the final toast, setRunning(false), and refreshRuns().
 				setLatestRunId(runId);
 				const token = { cancelled: false };
 				pollTokenRef.current = token;
@@ -472,7 +486,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 						toast.success("Automation completed");
 					}
 				}
-				fetchRuns();
+				refreshRuns();
 				setRunning(false);
 			}
 		} catch (error) {
@@ -481,7 +495,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 			);
 			setRunning(false);
 		}
-	}, [appId, applyRunData, fetchRuns, pollRun, save, steps, monolithStore]);
+	}, [appId, applyRunData, refreshRuns, pollRun, save, steps, monolithStore]);
 
 	/** Returns variable names available as inputs to the step at the given index: output vars from preceding steps plus all config keys. */
 	const upstreamVarsFor = useCallback(
@@ -854,7 +868,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 									size="sm"
 									variant="ghost"
 									className="h-8 px-2 text-xs"
-									onClick={fetchRuns}
+									onClick={refreshRuns}
 								>
 									<RefreshCw className="mr-1.5 h-3.5 w-3.5" />
 									Refresh

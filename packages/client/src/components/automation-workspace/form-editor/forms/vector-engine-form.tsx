@@ -11,17 +11,23 @@ import {
 import type { EngineOption, VectorEngineConfig } from "../../automation.types";
 import { BoundInput, EngineSelect } from "./shared";
 
+export interface VectorEngineFormProps {
+	/** Current node config */
+	config: VectorEngineConfig;
+	/** Vector engines the user has access to */
+	engines: EngineOption[];
+	/** Output variable names produced by upstream nodes, offered as autocomplete */
+	upstreamVars: string[];
+	/** Called with the updated config on every field change */
+	onChange: (c: VectorEngineConfig) => void;
+}
+
 export function VectorEngineForm({
 	config,
 	engines,
 	upstreamVars,
 	onChange,
-}: {
-	config: VectorEngineConfig;
-	engines: EngineOption[];
-	upstreamVars: string[];
-	onChange: (c: VectorEngineConfig) => void;
-}) {
+}: VectorEngineFormProps) {
 	return (
 		<div className="flex flex-col gap-4">
 			<EngineSelect

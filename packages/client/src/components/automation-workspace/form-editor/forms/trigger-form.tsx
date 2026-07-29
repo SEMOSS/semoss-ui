@@ -1,6 +1,11 @@
 import { CopyButton } from "./shared";
 
-export function TriggerForm({ appId }: { appId: string }) {
+export interface TriggerFormProps {
+	/** Id of the app the trigger pixel call targets */
+	appId: string;
+}
+
+export function TriggerForm({ appId }: TriggerFormProps) {
 	const pixelCall = `TriggerAutomation(project=["${appId}"])`;
 
 	return (

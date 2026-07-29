@@ -3,6 +3,7 @@ import { useIteratorApi } from "./use-iterator-api";
 import { usePixel } from "./use-pixel";
 import { useProject } from "./use-project";
 import { useTabBarScroll } from "./use-tab-bar-scroll";
+import { useAdminMode } from "./useAdminMode";
 import { useCacheState } from "./useCacheState";
 import { useDesigner } from "./useDesigner";
 import { useEngine } from "./useEngine";
@@ -21,6 +22,7 @@ import { useWorkspace } from "./useWorkspace";
 // block/renderer dependencies into the broad `@/hooks` import graph, which
 // increases production bundle size.
 export {
+	useAdminMode,
 	useAPI,
 	useCacheState,
 	useDesigner,

@@ -1,15 +1,16 @@
 import type { WaitConfig } from "../../automation.types";
 import { BoundInput } from "./shared";
 
-export function WaitForm({
-	config,
-	upstreamVars,
-	onChange,
-}: {
+export interface WaitFormProps {
+	/** Current node config */
 	config: WaitConfig;
+	/** Output variable names produced by upstream nodes, offered as autocomplete */
 	upstreamVars: string[];
+	/** Called with the updated config on every field change */
 	onChange: (c: WaitConfig) => void;
-}) {
+}
+
+export function WaitForm({ config, upstreamVars, onChange }: WaitFormProps) {
 	return (
 		<div className="flex flex-col gap-4">
 			<BoundInput

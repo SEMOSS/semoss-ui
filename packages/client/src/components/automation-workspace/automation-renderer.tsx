@@ -1,10 +1,8 @@
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useRootStore } from "@/hooks";
+import { usePixel } from "@semoss/sdk/react";
 import type {
 	AutomationDocument,
 	AutomationGraph,
-	AutomationNode,
 	AutomationRunSummary,
 } from "./automation.types";
 import { getDisplayMeta } from "./form-editor/automation-editor-utils";
@@ -14,49 +12,31 @@ interface AutomationRendererProps {
 	appId: string;
 }
 
+const EMPTY_GRAPH: AutomationGraph = { nodes: [], edges: [] };
+
 /**
  * Read-only summary of an automation's steps and latest run — shown on the
  * non-edit "view" page (ViewAppPage) for AUTOMATION-type apps. Users without
  * edit access land here, so this intentionally has no Save/Run controls.
  */
 export function AutomationRenderer({ appId }: AutomationRendererProps) {
-	const { monolithStore } = useRootStore();
-	const [loading, setLoading] = useState(true);
-	const [steps, setSteps] = useState<AutomationNode[]>([]);
-	const [latestRun, setLatestRun] = useState<AutomationRunSummary | null>(
-		null,
+	const { data: automationDoc, status: automationStatus } =
+		usePixel<AutomationDocument | null>(
+			`GetAutomation(project=["${appId}"]);`,
+			{ data: null },
+		);
+	const { data: runs, status: runsStatus } = usePixel<AutomationRunSummary[]>(
+		`ListAutomationRuns(project=["${appId}"], limit=[1]);`,
+		{ data: [] },
 	);
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: monolithStore is a stable singleton ref
-	useEffect(() => {
-		Promise.all([
-			monolithStore
-				.runQuery<[AutomationDocument]>(
-					`GetAutomation(project=["${appId}"])`,
-				)
-				.catch(() => null),
-			monolithStore
-				.runQuery(
-					`ListAutomationRuns(project=["${appId}"], limit=[1]);`,
-				)
-				.catch(() => null),
-		]).then(([autoRes, runRes]) => {
-			const doc = (autoRes?.pixelReturn?.[0]?.output ??
-				null) as AutomationDocument | null;
-			const graph: AutomationGraph = doc?.graph ?? {
-				nodes: [],
-				edges: [],
-			};
-			setSteps(graph.nodes);
-
-			const runs =
-				(runRes?.pixelReturn?.[0]?.output as
-					| AutomationRunSummary[]
-					| undefined) ?? [];
-			setLatestRun(runs[0] ?? null);
-			setLoading(false);
-		});
-	}, [appId]);
+	const loading =
+		automationStatus === "INITIAL" ||
+		automationStatus === "LOADING" ||
+		runsStatus === "INITIAL" ||
+		runsStatus === "LOADING";
+	const steps = (automationDoc?.graph ?? EMPTY_GRAPH).nodes;
+	const latestRun = runs?.[0] ?? null;
 
 	if (loading) {
 		return (

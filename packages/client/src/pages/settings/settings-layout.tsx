@@ -43,6 +43,10 @@ import { PrivacyPreferenceCenterModal } from "@/components/cookies/privacy-prefe
 import { AddTeamModal, TeamDeleteDialog } from "@/components/teams";
 import { SettingsContext } from "@/contexts";
 import { useAPI, useRootStore } from "@/hooks";
+import {
+	ADMIN_MODE_STORAGE_KEY,
+	getStoredAdminMode,
+} from "@/hooks/useAdminMode";
 import { useNavigate } from "@/hooks/useNavigate";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
 import { SETTINGS_ROUTES } from "./settings.constants";
@@ -65,14 +69,6 @@ export const SettingsLayout = observer(() => {
 	const { pathname, search } = useLocation();
 	const navigate = useNavigate();
 	const [privacyCenterOpen, setPrivacyCenterOpen] = useState(false);
-
-	const ADMIN_MODE_STORAGE_KEY = "semoss.adminMode";
-	const getStoredAdminMode = () => {
-		if (typeof window === "undefined") {
-			return false;
-		}
-		return window.localStorage.getItem(ADMIN_MODE_STORAGE_KEY) === "true";
-	};
 
 	// track the active breadcrumbs
 	const [adminMode, setAdminMode] = useState(getStoredAdminMode);

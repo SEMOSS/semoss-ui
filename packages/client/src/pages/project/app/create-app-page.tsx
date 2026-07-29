@@ -36,7 +36,7 @@ import type { Template } from "@/components/app/templates";
 import { LandingHeader } from "@/components/landing";
 import { UploadProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useRootStore } from "@/hooks";
+import { useAdminMode, useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import {
 	BASE_APP_QUERIES,
@@ -48,6 +48,7 @@ export const CreateAppPage = () => {
 	const navigate = useNavigate();
 
 	const { configStore } = useRootStore();
+	const adminMode = useAdminMode();
 	const [search, setSearch] = useState<string>("");
 	const [templates, setTemplates] = useState<Template[]>([]);
 	const [isTemplatesLoading, setIsTemplatesLoading] = useState<boolean>(true);
@@ -187,11 +188,7 @@ export const CreateAppPage = () => {
 				</P>
 				<div className="flex w-full flex-col gap-4">
 					<LandingHeader
-						isAdmin={
-							configStore.store.user.admin &&
-							window.localStorage.getItem("semoss.adminMode") ===
-								"true"
-						}
+						isAdmin={configStore.store.user.admin && adminMode}
 						onCreate={(type) => {
 							if (type === "blocks") {
 								setNewAppOptions({

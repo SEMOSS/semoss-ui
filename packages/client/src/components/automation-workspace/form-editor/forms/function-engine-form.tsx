@@ -13,17 +13,23 @@ import type {
 } from "../../automation.types";
 import { BoundInput, EngineSelect } from "./shared";
 
+export interface FunctionEngineFormProps {
+	/** Current node config */
+	config: FunctionEngineConfig;
+	/** Function engines the user has access to */
+	engines: EngineOption[];
+	/** Output variable names produced by upstream nodes, offered as autocomplete */
+	upstreamVars: string[];
+	/** Called with the updated config on every field change */
+	onChange: (c: FunctionEngineConfig) => void;
+}
+
 export function FunctionEngineForm({
 	config,
 	engines,
 	upstreamVars,
 	onChange,
-}: {
-	config: FunctionEngineConfig;
-	engines: EngineOption[];
-	upstreamVars: string[];
-	onChange: (c: FunctionEngineConfig) => void;
-}) {
+}: FunctionEngineFormProps) {
 	return (
 		<div className="flex flex-col gap-4">
 			<EngineSelect

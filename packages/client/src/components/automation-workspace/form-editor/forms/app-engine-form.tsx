@@ -10,17 +10,23 @@ import {
 import type { AppConfig, ProjectOption } from "../../automation.types";
 import { BoundInput } from "./shared";
 
+export interface AppEngineFormProps {
+	/** Current node config */
+	config: AppConfig;
+	/** Projects available to run the pixel expression inside of */
+	projects: ProjectOption[];
+	/** Output variable names produced by upstream nodes, offered as autocomplete */
+	upstreamVars: string[];
+	/** Called with the updated config on every field change */
+	onChange: (c: AppConfig) => void;
+}
+
 export function AppEngineForm({
 	config,
 	projects,
 	upstreamVars,
 	onChange,
-}: {
-	config: AppConfig;
-	projects: ProjectOption[];
-	upstreamVars: string[];
-	onChange: (c: AppConfig) => void;
-}) {
+}: AppEngineFormProps) {
 	return (
 		<div className="flex flex-col gap-4">
 			<Field>

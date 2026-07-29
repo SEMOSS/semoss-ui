@@ -28,17 +28,23 @@ interface TableStructure {
 	columns: { column: string; type: string }[];
 }
 
+export interface DatabaseEngineFormProps {
+	/** Current node config */
+	config: DatabaseEngineConfig;
+	/** Database engines the user has access to */
+	engines: EngineOption[];
+	/** Output variable names produced by upstream nodes, offered as autocomplete */
+	upstreamVars: string[];
+	/** Called with the updated config on every field change */
+	onChange: (c: DatabaseEngineConfig) => void;
+}
+
 export function DatabaseEngineForm({
 	config,
 	engines,
 	upstreamVars,
 	onChange,
-}: {
-	config: DatabaseEngineConfig;
-	engines: EngineOption[];
-	upstreamVars: string[];
-	onChange: (c: DatabaseEngineConfig) => void;
-}) {
+}: DatabaseEngineFormProps) {
 	const { monolithStore } = useRootStore();
 	const [structure, setStructure] = useState<TableStructure[]>([]);
 	const [schemaLoading, setSchemaLoading] = useState(false);

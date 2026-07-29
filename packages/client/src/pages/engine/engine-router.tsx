@@ -5,18 +5,12 @@ import { Help } from "@/components/help";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
+import { getStoredAdminMode } from "@/hooks/useAdminMode";
 import { ImportPage } from "../import";
 import type { ENGINE_ROUTES } from "./engine.constants";
 import { EngineEditPage } from "./engine-edit-page";
 import { EngineIndexPage } from "./engine-index-page";
 import { EngineLayout } from "./engine-layout";
-
-const getStoredAdminMode = () => {
-	if (typeof window === "undefined") {
-		return false;
-	}
-	return window.localStorage.getItem("semoss.adminMode") === "true";
-};
 
 interface EngineRouterProps {
 	/** Filter to a specific engine type by path (e.g., "model", "database") */

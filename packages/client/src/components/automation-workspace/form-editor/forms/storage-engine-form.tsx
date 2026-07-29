@@ -10,17 +10,23 @@ import {
 import type { EngineOption, StorageEngineConfig } from "../../automation.types";
 import { BoundInput, EngineSelect } from "./shared";
 
+export interface StorageEngineFormProps {
+	/** Current node config */
+	config: StorageEngineConfig;
+	/** Storage engines the user has access to */
+	engines: EngineOption[];
+	/** Output variable names produced by upstream nodes, offered as autocomplete */
+	upstreamVars: string[];
+	/** Called with the updated config on every field change */
+	onChange: (c: StorageEngineConfig) => void;
+}
+
 export function StorageEngineForm({
 	config,
 	engines,
 	upstreamVars,
 	onChange,
-}: {
-	config: StorageEngineConfig;
-	engines: EngineOption[];
-	upstreamVars: string[];
-	onChange: (c: StorageEngineConfig) => void;
-}) {
+}: StorageEngineFormProps) {
 	return (
 		<div className="flex flex-col gap-4">
 			<EngineSelect

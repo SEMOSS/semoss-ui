@@ -17,7 +17,7 @@ import {
 	LandingHeader,
 	SystemAppCard,
 } from "@/components/landing";
-import { usePage, useRootStore } from "@/hooks";
+import { useAdminMode, usePage, useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import {
 	BASE_APP_QUERIES,
@@ -34,8 +34,7 @@ export const LandingPage: React.FC = observer(() => {
 
 	const { configStore } = useRootStore();
 	const navigate = useNavigate();
-	const adminMode =
-		window.localStorage.getItem("semoss.adminMode") === "true";
+	const adminMode = useAdminMode();
 
 	const [newAppOptions, setNewAppOptions] = useState<
 		React.ComponentProps<typeof NewAppModal>["options"] | null

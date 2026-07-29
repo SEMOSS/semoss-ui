@@ -13,6 +13,21 @@ import {
 } from "@semoss/ui/next";
 import type { EngineOption } from "../../automation.types";
 
+export interface BoundInputProps {
+	/** Field label */
+	label: string;
+	/** Current bound value */
+	value: string;
+	/** Input placeholder text */
+	placeholder?: string;
+	/** Called with the updated value on every keystroke */
+	onChange: (v: string) => void;
+	/** Output variable names produced by upstream nodes, offered as autocomplete */
+	upstreamVars: string[];
+	/** Render as a multi-line monospace Textarea instead of a single-line Input */
+	mono?: boolean;
+}
+
 export function BoundInput({
 	label,
 	value,
@@ -20,14 +35,7 @@ export function BoundInput({
 	onChange,
 	upstreamVars,
 	mono,
-}: {
-	label: string;
-	value: string;
-	placeholder?: string;
-	onChange: (v: string) => void;
-	upstreamVars: string[];
-	mono?: boolean;
-}) {
+}: BoundInputProps) {
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -146,6 +154,21 @@ export function BoundInput({
 	);
 }
 
+export interface EngineSelectProps {
+	/** Field label */
+	label: string;
+	/** Selected engine id */
+	value: string;
+	/** Engines to list */
+	engines: EngineOption[];
+	/** Called with the newly selected engine id */
+	onChange: (v: string) => void;
+	/** Additional className applied to the Select trigger */
+	triggerClassName?: string;
+	/** Additional className applied to the field label */
+	labelClassName?: string;
+}
+
 export function EngineSelect({
 	label,
 	value,
@@ -153,14 +176,7 @@ export function EngineSelect({
 	onChange,
 	triggerClassName = "h-8 text-xs",
 	labelClassName = "text-xs",
-}: {
-	label: string;
-	value: string;
-	engines: EngineOption[];
-	onChange: (v: string) => void;
-	triggerClassName?: string;
-	labelClassName?: string;
-}) {
+}: EngineSelectProps) {
 	return (
 		<Field>
 			<FieldLabel className={labelClassName}>{label}</FieldLabel>
@@ -197,13 +213,14 @@ export function EngineSelect({
 	);
 }
 
-export function CopyButton({
-	value,
-	label,
-}: {
+export interface CopyButtonProps {
+	/** Value copied to the clipboard */
 	value: string;
+	/** Button label, shown when not in the "copied" state */
 	label?: string;
-}) {
+}
+
+export function CopyButton({ value, label }: CopyButtonProps) {
 	const [copied, setCopied] = useState(false);
 	return (
 		<button

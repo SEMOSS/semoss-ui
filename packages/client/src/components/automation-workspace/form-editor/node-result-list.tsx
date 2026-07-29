@@ -6,17 +6,23 @@ import { getDisplayMeta } from "./automation-editor-utils";
 import { OutputPreview } from "./output-preview";
 import { StatusBadge } from "./status-badge";
 
+export interface NodeResultListProps {
+	/** Automation node definitions, used to look up label/type per result */
+	steps: AutomationNode[];
+	/** Per-node execution results to render */
+	results: AutomationNodeResult[];
+	/** Node ids whose output preview is currently expanded */
+	expandedNodes: Set<string>;
+	/** Called with a node id when its output preview is expanded/collapsed */
+	onToggleNode: (nodeId: string) => void;
+}
+
 export function NodeResultList({
 	steps,
 	results,
 	expandedNodes,
 	onToggleNode,
-}: {
-	steps: AutomationNode[];
-	results: AutomationNodeResult[];
-	expandedNodes: Set<string>;
-	onToggleNode: (nodeId: string) => void;
-}) {
+}: NodeResultListProps) {
 	const stepMap = useMemo(
 		() => new Map(steps.map((step) => [step.id, step])),
 		[steps],

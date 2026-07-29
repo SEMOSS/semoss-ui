@@ -3,17 +3,23 @@ import { Fragment, useMemo, useState } from "react";
 import { toast } from "@semoss/ui/next";
 import { extractDataset } from "../automation-utils";
 
+export interface OutputPreviewProps {
+	/** Raw node output value (JSON string, markdown, or plain text) */
+	value: string;
+	/** Whether the full/expanded preview is currently shown */
+	expanded: boolean;
+	/** Called when the expand/collapse toggle is clicked */
+	onToggle: () => void;
+	/** Node type, used to pick a render mode (markdown, table, vector-results) */
+	nodeType?: string;
+}
+
 export function OutputPreview({
 	value,
 	expanded,
 	onToggle,
 	nodeType,
-}: {
-	value: string;
-	expanded: boolean;
-	onToggle: () => void;
-	nodeType?: string;
-}) {
+}: OutputPreviewProps) {
 	const preview = value.length > 180 ? `${value.slice(0, 180)}…` : value;
 	const [tableView, setTableView] = useState<"table" | "json">("table");
 

@@ -1,9 +1,10 @@
+import { observer } from "mobx-react-lite";
 import { Link } from "react-router-dom";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useWorkspace } from "@/hooks/useWorkspace";
+import { useWorkspace } from "@/hooks";
 import { AutomationFormEditor } from "./form-editor/automation-form-editor";
 
-export function AutomationWorkspace() {
+export const AutomationWorkspace: React.FC = observer(() => {
 	const { workspace } = useWorkspace();
 	const appId = workspace.appId;
 
@@ -32,4 +33,4 @@ export function AutomationWorkspace() {
 			</div>
 		</div>
 	);
-}
+});
