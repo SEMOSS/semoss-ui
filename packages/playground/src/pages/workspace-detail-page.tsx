@@ -43,7 +43,7 @@ import {
 	WorkspaceSkillList,
 } from "@/components";
 import { useGlobalBreadcrumbs } from "@/hooks";
-import { useChat } from "@/hooks/use-chat";
+import { useApp } from "@/hooks/use-app";
 import type { Workspace } from "@/types";
 
 /**
@@ -60,7 +60,7 @@ export const WorkspaceDetailPage = observer(() => {
 
 	const { workspaceId } = useParams<{ workspaceId: string }>();
 	const navigate = useNavigate();
-	const { chat } = useChat();
+	const { app } = useApp();
 
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [deleteModal, setDeleteModal] = useState(false);
@@ -379,7 +379,7 @@ export const WorkspaceDetailPage = observer(() => {
 								e.stopPropagation();
 								setIsDeleting(true);
 								try {
-									await chat.deleteWorkspace(workspaceId);
+									await app.deleteWorkspace(workspaceId);
 									navigate("/agent");
 								} catch (err) {
 									toast.error(

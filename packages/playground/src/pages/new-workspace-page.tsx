@@ -24,7 +24,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { InstructionsModal } from "@/components";
-import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
+import { useApp, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { MCPConfig } from "@/types";
 import { mcpToPlatformUrl, promptToPlatformUrl } from "@/utility/mcp-utils";
 
@@ -40,7 +40,7 @@ const FORM_ID = "workspace-new-form";
 export const NewWorkspacePage = observer(() => {
 	const { t } = useTranslation(["workspace", "common", "notifications"]);
 	const navigate = useNavigate();
-	const { chat } = useChat();
+	const { app } = useApp();
 	const { root } = useRoot();
 
 	const nameId = useId();
@@ -78,7 +78,7 @@ export const NewWorkspacePage = observer(() => {
 
 		setIsSaving(true);
 		try {
-			const newWorkspaceId = await chat.addWorkspace({
+			const newWorkspaceId = await app.addWorkspace({
 				name,
 				description,
 				system_prompt: instructions,

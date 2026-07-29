@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { ScrollArea } from "@semoss/ui/next";
-import { useChat } from "@/hooks";
+import { useApp } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import { RoomOptionsForm } from "./room-options-form";
 
@@ -11,7 +11,7 @@ interface RoomConfigurationProps {
 
 export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 	({ room }) => {
-		const { chat } = useChat();
+		const { app } = useApp();
 
 		return (
 			<ScrollArea className="h-full w-full">
@@ -21,7 +21,7 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 					onModelChange={(model) => {
 						if (model) {
 							room.setModel(model);
-							chat.setSelectedModel(model);
+							app.setSelectedModel(model);
 						}
 					}}
 					onOptionsChange={(options) => {

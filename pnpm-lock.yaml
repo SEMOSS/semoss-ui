@@ -156,7 +156,7 @@ importers:
         version: 18.3.1
       react-i18next:
         specifier: ^15.0.0
-        version: 15.7.4(i18next@23.16.8)(react@18.3.1)(typescript@5.5.4)
+        version: 15.7.4(i18next@23.16.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
     devDependencies:
       '@types/react':
         specifier: 18.3.1
@@ -927,18 +927,21 @@ importers:
       '@lexical/react':
         specifier: ^0.39.0
         version: 0.39.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(yjs@13.6.27)
+      '@semoss/chat':
+        specifier: preview
+        version: 0.1.0-preview.feat-playground-components.3.1(@semoss/sdk@1.0.0-beta.43.preview.feat-playground-components.3.1(react@18.3.1))(@semoss/shared@1.0.0-beta.1.preview.feat-playground-components.3.1(@types/react-dom@18.3.0)(@types/react@18.3.1)(typescript@5.5.4))(@semoss/ui@1.0.0-beta.3.preview.feat-playground-components.3.1(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))
       '@semoss/i18n':
-        specifier: workspace:*
-        version: link:../../libs/i18n
+        specifier: preview
+        version: 1.0.0-beta.1.preview.feat-playground-components.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
       '@semoss/sdk':
-        specifier: workspace:*
-        version: link:../../libs/sdk
+        specifier: preview
+        version: 1.0.0-beta.43.preview.feat-playground-components.3.1(react@18.3.1)
       '@semoss/shared':
-        specifier: workspace:*
-        version: link:../../libs/shared
+        specifier: preview
+        version: 1.0.0-beta.1.preview.feat-playground-components.3.1(@types/react-dom@18.3.0)(@types/react@18.3.1)(typescript@5.5.4)
       '@semoss/ui':
-        specifier: workspace:*
-        version: link:../../libs/ui
+        specifier: preview
+        version: 1.0.0-beta.3.preview.feat-playground-components.3.1(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tailwindcss/vite':
         specifier: ^4.1.14
         version: 4.1.17(vite@7.2.4(@types/node@25.9.3)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.48.0))
@@ -3431,6 +3434,34 @@ packages:
         optional: true
       zen-observable:
         optional: true
+
+  '@semoss/chat@0.1.0-preview.feat-playground-components.3.1':
+    resolution: {integrity: sha512-7i3IRQbyw6p8+r8W3PQDpj5gH52UQQAMnpSrqZuuwq/ZJ+r5JFQY9+qhubRSjYslB5hWPqDPmH1Pzmp9Jabecg==, tarball: https://npm.pkg.github.com/download/@semoss/chat/0.1.0-preview.feat-playground-components.3.1/0ff5e48c738f8f5f675a7813771a96eba9cdd58a}
+    peerDependencies:
+      '@semoss/sdk': 1.0.0-beta.43.preview.feat-playground-components.3.1
+      '@semoss/shared': 1.0.0-beta.1.preview.feat-playground-components.3.1
+      '@semoss/ui': 1.0.0-beta.3.preview.feat-playground-components.3.1
+      react: 18.3.1
+      react-dom: 18.3.1
+
+  '@semoss/i18n@1.0.0-beta.1.preview.feat-playground-components.3.1':
+    resolution: {integrity: sha512-mk4srDrhHj7xhbEvLL2B6CXyAF4SS4FWzQh1mpycZy4y7rQfmEIwjiaDSyXd/qWVT1IS98Y+v74cj0zTsnqZSw==, tarball: https://npm.pkg.github.com/download/@semoss/i18n/1.0.0-beta.1.preview.feat-playground-components.3.1/24a1b3e302cbc520a460d17e15f5fdcc4e378ff9}
+    peerDependencies:
+      react: 18.3.1
+
+  '@semoss/sdk@1.0.0-beta.43.preview.feat-playground-components.3.1':
+    resolution: {integrity: sha512-j0vkP3XkB9FlnvO8gBQGB/MT1Qp4m7ilErhxRcFI0vqzqLZ1U1KCn6ClGd/yQjUJHUO6ECJrhq7hNeW+Dvk6Yg==, tarball: https://npm.pkg.github.com/download/@semoss/sdk/1.0.0-beta.43.preview.feat-playground-components.3.1/ad655f6f7793d9fa1467c2c57ff89e14e9c5c796}
+    peerDependencies:
+      react: 18.3.1
+
+  '@semoss/shared@1.0.0-beta.1.preview.feat-playground-components.3.1':
+    resolution: {integrity: sha512-kqEyReMlQ98wOuMXSFu5/01aRGdUMjZT/YWcvwDchmoIKbZlhmaQDGa7an60VyXsg87daUx5i3PicqTZokIYaw==, tarball: https://npm.pkg.github.com/download/@semoss/shared/1.0.0-beta.1.preview.feat-playground-components.3.1/a5695bb1d7bcb252668458eab32b347a274a25d7}
+
+  '@semoss/ui@1.0.0-beta.3.preview.feat-playground-components.3.1':
+    resolution: {integrity: sha512-lbHuxTKhscWuZyy6tQXoj6ZddzZIpBtqjVgE0LiuKjMiYV9fCory0OuBMXDZgIHuXl6vN0TkaXLGEt7/OVDytg==, tarball: https://npm.pkg.github.com/download/@semoss/ui/1.0.0-beta.3.preview.feat-playground-components.3.1/211f6fd247de46cc70da0789004c5c86fdf6ca50}
+    peerDependencies:
+      react: 18.3.1
+      react-dom: 18.3.1
 
   '@shikijs/core@3.15.0':
     resolution: {integrity: sha512-8TOG6yG557q+fMsSVa8nkEDOZNTSxjbbR8l6lF2gyr6Np+jrPlslqDxQkN6rMXCECQ3isNPZAGszAfYoJOPGlg==}
@@ -11877,6 +11908,122 @@ snapshots:
     transitivePeerDependencies:
       - zenObservable
 
+  '@semoss/chat@0.1.0-preview.feat-playground-components.3.1(@semoss/sdk@1.0.0-beta.43.preview.feat-playground-components.3.1(react@18.3.1))(@semoss/shared@1.0.0-beta.1.preview.feat-playground-components.3.1(@types/react-dom@18.3.0)(@types/react@18.3.1)(typescript@5.5.4))(@semoss/ui@1.0.0-beta.3.preview.feat-playground-components.3.1(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))':
+    dependencies:
+      '@codesandbox/sandpack-react': 2.20.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@semoss/sdk': 1.0.0-beta.43.preview.feat-playground-components.3.1(react@18.3.1)
+      '@semoss/shared': 1.0.0-beta.1.preview.feat-playground-components.3.1(@types/react-dom@18.3.0)(@types/react@18.3.1)(typescript@5.5.4)
+      '@semoss/ui': 1.0.0-beta.3.preview.feat-playground-components.3.1(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      dayjs: 1.11.8
+      lucide-react: 0.545.0(react@18.3.1)
+      mermaid: 11.15.0
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      tailwind-merge: 3.4.0
+      zustand: 5.0.14(@types/react@18.3.1)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))
+    transitivePeerDependencies:
+      - '@types/react'
+      - immer
+      - use-sync-external-store
+
+  '@semoss/i18n@1.0.0-beta.1.preview.feat-playground-components.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)':
+    dependencies:
+      i18next: 23.16.8
+      i18next-browser-languagedetector: 8.2.1
+      react: 18.3.1
+      react-i18next: 15.7.4(i18next@23.16.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+    transitivePeerDependencies:
+      - react-dom
+      - react-native
+      - typescript
+
+  '@semoss/sdk@1.0.0-beta.43.preview.feat-playground-components.3.1(react@18.3.1)':
+    dependencies:
+      react: 18.3.1
+
+  '@semoss/shared@1.0.0-beta.1.preview.feat-playground-components.3.1(@types/react-dom@18.3.0)(@types/react@18.3.1)(typescript@5.5.4)':
+    dependencies:
+      '@iconify-icons/vscode-icons': 1.2.29
+      '@iconify/react': 5.2.1(react@18.3.1)
+      '@monaco-editor/react': 4.7.0(monaco-editor@0.45.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@semoss/i18n': 1.0.0-beta.1.preview.feat-playground-components.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+      '@semoss/sdk': 1.0.0-beta.43.preview.feat-playground-components.3.1(react@18.3.1)
+      '@semoss/ui': 1.0.0-beta.3.preview.feat-playground-components.3.1(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      dayjs: 1.11.8
+      echarts: 5.6.0
+      echarts-for-react: 3.0.5(echarts@5.6.0)(react@18.3.1)
+      flexlayout-react: 0.8.17(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      lucide-react: 0.545.0(react@18.3.1)
+      monaco-editor: 0.45.0
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+    transitivePeerDependencies:
+      - '@types/react'
+      - '@types/react-dom'
+      - react-native
+      - supports-color
+      - typescript
+
+  '@semoss/ui@1.0.0-beta.3.preview.feat-playground-components.3.1(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@base-ui/react': 1.1.0(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-accordion': 1.2.12(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-avatar': 1.1.11(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-checkbox': 1.3.3(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-collapsible': 1.1.12(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-dialog': 1.1.15(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-dropdown-menu': 2.1.16(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-hover-card': 1.1.15(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-label': 2.1.8(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-popover': 1.1.15(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-progress': 1.1.8(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-radio-group': 1.3.8(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-scroll-area': 1.2.10(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-select': 2.2.6(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-separator': 1.1.8(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-slider': 1.3.6(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-slot': 1.2.4(@types/react@18.3.1)(react@18.3.1)
+      '@radix-ui/react-switch': 1.2.6(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-tabs': 1.1.13(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-toggle': 1.1.10(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-toggle-group': 1.1.11(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-tooltip': 1.2.8(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@shikijs/core': 3.15.0
+      '@shikijs/engine-javascript': 3.15.0
+      '@shikijs/langs': 3.15.0
+      '@shikijs/themes': 3.15.0
+      '@xterm/addon-clipboard': 0.1.0(@xterm/xterm@5.5.0)
+      '@xterm/addon-fit': 0.10.0(@xterm/xterm@5.5.0)
+      '@xterm/addon-search': 0.15.0(@xterm/xterm@5.5.0)
+      '@xterm/addon-web-links': 0.11.0(@xterm/xterm@5.5.0)
+      '@xterm/xterm': 5.5.0
+      class-variance-authority: 0.7.1
+      clsx: 2.1.1
+      cmdk: 1.1.1(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      date-fns: 4.1.0
+      dayjs: 1.11.8
+      deepmerge: 4.3.1
+      js-yaml: 4.2.0
+      lucide-react: 0.545.0(react@18.3.1)
+      radix-ui: 1.4.3(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react: 18.3.1
+      react-day-picker: 9.13.0(react@18.3.1)
+      react-dom: 18.3.1(react@18.3.1)
+      react-markdown: 9.0.1(@types/react@18.3.1)(react@18.3.1)
+      react-resizable-panels: 3.0.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      rehype-raw: 7.0.0
+      remark-gfm: 4.0.1
+      sonner: 2.0.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      tailwind-merge: 3.4.0
+      tw-animate-css: 1.4.0
+      vaul: 1.1.2(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      xlsx: 0.18.5
+    transitivePeerDependencies:
+      - '@types/react'
+      - '@types/react-dom'
+      - supports-color
+
   '@shikijs/core@3.15.0':
     dependencies:
       '@shikijs/types': 3.15.0
@@ -16886,13 +17033,14 @@ snapshots:
     dependencies:
       react: 18.3.1
 
-  react-i18next@15.7.4(i18next@23.16.8)(react@18.3.1)(typescript@5.5.4):
+  react-i18next@15.7.4(i18next@23.16.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4):
     dependencies:
       '@babel/runtime': 7.28.4
       html-parse-stringify: 3.0.1
       i18next: 23.16.8
       react: 18.3.1
     optionalDependencies:
+      react-dom: 18.3.1(react@18.3.1)
       typescript: 5.5.4
 
   react-is@16.13.1: {}

@@ -18,7 +18,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useChat } from "@/hooks";
+import { useApp } from "@/hooks";
 import type { MCPConfig } from "@/types";
 
 interface SaveWorkspaceDialogProps {
@@ -35,7 +35,7 @@ export const SaveWorkspaceDialog = observer(
 		/**
 		 * Library hooks
 		 */
-		const { chat } = useChat();
+		const { app } = useApp();
 		const { t } = useTranslation("room");
 		const nameId = useId();
 		const descriptionId = useId();
@@ -60,7 +60,7 @@ export const SaveWorkspaceDialog = observer(
 			setIsLoading(true);
 
 			try {
-				await chat.addWorkspace({
+				await app.addWorkspace({
 					name,
 					description,
 					system_prompt: systemPrompt,

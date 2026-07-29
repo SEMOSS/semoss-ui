@@ -19,7 +19,7 @@ import {
 import workspaceImage from "@/assets/img/workspace.png";
 import workspaceImageDark from "@/assets/img/workspace-darkmode.png";
 import { WorkspaceCard } from "@/components";
-import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
+import { useApp, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { App } from "@/types";
 
 /**
@@ -48,7 +48,7 @@ export const WorkspacePage = observer(() => {
 
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);
-	const { chat } = useChat();
+	const { app } = useApp();
 
 	/**
 	 * Get all of the workspaces with lazy loading
@@ -169,7 +169,7 @@ export const WorkspacePage = observer(() => {
 									dateCreated={w.project_date_created}
 									onDeleteClick={async () => {
 										try {
-											await chat.deleteWorkspace(
+											await app.deleteWorkspace(
 												w.project_id,
 											);
 

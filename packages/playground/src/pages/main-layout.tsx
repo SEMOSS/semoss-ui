@@ -7,6 +7,7 @@ import React, {
 	useState,
 } from "react";
 import { Link, matchPath, Outlet, useLocation } from "react-router-dom";
+import { ChatRoomsProvider } from "@semoss/chat";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Breadcrumb,
@@ -25,10 +26,15 @@ import {
 import { GlobalFooter, GlobalNav } from "@/components";
 import { GlobalDialog } from "@/components/common/global-dialog";
 import { LandingTour } from "@/components/common/landing-tour";
-import { ChatContext, NavbarContext, TourContext } from "@/contexts";
+import {
+	AppContext,
+	ChatContext,
+	NavbarContext,
+	TourContext,
+} from "@/contexts";
 import { useRoot } from "@/hooks";
 import { useThemeTitle } from "@/hooks/use-theme-title";
-import { ChatStore } from "@/stores";
+import { AppStore, ChatStore } from "@/stores";
 import { setFavicon } from "@/utility/utils";
 
 export const MainLayout = observer(() => {
@@ -52,13 +58,16 @@ export const MainLayout = observer(() => {
 		`sidebar--isOpen`,
 	);
 
-	// set up the chat store
+	const appStore = useMemo(() => {
+		const store = new AppStore(root.theme, actions);
+		store.initialize();
+		return store;
+	}, [root.theme, actions]);
+
+	// TODO: remove once all consumers are migrated to useApp/useChatRoomsContext
 	const chatStore = useMemo(() => {
 		const store = new ChatStore(root.theme, actions);
-
-		// initialize it
 		store.initialize();
-
 		return store;
 	}, [root.theme, actions]);
 
@@ -67,11 +76,10 @@ export const MainLayout = observer(() => {
 	const iframeReadyRef = useRef<Record<string, boolean>>({});
 	const pendingNavRef = useRef<Record<string, string>>({});
 
-	// embedPath -> iframeBase (the hash-derived root path inside the iframe)
 	const embedPathToIframeBase = useMemo(() => {
 		const map: Record<string, string> = {};
 		for (const [embedPath, item] of Object.entries(
-			chatStore.embeddedPageMap,
+			appStore.embeddedPageMap,
 		)) {
 			try {
 				const hash = new URL(item.url).hash; // e.g. "#/agent"
@@ -81,7 +89,7 @@ export const MainLayout = observer(() => {
 			}
 		}
 		return map;
-	}, [chatStore.embeddedPageMap]);
+	}, [appStore.embeddedPageMap]);
 
 	useThemeTitle(theme);
 
@@ -159,170 +167,179 @@ export const MainLayout = observer(() => {
 	}, [root.theme.tour?.show, root.theme.dialog]);
 
 	return (
-		<ChatContext.Provider
-			value={{
-				chat: chatStore,
-			}}
-		>
-			<NavbarContext.Provider
-				value={{ actions: navbarActions, setActions: setNavbarActions }}
-			>
-				<TourContext.Provider
-					value={{
-						isOpen: isTourOpen,
-						startTour: () => setIsTourOpen(true),
-						stopTour: () => setIsTourOpen(false),
-					}}
-				>
-					<LandingTour />
-					<SidebarProvider
-						open={isSidebarOpen}
-						onOpenChange={setIsSidebarOpen}
-						style={
-							{
-								"--sidebar-width": "19rem",
-								"--sidebar-width-mobile": "19rem",
-							} as React.CSSProperties
-						}
+		<AppContext.Provider value={{ app: appStore }}>
+			<ChatContext.Provider value={{ chat: chatStore }}>
+				<ChatRoomsProvider>
+					<NavbarContext.Provider
+						value={{
+							actions: navbarActions,
+							setActions: setNavbarActions,
+						}}
 					>
-						<GlobalNav />
-						<SidebarInset className="m-0! min-w-0 rounded-none! shadow-none">
-							<GlobalDialog
-								onAcknowledge={() => {
-									if (pendingTour) {
-										setPendingTour(false);
-										setIsTourOpen(true);
-									}
-								}}
-							/>
-							<div
-								data-testid="main-layout"
-								className="flex h-screen w-full flex-col overflow-hidden bg-background"
-								style={{
-									...(!isDark && {
-										background:
-											"linear-gradient(180deg, #FCFCFC 58.78%, #F6F7FF 81.97%, #F1F8FF 94.04%), var(--base-secondary-background, #FFF)",
-									}),
-									...root.theme.overrides["main-layout"],
-								}}
+						<TourContext.Provider
+							value={{
+								isOpen: isTourOpen,
+								startTour: () => setIsTourOpen(true),
+								stopTour: () => setIsTourOpen(false),
+							}}
+						>
+							<LandingTour />
+							<SidebarProvider
+								open={isSidebarOpen}
+								onOpenChange={setIsSidebarOpen}
+								style={
+									{
+										"--sidebar-width": "19rem",
+										"--sidebar-width-mobile": "19rem",
+									} as React.CSSProperties
+								}
 							>
-								<div className="flex h-12.5 w-full shrink-0 flex-row items-center px-4">
-									<div className="flex min-w-0 flex-row items-center justify-center gap-1.5">
-										<SidebarTrigger />
-										<Separator
-											orientation="vertical"
-											style={{ height: "17px" }}
-										/>
-										<Breadcrumb className="min-w-0">
-											<BreadcrumbList className="min-w-0 flex-nowrap">
-												{root.breadcrumbs.map(
-													(crumb, index) => {
-														const isLast =
-															index ===
-															root.breadcrumbs
-																.length -
-																1;
+								<GlobalNav />
+								<SidebarInset className="m-0! min-w-0 rounded-none! shadow-none">
+									<GlobalDialog
+										onAcknowledge={() => {
+											if (pendingTour) {
+												setPendingTour(false);
+												setIsTourOpen(true);
+											}
+										}}
+									/>
+									<div
+										data-testid="main-layout"
+										className="flex h-screen w-full flex-col overflow-hidden bg-background"
+										style={{
+											...(!isDark && {
+												background:
+													"linear-gradient(180deg, #FCFCFC 58.78%, #F6F7FF 81.97%, #F1F8FF 94.04%), var(--base-secondary-background, #FFF)",
+											}),
+											...root.theme.overrides[
+												"main-layout"
+											],
+										}}
+									>
+										<div className="flex h-12.5 w-full shrink-0 flex-row items-center px-4">
+											<div className="flex min-w-0 flex-row items-center justify-center gap-1.5">
+												<SidebarTrigger />
+												<Separator
+													orientation="vertical"
+													style={{ height: "17px" }}
+												/>
+												<Breadcrumb className="min-w-0">
+													<BreadcrumbList className="min-w-0 flex-nowrap">
+														{root.breadcrumbs.map(
+															(crumb, index) => {
+																const isLast =
+																	index ===
+																	root
+																		.breadcrumbs
+																		.length -
+																		1;
 
-														return (
-															<React.Fragment
-																key={`${index}-${crumb.path}`}
-															>
-																<BreadcrumbItem
-																	className={
-																		isLast
-																			? "min-w-0"
-																			: undefined
-																	}
-																>
-																	{crumb.path ? (
-																		<BreadcrumbLink
-																			className={cn(
-																				"min-w-0 truncate",
-																				isLast &&
-																					"text-foreground",
-																			)}
-																			asChild
-																		>
-																			<Link
-																				to={`${crumb.path}`}
-																			>
-																				{
-																					crumb.name
-																				}
-																			</Link>
-																		</BreadcrumbLink>
-																	) : (
-																		<span
-																			className={cn(
-																				"min-w-0 truncate",
+																return (
+																	<React.Fragment
+																		key={`${index}-${crumb.path}`}
+																	>
+																		<BreadcrumbItem
+																			className={
 																				isLast
-																					? "text-foreground"
-																					: "text-muted-foreground",
-																			)}
-																		>
-																			{
-																				crumb.name
+																					? "min-w-0"
+																					: undefined
 																			}
-																		</span>
-																	)}
-																</BreadcrumbItem>
-																{!isLast && (
-																	<BreadcrumbSeparator />
-																)}
-															</React.Fragment>
-														);
+																		>
+																			{crumb.path ? (
+																				<BreadcrumbLink
+																					className={cn(
+																						"min-w-0 truncate",
+																						isLast &&
+																							"text-foreground",
+																					)}
+																					asChild
+																				>
+																					<Link
+																						to={`${crumb.path}`}
+																					>
+																						{
+																							crumb.name
+																						}
+																					</Link>
+																				</BreadcrumbLink>
+																			) : (
+																				<span
+																					className={cn(
+																						"min-w-0 truncate",
+																						isLast
+																							? "text-foreground"
+																							: "text-muted-foreground",
+																					)}
+																				>
+																					{
+																						crumb.name
+																					}
+																				</span>
+																			)}
+																		</BreadcrumbItem>
+																		{!isLast && (
+																			<BreadcrumbSeparator />
+																		)}
+																	</React.Fragment>
+																);
+															},
+														)}
+													</BreadcrumbList>
+												</Breadcrumb>
+											</div>
+											<div className="flex-1" />
+											<div className="flex items-center gap-2">
+												{navbarActions ?? null}
+											</div>
+										</div>
+										<Separator />
+										<div className="relative w-full flex-1 overflow-hidden">
+											<Outlet />
+											{Object.values(
+												appStore.embeddedPageMap,
+											).map((item) => {
+												const isActive = matchPath(
+													{
+														path: `/embed/${item.path}`,
+														end: false,
 													},
-												)}
-											</BreadcrumbList>
-										</Breadcrumb>
+													pathname,
+												);
+												return (
+													<iframe
+														key={item.path}
+														ref={(el) => {
+															iframeRefs.current[
+																item.path
+															] = el;
+														}}
+														src={item.url}
+														title={item.path}
+														className="absolute inset-0 h-full w-full border-none"
+														// @ts-expect-error fetchpriority is not yet in React's typings
+														fetchpriority="high"
+														style={{
+															opacity: isActive
+																? 1
+																: 0,
+															pointerEvents:
+																isActive
+																	? "auto"
+																	: "none",
+														}}
+													/>
+												);
+											})}
+										</div>
+										<GlobalFooter />
 									</div>
-									<div className="flex-1" />
-									<div className="flex items-center gap-2">
-										{navbarActions ?? null}
-									</div>
-								</div>
-								<Separator />
-								<div className="relative w-full flex-1 overflow-hidden">
-									<Outlet />
-									{Object.values(
-										chatStore.embeddedPageMap,
-									).map((item) => {
-										const isActive = matchPath(
-											{
-												path: `/embed/${item.path}`,
-												end: false,
-											},
-											pathname,
-										);
-										return (
-											<iframe
-												key={item.path}
-												ref={(el) => {
-													iframeRefs.current[
-														item.path
-													] = el;
-												}}
-												src={item.url}
-												title={item.path}
-												className="absolute inset-0 h-full w-full border-none"
-												// @ts-expect-error fetchpriority is not yet in React's typings
-												fetchpriority="high"
-												style={{
-													opacity: isActive ? 1 : 0,
-													pointerEvents: isActive
-														? "auto"
-														: "none",
-												}}
-											/>
-										);
-									})}
-								</div>
-								<GlobalFooter />
-							</div>
-						</SidebarInset>
-					</SidebarProvider>
-				</TourContext.Provider>
-			</NavbarContext.Provider>
-		</ChatContext.Provider>
+								</SidebarInset>
+							</SidebarProvider>
+						</TourContext.Provider>
+					</NavbarContext.Provider>
+				</ChatRoomsProvider>
+			</ChatContext.Provider>
+		</AppContext.Provider>
 	);
 });

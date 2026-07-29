@@ -1,6 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { ChatProvider } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { InsightProvider } from "@semoss/sdk/react";
 import {
@@ -17,7 +18,7 @@ import {
 	SaveWorkspaceDialog,
 } from "@/components";
 import { FileDragProvider } from "@/contexts";
-import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
+import { useApp, useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { Engine } from "@/types";
 /**
@@ -30,6 +31,7 @@ export const RoomPage = observer(() => {
 	const { setNavbarActions } = useGlobalBreadcrumbs({});
 	const { roomId } = useParams();
 	const { chat } = useChat();
+	const { app } = useApp();
 	const { root } = useRoot();
 	const navigate = useNavigate();
 
@@ -39,7 +41,7 @@ export const RoomPage = observer(() => {
 	 * State
 	 */
 	const [room, setRoom] = useState<RoomStore | null>(null);
-	const selectedModelRef = useRef<Engine>(chat.models.selected);
+	const selectedModelRef = useRef<Engine>(app.models.selected);
 
 	/**
 	 * Library hooks
@@ -78,14 +80,14 @@ export const RoomPage = observer(() => {
 	 */
 	// keep ref updated
 	useEffect(() => {
-		selectedModelRef.current = chat.models.selected;
-	}, [chat.models.selected]);
+		selectedModelRef.current = app.models.selected;
+	}, [app.models.selected]);
 
 	// load the room
 	useEffect(() => {
 		const loadRoom = async () => {
 			// if chat isn't initialized yet, wait for it to initialize
-			if (!chat.isInitialized) {
+			if (!app.isInitialized) {
 				return;
 			}
 
@@ -103,7 +105,7 @@ export const RoomPage = observer(() => {
 				if (!room.model) {
 					room.setModel(selectedModelRef.current);
 				} else {
-					chat.setSelectedModel(room.model);
+					app.setSelectedModel(room.model);
 				}
 
 				// set the room (breadcrumbs are driven reactively via useGlobalBreadcrumbs above)
@@ -120,8 +122,8 @@ export const RoomPage = observer(() => {
 		roomId,
 		navigate,
 		chat.loadRoom,
-		chat.setSelectedModel,
-		chat.isInitialized,
+		app.setSelectedModel,
+		app.isInitialized,
 	]);
 
 	const navbarActions = useMemo<React.ReactNode>(() => {
@@ -158,31 +160,42 @@ export const RoomPage = observer(() => {
 			options={{ insightId: room.insightId }}
 			destroyOnUnmount={false}
 		>
-			<div className="flex h-full w-full flex-col overflow-hidden">
-				<ResizablePanelGroup
-					direction="horizontal"
-					className="w-full flex-1 overflow-hidden"
-				>
-					<ResizablePanel className="h-full w-full flex-1 overflow-hidden p-2">
-						<FileDragProvider>
-							<FileDragOverlay />
-							<RoomContent room={room} />
-						</FileDragProvider>
-					</ResizablePanel>
-					{room.sidebar.isOpen && (
-						<>
-							<ResizableHandle />
-							<ResizablePanel
-								className={"relative p-2"}
-								defaultSize={50}
-								minSize={20}
-							>
-								<RoomSidebar room={room} />
-							</ResizablePanel>
-						</>
-					)}
-				</ResizablePanelGroup>
-			</div>
+			<ChatProvider
+				key={room.roomId}
+				options={{
+					engineId:
+						room.model?.engine_id ?? app.models.selected.engine_id,
+					roomId: room.roomId,
+					workspaceId: room.options?.workspace?.workspace_id,
+				}}
+				isActive
+			>
+				<div className="flex h-full w-full flex-col overflow-hidden">
+					<ResizablePanelGroup
+						direction="horizontal"
+						className="w-full flex-1 overflow-hidden"
+					>
+						<ResizablePanel className="h-full w-full flex-1 overflow-hidden p-2">
+							<FileDragProvider>
+								<FileDragOverlay />
+								<RoomContent room={room} />
+							</FileDragProvider>
+						</ResizablePanel>
+						{room.sidebar.isOpen && (
+							<>
+								<ResizableHandle />
+								<ResizablePanel
+									className={"relative p-2"}
+									defaultSize={50}
+									minSize={20}
+								>
+									<RoomSidebar room={room} />
+								</ResizablePanel>
+							</>
+						)}
+					</ResizablePanelGroup>
+				</div>
+			</ChatProvider>
 		</InsightProvider>
 	);
 });

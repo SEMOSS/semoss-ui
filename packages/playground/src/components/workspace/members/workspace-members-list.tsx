@@ -21,7 +21,7 @@ import {
 	Skeleton,
 	toast,
 } from "@semoss/ui/next";
-import { useChat } from "@/hooks";
+import { useApp } from "@/hooks";
 import type { PermissionChange } from "./permission-dropdown";
 import { WorkspaceMemberRow } from "./workspace-member-row";
 import { WorkspaceSharingModal } from "./workspace-sharing-modal";
@@ -75,8 +75,8 @@ export const WorkspaceMembersList = ({
 	const { t } = useTranslation(["workspace", "common"]);
 	const { rowsPerPage, offset, setTotalRows, setCurrentPage } =
 		paginationControl;
-	const { chat } = useChat();
-	const currentUser = chat.user;
+	const { app } = useApp();
+	const currentUser = app.user;
 
 	const navigate = useNavigate();
 

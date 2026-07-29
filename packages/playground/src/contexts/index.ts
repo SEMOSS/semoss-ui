@@ -1,7 +1,8 @@
+import { AppContext } from "./app-context";
 import { ChatContext } from "./chat-context";
 import { RootContext } from "./root-context";
 
-export { ChatContext, RootContext };
+export { AppContext, ChatContext, RootContext };
 export {
 	FILE_DRAG_ATTR,
 	FileDragContext,

@@ -28,7 +28,7 @@ import {
 	RoomInputMenuMCP,
 	RoomInputMenuUpload,
 } from "@/components";
-import { useChat, useGracefulErrors } from "@/hooks";
+import { useApp, useGracefulErrors } from "@/hooks";
 import { ResponseMessageStore, type RoomStore } from "@/stores";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomSuggestions } from "./room-suggestions";
@@ -45,7 +45,7 @@ interface RoomContentProps {
  * The page for a room
  */
 export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
-	const { chat } = useChat();
+	const { app } = useApp();
 	const { t } = useTranslation("room");
 	const { getGracefulErrorMessage } = useGracefulErrors();
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
@@ -500,7 +500,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					room={room}
 					setModel={(model) => {
 						room.setModel(model);
-						chat.setSelectedModel(model);
+						app.setSelectedModel(model);
 					}}
 					options={room.options}
 					onMcpChange={(mcp) =>
@@ -576,7 +576,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						room.latestResponseMessage.toggleIsPaused
 					}
 					tokensUsed={room.tokensUsed}
-					tokensMax={chat.models.contextWindow}
+					tokensMax={app.models.contextWindow}
 					totalTokens={room.totalTokensConsumed}
 					onCompact={handleCompactMessages}
 					onOpenSettings={handleOpenSettings}

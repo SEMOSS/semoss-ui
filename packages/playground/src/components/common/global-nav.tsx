@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import {
 	Bot,
 	HelpCircle,
@@ -19,8 +20,8 @@ import {
 	useNavigate,
 	useParams,
 } from "react-router-dom";
+import { useChatRoomsContext } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
-import { runPixel, useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	cn,
@@ -48,12 +49,11 @@ import {
 	SidebarRail,
 	Spinner,
 	toast,
-	useDebouncedValue,
 	useInfiniteScroll,
 	useSidebar,
 } from "@semoss/ui/next";
-import { useChat, useRoot, useTour } from "@/hooks";
-import { getDateBucket, normalizeTimestamp } from "@/utility";
+import { useRoot, useTour } from "@/hooks";
+import { getDateBucket } from "@/utility";
 import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
@@ -87,7 +87,7 @@ export const GlobalNav = observer(() => {
 	const { root } = useRoot();
 	const [search, setSearch] = useState("");
 	const [helpOpen, setHelpOpen] = useState(false);
-	const { chat } = useChat();
+	const chatRooms = useChatRoomsContext();
 	const { startTour } = useTour();
 	const { open, openMobile, isMobile } = useSidebar();
 	// True when the sidebar is actually visible to the user.
@@ -98,7 +98,11 @@ export const GlobalNav = observer(() => {
 	const isVisible = isMobile ? openMobile : open;
 	const { pathname } = useLocation();
 	const { roomId: activeRoomId } = useParams<{ roomId: string }>();
-	const debouncedSearch = useDebouncedValue(search);
+
+	// Wire local search to ChatRoomsProvider
+	useEffect(() => {
+		chatRooms.setSearch(search);
+	}, [search, chatRooms.setSearch]);
 
 	/**
 	 * Preserving scroll position
@@ -120,81 +124,15 @@ export const GlobalNav = observer(() => {
 		navigate("/new");
 		startTour();
 	};
-	const getPinnedRooms = useIteratorPixel<
-		{
-			ROOM_ID: string;
-			ROOM_NAME: string;
-			DATE_CREATED: string;
-			WORKSPACE_ID?: string;
-			PINNED?: boolean;
-		}[],
-		{
-			ROOM_ID: string;
-			ROOM_NAME: string;
-			DATE_CREATED: string;
-			WORKSPACE_ID?: string;
-			PINNED?: boolean;
-		}
-	>(
-		(_limit, _offset) =>
-			`META | GetPlaygroundRooms(pinned=[true], sort=["DESC"]);`,
-		() => -1,
-		(response) => response,
-		{},
-		// No roomCounter dependency here — the useEffect below already
-		// calls reset() when roomCounter increments, and reset() preserves
-		// the current data while refetching (no blank flash). Putting
-		// roomCounter in the useIteratorPixel deps would call setAllData([])
-		// instead, which is the source of the sidebar flicker.
-		[],
-	);
-
-	const getRooms = useIteratorPixel<
-		{
-			ROOM_ID: string;
-			ROOM_NAME: string;
-			DATE_CREATED: string;
-			WORKSPACE_ID?: string;
-			PINNED?: boolean;
-		}[],
-		{
-			ROOM_ID: string;
-			ROOM_NAME: string;
-			DATE_CREATED: string;
-			WORKSPACE_ID?: string;
-			PINNED?: boolean;
-		}
-	>(
-		(limit, offset) =>
-			`META | GetPlaygroundRooms(${debouncedSearch ? `search="<encode>${debouncedSearch}</encode>", ` : ""}limit=${limit}, offset=${offset}, sort=["DESC"]);`,
-
-		(response) => {
-			// if its less than the limit, we know its the end
-			if (response.length < 25) {
-				return -1;
-			}
-
-			return Infinity;
-		},
-		(response) => {
-			return response;
-		},
-		{
-			limit: 25,
-		},
-		// Re-fetch only on search change — counter-based refreshes are handled
-		// by the useEffect below, which calls reset() and preserves data.
-		[debouncedSearch],
-	);
 
 	/**
-	 * Setup infinite scroll for the command list
+	 * Setup infinite scroll for the room list
 	 */
 	const { setScroll } = useInfiniteScroll({
-		disabled: !isVisible || getRooms.isLoading || !getRooms.hasMore,
+		disabled: !isVisible || chatRooms.isLoading || !chatRooms.hasMore,
 		onNext: () => {
 			if (isVisible) {
-				getRooms.next();
+				chatRooms.loadMore();
 			}
 		},
 	});
@@ -225,40 +163,6 @@ export const GlobalNav = observer(() => {
 			return () => element.removeEventListener("scroll", handleScroll);
 		}
 	}, [handleScroll]);
-
-	// Skip the reset on first mount — the iterators already fetch on
-	// init, so resetting here would cause a duplicate request. Subsequent
-	// runs (when `roomCounter` increments after a new chat is created)
-	// should refetch as intended.
-	const didInitialMount = useRef(false);
-	useEffect(() => {
-		// keep this counter
-		chat.keys.roomCounter;
-		if (!didInitialMount.current) {
-			didInitialMount.current = true;
-			return;
-		}
-		getRooms.reset();
-		getPinnedRooms.reset();
-		if (scrollElementRef.current) {
-			scrollElementRef.current.scrollTop = 0;
-			setSavedScrollPosition(0);
-		}
-	}, [getRooms.reset, getPinnedRooms.reset, chat.keys.roomCounter]);
-
-	/**
-	 * Once the refetch returns a room we were showing optimistically, drop the
-	 * optimistic entry so the store's map doesn't grow unbounded across a
-	 * session. The render-time filter already hides it, so this is housekeeping.
-	 */
-	useEffect(() => {
-		const fetchedIds = new Set(getRooms.data.map((r) => r.ROOM_ID));
-		Object.keys(chat.optimisticRooms).forEach((roomId) => {
-			if (fetchedIds.has(roomId)) {
-				chat.removeOptimisticRoom(roomId);
-			}
-		});
-	}, [getRooms.data, chat]);
 
 	/**
 	 * Save and restore scroll position when sidebar opens/closes
@@ -294,34 +198,16 @@ export const GlobalNav = observer(() => {
 	/**
 	 * Bucket the rooms by date
 	 */
-	const pinnedRoomIds = new Set(getPinnedRooms.data.map((r) => r.ROOM_ID));
-
-	// Rooms optimistically shown before their first message has persisted.
-	// Drop any that the server has since returned (real data wins), and skip
-	// them entirely while searching so they don't pollute filtered results.
-	const fetchedRoomIds = new Set([
-		...getRooms.data.map((r) => r.ROOM_ID),
-		...pinnedRoomIds,
-	]);
-	const optimisticRooms = debouncedSearch
-		? []
-		: Object.values(chat.optimisticRooms).filter(
-				(r) => !fetchedRoomIds.has(r.ROOM_ID),
-			);
-
-	const bucketedRooms = [...optimisticRooms, ...getRooms.data].reduce(
+	const bucketedRooms = chatRooms.rooms.reduce(
 		(acc, val) => {
-			// Skip rooms handled by the dedicated pinned query
-			if (val.PINNED || pinnedRoomIds.has(val.ROOM_ID)) return acc;
-
-			const d = normalizeTimestamp(val.DATE_CREATED);
+			const d = dayjs(val.dateCreated);
 			const bucket = getDateBucket(d);
 			acc[t(`buckets.${bucket}`)].push(val);
 
 			return acc;
 		},
 		{
-			[t("buckets.favorites")]: [...getPinnedRooms.data],
+			[t("buckets.favorites")]: [...chatRooms.pinnedRooms],
 			[t("buckets.today")]: [],
 			[t("buckets.yesterday")]: [],
 			[t("buckets.fewDaysAgo")]: [],
@@ -329,7 +215,7 @@ export const GlobalNav = observer(() => {
 			[t("buckets.thisMonth")]: [],
 			[t("buckets.lastMonth")]: [],
 			[t("buckets.older")]: [],
-		} as Record<string, typeof getRooms.data>,
+		} as Record<string, typeof chatRooms.rooms>,
 	);
 
 	/**
@@ -340,10 +226,7 @@ export const GlobalNav = observer(() => {
 		isFavorite: boolean,
 	) => {
 		try {
-			// pinRoom bumps roomCounter, which the effect above watches to
-			// refetch both room queries here — and keeps the chats page in
-			// sync, so pinning is bidirectional across the two views.
-			await chat.pinRoom(roomId, !isFavorite);
+			await chatRooms.pinRoom(roomId, !isFavorite);
 		} catch {
 			toast.error(
 				isFavorite
@@ -370,19 +253,12 @@ export const GlobalNav = observer(() => {
 		}
 
 		try {
-			await runPixel(
-				`META | RenameRoom(roomId=["${roomId}"], name=["${editingName}"]);`,
-			);
+			await chatRooms.renameRoom(roomId, editingName.trim());
 
 			toast.success(t("toasts.roomRenamedSuccess"));
 
-			// Reset state
 			setEditingRoomId(null);
 			setEditingName("");
-
-			// Refetch rooms after renaming
-			getRooms.reset();
-			getPinnedRooms.reset();
 		} catch {
 			toast.error(t("toasts.failedToRename"));
 		}
@@ -520,7 +396,7 @@ export const GlobalNav = observer(() => {
 						}
 					}}
 				>
-					{isVisible && getRooms.isError && (
+					{isVisible && chatRooms.error && (
 						<div className="px-2 py-4 text-center">
 							<Muted className="text-destructive">
 								{t("messages.errorLoadingRooms")}
@@ -528,16 +404,16 @@ export const GlobalNav = observer(() => {
 						</div>
 					)}
 					{isVisible &&
-						getRooms.isLoading &&
-						getRooms.data.length === 0 && (
+						chatRooms.isLoading &&
+						chatRooms.rooms.length === 0 && (
 							<div className="flex w-full items-center justify-center px-2 py-4">
 								<Spinner className="size-4" />
 							</div>
 						)}
 					{isVisible &&
-						!getRooms.isLoading &&
-						getRooms.data.length === 0 &&
-						optimisticRooms.length === 0 && (
+						!chatRooms.isLoading &&
+						chatRooms.rooms.length === 0 &&
+						chatRooms.pinnedRooms.length === 0 && (
 							<div className="px-2 py-4 text-center">
 								<Muted>{t("messages.noRoomsFound")}</Muted>
 							</div>
@@ -559,30 +435,26 @@ export const GlobalNav = observer(() => {
 								<SidebarGroupContent>
 									<SidebarMenu>
 										{rooms.map((room) => {
-											const roomId = room.ROOM_ID;
+											const roomId = room.roomId;
 											const name =
-												room.ROOM_NAME ||
+												room.name ||
 												t("messages.untitled");
 											const date = root.theme.sidebar
 												.chatHistoryDate
-												? normalizeTimestamp(
-														room.DATE_CREATED,
+												? room.dateCreated.toLocaleString(
+														undefined,
+														{
+															month: "numeric",
+															day: "numeric",
+															year: "numeric",
+															hour: "numeric",
+															minute: "2-digit",
+															hour12: true,
+														},
 													)
-														.toDate()
-														.toLocaleString(
-															undefined,
-															{
-																month: "numeric",
-																day: "numeric",
-																year: "numeric",
-																hour: "numeric",
-																minute: "2-digit",
-																hour12: true,
-															},
-														)
 												: null;
 											const isFavorite =
-												room.PINNED || false;
+												room.pinned || false;
 											const isEditing =
 												editingRoomId === roomId;
 
@@ -752,7 +624,7 @@ export const GlobalNav = observer(() => {
 																						),
 																				);
 
-																				await chat.closeRoom(
+																				await chatRooms.deleteRoom(
 																					roomId,
 																				);
 
@@ -769,10 +641,6 @@ export const GlobalNav = observer(() => {
 																						"/",
 																					);
 																				}
-
-																				// Refetch rooms after deletion
-																				getRooms.reset();
-																				getPinnedRooms.reset();
 																			} catch (e) {
 																				if (
 																					e instanceof

@@ -17,7 +17,7 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
-import { useChat, useRoot } from "@/hooks";
+import { useApp, useRoot } from "@/hooks";
 import type { Workspace } from "@/types";
 import {
 	mcpToPlatformUrl,
@@ -69,7 +69,7 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 	/**
 	 * Library Hooks
 	 */
-	const { chat } = useChat();
+	const { app } = useApp();
 	const { root } = useRoot();
 
 	// Initialize form data from workspace prop
@@ -109,9 +109,9 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 
 			let output = "";
 			if (isNew) {
-				output = await chat.addWorkspace(updated);
+				output = await app.addWorkspace(updated);
 			} else {
-				output = await chat.editWorkspace(
+				output = await app.editWorkspace(
 					(values as Workspace).workspace_id,
 					updated,
 				);

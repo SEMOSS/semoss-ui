@@ -26,20 +26,20 @@ import {
 	useSidebar,
 	useTheme,
 } from "@semoss/ui/next";
-import { useChat, useRoot } from "@/hooks";
+import { useApp, useRoot } from "@/hooks";
 import { toInitials } from "@/utility";
 
 export const NavUser = () => {
 	const { t, i18n } = useTranslation("common");
 	const { isMobile } = useSidebar();
 	const { actions } = useInsight();
-	const { chat } = useChat();
+	const { app } = useApp();
 	const { theme, setTheme } = useTheme();
 	const { root } = useRoot();
 
 	const navigate = useNavigate();
 
-	const userName = chat.user.name;
+	const userName = app.user.name;
 
 	const selectedLanguage = LANGUAGES.find(
 		(lang) => lang.code === i18n.language,

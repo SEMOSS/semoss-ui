@@ -2,7 +2,7 @@ import { FolderTreeIcon } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
 import { runPixel } from "@semoss/sdk/react";
 import { DropdownMenuItem, toast } from "@semoss/ui/next";
-import { useChat, useRoot } from "@/hooks";
+import { useApp, useChat, useRoot } from "@/hooks";
 import { RoomStore } from "@/stores";
 
 const ROOM_FILE_EXPLORER_ID = "FILE_EXPLORER";
@@ -29,6 +29,7 @@ export const RoomInputMenuNewFileExplorer = ({
 }: RoomInputMenuNewFileExplorerProps) => {
 	const { t } = useTranslation("room");
 	const { root } = useRoot();
+	const { app } = useApp();
 	const { chat } = useChat();
 
 	return (
@@ -48,7 +49,7 @@ export const RoomInputMenuNewFileExplorer = ({
 					const roomId = pixelReturn[0].output.roomId;
 					const room = new RoomStore(root.theme, roomId, insightId);
 
-					room.setModel(chat.models.selected);
+					room.setModel(app.models.selected);
 					room.setMode(mode === "agent" ? "agent" : "chat");
 					await room.initialize();
 					await room.updateRoomOptions(options);

@@ -27,7 +27,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { InstructionsModal } from "@/components";
-import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
+import { useApp, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { MCPConfig, SkillConfig, Workspace } from "@/types";
 import {
 	mcpToPlatformUrl,
@@ -48,7 +48,7 @@ export const EditWorkspacePage = observer(() => {
 	const { t } = useTranslation(["workspace", "common", "notifications"]);
 	const { workspaceId } = useParams<{ workspaceId: string }>();
 	const navigate = useNavigate();
-	const { chat } = useChat();
+	const { app } = useApp();
 	const { root } = useRoot();
 
 	const nameId = useId();
@@ -181,7 +181,7 @@ export const EditWorkspacePage = observer(() => {
 
 		setIsSaving(true);
 		try {
-			await chat.editWorkspace(workspaceId, {
+			await app.editWorkspace(workspaceId, {
 				name,
 				description,
 				system_prompt: instructions,
