@@ -9,6 +9,11 @@ import {
 	FieldLabel,
 	Input,
 	Markdown,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Spinner,
 	Textarea,
 	toast,
@@ -26,6 +31,8 @@ interface CatalogOverviewForm extends Record<string, unknown> {
 	"data classification": string[];
 	"data restrictions": string[];
 }
+
+const UNSPECIFIED_SELECT_VALUE = "__UNSPECIFIED__";
 
 /**
  * Normalize mixed input values into a clean string array.
@@ -72,6 +79,9 @@ export interface CatalogOverviewProps {
 		metakey: string;
 		single_multi: string;
 		display_values?: string;
+		display_label?: string;
+		input_type?: "text" | "number";
+		read_only?: boolean;
 	}[];
 	/** Values */
 	metaValues: {
@@ -297,13 +307,16 @@ export const CatalogOverview = ({
 		metakey: string,
 		displayOption: string,
 		label: string,
+		inputType: "text" | "number" = "text",
+		readOnly = false,
 	) => {
 		const rawValue = form[metakey];
-		const textValue = typeof rawValue === "string" ? rawValue : "";
+		const textValue =
+			rawValue === null || rawValue === undefined ? "" : String(rawValue);
 		const arrayValue = normalizeArrayValue(rawValue);
 		const options = filterOptions[metakey] || [];
 
-		if (!isEditing) {
+		if (!isEditing || readOnly) {
 			// Read mode honors markdown rendering when requested by metadata config.
 			if (displayOption === "markdown") {
 				return rawValue ? (
@@ -313,7 +326,7 @@ export const CatalogOverview = ({
 				);
 			}
 
-			if (Array.isArray(rawValue)) {
+			if (Array.isArray(rawValue) && rawValue.length > 0) {
 				return (
 					<div className="flex flex-wrap gap-2">
 						{rawValue.map((tag) => (
@@ -326,7 +339,17 @@ export const CatalogOverview = ({
 			}
 
 			if (typeof rawValue === "string" && rawValue.trim() !== "") {
-				return <div className="text-sm">{rawValue}</div>;
+				return (
+					<div className="text-sm">
+						{displayOption === "single-select"
+							? toTitleCase(removeUnderscores(rawValue))
+							: rawValue}
+					</div>
+				);
+			}
+
+			if (typeof rawValue === "number" || typeof rawValue === "boolean") {
+				return <div className="text-sm">{String(rawValue)}</div>;
 			}
 
 			return <div className="text-muted-foreground text-xs">None</div>;
@@ -350,6 +373,36 @@ export const CatalogOverview = ({
 						updateForm(metakey, event.target.value)
 					}
 				/>
+			);
+		}
+
+		if (displayOption === "single-select") {
+			return (
+				<Select
+					value={textValue || UNSPECIFIED_SELECT_VALUE}
+					onValueChange={(value) =>
+						updateForm(
+							metakey,
+							value === UNSPECIFIED_SELECT_VALUE ? "" : value,
+						)
+					}
+				>
+					<SelectTrigger>
+						<SelectValue
+							placeholder={`Select ${label.toLowerCase()}`}
+						/>
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value={UNSPECIFIED_SELECT_VALUE}>
+							Not specified
+						</SelectItem>
+						{options.map((option) => (
+							<SelectItem key={option} value={option}>
+								{toTitleCase(removeUnderscores(option))}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
 			);
 		}
 
@@ -422,7 +475,9 @@ export const CatalogOverview = ({
 
 		return (
 			<Input
-				type="text"
+				type={inputType}
+				min={inputType === "number" ? 1 : undefined}
+				step={inputType === "number" ? 1 : undefined}
 				value={textValue}
 				onChange={(event) => updateForm(metakey, event.target.value)}
 				list={options.length ? `${metakey}-list` : undefined}
@@ -430,10 +485,14 @@ export const CatalogOverview = ({
 		);
 	};
 
-	const renderMetadataFields = () => {
+	const renderMetadataFields = (gridLayout = false) => {
+		const fullWidthClass = gridLayout
+			? "md:col-span-2 xl:col-span-3"
+			: undefined;
+
 		return (
 			<>
-				<Field>
+				<Field className={fullWidthClass}>
 					<FieldLabel>Description</FieldLabel>
 					{isEditing ? (
 						<Textarea
@@ -445,8 +504,14 @@ export const CatalogOverview = ({
 							data-testid="catalog-overview--descriptions"
 						/>
 					) : (
-						<div className="text-muted-foreground text-sm">
-							{String(form.description || "")}
+						<div
+							className={
+								form.description
+									? "text-sm"
+									: "text-muted-foreground text-sm"
+							}
+						>
+							{String(form.description || "None")}
 						</div>
 					)}
 				</Field>
@@ -504,7 +569,9 @@ export const CatalogOverview = ({
 				</Field>
 
 				{dynamicMetaKeys.map((meta) => {
-					const label = toTitleCase(removeUnderscores(meta.metakey));
+					const label =
+						meta.display_label ||
+						toTitleCase(removeUnderscores(meta.metakey));
 
 					if (
 						(meta.display_options === "multi-typeahead" ||
@@ -537,6 +604,8 @@ export const CatalogOverview = ({
 								meta.metakey,
 								meta.display_options,
 								label,
+								meta.input_type,
+								meta.read_only,
 							)}
 							{(filterOptions[meta.metakey] || []).length > 0 && (
 								<datalist id={`${meta.metakey}-list`}>
@@ -558,99 +627,110 @@ export const CatalogOverview = ({
 	};
 
 	return (
-		<div className="group relative z-0">
-			{isEditable && !isEditMode ? (
-				<div className="absolute top-2 right-2 z-1">
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => {
-							if (!isEditMode) {
-								setIsEditMode(true);
-							}
-						}}
-						disabled={isLoading}
-						className="opacity-0 transition-opacity group-hover:opacity-100"
-						data-testid="catalog-overview--tags--edit-btn"
-					>
-						<Pencil className="size-4" />
-						Edit
-					</Button>
-				</div>
-			) : null}
-
-			<div className="my-1 border-border border-b pb-2 last:mb-0 last:border-b-0">
+		<div className="relative z-0">
+			<div className="my-1">
 				{isEditing ? (
-					<div className="space-y-6">
-						<Field>
-							<FieldLabel>About</FieldLabel>
-							<MarkdownEditor
-								className="h-[40vh]"
-								value={String(form.markdown || "")}
-								onChange={(value) =>
-									updateForm("markdown", value)
-								}
-								data-testid="catalog-overview--markdown"
-							/>
-						</Field>
-
-						{renderMetadataFields()}
-
-						<div className="flex justify-end gap-2 pt-2">
-							<Button
-								variant="outline"
-								onClick={handleCancel}
-								disabled={isLoading}
-								data-testid="catalog-overview--cancel-btn"
-							>
-								Cancel
-							</Button>
-							<Button
-								onClick={handleSubmit}
-								disabled={isLoading || !isDirty}
-								data-testid="catalog-overview--save-btn"
-							>
-								{isLoading ? (
-									<Spinner className="size-4" />
-								) : (
-									"Save"
-								)}
-							</Button>
+					<section className="overflow-hidden rounded-xl border bg-card shadow-sm">
+						<div className="border-b px-6 py-4">
+							<h2 className="font-semibold text-lg">
+								Edit overview
+							</h2>
+							<p className="text-muted-foreground text-sm">
+								Update the catalog details and metadata.
+							</p>
 						</div>
-					</div>
+						<div className="space-y-8 p-6">
+							<Field>
+								<FieldLabel>About</FieldLabel>
+								<MarkdownEditor
+									className="h-[40vh]"
+									value={String(form.markdown || "")}
+									onChange={(value) =>
+										updateForm("markdown", value)
+									}
+									data-testid="catalog-overview--markdown"
+								/>
+							</Field>
+
+							<div className="grid gap-x-8 gap-y-6 md:grid-cols-2 xl:grid-cols-3">
+								{renderMetadataFields(true)}
+							</div>
+
+							<div className="flex justify-end gap-2 border-t pt-5">
+								<Button
+									variant="outline"
+									onClick={handleCancel}
+									disabled={isLoading}
+									data-testid="catalog-overview--cancel-btn"
+								>
+									Cancel
+								</Button>
+								<Button
+									onClick={handleSubmit}
+									disabled={isLoading || !isDirty}
+									data-testid="catalog-overview--save-btn"
+								>
+									{isLoading ? (
+										<Spinner className="size-4" />
+									) : (
+										"Save"
+									)}
+								</Button>
+							</div>
+						</div>
+					</section>
 				) : (
-					<div className="space-y-6 lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(16rem,24rem)] lg:gap-x-8 lg:space-y-0">
-						{form.markdown ? (
+					<section className="overflow-hidden rounded-xl border bg-card shadow-sm">
+						<div className="flex items-center justify-between gap-4 border-b px-6 py-4">
 							<div>
-								<Field>
-									<Markdown>{String(form.markdown)}</Markdown>
-								</Field>
+								<h2 className="font-semibold text-lg">
+									Details
+								</h2>
+								<p className="text-muted-foreground text-sm">
+									Catalog information and metadata.
+								</p>
 							</div>
-						) : (
-							<> &nbsp; </>
-						)}
-						<div>
-							<div className="space-y-6 lg:rounded-xl lg:border lg:bg-card lg:p-4">
-								{renderMetadataFields()}
-								{dateCreated && (
-									<Field>
-										<FieldLabel>Created</FieldLabel>
-										<div className="text-muted-foreground text-sm">
-											{formatDateToLocal(dateCreated)}
-										</div>
-									</Field>
-								)}
-								{dateLastEdited && (
-									<Field>
-										<FieldLabel>Updated</FieldLabel>
-										<div className="text-muted-foreground text-sm">
-											{formatDateToLocal(dateLastEdited)}
-										</div>
-									</Field>
-								)}
-							</div>
+							{isEditable ? (
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => setIsEditMode(true)}
+									disabled={isLoading}
+									data-testid="catalog-overview--tags--edit-btn"
+								>
+									<Pencil className="size-4" />
+									Edit
+								</Button>
+							) : null}
 						</div>
-					</div>
+
+						{form.markdown ? (
+							<div className="border-b px-6 py-5">
+								<h3 className="mb-3 font-medium">About</h3>
+								<Markdown>{String(form.markdown)}</Markdown>
+							</div>
+						) : null}
+
+						<div className="grid gap-x-8 gap-y-6 p-6 md:grid-cols-2 xl:grid-cols-3">
+							{renderMetadataFields(true)}
+							{dateCreated && (
+								<Field>
+									<FieldLabel>Created</FieldLabel>
+									<div className="text-muted-foreground text-sm">
+										{formatDateToLocal(dateCreated)}
+									</div>
+								</Field>
+							)}
+							{dateLastEdited && (
+								<Field>
+									<FieldLabel>Updated</FieldLabel>
+									<div className="text-muted-foreground text-sm">
+										{formatDateToLocal(dateLastEdited)}
+									</div>
+								</Field>
+							)}
+						</div>
+					</section>
 				)}
 			</div>
 		</div>

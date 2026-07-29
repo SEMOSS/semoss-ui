@@ -8,6 +8,7 @@ export type FieldType =
 	| "select"
 	| "number"
 	| "boolean"
+	| "multiselect"
 	| "textarea"
 	| "file-upload";
 
@@ -31,10 +32,11 @@ export interface FieldDefinition {
 	required: boolean;
 	category: categoryType;
 	// optional extras seen in the constants
-	value?: string;
+	value?: string | string[];
 	options?: string[];
+	optionLabels?: Record<string, string>;
 	disabled?: boolean;
-	default?: string | number | boolean;
+	default?: string | string[] | number | boolean;
 	rules?: FieldRules;
 	helperText?: string;
 }

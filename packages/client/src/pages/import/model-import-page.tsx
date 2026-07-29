@@ -33,6 +33,7 @@ import type {
 	FieldDefinition,
 	ImportableModels,
 	ModelFieldOverride,
+	ModelVersionDefinition,
 } from "@/components/import/model/model-import.constants";
 import {
 	IMPORTABLE_MODELS,
@@ -46,6 +47,11 @@ import {
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
+import {
+	getOptionLabels,
+	MODEL_PROVIDER_OPTIONS,
+	SERVING_PROVIDER_OPTIONS,
+} from "@/model-metadata.constants";
 import { formatToDataTestId } from "@/utility";
 import { ModelImportDetailsPage } from "./model-import-details-page";
 
@@ -159,6 +165,190 @@ const applyFieldOverrides = (
 	});
 
 	return nextFields;
+};
+
+const MODEL_PROVIDER_BY_BRAND: Record<string, string> = {
+	AZURE_OPEN_AI: "OPENAI",
+	CLAUDE: "ANTHROPIC",
+	FALCON: "TII",
+	FLAN_T5_LARGE: "GOOGLE",
+	GEMINI: "GOOGLE",
+	HUGGINGFACE: "OTHER",
+	META: "META",
+	MOSAIC_ML: "DATABRICKS",
+	NEMO: "NVIDIA",
+	OPEN_AI: "OPENAI",
+	ORCA: "MICROSOFT",
+	PERPLEXITY: "PERPLEXITY",
+	REPLIT_CODE_MODEL: "REPLIT",
+	STABLITY_AI: "STABILITY_AI",
+};
+
+const SERVING_PROVIDER_BY_NAME: Record<string, string> = {
+	Anthropic: "ANTHROPIC",
+	"AWS Bedrock": "AWS_BEDROCK",
+	"Azure OpenAI": "AZURE_OPENAI",
+	Embedded: "LOCAL",
+	"Google Gemini": "GOOGLE_VERTEX",
+	"NVIDIA NIM": "NVIDIA_NIM",
+	OpenAI: "OPENAI",
+	Perplexity: "PERPLEXITY",
+	"Self Hosted": "SELF_HOSTED",
+};
+
+const inferModelProvider = (
+	provider: string,
+	model: ModelVersionDefinition | null,
+) => {
+	const brand = model?.modelBrand?.toUpperCase();
+	if (brand && brand !== "BEDROCK")
+		return MODEL_PROVIDER_BY_BRAND[brand] || "OTHER";
+
+	const modelName = model?.name.toLowerCase() || "";
+	if (modelName.includes("anthropic") || modelName.includes("claude"))
+		return "ANTHROPIC";
+	if (modelName.includes("amazon") || modelName.includes("nova"))
+		return "AMAZON";
+	if (
+		modelName.includes("openai") ||
+		modelName.includes("gpt") ||
+		modelName.includes("text-embedding-3")
+	)
+		return "OPENAI";
+	if (modelName.includes("gemini") || modelName.includes("veo"))
+		return "GOOGLE";
+	if (modelName.includes("meta") || modelName.includes("llama"))
+		return "META";
+	if (provider === "Google Gemini") return "GOOGLE";
+	if (provider === "Azure OpenAI") return "OPENAI";
+	return "OTHER";
+};
+
+const inferCapability = (model: ModelVersionDefinition | null) => {
+	const modelName = model?.name.toLowerCase() || "";
+	if (model?.embedding) return "EMBEDDING";
+	if (modelName.includes("rerank")) return "RERANKING";
+	if (modelName.includes("whisper") || modelName.includes("transcribe"))
+		return "TRANSCRIPTION";
+	if (modelName.includes("tts") || modelName.includes("text-to-speech"))
+		return "SPEECH_SYNTHESIS";
+	if (
+		modelName.includes("veo") ||
+		modelName.includes("reel") ||
+		modelName.includes("video")
+	)
+		return "VIDEO_GENERATION";
+	if (
+		model?.image ||
+		modelName.includes("image") ||
+		modelName.includes("canvas")
+	)
+		return "IMAGE_GENERATION";
+	return "TEXT_GENERATION";
+};
+
+const getDefaultModalities = (
+	capability: string,
+	model: ModelVersionDefinition | null,
+) => {
+	switch (capability) {
+		case "EMBEDDING":
+			return { input: ["TEXT"], output: ["VECTOR"] };
+		case "IMAGE_GENERATION":
+			return { input: ["TEXT", "IMAGE"], output: ["IMAGE"] };
+		case "VIDEO_GENERATION":
+			return { input: ["TEXT", "IMAGE"], output: ["VIDEO"] };
+		case "TRANSCRIPTION":
+			return { input: ["AUDIO"], output: ["TEXT"] };
+		case "SPEECH_SYNTHESIS":
+			return { input: ["TEXT"], output: ["AUDIO"] };
+		default:
+			return model?.audio
+				? { input: ["TEXT", "AUDIO"], output: ["TEXT", "AUDIO"] }
+				: { input: ["TEXT"], output: ["TEXT"] };
+	}
+};
+
+const buildModelMetadataFields = (
+	provider: string,
+	model: ModelVersionDefinition | null,
+): FieldDefinition[] => {
+	const capability = inferCapability(model);
+	const modalities = getDefaultModalities(capability, model);
+	return [
+		{
+			key: "MODEL_PROVIDER",
+			label: "Model Provider",
+			type: "select",
+			required: true,
+			category: "Settings",
+			default: inferModelProvider(provider, model),
+			options: MODEL_PROVIDER_OPTIONS.map(({ value }) => value),
+			optionLabels: getOptionLabels(MODEL_PROVIDER_OPTIONS),
+			helperText:
+				"Organization that created the model, such as OPENAI or ANTHROPIC.",
+		},
+		{
+			key: "SERVING_PROVIDER",
+			label: "Serving Provider",
+			type: "select",
+			required: true,
+			category: "Settings",
+			default:
+				SERVING_PROVIDER_BY_NAME[provider] ||
+				provider.toUpperCase().replaceAll(/[^A-Z0-9]+/g, "_"),
+			options: SERVING_PROVIDER_OPTIONS.map(({ value }) => value),
+			optionLabels: getOptionLabels(SERVING_PROVIDER_OPTIONS),
+			helperText:
+				"Platform serving the model, such as AWS_BEDROCK or GOOGLE_VERTEX.",
+		},
+		{
+			key: "CAPABILITY",
+			label: "Primary Capability",
+			type: "select",
+			required: true,
+			category: "Settings",
+			default: capability,
+			options: [
+				"TEXT_GENERATION",
+				"IMAGE_GENERATION",
+				"VIDEO_GENERATION",
+				"EMBEDDING",
+				"TRANSCRIPTION",
+				"SPEECH_SYNTHESIS",
+				"RERANKING",
+				"MODERATION",
+			],
+		},
+		{
+			key: "INPUT_MODALITIES",
+			label: "Input Modalities",
+			type: "multiselect",
+			required: true,
+			category: "Settings",
+			default: modalities.input,
+			options: ["TEXT", "IMAGE", "AUDIO", "VIDEO", "VECTOR"],
+		},
+		{
+			key: "OUTPUT_MODALITIES",
+			label: "Output Modalities",
+			type: "multiselect",
+			required: true,
+			category: "Settings",
+			default: modalities.output,
+			options: ["TEXT", "IMAGE", "AUDIO", "VIDEO", "VECTOR"],
+		},
+		{
+			key: "BUILTIN_TOOLS",
+			label: "Built-in Tools",
+			type: "text",
+			required: false,
+			category: "Settings",
+			default: "",
+			helperText:
+				"Optional comma-separated canonical names, such as web_search, image_generation.",
+		},
+	];
 };
 
 export const ModelImportPage: React.FC = () => {
@@ -560,6 +750,19 @@ export const ModelImportPage: React.FC = () => {
 								value: modelBrand,
 								disabled: true,
 							};
+						}
+
+						for (const metadataField of buildModelMetadataFields(
+							selectedProvider,
+							selectedModelMetadata,
+						)) {
+							if (
+								!fields.some(
+									(field) => field.key === metadataField.key,
+								)
+							) {
+								fields.push(metadataField);
+							}
 						}
 					}
 				}
