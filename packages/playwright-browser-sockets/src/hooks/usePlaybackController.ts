@@ -579,7 +579,7 @@ export function usePlaybackController({
 				);
 			}
 		},
-		[initializeLoadedRecording, projects, recordingCatalog],
+		[initializeLoadedRecording, projects, recordingCatalog, roomId],
 	);
 
 	const resetReplayPreparation = useCallback(() => {

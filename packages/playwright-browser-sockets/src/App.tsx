@@ -850,7 +850,6 @@ export default function App() {
 		isInsightReady,
 		getRoomRecordingEnvelope,
 		isMcpPlaybackMode,
-		isRoomRecordingSource,
 		mcpRecordingFile,
 		mcpRecordingNameHint,
 		mcpPlaybackProjectId,
