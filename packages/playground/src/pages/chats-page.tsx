@@ -98,7 +98,7 @@ export const ChatsPage = observer(() => {
 	>(
 		() =>
 			debouncedSearch
-				? `META | SearchRoomMessages(search="<encode>${debouncedSearch}</encode>", limit=50, includeMessageText=false);`
+				? `META | SearchRoomMessages(search="<encode>${debouncedSearch}</encode>", project="SYSTEM__PLAYGROUND", limit=50, includeMessageText=false);`
 				: `META | Return(value=[]);`,
 		() => -1,
 		(rows) => {
