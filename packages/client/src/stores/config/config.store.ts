@@ -587,6 +587,13 @@ export class ConfigStore {
 		return true;
 	}
 
+	/**
+	 * Allow the user to login with ldap
+	 *
+	 * @param username - username to login with
+	 * @param password - password to login with
+	 * @returns true if successful
+	 */
 	async loginLDAP(username: string, password: string): Promise<boolean> {
 		const { monolithStore } = this._root;
 
