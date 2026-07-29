@@ -955,7 +955,7 @@ function ChatInputInner({
 			onSubmit={handleSubmit}
 			onDragOver={handleContainerDragOver}
 			className={cn(
-				"relative flex flex-col rounded-md border border-input bg-card shadow-lg transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
+				"relative flex flex-col overflow-hidden rounded-md border border-input bg-card shadow-lg transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
 				className,
 			)}
 		>

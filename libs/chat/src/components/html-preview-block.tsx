@@ -1,6 +1,6 @@
 import { type CSSProperties, lazy, Suspense, useEffect, useState } from "react";
 import { Code, Spinner } from "@semoss/ui/next";
-import { BlockHeader } from "./block-header";
+import { ChatHeader } from "./chat-header";
 import { CopyButton } from "./copy-button";
 import { FullViewDialog } from "./full-view-dialog";
 
@@ -78,7 +78,7 @@ export function HtmlPreviewBlock({ html, isLoading }: HtmlPreviewBlockProps) {
 	return (
 		<>
 			<div className="relative overflow-hidden rounded-md border border-border bg-background">
-				<BlockHeader
+				<ChatHeader
 					label="HTML Preview"
 					isCollapsed={isCollapsed}
 					onToggleCollapse={() => setIsCollapsed((prev) => !prev)}
@@ -100,7 +100,7 @@ export function HtmlPreviewBlock({ html, isLoading }: HtmlPreviewBlockProps) {
 						Full View
 					</button>
 					<CopyButton value={html} label="Copy HTML" />
-				</BlockHeader>
+				</ChatHeader>
 				{!isCollapsed &&
 					(isRaw ? (
 						<div className="p-3">

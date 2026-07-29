@@ -123,7 +123,7 @@ export function MessageList({
 						className,
 					)}
 				>
-					<div className="flex min-h-full flex-col gap-2">
+					<div className="flex min-h-full flex-col gap-2 p-4">
 						{isEmpty
 							? emptyState
 							: messages.map((message) => {

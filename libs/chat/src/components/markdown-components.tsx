@@ -7,7 +7,7 @@ import {
 	type Markdown,
 	ScrollArea,
 } from "@semoss/ui/next";
-import { BlockHeader } from "./block-header";
+import { ChatHeader } from "./chat-header";
 import { CopyButton } from "./copy-button";
 import { FullViewDialog } from "./full-view-dialog";
 import { HtmlPreviewBlock } from "./html-preview-block";
@@ -123,8 +123,8 @@ function CodeBlock({
 
 	return (
 		<>
-			<div className="overflow-hidden rounded-md border border-border bg-background">
-				<BlockHeader label={label}>
+			<div className="overflow-hidden rounded-md border border-border bg-background p-4">
+				<ChatHeader label={label}>
 					<button
 						type="button"
 						onClick={() => setIsFullViewOpen(true)}
@@ -133,7 +133,7 @@ function CodeBlock({
 						Full View
 					</button>
 					<CopyButton value={code} label="Copy code" />
-				</BlockHeader>
+				</ChatHeader>
 				<CodeContainer>
 					<Code code={code} language={language} />
 				</CodeContainer>
@@ -213,7 +213,7 @@ function MarkdownTable({
 
 	return (
 		<div className="overflow-hidden rounded-md border border-border bg-background">
-			<BlockHeader
+			<ChatHeader
 				label="Table"
 				isCollapsed={isCollapsed}
 				onToggleCollapse={() => setIsCollapsed((value) => !value)}
@@ -231,7 +231,7 @@ function MarkdownTable({
 					<DownloadIcon className="size-3.5" />
 					Export CSV
 				</button>
-			</BlockHeader>
+			</ChatHeader>
 			{!isCollapsed && (
 				<ScrollArea className="w-full" scrollOrientation="horizontal">
 					<table

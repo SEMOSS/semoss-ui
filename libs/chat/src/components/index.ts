@@ -9,6 +9,7 @@
  */
 
 import { Chat as ChatRoot } from "./chat";
+import { ChatHeader } from "./chat-header";
 import { ChatInput, createDefaultSlashCommands } from "./chat-input";
 import { ChatRoomsPage } from "./chat-rooms-page";
 import { EngineSelect } from "./engine-select";
@@ -28,6 +29,7 @@ import { ToolResponseSidebar } from "./tool-response-sidebar";
 import { TypingIndicator } from "./typing-indicator";
 
 const Chat = Object.assign(ChatRoot, {
+	Header: ChatHeader,
 	Input: ChatInput,
 	createDefaultSlashCommands,
 	RoomsPage: ChatRoomsPage,
@@ -52,6 +54,7 @@ export { Chat };
 
 // Re-export types for consumers that need them directly.
 export type { ChatProps } from "./chat";
+export type { ChatHeaderProps } from "./chat-header";
 export type {
 	ChatInputDefaultSlashCommandActions,
 	ChatInputDefaultSlashCommandId,
