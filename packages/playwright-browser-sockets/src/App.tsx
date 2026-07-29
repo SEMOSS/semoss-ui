@@ -1540,72 +1540,50 @@ export default function App() {
 
 	const handleAutomationGenerate = useCallback(async () => {
 		if (!automationModelId) {
-			toast({ title: "Select a model first via the Automate dropdown." });
+			toast("Select a model first via the Automate dropdown.");
 			return;
 		}
 		setIsAutomationGenerating(true);
 		try {
-			// Fetch the last 20 messages from the room for context.
 			const roomId = toolContext?.roomId ?? "";
-			let conversationContext = "";
-			if (roomId) {
-				try {
-					const msgResponse = await runPixel<
-						Array<Record<string, unknown>>
-					>(
-						`GetPlaygroundMessages(roomId=[${JSON.stringify(roomId)}]);`,
-						effectiveInsightId,
-					);
-					const messages = msgResponse.pixelReturn?.[0]?.output;
-					if (Array.isArray(messages)) {
-						const recent = messages.slice(-20);
-						conversationContext = recent
-							.map((m) => {
-								const role =
-									m.messageType === "HUMAN"
-										? "User"
-										: "Assistant";
-								const content =
-									typeof m.content === "string"
-										? m.content
-										: typeof m.message === "string"
-											? m.message
-											: JSON.stringify(m);
-								return `${role}: ${content}`;
-							})
-							.join("\n");
-					}
-				} catch {
-					// Proceed without room context if the pixel fails.
-				}
+			if (!roomId) {
+				toast(
+					"No room context available — open this tool from a Playground room.",
+				);
+				return;
 			}
 
-			const prompt = conversationContext
-				? `You are helping fill a form field in a web browser based on the following conversation.\n\nConversation:\n${conversationContext}\n\nBased on the conversation above, provide ONLY the text that should be typed into the active form field. Do not include any explanation — respond with the value only.`
-				: `Based on the context of this task, provide a suitable value for the active form field in the browser. Respond with the value only, no explanation.`;
-
-			const llmResponse = await runPixel<string>(
-				`LLM(engine=[${JSON.stringify(automationModelId)}], command=[${JSON.stringify(prompt)}]);`,
+			// Single reactor call: fetches room messages, calls LLM, returns text.
+			const response = await runPixel<Record<string, unknown>>(
+				`AutofillPlaywrightField(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, limit=20);`,
 				effectiveInsightId,
 			);
 
-			const generated =
-				typeof llmResponse.pixelReturn?.[0]?.output === "string"
-					? (llmResponse.pixelReturn[0].output as string).trim()
-					: "";
+			const output = response.pixelReturn?.[0]?.output as
+				| Record<string, unknown>
+				| undefined;
+			if (!output?.success) {
+				toast(
+					typeof output?.error === "string"
+						? output.error
+						: "Automation generation failed.",
+				);
+				return;
+			}
 
+			const generated =
+				typeof output?.text === "string" ? output.text.trim() : "";
 			if (generated) {
 				sendEvent({ type: "type-text", text: generated });
 			} else {
-				toast({ title: "Model returned an empty response." });
+				toast("Model returned an empty response — no text was filled.");
 			}
 		} catch (error) {
-			toast({
-				title:
-					error instanceof Error
-						? error.message
-						: "Automation generation failed.",
-			});
+			toast(
+				error instanceof Error
+					? error.message
+					: "Automation generation failed.",
+			);
 		} finally {
 			setIsAutomationGenerating(false);
 			setAutomationClick(null);
