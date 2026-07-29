@@ -1,7 +1,7 @@
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
-export interface BlockHeaderProps {
+export interface ChatHeaderProps {
 	label: string;
 	/** Omit both isCollapsed/onToggleCollapse for a header with no collapse affordance (e.g. a code block's header, which just needs a label + action buttons). */
 	isCollapsed?: boolean;
@@ -17,12 +17,12 @@ export interface BlockHeaderProps {
  * doesn't need collapse (code blocks) can just omit those two props
  * instead of every consumer being forced into collapse behavior.
  */
-export function BlockHeader({
+export function ChatHeader({
 	label,
 	isCollapsed,
 	onToggleCollapse,
 	children,
-}: BlockHeaderProps) {
+}: ChatHeaderProps) {
 	return (
 		<div className="border-border border-b px-3 py-2 text-muted-foreground text-xs">
 			<div className="flex items-center justify-between gap-2">

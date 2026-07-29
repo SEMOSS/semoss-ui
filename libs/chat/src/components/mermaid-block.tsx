@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Code } from "@semoss/ui/next";
-import { BlockHeader } from "./block-header";
+import { ChatHeader } from "./chat-header";
 import { CopyButton } from "./copy-button";
 import { FullViewDialog } from "./full-view-dialog";
 
@@ -66,7 +66,7 @@ export function MermaidBlock({ code, isLoading }: MermaidBlockProps) {
 	return (
 		<>
 			<div className="relative overflow-hidden rounded-md border border-border bg-background">
-				<BlockHeader
+				<ChatHeader
 					label="Mermaid"
 					isCollapsed={isCollapsed}
 					onToggleCollapse={() => setIsCollapsed((prev) => !prev)}
@@ -88,7 +88,7 @@ export function MermaidBlock({ code, isLoading }: MermaidBlockProps) {
 						Full View
 					</button>
 					<CopyButton value={code} label="Copy Mermaid definition" />
-				</BlockHeader>
+				</ChatHeader>
 				{!isCollapsed &&
 					(showCode ? (
 						<div className="p-3">
