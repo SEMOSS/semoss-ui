@@ -17,7 +17,7 @@ export const BlockHeader = ({
 	children,
 }: BlockHeaderProps) => {
 	return (
-		<div className="border-border border-b px-3 py-2 text-muted-foreground text-xs">
+		<div className="sticky top-0 z-10 border-border border-b bg-background px-3 py-2 text-muted-foreground text-xs">
 			<div className="flex items-center justify-between gap-2">
 				<div className="flex items-center gap-1">
 					<button

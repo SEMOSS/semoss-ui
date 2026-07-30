@@ -144,7 +144,7 @@ export const CodePreviewBlock = ({
 
 	return (
 		<>
-			<div className="relative overflow-hidden rounded-md border border-border bg-background">
+			<div className="relative max-h-[600px] overflow-y-auto overflow-x-hidden rounded-md border border-border bg-background">
 				<BlockHeader
 					label={langLabel}
 					isCollapsed={isCollapsed}
