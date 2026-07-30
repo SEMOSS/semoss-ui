@@ -19,7 +19,7 @@ function Tooltip({
 	...props
 }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
 	return (
-		<TooltipProvider>
+		<TooltipProvider disableHoverableContent>
 			<TooltipPrimitive.Root data-slot="tooltip" {...props} />
 		</TooltipProvider>
 	);
