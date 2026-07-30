@@ -67,6 +67,9 @@ const getDefaultFieldValue = (field: FieldDefinition) =>
 	field.value ??
 	(field.type === "boolean" ? false : field.type === "multiselect" ? [] : "");
 
+export const hasSelectedMultiselectValue = (value: unknown) =>
+	Array.isArray(value) && value.length > 0;
+
 export const ModelImportForm = (props: ModelImportFormProps) => {
 	const {
 		fields,
@@ -334,7 +337,17 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 				control={control}
 				defaultValue={defaultVal}
 				rules={{
-					required: f.required,
+					required:
+						f.type === "multiselect" && f.required
+							? `Select at least one ${f.label.toLowerCase()}.`
+							: f.required,
+					...(f.type === "multiselect" && f.required
+						? {
+								validate: (value: unknown) =>
+									hasSelectedMultiselectValue(value) ||
+									`Select at least one ${f.label.toLowerCase()}.`,
+							}
+						: {}),
 				}}
 				render={({
 					field: { ref, ...field },
@@ -763,10 +776,22 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 								: [];
 							return (
 								<Field data-testid={fieldWrapperTestId}>
-									<FieldLabel>{f.label}</FieldLabel>
+									<FieldLabel>
+										{f.label}
+										{f.required && (
+											<span className="text-destructive">
+												*
+											</span>
+										)}
+									</FieldLabel>
 									<div className="grid grid-cols-2 gap-2 rounded-md border border-border p-3">
 										{(f.options || []).map((opt) => {
 											const optionId = `${f.key}-${opt}`;
+											const optionDisabled =
+												!!f.disabled ||
+												f.disabledOptions?.includes(
+													opt,
+												);
 											return (
 												<div
 													key={opt}
@@ -797,21 +822,38 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 																nextValues,
 															);
 														}}
-														disabled={f.disabled}
+														disabled={
+															optionDisabled
+														}
 														data-testid={getModelFieldTestId(
 															f.key,
 															"option",
 															opt,
 														)}
 													/>
-													<label htmlFor={optionId}>
+													<label
+														htmlFor={optionId}
+														className={
+															optionDisabled
+																? "cursor-not-allowed text-muted-foreground"
+																: "cursor-pointer"
+														}
+													>
 														{opt}
 													</label>
 												</div>
 											);
 										})}
 									</div>
-									{f.helperText && (
+									{error && (
+										<P
+											className="text-destructive text-sm"
+											data-testid={fieldErrorTestId}
+										>
+											{error.message}
+										</P>
+									)}
+									{f.helperText && !error && (
 										<FieldDescription>
 											{f.helperText}
 										</FieldDescription>

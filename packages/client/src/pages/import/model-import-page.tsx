@@ -20,6 +20,7 @@ import {
 	InputGroupAddon,
 	InputGroupInput,
 	P,
+	Spinner,
 	Tabs,
 	TabsContent,
 	TabsList,
@@ -115,6 +116,48 @@ const sortProvidersForTabs = (providers: Array<{ name: string }>) => {
 };
 
 const ALL_PROVIDERS_FILTER = "ALL";
+
+const MODEL_MODALITIES = [
+	"TEXT",
+	"IMAGE",
+	"AUDIO",
+	"VIDEO",
+	"VECTOR",
+	"FILE",
+	"PDF",
+] as const;
+
+type ModelModality = (typeof MODEL_MODALITIES)[number];
+
+interface StaticModelMetadata {
+	id?: string;
+	capability?: string | null;
+	input_modalities?: string[] | null;
+	output_modalities?: string[] | null;
+	context_length?: number | null;
+	max_input_tokens?: number | null;
+	max_output_tokens?: number | null;
+	family?: string | null;
+	attachment?: boolean | null;
+	reasoning?: boolean | null;
+	tool_call?: boolean | null;
+	structured_output?: boolean | null;
+	temperature?: boolean | null;
+	knowledge_cutoff?: string | null;
+	release_date?: string | null;
+	benchmarks?: Record<string, unknown>[] | null;
+}
+
+interface StaticModelMetadataLookup {
+	key: string;
+	modelId: string;
+}
+
+interface StaticModelMetadataState {
+	lookupKey: string | null;
+	status: "INITIAL" | "LOADING" | "SUCCESS" | "ERROR";
+	data: StaticModelMetadata | null;
+}
 
 const applyFieldOverrides = (
 	baseFields: FieldDefinition[],
@@ -269,13 +312,92 @@ const getDefaultModalities = (
 	}
 };
 
-const buildModelMetadataFields = (
+const normalizeStaticModalities = (
+	modalities: string[] | null | undefined,
+): ModelModality[] => {
+	if (!Array.isArray(modalities)) return [];
+
+	return [
+		...new Set(
+			modalities
+				.map((modality) => modality.trim().toUpperCase())
+				.filter((modality): modality is ModelModality =>
+					MODEL_MODALITIES.includes(modality as ModelModality),
+				),
+		),
+	];
+};
+
+const inferStaticCapability = (
+	metadata: StaticModelMetadata | null,
+	model: ModelVersionDefinition | null,
+) => {
+	const declaredCapability = metadata?.capability
+		?.trim()
+		.toLowerCase()
+		.replaceAll(/[\s-]+/g, "_");
+	const inputModalities = normalizeStaticModalities(
+		metadata?.input_modalities,
+	);
+	const outputModalities = normalizeStaticModalities(
+		metadata?.output_modalities,
+	);
+
+	if (outputModalities.includes("VECTOR")) return "EMBEDDING";
+	if (outputModalities.includes("VIDEO")) return "VIDEO_GENERATION";
+	if (outputModalities.includes("IMAGE")) return "IMAGE_GENERATION";
+	if (outputModalities.includes("AUDIO") && inputModalities.includes("TEXT"))
+		return "SPEECH_SYNTHESIS";
+	if (declaredCapability === "embedding") return "EMBEDDING";
+	if (declaredCapability === "reranking") return "RERANKING";
+	if (declaredCapability === "moderation") return "MODERATION";
+	if (declaredCapability === "transcription") return "TRANSCRIPTION";
+	if (declaredCapability === "speech_synthesis") return "SPEECH_SYNTHESIS";
+
+	return inferCapability(model);
+};
+
+export const getStaticModelMetadataLookup = (
+	model: ModelVersionDefinition | null,
+): StaticModelMetadataLookup | null => {
+	const modelId = model?.name.trim();
+
+	if (!modelId || modelId.startsWith("other-")) {
+		return null;
+	}
+
+	return {
+		key: modelId,
+		modelId,
+	};
+};
+
+export const buildModelMetadataFields = (
 	provider: string,
 	model: ModelVersionDefinition | null,
+	staticMetadata: StaticModelMetadata | null,
 ): FieldDefinition[] => {
-	const capability = inferCapability(model);
-	const modalities = getDefaultModalities(capability, model);
-	return [
+	const capability = inferStaticCapability(staticMetadata, model);
+	const inferredModalities = getDefaultModalities(capability, model);
+	const staticInputModalities = normalizeStaticModalities(
+		staticMetadata?.input_modalities,
+	);
+	const staticOutputModalities = normalizeStaticModalities(
+		staticMetadata?.output_modalities,
+	);
+	const disabledInputModalities =
+		staticInputModalities.length > 0
+			? MODEL_MODALITIES.filter(
+					(modality) => !staticInputModalities.includes(modality),
+				)
+			: undefined;
+	const disabledOutputModalities =
+		staticOutputModalities.length > 0
+			? MODEL_MODALITIES.filter(
+					(modality) => !staticOutputModalities.includes(modality),
+				)
+			: undefined;
+	const metadataFields: FieldDefinition[] = [
 		{
 			key: "MODEL_PROVIDER",
 			label: "Model Provider",
@@ -326,8 +448,12 @@ const buildModelMetadataFields = (
 			type: "multiselect",
 			required: true,
 			category: "Settings",
-			default: modalities.input,
-			options: ["TEXT", "IMAGE", "AUDIO", "VIDEO", "VECTOR"],
+			default:
+				staticInputModalities.length > 0
+					? staticInputModalities
+					: inferredModalities.input,
+			options: [...MODEL_MODALITIES],
+			disabledOptions: disabledInputModalities,
 		},
 		{
 			key: "OUTPUT_MODALITIES",
@@ -335,8 +461,12 @@ const buildModelMetadataFields = (
 			type: "multiselect",
 			required: true,
 			category: "Settings",
-			default: modalities.output,
-			options: ["TEXT", "IMAGE", "AUDIO", "VIDEO", "VECTOR"],
+			default:
+				staticOutputModalities.length > 0
+					? staticOutputModalities
+					: inferredModalities.output,
+			options: [...MODEL_MODALITIES],
+			disabledOptions: disabledOutputModalities,
 		},
 		{
 			key: "BUILTIN_TOOLS",
@@ -349,6 +479,143 @@ const buildModelMetadataFields = (
 				"Optional comma-separated canonical names, such as web_search, image_generation.",
 		},
 	];
+
+	if (
+		typeof staticMetadata?.context_length === "number" &&
+		Number.isSafeInteger(staticMetadata.context_length) &&
+		staticMetadata.context_length > 0
+	) {
+		metadataFields.push({
+			key: "CONTEXT_WINDOW",
+			label: "Context Window",
+			type: "number",
+			required: true,
+			category: "Settings",
+			default: staticMetadata.context_length,
+		});
+	}
+
+	if (
+		typeof staticMetadata?.max_output_tokens === "number" &&
+		Number.isSafeInteger(staticMetadata.max_output_tokens) &&
+		staticMetadata.max_output_tokens > 0
+	) {
+		metadataFields.push({
+			key: "MAX_TOKENS",
+			label: "Max Tokens (Max Completion Tokens)",
+			type: "number",
+			required: true,
+			category: "Settings",
+			default: staticMetadata.max_output_tokens,
+		});
+	}
+
+	const addHiddenMetadataField = (
+		key: string,
+		label: string,
+		value: FieldDefinition["default"],
+	) => {
+		metadataFields.push({
+			key,
+			label,
+			type: "hidden",
+			required: false,
+			category: "Settings",
+			default: value,
+		});
+	};
+
+	if (
+		typeof staticMetadata?.max_input_tokens === "number" &&
+		Number.isSafeInteger(staticMetadata.max_input_tokens) &&
+		staticMetadata.max_input_tokens > 0
+	) {
+		addHiddenMetadataField(
+			"MAX_INPUT_TOKENS",
+			"Max Input Tokens",
+			staticMetadata.max_input_tokens,
+		);
+	}
+
+	if (staticMetadata?.family) {
+		addHiddenMetadataField("FAMILY", "Model Family", staticMetadata.family);
+	}
+
+	for (const [key, label, value] of [
+		["ATTACHMENT", "Attachment Support", staticMetadata?.attachment],
+		["REASONING", "Reasoning Support", staticMetadata?.reasoning],
+		["TOOL_CALL", "Tool Call Support", staticMetadata?.tool_call],
+		[
+			"STRUCTURED_OUTPUT",
+			"Structured Output Support",
+			staticMetadata?.structured_output,
+		],
+		["TEMPERATURE", "Temperature Support", staticMetadata?.temperature],
+	] as const) {
+		if (typeof value === "boolean") {
+			addHiddenMetadataField(key, label, value);
+		}
+	}
+
+	for (const [key, label, value] of [
+		[
+			"KNOWLEDGE_CUTOFF",
+			"Knowledge Cutoff",
+			staticMetadata?.knowledge_cutoff,
+		],
+		["RELEASE_DATE", "Release Date", staticMetadata?.release_date],
+	] as const) {
+		if (value) {
+			addHiddenMetadataField(key, label, value);
+		}
+	}
+
+	if (
+		Array.isArray(staticMetadata?.benchmarks) &&
+		staticMetadata.benchmarks.length > 0
+	) {
+		addHiddenMetadataField(
+			"BENCHMARKS",
+			"Benchmarks",
+			JSON.stringify(staticMetadata.benchmarks),
+		);
+	}
+
+	return metadataFields;
+};
+
+export const mergeModelMetadataFields = (
+	fields: FieldDefinition[],
+	advanced: FieldDefinition[],
+	metadataFields: FieldDefinition[],
+) => {
+	for (const metadataField of metadataFields) {
+		const fieldIndex = fields.findIndex(
+			(field) => field.key === metadataField.key,
+		);
+		if (fieldIndex !== -1) {
+			fields[fieldIndex] = {
+				...fields[fieldIndex],
+				default: metadataField.default,
+				disabledOptions: metadataField.disabledOptions,
+			};
+			continue;
+		}
+
+		const advancedIndex = advanced.findIndex(
+			(field) => field.key === metadataField.key,
+		);
+		if (advancedIndex !== -1) {
+			advanced[advancedIndex] = {
+				...advanced[advancedIndex],
+				default: metadataField.default,
+				disabledOptions: metadataField.disabledOptions,
+			};
+			continue;
+		}
+
+		fields.push(metadataField);
+	}
 };
 
 export const ModelImportPage: React.FC = () => {
@@ -365,6 +632,12 @@ export const ModelImportPage: React.FC = () => {
 	const [providerFilter, setProviderFilter] =
 		useState<string>(ALL_PROVIDERS_FILTER);
 	const [selectedModel, setSelectedModel] = useState<string | null>(null);
+	const [staticModelMetadata, setStaticModelMetadata] =
+		useState<StaticModelMetadataState>({
+			lookupKey: null,
+			status: "INITIAL",
+			data: null,
+		});
 	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
 	const [formLoading, setFormLoading] = useState(false);
 	const [filedata, setFiledata] = useState(null);
@@ -478,6 +751,87 @@ export const ModelImportPage: React.FC = () => {
 			) || null
 		);
 	}, [selectedProvider, selectedModel]);
+
+	const staticMetadataLookup = useMemo(
+		() => getStaticModelMetadataLookup(selectedModelMetadata),
+		[selectedModelMetadata],
+	);
+
+	useEffect(() => {
+		if (!staticMetadataLookup) {
+			setStaticModelMetadata({
+				lookupKey: null,
+				status: "INITIAL",
+				data: null,
+			});
+			return;
+		}
+
+		let isCancelled = false;
+		setStaticModelMetadata({
+			lookupKey: staticMetadataLookup.key,
+			status: "LOADING",
+			data: null,
+		});
+
+		const pixel = `GetStaticModelMetadata(modelId=${JSON.stringify(
+			staticMetadataLookup.modelId,
+		)});`;
+
+		monolithStore
+			.runQuery(pixel)
+			.then((response) => {
+				if (isCancelled) return;
+
+				const result = response.pixelReturn?.[0];
+				if (!result || result.operationType.indexOf("ERROR") > -1) {
+					throw new Error(
+						String(
+							result?.output ||
+								"Unable to retrieve static model metadata.",
+						),
+					);
+				}
+
+				const output = result.output;
+				if (
+					typeof output !== "object" ||
+					output === null ||
+					Array.isArray(output)
+				) {
+					throw new Error("Static model metadata must be an object.");
+				}
+
+				setStaticModelMetadata({
+					lookupKey: staticMetadataLookup.key,
+					status: "SUCCESS",
+					data: output as StaticModelMetadata,
+				});
+			})
+			.catch(() => {
+				if (isCancelled) return;
+				setStaticModelMetadata({
+					lookupKey: staticMetadataLookup.key,
+					status: "ERROR",
+					data: null,
+				});
+			});
+
+		return () => {
+			isCancelled = true;
+		};
+	}, [monolithStore, staticMetadataLookup]);
+
+	const isStaticMetadataLoading =
+		staticMetadataLookup !== null &&
+		(staticModelMetadata.lookupKey !== staticMetadataLookup.key ||
+			staticModelMetadata.status === "LOADING");
+	const selectedStaticMetadata =
+		staticMetadataLookup !== null &&
+		staticModelMetadata.lookupKey === staticMetadataLookup.key &&
+		staticModelMetadata.status === "SUCCESS"
+			? staticModelMetadata.data
+			: null;
 
 	const handleFileUpload = (flag: boolean) => {
 		// Open or close the file upload modal based on the provided flag
@@ -659,6 +1013,14 @@ export const ModelImportPage: React.FC = () => {
 					</div>
 				);
 			default: {
+				if (isStaticMetadataLoading) {
+					return (
+						<div className="flex min-h-64 items-center justify-center">
+							<Spinner />
+						</div>
+					);
+				}
+
 				// Find the provider definition for the selected provider
 				const providerDef = importableModels?.providers.find(
 					(p) => p.name === selectedProvider,
@@ -752,18 +1114,15 @@ export const ModelImportPage: React.FC = () => {
 							};
 						}
 
-						for (const metadataField of buildModelMetadataFields(
-							selectedProvider,
-							selectedModelMetadata,
-						)) {
-							if (
-								!fields.some(
-									(field) => field.key === metadataField.key,
-								)
-							) {
-								fields.push(metadataField);
-							}
-						}
+						mergeModelMetadataFields(
+							fields,
+							advanced,
+							buildModelMetadataFields(
+								selectedProvider,
+								selectedModelMetadata,
+								selectedStaticMetadata,
+							),
+						);
 					}
 				}
 
@@ -786,6 +1145,8 @@ export const ModelImportPage: React.FC = () => {
 		sortedProviders,
 		visibleProviderSections,
 		selectedModelMetadata,
+		isStaticMetadataLoading,
+		selectedStaticMetadata,
 	]);
 
 	return (

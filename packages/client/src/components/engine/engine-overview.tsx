@@ -22,8 +22,18 @@ type ModelMetadata = {
 	inputModalities?: string[] | null;
 	outputModalities?: string[] | null;
 	contextWindow?: number | null;
+	maxInputTokens?: number | null;
 	maxOutputTokens?: number | null;
 	builtinTools?: string[] | null;
+	family?: string | null;
+	attachment?: boolean | null;
+	reasoning?: boolean | null;
+	toolCall?: boolean | null;
+	structuredOutput?: boolean | null;
+	temperature?: boolean | null;
+	knowledgeCutoff?: string | null;
+	releaseDate?: string | null;
+	benchmarks?: Record<string, unknown>[] | null;
 };
 
 const CAPABILITIES = [
@@ -37,7 +47,15 @@ const CAPABILITIES = [
 	"MODERATION",
 ] as const;
 
-const MODALITIES = ["TEXT", "IMAGE", "AUDIO", "VIDEO", "VECTOR"] as const;
+const MODALITIES = [
+	"TEXT",
+	"IMAGE",
+	"AUDIO",
+	"VIDEO",
+	"VECTOR",
+	"FILE",
+	"PDF",
+] as const;
 
 const MODEL_METADATA_KEYS = new Set([
 	"modelId",
@@ -45,8 +63,18 @@ const MODEL_METADATA_KEYS = new Set([
 	"inputModalities",
 	"outputModalities",
 	"contextWindow",
+	"maxInputTokens",
 	"maxOutputTokens",
 	"builtinTools",
+	"family",
+	"attachment",
+	"reasoning",
+	"toolCall",
+	"structuredOutput",
+	"temperature",
+	"knowledgeCutoff",
+	"releaseDate",
+	"benchmarks",
 ]);
 
 const MODEL_METADATA_META_KEYS: CatalogOverviewProps["metaKeys"] = [
