@@ -2,7 +2,7 @@ import { Copy } from "lucide-react";
 import { Env } from "@semoss/sdk/react";
 import { Button, H4, Markdown, P, toast } from "@semoss/ui/next";
 
-export const getMcpUsage = (id, name = "backend-mcp") => {
+const getMcpUsage = (id, name = "backend-mcp") => {
 	const mcpUrl = `${window.location.origin}${Env.MODULE}/api/ext/mcp/${id}/comms`;
 	const mcpKey =
 		name
@@ -145,7 +145,7 @@ export const McpUsage = ({ id, name }: { id: string; name?: string }) => {
 			{usageData.map((item) => (
 				<div
 					key={item.Label}
-					className="rounded-2xl border border-base p-4 shadow-xs md:p-6"
+					className="rounded-2xl border border-border bg-card p-4 text-card-foreground shadow-xs md:p-6"
 				>
 					<div className="grid gap-4 md:grid-cols-2 md:gap-8">
 						{/* LEFT SIDE */}
@@ -162,7 +162,7 @@ export const McpUsage = ({ id, name }: { id: string; name?: string }) => {
 								</P>
 							)}
 
-							<ul className="mt-3 list-disc space-y-1 pl-5 text-gray-700 text-sm">
+							<ul className="mt-3 list-disc space-y-1 pl-5 text-muted-foreground text-sm">
 								{item.usage.map((point) => (
 									<li
 										data-testid={`mcp-usage-point-${item.Label}-${point}`}
@@ -175,8 +175,8 @@ export const McpUsage = ({ id, name }: { id: string; name?: string }) => {
 						</div>
 
 						{/* RIGHT SIDE */}
-						<div className="min-w-0 overflow-hidden rounded-xl border border-base shadow-xs">
-							<div className="flex items-center justify-end border-border border-b bg-gray-100 px-2 py-1">
+						<div className="min-w-0 overflow-hidden rounded-xl border border-border shadow-xs">
+							<div className="flex items-center justify-end border-border border-b bg-muted px-2 py-1">
 								<Button
 									aria-label="copy"
 									color="default"
@@ -192,7 +192,7 @@ export const McpUsage = ({ id, name }: { id: string; name?: string }) => {
 							<Markdown
 								components={{
 									pre: ({ children }) => (
-										<div className="max-h-64 overflow-x-auto overflow-y-auto bg-gray-50 p-4 text-sm">
+										<div className="max-h-64 overflow-x-auto overflow-y-auto bg-background p-4 text-sm">
 											{children}
 										</div>
 									),

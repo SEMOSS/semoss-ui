@@ -22,14 +22,6 @@ export interface Model {
 	engine_id?: string;
 }
 
-export interface VectorContext {
-	score: string;
-	doc_index: string;
-	tokens: string;
-	content: string;
-	url: string;
-}
-
 interface VectorQueryRow {
 	content?: string;
 	Content?: string;
@@ -230,7 +222,7 @@ export const EngineQAPage = () => {
 								<Large className="mb-0.5 font-semibold">
 									Policy Extraction Response:
 								</Large>
-								<Small className="font-semibold text-[#1260DD]">
+								<Small className="font-semibold text-primary">
 									Conclusion:
 								</Small>
 								<div className="mb-2 overflow-auto">

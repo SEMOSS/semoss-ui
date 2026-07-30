@@ -16,17 +16,17 @@ export const Panel: React.FC<PanelProps> = ({
 	footer = null,
 }) => {
 	return (
-		<div className="flex h-full w-full flex-col overflow-hidden">
+		<div className="flex h-full w-full flex-col overflow-hidden bg-background text-foreground">
 			{actions ? (
-				<div className="flex w-full flex-row items-center bg-white">
+				<div className="flex w-full flex-row items-center border-border border-b bg-card px-1 py-1">
 					{actions}
 				</div>
 			) : null}
-			<div className="min-h-0 w-full flex-1 overflow-hidden bg-white">
+			<div className="min-h-0 w-full flex-1 overflow-hidden bg-background">
 				{children}
 			</div>
 			{footer ? (
-				<div className="flex w-full flex-row items-center bg-white">
+				<div className="flex w-full flex-row items-center border-border border-t bg-card px-1 py-1">
 					{footer}
 				</div>
 			) : null}

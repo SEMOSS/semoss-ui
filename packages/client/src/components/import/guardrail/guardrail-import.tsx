@@ -40,6 +40,7 @@ interface guardrail {
 	name: string;
 	icon: string;
 	disable: boolean;
+	notice?: string;
 }
 
 export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
@@ -318,6 +319,7 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 						//selectedTab={tabLabels[selectedTab]}
 						title={selectedDatabase.name}
 						description={`Fill out ${selectedDatabase.name} details in order to add guardrail to catalog`}
+						notice={selectedDatabase.notice}
 						icon={(selectedDatabase as { icon?: string }).icon}
 						fields={selectedDatabase.fields}
 						advanced={selectedDatabase.advanced}

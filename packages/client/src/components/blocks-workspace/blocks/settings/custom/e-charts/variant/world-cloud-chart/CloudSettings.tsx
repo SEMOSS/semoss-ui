@@ -19,7 +19,7 @@ interface CloudSettingsProps<D extends BlockDef = BlockDef> {
 	path: Paths<Block<D>["data"], 4>;
 }
 
-export const CloudSettings = observer(
+const CloudSettings = observer(
 	<D extends BlockDef = BlockDef>({ id, path }: CloudSettingsProps<D>) => {
 		const { data, setData } = useBlockSettings<D>(id);
 		const [detail, setDetail] = useState({

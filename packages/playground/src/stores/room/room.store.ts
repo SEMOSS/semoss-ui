@@ -709,11 +709,14 @@ export class RoomStore {
 	 */
 	updateRoomOptions = async (options: RoomStore["options"]) => {
 		try {
-			// Filter out workspace MCPs before saving (they shouldn't be persisted to the room)
+			// Filter out MCPs the backend reports but does not store: workspace MCPs
+			// and the room's own toolbox, which is read from the room folder.
 			const optionsToSave = {
 				...options,
 				modelId: this._store.model.engine_id,
-				mcp: options.mcp.filter((mcp) => !mcp?.fromWorkspace),
+				mcp: options.mcp.filter(
+					(mcp) => !mcp?.fromWorkspace && !mcp?.fromRoom,
+				),
 			};
 
 			await this.runRoomPixel(
@@ -1315,6 +1318,12 @@ export class RoomStore {
 		if (!cur) throw new Error();
 
 		const curResponse = cur as ResponseMessageStore;
+
+		if (curResponse.hasTools) {
+			throw new Error(
+				"Cannot compact a response that includes tool calls",
+			);
+		}
 
 		curResponse.setIsCompacting(true);
 

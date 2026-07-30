@@ -1,16 +1,10 @@
 import { Shapes } from "lucide-react";
-import type { CSSProperties } from "react";
 import { InputSettings, QuerySelectionSettings } from "../../settings";
 import { InputModalSettings } from "../../settings/shared/InputModalSettings";
 import { SelectInputSettings } from "../../settings/shared/SelectInputSettings";
 import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
 import { buildListener, buildShowField } from "../block-defaults.shared";
 import type { BlockSettingsConfig } from "../settings.types";
-
-export const DefaultStyles: CSSProperties = {
-	width: "100%",
-	padding: "4px",
-};
 
 // export the config for the block
 export const config: BlockSettingsConfig = {

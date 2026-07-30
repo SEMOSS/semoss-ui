@@ -1,12 +1,13 @@
 import Logo from "@/assets/logo.svg";
+import LogoLight from "@/assets/logo-light.svg";
 import type { ALL_TYPES } from "./types";
 
-export const THEME_TITLE = import.meta.env.VITE_THEME_TITLE;
-export const DOCUMENTATION_URL = import.meta.env.VITE_DOCUMENTATION_URL;
+const THEME_TITLE = import.meta.env.VITE_THEME_TITLE;
 
 export const THEME = {
 	name: THEME_TITLE || "SEMOSS",
 	logo: Logo,
+	logoLight: LogoLight,
 };
 
 export const PERMISSION_DESCRIPTION_MAP: Record<
