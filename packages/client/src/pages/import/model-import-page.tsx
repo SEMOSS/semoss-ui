@@ -145,6 +145,8 @@ interface StaticModelMetadata {
 	temperature?: boolean | null;
 	knowledge_cutoff?: string | null;
 	release_date?: string | null;
+	supported_parameters?: string[] | null;
+	reasoning_config?: Record<string, unknown> | null;
 	benchmarks?: Record<string, unknown>[] | null;
 }
 
@@ -568,6 +570,30 @@ export const buildModelMetadataFields = (
 		if (value) {
 			addHiddenMetadataField(key, label, value);
 		}
+	}
+
+	if (
+		Array.isArray(staticMetadata?.supported_parameters) &&
+		staticMetadata.supported_parameters.length > 0
+	) {
+		addHiddenMetadataField(
+			"SUPPORTED_PARAMETERS",
+			"Supported Parameters",
+			JSON.stringify(staticMetadata.supported_parameters),
+		);
+	}
+
+	if (
+		staticMetadata?.reasoning_config &&
+		typeof staticMetadata.reasoning_config === "object" &&
+		!Array.isArray(staticMetadata.reasoning_config) &&
+		Object.keys(staticMetadata.reasoning_config).length > 0
+	) {
+		addHiddenMetadataField(
+			"REASONING_CONFIG",
+			"Reasoning Configuration",
+			JSON.stringify(staticMetadata.reasoning_config),
+		);
 	}
 
 	if (

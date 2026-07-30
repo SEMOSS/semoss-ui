@@ -33,6 +33,8 @@ type ModelMetadata = {
 	temperature?: boolean | null;
 	knowledgeCutoff?: string | null;
 	releaseDate?: string | null;
+	supportedParameters?: string[] | null;
+	reasoningConfig?: Record<string, unknown> | null;
 	benchmarks?: Record<string, unknown>[] | null;
 };
 
@@ -74,6 +76,8 @@ const MODEL_METADATA_KEYS = new Set([
 	"temperature",
 	"knowledgeCutoff",
 	"releaseDate",
+	"supportedParameters",
+	"reasoningConfig",
 	"benchmarks",
 ]);
 

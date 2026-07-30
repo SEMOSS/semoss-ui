@@ -29,6 +29,14 @@ const GPT_5_STATIC_METADATA = {
 	temperature: false,
 	knowledge_cutoff: "2024-09-30",
 	release_date: "2025-08-07",
+	supported_parameters: ["reasoning_effort", "tools"],
+	reasoning_config: {
+		default_effort: "high",
+		default_enabled: false,
+		mandatory: false,
+		supported_efforts: ["max", "high", "medium", "low"],
+		supports_max_tokens: true,
+	},
 	benchmarks: [{ name: "SWE-Bench", score: 74.9 }],
 };
 
@@ -110,6 +118,12 @@ describe("static model metadata defaults", () => {
 		expect(getField(fields, "TEMPERATURE").default).toBe(false);
 		expect(getField(fields, "KNOWLEDGE_CUTOFF").default).toBe("2024-09-30");
 		expect(getField(fields, "RELEASE_DATE").default).toBe("2025-08-07");
+		expect(getField(fields, "SUPPORTED_PARAMETERS").default).toBe(
+			JSON.stringify(GPT_5_STATIC_METADATA.supported_parameters),
+		);
+		expect(getField(fields, "REASONING_CONFIG").default).toBe(
+			JSON.stringify(GPT_5_STATIC_METADATA.reasoning_config),
+		);
 		expect(getField(fields, "BENCHMARKS").default).toBe(
 			JSON.stringify(GPT_5_STATIC_METADATA.benchmarks),
 		);
@@ -124,5 +138,11 @@ describe("static model metadata defaults", () => {
 		expect(
 			getField(fields, "OUTPUT_MODALITIES").disabledOptions,
 		).toBeUndefined();
+		expect(
+			fields.some((field) => field.key === "SUPPORTED_PARAMETERS"),
+		).toBe(false);
+		expect(fields.some((field) => field.key === "REASONING_CONFIG")).toBe(
+			false,
+		);
 	});
 });
