@@ -1,10 +1,6 @@
 import { AppCatalogAvatar } from "@semoss/shared";
 import { Card, CardContent } from "@semoss/ui/next";
 
-export const ProjectLandscapeCard = (_props) => {
-	return <div>Landscape</div>;
-};
-
 export const ProjectTileCard = (props) => {
 	const { name, id, description, onClick } = props;
 

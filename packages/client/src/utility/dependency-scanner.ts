@@ -4,23 +4,18 @@ import type { StateStore } from "@semoss/renderer";
 // TYPES
 // ============================================
 
-export type DependencyType =
-	| "blocks"
-	| "queries"
-	| "cells"
-	| "variables"
-	| "all";
+type DependencyType = "blocks" | "queries" | "cells" | "variables" | "all";
 
-export type DependencyDirection = "dependents" | "dependencies";
+type DependencyDirection = "dependents" | "dependencies";
 
-export interface DependencyResult {
+interface DependencyResult {
 	blocks: string[];
 	queries: string[];
 	cells: string[];
 	variables: string[];
 }
 
-export interface DependencyOptions {
+interface DependencyOptions {
 	type?: DependencyType;
 	direction?: DependencyDirection;
 }
@@ -29,7 +24,7 @@ export interface DependencyOptions {
 // MAIN FUNCTION
 // ============================================
 
-export function findDependentElements(
+function findDependentElements(
 	state: StateStore,
 	queryId?: string,
 	cellId?: string,
@@ -474,7 +469,7 @@ export function getDependentBlocks(
 	}).blocks;
 }
 
-export function getDependentQueries(
+function _getDependentQueries(
 	state: StateStore,
 	queryId?: string,
 	cellId?: string,
@@ -487,7 +482,7 @@ export function getDependentQueries(
 	}).queries;
 }
 
-export function getDependentCells(
+function _getDependentCells(
 	state: StateStore,
 	queryId?: string,
 	cellId?: string,
@@ -500,7 +495,7 @@ export function getDependentCells(
 	}).cells;
 }
 
-export function getDependentVariables(
+function _getDependentVariables(
 	state: StateStore,
 	queryId?: string,
 	cellId?: string,
@@ -517,7 +512,7 @@ export function getDependentVariables(
 // CONVENIENCE GETTER FUNCTIONS - DEPENDENCIES (what this uses)
 // ============================================
 
-export function getDependencyBlocks(
+function _getDependencyBlocks(
 	state: StateStore,
 	queryId?: string,
 	cellId?: string,
@@ -530,7 +525,7 @@ export function getDependencyBlocks(
 	}).blocks;
 }
 
-export function getDependencyQueries(
+function _getDependencyQueries(
 	state: StateStore,
 	queryId?: string,
 	cellId?: string,
@@ -556,7 +551,7 @@ export function getDependencyCells(
 	}).cells;
 }
 
-export function getDependencyVariables(
+function _getDependencyVariables(
 	state: StateStore,
 	queryId?: string,
 	cellId?: string,

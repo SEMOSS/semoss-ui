@@ -1,6 +1,6 @@
 import { createContext } from "react";
 
-export type SettingsEngineInfo = {
+type SettingsEngineInfo = {
 	status: "INITIAL" | "LOADING" | "SUCCESS" | "ERROR";
 	data: Record<string, unknown> | undefined;
 };

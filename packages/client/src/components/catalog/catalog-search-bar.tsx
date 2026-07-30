@@ -19,7 +19,7 @@ import {
 	SelectValue,
 } from "@semoss/ui/next";
 
-export interface SortOption {
+interface SortOption {
 	value: string;
 	label: string;
 }
