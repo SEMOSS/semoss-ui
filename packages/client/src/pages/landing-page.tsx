@@ -9,6 +9,8 @@ import BI from "@/assets/img/BI.png";
 import BIDark from "@/assets/img/BI-dark.png";
 import DevBanner from "@/assets/img/DevBanner.png";
 import DevBannerDark from "@/assets/img/DevBanner-dark.png";
+import Playwright from "@/assets/img/Playwright.svg";
+import PlaywrightDark from "@/assets/img/Playwright-dark.svg";
 import Terminal from "@/assets/img/Terminal.png";
 import TerminalDark from "@/assets/img/Terminal-dark.png";
 import { NewAppModal } from "@/components/app";
@@ -165,6 +167,14 @@ export const LandingPage: React.FC = observer(() => {
 							href="../../legacy/dist/"
 							img={BI}
 							darkImg={BIDark}
+						/>
+
+						<SystemAppCard
+							name="Playwright Browser"
+							description="Drive a remote browser, record what you do, and replay it later"
+							href="../../playwright-browser-sockets/dist/"
+							img={Playwright}
+							darkImg={PlaywrightDark}
 						/>
 					</div>
 				</div>

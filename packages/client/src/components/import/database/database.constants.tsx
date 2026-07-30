@@ -10,7 +10,6 @@ import DB2 from "@/assets/img/DB2.png";
 import DERBY from "@/assets/img/DERBY.png";
 import ELASTIC_SEARCH from "@/assets/img/ELASTIC_SEARCH.svg";
 import EXCEL from "@/assets/img/EXCEL.svg";
-import FILE_EXCEL from "@/assets/img/file-excel.svg";
 import H2_DB from "@/assets/img/H2_DB.png";
 import HIVE from "@/assets/img/HIVE.svg";
 import IMPALA from "@/assets/img/IMPALA.svg";
@@ -33,7 +32,6 @@ import TINKER from "@/assets/img/TINKER.png";
 import TRINO from "@/assets/img/TRINO.jpg";
 import TSV from "@/assets/img/TSV.svg";
 import TXT from "@/assets/img/TXT.svg";
-import ZIP from "@/assets/img/ZIP.svg";
 import type { FormField } from "../shared/import-form.types";
 import {
 	COMMON_FILE_GENERAL_FIELDS,
@@ -1814,49 +1812,4 @@ export const CATEGORY_DESCRIPTIONS = {
 		"Defines the technical configuration needed to connect to the database, including host, port, schema, and connection parameters.",
 	Credentials:
 		"Stores authentication details required to securely access the database, such as username and password.",
-};
-
-export const ENGINE_IMAGES = {
-	DATABASE: [
-		{ name: "ASTER_DB", icon: ASTER },
-		{ name: "ATHENA", icon: ATHENA },
-		{ name: "BIG_QUERY", icon: BIGQUERY },
-		{ name: "CASSANDRA", icon: CASSANDRA },
-		{ name: "CLICKHOUSE", icon: CLICKHOUSE },
-		{ name: "CSV", icon: CSV },
-		{ name: "DATABRICKS", icon: DATABRICKS },
-		{ name: "DATASTAX", icon: DATASTAX },
-		{ name: "DB2", icon: DB2 },
-		{ name: "DERBY", icon: DERBY },
-		{ name: "ELASTIC_SEARCH", icon: ELASTIC_SEARCH },
-		{ name: "EXCEL", icon: EXCEL },
-		{ name: "H2", icon: H2_DB },
-		{ name: "H2_DB", icon: H2_DB },
-		{ name: "HIVE", icon: HIVE },
-		{ name: "IMPALA", icon: IMPALA },
-		{ name: "MARIA_DB", icon: MARIA_DB },
-		{ name: "MYSQL", icon: MYSQL },
-		{ name: "NEO4J", icon: NEO4J },
-		{ name: "OPEN_SEARCH", icon: OPEN_SEARCH },
-		{ name: "ORACLE", icon: ORACLE },
-		{ name: "PHOENIX", icon: PHOENIX },
-		{ name: "POSTGRES", icon: POSTGRES },
-		{ name: "REDSHIFT", icon: REDSHIFT },
-		{ name: "SAP_HANA", icon: SAP_HANA },
-		{ name: "SEMOSS", icon: SEMOSS },
-		{ name: "SNOWFLAKE", icon: SNOWFLAKE },
-		{ name: "SQL_SERVER", icon: SQL_SERVER },
-		{ name: "SQLITE", icon: SQLITE },
-		{ name: "SQLITE", icon: SQLITE },
-		{ name: "TERADATA", icon: TERADATA },
-		{ name: "TIBCO", icon: TIBCO },
-		{ name: "TINKER", icon: TINKER },
-		{ name: "TRINO", icon: TRINO },
-		{ name: "TSV", icon: TSV },
-		{ name: "ZIP", icon: ZIP },
-	],
-};
-
-export const CSV_UPLOAD_ICONS = {
-	FILE_EXCEL,
 };

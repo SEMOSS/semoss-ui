@@ -8,44 +8,6 @@ import PINECONE from "@/assets/img/PINECONE.png";
 import POSTGRES from "@/assets/img/POSTGRES.svg";
 import WEVIATE from "@/assets/img/WEVIATE.png";
 
-export type FieldType =
-	| "text"
-	| "hidden"
-	| "password"
-	| "url"
-	| "select"
-	| "number"
-	| "boolean"
-	| "textarea"
-	| "file-upload"
-	| "checkbox";
-
-export interface FieldDefinition {
-	key: string;
-	label: string;
-	type: FieldType;
-	required: boolean;
-	// optional extras seen in the constants
-	value?: string;
-	options?: string[];
-	default?: string | number | boolean;
-}
-
-export interface ModelTypeDefinition {
-	model_types: string[]; // e.g. ["llm"] | ["embedding"]
-	fields: FieldDefinition[];
-	advanced: FieldDefinition[];
-}
-
-export interface ProviderDefinition {
-	name: string;
-	types: ModelTypeDefinition[];
-}
-
-export interface ImportableModels {
-	providers: ProviderDefinition[];
-}
-
 export const VECTOR_CONNECTIONS = {
 	description: {
 		General:

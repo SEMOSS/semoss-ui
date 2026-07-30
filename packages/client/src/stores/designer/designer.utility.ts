@@ -96,47 +96,6 @@ export const getNearestBlockElement = (
 
 /** Slot **/
 /**
- * Get the slot element
- *
- * @param id - id the block that we are searching
- * @param slot - slot of the block that we want to find
- *
- * @returns the element of the slot if found
- */
-export const getSlotElement = (id: string, slot: string): Element | null => {
-	const blockElement = getBlockElement(id);
-
-	const queue = [blockElement];
-	while (queue.length) {
-		const currentElement = queue.shift();
-
-		if (!currentElement) {
-			continue;
-		}
-
-		const currentSlot = currentElement.getAttribute("data-slot");
-		if (currentSlot === slot) {
-			return null;
-		}
-
-		// look at the children that are not blocks to find the slot
-		let childElement = currentElement.firstElementChild;
-		while (childElement) {
-			// get the block's id
-			const id = childElement.getAttribute("data-block");
-
-			if (!id) {
-				queue.push(childElement);
-			}
-
-			childElement = childElement.nextElementSibling;
-		}
-	}
-
-	return null;
-};
-
-/**
  * Get the nearest slot element from the starting element.
  *
  * @param element - element that we are starting with
