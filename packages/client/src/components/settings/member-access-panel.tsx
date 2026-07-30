@@ -36,7 +36,7 @@ type VIEW = "PROFILE" | "APP" | "ENGINE" | "INSIGHT";
 /** Page size for the Insights app combobox. */
 const APP_PAGE_SIZE = 25;
 
-export interface MemberAccessPanelProps {
+interface MemberAccessPanelProps {
 	/** The selected user whose access is being managed */
 	user: SETTINGS_MEMBER;
 	/** Called after the user's profile/roles change so the list can refresh */

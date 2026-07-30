@@ -61,7 +61,7 @@ type MCPJsonEditorProps = {
 	readOnly?: boolean;
 };
 
-export type MCPToolProperty = {
+type MCPToolProperty = {
 	title: string;
 	description?: string;
 	type: string;
@@ -69,7 +69,7 @@ export type MCPToolProperty = {
 	enum?: Array<string | number | boolean | null>;
 };
 
-export type MCPTool = {
+type MCPTool = {
 	name: string;
 	title: string;
 	description?: string;
@@ -83,7 +83,7 @@ export type MCPTool = {
 	_meta?: Record<string, unknown>;
 };
 
-export type MCPJsonData = {
+type MCPJsonData = {
 	_meta: Record<string, string>;
 	tools: MCPTool[];
 };

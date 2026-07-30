@@ -237,7 +237,7 @@ const DataSelection = ({
 				descriptionMap,
 				logicalNamesMap,
 				additionalDataTypes,
-				existing: fileIdx > 0 ? true : false,
+				existing: fileIdx > 0,
 			};
 		});
 

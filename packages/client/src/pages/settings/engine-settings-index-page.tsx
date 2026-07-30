@@ -13,14 +13,6 @@ import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { useRootStore, useSettings } from "@/hooks";
 import { getEngineLabel, isOwnerPermission } from "@/utility/catalog";
 
-export interface DBMember {
-	ID: string;
-	NAME: string;
-	PERMISSION: string;
-	EMAIL: string;
-	SELECTED: boolean;
-}
-
 /**
  * Show detailed settings for an engine
  */

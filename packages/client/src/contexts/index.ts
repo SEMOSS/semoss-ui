@@ -1,6 +1,5 @@
 import { DesignerContext, type DesignerContextType } from "./DesignerContext";
 import { EngineContext, type EngineContextType } from "./engine-context";
-import { LLMContext, type LLMContextType } from "./LLMContext";
 import {
 	MetamodelContext,
 	type MetamodelContextType,
@@ -22,7 +21,6 @@ export type {
 	ProjectContextType,
 	DesignerContextType,
 	EngineContextType,
-	LLMContextType,
 	MetamodelContextType,
 	RootStoreContextType,
 	SettingsContextType,
@@ -35,7 +33,6 @@ export {
 	ProjectContext,
 	DesignerContext,
 	EngineContext,
-	LLMContext,
 	MetamodelContext,
 	RootStoreContext,
 	SettingsContext,

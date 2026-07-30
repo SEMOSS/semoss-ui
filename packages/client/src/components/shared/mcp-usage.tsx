@@ -2,7 +2,7 @@ import { Copy } from "lucide-react";
 import { Env } from "@semoss/sdk/react";
 import { Button, H4, Markdown, P, toast } from "@semoss/ui/next";
 
-export const getMcpUsage = (id, name = "backend-mcp") => {
+const getMcpUsage = (id, name = "backend-mcp") => {
 	const mcpUrl = `${window.location.origin}${Env.MODULE}/api/ext/mcp/${id}/comms`;
 	const mcpKey =
 		name

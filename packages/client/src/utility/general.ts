@@ -1,4 +1,3 @@
-import { useEffect, useMemo, useRef } from "react";
 import { Env } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
 
@@ -19,27 +18,6 @@ export const splitAtPeriod = (str, side = "left") => {
 	} else {
 		throw new Error("Invalid side argument. Choose 'left' or 'right'");
 	}
-};
-
-/**
- * @desc lowercases the whole string
- */
-export const lowercase = (str) => {
-	if (str.length === 0 || str.length === 1) {
-		return str.toLowerCase();
-	}
-	// Identify word boundaries using regular expression
-	const regex = /\b\w+\b/g;
-	const match = regex.exec(str);
-	if (!match) {
-		return str;
-	}
-	const word = match[0].toLowerCase();
-	return str.replace(regex, word);
-};
-
-export const capitalizeFirstLetter = (str) => {
-	return str.replace(/\w{1}/, (match) => match.toUpperCase());
 };
 
 /*
@@ -116,30 +94,6 @@ const debounce = (func, wait) => {
 };
 
 /**
- * @desc useDebounce utility function returns a debounced function
- */
-export const debounced = (callback, delay) => {
-	const ref = useRef(() => {
-		console.log("ref");
-	});
-
-	useEffect(() => {
-		ref.current = callback;
-	}, [callback]);
-
-	// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
-	const debouncedCallback = useMemo(() => {
-		const func = () => {
-			ref.current?.();
-		};
-
-		return debounce(func, delay);
-	}, []);
-
-	return debouncedCallback;
-};
-
-/**
  * @desc Checks if output and verify if its a JSON object
  */
 export const isOutputJSON = (output: unknown) => {
@@ -159,53 +113,6 @@ export const isOutputJSON = (output: unknown) => {
 		}
 	}
 	return null;
-};
-
-export const permissionPriorityMapper = (permission: string | number) => {
-	if (!permission) {
-		console.warn("No permission");
-		return;
-	}
-
-	switch (permission) {
-		case 1:
-		case "OWNER":
-			return { permission: "Author", priority: 1 };
-		case "Author":
-			return { permission: "OWNER", priority: 1 };
-
-		case 2:
-		case "EDIT":
-			return { permission: "Editor", priority: 2 };
-		case "Editor":
-			return { permission: "EDIT", priority: 2 };
-
-		case 3:
-		case "READ_ONLY":
-			return { permission: "Read-Only", priority: 3 };
-		case "Read-Only":
-			return { permission: "READ_ONLY", priority: 3 };
-
-		default:
-			return { permission: "", priority: 0 };
-	}
-};
-
-/**
- * @name extractInitials
- *
- * Extract a initials for a string
- *
- * @param str
- */
-export const extractInitials = (str: string): string => {
-	if (str.length < 1) {
-		return "";
-	}
-
-	return str.split(" ").reduce((prev, curr) => {
-		return prev + (curr[0] || "");
-	}, "");
 };
 
 function parseAsUTC(input: string): Date | null {

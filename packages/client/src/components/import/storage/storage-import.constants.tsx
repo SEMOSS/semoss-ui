@@ -11,44 +11,6 @@ import NETWORK_FILE_SYSTEM from "@/assets/img/NETWORK_FILE_SYSTEM.png";
 import ONEDRIVE from "@/assets/img/ONEDRIVE.png";
 import SFTP from "@/assets/img/SFTP.png";
 
-export type FieldType =
-	| "text"
-	| "hidden"
-	| "password"
-	| "url"
-	| "select"
-	| "number"
-	| "boolean"
-	| "textarea"
-	| "file-upload"
-	| "checkbox";
-
-export interface FieldDefinition {
-	key: string;
-	label: string;
-	type: FieldType;
-	required: boolean;
-	// optional extras seen in the constants
-	value?: string;
-	options?: string[];
-	default?: string | number | boolean;
-}
-
-export interface ModelTypeDefinition {
-	model_types: string[];
-	fields: FieldDefinition[];
-	advanced: FieldDefinition[];
-}
-
-export interface ProviderDefinition {
-	name: string;
-	types: ModelTypeDefinition[];
-}
-
-export interface ImportableModels {
-	providers: ProviderDefinition[];
-}
-
 export interface Storage {
 	fields: [];
 	advanced: [];

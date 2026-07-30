@@ -1,6 +1,5 @@
 export * from "./AddVariableModal";
 export * from "./add-variable-popover";
-export * from "./delete-notebook-overlay";
 export * from "./new-notebook-dialog";
 export * from "./notebook";
 export * from "./notebook-variable";

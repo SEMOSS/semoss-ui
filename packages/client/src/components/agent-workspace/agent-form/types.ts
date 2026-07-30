@@ -1,6 +1,6 @@
 import type { MCPConfig, SkillConfig } from "@semoss/shared";
 
-export type SubagentEntry = {
+type SubagentEntry = {
 	workspaceId: string;
 };
 
@@ -17,7 +17,7 @@ export type ModelEngine = {
  * the backend persists entries as-is and future kinds may add their own
  * fields this form doesn't need to know about.
  */
-export type HookEntry = {
+type HookEntry = {
 	kind: string;
 	pixel?: string;
 	events?: string[];

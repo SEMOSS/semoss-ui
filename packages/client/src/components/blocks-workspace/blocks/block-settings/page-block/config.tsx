@@ -1,5 +1,4 @@
 import { Copy } from "lucide-react";
-import type { CSSProperties } from "react";
 import {
 	BorderSettings,
 	InputSettings,
@@ -14,14 +13,6 @@ import {
 	buildTypographySection,
 } from "../block-defaults.shared";
 import type { BlockSettingsConfig } from "../settings.types";
-
-export const DefaultStyles: CSSProperties = {
-	display: "flex",
-	flexDirection: "column",
-	padding: "24px",
-	gap: "8px",
-	fontFamily: "roboto",
-};
 
 // export the config for the block
 export const config: BlockSettingsConfig = {
