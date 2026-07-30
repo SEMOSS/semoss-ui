@@ -54,7 +54,7 @@ interface ScanResult {
 	variables: Dict;
 }
 
-export const AddAsClientBlock: AddAsClientBlockTypes = {
+const AddAsClientBlock: AddAsClientBlockTypes = {
 	name: "",
 	section: "",
 	helperText: "",

@@ -1,14 +1,14 @@
 import type { FormField } from "../shared/import-form.types";
 
-export const NAME_PATTERN_RULE = {
+const NAME_PATTERN_RULE = {
 	value: /^[\w\-\s]+$/,
 	message:
 		"Catalog names can only contain alphanumeric characters and dashes.",
 };
 
-export const CHECK_ENGINE_NAME_PIXEL = 'META | CheckEngineName ( "[VALUE]") ;';
+const CHECK_ENGINE_NAME_PIXEL = 'META | CheckEngineName ( "[VALUE]") ;';
 
-export const CHECK_ENGINE_NAME_MESSAGE =
+const CHECK_ENGINE_NAME_MESSAGE =
 	"This Catalog name has already been used, please try another.";
 
 export function dbDriverField(value: string): FormField {

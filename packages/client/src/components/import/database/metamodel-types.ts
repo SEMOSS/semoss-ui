@@ -1,4 +1,4 @@
-export interface InputNode {
+interface InputNode {
 	id: string;
 	type?: string;
 	data: {
@@ -9,7 +9,7 @@ export interface InputNode {
 	position: { x: number; y: number };
 }
 
-export interface InputEdge {
+interface InputEdge {
 	id: string;
 	type: string;
 	source: string;
@@ -91,7 +91,7 @@ export type FlowNode = {
 
 export type FlowData = { nodes: (MetamodelNode | FlowNode)[]; edges: Edge[] };
 
-export interface NodeData {
+interface NodeData {
 	name?: string;
 	properties?: Property[];
 	description?: string;

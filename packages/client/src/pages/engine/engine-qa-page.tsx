@@ -22,14 +22,6 @@ export interface Model {
 	engine_id?: string;
 }
 
-export interface VectorContext {
-	score: string;
-	doc_index: string;
-	tokens: string;
-	content: string;
-	url: string;
-}
-
 interface VectorQueryRow {
 	content?: string;
 	Content?: string;
