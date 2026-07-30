@@ -1533,83 +1533,69 @@ export default function App() {
 	const replayMenuOpen =
 		playback.controlsOpen || playback.loadedRecordingOpen;
 
-	const handleAutomationGenerate = useCallback(
-		async (remoteX?: number, remoteY?: number) => {
-			if (!automationModelId) {
-				toast("Select a model first via the Automate dropdown.");
+	const handleAutomationGenerate = useCallback(async () => {
+		if (!automationModelId) {
+			toast("Select a model first via the Automate dropdown.");
+			return;
+		}
+		setIsAutomationGenerating(true);
+		try {
+			const roomId = toolContext?.roomId ?? "";
+			if (!roomId) {
+				toast(
+					"No room context available — open this tool from a Playground room.",
+				);
 				return;
 			}
-			setIsAutomationGenerating(true);
-			try {
-				const roomId = toolContext?.roomId ?? "";
-				if (!roomId) {
-					toast(
-						"No room context available — open this tool from a Playground room.",
-					);
-					return;
-				}
 
-				// Pass session id + remote coords so the reactor can resolve the field label.
-				const sessionParam = session?.sessionId
-					? `, sessionId=${JSON.stringify(session.sessionId)}` +
-						(remoteX != null && remoteY != null
-							? `, x=${remoteX}, y=${remoteY}`
-							: "")
-					: "";
+			const response = await runPixel<Record<string, unknown>>(
+				`AutofillPlaywrightField(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, limit=20);`,
+				effectiveInsightId,
+			);
 
-				const response = await runPixel<Record<string, unknown>>(
-					`AutofillPlaywrightField(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, limit=20${sessionParam});`,
-					effectiveInsightId,
-				);
-
-				const output = response.pixelReturn?.[0]?.output as
-					| Record<string, unknown>
-					| undefined;
-				if (!output?.success) {
-					toast(
-						typeof output?.error === "string"
-							? output.error
-							: "Automation generation failed.",
-					);
-					return;
-				}
-
-				const generated =
-					typeof output?.text === "string" ? output.text.trim() : "";
-				if (generated) {
-					sendEvent({ type: "type-text", text: generated });
-					// Disable automation mode after a successful fill.
-					setAutomationMode(false);
-				} else {
-					toast(
-						"Model returned an empty response — no text was filled.",
-					);
-				}
-			} catch (error) {
+			const output = response.pixelReturn?.[0]?.output as
+				| Record<string, unknown>
+				| undefined;
+			if (!output?.success) {
 				toast(
-					error instanceof Error
-						? error.message
+					typeof output?.error === "string"
+						? output.error
 						: "Automation generation failed.",
 				);
-			} finally {
-				setIsAutomationGenerating(false);
-				setAutomationClickPos(null);
+				return;
 			}
-		},
-		[
-			automationModelId,
-			effectiveInsightId,
-			sendEvent,
-			session?.sessionId,
-			toolContext?.roomId,
-		],
-	);
+
+			const generated =
+				typeof output?.text === "string" ? output.text.trim() : "";
+			if (generated) {
+				sendEvent({ type: "type-text", text: generated });
+				// Disable automation mode after a successful fill.
+				setAutomationMode(false);
+			} else {
+				toast("Model returned an empty response — no text was filled.");
+			}
+		} catch (error) {
+			toast(
+				error instanceof Error
+					? error.message
+					: "Automation generation failed.",
+			);
+		} finally {
+			setIsAutomationGenerating(false);
+			setAutomationClickPos(null);
+		}
+	}, [automationModelId, effectiveInsightId, sendEvent, toolContext?.roomId]);
 
 	const handleAutomationClick = useCallback(
-		(localX: number, localY: number, remoteX: number, remoteY: number) => {
+		(
+			localX: number,
+			localY: number,
+			_remoteX: number,
+			_remoteY: number,
+		) => {
 			// Show loading indicator at click position, then generate immediately.
 			setAutomationClickPos({ localX, localY });
-			void handleAutomationGenerate(remoteX, remoteY);
+			void handleAutomationGenerate();
 		},
 		[handleAutomationGenerate],
 	);
