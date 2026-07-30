@@ -146,6 +146,10 @@ export function usePlaybackController({
 	const [controlsOpen, setControlsOpen] = useState(false);
 	const [loadedRecordingOpen, setLoadedRecordingOpen] = useState(false);
 	const resolvedParameterValuesRef = useRef<Record<string, string>>({});
+	const resolvedProjectRecordingRef = useRef<{
+		projectValue: string;
+		fileName: string;
+	} | null>(null);
 	const [editingStepId, setEditingStepId] = useState<number | null>(null);
 	const [valueRequiredStepId, setValueRequiredStepId] = useState<
 		number | null
@@ -250,8 +254,15 @@ export function usePlaybackController({
 	useEffect(() => {
 		let cancelled = false;
 		if (isMcpPlaybackMode && source === "room") return;
+		const resolvedSelection =
+			isMcpPlaybackMode &&
+			resolvedProjectRecordingRef.current?.projectValue === project?.value
+				? resolvedProjectRecordingRef.current
+				: null;
 		setLoadedRecording(null);
-		setSelectedRecording(null);
+		if (!resolvedSelection) {
+			setSelectedRecording(null);
+		}
 		setLoadedRecordingOpen(false);
 		setEditingStepId(null);
 		if (!insightId || !project?.value) {
@@ -267,12 +278,17 @@ export function usePlaybackController({
 				const preferredRecording =
 					savedRecordingSelection?.projectValue === project.value
 						? savedRecordingSelection.fileName
-						: null;
+						: (resolvedSelection?.fileName ?? null);
 				if (
 					preferredRecording &&
 					recordingFiles.includes(preferredRecording)
 				) {
 					setSelectedRecording(preferredRecording);
+				} else if (resolvedSelection) {
+					setSelectedRecording(null);
+					onError(
+						`Recording ${resolvedSelection.fileName} was matched but is not available in the selected app`,
+					);
 				} else if (!isMcpPlaybackMode) {
 					setSelectedRecording(recordingFiles[0] ?? null);
 				}
@@ -288,6 +304,7 @@ export function usePlaybackController({
 		insightId,
 		isMcpPlaybackMode,
 		listRecordingFiles,
+		onError,
 		project,
 		savedRecordingSelection,
 		source,
@@ -295,6 +312,7 @@ export function usePlaybackController({
 
 	const selectProject = useCallback((next: PlaybackProject | null) => {
 		resolvedParameterValuesRef.current = {};
+		resolvedProjectRecordingRef.current = null;
 		setSource("project");
 		setSavedRecordingSelection(null);
 		setProject(next);
@@ -302,6 +320,7 @@ export function usePlaybackController({
 
 	const selectRecording = useCallback((fileName: string | null) => {
 		resolvedParameterValuesRef.current = {};
+		resolvedProjectRecordingRef.current = null;
 		setSource("project");
 		setSelectedRecording(fileName);
 		setLoadedRecording(null);
@@ -311,6 +330,7 @@ export function usePlaybackController({
 
 	const selectSavedRecording = useCallback(
 		(nextProject: PlaybackProject, fileName: string) => {
+			resolvedProjectRecordingRef.current = null;
 			setSavedRecordingSelection({
 				projectValue: nextProject.value,
 				fileName,
@@ -328,6 +348,13 @@ export function usePlaybackController({
 		(selection: ResolvedRecordingSelection) => {
 			resolvedParameterValuesRef.current =
 				selection.parameterValues ?? {};
+			resolvedProjectRecordingRef.current =
+				selection.source === "project" && selection.project
+					? {
+							projectValue: selection.project.value,
+							fileName: selection.fileName,
+						}
+					: null;
 			setStartUrl(normalizeBrowserUrl(selection.startUrl));
 			setSource(selection.source);
 			setProject(selection.project);
@@ -364,6 +391,7 @@ export function usePlaybackController({
 		setEditingStepId(null);
 		setValueRequiredStepId(null);
 		resolvedParameterValuesRef.current = {};
+		resolvedProjectRecordingRef.current = null;
 	}, []);
 
 	const requestPause = useCallback(
