@@ -65,6 +65,13 @@ export type ClientToServerEvent =
 			record?: boolean;
 	  } & ReplayMetadata)
 	| ({
+			/** Clears the targeted element and fills it atomically (uses Playwright locator.fill). */
+			type: "fill-element";
+			text: string;
+			selector: BrowserSelector;
+			record?: boolean;
+	  } & ReplayMetadata)
+	| ({
 			type: "key";
 			key: string;
 			code?: string;

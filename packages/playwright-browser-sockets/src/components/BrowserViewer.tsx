@@ -20,7 +20,12 @@ interface BrowserViewerProps {
 	/** When true, clicks emit onAutomationClick in addition to being forwarded. */
 	automationMode?: boolean;
 	/** Called after a click in automation mode with local canvas coordinates. */
-	onAutomationClick?: (localX: number, localY: number) => void;
+	onAutomationClick?: (
+		localX: number,
+		localY: number,
+		remoteX: number,
+		remoteY: number,
+	) => void;
 }
 
 interface SelectionPoint {
@@ -282,14 +287,14 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 				...point,
 				button: getMouseButton(event),
 			});
-			// In automation mode, report local canvas position so the popup
-			// can be anchored near the click.
+			// In automation mode, report local canvas position (for popup anchoring)
+			// and remote browser coordinates (so the reactor can resolve the element).
 			if (automationMode && onAutomationClick) {
 				const canvas = canvasRef.current;
 				const rect = canvas?.getBoundingClientRect();
 				const localX = rect ? event.clientX - rect.left : event.clientX;
 				const localY = rect ? event.clientY - rect.top : event.clientY;
-				onAutomationClick(localX, localY);
+				onAutomationClick(localX, localY, point.x, point.y);
 			}
 		},
 		[

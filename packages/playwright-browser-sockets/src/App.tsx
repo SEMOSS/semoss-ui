@@ -16,7 +16,6 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { AutomationButton } from "./components/AutomationButton";
-import { AutomationPopup } from "./components/AutomationPopup";
 import { BrowserTabStrip } from "./components/BrowserTabStrip";
 import { BrowserToolbar } from "./components/BrowserToolbar";
 import { BrowserViewer } from "./components/BrowserViewer";
@@ -175,11 +174,9 @@ export default function App() {
 	// ── Automation mode ──────────────────────────────────────────────────────
 	const [automationMode, setAutomationMode] = useState(false);
 	const [automationModelId, setAutomationModelId] = useState("");
-	/** Local canvas coords of the most recent automation-mode click. */
-	const [automationClick, setAutomationClick] = useState<{
-		localX: number;
-		localY: number;
-	} | null>(null);
+	const [automationSubMode, setAutomationSubMode] = useState<
+		"click" | "fill-form"
+	>("click");
 	const [isAutomationGenerating, setIsAutomationGenerating] = useState(false);
 
 	const autoStartedRef = useRef(false);
@@ -1531,31 +1528,111 @@ export default function App() {
 	const replayMenuOpen =
 		playback.controlsOpen || playback.loadedRecordingOpen;
 
-	const handleAutomationClick = useCallback(
-		(localX: number, localY: number) => {
-			setAutomationClick({ localX, localY });
+	const handleAutomationGenerate = useCallback(
+		async (remoteX?: number, remoteY?: number) => {
+			if (!automationModelId) {
+				toast("Select a model first via the Automate dropdown.");
+				return;
+			}
+			setIsAutomationGenerating(true);
+			try {
+				const roomId = toolContext?.roomId ?? "";
+				if (!roomId) {
+					toast(
+						"No room context available — open this tool from a Playground room.",
+					);
+					return;
+				}
+
+				// Pass session id + remote coords so the reactor can resolve the field label.
+				const sessionParam = session?.sessionId
+					? `, sessionId=${JSON.stringify(session.sessionId)}` +
+						(remoteX != null && remoteY != null
+							? `, x=${remoteX}, y=${remoteY}`
+							: "")
+					: "";
+
+				const response = await runPixel<Record<string, unknown>>(
+					`AutofillPlaywrightField(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, limit=20${sessionParam});`,
+					effectiveInsightId,
+				);
+
+				const output = response.pixelReturn?.[0]?.output as
+					| Record<string, unknown>
+					| undefined;
+				if (!output?.success) {
+					toast(
+						typeof output?.error === "string"
+							? output.error
+							: "Automation generation failed.",
+					);
+					return;
+				}
+
+				const generated =
+					typeof output?.text === "string" ? output.text.trim() : "";
+				if (generated) {
+					sendEvent({ type: "type-text", text: generated });
+					// Disable automation mode after a successful fill.
+					setAutomationMode(false);
+				} else {
+					toast(
+						"Model returned an empty response — no text was filled.",
+					);
+				}
+			} catch (error) {
+				toast(
+					error instanceof Error
+						? error.message
+						: "Automation generation failed.",
+				);
+			} finally {
+				setIsAutomationGenerating(false);
+			}
 		},
-		[],
+		[
+			automationModelId,
+			effectiveInsightId,
+			sendEvent,
+			session?.sessionId,
+			toolContext?.roomId,
+		],
 	);
 
-	const handleAutomationGenerate = useCallback(async () => {
+	const handleAutomationClick = useCallback(
+		(
+			_localX: number,
+			_localY: number,
+			remoteX: number,
+			remoteY: number,
+		) => {
+			// Generate immediately — no confirmation popup.
+			void handleAutomationGenerate(remoteX, remoteY);
+		},
+		[handleAutomationGenerate],
+	);
+
+	const handleFillForm = useCallback(async () => {
 		if (!automationModelId) {
 			toast("Select a model first via the Automate dropdown.");
 			return;
 		}
+		if (!session?.sessionId) {
+			toast("No active browser session.");
+			return;
+		}
+		const roomId = toolContext?.roomId ?? "";
+		if (!roomId) {
+			toast(
+				"No room context available — open this tool from a Playground room.",
+			);
+			return;
+		}
 		setIsAutomationGenerating(true);
+		setAutomationMode(false);
 		try {
-			const roomId = toolContext?.roomId ?? "";
-			if (!roomId) {
-				toast(
-					"No room context available — open this tool from a Playground room.",
-				);
-				return;
-			}
-
-			// Single reactor call: fetches room messages, calls LLM, returns text.
 			const response = await runPixel<Record<string, unknown>>(
-				`AutofillPlaywrightField(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, limit=20);`,
+				`FillPlaywrightForm(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, sessionId=${JSON.stringify(session.sessionId)}, limit=20);`,
 				effectiveInsightId,
 			);
 
@@ -1566,29 +1643,58 @@ export default function App() {
 				toast(
 					typeof output?.error === "string"
 						? output.error
-						: "Automation generation failed.",
+						: "Form fill failed.",
 				);
 				return;
 			}
 
-			const generated =
-				typeof output?.text === "string" ? output.text.trim() : "";
-			if (generated) {
-				sendEvent({ type: "type-text", text: generated });
-			} else {
-				toast("Model returned an empty response — no text was filled.");
+			const fields = Array.isArray(output?.fields)
+				? (output.fields as Array<Record<string, unknown>>)
+				: [];
+
+			if (fields.length === 0) {
+				toast(
+					typeof output?.message === "string"
+						? output.message
+						: "No fillable fields found on the page.",
+				);
+				return;
 			}
-		} catch (error) {
+
+			// Dispatch fill-element events sequentially.
+			for (const field of fields) {
+				const value =
+					typeof field.value === "string" ? field.value : "";
+				const strategy =
+					typeof field.selectorStrategy === "string"
+						? field.selectorStrategy
+						: "css";
+				const selValue =
+					typeof field.selectorValue === "string"
+						? field.selectorValue
+						: "";
+				if (!value || !selValue) continue;
+				sendEvent({
+					type: "fill-element",
+					text: value,
+					selector: { strategy, value: selValue },
+				});
+			}
 			toast(
-				error instanceof Error
-					? error.message
-					: "Automation generation failed.",
+				`Filled ${fields.length} field${fields.length !== 1 ? "s" : ""} from context.`,
 			);
+		} catch (error) {
+			toast(error instanceof Error ? error.message : "Form fill failed.");
 		} finally {
 			setIsAutomationGenerating(false);
-			setAutomationClick(null);
 		}
-	}, [automationModelId, effectiveInsightId, sendEvent, toolContext?.roomId]);
+	}, [
+		automationModelId,
+		effectiveInsightId,
+		sendEvent,
+		session?.sessionId,
+		toolContext?.roomId,
+	]);
 
 	return (
 		<div className="flex h-screen flex-col overflow-hidden bg-canvas text-ink">
@@ -1616,12 +1722,17 @@ export default function App() {
 					{session && (
 						<AutomationButton
 							insightId={effectiveInsightId}
-							isActive={automationMode}
+							isActive={automationMode || isAutomationGenerating}
 							modelId={automationModelId}
+							subMode={automationSubMode}
 							onToggle={() => {
-								setAutomationMode((on) => !on);
-								setAutomationClick(null);
+								if (automationSubMode === "fill-form") {
+									void handleFillForm();
+								} else {
+									setAutomationMode((on) => !on);
+								}
 							}}
+							onSubModeChange={setAutomationSubMode}
 							onModelChange={setAutomationModelId}
 						/>
 					)}
@@ -1789,20 +1900,11 @@ export default function App() {
 							"Playback will pause after your interaction",
 						)
 					}
-					automationMode={automationMode}
+					automationMode={
+						automationMode && automationSubMode === "click"
+					}
 					onAutomationClick={handleAutomationClick}
 				/>
-
-				{/* Automation popup — shown over the canvas after a click */}
-				{automationMode && automationClick && (
-					<AutomationPopup
-						localX={automationClick.localX}
-						localY={automationClick.localY}
-						isGenerating={isAutomationGenerating}
-						onGenerate={() => void handleAutomationGenerate()}
-						onDismiss={() => setAutomationClick(null)}
-					/>
-				)}
 
 				<ReplaySidebar
 					playback={playback}

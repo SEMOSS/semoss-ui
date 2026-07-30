@@ -27,16 +27,20 @@ interface AutomationButtonProps {
 	insightId: string;
 	isActive: boolean;
 	modelId: string;
+	subMode: "click" | "fill-form";
 	onToggle: () => void;
 	onModelChange: (modelId: string) => void;
+	onSubModeChange: (mode: "click" | "fill-form") => void;
 }
 
 export const AutomationButton: React.FC<AutomationButtonProps> = ({
 	insightId,
 	isActive,
 	modelId,
+	subMode,
 	onToggle,
 	onModelChange,
+	onSubModeChange,
 }) => {
 	const [models, setModels] = useState<ModelOption[]>([]);
 	const [isLoadingModels, setIsLoadingModels] = useState(false);
@@ -85,13 +89,19 @@ export const AutomationButton: React.FC<AutomationButtonProps> = ({
 						onClick={onToggle}
 					>
 						<Wand2 />
-						{isActive ? "Automation On" : "Automate"}
+						{isActive
+							? subMode === "fill-form"
+								? "Filling…"
+								: "Automation On"
+							: "Automate"}
 					</Button>
 				</TooltipTrigger>
 				<TooltipContent>
-					{isActive
-						? "Click to disable automation mode"
-						: "Enable automation mode — click any text field to auto-fill from context"}
+					{subMode === "fill-form"
+						? "Fill all visible form fields from context"
+						: isActive
+							? "Click to disable automation mode"
+							: "Enable automation mode — click any text field to auto-fill from context"}
 				</TooltipContent>
 			</Tooltip>
 
@@ -111,11 +121,49 @@ export const AutomationButton: React.FC<AutomationButtonProps> = ({
 					</Button>
 				</PopoverTrigger>
 				<PopoverContent className="w-64 p-3" align="end">
-					<p className="mb-2 font-medium text-sm">Automation model</p>
-					<p className="mb-3 text-ink-muted text-xs">
-						The model used to fill text fields from conversation
-						context.
-					</p>
+					<p className="mb-2 font-medium text-sm">Automation mode</p>
+					<div className="mb-3 flex flex-col gap-1">
+						{[
+							{
+								value: "click" as const,
+								label: "Click to fill",
+								desc: "Click any input field to fill it from context",
+							},
+							{
+								value: "fill-form" as const,
+								label: "Fill form",
+								desc: "Fill all visible fields at once",
+							},
+						].map(({ value, label, desc }) => (
+							<button
+								key={value}
+								type="button"
+								className={`flex items-start gap-2 rounded p-2 text-left transition-colors ${
+									subMode === value
+										? "bg-accent/10"
+										: "hover:bg-surface-hover"
+								}`}
+								onClick={() => onSubModeChange(value)}
+							>
+								<span
+									className={`mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full border-2 ${
+										subMode === value
+											? "border-accent bg-accent"
+											: "border-ink-muted"
+									}`}
+								/>
+								<span>
+									<span className="block font-medium text-xs">
+										{label}
+									</span>
+									<span className="block text-ink-muted text-xs">
+										{desc}
+									</span>
+								</span>
+							</button>
+						))}
+					</div>
+					<p className="mb-2 font-medium text-sm">Model</p>
 					{isLoadingModels ? (
 						<div className="flex items-center gap-2 text-ink-muted text-sm">
 							<Spinner className="h-4 w-4" />
