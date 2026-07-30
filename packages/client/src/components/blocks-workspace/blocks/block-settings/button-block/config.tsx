@@ -1,5 +1,4 @@
 import { Square } from "lucide-react";
-import type { CSSProperties } from "react";
 import {
 	InputSettings,
 	QuerySelectionSettings,
@@ -12,8 +11,6 @@ import {
 	buildShowField,
 } from "../block-defaults.shared";
 import type { BlockSettingsConfig } from "../settings.types";
-
-export const DefaultStyles: CSSProperties = {};
 
 // export the config for the block
 export const config: BlockSettingsConfig = {

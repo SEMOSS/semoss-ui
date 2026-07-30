@@ -256,7 +256,7 @@ export const ToolsDefaultView = observer(
 				} else {
 					// Normal MCP tool execution for non-Playwright tools
 					const response = await room.runRoomPixel<[unknown]>(
-						`RunMCPTool(project = [ "${app}" ], function=[ "${
+						`RunMCPTool(project = [ "${tool.json._meta.SMSS_ENGINE_ID || app}" ], roomId=${JSON.stringify(room.roomId)}, function=[ "${
 							tool?.json.name
 						}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
 						false,

@@ -1,6 +1,6 @@
 import { createContext } from "react";
 
-export interface Step {
+interface Step {
 	/** Title of the step */
 	title: string;
 

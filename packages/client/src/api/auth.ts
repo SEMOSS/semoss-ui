@@ -163,33 +163,24 @@ export const confirmOTP = async (otp: string): Promise<boolean> => {
 export const loginLDAP = async (
 	username: string,
 	password: string,
-): Promise<"success" | "change-password"> => {
+): Promise<boolean> => {
+	// loginLDAP reads username / password, pin is only for linotp
 	const postData = {
 		username: username,
-		pin: password,
+		password: password,
 		disableRedirect: true,
 	};
 
-	// track the status
-	let status: "success" | "change-password" = "success";
-	await post(`${Env.MODULE}/api/auth/loginLDAP`, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
+	// an expired password comes back as a 401 with the error message,
+	// let it bubble up to the caller
+	await post(`${Env.MODULE}/api/auth/loginLDAP`, postData, {}).catch(
+		(error) => {
+			throw new Error(
+				error instanceof Error ? error.message : `${error}`,
+			);
 		},
-	}).catch((error) => {
-		if (
-			error.response &&
-			error.response.status === 401 &&
-			error.response.data &&
-			error.response.data.requirePwdChange
-		) {
-			status = "change-password";
-			return;
-		}
-		// throw the message
-		throw Error(error);
-	});
-	return status;
+	);
+	return true;
 };
 
 export const setupResetPassword = async (
