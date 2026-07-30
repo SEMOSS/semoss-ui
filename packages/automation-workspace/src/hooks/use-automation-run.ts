@@ -14,6 +14,7 @@ export interface AutomationRunNodeState {
 	status: NodeStatus;
 	durationMs?: number;
 	outputPreview?: string | null;
+	outputValue?: string | null;
 	errorMessage?: string | null;
 }
 
@@ -34,9 +35,16 @@ interface AutomationNodeStreamData {
 	ERROR_MESSAGE?: string | null;
 }
 
+interface TriggerAutomationNodeResult {
+	NODE_ID: string;
+	OUTPUT_VALUE?: string | null;
+}
+
 interface TriggerAutomationOutput {
 	STATUS: string;
 	summary?: string;
+	llmContext?: string;
+	nodeResults?: TriggerAutomationNodeResult[];
 	ERROR_MESSAGE?: string | null;
 	FAILED_NODE_ID?: string;
 }
@@ -47,8 +55,10 @@ export interface UseAutomationRunResult {
 	runId: string | null;
 	/** One entry per node, in execution order, updated live as each node transitions. */
 	nodeStates: AutomationRunNodeState[];
-	/** Per-workflow human-readable summary (AutomationConstants.RESULT_SUMMARY), set once the run finishes successfully. */
+	/** Short summary shown in the sidebar UI (AutomationConstants.RESULT_SUMMARY). */
 	summary: string | null;
+	/** Enriched context with per-step outputs, sent to the LLM as the MCP tool response. */
+	llmContext: string | null;
 	error: string | null;
 	/** Starts a run for the given nodes (in order) and streams live per-node progress. */
 	run: (projectId: string, nodes: AutomationRunnableNode[]) => Promise<void>;
@@ -75,6 +85,7 @@ export function useAutomationRun(): UseAutomationRunResult {
 	const [runId, setRunId] = useState<string | null>(null);
 	const [nodeStates, setNodeStates] = useState<AutomationRunNodeState[]>([]);
 	const [summary, setSummary] = useState<string | null>(null);
+	const [llmContext, setLlmContext] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	// Guards against a stale run's updates landing after a newer run has started.
 	const runTokenRef = useRef(0);
@@ -99,6 +110,7 @@ export function useAutomationRun(): UseAutomationRunResult {
 			setRunning(true);
 			setRunId(null);
 			setSummary(null);
+			setLlmContext(null);
 			setError(null);
 			setNodeStates(
 				nodes.map((n) => ({
@@ -196,6 +208,22 @@ export function useAutomationRun(): UseAutomationRunResult {
 					finalDetail?.summary ??
 						"Automation completed successfully.",
 				);
+				setLlmContext(finalDetail?.llmContext ?? null);
+				if (finalDetail?.nodeResults?.length) {
+					const valueMap = new Map(
+						finalDetail.nodeResults.map((r) => [
+							r.NODE_ID,
+							r.OUTPUT_VALUE,
+						]),
+					);
+					setNodeStates((prev) =>
+						prev.map((n) =>
+							valueMap.has(n.nodeId)
+								? { ...n, outputValue: valueMap.get(n.nodeId) }
+								: n,
+						),
+					);
+				}
 			} catch (err) {
 				if (token === runTokenRef.current) {
 					setError(
@@ -213,5 +241,5 @@ export function useAutomationRun(): UseAutomationRunResult {
 		[updateNode],
 	);
 
-	return { running, runId, nodeStates, summary, error, run };
+	return { running, runId, nodeStates, summary, llmContext, error, run };
 }

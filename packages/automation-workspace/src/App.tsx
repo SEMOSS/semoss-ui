@@ -2,6 +2,8 @@ import { Loader2, Play } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
 import { Button } from "@semoss/ui/next";
+import { AutomationFormEditor } from "./components/form-editor/automation-form-editor";
+import { OutputPreview } from "./components/form-editor/output-preview";
 import { StatusBadge } from "./components/status-badge";
 import type {
 	AutomationDocument,
@@ -49,7 +51,11 @@ export default function App() {
 			{ data: null },
 		);
 
-	const { running, nodeStates, summary, error, run } = useAutomationRun();
+	const { running, nodeStates, summary, llmContext, error, run } =
+		useAutomationRun();
+	const [expandedOutputs, setExpandedOutputs] = useState<Set<string>>(
+		new Set(),
+	);
 
 	const loading =
 		!ready ||
@@ -57,12 +63,45 @@ export default function App() {
 		automationStatus === "LOADING";
 	const steps = (automationDoc?.graph ?? EMPTY_GRAPH).nodes;
 
+	// When used as an MCP sidebar tool, postMessage back to the playground once the
+	// run completes so the tool call is marked done and the LLM can continue.
+	// playground/room-content.tsx listens for SMSS_EXEC_TOOL with the MCPToolResponse
+	// nested under the "tool" key.
+	useEffect(() => {
+		if (!toolContext || (!summary && !error)) return;
+		window.parent.postMessage(
+			{
+				type: "SMSS_EXEC_TOOL",
+				tool: {
+					type: "MCP",
+					id: toolContext.id,
+					name: toolContext.name,
+					message: toolContext.message,
+					roomId: toolContext.roomId,
+					response:
+						llmContext ??
+						summary ??
+						error ??
+						"Automation finished.",
+					tool_status: summary ? "success" : "error",
+					executedParameters: toolContext.parameters,
+				},
+			},
+			"*",
+		);
+	}, [summary, error, toolContext]);
+
 	if (!appId) {
 		return (
 			<div className="flex h-full items-center justify-center px-6 text-center text-muted-foreground text-sm">
 				No automation app was specified.
 			</div>
 		);
+	}
+
+	// Editor mode — full form editor (iframed by workspace.tsx without ?readOnly)
+	if (!readOnly && ready) {
+		return <AutomationFormEditor appId={appId} />;
 	}
 
 	if (loading) {
@@ -77,7 +116,7 @@ export default function App() {
 		<div className="mx-auto flex h-full max-w-3xl flex-col gap-4 overflow-auto px-6 py-6">
 			<div className="flex items-center justify-between">
 				<span className="font-semibold text-lg">Automation Steps</span>
-				{!readOnly ? (
+				{!readOnly || toolContext ? (
 					<Button
 						data-testid="automation-workspace-run-button"
 						disabled={running || steps.length === 0}
@@ -105,30 +144,55 @@ export default function App() {
 						const liveState = nodeStates.find(
 							(n) => n.nodeId === step.id,
 						);
+						const outputForDisplay =
+							liveState?.outputValue ?? liveState?.outputPreview;
+						const hasOutput =
+							liveState?.status === "SUCCESS" && outputForDisplay;
+						const isExpanded = expandedOutputs.has(step.id);
 						return (
 							<li
 								key={step.id}
-								className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3"
+								className="flex flex-col gap-2 rounded-xl border bg-card px-4 py-3"
 							>
-								<span className="flex h-6 w-6 shrink-0 items-center justify-center text-muted-foreground text-xs">
-									{index + 1}
-								</span>
-								<span
-									className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted ${meta.color}`}
-								>
-									<Icon className="h-4 w-4" />
-								</span>
-								<span className="flex flex-1 flex-col">
-									<span className="font-medium text-sm">
-										{step.label || meta.label}
+								<div className="flex items-center gap-3">
+									<span className="flex h-6 w-6 shrink-0 items-center justify-center text-muted-foreground text-xs">
+										{index + 1}
 									</span>
-									<span className="text-muted-foreground text-xs">
-										{meta.label}
+									<span
+										className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted ${meta.color}`}
+									>
+										<Icon className="h-4 w-4" />
 									</span>
-								</span>
-								{liveState ? (
-									<StatusBadge status={liveState.status} />
-								) : null}
+									<span className="flex flex-1 flex-col">
+										<span className="font-medium text-sm">
+											{step.label || meta.label}
+										</span>
+										<span className="text-muted-foreground text-xs">
+											{meta.label}
+										</span>
+									</span>
+									{liveState ? (
+										<StatusBadge
+											status={liveState.status}
+										/>
+									) : null}
+								</div>
+								{hasOutput && (
+									<OutputPreview
+										value={outputForDisplay as string}
+										nodeType={step.type}
+										expanded={isExpanded}
+										onToggle={() =>
+											setExpandedOutputs((prev) => {
+												const next = new Set(prev);
+												if (next.has(step.id))
+													next.delete(step.id);
+												else next.add(step.id);
+												return next;
+											})
+										}
+									/>
+								)}
 							</li>
 						);
 					})}

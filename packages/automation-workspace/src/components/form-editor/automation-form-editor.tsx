@@ -6,7 +6,6 @@ import {
 	Plus,
 	RefreshCw,
 	Save,
-	Zap,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -16,8 +15,6 @@ import {
 } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
 import { Button, toast } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
-import { NODE_TYPE_META } from "../automation.constants";
 import type {
 	AutomationConfigEntry,
 	AutomationDocument,
@@ -31,20 +28,25 @@ import type {
 	ProjectOption,
 	RunStatus,
 	StepRunStatus,
-} from "../automation.types";
-import { applyOutputTransform } from "../automation-utils";
-import { AutomationConfigTab } from "./automation-config-tab";
-import type { AutomationRunData } from "./automation-editor-utils";
+} from "../../domain/automation.types";
+import { NODE_TYPE_META } from "../../domain/automation-constants";
+import type { AutomationRunData } from "../../domain/automation-display";
 import {
 	formatRunDuration,
 	formatTimestamp,
 	getDisplayMeta,
 	newStepId,
 	STEP_TYPES,
-} from "./automation-editor-utils";
+} from "../../domain/automation-display";
+import {
+	applyOutputTransform,
+	validateNode,
+} from "../../domain/automation-utils";
+import { insight } from "../../semoss/client";
+import { StatusBadge } from "../status-badge";
+import { AutomationConfigTab } from "./automation-config-tab";
 import { AutomationStepEditorCard } from "./automation-step-editor-card";
 import { NodeResultList } from "./node-result-list";
-import { StatusBadge } from "./status-badge";
 import { TriggerStepCard } from "./trigger-step-card";
 
 interface AutomationFormEditorProps {
@@ -76,7 +78,6 @@ function ensureTriggerNode(nodes: AutomationNode[]): AutomationNode[] {
 const EMPTY_GRAPH: AutomationGraph = { nodes: [], edges: [] };
 
 export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
-	const { monolithStore } = useRootStore();
 	const [saving, setSaving] = useState(false);
 	const [activeTab, setActiveTab] = useState<TabId>("steps");
 	const [running, setRunning] = useState(false);
@@ -234,6 +235,21 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		setSteps((previous) =>
 			previous.map((step) => (step.id === updated.id ? updated : step)),
 		);
+		// Clear any validation error for this step if it's now valid
+		if (validateNode(updated).length === 0) {
+			setStepErrors((prev) => {
+				if (!prev[updated.id]) return prev;
+				const next = { ...prev };
+				delete next[updated.id];
+				return next;
+			});
+			setStepStatuses((prev) => {
+				if (prev[updated.id] !== "error") return prev;
+				const next = { ...prev };
+				delete next[updated.id];
+				return next;
+			});
+		}
 	}, []);
 
 	const deleteStep = useCallback((id: string) => {
@@ -265,8 +281,10 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 				version: 1,
 				graph: { nodes: steps, edges: [] },
 			};
-			const json = encodeURIComponent(JSON.stringify(doc));
-			await monolithStore.runQuery(
+			const json = btoa(
+				unescape(encodeURIComponent(JSON.stringify(doc))),
+			);
+			await insight.actions.run(
 				`SaveAutomation(project=["${appId}"], json=["${json}"]);`,
 			);
 			toast.success("Automation saved");
@@ -277,13 +295,15 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		} finally {
 			setSaving(false);
 		}
-	}, [appId, steps, monolithStore]);
+	}, [appId, steps]);
 
 	const saveConfig = useCallback(async () => {
 		setSavingConfig(true);
 		try {
-			const json = encodeURIComponent(JSON.stringify(config));
-			await monolithStore.runQuery(
+			const json = btoa(
+				unescape(encodeURIComponent(JSON.stringify(config))),
+			);
+			await insight.actions.run(
 				`SaveAutomationConfig(project=["${appId}"], config=["${json}"]);`,
 			);
 			toast.success("Config saved");
@@ -292,7 +312,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		} finally {
 			setSavingConfig(false);
 		}
-	}, [appId, config, monolithStore]);
+	}, [appId, config]);
 
 	/** Merges live run data into per-step UI state (statuses, durations, outputs). Called once the sequential per-node run finishes. */
 	const applyRunData = useCallback(
@@ -351,6 +371,31 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 
 	const run = useCallback(async () => {
 		if (steps.length === 0) return;
+
+		// Validate required fields before touching the server
+		const invalidSteps = steps.filter((s) => s.type !== "trigger");
+		const validationErrors: Record<string, string> = {};
+		for (const step of invalidSteps) {
+			const errs = validateNode(step);
+			if (errs.length > 0)
+				validationErrors[step.id] = `${errs.join(". ")}.`;
+		}
+		if (Object.keys(validationErrors).length > 0) {
+			setStepStatuses((prev) => {
+				const next = { ...prev };
+				for (const id of Object.keys(validationErrors))
+					next[id] = "error";
+				return next;
+			});
+			setStepErrors((prev) => ({ ...prev, ...validationErrors }));
+			setActiveTab("steps");
+			const count = Object.keys(validationErrors).length;
+			toast.error(
+				`Fix ${count} step${count > 1 ? "s" : ""} before running`,
+			);
+			return;
+		}
+
 		const saved = await save();
 		if (!saved) return;
 		setRunning(true);
@@ -380,7 +425,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 			for (let i = 0; i < 10; i++) {
 				await new Promise<void>((resolve) => setTimeout(resolve, 300));
 				try {
-					const activeRes = await monolithStore.runQuery(
+					const activeRes = await insight.actions.run(
 						`GetActiveAutomationRun(project=["${appId}"]);`,
 					);
 					const activeData = activeRes.pixelReturn?.[0]?.output as {
@@ -515,7 +560,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 			setLatestRunStatus("FAILED");
 			setRunning(false);
 		}
-	}, [appId, applyRunData, refreshRuns, save, steps, monolithStore]);
+	}, [appId, applyRunData, refreshRuns, save, steps]);
 
 	/** Returns variable names available as inputs to the step at the given index: output vars from preceding steps plus all config keys. */
 	const upstreamVarsFor = useCallback(
@@ -569,7 +614,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 			setHistoryDetailLoading(true);
 
 			try {
-				const response = await monolithStore.runQuery(
+				const response = await insight.actions.run(
 					`GetAutomationRun(project=["${appId}"], runId=["${runId}"]);`,
 				);
 				setExpandedHistoryRun(
@@ -579,7 +624,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 				setHistoryDetailLoading(false);
 			}
 		},
-		[appId, expandedHistoryRunId, monolithStore],
+		[appId, expandedHistoryRunId],
 	);
 
 	if (loading) {
@@ -695,8 +740,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 							{steps.filter((s) => s.type !== "trigger")
 								.length === 0 && (
 								<div className="rounded-2xl border border-dashed bg-card/60 px-6 py-10 text-center">
-									<Zap className="mx-auto h-10 w-10 text-muted-foreground/50" />
-									<p className="mt-3 font-medium text-sm">
+									<p className="font-medium text-sm">
 										No steps yet
 									</p>
 									<p className="mt-1 text-muted-foreground text-xs">
@@ -831,7 +875,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 												className="ml-auto h-7 px-2 text-xs"
 												onClick={async () => {
 													try {
-														await monolithStore.runQuery(
+														await insight.actions.run(
 															`CancelAutomationRun(project=["${appId}"], runId=["${latestRunId}"]);`,
 														);
 														toast.success(

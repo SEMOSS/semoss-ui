@@ -10,7 +10,7 @@ import {
 import type {
 	EngineOption,
 	FunctionEngineConfig,
-} from "../../automation.types";
+} from "../../../domain/automation.types";
 import { BoundInput, EngineSelect } from "./shared";
 
 export interface FunctionEngineFormProps {

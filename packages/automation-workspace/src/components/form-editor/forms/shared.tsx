@@ -11,7 +11,7 @@ import {
 	SelectValue,
 	Textarea,
 } from "@semoss/ui/next";
-import type { EngineOption } from "../../automation.types";
+import type { EngineOption } from "../../../domain/automation.types";
 
 export interface BoundInputProps {
 	/** Field label */

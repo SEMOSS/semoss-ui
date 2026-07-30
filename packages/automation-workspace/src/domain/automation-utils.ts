@@ -1,7 +1,14 @@
 import type {
+	AppConfig,
 	AutomationNode,
 	AutomationNodeType,
+	DatabaseEngineConfig,
+	FunctionEngineConfig,
+	ModelEngineConfig,
 	OutputTransform,
+	StorageEngineConfig,
+	VectorEngineConfig,
+	WaitConfig,
 } from "./automation.types";
 
 // ─── shared constants ─────────────────────────────────────────────────────────
@@ -387,4 +394,46 @@ function resolveSimplePath(obj: unknown, path: string): string | null {
 	}
 	if (cur == null) return null;
 	return typeof cur === "string" ? cur : JSON.stringify(cur, null, 2);
+}
+
+// ─── pre-run validation ───────────────────────────────────────────────────────
+
+/** Returns an array of human-readable error strings for a node's required fields. Empty = valid. */
+export function validateNode(node: AutomationNode): string[] {
+	const errors: string[] = [];
+	const { type, config } = node;
+
+	if (type === "database-engine") {
+		const c = config as DatabaseEngineConfig;
+		if (!c.engineId) errors.push("A database engine is required");
+		if (!c.expression?.trim()) errors.push("A SQL expression is required");
+	} else if (type === "model-engine") {
+		const c = config as ModelEngineConfig;
+		if (!c.engineId) errors.push("A model engine is required");
+		if (c.operation === "llm" || c.operation === "vision") {
+			if (!c.prompt?.trim() && !c.command?.trim())
+				errors.push("A prompt is required");
+		} else if (c.operation === "embeddings") {
+			if (!c.command?.trim()) errors.push("Text to embed is required");
+		}
+	} else if (type === "vector-engine") {
+		const c = config as VectorEngineConfig;
+		if (!c.engineId) errors.push("A vector engine is required");
+		if (c.operation === "search" && !c.command?.trim())
+			errors.push("A search query is required");
+	} else if (type === "storage-engine") {
+		const c = config as StorageEngineConfig;
+		if (!c.engineId) errors.push("A storage engine is required");
+	} else if (type === "function-engine") {
+		const c = config as FunctionEngineConfig;
+		if (!c.engineId) errors.push("A function engine is required");
+	} else if (type === "app") {
+		const c = config as AppConfig;
+		if (!c.pixel?.trim()) errors.push("A pixel expression is required");
+	} else if (type === "wait") {
+		const c = config as WaitConfig;
+		if (!c.seconds?.trim()) errors.push("A wait duration is required");
+	}
+
+	return errors;
 }

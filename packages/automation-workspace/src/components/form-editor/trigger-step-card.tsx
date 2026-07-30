@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight, Zap } from "lucide-react";
-import type { AutomationNode } from "../automation.types";
+import type { AutomationNode } from "../../domain/automation.types";
 import { TriggerForm } from "./forms/trigger-form";
 
 interface TriggerStepCardProps {

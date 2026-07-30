@@ -1,4 +1,4 @@
-import type { WaitConfig } from "../../automation.types";
+import type { WaitConfig } from "../../../domain/automation.types";
 import { BoundInput } from "./shared";
 
 export interface WaitFormProps {

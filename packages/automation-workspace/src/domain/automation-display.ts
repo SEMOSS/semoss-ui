@@ -10,6 +10,7 @@ import {
 	Sigma,
 } from "lucide-react";
 import type {
+	AutomationNode,
 	AutomationNodeResult,
 	AutomationNodeType,
 	RunStatus,
@@ -154,4 +155,20 @@ export function formatRunDuration(
 	if (!completedAt) return "—";
 	const ms = new Date(completedAt).getTime() - new Date(startedAt).getTime();
 	return formatDurationMs(ms);
+}
+
+export const STEP_STATUS_BORDER: Record<string, string> = {
+	error: "border-destructive/40",
+	success: "border-emerald-500/40",
+	running: "border-primary/40",
+	idle: "border-border",
+};
+
+export function newStepId(type: AutomationNodeType) {
+	return `${type}-${crypto.randomUUID()}`;
+}
+
+export function getStepHeaderLabel(step: AutomationNode) {
+	const meta = getDisplayMeta(step.type);
+	return step.label || meta.label;
 }

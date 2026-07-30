@@ -7,7 +7,10 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import type { AppConfig, ProjectOption } from "../../automation.types";
+import type {
+	AppConfig,
+	ProjectOption,
+} from "../../../domain/automation.types";
 import { BoundInput } from "./shared";
 
 export interface AppEngineFormProps {

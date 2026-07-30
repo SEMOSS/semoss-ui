@@ -1,10 +1,13 @@
 import { Clock3 } from "lucide-react";
 import { useMemo } from "react";
-import type { AutomationNode, AutomationNodeResult } from "../automation.types";
-import { formatDurationMs } from "../automation-utils";
-import { getDisplayMeta } from "./automation-editor-utils";
+import type {
+	AutomationNode,
+	AutomationNodeResult,
+} from "../../domain/automation.types";
+import { getDisplayMeta } from "../../domain/automation-display";
+import { formatDurationMs } from "../../domain/automation-utils";
+import { StatusBadge } from "../status-badge";
 import { OutputPreview } from "./output-preview";
-import { StatusBadge } from "./status-badge";
 
 export interface NodeResultListProps {
 	/** Automation node definitions, used to look up label/type per result */

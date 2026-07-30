@@ -1,7 +1,7 @@
 import { Eye, EyeOff, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Button, Input } from "@semoss/ui/next";
-import type { AutomationConfigEntry } from "../automation.types";
+import type { AutomationConfigEntry } from "../../domain/automation.types";
 
 interface AutomationConfigTabProps {
 	config: AutomationConfigEntry[];

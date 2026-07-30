@@ -16,11 +16,11 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
 import type {
 	DatabaseEngineConfig,
 	EngineOption,
-} from "../../automation.types";
+} from "../../../domain/automation.types";
+import { insight } from "../../../semoss/client";
 import { BoundInput, EngineSelect } from "./shared";
 
 interface TableStructure {
@@ -45,7 +45,6 @@ export function DatabaseEngineForm({
 	upstreamVars,
 	onChange,
 }: DatabaseEngineFormProps) {
-	const { monolithStore } = useRootStore();
 	const [structure, setStructure] = useState<TableStructure[]>([]);
 	const [schemaLoading, setSchemaLoading] = useState(false);
 	const [schemaError, setSchemaError] = useState(false);
@@ -62,11 +61,11 @@ export function DatabaseEngineForm({
 		}
 		setSchemaLoading(true);
 		setSchemaError(false);
-		monolithStore
-			.runQuery(
+		insight.actions
+			.run(
 				`META|GetDatabaseTableStructure(database=["${config.engineId}"]);`,
 			)
-			.then((res) => {
+			.then((res: { pixelReturn?: { output: unknown }[] }) => {
 				const rows = res.pixelReturn?.[0]?.output as unknown[][] | null;
 				if (!Array.isArray(rows)) return;
 				const byTable: Record<
@@ -96,7 +95,7 @@ export function DatabaseEngineForm({
 				setSchemaError(true);
 			})
 			.finally(() => setSchemaLoading(false));
-	}, [config.engineId, monolithStore]);
+	}, [config.engineId]);
 
 	const searchedStructure = searchTerm
 		? structure.filter(

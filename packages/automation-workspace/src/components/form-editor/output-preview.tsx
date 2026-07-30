@@ -1,7 +1,7 @@
 import { ChevronDown, ChevronRight, ClipboardCopy } from "lucide-react";
 import { Fragment, useMemo, useState } from "react";
 import { toast } from "@semoss/ui/next";
-import { extractDataset } from "../automation-utils";
+import { extractDataset } from "../../domain/automation-utils";
 
 export interface OutputPreviewProps {
 	/** Raw node output value (JSON string, markdown, or plain text) */
@@ -21,7 +21,7 @@ export function OutputPreview({
 	nodeType,
 }: OutputPreviewProps) {
 	const preview = value.length > 180 ? `${value.slice(0, 180)}…` : value;
-	const [tableView, setTableView] = useState<"table" | "json">("table");
+	const [tableView, setTableView] = useState<"table" | "json">("json");
 
 	const parsed = useMemo(() => {
 		try {
@@ -122,7 +122,7 @@ export function OutputPreview({
 											</span>
 										)}
 									</div>
-									{result.Content && (
+									{result.Content != null && (
 										<p className="mt-1 line-clamp-3 text-[11px] text-muted-foreground">
 											{String(result.Content).slice(
 												0,
@@ -142,19 +142,8 @@ export function OutputPreview({
 			const { headers, rows } = dbDataset;
 			return (
 				<div className="space-y-1.5 pr-8">
-					{/* View toggle: Table / JSON */}
+					{/* View toggle: JSON / Table */}
 					<div className="flex items-center gap-1">
-						<button
-							type="button"
-							onClick={() => setTableView("table")}
-							className={`rounded border px-2 py-0.5 text-[10px] transition-colors ${
-								tableView === "table"
-									? "border-primary bg-primary/10 font-medium text-primary"
-									: "border-border text-muted-foreground hover:border-primary/40"
-							}`}
-						>
-							Table
-						</button>
 						<button
 							type="button"
 							onClick={() => setTableView("json")}
@@ -166,6 +155,17 @@ export function OutputPreview({
 						>
 							JSON
 						</button>
+						<button
+							type="button"
+							onClick={() => setTableView("table")}
+							className={`rounded border px-2 py-0.5 text-[10px] transition-colors ${
+								tableView === "table"
+									? "border-primary bg-primary/10 font-medium text-primary"
+									: "border-border text-muted-foreground hover:border-primary/40"
+							}`}
+						>
+							Table
+						</button>
 						<span className="ml-auto text-[10px] text-muted-foreground/60">
 							{rows.length} row{rows.length !== 1 ? "s" : ""}
 						</span>
@@ -176,6 +176,9 @@ export function OutputPreview({
 							<table className="w-full border-collapse text-[11px]">
 								<thead>
 									<tr className="border-b bg-muted/50">
+										<th className="w-8 px-2 py-1.5 text-center font-semibold text-muted-foreground/60">
+											#
+										</th>
 										{headers.map((h) => (
 											<th
 												key={h}
@@ -191,6 +194,9 @@ export function OutputPreview({
 										// biome-ignore lint/suspicious/noArrayIndexKey: rows rebuilt from a single run each render
 										<Fragment key={i}>
 											<tr className="border-muted/50 border-b last:border-0">
+												<td className="px-2 py-1 text-center text-[10px] text-muted-foreground/60">
+													{i + 1}
+												</td>
 												{headers.map((h, j) => (
 													<td
 														key={h}
@@ -248,19 +254,15 @@ export function OutputPreview({
 				<button
 					type="button"
 					onClick={onToggle}
-					className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
+					className="inline-flex items-center gap-0.5 text-primary leading-none hover:underline"
 				>
-					{expanded
-						? "Hide"
-						: renderMode === "table"
-							? "Show table"
-							: renderMode === "vector-results"
-								? "Show results"
-								: "Expand"}
+					<span className="text-[11px]">
+						{expanded ? "Hide" : "Expand"}
+					</span>
 					{expanded ? (
-						<ChevronDown className="h-3 w-3" />
+						<ChevronDown className="h-2.5 w-2.5" />
 					) : (
-						<ChevronRight className="h-3 w-3" />
+						<ChevronRight className="h-2.5 w-2.5" />
 					)}
 				</button>
 			)}

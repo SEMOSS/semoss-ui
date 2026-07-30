@@ -8,7 +8,10 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import type { EngineOption, VectorEngineConfig } from "../../automation.types";
+import type {
+	EngineOption,
+	VectorEngineConfig,
+} from "../../../domain/automation.types";
 import { BoundInput, EngineSelect } from "./shared";
 
 export interface VectorEngineFormProps {
@@ -84,7 +87,7 @@ export function VectorEngineForm({
 									...config,
 									limit: e.target.value
 										? Number(e.target.value)
-										: undefined,
+										: 5,
 								})
 							}
 							placeholder="5"

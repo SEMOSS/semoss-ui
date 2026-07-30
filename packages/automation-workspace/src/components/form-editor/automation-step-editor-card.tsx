@@ -1,13 +1,17 @@
 import { ChevronDown, ChevronRight, Loader2, Play, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button, Field, FieldLabel, Input } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
 import type {
 	AutomationNode,
 	EngineOption,
 	ProjectOption,
 	StepRunStatus,
-} from "../automation.types";
+} from "../../domain/automation.types";
+import {
+	getDisplayMeta,
+	getStepHeaderLabel,
+	STEP_STATUS_BORDER,
+} from "../../domain/automation-display";
 import {
 	applyOutputTransform,
 	buildPixelPreview,
@@ -16,14 +20,10 @@ import {
 	substituteVars,
 	TRANSFORM_ENABLED,
 	TRANSFORM_MODES,
-} from "../automation-utils";
-import {
-	getDisplayMeta,
-	getStepHeaderLabel,
-	STEP_STATUS_BORDER,
-} from "./automation-editor-utils";
+} from "../../domain/automation-utils";
+import { insight } from "../../semoss/client";
+import { StatusIcon } from "../status-icon";
 import { OutputPreview } from "./output-preview";
-import { StatusIcon } from "./status-icon";
 import { StepForm } from "./step-form";
 
 export interface AutomationStepEditorCardProps {
@@ -67,7 +67,6 @@ export function AutomationStepEditorCard({
 	onMoveDown,
 	onSetOutput,
 }: AutomationStepEditorCardProps) {
-	const { monolithStore } = useRootStore();
 	const [runningStepTest, setRunningStepTest] = useState(false);
 	const [runOutput, setRunOutput] = useState<string | null>(null);
 	const [runOutputExpanded, setRunOutputExpanded] = useState(false);
@@ -89,7 +88,7 @@ export function AutomationStepEditorCard({
 		setRunOutput(null);
 
 		try {
-			const result = await monolithStore.runQuery(pixel);
+			const result = await insight.actions.run(pixel);
 			const pixelReturns = result.pixelReturn ?? [];
 			const lastReturn = pixelReturns[pixelReturns.length - 1];
 			const output = lastReturn?.output;
@@ -321,6 +320,9 @@ export function AutomationStepEditorCard({
 												onUpdate({
 													...step,
 													outputTransform: {
+														mode:
+															step.outputTransform
+																?.mode ?? "raw",
 														...step.outputTransform,
 														column: event.target
 															.value,
@@ -341,6 +343,9 @@ export function AutomationStepEditorCard({
 												onUpdate({
 													...step,
 													outputTransform: {
+														mode:
+															step.outputTransform
+																?.mode ?? "raw",
 														...step.outputTransform,
 														path: event.target
 															.value,
