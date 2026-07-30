@@ -38,6 +38,23 @@ type ModelMetadata = {
 	benchmarks?: Record<string, unknown>[] | null;
 };
 
+type StaticModelMetadata = {
+	description?: string | null;
+};
+
+export const getModelOverviewDescription = (
+	catalogDescription: unknown,
+	staticDescription: unknown,
+): string => {
+	if (
+		typeof catalogDescription === "string" &&
+		catalogDescription.trim() !== ""
+	) {
+		return catalogDescription;
+	}
+	return typeof staticDescription === "string" ? staticDescription : "";
+};
+
 const CAPABILITIES = [
 	"TEXT_GENERATION",
 	"IMAGE_GENERATION",
@@ -194,12 +211,26 @@ export const EngineOverview = ({
 			? `GetModelMetadata(engine=["${engine.engine_id}"]);`
 			: "",
 	);
+	const staticModelId =
+		typeof getModelMetadata.data?.modelId === "string"
+			? getModelMetadata.data.modelId.trim()
+			: "";
+	const getStaticModelMetadata = usePixel<StaticModelMetadata>(
+		isModel && !engine.description && staticModelId
+			? `GetStaticModelMetadata(modelId=${JSON.stringify(staticModelId)});`
+			: "",
+	);
+	const overviewDescription = getModelOverviewDescription(
+		engine.description,
+		getStaticModelMetadata.data?.description,
+	);
 	const overviewMetadata = useMemo<Record<string, unknown>>(
 		() => ({
 			...(engine as unknown as Record<string, unknown>),
 			...(isModel ? getModelMetadata.data : {}),
+			description: overviewDescription,
 		}),
-		[engine, isModel, getModelMetadata.data],
+		[engine, isModel, getModelMetadata.data, overviewDescription],
 	);
 
 	/**
@@ -307,7 +338,7 @@ export const EngineOverview = ({
 					? getEngineMetaValues.data
 					: []
 			}
-			description={engine.description || ""}
+			description={overviewDescription}
 			markdown={engine.markdown || ""}
 			tags={normalizeTagArray(engine.tag) || []}
 			dataClassification={

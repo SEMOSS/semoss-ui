@@ -131,6 +131,7 @@ type ModelModality = (typeof MODEL_MODALITIES)[number];
 
 interface StaticModelMetadata {
 	id?: string;
+	description?: string | null;
 	capability?: string | null;
 	input_modalities?: string[] | null;
 	output_modalities?: string[] | null;
@@ -400,6 +401,16 @@ export const buildModelMetadataFields = (
 				)
 			: undefined;
 	const metadataFields: FieldDefinition[] = [
+		{
+			key: "DESCRIPTION",
+			label: "Description",
+			type: "textarea",
+			required: false,
+			category: "General",
+			default: staticMetadata?.description?.trim() || "",
+			helperText:
+				"Optional catalog description shown to users browsing this model.",
+		},
 		{
 			key: "MODEL_PROVIDER",
 			label: "Model Provider",

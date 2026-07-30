@@ -188,9 +188,38 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 				return;
 			}
 
-			toast.success("Successfully added LLM to catalog");
 			// engine_id is the current key; database_id is the legacy fallback
-			navigate(`/model/${output.engine_id || output.database_id}`);
+			const engineId = output.engine_id || output.database_id;
+			const description =
+				typeof newFormData.DESCRIPTION === "string"
+					? newFormData.DESCRIPTION.trim()
+					: "";
+
+			if (engineId && description) {
+				try {
+					const metadataResponse = await configStore.runPixel(
+						`SetEngineMetadata(engine=[${JSON.stringify(engineId)}], meta=[${JSON.stringify(
+							{ description },
+						)}]);`,
+					);
+					const metadataResult = metadataResponse.pixelReturn?.[0];
+					if (
+						metadataResponse.errors.length > 0 ||
+						String(metadataResult?.operationType || "").includes(
+							"ERROR",
+						)
+					) {
+						throw new Error("Unable to save model description");
+					}
+				} catch {
+					toast.warning(
+						"Model added, but its description could not be saved.",
+					);
+				}
+			}
+
+			toast.success("Successfully added LLM to catalog");
+			navigate(`/model/${engineId}`);
 		});
 
 		if (onComplete) onComplete(data);

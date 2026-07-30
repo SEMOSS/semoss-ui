@@ -16,6 +16,7 @@ const GPT_5: ModelVersionDefinition = {
 };
 
 const GPT_5_STATIC_METADATA = {
+	description: "A model for coding, reasoning, and agentic workflows.",
 	input_modalities: ["text", "image", "pdf"],
 	output_modalities: ["text"],
 	context_length: 400000,
@@ -88,6 +89,11 @@ describe("static model metadata defaults", () => {
 			helperText: "Existing field settings are preserved.",
 		});
 		expect(getField(fields, "CAPABILITY").default).toBe("TEXT_GENERATION");
+		expect(getField(fields, "DESCRIPTION")).toMatchObject({
+			type: "textarea",
+			category: "General",
+			default: GPT_5_STATIC_METADATA.description,
+		});
 		expect(getField(fields, "INPUT_MODALITIES").default).toEqual([
 			"TEXT",
 			"IMAGE",
@@ -144,5 +150,6 @@ describe("static model metadata defaults", () => {
 		expect(fields.some((field) => field.key === "REASONING_CONFIG")).toBe(
 			false,
 		);
+		expect(getField(fields, "DESCRIPTION").default).toBe("");
 	});
 });

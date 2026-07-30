@@ -17,6 +17,18 @@ interface EngineLayoutProps {
 	};
 }
 
+const DEDICATED_ENGINE_META_KEYS = new Set(["description", "markdown", "tags"]);
+
+export const getEngineOverviewMetaKeys = (
+	configuredMetaKeys: { metakey: string }[],
+): string[] => [
+	"markdown",
+	"description",
+	...configuredMetaKeys
+		.filter((metaKey) => !DEDICATED_ENGINE_META_KEYS.has(metaKey.metakey))
+		.map((metaKey) => metaKey.metakey),
+];
+
 /**
  * Wrap the engine routes and add additional funcitonality
  */
@@ -24,23 +36,10 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ catalog }) => {
 	const { engineId } = useParams();
 	const { configStore } = useRootStore();
 
-	// filter metakeys to the ones we want
-	const engineMetaKeys = configStore.store.config.databaseMetaKeys.filter(
-		(k) => {
-			return (
-				k.metakey !== "description" &&
-				k.metakey !== "markdown" &&
-				k.metakey !== "tags"
-			);
-		},
+	// Always request dedicated overview fields, including the catalog description.
+	const metaKeys = getEngineOverviewMetaKeys(
+		configStore.store.config.databaseMetaKeys,
 	);
-
-	// kets to get dbMetaData for
-	const metaKeys = [
-		"markdown",
-		"description",
-		...engineMetaKeys.map((k) => k.metakey),
-	];
 
 	// get the metadata
 	const getEngineMetadata = usePixel<Engine>(
