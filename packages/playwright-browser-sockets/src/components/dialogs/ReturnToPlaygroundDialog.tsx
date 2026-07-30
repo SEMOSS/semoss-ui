@@ -96,11 +96,11 @@ export function ReturnToPlaygroundDialog({
 						/>
 						<span className="min-w-0 flex-1">
 							<span className="block font-semibold">
-								Playground and Playwright app
+								Playground and app
 							</span>
 							<span className="mt-1 block text-muted-foreground text-sm">
 								Save everything in Playground and also save the
-								recording in the selected Playwright app.
+								recording and playback tool in the selected app.
 							</span>
 							<span className="mt-3 block">
 								<Select

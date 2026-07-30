@@ -105,7 +105,8 @@ export function SaveRecordingDialog(props: SaveRecordingDialogProps) {
 							</SelectContent>
 						</Select>
 						<p className="text-muted-foreground text-xs">
-							Only Playwright-tagged portal projects are shown.
+							Apps you can edit are shown. Agents and skills are
+							excluded.
 						</p>
 					</div>
 					<div className="grid gap-2">

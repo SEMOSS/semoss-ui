@@ -74,7 +74,39 @@ interface ResolvedRecordingSelection {
 	fileName: string;
 	startUrl: string;
 	recording?: LoadedRecording;
+	parameterValues?: Record<string, string>;
 }
+
+const sanitizeParameterName = (label: string, prefix: string): string => {
+	let value = label
+		.replace(/[^a-zA-Z0-9\s]/g, "")
+		.trim()
+		.replace(/\s+/g, "_")
+		.toLowerCase();
+	if (!value || !/^[a-zA-Z]/.test(value)) value = `${prefix}${value}`;
+	return value;
+};
+
+const resolveTypeOverride = (
+	step: LoadedRecordingStep,
+	values: Record<string, string>,
+): string | undefined => {
+	const candidates = [
+		typeof step.id === "number" ? `step_${step.id}` : "",
+		typeof step.id === "number" ? String(step.id) : "",
+		typeof step.label === "string" ? step.label : "",
+		typeof step.label === "string"
+			? sanitizeParameterName(step.label, "field_")
+			: "",
+		typeof step.label === "string"
+			? sanitizeParameterName(step.label, "tool_")
+			: "",
+	].filter(Boolean);
+	const key = candidates.find((candidate) =>
+		Object.hasOwn(values, candidate),
+	);
+	return key ? values[key] : undefined;
+};
 
 export function usePlaybackController({
 	insightId,
@@ -113,6 +145,7 @@ export function usePlaybackController({
 	const [isPaused, setIsPaused] = useState(false);
 	const [controlsOpen, setControlsOpen] = useState(false);
 	const [loadedRecordingOpen, setLoadedRecordingOpen] = useState(false);
+	const resolvedParameterValuesRef = useRef<Record<string, string>>({});
 	const [editingStepId, setEditingStepId] = useState<number | null>(null);
 	const [valueRequiredStepId, setValueRequiredStepId] = useState<
 		number | null
@@ -150,7 +183,11 @@ export function usePlaybackController({
 	);
 
 	const initializeLoadedRecording = useCallback(
-		(recording: LoadedRecording, label: string) => {
+		(
+			recording: LoadedRecording,
+			label: string,
+			parameterValues: Record<string, string> = {},
+		) => {
 			setLoadedRecording(recording);
 			setExecutedStepIds(new Set());
 			setRunningStepId(null);
@@ -169,10 +206,13 @@ export function usePlaybackController({
 					.forEach((step) => {
 						if (
 							step.type === "TYPE" &&
-							typeof step.id === "number" &&
-							typeof step.text === "string"
+							typeof step.id === "number"
 						) {
-							initialValues[step.id] = step.text;
+							initialValues[step.id] =
+								resolveTypeOverride(step, parameterValues) ??
+								(typeof step.text === "string"
+									? step.text
+									: "");
 						}
 					});
 			});
@@ -254,12 +294,14 @@ export function usePlaybackController({
 	]);
 
 	const selectProject = useCallback((next: PlaybackProject | null) => {
+		resolvedParameterValuesRef.current = {};
 		setSource("project");
 		setSavedRecordingSelection(null);
 		setProject(next);
 	}, []);
 
 	const selectRecording = useCallback((fileName: string | null) => {
+		resolvedParameterValuesRef.current = {};
 		setSource("project");
 		setSelectedRecording(fileName);
 		setLoadedRecording(null);
@@ -284,6 +326,8 @@ export function usePlaybackController({
 
 	const configureResolvedRecording = useCallback(
 		(selection: ResolvedRecordingSelection) => {
+			resolvedParameterValuesRef.current =
+				selection.parameterValues ?? {};
 			setStartUrl(normalizeBrowserUrl(selection.startUrl));
 			setSource(selection.source);
 			setProject(selection.project);
@@ -292,6 +336,7 @@ export function usePlaybackController({
 				initializeLoadedRecording(
 					selection.recording,
 					selection.fileName,
+					resolvedParameterValuesRef.current,
 				);
 			}
 		},
@@ -318,6 +363,7 @@ export function usePlaybackController({
 		setLoadedRecordingOpen(false);
 		setEditingStepId(null);
 		setValueRequiredStepId(null);
+		resolvedParameterValuesRef.current = {};
 	}, []);
 
 	const requestPause = useCallback(
@@ -484,7 +530,11 @@ export function usePlaybackController({
 				selectedRecording,
 			);
 			if (recording)
-				initializeLoadedRecording(recording, selectedRecording);
+				initializeLoadedRecording(
+					recording,
+					selectedRecording,
+					resolvedParameterValuesRef.current,
+				);
 		} finally {
 			setIsLoadingRecording(false);
 		}
@@ -682,6 +732,7 @@ export function usePlaybackController({
 		project,
 		runStep,
 		selectedRecording,
+		source,
 	]);
 
 	const updateTypeValue = useCallback((stepId: number, value: string) => {
