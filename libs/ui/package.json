@@ -63,7 +63,7 @@
     "date-fns": "^4.1.0",
     "dayjs": "1.11.8",
     "deepmerge": "4.3.1",
-    "js-yaml": "^4.1.1",
+    "js-yaml": "^4.3.0",
     "lucide-react": "^0.545.0",
     "radix-ui": "^1.4.3",
     "react-day-picker": "^9.12.0",
