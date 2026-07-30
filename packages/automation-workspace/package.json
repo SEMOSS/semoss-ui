@@ -1,0 +1,30 @@
+{
+  "name": "@semoss/automation-workspace",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --mode development",
+    "build": "vite build --mode production",
+    "build:dev": "vite build --mode development",
+    "type-check": "tsc --pretty --noEmit",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@semoss/sdk": "workspace:*",
+    "@semoss/ui": "workspace:*",
+    "@tailwindcss/vite": "^4.1.14",
+    "lucide-react": "^0.545.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "tailwindcss": "^4.1.14"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.1",
+    "@types/react": "18.3.1",
+    "@types/react-dom": "18.3.0",
+    "@vitejs/plugin-react": "^4.6.0",
+    "typescript": "~5.5.2",
+    "vite": "^7.0.0"
+  }
+}

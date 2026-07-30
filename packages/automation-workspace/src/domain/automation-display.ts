@@ -10,12 +10,11 @@ import {
 	Sigma,
 } from "lucide-react";
 import type {
-	AutomationNode,
 	AutomationNodeResult,
 	AutomationNodeType,
 	RunStatus,
-} from "../automation.types";
-import { formatDurationMs } from "../automation-utils";
+} from "./automation.types";
+import { formatDurationMs } from "./format";
 
 // Manual runs execute in the background — the FE polls GetAutomationRun on this
 // interval until the run leaves RUNNING status.
@@ -26,7 +25,7 @@ export interface AutomationRunData {
 	RUN_ID?: string;
 	nodeResults?: AutomationNodeResult[];
 	ERROR_MESSAGE?: string;
-	/** Per-workflow human-readable summary (AutomationConstants.RESULT_SUMMARY on the backend). */
+	/** Per-workflow human-readable summary (see AutomationConstants.RESULT_SUMMARY on the backend). */
 	summary?: string;
 }
 
@@ -108,13 +107,6 @@ export const STATUS_STYLES: Record<string, string> = {
 	idle: "bg-muted text-muted-foreground",
 };
 
-export const STEP_STATUS_BORDER: Record<string, string> = {
-	error: "border-destructive/40",
-	success: "border-emerald-500/40",
-	running: "border-primary/40",
-	idle: "border-border",
-};
-
 export const TYPE_DISPLAY_META: Record<
 	string,
 	{
@@ -139,10 +131,6 @@ export const TYPE_DISPLAY_META: Record<
 	wait: STEP_TYPES[6],
 };
 
-export function newStepId(type: AutomationNodeType) {
-	return `${type}-${crypto.randomUUID()}`;
-}
-
 export function formatTimestamp(iso: string): string {
 	try {
 		return new Date(iso).toLocaleString();
@@ -157,11 +145,6 @@ export function getStatusClasses(status: string) {
 
 export function getDisplayMeta(type: AutomationNodeType | string) {
 	return TYPE_DISPLAY_META[type] ?? TYPE_DISPLAY_META["database-engine"];
-}
-
-export function getStepHeaderLabel(step: AutomationNode) {
-	const meta = getDisplayMeta(step.type);
-	return step.label || meta.label;
 }
 
 export function formatRunDuration(

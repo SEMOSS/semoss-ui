@@ -8,8 +8,12 @@ import {
 	Save,
 	Zap,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getPixelAsyncResult, runPixelAsync } from "@semoss/sdk";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+	getPixelAsyncResult,
+	getPixelJobStreaming,
+	runPixelAsync,
+} from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
 import { Button, toast } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
@@ -36,7 +40,6 @@ import {
 	formatTimestamp,
 	getDisplayMeta,
 	newStepId,
-	RUN_POLL_INTERVAL_MS,
 	STEP_TYPES,
 } from "./automation-editor-utils";
 import { AutomationStepEditorCard } from "./automation-step-editor-card";
@@ -291,17 +294,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		}
 	}, [appId, config, monolithStore]);
 
-	const pollTokenRef = useRef<{ cancelled: boolean } | null>(null);
-
-	useEffect(() => {
-		return () => {
-			if (pollTokenRef.current) {
-				pollTokenRef.current.cancelled = true;
-			}
-		};
-	}, []);
-
-	/** Merges live run data into per-step UI state (statuses, durations, outputs). Called on both initial run response and each poll tick. */
+	/** Merges live run data into per-step UI state (statuses, durations, outputs). Called once the sequential per-node run finishes. */
 	const applyRunData = useCallback(
 		(runData: AutomationRunData) => {
 			const nodeResultsMap = new Map(
@@ -356,74 +349,15 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		[steps],
 	);
 
-	// Ref-sync pattern: pollRun captures this ref so it always calls the latest
-	// applyRunData without needing applyRunData in pollRun's own dep array,
-	// which would restart polling every time steps change mid-run.
-	const applyRunDataRef = useRef(applyRunData);
-	useEffect(() => {
-		applyRunDataRef.current = applyRunData;
-	}, [applyRunData]);
-
-	/** Polls GetAutomationRun on RUN_POLL_INTERVAL_MS until run leaves RUNNING status. Cancellable via token.cancelled. */
-	const pollRun = useCallback(
-		async (runId: string, token: { cancelled: boolean }) => {
-			while (!token.cancelled) {
-				await new Promise((resolve) =>
-					setTimeout(resolve, RUN_POLL_INTERVAL_MS),
-				);
-				if (token.cancelled) return;
-
-				try {
-					const response = await monolithStore.runQuery(
-						`GetAutomationRun(project=["${appId}"], runId=["${runId}"]);`,
-					);
-					const runData = response.pixelReturn?.[0]
-						?.output as AutomationRunData | null;
-					if (!runData || token.cancelled) continue;
-
-					applyRunDataRef.current(runData);
-
-					if (runData.STATUS !== "RUNNING") {
-						if (runData.STATUS === "SUCCESS") {
-							toast.success("Automation completed");
-						} else if (runData.STATUS === "FAILED") {
-							toast.error(
-								runData.ERROR_MESSAGE ?? "Automation failed",
-							);
-						} else if (runData.STATUS === "CANCELLED") {
-							toast.error("Automation was cancelled");
-						}
-						setRunning(false);
-						refreshRuns();
-						return;
-					}
-				} catch (error) {
-					if (token.cancelled) return;
-					toast.error(
-						`Lost connection while polling run status: ${
-							(error as Error).message ?? "Unknown error"
-						}`,
-					);
-					setRunning(false);
-					return;
-				}
-			}
-		},
-		[appId, refreshRuns, monolithStore],
-	);
-
 	const run = useCallback(async () => {
 		if (steps.length === 0) return;
 		const saved = await save();
 		if (!saved) return;
-		if (pollTokenRef.current) {
-			pollTokenRef.current.cancelled = true;
-		}
 		setRunning(true);
 		setStepStatuses({});
 		setStepErrors({});
 		setStepDurations({});
-		setLatestRunStatus(null);
+		setLatestRunStatus("RUNNING");
 		setLatestRunId(null);
 		setLatestRunError(null);
 		setLatestRunResults([]);
@@ -431,17 +365,20 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		setActiveTab("results");
 
 		try {
-			// Launch on a virtual thread via runPixelAsync — returns immediately
-			// with a jobId while TriggerAutomation runs synchronously on the server.
+			// Launch on a virtual thread via runPixelAsync — TriggerAutomation runs every node
+			// in sequence server-side (same ordering/dependency guarantees as before), and
+			// streams a progress event per node onto the job (see AutomationRunEngine —
+			// mirrors HarnessToolExecutor's tool-call streaming). We poll that stream below for
+			// live per-node status instead of firing separate per-node HTTP calls, which raced
+			// (a node could start before the previous one's output was actually persisted).
 			const { jobId } = await runPixelAsync(
 				`TriggerAutomation(project=["${appId}"]);`,
 			);
 
-			// Poll AUTOMATION_ACTIVE_RUN (populated at claimActiveRun, before
-			// AUTOMATION_RUNS is written) to discover the runId as early as possible.
-			let runId: string | null = null;
+			// Poll AUTOMATION_ACTIVE_RUN briefly to surface the runId (for the header/cancel
+			// button) as soon as it's claimed — independent of the node-progress stream below.
 			for (let i = 0; i < 10; i++) {
-				await new Promise<void>((resolve) => setTimeout(resolve, 500));
+				await new Promise<void>((resolve) => setTimeout(resolve, 300));
 				try {
 					const activeRes = await monolithStore.runQuery(
 						`GetActiveAutomationRun(project=["${appId}"]);`,
@@ -450,7 +387,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 						RUN_ID?: string;
 					} | null;
 					if (activeData?.RUN_ID) {
-						runId = activeData.RUN_ID;
+						setLatestRunId(activeData.RUN_ID);
 						break;
 					}
 				} catch {
@@ -458,44 +395,127 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 				}
 			}
 
-			if (runId) {
-				// Have a runId — stream live per-node progress via GetAutomationRun.
-				// pollRun handles the final toast, setRunning(false), and refreshRuns().
-				setLatestRunId(runId);
-				const token = { cancelled: false };
-				pollTokenRef.current = token;
-				pollRun(runId, token);
-			} else {
-				// Run finished before we could observe the active slot — fetch the
-				// completed result directly from the async job.
-				const asyncResult = await getPixelAsyncResult(jobId);
-				if (asyncResult.errors.length > 0) {
-					toast.error(asyncResult.errors[0] ?? "Automation failed");
-					setRunning(false);
-					return;
-				}
-				const runData = asyncResult.results[0]
-					?.output as AutomationRunData | null;
-				if (runData) {
-					applyRunData(runData);
-					if (runData.STATUS === "FAILED") {
-						toast.error(
-							runData.ERROR_MESSAGE ?? "Automation failed",
+			let polling = true;
+			while (polling) {
+				const streamRes = await getPixelJobStreaming(jobId);
+
+				for (const message of streamRes.message) {
+					const msg = message as unknown as {
+						stream_type?: string;
+						data?: Partial<AutomationNodeResult> & {
+							NODE_ID?: string;
+						};
+					};
+					if (
+						msg.stream_type !== "automation" ||
+						!msg.data?.NODE_ID
+					) {
+						continue;
+					}
+					const { data } = msg;
+					const nodeId = data.NODE_ID as string;
+
+					setStepStatuses((previous) => ({
+						...previous,
+						[nodeId]:
+							data.STATUS === "FAILED"
+								? "error"
+								: data.STATUS === "RUNNING"
+									? "running"
+									: "success",
+					}));
+					if (data.DURATION_MS != null) {
+						setStepDurations((previous) => ({
+							...previous,
+							[nodeId]: data.DURATION_MS as number,
+						}));
+					}
+					if (data.ERROR_MESSAGE) {
+						setStepErrors((previous) => ({
+							...previous,
+							[nodeId]: data.ERROR_MESSAGE as string,
+						}));
+					}
+
+					// Also feed the "Latest Run Results" panel (NodeResultList) live — it reads
+					// from latestRunResults, which otherwise only gets its one and only update
+					// from applyRunData() after the whole run finishes.
+					setLatestRunResults((previous) => {
+						const step = steps.find((s) => s.id === nodeId);
+						const nextEntry: AutomationNodeResult = {
+							NODE_ID: nodeId,
+							NODE_LABEL:
+								data.NODE_LABEL ?? step?.label ?? nodeId,
+							STATUS: (data.STATUS ??
+								"RUNNING") as AutomationNodeResult["STATUS"],
+							DURATION_MS: data.DURATION_MS ?? 0,
+							OUTPUT_PREVIEW: data.OUTPUT_PREVIEW ?? null,
+							ERROR_MESSAGE: data.ERROR_MESSAGE ?? null,
+						};
+						const index = previous.findIndex(
+							(r) => r.NODE_ID === nodeId,
 						);
-					} else {
-						toast.success("Automation completed");
+						if (index === -1) {
+							return [...previous, nextEntry];
+						}
+						const next = [...previous];
+						next[index] = nextEntry;
+						return next;
+					});
+
+					if (data.OUTPUT_PREVIEW) {
+						const step = steps.find((s) => s.id === nodeId);
+						if (step?.outputVar) {
+							setNodeOutputsState((previous) => ({
+								...previous,
+								[step.outputVar]: applyOutputTransform(
+									data.OUTPUT_PREVIEW as string,
+									step.outputTransform,
+								),
+							}));
+						}
 					}
 				}
+
+				if (
+					streamRes.status === "ProgressComplete" ||
+					streamRes.status === "Complete"
+				) {
+					polling = false;
+				} else if (streamRes.status === "Error") {
+					throw new Error("Automation run encountered an error");
+				} else {
+					await new Promise((resolve) => setTimeout(resolve, 500));
+				}
+			}
+
+			// Job is confirmed complete (status checked above) — safe to fetch the final result.
+			const asyncResult = await getPixelAsyncResult(jobId);
+			if (asyncResult.errors.length > 0) {
+				const message = asyncResult.errors[0] ?? "Automation failed";
+				toast.error(message);
+				setLatestRunStatus("FAILED");
+				setLatestRunError(message);
 				refreshRuns();
 				setRunning(false);
+				return;
 			}
+			const runData = asyncResult.results[0]
+				?.output as AutomationRunData | null;
+			if (runData) {
+				applyRunData(runData);
+			}
+			toast.success(runData?.summary ?? "Automation completed");
+			refreshRuns();
+			setRunning(false);
 		} catch (error) {
 			toast.error(
 				`Automation failed: ${(error as Error).message ?? "Unknown error"}`,
 			);
+			setLatestRunStatus("FAILED");
 			setRunning(false);
 		}
-	}, [appId, applyRunData, refreshRuns, pollRun, save, steps, monolithStore]);
+	}, [appId, applyRunData, refreshRuns, save, steps, monolithStore]);
 
 	/** Returns variable names available as inputs to the step at the given index: output vars from preceding steps plus all config keys. */
 	const upstreamVarsFor = useCallback(

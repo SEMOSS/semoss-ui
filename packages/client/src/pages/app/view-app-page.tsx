@@ -24,11 +24,6 @@ const CodeRenderer = lazy(() =>
 		default: m.CodeRenderer,
 	})),
 );
-const AutomationRenderer = lazy(() =>
-	import("@/components/automation-workspace").then((m) => ({
-		default: m.AutomationRenderer,
-	})),
-);
 
 import { usePage, useRootStore } from "@/hooks";
 import type { WorkspaceStore } from "@/stores";
@@ -180,7 +175,13 @@ export const ViewAppPage = observer(() => {
 						<CodeRenderer appId={appId} />
 					) : null}
 					{workspace.type === "AUTOMATION" ? (
-						<AutomationRenderer appId={appId} />
+						// Shared "system app" (like Playwright's browser-sockets app) — the exact
+						// same bundle playground iframes for the TriggerAutomation MCP tool sidebar.
+						<iframe
+							className="h-full w-full border-none"
+							title="Automation Workspace"
+							src={`../../automation-workspace/dist/?app=${encodeURIComponent(appId)}&readOnly=1`}
+						/>
 					) : null}
 				</Suspense>
 			</div>
