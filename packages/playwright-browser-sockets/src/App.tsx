@@ -16,6 +16,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { AutomationButton } from "./components/AutomationButton";
+import { AutomationPopup } from "./components/AutomationPopup";
 import { BrowserTabStrip } from "./components/BrowserTabStrip";
 import { BrowserToolbar } from "./components/BrowserToolbar";
 import { BrowserViewer } from "./components/BrowserViewer";
@@ -178,6 +179,10 @@ export default function App() {
 		"click" | "fill-form"
 	>("click");
 	const [isAutomationGenerating, setIsAutomationGenerating] = useState(false);
+	const [automationClickPos, setAutomationClickPos] = useState<{
+		localX: number;
+		localY: number;
+	} | null>(null);
 
 	const autoStartedRef = useRef(false);
 	const autoRecordingStartedRef = useRef(false);
@@ -1588,6 +1593,7 @@ export default function App() {
 				);
 			} finally {
 				setIsAutomationGenerating(false);
+				setAutomationClickPos(null);
 			}
 		},
 		[
@@ -1600,13 +1606,9 @@ export default function App() {
 	);
 
 	const handleAutomationClick = useCallback(
-		(
-			_localX: number,
-			_localY: number,
-			remoteX: number,
-			remoteY: number,
-		) => {
-			// Generate immediately — no confirmation popup.
+		(localX: number, localY: number, remoteX: number, remoteY: number) => {
+			// Show loading indicator at click position, then generate immediately.
+			setAutomationClickPos({ localX, localY });
 			void handleAutomationGenerate(remoteX, remoteY);
 		},
 		[handleAutomationGenerate],
@@ -1884,6 +1886,16 @@ export default function App() {
 				)}
 
 			<div className="relative flex min-h-0 flex-1 overflow-hidden">
+				{/* Click-to-fill loading indicator */}
+				{isAutomationGenerating && automationClickPos && (
+					<AutomationPopup
+						localX={automationClickPos.localX}
+						localY={automationClickPos.localY}
+						isGenerating={true}
+						onGenerate={() => undefined}
+						onDismiss={() => undefined}
+					/>
+				)}
 				{/* Browser canvas */}
 				<BrowserViewer
 					connectionState={connectionState}
