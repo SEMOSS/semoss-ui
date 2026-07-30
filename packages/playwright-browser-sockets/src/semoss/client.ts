@@ -271,6 +271,31 @@ export async function resolvePlaywrightRoomRecording<T = unknown>(
 	return output as T;
 }
 
+export async function listPlaywrightRoomRecordings(): Promise<string[]> {
+	const { pixelReturn } = await runPixel<unknown>(
+		'FindPlaywrightRoomRecordings(query="", max_candidates=50);',
+		getSemossInsightId(),
+	);
+	const output = pixelReturn?.[0]?.output as
+		| {
+				recordings?: Array<{
+					fileName?: string;
+					summary?: { fileName?: string };
+				}>;
+		  }
+		| undefined;
+	return Array.from(
+		new Set(
+			(output?.recordings ?? [])
+				.map(
+					(recording) =>
+						recording.fileName || recording.summary?.fileName || "",
+				)
+				.filter((fileName): fileName is string => !!fileName),
+		),
+	).sort((a, b) => a.localeCompare(b));
+}
+
 export async function bindSemossInsightToRoom(roomId: string): Promise<void> {
 	const normalizedRoomId = roomId.trim();
 	if (!normalizedRoomId) {

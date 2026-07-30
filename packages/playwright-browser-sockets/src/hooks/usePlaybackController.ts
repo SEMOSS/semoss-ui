@@ -17,6 +17,10 @@ import type {
 
 export type PlaybackProject = { label: string; value: string };
 export type PlaybackRecordingSource = "project" | "room";
+export const CURRENT_ROOM_PROJECT: PlaybackProject = {
+	label: "Current Room",
+	value: "__current_room__",
+};
 export type FlattenedRecordingStep = {
 	tabId: string;
 	step: LoadedRecordingStep;
@@ -43,6 +47,10 @@ interface UsePlaybackControllerOptions {
 	loadRecording: (
 		insightId: string,
 		projectId: string,
+		fileName: string,
+	) => Promise<LoadedRecording | null>;
+	loadRoomRecording: (
+		insightId: string,
 		fileName: string,
 	) => Promise<LoadedRecording | null>;
 	replaySingleStep: (
@@ -115,13 +123,23 @@ export function usePlaybackController({
 	listRecordingProjects,
 	listRecordingFiles,
 	loadRecording,
+	loadRoomRecording,
 	replaySingleStep,
 	sendReplayEvent,
 	sendTabControlEvent,
 	onError,
 	onMessage,
 }: UsePlaybackControllerOptions) {
-	const [projects, setProjects] = useState<PlaybackProject[]>([]);
+	const [appProjects, setAppProjects] = useState<PlaybackProject[]>([]);
+	const [roomFiles, setRoomFiles] = useState<string[]>([]);
+	const roomFilesRef = useRef<string[]>([]);
+	const projects = useMemo(
+		() =>
+			roomFiles.length > 0
+				? [CURRENT_ROOM_PROJECT, ...appProjects]
+				: appProjects,
+		[appProjects, roomFiles],
+	);
 	const [project, setProject] = useState<PlaybackProject | null>(null);
 	const [files, setFiles] = useState<string[]>([]);
 	const [selectedRecording, setSelectedRecording] = useState<string | null>(
@@ -129,6 +147,8 @@ export function usePlaybackController({
 	);
 	const [startUrl, setStartUrl] = useState("");
 	const [source, setSource] = useState<PlaybackRecordingSource>("project");
+	const sourceRef = useRef<PlaybackRecordingSource>("project");
+	sourceRef.current = source;
 	const [loadedRecording, setLoadedRecording] =
 		useState<LoadedRecording | null>(null);
 	const [runningStepId, setRunningStepId] = useState<number | null>(null);
@@ -229,7 +249,7 @@ export function usePlaybackController({
 
 	const refreshProjects = useCallback(async () => {
 		if (!insightId) {
-			setProjects([]);
+			setAppProjects([]);
 			return;
 		}
 		setIsLoadingProjects(true);
@@ -240,7 +260,7 @@ export function usePlaybackController({
 					value: item.value || item.project_id || "",
 				}))
 				.filter((item) => item.value);
-			setProjects(options);
+			setAppProjects(options);
 			setProject((current) => current ?? options[0] ?? null);
 		} finally {
 			setIsLoadingProjects(false);
@@ -310,27 +330,47 @@ export function usePlaybackController({
 		source,
 	]);
 
-	const selectProject = useCallback((next: PlaybackProject | null) => {
-		resolvedParameterValuesRef.current = {};
-		resolvedProjectRecordingRef.current = null;
-		setSource("project");
-		setSavedRecordingSelection(null);
-		setProject(next);
-	}, []);
+	const selectProject = useCallback(
+		(next: PlaybackProject | null) => {
+			resolvedParameterValuesRef.current = {};
+			resolvedProjectRecordingRef.current = null;
+			const roomSelected = next?.value === CURRENT_ROOM_PROJECT.value;
+			sourceRef.current = roomSelected ? "room" : "project";
+			setSource(roomSelected ? "room" : "project");
+			setSavedRecordingSelection(null);
+			setProject(next);
+			if (roomSelected) {
+				setFiles(roomFiles);
+				setSelectedRecording(roomFiles[0] ?? null);
+				setLoadedRecording(null);
+				setLoadedRecordingOpen(false);
+			}
+		},
+		[roomFiles],
+	);
 
-	const selectRecording = useCallback((fileName: string | null) => {
-		resolvedParameterValuesRef.current = {};
-		resolvedProjectRecordingRef.current = null;
-		setSource("project");
-		setSelectedRecording(fileName);
-		setLoadedRecording(null);
-		setLoadedRecordingOpen(false);
-		setEditingStepId(null);
-	}, []);
+	const selectRecording = useCallback(
+		(fileName: string | null) => {
+			resolvedParameterValuesRef.current = {};
+			resolvedProjectRecordingRef.current = null;
+			const nextSource =
+				project?.value === CURRENT_ROOM_PROJECT.value
+					? "room"
+					: "project";
+			sourceRef.current = nextSource;
+			setSource(nextSource);
+			setSelectedRecording(fileName);
+			setLoadedRecording(null);
+			setLoadedRecordingOpen(false);
+			setEditingStepId(null);
+		},
+		[project],
+	);
 
 	const selectSavedRecording = useCallback(
 		(nextProject: PlaybackProject, fileName: string) => {
 			resolvedProjectRecordingRef.current = null;
+			sourceRef.current = "project";
 			setSavedRecordingSelection({
 				projectValue: nextProject.value,
 				fileName,
@@ -356,9 +396,22 @@ export function usePlaybackController({
 						}
 					: null;
 			setStartUrl(normalizeBrowserUrl(selection.startUrl));
+			sourceRef.current = selection.source;
 			setSource(selection.source);
-			setProject(selection.project);
+			setProject(
+				selection.source === "room"
+					? CURRENT_ROOM_PROJECT
+					: selection.project,
+			);
 			setSelectedRecording(selection.fileName);
+			if (selection.source === "room") {
+				const nextRoomFiles = Array.from(
+					new Set([...roomFilesRef.current, selection.fileName]),
+				).sort((a, b) => a.localeCompare(b));
+				roomFilesRef.current = nextRoomFiles;
+				setRoomFiles(nextRoomFiles);
+				setFiles(nextRoomFiles);
+			}
 			if (selection.recording) {
 				initializeLoadedRecording(
 					selection.recording,
@@ -370,6 +423,15 @@ export function usePlaybackController({
 		[initializeLoadedRecording],
 	);
 
+	const configureRoomRecordings = useCallback((recordingFiles: string[]) => {
+		const normalized = Array.from(new Set(recordingFiles)).sort((a, b) =>
+			a.localeCompare(b),
+		);
+		roomFilesRef.current = normalized;
+		setRoomFiles(normalized);
+		if (sourceRef.current === "room") setFiles(normalized);
+	}, []);
+
 	const resetReplayPreparation = useCallback(() => {
 		replayPreparedRef.current = false;
 	}, []);
@@ -379,7 +441,12 @@ export function usePlaybackController({
 		replayPreparedRef.current = false;
 		setSavedRecordingSelection(null);
 		setStartUrl("");
+		sourceRef.current = "project";
 		setSource("project");
+		setProject((current) =>
+			current?.value === CURRENT_ROOM_PROJECT.value ? null : current,
+		);
+		setFiles([]);
 		setSelectedRecording(null);
 		setLoadedRecording(null);
 		setRunningStepId(null);
@@ -392,6 +459,8 @@ export function usePlaybackController({
 		setValueRequiredStepId(null);
 		resolvedParameterValuesRef.current = {};
 		resolvedProjectRecordingRef.current = null;
+		roomFilesRef.current = [];
+		setRoomFiles([]);
 	}, []);
 
 	const requestPause = useCallback(
@@ -533,11 +602,35 @@ export function usePlaybackController({
 	);
 
 	const load = useCallback(async () => {
-		if (source === "room" && loadedRecording) {
-			initializeLoadedRecording(
-				loadedRecording,
-				selectedRecording || "room recording",
-			);
+		if (source === "room") {
+			if (!insightId || !selectedRecording) {
+				onError("Select a room recording first");
+				return;
+			}
+			if (loadedRecording) {
+				initializeLoadedRecording(
+					loadedRecording,
+					selectedRecording,
+					resolvedParameterValuesRef.current,
+				);
+				return;
+			}
+			setIsLoadingRecording(true);
+			try {
+				const recording = await loadRoomRecording(
+					insightId,
+					selectedRecording,
+				);
+				if (recording) {
+					initializeLoadedRecording(
+						recording,
+						selectedRecording,
+						resolvedParameterValuesRef.current,
+					);
+				}
+			} finally {
+				setIsLoadingRecording(false);
+			}
 			return;
 		}
 		if (!insightId || !project || !selectedRecording) {
@@ -570,6 +663,7 @@ export function usePlaybackController({
 		initializeLoadedRecording,
 		insightId,
 		loadRecording,
+		loadRoomRecording,
 		loadedRecording,
 		onError,
 		project,
@@ -781,6 +875,7 @@ export function usePlaybackController({
 
 	return {
 		hasSession: session !== null,
+		appProjects,
 		projects,
 		project,
 		files,
@@ -808,6 +903,7 @@ export function usePlaybackController({
 		selectRecording,
 		selectSavedRecording,
 		configureResolvedRecording,
+		configureRoomRecordings,
 		initializeLoadedRecording,
 		resetReplayPreparation,
 		resetExecution,

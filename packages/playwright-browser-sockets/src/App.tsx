@@ -51,6 +51,7 @@ import {
 	generatePlaywrightRecordingMetadata,
 	getSemossInsightId,
 	initSemoss,
+	listPlaywrightRoomRecordings,
 	listRecordingMetadataModels,
 	resolvePlaywrightRoomRecording,
 	sendMcpResponseToPlayground,
@@ -265,6 +266,11 @@ export default function App() {
 		onTabActivated: handleTabActivated,
 		onCursorChanged: setBrowserCursor,
 	});
+	const loadRoomRecording = useCallback(
+		(roomInsightId: string, fileName: string) =>
+			getRoomRecordingEnvelope(roomInsightId, `/playwright/${fileName}`),
+		[getRoomRecordingEnvelope],
+	);
 	const playback = usePlaybackController({
 		insightId: effectiveInsightId,
 		session,
@@ -272,6 +278,7 @@ export default function App() {
 		listRecordingProjects,
 		listRecordingFiles,
 		loadRecording,
+		loadRoomRecording,
 		replaySingleStep,
 		sendReplayEvent,
 		sendTabControlEvent,
@@ -474,8 +481,8 @@ export default function App() {
 	]);
 
 	useEffect(() => {
-		setSaveProject((current) => current ?? playback.projects[0] ?? null);
-	}, [playback.projects]);
+		setSaveProject((current) => current ?? playback.appProjects[0] ?? null);
+	}, [playback.appProjects]);
 
 	useEffect(() => {
 		if (
@@ -545,6 +552,14 @@ export default function App() {
 				throw new Error(
 					"Playground room ID is required to resolve a room recording",
 				);
+			}
+			try {
+				playback.configureRoomRecordings(
+					await listPlaywrightRoomRecordings(),
+				);
+			} catch {
+				// Matching can still proceed. The selected room file is inserted
+				// into the controls even if the optional catalog listing fails.
 			}
 
 			const directProject =
@@ -739,6 +754,7 @@ export default function App() {
 		mcpPlaybackProjectId,
 		mcpStartUrl,
 		playback.configureResolvedRecording,
+		playback.configureRoomRecordings,
 		// playback.project / playback.projects are deliberately omitted and read
 		// through refs instead. See the refs above: their async arrival would
 		// cancel this run-once effect's in-flight fetch.
@@ -1774,7 +1790,7 @@ export default function App() {
 
 			<SaveRecordingDialog
 				open={saveDialogOpen}
-				projects={playback.projects}
+				projects={playback.appProjects}
 				project={saveProject}
 				models={metadataModels}
 				model={metadataModel}
