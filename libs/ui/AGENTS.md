@@ -2,13 +2,18 @@
 
 This document provides context for AI coding assistants working with the SEMOSS UI component library.
 
-> **Inherits from:** [../../AGENTS.md](../../AGENTS.md) for monorepo conventions, commit messages, Biome config, and Node/pnpm requirements.
+> **Inherits from:** [../../AGENTS.md](../../AGENTS.md) for code style, file-naming, package
+> structure, commit messages, Biome config, and Node/pnpm requirements.
 
 ## Overview
 
 `@semoss/ui` is a React component library using a hybrid approach:
 - **shadcn/ui** + **Radix UI** for new accessible components
 - **Tailwind CSS v4** for styling
+
+> **Conventions:** `@semoss/ui` is the **exception** to the root "one component per file" rule
+> — related components are colocated in a folder. The shared theme tokens live in
+> [src/styles/globals.css](src/styles/globals.css) and are consumed across the monorepo.
 
 ## Build System
 
@@ -111,7 +116,6 @@ Components require these peer dependencies in consuming packages:
 - **class-variance-authority**: Component variants
 - **lucide-react**: Icon library
 - **tailwind-merge**: Tailwind class conflict resolution
-- **xterm**: Terminal component
 - **shiki**: Code syntax highlighting
 
 ## Agent Guardrails
