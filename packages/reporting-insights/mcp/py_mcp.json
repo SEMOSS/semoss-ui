@@ -1,0 +1,172 @@
+{
+	"_meta": {
+		"last_modified_date": "2026-07-31"
+	},
+	"tools": [
+		{
+			"name": "search_dashboards",
+			"title": "Search dashboards",
+			"description": "Find Reporting Insights dashboards whose content matches a query. Searches names, descriptions, tags, chart titles, database + column names, SQL text, and parameters. Returns ranked matches (id, name, description, databases, sheet/chart summary) — use this to answer \"which dashboard shows X?\".",
+			"inputSchema": {
+				"type": "object",
+				"title": "Search dashboards Arguments",
+				"properties": {
+					"query": {
+						"type": "string",
+						"title": "Search query",
+						"description": "What to look for (e.g. \"color distribution\", a table/column name, a topic)"
+					},
+					"limit": {
+						"type": "string",
+						"title": "Max results",
+						"description": "Maximum dashboards to return (default 10)",
+						"default": "10"
+					}
+				},
+				"required": ["query"]
+			},
+			"_meta": {
+				"generated_on": "2026-07-31",
+				"SMSS_MCP_EXECUTION": "auto"
+			},
+			"_type": "python"
+		},
+		{
+			"name": "describe_dashboard",
+			"title": "Describe a dashboard",
+			"description": "Return the full structure of one dashboard: its sheets, every visualization (title, chart type, database) and the underlying SQL queries + parameters. Use after search_dashboards to understand how a dashboard is built and what data it uses. Accepts a dashboard id OR a name.",
+			"inputSchema": {
+				"type": "object",
+				"title": "Describe a dashboard Arguments",
+				"properties": {
+					"dashboard_id": {
+						"type": "string",
+						"title": "Dashboard id",
+						"description": "The dashboard (project) id — or pass `name` instead"
+					},
+					"name": {
+						"type": "string",
+						"title": "Dashboard name",
+						"description": "Dashboard name (or part of it) if you do not have the id"
+					}
+				},
+				"required": []
+			},
+			"_meta": {
+				"generated_on": "2026-07-31",
+				"SMSS_MCP_EXECUTION": "auto"
+			},
+			"_type": "python"
+		},
+		{
+			"name": "query_dashboard",
+			"title": "Query a dashboard for insights",
+			"description": "Run a dashboard's queries against its live database and return sample rows + row counts, so you can answer questions about the actual data. Optionally target one chart by title. Falls back to returning the SQL if live execution is unavailable.",
+			"inputSchema": {
+				"type": "object",
+				"title": "Query a dashboard for insights Arguments",
+				"properties": {
+					"dashboard_id": {
+						"type": "string",
+						"title": "Dashboard id",
+						"description": "The dashboard (project) id to query"
+					},
+					"visualization": {
+						"type": "string",
+						"title": "Visualization",
+						"description": "Optional — only run the query for the chart whose title contains this text"
+					},
+					"limit": {
+						"type": "string",
+						"title": "Row limit",
+						"description": "Max rows per query (default 20)",
+						"default": "20"
+					}
+				},
+				"required": ["dashboard_id"]
+			},
+			"_meta": {
+				"generated_on": "2026-07-31",
+				"SMSS_MCP_EXECUTION": "auto"
+			},
+			"_type": "python"
+		},
+		{
+			"name": "list_dashboards",
+			"title": "List dashboards",
+			"description": "List all Reporting Insights dashboards with a short summary of each (id, name, description, databases, charts).",
+			"inputSchema": {
+				"type": "object",
+				"title": "List dashboards Arguments",
+				"properties": {},
+				"required": []
+			},
+			"_meta": {
+				"generated_on": "2026-07-31",
+				"SMSS_MCP_EXECUTION": "auto"
+			},
+			"_type": "python"
+		},
+		{
+			"name": "create_dashboard",
+			"title": "Create a dashboard",
+			"description": "Create AND deploy a new Reporting Insights dashboard from a natural-language description, grounded in a database. Opens the auto-build page which generates + deploys the dashboard.",
+			"inputSchema": {
+				"type": "object",
+				"title": "Create a dashboard Arguments",
+				"properties": {
+					"description": {
+						"type": "string",
+						"title": "Description",
+						"description": "What the dashboard should show (e.g. \"sales by region as a pie chart\")"
+					},
+					"database": {
+						"type": "string",
+						"title": "Database",
+						"description": "Database name or engine id to build from (e.g. \"alphabet2\")"
+					}
+				},
+				"required": ["description"]
+			},
+			"_meta": {
+				"generated_on": "2026-07-31",
+				"SMSS_MCP_EXECUTION": "auto",
+				"SMSS_MCP_UI": {
+					"resourceURI": "/#/mcp/create",
+					"loadingMessage": "Create a dashboard…",
+					"displayLocation": "inline",
+					"autoOpen": true
+				}
+			},
+			"_type": "python"
+		},
+		{
+			"name": "update_dashboard",
+			"title": "Edit a dashboard",
+			"description": "Open an existing Reporting Insights dashboard for editing / redeploying.",
+			"inputSchema": {
+				"type": "object",
+				"title": "Edit a dashboard Arguments",
+				"properties": {
+					"dashboard_id": {
+						"type": "string",
+						"title": "Dashboard id",
+						"description": "The dashboard (project) id to edit"
+					}
+				},
+				"required": []
+			},
+			"_meta": {
+				"generated_on": "2026-07-31",
+				"SMSS_MCP_EXECUTION": "auto",
+				"SMSS_MCP_UI": {
+					"resourceURI": "/#/published",
+					"loadingMessage": "Edit a dashboard…",
+					"displayLocation": "inline",
+					"autoOpen": true
+				}
+			},
+			"_type": "python"
+		}
+	]
+}

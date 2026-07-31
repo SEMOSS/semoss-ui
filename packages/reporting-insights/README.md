@@ -117,19 +117,24 @@ Set in `.env.local` (dev) or baked at build time. All are exposed to the bundle 
 | `VITE_PORT` | Dev server port (5176 by convention). |
 | `ENDPOINT` | SEMOSS backend origin (e.g. `http://localhost:9090`). Empty ⇒ the app uses its own origin. Used for the dev proxy **and** to build absolute published-portal links. |
 | `MODULE` | SEMOSS module path (default `/Monolith`). |
-| `VITE_APP_URL` | **This app's deployed URL**, baked into the MCP host's tool `resourceURI`s + redirect so the playground can open the app. See [MCP requirements](#requirements-gotchas--how-the-pieces-avoid-re-running). |
+| `VITE_APP_URL` | This app's deployed URL, used by the runtime `ensureMcpHost` refresh. Only needed when running from the Vite dev server. |
+| `REPORTING_INSIGHTS_URL` | **Server-side override** for the Python MCP driver's `APP_URL`. Not required — the driver auto-detects from `__file__` + `social.properties`. |
 
-**Deployment-correct URLs matter for MCP.** If you register/deploy from the Vite dev
-server (`:5176`), set `ENDPOINT` and `VITE_APP_URL` so the baked URLs point at the
-Tomcat origin, not the dev port — e.g.:
+**MCP URL auto-detection.** The static Python driver (`py/mcp_driver.py`) auto-detects
+its own project URL at runtime by extracting its project ID from `__file__` and reading
+the server origin from `social.properties`. No env var is needed for standard
+deployments. Set `REPORTING_INSIGHTS_URL` only for non-standard paths or proxied origins.
+
+For **local dev**, set `ENDPOINT` and `VITE_APP_URL` so the runtime `ensureMcpHost`
+refresh (optional) points at Tomcat, not the dev port:
 
 ```
 ENDPOINT=http://localhost:9090
 VITE_APP_URL=http://localhost:9090/SemossWeb/packages/reporting-insights/dist/
 ```
 
-When you register from the built app served under Tomcat, both can be blank
-(`window.location` is already correct).
+When running the built app under Tomcat, both can be blank (`window.location` is
+already correct).
 
 > **Cache note:** the app `index.html` ships `Cache-Control: no-store` so the shell can
 > never pin a stale JS bundle (hashed assets stay cacheable). This prevents the classic
@@ -411,15 +416,69 @@ yields "cannot find reactor"). We ship **Python**:
 
 ### 1. The app registers itself as an MCP host project
 
-On load, `WorkspaceProvider` calls `store.ensureMcpHost(appBaseUrl)`. It finds-or-creates
-one small SEMOSS project tagged **`MCP`** + **`reporting-insights--mcp-host`**, carrying
-`py/mcp_driver.py` + `mcp/py_mcp.json` (`buildHostMcp`) with three tools:
+The host tools are defined as **static artifacts** that ship with the codebase:
 
-| Tool (python fn) | Inputs | `resourceURI` | Opens the app at |
+| File | Purpose |
+| --- | --- |
+| `mcp/py_mcp.json` | Tool manifest — `GetMCPTools` reads this to discover tools |
+| `py/mcp_driver.py` | Python functions (name == tool name) that `RunMCPTool` executes |
+
+These files are deployed into the host project's `version/assets/` at publish time.
+**The app does NOT need to be opened for the tools to be registered** — the backend
+discovers them by reading the static JSON from the project assets.
+
+#### Host tools
+
+| Tool (python fn) | Inputs | `resourceURI` | What it does |
 | --- | --- | --- | --- |
-| `create_dashboard` | `description` (required), `database` | `/#/mcp/create` | `#/mcp/create?description=…&database=…` |
-| `list_dashboards` | — | `/#/published` | `#/published` |
-| `update_dashboard` | `dashboard_id` | `/#/published` | `#/dashboard/<id>/edit` |
+| `search_dashboards` | `query` (required), `limit` | — (data-only) | Search dashboards by content |
+| `describe_dashboard` | `dashboard_id`, `name` | — (data-only) | Return full dashboard structure |
+| `query_dashboard` | `dashboard_id` (required), `visualization`, `limit` | — (data-only) | Run SQL, return sample rows |
+| `list_dashboards` | — | — (data-only) | List all dashboards |
+| `create_dashboard` | `description` (required), `database` | `/#/mcp/create` | Opens auto-build UI |
+| `update_dashboard` | `dashboard_id` | `/#/published` | Opens editor UI |
+
+#### How `APP_URL` resolves for deployed instances
+
+The Python driver auto-detects the app URL at runtime — **no environment variable
+is required**. Resolution order:
+
+1. **`REPORTING_INSIGHTS_URL` env var** — explicit override (highest priority)
+2. **`SEMOSS_APP_URL` env var** — generic SEMOSS platform URL
+3. **Auto-detect from `__file__` + server config** — the driver extracts its own
+   project ID from its file path (`<base>/project/<Name>__<id>/app_root/…`) and
+   reads the server origin from `social.properties` (`SEMOSS_BASE_URL` or
+   `BASE_URL`) or `RDF_Map.prop`. It constructs:
+   `<origin>/Monolith/public_home/<projectId>/portals/`
+4. **Relative URL fallback** — if the origin can't be detected, returns
+   `/Monolith/public_home/<projectId>/portals/` (works in same-origin playground
+   iframes)
+
+**Example:** For a SEMOSS instance at `thisissemoss.org`, if
+`social.properties` contains `SEMOSS_BASE_URL=https://thisissemoss.org`, the
+driver automatically resolves to
+`https://thisissemoss.org/Monolith/public_home/<hostId>/portals/` — no env var
+needed.
+
+To override manually (e.g. dev server, non-standard path):
+
+```bash
+# Set on the SEMOSS server (e.g. in smss-config or docker env):
+REPORTING_INSIGHTS_URL=https://thisissemoss.org/Monolith/public_home/<hostProjectId>/portals/
+```
+
+The data tools (`search_dashboards`, `describe_dashboard`, `query_dashboard`,
+`list_dashboards`) do **not** depend on `APP_URL` for their core functionality — they
+read `dashboard.json` files from disk and run SQL via the SEMOSS pixel bridge. Only
+the returned `open_url` convenience field and the UI tools need it.
+
+#### Runtime refresh (optional)
+
+On load, `WorkspaceProvider` can still call `store.ensureMcpHost(appBaseUrl)` to
+overwrite the static artifacts with the current app URL baked in. This is gated by
+`HOST_ARTIFACT_VERSION` + the app URL (remembered in `localStorage` at
+`ri-mcp-host-sync`) so it only runs once per version change — not on every reload.
+Bump `HOST_ARTIFACT_VERSION` (in `mcpManifest.ts`) whenever the tool surface changes.
 
 The host is tagged host-only (not the `reporting-insights--app` dashboard marker), so it
 is **excluded from the dashboard listing**.
@@ -551,6 +610,8 @@ one should render the app/dashboard rather than erroring.
 
 | File | Role |
 | --- | --- |
+| `mcp/py_mcp.json` | **Static** MCP tool manifest — backend reads this for tool discovery (no app open required) |
+| `py/mcp_driver.py` | **Static** Python driver — functions executed by `RunMCPTool` |
 | `src/services/projectStore.ts` | All project CRUD + deploy (`create`/`saveDefinition`/`redeploy`), `ensureMcpHost`, `writeMcpManifest`, `findBySignature`, `sigTag`, tag constants |
 | `src/services/portalGenerator.ts` | `buildPortalZip` (dashboard project zip), `buildMcpHostZip`, `mcpHostRedirectHtml` (cache-busting forwarder) |
 | `src/services/mcpManifest.ts` | `buildDashboardMcp`, `buildHostMcp`, `dashboardParameters`, `HOST_ARTIFACT_VERSION`, `SIG_TAG_PREFIX` |
