@@ -1533,69 +1533,102 @@ export default function App() {
 	const replayMenuOpen =
 		playback.controlsOpen || playback.loadedRecordingOpen;
 
-	const handleAutomationGenerate = useCallback(async () => {
-		if (!automationModelId) {
-			toast("Select a model first via the Automate dropdown.");
-			return;
-		}
-		setIsAutomationGenerating(true);
-		try {
-			const roomId = toolContext?.roomId ?? "";
-			if (!roomId) {
-				toast(
-					"No room context available — open this tool from a Playground room.",
-				);
+	const handleAutomationGenerate = useCallback(
+		async (remoteX: number, remoteY: number) => {
+			if (!automationModelId) {
+				toast("Select a model first via the Automate dropdown.");
 				return;
 			}
+			if (!session?.sessionId) {
+				toast("No active browser session.");
+				return;
+			}
+			setIsAutomationGenerating(true);
+			try {
+				const roomId = toolContext?.roomId ?? "";
+				if (!roomId) {
+					toast(
+						"No room context available — open this tool from a Playground room.",
+					);
+					return;
+				}
 
-			const response = await runPixel<Record<string, unknown>>(
-				`AutofillPlaywrightField(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, limit=20);`,
-				effectiveInsightId,
-			);
+				// Single-field mode: passes x/y so the reactor identifies the clicked field,
+				// but still sees ALL form fields for cross-field reasoning accuracy.
+				const response = await runPixel<Record<string, unknown>>(
+					`FillPlaywrightInput(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, sessionId=${JSON.stringify(session.sessionId)}, limit=20, x=${remoteX}, y=${remoteY});`,
+					effectiveInsightId,
+				);
 
-			const output = response.pixelReturn?.[0]?.output as
-				| Record<string, unknown>
-				| undefined;
-			if (!output?.success) {
+				const output = response.pixelReturn?.[0]?.output as
+					| Record<string, unknown>
+					| undefined;
+				if (!output?.success) {
+					toast(
+						typeof output?.error === "string"
+							? output.error
+							: "Automation generation failed.",
+					);
+					return;
+				}
+
+				const fields = Array.isArray(output?.fields)
+					? (output.fields as Array<Record<string, unknown>>)
+					: [];
+
+				if (fields.length === 0) {
+					toast(
+						typeof output?.message === "string"
+							? output.message
+							: "Could not match the clicked field — try Fill Form instead.",
+					);
+					return;
+				}
+
+				for (const field of fields) {
+					const value =
+						typeof field.value === "string" ? field.value : "";
+					const strategy =
+						typeof field.selectorStrategy === "string"
+							? field.selectorStrategy
+							: "css";
+					const selValue =
+						typeof field.selectorValue === "string"
+							? field.selectorValue
+							: "";
+					if (!value || !selValue) continue;
+					sendEvent({
+						type: "fill-element",
+						text: value,
+						selector: { strategy, value: selValue },
+					});
+				}
+				setAutomationMode(false);
+			} catch (error) {
 				toast(
-					typeof output?.error === "string"
-						? output.error
+					error instanceof Error
+						? error.message
 						: "Automation generation failed.",
 				);
-				return;
+			} finally {
+				setIsAutomationGenerating(false);
+				setAutomationClickPos(null);
 			}
-
-			const generated =
-				typeof output?.text === "string" ? output.text.trim() : "";
-			if (generated) {
-				sendEvent({ type: "type-text", text: generated });
-				// Disable automation mode after a successful fill.
-				setAutomationMode(false);
-			} else {
-				toast("Model returned an empty response — no text was filled.");
-			}
-		} catch (error) {
-			toast(
-				error instanceof Error
-					? error.message
-					: "Automation generation failed.",
-			);
-		} finally {
-			setIsAutomationGenerating(false);
-			setAutomationClickPos(null);
-		}
-	}, [automationModelId, effectiveInsightId, sendEvent, toolContext?.roomId]);
+		},
+		[
+			automationModelId,
+			effectiveInsightId,
+			sendEvent,
+			session?.sessionId,
+			toolContext?.roomId,
+		],
+	);
 
 	const handleAutomationClick = useCallback(
-		(
-			localX: number,
-			localY: number,
-			_remoteX: number,
-			_remoteY: number,
-		) => {
+		(localX: number, localY: number, remoteX: number, remoteY: number) => {
 			// Show loading indicator at click position, then generate immediately.
 			setAutomationClickPos({ localX, localY });
-			void handleAutomationGenerate();
+			void handleAutomationGenerate(remoteX, remoteY);
 		},
 		[handleAutomationGenerate],
 	);
@@ -1619,8 +1652,9 @@ export default function App() {
 		setIsAutomationGenerating(true);
 		setAutomationMode(false);
 		try {
+			// All-fields mode: no x/y, reactor fills all visible fields.
 			const response = await runPixel<Record<string, unknown>>(
-				`FillPlaywrightForm(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, sessionId=${JSON.stringify(session.sessionId)}, limit=20);`,
+				`FillPlaywrightInput(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, sessionId=${JSON.stringify(session.sessionId)}, limit=20);`,
 				effectiveInsightId,
 			);
 
