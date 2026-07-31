@@ -16,15 +16,15 @@ import {
 } from "./prompt.constants";
 import type { Builder, Token } from "./prompt.types";
 
-export const DESCRIPTION_CONTAINER = "description-container";
-export const PROMPT_CONTAINER_BLOCK_ID = "prompt-container";
-export const APP_TITLE_BLOCK_ID = "title";
-export const HELP_TEXT_BLOCK_ID = "help-text";
-export const PROMPT_SUBMIT_BLOCK_ID = "prompt-submit";
-export const PROMPT_RESPONSE_BLOCK_ID = "prompt-response";
-export const PROMPT_QUERY_ID = "Prompt Query";
-export const PROMPT_QUERY_DEFINITION_ID = "Query Definitions";
-export const MODEL_ID = "Model";
+const DESCRIPTION_CONTAINER = "description-container";
+const PROMPT_CONTAINER_BLOCK_ID = "prompt-container";
+const APP_TITLE_BLOCK_ID = "title";
+const HELP_TEXT_BLOCK_ID = "help-text";
+const PROMPT_SUBMIT_BLOCK_ID = "prompt-submit";
+const PROMPT_RESPONSE_BLOCK_ID = "prompt-response";
+const PROMPT_QUERY_ID = "Prompt Query";
+const PROMPT_QUERY_DEFINITION_ID = "Query Definitions";
+const MODEL_ID = "Model";
 
 function capitalizeLabel(label: string): string {
 	const words = label.split(" ");
@@ -34,7 +34,7 @@ function capitalizeLabel(label: string): string {
 	return words.join(" ");
 }
 
-export function getIdForInput(inputType: string, index: number) {
+function getIdForInput(inputType: string, index: number) {
 	return `${inputType}-input-${index}`;
 }
 
@@ -108,7 +108,7 @@ function getSelectInputBlock(
 	};
 }
 
-export function getBlockForInput(
+function getBlockForInput(
 	token: Token,
 	inputType: string,
 	inputTypeMeta: { options?: string[] } | null | undefined,
@@ -141,10 +141,7 @@ export function getBlockForInput(
 	}
 }
 
-export function getInputFormatPrompt(
-	tokens: Token[],
-	inputTypes: object,
-): string {
+function getInputFormatPrompt(tokens: Token[], inputTypes: object): string {
 	const tokenStrings: string[] = [];
 	// compose tokens into a command
 	tokens.forEach((token: Token) => {
@@ -210,7 +207,7 @@ function getDatabaseQuery() {
     return f"Use the following list of objects representing each row in table to inform your answer: {result_df.to_dict(orient='records')}. The are the headers for the table are: {list(result_df.columns)}"`;
 }
 
-export function getNotebookForPrompt(
+function getNotebookForPrompt(
 	tokens: Token[],
 	inputTypes: object,
 ): Record<string, NotebookStateConfig> {

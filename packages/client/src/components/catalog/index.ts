@@ -2,26 +2,10 @@
 // These components provide a unified, clean catalog experience
 // following the simpler style from engine-index-page
 
-export {
-	CatalogFilterBox,
-	type CatalogFilterboxProps,
-} from "./catalog-filter-box";
-export {
-	CatalogGrid,
-	type CatalogGridProps,
-} from "./catalog-grid";
-export {
-	CatalogGridItem,
-	type CatalogGridItemProps,
-} from "./catalog-grid-item";
+export { CatalogFilterBox } from "./catalog-filter-box";
+export { CatalogGrid } from "./catalog-grid";
+export { CatalogGridItem } from "./catalog-grid-item";
 // Utilities
-export { CatalogLayout, type CatalogLayoutProps } from "./catalog-layout";
-export {
-	CatalogSearchBar,
-	type CatalogSearchBarProps,
-	type SortOption,
-} from "./catalog-search-bar";
-export {
-	CatalogTabs,
-	type CatalogTabsProps,
-} from "./catalog-tabs";
+export { CatalogLayout } from "./catalog-layout";
+export { CatalogSearchBar } from "./catalog-search-bar";
+export { CatalogTabs } from "./catalog-tabs";

@@ -55,7 +55,7 @@ const initialConstraintSettings: ConstraintSettings = {
 	bulletpoints: false,
 };
 
-export const PromptBuilderConstraint = (props: {
+const PromptBuilderConstraint = (props: {
 	constraint: Constraint;
 	constraintSettings: ConstraintSettings;
 	setBuilderValue: (

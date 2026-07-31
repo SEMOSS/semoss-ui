@@ -16,7 +16,6 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { ResourceNotFound } from "@/components/common/resource-not-found";
-import { EditProjectDetailDialog } from "@/components/project";
 import { ShareOverlay } from "@/components/ui";
 import { ProjectContext } from "@/contexts";
 import { useAPI, useRootStore } from "@/hooks";
@@ -31,6 +30,7 @@ import { AppSettingsPage } from "@/pages/app/app-settings-page";
 import { AppSmssPage } from "@/pages/app/app-smss-page";
 import { ProjectDependenciesPage } from "@/pages/project/project-dependencies-page";
 import { normalizeTagArray } from "@/utility";
+import { EditProjectDetailDialog } from "./edit-project-detail-dialog";
 
 const EMBEDDED_TAB_COMPONENTS: Record<string, React.FunctionComponent> = {
 	"": AppOverviewPage,

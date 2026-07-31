@@ -1,5 +1,4 @@
 import { ToggleRight } from "lucide-react";
-import type { CSSProperties } from "react";
 import {
 	InputSettings,
 	QueryInputSettings,
@@ -13,10 +12,6 @@ import {
 	buildShowField,
 } from "../block-defaults.shared";
 import type { BlockSettingsConfig } from "../settings.types";
-
-export const DefaultStyles: CSSProperties = {
-	width: "fit-content",
-};
 
 // export the config for the block
 export const config: BlockSettingsConfig = {
