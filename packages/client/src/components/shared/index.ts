@@ -11,3 +11,7 @@ export {
 	MCPJsonEditor,
 	MetadataHelpDialog,
 };
+export {
+	RemoteMcpConnection,
+	type RemoteMcpConnectionProps,
+} from "./remote-mcp-connection";
