@@ -8,6 +8,25 @@ export function getToolStringParameter(
 	return typeof value === "string" ? value.trim() : "";
 }
 
+export function getToolStringMapParameter(
+	context: McpToolContext | null,
+	key: string,
+): Record<string, string> {
+	const value = context?.parameters?.[key];
+	if (!value || typeof value !== "object" || Array.isArray(value)) {
+		return {};
+	}
+	return Object.fromEntries(
+		Object.entries(value).flatMap(([name, item]) =>
+			typeof item === "string" ||
+			typeof item === "number" ||
+			typeof item === "boolean"
+				? [[name, String(item)]]
+				: [],
+		),
+	);
+}
+
 function getToolFunctionName(context: McpToolContext | null): string {
 	return (context?.originalName || context?.name || "").trim();
 }

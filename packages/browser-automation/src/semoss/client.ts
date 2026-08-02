@@ -36,11 +36,12 @@ type McpToolResponse = {
 // published project portal there is no semoss-env script to read these from.
 //
 // APP is deliberately NOT set. The MCP logic for this app lives in the
-// `platform__playwright` project, but only the backend and the Playground need
-// to know that: tool definitions resolve through _meta on the Playground side,
-// and everything this app runs is room or insight scoped. Setting APP would make
-// the SDK prepend SetContext("playwright") to initialize(), which hard-fails the
-// whole app whenever that project is missing or not yet readable by the user.
+// `platform__browser_automation` project, but only the backend and the
+// Playground need to know that: tool definitions resolve through _meta on the
+// Playground side, and everything this app runs is room or insight scoped.
+// Setting APP would make the SDK prepend SetContext("browser_automation") to
+// initialize(), which hard-fails the whole app whenever that project is missing
+// or not yet readable by the user.
 Env.update({
 	MODULE: import.meta.env.MODULE || "/Monolith",
 });
@@ -269,6 +270,31 @@ export async function resolvePlaywrightRoomRecording<T = unknown>(
 		return JSON.parse(output) as T;
 	}
 	return output as T;
+}
+
+export async function listPlaywrightRoomRecordings(): Promise<string[]> {
+	const { pixelReturn } = await runPixel<unknown>(
+		'FindPlaywrightRoomRecordings(query="", max_candidates=50);',
+		getSemossInsightId(),
+	);
+	const output = pixelReturn?.[0]?.output as
+		| {
+				recordings?: Array<{
+					fileName?: string;
+					summary?: { fileName?: string };
+				}>;
+		  }
+		| undefined;
+	return Array.from(
+		new Set(
+			(output?.recordings ?? [])
+				.map(
+					(recording) =>
+						recording.fileName || recording.summary?.fileName || "",
+				)
+				.filter((fileName): fileName is string => !!fileName),
+		),
+	).sort((a, b) => a.localeCompare(b));
 }
 
 export async function bindSemossInsightToRoom(roomId: string): Promise<void> {

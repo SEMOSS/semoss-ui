@@ -81,9 +81,9 @@ jobs:
                 cd packages/terminal
                 pnpm run build
 
-            - name: Build playwright browser
+            - name: Build browser automation
               run: |
-                cd packages/playwright-browser-sockets
+                cd packages/browser-automation
                 pnpm run build
 
             # ---------- Download and Set Up semoss/bi -----------
@@ -134,11 +134,11 @@ jobs:
                 mkdir -p semoss-ui-build/packages/client
                 mkdir -p semoss-ui-build/packages/playground
                 mkdir -p semoss-ui-build/packages/terminal
-                mkdir -p semoss-ui-build/packages/playwright-browser-sockets
+                mkdir -p semoss-ui-build/packages/browser-automation
                 cp -r packages/client/dist semoss-ui-build/packages/client
                 cp -r packages/playground/dist semoss-ui-build/packages/playground
                 cp -r packages/terminal/dist semoss-ui-build/packages/terminal
-                cp -r packages/playwright-browser-sockets/dist semoss-ui-build/packages/playwright-browser-sockets
+                cp -r packages/browser-automation/dist semoss-ui-build/packages/browser-automation
                 cp -r packages/legacy semoss-ui-build/packages
                 cp -r index.html semoss-ui-build/
             
@@ -266,9 +266,9 @@ jobs:
                 cd packages/terminal
                 pnpm run build
 
-            - name: Build playwright browser
+            - name: Build browser automation
               run: |
-                cd packages/playwright-browser-sockets
+                cd packages/browser-automation
                 pnpm run build
 
             # ---------- Download and Set Up semoss/bi -----------
@@ -497,9 +497,9 @@ jobs:
                 cd packages/terminal
                 pnpm run build
 
-            - name: Build playwright browser
+            - name: Build browser automation
               run: |
-                cd packages/playwright-browser-sockets
+                cd packages/browser-automation
                 pnpm run build
 
             # ---------- Download and Set Up semoss/bi -----------

@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => {
 			strictPort: true,
 			proxy: {
 				[env.MODULE || "/Monolith"]: {
-					target: env.ENDPOINT || "http://localhost:9090/",
+					target: env.ENDPOINT || "http://localhost:8080/",
 					changeOrigin: true,
 					secure: false,
 					preserveHeaderKeyCase: true,
