@@ -6,6 +6,13 @@ import type {
 } from "../types/browserEvents";
 import { assertPixelSuccess, runPixel } from "./pixel";
 
+/**
+ * Reserved id the backend reports as SMSS_ENGINE_ID for room scoped tools. It
+ * stands in where a project or engine UUID would go and has no catalog entry
+ * behind it.
+ */
+const ROOM_MCP_ID = "__room__";
+
 type EnvWithTool = typeof Env & { TOOL?: unknown };
 type McpToolStatus = "success" | "error" | "cancelled" | "paused";
 type InsightWithMcpResponse = typeof insight & {
@@ -87,15 +94,23 @@ function normalizeToolContext(rawTool: unknown): McpToolContext | null {
 			? (tool.executedParameters as Record<string, unknown>)
 			: undefined;
 
-	// Extract the playwright app project ID from _meta so the sidebar URL resolves correctly
+	// Extract the owning app id from _meta so recordings resolve against the right
+	// project. SMSS_ENGINE_ID is the canonical key and SMSS_PROJECT_ID is the
+	// deprecated fallback, but a room scoped tool reports the reserved __room__ id
+	// rather than a catalog entry, so that value is treated as no project at all.
 	const meta =
 		tool._meta &&
 		typeof tool._meta === "object" &&
 		!Array.isArray(tool._meta)
 			? (tool._meta as Record<string, unknown>)
 			: {};
-	const projectId =
-		typeof meta.SMSS_PROJECT_ID === "string" ? meta.SMSS_PROJECT_ID : "";
+	const ownerId =
+		typeof meta.SMSS_ENGINE_ID === "string" && meta.SMSS_ENGINE_ID
+			? meta.SMSS_ENGINE_ID
+			: typeof meta.SMSS_PROJECT_ID === "string"
+				? meta.SMSS_PROJECT_ID
+				: "";
+	const projectId = ownerId === ROOM_MCP_ID ? "" : ownerId;
 
 	return {
 		type: typeof tool.type === "string" ? tool.type : "MCP",
