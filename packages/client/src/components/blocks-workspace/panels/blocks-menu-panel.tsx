@@ -5,6 +5,8 @@ import { runPixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
+	Dialog,
+	DialogContent,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
@@ -20,7 +22,6 @@ import {
 import { AddBlocksMenuCard } from "@/components/designer";
 import { AddClientBlockModal } from "@/components/designer/add-client-block-modal";
 import { Panel } from "@/components/workspace";
-import { useWorkspace } from "@/hooks";
 import { SECTION_ORDER } from "../menus/default-menu";
 import type {
 	BlockLocalStorageData,
@@ -50,12 +51,17 @@ const defaultSection = "Miscellaneous";
  */
 export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 	const { title, items } = props;
-	const { workspace } = useWorkspace();
 	const [search, setSearch] = useState("");
 	const [communityBlock, setCommunityBlock] = useState<CommunityBlockItem[]>(
 		[],
 	);
 	const [loading, setLoading] = useState(false);
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [deleteBlockId, setDeleteBlockId] = useState<string | null>(null);
+	const [editItem, setEditItem] = useState<{
+		blockId: string;
+		item: DesignerMenuItem;
+	} | null>(null);
 	const [mode, setMode] = useState<MODE>("SYSTEM");
 
 	const [filterMenuOpen, setFilterMenuOpen] = useState(false);
@@ -90,7 +96,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 	};
 
 	/**
-	 * Deletes a block by its ID and closes the overlay.
+	 * Deletes a block by its ID and closes the confirmation dialog.
 	 *
 	 * @param blockId - The unique identifier of the block to be deleted.
 	 */
@@ -106,52 +112,20 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 				}
 			},
 		);
-		workspace.closeOverlay();
+		setDeleteDialogOpen(false);
+		setDeleteBlockId(null);
 	};
 
 	/**
 	 * Open the delete modal
 	 */
 	const handleOnTrashClick = (blockId: string, _blockName: string) => {
-		workspace.openOverlay(() => (
-			<>
-				<DialogHeader>
-					<DialogTitle>Delete Selected Block?</DialogTitle>
-				</DialogHeader>
-				<div className="px-6 py-4">
-					<p className="text-muted-foreground text-sm">
-						You will permanently remove the block from the community
-						block section.
-					</p>
-				</div>
-				<DialogFooter>
-					<Button
-						variant="ghost"
-						onClick={() => workspace.closeOverlay()}
-					>
-						Cancel
-					</Button>
-					<Button
-						variant="destructive"
-						onClick={() => deleteBlock(blockId)}
-					>
-						Delete
-					</Button>
-				</DialogFooter>
-			</>
-		));
+		setDeleteBlockId(blockId);
+		setDeleteDialogOpen(true);
 	};
 
 	const handleOnEditClick = (blockId: string, item: DesignerMenuItem) => {
-		workspace.openOverlay(() => (
-			<AddClientBlockModal
-				isOpen={true}
-				onClose={() => workspace.closeOverlay()}
-				selected={blockId}
-				isEdit={true}
-				block_json={item}
-			/>
-		));
+		setEditItem({ blockId, item });
 	};
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
@@ -426,6 +400,58 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 					</div>
 				)}
 			</div>
+			<Dialog
+				open={deleteDialogOpen}
+				onOpenChange={(open) => {
+					setDeleteDialogOpen(open);
+					if (!open) {
+						setDeleteBlockId(null);
+					}
+				}}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Delete Selected Block?</DialogTitle>
+					</DialogHeader>
+					<div className="px-2 py-2">
+						<p className="text-muted-foreground text-sm">
+							You will permanently remove the block from the
+							community block section.
+						</p>
+					</div>
+					<DialogFooter>
+						<Button
+							variant="ghost"
+							onClick={() => {
+								setDeleteDialogOpen(false);
+								setDeleteBlockId(null);
+							}}
+						>
+							Cancel
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={() => {
+								if (deleteBlockId) {
+									deleteBlock(deleteBlockId);
+								}
+							}}
+						>
+							Delete
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{editItem ? (
+				<AddClientBlockModal
+					isOpen={true}
+					onClose={() => setEditItem(null)}
+					selected={editItem.blockId}
+					isEdit={true}
+					block_json={editItem.item}
+				/>
+			) : null}
 		</Panel>
 	);
 });

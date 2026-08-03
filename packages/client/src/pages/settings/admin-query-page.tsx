@@ -1,13 +1,14 @@
 import { useId, useState } from "react";
 import { Navigate } from "react-router-dom";
 import {
+	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-	Select as ShadcnSelect,
 } from "@semoss/ui/next";
-import { QueryWorkspace } from "@/components/query-workspace/query-workspace";
+import { AdminQueryWorkspace } from "@/components/settings";
+import { EngineContext } from "@/contexts";
 import { useRootStore, useSettings } from "@/hooks";
 
 const DATABASE_OPTIONS = [
@@ -50,7 +51,7 @@ export const AdminQueryPage = () => {
 				>
 					Database
 				</label>
-				<ShadcnSelect
+				<Select
 					value={selectedDatabase}
 					onValueChange={setSelectedDatabase}
 				>
@@ -68,17 +69,31 @@ export const AdminQueryPage = () => {
 							</SelectItem>
 						))}
 					</SelectContent>
-				</ShadcnSelect>
+				</Select>
 			</div>
 
 			{selectedDatabase ? (
 				<div className="h-[calc(100dvh-240px)] min-h-[480px] w-full overflow-hidden">
-					<QueryWorkspace
-						key={selectedDatabase}
-						engine={selectedDatabase}
-						mode="SQL"
-						variant="admin"
-					/>
+					{/* Reuse workbench panels that now read from useEngine by
+					injecting a minimal database-shaped context for admin routes. */}
+					<EngineContext.Provider
+						value={{
+							type: "DATABASE",
+							catalog: {
+								name: "admin",
+								path: "",
+							},
+							engine: {
+								engine_id: selectedDatabase,
+								engine_name: selectedDatabase,
+								engine_type: "DATABASE",
+							},
+							permission: "OWNER",
+							refresh: () => null,
+						}}
+					>
+						<AdminQueryWorkspace />
+					</EngineContext.Provider>
 				</div>
 			) : (
 				<div className="flex h-60 w-full items-center justify-center rounded-2xl border border-border/50 border-dashed bg-card/50 text-muted-foreground text-sm">

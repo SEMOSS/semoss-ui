@@ -24,7 +24,7 @@ export const splitAtPeriod = (str, side = "left") => {
  * @desc capitalizes every word that is spaced
  * "hello world" --> "Hello World"
  */
-export const toTitleCase = (str) => {
+export const toTitleCase = (str: string) => {
 	return str.replace(/\w\S*/g, (txt) => {
 		return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
 	});
@@ -79,7 +79,7 @@ SECRET_KEY="${secretKey ? secretKey : "<your secret key>"}"`;
 	}
 };
 
-const debounce = (func, wait) => {
+const _debounce = (func, wait) => {
 	let timeout: ReturnType<typeof setTimeout>;
 
 	return function executedFunction(...args) {
