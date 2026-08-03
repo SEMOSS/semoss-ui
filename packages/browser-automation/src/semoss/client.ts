@@ -43,10 +43,10 @@ type McpToolResponse = {
 // published project portal there is no semoss-env script to read these from.
 //
 // APP is deliberately NOT set. The MCP logic for this app lives in the
-// `platform__browser_automation` project, but only the backend and the
+// `platform__browser-automation` project, but only the backend and the
 // Playground need to know that: tool definitions resolve through _meta on the
 // Playground side, and everything this app runs is room or insight scoped.
-// Setting APP would make the SDK prepend SetContext("browser_automation") to
+// Setting APP would make the SDK prepend SetContext("browser-automation") to
 // initialize(), which hard-fails the whole app whenever that project is missing
 // or not yet readable by the user.
 Env.update({
