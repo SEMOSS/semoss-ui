@@ -17,6 +17,16 @@ interface BrowserViewerProps {
 	selectionMode?: boolean;
 	onSelectionComplete?: (bounds: SelectionBounds) => void;
 	onSelectionCancel?: () => void;
+	/** When true, clicks are delegated to onAutomationClick for acknowledged dispatch. */
+	automationMode?: boolean;
+	/** Called for an automation click with local and remote browser coordinates. */
+	onAutomationClick?: (
+		localX: number,
+		localY: number,
+		remoteX: number,
+		remoteY: number,
+		button: "left" | "right" | "middle",
+	) => void;
 }
 
 interface SelectionPoint {
@@ -45,6 +55,8 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 	selectionMode = false,
 	onSelectionComplete,
 	onSelectionCancel,
+	automationMode = false,
+	onAutomationClick,
 }) => {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -271,13 +283,33 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 				return;
 			}
 			const point = toRemoteCoords(event.clientX, event.clientY);
+			if (automationMode && onAutomationClick) {
+				const canvas = canvasRef.current;
+				const rect = canvas?.getBoundingClientRect();
+				const localX = rect ? event.clientX - rect.left : event.clientX;
+				const localY = rect ? event.clientY - rect.top : event.clientY;
+				onAutomationClick(
+					localX,
+					localY,
+					point.x,
+					point.y,
+					getMouseButton(event),
+				);
+				return;
+			}
 			sendEvent({
 				type: "mouse-click",
 				...point,
 				button: getMouseButton(event),
 			});
 		},
-		[onUserInput, sendEvent, toRemoteCoords],
+		[
+			automationMode,
+			onAutomationClick,
+			onUserInput,
+			sendEvent,
+			toRemoteCoords,
+		],
 	);
 	const lastMoveTime = useRef(0);
 	const handleMouseMove = useCallback(
@@ -404,7 +436,12 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 					className="relative block h-full w-full rounded-sm bg-black shadow-2xl shadow-black/50 outline-none ring-1 ring-white/10"
 					style={{
 						objectFit: "contain",
-						cursor: isConnected ? browserCursor : "default",
+						cursor:
+							automationMode && isConnected
+								? "crosshair"
+								: isConnected
+									? browserCursor
+									: "default",
 					}}
 					onMouseDown={handleMouseDown}
 					onMouseUp={handleMouseUp}

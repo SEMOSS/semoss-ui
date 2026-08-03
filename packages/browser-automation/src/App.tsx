@@ -15,6 +15,8 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
+import { AutomationButton } from "./components/AutomationButton";
+import { AutomationPopup } from "./components/AutomationPopup";
 import { BrowserTabStrip } from "./components/BrowserTabStrip";
 import { BrowserToolbar } from "./components/BrowserToolbar";
 import { BrowserViewer } from "./components/BrowserViewer";
@@ -57,6 +59,7 @@ import {
 	sendMcpResponseToPlayground,
 	subscribeToMcpToolContext,
 } from "./semoss/client";
+import { runPixel } from "./semoss/pixel";
 import type {
 	BrowserTabInfo,
 	ClientToServerEvent,
@@ -170,6 +173,19 @@ export default function App() {
 		number | null
 	>(null);
 	const [playbackStepsRun, setPlaybackStepsRun] = useState(0);
+
+	// ── Automation mode ──────────────────────────────────────────────────────
+	const [automationMode, setAutomationMode] = useState(false);
+	const [automationModelId, setAutomationModelId] = useState("");
+	const [automationSubMode, setAutomationSubMode] = useState<
+		"click" | "fill-page"
+	>("click");
+	const [isAutomationGenerating, setIsAutomationGenerating] = useState(false);
+	const [automationClickPos, setAutomationClickPos] = useState<{
+		localX: number;
+		localY: number;
+	} | null>(null);
+
 	const autoStartedRef = useRef(false);
 	const autoRecordingStartedRef = useRef(false);
 	const autoPlaybackProjectSelectedRef = useRef(false);
@@ -1550,6 +1566,233 @@ export default function App() {
 	const replayMenuOpen =
 		playback.controlsOpen || playback.loadedRecordingOpen;
 
+	const executeGeneratedFields = useCallback(
+		async (output: Record<string, unknown>): Promise<number> => {
+			const fields = Array.isArray(output.fields)
+				? (output.fields as Array<Record<string, unknown>>)
+				: [];
+			const expectedUrl =
+				typeof output.pageUrl === "string" ? output.pageUrl : undefined;
+			const expectedTabId =
+				typeof output.tabId === "string" ? output.tabId : undefined;
+			let completed = 0;
+
+			for (const field of fields) {
+				const value =
+					typeof field.value === "string" ? field.value : "";
+				const strategy =
+					typeof field.selectorStrategy === "string"
+						? field.selectorStrategy
+						: "css";
+				const selectorValue =
+					typeof field.selectorValue === "string"
+						? field.selectorValue
+						: "";
+				if (!value || !selectorValue) continue;
+
+				await sendReplayEvent({
+					type: "fill-element",
+					requestId: crypto.randomUUID(),
+					text: value,
+					selector: {
+						strategy,
+						value: selectorValue,
+						frameSelector:
+							typeof field.frameSelector === "string"
+								? field.frameSelector
+								: null,
+					},
+					label:
+						typeof field.label === "string"
+							? field.label
+							: undefined,
+					tag: typeof field.tag === "string" ? field.tag : undefined,
+					expectedUrl,
+					expectedTabId,
+				});
+				completed += 1;
+			}
+			return completed;
+		},
+		[sendReplayEvent],
+	);
+
+	const handleAutomationGenerate = useCallback(
+		async (remoteX: number, remoteY: number) => {
+			if (!session?.sessionId) {
+				toast("No active browser session.");
+				return;
+			}
+			setIsAutomationGenerating(true);
+			try {
+				const roomId = toolContext?.roomId ?? "";
+				if (!roomId) {
+					toast(
+						"No room context available — open this tool from a Playground room.",
+					);
+					return;
+				}
+
+				// Single-field mode: passes x/y so the reactor identifies the clicked field,
+				// but still sees ALL form fields for cross-field reasoning accuracy.
+				const response = await runPixel<Record<string, unknown>>(
+					`FillPlaywrightInput(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, sessionId=${JSON.stringify(session.sessionId)}, limit=20, x=${remoteX}, y=${remoteY});`,
+					effectiveInsightId,
+				);
+
+				const output = response.pixelReturn?.[0]?.output as
+					| Record<string, unknown>
+					| undefined;
+				if (!output?.success) {
+					toast(
+						typeof output?.error === "string"
+							? output.error
+							: "Automation generation failed.",
+					);
+					return;
+				}
+
+				const fields = Array.isArray(output?.fields)
+					? output.fields
+					: [];
+
+				if (fields.length === 0) {
+					toast(
+						typeof output?.message === "string"
+							? output.message
+							: "No editable field or context-supported value was found at that position.",
+					);
+					return;
+				}
+
+				const completed = await executeGeneratedFields(output);
+				if (completed === 0) {
+					toast("No generated field action could be executed.");
+					return;
+				}
+				if (!automationModelId && typeof output.engineId === "string") {
+					setAutomationModelId(output.engineId);
+				}
+				toast("Filled the selected field from Playground context.");
+				setAutomationMode(false);
+			} catch (error) {
+				toast(
+					error instanceof Error
+						? error.message
+						: "Automation generation failed.",
+				);
+			} finally {
+				setIsAutomationGenerating(false);
+				setAutomationClickPos(null);
+			}
+		},
+		[
+			automationModelId,
+			effectiveInsightId,
+			executeGeneratedFields,
+			session?.sessionId,
+			toolContext?.roomId,
+		],
+	);
+
+	const handleAutomationClick = useCallback(
+		async (
+			localX: number,
+			localY: number,
+			remoteX: number,
+			remoteY: number,
+			button: "left" | "right" | "middle",
+		) => {
+			setAutomationClickPos({ localX, localY });
+			try {
+				await sendReplayEvent({
+					type: "mouse-click",
+					requestId: crypto.randomUUID(),
+					x: remoteX,
+					y: remoteY,
+					button,
+				});
+				await handleAutomationGenerate(remoteX, remoteY);
+			} catch (error) {
+				toast(
+					error instanceof Error
+						? error.message
+						: "Could not click the selected browser position.",
+				);
+				setAutomationClickPos(null);
+			}
+		},
+		[handleAutomationGenerate, sendReplayEvent],
+	);
+
+	const handleFillPage = useCallback(async () => {
+		if (!session?.sessionId) {
+			toast("No active browser session.");
+			return;
+		}
+		const roomId = toolContext?.roomId ?? "";
+		if (!roomId) {
+			toast(
+				"No room context available — open this tool from a Playground room.",
+			);
+			return;
+		}
+		setIsAutomationGenerating(true);
+		setAutomationMode(false);
+		try {
+			// All-fields mode: no x/y, reactor fills all visible fields.
+			const response = await runPixel<Record<string, unknown>>(
+				`FillPlaywrightInput(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, sessionId=${JSON.stringify(session.sessionId)}, limit=20);`,
+				effectiveInsightId,
+			);
+
+			const output = response.pixelReturn?.[0]?.output as
+				| Record<string, unknown>
+				| undefined;
+			if (!output?.success) {
+				toast(
+					typeof output?.error === "string"
+						? output.error
+						: "Page fill failed.",
+				);
+				return;
+			}
+
+			const fields = Array.isArray(output?.fields) ? output.fields : [];
+
+			if (fields.length === 0) {
+				toast(
+					typeof output?.message === "string"
+						? output.message
+						: "No editable fields could be filled from the available context.",
+				);
+				return;
+			}
+
+			const completed = await executeGeneratedFields(output);
+			if (completed === 0) {
+				toast("No generated field action could be executed.");
+				return;
+			}
+			if (!automationModelId && typeof output.engineId === "string") {
+				setAutomationModelId(output.engineId);
+			}
+			toast(
+				`Filled ${completed} field${completed !== 1 ? "s" : ""} from Playground context.`,
+			);
+		} catch (error) {
+			toast(error instanceof Error ? error.message : "Page fill failed.");
+		} finally {
+			setIsAutomationGenerating(false);
+		}
+	}, [
+		automationModelId,
+		effectiveInsightId,
+		executeGeneratedFields,
+		session?.sessionId,
+		toolContext?.roomId,
+	]);
+
 	return (
 		<div className="flex h-screen flex-col overflow-hidden bg-canvas text-ink">
 			{/* Toolbar row */}
@@ -1573,6 +1816,23 @@ export default function App() {
 				/>
 				<div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-1">
 					<ConnectionStatus state={connectionState} />
+					{session && (
+						<AutomationButton
+							insightId={effectiveInsightId}
+							isActive={automationMode || isAutomationGenerating}
+							modelId={automationModelId}
+							subMode={automationSubMode}
+							onToggle={() => {
+								if (automationSubMode === "fill-page") {
+									void handleFillPage();
+								} else {
+									setAutomationMode((on) => !on);
+								}
+							}}
+							onSubModeChange={setAutomationSubMode}
+							onModelChange={setAutomationModelId}
+						/>
+					)}
 					{session && (
 						<Button
 							size="sm"
@@ -1721,6 +1981,16 @@ export default function App() {
 				)}
 
 			<div className="relative flex min-h-0 flex-1 overflow-hidden">
+				{/* Click-to-fill loading indicator */}
+				{isAutomationGenerating && automationClickPos && (
+					<AutomationPopup
+						localX={automationClickPos.localX}
+						localY={automationClickPos.localY}
+						isGenerating={true}
+						onGenerate={() => undefined}
+						onDismiss={() => undefined}
+					/>
+				)}
 				{/* Browser canvas */}
 				<BrowserViewer
 					connectionState={connectionState}
@@ -1737,6 +2007,10 @@ export default function App() {
 							"Playback will pause after your interaction",
 						)
 					}
+					automationMode={
+						automationMode && automationSubMode === "click"
+					}
+					onAutomationClick={handleAutomationClick}
 				/>
 
 				<ReplaySidebar
