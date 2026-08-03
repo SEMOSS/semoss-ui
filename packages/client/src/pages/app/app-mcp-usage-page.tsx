@@ -2,6 +2,7 @@ import { Wrench } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Badge, H4, Spinner, toast } from "@semoss/ui/next";
 import { McpUsage } from "@/components/shared/mcp-usage";
+import { RemoteMcpConnection } from "@/components/shared/remote-mcp-connection";
 import { SettingsContext } from "@/contexts";
 import { useProject, useRootStore } from "@/hooks";
 
@@ -232,6 +233,15 @@ export const AppMcpUsagePage = () => {
 							</div>
 						)}
 				</div>
+
+				{!!appId && (
+					<div className="rounded-2xl border border-base p-6 shadow-xs">
+						<RemoteMcpConnection
+							projectId={appId}
+							onChange={() => fetchMcpTools(appId)}
+						/>
+					</div>
+				)}
 
 				<McpUsage
 					id={project.project_id}
