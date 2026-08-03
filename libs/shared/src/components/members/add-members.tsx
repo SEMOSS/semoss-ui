@@ -9,6 +9,7 @@ import {
 
 const PAGE_SIZE = 50;
 
+import { useTranslation } from "@semoss/i18n";
 import { get as apiGet, post as apiPost, Env } from "@semoss/sdk";
 import {
 	Avatar,
@@ -82,6 +83,7 @@ export const AddMembersOverlay = ({
 	onClose,
 	adminMode = false,
 }: AddMembersOverlayProps) => {
+	const { t } = useTranslation("members");
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [searchKey, setSearchKey] = useState<string>("");
 	const debouncedSearchKey = useDebouncedValue(searchKey, 300);
@@ -134,7 +136,7 @@ export const AddMembersOverlay = ({
 				isFetchingRef.current = false;
 				if (fetchVersionRef.current !== version) return undefined;
 				setIsSearching(false);
-				toast.error(error?.message || "Failed to load users.");
+				toast.error(error?.message || t("errors.loadUsersFailed"));
 				return undefined;
 			});
 			isFetchingRef.current = false;
@@ -199,10 +201,7 @@ export const AddMembersOverlay = ({
 			`${authBase}/${isProject ? "project" : "engine"}/${isProject ? "addProjectUserPermissions" : "addEngineUserPermissions"}`,
 			{ [isProject ? "projectId" : "engineId"]: id, userpermissions },
 		).catch((error: Error) => {
-			toast.error(
-				error?.message ||
-					"There was an error adding the selected members.",
-			);
+			toast.error(error?.message || t("errors.addMembersFailed"));
 			resetState();
 			onClose(true);
 			return undefined;
@@ -210,7 +209,7 @@ export const AddMembersOverlay = ({
 
 		const responseData = (response?.data || {}) as { success?: boolean };
 		if (responseData.success) {
-			toast.success("Selected members have been added successfully.");
+			toast.success(t("success.membersAdded"));
 			resetState();
 			onClose(true);
 		}
@@ -228,6 +227,19 @@ export const AddMembersOverlay = ({
 		setHasMore(true);
 		setUserPermission("");
 		setIsSearching(false);
+	}
+
+	function permissionLabel(permission: string): string {
+		switch (permission) {
+			case "Viewer":
+				return t("permission.viewer");
+			case "Editor":
+				return t("permission.editor");
+			case "Owner":
+				return t("permission.owner");
+			default:
+				return permission;
+		}
 	}
 
 	function toggleUserSelected(user: AddPopupSearchResult) {
@@ -286,9 +298,9 @@ export const AddMembersOverlay = ({
 		>
 			<DialogContent className="flex max-h-[90vh] w-full max-w-2xl flex-col gap-4 overflow-hidden">
 				<DialogHeader>
-					<DialogTitle>Add Members</DialogTitle>
+					<DialogTitle>{t("dialog.title")}</DialogTitle>
 					<DialogDescription>
-						Search for users and invite them to this resource.
+						{t("dialog.description")}
 					</DialogDescription>
 				</DialogHeader>
 
@@ -296,7 +308,7 @@ export const AddMembersOverlay = ({
 				<input
 					ref={inputRef}
 					className="h-10 w-full shrink-0 rounded border bg-background px-3 text-sm outline-none ring-primary placeholder:text-muted-foreground focus:ring-2"
-					placeholder="Search by name or email..."
+					placeholder={t("search.placeholder")}
 					value={searchKey}
 					autoComplete="off"
 					autoCorrect="off"
@@ -350,7 +362,7 @@ export const AddMembersOverlay = ({
 										</span>
 										{isAdded && (
 											<span className="font-medium text-primary text-xs">
-												Added ✓
+												{t("search.added")} ✓
 											</span>
 										)}
 									</button>
@@ -359,8 +371,8 @@ export const AddMembersOverlay = ({
 						) : (
 							<div className="px-3 py-4 text-center text-muted-foreground text-sm">
 								{isLoadingResults
-									? "Searching for users..."
-									: "No users found"}
+									? t("search.searching")
+									: t("search.empty")}
 							</div>
 						)}
 					</div>
@@ -368,8 +380,9 @@ export const AddMembersOverlay = ({
 					{/* Selected users — always shown, scrollable cards */}
 					<div className="flex flex-col gap-2">
 						<span className="font-medium text-muted-foreground text-sm">
-							{selectedUsers.length} user
-							{selectedUsers.length !== 1 ? "s" : ""} selected
+							{t("selected.count", {
+								count: selectedUsers.length,
+							})}
 						</span>
 						<div className="flex flex-col gap-1.5">
 							{selectedUsers.map((u, i) => (
@@ -409,7 +422,9 @@ export const AddMembersOverlay = ({
 													variant="outline"
 													className="shrink-0"
 												>
-													{u.permission}
+													{permissionLabel(
+														u.permission,
+													)}
 													<ChevronDown className="ms-1 h-4 w-4" />
 												</Button>
 											</DropdownMenuTrigger>
@@ -436,7 +451,7 @@ export const AddMembersOverlay = ({
 														)
 													}
 												>
-													Viewer
+													{t("permission.viewer")}
 												</DropdownMenuCheckboxItem>
 												<DropdownMenuCheckboxItem
 													checked={
@@ -460,7 +475,7 @@ export const AddMembersOverlay = ({
 														)
 													}
 												>
-													Editor
+													{t("permission.editor")}
 												</DropdownMenuCheckboxItem>
 												{isOwner && (
 													<DropdownMenuCheckboxItem
@@ -488,7 +503,7 @@ export const AddMembersOverlay = ({
 															)
 														}
 													>
-														Owner
+														{t("permission.owner")}
 													</DropdownMenuCheckboxItem>
 												)}
 											</DropdownMenuContent>
@@ -514,13 +529,14 @@ export const AddMembersOverlay = ({
 								) : (
 									<ChevronRight className="rtl:-scale-x-100 h-4 w-4 shrink-0" />
 								)}
-								Model Limit Restrictions (for all selected
-								users)
+								{t("restrictions.title")}
 							</button>
 							{restrictionsOpen && (
 								<div className="flex flex-col gap-3">
 									<div className="flex flex-col gap-1.5">
-										<Label>Usage Limit Type</Label>
+										<Label>
+											{t("restrictions.usageLimitType")}
+										</Label>
 										<Select
 											value={restriction}
 											onValueChange={(val) => {
@@ -534,20 +550,24 @@ export const AddMembersOverlay = ({
 											</SelectTrigger>
 											<SelectContent>
 												<SelectItem value="null">
-													None
+													{t("restrictions.none")}
 												</SelectItem>
 												<SelectItem value="token">
-													Token
+													{t("restrictions.token")}
 												</SelectItem>
 												<SelectItem value="compute">
-													Compute time
+													{t(
+														"restrictions.computeTime",
+													)}
 												</SelectItem>
 											</SelectContent>
 										</Select>
 									</div>
 									{restriction === "token" && (
 										<div className="flex flex-col gap-1.5">
-											<Label>Max Tokens</Label>
+											<Label>
+												{t("restrictions.maxTokens")}
+											</Label>
 											<Input
 												type="text"
 												inputMode="numeric"
@@ -565,7 +585,11 @@ export const AddMembersOverlay = ({
 									{restriction === "compute" && (
 										<div className="flex gap-3">
 											<div className="flex flex-1 flex-col gap-1.5">
-												<Label>Max Response Time</Label>
+												<Label>
+													{t(
+														"restrictions.maxResponseTime",
+													)}
+												</Label>
 												<Input
 													type="text"
 													inputMode="numeric"
@@ -580,9 +604,13 @@ export const AddMembersOverlay = ({
 												/>
 											</div>
 											<div className="flex w-36 flex-col gap-1.5">
-												<Label>Unit</Label>
+												<Label>
+													{t("restrictions.unit")}
+												</Label>
 												<Input
-													value="milliseconds"
+													value={t(
+														"restrictions.milliseconds",
+													)}
 													readOnly
 												/>
 											</div>
@@ -590,7 +618,9 @@ export const AddMembersOverlay = ({
 									)}
 									{restriction !== "null" && (
 										<div className="flex flex-col gap-1.5">
-											<Label>Frequency</Label>
+											<Label>
+												{t("restrictions.frequency")}
+											</Label>
 											<Select
 												value={frequency}
 												onValueChange={setFrequency}
@@ -600,19 +630,29 @@ export const AddMembersOverlay = ({
 												</SelectTrigger>
 												<SelectContent>
 													<SelectItem value="DAY">
-														Daily
+														{t(
+															"restrictions.daily",
+														)}
 													</SelectItem>
 													<SelectItem value="WEEK">
-														Weekly
+														{t(
+															"restrictions.weekly",
+														)}
 													</SelectItem>
 													<SelectItem value="MONTH">
-														Monthly
+														{t(
+															"restrictions.monthly",
+														)}
 													</SelectItem>
 													<SelectItem value="YEAR">
-														Yearly
+														{t(
+															"restrictions.yearly",
+														)}
 													</SelectItem>
 													<SelectItem value="ALL_TIME">
-														All time
+														{t(
+															"restrictions.allTime",
+														)}
 													</SelectItem>
 												</SelectContent>
 											</Select>
@@ -631,10 +671,11 @@ export const AddMembersOverlay = ({
 						onClick={addNewMembers}
 						disabled={selectedUsers.length === 0}
 					>
-						Add{" "}
 						{selectedUsers.length > 0
-							? `(${selectedUsers.length})`
-							: ""}
+							? t("footer.addWithCount", {
+									count: selectedUsers.length,
+								})
+							: t("footer.add")}
 					</Button>
 				</div>
 			</DialogContent>
