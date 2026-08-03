@@ -47,6 +47,8 @@ export const AppMcpUsagePage = () => {
 	const { project } = useProject();
 	const { monolithStore } = useRootStore();
 
+	const appId = project.project_id;
+
 	const [mcpTools, setMcpTools] = useState<MCPToolDefinition[]>([]);
 	const [mcpToolsLoading, setMcpToolsLoading] = useState(false);
 	const [mcpToolsError, setMcpToolsError] = useState("");
@@ -94,11 +96,11 @@ export const AppMcpUsagePage = () => {
 	);
 
 	useEffect(() => {
-		if (!project.project_id) {
+		if (!appId) {
 			return;
 		}
-		fetchMcpTools(project.project_id);
-	}, [project.project_id, fetchMcpTools]);
+		fetchMcpTools(appId);
+	}, [appId, fetchMcpTools]);
 
 	return (
 		<SettingsContext.Provider value={{ adminMode: false }}>
@@ -244,7 +246,7 @@ export const AppMcpUsagePage = () => {
 				)}
 
 				<McpUsage
-					id={project.project_id}
+					id={appId}
 					name={
 						project?.project_display_name || project?.project_name
 					}
