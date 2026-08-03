@@ -13,6 +13,7 @@ import { get as apiGet, post as apiPost, Env } from "@semoss/sdk";
 import {
 	Avatar,
 	Button,
+	cn,
 	Dialog,
 	DialogContent,
 	DialogDescription,
@@ -30,6 +31,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 	toast,
+	useDebouncedValue,
 } from "@semoss/ui/next";
 import { returnAccessType } from "./common";
 
@@ -82,6 +84,7 @@ export const AddMembersOverlay = ({
 }: AddMembersOverlayProps) => {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [searchKey, setSearchKey] = useState<string>("");
+	const debouncedSearchKey = useDebouncedValue(searchKey, 300);
 	const [selectedUsers, setSelectedUsers] = useState<UserSelected[]>([]);
 	const [searchedResults, setSearchedResults] = useState<
 		AddPopupSearchResult[]
@@ -99,14 +102,18 @@ export const AddMembersOverlay = ({
 	const [restrictionsOpen, setRestrictionsOpen] = useState<boolean>(true);
 	const isProject = type === "PROJECT" || type === "WORKSPACE";
 	const isOwner = adminMode || userPermission === "OWNER";
+	// Debounce hasn't caught up to the latest keystroke yet
+	const isDebouncePending = searchKey !== debouncedSearchKey;
+	const isLoadingResults = isDebouncePending || isSearching;
 
-	// Reset to page 0 whenever the search term changes
+	// Reset to page 0 whenever the debounced search term changes.
+	// Keep prior results on screen (don't clear them) so the list doesn't
+	// flash to empty while the next page is fetched.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional reset-only effect
 	useEffect(() => {
 		setOffset(0);
-		setSearchedResults([]);
 		setHasMore(true);
-	}, [searchKey]);
+	}, [debouncedSearchKey]);
 
 	// Fetch a page; use a version ref to discard stale responses
 	// biome-ignore lint/correctness/useExhaustiveDependencies: adminMode intentionally excluded to avoid refetch on prop change
@@ -122,7 +129,7 @@ export const AddMembersOverlay = ({
 				: "getEngineUsersNoCredentials";
 			const idKey = isProject ? "projectId" : "engineId";
 			const response = await apiGet(
-				`${authBase}/${isProject ? "project" : "engine"}/${endpoint}?${idKey}=${id}&searchTerm=${searchKey}&limit=${PAGE_SIZE}&offset=${offset}`,
+				`${authBase}/${isProject ? "project" : "engine"}/${endpoint}?${idKey}=${id}&searchTerm=${debouncedSearchKey}&limit=${PAGE_SIZE}&offset=${offset}`,
 			).catch((error: Error) => {
 				isFetchingRef.current = false;
 				if (fetchVersionRef.current !== version) return undefined;
@@ -140,7 +147,7 @@ export const AddMembersOverlay = ({
 			setHasMore(page.length === PAGE_SIZE);
 		}
 		fetchUsers();
-	}, [searchKey, offset, id, isProject, open]);
+	}, [debouncedSearchKey, offset, id, isProject, open]);
 
 	// Fetch the current user's permission for this resource when the dialog opens
 	useEffect(() => {
@@ -212,6 +219,7 @@ export const AddMembersOverlay = ({
 	function resetState() {
 		setSelectedUsers([]);
 		setSearchKey("");
+		setSearchedResults([]);
 		setRestriction("null");
 		setMaxTokens("");
 		setMaxTime("");
@@ -302,7 +310,12 @@ export const AddMembersOverlay = ({
 				<div className="flex flex-1 flex-col gap-4 overflow-y-auto">
 					{/* Search results */}
 					<div
-						className="max-h-56 min-h-32 w-full shrink-0 overflow-y-auto rounded-md border bg-background"
+						className={cn(
+							"h-56 w-full shrink-0 overflow-y-auto rounded-md border bg-background transition-opacity",
+							isLoadingResults &&
+								searchedResults.length > 0 &&
+								"opacity-60",
+						)}
 						onScroll={handleResultsScroll}
 					>
 						{searchedResults.length > 0 ? (
@@ -345,7 +358,7 @@ export const AddMembersOverlay = ({
 							})
 						) : (
 							<div className="px-3 py-4 text-center text-muted-foreground text-sm">
-								{isSearching
+								{isLoadingResults
 									? "Searching for users..."
 									: "No users found"}
 							</div>
