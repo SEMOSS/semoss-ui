@@ -16,6 +16,8 @@ type ReplayMetadata = {
 	requestId?: string;
 	waitAfterMs?: number;
 	selector?: BrowserSelector;
+	expectedUrl?: string;
+	expectedTabId?: string;
 	recordedViewportWidth?: number;
 	recordedViewportHeight?: number;
 	replayTriggerTabId?: string;
@@ -62,6 +64,17 @@ export type ClientToServerEvent =
 			text: string;
 			x?: number;
 			y?: number;
+			record?: boolean;
+	  } & ReplayMetadata)
+	| ({
+			/** Atomically fills an editable element or selects a dropdown option. */
+			type: "fill-element";
+			text: string;
+			selector: BrowserSelector;
+			label?: string;
+			tag?: string;
+			isPassword?: boolean;
+			storeValue?: boolean;
 			record?: boolean;
 	  } & ReplayMetadata)
 	| ({
