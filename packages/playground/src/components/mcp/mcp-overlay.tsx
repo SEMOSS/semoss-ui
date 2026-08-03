@@ -322,11 +322,11 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 										}
 										autoFocus
 										enableKnowledgeMCP={
-											root.theme.featureFlags
+											root.getState().theme.featureFlags
 												?.enableKnowledgeMCP
 										}
 										getPlatformUrl={
-											root.theme.featureFlags
+											root.getState().theme.featureFlags
 												?.showPlatformLinks
 												? mcpToPlatformUrl
 												: undefined
@@ -345,11 +345,11 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 										onChange={setToolbox}
 										autoFocus
 										enableKnowledgeMCP={
-											root.theme.featureFlags
+											root.getState().theme.featureFlags
 												?.enableKnowledgeMCP
 										}
 										getPlatformUrl={
-											root.theme.featureFlags
+											root.getState().theme.featureFlags
 												?.showPlatformLinks
 												? mcpToPlatformUrl
 												: undefined

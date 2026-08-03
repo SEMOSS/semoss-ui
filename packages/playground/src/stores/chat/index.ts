@@ -1,3 +1,6 @@
-import { ChatStore } from "./chat.store";
-
-export { ChatStore };
+export {
+	type ChatState,
+	type ChatStore,
+	createChatStore,
+	type OptimisticRoom,
+} from "./chat.store";

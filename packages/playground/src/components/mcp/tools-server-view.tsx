@@ -1,5 +1,5 @@
-import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
+import { useStore } from "zustand";
 import { Label, Textarea } from "@semoss/ui/next";
 import type { ToolStore } from "@/stores";
 
@@ -31,7 +31,8 @@ const formatJson = (raw: unknown): string => {
  * The model provider already executed the tool, so all we have to show is the
  * call's parameters and the raw result payload.
  */
-export const ToolsServerView = observer(({ tool }: ToolsServerViewProps) => {
+export const ToolsServerView = ({ tool }: ToolsServerViewProps) => {
+	const toolStatus = useStore(tool, (s) => s.status);
 	const title = tool.json.title || tool.json.name;
 	const description = tool.json.description;
 	const parametersText = useMemo(
@@ -42,7 +43,7 @@ export const ToolsServerView = observer(({ tool }: ToolsServerViewProps) => {
 		() => formatJson(tool.response),
 		[tool.response],
 	);
-	const hasResponse = tool.status === "SUCCESS" && !!responseText;
+	const hasResponse = toolStatus === "SUCCESS" && !!responseText;
 
 	return (
 		<div className="flex h-full w-full flex-col space-y-4 overflow-auto px-3 py-4 text-foreground">
@@ -82,4 +83,4 @@ export const ToolsServerView = observer(({ tool }: ToolsServerViewProps) => {
 			</div>
 		</div>
 	);
-});
+};

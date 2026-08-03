@@ -1,250 +1,208 @@
-import { action, computed, makeObservable, observable } from "mobx";
+import { createStore } from "zustand/vanilla";
 import type { RoomStore } from "@/stores";
 import type { AbstractPixelMessage, PixelMessage } from "@/types";
 import { normalizeTimestamp } from "@/utility";
+
+export interface BaseMessageState {
+	id: string;
+	position: number;
+	parent: AbstractMessageStore | null;
+	children: AbstractMessageStore[];
+	activeChildPosition: number;
+	tokens: number;
+	modelId: string;
+	modelType: string;
+	ornaments: { modelName?: string };
+}
 
 /**
  * Abstract Message Store
  */
 export abstract class AbstractMessageStore {
-	/**
-	 * Id of the message
-	 */
-	id: string = "";
-
-	/**
-	 * Unique react key for the message. Only should be used to render.
-	 */
+	/** Non-reactive properties */
 	readonly key: string;
+	readonly room: RoomStore;
+	visible: boolean;
+	dateCreated: Date = new Date();
 
-	/**
-	 * Is the message visible to the user
-	 */
-	visible: boolean = false;
-
-	/**
-	 * Store the room
-	 */
-	room: RoomStore = null;
-
-	/**
-	 * Track if it is an root, input, or response message
-	 */
-	abstract type: "ROOT" | "PLAN" | "INPUT" | "OUTPUT";
-
-	/**
-	 * Parent of the message
-	 */
-	parent: AbstractMessageStore = null;
-
-	/**
-	 * Current position of message
-	 */
-	position: number = -1;
-
-	/**
-	 * Children messages
-	 */
-	children: AbstractMessageStore[] = [];
-
-	/**
-	 * Active Child Position
-	 */
-	activeChildPosition: number = -1;
-
-	/**
-	 * Track if it is an root, input, or response message
-	 */
+	abstract readonly type: "ROOT" | "PLAN" | "INPUT" | "OUTPUT";
 	abstract parts: AbstractPixelMessage["parts"];
 
-	/**
-	 * Tokens used in the message, used for cost calculation
-	 */
-	tokens: number = 0;
+	/** Subclasses create the full Zustand store (includes BaseMessageState) */
+	abstract getState(): BaseMessageState;
+	abstract subscribe(
+		listener: (state: BaseMessageState, prev: BaseMessageState) => void,
+	): () => void;
+	abstract getInitialState(): BaseMessageState;
+	abstract _setState(partial: Partial<BaseMessageState>): void;
 
-	/**
-	 * Model Id used for the message
-	 */
-	modelId: string;
-
-	/**
-	 * Model Type used for the message
-	 */
-	modelType: string;
-
-	/**
-	 * Ornaments for the message, used for extra properties that are not essential
-	 */
-	ornaments: {
-		modelName?: string;
-	};
-
-	/**
-	 * Date the message was created
-	 */
-	dateCreated: Date;
-
-	/**
-	 *
-	 * @param room
-	 * @param message
-	 */
 	constructor(room: RoomStore, message: AbstractPixelMessage) {
 		this.room = room;
-
-		// set the key
 		this.key = `room-${room.roomId}-${Date.now()}-${Math.floor(Math.random() * 100000000)}`;
-
-		this.id = message.messageId;
 		this.visible = message.visible;
-		this.tokens = message.tokens;
-		this.modelId = message.modelId;
-		this.modelType = message.modelType;
-		this.ornaments = {
-			modelName: message.ornaments?.modelName,
-		};
-
-		makeObservable(this, {
-			room: observable,
-			id: observable,
-			parent: observable,
-			position: observable,
-			children: observable,
-			activeChildPosition: observable,
-			tokens: observable,
-			modelId: observable,
-			modelType: observable,
-			ornaments: observable,
-			siblings: computed,
-			previousSibling: computed,
-			nextSibling: computed,
-			activeChild: computed,
-			connectParent: action,
-			addChild: action,
-			removeChild: action,
-			activateMessage: action,
-			sync: action,
-		});
 	}
 
-	/**
-	 * Getters
-	 */
+	/** Getters that read from Zustand state */
+	get id() {
+		return this.getState().id;
+	}
 
-	/**
-	 * Check if there are siblings
-	 */
+	set id(value: string) {
+		const oldId = this.getState().id;
+		this._setState({ id: value });
+		this.room.updateMessageId(oldId, value, this);
+	}
+
+	get parent() {
+		return this.getState().parent;
+	}
+
+	get position() {
+		return this.getState().position;
+	}
+
+	set position(value: number) {
+		this._setState({ position: value });
+	}
+
+	get children() {
+		return this.getState().children;
+	}
+
+	get activeChildPosition() {
+		return this.getState().activeChildPosition;
+	}
+
+	get tokens() {
+		return this.getState().tokens;
+	}
+
+	get modelId() {
+		return this.getState().modelId;
+	}
+
+	get modelType() {
+		return this.getState().modelType;
+	}
+
+	get ornaments() {
+		return this.getState().ornaments;
+	}
+
+	/** Computed getters */
 	get siblings() {
-		return this.parent.children;
+		return this.getState().parent?.children ?? [];
 	}
 
-	/**
-	 * Get the previous sibling
-	 */
 	get previousSibling() {
-		const next = this.position - 1;
-		if (next < 0 || this.parent.children.length <= next) {
-			return null;
-		}
-
-		return this.parent.children[next];
+		const idx = this.getState().position - 1;
+		const siblings = this.siblings;
+		if (idx < 0 || idx >= siblings.length) return null;
+		return siblings[idx];
 	}
 
-	/**
-	 * Get the next sibling
-	 */
 	get nextSibling() {
-		const next = this.position + 1;
-		if (next < 0 || this.parent.children.length <= next) {
-			return null;
-		}
-
-		return this.parent.children[next];
+		const idx = this.getState().position + 1;
+		const siblings = this.siblings;
+		if (idx < 0 || idx >= siblings.length) return null;
+		return siblings[idx];
 	}
 
-	/**
-	 * Get the active child
-	 */
 	get activeChild() {
-		return this.children[this.activeChildPosition] || null;
+		const { children, activeChildPosition } = this.getState();
+		return children[activeChildPosition] || null;
 	}
 
 	/** Actions */
-	/**
-	 * Sync store properties from the pixel message
-	 */
 	sync(message: PixelMessage) {
 		this.dateCreated = normalizeTimestamp(message.dateCreated).toDate();
 	}
 
-	/**
-	 * Connect the parent and store the position
-	 */
-	connectParent = (parentMessage: AbstractMessageStore, position: number) => {
-		// store the parent and position
-		this.parent = parentMessage;
-		this.position = position;
+	connectParent = (
+		parentMessage: AbstractMessageStore | null,
+		position: number,
+	) => {
+		this._setState({ parent: parentMessage, position });
 	};
 
-	/**
-	 * Add a child message
-	 */
 	addChild = (message: AbstractMessageStore) => {
-		// store it
-		this.children.push(message);
-
-		// last idx is the position
-		const position = this.children.length - 1;
-
-		// connect the child to the parent
+		const currentChildren = this.getState().children;
+		const newChildren = [...currentChildren, message];
+		this._setState({ children: newChildren });
+		const position = newChildren.length - 1;
 		message.connectParent(this, position);
-
-		// set as the active message
 		message.activateMessage();
+		this.room.notifyHistoryChange();
+		this.room.registerMessage(message);
 	};
 
-	/**
-	 * Remove a child message
-	 */
 	removeChild = (message: AbstractMessageStore) => {
-		if (!message) {
-			return;
-		}
+		if (!message) return;
+		const children = this.getState().children;
+		const index = children.findIndex((child) => child.id === message.id);
+		if (index === -1) return;
 
-		const index = this.children.findIndex(
-			(child) => child.id === message.id,
-		);
-		if (index === -1) {
-			return;
-		}
-
-		// remove the child
-		const [removed] = this.children.splice(index, 1);
-
-		// reset parent linkage on removed child
+		const newChildren = children.filter((_, i) => i !== index);
+		const removed = children[index];
 		if (removed) {
 			removed.connectParent(null, -1);
 		}
 
-		// reindex remaining children
-		this.children.forEach((child, position) => {
-			child.position = position;
+		// reindex remaining
+		newChildren.forEach((child, pos) => {
+			child.position = pos;
 		});
 
-		// update active child position
-		if (this.activeChildPosition === index) {
-			this.activeChildPosition = this.children.length
-				? Math.min(index, this.children.length - 1)
+		const activePos = this.getState().activeChildPosition;
+		let newActivePos: number;
+		if (activePos === index) {
+			newActivePos = newChildren.length
+				? Math.min(index, newChildren.length - 1)
 				: -1;
-		} else if (this.activeChildPosition > index) {
-			this.activeChildPosition -= 1;
+		} else if (activePos > index) {
+			newActivePos = activePos - 1;
+		} else {
+			newActivePos = activePos;
 		}
+
+		this._setState({
+			children: newChildren,
+			activeChildPosition: newActivePos,
+		});
+		this.room.notifyHistoryChange();
 	};
 
-	/**
-	 * Set the current message as active
-	 */
 	activateMessage = () => {
-		this.parent.activeChildPosition = this.position;
+		const { parent, position } = this.getState();
+		if (parent) {
+			parent._setState({ activeChildPosition: position });
+		}
+		this.room.notifyHistoryChange();
 	};
+}
+
+/**
+ * Helper to create the initial BaseMessageState from a pixel message
+ */
+export function makeBaseMessageState(
+	message: AbstractPixelMessage,
+): BaseMessageState {
+	return {
+		id: message.messageId,
+		position: -1,
+		parent: null,
+		children: [],
+		activeChildPosition: -1,
+		tokens: message.tokens,
+		modelId: message.modelId,
+		modelType: message.modelType,
+		ornaments: { modelName: message.ornaments?.modelName },
+	};
+}
+
+/**
+ * Convenience helper for creating a Zustand vanilla store with base state + extra state
+ */
+export function createMessageStore<T extends BaseMessageState>(initial: T) {
+	return createStore<T>()(() => initial);
 }

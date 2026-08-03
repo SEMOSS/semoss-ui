@@ -1,19 +1,14 @@
-import { makeAutoObservable, runInAction } from "mobx";
-import { type Insight, runPixel } from "@semoss/sdk/react";
+import { createStore } from "zustand/vanilla";
+import type { Insight } from "@semoss/sdk/react";
+import { runPixel } from "@semoss/sdk/react";
 import type { ThemeMap } from "@semoss/shared";
 import type { Engine, MCPConfig, Workspace } from "@/types";
 import { RoomStore } from "../room";
 
 const DEFAUlT_MODEL_ID = import.meta.env.VITE_DEFAUlT_MODEL_ID || "";
 const DEFAUlT_MODEL_NAME = import.meta.env.VITE_DEFAUlT_MODEL_NAME || "";
-
 const SESSION_MODEL_KEY = "smss-playground-session-model";
 
-/**
- * Shape of a room row as rendered in the nav list. Matches the columns
- * returned by GetPlaygroundRooms so optimistic rooms can be merged into the
- * fetched list seamlessly.
- */
 export interface OptimisticRoom {
 	ROOM_ID: string;
 	ROOM_NAME: string;
@@ -22,498 +17,41 @@ export interface OptimisticRoom {
 	PINNED?: boolean;
 }
 
-interface ChatStoreInterface {
-	/**
-	 *  Track if the chat is initialized
-	 */
+export interface ChatState {
 	isInitialized: boolean;
-
-	/**
-	 * List of the models available
-	 */
 	models: {
-		/** The current model */
 		selected: Engine;
-
-		/** The current context window */
 		contextWindow?: number;
 	};
-
-	/**
-	 * Engine ID of the model set as default in the user's profile (Settings > My Profile).
-	 * Empty string if no profile default is set.
-	 */
 	profileDefaultModelId: string;
-
-	/**
-	 * Cached rooms
-	 */
 	rooms: Record<string, RoomStore>;
-
-	/**
-	 * Rooms shown in the nav before their first message has persisted.
-	 * GetPlaygroundRooms only returns rooms that already have a message with
-	 * data, so a freshly created room is invisible to the refetch until its
-	 * first response lands. These bridge that gap and are removed once the
-	 * real room shows up in the fetched list. Keyed by room id.
-	 */
 	optimisticRooms: Record<string, OptimisticRoom>;
-
-	/**
-	 * Options related to the navbar
-	 */
-	keys: {
-		/**
-		 * Counter to force re-render of the nav when the rooms change
-		 */
-		roomCounter: number;
-	};
-
-	/**
-	 * Preloaded embedded paths
-	 * path -> url
-	 */
+	keys: { roomCounter: number };
 	embeddedPageMap: Record<
 		string,
 		| ThemeMap["playground"]["sidebar"]["headerItems"][number]
 		| ThemeMap["playground"]["sidebar"]["footerItems"][number]
 	>;
-
-	/**
-	 * Current user info
-	 */
-	user: {
-		id: string;
-		name: string;
-		lastLogin?: string;
-	};
-}
-
-/**
- * Manage the chat
- */
-export class ChatStore {
-	private _theme: ThemeMap["playground"];
-	private _actions: Insight["actions"];
-	private _store: ChatStoreInterface = {
-		isInitialized: false,
-		models: {
-			selected: null as unknown as Engine,
-			contextWindow: undefined,
-		},
-		rooms: {},
-		optimisticRooms: {},
-		keys: {
-			roomCounter: 0,
-		},
-		user: {
-			id: "",
-			name: "",
-		},
-		embeddedPageMap: {},
-		profileDefaultModelId: "",
-	};
-
-	constructor(theme: ThemeMap["playground"], actions: Insight["actions"]) {
-		this._theme = theme;
-		this._actions = actions;
-		this._store.embeddedPageMap = [
-			...theme.sidebar.headerItems,
-			...theme.sidebar.footerItems,
-		]
-			.filter((item) => item.embed && item.url)
-			.reduce(
-				(acc, item) => {
-					acc[item.path] = item;
-					return acc;
-				},
-				{} as Record<
-					string,
-					| ThemeMap["playground"]["sidebar"]["headerItems"][number]
-					| ThemeMap["playground"]["sidebar"]["footerItems"][number]
-				>,
-			);
-
-		// make it observable
-		makeAutoObservable(this);
-	}
-
-	/**
-	 * Getters
-	 */
-	/**
-	 * Track if the store is loaded
-	 */
-	get isInitialized() {
-		return this._store.isInitialized;
-	}
-
-	/**
-	 * Get the models from the store
-	 */
-	get models() {
-		return this._store.models;
-	}
-
-	/**
-	 * Get keys to refresh different objects
-	 */
-	get keys() {
-		return this._store.keys;
-	}
-
-	/**
-	 * Get the current user
-	 */
-	get user() {
-		return this._store.user;
-	}
-
-	/**
-	 * Get the map of preloaded embed paths
-	 */
-	get embeddedPageMap() {
-		return this._store.embeddedPageMap;
-	}
-
-	/**
-	 * Get the engine ID of the user's profile default model
-	 */
-	get profileDefaultModelId() {
-		return this._store.profileDefaultModelId;
-	}
-
-	/**
-	 * Get the rooms optimistically shown in the nav
-	 */
-	get optimisticRooms() {
-		return this._store.optimisticRooms;
-	}
-
-	/**
-	 * Initialize the store
-	 */
-	initialize = async (): Promise<void> => {
-		try {
-			// getUser must complete first so profileDefaultModelId is set
-			// before getDefaultModel runs its model selection logic
-			await this.getUser();
-			await this.getDefaultModel();
-		} catch (e) {
-			console.error(e);
-		} finally {
-			runInAction(() => {
-				this._store.isInitialized = true;
-			});
-		}
-	};
-
-	getUser = async (): Promise<void> => {
-		try {
-			const result = await this._actions.run<
-				[
-					Record<
-						string,
-						{
-							id: string;
-							name: string;
-							lastLogin?: string;
-							meta?: Record<string, unknown>;
-						}
-					>,
-				]
-			>(`META | GetUserInfo();`);
-
-			if (!result) return;
-
-			const providerData = Object.values(result.pixelReturn[0].output)[0];
-			if (!providerData) return;
-
-			runInAction(() => {
-				this._store.user = {
-					id: providerData.id,
-					name: providerData.name,
-					lastLogin: providerData.lastLogin,
-				};
-			});
-
-			// extract the profile default text-generation model set via Settings > My Profile
-			const metaValue = providerData.meta?.["text-generation-model"];
-			const profileDefaultModelId = Array.isArray(metaValue)
-				? (metaValue[0] as string) || ""
-				: typeof metaValue === "string"
-					? metaValue
-					: "";
-
-			runInAction(() => {
-				this._store.profileDefaultModelId = profileDefaultModelId;
-			});
-		} catch (e) {
-			console.error(e);
-		}
-	};
-
-	/**
-	 * Register a pre-created RoomStore in the local cache so it is
-	 * discoverable by loadRoom after navigation.  Used by consumers that
-	 * need a real insight before the first message is sent (e.g. the
-	 * file-explorer on the new-room page).
-	 */
-	registerRoom = (room: RoomStore): void => {
-		runInAction(() => {
-			this._store.rooms[room.roomId] = room;
-		});
-	};
-
-	/**
-	 * Optimistically surface a room in the nav before its first message has
-	 * persisted. Shown until the real room is returned by GetPlaygroundRooms
-	 * (see {@link removeOptimisticRoom}).
-	 */
-	addOptimisticRoom = (room: OptimisticRoom): void => {
-		runInAction(() => {
-			this._store.optimisticRooms[room.ROOM_ID] = room;
-		});
-	};
-
-	/**
-	 * Drop an optimistic room, once the real room has been fetched or its
-	 * first message failed to send.
-	 */
-	removeOptimisticRoom = (roomId: string): void => {
-		runInAction(() => {
-			delete this._store.optimisticRooms[roomId];
-		});
-	};
-
-	/**
-	 * Create a new room
-	 */
-	createRoom = async (
+	user: { id: string; name: string; lastLogin?: string };
+	/** Actions */
+	initialize: () => Promise<void>;
+	registerRoom: (room: RoomStore) => void;
+	addOptimisticRoom: (room: OptimisticRoom) => void;
+	removeOptimisticRoom: (roomId: string) => void;
+	incrementRoomCounter: () => void;
+	createRoom: (
 		mode: "agent" | "chat",
 		prompt: string,
 		files: File[],
 		options: RoomStore["options"],
 		workspaceId?: string,
-	): Promise<RoomStore> => {
-		// create the room in a new insight
-		const { errors, pixelReturn, insightId } = await runPixel<
-			[
-				{
-					roomId: string;
-				},
-			]
-		>(
-			`CreatePlaygroundRoom(${workspaceId ? `workspaceId=${JSON.stringify(workspaceId)}` : ""})`,
-			"new",
-		);
-
-		// throw errors
-		if (errors.length > 0) {
-			throw new Error(errors.join(""));
-		}
-
-		// get the output
-		const { output } = pixelReturn[0];
-
-		// get the new roomId
-		const roomId = output.roomId;
-
-		// create the room store
-		const room = new RoomStore(this._theme, roomId, insightId);
-
-		// set the model
-		room.setModel(this.models.selected);
-
-		// set the mode
-		room.setMode(mode);
-
-		// set default name
-		room.setMetadata({ name: prompt.substring(0, 15) });
-
-		// initialize the room
-		await room.initialize();
-
-		// set the options
-		await room.updateRoomOptions(options);
-
-		runInAction(() => {
-			// save it to the cache
-			this._store.rooms[roomId] = room;
-
-			// optimistically surface the room in the nav — GetPlaygroundRooms
-			// won't return it until its first message has data
-			this._store.optimisticRooms[roomId] = {
-				ROOM_ID: roomId,
-				ROOM_NAME: prompt.substring(0, 100),
-				DATE_CREATED: new Date().toISOString(),
-				WORKSPACE_ID: workspaceId,
-			};
-
-			// increment the roomCounter to force re-render of the nav
-			this._store.keys.roomCounter++;
-		});
-
-		// ask the room — fire-and-forget so we return (and navigate) without
-		// waiting on the response
-		(async () => {
-			try {
-				await room.askMessage(prompt, files);
-				runInAction(() => {
-					// increment the roomCounter to force re-render of the nav
-					this._store.keys.roomCounter++;
-				});
-			} catch {
-				// First message never landed — the room has no data and won't
-				// be returned by the refetch, so drop the optimistic entry.
-				this.removeOptimisticRoom(roomId);
-			}
-		})();
-
-		// return the room
-		return room;
-	};
-
-	/**
-	 * Remove an room from the remove and all of the related messages
-	 * @param roomId - Room to remove
-	 */
-	closeRoom = async (roomId: string): Promise<void> => {
-		const room = this._store.rooms[roomId];
-		const insightId = room?.insightId;
-
-		// wait for the pixel to run
-		await this._actions.run<[boolean]>(
-			`RemoveUserRoom(roomId=["${roomId}"]);`,
-		);
-
-		// only drop if the room was opened and has a real insightId
-		if (insightId && insightId !== "new") {
-			try {
-				await runPixel<[Record<string, unknown>]>(
-					"DropInsight()",
-					insightId,
-				);
-			} catch (e) {
-				console.warn(e);
-			}
-		}
-
-		runInAction(() => {
-			// delete it from the cache
-			delete this._store.rooms[roomId];
-
-			// increment the roomCounter to force re-render of the nav
-			this._store.keys.roomCounter++;
-		});
-	};
-
-	/**
-	 * Rename a room. Runs the RenameRoom pixel, updates the cached
-	 * room's metadata, and bumps the roomCounter so any room lists
-	 * elsewhere in the app (sidebar, chats page, per-agent timeline)
-	 * refetch and stay in sync.
-	 */
-	renameRoom = async (roomId: string, name: string): Promise<void> => {
-		const trimmed = name.trim();
-		if (!trimmed) {
-			throw new Error("Room name cannot be empty");
-		}
-		await this._actions.run<[boolean]>(
-			`META | RenameRoom(roomId=["${roomId}"], name=["<encode>${trimmed}</encode>"]);`,
-		);
-		runInAction(() => {
-			const cached = this._store.rooms[roomId];
-			if (cached) {
-				cached.setMetadata({ name: trimmed });
-			}
-			this._store.keys.roomCounter++;
-		});
-	};
-
-	/**
-	 * Pin or unpin a room. Runs the PinRoom pixel and bumps the
-	 * roomCounter so any room lists elsewhere in the app (sidebar,
-	 * chats page, per-agent timeline) refetch and stay in sync.
-	 */
-	pinRoom = async (roomId: string, pinned: boolean): Promise<void> => {
-		await this._actions.run<[boolean]>(
-			`PinRoom(roomId=["${roomId}"], pinned=[${pinned}]);`,
-		);
-		runInAction(() => {
-			this._store.keys.roomCounter++;
-		});
-	};
-
-	/**
-	 * Load a room from the store or create a new one
-	 * @param roomId - Room to remove
-	 */
-	loadRoom = async (roomId: string): Promise<RoomStore> => {
-		// if it exists in the store utilize it.
-		if (this._store.rooms[roomId]) {
-			return this._store.rooms[roomId];
-		}
-
-		// create the room store
-		const room = new RoomStore(this._theme, roomId);
-
-		// initialize the room
-		await room.initialize();
-
-		// If the room has no messages or just the placeholder, it means it is a valid room but it is empty, so we can consider it as not found and throw an error
-		// This happens if CreateRoom succeeds but the first AskPlayground call fails
-		if (!room.tail || room.tail.id === "ROOT_PLACEHOLDER_ID") {
-			throw new Error("Room not found");
-		}
-
-		runInAction(() => {
-			// save it to the cache
-			this._store.rooms[roomId] = room;
-			// No roomCounter increment here — loading an existing room doesn't
-			// change the list, so there's no reason to trigger a re-fetch.
-		});
-
-		// return the room
-		return room;
-	};
-
-	/**
-	 * Set the selected model
-	 */
-	setSelectedModel = (model: Engine): void => {
-		runInAction(() => {
-			this._store.models.selected = model;
-		});
-
-		sessionStorage.setItem(
-			SESSION_MODEL_KEY,
-			JSON.stringify({ model, lastLogin: this._store.user.lastLogin }),
-		);
-
-		this.loadEngineContextWindow(model.engine_id);
-	};
-
-	private loadEngineContextWindow = async (engineId: string) => {
-		runInAction(() => {
-			this._store.models.contextWindow = undefined;
-		});
-
-		const { pixelReturn } = await this._actions.run<[number | undefined]>(
-			`META | GetContextWindow(${JSON.stringify(engineId)});`,
-		);
-
-		if (this.models.selected?.engine_id === engineId) {
-			runInAction(() => {
-				this._store.models.contextWindow = pixelReturn[0].output;
-			});
-		}
-	};
-
-	/**
-	 * Add a new workspace
-	 */
-	addWorkspace = async (
+	) => Promise<RoomStore>;
+	closeRoom: (roomId: string) => Promise<void>;
+	renameRoom: (roomId: string, name: string) => Promise<void>;
+	pinRoom: (roomId: string, pinned: boolean) => Promise<void>;
+	loadRoom: (roomId: string) => Promise<RoomStore>;
+	setSelectedModel: (model: Engine) => void;
+	addWorkspace: (
 		data: Pick<
 			Workspace,
 			| "name"
@@ -523,26 +61,8 @@ export class ChatStore {
 			| "skills"
 			| "prompts"
 		>,
-	): Promise<string> => {
-		try {
-			const mcp = data.mcp.map(
-				({ name, id, type }): MCPConfig => ({ name, id, type }),
-			);
-			const skills = data.skills.map((s) => s.id);
-
-			const pixel = `AddWorkspace(name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)})`;
-			const { pixelReturn } = await this._actions.run<[string]>(pixel);
-
-			return pixelReturn[0].output;
-		} catch (e) {
-			throw e instanceof Error ? e : new Error(String(e));
-		}
-	};
-
-	/**
-	 * Edit a workspace
-	 */
-	editWorkspace = async (
+	) => Promise<string>;
+	editWorkspace: (
 		workspaceId: string,
 		data: Pick<
 			Workspace,
@@ -553,85 +73,128 @@ export class ChatStore {
 			| "skills"
 			| "prompts"
 		>,
-	): Promise<string> => {
-		try {
-			const mcp = data.mcp.map(
-				({ name, id, type }): MCPConfig => ({ name, id, type }),
-			);
-			const skills = data.skills.map((s) => s.id);
+	) => Promise<string>;
+	deleteWorkspace: (workspaceId: string) => Promise<void>;
+}
 
-			const pixel = `EditWorkspace(workspaceId=${JSON.stringify(workspaceId)}, name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)})`;
-			const { pixelReturn } = await this._actions.run<[string]>(pixel);
-
-			// throw errors
-			if (!pixelReturn[0].output) {
-				throw new Error();
-			}
-
-			return workspaceId;
-		} catch (e) {
-			throw e instanceof Error ? e : new Error(String(e));
-		}
-	};
-
-	deleteWorkspace = async (workspaceId: string) => {
-		try {
-			await this._actions.run(
-				`DeleteWorkspace(workspaceId=['${workspaceId}'])`,
-			);
-
-			return;
-		} catch (e) {
-			console.error(e);
-		}
-	};
-
-	/**
-	 * Helpers
-	 */
-	/**
-	 * Get available models from the backend
-	 */
-	private getDefaultModel = async (): Promise<void> => {
-		const defaultModelId =
-			this._theme.defaultRoomSettings?.model?.engine_id ||
-			DEFAUlT_MODEL_ID;
-		const defaultModelName =
-			this._theme.defaultRoomSettings?.model?.engine_display_name ||
-			this._theme.defaultRoomSettings?.model?.engine_name ||
-			DEFAUlT_MODEL_NAME;
-		// model selection is not enabled, set it to the default
-		if (!this._theme.featureFlags?.enableModelSelect) {
-			this.setSelectedModel({
-				engine_id: defaultModelId,
-				engine_name: defaultModelName,
-				engine_type: "MODEL",
-			});
-			return;
-		}
-
-		const { pixelReturn } = await this._actions.run<[Engine[]]>(
-			`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
+export const createChatStore = (
+	theme: ThemeMap["playground"],
+	actions: Insight["actions"],
+) => {
+	const embeddedPageMap = [
+		...theme.sidebar.headerItems,
+		...theme.sidebar.footerItems,
+	]
+		.filter((item) => item.embed && item.url)
+		.reduce(
+			(acc, item) => {
+				acc[item.path] = item;
+				return acc;
+			},
+			{} as ChatState["embeddedPageMap"],
 		);
 
-		runInAction(() => {
+	const store = createStore<ChatState>()((set, get) => {
+		const getUser = async () => {
+			try {
+				const result = await actions.run<
+					[
+						Record<
+							string,
+							{
+								id: string;
+								name: string;
+								lastLogin?: string;
+								meta?: Record<string, unknown>;
+							}
+						>,
+					]
+				>(`META | GetUserInfo();`);
+				if (!result) return;
+				const providerData = Object.values(
+					result.pixelReturn[0].output,
+				)[0];
+				if (!providerData) return;
+				set({
+					user: {
+						id: providerData.id,
+						name: providerData.name,
+						lastLogin: providerData.lastLogin,
+					},
+				});
+				const metaValue = providerData.meta?.["text-generation-model"];
+				const profileDefaultModelId = Array.isArray(metaValue)
+					? (metaValue[0] as string) || ""
+					: typeof metaValue === "string"
+						? metaValue
+						: "";
+				set({ profileDefaultModelId });
+			} catch (e) {
+				console.error(e);
+			}
+		};
+
+		const loadEngineContextWindow = async (engineId: string) => {
+			set((s) => ({
+				models: { ...s.models, contextWindow: undefined },
+			}));
+			const { pixelReturn } = await actions.run<[number | undefined]>(
+				`META | GetContextWindow(${JSON.stringify(engineId)});`,
+			);
+			if (get().models.selected?.engine_id === engineId) {
+				set((s) => ({
+					models: {
+						...s.models,
+						contextWindow: pixelReturn[0].output,
+					},
+				}));
+			}
+		};
+
+		const setSelectedModel = (model: Engine) => {
+			set((s) => ({ models: { ...s.models, selected: model } }));
+			sessionStorage.setItem(
+				SESSION_MODEL_KEY,
+				JSON.stringify({ model, lastLogin: get().user.lastLogin }),
+			);
+			loadEngineContextWindow(model.engine_id);
+		};
+
+		const getDefaultModel = async () => {
+			const defaultModelId =
+				theme.defaultRoomSettings?.model?.engine_id || DEFAUlT_MODEL_ID;
+			const defaultModelName =
+				theme.defaultRoomSettings?.model?.engine_display_name ||
+				theme.defaultRoomSettings?.model?.engine_name ||
+				DEFAUlT_MODEL_NAME;
+
+			if (!theme.featureFlags?.enableModelSelect) {
+				setSelectedModel({
+					engine_id: defaultModelId,
+					engine_name: defaultModelName,
+					engine_type: "MODEL",
+				});
+				return;
+			}
+
+			const { pixelReturn } = await actions.run<[Engine[]]>(
+				`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
+			);
+
 			const { output } = pixelReturn[0];
-			// profileDefaultModelId is already set by getUser(), which runs before this
-			const profileDefaultModelId = this._store.profileDefaultModelId;
+			const profileDefaultModelId = get().profileDefaultModelId;
 			let isSelected = false;
 
-			// 1. user's profile default — explicitly set by the user, highest personal priority
 			if (profileDefaultModelId) {
 				for (const m of output) {
 					if (m.engine_id === profileDefaultModelId) {
-						this.setSelectedModel(m);
+						setSelectedModel(m);
 						isSelected = true;
 						break;
 					}
 				}
 			}
 
-			// 2. last model selected in this login session (survives refresh, resets on new login)
 			if (!isSelected) {
 				try {
 					const sessionItem =
@@ -642,7 +205,7 @@ export class ChatStore {
 								model: Engine;
 								lastLogin?: string;
 							};
-						const currentLogin = this._store.user.lastLogin;
+						const currentLogin = get().user.lastLogin;
 						if (
 							storedLogin &&
 							currentLogin &&
@@ -650,7 +213,7 @@ export class ChatStore {
 						) {
 							for (const m of output) {
 								if (m.engine_id === sessionModel.engine_id) {
-									this.setSelectedModel(m);
+									setSelectedModel(m);
 									isSelected = true;
 									break;
 								}
@@ -660,21 +223,227 @@ export class ChatStore {
 				} catch {}
 			}
 
-			// 3. theme/admin-suggested default — used as a fallback when the user has no preference
 			if (!isSelected && defaultModelId) {
 				for (const m of output) {
 					if (m.engine_id === defaultModelId) {
-						this.setSelectedModel(m);
+						setSelectedModel(m);
 						isSelected = true;
 						break;
 					}
 				}
 			}
 
-			// 4. first available model
 			if (!isSelected && output.length > 0) {
-				this.setSelectedModel(output[0]);
+				setSelectedModel(output[0]);
 			}
-		});
-	};
-}
+		};
+
+		return {
+			isInitialized: false,
+			models: {
+				selected: null as unknown as Engine,
+				contextWindow: undefined,
+			},
+			profileDefaultModelId: "",
+			rooms: {},
+			optimisticRooms: {},
+			keys: { roomCounter: 0 },
+			embeddedPageMap,
+			user: { id: "", name: "" },
+
+			initialize: async () => {
+				try {
+					await getUser();
+					await getDefaultModel();
+				} catch (e) {
+					console.error(e);
+				} finally {
+					set({ isInitialized: true });
+				}
+			},
+
+			registerRoom: (room: RoomStore) => {
+				set((s) => ({ rooms: { ...s.rooms, [room.roomId]: room } }));
+			},
+
+			addOptimisticRoom: (room: OptimisticRoom) => {
+				set((s) => ({
+					optimisticRooms: {
+						...s.optimisticRooms,
+						[room.ROOM_ID]: room,
+					},
+				}));
+			},
+
+			removeOptimisticRoom: (roomId: string) => {
+				set((s) => {
+					const next = { ...s.optimisticRooms };
+					delete next[roomId];
+					return { optimisticRooms: next };
+				});
+			},
+
+			incrementRoomCounter: () => {
+				set((s) => ({
+					keys: { ...s.keys, roomCounter: s.keys.roomCounter + 1 },
+				}));
+			},
+
+			createRoom: async (mode, prompt, files, options, workspaceId) => {
+				const { errors, pixelReturn, insightId } = await runPixel<
+					[{ roomId: string }]
+				>(
+					`CreatePlaygroundRoom(${workspaceId ? `workspaceId=${JSON.stringify(workspaceId)}` : ""})`,
+					"new",
+				);
+				if (errors.length > 0) throw new Error(errors.join(""));
+				const { output } = pixelReturn[0];
+				const roomId = output.roomId;
+
+				const room = new RoomStore(theme, roomId, insightId);
+				room.setModel(get().models.selected);
+				room.setMode(mode);
+				room.setMetadata({ name: prompt.substring(0, 15) });
+				await room.initialize();
+				await room.updateRoomOptions(options);
+
+				set((s) => ({
+					rooms: { ...s.rooms, [roomId]: room },
+					optimisticRooms: {
+						...s.optimisticRooms,
+						[roomId]: {
+							ROOM_ID: roomId,
+							ROOM_NAME: prompt.substring(0, 100),
+							DATE_CREATED: new Date().toISOString(),
+							WORKSPACE_ID: workspaceId,
+						},
+					},
+					keys: { ...s.keys, roomCounter: s.keys.roomCounter + 1 },
+				}));
+
+				(async () => {
+					try {
+						await room.askMessage(prompt, files);
+						set((s) => ({
+							keys: {
+								...s.keys,
+								roomCounter: s.keys.roomCounter + 1,
+							},
+						}));
+					} catch {
+						get().removeOptimisticRoom(roomId);
+					}
+				})();
+
+				return room;
+			},
+
+			closeRoom: async (roomId: string) => {
+				const room = get().rooms[roomId];
+				const insightId = room?.insightId;
+				await actions.run<[boolean]>(
+					`RemoveUserRoom(roomId=["${roomId}"]);`,
+				);
+				if (insightId && insightId !== "new") {
+					try {
+						await runPixel<[Record<string, unknown>]>(
+							"DropInsight()",
+							insightId,
+						);
+					} catch (e) {
+						console.warn(e);
+					}
+				}
+				set((s) => {
+					const next = { ...s.rooms };
+					delete next[roomId];
+					return {
+						rooms: next,
+						keys: {
+							...s.keys,
+							roomCounter: s.keys.roomCounter + 1,
+						},
+					};
+				});
+			},
+
+			renameRoom: async (roomId: string, name: string) => {
+				const trimmed = name.trim();
+				if (!trimmed) throw new Error("Room name cannot be empty");
+				await actions.run<[boolean]>(
+					`META | RenameRoom(roomId=["${roomId}"], name=["<encode>${trimmed}</encode>"]);`,
+				);
+				const cached = get().rooms[roomId];
+				if (cached) cached.setMetadata({ name: trimmed });
+				set((s) => ({
+					keys: { ...s.keys, roomCounter: s.keys.roomCounter + 1 },
+				}));
+			},
+
+			pinRoom: async (roomId: string, pinned: boolean) => {
+				await actions.run<[boolean]>(
+					`PinRoom(roomId=["${roomId}"], pinned=[${pinned}]);`,
+				);
+				set((s) => ({
+					keys: { ...s.keys, roomCounter: s.keys.roomCounter + 1 },
+				}));
+			},
+
+			loadRoom: async (roomId: string) => {
+				if (get().rooms[roomId]) return get().rooms[roomId];
+				const room = new RoomStore(theme, roomId);
+				await room.initialize();
+				if (!room.tail || room.tail.id === "ROOT_PLACEHOLDER_ID") {
+					throw new Error("Room not found");
+				}
+				set((s) => ({ rooms: { ...s.rooms, [roomId]: room } }));
+				return room;
+			},
+
+			setSelectedModel,
+
+			addWorkspace: async (data) => {
+				try {
+					const mcp = data.mcp.map(
+						({ name, id, type }): MCPConfig => ({ name, id, type }),
+					);
+					const skills = data.skills.map((s) => s.id);
+					const pixel = `AddWorkspace(name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)})`;
+					const { pixelReturn } = await actions.run<[string]>(pixel);
+					return pixelReturn[0].output;
+				} catch (e) {
+					throw e instanceof Error ? e : new Error(String(e));
+				}
+			},
+
+			editWorkspace: async (workspaceId, data) => {
+				try {
+					const mcp = data.mcp.map(
+						({ name, id, type }): MCPConfig => ({ name, id, type }),
+					);
+					const skills = data.skills.map((s) => s.id);
+					const pixel = `EditWorkspace(workspaceId=${JSON.stringify(workspaceId)}, name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)})`;
+					const { pixelReturn } = await actions.run<[string]>(pixel);
+					if (!pixelReturn[0].output) throw new Error();
+					return workspaceId;
+				} catch (e) {
+					throw e instanceof Error ? e : new Error(String(e));
+				}
+			},
+
+			deleteWorkspace: async (workspaceId: string) => {
+				try {
+					await actions.run(
+						`DeleteWorkspace(workspaceId=['${workspaceId}'])`,
+					);
+				} catch (e) {
+					console.error(e);
+				}
+			},
+		};
+	});
+
+	return store;
+};
+
+export type ChatStore = ReturnType<typeof createChatStore>;

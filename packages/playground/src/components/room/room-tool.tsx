@@ -1,4 +1,3 @@
-import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
 import type { FlexLayout } from "@semoss/shared";
 import { ToolsView } from "@/components";
@@ -17,7 +16,7 @@ interface RoomToolProps {
  *
  * @component
  */
-export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
+export const RoomTool: React.FC<RoomToolProps> = ({ node, room }) => {
 	const config: {
 		app: string;
 		message: string;
@@ -40,4 +39,4 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 			toolId={config.toolId}
 		/>
 	);
-});
+};

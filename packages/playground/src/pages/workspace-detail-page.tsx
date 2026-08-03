@@ -10,7 +10,6 @@ import {
 	Trash2Icon,
 	UsersRound,
 } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
@@ -55,7 +54,7 @@ import type { Workspace } from "@/types";
  *   - Continue recent chats: scrollable list with a max height
  *   - Tabs: Knowledge / Toolboxes / Prompts / Members
  */
-export const WorkspaceDetailPage = observer(() => {
+export const WorkspaceDetailPage = () => {
 	const { t } = useTranslation(["workspace", "common"]);
 
 	const { workspaceId } = useParams<{ workspaceId: string }>();
@@ -379,7 +378,9 @@ export const WorkspaceDetailPage = observer(() => {
 								e.stopPropagation();
 								setIsDeleting(true);
 								try {
-									await chat.deleteWorkspace(workspaceId);
+									await chat
+										.getState()
+										.deleteWorkspace(workspaceId);
 									navigate("/agent");
 								} catch (err) {
 									toast.error(
@@ -401,4 +402,4 @@ export const WorkspaceDetailPage = observer(() => {
 			</Dialog>
 		</div>
 	);
-});
+};

@@ -1,3 +1,1 @@
-import { RootStore } from "./root.store";
-
-export { RootStore };
+export { createRootStore, type RootState, type RootStore } from "./root.store";

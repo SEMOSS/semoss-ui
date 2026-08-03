@@ -28,8 +28,7 @@ export interface ToolStreamChunkData {
  * completes replaces the placeholder with the fully-resolved part — same
  * `toolCall.id`, so the existing ToolStore is reused.
  *
- * Callers maintain `indexToToolId` across chunks (per-stream closure) and must
- * already be inside a mobx action.
+ * Callers maintain `indexToToolId` across chunks (per-stream closure).
  */
 export const applyToolStreamChunk = (
 	message: ResponseMessageStore,
@@ -78,7 +77,7 @@ export const applyToolStreamChunk = (
 				},
 			},
 		};
-		message.parts.push(placeholderPart);
+		message.savePart(placeholderPart);
 
 		// ToolStore.syncMessage will store the placeholder as toolCall.part, but
 		// the `json` getter sees the empty title and falls back to `streamingName`

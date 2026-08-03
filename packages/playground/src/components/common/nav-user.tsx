@@ -26,20 +26,20 @@ import {
 	useSidebar,
 	useTheme,
 } from "@semoss/ui/next";
-import { useChat, useRoot } from "@/hooks";
+import { useChatState, useRoot } from "@/hooks";
 import { toInitials } from "@/utility";
 
 export const NavUser = () => {
 	const { t, i18n } = useTranslation("common");
 	const { isMobile } = useSidebar();
 	const { actions } = useInsight();
-	const { chat } = useChat();
+	const chatUser = useChatState((s) => s.user);
 	const { theme, setTheme } = useTheme();
 	const { root } = useRoot();
 
 	const navigate = useNavigate();
 
-	const userName = chat.user.name;
+	const userName = chatUser.name;
 
 	const selectedLanguage = LANGUAGES.find(
 		(lang) => lang.code === i18n.language,
@@ -67,7 +67,7 @@ export const NavUser = () => {
 				align="end"
 				sideOffset={4}
 			>
-				{root.theme.featureFlags?.enableDarkMode && (
+				{root.getState().theme.featureFlags?.enableDarkMode && (
 					<DropdownMenuSub>
 						<DropdownMenuSubTrigger>
 							{theme === "dark" ? (

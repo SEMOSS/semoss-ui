@@ -1,6 +1,6 @@
 import { CheckIcon, CirclePause, HammerIcon, XCircleIcon } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
+import { useStore } from "zustand";
 import { useTranslation } from "@semoss/i18n";
 import { Button, cn, Spinner, useIsMobile } from "@semoss/ui/next";
 import { useLoadingMessage } from "@/hooks";
@@ -116,159 +116,87 @@ interface ResponseMessageToolProps {
 	isLarge?: boolean;
 }
 
-export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
-	({ message, tool, isLarge }) => {
-		const { t } = useTranslation("tool");
-		const { room } = message;
-		const isMobile = useIsMobile();
+export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = ({
+	message,
+	tool,
+	isLarge,
+}) => {
+	const { room } = message;
+	const toolStatus = useStore(tool, (s) => s.status);
+	const toolIsOpen = useStore(tool, (s) => s.isOpen);
+	const toolArgumentsStreaming = useStore(tool, (s) => s.argumentsStreaming);
+	const sidebarIsOpen = useStore(room, (s) => s.sidebar.isOpen);
+	const { t } = useTranslation("tool");
+	const isMobile = useIsMobile();
 
-		const { loadingMessage: toolExecutionMessage } = useLoadingMessage(
-			tool.status === "LOADING",
-			tool.json._meta.SMSS_MCP_UI?.loadingMessage
-				? [tool.json._meta.SMSS_MCP_UI.loadingMessage]
-				: [],
-		);
+	const { loadingMessage: toolExecutionMessage } = useLoadingMessage(
+		toolStatus === "LOADING",
+		tool.json._meta.SMSS_MCP_UI?.loadingMessage
+			? [tool.json._meta.SMSS_MCP_UI.loadingMessage]
+			: [],
+	);
 
-		useEffect(() => {
-			if (
-				!tool.argumentsStreaming &&
-				tool.display !== "hidden" &&
-				tool.json._meta.SMSS_MCP_UI?.autoOpen === true &&
-				!tool.isOpen
-			) {
-				tool.openTool(isMobile ? "inline" : undefined);
-			}
-		}, [
-			tool,
-			tool.argumentsStreaming,
-			tool.json._meta.SMSS_MCP_UI?.autoOpen,
-			isMobile,
-		]);
-
-		// While the tool call is still streaming in, we don't have title/meta/args
-		// yet — delegate to a dedicated placeholder pill that shows a spinner and
-		// optionally expands to preview the accumulating JSON.
-		if (tool.argumentsStreaming) {
-			return <ResponseMessageToolStreaming tool={tool} />;
+	useEffect(() => {
+		if (
+			!toolArgumentsStreaming &&
+			tool.display !== "hidden" &&
+			tool.json._meta.SMSS_MCP_UI?.autoOpen === true &&
+			!toolIsOpen
+		) {
+			tool.openTool(isMobile ? "inline" : undefined);
 		}
+	}, [
+		tool,
+		toolArgumentsStreaming,
+		tool.json._meta.SMSS_MCP_UI?.autoOpen,
+		isMobile,
+	]);
 
-		const isActive =
-			tool.isOpen &&
-			(tool.display === "sidebar" ? room.sidebar.isOpen : true);
+	// While the tool call is still streaming in, we don't have title/meta/args
+	// yet — delegate to a dedicated placeholder pill that shows a spinner and
+	// optionally expands to preview the accumulating JSON.
+	if (toolArgumentsStreaming) {
+		return <ResponseMessageToolStreaming tool={tool} />;
+	}
 
-		const toolState = getToolState(tool, t, toolExecutionMessage);
+	const isActive =
+		toolIsOpen && (tool.display === "sidebar" ? sidebarIsOpen : true);
 
-		// Don't render if hidden
-		if (tool.display === "hidden") {
-			return null;
-		}
+	const toolState = getToolState(tool, t, toolExecutionMessage);
 
-		const handleCancel = (e: React.MouseEvent) => {
-			e.stopPropagation();
-			message.saveToolExecution(tool, "", "cancelled", {});
-			tool.closeTool();
-		};
+	// Don't render if hidden
+	if (tool.display === "hidden") {
+		return null;
+	}
 
-		const handleClick = () => {
-			if (tool.isOpen) {
-				if (tool.display === "inline") {
-					// Clicks when inline should close
-					tool.closeTool();
-				} else {
-					// if it's open in the sidebar, move to front on desktop or switch to inline on mobile
-					tool.openTool(isMobile ? "inline" : "sidebar");
-				}
+	const handleCancel = (e: React.MouseEvent) => {
+		e.stopPropagation();
+		message.saveToolExecution(tool, "", "cancelled", {});
+		tool.closeTool();
+	};
+
+	const handleClick = () => {
+		if (toolIsOpen) {
+			if (tool.display === "inline") {
+				// Clicks when inline should close
+				tool.closeTool();
 			} else {
-				tool.openTool(isMobile ? "inline" : undefined);
+				// if it's open in the sidebar, move to front on desktop or switch to inline on mobile
+				tool.openTool(isMobile ? "inline" : "sidebar");
 			}
-		};
-
-		if (!isLarge) {
-			return (
-				<div
-					className={cn(
-						"flex flex-col rounded-lg border border-border bg-sidebar",
-						isActive && "border-primary",
-					)}
-				>
-					<div className="flex items-center">
-						<button
-							type="button"
-							className={cn(
-								"flex min-w-0 flex-1 items-center gap-3 p-2 text-start",
-								!toolState.actionType && "pe-0",
-							)}
-							onClick={handleClick}
-						>
-							<div className="flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground">
-								{toolState.icon}
-							</div>
-							<div className="-ms-1.5 flex min-w-0 flex-1 items-center gap-2">
-								<span
-									className="truncate text-muted-foreground text-sm"
-									title={tool.json.title}
-								>
-									{tool.json.title}
-								</span>
-								{tool.status === "LOADING" &&
-									toolExecutionMessage && (
-										<span className="shrink-0 text-muted-foreground text-sm italic">
-											{toolExecutionMessage}
-										</span>
-									)}
-								{tool.status === "INITIAL" &&
-									toolState.subtext && (
-										<span className="shrink-0 text-muted-foreground text-sm italic">
-											{toolState.subtext}
-										</span>
-									)}
-							</div>
-						</button>
-
-						{toolState.actionType === "cancel" && (
-							<button
-								type="button"
-								className="flex shrink-0 cursor-pointer items-center self-stretch rounded-e-lg px-4.5 text-muted-foreground text-sm hover:bg-accent"
-								onClick={handleCancel}
-							>
-								{t("actions.cancel")}
-							</button>
-						)}
-						{toolState.actionType === "menu" && (
-							<ResponseMessageToolMenu
-								message={message}
-								tool={tool}
-								isFullButton
-								label={toolState.badge?.text}
-								showCancelInMenu={toolState.showCancelInMenu}
-							/>
-						)}
-					</div>
-
-					{/* MCP UI Area */}
-					{tool.isOpen && tool.display === "inline" && (
-						<div className="p-2 pt-0">
-							<RoomInlineTool
-								room={room}
-								message={message}
-								tool={tool}
-							/>
-						</div>
-					)}
-				</div>
-			);
+		} else {
+			tool.openTool(isMobile ? "inline" : undefined);
 		}
+	};
 
+	if (!isLarge) {
 		return (
 			<div
 				className={cn(
-					"flex flex-col rounded-lg border border-border",
-					toolState.background,
+					"flex flex-col rounded-lg border border-border bg-sidebar",
 					isActive && "border-primary",
-					toolState.showHoverAccent && "hover:bg-accent",
 				)}
 			>
-				{/* Top section: button + actions */}
 				<div className="flex items-center">
 					<button
 						type="button"
@@ -278,48 +206,44 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 						)}
 						onClick={handleClick}
 					>
-						<div
-							className={cn(
-								"flex size-9 shrink-0 items-center justify-center rounded-sm",
-								toolState.iconClassName,
-							)}
-						>
+						<div className="flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground">
 							{toolState.icon}
 						</div>
-						<div className="flex min-w-0 flex-1 flex-col">
+						<div className="-ms-1.5 flex min-w-0 flex-1 items-center gap-2">
 							<span
-								className="truncate font-medium text-foreground text-sm"
+								className="truncate text-muted-foreground text-sm"
 								title={tool.json.title}
 							>
 								{tool.json.title}
 							</span>
-							{toolState.subtext && (
-								<span
-									className="truncate text-muted-foreground text-sm"
-									title={toolState.subtext}
-								>
+							{toolStatus === "LOADING" &&
+								toolExecutionMessage && (
+									<span className="shrink-0 text-muted-foreground text-sm italic">
+										{toolExecutionMessage}
+									</span>
+								)}
+							{toolStatus === "INITIAL" && toolState.subtext && (
+								<span className="shrink-0 text-muted-foreground text-sm italic">
 									{toolState.subtext}
 								</span>
 							)}
 						</div>
 					</button>
 
-					{/* Right-side actions */}
 					{toolState.actionType === "cancel" && (
-						<Button
+						<button
 							type="button"
-							size="sm"
-							variant="secondary"
-							className="me-2 shrink-0"
+							className="flex shrink-0 cursor-pointer items-center self-stretch rounded-e-lg px-4.5 text-muted-foreground text-sm hover:bg-accent"
 							onClick={handleCancel}
 						>
 							{t("actions.cancel")}
-						</Button>
+						</button>
 					)}
 					{toolState.actionType === "menu" && (
 						<ResponseMessageToolMenu
 							message={message}
 							tool={tool}
+							isFullButton
 							label={toolState.badge?.text}
 							showCancelInMenu={toolState.showCancelInMenu}
 						/>
@@ -327,7 +251,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				</div>
 
 				{/* MCP UI Area */}
-				{tool.isOpen && tool.display === "inline" && (
+				{toolIsOpen && tool.display === "inline" && (
 					<div className="p-2 pt-0">
 						<RoomInlineTool
 							room={room}
@@ -338,5 +262,81 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				)}
 			</div>
 		);
-	},
-);
+	}
+
+	return (
+		<div
+			className={cn(
+				"flex flex-col rounded-lg border border-border",
+				toolState.background,
+				isActive && "border-primary",
+				toolState.showHoverAccent && "hover:bg-accent",
+			)}
+		>
+			{/* Top section: button + actions */}
+			<div className="flex items-center">
+				<button
+					type="button"
+					className={cn(
+						"flex min-w-0 flex-1 items-center gap-3 p-2 text-start",
+						!toolState.actionType && "pe-0",
+					)}
+					onClick={handleClick}
+				>
+					<div
+						className={cn(
+							"flex size-9 shrink-0 items-center justify-center rounded-sm",
+							toolState.iconClassName,
+						)}
+					>
+						{toolState.icon}
+					</div>
+					<div className="flex min-w-0 flex-1 flex-col">
+						<span
+							className="truncate font-medium text-foreground text-sm"
+							title={tool.json.title}
+						>
+							{tool.json.title}
+						</span>
+						{toolState.subtext && (
+							<span
+								className="truncate text-muted-foreground text-sm"
+								title={toolState.subtext}
+							>
+								{toolState.subtext}
+							</span>
+						)}
+					</div>
+				</button>
+
+				{/* Right-side actions */}
+				{toolState.actionType === "cancel" && (
+					<Button
+						type="button"
+						size="sm"
+						variant="secondary"
+						className="me-2 shrink-0"
+						onClick={handleCancel}
+					>
+						{t("actions.cancel")}
+					</Button>
+				)}
+				{toolState.actionType === "menu" && (
+					<ResponseMessageToolMenu
+						message={message}
+						tool={tool}
+						label={toolState.badge?.text}
+						showCancelInMenu={toolState.showCancelInMenu}
+					/>
+				)}
+			</div>
+
+			{/* MCP UI Area */}
+			{toolIsOpen && tool.display === "inline" && (
+				<div className="p-2 pt-0">
+					<RoomInlineTool room={room} message={message} tool={tool} />
+				</div>
+			)}
+		</div>
+	);
+};

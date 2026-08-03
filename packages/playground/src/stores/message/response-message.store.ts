@@ -1,10 +1,3 @@
-import {
-	action,
-	computed,
-	makeObservable,
-	observable,
-	runInAction,
-} from "mobx";
 import { download } from "@semoss/sdk/react";
 import {
 	MCP_EXECUTION_AUTO,
@@ -17,71 +10,107 @@ import {
 import type { ToolStore } from "@/stores";
 import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
 import { getToolEngineId } from "@/utility/mcp-utils";
-import { AbstractMessageStore } from "./abstract-message.store";
+import {
+	AbstractMessageStore,
+	type BaseMessageState,
+	createMessageStore,
+	makeBaseMessageState,
+} from "./abstract-message.store";
 import { runAgentMessage } from "./agent-harness";
 import { InputMessageStore } from "./input-message.store";
 import { applyToolStreamChunk } from "./tool-stream";
+
+interface ResponseMessageState extends BaseMessageState {
+	parts: ResponsePixelMessage["parts"];
+	isThinking: boolean;
+	feedback: { rating: boolean; feedbackText: string } | null;
+	isPaused: boolean;
+	conversationCompactedAbove: boolean;
+	isCompacting: boolean;
+	model: { id: string; name: string };
+}
 
 /**
  * Response Message Store
  */
 export class ResponseMessageStore extends AbstractMessageStore {
-	readonly type = "OUTPUT";
+	readonly type = "OUTPUT" as const;
 
-	/**
-	 * Parts associated with the message
-	 */
-	parts: ResponsePixelMessage["parts"] = [];
-
-	/**
-	 *  Track if the message is thinking
-	 */
-	isThinking: boolean = false;
-
-	/**
-	 * Response to an execution
-	 */
+	/** Non-reactive cached reference — no component reads this directly */
 	toolResponseMessage: ResponseMessageStore | null = null;
 
-	/**
-	 * Feedback provided by the user; only applicable to messages provided via the LLM
-	 */
-	feedback: {
-		/** Sentiment */
-		rating: boolean;
+	private _zustand = createMessageStore<ResponseMessageState>({
+		...makeBaseMessageState({
+			messageId: "",
+			visible: false,
+			tokens: 0,
+			modelId: "",
+			modelType: "",
+			ornaments: {},
+		} as ResponsePixelMessage),
+		parts: [],
+		isThinking: false,
+		feedback: null,
+		isPaused: false,
+		conversationCompactedAbove: false,
+		isCompacting: false,
+		model: { id: "", name: "" },
+	});
 
-		/** Comment, unused for now */
-		feedbackText: string;
-	} | null = null;
+	readonly getState = (): ResponseMessageState => this._zustand.getState();
+	readonly subscribe = (
+		listener: (
+			state: ResponseMessageState,
+			prev: ResponseMessageState,
+		) => void,
+	): (() => void) => this._zustand.subscribe(listener);
+	readonly getInitialState = (): ResponseMessageState =>
+		this._zustand.getInitialState();
 
-	/**
-	 * Model information associated with the message
-	 */
-	model: {
-		/** Id of the model */
-		id: string;
-
-		/** Name of the model */
-		name: string;
-	} = {
-		id: "",
-		name: "",
+	_setState = (partial: Partial<ResponseMessageState>) => {
+		this._zustand.setState(partial as Partial<ResponseMessageState>);
 	};
 
-	/**
-	 * Whether the user has indicated to pause running tools
-	 */
-	isPaused: boolean = false;
+	/** Getters */
+	get parts() {
+		return this.getState().parts;
+	}
 
-	/**
-	 * Whether this conversation is compacted above this message
-	 */
-	conversationCompactedAbove: boolean = false;
+	get isThinking() {
+		return this.getState().isThinking;
+	}
 
-	/**
-	 * Whether this message's conversation is currently being compacted
-	 */
-	isCompacting: boolean = false;
+	set isThinking(value: boolean) {
+		this._zustand.setState({ isThinking: value });
+	}
+
+	get feedback() {
+		return this.getState().feedback;
+	}
+
+	set feedback(value: { rating: boolean; feedbackText: string } | null,) {
+		this._zustand.setState({ feedback: value });
+	}
+
+	get isPaused() {
+		return this.getState().isPaused;
+	}
+
+	set isPaused(value: boolean) {
+		this._zustand.setState({ isPaused: value });
+	}
+
+	get conversationCompactedAbove() {
+		return this.getState().conversationCompactedAbove;
+	}
+
+	get isCompacting() {
+		return this.getState().isCompacting;
+	}
+
+	get model() {
+		return this.getState().model;
+	}
 
 	constructor(
 		room: AbstractMessageStore["room"],
@@ -89,48 +118,37 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	) {
 		super(room, message);
 
-		// if prune, compaction happened
-		this.conversationCompactedAbove ||= message.pruneToolsAbove;
-
-		makeObservable(this, {
-			isThinking: observable,
-			parts: observable,
-			feedback: observable,
-			isPaused: observable,
-			conversationCompactedAbove: observable,
-			isCompacting: observable,
-			runMessage: action,
-			savePart: action,
-			recordFeedback: action,
-			rewriteMessage: action,
-			hasUnfinishedTools: computed,
-			hasTools: computed,
-			continueToolExecution: action,
-			saveToolExecution: action,
-			setConversationCompactedAbove: action,
-			setIsCompacting: action,
-			toggleIsPaused: action,
+		const baseState = makeBaseMessageState(message);
+		this._zustand.setState({
+			...baseState,
+			parts: message.parts ?? [],
+			conversationCompactedAbove: message.pruneToolsAbove ?? false,
+			model: {
+				id: message.modelId,
+				name: message.ornaments?.modelName ?? "AI",
+			},
 		});
 
-		// sync the message
 		this.sync(message);
 	}
 
-	/**
-	 * Sync store properties from the pixel message
-	 */
 	sync(message: ResponsePixelMessage) {
 		super.sync(message);
 
-		// set the id
-		this.id = message.messageId;
+		this._zustand.setState({
+			id: message.messageId,
+			parts: message.parts ?? [],
+			tokens: message.tokens,
+			model: {
+				id: message.modelId,
+				name: message.ornaments?.modelName ?? "AI",
+			},
+		});
 
-		// set the parts
-		this.parts = message.parts;
+		if (message.feedback) {
+			this._zustand.setState({ feedback: message.feedback });
+		}
 
-		// sync the tools — server tools (e.g. provider-side web_search) deliver
-		// both the call and result in the same response message, so we sync both
-		// part types here.
 		for (const part of message.parts) {
 			if (part.type === "TOOL_CALL") {
 				this.room.syncTool(part.toolCall.id, this, part);
@@ -138,50 +156,19 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				this.room.syncTool(part.toolResult.toolCallId, this, part);
 			}
 		}
-
-		// set tokens
-		this.tokens = message.tokens;
-
-		// set the model that was used
-		this.model = {
-			id: message.modelId,
-			name: message.ornaments?.modelName || "AI",
-		};
-
-		// set feedback if there
-		if (message.feedback) {
-			this.feedback = {
-				rating: message.feedback.rating,
-				feedbackText: message.feedback.feedbackText,
-			};
-		}
 	}
 
-	/**
-	 * Execute a user message and stream the AI response
-	 *
-	 * Creates a placeholder response message, sends the input to the AI model,
-	 * and streams back the response in real-time. After completion, automatically
-	 * initiates tool execution if the response contains tool calls.
-	 *
-	 * @param inputMessage - The user input message to send to the AI model
-	 * @param existingResponse - Optional pre-created response placeholder already wired into the message tree. When provided, skips creating a new ResponseMessageStore and skips the addChild setup calls, streaming directly into the existing placeholder instead.
-	 * @returns Promise resolving to the pixel response containing input and output messages
-	 */
 	runMessage = async (
 		inputMessage: InputMessageStore,
 		existingResponse?: ResponseMessageStore,
 	) => {
 		const room = this.room;
 
-		// In agent-harness mode the message is run server-side via RunAgent
-		// instead of the streaming AskPlayground flow. See ./agent-harness.
 		if (room.mode === "agent") {
 			await runAgentMessage(this, inputMessage, existingResponse);
 			return;
 		}
 
-		// Create a placeholder response message to show streaming content
 		const responseMessage =
 			existingResponse ??
 			new ResponseMessageStore(room, {
@@ -191,12 +178,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				platform_generated: true,
 				modelId: room.model.engine_id,
 				dateCreated: new Date().toISOString(),
-				parts: [
-					{
-						type: "THINKING",
-						thinking: "",
-					},
-				],
+				parts: [{ type: "THINKING", thinking: "" }],
 				tokens: 0,
 				ornaments: {
 					modelName:
@@ -207,29 +189,20 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			} as ResponsePixelMessage);
 
 		try {
-			// build the context if it is there
 			let context = "";
 			if (room.options?.instructions) {
-				context = room.options?.instructions;
+				context = room.options.instructions;
 			}
 
 			if (!existingResponse) {
-				// connect to the parent
 				this.addChild(inputMessage);
-
-				// Add placeholder as child of input to show streaming text
 				inputMessage.addChild(responseMessage);
 			}
 
-			// turn on thinking
 			responseMessage.isThinking = true;
 
-			// get the text
 			const text = inputMessage.parts.reduce((acc, part) => {
-				if (part.type === "TEXT") {
-					return acc + part.text;
-				}
-
+				if (part.type === "TEXT") return acc + part.text;
 				return acc;
 			}, "");
 
@@ -237,15 +210,11 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				if (part.type === "MEDIA") {
 					acc.push(part.mediaInfo.fileLocation as string);
 				}
-
 				return acc;
 			}, [] as string[]);
 
-			// per-stream map from tool delta `index` → wire `id`, used to associate
-			// arguments/name deltas with the ToolStore created on the opening chunk
 			const toolStreamIndexToId: Record<number, string> = {};
 
-			// wait for the pixel to run with streaming
 			const response = await room.runRoomPixelStreaming<
 				[
 					{
@@ -264,111 +233,102 @@ ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 paramValues=[{}]
 );`,
 				(chunk) => {
-					runInAction(() => {
-						if (chunk.stream_type === "content") {
-							if (chunk.data.content) {
-								responseMessage.savePart({
-									type: "TEXT",
-									text: chunk.data.content,
-									uiText: chunk.data.content,
-								});
-							}
-						} else if (chunk.stream_type === "thinking") {
-							if (chunk.data.thinking) {
-								responseMessage.savePart({
-									type: "THINKING",
-									thinking: chunk.data.thinking,
-								});
-							}
-						} else if (chunk.stream_type === "tool") {
-							applyToolStreamChunk(
-								responseMessage,
-								toolStreamIndexToId,
-								chunk.data,
-							);
-						} else {
-							console.error(`Unknown stream type`, chunk);
+					if (chunk.stream_type === "content") {
+						if (chunk.data.content) {
+							responseMessage.savePart({
+								type: "TEXT",
+								text: chunk.data.content,
+								uiText: chunk.data.content,
+							});
 						}
-					});
+					} else if (chunk.stream_type === "thinking") {
+						if (chunk.data.thinking) {
+							responseMessage.savePart({
+								type: "THINKING",
+								thinking: chunk.data.thinking,
+							});
+						}
+					} else if (chunk.stream_type === "tool") {
+						applyToolStreamChunk(
+							responseMessage,
+							toolStreamIndexToId,
+							chunk.data,
+						);
+					} else {
+						console.error(`Unknown stream type`, chunk);
+					}
 				},
 			);
 
 			const { output } = response.results[0];
-
-			// sync with the results
 			inputMessage.sync(output.inputMessage);
 			responseMessage.sync(output.responseMessage);
-
-			// start running tools if there are any
 			responseMessage.continueToolExecution();
 
 			return response;
 		} catch (e) {
-			// remove message if we failed
 			this.removeChild(inputMessage);
-
 			throw e;
 		} finally {
-			runInAction(() => {
-				// turn off thinking
-				responseMessage.isThinking = false;
-			});
+			responseMessage.isThinking = false;
 		}
 	};
 
-	/**
-	 * Append a message part during streaming
-	 *
-	 * Merges consecutive parts of the same type (TEXT or THINKING) or adds
-	 * a new part if the type differs from the last part.
-	 *
-	 * @param part - The message part to append (TEXT or THINKING)
-	 */
 	savePart = async (part: ResponsePixelMessage["parts"][number]) => {
-		const lastPart = this.parts[this.parts.length - 1];
+		const parts = this.getState().parts;
+		const lastPart = parts[parts.length - 1];
 
 		if (part.type === "TEXT") {
 			if (lastPart?.type === "TEXT") {
-				lastPart.text += part.text;
-				lastPart.uiText += part.uiText;
+				this._zustand.setState({
+					parts: [
+						...parts.slice(0, -1),
+						{
+							...lastPart,
+							text: lastPart.text + part.text,
+							uiText: lastPart.uiText + part.uiText,
+						},
+					],
+				});
 			} else {
-				// delete any existing empty thinking part, as we have new text coming in
 				if (lastPart?.type === "THINKING" && !lastPart.thinking) {
-					this.parts.pop();
+					this._zustand.setState({
+						parts: [...parts.slice(0, -1), part],
+					});
+				} else {
+					this._zustand.setState({ parts: [...parts, part] });
 				}
-				this.parts.push(part);
 			}
 		} else if (part.type === "THINKING") {
 			if (lastPart?.type === "THINKING") {
-				lastPart.thinking += part.thinking;
+				this._zustand.setState({
+					parts: [
+						...parts.slice(0, -1),
+						{
+							...lastPart,
+							thinking: lastPart.thinking + part.thinking,
+						},
+					],
+				});
 			} else {
-				this.parts.push(part);
+				this._zustand.setState({ parts: [...parts, part] });
 			}
 		}
 	};
 
-	/*
-	 * Set whether this conversation is compacted above this message
-	 */
 	setConversationCompactedAbove = (compacted: boolean) => {
-		this.conversationCompactedAbove = compacted;
+		this._zustand.setState({ conversationCompactedAbove: compacted });
 	};
 
-	/*
-	 * Set whether this message's conversation is currently being compacted
-	 */
 	setIsCompacting = (compacting: boolean) => {
-		this.isCompacting = compacting;
+		this._zustand.setState({ isCompacting: compacting });
 	};
 
-	/**
-	 * Toggle the stopped tools flag
-	 */
 	toggleIsPaused = () => {
-		if (!this.isPaused) {
-			this.isPaused = true;
-			// If we are currently running tools, then we want to stop them. So we should mark any loading or initial tools as paused
-			for (const part of this.parts) {
+		const { isPaused, parts } = this.getState();
+		if (!isPaused) {
+			this._zustand.setState({ isPaused: true });
+			for (const part of parts) {
 				if (part.type === "TOOL_CALL") {
 					const tool = this.room.getTool(part.toolCall.id);
 					if (
@@ -386,57 +346,35 @@ paramValues=[{}]
 				}
 			}
 		} else {
-			this.isPaused = false;
+			this._zustand.setState({ isPaused: false });
 		}
 	};
 
-	/**
-	 * Record Feedback
-	 * @param rating
-	 * @param feedbackText
-	 */
 	recordFeedback = async (
 		rating: boolean | null,
 		feedbackText = "",
 	): Promise<void> => {
 		const room = this.room;
-
 		try {
-			// wait for the pixel to run
 			await room.runRoomPixel<[boolean]>(
 				`SubmitLlmFeedback(messageId=${JSON.stringify(this.id)}, feedbackText=${JSON.stringify(feedbackText)}, rating=${JSON.stringify(rating)}, roomId=${JSON.stringify(room.roomId)});`,
 				false,
 			);
-
-			// save the feedback to the message's state
-			runInAction(() => {
-				this.feedback =
-					rating === null
-						? null
-						: {
-								rating,
-								feedbackText,
-							};
-			});
+			this.feedback = rating === null ? null : { rating, feedbackText };
 		} finally {
 			// noop
 		}
 	};
 
-	/**
-	 * Download the response as a Word or PDF document
-	 */
 	downloadResponse = async (format: "word" | "pdf") => {
-		// Extract text from all TEXT parts
-		const text = this.parts
-			.filter((part) => part.type === "TEXT")
+		const text = this.getState()
+			.parts.filter((part) => part.type === "TEXT")
 			.map((part) => part.text)
 			.join("");
 
 		if (!text) throw new Error("No content to download");
 
 		let pixelCommand: string;
-
 		if (format === "word") {
 			pixelCommand = `ToDocx(markdown=["<encode>${text}</encode>"], fileName="${this.room.roomId}");`;
 		} else if (format === "pdf") {
@@ -452,7 +390,6 @@ paramValues=[{}]
 
 		if (resp?.pixelReturn?.[0]) {
 			const { operationType, output } = resp.pixelReturn[0];
-
 			if (operationType?.includes("FILE_DOWNLOAD")) {
 				download(this.room.insightId, output);
 			} else {
@@ -465,27 +402,19 @@ paramValues=[{}]
 		}
 	};
 
-	/**
-	 * Rewrite a message and generate a new sibling
-	 */
 	rewriteMessage = async (): Promise<void> => {
 		const room = this.room;
-
-		// get the parent message
 		const parentMessage = this.parent;
-		if (parentMessage instanceof InputMessageStore === false) {
+		if (!(parentMessage instanceof InputMessageStore)) {
 			throw new Error("Can only rewrite response to user messages");
 		}
-
-		// get the grand parent message
 		const grandParentMessage = parentMessage.parent;
-		if (grandParentMessage instanceof ResponseMessageStore === false) {
+		if (!(grandParentMessage instanceof ResponseMessageStore)) {
 			throw new Error(
 				"Can only rewrite if the parent is a response message",
 			);
 		}
 
-		// create a new input message
 		const rewrittenMessage = new InputMessageStore(room, {
 			io: "INPUT",
 			type: "INPUT_TEXT",
@@ -506,50 +435,33 @@ paramValues=[{}]
 			pruneToolsAbove: false,
 		});
 
-		// Update room options with current modelId before running message
 		await room.updateRoomOptions(room.options);
-
 		grandParentMessage.runMessage(rewrittenMessage);
 	};
 
-	/**
-	 * Execution
-	 */
-	/**
-	 * Whether this response includes any tool calls, finished or not
-	 */
 	get hasTools() {
-		return this.parts.some((part) => part.type === "TOOL_CALL");
+		return this.getState().parts.some((part) => part.type === "TOOL_CALL");
 	}
 
-	/**
-	 * Check if there are any unfinished tools
-	 */
 	get hasUnfinishedTools() {
-		for (const part of this.parts) {
+		for (const part of this.getState().parts) {
 			if (part.type === "TOOL_CALL") {
 				const tool = this.room.getTool(part.toolCall.id);
-				if (tool) {
-					if (
-						tool.status === "LOADING" ||
-						tool.status === "INITIAL"
-					) {
-						return true;
-					}
+				if (
+					tool &&
+					(tool.status === "LOADING" || tool.status === "INITIAL")
+				) {
+					return true;
 				}
 			}
 		}
 		return false;
 	}
 
-	/**
-	 * Run tools associated with the message
-	 */
 	continueToolExecution = () => {
-		// Find the tools that can be run
-		let numRunningTools: number = 0;
+		let numRunningTools = 0;
 		const toolsToRun: ToolStore[] = [];
-		for (const part of this.parts) {
+		for (const part of this.getState().parts) {
 			if (part.type === "TOOL_CALL") {
 				const tool = this.room.getTool(part.toolCall.id);
 				if (tool.json._meta.SMSS_MCP_EXECUTION === MCP_EXECUTION_AUTO) {
@@ -562,7 +474,6 @@ paramValues=[{}]
 			}
 		}
 
-		// Check how many tools can be run. If toolLimit is false-y, then limit to 5
 		const toolLimit = this.room.theme.toolAutoExecutionLimit || 5;
 		const numToolsToRun = toolLimit - numRunningTools;
 		if (numToolsToRun > 0) {
@@ -572,21 +483,16 @@ paramValues=[{}]
 		}
 	};
 
-	/**
-	 * Run a tool
-	 */
 	private runToolExecution = async (tool: ToolStore): Promise<void> => {
 		if (
 			!tool ||
 			tool.status !== "INITIAL" ||
 			tool.json._meta.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO
 		) {
-			// skip
 			return;
 		}
 
 		if (this.isPaused) {
-			// If the user has indicated to pause running tools, mark this tool as cancelled and save the response without running the tool
 			await this.saveToolExecution(
 				tool,
 				"",
@@ -597,17 +503,13 @@ paramValues=[{}]
 			return;
 		}
 
-		// mark as loading
-		runInAction(() => {
-			tool.status = "LOADING";
-		});
+		tool.status = "LOADING";
 
 		try {
 			let output = "";
 			let toolError = false;
 
 			try {
-				// wait for the pixel to run
 				const response = await this.room.runRoomPixel<[unknown]>(
 					`RunMCPTool(project = [ "${getToolEngineId(tool.json._meta)}" ], roomId=${JSON.stringify(this.room.roomId)}, function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
 					false,
@@ -620,12 +522,10 @@ paramValues=[{}]
 						? rawOutput
 						: JSON.stringify(rawOutput);
 			} catch (e) {
-				// If RunMCPTool fails, we want to save the error message as the tool response, and set the tool status to error
 				output = (e as Error).message;
 				toolError = true;
 			}
 
-			// save the response
 			await this.saveToolExecution(
 				tool,
 				output,
@@ -633,16 +533,10 @@ paramValues=[{}]
 				tool.parameters,
 			);
 		} catch {
-			// Error in AddPlaygroundToolExecution handled by saveToolExecution, which will set the tool status to error and save the error response
+			// Error handled by saveToolExecution
 		}
 	};
 
-	/**
-	 * Save a tool execution response
-	 * @param tool - tool to save
-	 * @param toolResponse - response of the tool
-	 * @param toolStatus - status of the tool
-	 */
 	saveToolExecution = async (
 		tool: ToolStore,
 		toolResponse: string,
@@ -652,7 +546,6 @@ paramValues=[{}]
 	): Promise<void> => {
 		const room = this.room;
 
-		// wrap the message
 		if (toolStatus === "error") {
 			toolResponse = `${errorDuringSaving ? TOOL_OUTPUT_UNREADABLE_PROMPT : TOOL_ERROR_PROMPT}${toolResponse ? `\n\nError Details: ${toolResponse}` : ""}`;
 		} else if (toolStatus === "cancelled") {
@@ -661,42 +554,31 @@ paramValues=[{}]
 			toolResponse = `${TOOL_PAUSE_PROMPT}${toolResponse ? `\n\nDetails: ${toolResponse}` : ""}`;
 		}
 
-		// skip if the tool is already completed
 		if (
 			tool.status === "SUCCESS" ||
 			tool.status === "CANCELLED" ||
 			tool.status === "PAUSED" ||
 			tool.status === "ERROR"
 		) {
-			// this must be an outdated call, skip
 			return;
 		}
 
-		// save the response
-		runInAction(() => {
-			tool.response = toolResponse;
-			tool.parameters = executedParameters;
-			if (toolStatus === "success") {
-				tool.status = "SUCCESS";
-			} else if (toolStatus === "cancelled") {
-				tool.status = "CANCELLED";
-			} else if (toolStatus === "error") {
-				tool.status = "ERROR";
-			} else if (toolStatus === "paused") {
-				tool.status = "PAUSED";
-			}
-		});
+		tool.response = toolResponse;
+		tool.parameters = executedParameters;
+		if (toolStatus === "success") {
+			tool.status = "SUCCESS";
+		} else if (toolStatus === "cancelled") {
+			tool.status = "CANCELLED";
+		} else if (toolStatus === "error") {
+			tool.status = "ERROR";
+		} else if (toolStatus === "paused") {
+			tool.status = "PAUSED";
+		}
 
-		// Sync room options after any "ask" tool completes so anything the tool
-		// changed shows up in the MCP indicator and is available to the next
-		// AskPlayground call, without a full page refresh. A tool that writes tool
-		// definitions into the room folder surfaces here too, since the backend
-		// reports the room's own toolbox alongside the configured ones.
 		if (toolStatus === "success" || toolStatus === "cancelled") {
 			await room.syncRoomOptions();
 		}
 
-		// if there is no responseMessage create it. This will hold it.
 		let responseMessage = this.toolResponseMessage;
 		if (!responseMessage) {
 			this.toolResponseMessage = new ResponseMessageStore(room, {
@@ -706,17 +588,9 @@ paramValues=[{}]
 				platform_generated: true,
 				modelId: this.room.model.app_id,
 				dateCreated: new Date().toISOString(),
-				// Add blank thinking part for loading if this is the last tool
-				// We've already updated this tool's status optimistically, so can check
-				// hasUnfinishedTools to see if it was the last tool
 				parts: this.hasUnfinishedTools
 					? []
-					: [
-							{
-								type: "THINKING",
-								thinking: "",
-							},
-						],
+					: [{ type: "THINKING", thinking: "" }],
 				tokens: 0,
 				ornaments: {
 					modelName:
@@ -724,29 +598,21 @@ paramValues=[{}]
 				},
 			} as ResponsePixelMessage);
 
-			// add as a child
 			this.addChild(this.toolResponseMessage);
-
-			// save it
 			responseMessage = this.toolResponseMessage;
 		}
 
-		type PartialResponse = {
-			responseMessage: string;
-		};
+		type PartialResponse = { responseMessage: string };
 		type TotalResponse = {
 			responseMessage: ResponsePixelMessage;
 			inputMessage: InputPixelMessage;
 		};
 
 		try {
-			// turn on thinking
 			responseMessage.isThinking = true;
 
-			// per-stream map from tool delta `index` → wire `id` for the post-exec stream
 			const toolStreamIndexToId: Record<number, string> = {};
 
-			// wait for the pixel to run
 			const response = await room.runRoomPixelStreaming<
 				[PartialResponse | TotalResponse]
 			>(
@@ -762,82 +628,58 @@ mcpToolStatus=${JSON.stringify(toolStatus)},
 toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 );`,
 				(chunk) => {
-					runInAction(() => {
-						if (chunk.stream_type === "content") {
-							if (chunk.data.content) {
-								responseMessage.savePart({
-									type: "TEXT",
-									text: chunk.data.content,
-									uiText: chunk.data.content,
-								});
-							}
-						} else if (chunk.stream_type === "thinking") {
-							if (chunk.data.thinking) {
-								responseMessage.savePart({
-									type: "THINKING",
-									thinking: chunk.data.thinking,
-								});
-							}
-						} else if (chunk.stream_type === "tool") {
-							applyToolStreamChunk(
-								responseMessage,
-								toolStreamIndexToId,
-								chunk.data,
-							);
-						} else {
-							console.error(`Unknown stream type`, chunk);
+					if (chunk.stream_type === "content") {
+						if (chunk.data.content) {
+							responseMessage.savePart({
+								type: "TEXT",
+								text: chunk.data.content,
+								uiText: chunk.data.content,
+							});
 						}
-					});
+					} else if (chunk.stream_type === "thinking") {
+						if (chunk.data.thinking) {
+							responseMessage.savePart({
+								type: "THINKING",
+								thinking: chunk.data.thinking,
+							});
+						}
+					} else if (chunk.stream_type === "tool") {
+						applyToolStreamChunk(
+							responseMessage,
+							toolStreamIndexToId,
+							chunk.data,
+						);
+					} else {
+						console.error(`Unknown stream type`, chunk);
+					}
 				},
 				true,
-				toolStatus !== "success", // If the tool execution succeeds but saving it failed, we will try to save it again with an error status, so dont error the room yet
+				toolStatus !== "success",
 			);
 
 			const { output } = response.results[0];
 
-			// If the output is a string (as opposed to a tool response message), continue tool execution. Otherwise, create the response message
 			if (
 				typeof output === "string" ||
 				typeof output.responseMessage === "string"
 			) {
-				// Keep executing tools
 				this.continueToolExecution();
 			} else {
 				const inputMessage = (output as TotalResponse).inputMessage;
-
-				// create the response and link to the message
 				responseMessage.sync(output.responseMessage);
 
-				// We don't create INPUT_TOOL_EXEC messages, so stamp the server's cumulative
-				// input token count onto this response message as a proxy. tokensUsed() in
-				// room.store relies on finding a (cumulative, incremental) pair when walking back.
-				runInAction(() => {
-					this.tokens = inputMessage.tokens;
-				});
+				this._zustand.setState({ tokens: inputMessage.tokens });
 
-				// edge case handling: it's possible that the user paused tools while this tool was running
-				// mark the new response as paused if that is the case
 				if (this.isPaused) {
-					runInAction(() => {
-						responseMessage.isPaused = true;
-					});
+					responseMessage.isPaused = true;
 				}
 
-				// start running tools if there are any
 				responseMessage.continueToolExecution();
-
-				// clear it
 				this.toolResponseMessage = null;
 			}
 		} catch (e) {
 			if (toolStatus === "success") {
-				// Attempt to save the error response
-
-				// set status back to loading so that the error response can be saved
-				runInAction(() => {
-					tool.status = "LOADING";
-				});
-
+				tool.status = "LOADING";
 				await this.saveToolExecution(
 					tool,
 					`Failed to save tool response: ${e}`,
@@ -846,35 +688,24 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 					true,
 				);
 			} else {
-				// set error status
-				runInAction(() => {
-					tool.status = "ERROR";
-				});
-
-				// remove as a child
+				tool.status = "ERROR";
 				this.removeChild(responseMessage);
-
-				// clear it
 				this.toolResponseMessage = null;
 			}
-
 			throw e;
 		} finally {
-			// turn off thinking unless there are other tools still running
 			let hasOtherRunningTools = false;
-			for (const part of this.parts) {
+			for (const part of this.getState().parts) {
 				if (part.type === "TOOL_CALL") {
-					const tool = this.room.getTool(part.toolCall.id);
-					if (tool && tool.status === "LOADING") {
+					const t = this.room.getTool(part.toolCall.id);
+					if (t && t.status === "LOADING") {
 						hasOtherRunningTools = true;
 						break;
 					}
 				}
 			}
 			if (!hasOtherRunningTools) {
-				runInAction(() => {
-					responseMessage.isThinking = false;
-				});
+				responseMessage.isThinking = false;
 			}
 		}
 	};

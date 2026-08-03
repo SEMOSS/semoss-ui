@@ -29,8 +29,8 @@ export const ErrorPage = ({ isInnerComponent = false }: ErrorPageProps) => {
 			window.matchMedia("(prefers-color-scheme: dark)").matches);
 
 	const src = isDark
-		? root.theme.images.errorDark || backgroundDark
-		: root.theme.images.error || background;
+		? root.getState().theme.images.errorDark || backgroundDark
+		: root.getState().theme.images.error || background;
 
 	const content = (
 		<div className="max-w-md p-8 text-center">

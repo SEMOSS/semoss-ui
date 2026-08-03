@@ -5,8 +5,8 @@ import {
 	Settings2Icon,
 	TriangleAlertIcon,
 } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import React, { useCallback, useEffect, useState } from "react";
+import { useStore } from "zustand";
 import { useTranslation } from "@semoss/i18n";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
@@ -28,7 +28,7 @@ import {
 	RoomInputMenuMCP,
 	RoomInputMenuUpload,
 } from "@/components";
-import { useChat, useGracefulErrors } from "@/hooks";
+import { useChat, useChatState, useGracefulErrors } from "@/hooks";
 import { ResponseMessageStore, type RoomStore } from "@/stores";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomSuggestions } from "./room-suggestions";
@@ -44,8 +44,13 @@ interface RoomContentProps {
 /**
  * The page for a room
  */
-export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
+export const RoomContent: React.FC<RoomContentProps> = ({ room }) => {
 	const { chat } = useChat();
+	const isLoading = useStore(room, (s) => s.isLoading);
+	const error = useStore(room, (s) => s.error);
+	const history = room.history;
+	const roomOptions = useStore(room, (s) => s.options);
+	const contextWindow = useChatState((s) => s.models.contextWindow);
 	const { t } = useTranslation("room");
 	const { getGracefulErrorMessage } = useGracefulErrors();
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
@@ -60,7 +65,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	 */
 	const handlePrompt = async (prompt: string, files: File[]) => {
 		// update the options
-		await room.updateRoomOptions(room.options);
+		await room.updateRoomOptions(roomOptions);
 
 		// ask the room
 		await room.askMessage(prompt, files);
@@ -217,7 +222,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		});
 	}, [scrollEle]);
 
-	const isAnyMessageStreaming = room.history.some(
+	const isAnyMessageStreaming = history.some(
 		(msg) => msg instanceof ResponseMessageStore && msg.isThinking,
 	);
 
@@ -360,7 +365,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	})();
 
 	const showLoadingState =
-		room.isLoading ||
+		isLoading ||
 		room.latestResponseMessage.isThinking ||
 		isAutoExecutingTools;
 
@@ -380,7 +385,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						}}
 					>
 						<div className="mx-auto flex w-full max-w-[1120px] flex-col gap-2 px-4 py-6 sm:px-8 lg:px-16">
-							{room.history.map((m) => {
+							{history.map((m) => {
 								if (!m.visible) {
 									return null;
 								}
@@ -433,14 +438,12 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 								<RoomSuggestions room={room} />
 							)}
 						</div>
-						{room.error ? (
+						{error ? (
 							<div className="mx-auto flex w-full max-w-[1120px] items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
 								<div className="flex h-10 w-10 items-center justify-center rounded-full">
 									<TriangleAlertIcon className="h-6 w-6" />
 								</div>
-								<span>
-									{getGracefulErrorMessage(room.error)}
-								</span>
+								<span>{getGracefulErrorMessage(error)}</span>
 							</div>
 						) : null}
 					</div>
@@ -492,7 +495,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			</div>
 			<div className="mx-auto flex w-full max-w-[1120px] shrink-0 flex-col px-4 py-4 sm:px-8 lg:px-16">
 				<RoomInput
-					predefinedPrompts={room.options.predefinedPrompts}
+					predefinedPrompts={roomOptions.predefinedPrompts}
 					className="max-h-56 min-h-24"
 					isLoading={showLoadingState}
 					hidePauseButton={!room.numberOfTools}
@@ -500,72 +503,68 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					room={room}
 					setModel={(model) => {
 						room.setModel(model);
-						chat.setSelectedModel(model);
+						chat.getState().setSelectedModel(model);
 					}}
-					options={room.options}
+					options={roomOptions}
 					onMcpChange={(mcp) =>
 						room.setOptions({
-							...room.options,
+							...roomOptions,
 							mcp,
 						})
 					}
-					MenuComponent={observer(
-						({ onOpenChange, onOpenMcpOverlay }) => (
-							<>
-								<RoomInputMenuUpload
-									onSelect={() => onOpenChange(false)}
-								/>
-								<DropdownMenuSeparator />
-								<RoomInputMenuMCP
-									type="KNOWLEDGE"
-									options={room.options}
-									onSelect={() => {
-										onOpenMcpOverlay("KNOWLEDGE");
-										onOpenChange(false);
-									}}
-								/>
-								<RoomInputMenuMCP
-									type="TOOLBOX"
-									options={room.options}
-									onSelect={() => {
-										onOpenMcpOverlay("TOOLBOX");
-										onOpenChange(false);
-									}}
-								/>
-								<DropdownMenuSeparator />
-								<RoomInputMenuFileExplorer
-									room={room}
-									onSelect={() => onOpenChange(false)}
-								/>
-								{room.theme.featureFlags?.showActivityLog !==
-									false && (
-									<DropdownMenuItem
-										onSelect={(e) => {
-											e.preventDefault();
-											handleOpenActivityLog();
-											onOpenChange(false);
-										}}
-									>
-										<ScrollTextIcon />
-										<span className="flex-1">
-											Activity Log
-										</span>
-									</DropdownMenuItem>
-								)}
+					MenuComponent={({ onOpenChange, onOpenMcpOverlay }) => (
+						<>
+							<RoomInputMenuUpload
+								onSelect={() => onOpenChange(false)}
+							/>
+							<DropdownMenuSeparator />
+							<RoomInputMenuMCP
+								type="KNOWLEDGE"
+								options={roomOptions}
+								onSelect={() => {
+									onOpenMcpOverlay("KNOWLEDGE");
+									onOpenChange(false);
+								}}
+							/>
+							<RoomInputMenuMCP
+								type="TOOLBOX"
+								options={roomOptions}
+								onSelect={() => {
+									onOpenMcpOverlay("TOOLBOX");
+									onOpenChange(false);
+								}}
+							/>
+							<DropdownMenuSeparator />
+							<RoomInputMenuFileExplorer
+								room={room}
+								onSelect={() => onOpenChange(false)}
+							/>
+							{room.theme.featureFlags?.showActivityLog !==
+								false && (
 								<DropdownMenuItem
 									onSelect={(e) => {
 										e.preventDefault();
-										handleOpenSettings();
+										handleOpenActivityLog();
 										onOpenChange(false);
 									}}
 								>
-									<Settings2Icon />
-									<span className="flex-1">
-										{t("settings.edit")}
-									</span>
+									<ScrollTextIcon />
+									<span className="flex-1">Activity Log</span>
 								</DropdownMenuItem>
-							</>
-						),
+							)}
+							<DropdownMenuItem
+								onSelect={(e) => {
+									e.preventDefault();
+									handleOpenSettings();
+									onOpenChange(false);
+								}}
+							>
+								<Settings2Icon />
+								<span className="flex-1">
+									{t("settings.edit")}
+								</span>
+							</DropdownMenuItem>
+						</>
 					)}
 					onPrompt={handlePrompt}
 					hasOutstandingTools={
@@ -576,7 +575,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						room.latestResponseMessage.toggleIsPaused
 					}
 					tokensUsed={room.tokensUsed}
-					tokensMax={chat.models.contextWindow}
+					tokensMax={contextWindow}
 					totalTokens={room.totalTokensConsumed}
 					onCompact={handleCompactMessages}
 					onOpenSettings={handleOpenSettings}
@@ -585,4 +584,4 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			</div>
 		</div>
 	);
-});
+};

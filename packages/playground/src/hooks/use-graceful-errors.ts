@@ -29,7 +29,7 @@ export const useGracefulErrors = (
 	const { t } = useTranslation("chat", translationOptions);
 	const { root } = useRoot();
 
-	const gracefulErrors = root.theme.gracefulErrors;
+	const gracefulErrors = root.getState().theme.gracefulErrors;
 
 	/**
 	 * Transforms an error into a user-friendly, localized message.

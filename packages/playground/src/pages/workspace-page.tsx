@@ -1,5 +1,4 @@
 import { SearchIcon } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
@@ -27,7 +26,7 @@ import type { App } from "@/types";
  *
  * @component
  */
-export const WorkspacePage = observer(() => {
+export const WorkspacePage = () => {
 	const { t } = useTranslation(["workspace", "notifications", "common"]);
 	const navigate = useNavigate();
 	const { root } = useRoot();
@@ -90,8 +89,8 @@ export const WorkspacePage = observer(() => {
 			window.matchMedia("(prefers-color-scheme: dark)").matches);
 
 	const src = isDark
-		? root.theme.images.workspaceDark || workspaceImageDark
-		: root.theme.images.workspace || workspaceImage;
+		? root.getState().theme.images.workspaceDark || workspaceImageDark
+		: root.getState().theme.images.workspace || workspaceImage;
 
 	return (
 		<div
@@ -169,9 +168,9 @@ export const WorkspacePage = observer(() => {
 									dateCreated={w.project_date_created}
 									onDeleteClick={async () => {
 										try {
-											await chat.deleteWorkspace(
-												w.project_id,
-											);
+											await chat
+												.getState()
+												.deleteWorkspace(w.project_id);
 
 											getWorkspaces.reset();
 										} catch (e) {
@@ -199,4 +198,4 @@ export const WorkspacePage = observer(() => {
 			</div>
 		</div>
 	);
-});
+};

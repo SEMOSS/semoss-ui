@@ -163,7 +163,7 @@ export const WorkspaceChatList = ({
 		setDeletedSet((prev) => new Set([...prev, roomId]));
 
 		try {
-			await chat.closeRoom(roomId);
+			await chat.getState().closeRoom(roomId);
 			toast.success(t("chat.deleteSuccess"));
 			setPendingDelete(null);
 			getWorkspaceRooms.reset();
@@ -227,7 +227,7 @@ export const WorkspaceChatList = ({
 		}
 		setIsRenaming(true);
 		try {
-			await chat.renameRoom(editingId, trimmed);
+			await chat.getState().renameRoom(editingId, trimmed);
 			toast.success(t("chat.renameSuccess"));
 			setRenamedMap((prev) => ({ ...prev, [editingId]: trimmed }));
 			setEditingId(null);

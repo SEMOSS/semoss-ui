@@ -1,353 +1,215 @@
-import { configure, makeAutoObservable } from "mobx";
 import type React from "react";
+import { createStore } from "zustand/vanilla";
 import type { ThemeMap } from "@semoss/shared";
-
-configure({
-	enforceActions: "always",
-});
 
 const NAME = import.meta.env.VITE_NAME || "";
 const THEME = import.meta.env.VITE_THEME || "{}";
 
-interface RootStoreInterface {
-	/**
-	 * Track if the store is initialized
-	 */
+const DEFAULT_THEME: ThemeMap["playground"] = {
+	name: "",
+	banner: "",
+	description: "",
+	variables: { backgroundColor: "", primaryColor: "", secondaryColor: "" },
+	images: {
+		app: "",
+		logo: "",
+		login: "",
+		landing: "",
+		tabIcon: "",
+		workspace: "",
+		loginDark: "",
+		landingDark: "",
+		workspaceDark: "",
+		error: "",
+		errorDark: "",
+	},
+	overrides: { "main-layout": {} },
+	footer: "",
+	landing: "",
+	altLandingKey: "",
+	altLanding: "",
+	sidebar: {
+		expandedByDefault: false,
+		chatHistoryDate: false,
+		headerItems: [],
+		footerItems: [],
+	},
+	dialog: undefined,
+	toolAutoExecutionLimit: null,
+	defaultRoomSettings: { model: undefined },
+	allowedFileTypes: [],
+	allowedUrlPrefixes: [],
+	defaultTools: [],
+	gracefulErrors: [],
+	featureFlags: {
+		enableModelSelect: true,
+		enableAgent: true,
+		enableSuggestions: false,
+		enableAgentHarness: false,
+		enableRewrite: true,
+		enablePromptOptimizer: true,
+		enableDarkMode: true,
+		hideToolsInIframe: false,
+		enableKnowledgeMCP: true,
+		allowEmbeddingOptions: true,
+		showKnowledgeMenu: true,
+		showToolboxMenu: true,
+		showActivityLog: true,
+		showPlatformLinks: true,
+		enableFeedbackText: true,
+	},
+};
+
+export interface RootState {
 	isInitialized: boolean;
-
-	/**
-	 * Current theme setting
-	 */
 	theme: ThemeMap["playground"];
-
-	/**
-	 * Custom breadcrumbs for the main layout
-	 */
-	breadcrumbs: {
-		name: string;
-		path: string;
-	}[];
-
-	/**
-	 * Optional right-side actions to render in the main layout header
-	 */
-	navbarActions?: React.ReactNode | null;
+	breadcrumbs: { name: string; path: string }[];
+	navbarActions: React.ReactNode | null;
+	/** Actions */
+	initialize: (theme: Partial<ThemeMap["playground"]>) => Promise<void>;
+	setBreadcrumbs: (breadcrumbs: { name: string; path: string }[]) => void;
+	clearBreadcrumbs: () => void;
+	setNavbarActions: (actions: React.ReactNode | null) => void;
+	clearNavbarActions: () => void;
 }
 
-/**
- * Manage global application state including theme
- */
-export class RootStore {
-	private _store: RootStoreInterface = {
+function applyThemeToDom(theme: ThemeMap["playground"]) {
+	const root = document.documentElement;
+	if (theme.variables.backgroundColor) {
+		root.style.setProperty("--background", theme.variables.backgroundColor);
+	}
+	if (theme.variables.primaryColor) {
+		root.style.setProperty("--primary", theme.variables.primaryColor);
+	}
+	if (theme.variables.secondaryColor) {
+		root.style.setProperty("--secondary", theme.variables.secondaryColor);
+	}
+}
+
+function mergeTheme(
+	current: ThemeMap["playground"],
+	incoming: Partial<ThemeMap["playground"]> = {},
+): ThemeMap["playground"] {
+	const legacy = (incoming ?? {}) as Record<string, unknown>;
+	const resolvedFeatureFlags = {
+		...current.featureFlags,
+		...(legacy.hideToolsInIframe !== undefined
+			? { hideToolsInIframe: legacy.hideToolsInIframe as boolean }
+			: {}),
+		...(legacy.enableKnowledgeMCP !== undefined
+			? { enableKnowledgeMCP: legacy.enableKnowledgeMCP as boolean }
+			: {}),
+		...(legacy.allowEmbeddingOptions !== undefined
+			? { allowEmbeddingOptions: legacy.allowEmbeddingOptions as boolean }
+			: {}),
+		...(legacy.showKnowledgeMenu !== undefined
+			? { showKnowledgeMenu: legacy.showKnowledgeMenu as boolean }
+			: {}),
+		...(legacy.showToolboxMenu !== undefined
+			? { showToolboxMenu: legacy.showToolboxMenu as boolean }
+			: {}),
+		...(legacy.showPlatformLinks !== undefined
+			? { showPlatformLinks: legacy.showPlatformLinks as boolean }
+			: {}),
+		...(incoming?.featureFlags || {}),
+	};
+
+	return {
+		...current,
+		name: incoming?.name || current.name,
+		banner: incoming?.banner || current.banner,
+		description: incoming?.description || current.description,
+		fileDragDisclaimer:
+			incoming?.fileDragDisclaimer ?? current.fileDragDisclaimer,
+		variables: { ...current.variables, ...(incoming?.variables || {}) },
+		images: { ...current.images, ...(incoming?.images || {}) },
+		overrides: { ...current.overrides, ...(incoming?.overrides || {}) },
+		footer: incoming?.footer || current.footer,
+		landing: incoming?.landing || current.landing,
+		altLandingKey: incoming?.altLandingKey || current.altLandingKey,
+		altLanding: incoming?.altLanding || current.altLanding,
+		sidebar: {
+			...current.sidebar,
+			...(incoming?.sidebar || {}),
+			expandedByDefault:
+				incoming?.sidebar?.expandedByDefault !== undefined
+					? incoming.sidebar.expandedByDefault
+					: current.sidebar.expandedByDefault,
+			chatHistoryDate:
+				incoming?.sidebar?.chatHistoryDate !== undefined
+					? incoming.sidebar.chatHistoryDate
+					: current.sidebar.chatHistoryDate,
+			headerItems: [
+				...current.sidebar.headerItems,
+				...(incoming?.sidebar?.headerItems || []),
+			],
+			footerItems: [
+				...current.sidebar.footerItems,
+				...(incoming?.sidebar?.footerItems || []),
+			],
+		},
+		dialog: incoming?.dialog || current.dialog,
+		defaultRoomSettings: {
+			...current.defaultRoomSettings,
+			...(incoming?.defaultRoomSettings || {}),
+		},
+		toolAutoExecutionLimit:
+			incoming?.toolAutoExecutionLimit || current.toolAutoExecutionLimit,
+		allowedFileTypes:
+			incoming?.allowedFileTypes || current.allowedFileTypes || [],
+		allowedUrlPrefixes:
+			incoming?.allowedUrlPrefixes || current.allowedUrlPrefixes,
+		defaultEmbedderId:
+			incoming?.defaultEmbedderId || current.defaultEmbedderId,
+		defaultTools: [
+			...new Map(
+				[
+					...current.defaultTools,
+					...(incoming?.defaultTools || []),
+				].map((tool) => [tool.id, tool]),
+			).values(),
+		],
+		gracefulErrors: [
+			...current.gracefulErrors,
+			...(incoming?.gracefulErrors || []),
+		],
+		tour: incoming?.tour || current.tour,
+		featureFlags: resolvedFeatureFlags,
+	};
+}
+
+function buildInitialTheme(): ThemeMap["playground"] {
+	let theme = { ...DEFAULT_THEME };
+	if (NAME) theme.name = NAME;
+	try {
+		const parsed = JSON.parse(THEME);
+		const env = (parsed?.playground || parsed) as Partial<
+			ThemeMap["playground"]
+		>;
+		theme = mergeTheme(theme, env);
+	} catch {
+		// noop
+	}
+	return theme;
+}
+
+export const createRootStore = () =>
+	createStore<RootState>()((set, get) => ({
 		isInitialized: false,
+		theme: buildInitialTheme(),
 		breadcrumbs: [],
 		navbarActions: null,
-		theme: {
-			name: "",
-			banner: "",
-			description: "",
-			variables: {
-				backgroundColor: "",
-				primaryColor: "",
-				secondaryColor: "",
-			},
-			images: {
-				app: "",
-				logo: "",
-				login: "",
-				landing: "",
-				tabIcon: "",
-				workspace: "",
-				loginDark: "",
-				landingDark: "",
-				workspaceDark: "",
-				error: "",
-				errorDark: "",
-			},
-			overrides: {
-				"main-layout": {},
-			},
-			footer: "",
-			landing: "",
-			altLandingKey: "",
-			altLanding: "",
-			sidebar: {
-				expandedByDefault: false,
-				chatHistoryDate: false,
-				headerItems: [],
-				footerItems: [],
-			},
-			dialog: undefined,
-			toolAutoExecutionLimit: null,
-			defaultRoomSettings: {
-				model: undefined,
-			},
-			allowedFileTypes: [],
-			allowedUrlPrefixes: [],
-			defaultTools: [],
-			gracefulErrors: [],
-			featureFlags: {
-				// These will be the defaults, used when the user has no theme
-				enableModelSelect: true,
-				enableAgent: true,
-				enableSuggestions: false,
-				enableAgentHarness: false,
-				enableRewrite: true,
-				enablePromptOptimizer: true,
-				enableDarkMode: true,
-				hideToolsInIframe: false,
-				enableKnowledgeMCP: true,
-				allowEmbeddingOptions: true,
-				showKnowledgeMenu: true,
-				showToolboxMenu: true,
-				showActivityLog: true,
-				showPlatformLinks: true,
-				enableFeedbackText: true,
-			},
+
+		initialize: async (incoming: Partial<ThemeMap["playground"]>) => {
+			const newTheme = mergeTheme(get().theme, incoming);
+			applyThemeToDom(newTheme);
+			set({ theme: newTheme, isInitialized: true });
 		},
-	};
 
-	constructor() {
-		// If parsing fails, fall back to environment variables only
-		if (NAME) {
-			this._store.theme.name = NAME;
-		}
+		setBreadcrumbs: (breadcrumbs) => set({ breadcrumbs }),
+		clearBreadcrumbs: () => set({ breadcrumbs: [] }),
+		setNavbarActions: (navbarActions) => set({ navbarActions }),
+		clearNavbarActions: () => set({ navbarActions: null }),
+	}));
 
-		// merge with the environment variables
-		try {
-			const parsed = JSON.parse(THEME);
-			// Support both wrapped ({ playground: {...} }) and flat formats
-			const theme = (parsed?.playground || parsed) as Partial<
-				ThemeMap["playground"]
-			>;
-
-			// update the theme
-			this.updateTheme(theme);
-		} catch (_e) {
-			// noop
-		}
-
-		// make it observable
-		makeAutoObservable(this);
-	}
-
-	/**
-	 * Getters
-	 */
-	/**
-	 * Track if the store is loaded
-	 */
-	get isInitialized() {
-		return this._store.isInitialized;
-	}
-
-	/**
-	 * Get the current theme
-	 */
-	get theme() {
-		return this._store.theme;
-	}
-
-	/**
-	 * Get the current breadcrumbs
-	 */
-	get breadcrumbs() {
-		return this._store.breadcrumbs;
-	}
-
-	/**
-	 * Get the current navbar actions
-	 */
-	get navbarActions() {
-		return this._store.navbarActions;
-	}
-
-	/**
-	 * Set custom breadcrumbs
-	 */
-	setBreadcrumbs = (breadcrumbs: RootStore["breadcrumbs"]) => {
-		this._store.breadcrumbs = breadcrumbs;
-	};
-
-	/**
-	 * Clear breadcrumbs (use default route-based breadcrumbs)
-	 */
-	clearBreadcrumbs = () => {
-		this._store.breadcrumbs = [];
-	};
-
-	/**
-	 * Set right-side navbar actions
-	 */
-	setNavbarActions = (actions: React.ReactNode | null) => {
-		this._store.navbarActions = actions;
-	};
-
-	/**
-	 * Clear right-side navbar actions
-	 */
-	clearNavbarActions = () => {
-		this._store.navbarActions = null;
-	};
-
-	/**
-	 * Set the default theme
-	 */
-	initialize = async (
-		theme: Partial<ThemeMap["playground"]>,
-	): Promise<void> => {
-		this.updateTheme(theme);
-
-		// set as initialized
-		this._store.isInitialized = true;
-	};
-
-	/**
-	 * Helpers
-	 */
-
-	/**
-	 * Update the theme
-	 * @param theme Theme
-	 */
-	private updateTheme = (theme: Partial<ThemeMap["playground"]> = {}) => {
-		// Resolve featureFlags before building the merged theme. Several flags
-		// were historically stored as top-level keys on the theme object; new
-		// themes should put them inside featureFlags instead. Top-level values
-		// are treated as migration fallbacks so old stored themes continue to
-		// work — explicit featureFlags always wins over the promoted top-level value.
-		//
-		// The cast to `legacy` suppresses @deprecated hints: reading these fields
-		// here is intentional — it's the one place responsible for the migration.
-		const legacy = (theme ?? {}) as Record<string, unknown>;
-		const resolvedFeatureFlags = {
-			...this._store.theme.featureFlags,
-			// Migrate top-level booleans for old stored themes
-			...(legacy.hideToolsInIframe !== undefined
-				? { hideToolsInIframe: legacy.hideToolsInIframe as boolean }
-				: {}),
-			...(legacy.enableKnowledgeMCP !== undefined
-				? { enableKnowledgeMCP: legacy.enableKnowledgeMCP as boolean }
-				: {}),
-			...(legacy.allowEmbeddingOptions !== undefined
-				? {
-						allowEmbeddingOptions:
-							legacy.allowEmbeddingOptions as boolean,
-					}
-				: {}),
-			...(legacy.showKnowledgeMenu !== undefined
-				? { showKnowledgeMenu: legacy.showKnowledgeMenu as boolean }
-				: {}),
-			...(legacy.showToolboxMenu !== undefined
-				? { showToolboxMenu: legacy.showToolboxMenu as boolean }
-				: {}),
-			...(legacy.showPlatformLinks !== undefined
-				? { showPlatformLinks: legacy.showPlatformLinks as boolean }
-				: {}),
-			// Explicit featureFlags take precedence over everything above
-			...(theme?.featureFlags || {}),
-		};
-
-		// deep merge from the environment
-		this._store.theme = {
-			...this._store.theme,
-			name: theme?.name || this._store.theme.name,
-			banner: theme?.banner || this._store.theme.banner,
-			description: theme?.description || this._store.theme.description,
-			fileDragDisclaimer:
-				theme?.fileDragDisclaimer ??
-				this._store.theme.fileDragDisclaimer,
-			variables: {
-				...this._store.theme.variables,
-				...(theme?.variables || {}),
-			},
-			images: {
-				...this._store.theme.images,
-				...(theme?.images || {}),
-			},
-			overrides: {
-				...this._store.theme.overrides,
-				...(theme?.overrides || {}),
-			},
-			footer: theme?.footer || this._store.theme.footer,
-			landing: theme?.landing || this._store.theme.landing,
-			altLandingKey:
-				theme?.altLandingKey || this._store.theme.altLandingKey,
-			altLanding: theme?.altLanding || this._store.theme.altLanding,
-			sidebar: {
-				...this._store.theme.sidebar,
-				...(theme?.sidebar || {}),
-				expandedByDefault:
-					theme?.sidebar?.expandedByDefault !== undefined
-						? theme.sidebar.expandedByDefault
-						: this._store.theme.sidebar.expandedByDefault,
-				chatHistoryDate:
-					theme?.sidebar?.chatHistoryDate !== undefined
-						? theme.sidebar.chatHistoryDate
-						: this._store.theme.sidebar.chatHistoryDate,
-				headerItems: [
-					...this._store.theme.sidebar.headerItems,
-					...(theme?.sidebar?.headerItems || []),
-				],
-				footerItems: [
-					...this._store.theme.sidebar.footerItems,
-					...(theme?.sidebar?.footerItems || []),
-				],
-			},
-			dialog: theme?.dialog || this._store.theme.dialog,
-			defaultRoomSettings: {
-				...this._store.theme.defaultRoomSettings,
-				...(theme?.defaultRoomSettings || {}),
-			},
-			toolAutoExecutionLimit:
-				theme?.toolAutoExecutionLimit ||
-				this._store.theme.toolAutoExecutionLimit,
-			allowedFileTypes:
-				theme?.allowedFileTypes ||
-				this._store.theme.allowedFileTypes ||
-				[],
-			allowedUrlPrefixes:
-				theme?.allowedUrlPrefixes ||
-				this._store.theme.allowedUrlPrefixes,
-			defaultEmbedderId:
-				theme?.defaultEmbedderId || this._store.theme.defaultEmbedderId,
-			defaultTools: [
-				...new Map(
-					[
-						...this._store.theme.defaultTools,
-						...(theme?.defaultTools || []),
-					].map((tool) => [tool.id, tool]),
-				).values(),
-			],
-			gracefulErrors: [
-				...this._store.theme.gracefulErrors,
-				...(theme?.gracefulErrors || []),
-			],
-			tour: theme?.tour || this._store.theme.tour,
-			featureFlags: resolvedFeatureFlags,
-		};
-
-		// apply the theme to document root
-		const root = document.documentElement;
-		if (this._store.theme.variables.backgroundColor) {
-			root.style.setProperty(
-				"--background",
-				this._store.theme.variables.backgroundColor,
-			);
-		}
-
-		if (this._store.theme.variables.primaryColor) {
-			root.style.setProperty(
-				"--primary",
-				this._store.theme.variables.primaryColor,
-			);
-		}
-
-		if (this._store.theme.variables.secondaryColor) {
-			root.style.setProperty(
-				"--secondary",
-				this._store.theme.variables.secondaryColor,
-			);
-		}
-	};
-}
+export type RootStore = ReturnType<typeof createRootStore>;

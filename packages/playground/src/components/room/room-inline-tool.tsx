@@ -4,7 +4,7 @@ import {
 	TvMinimalIcon,
 	XIcon,
 } from "lucide-react";
-import { observer } from "mobx-react-lite";
+import { useStore } from "zustand";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
@@ -28,8 +28,12 @@ interface RoomInlineToolProps {
 	tool: ToolStore;
 }
 
-export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
-	({ room, message, tool }) => {
+export const RoomInlineTool: React.FC<RoomInlineToolProps> = ({
+	room,
+	message,
+	tool,
+}) => {
+        const msgId = useStore(message, (s) => s.id);
 		const { t } = useTranslation("room");
 
 		return (
@@ -123,12 +127,11 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 						<ToolsView
 							room={room}
 							app={getToolAppId(tool.json._meta)}
-							message={message.id}
+							message={msgId}
 							toolId={tool.json.id}
 						/>
 					</div>
 				</div>
 			</div>
 		);
-	},
-);
+	};

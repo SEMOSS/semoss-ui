@@ -13,7 +13,6 @@ import {
 	FolderPlusIcon,
 	MessageSquarePlusIcon,
 } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
@@ -165,7 +164,7 @@ const getMimeType = (name: string): string => {
 /**
  * Knowledge detail page
  */
-export const KnowledgeDetailPage = observer(() => {
+export const KnowledgeDetailPage = () => {
 	const { t } = useTranslation(["knowledge", "common"]);
 	const navigate = useNavigate();
 	const { knowledgeId } = useParams<{ knowledgeId: string }>();
@@ -971,4 +970,4 @@ export const KnowledgeDetailPage = observer(() => {
 			</div>
 		</div>
 	);
-});
+};

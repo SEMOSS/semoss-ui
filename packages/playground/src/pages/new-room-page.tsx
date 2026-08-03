@@ -5,10 +5,9 @@ import {
 	Settings2Icon,
 	XIcon,
 } from "lucide-react";
-import { runInAction } from "mobx";
-import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useStore } from "zustand";
 import { useTranslation } from "@semoss/i18n";
 import { InsightProvider, usePixel } from "@semoss/sdk/react";
 import {
@@ -38,7 +37,7 @@ import {
 } from "@/components";
 import { RoomOptionsForm } from "@/components/room/room-options-form";
 import { FileDragProvider } from "@/contexts";
-import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
+import { useChat, useChatState, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { RoomStore } from "@/stores";
 import type { MCPConfig, Prompt, Workspace } from "@/types";
 
@@ -47,7 +46,7 @@ import type { MCPConfig, Prompt, Workspace } from "@/types";
  *
  * @component
  */
-export const NewRoomPage = observer(() => {
+export const NewRoomPage = () => {
 	const { t } = useTranslation(["room", "workspace", "common", "chat"]);
 	const { root } = useRoot();
 	const { theme: colorMode } = useTheme();
@@ -58,8 +57,8 @@ export const NewRoomPage = observer(() => {
 			window.matchMedia("(prefers-color-scheme: dark)").matches);
 
 	const landingSrc = isDark
-		? root.theme.images.landingDark || landingDarkImage
-		: root.theme.images.landing || landingImage;
+		? root.getState().theme.images.landingDark || landingDarkImage
+		: root.getState().theme.images.landing || landingImage;
 	useGlobalBreadcrumbs({
 		breadcrumbs: [
 			{
@@ -70,6 +69,8 @@ export const NewRoomPage = observer(() => {
 	});
 
 	const { chat } = useChat();
+	const chatModels = useChatState((s) => s.models);
+	const chatKeys = useChatState((s) => s.keys);
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
 	const initialPrompt = searchParams.get("prompt") ?? "";
@@ -83,16 +84,19 @@ export const NewRoomPage = observer(() => {
 	// Create a temporary RoomStore instance to handle options mutations
 	// This prevents re-renders on tool selection since MobX handles the mutations
 	const tempRoomStore = useMemo(
-		() => new RoomStore(root.theme, "temp"),
-		[root.theme],
+		() => new RoomStore(root.getState().theme, "temp"),
+		[root.getState().theme],
 	);
+	const tempRoomOptions = useStore(tempRoomStore, (s) => s.options);
 	const bannerRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		if (!bannerRef.current) return;
 		// The url stripping here is primarily due to a BE theme bug where single quote apostrophes get serial added when saving
 		const urls =
-			(root.theme.banner ?? "").match(/https?:\/\/[^\s'"<>]+/g) ?? [];
+			(root.getState().theme.banner ?? "").match(
+				/https?:\/\/[^\s'"<>]+/g,
+			) ?? [];
 		bannerRef.current
 			.querySelectorAll("a")
 			.forEach((a: HTMLAnchorElement, i: number) => {
@@ -100,20 +104,34 @@ export const NewRoomPage = observer(() => {
 				a.rel = "noopener noreferrer";
 				if (urls[i]) a.setAttribute("href", urls[i]);
 			});
-	}, [root.theme.banner]);
+	}, [root.getState().theme.banner]);
 
 	const [isLoading, setIsLoading] = useState(false);
 	const [isConfigurationOpen, setIsConfgurationOpen] = useState(false);
 	const [preCreatedRoom, setPreCreatedRoom] = useState<RoomStore | null>(
 		null,
 	);
+	const [preCreatedRoomSidebarIsOpen, setPreCreatedRoomSidebarIsOpen] =
+		useState(false);
+	useEffect(() => {
+		if (!preCreatedRoom) {
+			setPreCreatedRoomSidebarIsOpen(false);
+			return;
+		}
+		setPreCreatedRoomSidebarIsOpen(
+			preCreatedRoom.getState().sidebar.isOpen,
+		);
+		return preCreatedRoom.subscribe((s) =>
+			setPreCreatedRoomSidebarIsOpen(s.sidebar.isOpen),
+		);
+	}, [preCreatedRoom]);
 	const submittedRef = useRef(false);
 	const [mode, setMode] = useState<"chat" | "agent" | "workspace">("chat");
 	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
 	const [prompts, setPrompts] = useState<string[]>([]);
 	const previewPrompts = useMemo(
-		() => tempRoomStore.options.predefinedPrompts.slice(0, 5),
-		[tempRoomStore.options.predefinedPrompts],
+		() => tempRoomOptions.predefinedPrompts.slice(0, 5),
+		[tempRoomOptions.predefinedPrompts],
 	);
 
 	const getWorkspace = usePixel<Workspace | null>(
@@ -152,11 +170,11 @@ export const NewRoomPage = observer(() => {
 	useEffect(() => {
 		tempRoomStore.setOptions({
 			instructions: "",
-			mcp: [...(root.theme.defaultTools || [])],
+			mcp: [...(root.getState().theme.defaultTools || [])],
 			workspace: undefined,
 			predefinedPrompts: [],
 		});
-	}, [tempRoomStore, root.theme]);
+	}, [tempRoomStore, root.getState().theme]);
 
 	/**
 	 * Create a new room and ask the model
@@ -175,8 +193,8 @@ export const NewRoomPage = observer(() => {
 			setIsLoading(true);
 
 			const options = {
-				...tempRoomStore.options,
-				mcp: tempRoomStore.options.mcp,
+				...tempRoomOptions,
+				mcp: tempRoomOptions.mcp,
 				// Persist the agent harness selection so the room stays in agent
 				// mode across reloads.
 				harnessType: mode === "agent" ? "semoss" : undefined,
@@ -200,7 +218,7 @@ export const NewRoomPage = observer(() => {
 				await preCreatedRoom.updateRoomOptions(options);
 				// Optimistically surface the room in the nav — GetPlaygroundRooms
 				// won't return it until its first message has data.
-				chat.addOptimisticRoom({
+				chat.getState().addOptimisticRoom({
 					ROOM_ID: preCreatedRoom.roomId,
 					ROOM_NAME: prompt.substring(0, 100),
 					DATE_CREATED: new Date().toISOString(),
@@ -210,24 +228,26 @@ export const NewRoomPage = observer(() => {
 				(async () => {
 					try {
 						await preCreatedRoom.askMessage(prompt, files);
-						runInAction(() => {
-							chat.keys.roomCounter++;
-						});
+						chatKeys.roomCounter++;
 					} catch {
-						chat.removeOptimisticRoom(preCreatedRoom.roomId);
+						chat.getState().removeOptimisticRoom(
+							preCreatedRoom.roomId,
+						);
 					}
 				})();
 				submittedRef.current = true;
 				navigate(`/room/${preCreatedRoom.roomId}`);
 			} else {
 				// Standard flow — create room and send first message together.
-				const room = await chat.createRoom(
-					mode === "agent" ? "agent" : "chat",
-					prompt,
-					files,
-					options,
-					getWorkspace.data?.workspace_id,
-				);
+				const room = await chat
+					.getState()
+					.createRoom(
+						mode === "agent" ? "agent" : "chat",
+						prompt,
+						files,
+						options,
+						getWorkspace.data?.workspace_id,
+					);
 				submittedRef.current = true;
 				navigate(`/room/${room.roomId}`);
 			}
@@ -280,7 +300,7 @@ export const NewRoomPage = observer(() => {
 		}));
 
 		// Preserve existing tools that are not from workspace
-		const nonWorkspaceMCPs = tempRoomStore.options.mcp.filter(
+		const nonWorkspaceMCPs = tempRoomOptions.mcp.filter(
 			(mcp) => !mcp.fromWorkspace,
 		);
 
@@ -302,10 +322,10 @@ export const NewRoomPage = observer(() => {
 				: [],
 		);
 		tempRoomStore.setOptions({
-			...tempRoomStore.options,
+			...tempRoomOptions,
 			instructions:
 				getWorkspace.data?.system_prompt ||
-				tempRoomStore.options.instructions,
+				tempRoomOptions.instructions,
 			mcp: Array.from(mcpMap.values()),
 			workspace: {
 				workspace_id: getWorkspace.data.workspace_id,
@@ -326,7 +346,7 @@ export const NewRoomPage = observer(() => {
 
 		// Add the knowledge MCP to options using the temporary RoomStore
 		// Check if this knowledge MCP already exists
-		const existingMcp = tempRoomStore.options.mcp.find(
+		const existingMcp = tempRoomOptions.mcp.find(
 			(mcp) => mcp.id === knowledgeId && mcp.type === "VECTOR",
 		);
 
@@ -346,8 +366,8 @@ export const NewRoomPage = observer(() => {
 		};
 
 		tempRoomStore.setOptions({
-			...tempRoomStore.options,
-			mcp: [...tempRoomStore.options.mcp, knowledgeMcp],
+			...tempRoomOptions,
+			mcp: [...tempRoomOptions.mcp, knowledgeMcp],
 		});
 	}, [knowledgeId, getKnowledge.status, getKnowledge.data, tempRoomStore]);
 
@@ -372,7 +392,7 @@ export const NewRoomPage = observer(() => {
 		}));
 
 		tempRoomStore.setOptions({
-			...tempRoomStore.options,
+			...tempRoomOptions,
 			predefinedPrompts: prompts,
 		});
 	}, [getPrompts.status, getPrompts.data, tempRoomStore]);
@@ -381,38 +401,40 @@ export const NewRoomPage = observer(() => {
 	useEffect(() => {
 		if (mode !== "workspace") {
 			tempRoomStore.setOptions({
-				...tempRoomStore.options,
+				...tempRoomOptions,
 				instructions: "",
-				mcp: [...(root.theme.defaultTools || [])], // Remove workspace MCPs
+				mcp: [...(root.getState().theme.defaultTools || [])], // Remove workspace MCPs
 			});
 		}
-	}, [mode, root.theme.defaultTools, tempRoomStore]);
+	}, [mode, root.getState().theme.defaultTools, tempRoomStore]);
 
 	// Close the configuration panel when the file-explorer sidebar opens.
 	useEffect(() => {
-		if (preCreatedRoom?.sidebar.isOpen) {
+		if (preCreatedRoomSidebarIsOpen) {
 			setIsConfgurationOpen(false);
 		}
-	}, [preCreatedRoom?.sidebar.isOpen]);
+	}, [preCreatedRoomSidebarIsOpen]);
 
 	// Discard a pre-created room if the user navigates away without submitting.
 	useEffect(() => {
 		return () => {
 			if (preCreatedRoom && !submittedRef.current) {
 				// Fire-and-forget server-side cleanup.
-				chat.closeRoom(preCreatedRoom.roomId);
+				chat.getState().closeRoom(preCreatedRoom.roomId);
 			}
 		};
 	}, [preCreatedRoom, chat]);
 
 	return (
 		<div className="flex h-full w-full flex-col overflow-hidden">
-			{root.theme.banner ? (
+			{root.getState().theme.banner ? (
 				<div
 					ref={bannerRef}
 					className="w-full shrink-0 bg-primary px-4 py-2 text-center text-sm text-white opacity-80 [&_a]:underline"
 					// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
-					dangerouslySetInnerHTML={{ __html: root.theme.banner }}
+					dangerouslySetInnerHTML={{
+						__html: root.getState().theme.banner,
+					}}
 				/>
 			) : null}
 			<ResizablePanelGroup direction="horizontal" className="flex-1">
@@ -426,51 +448,58 @@ export const NewRoomPage = observer(() => {
 						/>
 						<div className="flex h-full flex-col items-center justify-center overflow-auto p-2">
 							<div className="z-10 mx-auto flex w-full max-w-2xl flex-col gap-6">
-								{root.theme.landing ? (
+								{root.getState().theme.landing ? (
 									<div
 										className="mx-auto flex max-w-xl"
 										// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
 										dangerouslySetInnerHTML={{
 											__html:
-												root.theme?.altLandingKey &&
+												root.getState().theme
+													?.altLandingKey &&
 												searchParams.has(
-													root.theme.altLandingKey,
+													root.getState().theme
+														.altLandingKey,
 												) &&
-												root.theme.altLanding
-													? root.theme.altLanding
-													: root.theme.landing,
+												root.getState().theme.altLanding
+													? root.getState().theme
+															.altLanding
+													: root.getState().theme
+															.landing,
 										}}
 									/>
 								) : (
 									<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
 										<div className="text-center font-semibold text-4xl text-foreground leading-normal">
 											{t("room:welcome", {
-												name: chat.user.name,
+												name: chat.getState().user.name,
 											})}
 										</div>
-										{root.theme.description ? (
+										{root.getState().theme.description ? (
 											<div className="text-center text-muted-foreground text-sm leading-normal">
-												{root.theme.description}
+												{
+													root.getState().theme
+														.description
+												}
 											</div>
 										) : null}
 									</div>
 								)}
 								<RoomInput
 									predefinedPrompts={
-										tempRoomStore.options.predefinedPrompts
+										tempRoomOptions.predefinedPrompts
 									}
 									className="max-h-64 min-h-48 bg-background"
 									isLoading={isLoading}
 									initialValue={initialPrompt}
-									model={chat.models.selected}
+									model={chatModels.selected}
 									room={tempRoomStore}
 									setModel={(m) => {
-										chat.setSelectedModel(m);
+										chat.getState().setSelectedModel(m);
 									}}
-									options={tempRoomStore.options}
+									options={tempRoomOptions}
 									onMcpChange={(mcp) =>
 										tempRoomStore.setOptions({
-											...tempRoomStore.options,
+											...tempRoomOptions,
 											mcp,
 										})
 									}
@@ -481,14 +510,14 @@ export const NewRoomPage = observer(() => {
 												next.workspace_id,
 											);
 											tempRoomStore.setOptions({
-												...tempRoomStore.options,
+												...tempRoomOptions,
 												workspace: next,
 											});
 										} else {
 											setMode("chat");
 											setSelectedWorkspaceId("");
 											tempRoomStore.setOptions({
-												...tempRoomStore.options,
+												...tempRoomOptions,
 												workspace: undefined,
 											});
 										}
@@ -503,161 +532,139 @@ export const NewRoomPage = observer(() => {
 									onOpenSettings={() =>
 										setIsConfgurationOpen(true)
 									}
-									MenuComponent={observer(
-										({
-											onOpenChange,
-											onOpenMcpOverlay,
-										}) => (
-											<>
-												<RoomInputMenuUpload
+									MenuComponent={({
+										onOpenChange,
+										onOpenMcpOverlay,
+									}) => (
+										<>
+											<RoomInputMenuUpload
+												onSelect={() =>
+													onOpenChange(false)
+												}
+											/>
+											<DropdownMenuSeparator />
+											{root.getState().theme.featureFlags
+												?.enableAgentHarness && (
+												<>
+													<DropdownMenuItem
+														onSelect={() => {
+															setMode("chat");
+															onOpenChange(false);
+														}}
+													>
+														<MessageCircleIcon />
+														<span className="flex-1">
+															{t(
+																"room:modes.ask",
+															)}
+														</span>
+														{mode === "chat" ? (
+															<div className="px-1">
+																<CheckIcon />
+															</div>
+														) : null}
+													</DropdownMenuItem>
+													<DropdownMenuItem
+														onSelect={() => {
+															setMode("agent");
+															onOpenChange(false);
+														}}
+													>
+														<BotIcon />
+														<span className="flex-1">
+															{t(
+																"room:modes.agent",
+															)}
+														</span>
+
+														{mode === "agent" ? (
+															<div className="px-1">
+																<CheckIcon />
+															</div>
+														) : null}
+													</DropdownMenuItem>
+												</>
+											)}
+											<DropdownMenuItem
+												onSelect={() => {
+													onOpenMcpOverlay("AGENT");
+													onOpenChange(false);
+												}}
+											>
+												<BotIcon />
+												<span className="flex-1">
+													{t(
+														"room:menuWorkspace.selectAgent",
+													)}
+												</span>
+												{tempRoomOptions.workspace ? (
+													<div className="px-1">
+														<CheckIcon />
+													</div>
+												) : null}
+											</DropdownMenuItem>
+											<RoomInputMenuMCP
+												type="KNOWLEDGE"
+												options={tempRoomOptions}
+												onSelect={() => {
+													onOpenMcpOverlay(
+														"KNOWLEDGE",
+													);
+													onOpenChange(false);
+												}}
+											/>
+											<RoomInputMenuMCP
+												type="TOOLBOX"
+												options={tempRoomOptions}
+												onSelect={() => {
+													onOpenMcpOverlay("TOOLBOX");
+													onOpenChange(false);
+												}}
+											/>
+											<DropdownMenuSeparator />
+											{preCreatedRoom ? (
+												<RoomInputMenuFileExplorer
+													room={preCreatedRoom}
 													onSelect={() =>
 														onOpenChange(false)
 													}
 												/>
-												<DropdownMenuSeparator />
-												{root.theme.featureFlags
-													?.enableAgentHarness && (
-													<>
-														<DropdownMenuItem
-															onSelect={() => {
-																setMode("chat");
-																onOpenChange(
-																	false,
-																);
-															}}
-														>
-															<MessageCircleIcon />
-															<span className="flex-1">
-																{t(
-																	"room:modes.ask",
-																)}
-															</span>
-															{mode === "chat" ? (
-																<div className="px-1">
-																	<CheckIcon />
-																</div>
-															) : null}
-														</DropdownMenuItem>
-														<DropdownMenuItem
-															onSelect={() => {
-																setMode(
-																	"agent",
-																);
-																onOpenChange(
-																	false,
-																);
-															}}
-														>
-															<BotIcon />
-															<span className="flex-1">
-																{t(
-																	"room:modes.agent",
-																)}
-															</span>
-
-															{mode ===
-															"agent" ? (
-																<div className="px-1">
-																	<CheckIcon />
-																</div>
-															) : null}
-														</DropdownMenuItem>
-													</>
-												)}
-												<DropdownMenuItem
-													onSelect={() => {
-														onOpenMcpOverlay(
-															"AGENT",
-														);
-														onOpenChange(false);
-													}}
-												>
-													<BotIcon />
-													<span className="flex-1">
-														{t(
-															"room:menuWorkspace.selectAgent",
-														)}
-													</span>
-													{tempRoomStore.options
-														.workspace ? (
-														<div className="px-1">
-															<CheckIcon />
-														</div>
-													) : null}
-												</DropdownMenuItem>
-												<RoomInputMenuMCP
-													type="KNOWLEDGE"
-													options={
-														tempRoomStore.options
+											) : (
+												<RoomInputMenuNewFileExplorer
+													mode={mode}
+													options={tempRoomOptions}
+													onRoomCreated={(room) =>
+														setPreCreatedRoom(room)
 													}
-													onSelect={() => {
-														onOpenMcpOverlay(
-															"KNOWLEDGE",
-														);
-														onOpenChange(false);
-													}}
-												/>
-												<RoomInputMenuMCP
-													type="TOOLBOX"
-													options={
-														tempRoomStore.options
+													onSelect={() =>
+														onOpenChange(false)
 													}
-													onSelect={() => {
-														onOpenMcpOverlay(
-															"TOOLBOX",
-														);
-														onOpenChange(false);
-													}}
 												/>
-												<DropdownMenuSeparator />
-												{preCreatedRoom ? (
-													<RoomInputMenuFileExplorer
-														room={preCreatedRoom}
-														onSelect={() =>
-															onOpenChange(false)
-														}
-													/>
-												) : (
-													<RoomInputMenuNewFileExplorer
-														mode={mode}
-														options={
-															tempRoomStore.options
-														}
-														onRoomCreated={(room) =>
-															setPreCreatedRoom(
-																room,
+											)}
+											<DropdownMenuItem
+												onSelect={(e) => {
+													e.preventDefault();
+													setIsConfgurationOpen(
+														!isConfigurationOpen,
+													);
+												}}
+											>
+												<Settings2Icon />
+												<span className="flex-1">
+													{isConfigurationOpen
+														? t(
+																"room:settings.close",
 															)
-														}
-														onSelect={() =>
-															onOpenChange(false)
-														}
-													/>
-												)}
-												<DropdownMenuItem
-													onSelect={(e) => {
-														e.preventDefault();
-														setIsConfgurationOpen(
-															!isConfigurationOpen,
-														);
-													}}
-												>
-													<Settings2Icon />
-													<span className="flex-1">
-														{isConfigurationOpen
-															? t(
-																	"room:settings.close",
-																)
-															: t(
-																	"room:settings.open",
-																)}
-													</span>
-												</DropdownMenuItem>
-											</>
-										),
+														: t(
+																"room:settings.open",
+															)}
+												</span>
+											</DropdownMenuItem>
+										</>
 									)}
 								/>
-								{tempRoomStore.options.predefinedPrompts
-									.length > 0 ? (
+								{tempRoomOptions.predefinedPrompts.length >
+								0 ? (
 									<div className="mx-auto flex w-full flex-col items-center gap-3">
 										<div className="flex max-h-34 w-full flex-wrap justify-center gap-2 overflow-hidden">
 											{previewPrompts.map((prompt) => {
@@ -720,11 +727,11 @@ export const NewRoomPage = observer(() => {
 
 										<ScrollArea className="h-full w-full px-2">
 											<RoomOptionsForm
-												model={chat.models.selected}
-												options={tempRoomStore.options}
+												model={chatModels.selected}
+												options={tempRoomOptions}
 												onModelChange={(model) => {
 													if (model) {
-														chat.setSelectedModel(
+														chat.getState().setSelectedModel(
 															model,
 														);
 													}
@@ -749,7 +756,7 @@ export const NewRoomPage = observer(() => {
 														}
 													}
 													tempRoomStore.setOptions({
-														...tempRoomStore.options,
+														...tempRoomOptions,
 														...opts,
 													});
 												}}
@@ -761,7 +768,7 @@ export const NewRoomPage = observer(() => {
 						</ResizablePanel>
 					</>
 				)}
-				{preCreatedRoom?.sidebar.isOpen && (
+				{preCreatedRoomSidebarIsOpen && (
 					<>
 						<ResizableHandle />
 						<ResizablePanel defaultSize={50} minSize={20}>
@@ -780,4 +787,4 @@ export const NewRoomPage = observer(() => {
 			</ResizablePanelGroup>
 		</div>
 	);
-});
+};

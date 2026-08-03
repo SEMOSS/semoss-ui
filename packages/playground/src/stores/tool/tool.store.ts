@@ -1,4 +1,4 @@
-import { makeAutoObservable } from "mobx";
+import { createStore } from "zustand/vanilla";
 import { MCP_EXECUTION_ASK } from "@/constants";
 import {
 	type InputMessageStore,
@@ -11,13 +11,6 @@ import type {
 } from "@/types";
 import { getToolAppId } from "@/utility/mcp-utils";
 
-/**
- * Build a synthetic toolCall payload for server tools (e.g. provider-side
- * web_search) that the model provider executes itself. These calls arrive
- * without the MCP `_meta` block, so we fill in safe defaults — notably
- * `SMSS_MCP_EXECUTION: "disabled"` so the tool is never queued for client-side
- * execution.
- */
 const buildServerToolJson = (
 	part: PixelMessageToolCallPart["toolCall"],
 ): PixelMessageToolCallPart["toolCall"] => ({
@@ -40,79 +33,137 @@ const buildServerToolJson = (
 	},
 });
 
-/**
- * Tool
- */
-export class ToolStore {
-	/**
-	 * Store the room
-	 */
-	room: RoomStore;
-
-	/**
-	 * Id for the tool
-	 */
-	id: string;
-
-	/**
-	 * Id of the node
-	 */
-	get nodeId() {
-		return `tool--${this.id}`;
-	}
-
-	/**
-	 * Status for the tool
-	 */
+export interface ToolStoreState {
 	status:
 		| "INITIAL"
 		| "LOADING"
 		| "CANCELLED"
 		| "SUCCESS"
 		| "ERROR"
-		| "PAUSED" = "INITIAL";
+		| "PAUSED";
+	parameters: Record<string, unknown>;
+	argumentsStreaming: boolean;
+	argumentsBuffer: string;
+	streamingName: string;
+	response: string;
+	isOpen: boolean;
+	isExpanded: boolean;
+	display: "inline" | "sidebar" | "hidden";
+	toolCall: {
+		message: ResponseMessageStore | null;
+		part: PixelMessageToolCallPart | null;
+	};
+	toolResult: {
+		message: InputMessageStore | ResponseMessageStore | null;
+		part: PixelMessageToolResultPart | null;
+	};
+}
 
-	/**
-	 * Parameters for the tool
-	 */
-	parameters: Record<string, unknown> = {};
+/**
+ * Tool
+ */
+export class ToolStore {
+	readonly room: RoomStore;
+	readonly id: string;
 
-	/**
-	 * Whether the tool call is still streaming in (name/arguments arriving via SSE).
-	 * While true, the tool does not have its final `_meta`, `title`, or parsed
-	 * `arguments` yet and should not be interactive.
-	 */
-	argumentsStreaming: boolean = false;
+	private _zustand = createStore<ToolStoreState>()(() => ({
+		status: "INITIAL" as const,
+		parameters: {},
+		argumentsStreaming: false,
+		argumentsBuffer: "",
+		streamingName: "",
+		response: "",
+		isOpen: false,
+		isExpanded: false,
+		display: "sidebar" as const,
+		toolCall: { message: null, part: null },
+		toolResult: { message: null, part: null },
+	}));
 
-	/**
-	 * Raw partial JSON string for `arguments` accumulated from streaming chunks.
-	 * Cleared once the final response sync replaces it with the parsed object.
-	 */
-	argumentsBuffer: string = "";
+	/** Expose Zustand StoreApi for `useStore(tool, selector)` in components */
+	readonly getState = (): ToolStoreState => this._zustand.getState();
+	readonly subscribe = (
+		listener: (state: ToolStoreState, prev: ToolStoreState) => void,
+	): (() => void) => this._zustand.subscribe(listener);
+	readonly getInitialState = (): ToolStoreState =>
+		this._zustand.getInitialState();
 
-	/**
-	 * Wire name received from the streaming chunk, used as a placeholder for
-	 * `name`/`title` until the final synced part provides the friendly title.
-	 */
-	streamingName: string = "";
+	private get _s() {
+		return this._zustand.getState();
+	}
 
-	/**
-	 * Json for the tool
-	 */
+	constructor(room: RoomStore, toolId: string) {
+		this.room = room;
+		this.id = toolId;
+	}
+
+	/** Getters */
+
+	get nodeId() {
+		return `tool--${this.id}`;
+	}
+
+	get status() {
+		return this._s.status;
+	}
+
+	set status(value: ToolStoreState["status"]) {
+		this._zustand.setState({ status: value });
+	}
+
+	get parameters() {
+		return this._s.parameters;
+	}
+
+	set parameters(value: Record<string, unknown>) {
+		this._zustand.setState({ parameters: value });
+	}
+
+	get argumentsStreaming() {
+		return this._s.argumentsStreaming;
+	}
+
+	get argumentsBuffer() {
+		return this._s.argumentsBuffer;
+	}
+
+	get streamingName() {
+		return this._s.streamingName;
+	}
+
+	get response() {
+		return this._s.response;
+	}
+
+	set response(value: string) {
+		this._zustand.setState({ response: value });
+	}
+
+	get isOpen() {
+		return this._s.isOpen;
+	}
+
+	set isOpen(value: boolean) {
+		this._zustand.setState({ isOpen: value });
+	}
+
+	get isExpanded() {
+		return this._s.isExpanded;
+	}
+
+	get display() {
+		return this._s.display;
+	}
+
 	get json() {
-		const part = this.toolCall.part?.toolCall;
-		// Server tools (provider-executed, e.g. web_search) skip the MCP _meta
-		// block — synthesize one so downstream consumers see a consistent shape.
+		const part = this._s.toolCall.part?.toolCall;
 		if (part?.server_tool) {
 			return buildServerToolJson(part);
 		}
-		// If the real part has arrived (has a title), use it. Otherwise (placeholder
-		// pushed during streaming, or no part at all) synthesize from streamingName
-		// so the pill renders the wire name until the final sync swaps it.
 		if (part?.title) {
 			return part;
 		}
-		const name = this.streamingName;
+		const name = this._s.streamingName;
 		return {
 			id: this.id,
 			title: name,
@@ -127,57 +178,6 @@ export class ToolStore {
 		} as PixelMessageToolCallPart["toolCall"];
 	}
 
-	/**
-	 * Response for the tool
-	 */
-	response: string = "";
-
-	/**
-	 * Track if the tool is open
-	 */
-	isOpen: boolean = false;
-
-	/**
-	 * Track if the tool is expanded (fullscreen) in inline mode
-	 */
-	isExpanded: boolean = false;
-
-	/**
-	 * Display information for the tool
-	 */
-	display: "inline" | "sidebar" | "hidden" = "sidebar";
-
-	/**
-	 * Tool call data
-	 */
-	private toolCall: {
-		message: ResponseMessageStore | null;
-		part: PixelMessageToolCallPart | null;
-	} = { message: null, part: null };
-
-	/**
-	 * Tool result data — MCP tools land in a follow-up InputMessage; server
-	 * tools land in the same ResponseMessage as the call.
-	 */
-	private toolResult: {
-		message: InputMessageStore | ResponseMessageStore | null;
-		part: PixelMessageToolResultPart | null;
-	} = { message: null, part: null };
-
-	constructor(room: RoomStore, toolId: string) {
-		this.room = room;
-
-		// set the id based on the json
-		this.id = toolId;
-
-		makeAutoObservable(this);
-	}
-
-	/**
-	 * Update the tool with the new message information
-	 * @param message - the message that contains the tool call information
-	 * @param part - the part of the message that contains the tool call or result information
-	 */
 	syncMessage = (
 		message: InputMessageStore | ResponseMessageStore,
 		part: PixelMessageToolCallPart | PixelMessageToolResultPart,
@@ -186,153 +186,101 @@ export class ToolStore {
 			part.type === "TOOL_CALL" &&
 			message instanceof ResponseMessageStore
 		) {
-			// set the display — server tools default to sidebar since they have
-			// no SMSS_MCP_UI block
-			this.display =
-				part.toolCall._meta?.SMSS_MCP_UI?.displayLocation || "sidebar";
-
-			//set the parameters based on the json
-			this.parameters = part.toolCall.arguments || {};
-
-			// update the tool call information
-			this.toolCall = {
-				message: message,
-				part,
-			};
-
-			// the final part has arrived — clear streaming bookkeeping
-			this.argumentsStreaming = false;
-			this.argumentsBuffer = "";
-			this.streamingName = "";
+			this._zustand.setState({
+				display:
+					part.toolCall._meta?.SMSS_MCP_UI?.displayLocation ||
+					"sidebar",
+				parameters: part.toolCall.arguments || {},
+				argumentsStreaming: false,
+				argumentsBuffer: "",
+				streamingName: "",
+				toolCall: { message, part },
+			});
 		} else if (part.type === "TOOL_RESULT") {
-			// Server tool results don't echo back toolParameterValues — keep the
-			// args we already captured from the matching TOOL_CALL sync.
-			if (part.toolResult.toolParameterValues) {
-				this.parameters = part.toolResult.toolParameterValues;
-			}
-			this.response = part.toolResult.output;
-
-			// Server tool results also typically omit toolStatus — they're only
-			// emitted on success, so default to SUCCESS in that case.
-			if (part.toolResult.toolStatus === "error") {
-				this.status = "ERROR";
-			} else if (part.toolResult.toolStatus === "cancelled") {
-				this.status = "CANCELLED";
-			} else if (part.toolResult.toolStatus === "paused") {
-				this.status = "PAUSED";
-			} else {
-				this.status = "SUCCESS";
-			}
-
-			// update the tool result information
-			this.toolResult = {
-				message: message,
-				part,
+			const updates: Partial<ToolStoreState> = {
+				toolResult: { message, part },
 			};
+			if (part.toolResult.toolParameterValues) {
+				updates.parameters = part.toolResult.toolParameterValues;
+			}
+			updates.response = part.toolResult.output;
+			if (part.toolResult.toolStatus === "error") {
+				updates.status = "ERROR";
+			} else if (part.toolResult.toolStatus === "cancelled") {
+				updates.status = "CANCELLED";
+			} else if (part.toolResult.toolStatus === "paused") {
+				updates.status = "PAUSED";
+			} else {
+				updates.status = "SUCCESS";
+			}
+			this._zustand.setState(updates);
 		}
 	};
 
-	/**
-	 * Mark the tool as actively streaming and seed its wire identity.
-	 * Called when the first streaming chunk for this tool arrives (carries `id`).
-	 */
 	beginStreaming = () => {
-		this.argumentsStreaming = true;
-		this.argumentsBuffer = "";
+		this._zustand.setState({
+			argumentsStreaming: true,
+			argumentsBuffer: "",
+		});
 	};
 
-	/**
-	 * Record the wire name from a streaming chunk.
-	 */
 	setStreamingName = (name: string) => {
-		this.streamingName = name;
+		this._zustand.setState({ streamingName: name });
 	};
 
-	/**
-	 * Append an `arguments` delta from a streaming chunk.
-	 */
 	appendStreamingArguments = (delta: string) => {
-		this.argumentsBuffer += delta;
+		this._zustand.setState((s) => ({
+			argumentsBuffer: s.argumentsBuffer + delta,
+		}));
 	};
 
-	/**
-	 * Streaming finished; we still don't have the parsed meta (that arrives in
-	 * the final sync), but no further deltas are coming.
-	 */
 	endStreaming = () => {
-		this.argumentsStreaming = false;
+		this._zustand.setState({ argumentsStreaming: false });
 	};
 
-	/**
-	 * Set the isOpen state
-	 */
 	setIsOpen = (isOpen: boolean) => {
-		// set as open
-		this.isOpen = isOpen;
+		this._zustand.setState({ isOpen });
 	};
 
-	/**
-	 * Set the isExpanded state
-	 */
 	setIsExpanded = (isExpanded: boolean) => {
-		this.isExpanded = isExpanded;
+		this._zustand.setState({ isExpanded });
 	};
 
-	/**
-	 * Update the parameters of the tool
-	 */
 	openTool = (display?: "inline" | "sidebar" | "hidden") => {
-		if (this.isOpen) {
-			// Tool is already open. If the new display is the same or undefined, move to front
-			// if the new display is different, close and reopen in the new location
-			if (display !== undefined && display !== this.display) {
+		const current = this._s;
+		if (current.isOpen) {
+			if (display !== undefined && display !== current.display) {
 				this.closeTool();
 			}
 		}
 
-		// set as open
-		this.isOpen = true;
-
-		// update the display if it is defined
+		const updates: Partial<ToolStoreState> = { isOpen: true };
 		if (display) {
-			this.display = display;
+			updates.display = display;
 		}
+		this._zustand.setState(updates);
 
-		if (this.display === "inline") {
-			// noop. processed by component
-		} else if (this.display === "sidebar") {
-			// Default to sidebar
+		const effectiveDisplay = display ?? current.display;
+		if (effectiveDisplay === "sidebar") {
 			this.room.addSidebarNode(this.nodeId, {
 				type: "tab",
 				name: this.json.title,
 				component: "room-tool",
 				config: {
 					app: getToolAppId(this.json._meta),
-					message: this.toolCall.message?.id,
+					message: this._s.toolCall.message?.id,
 					toolId: this.json.id,
 				},
 				enableClose: true,
 			});
-		} else if (this.display === "hidden") {
-			// noop
 		}
 	};
 
-	/**
-	 * Close the tool
-	 */
 	closeTool = () => {
-		// close it
-		this.isOpen = false;
-		this.isExpanded = false;
-
-		// close the previous location
-		if (this.display === "inline") {
-			// noop. processed by component
-		} else if (this.display === "sidebar") {
+		const { display } = this._s;
+		this._zustand.setState({ isOpen: false, isExpanded: false });
+		if (display === "sidebar") {
 			this.room.removeSidebarNode(this.nodeId);
-		} else if (this.display === "hidden") {
-			// noop
 		}
 	};
 }

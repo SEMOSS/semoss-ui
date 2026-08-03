@@ -1,6 +1,6 @@
-import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useStore } from "zustand";
 import { useTranslation } from "@semoss/i18n";
 import { InsightProvider } from "@semoss/sdk/react";
 import {
@@ -17,7 +17,7 @@ import {
 	SaveWorkspaceDialog,
 } from "@/components";
 import { FileDragProvider } from "@/contexts";
-import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
+import { useChat, useChatState, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { Engine } from "@/types";
 /**
@@ -25,21 +25,23 @@ import type { Engine } from "@/types";
  *
  * @component
  */
-export const RoomPage = observer(() => {
+export const RoomPage = () => {
 	const { t } = useTranslation("workspace");
 	const { setNavbarActions } = useGlobalBreadcrumbs({});
 	const { roomId } = useParams();
 	const { chat } = useChat();
+	const chatModels = useChatState((s) => s.models);
 	const { root } = useRoot();
 	const navigate = useNavigate();
 
-	const platformLinksDisabled = !root.theme.featureFlags?.showPlatformLinks;
+	const platformLinksDisabled =
+		!root.getState().theme.featureFlags?.showPlatformLinks;
 
 	/**
 	 * State
 	 */
 	const [room, setRoom] = useState<RoomStore | null>(null);
-	const selectedModelRef = useRef<Engine>(chat.models.selected);
+	const selectedModelRef = useRef<Engine>(chatModels.selected);
 
 	/**
 	 * Library hooks
@@ -78,14 +80,14 @@ export const RoomPage = observer(() => {
 	 */
 	// keep ref updated
 	useEffect(() => {
-		selectedModelRef.current = chat.models.selected;
-	}, [chat.models.selected]);
+		selectedModelRef.current = chatModels.selected;
+	}, [chatModels.selected]);
 
 	// load the room
 	useEffect(() => {
 		const loadRoom = async () => {
 			// if chat isn't initialized yet, wait for it to initialize
-			if (!chat.isInitialized) {
+			if (!chat.getState().isInitialized) {
 				return;
 			}
 
@@ -97,13 +99,13 @@ export const RoomPage = observer(() => {
 					return;
 				}
 
-				const room = await chat.loadRoom(roomId);
+				const room = await chat.getState().loadRoom(roomId);
 
 				// update the model based on the room
 				if (!room.model) {
 					room.setModel(selectedModelRef.current);
 				} else {
-					chat.setSelectedModel(room.model);
+					chat.getState().setSelectedModel(room.model);
 				}
 
 				// set the room (breadcrumbs are driven reactively via useGlobalBreadcrumbs above)
@@ -119,9 +121,9 @@ export const RoomPage = observer(() => {
 	}, [
 		roomId,
 		navigate,
-		chat.loadRoom,
-		chat.setSelectedModel,
-		chat.isInitialized,
+		chat.getState().loadRoom,
+		chat.getState().setSelectedModel,
+		chat.getState().isInitialized,
 	]);
 
 	const navbarActions = useMemo<React.ReactNode>(() => {
@@ -158,31 +160,39 @@ export const RoomPage = observer(() => {
 			options={{ insightId: room.insightId }}
 			destroyOnUnmount={false}
 		>
-			<div className="flex h-full w-full flex-col overflow-hidden">
-				<ResizablePanelGroup
-					direction="horizontal"
-					className="w-full flex-1 overflow-hidden"
-				>
-					<ResizablePanel className="h-full w-full flex-1 overflow-hidden p-2">
-						<FileDragProvider>
-							<FileDragOverlay />
-							<RoomContent room={room} />
-						</FileDragProvider>
-					</ResizablePanel>
-					{room.sidebar.isOpen && (
-						<>
-							<ResizableHandle />
-							<ResizablePanel
-								className={"relative p-2"}
-								defaultSize={50}
-								minSize={20}
-							>
-								<RoomSidebar room={room} />
-							</ResizablePanel>
-						</>
-					)}
-				</ResizablePanelGroup>
-			</div>
+			<RoomPageContent room={room} />
 		</InsightProvider>
 	);
-});
+};
+
+const RoomPageContent = ({ room }: { room: RoomStore }) => {
+	const sidebarIsOpen = useStore(room, (s) => s.sidebar.isOpen);
+
+	return (
+		<div className="flex h-full w-full flex-col overflow-hidden">
+			<ResizablePanelGroup
+				direction="horizontal"
+				className="w-full flex-1 overflow-hidden"
+			>
+				<ResizablePanel className="h-full w-full flex-1 overflow-hidden p-2">
+					<FileDragProvider>
+						<FileDragOverlay />
+						<RoomContent room={room} />
+					</FileDragProvider>
+				</ResizablePanel>
+				{sidebarIsOpen && (
+					<>
+						<ResizableHandle />
+						<ResizablePanel
+							className={"relative p-2"}
+							defaultSize={50}
+							minSize={20}
+						>
+							<RoomSidebar room={room} />
+						</ResizablePanel>
+					</>
+				)}
+			</ResizablePanelGroup>
+		</div>
+	);
+};

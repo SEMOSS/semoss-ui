@@ -1,4 +1,3 @@
-import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
@@ -14,9 +13,9 @@ import { setFavicon } from "@/utility";
 /**
  * LoginPage
  */
-export const LoginPage = observer(() => {
+export const LoginPage = () => {
 	const { root } = useRoot();
-	const theme = root.theme;
+	const theme = root.getState().theme;
 	const { isAuthorized } = useInsight();
 	const { theme: colorMode } = useTheme();
 
@@ -45,8 +44,8 @@ export const LoginPage = observer(() => {
 
 	// handling the login image source based on theme
 	const src = isDark
-		? root.theme.images.loginDark || loginImageDark
-		: root.theme.images.login || loginImage;
+		? root.getState().theme.images.loginDark || loginImageDark
+		: root.getState().theme.images.login || loginImage;
 
 	return (
 		<div className="grid min-h-svh lg:grid-cols-2">
@@ -71,4 +70,4 @@ export const LoginPage = observer(() => {
 			</div>
 		</div>
 	);
-});
+};

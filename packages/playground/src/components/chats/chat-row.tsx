@@ -83,7 +83,7 @@ export const ChatRow = ({
 		}
 		setIsRenaming(true);
 		try {
-			await chat.renameRoom(room.ROOM_ID, trimmed);
+			await chat.getState().renameRoom(room.ROOM_ID, trimmed);
 			toast.success(t("workspace:chat.renameSuccess"));
 			handleCancelRename();
 		} catch {

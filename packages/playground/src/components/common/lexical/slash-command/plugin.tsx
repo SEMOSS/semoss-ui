@@ -85,7 +85,10 @@ export const SlashMentionPlugin: React.FC<{
 	const { root } = useRoot();
 	const { commands } = useSlashCommands();
 
-	if (disabled || (root.theme.featureFlags?.hideToolsInIframe && isIframed))
+	if (
+		disabled ||
+		(root.getState().theme.featureFlags?.hideToolsInIframe && isIframed)
+	)
 		return null;
 
 	return (

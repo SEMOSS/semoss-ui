@@ -1,4 +1,3 @@
-import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
 import appImage from "@/assets/img/app.svg";
 import logoImage from "@/assets/img/logo.svg";
@@ -11,7 +10,7 @@ interface AppLogoProps {
 	full: boolean;
 }
 
-export const AppLogo: React.FC<AppLogoProps> = observer(({ full = false }) => {
+export const AppLogo: React.FC<AppLogoProps> = ({ full = false }) => {
 	const { t } = useTranslation("common");
 	const { root } = useRoot();
 
@@ -22,16 +21,16 @@ export const AppLogo: React.FC<AppLogoProps> = observer(({ full = false }) => {
 			{full ? (
 				<img
 					alt={t("images.logoAlt")}
-					src={root.theme.images.app || appImage}
+					src={root.getState().theme.images.app || appImage}
 					className="dark:brightness-0 dark:invert"
 				/>
 			) : (
 				<img
 					alt={t("images.logoAlt")}
-					src={root.theme.images.logo || logoImage}
+					src={root.getState().theme.images.logo || logoImage}
 					className="dark:brightness-0 dark:invert"
 				/>
 			)}
 		</div>
 	);
-});
+};
