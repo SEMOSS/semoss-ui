@@ -39,6 +39,7 @@ import {
 	selectedContextsForPlayground,
 } from "./domain/selected-text";
 import {
+	getToolStringMapParameter,
 	getToolStringParameter,
 	isPlayRecordingTool,
 } from "./domain/tool-context";
@@ -50,6 +51,7 @@ import {
 	generatePlaywrightRecordingMetadata,
 	getSemossInsightId,
 	initSemoss,
+	listPlaywrightRoomRecordings,
 	listRecordingMetadataModels,
 	resolvePlaywrightRoomRecording,
 	sendMcpResponseToPlayground,
@@ -100,13 +102,13 @@ export default function App() {
 		getRecordingEnvelope,
 		saveRoomRecording,
 		listRecordingProjects,
-		listMcpProjects,
 		listRecordingFiles,
 		getRoomRecordingEnvelope,
 		loadRecording,
 		replaySingleStep,
 		getRecordedSteps,
 		saveRoomMcpEntry,
+		saveProjectMcpEntry,
 	} = useRemoteBrowserSession();
 	const [latestFrame, setLatestFrame] = useState<string | null>(null);
 	const [currentUrl, setCurrentUrl] = useState("");
@@ -264,6 +266,11 @@ export default function App() {
 		onTabActivated: handleTabActivated,
 		onCursorChanged: setBrowserCursor,
 	});
+	const loadRoomRecording = useCallback(
+		(roomInsightId: string, fileName: string) =>
+			getRoomRecordingEnvelope(roomInsightId, `/playwright/${fileName}`),
+		[getRoomRecordingEnvelope],
+	);
 	const playback = usePlaybackController({
 		insightId: effectiveInsightId,
 		session,
@@ -271,6 +278,7 @@ export default function App() {
 		listRecordingProjects,
 		listRecordingFiles,
 		loadRecording,
+		loadRoomRecording,
 		replaySingleStep,
 		sendReplayEvent,
 		sendTabControlEvent,
@@ -473,8 +481,8 @@ export default function App() {
 	]);
 
 	useEffect(() => {
-		setSaveProject((current) => current ?? playback.projects[0] ?? null);
-	}, [playback.projects]);
+		setSaveProject((current) => current ?? playback.appProjects[0] ?? null);
+	}, [playback.appProjects]);
 
 	useEffect(() => {
 		if (
@@ -520,6 +528,13 @@ export default function App() {
 		) {
 			return;
 		}
+		const parameterValues = {
+			...getToolStringMapParameter(
+				toolContextRef.current,
+				"param_values",
+			),
+			...getToolStringMapParameter(toolContextRef.current, "paramValues"),
+		};
 
 		autoPlaybackRecordingSelectedRef.current = true;
 
@@ -537,6 +552,14 @@ export default function App() {
 				throw new Error(
 					"Playground room ID is required to resolve a room recording",
 				);
+			}
+			try {
+				playback.configureRoomRecordings(
+					await listPlaywrightRoomRecordings(),
+				);
+			} catch {
+				// Matching can still proceed. The selected room file is inserted
+				// into the controls even if the optional catalog listing fails.
 			}
 
 			const directProject =
@@ -570,6 +593,7 @@ export default function App() {
 								getRecordingStartUrl(envelope) ||
 								"https://example.com",
 							recording: envelope,
+							parameterValues,
 						});
 						setSnackMessage(
 							`Matched room recording ${directRoomPath} (exact filename)`,
@@ -678,6 +702,7 @@ export default function App() {
 						selected.startUrl ||
 						"https://example.com",
 					recording: envelope,
+					parameterValues,
 				});
 				setSnackMessage(
 					`Matched room recording ${selected.roomPath} (${selected.reason})`,
@@ -691,6 +716,7 @@ export default function App() {
 				fileName: selected.fileName,
 				startUrl:
 					mcpStartUrl || selected.startUrl || "https://example.com",
+				parameterValues,
 			});
 			setSnackMessage(
 				`Matched ${selected.fileName} (${selected.reason})`,
@@ -728,6 +754,7 @@ export default function App() {
 		mcpPlaybackProjectId,
 		mcpStartUrl,
 		playback.configureResolvedRecording,
+		playback.configureRoomRecordings,
 		// playback.project / playback.projects are deliberately omitted and read
 		// through refs instead. See the refs above: their async arrival would
 		// cancel this run-once effect's in-flight fetch.
@@ -1162,10 +1189,9 @@ export default function App() {
 			});
 
 			if (!saved) {
-				throw new Error(
-					"Failed to save recording to the Playwright app",
-				);
+				throw new Error("Failed to save recording to the selected app");
 			}
+			await saveProjectMcpEntry(effectiveInsightId, saved.project);
 
 			playback.selectSavedRecording(saveProject, saved.fileName);
 			setSaveDialogOpen(false);
@@ -1197,10 +1223,12 @@ export default function App() {
 	}, [
 		closeBrowserSession,
 		defaultRecordingName,
+		effectiveInsightId,
 		saveDescription,
 		saveIntent,
 		saveProject,
 		saveRecording,
+		saveProjectMcpEntry,
 		saveTitle,
 		sendRecordingControlEvent,
 		session,
@@ -1215,16 +1243,16 @@ export default function App() {
 		setReturnDialogOpen(true);
 		setIsLoadingReturnProjects(true);
 		try {
-			const projects = await listMcpProjects(effectiveInsightId);
+			const projects = await listRecordingProjects(effectiveInsightId);
 			setReturnProjects(projects);
 			setReturnProject(projects[0] ?? null);
 			if (projects.length === 0) {
-				setSnackMessage("No MCP-tagged projects are available");
+				setSnackMessage("No editable app projects are available");
 			}
 		} finally {
 			setIsLoadingReturnProjects(false);
 		}
-	}, [effectiveInsightId, listMcpProjects]);
+	}, [effectiveInsightId, listRecordingProjects]);
 
 	const handleReturnToPlayground = useCallback(
 		async (appProject: RecordingProjectOption | null) => {
@@ -1318,9 +1346,13 @@ export default function App() {
 					});
 					if (!appSaved) {
 						throw new Error(
-							"Failed to save recording to the current Playwright app",
+							"Failed to save recording to the selected app",
 						);
 					}
+					await saveProjectMcpEntry(
+						roomBoundInsightId,
+						appSaved.project,
+					);
 					appRecording = {
 						project: appSaved.project,
 						fileName: appSaved.fileName,
@@ -1371,7 +1403,7 @@ export default function App() {
 				setReturnDialogOpen(false);
 				setSnackMessage(
 					appRecording
-						? "Saved recording to Playground and Playwright app"
+						? "Saved recording to Playground and app"
 						: `Saved recording: ${saved.roomPath}`,
 				);
 			} catch (error) {
@@ -1416,6 +1448,7 @@ export default function App() {
 			saveRoomMcpEntry,
 			saveRoomRecording,
 			saveRecording,
+			saveProjectMcpEntry,
 			selectedTextContexts,
 			sendRecordingControlEvent,
 			session,
@@ -1757,7 +1790,7 @@ export default function App() {
 
 			<SaveRecordingDialog
 				open={saveDialogOpen}
-				projects={playback.projects}
+				projects={playback.appProjects}
 				project={saveProject}
 				models={metadataModels}
 				model={metadataModel}

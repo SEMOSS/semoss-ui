@@ -1,4 +1,4 @@
-# AGENTS.md - @semoss/playwright-browser-sockets
+# AGENTS.md - @semoss/browser-automation
 
 This document provides context for AI coding assistants working with the SEMOSS Playwright
 browser sockets harness.
@@ -8,7 +8,7 @@ browser sockets harness.
 
 ## Overview
 
-`@semoss/playwright-browser-sockets` is a **private** Vite harness that drives a browser over
+`@semoss/browser-automation` is a **private** Vite harness that drives a browser over
 sockets for Playwright/automation scenarios and exposes a SEMOSS MCP surface. It depends on
 `@semoss/sdk` and `@semoss/ui`.
 
@@ -35,7 +35,7 @@ ships a local **ESLint** config (`eslint.config.js`). Run both:
 
 ```bash
 pnpm check
-pnpm --filter @semoss/playwright-browser-sockets lint
+pnpm --filter @semoss/browser-automation lint
 ```
 
 ## Structure
@@ -61,7 +61,7 @@ pnpm --filter @semoss/playwright-browser-sockets lint
 ### Testing Changes
 
 ```bash
-pnpm --filter @semoss/playwright-browser-sockets lint
-pnpm --filter @semoss/playwright-browser-sockets type-check
-pnpm --filter @semoss/playwright-browser-sockets build
+pnpm --filter @semoss/browser-automation lint
+pnpm --filter @semoss/browser-automation type-check
+pnpm --filter @semoss/browser-automation build
 ```

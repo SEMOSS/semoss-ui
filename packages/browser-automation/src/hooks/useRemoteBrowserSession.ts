@@ -44,7 +44,6 @@ interface UseRemoteBrowserSessionReturn {
 	listRecordingProjects: (
 		insightId: string,
 	) => Promise<RecordingProjectOption[]>;
-	listMcpProjects: (insightId: string) => Promise<RecordingProjectOption[]>;
 	listRecordingFiles: (
 		insightId: string,
 		projectId: string,
@@ -74,6 +73,11 @@ interface UseRemoteBrowserSessionReturn {
 		envelope: StepsEnvelope,
 		roomId?: string,
 		projectId?: string,
+	) => Promise<void>;
+	/** Regenerates this app's recording-owned MCP tools while preserving its other tools. */
+	saveProjectMcpEntry: (
+		insightId: string,
+		projectId: string,
 	) => Promise<void>;
 }
 
@@ -302,7 +306,9 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 			setIsLoadingProjects(true);
 			setError(null);
 			try {
-				const pixel = `MyProjects(metaFilters=[{"tag":["PLAYWRIGHT"]}], filterWord=[""], onlyPortals=[true]);`;
+				// Recordings can live in any app the user can edit. WORKSPACE and
+				// SKILL projects are deliberately excluded.
+				const pixel = `META | MyProjects(projectType=["CODE", "BLOCKS"], filterWord=[""]);`;
 				const res = await runPixel(pixel, insightId);
 				const output = res.pixelReturn?.[0]?.output;
 				if (!Array.isArray(output)) {
@@ -315,9 +321,17 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 							project_display_name?: string;
 							project_name?: string;
 							project_id?: string;
+							user_permission?: number;
+							permission?: number;
 						}): RecordingProjectOption | null => {
 							const value = project.project_id;
-							if (!value) {
+							const permission =
+								project.user_permission ?? project.permission;
+							if (
+								!value ||
+								(typeof permission === "number" &&
+									permission > 2)
+							) {
 								return null;
 							}
 							return {
@@ -344,55 +358,6 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 				return [];
 			} finally {
 				setIsLoadingProjects(false);
-			}
-		},
-		[],
-	);
-
-	const listMcpProjects = useCallback(
-		async (insightId: string): Promise<RecordingProjectOption[]> => {
-			if (!insightId) {
-				setError("Insight ID is required to list MCP projects");
-				return [];
-			}
-
-			setError(null);
-			try {
-				const pixel = `META | MyProjects(metaKeys=["tag", "description"], metaFilters=[{"tag":["MCP"]}], filterWord=[""]);`;
-				const res = await runPixel(pixel, insightId);
-				const output = res.pixelReturn?.[0]?.output;
-				if (!Array.isArray(output)) return [];
-
-				return output
-					.map(
-						(project: {
-							project_display_name?: string;
-							project_name?: string;
-							project_id?: string;
-						}): RecordingProjectOption | null => {
-							const value = project.project_id;
-							if (!value) return null;
-							return {
-								label:
-									project.project_display_name ||
-									project.project_name ||
-									value,
-								value,
-								project_id: value,
-								project_name: project.project_name,
-							};
-						},
-					)
-					.filter(
-						(option): option is RecordingProjectOption => !!option,
-					);
-			} catch (e: unknown) {
-				setError(
-					e instanceof Error
-						? e.message
-						: "Failed to list MCP projects",
-				);
-				return [];
 			}
 		},
 		[],
@@ -616,6 +581,18 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 		[],
 	);
 
+	const saveProjectMcpEntry = useCallback(
+		async (insightId: string, projectId: string): Promise<void> => {
+			if (!insightId || !projectId) return;
+			const response = await runPixel(
+				`MakePlaywrightMCP(project=${JSON.stringify(projectId)});`,
+				insightId,
+			);
+			assertPixelSuccess(response, "App MCP generation");
+		},
+		[],
+	);
+
 	return {
 		session,
 		error,
@@ -628,12 +605,12 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 		getRecordingEnvelope,
 		saveRoomRecording,
 		listRecordingProjects,
-		listMcpProjects,
 		listRecordingFiles,
 		getRoomRecordingEnvelope,
 		loadRecording,
 		replaySingleStep,
 		getRecordedSteps,
 		saveRoomMcpEntry,
+		saveProjectMcpEntry,
 	};
 }

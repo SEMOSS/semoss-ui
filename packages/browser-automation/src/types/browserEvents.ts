@@ -270,7 +270,11 @@ export interface McpToolContext {
 	originalName: string;
 	message: string;
 	roomId: string;
-	/** SMSS_PROJECT_ID from the tool’s _meta — the playwright app project ID for the sidebar URL. */
+	/**
+	 * Owning app id from the tool's _meta, preferring SMSS_ENGINE_ID over the
+	 * deprecated SMSS_PROJECT_ID. Empty for room scoped tools, which report the
+	 * reserved __room__ id instead of a catalog entry.
+	 */
 	projectId: string;
 	parameters: Record<string, unknown>;
 	toolResponse?: unknown;

@@ -176,9 +176,9 @@ export const LandingPage: React.FC = observer(() => {
 						/>
 
 						<SystemAppCard
-							name="Playwright Browser"
+							name="Browser Automation"
 							description="Drive a remote browser, record what you do, and replay it later"
-							href="../../playwright-browser-sockets/dist/"
+							href="../../browser-automation/dist/"
 							img={Playwright}
 							darkImg={PlaywrightDark}
 						/>

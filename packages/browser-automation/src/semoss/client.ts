@@ -6,6 +6,13 @@ import type {
 } from "../types/browserEvents";
 import { assertPixelSuccess, runPixel } from "./pixel";
 
+/**
+ * Reserved id the backend reports as SMSS_ENGINE_ID for room scoped tools. It
+ * stands in where a project or engine UUID would go and has no catalog entry
+ * behind it.
+ */
+const ROOM_MCP_ID = "__room__";
+
 type EnvWithTool = typeof Env & { TOOL?: unknown };
 type McpToolStatus = "success" | "error" | "cancelled" | "paused";
 type InsightWithMcpResponse = typeof insight & {
@@ -36,11 +43,12 @@ type McpToolResponse = {
 // published project portal there is no semoss-env script to read these from.
 //
 // APP is deliberately NOT set. The MCP logic for this app lives in the
-// `platform__playwright` project, but only the backend and the Playground need
-// to know that: tool definitions resolve through _meta on the Playground side,
-// and everything this app runs is room or insight scoped. Setting APP would make
-// the SDK prepend SetContext("playwright") to initialize(), which hard-fails the
-// whole app whenever that project is missing or not yet readable by the user.
+// `platform__browser_automation` project, but only the backend and the
+// Playground need to know that: tool definitions resolve through _meta on the
+// Playground side, and everything this app runs is room or insight scoped.
+// Setting APP would make the SDK prepend SetContext("browser_automation") to
+// initialize(), which hard-fails the whole app whenever that project is missing
+// or not yet readable by the user.
 Env.update({
 	MODULE: import.meta.env.MODULE || "/Monolith",
 });
@@ -86,15 +94,23 @@ function normalizeToolContext(rawTool: unknown): McpToolContext | null {
 			? (tool.executedParameters as Record<string, unknown>)
 			: undefined;
 
-	// Extract the playwright app project ID from _meta so the sidebar URL resolves correctly
+	// Extract the owning app id from _meta so recordings resolve against the right
+	// project. SMSS_ENGINE_ID is the canonical key and SMSS_PROJECT_ID is the
+	// deprecated fallback, but a room scoped tool reports the reserved __room__ id
+	// rather than a catalog entry, so that value is treated as no project at all.
 	const meta =
 		tool._meta &&
 		typeof tool._meta === "object" &&
 		!Array.isArray(tool._meta)
 			? (tool._meta as Record<string, unknown>)
 			: {};
-	const projectId =
-		typeof meta.SMSS_PROJECT_ID === "string" ? meta.SMSS_PROJECT_ID : "";
+	const ownerId =
+		typeof meta.SMSS_ENGINE_ID === "string" && meta.SMSS_ENGINE_ID
+			? meta.SMSS_ENGINE_ID
+			: typeof meta.SMSS_PROJECT_ID === "string"
+				? meta.SMSS_PROJECT_ID
+				: "";
+	const projectId = ownerId === ROOM_MCP_ID ? "" : ownerId;
 
 	return {
 		type: typeof tool.type === "string" ? tool.type : "MCP",
@@ -269,6 +285,31 @@ export async function resolvePlaywrightRoomRecording<T = unknown>(
 		return JSON.parse(output) as T;
 	}
 	return output as T;
+}
+
+export async function listPlaywrightRoomRecordings(): Promise<string[]> {
+	const { pixelReturn } = await runPixel<unknown>(
+		'FindPlaywrightRoomRecordings(query="", max_candidates=50);',
+		getSemossInsightId(),
+	);
+	const output = pixelReturn?.[0]?.output as
+		| {
+				recordings?: Array<{
+					fileName?: string;
+					summary?: { fileName?: string };
+				}>;
+		  }
+		| undefined;
+	return Array.from(
+		new Set(
+			(output?.recordings ?? [])
+				.map(
+					(recording) =>
+						recording.fileName || recording.summary?.fileName || "",
+				)
+				.filter((fileName): fileName is string => !!fileName),
+		),
+	).sort((a, b) => a.localeCompare(b));
 }
 
 export async function bindSemossInsightToRoom(roomId: string): Promise<void> {
