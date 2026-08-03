@@ -131,7 +131,8 @@ export const WorkspaceMCPList = ({
 							}
 							handleRequestAccess={() => handleRequestAccess(m)}
 							getPlatformUrl={
-								root.theme.featureFlags?.showPlatformLinks
+								root.getState().theme.featureFlags
+									?.showPlatformLinks
 									? mcpToPlatformUrl
 									: undefined
 							}

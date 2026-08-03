@@ -5,7 +5,6 @@ import {
 	HammerIcon,
 	XCircleIcon,
 } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { cn, Spinner } from "@semoss/ui/next";
@@ -69,91 +68,90 @@ interface ResponseMessageToolGroupProps {
 	tools: ToolStore[];
 }
 
-export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
-	observer(({ message, tools }) => {
-		const { t } = useTranslation("tool");
-		const [isOpen, setIsOpen] = useState(false);
+export const ResponseMessageToolGroup: React.FC<
+	ResponseMessageToolGroupProps
+> = ({ message, tools }) => {
+	const { t } = useTranslation("tool");
+	const [isOpen, setIsOpen] = useState(false);
 
-		const { status, counts, loadingOptions } = analyzeTools(tools);
-		const { icon } = groupStatusConfig[status];
-		const isLoading = status === "LOADING";
+	const { status, counts, loadingOptions } = analyzeTools(tools);
+	const { icon } = groupStatusConfig[status];
+	const isLoading = status === "LOADING";
 
-		const { loadingMessage } = useLoadingMessage(isLoading, loadingOptions);
+	const { loadingMessage } = useLoadingMessage(isLoading, loadingOptions);
 
-		const summaryParts = [
-			counts.SUCCESS > 0 &&
-				counts.SUCCESS < tools.length &&
-				t("group.summaryCompleted", { count: counts.SUCCESS }),
-			counts.ERROR > 0 &&
-				t("group.summaryError", { count: counts.ERROR }),
-			counts.CANCELLED > 0 &&
-				t("group.summaryCancelled", { count: counts.CANCELLED }),
-			counts.PAUSED > 0 &&
-				t("group.summaryPaused", { count: counts.PAUSED }),
-		].filter((s): s is string => Boolean(s));
+	const summaryParts = [
+		counts.SUCCESS > 0 &&
+			counts.SUCCESS < tools.length &&
+			t("group.summaryCompleted", { count: counts.SUCCESS }),
+		counts.ERROR > 0 && t("group.summaryError", { count: counts.ERROR }),
+		counts.CANCELLED > 0 &&
+			t("group.summaryCancelled", { count: counts.CANCELLED }),
+		counts.PAUSED > 0 && t("group.summaryPaused", { count: counts.PAUSED }),
+	].filter((s): s is string => Boolean(s));
 
-		return (
+	return (
+		<div
+			className={cn(
+				"flex flex-col overflow-hidden rounded-lg border border-border bg-sidebar",
+			)}
+		>
+			{/* Header toggle */}
+			<button
+				type="button"
+				className="flex w-full cursor-pointer items-center gap-3 p-2 text-start transition-colors hover:bg-accent"
+				onClick={() => setIsOpen((prev) => !prev)}
+			>
+				<div className="flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground">
+					{isOpen ? <HammerIcon className="size-5" /> : icon}
+				</div>
+				<span className="-ms-1.5 truncate text-muted-foreground text-sm">
+					{isOpen
+						? t("group.labelOpen", { count: tools.length })
+						: t("group.labelClosed", {
+								toolName: tools[0].json.title,
+								count: tools.length - 1,
+							})}
+				</span>
+				{isLoading && !isOpen && loadingMessage && (
+					<span className="shrink-0 text-muted-foreground text-sm italic">
+						{loadingMessage}
+					</span>
+				)}
+				<ChevronDownIcon
+					className={cn(
+						"ms-auto me-1 size-5 shrink-0 text-muted-foreground transition-transform duration-200",
+						isOpen && "rotate-180",
+					)}
+				/>
+			</button>
+
+			{/* Expanded tool list — animates open/close via grid-rows */}
 			<div
 				className={cn(
-					"flex flex-col overflow-hidden rounded-lg border border-border bg-sidebar",
+					"grid transition-[grid-template-rows] duration-200 ease-in-out",
+					isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
 				)}
 			>
-				{/* Header toggle */}
-				<button
-					type="button"
-					className="flex w-full cursor-pointer items-center gap-3 p-2 text-start transition-colors hover:bg-accent"
-					onClick={() => setIsOpen((prev) => !prev)}
-				>
-					<div className="flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground">
-						{isOpen ? <HammerIcon className="size-5" /> : icon}
-					</div>
-					<span className="-ms-1.5 truncate text-muted-foreground text-sm">
-						{isOpen
-							? t("group.labelOpen", { count: tools.length })
-							: t("group.labelClosed", {
-									toolName: tools[0].json.title,
-									count: tools.length - 1,
-								})}
-					</span>
-					{isLoading && !isOpen && loadingMessage && (
-						<span className="shrink-0 text-muted-foreground text-sm italic">
-							{loadingMessage}
-						</span>
-					)}
-					<ChevronDownIcon
-						className={cn(
-							"ms-auto me-1 size-5 shrink-0 text-muted-foreground transition-transform duration-200",
-							isOpen && "rotate-180",
-						)}
-					/>
-				</button>
-
-				{/* Expanded tool list — animates open/close via grid-rows */}
-				<div
-					className={cn(
-						"grid transition-[grid-template-rows] duration-200 ease-in-out",
-						isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
-					)}
-				>
-					<div className="overflow-hidden">
-						<div className="flex flex-col gap-1 border-border border-t bg-background p-2">
-							<div className="flex flex-col gap-2 p-2">
-								{tools.map((tool) => (
-									<ResponseMessageTool
-										key={tool.id}
-										message={message}
-										tool={tool}
-									/>
-								))}
-							</div>
-							{summaryParts.length > 0 && (
-								<span className="ps-2 text-muted-foreground text-sm">
-									{summaryParts.join(" · ")}
-								</span>
-							)}
+				<div className="overflow-hidden">
+					<div className="flex flex-col gap-1 border-border border-t bg-background p-2">
+						<div className="flex flex-col gap-2 p-2">
+							{tools.map((tool) => (
+								<ResponseMessageTool
+									key={tool.id}
+									message={message}
+									tool={tool}
+								/>
+							))}
 						</div>
+						{summaryParts.length > 0 && (
+							<span className="ps-2 text-muted-foreground text-sm">
+								{summaryParts.join(" · ")}
+							</span>
+						)}
 					</div>
 				</div>
 			</div>
-		);
-	});
+		</div>
+	);
+};

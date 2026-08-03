@@ -4,7 +4,6 @@ import {
 	MapIcon,
 	XIcon,
 } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "@semoss/i18n";
@@ -114,7 +113,7 @@ function getCardStyle(
 	}
 }
 
-export const LandingTour: React.FC = observer(() => {
+export const LandingTour: React.FC = () => {
 	const { t } = useTranslation("tour");
 	const { isOpen, stopTour } = useTour();
 	const { root } = useRoot();
@@ -122,10 +121,12 @@ export const LandingTour: React.FC = observer(() => {
 	const [rect, setRect] = useState<DOMRect | null>(null);
 
 	const allSteps = useMemo<TourStep[]>(() => {
-		const excluded = new Set(root.theme.tour?.excludedSteps ?? []);
-		const custom = root.theme.tour?.customSteps ?? [];
-		const trailing = root.theme.tour?.trailingCustomSteps ?? [];
-		const overrides = root.theme.tour?.stepOverrides ?? {};
+		const excluded = new Set(
+			root.getState().theme.tour?.excludedSteps ?? [],
+		);
+		const custom = root.getState().theme.tour?.customSteps ?? [];
+		const trailing = root.getState().theme.tour?.trailingCustomSteps ?? [];
+		const overrides = root.getState().theme.tour?.stepOverrides ?? {};
 		// Theme overrides are keyed by the step target (or "welcome").
 		// Translation keys live under `steps.<key>.title|content`.
 		const base = TOUR_STEP_DEFS.filter((s) => {
@@ -167,10 +168,10 @@ export const LandingTour: React.FC = observer(() => {
 		];
 	}, [
 		t,
-		root.theme.tour?.excludedSteps,
-		root.theme.tour?.customSteps,
-		root.theme.tour?.trailingCustomSteps,
-		root.theme.tour?.stepOverrides,
+		root.getState().theme.tour?.excludedSteps,
+		root.getState().theme.tour?.customSteps,
+		root.getState().theme.tour?.trailingCustomSteps,
+		root.getState().theme.tour?.stepOverrides,
 	]);
 
 	const currentStep = allSteps[step];
@@ -203,7 +204,7 @@ export const LandingTour: React.FC = observer(() => {
 		};
 	}, [isOpen, currentStep.target]);
 
-	if (root.theme.tour?.show === false || !isOpen) return null;
+	if (root.getState().theme.tour?.show === false || !isOpen) return null;
 
 	const cardStyle = getCardStyle(rect, currentStep.placement);
 
@@ -329,4 +330,4 @@ export const LandingTour: React.FC = observer(() => {
 		</>,
 		document.body,
 	);
-});
+};

@@ -6,7 +6,6 @@ import {
 	SparklesIcon,
 	UsersRound,
 } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useEffect, useId, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
@@ -44,7 +43,7 @@ const FORM_ID = "workspace-edit-form";
  * Prompts → Members) with editable controls and an editable
  * MembersTable in place of the read-only view.
  */
-export const EditWorkspacePage = observer(() => {
+export const EditWorkspacePage = () => {
 	const { t } = useTranslation(["workspace", "common", "notifications"]);
 	const { workspaceId } = useParams<{ workspaceId: string }>();
 	const navigate = useNavigate();
@@ -104,7 +103,11 @@ export const EditWorkspacePage = observer(() => {
 		setName(w.name || "");
 		setDescription(w.description || "");
 		setInstructions((w.system_prompt || "").replace(/\\n/g, "\n"));
-		setPrompts(w.prompts ?? []);
+		setPrompts(
+			(w.prompts ?? []).map((p) =>
+				typeof p === "string" ? p : (p as { id: string }).id,
+			),
+		);
 		const { knowledge: nextKnowledge, toolbox: nextToolbox } =
 			splitMcpByType(w.mcp ?? []);
 		setKnowledge(nextKnowledge);
@@ -181,7 +184,7 @@ export const EditWorkspacePage = observer(() => {
 
 		setIsSaving(true);
 		try {
-			await chat.editWorkspace(workspaceId, {
+			await chat.getState().editWorkspace(workspaceId, {
 				name,
 				description,
 				system_prompt: instructions,
@@ -329,10 +332,12 @@ export const EditWorkspacePage = observer(() => {
 							className="h-112"
 							workspaceId={workspaceId}
 							enableKnowledgeMCP={
-								root.theme.featureFlags?.enableKnowledgeMCP
+								root.getState().theme.featureFlags
+									?.enableKnowledgeMCP
 							}
 							getPlatformUrl={
-								root.theme.featureFlags?.showPlatformLinks
+								root.getState().theme.featureFlags
+									?.showPlatformLinks
 									? mcpToPlatformUrl
 									: undefined
 							}
@@ -353,10 +358,12 @@ export const EditWorkspacePage = observer(() => {
 							className="h-112"
 							workspaceId={workspaceId}
 							enableKnowledgeMCP={
-								root.theme.featureFlags?.enableKnowledgeMCP
+								root.getState().theme.featureFlags
+									?.enableKnowledgeMCP
 							}
 							getPlatformUrl={
-								root.theme.featureFlags?.showPlatformLinks
+								root.getState().theme.featureFlags
+									?.showPlatformLinks
 									? mcpToPlatformUrl
 									: undefined
 							}
@@ -389,7 +396,8 @@ export const EditWorkspacePage = observer(() => {
 							onChange={(next) => setPrompts(next)}
 							className="h-112"
 							getPlatformUrl={
-								root.theme.featureFlags?.showPlatformLinks
+								root.getState().theme.featureFlags
+									?.showPlatformLinks
 									? promptToPlatformUrl
 									: undefined
 							}
@@ -422,4 +430,4 @@ export const EditWorkspacePage = observer(() => {
 			/>
 		</div>
 	);
-});
+};

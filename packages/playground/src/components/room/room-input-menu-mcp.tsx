@@ -1,5 +1,4 @@
 import { BookOpenIcon, HammerIcon } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
 import { Badge, DropdownMenuItem } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
@@ -37,4 +36,4 @@ const RoomInputMenuMCPInner: React.FC<RoomInputMenuMCPProps> = ({
 	);
 };
 
-export const RoomInputMenuMCP = observer(RoomInputMenuMCPInner);
+export const RoomInputMenuMCP = RoomInputMenuMCPInner;

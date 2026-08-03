@@ -10,7 +10,6 @@ import {
 	StarIcon,
 	TrashIcon,
 } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	Link,
@@ -52,7 +51,7 @@ import {
 	useInfiniteScroll,
 	useSidebar,
 } from "@semoss/ui/next";
-import { useChat, useRoot, useTour } from "@/hooks";
+import { useChat, useChatState, useRoot, useTour } from "@/hooks";
 import { getDateBucket, normalizeTimestamp } from "@/utility";
 import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
@@ -70,7 +69,7 @@ try {
  *
  * @component
  */
-export const GlobalNav = observer(() => {
+export const GlobalNav = () => {
 	const { t } = useTranslation("sidebar");
 
 	const BUCKETS = [
@@ -88,6 +87,8 @@ export const GlobalNav = observer(() => {
 	const [search, setSearch] = useState("");
 	const [helpOpen, setHelpOpen] = useState(false);
 	const { chat } = useChat();
+	const roomCounter = useChatState((s) => s.keys.roomCounter);
+	const optimisticRoomsMap = useChatState((s) => s.optimisticRooms);
 	const { startTour } = useTour();
 	const { open, openMobile, isMobile } = useSidebar();
 	// True when the sidebar is actually visible to the user.
@@ -233,7 +234,7 @@ export const GlobalNav = observer(() => {
 	const didInitialMount = useRef(false);
 	useEffect(() => {
 		// keep this counter
-		chat.keys.roomCounter;
+		roomCounter;
 		if (!didInitialMount.current) {
 			didInitialMount.current = true;
 			return;
@@ -244,7 +245,7 @@ export const GlobalNav = observer(() => {
 			scrollElementRef.current.scrollTop = 0;
 			setSavedScrollPosition(0);
 		}
-	}, [getRooms.reset, getPinnedRooms.reset, chat.keys.roomCounter]);
+	}, [getRooms.reset, getPinnedRooms.reset, roomCounter]);
 
 	/**
 	 * Once the refetch returns a room we were showing optimistically, drop the
@@ -253,9 +254,9 @@ export const GlobalNav = observer(() => {
 	 */
 	useEffect(() => {
 		const fetchedIds = new Set(getRooms.data.map((r) => r.ROOM_ID));
-		Object.keys(chat.optimisticRooms).forEach((roomId) => {
+		Object.keys(optimisticRoomsMap).forEach((roomId) => {
 			if (fetchedIds.has(roomId)) {
-				chat.removeOptimisticRoom(roomId);
+				chat.getState().removeOptimisticRoom(roomId);
 			}
 		});
 	}, [getRooms.data, chat]);
@@ -305,7 +306,7 @@ export const GlobalNav = observer(() => {
 	]);
 	const optimisticRooms = debouncedSearch
 		? []
-		: Object.values(chat.optimisticRooms).filter(
+		: Object.values(optimisticRoomsMap).filter(
 				(r) => !fetchedRoomIds.has(r.ROOM_ID),
 			);
 
@@ -343,7 +344,7 @@ export const GlobalNav = observer(() => {
 			// pinRoom bumps roomCounter, which the effect above watches to
 			// refetch both room queries here — and keeps the chats page in
 			// sync, so pinning is bidirectional across the two views.
-			await chat.pinRoom(roomId, !isFavorite);
+			await chat.getState().pinRoom(roomId, !isFavorite);
 		} catch {
 			toast.error(
 				isFavorite
@@ -423,7 +424,7 @@ export const GlobalNav = observer(() => {
 							<Search />
 						</InputGroupAddon>
 					</InputGroup>
-					{root.theme.featureFlags?.hideToolsInIframe &&
+					{root.getState().theme.featureFlags?.hideToolsInIframe &&
 					isIframed ? null : (
 						<>
 							<SidebarMenuItem data-tour="tour-new-chat">
@@ -442,7 +443,8 @@ export const GlobalNav = observer(() => {
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 
-							{root.theme.featureFlags?.enableAgent && (
+							{root.getState().theme.featureFlags
+								?.enableAgent && (
 								<SidebarMenuItem>
 									<SidebarMenuButton
 										asChild
@@ -481,19 +483,21 @@ export const GlobalNav = observer(() => {
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 
-							{root.theme.sidebar.headerItems.map(
-								(item, index) => (
-									<GlobalNavItem
-										key={`header-${item.name}-${index}`}
-										name={item.name}
-										icon={item.icon}
-										path={item.path}
-										url={item.url}
-										embed={item.embed}
-										tooltip={item.tooltip}
-									/>
-								),
-							)}
+							{root
+								.getState()
+								.theme.sidebar.headerItems.map(
+									(item, index) => (
+										<GlobalNavItem
+											key={`header-${item.name}-${index}`}
+											name={item.name}
+											icon={item.icon}
+											path={item.path}
+											url={item.url}
+											embed={item.embed}
+											tooltip={item.tooltip}
+										/>
+									),
+								)}
 						</>
 					)}
 				</SidebarMenu>
@@ -563,8 +567,8 @@ export const GlobalNav = observer(() => {
 											const name =
 												room.ROOM_NAME ||
 												t("messages.untitled");
-											const date = root.theme.sidebar
-												.chatHistoryDate
+											const date = root.getState().theme
+												.sidebar.chatHistoryDate
 												? normalizeTimestamp(
 														room.DATE_CREATED,
 													)
@@ -752,9 +756,11 @@ export const GlobalNav = observer(() => {
 																						),
 																				);
 
-																				await chat.closeRoom(
-																					roomId,
-																				);
+																				await chat
+																					.getState()
+																					.closeRoom(
+																						roomId,
+																					);
 
 																				toast.success(
 																					t(
@@ -827,7 +833,7 @@ export const GlobalNav = observer(() => {
 			<SidebarFooter>
 				<Separator className="group-data-[collapsible=icon]:hidden" />
 				<SidebarMenu className="gap-2 p-2">
-					{root.theme.sidebar.footerItems.length > 0 && (
+					{root.getState().theme.sidebar.footerItems.length > 0 && (
 						// biome-ignore lint/a11y/useSemanticElements: keeping div for layout reasons
 						<div
 							className="relative group-data-[collapsible=icon]:hidden"
@@ -851,25 +857,27 @@ export const GlobalNav = observer(() => {
 							{helpOpen && (
 								<div className="absolute start-0 bottom-full z-50 w-full rounded-md border bg-popover p-1 shadow-md">
 									<SidebarMenu>
-										{root.theme.sidebar.footerItems.map(
-											(item) => (
-												<GlobalNavItem
-													key={item.path}
-													name={item.name}
-													icon={item.icon}
-													path={item.path}
-													url={item.url}
-													embed={item.embed}
-													tooltip={item.tooltip} // Just pass it directly!
-												/>
-											),
-										)}
+										{root
+											.getState()
+											.theme.sidebar.footerItems.map(
+												(item) => (
+													<GlobalNavItem
+														key={item.path}
+														name={item.name}
+														icon={item.icon}
+														path={item.path}
+														url={item.url}
+														embed={item.embed}
+														tooltip={item.tooltip} // Just pass it directly!
+													/>
+												),
+											)}
 									</SidebarMenu>
 								</div>
 							)}
 						</div>
 					)}
-					{root.theme.tour?.show !== false && (
+					{root.getState().theme.tour?.show !== false && (
 						<SidebarMenuItem className="group-data-[collapsible=icon]:hidden">
 							<SidebarMenuButton
 								onClick={handleStartTour}
@@ -888,4 +896,4 @@ export const GlobalNav = observer(() => {
 			<SidebarRail />
 		</Sidebar>
 	);
-});
+};

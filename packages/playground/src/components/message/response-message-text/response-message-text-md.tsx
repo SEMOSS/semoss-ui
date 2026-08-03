@@ -1,4 +1,3 @@
-import { observer } from "mobx-react-lite";
 import { useEffect, useMemo } from "react";
 import { Markdown } from "@semoss/ui/next";
 import { type ChunkStatus, useRoot } from "@/hooks";
@@ -32,102 +31,109 @@ interface ResponseMessageTextMdProps {
 	isFirstView: boolean;
 }
 
-export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
-	observer(({ content, status, message, onComplete, isFirstView }) => {
-		const { root } = useRoot();
+export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> = ({
+	content,
+	status,
+	message,
+	onComplete,
+	isFirstView,
+}) => {
+	const { root } = useRoot();
 
-		// ── Typewriter ────────────────────────────────────────────────────────────
-		// On a first view the typewriter animates the whole chunk from 0 (even if
-		// some content buffered before this chunk's turn came up); on a return view
-		// it baselines at the content present on mount, so already-streamed text
-		// shows instantly and only net-new tokens animate (jump to latest, no
-		// replay). `typewriter.rendered` is the full text revealed so far.
-		const typewriter = useMarkdownTypewriter(content, !isFirstView);
+	// ── Typewriter ────────────────────────────────────────────────────────────
+	// On a first view the typewriter animates the whole chunk from 0 (even if
+	// some content buffered before this chunk's turn came up); on a return view
+	// it baselines at the content present on mount, so already-streamed text
+	// shows instantly and only net-new tokens animate (jump to latest, no
+	// replay). `typewriter.rendered` is the full text revealed so far.
+	const typewriter = useMarkdownTypewriter(content, !isFirstView);
 
-		// While active, show what the typewriter has revealed; otherwise (done)
-		// render the full content directly.
-		const fullRenderedText =
-			status === "active" ? typewriter.rendered : content;
+	// While active, show what the typewriter has revealed; otherwise (done)
+	// render the full content directly.
+	const fullRenderedText =
+		status === "active" ? typewriter.rendered : content;
 
-		// ── Markdown components ───────────────────────────────────────────────────
-		const isPreviewLoading = status !== "done";
-		const components = useMemo(
-			() =>
-				createMarkdownComponents(
-					message.room,
-					isPreviewLoading,
-					!!root.theme.featureFlags?.enableTableExport,
-				),
-			[
+	// ── Markdown components ───────────────────────────────────────────────────
+	const isPreviewLoading = status !== "done";
+	const components = useMemo(
+		() =>
+			createMarkdownComponents(
 				message.room,
 				isPreviewLoading,
-				root.theme.featureFlags?.enableTableExport,
-			],
-		);
+				!!root.getState().theme.featureFlags?.enableTableExport,
+			),
+		[
+			message.room,
+			isPreviewLoading,
+			root.getState().theme.featureFlags?.enableTableExport,
+		],
+	);
 
-		// ── URL transform ─────────────────────────────────────────────────────────
-		const urlTransform = (url: string) => {
-			if (url.startsWith("room://")) return url;
-			if (
-				root.theme.allowedUrlPrefixes?.some((prefix) =>
+	// ── URL transform ─────────────────────────────────────────────────────────
+	const urlTransform = (url: string) => {
+		if (url.startsWith("room://")) return url;
+		if (
+			root
+				.getState()
+				.theme.allowedUrlPrefixes?.some((prefix) =>
 					url.startsWith(prefix),
 				)
-			)
-				return url;
-			if (/^(https?:|mailto:|#)/.test(url)) return url;
-			return "";
-		};
+		)
+			return url;
+		if (/^(https?:|mailto:|#)/.test(url)) return url;
+		return "";
+	};
 
-		// ── Effects ───────────────────────────────────────────────────────────────
+	// ── Effects ───────────────────────────────────────────────────────────────
 
-		// Drive the typewriter while this chunk is active:
-		// - If the typewriter has caught up to current content, report onComplete
-		//   (parent decides whether to actually advance based on whether this is the
-		//   last chunk + isThinking).
-		// - Otherwise, if it isn't running, start it.
-		// In an effect (not render) since onComplete updates the parent queue —
-		// doing it during render would update a different component mid-render.
-		useEffect(() => {
-			if (status !== "active") return;
+	// Drive the typewriter while this chunk is active:
+	// - If the typewriter has caught up to current content, report onComplete
+	//   (parent decides whether to actually advance based on whether this is the
+	//   last chunk + isThinking).
+	// - Otherwise, if it isn't running, start it.
+	// In an effect (not render) since onComplete updates the parent queue —
+	// doing it during render would update a different component mid-render.
+	useEffect(() => {
+		if (status !== "active") return;
 
-			const caughtUp =
-				!typewriter.isTyping &&
-				typewriter.rendered.length >= content.length;
+		const caughtUp =
+			!typewriter.isTyping &&
+			typewriter.rendered.length >= content.length;
 
-			if (caughtUp) {
-				onComplete();
-				return;
-			}
-
-			if (!typewriter.isTyping) {
-				typewriter.start();
-			}
-		}, [
-			status,
-			typewriter.isTyping,
-			typewriter.rendered.length,
-			content.length,
-			onComplete,
-			typewriter.start,
-		]);
-
-		// ── Render ────────────────────────────────────────────────────────────────
-		// not_started chunks render nothing — they mount invisibly and wait for
-		// their status to flip to "active", at which point the typewriter baselines
-		// (from 0 on a first view, or from current content on a return).
-		if (status === "not_started") {
-			return null;
+		if (caughtUp) {
+			onComplete();
+			return;
 		}
 
-		return (
-			<Markdown
-				dir="auto"
-				components={components}
-				// wrap-anywhere: breaks long tokens and collapses min-width so they don't overflow the scroll area
-				className="wrap-anywhere [&>*:first-child]:mt-0"
-				urlTransform={urlTransform}
-			>
-				{fullRenderedText}
-			</Markdown>
-		);
-	});
+		if (!typewriter.isTyping) {
+			typewriter.start();
+		}
+	}, [
+		status,
+		typewriter.isTyping,
+		typewriter.rendered.length,
+		content.length,
+		onComplete,
+		typewriter.start,
+	]);
+
+	// ── Render ────────────────────────────────────────────────────────────────
+	// not_started chunks render nothing — they mount invisibly and wait for
+	// their status to flip to "active", at which point the typewriter baselines
+	// (from 0 on a first view, or from current content on a return).
+	if (status === "not_started") {
+		return null;
+	}
+
+	return (
+		<Markdown
+			dir="auto"
+			components={components}
+			// wrap-anywhere: breaks long tokens and collapses min-width so they don't overflow the scroll area
+			className="wrap-anywhere [&>*:first-child]:mt-0"
+			urlTransform={urlTransform}
+		>
+			{fullRenderedText}
+		</Markdown>
+	);
+};

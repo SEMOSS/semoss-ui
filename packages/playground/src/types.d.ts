@@ -52,7 +52,7 @@ export interface Workspace {
 	system_prompt: string;
 	mcp: MCPConfig[];
 	skills: SkillConfig[];
-	prompts: string[];
+	prompts: Array<string | { id: string; name: string; type: string }>;
 }
 
 /**

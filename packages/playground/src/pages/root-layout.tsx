@@ -1,21 +1,19 @@
 import { type PropsWithChildren, useMemo } from "react";
+import { useStore } from "zustand";
 import { useInsight } from "@semoss/sdk/react";
 import type { ThemeMap } from "@semoss/shared";
 import { Spinner } from "@semoss/ui/next";
 import { RootContext } from "@/contexts";
-import { RootStore } from "@/stores";
+import { createRootStore } from "@/stores";
 
 export const RootLayout = ({ children }: PropsWithChildren) => {
 	const { system } = useInsight();
 
-	// set up the store
 	const rootStore = useMemo(() => {
-		const store = new RootStore();
+		const store = createRootStore();
 
 		if (system?.config?.theme) {
-			// parse the theme
 			let theme: Partial<ThemeMap["playground"]> = {};
-
 			const rawTheme = system.config.theme.THEME_MAP || null || "{}";
 			try {
 				if (rawTheme) {
@@ -23,14 +21,15 @@ export const RootLayout = ({ children }: PropsWithChildren) => {
 					theme = parsedTheme?.playground || {};
 				}
 			} catch (_e) {}
-
-			store.initialize(theme);
+			store.getState().initialize(theme);
 		}
 
 		return store;
 	}, [system.config.theme]);
 
-	if (!rootStore.isInitialized) {
+	const isInitialized = useStore(rootStore, (s) => s.isInitialized);
+
+	if (!isInitialized) {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
 				<Spinner />
@@ -39,11 +38,7 @@ export const RootLayout = ({ children }: PropsWithChildren) => {
 	}
 
 	return (
-		<RootContext.Provider
-			value={{
-				root: rootStore,
-			}}
-		>
+		<RootContext.Provider value={rootStore}>
 			{children}
 		</RootContext.Provider>
 	);

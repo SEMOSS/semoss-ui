@@ -1,4 +1,3 @@
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useMemo } from "react";
 import { type ChunkStatus, useActiveIndex } from "@/hooks";
@@ -49,64 +48,68 @@ interface ResponseMessageTextProps {
  * render. Chunks animate one at a time while this part is "active"; once the
  * parent marks it "done", every chunk renders its full content directly.
  */
-export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
-	({ message, part, status, onComplete, isFirstView }) => {
-		// This part feeds its internal chunk queue only while it's the active
-		// part. Once "done", the internal queue snaps every chunk to full content.
-		const isActive = status === "active";
+export const ResponseMessageText: React.FC<ResponseMessageTextProps> = ({
+	message,
+	part,
+	status,
+	onComplete,
+	isFirstView,
+}) => {
+	// This part feeds its internal chunk queue only while it's the active
+	// part. Once "done", the internal queue snaps every chunk to full content.
+	const isActive = status === "active";
 
-		// Parse text into ordered md/html chunks. Memoized on the text so a
-		// streaming message (which re-renders per token) doesn't re-scan the full
-		// string every render. The hook bubbles `onComplete` to the parent message
-		// queue when the last chunk catches up, so this part reports its own
-		// completion without extra wiring. On a return view, seed at the latest
-		// chunk to jump to the frontier.
-		const chunks = useMemo(() => parseChunks(part.text), [part.text]);
-		const { chunkCallbacks, getChunkStatus } = useActiveIndex(
-			chunks.length,
-			isActive,
-			onComplete,
-			!isFirstView,
-		);
+	// Parse text into ordered md/html chunks. Memoized on the text so a
+	// streaming message (which re-renders per token) doesn't re-scan the full
+	// string every render. The hook bubbles `onComplete` to the parent message
+	// queue when the last chunk catches up, so this part reports its own
+	// completion without extra wiring. On a return view, seed at the latest
+	// chunk to jump to the frontier.
+	const chunks = useMemo(() => parseChunks(part.text), [part.text]);
+	const { chunkCallbacks, getChunkStatus } = useActiveIndex(
+		chunks.length,
+		isActive,
+		onComplete,
+		!isFirstView,
+	);
 
-		// An empty text part has nothing to animate — report complete so the
-		// parent can advance. While this is the last part and still streaming the
-		// parent's guard holds it, so this is a no-op until content arrives or a
-		// later part seals it.
-		if (chunks.length === 0) {
-			if (isActive) {
-				onComplete();
-			}
-			return null;
+	// An empty text part has nothing to animate — report complete so the
+	// parent can advance. While this is the last part and still streaming the
+	// parent's guard holds it, so this is a no-op until content arrives or a
+	// later part seals it.
+	if (chunks.length === 0) {
+		if (isActive) {
+			onComplete();
 		}
+		return null;
+	}
 
-		return (
-			<>
-				{chunks.map((chunk, idx) => {
-					if (chunk.type === "html") {
-						return (
-							<ResponseMessageTextHtml
-								key={chunk.key}
-								html={chunk.content}
-								status={getChunkStatus(idx)}
-								room={message.room}
-								onComplete={chunkCallbacks[idx]}
-							/>
-						);
-					}
-
+	return (
+		<>
+			{chunks.map((chunk, idx) => {
+				if (chunk.type === "html") {
 					return (
-						<ResponseMessageTextMd
+						<ResponseMessageTextHtml
 							key={chunk.key}
-							content={chunk.content}
+							html={chunk.content}
 							status={getChunkStatus(idx)}
-							message={message}
+							room={message.room}
 							onComplete={chunkCallbacks[idx]}
-							isFirstView={isFirstView}
 						/>
 					);
-				})}
-			</>
-		);
-	},
-);
+				}
+
+				return (
+					<ResponseMessageTextMd
+						key={chunk.key}
+						content={chunk.content}
+						status={getChunkStatus(idx)}
+						message={message}
+						onComplete={chunkCallbacks[idx]}
+						isFirstView={isFirstView}
+					/>
+				);
+			})}
+		</>
+	);
+};

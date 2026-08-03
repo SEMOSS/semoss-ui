@@ -46,15 +46,19 @@ export const RoomInputMenuNewFileExplorer = ({
 					}
 
 					const roomId = pixelReturn[0].output.roomId;
-					const room = new RoomStore(root.theme, roomId, insightId);
+					const room = new RoomStore(
+						root.getState().theme,
+						roomId,
+						insightId,
+					);
 
-					room.setModel(chat.models.selected);
+					room.setModel(chat.getState().models.selected);
 					room.setMode(mode === "agent" ? "agent" : "chat");
 					await room.initialize();
 					await room.updateRoomOptions(options);
 
 					// Register in the cache so loadRoom finds it after navigation.
-					chat.registerRoom(room);
+					chat.getState().registerRoom(room);
 
 					// Open the file explorer sidebar tab.
 					room.addSidebarNode(ROOM_FILE_EXPLORER_ID, {

@@ -5,7 +5,6 @@ import {
 	Maximize2Icon,
 	SparklesIcon,
 } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useId, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
@@ -37,7 +36,7 @@ const FORM_ID = "workspace-new-form";
  * Toolboxes → Prompts with a sticky Cancel/Create header). Skips the
  * Members section because the agent doesn't exist yet.
  */
-export const NewWorkspacePage = observer(() => {
+export const NewWorkspacePage = () => {
 	const { t } = useTranslation(["workspace", "common", "notifications"]);
 	const navigate = useNavigate();
 	const { chat } = useChat();
@@ -78,7 +77,7 @@ export const NewWorkspacePage = observer(() => {
 
 		setIsSaving(true);
 		try {
-			const newWorkspaceId = await chat.addWorkspace({
+			const newWorkspaceId = await chat.getState().addWorkspace({
 				name,
 				description,
 				system_prompt: instructions,
@@ -223,10 +222,12 @@ export const NewWorkspacePage = observer(() => {
 							onChange={(next) => setKnowledge(next)}
 							className="h-112"
 							enableKnowledgeMCP={
-								root.theme.featureFlags?.enableKnowledgeMCP
+								root.getState().theme.featureFlags
+									?.enableKnowledgeMCP
 							}
 							getPlatformUrl={
-								root.theme.featureFlags?.showPlatformLinks
+								root.getState().theme.featureFlags
+									?.showPlatformLinks
 									? mcpToPlatformUrl
 									: undefined
 							}
@@ -246,10 +247,12 @@ export const NewWorkspacePage = observer(() => {
 							onChange={(next) => setToolbox(next)}
 							className="h-112"
 							enableKnowledgeMCP={
-								root.theme.featureFlags?.enableKnowledgeMCP
+								root.getState().theme.featureFlags
+									?.enableKnowledgeMCP
 							}
 							getPlatformUrl={
-								root.theme.featureFlags?.showPlatformLinks
+								root.getState().theme.featureFlags
+									?.showPlatformLinks
 									? mcpToPlatformUrl
 									: undefined
 							}
@@ -282,7 +285,8 @@ export const NewWorkspacePage = observer(() => {
 							onChange={(next) => setPrompts(next)}
 							className="h-112"
 							getPlatformUrl={
-								root.theme.featureFlags?.showPlatformLinks
+								root.getState().theme.featureFlags
+									?.showPlatformLinks
 									? promptToPlatformUrl
 									: undefined
 							}
@@ -301,4 +305,4 @@ export const NewWorkspacePage = observer(() => {
 			/>
 		</div>
 	);
-});
+};

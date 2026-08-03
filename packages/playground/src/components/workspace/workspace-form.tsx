@@ -76,7 +76,11 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 	useEffect(() => {
 		setName(values?.name || "");
 		setDescription(values?.description || "");
-		setPrompts(values?.prompts ?? []);
+		setPrompts(
+			(values?.prompts ?? []).map((p) =>
+				typeof p === "string" ? p : (p as { id: string }).id,
+			),
+		);
 		setInstructions(values?.system_prompt || "");
 		const { knowledge: nextKnowledge, toolbox: nextToolbox } =
 			splitMcpByType(values?.mcp ?? []);
@@ -109,12 +113,11 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 
 			let output = "";
 			if (isNew) {
-				output = await chat.addWorkspace(updated);
+				output = await chat.getState().addWorkspace(updated);
 			} else {
-				output = await chat.editWorkspace(
-					(values as Workspace).workspace_id,
-					updated,
-				);
+				output = await chat
+					.getState()
+					.editWorkspace((values as Workspace).workspace_id, updated);
 			}
 
 			// get new app id and return in the onclose
@@ -190,10 +193,12 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 						onChange={(knowledge) => setKnowledge(knowledge)}
 						className="h-112"
 						enableKnowledgeMCP={
-							root.theme.featureFlags?.enableKnowledgeMCP
+							root.getState().theme.featureFlags
+								?.enableKnowledgeMCP
 						}
 						getPlatformUrl={
-							root.theme.featureFlags?.showPlatformLinks
+							root.getState().theme.featureFlags
+								?.showPlatformLinks
 								? mcpToPlatformUrl
 								: undefined
 						}
@@ -208,10 +213,12 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 						onChange={(mcps) => setToolbox(mcps)}
 						className="h-112"
 						enableKnowledgeMCP={
-							root.theme.featureFlags?.enableKnowledgeMCP
+							root.getState().theme.featureFlags
+								?.enableKnowledgeMCP
 						}
 						getPlatformUrl={
-							root.theme.featureFlags?.showPlatformLinks
+							root.getState().theme.featureFlags
+								?.showPlatformLinks
 								? mcpToPlatformUrl
 								: undefined
 						}
@@ -236,7 +243,8 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 						onChange={(values) => setPrompts(values)}
 						className="h-112"
 						getPlatformUrl={
-							root.theme.featureFlags?.showPlatformLinks
+							root.getState().theme.featureFlags
+								?.showPlatformLinks
 								? promptToPlatformUrl
 								: undefined
 						}

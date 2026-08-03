@@ -1,18 +1,18 @@
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo } from "react";
-import type { RootStore } from "@/stores";
+import type { RootState } from "@/stores";
 import { useNavbar } from "./use-navbar";
 import { useRoot } from "./use-root";
 
 interface useGlobalBreadcrumbsReturn {
-	setBreadcrumbs: (breadcrumbs: RootStore["breadcrumbs"]) => void;
+	setBreadcrumbs: (breadcrumbs: RootState["breadcrumbs"]) => void;
 	clearBreadcrumbs: () => void;
 	setNavbarActions: (actions: ReactNode | null) => void;
 	clearNavbarActions: () => void;
 }
 
 export interface UseGlobalBreadcrumbsOptions {
-	breadcrumbs?: RootStore["breadcrumbs"];
+	breadcrumbs?: RootState["breadcrumbs"];
 	navbarActions?: ReactNode | null;
 }
 
@@ -36,8 +36,8 @@ export const useGlobalBreadcrumbs = (
 	}, [breadcrumbs]);
 
 	// Make a stable breadcrumbs array that only changes when its content changes.
-	const stableBreadcrumbs = useMemo<RootStore["breadcrumbs"]>(() => {
-		return JSON.parse(breadcrumbsJson) as RootStore["breadcrumbs"];
+	const stableBreadcrumbs = useMemo<RootState["breadcrumbs"]>(() => {
+		return JSON.parse(breadcrumbsJson) as RootState["breadcrumbs"];
 	}, [breadcrumbsJson]);
 
 	useEffect(() => {
@@ -45,10 +45,10 @@ export const useGlobalBreadcrumbs = (
 			return;
 		}
 
-		root.setBreadcrumbs(stableBreadcrumbs);
+		root.getState().setBreadcrumbs(stableBreadcrumbs);
 
 		return () => {
-			root.clearBreadcrumbs();
+			root.getState().clearBreadcrumbs();
 		};
 	}, [shouldManageBreadcrumbs, stableBreadcrumbs, root]);
 
@@ -72,8 +72,8 @@ export const useGlobalBreadcrumbs = (
 	}, [setActions]);
 
 	return {
-		setBreadcrumbs: root.setBreadcrumbs,
-		clearBreadcrumbs: root.clearBreadcrumbs,
+		setBreadcrumbs: root.getState().setBreadcrumbs,
+		clearBreadcrumbs: root.getState().clearBreadcrumbs,
 		setNavbarActions,
 		clearNavbarActions,
 	};

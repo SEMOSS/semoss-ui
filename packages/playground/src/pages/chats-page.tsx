@@ -1,5 +1,4 @@
 import { SearchIcon, StarIcon, Trash2Icon } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
@@ -22,7 +21,7 @@ import {
 	useInfiniteScroll,
 } from "@semoss/ui/next";
 import { CHECKBOX_CLASS, ChatRow, type RoomItem } from "@/components";
-import { useChat, useGlobalBreadcrumbs } from "@/hooks";
+import { useChat, useChatState, useGlobalBreadcrumbs } from "@/hooks";
 import {
 	DATE_BUCKET_ORDER,
 	getDateBucket,
@@ -35,9 +34,10 @@ import {
  * section plus date buckets, with multi-select + bulk delete, inline
  * rename, and pin/unpin.
  */
-export const ChatsPage = observer(() => {
+export const ChatsPage = () => {
 	const { t } = useTranslation(["workspace", "common", "sidebar"]);
 	const { chat } = useChat();
+	const roomCounter = useChatState((s) => s.keys.roomCounter);
 
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);
@@ -171,14 +171,14 @@ export const ChatsPage = observer(() => {
 	// preserves current data while the refetch runs, avoiding a blank flash.
 	const didInitialMount = useRef(false);
 	useEffect(() => {
-		chat.keys.roomCounter;
+		roomCounter;
 		if (!didInitialMount.current) {
 			didInitialMount.current = true;
 			return;
 		}
 		getRooms.reset();
 		getPinnedRooms.refresh();
-	}, [getRooms.reset, getPinnedRooms.refresh, chat.keys.roomCounter]);
+	}, [getRooms.reset, getPinnedRooms.refresh, roomCounter]);
 
 	// Keyboard shortcuts: Esc clears the current selection;
 	// Cmd/Ctrl+A selects all visible chats (only when focus isn't
@@ -229,7 +229,7 @@ export const ChatsPage = observer(() => {
 			return next;
 		});
 		try {
-			await chat.pinRoom(roomId, !wasPinned);
+			await chat.getState().pinRoom(roomId, !wasPinned);
 		} catch {
 			setPinnedIds((prev) => {
 				const next = new Set(prev);
@@ -254,7 +254,7 @@ export const ChatsPage = observer(() => {
 		setDeletedSet((prev) => new Set([...prev, ...ids]));
 
 		const results = await Promise.allSettled(
-			ids.map((id) => chat.closeRoom(id)),
+			ids.map((id) => chat.getState().closeRoom(id)),
 		);
 
 		const failed = ids.filter((_id, i) => results[i].status === "rejected");
@@ -469,4 +469,4 @@ export const ChatsPage = observer(() => {
 			</Dialog>
 		</div>
 	);
-});
+};

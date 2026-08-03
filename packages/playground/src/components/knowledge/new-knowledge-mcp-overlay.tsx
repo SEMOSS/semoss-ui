@@ -1,4 +1,3 @@
-import { observer } from "mobx-react-lite";
 import { useId, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
@@ -28,62 +27,58 @@ interface NewKnowledgeMCPOverlayProps {
  * already inside a modal should host the form body directly to avoid stacking
  * Dialogs.
  */
-export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> =
-	observer(({ open, onClose }) => {
-		const { t } = useTranslation(["knowledge", "common"]);
-		const formId = useId();
-		const [isLoading, setIsLoading] = useState(false);
+export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> = ({
+	open,
+	onClose,
+}) => {
+	const { t } = useTranslation(["knowledge", "common"]);
+	const formId = useId();
+	const [isLoading, setIsLoading] = useState(false);
 
-		return (
-			<Dialog
-				open={open}
-				onOpenChange={(next) => {
-					if (!next && !isLoading) {
-						onClose();
-					}
-				}}
+	return (
+		<Dialog
+			open={open}
+			onOpenChange={(next) => {
+				if (!next && !isLoading) {
+					onClose();
+				}
+			}}
+		>
+			<DialogContent
+				className="w-full sm:max-w-4xl"
+				aria-describedby={t("knowledge:newSource.title")}
 			>
-				<DialogContent
-					className="w-full sm:max-w-4xl"
-					aria-describedby={t("knowledge:newSource.title")}
-				>
-					<DialogHeader>
-						<DialogTitle>
-							{t("knowledge:newSource.title")}
-						</DialogTitle>
-						<DialogDescription>
-							{t("knowledge:newSource.description")}
-						</DialogDescription>
-					</DialogHeader>
+				<DialogHeader>
+					<DialogTitle>{t("knowledge:newSource.title")}</DialogTitle>
+					<DialogDescription>
+						{t("knowledge:newSource.description")}
+					</DialogDescription>
+				</DialogHeader>
 
-					<NewKnowledgeFormBody
-						formId={formId}
-						onSuccess={(knowledge) => onClose(knowledge)}
-						onLoadingChange={setIsLoading}
-					/>
+				<NewKnowledgeFormBody
+					formId={formId}
+					onSuccess={(knowledge) => onClose(knowledge)}
+					onLoadingChange={setIsLoading}
+				/>
 
-					<DialogFooter>
-						<Button
-							variant="ghost"
-							disabled={isLoading}
-							onClick={() => onClose()}
-						>
-							{t("common:buttons.cancel")}
-						</Button>
-						<Button
-							type="submit"
-							form={formId}
-							variant="default"
-							disabled={isLoading}
-						>
-							{isLoading ? (
-								<Spinner />
-							) : (
-								t("common:buttons.create")
-							)}
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
-		);
-	});
+				<DialogFooter>
+					<Button
+						variant="ghost"
+						disabled={isLoading}
+						onClick={() => onClose()}
+					>
+						{t("common:buttons.cancel")}
+					</Button>
+					<Button
+						type="submit"
+						form={formId}
+						variant="default"
+						disabled={isLoading}
+					>
+						{isLoading ? <Spinner /> : t("common:buttons.create")}
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	);
+};

@@ -58,15 +58,15 @@ export const FileDragOverlay = () => {
 					{...{ [FILE_DRAG_ATTR]: "" }}
 					// Suppresses Radix's missing-description warning when there
 					// is no fileDragDisclaimer theme value to render.
-					{...(!root.theme.fileDragDisclaimer && {
+					{...(!root.getState().theme.fileDragDisclaimer && {
 						"aria-describedby": undefined,
 					})}
 				>
 					<DialogHeader>
 						<DialogTitle>{t("fileDrag.modalTitle")}</DialogTitle>
-						{root.theme.fileDragDisclaimer && (
+						{root.getState().theme.fileDragDisclaimer && (
 							<DialogDescription>
-								{root.theme.fileDragDisclaimer}
+								{root.getState().theme.fileDragDisclaimer}
 							</DialogDescription>
 						)}
 					</DialogHeader>

@@ -5,8 +5,8 @@ import { Muted, ScrollArea, Spinner } from "@semoss/ui/next";
 import type { Prompt } from "@/types";
 
 interface WorkspacePromptListProps {
-	/** Prompt IDs from the workspace */
-	promptIds: string[];
+	/** Prompt IDs or prompt objects from the workspace */
+	promptIds: Array<string | { id: string; name: string; type: string }>;
 }
 
 /**
@@ -19,7 +19,14 @@ export const WorkspacePromptList = ({
 	const { t } = useTranslation("workspace");
 
 	const ids = useMemo(
-		() => promptIds.filter(Boolean).map((p) => `"${p}"`),
+		// Backend may return string IDs or {id: string} objects
+		() =>
+			promptIds
+				.map((p) =>
+					typeof p === "string" ? p : (p as { id: string }).id,
+				)
+				.filter(Boolean)
+				.map((p) => `"${p}"`),
 		[promptIds],
 	);
 

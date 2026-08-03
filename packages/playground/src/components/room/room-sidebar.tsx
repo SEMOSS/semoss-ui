@@ -7,8 +7,8 @@ import {
 	TvMinimalIcon,
 	XIcon,
 } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect, useRef, useState } from "react";
+import { useStore } from "zustand";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import {
@@ -41,9 +41,10 @@ interface RoomSidebarProps {
 	room: RoomStore;
 }
 
-export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
+export const RoomSidebar: React.FC<RoomSidebarProps> = ({ room }) => {
 	const { t } = useTranslation("sidebar");
 	const insight = useInsight();
+	const _sidebarCounter = useStore(room, (s) => s.sidebar.counter);
 	const layoutRef = useRef<FlexLayout.Layout | null>(null);
 	const sidebarRef = useRef<HTMLDivElement | null>(null);
 	const controlsRef = useRef<HTMLDivElement | null>(null);
@@ -84,7 +85,7 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 	}, [pendingRename, insight.actions.run, room]);
 
 	// this will render the component whenever the sidebar model changes
-	room.sidebar.counter;
+	_sidebarCounter;
 
 	// get the node and do a type check
 	let activeNode: FlexLayout.TabNode | null = null;
@@ -363,4 +364,4 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 			</div>
 		</div>
 	);
-});
+};
