@@ -217,14 +217,6 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		};
 
 		/**
-		 * @name openInfo
-		 * @param engine
-		 */
-		const openInfo = async (engine: Engine) => {
-			window.open(`#/${route.path}/${engine.engine_id}`, "_blank");
-		};
-
-		/**
 		 * @name deleteEngine
 		 * @desc confirm deleting an engine
 		 */
@@ -384,17 +376,17 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 												<EngineGridItem
 													key={engine.engine_id}
 													variant={gridStyle}
-													path={`/${route.path}/${engine.engine_id}/workbench`}
+													path={`/${route.path}/${engine.engine_id}`}
 													engine={engine}
 													isFavorited={true}
 													showFavorite={true}
 													showGlobal={true}
-													showInfo={true}
+													showInfo={false}
 													showDelete={isOwnerPermission(
 														engine.engine_user_permission,
 													)}
 													onFavorite={setFavorite}
-													onInfo={openInfo}
+													onInfo={() => null}
 													onGlobalToggle={setGlobal}
 													onDelete={
 														handleDeleteRequest
@@ -425,19 +417,19 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 										<EngineGridItem
 											key={engine.engine_id}
 											variant={gridStyle}
-											path={`/${route.path}/${engine.engine_id}/workbench`}
+											path={`/${route.path}/${engine.engine_id}`}
 											engine={engine}
 											isFavorited={
 												engine.engine_favorite === 1
 											} // should be false
 											showFavorite={true}
 											showGlobal={true}
-											showInfo={true}
+											showInfo={false}
 											showDelete={isOwnerPermission(
 												engine.engine_user_permission,
 											)}
 											onFavorite={setFavorite}
-											onInfo={openInfo}
+											onInfo={() => null}
 											onGlobalToggle={setGlobal}
 											onDelete={handleDeleteRequest}
 										/>
@@ -492,7 +484,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 												engine.engine_user_permission,
 											)}
 											onFavorite={setFavorite}
-											onInfo={openInfo}
+											onInfo={() => null}
 											onGlobalToggle={setGlobal}
 											onDelete={handleDeleteRequest}
 										/>
