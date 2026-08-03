@@ -21,9 +21,7 @@ interface EngineSettingsDetailPageProps {
 	type: ALL_TYPES;
 }
 
-export const EngineSettingsUserDetailPage = (
-	props: EngineSettingsDetailPageProps,
-) => {
+const EngineSettingsUserDetailPage = (props: EngineSettingsDetailPageProps) => {
 	const { type } = props;
 
 	const { id } = useParams();
@@ -108,7 +106,7 @@ export const EngineSettingsUserDetailPage = (
 	);
 };
 
-export const EngineSettingsAdminDetailPage = (
+const EngineSettingsAdminDetailPage = (
 	props: EngineSettingsDetailPageProps,
 ) => {
 	const { type } = props;

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="248" height="164" viewBox="0 0 248 164" fill="none">
+	<rect width="248" height="164" fill="#FAFAFE" />
+
+	<!-- faint background planes, matching the other system app illustrations -->
+	<g opacity="0.5">
+		<path d="M0 96 L38 74 L38 132 L0 154 Z" fill="#EEEFF9" />
+		<path d="M38 74 L76 96 L76 154 L38 132 Z" fill="#F4F5FC" />
+		<path d="M196 30 L248 60 L248 128 L196 98 Z" fill="#F1F2FA" />
+	</g>
+
+	<!-- subject sits right of centre and fills the frame, because the card crops
+	     the illustration with object-cover object-right -->
+	<g transform="translate(12 -12.6) scale(1.08)">
+	<!-- base plate the box sits on -->
+	<g stroke="#D3D5EE" stroke-width="1">
+		<path d="M124 150 L52 108 L124 66 L196 108 Z" fill="#F3F4FB" />
+		<path d="M52 108 L52 116 L124 158 L124 150 Z" fill="#E9EAF5" />
+		<path d="M124 150 L124 158 L196 116 L196 108 Z" fill="#EFF0F9" />
+	</g>
+
+	<!-- the box: top face, then the two visible side faces -->
+	<g stroke="#C9CBE9" stroke-width="1" stroke-linejoin="round">
+		<path d="M124 18 L169 44 L124 70 L79 44 Z" fill="#FFFFFF" />
+		<path d="M79 44 L124 70 L124 128 L79 102 Z" fill="#E8E9F6" />
+		<path d="M124 70 L169 44 L169 102 L124 128 Z" fill="#F2F2FA" />
+	</g>
+
+	<!-- play triangle, sheared into the plane of the right hand face -->
+	<path d="M137.5 105.7 L137.5 76.7 L157.8 79.5 Z" fill="#DCDEF3" stroke="#AFB2DD"
+		stroke-width="1.25" stroke-linejoin="round" />
+	</g>
+</svg>

@@ -2,11 +2,18 @@
 
 This document provides context for AI coding assistants working with the SEMOSS Playground application.
 
-> **Inherits from:** [../../AGENTS.md](../../AGENTS.md) for monorepo conventions, commit messages, Biome config, and Node/pnpm requirements.
+> **Inherits from:** [../../AGENTS.md](../../AGENTS.md) for code style, file-naming, package
+> structure, commit messages, Biome config, and Node/pnpm requirements.
 
 ## Overview
 
 `@semoss/playground` is a development playground application for testing SEMOSS SDK features and components. It's a private package (not published) used for development and experimentation.
+
+## Structure & Conventions
+
+Follows the standard `src/` layout and file-naming rules from the root AGENTS.md. As an
+application it uses `contexts/`, `stores/`, `hooks/`, and a `pages/` router tree
+(`router.tsx` / `<name>.routes.tsx` / `<name>.layout.tsx` / `<name>.page.tsx`).
 
 ## Build System
 
