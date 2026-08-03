@@ -44,7 +44,7 @@ const hasPixelError = (operationType?: string[] | string): boolean => {
 };
 
 export const AppMcpUsagePage = () => {
-	const { appId, project } = useProject();
+	const { project } = useProject();
 	const { monolithStore } = useRootStore();
 
 	const [mcpTools, setMcpTools] = useState<MCPToolDefinition[]>([]);
@@ -94,11 +94,11 @@ export const AppMcpUsagePage = () => {
 	);
 
 	useEffect(() => {
-		if (!appId) {
+		if (!project.project_id) {
 			return;
 		}
-		fetchMcpTools(appId);
-	}, [appId, fetchMcpTools]);
+		fetchMcpTools(project.project_id);
+	}, [project.project_id, fetchMcpTools]);
 
 	return (
 		<SettingsContext.Provider value={{ adminMode: false }}>
@@ -244,7 +244,7 @@ export const AppMcpUsagePage = () => {
 				)}
 
 				<McpUsage
-					id={appId}
+					id={project.project_id}
 					name={
 						project?.project_display_name || project?.project_name
 					}

@@ -24,6 +24,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
+import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { STORAGE_CONNECTIONS, type Storage } from "./storage-import.constants";
@@ -132,7 +133,8 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 	};
 
 	const renderBreadcrumbs = () => (
-		<div className="mb-6">
+		<NavbarLeft>
+			<NavbarHeader logo={null} />
 			<Breadcrumb data-testid="breadcrumbs">
 				<BreadcrumbList>
 					<BreadcrumbItem>
@@ -181,7 +183,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 					)}
 				</BreadcrumbList>
 			</Breadcrumb>
-		</div>
+		</NavbarLeft>
 	);
 
 	const renderDatabaseGrid = (Databases: Storage[]) => (
