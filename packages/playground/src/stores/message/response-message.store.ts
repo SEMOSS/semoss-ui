@@ -9,6 +9,7 @@ import {
 } from "@/constants";
 import type { ToolStore } from "@/stores";
 import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
+import { getToolEngineId } from "@/utility/mcp-utils";
 import {
 	AbstractMessageStore,
 	type BaseMessageState,
@@ -510,7 +511,7 @@ paramValues=[{}]
 
 			try {
 				const response = await this.room.runRoomPixel<[unknown]>(
-					`RunMCPTool(project = [ "${tool.json._meta.SMSS_ENGINE_ID || tool.json._meta.SMSS_PROJECT_ID}" ], roomId=${JSON.stringify(this.room.roomId)}, function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
+					`RunMCPTool(project = [ "${getToolEngineId(tool.json._meta)}" ], roomId=${JSON.stringify(this.room.roomId)}, function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
 					false,
 					false,
 				);

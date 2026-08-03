@@ -148,6 +148,7 @@ export const NewRoomPage = () => {
 		| {
 				engine_id: string;
 				engine_name: string;
+				engine_display_name?: string;
 		  }[]
 		| null
 	>(
@@ -358,7 +359,10 @@ export const NewRoomPage = () => {
 		const knowledgeMcp = {
 			id: knowledgeId,
 			type: "VECTOR" as const,
-			name: getKnowledge.data[0].engine_name || knowledgeId,
+			name:
+				getKnowledge.data[0].engine_display_name ||
+				getKnowledge.data[0].engine_name ||
+				knowledgeId,
 		};
 
 		tempRoomStore.setOptions({

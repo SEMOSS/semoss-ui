@@ -9,6 +9,7 @@ import type {
 	PixelMessageToolCallPart,
 	PixelMessageToolResultPart,
 } from "@/types";
+import { getToolAppId } from "@/utility/mcp-utils";
 
 const buildServerToolJson = (
 	part: PixelMessageToolCallPart["toolCall"],
@@ -266,7 +267,7 @@ export class ToolStore {
 				name: this.json.title,
 				component: "room-tool",
 				config: {
-					app: this.json._meta.SMSS_PROJECT_ID,
+					app: getToolAppId(this.json._meta),
 					message: this._s.toolCall.message?.id,
 					toolId: this.json.id,
 				},

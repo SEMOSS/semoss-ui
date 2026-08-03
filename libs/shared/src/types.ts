@@ -16,12 +16,15 @@ export interface Engine {
 	engine_user_permission?: number;
 	engine_group_permission?: number;
 	engine_date_created?: string;
+	engine_created_by?: string;
 	engine_date_last_edited?: string;
 	engine_cost?: string;
 	low_engine_name?: string;
-	description?: string;
 	tag?: string;
-
+	description?: string;
+	markdown?: string;
+	"data classification"?: string[];
+	"data restrictions"?: string[];
 	/** @deprecated legacy keys from MyEngines */
 	app_id?: string;
 	/** @deprecated legacy keys from MyEngines */
