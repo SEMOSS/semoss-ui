@@ -160,7 +160,7 @@
 		"viewDescription": "このエージェントの動作を導くシステムプロンプト。",
 		"editTitle": "指示を編集",
 		"editDescription": "このエージェントの動作を導くシステムプロンプトを更新します。",
-		"charCount": "{{count}} 文字"
+		"charCount_other": "{{count, number}} 文字"
 	},
 	"skills": {
 		"noSkills": "スキルが追加されていません"

@@ -2,6 +2,7 @@ import type * as monacoType from "monaco-editor";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
+	download,
 	getPixelAsyncResult,
 	console as getPixelConsole,
 	runPixelAsync,
@@ -305,6 +306,45 @@ export const TerminalConsole = ({
 				const last = results[results.length - 1];
 				const opType = (last?.operationType?.[0] as string) || "";
 				const output = unwrapPixelOutput(last);
+
+				// FILE_DOWNLOAD pixels (DownloadInsightAsset, ToCsv, ToPdf, ...)
+				// don't return displayable output — their `output` is a file key
+				// that must be handed to a secondary downloadFile call to stream
+				// the bytes to the browser (mirrors the file explorer + renderer
+				// side-effect handling). Trigger the download here so REPL/editor
+				// submissions that produce a file behave the same, and show a
+				// friendly line instead of the opaque key.
+				if (opType === "FILE_DOWNLOAD") {
+					const fileKey =
+						typeof output === "string"
+							? output
+							: String(output ?? "");
+					try {
+						if (fileKey) {
+							await download(targetInsightId, fileKey);
+						}
+						updateStep(stepIdx, {
+							type: opType,
+							output: t("results.fileDownloadStarted"),
+							messages: collected.slice(),
+							lastStatus,
+							pending: false,
+						});
+					} catch (e) {
+						updateStep(stepIdx, {
+							type: "ERROR",
+							output:
+								e instanceof Error
+									? e.message
+									: t("results.downloadFailed"),
+							messages: collected.slice(),
+							lastStatus,
+							pending: false,
+						});
+					}
+					return;
+				}
+
 				const formatted = formatOutputForDisplay(
 					output,
 					opType,

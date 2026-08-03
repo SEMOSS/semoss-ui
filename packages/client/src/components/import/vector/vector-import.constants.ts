@@ -8,44 +8,6 @@ import PINECONE from "@/assets/img/PINECONE.png";
 import POSTGRES from "@/assets/img/POSTGRES.svg";
 import WEVIATE from "@/assets/img/WEVIATE.png";
 
-export type FieldType =
-	| "text"
-	| "hidden"
-	| "password"
-	| "url"
-	| "select"
-	| "number"
-	| "boolean"
-	| "textarea"
-	| "file-upload"
-	| "checkbox";
-
-export interface FieldDefinition {
-	key: string;
-	label: string;
-	type: FieldType;
-	required: boolean;
-	// optional extras seen in the constants
-	value?: string;
-	options?: string[];
-	default?: string | number | boolean;
-}
-
-export interface ModelTypeDefinition {
-	model_types: string[]; // e.g. ["llm"] | ["embedding"]
-	fields: FieldDefinition[];
-	advanced: FieldDefinition[];
-}
-
-export interface ProviderDefinition {
-	name: string;
-	types: ModelTypeDefinition[];
-}
-
-export interface ImportableModels {
-	providers: ProviderDefinition[];
-}
-
 export const VECTOR_CONNECTIONS = {
 	description: {
 		General:
@@ -2228,6 +2190,36 @@ export const VECTOR_CONNECTIONS = {
 					category: "Credentials",
 				},
 				{
+					key: "WEAVIATE_HTTP_PORT",
+					label: "HTTP Port",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Defaults to 443 for https and 80 for http, or the port included in the host name.",
+					category: "Credentials",
+				},
+				{
+					key: "WEAVIATE_GRPC_HOST",
+					label: "gRPC Host Name",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText: "Defaults to the host name.",
+					category: "Credentials",
+				},
+				{
+					key: "WEAVIATE_GRPC_PORT",
+					label: "gRPC Port",
+					value: "50051",
+					type: "text",
+					disabled: false,
+					required: true,
+					category: "Credentials",
+				},
+				{
 					key: "API_KEY",
 					label: "API Key",
 					value: "",
@@ -2239,7 +2231,7 @@ export const VECTOR_CONNECTIONS = {
 				{
 					key: "WEAVIATE_CLASSNAME",
 					label: "Weaviate Classname",
-					value: "Vector_Table",
+					value: "default",
 					type: "text",
 					disabled: false,
 					required: true,

@@ -25,6 +25,8 @@
 	"results": {
 		"successNoOutput": "✓ تم التشغيل بنجاح (بدون مخرجات)",
 		"insightNotReady": "الرؤية غير جاهزة",
-		"unknownError": "خطأ غير معروف"
+		"unknownError": "خطأ غير معروف",
+		"fileDownloadStarted": "✓ بدأ تنزيل الملف",
+		"downloadFailed": "فشل تنزيل الملف"
 	}
 }

@@ -1,7 +1,10 @@
 import {
+	confirmOTP,
 	download,
 	getSystemConfig,
 	login,
+	loginLDAP,
+	loginOTP,
 	logout,
 	oauth,
 	runPixel,
@@ -597,6 +600,25 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 	/** Accessible by the end user */
 	actions = {
 		/**
+		 * Start a linotp login. The pin is verified and a challenge is sent to
+		 * the user, no session exists until the otp is passed back into
+		 * login({ type: "linotp", otp }).
+		 *
+		 * @param username - username to login with
+		 * @param pin - pin to login with
+		 * @returns true if the challenge was accepted
+		 */
+		requestOTP: async (username: string, pin: string): Promise<boolean> => {
+			try {
+				return await loginOTP(username, pin);
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
+
+			return false;
+		},
+
+		/**
 		 * Allow the user to login
 		 * @param credentials
 		 * @returns
@@ -607,6 +629,15 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 						type: "native";
 						username: string;
 						password: string;
+				  }
+				| {
+						type: "ldap";
+						username: string;
+						password: string;
+				  }
+				| {
+						type: "linotp";
+						otp: string;
 				  }
 				| {
 						type: "oauth";
@@ -621,6 +652,21 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 						credentials.username,
 						credentials.password,
 					);
+
+					if (response) {
+						loggedIn = true;
+					}
+				} else if (credentials.type === "ldap") {
+					const response = await loginLDAP(
+						credentials.username,
+						credentials.password,
+					);
+
+					if (response) {
+						loggedIn = true;
+					}
+				} else if (credentials.type === "linotp") {
+					const response = await confirmOTP(credentials.otp);
 
 					if (response) {
 						loggedIn = true;

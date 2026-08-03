@@ -90,7 +90,7 @@ export const InstructionsModal = ({
 				<DialogFooter className="items-center justify-between sm:justify-between">
 					<span className="text-muted-foreground text-xs">
 						{t("workspace:instructions.charCount", {
-							count: normalized.length.toLocaleString(),
+							count: normalized.length,
 						})}
 					</span>
 					<Button type="button" onClick={() => onOpenChange(false)}>

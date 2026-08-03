@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { Button } from "@semoss/ui/next";
 import { THEME } from "@/constants";
-import { usePage, useRootStore } from "@/hooks";
+import { usePage, useRootStore, useThemeLogo } from "@/hooks";
 
 interface NavbarHeaderProps {
 	/**
@@ -15,6 +15,7 @@ export const NavbarHeader = observer((props: NavbarHeaderProps) => {
 	const { logo } = props;
 	const { page } = usePage();
 	const { configStore } = useRootStore();
+	const themeLogo = useThemeLogo();
 	// `logo` has three intentional states:
 	// - `undefined`: show default branding (theme logo + name)
 	// - `ReactNode`: show custom branding content
@@ -63,10 +64,10 @@ export const NavbarHeader = observer((props: NavbarHeaderProps) => {
 
 			{showDefaultBranding ? (
 				<div className="flex min-w-0 max-w-full items-center gap-1 rounded-md px-1 py-1 text-foreground sm:gap-2 sm:px-2">
-					{configStore.theme.logo ? (
+					{themeLogo ? (
 						<img
 							alt="logo"
-							src={configStore.theme.logo}
+							src={themeLogo}
 							className="h-4 w-auto sm:h-5"
 						/>
 					) : null}

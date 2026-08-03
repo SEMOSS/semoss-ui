@@ -293,37 +293,6 @@ async function deployProject(projectId, progressCallback) {
 				return;
 			}
 
-			progress.report({ increment: 80 });
-			progressCallback?.("Setting project portal...");
-
-			// Set project portal
-			try {
-				const data = {
-					projectId: projectId,
-					hasPortal: true,
-				};
-
-				response = await post(
-					`${SEMOSS_URL}/Monolith/api/auth/project/setProjectPortal`,
-					data,
-					{ headers },
-				);
-			} catch (error) {
-				vscode.window.showErrorMessage(
-					`Failed to set project portal: ${getErrorMessage(error)}`,
-				);
-				progressCallback?.(
-					`Failed to set project portal: ${getErrorMessage(error)}`,
-				);
-				return;
-			}
-
-			if (!response.data) {
-				vscode.window.showErrorMessage("Failed to set project portal");
-				progressCallback?.("Failed to set project portal");
-				return;
-			}
-
 			progress.report({ increment: 90 });
 			progressCallback?.("Publishing project...");
 

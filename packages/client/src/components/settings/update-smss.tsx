@@ -11,6 +11,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 	toast,
+	useTheme,
 } from "@semoss/ui/next";
 import {
 	updateDatabaseSmssProperties,
@@ -33,6 +34,7 @@ interface UpdateSMSSFormProps {
 
 export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 	const { adminMode } = useSettings();
+	const { resolvedTheme } = useTheme();
 
 	const [value, setValue] = useState("");
 	const [readOnly, setReadOnly] = useState(true);
@@ -106,7 +108,7 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 
 	return (
 		<div className="w-full overflow-hidden rounded-md border border-input bg-transparent dark:bg-input/30">
-			<div className="flex w-full flex-row items-center gap-1 border-input border-b bg-primary-foreground p-4">
+			<div className="flex w-full flex-row items-center gap-1 border-input border-b bg-muted px-4 py-2 text-muted-foreground">
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<Button
@@ -149,6 +151,7 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 						<Button
 							aria-label={"Update SMSS Properties"}
 							disabled={readOnly || getSMSS.data === value}
+							size="sm"
 							onClick={() => {
 								updateSMSSProperties();
 							}}
@@ -193,6 +196,7 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 					<MonacoEditor
 						width={"100%"}
 						height={editorHeight}
+						theme={resolvedTheme === "dark" ? "vs-dark" : "vs"}
 						options={{
 							minimap: {
 								enabled: false,
@@ -200,11 +204,14 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 							scrollBeyondLastLine: false,
 							readOnly: readOnly,
 							contextmenu: false,
+							scrollbar: {
+								alwaysConsumeMouseWheel: false,
+							},
 						}}
 						value={value}
 						language={"plaintext"}
 						onChange={(newValue) => {
-							setValue(newValue);
+							setValue(newValue || "");
 						}}
 						data-test-id="SMSS-editor"
 					/>

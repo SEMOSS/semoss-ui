@@ -2,8 +2,9 @@ import { Wrench } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Badge, H4, Spinner, toast } from "@semoss/ui/next";
 import { McpUsage } from "@/components/shared/mcp-usage";
-import { SettingsContext, useAppDetail } from "@/contexts";
-import { useRootStore } from "@/hooks";
+import { RemoteMcpConnection } from "@/components/shared/remote-mcp-connection";
+import { SettingsContext } from "@/contexts";
+import { useProject, useRootStore } from "@/hooks";
 
 interface MCPToolInputProperty {
 	title?: string;
@@ -43,7 +44,7 @@ const hasPixelError = (operationType?: string[] | string): boolean => {
 };
 
 export const AppMcpUsagePage = () => {
-	const { appId, appInfo } = useAppDetail();
+	const { project } = useProject();
 	const { monolithStore } = useRootStore();
 
 	const [mcpTools, setMcpTools] = useState<MCPToolDefinition[]>([]);
@@ -93,11 +94,11 @@ export const AppMcpUsagePage = () => {
 	);
 
 	useEffect(() => {
-		if (!appId) {
+		if (!project.project_id) {
 			return;
 		}
-		fetchMcpTools(appId);
-	}, [appId, fetchMcpTools]);
+		fetchMcpTools(project.project_id);
+	}, [project.project_id, fetchMcpTools]);
 
 	return (
 		<SettingsContext.Provider value={{ adminMode: false }}>
@@ -233,10 +234,19 @@ export const AppMcpUsagePage = () => {
 						)}
 				</div>
 
+				{!!appId && (
+					<div className="rounded-2xl border border-base p-6 shadow-xs">
+						<RemoteMcpConnection
+							projectId={appId}
+							onChange={() => fetchMcpTools(appId)}
+						/>
+					</div>
+				)}
+
 				<McpUsage
-					id={appId}
+					id={project.project_id}
 					name={
-						appInfo?.project_display_name || appInfo?.project_name
+						project?.project_display_name || project?.project_name
 					}
 				/>
 			</div>

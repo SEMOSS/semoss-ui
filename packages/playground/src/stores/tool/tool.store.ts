@@ -9,6 +9,7 @@ import type {
 	PixelMessageToolCallPart,
 	PixelMessageToolResultPart,
 } from "@/types";
+import { getToolAppId } from "@/utility/mcp-utils";
 
 /**
  * Build a synthetic toolCall payload for server tools (e.g. provider-side
@@ -108,7 +109,7 @@ export class ToolStore {
 		// If the real part has arrived (has a title), use it. Otherwise (placeholder
 		// pushed during streaming, or no part at all) synthesize from streamingName
 		// so the pill renders the wire name until the final sync swaps it.
-		if (part && part.title) {
+		if (part?.title) {
 			return part;
 		}
 		const name = this.streamingName;
@@ -306,7 +307,7 @@ export class ToolStore {
 				name: this.json.title,
 				component: "room-tool",
 				config: {
-					app: this.json._meta.SMSS_PROJECT_ID,
+					app: getToolAppId(this.json._meta),
 					message: this.toolCall.message?.id,
 					toolId: this.json.id,
 				},

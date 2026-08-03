@@ -12,4 +12,4 @@ function getImageFiles(data) {
 		: [];
 }
 
-export { getImageFiles, imageTypes, imageExtensions };
+export { getImageFiles, imageExtensions };

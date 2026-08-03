@@ -8,11 +8,7 @@ import {
 	uploadInsight,
 } from "@semoss/sdk/react";
 import { FlexLayout, type ThemeMap } from "@semoss/shared";
-import {
-	STREAMING_PLACEHOLDER_ID,
-	TEMPERATURE,
-	TOKEN_LENGTH,
-} from "@/constants";
+import { STREAMING_PLACEHOLDER_ID } from "@/constants";
 import {
 	type AbstractMessageStore,
 	createMessageStore,
@@ -106,16 +102,6 @@ interface RoomStoreInterface {
 		mcp: MCPConfig[];
 
 		/*
-		 * Length of the token
-		 */
-		tokenLength: number;
-
-		/*
-		 * Temperature of the model
-		 */
-		temperature: number;
-
-		/*
 		 * Workspace associated with the room
 		 */
 		workspace?: {
@@ -176,8 +162,6 @@ export class RoomStore {
 			predefinedPrompts: [],
 			instructions: "",
 			mcp: [],
-			tokenLength: TOKEN_LENGTH,
-			temperature: TEMPERATURE,
 		},
 		sidebar: {
 			isOpen: false,
@@ -396,21 +380,6 @@ export class RoomStore {
 		}
 
 		return tokensUsed;
-	}
-
-	/**
-	 * Get the tokens used in the most recent message
-	 */
-	get lastMessageTokens(): number {
-		// Walk back from tail to find the most recent message with tokens
-		let currMessage = this.tail as AbstractMessageStore;
-		while (currMessage) {
-			if (currMessage.tokens && currMessage.tokens > 0) {
-				return currMessage.tokens;
-			}
-			currMessage = currMessage.parent;
-		}
-		return 0;
 	}
 
 	/**
@@ -740,11 +709,14 @@ export class RoomStore {
 	 */
 	updateRoomOptions = async (options: RoomStore["options"]) => {
 		try {
-			// Filter out workspace MCPs before saving (they shouldn't be persisted to the room)
+			// Filter out MCPs the backend reports but does not store: workspace MCPs
+			// and the room's own toolbox, which is read from the room folder.
 			const optionsToSave = {
 				...options,
 				modelId: this._store.model.engine_id,
-				mcp: options.mcp.filter((mcp) => !mcp?.fromWorkspace),
+				mcp: options.mcp.filter(
+					(mcp) => !mcp?.fromWorkspace && !mcp?.fromRoom,
+				),
 			};
 
 			await this.runRoomPixel(
@@ -970,7 +942,10 @@ export class RoomStore {
 			pruneToolsAbove: false,
 		});
 
-		const parentMessage = this.tail;
+		// Anchor to the latest REAL response. this.tail can be an un-synced
+		// STREAMING_PLACEHOLDER_ID node left behind by a turn that errored mid-stream;
+		// latestResponseMessage skips those (and INPUT_TOOL_EXEC nodes).
+		const parentMessage = this.latestResponseMessage ?? this.tail;
 		if (parentMessage instanceof InputMessageStore) {
 			throw new Error("Cannot respond to input messages");
 		}
@@ -1270,7 +1245,7 @@ export class RoomStore {
 			// Poll for streaming content
 			let isPolling = true;
 
-			const pollingInterval = 300; // 300ms for responsive streaming
+			const pollingInterval = 500; // 500ms between streaming polls
 
 			while (isPolling) {
 				try {
@@ -1343,6 +1318,12 @@ export class RoomStore {
 		if (!cur) throw new Error();
 
 		const curResponse = cur as ResponseMessageStore;
+
+		if (curResponse.hasTools) {
+			throw new Error(
+				"Cannot compact a response that includes tool calls",
+			);
+		}
 
 		curResponse.setIsCompacting(true);
 

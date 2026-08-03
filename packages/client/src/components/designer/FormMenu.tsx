@@ -227,7 +227,7 @@ export const FormMenu: React.FC<FormMenuProps> = ({
 					>
 						<span
 							className="text-[13px] leading-[18px] tracking-[0.16px]"
-							style={{ color: "var(--Primary-Dark, #1260DD)" }}
+							style={{ color: "var(--primary)" }}
 						>
 							{title}
 						</span>

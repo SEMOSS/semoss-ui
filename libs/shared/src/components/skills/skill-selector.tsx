@@ -61,7 +61,7 @@ export const SkillSelector: React.FC<SkillSelectorProps> = ({
 	 */
 	const getSkills = useIteratorPixel<App[], App>(
 		(limit, offset) =>
-			`META | MyProjects(${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}type = "SKILL", limit=[${limit}], offset=[${offset}])`,
+			`META | MyProjects(${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}projectType=["SKILL"], limit=[${limit}], offset=[${offset}])`,
 		(response) => (response.length < 25 ? -1 : Infinity),
 		(response) => response,
 		{ limit: 25 },
@@ -97,11 +97,11 @@ export const SkillSelector: React.FC<SkillSelectorProps> = ({
 	return (
 		<div
 			className={cn(
-				"flex w-full flex-col overflow-hidden rounded-xl border-border bg-card shadow-sm",
+				"flex w-full flex-col overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm",
 				isEmpty ? "h-auto" : cn("h-full min-h-0", className),
 			)}
 		>
-			<div className="flex w-full shrink-0 flex-row gap-2 border-border bg-muted p-4">
+			<div className="flex w-full shrink-0 flex-row gap-2 border-border border-b bg-muted p-4">
 				<InputGroup className="bg-background">
 					<InputGroupInput
 						placeholder={t("selector.search")}

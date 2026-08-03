@@ -422,7 +422,7 @@ export const MyProfilePage = () => {
 									<div>
 										<button
 											type="button"
-											className="cursor-pointer font-medium text-[#0471F0] text-sm underline"
+											className="cursor-pointer font-medium text-primary text-sm underline"
 											onClick={() =>
 												setPasswordModal(true)
 											}
@@ -510,7 +510,7 @@ export const MyProfilePage = () => {
 				</h2>
 				{getModals.status === "INITIAL" ||
 				getModals.status === "LOADING" ? (
-					<span className="font-medium text-gray-700 text-sm">
+					<span className="font-medium text-muted-foreground text-sm">
 						Loading models...
 					</span>
 				) : getModals.status === "ERROR" ? (
@@ -671,23 +671,23 @@ export const MyProfilePage = () => {
 				<div className="mt-4 overflow-x-auto">
 					<table className="w-full text-sm">
 						<thead>
-							<tr className="bg-[#f3f3f3]">
-								<th className="rounded-tl-xl border-[#ccc] border-b px-3 py-2 text-left font-medium">
+							<tr className="bg-muted text-muted-foreground">
+								<th className="rounded-tl-xl border-border border-b px-3 py-2 text-left font-medium">
 									Name
 								</th>
-								<th className="border-[#ccc] border-b px-3 py-2 text-left font-medium">
+								<th className="border-border border-b px-3 py-2 text-left font-medium">
 									Description
 								</th>
-								<th className="border-[#ccc] border-b px-3 py-2 text-left font-medium">
+								<th className="border-border border-b px-3 py-2 text-left font-medium">
 									Date Created
 								</th>
-								<th className="border-[#ccc] border-b px-3 py-2 text-left font-medium">
+								<th className="border-border border-b px-3 py-2 text-left font-medium">
 									Last Used Created
 								</th>
-								<th className="border-[#ccc] border-b px-3 py-2 text-left font-medium">
+								<th className="border-border border-b px-3 py-2 text-left font-medium">
 									Access Key
 								</th>
-								<th className="rounded-tr-xl border-[#ccc] border-b px-3 py-2">
+								<th className="rounded-tr-xl border-border border-b px-3 py-2">
 									&nbsp;
 								</th>
 							</tr>
@@ -770,7 +770,7 @@ export const MyProfilePage = () => {
 				</div>
 				{getUserAccessKeys.status === "SUCCESS" &&
 					getUserAccessKeys.data?.length === 0 && (
-						<div className="mx-auto my-[75px] block w-full text-center text-[#666] text-[13px]">
+						<div className="mx-auto my-[75px] block w-full text-center text-[13px] text-muted-foreground">
 							No Personal Access Tokens to display at this time
 							<br />
 							Click New Key to create a new Personal Access Token
@@ -798,6 +798,10 @@ export const MyProfilePage = () => {
 							className="my-profile-page__generate-key-form"
 						>
 							<div className="flex flex-col gap-3">
+								<div className="rounded-md border border-primary/20 bg-primary/10 px-4 py-3 text-primary text-sm">
+									Note: Your private key will only be
+									generated once
+								</div>
 								<Controller
 									name="TOKENNAME"
 									control={control}

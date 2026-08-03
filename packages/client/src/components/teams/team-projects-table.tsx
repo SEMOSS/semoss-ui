@@ -99,10 +99,8 @@ interface TeamProjects {
 	project_date_created: string;
 	project_discoverable: boolean;
 	project_global: boolean;
-	project_has_portal: boolean;
 	project_id: string;
 	project_name: string;
-	project_portal_name: string;
 	project_type: string;
 	projectid?: string;
 	type?: string;
@@ -584,8 +582,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 												project.project_id;
 											const projectKey =
 												projectId ??
-												project.project_name ??
-												project.project_portal_name;
+												project.project_name;
 											const isSelected =
 												selectedProjects.some(
 													(value) =>

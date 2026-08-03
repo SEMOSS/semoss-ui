@@ -160,7 +160,8 @@
 		"viewDescription": "इस एजेंट के व्यवहार को निर्देशित करने वाला सिस्टम प्रॉम्प्ट।",
 		"editTitle": "निर्देश संपादित करें",
 		"editDescription": "इस एजेंट के व्यवहार को निर्देशित करने वाले सिस्टम प्रॉम्प्ट को अपडेट करें।",
-		"charCount": "{{count}} वर्ण"
+		"charCount_one": "{{count, number}} वर्ण",
+		"charCount_other": "{{count, number}} वर्ण"
 	},
 	"skills": {
 		"noSkills": "कोई कौशल नहीं जोड़ा गया"

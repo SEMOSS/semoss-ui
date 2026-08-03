@@ -320,7 +320,7 @@ export const LLMFeedbackPage = () => {
 	return (
 		<>
 			{isLoading && (
-				<div className="fixed inset-0 z-[1501] flex items-center justify-center bg-white/50">
+				<div className="fixed inset-0 z-[1501] flex items-center justify-center bg-background/50">
 					<div className="flex flex-col items-center gap-1">
 						<Spinner />
 						<p className="text-sm">

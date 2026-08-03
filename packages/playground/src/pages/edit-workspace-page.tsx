@@ -309,7 +309,7 @@ export const EditWorkspacePage = observer(() => {
 							/>
 							<div className="text-muted-foreground text-xs">
 								{t("workspace:instructions.charCount", {
-									count: instructions.length.toLocaleString(),
+									count: instructions.length,
 								})}
 							</div>
 						</Field>
