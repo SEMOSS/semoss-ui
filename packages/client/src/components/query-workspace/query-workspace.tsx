@@ -23,21 +23,21 @@ import type { QueryWorkspaceMode } from "./query-script-templates";
 import { QueryStructureBrowser } from "./query-structure-browser";
 
 /** FlexLayout component identifiers for the query workspace panels */
-export const QUERY_WORKSPACE_COMPONENT = {
+const QUERY_WORKSPACE_COMPONENT = {
 	STRUCTURE: "query-structure-browser",
 	EDITOR: "query-editor",
 	RESULTS: "query-results-panel",
 } as const;
 
 /** FlexLayout tab identifiers for the query workspace panels */
-export const QUERY_WORKSPACE_TAB = {
+const QUERY_WORKSPACE_TAB = {
 	STRUCTURE: "DATABASE_STRUCTURE",
 	EDITOR: "QUERY_EDITOR",
 	RESULTS: "QUERY_RESULTS",
 } as const;
 
 /** FlexLayout tabset identifiers for the query workspace panels */
-export const QUERY_WORKSPACE_TABSET = {
+const QUERY_WORKSPACE_TABSET = {
 	EDITOR: "QUERY_EDITOR_TABSET",
 } as const;
 

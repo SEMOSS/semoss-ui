@@ -13,6 +13,7 @@ import {
 } from "@/constants";
 import type { ToolStore } from "@/stores";
 import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
+import { getToolEngineId } from "@/utility/mcp-utils";
 import { AbstractMessageStore } from "./abstract-message.store";
 import { runAgentMessage } from "./agent-harness";
 import { InputMessageStore } from "./input-message.store";
@@ -639,7 +640,7 @@ paramValues=[{}]`;
 			try {
 				// wait for the pixel to run
 				const response = await this.room.runRoomPixel<[unknown]>(
-					`RunMCPTool(project = [ "${tool.json._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
+					`RunMCPTool(project = [ "${getToolEngineId(tool.json._meta)}" ], roomId=${JSON.stringify(this.room.roomId)}, function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
 					false,
 					false,
 				);

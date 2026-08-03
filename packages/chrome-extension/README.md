@@ -230,7 +230,7 @@ For technical details about the extension's architecture, components, and develo
 
 ## Contributing
 
-See [CONTRIBUTING.md](../../CONTRIBUTING.md) for development guidelines.
+See [AGENTS.md](../../AGENTS.md) for development guidelines and conventions.
 
 ## License
 

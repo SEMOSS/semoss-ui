@@ -1,6 +1,6 @@
 // Removed unused import (was: import { link } from "fs");
 // biome-ignore-all lint/suspicious/noTemplateCurlyInString: TODO
-export type FieldType =
+type FieldType =
 	| "text"
 	| "hidden"
 	| "password"
@@ -11,9 +11,9 @@ export type FieldType =
 	| "textarea"
 	| "file-upload";
 
-export type categoryType = "General" | "Credentials" | "Settings";
+type categoryType = "General" | "Credentials" | "Settings";
 
-export interface FieldRules {
+interface FieldRules {
 	pattern: {
 		value: RegExp;
 		message: string;
@@ -39,13 +39,13 @@ export interface FieldDefinition {
 	helperText?: string;
 }
 
-export interface ModelTypeDefinition {
+interface ModelTypeDefinition {
 	model_types: string[]; // e.g. ["llm"] | ["embedding"]
 	fields: FieldDefinition[];
 	advanced: FieldDefinition[];
 }
 
-export interface ProviderDefinition {
+interface ProviderDefinition {
 	name: string;
 	types: ModelTypeDefinition[];
 }
@@ -54,7 +54,7 @@ export interface ImportableModels {
 	providers: ProviderDefinition[];
 }
 
-export interface CategoryText {
+interface CategoryText {
 	General: string;
 	Settings: string;
 	Credentials: string;
@@ -76,14 +76,14 @@ export interface AppendedModelField {
 	insertAfterKey?: string;
 }
 
-export interface ModelFormConfig {
+interface ModelFormConfig {
 	fieldOverrides?: ModelFieldOverride[];
 	appendFields?: AppendedModelField[];
 	advancedFieldOverrides?: ModelFieldOverride[];
 	appendAdvancedFields?: AppendedModelField[];
 }
 
-export interface ModelVersionDefinition {
+interface ModelVersionDefinition {
 	name: string;
 	display: string;
 	icon: string;
@@ -100,10 +100,7 @@ export interface ModelVersionDefinition {
 export type ModelVersionsByProvider = Record<string, ModelVersionDefinition[]>;
 export const UNKNOWN_MODEL_BRAND = "HUGGINGFACE";
 
-export const OTHER_MODEL_FORM_CONFIG_BY_PROVIDER: Record<
-	string,
-	ModelFormConfig
-> = {
+const OTHER_MODEL_FORM_CONFIG_BY_PROVIDER: Record<string, ModelFormConfig> = {
 	OpenAI: {
 		fieldOverrides: [
 			{
@@ -3574,18 +3571,3 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 		},
 	],
 };
-
-export const Custom_Model_Image = [
-	{ name: "OpenAI", imgURL: "/src/assets/img/OPEN_AI.svg" },
-	{ name: "Google Gemini", imgURL: "/src/assets/img/GEMINI_COLOR.svg" },
-	{ name: "Azure OpenAI", imgURL: "/src/assets/img/AZURE_OPEN_AI.svg" },
-	{ name: "Anthropic", imgURL: "/src/assets/img/CLAUDE_AI.svg" },
-	{ name: "AWS Bedrock", imgURL: "/src/assets/img/BEDROCK.svg" },
-	{ name: "NVIDIA NIM", imgURL: "/src/assets/img/NEMO.png" },
-	{
-		name: "Self Hosted",
-		imgURL: "/src/assets/img/HUGGINGFACE_COLOR.svg",
-	},
-	{ name: "Perplexity", imgURL: "/src/assets/img/PERPLEXITY.svg" },
-	{ name: "Embedded", imgURL: "/src/assets/img/OPEN_AI.svg" },
-];

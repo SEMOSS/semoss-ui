@@ -37,7 +37,7 @@ type RouteConfig = {
 	children?: (typeof PROJECT_ROUTES)[number][];
 };
 
-export const renderRoute = (route: RouteConfig): React.ReactElement => {
+const renderRoute = (route: RouteConfig): React.ReactElement => {
 	if (route.path === "") {
 		return <Route key="index" index element={route.element} />;
 	}

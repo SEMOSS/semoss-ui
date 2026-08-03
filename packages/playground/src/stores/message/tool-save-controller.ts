@@ -247,10 +247,36 @@ export class ToolSaveController {
 		}
 		this.flushing = true;
 
+		const message = this.message;
+		const room = message.room;
 		const batch = this.queue.splice(0, this.queue.length);
 		// Writes are serialized, so if nothing is unfinished after this batch it
 		// is the one that completes the set — the model-invoking write.
-		const isFinal = !this.message.hasUnfinishedTools;
+		const isFinal = !message.hasUnfinishedTools;
+
+		// Refresh room options once the tool phase wraps up, so anything a tool
+		// changed (e.g. one that writes tool definitions into the room folder)
+		// shows up in the MCP indicator and is available to the next
+		// AskPlayground call, without a full page refresh. Gated to the final
+		// batch and skipped if nothing could have changed, rather than firing
+		// per tool — a turn with several tools would otherwise send that many
+		// redundant GetRoomOptions calls.
+		if (
+			isFinal &&
+			message.parts.some((part) => {
+				if (part.type !== "TOOL_CALL") return false;
+				const status = room.getTool(part.toolCall.id)?.status;
+				return status === "SUCCESS" || status === "CANCELLED";
+			})
+		) {
+			(async () => {
+				try {
+					await room.syncRoomOptions();
+				} catch (e) {
+					console.error("Failed to sync room options", e);
+				}
+			})();
+		}
 
 		// Assigned synchronously so cancelPending can await the in-flight batch.
 		// sendBatch reconciles each statement's outcome itself; a throw here is a

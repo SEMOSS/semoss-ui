@@ -7,10 +7,6 @@ export const PROMPT_BUILDER_INPUT_TYPES_STEP = 3;
 export const PROMPT_BUILDER_CONSTRAINTS_STEP = 4;
 export const PROMPT_BUILDER_PREVIEW_STEP = 5;
 
-export const LIBRARY_PROMPT_TAG_TRAVEL = "travel";
-export const LIBRARY_PROMPT_TAG_COMMUNICATIONS = "communications";
-export const LIBRARY_PROMPT_TAG_BUSINESS = "business";
-
 export const TOKEN_TYPE_TEXT = "text";
 export const TOKEN_TYPE_INPUT = "input";
 

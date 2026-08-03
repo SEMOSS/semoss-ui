@@ -122,8 +122,6 @@ const LayersDropdown = ({ id }) => {
 	);
 };
 
-export default LayersDropdown;
-
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_LAYOUT,
 	icon: Network,
