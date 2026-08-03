@@ -8,6 +8,7 @@ type FieldType =
 	| "select"
 	| "number"
 	| "boolean"
+	| "multiselect"
 	| "textarea"
 	| "file-upload";
 
@@ -31,10 +32,12 @@ export interface FieldDefinition {
 	required: boolean;
 	category: categoryType;
 	// optional extras seen in the constants
-	value?: string;
+	value?: string | string[];
 	options?: string[];
+	disabledOptions?: string[];
+	optionLabels?: Record<string, string>;
 	disabled?: boolean;
-	default?: string | number | boolean;
+	default?: string | string[] | number | boolean;
 	rules?: FieldRules;
 	helperText?: string;
 }
@@ -2945,8 +2948,8 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			formConfig: withModelTokenLimits(undefined, 65536, 1048576),
 		},
 		{
-			name: "gemini-3.1-flash-lite-preview",
-			display: "Gemini 3.1 Flash Lite Preview",
+			name: "gemini-3.1-flash-lite",
+			display: "Gemini 3.1 Flash Lite",
 			icon: "/src/assets/img/GEMINI_COLOR.svg",
 			embedding: false,
 			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/3-1-flash-lite",
@@ -2955,8 +2958,8 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			formConfig: withModelTokenLimits(undefined, 65536, 1048576),
 		},
 		{
-			name: "gemini-3-pro-image-preview",
-			display: "Gemini 3 Pro Image Preview",
+			name: "gemini-3-pro-image",
+			display: "Gemini 3 Pro Image",
 			icon: "/src/assets/img/GEMINI_COLOR.svg",
 			embedding: false,
 			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/3-pro-image",
@@ -2966,8 +2969,8 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			formConfig: withModelTokenLimits(undefined, 32768, 65536),
 		},
 		{
-			name: "gemini-3.1-flash-image-preview",
-			display: "Gemini 3.1 Flash Image Preview",
+			name: "gemini-3.1-flash-image",
+			display: "Gemini 3.1 Flash Image",
 			icon: "/src/assets/img/GEMINI_COLOR.svg",
 			embedding: false,
 			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/3-1-flash-image",

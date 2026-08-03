@@ -164,7 +164,7 @@ export const EngineMetadataPage = observer(() => {
 		relName?: string;
 	};
 
-	const { active } = useEngine();
+	const { engine } = useEngine();
 	const { configStore } = useRootStore();
 
 	const [isModified, setIsModified] = useState(false);
@@ -224,8 +224,8 @@ export const EngineMetadataPage = observer(() => {
 		descriptions: Record<string, string>;
 		additionalDataTypes: Record<string, string>;
 	}>(
-		active.id
-			? `GetDatabaseMetamodel( database=["${active.id}"], options=["dataTypes","physicalTypes","additionalDataTypes","logicalNames","descriptions","positions"]);`
+		engine.engine_id
+			? `GetDatabaseMetamodel( database=["${engine.engine_id}"], options=["dataTypes","physicalTypes","additionalDataTypes","logicalNames","descriptions","positions"]);`
 			: "",
 		{
 			onSuccess({
@@ -312,7 +312,7 @@ export const EngineMetadataPage = observer(() => {
 	}>(
 		selectedNode && selectedNode.data.properties.length > 0
 			? `Database(database=["${
-					active.id
+					engine.engine_id
 				}"]) | Distinct(false) | Select(${selectedNode.data.properties
 					.map((p) => p.id)
 					.join(", ")}) | Collect(100);`
@@ -331,7 +331,9 @@ export const EngineMetadataPage = observer(() => {
 	);
 
 	const getDatabaseCategory = usePixel<string>(
-		active.id ? `GetDatabaseCategory(engine=["${active.id}"]);` : "",
+		engine.engine_id
+			? `GetDatabaseCategory(engine=["${engine.engine_id}"]);`
+			: "",
 	);
 	const isRdbms = getDatabaseCategory.data?.toUpperCase() === "SQL";
 
@@ -608,7 +610,7 @@ export const EngineMetadataPage = observer(() => {
 					},
 				]
 			>(
-				`ExternalUpdateJdbcSchema(database=["${active.id}"], filters=${filters});`,
+				`ExternalUpdateJdbcSchema(database=["${engine.engine_id}"], filters=${filters});`,
 			);
 
 			if (errors.length > 0) {
@@ -873,7 +875,7 @@ Error ${e.message || "Unknown error"}
 			// run it
 			const { errors, pixelReturn, insightId } =
 				await configStore.runPixel<[string]>(
-					`DatabaseMetadataToPdf(database=["${active.id}"]);`,
+					`DatabaseMetadataToPdf(database=["${engine.engine_id}"]);`,
 				);
 
 			if (errors.length > 0) {
@@ -946,7 +948,7 @@ Error ${e.message || "Unknown error"}
 				}
 
 				const { errors } = await runPixelWithConsole(
-					`RdbmsExternalUpload(database=["${active.id}"], metamodel=[${JSON.stringify({ relationships: relationships, tables: tables })}], existing=[true]); META|SaveOwlPositions(database=["${active.id}"], positionMap=[${JSON.stringify(positions)}]);SyncDatabaseWithLocalMaster(database=["${active.id}"]);`,
+					`RdbmsExternalUpload(database=["${engine.engine_id}"], metamodel=[${JSON.stringify({ relationships: relationships, tables: tables })}], existing=[true]); META|SaveOwlPositions(database=["${engine.engine_id}"], positionMap=[${JSON.stringify(positions)}]);SyncDatabaseWithLocalMaster(database=["${engine.engine_id}"]);`,
 				);
 
 				if (errors.length > 0) {
@@ -954,7 +956,7 @@ Error ${e.message || "Unknown error"}
 				}
 			} else {
 				const { errors } = await configStore.runPixel(
-					`META|SaveOwlPositions(database=["${active.id}"], positionMap=[${JSON.stringify(positions)}]);`,
+					`META|SaveOwlPositions(database=["${engine.engine_id}"], positionMap=[${JSON.stringify(positions)}]);`,
 				);
 
 				if (errors.length > 0) {
@@ -1118,7 +1120,6 @@ Error ${e.message || "Unknown error"}
 									<TooltipTrigger asChild>
 										<Button
 											size="sm"
-											disabled={!active?.id}
 											variant="outline"
 											onClick={() =>
 												setShowSyncDatabase(true)
@@ -1138,7 +1139,6 @@ Error ${e.message || "Unknown error"}
 								<TooltipTrigger asChild>
 									<Button
 										size="sm"
-										disabled={!active?.id}
 										variant="outline"
 										onClick={() =>
 											downloadDatabaseMetadata()
@@ -1157,7 +1157,7 @@ Error ${e.message || "Unknown error"}
 								<TooltipTrigger asChild>
 									<Button
 										size="sm"
-										disabled={!active?.id || !isModified}
+										disabled={!isModified}
 										variant="outline"
 										className={
 											showSaveReminder
@@ -1742,22 +1742,20 @@ Error ${e.message || "Unknown error"}
 				description={selectedColumnDetails?.description}
 			/>
 
-			{active?.id && (
-				<SyncExternalDatabaseOverlay
-					engine={active.id}
-					tables={concepts} // for RDBMS, tables and views are the same in terms of metadata, so we can just pass the concepts as both
-					views={concepts} // for RDBMS, tables and views are the same in terms of metadata, so we can just pass the concepts as both
-					open={showSyncDatabase}
-					onClose={async (success, data) => {
-						if (success && data) {
-							await syncDatabase(data.tables, data.views);
-						}
+			<SyncExternalDatabaseOverlay
+				engine={engine.engine_id}
+				tables={concepts} // for RDBMS, tables and views are the same in terms of metadata, so we can just pass the concepts as both
+				views={concepts} // for RDBMS, tables and views are the same in terms of metadata, so we can just pass the concepts as both
+				open={showSyncDatabase}
+				onClose={async (success, data) => {
+					if (success && data) {
+						await syncDatabase(data.tables, data.views);
+					}
 
-						// close it
-						setShowSyncDatabase(false);
-					}}
-				/>
-			)}
+					// close it
+					setShowSyncDatabase(false);
+				}}
+			/>
 		</div>
 	);
 });

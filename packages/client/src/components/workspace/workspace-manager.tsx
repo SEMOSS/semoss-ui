@@ -1,6 +1,7 @@
 import {
 	Blocks,
 	Braces,
+	ChevronRightIcon,
 	FlaskConical,
 	Folder,
 	Layers,
@@ -17,13 +18,22 @@ import type React from "react";
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { FlexLayout, getFileIconComponent } from "@semoss/shared";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 import { ClosePage } from "@/assets/img/ClosePage";
-import { useTabBarScroll, useWorkspace } from "@/hooks";
+import { useProject, useTabBarScroll, useWorkspace } from "@/hooks";
 import type { WorkspaceOptions } from "@/stores";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
 import { WorkspaceLoading } from "./WorkspaceLoading";
-import { WorkspaceOverlay } from "./workspace-overlay";
 
 const TAB_ICON_CLASS_NAME = "size-4";
 
@@ -77,6 +87,7 @@ type WorkspaceManagerProps = {
 
 export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 	({ navbarActions, options, factory = () => null, onAction }) => {
+		const { catalog, project } = useProject();
 		const { workspace } = useWorkspace();
 		const layoutRef = useRef<FlexLayout.Layout | null>(null);
 		const containerRef = useRef<HTMLDivElement | null>(null);
@@ -198,43 +209,38 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 			<>
 				<NavbarLeft>
 					<NavbarHeader logo={null} />
-					<div className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
-						<div className="flex items-center gap-1">
-							{workspace.type === "SKILL" ||
-							workspace.type === "WORKSPACE" ? (
-								<div
-									title={workspace?.metadata?.project_name}
-									className="max-w-[30ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
-								>
-									{workspace?.metadata?.project_name}
-								</div>
-							) : (
-								<>
-									<Link
-										to={`/app/${workspace.metadata.project_id}/view`}
-										className="flex items-center text-inherit no-underline"
-									>
-										<div
-											title={
-												workspace?.metadata
-													?.project_name
-											}
-											className="max-w-[30ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
-										>
-											{workspace?.metadata?.project_name}
-										</div>
+					<Breadcrumb>
+						<BreadcrumbList>
+							<BreadcrumbItem>
+								<BreadcrumbLink asChild>
+									<Link to={catalog.path}>
+										{catalog.name} Catalog
 									</Link>
-									<span className="text-muted-foreground text-sm">
-										/
-									</span>
-									<span className="text-sm">Editing</span>
-								</>
-							)}
-						</div>
-					</div>
+								</BreadcrumbLink>
+							</BreadcrumbItem>
+							<BreadcrumbSeparator>
+								<ChevronRightIcon />
+							</BreadcrumbSeparator>
+							<BreadcrumbItem>
+								<BreadcrumbLink asChild>
+									<Link
+										to={`${catalog.path}/${project.project_id}`}
+									>
+										{project.project_display_name ||
+											project.project_name}
+									</Link>
+								</BreadcrumbLink>
+							</BreadcrumbItem>
+							<BreadcrumbSeparator>
+								<ChevronRightIcon />
+							</BreadcrumbSeparator>
+							<BreadcrumbItem>
+								<BreadcrumbPage>Edit</BreadcrumbPage>
+							</BreadcrumbItem>
+						</BreadcrumbList>
+					</Breadcrumb>
 				</NavbarLeft>
 				<NavbarRight>{navbarActions}</NavbarRight>
-				<WorkspaceOverlay />
 				<div className="relative flex h-full w-full flex-col overflow-hidden">
 					<div className="relative mt-2 flex h-full w-full flex-1 overflow-hidden px-3 pt-3 pb-3">
 						<WorkspaceLoading />
@@ -304,7 +310,6 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 						</div>
 					</div>
 				</div>
-				<WorkspaceOverlay />
 			</>
 		);
 	},
