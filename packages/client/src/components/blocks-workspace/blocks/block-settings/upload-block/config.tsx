@@ -1,5 +1,4 @@
 import { Upload } from "lucide-react";
-import type { CSSProperties } from "react";
 import { InputSettings, QuerySelectionSettings } from "../../settings";
 import { SelectSettings } from "../../settings/shared/SelectSettings";
 import { SwitchSettings } from "../../settings/shared/SwitchSettings";
@@ -8,12 +7,8 @@ import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
 import { buildListener, buildShowField } from "../block-defaults.shared";
 import type { BlockSettingsConfig } from "../settings.types";
 
-export const DefaultStyles: CSSProperties = {
-	width: "100%",
-	padding: "4px",
-};
 
-export const FileTypes: string[] = [
+const FileTypes: string[] = [
 	".csv",
 	".txt",
 	".jpeg",

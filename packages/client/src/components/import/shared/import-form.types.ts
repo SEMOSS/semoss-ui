@@ -1,4 +1,4 @@
-export type FieldType =
+type FieldType =
 	| "text"
 	| "password"
 	| "number"
@@ -9,14 +9,14 @@ export type FieldType =
 	| "checkbox"
 	| "tags";
 
-export interface ShowWhenRule {
+interface ShowWhenRule {
 	field: string;
 	oneOf?: string[];
 	notOneOf?: string[];
 	eq?: string | boolean;
 }
 
-export interface OptionsWhenRule {
+interface OptionsWhenRule {
 	field: string;
 	eq: string;
 	restrictTo: string[];
@@ -56,12 +56,4 @@ export interface FormField {
 	displayRules?: {
 		hideOtherFields?: Array<{ key: string; value: string[] }>;
 	};
-}
-
-export interface FormDefinition {
-	name: string;
-	disable: boolean;
-	icon: string;
-	fields: FormField[];
-	advanced?: FormField[];
 }

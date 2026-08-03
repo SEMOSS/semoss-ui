@@ -1,4 +1,4 @@
-import { MembersTable, type Project } from "@semoss/shared";
+import { MembersTable, type Project, type Role } from "@semoss/shared";
 import { H2 } from "@semoss/ui/next";
 import { PendingMembersTable, SettingsTiles } from "@/components/settings";
 import { TeamsTable } from "@/components/settings/teams-table";
@@ -13,7 +13,7 @@ interface AccessProps {
 	>;
 	appId: string;
 	fetchUserSpecificData: () => void;
-	permission: string;
+	permission: Role;
 }
 
 export const AccessControl = ({
@@ -31,7 +31,7 @@ export const AccessControl = ({
 			}}
 		>
 			<div className="flex w-full flex-col items-start gap-6 self-stretch">
-				{permission === "author" && (
+				{permission === "OWNER" && (
 					<section className="w-full">
 						<H2 className="mb-2 font-medium text-xl">
 							Access Settings
