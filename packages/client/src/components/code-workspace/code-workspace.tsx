@@ -8,7 +8,10 @@ import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
 import { ProjectDetailTabs } from "@/components/project";
 import { useWorkspace } from "@/hooks";
 import { WorkspaceManager } from "../../components/workspace";
-import { WorkspaceTerminal } from "../../components/workspace/panels";
+import {
+	WorkspaceConsole,
+	WorkspaceTerminal,
+} from "../../components/workspace/panels";
 import type { WorkspaceOptions } from "../../stores";
 import { MCPJsonEditor } from "../shared";
 import { CodeWorkspaceActions } from "./code-workspace-actions";
@@ -59,6 +62,14 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						type: "tab",
 						name: "Terminal",
 						component: "terminal",
+						enableClose: false,
+						config: {},
+					},
+					{
+						id: "console",
+						type: "tab",
+						name: "Console",
+						component: "console",
 						enableClose: false,
 						config: {},
 					},
@@ -163,6 +174,35 @@ export const CodeWorkspace: React.FC = observer(() => {
 		);
 	}, [workspace.model]);
 
+	// Inject the Console tab into the bottom border if it was loaded from a
+	// cached layout that pre-dates this tab. Runs once after the model loads.
+	useEffect(() => {
+		const model = workspace.model;
+		if (!model) return;
+		if (model.getNodeById("console")) return; // already there
+
+		// Find the bottom border via the always-present terminal tab
+		const terminalNode = model.getNodeById("terminal");
+		const bottomBorder = terminalNode?.getParent();
+		if (!bottomBorder) return;
+
+		model.doAction(
+			FlexLayout.Actions.addNode(
+				{
+					id: "console",
+					type: "tab",
+					name: "Console",
+					component: "console",
+					enableClose: false,
+					config: {},
+				},
+				bottomBorder.getId(),
+				FlexLayout.DockLocation.CENTER,
+				1,
+			),
+		);
+	}, [workspace.model]);
+
 	const FACTORY: React.ComponentProps<typeof WorkspaceManager>["factory"] = (
 		node,
 		layout,
@@ -231,6 +271,8 @@ export const CodeWorkspace: React.FC = observer(() => {
 					onActiveInsightChange={workspace.setActiveTerminalInsightId}
 				/>
 			);
+		} else if (component === "console") {
+			return <WorkspaceConsole appId={workspace.appId} />;
 		}
 
 		return <>{component}</>;

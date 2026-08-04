@@ -1,216 +1,263 @@
-// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
-
-import { CircleDot, RefreshCw, Square, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Button } from "@semoss/ui/next";
+import { Search } from "lucide-react";
+import { useCallback, useState } from "react";
+import { Button, ToggleGroup, ToggleGroupItem } from "@semoss/ui/next";
 import { useProject, useRootStore } from "@/hooks";
+import {
+	APP_LOG_LEVEL_BADGE_CLASSES,
+	APP_LOG_LEVEL_CHIP_CLASSES,
+	type ParsedAppLogLine,
+	parseAppLogLine,
+} from "@/utility/parse-app-log-line";
 
-interface ParsedLogLine {
-	id: number;
-	raw: string;
-	level: "INFO" | "WARN" | "ERROR" | "DEBUG" | "TRACE" | "OTHER";
+const PAGE_SIZE = 50;
+
+interface SearchAppLogsResult {
+	lines: string[];
+	totalMatches: number;
+	hasMore: boolean;
 }
 
-type LevelFilter = Record<string, boolean>;
-
-const POLL_INTERVAL_MS = 2000;
-const LEVEL_REGEX = /^\[(INFO|WARN|ERROR|DEBUG|TRACE)\s*\]/;
-
-const LEVEL_CLASSES: Record<string, string> = {
-	INFO: "text-slate-300",
-	WARN: "text-yellow-400",
-	ERROR: "text-red-400",
-	DEBUG: "text-blue-400",
-	TRACE: "text-slate-500",
-	OTHER: "text-slate-400",
-};
-
-function parseLine(raw: string, id: number): ParsedLogLine {
-	const match = raw.match(LEVEL_REGEX);
-	const level = (match?.[1] as ParsedLogLine["level"]) ?? "OTHER";
-	return { id, raw, level };
-}
-
+/**
+ * Searches this project's app.log (and its rotated siblings) on disk via
+ * SearchAppLogsReactor — historical, durable-enough (bounded by rotation),
+ * searchable. Deliberately not live — for that, see the Console panel in the
+ * code workspace.
+ */
 export const AppLogsPage = () => {
 	const { project } = useProject();
 	const appId = project.project_id;
 	const { monolithStore } = useRootStore();
-	const [lines, setLines] = useState<ParsedLogLine[]>([]);
-	const [connected, setConnected] = useState(false);
-	const [paused, setPaused] = useState(false);
-	const [levelFilter, setLevelFilter] = useState<LevelFilter>({
-		INFO: true,
-		WARN: true,
-		ERROR: true,
-		DEBUG: false,
-	});
-	const terminalRef = useRef<HTMLDivElement>(null);
-	const lineIdRef = useRef(0);
-	const offsetRef = useRef<number>(-1); // -1 = initial load (get last ~50KB)
-	const fileSizeRef = useRef<number>(0);
-	const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-	const pausedRef = useRef(paused);
-	pausedRef.current = paused;
 
-	const poll = useCallback(async () => {
-		try {
-			const res = await monolithStore.runQuery(
-				`GetAppLogs(paramValues=[{"projectId": "${appId}", "offset": "${offsetRef.current}"}]);`,
-			);
-			const { operationType, output } = res.pixelReturn[0];
-			if (operationType.includes("ERROR")) return;
+	const [query, setQuery] = useState("");
+	const [levels, setLevels] = useState<string[]>([]);
+	const [offset, setOffset] = useState(0);
+	const [lines, setLines] = useState<ParsedAppLogLine[]>([]);
+	const [totalMatches, setTotalMatches] = useState(0);
+	const [hasMore, setHasMore] = useState(false);
+	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 
-			const data = output as unknown as {
-				lines: string[];
-				nextOffset: number;
-				fileSize: number;
-			};
-
-			// Detect log rotation: if stored offset > new file size, file was rotated
-			if (offsetRef.current > 0 && offsetRef.current > data.fileSize) {
-				setLines([]);
-				lineIdRef.current = 0;
-			}
-
-			offsetRef.current = data.nextOffset;
-			fileSizeRef.current = data.fileSize;
-			setConnected(true);
-
-			if (!pausedRef.current && data.lines.length > 0) {
-				const newParsed = data.lines.map((raw) =>
-					parseLine(raw, ++lineIdRef.current),
+	const runSearch = useCallback(
+		async (searchOffset: number) => {
+			setLoading(true);
+			setError(null);
+			try {
+				const params: Record<string, string> = {
+					projectId: appId,
+					offset: String(searchOffset),
+					limit: String(PAGE_SIZE),
+				};
+				if (query.trim()) {
+					params.query = query.trim();
+				}
+				if (levels.length > 0) {
+					params.levels = levels.join(",");
+				}
+				const paramValues = Object.entries(params)
+					.map(
+						([key, value]) =>
+							`"${key}": "${value.replace(/"/g, '\\"')}"`,
+					)
+					.join(", ");
+				const res = await monolithStore.runQuery<[SearchAppLogsResult]>(
+					`SearchAppLogs(paramValues=[{${paramValues}}]);`,
 				);
-				setLines((prev) => {
-					const combined = [...prev, ...newParsed];
-					return combined.length > 5000
-						? combined.slice(-5000)
-						: combined;
-				});
+				const { operationType, output } = res.pixelReturn[0];
+				if (operationType.includes("ERROR")) {
+					throw new Error("Search failed");
+				}
+				const data = output as unknown as SearchAppLogsResult;
+				setLines(data.lines.map(parseAppLogLine));
+				setTotalMatches(data.totalMatches);
+				setHasMore(data.hasMore);
+				setOffset(searchOffset);
+			} catch {
+				setError(
+					"Only project owners can search app logs, or the search itself failed.",
+				);
+				setLines([]);
+				setTotalMatches(0);
+				setHasMore(false);
+			} finally {
+				setLoading(false);
 			}
-		} catch {
-			setConnected(false);
-		}
-	}, [appId, monolithStore]);
+		},
+		[appId, query, levels, monolithStore],
+	);
 
-	// Start polling on mount, clean up on unmount
-	useEffect(() => {
-		offsetRef.current = -1;
-		poll(); // immediate first fetch
-		intervalRef.current = setInterval(poll, POLL_INTERVAL_MS);
-		return () => {
-			if (intervalRef.current) clearInterval(intervalRef.current);
-		};
-	}, [poll]);
-
-	// Auto-scroll to bottom when new lines arrive (unless paused)
-	useEffect(() => {
-		if (!paused && terminalRef.current) {
-			terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
-		}
-	}, [lines, paused]);
-
-	const toggleLevel = (level: string) =>
-		setLevelFilter((prev) => ({ ...prev, [level]: !prev[level] }));
-
-	const visibleLines = lines.filter((l) => levelFilter[l.level] ?? true);
-
-	const levelButtons = [
-		{ key: "INFO", activeClass: "bg-slate-700 text-slate-200" },
-		{ key: "WARN", activeClass: "bg-yellow-900 text-yellow-300" },
-		{ key: "ERROR", activeClass: "bg-red-900 text-red-300" },
-		{ key: "DEBUG", activeClass: "bg-blue-900 text-blue-300" },
-	];
+	const rangeEnd = Math.min(offset + lines.length, totalMatches);
 
 	return (
 		<div
-			className="flex h-full flex-col gap-3"
+			className="flex h-full flex-col gap-3 p-4"
 			data-testid="app-logs-page-container"
 		>
-			<div className="flex items-center justify-between">
-				<div className="flex items-center gap-2">
-					<CircleDot
-						className={`size-3 ${connected ? "text-green-400" : "text-red-400"}`}
+			<div className="flex items-center justify-between gap-2">
+				<h3 className="font-semibold text-lg">Logs</h3>
+				<span className="text-muted-foreground text-xs">
+					Searches app.log and its rotated history on disk — not a
+					live view
+				</span>
+			</div>
+
+			<div className="flex flex-wrap items-center gap-2 border-border border-b pb-3">
+				<div className="flex flex-1 items-center gap-1.5 rounded border border-border bg-background px-2 py-1.5">
+					<Search className="size-3.5 text-muted-foreground" />
+					<input
+						value={query}
+						onChange={(e) => setQuery(e.target.value)}
+						onKeyDown={(e) => {
+							if (e.key === "Enter") runSearch(0);
+						}}
+						placeholder="Search log text…"
+						className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+						data-testid="app-logs-page-search"
 					/>
-					<span
-						className={`font-medium text-sm ${connected ? "text-green-400" : "text-red-400"}`}
-					>
-						{connected ? "Live" : "Disconnected"}
-					</span>
-					<span className="text-muted-foreground text-xs">
-						{visibleLines.length} lines
-					</span>
 				</div>
-				<div className="flex items-center gap-2">
-					{levelButtons.map(({ key, activeClass }) => (
-						<button
-							key={key}
-							type="button"
-							onClick={() => toggleLevel(key)}
-							className={`rounded px-2 py-0.5 font-mono text-xs transition-colors ${
-								levelFilter[key]
-									? activeClass
-									: "bg-muted text-muted-foreground"
-							}`}
-							data-testid={`app-logs-page-level-${key.toLowerCase()}`}
-						>
-							{key}
-						</button>
-					))}
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={() => setPaused((p) => !p)}
-						data-testid="app-logs-page-pause-button"
+				<ToggleGroup
+					type="multiple"
+					size="sm"
+					variant="outline"
+					value={levels}
+					onValueChange={setLevels}
+					data-testid="app-logs-page-level-filter"
+					className="gap-1"
+					spacing={2}
+				>
+					<ToggleGroupItem
+						value="INFO"
+						aria-label="Toggle INFO"
+						className={`font-mono text-[10px] ${APP_LOG_LEVEL_CHIP_CLASSES.INFO}`}
 					>
-						{paused ? (
-							<>
-								<RefreshCw className="mr-1 size-3" />
-								Resume
-							</>
+						INFO
+					</ToggleGroupItem>
+					<ToggleGroupItem
+						value="WARN"
+						aria-label="Toggle WARN"
+						className={`font-mono text-[10px] ${APP_LOG_LEVEL_CHIP_CLASSES.WARN}`}
+					>
+						WARN
+					</ToggleGroupItem>
+					<ToggleGroupItem
+						value="ERROR"
+						aria-label="Toggle ERROR"
+						className={`font-mono text-[10px] ${APP_LOG_LEVEL_CHIP_CLASSES.ERROR}`}
+					>
+						ERROR
+					</ToggleGroupItem>
+					<ToggleGroupItem
+						value="DEBUG"
+						aria-label="Toggle DEBUG"
+						className={`font-mono text-[10px] ${APP_LOG_LEVEL_CHIP_CLASSES.DEBUG}`}
+					>
+						DEBUG
+					</ToggleGroupItem>
+				</ToggleGroup>
+				<Button
+					size="sm"
+					onClick={() => runSearch(0)}
+					disabled={loading}
+					data-testid="app-logs-page-search-button"
+				>
+					{loading ? "Searching…" : "Search"}
+				</Button>
+			</div>
+
+			{error ? (
+				<div
+					className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-destructive text-xs"
+					data-testid="app-logs-page-error"
+				>
+					{error}
+				</div>
+			) : null}
+
+			<div className="min-h-0 flex-1 overflow-y-auto rounded-md border border-border">
+				<table className="w-full text-sm">
+					<thead className="sticky top-0 bg-muted/60">
+						<tr>
+							<th className="px-3 py-2 text-left font-medium text-muted-foreground text-xs">
+								Time
+							</th>
+							<th className="px-3 py-2 text-left font-medium text-muted-foreground text-xs">
+								Level
+							</th>
+							<th className="px-3 py-2 text-left font-medium text-muted-foreground text-xs">
+								Source
+							</th>
+							<th className="px-3 py-2 text-left font-medium text-muted-foreground text-xs">
+								Message
+							</th>
+						</tr>
+					</thead>
+					<tbody>
+						{lines.length === 0 ? (
+							<tr>
+								<td
+									colSpan={4}
+									className="px-3 py-8 text-center text-muted-foreground text-sm"
+								>
+									{loading
+										? "Searching…"
+										: "No results yet — run a search above."}
+								</td>
+							</tr>
 						) : (
-							<>
-								<Square className="mr-1 size-3" />
-								Pause
-							</>
+							lines.map((line) => (
+								<tr
+									key={`${offset}-${line.raw}`}
+									className="border-border border-t hover:bg-muted/30"
+								>
+									<td className="whitespace-nowrap px-3 py-2 font-mono text-muted-foreground text-xs">
+										{line.timestamp ?? "—"}
+									</td>
+									<td className="whitespace-nowrap px-3 py-2">
+										<span
+											className={`inline-block rounded px-1.5 py-0.5 font-mono font-semibold text-[10px] ${APP_LOG_LEVEL_BADGE_CLASSES[line.level]}`}
+										>
+											{line.level}
+										</span>
+									</td>
+									<td className="whitespace-nowrap px-3 py-2 font-mono text-muted-foreground text-xs">
+										{line.source ?? "—"}
+									</td>
+									<td className="px-3 py-2 font-mono text-xs">
+										{line.message ?? line.raw}
+									</td>
+								</tr>
+							))
 						)}
+					</tbody>
+				</table>
+			</div>
+
+			<div className="flex items-center justify-between text-muted-foreground text-xs">
+				<span>
+					{totalMatches > 0
+						? `Showing ${offset + 1}–${rangeEnd} of ${totalMatches} matching lines`
+						: null}
+				</span>
+				<div className="flex gap-2">
+					<Button
+						variant="outline"
+						size="sm"
+						disabled={offset === 0 || loading}
+						onClick={() =>
+							runSearch(Math.max(0, offset - PAGE_SIZE))
+						}
+					>
+						Previous
 					</Button>
 					<Button
-						variant="ghost"
+						variant="outline"
 						size="sm"
-						onClick={() => setLines([])}
-						data-testid="app-logs-page-clear-button"
+						disabled={!hasMore || loading}
+						onClick={() => runSearch(offset + PAGE_SIZE)}
 					>
-						<Trash2 className="mr-1 size-3" />
-						Clear
+						Next
 					</Button>
 				</div>
 			</div>
-			<div
-				ref={terminalRef}
-				className="h-[calc(100vh-280px)] min-h-[400px] overflow-y-auto rounded-lg bg-gray-950 p-4 font-mono text-xs leading-5"
-				data-testid="app-logs-page-terminal"
-			>
-				{visibleLines.length === 0 ? (
-					<span className="text-slate-500 italic">
-						{connected
-							? "Waiting for activity on this app…"
-							: "Connecting…"}
-					</span>
-				) : (
-					visibleLines.map((line) => (
-						<div
-							key={line.id}
-							className={`whitespace-pre-wrap break-all ${LEVEL_CLASSES[line.level]}`}
-						>
-							{line.raw}
-						</div>
-					))
-				)}
-			</div>
-			<p className="text-muted-foreground text-xs">
-				⚠ Logs are specific to this container. In a clustered deployment
-				each pod streams its own log file independently.
-			</p>
 		</div>
 	);
 };
