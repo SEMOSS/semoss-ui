@@ -86,7 +86,7 @@ export const AddMembersOverlay = ({
 	const [offset, setOffset] = useState<number>(0);
 	const [hasMore, setHasMore] = useState<boolean>(true);
 	const fetchVersionRef = useRef(0);
-	const [isSearching, setIsSearching] = useState<boolean>(false);
+	const [isSearching, setIsSearching] = useState<boolean>(true);
 	const [restriction, setRestriction] = useState<string>("null");
 	const [maxTokens, setMaxTokens] = useState<string>("");
 	const [maxTime, setMaxTime] = useState<string>("");
@@ -105,14 +105,12 @@ export const AddMembersOverlay = ({
 	// Reset to page 0 whenever the debounced search term changes.
 	// Keep prior results on screen (don't clear them) so the list doesn't
 	// flash to empty while the next page is fetched.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional reset-only effect
 	useEffect(() => {
 		setOffset(0);
 		setHasMore(true);
 	}, [debouncedSearchKey]);
 
 	// Fetch a page; use a version ref to discard stale responses
-	// biome-ignore lint/correctness/useExhaustiveDependencies: adminMode intentionally excluded to avoid refetch on prop change; t is stable from useTranslation
 	useEffect(() => {
 		if (!open) return;
 		const version = ++fetchVersionRef.current;
@@ -232,7 +230,7 @@ export const AddMembersOverlay = ({
 		setOffset(0);
 		setHasMore(true);
 		setUserPermission("");
-		setIsSearching(false);
+		setIsSearching(true);
 	};
 
 	const permissionLabel = (permission: string): string => {
