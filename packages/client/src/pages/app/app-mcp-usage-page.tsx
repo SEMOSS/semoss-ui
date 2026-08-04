@@ -234,11 +234,11 @@ export const AppMcpUsagePage = () => {
 						)}
 				</div>
 
-				{!!appId && (
+				{!!project.project_id && (
 					<div className="rounded-2xl border border-base p-6 shadow-xs">
 						<RemoteMcpConnection
-							projectId={appId}
-							onChange={() => fetchMcpTools(appId)}
+							projectId={project.project_id}
+							onChange={() => fetchMcpTools(project.project_id)}
 						/>
 					</div>
 				)}
