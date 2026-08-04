@@ -5,16 +5,9 @@
  */
 
 export { BorderSettings } from "./BorderSettings";
-export { ChipSettings } from "./ChipSettings";
 export { ContainerLayoutSettings } from "./ContainerLayoutSettings";
 export * from "./data-grid";
-export { FontSizeSettings } from "./FontSizeSettings";
-export { GridSettings } from "./grid";
-export { IconSelectSettings } from "./IconSelectSettings";
 export { OptionsSettings } from "./OptionsSettings";
 export { QueryInputSettings } from "./query-input-settings";
 export { QuerySelectionSettings } from "./query-selection-settings";
-export { SelectInputOptionsSettings } from "./SelectInputOptionsSettings";
-export { SelectInputValueSettings } from "./SelectInputValueSettings";
-export { SizeSpacingSettings } from "./SizeSpacingSettings";
 export { TabBlockArraySettings } from "./tab";

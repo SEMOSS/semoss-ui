@@ -22,7 +22,10 @@
     "scripts": {
         "dev": "rollup -w -c",
         "build": "rollup -c --environment NODE_ENV:production",
-        "build:dev": "rollup -c"
+        "build:dev": "rollup -c",
+        "test": "vitest run",
+        "test:watch": "vitest --watch",
+        "test:coverage": "vitest --coverage --watch=false"
     },
     "keywords": [],
     "author": "",
@@ -33,11 +36,13 @@
         "@rollup/plugin-terser": "^1.0.0",
         "@rollup/plugin-typescript": "12.1.4",
         "@types/react": "18.3.1",
+        "@vitest/coverage-v8": "^4.1.6",
         "react": "18.3.1",
         "rollup": "4.59.0",
         "rollup-plugin-delete": "3.0.1",
         "tslib": "2.5.3",
-        "typescript": "~5.5.2"
+        "typescript": "~5.5.2",
+        "vitest": "^4.1.6"
     },
     "peerDependencies": {
         "react": "18.3.1"

@@ -31,14 +31,22 @@ interface OperationProps {
 	hideJsonToggle?: boolean;
 	/** Reserve fully-expanded height in the JSON viewer (modal contexts). */
 	fixedJsonHeight?: boolean;
+	/** Height cap for inline images; modal contexts pass `max-h-none`. */
+	imageClassName?: string;
 }
 
 /**
  * Operation that is rendered
  */
 export const Operation = observer((props: OperationProps): JSX.Element => {
-	const { operation, output, expandAll, hideJsonToggle, fixedJsonHeight } =
-		props;
+	const {
+		operation,
+		output,
+		expandAll,
+		hideJsonToggle,
+		fixedJsonHeight,
+		imageClassName,
+	} = props;
 
 	if (operation === "SUCCESS") {
 		return <SuccessOperation output={output as string} />;
@@ -78,6 +86,7 @@ export const Operation = observer((props: OperationProps): JSX.Element => {
 			expandAll={expandAll}
 			hideJsonToggle={hideJsonToggle}
 			fixedJsonHeight={fixedJsonHeight}
+			imageClassName={imageClassName}
 		/>
 	);
 });

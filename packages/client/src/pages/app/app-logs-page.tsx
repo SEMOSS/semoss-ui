@@ -3,8 +3,7 @@
 import { CircleDot, RefreshCw, Square, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@semoss/ui/next";
-import { useAppDetail } from "@/contexts";
-import { useRootStore } from "@/hooks";
+import { useProject, useRootStore } from "@/hooks";
 
 interface ParsedLogLine {
 	id: number;
@@ -33,7 +32,8 @@ function parseLine(raw: string, id: number): ParsedLogLine {
 }
 
 export const AppLogsPage = () => {
-	const { appId } = useAppDetail();
+	const { project } = useProject();
+	const appId = project.project_id;
 	const { monolithStore } = useRootStore();
 	const [lines, setLines] = useState<ParsedLogLine[]>([]);
 	const [connected, setConnected] = useState(false);

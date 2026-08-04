@@ -60,7 +60,7 @@ const PermissionCard = ({
 };
 
 export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
-	const { type, active } = useEngine();
+	const { type, engine, permission } = useEngine();
 
 	const { monolithStore } = useRootStore();
 
@@ -71,12 +71,12 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 	// close when the id changes
 	useEffect(() => {
 		setOpen(false);
-	}, [active.id]);
+	}, [engine.engine_id]);
 
 	const handleOpen = () => {
 		setRequestedRole("READ_ONLY");
 		setComment(
-			`I am requesting access to ${active.name || "this engine"} for [please provide a reason]`,
+			`I am requesting access to ${engine.engine_display_name || "this engine"} for [please provide a reason]`,
 		);
 		setOpen(true);
 	};
@@ -88,7 +88,7 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 		try {
 			const response = await monolithStore.runQuery(
 				`META | RequestEngine(engine=['${
-					active.id
+					engine.engine_id
 				}'], permission=['${requestedRole}']${
 					comment && `, comment=['${comment}']`
 				})`,
@@ -111,22 +111,18 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 	};
 
 	// cannot request access if the owner
-	if (active?.role === "OWNER" && !fromApp) {
+	if (permission === "OWNER" && !fromApp) {
 		return null;
 	}
 	return (
 		<>
 			{fromApp ? (
-				<Button
-					variant="outline"
-					className="h-[30px] rounded-xl border-primary px-6 text-(--primary) text-[13px]"
-					onClick={handleOpen}
-				>
-					{active?.role === "DISCOVERABLE" || !active.role
+				<Button variant="outline" onClick={handleOpen}>
+					{permission === "DISCOVERABLE" || !permission
 						? "Request Access"
 						: "Change Access"}
 				</Button>
-			) : active?.role === "DISCOVERABLE" || !active.role ? (
+			) : permission === "DISCOVERABLE" || !permission ? (
 				<Button
 					variant="default"
 					className="gap-2"
@@ -136,11 +132,7 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 					Request Access
 				</Button>
 			) : (
-				<Button
-					variant="outline"
-					onClick={handleOpen}
-					className="border-(--primary) bg-transparent text-(--primary) hover:text-(--primary)"
-				>
+				<Button variant="outline" onClick={handleOpen}>
 					<Plus className="size-4" />
 					Change Access
 				</Button>
@@ -155,7 +147,7 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 				<DialogContent className="max-h-[90vh] overflow-auto sm:max-w-2xl">
 					<DialogHeader>
 						<DialogTitle>
-							{active?.role === "DISCOVERABLE"
+							{permission === "DISCOVERABLE"
 								? "Request Access"
 								: "Change Access"}
 						</DialogTitle>
@@ -214,7 +206,7 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 						</Button>
 						<Button
 							disabled={
-								!requestedRole || requestedRole === active?.role
+								!requestedRole || requestedRole === permission
 							}
 							onClick={() => {
 								requestAccess();

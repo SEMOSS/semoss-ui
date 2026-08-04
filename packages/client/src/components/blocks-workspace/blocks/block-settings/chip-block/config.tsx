@@ -1,5 +1,4 @@
 import { Tag } from "lucide-react";
-import type { CSSProperties } from "react";
 import {
 	ColorSettings,
 	InputSettings,
@@ -10,8 +9,6 @@ import { SwitchSettings } from "../../settings/shared/SwitchSettings";
 import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
 import { buildListener, buildShowField } from "../block-defaults.shared";
 import type { BlockSettingsConfig } from "../settings.types";
-
-export const DefaultStyles: CSSProperties = {};
 
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_DISPLAY,

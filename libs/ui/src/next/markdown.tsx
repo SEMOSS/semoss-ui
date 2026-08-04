@@ -1,3 +1,4 @@
+import { load as parseYaml } from "js-yaml";
 import * as React from "react";
 import { type Components, default as ReactMarkdown } from "react-markdown";
 import rehypeRaw from "rehype-raw";
@@ -15,6 +16,74 @@ import {
 	TableRow,
 } from "./table";
 import { H1, H2, H3, H4, List, P, Quote } from "./typography";
+
+const FRONTMATTER_PATTERN = /^\uFEFF?---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
+
+function isPrimative(value: unknown): value is string | number | boolean {
+	const type = typeof value;
+	return type === "string" || type === "number" || type === "boolean";
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+	if (!value || typeof value !== "object" || Array.isArray(value)) {
+		return false;
+	}
+
+	return true;
+}
+
+function toCodeString(value: unknown): string {
+	const output = JSON.stringify(value, null, 2);
+	if (output) {
+		return output;
+	}
+
+	return String(value);
+}
+
+function renderFrontmatterValue(value: unknown): React.ReactNode {
+	if (isPrimative(value)) {
+		return String(value);
+	}
+
+	if (value === null) {
+		return <span className="text-muted-foreground">null</span>;
+	}
+
+	if (Array.isArray(value)) {
+		if (value.length === 0) {
+			return <span className="text-muted-foreground">[]</span>;
+		}
+
+		if (value.every((item) => isPrimative(item))) {
+			return value.join(", ");
+		}
+
+		return (
+			<CodeContainer className="mt-0 rounded-md border bg-muted/40 p-2">
+				<Code code={toCodeString(value)} language="json" />
+			</CodeContainer>
+		);
+	}
+
+	if (isObject(value)) {
+		if (Object.keys(value).length === 0) {
+			return <span className="text-muted-foreground">{"{}"}</span>;
+		}
+
+		return (
+			<CodeContainer className="mt-0 rounded-md border bg-muted/40 p-2">
+				<Code code={toCodeString(value)} language="json" />
+			</CodeContainer>
+		);
+	}
+
+	return (
+		<CodeContainer className="mt-0 rounded-md border bg-muted/40 p-2">
+			<Code code={toCodeString(value)} language="json" />
+		</CodeContainer>
+	);
+}
 
 interface MarkdownProps extends React.HTMLAttributes<HTMLDivElement> {
 	/** Markdown content to render */
@@ -139,6 +208,52 @@ function Markdown({
 		};
 	}, [defaultComponents, components]);
 
+	const { content, frontmatter } = React.useMemo(() => {
+		if (!children) {
+			return {
+				content: children || "",
+				frontmatter: null,
+			};
+		}
+
+		const match = FRONTMATTER_PATTERN.exec(children);
+		if (!match) {
+			return {
+				content: children,
+				frontmatter: null,
+			};
+		}
+
+		const frontmatterText = match[1];
+		const markdownContent = children.slice(match[0].length);
+
+		try {
+			const parsed = parseYaml(frontmatterText);
+			if (isObject(parsed)) {
+				return {
+					content: markdownContent,
+					frontmatter: {
+						kind: "parsed",
+						value: parsed,
+					},
+				};
+			}
+		} catch {
+			return {
+				content: markdownContent,
+				frontmatter: {
+					kind: "raw",
+					value: frontmatterText,
+				},
+			};
+		}
+
+		return {
+			content: markdownContent,
+			frontmatter: null,
+		};
+	}, [children]);
+
 	if (!children) {
 		return null;
 	}
@@ -152,14 +267,56 @@ function Markdown({
 			)}
 			{...props}
 		>
-			<ReactMarkdown
-				remarkPlugins={[remarkGfm]}
-				rehypePlugins={[rehypeRaw]}
-				components={mergedComponents}
-				urlTransform={urlTransform}
-			>
-				{children}
-			</ReactMarkdown>
+			{frontmatter && frontmatter.kind === "raw" && frontmatter.value && (
+				<section className="not-prose mt-2 mb-6">
+					<CodeContainer className="overflow-hidden rounded-xl border bg-background">
+						<Code
+							code={String(frontmatter.value)}
+							language="yaml"
+						/>
+					</CodeContainer>
+				</section>
+			)}
+			{frontmatter &&
+				frontmatter.kind === "parsed" &&
+				Object.entries(frontmatter.value).length > 0 && (
+					<section className="not-prose mt-2 mb-6">
+						<Table wrapperClassName="overflow-y-hidden rounded-xl border bg-background">
+							<TableBody>
+								{Object.entries(frontmatter.value).map(
+									([key, value]) => {
+										return (
+											<TableRow key={key}>
+												<TableCell
+													className="max-w-[200px] truncate align-top font-medium"
+													title={String(key)}
+												>
+													{key}
+												</TableCell>
+												<TableCell className="whitespace-normal align-top">
+													{renderFrontmatterValue(
+														value,
+													)}
+												</TableCell>
+											</TableRow>
+										);
+									},
+								)}
+							</TableBody>
+						</Table>
+					</section>
+				)}
+
+			{content && (
+				<ReactMarkdown
+					remarkPlugins={[remarkGfm]}
+					rehypePlugins={[rehypeRaw]}
+					components={mergedComponents}
+					urlTransform={urlTransform}
+				>
+					{content}
+				</ReactMarkdown>
+			)}
 		</div>
 	);
 }

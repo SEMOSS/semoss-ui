@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
 	Button,
+	Checkbox,
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
@@ -61,6 +62,14 @@ const getModelFieldTestId = (
 	return formatToDataTestId(optionValue ? `${base}-${optionValue}` : base);
 };
 
+const getDefaultFieldValue = (field: FieldDefinition) =>
+	field.default ??
+	field.value ??
+	(field.type === "boolean" ? false : field.type === "multiselect" ? [] : "");
+
+export const hasSelectedMultiselectValue = (value: unknown) =>
+	Array.isArray(value) && value.length > 0;
+
 export const ModelImportForm = (props: ModelImportFormProps) => {
 	const {
 		fields,
@@ -96,8 +105,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		mode: "onChange",
 		defaultValues: [...fields, ...advanced].reduce<Record<string, unknown>>(
 			(acc, f) => {
-				acc[f.key] =
-					f.default ?? f.value ?? (f.type === "boolean" ? false : "");
+				acc[f.key] = getDefaultFieldValue(f);
 				return acc;
 			},
 			{},
@@ -122,8 +130,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 	useEffect(() => {
 		const defaults: Record<string, unknown> = {};
 		[...fields, ...advanced].forEach((f) => {
-			defaults[f.key] =
-				f.default ?? f.value ?? (f.type === "boolean" ? false : "");
+			defaults[f.key] = getDefaultFieldValue(f);
 		});
 		reset(defaults);
 	}, [fields, advanced, reset]);
@@ -181,9 +188,38 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 				return;
 			}
 
-			toast.success("Successfully added LLM to catalog");
 			// engine_id is the current key; database_id is the legacy fallback
-			navigate(`/model/${output.engine_id || output.database_id}`);
+			const engineId = output.engine_id || output.database_id;
+			const description =
+				typeof newFormData.DESCRIPTION === "string"
+					? newFormData.DESCRIPTION.trim()
+					: "";
+
+			if (engineId && description) {
+				try {
+					const metadataResponse = await configStore.runPixel(
+						`SetEngineMetadata(engine=[${JSON.stringify(engineId)}], meta=[${JSON.stringify(
+							{ description },
+						)}]);`,
+					);
+					const metadataResult = metadataResponse.pixelReturn?.[0];
+					if (
+						metadataResponse.errors.length > 0 ||
+						String(metadataResult?.operationType || "").includes(
+							"ERROR",
+						)
+					) {
+						throw new Error("Unable to save model description");
+					}
+				} catch {
+					toast.warning(
+						"Model added, but its description could not be saved.",
+					);
+				}
+			}
+
+			toast.success("Successfully added LLM to catalog");
+			navigate(`/model/${engineId}`);
 		});
 
 		if (onComplete) onComplete(data);
@@ -263,8 +299,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 	};
 
 	const renderField = (f: FieldDefinition) => {
-		const defaultVal =
-			f.default ?? f.value ?? (f.type === "boolean" ? false : "");
+		const defaultVal = getDefaultFieldValue(f);
 		const fieldWrapperTestId = getModelFieldTestId(f.key, "field");
 		const fieldInputTestId = getModelFieldTestId(f.key, "input");
 		const fieldErrorTestId = getModelFieldTestId(f.key, "error");
@@ -331,7 +366,17 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 				control={control}
 				defaultValue={defaultVal}
 				rules={{
-					required: f.required,
+					required:
+						f.type === "multiselect" && f.required
+							? `Select at least one ${f.label.toLowerCase()}.`
+							: f.required,
+					...(f.type === "multiselect" && f.required
+						? {
+								validate: (value: unknown) =>
+									hasSelectedMultiselectValue(value) ||
+									`Select at least one ${f.label.toLowerCase()}.`,
+							}
+						: {}),
 				}}
 				render={({
 					field: { ref, ...field },
@@ -746,13 +791,105 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 														opt,
 													)}
 												>
-													{opt}
+													{f.optionLabels?.[opt] ||
+														opt}
 												</SelectItem>
 											))}
 										</SelectContent>
 									</Select>
 								</Field>
 							);
+						case "multiselect": {
+							const selectedValues = Array.isArray(field.value)
+								? field.value.map(String)
+								: [];
+							return (
+								<Field data-testid={fieldWrapperTestId}>
+									<FieldLabel>
+										{f.label}
+										{f.required && (
+											<span className="text-destructive">
+												*
+											</span>
+										)}
+									</FieldLabel>
+									<div className="grid grid-cols-2 gap-2 rounded-md border border-border p-3">
+										{(f.options || []).map((opt) => {
+											const optionId = `${f.key}-${opt}`;
+											const optionDisabled =
+												!!f.disabled ||
+												f.disabledOptions?.includes(
+													opt,
+												);
+											return (
+												<div
+													key={opt}
+													className="flex items-center gap-2 text-sm"
+												>
+													<Checkbox
+														id={optionId}
+														checked={selectedValues.includes(
+															opt,
+														)}
+														onCheckedChange={(
+															checked,
+														) => {
+															const nextValues =
+																checked
+																	? [
+																			...selectedValues,
+																			opt,
+																		]
+																	: selectedValues.filter(
+																			(
+																				value,
+																			) =>
+																				value !==
+																				opt,
+																		);
+															field.onChange(
+																nextValues,
+															);
+														}}
+														disabled={
+															optionDisabled
+														}
+														data-testid={getModelFieldTestId(
+															f.key,
+															"option",
+															opt,
+														)}
+													/>
+													<label
+														htmlFor={optionId}
+														className={
+															optionDisabled
+																? "cursor-not-allowed text-muted-foreground"
+																: "cursor-pointer"
+														}
+													>
+														{opt}
+													</label>
+												</div>
+											);
+										})}
+									</div>
+									{error && (
+										<P
+											className="text-destructive text-sm"
+											data-testid={fieldErrorTestId}
+										>
+											{error.message}
+										</P>
+									)}
+									{f.helperText && !error && (
+										<FieldDescription>
+											{f.helperText}
+										</FieldDescription>
+									)}
+								</Field>
+							);
+						}
 						case "boolean":
 							return (
 								<div

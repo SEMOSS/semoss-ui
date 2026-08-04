@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { HashRouter } from "react-router-dom";
-import { LoadingScreen, ThemeProvider, Toaster } from "@semoss/ui/next";
+import { LoadingScreen } from "@semoss/ui/next";
 import { Router } from "@/pages";
 import { CookieWrapper } from "./components/cookies";
 import { useRootStore } from "./hooks";
@@ -24,15 +24,12 @@ export const AppWrapper = observer(() => {
 	}, [configStore.theme]);
 
 	return (
-		<ThemeProvider defaultTheme="light">
-			<Toaster />
-			<LoadingScreen>
-				<CookieWrapper>
-					<HashRouter>
-						<Router />
-					</HashRouter>
-				</CookieWrapper>
-			</LoadingScreen>
-		</ThemeProvider>
+		<LoadingScreen>
+			<CookieWrapper>
+				<HashRouter>
+					<Router />
+				</HashRouter>
+			</CookieWrapper>
+		</LoadingScreen>
 	);
 });

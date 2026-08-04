@@ -1,15 +1,23 @@
-import { AppCatalogPage } from "./app-catalog-page";
-import { AppDetailPage } from "./app-detail-page";
-import { AppEditPage } from "./app-edit-page";
-import { CreateAppPage } from "./create-app-page";
+import { AppCommitsPage } from "./app-commits-page";
+import { AppFilesPage } from "./app-files-page";
+import { AppGithubPage } from "./app-github-page";
+import { AppGithubSelectRepoPage } from "./app-github-select-repo-page";
+import { AppLogsPage } from "./app-logs-page";
+import { AppMcpUsagePage } from "./app-mcp-usage-page";
+import { AppSettingsPage } from "./app-settings-page";
+import { AppSmssPage } from "./app-smss-page";
 import { NewPromptBuilderAppPage } from "./NewPromptBuilderAppPage";
 import { ViewAppPage } from "./view-app-page";
 
 export {
-	AppCatalogPage,
-	AppDetailPage,
 	ViewAppPage,
-	CreateAppPage,
-	AppEditPage,
 	NewPromptBuilderAppPage,
+	AppGithubSelectRepoPage,
+	AppCommitsPage,
+	AppFilesPage,
+	AppGithubPage,
+	AppLogsPage,
+	AppMcpUsagePage,
+	AppSettingsPage,
+	AppSmssPage,
 };
