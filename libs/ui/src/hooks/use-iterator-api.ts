@@ -94,22 +94,17 @@ export function useIteratorApi<T>(
 
 	// Reset whenever the caller's query inputs change (but not on first mount —
 	// the fetch effect already loads page 0 then).
-	useEffect(
-		() => {
-			if (!mountedRef.current) {
-				mountedRef.current = true;
-				return;
-			}
-			reset();
-		},
-		// biome-ignore lint/correctness/useExhaustiveDependencies: reset on caller deps
-		deps,
-	);
+	useEffect(() => {
+		if (!mountedRef.current) {
+			mountedRef.current = true;
+			return;
+		}
+		reset();
+	}, deps);
 
 	// Fetch the page for the current offset. Setting offset=0 and resetKey in
 	// `reset` collapses to a single re-render, so this fires exactly once per
 	// reset (no stale duplicate request).
-	// biome-ignore lint/correctness/useExhaustiveDependencies: driven by offset/resetKey (deps re-fetch via reset)
 	useEffect(() => {
 		if (!enabled) {
 			return;
