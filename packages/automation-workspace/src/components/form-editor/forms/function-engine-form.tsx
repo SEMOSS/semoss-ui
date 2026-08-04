@@ -1,3 +1,4 @@
+import { useId } from "react";
 import {
 	Field,
 	FieldLabel,
@@ -11,6 +12,7 @@ import type {
 	EngineOption,
 	FunctionEngineConfig,
 } from "../../../domain/automation.types";
+import { getPlaygroundParamDescription } from "../../../domain/automation-utils";
 import { BoundInput, EngineSelect } from "./shared";
 
 export interface FunctionEngineFormProps {
@@ -22,6 +24,10 @@ export interface FunctionEngineFormProps {
 	upstreamVars: string[];
 	/** Called with the updated config on every field change */
 	onChange: (c: FunctionEngineConfig) => void;
+	/** Fields in this node's config currently marked as playground-fillable */
+	playgroundFillable: string[];
+	/** Called when the set of playground-fillable fields changes */
+	onPlaygroundFieldsChange: (fields: string[]) => void;
 }
 
 export function FunctionEngineForm({
@@ -29,7 +35,10 @@ export function FunctionEngineForm({
 	engines,
 	upstreamVars,
 	onChange,
+	playgroundFillable,
+	onPlaygroundFieldsChange,
 }: FunctionEngineFormProps) {
+	const pgFillId = useId();
 	return (
 		<div className="flex flex-col gap-4">
 			<EngineSelect
@@ -66,6 +75,36 @@ export function FunctionEngineForm({
 				upstreamVars={upstreamVars}
 				mono
 			/>
+			<div className="flex items-center gap-2">
+				<input
+					type="checkbox"
+					id={pgFillId}
+					checked={playgroundFillable.includes("params")}
+					onChange={(e) => {
+						const next = e.target.checked
+							? [...playgroundFillable, "params"]
+							: playgroundFillable.filter((f) => f !== "params");
+						onPlaygroundFieldsChange(next);
+					}}
+					className="h-3.5 w-3.5 cursor-pointer accent-primary"
+				/>
+				<label
+					htmlFor={pgFillId}
+					className="cursor-pointer text-muted-foreground text-xs"
+					title={getPlaygroundParamDescription(
+						"function-engine",
+						"params",
+					)}
+				>
+					Let Playground fill this field
+				</label>
+			</div>
+			{playgroundFillable.includes("params") && config.params && (
+				<p className="text-amber-600 text-xs dark:text-amber-400">
+					Current value will be overwritten if Playground provides
+					input
+				</p>
+			)}
 		</div>
 	);
 }

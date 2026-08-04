@@ -1,3 +1,4 @@
+import { useId } from "react";
 import {
 	Field,
 	FieldLabel,
@@ -11,6 +12,7 @@ import type {
 	EngineOption,
 	ModelEngineConfig,
 } from "../../../domain/automation.types";
+import { getPlaygroundParamDescription } from "../../../domain/automation-utils";
 import { BoundInput, EngineSelect } from "./shared";
 
 export interface ModelEngineFormProps {
@@ -22,6 +24,10 @@ export interface ModelEngineFormProps {
 	upstreamVars: string[];
 	/** Called with the updated config on every field change */
 	onChange: (c: ModelEngineConfig) => void;
+	/** Fields in this node's config currently marked as playground-fillable */
+	playgroundFillable: string[];
+	/** Called when the set of playground-fillable fields changes */
+	onPlaygroundFieldsChange: (fields: string[]) => void;
 }
 
 export function ModelEngineForm({
@@ -29,7 +35,10 @@ export function ModelEngineForm({
 	engines,
 	upstreamVars,
 	onChange,
+	playgroundFillable,
+	onPlaygroundFieldsChange,
 }: ModelEngineFormProps) {
+	const pgFillId = useId();
 	return (
 		<div className="flex flex-col gap-4">
 			<EngineSelect
@@ -70,6 +79,39 @@ export function ModelEngineForm({
 						upstreamVars={upstreamVars}
 						mono
 					/>
+					<div className="flex items-center gap-2">
+						<input
+							type="checkbox"
+							id={pgFillId}
+							checked={playgroundFillable.includes("command")}
+							onChange={(e) => {
+								const next = e.target.checked
+									? [...playgroundFillable, "command"]
+									: playgroundFillable.filter(
+											(f) => f !== "command",
+										);
+								onPlaygroundFieldsChange(next);
+							}}
+							className="h-3.5 w-3.5 cursor-pointer accent-primary"
+						/>
+						<label
+							htmlFor={pgFillId}
+							className="cursor-pointer text-muted-foreground text-xs"
+							title={getPlaygroundParamDescription(
+								"model-engine",
+								"command",
+							)}
+						>
+							Let Playground fill this field
+						</label>
+					</div>
+					{playgroundFillable.includes("command") &&
+						config.command && (
+							<p className="text-amber-600 text-xs dark:text-amber-400">
+								Current value will be overwritten if Playground
+								provides input
+							</p>
+						)}
 					<BoundInput
 						label="Context (optional)"
 						value={config.context}

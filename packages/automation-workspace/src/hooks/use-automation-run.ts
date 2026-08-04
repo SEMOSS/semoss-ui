@@ -60,8 +60,17 @@ export interface UseAutomationRunResult {
 	/** Enriched context with per-step outputs, sent to the LLM as the MCP tool response. */
 	llmContext: string | null;
 	error: string | null;
-	/** Starts a run for the given nodes (in order) and streams live per-node progress. */
-	run: (projectId: string, nodes: AutomationRunnableNode[]) => Promise<void>;
+	/**
+	 * Starts a run for the given nodes (in order) and streams live per-node progress.
+	 * @param inputs Optional map of playground-supplied field values to inject into node
+	 *               configs before running. Keys are the parameter names from the automation's
+	 *               MCP tool schema (e.g. `database_query_expression`).
+	 */
+	run: (
+		projectId: string,
+		nodes: AutomationRunnableNode[],
+		inputs?: Record<string, unknown>,
+	) => Promise<void>;
 }
 
 /**
@@ -105,7 +114,11 @@ export function useAutomationRun(): UseAutomationRunResult {
 	);
 
 	const run = useCallback(
-		async (projectId: string, nodes: AutomationRunnableNode[]) => {
+		async (
+			projectId: string,
+			nodes: AutomationRunnableNode[],
+			inputs?: Record<string, unknown>,
+		) => {
 			const token = ++runTokenRef.current;
 			setRunning(true);
 			setRunId(null);
@@ -122,8 +135,12 @@ export function useAutomationRun(): UseAutomationRunResult {
 			);
 
 			try {
+				const inputsClause =
+					inputs && Object.keys(inputs).length > 0
+						? `, inputs=${JSON.stringify(inputs)}`
+						: "";
 				const { jobId } = await runPixelAsync(
-					`TriggerAutomation(project=["${projectId}"]);`,
+					`TriggerAutomation(project=["${projectId}"]${inputsClause});`,
 				);
 
 				// Best-effort: surface the runId (for a future cancel affordance) as soon as

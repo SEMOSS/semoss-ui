@@ -24,6 +24,10 @@ interface StepFormProps {
 	projects: ProjectOption[];
 	upstreamVars: string[];
 	onUpdate: (step: AutomationNode) => void;
+	/** Fields in this node's config currently marked as playground-fillable */
+	playgroundFillable: string[];
+	/** Called when the set of playground-fillable fields changes */
+	onPlaygroundFieldsChange: (fields: string[]) => void;
 }
 
 export function StepForm({
@@ -32,6 +36,8 @@ export function StepForm({
 	projects,
 	upstreamVars,
 	onUpdate,
+	playgroundFillable,
+	onPlaygroundFieldsChange,
 }: StepFormProps) {
 	const update = (config: AutomationNode["config"]) =>
 		onUpdate({ ...step, config });
@@ -47,6 +53,8 @@ export function StepForm({
 					engines={enginesByType.DATABASE ?? []}
 					upstreamVars={upstreamVars}
 					onChange={update}
+					playgroundFillable={playgroundFillable}
+					onPlaygroundFieldsChange={onPlaygroundFieldsChange}
 				/>
 			);
 		case "model-engine":
@@ -56,6 +64,8 @@ export function StepForm({
 					engines={enginesByType.MODEL ?? []}
 					upstreamVars={upstreamVars}
 					onChange={update}
+					playgroundFillable={playgroundFillable}
+					onPlaygroundFieldsChange={onPlaygroundFieldsChange}
 				/>
 			);
 		case "vector-engine":
@@ -65,6 +75,8 @@ export function StepForm({
 					engines={enginesByType.VECTOR ?? []}
 					upstreamVars={upstreamVars}
 					onChange={update}
+					playgroundFillable={playgroundFillable}
+					onPlaygroundFieldsChange={onPlaygroundFieldsChange}
 				/>
 			);
 		case "storage-engine":
@@ -83,6 +95,8 @@ export function StepForm({
 					engines={enginesByType.FUNCTION ?? []}
 					upstreamVars={upstreamVars}
 					onChange={update}
+					playgroundFillable={playgroundFillable}
+					onPlaygroundFieldsChange={onPlaygroundFieldsChange}
 				/>
 			);
 		case "app":

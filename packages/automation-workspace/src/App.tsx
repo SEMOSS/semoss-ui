@@ -62,6 +62,12 @@ export default function App() {
 		automationStatus === "INITIAL" ||
 		automationStatus === "LOADING";
 	const steps = (automationDoc?.graph ?? EMPTY_GRAPH).nodes;
+	const playgroundInputs =
+		toolContext?.parameters?.inputs &&
+		typeof toolContext.parameters.inputs === "object" &&
+		!Array.isArray(toolContext.parameters.inputs)
+			? (toolContext.parameters.inputs as Record<string, unknown>)
+			: undefined;
 
 	// When used as an MCP sidebar tool, postMessage back to the playground once the
 	// run completes so the tool call is marked done and the LLM can continue.
@@ -89,7 +95,7 @@ export default function App() {
 			},
 			"*",
 		);
-	}, [summary, error, toolContext]);
+	}, [summary, error, llmContext, toolContext]);
 
 	if (!appId) {
 		return (
@@ -119,7 +125,7 @@ export default function App() {
 				<Button
 					data-testid="automation-workspace-run-button"
 					disabled={running || steps.length === 0}
-					onClick={() => run(appId, steps)}
+					onClick={() => run(appId, steps, playgroundInputs)}
 				>
 					{running ? (
 						<Loader2 className="mr-2 h-4 w-4 animate-spin" />

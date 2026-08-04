@@ -106,6 +106,7 @@ export interface AutomationNode {
 	outputVar: string;
 	config: NodeConfig;
 	outputTransform?: OutputTransform;
+	playgroundFillable?: string[];
 }
 
 export interface AutomationEdge {

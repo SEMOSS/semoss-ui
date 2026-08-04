@@ -255,6 +255,10 @@ export function AutomationStepEditorCard({
 						projects={projects}
 						upstreamVars={upstreamVars}
 						onUpdate={onUpdate}
+						playgroundFillable={step.playgroundFillable ?? []}
+						onPlaygroundFieldsChange={(fields) =>
+							onUpdate({ ...step, playgroundFillable: fields })
+						}
 					/>
 
 					{pixelPreview && !pixelPreview.startsWith("//") && (

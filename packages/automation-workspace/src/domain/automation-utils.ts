@@ -396,6 +396,31 @@ function resolveSimplePath(obj: unknown, path: string): string | null {
 	return typeof cur === "string" ? cur : JSON.stringify(cur, null, 2);
 }
 
+// ─── playground input descriptions ───────────────────────────────────────────
+
+/** Maps a node type and config field name to the description the LLM will receive when this field is exposed as a playground input. */
+export function getPlaygroundParamDescription(
+	nodeType: AutomationNodeType,
+	fieldName: string,
+): string {
+	if (nodeType === "database-engine" && fieldName === "expression") {
+		return "SQL query to execute against the connected database";
+	}
+	if (nodeType === "model-engine" && fieldName === "command") {
+		return "Natural language prompt to send to the language model";
+	}
+	if (nodeType === "model-engine" && fieldName === "context") {
+		return "System instructions for the language model's behavior";
+	}
+	if (nodeType === "vector-engine" && fieldName === "command") {
+		return "Search query to run against the vector database";
+	}
+	if (nodeType === "function-engine" && fieldName === "params") {
+		return "JSON parameters to pass to the function";
+	}
+	return `Input for the ${fieldName} field`;
+}
+
 // ─── pre-run validation ───────────────────────────────────────────────────────
 
 /** Returns an array of human-readable error strings for a node's required fields. Empty = valid. */
