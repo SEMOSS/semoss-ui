@@ -105,12 +105,14 @@ export const AddMembersOverlay = ({
 	// Reset to page 0 whenever the debounced search term changes.
 	// Keep prior results on screen (don't clear them) so the list doesn't
 	// flash to empty while the next page is fetched.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional reset-only effect
 	useEffect(() => {
 		setOffset(0);
 		setHasMore(true);
 	}, [debouncedSearchKey]);
 
 	// Fetch a page; use a version ref to discard stale responses
+	// biome-ignore lint/correctness/useExhaustiveDependencies: adminMode intentionally excluded to avoid refetch on prop change; t is stable from useTranslation
 	useEffect(() => {
 		if (!open) return;
 		const version = ++fetchVersionRef.current;
