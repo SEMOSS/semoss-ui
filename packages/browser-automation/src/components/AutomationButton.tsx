@@ -1,8 +1,9 @@
-import { ChevronDown, Wand2 } from "lucide-react";
+import { ChevronDown, Square, Wand2 } from "lucide-react";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import {
 	Button,
+	Input,
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
@@ -26,25 +27,39 @@ interface ModelOption {
 interface AutomationButtonProps {
 	insightId: string;
 	isActive: boolean;
+	isGoalRunning: boolean;
 	modelId: string;
-	subMode: "click" | "fill-page";
+	subMode: "click" | "fill-page" | "run-goal";
+	goal: string;
+	maxIterations: number;
+	progressLabel?: string;
 	onToggle: () => void;
 	onModelChange: (modelId: string) => void;
-	onSubModeChange: (mode: "click" | "fill-page") => void;
+	onSubModeChange: (mode: "click" | "fill-page" | "run-goal") => void;
+	onGoalChange: (goal: string) => void;
+	onMaxIterationsChange: (maxIterations: number) => void;
 }
 
 export const AutomationButton: React.FC<AutomationButtonProps> = ({
 	insightId,
 	isActive,
+	isGoalRunning,
 	modelId,
 	subMode,
+	goal,
+	maxIterations,
+	progressLabel,
 	onToggle,
 	onModelChange,
 	onSubModeChange,
+	onGoalChange,
+	onMaxIterationsChange,
 }) => {
 	const [models, setModels] = useState<ModelOption[]>([]);
 	const [isLoadingModels, setIsLoadingModels] = useState(false);
 	const [popoverOpen, setPopoverOpen] = useState(false);
+	const goalInputId = useId();
+	const maxIterationsId = useId();
 
 	useEffect(() => {
 		setIsLoadingModels(true);
@@ -100,20 +115,26 @@ export const AutomationButton: React.FC<AutomationButtonProps> = ({
 						}
 						onClick={onToggle}
 					>
-						<Wand2 />
-						{isActive
-							? subMode === "fill-page"
-								? "Filling…"
-								: "Automation On"
-							: "Automate"}
+						{isGoalRunning ? <Square /> : <Wand2 />}
+						{isGoalRunning
+							? progressLabel || "Stop automation"
+							: isActive
+								? subMode === "fill-page"
+									? "Filling…"
+									: "Automation On"
+								: "Automate"}
 					</Button>
 				</TooltipTrigger>
 				<TooltipContent>
-					{subMode === "fill-page"
-						? "Fill visible editable fields from context"
-						: isActive
-							? "Click to disable automation mode"
-							: "Enable automation mode — click any text field to auto-fill from context"}
+					{isGoalRunning
+						? "Stop goal automation after the current operation"
+						: subMode === "run-goal"
+							? "Iterate through browser actions until the goal is reached"
+							: subMode === "fill-page"
+								? "Fill visible editable fields from context"
+								: isActive
+									? "Click to disable automation mode"
+									: "Enable automation mode — click any text field to auto-fill from context"}
 				</TooltipContent>
 			</Tooltip>
 
@@ -146,6 +167,11 @@ export const AutomationButton: React.FC<AutomationButtonProps> = ({
 								label: "Fill page",
 								desc: "Fill visible editable fields at once",
 							},
+							{
+								value: "run-goal" as const,
+								label: "Run goal",
+								desc: "Click and fill iteratively until the goal is reached",
+							},
 						].map(({ value, label, desc }) => (
 							<button
 								key={value}
@@ -175,6 +201,59 @@ export const AutomationButton: React.FC<AutomationButtonProps> = ({
 							</button>
 						))}
 					</div>
+					{subMode === "run-goal" && (
+						<div className="mb-3 flex flex-col gap-2">
+							<label
+								className="font-medium text-sm"
+								htmlFor={goalInputId}
+							>
+								Goal
+							</label>
+							<Input
+								id={goalInputId}
+								value={goal}
+								onChange={(event) =>
+									onGoalChange(event.target.value)
+								}
+								placeholder="Use latest Playground request"
+								disabled={isGoalRunning}
+							/>
+							<label
+								className="font-medium text-sm"
+								htmlFor={maxIterationsId}
+							>
+								Maximum iterations
+							</label>
+							<Select
+								value={String(maxIterations)}
+								onValueChange={(value) =>
+									onMaxIterationsChange(Number(value))
+								}
+								disabled={isGoalRunning}
+							>
+								<SelectTrigger
+									id={maxIterationsId}
+									className="w-full"
+								>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{[5, 10, 15, 20, 25].map((value) => (
+										<SelectItem
+											key={value}
+											value={String(value)}
+										>
+											{value}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							<p className="text-ink-muted text-xs">
+								Leave the goal empty to use the latest
+								Playground request.
+							</p>
+						</div>
+					)}
 					<p className="mb-2 font-medium text-sm">Model</p>
 					{isLoadingModels ? (
 						<div className="flex items-center gap-2 text-ink-muted text-sm">

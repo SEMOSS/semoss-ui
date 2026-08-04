@@ -29,6 +29,8 @@ export type ClientToServerEvent =
 			x: number;
 			y: number;
 			button: "left" | "right" | "middle";
+			label?: string;
+			tag?: string;
 			record?: boolean;
 	  } & ReplayMetadata)
 	| ({

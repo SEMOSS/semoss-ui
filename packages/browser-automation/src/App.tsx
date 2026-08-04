@@ -91,6 +91,19 @@ type ResolvePlaywrightRecordingResponse = {
 	searchedRoomRecordings: number;
 };
 
+type AutomationHistoryEntry = {
+	iteration: number;
+	type: "click" | "fill" | "select";
+	label: string;
+	value?: string;
+	pageUrl: string;
+	reason: string;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 export default function App() {
 	const { insightId } = useInsight();
 	const {
@@ -178,9 +191,17 @@ export default function App() {
 	const [automationMode, setAutomationMode] = useState(false);
 	const [automationModelId, setAutomationModelId] = useState("");
 	const [automationSubMode, setAutomationSubMode] = useState<
-		"click" | "fill-page"
+		"click" | "fill-page" | "run-goal"
 	>("click");
 	const [isAutomationGenerating, setIsAutomationGenerating] = useState(false);
+	const [isGoalAutomationRunning, setIsGoalAutomationRunning] =
+		useState(false);
+	const [automationGoal, setAutomationGoal] = useState("");
+	const [automationMaxIterations, setAutomationMaxIterations] = useState(10);
+	const [automationProgress, setAutomationProgress] = useState<{
+		iteration: number;
+		maxIterations: number;
+	} | null>(null);
 	const [automationClickPos, setAutomationClickPos] = useState<{
 		localX: number;
 		localY: number;
@@ -196,6 +217,7 @@ export default function App() {
 	const returningToPlaygroundRef = useRef(false);
 	const selectedContextSequenceRef = useRef(0);
 	const activeToolExecutionRef = useRef("");
+	const automationRunTokenRef = useRef(0);
 
 	useEffect(() => {
 		if (!snackError) return;
@@ -1061,7 +1083,6 @@ export default function App() {
 			void runBrowserAction({
 				type: "navigate",
 				url: normalizeBrowserUrl(url),
-				waitAfterMs: 1200,
 			});
 		},
 		[runBrowserAction],
@@ -1793,6 +1814,213 @@ export default function App() {
 		toolContext?.roomId,
 	]);
 
+	const executePlannedAutomationAction = useCallback(
+		async (
+			output: Record<string, unknown>,
+			iteration: number,
+		): Promise<AutomationHistoryEntry> => {
+			if (!isRecord(output.action)) {
+				throw new Error("Automation planner did not return an action.");
+			}
+			const action = output.action;
+			const type = action.type;
+			if (type !== "click" && type !== "fill" && type !== "select") {
+				throw new Error(
+					"Automation planner returned an unsupported action.",
+				);
+			}
+			if (!isRecord(action.selector)) {
+				throw new Error("Automation action has no validated selector.");
+			}
+			const strategy =
+				typeof action.selector.strategy === "string"
+					? action.selector.strategy
+					: "css";
+			const selectorValue =
+				typeof action.selector.value === "string"
+					? action.selector.value
+					: "";
+			if (!selectorValue) {
+				throw new Error("Automation action has an empty selector.");
+			}
+			const selector = {
+				strategy,
+				value: selectorValue,
+				frameSelector:
+					typeof action.selector.frameSelector === "string"
+						? action.selector.frameSelector
+						: null,
+			};
+			const label = typeof action.label === "string" ? action.label : "";
+			const tag = typeof action.tag === "string" ? action.tag : undefined;
+			const expectedUrl =
+				typeof output.pageUrl === "string" ? output.pageUrl : undefined;
+			const expectedTabId =
+				typeof output.tabId === "string" ? output.tabId : undefined;
+			const reason =
+				typeof output.reason === "string" ? output.reason : "";
+
+			if (type === "click") {
+				const coords = isRecord(action.coords) ? action.coords : {};
+				await sendReplayEvent({
+					type: "mouse-click",
+					requestId: crypto.randomUUID(),
+					x: typeof coords.x === "number" ? coords.x : 0,
+					y: typeof coords.y === "number" ? coords.y : 0,
+					button: "left",
+					selector,
+					label,
+					tag,
+					waitAfterMs: 500,
+					expectedUrl,
+					expectedTabId,
+				});
+				return {
+					iteration,
+					type,
+					label,
+					pageUrl: expectedUrl || "",
+					reason,
+				};
+			}
+
+			const value = typeof action.value === "string" ? action.value : "";
+			if (!value)
+				throw new Error("Automation planner returned an empty value.");
+			await sendReplayEvent({
+				type: "fill-element",
+				requestId: crypto.randomUUID(),
+				text: value,
+				selector,
+				label,
+				tag: type === "select" ? "select" : tag,
+				expectedUrl,
+				expectedTabId,
+			});
+			return {
+				iteration,
+				type,
+				label,
+				value,
+				pageUrl: expectedUrl || "",
+				reason,
+			};
+		},
+		[sendReplayEvent],
+	);
+
+	const cancelGoalAutomation = useCallback(() => {
+		automationRunTokenRef.current += 1;
+		setIsGoalAutomationRunning(false);
+		setAutomationProgress(null);
+		toast("Goal automation stopped.");
+	}, []);
+
+	const runGoalAutomation = useCallback(async () => {
+		if (!session?.sessionId) {
+			toast("No active browser session.");
+			return;
+		}
+		const roomId = toolContext?.roomId ?? "";
+		if (!roomId) {
+			toast(
+				"No room context available — open this tool from a Playground room.",
+			);
+			return;
+		}
+
+		const runToken = automationRunTokenRef.current + 1;
+		automationRunTokenRef.current = runToken;
+		setAutomationMode(false);
+		setIsGoalAutomationRunning(true);
+		const history: AutomationHistoryEntry[] = [];
+		let resolvedGoal = automationGoal.trim();
+		let reachedGoal = false;
+
+		try {
+			for (
+				let iteration = 1;
+				iteration <= automationMaxIterations;
+				iteration += 1
+			) {
+				if (automationRunTokenRef.current !== runToken) return;
+				setAutomationProgress({
+					iteration,
+					maxIterations: automationMaxIterations,
+				});
+
+				const response = await runPixel<Record<string, unknown>>(
+					`PlanPlaywrightAutomation(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, sessionId=${JSON.stringify(session.sessionId)}, goal=${JSON.stringify(resolvedGoal)}, history=${JSON.stringify(JSON.stringify(history))}, iteration=${iteration}, maxIterations=${automationMaxIterations}, limit=20);`,
+					effectiveInsightId,
+				);
+				if (automationRunTokenRef.current !== runToken) return;
+
+				const output = response.pixelReturn?.[0]?.output;
+				if (!isRecord(output) || output.success !== true) {
+					throw new Error(
+						isRecord(output) && typeof output.error === "string"
+							? output.error
+							: "Browser automation planning failed.",
+					);
+				}
+				if (!resolvedGoal && typeof output.goal === "string") {
+					resolvedGoal = output.goal;
+					setAutomationGoal(output.goal);
+				}
+				if (!automationModelId && typeof output.engineId === "string") {
+					setAutomationModelId(output.engineId);
+				}
+				const reason =
+					typeof output.reason === "string" ? output.reason : "";
+				if (output.goalReached === true) {
+					reachedGoal = true;
+					toast(reason || "Browser automation reached the goal.");
+					return;
+				}
+				if (!isRecord(output.action)) {
+					toast(
+						reason || "Browser automation has no safe next action.",
+					);
+					return;
+				}
+
+				const completed = await executePlannedAutomationAction(
+					output,
+					iteration,
+				);
+				if (automationRunTokenRef.current !== runToken) return;
+				history.push(completed);
+			}
+
+			if (!reachedGoal) {
+				toast(
+					`Browser automation stopped after ${automationMaxIterations} iterations without confirming the goal.`,
+				);
+			}
+		} catch (error) {
+			if (automationRunTokenRef.current === runToken) {
+				toast(
+					error instanceof Error
+						? error.message
+						: "Browser automation failed.",
+				);
+			}
+		} finally {
+			if (automationRunTokenRef.current === runToken) {
+				setIsGoalAutomationRunning(false);
+				setAutomationProgress(null);
+			}
+		}
+	}, [
+		automationGoal,
+		automationMaxIterations,
+		automationModelId,
+		effectiveInsightId,
+		executePlannedAutomationAction,
+		session?.sessionId,
+		toolContext?.roomId,
+	]);
+
 	return (
 		<div className="flex h-screen flex-col overflow-hidden bg-canvas text-ink">
 			{/* Toolbar row */}
@@ -1819,11 +2047,27 @@ export default function App() {
 					{session && (
 						<AutomationButton
 							insightId={effectiveInsightId}
-							isActive={automationMode || isAutomationGenerating}
+							isActive={
+								automationMode ||
+								isAutomationGenerating ||
+								isGoalAutomationRunning
+							}
+							isGoalRunning={isGoalAutomationRunning}
 							modelId={automationModelId}
 							subMode={automationSubMode}
+							goal={automationGoal}
+							maxIterations={automationMaxIterations}
+							progressLabel={
+								automationProgress
+									? `Step ${automationProgress.iteration}/${automationProgress.maxIterations}`
+									: undefined
+							}
 							onToggle={() => {
-								if (automationSubMode === "fill-page") {
+								if (isGoalAutomationRunning) {
+									cancelGoalAutomation();
+								} else if (automationSubMode === "run-goal") {
+									void runGoalAutomation();
+								} else if (automationSubMode === "fill-page") {
 									void handleFillPage();
 								} else {
 									setAutomationMode((on) => !on);
@@ -1831,6 +2075,8 @@ export default function App() {
 							}}
 							onSubModeChange={setAutomationSubMode}
 							onModelChange={setAutomationModelId}
+							onGoalChange={setAutomationGoal}
+							onMaxIterationsChange={setAutomationMaxIterations}
 						/>
 					)}
 					{session && (
@@ -2002,11 +2248,12 @@ export default function App() {
 					selectionMode={selectionMode}
 					onSelectionComplete={handleSelectedTextCapture}
 					onSelectionCancel={() => setSelectionMode(false)}
-					onUserInput={() =>
+					onUserInput={() => {
 						playback.requestPause(
 							"Playback will pause after your interaction",
-						)
-					}
+						);
+						if (isGoalAutomationRunning) cancelGoalAutomation();
+					}}
 					automationMode={
 						automationMode && automationSubMode === "click"
 					}
