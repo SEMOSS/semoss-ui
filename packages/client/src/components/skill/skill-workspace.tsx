@@ -142,6 +142,11 @@ export const SkillWorkspace: React.FC = observer(() => {
 							restrict: ["OWNER", "EDIT"],
 						},
 						{
+							name: "Activity Log",
+							component: "activity",
+							restrict: ["OWNER"],
+						},
+						{
 							name: "SMSS",
 							component: "smss",
 							restrict: ["OWNER"],
