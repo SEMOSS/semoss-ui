@@ -2,7 +2,7 @@
 import { Bot, Eye, Save, Share2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import { useBlocks } from "@semoss/renderer";
+import { type SerializedState, useBlocks } from "@semoss/renderer";
 import { runPixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -14,9 +14,9 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { ShareOverlay } from "@/components/ui";
-import { PreviewOverlay } from "@/components/workspace";
+import { PreviewDialog } from "@/components/workspace";
 import { useRootStore, useWorkspace } from "@/hooks";
-import { LLMSelectOverlay } from "../llms";
+import { LLMSelectDialog } from "../llms";
 
 export const BlocksWorkspaceActions = observer(() => {
 	const { state } = useBlocks();
@@ -26,6 +26,12 @@ export const BlocksWorkspaceActions = observer(() => {
 
 	const [shareOpen, setShareOpen] = useState(false);
 	const [shareDiffs, setShareDiffs] = useState(false);
+	const [modelList, setModelList] = useState<Record<string, string>[]>([]);
+	const [modelDialogOpen, setModelDialogOpen] = useState(false);
+	const [previewState, setPreviewState] = useState<SerializedState | null>(
+		null,
+	);
+	const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
 
 	const removePageIdsFromURL = () => {
 		const url = window.location.href;
@@ -64,23 +70,8 @@ export const BlocksWorkspaceActions = observer(() => {
 				};
 			});
 		}
-		workspace.openOverlay(
-			() => (
-				<LLMSelectOverlay
-					llmList={modelList || []}
-					selectedLLM={workspace.agentModelEngine || ""}
-					onSelect={(id: string) => {
-						workspace.setAgentModelEngine(id);
-					}}
-					onClose={() => {
-						workspace.closeOverlay();
-					}}
-				/>
-			),
-			{
-				maxWidth: "sm",
-			},
-		);
+		setModelList(modelList);
+		setModelDialogOpen(true);
 	};
 
 	/**
@@ -93,19 +84,8 @@ export const BlocksWorkspaceActions = observer(() => {
 			// get the current state
 			const json = state.toJSON();
 
-			workspace.openOverlay(
-				() => (
-					<PreviewOverlay
-						state={json}
-						onClose={() => {
-							workspace.closeOverlay();
-						}}
-					/>
-				),
-				{
-					maxWidth: "3xl",
-				},
-			);
+			setPreviewState(json);
+			setPreviewDialogOpen(true);
 		} catch (e) {
 			console.error(e);
 			toast.error(e.message);
@@ -283,6 +263,36 @@ export const BlocksWorkspaceActions = observer(() => {
 						diffs={shareDiffs}
 						onClose={() => setShareOpen(false)}
 					/>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog
+				open={modelDialogOpen}
+				onOpenChange={(o) => !o && setModelDialogOpen(false)}
+			>
+				<DialogContent className="max-w-sm p-0">
+					<LLMSelectDialog
+						llmList={modelList}
+						selectedLLM={workspace.agentModelEngine || ""}
+						onSelect={(id: string) => {
+							workspace.setAgentModelEngine(id);
+						}}
+						onClose={() => setModelDialogOpen(false)}
+					/>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog
+				open={previewDialogOpen}
+				onOpenChange={(o) => !o && setPreviewDialogOpen(false)}
+			>
+				<DialogContent className="max-w-3xl p-0">
+					{previewState ? (
+						<PreviewDialog
+							state={previewState}
+							onClose={() => setPreviewDialogOpen(false)}
+						/>
+					) : null}
 				</DialogContent>
 			</Dialog>
 		</div>

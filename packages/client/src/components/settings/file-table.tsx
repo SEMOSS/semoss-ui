@@ -39,6 +39,12 @@ interface FileTableProps {
 	 * Id of the vector engine
 	 */
 	id: string;
+
+	/**
+	 * When true, the table is view-only: upload/embed and delete controls are
+	 * hidden. Download, search, and listing remain available. Defaults to false.
+	 */
+	readOnly?: boolean;
 }
 
 type FileUploadForm = {
@@ -135,7 +141,7 @@ export const FileTable = (props: FileTableProps) => {
 		},
 	];
 
-	const { id } = props;
+	const { id, readOnly = false } = props;
 
 	/**
 	 * Helper function to format file names for Pixel query syntax.
@@ -571,7 +577,7 @@ export const FileTable = (props: FileTableProps) => {
 								? "Try adjusting your search terms"
 								: "Upload your first document to get started"}
 						</P>
-						{!isFiltered && (
+						{!isFiltered && !readOnly && (
 							<Button
 								onClick={() => setOpen(true)}
 								size="sm"
@@ -776,7 +782,7 @@ export const FileTable = (props: FileTableProps) => {
 								data-testid="file-search"
 							/>
 						</div>
-						{selectedFiles.length > 0 && (
+						{selectedFiles.length > 0 && !readOnly && (
 							<Button
 								variant="outline"
 								size="sm"
@@ -809,6 +815,7 @@ export const FileTable = (props: FileTableProps) => {
 							onClick={() => setOpen(true)}
 							size="sm"
 							data-testid="embed-new-document-btn"
+							className={readOnly ? "hidden" : undefined}
 						>
 							<Plus className="size-4" />
 							<span className="hidden sm:inline">
@@ -936,21 +943,23 @@ export const FileTable = (props: FileTableProps) => {
 															)}
 														</TableCell>
 														<TableCell>
-															<Button
-																variant="ghost"
-																size="icon"
-																onClick={() => {
-																	setDeleteFileModal(
-																		true,
-																	);
-																	setFileToDelete(
-																		file,
-																	);
-																}}
-																data-testid={`delete-file-${file.fileName}`}
-															>
-																<Trash2 className="size-4" />
-															</Button>
+															{!readOnly && (
+																<Button
+																	variant="ghost"
+																	size="icon"
+																	onClick={() => {
+																		setDeleteFileModal(
+																			true,
+																		);
+																		setFileToDelete(
+																			file,
+																		);
+																	}}
+																	data-testid={`delete-file-${file.fileName}`}
+																>
+																	<Trash2 className="size-4" />
+																</Button>
+															)}
 														</TableCell>
 													</TableRow>
 												);
