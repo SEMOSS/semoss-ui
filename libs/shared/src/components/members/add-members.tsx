@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, X } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 import {
 	type ChangeEvent,
 	type KeyboardEvent,
@@ -13,6 +13,7 @@ import { useTranslation } from "@semoss/i18n";
 import { get as apiGet, post as apiPost, Env } from "@semoss/sdk";
 import {
 	Avatar,
+	AvatarFallback,
 	Button,
 	cn,
 	Dialog,
@@ -25,16 +26,13 @@ import {
 	DropdownMenuContent,
 	DropdownMenuTrigger,
 	Input,
-	Label,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
+	ScrollArea,
 	toast,
 	useDebouncedValue,
+	useInfiniteScroll,
 } from "@semoss/ui/next";
 import { returnAccessType } from "./common";
+import { ModelRestrictionFields } from "./model-restriction-fields";
 
 interface AddPopupSearchResult {
 	email: string;
@@ -66,15 +64,9 @@ interface AddMembersOverlayProps {
 	adminMode?: boolean;
 }
 
-function formatNum(val: string): string {
-	const digits = val.replace(/[^0-9]/g, "");
-	if (!digits) return "";
-	return Number(digits).toLocaleString();
-}
-
-function parseNum(val: string): string {
-	return val.replace(/[^0-9]/g, "");
-}
+// Shared row style so the search-results list and the selected-users list read as one system
+const MEMBER_ROW_CLASS =
+	"flex items-center justify-between rounded-md border bg-muted/40 px-3 py-2";
 
 export const AddMembersOverlay = ({
 	id,
@@ -94,81 +86,87 @@ export const AddMembersOverlay = ({
 	const [offset, setOffset] = useState<number>(0);
 	const [hasMore, setHasMore] = useState<boolean>(true);
 	const fetchVersionRef = useRef(0);
-	const isFetchingRef = useRef(false);
 	const [isSearching, setIsSearching] = useState<boolean>(false);
 	const [restriction, setRestriction] = useState<string>("null");
 	const [maxTokens, setMaxTokens] = useState<string>("");
 	const [maxTime, setMaxTime] = useState<string>("");
 	const [frequency, setFrequency] = useState<string>("DAY");
 	const [userPermission, setUserPermission] = useState<string>("");
-	const [restrictionsOpen, setRestrictionsOpen] = useState<boolean>(true);
 	const isProject = type === "PROJECT" || type === "WORKSPACE";
 	const isOwner = adminMode || userPermission === "OWNER";
 	// Debounce hasn't caught up to the latest keystroke yet
 	const isDebouncePending = searchKey !== debouncedSearchKey;
 	const isLoadingResults = isDebouncePending || isSearching;
+	const { setScroll: setResultsScroll } = useInfiniteScroll({
+		disabled: isSearching || !hasMore,
+		onNext: () => setOffset((prev) => prev + PAGE_SIZE),
+	});
 
 	// Reset to page 0 whenever the debounced search term changes.
 	// Keep prior results on screen (don't clear them) so the list doesn't
 	// flash to empty while the next page is fetched.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional reset-only effect
 	useEffect(() => {
 		setOffset(0);
 		setHasMore(true);
 	}, [debouncedSearchKey]);
 
 	// Fetch a page; use a version ref to discard stale responses
-	// biome-ignore lint/correctness/useExhaustiveDependencies: adminMode intentionally excluded to avoid refetch on prop change
 	useEffect(() => {
 		if (!open) return;
 		const version = ++fetchVersionRef.current;
-		async function fetchUsers() {
-			isFetchingRef.current = true;
+		const fetchUsers = async () => {
 			setIsSearching(true);
-			const authBase = `${Env.MODULE}/api/auth${adminMode ? "/admin" : ""}`;
-			const endpoint = isProject
-				? "getProjectUsersNoCredentials"
-				: "getEngineUsersNoCredentials";
-			const idKey = isProject ? "projectId" : "engineId";
-			const response = await apiGet(
-				`${authBase}/${isProject ? "project" : "engine"}/${endpoint}?${idKey}=${id}&searchTerm=${debouncedSearchKey}&limit=${PAGE_SIZE}&offset=${offset}`,
-			).catch((error: Error) => {
-				isFetchingRef.current = false;
-				if (fetchVersionRef.current !== version) return undefined;
+			try {
+				const authBase = `${Env.MODULE}/api/auth${adminMode ? "/admin" : ""}`;
+				const endpoint = isProject
+					? "getProjectUsersNoCredentials"
+					: "getEngineUsersNoCredentials";
+				const idKey = isProject ? "projectId" : "engineId";
+				const response = await apiGet(
+					`${authBase}/${isProject ? "project" : "engine"}/${endpoint}?${idKey}=${id}&searchTerm=${debouncedSearchKey}&limit=${PAGE_SIZE}&offset=${offset}`,
+				);
+				if (fetchVersionRef.current !== version) return;
 				setIsSearching(false);
-				toast.error(error?.message || t("errors.loadUsersFailed"));
-				return undefined;
-			});
-			isFetchingRef.current = false;
-			if (fetchVersionRef.current !== version) return;
-			setIsSearching(false);
-			const page = (response?.data ?? []) as AddPopupSearchResult[];
-			setSearchedResults((prev) =>
-				offset === 0 ? page : [...prev, ...page],
-			);
-			setHasMore(page.length === PAGE_SIZE);
-		}
+				const page = (response?.data ?? []) as AddPopupSearchResult[];
+				setSearchedResults((prev) =>
+					offset === 0 ? page : [...prev, ...page],
+				);
+				setHasMore(page.length === PAGE_SIZE);
+			} catch (error) {
+				if (fetchVersionRef.current !== version) return;
+				setIsSearching(false);
+				toast.error(
+					error instanceof Error
+						? error.message
+						: t("errors.loadUsersFailed"),
+				);
+			}
+		};
 		fetchUsers();
 	}, [debouncedSearchKey, offset, id, isProject, open]);
 
 	// Fetch the current user's permission for this resource when the dialog opens
 	useEffect(() => {
 		if (!open) return;
-		async function fetchMyPermission() {
-			const endpoint = isProject
-				? `project/getUserProjectPermission?projectId=${id}`
-				: `engine/getUserEnginePermission?engineId=${id}`;
-			const response = await apiGet(
-				`${Env.MODULE}/api/auth/${endpoint}`,
-			).catch(() => undefined);
-			const perm = (response?.data as { permission?: string })
-				?.permission;
-			if (perm) setUserPermission(perm);
-		}
+		const fetchMyPermission = async () => {
+			try {
+				const endpoint = isProject
+					? `project/getUserProjectPermission?projectId=${id}`
+					: `engine/getUserEnginePermission?engineId=${id}`;
+				const response = await apiGet(
+					`${Env.MODULE}/api/auth/${endpoint}`,
+				);
+				const perm = (response?.data as { permission?: string })
+					?.permission;
+				if (perm) setUserPermission(perm);
+			} catch {
+				// Non-fatal: falls back to the default (non-owner) permission
+			}
+		};
 		fetchMyPermission();
 	}, [open, id, isProject]);
 
-	async function addNewMembers() {
+	const addNewMembers = async () => {
 		if (selectedUsers.length === 0) return;
 
 		const userpermissions = selectedUsers.map((m) => {
@@ -196,26 +194,32 @@ export const AddMembersOverlay = ({
 			};
 		});
 
-		const authBase = `${Env.MODULE}/api/auth${adminMode ? "/admin" : ""}`;
-		const response = await apiPost(
-			`${authBase}/${isProject ? "project" : "engine"}/${isProject ? "addProjectUserPermissions" : "addEngineUserPermissions"}`,
-			{ [isProject ? "projectId" : "engineId"]: id, userpermissions },
-		).catch((error: Error) => {
-			toast.error(error?.message || t("errors.addMembersFailed"));
-			resetState();
-			onClose(true);
-			return undefined;
-		});
-
-		const responseData = (response?.data || {}) as { success?: boolean };
-		if (responseData.success) {
-			toast.success(t("success.membersAdded"));
+		try {
+			const authBase = `${Env.MODULE}/api/auth${adminMode ? "/admin" : ""}`;
+			const response = await apiPost(
+				`${authBase}/${isProject ? "project" : "engine"}/${isProject ? "addProjectUserPermissions" : "addEngineUserPermissions"}`,
+				{ [isProject ? "projectId" : "engineId"]: id, userpermissions },
+			);
+			const responseData = (response?.data || {}) as {
+				success?: boolean;
+			};
+			if (responseData.success) {
+				toast.success(t("success.membersAdded"));
+				resetState();
+				onClose(true);
+			}
+		} catch (error) {
+			toast.error(
+				error instanceof Error
+					? error.message
+					: t("errors.addMembersFailed"),
+			);
 			resetState();
 			onClose(true);
 		}
-	}
+	};
 
-	function resetState() {
+	const resetState = () => {
 		setSelectedUsers([]);
 		setSearchKey("");
 		setSearchedResults([]);
@@ -227,9 +231,9 @@ export const AddMembersOverlay = ({
 		setHasMore(true);
 		setUserPermission("");
 		setIsSearching(false);
-	}
+	};
 
-	function permissionLabel(permission: string): string {
+	const permissionLabel = (permission: string): string => {
 		switch (permission) {
 			case "Viewer":
 				return t("permission.viewer");
@@ -240,17 +244,17 @@ export const AddMembersOverlay = ({
 			default:
 				return permission;
 		}
-	}
+	};
 
-	function toggleUserSelected(user: AddPopupSearchResult) {
+	const toggleUserSelected = (user: AddPopupSearchResult) => {
 		setSelectedUsers((prev) =>
 			prev.find((u) => u.email === user.email)
 				? prev.filter((u) => u.email !== user.email)
 				: [...prev, { ...user, permission: "Viewer" }],
 		);
-	}
+	};
 
-	function tryAddFromText(text: string) {
+	const tryAddFromText = (text: string) => {
 		const trimmed = text.trim().toLowerCase();
 		if (!trimmed) return;
 		const match =
@@ -262,31 +266,20 @@ export const AddMembersOverlay = ({
 							r.name.toLowerCase() === trimmed,
 					);
 		if (match) toggleUserSelected(match);
-	}
+	};
 
-	function handleSearchChange(e: ChangeEvent<HTMLInputElement>) {
+	const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
 		setSearchKey(e.target.value);
-	}
+	};
 
-	function handleSearchKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+	const handleSearchKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
 		// Press Enter to add: exact name/email match, or auto-select if only one result remains
 		if (e.key === "Enter" && searchKey.trim()) {
 			e.preventDefault();
 			tryAddFromText(searchKey);
 			setSearchKey("");
 		}
-	}
-
-	function handleResultsScroll(e: React.UIEvent<HTMLDivElement>) {
-		const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-		if (
-			scrollHeight - scrollTop - clientHeight < 60 &&
-			hasMore &&
-			!isFetchingRef.current
-		) {
-			setOffset((prev) => prev + PAGE_SIZE);
-		}
-	}
+	};
 
 	return (
 		<Dialog
@@ -305,9 +298,9 @@ export const AddMembersOverlay = ({
 				</DialogHeader>
 
 				{/* Search input */}
-				<input
+				<Input
 					ref={inputRef}
-					className="h-10 w-full shrink-0 rounded border bg-background px-3 text-sm outline-none ring-primary placeholder:text-muted-foreground focus:ring-2"
+					className="shrink-0"
 					placeholder={t("search.placeholder")}
 					value={searchKey}
 					autoComplete="off"
@@ -320,347 +313,258 @@ export const AddMembersOverlay = ({
 
 				{/* Scrollable middle section */}
 				<div className="flex flex-1 flex-col gap-4 overflow-y-auto">
-					{/* Search results */}
-					<div
-						className={cn(
-							"h-56 w-full shrink-0 overflow-y-auto rounded-md border bg-background transition-opacity",
-							isLoadingResults &&
-								searchedResults.length > 0 &&
-								"opacity-60",
-						)}
-						onScroll={handleResultsScroll}
-					>
-						{searchedResults.length > 0 ? (
-							searchedResults.map((item) => {
-								const isAdded = selectedUsers.some(
-									(u) => u.email === item.email,
-								);
-								return (
-									<button
-										key={`${item.type}-${item.id}`}
-										type="button"
-										className="flex w-full items-center justify-between px-3 py-2 text-start text-sm hover:bg-accent"
-										onClick={() => toggleUserSelected(item)}
-									>
-										<span className="flex items-center gap-2">
-											<Avatar className="h-7 w-7 items-center justify-center bg-muted text-muted-foreground text-xs">
-												{item.name
-													.charAt(0)
-													.toUpperCase()}
-											</Avatar>
-											<span className="flex flex-col">
-												<span className="font-medium">
-													{item.name}
+					{/* Results + selected users share one fixed-height pane so the
+					    dialog never resizes: results fill it entirely until the
+					    first person is selected, then the selected-users list
+					    claims a fixed slice at the bottom. */}
+					<div className="flex h-96 shrink-0 flex-col gap-4">
+						{/* Search results */}
+						<ScrollArea
+							viewportRef={setResultsScroll}
+							className={cn(
+								"min-h-0 w-full flex-1 rounded-md border bg-background transition-opacity",
+								isLoadingResults &&
+									searchedResults.length > 0 &&
+									"opacity-60",
+							)}
+						>
+							<div className="flex flex-col gap-1.5 p-2">
+								{searchedResults.length > 0 ? (
+									searchedResults.map((item) => {
+										const isAdded = selectedUsers.some(
+											(u) => u.email === item.email,
+										);
+										return (
+											<button
+												key={`${item.type}-${item.id}`}
+												type="button"
+												className={cn(
+													MEMBER_ROW_CLASS,
+													"w-full text-start hover:bg-accent",
+												)}
+												onClick={() =>
+													toggleUserSelected(item)
+												}
+											>
+												<span className="flex items-center gap-2">
+													<Avatar className="h-8 w-8">
+														<AvatarFallback className="text-muted-foreground text-sm">
+															{item.name
+																.charAt(0)
+																.toUpperCase()}
+														</AvatarFallback>
+													</Avatar>
+													<span className="flex flex-col">
+														<span className="font-medium text-sm">
+															{item.name}
+														</span>
+														<span className="text-muted-foreground text-xs">
+															id: {item.id}
+														</span>
+														<span className="text-muted-foreground text-xs">
+															email: {item.email}
+														</span>
+													</span>
 												</span>
-												<span className="text-muted-foreground text-xs">
-													id: {item.id}
+												{isAdded && (
+													<span className="font-medium text-primary text-xs">
+														{t("search.added")} ✓
+													</span>
+												)}
+											</button>
+										);
+									})
+								) : (
+									<div className="px-3 py-4 text-center text-muted-foreground text-sm">
+										{isLoadingResults
+											? t("search.searching")
+											: t("search.empty")}
+									</div>
+								)}
+							</div>
+						</ScrollArea>
+
+						{/* Selected users — appears once someone is added, claiming a
+					    fixed slice of the pane above so it never grows further */}
+						{selectedUsers.length > 0 && (
+							<div className="flex h-36 shrink-0 flex-col gap-2">
+								<span className="font-medium text-muted-foreground text-sm">
+									{t("selected.count", {
+										count: selectedUsers.length,
+									})}
+								</span>
+								<ScrollArea className="min-h-0 w-full flex-1 rounded-md border bg-background">
+									<div className="flex flex-col gap-1.5 p-2">
+										{selectedUsers.map((u, i) => (
+											<div
+												key={`${u.type}-${u.id}`}
+												className={MEMBER_ROW_CLASS}
+											>
+												<span className="flex items-center gap-2">
+													<Avatar className="h-8 w-8">
+														<AvatarFallback className="text-muted-foreground text-sm">
+															{u.name
+																.charAt(0)
+																.toUpperCase()}
+														</AvatarFallback>
+													</Avatar>
+													<span className="flex flex-col">
+														<span className="font-medium text-sm">
+															{u.name}
+														</span>
+														<span className="text-muted-foreground text-xs">
+															id: {u.id}
+														</span>
+														<span className="text-muted-foreground text-xs">
+															email: {u.email}
+														</span>
+													</span>
 												</span>
-												<span className="text-muted-foreground text-xs">
-													email: {item.email}
-												</span>
-											</span>
-										</span>
-										{isAdded && (
-											<span className="font-medium text-primary text-xs">
-												{t("search.added")} ✓
-											</span>
-										)}
-									</button>
-								);
-							})
-						) : (
-							<div className="px-3 py-4 text-center text-muted-foreground text-sm">
-								{isLoadingResults
-									? t("search.searching")
-									: t("search.empty")}
+												<div className="flex flex-col items-end gap-1.5">
+													<button
+														type="button"
+														className="text-muted-foreground hover:text-destructive"
+														onClick={() =>
+															toggleUserSelected(
+																u,
+															)
+														}
+													>
+														<X className="h-4 w-4" />
+													</button>
+													<DropdownMenu>
+														<DropdownMenuTrigger
+															asChild
+														>
+															<Button
+																variant="outline"
+																className="shrink-0"
+															>
+																{permissionLabel(
+																	u.permission,
+																)}
+																<ChevronDown className="ms-1 h-4 w-4" />
+															</Button>
+														</DropdownMenuTrigger>
+														<DropdownMenuContent>
+															<DropdownMenuCheckboxItem
+																checked={
+																	u.permission ===
+																	"Viewer"
+																}
+																onCheckedChange={() =>
+																	setSelectedUsers(
+																		(
+																			prev,
+																		) =>
+																			prev.map(
+																				(
+																					s,
+																					idx,
+																				) =>
+																					idx ===
+																					i
+																						? {
+																								...s,
+																								permission:
+																									"Viewer",
+																							}
+																						: s,
+																			),
+																	)
+																}
+															>
+																{t(
+																	"permission.viewer",
+																)}
+															</DropdownMenuCheckboxItem>
+															<DropdownMenuCheckboxItem
+																checked={
+																	u.permission ===
+																	"Editor"
+																}
+																onCheckedChange={() =>
+																	setSelectedUsers(
+																		(
+																			prev,
+																		) =>
+																			prev.map(
+																				(
+																					s,
+																					idx,
+																				) =>
+																					idx ===
+																					i
+																						? {
+																								...s,
+																								permission:
+																									"Editor",
+																							}
+																						: s,
+																			),
+																	)
+																}
+															>
+																{t(
+																	"permission.editor",
+																)}
+															</DropdownMenuCheckboxItem>
+															{isOwner && (
+																<DropdownMenuCheckboxItem
+																	checked={
+																		u.permission ===
+																		"Owner"
+																	}
+																	onCheckedChange={() =>
+																		setSelectedUsers(
+																			(
+																				prev,
+																			) =>
+																				prev.map(
+																					(
+																						s,
+																						idx,
+																					) =>
+																						idx ===
+																						i
+																							? {
+																									...s,
+																									permission:
+																										"Owner",
+																								}
+																							: s,
+																				),
+																		)
+																	}
+																>
+																	{t(
+																		"permission.owner",
+																	)}
+																</DropdownMenuCheckboxItem>
+															)}
+														</DropdownMenuContent>
+													</DropdownMenu>
+												</div>
+											</div>
+										))}
+									</div>
+								</ScrollArea>
 							</div>
 						)}
 					</div>
 
-					{/* Selected users — always shown, scrollable cards */}
-					<div className="flex flex-col gap-2">
-						<span className="font-medium text-muted-foreground text-sm">
-							{t("selected.count", {
-								count: selectedUsers.length,
-							})}
-						</span>
-						<div className="flex flex-col gap-1.5">
-							{selectedUsers.map((u, i) => (
-								<div
-									key={`${u.type}-${u.id}`}
-									className="flex items-center justify-between rounded-md border bg-muted/40 px-3 py-2"
-								>
-									<span className="flex items-center gap-2">
-										<Avatar className="h-8 w-8 items-center justify-center bg-muted text-muted-foreground text-sm">
-											{u.name.charAt(0).toUpperCase()}
-										</Avatar>
-										<span className="flex flex-col">
-											<span className="font-medium text-sm">
-												{u.name}
-											</span>
-											<span className="text-muted-foreground text-xs">
-												id: {u.id}
-											</span>
-											<span className="text-muted-foreground text-xs">
-												email: {u.email}
-											</span>
-										</span>
-									</span>
-									<div className="flex flex-col items-end gap-1.5">
-										<button
-											type="button"
-											className="text-muted-foreground hover:text-destructive"
-											onClick={() =>
-												toggleUserSelected(u)
-											}
-										>
-											<X className="h-4 w-4" />
-										</button>
-										<DropdownMenu>
-											<DropdownMenuTrigger asChild>
-												<Button
-													variant="outline"
-													className="shrink-0"
-												>
-													{permissionLabel(
-														u.permission,
-													)}
-													<ChevronDown className="ms-1 h-4 w-4" />
-												</Button>
-											</DropdownMenuTrigger>
-											<DropdownMenuContent>
-												<DropdownMenuCheckboxItem
-													checked={
-														u.permission ===
-														"Viewer"
-													}
-													onCheckedChange={() =>
-														setSelectedUsers(
-															(prev) =>
-																prev.map(
-																	(s, idx) =>
-																		idx ===
-																		i
-																			? {
-																					...s,
-																					permission:
-																						"Viewer",
-																				}
-																			: s,
-																),
-														)
-													}
-												>
-													{t("permission.viewer")}
-												</DropdownMenuCheckboxItem>
-												<DropdownMenuCheckboxItem
-													checked={
-														u.permission ===
-														"Editor"
-													}
-													onCheckedChange={() =>
-														setSelectedUsers(
-															(prev) =>
-																prev.map(
-																	(s, idx) =>
-																		idx ===
-																		i
-																			? {
-																					...s,
-																					permission:
-																						"Editor",
-																				}
-																			: s,
-																),
-														)
-													}
-												>
-													{t("permission.editor")}
-												</DropdownMenuCheckboxItem>
-												{isOwner && (
-													<DropdownMenuCheckboxItem
-														checked={
-															u.permission ===
-															"Owner"
-														}
-														onCheckedChange={() =>
-															setSelectedUsers(
-																(prev) =>
-																	prev.map(
-																		(
-																			s,
-																			idx,
-																		) =>
-																			idx ===
-																			i
-																				? {
-																						...s,
-																						permission:
-																							"Owner",
-																					}
-																				: s,
-																	),
-															)
-														}
-													>
-														{t("permission.owner")}
-													</DropdownMenuCheckboxItem>
-												)}
-											</DropdownMenuContent>
-										</DropdownMenu>
-									</div>
-								</div>
-							))}
-						</div>
-					</div>
-
 					{/* MODEL restriction fields */}
 					{type === "MODEL" && (
-						<div className="flex flex-col gap-3 rounded border border-border p-3">
-							<button
-								type="button"
-								className="flex items-center gap-1.5 text-start font-medium text-sm"
-								onClick={() =>
-									setRestrictionsOpen((prev) => !prev)
-								}
-							>
-								{restrictionsOpen ? (
-									<ChevronDown className="h-4 w-4 shrink-0" />
-								) : (
-									<ChevronRight className="rtl:-scale-x-100 h-4 w-4 shrink-0" />
-								)}
-								{t("restrictions.title")}
-							</button>
-							{restrictionsOpen && (
-								<div className="flex flex-col gap-3">
-									<div className="flex flex-col gap-1.5">
-										<Label>
-											{t("restrictions.usageLimitType")}
-										</Label>
-										<Select
-											value={restriction}
-											onValueChange={(val) => {
-												setRestriction(val);
-												setMaxTokens("");
-												setMaxTime("");
-											}}
-										>
-											<SelectTrigger className="w-full">
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectItem value="null">
-													{t("restrictions.none")}
-												</SelectItem>
-												<SelectItem value="token">
-													{t("restrictions.token")}
-												</SelectItem>
-												<SelectItem value="compute">
-													{t(
-														"restrictions.computeTime",
-													)}
-												</SelectItem>
-											</SelectContent>
-										</Select>
-									</div>
-									{restriction === "token" && (
-										<div className="flex flex-col gap-1.5">
-											<Label>
-												{t("restrictions.maxTokens")}
-											</Label>
-											<Input
-												type="text"
-												inputMode="numeric"
-												value={formatNum(maxTokens)}
-												onChange={(e) =>
-													setMaxTokens(
-														parseNum(
-															e.target.value,
-														),
-													)
-												}
-											/>
-										</div>
-									)}
-									{restriction === "compute" && (
-										<div className="flex gap-3">
-											<div className="flex flex-1 flex-col gap-1.5">
-												<Label>
-													{t(
-														"restrictions.maxResponseTime",
-													)}
-												</Label>
-												<Input
-													type="text"
-													inputMode="numeric"
-													value={formatNum(maxTime)}
-													onChange={(e) =>
-														setMaxTime(
-															parseNum(
-																e.target.value,
-															),
-														)
-													}
-												/>
-											</div>
-											<div className="flex w-36 flex-col gap-1.5">
-												<Label>
-													{t("restrictions.unit")}
-												</Label>
-												<Input
-													value={t(
-														"restrictions.milliseconds",
-													)}
-													readOnly
-												/>
-											</div>
-										</div>
-									)}
-									{restriction !== "null" && (
-										<div className="flex flex-col gap-1.5">
-											<Label>
-												{t("restrictions.frequency")}
-											</Label>
-											<Select
-												value={frequency}
-												onValueChange={setFrequency}
-											>
-												<SelectTrigger className="w-full">
-													<SelectValue />
-												</SelectTrigger>
-												<SelectContent>
-													<SelectItem value="DAY">
-														{t(
-															"restrictions.daily",
-														)}
-													</SelectItem>
-													<SelectItem value="WEEK">
-														{t(
-															"restrictions.weekly",
-														)}
-													</SelectItem>
-													<SelectItem value="MONTH">
-														{t(
-															"restrictions.monthly",
-														)}
-													</SelectItem>
-													<SelectItem value="YEAR">
-														{t(
-															"restrictions.yearly",
-														)}
-													</SelectItem>
-													<SelectItem value="ALL_TIME">
-														{t(
-															"restrictions.allTime",
-														)}
-													</SelectItem>
-												</SelectContent>
-											</Select>
-										</div>
-									)}
-								</div>
-							)}
-						</div>
+						<ModelRestrictionFields
+							restriction={restriction}
+							setRestriction={setRestriction}
+							maxTokens={maxTokens}
+							setMaxTokens={setMaxTokens}
+							maxTime={maxTime}
+							setMaxTime={setMaxTime}
+							frequency={frequency}
+							setFrequency={setFrequency}
+						/>
 					)}
 				</div>
 				{/* end scrollable middle section */}
