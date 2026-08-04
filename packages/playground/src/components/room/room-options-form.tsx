@@ -13,6 +13,7 @@ import {
 	FieldLabel,
 	FieldLegend,
 	FieldSet,
+	Slider,
 	Textarea,
 	Tooltip,
 	TooltipContent,
@@ -482,6 +483,25 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 									});
 								}}
 							/>
+							{root.theme.featureFlags?.enableTemperature && (
+								<Field>
+									<FieldLabel>
+										{t("room:form.temperatureLabel")} (
+										{(options.temperature ?? 0).toFixed(2)})
+									</FieldLabel>
+									<Slider
+										min={0}
+										max={1}
+										step={0.01}
+										value={[options.temperature ?? 0]}
+										onValueChange={(value) =>
+											onOptionsChange({
+												temperature: value[0],
+											})
+										}
+									/>
+								</Field>
+							)}
 						</FieldGroup>
 					</FieldSet>
 				</FieldGroup>

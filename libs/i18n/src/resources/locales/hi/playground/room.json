@@ -13,7 +13,8 @@
 		"instructionsLabel": "निर्देश",
 		"agentLabel": "एजेंट",
 		"knowledgeLabel": "ज्ञान",
-		"toolboxLabel": "टूलबॉक्स"
+		"toolboxLabel": "टूलबॉक्स",
+		"temperatureLabel": "तापमान"
 	},
 	"modes": {
 		"ask": "पूछें",

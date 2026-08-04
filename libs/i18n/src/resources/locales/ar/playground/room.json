@@ -13,7 +13,8 @@
 		"instructionsLabel": "التعليمات",
 		"agentLabel": "الوكيل",
 		"knowledgeLabel": "المعرفة",
-		"toolboxLabel": "صناديق الأدوات"
+		"toolboxLabel": "صناديق الأدوات",
+		"temperatureLabel": "درجة الحرارة"
 	},
 	"modes": {
 		"ask": "اسأل",

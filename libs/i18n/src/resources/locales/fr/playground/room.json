@@ -13,7 +13,8 @@
 		"instructionsLabel": "Instructions",
 		"agentLabel": "Agent",
 		"knowledgeLabel": "Connaissances",
-		"toolboxLabel": "Boîtes à outils"
+		"toolboxLabel": "Boîtes à outils",
+		"temperatureLabel": "Température"
 	},
 	"modes": {
 		"ask": "Demander",

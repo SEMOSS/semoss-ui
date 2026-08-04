@@ -13,7 +13,8 @@
 		"instructionsLabel": "指示",
 		"agentLabel": "エージェント",
 		"knowledgeLabel": "ナレッジ",
-		"toolboxLabel": "ツールボックス"
+		"toolboxLabel": "ツールボックス",
+		"temperatureLabel": "温度"
 	},
 	"modes": {
 		"ask": "質問",

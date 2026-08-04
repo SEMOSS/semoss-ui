@@ -20,7 +20,8 @@
 		"instructionsLabel": "Instructions",
 		"agentLabel": "Agent",
 		"knowledgeLabel": "Knowledge",
-		"toolboxLabel": "Toolboxes"
+		"toolboxLabel": "Toolboxes",
+		"temperatureLabel": "Temperature"
 	},
 	"modes": {
 		"ask": "Ask",

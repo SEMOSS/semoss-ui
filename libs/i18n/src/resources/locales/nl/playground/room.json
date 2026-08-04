@@ -20,7 +20,8 @@
 		"instructionsLabel": "Instructies",
 		"agentLabel": "Agent",
 		"knowledgeLabel": "Kennis",
-		"toolboxLabel": "Toolboxes"
+		"toolboxLabel": "Toolboxes",
+		"temperatureLabel": "Temperatuur"
 	},
 	"modes": {
 		"ask": "Vragen",
