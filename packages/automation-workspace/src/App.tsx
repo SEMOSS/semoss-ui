@@ -116,20 +116,18 @@ export default function App() {
 		<div className="mx-auto flex h-full max-w-3xl flex-col gap-4 overflow-auto px-6 py-6">
 			<div className="flex items-center justify-between">
 				<span className="font-semibold text-lg">Automation Steps</span>
-				{!readOnly || toolContext ? (
-					<Button
-						data-testid="automation-workspace-run-button"
-						disabled={running || steps.length === 0}
-						onClick={() => run(appId, steps)}
-					>
-						{running ? (
-							<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-						) : (
-							<Play className="mr-2 h-4 w-4" />
-						)}
-						{running ? "Running…" : "Run"}
-					</Button>
-				) : null}
+				<Button
+					data-testid="automation-workspace-run-button"
+					disabled={running || steps.length === 0}
+					onClick={() => run(appId, steps)}
+				>
+					{running ? (
+						<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+					) : (
+						<Play className="mr-2 h-4 w-4" />
+					)}
+					{running ? "Running…" : "Run"}
+				</Button>
 			</div>
 
 			{steps.length === 0 ? (

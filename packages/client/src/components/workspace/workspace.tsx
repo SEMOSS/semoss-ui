@@ -24,6 +24,11 @@ const AgentWorkspace = lazy(() =>
 		default: m.AgentWorkspace,
 	})),
 );
+const AutomationWorkspace = lazy(() =>
+	import("@/components/automation-workspace").then((m) => ({
+		default: m.AutomationWorkspace,
+	})),
+);
 
 import { useRootStore } from "@/hooks";
 import type { WorkspaceStore } from "@/stores";
@@ -117,13 +122,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
 				{workspace.type === "BLOCKS" && <BlocksWorkspace />}
 				{workspace.type === "SKILL" && <SkillWorkspace />}
 				{workspace.type === "WORKSPACE" && <AgentWorkspace />}
-				{workspace.type === "AUTOMATION" && (
-					<iframe
-						className="h-full w-full border-none"
-						title="Automation Workspace"
-						src={`../../automation-workspace/dist/?app=${encodeURIComponent(workspace.appId)}`}
-					/>
-				)}
+				{workspace.type === "AUTOMATION" && <AutomationWorkspace />}
 			</Suspense>
 		</WorkspaceContext.Provider>
 	);
