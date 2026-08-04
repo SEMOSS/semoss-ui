@@ -9,6 +9,7 @@ import type {
 	PixelMessageToolCallPart,
 	PixelMessageToolResultPart,
 } from "@/types";
+import { getToolAppId } from "@/utility/mcp-utils";
 
 /**
  * Build a synthetic toolCall payload for server tools (e.g. provider-side
@@ -306,7 +307,7 @@ export class ToolStore {
 				name: this.json.title,
 				component: "room-tool",
 				config: {
-					app: this.json._meta.SMSS_PROJECT_ID,
+					app: getToolAppId(this.json._meta),
 					message: this.toolCall.message?.id,
 					toolId: this.json.id,
 				},

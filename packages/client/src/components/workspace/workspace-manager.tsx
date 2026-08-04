@@ -1,30 +1,53 @@
 import {
+	Blocks,
+	Braces,
+	ChevronRightIcon,
+	FlaskConical,
+	Folder,
+	Layers,
 	type LucideIcon,
+	Notebook,
 	NotebookTabs,
 	PanelsTopLeft,
 	RotateCcw,
+	Settings,
+	Terminal,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { getFileIconComponent } from "@semoss/shared";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
+import { FlexLayout, getFileIconComponent } from "@semoss/shared";
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 import { ClosePage } from "@/assets/img/ClosePage";
-import { FlexLayout } from "@/components/flex-layout";
-import { useTabBarScroll, useWorkspace } from "@/hooks";
-import { SIDEBAR_MENU } from "@/shared/constants/sidebar-menu.constants";
+import { useProject, useTabBarScroll, useWorkspace } from "@/hooks";
 import type { WorkspaceOptions } from "@/stores";
-import { formatToDataTestId } from "@/utility";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
 import { WorkspaceLoading } from "./WorkspaceLoading";
-import { WorkspaceOverlay } from "./workspace-overlay";
 
 const TAB_ICON_CLASS_NAME = "size-4";
 
 const WORKSPACE_TAB_ICON_BY_COMPONENT: Record<string, LucideIcon> = {
 	designer: PanelsTopLeft,
 	"notebook-viewer": NotebookTabs,
+	"settings-panel": Settings,
+	terminal: Terminal,
+	variables: Braces,
+	blocks: Blocks,
+	layers: Layers,
+	insight: FlaskConical,
+	"app-file-explorer": Folder,
+	"notebook-explorer": Notebook,
 };
 
 const renderTabIcon = (Icon: React.ComponentType<{ className?: string }>) => (
@@ -64,10 +87,10 @@ type WorkspaceManagerProps = {
 
 export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 	({ navbarActions, options, factory = () => null, onAction }) => {
+		const { catalog, project } = useProject();
 		const { workspace } = useWorkspace();
 		const layoutRef = useRef<FlexLayout.Layout | null>(null);
 		const containerRef = useRef<HTMLDivElement | null>(null);
-		const model = workspace.model;
 
 		useTabBarScroll(containerRef);
 
@@ -182,194 +205,48 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 			}
 		};
 
-		const updateModel = (action: FlexLayout.Action) => {
-			if (!model) return;
-
-			const isSettingsTab = action.data.tabNode === "settings";
-			const mainTabsetWeight = model
-				?.getNodeById("main-tabset")
-				?.getAttr("weight");
-
-			// Find a tab node's id by its display name
-			const findTabIdByName = (name: string): string | null => {
-				let id: string | null = null;
-				model.visitNodes((node) => {
-					if (
-						node instanceof FlexLayout.TabNode &&
-						node.getName() === name
-					) {
-						id = node.getId();
-					}
-				});
-				return id;
-			};
-
-			// Collapse all border panels
-			const collapseAllBorders = () => {
-				model
-					.getBorderSet()
-					.getBorders()
-					.forEach((b) => {
-						b.setSelected(-1);
-					});
-			};
-
-			// Toggle the settings sidebar highlight
-			const setSettingsActive = (active: boolean) =>
-				model.doAction(
-					FlexLayout.Actions.updateNodeAttributes("settings", {
-						config: { isSettingsActive: active },
-					}),
-				);
-
-			if (isSettingsTab) {
-				try {
-					// getNodeById is sufficient — no visitNodes needed for an id lookup
-					const settingsNode = model.getNodeById(
-						"settings",
-					) as FlexLayout.TabNode | null;
-					const isAlreadyActive =
-						settingsNode?.getConfig()?.isSettingsActive;
-
-					if (isAlreadyActive) {
-						const existingId = findTabIdByName("Settings");
-						if (existingId) {
-							model.doAction(
-								FlexLayout.Actions.selectTab(existingId),
-							);
-						}
-						return true;
-					}
-
-					setSettingsActive(true);
-					collapseAllBorders();
-
-					const mainTabsetId =
-						model.getNodeById("main-tabset")?.getId() ||
-						model.getRoot().getChildren()[0]?.getId() ||
-						"";
-
-					let existingId = findTabIdByName("Settings");
-
-					if (!existingId) {
-						model.doAction(
-							FlexLayout.Actions.addNode(
-								{
-									type: "tab",
-									name: "Settings",
-									component: "settingsPanel",
-									config: {},
-									enableClose: true,
-								},
-								mainTabsetId,
-								FlexLayout.DockLocation.CENTER,
-								-1,
-								true,
-							),
-						);
-						existingId = findTabIdByName("Settings");
-					}
-
-					if (existingId) {
-						model.doAction(
-							FlexLayout.Actions.selectTab(existingId),
-						);
-					}
-				} catch (err) {
-					console.error(err);
-				}
-
-				return true;
-			}
-
-			setSettingsActive(false);
-			model
-				.getBorderSet()
-				.getBorders()
-				.forEach((border) => {
-					border.setSelected(
-						action.data.tabNode === "block-settings" &&
-							mainTabsetWeight === 0
-							? 1
-							: border.getSelected(),
-					);
-				});
-
-			if (isSettingsTab || mainTabsetWeight === 0) {
-				model.visitNodes((node) => {
-					if (
-						node &&
-						typeof node.getType === "function" &&
-						node.getType() === "tabset"
-					) {
-						const newWeight =
-							(isSettingsTab &&
-								node.getId() === "settings-tabset") ||
-							(!isSettingsTab &&
-								mainTabsetWeight === 0 &&
-								node.getId() !== "settings-tabset")
-								? 100
-								: 0;
-						model.doAction(
-							FlexLayout.Actions.updateNodeAttributes(
-								node.getId(),
-								{
-									weight: newWeight,
-								},
-							),
-						);
-					}
-				});
-			}
-		};
-
 		return (
 			<>
 				<NavbarLeft>
 					<NavbarHeader logo={null} />
-					<div className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
-						<div className="flex items-center gap-1">
-							{workspace.type === "SKILL" ||
-							workspace.type === "WORKSPACE" ? (
-								<div
-									title={workspace?.metadata?.project_name}
-									className="max-w-[30ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
-								>
-									{workspace?.metadata?.project_name}
-								</div>
-							) : (
-								<>
-									<Link
-										to={`/app/${workspace.metadata.project_id}/view`}
-										className="flex items-center text-inherit no-underline"
-									>
-										<div
-											title={
-												workspace?.metadata
-													?.project_name
-											}
-											className="max-w-[30ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
-										>
-											{workspace?.metadata?.project_name}
-										</div>
+					<Breadcrumb>
+						<BreadcrumbList>
+							<BreadcrumbItem>
+								<BreadcrumbLink asChild>
+									<Link to={catalog.path}>
+										{catalog.name} Catalog
 									</Link>
-									<span className="text-muted-foreground text-sm">
-										/
-									</span>
-									<span className="text-sm">Editing</span>
-								</>
-							)}
-						</div>
-					</div>
+								</BreadcrumbLink>
+							</BreadcrumbItem>
+							<BreadcrumbSeparator>
+								<ChevronRightIcon />
+							</BreadcrumbSeparator>
+							<BreadcrumbItem>
+								<BreadcrumbLink asChild>
+									<Link
+										to={`${catalog.path}/${project.project_id}`}
+									>
+										{project.project_display_name ||
+											project.project_name}
+									</Link>
+								</BreadcrumbLink>
+							</BreadcrumbItem>
+							<BreadcrumbSeparator>
+								<ChevronRightIcon />
+							</BreadcrumbSeparator>
+							<BreadcrumbItem>
+								<BreadcrumbPage>Edit</BreadcrumbPage>
+							</BreadcrumbItem>
+						</BreadcrumbList>
+					</Breadcrumb>
 				</NavbarLeft>
 				<NavbarRight>{navbarActions}</NavbarRight>
-				<WorkspaceOverlay />
 				<div className="relative flex h-full w-full flex-col overflow-hidden">
 					<div className="relative mt-2 flex h-full w-full flex-1 overflow-hidden px-3 pt-3 pb-3">
 						<WorkspaceLoading />
 						<div
 							ref={containerRef}
-							className="flexlayout__theme_smss--legacy absolute top-0 right-3 bottom-3 left-3 overflow-hidden"
+							className="flexlayout__theme_smss absolute top-0 right-3 bottom-3 left-3 overflow-hidden"
 						>
 							{workspace.model ? (
 								<>
@@ -393,10 +270,8 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 											if (external === undefined) {
 												return undefined;
 											}
-											const handled = updateModel(action);
-											return !handled
-												? action
-												: undefined;
+
+											return action;
 										}}
 										onRenderTab={(
 											tabNode,
@@ -411,117 +286,10 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 												renderValues.leading = tabIcon;
 											}
 
-											const isSettingsTab =
-												tabNode.getName() ===
-												"Settings";
-											const item = SIDEBAR_MENU.MENU.find(
-												(menuItem) =>
-													menuItem.name ===
-													tabNode.getName(),
-											);
-											const isSelected = isSettingsTab
-												? !!tabNode.getConfig()
-														?.isSettingsActive
-												: tabNode.isSelected();
-
-											const baseDataTestId =
-												formatToDataTestId(
-													`workspace-${tabNode.getName()}`,
-												);
-
-											const DynamicDataTestId = (
-												el: HTMLElement | null,
-											) => {
-												if (el) {
-													const parent =
-														el.parentElement;
-													const grandParent =
-														parent?.parentElement;
-
-													const isGhost =
-														parent?.classList.contains(
-															"flexlayout__tab_button_stamp",
-														) ||
-														grandParent?.classList.contains(
-															"flexlayout__tab_button_stamp",
-														);
-
-													const suffix = isGhost
-														? "ghost"
-														: "image";
-													el.setAttribute(
-														"data-testid",
-														`${baseDataTestId}-${suffix}`,
-													);
-												}
-											};
-
-											if (item?.icon?.component) {
-												const Icon =
-													item.icon.component;
-
-												renderValues.content = (
-													<Tooltip>
-														<TooltipTrigger asChild>
-															<button
-																type="button"
-																className="flex size-9 items-center justify-center rounded hover:bg-accent"
-																ref={
-																	DynamicDataTestId
-																}
-															>
-																<Icon
-																	className={
-																		isSelected
-																			? "size-5 text-primary"
-																			: "size-5 text-foreground/70"
-																	}
-																/>
-															</button>
-														</TooltipTrigger>
-														<TooltipContent>
-															{item.icon.tooltip}
-														</TooltipContent>
-													</Tooltip>
-												);
-											} else if (item?.icon) {
-												const imgIcon =
-													item.icon as unknown as {
-														active: string;
-														default: string;
-													};
-												const iconSrc = isSelected
-													? imgIcon.active
-													: imgIcon.default;
-												renderValues.content =
-													isSelected ? (
-														<img
-															src={iconSrc}
-															alt={tabNode.getName()}
-															ref={
-																DynamicDataTestId
-															}
-															className="m-auto block h-[40px] w-[50px] max-w-none transition-all duration-200"
-														/>
-													) : (
-														<span
-															ref={
-																DynamicDataTestId
-															}
-															role="img"
-															aria-label={tabNode.getName()}
-															className="m-auto block h-[40px] w-[50px] max-w-none bg-muted-foreground transition-colors duration-200"
-															style={{
-																WebkitMask: `url("${iconSrc}") center / contain no-repeat`,
-																mask: `url("${iconSrc}") center / contain no-repeat`,
-															}}
-														/>
-													);
-											}
 											return renderValues;
 										}}
 									/>
-									<div className="absolute bottom-9 left-[5px] z-1 flex w-8 flex-col justify-center">
+									<div className="absolute bottom-12 left-0 z-1 flex h-12 w-12 flex-col items-center justify-center">
 										<Tooltip>
 											<TooltipTrigger asChild>
 												<button
@@ -542,7 +310,6 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 						</div>
 					</div>
 				</div>
-				<WorkspaceOverlay />
 			</>
 		);
 	},

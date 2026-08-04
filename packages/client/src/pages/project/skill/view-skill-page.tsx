@@ -1,13 +1,19 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 
-import { PencilIcon, SettingsIcon } from "lucide-react";
+import { ChevronRightIcon, InfoIcon, PencilIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { InsightProvider } from "@semoss/sdk/react";
 import type { FileItem } from "@semoss/shared";
 import { FileExplorer } from "@semoss/shared";
 import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
 	Button,
 	Spinner,
 	Tooltip,
@@ -17,16 +23,15 @@ import {
 } from "@semoss/ui/next";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "@/components/shared";
 import { SkillFileViewer } from "@/components/skill";
-import { usePage, useRootStore } from "@/hooks";
-import { useNavigate } from "@/hooks/useNavigate";
+import { usePage, useProject, useRootStore } from "@/hooks";
 import type { WorkspaceStore } from "@/stores";
 
 const PUBLIC_ROOT_PATH = "/public";
 
 export const ViewSkillPage = observer(() => {
-	const { appId } = useParams();
 	const { configStore } = useRootStore();
 	const navigate = useNavigate();
+	const { project, catalog } = useProject();
 
 	const [workspace, setWorkspace] = useState<WorkspaceStore | null>(null);
 	const [selectedPath, setSelectedPath] = useState<string | null>(null);
@@ -37,17 +42,13 @@ export const ViewSkillPage = observer(() => {
 	});
 
 	useEffect(() => {
-		if (!appId) {
-			return;
-		}
-
 		// clear out the old workspace/selection
 		setWorkspace(null);
 		setSelectedPath(null);
 		hasAutoSelectedRef.current = false;
 
 		configStore
-			.createWorkspace(appId)
+			.createWorkspace(project.project_id)
 			.then((loadedWorkspace) => {
 				setWorkspace(loadedWorkspace);
 			})
@@ -55,7 +56,7 @@ export const ViewSkillPage = observer(() => {
 				toast.error(e.message);
 				navigate("/");
 			});
-	}, [appId]);
+	}, [project.project_id]);
 
 	/**
 	 * Auto-select SKILL.md the first time the /public root finishes loading
@@ -80,7 +81,7 @@ export const ViewSkillPage = observer(() => {
 		}
 	};
 
-	if (!workspace || !appId) {
+	if (!workspace || !project.project_id) {
 		return (
 			<div className="absolute inset-0 flex flex-1 items-center justify-center">
 				<Spinner />
@@ -91,20 +92,32 @@ export const ViewSkillPage = observer(() => {
 	return (
 		<>
 			<NavbarLeft>
-				<NavbarHeader
-					logo={
-						<div
-							title={
-								workspace?.metadata?.project_display_name ||
-								workspace?.metadata?.project_name
-							}
-							className="w-[30ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
-						>
-							{workspace?.metadata?.project_display_name ||
-								workspace?.metadata?.project_name}
-						</div>
-					}
-				/>
+				<NavbarHeader logo={null} />
+				<Breadcrumb>
+					<BreadcrumbList>
+						<BreadcrumbItem>
+							<BreadcrumbLink asChild>
+								<Link to={catalog.path}>
+									{catalog.name} Catalog
+								</Link>
+							</BreadcrumbLink>
+						</BreadcrumbItem>
+						<BreadcrumbSeparator>
+							<ChevronRightIcon />
+						</BreadcrumbSeparator>
+						<BreadcrumbItem>
+							<BreadcrumbPage
+								title={
+									project.project_display_name ||
+									project.project_name
+								}
+							>
+								{project.project_display_name ||
+									project.project_name}
+							</BreadcrumbPage>
+						</BreadcrumbItem>
+					</BreadcrumbList>
+				</Breadcrumb>
 			</NavbarLeft>
 			<NavbarRight>
 				<Tooltip>
@@ -112,10 +125,12 @@ export const ViewSkillPage = observer(() => {
 						<Button
 							variant="ghost"
 							size="icon"
-							onClick={() => navigate(`/skill/${appId}`)}
 							data-testid={"settings"}
+							asChild
 						>
-							<SettingsIcon className="size-4" />
+							<Link to={`..`}>
+								<InfoIcon className="size-4" />
+							</Link>
 						</Button>
 					</TooltipTrigger>
 					<TooltipContent>Settings</TooltipContent>
@@ -124,11 +139,13 @@ export const ViewSkillPage = observer(() => {
 					<Button
 						variant="default"
 						size="sm"
-						onClick={() => navigate(`/skill/${appId}/edit`)}
 						data-testid={"viewSkillPage-edit-btn"}
+						asChild
 					>
-						<PencilIcon className="mr-1 size-4" />
-						Edit
+						<Link to={`../edit`}>
+							<PencilIcon className="mr-1 size-4" />
+							Edit
+						</Link>
 					</Button>
 				)}
 			</NavbarRight>
@@ -137,11 +154,11 @@ export const ViewSkillPage = observer(() => {
 					options={{ insightId: workspace.insightId }}
 					destroyOnUnmount={false}
 				>
-					<div className="mb-6 h-[35vh] min-h-[220px] overflow-hidden rounded-md border border-border">
+					<div className="mb-6 max-h-[35vh] overflow-auto rounded-md border border-border">
 						<FileExplorer
 							mode={{
 								type: "APP",
-								app: appId,
+								app: project.project_id,
 							}}
 							initialPath={PUBLIC_ROOT_PATH}
 							readOnly
@@ -150,7 +167,7 @@ export const ViewSkillPage = observer(() => {
 						/>
 					</div>
 					<SkillFileViewer
-						projectId={appId}
+						projectId={project.project_id}
 						insightId={workspace.insightId}
 						path={selectedPath}
 					/>

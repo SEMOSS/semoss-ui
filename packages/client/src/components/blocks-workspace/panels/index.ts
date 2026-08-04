@@ -5,5 +5,4 @@ export * from "./layers-panel";
 export * from "./NotebookViewerPanel";
 export * from "./notebook-explorer-panel";
 export * from "./SelectedBlockPanel";
-export * from "./SettingsNavPanel";
 export * from "./variables-panel";
