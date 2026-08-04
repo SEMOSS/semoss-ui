@@ -657,7 +657,7 @@ export const DATABASE_CONNECTION = {
 			advanced: COMMON_JDBC_ADVANCED,
 		},
 		// -----------------------------------------------------------------------
-		// Non-standard: Clickhouse (extra database field between port and schema)
+		// Non-standard: Clickhouse (database field instead of schema)
 		// -----------------------------------------------------------------------
 		{
 			name: "Clickhouse",
@@ -678,7 +678,7 @@ export const DATABASE_CONNECTION = {
 				{
 					key: "port",
 					label: "Port",
-					value: "9042",
+					value: "8123",
 					type: "number",
 					disabled: false,
 					rules: { min: 0 },
@@ -687,16 +687,7 @@ export const DATABASE_CONNECTION = {
 				{
 					key: "database",
 					label: "Database",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: false,
-					category: "Settings",
-				},
-				{
-					key: "schema",
-					label: "Schema",
-					value: "",
+					value: "default",
 					type: "text",
 					disabled: false,
 					required: false,
