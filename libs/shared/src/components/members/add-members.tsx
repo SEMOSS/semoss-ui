@@ -2,6 +2,7 @@ import { ChevronDown, X } from "lucide-react";
 import {
 	type ChangeEvent,
 	type KeyboardEvent,
+	useCallback,
 	useEffect,
 	useRef,
 	useState,
@@ -30,6 +31,7 @@ import {
 	toast,
 	useDebouncedValue,
 	useInfiniteScroll,
+	useIteratorApi,
 } from "@semoss/ui/next";
 import { returnAccessType } from "./common";
 import { ModelRestrictionFields } from "./model-restriction-fields";
@@ -80,13 +82,6 @@ export const AddMembersOverlay = ({
 	const [searchKey, setSearchKey] = useState<string>("");
 	const debouncedSearchKey = useDebouncedValue(searchKey, 300);
 	const [selectedUsers, setSelectedUsers] = useState<UserSelected[]>([]);
-	const [searchedResults, setSearchedResults] = useState<
-		AddPopupSearchResult[]
-	>([]);
-	const [offset, setOffset] = useState<number>(0);
-	const [hasMore, setHasMore] = useState<boolean>(true);
-	const fetchVersionRef = useRef(0);
-	const [isSearching, setIsSearching] = useState<boolean>(true);
 	const [restriction, setRestriction] = useState<string>("null");
 	const [maxTokens, setMaxTokens] = useState<string>("");
 	const [maxTime, setMaxTime] = useState<string>("");
@@ -96,26 +91,9 @@ export const AddMembersOverlay = ({
 	const isOwner = adminMode || userPermission === "OWNER";
 	// Debounce hasn't caught up to the latest keystroke yet
 	const isDebouncePending = searchKey !== debouncedSearchKey;
-	const isLoadingResults = isDebouncePending || isSearching;
-	const { setScroll: setResultsScroll } = useInfiniteScroll({
-		disabled: isSearching || !hasMore,
-		onNext: () => setOffset((prev) => prev + PAGE_SIZE),
-	});
 
-	// Reset to page 0 whenever the debounced search term changes.
-	// Keep prior results on screen (don't clear them) so the list doesn't
-	// flash to empty while the next page is fetched.
-	useEffect(() => {
-		setOffset(0);
-		setHasMore(true);
-	}, [debouncedSearchKey]);
-
-	// Fetch a page; use a version ref to discard stale responses
-	useEffect(() => {
-		if (!open) return;
-		const version = ++fetchVersionRef.current;
-		const fetchUsers = async () => {
-			setIsSearching(true);
+	const usersIterator = useIteratorApi<AddPopupSearchResult>(
+		async (limit, offset) => {
 			try {
 				const authBase = `${Env.MODULE}/api/auth${adminMode ? "/admin" : ""}`;
 				const endpoint = isProject
@@ -123,27 +101,46 @@ export const AddMembersOverlay = ({
 					: "getEngineUsersNoCredentials";
 				const idKey = isProject ? "projectId" : "engineId";
 				const response = await apiGet(
-					`${authBase}/${isProject ? "project" : "engine"}/${endpoint}?${idKey}=${id}&searchTerm=${debouncedSearchKey}&limit=${PAGE_SIZE}&offset=${offset}`,
+					`${authBase}/${isProject ? "project" : "engine"}/${endpoint}?${idKey}=${id}&searchTerm=${debouncedSearchKey}&limit=${limit}&offset=${offset}`,
 				);
-				if (fetchVersionRef.current !== version) return;
-				setIsSearching(false);
-				const page = (response?.data ?? []) as AddPopupSearchResult[];
-				setSearchedResults((prev) =>
-					offset === 0 ? page : [...prev, ...page],
-				);
-				setHasMore(page.length === PAGE_SIZE);
+				return (response?.data ?? []) as AddPopupSearchResult[];
 			} catch (error) {
-				if (fetchVersionRef.current !== version) return;
-				setIsSearching(false);
 				toast.error(
 					error instanceof Error
 						? error.message
 						: t("errors.loadUsersFailed"),
 				);
+				throw error;
 			}
-		};
-		fetchUsers();
-	}, [debouncedSearchKey, offset, id, isProject, open]);
+		},
+		{ enabled: open, limit: PAGE_SIZE },
+		// adminMode intentionally excluded to avoid refetch on prop change
+		[debouncedSearchKey, id, isProject],
+	);
+	const isLoadingResults = isDebouncePending || usersIterator.isLoading;
+	// Latches true the first time a fetch completes and never resets, so the
+	// empty-results placeholder can settle on "No users found" for good after
+	// that — otherwise every keystroke that still matches nothing flips the
+	// text back and forth between that and "Searching...".
+	const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+	useEffect(() => {
+		if (!usersIterator.isLoading) {
+			setHasLoadedOnce(true);
+		}
+	}, [usersIterator.isLoading]);
+
+	// Stable onNext so useInfiniteScroll doesn't tear down its listener each
+	// time the iterator's `next` identity changes (mirrors engine-select.tsx).
+	const usersNextRef = useRef(usersIterator.next);
+	useEffect(() => {
+		usersNextRef.current = usersIterator.next;
+	}, [usersIterator.next]);
+	const handleUsersNext = useCallback(() => usersNextRef.current(), []);
+
+	const { setScroll: setResultsScroll } = useInfiniteScroll({
+		disabled: usersIterator.isLoading || !usersIterator.hasMore,
+		onNext: handleUsersNext,
+	});
 
 	// Fetch the current user's permission for this resource when the dialog opens
 	useEffect(() => {
@@ -222,15 +219,12 @@ export const AddMembersOverlay = ({
 	const resetState = () => {
 		setSelectedUsers([]);
 		setSearchKey("");
-		setSearchedResults([]);
+		usersIterator.reset();
 		setRestriction("null");
 		setMaxTokens("");
 		setMaxTime("");
 		setFrequency("DAY");
-		setOffset(0);
-		setHasMore(true);
 		setUserPermission("");
-		setIsSearching(true);
 	};
 
 	const permissionLabel = (permission: string): string => {
@@ -258,9 +252,9 @@ export const AddMembersOverlay = ({
 		const trimmed = text.trim().toLowerCase();
 		if (!trimmed) return;
 		const match =
-			searchedResults.length === 1
-				? searchedResults[0]
-				: searchedResults.find(
+			usersIterator.data.length === 1
+				? usersIterator.data[0]
+				: usersIterator.data.find(
 						(r) =>
 							r.email.toLowerCase() === trimmed ||
 							r.name.toLowerCase() === trimmed,
@@ -323,14 +317,12 @@ export const AddMembersOverlay = ({
 							viewportRef={setResultsScroll}
 							className={cn(
 								"min-h-0 w-full flex-1 rounded-md border bg-background transition-opacity",
-								isLoadingResults &&
-									searchedResults.length > 0 &&
-									"opacity-60",
+								isLoadingResults && "opacity-60",
 							)}
 						>
 							<div className="flex flex-col gap-1.5 p-2">
-								{searchedResults.length > 0 ? (
-									searchedResults.map((item) => {
+								{usersIterator.data.length > 0 ? (
+									usersIterator.data.map((item) => {
 										const isAdded = selectedUsers.some(
 											(u) => u.email === item.email,
 										);
@@ -376,7 +368,7 @@ export const AddMembersOverlay = ({
 									})
 								) : (
 									<div className="px-3 py-4 text-center text-muted-foreground text-sm">
-										{isLoadingResults
+										{!hasLoadedOnce && isLoadingResults
 											? t("search.searching")
 											: t("search.empty")}
 									</div>

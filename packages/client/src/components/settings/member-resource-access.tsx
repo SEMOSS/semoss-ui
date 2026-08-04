@@ -11,6 +11,7 @@ import {
 	toast,
 	useDebouncedValue,
 	useInfiniteScroll,
+	useIteratorApi,
 } from "@semoss/ui/next";
 import {
 	type AccessKind,
@@ -25,7 +26,7 @@ import {
 	type UserInsightAccess,
 	type UserResourceAccess,
 } from "@/api";
-import { useAPI, useIteratorApi, useSettings } from "@/hooks";
+import { useAPI, useSettings } from "@/hooks";
 import type { Role } from "@/types";
 import type { GrantCandidate } from "./user-access-grant-overlay";
 import { UserAccessGrantOverlay } from "./user-access-grant-overlay";
