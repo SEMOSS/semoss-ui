@@ -13,7 +13,7 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
-import { MarkdownEditor } from "@/components/common";
+import { MarkdownEditor, NoDetailsEmptyState } from "@/components/common";
 import { normalizeTagArray, removeUnderscores, toTitleCase } from "@/utility";
 import { formatDateToLocal } from "@/utility/date";
 import { CatalogTagInput } from "./catalog-tag-input";
@@ -620,14 +620,19 @@ export const CatalogOverview = ({
 					</div>
 				) : (
 					<div className="space-y-6 lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(16rem,24rem)] lg:gap-x-8 lg:space-y-0">
-						{form.markdown ? (
+						{String(form.markdown || "").trim() ? (
 							<div>
 								<Field>
 									<Markdown>{String(form.markdown)}</Markdown>
 								</Field>
 							</div>
 						) : (
-							<> &nbsp; </>
+							// self-start keeps the placeholder near the top of the row
+							// instead of centering it against a tall metadata sidebar.
+							<NoDetailsEmptyState
+								className="self-start"
+								data-testid="catalog-overview--markdown-empty"
+							/>
 						)}
 						<div>
 							<div className="space-y-6 lg:rounded-xl lg:border lg:bg-card lg:p-4">
