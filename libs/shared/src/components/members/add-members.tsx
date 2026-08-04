@@ -311,7 +311,7 @@ export const AddMembersOverlay = ({
 					    dialog never resizes: results fill it entirely until the
 					    first person is selected, then the selected-users list
 					    claims a fixed slice at the bottom. */}
-					<div className="flex h-96 shrink-0 flex-col gap-4">
+					<div className="flex h-[28rem] shrink-0 flex-col gap-4">
 						{/* Search results */}
 						<ScrollArea
 							viewportRef={setResultsScroll}
@@ -376,16 +376,16 @@ export const AddMembersOverlay = ({
 							</div>
 						</ScrollArea>
 
-						{/* Selected users — appears once someone is added, claiming a
-					    fixed slice of the pane above so it never grows further */}
-						{selectedUsers.length > 0 && (
-							<div className="flex h-36 shrink-0 flex-col gap-2">
-								<span className="font-medium text-muted-foreground text-sm">
-									{t("selected.count", {
-										count: selectedUsers.length,
-									})}
-								</span>
-								<ScrollArea className="min-h-0 w-full flex-1 rounded-md border bg-background">
+						{/* Selected users — always shown at a fixed height so adding
+					    the first person never resizes the dialog either */}
+						<div className="flex h-48 shrink-0 flex-col gap-2">
+							<span className="font-medium text-muted-foreground text-sm">
+								{t("selected.count", {
+									count: selectedUsers.length,
+								})}
+							</span>
+							<ScrollArea className="min-h-0 w-full flex-1 rounded-md border bg-background">
+								{selectedUsers.length > 0 ? (
 									<div className="flex flex-col gap-1.5 p-2">
 										{selectedUsers.map((u, i) => (
 											<div
@@ -540,9 +540,13 @@ export const AddMembersOverlay = ({
 											</div>
 										))}
 									</div>
-								</ScrollArea>
-							</div>
-						)}
+								) : (
+									<div className="px-3 py-4 text-center text-muted-foreground text-sm">
+										{t("selected.empty")}
+									</div>
+								)}
+							</ScrollArea>
+						</div>
 					</div>
 
 					{/* MODEL restriction fields */}

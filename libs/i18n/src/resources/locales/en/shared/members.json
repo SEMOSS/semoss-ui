@@ -11,7 +11,8 @@
 	},
 	"selected": {
 		"count_one": "{{count}} user selected",
-		"count_other": "{{count}} users selected"
+		"count_other": "{{count}} users selected",
+		"empty": "No users selected"
 	},
 	"permission": {
 		"viewer": "Viewer",
