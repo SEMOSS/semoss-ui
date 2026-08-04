@@ -148,7 +148,16 @@ export const WorkspaceConsole = ({ appId }: WorkspaceConsoleProps) => {
 	const visibleLines = useMemo(() => {
 		const needle = search.trim().toLowerCase();
 		return lines.filter((l) => {
-			if (!activeLevels.includes(l.level)) return false;
+			// OTHER/TRACE lines have no corresponding toggle button, so they
+			// can never be added to `activeLevels` - excluding them here would
+			// silently and permanently hide any line that doesn't match the
+			// structured log pattern (e.g. multi-line stack traces).
+			const isToggleable =
+				l.level === "INFO" ||
+				l.level === "WARN" ||
+				l.level === "ERROR" ||
+				l.level === "DEBUG";
+			if (isToggleable && !activeLevels.includes(l.level)) return false;
 			if (!needle) return true;
 			return l.raw.toLowerCase().includes(needle);
 		});
@@ -195,6 +204,7 @@ export const WorkspaceConsole = ({ appId }: WorkspaceConsoleProps) => {
 						<ToggleGroupItem
 							value="INFO"
 							aria-label="Toggle INFO"
+							data-testid="workspace-console-level-toggle-info"
 							className={`font-mono text-[10px] ${APP_LOG_LEVEL_CHIP_CLASSES.INFO}`}
 						>
 							INFO
@@ -202,6 +212,7 @@ export const WorkspaceConsole = ({ appId }: WorkspaceConsoleProps) => {
 						<ToggleGroupItem
 							value="WARN"
 							aria-label="Toggle WARN"
+							data-testid="workspace-console-level-toggle-warn"
 							className={`font-mono text-[10px] ${APP_LOG_LEVEL_CHIP_CLASSES.WARN}`}
 						>
 							WARN
@@ -209,6 +220,7 @@ export const WorkspaceConsole = ({ appId }: WorkspaceConsoleProps) => {
 						<ToggleGroupItem
 							value="ERROR"
 							aria-label="Toggle ERROR"
+							data-testid="workspace-console-level-toggle-error"
 							className={`font-mono text-[10px] ${APP_LOG_LEVEL_CHIP_CLASSES.ERROR}`}
 						>
 							ERROR
@@ -216,6 +228,7 @@ export const WorkspaceConsole = ({ appId }: WorkspaceConsoleProps) => {
 						<ToggleGroupItem
 							value="DEBUG"
 							aria-label="Toggle DEBUG"
+							data-testid="workspace-console-level-toggle-debug"
 							className={`font-mono text-[10px] ${APP_LOG_LEVEL_CHIP_CLASSES.DEBUG}`}
 						>
 							DEBUG

@@ -127,6 +127,7 @@ export const AppLogsPage = () => {
 					<ToggleGroupItem
 						value="INFO"
 						aria-label="Toggle INFO"
+						data-testid="app-logs-page-level-toggle-info"
 						className={`font-mono text-[10px] ${APP_LOG_LEVEL_CHIP_CLASSES.INFO}`}
 					>
 						INFO
@@ -134,6 +135,7 @@ export const AppLogsPage = () => {
 					<ToggleGroupItem
 						value="WARN"
 						aria-label="Toggle WARN"
+						data-testid="app-logs-page-level-toggle-warn"
 						className={`font-mono text-[10px] ${APP_LOG_LEVEL_CHIP_CLASSES.WARN}`}
 					>
 						WARN
@@ -141,6 +143,7 @@ export const AppLogsPage = () => {
 					<ToggleGroupItem
 						value="ERROR"
 						aria-label="Toggle ERROR"
+						data-testid="app-logs-page-level-toggle-error"
 						className={`font-mono text-[10px] ${APP_LOG_LEVEL_CHIP_CLASSES.ERROR}`}
 					>
 						ERROR
@@ -148,6 +151,7 @@ export const AppLogsPage = () => {
 					<ToggleGroupItem
 						value="DEBUG"
 						aria-label="Toggle DEBUG"
+						data-testid="app-logs-page-level-toggle-debug"
 						className={`font-mono text-[10px] ${APP_LOG_LEVEL_CHIP_CLASSES.DEBUG}`}
 					>
 						DEBUG
@@ -242,6 +246,7 @@ export const AppLogsPage = () => {
 						variant="outline"
 						size="sm"
 						disabled={offset === 0 || loading}
+						data-testid="app-logs-page-previous-button"
 						onClick={() =>
 							runSearch(Math.max(0, offset - PAGE_SIZE))
 						}
@@ -252,6 +257,7 @@ export const AppLogsPage = () => {
 						variant="outline"
 						size="sm"
 						disabled={!hasMore || loading}
+						data-testid="app-logs-page-next-button"
 						onClick={() => runSearch(offset + PAGE_SIZE)}
 					>
 						Next
