@@ -123,7 +123,9 @@ export const AgentActivityPage = () => {
 	};
 
 	/**
-	 * Recursively load the subagent run tree under a run via GetSubagentRuns.
+	 * Recursively load the subagent run tree under a run via GetSubagentRuns,
+	 * pulling each subagent's full transcript via GetAgentRun so the graph can
+	 * show its room, tool calls, and nested subagents just like the parent.
 	 * `visited` guards against cycles/duplicates across the whole room fetch;
 	 * depth is capped as a safety net.
 	 */
@@ -149,14 +151,16 @@ export const AgentActivityPage = () => {
 			visited.add(run.runId);
 		}
 		return Promise.all(
-			subagentRuns.map(async (run) => ({
-				...run,
-				children: await fetchSubagentRunTree(
-					run.runId,
-					visited,
-					depth + 1,
-				),
-			})),
+			subagentRuns.map(async (run) => {
+				const [detail, children] = await Promise.all([
+					// A dead transcript shouldn't sink the whole room view -
+					// fall back to the summary row with no messages.
+					fetchRunDetail(run.runId).catch(() => null),
+					fetchSubagentRunTree(run.runId, visited, depth + 1),
+				]);
+				const base = detail ?? { ...run, messages: [] };
+				return { ...base, children };
+			}),
 		);
 	};
 

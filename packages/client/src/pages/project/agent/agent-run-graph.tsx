@@ -4,7 +4,6 @@ import {
 	type Edge,
 	Handle,
 	MarkerType,
-	MiniMap,
 	type Node,
 	type NodeProps,
 	Position,
@@ -72,6 +71,7 @@ type GraphSelection =
 	| { kind: "room"; roomId: string; runs: RoomRunDetail[] }
 	| { kind: "run"; run: RoomRunDetail }
 	| { kind: "subagent"; run: SubagentRunNode }
+	| { kind: "subroom"; roomId: string; run: SubagentRunNode }
 	| { kind: "tool"; toolName: string; invocations: ToolInvocation[] };
 
 interface LayoutTreeNode {
@@ -79,6 +79,8 @@ interface LayoutTreeNode {
 	data: ActivityNodeData;
 	selection: GraphSelection;
 	children: LayoutTreeNode[];
+	/** Status coloring the edge from this node's parent; undefined = tool gray. */
+	edgeStatus?: string;
 	x?: number;
 	y?: number;
 }
@@ -189,18 +191,69 @@ const collectToolInvocations = (
 	return invocationsByTool;
 };
 
-const buildSubagentTreeNode = (run: SubagentRunNode): LayoutTreeNode => ({
-	id: run.runId,
-	data: {
-		kind: "subagent",
-		label: run.input || run.runId,
-		sublabel: run.modelId,
-		status: run.status,
-		duration: formatRunDuration(run.startedAt, run.completedAt),
-	},
-	selection: { kind: "subagent", run },
-	children: run.children.map(buildSubagentTreeNode),
-});
+const buildToolTreeNodes = (run: AgentRunDetail): LayoutTreeNode[] =>
+	Array.from(collectToolInvocations(run).entries()).map(
+		([toolName, invocations]) => ({
+			id: `${run.runId}-tool-${toolName}`,
+			data: {
+				kind: "tool" as const,
+				label: toolName,
+				count: invocations.length,
+				status: invocations.some(
+					(inv) => inv.result?.toolStatus === "error",
+				)
+					? "FAILED"
+					: undefined,
+			},
+			selection: { kind: "tool" as const, toolName, invocations },
+			children: [],
+		}),
+	);
+
+/**
+ * A subagent run mirrors the parent structure: the run card points at its own
+ * room, which fans out into the tools it called and any nested subagents.
+ */
+const buildSubagentTreeNode = (run: SubagentRunNode): LayoutTreeNode => {
+	const contents: LayoutTreeNode[] = [
+		...buildToolTreeNodes(run),
+		...run.children.map(buildSubagentTreeNode),
+	];
+
+	const roomChildren: LayoutTreeNode[] = run.roomId
+		? [
+				{
+					id: `${run.runId}-room`,
+					data: {
+						kind: "room" as const,
+						label: run.roomId,
+						count: contents.length,
+					},
+					selection: {
+						kind: "subroom" as const,
+						roomId: run.roomId,
+						run,
+					},
+					children: contents,
+					edgeStatus: run.status,
+				},
+			]
+		: contents;
+
+	return {
+		id: run.runId,
+		data: {
+			kind: "subagent",
+			label: run.input || run.runId,
+			sublabel: run.modelId,
+			status: run.status,
+			duration: formatRunDuration(run.startedAt, run.completedAt),
+		},
+		selection: { kind: "subagent", run },
+		children: roomChildren,
+		edgeStatus: run.status,
+	};
+};
 
 const buildGraph = (
 	roomId: string,
@@ -218,42 +271,22 @@ const buildGraph = (
 			count: runs.length,
 		},
 		selection: { kind: "room", roomId, runs },
-		children: runs.map((run) => {
-			const invocationsByTool = collectToolInvocations(run);
-			const toolChildren: LayoutTreeNode[] = Array.from(
-				invocationsByTool.entries(),
-			).map(([toolName, invocations]) => ({
-				id: `${run.runId}-tool-${toolName}`,
-				data: {
-					kind: "tool" as const,
-					label: toolName,
-					count: invocations.length,
-					status: invocations.some(
-						(inv) => inv.result?.toolStatus === "error",
-					)
-						? "FAILED"
-						: undefined,
-				},
-				selection: { kind: "tool" as const, toolName, invocations },
-				children: [],
-			}));
-
-			return {
-				id: run.runId,
-				data: {
-					kind: "run" as const,
-					label: run.input || run.runId,
-					sublabel: run.modelId,
-					status: run.status,
-					duration: formatRunDuration(run.startedAt, run.completedAt),
-				},
-				selection: { kind: "run" as const, run },
-				children: [
-					...toolChildren,
-					...run.subagents.map(buildSubagentTreeNode),
-				],
-			};
-		}),
+		children: runs.map((run) => ({
+			id: run.runId,
+			data: {
+				kind: "run" as const,
+				label: run.input || run.runId,
+				sublabel: run.modelId,
+				status: run.status,
+				duration: formatRunDuration(run.startedAt, run.completedAt),
+			},
+			selection: { kind: "run" as const, run },
+			children: [
+				...buildToolTreeNodes(run),
+				...run.subagents.map(buildSubagentTreeNode),
+			],
+			edgeStatus: run.status,
+		})),
 	};
 
 	layoutTree(root);
@@ -276,9 +309,7 @@ const buildGraph = (
 				id: `${node.id}->${child.id}`,
 				source: node.id,
 				target: child.id,
-				...edgeStyleForStatus(
-					child.data.kind === "tool" ? undefined : child.data.status,
-				),
+				...edgeStyleForStatus(child.edgeStatus),
 			});
 			visit(child);
 		}
@@ -394,11 +425,23 @@ const nodeTypes = {
 const CodeBlock = ({
 	code,
 	language,
+	fill = false,
 }: {
 	code: string;
 	language: "json" | "text";
+	/**
+	 * When true the block sizes to its content but may shrink (and scroll)
+	 * to fit its flex container instead of capping at max-h-64 - lets a lone
+	 * block use the panel's full height before scrolling.
+	 */
+	fill?: boolean;
 }) => (
-	<CodeContainer className="max-h-64 overflow-auto bg-muted text-xs">
+	<CodeContainer
+		className={cn(
+			"overflow-auto bg-muted text-xs",
+			fill ? "min-h-0" : "max-h-64",
+		)}
+	>
 		<Code code={code} language={language} />
 	</CodeContainer>
 );
@@ -619,7 +662,13 @@ const MetaRow = ({ label, value }: { label: string; value?: string | null }) =>
 		</div>
 	) : null;
 
-const RunDetailPanel = ({ run }: { run: RoomRunDetail }) => {
+const RunDetailPanel = ({
+	run,
+	title,
+}: {
+	run: AgentRunDetail;
+	title: string;
+}) => {
 	const stepNodes = useMemo(() => buildTranscriptStepNodes(run), [run]);
 	const [expanded, setExpanded] = useState<string[]>([]);
 
@@ -630,11 +679,12 @@ const RunDetailPanel = ({ run }: { run: RoomRunDetail }) => {
 	return (
 		<div className="flex flex-col gap-3">
 			<div className="flex items-center justify-between gap-2">
-				<h6 className="font-semibold text-sm">Agent run</h6>
+				<h6 className="font-semibold text-sm">{title}</h6>
 				<StatusBadge status={run.status} />
 			</div>
 			<div className="flex flex-col gap-1 rounded-lg border bg-muted/40 p-3">
 				<MetaRow label="Run ID" value={run.runId} />
+				<MetaRow label="Room" value={run.roomId} />
 				<MetaRow label="Model" value={run.modelId} />
 				<MetaRow label="Harness" value={run.harnessType} />
 				<MetaRow
@@ -643,63 +693,78 @@ const RunDetailPanel = ({ run }: { run: RoomRunDetail }) => {
 				/>
 				<MetaRow label="Started" value={run.startedAt} />
 			</div>
+			{run.errorMessage && (
+				<div>
+					<p className="mb-1 flex items-center gap-1 font-medium text-destructive text-xs">
+						<XCircle className="size-3.5" />
+						Error
+					</p>
+					<p className="whitespace-pre-wrap text-destructive text-xs">
+						{run.errorMessage}
+					</p>
+				</div>
+			)}
 			{stepNodes.length > 0 ? (
 				<TreeView expanded={expanded} onExpandChange={setExpanded}>
 					{renderTreeNodes(stepNodes)}
 				</TreeView>
 			) : (
-				<p className="text-muted-foreground text-sm">
-					No transcript available for this run.
-				</p>
+				<>
+					{run.input && (
+						<div>
+							<p className="mb-1 font-medium text-muted-foreground text-xs">
+								Input
+							</p>
+							<Markdown className="text-sm">{run.input}</Markdown>
+						</div>
+					)}
+					{run.finalText && (
+						<div>
+							<p className="mb-1 flex items-center gap-1 font-medium text-muted-foreground text-xs">
+								<CheckCircle2 className="size-3.5 text-green-600" />
+								Final answer
+							</p>
+							<Markdown className="text-sm">
+								{run.finalText}
+							</Markdown>
+						</div>
+					)}
+					{!run.input && !run.finalText && (
+						<p className="text-muted-foreground text-sm">
+							No transcript available for this run.
+						</p>
+					)}
+				</>
 			)}
 		</div>
 	);
 };
 
-const SubagentDetailPanel = ({ run }: { run: SubagentRunNode }) => (
+const SubroomDetailPanel = ({
+	roomId,
+	run,
+}: {
+	roomId: string;
+	run: SubagentRunNode;
+}) => (
 	<div className="flex flex-col gap-3">
-		<div className="flex items-center justify-between gap-2">
-			<h6 className="font-semibold text-sm">Sub-agent run</h6>
-			<StatusBadge status={run.status} />
-		</div>
+		<h6 className="font-semibold text-sm">Sub-agent room</h6>
 		<div className="flex flex-col gap-1 rounded-lg border bg-muted/40 p-3">
-			<MetaRow label="Run ID" value={run.runId} />
-			<MetaRow label="Model" value={run.modelId} />
-			<MetaRow label="Harness" value={run.harnessType} />
+			<MetaRow label="Room ID" value={roomId} />
+			<MetaRow label="Sub-agent run" value={run.runId} />
 			<MetaRow
-				label="Duration"
-				value={formatRunDuration(run.startedAt, run.completedAt)}
+				label="Tools used"
+				value={String(collectToolInvocations(run).size)}
 			/>
-			<MetaRow label="Started" value={run.startedAt} />
+			<MetaRow
+				label="Nested sub-agents"
+				value={String(run.children.length)}
+			/>
 		</div>
-		{run.input && (
-			<div>
-				<p className="mb-1 font-medium text-muted-foreground text-xs">
-					Input
-				</p>
-				<Markdown className="text-sm">{run.input}</Markdown>
-			</div>
-		)}
-		{run.finalText && (
-			<div>
-				<p className="mb-1 flex items-center gap-1 font-medium text-muted-foreground text-xs">
-					<CheckCircle2 className="size-3.5 text-green-600" />
-					Final answer
-				</p>
-				<Markdown className="text-sm">{run.finalText}</Markdown>
-			</div>
-		)}
-		{run.errorMessage && (
-			<div>
-				<p className="mb-1 flex items-center gap-1 font-medium text-destructive text-xs">
-					<XCircle className="size-3.5" />
-					Error
-				</p>
-				<p className="whitespace-pre-wrap text-destructive text-xs">
-					{run.errorMessage}
-				</p>
-			</div>
-		)}
+		<p className="text-muted-foreground text-xs">
+			Room the sub-agent ran in. Click its tool or sub-agent nodes to
+			inspect them.
+		</p>
 	</div>
 );
 
@@ -709,56 +774,67 @@ const ToolDetailPanel = ({
 }: {
 	toolName: string;
 	invocations: ToolInvocation[];
-}) => (
-	<div className="flex flex-col gap-3">
-		<div className="flex items-center justify-between gap-2">
-			<h6 className="font-mono font-semibold text-sm">{toolName}</h6>
-			<Badge variant="secondary">
-				{invocations.length}{" "}
-				{invocations.length === 1 ? "call" : "calls"}
-			</Badge>
-		</div>
-		{invocations.map(({ call, result }, idx) => {
-			const parsedOutput = result
-				? tryParseJson(result.output)
-				: undefined;
-			return (
-				<div
-					key={call.id}
-					className="flex flex-col gap-2 rounded-lg border p-3"
-				>
-					<div className="flex items-center justify-between gap-2">
-						<span className="font-medium text-muted-foreground text-xs">
-							Call {idx + 1}
-						</span>
-						{result &&
-							(result.toolStatus === "error" ? (
-								<XCircle className="size-3.5 text-destructive" />
-							) : (
-								<CheckCircle2 className="size-3.5 text-green-600" />
-							))}
-					</div>
-					<CodeBlock
-						code={toPrettyJson(call.arguments)}
-						language="json"
-					/>
-					{result && (
+}) => {
+	// A lone invocation gets the panel's full height before scrolling instead
+	// of capping its code blocks while whitespace sits below them.
+	const single = invocations.length === 1;
+
+	return (
+		<div className={cn("flex flex-col gap-3", single && "h-full")}>
+			<div className="flex shrink-0 items-center justify-between gap-2">
+				<h6 className="font-mono font-semibold text-sm">{toolName}</h6>
+				<Badge variant="secondary">
+					{invocations.length}{" "}
+					{invocations.length === 1 ? "call" : "calls"}
+				</Badge>
+			</div>
+			{invocations.map(({ call, result }, idx) => {
+				const parsedOutput = result
+					? tryParseJson(result.output)
+					: undefined;
+				return (
+					<div
+						key={call.id}
+						className={cn(
+							"flex flex-col gap-2 rounded-lg border p-3",
+							single && "min-h-0",
+						)}
+					>
+						<div className="flex shrink-0 items-center justify-between gap-2">
+							<span className="font-medium text-muted-foreground text-xs">
+								Call {idx + 1}
+							</span>
+							{result &&
+								(result.toolStatus === "error" ? (
+									<XCircle className="size-3.5 text-destructive" />
+								) : (
+									<CheckCircle2 className="size-3.5 text-green-600" />
+								))}
+						</div>
 						<CodeBlock
-							code={
-								parsedOutput !== undefined
-									? toPrettyJson(parsedOutput)
-									: result.output
-							}
-							language={
-								parsedOutput !== undefined ? "json" : "text"
-							}
+							code={toPrettyJson(call.arguments)}
+							language="json"
+							fill={single}
 						/>
-					)}
-				</div>
-			);
-		})}
-	</div>
-);
+						{result && (
+							<CodeBlock
+								code={
+									parsedOutput !== undefined
+										? toPrettyJson(parsedOutput)
+										: result.output
+								}
+								language={
+									parsedOutput !== undefined ? "json" : "text"
+								}
+								fill={single}
+							/>
+						)}
+					</div>
+				);
+			})}
+		</div>
+	);
+};
 
 const RoomDetailPanel = ({
 	roomId,
@@ -842,11 +918,6 @@ export const AgentRunGraph = ({ roomId, runs }: AgentRunGraphProps) => {
 					onPaneClick={() => setSelectedNodeId("room-root")}
 				>
 					<Background gap={16} />
-					<MiniMap
-						pannable
-						zoomable
-						className="rounded-md border border-border bg-card"
-					/>
 					<Controls
 						showInteractive={false}
 						className="rounded-md border border-border bg-card text-foreground shadow-sm"
@@ -866,10 +937,16 @@ export const AgentRunGraph = ({ roomId, runs }: AgentRunGraphProps) => {
 			</div>
 			<div className="w-[380px] shrink-0 overflow-y-auto border-l bg-background p-4">
 				{selection?.kind === "run" && (
-					<RunDetailPanel run={selection.run} />
+					<RunDetailPanel run={selection.run} title="Agent run" />
 				)}
 				{selection?.kind === "subagent" && (
-					<SubagentDetailPanel run={selection.run} />
+					<RunDetailPanel run={selection.run} title="Sub-agent run" />
+				)}
+				{selection?.kind === "subroom" && (
+					<SubroomDetailPanel
+						roomId={selection.roomId}
+						run={selection.run}
+					/>
 				)}
 				{selection?.kind === "tool" && (
 					<ToolDetailPanel

@@ -102,10 +102,6 @@ export interface SubagentRun {
 	userId: string;
 }
 
-export interface SubagentRunNode extends SubagentRun {
-	children: SubagentRunNode[];
-}
-
 export interface AgentRunDetail {
 	jobId: string;
 	runId: string;
@@ -118,13 +114,22 @@ export interface AgentRunDetail {
 	status: string;
 	input: string;
 	finalText?: string;
+	errorMessage?: string;
 	finalOutputMessageId?: string;
 	inputMessageId?: string;
-	startedAt: string;
+	startedAt?: string;
 	completedAt?: string;
 	dateCreated: string;
 	messages: TranscriptMessage[];
 	artifacts: unknown[];
+}
+
+/**
+ * A subagent run with its full run detail (transcript included when the
+ * GetAgentRun fetch succeeded) plus its own recursively-loaded subagents.
+ */
+export interface SubagentRunNode extends AgentRunDetail {
+	children: SubagentRunNode[];
 }
 
 export interface RoomRunDetail extends AgentRunDetail {
