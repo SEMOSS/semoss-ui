@@ -14,7 +14,7 @@ import { GithubRepoPicker } from "./app-detail-tabs/github-repo-picker";
 
 /**
  * Post-install repo picker. The install callback redirects the browser here
- * (`#/app/<projectId>/github/select-repo?installation_id=<id>`) when the
+ * (`/app/<projectId>/github/select-repo?installation_id=<id>`) when the
  * installation granted access to more than one repo, so the user must pick
  * which repo this project uses. On confirm we persist the link and return to
  * the GitHub tab (state 2).

@@ -1,7 +1,6 @@
 import { Check, Copy, TriangleAlert } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { resolvePath } from "react-router-dom";
 import {
 	Button,
 	DialogDescription,
@@ -12,6 +11,7 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { toRouteHref } from "@/utility/router";
 
 interface ShareOverlayProps {
 	appId: string;
@@ -64,9 +64,7 @@ const CopyButton = ({
 export const ShareOverlay = observer((props: ShareOverlayProps) => {
 	const { appId, diffs, onClose = () => null } = props;
 
-	const base = window.location.href.replace(window.location.hash, "#");
-	const path = resolvePath(`./s/${appId}`, base);
-	const url = path.pathname;
+	const url = `${window.location.origin}${toRouteHref(`s/${appId}`)}`;
 	const iframe = `<iframe frameborder="0" width="1000" height="600" style="border: 1px solid #ccc;" src="${url}"></iframe>`;
 
 	return (

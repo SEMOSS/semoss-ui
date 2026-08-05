@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Env, runPixel } from "@semoss/sdk/react";
 import { Spinner, Toaster } from "@semoss/ui/next";
 import { DefaultBlocks } from "./components/block-defaults";
@@ -43,6 +43,11 @@ export const Renderer = observer((props: RendererProps) => {
 	const queryStringParams = new URLSearchParams(useLocation().search);
 
 	const [homePage, setHomePage] = useState("");
+
+	// held in a ref so routing to another page block never re-runs the load below
+	const navigate = useNavigate();
+	const navigateRef = useRef(navigate);
+	navigateRef.current = navigate;
 
 	const URLroute = window.location.href;
 
@@ -135,6 +140,7 @@ export const Renderer = observer((props: RendererProps) => {
 					insightId: insightId,
 					state: s,
 					cellRegistry: DefaultCells,
+					navigate: (path: string) => navigateRef.current(path),
 				});
 
 				// set it

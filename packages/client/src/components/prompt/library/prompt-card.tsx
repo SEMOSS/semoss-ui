@@ -17,6 +17,7 @@ import {
 	P,
 	toast,
 } from "@semoss/ui/next";
+import { toRouteHref } from "@/utility/router";
 import { PromptModal } from "../../../pages/prompt/PromptModal";
 import type { Prompt } from "../prompt.types";
 import { PromptDeleteModal } from "../prompt-delete-modal";
@@ -166,7 +167,7 @@ export const PromptCard = (props: PromptCardProps) => {
 		(e: React.MouseEvent) => {
 			e.stopPropagation();
 			window.open(
-				`#/prompt/${prompt.id}`,
+				toRouteHref(`prompt/${prompt.id}`),
 				"_blank",
 				"noopener,noreferrer",
 			);

@@ -26,6 +26,7 @@ import { Help } from "@/components/help";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { useRootStore } from "@/hooks";
 import { getProjectLabel, isOwnerPermission } from "@/utility/catalog";
+import { toRouteHref } from "@/utility/router";
 import { NavbarHeader, NavbarLeft } from "../shared";
 import { ProjectGridItem } from "./project-grid-item";
 
@@ -291,7 +292,10 @@ export const ProjectCatalog = observer(
 		 * @param project
 		 */
 		const openInfo = async (project: Project) => {
-			window.open(`#${config.basePath}/${project.project_id}`, "_blank");
+			window.open(
+				toRouteHref(`${config.basePath}/${project.project_id}`),
+				"_blank",
+			);
 		};
 
 		/**

@@ -1,4 +1,6 @@
 interface ImportMetaEnv {
+	/** Vite's `base`, set from VITE_BASE_URL at build time */
+	readonly BASE_URL: string;
 	readonly ENDPOINT: string;
 	readonly MODULE: string;
 	readonly APP: string;

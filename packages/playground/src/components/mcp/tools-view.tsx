@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Env, type MCPToolRequest, usePixel } from "@semoss/sdk/react";
 import { Skeleton } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
+import { toSiblingAppHref } from "@/utility/router";
 import { ToolsDefaultView } from "./tools-default-view";
 import { ToolsServerView } from "./tools-server-view";
 
@@ -20,8 +21,8 @@ const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 const SYSTEM_APP_URI = /^system:\/\/([a-zA-Z0-9._-]+)(\/.*)?$/;
 
 /**
- * Resolves a `system://` resourceURI to a path relative to this app's own
- * build output. Returns null when the URI is not a system app URI.
+ * Resolves a `system://` resourceURI to the sibling app's build output. Returns
+ * null when the URI is not a system app URI.
  */
 const resolveSystemAppUrl = (
 	resourceURI: string | undefined,
@@ -30,7 +31,7 @@ const resolveSystemAppUrl = (
 		return null;
 	}
 	const match = SYSTEM_APP_URI.exec(resourceURI);
-	return match ? `../../${match[1]}/dist${match[2] ?? "/"}` : null;
+	return match ? toSiblingAppHref(match[1], match[2] ?? "/") : null;
 };
 
 interface ToolsViewProps {

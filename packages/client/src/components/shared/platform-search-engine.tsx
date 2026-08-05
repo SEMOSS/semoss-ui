@@ -3,6 +3,7 @@ import { useIteratorPixel } from "@semoss/sdk/react";
 import { type Engine, EngineSubtypeIcon } from "@semoss/shared";
 import { Button, CommandGroup, CommandItem, Spinner } from "@semoss/ui/next";
 import { useNavigate } from "@/hooks/useNavigate";
+import { toRouteHref } from "@/utility/router";
 
 const LIMIT = 5;
 
@@ -112,7 +113,7 @@ export const PlatformSearchEngine = ({
 						<a
 							className="rounded-sm p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
 							target="_blank"
-							href={`./#/${type.toLowerCase()}/${engineId}`}
+							href={toRouteHref(`${type.toLowerCase()}/${engineId}`)}
 							onClick={(e) => {
 								e.stopPropagation();
 							}}

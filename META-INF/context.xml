@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context>
+    <!--
+        Enables Tomcat's built in rewrite engine for this webapp only, so no
+        change to Tomcat's conf/ is needed. Rules live in WEB-INF/rewrite.config
+        and are matched relative to the context path, which lets the same file
+        work at /semoss-ui locally and /SemossWeb when deployed as a WAR.
+    -->
+    <Valve className="org.apache.catalina.valves.rewrite.RewriteValve" />
+</Context>

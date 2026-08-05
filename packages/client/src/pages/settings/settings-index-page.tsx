@@ -34,6 +34,7 @@ import {
 import { useSettings } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId } from "@/utility";
+import { toRouteHref } from "@/utility/router";
 import { SETTINGS_ROUTES } from "./settings.constants";
 
 const DEFAULT_CARDS = SETTINGS_ROUTES.filter(
@@ -141,7 +142,11 @@ export const SettingsIndexPage = () => {
 		const normalizedPath = path.startsWith("/")
 			? path
 			: `/settings/${path}`;
-		window.open(`#${normalizedPath}`, "_blank", "noopener,noreferrer");
+		window.open(
+			toRouteHref(normalizedPath),
+			"_blank",
+			"noopener,noreferrer",
+		);
 	};
 
 	const handleCardClick = (event: MouseEvent, path: string) => {

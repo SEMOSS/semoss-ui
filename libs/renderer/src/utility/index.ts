@@ -252,6 +252,34 @@ export const getValueByPath = <T extends object>(target: T, path: string) => {
 	return target;
 };
 
+/**
+ * Resolve a page block route, such as "/page-2", against the app route that is
+ * currently in the address bar.
+ *
+ * The leading path is matched loosely on purpose: the app is served from a
+ * context path that differs per deployment, so the router basename is not known
+ * here.
+ *
+ * @param destination - route of the page block to open
+ * @returns the path to navigate to, or null when the app is not being viewed
+ * through an app or share route
+ */
+export const resolveAppPagePath = (destination: string): string | null => {
+	const { pathname } = window.location;
+
+	// the app route renders pages under /view, the share route renders them directly
+	const appPageMatch = pathname.match(/^(.*\/app\/[^/]+)/);
+	const base = appPageMatch
+		? `${appPageMatch[1]}/view`
+		: pathname.match(/^(.*\/s\/[^/]+)/)?.[1];
+
+	if (!base) {
+		return null;
+	}
+
+	return `${base.replace(/\/$/, "")}/${destination.replace(/^\//, "")}`;
+};
+
 export const getHomePage = (state: SerializedState) => {
 	let active = "";
 	const blocks = state.blocks;

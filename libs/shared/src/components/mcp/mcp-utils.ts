@@ -166,12 +166,12 @@ export const createMcpPlatformUrl =
 		const id = "id" in mcp ? mcp.id : mcp.engine_id;
 		const type = "type" in mcp ? mcp.type : mcp.engine_type;
 		if (type === "PROJECT") {
-			return `${baseUrl}/#/app/${id}/mcp-usage`;
+			return `${baseUrl}/app/${id}/mcp-usage`;
 		}
-		return `${baseUrl}/#/engine/${type.toLowerCase()}/${id}/mcp-usage`;
+		return `${baseUrl}/engine/${type.toLowerCase()}/${id}/mcp-usage`;
 	};
 
 export const createPromptPlatformUrl =
 	(baseUrl: string) =>
 	(prompt: Pick<Prompt, "id">): string =>
-		`${baseUrl}/#/prompt/${prompt.id}`;
+		`${baseUrl}/prompt/${prompt.id}`;

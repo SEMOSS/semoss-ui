@@ -3,6 +3,7 @@ import { useIteratorPixel } from "@semoss/sdk/react";
 import { type App, AppCatalogAvatar } from "@semoss/shared";
 import { Button, CommandGroup, CommandItem, Spinner } from "@semoss/ui/next";
 import { useNavigate } from "@/hooks/useNavigate";
+import { toRouteHref } from "@/utility/router";
 
 const LIMIT = 5;
 
@@ -93,7 +94,7 @@ export const PlatformSearchApp = ({
 						<a
 							className="rounded-sm p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
 							target="_blank"
-							href={`./#/app/${app.project_id}/view`}
+							href={toRouteHref(`app/${app.project_id}/view`)}
 							onClick={(e) => {
 								e.stopPropagation();
 							}}

@@ -1,5 +1,6 @@
-import { createHashRouter, Navigate, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 import { DocumentLibrary } from "@/pages/knowledge-page";
+import { getRouterBasename } from "@/utility/router";
 import { AuthenticatedLayout } from "./authenticated-layout";
 import { ChatsPage } from "./chats-page";
 import { EditWorkspacePage } from "./edit-workspace-page";
@@ -15,7 +16,7 @@ import { RoomPage } from "./room-page";
 import { WorkspaceDetailPage } from "./workspace-detail-page";
 import { WorkspacePage } from "./workspace-page";
 
-const router = createHashRouter(
+const router = createBrowserRouter(
 	[
 		{
 			// wrap eveything in an error boundary to catch any errors in the layouts or login page
@@ -100,6 +101,7 @@ const router = createHashRouter(
 		},
 	],
 	{
+		basename: getRouterBasename(),
 		future: {
 			v7_relativeSplatPath: true,
 		},
