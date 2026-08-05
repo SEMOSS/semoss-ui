@@ -123,7 +123,7 @@ When contributing to the extension:
 3. Update documentation for architectural changes
 4. Ensure backward compatibility with existing scripts
 
-See [CONTRIBUTING.md](../../CONTRIBUTING.md) for general development guidelines.
+See [AGENTS.md](../../AGENTS.md) for general development guidelines and conventions.
 
 ## Permissions
 

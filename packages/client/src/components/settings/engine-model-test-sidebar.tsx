@@ -6,7 +6,6 @@ import {
 	AlertDescription,
 	Card,
 	Input,
-	Slider,
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
@@ -29,8 +28,6 @@ interface ModelInfo {
 interface EngineModelTestSidebarProps {
 	selectedModel: Model;
 	setSelectedModel: Dispatch<SetStateAction<Model>>;
-	temperature: number;
-	setTemperature: (temp: number) => void;
 	maxTokens: number;
 	setMaxTokens: (tokens: number) => void;
 }
@@ -38,24 +35,25 @@ interface EngineModelTestSidebarProps {
 export const EngineModelTestSidebar = ({
 	selectedModel,
 	setSelectedModel,
-	temperature,
-	setTemperature,
 	maxTokens,
 	setMaxTokens,
 }: EngineModelTestSidebarProps) => {
 	const [modelInfo, setModelInfo] = useState<ModelInfo | null>(null);
-
-	const temperatureTooltipText = `
-This changes the randomness of the LLM's output.
-Higher temperature = more creative responses.
-Range: 0.0 to 1.0
-`;
+	const [maxTokensDraft, setMaxTokensDraft] = useState(() =>
+		String(maxTokens),
+	);
 
 	const maxTokensTooltipText = `
 Controls the maximum number of tokens in the response.
 Higher values allow longer outputs.
 Default: 2000
 `;
+
+	useEffect(() => {
+		setMaxTokensDraft((prev) =>
+			parseInt(prev, 10) === maxTokens ? prev : String(maxTokens),
+		);
+	}, [maxTokens]);
 
 	useEffect(() => {
 		if (!selectedModel.model_id) return;
@@ -105,9 +103,25 @@ Default: 2000
 	}, [selectedModel.model_id, selectedModel.model_name, setSelectedModel]);
 
 	const handleMaxTokensChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const value = parseInt(e.target.value, 10);
+		// Strip the separators the field displays before parsing.
+		const digits = e.target.value.replace(/[^\d]/g, "");
+		setMaxTokensDraft(digits);
+
+		const value = parseInt(digits, 10);
 		if (!Number.isNaN(value) && value > 0) {
 			setMaxTokens(value);
+		}
+	};
+
+	/**
+	 * Restore the applied value when the field is left empty or at zero, so an
+	 * in-progress edit can be blank without persisting an invalid setting.
+	 */
+	const handleMaxTokensBlur = () => {
+		const value = parseInt(maxTokensDraft, 10);
+
+		if (Number.isNaN(value) || value <= 0) {
+			setMaxTokensDraft(String(maxTokens));
 		}
 	};
 
@@ -148,41 +162,6 @@ Default: 2000
 			<div className="flex flex-col gap-6">
 				<h3 className="font-semibold text-base">Parameters</h3>
 
-				{/* Temperature */}
-				<div className="flex flex-col gap-2">
-					<div className="flex items-center gap-1">
-						<span className="font-medium text-sm">Temperature</span>
-						<TooltipProvider>
-							<Tooltip>
-								<TooltipTrigger>
-									<HelpCircle className="h-4 w-4 text-primary" />
-								</TooltipTrigger>
-								<TooltipContent className="max-w-xs text-xs">
-									{temperatureTooltipText}
-								</TooltipContent>
-							</Tooltip>
-						</TooltipProvider>
-					</div>
-
-					<Slider
-						value={[temperature]}
-						className="cursor-pointer"
-						min={0}
-						max={1}
-						step={0.1}
-						onValueChange={(v) => setTemperature(v[0])}
-					/>
-					<div className="mt-1 flex justify-between text-muted-foreground text-xs">
-						<span>0</span>
-						<span>0.5</span>
-						<span>1</span>
-					</div>
-
-					<p className="text-muted-foreground text-xs">
-						Current: {temperature}
-					</p>
-				</div>
-
 				{/* Max Tokens */}
 				<div className="flex flex-col gap-2">
 					<div className="flex items-center gap-1">
@@ -201,18 +180,22 @@ Default: 2000
 						</TooltipProvider>
 					</div>
 
+					{/*
+					 * Text input rather than type="number" so the value can carry
+					 * thousands separators; type="number" rejects a value containing
+					 * commas and blanks the field.
+					 */}
 					<Input
-						type="number"
-						value={maxTokens}
+						type="text"
+						inputMode="numeric"
+						value={
+							maxTokensDraft === ""
+								? ""
+								: Number(maxTokensDraft).toLocaleString()
+						}
 						onChange={handleMaxTokensChange}
-						min={1}
-						max={8192}
-						step={100}
+						onBlur={handleMaxTokensBlur}
 					/>
-
-					<p className="text-muted-foreground text-xs">
-						Range: 1 – 8192 tokens
-					</p>
 				</div>
 			</div>
 

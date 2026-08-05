@@ -5,8 +5,8 @@ import { FileExplorer, FlexLayout } from "@semoss/shared";
 import { Spinner } from "@semoss/ui/next";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
+import { ProjectDetailTabs } from "@/components/project";
 import { useWorkspace } from "@/hooks";
-import { AppDetailPage } from "@/pages/app/app-detail-page";
 import { WorkspaceManager } from "../../components/workspace";
 import { WorkspaceTerminal } from "../../components/workspace/panels";
 import type { WorkspaceOptions } from "../../stores";
@@ -38,13 +38,7 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						enableClose: false,
 						config: {},
 					},
-					{
-						id: "settings",
-						type: "tab",
-						name: "Settings",
-						component: "settingsPanel",
-						config: {},
-					},
+
 					{
 						id: "insight-explorer",
 						type: "tab",
@@ -67,6 +61,16 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						component: "terminal",
 						enableClose: false,
 						config: {},
+					},
+					{
+						id: "settings",
+						type: "tab",
+						name: "Settings",
+						component: "settings-panel",
+						config: {},
+						enableClose: false,
+						borderWidth: 800,
+						borderHeight: 1200,
 					},
 				],
 			},
@@ -172,10 +176,6 @@ export const CodeWorkspace: React.FC = observer(() => {
 					node={node}
 					layout={layout}
 					app={workspace.appId}
-					onOpenStateChange={workspace.setFileBrowserOpen}
-					onVisibleAssetPathsChange={({ path, paths }) => {
-						workspace.setFileBrowserVisiblePaths(path, paths);
-					}}
 				/>
 			);
 		} else if (component === "app-file-editor") {
@@ -184,8 +184,44 @@ export const CodeWorkspace: React.FC = observer(() => {
 			return <MCPJsonEditor dataMap={config.data} />;
 		} else if (component === "renderer") {
 			return <RendererPanel />;
-		} else if (component === "settingsPanel") {
-			return <AppDetailPage showNav={false} />;
+		} else if (component === "settings-panel") {
+			return (
+				<ProjectDetailTabs
+					tabs={[
+						{ name: "Overview", component: "project-overview" },
+						{
+							name: "MCP",
+							component: "mcp-usage",
+							restrict: ["OWNER", "EDIT", "READ_ONLY"],
+						},
+						{
+							name: "Commits",
+							component: "commits",
+							restrict: ["OWNER", "EDIT"],
+						},
+						{
+							name: "GitHub",
+							component: "github",
+							restrict: ["OWNER"],
+						},
+						{
+							name: "Settings",
+							component: "settings",
+							restrict: ["OWNER"],
+						},
+						{
+							name: "Access Control",
+							component: "access-control",
+							restrict: ["OWNER", "EDIT"],
+						},
+						{
+							name: "SMSS",
+							component: "smss",
+							restrict: ["OWNER"],
+						},
+					]}
+				/>
+			);
 		} else if (component === "insight-explorer") {
 			return <InsightFilesPanel />;
 		} else if (component === "terminal") {

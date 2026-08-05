@@ -124,6 +124,14 @@ interface FileExplorerProps {
 		path: string;
 		items: FileItem[];
 	}) => void;
+
+	/**
+	 * When true, the explorer is browse/view-only: the new file/upload
+	 * button, drag-and-drop, and mutating context menu actions (rename,
+	 * delete, copy, cut, paste, create) are all disabled. Browsing, search,
+	 * and download remain available. Defaults to false.
+	 */
+	readOnly?: boolean;
 }
 
 export const FileExplorer: React.FC<FileExplorerProps> = ({
@@ -135,6 +143,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 	onItemsMoved,
 	onItemsDeleted,
 	onVisibleItemsChange,
+	readOnly = false,
 }) => {
 	const insight = useInsight();
 	// `common` is preloaded by every app's I18nBuilder (it's in each app's
@@ -226,7 +235,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 	const directoryRefreshRef = useRef<Map<string, () => void>>(new Map());
 
 	const debouncedSearch = useDebouncedValue(search);
-	const canMutateFiles = mode.type !== "STORAGE";
+	const canMutateFiles = mode.type !== "STORAGE" && !readOnly;
 
 	let getFilesPixel = "";
 	if (mode.type === "APP") {
@@ -1224,7 +1233,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 					)}
 
 					{getFiles.status === "ERROR" && (
-						<div className="flex items-center justify-center py-4">
+						<div className="flex items-center justify-center py-16">
 							<Muted className="text-destructive">
 								{getFiles.error?.message ||
 									t("fileExplorer.failedToLoadFiles")}

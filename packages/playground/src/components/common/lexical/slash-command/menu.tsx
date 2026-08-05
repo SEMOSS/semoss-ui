@@ -46,8 +46,10 @@ interface RoomInputMenuSlashProps {
 	 * the caller is responsible for executing the command and closing the menu.
 	 */
 	onCommandSelect?: (cmd: SlashCommand) => void;
-	/** When true, commands with disableDuringLoading are shown as disabled */
+	/** When true, commands with disableWithTools are shown as disabled */
 	isLoading?: boolean;
+	/** When true, commands with disableWithTools are shown as disabled */
+	hasTools?: boolean;
 }
 
 /**
@@ -65,6 +67,7 @@ export const RoomInputMenuSlash: React.FC<RoomInputMenuSlashProps> = ({
 	onRequestClose,
 	onCommandSelect,
 	isLoading,
+	hasTools,
 }) => {
 	const { commands } = useSlashCommands();
 	const filtered = filterSlashCommands(commands, query);
@@ -102,7 +105,8 @@ export const RoomInputMenuSlash: React.FC<RoomInputMenuSlashProps> = ({
 						{filtered.map((cmd) => {
 							const Icon = cmd.icon;
 							const disabled = !!(
-								cmd.disableDuringLoading && isLoading
+								cmd.disableWithTools &&
+								(isLoading || hasTools)
 							);
 							return (
 								<CommandItem

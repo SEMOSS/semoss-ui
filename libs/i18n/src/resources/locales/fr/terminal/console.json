@@ -25,6 +25,8 @@
 	"results": {
 		"successNoOutput": "✓ Exécuté avec succès (aucune sortie)",
 		"insightNotReady": "L'aperçu n'est pas prêt",
-		"unknownError": "Erreur inconnue"
+		"unknownError": "Erreur inconnue",
+		"fileDownloadStarted": "✓ Téléchargement du fichier démarré",
+		"downloadFailed": "Échec du téléchargement du fichier"
 	}
 }

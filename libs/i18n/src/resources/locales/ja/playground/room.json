@@ -13,9 +13,7 @@
 		"instructionsLabel": "指示",
 		"agentLabel": "エージェント",
 		"knowledgeLabel": "ナレッジ",
-		"toolboxLabel": "ツールボックス",
-		"maxTokenLabel": "最大トークン",
-		"temperatureLabel": "温度"
+		"toolboxLabel": "ツールボックス"
 	},
 	"modes": {
 		"ask": "質問",

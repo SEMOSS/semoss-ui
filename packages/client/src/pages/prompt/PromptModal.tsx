@@ -54,8 +54,7 @@ export const PromptModal = (props: PromptModalProps) => {
 			tags: tags,
 			global: global,
 		};
-		const stringified =
-			"AddPrompt ( map = [" + JSON.stringify(promptMap) + " ])";
+		const stringified = `AddPrompt ( map = [${JSON.stringify(promptMap)} ])`;
 		monolithStore
 			.runQuery(stringified)
 			.then(() => {
@@ -76,8 +75,7 @@ export const PromptModal = (props: PromptModalProps) => {
 			global: global,
 			id: prompt,
 		};
-		const stringified =
-			"UpdatePrompt ( map = [" + JSON.stringify(promptMap) + " ])";
+		const stringified = `UpdatePrompt ( map = [${JSON.stringify(promptMap)} ])`;
 		monolithStore
 			.runQuery(stringified)
 			.then(() => {

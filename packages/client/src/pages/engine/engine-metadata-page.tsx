@@ -1,4 +1,5 @@
 import {
+	AlertCircleIcon,
 	ChevronDown,
 	ChevronLeft,
 	ChevronRight,
@@ -18,6 +19,9 @@ import {
 } from "@semoss/sdk/react";
 import { ColumnMetadataModal, type LogicalDataType } from "@semoss/shared";
 import {
+	Alert,
+	AlertDescription,
+	AlertTitle,
 	Badge,
 	Button,
 	Card,
@@ -33,6 +37,7 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
+	Spinner,
 	Table,
 	TableBody,
 	TableCell,
@@ -48,7 +53,6 @@ import { SyncExternalDatabaseOverlay } from "@/components/database";
 import { Metamodel, type MetamodelNodeType } from "@/components/metamodel";
 import { Section } from "@/components/ui";
 import { useEngine, useRootStore } from "@/hooks";
-import { useQueryResults } from "@/hooks/use-database-query-results";
 
 const normalizeSearchValue = (value: string) =>
 	value.toLowerCase().replace(/[\s_]+/g, "");
@@ -160,7 +164,7 @@ export const EngineMetadataPage = observer(() => {
 		relName?: string;
 	};
 
-	const { active } = useEngine();
+	const { engine } = useEngine();
 	const { configStore } = useRootStore();
 
 	const [isModified, setIsModified] = useState(false);
@@ -198,8 +202,6 @@ export const EngineMetadataPage = observer(() => {
 	const [selectedColumnDetails, setSelectedColumnDetails] =
 		useState<ColumnDetails | null>(null);
 
-	const renderQueryResults = useQueryResults();
-
 	const getDatabaseMetamodel = usePixel<{
 		dataTypes: Record<string, string>;
 		logicalNames: Record<string, string[]>;
@@ -222,8 +224,8 @@ export const EngineMetadataPage = observer(() => {
 		descriptions: Record<string, string>;
 		additionalDataTypes: Record<string, string>;
 	}>(
-		active.id
-			? `GetDatabaseMetamodel( database=["${active.id}"], options=["dataTypes","physicalTypes","additionalDataTypes","logicalNames","descriptions","positions"]);`
+		engine.engine_id
+			? `GetDatabaseMetamodel( database=["${engine.engine_id}"], options=["dataTypes","physicalTypes","additionalDataTypes","logicalNames","descriptions","positions"]);`
 			: "",
 		{
 			onSuccess({
@@ -310,7 +312,7 @@ export const EngineMetadataPage = observer(() => {
 	}>(
 		selectedNode && selectedNode.data.properties.length > 0
 			? `Database(database=["${
-					active.id
+					engine.engine_id
 				}"]) | Distinct(false) | Select(${selectedNode.data.properties
 					.map((p) => p.id)
 					.join(", ")}) | Collect(100);`
@@ -329,7 +331,9 @@ export const EngineMetadataPage = observer(() => {
 	);
 
 	const getDatabaseCategory = usePixel<string>(
-		active.id ? `GetDatabaseCategory(engine=["${active.id}"]);` : "",
+		engine.engine_id
+			? `GetDatabaseCategory(engine=["${engine.engine_id}"]);`
+			: "",
 	);
 	const isRdbms = getDatabaseCategory.data?.toUpperCase() === "SQL";
 
@@ -606,7 +610,7 @@ export const EngineMetadataPage = observer(() => {
 					},
 				]
 			>(
-				`ExternalUpdateJdbcSchema(database=["${active.id}"], filters=${filters});`,
+				`ExternalUpdateJdbcSchema(database=["${engine.engine_id}"], filters=${filters});`,
 			);
 
 			if (errors.length > 0) {
@@ -871,7 +875,7 @@ Error ${e.message || "Unknown error"}
 			// run it
 			const { errors, pixelReturn, insightId } =
 				await configStore.runPixel<[string]>(
-					`DatabaseMetadataToPdf(database=["${active.id}"]);`,
+					`DatabaseMetadataToPdf(database=["${engine.engine_id}"]);`,
 				);
 
 			if (errors.length > 0) {
@@ -944,7 +948,7 @@ Error ${e.message || "Unknown error"}
 				}
 
 				const { errors } = await runPixelWithConsole(
-					`RdbmsExternalUpload(database=["${active.id}"], metamodel=[${JSON.stringify({ relationships: relationships, tables: tables })}], existing=[true]); META|SaveOwlPositions(database=["${active.id}"], positionMap=[${JSON.stringify(positions)}]);SyncDatabaseWithLocalMaster(database=["${active.id}"]);`,
+					`RdbmsExternalUpload(database=["${engine.engine_id}"], metamodel=[${JSON.stringify({ relationships: relationships, tables: tables })}], existing=[true]); META|SaveOwlPositions(database=["${engine.engine_id}"], positionMap=[${JSON.stringify(positions)}]);SyncDatabaseWithLocalMaster(database=["${engine.engine_id}"]);`,
 				);
 
 				if (errors.length > 0) {
@@ -952,7 +956,7 @@ Error ${e.message || "Unknown error"}
 				}
 			} else {
 				const { errors } = await configStore.runPixel(
-					`META|SaveOwlPositions(database=["${active.id}"], positionMap=[${JSON.stringify(positions)}]);`,
+					`META|SaveOwlPositions(database=["${engine.engine_id}"], positionMap=[${JSON.stringify(positions)}]);`,
 				);
 
 				if (errors.length > 0) {
@@ -1062,8 +1066,8 @@ Error ${e.message || "Unknown error"}
 		? "Positions updated. Save to persist layout."
 		: "Save changes or they will be lost.";
 	const saveButtonHighlightClass = isPositionOnlyChange
-		? "border-sky-500 bg-sky-50 text-sky-900 hover:bg-sky-100"
-		: "border-amber-500 bg-amber-50 text-amber-900 hover:bg-amber-100";
+		? "border-primary/40 bg-primary/10 text-foreground hover:bg-primary/15"
+		: "border-destructive/40 bg-destructive/10 text-foreground hover:bg-destructive/15";
 	const saveTooltipText = isPositionOnlyChange
 		? "Save to persist updated table positions."
 		: "You must save your changes or they will be lost.";
@@ -1078,15 +1082,15 @@ Error ${e.message || "Unknown error"}
 								<div
 									className={
 										isPositionOnlyChange
-											? "rounded-md border border-sky-300 bg-sky-50 px-2 py-1"
-											: "rounded-md border border-amber-300 bg-amber-50 px-2 py-1"
+											? "rounded-md border border-primary/40 bg-primary/10 px-2 py-1"
+											: "rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1"
 									}
 								>
 									<P
 										className={
 											isPositionOnlyChange
-												? "whitespace-nowrap font-medium text-[11px] text-sky-900"
-												: "whitespace-nowrap font-medium text-[11px] text-amber-900"
+												? "whitespace-nowrap font-medium text-[11px] text-foreground"
+												: "whitespace-nowrap font-medium text-[11px] text-foreground"
 										}
 									>
 										{saveReminderText}
@@ -1116,7 +1120,6 @@ Error ${e.message || "Unknown error"}
 									<TooltipTrigger asChild>
 										<Button
 											size="sm"
-											disabled={!active?.id}
 											variant="outline"
 											onClick={() =>
 												setShowSyncDatabase(true)
@@ -1136,7 +1139,6 @@ Error ${e.message || "Unknown error"}
 								<TooltipTrigger asChild>
 									<Button
 										size="sm"
-										disabled={!active?.id}
 										variant="outline"
 										onClick={() =>
 											downloadDatabaseMetadata()
@@ -1155,7 +1157,7 @@ Error ${e.message || "Unknown error"}
 								<TooltipTrigger asChild>
 									<Button
 										size="sm"
-										disabled={!active?.id || !isModified}
+										disabled={!isModified}
 										variant="outline"
 										className={
 											showSaveReminder
@@ -1511,7 +1513,7 @@ Error ${e.message || "Unknown error"}
 																	className={
 																		isMetadataMatch ||
 																		isColumnSearchMatch
-																			? "rounded bg-yellow-200 px-1 py-0.5 font-medium text-[13px] text-foreground leading-5"
+																			? "rounded bg-primary/20 px-1 py-0.5 font-medium text-[13px] text-foreground leading-5"
 																			: "font-medium text-[13px] text-foreground leading-5"
 																	}
 																>
@@ -1649,28 +1651,79 @@ Error ${e.message || "Unknown error"}
 							<div className="min-h-0 flex-1 overflow-hidden">
 								{getData.status === "SUCCESS" &&
 								metadataPreviewData ? (
-									renderQueryResults(
-										metadataPreviewData,
-										100,
-										true,
-									)
+									<div className="h-full w-full overflow-hidden px-4 py-1.5">
+										<Table wrapperClassName="h-full w-full rounded-md border border-border overflow-auto">
+											<TableHeader className="sticky top-0 z-10 bg-secondary">
+												<TableRow>
+													{metadataPreviewData.output.data.headers.map(
+														(header) => (
+															<TableHead
+																key={header}
+															>
+																{header}
+															</TableHead>
+														),
+													)}
+												</TableRow>
+											</TableHeader>
+											<TableBody>
+												{metadataPreviewData.output.data.values.map(
+													(row, rowIdx) => (
+														// biome-ignore lint/suspicious/noArrayIndexKey: table rows have no natural unique key
+														<TableRow key={rowIdx}>
+															{(
+																row as unknown[]
+															).map(
+																(
+																	cell,
+																	cellIdx,
+																) => (
+																	<TableCell
+																		key={
+																			metadataPreviewData
+																				.output
+																				.data
+																				.headers[
+																				cellIdx
+																			]
+																		}
+																	>
+																		{String(
+																			cell ??
+																				"",
+																		)}
+																	</TableCell>
+																),
+															)}
+														</TableRow>
+													),
+												)}
+											</TableBody>
+										</Table>
+									</div>
 								) : getData.status === "LOADING" ? (
 									<div className="flex h-full items-center justify-center p-8">
-										<P className="text-muted-foreground text-sm">
-											Loading data preview...
-										</P>
+										<Spinner />
 									</div>
 								) : getData.status === "ERROR" ? (
-									<div className="flex h-full items-center justify-center p-8">
-										<P className="text-muted-foreground text-sm">
-											Unable to load data preview.
-										</P>
+									<div className="flex h-full w-full items-center justify-center">
+										<Alert
+											variant="destructive"
+											className="max-w-md"
+										>
+											<AlertCircleIcon />
+											<AlertTitle>Error</AlertTitle>
+											<AlertDescription>
+												{getData.error?.message ||
+													"Error"}
+											</AlertDescription>
+										</Alert>
 									</div>
 								) : (
 									<div className="flex h-full items-center justify-center p-8">
-										<P className="text-muted-foreground text-sm">
+										<Muted>
 											Select a table to view data.
-										</P>
+										</Muted>
 									</div>
 								)}
 							</div>
@@ -1689,22 +1742,20 @@ Error ${e.message || "Unknown error"}
 				description={selectedColumnDetails?.description}
 			/>
 
-			{active?.id && (
-				<SyncExternalDatabaseOverlay
-					engine={active.id}
-					tables={concepts} // for RDBMS, tables and views are the same in terms of metadata, so we can just pass the concepts as both
-					views={concepts} // for RDBMS, tables and views are the same in terms of metadata, so we can just pass the concepts as both
-					open={showSyncDatabase}
-					onClose={async (success, data) => {
-						if (success) {
-							await syncDatabase(data.tables, data.views);
-						}
+			<SyncExternalDatabaseOverlay
+				engine={engine.engine_id}
+				tables={concepts} // for RDBMS, tables and views are the same in terms of metadata, so we can just pass the concepts as both
+				views={concepts} // for RDBMS, tables and views are the same in terms of metadata, so we can just pass the concepts as both
+				open={showSyncDatabase}
+				onClose={async (success, data) => {
+					if (success && data) {
+						await syncDatabase(data.tables, data.views);
+					}
 
-						// close it
-						setShowSyncDatabase(false);
-					}}
-				/>
-			)}
+					// close it
+					setShowSyncDatabase(false);
+				}}
+			/>
 		</div>
 	);
 });

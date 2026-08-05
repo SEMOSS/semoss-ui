@@ -9,13 +9,7 @@ export type Script = {
 	alias: string;
 };
 
-export type Role =
-	| "OWNER"
-	| "EDIT"
-	| "VIEWER"
-	| "READ_ONLY"
-	| "DISCOVERABLE"
-	| "EDITOR";
+export type Role = "OWNER" | "EDIT" | "READ_ONLY" | "DISCOVERABLE";
 
 export interface ColumnInterface {
 	column: string;
@@ -37,6 +31,7 @@ export interface MCPToolRequest {
 	original_name: string;
 	tool_response?: string;
 	executedParameters?: Record<string, unknown>;
+	_meta?: Record<string, unknown>;
 }
 
 export interface MCPToolResponse {

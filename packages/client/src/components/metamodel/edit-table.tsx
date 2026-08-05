@@ -83,13 +83,6 @@ const EditTable: React.FC<EditTableProps> = ({
 		setAliasVal(node?.data?.name ?? "");
 		setDescriptionVal(node?.data?.description ?? "");
 
-		if (node && node.data) {
-			node.data = {
-				...node.data,
-				properties: props,
-			};
-		}
-
 		const available = columnOptions ?? [];
 
 		const availableKeys = new Set(

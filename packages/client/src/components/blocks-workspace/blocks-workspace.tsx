@@ -11,12 +11,12 @@ import {
 	StateStore,
 } from "@semoss/renderer";
 import { runPixel, useInsight } from "@semoss/sdk/react";
+import { FlexLayout } from "@semoss/shared";
 import { Spinner, toast } from "@semoss/ui/next";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
-import { FlexLayout } from "@/components/flex-layout";
+import { ProjectDetailTabs } from "@/components/project";
 import { useWorkspace } from "@/hooks";
-import { AppDetailPage } from "@/pages/app";
 import { DesignerStore, type WorkspaceOptions } from "@/stores";
 import { WorkspaceManager } from "../../components/workspace";
 import { WorkspaceTerminal } from "../../components/workspace/panels";
@@ -91,16 +91,6 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						config: {},
 						helpText: "Files",
 					},
-					{
-						type: "tab",
-						id: "settings",
-						name: "Settings",
-						component: "settingsPanel",
-						config: {},
-						// maxWidth: 1,
-						helpText: "Settings",
-						enableDrag: false,
-					},
 				],
 			},
 			{
@@ -143,6 +133,18 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						component: "terminal",
 						enableClose: false,
 						config: {},
+					},
+					{
+						type: "tab",
+						id: "settings",
+						name: "Settings",
+						component: "settings-panel",
+						config: {},
+						// maxWidth: 1,
+						helpText: "Settings",
+						enableClose: false,
+						borderWidth: 800,
+						borderHeight: 1200,
 					},
 				],
 			},
@@ -356,10 +358,6 @@ export const BlocksWorkspace: React.FC = observer(() => {
 					node={node}
 					layout={layout}
 					app={workspace.appId}
-					onOpenStateChange={workspace.setFileBrowserOpen}
-					onVisibleAssetPathsChange={({ path, paths }) => {
-						workspace.setFileBrowserVisiblePaths(path, paths);
-					}}
 				/>
 			);
 		} else if (component === "app-file-editor") {
@@ -376,8 +374,44 @@ export const BlocksWorkspace: React.FC = observer(() => {
 			return <WorkspaceTerminal appId={workspace.appId} />;
 		} else if (component === "graph") {
 			return <GraphPanel />;
-		} else if (component === "settingsPanel") {
-			return <AppDetailPage showNav={false} />;
+		} else if (component === "settings-panel") {
+			return (
+				<ProjectDetailTabs
+					tabs={[
+						{ name: "Overview", component: "project-overview" },
+						{
+							name: "MCP",
+							component: "mcp-usage",
+							restrict: ["OWNER", "EDIT", "READ_ONLY"],
+						},
+						{
+							name: "Commits",
+							component: "commits",
+							restrict: ["OWNER", "EDIT"],
+						},
+						{
+							name: "GitHub",
+							component: "github",
+							restrict: ["OWNER"],
+						},
+						{
+							name: "Settings",
+							component: "settings",
+							restrict: ["OWNER"],
+						},
+						{
+							name: "Access Control",
+							component: "access-control",
+							restrict: ["OWNER", "EDIT"],
+						},
+						{
+							name: "SMSS",
+							component: "smss",
+							restrict: ["OWNER"],
+						},
+					]}
+				/>
+			);
 		} else if (component === "export-button") {
 			return <ExportButtonPanel />;
 		}
