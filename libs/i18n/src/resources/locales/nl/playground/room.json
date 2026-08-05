@@ -20,9 +20,7 @@
 		"instructionsLabel": "Instructies",
 		"agentLabel": "Agent",
 		"knowledgeLabel": "Kennis",
-		"toolboxLabel": "Toolboxes",
-		"maxTokenLabel": "Max. tokens",
-		"temperatureLabel": "Temperatuur"
+		"toolboxLabel": "Toolboxes"
 	},
 	"modes": {
 		"ask": "Vragen",

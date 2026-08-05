@@ -114,21 +114,20 @@ const CodeBlockWithCopy = ({ children }: { children: React.ReactNode }) => {
  */
 export const EngineUsagePage = () => {
 	// get the database information
-	const { active } = useEngine();
+	const { engine } = useEngine();
 
 	// get the engine info
 	const GetEngineUsage = usePixel<{
 		code: string;
 		label: string;
 		type: string;
-	}>(`GetEngineUsage(engine=["${active.id}"]);`);
+	}>(`GetEngineUsage(engine=["${engine.engine_id}"]);`);
 
 	// show a loading screen when it is pending
 	if (GetEngineUsage.status !== "SUCCESS") {
 		return (
 			<div className="flex h-full flex-col items-center justify-center gap-4">
-				<Spinner className="size-8" />
-				<P className="text-muted-foreground">Loading Usage</P>
+				<Spinner />
 			</div>
 		);
 	}

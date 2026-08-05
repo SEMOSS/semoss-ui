@@ -1,4 +1,4 @@
-import type { FlexLayout } from "@/components/flex-layout";
+import type { FlexLayout } from "@semoss/shared";
 
 export interface WorkspaceOptions {
 	version: string;

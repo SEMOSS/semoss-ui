@@ -22,25 +22,25 @@ const AppSettingsUserDetailPage = () => {
 	const [view, setView] = useState<VIEW>("CURRENT");
 	const [permission, setPermission] = useState<Role | null>(null);
 
-	const getUserEnginePermission = useAPI(["getUserProjectPermission", id]);
+	const getUserProjectPermission = useAPI(["getUserProjectPermission", id]);
 
 	/**
 	 * @name useEffect
 	 * @desc - Set Permission to see Pending Requests
 	 */
 	useEffect(() => {
-		if (getUserEnginePermission.status !== "SUCCESS") {
+		if (getUserProjectPermission.status !== "SUCCESS") {
 			return;
 		}
 
-		if (!getUserEnginePermission.data) {
+		if (!getUserProjectPermission.data) {
 			setPermission(null);
 			return;
 		}
 
 		// set the permission
-		setPermission(getUserEnginePermission.data);
-	}, [getUserEnginePermission.status, getUserEnginePermission.data]);
+		setPermission(getUserProjectPermission.data);
+	}, [getUserProjectPermission.status, getUserProjectPermission.data]);
 
 	// if there is no permission, ignore
 	if (!permission) {

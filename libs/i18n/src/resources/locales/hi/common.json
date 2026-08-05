@@ -15,7 +15,6 @@
 		"type": "प्रकार",
 		"model": "मॉडल",
 		"instructions": "निर्देश",
-		"temperature": "टेम्परेचर",
 		"maxToken": "अधिकतम टोकन"
 	},
 	"placeholders": {
@@ -23,7 +22,6 @@
 		"enterDescription": "विवरण दर्ज करें",
 		"enterInstructions": "निर्देश दर्ज करें",
 		"updateInstructions": "निर्देश अपडेट करें",
-		"updateTokenLength": "टोकन लंबाई अपडेट करें",
 		"uploadFiles": "फ़ाइलें अपलोड करें",
 		"search": "खोजें...",
 		"enterPromptLibraryTag": "प्रॉम्प्ट लाइब्रेरी टैग दर्ज करें"
@@ -210,6 +208,9 @@
 			"formatted": "स्वरूपित",
 			"raw": "कच्चा"
 		},
+		"image": {
+			"alt": "प्रस्तुत छवि {{index}}"
+		},
 		"copy": {
 			"command": "कमांड कॉपी करें",
 			"logs": "लॉग्स कॉपी करें",
@@ -221,6 +222,8 @@
 		"collapseAll": "सब बंद करें",
 		"close": "बंद करें",
 		"lines_one": "{{count}} पंक्ति",
-		"lines_other": "{{count}} पंक्तियाँ"
+		"lines_other": "{{count}} पंक्तियाँ",
+		"images_one": "{{count}} छवि",
+		"images_other": "{{count}} छवियाँ"
 	}
 }

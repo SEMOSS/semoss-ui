@@ -1,4 +1,13 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+	createContext,
+	startTransition,
+	useCallback,
+	useContext,
+	useEffect,
+	useLayoutEffect,
+	useMemo,
+	useState,
+} from "react";
 
 /**
  * Available theme options for the application
@@ -26,6 +35,8 @@ type ThemeProviderProps = {
 type ThemeProviderState = {
 	/** Current active theme */
 	theme: Theme;
+	/** Resolved theme currently applied to the document */
+	resolvedTheme: Exclude<Theme, "system">;
 	/** Function to update the theme and persist to storage */
 	setTheme: (theme: Theme) => void;
 };
@@ -36,6 +47,7 @@ type ThemeProviderState = {
  */
 const initialState: ThemeProviderState = {
 	theme: "system",
+	resolvedTheme: "light",
 	setTheme: () => null,
 };
 
@@ -44,6 +56,91 @@ const initialState: ThemeProviderState = {
  * Provides theme state and setter throughout the component tree
  */
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
+
+const THEME_VALUES = new Set<Theme>(["dark", "light", "system"]);
+const THEME_CHANGE_EVENT = "smss-theme-change";
+const DISABLE_TRANSITIONS_STYLE_ID = "smss-disable-theme-transitions";
+let transitionResetFrame: number | null = null;
+
+const isTheme = (value: string | null): value is Theme =>
+	value !== null && THEME_VALUES.has(value as Theme);
+
+const getSystemTheme = (): Exclude<Theme, "system"> => {
+	if (typeof window === "undefined") {
+		return "light";
+	}
+
+	return window.matchMedia("(prefers-color-scheme: dark)").matches
+		? "dark"
+		: "light";
+};
+
+const getStoredTheme = (storageKey: string, defaultTheme: Theme): Theme => {
+	if (typeof window === "undefined") {
+		return defaultTheme;
+	}
+
+	const storedTheme = localStorage.getItem(storageKey);
+	return isTheme(storedTheme) ? storedTheme : defaultTheme;
+};
+
+const resolveTheme = (theme: Theme): Exclude<Theme, "system"> =>
+	theme === "system" ? getSystemTheme() : theme;
+
+const temporarilyDisableThemeTransitions = () => {
+	if (typeof document === "undefined" || typeof window === "undefined") {
+		return;
+	}
+
+	if (!document.getElementById(DISABLE_TRANSITIONS_STYLE_ID)) {
+		const style = document.createElement("style");
+		style.id = DISABLE_TRANSITIONS_STYLE_ID;
+		style.appendChild(
+			document.createTextNode(
+				"*, *::before, *::after { transition: none !important; animation: none !important; }",
+			),
+		);
+		document.head.appendChild(style);
+	}
+
+	if (transitionResetFrame !== null) {
+		window.cancelAnimationFrame(transitionResetFrame);
+	}
+
+	transitionResetFrame = window.requestAnimationFrame(() => {
+		transitionResetFrame = window.requestAnimationFrame(() => {
+			document.getElementById(DISABLE_TRANSITIONS_STYLE_ID)?.remove();
+			transitionResetFrame = null;
+		});
+	});
+};
+
+const applyDocumentTheme = (theme: Exclude<Theme, "system">) => {
+	if (typeof document === "undefined") {
+		return;
+	}
+
+	const root = document.documentElement;
+	const previousTheme = root.classList.contains("dark") ? "dark" : "light";
+	const isThemeAlreadyApplied = root.classList.contains(theme);
+
+	if (isThemeAlreadyApplied) {
+		root.style.colorScheme = theme;
+		return;
+	}
+
+	temporarilyDisableThemeTransitions();
+
+	root.classList.remove("light", "dark");
+	root.classList.add(theme);
+	root.style.colorScheme = theme;
+
+	if (previousTheme !== theme && typeof window !== "undefined") {
+		window.dispatchEvent(
+			new CustomEvent(THEME_CHANGE_EVENT, { detail: { theme } }),
+		);
+	}
+};
 
 /**
  * ThemeProvider component that manages theme state and persistence
@@ -62,56 +159,77 @@ export function ThemeProvider({
 	children,
 	defaultTheme = "system",
 	storageKey = "vite-ui-theme",
-	...props
 }: ThemeProviderProps) {
 	/**
 	 * Initialize theme from localStorage or fall back to defaultTheme
 	 * Uses lazy initialization to avoid hydration mismatches in SSR
 	 */
-	const [theme, setTheme] = useState<Theme>(
-		() => (localStorage.getItem(storageKey) as Theme) || defaultTheme,
+	const [theme, setThemeState] = useState<Theme>(() =>
+		getStoredTheme(storageKey, defaultTheme),
 	);
+	const [systemTheme, setSystemTheme] =
+		useState<Exclude<Theme, "system">>(getSystemTheme);
+	const resolvedTheme = theme === "system" ? systemTheme : theme;
 
 	/**
 	 * Effect to apply theme classes to document root
 	 * Handles system theme detection and class management
 	 */
+	useLayoutEffect(() => {
+		applyDocumentTheme(resolvedTheme);
+	}, [resolvedTheme]);
+
 	useEffect(() => {
-		const root = window.document.documentElement;
-
-		// Clean up previous theme classes
-		root.classList.remove("light", "dark");
-
-		if (theme === "system") {
-			// Detect system theme preference
-			const systemTheme = window.matchMedia(
-				"(prefers-color-scheme: dark)",
-			).matches
-				? "dark"
-				: "light";
-
-			root.classList.add(systemTheme);
+		if (theme !== "system") {
 			return;
 		}
 
-		// Apply the explicitly set theme
-		root.classList.add(theme);
+		const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+		const updateSystemTheme = () => {
+			setSystemTheme(mediaQuery.matches ? "dark" : "light");
+		};
+
+		updateSystemTheme();
+
+		mediaQuery.addEventListener("change", updateSystemTheme);
+
+		return () => {
+			mediaQuery.removeEventListener("change", updateSystemTheme);
+		};
 	}, [theme]);
 
 	/**
 	 * Context value containing current theme and setter
 	 * The setter automatically persists changes to localStorage
 	 */
-	const value = {
-		theme,
-		setTheme: (theme: Theme) => {
-			localStorage.setItem(storageKey, theme);
-			setTheme(theme);
+	const setTheme = useCallback(
+		(nextTheme: Theme) => {
+			if (typeof window !== "undefined") {
+				localStorage.setItem(storageKey, nextTheme);
+			}
+
+			applyDocumentTheme(resolveTheme(nextTheme));
+			startTransition(() => {
+				setThemeState((currentTheme) =>
+					currentTheme === nextTheme ? currentTheme : nextTheme,
+				);
+			});
 		},
-	};
+		[storageKey],
+	);
+
+	const value = useMemo(
+		() => ({
+			theme,
+			resolvedTheme,
+			setTheme,
+		}),
+		[resolvedTheme, setTheme, theme],
+	);
 
 	return (
-		<ThemeProviderContext.Provider {...props} value={value}>
+		<ThemeProviderContext.Provider value={value}>
 			{children}
 		</ThemeProviderContext.Provider>
 	);

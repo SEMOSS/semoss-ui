@@ -239,7 +239,7 @@ export const ConfigurationsPage = () => {
 	const fileContentsPage = () => {
 		const defaultTyping = ``;
 		return (
-			<div className="mb-4 flex flex-col rounded-[15px] bg-white p-6 shadow-[0px_5px_22px_0px_rgba(0,0,0,0.06)]">
+			<div className="mb-4 flex flex-col rounded-[15px] border border-border bg-card p-6 text-card-foreground shadow-sm">
 				<div className="mb-2 flex justify-between">
 					<h2 className="font-semibold text-xl">social.properties</h2>
 					<div className="flex justify-center gap-2">
@@ -355,7 +355,7 @@ const SocialProperty = (props) => {
 			{fields.map((f, i) => (
 				<div
 					key={`${fieldName}-${f.label}`}
-					className="mb-4 flex flex-col rounded-[15px] bg-white p-6 shadow-[0px_5px_22px_0px_rgba(0,0,0,0.06)]"
+					className="mb-4 flex flex-col rounded-[15px] border border-border bg-card p-6 text-card-foreground shadow-sm"
 				>
 					<div className="flex gap-3">
 						<div className="flex flex-1 flex-col gap-1">
