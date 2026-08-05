@@ -24,29 +24,28 @@ This repository follows a standardized commit message convention to ensure consi
 Must be one of the following:
 
 * **build**: Changes that affect the build system or external dependencies (example scopes: gulp, broccoli, npm)
+* **chore**: Other changes that don't modify src or test files
 * **ci**: Changes to our CI configuration files and scripts (example scopes: Travis, Circle, BrowserStack, SauceLabs)
 * **docs**: Documentation only changes
 * **feat**: A new feature
 * **fix**: A bug fix
 * **perf**: A code change that improves performance
 * **refactor**: A code change that neither fixes a bug nor adds a feature
+* **revert**: Reverts a previous commit
 * **style**: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
 * **test**: Adding missing tests or correcting existing tests
 
 For example I have just created a new feature to the application where different users can now request access to different engines in the Catalog.  As this is new functionality to the users, the type of this commit would be a 'feat'.
 
 ### Scope
-The scope should be the name of the package affected along with the overlying issue that was resolved with your commit.
+The scope is optional and free-form (it is not enforced by commitlint). When used, it should be the name of the package affected along with the overlying issue that was resolved with your commit.
 
-The following is the list of supported scopes:
+Common scopes are the workspace package short names:
 
-* **(client):**
-* **(playsheet):**
-* **(sdk):**
-* **(ui):**
-* **(environment):**
+* Libraries: **sdk**, **ui**, **i18n**, **shared**, **renderer**
+* Applications: **client**, **playground**, **terminal**, **auditlog**, **cli**
 
-This list will be expanding as the repository continues to grow. Please share your thoughts and suggestions.
+This list will expand as the repository continues to grow. Please share your thoughts and suggestions.
 
 ### Subject
 The subject contains a succinct description of the change:
@@ -68,115 +67,6 @@ Enforcing a standardized commit message format offers several advantages:
 - Collaboration: Facilitate collaboration by providing a common and predictable commit message structure.
 
 By adhering to these commit message conventions and leveraging CommitLint, we aim to enhance the quality and coherence of our version control history. This approach streamlines collaboration and contributes to a more transparent and maintainable codebase.
-
-
-# Coding Standards
-
-This section serves as a comprehensive guide outlining the coding standards to be adhered to across our codebase. Consistent coding practices ensure readability, maintainability, and collaboration among developers. Please refer to this document when contributing to the project to ensure uniformity in our code and promote a high standard of quality.
-
-## State Management
-
-### Application Level State
-
-In our application, we harness the power of MobX for seamless global state management. We've adopted a centralized store approach, where a single store acts as the conductor orchestrating all other stores. Each individual store encapsulates and manages state for specific functionalities.
-
-By consolidating state logic into dedicated stores, we enhance code maintainability and clarity. The main store serves as the nexus, effortlessly consuming and coordinating the various state slices across our application. This streamlined architecture not only simplifies state management but also promotes consistency and coherence in our codebase.
-
-To facilitate convenient access to our central store in the application, we've implemented a custom React hook called useRootStore. This hook is designed to simplify the process of interacting with the overarching store from any component.
-
-When you employ useRootStore in your component, it seamlessly grants access to the central store and its associated methods. This abstraction shields components from the details of how the store is implemented, promoting a clean and intuitive API for state management.
-
-Here's a brief guide on utilizing the useRootStore hook:
-
-1. Import the Hook:
-```
-import { useRootStore } from '@/hooks';
-```
-
-2. Invoke the Hook:
-```
-const { configStore, monolithStore } = useRootStore();
-```
-
-### Feature Specific State
-
-In our codebase, we leverage the power of React context for efficient state management within specific business features. By creating dedicated contexts, we encapsulate the state logic related to a particular domain, ensuring modularity and clarity in our code architecture.
-
-To seamlessly access and manipulate the state within these contexts, we provide custom hooks. These hooks serve as a bridge, enabling components to interact with the underlying context state in a clean and intuitive manner.
-
-By adopting this approach, we enhance the maintainability and scalability of our application, as each business feature maintains its own state in isolation. Developers can easily understand and extend the functionality of a feature without impacting the broader application state. This modular design fosters a more organized and collaborative development environment.
-
-## Testing
-
-Components must have unique identifiers to ensure reliable and maintainable test code coverage. Use unique `ids`, `roles`, or `data-testid's` on each element of a page to more easily be selected during testing. `Roles` are primarily used as part of the application's accessibility strategy, where `data-testid's` are a custom attribute used solely for testing. When adding a `data-testid`, use the following naming method for the element: 'data-testid: fileName-component-uniqueIdentifier'.
-
-## Style
-
-In our development practices, we prioritize the use of styled components over inline styles to craft visually appealing and maintainable user interfaces. Styled components offer a powerful and intuitive way to manage styles in React applications.
-
-Rather than scattering styles throughout the JSX code, styled components allow us to encapsulate styles within dedicated components. This not only promotes a cleaner and more readable codebase but also ensures a clear separation of concerns between structure and presentation.
-
-1. Styled component accessing our theme:
-```
-const StyledContainer = styled('div')(({ theme }) => ({
-    display: 'flex',
-    height: '100%',
-    gap: theme.spacing(3),
-    paddingTop: theme.spacing(1),
-    paddingBottom: theme.spacing(1),
-}));
-```
-
-2. Styled component with props:
-
-```
-const StyledPageHeader = styled('div', {
-    shouldForwardProp: (prop) => prop !== 'stuck',
-})<{
-    /** Track if the page header is stuck */
-    stuck: boolean;
-}>(({ theme, stuck }) => ({
-    position: 'sticky',
-    top: '-1px',
-    paddingTop: theme.spacing(5),
-    paddingBottom: theme.spacing(1),
-    zIndex: 10,
-    borderBottom: stuck ? `solid ${theme.palette.divider}` : 'none',
-    backgroundColor: theme.palette.background.paper,
-}));
-```
-
-## Design Style Guide
-
-## Design Reference / Figma
-### Where to find the design files
-Figma - https://www.figma.com/files/962061179867410972/team/1025450952149421785
-
-We are following 8px divisible spacing system on most of UI structure, with some case of using 4px.
-When you see decimal or value not divisible of 8/4px, please flag the issue to designer!
-
-## Spacing
-### Pixel vs rem
-In figma, use dev, and change the unit to 'rem'
-- 1rem = 16px
-- 1.5rem = 24px
-- 2 rem = 32px
-
-### theme.spacing (Padding & Margin)
-- theme.spacing(1) = equivalent of 8px
-- theme.spacing(2) = equivalent of 16px
-- theme.spacing(3) = equivalent of 24px
-- theme.spacing(4) = equivalent of 32px
-- theme.spacing(5) = equivalent of 40px
-
-### Font?
-- h1-6 & paragraph
-
-
-Contributing Designer - Let us know if you have any question or issue with figma file.
-- Natalie
-- Sarah
-- KT
 
 
 # Code reviews

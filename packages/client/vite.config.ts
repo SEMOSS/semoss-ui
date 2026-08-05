@@ -6,9 +6,6 @@ import svgr from "vite-plugin-svgr";
 import { resolve } from "node:path";
 
 export default defineConfig(({ mode }) => {
-	// To analyze the bundle: uncomment the visualizer import + plugin below,
-	// run `pnpm build:dev`, then inspect dist/stats.html with analyze-bundle.mjs.
-	// const { visualizer } = await import("rollup-plugin-visualizer");
 	const env = loadEnv(mode, process.cwd(), "");
 
 	const isProduction = mode === "production";

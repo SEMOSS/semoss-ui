@@ -7,7 +7,4 @@ export { buildEditWorkspacePixel } from "./pixel";
 export {
 	AGENT_FORM_DEFAULT_VALUES,
 	type AgentFormValues,
-	type HookEntry,
-	type ModelEngine,
-	type SubagentEntry,
 } from "./types";
