@@ -150,6 +150,11 @@ export const AgentWorkspace: React.FC = observer(() => {
 							restrict: ["OWNER"],
 						},
 						{
+							name: "Agent Activity",
+							component: "agent-activity",
+							restrict: ["OWNER", "EDIT", "READ_ONLY"],
+						},
+						{
 							name: "Access Control",
 							component: "access-control",
 							restrict: ["OWNER", "EDIT"],
