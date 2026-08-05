@@ -1,6 +1,6 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { preloadNamespaces, useTranslation } from "@semoss/i18n";
-import { InsightProvider } from "@semoss/sdk/react";
+import { InsightProvider, useInsight } from "@semoss/sdk/react";
 import { TerminalProvider } from "../terminal/terminal-context";
 import { TerminalConsole } from "../terminal-console/terminal-console";
 
@@ -32,11 +32,48 @@ export interface TerminalConsolePanelProps {
 	 * `false` for a single fixed console. Defaults to `true`.
 	 */
 	allowMultipleTerminals?: boolean;
+	/**
+	 * Notifies the embedder of the insightId of the *active* terminal tab (or
+	 * `null` before any tab's insight is ready). Each tab owns an independent
+	 * insight; embedders use this to keep an external INSIGHT-scoped file
+	 * browser pointed at the terminal the user is running commands in — see the
+	 * client's code workspace, which binds its "Insight" explorer to this.
+	 */
+	onActiveInsightChange?: (insightId: string | null) => void;
 }
 
-const Session = ({ appId }: { appId?: string }) => (
+/**
+ * Reports the ambient insight (this tab's) up to the panel whenever it becomes
+ * ready or changes, and retracts it on unmount. Rendered inside each Session's
+ * InsightProvider so it reads that tab's own insight.
+ */
+const SessionInsightReporter = ({
+	tabId,
+	onInsight,
+}: {
+	tabId: string;
+	onInsight: (tabId: string, insightId: string | null) => void;
+}) => {
+	const { insightId } = useInsight();
+	useEffect(() => {
+		if (insightId) onInsight(tabId, insightId);
+	}, [tabId, insightId, onInsight]);
+	useEffect(() => () => onInsight(tabId, null), [tabId, onInsight]);
+	return null;
+};
+
+const Session = ({
+	appId,
+	tabId,
+	onInsight,
+}: {
+	appId?: string;
+	tabId: string;
+	onInsight: (tabId: string, insightId: string | null) => void;
+}) => (
 	<InsightProvider options={appId ? { app: appId } : undefined}>
 		<TerminalProvider location="panel">
+			<SessionInsightReporter tabId={tabId} onInsight={onInsight} />
 			<TerminalConsole projectId={appId} />
 		</TerminalProvider>
 	</InsightProvider>
@@ -51,6 +88,7 @@ const Session = ({ appId }: { appId?: string }) => (
 export const TerminalConsolePanel = ({
 	appId,
 	allowMultipleTerminals = true,
+	onActiveInsightChange,
 }: TerminalConsolePanelProps) => {
 	const { t, ready } = useTranslation(PANEL_NS);
 
@@ -103,6 +141,30 @@ export const TerminalConsolePanel = ({
 		setMountedIds((prev) => new Set([...prev, id]));
 	}, []);
 
+	// tabId -> insightId for every mounted session, so we can surface the
+	// active tab's insight to the embedder as focus/tabs change.
+	const [tabInsights, setTabInsights] = useState<Record<string, string>>({});
+	const handleTabInsight = useCallback(
+		(tabId: string, insightId: string | null) => {
+			setTabInsights((prev) => {
+				if (insightId === null) {
+					if (!(tabId in prev)) return prev;
+					const next = { ...prev };
+					delete next[tabId];
+					return next;
+				}
+				if (prev[tabId] === insightId) return prev;
+				return { ...prev, [tabId]: insightId };
+			});
+		},
+		[],
+	);
+
+	const activeInsightId = tabInsights[activeId] ?? null;
+	useEffect(() => {
+		onActiveInsightChange?.(activeInsightId);
+	}, [onActiveInsightChange, activeInsightId]);
+
 	// All hooks run above this point — safe to bail out once they have.
 	if (!ready) {
 		return null;
@@ -112,7 +174,11 @@ export const TerminalConsolePanel = ({
 	if (!allowMultipleTerminals) {
 		return (
 			<div className="flex h-full flex-col overflow-hidden bg-background">
-				<Session appId={appId} />
+				<Session
+					appId={appId}
+					tabId={tabs[0].id}
+					onInsight={handleTabInsight}
+				/>
 			</div>
 		);
 	}
@@ -194,7 +260,11 @@ export const TerminalConsolePanel = ({
 								pointerEvents: isActive ? "auto" : "none",
 							}}
 						>
-							<Session appId={appId} />
+							<Session
+								appId={appId}
+								tabId={tab.id}
+								onInsight={handleTabInsight}
+							/>
 						</div>
 					);
 				})}

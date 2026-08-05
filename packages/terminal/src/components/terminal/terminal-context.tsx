@@ -95,11 +95,32 @@ interface TerminalContextValue {
 	setActiveConsoleId: (id: string | null) => void;
 
 	/**
+	 * Publish (or, with `insightId === null`, retract) the insight a console
+	 * has attached to, keyed by its console/tab id. Each terminal tab owns an
+	 * independent insight (separate R/Python/variable + asset space); this
+	 * registry lets the file explorer point at the *active* tab's insight so
+	 * uploads and REPL commands share one workspace. See `activeInsightId`.
+	 */
+	setConsoleInsight: (id: string, insightId: string | null) => void;
+	/**
+	 * The insightId of the active terminal tab (or the anchor console when
+	 * nothing is focused yet) — `null` until at least one console has attached.
+	 * The file explorer scopes INSIGHT-mode asset browsing/upload to this so it
+	 * always mirrors the terminal the user is running commands in.
+	 */
+	activeInsightId: string | null;
+
+	/**
 	 * Current file scope — which Pixel reactor family the file explorer
 	 * (and any newly opened file tabs) should target. INSIGHT-scoped uses
 	 * `GetInsightAssets` etc.; APP-scoped uses `GetAppAssets(project=...)`.
 	 * Tabs snapshot this value when opened, so switching scope here doesn't
 	 * change the scope of files already open.
+	 *
+	 * For INSIGHT scope this is *resolved* to carry `insightId: activeInsightId`
+	 * so the explorer and newly opened file tabs bind to the active terminal
+	 * tab's insight rather than the ambient app-level one. `setFileMode` only
+	 * sets the scope intent; the insightId is injected here.
 	 */
 	fileMode: FileMode;
 	setFileMode: (mode: FileMode) => void;
@@ -174,9 +195,58 @@ export const TerminalProvider = ({
 	const submitToConsoleMapRef = useRef(new Map<string, SubmitToConsoleFn>());
 	const [activeConsoleId, setActiveConsoleId] = useState<string | null>(null);
 
-	const [fileMode, setFileMode] = useState<FileMode>({ type: "INSIGHT" });
+	// consoleId -> insightId for every mounted terminal tab. Insertion order is
+	// preserved, so the first entry is the anchor console — the fallback the
+	// file explorer (and `submitToConsole`) use before the user focuses a tab.
+	const [consoleInsights, setConsoleInsights] = useState<
+		Record<string, string>
+	>({});
+
+	// Scope *intent* set by the ScopePicker; the exposed `fileMode` below
+	// resolves this with the active insightId for INSIGHT scope.
+	const [fileModeIntent, setFileModeIntent] = useState<FileMode>({
+		type: "INSIGHT",
+	});
 	const [selectedApp, setSelectedApp] = useState<AppRef | undefined>(
 		undefined,
+	);
+
+	const setConsoleInsight = useCallback(
+		(id: string, insightId: string | null) => {
+			setConsoleInsights((prev) => {
+				if (insightId === null) {
+					if (!(id in prev)) return prev;
+					const next = { ...prev };
+					delete next[id];
+					return next;
+				}
+				if (prev[id] === insightId) return prev;
+				return { ...prev, [id]: insightId };
+			});
+		},
+		[],
+	);
+
+	// Active tab's insight, falling back to the anchor (first-registered)
+	// console so the explorer is scoped correctly before any tab is focused —
+	// mirroring the `submitToConsole` fallback.
+	const activeInsightId = useMemo<string | null>(() => {
+		if (activeConsoleId && consoleInsights[activeConsoleId]) {
+			return consoleInsights[activeConsoleId];
+		}
+		const [first] = Object.values(consoleInsights);
+		return first ?? null;
+	}, [activeConsoleId, consoleInsights]);
+
+	// Inject the active insightId into INSIGHT scope so the explorer + newly
+	// opened file tabs target the active terminal's insight. Other scopes
+	// (APP/USER/…) are insight-independent and pass through untouched.
+	const fileMode = useMemo<FileMode>(
+		() =>
+			fileModeIntent.type === "INSIGHT"
+				? { type: "INSIGHT", insightId: activeInsightId ?? undefined }
+				: fileModeIntent,
+		[fileModeIntent, activeInsightId],
 	);
 
 	const browserPathRef = useRef<string>("");
@@ -282,8 +352,11 @@ export const TerminalProvider = ({
 			activeConsoleId,
 			setActiveConsoleId,
 
+			setConsoleInsight,
+			activeInsightId,
+
 			fileMode,
-			setFileMode,
+			setFileMode: setFileModeIntent,
 			selectedApp,
 			setSelectedApp,
 
@@ -316,6 +389,8 @@ export const TerminalProvider = ({
 			closeUpload,
 			setUpload,
 			activeConsoleId,
+			setConsoleInsight,
+			activeInsightId,
 			fileMode,
 			selectedApp,
 			browserRenderToken,

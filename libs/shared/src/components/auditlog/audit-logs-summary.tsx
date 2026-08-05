@@ -52,11 +52,21 @@ export const AuditLogsSummary: React.FC<AuditLogsSummaryProps> = ({
 			(sum, log) => sum + (Number(log.tokens) || 0),
 			0,
 		);
+		const cacheReadTokens = logs.reduce(
+			(sum, log) => sum + (Number(log.cacheReadTokens) || 0),
+			0,
+		);
+		const cacheCreationTokens = logs.reduce(
+			(sum, log) => sum + (Number(log.cacheCreationTokens) || 0),
+			0,
+		);
 		const failures = logs.filter((log) => !isSuccess(log.status)).length;
 		return {
 			p50: percentile(latencies, 50),
 			p95: percentile(latencies, 95),
 			tokens,
+			cacheReadTokens,
+			cacheCreationTokens,
 			failures,
 		};
 	}, [logs]);
@@ -116,6 +126,24 @@ export const AuditLogsSummary: React.FC<AuditLogsSummaryProps> = ({
 			node: (
 				<>
 					{value(formatCompact(stats.tokens))} {t("summary.tokens")}
+				</>
+			),
+		},
+		{
+			key: "cacheRead",
+			node: (
+				<>
+					{value(formatCompact(stats.cacheReadTokens))}{" "}
+					{t("summary.cacheRead")}
+				</>
+			),
+		},
+		{
+			key: "cacheWrite",
+			node: (
+				<>
+					{value(formatCompact(stats.cacheCreationTokens))}{" "}
+					{t("summary.cacheWrite")}
 				</>
 			),
 		},

@@ -11,7 +11,7 @@ import { createPortal } from "react-dom";
 import { getLanguageDirection, useTranslation } from "@semoss/i18n";
 import { InsightProvider } from "@semoss/sdk/react";
 import { FileExplorer, FlexLayout, getFileIconComponent } from "@semoss/shared";
-import type { SelectedFile } from "../../types";
+import type { FileMode, SelectedFile } from "../../types";
 import { modeKey } from "../../utility/file-mode";
 import {
 	type FileEditorTabConfig,
@@ -53,6 +53,32 @@ const PaneLoader = () => (
 		<div className="h-5 w-5 animate-spin rounded-full border-2 border-border border-t-primary" />
 	</div>
 );
+
+/**
+ * Binds a file pane (explorer or editor) to an *existing* terminal-tab insight
+ * instead of the ambient app-level one, so browsing/uploading and REPL commands
+ * share a single workspace. Passing `insightId` makes the SDK attach to the
+ * already-live insight rather than spin up a new one, and `destroyOnUnmount`
+ * is off so unmounting this pane never drops the insight the terminal owns.
+ *
+ * While no console has attached yet (`insightId` null) we show the loader —
+ * rendering a provider with an empty id would create a throwaway third insight
+ * and reintroduce the very split this fixes.
+ */
+const AdoptingInsight = ({
+	insightId,
+	children,
+}: {
+	insightId: string | null;
+	children: React.ReactNode;
+}) => {
+	if (!insightId) return <PaneLoader />;
+	return (
+		<InsightProvider options={{ insightId }} destroyOnUnmount={false}>
+			{children}
+		</InsightProvider>
+	);
+};
 
 const REPL_TABSET_ID = "REPL_TABSET";
 
@@ -565,18 +591,40 @@ export const Terminal = ({
 				</div>
 			);
 			if (component === "file-explorer") {
+				// Follows the *live* active terminal: switching tabs re-points
+				// the explorer (and its uploads) at that tab's insight.
 				return wrap(
-					<FileExplorerPane
-						mode={terminal.fileMode}
-						onItemSelect={handleItemSelect}
-					/>,
+					<AdoptingInsight insightId={terminal.activeInsightId}>
+						<FileExplorerPane
+							mode={terminal.fileMode}
+							onItemSelect={handleItemSelect}
+						/>
+					</AdoptingInsight>,
 				);
 			}
 			if (component === "file-editor") {
+				// Bind to the insight the file was opened against (snapshotted
+				// into the tab's mode) so an open editor keeps reading/saving
+				// the right workspace even after the user switches terminals —
+				// the "scope changed" overlay in TerminalFile fences edits when
+				// that snapshot no longer matches the active tab. APP/USER/…
+				// files are insight-independent, so they fall back to the
+				// active insight.
+				const cfg = node.getConfig() as { mode?: FileMode } | undefined;
+				const snapshotInsightId =
+					cfg?.mode?.type === "INSIGHT"
+						? cfg.mode.insightId
+						: undefined;
 				return wrap(
-					<Suspense fallback={<PaneLoader />}>
-						<TerminalFile node={node} />
-					</Suspense>,
+					<AdoptingInsight
+						insightId={
+							snapshotInsightId ?? terminal.activeInsightId
+						}
+					>
+						<Suspense fallback={<PaneLoader />}>
+							<TerminalFile node={node} />
+						</Suspense>
+					</AdoptingInsight>,
 				);
 			}
 			if (component === "repl") {
@@ -594,7 +642,13 @@ export const Terminal = ({
 			}
 			return null;
 		},
-		[handleItemSelect, openHelp, paneDir, terminal.fileMode],
+		[
+			handleItemSelect,
+			openHelp,
+			paneDir,
+			terminal.fileMode,
+			terminal.activeInsightId,
+		],
 	);
 
 	if (!terminal.open) return null;

@@ -436,7 +436,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 											/>
 											{selectedTeamType !== "CUSTOM" &&
 											selectedTeamType !== "" ? (
-												<FieldDescription className="pl-3.5 text-[#666666] text-[12px] leading-[20px] tracking-[0.4px]">
+												<FieldDescription className="pl-3.5 text-[12px] text-muted-foreground leading-[20px] tracking-[0.4px]">
 													Must be the name of the
 													group/team from your IdP
 												</FieldDescription>

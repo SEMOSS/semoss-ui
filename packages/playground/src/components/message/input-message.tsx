@@ -278,7 +278,9 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 								dir="auto"
 								className="whitespace-pre-wrap text-foreground text-small"
 							>
-								{p.text}
+								{p.uiText && p.uiText !== p.text
+									? p.uiText
+									: p.text}
 							</span>
 						))}
 					</div>

@@ -1,8 +1,11 @@
 import { useTranslation } from "@semoss/i18n";
+import type { User } from "@semoss/shared";
 import { Avatar, AvatarFallback } from "@semoss/ui/next";
-import type { User } from "@/types";
 import { toInitials } from "@/utility";
-import { PermissionDropdown } from "./permission-dropdown";
+import {
+	type PermissionChange,
+	PermissionDropdown,
+} from "./permission-dropdown";
 
 export interface WorkspaceMemberRowProps {
 	/**
@@ -23,7 +26,7 @@ export interface WorkspaceMemberRowProps {
 	/**
 	 * Callback when the permission is changed
 	 */
-	onPermissionChange: (newPermission: string) => void;
+	onPermissionChange: (newPermission: PermissionChange) => void;
 }
 
 /**

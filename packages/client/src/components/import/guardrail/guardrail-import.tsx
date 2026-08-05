@@ -27,6 +27,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
+import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { GUARDRAIL_CONNECTION } from "./guardrail-import.constants";
@@ -40,6 +41,7 @@ interface guardrail {
 	name: string;
 	icon: string;
 	disable: boolean;
+	notice?: string;
 }
 
 export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
@@ -145,7 +147,7 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 	};
 
 	const renderBreadcrumbs = () => (
-		<Breadcrumb className="mb-6">
+		<Breadcrumb>
 			<BreadcrumbList>
 				<BreadcrumbItem>
 					<BreadcrumbLink
@@ -236,7 +238,10 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 
 	return (
 		<div>
-			{renderBreadcrumbs()}
+			<NavbarLeft>
+				<NavbarHeader logo={null} />
+				{renderBreadcrumbs()}
+			</NavbarLeft>
 			{/* File Upload Modal */}
 			<Dialog
 				open={isFileUploadModalOpen}
@@ -318,6 +323,7 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 						//selectedTab={tabLabels[selectedTab]}
 						title={selectedDatabase.name}
 						description={`Fill out ${selectedDatabase.name} details in order to add guardrail to catalog`}
+						notice={selectedDatabase.notice}
 						icon={(selectedDatabase as { icon?: string }).icon}
 						fields={selectedDatabase.fields}
 						advanced={selectedDatabase.advanced}

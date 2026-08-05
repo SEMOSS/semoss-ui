@@ -34,7 +34,9 @@
 		"errors": "Erreurs",
 		"p50": "P50",
 		"p95": "P95",
-		"tokens": "Jetons",
+		"tokens": "Total des jetons",
+		"cacheRead": "Lecture de cache",
+		"cacheWrite": "Écriture de cache",
 		"currentPage": "page actuelle",
 		"currentPageHint": "La latence, les erreurs et les jetons sont calculés sur les événements de la page actuelle."
 	},
@@ -54,9 +56,18 @@
 			"engineType": "Type de moteur",
 			"engineName": "Nom du moteur",
 			"latency": "Latence",
-			"tokens": "Jetons",
+			"tokens": "Total des jetons",
+			"promptTokens": "Jetons de requête",
+			"responseTokens": "Jetons de réponse",
+			"cacheRead": "Lecture de cache",
+			"cacheWrite": "Écriture de cache",
 			"timestamp": "Horodatage",
-			"status": "Statut"
+			"status": "Statut",
+			"guardrailAction": "Garde-fou"
+		},
+		"guardrailActions": {
+			"MASK": "Masqué",
+			"BLOCK": "Bloqué"
 		},
 		"groupRequest": "Requête",
 		"groupSpan": "Span",
@@ -88,7 +99,7 @@
 			"engine": "Moteur",
 			"user": "Utilisateur",
 			"latency": "Latence",
-			"tokens": "Jetons",
+			"tokens": "Total des jetons",
 			"start": "Début",
 			"end": "Fin",
 			"span": "Span",
@@ -108,7 +119,11 @@
 		"collapseAll": "Tout réduire",
 		"fields": {
 			"latency": "Latence",
-			"tokens": "Jetons",
+			"tokens": "Total des jetons",
+			"promptTokens": "Jetons de requête",
+			"responseTokens": "Jetons de réponse",
+			"cacheRead": "Lecture de cache",
+			"cacheWrite": "Écriture de cache",
 			"user": "Utilisateur",
 			"userId": "ID d'utilisateur",
 			"start": "Début",

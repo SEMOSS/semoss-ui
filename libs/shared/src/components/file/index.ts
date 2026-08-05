@@ -1,3 +1,4 @@
+export * from "./file.types";
 export * from "./file-code-editor";
 export * from "./file-download-view";
 export * from "./file-editor";

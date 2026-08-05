@@ -1,5 +1,6 @@
 import { Trash2 } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
+import type { Role } from "@semoss/shared";
 import {
 	Select,
 	SelectContent,
@@ -9,9 +10,15 @@ import {
 	SelectValue,
 } from "@semoss/ui/next";
 
+/**
+ * A permission value the dropdown can emit: a real role, or the "delete"
+ * sentinel that routes to member removal.
+ */
+export type PermissionChange = Role | "delete";
+
 export interface PermissionDropdownProps {
 	permission: string;
-	handlePermissionChange: (newPermission: string) => void;
+	handlePermissionChange: (newPermission: PermissionChange) => void;
 	activeUserPermission: string;
 	hideDeleteOption?: boolean;
 }
@@ -32,8 +39,10 @@ export const PermissionDropdown = ({
 	return (
 		<Select
 			value={permission}
+			// Select types its value as a bare string; the SelectItems below
+			// constrain it to exactly the PermissionChange members.
 			onValueChange={(newPermission) =>
-				handlePermissionChange(newPermission)
+				handlePermissionChange(newPermission as PermissionChange)
 			}
 			// Disable if current user is read-only or trying to modify an owner without being an owner
 			disabled={disabled}

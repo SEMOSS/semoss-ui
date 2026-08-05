@@ -11,7 +11,6 @@ import {
 	SelectValue,
 	Textarea,
 } from "@semoss/ui/next";
-import { capitalizeWords } from "@/utility";
 import { JSONEditor } from "./json-editor";
 
 export interface ToolFieldProps<T = unknown> {
@@ -66,7 +65,8 @@ export const ToolField = ({
 	onChange,
 }: ToolFieldProps) => {
 	const { t } = useTranslation("mcp");
-	const displayName = capitalizeWords(fieldName);
+	// Use the raw parameter name so the default view shows exact keys for debugging. Otherwise it is a huge pain to debug
+	const displayName = fieldName;
 
 	switch (fieldSchema.type) {
 		case "string":
@@ -102,7 +102,7 @@ export const ToolField = ({
 							<SelectContent>
 								{fieldSchema.enum.map((option: string) => (
 									<SelectItem key={option} value={option}>
-										{capitalizeWords(option)}
+										{option}
 									</SelectItem>
 								))}
 							</SelectContent>

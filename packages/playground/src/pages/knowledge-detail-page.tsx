@@ -14,7 +14,7 @@ import {
 	MessageSquarePlusIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import {
@@ -290,9 +290,9 @@ export const KnowledgeDetailPage = observer(() => {
 			cancelled = true;
 			if (createdBlobUrl) URL.revokeObjectURL(createdBlobUrl);
 		};
-	}, [previewDoc, knowledgeId]);
+	}, [previewDoc, knowledgeId, insight.actions.run]);
 
-	const loadMembers = async () => {
+	const loadMembers = useCallback(async () => {
 		if (!knowledgeId) return;
 		setMembersLoading(true);
 		try {
@@ -303,7 +303,7 @@ export const KnowledgeDetailPage = observer(() => {
 		} finally {
 			setMembersLoading(false);
 		}
-	};
+	}, [knowledgeId]);
 
 	const handleAddUser = async () => {
 		if (!selectedUser) return;
@@ -362,7 +362,7 @@ export const KnowledgeDetailPage = observer(() => {
 		if (activeTab === "permissions") {
 			void loadMembers();
 		}
-	}, [activeTab]);
+	}, [activeTab, loadMembers]);
 
 	useEffect(() => {
 		if (!userSearch || !addOpen) {

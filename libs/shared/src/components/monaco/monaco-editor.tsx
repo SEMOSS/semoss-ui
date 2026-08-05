@@ -1,6 +1,9 @@
 /// <reference path="../../vite-env.d.ts" />
 import { createElement, lazy } from "react";
 
+export type { OnMount } from "@monaco-editor/react";
+export type * as monaco from "monaco-editor";
+
 type MonacoReactModule = typeof import("@monaco-editor/react");
 
 type MonacoEnvironment = {
@@ -39,6 +42,7 @@ const ensureMonacoSetup = async () => {
 				import(
 					"monaco-editor/esm/vs/language/typescript/ts.worker?worker"
 				),
+				import("monaco-editor/esm/vs/editor/editor.main"),
 			]);
 
 			const monacoGlobal = globalThis as typeof globalThis & {

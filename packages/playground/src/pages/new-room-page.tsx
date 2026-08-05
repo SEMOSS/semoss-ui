@@ -37,7 +37,6 @@ import {
 	RoomSidebar,
 } from "@/components";
 import { RoomOptionsForm } from "@/components/room/room-options-form";
-import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { FileDragProvider } from "@/contexts";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { RoomStore } from "@/stores";
@@ -131,6 +130,7 @@ export const NewRoomPage = observer(() => {
 		| {
 				engine_id: string;
 				engine_name: string;
+				engine_display_name?: string;
 		  }[]
 		| null
 	>(
@@ -153,10 +153,6 @@ export const NewRoomPage = observer(() => {
 		tempRoomStore.setOptions({
 			instructions: "",
 			mcp: [...(root.theme.defaultTools || [])],
-			tokenLength:
-				root.theme.defaultRoomSettings?.tokenLength || TOKEN_LENGTH,
-			temperature:
-				root.theme?.defaultRoomSettings?.temperature || TEMPERATURE,
 			workspace: undefined,
 			predefinedPrompts: [],
 		});
@@ -202,11 +198,25 @@ export const NewRoomPage = observer(() => {
 				preCreatedRoom.setMode(mode === "agent" ? "agent" : "chat");
 				preCreatedRoom.setMetadata({ name: prompt.substring(0, 15) });
 				await preCreatedRoom.updateRoomOptions(options);
-				preCreatedRoom.askMessage(prompt, files).then(() => {
-					runInAction(() => {
-						chat.keys.roomCounter++;
-					});
+				// Optimistically surface the room in the nav — GetPlaygroundRooms
+				// won't return it until its first message has data.
+				chat.addOptimisticRoom({
+					ROOM_ID: preCreatedRoom.roomId,
+					ROOM_NAME: prompt.substring(0, 100),
+					DATE_CREATED: new Date().toISOString(),
+					WORKSPACE_ID: options.workspace?.workspace_id,
 				});
+				// Fire-and-forget so we navigate without waiting on the response.
+				(async () => {
+					try {
+						await preCreatedRoom.askMessage(prompt, files);
+						runInAction(() => {
+							chat.keys.roomCounter++;
+						});
+					} catch {
+						chat.removeOptimisticRoom(preCreatedRoom.roomId);
+					}
+				})();
 				submittedRef.current = true;
 				navigate(`/room/${preCreatedRoom.roomId}`);
 			} else {
@@ -329,7 +339,10 @@ export const NewRoomPage = observer(() => {
 		const knowledgeMcp = {
 			id: knowledgeId,
 			type: "VECTOR" as const,
-			name: getKnowledge.data[0].engine_name || knowledgeId,
+			name:
+				getKnowledge.data[0].engine_display_name ||
+				getKnowledge.data[0].engine_name ||
+				knowledgeId,
 		};
 
 		tempRoomStore.setOptions({
@@ -370,17 +383,10 @@ export const NewRoomPage = observer(() => {
 			tempRoomStore.setOptions({
 				...tempRoomStore.options,
 				instructions: "",
-				temperature: root.theme.defaultRoomSettings?.temperature,
-				tokenLength: root.theme.defaultRoomSettings?.tokenLength,
 				mcp: [...(root.theme.defaultTools || [])], // Remove workspace MCPs
 			});
 		}
-	}, [
-		mode,
-		root.theme.defaultTools,
-		root.theme.defaultRoomSettings,
-		tempRoomStore,
-	]);
+	}, [mode, root.theme.defaultTools, tempRoomStore]);
 
 	// Close the configuration panel when the file-explorer sidebar opens.
 	useEffect(() => {

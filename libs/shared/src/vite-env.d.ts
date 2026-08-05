@@ -40,3 +40,9 @@ declare module "monaco-editor/esm/vs/language/typescript/ts.worker?worker" {
 	const WorkerFactory: new () => Worker;
 	export default WorkerFactory;
 }
+
+// Side-effect-only import of Monaco's full editor bundle (registers the editor
+// contributions — find, folding, multi-cursor, rename, go-to-line, …). Deep
+// path so the client/playground `monaco-editor` -> `editor.api` alias leaves it
+// alone; it has no shipped .d.ts, so declare it as a bare module here.
+declare module "monaco-editor/esm/vs/editor/editor.main";

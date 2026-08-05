@@ -25,6 +25,8 @@
 	"results": {
 		"successNoOutput": "✓ Ejecutado correctamente (sin salida)",
 		"insightNotReady": "La perspectiva no está lista",
-		"unknownError": "Error desconocido"
+		"unknownError": "Error desconocido",
+		"fileDownloadStarted": "✓ Descarga de archivo iniciada",
+		"downloadFailed": "No se pudo descargar el archivo"
 	}
 }

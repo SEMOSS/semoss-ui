@@ -97,6 +97,10 @@
   --sidebar-accent-foreground: rgba(23, 23, 23, 1);
   --sidebar-border: rgba(230, 230, 230, 1);
   --sidebar-ring: rgba(163, 163, 163, 1);
+  --login-background: var(--background);
+  --login-input: var(--background);
+  --login-input-border: var(--input);
+  --login-input-placeholder: var(--muted-foreground);
 }
 
 .dark {
@@ -136,6 +140,16 @@
   --sidebar-accent-foreground: rgba(250, 250, 250, 1);
   --sidebar-border: rgba(255, 255, 255, 0.1);
   --sidebar-ring: rgba(82, 82, 82, 1);
+  --login-background:
+    linear-gradient(
+      48deg,
+      rgba(32, 39, 54, 0.5) 7.37%,
+      rgba(30, 41, 75, 0.49) 39.18%,
+      rgba(120, 133, 213, 0) 84.89%
+    );
+  --login-input: #171d2b;
+  --login-input-border: #3b4254;
+  --login-input-placeholder: #a0a7b7;
 }
 
 /* Custom */
@@ -198,6 +212,42 @@
   }
   button {
     cursor: pointer;
+  }
+
+  .semoss-login-page {
+    background: var(--login-background);
+  }
+
+  .dark .semoss-login-form input {
+    background-color: var(--login-input);
+    border-color: var(--login-input-border);
+    color: var(--foreground);
+    box-shadow: none;
+  }
+
+  .dark .semoss-login-form input::placeholder {
+    color: var(--login-input-placeholder);
+  }
+
+  .dark .semoss-login-form input:-webkit-autofill,
+  .dark .semoss-login-form input:-webkit-autofill:hover,
+  .dark .semoss-login-form input:-webkit-autofill:focus {
+    border-color: var(--login-input-border);
+    -webkit-text-fill-color: var(--foreground);
+    caret-color: var(--foreground);
+    box-shadow: 0 0 0 1000px var(--login-input) inset;
+  }
+
+  .shiki,
+  .shiki span {
+    background-color: var(--shiki-light-bg, transparent);
+    color: var(--shiki-light);
+  }
+
+  .dark .shiki,
+  .dark .shiki span {
+    background-color: var(--shiki-dark-bg, transparent);
+    color: var(--shiki-dark);
   }
   
   .heading-xl {

@@ -16,12 +16,15 @@ export interface Engine {
 	engine_user_permission?: number;
 	engine_group_permission?: number;
 	engine_date_created?: string;
+	engine_created_by?: string;
 	engine_date_last_edited?: string;
 	engine_cost?: string;
 	low_engine_name?: string;
-	description?: string;
 	tag?: string;
-
+	description?: string;
+	markdown?: string;
+	"data classification"?: string[];
+	"data restrictions"?: string[];
 	/** @deprecated legacy keys from MyEngines */
 	app_id?: string;
 	/** @deprecated legacy keys from MyEngines */
@@ -65,6 +68,7 @@ export interface Project {
 	"data restrictions"?: string[];
 	tag?: string | string[];
 	description?: string;
+	markdown?: string;
 }
 
 export interface App {
@@ -181,8 +185,6 @@ export interface ThemeMap {
 		 */
 		defaultRoomSettings?: {
 			model?: Engine;
-			temperature?: number;
-			tokenLength?: number;
 		};
 
 		/**
@@ -333,11 +335,13 @@ export interface ThemeMap {
 			showPlatformLinks?: boolean;
 			/** Whether to show a text input for feedback comments when rating a response. Defaults to false. */
 			enableFeedbackText?: boolean;
+			/** Whether to show an export button on tables rendered in chat responses. Defaults to false. */
+			enableTableExport?: boolean;
 		};
 	};
 }
 
-export type Role = "OWNER" | "EDIT" | "READ_ONLY";
+export type Role = "OWNER" | "EDIT" | "READ_ONLY" | "DISCOVERABLE";
 
 /**
  * User permission entry for adding/editing permissions
@@ -368,8 +372,19 @@ export interface UserAccessRequest {
 }
 
 export interface MCP {
-	/** Type of the mcp */
-	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION" | "MODEL" | "VECTOR";
+	/**
+	 * Type of the mcp. Every value but ROOM is an engine or project catalog type.
+	 * ROOM is the room's own toolbox, which has no catalog entry behind it.
+	 */
+	type:
+		| "PROJECT"
+		| "STORAGE"
+		| "DATABASE"
+		| "FUNCTION"
+		| "MODEL"
+		| "VECTOR"
+		| "GUARDRAIL"
+		| "ROOM";
 	/** Id of the mcp */
 	id: string;
 	/** Name of the mcp */
@@ -386,6 +401,12 @@ export interface MCP {
 export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {
 	/** Flag to indicate if this MCP comes from a workspace */
 	fromWorkspace?: boolean;
+	/**
+	 * Set by the backend on the room's own toolbox, which is derived from the tool
+	 * definitions in the room folder rather than stored in room options. Not
+	 * persisted.
+	 */
+	fromRoom?: boolean;
 };
 
 export interface Skill {
@@ -408,19 +429,13 @@ export interface Skill {
 export type SkillConfig = Pick<Skill, "id" | "name">;
 
 export interface ProjectDependency {
-	engine_type:
-		| "PROJECT"
-		| "STORAGE"
-		| "DATABASE"
-		| "FUNCTION"
-		| "MODEL"
-		| "VECTOR";
+	engine_type: Project["project_type"] | Engine["engine_type"];
 	engine_id: string;
 	engine_name: string;
 	engine_subtype?: string;
 	description?: string;
 	engine_discoverable?: boolean;
-	permission_name?: "READ_ONLY" | "EDIT" | "OWNER";
+	permission_name?: Role;
 	engine_global?: boolean;
 	access_permission?: number;
 	tags?: string;

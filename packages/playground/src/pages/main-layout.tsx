@@ -14,6 +14,7 @@ import {
 	BreadcrumbLink,
 	BreadcrumbList,
 	BreadcrumbSeparator,
+	cn,
 	Separator,
 	SidebarInset,
 	SidebarProvider,
@@ -76,7 +77,7 @@ export const MainLayout = observer(() => {
 				const hash = new URL(item.url).hash; // e.g. "#/agent"
 				map[embedPath] = hash.startsWith("#") ? hash.slice(1) : hash; // e.g. "/agent"
 			} catch {
-				map[embedPath] = "/" + embedPath;
+				map[embedPath] = `/${embedPath}`; // fallback to the embed path itself
 			}
 		}
 		return map;
@@ -185,7 +186,7 @@ export const MainLayout = observer(() => {
 						}
 					>
 						<GlobalNav />
-						<SidebarInset className="m-0! rounded-none! shadow-none">
+						<SidebarInset className="m-0! min-w-0 rounded-none! shadow-none">
 							<GlobalDialog
 								onAcknowledge={() => {
 									if (pendingTour) {
@@ -206,14 +207,14 @@ export const MainLayout = observer(() => {
 								}}
 							>
 								<div className="flex h-12.5 w-full shrink-0 flex-row items-center px-4">
-									<div className="flex flex-row items-center justify-center gap-1.5">
+									<div className="flex min-w-0 flex-row items-center justify-center gap-1.5">
 										<SidebarTrigger />
 										<Separator
 											orientation="vertical"
 											style={{ height: "17px" }}
 										/>
-										<Breadcrumb>
-											<BreadcrumbList>
+										<Breadcrumb className="min-w-0">
+											<BreadcrumbList className="min-w-0 flex-nowrap">
 												{root.breadcrumbs.map(
 													(crumb, index) => {
 														const isLast =
@@ -226,14 +227,20 @@ export const MainLayout = observer(() => {
 															<React.Fragment
 																key={`${index}-${crumb.path}`}
 															>
-																<BreadcrumbItem>
+																<BreadcrumbItem
+																	className={
+																		isLast
+																			? "min-w-0"
+																			: undefined
+																	}
+																>
 																	{crumb.path ? (
 																		<BreadcrumbLink
-																			className={
-																				isLast
-																					? "text-foreground"
-																					: ""
-																			}
+																			className={cn(
+																				"min-w-0 truncate",
+																				isLast &&
+																					"text-foreground",
+																			)}
 																			asChild
 																		>
 																			<Link
@@ -246,11 +253,12 @@ export const MainLayout = observer(() => {
 																		</BreadcrumbLink>
 																	) : (
 																		<span
-																			className={
+																			className={cn(
+																				"min-w-0 truncate",
 																				isLast
 																					? "text-foreground"
-																					: "text-muted-foreground"
-																			}
+																					: "text-muted-foreground",
+																			)}
 																		>
 																			{
 																				crumb.name

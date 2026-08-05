@@ -3,8 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 // ============================================
 // CONFIGURATION
 // ============================================
-const CHARS_PER_FRAME = 3; // Characters to reveal per animation frame
-const DEBOUNCE_MS = 8; // Batch updates when content streams too fast (125fps throttle)
+const CHARS_PER_FRAME = 2; // Characters to reveal per animation frame
+const DEBOUNCE_MS = 15; // Batch updates when content streams too fast (66fps throttle)
 const MAX_BACKTRACK = 40; // Maximum characters to walk back for syntax safety
 
 // ============================================
@@ -13,12 +13,7 @@ const MAX_BACKTRACK = 40; // Maximum characters to walk back for syntax safety
 /**
  * If targetIndex lands inside a fenced code block (``` ... ```), jump to the
  * index just past the closing fence so the block is revealed atomically.
- *
- * Code blocks must not be animated character-by-character because:
- *  - It looks wrong (partial syntax)
- *  - HtmlPreviewBlock needs its full content before it can run scripts /
- *    render charts, and it only receives whatever the typewriter has revealed.
- *
+ * Prevents partial syntax from rendering mid-animation.
  * Inline backticks are NOT affected — only triple-backtick fences.
  */
 function skipPastCodeFence(fullText: string, targetIndex: number): number {
@@ -116,8 +111,14 @@ interface UseMarkdownTypewriterReturn {
 
 export function useMarkdownTypewriter(
 	content: string,
+	startAtLatest: boolean = false,
 ): UseMarkdownTypewriterReturn {
-	const [renderedLength, setRenderedLength] = useState<number>(0);
+	// On a return view, start fully revealed (only later tokens animate); on a
+	// first view, start from 0. `rendered` slices the full content, so this seed
+	// alone gives baseline + animated net-new with no work in the consumer.
+	const [renderedLength, setRenderedLength] = useState<number>(() =>
+		startAtLatest ? content.length : 0,
+	);
 	const [isRunning, setIsRunning] = useState<boolean>(false);
 	const contentRef = useRef<string>(content);
 	const rafRef = useRef<number | null>(null);
@@ -138,6 +139,25 @@ export function useMarkdownTypewriter(
 	const rendered = useMemo(() => {
 		return content.slice(0, renderedLength);
 	}, [content, renderedLength]);
+
+	// On tab return, snap renderedLength forward to absorb everything that
+	// streamed in while away, then reset timing so only net-new tokens animate.
+	useEffect(() => {
+		const handleVisibilityChange = () => {
+			if (document.visibilityState === "visible") {
+				setRenderedLength(contentRef.current.length);
+				lastUpdateRef.current = performance.now();
+				pendingCharsRef.current = 0;
+			}
+		};
+		document.addEventListener("visibilitychange", handleVisibilityChange);
+		return () => {
+			document.removeEventListener(
+				"visibilitychange",
+				handleVisibilityChange,
+			);
+		};
+	}, []);
 
 	// requestAnimationFrame-based typewriter for smooth 60fps animation
 	useEffect(() => {
@@ -169,8 +189,8 @@ export function useMarkdownTypewriter(
 				}
 
 				// Jump past any enclosing code fence so blocks appear atomically.
-				// This ensures HtmlPreviewBlock receives its full content immediately
-				// rather than waiting for the typewriter to crawl through the HTML.
+				// Prevents partial syntax from rendering mid-animation for non-html
+				// code fences (e.g. ```python, ```ts) that live inside md chunks.
 				const skipped = skipPastCodeFence(fullText, target);
 
 				// Find syntax-safe index
@@ -204,9 +224,9 @@ export function useMarkdownTypewriter(
 	}, []);
 
 	const skipToEnd = useCallback(() => {
-		setRenderedLength(content.length);
+		setRenderedLength(contentRef.current.length);
 		setIsRunning(false);
-	}, [content]);
+	}, []);
 
 	const reset = useCallback(() => {
 		setRenderedLength(0);

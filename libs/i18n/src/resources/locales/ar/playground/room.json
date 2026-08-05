@@ -5,16 +5,15 @@
 		"description": "تحديث إعدادات الغرفة وتعديل سلوك الدردشة",
 		"open": "فتح إعدادات الغرفة",
 		"close": "إغلاق إعدادات الغرفة",
-		"edit": "تعديل إعدادات الغرفة"
+		"edit": "تعديل إعدادات الغرفة",
+		"compactTooltip": "اضغط محادثتك لتوفير الرموز. تبقى رسائلك السابقة كما هي."
 	},
 	"form": {
 		"modelLabel": "النموذج",
 		"instructionsLabel": "التعليمات",
 		"agentLabel": "الوكيل",
 		"knowledgeLabel": "المعرفة",
-		"toolboxLabel": "صناديق الأدوات",
-		"maxTokenLabel": "الحد الأقصى للرموز",
-		"temperatureLabel": "درجة الحرارة"
+		"toolboxLabel": "صناديق الأدوات"
 	},
 	"modes": {
 		"ask": "اسأل",
@@ -97,7 +96,9 @@
 		"descriptionHigh": "هذه المحادثة على وشك الامتلاء. سيبدأ النموذج قريبًا في نسيان الرسائل السابقة. اضغط هذه المحادثة أو ابدأ دردشة جديدة للاستمرار بسياق كامل.",
 		"descriptionExceeded": "تجاوزت هذه المحادثة حدها. يقوم النموذج الآن بنسيان الرسائل السابقة. اضغط هذه المحادثة أو ابدأ دردشة جديدة للحصول على أفضل النتائج.",
 		"memoryUsedTitle": "الذاكرة المستخدمة:",
-		"memoryUsedValue": "{{used}} / {{total}} رمز ({{percent}}%)"
+		"memoryUsedValue": "{{used}} / {{total}} رمز ({{percent}}%)",
+		"totalUsedTitle": "إجمالي المحادثة:",
+		"totalUsedValue": "{{total}} رمز"
 	},
 	"menuMcp": {
 		"searchPlaceholder": "البحث في المعرفة وصناديق الأدوات",
