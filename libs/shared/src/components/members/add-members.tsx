@@ -12,6 +12,7 @@ const PAGE_SIZE = 50;
 
 import { useTranslation } from "@semoss/i18n";
 import { get as apiGet, post as apiPost, Env } from "@semoss/sdk";
+import { useIteratorApi } from "@semoss/sdk/react";
 import {
 	Avatar,
 	AvatarFallback,
@@ -31,7 +32,6 @@ import {
 	toast,
 	useDebouncedValue,
 	useInfiniteScroll,
-	useIteratorApi,
 } from "@semoss/ui/next";
 import { returnAccessType } from "./common";
 import { ModelRestrictionFields } from "./model-restriction-fields";

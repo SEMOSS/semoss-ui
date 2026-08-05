@@ -13,14 +13,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-
-const formatNum = (val: string): string => {
-	const digits = val.replace(/[^0-9]/g, "");
-	if (!digits) return "";
-	return Number(digits).toLocaleString();
-};
-
-const parseNum = (val: string): string => val.replace(/[^0-9]/g, "");
+import { formatNum, parseNum } from "./common";
 
 export interface ModelRestrictionFieldsProps {
 	restriction: string;

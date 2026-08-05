@@ -1,5 +1,6 @@
 import { ChevronDown, Copy, Lock } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useIteratorApi } from "@semoss/sdk/react";
 import { AppCatalogAvatar } from "@semoss/shared";
 import {
 	Avatar,
@@ -24,7 +25,6 @@ import {
 	toast,
 	useDebouncedValue,
 	useInfiniteScroll,
-	useIteratorApi,
 } from "@semoss/ui/next";
 import { getProjects, setUserLocked } from "@/api";
 import { useSettings } from "@/hooks";

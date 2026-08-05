@@ -23,6 +23,7 @@ import {
 	useDebouncedValue,
 } from "@semoss/ui/next";
 import { AddMembersOverlay } from "./add-members";
+import { formatNum, parseNum } from "./common";
 import { MembersList, type MemberUser } from "./members-list";
 
 interface MembersProps {
@@ -48,16 +49,6 @@ interface MembersProps {
 	 *   - renders the Permission column as static text (no dropdown)
 	 */
 	readOnly?: boolean;
-}
-
-function formatNum(val: string): string {
-	const digits = val.replace(/[^0-9]/g, "");
-	if (!digits) return "";
-	return Number(digits).toLocaleString();
-}
-
-function parseNum(val: string): string {
-	return val.replace(/[^0-9]/g, "");
 }
 
 export const MembersTable = ({

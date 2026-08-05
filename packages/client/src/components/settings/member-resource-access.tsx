@@ -1,5 +1,6 @@
 import { Plus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useIteratorApi } from "@semoss/sdk/react";
 import { AppCatalogAvatar, EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Button,
@@ -11,7 +12,6 @@ import {
 	toast,
 	useDebouncedValue,
 	useInfiniteScroll,
-	useIteratorApi,
 } from "@semoss/ui/next";
 import {
 	type AccessKind,
