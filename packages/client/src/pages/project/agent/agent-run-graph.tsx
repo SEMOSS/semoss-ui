@@ -33,6 +33,7 @@ import {
 } from "@semoss/ui/next";
 import type {
 	AgentRunDetail,
+	EngineInfo,
 	RoomRunDetail,
 	SubagentRunNode,
 	TranscriptToolCall,
@@ -214,10 +215,15 @@ const buildToolTreeNodes = (run: AgentRunDetail): LayoutTreeNode[] =>
  * A subagent run mirrors the parent structure: the run card points at its own
  * room, which fans out into the tools it called and any nested subagents.
  */
-const buildSubagentTreeNode = (run: SubagentRunNode): LayoutTreeNode => {
+const buildSubagentTreeNode = (
+	run: SubagentRunNode,
+	engineInfo: Record<string, EngineInfo>,
+): LayoutTreeNode => {
 	const contents: LayoutTreeNode[] = [
 		...buildToolTreeNodes(run),
-		...run.children.map(buildSubagentTreeNode),
+		...run.children.map((child) =>
+			buildSubagentTreeNode(child, engineInfo),
+		),
 	];
 
 	const roomChildren: LayoutTreeNode[] = run.roomId
@@ -226,7 +232,7 @@ const buildSubagentTreeNode = (run: SubagentRunNode): LayoutTreeNode => {
 					id: `${run.runId}-room`,
 					data: {
 						kind: "room" as const,
-						label: run.roomId,
+						label: run.roomName || run.roomId,
 						count: contents.length,
 					},
 					selection: {
@@ -245,7 +251,7 @@ const buildSubagentTreeNode = (run: SubagentRunNode): LayoutTreeNode => {
 		data: {
 			kind: "subagent",
 			label: run.input || run.runId,
-			sublabel: run.modelId,
+			sublabel: engineInfo[run.modelId]?.name ?? run.modelId,
 			status: run.status,
 			duration: formatRunDuration(run.startedAt, run.completedAt),
 		},
@@ -257,7 +263,9 @@ const buildSubagentTreeNode = (run: SubagentRunNode): LayoutTreeNode => {
 
 const buildGraph = (
 	roomId: string,
+	roomName: string | undefined,
 	runs: RoomRunDetail[],
+	engineInfo: Record<string, EngineInfo>,
 ): {
 	nodes: ActivityFlowNode[];
 	edges: Edge[];
@@ -267,7 +275,7 @@ const buildGraph = (
 		id: "room-root",
 		data: {
 			kind: "room",
-			label: roomId,
+			label: roomName || roomId,
 			count: runs.length,
 		},
 		selection: { kind: "room", roomId, runs },
@@ -276,14 +284,16 @@ const buildGraph = (
 			data: {
 				kind: "run" as const,
 				label: run.input || run.runId,
-				sublabel: run.modelId,
+				sublabel: engineInfo[run.modelId]?.name ?? run.modelId,
 				status: run.status,
 				duration: formatRunDuration(run.startedAt, run.completedAt),
 			},
 			selection: { kind: "run" as const, run },
 			children: [
 				...buildToolTreeNodes(run),
-				...run.subagents.map(buildSubagentTreeNode),
+				...run.subagents.map((subagent) =>
+					buildSubagentTreeNode(subagent, engineInfo),
+				),
 			],
 			edgeStatus: run.status,
 		})),
@@ -665,9 +675,11 @@ const MetaRow = ({ label, value }: { label: string; value?: string | null }) =>
 const RunDetailPanel = ({
 	run,
 	title,
+	engineInfo,
 }: {
 	run: AgentRunDetail;
 	title: string;
+	engineInfo: Record<string, EngineInfo>;
 }) => {
 	const stepNodes = useMemo(() => buildTranscriptStepNodes(run), [run]);
 	const [expanded, setExpanded] = useState<string[]>([]);
@@ -675,6 +687,8 @@ const RunDetailPanel = ({
 	useEffect(() => {
 		setExpanded(stepNodes.map((node) => node.id));
 	}, [stepNodes]);
+
+	const info = engineInfo[run.modelId];
 
 	return (
 		<div className="flex flex-col gap-3">
@@ -684,8 +698,8 @@ const RunDetailPanel = ({
 			</div>
 			<div className="flex flex-col gap-1 rounded-lg border bg-muted/40 p-3">
 				<MetaRow label="Run ID" value={run.runId} />
-				<MetaRow label="Room" value={run.roomId} />
-				<MetaRow label="Model" value={run.modelId} />
+				<MetaRow label="Room" value={run.roomName || run.roomId} />
+				<MetaRow label="Model" value={info?.name ?? run.modelId} />
 				<MetaRow label="Harness" value={run.harnessType} />
 				<MetaRow
 					label="Duration"
@@ -750,6 +764,7 @@ const SubroomDetailPanel = ({
 	<div className="flex flex-col gap-3">
 		<h6 className="font-semibold text-sm">Sub-agent room</h6>
 		<div className="flex flex-col gap-1 rounded-lg border bg-muted/40 p-3">
+			<MetaRow label="Name" value={run.roomName} />
 			<MetaRow label="Room ID" value={roomId} />
 			<MetaRow label="Sub-agent run" value={run.runId} />
 			<MetaRow
@@ -838,14 +853,17 @@ const ToolDetailPanel = ({
 
 const RoomDetailPanel = ({
 	roomId,
+	roomName,
 	runs,
 }: {
 	roomId: string;
+	roomName?: string;
 	runs: RoomRunDetail[];
 }) => (
 	<div className="flex flex-col gap-3">
 		<h6 className="font-semibold text-sm">Room</h6>
 		<div className="flex flex-col gap-1 rounded-lg border bg-muted/40 p-3">
+			<MetaRow label="Name" value={roomName} />
 			<MetaRow label="Room ID" value={roomId} />
 			<MetaRow label="Runs" value={String(runs.length)} />
 			<MetaRow
@@ -881,7 +899,10 @@ const LEGEND_ITEMS: { label: string; className: string }[] = [
 
 interface AgentRunGraphProps {
 	roomId: string;
+	roomName?: string;
 	runs: RoomRunDetail[];
+	/** Model engine id -> display info resolved via GetEngineMetadata. */
+	engineInfo?: Record<string, EngineInfo>;
 }
 
 /**
@@ -889,13 +910,18 @@ interface AgentRunGraphProps {
  * calls and (recursive) sub-agent runs, with a detail panel for the selected
  * node. Render with key={roomId} so selection resets when the room changes.
  */
-export const AgentRunGraph = ({ roomId, runs }: AgentRunGraphProps) => {
+export const AgentRunGraph = ({
+	roomId,
+	roomName,
+	runs,
+	engineInfo = {},
+}: AgentRunGraphProps) => {
 	const { resolvedTheme } = useTheme();
 	const isDarkTheme = resolvedTheme === "dark";
 
 	const { nodes, edges, selectionById } = useMemo(
-		() => buildGraph(roomId, runs),
-		[roomId, runs],
+		() => buildGraph(roomId, roomName, runs, engineInfo),
+		[roomId, roomName, runs, engineInfo],
 	);
 
 	const [selectedNodeId, setSelectedNodeId] = useState<string>("room-root");
@@ -937,10 +963,18 @@ export const AgentRunGraph = ({ roomId, runs }: AgentRunGraphProps) => {
 			</div>
 			<div className="w-[380px] shrink-0 overflow-y-auto border-l bg-background p-4">
 				{selection?.kind === "run" && (
-					<RunDetailPanel run={selection.run} title="Agent run" />
+					<RunDetailPanel
+						run={selection.run}
+						title="Agent run"
+						engineInfo={engineInfo}
+					/>
 				)}
 				{selection?.kind === "subagent" && (
-					<RunDetailPanel run={selection.run} title="Sub-agent run" />
+					<RunDetailPanel
+						run={selection.run}
+						title="Sub-agent run"
+						engineInfo={engineInfo}
+					/>
 				)}
 				{selection?.kind === "subroom" && (
 					<SubroomDetailPanel
@@ -955,7 +989,11 @@ export const AgentRunGraph = ({ roomId, runs }: AgentRunGraphProps) => {
 					/>
 				)}
 				{(!selection || selection.kind === "room") && (
-					<RoomDetailPanel roomId={roomId} runs={runs} />
+					<RoomDetailPanel
+						roomId={roomId}
+						roomName={roomName}
+						runs={runs}
+					/>
 				)}
 			</div>
 		</div>

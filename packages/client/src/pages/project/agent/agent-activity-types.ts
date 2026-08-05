@@ -13,6 +13,7 @@ export interface TreeNodeSpec {
 
 export interface AgentActivityRun {
 	roomId: string;
+	roomName?: string;
 	runId: string;
 	parentRunId?: string;
 	jobId: string;
@@ -35,6 +36,7 @@ export type AgentActivityLogResponse = Record<string, AgentActivityRun[]>;
 
 export interface RoomSummary {
 	roomId: string;
+	roomName: string | null;
 	runCount: number;
 	mostRecentCompletedAt: string | null;
 	sortMs: number;
@@ -100,6 +102,7 @@ export interface SubagentRun {
 	startedAt?: string;
 	completedAt?: string;
 	userId: string;
+	artifacts: unknown[];
 }
 
 export interface AgentRunDetail {
@@ -107,6 +110,7 @@ export interface AgentRunDetail {
 	runId: string;
 	parentRunId?: string;
 	roomId: string;
+	roomName?: string;
 	userId: string;
 	workspaceId: string;
 	harnessType: string;
@@ -134,6 +138,14 @@ export interface SubagentRunNode extends AgentRunDetail {
 
 export interface RoomRunDetail extends AgentRunDetail {
 	subagents: SubagentRunNode[];
+}
+
+/**
+ * Display info for a model engine, resolved via GetEngineMetadata. `name` is
+ * the engine's display name (e.g. "CallCenterModel").
+ */
+export interface EngineInfo {
+	name: string;
 }
 
 export const toMs = (dateStr: string | undefined): number =>

@@ -1,5 +1,5 @@
 import { ArrowLeft, ChevronRight, Clock, MessageSquare } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge, Button, Skeleton, toast } from "@semoss/ui/next";
 import { useProject, useRootStore } from "@/hooks";
 import { formatDateToRelative } from "@/utility/date";
@@ -7,6 +7,7 @@ import type {
 	AgentActivityLogResponse,
 	AgentActivityRun,
 	AgentRunDetail,
+	EngineInfo,
 	RoomRunDetail,
 	RoomSummary,
 	SubagentRun,
@@ -14,18 +15,49 @@ import type {
 } from "./agent-activity-types";
 import { toMs } from "./agent-activity-types";
 import { AgentRunGraph } from "./agent-run-graph";
+import type { ClaudeCodeTranscriptEvent } from "./claude-code-transcript";
+import { mergeClaudeCodeTranscript } from "./claude-code-transcript";
 
 const MAX_SUBAGENT_DEPTH = 5;
+
+/** Subset of the GetEngineMetadata output this page reads. */
+interface EngineMetadataOutput {
+	engine_display_name?: string;
+	engine_name?: string;
+}
+
+/** Every distinct model engine id used by the runs, incl. nested subagents. */
+const collectModelIds = (runs: RoomRunDetail[]): Set<string> => {
+	const ids = new Set<string>();
+	const visitSubagent = (node: SubagentRunNode) => {
+		if (node.modelId) {
+			ids.add(node.modelId);
+		}
+		node.children.forEach(visitSubagent);
+	};
+	for (const run of runs) {
+		if (run.modelId) {
+			ids.add(run.modelId);
+		}
+		run.subagents.forEach(visitSubagent);
+	}
+	return ids;
+};
 
 const summarizeRoom = (
 	roomId: string,
 	runs: AgentActivityRun[],
 ): RoomSummary => {
+	let roomName: string | null = null;
 	let mostRecentCompletedAt: string | null = null;
 	let mostRecentCompletedMs = -Infinity;
 	let sortMs = -Infinity;
 
 	for (const run of runs) {
+		if (!roomName && run.roomName) {
+			roomName = run.roomName;
+		}
+
 		const completedMs = toMs(run.completedAt);
 		if (completedMs > mostRecentCompletedMs) {
 			mostRecentCompletedMs = completedMs;
@@ -40,7 +72,13 @@ const summarizeRoom = (
 		);
 	}
 
-	return { roomId, runCount: runs.length, mostRecentCompletedAt, sortMs };
+	return {
+		roomId,
+		roomName,
+		runCount: runs.length,
+		mostRecentCompletedAt,
+		sortMs,
+	};
 };
 
 /**
@@ -56,11 +94,19 @@ export const AgentActivityPage = () => {
 	const [activity, setActivity] = useState<AgentActivityLogResponse>({});
 	const [loading, setLoading] = useState(true);
 
-	const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+	const [selectedRoom, setSelectedRoom] = useState<RoomSummary | null>(null);
 	const [selectedRoomRuns, setSelectedRoomRuns] = useState<RoomRunDetail[]>(
 		[],
 	);
 	const [loadingRunDetails, setLoadingRunDetails] = useState(false);
+
+	const [engineInfo, setEngineInfo] = useState<Record<string, EngineInfo>>(
+		{},
+	);
+	// Engine metadata is stable - cache lookups across room clicks.
+	const engineInfoCache = useRef(
+		new Map<string, Promise<EngineInfo | null>>(),
+	);
 
 	useEffect(() => {
 		const agentId = project.project_id;
@@ -123,6 +169,105 @@ export const AgentActivityPage = () => {
 	};
 
 	/**
+	 * Resolve a model engine id to its display name via GetEngineMetadata so
+	 * the graph can show "CallCenterModel" instead of the engine UUID stored
+	 * on AGENT_RUN.
+	 */
+	const fetchEngineInfo = (engineId: string): Promise<EngineInfo | null> => {
+		let pending = engineInfoCache.current.get(engineId);
+		if (!pending) {
+			pending = monolithStore
+				.runQuery<[EngineMetadataOutput]>(
+					`GetEngineMetadata(engine=["${engineId}"], metaKeys=${JSON.stringify(
+						[["engine_display_name", "engine_name"]],
+					)});`,
+				)
+				.then((response) => {
+					const { operationType, output } = response.pixelReturn[0];
+					if (operationType.indexOf("ERROR") > -1) {
+						throw new Error(String(output));
+					}
+					const name =
+						output?.engine_display_name || output?.engine_name;
+					return name ? { name } : null;
+				})
+				.catch((error) => {
+					console.error("Error fetching engine metadata:", error);
+					return null;
+				});
+			engineInfoCache.current.set(engineId, pending);
+		}
+		return pending;
+	};
+
+	const resolveEngineInfo = async (modelIds: Set<string>) => {
+		const entries = await Promise.all(
+			Array.from(modelIds).map(
+				async (id) => [id, await fetchEngineInfo(id)] as const,
+			),
+		);
+		const resolved: Record<string, EngineInfo> = {};
+		for (const [id, info] of entries) {
+			if (info) {
+				resolved[id] = info;
+			}
+		}
+		if (Object.keys(resolved).length > 0) {
+			setEngineInfo((prev) => ({ ...prev, ...resolved }));
+		}
+	};
+
+	/**
+	 * claude_code-harness runs don't persist tool activity as room messages -
+	 * it lives in the room's Claude Code JSONL transcript. Fetch it once per
+	 * room (the cache holds the in-flight promise) and splice the parsed tool
+	 * calls/results into the run so the graph treats both harnesses the same.
+	 */
+	const enrichWithClaudeCodeTranscript = async (
+		run: AgentRunDetail,
+		transcriptCache: Map<string, Promise<ClaudeCodeTranscriptEvent[]>>,
+		multiRunRoomId: string | null,
+	): Promise<AgentRunDetail> => {
+		if (run.harnessType !== "claude_code" || !run.roomId) {
+			return run;
+		}
+		try {
+			let pending = transcriptCache.get(run.roomId);
+			if (!pending) {
+				pending = monolithStore
+					.runQuery<[ClaudeCodeTranscriptEvent[]]>(
+						`GetClaudeCodeTranscriptHistory ( roomId = "${run.roomId}" ) ;`,
+					)
+					.then((response) => {
+						const { operationType, output } =
+							response.pixelReturn[0];
+						if (operationType.indexOf("ERROR") > -1) {
+							throw new Error(String(output));
+						}
+						return output ?? [];
+					});
+				transcriptCache.set(run.roomId, pending);
+			}
+			const events = await pending;
+			if (events.length === 0) {
+				return run;
+			}
+			// The JSONL covers the whole room; narrow to this run's time
+			// window only when other runs share the room.
+			return mergeClaudeCodeTranscript(
+				run,
+				events,
+				run.roomId === multiRunRoomId,
+			);
+		} catch (error) {
+			// Transcript may be missing on disk - the run still renders from
+			// its room messages.
+			console.error("Error fetching Claude Code transcript:", error);
+			return run;
+		}
+	};
+
+	/**
 	 * Recursively load the subagent run tree under a run via GetSubagentRuns,
 	 * pulling each subagent's full transcript via GetAgentRun so the graph can
 	 * show its room, tool calls, and nested subagents just like the parent.
@@ -132,6 +277,8 @@ export const AgentActivityPage = () => {
 	const fetchSubagentRunTree = async (
 		runId: string,
 		visited: Set<string>,
+		transcriptCache: Map<string, Promise<ClaudeCodeTranscriptEvent[]>>,
+		multiRunRoomId: string | null,
 		depth = 0,
 	): Promise<SubagentRunNode[]> => {
 		if (depth >= MAX_SUBAGENT_DEPTH) {
@@ -156,9 +303,19 @@ export const AgentActivityPage = () => {
 					// A dead transcript shouldn't sink the whole room view -
 					// fall back to the summary row with no messages.
 					fetchRunDetail(run.runId).catch(() => null),
-					fetchSubagentRunTree(run.runId, visited, depth + 1),
+					fetchSubagentRunTree(
+						run.runId,
+						visited,
+						transcriptCache,
+						multiRunRoomId,
+						depth + 1,
+					),
 				]);
-				const base = detail ?? { ...run, messages: [] };
+				const base = await enrichWithClaudeCodeTranscript(
+					detail ?? { ...run, messages: [] },
+					transcriptCache,
+					multiRunRoomId,
+				);
 				return { ...base, children };
 			}),
 		);
@@ -173,22 +330,43 @@ export const AgentActivityPage = () => {
 			(run) => !run.parentRunId || !roomRunIds.has(run.parentRunId),
 		);
 
-		setSelectedRoomId(room.roomId);
+		setSelectedRoom(room);
 		setSelectedRoomRuns([]);
 		setLoadingRunDetails(true);
 
 		try {
 			const visited = new Set(runs.map((run) => run.runId));
+			const transcriptCache = new Map<
+				string,
+				Promise<ClaudeCodeTranscriptEvent[]>
+			>();
+			// Sub-agent rooms host a single run, but this room's JSONL spans
+			// every run listed here - those need time-window filtering.
+			const multiRunRoomId = allRuns.length > 1 ? room.roomId : null;
 			const runDetails = await Promise.all(
 				runs.map(async (run) => {
 					const [detail, subagents] = await Promise.all([
-						fetchRunDetail(run.runId),
-						fetchSubagentRunTree(run.runId, visited),
+						fetchRunDetail(run.runId).then((fetched) =>
+							enrichWithClaudeCodeTranscript(
+								fetched,
+								transcriptCache,
+								multiRunRoomId,
+							),
+						),
+						fetchSubagentRunTree(
+							run.runId,
+							visited,
+							transcriptCache,
+							multiRunRoomId,
+						),
 					]);
 					return { ...detail, subagents };
 				}),
 			);
 			setSelectedRoomRuns(runDetails);
+			// Resolve model display names in the background - the graph
+			// falls back to raw engine ids until these land.
+			void resolveEngineInfo(collectModelIds(runDetails));
 		} catch (error) {
 			console.error("Error fetching agent run:", error);
 			toast.error(`Error fetching agent run: ${error}`);
@@ -198,7 +376,7 @@ export const AgentActivityPage = () => {
 	};
 
 	const handleBackToList = () => {
-		setSelectedRoomId(null);
+		setSelectedRoom(null);
 		setSelectedRoomRuns([]);
 	};
 
@@ -224,7 +402,7 @@ export const AgentActivityPage = () => {
 		);
 	}
 
-	if (selectedRoomId) {
+	if (selectedRoom) {
 		return (
 			<div className="flex flex-col gap-4">
 				<div className="flex items-center gap-2">
@@ -237,8 +415,15 @@ export const AgentActivityPage = () => {
 						<ArrowLeft className="size-4" />
 					</Button>
 					<div>
-						<h6 className="font-mono font-semibold text-sm">
-							{selectedRoomId}
+						<h6
+							className={
+								selectedRoom.roomName
+									? "font-semibold text-sm"
+									: "font-mono font-semibold text-sm"
+							}
+							title={selectedRoom.roomId}
+						>
+							{selectedRoom.roomName ?? selectedRoom.roomId}
 						</h6>
 						<p className="text-muted-foreground text-xs">
 							Execution graph of agent runs, sub-agents, and tool
@@ -251,9 +436,11 @@ export const AgentActivityPage = () => {
 					<Skeleton className="h-[600px] w-full rounded-xl" />
 				) : selectedRoomRuns.length > 0 ? (
 					<AgentRunGraph
-						key={selectedRoomId}
-						roomId={selectedRoomId}
+						key={selectedRoom.roomId}
+						roomId={selectedRoom.roomId}
+						roomName={selectedRoom.roomName ?? undefined}
 						runs={selectedRoomRuns}
+						engineInfo={engineInfo}
 					/>
 				) : (
 					<p className="text-muted-foreground text-sm">
@@ -285,10 +472,14 @@ export const AgentActivityPage = () => {
 							<MessageSquare className="size-4" />
 						</span>
 						<span
-							className="min-w-0 flex-1 truncate font-mono text-muted-foreground text-xs"
+							className={
+								room.roomName
+									? "min-w-0 flex-1 truncate font-medium text-sm"
+									: "min-w-0 flex-1 truncate font-mono text-muted-foreground text-xs"
+							}
 							title={room.roomId}
 						>
-							{room.roomId}
+							{room.roomName ?? room.roomId}
 						</span>
 						<Badge variant="secondary" className="shrink-0">
 							{room.runCount}{" "}
