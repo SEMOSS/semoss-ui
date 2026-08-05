@@ -17,8 +17,8 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
-import { AutomationButton } from "./components/AutomationButton";
-import { AutomationPopup } from "./components/AutomationPopup";
+import { AutomationActionIndicator } from "./components/AutomationActionIndicator";
+import { AutomationControls } from "./components/AutomationControls";
 import { BrowserTabStrip } from "./components/BrowserTabStrip";
 import { BrowserToolbar } from "./components/BrowserToolbar";
 import { BrowserViewer } from "./components/BrowserViewer";
@@ -210,6 +210,10 @@ export default function App() {
 	const [isGoalAutomationRunning, setIsGoalAutomationRunning] =
 		useState(false);
 	const [automationGoal, setAutomationGoal] = useState("");
+	const [isAutomationGoalGenerating, setIsAutomationGoalGenerating] =
+		useState(false);
+	const [automationGoalGenerationError, setAutomationGoalGenerationError] =
+		useState("");
 	const [automationMaxIterations, setAutomationMaxIterations] = useState(10);
 	const [automationProgress, setAutomationProgress] = useState<{
 		iteration: number;
@@ -232,6 +236,7 @@ export default function App() {
 	const textSelectionRequestRef = useRef(0);
 	const activeToolExecutionRef = useRef("");
 	const automationRunTokenRef = useRef(0);
+	const automationGoalExecutionRef = useRef("");
 
 	useEffect(() => {
 		if (!snackError) return;
@@ -498,6 +503,9 @@ export default function App() {
 		setSaveDialogOpen(false);
 		setSelectedTextContexts([]);
 		setRecordedSteps([]);
+		setAutomationGoal("");
+		setAutomationGoalGenerationError("");
+		automationGoalExecutionRef.current = "";
 		playback.resetExecution();
 	}, [playback.resetExecution, toolExecutionKey]);
 
@@ -594,6 +602,7 @@ export default function App() {
 		if (isPlaygroundMode && !startupUrl) return;
 
 		autoStartedRef.current = true;
+		if (startupUrl) setCurrentUrl(startupUrl);
 		createSession(
 			isPlaygroundMode ? startupUrl : "",
 			1365,
@@ -1078,11 +1087,11 @@ export default function App() {
 	const handleStart = useCallback(
 		async (url: string) => {
 			const normalizedUrl = normalizeBrowserUrl(url);
+			setCurrentUrl(normalizedUrl);
 			const info = await createSession(normalizedUrl);
 			if (info) {
 				setSelectedTextContexts([]);
 				setSelectedTextContextsOpen(false);
-				setSelectionMode(false);
 				selectedContextSequenceRef.current = 0;
 				setCurrentUrl(info.currentUrl || normalizedUrl);
 				setLatestFrame(null);
@@ -1106,6 +1115,7 @@ export default function App() {
 		}
 
 		autoStartedRef.current = true;
+		setCurrentUrl(targetUrl);
 		const info = await createSession(targetUrl, 1365, 768, false);
 		if (!info) {
 			autoStartedRef.current = false;
@@ -1115,7 +1125,6 @@ export default function App() {
 		setCurrentUrl(info.currentUrl || targetUrl);
 		setSelectedTextContexts([]);
 		setSelectedTextContextsOpen(false);
-		setSelectionMode(false);
 		selectedContextSequenceRef.current = 0;
 		setLatestFrame(null);
 		setBrowserTabs([]);
@@ -1724,6 +1733,74 @@ export default function App() {
 	const replayMenuOpen =
 		playback.controlsOpen || playback.loadedRecordingOpen;
 
+	const generateAutomationGoal = useCallback(
+		async (replaceExisting: boolean) => {
+			const roomId = toolContext?.roomId ?? "";
+			if (!roomId || !automationModelId || !effectiveInsightId) return;
+
+			setIsAutomationGoalGenerating(true);
+			setAutomationGoalGenerationError("");
+			try {
+				const response = await runPixel<Record<string, unknown>>(
+					`GeneratePlaywrightAutomationGoal(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, limit=20);`,
+					effectiveInsightId,
+				);
+				const output = response.pixelReturn?.[0]?.output;
+				if (!isRecord(output) || output.success !== true) {
+					throw new Error(
+						isRecord(output) && typeof output.error === "string"
+							? output.error
+							: "Could not generate an automation goal.",
+					);
+				}
+				const generatedGoal =
+					typeof output.goal === "string" ? output.goal.trim() : "";
+				if (!generatedGoal) {
+					throw new Error(
+						"The model returned an empty automation goal.",
+					);
+				}
+				setAutomationGoal((current) =>
+					replaceExisting || !current.trim()
+						? generatedGoal
+						: current,
+				);
+				if (!automationModelId && typeof output.engineId === "string") {
+					setAutomationModelId(output.engineId);
+				}
+			} catch (error) {
+				setAutomationGoalGenerationError(
+					error instanceof Error
+						? error.message
+						: "Could not generate an automation goal.",
+				);
+			} finally {
+				setIsAutomationGoalGenerating(false);
+			}
+		},
+		[automationModelId, effectiveInsightId, toolContext?.roomId],
+	);
+
+	useEffect(() => {
+		if (
+			!isPlaygroundMode ||
+			isMcpPlaybackMode ||
+			!toolExecutionKey ||
+			!automationModelId ||
+			automationGoalExecutionRef.current === toolExecutionKey
+		) {
+			return;
+		}
+		automationGoalExecutionRef.current = toolExecutionKey;
+		void generateAutomationGoal(false);
+	}, [
+		automationModelId,
+		generateAutomationGoal,
+		isMcpPlaybackMode,
+		isPlaygroundMode,
+		toolExecutionKey,
+	]);
+
 	const executeGeneratedFields = useCallback(
 		async (output: Record<string, unknown>): Promise<number> => {
 			const fields = Array.isArray(output.fields)
@@ -1765,6 +1842,8 @@ export default function App() {
 							? field.label
 							: undefined,
 					tag: typeof field.tag === "string" ? field.tag : undefined,
+					isPassword: field.isPassword === true,
+					storeValue: field.storeValue === true,
 					expectedUrl,
 					expectedTabId,
 				});
@@ -1775,7 +1854,7 @@ export default function App() {
 		[sendReplayEvent],
 	);
 
-	const handleAutomationGenerate = useCallback(
+	const generateAndFillSelectedField = useCallback(
 		async (remoteX: number, remoteY: number) => {
 			if (!session?.sessionId) {
 				toast("No active browser session.");
@@ -1794,7 +1873,7 @@ export default function App() {
 				// Single-field mode: passes x/y so the reactor identifies the clicked field,
 				// but still sees ALL form fields for cross-field reasoning accuracy.
 				const response = await runPixel<Record<string, unknown>>(
-					`FillPlaywrightInput(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, sessionId=${JSON.stringify(session.sessionId)}, limit=20, x=${remoteX}, y=${remoteY});`,
+					`GeneratePlaywrightFieldActions(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, sessionId=${JSON.stringify(session.sessionId)}, limit=20, x=${remoteX}, y=${remoteY});`,
 					effectiveInsightId,
 				);
 
@@ -1853,7 +1932,7 @@ export default function App() {
 		],
 	);
 
-	const handleAutomationClick = useCallback(
+	const handleFieldAutomationTarget = useCallback(
 		async (
 			localX: number,
 			localY: number,
@@ -1870,7 +1949,7 @@ export default function App() {
 					y: remoteY,
 					button,
 				});
-				await handleAutomationGenerate(remoteX, remoteY);
+				await generateAndFillSelectedField(remoteX, remoteY);
 			} catch (error) {
 				toast(
 					error instanceof Error
@@ -1880,10 +1959,10 @@ export default function App() {
 				setAutomationClickPos(null);
 			}
 		},
-		[handleAutomationGenerate, sendReplayEvent],
+		[generateAndFillSelectedField, sendReplayEvent],
 	);
 
-	const handleFillPage = useCallback(async () => {
+	const fillVisibleFieldsFromContext = useCallback(async () => {
 		if (!session?.sessionId) {
 			toast("No active browser session.");
 			return;
@@ -1900,7 +1979,7 @@ export default function App() {
 		try {
 			// All-fields mode: no x/y, reactor fills all visible fields.
 			const response = await runPixel<Record<string, unknown>>(
-				`FillPlaywrightInput(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, sessionId=${JSON.stringify(session.sessionId)}, limit=20);`,
+				`GeneratePlaywrightFieldActions(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, sessionId=${JSON.stringify(session.sessionId)}, limit=20);`,
 				effectiveInsightId,
 			);
 
@@ -2031,6 +2110,8 @@ export default function App() {
 						: null,
 			};
 			const tag = typeof action.tag === "string" ? action.tag : undefined;
+			const isPassword = action.isPassword === true;
+			const storeValue = action.storeValue === true;
 
 			if (type === "click") {
 				const coords = isRecord(action.coords) ? action.coords : {};
@@ -2066,6 +2147,8 @@ export default function App() {
 				selector,
 				label,
 				tag: type === "select" ? "select" : tag,
+				isPassword,
+				storeValue,
 				expectedUrl,
 				expectedTabId,
 			});
@@ -2073,7 +2156,7 @@ export default function App() {
 				iteration,
 				type,
 				label,
-				value,
+				value: isPassword ? "[REDACTED]" : value,
 				pageUrl: expectedUrl || "",
 				reason,
 			};
@@ -2106,8 +2189,13 @@ export default function App() {
 		setAutomationMode(false);
 		setIsGoalAutomationRunning(true);
 		const history: AutomationHistoryEntry[] = [];
-		let resolvedGoal = automationGoal.trim();
+		const resolvedGoal = automationGoal.trim();
 		let reachedGoal = false;
+		if (!resolvedGoal) {
+			setIsGoalAutomationRunning(false);
+			toast("Review or enter an automation goal before running.");
+			return;
+		}
 
 		try {
 			for (
@@ -2122,7 +2210,7 @@ export default function App() {
 				});
 
 				const response = await runPixel<Record<string, unknown>>(
-					`PlanPlaywrightAutomation(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, sessionId=${JSON.stringify(session.sessionId)}, goal=${JSON.stringify(resolvedGoal)}, history=${JSON.stringify(JSON.stringify(history))}, iteration=${iteration}, maxIterations=${automationMaxIterations}, limit=20);`,
+					`PlanNextPlaywrightAction(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, sessionId=${JSON.stringify(session.sessionId)}, goal=${JSON.stringify(resolvedGoal)}, history=${JSON.stringify(JSON.stringify(history))}, iteration=${iteration}, maxIterations=${automationMaxIterations}, limit=20);`,
 					effectiveInsightId,
 				);
 				if (automationRunTokenRef.current !== runToken) return;
@@ -2134,10 +2222,6 @@ export default function App() {
 							? output.error
 							: "Browser automation planning failed.",
 					);
-				}
-				if (!resolvedGoal && typeof output.goal === "string") {
-					resolvedGoal = output.goal;
-					setAutomationGoal(output.goal);
 				}
 				if (!automationModelId && typeof output.engineId === "string") {
 					setAutomationModelId(output.engineId);
@@ -2216,7 +2300,7 @@ export default function App() {
 				/>
 				<div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-1">
 					{isPlaygroundMode && session && (
-						<AutomationButton
+						<AutomationControls
 							insightId={effectiveInsightId}
 							isActive={
 								automationMode ||
@@ -2228,6 +2312,10 @@ export default function App() {
 							subMode={automationSubMode}
 							goal={automationGoal}
 							maxIterations={automationMaxIterations}
+							isGoalGenerating={isAutomationGoalGenerating}
+							goalGenerationError={
+								automationGoalGenerationError || undefined
+							}
 							progressLabel={
 								automationProgress
 									? `Step ${automationProgress.iteration}/${automationProgress.maxIterations}`
@@ -2239,14 +2327,20 @@ export default function App() {
 								} else if (automationSubMode === "run-goal") {
 									void runGoalAutomation();
 								} else if (automationSubMode === "fill-page") {
-									void handleFillPage();
+									void fillVisibleFieldsFromContext();
 								} else {
 									setAutomationMode((on) => !on);
 								}
 							}}
 							onSubModeChange={setAutomationSubMode}
 							onModelChange={setAutomationModelId}
-							onGoalChange={setAutomationGoal}
+							onGoalChange={(goal) => {
+								setAutomationGoal(goal);
+								setAutomationGoalGenerationError("");
+							}}
+							onRegenerateGoal={() =>
+								void generateAutomationGoal(true)
+							}
 							onMaxIterationsChange={setAutomationMaxIterations}
 						/>
 					)}
@@ -2362,12 +2456,9 @@ export default function App() {
 			<div className="relative flex min-h-0 flex-1 overflow-hidden">
 				{/* Click-to-fill loading indicator */}
 				{isAutomationGenerating && automationClickPos && (
-					<AutomationPopup
+					<AutomationActionIndicator
 						localX={automationClickPos.localX}
 						localY={automationClickPos.localY}
-						isGenerating={true}
-						onGenerate={() => undefined}
-						onDismiss={() => undefined}
 					/>
 				)}
 				{pendingTextSelection && (
@@ -2467,7 +2558,7 @@ export default function App() {
 					automationMode={
 						automationMode && automationSubMode === "click"
 					}
-					onAutomationClick={handleAutomationClick}
+					onAutomationClick={handleFieldAutomationTarget}
 				/>
 
 				<ReplaySidebar

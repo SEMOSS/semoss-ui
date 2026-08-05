@@ -66,7 +66,7 @@ export const BrowserToolbar: React.FC<BrowserToolbarProps> = ({
 	onToggleRecording,
 	onOpenSaveRecording,
 }) => {
-	const [urlInput, setUrlInput] = useState("https://github.com");
+	const [urlInput, setUrlInput] = useState(currentUrl);
 	const isActive =
 		connectionState === "connected" || connectionState === "connecting";
 
@@ -78,7 +78,7 @@ export const BrowserToolbar: React.FC<BrowserToolbarProps> = ({
 	};
 
 	React.useEffect(() => {
-		if (currentUrl) setUrlInput(currentUrl);
+		setUrlInput(currentUrl);
 	}, [currentUrl]);
 
 	return (

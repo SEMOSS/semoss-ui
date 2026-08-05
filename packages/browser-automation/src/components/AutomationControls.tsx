@@ -1,9 +1,8 @@
-import { ChevronDown, Square, Wand2 } from "lucide-react";
+import { ChevronDown, RefreshCw, Square, Wand2 } from "lucide-react";
 import type React from "react";
 import { useEffect, useId, useState } from "react";
 import {
 	Button,
-	Input,
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
@@ -13,6 +12,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Spinner,
+	Textarea,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -24,7 +24,7 @@ interface ModelOption {
 	name: string;
 }
 
-interface AutomationButtonProps {
+interface AutomationControlsProps {
 	insightId: string;
 	isActive: boolean;
 	isGoalRunning: boolean;
@@ -32,15 +32,18 @@ interface AutomationButtonProps {
 	subMode: "click" | "fill-page" | "run-goal";
 	goal: string;
 	maxIterations: number;
+	isGoalGenerating: boolean;
+	goalGenerationError?: string;
 	progressLabel?: string;
 	onToggle: () => void;
 	onModelChange: (modelId: string) => void;
 	onSubModeChange: (mode: "click" | "fill-page" | "run-goal") => void;
 	onGoalChange: (goal: string) => void;
+	onRegenerateGoal: () => void;
 	onMaxIterationsChange: (maxIterations: number) => void;
 }
 
-export const AutomationButton: React.FC<AutomationButtonProps> = ({
+export const AutomationControls: React.FC<AutomationControlsProps> = ({
 	insightId,
 	isActive,
 	isGoalRunning,
@@ -48,11 +51,14 @@ export const AutomationButton: React.FC<AutomationButtonProps> = ({
 	subMode,
 	goal,
 	maxIterations,
+	isGoalGenerating,
+	goalGenerationError,
 	progressLabel,
 	onToggle,
 	onModelChange,
 	onSubModeChange,
 	onGoalChange,
+	onRegenerateGoal,
 	onMaxIterationsChange,
 }) => {
 	const [models, setModels] = useState<ModelOption[]>([]);
@@ -112,6 +118,11 @@ export const AutomationButton: React.FC<AutomationButtonProps> = ({
 							isActive
 								? "rounded-r-none bg-accent text-canvas hover:bg-accent/90"
 								: "rounded-r-none"
+						}
+						disabled={
+							!isGoalRunning &&
+							subMode === "run-goal" &&
+							(isGoalGenerating || !goal.trim())
 						}
 						onClick={onToggle}
 					>
@@ -209,15 +220,47 @@ export const AutomationButton: React.FC<AutomationButtonProps> = ({
 							>
 								Goal
 							</label>
-							<Input
+							<Textarea
 								id={goalInputId}
 								value={goal}
 								onChange={(event) =>
 									onGoalChange(event.target.value)
 								}
-								placeholder="Use latest Playground request"
+								placeholder={
+									isGoalGenerating
+										? "Summarizing recent Playground messages…"
+										: "Describe the browser goal"
+								}
 								disabled={isGoalRunning}
+								rows={3}
+								className="min-h-20 resize-y"
 							/>
+							<div className="flex items-start justify-between gap-2">
+								<p
+									className={`text-xs ${
+										goalGenerationError
+											? "text-destructive"
+											: "text-ink-muted"
+									}`}
+								>
+									{goalGenerationError ||
+										"Generated from up to 20 recent messages. Review or edit it before running."}
+								</p>
+								<Button
+									type="button"
+									size="icon-sm"
+									variant="ghost"
+									onClick={onRegenerateGoal}
+									disabled={isGoalGenerating || isGoalRunning}
+									aria-label="Regenerate goal from recent messages"
+								>
+									{isGoalGenerating ? (
+										<Spinner className="h-3.5 w-3.5" />
+									) : (
+										<RefreshCw className="h-3.5 w-3.5" />
+									)}
+								</Button>
+							</div>
 							<label
 								className="font-medium text-sm"
 								htmlFor={maxIterationsId}
@@ -248,10 +291,6 @@ export const AutomationButton: React.FC<AutomationButtonProps> = ({
 									))}
 								</SelectContent>
 							</Select>
-							<p className="text-ink-muted text-xs">
-								Leave the goal empty to use the latest
-								Playground request.
-							</p>
 						</div>
 					)}
 					<p className="mb-2 font-medium text-sm">Model</p>
