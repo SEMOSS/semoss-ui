@@ -1,5 +1,4 @@
 import { Clock } from "lucide-react";
-import type { CSSProperties } from "react";
 import { InputSettings, SelectInputSettings } from "../../settings";
 import { SwitchSettings } from "../../settings/shared/SwitchSettings";
 import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
@@ -9,19 +8,6 @@ import {
 	buildShowField,
 } from "../block-defaults.shared";
 import type { BlockSettingsConfig } from "../settings.types";
-
-export const DefaultStyles: CSSProperties = {};
-
-// Helper function to generate multi-select options for views
-const _getViewsOptions = () => {
-	const views = [
-		{ label: "Hours", value: "hours" },
-		{ label: "Minutes", value: "minutes" },
-		{ label: "Seconds", value: "seconds" },
-	];
-
-	return views;
-};
 
 // export the config for the block
 export const config: BlockSettingsConfig = {

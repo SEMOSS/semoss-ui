@@ -26,6 +26,7 @@ import {
 	useBlocks,
 } from "@semoss/renderer";
 import { runPixel } from "@semoss/sdk";
+import { hasInlineImage } from "@semoss/shared";
 import {
 	Button,
 	ButtonGroup,
@@ -475,6 +476,14 @@ export const NotebookCell = observer(
 			[cell.output],
 		);
 
+		// Python cells return rendered figures as inline base64 images. Badged
+		// in the header the same way JSON is, so it is obvious the Formatted
+		// view is showing a picture rather than markup.
+		const outputHasImage = useMemo(
+			() => hasInlineImage(rawOutput),
+			[rawOutput],
+		);
+
 		const outputStats = useMemo(() => {
 			const lines = rawOutput ? rawOutput.split("\n").length : 0;
 			const bytes = rawOutput
@@ -514,6 +523,11 @@ export const NotebookCell = observer(
 					{outputIsJson && (
 						<span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
 							JSON
+						</span>
+					)}
+					{outputHasImage && (
+						<span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+							Image
 						</span>
 					)}
 				</div>
@@ -1240,6 +1254,9 @@ export const NotebookCell = observer(
 										expandAll={expandAllLogging}
 										hideJsonToggle
 										fixedHeight
+										// the modal has room, so show figures
+										// at full size
+										imageClassName="max-h-none"
 									/>
 								)}
 							</div>
@@ -1370,6 +1387,9 @@ export const NotebookCell = observer(
 														}
 														hideJsonToggle
 														fixedJsonHeight
+														// the modal has room,
+														// so show figures full size
+														imageClassName="max-h-none"
 														cellData={{
 															cellId: cell.id.toString(),
 															queryId:

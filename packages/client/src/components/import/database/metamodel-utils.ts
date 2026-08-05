@@ -342,18 +342,18 @@ export const createPayloadsFromFlowStates = (
 	return payloads;
 };
 
-export function getPrimaryProp(props?: Property[]): Property | null {
+function getPrimaryProp(props?: Property[]): Property | null {
 	if (!Array.isArray(props)) return null;
 	const found = props.find((p) => Boolean(p?.isPrimary));
 	return found ?? null;
 }
 
-export function getNonPrimaryProps<T extends Property>(props?: T[]): T[] {
+function getNonPrimaryProps<T extends Property>(props?: T[]): T[] {
 	if (!Array.isArray(props)) return [];
 	return props.filter((p) => !p?.isPrimary);
 }
 
-export function defineName(node: MetaNode): string {
+function defineName(node: MetaNode): string {
 	const props: Property[] = Array.isArray(node.data?.properties)
 		? node.data.properties
 		: [];

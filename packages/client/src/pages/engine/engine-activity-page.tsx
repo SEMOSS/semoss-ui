@@ -7,6 +7,6 @@ import { AuditLogsDashboard } from "../audit-logs-dashboard";
  * route params; the engine-type display name comes from the engine context.
  */
 export const EngineActivityPage = () => {
-	const { name } = useEngine();
-	return <AuditLogsDashboard catalogName={name} embedded />;
+	const { catalog } = useEngine();
+	return <AuditLogsDashboard catalogName={catalog.name} embedded />;
 };
