@@ -1,30 +1,39 @@
 /**
- * BoxPlotChart — pure SVG box-and-whisker chart.
- * Props: data (array of row objects), config (VisualizationConfig).
+ * BoxPlotChart — Recharts-based box-and-whisker chart.
  *
  * Config fields used:
- *   config.xKey        — category column (one box per unique value)
- *   config.yKeys[0]    — numeric value column (the distribution to analyse)
- *   config.styling?.boxplot — BoxPlotStyling options
+ *   config.xKey               — category column (one box per unique value)
+ *   config.yKeys[0]           — numeric value column (the distribution to analyse)
+ *   config.styling?.boxplot   — BoxPlotStyling options
+ *   config.styling?.colorPalette — color palette
  */
-import type { VisualizationConfig } from "@/types/dashboard";
 
-const PALETTE = [
-	"#6366f1",
-	"#8b5cf6",
-	"#ec4899",
-	"#f59e0b",
-	"#10b981",
-	"#3b82f6",
-	"#ef4444",
-	"#14b8a6",
-	"#f97316",
-	"#84cc16",
-];
+import { useMemo, useRef, useState } from "react";
+import {
+	Bar,
+	CartesianGrid,
+	ComposedChart,
+	ResponsiveContainer,
+	Tooltip,
+	usePlotArea,
+	XAxis,
+	YAxis,
+	ZIndexLayer,
+} from "recharts";
+import {
+	AXIS_STYLE,
+	CHART_COLORS,
+	compareColorRule,
+	GRID_STYLE,
+} from "@/components/visualizations/shared/chartShared";
+import type {
+	ColorPalette as ColorPaletteType,
+	ColorRule,
+	VisualizationConfig,
+} from "@/types/dashboard";
 
-// ── Stats helpers ─────────────────────────────────────────────────────────────
+// ── Stats helpers ──────────────────────────────────────────────────────────────
 
-/** Return the percentile value from a sorted array (linear interpolation). */
 function percentile(sorted: number[], p: number): number {
 	if (sorted.length === 0) return 0;
 	if (sorted.length === 1) return sorted[0];
@@ -36,7 +45,6 @@ function percentile(sorted: number[], p: number): number {
 }
 
 interface BoxStats {
-	category: string;
 	count: number;
 	min: number;
 	q1: number;
@@ -51,8 +59,9 @@ interface BoxStats {
 function computeBoxStats(
 	values: number[],
 	whiskerType: "minmax" | "iqr",
-): Omit<BoxStats, "category" | "count"> {
+): BoxStats {
 	const sorted = [...values].sort((a, b) => a - b);
+	const count = sorted.length;
 	const min = sorted[0];
 	const max = sorted[sorted.length - 1];
 	const q1 = percentile(sorted, 25);
@@ -61,6 +70,7 @@ function computeBoxStats(
 
 	if (whiskerType === "minmax") {
 		return {
+			count,
 			min,
 			q1,
 			median,
@@ -72,59 +82,733 @@ function computeBoxStats(
 		};
 	}
 
-	// IQR mode
 	const iqr = q3 - q1;
 	const lowerFence = q1 - 1.5 * iqr;
 	const upperFence = q3 + 1.5 * iqr;
 	const whiskerLow = sorted.find((v) => v >= lowerFence) ?? min;
-	const whiskerHighCandidate = [...sorted]
-		.reverse()
-		.find((v) => v <= upperFence);
-	const whiskerHigh = whiskerHighCandidate ?? max;
+	const whiskerHigh =
+		[...sorted].reverse().find((v) => v <= upperFence) ?? max;
 	const outliers = sorted.filter((v) => v < lowerFence || v > upperFence);
-	return { min, q1, median, q3, max, whiskerLow, whiskerHigh, outliers };
+	return {
+		count,
+		min,
+		q1,
+		median,
+		q3,
+		max,
+		whiskerLow,
+		whiskerHigh,
+		outliers,
+	};
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
+const CAP_HALF = 6;
+
+// ── Brush components (mirrors Bar_Chart pattern) ───────────────────────────────
+
+function YAxisBrush({
+	dataYMin,
+	dataYMax,
+	value,
+	onChange,
+	marginTop = 4,
+	marginBottom = 4,
+}: {
+	dataYMin: number;
+	dataYMax: number;
+	value: [number, number];
+	onChange: (v: [number, number]) => void;
+	marginTop?: number;
+	marginBottom?: number;
+}) {
+	const trackRef = useRef<HTMLDivElement>(null);
+	const drag = useRef<{
+		handle: "min" | "max";
+		startY: number;
+		startVal: [number, number];
+	} | null>(null);
+
+	const onPointerDown =
+		(handle: "min" | "max") => (e: React.PointerEvent<HTMLDivElement>) => {
+			e.preventDefault();
+			e.currentTarget.setPointerCapture(e.pointerId);
+			drag.current = {
+				handle,
+				startY: e.clientY,
+				startVal: [value[0], value[1]],
+			};
+		};
+
+	const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+		if (!drag.current || !trackRef.current) return;
+		const h = trackRef.current.getBoundingClientRect().height;
+		if (!h) return;
+		const delta = -(e.clientY - drag.current.startY) / h;
+		const [lo, hi] = drag.current.startVal;
+		if (drag.current.handle === "max") {
+			onChange([lo, Math.min(1, Math.max(lo + 0.02, hi + delta))]);
+		} else {
+			onChange([Math.max(0, Math.min(hi - 0.02, lo + delta)), hi]);
+		}
+	};
+
+	const onPointerUp = () => {
+		drag.current = null;
+	};
+
+	const topPct = (frac: number) => `${(1 - frac) * 100}%`;
+	const nonSelTopH = `${(1 - value[1]) * 100}%`;
+	const nonSelBotH = `${value[0] * 100}%`;
+	const fmt = (frac: number) =>
+		Math.round(dataYMin + frac * (dataYMax - dataYMin)).toLocaleString();
+
+	const traveller = (handle: "min" | "max"): React.CSSProperties => ({
+		position: "absolute",
+		left: 0,
+		right: 0,
+		top: topPct(handle === "max" ? value[1] : value[0]),
+		height: 6,
+		marginTop: -3,
+		background: "#f8fafc",
+		border: "1px solid #cbd5e1",
+		cursor: "ns-resize",
+		zIndex: 2,
+		borderRadius: 1,
+	});
+
+	return (
+		<div
+			style={{
+				width: 20,
+				flexShrink: 0,
+				paddingTop: marginTop,
+				paddingBottom: marginBottom,
+				boxSizing: "border-box",
+			}}
+			onPointerMove={onPointerMove}
+			onPointerUp={onPointerUp}
+			onPointerLeave={onPointerUp}
+		>
+			<div
+				ref={trackRef}
+				style={{
+					position: "relative",
+					height: "100%",
+					border: "1px solid #cbd5e1",
+					background: "#f8fafc",
+					borderRadius: 2,
+					boxSizing: "border-box",
+					overflow: "hidden",
+				}}
+			>
+				<div
+					style={{
+						position: "absolute",
+						left: 0,
+						right: 0,
+						top: 0,
+						height: nonSelTopH,
+						background: "rgba(0,0,0,0.07)",
+						pointerEvents: "none",
+					}}
+				/>
+				<div
+					style={{
+						position: "absolute",
+						left: 0,
+						right: 0,
+						bottom: 0,
+						height: nonSelBotH,
+						background: "rgba(0,0,0,0.07)",
+						pointerEvents: "none",
+					}}
+				/>
+				<div
+					title={`Max: ${fmt(value[1])}`}
+					onPointerDown={onPointerDown("max")}
+					style={traveller("max")}
+				/>
+				<div
+					title={`Min: ${fmt(value[0])}`}
+					onPointerDown={onPointerDown("min")}
+					style={traveller("min")}
+				/>
+			</div>
+		</div>
+	);
+}
+
+function XAxisBrush({
+	value,
+	onChange,
+	marginLeft = 0,
+	marginRight = 0,
+}: {
+	value: [number, number];
+	onChange: (v: [number, number]) => void;
+	marginLeft?: number;
+	marginRight?: number;
+}) {
+	const trackRef = useRef<HTMLDivElement>(null);
+	const drag = useRef<{
+		handle: "left" | "right";
+		startX: number;
+		startVal: [number, number];
+	} | null>(null);
+
+	const onPointerDown =
+		(handle: "left" | "right") =>
+		(e: React.PointerEvent<HTMLDivElement>) => {
+			e.preventDefault();
+			e.currentTarget.setPointerCapture(e.pointerId);
+			drag.current = {
+				handle,
+				startX: e.clientX,
+				startVal: [value[0], value[1]],
+			};
+		};
+
+	const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+		if (!drag.current || !trackRef.current) return;
+		const w = trackRef.current.getBoundingClientRect().width;
+		if (!w) return;
+		const delta = (e.clientX - drag.current.startX) / w;
+		const [lo, hi] = drag.current.startVal;
+		if (drag.current.handle === "left") {
+			onChange([Math.max(0, Math.min(hi - 0.02, lo + delta)), hi]);
+		} else {
+			onChange([lo, Math.min(1, Math.max(lo + 0.02, hi + delta))]);
+		}
+	};
+
+	const onPointerUp = () => {
+		drag.current = null;
+	};
+
+	const leftPct = `${value[0] * 100}%`;
+	const rightPct = `${(1 - value[1]) * 100}%`;
+
+	const travellerStyle = (side: "left" | "right"): React.CSSProperties => ({
+		position: "absolute",
+		top: 0,
+		bottom: 0,
+		left: side === "left" ? leftPct : `${value[1] * 100}%`,
+		width: 6,
+		marginLeft: -3,
+		background: "#f8fafc",
+		border: "1px solid #cbd5e1",
+		cursor: "ew-resize",
+		zIndex: 2,
+		borderRadius: 1,
+	});
+
+	return (
+		<div
+			style={{
+				paddingLeft: marginLeft,
+				paddingRight: marginRight,
+				paddingTop: 8,
+				boxSizing: "border-box",
+				flexShrink: 0,
+			}}
+			onPointerMove={onPointerMove}
+			onPointerUp={onPointerUp}
+			onPointerLeave={onPointerUp}
+		>
+			<div
+				ref={trackRef}
+				style={{
+					position: "relative",
+					height: 20,
+					border: "1px solid #cbd5e1",
+					background: "#f8fafc",
+					borderRadius: 2,
+					boxSizing: "border-box",
+					overflow: "hidden",
+				}}
+			>
+				<div
+					style={{
+						position: "absolute",
+						top: 0,
+						bottom: 0,
+						left: 0,
+						width: leftPct,
+						background: "rgba(0,0,0,0.07)",
+						pointerEvents: "none",
+					}}
+				/>
+				<div
+					style={{
+						position: "absolute",
+						top: 0,
+						bottom: 0,
+						right: 0,
+						width: rightPct,
+						background: "rgba(0,0,0,0.07)",
+						pointerEvents: "none",
+					}}
+				/>
+				<div
+					onPointerDown={onPointerDown("left")}
+					style={travellerStyle("left")}
+				/>
+				<div
+					onPointerDown={onPointerDown("right")}
+					style={travellerStyle("right")}
+				/>
+			</div>
+		</div>
+	);
+}
+
+// ── Box datum type ─────────────────────────────────────────────────────────────
+
+interface BoxDatum extends BoxStats {
+	category: string;
+	color: string;
+	_placeholder: number;
+}
+
+// ── BoxPlotShapes ──────────────────────────────────────────────────────────────
+//
+// Recharts scale hooks (useXAxisScale / useYAxisScale) return plot-area-relative
+// coordinates (range starts at 0). plotArea.x / plotArea.y give the absolute SVG
+// offset of the plot area. We compute all positions manually using plotArea so
+// boxes are anchored correctly over their category labels.
+
+interface BoxPlotShapesProps {
+	data: BoxDatum[];
+	fillOpacity: number;
+	showOutliers: boolean;
+	flipAxis: boolean;
+	/** Numeric axis domain min — must match the YAxis (or XAxis when flipped) domain. */
+	valueDomainMin: number;
+	/** Numeric axis domain max. */
+	valueDomainMax: number;
+}
+
+function BoxPlotShapes({
+	data,
+	fillOpacity,
+	showOutliers,
+	flipAxis,
+	valueDomainMin,
+	valueDomainMax,
+}: BoxPlotShapesProps) {
+	const plotArea = usePlotArea();
+	if (!plotArea || !data.length) return null;
+
+	const { x: px, y: py, width: pw, height: ph } = plotArea;
+	const n = data.length;
+	const domainSpan = valueDomainMax - valueDomainMin || 1;
+
+	// Convert a data value to its absolute SVG position on the numeric axis.
+	// clamp keeps drawn elements inside the visible plot area when the brush clips the domain.
+	const clamp = (v: number, lo: number, hi: number) =>
+		Math.max(lo, Math.min(hi, v));
+
+	const toAbsY = (v: number): number => {
+		const frac = (v - valueDomainMin) / domainSpan;
+		return clamp(py + ph - frac * ph, py, py + ph);
+	};
+
+	const toAbsX = (v: number): number => {
+		const frac = (v - valueDomainMin) / domainSpan;
+		return clamp(px + frac * pw, px, px + pw);
+	};
+
+	const shapes = data.map((d, i) => {
+		const color = d.color;
+
+		if (flipAxis) {
+			// layout="vertical": categories on Y (equal-height slots), values on X
+			const slotH = ph / n;
+			const cy = py + (i + 0.5) * slotH;
+			const boxHalf = Math.min(16, slotH * 0.35);
+
+			const xWLow = toAbsX(d.whiskerLow);
+			const xQ1 = toAbsX(d.q1);
+			const xMedian = toAbsX(d.median);
+			const xQ3 = toAbsX(d.q3);
+			const xWHigh = toAbsX(d.whiskerHigh);
+
+			return (
+				<g key={d.category}>
+					<line
+						x1={xWLow}
+						y1={cy}
+						x2={xQ1}
+						y2={cy}
+						stroke={color}
+						strokeWidth={1.5}
+						strokeDasharray="3 2"
+					/>
+					<line
+						x1={xWLow}
+						y1={cy - CAP_HALF}
+						x2={xWLow}
+						y2={cy + CAP_HALF}
+						stroke={color}
+						strokeWidth={1.5}
+					/>
+					<rect
+						x={xQ1}
+						y={cy - boxHalf}
+						width={Math.max(1, xQ3 - xQ1)}
+						height={boxHalf * 2}
+						fill={color}
+						fillOpacity={fillOpacity}
+						stroke={color}
+						strokeWidth={1.5}
+						rx={2}
+					/>
+					<line
+						x1={xMedian}
+						y1={cy - boxHalf}
+						x2={xMedian}
+						y2={cy + boxHalf}
+						stroke={color}
+						strokeWidth={2.5}
+					/>
+					<line
+						x1={xQ3}
+						y1={cy}
+						x2={xWHigh}
+						y2={cy}
+						stroke={color}
+						strokeWidth={1.5}
+						strokeDasharray="3 2"
+					/>
+					<line
+						x1={xWHigh}
+						y1={cy - CAP_HALF}
+						x2={xWHigh}
+						y2={cy + CAP_HALF}
+						stroke={color}
+						strokeWidth={1.5}
+					/>
+					{showOutliers &&
+						d.outliers.map((ov, oi) => (
+							<circle
+								key={oi}
+								cx={toAbsX(ov)}
+								cy={cy}
+								r={3}
+								fill="none"
+								stroke={color}
+								strokeWidth={1.5}
+							/>
+						))}
+				</g>
+			);
+		} else {
+			// layout="horizontal": categories on X (equal-width slots), values on Y
+			const slotW = pw / n;
+			const cx = px + (i + 0.5) * slotW;
+			const boxHalf = Math.min(24, slotW * 0.4);
+
+			const yWLow = toAbsY(d.whiskerLow);
+			const yQ1 = toAbsY(d.q1);
+			const yMedian = toAbsY(d.median);
+			const yQ3 = toAbsY(d.q3);
+			const yWHigh = toAbsY(d.whiskerHigh);
+
+			return (
+				<g key={d.category}>
+					{/* Lower whisker stem: Q1 → whiskerLow */}
+					<line
+						x1={cx}
+						y1={yQ1}
+						x2={cx}
+						y2={yWLow}
+						stroke={color}
+						strokeWidth={1.5}
+						strokeDasharray="3 2"
+					/>
+					<line
+						x1={cx - CAP_HALF}
+						y1={yWLow}
+						x2={cx + CAP_HALF}
+						y2={yWLow}
+						stroke={color}
+						strokeWidth={1.5}
+					/>
+					{/* Box: Q1 to Q3 */}
+					<rect
+						x={cx - boxHalf}
+						y={yQ3}
+						width={boxHalf * 2}
+						height={Math.max(1, yQ1 - yQ3)}
+						fill={color}
+						fillOpacity={fillOpacity}
+						stroke={color}
+						strokeWidth={1.5}
+						rx={2}
+					/>
+					{/* Median */}
+					<line
+						x1={cx - boxHalf}
+						y1={yMedian}
+						x2={cx + boxHalf}
+						y2={yMedian}
+						stroke={color}
+						strokeWidth={2.5}
+					/>
+					{/* Upper whisker stem: Q3 → whiskerHigh */}
+					<line
+						x1={cx}
+						y1={yQ3}
+						x2={cx}
+						y2={yWHigh}
+						stroke={color}
+						strokeWidth={1.5}
+						strokeDasharray="3 2"
+					/>
+					<line
+						x1={cx - CAP_HALF}
+						y1={yWHigh}
+						x2={cx + CAP_HALF}
+						y2={yWHigh}
+						stroke={color}
+						strokeWidth={1.5}
+					/>
+					{showOutliers &&
+						d.outliers.map((ov, oi) => (
+							<circle
+								key={oi}
+								cx={cx}
+								cy={toAbsY(ov)}
+								r={3}
+								fill="none"
+								stroke={color}
+								strokeWidth={1.5}
+							/>
+						))}
+				</g>
+			);
+		}
+	});
+
+	return (
+		<ZIndexLayer zIndex={300}>
+			<g>{shapes}</g>
+		</ZIndexLayer>
+	);
+}
+
+// ── Tooltip ────────────────────────────────────────────────────────────────────
+
+function fmtNum(v: number): string {
+	if (Math.abs(v) >= 1_000_000) return `${(v / 1_000_000).toFixed(2)}M`;
+	if (Math.abs(v) >= 1_000) return `${(v / 1_000).toFixed(1)}k`;
+	return v % 1 === 0 ? String(Math.round(v)) : v.toFixed(2);
+}
+
+function BoxTooltip({ active, payload }: any) {
+	if (!active || !payload?.length) return null;
+	const d: BoxDatum = payload[0]?.payload;
+	if (!d) return null;
+	return (
+		<div className="min-w-[140px] rounded-lg border border-stone-200 bg-white p-3 text-xs shadow-lg">
+			<div className="mb-2 border-stone-100 border-b pb-1.5 font-semibold text-stone-800">
+				{d.category}
+			</div>
+			<div className="space-y-1 text-stone-600">
+				<div className="flex justify-between gap-4">
+					<span>Max</span>
+					<span className="font-medium text-stone-800">
+						{fmtNum(d.max)}
+					</span>
+				</div>
+				<div className="flex justify-between gap-4">
+					<span>Q3 (75%)</span>
+					<span className="font-medium text-stone-800">
+						{fmtNum(d.q3)}
+					</span>
+				</div>
+				<div className="flex justify-between gap-4">
+					<span>Median</span>
+					<span className="font-medium text-stone-800">
+						{fmtNum(d.median)}
+					</span>
+				</div>
+				<div className="flex justify-between gap-4">
+					<span>Q1 (25%)</span>
+					<span className="font-medium text-stone-800">
+						{fmtNum(d.q1)}
+					</span>
+				</div>
+				<div className="flex justify-between gap-4">
+					<span>Min</span>
+					<span className="font-medium text-stone-800">
+						{fmtNum(d.min)}
+					</span>
+				</div>
+				<div className="flex justify-between gap-4 border-stone-100 border-t pt-1">
+					<span>Count</span>
+					<span className="font-medium text-stone-800">
+						{d.count}
+					</span>
+				</div>
+				{d.outliers.length > 0 && (
+					<div className="flex justify-between gap-4">
+						<span>Outliers</span>
+						<span className="font-medium text-stone-800">
+							{d.outliers.length}
+						</span>
+					</div>
+				)}
+			</div>
+		</div>
+	);
+}
+
+// ── Component ──────────────────────────────────────────────────────────────────
 
 interface BoxPlotChartProps {
 	data: any[];
 	config?: VisualizationConfig;
 }
 
-const SVG_W = 500;
-const SVG_H = 350;
-const PAD_TOP = 24;
-const PAD_BOTTOM = 60;
-const PAD_LEFT = 52;
-const PAD_RIGHT = 20;
-const CHART_W = SVG_W - PAD_LEFT - PAD_RIGHT;
-const CHART_H = SVG_H - PAD_TOP - PAD_BOTTOM;
-const GRID_LINES = 5;
-const CAP_HALF = 8; // half-width of whisker horizontal caps
-
 export function BoxPlotChart({ data, config }: BoxPlotChartProps) {
 	const xKey = config?.xKey ?? "";
-	const yKey = config?.yKeys?.[0] ?? "";
+	const yKeys = config?.yKeys ?? [];
+	const yKey = yKeys[0] ?? "";
+	const bpStyling = config?.styling?.boxplot ?? {};
 
-	const bpStyling = (config?.styling as any)?.boxplot ?? {};
-	const showOutliers: boolean = bpStyling.showOutliers !== false;
+	const showOutliers = bpStyling.showOutliers !== false;
 	const whiskerType: "minmax" | "iqr" =
 		bpStyling.whiskerType === "minmax" ? "minmax" : "iqr";
-	const fillOpacity: number =
+	const fillOpacity =
 		typeof bpStyling.fillOpacity === "number" ? bpStyling.fillOpacity : 0.6;
+	const flipAxis = bpStyling.flipAxis === true;
+	const showTooltip = bpStyling.showTooltip !== false;
+	const zoomX = bpStyling.zoomX === true;
+	const zoomY = bpStyling.zoomY === true;
+	const colorRules = useMemo<ColorRule[]>(
+		() => bpStyling.colorRules ?? [],
+		[bpStyling.colorRules],
+	);
+	const xCfg = bpStyling.xAxisConfig ?? {};
+	const yCfg = bpStyling.yAxisConfig ?? {};
 
-	// ── Unconfigured / no data states ──────────────────────────────────────────
+	// Resolve color palette
+	const palette = useMemo(() => {
+		const cp = config?.styling?.colorPalette as
+			| ColorPaletteType
+			| undefined;
+		return cp?.colors?.length ? cp.colors : CHART_COLORS;
+	}, [config?.styling?.colorPalette]);
+
+	// Compute box stats per category
+	const allBoxData = useMemo<BoxDatum[]>(() => {
+		if (!xKey || !yKey || !data.length) return [];
+		const grouped = new Map<string, number[]>();
+		for (const row of data) {
+			const cat = String(row[xKey] ?? "");
+			const val = Number(row[yKey]);
+			if (!isNaN(val)) {
+				if (!grouped.has(cat)) grouped.set(cat, []);
+				grouped.get(cat)!.push(val);
+			}
+		}
+		return Array.from(grouped.entries()).map(([category, values], i) => {
+			const stats = computeBoxStats(values, whiskerType);
+			let color = palette[i % palette.length];
+			for (const rule of colorRules) {
+				const vc = rule.valueColumn;
+				// xKey column → compare the category label string
+				if (vc === xKey) {
+					if (
+						compareColorRule(rule.comparator, category, rule.value)
+					) {
+						color = rule.color;
+						break;
+					}
+					continue;
+				}
+				// Any y-axis column → compare the median of its distribution
+				// Named stat shortcuts also accepted
+				const statValue =
+					yKeys.includes(vc) || vc === "median"
+						? stats.median
+						: vc === "q1"
+							? stats.q1
+							: vc === "q3"
+								? stats.q3
+								: vc === "min"
+									? stats.min
+									: vc === "max"
+										? stats.max
+										: vc === "count"
+											? stats.count
+											: undefined;
+				if (
+					statValue !== undefined &&
+					compareColorRule(rule.comparator, statValue, rule.value)
+				) {
+					color = rule.color;
+					break;
+				}
+			}
+			return { category, color, _placeholder: 0, ...stats };
+		});
+	}, [data, xKey, yKey, yKeys, whiskerType, palette, colorRules]);
+
+	// X brush state
+	const [xBrushFrac, setXBrushFrac] = useState<[number, number]>([0, 1]);
+	// Y brush state
+	const [yBrushFrac, setYBrushFrac] = useState<[number, number]>([0, 1]);
+
+	// Filter visible data by X brush
+	const visibleData = useMemo(() => {
+		if (!zoomX || allBoxData.length < 2) return allBoxData;
+		const n = allBoxData.length;
+		const start = Math.floor(xBrushFrac[0] * n);
+		const end = Math.ceil(xBrushFrac[1] * n);
+		return allBoxData.slice(Math.max(0, start), Math.min(n, end));
+	}, [allBoxData, zoomX, xBrushFrac]);
+
+	// Compute full Y data range (outliers included when shown)
+	const { dataYMin, dataYMax } = useMemo(() => {
+		if (!visibleData.length) return { dataYMin: 0, dataYMax: 1 };
+		let lo = Infinity,
+			hi = -Infinity;
+		for (const d of visibleData) {
+			lo = Math.min(lo, d.whiskerLow);
+			hi = Math.max(hi, d.whiskerHigh);
+			if (showOutliers && d.outliers.length) {
+				lo = Math.min(lo, ...d.outliers);
+				hi = Math.max(hi, ...d.outliers);
+			}
+		}
+		const pad = (hi - lo) * 0.1 || 1;
+		return { dataYMin: lo - pad, dataYMax: hi + pad };
+	}, [visibleData, showOutliers]);
+
+	const yBrushActive = zoomY && (yBrushFrac[0] > 0 || yBrushFrac[1] < 1);
+	const yDomain: [number, number] = yBrushActive
+		? [
+				dataYMin + yBrushFrac[0] * (dataYMax - dataYMin),
+				dataYMin + yBrushFrac[1] * (dataYMax - dataYMin),
+			]
+		: [dataYMin, dataYMax];
+
+	// Axis labels from AxisConfig, falling back to key name
+	const xAxisLabel = xCfg.title || (xKey ? xKey : undefined);
+	const yAxisLabel = yCfg.title || (yKey ? yKey : undefined);
+
+	// Empty / unconfigured states
 	if (!xKey || !yKey) {
 		return (
 			<div className="flex h-full items-center justify-center text-slate-400 text-sm">
-				Configure a Category column and a Values column to render the
-				box plot.
+				Configure a Category (X-Axis) and Values (Y-Axis) column to
+				render the box plot.
 			</div>
 		);
 	}
-
-	if (!data.length) {
+	if (!data.length || !visibleData.length) {
 		return (
 			<div className="flex h-full items-center justify-center text-slate-400 text-sm">
 				No data
@@ -132,230 +816,213 @@ export function BoxPlotChart({ data, config }: BoxPlotChartProps) {
 		);
 	}
 
-	// ── Group values by category ───────────────────────────────────────────────
-	const grouped = new Map<string, number[]>();
-	for (const row of data) {
-		const cat = String(row[xKey] ?? "");
-		const val = Number(row[yKey]);
-		if (isNaN(val)) continue;
-		if (!grouped.has(cat)) grouped.set(cat, []);
-		grouped.get(cat)!.push(val);
-	}
-
-	const categories = Array.from(grouped.keys());
-	if (categories.length === 0) {
-		return (
-			<div className="flex h-full items-center justify-center text-slate-400 text-sm">
-				No numeric values in the selected column.
-			</div>
-		);
-	}
-
-	const boxes: BoxStats[] = categories.map((cat) => {
-		const vals = grouped.get(cat)!;
-		return {
-			category: cat,
-			count: vals.length,
-			...computeBoxStats(vals, whiskerType),
-		};
-	});
-
-	// ── Y scale ───────────────────────────────────────────────────────────────
-	const allValues = boxes.flatMap((b) =>
-		showOutliers
-			? [b.whiskerLow, b.whiskerHigh, ...b.outliers]
-			: [b.whiskerLow, b.whiskerHigh],
-	);
-	const rawMin = Math.min(...allValues);
-	const rawMax = Math.max(...allValues);
-	const valueRange = rawMax - rawMin || 1;
-	const yMin = rawMin - valueRange * 0.08;
-	const yMax = rawMax + valueRange * 0.08;
-	const yRange = yMax - yMin;
-
-	const toY = (v: number) =>
-		PAD_TOP + CHART_H - ((v - yMin) / yRange) * CHART_H;
-
-	// ── X layout ──────────────────────────────────────────────────────────────
-	const n = categories.length;
-	const boxWidth = Math.min(40, (CHART_W / n) * 0.5);
-	const catX = (i: number) => PAD_LEFT + (i + 0.5) * (CHART_W / n);
-
-	// ── Grid line values ──────────────────────────────────────────────────────
-	const gridVals = Array.from(
-		{ length: GRID_LINES + 1 },
-		(_, i) => yMin + (i / GRID_LINES) * yRange,
-	);
-
-	// ── Format Y tick ─────────────────────────────────────────────────────────
-	const fmtY = (v: number) => {
-		if (Math.abs(v) >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
-		if (Math.abs(v) >= 1_000) return `${(v / 1_000).toFixed(1)}k`;
-		return v % 1 === 0 ? String(Math.round(v)) : v.toFixed(1);
-	};
-
 	return (
-		<svg
-			viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-			className="h-full w-full"
-			style={{ display: "block" }}
-			aria-label="Box plot chart"
+		<div
+			style={{
+				display: "flex",
+				flexDirection: "column",
+				width: "100%",
+				height: "100%",
+			}}
 		>
-			{/* Grid lines + Y axis labels */}
-			{gridVals.map((v, i) => {
-				const y = toY(v);
-				return (
-					<g key={i}>
-						<line
-							x1={PAD_LEFT}
-							x2={PAD_LEFT + CHART_W}
-							y1={y}
-							y2={y}
-							stroke="#e2e8f0"
-							strokeWidth={1}
-						/>
-						<text
-							x={PAD_LEFT - 4}
-							y={y}
-							textAnchor="end"
-							dominantBaseline="middle"
-							fontSize={9}
-							fill="#94a3b8"
-						>
-							{fmtY(v)}
-						</text>
-					</g>
-				);
-			})}
-
-			{/* X axis baseline */}
-			<line
-				x1={PAD_LEFT}
-				x2={PAD_LEFT + CHART_W}
-				y1={PAD_TOP + CHART_H}
-				y2={PAD_TOP + CHART_H}
-				stroke="#cbd5e1"
-				strokeWidth={1}
-			/>
-
-			{/* Boxes */}
-			{boxes.map((b, i) => {
-				const cx = catX(i);
-				const color = PALETTE[i % PALETTE.length];
-				const yQ1 = toY(b.q1);
-				const yQ3 = toY(b.q3);
-				const yMedian = toY(b.median);
-				const yWLow = toY(b.whiskerLow);
-				const yWHigh = toY(b.whiskerHigh);
-				// In SVG, larger Y = lower on screen; Q3 > Q1 so yQ3 < yQ1
-				const boxTop = Math.min(yQ1, yQ3);
-				const boxH = Math.abs(yQ3 - yQ1) || 1;
-
-				return (
-					<g key={b.category}>
-						{/* Lower whisker stem: Q1 down to whiskerLow */}
-						<line
-							x1={cx}
-							x2={cx}
-							y1={yQ1}
-							y2={yWLow}
-							stroke={color}
-							strokeWidth={1.5}
-							strokeDasharray="3 2"
-						/>
-						{/* Lower whisker cap */}
-						<line
-							x1={cx - CAP_HALF}
-							x2={cx + CAP_HALF}
-							y1={yWLow}
-							y2={yWLow}
-							stroke={color}
-							strokeWidth={1.5}
+			<div
+				style={{
+					display: "flex",
+					flex: 1,
+					minHeight: 0,
+					gap: zoomY ? 4 : 0,
+				}}
+			>
+				<ResponsiveContainer width="100%" height="100%">
+					<ComposedChart
+						data={visibleData}
+						layout={flipAxis ? "vertical" : "horizontal"}
+						margin={{
+							top: 8,
+							right: 8,
+							left: 0,
+							bottom: xAxisLabel && !flipAxis ? 16 : 4,
+						}}
+					>
+						<CartesianGrid
+							{...GRID_STYLE}
+							horizontal={!flipAxis}
+							vertical={flipAxis}
 						/>
 
-						{/* Upper whisker stem: Q3 up to whiskerHigh */}
-						<line
-							x1={cx}
-							x2={cx}
-							y1={yQ3}
-							y2={yWHigh}
-							stroke={color}
-							strokeWidth={1.5}
-							strokeDasharray="3 2"
-						/>
-						{/* Upper whisker cap */}
-						<line
-							x1={cx - CAP_HALF}
-							x2={cx + CAP_HALF}
-							y1={yWHigh}
-							y2={yWHigh}
-							stroke={color}
-							strokeWidth={1.5}
-						/>
-
-						{/* Box body (Q1 to Q3) */}
-						<rect
-							x={cx - boxWidth / 2}
-							y={boxTop}
-							width={boxWidth}
-							height={boxH}
-							fill={color}
-							fillOpacity={fillOpacity}
-							stroke={color}
-							strokeWidth={1.5}
-							rx={2}
-						/>
-
-						{/* Median line */}
-						<line
-							x1={cx - boxWidth / 2}
-							x2={cx + boxWidth / 2}
-							y1={yMedian}
-							y2={yMedian}
-							stroke={color}
-							strokeWidth={2.5}
-						/>
-
-						{/* Outlier dots */}
-						{showOutliers &&
-							b.outliers.map((ov, oi) => (
-								<circle
-									key={oi}
-									cx={cx}
-									cy={toY(ov)}
-									r={3}
-									fill="none"
-									stroke={color}
-									strokeWidth={1.5}
+						{flipAxis ? (
+							<>
+								{/* Flipped: value axis is X, category axis is Y */}
+								<XAxis
+									type="number"
+									domain={yDomain}
+									allowDataOverflow={yBrushActive}
+									tick={
+										yCfg.showLabels === false
+											? false
+											: {
+													...AXIS_STYLE,
+													fontSize:
+														yCfg.fontSize ??
+														AXIS_STYLE.fontSize,
+												}
+									}
+									axisLine={false}
+									tickLine={yCfg.showTicks ?? true}
+									tickMargin={yCfg.axisGap ?? undefined}
+									label={
+										yAxisLabel
+											? {
+													value: yAxisLabel,
+													position: "insideBottom",
+													offset: -4,
+													fontSize: 11,
+													fill: "#64748b",
+												}
+											: undefined
+									}
 								/>
-							))}
+								<YAxis
+									dataKey="category"
+									type="category"
+									tick={
+										xCfg.showLabels === false
+											? false
+											: {
+													...AXIS_STYLE,
+													fontSize:
+														xCfg.fontSize ??
+														AXIS_STYLE.fontSize,
+												}
+									}
+									axisLine={false}
+									tickLine={false}
+									width={80}
+									label={
+										xAxisLabel
+											? {
+													value: xAxisLabel,
+													angle: -90,
+													position: "insideLeft",
+													fontSize: 11,
+													fill: "#64748b",
+												}
+											: undefined
+									}
+								/>
+							</>
+						) : (
+							<>
+								{/* Normal: category axis is X, value axis is Y */}
+								<XAxis
+									dataKey="category"
+									type="category"
+									tick={
+										xCfg.showLabels === false
+											? false
+											: {
+													...AXIS_STYLE,
+													fontSize:
+														xCfg.fontSize ??
+														AXIS_STYLE.fontSize,
+												}
+									}
+									axisLine={false}
+									tickLine={xCfg.showTicks ?? true}
+									tickMargin={xCfg.axisGap ?? undefined}
+									angle={xCfg.rotateValues ?? 0}
+									textAnchor={
+										xCfg.rotateValues ? "end" : "middle"
+									}
+									label={
+										xAxisLabel
+											? {
+													value: xAxisLabel,
+													position: "insideBottom",
+													offset: -4,
+													fontSize: 11,
+													fill: "#64748b",
+												}
+											: undefined
+									}
+								/>
+								<YAxis
+									type="number"
+									domain={yDomain}
+									allowDataOverflow={yBrushActive}
+									tick={
+										yCfg.showLabels === false
+											? false
+											: {
+													...AXIS_STYLE,
+													fontSize:
+														yCfg.fontSize ??
+														AXIS_STYLE.fontSize,
+												}
+									}
+									axisLine={false}
+									tickLine={yCfg.showTicks ?? true}
+									tickMargin={yCfg.axisGap ?? undefined}
+									width={48}
+									label={
+										yAxisLabel
+											? {
+													value: yAxisLabel,
+													angle: -90,
+													position: "insideLeft",
+													fontSize: 11,
+													fill: "#64748b",
+												}
+											: undefined
+									}
+								/>
+							</>
+						)}
 
-						{/* Category label */}
-						<text
-							x={cx}
-							y={PAD_TOP + CHART_H + 14}
-							textAnchor="middle"
-							fontSize={10}
-							fill="#475569"
-						>
-							{b.category.length > 12
-								? b.category.slice(0, 11) + "…"
-								: b.category}
-						</text>
+						{showTooltip && (
+							<Tooltip content={<BoxTooltip />} cursor={false} />
+						)}
 
-						{/* Count label */}
-						<text
-							x={cx}
-							y={PAD_TOP + CHART_H + 26}
-							textAnchor="middle"
-							fontSize={8}
-							fill="#94a3b8"
-						>
-							n={b.count}
-						</text>
-					</g>
-				);
-			})}
-		</svg>
+						{/* Invisible bar — registers category bands and enables tooltip hit areas */}
+						<Bar
+							dataKey="_placeholder"
+							fill="transparent"
+							stroke="none"
+							isAnimationActive={false}
+							legendType="none"
+						/>
+
+						<BoxPlotShapes
+							data={visibleData}
+							fillOpacity={fillOpacity}
+							showOutliers={showOutliers}
+							flipAxis={flipAxis}
+							valueDomainMin={yDomain[0]}
+							valueDomainMax={yDomain[1]}
+						/>
+					</ComposedChart>
+				</ResponsiveContainer>
+
+				{zoomY && (
+					<YAxisBrush
+						dataYMin={dataYMin}
+						dataYMax={dataYMax}
+						value={yBrushFrac}
+						onChange={setYBrushFrac}
+						marginTop={36}
+						marginBottom={4}
+					/>
+				)}
+			</div>
+
+			{zoomX && (
+				<XAxisBrush
+					value={xBrushFrac}
+					onChange={setXBrushFrac}
+					marginLeft={48}
+					marginRight={8 + (zoomY ? 24 : 0)}
+				/>
+			)}
+		</div>
 	);
 }

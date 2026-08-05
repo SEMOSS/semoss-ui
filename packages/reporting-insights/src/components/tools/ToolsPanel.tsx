@@ -13,12 +13,14 @@ import {
 	buildDefaultYAxisTitle,
 } from "@/components/visualizations/shared/chartShared";
 import type {
+	ColorRule,
 	VisualizationStyling,
 	VisualizationType,
 } from "@/types/dashboard";
 import { ShowTotals as AreaShowTotals } from "./area/ShowTotals";
 import { BarWidth } from "./bar/BarWidth";
 import { Trendline } from "./bar/Trendline";
+import { SeriesType } from "./combo/SeriesType";
 import { KpiColorByValue } from "./kpi/KpiColorByValue";
 import { KpiFilterVisualization } from "./kpi/KpiFilterVisualization";
 import { KpiSettings } from "./kpi/KpiSettings";
@@ -182,6 +184,112 @@ export function ToolsPanel({
 		return result;
 	}, [rows, xKey, yKeys, columnAggregations, columnValues]);
 
+	// Combo chart: compute resolved column keys, human-readable labels, and aggregated
+	// value suggestions for ColorByValue.
+	const comboColorColumns = useMemo(() => {
+		if (visualizationType !== "combo") return null;
+		const barDisplayKeys = styling.combo?.barKeys ?? [];
+		const lineDisplayKeys = styling.combo?.lineKeys ?? [];
+		const barAggs = styling.combo?.barAggregations ?? {};
+		const lineAggs = styling.combo?.lineAggregations ?? {};
+		const sharedCols = new Set(
+			barDisplayKeys.filter((k) => lineDisplayKeys.includes(k)),
+		);
+
+		const cols: string[] = [];
+		const labels: Record<string, string> = {};
+		const aggMap: Record<string, string> = {};
+
+		for (const k of barDisplayKeys) {
+			const rk = sharedCols.has(k) ? `${k}__combo_bar` : k;
+			const agg = barAggs[k];
+			cols.push(rk);
+			labels[rk] = agg
+				? `${AGGREGATION_LABELS[agg] ?? agg} of ${k}${sharedCols.has(k) ? " (Bar)" : ""}`
+				: sharedCols.has(k)
+					? `${k} (Bar)`
+					: k;
+			if (agg) aggMap[rk] = agg;
+		}
+		for (const k of lineDisplayKeys) {
+			const rk = sharedCols.has(k) ? `${k}__combo_line` : k;
+			const agg = lineAggs[k];
+			cols.push(rk);
+			labels[rk] = agg
+				? `${AGGREGATION_LABELS[agg] ?? agg} of ${k}${sharedCols.has(k) ? " (Line)" : ""}`
+				: sharedCols.has(k)
+					? `${k} (Line)`
+					: k;
+			if (agg) aggMap[rk] = agg;
+		}
+
+		const processedRows: Record<string, unknown>[] =
+			sharedCols.size > 0 && rows.length > 0
+				? rows.map((row) => {
+						const out = { ...row } as Record<string, unknown>;
+						for (const k of sharedCols) {
+							out[`${k}__combo_bar`] = (
+								row as Record<string, unknown>
+							)[k];
+							out[`${k}__combo_line`] = (
+								row as Record<string, unknown>
+							)[k];
+						}
+						return out;
+					})
+				: (rows as Record<string, unknown>[]);
+
+		const values: Record<string, string[]> = {};
+		if (processedRows.length > 0 && xKey && cols.length > 0) {
+			const chartData = aggregateChartData(processedRows, xKey, cols, {
+				columnAggregations: aggMap,
+			} as never);
+			for (const rk of cols) {
+				if (aggMap[rk]) {
+					values[rk] = [
+						...new Set(
+							chartData
+								.map((r) => String(r[rk] ?? ""))
+								.filter(Boolean),
+						),
+					].sort(
+						(a, b) => Number(a) - Number(b) || a.localeCompare(b),
+					);
+				}
+			}
+		}
+
+		const valueColumnList = [...new Set([...columns, ...cols])];
+		const mergedValues: Record<string, string[]> = { ...values };
+		for (const col of columns) {
+			if (!mergedValues[col]) {
+				const rawVals = [
+					...new Set(
+						rows
+							.map((r) =>
+								String(
+									(r as Record<string, unknown>)[col] ?? "",
+								),
+							)
+							.filter(Boolean),
+					),
+				].sort();
+				if (rawVals.length) mergedValues[col] = rawVals;
+			}
+		}
+
+		return { cols, labels, values, valueColumnList, mergedValues };
+	}, [
+		visualizationType,
+		styling.combo?.barKeys,
+		styling.combo?.lineKeys,
+		styling.combo?.barAggregations,
+		styling.combo?.lineAggregations,
+		rows,
+		xKey,
+		columns,
+	]);
+
 	const updateStyling = (updates: Partial<VisualizationStyling>) => {
 		onChange({ ...styling, ...updates });
 	};
@@ -257,6 +365,28 @@ export function ToolsPanel({
 		updates: Partial<NonNullable<VisualizationStyling["boxplot"]>>,
 	) => {
 		updateStyling({ boxplot: { ...styling.boxplot, ...updates } });
+	};
+	const updateBoxPlotXAxis = (
+		updates: Partial<
+			NonNullable<
+				NonNullable<VisualizationStyling["boxplot"]>["xAxisConfig"]
+			>
+		>,
+	) => {
+		updateBoxPlotStyling({
+			xAxisConfig: { ...styling.boxplot?.xAxisConfig, ...updates },
+		});
+	};
+	const updateBoxPlotYAxis = (
+		updates: Partial<
+			NonNullable<
+				NonNullable<VisualizationStyling["boxplot"]>["yAxisConfig"]
+			>
+		>,
+	) => {
+		updateBoxPlotStyling({
+			yAxisConfig: { ...styling.boxplot?.yAxisConfig, ...updates },
+		});
 	};
 
 	const updatePolarBarStyling = (
@@ -406,6 +536,34 @@ export function ToolsPanel({
 	) => {
 		updateLineStyling({
 			yAxisConfig: { ...styling.line?.yAxisConfig, ...updates },
+		});
+	};
+
+	const updateComboStyling = (
+		updates: Partial<NonNullable<VisualizationStyling["combo"]>>,
+	) => {
+		updateStyling({ combo: { ...styling.combo, ...updates } });
+	};
+	const updateComboXAxis = (
+		updates: Partial<
+			NonNullable<
+				NonNullable<VisualizationStyling["combo"]>["xAxisConfig"]
+			>
+		>,
+	) => {
+		updateComboStyling({
+			xAxisConfig: { ...styling.combo?.xAxisConfig, ...updates },
+		});
+	};
+	const updateComboYAxis = (
+		updates: Partial<
+			NonNullable<
+				NonNullable<VisualizationStyling["combo"]>["yAxisConfig"]
+			>
+		>,
+	) => {
+		updateComboStyling({
+			yAxisConfig: { ...styling.combo?.yAxisConfig, ...updates },
 		});
 	};
 
@@ -1386,83 +1544,85 @@ export function ToolsPanel({
 	// Box plot–specific tools
 	const boxPlotTools = (
 		<>
-			<ToolAccordion title="Fill Opacity">
-				<div className="flex flex-col gap-2 px-1 py-1">
-					<div className="flex items-center justify-between">
-						<span className="text-stone-500 text-xs">Opacity</span>
-						<span className="font-medium text-stone-700 text-xs">
-							{Math.round(
-								(styling.boxplot?.fillOpacity ?? 0.6) * 100,
-							)}
-							%
-						</span>
-					</div>
-					<input
-						type="range"
-						min={10}
-						max={100}
-						step={5}
-						value={Math.round(
-							(styling.boxplot?.fillOpacity ?? 0.6) * 100,
-						)}
-						onChange={(e) =>
-							updateBoxPlotStyling({
-								fillOpacity: Number(e.target.value) / 100,
-							})
-						}
-						className="w-full accent-indigo-500"
-					/>
-				</div>
+			<ToolAccordion title="Color Palette">
+				<ColorPalette
+					value={styling.colorPalette}
+					customPalettes={styling.customColorPalettes || []}
+					onChange={(patch) => updateStyling(patch)}
+				/>
 			</ToolAccordion>
-			<ToolAccordion title="Show Outliers">
-				<div className="flex items-center justify-between px-1 py-1">
-					<span className="text-stone-600 text-xs">
-						Show outlier dots
-					</span>
-					<button
-						type="button"
-						onClick={() =>
-							updateBoxPlotStyling({
-								showOutliers: !(
-									styling.boxplot?.showOutliers !== false
-								),
-							})
-						}
-						className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-							styling.boxplot?.showOutliers !== false
-								? "bg-indigo-500"
-								: "bg-stone-300"
-						}`}
-					>
-						<span
-							className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
-								styling.boxplot?.showOutliers !== false
-									? "translate-x-[18px]"
-									: "translate-x-[2px]"
-							}`}
-						/>
-					</button>
-				</div>
+			<ToolAccordion title="Color By Value">
+				<ColorByValue
+					columns={sortableColumns ?? yKeys}
+					valueColumns={columns}
+					visualizationType="bar"
+					columnValues={yKeyAggregatedColumnValues}
+					columnLabels={yKeyColumnLabels}
+					value={styling.boxplot?.colorRules || []}
+					onChange={(colorRules) =>
+						updateBoxPlotStyling({
+							colorRules: colorRules as ColorRule[],
+						})
+					}
+					onReset={() => updateBoxPlotStyling({ colorRules: [] })}
+				/>
 			</ToolAccordion>
-			<ToolAccordion title="Whisker Type">
-				<div className="flex gap-2 px-1 py-1">
-					{(["minmax", "iqr"] as const).map((wt) => (
-						<button
-							key={wt}
-							type="button"
-							onClick={() =>
-								updateBoxPlotStyling({ whiskerType: wt })
-							}
-							className={`flex-1 rounded px-2 py-1.5 font-medium text-xs transition-colors ${
-								(styling.boxplot?.whiskerType ?? "iqr") === wt
-									? "bg-indigo-500 text-white"
-									: "bg-stone-100 text-stone-600 hover:bg-stone-200"
-							}`}
-						>
-							{wt === "minmax" ? "Min/Max" : "1.5×IQR"}
-						</button>
-					))}
-				</div>
+			<ToolAccordion title="Edit X Axis">
+				<AxisSettings
+					axis="x"
+					value={styling.boxplot?.xAxisConfig}
+					onChange={(updates) => updateBoxPlotXAxis(updates)}
+					defaultTitle={xKey ?? ""}
+					onReset={() =>
+						updateBoxPlotStyling({ xAxisConfig: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Edit Y Axis">
+				<AxisSettings
+					axis="y"
+					value={styling.boxplot?.yAxisConfig}
+					onChange={(updates) => updateBoxPlotYAxis(updates)}
+					defaultTitle={buildDefaultYAxisTitle(
+						yKeys,
+						columnAggregations,
+					)}
+					onReset={() =>
+						updateBoxPlotStyling({ yAxisConfig: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Flip Axis">
+				<FlipAxis
+					value={styling.boxplot?.flipAxis}
+					onChange={(v) => updateBoxPlotStyling({ flipAxis: v })}
+					onReset={() =>
+						updateBoxPlotStyling({ flipAxis: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Toggle Tooltips">
+				<ShowTooltipToggle
+					value={styling.boxplot?.showTooltip}
+					onChange={(v) => updateBoxPlotStyling({ showTooltip: v })}
+					onReset={() =>
+						updateBoxPlotStyling({ showTooltip: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Zoom X Axis">
+				<ZoomXAxis
+					value={styling.boxplot?.zoomX}
+					onChange={(v) => updateBoxPlotStyling({ zoomX: v })}
+					onReset={() => updateBoxPlotStyling({ zoomX: undefined })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Zoom Y Axis">
+				<ZoomYAxis
+					value={styling.boxplot?.zoomY}
+					onChange={(v) => updateBoxPlotStyling({ zoomY: v })}
+					onReset={() => updateBoxPlotStyling({ zoomY: undefined })}
+				/>
 			</ToolAccordion>
 		</>
 	);
@@ -1995,7 +2155,8 @@ export function ToolsPanel({
 			</ToolAccordion>
 			<ToolAccordion title="Color by Value">
 				<ColorByValue
-					columns={columns}
+					columns={yKeys}
+					valueColumns={columns}
 					visualizationType="bar"
 					columnValues={yKeyAggregatedColumnValues}
 					columnLabels={yKeyColumnLabels}
@@ -2201,7 +2362,8 @@ export function ToolsPanel({
 			</ToolAccordion>
 			<ToolAccordion title="Color by Value">
 				<ColorByValue
-					columns={columns}
+					columns={yKeys}
+					valueColumns={columns}
 					visualizationType="bar"
 					columnValues={yKeyAggregatedColumnValues}
 					columnLabels={yKeyColumnLabels}
@@ -2377,7 +2539,8 @@ export function ToolsPanel({
 			</ToolAccordion>
 			<ToolAccordion title="Color by Value">
 				<ColorByValue
-					columns={columns}
+					columns={yKeys}
+					valueColumns={columns}
 					visualizationType="area"
 					columnValues={yKeyAggregatedColumnValues}
 					columnLabels={yKeyColumnLabels}
@@ -2596,7 +2759,8 @@ export function ToolsPanel({
 			</ToolAccordion>
 			<ToolAccordion title="Color by Value">
 				<ColorByValue
-					columns={columns}
+					columns={yKeys}
+					valueColumns={columns}
 					visualizationType="line"
 					columnValues={yKeyAggregatedColumnValues}
 					columnLabels={yKeyColumnLabels}
@@ -2828,6 +2992,220 @@ export function ToolsPanel({
 		</>
 	);
 
+	const comboTools = (
+		<>
+			<ToolAccordion title="Average Line">
+				<AverageToggle
+					value={styling.combo?.showAverage}
+					onChange={(v) => updateComboStyling({ showAverage: v })}
+					onReset={() =>
+						updateComboStyling({ showAverage: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Axis Pointer">
+				<AxisPointer
+					value={styling.combo?.axisPointer}
+					onChange={(v) => updateComboStyling({ axisPointer: v })}
+					onReset={() =>
+						updateComboStyling({ axisPointer: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Bar Width">
+				<BarWidth
+					value={styling.combo?.barWidth}
+					onChange={(v) => updateComboStyling({ barWidth: v })}
+					onReset={() => updateComboStyling({ barWidth: undefined })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Color by Value">
+				<ColorByValue
+					columns={comboColorColumns?.cols ?? []}
+					valueColumns={comboColorColumns?.valueColumnList ?? []}
+					valueColumnLabels={comboColorColumns?.labels ?? {}}
+					visualizationType="bar"
+					columnValues={comboColorColumns?.mergedValues ?? {}}
+					columnLabels={comboColorColumns?.labels ?? {}}
+					value={styling.combo?.colorRules || []}
+					onChange={(colorRules) =>
+						updateComboStyling({
+							colorRules: colorRules as ColorRule[],
+						})
+					}
+					onReset={() => updateComboStyling({ colorRules: [] })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Color Palette">
+				<ColorPalette
+					value={styling.colorPalette}
+					customPalettes={styling.customColorPalettes || []}
+					onChange={(patch) => updateStyling(patch)}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Flip Axis">
+				<FlipAxis
+					value={styling.combo?.flipAxis}
+					onChange={(v) => updateComboStyling({ flipAxis: v })}
+					onReset={() => updateComboStyling({ flipAxis: undefined })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Legend">
+				<ShowLegendToggle
+					value={styling.combo?.showLegend}
+					onChange={(v) => updateComboStyling({ showLegend: v })}
+					onReset={() =>
+						updateComboStyling({ showLegend: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Line Style">
+				<LineStyle
+					value={{
+						curveType: styling.combo?.curveType,
+						lineType: styling.combo?.lineType,
+						lineWidth: styling.combo?.lineWidth,
+					}}
+					onChange={(updates) => updateComboStyling(updates)}
+					onReset={() =>
+						updateComboStyling({
+							curveType: undefined,
+							lineType: undefined,
+							lineWidth: undefined,
+						})
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Min / Max Markers">
+				<MinMaxToggle
+					value={styling.combo?.showMinMax}
+					onChange={(v) => updateComboStyling({ showMinMax: v })}
+					onReset={() =>
+						updateComboStyling({ showMinMax: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Reverse Y Axis">
+				<ReverseYAxis
+					value={styling.combo?.reverseYAxis}
+					onChange={(v) => updateComboStyling({ reverseYAxis: v })}
+					onReset={() =>
+						updateComboStyling({ reverseYAxis: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Save Zoom">
+				<SaveZoom
+					value={styling.combo?.saveZoom}
+					savedZoomX={styling.combo?.savedZoomX}
+					savedZoomY={styling.combo?.savedZoomY}
+					zoomXEnabled={styling.combo?.zoomX}
+					zoomYEnabled={styling.combo?.zoomY}
+					onChange={(v) => updateComboStyling({ saveZoom: v })}
+					onReset={() =>
+						updateComboStyling({
+							saveZoom: undefined,
+							savedZoomX: undefined,
+							savedZoomY: undefined,
+						})
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Series Type">
+				<SeriesType
+					barKeys={styling.combo?.barKeys ?? []}
+					lineKeys={styling.combo?.lineKeys ?? []}
+					seriesTypes={styling.combo?.seriesTypes ?? {}}
+					onChange={(updates) => updateComboStyling(updates)}
+					onReset={() =>
+						updateComboStyling({ seriesTypes: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Symbol Style">
+				<SymbolStyle
+					symbolType={styling.combo?.symbolType}
+					symbolSize={styling.combo?.symbolSize}
+					defaultSymbolType="circle"
+					onChange={(updates) => updateComboStyling(updates)}
+					onReset={() =>
+						updateComboStyling({
+							symbolType: undefined,
+							symbolSize: undefined,
+						})
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Target Areas">
+				<TargetArea
+					value={styling.combo?.targetAreas ?? []}
+					onChange={(v) => updateComboStyling({ targetAreas: v })}
+					onReset={() => updateComboStyling({ targetAreas: [] })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Target Lines">
+				<TargetLine
+					value={styling.combo?.targetLines ?? []}
+					onChange={(v) => updateComboStyling({ targetLines: v })}
+					onReset={() => updateComboStyling({ targetLines: [] })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Trendline">
+				<Trendline
+					value={styling.combo?.trendlineType}
+					onChange={(v) => updateComboStyling({ trendlineType: v })}
+					onReset={() =>
+						updateComboStyling({ trendlineType: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Value Labels">
+				<LineValueLabelEditor
+					value={styling.combo?.valueLabel}
+					onChange={(v) => updateComboStyling({ valueLabel: v })}
+					onReset={() =>
+						updateComboStyling({ valueLabel: undefined })
+					}
+					variant="line"
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="X Axis Settings">
+				<AxisSettings
+					value={styling.combo?.xAxisConfig}
+					axis="x"
+					onChange={updateComboXAxis}
+					onReset={() =>
+						updateComboStyling({ xAxisConfig: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Y Axis Settings">
+				<AxisSettings
+					value={styling.combo?.yAxisConfig}
+					axis="y"
+					onChange={updateComboYAxis}
+					onReset={() =>
+						updateComboStyling({ yAxisConfig: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Zoom X Axis">
+				<ZoomXAxis
+					value={styling.combo?.zoomX}
+					onChange={(v) => updateComboStyling({ zoomX: v })}
+					onReset={() => updateComboStyling({ zoomX: undefined })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Zoom Y Axis">
+				<ZoomYAxis
+					value={styling.combo?.zoomY}
+					onChange={(v) => updateComboStyling({ zoomY: v })}
+					onReset={() => updateComboStyling({ zoomY: undefined })}
+				/>
+			</ToolAccordion>
+		</>
+	);
+
 	return (
 		<ToolSearchContext.Provider value={searchQuery}>
 			<div className="flex h-full flex-col">
@@ -2901,6 +3279,7 @@ export function ToolsPanel({
 								: null,
 							visualizationType === "line" ? lineTools : null,
 							visualizationType === "pie" ? pieTools : null,
+							visualizationType === "combo" ? comboTools : null,
 						].filter(Boolean) as ReactNode[],
 					)}
 					{visualizationType === "pivot" && (

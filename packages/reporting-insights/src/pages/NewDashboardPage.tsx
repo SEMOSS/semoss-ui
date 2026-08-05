@@ -44,6 +44,7 @@ import {
 	ensureParamSheet,
 	migrateSheetsToSharedQueries,
 	pruneQueries,
+	resolveParamDefault,
 	resolveQuery,
 } from "@/lib/resolveQuery";
 import { useTabColors } from "@/lib/tabColors";
@@ -97,6 +98,7 @@ const VIZ_TYPES: VisualizationType[] = [
 	"wordcloud",
 	"bubble",
 	"sunburst",
+	"combo",
 	"puck",
 	"csvexport",
 	"filter",
@@ -886,7 +888,7 @@ export function NewDashboardPage() {
 					if (p.name)
 						r = r.replaceAll(
 							`{{${p.name}}}`,
-							paramOverrides?.[p.name] ?? p.defaultValue,
+							paramOverrides?.[p.name] ?? resolveParamDefault(p),
 						);
 				});
 				return r;
@@ -1052,7 +1054,10 @@ export function NewDashboardPage() {
 			for (const v of layoutVizs) {
 				const s = resolveQuery(v, queries);
 				const missing = (s.parameters ?? []).find(
-					(p) => p.name && !String(p.defaultValue ?? "").trim(),
+					(p) =>
+						p.name &&
+						!p.useCurrentDate &&
+						!String(resolveParamDefault(p) ?? "").trim(),
 				);
 				if (missing) {
 					alert(
@@ -1129,7 +1134,7 @@ export function NewDashboardPage() {
 						if (p.name)
 							r = r.replaceAll(
 								`{{${p.name}}}`,
-								p.defaultValue ?? "",
+								resolveParamDefault(p) ?? "",
 							);
 					});
 					return r;
@@ -1809,6 +1814,33 @@ export function NewDashboardPage() {
 																								.config
 																								?.styling
 																								?.line ??
+																								{}),
+																							...updates,
+																						},
+																					},
+																			},
+																		},
+																	);
+																}}
+																onComboStylingChange={(
+																	updates,
+																) => {
+																	updateVisualization(
+																		viz.id,
+																		{
+																			config: {
+																				...viz.config,
+																				styling:
+																					{
+																						...(viz
+																							.config
+																							?.styling ??
+																							{}),
+																						combo: {
+																							...(viz
+																								.config
+																								?.styling
+																								?.combo ??
 																								{}),
 																							...updates,
 																						},
@@ -2941,6 +2973,50 @@ function VizCard({
 						}),
 					);
 				}
+			} else if (vizType === "combo") {
+				if (viz.config?.xKey) {
+					data.xAxis = [
+						{
+							name: viz.config.xKey,
+							dataType: typeMap[viz.config.xKey] || "STRING",
+						},
+					];
+				}
+				if (viz.config?.barSeries?.length) {
+					data.barSeries = viz.config.barSeries.map(
+						(name: string) => ({
+							name,
+							dataType: typeMap[name] || "STRING",
+							aggregation:
+								viz.config?.columnAggregations?.[name] || "sum",
+						}),
+					);
+				}
+				if (viz.config?.lineSeries?.length) {
+					data.lineSeries = viz.config.lineSeries.map(
+						(name: string) => ({
+							name,
+							dataType: typeMap[name] || "STRING",
+							aggregation:
+								viz.config?.columnAggregations?.[name] || "avg",
+						}),
+					);
+				}
+				if (viz.config?.tooltips?.length) {
+					data.tooltip = viz.config.tooltips.map(
+						({
+							column,
+							aggregation,
+						}: {
+							column: string;
+							aggregation: string;
+						}) => ({
+							name: column,
+							dataType: typeMap[column] || "STRING",
+							aggregation,
+						}),
+					);
+				}
 			} else {
 				// Bar, Line, Area, Radar: standard xAxis/yAxis
 				if (viz.config?.xKey) {
@@ -3201,6 +3277,27 @@ function VizCard({
 					newConfig.columnAggregations[data.size[0].name] =
 						data.size[0].aggregation;
 				newConfig.xKey = "";
+			} else if (vizType === "combo") {
+				newConfig.xKey = data.xAxis?.[0]?.name || "";
+				newConfig.barSeries =
+					data.barSeries?.map((c: any) => c.name) || [];
+				newConfig.lineSeries =
+					data.lineSeries?.map((c: any) => c.name) || [];
+				newConfig.yKeys = [
+					...(newConfig.barSeries || []),
+					...(newConfig.lineSeries || []),
+				];
+				newConfig.columnAggregations = {};
+				data.barSeries?.forEach((c: any) => {
+					if (c.aggregation && newConfig.columnAggregations) {
+						newConfig.columnAggregations[c.name] = c.aggregation;
+					}
+				});
+				data.lineSeries?.forEach((c: any) => {
+					if (c.aggregation && newConfig.columnAggregations) {
+						newConfig.columnAggregations[c.name] = c.aggregation;
+					}
+				});
 			} else {
 				// Standard: xAxis → xKey, yAxis → yKeys
 				newConfig.xKey = data.xAxis?.[0]?.name || "";

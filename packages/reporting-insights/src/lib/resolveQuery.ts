@@ -15,6 +15,18 @@ import type {
 	Parameter,
 } from "@/types/dashboard";
 
+/**
+ * Resolve a parameter's effective default value at load/run time.
+ * When `useCurrentDate` is set the stored value is ignored and today's date is returned.
+ */
+export function resolveParamDefault(
+	p: Pick<Parameter, "defaultValue" | "useCurrentDate">,
+): string {
+	return p.useCurrentDate
+		? new Date().toISOString().slice(0, 10)
+		: p.defaultValue;
+}
+
 /** The data-source fields a visualization needs to run, wherever they come from. */
 export interface QuerySource {
 	databaseId: string;
@@ -83,6 +95,7 @@ function fingerprint(src: QuerySource): string {
 		options: p.options,
 		optionsQuery: p.optionsQuery,
 		optionsDatabaseId: p.optionsDatabaseId,
+		useCurrentDate: p.useCurrentDate,
 	}));
 	return JSON.stringify([src.databaseId, src.query, params]);
 }

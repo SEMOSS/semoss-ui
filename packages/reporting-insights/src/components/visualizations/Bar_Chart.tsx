@@ -711,10 +711,11 @@ export function Bar_Chart({
 	/** Resolve a fill color for a given row + Y series. ColorRule wins over palette. */
 	const colorForBar = (
 		row: Record<string, unknown>,
-		_seriesKey: string,
+		seriesKey: string,
 		seriesIndex: number,
 	): string => {
 		for (const rule of colorRules) {
+			if (rule.targetColumn && rule.targetColumn !== seriesKey) continue;
 			const candidate: unknown = row[rule.valueColumn];
 			if (compareColorRule(rule.comparator, candidate, rule.value))
 				return rule.color;

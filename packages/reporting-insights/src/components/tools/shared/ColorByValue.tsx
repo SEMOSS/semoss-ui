@@ -4,7 +4,16 @@ import { ColorPicker } from "./ColorPicker";
 import { ResetButton } from "./ResetButton";
 
 interface ColorByValueProps {
+	/** Options for "Select Column to Color" — typically the y-axis series columns. */
 	columns: string[];
+	/**
+	 * Options for "Select Column of Values" — defaults to `columns` when omitted.
+	 * Pass a broader list (e.g. all raw columns + aggregated series) so users can
+	 * compare against any available value.
+	 */
+	valueColumns?: string[];
+	/** Display labels for `valueColumns` entries (merged with `columnLabels` for the value dropdown). */
+	valueColumnLabels?: Record<string, string>;
 	visualizationType:
 		| "table"
 		| "kpi"
@@ -38,6 +47,8 @@ interface ColorByValueProps {
 
 export function ColorByValue({
 	columns,
+	valueColumns,
+	valueColumnLabels,
 	visualizationType,
 	value,
 	onChange,
@@ -46,6 +57,8 @@ export function ColorByValue({
 	columnLabels = {},
 	fixedMetricColumn,
 }: ColorByValueProps) {
+	const effectiveValueColumns = valueColumns ?? columns;
+	const effectiveValueLabels = { ...columnLabels, ...valueColumnLabels };
 	// Pivot, Word Cloud, Bubble, Bar, Line, and Pie reuse the table rule shape
 	// (ColorRule). The only difference is the rendered config UI: only `table`
 	// shows the "Color entire row" toggle.
@@ -191,9 +204,10 @@ export function ColorByValue({
 										}
 										className="w-full rounded border border-stone-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
 									>
-										{columns.map((col) => (
+										{effectiveValueColumns.map((col) => (
 											<option key={col} value={col}>
-												{columnLabels[col] ?? col}
+												{effectiveValueLabels[col] ??
+													col}
 											</option>
 										))}
 									</select>

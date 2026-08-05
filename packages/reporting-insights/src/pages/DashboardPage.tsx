@@ -24,6 +24,7 @@ import {
 	computeParamGroups,
 	ensureParamSheet,
 	migrateSheetsToSharedQueries,
+	resolveParamDefault,
 	resolveQuery,
 } from "@/lib/resolveQuery";
 import { useTabColors } from "@/lib/tabColors";
@@ -258,7 +259,10 @@ export function DashboardPage() {
 				const initial: Record<string, Record<string, string>> = {};
 				for (const q of migratedQueries) {
 					initial[q.id] = Object.fromEntries(
-						q.parameters.map((p) => [p.name, p.defaultValue]),
+						q.parameters.map((p) => [
+							p.name,
+							resolveParamDefault(p),
+						]),
 					);
 				}
 				for (const viz of migratedSheets.flatMap(
@@ -266,7 +270,10 @@ export function DashboardPage() {
 				)) {
 					if (!viz.queryId) {
 						initial[viz.id] = Object.fromEntries(
-							viz.parameters.map((p) => [p.name, p.defaultValue]),
+							viz.parameters.map((p) => [
+								p.name,
+								resolveParamDefault(p),
+							]),
 						);
 					}
 				}

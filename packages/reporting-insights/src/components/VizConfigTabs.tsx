@@ -100,9 +100,28 @@ export function VizConfigTabs({
 					metricColumns={(value.metrics ?? []).map((c) => c.name)}
 					hasSizeColumn={Boolean(value.size?.[0]?.name)}
 					xKey={value.xAxis?.[0]?.name}
-					yKeys={(value.yAxis ?? []).map((c) => c.name)}
+					yKeys={
+						visualizationType === "combo"
+							? [
+									...new Set([
+										...(value.barSeries ?? []).map(
+											(c) => c.name,
+										),
+										...(value.lineSeries ?? []).map(
+											(c) => c.name,
+										),
+									]),
+								]
+							: (value.yAxis ?? []).map((c) => c.name)
+					}
 					columnAggregations={Object.fromEntries(
-						(value.yAxis ?? [])
+						(visualizationType === "combo"
+							? [
+									...(value.barSeries ?? []),
+									...(value.lineSeries ?? []),
+								]
+							: (value.yAxis ?? [])
+						)
 							.filter((c) => c.aggregation)
 							.map((c) => [c.name, c.aggregation as string]),
 					)}

@@ -1,8 +1,18 @@
-import { TrendingUp } from "lucide-react";
+/**
+ * Combo chart — mixes Bar, Line, and Area series in a single ComposedChart.
+ *
+ * Each yKey is independently configurable as 'bar', 'line', or 'area' via
+ * `config.styling.combo.seriesTypes`. All other tools (zoom, flip, avg lines,
+ * min/max, axis pointer, target areas/lines, trendline) match Bar_Chart.tsx.
+ */
+
+import { BarChart2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	Area,
+	Bar,
 	CartesianGrid,
+	Cell,
 	ComposedChart,
 	DefaultZIndexes,
 	LabelList,
@@ -13,6 +23,7 @@ import {
 	ResponsiveContainer,
 	Tooltip,
 	useActiveTooltipCoordinate,
+	useActiveTooltipLabel,
 	useIsTooltipActive,
 	usePlotArea,
 	useXAxisScale,
@@ -33,30 +44,30 @@ import {
 	strokeDashFor,
 } from "@/components/visualizations/shared/chartShared";
 import {
-	type AreaStyling,
 	type ColorPalette as ColorPaletteType,
 	type ColorRule,
+	type ComboStyling,
 	curveTypeToRecharts,
 	type VisualizationConfig,
 } from "@/types/dashboard";
 
-// ── Vertical range brush (Y axis) ────────────────────────────────────────────
+// ─── Y-axis brush (vertical range slider) ────────────────────────────────────
 function YAxisBrush({
+	dataYMin,
+	dataYMax,
 	value,
 	onChange,
 	onCommit,
-	marginTop = 0,
-	marginBottom = 0,
-	dataYMin,
-	dataYMax,
+	marginTop = 4,
+	marginBottom = 4,
 }: {
+	dataYMin: number;
+	dataYMax: number;
 	value: [number, number];
 	onChange: (v: [number, number]) => void;
 	onCommit?: (v: [number, number]) => void;
 	marginTop?: number;
 	marginBottom?: number;
-	dataYMin: number;
-	dataYMax: number;
 }) {
 	const trackRef = useRef<HTMLDivElement>(null);
 	const drag = useRef<{
@@ -83,11 +94,9 @@ function YAxisBrush({
 		if (!h) return;
 		const delta = -(e.clientY - drag.current.startY) / h;
 		const [lo, hi] = drag.current.startVal;
-		if (drag.current.handle === "max") {
+		if (drag.current.handle === "max")
 			onChange([lo, Math.min(1, Math.max(lo + 0.02, hi + delta))]);
-		} else {
-			onChange([Math.max(0, Math.min(hi - 0.02, lo + delta)), hi]);
-		}
+		else onChange([Math.max(0, Math.min(hi - 0.02, lo + delta)), hi]);
 	};
 	const onPointerUp = () => {
 		if (drag.current) onCommit?.(latestValue.current);
@@ -95,10 +104,9 @@ function YAxisBrush({
 	};
 
 	const topPct = (frac: number) => `${(1 - frac) * 100}%`;
-	const nonSelTopH = `${(1 - value[1]) * 100}%`;
-	const nonSelBotH = `${value[0] * 100}%`;
 	const fmt = (frac: number) =>
 		Math.round(dataYMin + frac * (dataYMax - dataYMin)).toLocaleString();
+
 	const traveller = (handle: "min" | "max"): React.CSSProperties => ({
 		position: "absolute",
 		left: 0,
@@ -144,7 +152,7 @@ function YAxisBrush({
 						left: 0,
 						right: 0,
 						top: 0,
-						height: nonSelTopH,
+						height: `${(1 - value[1]) * 100}%`,
 						background: "rgba(0,0,0,0.07)",
 						pointerEvents: "none",
 					}}
@@ -155,7 +163,7 @@ function YAxisBrush({
 						left: 0,
 						right: 0,
 						bottom: 0,
-						height: nonSelBotH,
+						height: `${value[0] * 100}%`,
 						background: "rgba(0,0,0,0.07)",
 						pointerEvents: "none",
 					}}
@@ -175,7 +183,7 @@ function YAxisBrush({
 	);
 }
 
-// ── Horizontal range brush (X axis) ──────────────────────────────────────────
+// ─── X-axis brush (horizontal range slider) ───────────────────────────────────
 function XAxisBrush({
 	value,
 	onChange,
@@ -215,24 +223,20 @@ function XAxisBrush({
 		if (!w) return;
 		const delta = (e.clientX - drag.current.startX) / w;
 		const [lo, hi] = drag.current.startVal;
-		if (drag.current.handle === "left") {
+		if (drag.current.handle === "left")
 			onChange([Math.max(0, Math.min(hi - 0.02, lo + delta)), hi]);
-		} else {
-			onChange([lo, Math.min(1, Math.max(lo + 0.02, hi + delta))]);
-		}
+		else onChange([lo, Math.min(1, Math.max(lo + 0.02, hi + delta))]);
 	};
 	const onPointerUp = () => {
 		if (drag.current) onCommit?.(latestValue.current);
 		drag.current = null;
 	};
 
-	const leftPct = `${value[0] * 100}%`;
-	const rightPct = `${(1 - value[1]) * 100}%`;
 	const travellerStyle = (side: "left" | "right"): React.CSSProperties => ({
 		position: "absolute",
 		top: 0,
 		bottom: 0,
-		left: side === "left" ? leftPct : `${value[1] * 100}%`,
+		left: side === "left" ? `${value[0] * 100}%` : `${value[1] * 100}%`,
 		width: 6,
 		marginLeft: -3,
 		background: "#f8fafc",
@@ -273,7 +277,7 @@ function XAxisBrush({
 						top: 0,
 						bottom: 0,
 						left: 0,
-						width: leftPct,
+						width: `${value[0] * 100}%`,
 						background: "rgba(0,0,0,0.07)",
 						pointerEvents: "none",
 					}}
@@ -284,7 +288,7 @@ function XAxisBrush({
 						top: 0,
 						bottom: 0,
 						right: 0,
-						width: rightPct,
+						width: `${(1 - value[1]) * 100}%`,
 						background: "rgba(0,0,0,0.07)",
 						pointerEvents: "none",
 					}}
@@ -302,7 +306,7 @@ function XAxisBrush({
 	);
 }
 
-// ── Axis pointer cursor overlay ───────────────────────────────────────────────
+// ─── Axis pointer cursor ──────────────────────────────────────────────────────
 const CURSOR_FILL = "rgba(0,0,0,0.04)";
 const CURSOR_LINE_STYLE = {
 	stroke: "#94a3b8",
@@ -311,26 +315,12 @@ const CURSOR_LINE_STYLE = {
 	pointerEvents: "none" as const,
 };
 
-// Area/line charts use a point scale, not a band scale, so xScale(label, { position: 'start'/'end' })
-// returns zero-width bands. Instead, derive the shadow width from the spacing between ticks.
-function getShadowHalfWidth(scale: any, ticks: string[]): number {
-	if (ticks.length < 2) return 30;
-	const p0: number | undefined = scale?.(ticks[0]);
-	const p1: number | undefined = scale?.(ticks[1]);
-	if (p0 != null && p1 != null && p1 > p0) return (p1 - p0) / 2;
-	return 30;
-}
-
-function AreaCursor({
+function ComboCursor({
 	axisPointerType,
 	flipAxis,
-	xTicks,
-	yTicks,
 }: {
 	axisPointerType: string;
 	flipAxis: boolean;
-	xTicks: string[];
-	yTicks: string[];
 }) {
 	const coordinate = useActiveTooltipCoordinate();
 	const plotArea = usePlotArea();
@@ -339,6 +329,7 @@ function AreaCursor({
 	const xScale = useXAxisScale() as any;
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const yScale = useYAxisScale() as any;
+	const activeLabel = useActiveTooltipLabel();
 
 	if (!isActive || !coordinate || !plotArea) return null;
 
@@ -351,34 +342,43 @@ function AreaCursor({
 		height: plotHeight,
 	} = plotArea;
 
-	// Shadow: use half the inter-tick spacing as the half-width of the highlight band,
-	// centered on the snapped coordinate (ax / ay). This works for point scales where
-	// the band-scale position approach returns zero width.
 	let shadowRect: React.ReactNode = null;
 	if (flipAxis) {
-		const hw = getShadowHalfWidth(yScale, yTicks);
-		shadowRect = (
-			<rect
-				x={plotLeft}
-				y={ay - hw}
-				width={plotWidth}
-				height={hw * 2}
-				fill={CURSOR_FILL}
-				pointerEvents="none"
-			/>
-		);
+		const bandStart: number | undefined = yScale?.(activeLabel, {
+			position: "start",
+		});
+		const bandEnd: number | undefined = yScale?.(activeLabel, {
+			position: "end",
+		});
+		if (bandStart != null && bandEnd != null)
+			shadowRect = (
+				<rect
+					x={plotLeft}
+					y={bandStart}
+					width={plotWidth}
+					height={bandEnd - bandStart}
+					fill={CURSOR_FILL}
+					pointerEvents="none"
+				/>
+			);
 	} else {
-		const hw = getShadowHalfWidth(xScale, xTicks);
-		shadowRect = (
-			<rect
-				x={ax - hw}
-				y={plotTop}
-				width={hw * 2}
-				height={plotHeight}
-				fill={CURSOR_FILL}
-				pointerEvents="none"
-			/>
-		);
+		const bandStart: number | undefined = xScale?.(activeLabel, {
+			position: "start",
+		});
+		const bandEnd: number | undefined = xScale?.(activeLabel, {
+			position: "end",
+		});
+		if (bandStart != null && bandEnd != null)
+			shadowRect = (
+				<rect
+					x={bandStart}
+					y={plotTop}
+					width={bandEnd - bandStart}
+					height={plotHeight}
+					fill={CURSOR_FILL}
+					pointerEvents="none"
+				/>
+			);
 	}
 
 	let lines: React.ReactNode = null;
@@ -433,96 +433,78 @@ function AreaCursor({
 	);
 }
 
-// ── Total labels — renders per-category totals at fixed top/right margin ─────
-// Uses the same direct-child hook pattern as AreaCursor so axis scales are accessible.
-function TotalLabels({
-	rows,
-	xDataKey,
-	flipAxis,
-}: {
-	rows: Array<Record<string, unknown>>;
-	xDataKey: string;
-	flipAxis: boolean;
-}) {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const xScale = useXAxisScale() as any;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const yScale = useYAxisScale() as any;
-	const plotArea = usePlotArea();
-
-	if (!plotArea) return null;
-
-	return (
-		<g>
-			{rows.map((row, i) => {
-				const total = row._total;
-				if (total == null) return null;
-				const formatted =
-					typeof total === "number"
-						? total.toLocaleString()
-						: String(total);
-				const catVal = String(row[xDataKey] ?? "");
-
-				if (flipAxis) {
-					const y = yScale?.(catVal);
-					if (y == null) return null;
-					return (
-						<text
-							key={i}
-							x={plotArea.x + plotArea.width + 6}
-							y={y + 4}
-							fontSize={10}
-							fill="#64748b"
-							textAnchor="start"
-						>
-							{formatted}
-						</text>
-					);
-				}
-
-				const x = xScale?.(catVal);
-				if (x == null) return null;
-				return (
-					<text
-						key={i}
-						x={x}
-						y={plotArea.y - 5}
-						textAnchor="middle"
-						fontSize={10}
-						fill="#64748b"
-					>
-						{formatted}
-					</text>
-				);
-			})}
-		</g>
-	);
-}
-
-// ── Props ─────────────────────────────────────────────────────────────────────
-interface AreaChartVizProps {
+// ─── Component ───────────────────────────────────────────────────────────────
+interface ComboChartVizProps {
 	data: Record<string, unknown>[];
 	config?: VisualizationConfig;
-	onStylingChange?: (updates: Partial<AreaStyling>) => void;
+	onStylingChange?: (updates: Partial<ComboStyling>) => void;
 }
 
-export function Area_Chart({
+export function Combo_Chart({
 	data,
 	config,
 	onStylingChange,
-}: AreaChartVizProps) {
+}: ComboChartVizProps) {
 	const xKey = config?.xKey ?? "";
 	const yKeys = config?.yKeys ?? [];
-	const s: AreaStyling = config?.styling?.area ?? {};
+	const s = config?.styling?.combo ?? {};
 
+	const seriesTypes = s.seriesTypes ?? {};
+	// Display-name lists per zone (may overlap for shared columns)
+	const comboBarKeys = s.barKeys ?? yKeys.filter((k) => !seriesTypes[k]);
+	const comboLineKeys = s.lineKeys ?? yKeys.filter((k) => !!seriesTypes[k]);
+
+	// For shared columns (same col in both zones), alias them so each zone gets its own
+	// aggregation slot in the data: "revenue" → "revenue__combo_bar" / "revenue__combo_line"
+	const comboSeries = useMemo(() => {
+		const sharedCols = new Set(
+			comboBarKeys.filter((k) => comboLineKeys.includes(k)),
+		);
+		return {
+			bars: comboBarKeys.map((displayKey) => ({
+				displayKey,
+				resolvedKey: sharedCols.has(displayKey)
+					? `${displayKey}__combo_bar`
+					: displayKey,
+			})),
+			lines: comboLineKeys.map((displayKey) => ({
+				displayKey,
+				resolvedKey: sharedCols.has(displayKey)
+					? `${displayKey}__combo_line`
+					: displayKey,
+			})),
+			sharedCols,
+		};
+	}, [comboBarKeys, comboLineKeys]);
+
+	const dataWithAliases = useMemo(() => {
+		if (!comboSeries.sharedCols.size) return data;
+		return data.map((row) => {
+			const out = { ...row };
+			for (const k of comboSeries.sharedCols) {
+				out[`${k}__combo_bar`] = row[k];
+				out[`${k}__combo_line`] = row[k];
+			}
+			return out;
+		});
+	}, [data, comboSeries.sharedCols]);
+	const xCfg = s.xAxisConfig ?? {};
+	const yCfg = s.yAxisConfig ?? {};
+	const barWidth = s.barWidth ?? 60;
 	const curveType = s.curveType ?? "smooth";
+	const lineType = s.lineType;
 	const lineWidth = s.lineWidth ?? 2;
-	const trendlineType = s.trendlineType ?? "none";
+	const symbolType = s.symbolType ?? "circle";
+	const symbolSize = s.symbolSize ?? 3;
 	const showLegend = s.showLegend ?? true;
+	const colorRules = useMemo<ColorRule[]>(
+		() => s.colorRules ?? [],
+		[s.colorRules],
+	);
+	const trendlineType = s.trendlineType ?? "none";
 	const showAverage = s.showAverage === true;
 	const axisPointerType = s.axisPointer ?? "shadow";
 	const flipAxis = s.flipAxis === true;
-	const flipSeries = s.flipSeries === true;
 	const showMinMax = s.showMinMax === true;
 	const reverseYAxis = s.reverseYAxis === true;
 	const targetAreas = s.targetAreas ?? [];
@@ -530,17 +512,7 @@ export function Area_Chart({
 	const zoomX = s.zoomX === true;
 	const zoomY = s.zoomY === true;
 	const saveZoom = s.saveZoom === true;
-	const unstacked = s.unstacked === true;
-	const showTotals = s.showTotals === true;
-	const symbolType = s.symbolType ?? "none";
-	const symbolSize = s.symbolSize ?? 4;
-	const xCfg = s.xAxisConfig ?? {};
-	const yCfg = s.yAxisConfig ?? {};
 	const valueLabelCfg = s.valueLabel ?? null;
-	const colorRules = useMemo<ColorRule[]>(
-		() => s.colorRules ?? [],
-		[s.colorRules],
-	);
 
 	const palette = useMemo(() => {
 		const cp = config?.styling?.colorPalette as
@@ -550,40 +522,18 @@ export function Area_Chart({
 	}, [config?.styling?.colorPalette]);
 
 	const chartData = useMemo(
-		() => aggregateChartData(data, xKey, yKeys, config),
-		[data, xKey, yKeys, config],
+		() => aggregateChartData(dataWithAliases, xKey, yKeys, config),
+		[dataWithAliases, xKey, yKeys, config],
 	);
 
-	// FlipSeries: pivot yKey names → x-axis, xKey values → series columns
-	const { renderData, seriesKeys } = useMemo(() => {
-		if (flipSeries && yKeys.length > 0 && chartData.length > 0) {
-			const xVals: string[] = [];
-			const xSeen = new Set<string>();
-			for (const r of chartData) {
-				const x = String(r[xKey] ?? "");
-				if (!xSeen.has(x)) {
-					xSeen.add(x);
-					xVals.push(x);
-				}
-			}
-			const rows = yKeys.map((yk) => {
-				const row: Record<string, unknown> = { __yKey__: yk };
-				for (const r of chartData) row[String(r[xKey] ?? "")] = r[yk];
-				return row;
-			});
-			return { renderData: rows, seriesKeys: xVals };
-		}
-		return { renderData: chartData, seriesKeys: yKeys };
-	}, [flipSeries, yKeys, chartData, xKey]);
-
-	const effectiveXDataKey = flipSeries ? "__yKey__" : xKey;
-
-	// Category tick labels — used by AreaCursor to compute inter-tick spacing for the shadow band.
-	// Computed from renderData before x-brush slicing so spacing stays stable during zoom.
-	const categoryTicks = useMemo(
-		() => renderData.map((r) => String(r[effectiveXDataKey] ?? "")),
-		[renderData, effectiveXDataKey],
-	);
+	const trendlineData = useMemo(() => {
+		if (trendlineType === "none" || !yKeys.length || !chartData.length)
+			return null;
+		return chartData.map((row) => ({
+			...row,
+			_trend: Number(row[yKeys[0]]) || 0,
+		}));
+	}, [trendlineType, chartData, yKeys]);
 
 	// Zoom state
 	const [yBrushFrac, setYBrushFrac] = useState<[number, number]>(() =>
@@ -611,46 +561,22 @@ export function Area_Chart({
 
 	const xBrushActive = zoomX && (xBrushFrac[0] > 0 || xBrushFrac[1] < 1);
 	const visibleRenderData = useMemo(() => {
-		if (!xBrushActive || renderData.length < 2) return renderData;
-		const n = renderData.length;
+		if (!xBrushActive || chartData.length < 2) return chartData;
+		const n = chartData.length;
 		const start = Math.floor(xBrushFrac[0] * n);
 		const end = Math.ceil(xBrushFrac[1] * n) - 1;
-		return renderData.slice(Math.max(0, start), Math.min(n, end + 1));
-	}, [xBrushActive, renderData, xBrushFrac]);
+		return chartData.slice(Math.max(0, start), Math.min(n, end + 1));
+	}, [xBrushActive, chartData, xBrushFrac]);
 
-	// Compute data y range for Y brush
-	const { dataYMin, dataYMax } = useMemo(() => {
-		if (!zoomY || !renderData.length || !seriesKeys.length)
-			return { dataYMin: 0, dataYMax: 1 };
-		let maxVal = 0;
-		for (const row of renderData) {
-			const rowMax = seriesKeys.reduce(
-				(s, sk) => s + Math.max(0, Number(row[sk] ?? 0)),
-				0,
-			);
-			if (rowMax > maxVal) maxVal = rowMax;
-		}
-		return { dataYMin: 0, dataYMax: maxVal };
-	}, [zoomY, renderData, seriesKeys]);
-
-	const yBrushActive = zoomY && (yBrushFrac[0] > 0 || yBrushFrac[1] < 1);
-	const yDomain = yBrushActive
-		? ([
-				dataYMin + yBrushFrac[0] * (dataYMax - dataYMin),
-				dataYMin + yBrushFrac[1] * (dataYMax - dataYMin),
-			] as [number, number])
-		: undefined;
-
-	// Per-series min/max indices
 	const { minIdx, maxIdx } = useMemo(() => {
-		if (!showMinMax || !seriesKeys.length || !visibleRenderData.length)
+		if (!showMinMax || !yKeys.length || !visibleRenderData.length)
 			return {
 				minIdx: {} as Record<string, number>,
 				maxIdx: {} as Record<string, number>,
 			};
 		const minI: Record<string, number> = {};
 		const maxI: Record<string, number> = {};
-		for (const sk of seriesKeys) {
+		for (const sk of yKeys) {
 			let minV = Infinity,
 				maxV = -Infinity,
 				mi = 0,
@@ -670,64 +596,43 @@ export function Area_Chart({
 			maxI[sk] = xi;
 		}
 		return { minIdx: minI, maxIdx: maxI };
-	}, [showMinMax, seriesKeys, visibleRenderData]);
+	}, [showMinMax, yKeys, visibleRenderData]);
 
-	// Trendlines: linear regression per series, stored as _trend_<key> fields.
-	// When stacked, regress through the cumulative top-edge values so each
-	// trendline tracks the top of its own visual band, not the raw series value.
-	const trendDataMap = useMemo<Record<string, number[]> | null>(() => {
-		if (
-			trendlineType === "none" ||
-			!seriesKeys.length ||
-			!visibleRenderData.length
-		)
-			return null;
-		const result: Record<string, number[]> = {};
-		// running[i] accumulates the stack height at row i across series
-		const running = new Array<number>(visibleRenderData.length).fill(0);
-		for (const sk of seriesKeys) {
-			const vals = visibleRenderData.map((r, i) => {
-				const v = Number(r[sk] ?? 0);
-				if (!unstacked) {
-					running[i] += v;
-					return running[i];
-				}
-				return v;
-			});
-			const n = vals.length;
-			const sumX = (n * (n - 1)) / 2;
-			const sumX2 = (n * (n - 1) * (2 * n - 1)) / 6;
-			const sumY = vals.reduce((a, v) => a + v, 0);
-			const sumXY = vals.reduce((a, v, i) => a + i * v, 0);
-			const denom = n * sumX2 - sumX * sumX;
-			const slope = denom ? (n * sumXY - sumX * sumY) / denom : 0;
-			const intercept = (sumY - slope * sumX) / n;
-			result[sk] = vals.map((_, i) => slope * i + intercept);
+	const { dataYMin, dataYMax } = useMemo(() => {
+		if (!zoomY || !chartData.length || !yKeys.length)
+			return { dataYMin: 0, dataYMax: 1 };
+		let maxVal = 0;
+		for (const row of chartData) {
+			const rowMax = yKeys.reduce(
+				(mx, sk) => Math.max(mx, Number(row[sk] ?? 0)),
+				0,
+			);
+			if (rowMax > maxVal) maxVal = rowMax;
 		}
-		return result;
-	}, [trendlineType, seriesKeys, visibleRenderData, unstacked]);
+		return { dataYMin: 0, dataYMax: maxVal };
+	}, [zoomY, chartData, yKeys]);
 
-	// Merge _total and _trend_* into the final chart data in one pass
-	const renderDataFinal = useMemo(() => {
-		const needsTotal = showTotals;
-		const needsTrend = trendDataMap !== null;
-		if (!needsTotal && !needsTrend) return visibleRenderData;
-		return visibleRenderData.map((row, i) => {
-			const extra: Record<string, unknown> = {};
-			if (needsTotal) {
-				extra._total = seriesKeys.reduce(
-					(sum, sk) => sum + (Number(row[sk]) || 0),
-					0,
-				);
-			}
-			if (needsTrend) {
-				for (const sk of seriesKeys) {
-					extra[`_trend_${sk}`] = trendDataMap![sk][i];
-				}
-			}
-			return { ...row, ...extra };
-		});
-	}, [showTotals, trendDataMap, visibleRenderData, seriesKeys]);
+	const yBrushActive = zoomY && (yBrushFrac[0] > 0 || yBrushFrac[1] < 1);
+	const yDomain = yBrushActive
+		? ([
+				dataYMin + yBrushFrac[0] * (dataYMax - dataYMin),
+				dataYMin + yBrushFrac[1] * (dataYMax - dataYMin),
+			] as [number, number])
+		: undefined;
+
+	const colorForSeries = (
+		row: Record<string, unknown>,
+		seriesIndex: number,
+		seriesKey: string,
+	): string => {
+		for (const rule of colorRules) {
+			if (rule.targetColumn && rule.targetColumn !== seriesKey) continue;
+			const candidate: unknown = row[rule.valueColumn];
+			if (compareColorRule(rule.comparator, candidate, rule.value))
+				return rule.color;
+		}
+		return palette[seriesIndex % palette.length];
+	};
 
 	const xAxisLabel = xCfg.title ?? config?.xLabel ?? (xKey || undefined);
 	const yAxisLabel =
@@ -740,7 +645,7 @@ export function Area_Chart({
 		return (
 			<div className="flex h-full items-center justify-center">
 				<div className="px-6 text-center text-slate-400">
-					<TrendingUp className="mx-auto mb-3 h-12 w-12 opacity-30" />
+					<BarChart2 className="mx-auto mb-3 h-12 w-12 opacity-30" />
 					<p className="font-medium text-sm">No data configured</p>
 					<p className="mt-1 text-xs">
 						Drag columns to X-Axis and Y-Axis drop zones
@@ -750,50 +655,13 @@ export function Area_Chart({
 		);
 	}
 
-	const colorForSeries = (
-		seriesIndex: number,
-		row?: Record<string, unknown>,
-		seriesKey?: string,
-	): string => {
-		if (row && seriesKey) {
-			for (const rule of colorRules) {
-				if (rule.targetColumn && rule.targetColumn !== seriesKey)
-					continue;
-				if (
-					compareColorRule(
-						rule.comparator,
-						row[rule.valueColumn],
-						rule.value,
-					)
-				)
-					return rule.color;
-			}
-		}
-		return palette[seriesIndex % palette.length];
-	};
-
-	// Pre-compute per-series average for average lines.
-	// Stacked: series i is visually drawn from cumsum(0..i-1) to cumsum(0..i),
-	// so its reference line must sit at the cumulative average Σavg(0..i).
-	const seriesAvg = useMemo(() => {
-		if (!showAverage || !visibleRenderData.length)
-			return {} as Record<string, number>;
-		const rawAvgs: Record<string, number> = {};
-		for (const sk of seriesKeys) {
-			rawAvgs[sk] =
-				visibleRenderData.reduce((s, r) => s + Number(r[sk] ?? 0), 0) /
-				visibleRenderData.length;
-		}
-		if (unstacked) return rawAvgs;
-		// Stacked: build cumulative averages
-		const cumAvgs: Record<string, number> = {};
-		let running = 0;
-		for (const sk of seriesKeys) {
-			running += rawAvgs[sk];
-			cumAvgs[sk] = running;
-		}
-		return cumAvgs;
-	}, [showAverage, visibleRenderData, seriesKeys, unstacked]);
+	const renderData =
+		trendlineType !== "none" && trendlineData
+			? visibleRenderData.map((r) => ({
+					...r,
+					_trend: Number(r[yKeys[0]]) || 0,
+				}))
+			: visibleRenderData;
 
 	return (
 		<div
@@ -814,45 +682,57 @@ export function Area_Chart({
 			>
 				<ResponsiveContainer width="100%" height="100%">
 					<ComposedChart
-						data={renderDataFinal}
+						data={renderData}
+						barCategoryGap="30%"
 						layout={flipAxis ? "vertical" : "horizontal"}
 						margin={{
-							top: Math.max(
-								showTotals && !flipAxis ? 20 : 4,
-								flipAxis && showAverage ? 20 : 4,
-								showMinMax ? 24 : 4,
-							),
-							right: Math.max(
-								!flipAxis && showAverage ? 48 : 8,
-								flipAxis && showMinMax ? 50 : 8,
-								showTotals && flipAxis ? 50 : 8,
-							),
+							top: showAverage && flipAxis ? 20 : 4,
+							right:
+								showAverage && !flipAxis
+									? 48
+									: showMinMax && flipAxis
+										? 50
+										: 8,
 							left: 0,
 							bottom: 4,
 						}}
 					>
 						<defs>
-							{seriesKeys.map((_, i) => (
-								<linearGradient
-									key={i}
-									id={`area-grad-${i}`}
-									x1="0"
-									y1="0"
-									x2="0"
-									y2="1"
-								>
-									<stop
-										offset="5%"
-										stopColor={palette[i % palette.length]}
-										stopOpacity={0.15}
-									/>
-									<stop
-										offset="95%"
-										stopColor={palette[i % palette.length]}
-										stopOpacity={0}
-									/>
-								</linearGradient>
-							))}
+							{comboSeries.lines.map(
+								({ displayKey, resolvedKey }) => {
+									if (
+										(seriesTypes[displayKey] ?? "line") !==
+										"area"
+									)
+										return null;
+									const i = yKeys.indexOf(resolvedKey);
+									const color =
+										palette[
+											Math.max(0, i) % palette.length
+										];
+									return (
+										<linearGradient
+											key={`grad-${resolvedKey}`}
+											id={`combo-grad-${resolvedKey}`}
+											x1="0"
+											y1="0"
+											x2="0"
+											y2="1"
+										>
+											<stop
+												offset="5%"
+												stopColor={color}
+												stopOpacity={0.25}
+											/>
+											<stop
+												offset="95%"
+												stopColor={color}
+												stopOpacity={0.03}
+											/>
+										</linearGradient>
+									);
+								},
+							)}
 						</defs>
 						<CartesianGrid
 							{...GRID_STYLE}
@@ -872,11 +752,9 @@ export function Area_Chart({
 									axisLine={false}
 									tickLine={yCfg.showTicks ?? true}
 									reversed={reverseYAxis || undefined}
-									domain={yDomain}
-									allowDataOverflow={yBrushActive}
 								/>
 								<YAxis
-									dataKey={effectiveXDataKey}
+									dataKey={xKey}
 									type="category"
 									tick={{
 										...AXIS_STYLE,
@@ -892,9 +770,7 @@ export function Area_Chart({
 						) : (
 							<>
 								<XAxis
-									dataKey={effectiveXDataKey}
-									type="category"
-									padding={{ left: 30, right: 30 }}
+									dataKey={xKey}
 									tick={
 										xCfg.showLabels === false
 											? false
@@ -971,112 +847,132 @@ export function Area_Chart({
 							/>
 						)}
 
-						{seriesKeys.map((k, i) => (
-							<Area
-								key={k}
-								type={curveTypeToRecharts(curveType)}
-								dataKey={k}
-								isAnimationActive={false}
-								stackId={unstacked ? undefined : "area"}
-								stroke={colorForSeries(i)}
-								strokeWidth={lineWidth}
-								strokeDasharray={strokeDashFor(s.lineType)}
-								fill={`url(#area-grad-${i})`}
-								dot={
-									symbolType === "none"
-										? false
-										: (props: any) => {
-												const {
-													cx,
-													cy,
-													payload,
-													index,
-												} = props;
-												const fill = colorForSeries(
-													i,
-													payload as Record<
-														string,
-														unknown
-													>,
-													k,
-												);
-												return (
-													<g
-														key={`dot-${k}-${index}`}
-													>
-														{renderChartSymbol(
-															symbolType,
-															cx,
-															cy,
-															symbolSize,
-															fill,
-														)}
-													</g>
-												);
+						{/* Bars — rendered first so overlays paint on top */}
+						{comboSeries.bars.map(({ displayKey, resolvedKey }) => {
+							const i = yKeys.indexOf(resolvedKey);
+							const color =
+								palette[Math.max(0, i) % palette.length];
+							const showLabels = valueLabelCfg?.show === true;
+							return (
+								<Bar
+									key={`bar-${resolvedKey}`}
+									dataKey={resolvedKey}
+									name={displayKey}
+									fill={color}
+									barSize={barWidth}
+									radius={[3, 3, 0, 0]}
+									isAnimationActive={false}
+								>
+									{visibleRenderData.map((row, idx) => (
+										<Cell
+											key={`${resolvedKey}-${idx}`}
+											fill={colorForSeries(
+												row,
+												i,
+												resolvedKey,
+											)}
+										/>
+									))}
+									{showLabels && (
+										<LabelList
+											dataKey={resolvedKey}
+											position={
+												valueLabelCfg?.position ?? "top"
 											}
-								}
-								activeDot={
-									symbolType === "none"
-										? false
-										: { r: symbolSize + 2, strokeWidth: 0 }
-								}
-							>
-								{valueLabelCfg?.show === true && (
-									<LabelList
-										dataKey={k}
-										position={
-											valueLabelCfg.position ?? "top"
-										}
-										angle={valueLabelCfg.rotate ?? 0}
-										style={{
-											fontSize:
-												valueLabelCfg.fontSize ?? 10,
-											fill:
-												valueLabelCfg.color ??
-												"#64748b",
-											fontFamily:
-												valueLabelCfg.fontFamily ??
-												undefined,
-										}}
-										formatter={
-											((v: unknown) =>
-												typeof v === "number"
-													? v.toLocaleString()
-													: String(v ?? "")) as never
-										}
-									/>
-								)}
-								{showMinMax && (
-									<LabelList
-										dataKey={k}
-										content={(props: any) => {
-											const {
-												index,
-												x,
-												y,
-												width,
-												height,
-												value,
-											} = props;
-											const isMax = index === maxIdx[k];
-											const isMin = index === minIdx[k];
-											if (!isMax && !isMin) return null;
-											const color =
-												palette[i % palette.length];
-											const label =
-												typeof value === "number"
-													? value.toLocaleString()
-													: String(value ?? "");
-											const badgeW = Math.max(
-												label.length * 6 + 10,
-												26,
-											);
-											if (flipAxis) {
+											angle={valueLabelCfg?.rotate ?? 0}
+											style={{
+												fontSize:
+													valueLabelCfg?.fontSize ??
+													10,
+												fill:
+													valueLabelCfg?.color ??
+													"#64748b",
+											}}
+											formatter={
+												((v: unknown) =>
+													typeof v === "number"
+														? v.toLocaleString()
+														: String(
+																v ?? "",
+															)) as never
+											}
+										/>
+									)}
+									{showMinMax && (
+										<LabelList
+											dataKey={resolvedKey}
+											content={(props: any) => {
+												const {
+													index,
+													x,
+													y,
+													width,
+													height,
+													value,
+												} = props;
+												const isMax =
+													index ===
+													maxIdx[resolvedKey];
+												const isMin =
+													index ===
+													minIdx[resolvedKey];
+												if (!isMax && !isMin)
+													return null;
+												const label =
+													typeof value === "number"
+														? value.toLocaleString()
+														: String(value ?? "");
+												const badgeW = Math.max(
+													label.length * 6 + 10,
+													26,
+												);
+												if (flipAxis) {
+													const cx =
+														(x ?? 0) + (width ?? 0);
+													const cy =
+														(y ?? 0) +
+														(height ?? 0) / 2;
+													return (
+														<g>
+															<circle
+																cx={cx}
+																cy={cy}
+																r={5}
+																fill={color}
+																stroke="#fff"
+																strokeWidth={
+																	1.5
+																}
+															/>
+															<rect
+																x={cx + 8}
+																y={cy - 7}
+																width={badgeW}
+																height={14}
+																rx={4}
+																fill={color}
+															/>
+															<text
+																x={
+																	cx +
+																	8 +
+																	badgeW / 2
+																}
+																y={cy}
+																textAnchor="middle"
+																dominantBaseline="middle"
+																fontSize={9}
+																fontWeight={700}
+																fill="#fff"
+															>
+																{label}
+															</text>
+														</g>
+													);
+												}
 												const cx =
-													(x ?? 0) + (width ?? 0);
-												const cy =
-													(y ?? 0) +
-													(height ?? 0) / 2;
+													(x ?? 0) + (width ?? 0) / 2;
+												const cy = y ?? 0;
 												return (
 													<g>
 														<circle
@@ -1088,20 +984,16 @@ export function Area_Chart({
 															strokeWidth={1.5}
 														/>
 														<rect
-															x={cx + 8}
-															y={cy - 7}
+															x={cx - badgeW / 2}
+															y={cy - 23}
 															width={badgeW}
 															height={14}
 															rx={4}
 															fill={color}
 														/>
 														<text
-															x={
-																cx +
-																8 +
-																badgeW / 2
-															}
-															y={cy}
+															x={cx}
+															y={cy - 16}
 															textAnchor="middle"
 															dominantBaseline="middle"
 															fontSize={9}
@@ -1112,93 +1004,242 @@ export function Area_Chart({
 														</text>
 													</g>
 												);
-											}
-											const cx =
-												(x ?? 0) + (width ?? 0) / 2;
-											const cy = isMax
-												? (y ?? 0)
-												: (y ?? 0) + (height ?? 0);
-											return (
-												<g>
-													<circle
-														cx={cx}
-														cy={cy}
-														r={5}
-														fill={color}
-														stroke="#fff"
-														strokeWidth={1.5}
-													/>
-													<rect
-														x={cx - badgeW / 2}
-														y={
-															cy -
-															(isMax ? 23 : -9)
-														}
-														width={badgeW}
-														height={14}
-														rx={4}
-														fill={color}
-													/>
-													<text
-														x={cx}
-														y={
-															cy -
-															(isMax ? 16 : -16)
-														}
-														textAnchor="middle"
-														dominantBaseline="middle"
-														fontSize={9}
-														fontWeight={700}
-														fill="#fff"
-													>
-														{label}
-													</text>
-												</g>
-											);
-										}}
-									/>
-								)}
-							</Area>
-						))}
+											}}
+										/>
+									)}
+								</Bar>
+							);
+						})}
 
-						{/* Display Total — labels pinned to the top/right margin via TotalLabels */}
-						{showTotals && (
-							<TotalLabels
-								rows={renderDataFinal}
-								xDataKey={effectiveXDataKey}
-								flipAxis={flipAxis}
+						{/* Area overlays */}
+						{comboSeries.lines
+							.filter(
+								({ displayKey }) =>
+									(seriesTypes[displayKey] ?? "line") ===
+									"area",
+							)
+							.map(({ displayKey, resolvedKey }) => {
+								const i = yKeys.indexOf(resolvedKey);
+								const color =
+									palette[Math.max(0, i) % palette.length];
+								const showLabels = valueLabelCfg?.show === true;
+								return (
+									<Area
+										key={`area-${resolvedKey}`}
+										dataKey={resolvedKey}
+										name={displayKey}
+										stroke={color}
+										fill={`url(#combo-grad-${resolvedKey})`}
+										strokeWidth={lineWidth}
+										strokeDasharray={strokeDashFor(
+											lineType,
+										)}
+										type={curveTypeToRecharts(
+											curveType as any,
+										)}
+										isAnimationActive={false}
+										dot={
+											symbolType === "none"
+												? false
+												: (props: any) => {
+														const {
+															cx,
+															cy,
+															index,
+														} = props;
+														const row =
+															visibleRenderData[
+																index
+															];
+														const dotColor = row
+															? colorForSeries(
+																	row,
+																	i,
+																	resolvedKey,
+																)
+															: color;
+														return (
+															<g
+																key={`dot-area-${resolvedKey}-${index}`}
+															>
+																{renderChartSymbol(
+																	symbolType,
+																	cx,
+																	cy,
+																	symbolSize,
+																	dotColor,
+																)}
+															</g>
+														);
+													}
+										}
+										activeDot={
+											symbolType === "none"
+												? false
+												: {
+														r: symbolSize + 2,
+														strokeWidth: 0,
+														fill: color,
+													}
+										}
+									>
+										{showLabels && (
+											<LabelList
+												dataKey={resolvedKey}
+												position={
+													valueLabelCfg?.position ??
+													"top"
+												}
+												angle={
+													valueLabelCfg?.rotate ?? 0
+												}
+												style={{
+													fontSize:
+														valueLabelCfg?.fontSize ??
+														10,
+													fill:
+														valueLabelCfg?.color ??
+														"#64748b",
+												}}
+												formatter={
+													((v: unknown) =>
+														typeof v === "number"
+															? v.toLocaleString()
+															: String(
+																	v ?? "",
+																)) as never
+												}
+											/>
+										)}
+									</Area>
+								);
+							})}
+
+						{/* Line overlays */}
+						{comboSeries.lines
+							.filter(
+								({ displayKey }) =>
+									(seriesTypes[displayKey] ?? "line") ===
+									"line",
+							)
+							.map(({ displayKey, resolvedKey }) => {
+								const i = yKeys.indexOf(resolvedKey);
+								const color =
+									palette[Math.max(0, i) % palette.length];
+								const showLabels = valueLabelCfg?.show === true;
+								return (
+									<Line
+										key={`line-${resolvedKey}`}
+										dataKey={resolvedKey}
+										name={displayKey}
+										stroke={color}
+										strokeWidth={lineWidth}
+										strokeDasharray={strokeDashFor(
+											lineType,
+										)}
+										type={curveTypeToRecharts(
+											curveType as any,
+										)}
+										isAnimationActive={false}
+										dot={
+											symbolType === "none"
+												? false
+												: (props: any) => {
+														const {
+															cx,
+															cy,
+															index,
+														} = props;
+														const row =
+															visibleRenderData[
+																index
+															];
+														const dotColor = row
+															? colorForSeries(
+																	row,
+																	i,
+																	resolvedKey,
+																)
+															: color;
+														return (
+															<g
+																key={`dot-line-${resolvedKey}-${index}`}
+															>
+																{renderChartSymbol(
+																	symbolType,
+																	cx,
+																	cy,
+																	symbolSize,
+																	dotColor,
+																)}
+															</g>
+														);
+													}
+										}
+										activeDot={
+											symbolType === "none"
+												? false
+												: {
+														r: symbolSize + 2,
+														strokeWidth: 0,
+														fill: color,
+													}
+										}
+									>
+										{showLabels && (
+											<LabelList
+												dataKey={resolvedKey}
+												position={
+													valueLabelCfg?.position ??
+													"top"
+												}
+												angle={
+													valueLabelCfg?.rotate ?? 0
+												}
+												style={{
+													fontSize:
+														valueLabelCfg?.fontSize ??
+														10,
+													fill:
+														valueLabelCfg?.color ??
+														"#64748b",
+												}}
+												formatter={
+													((v: unknown) =>
+														typeof v === "number"
+															? v.toLocaleString()
+															: String(
+																	v ?? "",
+																)) as never
+												}
+											/>
+										)}
+									</Line>
+								);
+							})}
+
+						{/* Trendline */}
+						{trendlineType !== "none" && (
+							<Line
+								type={curveTypeToRecharts(trendlineType as any)}
+								dataKey="_trend"
+								stroke="#64748b"
+								strokeWidth={2}
+								dot={{ r: 3, strokeWidth: 0, fill: "#64748b" }}
+								activeDot={false}
+								legendType="none"
+								isAnimationActive={false}
 							/>
 						)}
 
-						{/* Trendlines — one per series, colored to match */}
-						{trendDataMap &&
-							trendlineType !== "none" &&
-							seriesKeys.map((sk, i) => (
-								<Line
-									key={`trend-${sk}`}
-									type={curveTypeToRecharts(
-										trendlineType as Exclude<
-											typeof trendlineType,
-											"none"
-										>,
-									)}
-									dataKey={`_trend_${sk}`}
-									stroke={palette[i % palette.length]}
-									strokeWidth={2}
-									strokeDasharray="4 4"
-									dot={false}
-									activeDot={false}
-									legendType="none"
-									isAnimationActive={false}
-								/>
-							))}
-
-						{/* Average lines — cumulative position when stacked so each line
-                            lands inside its own series' visual band */}
+						{/* Average lines */}
 						{showAverage &&
-							seriesKeys.map((sk, i) => {
-								const avg = seriesAvg[sk];
-								if (avg == null) return null;
+							yKeys.map((sk, i) => {
+								const avg =
+									visibleRenderData.reduce(
+										(s, r) => s + Number(r[sk] ?? 0),
+										0,
+									) / (visibleRenderData.length || 1);
 								const color = palette[i % palette.length];
 								return (
 									<ReferenceLine
@@ -1267,14 +1308,13 @@ export function Area_Chart({
 							/>
 						))}
 
-						<AreaCursor
+						<ComboCursor
 							axisPointerType={axisPointerType}
 							flipAxis={flipAxis}
-							xTicks={categoryTicks}
-							yTicks={categoryTicks}
 						/>
 					</ComposedChart>
 				</ResponsiveContainer>
+
 				{zoomY && (
 					<YAxisBrush
 						dataYMin={dataYMin}
@@ -1291,6 +1331,7 @@ export function Area_Chart({
 					/>
 				)}
 			</div>
+
 			{zoomX && (
 				<XAxisBrush
 					value={xBrushFrac}

@@ -10,7 +10,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { ParamControl } from "@/components/ParamControl";
 import { type QueryRunFn, useQueryRunner } from "@/components/QueryRunner";
-import type { ParamGroup } from "@/lib/resolveQuery";
+import { type ParamGroup, resolveParamDefault } from "@/lib/resolveQuery";
 import type { ParamSheetConfig } from "@/types/dashboard";
 
 /** Distinct first-column values from a SEMOSS query result (for dropdown options). */
@@ -326,7 +326,8 @@ export function ParamSheet({
 								<ParamControl
 									param={g.param}
 									value={
-										values[g.name] ?? g.param.defaultValue
+										values[g.name] ??
+										resolveParamDefault(g.param)
 									}
 									options={optionsFor(g)}
 									onChange={(v) => onChangeValue(g.name, v)}

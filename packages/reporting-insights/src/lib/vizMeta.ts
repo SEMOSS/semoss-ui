@@ -32,6 +32,7 @@ export const VIZ_TYPE_META: Record<
 	kpi: { icon: Activity, label: "KPI", category: "Metrics" },
 	bar: { icon: BarChart2, label: "Bar", category: "Comparison" },
 	stackbar: { icon: BarChart2, label: "Stacked Bar", category: "Comparison" },
+	combo: { icon: BarChart2, label: "Combo Chart", category: "Comparison" },
 	line: { icon: LineChart, label: "Line", category: "Trends" },
 	area: { icon: AreaChart, label: "Area", category: "Trends" },
 	scatter: { icon: ScatterChart, label: "Scatter", category: "Distribution" },

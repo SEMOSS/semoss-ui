@@ -16,6 +16,7 @@
 
 import {
 	AlertTriangle,
+	BookOpen,
 	ChevronDown,
 	Database,
 	GitBranch,
@@ -43,6 +44,7 @@ export interface QueryParam {
 	defaultValue: string;
 	inputType?: "text" | "dropdown" | "multiselect" | "date";
 	required?: boolean;
+	useCurrentDate?: boolean;
 	options?: string[];
 	optionsQuery?: string;
 	optionsDatabaseId?: string;
@@ -131,6 +133,78 @@ export function QueryParameters({
 	const definedNames = new Set(parameters.map((p) => p.name).filter(Boolean));
 	const undefinedTokens = tokens.filter((t) => !definedNames.has(t));
 
+	const [showGuide, setShowGuide] = useState(false);
+	const [activeFlow, setActiveFlow] = useState<0 | 1 | 2>(0);
+
+	const FLOWS: { label: string; steps: React.ReactNode[] }[] = [
+		{
+			label: "Creating Params",
+			steps: [
+				<>
+					Write your SQL and reference parameters using double-brace
+					syntax:{" "}
+					<code className="rounded bg-stone-100 px-1 font-mono text-[11px] text-indigo-500">
+						{"{{param_name}}"}
+					</code>
+				</>,
+				"Open the Parameters modal — any detected tokens appear in the amber banner at the top.",
+				<>
+					Click <strong className="text-stone-700">Define all</strong>{" "}
+					to auto-create entries for each token, then configure each
+					one.
+				</>,
+			],
+		},
+		{
+			label: "Defining Params",
+			steps: [
+				<>
+					Each parameter accordion lets you set a{" "}
+					<strong className="text-stone-700">label</strong>,{" "}
+					<strong className="text-stone-700">input type</strong>{" "}
+					(text, dropdown, date…), and a{" "}
+					<strong className="text-stone-700">default value</strong>.
+				</>,
+				<>
+					For dropdown / multiselect types you can supply options
+					manually, or write an{" "}
+					<strong className="text-stone-700">options query</strong>{" "}
+					that fetches values from the database at runtime.
+				</>,
+				"A green dot on the param header means the token is referenced in the query. Amber means the param exists but is not yet used in SQL.",
+			],
+		},
+		{
+			label: "Conditional Params",
+			steps: [
+				<>
+					Create a{" "}
+					<strong className="text-stone-700">dropdown</strong> param
+					first (e.g.{" "}
+					<code className="rounded bg-stone-100 px-1 font-mono text-[11px] text-indigo-500">
+						{"{{region}}"}
+					</code>
+					) and populate its options. This is your driver param.
+				</>,
+				<>
+					Create a second dropdown param (e.g.{" "}
+					<code className="rounded bg-stone-100 px-1 font-mono text-[11px] text-indigo-500">
+						{"{{city}}"}
+					</code>
+					). Set{" "}
+					<strong className="text-stone-700">Conditional on</strong>{" "}
+					to the driver param name.
+				</>,
+				<>
+					In the <strong className="text-stone-700">Branches</strong>{" "}
+					section, add one branch per driver value. Each branch
+					defines which options appear when that driver value is
+					selected.
+				</>,
+			],
+		},
+	];
+
 	// Accordion: only one parameter is open at a time, so a long list stays readable.
 	const [openId, setOpenId] = useState<string | null>(
 		parameters.length === 1 ? parameters[0].id : null,
@@ -176,6 +250,60 @@ export function QueryParameters({
 
 	return (
 		<div className="space-y-3">
+			{/* Guide panel */}
+			<div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+				<button
+					type="button"
+					onClick={() => setShowGuide((v) => !v)}
+					className="flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-stone-50"
+				>
+					<BookOpen className="h-4 w-4 flex-shrink-0 text-stone-400" />
+					<span className="flex-1 font-semibold text-[12px] text-stone-500">
+						How does this work?
+					</span>
+					<ChevronDown
+						className={`h-4 w-4 flex-shrink-0 text-stone-400 transition-transform ${showGuide ? "" : "-rotate-90"}`}
+					/>
+				</button>
+				{showGuide && (
+					<div className="space-y-3 border-stone-100 border-t bg-stone-50/50 px-3 py-3">
+						<div className="flex gap-1.5">
+							{FLOWS.map((f, i) => (
+								<button
+									key={f.label}
+									type="button"
+									onClick={() =>
+										setActiveFlow(i as 0 | 1 | 2)
+									}
+									className={`rounded-md px-2.5 py-1 font-semibold text-[11px] transition-colors ${
+										activeFlow === i
+											? "bg-indigo-100 text-indigo-700"
+											: "text-stone-500 hover:bg-stone-100"
+									}`}
+								>
+									{f.label}
+								</button>
+							))}
+						</div>
+						<ol className="space-y-2">
+							{FLOWS[activeFlow].steps.map((step, i) => (
+								<li
+									key={`step-${activeFlow}-${i}`}
+									className="flex gap-2.5"
+								>
+									<span className="mt-0.5 grid h-4 w-4 flex-shrink-0 place-items-center rounded-full bg-indigo-100 font-bold text-[10px] text-indigo-600">
+										{i + 1}
+									</span>
+									<p className="text-[12px] text-stone-600 leading-snug">
+										{step}
+									</p>
+								</li>
+							))}
+						</ol>
+					</div>
+				)}
+			</div>
+
 			{/* Undefined-token detector */}
 			{undefinedTokens.length > 0 && (
 				<div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
@@ -390,23 +518,52 @@ export function QueryParameters({
 													/>
 												)}
 												{inputType === "date" && (
-													<Input
-														type="date"
-														value={
-															param.defaultValue
-														}
-														onChange={(e) =>
-															updateParam(
-																param.id,
-																{
-																	defaultValue:
-																		e.target
-																			.value,
-																},
-															)
-														}
-														className={FIELD}
-													/>
+													<>
+														<Input
+															type="date"
+															value={
+																param.defaultValue
+															}
+															disabled={
+																param.useCurrentDate
+															}
+															onChange={(e) =>
+																updateParam(
+																	param.id,
+																	{
+																		defaultValue:
+																			e
+																				.target
+																				.value,
+																	},
+																)
+															}
+															className={`${FIELD} ${param.useCurrentDate ? "cursor-not-allowed opacity-40" : ""}`}
+														/>
+														<label className="mt-1.5 inline-flex cursor-pointer items-center gap-1.5 text-[11px] text-stone-500">
+															<input
+																type="checkbox"
+																checked={
+																	param.useCurrentDate ??
+																	false
+																}
+																onChange={(e) =>
+																	updateParam(
+																		param.id,
+																		{
+																			useCurrentDate:
+																				e
+																					.target
+																					.checked,
+																		},
+																	)
+																}
+																className="h-3 w-3 rounded border-stone-300 accent-indigo-600"
+															/>
+															Always use
+															today&apos;s date
+														</label>
+													</>
 												)}
 												{needsOptions &&
 													(hasOptionsSource ? (

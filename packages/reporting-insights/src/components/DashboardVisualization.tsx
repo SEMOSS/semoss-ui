@@ -39,6 +39,7 @@ import { Bar_Chart } from "@/components/visualizations/Bar_Chart";
 import { BoxPlotChart } from "@/components/visualizations/BoxPlotChart";
 import { BubbleChart } from "@/components/visualizations/BubbleChart";
 import { ClusterChart } from "@/components/visualizations/ClusterChart";
+import { Combo_Chart } from "@/components/visualizations/Combo_Chart";
 import { HalfDonutChart } from "@/components/visualizations/HalfDonutChart";
 import { HeatmapChart } from "@/components/visualizations/HeatmapChart";
 import { HtmlBlockVisualization } from "@/components/visualizations/HtmlBlockVisualization";
@@ -63,13 +64,14 @@ import {
 	useFilterStore,
 } from "@/lib/dashboardFilters";
 import { escapeSqlForPixel } from "@/lib/pixel";
-import type { QuerySource } from "@/lib/resolveQuery";
+import { type QuerySource, resolveParamDefault } from "@/lib/resolveQuery";
 import { aggregateTableRows } from "@/lib/tableAggregate";
 import { applyVizFilter } from "@/lib/vizFilter";
 import { contentSizeStyles, hasContentSize } from "@/lib/vizSize";
 import { applyVizSort } from "@/lib/vizSort";
 import type {
 	AreaStyling,
+	ComboStyling,
 	LineStyling,
 	StackBarStyling,
 	Visualization,
@@ -251,6 +253,10 @@ interface Props {
 	 * Called when the line chart requests a styling update (e.g. save-zoom on brush release).
 	 */
 	onLineStylingChange?: (updates: Partial<LineStyling>) => void;
+	/**
+	 * Called when the combo chart requests a styling update (e.g. save-zoom on brush release).
+	 */
+	onComboStylingChange?: (updates: Partial<ComboStyling>) => void;
 }
 
 // Facet navigation bar
@@ -415,6 +421,7 @@ export function DashboardVisualization({
 	onStackbarStylingChange,
 	onAreaStylingChange,
 	onLineStylingChange,
+	onComboStylingChange,
 }: Props) {
 	const { actions } = useInsight();
 	const sharedRun = useQueryRunner();
@@ -694,9 +701,13 @@ export function DashboardVisualization({
 		let r = q;
 		const m: Record<string, string> = {};
 		src.parameters?.forEach((p) => {
-			m[p.name] = p.defaultValue;
+			m[p.name] = resolveParamDefault(p);
 		});
 		Object.assign(m, parameterValues);
+		// useCurrentDate always wins — override any stale stored value.
+		src.parameters?.forEach((p) => {
+			if (p.useCurrentDate) m[p.name] = resolveParamDefault(p);
+		});
 		// Empty multiselect = "all options" → substitute every known option so
 		// IN ({{param}}) matches all rows instead of generating invalid IN ().
 		src.parameters?.forEach((p) => {
@@ -1366,6 +1377,17 @@ export function DashboardVisualization({
 					data={facetData}
 					config={visualization.config}
 					onStylingChange={onLineStylingChange}
+				/>
+			);
+		}
+
+		// Combo
+		if (vt === "combo") {
+			return (
+				<Combo_Chart
+					data={facetData}
+					config={visualization.config}
+					onStylingChange={onComboStylingChange}
 				/>
 			);
 		}

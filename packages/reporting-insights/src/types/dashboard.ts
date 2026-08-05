@@ -16,6 +16,8 @@ export interface Parameter {
 	name: string; // Used in query as {{name}}
 	label: string; // Human-readable display name
 	defaultValue: string;
+	/** When true, the effective value at load/run time is always today's date (YYYY-MM-DD), ignoring `defaultValue`. */
+	useCurrentDate?: boolean;
 	/**
 	 * How the value is entered at view time:
 	 *  - 'text'        free input (default)
@@ -66,7 +68,8 @@ export type VisualizationType =
 	| "sunburst"
 	| "puck"
 	| "csvexport"
-	| "filter";
+	| "filter"
+	| "combo";
 
 /** Width in a 12-column grid: quarter (3), third (4), half (6), full (12) */
 export type ColSpan = 3 | 4 | 6 | 12;
@@ -284,6 +287,39 @@ export interface AreaStyling {
 	symbolSize?: number;
 }
 
+/** Combo chart–specific styling configuration (mixed bar / line / area series) */
+export interface ComboStyling {
+	barKeys?: string[];
+	lineKeys?: string[];
+	barAggregations?: Record<string, string>;
+	lineAggregations?: Record<string, string>;
+	seriesTypes?: Record<string, "line" | "area">;
+	xAxisConfig?: AxisConfig;
+	yAxisConfig?: AxisConfig;
+	valueLabel?: ValueLabelConfig;
+	barWidth?: number;
+	curveType?: CurveType;
+	lineType?: "solid" | "dashed" | "dotted";
+	lineWidth?: number;
+	symbolType?: SymbolType;
+	symbolSize?: number;
+	showLegend?: boolean;
+	colorRules?: ColorRule[];
+	trendlineType?: CurveType | "none";
+	showAverage?: boolean;
+	axisPointer?: "shadow" | "line" | "cross";
+	flipAxis?: boolean;
+	showMinMax?: boolean;
+	reverseYAxis?: boolean;
+	targetAreas?: TargetArea[];
+	targetLines?: TargetLine[];
+	zoomX?: boolean;
+	zoomY?: boolean;
+	saveZoom?: boolean;
+	savedZoomX?: [number, number];
+	savedZoomY?: [number, number];
+}
+
 /** Multi-line chart–specific styling configuration */
 export interface MultiLineStyling {
 	showAverage?: boolean;
@@ -311,6 +347,16 @@ export interface BoxPlotStyling {
 	whiskerType?: "minmax" | "iqr";
 	/** Box fill opacity 0.1–1.0 (default 0.6) */
 	fillOpacity?: number;
+	colorRules?: ColorRule[];
+	xAxisConfig?: AxisConfig;
+	yAxisConfig?: AxisConfig;
+	flipAxis?: boolean;
+	showTooltip?: boolean;
+	zoomX?: boolean;
+	zoomY?: boolean;
+	saveZoom?: boolean;
+	savedZoomX?: [number, number];
+	savedZoomY?: [number, number];
 }
 
 /** Cluster chart–specific styling configuration */
@@ -400,6 +446,8 @@ export interface VisualizationStyling {
 	bar?: BarStyling;
 	/** Line chart–specific styling and behavior configuration */
 	line?: LineStyling;
+	/** Combo chart–specific styling and behavior configuration */
+	combo?: ComboStyling;
 	/** Pie chart–specific styling and behavior configuration */
 	pie?: PieStyling;
 	/**
@@ -986,7 +1034,6 @@ export function curveTypeToRecharts(
 			return "step";
 		case "stepEnd":
 			return "stepAfter";
-		case "smooth":
 		default:
 			return "monotone";
 	}

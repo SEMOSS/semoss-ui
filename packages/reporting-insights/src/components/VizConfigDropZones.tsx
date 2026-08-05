@@ -150,6 +150,35 @@ const DROP_ZONES_CONFIG: Record<VisualizationType, DropZone[]> = {
 			placeholder: "Drag a column to slice data by its values",
 		},
 	],
+	combo: [
+		{
+			id: "xAxis",
+			label: "X-Axis",
+			multiColumn: false,
+			placeholder: "Drag a dimension column",
+		},
+		{
+			id: "barSeries",
+			label: "Y-Axis (Bar)",
+			multiColumn: true,
+			aggregation: true,
+			placeholder: "Drag columns to render as bars",
+		},
+		{
+			id: "lineSeries",
+			label: "Y-Axis (Line / Area Overlay)",
+			multiColumn: true,
+			aggregation: true,
+			placeholder: "Drag columns to overlay as line or area",
+		},
+		{
+			id: "tooltip",
+			label: "Tooltip (Optional)",
+			multiColumn: true,
+			aggregation: true,
+			placeholder: "Drag columns to show in hover tooltip",
+		},
+	],
 	scatter: [
 		{
 			id: "label",
@@ -389,16 +418,22 @@ const DROP_ZONES_CONFIG: Record<VisualizationType, DropZone[]> = {
 	boxplot: [
 		{
 			id: "xAxis",
-			label: "Category (Required)",
+			label: "X-Axis (Category)",
 			multiColumn: false,
 			placeholder: "Drag a categorical column",
 		},
 		{
 			id: "yAxis",
-			label: "Values (Required)",
+			label: "Y-Axis (Values)",
+			multiColumn: true,
+			aggregation: true,
+			placeholder: "Drag one or more numeric columns",
+		},
+		{
+			id: "facet",
+			label: "Facet (Optional)",
 			multiColumn: false,
-			aggregation: false,
-			placeholder: "Drag a numeric column",
+			placeholder: "Drag a column to facet the chart",
 		},
 	],
 	polarbar: [
@@ -628,6 +663,13 @@ interface VizConfigDropZonesProps {
 	onChange: (data: DropZoneDataWithTable) => void;
 }
 
+const TypeIcon = ({ dt }: { dt: string }) =>
+	normalizeDataType(dt) === "NUMBER" ? (
+		<Hash className="h-4 w-4 flex-shrink-0 text-emerald-500" />
+	) : (
+		<Type className="h-4 w-4 flex-shrink-0 text-stone-400" />
+	);
+
 // ── Component ─────────────────────────────────────────────────────────────────
 export function VizConfigDropZones({
 	columns,
@@ -816,13 +858,6 @@ export function VizConfigDropZones({
 				removeOne(name);
 			}
 		};
-
-		const TypeIcon = ({ dt }: { dt: string }) =>
-			normalizeDataType(dt) === "NUMBER" ? (
-				<Hash className="h-4 w-4 flex-shrink-0 text-emerald-500" />
-			) : (
-				<Type className="h-4 w-4 flex-shrink-0 text-stone-400" />
-			);
 
 		return (
 			<DragDropContext onDragEnd={handleTableDragEnd}>

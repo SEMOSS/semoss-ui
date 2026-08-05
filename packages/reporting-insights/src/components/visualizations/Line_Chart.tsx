@@ -738,6 +738,8 @@ export function Line_Chart({
 	): string => {
 		if (row && seriesKey) {
 			for (const rule of colorRules) {
+				if (rule.targetColumn && rule.targetColumn !== seriesKey)
+					continue;
 				if (
 					compareColorRule(
 						rule.comparator,
