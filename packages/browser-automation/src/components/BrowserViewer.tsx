@@ -1,6 +1,14 @@
 import type React from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	useCallback,
+	useEffect,
+	useId,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import type {
+	BrowserScrollMetrics,
 	ClientToServerEvent,
 	ConnectionState,
 	SelectionBounds,
@@ -11,12 +19,14 @@ interface BrowserViewerProps {
 	remoteWidth: number;
 	remoteHeight: number;
 	latestFrame: string | null;
+	scrollMetrics: BrowserScrollMetrics;
 	browserCursor?: string;
 	sendEvent: (event: ClientToServerEvent) => void;
 	onUserInput?: () => void;
-	selectionMode?: boolean;
-	onSelectionComplete?: (bounds: SelectionBounds) => void;
-	onSelectionCancel?: () => void;
+	onTextDragComplete?: (
+		bounds: SelectionBounds,
+		anchor: { clientX: number; clientY: number },
+	) => void;
 	/** When true, clicks are delegated to onAutomationClick for acknowledged dispatch. */
 	automationMode?: boolean;
 	/** Called for an automation click with local and remote browser coordinates. */
@@ -27,13 +37,6 @@ interface BrowserViewerProps {
 		remoteY: number,
 		button: "left" | "right" | "middle",
 	) => void;
-}
-
-interface SelectionPoint {
-	localX: number;
-	localY: number;
-	remoteX: number;
-	remoteY: number;
 }
 
 function getMouseButton(event: React.MouseEvent): "left" | "right" | "middle" {
@@ -49,25 +52,23 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 	remoteWidth,
 	remoteHeight,
 	latestFrame,
+	scrollMetrics,
 	browserCursor = "default",
 	sendEvent,
 	onUserInput,
-	selectionMode = false,
-	onSelectionComplete,
-	onSelectionCancel,
+	onTextDragComplete,
 	automationMode = false,
 	onAutomationClick,
 }) => {
+	const canvasId = useId();
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
-	const selectionLayerRef = useRef<HTMLButtonElement>(null);
+	const scrollbarTrackRef = useRef<HTMLDivElement>(null);
+	const scrollbarThumbRef = useRef<HTMLDivElement>(null);
+	const scrollbarDragOffsetRef = useRef<number | null>(null);
+	const lastScrollbarDispatchRef = useRef(0);
+	const optimisticScrollTopRef = useRef(0);
 	const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-	const [selectionStart, setSelectionStart] = useState<SelectionPoint | null>(
-		null,
-	);
-	const [selectionEnd, setSelectionEnd] = useState<SelectionPoint | null>(
-		null,
-	);
 
 	useEffect(() => {
 		if (!containerRef.current) return;
@@ -100,6 +101,85 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 			height: Math.max(1, Math.floor(remoteHeight * scale)),
 		};
 	}, [containerSize.height, containerSize.width, remoteHeight, remoteWidth]);
+	const remoteScrollableHeight = Math.max(
+		0,
+		scrollMetrics.scrollHeight - scrollMetrics.viewportHeight,
+	);
+	const scrollbarHeight = Math.max(1, fittedCanvasSize.height);
+	const scrollbarThumbHeight = Math.min(
+		scrollbarHeight,
+		Math.max(
+			28,
+			scrollbarHeight *
+				(scrollMetrics.viewportHeight /
+					Math.max(1, scrollMetrics.scrollHeight)),
+		),
+	);
+	const scrollbarTravel = Math.max(0, scrollbarHeight - scrollbarThumbHeight);
+	const scrollbarThumbTop =
+		remoteScrollableHeight > 0
+			? (Math.min(scrollMetrics.scrollTop, remoteScrollableHeight) /
+					remoteScrollableHeight) *
+				scrollbarTravel
+			: 0;
+
+	useEffect(() => {
+		if (scrollbarDragOffsetRef.current === null) {
+			optimisticScrollTopRef.current = scrollMetrics.scrollTop;
+		}
+	}, [scrollMetrics.scrollTop]);
+
+	const dispatchScrollbarTarget = useCallback(
+		(target: number, localTop: number) => {
+			if (remoteScrollableHeight <= 0) return;
+			if (scrollbarThumbRef.current) {
+				scrollbarThumbRef.current.style.transform = `translateY(${localTop}px)`;
+			}
+			const now = Date.now();
+			if (now - lastScrollbarDispatchRef.current < 75) return;
+			lastScrollbarDispatchRef.current = now;
+			const clampedTarget = Math.max(
+				0,
+				Math.min(target, remoteScrollableHeight),
+			);
+			const delta = clampedTarget - optimisticScrollTopRef.current;
+			if (Math.abs(delta) < 1) return;
+			optimisticScrollTopRef.current = clampedTarget;
+			onUserInput?.();
+			sendEvent({
+				type: "wheel",
+				x: remoteWidth / 2,
+				y: remoteHeight / 2,
+				deltaX: 0,
+				deltaY: delta,
+			});
+		},
+		[
+			onUserInput,
+			remoteHeight,
+			remoteScrollableHeight,
+			remoteWidth,
+			sendEvent,
+		],
+	);
+
+	const updateScrollbarFromPointer = useCallback(
+		(clientY: number) => {
+			const track = scrollbarTrackRef.current;
+			const dragOffset = scrollbarDragOffsetRef.current;
+			if (!track || dragOffset === null || scrollbarTravel <= 0) return;
+			const rect = track.getBoundingClientRect();
+			const localTop = Math.max(
+				0,
+				Math.min(clientY - rect.top - dragOffset, scrollbarTravel),
+			);
+			dispatchScrollbarTarget(
+				(localTop / scrollbarTravel) * remoteScrollableHeight,
+				localTop,
+			);
+		},
+		[dispatchScrollbarTarget, remoteScrollableHeight, scrollbarTravel],
+	);
 
 	useEffect(() => {
 		if (!latestFrame || !canvasRef.current) return;
@@ -114,15 +194,6 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 		};
 		image.src = `data:image/jpeg;base64,${latestFrame}`;
 	}, [latestFrame]);
-
-	useEffect(() => {
-		if (!selectionMode) {
-			setSelectionStart(null);
-			setSelectionEnd(null);
-			return;
-		}
-		selectionLayerRef.current?.focus();
-	}, [selectionMode]);
 
 	const toRemoteCoords = useCallback(
 		(clientX: number, clientY: number) => {
@@ -149,109 +220,19 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 		[remoteHeight, remoteWidth],
 	);
 
-	const toSelectionPoint = useCallback(
-		(clientX: number, clientY: number): SelectionPoint => {
-			const layer = selectionLayerRef.current;
-			if (!layer) {
-				const remote = toRemoteCoords(clientX, clientY);
-				return {
-					localX: 0,
-					localY: 0,
-					remoteX: remote.x,
-					remoteY: remote.y,
-				};
-			}
-			const rect = layer.getBoundingClientRect();
-			const localX = Math.max(
-				0,
-				Math.min(clientX - rect.left, rect.width),
-			);
-			const localY = Math.max(
-				0,
-				Math.min(clientY - rect.top, rect.height),
-			);
-			const remote = toRemoteCoords(clientX, clientY);
-			return {
-				localX,
-				localY,
-				remoteX: remote.x,
-				remoteY: remote.y,
-			};
-		},
-		[toRemoteCoords],
-	);
-
-	const handleSelectionPointerDown = useCallback(
-		(event: React.PointerEvent<HTMLButtonElement>) => {
-			if (event.button !== 0) return;
-			event.preventDefault();
-			event.currentTarget.setPointerCapture(event.pointerId);
-			const point = toSelectionPoint(event.clientX, event.clientY);
-			setSelectionStart(point);
-			setSelectionEnd(point);
-		},
-		[toSelectionPoint],
-	);
-
-	const handleSelectionPointerMove = useCallback(
-		(event: React.PointerEvent<HTMLButtonElement>) => {
-			if (
-				!selectionStart ||
-				!event.currentTarget.hasPointerCapture(event.pointerId)
-			)
-				return;
-			setSelectionEnd(toSelectionPoint(event.clientX, event.clientY));
-		},
-		[selectionStart, toSelectionPoint],
-	);
-
-	const handleSelectionPointerUp = useCallback(
-		(event: React.PointerEvent<HTMLButtonElement>) => {
-			if (!selectionStart) return;
-			const end = toSelectionPoint(event.clientX, event.clientY);
-			if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-				event.currentTarget.releasePointerCapture(event.pointerId);
-			}
-			const width = Math.abs(end.localX - selectionStart.localX);
-			const height = Math.abs(end.localY - selectionStart.localY);
-			if (width < 5 && height < 5) {
-				setSelectionStart(null);
-				setSelectionEnd(null);
-				return;
-			}
-			onSelectionComplete?.({
-				startX: selectionStart.remoteX,
-				startY: selectionStart.remoteY,
-				endX: end.remoteX,
-				endY: end.remoteY,
-			});
-			setSelectionStart(null);
-			setSelectionEnd(null);
-		},
-		[onSelectionComplete, selectionStart, toSelectionPoint],
-	);
-
-	const selectionRectangle = useMemo(() => {
-		if (!selectionStart || !selectionEnd) return null;
-		return {
-			left: Math.min(selectionStart.localX, selectionEnd.localX),
-			top: Math.min(selectionStart.localY, selectionEnd.localY),
-			width: Math.abs(selectionEnd.localX - selectionStart.localX),
-			height: Math.abs(selectionEnd.localY - selectionStart.localY),
-		};
-	}, [selectionEnd, selectionStart]);
-
 	// Drag detection: only send mouse-click for clean clicks; send
 	// mouse-down/mouse-up only for real drags. Without this, mousedown+mouseup
 	// fires an implicit browser click AND the explicit mouse-click event fires
 	// another one — causing every click to register twice on the remote page.
 	const dragDownPosRef = useRef<{ x: number; y: number } | null>(null);
 	const isDraggingRef = useRef(false);
+	const suppressNextClickRef = useRef(false);
 	const DRAG_THRESHOLD_PX = 5;
 
 	const handleMouseDown = useCallback(
 		(event: React.MouseEvent) => {
 			onUserInput?.();
+			suppressNextClickRef.current = false;
 			const point = toRemoteCoords(event.clientX, event.clientY);
 			dragDownPosRef.current = point;
 			isDraggingRef.current = false;
@@ -263,25 +244,42 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 		(event: React.MouseEvent) => {
 			onUserInput?.();
 			const point = toRemoteCoords(event.clientX, event.clientY);
-			if (isDraggingRef.current) {
+			const dragStart = dragDownPosRef.current;
+			const wasDragging = isDraggingRef.current;
+			if (wasDragging) {
 				sendEvent({
 					type: "mouse-up",
 					...point,
 					button: getMouseButton(event),
 				});
+				suppressNextClickRef.current = true;
+				if (event.button === 0 && dragStart) {
+					onTextDragComplete?.(
+						{
+							startX: dragStart.x,
+							startY: dragStart.y,
+							endX: point.x,
+							endY: point.y,
+						},
+						{ clientX: event.clientX, clientY: event.clientY },
+					);
+				}
 			}
 			isDraggingRef.current = false;
 			dragDownPosRef.current = null;
 		},
-		[onUserInput, sendEvent, toRemoteCoords],
+		[onTextDragComplete, onUserInput, sendEvent, toRemoteCoords],
 	);
 	const handleClick = useCallback(
 		(event: React.MouseEvent) => {
-			onUserInput?.();
-			if (isDraggingRef.current) {
-				isDraggingRef.current = false;
+			// A browser click event is emitted after mouseup even when the gesture
+			// was a drag. Ignore it completely: notifying onUserInput here would
+			// immediately dismiss the selected-text popup created by mouseup.
+			if (suppressNextClickRef.current) {
+				suppressNextClickRef.current = false;
 				return;
 			}
+			onUserInput?.();
 			const point = toRemoteCoords(event.clientX, event.clientY);
 			if (automationMode && onAutomationClick) {
 				const canvas = canvasRef.current;
@@ -337,21 +335,38 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 		},
 		[sendEvent, toRemoteCoords],
 	);
-	const handleWheel = useCallback(
-		(event: React.WheelEvent) => {
+	const lastScrollTimeRef = useRef(0);
+	const scrollViewport = useCallback(
+		(direction: -1 | 1) => {
 			onUserInput?.();
-			event.preventDefault();
 			sendEvent({
 				type: "wheel",
-				...toRemoteCoords(event.clientX, event.clientY),
-				deltaX: event.deltaX,
-				deltaY: event.deltaY,
+				x: remoteWidth / 2,
+				y: remoteHeight / 2,
+				deltaX: 0,
+				deltaY: direction * remoteHeight * 0.7,
 			});
 		},
-		[onUserInput, sendEvent, toRemoteCoords],
+		[onUserInput, remoteHeight, remoteWidth, sendEvent],
+	);
+	const handleWheel = useCallback(
+		(event: React.WheelEvent) => {
+			event.preventDefault();
+			const now = Date.now();
+			if (now - lastScrollTimeRef.current < 220 || event.deltaY === 0)
+				return;
+			lastScrollTimeRef.current = now;
+			scrollViewport(event.deltaY < 0 ? -1 : 1);
+		},
+		[scrollViewport],
 	);
 	const handleKeyDown = useCallback(
 		(event: React.KeyboardEvent) => {
+			if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+				event.preventDefault();
+				scrollViewport(event.key === "ArrowUp" ? -1 : 1);
+				return;
+			}
 			onUserInput?.();
 			const preventDefault = [
 				"Tab",
@@ -389,7 +404,7 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 					},
 				});
 		},
-		[onUserInput, sendEvent],
+		[onUserInput, scrollViewport, sendEvent],
 	);
 
 	const isConnected = connectionState === "connected";
@@ -431,6 +446,7 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 				}}
 			>
 				<canvas
+					id={canvasId}
 					ref={canvasRef}
 					tabIndex={0}
 					className="relative block h-full w-full rounded-sm bg-black shadow-2xl shadow-black/50 outline-none ring-1 ring-white/10"
@@ -451,33 +467,96 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 					onWheel={handleWheel}
 					onKeyDown={handleKeyDown}
 				/>
-				{selectionMode && (
-					<button
-						type="button"
-						ref={selectionLayerRef}
-						aria-label="Select website text. Drag over text or press Escape to cancel."
-						className="absolute inset-0 z-20 cursor-text rounded-sm border-0 bg-transparent p-0 text-left outline-none"
-						style={{ touchAction: "none" }}
-						onPointerDown={handleSelectionPointerDown}
-						onPointerMove={handleSelectionPointerMove}
-						onPointerUp={handleSelectionPointerUp}
+				{isConnected && remoteScrollableHeight > 0 && (
+					<div
+						ref={scrollbarTrackRef}
+						role="scrollbar"
+						tabIndex={0}
+						aria-controls={canvasId}
+						aria-orientation="vertical"
+						aria-valuemin={0}
+						aria-valuemax={remoteScrollableHeight}
+						aria-valuenow={Math.round(scrollMetrics.scrollTop)}
+						aria-label="Remote page scrollbar"
+						className="group absolute inset-y-0 right-0 z-20 h-full w-4 cursor-default touch-none select-none bg-slate-500/10 transition-colors hover:bg-slate-500/15 active:bg-slate-500/15"
+						onPointerDown={(event) => {
+							event.preventDefault();
+							event.stopPropagation();
+							event.currentTarget.setPointerCapture(
+								event.pointerId,
+							);
+							const rect =
+								event.currentTarget.getBoundingClientRect();
+							const pointerTop = event.clientY - rect.top;
+							const isOnThumb =
+								pointerTop >= scrollbarThumbTop &&
+								pointerTop <=
+									scrollbarThumbTop + scrollbarThumbHeight;
+							scrollbarDragOffsetRef.current = isOnThumb
+								? pointerTop - scrollbarThumbTop
+								: scrollbarThumbHeight / 2;
+							updateScrollbarFromPointer(event.clientY);
+						}}
+						onPointerMove={(event) => {
+							if (
+								scrollbarDragOffsetRef.current === null ||
+								!event.currentTarget.hasPointerCapture(
+									event.pointerId,
+								)
+							)
+								return;
+							updateScrollbarFromPointer(event.clientY);
+						}}
+						onPointerUp={(event) => {
+							updateScrollbarFromPointer(event.clientY);
+							scrollbarDragOffsetRef.current = null;
+							if (
+								event.currentTarget.hasPointerCapture(
+									event.pointerId,
+								)
+							) {
+								event.currentTarget.releasePointerCapture(
+									event.pointerId,
+								);
+							}
+						}}
+						onPointerCancel={() => {
+							scrollbarDragOffsetRef.current = null;
+						}}
 						onKeyDown={(event) => {
-							if (event.key === "Escape") {
+							if (
+								event.key === "ArrowUp" ||
+								event.key === "ArrowDown"
+							) {
 								event.preventDefault();
-								onSelectionCancel?.();
+								scrollViewport(
+									event.key === "ArrowUp" ? -1 : 1,
+								);
+							} else if (
+								event.key === "Home" ||
+								event.key === "End"
+							) {
+								event.preventDefault();
+								const localTop =
+									event.key === "Home" ? 0 : scrollbarTravel;
+								dispatchScrollbarTarget(
+									event.key === "Home"
+										? 0
+										: remoteScrollableHeight,
+									localTop,
+								);
 							}
 						}}
 					>
-						<div className="-translate-x-1/2 pointer-events-none absolute top-2 left-1/2 rounded-md bg-black/80 px-3 py-1.5 font-medium text-white text-xs shadow-lg">
-							Drag over website text · Esc to cancel
-						</div>
-						{selectionRectangle && (
-							<div
-								className="pointer-events-none absolute border-2 border-accent bg-accent/20 shadow-[0_0_0_9999px_rgba(0,0,0,0.18)]"
-								style={selectionRectangle}
-							/>
-						)}
-					</button>
+						<div
+							ref={scrollbarThumbRef}
+							className="absolute top-0 right-1 left-1 rounded-full bg-slate-400/55 shadow-sm transition-colors group-hover:bg-slate-500/80 group-active:bg-slate-500/80"
+							style={{
+								height: scrollbarThumbHeight,
+								transform: `translateY(${scrollbarThumbTop}px)`,
+							}}
+						/>
+					</div>
 				)}
 			</div>
 		</div>

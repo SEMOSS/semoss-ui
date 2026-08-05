@@ -3,7 +3,9 @@ import {
 	ChevronDown,
 	ChevronRight,
 	Circle,
+	Copy,
 	ScanLine,
+	X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
@@ -20,7 +22,6 @@ import { AutomationPopup } from "./components/AutomationPopup";
 import { BrowserTabStrip } from "./components/BrowserTabStrip";
 import { BrowserToolbar } from "./components/BrowserToolbar";
 import { BrowserViewer } from "./components/BrowserViewer";
-import { ConnectionStatus } from "./components/ConnectionStatus";
 import { PlaybackCompleteDialog } from "./components/dialogs/PlaybackCompleteDialog";
 import { ReturnToPlaygroundDialog } from "./components/dialogs/ReturnToPlaygroundDialog";
 import { SaveRecordingDialog } from "./components/dialogs/SaveRecordingDialog";
@@ -61,8 +62,10 @@ import {
 } from "./semoss/client";
 import { runPixel } from "./semoss/pixel";
 import type {
+	BrowserScrollMetrics,
 	BrowserTabInfo,
 	ClientToServerEvent,
+	LoadedRecordingStep,
 	McpToolContext,
 	RecordingMetadataModelOption,
 	RecordingProjectOption,
@@ -93,11 +96,17 @@ type ResolvePlaywrightRecordingResponse = {
 
 type AutomationHistoryEntry = {
 	iteration: number;
-	type: "click" | "fill" | "select";
+	type: "click" | "fill" | "select" | "scroll";
 	label: string;
 	value?: string;
 	pageUrl: string;
 	reason: string;
+};
+
+type PendingTextSelection = {
+	context: SelectedTextContext | null;
+	clientX: number;
+	clientY: number;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -127,6 +136,12 @@ export default function App() {
 		saveProjectMcpEntry,
 	} = useRemoteBrowserSession();
 	const [latestFrame, setLatestFrame] = useState<string | null>(null);
+	const [browserScrollMetrics, setBrowserScrollMetrics] =
+		useState<BrowserScrollMetrics>({
+			scrollTop: 0,
+			scrollHeight: 1,
+			viewportHeight: 1,
+		});
 	const [currentUrl, setCurrentUrl] = useState("");
 	const [browserCursor, setBrowserCursor] = useState("default");
 	const [browserTabs, setBrowserTabs] = useState<BrowserTabInfo[]>([]);
@@ -176,11 +191,9 @@ export default function App() {
 	>([]);
 	const [selectedTextContextsOpen, setSelectedTextContextsOpen] =
 		useState(false);
-	const [selectionMode, setSelectionMode] = useState(false);
-	const [isCapturingSelectedText, setIsCapturingSelectedText] =
-		useState(false);
-	const [pendingBrowserActionCount, setPendingBrowserActionCount] =
-		useState(0);
+	const [pendingTextSelection, setPendingTextSelection] =
+		useState<PendingTextSelection | null>(null);
+	const [pendingNavigationCount, setPendingNavigationCount] = useState(0);
 	const [recordedStepsOpen, setRecordedStepsOpen] = useState(false);
 	const [playbackCloseCountdown, setPlaybackCloseCountdown] = useState<
 		number | null
@@ -216,6 +229,7 @@ export default function App() {
 	const autoPlaybackErrorSentRef = useRef(false);
 	const returningToPlaygroundRef = useRef(false);
 	const selectedContextSequenceRef = useRef(0);
+	const textSelectionRequestRef = useRef(0);
 	const activeToolExecutionRef = useRef("");
 	const automationRunTokenRef = useRef(0);
 
@@ -251,13 +265,23 @@ export default function App() {
 	const effectiveInsightId = getSemossInsightId() || insightId;
 
 	// Frame callback - stable reference so it doesn't re-trigger the socket effect
-	const handleFrame = useCallback((data: string, _w: number, _h: number) => {
-		setLatestFrame(data);
-	}, []);
+	const handleFrame = useCallback(
+		(
+			data: string,
+			_w: number,
+			_h: number,
+			scrollMetrics: BrowserScrollMetrics,
+		) => {
+			setLatestFrame(data);
+			setBrowserScrollMetrics(scrollMetrics);
+		},
+		[],
+	);
 
 	const handleNavigated = useCallback((url: string) => {
 		setCurrentUrl(url);
-		setSelectionMode(false);
+		textSelectionRequestRef.current += 1;
+		setPendingTextSelection(null);
 	}, []);
 
 	const handleSocketError = useCallback((msg: string) => {
@@ -282,6 +306,11 @@ export default function App() {
 		);
 		if (activeTab?.url) setCurrentUrl(activeTab.url);
 		setLatestFrame(null);
+		setBrowserScrollMetrics({
+			scrollTop: 0,
+			scrollHeight: 1,
+			viewportHeight: 1,
+		});
 	}, []);
 
 	useEffect(() => {
@@ -304,6 +333,90 @@ export default function App() {
 		onTabActivated: handleTabActivated,
 		onCursorChanged: setBrowserCursor,
 	});
+	const storeSelectedTextContext = useCallback(
+		(context: SelectedTextContext) => {
+			selectedContextSequenceRef.current += 1;
+			const title = (context.title || "Website text").trim().slice(0, 72);
+			const boundedContent = context.content
+				.trim()
+				.slice(0, MAX_SELECTED_CONTEXT_CHARS);
+			const stored: SelectedTextContext = {
+				...context,
+				label: `${title} - Selection ${selectedContextSequenceRef.current}`,
+				content: boundedContent,
+				text: renderSelectedTextContext({
+					...context,
+					content: boundedContent,
+				}),
+				stats: {
+					...context.stats,
+					characterCount: boundedContent.length,
+					truncated:
+						context.stats.truncated ||
+						context.content.length > boundedContent.length,
+				},
+			};
+			setSelectedTextContexts((current) =>
+				appendBoundedSelectedContext(current, stored),
+			);
+			setSelectedTextContextsOpen(true);
+			setSnackMessage(
+				`Captured ${boundedContent.length} characters of website text`,
+			);
+		},
+		[],
+	);
+	const replayContextStep = useCallback(
+		async (step: LoadedRecordingStep) => {
+			const points = Array.isArray(step.multiCoords)
+				? step.multiCoords.filter(isRecord)
+				: [];
+			if (points.length < 2) {
+				throw new Error("recorded selection bounds are missing");
+			}
+			const start = points[0];
+			const end = points[points.length - 1];
+			const viewport = isRecord(step.viewport) ? step.viewport : {};
+			const recordedWidth =
+				typeof viewport.width === "number" ? viewport.width : 0;
+			const recordedHeight =
+				typeof viewport.height === "number" ? viewport.height : 0;
+			const scaleX =
+				recordedWidth > 0 && session?.viewport.width
+					? session.viewport.width / recordedWidth
+					: 1;
+			const scaleY =
+				recordedHeight > 0 && session?.viewport.height
+					? session.viewport.height / recordedHeight
+					: 1;
+			const coordinate = (
+				point: Record<string, unknown>,
+				key: "x" | "y",
+				scale: number,
+			) => {
+				const value = point[key];
+				if (typeof value !== "number" || !Number.isFinite(value)) {
+					throw new Error(
+						`recorded selection ${key} coordinate is invalid`,
+					);
+				}
+				return value * scale;
+			};
+			const context = await captureSelectedText({
+				startX: coordinate(start, "x", scaleX),
+				startY: coordinate(start, "y", scaleY),
+				endX: coordinate(end, "x", scaleX),
+				endY: coordinate(end, "y", scaleY),
+			});
+			storeSelectedTextContext(context);
+		},
+		[
+			captureSelectedText,
+			session?.viewport.height,
+			session?.viewport.width,
+			storeSelectedTextContext,
+		],
+	);
 	const loadRoomRecording = useCallback(
 		(roomInsightId: string, fileName: string) =>
 			getRoomRecordingEnvelope(roomInsightId, `/playwright/${fileName}`),
@@ -320,6 +433,7 @@ export default function App() {
 		replaySingleStep,
 		sendReplayEvent,
 		sendTabControlEvent,
+		replayContextStep,
 		onError: setSnackError,
 		onMessage: setSnackMessage,
 	});
@@ -389,7 +503,15 @@ export default function App() {
 
 	const runBrowserAction = useCallback(
 		async (event: ClientToServerEvent) => {
-			setPendingBrowserActionCount((count) => count + 1);
+			const isNavigation = [
+				"navigate",
+				"navigate-back",
+				"navigate-forward",
+				"reload",
+			].includes(event.type);
+			if (isNavigation) {
+				setPendingNavigationCount((count) => count + 1);
+			}
 			try {
 				await sendReplayEvent({
 					...event,
@@ -402,7 +524,11 @@ export default function App() {
 						: "Browser action failed",
 				);
 			} finally {
-				setPendingBrowserActionCount((count) => Math.max(0, count - 1));
+				if (isNavigation) {
+					setPendingNavigationCount((count) =>
+						Math.max(0, count - 1),
+					);
+				}
 			}
 		},
 		[sendReplayEvent],
@@ -821,50 +947,42 @@ export default function App() {
 		};
 	}, [getRecordedSteps, isRecording, session]);
 
-	const handleSelectedTextCapture = useCallback(
-		async (bounds: SelectionBounds) => {
-			setSelectionMode(false);
-			setIsCapturingSelectedText(true);
+	const dismissPendingTextSelection = useCallback(() => {
+		textSelectionRequestRef.current += 1;
+		setPendingTextSelection(null);
+	}, []);
+
+	const handleTextDragComplete = useCallback(
+		async (
+			bounds: SelectionBounds,
+			anchor: { clientX: number; clientY: number },
+		) => {
+			const request = textSelectionRequestRef.current + 1;
+			textSelectionRequestRef.current = request;
+			setPendingTextSelection({
+				context: null,
+				clientX: anchor.clientX,
+				clientY: anchor.clientY,
+			});
 			try {
 				const context = await captureSelectedText(bounds);
-				selectedContextSequenceRef.current += 1;
-				const title = (context.title || "Website text")
-					.trim()
-					.slice(0, 72);
-				const boundedContent = context.content
-					.trim()
-					.slice(0, MAX_SELECTED_CONTEXT_CHARS);
-				const stored: SelectedTextContext = {
-					...context,
-					label: `${title} - Selection ${selectedContextSequenceRef.current}`,
-					content: boundedContent,
-					text: renderSelectedTextContext({
-						...context,
-						content: boundedContent,
-					}),
-					stats: {
-						...context.stats,
-						characterCount: boundedContent.length,
-						truncated:
-							context.stats.truncated ||
-							context.content.length > boundedContent.length,
-					},
-				};
-				setSelectedTextContexts((current) =>
-					appendBoundedSelectedContext(current, stored),
-				);
-				setSelectedTextContextsOpen(true);
-				setSnackMessage(
-					`Captured ${boundedContent.length} characters of website text`,
-				);
+				if (textSelectionRequestRef.current !== request) return;
+				setPendingTextSelection({
+					context,
+					clientX: anchor.clientX,
+					clientY: anchor.clientY,
+				});
 			} catch (error) {
-				setSnackError(
-					error instanceof Error
-						? error.message
-						: "Failed to capture selected website text",
-				);
-			} finally {
-				setIsCapturingSelectedText(false);
+				if (textSelectionRequestRef.current !== request) return;
+				setPendingTextSelection(null);
+				const message = error instanceof Error ? error.message : "";
+				// Ordinary drags (sliders, maps, canvases) are not text selections.
+				// Keep those interactions quiet; surface only transport/server failures.
+				if (!message.includes("No visible DOM text")) {
+					setSnackError(
+						message || "Failed to inspect selected website text",
+					);
+				}
 			}
 		},
 		[captureSelectedText],
@@ -880,6 +998,40 @@ export default function App() {
 			}
 		},
 		[],
+	);
+
+	const handleAddSelectedContext = useCallback(
+		async (context: SelectedTextContext) => {
+			let captured = context;
+			let recordingError = "";
+			if (isRecording) {
+				try {
+					captured = await captureSelectedText(
+						context.bounds,
+						true,
+						context.title || "Selected website text",
+					);
+				} catch (error) {
+					recordingError =
+						error instanceof Error
+							? error.message
+							: "Could not record the context extraction step";
+				}
+			}
+			storeSelectedTextContext(captured);
+			dismissPendingTextSelection();
+			if (recordingError) {
+				setSnackError(
+					`Context was added, but its recording step failed: ${recordingError}`,
+				);
+			}
+		},
+		[
+			captureSelectedText,
+			dismissPendingTextSelection,
+			isRecording,
+			storeSelectedTextContext,
+		],
 	);
 
 	const handleDeleteSelectedContext = useCallback(
@@ -983,7 +1135,6 @@ export default function App() {
 		setActiveBrowserTabId("tab-1");
 		playback.resetReplayPreparation();
 		setIsRecording(false);
-		setSelectionMode(false);
 		setSaveDialogOpen(false);
 		setStopRecordingDialogOpen(false);
 	}, [closeSession, playback.resetReplayPreparation, sendEvent]);
@@ -1019,17 +1170,6 @@ export default function App() {
 		setPlaybackCloseCountdown(null);
 		void closeBrowserSessionRef.current();
 	}, []);
-
-	const handleStop = useCallback(async () => {
-		if (isRecording) {
-			sendEvent({
-				type: "recording-control",
-				recording: false,
-				discard: true,
-			});
-		}
-		await closeBrowserSession();
-	}, [closeBrowserSession, isRecording, sendEvent]);
 
 	const handleSwitchBrowserTab = useCallback(
 		async (tabId: string) => {
@@ -1580,10 +1720,7 @@ export default function App() {
 
 	const remoteWidth = session?.viewport.width ?? 1365;
 	const remoteHeight = session?.viewport.height ?? 768;
-	const isBrowserLoading =
-		isCreating ||
-		pendingBrowserActionCount > 0 ||
-		playback.runningStepId !== null;
+	const isBrowserLoading = isCreating || pendingNavigationCount > 0;
 	const replayMenuOpen =
 		playback.controlsOpen || playback.loadedRecordingOpen;
 
@@ -1823,11 +1960,53 @@ export default function App() {
 				throw new Error("Automation planner did not return an action.");
 			}
 			const action = output.action;
-			const type = action.type;
-			if (type !== "click" && type !== "fill" && type !== "select") {
+			const rawType = action.type;
+			const type =
+				typeof rawType === "string" ? rawType.trim().toLowerCase() : "";
+			if (
+				type !== "click" &&
+				type !== "fill" &&
+				type !== "select" &&
+				type !== "scroll"
+			) {
 				throw new Error(
-					"Automation planner returned an unsupported action.",
+					`Automation planner returned an unsupported action type: ${JSON.stringify(rawType)}.`,
 				);
+			}
+			const label = typeof action.label === "string" ? action.label : "";
+			const expectedUrl =
+				typeof output.pageUrl === "string" ? output.pageUrl : undefined;
+			const expectedTabId =
+				typeof output.tabId === "string" ? output.tabId : undefined;
+			const reason =
+				typeof output.reason === "string" ? output.reason : "";
+
+			if (type === "scroll") {
+				const deltaY =
+					typeof action.deltaY === "number" ? action.deltaY : 0;
+				if (!deltaY) {
+					throw new Error(
+						"Automation planner returned an empty scroll amount.",
+					);
+				}
+				await sendReplayEvent({
+					type: "wheel",
+					requestId: crypto.randomUUID(),
+					x: remoteWidth / 2,
+					y: remoteHeight / 2,
+					deltaX: 0,
+					deltaY,
+					expectedUrl,
+					expectedTabId,
+				});
+				return {
+					iteration,
+					type,
+					label,
+					value: `${deltaY < 0 ? "up" : "down"} 70%`,
+					pageUrl: expectedUrl || "",
+					reason,
+				};
 			}
 			if (!isRecord(action.selector)) {
 				throw new Error("Automation action has no validated selector.");
@@ -1851,14 +2030,7 @@ export default function App() {
 						? action.selector.frameSelector
 						: null,
 			};
-			const label = typeof action.label === "string" ? action.label : "";
 			const tag = typeof action.tag === "string" ? action.tag : undefined;
-			const expectedUrl =
-				typeof output.pageUrl === "string" ? output.pageUrl : undefined;
-			const expectedTabId =
-				typeof output.tabId === "string" ? output.tabId : undefined;
-			const reason =
-				typeof output.reason === "string" ? output.reason : "";
 
 			if (type === "click") {
 				const coords = isRecord(action.coords) ? action.coords : {};
@@ -1906,7 +2078,7 @@ export default function App() {
 				reason,
 			};
 		},
-		[sendReplayEvent],
+		[remoteHeight, remoteWidth, sendReplayEvent],
 	);
 
 	const cancelGoalAutomation = useCallback(() => {
@@ -2020,6 +2192,7 @@ export default function App() {
 		session?.sessionId,
 		toolContext?.roomId,
 	]);
+	const pendingSelectionContext = pendingTextSelection?.context ?? null;
 
 	return (
 		<div className="flex h-screen flex-col overflow-hidden bg-canvas text-ink">
@@ -2031,7 +2204,6 @@ export default function App() {
 					isCreating={isCreating}
 					isLoading={isBrowserLoading}
 					onStart={handleStart}
-					onStop={handleStop}
 					onNavigate={handleNavigate}
 					onBack={handleBack}
 					onForward={handleForward}
@@ -2043,8 +2215,7 @@ export default function App() {
 					onOpenSaveRecording={handleOpenSaveRecording}
 				/>
 				<div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-1">
-					<ConnectionStatus state={connectionState} />
-					{session && (
+					{isPlaygroundMode && session && (
 						<AutomationButton
 							insightId={effectiveInsightId}
 							isActive={
@@ -2079,43 +2250,6 @@ export default function App() {
 							onMaxIterationsChange={setAutomationMaxIterations}
 						/>
 					)}
-					{session && (
-						<Button
-							size="sm"
-							variant={selectionMode ? "default" : "outline"}
-							className={
-								selectionMode
-									? "bg-warning text-canvas hover:bg-warning/90"
-									: ""
-							}
-							disabled={
-								connectionState !== "connected" ||
-								isCapturingSelectedText ||
-								isReturningToPlayground
-							}
-							onClick={() => {
-								if (selectionMode) {
-									setSelectionMode(false);
-									return;
-								}
-								playback.requestPause(
-									"Playback paused for context selection",
-								);
-								setSelectionMode(true);
-							}}
-						>
-							{isCapturingSelectedText ? (
-								<Spinner />
-							) : (
-								<ScanLine />
-							)}
-							{isCapturingSelectedText
-								? "Extracting..."
-								: selectionMode
-									? "Cancel Capture"
-									: "Add context"}
-						</Button>
-					)}
 					{selectedTextContexts.length > 0 && (
 						<Button
 							size="sm"
@@ -2136,9 +2270,7 @@ export default function App() {
 							disabled={
 								isReturningToPlayground ||
 								isSaving ||
-								isSavingRecording ||
-								isCapturingSelectedText ||
-								selectionMode
+								isSavingRecording
 							}
 							onClick={() => void handleOpenReturnDialog()}
 						>
@@ -2169,22 +2301,22 @@ export default function App() {
 						{replayMenuOpen ? <ChevronDown /> : <ChevronRight />}
 						Replay
 					</Button>
-					<Button
-						size="sm"
-						variant={recordedStepsOpen ? "default" : "outline"}
-						disabled={!isRecording && recordedSteps.length === 0}
-						onClick={() => setRecordedStepsOpen((open) => !open)}
-					>
-						<Circle
-							className={
-								isRecording ? "fill-danger text-danger" : ""
+					{recordedSteps.length > 0 && (
+						<Button
+							size="sm"
+							variant={recordedStepsOpen ? "default" : "outline"}
+							onClick={() =>
+								setRecordedStepsOpen((open) => !open)
 							}
-						/>
-						Recorded{" "}
-						{recordedSteps.length
-							? `(${recordedSteps.length})`
-							: ""}
-					</Button>
+						>
+							<Circle
+								className={
+									isRecording ? "fill-danger text-danger" : ""
+								}
+							/>
+							Recorded ({recordedSteps.length})
+						</Button>
+					)}
 					{playback.isPaused && (
 						<Badge
 							variant="outline"
@@ -2202,6 +2334,7 @@ export default function App() {
 			<BrowserTabStrip
 				tabs={browserTabs}
 				activeTabId={activeBrowserTabId}
+				connectionState={connectionState}
 				isRecording={isRecording}
 				onSwitch={handleSwitchBrowserTab}
 				onClose={handleCloseBrowserTab}
@@ -2237,21 +2370,98 @@ export default function App() {
 						onDismiss={() => undefined}
 					/>
 				)}
+				{pendingTextSelection && (
+					<div
+						className="fixed z-50 w-72 rounded-lg border border-line bg-surface p-3 text-ink shadow-xl"
+						style={{
+							left: Math.max(
+								8,
+								Math.min(
+									pendingTextSelection.clientX + 10,
+									window.innerWidth - 296,
+								),
+							),
+							top: Math.max(
+								8,
+								Math.min(
+									pendingTextSelection.clientY + 10,
+									window.innerHeight - 180,
+								),
+							),
+						}}
+					>
+						<div className="mb-2 flex items-center justify-between gap-2">
+							<p className="font-medium text-sm">
+								Selected website text
+							</p>
+							<Button
+								size="icon-sm"
+								variant="ghost"
+								aria-label="Dismiss selected text"
+								onClick={dismissPendingTextSelection}
+							>
+								<X />
+							</Button>
+						</div>
+						{pendingSelectionContext ? (
+							<>
+								<p className="mb-3 line-clamp-3 text-ink-muted text-xs leading-5">
+									{pendingSelectionContext.content}
+								</p>
+								<div className="flex justify-end gap-2">
+									<Button
+										size="sm"
+										variant="outline"
+										onClick={() => {
+											void (async () => {
+												await handleCopySelectedContext(
+													pendingSelectionContext,
+												);
+												dismissPendingTextSelection();
+											})();
+										}}
+									>
+										<Copy />
+										Copy
+									</Button>
+									<Button
+										size="sm"
+										onClick={() => {
+											void handleAddSelectedContext(
+												pendingSelectionContext,
+											);
+										}}
+									>
+										<ScanLine />
+										Add as context
+									</Button>
+								</div>
+							</>
+						) : (
+							<div className="flex items-center gap-2 text-ink-muted text-sm">
+								<Spinner />
+								Reading selected text…
+							</div>
+						)}
+					</div>
+				)}
 				{/* Browser canvas */}
 				<BrowserViewer
 					connectionState={connectionState}
 					remoteWidth={remoteWidth}
 					remoteHeight={remoteHeight}
 					latestFrame={latestFrame}
+					scrollMetrics={browserScrollMetrics}
 					browserCursor={browserCursor}
 					sendEvent={sendViewerEvent}
-					selectionMode={selectionMode}
-					onSelectionComplete={handleSelectedTextCapture}
-					onSelectionCancel={() => setSelectionMode(false)}
+					onTextDragComplete={handleTextDragComplete}
 					onUserInput={() => {
 						playback.requestPause(
 							"Playback will pause after your interaction",
 						);
+						if (pendingTextSelection) {
+							dismissPendingTextSelection();
+						}
 						if (isGoalAutomationRunning) cancelGoalAutomation();
 					}}
 					automationMode={

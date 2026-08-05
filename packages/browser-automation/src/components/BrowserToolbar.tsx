@@ -6,7 +6,6 @@ import {
 	RefreshCw,
 	Save,
 	Send,
-	Square,
 } from "lucide-react";
 import React, { useState } from "react";
 import {
@@ -25,7 +24,6 @@ interface BrowserToolbarProps {
 	isCreating: boolean;
 	isLoading: boolean;
 	onStart: (url: string) => void;
-	onStop: () => void;
 	onNavigate: (url: string) => void;
 	onBack: () => void;
 	onForward: () => void;
@@ -58,7 +56,6 @@ export const BrowserToolbar: React.FC<BrowserToolbarProps> = ({
 	isCreating,
 	isLoading,
 	onStart,
-	onStop,
 	onNavigate,
 	onBack,
 	onForward,
@@ -134,7 +131,7 @@ export const BrowserToolbar: React.FC<BrowserToolbarProps> = ({
 						disabled={isLoading}
 						onClick={submit}
 					>
-						{isCreating ? (
+						{isCreating || isLoading ? (
 							<Spinner />
 						) : isActive ? (
 							<Send />
@@ -143,27 +140,6 @@ export const BrowserToolbar: React.FC<BrowserToolbarProps> = ({
 						)}
 					</Button>
 				</ToolbarTip>
-			</div>
-
-			<div className="flex shrink-0 items-center gap-1">
-				{isActive && (
-					<ToolbarTip label="Stop viewer">
-						<Button
-							size="icon-sm"
-							variant="outline"
-							className="text-danger"
-							onClick={onStop}
-						>
-							<Square />
-						</Button>
-					</ToolbarTip>
-				)}
-				<span
-					className="grid h-8 w-8 place-items-center"
-					aria-live="polite"
-				>
-					{isLoading && <Spinner className="text-accent" />}
-				</span>
 			</div>
 
 			<div className="flex shrink-0 items-center gap-1.5 border-line border-l pl-2">
