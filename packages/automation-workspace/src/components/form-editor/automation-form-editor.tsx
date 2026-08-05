@@ -554,10 +554,10 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 			refreshRuns();
 			setRunning(false);
 		} catch (error) {
-			toast.error(
-				`Automation failed: ${(error as Error).message ?? "Unknown error"}`,
-			);
+			const message = (error as Error).message ?? "Unknown error";
+			toast.error(`Automation failed: ${message}`);
 			setLatestRunStatus("FAILED");
+			setLatestRunError(message);
 			setRunning(false);
 		}
 	}, [appId, applyRunData, refreshRuns, save, steps]);
@@ -617,9 +617,13 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 				const response = await insight.actions.run(
 					`GetAutomationRun(project=["${appId}"], runId=["${runId}"]);`,
 				);
-				setExpandedHistoryRun(
-					response.pixelReturn[0].output as AutomationRunDetail,
-				);
+				const detail = response.pixelReturn?.[0]
+					?.output as AutomationRunDetail | null;
+				if (detail) {
+					setExpandedHistoryRun(detail);
+				}
+			} catch {
+				toast.error("Failed to load run detail");
 			} finally {
 				setHistoryDetailLoading(false);
 			}
@@ -991,9 +995,14 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 																	runItem.COMPLETED_AT,
 																)}
 															</span>
-															<span className="text-muted-foreground">
-																{runItem.TRIGGER_TYPE ??
-																	"—"}
+															<span className="text-muted-foreground text-xs">
+																{runItem.TRIGGER_TYPE ===
+																"PLAYGROUND"
+																	? "Playground"
+																	: runItem.TRIGGER_TYPE ===
+																			"MANUAL"
+																		? "Manual"
+																		: "—"}
 															</span>
 															<span className="flex items-center justify-between gap-2 text-muted-foreground">
 																<span>

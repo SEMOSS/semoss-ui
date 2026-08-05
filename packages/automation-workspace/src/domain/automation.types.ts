@@ -13,6 +13,7 @@ export type AutomationNodeType =
 // ─── node configs (one per node type) ────────────────────────────────────────
 
 export interface TriggerConfig {
+	/** Node-level config mode — lowercase by convention, distinct from the run-level AutomationTriggerType enum. */
 	mode: "manual";
 }
 
@@ -149,7 +150,12 @@ export type NodeStatus =
 	| "FAILED"
 	| "SKIPPED";
 
-export type AutomationTriggerType = "MANUAL";
+/**
+ * How a run was initiated.
+ * - MANUAL: triggered by a user clicking Run in the editor.
+ * - PLAYGROUND: triggered by the AI playground sidebar via the MCP TriggerAutomation tool.
+ */
+export type AutomationTriggerType = "MANUAL" | "PLAYGROUND";
 
 export interface AutomationRunSummary {
 	RUN_ID: string;
