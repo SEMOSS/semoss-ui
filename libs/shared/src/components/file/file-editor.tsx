@@ -33,6 +33,10 @@ interface FileEditorProps {
 	/** Optional content rendered at the start of the code editor's toolbar row.
 	 * Only applies to the code editor (other file viewers have no toolbar). */
 	leadingToolbar?: React.ReactNode;
+
+	/** When true, the editor is rendered in a read-only, view-only mode:
+	 * content cannot be edited and the Save action is hidden. Defaults to false. */
+	readOnly?: boolean;
 }
 
 export const FileEditor: React.FC<FileEditorProps> = ({
@@ -41,6 +45,7 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 	onChange = () => null,
 	onRun,
 	leadingToolbar,
+	readOnly = false,
 }) => {
 	const ext = path.split(".").pop()?.toLowerCase() || "";
 
@@ -76,6 +81,7 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 					mode={mode}
 					path={path}
 					onChange={onChange}
+					readOnly={readOnly}
 				/>
 			)}
 			{/* .ipynb → interactive notebook renderer/runner */}

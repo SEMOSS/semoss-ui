@@ -39,12 +39,21 @@ export const EngineModelTestSidebar = ({
 	setMaxTokens,
 }: EngineModelTestSidebarProps) => {
 	const [modelInfo, setModelInfo] = useState<ModelInfo | null>(null);
+	const [maxTokensDraft, setMaxTokensDraft] = useState(() =>
+		String(maxTokens),
+	);
 
 	const maxTokensTooltipText = `
 Controls the maximum number of tokens in the response.
 Higher values allow longer outputs.
 Default: 2000
 `;
+
+	useEffect(() => {
+		setMaxTokensDraft((prev) =>
+			parseInt(prev, 10) === maxTokens ? prev : String(maxTokens),
+		);
+	}, [maxTokens]);
 
 	useEffect(() => {
 		if (!selectedModel.model_id) return;
@@ -94,9 +103,25 @@ Default: 2000
 	}, [selectedModel.model_id, selectedModel.model_name, setSelectedModel]);
 
 	const handleMaxTokensChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const value = parseInt(e.target.value, 10);
+		// Strip the separators the field displays before parsing.
+		const digits = e.target.value.replace(/[^\d]/g, "");
+		setMaxTokensDraft(digits);
+
+		const value = parseInt(digits, 10);
 		if (!Number.isNaN(value) && value > 0) {
 			setMaxTokens(value);
+		}
+	};
+
+	/**
+	 * Restore the applied value when the field is left empty or at zero, so an
+	 * in-progress edit can be blank without persisting an invalid setting.
+	 */
+	const handleMaxTokensBlur = () => {
+		const value = parseInt(maxTokensDraft, 10);
+
+		if (Number.isNaN(value) || value <= 0) {
+			setMaxTokensDraft(String(maxTokens));
 		}
 	};
 
@@ -155,18 +180,22 @@ Default: 2000
 						</TooltipProvider>
 					</div>
 
+					{/*
+					 * Text input rather than type="number" so the value can carry
+					 * thousands separators; type="number" rejects a value containing
+					 * commas and blanks the field.
+					 */}
 					<Input
-						type="number"
-						value={maxTokens}
+						type="text"
+						inputMode="numeric"
+						value={
+							maxTokensDraft === ""
+								? ""
+								: Number(maxTokensDraft).toLocaleString()
+						}
 						onChange={handleMaxTokensChange}
-						min={1}
-						max={8192}
-						step={100}
+						onBlur={handleMaxTokensBlur}
 					/>
-
-					<p className="text-muted-foreground text-xs">
-						Range: 1 – 8192 tokens
-					</p>
 				</div>
 			</div>
 

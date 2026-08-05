@@ -110,16 +110,12 @@ export const CreateSkillPage = () => {
 	return (
 		<>
 			<NavbarLeft>
-				<NavbarHeader />
-			</NavbarLeft>
-			<div className="flex flex-col gap-1">
-				<Breadcrumb className="mb-4">
+				<NavbarHeader logo={null} />
+				<Breadcrumb>
 					<BreadcrumbList>
 						<BreadcrumbItem>
 							<BreadcrumbLink asChild>
-								<Link to="../" className="text-inherit">
-									Skill Catalog
-								</Link>
+								<Link to="../">Skill Catalog</Link>
 							</BreadcrumbLink>
 						</BreadcrumbItem>
 						<BreadcrumbSeparator>
@@ -130,6 +126,8 @@ export const CreateSkillPage = () => {
 						</BreadcrumbItem>
 					</BreadcrumbList>
 				</Breadcrumb>
+			</NavbarLeft>
+			<div className="flex flex-col gap-1">
 				<div className="flex flex-row items-center justify-between gap-2">
 					<H4>New Skill</H4>
 					<Button

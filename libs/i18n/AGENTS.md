@@ -2,7 +2,8 @@
 
 This document provides context for AI coding assistants working with the SEMOSS internationalization library.
 
-> **Inherits from:** [../../AGENTS.md](../../AGENTS.md) for monorepo conventions, commit messages, Biome config, and Node/pnpm requirements.
+> **Inherits from:** [../../AGENTS.md](../../AGENTS.md) for code style, file-naming, package
+> structure, commit messages, Biome config, and Node/pnpm requirements.
 
 ## Overview
 

@@ -71,6 +71,7 @@ export default defineConfig(({ mode }) => {
 			proxy: {
 				[MODULE]: {
 					target: ENDPOINT,
+					ws: true,
 					changeOrigin: true,
 					secure: false,
 					preserveHeaderKeyCase: true,
