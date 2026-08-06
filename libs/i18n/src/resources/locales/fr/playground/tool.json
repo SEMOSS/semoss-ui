@@ -26,6 +26,7 @@
 	},
 	"form": {
 		"result": "Résultat",
+		"parameters": "Paramètres",
 		"schemaLoadFailed": "Échec du chargement du schéma de l'outil",
 		"schemaLoadFailedDescription": "Impossible de récupérer la configuration de l'outil. Veuillez réessayer ultérieurement.",
 		"schemaLoading": "Chargement du schéma de l'outil...",
