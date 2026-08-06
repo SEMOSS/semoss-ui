@@ -11,7 +11,13 @@ import {
 const PAGE_SIZE = 50;
 
 import { useTranslation } from "@semoss/i18n";
-import { get as apiGet, post as apiPost, Env } from "@semoss/sdk";
+import {
+	addEngineUserPermissions,
+	addProjectUserPermissions,
+	getEngineUsersNoCredentials,
+	getProjectUsersNoCredentials,
+	type PostUser,
+} from "@semoss/sdk";
 import { useIteratorApi } from "@semoss/sdk/react";
 import {
 	Avatar,
@@ -33,6 +39,10 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
+import {
+	getUserEnginePermission,
+	getUserProjectPermission,
+} from "../../api/permissions";
 import { returnAccessType } from "./common";
 import { ModelRestrictionFields } from "./model-restriction-fields";
 
@@ -95,15 +105,22 @@ export const AddMembersOverlay = ({
 	const usersIterator = useIteratorApi<AddPopupSearchResult>(
 		async (limit, offset) => {
 			try {
-				const authBase = `${Env.MODULE}/api/auth${adminMode ? "/admin" : ""}`;
-				const endpoint = isProject
-					? "getProjectUsersNoCredentials"
-					: "getEngineUsersNoCredentials";
-				const idKey = isProject ? "projectId" : "engineId";
-				const response = await apiGet(
-					`${authBase}/${isProject ? "project" : "engine"}/${endpoint}?${idKey}=${id}&searchTerm=${debouncedSearchKey}&limit=${limit}&offset=${offset}`,
-				);
-				return (response?.data ?? []) as AddPopupSearchResult[];
+				const users = isProject
+					? await getProjectUsersNoCredentials(
+							id,
+							adminMode,
+							debouncedSearchKey,
+							limit,
+							offset,
+						)
+					: await getEngineUsersNoCredentials(
+							id,
+							adminMode,
+							debouncedSearchKey,
+							limit,
+							offset,
+						);
+				return users as unknown as AddPopupSearchResult[];
 			} catch (error) {
 				toast.error(
 					error instanceof Error
@@ -147,14 +164,9 @@ export const AddMembersOverlay = ({
 		if (!open) return;
 		const fetchMyPermission = async () => {
 			try {
-				const endpoint = isProject
-					? `project/getUserProjectPermission?projectId=${id}`
-					: `engine/getUserEnginePermission?engineId=${id}`;
-				const response = await apiGet(
-					`${Env.MODULE}/api/auth/${endpoint}`,
-				);
-				const perm = (response?.data as { permission?: string })
-					?.permission;
+				const perm = isProject
+					? await getUserProjectPermission(id)
+					: await getUserEnginePermission(id);
 				if (perm) setUserPermission(perm);
 			} catch {
 				// Non-fatal: falls back to the default (non-owner) permission
@@ -192,15 +204,18 @@ export const AddMembersOverlay = ({
 		});
 
 		try {
-			const authBase = `${Env.MODULE}/api/auth${adminMode ? "/admin" : ""}`;
-			const response = await apiPost(
-				`${authBase}/${isProject ? "project" : "engine"}/${isProject ? "addProjectUserPermissions" : "addEngineUserPermissions"}`,
-				{ [isProject ? "projectId" : "engineId"]: id, userpermissions },
-			);
-			const responseData = (response?.data || {}) as {
-				success?: boolean;
-			};
-			if (responseData.success) {
+			const success = isProject
+				? await addProjectUserPermissions(
+						id,
+						userpermissions as unknown as PostUser[],
+						adminMode,
+					)
+				: await addEngineUserPermissions(
+						id,
+						userpermissions as unknown as PostUser[],
+						adminMode,
+					);
+			if (success) {
 				toast.success(t("success.membersAdded"));
 				resetState();
 				onClose(true);

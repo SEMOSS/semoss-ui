@@ -11,6 +11,23 @@ export type Script = {
 
 export type Role = "OWNER" | "EDIT" | "READ_ONLY" | "DISCOVERABLE";
 
+/**
+ * User details with permission information
+ */
+export interface User {
+	date_added?: string;
+	name: string;
+	permission: Role;
+	id: string;
+	type?: string;
+	email?: string;
+}
+
+export interface PostUser {
+	userid: string;
+	permission: Role;
+}
+
 export interface ColumnInterface {
 	column: string;
 	type: string;

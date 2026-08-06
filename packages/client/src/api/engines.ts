@@ -72,61 +72,6 @@ export const getEngineUsers = async (
 	return response.data;
 };
 
-export const getEngineUsersNoCredentials = async (
-	admin: boolean,
-	engineId: string,
-	limit: number,
-	offset: number,
-	searchTerm: string,
-) => {
-	let url = `${Env.MODULE}/api/auth/`;
-	// Currently no admin ENDPOINT;
-	if (admin) {
-		url += "admin/";
-	}
-	url += `engine/getEngineUsersNoCredentials?engineId=${engineId}&limit=${limit}&offset=${offset}&searchTerm=${searchTerm}`;
-	// get the response
-	const response = await get<
-		{
-			id: string;
-			email: string;
-			name: string;
-			type: string;
-			username: string;
-		}[]
-	>(url).catch((error) => {
-		throw Error(error);
-	});
-	// there was no response, that is an error
-	if (!response) {
-		throw Error("No Response to get non credentialed users");
-	}
-	return response;
-};
-
-export const addEngineUserPermissions = async (
-	admin: boolean,
-	appId: string,
-	users: unknown[],
-) => {
-	let url = `${Env.MODULE}/api/auth/`;
-	// No Admin endpoint currently
-	if (admin) {
-		url += "admin/";
-	}
-	url += "engine/addEngineUserPermissions";
-	const postData: Record<string, unknown> = {
-		engineId: appId,
-		userpermissions: users,
-	};
-
-	const response = await post<{
-		success: boolean;
-	}>(url, processPostData(postData), {});
-	return response;
-	// figure out whether we want to do .catch here
-};
-
 export const removeEngineUserPermissions = async (
 	admin: boolean,
 	appId: string,

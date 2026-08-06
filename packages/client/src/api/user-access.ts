@@ -1,6 +1,9 @@
+import {
+	addEngineUserPermissions,
+	addProjectUserPermissions,
+} from "@semoss/sdk";
 import { Env, get, post } from "@semoss/sdk/react";
 import {
-	addProjectUserPermissions,
 	editProjectUserPermissions,
 	removeProjectUserPermissions,
 } from "@semoss/shared/api";
@@ -11,7 +14,6 @@ import {
 	removeInsightUserPermissions,
 } from "./auth";
 import {
-	addEngineUserPermissions,
 	editEngineUserPermissions,
 	removeEngineUserPermissions,
 } from "./engines";
@@ -315,7 +317,7 @@ const succeeded = (result: unknown): boolean => {
  * Grant a user access to a resource.
  *
  * Wraps the resource-centric mutation APIs so callers don't have to remember
- * the differing argument orders (project = admin last; engine/insight = admin
+ * the differing argument orders (project/engine = admin last; insight = admin
  * first) or payload shapes.
  */
 export const grantUserAccess = async (
@@ -336,7 +338,7 @@ export const grantUserAccess = async (
 			);
 		case "ENGINE":
 			return succeeded(
-				await addEngineUserPermissions(admin, resourceId, users),
+				await addEngineUserPermissions(resourceId, users, admin),
 			);
 		case "INSIGHT":
 			return succeeded(
