@@ -344,6 +344,8 @@ export class ConfigStore {
 
 		const moduleMap = {
 			PROJECT: "Project",
+			WORKSPACE: "Workspace",
+			SKILL: "Skill",
 			DATABASE: "Db",
 			FUNCTION: "Function",
 			MODEL: "Model",

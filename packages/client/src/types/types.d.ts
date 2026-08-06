@@ -10,7 +10,7 @@ export interface PixelCommand {
 /**
  * All types used in the app
  */
-export type ALL_TYPES = ENGINE_TYPES | "PROJECT";
+export type ALL_TYPES = ENGINE_TYPES | "PROJECT" | "WORKSPACE" | "SKILL";
 
 /**
  * Engine types used in the app

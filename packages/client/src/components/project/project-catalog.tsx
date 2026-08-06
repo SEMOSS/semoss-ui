@@ -63,6 +63,16 @@ const CATALOG_CONFIG = {
 	},
 } as const;
 
+// CATALOG_CONFIG keys are catalog UI types (CODE covers Code+Blocks project
+// creation); map each to the admin-only permission type that actually gates
+// it, since CODE creation still falls under the "PROJECT" restriction while
+// Skill/Agent now have their own independent admin-only flags.
+const CATALOG_PERMISSION_TYPE = {
+	CODE: "PROJECT",
+	SKILL: "SKILL",
+	WORKSPACE: "WORKSPACE",
+} as const;
+
 type TabMode = "Mine" | "Discoverable" | "System";
 
 const SYSTEM_APPS: {
@@ -352,17 +362,24 @@ export const ProjectCatalog = observer(
 					title={`${config.name} Catalog`}
 					description={config.description}
 					headerActions={
-						<Button
-							variant="default"
-							aria-label={`Add ${config.name}`}
-							data-testid="ProjectPage-create-new-app-btn"
-							asChild
-						>
-							<Link to={config.createPath}>
-								<Plus className="size-4" />
-								Add {config.name}
-							</Link>
-						</Button>
+						configStore.isEngineOperationAvailable(
+							CATALOG_PERMISSION_TYPE[
+								type as keyof typeof CATALOG_PERMISSION_TYPE
+							],
+							"add",
+						) ? (
+							<Button
+								variant="default"
+								aria-label={`Add ${config.name}`}
+								data-testid="ProjectPage-create-new-app-btn"
+								asChild
+							>
+								<Link to={config.createPath}>
+									<Plus className="size-4" />
+									Add {config.name}
+								</Link>
+							</Button>
+						) : null
 					}
 					searchBar={
 						<CatalogSearchBar
