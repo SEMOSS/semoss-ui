@@ -5,11 +5,12 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import type { BrowserTabInfo } from "../types/browserEvents";
+import type { BrowserTabInfo, ConnectionState } from "../types/browserEvents";
 
 interface BrowserTabStripProps {
 	tabs: BrowserTabInfo[];
 	activeTabId: string;
+	connectionState: ConnectionState;
 	isRecording: boolean;
 	onSwitch: (tabId: string) => void;
 	onClose: (tabId: string) => void;
@@ -18,6 +19,7 @@ interface BrowserTabStripProps {
 export function BrowserTabStrip({
 	tabs,
 	activeTabId,
+	connectionState,
 	isRecording,
 	onSwitch,
 	onClose,
@@ -28,11 +30,42 @@ export function BrowserTabStrip({
 			{tabs.map((tab) => {
 				const active = tab.tabId === activeTabId;
 				const label = tab.title.trim() || tab.url || tab.tabId;
+				const status =
+					connectionState === "connected"
+						? isRecording
+							? {
+									label: "Recording",
+									dot: "bg-danger shadow-[0_0_8px_rgba(240,82,103,0.65)]",
+								}
+							: {
+									label: "Live",
+									dot: "bg-success shadow-[0_0_8px_rgba(54,199,176,0.55)]",
+								}
+						: {
+								label:
+									connectionState === "connecting"
+										? "Connecting"
+										: "Disconnected",
+								dot:
+									connectionState === "connecting"
+										? "animate-pulse bg-slate-400"
+										: "bg-slate-500",
+							};
 				return (
 					<div
 						key={tab.tabId}
 						className={`mb-[-1px] flex w-[210px] max-w-[80vw] shrink-0 items-center rounded-t-md border ${active ? "border-line border-b-surface bg-surface" : "border-transparent"}`}
 					>
+						{active && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<span
+										className={`ml-2 size-2 shrink-0 rounded-full ${status.dot}`}
+									/>
+								</TooltipTrigger>
+								<TooltipContent>{status.label}</TooltipContent>
+							</Tooltip>
+						)}
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<Button

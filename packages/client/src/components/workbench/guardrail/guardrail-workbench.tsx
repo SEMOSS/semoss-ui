@@ -6,6 +6,7 @@ import {
 	EngineFileExplorerPanel,
 	EngineMcpEditorPanel,
 	EngineSettingsPanel,
+	EngineSettingsToggle,
 } from "../engine";
 import { Workbench } from "../workbench";
 import { WORKBENCH_COMPONENTS } from "../workbench.contants";
@@ -37,25 +38,6 @@ export const GuardrailWorkbench: React.FC = () => {
 							config: {},
 							helpText: "File Explorer",
 							enableClose: false,
-						},
-					],
-				},
-				{
-					type: "border",
-					location: "bottom",
-					size: 400,
-					selected: -1,
-					children: [
-						{
-							type: "tab",
-							id: WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
-							name: "Settings",
-							component: WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
-							config: {},
-							helpText: "Settings",
-							enableClose: false,
-							borderWidth: 800,
-							borderHeight: 1200,
 						},
 					],
 				},
@@ -146,5 +128,11 @@ export const GuardrailWorkbench: React.FC = () => {
 		},
 	};
 
-	return <Workbench model={model} components={components} />;
+	return (
+		<Workbench
+			model={model}
+			components={components}
+			actions={<EngineSettingsToggle model={model} />}
+		/>
+	);
 };

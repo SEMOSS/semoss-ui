@@ -51,16 +51,6 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						enableClose: false,
 						config: {},
 					},
-					{
-						id: "settings",
-						type: "tab",
-						name: "Settings",
-						component: "settings-panel",
-						config: {},
-						enableClose: false,
-						borderWidth: 800,
-						borderHeight: 1200,
-					},
 				],
 			},
 		],
@@ -148,6 +138,11 @@ export const AgentWorkspace: React.FC = observer(() => {
 							name: "GitHub",
 							component: "github",
 							restrict: ["OWNER"],
+						},
+						{
+							name: "Agent Activity",
+							component: "agent-activity",
+							restrict: ["OWNER", "EDIT", "READ_ONLY"],
 						},
 						{
 							name: "Access Control",
