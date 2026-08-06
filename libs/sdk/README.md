@@ -348,3 +348,69 @@ const hello = (name) => {
     console.log(output);
 };
 ```
+
+## AI Coding Assistant Setup
+
+`@semoss/sdk` ships AI agent skills alongside its source code. These skills give your AI
+coding assistant (GitHub Copilot, Claude Code, Cursor, etc.) built-in knowledge of the SDK's
+APIs — including the playground, pixel calls, and hook patterns — without you having to paste
+docs into chat.
+
+Skills are bundled under `node_modules/@semoss/sdk/skills/` and follow the
+[Agent Skills](https://agentskills.io/) open standard, making them compatible with
+[`npm-skills`](https://www.npmjs.com/package/npm-skills) and
+[`skills-npm`](https://github.com/antfu/skills-npm).
+
+### One-time extraction
+
+Run extraction into your agent's discovery directory after installing the SDK:
+
+```sh
+# GitHub Copilot
+npx npm-skills extract --output .github/skills
+
+# Claude Code / generic agents
+npx npm-skills extract --output .agents/skills
+
+# Cursor
+npx npm-skills extract --output .cursor/skills
+```
+
+### Keep skills in sync automatically
+
+Add a `postinstall` script so skills update whenever you upgrade the SDK:
+
+```json
+{
+    "scripts": {
+        "postinstall": "npm-skills extract --skip-production --override --output .github/skills"
+    },
+    "devDependencies": {
+        "npm-skills": "latest"
+    }
+}
+```
+
+Or configure the output path once and just run `npm run skills:extract`:
+
+```json
+{
+    "scripts": {
+        "skills:extract": "npm-skills extract --override"
+    },
+    "npmSkills": {
+        "consume": {
+            "output": ".github/skills"
+        }
+    }
+}
+```
+
+### What gets installed
+
+| Skill | Covers |
+|-------|--------|
+| `sdk-playground` | Creating rooms, sending messages, fetching room options, updating config, binding rooms to insights |
+
+Skills are versioned with the SDK — upgrading `@semoss/sdk` and re-running extraction keeps
+your assistant's knowledge current.

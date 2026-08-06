@@ -17,8 +17,14 @@
     },
     "files": [
         "src",
-        "dist"
+        "dist",
+        "skills"
     ],
+    "npmSkills": {
+        "publish": {
+            "source": "skills"
+        }
+    },
     "scripts": {
         "dev": "rollup -w -c",
         "build": "rollup -c --environment NODE_ENV:production",
