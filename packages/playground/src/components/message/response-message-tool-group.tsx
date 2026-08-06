@@ -111,7 +111,7 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 						{isOpen
 							? t("group.labelOpen", { count: tools.length })
 							: t("group.labelClosed", {
-									toolName: tools[0].json.title,
+									toolName: tools[0].displayName,
 									count: tools.length - 1,
 								})}
 					</span>

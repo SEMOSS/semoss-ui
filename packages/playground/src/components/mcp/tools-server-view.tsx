@@ -32,7 +32,7 @@ const formatJson = (raw: unknown): string => {
  * call's parameters and the raw result payload.
  */
 export const ToolsServerView = observer(({ tool }: ToolsServerViewProps) => {
-	const title = tool.json.title || tool.json.name;
+	const title = tool.displayName;
 	const description = tool.json.description;
 	const parametersText = useMemo(
 		() => formatJson(tool.parameters),
