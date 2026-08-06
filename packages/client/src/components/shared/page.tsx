@@ -11,7 +11,7 @@ export interface PageProps {
 
 export const Page: React.FC<PageProps> = observer(({ children }) => {
 	return (
-		<div className="relative flex h-screen w-screen overflow-hidden">
+		<div className="relative flex h-dvh w-dvw overflow-hidden">
 			<Sidebar />
 			<div className="relative h-full w-full flex-1 overflow-hidden pt-14">
 				<Navbar />
