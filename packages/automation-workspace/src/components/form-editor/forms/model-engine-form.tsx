@@ -8,12 +8,9 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import type {
-	EngineOption,
-	ModelEngineConfig,
-} from "../../../domain/automation.types";
+import type { ModelEngineConfig } from "../../../domain/automation.types";
 import { getPlaygroundParamDescription } from "../../../domain/automation-utils";
-import { BoundInput, EngineSelect } from "./shared";
+import { BoundInput, EnginePickerField } from "./shared";
 
 /** Maps engine_subtype values to the operations they support. */
 const SUBTYPE_OPERATIONS: Record<string, ModelEngineConfig["operation"][]> = {
@@ -37,8 +34,6 @@ const ALL_OPERATIONS: {
 export interface ModelEngineFormProps {
 	/** Current node config */
 	config: ModelEngineConfig;
-	/** Model engines the user has access to */
-	engines: EngineOption[];
 	/** Output variable names produced by upstream nodes, offered as autocomplete */
 	upstreamVars: string[];
 	/** Called with the updated config on every field change */
@@ -53,7 +48,6 @@ export interface ModelEngineFormProps {
 
 export function ModelEngineForm({
 	config,
-	engines,
 	upstreamVars,
 	onChange,
 	playgroundFillable,
@@ -65,12 +59,11 @@ export function ModelEngineForm({
 	// Derive which operations the selected engine supports based on its subtype
 	const availableOps = useMemo(() => {
 		if (!config.engineId) return ALL_OPERATIONS;
-		const selected = engines.find((e) => e.engine_id === config.engineId);
-		const subtype = selected?.engine_subtype?.toUpperCase() ?? "";
+		const subtype = (config.engineSubtype ?? "").toUpperCase();
 		const allowed = SUBTYPE_OPERATIONS[subtype];
 		if (!allowed) return ALL_OPERATIONS;
 		return ALL_OPERATIONS.filter((op) => allowed.includes(op.value));
-	}, [config.engineId, engines]);
+	}, [config.engineId, config.engineSubtype]);
 
 	// Auto-select the only available operation when the engine constrains it
 	useEffect(() => {
@@ -86,12 +79,19 @@ export function ModelEngineForm({
 
 	return (
 		<div className="flex flex-col gap-4">
-			<EngineSelect
-				label="Model Engine"
+			<EnginePickerField
+				label="AI Engine"
+				name={config.engineName || ""}
 				value={config.engineId}
-				engines={engines}
-				onChange={(v) => onChange({ ...config, engineId: v })}
-				catalogPath="/model"
+				engineTypes={["MODEL"]}
+				onChange={(e) =>
+					onChange({
+						...config,
+						engineId: e.engine_id,
+						engineName: e.engine_display_name ?? e.engine_name,
+						engineSubtype: e.engine_subtype ?? "",
+					})
+				}
 			/>
 			<Field>
 				<FieldLabel>Operation</FieldLabel>

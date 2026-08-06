@@ -3,8 +3,6 @@ import { useMemo, useRef, useState } from "react";
 import { Button, Field, FieldLabel, Input } from "@semoss/ui/next";
 import type {
 	AutomationNode,
-	EngineOption,
-	ProjectOption,
 	StepRunStatus,
 } from "../../domain/automation.types";
 import {
@@ -32,8 +30,6 @@ export interface AutomationStepEditorCardProps {
 	isExpanded: boolean;
 	isFirst: boolean;
 	isLast: boolean;
-	enginesByType: Record<string, EngineOption[]>;
-	projects: ProjectOption[];
 	upstreamVars: string[];
 	nodeOutputs: Record<string, string>;
 	runStatus?: StepRunStatus;
@@ -57,8 +53,6 @@ export function AutomationStepEditorCard({
 	isExpanded,
 	isFirst,
 	isLast,
-	enginesByType,
-	projects,
 	upstreamVars,
 	nodeOutputs,
 	runStatus,
@@ -282,8 +276,6 @@ export function AutomationStepEditorCard({
 
 					<StepForm
 						step={step}
-						enginesByType={enginesByType}
-						projects={projects}
 						upstreamVars={upstreamVars}
 						onUpdate={onUpdate}
 						playgroundFillable={step.playgroundFillable ?? []}

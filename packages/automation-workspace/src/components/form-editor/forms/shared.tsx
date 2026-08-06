@@ -1,17 +1,8 @@
 import { Check, Copy } from "lucide-react";
 import { useRef, useState } from "react";
-import {
-	Field,
-	FieldLabel,
-	Input,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-	Textarea,
-} from "@semoss/ui/next";
-import type { EngineOption } from "../../../domain/automation.types";
+import type { Engine } from "@semoss/shared";
+import { Field, FieldLabel, Input, Textarea } from "@semoss/ui/next";
+import { AutomationEngineSelect } from "./engine-picker";
 
 export interface BoundInputProps {
 	/** Field label */
@@ -154,83 +145,30 @@ export function BoundInput({
 	);
 }
 
-export interface EngineSelectProps {
-	/** Field label */
+export interface EnginePickerFieldProps {
 	label: string;
-	/** Selected engine id */
+	name: string;
 	value: string;
-	/** Engines to list */
-	engines: EngineOption[];
-	/** Called with the newly selected engine id */
-	onChange: (v: string) => void;
-	/** Additional className applied to the Select trigger */
-	triggerClassName?: string;
-	/** Additional className applied to the field label */
-	labelClassName?: string;
-	/** Hash path in the parent app to navigate to (e.g. "/function"). Generates a standard "go to catalog" hint when engines is empty. */
-	catalogPath?: string;
+	engineTypes: Engine["engine_type"][];
+	onChange: (e: Engine) => void;
 }
 
-export function EngineSelect({
+export function EnginePickerField({
 	label,
+	name,
 	value,
-	engines,
+	engineTypes,
 	onChange,
-	triggerClassName = "h-8 text-xs",
-	labelClassName = "text-xs",
-	catalogPath,
-}: EngineSelectProps) {
-	const empty = engines.length === 0;
+}: EnginePickerFieldProps) {
 	return (
 		<Field>
-			<FieldLabel className={labelClassName}>{label}</FieldLabel>
-			<Select value={value} onValueChange={onChange} disabled={empty}>
-				<SelectTrigger className={triggerClassName}>
-					<SelectValue
-						placeholder={
-							empty
-								? `No ${label.toLowerCase()} available`
-								: `Select ${label.toLowerCase()}…`
-						}
-					/>
-				</SelectTrigger>
-				<SelectContent>
-					{engines.map((e) => (
-						<SelectItem
-							key={e.engine_id}
-							value={e.engine_id}
-							className="py-1.5 text-xs"
-						>
-							<span className="flex flex-col items-start gap-0.5">
-								<span>
-									{e.engine_display_name ?? e.engine_name}
-								</span>
-								<span className="font-mono text-[10px] text-muted-foreground">
-									{e.engine_id}
-								</span>
-							</span>
-						</SelectItem>
-					))}
-				</SelectContent>
-			</Select>
-			{empty && catalogPath && (
-				<p className="mt-1 text-[11px] text-muted-foreground">
-					No {label.toLowerCase()} are shared with you. Ask an admin
-					to grant access, or connect your own from the{" "}
-					<button
-						type="button"
-						onClick={() => {
-							const base =
-								window.parent.location.href.split("#")[0];
-							window.open(`${base}#${catalogPath}`, "_blank");
-						}}
-						className="underline hover:text-foreground"
-					>
-						{label} catalog
-					</button>
-					.
-				</p>
-			)}
+			<FieldLabel>{label}</FieldLabel>
+			<AutomationEngineSelect
+				name={name}
+				value={value}
+				engineTypes={engineTypes}
+				onChange={onChange}
+			/>
 		</Field>
 	);
 }

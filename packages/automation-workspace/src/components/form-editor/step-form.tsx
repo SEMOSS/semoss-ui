@@ -2,10 +2,8 @@ import type {
 	AppConfig,
 	AutomationNode,
 	DatabaseEngineConfig,
-	EngineOption,
 	FunctionEngineConfig,
 	ModelEngineConfig,
-	ProjectOption,
 	StorageEngineConfig,
 	VectorEngineConfig,
 	WaitConfig,
@@ -20,8 +18,6 @@ import { WaitForm } from "./forms/wait-form";
 
 interface StepFormProps {
 	step: AutomationNode;
-	enginesByType: Record<string, EngineOption[]>;
-	projects: ProjectOption[];
 	upstreamVars: string[];
 	onUpdate: (step: AutomationNode) => void;
 	/** Fields in this node's config currently marked as playground-fillable */
@@ -36,8 +32,6 @@ interface StepFormProps {
 
 export function StepForm({
 	step,
-	enginesByType,
-	projects,
 	upstreamVars,
 	onUpdate,
 	playgroundFillable,
@@ -56,7 +50,6 @@ export function StepForm({
 			return (
 				<DatabaseEngineForm
 					config={step.config as DatabaseEngineConfig}
-					engines={enginesByType.DATABASE ?? []}
 					upstreamVars={upstreamVars}
 					onChange={update}
 					playgroundFillable={playgroundFillable}
@@ -67,7 +60,6 @@ export function StepForm({
 			return (
 				<ModelEngineForm
 					config={step.config as ModelEngineConfig}
-					engines={enginesByType.MODEL ?? []}
 					upstreamVars={upstreamVars}
 					onChange={update}
 					playgroundFillable={playgroundFillable}
@@ -79,7 +71,6 @@ export function StepForm({
 			return (
 				<VectorEngineForm
 					config={step.config as VectorEngineConfig}
-					engines={enginesByType.VECTOR ?? []}
 					upstreamVars={upstreamVars}
 					onChange={update}
 					playgroundFillable={playgroundFillable}
@@ -91,7 +82,6 @@ export function StepForm({
 			return (
 				<StorageEngineForm
 					config={step.config as StorageEngineConfig}
-					engines={enginesByType.STORAGE ?? []}
 					upstreamVars={upstreamVars}
 					onChange={update}
 				/>
@@ -100,7 +90,6 @@ export function StepForm({
 			return (
 				<FunctionEngineForm
 					config={step.config as FunctionEngineConfig}
-					engines={enginesByType.FUNCTION ?? []}
 					upstreamVars={upstreamVars}
 					onChange={update}
 					playgroundFillable={playgroundFillable}
@@ -111,7 +100,6 @@ export function StepForm({
 			return (
 				<AppEngineForm
 					config={step.config as AppConfig}
-					projects={projects}
 					upstreamVars={upstreamVars}
 					onChange={update}
 					currentAppId={appId}

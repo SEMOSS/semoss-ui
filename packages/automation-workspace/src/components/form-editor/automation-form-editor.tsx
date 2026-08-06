@@ -27,8 +27,6 @@ import type {
 	AutomationNodeType,
 	AutomationRunDetail,
 	AutomationRunSummary,
-	EngineOption,
-	ProjectOption,
 	RunStatus,
 	StepRunStatus,
 } from "../../domain/automation.types";
@@ -101,10 +99,6 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		{},
 	);
 	const [steps, setSteps] = useState<AutomationNode[]>([]);
-	const [enginesByType, setEnginesByType] = useState<
-		Record<string, EngineOption[]>
-	>({});
-	const [projects, setProjects] = useState<ProjectOption[]>([]);
 	const [config, setConfig] = useState<AutomationConfigEntry[]>([]);
 	const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
 	const [nodeOutputs, setNodeOutputsState] = useState<Record<string, string>>(
@@ -214,32 +208,6 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		},
 	);
 
-	const { status: enginesStatus } = usePixel<EngineOption[]>(
-		`MyEngines(engineTypes=["DATABASE","MODEL","VECTOR","STORAGE","FUNCTION"], limit=[100]);`,
-		{
-			data: [],
-			onSuccess: (engList) => {
-				const byType: Record<string, EngineOption[]> = {};
-				for (const engine of engList ?? []) {
-					const type = (engine.engine_type ?? "").toUpperCase();
-					if (!byType[type]) {
-						byType[type] = [];
-					}
-					byType[type].push(engine);
-				}
-				setEnginesByType(byType);
-			},
-		},
-	);
-
-	const { status: projectsStatus } = usePixel<ProjectOption[]>(
-		`MyProjects(limit=[100], offset=[0]);`,
-		{
-			data: [],
-			onSuccess: (projectList) => setProjects(projectList ?? []),
-		},
-	);
-
 	const { status: automationConfigStatus } = usePixel<
 		AutomationConfigEntry[]
 	>(`GetAutomationConfig(project=["${appId}"]);`, {
@@ -249,18 +217,10 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 
 	const loading = useMemo(
 		() =>
-			[
-				automationStatus,
-				enginesStatus,
-				projectsStatus,
-				automationConfigStatus,
-			].some((status) => status === "INITIAL" || status === "LOADING"),
-		[
-			automationStatus,
-			enginesStatus,
-			projectsStatus,
-			automationConfigStatus,
-		],
+			[automationStatus, automationConfigStatus].some(
+				(status) => status === "INITIAL" || status === "LOADING",
+			),
+		[automationStatus, automationConfigStatus],
 	);
 
 	const {
@@ -1031,8 +991,6 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 													index ===
 													nonTriggerArr.length - 1
 												}
-												enginesByType={enginesByType}
-												projects={projects}
 												upstreamVars={upstreamVarsFor(
 													steps.indexOf(step),
 												)}

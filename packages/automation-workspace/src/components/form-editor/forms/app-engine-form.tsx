@@ -1,28 +1,20 @@
 import { Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
-import {
-	Field,
-	FieldLabel,
-	Input,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@semoss/ui/next";
-import type {
-	AppConfig,
-	ProjectOption,
-} from "../../../domain/automation.types";
+import { Field, FieldLabel, Input } from "@semoss/ui/next";
+import type { AppConfig } from "../../../domain/automation.types";
 import { insight } from "../../../semoss/client";
+import { AutomationProjectSelect } from "./engine-picker";
 import { BoundInput } from "./shared";
+
+function ensureSemicolon(pixel: string): string {
+	const trimmed = pixel.trimEnd();
+	return trimmed.endsWith(")") ? `${trimmed};` : pixel;
+}
 
 export interface AppEngineFormProps {
 	/** Current node config */
 	config: AppConfig;
-	/** Projects available to run the pixel expression inside of */
-	projects: ProjectOption[];
 	/** Output variable names produced by upstream nodes, offered as autocomplete */
 	upstreamVars: string[];
 	/** Called with the updated config on every field change */
@@ -33,7 +25,6 @@ export interface AppEngineFormProps {
 
 export function AppEngineForm({
 	config,
-	projects,
 	upstreamVars,
 	onChange,
 	currentAppId,
@@ -96,15 +87,18 @@ export function AppEngineForm({
 						description?: string;
 					}[];
 				};
-				onChange({ ...config, pixel: parsed.template ?? `${name}()` });
+				onChange({
+					...config,
+					pixel: ensureSemicolon(parsed.template ?? `${name}()`),
+				});
 				if (parsed.description)
 					setReactorDescription(parsed.description);
 				if (parsed.params?.length) setReactorParams(parsed.params);
 			} else {
-				onChange({ ...config, pixel: `${name}()` });
+				onChange({ ...config, pixel: ensureSemicolon(`${name}()`) });
 			}
 		} catch {
-			onChange({ ...config, pixel: `${name}()` });
+			onChange({ ...config, pixel: ensureSemicolon(`${name}()`) });
 		} finally {
 			setSigLoading(null);
 		}
@@ -114,43 +108,17 @@ export function AppEngineForm({
 		<div className="flex flex-col gap-4">
 			<Field>
 				<FieldLabel>App Context (optional)</FieldLabel>
-				<Select
-					value={config.appId ?? ""}
-					onValueChange={(v) =>
+				<AutomationProjectSelect
+					name={config.appName || ""}
+					value={config.appId || ""}
+					onChange={(projectId, projectName) =>
 						onChange({
 							...config,
-							appId: v === "__none__" ? "" : v,
+							appId: projectId,
+							appName: projectName,
 						})
 					}
-				>
-					<SelectTrigger>
-						<SelectValue placeholder="Run in default context" />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="__none__">
-							<span className="text-muted-foreground">
-								None (default context)
-							</span>
-						</SelectItem>
-						{projects.map((p) => (
-							<SelectItem
-								key={p.project_id}
-								value={p.project_id}
-								className="py-1.5 text-xs"
-							>
-								<span className="flex flex-col gap-0.5">
-									<span>
-										{p.project_display_name ??
-											p.project_name}
-									</span>
-									<span className="font-mono text-[10px] text-muted-foreground">
-										{p.project_id}
-									</span>
-								</span>
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
+				/>
 				<p className="mt-1 text-muted-foreground text-xs">
 					Run this function inside a specific app's context
 					(optional).
@@ -214,7 +182,9 @@ export function AppEngineForm({
 					label="Function Call"
 					value={config.pixel}
 					placeholder='MyFunction(param=[""])'
-					onChange={(v) => onChange({ ...config, pixel: v })}
+					onChange={(v) =>
+						onChange({ ...config, pixel: ensureSemicolon(v) })
+					}
 					upstreamVars={upstreamVars}
 					mono
 				/>

@@ -9,18 +9,13 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import type {
-	EngineOption,
-	VectorEngineConfig,
-} from "../../../domain/automation.types";
+import type { VectorEngineConfig } from "../../../domain/automation.types";
 import { getPlaygroundParamDescription } from "../../../domain/automation-utils";
-import { BoundInput, EngineSelect } from "./shared";
+import { BoundInput, EnginePickerField } from "./shared";
 
 export interface VectorEngineFormProps {
 	/** Current node config */
 	config: VectorEngineConfig;
-	/** Vector engines the user has access to */
-	engines: EngineOption[];
 	/** Output variable names produced by upstream nodes, offered as autocomplete */
 	upstreamVars: string[];
 	/** Called with the updated config on every field change */
@@ -35,7 +30,6 @@ export interface VectorEngineFormProps {
 
 export function VectorEngineForm({
 	config,
-	engines,
 	upstreamVars,
 	onChange,
 	playgroundFillable,
@@ -45,12 +39,18 @@ export function VectorEngineForm({
 	const pgFillId = useId();
 	return (
 		<div className="flex flex-col gap-4">
-			<EngineSelect
-				label="Vector Engine"
+			<EnginePickerField
+				label="Search Documents Engine"
+				name={config.engineName || ""}
 				value={config.engineId}
-				engines={engines}
-				onChange={(v) => onChange({ ...config, engineId: v })}
-				catalogPath="/vector"
+				engineTypes={["VECTOR"]}
+				onChange={(e) =>
+					onChange({
+						...config,
+						engineId: e.engine_id,
+						engineName: e.engine_display_name ?? e.engine_name,
+					})
+				}
 			/>
 			<Field>
 				<FieldLabel>Operation</FieldLabel>

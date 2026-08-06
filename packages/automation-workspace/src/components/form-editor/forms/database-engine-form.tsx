@@ -8,13 +8,10 @@ import {
 } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { Input, Textarea } from "@semoss/ui/next";
-import type {
-	DatabaseEngineConfig,
-	EngineOption,
-} from "../../../domain/automation.types";
+import type { DatabaseEngineConfig } from "../../../domain/automation.types";
 import { getPlaygroundParamDescription } from "../../../domain/automation-utils";
 import { insight } from "../../../semoss/client";
-import { BoundInput, EngineSelect } from "./shared";
+import { BoundInput, EnginePickerField } from "./shared";
 
 interface TableStructure {
 	table: string;
@@ -24,8 +21,6 @@ interface TableStructure {
 export interface DatabaseEngineFormProps {
 	/** Current node config */
 	config: DatabaseEngineConfig;
-	/** Database engines the user has access to */
-	engines: EngineOption[];
 	/** Output variable names produced by upstream nodes, offered as autocomplete */
 	upstreamVars: string[];
 	/** Called with the updated config on every field change */
@@ -38,7 +33,6 @@ export interface DatabaseEngineFormProps {
 
 export function DatabaseEngineForm({
 	config,
-	engines,
 	upstreamVars,
 	onChange,
 	playgroundFillable,
@@ -146,12 +140,18 @@ export function DatabaseEngineForm({
 
 	return (
 		<div className="flex flex-col gap-4">
-			<EngineSelect
+			<EnginePickerField
 				label="Database Engine"
+				name={config.engineName || ""}
 				value={config.engineId}
-				engines={engines}
-				onChange={(v) => onChange({ ...config, engineId: v })}
-				catalogPath="/database"
+				engineTypes={["DATABASE"]}
+				onChange={(e) =>
+					onChange({
+						...config,
+						engineId: e.engine_id,
+						engineName: e.engine_display_name ?? e.engine_name,
+					})
+				}
 			/>
 
 			<div className="flex flex-col gap-1">

@@ -8,18 +8,13 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import type {
-	EngineOption,
-	FunctionEngineConfig,
-} from "../../../domain/automation.types";
+import type { FunctionEngineConfig } from "../../../domain/automation.types";
 import { getPlaygroundParamDescription } from "../../../domain/automation-utils";
-import { BoundInput, EngineSelect } from "./shared";
+import { BoundInput, EnginePickerField } from "./shared";
 
 export interface FunctionEngineFormProps {
 	/** Current node config */
 	config: FunctionEngineConfig;
-	/** Function engines the user has access to */
-	engines: EngineOption[];
 	/** Output variable names produced by upstream nodes, offered as autocomplete */
 	upstreamVars: string[];
 	/** Called with the updated config on every field change */
@@ -32,7 +27,6 @@ export interface FunctionEngineFormProps {
 
 export function FunctionEngineForm({
 	config,
-	engines,
 	upstreamVars,
 	onChange,
 	playgroundFillable,
@@ -41,12 +35,18 @@ export function FunctionEngineForm({
 	const pgFillId = useId();
 	return (
 		<div className="flex flex-col gap-4">
-			<EngineSelect
+			<EnginePickerField
 				label="Function Engine"
+				name={config.engineName || ""}
 				value={config.engineId}
-				engines={engines}
-				onChange={(v) => onChange({ ...config, engineId: v })}
-				catalogPath="/function"
+				engineTypes={["FUNCTION"]}
+				onChange={(e) =>
+					onChange({
+						...config,
+						engineId: e.engine_id,
+						engineName: e.engine_display_name ?? e.engine_name,
+					})
+				}
 			/>
 			<Field>
 				<FieldLabel>Operation</FieldLabel>

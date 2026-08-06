@@ -19,6 +19,7 @@ export interface TriggerConfig {
 
 export interface DatabaseEngineConfig {
 	engineId: string;
+	engineName?: string;
 	operation: "query" | "write";
 	expression: string;
 	limit: number;
@@ -27,6 +28,7 @@ export interface DatabaseEngineConfig {
 
 export interface StorageEngineConfig {
 	engineId: string;
+	engineName?: string;
 	operation: "list" | "download" | "upload" | "delete" | "read-base64";
 	storagePath: string;
 	filePath: string;
@@ -35,6 +37,7 @@ export interface StorageEngineConfig {
 
 export interface VectorEngineConfig {
 	engineId: string;
+	engineName?: string;
 	operation:
 		| "search"
 		| "add-file"
@@ -56,6 +59,8 @@ export interface VectorEngineConfig {
 
 export interface ModelEngineConfig {
 	engineId: string;
+	engineName?: string;
+	engineSubtype?: string;
 	operation: "llm" | "embeddings" | "vision" | "ner";
 	command: string;
 	context: string;
@@ -68,6 +73,7 @@ export interface ModelEngineConfig {
 
 export interface FunctionEngineConfig {
 	engineId: string;
+	engineName?: string;
 	operation: "execute" | "streaming";
 	params: string;
 }
@@ -75,6 +81,7 @@ export interface FunctionEngineConfig {
 export interface AppConfig {
 	pixel: string;
 	appId?: string;
+	appName?: string;
 }
 
 export interface WaitConfig {

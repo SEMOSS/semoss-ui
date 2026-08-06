@@ -7,17 +7,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import type {
-	EngineOption,
-	StorageEngineConfig,
-} from "../../../domain/automation.types";
-import { BoundInput, EngineSelect } from "./shared";
+import type { StorageEngineConfig } from "../../../domain/automation.types";
+import { BoundInput, EnginePickerField } from "./shared";
 
 export interface StorageEngineFormProps {
 	/** Current node config */
 	config: StorageEngineConfig;
-	/** Storage engines the user has access to */
-	engines: EngineOption[];
 	/** Output variable names produced by upstream nodes, offered as autocomplete */
 	upstreamVars: string[];
 	/** Called with the updated config on every field change */
@@ -26,18 +21,23 @@ export interface StorageEngineFormProps {
 
 export function StorageEngineForm({
 	config,
-	engines,
 	upstreamVars,
 	onChange,
 }: StorageEngineFormProps) {
 	return (
 		<div className="flex flex-col gap-4">
-			<EngineSelect
+			<EnginePickerField
 				label="Storage Engine"
+				name={config.engineName || ""}
 				value={config.engineId}
-				engines={engines}
-				onChange={(v) => onChange({ ...config, engineId: v })}
-				catalogPath="/storage"
+				engineTypes={["STORAGE"]}
+				onChange={(e) =>
+					onChange({
+						...config,
+						engineId: e.engine_id,
+						engineName: e.engine_display_name ?? e.engine_name,
+					})
+				}
 			/>
 			<Field>
 				<FieldLabel>Operation</FieldLabel>
