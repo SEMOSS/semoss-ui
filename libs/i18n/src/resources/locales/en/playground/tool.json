@@ -28,6 +28,7 @@
 	},
 	"form": {
 		"result": "Result",
+		"parameters": "Parameters",
 		"schemaLoadFailed": "Failed to load tool schema",
 		"schemaLoadFailedDescription": "Unable to retrieve tool configuration. Please try again later.",
 		"schemaLoading": "Loading tool schema...",

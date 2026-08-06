@@ -26,6 +26,7 @@
 	},
 	"form": {
 		"result": "परिणाम",
+		"parameters": "पैरामीटर",
 		"schemaLoadFailed": "टूल स्कीमा लोड करने में विफल",
 		"schemaLoadFailedDescription": "टूल कॉन्फ़िगरेशन प्राप्त नहीं किया जा सका। कृपया बाद में पुनः प्रयास करें।",
 		"schemaLoading": "टूल स्कीमा लोड हो रहा है...",

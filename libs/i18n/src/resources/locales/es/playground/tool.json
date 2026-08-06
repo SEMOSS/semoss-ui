@@ -26,6 +26,7 @@
 	},
 	"form": {
 		"result": "Resultado",
+		"parameters": "Parámetros",
 		"schemaLoadFailed": "Error al cargar el esquema de la herramienta",
 		"schemaLoadFailedDescription": "No se pudo recuperar la configuración de la herramienta. Por favor, inténtelo de nuevo más tarde.",
 		"schemaLoading": "Cargando esquema de la herramienta...",

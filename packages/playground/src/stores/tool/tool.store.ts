@@ -92,6 +92,13 @@ export class ToolStore {
 	streamingName: string = "";
 
 	/**
+	 * Whether the stored TOOL_CALL part is the placeholder pushed while the call
+	 * streams in, rather than the final part synced from the response. The
+	 * placeholder carries a stubbed `_meta`, so `json` must not hand it out.
+	 */
+	isStreamingPlaceholder: boolean = false;
+
+	/**
 	 * Json for the tool
 	 */
 	get json() {
@@ -101,10 +108,12 @@ export class ToolStore {
 		if (part?.server_tool) {
 			return buildServerToolJson(part);
 		}
-		// If the real part has arrived (has a title), use it. Otherwise (placeholder
-		// pushed during streaming, or no part at all) synthesize from streamingName
-		// so the pill renders the wire name until the final sync swaps it.
-		if (part?.title) {
+		// If the final part has arrived, use it. Otherwise (placeholder pushed
+		// during streaming, or no part at all) synthesize from streamingName so
+		// the pill renders the wire name until the final sync swaps it. Never key
+		// this off a display field such as `title`: MCP tools are not required to
+		// declare one, and a real part without a title would lose its `_meta`.
+		if (part && !this.isStreamingPlaceholder) {
 			return part;
 		}
 		const name = this.streamingName;
@@ -137,6 +146,26 @@ export class ToolStore {
 	get isResolved(): boolean {
 		const part = this.toolCall.part?.toolCall;
 		return !!part && (part.server_tool === true || !!part.title);
+	}
+
+	/**
+	 * Label to render for the tool. `title` is optional in MCP and the backend
+	 * only stamps it on when the tool declares one, so fall back to the name.
+	 * `_meta.SMSS_ORIGINAL_TOOL_NAME` is the name the tool declared before the
+	 * backend rewrote it for the model, so it is preferred over `original_name`
+	 * and `name`, which hold the rewritten wire name whenever the tool has no
+	 * explicit function-name indirection. While streaming, all we have is the
+	 * wire name.
+	 */
+	get displayName(): string {
+		const json = this.json;
+		return (
+			json.title ||
+			json._meta?.SMSS_ORIGINAL_TOOL_NAME ||
+			json.original_name ||
+			json.name ||
+			""
+		);
 	}
 
 	/**
@@ -189,15 +218,19 @@ export class ToolStore {
 	 * Update the tool with the new message information
 	 * @param message - the message that contains the tool call information
 	 * @param part - the part of the message that contains the tool call or result information
+	 * @param options.placeholder - the part is the stub pushed while the call streams in
 	 */
 	syncMessage = (
 		message: InputMessageStore | ResponseMessageStore,
 		part: PixelMessageToolCallPart | PixelMessageToolResultPart,
+		options?: { placeholder?: boolean },
 	) => {
 		if (
 			part.type === "TOOL_CALL" &&
 			message instanceof ResponseMessageStore
 		) {
+			this.isStreamingPlaceholder = options?.placeholder === true;
+
 			// set the display — server tools default to sidebar since they have
 			// no SMSS_MCP_UI block
 			this.display =
@@ -212,10 +245,12 @@ export class ToolStore {
 				part,
 			};
 
-			// the final part has arrived — clear streaming bookkeeping
-			this.argumentsStreaming = false;
-			this.argumentsBuffer = "";
-			this.streamingName = "";
+			// once the final part has arrived, clear streaming bookkeeping
+			if (!this.isStreamingPlaceholder) {
+				this.argumentsStreaming = false;
+				this.argumentsBuffer = "";
+				this.streamingName = "";
+			}
 		} else if (part.type === "TOOL_RESULT") {
 			// Server tool results don't echo back toolParameterValues — keep the
 			// args we already captured from the matching TOOL_CALL sync.
@@ -319,7 +354,7 @@ export class ToolStore {
 			// Default to sidebar
 			this.room.addSidebarNode(this.nodeId, {
 				type: "tab",
-				name: this.json.title,
+				name: this.displayName,
 				component: "room-tool",
 				config: {
 					app: getToolAppId(this.json._meta),

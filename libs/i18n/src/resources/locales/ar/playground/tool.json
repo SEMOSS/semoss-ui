@@ -26,6 +26,7 @@
 	},
 	"form": {
 		"result": "النتيجة",
+		"parameters": "المعاملات",
 		"schemaLoadFailed": "فشل تحميل مخطط الأداة",
 		"schemaLoadFailedDescription": "تعذّر استرداد تكوين الأداة. يرجى المحاولة مرة أخرى لاحقاً.",
 		"schemaLoading": "جارٍ تحميل مخطط الأداة...",
