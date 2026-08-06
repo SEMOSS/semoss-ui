@@ -137,7 +137,7 @@ export const ToolsDefaultView = observer(
 		const optionalFields = Object.entries(properties).filter(
 			([fieldName]) => !required.includes(fieldName),
 		);
-		const title = tool?.json.title || "";
+		const title = tool?.displayName || "";
 		const description = tool?.json.description || "";
 		const isAutoExecuting =
 			tool?.json._meta.SMSS_MCP_EXECUTION !== "ask" &&
