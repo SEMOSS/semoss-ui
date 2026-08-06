@@ -1,5 +1,5 @@
-import { Clock3 } from "lucide-react";
-import { useMemo } from "react";
+import { ChevronDown, ChevronRight, Clock3 } from "lucide-react";
+import { useMemo, useState } from "react";
 import type {
 	AutomationNode,
 	AutomationNodeResult,
@@ -20,6 +20,34 @@ export interface NodeResultListProps {
 	onToggleNode: (nodeId: string) => void;
 }
 
+function ErrorDetail({ message }: { message: string }) {
+	const [expanded, setExpanded] = useState(false);
+	return (
+		<div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-[11px] text-destructive">
+			<div className="flex items-center justify-between gap-2">
+				<span className="font-medium">Step failed</span>
+				<button
+					type="button"
+					onClick={() => setExpanded((p) => !p)}
+					className="flex items-center gap-0.5 text-destructive/70 hover:text-destructive"
+				>
+					{expanded ? (
+						<ChevronDown className="h-3 w-3" />
+					) : (
+						<ChevronRight className="h-3 w-3" />
+					)}
+					{expanded ? "Hide details" : "Show details"}
+				</button>
+			</div>
+			{expanded && (
+				<pre className="mt-2 whitespace-pre-wrap break-all font-mono text-[10px] opacity-80">
+					{message}
+				</pre>
+			)}
+		</div>
+	);
+}
+
 export function NodeResultList({
 	steps,
 	results,
@@ -34,18 +62,24 @@ export function NodeResultList({
 	if (results.length === 0) {
 		return (
 			<div className="rounded-xl border border-dashed bg-card/60 px-6 py-12 text-center text-muted-foreground text-sm">
-				No node results available yet.
+				No results yet. Run the automation to see what each step
+				produces.
 			</div>
 		);
 	}
 
 	return (
 		<div className="space-y-3">
-			{results.map((result, _index) => {
+			{results.map((result) => {
 				const step = stepMap.get(result.NODE_ID);
-				const meta = getDisplayMeta(step?.type ?? "app-engine");
+				const meta = getDisplayMeta(step?.type ?? "app");
 				const Icon = meta.icon;
 				const isExpanded = expandedNodes.has(result.NODE_ID);
+
+				const displayStatus =
+					step?.type === "trigger" && result.STATUS === "PENDING"
+						? "SUCCESS"
+						: result.STATUS;
 
 				return (
 					<div
@@ -66,12 +100,12 @@ export function NodeResultList({
 												step?.label ||
 												meta.label}
 										</span>
-										<StatusBadge status={result.STATUS} />
+										<StatusBadge status={displayStatus} />
 									</div>
 									{result.ERROR_MESSAGE && (
-										<div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 font-mono text-[11px] text-destructive">
-											{result.ERROR_MESSAGE}
-										</div>
+										<ErrorDetail
+											message={result.ERROR_MESSAGE}
+										/>
 									)}
 									{result.OUTPUT_PREVIEW && (
 										<OutputPreview

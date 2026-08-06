@@ -4,18 +4,10 @@ import {
 	Database,
 	Loader2,
 	Search,
+	Sparkles,
 } from "lucide-react";
 import { useEffect, useId, useState } from "react";
-import {
-	Field,
-	FieldLabel,
-	Input,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@semoss/ui/next";
+import { Input, Textarea } from "@semoss/ui/next";
 import type {
 	DatabaseEngineConfig,
 	EngineOption,
@@ -61,6 +53,11 @@ export function DatabaseEngineForm({
 		Record<string, boolean>
 	>({});
 
+	// AI SQL generation state
+	const [showAiPrompt, setShowAiPrompt] = useState(false);
+	const [aiPrompt, setAiPrompt] = useState("");
+	const [aiLoading, setAiLoading] = useState(false);
+
 	useEffect(() => {
 		if (!config.engineId) {
 			setStructure([]);
@@ -82,7 +79,6 @@ export function DatabaseEngineForm({
 				> = {};
 				for (const row of rows) {
 					if (!Array.isArray(row) || row.length < 3) continue;
-					// Response format: [tableAlias, colAlias, type, isPk, physColName, physTableName]
 					const t = String(row[5] ?? row[0] ?? "").trim();
 					const c = String(row[4] ?? row[1] ?? "").trim();
 					const type =
@@ -126,6 +122,28 @@ export function DatabaseEngineForm({
 	const insertColumn = (table: string, column: string) =>
 		onChange({ ...config, expression: `SELECT ${column} FROM ${table}` });
 
+	const handleAiGenerate = async () => {
+		if (!aiPrompt.trim() || !config.engineId) return;
+		setAiLoading(true);
+		try {
+			const encoded = btoa(unescape(encodeURIComponent(aiPrompt.trim())));
+			const result = await insight.actions.run(
+				`GenerateSQL(database=["${config.engineId}"], description=["${encoded}"]);`,
+			);
+			const raw =
+				result.pixelReturn?.[result.pixelReturn.length - 1]?.output;
+			if (typeof raw === "string" && raw.trim()) {
+				onChange({ ...config, expression: raw.trim() });
+				setShowAiPrompt(false);
+				setAiPrompt("");
+			}
+		} catch {
+			// leave expression unchanged
+		} finally {
+			setAiLoading(false);
+		}
+	};
+
 	return (
 		<div className="flex flex-col gap-4">
 			<EngineSelect
@@ -133,37 +151,80 @@ export function DatabaseEngineForm({
 				value={config.engineId}
 				engines={engines}
 				onChange={(v) => onChange({ ...config, engineId: v })}
+				catalogPath="/database"
 			/>
-			<Field>
-				<FieldLabel>Operation</FieldLabel>
-				<Select
-					value={config.operation}
-					onValueChange={(v) =>
-						onChange({
-							...config,
-							operation: v as DatabaseEngineConfig["operation"],
-						})
-					}
-				>
-					<SelectTrigger>
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="query">Query (SELECT)</SelectItem>
-						<SelectItem value="write">
-							Write (INSERT/UPDATE/DELETE)
-						</SelectItem>
-					</SelectContent>
-				</Select>
-			</Field>
-			<BoundInput
-				label="SQL Expression"
-				value={config.expression}
-				placeholder="SELECT * FROM table WHERE id = '${id}'"
-				onChange={(v) => onChange({ ...config, expression: v })}
-				upstreamVars={upstreamVars}
-				mono
-			/>
+
+			<div className="flex flex-col gap-1">
+				<BoundInput
+					label="Database Query"
+					value={config.expression}
+					placeholder="e.g. SELECT * FROM CLAIMS WHERE STATUS = 'pending' LIMIT 100"
+					onChange={(v) => onChange({ ...config, expression: v })}
+					upstreamVars={upstreamVars}
+					mono
+				/>
+
+				{/* AI help — only shown when a DB engine is selected */}
+				{config.engineId && !showAiPrompt && (
+					<button
+						type="button"
+						onClick={() => setShowAiPrompt(true)}
+						className="flex items-center gap-1 self-start text-[11px] text-muted-foreground transition-colors hover:text-primary"
+					>
+						<Sparkles className="h-3 w-3" />
+						Help me write this query
+					</button>
+				)}
+
+				{showAiPrompt && (
+					<div className="mt-1 flex flex-col gap-2 rounded-lg border bg-muted/30 p-3">
+						<p className="text-[11px] text-muted-foreground">
+							Describe what data you need and the AI will write
+							the SQL for you.
+						</p>
+						<Textarea
+							value={aiPrompt}
+							onChange={(e) => setAiPrompt(e.target.value)}
+							placeholder="e.g. Get all open claims submitted in the last 7 days, showing claim ID, status, and date"
+							className="min-h-[60px] resize-none text-xs"
+							onKeyDown={(e) => {
+								if (
+									e.key === "Enter" &&
+									(e.metaKey || e.ctrlKey)
+								) {
+									handleAiGenerate();
+								}
+							}}
+						/>
+						<div className="flex items-center gap-2">
+							<button
+								type="button"
+								disabled={!aiPrompt.trim() || aiLoading}
+								onClick={handleAiGenerate}
+								className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 font-medium text-[11px] text-primary-foreground transition-opacity disabled:opacity-50"
+							>
+								{aiLoading ? (
+									<Loader2 className="h-3 w-3 animate-spin" />
+								) : (
+									<Sparkles className="h-3 w-3" />
+								)}
+								Generate
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									setShowAiPrompt(false);
+									setAiPrompt("");
+								}}
+								className="text-[11px] text-muted-foreground hover:text-foreground"
+							>
+								Cancel
+							</button>
+						</div>
+					</div>
+				)}
+			</div>
+
 			<div className="flex items-center gap-2">
 				<input
 					type="checkbox"
@@ -195,23 +256,6 @@ export function DatabaseEngineForm({
 					Current value will be overwritten if Playground provides
 					input
 				</p>
-			)}
-			{config.operation === "query" && (
-				<Field>
-					<FieldLabel>Row Limit</FieldLabel>
-					<Input
-						type="number"
-						min={1}
-						value={config.limit ?? 50}
-						onChange={(e) =>
-							onChange({
-								...config,
-								limit: Number(e.target.value),
-							})
-						}
-						placeholder="50"
-					/>
-				</Field>
 			)}
 
 			{config.engineId && (

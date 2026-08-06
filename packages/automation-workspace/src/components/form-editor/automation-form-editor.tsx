@@ -1,20 +1,23 @@
 import {
 	ChevronDown,
 	ChevronRight,
+	HelpCircle,
 	Loader2,
 	Play,
 	Plus,
 	RefreshCw,
 	Save,
+	Sparkles,
+	Wand2,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	getPixelAsyncResult,
 	getPixelJobStreaming,
 	runPixelAsync,
 } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
-import { Button, toast } from "@semoss/ui/next";
+import { Button, Textarea, toast } from "@semoss/ui/next";
 import type {
 	AutomationConfigEntry,
 	AutomationDocument,
@@ -32,6 +35,7 @@ import type {
 import { NODE_TYPE_META } from "../../domain/automation-constants";
 import type { AutomationRunData } from "../../domain/automation-display";
 import {
+	formatRelativeTime,
 	formatRunDuration,
 	formatTimestamp,
 	getDisplayMeta,
@@ -46,6 +50,7 @@ import { insight } from "../../semoss/client";
 import { StatusBadge } from "../status-badge";
 import { AutomationConfigTab } from "./automation-config-tab";
 import { AutomationStepEditorCard } from "./automation-step-editor-card";
+import { HelpModal } from "./help-modal";
 import { NodeResultList } from "./node-result-list";
 import { TriggerStepCard } from "./trigger-step-card";
 
@@ -80,6 +85,13 @@ const EMPTY_GRAPH: AutomationGraph = { nodes: [], edges: [] };
 export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 	const [saving, setSaving] = useState(false);
 	const [activeTab, setActiveTab] = useState<TabId>("steps");
+	const [description, setDescription] = useState("");
+	const [devMode, setDevMode] = useState(false);
+	const [generationPrompt, setGenerationPrompt] = useState("");
+	const [generating, setGenerating] = useState(false);
+	const [showGenerationWizard, setShowGenerationWizard] = useState(false);
+	// Edit panel (wand) slides in from the right without hiding nodes
+	const [showEditPanel, setShowEditPanel] = useState(false);
 	const [running, setRunning] = useState(false);
 	const [stepStatuses, setStepStatuses] = useState<
 		Record<string, StepRunStatus>
@@ -94,7 +106,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 	>({});
 	const [projects, setProjects] = useState<ProjectOption[]>([]);
 	const [config, setConfig] = useState<AutomationConfigEntry[]>([]);
-	const [savingConfig, setSavingConfig] = useState(false);
+	const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
 	const [nodeOutputs, setNodeOutputsState] = useState<Record<string, string>>(
 		{},
 	);
@@ -122,13 +134,83 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		Set<string>
 	>(new Set());
 
+	const [isDirty, setIsDirty] = useState(false);
+	const [showHelp, setShowHelp] = useState(false);
+	// Set to true after initial server data loads so draft writes don't fire on mount
+	const loadedRef = useRef(false);
+
 	const { status: automationStatus } = usePixel<AutomationDocument | null>(
 		`GetAutomation(project=["${appId}"]);`,
 		{
 			data: null,
-			onSuccess: (doc) =>
-				setSteps(ensureTriggerNode((doc?.graph ?? EMPTY_GRAPH).nodes)),
-			onError: () => setSteps(ensureTriggerNode(EMPTY_GRAPH.nodes)),
+			onSuccess: (doc) => {
+				const serverSteps = ensureTriggerNode(
+					(doc?.graph ?? EMPTY_GRAPH).nodes,
+				);
+				const serverDescription = doc?.description ?? "";
+
+				// Check for a localStorage draft saved after the server version
+				const draftKey = `automation-draft-${appId}`;
+				const raw = localStorage.getItem(draftKey);
+				if (raw) {
+					try {
+						const draft = JSON.parse(raw) as {
+							steps: AutomationNode[];
+							description: string;
+							savedAt: number;
+						};
+						// Auto-restore without blocking the thread; toast lets user discard if needed
+						setSteps(draft.steps);
+						setDescription(draft.description);
+						setIsDirty(true);
+						loadedRef.current = true;
+						toast.success(
+							"Draft restored from your previous session",
+							{
+								description:
+									"Your unsaved changes have been restored.",
+							},
+						);
+						const hasSteps = draft.steps.some(
+							(n) => n.type !== "trigger",
+						);
+						const wizardDismissed =
+							localStorage.getItem(
+								`automation-wizard-seen-${appId}`,
+							) === "true";
+						if (
+							!hasSteps &&
+							!draft.description.trim() &&
+							!wizardDismissed
+						) {
+							setShowGenerationWizard(true);
+						}
+						return;
+					} catch {
+						localStorage.removeItem(draftKey);
+					}
+				}
+
+				setSteps(serverSteps);
+				setDescription(serverDescription);
+				loadedRef.current = true;
+				// Only auto-show the wizard on a truly blank automation that hasn't been dismissed
+				const hasSteps = serverSteps.some((n) => n.type !== "trigger");
+				const wizardDismissed =
+					localStorage.getItem(`automation-wizard-seen-${appId}`) ===
+					"true";
+				if (
+					!hasSteps &&
+					!serverDescription.trim() &&
+					!wizardDismissed
+				) {
+					setShowGenerationWizard(true);
+				}
+			},
+			onError: () => {
+				setSteps(ensureTriggerNode(EMPTY_GRAPH.nodes));
+				loadedRef.current = true;
+			},
 		},
 	);
 
@@ -196,10 +278,23 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		},
 	);
 	const historyLoading = runsStatus === "INITIAL" || runsStatus === "LOADING";
+	const hasRunnableSteps = steps.some((s) => s.type !== "trigger");
 
 	useEffect(() => {
 		setRuns(runsData ?? []);
+		if (runsData) setLastRefreshed(new Date());
 	}, [runsData]);
+
+	// Persist draft to localStorage and mark dirty on every steps/description change
+	useEffect(() => {
+		if (!loadedRef.current) return;
+		const draft = { steps, description, savedAt: Date.now() };
+		localStorage.setItem(
+			`automation-draft-${appId}`,
+			JSON.stringify(draft),
+		);
+		setIsDirty(true);
+	}, [steps, description, appId]);
 
 	const setNodeOutput = useCallback((outputVar: string, value: string) => {
 		setNodeOutputsState((previous) => ({
@@ -279,14 +374,27 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		try {
 			const doc: AutomationDocument = {
 				version: 1,
+				...(description.trim()
+					? { description: description.trim() }
+					: {}),
 				graph: { nodes: steps, edges: [] },
 			};
 			const json = btoa(
 				unescape(encodeURIComponent(JSON.stringify(doc))),
 			);
-			await insight.actions.run(
-				`SaveAutomation(project=["${appId}"], json=["${json}"]);`,
+			const configJson = btoa(
+				unescape(encodeURIComponent(JSON.stringify(config))),
 			);
+			await Promise.all([
+				insight.actions.run(
+					`SaveAutomation(project=["${appId}"], json=["${json}"]);`,
+				),
+				insight.actions.run(
+					`SaveAutomationConfig(project=["${appId}"], config=["${configJson}"]);`,
+				),
+			]);
+			localStorage.removeItem(`automation-draft-${appId}`);
+			setIsDirty(false);
 			toast.success("Automation saved");
 			return true;
 		} catch {
@@ -295,24 +403,56 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		} finally {
 			setSaving(false);
 		}
-	}, [appId, steps]);
+	}, [appId, config, description, steps]);
 
-	const saveConfig = useCallback(async () => {
-		setSavingConfig(true);
+	const generate = useCallback(async () => {
+		if (!generationPrompt.trim()) return;
+		setGenerating(true);
+		const wasEditPanel = showEditPanel;
 		try {
-			const json = btoa(
-				unescape(encodeURIComponent(JSON.stringify(config))),
+			const encodedPrompt = btoa(
+				unescape(encodeURIComponent(generationPrompt.trim())),
 			);
-			await insight.actions.run(
-				`SaveAutomationConfig(project=["${appId}"], config=["${json}"]);`,
+			let pixel: string;
+			if (wasEditPanel && steps.length > 0) {
+				const currentDoc: AutomationDocument = {
+					version: 1,
+					...(description.trim()
+						? { description: description.trim() }
+						: {}),
+					graph: { nodes: steps, edges: [] },
+				};
+				const encodedDoc = btoa(
+					unescape(encodeURIComponent(JSON.stringify(currentDoc))),
+				);
+				pixel = `GenerateAutomation(project=["${appId}"], description=["${encodedPrompt}"], currentDoc=["${encodedDoc}"]);`;
+			} else {
+				pixel = `GenerateAutomation(project=["${appId}"], description=["${encodedPrompt}"]);`;
+			}
+			const result = await insight.actions.run(pixel);
+			const raw = result.pixelReturn?.[0]?.output as string | null;
+			if (!raw) throw new Error("No response from AI");
+			const doc: AutomationDocument = JSON.parse(raw);
+			const generated = ensureTriggerNode(
+				(doc?.graph ?? EMPTY_GRAPH).nodes,
 			);
-			toast.success("Config saved");
-		} catch {
-			toast.error("Config save failed");
+			setSteps(generated);
+			if (doc.description) setDescription(doc.description);
+			localStorage.setItem(`automation-wizard-seen-${appId}`, "true");
+			setShowGenerationWizard(false);
+			setShowEditPanel(false);
+			setGenerationPrompt("");
+			toast.success(
+				wasEditPanel
+					? "Automation updated — review the changes, then save when ready."
+					: "Automation generated — review each step, then save when ready.",
+			);
+		} catch (error) {
+			toast.error(`Generation failed: ${(error as Error).message}`);
 		} finally {
-			setSavingConfig(false);
+			setGenerating(false);
 		}
-	}, [appId, config]);
+	}, [appId, description, generationPrompt, showEditPanel, steps]);
 
 	/** Merges live run data into per-step UI state (statuses, durations, outputs). Called once the sequential per-node run finishes. */
 	const applyRunData = useCallback(
@@ -640,469 +780,735 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 	}
 
 	return (
-		<div className="flex h-full flex-col bg-background">
-			<div className="border-b px-6 py-4">
-				<div className="flex items-center justify-between">
-					<div className="flex items-center gap-3">
-						<span className="font-semibold">Automation</span>
-					</div>
-					<div className="flex items-center gap-2">
-						<Button
-							size="sm"
-							variant="outline"
-							onClick={save}
-							disabled={saving}
-						>
-							{saving ? (
-								<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-							) : (
-								<Save className="mr-1.5 h-3.5 w-3.5" />
-							)}
-							Save
-						</Button>
-						<Button size="sm" onClick={run} disabled={running}>
-							{running ? (
-								<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-							) : (
-								<Play className="mr-1.5 h-3.5 w-3.5" />
-							)}
-							Run
-						</Button>
-					</div>
-				</div>
-			</div>
-
-			{running && (
-				<div className="border-b bg-primary/5 px-6 py-3">
-					<div className="flex items-center gap-3">
-						<Loader2 className="h-4 w-4 animate-spin text-primary" />
-						<span className="font-medium text-primary text-sm">
-							Running automation...
-						</span>
-						<div className="ml-auto flex items-center gap-2">
-							<div className="h-1.5 w-48 overflow-hidden rounded-full bg-primary/20">
-								<div className="h-full w-[60%] animate-pulse rounded-full bg-primary" />
-							</div>
+		<>
+			<div className="flex h-full flex-col bg-background">
+				<div className="border-b px-6 py-4">
+					<div className="flex items-center justify-between">
+						<div className="flex items-center gap-3">
+							<span className="font-semibold">Automation</span>
 						</div>
-					</div>
-				</div>
-			)}
-
-			<div className="border-b px-6">
-				<div className="flex items-center gap-2 py-2">
-					{[
-						{ id: "steps", label: "Steps" },
-						{ id: "results", label: "Run Results" },
-						{ id: "history", label: "Automation History" },
-						{ id: "config", label: "Config" },
-					].map((tab) => {
-						const isActive = activeTab === tab.id;
-						return (
+						<div className="flex items-center gap-2">
 							<button
-								key={tab.id}
 								type="button"
-								onClick={() => setActiveTab(tab.id as TabId)}
-								className={`rounded-full px-3 py-1.5 font-medium text-sm transition-colors ${
-									isActive
-										? "bg-primary text-primary-foreground"
-										: "text-muted-foreground hover:bg-muted hover:text-foreground"
-								}`}
+								onClick={() => setShowHelp(true)}
+								className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-muted-foreground text-xs transition-colors hover:bg-muted"
+								title="Open automation reference"
 							>
-								{tab.label}
+								<HelpCircle className="h-3.5 w-3.5" />
+								Help
 							</button>
-						);
-					})}
-				</div>
-			</div>
-
-			<div className="flex-1 overflow-hidden">
-				{activeTab === "steps" && (
-					<div className="h-full overflow-y-auto px-6 py-6">
-						<div className="mx-auto max-w-3xl space-y-4">
-							{/* Trigger node — always first, never deleteable */}
-							{steps
-								.filter((s) => s.type === "trigger")
-								.map((triggerStep) => (
-									<TriggerStepCard
-										key={triggerStep.id}
-										step={triggerStep}
-										isExpanded={
-											expandedId === triggerStep.id
-										}
-										appId={appId}
-										onToggle={() =>
-											setExpandedId((previous) =>
-												previous === triggerStep.id
-													? null
-													: triggerStep.id,
-											)
-										}
-									/>
-								))}
-
-							{/* Non-trigger steps */}
-							{steps.filter((s) => s.type !== "trigger")
-								.length === 0 && (
-								<div className="rounded-2xl border border-dashed bg-card/60 px-6 py-10 text-center">
-									<p className="font-medium text-sm">
-										No steps yet
-									</p>
-									<p className="mt-1 text-muted-foreground text-xs">
-										Add a step below to get started.
-									</p>
-								</div>
-							)}
-
-							{steps
-								.filter((s) => s.type !== "trigger")
-								.map((step, index, nonTriggerArr) => (
-									<AutomationStepEditorCard
-										key={step.id}
-										step={step}
-										index={index}
-										isExpanded={expandedId === step.id}
-										isFirst={index === 0}
-										isLast={
-											index === nonTriggerArr.length - 1
-										}
-										enginesByType={enginesByType}
-										projects={projects}
-										upstreamVars={upstreamVarsFor(
-											steps.indexOf(step),
-										)}
-										nodeOutputs={nodeOutputs}
-										runStatus={stepStatuses[step.id]}
-										runError={stepErrors[step.id]}
-										runDuration={stepDurations[step.id]}
-										onToggle={() =>
-											setExpandedId((previous) =>
-												previous === step.id
-													? null
-													: step.id,
-											)
-										}
-										onUpdate={updateStep}
-										onDelete={() => deleteStep(step.id)}
-										onMoveUp={() => moveStep(step.id, -1)}
-										onMoveDown={() => moveStep(step.id, 1)}
-										onSetOutput={setNodeOutput}
-									/>
-								))}
-
-							{!showTypePicker ? (
-								<button
-									type="button"
-									onClick={() => setShowTypePicker(true)}
-									className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed py-4 text-muted-foreground text-sm transition-colors hover:border-primary hover:text-primary"
-								>
-									<Plus className="h-4 w-4" />
-									Add Step
-								</button>
-							) : (
-								<div className="rounded-2xl border bg-card p-5 shadow-sm">
-									<div className="mb-4 flex items-center justify-between gap-3">
-										<div>
-											<p className="font-medium text-sm">
-												Choose step type
-											</p>
-											<p className="text-[11px] text-muted-foreground">
-												Select a step to add to the
-												automation.
-											</p>
-										</div>
-										<Button
-											size="sm"
-											variant="ghost"
-											className="h-8 px-2 text-xs"
-											onClick={() =>
-												setShowTypePicker(false)
-											}
-										>
-											Cancel
-										</Button>
-									</div>
-									<div className="grid gap-3 md:grid-cols-2">
-										{STEP_TYPES.map((stepType) => {
-											const Icon = stepType.icon;
-											return (
-												<button
-													key={stepType.type}
-													type="button"
-													onClick={() =>
-														addStep(stepType.type)
-													}
-													className="flex items-start gap-3 rounded-xl border p-4 text-left transition-colors hover:border-primary hover:bg-muted/40"
-												>
-													<span
-														className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted ${stepType.color}`}
-													>
-														<Icon className="h-5 w-5" />
-													</span>
-													<span className="space-y-1">
-														<span className="block font-medium text-sm">
-															{stepType.label}
-														</span>
-														<span className="block text-[11px] text-muted-foreground">
-															{
-																stepType.description
-															}
-														</span>
-													</span>
-												</button>
-											);
-										})}
-									</div>
-								</div>
-							)}
-						</div>
-					</div>
-				)}
-
-				{activeTab === "results" && (
-					<div className="h-full overflow-y-auto px-6 py-6">
-						<div className="space-y-4">
-							<div className="flex flex-col gap-3 rounded-2xl border bg-card px-5 py-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
-								<div>
-									<div className="flex flex-wrap items-center gap-2">
-										<h2 className="font-semibold text-sm">
-											Latest Run Results
-										</h2>
-										{latestRunStatus && (
-											<StatusBadge
-												status={latestRunStatus}
-											/>
-										)}
-										{running && latestRunId && (
-											<Button
-												size="sm"
-												variant="destructive"
-												className="ml-auto h-7 px-2 text-xs"
-												onClick={async () => {
-													try {
-														await insight.actions.run(
-															`CancelAutomationRun(project=["${appId}"], runId=["${latestRunId}"]);`,
-														);
-														toast.success(
-															"Cancel requested",
-														);
-													} catch {
-														toast.error(
-															"Failed to send cancel request",
-														);
-													}
-												}}
-											>
-												Cancel Run
-											</Button>
-										)}
-									</div>
-									<p className="mt-1 text-[11px] text-muted-foreground">
-										{latestRunId
-											? `Run ID: ${latestRunId}`
-											: "Run the automation to populate node results."}
-									</p>
-								</div>
-								{latestRunError && (
-									<div className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 font-mono text-[11px] text-destructive">
-										{latestRunError}
-									</div>
-								)}
-							</div>
-
-							<NodeResultList
-								steps={steps}
-								results={latestRunResults}
-								expandedNodes={expandedResultNodes}
-								onToggleNode={toggleResultNode}
-							/>
-						</div>
-					</div>
-				)}
-
-				{activeTab === "history" && (
-					<div className="h-full overflow-y-auto px-6 py-6">
-						<div className="space-y-4">
-							<div className="flex items-center justify-between gap-3">
-								<div>
-									<h2 className="font-semibold text-sm">
-										Automation History
-									</h2>
-									<p className="text-[11px] text-muted-foreground">
-										Review recent automation runs and
-										inspect per-node outputs.
-									</p>
-								</div>
+							<div className="relative">
 								<Button
 									size="sm"
-									variant="ghost"
-									className="h-8 px-2 text-xs"
-									onClick={refreshRuns}
+									variant="outline"
+									onClick={save}
+									disabled={saving}
+									className=""
 								>
-									<RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-									Refresh
+									<span className="relative mr-1.5">
+										{saving ? (
+											<Loader2 className="h-3.5 w-3.5 animate-spin" />
+										) : (
+											<Save className="h-3.5 w-3.5" />
+										)}
+										{isDirty && !saving && (
+											<span className="-top-1 -right-1 absolute h-2 w-2 rounded-full bg-amber-500 ring-1 ring-background" />
+										)}
+									</span>
+									Save
 								</Button>
 							</div>
+							<Button
+								size="sm"
+								onClick={run}
+								disabled={running || !hasRunnableSteps}
+								title={
+									!hasRunnableSteps
+										? "Add at least one step before running"
+										: undefined
+								}
+							>
+								{running ? (
+									<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+								) : (
+									<Play className="mr-1.5 h-3.5 w-3.5" />
+								)}
+								Run
+							</Button>
+						</div>
+					</div>
+				</div>
 
-							{historyLoading ? (
-								<div className="flex h-40 items-center justify-center rounded-2xl border bg-card">
-									<Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+				{running && (
+					<div className="border-b bg-primary/5 px-6 py-3">
+						<div className="flex items-center gap-3">
+							<Loader2 className="h-4 w-4 animate-spin text-primary" />
+							<span className="font-medium text-primary text-sm">
+								Running automation...
+							</span>
+							<div className="ml-auto flex items-center gap-2">
+								<div className="h-1.5 w-48 overflow-hidden rounded-full bg-primary/20">
+									<div className="h-full w-[60%] animate-pulse rounded-full bg-primary" />
 								</div>
-							) : runs.length === 0 ? (
-								<div className="rounded-2xl border border-dashed bg-card/60 px-6 py-14 text-center text-muted-foreground text-sm">
-									No runs yet — click "Run" to start.
-								</div>
-							) : (
-								<div className="overflow-x-auto rounded-2xl border bg-card shadow-sm">
-									<div className="min-w-[760px]">
-										<div className="grid grid-cols-[160px_minmax(0,1.4fr)_120px_120px_140px] gap-4 border-b bg-muted/30 px-4 py-3 font-medium text-[11px] text-muted-foreground uppercase tracking-wide">
-											<span>Status</span>
-											<span>Started</span>
-											<span>Duration</span>
-											<span>Trigger</span>
-											<span>Nodes Completed</span>
+							</div>
+						</div>
+					</div>
+				)}
+
+				<div className="border-b px-6">
+					<div className="flex items-center gap-2 py-2">
+						{[
+							{ id: "steps", label: "Steps" },
+							{ id: "results", label: "Run Results" },
+							{ id: "history", label: "Automation History" },
+							{ id: "config", label: "Config" },
+						].map((tab) => {
+							const isActive = activeTab === tab.id;
+							return (
+								<button
+									key={tab.id}
+									type="button"
+									onClick={() =>
+										setActiveTab(tab.id as TabId)
+									}
+									className={`rounded-full px-3 py-1.5 font-medium text-sm transition-colors ${
+										isActive
+											? "bg-primary text-primary-foreground"
+											: "text-muted-foreground hover:bg-muted hover:text-foreground"
+									}`}
+								>
+									{tab.label}
+								</button>
+							);
+						})}
+					</div>
+				</div>
+
+				<div className="flex-1 overflow-hidden">
+					{activeTab === "steps" && (
+						<div className="h-full overflow-y-auto px-6 py-6">
+							<div className="mx-auto max-w-3xl space-y-4">
+								{/* AI Generation wizard — shown once on a blank automation */}
+								{showGenerationWizard && (
+									<div className="rounded-2xl border bg-gradient-to-b from-primary/5 to-card px-6 py-8 text-center shadow-sm">
+										<div className="mb-4 flex justify-center">
+											<span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+												<Sparkles className="h-6 w-6 text-primary" />
+											</span>
 										</div>
-										<div className="divide-y">
-											{runs.map((runItem) => {
-												const isExpanded =
-													expandedHistoryRunId ===
-													runItem.RUN_ID;
-												return (
-													<div key={runItem.RUN_ID}>
-														<button
-															type="button"
-															onClick={() =>
-																void selectHistoryRun(
-																	runItem.RUN_ID,
-																)
-															}
-															className="grid w-full grid-cols-[160px_minmax(0,1.4fr)_120px_120px_140px] gap-4 px-4 py-3 text-left text-sm transition-colors hover:bg-muted/30"
-														>
-															<span>
-																<StatusBadge
-																	status={
-																		runItem.STATUS
-																	}
-																/>
-															</span>
-															<span className="truncate text-muted-foreground">
-																{formatTimestamp(
-																	runItem.STARTED_AT,
-																)}
-															</span>
-															<span className="text-muted-foreground">
-																{formatRunDuration(
-																	runItem.STARTED_AT,
-																	runItem.COMPLETED_AT,
-																)}
-															</span>
-															<span className="text-muted-foreground text-xs">
-																{runItem.TRIGGER_TYPE ===
-																"PLAYGROUND"
-																	? "Playground"
-																	: runItem.TRIGGER_TYPE ===
-																			"MANUAL"
-																		? "Manual"
-																		: "—"}
-															</span>
-															<span className="flex items-center justify-between gap-2 text-muted-foreground">
-																<span>
-																	{runItem.COMPLETED_NODES ??
-																		0}
-																	/
-																	{runItem.TOTAL_NODES ??
-																		0}
-																</span>
-																{isExpanded ? (
-																	<ChevronDown className="h-4 w-4 shrink-0" />
-																) : (
-																	<ChevronRight className="h-4 w-4 shrink-0" />
-																)}
-															</span>
-														</button>
+										<h2 className="mb-1 font-semibold text-base">
+											What should this automation do?
+										</h2>
+										<p className="mb-5 text-muted-foreground text-xs leading-relaxed">
+											Describe it in plain language and AI
+											will build a starter workflow.
+											<br />
+											Tip: mention specific database or AI
+											engine names for best results.
+										</p>
+										<Textarea
+											value={generationPrompt}
+											onChange={(e) =>
+												setGenerationPrompt(
+													e.target.value,
+												)
+											}
+											placeholder="e.g. Query the claims database for open cases, summarize them with AI, and save the results"
+											className="mb-4 min-h-[80px] resize-none text-sm"
+											onKeyDown={(e) => {
+												if (
+													e.key === "Enter" &&
+													(e.metaKey || e.ctrlKey)
+												) {
+													void generate();
+												}
+											}}
+										/>
+										<div className="flex items-center justify-center gap-3">
+											<Button
+												size="sm"
+												onClick={() => void generate()}
+												disabled={
+													generating ||
+													!generationPrompt.trim()
+												}
+											>
+												{generating ? (
+													<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+												) : (
+													<Sparkles className="mr-1.5 h-3.5 w-3.5" />
+												)}
+												{generating
+													? "Generating…"
+													: "Generate"}
+											</Button>
+											<button
+												type="button"
+												onClick={() => {
+													localStorage.setItem(
+														`automation-wizard-seen-${appId}`,
+														"true",
+													);
+													setShowGenerationWizard(
+														false,
+													);
+													setGenerationPrompt("");
+												}}
+												className="text-muted-foreground text-sm hover:text-foreground hover:underline"
+											>
+												Start blank
+											</button>
+										</div>
+									</div>
+								)}
 
-														{isExpanded && (
-															<div className="border-t bg-muted/10 px-4 py-4">
-																{runItem.ERROR_MESSAGE && (
-																	<div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 font-mono text-[11px] text-destructive">
-																		{
-																			runItem.ERROR_MESSAGE
-																		}
-																	</div>
-																)}
-																{historyDetailLoading ? (
-																	<div className="flex h-24 items-center justify-center">
-																		<Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-																	</div>
-																) : expandedHistoryRun ? (
-																	<NodeResultList
-																		steps={
-																			steps
-																		}
-																		results={
-																			expandedHistoryRun.nodeResults
-																		}
-																		expandedNodes={
-																			expandedHistoryNodes
-																		}
-																		onToggleNode={
-																			toggleHistoryNode
-																		}
-																	/>
-																) : null}
-															</div>
-														)}
-													</div>
+								{/* Trigger node — always first, never deleteable */}
+								{!showGenerationWizard &&
+									steps
+										.filter((s) => s.type === "trigger")
+										.map((triggerStep) => (
+											<TriggerStepCard
+												key={triggerStep.id}
+												step={triggerStep}
+												isExpanded={
+													expandedId ===
+													triggerStep.id
+												}
+												appId={appId}
+												description={description}
+												onDescriptionChange={
+													setDescription
+												}
+												devMode={devMode}
+												onDevModeChange={setDevMode}
+												onToggle={() =>
+													setExpandedId((previous) =>
+														previous ===
+														triggerStep.id
+															? null
+															: triggerStep.id,
+													)
+												}
+											/>
+										))}
+
+								{/* Non-trigger steps */}
+								{!showGenerationWizard &&
+									steps.filter((s) => s.type !== "trigger")
+										.length === 0 && (
+										<div className="rounded-2xl border border-dashed bg-card/60 px-6 py-12 text-center">
+											<p className="font-semibold text-sm">
+												No steps yet
+											</p>
+											<p className="mt-2 text-muted-foreground text-xs leading-relaxed">
+												Steps are the actions your
+												automation takes — query a
+												database, ask an AI, search
+												documents, and more.
+												<br />
+												Click{" "}
+												<span className="font-medium text-foreground">
+													Add Step
+												</span>{" "}
+												below to build your first step.
+											</p>
+										</div>
+									)}
+
+								{!showGenerationWizard &&
+									steps
+										.filter((s) => s.type !== "trigger")
+										.map((step, index, nonTriggerArr) => (
+											<AutomationStepEditorCard
+												key={step.id}
+												step={step}
+												index={index}
+												isExpanded={
+													expandedId === step.id
+												}
+												isFirst={index === 0}
+												isLast={
+													index ===
+													nonTriggerArr.length - 1
+												}
+												enginesByType={enginesByType}
+												projects={projects}
+												upstreamVars={upstreamVarsFor(
+													steps.indexOf(step),
+												)}
+												nodeOutputs={nodeOutputs}
+												runStatus={
+													stepStatuses[step.id]
+												}
+												runError={stepErrors[step.id]}
+												runDuration={
+													stepDurations[step.id]
+												}
+												onToggle={() =>
+													setExpandedId((previous) =>
+														previous === step.id
+															? null
+															: step.id,
+													)
+												}
+												onUpdate={updateStep}
+												onDelete={() =>
+													deleteStep(step.id)
+												}
+												onMoveUp={() =>
+													moveStep(step.id, -1)
+												}
+												onMoveDown={() =>
+													moveStep(step.id, 1)
+												}
+												onSetOutput={setNodeOutput}
+												devMode={devMode}
+												appId={appId}
+											/>
+										))}
+
+								{!showGenerationWizard && !showTypePicker ? (
+									<button
+										type="button"
+										onClick={() => setShowTypePicker(true)}
+										className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed py-4 text-muted-foreground text-sm transition-colors hover:border-primary hover:text-primary"
+									>
+										<Plus className="h-4 w-4" />
+										Add Step
+									</button>
+								) : !showGenerationWizard ? (
+									<div className="rounded-2xl border bg-card p-5 shadow-sm">
+										<div className="mb-4 flex items-center justify-between gap-3">
+											<div>
+												<p className="font-medium text-sm">
+													Choose step type
+												</p>
+												<p className="text-[11px] text-muted-foreground">
+													Select a step to add to the
+													automation.
+												</p>
+											</div>
+											<Button
+												size="sm"
+												variant="ghost"
+												className="h-8 px-2 text-xs"
+												onClick={() =>
+													setShowTypePicker(false)
+												}
+											>
+												Cancel
+											</Button>
+										</div>
+										<div className="grid gap-3 md:grid-cols-2">
+											{STEP_TYPES.map((stepType) => {
+												const Icon = stepType.icon;
+												return (
+													<button
+														key={stepType.type}
+														type="button"
+														onClick={() =>
+															addStep(
+																stepType.type,
+															)
+														}
+														className="flex items-start gap-3 rounded-xl border p-4 text-left transition-colors hover:border-primary hover:bg-muted/40"
+													>
+														<span
+															className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted ${stepType.color}`}
+														>
+															<Icon className="h-5 w-5" />
+														</span>
+														<span className="space-y-1">
+															<span className="block font-medium text-sm">
+																{stepType.label}
+															</span>
+															<span className="block text-[11px] text-muted-foreground">
+																{
+																	stepType.description
+																}
+															</span>
+														</span>
+													</button>
 												);
 											})}
 										</div>
 									</div>
-								</div>
-							)}
+								) : null}
+							</div>
 						</div>
-					</div>
-				)}
+					)}
 
-				{activeTab === "config" && (
-					<div className="h-full overflow-y-auto px-6 py-6">
-						<div className="mx-auto max-w-3xl space-y-4">
-							<div className="flex items-center justify-between gap-3">
+					{activeTab === "results" && (
+						<div className="h-full overflow-y-auto px-6 py-6">
+							<div className="space-y-4">
+								<div className="flex flex-col gap-3 rounded-2xl border bg-card px-5 py-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+									<div>
+										<div className="flex flex-wrap items-center gap-2">
+											<h2 className="font-semibold text-sm">
+												Latest Run Results
+											</h2>
+											{latestRunStatus && (
+												<StatusBadge
+													status={latestRunStatus}
+												/>
+											)}
+											{running && latestRunId && (
+												<Button
+													size="sm"
+													variant="destructive"
+													className="ml-auto h-7 px-2 text-xs"
+													onClick={async () => {
+														try {
+															await insight.actions.run(
+																`CancelAutomationRun(project=["${appId}"], runId=["${latestRunId}"]);`,
+															);
+															toast.success(
+																"Cancel requested",
+															);
+														} catch {
+															toast.error(
+																"Failed to send cancel request",
+															);
+														}
+													}}
+												>
+													Cancel Run
+												</Button>
+											)}
+										</div>
+										{!latestRunId && (
+											<p className="mt-1 text-[11px] text-muted-foreground">
+												Run the automation to see
+												results here.
+											</p>
+										)}
+										{latestRunId && devMode && (
+											<p className="mt-1 font-mono text-[10px] text-muted-foreground/60">
+												{latestRunId}
+											</p>
+										)}
+									</div>
+									{latestRunError && (
+										<div className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 font-mono text-[11px] text-destructive">
+											{latestRunError}
+										</div>
+									)}
+								</div>
+
+								<NodeResultList
+									steps={steps}
+									results={latestRunResults}
+									expandedNodes={expandedResultNodes}
+									onToggleNode={toggleResultNode}
+								/>
+							</div>
+						</div>
+					)}
+
+					{activeTab === "history" && (
+						<div className="h-full overflow-y-auto px-6 py-6">
+							<div className="space-y-4">
+								<div className="flex items-center justify-between gap-3">
+									<div>
+										<h2 className="font-semibold text-sm">
+											Automation History
+										</h2>
+										<p className="text-[11px] text-muted-foreground">
+											Review recent automation runs and
+											inspect per-node outputs.
+										</p>
+									</div>
+									<div className="flex flex-col items-end gap-0.5">
+										<Button
+											size="sm"
+											variant="ghost"
+											className="h-8 px-2 text-xs"
+											onClick={refreshRuns}
+										>
+											<RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+											Refresh
+										</Button>
+										{lastRefreshed && (
+											<span className="text-[10px] text-muted-foreground/60">
+												Updated{" "}
+												{formatRelativeTime(
+													lastRefreshed.toISOString(),
+												)}
+											</span>
+										)}
+									</div>
+								</div>
+
+								{historyLoading ? (
+									<div className="flex h-40 items-center justify-center rounded-2xl border bg-card">
+										<Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+									</div>
+								) : runs.length === 0 ? (
+									<div className="rounded-2xl border border-dashed bg-card/60 px-6 py-14 text-center">
+										<p className="font-semibold text-sm">
+											No runs yet
+										</p>
+										<p className="mt-2 text-muted-foreground text-xs leading-relaxed">
+											Each time the automation runs,
+											results appear here so you can
+											review what happened.
+											<br />
+											Click{" "}
+											<span className="font-medium text-foreground">
+												Run
+											</span>{" "}
+											in the top toolbar to run it now.
+										</p>
+									</div>
+								) : (
+									<div className="overflow-x-auto rounded-2xl border bg-card shadow-sm">
+										<div className="min-w-[900px]">
+											<div className="grid grid-cols-[120px_120px_100px_minmax(0,1fr)_100px] gap-4 border-b bg-muted/30 px-4 py-3 font-medium text-[11px] text-muted-foreground uppercase tracking-wide">
+												<span>Status</span>
+												<span>Started</span>
+												<span>Duration</span>
+												<span>Summary</span>
+												<span title="Number of steps completed out of total steps">
+													Progress
+												</span>
+											</div>
+											<div className="divide-y">
+												{runs.map((runItem) => {
+													const isExpanded =
+														expandedHistoryRunId ===
+														runItem.RUN_ID;
+													return (
+														<div
+															key={runItem.RUN_ID}
+														>
+															<button
+																type="button"
+																onClick={() =>
+																	void selectHistoryRun(
+																		runItem.RUN_ID,
+																	)
+																}
+																className="grid w-full grid-cols-[120px_120px_100px_minmax(0,1fr)_100px] gap-4 px-4 py-3 text-left text-sm transition-colors hover:bg-muted/30"
+															>
+																<span>
+																	<StatusBadge
+																		status={
+																			runItem.STATUS
+																		}
+																	/>
+																</span>
+																<span
+																	className="truncate text-muted-foreground text-xs"
+																	title={formatTimestamp(
+																		runItem.STARTED_AT,
+																	)}
+																>
+																	{formatRelativeTime(
+																		runItem.STARTED_AT,
+																	)}
+																</span>
+																<span className="text-muted-foreground text-xs">
+																	{formatRunDuration(
+																		runItem.STARTED_AT,
+																		runItem.COMPLETED_AT,
+																	)}
+																</span>
+																<span className="truncate text-muted-foreground text-xs">
+																	{runItem.RESULT_SUMMARY ??
+																		(runItem.ERROR_MESSAGE
+																			? runItem.ERROR_MESSAGE
+																			: "—")}
+																</span>
+																<span className="flex items-center justify-between gap-2 text-muted-foreground text-xs">
+																	<span>
+																		{runItem.COMPLETED_NODES ??
+																			0}
+																		/
+																		{runItem.TOTAL_NODES ??
+																			0}
+																	</span>
+																	{isExpanded ? (
+																		<ChevronDown className="h-4 w-4 shrink-0" />
+																	) : (
+																		<ChevronRight className="h-4 w-4 shrink-0" />
+																	)}
+																</span>
+															</button>
+
+															{isExpanded && (
+																<div className="border-t bg-muted/10 px-4 py-4">
+																	{runItem.ERROR_MESSAGE && (
+																		<div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 font-mono text-[11px] text-destructive">
+																			{
+																				runItem.ERROR_MESSAGE
+																			}
+																		</div>
+																	)}
+																	{historyDetailLoading ? (
+																		<div className="flex h-24 items-center justify-center">
+																			<Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+																		</div>
+																	) : expandedHistoryRun ? (
+																		<NodeResultList
+																			steps={
+																				steps
+																			}
+																			results={
+																				expandedHistoryRun.nodeResults
+																			}
+																			expandedNodes={
+																				expandedHistoryNodes
+																			}
+																			onToggleNode={
+																				toggleHistoryNode
+																			}
+																		/>
+																	) : null}
+																</div>
+															)}
+														</div>
+													);
+												})}
+											</div>
+										</div>
+									</div>
+								)}
+							</div>
+						</div>
+					)}
+
+					{activeTab === "config" && (
+						<div className="h-full overflow-y-auto px-6 py-6">
+							<div className="mx-auto max-w-3xl space-y-4">
 								<div>
 									<h2 className="font-semibold text-sm">
-										Automation Config
+										Variables
 									</h2>
 									<p className="text-[11px] text-muted-foreground">
-										Key-value pairs stored in this
-										automation's SMSS. Reference them in
-										node fields as{" "}
+										Store reusable values like API keys or
+										URLs. Reference them in any step as{" "}
 										<code className="rounded bg-muted px-1 font-mono">
 											{/* biome-ignore lint/suspicious/noTemplateCurlyInString: intentional literal display */}
-											{"${config.KEY}"}
+											{"${config.NAME}"}
 										</code>
-										.
+										. Variables are saved with the
+										automation.
 									</p>
 								</div>
-								<Button
-									size="sm"
-									variant="outline"
-									onClick={saveConfig}
-									disabled={savingConfig}
-								>
-									{savingConfig ? (
-										<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-									) : (
-										<Save className="mr-1.5 h-3.5 w-3.5" />
-									)}
-									Save Config
-								</Button>
+								<AutomationConfigTab
+									config={config}
+									onChange={setConfig}
+								/>
 							</div>
-							<AutomationConfigTab
-								config={config}
-								onChange={setConfig}
-							/>
 						</div>
-					</div>
-				)}
+					)}
+				</div>
 			</div>
-		</div>
+
+			{!showGenerationWizard && (
+				<button
+					type="button"
+					onClick={() => {
+						setShowEditPanel(true);
+					}}
+					className="fixed bottom-6 left-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-95"
+					title="Edit with AI"
+				>
+					<Wand2 className="h-5 w-5" />
+				</button>
+			)}
+
+			{/* AI edit panel — slides in from the right, nodes stay visible */}
+			<div
+				className={`fixed inset-y-0 right-0 z-40 flex w-[380px] flex-col border-l bg-background shadow-2xl transition-transform duration-300 ${
+					showEditPanel ? "translate-x-0" : "translate-x-full"
+				}`}
+			>
+				<div className="flex items-center justify-between border-b px-5 py-4">
+					<div className="flex items-center gap-2">
+						<Wand2 className="h-4 w-4 text-primary" />
+						<span className="font-semibold text-sm">
+							Edit with AI
+						</span>
+					</div>
+					<button
+						type="button"
+						onClick={() => {
+							setShowEditPanel(false);
+						}}
+						className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+						aria-label="Close AI edit panel"
+					>
+						<svg
+							className="h-4 w-4"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth={2}
+							aria-hidden="true"
+						>
+							<path
+								d="M18 6L6 18M6 6l12 12"
+								strokeLinecap="round"
+							/>
+						</svg>
+					</button>
+				</div>
+				<div className="flex flex-1 flex-col gap-4 overflow-y-auto px-5 py-5">
+					<p className="text-muted-foreground text-xs leading-relaxed">
+						Describe what you'd like to add or change. AI will
+						update the existing steps and preserve everything else.
+						<br />
+						<br />
+						Tip: reference specific steps by name, or mention engine
+						names for best results.
+					</p>
+					<Textarea
+						value={generationPrompt}
+						onChange={(e) => setGenerationPrompt(e.target.value)}
+						placeholder="e.g. Add a step to email the results, or swap the database query to filter by open status only"
+						className="min-h-[120px] resize-none text-sm"
+						onKeyDown={(e) => {
+							if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+								void generate();
+							}
+						}}
+					/>
+					<div className="flex items-center gap-3">
+						<Button
+							size="sm"
+							onClick={() => void generate()}
+							disabled={generating || !generationPrompt.trim()}
+							className="flex-1"
+						>
+							{generating ? (
+								<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+							) : (
+								<Wand2 className="mr-1.5 h-3.5 w-3.5" />
+							)}
+							{generating ? "Updating…" : "Update"}
+						</Button>
+						<button
+							type="button"
+							onClick={() => setShowEditPanel(false)}
+							className="text-muted-foreground text-sm hover:text-foreground hover:underline"
+						>
+							Cancel
+						</button>
+					</div>
+				</div>
+			</div>
+			{showEditPanel && (
+				// biome-ignore lint/a11y/noStaticElementInteractions: modal backdrop — click-outside dismiss, not a focusable control
+				<div
+					role="presentation"
+					className="fixed inset-0 z-30 bg-black/10"
+					onClick={() => setShowEditPanel(false)}
+					onKeyDown={() => setShowEditPanel(false)}
+				/>
+			)}
+
+			<HelpModal open={showHelp} onClose={() => setShowHelp(false)} />
+		</>
 	);
 }

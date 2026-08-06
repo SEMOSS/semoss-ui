@@ -21,17 +21,8 @@ export function WaitForm({ config, upstreamVars, onChange }: WaitFormProps) {
 				upstreamVars={upstreamVars}
 			/>
 			<p className="text-muted-foreground text-xs">
-				Supports{" "}
-				<code className="rounded bg-muted px-1">
-					{/* biome-ignore lint/suspicious/noTemplateCurlyInString: literal */}
-					{"${var}"}
-				</code>{" "}
-				templates. Maximum 3600 seconds (1 hour). Use{" "}
-				<code className="rounded bg-muted px-1">
-					{/* biome-ignore lint/suspicious/noTemplateCurlyInString: literal */}
-					{"${config.KEY}"}
-				</code>{" "}
-				to reference a config value.
+				Maximum 3600 seconds (1 hour). You can reference an earlier
+				step's output — see Help for details.
 			</p>
 		</div>
 	);

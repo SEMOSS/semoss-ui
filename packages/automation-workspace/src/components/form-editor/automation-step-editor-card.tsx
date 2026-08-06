@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight, Loader2, Play, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Button, Field, FieldLabel, Input } from "@semoss/ui/next";
 import type {
 	AutomationNode,
@@ -45,6 +45,10 @@ export interface AutomationStepEditorCardProps {
 	onMoveUp: () => void;
 	onMoveDown: () => void;
 	onSetOutput: (outputVar: string, value: string) => void;
+	/** When false (business mode), technical fields like output variable and pixel preview are hidden */
+	devMode?: boolean;
+	/** The automation's own project ID — passed to app node forms for reactor discovery */
+	appId?: string;
 }
 
 export function AutomationStepEditorCard({
@@ -66,11 +70,16 @@ export function AutomationStepEditorCard({
 	onMoveUp,
 	onMoveDown,
 	onSetOutput,
+	devMode = false,
+	appId = "",
 }: AutomationStepEditorCardProps) {
 	const [runningStepTest, setRunningStepTest] = useState(false);
 	const [runOutput, setRunOutput] = useState<string | null>(null);
 	const [runOutputExpanded, setRunOutputExpanded] = useState(false);
 	const [mockValues, setMockValues] = useState<Record<string, string>>({});
+	const [editingVar, setEditingVar] = useState(false);
+	const [varDraft, setVarDraft] = useState("");
+	const varInputRef = useRef<HTMLInputElement>(null);
 	const meta = getDisplayMeta(step.type);
 	const Icon = meta.icon;
 	const pixelPreview = useMemo(() => buildPixelPreview(step), [step]);
@@ -132,11 +141,49 @@ export function AutomationStepEditorCard({
 							<span className="font-medium text-sm">
 								{getStepHeaderLabel(step)}
 							</span>
-							{step.outputVar && (
-								<span className="rounded-full bg-muted px-2.5 py-1 font-mono text-[10px] text-muted-foreground">
-									{step.outputVar}
-								</span>
-							)}
+							{step.outputVar &&
+								(editingVar ? (
+									<input
+										ref={varInputRef}
+										className="w-32 rounded-full bg-muted px-2.5 py-1 font-mono text-[10px] text-muted-foreground outline-none ring-1 ring-primary/40"
+										value={varDraft}
+										onChange={(e) =>
+											setVarDraft(e.target.value)
+										}
+										onBlur={() => {
+											const trimmed = varDraft.trim();
+											if (trimmed)
+												onUpdate({
+													...step,
+													outputVar: trimmed,
+												});
+											setEditingVar(false);
+										}}
+										onKeyDown={(e) => {
+											if (e.key === "Enter") {
+												e.currentTarget.blur();
+											} else if (e.key === "Escape") {
+												setEditingVar(false);
+											}
+										}}
+									/>
+								) : (
+									<button
+										type="button"
+										title="Click to rename this output variable"
+										onClick={(e) => {
+											e.stopPropagation();
+											setVarDraft(step.outputVar);
+											setEditingVar(true);
+											requestAnimationFrame(() =>
+												varInputRef.current?.select(),
+											);
+										}}
+										className="rounded-full bg-muted px-2.5 py-1 font-mono text-[10px] text-muted-foreground transition-all hover:bg-muted/70 hover:ring-1 hover:ring-primary/30"
+									>
+										{step.outputVar}
+									</button>
+								))}
 						</div>
 						<div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
 							<span>{meta.label}</span>
@@ -216,7 +263,7 @@ export function AutomationStepEditorCard({
 						</div>
 					)}
 
-					<div className="mb-4 grid gap-3 md:grid-cols-2">
+					<div className="mb-4">
 						<Field>
 							<FieldLabel className="text-xs">Label</FieldLabel>
 							<Input
@@ -231,22 +278,6 @@ export function AutomationStepEditorCard({
 								placeholder="Step label"
 							/>
 						</Field>
-						<Field>
-							<FieldLabel className="text-xs">
-								Output variable
-							</FieldLabel>
-							<Input
-								className="h-9 font-mono text-sm"
-								value={step.outputVar}
-								onChange={(event) =>
-									onUpdate({
-										...step,
-										outputVar: event.target.value,
-									})
-								}
-								placeholder="outputVar"
-							/>
-						</Field>
 					</div>
 
 					<StepForm
@@ -259,186 +290,183 @@ export function AutomationStepEditorCard({
 						onPlaygroundFieldsChange={(fields) =>
 							onUpdate({ ...step, playgroundFillable: fields })
 						}
+						devMode={devMode}
+						appId={appId}
 					/>
 
-					{pixelPreview && !pixelPreview.startsWith("//") && (
-						<div className="mt-4 space-y-4">
-							<div>
-								<p className="mb-1 font-medium text-[11px] text-muted-foreground">
-									Pixel preview
-								</p>
-								<pre className="whitespace-pre-wrap break-all rounded-lg border bg-muted/40 px-3 py-2 font-mono text-[11px]">
-									{pixelPreview}
-								</pre>
+					{TRANSFORM_ENABLED.has(step.type) && (
+						<div className="mt-4">
+							<p className="mb-2 font-medium text-[11px] text-muted-foreground">
+								How to store the result:
+							</p>
+							<div className="flex flex-wrap gap-2">
+								{TRANSFORM_MODES.filter(
+									(mode) => devMode || !mode.devOnly,
+								).map((mode) => {
+									const isActive =
+										(step.outputTransform?.mode ??
+											"raw") === mode.value;
+
+									return (
+										<button
+											key={mode.value}
+											type="button"
+											onClick={() =>
+												onUpdate({
+													...step,
+													outputTransform: {
+														...(step.outputTransform ?? {
+															mode: "raw" as const,
+														}),
+														mode: mode.value,
+													},
+												})
+											}
+											className={`rounded-full border px-3 py-1 text-[11px] transition-colors ${
+												isActive
+													? "border-primary bg-primary/10 font-medium text-primary"
+													: "hover:border-primary/40"
+											}`}
+										>
+											{mode.label}
+										</button>
+									);
+								})}
 							</div>
-
-							{TRANSFORM_ENABLED.has(step.type) && (
-								<div>
-									<p className="mb-2 font-medium text-[11px] text-muted-foreground">
-										Store in{" "}
-										<code className="font-mono">{`\${${step.outputVar || "out"}}`}</code>{" "}
-										as:
-									</p>
-									<div className="flex flex-wrap gap-2">
-										{TRANSFORM_MODES.map((mode) => {
-											const isActive =
-												(step.outputTransform?.mode ??
-													"raw") === mode.value;
-
-											return (
-												<button
-													key={mode.value}
-													type="button"
-													onClick={() =>
-														onUpdate({
-															...step,
-															outputTransform: {
-																...(step.outputTransform ?? {
-																	mode: "raw" as const,
-																}),
-																mode: mode.value,
-															},
-														})
-													}
-													className={`rounded-full border px-3 py-1 text-[11px] transition-colors ${
-														isActive
-															? "border-primary bg-primary/10 font-medium text-primary"
-															: "hover:border-primary/40"
-													}`}
-												>
-													{mode.label}
-												</button>
-											);
-										})}
-									</div>
-									{step.outputTransform?.mode ===
-										"column" && (
-										<Input
-											className="mt-2 h-8 text-xs"
-											placeholder="Column name e.g. NAME"
-											value={
-												step.outputTransform.column ??
-												""
-											}
-											onChange={(event) =>
-												onUpdate({
-													...step,
-													outputTransform: {
-														mode:
-															step.outputTransform
-																?.mode ?? "raw",
-														...step.outputTransform,
-														column: event.target
-															.value,
-													},
-												})
-											}
-										/>
-									)}
-									{step.outputTransform?.mode ===
-										"jsonpath" && (
-										<Input
-											className="mt-2 h-8 font-mono text-xs"
-											placeholder="$.data.values"
-											value={
-												step.outputTransform.path ?? ""
-											}
-											onChange={(event) =>
-												onUpdate({
-													...step,
-													outputTransform: {
-														mode:
-															step.outputTransform
-																?.mode ?? "raw",
-														...step.outputTransform,
-														path: event.target
-															.value,
-													},
-												})
-											}
-										/>
-									)}
-								</div>
+							{step.outputTransform?.mode === "column" && (
+								<Input
+									className="mt-2 h-8 text-xs"
+									placeholder="Column name e.g. NAME"
+									value={step.outputTransform.column ?? ""}
+									onChange={(event) =>
+										onUpdate({
+											...step,
+											outputTransform: {
+												mode:
+													step.outputTransform
+														?.mode ?? "raw",
+												...step.outputTransform,
+												column: event.target.value,
+											},
+										})
+									}
+								/>
 							)}
-
-							<div className="rounded-xl border border-dashed p-4">
-								<div className="flex items-center justify-between gap-3">
-									<div>
-										<p className="font-medium text-sm">
-											Test this step
-										</p>
-										<p className="text-[11px] text-muted-foreground">
-											Execute the generated Pixel with
-											optional mock inputs.
-										</p>
-									</div>
-									<Button
-										size="sm"
-										variant="outline"
-										className="h-8 px-3 text-xs"
-										onClick={handleRunStep}
-										disabled={runningStepTest}
-									>
-										{runningStepTest ? (
-											<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-										) : (
-											<Play className="mr-1.5 h-3.5 w-3.5" />
-										)}
-										Run
-									</Button>
-								</div>
-
-								{unresolvedVars.length > 0 && (
-									<div className="mt-3 space-y-2">
-										<p className="text-[11px] text-muted-foreground">
-											Mock values for unresolved
-											references:
-										</p>
-										{unresolvedVars.map((value) => (
-											<div
-												key={value}
-												className="flex flex-col gap-2 md:flex-row md:items-center"
-											>
-												<code className="w-full font-mono text-[11px] text-muted-foreground md:w-32">{`\${${value}}`}</code>
-												<Input
-													className="h-8 flex-1 text-xs"
-													placeholder="mock value…"
-													value={
-														mockValues[value] ?? ""
-													}
-													onChange={(event) =>
-														setMockValues(
-															(previous) => ({
-																...previous,
-																[value]:
-																	event.target
-																		.value,
-															}),
-														)
-													}
-												/>
-											</div>
-										))}
-									</div>
-								)}
-
-								{runOutput !== null && (
-									<div className="mt-3">
-										<OutputPreview
-											value={runOutput}
-											expanded={runOutputExpanded}
-											onToggle={() =>
-												setRunOutputExpanded(
-													(prev) => !prev,
-												)
-											}
-											nodeType={step.type}
-										/>
-									</div>
-								)}
-							</div>
+							{step.outputTransform?.mode === "jsonpath" && (
+								<Input
+									className="mt-2 h-8 font-mono text-xs"
+									placeholder="$.data.values"
+									value={step.outputTransform.path ?? ""}
+									onChange={(event) =>
+										onUpdate({
+											...step,
+											outputTransform: {
+												mode:
+													step.outputTransform
+														?.mode ?? "raw",
+												...step.outputTransform,
+												path: event.target.value,
+											},
+										})
+									}
+								/>
+							)}
 						</div>
 					)}
+
+					{devMode &&
+						pixelPreview &&
+						!pixelPreview.startsWith("//") && (
+							<div className="mt-4 space-y-4">
+								<div>
+									<p className="mb-1 font-medium text-[11px] text-muted-foreground">
+										Pixel preview
+									</p>
+									<pre className="whitespace-pre-wrap break-all rounded-lg border bg-muted/40 px-3 py-2 font-mono text-[11px]">
+										{pixelPreview}
+									</pre>
+								</div>
+
+								<div className="rounded-xl border border-dashed p-4">
+									<div className="flex items-center justify-between gap-3">
+										<div>
+											<p className="font-medium text-sm">
+												Test this step
+											</p>
+											<p className="text-[11px] text-muted-foreground">
+												Execute the generated Pixel with
+												optional mock inputs.
+											</p>
+										</div>
+										<Button
+											size="sm"
+											variant="outline"
+											className="h-8 px-3 text-xs"
+											onClick={handleRunStep}
+											disabled={runningStepTest}
+										>
+											{runningStepTest ? (
+												<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+											) : (
+												<Play className="mr-1.5 h-3.5 w-3.5" />
+											)}
+											Run
+										</Button>
+									</div>
+
+									{unresolvedVars.length > 0 && (
+										<div className="mt-3 space-y-2">
+											<p className="text-[11px] text-muted-foreground">
+												Mock values for unresolved
+												references:
+											</p>
+											{unresolvedVars.map((value) => (
+												<div
+													key={value}
+													className="flex flex-col gap-2 md:flex-row md:items-center"
+												>
+													<code className="w-full font-mono text-[11px] text-muted-foreground md:w-32">{`\${${value}}`}</code>
+													<Input
+														className="h-8 flex-1 text-xs"
+														placeholder="mock value…"
+														value={
+															mockValues[value] ??
+															""
+														}
+														onChange={(event) =>
+															setMockValues(
+																(previous) => ({
+																	...previous,
+																	[value]:
+																		event
+																			.target
+																			.value,
+																}),
+															)
+														}
+													/>
+												</div>
+											))}
+										</div>
+									)}
+
+									{runOutput !== null && (
+										<div className="mt-3">
+											<OutputPreview
+												value={runOutput}
+												expanded={runOutputExpanded}
+												onToggle={() =>
+													setRunOutputExpanded(
+														(prev) => !prev,
+													)
+												}
+												nodeType={step.type}
+											/>
+										</div>
+									)}
+								</div>
+							</div>
+						)}
 				</div>
 			)}
 		</div>

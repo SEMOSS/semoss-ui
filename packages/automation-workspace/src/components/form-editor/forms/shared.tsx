@@ -167,6 +167,8 @@ export interface EngineSelectProps {
 	triggerClassName?: string;
 	/** Additional className applied to the field label */
 	labelClassName?: string;
+	/** Hash path in the parent app to navigate to (e.g. "/function"). Generates a standard "go to catalog" hint when engines is empty. */
+	catalogPath?: string;
 }
 
 export function EngineSelect({
@@ -176,17 +178,19 @@ export function EngineSelect({
 	onChange,
 	triggerClassName = "h-8 text-xs",
 	labelClassName = "text-xs",
+	catalogPath,
 }: EngineSelectProps) {
+	const empty = engines.length === 0;
 	return (
 		<Field>
 			<FieldLabel className={labelClassName}>{label}</FieldLabel>
-			<Select value={value} onValueChange={onChange}>
+			<Select value={value} onValueChange={onChange} disabled={empty}>
 				<SelectTrigger className={triggerClassName}>
 					<SelectValue
 						placeholder={
-							engines.length
-								? `Select ${label.toLowerCase()}…`
-								: "No engines available"
+							empty
+								? `No ${label.toLowerCase()} available`
+								: `Select ${label.toLowerCase()}…`
 						}
 					/>
 				</SelectTrigger>
@@ -197,7 +201,7 @@ export function EngineSelect({
 							value={e.engine_id}
 							className="py-1.5 text-xs"
 						>
-							<span className="flex flex-col gap-0.5">
+							<span className="flex flex-col items-start gap-0.5">
 								<span>
 									{e.engine_display_name ?? e.engine_name}
 								</span>
@@ -209,6 +213,24 @@ export function EngineSelect({
 					))}
 				</SelectContent>
 			</Select>
+			{empty && catalogPath && (
+				<p className="mt-1 text-[11px] text-muted-foreground">
+					No {label.toLowerCase()} are shared with you. Ask an admin
+					to grant access, or connect your own from the{" "}
+					<button
+						type="button"
+						onClick={() => {
+							const base =
+								window.parent.location.href.split("#")[0];
+							window.open(`${base}#${catalogPath}`, "_blank");
+						}}
+						className="underline hover:text-foreground"
+					>
+						{label} catalog
+					</button>
+					.
+				</p>
+			)}
 		</Field>
 	);
 }

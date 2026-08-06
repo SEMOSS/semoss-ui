@@ -1,4 +1,4 @@
-import { Eye, EyeOff, Plus, Trash2 } from "lucide-react";
+import { Eye, EyeOff, Lock, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Button, Input } from "@semoss/ui/next";
 import type { AutomationConfigEntry } from "../../domain/automation.types";
@@ -33,20 +33,24 @@ export function AutomationConfigTab({
 		<div className="flex flex-col gap-4 p-4">
 			{config.length === 0 ? (
 				<p className="rounded-md border border-border border-dashed py-8 text-center text-muted-foreground text-xs">
-					No config entries yet. Add one below.
+					No settings yet. Add a setting to store reusable values like
+					API keys or URLs that your steps can reference.
 				</p>
 			) : (
 				<div className="flex flex-col gap-2">
 					{/* header */}
 					<div className="grid grid-cols-[1fr_2fr_auto_auto] gap-2 px-1">
 						<span className="font-medium text-muted-foreground text-xs">
-							Key
+							Name
 						</span>
 						<span className="font-medium text-muted-foreground text-xs">
 							Value
 						</span>
-						<span className="font-medium text-muted-foreground text-xs">
-							Sensitive
+						<span
+							className="font-medium text-muted-foreground text-xs"
+							title="Sensitive values are stored encrypted and never shown in run history"
+						>
+							Private
 						</span>
 						<span />
 					</div>
@@ -62,7 +66,7 @@ export function AutomationConfigTab({
 								onChange={(e) =>
 									update(i, { key: e.target.value })
 								}
-								placeholder="KEY_NAME"
+								placeholder="e.g. API_KEY"
 								className="font-mono text-xs"
 							/>
 							<div className="relative flex items-center">
@@ -77,8 +81,11 @@ export function AutomationConfigTab({
 											? "password"
 											: "text"
 									}
-									className="pr-8 text-xs"
+									className={`text-xs ${entry.sensitive ? "pr-14" : "pr-8"}`}
 								/>
+								{entry.sensitive && (
+									<Lock className="absolute right-8 h-3 w-3 text-amber-500/70" />
+								)}
 								{entry.sensitive && (
 									<button
 										type="button"
@@ -103,7 +110,7 @@ export function AutomationConfigTab({
 										})
 									}
 									className="h-3.5 w-3.5 rounded border-border"
-									title="Mark as sensitive (stored encrypted)"
+									title="Mark as private — value will be stored encrypted and hidden in run history"
 								/>
 							</div>
 							<button
@@ -125,30 +132,24 @@ export function AutomationConfigTab({
 				onClick={add}
 			>
 				<Plus className="mr-1.5 h-3.5 w-3.5" />
-				Add entry
+				Add variable
 			</Button>
 
 			<div className="rounded-md bg-muted/40 p-3">
 				<p className="font-medium text-muted-foreground text-xs">
-					Usage in node fields
+					How to use settings in your steps
 				</p>
-				<ul className="mt-1 space-y-0.5 text-muted-foreground text-xs">
-					<li>
-						<code className="rounded bg-muted px-1">
-							{/* biome-ignore lint/suspicious/noTemplateCurlyInString: shows example syntax for users */}
-							{"${config.MIRTH_API_URL}"}
-						</code>{" "}
-						— resolved at runtime
-					</li>
-					<li>
-						<code className="rounded bg-muted px-1">
-							{/* biome-ignore lint/suspicious/noTemplateCurlyInString: shows example syntax for users */}
-							{"${config.BASE_URL}"}
-						</code>{" "}
-						— resolved at runtime
-					</li>
-					<li>Sensitive values are never exposed in run logs.</li>
-				</ul>
+				<p className="mt-1 text-muted-foreground text-xs">
+					In any step field, reference a setting by name:
+				</p>
+				<code className="mt-1.5 block rounded bg-muted px-2 py-1 font-mono text-[11px]">
+					{/* biome-ignore lint/suspicious/noTemplateCurlyInString: shows example syntax for users */}
+					{"${config.SETTING_NAME}"}
+				</code>
+				<p className="mt-1.5 text-[11px] text-muted-foreground">
+					The value is inserted when the automation runs. Private
+					settings are never shown in run history.
+				</p>
 			</div>
 		</div>
 	);

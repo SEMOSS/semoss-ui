@@ -46,6 +46,7 @@ export function FunctionEngineForm({
 				value={config.engineId}
 				engines={engines}
 				onChange={(v) => onChange({ ...config, engineId: v })}
+				catalogPath="/function"
 			/>
 			<Field>
 				<FieldLabel>Operation</FieldLabel>
@@ -68,7 +69,7 @@ export function FunctionEngineForm({
 				</Select>
 			</Field>
 			<BoundInput
-				label="Parameters (JSON)"
+				label="Input Parameters"
 				value={config.params}
 				placeholder='{"input": "${files}"}'
 				onChange={(v) => onChange({ ...config, params: v })}

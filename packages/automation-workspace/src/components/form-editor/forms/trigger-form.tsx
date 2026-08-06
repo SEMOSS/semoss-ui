@@ -6,23 +6,23 @@ export interface TriggerFormProps {
 }
 
 export function TriggerForm({ appId }: TriggerFormProps) {
-	const pixelCall = `TriggerAutomation(project=["${appId}"])`;
+	const triggerCall = `TriggerAutomation(project=["${appId}"])`;
 
 	return (
 		<div className="flex flex-col gap-4">
 			<div className="rounded-md border border-border bg-muted/30 p-3">
 				<p className="mb-1.5 font-medium text-xs">
-					Pixel call (from any app or the SEMOSS console)
+					Trigger from another app
 				</p>
 				<div className="flex items-center gap-2">
 					<code className="flex-1 break-all rounded bg-muted px-2 py-1 font-mono text-[10px]">
-						{pixelCall}
+						{triggerCall}
 					</code>
-					<CopyButton value={pixelCall} />
+					<CopyButton value={triggerCall} />
 				</div>
 				<p className="mt-1.5 text-[10px] text-muted-foreground">
-					Use this in a button's pixel expression or any app insight
-					to trigger this automation on demand.
+					Copy this code into any button or app to start this
+					automation.
 				</p>
 			</div>
 		</div>

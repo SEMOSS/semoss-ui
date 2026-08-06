@@ -16,12 +16,13 @@ import type {
 export const TRANSFORM_MODES: {
 	value: OutputTransform["mode"];
 	label: string;
+	devOnly?: boolean;
 }[] = [
-	{ value: "raw", label: "Raw" },
-	{ value: "rows-as-objects", label: "Rows → Objects" },
-	{ value: "first-row", label: "First Row" },
-	{ value: "column", label: "Column" },
-	{ value: "jsonpath", label: "JSONPath" },
+	{ value: "raw", label: "Full result" },
+	{ value: "rows-as-objects", label: "Rows as objects" },
+	{ value: "first-row", label: "First result" },
+	{ value: "column", label: "Single column" },
+	{ value: "jsonpath", label: "JSONPath", devOnly: true },
 ];
 
 export const TRANSFORM_ENABLED: Set<AutomationNodeType> = new Set([
@@ -33,15 +34,7 @@ export const TRANSFORM_ENABLED: Set<AutomationNodeType> = new Set([
 	"app",
 ]);
 
-export function formatDurationMs(
-	ms?: number | null,
-	fractionDigits = 1,
-): string {
-	if (ms == null) return "—";
-	if (ms < 1000) return `${ms}ms`;
-	if (ms < 60000) return `${(ms / 1000).toFixed(fractionDigits)}s`;
-	return `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`;
-}
+export { formatDurationMs } from "./format";
 
 // ─── per-node-type descriptor map ────────────────────────────────────────────
 
@@ -63,7 +56,9 @@ const NODE_DESCRIPTORS: Record<AutomationNodeType, NodeDescriptor> = {
 			if (c.operation === "write") {
 				return `SqlQuery(database=["${eid}"], query=["<encode>${sql}</encode>"], commit=[true]);`;
 			}
-			return `SqlQuery(database=["${eid}"], query=["<encode>${sql}</encode>"], limit=[${num(c.limit, 50)}]);`;
+			// Use a high default so SQL-level LIMIT controls the result set;
+			// only fall back to config.limit if explicitly set by older saved automations
+			return `SqlQuery(database=["${eid}"], query=["<encode>${sql}</encode>"], limit=[${num(c.limit, 5000)}]);`;
 		},
 		isReady(node) {
 			const c = node.config as unknown as Record<string, unknown>;
@@ -271,11 +266,6 @@ export function buildPixelPreview(node: AutomationNode): string {
 	return NODE_DESCRIPTORS[node.type]?.buildPixel(node) ?? `// ${node.type}`;
 }
 
-/** Returns true when a node has all required fields to produce a runnable pixel. */
-export function isNodeReady(node: AutomationNode): boolean {
-	return NODE_DESCRIPTORS[node.type]?.isReady(node) ?? true;
-}
-
 /** Replace ${varName} tokens in a pixel with stored outputs or mock values. */
 export function substituteVars(
 	pixel: string,
@@ -439,7 +429,7 @@ export function validateNode(node: AutomationNode): string[] {
 			if (!c.prompt?.trim() && !c.command?.trim())
 				errors.push("A prompt is required");
 		} else if (c.operation === "embeddings") {
-			if (!c.command?.trim()) errors.push("Text to embed is required");
+			if (!c.values?.trim()) errors.push("Text to embed is required");
 		}
 	} else if (type === "vector-engine") {
 		const c = config as VectorEngineConfig;

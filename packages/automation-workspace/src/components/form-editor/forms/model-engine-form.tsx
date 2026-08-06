@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useEffect, useId, useMemo } from "react";
 import {
 	Field,
 	FieldLabel,
@@ -15,6 +15,25 @@ import type {
 import { getPlaygroundParamDescription } from "../../../domain/automation-utils";
 import { BoundInput, EngineSelect } from "./shared";
 
+/** Maps engine_subtype values to the operations they support. */
+const SUBTYPE_OPERATIONS: Record<string, ModelEngineConfig["operation"][]> = {
+	TEXT_EMBEDDINGS: ["embeddings"],
+	KSERVE_IMAGE_EMBED: ["embeddings"],
+	NER: ["ner"],
+	KSERVE_VISION: ["vision"],
+	KSERVE_IMAGE: ["vision"],
+};
+
+const ALL_OPERATIONS: {
+	value: ModelEngineConfig["operation"];
+	label: string;
+}[] = [
+	{ value: "llm", label: "LLM (chat)" },
+	{ value: "embeddings", label: "Embeddings" },
+	{ value: "vision", label: "Vision" },
+	{ value: "ner", label: "Extract Entities" },
+];
+
 export interface ModelEngineFormProps {
 	/** Current node config */
 	config: ModelEngineConfig;
@@ -28,6 +47,8 @@ export interface ModelEngineFormProps {
 	playgroundFillable: string[];
 	/** Called when the set of playground-fillable fields changes */
 	onPlaygroundFieldsChange: (fields: string[]) => void;
+	/** When false (business mode), advanced fields like Model Settings are hidden */
+	devMode?: boolean;
 }
 
 export function ModelEngineForm({
@@ -37,8 +58,32 @@ export function ModelEngineForm({
 	onChange,
 	playgroundFillable,
 	onPlaygroundFieldsChange,
+	devMode = false,
 }: ModelEngineFormProps) {
 	const pgFillId = useId();
+
+	// Derive which operations the selected engine supports based on its subtype
+	const availableOps = useMemo(() => {
+		if (!config.engineId) return ALL_OPERATIONS;
+		const selected = engines.find((e) => e.engine_id === config.engineId);
+		const subtype = selected?.engine_subtype?.toUpperCase() ?? "";
+		const allowed = SUBTYPE_OPERATIONS[subtype];
+		if (!allowed) return ALL_OPERATIONS;
+		return ALL_OPERATIONS.filter((op) => allowed.includes(op.value));
+	}, [config.engineId, engines]);
+
+	// Auto-select the only available operation when the engine constrains it
+	useEffect(() => {
+		if (
+			availableOps.length === 1 &&
+			config.operation !== availableOps[0].value
+		) {
+			onChange({ ...config, operation: availableOps[0].value });
+		}
+	}, [availableOps, config, onChange]);
+
+	const singleOp = availableOps.length === 1;
+
 	return (
 		<div className="flex flex-col gap-4">
 			<EngineSelect
@@ -46,28 +91,39 @@ export function ModelEngineForm({
 				value={config.engineId}
 				engines={engines}
 				onChange={(v) => onChange({ ...config, engineId: v })}
+				catalogPath="/model"
 			/>
 			<Field>
 				<FieldLabel>Operation</FieldLabel>
-				<Select
-					value={config.operation}
-					onValueChange={(v) =>
-						onChange({
-							...config,
-							operation: v as ModelEngineConfig["operation"],
-						})
-					}
-				>
-					<SelectTrigger>
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="llm">LLM (chat)</SelectItem>
-						<SelectItem value="embeddings">Embeddings</SelectItem>
-						<SelectItem value="vision">Vision</SelectItem>
-						<SelectItem value="ner">NER</SelectItem>
-					</SelectContent>
-				</Select>
+				{singleOp ? (
+					<p className="text-muted-foreground text-sm">
+						{availableOps[0].label}
+						<span className="ml-2 text-[11px]">
+							(only operation supported by this engine type)
+						</span>
+					</p>
+				) : (
+					<Select
+						value={config.operation}
+						onValueChange={(v) =>
+							onChange({
+								...config,
+								operation: v as ModelEngineConfig["operation"],
+							})
+						}
+					>
+						<SelectTrigger>
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{availableOps.map((op) => (
+								<SelectItem key={op.value} value={op.value}>
+									{op.label}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				)}
 			</Field>
 			{config.operation === "llm" && (
 				<>
@@ -113,28 +169,30 @@ export function ModelEngineForm({
 							</p>
 						)}
 					<BoundInput
-						label="Context (optional)"
+						label="System Instructions (optional)"
 						value={config.context}
-						placeholder="You are a helpful assistant."
+						placeholder="e.g. You are a helpful assistant."
 						onChange={(v) => onChange({ ...config, context: v })}
 						upstreamVars={upstreamVars}
 						mono
 					/>
-					<BoundInput
-						label="Param Values (JSON, optional)"
-						value={config.paramValues}
-						placeholder='{"temperature": 0.7, "maxTokens": 1000}'
-						onChange={(v) =>
-							onChange({ ...config, paramValues: v })
-						}
-						upstreamVars={upstreamVars}
-						mono
-					/>
+					{devMode && (
+						<BoundInput
+							label="Model Settings (JSON, optional)"
+							value={config.paramValues}
+							placeholder='{"temperature": 0.7, "maxTokens": 1000}'
+							onChange={(v) =>
+								onChange({ ...config, paramValues: v })
+							}
+							upstreamVars={upstreamVars}
+							mono
+						/>
+					)}
 				</>
 			)}
 			{config.operation === "embeddings" && (
 				<BoundInput
-					label="Values"
+					label="Text to Embed"
 					value={config.values}
 					placeholder="${text_to_embed}"
 					onChange={(v) => onChange({ ...config, values: v })}

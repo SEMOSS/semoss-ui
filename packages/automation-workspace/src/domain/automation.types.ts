@@ -127,6 +127,8 @@ export interface AutomationGraph {
 
 export interface AutomationDocument {
 	version: 1;
+	/** Optional plain-text description shown in the editor header and used as the MCP tool description. */
+	description?: string;
 	graph: AutomationGraph;
 }
 
@@ -169,6 +171,7 @@ export interface AutomationRunSummary {
 	COMPLETED_NODES?: number;
 	FAILED_NODE_ID?: string;
 	ERROR_MESSAGE?: string | null;
+	RESULT_SUMMARY?: string | null;
 }
 
 export interface AutomationNodeResult {
@@ -199,6 +202,8 @@ export interface EngineOption {
 	engine_name: string;
 	engine_display_name?: string;
 	engine_type?: string;
+	/** Model subtype (e.g. TEXT_EMBEDDINGS, NER, KSERVE_VISION, ANTHROPIC, OPEN_AI, etc.) */
+	engine_subtype?: string;
 }
 
 // ─── project option (from MyProjects pixel) ──────────────────────────────────

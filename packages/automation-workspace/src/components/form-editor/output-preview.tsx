@@ -21,7 +21,7 @@ export function OutputPreview({
 	nodeType,
 }: OutputPreviewProps) {
 	const preview = value.length > 180 ? `${value.slice(0, 180)}…` : value;
-	const [tableView, setTableView] = useState<"table" | "json">("json");
+	const [tableView, setTableView] = useState<"table" | "json">("table");
 
 	const parsed = useMemo(() => {
 		try {
@@ -146,17 +146,6 @@ export function OutputPreview({
 					<div className="flex items-center gap-1">
 						<button
 							type="button"
-							onClick={() => setTableView("json")}
-							className={`rounded border px-2 py-0.5 text-[10px] transition-colors ${
-								tableView === "json"
-									? "border-primary bg-primary/10 font-medium text-primary"
-									: "border-border text-muted-foreground hover:border-primary/40"
-							}`}
-						>
-							JSON
-						</button>
-						<button
-							type="button"
 							onClick={() => setTableView("table")}
 							className={`rounded border px-2 py-0.5 text-[10px] transition-colors ${
 								tableView === "table"
@@ -165,6 +154,17 @@ export function OutputPreview({
 							}`}
 						>
 							Table
+						</button>
+						<button
+							type="button"
+							onClick={() => setTableView("json")}
+							className={`rounded border px-2 py-0.5 text-[10px] transition-colors ${
+								tableView === "json"
+									? "border-primary bg-primary/10 font-medium text-primary"
+									: "border-border text-muted-foreground hover:border-primary/40"
+							}`}
+						>
+							Raw data
 						</button>
 						<span className="ml-auto text-[10px] text-muted-foreground/60">
 							{rows.length} row{rows.length !== 1 ? "s" : ""}

@@ -25,8 +25,8 @@ export const NODE_TYPE_META: NodeTypeMeta[] = [
 	},
 	{
 		type: "database-engine",
-		label: "Database Engine",
-		description: "Run SQL queries or writes against a connected database.",
+		label: "Query Database",
+		description: "Run a query or write against a connected database.",
 		tooltip: // biome-ignore lint/suspicious/noTemplateCurlyInString: ${} in tooltip shows example syntax for users
 			"Executes a SQL expression against a registered RDBMS engine (e.g. Postgres, MySQL, Snowflake).\n\nExamples:\n• Pull today's open cases: SELECT * FROM cases WHERE status='open'\n• Write enriched records: INSERT INTO enriched SELECT ...\n• Use upstream vars: SELECT * FROM patients WHERE id='${case_id}'",
 		category: "engine",
@@ -41,7 +41,7 @@ export const NODE_TYPE_META: NodeTypeMeta[] = [
 	},
 	{
 		type: "storage-engine",
-		label: "Storage Engine",
+		label: "File Storage",
 		description:
 			"List, download, upload, or delete files in a storage connector.",
 		tooltip: // biome-ignore lint/suspicious/noTemplateCurlyInString: ${} in tooltip shows example syntax for users
@@ -58,9 +58,9 @@ export const NODE_TYPE_META: NodeTypeMeta[] = [
 	},
 	{
 		type: "vector-engine",
-		label: "Vector Engine",
+		label: "Search Documents",
 		description:
-			"Semantic search or document management in a vector store.",
+			"Find relevant documents using semantic search or manage a document store.",
 		tooltip: // biome-ignore lint/suspicious/noTemplateCurlyInString: ${} in tooltip shows example syntax for users
 			"Queries or manages documents in a registered vector database.\n\nExamples:\n• Search: find the 5 most relevant policy docs for '${user_question}'\n• Add file: index a newly uploaded PDF into the knowledge base\n• Delete: remove outdated documents by name\n• Commonly used before a Model Engine to give the LLM relevant context (RAG pattern)",
 		category: "engine",
@@ -82,9 +82,9 @@ export const NODE_TYPE_META: NodeTypeMeta[] = [
 	},
 	{
 		type: "model-engine",
-		label: "Model Engine",
+		label: "Ask AI",
 		description:
-			"Call an LLM, embeddings model, vision model, or NER model.",
+			"Send a prompt to an AI model, generate embeddings, or analyze images.",
 		tooltip: // biome-ignore lint/suspicious/noTemplateCurlyInString: ${} in tooltip shows example syntax for users
 			"Invokes a registered AI model engine.\n\nExamples:\n• LLM: Summarize a support ticket — 'Summarize this case: ${case_text}'\n• LLM: Generate a draft report from structured data\n• Embeddings: Convert text chunks to vectors before storing in a vector engine\n• Vision: Describe an image pulled from storage\n• NER: Extract entities (names, dates, orgs) from raw text",
 		category: "engine",
@@ -103,9 +103,9 @@ export const NODE_TYPE_META: NodeTypeMeta[] = [
 	},
 	{
 		type: "function-engine",
-		label: "Function Engine",
+		label: "Run Function",
 		description:
-			"Invoke a registered serverless function with a JSON payload.",
+			"Call a custom function or external API with a JSON payload.",
 		tooltip: // biome-ignore lint/suspicious/noTemplateCurlyInString: ${} in tooltip shows example syntax for users
 			"Calls a custom function engine — useful for arbitrary Python/Java logic packaged as a SEMOSS engine.\n\nExamples:\n• Run a custom scoring function on ${patient_data}\n• Call a validation routine before writing to a database\n• Trigger a microservice with parameters built from upstream outputs",
 		category: "engine",
@@ -118,9 +118,9 @@ export const NODE_TYPE_META: NodeTypeMeta[] = [
 	},
 	{
 		type: "app",
-		label: "App Engine",
+		label: "Run App",
 		description:
-			"Write any SEMOSS pixel expression. Optionally run inside an app context.",
+			"Execute a script or pixel expression, optionally within an app context.",
 		tooltip: // biome-ignore lint/suspicious/noTemplateCurlyInString: ${} in tooltip shows example syntax for users
 			'Execute any arbitrary SEMOSS Pixel. Supports ${variable} template substitution from upstream node outputs.\n\nOptionally set an App/Project ID to load that app\'s insight context before running — useful when your pixel calls reactors registered inside a specific app.\n\nExamples:\n• SyncFilesToStorage(path=["/data/"], extension=["txt"], storage=["<id>"], database=["<id>"])\n• RunCustomReport(project=["my-app-id"], params=["${db_out}"])\n• Any pixel you\'d run in the SEMOSS console',
 		category: "engine",
@@ -129,9 +129,9 @@ export const NODE_TYPE_META: NodeTypeMeta[] = [
 	},
 	{
 		type: "wait",
-		label: "Wait / Delay",
+		label: "Wait / Pause",
 		description:
-			"Pause automation execution for a fixed number of seconds.",
+			"Pause the automation for a fixed number of seconds before continuing.",
 		tooltip: // biome-ignore lint/suspicious/noTemplateCurlyInString: ${} in tooltip shows example syntax for users
 			"Sleeps for the specified number of seconds before continuing. The value supports ${var} template substitution so wait duration can be dynamic.\n\nExamples:\n• Wait 30 seconds between API polling attempts\n• Use ${config.POLL_INTERVAL} to make the delay configurable via SMSS settings\n• Cap: maximum 3600 seconds (1 hour) per node",
 		category: "logic",

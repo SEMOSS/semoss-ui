@@ -37,6 +37,7 @@ export function StorageEngineForm({
 				value={config.engineId}
 				engines={engines}
 				onChange={(v) => onChange({ ...config, engineId: v })}
+				catalogPath="/storage"
 			/>
 			<Field>
 				<FieldLabel>Operation</FieldLabel>
@@ -58,7 +59,7 @@ export function StorageEngineForm({
 						<SelectItem value="upload">Upload</SelectItem>
 						<SelectItem value="delete">Delete</SelectItem>
 						<SelectItem value="read-base64">
-							Read as Base64
+							Read as Encoded Text
 						</SelectItem>
 					</SelectContent>
 				</Select>
@@ -73,9 +74,9 @@ export function StorageEngineForm({
 			{(config.operation === "download" ||
 				config.operation === "upload") && (
 				<BoundInput
-					label="Local File Path"
+					label="File Path"
 					value={config.filePath}
-					placeholder="/tmp/output.csv"
+					placeholder="/path/to/file.csv"
 					onChange={(v) => onChange({ ...config, filePath: v })}
 					upstreamVars={upstreamVars}
 				/>

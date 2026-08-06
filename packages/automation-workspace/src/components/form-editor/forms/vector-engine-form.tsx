@@ -29,6 +29,8 @@ export interface VectorEngineFormProps {
 	playgroundFillable: string[];
 	/** Called when the set of playground-fillable fields changes */
 	onPlaygroundFieldsChange: (fields: string[]) => void;
+	/** When false (business mode), advanced JSON fields like Filters are hidden */
+	devMode?: boolean;
 }
 
 export function VectorEngineForm({
@@ -38,6 +40,7 @@ export function VectorEngineForm({
 	onChange,
 	playgroundFillable,
 	onPlaygroundFieldsChange,
+	devMode = false,
 }: VectorEngineFormProps) {
 	const pgFillId = useId();
 	return (
@@ -47,6 +50,7 @@ export function VectorEngineForm({
 				value={config.engineId}
 				engines={engines}
 				onChange={(v) => onChange({ ...config, engineId: v })}
+				catalogPath="/vector"
 			/>
 			<Field>
 				<FieldLabel>Operation</FieldLabel>
@@ -63,11 +67,9 @@ export function VectorEngineForm({
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value="search">
-							Search (semantic)
-						</SelectItem>
-						<SelectItem value="add-file">Add File</SelectItem>
-						<SelectItem value="add-csv">Add CSV</SelectItem>
+						<SelectItem value="search">Search with AI</SelectItem>
+						<SelectItem value="add-file">Add Document</SelectItem>
+						<SelectItem value="add-csv">Add CSV File</SelectItem>
 						<SelectItem value="list">List Documents</SelectItem>
 						<SelectItem value="delete">Delete Documents</SelectItem>
 						<SelectItem value="download">
@@ -79,9 +81,9 @@ export function VectorEngineForm({
 			{config.operation === "search" && (
 				<>
 					<BoundInput
-						label="Search Query"
+						label="What to search for"
 						value={config.command}
-						placeholder="find documents about ${topic}"
+						placeholder="e.g. find documents about claims filed in 2024"
 						onChange={(v) => onChange({ ...config, command: v })}
 						upstreamVars={upstreamVars}
 					/>
@@ -119,7 +121,7 @@ export function VectorEngineForm({
 							</p>
 						)}
 					<Field>
-						<FieldLabel>Result Limit</FieldLabel>
+						<FieldLabel>Max Results</FieldLabel>
 						<Input
 							type="number"
 							min={1}
@@ -135,14 +137,18 @@ export function VectorEngineForm({
 							placeholder="5"
 						/>
 					</Field>
-					<BoundInput
-						label="Filters (JSON, optional)"
-						value={config.filters}
-						placeholder='{"category": "reports"}'
-						onChange={(v) => onChange({ ...config, filters: v })}
-						upstreamVars={upstreamVars}
-						mono
-					/>
+					{devMode && (
+						<BoundInput
+							label="Filters (JSON, optional)"
+							value={config.filters}
+							placeholder='{"category": "reports"}'
+							onChange={(v) =>
+								onChange({ ...config, filters: v })
+							}
+							upstreamVars={upstreamVars}
+							mono
+						/>
+					)}
 				</>
 			)}
 			{config.operation === "add-file" && (
@@ -155,14 +161,14 @@ export function VectorEngineForm({
 						upstreamVars={upstreamVars}
 					/>
 					<BoundInput
-						label="Source (optional)"
+						label="Category (optional)"
 						value={config.source}
 						placeholder="internal-docs"
 						onChange={(v) => onChange({ ...config, source: v })}
 						upstreamVars={upstreamVars}
 					/>
 					<BoundInput
-						label="Space (optional)"
+						label="Collection (optional)"
 						value={config.space}
 						placeholder="finance"
 						onChange={(v) => onChange({ ...config, space: v })}

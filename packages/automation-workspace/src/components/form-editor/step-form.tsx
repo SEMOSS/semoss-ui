@@ -28,6 +28,10 @@ interface StepFormProps {
 	playgroundFillable: string[];
 	/** Called when the set of playground-fillable fields changes */
 	onPlaygroundFieldsChange: (fields: string[]) => void;
+	/** When false (business mode), advanced JSON fields are hidden in forms that support it */
+	devMode?: boolean;
+	/** The automation's own project ID — passed to app node forms for reactor discovery */
+	appId?: string;
 }
 
 export function StepForm({
@@ -38,6 +42,8 @@ export function StepForm({
 	onUpdate,
 	playgroundFillable,
 	onPlaygroundFieldsChange,
+	devMode = false,
+	appId = "",
 }: StepFormProps) {
 	const update = (config: AutomationNode["config"]) =>
 		onUpdate({ ...step, config });
@@ -66,6 +72,7 @@ export function StepForm({
 					onChange={update}
 					playgroundFillable={playgroundFillable}
 					onPlaygroundFieldsChange={onPlaygroundFieldsChange}
+					devMode={devMode}
 				/>
 			);
 		case "vector-engine":
@@ -77,6 +84,7 @@ export function StepForm({
 					onChange={update}
 					playgroundFillable={playgroundFillable}
 					onPlaygroundFieldsChange={onPlaygroundFieldsChange}
+					devMode={devMode}
 				/>
 			);
 		case "storage-engine":
@@ -106,6 +114,7 @@ export function StepForm({
 					projects={projects}
 					upstreamVars={upstreamVars}
 					onChange={update}
+					currentAppId={appId}
 				/>
 			);
 		case "wait":

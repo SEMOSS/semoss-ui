@@ -17,10 +17,6 @@ import type {
 } from "./automation.types";
 import { formatDurationMs } from "./format";
 
-// Manual runs execute in the background — the FE polls GetAutomationRun on this
-// interval until the run leaves RUNNING status.
-export const RUN_POLL_INTERVAL_MS = 3000;
-
 export interface AutomationRunData {
 	STATUS: RunStatus;
 	RUN_ID?: string;
@@ -39,49 +35,49 @@ export const STEP_TYPES: {
 }[] = [
 	{
 		type: "database-engine",
-		label: "Database Query",
-		description: "Run SQL against a database engine",
+		label: "Query Database",
+		description: "Run a query or write against a connected database",
 		icon: Database,
 		color: "text-blue-600",
 	},
 	{
 		type: "model-engine",
-		label: "AI Model",
-		description: "Call an LLM, get embeddings, or run vision",
+		label: "Ask AI",
+		description: "Send a prompt to an AI model and get a response",
 		icon: Cpu,
 		color: "text-purple-600",
 	},
 	{
 		type: "vector-engine",
-		label: "Vector Search",
-		description: "Query a vector database for similar content",
+		label: "Search Documents",
+		description: "Find relevant documents using semantic search",
 		icon: Bolt,
 		color: "text-amber-600",
 	},
 	{
 		type: "storage-engine",
-		label: "Storage",
-		description: "Upload or download from cloud storage",
+		label: "File Storage",
+		description: "Upload, download, or list files in cloud storage",
 		icon: Archive,
 		color: "text-emerald-600",
 	},
 	{
 		type: "function-engine",
-		label: "Function / API",
-		description: "Call an external API or function engine",
+		label: "Run Function",
+		description: "Call a custom function or external API",
 		icon: Sigma,
 		color: "text-cyan-600",
 	},
 	{
 		type: "app",
-		label: "App Engine",
-		description: "Run a Pixel expression inside an app engine context",
+		label: "Run App",
+		description: "Run a custom function from this app",
 		icon: LayoutGrid,
 		color: "text-slate-600",
 	},
 	{
 		type: "wait",
-		label: "Wait / Delay",
+		label: "Delay",
 		description: "Pause execution for a fixed number of seconds",
 		icon: Clock,
 		color: "text-sky-600",
@@ -132,9 +128,34 @@ export const TYPE_DISPLAY_META: Record<
 	wait: STEP_TYPES[6],
 };
 
+/**
+ * DB timestamps come back as "YYYY-MM-DD HH:MM:SS.s" with no timezone marker but
+ * are stored as UTC. Appending "Z" tells JS to interpret them as UTC, not local time.
+ */
+function parseUtcDate(iso: string): Date {
+	if (!iso) return new Date(Number.NaN);
+	const s = iso.trim();
+	// Already has timezone info — trust it
+	if (s.endsWith("Z") || /[+-]\d{2}:?\d{2}$/.test(s)) return new Date(s);
+	// Bare datetime (space or T separator) — normalize to ISO 8601 UTC
+	return new Date(`${s.replace(" ", "T").replace(/\.\d+$/, "")}Z`);
+}
+
 export function formatTimestamp(iso: string): string {
 	try {
-		return new Date(iso).toLocaleString();
+		return parseUtcDate(iso).toLocaleString();
+	} catch {
+		return iso;
+	}
+}
+
+export function formatRelativeTime(iso: string): string {
+	try {
+		const ms = Date.now() - parseUtcDate(iso).getTime();
+		if (ms < 60_000) return "just now";
+		if (ms < 3_600_000) return `${Math.floor(ms / 60_000)}m ago`;
+		if (ms < 86_400_000) return `${Math.floor(ms / 3_600_000)}h ago`;
+		return parseUtcDate(iso).toLocaleDateString();
 	} catch {
 		return iso;
 	}
@@ -153,7 +174,8 @@ export function formatRunDuration(
 	completedAt: string | null,
 ): string {
 	if (!completedAt) return "—";
-	const ms = new Date(completedAt).getTime() - new Date(startedAt).getTime();
+	const ms =
+		parseUtcDate(completedAt).getTime() - parseUtcDate(startedAt).getTime();
 	return formatDurationMs(ms);
 }
 

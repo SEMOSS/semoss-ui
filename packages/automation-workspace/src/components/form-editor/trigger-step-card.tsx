@@ -1,4 +1,5 @@
 import { ChevronDown, ChevronRight, Zap } from "lucide-react";
+import { Field, FieldLabel, Input } from "@semoss/ui/next";
 import type { AutomationNode } from "../../domain/automation.types";
 import { TriggerForm } from "./forms/trigger-form";
 
@@ -6,14 +7,22 @@ interface TriggerStepCardProps {
 	step: AutomationNode;
 	isExpanded: boolean;
 	appId: string;
+	description: string;
+	onDescriptionChange: (v: string) => void;
 	onToggle: () => void;
+	devMode: boolean;
+	onDevModeChange: (v: boolean) => void;
 }
 
 export function TriggerStepCard({
 	step,
 	isExpanded,
 	appId,
+	description,
+	onDescriptionChange,
 	onToggle,
+	devMode,
+	onDevModeChange,
 }: TriggerStepCardProps) {
 	return (
 		<div className="rounded-2xl border bg-card shadow-sm ring-1 ring-primary/20">
@@ -31,15 +40,16 @@ export function TriggerStepCard({
 						<span className="font-medium text-sm">
 							{step.label}
 						</span>
-						<span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] text-primary">
-							Manual
-						</span>
-						<span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-							non-deletable
-						</span>
+						{devMode && (
+							<span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[10px] text-amber-700 dark:text-amber-400">
+								Dev mode
+							</span>
+						)}
 					</div>
-					<div className="mt-0.5 text-[11px] text-muted-foreground">
-						Trigger · defines how this automation starts
+					<div className="mt-0.5 truncate text-[11px] text-muted-foreground">
+						{description.trim()
+							? description.trim()
+							: "Add a description of what this automation does"}
 					</div>
 				</div>
 				{isExpanded ? (
@@ -51,8 +61,47 @@ export function TriggerStepCard({
 
 			{/* body */}
 			{isExpanded && (
-				<div className="border-t px-4 pt-3 pb-4">
+				<div className="space-y-4 border-t px-4 pt-4 pb-4">
+					<Field>
+						<FieldLabel className="text-xs">Description</FieldLabel>
+						<Input
+							value={description}
+							onChange={(e) =>
+								onDescriptionChange(e.target.value)
+							}
+							placeholder="What does this automation do? e.g. Queries open claims and sends a daily summary email"
+							className="h-9 text-sm"
+						/>
+					</Field>
 					<TriggerForm appId={appId} />
+					<div className="flex items-center justify-between border-t pt-3">
+						<div>
+							<p className="font-medium text-xs">
+								Developer mode
+							</p>
+							<p className="text-[11px] text-muted-foreground">
+								Show advanced fields like pixel previews and
+								output variable names
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => onDevModeChange(!devMode)}
+							className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none ${
+								devMode
+									? "bg-amber-500"
+									: "bg-muted-foreground/30"
+							}`}
+							role="switch"
+							aria-checked={devMode}
+						>
+							<span
+								className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm ring-0 transition-transform ${
+									devMode ? "translate-x-4" : "translate-x-0"
+								}`}
+							/>
+						</button>
+					</div>
 				</div>
 			)}
 		</div>
