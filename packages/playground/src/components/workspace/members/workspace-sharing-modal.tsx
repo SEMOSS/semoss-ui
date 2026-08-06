@@ -5,8 +5,10 @@ import {
 	addProjectUserPermissions,
 	getProjectUsers,
 	getProjectUsersNoCredentials,
+	type PostUser,
+	type Role,
+	type User,
 } from "@semoss/sdk";
-import type { PostUser, Role, User } from "@semoss/shared";
 import {
 	Button,
 	Command,

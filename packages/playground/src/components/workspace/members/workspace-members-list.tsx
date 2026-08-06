@@ -5,9 +5,10 @@ import {
 	editProjectUserPermissions,
 	getProjectUsers,
 	getUserProjectPermission,
+	type Role,
 	removeProjectUserPermissions,
+	type User,
 } from "@semoss/sdk";
-import type { Role, User } from "@semoss/shared";
 import {
 	Button,
 	Dialog,

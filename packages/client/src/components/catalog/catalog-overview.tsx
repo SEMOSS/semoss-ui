@@ -1,6 +1,6 @@
 import { Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { Role } from "@semoss/shared";
+import type { Role } from "@semoss/sdk";
 import {
 	Badge,
 	Button,

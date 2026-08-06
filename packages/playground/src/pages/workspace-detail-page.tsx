@@ -14,9 +14,9 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
-import { getUserProjectPermission } from "@semoss/sdk";
+import { getUserProjectPermission, type Role } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
-import { AppCatalogAvatar, MembersTable, type Role } from "@semoss/shared";
+import { AppCatalogAvatar, MembersTable } from "@semoss/shared";
 import {
 	Button,
 	Dialog,
