@@ -17,14 +17,31 @@ import type {
 
 /**
  * Resolve a parameter's effective default value at load/run time.
- * When `useCurrentDate` is set the stored value is ignored and today's date is returned.
+ * - `useCurrentDate` always wins over stored values.
+ * - Required text params with a placeholder use the placeholder as the preview
+ *   value (editor inline queries, DashboardVisualization inline seed). The
+ *   runtime viewer overrides this back to '' in DashboardPage seeding so the
+ *   ParamSheet input starts blank and forces the user to type.
  */
 export function resolveParamDefault(
-	p: Pick<Parameter, "defaultValue" | "useCurrentDate">,
+	p: Pick<
+		Parameter,
+		| "defaultValue"
+		| "useCurrentDate"
+		| "placeholder"
+		| "required"
+		| "inputType"
+	>,
 ): string {
-	return p.useCurrentDate
-		? new Date().toISOString().slice(0, 10)
-		: p.defaultValue;
+	if (p.useCurrentDate) return new Date().toISOString().slice(0, 10);
+	if (
+		p.required &&
+		(!p.inputType || p.inputType === "text") &&
+		p.placeholder
+	) {
+		return p.placeholder;
+	}
+	return p.defaultValue;
 }
 
 /** The data-source fields a visualization needs to run, wherever they come from. */

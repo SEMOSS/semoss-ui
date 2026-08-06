@@ -7,6 +7,7 @@ import type {
 	PivotResult,
 	PivotRow,
 } from "@/hooks/usePivotTransform";
+import { formatValue } from "@/lib/formatValue";
 import type { ColorRule, VisualizationStyling } from "@/types/dashboard";
 
 interface PivotTableProps {
@@ -179,6 +180,14 @@ export function PivotTable({
 		grandTotalRow,
 		hasGrandTotalColumn,
 	} = pivot;
+
+	const formatDRules = styling?.formatRules ?? [];
+	const fmtCell = (v: number | null, col: string): string => {
+		if (v == null) return "—";
+		if (!isFinite(v)) return String(v);
+		const hasRule = formatDRules.some((r) => r.column === col);
+		return hasRule ? formatValue(v, col, formatDRules) : formatNumber(v);
+	};
 
 	// Column-combination pagination
 	// Pagination buckets columns by their column-dimension combination so that
@@ -492,7 +501,14 @@ export function PivotTable({
 											className="whitespace-nowrap border-slate-200 border-b px-3 py-2 text-center font-semibold text-slate-600 text-xs uppercase tracking-wide"
 											style={getHeaderStyle(cell.label)}
 										>
-											{cell.label}
+											{isLastRow
+												? cell.label
+												: formatValue(
+														cell.label,
+														columnFields[ri] ??
+															cell.label,
+														formatDRules,
+													)}
 										</th>
 									))}
 									{/* Grand-total column header — only render alongside the first header row,
@@ -556,7 +572,11 @@ export function PivotTable({
 														rowFields[idx],
 													)}
 												>
-													{label}
+													{formatValue(
+														label,
+														rowFields[idx],
+														formatDRules,
+													)}
 												</td>
 											))
 										: null}
@@ -575,7 +595,10 @@ export function PivotTable({
 											)}
 										>
 											{row.cells[col.key] != null ? (
-												formatNumber(row.cells[col.key])
+												fmtCell(
+													row.cells[col.key],
+													col.valueField,
+												)
 											) : (
 												<span className="text-slate-300">
 													—
@@ -591,8 +614,9 @@ export function PivotTable({
 												className={`${getCellClassName(vf, row)} border-slate-200 border-l-2 bg-slate-100 font-semibold`}
 											>
 												{row.rowTotals[vf] != null ? (
-													formatNumber(
+													fmtCell(
 														row.rowTotals[vf],
+														vf,
 													)
 												) : (
 													<span className="text-slate-300">
@@ -626,8 +650,9 @@ export function PivotTable({
 									>
 										{grandTotalRow.cells[col.key] !=
 										null ? (
-											formatNumber(
+											fmtCell(
 												grandTotalRow.cells[col.key],
+												col.valueField,
 											)
 										) : (
 											<span className="text-slate-400">
@@ -644,8 +669,9 @@ export function PivotTable({
 										>
 											{grandTotalRow.rowTotals[vf] !=
 											null ? (
-												formatNumber(
+												fmtCell(
 													grandTotalRow.rowTotals[vf],
+													vf,
 												)
 											) : (
 												<span className="text-slate-400">

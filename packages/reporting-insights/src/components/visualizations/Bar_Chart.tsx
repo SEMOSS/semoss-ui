@@ -48,6 +48,7 @@ import {
 	compareColorRule,
 	GRID_STYLE,
 } from "@/components/visualizations/shared/chartShared";
+import { formatValue } from "@/lib/formatValue";
 import {
 	type ColorPalette as ColorPaletteType,
 	type ColorRule,
@@ -501,6 +502,7 @@ export function Bar_Chart({
 	const styling = stacked ? sbStyling : barStyling;
 	const xCfg = styling.xAxisConfig ?? {};
 	const yCfg = styling.yAxisConfig ?? {};
+	const formatRules = config?.styling?.formatRules ?? [];
 	const showValueLabels = styling.showValueLabels === true;
 	const barWidth = styling.barWidth ?? 60;
 	const trendlineType = styling.trendlineType ?? "none";
@@ -933,6 +935,13 @@ export function Bar_Chart({
 									axisLine={false}
 									tickLine={yCfg.showTicks ?? true}
 									reversed={reverseYAxis || undefined}
+									tickFormatter={(v: unknown) =>
+										formatValue(
+											v,
+											yKeys[0] ?? "",
+											formatRules,
+										)
+									}
 								/>
 								<YAxis
 									dataKey={effectiveXDataKey}
@@ -946,6 +955,9 @@ export function Bar_Chart({
 									axisLine={false}
 									tickLine={false}
 									width={80}
+									tickFormatter={(v: unknown) =>
+										formatValue(v, xKey, formatRules)
+									}
 								/>
 							</>
 						) : (
@@ -968,6 +980,9 @@ export function Bar_Chart({
 									angle={xCfg.rotateValues ?? 0}
 									textAnchor={
 										xCfg.rotateValues ? "end" : "middle"
+									}
+									tickFormatter={(v: unknown) =>
+										formatValue(v, xKey, formatRules)
 									}
 									label={
 										xAxisLabel
@@ -1000,6 +1015,13 @@ export function Bar_Chart({
 									domain={yDomain}
 									allowDataOverflow={yBrushActive}
 									allowDecimals={zoomY ? false : undefined}
+									tickFormatter={(v: unknown) =>
+										formatValue(
+											v,
+											yKeys[0] ?? "",
+											formatRules,
+										)
+									}
 									label={
 										yAxisLabel
 											? {
@@ -1083,7 +1105,11 @@ export function Bar_Chart({
 										formatter={
 											((v: unknown) =>
 												typeof v === "number"
-													? v.toLocaleString()
+													? formatValue(
+															v,
+															k,
+															formatRules,
+														)
 													: String(v ?? "")) as never
 										}
 									/>
@@ -1249,7 +1275,11 @@ export function Bar_Chart({
 										stroke={color}
 										strokeDasharray="4 4"
 										label={{
-											value: avg.toFixed(1),
+											value: formatValue(
+												avg,
+												sk,
+												formatRules,
+											),
 											position: flipAxis
 												? "top"
 												: "right",

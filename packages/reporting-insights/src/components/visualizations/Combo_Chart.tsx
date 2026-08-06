@@ -43,6 +43,7 @@ import {
 	renderChartSymbol,
 	strokeDashFor,
 } from "@/components/visualizations/shared/chartShared";
+import { formatValue } from "@/lib/formatValue";
 import {
 	type ColorPalette as ColorPaletteType,
 	type ColorRule,
@@ -513,6 +514,7 @@ export function Combo_Chart({
 	const zoomY = s.zoomY === true;
 	const saveZoom = s.saveZoom === true;
 	const valueLabelCfg = s.valueLabel ?? null;
+	const formatRules = config?.styling?.formatRules ?? [];
 
 	const palette = useMemo(() => {
 		const cp = config?.styling?.colorPalette as
@@ -752,6 +754,16 @@ export function Combo_Chart({
 									axisLine={false}
 									tickLine={yCfg.showTicks ?? true}
 									reversed={reverseYAxis || undefined}
+									tickFormatter={(v: unknown) =>
+										formatValue(
+											v,
+											comboBarKeys[0] ??
+												comboLineKeys[0] ??
+												yKeys[0] ??
+												"",
+											formatRules,
+										)
+									}
 								/>
 								<YAxis
 									dataKey={xKey}
@@ -765,6 +777,9 @@ export function Combo_Chart({
 									axisLine={false}
 									tickLine={false}
 									width={80}
+									tickFormatter={(v: unknown) =>
+										formatValue(v, xKey, formatRules)
+									}
 								/>
 							</>
 						) : (
@@ -787,6 +802,9 @@ export function Combo_Chart({
 									angle={xCfg.rotateValues ?? 0}
 									textAnchor={
 										xCfg.rotateValues ? "end" : "middle"
+									}
+									tickFormatter={(v: unknown) =>
+										formatValue(v, xKey, formatRules)
 									}
 									label={
 										xAxisLabel
@@ -819,6 +837,16 @@ export function Combo_Chart({
 									domain={yDomain}
 									allowDataOverflow={yBrushActive}
 									allowDecimals={zoomY ? false : undefined}
+									tickFormatter={(v: unknown) =>
+										formatValue(
+											v,
+											comboBarKeys[0] ??
+												comboLineKeys[0] ??
+												yKeys[0] ??
+												"",
+											formatRules,
+										)
+									}
 									label={
 										yAxisLabel
 											? {
@@ -891,7 +919,11 @@ export function Combo_Chart({
 											formatter={
 												((v: unknown) =>
 													typeof v === "number"
-														? v.toLocaleString()
+														? formatValue(
+																v,
+																resolvedKey,
+																formatRules,
+															)
 														: String(
 																v ?? "",
 															)) as never
@@ -1104,7 +1136,11 @@ export function Combo_Chart({
 												formatter={
 													((v: unknown) =>
 														typeof v === "number"
-															? v.toLocaleString()
+															? formatValue(
+																	v,
+																	resolvedKey,
+																	formatRules,
+																)
 															: String(
 																	v ?? "",
 																)) as never
@@ -1207,7 +1243,11 @@ export function Combo_Chart({
 												formatter={
 													((v: unknown) =>
 														typeof v === "number"
-															? v.toLocaleString()
+															? formatValue(
+																	v,
+																	resolvedKey,
+																	formatRules,
+																)
 															: String(
 																	v ?? "",
 																)) as never
@@ -1249,7 +1289,11 @@ export function Combo_Chart({
 										stroke={color}
 										strokeDasharray="4 4"
 										label={{
-											value: avg.toFixed(1),
+											value: formatValue(
+												avg,
+												sk,
+												formatRules,
+											),
 											position: flipAxis
 												? "top"
 												: "right",

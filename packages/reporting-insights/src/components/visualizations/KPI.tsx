@@ -1,6 +1,6 @@
 import { Activity, TrendingDown, TrendingUp } from "lucide-react";
 import type React from "react";
-import { formatKpiNumber } from "@/lib/kpiFormat";
+import { formatValue } from "@/lib/formatValue";
 import { applyVizFilter } from "@/lib/vizFilter";
 import type { ChartTitleConfig, VisualizationConfig } from "@/types/dashboard";
 
@@ -132,7 +132,9 @@ export function KPI({
 		return `${formatAggregation(agg)} of ${col}`;
 	};
 
-	const formatNum = (n: number): string => formatKpiNumber(n, cfg);
+	const formatRules = cfg.styling?.formatRules ?? [];
+	const formatNum = (n: number, col: string): string =>
+		formatValue(n, col, formatRules);
 
 	const getTrend = (rows: KpiData[], col: string) => {
 		if (rows.length < 2) return null;
@@ -292,7 +294,7 @@ export function KPI({
 								color: valueColor,
 							}}
 						>
-							{formatNum(value)}
+							{formatNum(value, col)}
 						</p>
 						{trend ? (
 							<div

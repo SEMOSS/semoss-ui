@@ -59,6 +59,7 @@ import {
 	type Role,
 } from "@/services/permissionsApi";
 import type {
+	ColorPalette as ColorPaletteType,
 	ColSpan,
 	Dashboard,
 	DashboardQuery,
@@ -184,6 +185,22 @@ function initSheets(existingDashboard: Dashboard | undefined): Sheet[] {
 	return [makeSheet("Sheet 1", SHEET_COLORS[0])];
 }
 
+function collectVizLevelPalettes(sheets: Sheet[]): ColorPaletteType[] {
+	const seen = new Set<string>();
+	const result: ColorPaletteType[] = [];
+	for (const sheet of sheets) {
+		for (const viz of sheet.visualizations) {
+			for (const p of viz.config?.styling?.customColorPalettes ?? []) {
+				if (!seen.has(p.label)) {
+					seen.add(p.label);
+					result.push(p);
+				}
+			}
+		}
+	}
+	return result;
+}
+
 export function NewDashboardPage() {
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
@@ -288,6 +305,12 @@ export function NewDashboardPage() {
 	const [queries, setQueries] = useState<DashboardQuery[]>(
 		initialMigration.queries,
 	);
+	const [customColorPalettes, setCustomColorPalettes] = useState<
+		ColorPaletteType[]
+	>(
+		seedSource?.customColorPalettes ??
+			collectVizLevelPalettes(initialMigration.sheets),
+	);
 	const [activeSheetId, setActiveSheetId] = useState<string>(
 		initialMigration.sheets.find((s) => !s.isParamSheet)?.id ??
 			initialMigration.sheets[0].id,
@@ -380,6 +403,14 @@ export function NewDashboardPage() {
 				flexModelCacheRef.current = {};
 				setSheets(finalSheets);
 				setQueries(hydratedQueries);
+				const dashLevel = full.customColorPalettes ?? [];
+				const vizLevel = collectVizLevelPalettes(finalSheets);
+				setCustomColorPalettes([
+					...dashLevel,
+					...vizLevel.filter(
+						(p) => !dashLevel.some((d) => d.label === p.label),
+					),
+				]);
 				setActiveSheetId(
 					finalSheets.find((s) => !s.isParamSheet)?.id ??
 						finalSheets[0].id,
@@ -1053,12 +1084,17 @@ export function NewDashboardPage() {
 			// Every parameter must have a default value.
 			for (const v of layoutVizs) {
 				const s = resolveQuery(v, queries);
-				const missing = (s.parameters ?? []).find(
-					(p) =>
-						p.name &&
-						!p.useCurrentDate &&
-						!String(resolveParamDefault(p) ?? "").trim(),
-				);
+				const missing = (s.parameters ?? []).find((p) => {
+					if (!p.name || p.useCurrentDate) return false;
+					// Required text params satisfy the check via placeholder instead of defaultValue
+					if (
+						p.required &&
+						(!p.inputType || p.inputType === "text")
+					) {
+						return !String(p.placeholder ?? "").trim();
+					}
+					return !String(p.defaultValue ?? "").trim();
+				});
 				if (missing) {
 					alert(
 						`Parameter "${missing.label || missing.name}" in "${v.title || "Untitled"}" needs a default value.`,
@@ -1093,9 +1129,23 @@ export function NewDashboardPage() {
 			const layoutVizIds = new Set(sheet.layout.map((l) => l.vizId));
 			return {
 				...sheet,
-				visualizations: sheet.visualizations.filter((v) =>
-					layoutVizIds.has(v.id),
-				),
+				visualizations: sheet.visualizations
+					.filter((v) => layoutVizIds.has(v.id))
+					.map((v) => {
+						// Strip stale viz-level customColorPalettes — now stored at dashboard level.
+						if (!v.config?.styling?.customColorPalettes) return v;
+						const {
+							customColorPalettes: _dropped,
+							...restStyling
+						} = v.config.styling;
+						return {
+							...v,
+							config: {
+								...v.config,
+								styling: restStyling,
+							},
+						};
+					}),
 			};
 		});
 		return {
@@ -1105,6 +1155,7 @@ export function NewDashboardPage() {
 			tags: tagsRef.current,
 			sheets: cleanedSheets,
 			queries: pruneQueries(queries, cleanedSheets),
+			customColorPalettes,
 			createdAt: createdAtRef.current,
 			updatedAt: new Date().toISOString(),
 		};
@@ -1567,6 +1618,12 @@ export function NewDashboardPage() {
 													}
 													onTestQuery={() =>
 														void testQuery(viz.id)
+													}
+													customColorPalettes={
+														customColorPalettes
+													}
+													onCustomColorPalettesChange={
+														setCustomColorPalettes
 													}
 													onRunAllQueries={() =>
 														void runAllQueries()
@@ -2321,6 +2378,8 @@ interface VizCardProps {
 	onSelectQuery: (queryId: string) => void;
 	onAddToLayout: () => void;
 	onTestQuery: () => void;
+	customColorPalettes: ColorPaletteType[];
+	onCustomColorPalettesChange: (palettes: ColorPaletteType[]) => void;
 	/** Run every query across all visualizations (uses the Parameters form values). */
 	onRunAllQueries?: () => void;
 	/** True while all queries are running. */
@@ -2357,6 +2416,8 @@ function VizCard({
 	onSelectQuery,
 	onAddToLayout,
 	onTestQuery,
+	customColorPalettes,
+	onCustomColorPalettesChange,
 	onRunAllQueries,
 	runningAllQueries = false,
 	siblings,
@@ -2982,25 +3043,28 @@ function VizCard({
 						},
 					];
 				}
-				if (viz.config?.barSeries?.length) {
-					data.barSeries = viz.config.barSeries.map(
-						(name: string) => ({
-							name,
-							dataType: typeMap[name] || "STRING",
-							aggregation:
-								viz.config?.columnAggregations?.[name] || "sum",
-						}),
-					);
+				const comboStyling = viz.config?.styling?.combo ?? {};
+				const barKeys = comboStyling.barKeys ?? [];
+				const lineKeys = comboStyling.lineKeys ?? [];
+				const barAggregations = comboStyling.barAggregations ?? {};
+				const lineAggregations = comboStyling.lineAggregations ?? {};
+				if (barKeys.length) {
+					data.barSeries = barKeys.map((name: string) => ({
+						name,
+						dataType: typeMap[name] || "STRING",
+						aggregation:
+							barAggregations[name] ||
+							(typeMap[name] === "NUMBER" ? "avg" : "count"),
+					}));
 				}
-				if (viz.config?.lineSeries?.length) {
-					data.lineSeries = viz.config.lineSeries.map(
-						(name: string) => ({
-							name,
-							dataType: typeMap[name] || "STRING",
-							aggregation:
-								viz.config?.columnAggregations?.[name] || "avg",
-						}),
-					);
+				if (lineKeys.length) {
+					data.lineSeries = lineKeys.map((name: string) => ({
+						name,
+						dataType: typeMap[name] || "STRING",
+						aggregation:
+							lineAggregations[name] ||
+							(typeMap[name] === "NUMBER" ? "avg" : "count"),
+					}));
 				}
 				if (viz.config?.tooltips?.length) {
 					data.tooltip = viz.config.tooltips.map(
@@ -3278,24 +3342,32 @@ function VizCard({
 						data.size[0].aggregation;
 				newConfig.xKey = "";
 			} else if (vizType === "combo") {
+				const barCols = (data.barSeries as any[]) ?? [];
+				const lineCols = (data.lineSeries as any[]) ?? [];
+				const barKeys = barCols.map((c: any) => c.name as string);
+				const lineKeys = lineCols.map((c: any) => c.name as string);
+				const sharedCols = new Set(
+					barKeys.filter((k) => lineKeys.includes(k)),
+				);
+				const resolvedBarKeys = barKeys.map((k) =>
+					sharedCols.has(k) ? `${k}__combo_bar` : k,
+				);
+				const resolvedLineKeys = lineKeys.map((k) =>
+					sharedCols.has(k) ? `${k}__combo_line` : k,
+				);
 				newConfig.xKey = data.xAxis?.[0]?.name || "";
-				newConfig.barSeries =
-					data.barSeries?.map((c: any) => c.name) || [];
-				newConfig.lineSeries =
-					data.lineSeries?.map((c: any) => c.name) || [];
-				newConfig.yKeys = [
-					...(newConfig.barSeries || []),
-					...(newConfig.lineSeries || []),
-				];
+				newConfig.yKeys = [...resolvedBarKeys, ...resolvedLineKeys];
 				newConfig.columnAggregations = {};
-				data.barSeries?.forEach((c: any) => {
+				barCols.forEach((c: any, i: number) => {
 					if (c.aggregation && newConfig.columnAggregations) {
-						newConfig.columnAggregations[c.name] = c.aggregation;
+						newConfig.columnAggregations[resolvedBarKeys[i]] =
+							c.aggregation;
 					}
 				});
-				data.lineSeries?.forEach((c: any) => {
+				lineCols.forEach((c: any, i: number) => {
 					if (c.aggregation && newConfig.columnAggregations) {
-						newConfig.columnAggregations[c.name] = c.aggregation;
+						newConfig.columnAggregations[resolvedLineKeys[i]] =
+							c.aggregation;
 					}
 				});
 			} else {
@@ -3340,6 +3412,39 @@ function VizCard({
 
 			// Preserve styling configuration
 			newConfig.styling = data.styling;
+
+			// Patch combo: save barKeys/lineKeys, per-zone aggregations, and seriesTypes
+			if (vizType === "combo") {
+				const barCols = (data.barSeries as any[]) ?? [];
+				const lineCols = (data.lineSeries as any[]) ?? [];
+				const barKeys = barCols.map((c: any) => c.name as string);
+				const lineKeys = lineCols.map((c: any) => c.name as string);
+				const barAggregations: Record<string, string> = {};
+				barCols.forEach((c: any) => {
+					if (c.aggregation) barAggregations[c.name] = c.aggregation;
+				});
+				const lineAggregations: Record<string, string> = {};
+				lineCols.forEach((c: any) => {
+					if (c.aggregation) lineAggregations[c.name] = c.aggregation;
+				});
+				const existing = (newConfig.styling?.combo?.seriesTypes ??
+					{}) as Record<string, "line" | "area">;
+				const newSeriesTypes: Record<string, "line" | "area"> = {};
+				for (const k of lineKeys) {
+					newSeriesTypes[k] = existing[k] ?? "line";
+				}
+				newConfig.styling = {
+					...newConfig.styling,
+					combo: {
+						...(newConfig.styling?.combo ?? {}),
+						barKeys,
+						lineKeys,
+						barAggregations,
+						lineAggregations,
+						seriesTypes: newSeriesTypes,
+					},
+				};
+			}
 
 			onUpdate({ config: newConfig });
 		};
@@ -3403,6 +3508,8 @@ function VizCard({
 				onAddToLayout={onAddToLayout}
 				runPixel={runPixel}
 				siblings={siblings}
+				customColorPalettes={customColorPalettes}
+				onCustomColorPalettesChange={onCustomColorPalettesChange}
 				reuse={reuse}
 				showPhiToggle={false}
 			/>

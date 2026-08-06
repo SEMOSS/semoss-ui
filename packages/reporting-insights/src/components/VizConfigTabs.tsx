@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@semoss/ui/next";
-import type { VisualizationType } from "@/types/dashboard";
+import type {
+	ColorPalette as ColorPaletteType,
+	VisualizationType,
+} from "@/types/dashboard";
 import { ToolsPanel } from "./tools/ToolsPanel";
 import {
 	type Column,
@@ -52,6 +55,8 @@ interface VizConfigTabsProps {
 	onChange: (data: DropZoneDataWithTable) => void;
 	/** Sample rows from the editor preview — used by the Filter Visualization tool. */
 	rows?: Array<Record<string, unknown>>;
+	customColorPalettes?: ColorPaletteType[];
+	onCustomColorPalettesChange?: (palettes: ColorPaletteType[]) => void;
 }
 
 type TabId = "data" | "tools";
@@ -62,6 +67,8 @@ export function VizConfigTabs({
 	value,
 	onChange,
 	rows,
+	customColorPalettes,
+	onCustomColorPalettesChange,
 }: VizConfigTabsProps) {
 	const [activeTab, setActiveTab] = useState<TabId>("data");
 
@@ -125,6 +132,8 @@ export function VizConfigTabs({
 							.filter((c) => c.aggregation)
 							.map((c) => [c.name, c.aggregation as string]),
 					)}
+					customColorPalettes={customColorPalettes}
+					onCustomColorPalettesChange={onCustomColorPalettesChange}
 					onChange={(styling) => {
 						onChange({
 							...value,

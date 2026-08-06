@@ -26,6 +26,7 @@ import {
 	ChartTooltip,
 	compareColorRule,
 } from "@/components/visualizations/shared/chartShared";
+import { formatValue } from "@/lib/formatValue";
 import {
 	type ColorPalette as ColorPaletteType,
 	type ColorRule,
@@ -103,7 +104,8 @@ export function Pie_Chart({ data, config }: PieChartVizProps) {
 	}: {
 		name?: string;
 		percent?: number;
-	}) => `${name ?? ""} (${((percent ?? 0) * 100).toFixed(0)}%)`;
+	}) =>
+		`${formatValue(name ?? "", xKey, config?.styling?.formatRules ?? [])} (${((percent ?? 0) * 100).toFixed(0)}%)`;
 
 	return (
 		<ResponsiveContainer width="100%" height="100%">

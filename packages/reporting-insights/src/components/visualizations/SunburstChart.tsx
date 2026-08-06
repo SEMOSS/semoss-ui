@@ -9,11 +9,13 @@
  */
 
 import React, { useMemo } from "react";
-import type { VisualizationConfig } from "@/types/dashboard";
+import { formatValue } from "@/lib/formatValue";
+import type { FormatRule, VisualizationConfig } from "@/types/dashboard";
 
 interface Props {
 	data: any[];
 	config?: VisualizationConfig;
+	formatRules?: FormatRule[];
 }
 
 const PALETTE = [
@@ -202,7 +204,7 @@ function flattenArcs(
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export function SunburstChart({ data, config }: Props) {
+export function SunburstChart({ data, config, formatRules = [] }: Props) {
 	const levels = config?.sunburstLevels ?? [];
 	const valueCol = config?.yKeys?.[0] ?? "";
 	const aggType =
@@ -331,9 +333,16 @@ export function SunburstChart({ data, config }: Props) {
 											userSelect: "none",
 										}}
 									>
-										{arc.node.name.length > 12
-											? arc.node.name.slice(0, 10) + "…"
-											: arc.node.name}
+										{(() => {
+											const fmtName = formatValue(
+												arc.node.name,
+												levels[arc.node.depth] ?? "",
+												formatRules,
+											);
+											return fmtName.length > 12
+												? fmtName.slice(0, 10) + "…"
+												: fmtName;
+										})()}
 									</text>
 								)}
 						</g>
@@ -351,9 +360,16 @@ export function SunburstChart({ data, config }: Props) {
 							fontWeight={700}
 							fill="#1e293b"
 						>
-							{hovered.node.name.length > 16
-								? hovered.node.name.slice(0, 14) + "…"
-								: hovered.node.name}
+							{(() => {
+								const fmtName = formatValue(
+									hovered.node.name,
+									levels[hovered.node.depth] ?? "",
+									formatRules ?? [],
+								);
+								return fmtName.length > 16
+									? fmtName.slice(0, 14) + "…"
+									: fmtName;
+							})()}
 						</text>
 						<text
 							x={cx}
@@ -362,9 +378,11 @@ export function SunburstChart({ data, config }: Props) {
 							fontSize={10}
 							fill="#64748b"
 						>
-							{hovered.node.value.toLocaleString(undefined, {
-								maximumFractionDigits: 2,
-							})}
+							{formatValue(
+								hovered.node.value,
+								valueCol,
+								formatRules ?? [],
+							)}
 						</text>
 					</>
 				)}

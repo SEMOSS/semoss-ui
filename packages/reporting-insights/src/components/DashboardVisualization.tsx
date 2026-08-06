@@ -63,6 +63,7 @@ import {
 	useAppliedFilters,
 	useFilterStore,
 } from "@/lib/dashboardFilters";
+import { formatValue } from "@/lib/formatValue";
 import { escapeSqlForPixel } from "@/lib/pixel";
 import { type QuerySource, resolveParamDefault } from "@/lib/resolveQuery";
 import { aggregateTableRows } from "@/lib/tableAggregate";
@@ -147,9 +148,11 @@ function ChartTooltip({
 							</span>
 						</div>
 						<span className="font-semibold text-slate-900 text-xs tabular-nums">
-							{typeof entry.value === "number"
-								? entry.value.toLocaleString()
-								: String(entry.value)}
+							{formatValue(
+								entry.value,
+								entry.dataKey,
+								config?.styling?.formatRules ?? [],
+							)}
 						</span>
 					</div>
 				))}
@@ -165,14 +168,11 @@ function ChartTooltip({
 								{aggregation} of {column}:
 							</span>
 							<span className="font-semibold text-slate-700 text-xs tabular-nums">
-								{typeof rowData[`_tooltip_${column}`] ===
-								"number"
-									? rowData[
-											`_tooltip_${column}`
-										].toLocaleString(undefined, {
-											maximumFractionDigits: 2,
-										})
-									: String(rowData[`_tooltip_${column}`])}
+								{formatValue(
+									rowData[`_tooltip_${column}`],
+									column,
+									config?.styling?.formatRules ?? [],
+								)}
 							</span>
 						</div>
 					))}
@@ -1258,7 +1258,11 @@ export function DashboardVisualization({
 		// tooltip, and legend. Reused by the portal preview / view.
 		if (vt === "heatmap") {
 			return (
-				<HeatmapChart data={facetData} config={visualization.config} />
+				<HeatmapChart
+					data={facetData}
+					config={visualization.config}
+					formatRules={visualization.config?.styling?.formatRules}
+				/>
 			);
 		}
 		// ── Half Donut ────────────────────────────────────────────────────────────
@@ -1288,7 +1292,11 @@ export function DashboardVisualization({
 
 		if (vt === "worldmap") {
 			return (
-				<WorldMapChart data={facetData} config={visualization.config} />
+				<WorldMapChart
+					data={facetData}
+					config={visualization.config}
+					formatRules={visualization.config?.styling?.formatRules}
+				/>
 			);
 		}
 
@@ -1296,7 +1304,13 @@ export function DashboardVisualization({
 		// Self-contained d3-cloud renderer with its own aggregation, color, and
 		// tooltip handling. Reused by the portal preview / view.
 		if (vt === "wordcloud") {
-			return <WordCloud data={facetData} config={visualization.config} />;
+			return (
+				<WordCloud
+					data={facetData}
+					config={visualization.config}
+					formatRules={visualization.config?.styling?.formatRules}
+				/>
+			);
 		}
 
 		// Bubble chart
@@ -1304,25 +1318,43 @@ export function DashboardVisualization({
 		// WorldMap / WordCloud. Drop zones: Bubbles (xKey) / Size (yKeys[0]) / Tooltip.
 		if (vt === "bubble") {
 			return (
-				<BubbleChart data={facetData} config={visualization.config} />
+				<BubbleChart
+					data={facetData}
+					config={visualization.config}
+					formatRules={visualization.config?.styling?.formatRules}
+				/>
 			);
 		}
 
 		if (vt === "sunburst") {
 			return (
-				<SunburstChart data={facetData} config={visualization.config} />
+				<SunburstChart
+					data={facetData}
+					config={visualization.config}
+					formatRules={visualization.config?.styling?.formatRules}
+				/>
 			);
 		}
 
 		if (vt === "puck") {
-			return <PuckChart data={facetData} config={visualization.config} />;
+			return (
+				<PuckChart
+					data={facetData}
+					config={visualization.config}
+					formatRules={visualization.config?.styling?.formatRules}
+				/>
+			);
 		}
 
 		// KPI
 		// ── Box Plot ──────────────────────────────────────────────────────────
 		if (vt === "boxplot") {
 			return (
-				<BoxPlotChart data={facetData} config={visualization.config} />
+				<BoxPlotChart
+					data={facetData}
+					config={visualization.config}
+					formatRules={visualization.config?.styling?.formatRules}
+				/>
 			);
 		}
 
@@ -1585,6 +1617,13 @@ export function DashboardVisualization({
 							axisLine={false}
 							tickLine={false}
 							name={xKey}
+							tickFormatter={(v: unknown) =>
+								formatValue(
+									v,
+									xKey,
+									cfg?.styling?.formatRules ?? [],
+								)
+							}
 							label={
 								cfg.xLabel
 									? {
@@ -1605,6 +1644,13 @@ export function DashboardVisualization({
 							tickLine={false}
 							width={48}
 							name={yKeys[0]}
+							tickFormatter={(v: unknown) =>
+								formatValue(
+									v,
+									yKeys[0] ?? "",
+									cfg?.styling?.formatRules ?? [],
+								)
+							}
 							label={
 								cfg.yLabel
 									? {
@@ -1638,16 +1684,21 @@ export function DashboardVisualization({
 									<div className="rounded border border-slate-200 bg-white p-2 text-xs shadow-lg">
 										{labelKey && data.label && (
 											<div className="mb-1 font-semibold">
-												{data.label}
+												{formatValue(
+													data.label,
+													labelKey,
+													cfg?.styling?.formatRules ??
+														[],
+												)}
 											</div>
 										)}
-										<div>{`${xKey} (${xAgg}): ${Number(data[xKey]).toFixed(2)}`}</div>
-										<div>{`${yKeys[0]} (${yAgg}): ${Number(data[yKeys[0]]).toFixed(2)}`}</div>
+										<div>{`${xKey} (${xAgg}): ${formatValue(data[xKey], xKey, cfg?.styling?.formatRules ?? [])}`}</div>
+										<div>{`${yKeys[0]} (${yAgg}): ${formatValue(data[yKeys[0]], yKeys[0], cfg?.styling?.formatRules ?? [])}`}</div>
 										{sizeKey && data[sizeKey] != null && (
-											<div>{`${sizeKey} (${sizeAgg}): ${Number(data[sizeKey]).toFixed(2)}`}</div>
+											<div>{`${sizeKey} (${sizeAgg}): ${formatValue(data[sizeKey], sizeKey, cfg?.styling?.formatRules ?? [])}`}</div>
 										)}
 										{colorKey && data.colorCategory && (
-											<div>{`${colorKey}: ${data.colorCategory}`}</div>
+											<div>{`${colorKey}: ${formatValue(data.colorCategory, colorKey, cfg?.styling?.formatRules ?? [])}`}</div>
 										)}
 										{activeTtCols.length > 0 && (
 											<div className="mt-1 border-slate-200 border-t pt-1">
@@ -1658,17 +1709,7 @@ export function DashboardVisualization({
 													}) => (
 														<div
 															key={column}
-														>{`${column} (${aggregation}): ${
-															typeof data[
-																`_tooltip_${column}`
-															] === "number"
-																? data[
-																		`_tooltip_${column}`
-																	].toFixed(2)
-																: data[
-																		`_tooltip_${column}`
-																	]
-														}`}</div>
+														>{`${column} (${aggregation}): ${formatValue(data[`_tooltip_${column}`], column, cfg?.styling?.formatRules ?? [])}`}</div>
 													),
 												)}
 											</div>
@@ -1772,10 +1813,29 @@ export function DashboardVisualization({
 				<ResponsiveContainer width="100%" height={chartHeight}>
 					<RadarChart data={chartData}>
 						<PolarGrid stroke="#f1f5f9" />
-						<PolarAngleAxis dataKey={xKey} tick={AXIS_STYLE} />
+						<PolarAngleAxis
+							dataKey={xKey}
+							tick={AXIS_STYLE}
+							tickFormatter={(v: unknown) =>
+								formatValue(
+									v,
+									xKey,
+									visualization.config?.styling
+										?.formatRules ?? [],
+								)
+							}
+						/>
 						<PolarRadiusAxis
 							tick={{ fontSize: 10, fill: "#94a3b8" }}
 							axisLine={false}
+							tickFormatter={(v: unknown) =>
+								formatValue(
+									v,
+									yKeys[0] ?? "",
+									visualization.config?.styling
+										?.formatRules ?? [],
+								)
+							}
 						/>
 						{yKeys.map((k, i) => (
 							<Radar

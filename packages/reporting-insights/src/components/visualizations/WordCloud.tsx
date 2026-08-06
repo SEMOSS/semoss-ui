@@ -8,10 +8,12 @@ import {
 	useState,
 } from "react";
 import WordCloudJS from "wordcloud";
+import { formatValue } from "@/lib/formatValue";
 import {
 	type ColorPalette as ColorPaletteType,
 	type ColorRule,
 	DEFAULT_WORDCLOUD_STYLING,
+	type FormatRule,
 	type VisualizationConfig,
 	type WordCloudShape,
 } from "@/types/dashboard";
@@ -294,6 +296,7 @@ interface WordCloudProps {
 	config?: VisualizationConfig;
 	/** Optional explicit palette override (otherwise reads `config.styling.colorPalette`). */
 	palette?: string[];
+	formatRules?: FormatRule[];
 }
 
 interface HoveredWord {
@@ -302,7 +305,12 @@ interface HoveredWord {
 	y: number;
 }
 
-export function WordCloud({ data, config, palette }: WordCloudProps) {
+export function WordCloud({
+	data,
+	config,
+	palette,
+	formatRules = [],
+}: WordCloudProps) {
 	const wordsKey = config?.xKey;
 	const sizeKey = config?.yKeys?.[0];
 	const tooltipEntries: Array<{ column: string; aggregation: string }> =
@@ -441,7 +449,7 @@ export function WordCloud({ data, config, palette }: WordCloudProps) {
 		// back through the `hover` callback. Stash the WordCloudWord payload at
 		// index 2 so we can render the tooltip without a separate map lookup.
 		const list = words.map<[string, number, WordCloudWord]>((w) => [
-			w.label,
+			formatValue(w.label, wordsKey ?? "", formatRules ?? []),
 			w.sizeValue,
 			w,
 		]);
@@ -558,16 +566,21 @@ export function WordCloud({ data, config, palette }: WordCloudProps) {
 								),
 							}}
 						/>
-						{hovered.word.label}
+						{formatValue(
+							hovered.word.label,
+							wordsKey ?? "",
+							formatRules ?? [],
+						)}
 					</div>
 					<div className="text-slate-700">
 						{sizeKey
 							? `${sizeKey} (${config?.columnAggregations?.[sizeKey] || "sum"}):`
 							: "Count:"}{" "}
 						<span className="font-medium tabular-nums">
-							{Number(hovered.word.sizeValue).toLocaleString(
-								undefined,
-								{ maximumFractionDigits: 2 },
+							{formatValue(
+								hovered.word.sizeValue,
+								sizeKey ?? "",
+								formatRules ?? [],
 							)}
 						</span>
 					</div>
@@ -579,21 +592,11 @@ export function WordCloud({ data, config, palette }: WordCloudProps) {
 							>
 								{column} ({aggregation}):{" "}
 								<span className="font-medium tabular-nums">
-									{typeof hovered.word.tooltipValues![
-										column
-									] === "number"
-										? (
-												hovered.word.tooltipValues![
-													column
-												] as number
-											).toLocaleString(undefined, {
-												maximumFractionDigits: 2,
-											})
-										: String(
-												hovered.word.tooltipValues![
-													column
-												],
-											)}
+									{formatValue(
+										hovered.word.tooltipValues![column],
+										column,
+										formatRules ?? [],
+									)}
 								</span>
 							</div>
 						) : null,

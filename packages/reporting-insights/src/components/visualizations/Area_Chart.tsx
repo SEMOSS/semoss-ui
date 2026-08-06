@@ -32,6 +32,7 @@ import {
 	renderChartSymbol,
 	strokeDashFor,
 } from "@/components/visualizations/shared/chartShared";
+import { formatValue } from "@/lib/formatValue";
 import {
 	type AreaStyling,
 	type ColorPalette as ColorPaletteType,
@@ -439,10 +440,14 @@ function TotalLabels({
 	rows,
 	xDataKey,
 	flipAxis,
+	yKey,
+	formatRules,
 }: {
 	rows: Array<Record<string, unknown>>;
 	xDataKey: string;
 	flipAxis: boolean;
+	yKey: string;
+	formatRules: unknown[];
 }) {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const xScale = useXAxisScale() as any;
@@ -459,7 +464,7 @@ function TotalLabels({
 				if (total == null) return null;
 				const formatted =
 					typeof total === "number"
-						? total.toLocaleString()
+						? formatValue(total, yKey, formatRules)
 						: String(total);
 				const catVal = String(row[xDataKey] ?? "");
 
@@ -537,6 +542,7 @@ export function Area_Chart({
 	const xCfg = s.xAxisConfig ?? {};
 	const yCfg = s.yAxisConfig ?? {};
 	const valueLabelCfg = s.valueLabel ?? null;
+	const formatRules = config?.styling?.formatRules ?? [];
 	const colorRules = useMemo<ColorRule[]>(
 		() => s.colorRules ?? [],
 		[s.colorRules],
@@ -874,6 +880,13 @@ export function Area_Chart({
 									reversed={reverseYAxis || undefined}
 									domain={yDomain}
 									allowDataOverflow={yBrushActive}
+									tickFormatter={(v: unknown) =>
+										formatValue(
+											v,
+											yKeys[0] ?? "",
+											formatRules,
+										)
+									}
 								/>
 								<YAxis
 									dataKey={effectiveXDataKey}
@@ -887,6 +900,9 @@ export function Area_Chart({
 									axisLine={false}
 									tickLine={false}
 									width={80}
+									tickFormatter={(v: unknown) =>
+										formatValue(v, xKey, formatRules)
+									}
 								/>
 							</>
 						) : (
@@ -923,6 +939,9 @@ export function Area_Chart({
 												}
 											: undefined
 									}
+									tickFormatter={(v: unknown) =>
+										formatValue(v, xKey, formatRules)
+									}
 								/>
 								<YAxis
 									tick={
@@ -953,6 +972,13 @@ export function Area_Chart({
 													fill: "#64748b",
 												}
 											: undefined
+									}
+									tickFormatter={(v: unknown) =>
+										formatValue(
+											v,
+											yKeys[0] ?? "",
+											formatRules,
+										)
 									}
 								/>
 							</>
@@ -1041,7 +1067,11 @@ export function Area_Chart({
 										formatter={
 											((v: unknown) =>
 												typeof v === "number"
-													? v.toLocaleString()
+													? formatValue(
+															v,
+															k,
+															formatRules,
+														)
 													: String(v ?? "")) as never
 										}
 									/>
@@ -1065,7 +1095,11 @@ export function Area_Chart({
 												palette[i % palette.length];
 											const label =
 												typeof value === "number"
-													? value.toLocaleString()
+													? formatValue(
+															value,
+															k,
+															formatRules,
+														)
 													: String(value ?? "");
 											const badgeW = Math.max(
 												label.length * 6 + 10,
@@ -1167,6 +1201,8 @@ export function Area_Chart({
 								rows={renderDataFinal}
 								xDataKey={effectiveXDataKey}
 								flipAxis={flipAxis}
+								yKey={yKeys[0] ?? ""}
+								formatRules={formatRules}
 							/>
 						)}
 
@@ -1208,7 +1244,11 @@ export function Area_Chart({
 										stroke={color}
 										strokeDasharray="4 4"
 										label={{
-											value: avg.toFixed(1),
+											value: formatValue(
+												avg,
+												sk,
+												formatRules,
+											),
 											position: flipAxis
 												? "top"
 												: "right",

@@ -20,6 +20,7 @@ import {
 	ChartTooltip,
 	compareColorRule,
 } from "@/components/visualizations/shared/chartShared";
+import { formatValue } from "@/lib/formatValue";
 import type { ColorRule, VisualizationConfig } from "@/types/dashboard";
 
 const PALETTE = [
@@ -234,6 +235,13 @@ export function MultiLineChart({ data, config }: MultiLineChartProps) {
 								}
 							: undefined
 					}
+					tickFormatter={(v: unknown) =>
+						formatValue(
+							v,
+							xKey ?? "",
+							config?.styling?.formatRules ?? [],
+						)
+					}
 				/>
 
 				<YAxis
@@ -249,6 +257,13 @@ export function MultiLineChart({ data, config }: MultiLineChartProps) {
 									fontSize: 11,
 								}
 							: undefined
+					}
+					tickFormatter={(v: unknown) =>
+						formatValue(
+							v,
+							yKey ?? "",
+							config?.styling?.formatRules ?? [],
+						)
 					}
 				/>
 
@@ -300,6 +315,17 @@ export function MultiLineChart({ data, config }: MultiLineChartProps) {
 									dataKey={cat}
 									position="top"
 									fontSize={10}
+									formatter={
+										((v: unknown) =>
+											typeof v === "number"
+												? formatValue(
+														v,
+														cat,
+														config?.styling
+															?.formatRules ?? [],
+													)
+												: String(v ?? "")) as never
+									}
 								/>
 							)}
 						</Line>

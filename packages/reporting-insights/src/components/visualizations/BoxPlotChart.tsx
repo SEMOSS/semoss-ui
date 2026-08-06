@@ -26,9 +26,11 @@ import {
 	compareColorRule,
 	GRID_STYLE,
 } from "@/components/visualizations/shared/chartShared";
+import { formatValue } from "@/lib/formatValue";
 import type {
 	ColorPalette as ColorPaletteType,
 	ColorRule,
+	FormatRule,
 	VisualizationConfig,
 } from "@/types/dashboard";
 
@@ -599,13 +601,7 @@ function BoxPlotShapes({
 
 // ── Tooltip ────────────────────────────────────────────────────────────────────
 
-function fmtNum(v: number): string {
-	if (Math.abs(v) >= 1_000_000) return `${(v / 1_000_000).toFixed(2)}M`;
-	if (Math.abs(v) >= 1_000) return `${(v / 1_000).toFixed(1)}k`;
-	return v % 1 === 0 ? String(Math.round(v)) : v.toFixed(2);
-}
-
-function BoxTooltip({ active, payload }: any) {
+function BoxTooltip({ active, payload, formatRules, yKey }: any) {
 	if (!active || !payload?.length) return null;
 	const d: BoxDatum = payload[0]?.payload;
 	if (!d) return null;
@@ -618,31 +614,31 @@ function BoxTooltip({ active, payload }: any) {
 				<div className="flex justify-between gap-4">
 					<span>Max</span>
 					<span className="font-medium text-stone-800">
-						{fmtNum(d.max)}
+						{formatValue(d.max, yKey, formatRules ?? [])}
 					</span>
 				</div>
 				<div className="flex justify-between gap-4">
 					<span>Q3 (75%)</span>
 					<span className="font-medium text-stone-800">
-						{fmtNum(d.q3)}
+						{formatValue(d.q3, yKey, formatRules ?? [])}
 					</span>
 				</div>
 				<div className="flex justify-between gap-4">
 					<span>Median</span>
 					<span className="font-medium text-stone-800">
-						{fmtNum(d.median)}
+						{formatValue(d.median, yKey, formatRules ?? [])}
 					</span>
 				</div>
 				<div className="flex justify-between gap-4">
 					<span>Q1 (25%)</span>
 					<span className="font-medium text-stone-800">
-						{fmtNum(d.q1)}
+						{formatValue(d.q1, yKey, formatRules ?? [])}
 					</span>
 				</div>
 				<div className="flex justify-between gap-4">
 					<span>Min</span>
 					<span className="font-medium text-stone-800">
-						{fmtNum(d.min)}
+						{formatValue(d.min, yKey, formatRules ?? [])}
 					</span>
 				</div>
 				<div className="flex justify-between gap-4 border-stone-100 border-t pt-1">
@@ -669,9 +665,14 @@ function BoxTooltip({ active, payload }: any) {
 interface BoxPlotChartProps {
 	data: any[];
 	config?: VisualizationConfig;
+	formatRules?: FormatRule[];
 }
 
-export function BoxPlotChart({ data, config }: BoxPlotChartProps) {
+export function BoxPlotChart({
+	data,
+	config,
+	formatRules = [],
+}: BoxPlotChartProps) {
 	const xKey = config?.xKey ?? "";
 	const yKeys = config?.yKeys ?? [];
 	const yKey = yKeys[0] ?? "";
@@ -881,6 +882,13 @@ export function BoxPlotChart({ data, config }: BoxPlotChartProps) {
 												}
 											: undefined
 									}
+									tickFormatter={(v: unknown) =>
+										formatValue(
+											v,
+											yKeys[0] ?? "",
+											formatRules,
+										)
+									}
 								/>
 								<YAxis
 									dataKey="category"
@@ -908,6 +916,9 @@ export function BoxPlotChart({ data, config }: BoxPlotChartProps) {
 													fill: "#64748b",
 												}
 											: undefined
+									}
+									tickFormatter={(v: unknown) =>
+										formatValue(v, xKey, formatRules)
 									}
 								/>
 							</>
@@ -945,6 +956,9 @@ export function BoxPlotChart({ data, config }: BoxPlotChartProps) {
 												}
 											: undefined
 									}
+									tickFormatter={(v: unknown) =>
+										formatValue(v, xKey, formatRules)
+									}
 								/>
 								<YAxis
 									type="number"
@@ -975,12 +989,28 @@ export function BoxPlotChart({ data, config }: BoxPlotChartProps) {
 												}
 											: undefined
 									}
+									tickFormatter={(v: unknown) =>
+										formatValue(
+											v,
+											yKeys[0] ?? "",
+											formatRules,
+										)
+									}
 								/>
 							</>
 						)}
 
 						{showTooltip && (
-							<Tooltip content={<BoxTooltip />} cursor={false} />
+							<Tooltip
+								content={(props: any) => (
+									<BoxTooltip
+										{...props}
+										formatRules={formatRules}
+										yKey={yKey}
+									/>
+								)}
+								cursor={false}
+							/>
 						)}
 
 						{/* Invisible bar — registers category bands and enables tooltip hit areas */}

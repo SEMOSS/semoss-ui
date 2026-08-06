@@ -19,6 +19,7 @@ export interface ParamSpec {
 	defaultValue: string;
 	inputType?: ParamInputType;
 	required?: boolean;
+	placeholder?: string;
 }
 
 // ── multiselect <-> SQL list helpers ────────────────────────────────────────
@@ -99,14 +100,31 @@ export function ParamControl({
 		);
 	}
 	return (
-		<Input
-			type="text"
-			value={value}
-			onChange={(e) => onChange(e.target.value)}
-			onKeyDown={(e) => e.key === "Enter" && onEnter?.()}
-			className={cls}
-			placeholder={param.defaultValue || param.name}
-		/>
+		<div className="relative">
+			<Input
+				type="text"
+				value={value}
+				onChange={(e) => onChange(e.target.value)}
+				onKeyDown={(e) => e.key === "Enter" && onEnter?.()}
+				className={`${cls} ${value ? "pr-8" : ""}`}
+				placeholder={
+					param.placeholder || param.defaultValue || param.name
+				}
+			/>
+			{value && (
+				<button
+					type="button"
+					onMouseDown={(e) => {
+						e.preventDefault();
+						onChange("");
+					}}
+					className="absolute inset-y-0 right-2 flex items-center text-slate-400 hover:text-slate-600"
+					aria-label="Clear"
+				>
+					<X className="h-3.5 w-3.5" />
+				</button>
+			)}
+		</div>
 	);
 }
 

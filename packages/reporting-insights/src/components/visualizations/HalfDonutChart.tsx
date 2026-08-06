@@ -8,6 +8,7 @@
  *   - xKey  → category column (one slice per unique value)
  *   - yKeys[0] → numeric value column (determines slice size)
  */
+import { formatValue } from "@/lib/formatValue";
 import type { VisualizationConfig } from "@/types/dashboard";
 
 // ── Palette ───────────────────────────────────────────────────────────────────
@@ -78,14 +79,6 @@ function arcPath(
 		`A ${innerR} ${innerR} 0 ${largeArc} 0 ${i2.x} ${i2.y}`,
 		"Z",
 	].join(" ");
-}
-
-// ── Format helper ─────────────────────────────────────────────────────────────
-function fmtNum(v: number): string {
-	if (v >= 1e9) return `${(v / 1e9).toFixed(1)}B`;
-	if (v >= 1e6) return `${(v / 1e6).toFixed(1)}M`;
-	if (v >= 1e3) return `${(v / 1e3).toFixed(1)}K`;
-	return v % 1 === 0 ? v.toFixed(0) : v.toFixed(1);
 }
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -191,7 +184,8 @@ export function HalfDonutChart({ data, config }: Props) {
 	});
 
 	// ── Center display ────────────────────────────────────────────────────────
-	const centerText = fmtNum(total);
+	const fmtRules = config?.styling?.formatRules ?? [];
+	const centerText = formatValue(total, yKey, fmtRules);
 	const centerLabel = yKey.length > 14 ? yKey.slice(0, 12) + "…" : yKey;
 
 	return (
@@ -222,7 +216,7 @@ export function HalfDonutChart({ data, config }: Props) {
 							stroke="#fff"
 							strokeWidth={1.5}
 						>
-							<title>{`${s.cat}: ${fmtNum(s.value)} (${(s.fraction * 100).toFixed(1)}%)`}</title>
+							<title>{`${formatValue(s.cat, xKey, fmtRules)}: ${formatValue(s.value, yKey, fmtRules)} (${(s.fraction * 100).toFixed(1)}%)`}</title>
 						</path>
 					);
 				})}
@@ -284,10 +278,16 @@ export function HalfDonutChart({ data, config }: Props) {
 									? "end"
 									: "start";
 
-						const display =
-							s.cat.length > 14
-								? s.cat.slice(0, 12) + "…"
-								: s.cat;
+						const display = (() => {
+							const formatted = formatValue(
+								s.cat,
+								xKey,
+								fmtRules,
+							);
+							return formatted.length > 14
+								? formatted.slice(0, 12) + "…"
+								: formatted;
+						})();
 
 						return (
 							<text
@@ -325,7 +325,7 @@ export function HalfDonutChart({ data, config }: Props) {
 								dominantBaseline="middle"
 								style={{ pointerEvents: "none" }}
 							>
-								{fmtNum(s.value)}
+								{formatValue(s.value, yKey, fmtRules)}
 							</text>
 						);
 					})}
@@ -357,10 +357,16 @@ export function HalfDonutChart({ data, config }: Props) {
 										const startX =
 											(SVG_W - totalWidth) / 2 +
 											colIdx * itemWidth;
-										const display =
-											s.cat.length > 10
-												? s.cat.slice(0, 8) + "…"
-												: s.cat;
+										const display = (() => {
+											const formatted = formatValue(
+												s.cat,
+												xKey,
+												fmtRules,
+											);
+											return formatted.length > 10
+												? formatted.slice(0, 8) + "…"
+												: formatted;
+										})();
 										return (
 											<g
 												key={s.cat}

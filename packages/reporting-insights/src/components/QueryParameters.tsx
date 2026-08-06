@@ -42,6 +42,8 @@ export interface QueryParam {
 	name: string;
 	label: string;
 	defaultValue: string;
+	/** Text inputs only: hint shown grayed-out in the empty input at runtime. */
+	placeholder?: string;
 	inputType?: "text" | "dropdown" | "multiselect" | "date";
 	required?: boolean;
 	useCurrentDate?: boolean;
@@ -172,6 +174,21 @@ export function QueryParameters({
 					that fetches values from the database at runtime.
 				</>,
 				"A green dot on the param header means the token is referenced in the query. Amber means the param exists but is not yet used in SQL.",
+				<>
+					Check <strong className="text-stone-700">Required</strong>{" "}
+					to force the viewer to fill in the param before running. For{" "}
+					<strong className="text-stone-700">text</strong> inputs you
+					can set a{" "}
+					<strong className="text-stone-700">placeholder hint</strong>{" "}
+					(shown grayed-out in the empty box). For{" "}
+					<strong className="text-stone-700">
+						dropdown / multi-select
+					</strong>{" "}
+					you can pre-select a default option. For{" "}
+					<strong className="text-stone-700">date</strong> you can
+					pre-set a date or always use today&apos;s date
+					automatically.
+				</>,
 			],
 		},
 		{
@@ -494,29 +511,64 @@ export function QueryParameters({
 												/>
 											</label>
 											<label className="block">
-												<span className="mb-1 block font-medium text-[11px] text-stone-500">
-													Default value
+												<span className="mb-1 flex items-center gap-1 font-medium text-[11px] text-stone-500">
+													{inputType === "text"
+														? param.required
+															? "Placeholder text"
+															: "Default value"
+														: inputType === "date"
+															? "Default date"
+															: "Default selection"}
+													{inputType !== "text" && (
+														<span className="text-rose-500">
+															*
+														</span>
+													)}
 												</span>
-												{inputType === "text" && (
-													<Input
-														type="text"
-														value={
-															param.defaultValue
-														}
-														onChange={(e) =>
-															updateParam(
-																param.id,
-																{
-																	defaultValue:
-																		e.target
-																			.value,
-																},
-															)
-														}
-														className={FIELD}
-														placeholder="Default value"
-													/>
-												)}
+												{inputType === "text" &&
+													(param.required ? (
+														<Input
+															type="text"
+															value={
+																param.placeholder ??
+																""
+															}
+															onChange={(e) =>
+																updateParam(
+																	param.id,
+																	{
+																		placeholder:
+																			e
+																				.target
+																				.value ||
+																			undefined,
+																	},
+																)
+															}
+															className={FIELD}
+															placeholder="e.g. Enter city name…"
+														/>
+													) : (
+														<Input
+															type="text"
+															value={
+																param.defaultValue
+															}
+															onChange={(e) =>
+																updateParam(
+																	param.id,
+																	{
+																		defaultValue:
+																			e
+																				.target
+																				.value,
+																	},
+																)
+															}
+															className={FIELD}
+															placeholder="Default value"
+														/>
+													))}
 												{inputType === "date" && (
 													<>
 														<Input
@@ -671,14 +723,31 @@ export function QueryParameters({
 													checked={
 														param.required ?? false
 													}
-													onChange={(e) =>
-														updateParam(param.id, {
-															required:
-																e.target
-																	.checked ||
-																undefined,
-														})
-													}
+													onChange={(e) => {
+														const nowRequired =
+															e.target.checked;
+														const patch: Partial<QueryParam> =
+															{
+																required:
+																	nowRequired ||
+																	undefined,
+															};
+														if (
+															inputType === "text"
+														) {
+															if (nowRequired) {
+																patch.defaultValue =
+																	"";
+															} else {
+																patch.placeholder =
+																	undefined;
+															}
+														}
+														updateParam(
+															param.id,
+															patch,
+														);
+													}}
 													className="h-4 w-4 rounded border-stone-300 text-indigo-600 focus:ring-indigo-500"
 												/>
 												Required

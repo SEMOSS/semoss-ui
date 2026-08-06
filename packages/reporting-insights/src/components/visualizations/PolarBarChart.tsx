@@ -55,12 +55,6 @@ function wedgePath(
 		.join(" ");
 }
 
-function formatNum(v: number): string {
-	if (v >= 1e6) return `${(v / 1e6).toFixed(1)}M`;
-	if (v >= 1e3) return `${(v / 1e3).toFixed(1)}K`;
-	return v % 1 === 0 ? String(Math.round(v)) : v.toFixed(1);
-}
-
 // ── Layout constants ──────────────────────────────────────────────────────────
 const SVG_W = 400;
 const SVG_H = 420;
@@ -470,7 +464,7 @@ export function PolarBarChart({ data, config }: Props) {
 							strokeWidth={0.5}
 							onMouseEnter={() => setHoveredCat(catIdx)}
 						>
-							<title>{`${categories[catIdx]} · ${key}: ${value.toLocaleString()}`}</title>
+							<title>{`${formatValue(categories[catIdx], xKey, config?.styling?.formatRules ?? [])} · ${key}: ${formatValue(value, key, config?.styling?.formatRules ?? [])}`}</title>
 						</path>
 					)}
 					{showValues && value > 0 && (
@@ -483,7 +477,11 @@ export function PolarBarChart({ data, config }: Props) {
 							dominantBaseline="middle"
 							style={{ pointerEvents: "none" }}
 						>
-							{formatNum(value)}
+							{formatValue(
+								value,
+								key,
+								config?.styling?.formatRules ?? [],
+							)}
 						</text>
 					)}
 					{minMaxMarker}
@@ -494,7 +492,13 @@ export function PolarBarChart({ data, config }: Props) {
 
 	// ── Tooltip data ──────────────────────────────────────────────────────────
 	const hoveredRow = hoveredCat !== null ? aggregated[hoveredCat] : null;
-	const hoveredLabel = hoveredRow ? String(hoveredRow[xKey] ?? "") : "";
+	const hoveredLabel = hoveredRow
+		? formatValue(
+				hoveredRow[xKey],
+				xKey,
+				config?.styling?.formatRules ?? [],
+			)
+		: "";
 
 	return (
 		<div className="flex h-full w-full flex-col items-center">
@@ -536,7 +540,11 @@ export function PolarBarChart({ data, config }: Props) {
 							textAnchor="start"
 							dominantBaseline="hanging"
 						>
-							{formatNum(effectiveMax * lvl)}
+							{formatValue(
+								effectiveMax * lvl,
+								yKeys[0],
+								config?.styling?.formatRules ?? [],
+							)}
 						</text>
 					);
 				})}
@@ -563,8 +571,15 @@ export function PolarBarChart({ data, config }: Props) {
 								: pos.x < CX
 									? "end"
 									: "start";
+						const formatted = formatValue(
+							cat,
+							xKey,
+							config?.styling?.formatRules ?? [],
+						);
 						const display =
-							cat.length > 14 ? cat.slice(0, 12) + "…" : cat;
+							formatted.length > 14
+								? formatted.slice(0, 12) + "…"
+								: formatted;
 						return (
 							<text
 								key={catIdx}

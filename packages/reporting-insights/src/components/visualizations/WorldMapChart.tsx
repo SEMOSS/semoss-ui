@@ -7,9 +7,11 @@ import {
 	Marker,
 } from "react-simple-maps";
 import worldGeoData from "world-atlas/countries-110m.json";
+import { formatValue } from "@/lib/formatValue";
 import {
 	type ColorPalette as ColorPaletteType,
 	DEFAULT_WORLDMAP_STYLING,
+	type FormatRule,
 	type VisualizationConfig,
 } from "@/types/dashboard";
 
@@ -163,9 +165,15 @@ interface WorldMapChartProps {
 	config?: VisualizationConfig;
 	/** Optional explicit palette override (otherwise reads `config.styling.colorPalette`). */
 	palette?: string[];
+	formatRules?: FormatRule[];
 }
 
-export function WorldMapChart({ data, config, palette }: WorldMapChartProps) {
+export function WorldMapChart({
+	data,
+	config,
+	palette,
+	formatRules = [],
+}: WorldMapChartProps) {
 	const labelKey = config?.label;
 	const latKey = config?.latitudeKey;
 	const lonKey = config?.longitudeKey;
@@ -373,8 +381,19 @@ export function WorldMapChart({ data, config, palette }: WorldMapChartProps) {
 						<div className="text-slate-700">
 							Coordinates:{" "}
 							<span className="font-medium tabular-nums">
-								({hovered.point.latitude.toFixed(3)},{" "}
-								{hovered.point.longitude.toFixed(3)})
+								(
+								{formatValue(
+									hovered.point.latitude,
+									latKey ?? "",
+									formatRules ?? [],
+								)}
+								,{" "}
+								{formatValue(
+									hovered.point.longitude,
+									lonKey ?? "",
+									formatRules ?? [],
+								)}
+								)
 							</span>
 						</div>
 						{sizeKey && hovered.point.sizeValue !== undefined && (
@@ -383,11 +402,11 @@ export function WorldMapChart({ data, config, palette }: WorldMapChartProps) {
 								{config?.columnAggregations?.[sizeKey] || "sum"}
 								):{" "}
 								<span className="font-medium tabular-nums">
-									{Number(
+									{formatValue(
 										hovered.point.sizeValue,
-									).toLocaleString(undefined, {
-										maximumFractionDigits: 2,
-									})}
+										sizeKey!,
+										formatRules ?? [],
+									)}
 								</span>
 							</div>
 						)}
@@ -395,7 +414,11 @@ export function WorldMapChart({ data, config, palette }: WorldMapChartProps) {
 							<div className="text-slate-700">
 								{colorKey}:{" "}
 								<span className="font-medium">
-									{hovered.point.colorCategory}
+									{formatValue(
+										hovered.point.colorCategory,
+										colorKey,
+										formatRules ?? [],
+									)}
 								</span>
 							</div>
 						)}
@@ -408,18 +431,13 @@ export function WorldMapChart({ data, config, palette }: WorldMapChartProps) {
 								>
 									{column} ({aggregation}):{" "}
 									<span className="font-medium tabular-nums">
-										{typeof hovered.point.tooltipValues![
-											column
-										] === "number"
-											? hovered.point.tooltipValues![
-													column
-												].toLocaleString(undefined, {
-													maximumFractionDigits: 2,
-												})
-											: String(
-													hovered.point
-														.tooltipValues![column],
-												)}
+										{formatValue(
+											hovered.point.tooltipValues![
+												column
+											],
+											column,
+											formatRules ?? [],
+										)}
 									</span>
 								</div>
 							) : null,

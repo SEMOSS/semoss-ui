@@ -173,29 +173,39 @@ export function ChartTooltip({
 				</p>
 			)}
 			<div className="space-y-1">
-				{payload.map((entry) => (
-					<div
-						key={entry.dataKey}
-						className="flex items-center justify-between gap-4"
-					>
-						<div className="flex items-center gap-1.5">
-							<span
-								className="h-2 w-2 flex-shrink-0 rounded-full"
-								style={{ background: entry.color }}
-							/>
-							<span className="text-slate-500 text-xs">
-								{entry.dataKey}
+				{payload.map((entry) => {
+					// Combo chart aliases shared columns as "col__combo_bar" / "col__combo_line".
+					// Strip the suffix so format rules keyed by raw column name still apply.
+					const rawKey = entry.dataKey.replace(
+						/__combo_(?:bar|line)$/,
+						"",
+					);
+					const displayName =
+						(entry as Record<string, unknown>).name ?? rawKey;
+					return (
+						<div
+							key={entry.dataKey}
+							className="flex items-center justify-between gap-4"
+						>
+							<div className="flex items-center gap-1.5">
+								<span
+									className="h-2 w-2 flex-shrink-0 rounded-full"
+									style={{ background: entry.color }}
+								/>
+								<span className="text-slate-500 text-xs">
+									{String(displayName)}
+								</span>
+							</div>
+							<span className="font-semibold text-slate-900 text-xs tabular-nums">
+								{formatValue(
+									entry.value,
+									rawKey,
+									config?.styling?.formatRules,
+								)}
 							</span>
 						</div>
-						<span className="font-semibold text-slate-900 text-xs tabular-nums">
-							{formatValue(
-								entry.value,
-								entry.dataKey,
-								config?.styling?.formatRules,
-							)}
-						</span>
-					</div>
-				))}
+					);
+				})}
 			</div>
 			{activeTooltips.length > 0 && (
 				<div className="mt-2 space-y-1 border-slate-100 border-t pt-2">

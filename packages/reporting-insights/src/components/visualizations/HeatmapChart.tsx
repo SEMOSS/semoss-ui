@@ -1,9 +1,11 @@
 import { useMemo } from "react";
-import type { VisualizationConfig } from "@/types/dashboard";
+import { formatValue } from "@/lib/formatValue";
+import type { FormatRule, VisualizationConfig } from "@/types/dashboard";
 
 interface Props {
 	data: any[];
 	config?: VisualizationConfig;
+	formatRules?: FormatRule[];
 }
 
 /** Linearly interpolate between two hex colors. t in [0,1]. */
@@ -42,7 +44,7 @@ const LABEL_W = 90;
 const LABEL_H = 52;
 const CELL_H = 36;
 
-export function HeatmapChart({ data, config = {} }: Props) {
+export function HeatmapChart({ data, config = {}, formatRules = [] }: Props) {
 	const xKey = config.xKey ?? "";
 	const yKey = config.heatmapYKey ?? "";
 	const valueKey = config.yKeys?.[0] ?? "";
@@ -107,13 +109,6 @@ export function HeatmapChart({ data, config = {} }: Props) {
 		return lerpColor(minColor, maxColor, t);
 	};
 
-	const fmt = (v: number) =>
-		Math.abs(v) >= 1000
-			? `${(v / 1000).toFixed(1)}k`
-			: Number.isInteger(v)
-				? String(v)
-				: v.toFixed(1);
-
 	return (
 		<div className="flex h-full w-full flex-col gap-2 overflow-auto p-1.5">
 			{/* Grid */}
@@ -138,7 +133,7 @@ export function HeatmapChart({ data, config = {} }: Props) {
 							className="break-words text-center font-semibold text-[10px] text-slate-500 leading-tight"
 							style={{ maxWidth: 56 }}
 						>
-							{x}
+							{formatValue(x, xKey, formatRules ?? [])}
 						</span>
 					</div>
 				))}
@@ -169,7 +164,7 @@ export function HeatmapChart({ data, config = {} }: Props) {
 									key={`${x}-${y}`}
 									title={
 										val !== undefined
-											? `${xKey}: ${x}\n${yKey}: ${y}\n${valueKey}: ${val}`
+											? `${xKey}: ${x}\n${yKey}: ${y}\n${valueKey}: ${formatValue(val, valueKey, formatRules ?? [])}`
 											: `No data`
 									}
 									className="flex cursor-default items-center justify-center transition-opacity hover:opacity-75"
@@ -180,7 +175,11 @@ export function HeatmapChart({ data, config = {} }: Props) {
 											className="select-none font-bold text-[9px]"
 											style={{ color: contrastText(bg) }}
 										>
-											{fmt(val)}
+											{formatValue(
+												val,
+												valueKey,
+												formatRules ?? [],
+											)}
 										</span>
 									)}
 								</div>
@@ -193,7 +192,7 @@ export function HeatmapChart({ data, config = {} }: Props) {
 			{/* Color scale legend */}
 			<div className="flex flex-shrink-0 items-center gap-2 px-1">
 				<span className="text-[10px] text-slate-400 tabular-nums">
-					{fmt(minVal)}
+					{formatValue(minVal, valueKey, formatRules ?? [])}
 				</span>
 				<div
 					className="h-2.5 flex-1 rounded-full border border-slate-200"
@@ -202,7 +201,7 @@ export function HeatmapChart({ data, config = {} }: Props) {
 					}}
 				/>
 				<span className="text-[10px] text-slate-400 tabular-nums">
-					{fmt(maxVal)}
+					{formatValue(maxVal, valueKey, formatRules ?? [])}
 				</span>
 			</div>
 		</div>

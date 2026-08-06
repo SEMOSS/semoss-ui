@@ -6,10 +6,12 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { formatValue } from "@/lib/formatValue";
 import {
 	type ColorPalette as ColorPaletteType,
 	type ColorRule,
 	DEFAULT_BUBBLE_STYLING,
+	type FormatRule,
 	type VisualizationConfig,
 } from "@/types/dashboard";
 
@@ -191,6 +193,7 @@ interface BubbleChartProps {
 	config?: VisualizationConfig;
 	/** Optional explicit palette override (otherwise reads `config.styling.colorPalette`). */
 	palette?: string[];
+	formatRules?: FormatRule[];
 }
 
 interface PlacedBubble extends BubblePoint {
@@ -204,11 +207,6 @@ interface HoveredBubble {
 	point: PlacedBubble;
 	x: number;
 	y: number;
-}
-
-function formatNumber(n: number): string {
-	if (Number.isInteger(n)) return n.toLocaleString();
-	return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
 /** Truncate `text` with a trailing ellipsis when it doesn't fit within `maxWidthPx`.
@@ -232,7 +230,12 @@ function tooltipStyle(x: number, y: number): CSSProperties {
 	return { left: x + 12, top: y + 12 };
 }
 
-export function BubbleChart({ data, config, palette }: BubbleChartProps) {
+export function BubbleChart({
+	data,
+	config,
+	palette,
+	formatRules = [],
+}: BubbleChartProps) {
 	const labelKey = config?.xKey;
 	const sizeKey = config?.yKeys?.[0];
 	const tooltipEntries: Array<{ column: string; aggregation: string }> =
@@ -552,9 +555,17 @@ export function BubbleChart({ data, config, palette }: BubbleChartProps) {
 									// 12px total horizontal padding inside the bubble.
 									const maxWidth = p.r * 2 - 12;
 									if (maxWidth <= 0) return null;
-									const valueText = formatNumber(p.sizeValue);
+									const valueText = formatValue(
+										p.sizeValue,
+										sizeKey!,
+										formatRules ?? [],
+									);
 									const truncatedName = truncateToFit(
-										p.label,
+										formatValue(
+											p.label,
+											labelKey ?? "",
+											formatRules ?? [],
+										),
 										maxWidth,
 										nameFontSize,
 									);
@@ -613,7 +624,11 @@ export function BubbleChart({ data, config, palette }: BubbleChartProps) {
 								style={{ background: hovered.point.color }}
 							/>
 							<span className="truncate">
-								{hovered.point.label}
+								{formatValue(
+									hovered.point.label,
+									labelKey ?? "",
+									formatRules ?? [],
+								)}
 							</span>
 						</div>
 						<div className="flex items-center justify-between gap-3 text-slate-600">
@@ -621,7 +636,11 @@ export function BubbleChart({ data, config, palette }: BubbleChartProps) {
 								{sizeAgg} of {sizeKey}:
 							</span>
 							<span className="font-medium text-slate-700 tabular-nums">
-								{formatNumber(hovered.point.sizeValue)}
+								{formatValue(
+									hovered.point.sizeValue,
+									sizeKey!,
+									formatRules ?? [],
+								)}
 							</span>
 						</div>
 						{tooltipEntries.map(({ column, aggregation }) =>
@@ -635,19 +654,13 @@ export function BubbleChart({ data, config, palette }: BubbleChartProps) {
 										{aggregation} of {column}:
 									</span>
 									<span className="font-medium text-slate-700 tabular-nums">
-										{typeof hovered.point.tooltipValues![
-											column
-										] === "number"
-											? formatNumber(
-													hovered.point
-														.tooltipValues![
-														column
-													] as number,
-												)
-											: String(
-													hovered.point
-														.tooltipValues![column],
-												)}
+										{formatValue(
+											hovered.point.tooltipValues![
+												column
+											],
+											column,
+											formatRules ?? [],
+										)}
 									</span>
 								</div>
 							) : null,
@@ -668,7 +681,11 @@ export function BubbleChart({ data, config, palette }: BubbleChartProps) {
 								style={{ background: p.color }}
 							/>
 							<span className="max-w-[140px] truncate">
-								{p.label}
+								{formatValue(
+									p.label,
+									labelKey ?? "",
+									formatRules ?? [],
+								)}
 							</span>
 						</div>
 					))}

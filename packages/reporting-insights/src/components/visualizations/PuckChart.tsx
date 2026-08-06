@@ -6,10 +6,12 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { formatValue } from "@/lib/formatValue";
 import {
 	type ColorPalette as ColorPaletteType,
 	type ColorRule,
 	DEFAULT_PUCK_STYLING,
+	type FormatRule,
 	type VisualizationConfig,
 } from "@/types/dashboard";
 
@@ -305,16 +307,12 @@ function truncateToFit(text: string, maxPx: number, fontSize: number): string {
 			: text.slice(0, max - 1) + "…";
 }
 
-function formatNumber(n: number): string {
-	if (Number.isInteger(n)) return n.toLocaleString();
-	return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
-}
-
 // ── Component ─────────────────────────────────────────────────────────────────
 interface PuckChartProps {
 	data: Record<string, unknown>[];
 	config?: VisualizationConfig;
 	palette?: string[];
+	formatRules?: FormatRule[];
 }
 
 interface HoveredNode {
@@ -323,7 +321,12 @@ interface HoveredNode {
 	y: number;
 }
 
-export function PuckChart({ data, config, palette }: PuckChartProps) {
+export function PuckChart({
+	data,
+	config,
+	palette,
+	formatRules = [],
+}: PuckChartProps) {
 	const groupCols = config?.puckGroups ?? [];
 	const valueCol = config?.yKeys?.[0] ?? "";
 	const aggType =
@@ -461,12 +464,20 @@ export function PuckChart({ data, config, palette }: PuckChartProps) {
 										const maxW = node.r * 2 - 12;
 										if (maxW <= 0) return null;
 										const tName = truncateToFit(
-											node.name,
+											formatValue(
+												node.name,
+												node.groupCol,
+												formatRules ?? [],
+											),
 											maxW,
 											nFS,
 										);
 										const tVal = truncateToFit(
-											formatNumber(node.value),
+											formatValue(
+												node.value,
+												valueCol,
+												formatRules ?? [],
+											),
 											maxW,
 											vFS,
 										);
@@ -535,7 +546,11 @@ export function PuckChart({ data, config, palette }: PuckChartProps) {
 								style={{ background: hovered.node.color }}
 							/>
 							<span className="truncate">
-								{hovered.node.name}
+								{formatValue(
+									hovered.node.name,
+									hovered.node.groupCol,
+									formatRules ?? [],
+								)}
 							</span>
 						</div>
 						{hovered.node.depth > 1 && (
@@ -548,7 +563,11 @@ export function PuckChart({ data, config, palette }: PuckChartProps) {
 								{aggType} of {valueCol}:
 							</span>
 							<span className="font-medium text-slate-700 tabular-nums">
-								{formatNumber(hovered.node.value)}
+								{formatValue(
+									hovered.node.value,
+									valueCol,
+									formatRules ?? [],
+								)}
 							</span>
 						</div>
 					</div>

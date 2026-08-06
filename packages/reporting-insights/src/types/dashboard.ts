@@ -12,6 +12,8 @@ export interface ConditionalOptionBranch {
 }
 
 export interface Parameter {
+	/** Text inputs only: hint shown grayed-out in the empty input at runtime. */
+	placeholder?: string;
 	id: string;
 	name: string; // Used in query as {{name}}
 	label: string; // Human-readable display name
@@ -102,20 +104,6 @@ export interface VisualizationConfig {
 	kpiAggregation?: "sum" | "avg" | "count" | "max" | "min" | "last";
 	/** Per-column aggregations for KPI metrics (column name → aggregation type) */
 	columnAggregations?: Record<string, string>;
-	/** KPI: how to format the displayed number */
-	kpiFormat?: "auto" | "number" | "currency" | "percent";
-	/** KPI: optional prefix added before each value (e.g. "$") */
-	kpiPrefix?: string;
-	/** KPI: optional suffix added after each value (e.g. "%") */
-	kpiSuffix?: string;
-	/** KPI: number of decimal places to round to. 'auto' = up to 2, trimmed. */
-	kpiDecimals?: number | "auto";
-	/** KPI: 'compact' renders metric notation (1.2K, 3.4M); 'standard' spells it out. */
-	kpiNotation?: "standard" | "compact";
-	/** KPI: thousands grouping delimiter ('none' disables grouping). */
-	kpiThousandsSep?: "," | "." | " " | "none";
-	/** KPI: decimal delimiter. */
-	kpiDecimalSep?: "." | ",";
 	/**
 	 * Column type map populated from SEMOSS headerInfo at test-query time.
 	 * Values mirror the SEMOSS `type` field: "NUMBER", "STRING", "DATE", etc.
@@ -1169,6 +1157,8 @@ export interface Dashboard {
 	 * query model have none, and visualizations fall back to their embedded query.
 	 */
 	queries?: DashboardQuery[];
+	/** Custom color palette templates shared across all visualization panels in this dashboard. */
+	customColorPalettes?: ColorPalette[];
 	/** Current user's SEMOSS role on the backing project (OWNER/EDIT/READ_ONLY/…). */
 	permission?: string;
 	sheets: Sheet[];

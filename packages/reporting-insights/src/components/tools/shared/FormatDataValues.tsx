@@ -175,6 +175,7 @@ function makeDraft(col: string, type: FormatRuleType): FormatRule {
 interface DimensionSelectProps {
 	columns: string[];
 	columnTypes: Record<string, FormatRuleType>;
+	columnLabels?: Record<string, string>;
 	value: string;
 	onChange: (col: string, type: FormatRuleType) => void;
 }
@@ -182,6 +183,7 @@ interface DimensionSelectProps {
 function DimensionSelect({
 	columns,
 	columnTypes,
+	columnLabels,
 	value,
 	onChange,
 }: DimensionSelectProps) {
@@ -206,7 +208,13 @@ function DimensionSelect({
 	}, []);
 
 	const filtered = search
-		? columns.filter((c) => c.toLowerCase().includes(search.toLowerCase()))
+		? columns.filter(
+				(c) =>
+					c.toLowerCase().includes(search.toLowerCase()) ||
+					(columnLabels?.[c] ?? "")
+						.toLowerCase()
+						.includes(search.toLowerCase()),
+			)
 		: columns;
 
 	const selectedType = columnTypes[value];
@@ -229,6 +237,7 @@ function DimensionSelect({
 			{/* Trigger */}
 			<div
 				role="combobox"
+				tabIndex={0}
 				aria-expanded={open}
 				onClick={openList}
 				className="flex w-full cursor-pointer items-center gap-2 rounded border border-stone-200 bg-white px-3 py-2 text-sm focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-500/20 hover:border-stone-300"
@@ -255,7 +264,9 @@ function DimensionSelect({
 					<span
 						className={`flex-1 truncate ${value ? "text-stone-800" : "text-stone-400"}`}
 					>
-						{value || "Select dimension…"}
+						{value
+							? (columnLabels?.[value] ?? value)
+							: "Select dimension…"}
 					</span>
 				)}
 				{/* Type badge for selected column (when closed) */}
@@ -297,7 +308,9 @@ function DimensionSelect({
 											: "text-stone-700 hover:bg-stone-50"
 									}`}
 								>
-									<span className="truncate">{col}</span>
+									<span className="truncate">
+										{columnLabels?.[col] ?? col}
+									</span>
 									<span
 										className={`inline-flex shrink-0 items-center rounded px-1.5 py-0.5 font-bold text-xs ${b.bg} ${b.text}`}
 									>
@@ -315,6 +328,7 @@ function DimensionSelect({
 
 interface FormatDataValuesProps {
 	columns: string[];
+	columnLabels?: Record<string, string>;
 	rows?: Array<Record<string, unknown>>;
 	value: FormatRule[];
 	onChange: (rules: FormatRule[]) => void;
@@ -323,6 +337,7 @@ interface FormatDataValuesProps {
 
 export function FormatDataValues({
 	columns,
+	columnLabels,
 	rows = [],
 	value,
 	onChange,
@@ -406,6 +421,7 @@ export function FormatDataValues({
 						<DimensionSelect
 							columns={columns}
 							columnTypes={columnTypes}
+							columnLabels={columnLabels}
 							value={draft.column}
 							onChange={(col, type) => upd({ column: col, type })}
 						/>
@@ -533,6 +549,7 @@ export function FormatDataValues({
 															10,
 															parseInt(
 																e.target.value,
+																10,
 															) || 0,
 														),
 													),

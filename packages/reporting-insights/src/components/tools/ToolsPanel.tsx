@@ -13,6 +13,7 @@ import {
 	buildDefaultYAxisTitle,
 } from "@/components/visualizations/shared/chartShared";
 import type {
+	ColorPalette as ColorPaletteType,
 	ColorRule,
 	VisualizationStyling,
 	VisualizationType,
@@ -33,7 +34,7 @@ import { PolarZoom } from "./polarbar/PolarZoom";
 import { AxisSettings } from "./shared/AxisSettings";
 import { ChartTitle } from "./shared/ChartTitle";
 import { ColorByValue } from "./shared/ColorByValue";
-import { ColorPalette } from "./shared/ColorPalette";
+import { ColorPalette, type ColorPalettePatch } from "./shared/ColorPalette";
 import { FilterVisualization } from "./shared/FilterVisualization";
 import { FormatDataValues } from "./shared/FormatDataValues";
 import { ShowLabelsToggle } from "./shared/ShowLabelsToggle";
@@ -112,6 +113,10 @@ interface ToolsPanelProps {
 	 * every column in the query result. Falls back to `columns` when not provided.
 	 */
 	sortableColumns?: string[];
+	/** Dashboard-level custom palettes — shared across all visualization panels. */
+	customColorPalettes?: ColorPaletteType[];
+	/** Fires when the user creates/edits/deletes a custom palette template. */
+	onCustomColorPalettesChange?: (palettes: ColorPaletteType[]) => void;
 	onChange: (styling: VisualizationStyling) => void;
 }
 
@@ -126,6 +131,8 @@ export function ToolsPanel({
 	yKeys = [],
 	columnAggregations = {},
 	sortableColumns,
+	customColorPalettes = [],
+	onCustomColorPalettesChange,
 	onChange,
 }: ToolsPanelProps) {
 	const [searchQuery, setSearchQuery] = useState("");
@@ -290,8 +297,23 @@ export function ToolsPanel({
 		columns,
 	]);
 
+	const formatToolColumnLabels = useMemo(() => {
+		if (visualizationType === "combo")
+			return comboColorColumns?.labels ?? {};
+		return yKeyColumnLabels;
+	}, [visualizationType, comboColorColumns?.labels, yKeyColumnLabels]);
+
 	const updateStyling = (updates: Partial<VisualizationStyling>) => {
 		onChange({ ...styling, ...updates });
+	};
+
+	const handleColorPalettePatch = (patch: ColorPalettePatch) => {
+		if (patch.customColorPalettes !== undefined) {
+			onCustomColorPalettesChange?.(patch.customColorPalettes);
+		}
+		if ("colorPalette" in patch) {
+			updateStyling({ colorPalette: patch.colorPalette });
+		}
 	};
 
 	const updateTableStyling = (
@@ -656,7 +678,8 @@ export function ToolsPanel({
 	const formatTool = (
 		<ToolAccordion title="Format Data Values">
 			<FormatDataValues
-				columns={columns}
+				columns={sortableColumns?.length ? sortableColumns : columns}
+				columnLabels={formatToolColumnLabels}
 				rows={rows}
 				value={styling.formatRules || []}
 				onChange={(formatRules) => updateStyling({ formatRules })}
@@ -752,8 +775,8 @@ export function ToolsPanel({
 			<ToolAccordion title="Color Palette">
 				<ColorPalette
 					value={styling.colorPalette}
-					customPalettes={styling.customColorPalettes || []}
-					onChange={(patch) => updateStyling(patch)}
+					customPalettes={customColorPalettes}
+					onChange={handleColorPalettePatch}
 				/>
 			</ToolAccordion>
 
@@ -897,8 +920,8 @@ export function ToolsPanel({
 			<ToolAccordion title="Color Palette">
 				<ColorPalette
 					value={styling.colorPalette}
-					customPalettes={styling.customColorPalettes || []}
-					onChange={(patch) => updateStyling(patch)}
+					customPalettes={customColorPalettes}
+					onChange={handleColorPalettePatch}
 				/>
 			</ToolAccordion>
 
@@ -978,8 +1001,8 @@ export function ToolsPanel({
 			<ToolAccordion title="Color Palette">
 				<ColorPalette
 					value={styling.colorPalette}
-					customPalettes={styling.customColorPalettes || []}
-					onChange={(patch) => updateStyling(patch)}
+					customPalettes={customColorPalettes}
+					onChange={handleColorPalettePatch}
 				/>
 			</ToolAccordion>
 
@@ -1035,8 +1058,8 @@ export function ToolsPanel({
 			<ToolAccordion title="Color Palette">
 				<ColorPalette
 					value={styling.colorPalette}
-					customPalettes={styling.customColorPalettes || []}
-					onChange={(patch) => updateStyling(patch)}
+					customPalettes={customColorPalettes}
+					onChange={handleColorPalettePatch}
 				/>
 			</ToolAccordion>
 
@@ -1100,8 +1123,8 @@ export function ToolsPanel({
 			<ToolAccordion title="Color Palette">
 				<ColorPalette
 					value={styling.colorPalette}
-					customPalettes={styling.customColorPalettes || []}
-					onChange={(patch) => updateStyling(patch)}
+					customPalettes={customColorPalettes}
+					onChange={handleColorPalettePatch}
 				/>
 			</ToolAccordion>
 
@@ -1403,8 +1426,8 @@ export function ToolsPanel({
 			<ToolAccordion title="Color Palette">
 				<ColorPalette
 					value={styling.colorPalette}
-					customPalettes={styling.customColorPalettes || []}
-					onChange={(patch) => updateStyling(patch)}
+					customPalettes={customColorPalettes}
+					onChange={handleColorPalettePatch}
 				/>
 			</ToolAccordion>
 
@@ -1547,8 +1570,8 @@ export function ToolsPanel({
 			<ToolAccordion title="Color Palette">
 				<ColorPalette
 					value={styling.colorPalette}
-					customPalettes={styling.customColorPalettes || []}
-					onChange={(patch) => updateStyling(patch)}
+					customPalettes={customColorPalettes}
+					onChange={handleColorPalettePatch}
 				/>
 			</ToolAccordion>
 			<ToolAccordion title="Color By Value">
@@ -1766,8 +1789,8 @@ export function ToolsPanel({
 			<ToolAccordion title="Color Palette">
 				<ColorPalette
 					value={styling.colorPalette}
-					customPalettes={styling.customColorPalettes || []}
-					onChange={(patch) => updateStyling(patch)}
+					customPalettes={customColorPalettes}
+					onChange={handleColorPalettePatch}
 				/>
 			</ToolAccordion>
 
@@ -2170,8 +2193,8 @@ export function ToolsPanel({
 			<ToolAccordion title="Color Palette">
 				<ColorPalette
 					value={styling.colorPalette}
-					customPalettes={styling.customColorPalettes || []}
-					onChange={(patch) => updateStyling(patch)}
+					customPalettes={customColorPalettes}
+					onChange={handleColorPalettePatch}
 				/>
 			</ToolAccordion>
 			<ToolAccordion title="Flip Axis">
@@ -2377,8 +2400,8 @@ export function ToolsPanel({
 			<ToolAccordion title="Color Palette">
 				<ColorPalette
 					value={styling.colorPalette}
-					customPalettes={styling.customColorPalettes || []}
-					onChange={(patch) => updateStyling(patch)}
+					customPalettes={customColorPalettes}
+					onChange={handleColorPalettePatch}
 				/>
 			</ToolAccordion>
 			<ToolAccordion title="Flip Axis">
@@ -2554,8 +2577,8 @@ export function ToolsPanel({
 			<ToolAccordion title="Color Palette">
 				<ColorPalette
 					value={styling.colorPalette}
-					customPalettes={styling.customColorPalettes || []}
-					onChange={(patch) => updateStyling(patch)}
+					customPalettes={customColorPalettes}
+					onChange={handleColorPalettePatch}
 				/>
 			</ToolAccordion>
 			<ToolAccordion title="Display Total">
@@ -2774,8 +2797,8 @@ export function ToolsPanel({
 			<ToolAccordion title="Color Palette">
 				<ColorPalette
 					value={styling.colorPalette}
-					customPalettes={styling.customColorPalettes || []}
-					onChange={(patch) => updateStyling(patch)}
+					customPalettes={customColorPalettes}
+					onChange={handleColorPalettePatch}
 				/>
 			</ToolAccordion>
 			<ToolAccordion title="Display Total">
@@ -2953,8 +2976,8 @@ export function ToolsPanel({
 			<ToolAccordion title="Color Palette">
 				<ColorPalette
 					value={styling.colorPalette}
-					customPalettes={styling.customColorPalettes || []}
-					onChange={(patch) => updateStyling(patch)}
+					customPalettes={customColorPalettes}
+					onChange={handleColorPalettePatch}
 				/>
 			</ToolAccordion>
 			<ToolAccordion title="Donut">
@@ -3039,8 +3062,8 @@ export function ToolsPanel({
 			<ToolAccordion title="Color Palette">
 				<ColorPalette
 					value={styling.colorPalette}
-					customPalettes={styling.customColorPalettes || []}
-					onChange={(patch) => updateStyling(patch)}
+					customPalettes={customColorPalettes}
+					onChange={handleColorPalettePatch}
 				/>
 			</ToolAccordion>
 			<ToolAccordion title="Flip Axis">

@@ -28,7 +28,12 @@ import {
 	resolveQuery,
 } from "@/lib/resolveQuery";
 import { useTabColors } from "@/lib/tabColors";
-import type { Dashboard, DashboardQuery, Sheet } from "@/types/dashboard";
+import type {
+	Dashboard,
+	DashboardQuery,
+	Parameter,
+	Sheet,
+} from "@/types/dashboard";
 import {
 	buildFlexModel,
 	isViewOnlyLayoutAction,
@@ -256,13 +261,17 @@ export function DashboardPage() {
 
 				// Parameter state is keyed by the SHARED query id (falling back to the viz
 				// id for unbound vizs), so every chart on a query shares one form + one run.
+				// Required text params start blank so the ParamSheet forces the user
+				// to type a value before executing.  All other params use their stored default.
+				const seedParam = (p: Parameter): string =>
+					p.required && (!p.inputType || p.inputType === "text")
+						? ""
+						: resolveParamDefault(p);
+
 				const initial: Record<string, Record<string, string>> = {};
 				for (const q of migratedQueries) {
 					initial[q.id] = Object.fromEntries(
-						q.parameters.map((p) => [
-							p.name,
-							resolveParamDefault(p),
-						]),
+						q.parameters.map((p) => [p.name, seedParam(p)]),
 					);
 				}
 				for (const viz of migratedSheets.flatMap(
@@ -270,10 +279,7 @@ export function DashboardPage() {
 				)) {
 					if (!viz.queryId) {
 						initial[viz.id] = Object.fromEntries(
-							viz.parameters.map((p) => [
-								p.name,
-								resolveParamDefault(p),
-							]),
+							viz.parameters.map((p) => [p.name, seedParam(p)]),
 						);
 					}
 				}
@@ -331,6 +337,7 @@ export function DashboardPage() {
 				updateDashboard(dashboard.id, {
 					sheets: newSheets,
 					queries: dashboard.queries,
+					customColorPalettes: dashboard.customColorPalettes,
 				});
 			}, 400);
 			// eslint-disable-next-line react-hooks/exhaustive-deps

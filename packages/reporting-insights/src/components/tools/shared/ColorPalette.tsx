@@ -8,7 +8,6 @@ import {
 	ArrowLeft,
 	Check,
 	GripVertical,
-	PaintBucket,
 	Pencil,
 	Trash2,
 	X,
@@ -294,7 +293,6 @@ export function ColorPalette({
 	const [paletteName, setPaletteName] = useState("");
 	const [colors, setColors] = useState<string[]>([]);
 	const [currentColor, setCurrentColor] = useState("#000000");
-	const [showColorPicker, setShowColorPicker] = useState(false);
 	const [editingColorIndex, setEditingColorIndex] = useState(-1);
 	const [bulkInput, setBulkInput] = useState("");
 	const [bulkStep, setBulkStep] = useState<"" | "input" | "confirm">("");
@@ -323,7 +321,6 @@ export function ColorPalette({
 		setColors([]);
 		setEditingPalette(null);
 		setEditingColorIndex(-1);
-		setShowColorPicker(false);
 		setBulkInput("");
 		setBulkStep("");
 		setPendingColors([]);
@@ -389,13 +386,6 @@ export function ColorPalette({
 			});
 			handleClose();
 		}
-	};
-
-	const addColor = () => {
-		if (!colors.includes(currentColor)) {
-			setColors([...colors, currentColor]);
-		}
-		setShowColorPicker(false);
 	};
 
 	const editColor = (index: number) => {
@@ -464,78 +454,22 @@ export function ColorPalette({
 					/>
 				</div>
 
-				{/* View A — normal single-color add path */}
+				{/* View A - Color view + add button section */}
 				{bulkStep === "" && (
-					<>
-						<div>
-							<div className="mb-1.5 flex items-center justify-between">
-								<label className="block font-semibold text-stone-600 text-xs">
-									Colors
-								</label>
-								<button
-									type="button"
-									onClick={() => {
-										setBulkStep("input");
-										setShowColorPicker(false);
-									}}
-									className="font-medium text-indigo-600 text-xs hover:underline"
-								>
-									+ Add multiple
-								</button>
-							</div>
-							<div className="flex items-center gap-2">
-								<Input
-									type="text"
-									value={currentColor}
-									onChange={(e) => {
-										setCurrentColor(e.target.value);
-										setShowColorPicker(true);
-									}}
-									placeholder="#000000"
-									className="flex-1 rounded border border-stone-200 px-3 py-2 font-mono text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-								/>
-								<button
-									type="button"
-									onClick={() =>
-										setShowColorPicker(!showColorPicker)
-									}
-									className="rounded border border-stone-200 p-2 transition-colors hover:bg-stone-50"
-								>
-									<PaintBucket className="h-5 w-5 text-stone-600" />
-								</button>
-							</div>
+					<div>
+						<div className="mb-1.5 flex items-center justify-between">
+							<label className="block font-semibold text-stone-600 text-xs">
+								Colors
+							</label>
+							<button
+								type="button"
+								onClick={() => setBulkStep("input")}
+								className="font-medium text-indigo-600 text-xs hover:underline"
+							>
+								+ Add
+							</button>
 						</div>
-						{showColorPicker && (
-							<div className="rounded-lg border border-stone-200 bg-white p-3 shadow-sm">
-								<Input
-									type="color"
-									value={currentColor}
-									onChange={(e) =>
-										setCurrentColor(e.target.value)
-									}
-									className="h-32 w-full cursor-pointer rounded"
-								/>
-								<div className="mt-3 flex justify-end gap-2">
-									<button
-										type="button"
-										onClick={() =>
-											setShowColorPicker(false)
-										}
-										className="p-1 text-stone-400 hover:text-stone-600"
-									>
-										<X className="h-4 w-4" />
-									</button>
-									<button
-										type="button"
-										onClick={addColor}
-										className="p-1 text-indigo-600 hover:text-indigo-700"
-									>
-										<Check className="h-4 w-4" />
-									</button>
-								</div>
-							</div>
-						)}
-					</>
+					</div>
 				)}
 
 				{/* View B — bulk textarea input */}

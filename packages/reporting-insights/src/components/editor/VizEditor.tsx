@@ -105,6 +105,15 @@ export interface VizLike {
 		name: string;
 		label: string;
 		defaultValue: string;
+		placeholder?: string;
+		required?: boolean;
+		inputType?: string;
+		useCurrentDate?: boolean;
+		options?: string[];
+		optionsQuery?: string;
+		optionsDatabaseId?: string;
+		conditionalOn?: string;
+		conditionalBranches?: any[];
 	}>;
 	config?: any;
 	/** When true, the visualization's tab header is flagged as PHI/PII (red). */
@@ -200,6 +209,11 @@ export interface VizEditorProps {
 	loadAfterParams?: boolean;
 	/** Toggle `loadAfterParams` on the bound query. */
 	onToggleLoadAfterParams?: () => void;
+	/** Dashboard-level custom color palette templates, shared across all viz panels. */
+	customColorPalettes?: import("@/types/dashboard").ColorPalette[];
+	onCustomColorPalettesChange?: (
+		palettes: import("@/types/dashboard").ColorPalette[],
+	) => void;
 	/** Show the PHI/PII shield toggle in the header. Default true; the app hides it (the navigator owns it). */
 	showPhiToggle?: boolean;
 	/** Reuse this viz's query as a new chart in an existing/new sheet (renders a Reuse button by the query picker). */
@@ -433,6 +447,8 @@ export function VizEditor(props: VizEditorProps) {
 		hasParamSheet = false,
 		loadAfterParams = false,
 		onToggleLoadAfterParams,
+		customColorPalettes,
+		onCustomColorPalettesChange,
 		showPhiToggle = true,
 		reuse,
 	} = props;
@@ -636,6 +652,10 @@ export function VizEditor(props: VizEditorProps) {
 						value={dropZoneData}
 						onChange={onDropZoneChange}
 						rows={previewRows}
+						customColorPalettes={customColorPalettes}
+						onCustomColorPalettesChange={
+							onCustomColorPalettesChange
+						}
 					/>
 				)}
 			</div>
@@ -665,137 +685,6 @@ export function VizEditor(props: VizEditorProps) {
 							}
 							className="py-1.5 text-xs"
 						/>
-					</div>
-				</div>
-			)}
-			{viz.visualizationType === "kpi" && (
-				<div className="flex-shrink-0 space-y-2 border-stone-200 border-t px-3 py-2.5">
-					<SubLabel>KPI Format</SubLabel>
-					<div className="grid grid-cols-3 gap-2">
-						<Select
-							value={viz.config?.kpiFormat ?? "auto"}
-							onChange={(e) =>
-								patchConfig({ kpiFormat: e.target.value })
-							}
-							className="py-1.5 text-xs"
-						>
-							{["auto", "number", "currency", "percent"].map(
-								(f) => (
-									<option key={f} value={f}>
-										{f}
-									</option>
-								),
-							)}
-						</Select>
-						<Input
-							placeholder="Prefix"
-							value={viz.config?.kpiPrefix ?? ""}
-							onChange={(e) =>
-								patchConfig({
-									kpiPrefix: e.target.value || undefined,
-								})
-							}
-							className="py-1.5 text-xs"
-						/>
-						<Input
-							placeholder="Suffix"
-							value={viz.config?.kpiSuffix ?? ""}
-							onChange={(e) =>
-								patchConfig({
-									kpiSuffix: e.target.value || undefined,
-								})
-							}
-							className="py-1.5 text-xs"
-						/>
-					</div>
-					<div className="grid grid-cols-2 gap-2">
-						<label className="flex flex-col gap-1">
-							<span className="font-medium text-[10px] text-stone-500">
-								Notation
-							</span>
-							<Select
-								value={viz.config?.kpiNotation ?? "standard"}
-								onChange={(e) =>
-									patchConfig({
-										kpiNotation: e.target.value as
-											| "standard"
-											| "compact",
-									})
-								}
-								className="py-1.5 text-xs"
-							>
-								<option value="standard">Full number</option>
-								<option value="compact">Metric (100K)</option>
-							</Select>
-						</label>
-						<label className="flex flex-col gap-1">
-							<span className="font-medium text-[10px] text-stone-500">
-								Decimal places
-							</span>
-							<Select
-								value={String(
-									viz.config?.kpiDecimals ?? "auto",
-								)}
-								onChange={(e) =>
-									patchConfig({
-										kpiDecimals:
-											e.target.value === "auto"
-												? "auto"
-												: Number(e.target.value),
-									})
-								}
-								className="py-1.5 text-xs"
-							>
-								<option value="auto">Auto</option>
-								{[0, 1, 2, 3, 4].map((d) => (
-									<option key={d} value={d}>
-										{d}
-									</option>
-								))}
-							</Select>
-						</label>
-						<label className="flex flex-col gap-1">
-							<span className="font-medium text-[10px] text-stone-500">
-								Thousands
-							</span>
-							<Select
-								value={viz.config?.kpiThousandsSep ?? ","}
-								onChange={(e) =>
-									patchConfig({
-										kpiThousandsSep: e.target.value as
-											| ","
-											| "."
-											| " "
-											| "none",
-									})
-								}
-								className="py-1.5 text-xs"
-							>
-								<option value=",">Comma (1,000)</option>
-								<option value=".">Period (1.000)</option>
-								<option value=" ">Space (1 000)</option>
-								<option value="none">None (1000)</option>
-							</Select>
-						</label>
-						<label className="flex flex-col gap-1">
-							<span className="font-medium text-[10px] text-stone-500">
-								Decimal mark
-							</span>
-							<Select
-								value={viz.config?.kpiDecimalSep ?? "."}
-								onChange={(e) =>
-									patchConfig({
-										kpiDecimalSep: e.target.value as
-											| "."
-											| ",",
-									})
-								}
-								className="py-1.5 text-xs"
-							>
-								<option value=".">Period (1.5)</option>
-								<option value=",">Comma (1,5)</option>
-							</Select>
-						</label>
 					</div>
 				</div>
 			)}
