@@ -903,8 +903,8 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 											Describe it in plain language and AI
 											will build a starter workflow.
 											<br />
-											Tip: mention specific database or AI
-											engine names for best results.
+											Tip: mention engine names or IDs for
+											best results.
 										</p>
 										<Textarea
 											value={generationPrompt}
@@ -1461,7 +1461,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 						<br />
 						<br />
 						Tip: reference specific steps by name, or mention engine
-						names for best results.
+						names or IDs for best results.
 					</p>
 					<Textarea
 						value={generationPrompt}
