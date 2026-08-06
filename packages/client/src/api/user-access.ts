@@ -3,11 +3,11 @@ import {
 	addProjectUserPermissions,
 	editEngineUserPermissions,
 	editProjectUserPermissions,
+	type Role,
 	removeEngineUserPermissions,
 	removeProjectUserPermissions,
 } from "@semoss/sdk";
 import { Env, get, post } from "@semoss/sdk/react";
-import type { Role } from "@/types";
 import {
 	addInsightUserPermissions,
 	editInsightUserPermissions,

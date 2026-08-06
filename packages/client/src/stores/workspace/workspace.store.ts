@@ -1,8 +1,8 @@
 import { makeAutoObservable } from "mobx";
+import type { Role } from "@semoss/sdk";
 import { FlexLayout } from "@semoss/shared";
 import type { AppMetadata } from "@/components/app";
 import type { RootStore, WorkspaceOptions } from "@/stores";
-import type { Role } from "@/types";
 
 export interface WorkspaceStoreInterface {
 	/**
