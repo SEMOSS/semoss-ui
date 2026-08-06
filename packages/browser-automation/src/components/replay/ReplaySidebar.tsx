@@ -35,22 +35,26 @@ export function ReplaySidebar(props: ReplaySidebarProps) {
 		>
 			<div className="min-h-0 overflow-auto">
 				<ReplayControlsPanel playback={props.playback} />
-				<SelectedTextContextsPanel
-					open={props.selectedTextContextsOpen}
-					contexts={props.selectedTextContexts}
-					onToggle={props.onToggleSelectedTextContexts}
-					onCopy={props.onCopySelectedContext}
-					onDelete={props.onDeleteSelectedContext}
-					onSave={props.onSaveSelectedContext}
-				/>
+				{props.selectedTextContexts.length > 0 && (
+					<SelectedTextContextsPanel
+						open={props.selectedTextContextsOpen}
+						contexts={props.selectedTextContexts}
+						onToggle={props.onToggleSelectedTextContexts}
+						onCopy={props.onCopySelectedContext}
+						onDelete={props.onDeleteSelectedContext}
+						onSave={props.onSaveSelectedContext}
+					/>
+				)}
 				<LoadedRecordingPanel playback={props.playback} />
-				<RecordedStepsPanel
-					open={props.recordedStepsOpen}
-					isRecording={props.isRecording}
-					steps={props.recordedSteps}
-					onToggle={props.onToggleRecordedSteps}
-					onSave={props.onSaveRecording}
-				/>
+				{props.recordedSteps.length > 0 && (
+					<RecordedStepsPanel
+						open={props.recordedStepsOpen}
+						isRecording={props.isRecording}
+						steps={props.recordedSteps}
+						onToggle={props.onToggleRecordedSteps}
+						onSave={props.onSaveRecording}
+					/>
+				)}
 			</div>
 		</aside>
 	);
