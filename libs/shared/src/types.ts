@@ -16,12 +16,15 @@ export interface Engine {
 	engine_user_permission?: number;
 	engine_group_permission?: number;
 	engine_date_created?: string;
+	engine_created_by?: string;
 	engine_date_last_edited?: string;
 	engine_cost?: string;
 	low_engine_name?: string;
-	description?: string;
 	tag?: string;
-
+	description?: string;
+	markdown?: string;
+	"data classification"?: string[];
+	"data restrictions"?: string[];
 	/** @deprecated legacy keys from MyEngines */
 	app_id?: string;
 	/** @deprecated legacy keys from MyEngines */
@@ -369,7 +372,10 @@ export interface UserAccessRequest {
 }
 
 export interface MCP {
-	/** Type of the mcp */
+	/**
+	 * Type of the mcp. Every value but ROOM is an engine or project catalog type.
+	 * ROOM is the room's own toolbox, which has no catalog entry behind it.
+	 */
 	type:
 		| "PROJECT"
 		| "STORAGE"
@@ -377,7 +383,8 @@ export interface MCP {
 		| "FUNCTION"
 		| "MODEL"
 		| "VECTOR"
-		| "GUARDRAIL";
+		| "GUARDRAIL"
+		| "ROOM";
 	/** Id of the mcp */
 	id: string;
 	/** Name of the mcp */
@@ -394,6 +401,12 @@ export interface MCP {
 export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {
 	/** Flag to indicate if this MCP comes from a workspace */
 	fromWorkspace?: boolean;
+	/**
+	 * Set by the backend on the room's own toolbox, which is derived from the tool
+	 * definitions in the room folder rather than stored in room options. Not
+	 * persisted.
+	 */
+	fromRoom?: boolean;
 };
 
 export interface Skill {

@@ -24,6 +24,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
+import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { VECTOR_CONNECTIONS } from "./vector-import.constants";
@@ -143,7 +144,7 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 	};
 
 	const renderBreadcrumbs = () => (
-		<Breadcrumb data-testid="breadcrumbs" className="mb-6">
+		<Breadcrumb data-testid="breadcrumbs">
 			<BreadcrumbList>
 				<BreadcrumbItem>
 					<BreadcrumbLink
@@ -218,7 +219,10 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 
 	return (
 		<>
-			{renderBreadcrumbs()}
+			<NavbarLeft>
+				<NavbarHeader logo={null} />
+				{renderBreadcrumbs()}
+			</NavbarLeft>
 			<Dialog
 				open={isFileUploadModalOpen}
 				onOpenChange={(isOpen) => setIsFileUploadModalOpen(isOpen)}
