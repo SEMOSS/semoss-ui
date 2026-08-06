@@ -28,6 +28,7 @@
 	},
 	"form": {
 		"result": "Resultaat",
+		"parameters": "Parameters",
 		"schemaLoadFailed": "Laden van toolschema mislukt",
 		"schemaLoadFailedDescription": "Kan toolconfiguratie niet ophalen. Probeer het later opnieuw.",
 		"schemaLoading": "Toolschema laden...",
