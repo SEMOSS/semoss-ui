@@ -150,6 +150,13 @@ export const MembersTable = ({
 
 		if (response?.data?.success) {
 			toast.success("User updated successfully.");
+			// Editing your own permission can change what you're allowed to see/do
+			// here (and in ancestors gating on it), so let them resync — unlike
+			// adding a member, which never changes your own permission.
+			if (editUser.id === myUserId) {
+				setMyPermission(editPermission);
+				onChange?.();
+			}
 			setEditUser(null);
 			setListRefreshKey((prev) => prev + 1);
 		}
@@ -211,9 +218,10 @@ export const MembersTable = ({
 				open={openAddMembers}
 				onClose={(success) => {
 					setOpenAddMembers(false);
+					// Adding a member never changes your own permission, so unlike
+					// editing, this doesn't need to notify ancestors via onChange.
 					if (success) {
 						setListRefreshKey((prev) => prev + 1);
-						if (onChange) onChange();
 					}
 				}}
 				adminMode={adminMode}
