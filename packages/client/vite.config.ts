@@ -13,8 +13,15 @@ export default defineConfig(({ mode }) => {
 	const MODULE = env.MODULE;
 	const ENDPOINT = env.ENDPOINT;
 
+	// BrowserRouter requires an absolute base. A relative one makes the browser
+	// resolve the asset URLs in index.html against the current route rather than
+	// the app root, so any deep link fails to load its bundles. Set
+	// VITE_BASE_URL to the path the build is served from; the dev server needs
+	// no override. See .env.production and .env.production.local.
+	const BASE_URL = env.VITE_BASE_URL || "/";
+
 	return {
-		base: "./",
+		base: BASE_URL,
 		plugins: [
 			tailwindcss(),
 			svgr(),

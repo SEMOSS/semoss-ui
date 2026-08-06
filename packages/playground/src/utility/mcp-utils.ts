@@ -1,4 +1,5 @@
 import { createMcpPlatformUrl, createPromptPlatformUrl } from "@semoss/shared";
+import { toSiblingAppHref } from "./router";
 
 export { isKnowledgeMcp, splitMcpByType } from "@semoss/shared";
 
@@ -36,7 +37,9 @@ export const getToolAppId = (meta: ToolOwnerMeta | undefined): string => {
 	return engineId === ROOM_MCP_ID ? "" : engineId;
 };
 
-const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL ?? "";
+// The client app is a sibling package, so its base is derived from this app's
+// own basename rather than duplicated as a second per deployment env var.
+const PLATFORM_URL = toSiblingAppHref("client").replace(/\/$/, "");
 
 export const mcpToPlatformUrl = createMcpPlatformUrl(PLATFORM_URL);
 export const promptToPlatformUrl = createPromptPlatformUrl(PLATFORM_URL);

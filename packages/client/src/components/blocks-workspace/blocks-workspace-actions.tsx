@@ -2,6 +2,7 @@
 import { Bot, Eye, Save, Share2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { type SerializedState, useBlocks } from "@semoss/renderer";
 import { runPixel } from "@semoss/sdk/react";
 import {
@@ -24,6 +25,9 @@ export const BlocksWorkspaceActions = observer(() => {
 	const { monolithStore } = useRootStore();
 	const { workspace } = useWorkspace();
 
+	const location = useLocation();
+	const navigate = useNavigate();
+
 	const [shareOpen, setShareOpen] = useState(false);
 	const [shareDiffs, setShareDiffs] = useState(false);
 	const [modelList, setModelList] = useState<Record<string, string>[]>([]);
@@ -34,16 +38,22 @@ export const BlocksWorkspaceActions = observer(() => {
 	const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
 
 	const removePageIdsFromURL = () => {
-		const url = window.location.href;
 		const pages = state.getAllBlocksOfType("page").map((page) => page.id);
-		const matchedSubstring = pages.find((sub) => url.includes(sub));
+		const matchedSubstring = pages.find((sub) =>
+			location.pathname.includes(sub),
+		);
 		if (matchedSubstring) {
-			const cleanedUrl = matchedSubstring
-				? url
-						.replace(matchedSubstring, "")
-						.replace(/\/+$/, "") // remove trailing slash if left
-				: url;
-			window.location.href = cleanedUrl;
+			const cleanedPath =
+				location.pathname
+					.replace(matchedSubstring, "")
+					.replace(/\/+$/, "") || "/"; // remove trailing slash if left
+
+			// routed rather than assigned to window.location: the page id is part
+			// of the path, so assigning would reload the whole workspace and drop
+			// the preview that opens right after this
+			navigate(`${cleanedPath}${location.search}${location.hash}`, {
+				replace: true,
+			});
 		}
 	};
 	/**

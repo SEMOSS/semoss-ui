@@ -3,6 +3,7 @@ import { download, Env, runPixel } from "@semoss/sdk/react";
 import {
 	cancellablePromise,
 	getValueByPath,
+	resolveAppPagePath,
 	syncronousPromise,
 } from "../../utility";
 import type { CellStateConfig } from "./cell.state";
@@ -68,6 +69,13 @@ export class StateStoreConfig {
 
 	/** Cells registered to the insight */
 	cellRegistry: CellRegistry;
+
+	/**
+	 * Client side navigation, supplied by the component that owns the router.
+	 * The store cannot use hooks, and assigning to window.location would reload
+	 * the whole app instead of routing to another page block.
+	 */
+	navigate?: (path: string) => void;
 }
 
 /**
@@ -97,8 +105,14 @@ export class StateStore {
 			string,
 			ReturnType<typeof cancellablePromise> | null
 		>;
+
+		/**
+		 * Route to another page block, see StateStoreConfig.navigate
+		 */
+		navigate: ((path: string) => void) | null;
 	} = {
 		queryPromises: {},
+		navigate: null,
 	};
 
 	constructor(config: StateStoreConfig) {
@@ -110,6 +124,9 @@ export class StateStore {
 
 		// register the cells
 		this._store.cellRegistry = config.cellRegistry || {};
+
+		// save how to route, if the caller is inside a router
+		this._utils.navigate = config.navigate || null;
 
 		// make it observable
 		makeAutoObservable(this);
@@ -2080,16 +2097,9 @@ export class StateStore {
 
 		if (this.mode === "interactive") {
 			if (destinationType === "Internal") {
-				const hash = window.location.hash;
-				// Match either #/s/:id/ or #/:id/view
-				const appPageMatch = hash.match(/^#\/app\/([^/]+)/);
-				const sharePageMatch = hash.match(/^#\/s\/([^/]+)/);
+				const path = resolveAppPagePath(destination);
 
-				if (appPageMatch || sharePageMatch) {
-					const base = appPageMatch
-						? `${appPageMatch[0]}/view`
-						: sharePageMatch[0]; // This will be either #/s/:id/ or #/:id/view
-
+				if (path) {
 					const pageBlocks = this.getAllBlocksOfType("page");
 
 					const urlPageRouteMatch = pageBlocks.find(
@@ -2097,16 +2107,11 @@ export class StateStore {
 					);
 
 					if (urlPageRouteMatch) {
-						const newHash = destination.startsWith("/")
-							? base.replace(/\/$/, "") + destination
-							: `${base.replace(/\/$/, "")}/${destination}`; // Avoid double slashes
-
-						window.location.hash = newHash;
+						this._utils.navigate?.(path);
 					}
 
 					return;
 				}
-				4;
 			} else if (destinationType === "External") {
 				window.location.href = destination;
 			}

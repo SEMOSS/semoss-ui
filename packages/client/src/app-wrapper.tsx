@@ -1,8 +1,9 @@
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
-import { HashRouter } from "react-router-dom";
+import { BrowserRouter } from "react-router-dom";
 import { LoadingScreen } from "@semoss/ui/next";
 import { Router } from "@/pages";
+import { getRouterBasename } from "@/utility/router";
 import { CookieWrapper } from "./components/cookies";
 import { useRootStore } from "./hooks";
 
@@ -26,9 +27,9 @@ export const AppWrapper = observer(() => {
 	return (
 		<LoadingScreen>
 			<CookieWrapper>
-				<HashRouter>
+				<BrowserRouter basename={getRouterBasename()}>
 					<Router />
-				</HashRouter>
+				</BrowserRouter>
 			</CookieWrapper>
 		</LoadingScreen>
 	);

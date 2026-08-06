@@ -9,6 +9,7 @@ import {
 	useNavigate as useReactRouterNavigate,
 	useResolvedPath,
 } from "react-router-dom";
+import { toRouteHref } from "@/utility/router";
 
 const MODIFIER_NAVIGATION_WINDOW_MS = 700;
 
@@ -93,9 +94,8 @@ const openRouteInNewTab = (
 	const resolvedPath = resolvePath(to, ensureTrailingSlash(basePathname));
 	const path = createPath(resolvedPath);
 	const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-	const baseUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`;
 	window.open(
-		`${baseUrl}#${normalizedPath}`,
+		`${window.location.origin}${toRouteHref(normalizedPath)}`,
 		"_blank",
 		"noopener,noreferrer",
 	);

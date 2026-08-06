@@ -29,6 +29,7 @@ import {
 	useInfiniteScroll,
 } from "@semoss/ui/next";
 import type { App, Workspace } from "@/types";
+import { toRouteHref } from "@/utility/router";
 
 type WorkspaceRef = Pick<Workspace, "workspace_id"> &
 	Partial<Pick<Workspace, "name">>;
@@ -102,7 +103,10 @@ export const AgentSelector = observer(
 								onClick={(event) => {
 									event.preventDefault();
 									event.stopPropagation();
-									window.open("#/agent/new", "_blank");
+									window.open(
+										toRouteHref("agent/new"),
+										"_blank",
+									);
 								}}
 								disabled={disabled}
 								data-testid="agent-selector--create-btn"
@@ -185,7 +189,9 @@ export const AgentSelector = observer(
 																asChild
 															>
 																<a
-																	href={`#/agent/${w.project_id}`}
+																	href={toRouteHref(
+																		`agent/${w.project_id}`,
+																	)}
 																	onClick={(
 																		event,
 																	) => {

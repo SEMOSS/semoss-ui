@@ -26,6 +26,7 @@ import {
 	BASE_APP_VARIABLES,
 	BASE_PAGE_BLOCKS,
 } from "@/pages/app/app.constants";
+import { toSiblingAppHref } from "@/utility/router";
 import { NavbarHeader, NavbarLeft } from "../components/shared";
 
 export const LandingPage: React.FC = observer(() => {
@@ -66,7 +67,7 @@ export const LandingPage: React.FC = observer(() => {
 					}
 					link={{
 						label: "Launch Playground",
-						to: "../../playground/dist/",
+						to: toSiblingAppHref("playground"),
 					}}
 				/>
 				<div className="flex w-full flex-col gap-6">
@@ -148,7 +149,7 @@ export const LandingPage: React.FC = observer(() => {
 						<SystemAppCard
 							name="Playground"
 							description="Test your apps and skills"
-							href="../../playground/dist/"
+							href={toSiblingAppHref("playground")}
 							img={DevBanner}
 							darkImg={DevBannerDark}
 						/>
@@ -156,7 +157,7 @@ export const LandingPage: React.FC = observer(() => {
 						<SystemAppCard
 							name="Terminal"
 							description="Execute commands and see a response"
-							href="../../terminal/dist/"
+							href={toSiblingAppHref("terminal")}
 							img={Terminal}
 							darkImg={TerminalDark}
 						/>
@@ -164,7 +165,7 @@ export const LandingPage: React.FC = observer(() => {
 						<SystemAppCard
 							name="BI"
 							description="Develop dashboards and visualizations to view data"
-							href="../../legacy/dist/"
+							href={toSiblingAppHref("legacy")}
 							img={BI}
 							darkImg={BIDark}
 						/>
@@ -172,7 +173,7 @@ export const LandingPage: React.FC = observer(() => {
 						<SystemAppCard
 							name="Browser Automation"
 							description="Drive a remote browser, record what you do, and replay it later"
-							href="../../browser-automation/dist/"
+							href={toSiblingAppHref("browser-automation")}
 							img={Playwright}
 							darkImg={PlaywrightDark}
 						/>

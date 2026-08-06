@@ -62,6 +62,7 @@ import { useGracefulErrors, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { Engine, MCPConfig, Workspace } from "@/types";
 import { isKnowledgeMcp } from "@/utility/mcp-utils";
+import { toRouteHref } from "@/utility/router";
 import { PromptOptimizer } from "../../components/prompt/PromptOptimizer";
 
 type WorkspaceRef = Pick<Workspace, "workspace_id"> &
@@ -869,7 +870,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													<a
 														target="_blank"
 														rel="noopener noreferrer"
-														href={`#/agent/${agentChipWorkspace.workspace_id}`}
+														href={toRouteHref(
+														`agent/${agentChipWorkspace.workspace_id}`,
+													)}
 														className="flex h-full items-center border-border border-s px-1.5 transition-colors hover:bg-muted/50"
 														onClick={(e) =>
 															e.stopPropagation()
