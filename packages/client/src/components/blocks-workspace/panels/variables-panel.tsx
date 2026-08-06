@@ -1,7 +1,7 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { ChevronsUpDown, Plus, Wand2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type JSX, useEffect, useMemo, useRef, useState } from "react";
 import { useBlocks, type Variable } from "@semoss/renderer";
 import {
 	Accordion,

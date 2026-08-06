@@ -1,7 +1,7 @@
 import { Check, ChevronsUpDown } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
+import { type JSX, useEffect, useState } from "react";
 import {
 	Button,
 	Command,

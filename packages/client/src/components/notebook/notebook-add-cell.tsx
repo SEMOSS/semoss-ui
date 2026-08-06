@@ -10,7 +10,7 @@ import {
 	X,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useMemo, useState } from "react";
+import { type JSX, useMemo, useState } from "react";
 import {
 	ActionMessages,
 	type CellStateConfig,

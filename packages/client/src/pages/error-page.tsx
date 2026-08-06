@@ -10,7 +10,7 @@ import { useNavigate } from "@/hooks/useNavigate";
  */
 export const ErrorPage = () => {
 	const [countdown, setCountdown] = useState(10);
-	const timer = useRef<NodeJS.Timer>();
+	const timer = useRef<NodeJS.Timer>(undefined);
 	const navigate = useNavigate();
 	const { pathname } = useLocation();
 
