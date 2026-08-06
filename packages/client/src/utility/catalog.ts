@@ -90,15 +90,8 @@ export const isOwnerPermission = (
  * @param permission
  * @returns true if the user can edit the resource, false otherwise
  */
-export const isEditorPermission = (
-	permission?: number | string | null,
-): boolean => {
-	return (
-		permission === 1 ||
-		permission === 2 ||
-		permission === "OWNER" ||
-		permission === "EDIT"
-	);
+export const isEditorPermission = (permission?: number): boolean => {
+	return permission === 1 || permission === 2;
 };
 
 /**
