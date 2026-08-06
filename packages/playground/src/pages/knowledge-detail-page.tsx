@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import {
 	download,

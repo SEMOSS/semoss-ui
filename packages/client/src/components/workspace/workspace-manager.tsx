@@ -16,7 +16,7 @@ import {
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useMemo, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { FlexLayout, getFileIconComponent } from "@semoss/shared";
 import {
 	Breadcrumb,

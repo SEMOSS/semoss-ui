@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { Navigate } from "react-router-dom";
+import { Navigate } from "react-router";
 import { InsightProvider } from "@semoss/sdk/react";
 import { Workspace } from "@/components/workspace";
 import { usePage, useProject } from "@/hooks";

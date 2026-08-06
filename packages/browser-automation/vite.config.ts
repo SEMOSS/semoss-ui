@@ -19,7 +19,8 @@ export default defineConfig(({ mode }) => {
 			"import.meta.env.ENDPOINT": JSON.stringify(env.ENDPOINT),
 		},
 		server: {
-			// 5173 client, 5174 playground, 5175 terminal/auditlog
+			// dev server ports: client 5173, playground 5174, terminal 5175,
+			// browser-automation 5176, auditlog 5177, chrome-extension 5178
 			port: 5176,
 			strictPort: true,
 			proxy: {

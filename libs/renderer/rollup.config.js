@@ -53,7 +53,7 @@ export default defineConfig({
 		"mobx-react-lite",
 		"react",
 		"react-dom",
-		"react-router-dom",
+		"react-router",
 	],
 	watch: {
 		clearScreen: false,

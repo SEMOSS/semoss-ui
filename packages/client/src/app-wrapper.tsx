@@ -1,6 +1,5 @@
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
-import { HashRouter } from "react-router-dom";
 import { LoadingScreen } from "@semoss/ui/next";
 import { Router } from "@/pages";
 import { CookieWrapper } from "./components/cookies";
@@ -26,9 +25,7 @@ export const AppWrapper = observer(() => {
 	return (
 		<LoadingScreen>
 			<CookieWrapper>
-				<HashRouter>
-					<Router />
-				</HashRouter>
+				<Router />
 			</CookieWrapper>
 		</LoadingScreen>
 	);

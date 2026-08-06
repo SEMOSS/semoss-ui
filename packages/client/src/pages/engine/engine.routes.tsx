@@ -1,4 +1,4 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, type RouteObject } from "react-router";
 import { DatabasePageContent } from "@/components/import/database/database-page-content";
 import { FunctionImport } from "@/components/import/function/function-import";
 import { GuardrailImport } from "@/components/import/guardrail/guardrail-import";
@@ -18,16 +18,7 @@ import { EngineTabsLayout } from "./engine-tabs-layout";
 import { EngineUsagePage } from "./engine-usage-page";
 import { EngineWorkbenchPage } from "./engine-workbench-page";
 
-export const ENGINE_ROUTES: {
-	/** Name of the specific path (omitted for pathless layout routes) */
-	path: string;
-
-	/** Element to render */
-	element: React.ReactNode;
-
-	/** Child routes */
-	children?: (typeof ENGINE_ROUTES)[number][];
-}[] = [
+export const ENGINE_ROUTES: RouteObject[] = [
 	// FUNCTION
 	{
 		path: "function",
@@ -64,7 +55,6 @@ export const ENGINE_ROUTES: {
 						element: <EngineWorkbenchPage />,
 					},
 					{
-						path: "*",
 						element: (
 							<EngineTabsLayout
 								tabs={[
@@ -188,7 +178,6 @@ export const ENGINE_ROUTES: {
 						element: <EngineWorkbenchPage />,
 					},
 					{
-						path: "*",
 						element: (
 							<EngineTabsLayout
 								tabs={[
@@ -302,7 +291,6 @@ export const ENGINE_ROUTES: {
 						element: <EngineWorkbenchPage />,
 					},
 					{
-						path: "*",
 						element: (
 							<EngineTabsLayout
 								tabs={[
@@ -429,7 +417,6 @@ export const ENGINE_ROUTES: {
 						element: <EngineWorkbenchPage />,
 					},
 					{
-						path: "*",
 						element: (
 							<EngineTabsLayout
 								tabs={[
@@ -543,7 +530,6 @@ export const ENGINE_ROUTES: {
 						element: <EngineWorkbenchPage />,
 					},
 					{
-						path: "*",
 						element: (
 							<EngineTabsLayout
 								tabs={[
@@ -667,7 +653,6 @@ export const ENGINE_ROUTES: {
 						element: <EngineWorkbenchPage />,
 					},
 					{
-						path: "*",
 						element: (
 							<EngineTabsLayout
 								tabs={[

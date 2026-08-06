@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, type RouteObject } from "react-router";
 import {
 	ProjectAccessControl,
 	ProjectCatalog,
@@ -25,16 +25,7 @@ import { ProjectTabsLayout } from "./project-tabs-layout";
 import { CreateSkillPage } from "./skill/create-skill-page";
 import { ViewSkillPage } from "./skill/view-skill-page";
 
-export const PROJECT_ROUTES: {
-	/** Name of the specific path */
-	path: string;
-
-	/** Element to render */
-	element: React.ReactNode;
-
-	/** Child routes */
-	children?: (typeof PROJECT_ROUTES)[number][];
-}[] = [
+export const PROJECT_ROUTES: RouteObject[] = [
 	{
 		path: "app",
 		element: <Outlet />,
@@ -64,7 +55,6 @@ export const PROJECT_ROUTES: {
 						element: <ViewAppPage />,
 					},
 					{
-						path: "*",
 						element: (
 							<ProjectTabsLayout
 								tabs={[
@@ -192,7 +182,6 @@ export const PROJECT_ROUTES: {
 						element: <ViewSkillPage />,
 					},
 					{
-						path: "*",
 						element: (
 							<ProjectTabsLayout
 								tabs={[
@@ -272,7 +261,6 @@ export const PROJECT_ROUTES: {
 						element: <ProjectEdit />,
 					},
 					{
-						path: "*",
 						element: (
 							<ProjectTabsLayout
 								tabs={[

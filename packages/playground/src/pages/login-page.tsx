@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import { LoginForm } from "@semoss/shared";
 import { useTheme } from "@semoss/ui/next";

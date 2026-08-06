@@ -2,7 +2,7 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useId, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { type Location, Navigate, useLocation } from "react-router-dom";
+import { type Location, Navigate, useLocation } from "react-router";
 import {
 	getLoginProviderInitials,
 	getLoginProviderKey,

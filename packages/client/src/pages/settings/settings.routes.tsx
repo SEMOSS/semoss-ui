@@ -1,5 +1,5 @@
-import { observer } from "mobx-react-lite";
-import { Navigate, Route, Routes } from "react-router-dom";
+import type { ComponentType } from "react";
+import { Navigate, type RouteObject } from "react-router";
 import { AddNewJob } from "../jobs/add-new-job";
 import { JobsPage } from "../jobs/jobs-page";
 import { AdminQueryPage } from "./admin-query-page";
@@ -21,8 +21,8 @@ import { SettingsLayout } from "./settings-layout";
 import { TeamSettingsDetailPage } from "./team-settings-detail-page";
 import { TeamsSettingsPage } from "./teams-settings-page";
 
-// map each route to a component
-const SETTINGS_COMPONETS = {
+// map each settings route path to the component that renders it
+const SETTINGS_COMPONENTS: Record<string, ComponentType> = {
 	"": SettingsIndexPage,
 	app: ProjectSettingsIndexPage,
 	"app/:id": ProjectSettingsDetailsPage,
@@ -56,35 +56,25 @@ const SETTINGS_COMPONETS = {
 	"guardrail/:id": () => <EngineSettingsDetailPage type="GUARDRAIL" />,
 };
 
-export const SettingsRouter = observer(() => {
-	return (
-		<Routes>
-			<Route path="/" element={<SettingsLayout />}>
-				{SETTINGS_ROUTES.map((r) => {
-					const Component = SETTINGS_COMPONETS[r.path];
+const SETTINGS_CHILDREN: RouteObject[] = SETTINGS_ROUTES.map((route) => {
+	const Component = SETTINGS_COMPONENTS[route.path];
 
-					if (!Component) {
-						throw Error(
-							`ERROR ::: missing component for path ${r.path}`,
-						);
-					}
+	if (!Component) {
+		throw Error(`ERROR ::: missing component for path ${route.path}`);
+	}
 
-					if (!r.path) {
-						return (
-							<Route index key={r.path} element={<Component />} />
-						);
-					}
+	if (!route.path) {
+		return { index: true, element: <Component /> };
+	}
 
-					return (
-						<Route
-							key={r.path}
-							path={r.path}
-							element={<Component />}
-						/>
-					);
-				})}
-			</Route>
-			<Route path="*" element={<Navigate to={`.`} replace />} />
-		</Routes>
-	);
+	return { path: route.path, element: <Component /> };
 });
+
+export const SETTINGS_ROUTE: RouteObject = {
+	path: "settings",
+	element: <SettingsLayout />,
+	children: [
+		...SETTINGS_CHILDREN,
+		{ path: "*", element: <Navigate to="." replace /> },
+	],
+};

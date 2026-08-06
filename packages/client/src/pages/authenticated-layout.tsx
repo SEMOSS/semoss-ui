@@ -1,5 +1,7 @@
 import { observer } from "mobx-react-lite";
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Suspense } from "react";
+import { Navigate, Outlet, useLocation } from "react-router";
+import { Spinner } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks/";
 
 /**
@@ -14,5 +16,15 @@ export const AuthenticatedLayout = observer(() => {
 		return <Navigate to="/login" state={{ from: location }} replace />;
 	}
 
-	return <Outlet />;
+	return (
+		<Suspense
+			fallback={
+				<div className="flex h-screen w-screen items-center justify-center">
+					<Spinner />
+				</div>
+			}
+		>
+			<Outlet />
+		</Suspense>
+	);
 });

@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { lazy, Suspense, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import {
 	Breadcrumb,
 	BreadcrumbItem,

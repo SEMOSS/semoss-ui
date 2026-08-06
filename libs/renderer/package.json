@@ -54,6 +54,7 @@
         "echarts-for-react": "^3.0.2",
         "react": "^19.0.0",
         "react-hook-form": "^7.34.2",
+        "react-router": "8.3.0",
         "react-vega": "^7.6.0",
         "rollup": "4.59.0",
         "rollup-plugin-delete": "3.0.1",
@@ -71,6 +72,6 @@
         "mobx-react-lite": "^4.0.0",
         "react": "^18.3.1 || ^19.0.0",
         "react-dom": "^18.3.1 || ^19.0.0",
-        "react-router-dom": "^6.30.3"
+        "react-router": "^8.0.0"
     }
 }

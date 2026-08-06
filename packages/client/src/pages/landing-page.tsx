@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router";
 import type { Variable } from "@semoss/renderer";
 import { STATE_VERSION } from "@semoss/renderer/version";
 import { Button, H4, Muted } from "@semoss/ui/next";
