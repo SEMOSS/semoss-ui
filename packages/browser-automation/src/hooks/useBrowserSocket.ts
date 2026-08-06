@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getModulePath } from "../semoss/pixel";
 import type {
+	BrowserScrollMetrics,
 	BrowserTabInfo,
 	ClientToServerEvent,
 	ConnectionState,
@@ -11,7 +12,12 @@ import type {
 
 interface UseBrowserSocketOptions {
 	wsUrl: string | null;
-	onFrame: (data: string, width: number, height: number) => void;
+	onFrame: (
+		data: string,
+		width: number,
+		height: number,
+		scrollMetrics: BrowserScrollMetrics,
+	) => void;
 	onNavigated: (url: string) => void;
 	onError: (message: string) => void;
 	onTabsChanged: (tabs: BrowserTabInfo[], activeTabId: string) => void;
@@ -33,6 +39,8 @@ interface UseBrowserSocketReturn {
 	) => Promise<void>;
 	captureSelectedText: (
 		bounds: SelectionBounds,
+		record?: boolean,
+		label?: string,
 	) => Promise<SelectedTextContext>;
 }
 
@@ -127,6 +135,15 @@ export function useBrowserSocket({
 							msg.data,
 							msg.metadata.width,
 							msg.metadata.height,
+							{
+								scrollTop: msg.metadata.scrollTop ?? 0,
+								scrollHeight:
+									msg.metadata.scrollHeight ??
+									msg.metadata.height,
+								viewportHeight:
+									msg.metadata.viewportHeight ??
+									msg.metadata.height,
+							},
 						);
 						break;
 					case "navigated":
@@ -312,7 +329,11 @@ export function useBrowserSocket({
 	);
 
 	const captureSelectedText = useCallback(
-		(bounds: SelectionBounds): Promise<SelectedTextContext> => {
+		(
+			bounds: SelectionBounds,
+			record = false,
+			label?: string,
+		): Promise<SelectedTextContext> => {
 			const ws = wsRef.current;
 			if (!ws || ws.readyState !== WebSocket.OPEN) {
 				return Promise.reject(
@@ -344,6 +365,8 @@ export function useBrowserSocket({
 						y: bounds.startY,
 						endX: bounds.endX,
 						endY: bounds.endY,
+						record,
+						label,
 					}),
 				);
 			});

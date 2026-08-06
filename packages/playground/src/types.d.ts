@@ -170,7 +170,9 @@ export interface PixelMessageToolCallPart {
 		arguments: Record<string, unknown>;
 		_tool_found: boolean;
 		original_name: string;
-		title: string;
+		// Optional in MCP: the backend only sets it when the tool declares one.
+		// Use ToolStore.displayName rather than reading this directly.
+		title?: string;
 		description: string;
 		// Set by the backend when the model provider executed the tool itself
 		// (e.g. web_search). Server tools lack the MCP `_meta`
@@ -183,6 +185,11 @@ export interface PixelMessageToolCallPart {
 			SMSS_PROJECT_NAME: string;
 			SMSS_PROJECT_ID: string;
 			SMSS_MCP_EXECUTION: "auto" | "ask" | "disabled";
+			// The tool's declared name, before the backend rewrote it into the
+			// LLM-facing name. On length-limited providers that rewrite is not
+			// reversible (short engine-id prefix plus truncation), so this is the
+			// only way back to the real name.
+			SMSS_ORIGINAL_TOOL_NAME?: string;
 			SMSS_MCP_UI?: {
 				loadingMessage?: string;
 				displayLocation?: "inline" | "sidebar" | "hidden";
