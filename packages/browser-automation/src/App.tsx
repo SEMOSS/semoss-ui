@@ -3,7 +3,9 @@ import {
 	ChevronDown,
 	ChevronRight,
 	Circle,
+	Copy,
 	ScanLine,
+	X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
@@ -15,10 +17,11 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
+import { AutomationActionIndicator } from "./components/AutomationActionIndicator";
+import { AutomationControls } from "./components/AutomationControls";
 import { BrowserTabStrip } from "./components/BrowserTabStrip";
 import { BrowserToolbar } from "./components/BrowserToolbar";
 import { BrowserViewer } from "./components/BrowserViewer";
-import { ConnectionStatus } from "./components/ConnectionStatus";
 import { PlaybackCompleteDialog } from "./components/dialogs/PlaybackCompleteDialog";
 import { ReturnToPlaygroundDialog } from "./components/dialogs/ReturnToPlaygroundDialog";
 import { SaveRecordingDialog } from "./components/dialogs/SaveRecordingDialog";
@@ -57,9 +60,12 @@ import {
 	sendMcpResponseToPlayground,
 	subscribeToMcpToolContext,
 } from "./semoss/client";
+import { runPixel } from "./semoss/pixel";
 import type {
+	BrowserScrollMetrics,
 	BrowserTabInfo,
 	ClientToServerEvent,
+	LoadedRecordingStep,
 	McpToolContext,
 	RecordingMetadataModelOption,
 	RecordingProjectOption,
@@ -88,6 +94,25 @@ type ResolvePlaywrightRecordingResponse = {
 	searchedRoomRecordings: number;
 };
 
+type AutomationHistoryEntry = {
+	iteration: number;
+	type: "click" | "fill" | "select" | "scroll";
+	label: string;
+	value?: string;
+	pageUrl: string;
+	reason: string;
+};
+
+type PendingTextSelection = {
+	context: SelectedTextContext | null;
+	clientX: number;
+	clientY: number;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 export default function App() {
 	const { insightId } = useInsight();
 	const {
@@ -111,6 +136,12 @@ export default function App() {
 		saveProjectMcpEntry,
 	} = useRemoteBrowserSession();
 	const [latestFrame, setLatestFrame] = useState<string | null>(null);
+	const [browserScrollMetrics, setBrowserScrollMetrics] =
+		useState<BrowserScrollMetrics>({
+			scrollTop: 0,
+			scrollHeight: 1,
+			viewportHeight: 1,
+		});
 	const [currentUrl, setCurrentUrl] = useState("");
 	const [browserCursor, setBrowserCursor] = useState("default");
 	const [browserTabs, setBrowserTabs] = useState<BrowserTabInfo[]>([]);
@@ -160,16 +191,39 @@ export default function App() {
 	>([]);
 	const [selectedTextContextsOpen, setSelectedTextContextsOpen] =
 		useState(false);
-	const [selectionMode, setSelectionMode] = useState(false);
-	const [isCapturingSelectedText, setIsCapturingSelectedText] =
-		useState(false);
-	const [pendingBrowserActionCount, setPendingBrowserActionCount] =
-		useState(0);
+	const [pendingTextSelection, setPendingTextSelection] =
+		useState<PendingTextSelection | null>(null);
+	const [pendingNavigationCount, setPendingNavigationCount] = useState(0);
 	const [recordedStepsOpen, setRecordedStepsOpen] = useState(false);
 	const [playbackCloseCountdown, setPlaybackCloseCountdown] = useState<
 		number | null
 	>(null);
 	const [playbackStepsRun, setPlaybackStepsRun] = useState(0);
+
+	// ── Automation mode ──────────────────────────────────────────────────────
+	const [automationMode, setAutomationMode] = useState(false);
+	const [automationModelId, setAutomationModelId] = useState("");
+	const [automationSubMode, setAutomationSubMode] = useState<
+		"click" | "fill-page" | "run-goal"
+	>("click");
+	const [isAutomationGenerating, setIsAutomationGenerating] = useState(false);
+	const [isGoalAutomationRunning, setIsGoalAutomationRunning] =
+		useState(false);
+	const [automationGoal, setAutomationGoal] = useState("");
+	const [isAutomationGoalGenerating, setIsAutomationGoalGenerating] =
+		useState(false);
+	const [automationGoalGenerationError, setAutomationGoalGenerationError] =
+		useState("");
+	const [automationMaxIterations, setAutomationMaxIterations] = useState(10);
+	const [automationProgress, setAutomationProgress] = useState<{
+		iteration: number;
+		maxIterations: number;
+	} | null>(null);
+	const [automationClickPos, setAutomationClickPos] = useState<{
+		localX: number;
+		localY: number;
+	} | null>(null);
+
 	const autoStartedRef = useRef(false);
 	const autoRecordingStartedRef = useRef(false);
 	const autoPlaybackProjectSelectedRef = useRef(false);
@@ -179,7 +233,10 @@ export default function App() {
 	const autoPlaybackErrorSentRef = useRef(false);
 	const returningToPlaygroundRef = useRef(false);
 	const selectedContextSequenceRef = useRef(0);
+	const textSelectionRequestRef = useRef(0);
 	const activeToolExecutionRef = useRef("");
+	const automationRunTokenRef = useRef(0);
+	const automationGoalExecutionRef = useRef("");
 
 	useEffect(() => {
 		if (!snackError) return;
@@ -213,13 +270,23 @@ export default function App() {
 	const effectiveInsightId = getSemossInsightId() || insightId;
 
 	// Frame callback - stable reference so it doesn't re-trigger the socket effect
-	const handleFrame = useCallback((data: string, _w: number, _h: number) => {
-		setLatestFrame(data);
-	}, []);
+	const handleFrame = useCallback(
+		(
+			data: string,
+			_w: number,
+			_h: number,
+			scrollMetrics: BrowserScrollMetrics,
+		) => {
+			setLatestFrame(data);
+			setBrowserScrollMetrics(scrollMetrics);
+		},
+		[],
+	);
 
 	const handleNavigated = useCallback((url: string) => {
 		setCurrentUrl(url);
-		setSelectionMode(false);
+		textSelectionRequestRef.current += 1;
+		setPendingTextSelection(null);
 	}, []);
 
 	const handleSocketError = useCallback((msg: string) => {
@@ -244,6 +311,11 @@ export default function App() {
 		);
 		if (activeTab?.url) setCurrentUrl(activeTab.url);
 		setLatestFrame(null);
+		setBrowserScrollMetrics({
+			scrollTop: 0,
+			scrollHeight: 1,
+			viewportHeight: 1,
+		});
 	}, []);
 
 	useEffect(() => {
@@ -266,6 +338,90 @@ export default function App() {
 		onTabActivated: handleTabActivated,
 		onCursorChanged: setBrowserCursor,
 	});
+	const storeSelectedTextContext = useCallback(
+		(context: SelectedTextContext) => {
+			selectedContextSequenceRef.current += 1;
+			const title = (context.title || "Website text").trim().slice(0, 72);
+			const boundedContent = context.content
+				.trim()
+				.slice(0, MAX_SELECTED_CONTEXT_CHARS);
+			const stored: SelectedTextContext = {
+				...context,
+				label: `${title} - Selection ${selectedContextSequenceRef.current}`,
+				content: boundedContent,
+				text: renderSelectedTextContext({
+					...context,
+					content: boundedContent,
+				}),
+				stats: {
+					...context.stats,
+					characterCount: boundedContent.length,
+					truncated:
+						context.stats.truncated ||
+						context.content.length > boundedContent.length,
+				},
+			};
+			setSelectedTextContexts((current) =>
+				appendBoundedSelectedContext(current, stored),
+			);
+			setSelectedTextContextsOpen(true);
+			setSnackMessage(
+				`Captured ${boundedContent.length} characters of website text`,
+			);
+		},
+		[],
+	);
+	const replayContextStep = useCallback(
+		async (step: LoadedRecordingStep) => {
+			const points = Array.isArray(step.multiCoords)
+				? step.multiCoords.filter(isRecord)
+				: [];
+			if (points.length < 2) {
+				throw new Error("recorded selection bounds are missing");
+			}
+			const start = points[0];
+			const end = points[points.length - 1];
+			const viewport = isRecord(step.viewport) ? step.viewport : {};
+			const recordedWidth =
+				typeof viewport.width === "number" ? viewport.width : 0;
+			const recordedHeight =
+				typeof viewport.height === "number" ? viewport.height : 0;
+			const scaleX =
+				recordedWidth > 0 && session?.viewport.width
+					? session.viewport.width / recordedWidth
+					: 1;
+			const scaleY =
+				recordedHeight > 0 && session?.viewport.height
+					? session.viewport.height / recordedHeight
+					: 1;
+			const coordinate = (
+				point: Record<string, unknown>,
+				key: "x" | "y",
+				scale: number,
+			) => {
+				const value = point[key];
+				if (typeof value !== "number" || !Number.isFinite(value)) {
+					throw new Error(
+						`recorded selection ${key} coordinate is invalid`,
+					);
+				}
+				return value * scale;
+			};
+			const context = await captureSelectedText({
+				startX: coordinate(start, "x", scaleX),
+				startY: coordinate(start, "y", scaleY),
+				endX: coordinate(end, "x", scaleX),
+				endY: coordinate(end, "y", scaleY),
+			});
+			storeSelectedTextContext(context);
+		},
+		[
+			captureSelectedText,
+			session?.viewport.height,
+			session?.viewport.width,
+			storeSelectedTextContext,
+		],
+	);
 	const loadRoomRecording = useCallback(
 		(roomInsightId: string, fileName: string) =>
 			getRoomRecordingEnvelope(roomInsightId, `/playwright/${fileName}`),
@@ -282,6 +438,7 @@ export default function App() {
 		replaySingleStep,
 		sendReplayEvent,
 		sendTabControlEvent,
+		replayContextStep,
 		onError: setSnackError,
 		onMessage: setSnackMessage,
 	});
@@ -346,12 +503,23 @@ export default function App() {
 		setSaveDialogOpen(false);
 		setSelectedTextContexts([]);
 		setRecordedSteps([]);
+		setAutomationGoal("");
+		setAutomationGoalGenerationError("");
+		automationGoalExecutionRef.current = "";
 		playback.resetExecution();
 	}, [playback.resetExecution, toolExecutionKey]);
 
 	const runBrowserAction = useCallback(
 		async (event: ClientToServerEvent) => {
-			setPendingBrowserActionCount((count) => count + 1);
+			const isNavigation = [
+				"navigate",
+				"navigate-back",
+				"navigate-forward",
+				"reload",
+			].includes(event.type);
+			if (isNavigation) {
+				setPendingNavigationCount((count) => count + 1);
+			}
 			try {
 				await sendReplayEvent({
 					...event,
@@ -364,7 +532,11 @@ export default function App() {
 						: "Browser action failed",
 				);
 			} finally {
-				setPendingBrowserActionCount((count) => Math.max(0, count - 1));
+				if (isNavigation) {
+					setPendingNavigationCount((count) =>
+						Math.max(0, count - 1),
+					);
+				}
 			}
 		},
 		[sendReplayEvent],
@@ -430,6 +602,7 @@ export default function App() {
 		if (isPlaygroundMode && !startupUrl) return;
 
 		autoStartedRef.current = true;
+		if (startupUrl) setCurrentUrl(startupUrl);
 		createSession(
 			isPlaygroundMode ? startupUrl : "",
 			1365,
@@ -783,50 +956,42 @@ export default function App() {
 		};
 	}, [getRecordedSteps, isRecording, session]);
 
-	const handleSelectedTextCapture = useCallback(
-		async (bounds: SelectionBounds) => {
-			setSelectionMode(false);
-			setIsCapturingSelectedText(true);
+	const dismissPendingTextSelection = useCallback(() => {
+		textSelectionRequestRef.current += 1;
+		setPendingTextSelection(null);
+	}, []);
+
+	const handleTextDragComplete = useCallback(
+		async (
+			bounds: SelectionBounds,
+			anchor: { clientX: number; clientY: number },
+		) => {
+			const request = textSelectionRequestRef.current + 1;
+			textSelectionRequestRef.current = request;
+			setPendingTextSelection({
+				context: null,
+				clientX: anchor.clientX,
+				clientY: anchor.clientY,
+			});
 			try {
 				const context = await captureSelectedText(bounds);
-				selectedContextSequenceRef.current += 1;
-				const title = (context.title || "Website text")
-					.trim()
-					.slice(0, 72);
-				const boundedContent = context.content
-					.trim()
-					.slice(0, MAX_SELECTED_CONTEXT_CHARS);
-				const stored: SelectedTextContext = {
-					...context,
-					label: `${title} - Selection ${selectedContextSequenceRef.current}`,
-					content: boundedContent,
-					text: renderSelectedTextContext({
-						...context,
-						content: boundedContent,
-					}),
-					stats: {
-						...context.stats,
-						characterCount: boundedContent.length,
-						truncated:
-							context.stats.truncated ||
-							context.content.length > boundedContent.length,
-					},
-				};
-				setSelectedTextContexts((current) =>
-					appendBoundedSelectedContext(current, stored),
-				);
-				setSelectedTextContextsOpen(true);
-				setSnackMessage(
-					`Captured ${boundedContent.length} characters of website text`,
-				);
+				if (textSelectionRequestRef.current !== request) return;
+				setPendingTextSelection({
+					context,
+					clientX: anchor.clientX,
+					clientY: anchor.clientY,
+				});
 			} catch (error) {
-				setSnackError(
-					error instanceof Error
-						? error.message
-						: "Failed to capture selected website text",
-				);
-			} finally {
-				setIsCapturingSelectedText(false);
+				if (textSelectionRequestRef.current !== request) return;
+				setPendingTextSelection(null);
+				const message = error instanceof Error ? error.message : "";
+				// Ordinary drags (sliders, maps, canvases) are not text selections.
+				// Keep those interactions quiet; surface only transport/server failures.
+				if (!message.includes("No visible DOM text")) {
+					setSnackError(
+						message || "Failed to inspect selected website text",
+					);
+				}
 			}
 		},
 		[captureSelectedText],
@@ -842,6 +1007,40 @@ export default function App() {
 			}
 		},
 		[],
+	);
+
+	const handleAddSelectedContext = useCallback(
+		async (context: SelectedTextContext) => {
+			let captured = context;
+			let recordingError = "";
+			if (isRecording) {
+				try {
+					captured = await captureSelectedText(
+						context.bounds,
+						true,
+						context.title || "Selected website text",
+					);
+				} catch (error) {
+					recordingError =
+						error instanceof Error
+							? error.message
+							: "Could not record the context extraction step";
+				}
+			}
+			storeSelectedTextContext(captured);
+			dismissPendingTextSelection();
+			if (recordingError) {
+				setSnackError(
+					`Context was added, but its recording step failed: ${recordingError}`,
+				);
+			}
+		},
+		[
+			captureSelectedText,
+			dismissPendingTextSelection,
+			isRecording,
+			storeSelectedTextContext,
+		],
 	);
 
 	const handleDeleteSelectedContext = useCallback(
@@ -888,11 +1087,11 @@ export default function App() {
 	const handleStart = useCallback(
 		async (url: string) => {
 			const normalizedUrl = normalizeBrowserUrl(url);
+			setCurrentUrl(normalizedUrl);
 			const info = await createSession(normalizedUrl);
 			if (info) {
 				setSelectedTextContexts([]);
 				setSelectedTextContextsOpen(false);
-				setSelectionMode(false);
 				selectedContextSequenceRef.current = 0;
 				setCurrentUrl(info.currentUrl || normalizedUrl);
 				setLatestFrame(null);
@@ -916,6 +1115,7 @@ export default function App() {
 		}
 
 		autoStartedRef.current = true;
+		setCurrentUrl(targetUrl);
 		const info = await createSession(targetUrl, 1365, 768, false);
 		if (!info) {
 			autoStartedRef.current = false;
@@ -925,7 +1125,6 @@ export default function App() {
 		setCurrentUrl(info.currentUrl || targetUrl);
 		setSelectedTextContexts([]);
 		setSelectedTextContextsOpen(false);
-		setSelectionMode(false);
 		selectedContextSequenceRef.current = 0;
 		setLatestFrame(null);
 		setBrowserTabs([]);
@@ -945,7 +1144,6 @@ export default function App() {
 		setActiveBrowserTabId("tab-1");
 		playback.resetReplayPreparation();
 		setIsRecording(false);
-		setSelectionMode(false);
 		setSaveDialogOpen(false);
 		setStopRecordingDialogOpen(false);
 	}, [closeSession, playback.resetReplayPreparation, sendEvent]);
@@ -981,17 +1179,6 @@ export default function App() {
 		setPlaybackCloseCountdown(null);
 		void closeBrowserSessionRef.current();
 	}, []);
-
-	const handleStop = useCallback(async () => {
-		if (isRecording) {
-			sendEvent({
-				type: "recording-control",
-				recording: false,
-				discard: true,
-			});
-		}
-		await closeBrowserSession();
-	}, [closeBrowserSession, isRecording, sendEvent]);
 
 	const handleSwitchBrowserTab = useCallback(
 		async (tabId: string) => {
@@ -1045,7 +1232,6 @@ export default function App() {
 			void runBrowserAction({
 				type: "navigate",
 				url: normalizeBrowserUrl(url),
-				waitAfterMs: 1200,
 			});
 		},
 		[runBrowserAction],
@@ -1543,12 +1729,554 @@ export default function App() {
 
 	const remoteWidth = session?.viewport.width ?? 1365;
 	const remoteHeight = session?.viewport.height ?? 768;
-	const isBrowserLoading =
-		isCreating ||
-		pendingBrowserActionCount > 0 ||
-		playback.runningStepId !== null;
+	const isBrowserLoading = isCreating || pendingNavigationCount > 0;
 	const replayMenuOpen =
 		playback.controlsOpen || playback.loadedRecordingOpen;
+
+	const generateAutomationGoal = useCallback(
+		async (replaceExisting: boolean) => {
+			const roomId = toolContext?.roomId ?? "";
+			if (!roomId || !automationModelId || !effectiveInsightId) return;
+
+			setIsAutomationGoalGenerating(true);
+			setAutomationGoalGenerationError("");
+			try {
+				const response = await runPixel<Record<string, unknown>>(
+					`GeneratePlaywrightAutomationGoal(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, limit=20);`,
+					effectiveInsightId,
+				);
+				const output = response.pixelReturn?.[0]?.output;
+				if (!isRecord(output) || output.success !== true) {
+					throw new Error(
+						isRecord(output) && typeof output.error === "string"
+							? output.error
+							: "Could not generate an automation goal.",
+					);
+				}
+				const generatedGoal =
+					typeof output.goal === "string" ? output.goal.trim() : "";
+				if (!generatedGoal) {
+					throw new Error(
+						"The model returned an empty automation goal.",
+					);
+				}
+				setAutomationGoal((current) =>
+					replaceExisting || !current.trim()
+						? generatedGoal
+						: current,
+				);
+				if (!automationModelId && typeof output.engineId === "string") {
+					setAutomationModelId(output.engineId);
+				}
+			} catch (error) {
+				setAutomationGoalGenerationError(
+					error instanceof Error
+						? error.message
+						: "Could not generate an automation goal.",
+				);
+			} finally {
+				setIsAutomationGoalGenerating(false);
+			}
+		},
+		[automationModelId, effectiveInsightId, toolContext?.roomId],
+	);
+
+	useEffect(() => {
+		if (
+			!isPlaygroundMode ||
+			isMcpPlaybackMode ||
+			!toolExecutionKey ||
+			!automationModelId ||
+			automationGoalExecutionRef.current === toolExecutionKey
+		) {
+			return;
+		}
+		automationGoalExecutionRef.current = toolExecutionKey;
+		void generateAutomationGoal(false);
+	}, [
+		automationModelId,
+		generateAutomationGoal,
+		isMcpPlaybackMode,
+		isPlaygroundMode,
+		toolExecutionKey,
+	]);
+
+	const executeGeneratedFields = useCallback(
+		async (output: Record<string, unknown>): Promise<number> => {
+			const fields = Array.isArray(output.fields)
+				? (output.fields as Array<Record<string, unknown>>)
+				: [];
+			const expectedUrl =
+				typeof output.pageUrl === "string" ? output.pageUrl : undefined;
+			const expectedTabId =
+				typeof output.tabId === "string" ? output.tabId : undefined;
+			let completed = 0;
+
+			for (const field of fields) {
+				const value =
+					typeof field.value === "string" ? field.value : "";
+				const strategy =
+					typeof field.selectorStrategy === "string"
+						? field.selectorStrategy
+						: "css";
+				const selectorValue =
+					typeof field.selectorValue === "string"
+						? field.selectorValue
+						: "";
+				if (!value || !selectorValue) continue;
+
+				await sendReplayEvent({
+					type: "fill-element",
+					requestId: crypto.randomUUID(),
+					text: value,
+					selector: {
+						strategy,
+						value: selectorValue,
+						frameSelector:
+							typeof field.frameSelector === "string"
+								? field.frameSelector
+								: null,
+					},
+					label:
+						typeof field.label === "string"
+							? field.label
+							: undefined,
+					tag: typeof field.tag === "string" ? field.tag : undefined,
+					isPassword: field.isPassword === true,
+					storeValue: field.storeValue === true,
+					expectedUrl,
+					expectedTabId,
+				});
+				completed += 1;
+			}
+			return completed;
+		},
+		[sendReplayEvent],
+	);
+
+	const generateAndFillSelectedField = useCallback(
+		async (remoteX: number, remoteY: number) => {
+			if (!session?.sessionId) {
+				toast("No active browser session.");
+				return;
+			}
+			setIsAutomationGenerating(true);
+			try {
+				const roomId = toolContext?.roomId ?? "";
+				if (!roomId) {
+					toast(
+						"No room context available — open this tool from a Playground room.",
+					);
+					return;
+				}
+
+				// Single-field mode: passes x/y so the reactor identifies the clicked field,
+				// but still sees ALL form fields for cross-field reasoning accuracy.
+				const response = await runPixel<Record<string, unknown>>(
+					`GeneratePlaywrightFieldActions(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, sessionId=${JSON.stringify(session.sessionId)}, limit=20, x=${remoteX}, y=${remoteY});`,
+					effectiveInsightId,
+				);
+
+				const output = response.pixelReturn?.[0]?.output as
+					| Record<string, unknown>
+					| undefined;
+				if (!output?.success) {
+					toast(
+						typeof output?.error === "string"
+							? output.error
+							: "Automation generation failed.",
+					);
+					return;
+				}
+
+				const fields = Array.isArray(output?.fields)
+					? output.fields
+					: [];
+
+				if (fields.length === 0) {
+					toast(
+						typeof output?.message === "string"
+							? output.message
+							: "No editable field or context-supported value was found at that position.",
+					);
+					return;
+				}
+
+				const completed = await executeGeneratedFields(output);
+				if (completed === 0) {
+					toast("No generated field action could be executed.");
+					return;
+				}
+				if (!automationModelId && typeof output.engineId === "string") {
+					setAutomationModelId(output.engineId);
+				}
+				toast("Filled the selected field from Playground context.");
+				setAutomationMode(false);
+			} catch (error) {
+				toast(
+					error instanceof Error
+						? error.message
+						: "Automation generation failed.",
+				);
+			} finally {
+				setIsAutomationGenerating(false);
+				setAutomationClickPos(null);
+			}
+		},
+		[
+			automationModelId,
+			effectiveInsightId,
+			executeGeneratedFields,
+			session?.sessionId,
+			toolContext?.roomId,
+		],
+	);
+
+	const handleFieldAutomationTarget = useCallback(
+		async (
+			localX: number,
+			localY: number,
+			remoteX: number,
+			remoteY: number,
+			button: "left" | "right" | "middle",
+		) => {
+			setAutomationClickPos({ localX, localY });
+			try {
+				await sendReplayEvent({
+					type: "mouse-click",
+					requestId: crypto.randomUUID(),
+					x: remoteX,
+					y: remoteY,
+					button,
+				});
+				await generateAndFillSelectedField(remoteX, remoteY);
+			} catch (error) {
+				toast(
+					error instanceof Error
+						? error.message
+						: "Could not click the selected browser position.",
+				);
+				setAutomationClickPos(null);
+			}
+		},
+		[generateAndFillSelectedField, sendReplayEvent],
+	);
+
+	const fillVisibleFieldsFromContext = useCallback(async () => {
+		if (!session?.sessionId) {
+			toast("No active browser session.");
+			return;
+		}
+		const roomId = toolContext?.roomId ?? "";
+		if (!roomId) {
+			toast(
+				"No room context available — open this tool from a Playground room.",
+			);
+			return;
+		}
+		setIsAutomationGenerating(true);
+		setAutomationMode(false);
+		try {
+			// All-fields mode: no x/y, reactor fills all visible fields.
+			const response = await runPixel<Record<string, unknown>>(
+				`GeneratePlaywrightFieldActions(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, sessionId=${JSON.stringify(session.sessionId)}, limit=20);`,
+				effectiveInsightId,
+			);
+
+			const output = response.pixelReturn?.[0]?.output as
+				| Record<string, unknown>
+				| undefined;
+			if (!output?.success) {
+				toast(
+					typeof output?.error === "string"
+						? output.error
+						: "Page fill failed.",
+				);
+				return;
+			}
+
+			const fields = Array.isArray(output?.fields) ? output.fields : [];
+
+			if (fields.length === 0) {
+				toast(
+					typeof output?.message === "string"
+						? output.message
+						: "No editable fields could be filled from the available context.",
+				);
+				return;
+			}
+
+			const completed = await executeGeneratedFields(output);
+			if (completed === 0) {
+				toast("No generated field action could be executed.");
+				return;
+			}
+			if (!automationModelId && typeof output.engineId === "string") {
+				setAutomationModelId(output.engineId);
+			}
+			toast(
+				`Filled ${completed} field${completed !== 1 ? "s" : ""} from Playground context.`,
+			);
+		} catch (error) {
+			toast(error instanceof Error ? error.message : "Page fill failed.");
+		} finally {
+			setIsAutomationGenerating(false);
+		}
+	}, [
+		automationModelId,
+		effectiveInsightId,
+		executeGeneratedFields,
+		session?.sessionId,
+		toolContext?.roomId,
+	]);
+
+	const executePlannedAutomationAction = useCallback(
+		async (
+			output: Record<string, unknown>,
+			iteration: number,
+		): Promise<AutomationHistoryEntry> => {
+			if (!isRecord(output.action)) {
+				throw new Error("Automation planner did not return an action.");
+			}
+			const action = output.action;
+			const rawType = action.type;
+			const type =
+				typeof rawType === "string" ? rawType.trim().toLowerCase() : "";
+			if (
+				type !== "click" &&
+				type !== "fill" &&
+				type !== "select" &&
+				type !== "scroll"
+			) {
+				throw new Error(
+					`Automation planner returned an unsupported action type: ${JSON.stringify(rawType)}.`,
+				);
+			}
+			const label = typeof action.label === "string" ? action.label : "";
+			const expectedUrl =
+				typeof output.pageUrl === "string" ? output.pageUrl : undefined;
+			const expectedTabId =
+				typeof output.tabId === "string" ? output.tabId : undefined;
+			const reason =
+				typeof output.reason === "string" ? output.reason : "";
+
+			if (type === "scroll") {
+				const deltaY =
+					typeof action.deltaY === "number" ? action.deltaY : 0;
+				if (!deltaY) {
+					throw new Error(
+						"Automation planner returned an empty scroll amount.",
+					);
+				}
+				await sendReplayEvent({
+					type: "wheel",
+					requestId: crypto.randomUUID(),
+					x: remoteWidth / 2,
+					y: remoteHeight / 2,
+					deltaX: 0,
+					deltaY,
+					expectedUrl,
+					expectedTabId,
+				});
+				return {
+					iteration,
+					type,
+					label,
+					value: `${deltaY < 0 ? "up" : "down"} 70%`,
+					pageUrl: expectedUrl || "",
+					reason,
+				};
+			}
+			if (!isRecord(action.selector)) {
+				throw new Error("Automation action has no validated selector.");
+			}
+			const strategy =
+				typeof action.selector.strategy === "string"
+					? action.selector.strategy
+					: "css";
+			const selectorValue =
+				typeof action.selector.value === "string"
+					? action.selector.value
+					: "";
+			if (!selectorValue) {
+				throw new Error("Automation action has an empty selector.");
+			}
+			const selector = {
+				strategy,
+				value: selectorValue,
+				frameSelector:
+					typeof action.selector.frameSelector === "string"
+						? action.selector.frameSelector
+						: null,
+			};
+			const tag = typeof action.tag === "string" ? action.tag : undefined;
+			const isPassword = action.isPassword === true;
+			const storeValue = action.storeValue === true;
+
+			if (type === "click") {
+				const coords = isRecord(action.coords) ? action.coords : {};
+				await sendReplayEvent({
+					type: "mouse-click",
+					requestId: crypto.randomUUID(),
+					x: typeof coords.x === "number" ? coords.x : 0,
+					y: typeof coords.y === "number" ? coords.y : 0,
+					button: "left",
+					selector,
+					label,
+					tag,
+					waitAfterMs: 500,
+					expectedUrl,
+					expectedTabId,
+				});
+				return {
+					iteration,
+					type,
+					label,
+					pageUrl: expectedUrl || "",
+					reason,
+				};
+			}
+
+			const value = typeof action.value === "string" ? action.value : "";
+			if (!value)
+				throw new Error("Automation planner returned an empty value.");
+			await sendReplayEvent({
+				type: "fill-element",
+				requestId: crypto.randomUUID(),
+				text: value,
+				selector,
+				label,
+				tag: type === "select" ? "select" : tag,
+				isPassword,
+				storeValue,
+				expectedUrl,
+				expectedTabId,
+			});
+			return {
+				iteration,
+				type,
+				label,
+				value: isPassword ? "[REDACTED]" : value,
+				pageUrl: expectedUrl || "",
+				reason,
+			};
+		},
+		[remoteHeight, remoteWidth, sendReplayEvent],
+	);
+
+	const cancelGoalAutomation = useCallback(() => {
+		automationRunTokenRef.current += 1;
+		setIsGoalAutomationRunning(false);
+		setAutomationProgress(null);
+		toast("Goal automation stopped.");
+	}, []);
+
+	const runGoalAutomation = useCallback(async () => {
+		if (!session?.sessionId) {
+			toast("No active browser session.");
+			return;
+		}
+		const roomId = toolContext?.roomId ?? "";
+		if (!roomId) {
+			toast(
+				"No room context available — open this tool from a Playground room.",
+			);
+			return;
+		}
+
+		const runToken = automationRunTokenRef.current + 1;
+		automationRunTokenRef.current = runToken;
+		setAutomationMode(false);
+		setIsGoalAutomationRunning(true);
+		const history: AutomationHistoryEntry[] = [];
+		const resolvedGoal = automationGoal.trim();
+		let reachedGoal = false;
+		if (!resolvedGoal) {
+			setIsGoalAutomationRunning(false);
+			toast("Review or enter an automation goal before running.");
+			return;
+		}
+
+		try {
+			for (
+				let iteration = 1;
+				iteration <= automationMaxIterations;
+				iteration += 1
+			) {
+				if (automationRunTokenRef.current !== runToken) return;
+				setAutomationProgress({
+					iteration,
+					maxIterations: automationMaxIterations,
+				});
+
+				const response = await runPixel<Record<string, unknown>>(
+					`PlanNextPlaywrightAction(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, sessionId=${JSON.stringify(session.sessionId)}, goal=${JSON.stringify(resolvedGoal)}, history=${JSON.stringify(JSON.stringify(history))}, iteration=${iteration}, maxIterations=${automationMaxIterations}, limit=20);`,
+					effectiveInsightId,
+				);
+				if (automationRunTokenRef.current !== runToken) return;
+
+				const output = response.pixelReturn?.[0]?.output;
+				if (!isRecord(output) || output.success !== true) {
+					throw new Error(
+						isRecord(output) && typeof output.error === "string"
+							? output.error
+							: "Browser automation planning failed.",
+					);
+				}
+				if (!automationModelId && typeof output.engineId === "string") {
+					setAutomationModelId(output.engineId);
+				}
+				const reason =
+					typeof output.reason === "string" ? output.reason : "";
+				if (output.goalReached === true) {
+					reachedGoal = true;
+					toast(reason || "Browser automation reached the goal.");
+					return;
+				}
+				if (!isRecord(output.action)) {
+					toast(
+						reason || "Browser automation has no safe next action.",
+					);
+					return;
+				}
+
+				const completed = await executePlannedAutomationAction(
+					output,
+					iteration,
+				);
+				if (automationRunTokenRef.current !== runToken) return;
+				history.push(completed);
+			}
+
+			if (!reachedGoal) {
+				toast(
+					`Browser automation stopped after ${automationMaxIterations} iterations without confirming the goal.`,
+				);
+			}
+		} catch (error) {
+			if (automationRunTokenRef.current === runToken) {
+				toast(
+					error instanceof Error
+						? error.message
+						: "Browser automation failed.",
+				);
+			}
+		} finally {
+			if (automationRunTokenRef.current === runToken) {
+				setIsGoalAutomationRunning(false);
+				setAutomationProgress(null);
+			}
+		}
+	}, [
+		automationGoal,
+		automationMaxIterations,
+		automationModelId,
+		effectiveInsightId,
+		executePlannedAutomationAction,
+		session?.sessionId,
+		toolContext?.roomId,
+	]);
+	const pendingSelectionContext = pendingTextSelection?.context ?? null;
 
 	return (
 		<div className="flex h-screen flex-col overflow-hidden bg-canvas text-ink">
@@ -1560,7 +2288,6 @@ export default function App() {
 					isCreating={isCreating}
 					isLoading={isBrowserLoading}
 					onStart={handleStart}
-					onStop={handleStop}
 					onNavigate={handleNavigate}
 					onBack={handleBack}
 					onForward={handleForward}
@@ -1572,43 +2299,50 @@ export default function App() {
 					onOpenSaveRecording={handleOpenSaveRecording}
 				/>
 				<div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-1">
-					<ConnectionStatus state={connectionState} />
-					{session && (
-						<Button
-							size="sm"
-							variant={selectionMode ? "default" : "outline"}
-							className={
-								selectionMode
-									? "bg-warning text-canvas hover:bg-warning/90"
-									: ""
+					{isPlaygroundMode && session && (
+						<AutomationControls
+							insightId={effectiveInsightId}
+							isActive={
+								automationMode ||
+								isAutomationGenerating ||
+								isGoalAutomationRunning
 							}
-							disabled={
-								connectionState !== "connected" ||
-								isCapturingSelectedText ||
-								isReturningToPlayground
+							isGoalRunning={isGoalAutomationRunning}
+							modelId={automationModelId}
+							subMode={automationSubMode}
+							goal={automationGoal}
+							maxIterations={automationMaxIterations}
+							isGoalGenerating={isAutomationGoalGenerating}
+							goalGenerationError={
+								automationGoalGenerationError || undefined
 							}
-							onClick={() => {
-								if (selectionMode) {
-									setSelectionMode(false);
-									return;
+							progressLabel={
+								automationProgress
+									? `Step ${automationProgress.iteration}/${automationProgress.maxIterations}`
+									: undefined
+							}
+							onToggle={() => {
+								if (isGoalAutomationRunning) {
+									cancelGoalAutomation();
+								} else if (automationSubMode === "run-goal") {
+									void runGoalAutomation();
+								} else if (automationSubMode === "fill-page") {
+									void fillVisibleFieldsFromContext();
+								} else {
+									setAutomationMode((on) => !on);
 								}
-								playback.requestPause(
-									"Playback paused for context selection",
-								);
-								setSelectionMode(true);
 							}}
-						>
-							{isCapturingSelectedText ? (
-								<Spinner />
-							) : (
-								<ScanLine />
-							)}
-							{isCapturingSelectedText
-								? "Extracting..."
-								: selectionMode
-									? "Cancel Capture"
-									: "Add context"}
-						</Button>
+							onSubModeChange={setAutomationSubMode}
+							onModelChange={setAutomationModelId}
+							onGoalChange={(goal) => {
+								setAutomationGoal(goal);
+								setAutomationGoalGenerationError("");
+							}}
+							onRegenerateGoal={() =>
+								void generateAutomationGoal(true)
+							}
+							onMaxIterationsChange={setAutomationMaxIterations}
+						/>
 					)}
 					{selectedTextContexts.length > 0 && (
 						<Button
@@ -1630,9 +2364,7 @@ export default function App() {
 							disabled={
 								isReturningToPlayground ||
 								isSaving ||
-								isSavingRecording ||
-								isCapturingSelectedText ||
-								selectionMode
+								isSavingRecording
 							}
 							onClick={() => void handleOpenReturnDialog()}
 						>
@@ -1663,22 +2395,22 @@ export default function App() {
 						{replayMenuOpen ? <ChevronDown /> : <ChevronRight />}
 						Replay
 					</Button>
-					<Button
-						size="sm"
-						variant={recordedStepsOpen ? "default" : "outline"}
-						disabled={!isRecording && recordedSteps.length === 0}
-						onClick={() => setRecordedStepsOpen((open) => !open)}
-					>
-						<Circle
-							className={
-								isRecording ? "fill-danger text-danger" : ""
+					{recordedSteps.length > 0 && (
+						<Button
+							size="sm"
+							variant={recordedStepsOpen ? "default" : "outline"}
+							onClick={() =>
+								setRecordedStepsOpen((open) => !open)
 							}
-						/>
-						Recorded{" "}
-						{recordedSteps.length
-							? `(${recordedSteps.length})`
-							: ""}
-					</Button>
+						>
+							<Circle
+								className={
+									isRecording ? "fill-danger text-danger" : ""
+								}
+							/>
+							Recorded ({recordedSteps.length})
+						</Button>
+					)}
 					{playback.isPaused && (
 						<Badge
 							variant="outline"
@@ -1696,6 +2428,7 @@ export default function App() {
 			<BrowserTabStrip
 				tabs={browserTabs}
 				activeTabId={activeBrowserTabId}
+				connectionState={connectionState}
 				isRecording={isRecording}
 				onSwitch={handleSwitchBrowserTab}
 				onClose={handleCloseBrowserTab}
@@ -1721,22 +2454,111 @@ export default function App() {
 				)}
 
 			<div className="relative flex min-h-0 flex-1 overflow-hidden">
+				{/* Click-to-fill loading indicator */}
+				{isAutomationGenerating && automationClickPos && (
+					<AutomationActionIndicator
+						localX={automationClickPos.localX}
+						localY={automationClickPos.localY}
+					/>
+				)}
+				{pendingTextSelection && (
+					<div
+						className="fixed z-50 w-72 rounded-lg border border-line bg-surface p-3 text-ink shadow-xl"
+						style={{
+							left: Math.max(
+								8,
+								Math.min(
+									pendingTextSelection.clientX + 10,
+									window.innerWidth - 296,
+								),
+							),
+							top: Math.max(
+								8,
+								Math.min(
+									pendingTextSelection.clientY + 10,
+									window.innerHeight - 180,
+								),
+							),
+						}}
+					>
+						<div className="mb-2 flex items-center justify-between gap-2">
+							<p className="font-medium text-sm">
+								Selected website text
+							</p>
+							<Button
+								size="icon-sm"
+								variant="ghost"
+								aria-label="Dismiss selected text"
+								onClick={dismissPendingTextSelection}
+							>
+								<X />
+							</Button>
+						</div>
+						{pendingSelectionContext ? (
+							<>
+								<p className="mb-3 line-clamp-3 text-ink-muted text-xs leading-5">
+									{pendingSelectionContext.content}
+								</p>
+								<div className="flex justify-end gap-2">
+									<Button
+										size="sm"
+										variant="outline"
+										onClick={() => {
+											void (async () => {
+												await handleCopySelectedContext(
+													pendingSelectionContext,
+												);
+												dismissPendingTextSelection();
+											})();
+										}}
+									>
+										<Copy />
+										Copy
+									</Button>
+									<Button
+										size="sm"
+										onClick={() => {
+											void handleAddSelectedContext(
+												pendingSelectionContext,
+											);
+										}}
+									>
+										<ScanLine />
+										Add as context
+									</Button>
+								</div>
+							</>
+						) : (
+							<div className="flex items-center gap-2 text-ink-muted text-sm">
+								<Spinner />
+								Reading selected text…
+							</div>
+						)}
+					</div>
+				)}
 				{/* Browser canvas */}
 				<BrowserViewer
 					connectionState={connectionState}
 					remoteWidth={remoteWidth}
 					remoteHeight={remoteHeight}
 					latestFrame={latestFrame}
+					scrollMetrics={browserScrollMetrics}
 					browserCursor={browserCursor}
 					sendEvent={sendViewerEvent}
-					selectionMode={selectionMode}
-					onSelectionComplete={handleSelectedTextCapture}
-					onSelectionCancel={() => setSelectionMode(false)}
-					onUserInput={() =>
+					onTextDragComplete={handleTextDragComplete}
+					onUserInput={() => {
 						playback.requestPause(
 							"Playback will pause after your interaction",
-						)
+						);
+						if (pendingTextSelection) {
+							dismissPendingTextSelection();
+						}
+						if (isGoalAutomationRunning) cancelGoalAutomation();
+					}}
+					automationMode={
+						automationMode && automationSubMode === "click"
 					}
+					onAutomationClick={handleFieldAutomationTarget}
 				/>
 
 				<ReplaySidebar

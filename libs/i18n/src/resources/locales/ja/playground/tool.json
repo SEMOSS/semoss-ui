@@ -26,6 +26,7 @@
 	},
 	"form": {
 		"result": "結果",
+		"parameters": "パラメーター",
 		"schemaLoadFailed": "ツールスキーマの読み込みに失敗しました",
 		"schemaLoadFailedDescription": "ツールの設定を取得できませんでした。後でもう一度お試しください。",
 		"schemaLoading": "ツールスキーマを読み込んでいます...",

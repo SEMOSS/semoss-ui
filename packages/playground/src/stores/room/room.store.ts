@@ -746,6 +746,7 @@ export class RoomStore {
 		toolId: string,
 		message: InputMessageStore | ResponseMessageStore,
 		part: PixelMessageToolCallPart | PixelMessageToolResultPart,
+		options?: { placeholder?: boolean },
 	) => {
 		let tool = this._store.tools[toolId];
 		if (!tool) {
@@ -753,7 +754,7 @@ export class RoomStore {
 			this._store.tools[tool.id] = tool;
 		}
 
-		tool.syncMessage(message, part);
+		tool.syncMessage(message, part, options);
 	};
 
 	/**
