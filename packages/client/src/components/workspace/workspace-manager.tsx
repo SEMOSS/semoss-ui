@@ -9,13 +9,13 @@ import {
 	Notebook,
 	NotebookTabs,
 	PanelsTopLeft,
-	RotateCcw,
 	Settings,
 	Terminal,
+	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import { FlexLayout, getFileIconComponent } from "@semoss/shared";
 import {
@@ -25,15 +25,14 @@ import {
 	BreadcrumbList,
 	BreadcrumbPage,
 	BreadcrumbSeparator,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
+	cn,
 } from "@semoss/ui/next";
-import { ClosePage } from "@/assets/img/ClosePage";
 import { useProject, useTabBarScroll, useWorkspace } from "@/hooks";
 import type { WorkspaceOptions } from "@/stores";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
 import { WorkspaceLoading } from "./WorkspaceLoading";
+import { WorkspaceResetButton } from "./workspace-reset-button";
+import { WorkspaceSettingsToggle } from "./workspace-settings-toggle";
 
 const TAB_ICON_CLASS_NAME = "size-4";
 
@@ -93,6 +92,16 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 		const containerRef = useRef<HTMLDivElement | null>(null);
 
 		useTabBarScroll(containerRef);
+
+		// Offset the actions above the bottom border tab strip when one exists.
+		const hasBottomBorder = useMemo(
+			() =>
+				workspace.model
+					?.toJson()
+					.borders?.some((border) => border.location === "bottom") ??
+				false,
+			[workspace.model],
+		);
 
 		// build the model from the layout
 		// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only event registration
@@ -189,22 +198,6 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 			}
 		}, [options]);
 
-		/**
-		 * reset the selected layout
-		 */
-		const resetWorkspace = () => {
-			try {
-				// copy the optoins
-				const layout = JSON.parse(JSON.stringify(options.layout));
-
-				// update the layout
-				workspace.updateLayout(layout);
-			} catch (e) {
-				console.error(e);
-				throw e;
-			}
-		};
-
 		return (
 			<>
 				<NavbarLeft>
@@ -242,72 +235,66 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 				</NavbarLeft>
 				<NavbarRight>{navbarActions}</NavbarRight>
 				<div className="relative flex h-full w-full flex-col overflow-hidden">
-					<div className="relative mt-2 flex h-full w-full flex-1 overflow-hidden px-3 pt-3 pb-3">
-						<WorkspaceLoading />
-						<div
-							ref={containerRef}
-							className="flexlayout__theme_smss absolute top-0 right-3 bottom-3 left-3 overflow-hidden"
-						>
-							{workspace.model ? (
-								<>
-									<FlexLayout.Layout
-										ref={layoutRef}
+					<WorkspaceLoading />
+					<div
+						ref={containerRef}
+						className="flexlayout__theme_smss absolute inset-0 overflow-hidden"
+					>
+						{workspace.model ? (
+							<>
+								<FlexLayout.Layout
+									ref={layoutRef}
+									model={workspace.model}
+									factory={(node) => {
+										return factory(
+											node,
+											layoutRef.current as FlexLayout.Layout,
+										);
+									}}
+									icons={{
+										close: <XIcon className="size-4" />,
+									}}
+									onModelChange={() => {
+										workspace.saveToCache();
+									}}
+									onAction={(action) => {
+										const external = onAction?.(action);
+										if (external === undefined) {
+											return undefined;
+										}
+
+										return action;
+									}}
+									onRenderTab={(tabNode, renderValues) => {
+										const tabIcon = getWorkspaceTabIcon(
+											tabNode.getComponent() as string,
+											tabNode.getName(),
+										);
+
+										if (tabIcon) {
+											renderValues.leading = tabIcon;
+										}
+
+										return renderValues;
+									}}
+								/>
+								<div
+									className={cn(
+										"absolute left-2 z-10 flex flex-col gap-1",
+										hasBottomBorder
+											? "bottom-14"
+											: "bottom-2",
+									)}
+								>
+									<WorkspaceSettingsToggle
 										model={workspace.model}
-										factory={(node) => {
-											return factory(
-												node,
-												layoutRef.current as FlexLayout.Layout,
-											);
-										}}
-										icons={{
-											close: <ClosePage />,
-										}}
-										onModelChange={() => {
-											workspace.saveToCache();
-										}}
-										onAction={(action) => {
-											const external = onAction?.(action);
-											if (external === undefined) {
-												return undefined;
-											}
-
-											return action;
-										}}
-										onRenderTab={(
-											tabNode,
-											renderValues,
-										) => {
-											const tabIcon = getWorkspaceTabIcon(
-												tabNode.getComponent() as string,
-												tabNode.getName(),
-											);
-
-											if (tabIcon) {
-												renderValues.leading = tabIcon;
-											}
-
-											return renderValues;
-										}}
 									/>
-									<div className="absolute bottom-12 left-0 z-1 flex h-12 w-12 flex-col items-center justify-center">
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<button
-													type="button"
-													className="flex size-7 items-center justify-center rounded hover:bg-accent"
-													onClick={resetWorkspace}
-												>
-													<RotateCcw className="size-4" />
-												</button>
-											</TooltipTrigger>
-											<TooltipContent>
-												Reset workspace
-											</TooltipContent>
-										</Tooltip>
-									</div>
-								</>
-							) : null}
-						</div>
+									<WorkspaceResetButton
+										layout={options.layout}
+									/>
+								</div>
+							</>
+						) : null}
 					</div>
 				</div>
 			</>

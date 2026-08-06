@@ -67,6 +67,7 @@ interface UsePlaybackControllerOptions {
 	sendTabControlEvent: (
 		event: ClientToServerEvent & { requestId: string },
 	) => Promise<void>;
+	replayContextStep: (step: LoadedRecordingStep) => Promise<void>;
 	onError: (message: string) => void;
 	onMessage: (message: string) => void;
 }
@@ -127,6 +128,7 @@ export function usePlaybackController({
 	replaySingleStep,
 	sendReplayEvent,
 	sendTabControlEvent,
+	replayContextStep,
 	onError,
 	onMessage,
 }: UsePlaybackControllerOptions) {
@@ -674,6 +676,10 @@ export function usePlaybackController({
 
 	const runStep = useCallback(
 		async (tabId: string, step: LoadedRecordingStep) => {
+			const isContextStep =
+				String(step.type || "")
+					.trim()
+					.toUpperCase() === "CONTEXT";
 			// Room recordings replay through replayRoomStep below, which never
 			// touches project, so only project-sourced recordings require one.
 			if (
@@ -727,12 +733,45 @@ export function usePlaybackController({
 				});
 			} catch (error) {
 				setRunningStepId(null);
+				if (isContextStep) {
+					setExecutedStepIds((current) =>
+						new Set(current).add(step.id as number),
+					);
+					onError(
+						`Optional context step ${step.id} failed: ${
+							error instanceof Error
+								? error.message
+								: `Could not prepare ${tabId} for context extraction`
+						}. Continuing playback.`,
+					);
+					return true;
+				}
 				onError(
 					error instanceof Error
 						? error.message
 						: `Could not prepare ${tabId} for playback`,
 				);
 				return false;
+			}
+
+			if (isContextStep) {
+				try {
+					await replayContextStep(step);
+					onMessage(`Extracted context at optional step ${step.id}`);
+				} catch (error) {
+					onError(
+						`Optional context step ${step.id} failed: ${
+							error instanceof Error
+								? error.message
+								: "Could not extract selected website text"
+						}. Continuing playback.`,
+					);
+				}
+				setRunningStepId(null);
+				setExecutedStepIds((current) =>
+					new Set(current).add(step.id as number),
+				);
+				return true;
 			}
 
 			if (source === "room") {
@@ -801,6 +840,7 @@ export function usePlaybackController({
 			onMessage,
 			project,
 			replayRoomStep,
+			replayContextStep,
 			replaySingleStep,
 			selectedRecording,
 			sendTabControlEvent,
