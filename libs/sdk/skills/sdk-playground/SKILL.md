@@ -19,6 +19,8 @@ import {
     setRoomForInsight,
     updateRoomOptions,
     askPlayground,
+    getPixelJobStreaming,
+    getPixelAsyncResult,
 } from "@semoss/sdk";
 
 // Types (all exported alongside functions)
@@ -28,7 +30,8 @@ import type {
     PlaygroundRoomOptions,
     PlaygroundWorkspace,
     AskPlaygroundParams,
-    PlaygroundResponse,
+    PixelStreamMessage,
+    PixelJobStreamingStatus,
 } from "@semoss/sdk";
 ```
 
@@ -113,7 +116,9 @@ await updateRoomOptions(insightId, room.roomId, newOptions);
 
 ### `askPlayground(insightId, params)`
 
-Sends a message and returns the model's `PlaygroundResponse`.
+Fires the `AskPlayground` reactor asynchronously and returns `{ jobId }`. Use
+`getPixelJobStreaming` to stream tokens as they arrive, then `getPixelAsyncResult`
+to fetch the full structured result once the job completes.
 
 ```ts
 const params: AskPlaygroundParams = {
@@ -124,8 +129,28 @@ const params: AskPlaygroundParams = {
     parentMessageId: "ROOT_PLACEHOLDER_ID", // use for new threads
 };
 
-const response = await askPlayground(insightId, params);
-console.log(response.content);
+// 1. Start the async job
+const { jobId } = await askPlayground(insightId, params);
+
+// 2. Stream tokens as they arrive
+const TERMINAL: PixelJobStreamingStatus[] = [
+    "Complete", "ProgressComplete", "Canceled", "Error", "UnknownJob",
+];
+
+while (true) {
+    const { message, status } = await getPixelJobStreaming(jobId);
+
+    for (const chunk of message) {
+        if (chunk.stream_type === "content" && chunk.data.content) {
+            setMessage(prev => prev + chunk.data.content);
+        }
+    }
+
+    if (TERMINAL.includes(status)) break;
+}
+
+// 3. Fetch the full structured result
+const { errors, results } = await getPixelAsyncResult(jobId);
 ```
 
 **Optional fields on `AskPlaygroundParams`:**
@@ -162,12 +187,29 @@ await setRoomForInsight(insightId, room.roomId);
 // 3. Configure the room
 await updateRoomOptions(insightId, room.roomId, [{ ... }]);
 
-// 4. Send a message
-const response = await askPlayground(insightId, {
+// 4. Send a message and get the job ID
+const { jobId } = await askPlayground(insightId, {
     engine: "gpt-4o",
     roomId: room.roomId,
     command: "Hello!",
     context: "You are helpful.",
     parentMessageId: "ROOT_PLACEHOLDER_ID",
 });
+
+// 5. Stream tokens
+const TERMINAL: PixelJobStreamingStatus[] = [
+    "Complete", "ProgressComplete", "Canceled", "Error", "UnknownJob",
+];
+while (true) {
+    const { message, status } = await getPixelJobStreaming(jobId);
+    for (const chunk of message) {
+        if (chunk.stream_type === "content" && chunk.data.content) {
+            setMessage(prev => prev + chunk.data.content);
+        }
+    }
+    if (TERMINAL.includes(status)) break;
+}
+
+// 6. Fetch the full structured result
+const { errors, results } = await getPixelAsyncResult(jobId);
 ```

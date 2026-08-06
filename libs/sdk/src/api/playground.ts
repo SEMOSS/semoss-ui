@@ -1,4 +1,4 @@
-import { runPixel } from "./base";
+import { runPixel, runPixelAsync } from "./base";
 
 // -------------------------------------------------------------------------------------------------
 // INTERFACES
@@ -201,16 +201,33 @@ export const updateRoomOptions = async (
 };
 
 /**
- * Sends a message to the playground and returns the model response.
+ * Sends a message to the playground and returns the job ID for streaming.
+ * Poll the job using {@link getPixelJobStreaming} until the status reaches a
+ * terminal state ("Complete", "ProgressComplete", "Canceled", "Error", "UnknownJob").
  *
  * @param insightId - The active SEMOSS insight ID.
  * @param params - Parameters for the playground request.
- * @returns The model's response.
+ * @returns The async job ID to pass to {@link getPixelJobStreaming}.
+ *
+ * @example
+ * ```ts
+ * const { jobId } = await askPlayground(insightId, params);
+ *
+ * while (true) {
+ *   const { message, status } = await getPixelJobStreaming(jobId);
+ *   for (const chunk of message) {
+ *     if (chunk.stream_type === "content" && chunk.data.content) {
+ *       setMessage(prev => prev + chunk.data.content);
+ *     }
+ *   }
+ *   if (["Complete", "ProgressComplete", "Canceled", "Error", "UnknownJob"].includes(status)) break;
+ * }
+ * ```
  */
 export const askPlayground = async (
 	insightId: string,
 	params: AskPlaygroundParams,
-): Promise<PlaygroundResponse> => {
+): Promise<{ jobId: string }> => {
 	const {
 		engine,
 		roomId,
@@ -221,22 +238,9 @@ export const askPlayground = async (
 		paramValues = [{}],
 	} = params;
 
-	const pixel = `AskPlayground(engine=["${engine}"], roomId=["${roomId}"], command=["<encode>${command}</encode>"], context=["<encode>${context}</encode>"], image=${JSON.stringify(image)}, parentMessageId=["${parentMessageId}"], paramValues=${JSON.stringify(paramValues)});`;
-	const { errors, pixelReturn } = await runPixel<[PlaygroundResponse]>(
-		pixel,
-		insightId,
-	);
+	const pixel = `AskPlayground(engine=["${engine}"], roomId=["${roomId}"], command=["<encode>${command}</encode>"], context=["<encode>${context}</encode>"], image=${JSON.stringify(image)}, parentMessageId=["${parentMessageId}"], paramValues=${JSON.stringify(paramValues)})`;
 
-	if (errors.length > 0) {
-		throw new Error(errors.join(", "));
-	}
-
-	const output = pixelReturn[0]?.output;
-	if (!output) {
-		throw new Error("AskPlayground returned no data");
-	}
-
-	return output;
+	return runPixelAsync(pixel, insightId);
 };
 
 /**
