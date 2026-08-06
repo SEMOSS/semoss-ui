@@ -1,7 +1,9 @@
 import {
 	addEngineUserPermissions,
 	addProjectUserPermissions,
+	editEngineUserPermissions,
 	editProjectUserPermissions,
+	removeEngineUserPermissions,
 	removeProjectUserPermissions,
 } from "@semoss/sdk";
 import { Env, get, post } from "@semoss/sdk/react";
@@ -11,10 +13,6 @@ import {
 	editInsightUserPermissions,
 	removeInsightUserPermissions,
 } from "./auth";
-import {
-	editEngineUserPermissions,
-	removeEngineUserPermissions,
-} from "./engines";
 
 /**
  * User-centric access APIs.
@@ -369,7 +367,7 @@ export const editUserAccess = async (
 			);
 		case "ENGINE":
 			return succeeded(
-				await editEngineUserPermissions(admin, resourceId, users),
+				await editEngineUserPermissions(resourceId, users, admin),
 			);
 		case "INSIGHT":
 			return succeeded(
@@ -396,7 +394,7 @@ export const revokeUserAccess = async (
 			);
 		case "ENGINE":
 			return succeeded(
-				await removeEngineUserPermissions(admin, resourceId, [userId]),
+				await removeEngineUserPermissions(resourceId, [userId], admin),
 			);
 		case "INSIGHT":
 			return succeeded(

@@ -104,6 +104,53 @@ export const getProjectUsers = async (
 };
 
 /**
+ * Get users with access to an engine
+ * @param engineId - The engine ID
+ * @param admin - Whether to use admin endpoint
+ * @param userId - Optional user ID to filter by
+ * @param permission - Optional permission level to filter by
+ * @param limit - Optional limit for pagination
+ * @param offset - Optional offset for pagination
+ * @returns Object containing members array and total count
+ */
+export const getEngineUsers = async (
+	engineId: string,
+	admin = false,
+	userId?: string,
+	permission?: string,
+	limit?: number,
+	offset?: number,
+): Promise<{
+	totalMembers: number;
+	members: User[];
+}> => {
+	let url = `${Env.MODULE}/api/auth/`;
+	if (admin) {
+		url += "admin/";
+	}
+
+	url += "engine/getEngineUsers?";
+	url += `engineId=${engineId}`;
+	url += userId ? `&searchTerm=${userId}` : "";
+	url += permission ? `&permission=${permission}` : "";
+	url += offset !== undefined ? `&offset=${offset}` : "";
+	url += limit !== undefined ? `&limit=${limit}` : "";
+
+	const response = await get<{
+		members: User[];
+		totalMembers: number;
+	}>(url).catch((error) => {
+		throw Error(error);
+	});
+
+	if (!response) {
+		throw Error("No Response to get users associated with engine");
+	}
+
+	return response.data;
+};
+
+/**
  * Edit user permissions for a project
  * @param projectId - The project ID
  * @param users - Array of users with their updated permissions
@@ -134,6 +181,36 @@ export const editProjectUserPermissions = async (
 };
 
 /**
+ * Edit user permissions for an engine
+ * @param engineId - The engine ID
+ * @param users - Array of users with their updated permissions
+ * @param admin - Whether to use admin endpoint
+ * @returns Whether the operation was successful
+ */
+export const editEngineUserPermissions = async (
+	engineId: string,
+	users: PostUser[],
+	admin = false,
+): Promise<boolean> => {
+	let url = `${Env.MODULE}/api/auth/`;
+	if (admin) {
+		url += "admin/";
+	}
+	url += "engine/editEngineUserPermissions";
+
+	const response = await post<{ success: boolean }>(
+		url,
+		{
+			engineId,
+			userpermissions: users,
+		},
+		{},
+	);
+
+	return response.data.success;
+};
+
+/**
  * Remove user permissions from a project
  * @param projectId - The project ID
  * @param userIds - Array of user IDs to remove
@@ -155,6 +232,36 @@ export const removeProjectUserPermissions = async (
 		url,
 		{
 			projectId,
+			ids: userIds,
+		},
+		{},
+	);
+
+	return response.data.success;
+};
+
+/**
+ * Remove user permissions from an engine
+ * @param engineId - The engine ID
+ * @param userIds - Array of user IDs to remove
+ * @param admin - Whether to use admin endpoint
+ * @returns Whether the operation was successful
+ */
+export const removeEngineUserPermissions = async (
+	engineId: string,
+	userIds: string[],
+	admin = false,
+): Promise<boolean> => {
+	let url = `${Env.MODULE}/api/auth/`;
+	if (admin) {
+		url += "admin/";
+	}
+	url += "engine/removeEngineUserPermissions";
+
+	const response = await post<{ success: boolean }>(
+		url,
+		{
+			engineId,
 			ids: userIds,
 		},
 		{},
