@@ -229,6 +229,8 @@ export function OutputPreview({
 		);
 	};
 
+	const isTableMode = renderMode === "table";
+
 	return (
 		<div className="space-y-2">
 			<div className="relative rounded-md border bg-muted/30 px-3 py-2 font-mono text-[11px] text-muted-foreground">
@@ -242,7 +244,7 @@ export function OutputPreview({
 				>
 					<ClipboardCopy className="h-3 w-3" />
 				</button>
-				{expanded ? (
+				{isTableMode || expanded ? (
 					renderExpanded()
 				) : (
 					<p className="whitespace-pre-wrap break-all pr-8">
@@ -250,7 +252,7 @@ export function OutputPreview({
 					</p>
 				)}
 			</div>
-			{value.length > 180 && (
+			{!isTableMode && value.length > 180 && (
 				<button
 					type="button"
 					onClick={onToggle}
