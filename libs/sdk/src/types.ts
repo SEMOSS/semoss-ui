@@ -28,6 +28,14 @@ export interface PostUser {
 	permission: Role;
 }
 
+export interface UserAccessRequest {
+	requestid: string;
+	userid: string;
+	permission: Role;
+	/** Resource type — only read by the backend when access-request notifications are enabled. */
+	type?: string;
+}
+
 export interface ColumnInterface {
 	column: string;
 	type: string;

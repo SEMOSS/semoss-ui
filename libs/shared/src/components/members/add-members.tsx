@@ -16,6 +16,8 @@ import {
 	addProjectUserPermissions,
 	getEngineUsersNoCredentials,
 	getProjectUsersNoCredentials,
+	getUserEnginePermission,
+	getUserProjectPermission,
 	type PostUser,
 } from "@semoss/sdk";
 import { useIteratorApi } from "@semoss/sdk/react";
@@ -39,10 +41,6 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
-import {
-	getUserEnginePermission,
-	getUserProjectPermission,
-} from "../../api/permissions";
 import { returnAccessType } from "./common";
 import { ModelRestrictionFields } from "./model-restriction-fields";
 

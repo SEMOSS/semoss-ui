@@ -1,12 +1,10 @@
 import {
 	addEngineUserPermissions,
 	addProjectUserPermissions,
-} from "@semoss/sdk";
-import { Env, get, post } from "@semoss/sdk/react";
-import {
 	editProjectUserPermissions,
 	removeProjectUserPermissions,
-} from "@semoss/shared/api";
+} from "@semoss/sdk";
+import { Env, get, post } from "@semoss/sdk/react";
 import type { Role } from "@/types";
 import {
 	addInsightUserPermissions,
