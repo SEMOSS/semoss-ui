@@ -28,7 +28,7 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { EngineSelect } from "@semoss/shared";
+import { ContextUsageIndicator, EngineSelect } from "@semoss/shared";
 import {
 	Button,
 	cn,
@@ -944,7 +944,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								    until chips-region collapses; then clip from the
 								    left (justify-end + overflow-hidden). */}
 									<div className="flex min-w-0 items-center justify-end gap-2 overflow-hidden">
-										<div data-tour="tour-model">
+										<div
+											data-tour="tour-model"
+											className="flex items-center gap-1.5"
+										>
 											{root.theme.featureFlags
 												?.enableModelSelect && (
 												<EngineSelect
@@ -967,14 +970,19 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													popoverContentProps={{
 														align: "start",
 													}}
-													tokensUsed={tokensUsed}
-													tokensMax={tokensMax}
-													contextTooltipContent={
-														contextTooltipContent
-													}
 												/>
 											)}
 										</div>
+										<ContextUsageIndicator
+											// -ms-1 to make spacing between engine select and context usage look more like spacing between it and mic
+											// this is because engine select is ghost
+											className="-ms-1"
+											tokensUsed={tokensUsed}
+											tokensMax={tokensMax}
+											tooltipContent={
+												contextTooltipContent
+											}
+										/>
 										{predefinedPrompts.length > 0 ? (
 											<Tooltip>
 												<TooltipTrigger asChild>
@@ -1015,9 +1023,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 															recognitionRef.current?.start();
 														}
 													}}
-													// -ms-1 to make spacing between engine select and mic look more like spacing between mic and send
-													// this is because engine select and mic are ghost
-													className="-ms-1"
 												>
 													<MicIcon
 														className={`${isListening ? "animate-pulse text-destructive" : ""}`}
