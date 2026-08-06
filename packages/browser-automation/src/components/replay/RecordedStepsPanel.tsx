@@ -2,6 +2,33 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { Badge, Button } from "@semoss/ui/next";
 import type { RemoteBrowserRecordedStep } from "../../types/browserEvents";
 
+function recordedStepType(step: RemoteBrowserRecordedStep): string {
+	return step.type?.toUpperCase() === "WHEEL"
+		? "SCROLL"
+		: step.type?.toUpperCase() === "SELECTED-TEXT-CONTEXT"
+			? "CONTEXT"
+			: step.type?.toUpperCase() || "STEP";
+}
+
+function recordedStepValue(step: RemoteBrowserRecordedStep): string | null {
+	const type = step.type?.toUpperCase();
+	if (type === "TYPE" && step.text) return `“${step.text}”`;
+	if (type === "NAVIGATE" && step.url) return step.url;
+	if (type === "KEY" && step.key) return step.key;
+	if (type === "SELECTED-TEXT-CONTEXT" || type === "CONTEXT") {
+		return "Extract selected website text (optional)";
+	}
+	if (type === "WHEEL" || type === "SCROLL") {
+		const delta = step.deltaY ?? 0;
+		const height = step.viewport?.height ?? 0;
+		const percentage = height
+			? Math.max(1, Math.round((Math.abs(delta) / height) * 100))
+			: 70;
+		return `${delta < 0 ? "Up" : "Down"} ${percentage}% of screen`;
+	}
+	return null;
+}
+
 interface RecordedStepsPanelProps {
 	open: boolean;
 	isRecording: boolean;
@@ -18,7 +45,7 @@ export function RecordedStepsPanel({
 	onSave,
 }: RecordedStepsPanelProps) {
 	return (
-		<section className="border-line border-b">
+		<section className="border-line border-b bg-surface-raised/20">
 			<div className="flex items-center gap-2 px-2 py-1.5">
 				<Button
 					size="icon-sm"
@@ -45,7 +72,7 @@ export function RecordedStepsPanel({
 				</Button>
 			</div>
 			{open && (
-				<div className="border-line border-t">
+				<div className="space-y-1.5 border-line border-t bg-canvas/40 p-2">
 					{steps.length === 0 ? (
 						<p className="p-4 text-muted-foreground text-sm">
 							{isRecording
@@ -53,25 +80,29 @@ export function RecordedStepsPanel({
 								: "Start recording to preview captured steps."}
 						</p>
 					) : (
-						steps.map((step, index) => (
-							<div
-								key={`${step.timestamp ?? index}-${index}`}
-								className="border-line border-b px-3 py-2 last:border-b-0"
-							>
-								<div className="font-semibold text-sm">
-									#{index + 1} {step.type || "STEP"}
+						steps.map((step, index) => {
+							const value = recordedStepValue(step);
+							return (
+								<div
+									key={`${step.timestamp ?? index}-${index}`}
+									className="flex items-start gap-2 rounded-md border border-line bg-surface px-2.5 py-2 shadow-sm"
+								>
+									<span className="grid size-6 shrink-0 place-items-center rounded-full bg-accent/10 font-semibold text-accent text-xs">
+										{index + 1}
+									</span>
+									<div className="min-w-0 flex-1">
+										<div className="font-semibold text-sm">
+											{recordedStepType(step)}
+										</div>
+										{value && (
+											<div className="mt-0.5 break-words text-muted-foreground text-xs">
+												{value}
+											</div>
+										)}
+									</div>
 								</div>
-								<div className="break-words text-muted-foreground text-xs">
-									{step.selector
-										? `${step.role || "selector"}: ${step.selector}`
-										: ""}
-									{step.text ? ` · "${step.text}"` : ""}
-									{step.coordinates
-										? ` · (${Math.round(step.coordinates.x)}, ${Math.round(step.coordinates.y)})`
-										: ""}
-								</div>
-							</div>
-						))
+							);
+						})
 					)}
 				</div>
 			)}
