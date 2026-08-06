@@ -15,6 +15,7 @@ import {
 	NewPromptBuilderAppPage,
 	ViewAppPage,
 } from "../app";
+import { AgentActivityPage } from "./agent/agent-activity-page";
 import { CreateAgentPage } from "./agent/create-agent-page";
 import { CreateAppPage } from "./app/create-app-page";
 import { ProjectDependenciesPage } from "./project-dependencies-page";
@@ -287,6 +288,15 @@ export const PROJECT_ROUTES: {
 										restrict: ["OWNER"],
 									},
 									{
+										name: "Agent Activity",
+										path: "agent-activity",
+										restrict: [
+											"OWNER",
+											"EDIT",
+											"READ_ONLY",
+										],
+									},
+									{
 										name: "Access Control",
 										path: "access-control",
 										restrict: ["OWNER", "EDIT"],
@@ -315,6 +325,10 @@ export const PROJECT_ROUTES: {
 							{
 								path: "github/select-repo",
 								element: <AppGithubSelectRepoPage />,
+							},
+							{
+								path: "agent-activity",
+								element: <AgentActivityPage />,
 							},
 							{
 								path: "access-control",
