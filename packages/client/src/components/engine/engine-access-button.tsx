@@ -1,6 +1,7 @@
 import { Eye, LockKeyhole, Pencil, Plus, User } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import type { Role } from "@semoss/sdk";
 import {
 	Button,
 	Card,
@@ -20,7 +21,6 @@ import {
 } from "@semoss/ui/next";
 import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
 import { useEngine, useRootStore } from "@/hooks";
-import type { Role } from "@/types";
 
 type EngineAccessButtonProps = {
 	fromApp?: boolean;
