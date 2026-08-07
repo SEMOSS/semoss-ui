@@ -1,12 +1,13 @@
 import type React from "react";
+import { useCallback, useEffect, useId, useRef } from "react";
 import {
-	useCallback,
-	useEffect,
-	useId,
-	useMemo,
-	useRef,
-	useState,
-} from "react";
+	Alert,
+	AlertDescription,
+	Muted,
+	Slider,
+	Small,
+	Spinner,
+} from "@semoss/ui/next";
 import type {
 	BrowserScrollMetrics,
 	ClientToServerEvent,
@@ -47,6 +48,31 @@ function getMouseButton(event: React.MouseEvent): "left" | "right" | "middle" {
 			: "left";
 }
 
+/** Maps browser cursor names to the equivalent Tailwind cursor utility. */
+function browserCursorClass(cursor: string): string {
+	const cursors: Record<string, string> = {
+		auto: "cursor-auto",
+		default: "cursor-default",
+		pointer: "cursor-pointer",
+		text: "cursor-text",
+		wait: "cursor-wait",
+		progress: "cursor-progress",
+		move: "cursor-move",
+		"not-allowed": "cursor-not-allowed",
+		grab: "cursor-grab",
+		grabbing: "cursor-grabbing",
+		"zoom-in": "cursor-zoom-in",
+		"zoom-out": "cursor-zoom-out",
+		"col-resize": "cursor-col-resize",
+		"row-resize": "cursor-row-resize",
+		"n-resize": "cursor-n-resize",
+		"e-resize": "cursor-e-resize",
+		"s-resize": "cursor-s-resize",
+		"w-resize": "cursor-w-resize",
+	};
+	return cursors[cursor] ?? "cursor-default";
+}
+
 export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 	connectionState,
 	remoteWidth,
@@ -62,81 +88,22 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 }) => {
 	const canvasId = useId();
 	const canvasRef = useRef<HTMLCanvasElement>(null);
-	const containerRef = useRef<HTMLDivElement>(null);
-	const scrollbarTrackRef = useRef<HTMLDivElement>(null);
-	const scrollbarThumbRef = useRef<HTMLDivElement>(null);
-	const scrollbarDragOffsetRef = useRef<number | null>(null);
 	const lastScrollbarDispatchRef = useRef(0);
 	const optimisticScrollTopRef = useRef(0);
-	const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-
-	useEffect(() => {
-		if (!containerRef.current) return;
-		const observer = new ResizeObserver(
-			([entry]) =>
-				entry &&
-				setContainerSize({
-					width: entry.contentRect.width,
-					height: entry.contentRect.height,
-				}),
-		);
-		observer.observe(containerRef.current);
-		return () => observer.disconnect();
-	}, []);
-
-	const fittedCanvasSize = useMemo(() => {
-		if (
-			!containerSize.width ||
-			!containerSize.height ||
-			!remoteWidth ||
-			!remoteHeight
-		)
-			return { width: remoteWidth, height: remoteHeight };
-		const scale = Math.min(
-			containerSize.width / remoteWidth,
-			containerSize.height / remoteHeight,
-		);
-		return {
-			width: Math.max(1, Math.floor(remoteWidth * scale)),
-			height: Math.max(1, Math.floor(remoteHeight * scale)),
-		};
-	}, [containerSize.height, containerSize.width, remoteHeight, remoteWidth]);
 	const remoteScrollableHeight = Math.max(
 		0,
 		scrollMetrics.scrollHeight - scrollMetrics.viewportHeight,
 	);
-	const scrollbarHeight = Math.max(1, fittedCanvasSize.height);
-	const scrollbarThumbHeight = Math.min(
-		scrollbarHeight,
-		Math.max(
-			28,
-			scrollbarHeight *
-				(scrollMetrics.viewportHeight /
-					Math.max(1, scrollMetrics.scrollHeight)),
-		),
-	);
-	const scrollbarTravel = Math.max(0, scrollbarHeight - scrollbarThumbHeight);
-	const scrollbarThumbTop =
-		remoteScrollableHeight > 0
-			? (Math.min(scrollMetrics.scrollTop, remoteScrollableHeight) /
-					remoteScrollableHeight) *
-				scrollbarTravel
-			: 0;
 
 	useEffect(() => {
-		if (scrollbarDragOffsetRef.current === null) {
-			optimisticScrollTopRef.current = scrollMetrics.scrollTop;
-		}
+		optimisticScrollTopRef.current = scrollMetrics.scrollTop;
 	}, [scrollMetrics.scrollTop]);
 
 	const dispatchScrollbarTarget = useCallback(
-		(target: number, localTop: number) => {
+		(target: number, force = false) => {
 			if (remoteScrollableHeight <= 0) return;
-			if (scrollbarThumbRef.current) {
-				scrollbarThumbRef.current.style.transform = `translateY(${localTop}px)`;
-			}
 			const now = Date.now();
-			if (now - lastScrollbarDispatchRef.current < 75) return;
+			if (!force && now - lastScrollbarDispatchRef.current < 75) return;
 			lastScrollbarDispatchRef.current = now;
 			const clampedTarget = Math.max(
 				0,
@@ -163,24 +130,6 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 		],
 	);
 
-	const updateScrollbarFromPointer = useCallback(
-		(clientY: number) => {
-			const track = scrollbarTrackRef.current;
-			const dragOffset = scrollbarDragOffsetRef.current;
-			if (!track || dragOffset === null || scrollbarTravel <= 0) return;
-			const rect = track.getBoundingClientRect();
-			const localTop = Math.max(
-				0,
-				Math.min(clientY - rect.top - dragOffset, scrollbarTravel),
-			);
-			dispatchScrollbarTarget(
-				(localTop / scrollbarTravel) * remoteScrollableHeight,
-				localTop,
-			);
-		},
-		[dispatchScrollbarTarget, remoteScrollableHeight, scrollbarTravel],
-	);
-
 	useEffect(() => {
 		if (!latestFrame || !canvasRef.current) return;
 		const canvas = canvasRef.current;
@@ -188,30 +137,51 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 		if (!context) return;
 		const image = new Image();
 		image.onload = () => {
-			canvas.width = image.naturalWidth;
-			canvas.height = image.naturalHeight;
-			context.drawImage(image, 0, 0);
+			// Browser input coordinates use the Playwright viewport, which can
+			// differ from the encoded frame size because of device scaling. Keep
+			// the canvas in viewport coordinates and scale the frame into it so
+			// its rendered bounds map exactly to backend mouse coordinates.
+			canvas.width = remoteWidth || image.naturalWidth;
+			canvas.height = remoteHeight || image.naturalHeight;
+			context.drawImage(image, 0, 0, canvas.width, canvas.height);
 		};
 		image.src = `data:image/jpeg;base64,${latestFrame}`;
-	}, [latestFrame]);
+	}, [latestFrame, remoteHeight, remoteWidth]);
 
 	const toRemoteCoords = useCallback(
 		(clientX: number, clientY: number) => {
 			const canvas = canvasRef.current;
 			if (!canvas) return { x: clientX, y: clientY };
 			const rect = canvas.getBoundingClientRect();
+			if (rect.width <= 0 || rect.height <= 0) return { x: 0, y: 0 };
+
+			// object-contain can leave horizontal or vertical space inside the
+			// canvas element. Map against the visible frame rather than the outer
+			// element bounds; otherwise every pointer event includes that offset.
+			const frameWidth = canvas.width || remoteWidth;
+			const frameHeight = canvas.height || remoteHeight;
+			const frameScale = Math.min(
+				rect.width / frameWidth,
+				rect.height / frameHeight,
+			);
+			const renderedWidth = frameWidth * frameScale;
+			const renderedHeight = frameHeight * frameScale;
+			const offsetX = (rect.width - renderedWidth) / 2;
+			const offsetY = (rect.height - renderedHeight) / 2;
 			return {
 				x: Math.max(
 					0,
 					Math.min(
-						(clientX - rect.left) * (remoteWidth / rect.width),
+						(clientX - rect.left - offsetX) *
+							(remoteWidth / renderedWidth),
 						remoteWidth,
 					),
 				),
 				y: Math.max(
 					0,
 					Math.min(
-						(clientY - rect.top) * (remoteHeight / rect.height),
+						(clientY - rect.top - offsetY) *
+							(remoteHeight / renderedHeight),
 						remoteHeight,
 					),
 				),
@@ -409,56 +379,45 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 
 	const isConnected = connectionState === "connected";
 	return (
-		<div
-			ref={containerRef}
-			className="relative flex min-w-0 flex-1 items-center justify-center overflow-hidden bg-canvas p-4"
-			style={{ cursor: "default" }}
-		>
-			<div className="pointer-events-none absolute inset-0 opacity-20 [background-image:linear-gradient(rgba(54,199,176,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(54,199,176,0.08)_1px,transparent_1px)] [background-size:24px_24px]" />
+		<div className="relative flex min-w-0 flex-1 cursor-default items-center justify-center overflow-hidden bg-background p-4">
 			{connectionState === "idle" && (
 				<div className="relative max-w-sm text-center">
-					<div className="mb-3 font-semibold text-ink text-sm">
+					<Small className="mb-3 text-foreground">
 						Remote Browser
-					</div>
-					<p className="text-ink-muted text-sm leading-6">
+					</Small>
+					<Muted className="leading-6">
 						Enter a URL above to start a secure remote browser
 						session.
-					</p>
+					</Muted>
 				</div>
 			)}
 			{connectionState === "connecting" && (
-				<div className="relative flex items-center gap-3 text-ink-muted text-sm">
-					<span className="h-5 w-5 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-					Connecting to browser
+				<div className="relative flex items-center gap-3">
+					<Spinner className="size-5" />
+					<Muted>Connecting to browser</Muted>
 				</div>
 			)}
 			{connectionState === "error" && (
-				<div className="relative rounded-md border border-danger/40 bg-danger/10 px-4 py-3 text-danger text-sm">
-					Connection failed. Restart the browser session.
-				</div>
+				<Alert variant="destructive" className="relative w-auto">
+					<AlertDescription>
+						Connection failed. Restart the browser session.
+					</AlertDescription>
+				</Alert>
 			)}
 			<div
-				className="relative max-h-full max-w-full"
-				style={{
-					display: isConnected || latestFrame ? "block" : "none",
-					width: fittedCanvasSize.width,
-					height: fittedCanvasSize.height,
-				}}
+				className={`relative max-h-full min-h-0 min-w-0 max-w-full ${isConnected || latestFrame ? "flex" : "hidden"}`}
 			>
 				<canvas
 					id={canvasId}
 					ref={canvasRef}
 					tabIndex={0}
-					className="relative block h-full w-full rounded-sm bg-black shadow-2xl shadow-black/50 outline-none ring-1 ring-white/10"
-					style={{
-						objectFit: "contain",
-						cursor:
-							automationMode && isConnected
-								? "crosshair"
-								: isConnected
-									? browserCursor
-									: "default",
-					}}
+					className={`relative block h-auto max-h-full w-auto max-w-full rounded-sm bg-background object-contain shadow-lg outline-none ring-1 ring-border ${
+						automationMode && isConnected
+							? "cursor-crosshair"
+							: isConnected
+								? browserCursorClass(browserCursor)
+								: "cursor-default"
+					}`}
 					onMouseDown={handleMouseDown}
 					onMouseUp={handleMouseUp}
 					onClick={handleClick}
@@ -468,95 +427,27 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 					onKeyDown={handleKeyDown}
 				/>
 				{isConnected && remoteScrollableHeight > 0 && (
-					<div
-						ref={scrollbarTrackRef}
-						role="scrollbar"
-						tabIndex={0}
-						aria-controls={canvasId}
-						aria-orientation="vertical"
-						aria-valuemin={0}
-						aria-valuemax={remoteScrollableHeight}
-						aria-valuenow={Math.round(scrollMetrics.scrollTop)}
+					<Slider
+						orientation="vertical"
+						inverted
+						min={0}
+						max={remoteScrollableHeight}
+						step={1}
+						value={[
+							Math.min(
+								scrollMetrics.scrollTop,
+								remoteScrollableHeight,
+							),
+						]}
+						onValueChange={([value]) =>
+							dispatchScrollbarTarget(value ?? 0)
+						}
+						onValueCommit={([value]) =>
+							dispatchScrollbarTarget(value ?? 0, true)
+						}
 						aria-label="Remote page scrollbar"
-						className="group absolute inset-y-0 right-0 z-20 h-full w-4 cursor-default touch-none select-none bg-slate-500/10 transition-colors hover:bg-slate-500/15 active:bg-slate-500/15"
-						onPointerDown={(event) => {
-							event.preventDefault();
-							event.stopPropagation();
-							event.currentTarget.setPointerCapture(
-								event.pointerId,
-							);
-							const rect =
-								event.currentTarget.getBoundingClientRect();
-							const pointerTop = event.clientY - rect.top;
-							const isOnThumb =
-								pointerTop >= scrollbarThumbTop &&
-								pointerTop <=
-									scrollbarThumbTop + scrollbarThumbHeight;
-							scrollbarDragOffsetRef.current = isOnThumb
-								? pointerTop - scrollbarThumbTop
-								: scrollbarThumbHeight / 2;
-							updateScrollbarFromPointer(event.clientY);
-						}}
-						onPointerMove={(event) => {
-							if (
-								scrollbarDragOffsetRef.current === null ||
-								!event.currentTarget.hasPointerCapture(
-									event.pointerId,
-								)
-							)
-								return;
-							updateScrollbarFromPointer(event.clientY);
-						}}
-						onPointerUp={(event) => {
-							updateScrollbarFromPointer(event.clientY);
-							scrollbarDragOffsetRef.current = null;
-							if (
-								event.currentTarget.hasPointerCapture(
-									event.pointerId,
-								)
-							) {
-								event.currentTarget.releasePointerCapture(
-									event.pointerId,
-								);
-							}
-						}}
-						onPointerCancel={() => {
-							scrollbarDragOffsetRef.current = null;
-						}}
-						onKeyDown={(event) => {
-							if (
-								event.key === "ArrowUp" ||
-								event.key === "ArrowDown"
-							) {
-								event.preventDefault();
-								scrollViewport(
-									event.key === "ArrowUp" ? -1 : 1,
-								);
-							} else if (
-								event.key === "Home" ||
-								event.key === "End"
-							) {
-								event.preventDefault();
-								const localTop =
-									event.key === "Home" ? 0 : scrollbarTravel;
-								dispatchScrollbarTarget(
-									event.key === "Home"
-										? 0
-										: remoteScrollableHeight,
-									localTop,
-								);
-							}
-						}}
-					>
-						<div
-							ref={scrollbarThumbRef}
-							className="absolute top-0 right-1 left-1 rounded-full bg-slate-400/55 shadow-sm transition-colors group-hover:bg-slate-500/80 group-active:bg-slate-500/80"
-							style={{
-								height: scrollbarThumbHeight,
-								transform: `translateY(${scrollbarThumbTop}px)`,
-							}}
-						/>
-					</div>
+						className="absolute inset-y-2 right-1 z-20 [&_[data-slot=slider-range]]:bg-muted-foreground [&_[data-slot=slider-thumb]]:border-muted-foreground [&_[data-slot=slider-thumb]]:bg-background"
+					/>
 				)}
 			</div>
 		</div>

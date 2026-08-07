@@ -31,7 +31,7 @@ export function ReplaySidebar(props: ReplaySidebarProps) {
 		props.selectedTextContextsOpen;
 	return (
 		<aside
-			className={`absolute inset-y-0 right-0 z-20 flex max-w-full flex-col overflow-hidden border-line border-l bg-surface shadow-xl transition-[width] duration-150 ${isOpen ? "w-[340px]" : "w-0 border-l-0"}`}
+			className={`absolute inset-y-0 right-0 z-20 flex max-w-full flex-col overflow-hidden border-border border-l bg-card shadow-xl transition-[width] duration-150 ${isOpen ? "w-[340px]" : "w-0 border-l-0"}`}
 		>
 			<div className="min-h-0 overflow-auto">
 				<ReplayControlsPanel playback={props.playback} />

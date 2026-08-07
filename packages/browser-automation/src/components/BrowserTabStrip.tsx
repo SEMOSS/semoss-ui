@@ -1,6 +1,7 @@
 import { X } from "lucide-react";
 import {
 	Button,
+	Muted,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -26,7 +27,7 @@ export function BrowserTabStrip({
 }: BrowserTabStripProps) {
 	if (tabs.length === 0) return null;
 	return (
-		<div className="order-[-1] flex items-end gap-0.5 overflow-x-auto border-line border-b bg-surface-hover px-1 pt-1">
+		<div className="order-[-1] flex items-end gap-0.5 overflow-x-auto border-border border-b bg-muted px-1 pt-1">
 			{tabs.map((tab) => {
 				const active = tab.tabId === activeTabId;
 				const label = tab.title.trim() || tab.url || tab.tabId;
@@ -35,11 +36,11 @@ export function BrowserTabStrip({
 						? isRecording
 							? {
 									label: "Recording",
-									dot: "bg-danger shadow-[0_0_8px_rgba(240,82,103,0.65)]",
+									dot: "bg-destructive",
 								}
 							: {
 									label: "Live",
-									dot: "bg-success shadow-[0_0_8px_rgba(54,199,176,0.55)]",
+									dot: "bg-success",
 								}
 						: {
 								label:
@@ -48,18 +49,19 @@ export function BrowserTabStrip({
 										: "Disconnected",
 								dot:
 									connectionState === "connecting"
-										? "animate-pulse bg-slate-400"
-										: "bg-slate-500",
+										? "animate-pulse bg-primary"
+										: "bg-muted-foreground",
 							};
 				return (
 					<div
 						key={tab.tabId}
-						className={`mb-[-1px] flex w-[210px] max-w-[80vw] shrink-0 items-center rounded-t-md border ${active ? "border-line border-b-surface bg-surface" : "border-transparent"}`}
+						className={`mb-[-1px] flex w-[210px] max-w-[80vw] shrink-0 items-center rounded-t-md border ${active ? "border-border border-b-card bg-card" : "border-transparent"}`}
 					>
 						{active && (
 							<Tooltip>
 								<TooltipTrigger asChild>
-									<span
+									<div
+										aria-hidden
 										className={`ml-2 size-2 shrink-0 rounded-full ${status.dot}`}
 									/>
 								</TooltipTrigger>
@@ -74,9 +76,9 @@ export function BrowserTabStrip({
 									onClick={() => onSwitch(tab.tabId)}
 									className="min-w-0 flex-1 justify-start overflow-hidden px-2 font-normal"
 								>
-									<span className="block min-w-0 truncate text-left">
+									<Muted className="block min-w-0 truncate text-left text-foreground">
 										{label}
-									</span>
+									</Muted>
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent>{tab.url || label}</TooltipContent>

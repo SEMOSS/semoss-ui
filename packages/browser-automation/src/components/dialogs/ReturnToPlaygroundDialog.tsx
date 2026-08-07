@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import {
 	Button,
 	Dialog,
@@ -8,6 +8,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 	Label,
+	Muted,
 	RadioGroup,
 	RadioGroupItem,
 	Select,
@@ -44,6 +45,8 @@ export function ReturnToPlaygroundDialog({
 }: ReturnToPlaygroundDialogProps) {
 	const [destination, setDestination] =
 		useState<RecordingDestination>("playground");
+	const playgroundDestinationId = useId();
+	const appDestinationId = useId();
 	useEffect(() => {
 		if (open) setDestination("playground");
 	}, [open]);
@@ -69,40 +72,44 @@ export function ReturnToPlaygroundDialog({
 					className="gap-3"
 				>
 					<Label
-						className={`flex cursor-pointer items-start gap-3 rounded-md border p-4 ${destination === "playground" ? "border-primary bg-primary/10" : "border-border"}`}
+						htmlFor={playgroundDestinationId}
+						className={`flex cursor-pointer items-start gap-3 rounded-md border p-4 ${destination === "playground" ? "border-primary bg-accent" : "border-border"}`}
 					>
 						<RadioGroupItem
+							id={playgroundDestinationId}
 							value="playground"
 							disabled={disabled}
 							className="mt-0.5"
 						/>
-						<span className="min-w-0">
-							<span className="block font-semibold">
+						<div className="min-w-0">
+							<Muted className="block text-foreground">
 								Playground only
-							</span>
-							<span className="mt-1 block text-muted-foreground text-sm">
+							</Muted>
+							<Muted className="mt-1 block">
 								Save the recording, selected website contexts,
 								and MCP configuration in Playground.
-							</span>
-						</span>
+							</Muted>
+						</div>
 					</Label>
 					<Label
-						className={`flex cursor-pointer items-start gap-3 rounded-md border p-4 ${savingToApp ? "border-primary bg-primary/10" : "border-border"}`}
+						htmlFor={appDestinationId}
+						className={`flex cursor-pointer items-start gap-3 rounded-md border p-4 ${savingToApp ? "border-primary bg-accent" : "border-border"}`}
 					>
 						<RadioGroupItem
+							id={appDestinationId}
 							value="playground-and-app"
 							disabled={disabled}
 							className="mt-0.5"
 						/>
-						<span className="min-w-0 flex-1">
-							<span className="block font-semibold">
+						<div className="min-w-0 flex-1">
+							<Muted className="block text-foreground">
 								Playground and app
-							</span>
-							<span className="mt-1 block text-muted-foreground text-sm">
+							</Muted>
+							<Muted className="mt-1 block">
 								Save everything in Playground and also save the
 								recording and playback tool in the selected app.
-							</span>
-							<span className="mt-3 block">
+							</Muted>
+							<div className="mt-3">
 								<Select
 									value={project?.value ?? ""}
 									onValueChange={(value) => {
@@ -138,8 +145,8 @@ export function ReturnToPlaygroundDialog({
 										))}
 									</SelectContent>
 								</Select>
-							</span>
-						</span>
+							</div>
+						</div>
 					</Label>
 				</RadioGroup>
 				<DialogFooter>

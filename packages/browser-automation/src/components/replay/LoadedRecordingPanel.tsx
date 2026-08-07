@@ -1,5 +1,6 @@
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { Badge, Button } from "@semoss/ui/next";
+import { Badge, Button, Muted, Small } from "@semoss/ui/next";
+import { getRecordingDisplayName } from "../../domain/recording";
 import type { PlaybackController } from "../../hooks/usePlaybackController";
 import { RecordingStepRow } from "./RecordingStepRow";
 
@@ -9,7 +10,7 @@ export function LoadedRecordingPanel({
 	playback: PlaybackController;
 }) {
 	return (
-		<section className="border-line border-b">
+		<section className="border-border border-b">
 			<div className="flex items-center gap-2 px-2 py-1.5">
 				<Button
 					size="icon-sm"
@@ -28,14 +29,14 @@ export function LoadedRecordingPanel({
 					)}
 				</Button>
 				<div className="min-w-0 flex-1">
-					<div className="font-semibold text-sm">
-						Loaded recording
-					</div>
-					<div className="truncate text-muted-foreground text-xs">
+					<Small>Loaded recording</Small>
+					<Muted className="block truncate text-xs">
 						{playback.loadedRecording
-							? playback.selectedRecording
+							? getRecordingDisplayName(
+									playback.selectedRecording ?? "",
+								)
 							: "Load a recording to inspect and replay steps"}
-					</div>
+					</Muted>
 				</div>
 				{playback.loadedRecording && (
 					<Badge variant="secondary">
@@ -49,11 +50,11 @@ export function LoadedRecordingPanel({
 				)}
 			</div>
 			{playback.loadedRecordingOpen && (
-				<div className="border-line border-t">
+				<div className="border-border border-t">
 					{playback.flattenedSteps.length === 0 ? (
-						<p className="p-4 text-muted-foreground text-sm">
+						<Muted className="block p-4">
 							Load a recording to see its steps here.
-						</p>
+						</Muted>
 					) : (
 						playback.flattenedSteps.map(
 							({ tabId, step, index }) => (

@@ -16,6 +16,8 @@ import {
 	AccordionTrigger,
 	Badge,
 	Button,
+	Muted,
+	Small,
 	Textarea,
 } from "@semoss/ui/next";
 import type { SelectedTextContext } from "../types/browserEvents";
@@ -50,7 +52,7 @@ export const SelectedTextContextsPanel: React.FC<
 		}
 	}, [contexts, editingId]);
 	return (
-		<section className="border-line border-b bg-surface-raised/30">
+		<section className="border-border border-b bg-muted">
 			<div className="flex items-center gap-2 px-2 py-2">
 				<Button
 					size="icon-sm"
@@ -66,22 +68,22 @@ export const SelectedTextContextsPanel: React.FC<
 					{open ? <ChevronDown /> : <ChevronRight />}
 				</Button>
 				<div className="min-w-0 flex-1">
-					<div className="flex items-center gap-1.5 font-semibold text-sm">
-						<FileText className="size-3.5 text-accent" />
+					<Small className="flex items-center gap-1.5">
+						<FileText className="size-3.5 text-primary" />
 						Captured contexts
-					</div>
-					<div className="text-muted-foreground text-xs">
+					</Small>
+					<Muted className="block text-xs">
 						Selected visible website text
-					</div>
+					</Muted>
 				</div>
 				<Badge variant="secondary">{contexts.length}</Badge>
 			</div>
 			{open && (
-				<div className="border-line border-t bg-canvas/40 p-2.5">
+				<div className="border-border border-t bg-background p-2.5">
 					{contexts.length === 0 ? (
-						<p className="text-muted-foreground text-sm">
+						<Muted>
 							Choose Capture Context, then drag over website text.
-						</p>
+						</Muted>
 					) : (
 						<Accordion type="multiple" className="space-y-2.5">
 							{contexts.map((context, index) => {
@@ -90,25 +92,25 @@ export const SelectedTextContextsPanel: React.FC<
 									<AccordionItem
 										key={context.id}
 										value={context.id}
-										className="overflow-hidden rounded-lg border border-accent/20 bg-surface shadow-sm"
+										className="overflow-hidden rounded-lg border border-border bg-card shadow-sm"
 									>
-										<AccordionTrigger className="border-accent border-l-2 px-3 py-3 hover:bg-accent/5 hover:no-underline">
-											<span className="min-w-0 flex-1 text-left">
-												<span className="block truncate font-semibold">
+										<AccordionTrigger className="border-primary border-l-2 px-3 py-3 hover:bg-accent hover:no-underline">
+											<div className="min-w-0 flex-1 text-left">
+												<Muted className="block truncate text-foreground">
 													{contextLabel(
 														context,
 														index,
 													)}
-												</span>
-												<span className="mt-1 flex items-center gap-1 truncate text-muted-foreground text-xs">
+												</Muted>
+												<div className="mt-1 flex items-center gap-1 text-muted-foreground text-xs">
 													<Globe2 className="size-3 shrink-0" />
-													<span className="truncate">
+													<Muted className="truncate text-xs">
 														{context.url}
-													</span>
-												</span>
-											</span>
+													</Muted>
+												</div>
+											</div>
 										</AccordionTrigger>
-										<AccordionContent className="border-line border-t px-3 pt-3 pb-3">
+										<AccordionContent className="border-border border-t px-3 pt-3 pb-3">
 											<div className="mb-2 flex flex-wrap gap-1">
 												<Badge>Selected text</Badge>
 												<Badge variant="secondary">
@@ -127,10 +129,7 @@ export const SelectedTextContextsPanel: React.FC<
 													</Badge>
 												)}
 												{context.stats.truncated && (
-													<Badge
-														variant="outline"
-														className="border-warning text-warning"
-													>
+													<Badge variant="destructive">
 														Bounded
 													</Badge>
 												)}
@@ -147,10 +146,10 @@ export const SelectedTextContextsPanel: React.FC<
 													aria-label="Selected website text"
 												/>
 											) : (
-												<div className="rounded-md border border-line bg-canvas shadow-black/10 shadow-inner">
-													<div className="border-line border-b px-2.5 py-1.5 font-medium text-[11px] text-muted-foreground uppercase tracking-wide">
+												<div className="rounded-md border border-border bg-background shadow-inner">
+													<Muted className="block border-border border-b px-2.5 py-1.5 text-xs uppercase tracking-wide">
 														Extracted website text
-													</div>
+													</Muted>
 													<pre className="max-h-[360px] overflow-auto whitespace-pre-wrap break-words p-3 font-sans text-sm leading-6">
 														{context.content}
 													</pre>
@@ -219,8 +218,7 @@ export const SelectedTextContextsPanel: React.FC<
 														</Button>
 														<Button
 															size="sm"
-															variant="ghost"
-															className="text-destructive"
+															variant="destructive"
 															onClick={() =>
 																onDelete(
 																	context.id,
