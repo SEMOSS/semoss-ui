@@ -58,29 +58,17 @@ export const LandscapeRestriction = () => {
 
 	return (
 		<div
-			data-testid="landscape-restriction-overlay"
 			className={cn(
 				"fixed inset-0 z-[9999]",
 				"flex flex-col items-center justify-center",
-				"bg-white px-8 text-center",
+				"bg-background px-8 text-center",
 			)}
 		>
-			<span
-				data-testid="landscape-restriction-icon"
-				className="mb-4 animate-spin text-5xl"
-			>
-				📱
-			</span>
-			<h1
-				data-testid="landscape-restriction-heading"
-				className="mb-4 font-bold text-2xl text-gray-800"
-			>
+			<span className="mb-4 animate-spin text-5xl">📱</span>
+			<h1 className="mb-4 font-bold text-2xl text-foreground">
 				{t("messages.rotateDevice")}
 			</h1>
-			<p
-				data-testid="landscape-restriction-message"
-				className="max-w-sm text-base text-gray-500 leading-relaxed"
-			>
+			<p className="max-w-sm text-base text-muted-foreground leading-relaxed">
 				{t("messages.noLandscapeMode")}
 			</p>
 		</div>
