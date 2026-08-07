@@ -41,7 +41,6 @@ export const LandingPage: React.FC = observer(() => {
 	>(null);
 
 	const isNameOpen = !!newAppOptions;
-
 	return (
 		<>
 			<NavbarLeft>

@@ -452,7 +452,9 @@ export const ProjectCatalog = observer(
 					filterBox={
 						!configStore.store.config.adminOnlyViewMenuBarFlag &&
 						configStore.isEngineOperationAvailable(
-							"PROJECT",
+							CATALOG_PERMISSION_TYPE[
+								type as keyof typeof CATALOG_PERMISSION_TYPE
+							],
 							"add",
 						) ? (
 							<CatalogFilterBox
