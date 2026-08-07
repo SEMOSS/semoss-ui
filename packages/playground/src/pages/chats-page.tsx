@@ -77,13 +77,6 @@ export const ChatsPage = observer(() => {
 		{ data: [] },
 	);
 
-	const { setScroll } = useInfiniteScroll({
-		disabled: getRooms.isLoading || !getRooms.hasMore,
-		onNext: () => {
-			getRooms.next();
-		},
-	});
-
 	// Content-match rooms from SearchRoomMessages — rooms whose message text
 	// matches the keyword but whose name may not. Refetches on roomCounter
 	// change so renames/creates/deletes don't leave stale results.
@@ -96,11 +89,14 @@ export const ChatsPage = observer(() => {
 		}[],
 		RoomItem
 	>(
-		() =>
+		(limit, offset) =>
 			debouncedSearch
-				? `META | SearchRoomMessages(search="<encode>${debouncedSearch}</encode>", project="SYSTEM__PLAYGROUND", limit=50, includeMessageText=false);`
+				? `META | SearchRoomMessages(search="<encode>${debouncedSearch}</encode>", project="SYSTEM__PLAYGROUND", limit=${limit}, offset=${offset}, includeMessageText=false);`
 				: `META | Return(value=[]);`,
-		() => -1,
+		// Same short-page-means-last-page heuristic as getRooms above — the
+		// backend already dedupes to one row per room before limit/offset, so a
+		// full page here means "there may be more matching rooms."
+		(response) => (response.length < 50 ? -1 : Infinity),
 		(rows) => {
 			const seen = new Set<string>();
 			return rows
@@ -116,6 +112,20 @@ export const ChatsPage = observer(() => {
 		{ limit: 50 },
 		[debouncedSearch, chat.keys.roomCounter],
 	);
+
+	const { setScroll } = useInfiniteScroll({
+		disabled:
+			(getRooms.isLoading || !getRooms.hasMore) &&
+			(getContentMatches.isLoading || !getContentMatches.hasMore),
+		onNext: () => {
+			if (!getRooms.isLoading && getRooms.hasMore) {
+				getRooms.next();
+			}
+			if (!getContentMatches.isLoading && getContentMatches.hasMore) {
+				getContentMatches.next();
+			}
+		},
+	});
 
 	// Seed pinned ids from the dedicated pinned query. Toggles update
 	// `pinnedIds` optimistically and never refetch this query, so this
