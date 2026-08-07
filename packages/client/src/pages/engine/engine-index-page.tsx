@@ -1,6 +1,6 @@
 import { Plus } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
+import { type JSX, useEffect, useState } from "react";
 import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
 import {

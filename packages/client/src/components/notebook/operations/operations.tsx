@@ -1,4 +1,5 @@
 import { observer } from "mobx-react-lite";
+import type { JSX } from "react";
 import type { CellState } from "@semoss/renderer";
 import { DefaultOperation } from "./default-operation";
 import { ErrorOperation } from "./ErrorOperation";

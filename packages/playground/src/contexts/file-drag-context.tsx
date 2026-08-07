@@ -24,8 +24,8 @@ interface FileDragContextType {
 	addFiles: (files: File[]) => void;
 	removeFile: (index: number) => void;
 	clearFiles: () => void;
-	fileInputRef: React.RefObject<HTMLInputElement>;
-	containerRef: React.RefObject<HTMLDivElement>;
+	fileInputRef: React.RefObject<HTMLInputElement | null>;
+	containerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export const FileDragContext = createContext<FileDragContextType | undefined>(

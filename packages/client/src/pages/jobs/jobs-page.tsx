@@ -11,7 +11,7 @@ import {
 	Trash,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate } from "react-router";
 import { runPixel, useDebouncedValue } from "@semoss/sdk/react";
 import {
 	Alert,

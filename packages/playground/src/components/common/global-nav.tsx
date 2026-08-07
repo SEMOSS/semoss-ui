@@ -18,7 +18,7 @@ import {
 	useLocation,
 	useNavigate,
 	useParams,
-} from "react-router-dom";
+} from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { runPixel, useIteratorPixel } from "@semoss/sdk/react";
 import {

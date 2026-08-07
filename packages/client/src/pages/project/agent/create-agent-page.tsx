@@ -1,7 +1,7 @@
 import { ChevronRight, UploadIcon } from "lucide-react";
 import { useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { MCPSelector, PromptSelector, SkillSelector } from "@semoss/shared";
 import {
 	Breadcrumb,

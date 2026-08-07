@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { useBlock } from "@semoss/renderer";
 import { useRootStore } from "@/hooks";
 import TabsComponent from "./SelectionTabs";

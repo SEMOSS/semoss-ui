@@ -1,6 +1,6 @@
 import { X } from "lucide-react";
 import { useId, useMemo, useState } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation } from "react-router";
 import { runPixel } from "@semoss/sdk/react";
 import {
 	Alert,

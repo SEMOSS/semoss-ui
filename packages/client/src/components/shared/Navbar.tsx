@@ -67,7 +67,9 @@ export const Navbar: React.FC = observer(() => {
 	return (
 		<TooltipProvider delayDuration={300}>
 			<div
-				ref={(n) => page.setNavbarElement(n)}
+				ref={(n) => {
+					page.setNavbarElement(n);
+				}}
 				className="absolute top-0 flex h-14 w-full flex-row items-center justify-between gap-4 border-border border-b bg-background px-8 text-foreground sm:gap-2 sm:px-2 md:gap-3 md:px-4"
 			>
 				{/* Left slot */}

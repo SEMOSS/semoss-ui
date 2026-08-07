@@ -17,16 +17,16 @@ This document provides context for AI coding assistants working with the SEMOSS 
 
 ## Build System
 
-- **Bundler**: Rollup
-- **Output**: ES modules (`dist/index.mjs`)
-- **Types**: TypeScript declarations (`dist/types/`)
-- **Styles**: PostCSS with Tailwind
+- **Bundler**: Vite 8 library mode (Rolldown)
+- **Output**: ES modules (`dist/index.mjs`, `dist/next.mjs`)
+- **Types**: TypeScript declarations (`dist/types/`, via unplugin-dts)
+- **Styles**: Tailwind CSS extracted to `dist/index.css` (via `@tailwindcss/vite`)
 
 ### Commands
 
 | Command | Description |
 |---------|-------------|
-| `pnpm dev` | Watch mode with Rollup |
+| `pnpm dev` | Watch mode with Vite |
 | `pnpm build` | Production build (minified) |
 | `pnpm build:dev` | Development build |
 
@@ -128,7 +128,7 @@ Components require these peer dependencies in consuming packages:
 ### Be Cautious With
 
 - **`src/index.ts`** - Main exports, affects all consumers
-- **`rollup.config.js`** - Build configuration
+- **`vite.config.ts`** - Build configuration
 - **`components.json`** - shadcn CLI configuration
 
 ### When Adding Components

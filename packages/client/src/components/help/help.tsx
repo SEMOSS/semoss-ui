@@ -1,5 +1,6 @@
 import { HelpCircleIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
+import type { JSX } from "react";
 import {
 	Button,
 	DropdownMenu,

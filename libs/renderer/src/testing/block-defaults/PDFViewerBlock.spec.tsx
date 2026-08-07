@@ -11,7 +11,7 @@ vi.mock("@semoss/sdk/react", () => ({
 	},
 }));
 
-vi.mock("react-router-dom", () => ({
+vi.mock("react-router", () => ({
 	useParams: () => ({ appId: "test-app-id" }),
 }));
 

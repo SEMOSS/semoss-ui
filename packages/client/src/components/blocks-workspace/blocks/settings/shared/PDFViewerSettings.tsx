@@ -2,7 +2,7 @@
 import { Info, Trash2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import {
 	type Block,
 	type BlockDef,

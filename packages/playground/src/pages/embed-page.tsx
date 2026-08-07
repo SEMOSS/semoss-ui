@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
-import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { useChat, useGlobalBreadcrumbs } from "@/hooks";
 

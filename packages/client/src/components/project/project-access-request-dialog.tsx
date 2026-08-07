@@ -1,6 +1,6 @@
 import { Ban, Eye, Pencil, User } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { usePixel } from "@semoss/sdk/react";
 import type { Project, ProjectDependency, Role } from "@semoss/shared";
 import {

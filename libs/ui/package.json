@@ -7,7 +7,7 @@
   "module": "./dist/index.mjs",
   "types": "./dist/types/index.d.ts",
   "exports": {
-    "./globals.css": "./dist/index.css",
+    "./globals.css": "./src/styles/globals.css",
     ".": {
       "types": "./dist/types/index.d.ts",
       "default": "./dist/index.mjs"
@@ -18,9 +18,9 @@
     }
   },
   "scripts": {
-    "dev": "rollup -w -c",
-    "build": "rollup -c --environment NODE_ENV:production",
-    "build:dev": "rollup -c"
+    "dev": "vite build --watch --mode development --configLoader runner",
+    "build": "vite build --configLoader runner",
+    "build:dev": "vite build --mode development --configLoader runner"
   },
   "keywords": [],
   "author": "",
@@ -68,33 +68,23 @@
     "vaul": "^1.1.2"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "28.0.6",
-    "@rollup/plugin-image": "^3.0.3",
-    "@rollup/plugin-json": "^6.1.0",
-    "@rollup/plugin-node-resolve": "16.0.1",
-    "@rollup/plugin-terser": "^0.4.4",
-    "@rollup/plugin-typescript": "12.1.4",
-    "@tailwindcss/postcss": "^4.1.14",
+    "@semoss/config": "workspace:*",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@types/js-yaml": "^4.0.9",
-    "@types/react": "18.3.1",
-    "@types/react-dom": "18.3.0",
-    "autoprefixer": "^10.4.21",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "jsdom": "~22.1.0",
     "npm-run-all": "4.1.5",
-    "postcss": "^8.5.6",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "rollup": "4.59.0",
-    "rollup-plugin-delete": "3.0.1",
-    "rollup-plugin-postcss": "^4.0.2",
-    "tailwindcss": "^4.1.14",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwindcss": "^4.3.3",
     "tslib": "2.5.3",
-    "typescript": "~5.5.2"
+    "typescript": "~6.0.0",
+    "vite": "^8.2.1"
   },
   "peerDependencies": {
-    "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react": "^18.3.1 || ^19.0.0",
+    "react-dom": "^18.3.1 || ^19.0.0"
   }
 }

@@ -3,7 +3,7 @@
 import { ChevronRightIcon, InfoIcon, PencilIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router";
 import { InsightProvider } from "@semoss/sdk/react";
 import type { FileItem } from "@semoss/shared";
 import { FileExplorer } from "@semoss/shared";
