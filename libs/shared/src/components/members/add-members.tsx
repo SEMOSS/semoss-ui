@@ -255,8 +255,8 @@ export const AddMembersOverlay = ({
 
 	const toggleUserSelected = (user: AddPopupSearchResult) => {
 		setSelectedUsers((prev) =>
-			prev.find((u) => u.email === user.email)
-				? prev.filter((u) => u.email !== user.email)
+			prev.find((u) => u.id === user.id)
+				? prev.filter((u) => u.id !== user.id)
 				: [...prev, { ...user, permission: "Viewer" }],
 		);
 	};
@@ -337,7 +337,7 @@ export const AddMembersOverlay = ({
 								{usersIterator.data.length > 0 ? (
 									usersIterator.data.map((item) => {
 										const isAdded = selectedUsers.some(
-											(u) => u.email === item.email,
+											(u) => u.id === item.id,
 										);
 										return (
 											<button
