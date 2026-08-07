@@ -344,7 +344,7 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 				x: remoteWidth / 2,
 				y: remoteHeight / 2,
 				deltaX: 0,
-				deltaY: direction * remoteHeight * 0.7,
+				deltaY: direction * remoteHeight * 0.3,
 			});
 		},
 		[onUserInput, remoteHeight, remoteWidth, sendEvent],

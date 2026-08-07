@@ -42,6 +42,7 @@ interface UseBrowserSocketReturn {
 		bounds: SelectionBounds,
 		record?: boolean,
 		label?: string,
+		expectedTabId?: string,
 	) => Promise<SelectedTextContext>;
 }
 
@@ -341,6 +342,7 @@ export function useBrowserSocket({
 			bounds: SelectionBounds,
 			record = false,
 			label?: string,
+			expectedTabId?: string,
 		): Promise<SelectedTextContext> => {
 			const ws = wsRef.current;
 			if (!ws || ws.readyState !== WebSocket.OPEN) {
@@ -373,6 +375,7 @@ export function useBrowserSocket({
 						y: bounds.startY,
 						endX: bounds.endX,
 						endY: bounds.endY,
+						expectedTabId,
 						record,
 						label,
 					}),

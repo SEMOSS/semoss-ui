@@ -196,7 +196,28 @@ export function usePlaybackController({
 					rows.push({ tabId, step, index });
 				});
 		});
-		return rows;
+		// Recorder step IDs are session-global. Sort across tab buckets so a
+		// workflow that switches tabs replays in its original chronology.
+		return rows.sort((left, right) => {
+			const leftId =
+				typeof left.step.id === "number"
+					? left.step.id
+					: Number.POSITIVE_INFINITY;
+			const rightId =
+				typeof right.step.id === "number"
+					? right.step.id
+					: Number.POSITIVE_INFINITY;
+			if (leftId !== rightId) return leftId - rightId;
+			const leftTimestamp =
+				typeof left.step.timestamp === "number"
+					? left.step.timestamp
+					: Number.POSITIVE_INFINITY;
+			const rightTimestamp =
+				typeof right.step.timestamp === "number"
+					? right.step.timestamp
+					: Number.POSITIVE_INFINITY;
+			return leftTimestamp - rightTimestamp;
+		});
 	}, [loadedRecording]);
 
 	const typeStepCount = useMemo(
@@ -557,12 +578,26 @@ export function usePlaybackController({
 					}
 					case "SCROLL": {
 						const deltaY = Number(step.deltaY);
+						const viewport =
+							step.viewport && typeof step.viewport === "object"
+								? (step.viewport as Record<string, unknown>)
+								: null;
+						const viewportHeight =
+							typeof viewport?.height === "number"
+								? viewport.height
+								: 768;
+						const fallbackDeltaY = Math.max(
+							1,
+							Math.round(viewportHeight * 0.3),
+						);
 						await replay({
 							type: "wheel",
 							x: coords?.x ?? 0,
 							y: coords?.y ?? 0,
 							deltaX: 0,
-							deltaY: Number.isFinite(deltaY) ? deltaY : 600,
+							deltaY: Number.isFinite(deltaY)
+								? deltaY
+								: fallbackDeltaY,
 							record: false,
 							waitAfterMs: getReplayWaitAfterMs(step, 300),
 						});
@@ -726,11 +761,25 @@ export function usePlaybackController({
 					});
 					replayPreparedRef.current = true;
 				}
-				await sendTabControlEvent({
-					type: "switch-replay-tab",
-					targetTabId: tabId,
-					requestId: crypto.randomUUID(),
-				});
+				try {
+					await sendTabControlEvent({
+						type: "switch-replay-tab",
+						targetTabId: tabId,
+						requestId: crypto.randomUUID(),
+					});
+				} catch (error) {
+					const message =
+						error instanceof Error ? error.message : String(error);
+					const isUnopenedManualTab =
+						String(step.type || "").toUpperCase() === "NAVIGATE" &&
+						message.includes("has not been opened by playback yet");
+					if (!isUnopenedManualTab) throw error;
+					await sendTabControlEvent({
+						type: "new-tab",
+						targetTabId: tabId,
+						requestId: crypto.randomUUID(),
+					});
+				}
 			} catch (error) {
 				setRunningStepId(null);
 				if (isContextStep) {

@@ -23,7 +23,7 @@ function recordedStepValue(step: RemoteBrowserRecordedStep): string | null {
 		const height = step.viewport?.height ?? 0;
 		const percentage = height
 			? Math.max(1, Math.round((Math.abs(delta) / height) * 100))
-			: 70;
+			: 30;
 		return `${delta < 0 ? "Up" : "Down"} ${percentage}% of screen`;
 	}
 	return null;
