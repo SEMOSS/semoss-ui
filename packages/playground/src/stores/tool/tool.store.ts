@@ -135,8 +135,10 @@ export class ToolStore {
 	 * Whether the server-resolved tool part has synced. Until it has we only
 	 * have wire-level data (id, raw name, partial args) from the SSE stream — no
 	 * friendly title, description, or `_meta` — so the tool should render as a
-	 * generic loading state rather than exposing the raw wire name. Server tools
-	 * arrive fully resolved in a single sync, so they count as resolved at once.
+	 * generic loading state rather than exposing the raw wire name. Mirrors the
+	 * `json` getter's own resolved check — never key this off a display field
+	 * such as `title`: MCP tools aren't required to declare one, and a titleless
+	 * tool would otherwise never resolve.
 	 *
 	 * Distinct from `argumentsStreaming` (only true while deltas are still
 	 * arriving): a tool stays unresolved through the gap between the terminal
@@ -144,8 +146,7 @@ export class ToolStore {
 	 * there.
 	 */
 	get isResolved(): boolean {
-		const part = this.toolCall.part?.toolCall;
-		return !!part && (part.server_tool === true || !!part.title);
+		return !!this.toolCall.part && !this.isStreamingPlaceholder;
 	}
 
 	/**
