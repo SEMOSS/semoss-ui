@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	download,
 	console as getPixelConsole,
+	runPixel,
 	usePixel,
 } from "@semoss/sdk/react";
 import { ColumnMetadataModal, type LogicalDataType } from "@semoss/shared";
@@ -413,7 +414,7 @@ export const EngineMetadataPage = observer(() => {
 
 		const pollPromise = pollConsole();
 		try {
-			return await configStore.runPixel<O>(pixel);
+			return await runPixel<O>(pixel, configStore.store.insightID);
 		} finally {
 			stopPolling = true;
 			await pollPromise;
@@ -580,7 +581,7 @@ export const EngineMetadataPage = observer(() => {
 			const filters = JSON.stringify([...tables, ...views]);
 
 			// run it
-			const { errors, pixelReturn } = await configStore.runPixel<
+			const { errors, pixelReturn } = await runPixel<
 				[
 					{
 						positions: Record<
@@ -873,10 +874,10 @@ Error ${e.message || "Unknown error"}
 	const downloadDatabaseMetadata = async () => {
 		try {
 			// run it
-			const { errors, pixelReturn, insightId } =
-				await configStore.runPixel<[string]>(
-					`DatabaseMetadataToPdf(database=["${engine.engine_id}"]);`,
-				);
+			const { errors, pixelReturn } = await runPixel<[string]>(
+				`DatabaseMetadataToPdf(database=["${engine.engine_id}"]);`,
+				configStore.store.insightID,
+			);
 
 			if (errors.length > 0) {
 				throw new Error(errors.join(""));
@@ -885,7 +886,7 @@ Error ${e.message || "Unknown error"}
 			const output = pixelReturn[0]?.output;
 
 			// download the file
-			download(insightId, output);
+			download(configStore.store.insightID, output);
 		} catch (e) {
 			toast.error(
 				`
@@ -955,7 +956,7 @@ Error ${e.message || "Unknown error"}
 					throw new Error(errors.join(""));
 				}
 			} else {
-				const { errors } = await configStore.runPixel(
+				const { errors } = await runPixel(
 					`META|SaveOwlPositions(database=["${engine.engine_id}"], positionMap=[${JSON.stringify(positions)}]);`,
 				);
 

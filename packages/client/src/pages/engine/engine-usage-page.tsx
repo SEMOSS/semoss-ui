@@ -1,5 +1,6 @@
 import { Check, Copy, Terminal } from "lucide-react";
 import { Children, isValidElement, useState } from "react";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	CodeContainer,
 	H4,
@@ -9,7 +10,7 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
-import { useEngine, usePixel } from "@/hooks";
+import { useEngine } from "@/hooks";
 
 /**
  * Wraps a fenced code block with a header bar showing the language and a

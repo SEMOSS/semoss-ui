@@ -4,6 +4,7 @@
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { runPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -197,7 +198,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 
 			if (engineId && description) {
 				try {
-					const metadataResponse = await configStore.runPixel(
+					const metadataResponse = await runPixel(
 						`SetEngineMetadata(engine=[${JSON.stringify(engineId)}], meta=[${JSON.stringify(
 							{ description },
 						)}]);`,

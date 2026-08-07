@@ -3,6 +3,7 @@ import { ChevronsUpDown, Plus, Wand2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { type JSX, useEffect, useMemo, useRef, useState } from "react";
 import { useBlocks, type Variable } from "@semoss/renderer";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Accordion,
 	AccordionContent,
@@ -27,7 +28,7 @@ import {
 	TypeIcon,
 } from "@/components/notebook/variable-icon";
 import { Panel } from "@/components/workspace";
-import { usePixel, useWorkspace } from "@/hooks";
+import { useWorkspace } from "@/hooks";
 import { suggestVariableRenames } from "../utils";
 import { PanelSearch } from "./panel-search";
 

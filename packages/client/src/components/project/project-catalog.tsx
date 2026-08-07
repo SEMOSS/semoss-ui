@@ -2,7 +2,7 @@ import { Plus } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { type JSX, useEffect, useState } from "react";
 import { Link } from "react-router";
-import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
+import { runPixel, useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import {
 	Button,
@@ -306,7 +306,7 @@ export const ProjectCatalog = observer(
 			try {
 				setIsDeletingProject(true);
 
-				const response = await configStore.runPixel(
+				const response = await runPixel(
 					`DeleteProject(project=['${projectToDelete.project_id}']);`,
 				);
 

@@ -1,4 +1,4 @@
-import { usePixel } from "@semoss/sdk/react";
+import { runPixel, usePixel } from "@semoss/sdk/react";
 import type { Project, Role } from "@semoss/shared";
 import { CatalogOverview } from "@/components/catalog";
 import { useRootStore } from "@/hooks";
@@ -31,7 +31,7 @@ export const ProjectOverview = ({
 	 * @returns Promise that resolves after save flow completes.
 	 */
 	const onSave = async (id: string, metadata: Record<string, unknown>) => {
-		await configStore.runPixel(
+		await runPixel(
 			`SetProjectMetadata(project=["${id}"], meta=[${JSON.stringify(
 				metadata,
 			)}])`,

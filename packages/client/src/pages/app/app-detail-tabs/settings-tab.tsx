@@ -1,7 +1,7 @@
 import { Copy, DownloadIcon, Link as LinkIcon, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { download, usePixel } from "@semoss/sdk/react";
+import { download, runPixel, usePixel } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import {
 	Avatar,
@@ -275,7 +275,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 		try {
 			setIsExporting(true);
 
-			const response = await configStore.runPixel(
+			const response = await runPixel(
 				`ExportProjectApp(project=["${project.project_id}"]);`,
 			);
 

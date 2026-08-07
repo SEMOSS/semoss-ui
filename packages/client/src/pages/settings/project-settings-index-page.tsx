@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useIteratorPixel } from "@semoss/sdk/react";
+import { runPixel, useIteratorPixel } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import {
 	Muted,
@@ -114,7 +114,7 @@ export const ProjectSettingsIndexPage = () => {
 				deletePixel = `DeleteProject(project=['${projectToDelete.project_id}']);`;
 			}
 
-			const response = await configStore.runPixel(deletePixel);
+			const response = await runPixel(deletePixel);
 
 			const operationType =
 				response.pixelReturn?.[0]?.operationType || "";

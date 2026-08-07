@@ -777,6 +777,7 @@ export class ConfigStore {
 	}
 
 	/**
+	 * @deprecated - use runPixel from @semoss/sdk/react instead. Just link to correct insightID.
 	 * Run a pixel string
 	 *
 	 * @param pixel - pixel to execute

@@ -1,6 +1,5 @@
 import { useAPI } from "./use-api";
 import { useIteratorApi } from "./use-iterator-api";
-import { usePixel } from "./use-pixel";
 import { useProject } from "./use-project";
 import { useTabBarScroll } from "./use-tab-bar-scroll";
 import { useDesigner } from "./useDesigner";
@@ -25,7 +24,6 @@ export {
 	useIteratorApi,
 	useMetamodel,
 	usePage,
-	usePixel,
 	useRootStore,
 	useServerPagination,
 	useSettings,

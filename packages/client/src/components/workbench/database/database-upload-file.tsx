@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from "react";
 import type { ColumnInterface } from "@semoss/sdk/react";
-import { upload } from "@semoss/sdk/react";
+import { runPixel, upload } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -138,25 +138,24 @@ export const DatabaseUploadCsv = ({
 			// preview the data
 			const pixel = `FileRead(filePath=[${JSON.stringify(filePath)}], delimiter=[${JSON.stringify(delimiter)}]) | Iterate() | Collect(500);`;
 
-			const response =
-				await configStore.runPixel<
-					[
-						{
-							data: {
-								headers: string[];
-								values: unknown[][];
-							};
-							headerInfo: {
-								dataType: string;
-								additionalDataType: string;
-								alias: string;
-								header: string;
-								type: string;
-								derived: boolean;
-							}[];
-						},
-					]
-				>(pixel);
+			const response = await runPixel<
+				[
+					{
+						data: {
+							headers: string[];
+							values: unknown[][];
+						};
+						headerInfo: {
+							dataType: string;
+							additionalDataType: string;
+							alias: string;
+							header: string;
+							type: string;
+							derived: boolean;
+						}[];
+					},
+				]
+			>(pixel, configStore.store.insightID);
 
 			if (response.errors?.length > 0) {
 				throw new Error(response.errors?.join("\n"));
@@ -215,7 +214,7 @@ export const DatabaseUploadCsv = ({
 			// Build the upload pixel using RdbmsUploadTableData pattern
 			const pixel = `FileRead(filePath=[${JSON.stringify(filePath)}], delimiter=[${JSON.stringify(delimiter)}]) | ToDatabase(targetDatabase=[${JSON.stringify(engine.engine_id)}], targetTable=[${JSON.stringify(resolvedTarget)}], override=[${method === "replace"}]);`;
 
-			const response = await configStore.runPixel(pixel);
+			const response = await runPixel(pixel, configStore.store.insightID);
 			if (response.errors?.length > 0) {
 				throw new Error(response.errors?.join("\n"));
 			}

@@ -1,7 +1,7 @@
 import { AlertCircleIcon, Download } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
-import { download } from "@semoss/sdk/react";
+import { download, runPixel } from "@semoss/sdk/react";
 import type { FlexLayout } from "@semoss/shared";
 import {
 	Alert,
@@ -110,7 +110,7 @@ export const DatabaseQueryResultsPanel: React.FC<
 		try {
 			setIsExporting(true);
 
-			const response = await configStore.runPixel(pixel);
+			const response = await runPixel(pixel, configStore.store.insightID);
 
 			if (response.errors?.length) {
 				throw new Error(response.errors.join("\n"));
@@ -118,7 +118,10 @@ export const DatabaseQueryResultsPanel: React.FC<
 
 			const firstResult = response?.pixelReturn?.[0];
 
-			await download(response.insightId, firstResult.output as string);
+			await download(
+				configStore.store.insightID,
+				firstResult.output as string,
+			);
 
 			toast.success("Successfully exported results");
 		} catch (error) {

@@ -1,6 +1,10 @@
 import { Check, Copy, Search, X } from "lucide-react";
 import { type UIEvent, useEffect, useState } from "react";
-import { useDebouncedValue, useIteratorPixel } from "@semoss/sdk/react";
+import {
+	runPixel,
+	useDebouncedValue,
+	useIteratorPixel,
+} from "@semoss/sdk/react";
 import {
 	AppCatalogAvatar,
 	type Engine,
@@ -26,7 +30,6 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
 import { isProjectType } from "@/utility/catalog";
 
 interface EditProjectDependenciesDialogProps {
@@ -97,15 +100,6 @@ export const EditProjectDependenciesDialog = ({
 			});
 	};
 
-	/**
-	 * Library Hooks
-	 *
-	 * Engines and projects are fetched from their own paginated reactors
-	 * (MyEngines / MyProjects), each with its own iterator so they paginate
-	 * independently and stably. Only the active source runs — the inactive one
-	 * is passed an empty pixel.
-	 */
-	const { configStore } = useRootStore();
 	// Coalesce to "" so the initial undefined -> "" debounce transition doesn't
 	// reset the iterator (which clears its data but can't refetch an unchanged
 	// query), which would blank the list until the source is toggled.
@@ -172,7 +166,7 @@ export const EditProjectDependenciesDialog = ({
 		try {
 			setIsSaving(true);
 
-			const response = await configStore.runPixel<string[]>(
+			const response = await runPixel<string[]>(
 				`SetProjectDependencies(project="${appId}", dependencies=${JSON.stringify(
 					selectedDeps.map((dep) => ({
 						id: dep.engine_id,
