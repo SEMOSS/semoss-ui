@@ -73,11 +73,14 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 			tabIdx < tabLen;
 			tabIdx++
 		) {
+			const tabPath = `${resolvedPath.pathname}/${visibleTabs[tabIdx].path}`;
+
 			if (
-				matchPath(
-					`${resolvedPath.pathname}/${visibleTabs[tabIdx].path}`,
-					pathname,
-				)
+				matchPath(tabPath, pathname) ||
+				// Keep tabs with nested routes (e.g. settings/*) highlighted;
+				// skip the Overview tab ("") or it would match every path.
+				(visibleTabs[tabIdx].path !== "" &&
+					matchPath(`${tabPath}/*`, pathname))
 			) {
 				return tabIdx;
 			}
