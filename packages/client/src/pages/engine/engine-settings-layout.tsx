@@ -1,5 +1,5 @@
 import { AlignLeftIcon, SlidersHorizontalIcon, TagsIcon } from "lucide-react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet } from "react-router";
 
 const SETTINGS_SECTIONS = [
 	{
