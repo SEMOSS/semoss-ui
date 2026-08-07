@@ -208,6 +208,9 @@
 			"formatted": "CON FORMATO",
 			"raw": "EN BRUTO"
 		},
+		"image": {
+			"alt": "Imagen generada {{index}}"
+		},
 		"copy": {
 			"command": "Copiar comando",
 			"logs": "Copiar registros",
@@ -219,6 +222,8 @@
 		"collapseAll": "Contraer todo",
 		"close": "Cerrar",
 		"lines_one": "{{count}} línea",
-		"lines_other": "{{count}} líneas"
+		"lines_other": "{{count}} líneas",
+		"images_one": "{{count}} imagen",
+		"images_other": "{{count}} imágenes"
 	}
 }

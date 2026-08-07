@@ -23,12 +23,17 @@ interface FileMarkdownEditorProps {
 
 	/** Callback when the file is changed */
 	onChange?: (content: string, isModified: boolean) => void;
+
+	/** When true, the editor is view-only: content cannot be edited and the
+	 * Save action is hidden. Defaults to false. */
+	readOnly?: boolean;
 }
 
 export const FileMarkdownEditor: React.FC<FileMarkdownEditorProps> = ({
 	mode,
 	path,
 	onChange = () => null,
+	readOnly = false,
 }) => {
 	const insight = useInsight();
 	const [tab, setTab] = useState<"edit" | "preview">("edit");
@@ -100,22 +105,28 @@ export const FileMarkdownEditor: React.FC<FileMarkdownEditorProps> = ({
 						<RefreshCwIcon className="size-4" />
 						Refresh
 					</Button>
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => editorActionsRef.current?.save()}
-					>
-						<SaveIcon className="size-4" />
-						Save
-					</Button>
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => editorActionsRef.current?.download()}
-					>
-						<DownloadIcon className="size-4" />
-						Download
-					</Button>
+					{!readOnly && (
+						<>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => editorActionsRef.current?.save()}
+							>
+								<SaveIcon className="size-4" />
+								Save
+							</Button>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() =>
+									editorActionsRef.current?.download()
+								}
+							>
+								<DownloadIcon className="size-4" />
+								Download
+							</Button>
+						</>
+					)}
 				</div>
 			</div>
 
@@ -133,6 +144,7 @@ export const FileMarkdownEditor: React.FC<FileMarkdownEditorProps> = ({
 					path={path}
 					onChange={handleContentChange}
 					hideToolbar
+					readOnly={readOnly}
 				/>
 			</div>
 

@@ -1,6 +1,6 @@
 import { createContext } from "react";
 
-export interface Step {
+interface Step {
 	/** Title of the step */
 	title: string;
 
@@ -8,6 +8,7 @@ export interface Step {
 	description: string;
 
 	/** Data associated with the step */
+	// biome-ignore lint/suspicious/noExplicitAny: pre-existing, needs proper typing
 	data: object | any;
 
 	/** ID For particular step */

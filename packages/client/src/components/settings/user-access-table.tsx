@@ -30,10 +30,6 @@ export const ACCESS_PERMISSIONS: { value: Role; label: string }[] = [
 	{ value: "READ_ONLY", label: "Read-Only" },
 ];
 
-export const permissionLabel = (permission: string): string =>
-	ACCESS_PERMISSIONS.find((option) => option.value === permission)?.label ??
-	permission;
-
 export interface UserAccessTableProps {
 	/** Resources the selected user currently has access to */
 	rows: UserResourceAccess[];

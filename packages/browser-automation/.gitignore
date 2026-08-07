@@ -1,0 +1,7 @@
+# Build output
+portals/
+
+# Local env files
+*.local
+.env
+.env.*
