@@ -18,13 +18,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import {
-	download,
-	Env,
-	get,
-	post,
-	useInsight,
-	usePixel,
-} from "@semoss/sdk/react";
+	addEngineUserPermissions,
+	editEngineUserPermissions,
+	getEngineUsers,
+	getEngineUsersNoCredentials,
+	type PostUser,
+	removeEngineUserPermissions,
+} from "@semoss/sdk";
+import { download, useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -296,10 +297,8 @@ export const KnowledgeDetailPage = observer(() => {
 		if (!knowledgeId) return;
 		setMembersLoading(true);
 		try {
-			const { data } = await get<{ members: EngineUser[] }>(
-				`${Env.MODULE}/api/auth/engine/getEngineUsers?engineId=${knowledgeId}`,
-			);
-			setMembers(data.members ?? []);
+			const { members } = await getEngineUsers(knowledgeId);
+			setMembers((members ?? []) as unknown as EngineUser[]);
 		} finally {
 			setMembersLoading(false);
 		}
@@ -307,23 +306,16 @@ export const KnowledgeDetailPage = observer(() => {
 
 	const handleAddUser = async () => {
 		if (!selectedUser) return;
-		await post(
-			`${Env.MODULE}/api/auth/engine/addEngineUserPermissions`,
+		await addEngineUserPermissions(knowledgeId, [
 			{
-				engineId: knowledgeId,
-				userpermissions: [
-					{
-						userid: selectedUser.id,
-						permission: selectedRole,
-						email: selectedUser.email,
-						name: selectedUser.name,
-						type: selectedUser.type,
-						username: selectedUser.username,
-					},
-				],
+				userid: selectedUser.id,
+				permission: selectedRole,
+				email: selectedUser.email,
+				name: selectedUser.name,
+				type: selectedUser.type,
+				username: selectedUser.username,
 			},
-			{},
-		);
+		] as unknown as PostUser[]);
 		setAddOpen(false);
 		setUserSearch("");
 		setSelectedUser(null);
@@ -332,14 +324,9 @@ export const KnowledgeDetailPage = observer(() => {
 	};
 
 	const handleRoleChange = async (userId: string, newRole: string) => {
-		await post(
-			`${Env.MODULE}/api/auth/engine/editEngineUserPermissions`,
-			{
-				engineId: knowledgeId,
-				userpermissions: [{ userid: userId, permission: newRole }],
-			},
-			{},
-		);
+		await editEngineUserPermissions(knowledgeId, [
+			{ userid: userId, permission: newRole },
+		] as unknown as PostUser[]);
 		setMembers((prev) =>
 			prev.map((m) =>
 				m.id === userId ? { ...m, permission: newRole } : m,
@@ -349,11 +336,7 @@ export const KnowledgeDetailPage = observer(() => {
 
 	const handleRemoveConfirmed = async () => {
 		if (!removeTarget) return;
-		await post(
-			`${Env.MODULE}/api/auth/engine/removeEngineUserPermissions`,
-			{ engineId: knowledgeId, ids: [removeTarget.id] },
-			{},
-		);
+		await removeEngineUserPermissions(knowledgeId, [removeTarget.id]);
 		setRemoveTarget(null);
 		void loadMembers();
 	};
@@ -372,10 +355,12 @@ export const KnowledgeDetailPage = observer(() => {
 		const t = setTimeout(async () => {
 			setSearchLoading(true);
 			try {
-				const { data } = await get<SearchUser[]>(
-					`${Env.MODULE}/api/auth/engine/getEngineUsersNoCredentials?engineId=${knowledgeId}&searchTerm=${encodeURIComponent(userSearch)}`,
+				const results = await getEngineUsersNoCredentials(
+					knowledgeId,
+					false,
+					userSearch,
 				);
-				setSearchResults(data ?? []);
+				setSearchResults(results as unknown as SearchUser[]);
 			} finally {
 				setSearchLoading(false);
 			}

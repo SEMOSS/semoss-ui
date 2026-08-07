@@ -1,8 +1,8 @@
 import { observer } from "mobx-react-lite";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { useParams } from "react-router";
+import { getUserProjectPermission } from "@semoss/sdk";
 import { runPixel } from "@semoss/sdk/react";
-import { getUserProjectPermission as getUserProjectLevelPermission } from "@semoss/shared";
 import { Spinner, toast } from "@semoss/ui/next";
 import type { AppMetadata, AppType } from "@/components/app";
 import { PlatformMessages } from "@/components/shared";
@@ -40,7 +40,7 @@ export const SharePage = observer(() => {
 			setType(null);
 
 			// get the role and throw an error if it is missing
-			const role = await getUserProjectLevelPermission(appId);
+			const role = await getUserProjectPermission(appId);
 			if (!role) {
 				throw new Error("Unauthorized");
 			}

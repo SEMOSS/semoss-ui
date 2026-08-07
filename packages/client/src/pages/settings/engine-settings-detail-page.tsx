@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router";
-import { MembersTable, type Role } from "@semoss/shared";
+import type { Role } from "@semoss/sdk";
+import { MembersTable } from "@semoss/shared";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import {
 	PendingMembersTable,

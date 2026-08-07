@@ -1,5 +1,6 @@
+import type { Role } from "@semoss/sdk";
 import { runPixel, usePixel } from "@semoss/sdk/react";
-import type { Project, Role } from "@semoss/shared";
+import type { Project } from "@semoss/shared";
 import { CatalogOverview } from "@/components/catalog";
 import { useRootStore } from "@/hooks";
 import { normalizeTagArray } from "@/utility";

@@ -1,5 +1,4 @@
 import { useAPI } from "./use-api";
-import { useIteratorApi } from "./use-iterator-api";
 import { useProject } from "./use-project";
 import { useTabBarScroll } from "./use-tab-bar-scroll";
 import { useDesigner } from "./useDesigner";
@@ -21,7 +20,6 @@ export {
 	useAPI,
 	useDesigner,
 	useEngine,
-	useIteratorApi,
 	useMetamodel,
 	usePage,
 	useRootStore,

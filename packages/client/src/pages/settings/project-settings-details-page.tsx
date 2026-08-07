@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router";
+import type { Role } from "@semoss/sdk";
 import { MembersTable } from "@semoss/shared";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import { AppSettings } from "@/components/app";
@@ -10,7 +11,6 @@ import {
 } from "@/components/settings";
 import { useAPI, useSettings } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
-import type { Role } from "@/types";
 
 type VIEW = "CURRENT" | "PENDING" | "APP";
 

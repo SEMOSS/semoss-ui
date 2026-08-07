@@ -7,11 +7,11 @@ import {
 	X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { usePixel } from "@semoss/sdk/react";
 import {
 	approveProjectUserAccessRequest,
 	denyProjectUserAccessRequest,
-} from "@semoss/shared";
+} from "@semoss/sdk";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
