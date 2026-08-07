@@ -19,6 +19,7 @@ interface UseBrowserSocketOptions {
 		scrollMetrics: BrowserScrollMetrics,
 	) => void;
 	onNavigated: (url: string) => void;
+	onLoadingChanged: (isLoading: boolean) => void;
 	onError: (message: string) => void;
 	onTabsChanged: (tabs: BrowserTabInfo[], activeTabId: string) => void;
 	onTabActivated: (tabId: string) => void;
@@ -78,6 +79,7 @@ export function useBrowserSocket({
 	wsUrl,
 	onFrame,
 	onNavigated,
+	onLoadingChanged,
 	onError,
 	onTabsChanged,
 	onTabActivated,
@@ -124,6 +126,7 @@ export function useBrowserSocket({
 
 		ws.onopen = () => {
 			setConnectionState("connected");
+			onLoadingChanged(false);
 		};
 
 		ws.onmessage = (evt: MessageEvent) => {
@@ -148,6 +151,9 @@ export function useBrowserSocket({
 						break;
 					case "navigated":
 						onNavigated(msg.url);
+						break;
+					case "loading":
+						onLoadingChanged(msg.isLoading);
 						break;
 					case "tab-activated":
 						onTabActivated(msg.tabId);
@@ -239,6 +245,7 @@ export function useBrowserSocket({
 
 		ws.onclose = () => {
 			setConnectionState("closed");
+			onLoadingChanged(false);
 			wsRef.current = null;
 			pendingReplayRef.current.forEach((pending) => {
 				window.clearTimeout(pending.timeout);
@@ -287,6 +294,7 @@ export function useBrowserSocket({
 		buildFullWsUrl,
 		onFrame,
 		onNavigated,
+		onLoadingChanged,
 		onError,
 		onTabsChanged,
 		onTabActivated,

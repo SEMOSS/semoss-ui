@@ -194,6 +194,7 @@ export default function App() {
 	const [pendingTextSelection, setPendingTextSelection] =
 		useState<PendingTextSelection | null>(null);
 	const [pendingNavigationCount, setPendingNavigationCount] = useState(0);
+	const [isRemoteNavigating, setIsRemoteNavigating] = useState(false);
 	const [recordedStepsOpen, setRecordedStepsOpen] = useState(false);
 	const [playbackCloseCountdown, setPlaybackCloseCountdown] = useState<
 		number | null
@@ -333,6 +334,7 @@ export default function App() {
 		wsUrl: session?.webSocketUrl ?? null,
 		onFrame: handleFrame,
 		onNavigated: handleNavigated,
+		onLoadingChanged: setIsRemoteNavigating,
 		onError: handleSocketError,
 		onTabsChanged: handleTabsChanged,
 		onTabActivated: handleTabActivated,
@@ -1729,7 +1731,8 @@ export default function App() {
 
 	const remoteWidth = session?.viewport.width ?? 1365;
 	const remoteHeight = session?.viewport.height ?? 768;
-	const isBrowserLoading = isCreating || pendingNavigationCount > 0;
+	const isBrowserLoading =
+		isCreating || pendingNavigationCount > 0 || isRemoteNavigating;
 	const replayMenuOpen =
 		playback.controlsOpen || playback.loadedRecordingOpen;
 
