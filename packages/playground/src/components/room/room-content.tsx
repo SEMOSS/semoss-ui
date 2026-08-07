@@ -66,8 +66,13 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		await room.askMessage(prompt, files);
 
 		// re-sync room options from backend after message completes,
-		// preserving workspace MCPs that are only held in memory
-		await room.syncRoomOptions();
+		// preserving workspace MCPs that are only held in memory. Skipped when
+		// the turn just errored (e.g. a cancel that failed to persist) — a
+		// successful sync clears the room's error state, which would otherwise
+		// wipe the message the user just needs to see.
+		if (!room.error) {
+			await room.syncRoomOptions();
+		}
 
 		return true;
 	};

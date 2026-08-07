@@ -276,6 +276,18 @@ export class RoomStore {
 	}
 
 	/**
+	 * Surface an error on the room. Public so callers outside this store — e.g.
+	 * ToolSaveController, when a tool-phase stop fails to persist — can report a
+	 * failure that isn't already caught by runRoomPixel/streamJob's own
+	 * setErrorOnFail handling.
+	 */
+	setError = (error: Error): void => {
+		runInAction(() => {
+			this._store.error = error;
+		});
+	};
+
+	/**
 	 * Get the mode of the room
 	 */
 	get mode() {

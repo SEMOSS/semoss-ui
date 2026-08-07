@@ -228,6 +228,7 @@ export class ToolSaveController {
 			});
 		} catch (e) {
 			console.error("Failed to cancel pending tools", e);
+			room.setError(e as Error);
 			entries.forEach((entry) => {
 				entry.reject(e);
 			});
@@ -271,7 +272,12 @@ export class ToolSaveController {
 		) {
 			(async () => {
 				try {
-					await room.syncRoomOptions();
+					// A successful sync clears the room's error state, so skip it
+					// if something has already failed — a later cancel-commit
+					// failure on this same batch shouldn't get wiped by this.
+					if (!room.error) {
+						await room.syncRoomOptions();
+					}
 				} catch (e) {
 					console.error("Failed to sync room options", e);
 				}
@@ -542,7 +548,12 @@ export class ToolSaveController {
 
 			message.toolResponseMessage = null;
 		} catch (e) {
+			// Rethrown so stop() (StreamJobController), which awaits this as the
+			// job's onCancel, surfaces the failure as a room error — this is the
+			// user's only signal that the cancelled tool turn didn't actually
+			// persist.
 			console.error("Failed to record cancelled tool execution", e);
+			throw e;
 		}
 	};
 

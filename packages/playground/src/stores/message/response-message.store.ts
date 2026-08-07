@@ -356,7 +356,11 @@ paramValues=[{}]`;
 
 			spliceHiddenMessages(responseMessage, output.extraMessages);
 		} catch (e) {
+			// Rethrown so stop() (StreamJobController), which awaits this as the
+			// job's onCancel, surfaces the failure as a room error — this is the
+			// user's only signal that the cancelled turn didn't actually persist.
 			console.error("Failed to record cancelled turn", e);
+			throw e;
 		}
 	};
 
