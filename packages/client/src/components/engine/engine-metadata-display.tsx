@@ -76,6 +76,21 @@ export const MODALITIES = [
 	"PDF",
 ] as const;
 
+/**
+ * Display labels only. The selectable efforts come from the model's stored
+ * config, never from this list - providers disagree on the scale, so offering
+ * levels the config does not list would invent support that may not exist.
+ */
+const REASONING_EFFORT_LABELS: Record<string, string> = {
+	none: "None",
+	minimal: "Minimal",
+	low: "Low",
+	medium: "Medium",
+	high: "High",
+	xhigh: "X-High",
+	max: "Max",
+};
+
 const MODALITY_LABELS: Record<string, string> = {
 	TEXT: "Text",
 	IMAGE: "Image",
@@ -106,6 +121,307 @@ export const formatEnumLabel = (value: string) =>
  */
 export const formatModalityLabel = (value: string) =>
 	MODALITY_LABELS[value] || formatEnumLabel(value);
+
+/** Display label for a reasoning effort, title cased for unknown values. */
+export const formatEffortLabel = (value: string) =>
+	REASONING_EFFORT_LABELS[value] || formatEnumLabel(value);
+
+/** Lowercase, deduped effort values - the stored config is provider-supplied. */
+export const normalizeEfforts = (value: unknown): string[] => [
+	...new Set(
+		normalizeStringArray(value).map((effort) => effort.toLowerCase()),
+	),
+];
+
+/**
+ * Weakest to strongest, for display order only. Configs list their efforts in
+ * whatever order the provider used - usually strongest first, which reads
+ * backwards next to every other scale in the UI.
+ */
+const EFFORT_ORDER = [
+	"none",
+	"minimal",
+	"low",
+	"medium",
+	"high",
+	"xhigh",
+	"max",
+];
+
+/**
+ * Order efforts weakest to strongest. Values outside the known scale keep their
+ * relative order and go last, since there is no sensible rank for them.
+ */
+export const sortEfforts = (efforts: string[]): string[] =>
+	[...efforts].sort((a, b) => {
+		const rankA = EFFORT_ORDER.indexOf(a);
+		const rankB = EFFORT_ORDER.indexOf(b);
+
+		if (rankA === -1 || rankB === -1) {
+			return rankA === rankB ? 0 : rankA === -1 ? 1 : -1;
+		}
+
+		return rankA - rankB;
+	});
+
+/**
+ * The selectable efforts, deduped across the given stored lists and ordered for
+ * display. Nothing is added: only what the model's own config named is ever
+ * offered.
+ */
+export const getEffortOptions = (...stored: string[][]): string[] =>
+	sortEfforts([...new Set(stored.flat().filter((effort) => effort !== ""))]);
+
+/**
+ * Keep the default effort on something selectable: the previous value when it
+ * survives, otherwise the closest remaining effort by rank, preferring the
+ * weaker side on a tie. An unset default stays unset - the form should never
+ * invent one - and no options at all clears it.
+ */
+export const pickNearestEffort = (
+	previous: string,
+	options: string[],
+): string => {
+	if (previous === "" || options.length === 0) {
+		return "";
+	}
+
+	if (options.includes(previous)) {
+		return previous;
+	}
+
+	// Unknown values sort past the end of the scale, so they read as strongest.
+	const rankOf = (effort: string) => {
+		const rank = EFFORT_ORDER.indexOf(effort);
+		return rank === -1 ? EFFORT_ORDER.length : rank;
+	};
+	const target = rankOf(previous);
+
+	return sortEfforts(options).reduce((best, option) =>
+		Math.abs(rankOf(option) - target) < Math.abs(rankOf(best) - target)
+			? option
+			: best,
+	);
+};
+
+/** Shape returned by the GetStaticModelMetadata pixel (meta/model.json). */
+export type StaticModelMetadata = {
+	id?: string;
+	description?: string | null;
+	input_modalities?: string[] | null;
+	output_modalities?: string[] | null;
+	context_length?: number | null;
+	max_output_tokens?: number | null;
+	reasoning?: boolean | null;
+};
+
+/**
+ * Whether the catalog actually knows this model. The pixel answers with an
+ * empty map for a model it has never heard of, which is the signal that none
+ * of the advisory checks below can say anything.
+ */
+export const hasCatalogEntry = (
+	metadata: StaticModelMetadata | undefined,
+): boolean =>
+	!!metadata &&
+	typeof metadata === "object" &&
+	Object.keys(metadata).length > 0;
+
+/**
+ * Modalities the curated catalog is capable of expressing. VECTOR and FILE
+ * never appear in meta/model.json - embedding models are recorded there with a
+ * text output - so the catalog staying silent about them says nothing about
+ * support and must never produce a warning.
+ */
+const CATALOG_MODALITIES = ["TEXT", "IMAGE", "AUDIO", "VIDEO", "PDF"];
+
+/**
+ * Normalize the catalog's lowercase modality values ("text", "pdf") into the
+ * uppercase vocabulary the settings form uses, dropping anything unrecognized.
+ */
+export const normalizeCatalogModalities = (value: unknown): string[] => [
+	...new Set(
+		normalizeStringArray(value)
+			.map((modality) => modality.toUpperCase())
+			.filter((modality) =>
+				(MODALITIES as readonly string[]).includes(modality),
+			),
+	),
+];
+
+/**
+ * Selected modalities the catalog entry does not list for this model.
+ *
+ * Deliberately conservative: an empty catalog list (unknown model, or a
+ * direction the entry says nothing about) reports nothing, and only values the
+ * catalog could have listed are ever flagged. Clearing a modality is always
+ * silent, since this only looks at what is currently selected.
+ */
+export const getUnlistedModalities = (
+	selected: string[],
+	catalogModalities: string[],
+): string[] => {
+	if (catalogModalities.length === 0) {
+		return [];
+	}
+
+	return normalizeCatalogModalities(selected).filter(
+		(modality) =>
+			CATALOG_MODALITIES.includes(modality) &&
+			!catalogModalities.includes(modality),
+	);
+};
+
+/** Join modality labels into "Image", "Image or PDF", "Image, Audio or PDF". */
+const formatModalityList = (modalities: string[]) => {
+	const labels = modalities.map(formatModalityLabel);
+
+	if (labels.length < 2) {
+		return labels.join("");
+	}
+
+	return `${labels.slice(0, -1).join(", ")} or ${labels[labels.length - 1]}`;
+};
+
+/**
+ * Advisory copy for modalities the catalog does not list. Returns "" when there
+ * is nothing to say - the catalog is sparse and hand-maintained, so this warns
+ * rather than blocks and the save path never consults it.
+ */
+export const getModalityWarning = (
+	direction: "input" | "output",
+	selected: string[],
+	catalogModalities: string[],
+): string => {
+	const unlisted = getUnlistedModalities(selected, catalogModalities);
+
+	if (unlisted.length === 0) {
+		return "";
+	}
+
+	const pronoun = unlisted.length > 1 ? "them" : "it";
+	return `The model catalog does not list ${formatModalityList(unlisted)} as ${direction} for this model. You can still keep ${pronoun} enabled, but the provider may reject requests that use ${pronoun}.`;
+};
+
+/**
+ * A usable token limit from the catalog, or null when there is none to compare
+ * against. `minimum` exists for the output limit: the catalog records 0 or 1
+ * there to mean "not a text completion model", and treating that placeholder
+ * as a real ceiling would flag every sane value as too high.
+ */
+export const normalizeCatalogTokenLimit = (
+	value: unknown,
+	minimum = 1,
+): number | null => {
+	const parsed = typeof value === "number" ? value : Number(value);
+
+	if (!Number.isInteger(parsed) || parsed < minimum) {
+		return null;
+	}
+
+	return parsed;
+};
+
+/**
+ * Advisory copy for a token limit set above what the catalog lists. Only ever
+ * fires on values that exceed the catalog - lowering a limit is always a valid
+ * thing to want, and nothing here blocks the save.
+ */
+export const getTokenLimitWarning = (
+	label: string,
+	value: string,
+	catalogLimit: number | null,
+): string => {
+	if (catalogLimit === null || !/^\d+$/.test(value)) {
+		return "";
+	}
+
+	if (Number(value) <= catalogLimit) {
+		return "";
+	}
+
+	return `The model catalog lists a ${label} of ${catalogLimit.toLocaleString()} tokens for this model. You can still save a higher value, but the provider may reject requests that exceed its own limit.`;
+};
+
+/**
+ * The stored REASONINGCONFIG object, e.g.
+ * `{"default_effort":"medium","mandatory":true,"supported_efforts":["low"]}`.
+ * Providers add keys beyond these (default_enabled, supports_max_tokens), so
+ * the raw object is kept around and only the edited keys are ever rewritten.
+ */
+export interface ReasoningConfig {
+	default_effort?: string | null;
+	mandatory?: boolean | null;
+	supported_efforts?: string[] | null;
+	[key: string]: unknown;
+}
+
+/** The stored config, or null when the column is empty. */
+export const toReasoningConfig = (value: unknown): ReasoningConfig | null => {
+	if (!value || typeof value !== "object" || Array.isArray(value)) {
+		return null;
+	}
+
+	const config = value as ReasoningConfig;
+	return Object.keys(config).length > 0 ? config : null;
+};
+
+/** Whether the stored config marks reasoning as required for the model. */
+export const isReasoningMandatory = (config: ReasoningConfig | null): boolean =>
+	config?.mandatory === true;
+
+/**
+ * Advisory copy for enabling reasoning on a model not known to support it.
+ * Both the saved metadata and the catalog get a say: either one claiming
+ * support is enough to stay quiet, so the note only appears when nothing on
+ * record backs the choice.
+ */
+export const getReasoningSupportWarning = (
+	enabled: boolean,
+	savedReasoning: boolean | null | undefined,
+	catalogReasoning: boolean | null | undefined,
+): string => {
+	if (!enabled || savedReasoning === true || catalogReasoning === true) {
+		return "";
+	}
+
+	return "This model is not on record as supporting reasoning. You can still enable it, but the provider may reject or ignore reasoning requests.";
+};
+
+/**
+ * Copy for switching reasoning off on a model whose config marks it mandatory.
+ * Rendered in the destructive tone - it is a stronger claim than the advisory
+ * notes - but it still only warns, since a deployment can override this.
+ */
+export const getMandatoryReasoningWarning = (
+	enabled: boolean,
+	mandatory: boolean,
+): string => {
+	if (enabled || !mandatory) {
+		return "";
+	}
+
+	return "Reasoning is mandatory for this model. Turning it off is expected to make requests fail unless the provider has since made it optional.";
+};
+
+/**
+ * Advisory copy for a default effort missing from the supported list. Silent
+ * when either side is unset, since an empty supported list says nothing.
+ */
+export const getDefaultEffortWarning = (
+	defaultEffort: string,
+	supportedEfforts: string[],
+): string => {
+	if (
+		defaultEffort === "" ||
+		supportedEfforts.length === 0 ||
+		supportedEfforts.includes(defaultEffort)
+	) {
+		return "";
+	}
+
+	return `${formatEffortLabel(defaultEffort)} is not one of the supported efforts, so the provider may fall back to its own default.`;
+};
 
 /**
  * Format a digits-only string with locale thousands separators.
@@ -275,6 +591,14 @@ export interface ModelSettingsValues {
 	capability: string;
 	inputModalities: string[];
 	outputModalities: string[];
+	/**
+	 * Tri-state, because REASONING is a nullable column: "" means the metadata
+	 * has no opinion, which is distinct from an explicit "false".
+	 */
+	reasoning: "" | "true" | "false";
+	reasoningMandatory: boolean;
+	reasoningDefaultEffort: string;
+	reasoningSupportedEfforts: string[];
 	/** Digits only; formatted with separators at render time. */
 	contextWindow: string;
 	maxOutputTokens: string;
@@ -286,25 +610,67 @@ export interface ModelSettingsValues {
  */
 export const toModelSettingsValues = (
 	metadata: ModelMetadata | undefined,
-): ModelSettingsValues => ({
-	capability:
-		typeof metadata?.capability === "string"
-			? metadata.capability.trim()
-			: "",
-	inputModalities: normalizeStringArray(metadata?.inputModalities),
-	outputModalities: normalizeStringArray(metadata?.outputModalities),
-	contextWindow:
-		metadata?.contextWindow !== null &&
-		metadata?.contextWindow !== undefined
-			? String(metadata.contextWindow)
-			: "",
-	maxOutputTokens:
-		metadata?.maxOutputTokens !== null &&
-		metadata?.maxOutputTokens !== undefined
-			? String(metadata.maxOutputTokens)
-			: "",
-	builtinTools: normalizeStringArray(metadata?.builtinTools),
-});
+): ModelSettingsValues => {
+	const reasoningConfig = toReasoningConfig(metadata?.reasoningConfig);
+
+	return {
+		capability:
+			typeof metadata?.capability === "string"
+				? metadata.capability.trim()
+				: "",
+		inputModalities: normalizeStringArray(metadata?.inputModalities),
+		outputModalities: normalizeStringArray(metadata?.outputModalities),
+		reasoning:
+			typeof metadata?.reasoning === "boolean"
+				? metadata.reasoning
+					? "true"
+					: "false"
+				: "",
+		reasoningMandatory: isReasoningMandatory(reasoningConfig),
+		reasoningDefaultEffort:
+			typeof reasoningConfig?.default_effort === "string"
+				? reasoningConfig.default_effort.trim().toLowerCase()
+				: "",
+		reasoningSupportedEfforts: normalizeEfforts(
+			reasoningConfig?.supported_efforts,
+		),
+		contextWindow:
+			metadata?.contextWindow !== null &&
+			metadata?.contextWindow !== undefined
+				? String(metadata.contextWindow)
+				: "",
+		maxOutputTokens:
+			metadata?.maxOutputTokens !== null &&
+			metadata?.maxOutputTokens !== undefined
+				? String(metadata.maxOutputTokens)
+				: "",
+		builtinTools: normalizeStringArray(metadata?.builtinTools),
+	};
+};
+
+/**
+ * Rewrite only the keys this form edits, so provider keys it does not surface
+ * (mandatory, default_enabled, supports_max_tokens) survive the round trip.
+ * Returns null when the model has no stored config, in which case the caller
+ * leaves the column alone rather than inventing one.
+ */
+export const buildReasoningConfigPayload = (
+	config: ReasoningConfig | null,
+	values: ModelSettingsValues,
+): ReasoningConfig | null => {
+	if (config === null) {
+		return null;
+	}
+
+	return {
+		...config,
+		default_effort:
+			values.reasoningDefaultEffort !== ""
+				? values.reasoningDefaultEffort
+				: null,
+		supported_efforts: values.reasoningSupportedEfforts,
+	};
+};
 
 /** Shared placeholder for read-mode fields without a value. */
 export const EmptyValue = () => (
@@ -438,6 +804,45 @@ export const ModelMetadataFields = ({
 				values={values.outputModalities}
 				format={formatModalityLabel}
 			/>
+		</SettingsEntry>
+
+		<SettingsEntry label="Reasoning">
+			{values.reasoning !== "" ? (
+				<div className="flex flex-wrap gap-1.5">
+					<Badge variant="secondary">
+						{values.reasoning === "true" ? "Enabled" : "Disabled"}
+					</Badge>
+					{values.reasoningMandatory && (
+						<Badge variant="outline">Required</Badge>
+					)}
+				</div>
+			) : (
+				<EmptyValue />
+			)}
+		</SettingsEntry>
+
+		<SettingsEntry label="Reasoning effort">
+			{values.reasoningDefaultEffort !== "" ||
+			values.reasoningSupportedEfforts.length > 0 ? (
+				<div className="flex flex-wrap items-center gap-1.5">
+					{values.reasoningDefaultEffort !== "" && (
+						<Badge variant="secondary">
+							{formatEffortLabel(values.reasoningDefaultEffort)}{" "}
+							by default
+						</Badge>
+					)}
+					{values.reasoningSupportedEfforts.length > 0 && (
+						<BadgeList
+							values={sortEfforts(
+								values.reasoningSupportedEfforts,
+							)}
+							format={formatEffortLabel}
+						/>
+					)}
+				</div>
+			) : (
+				<EmptyValue />
+			)}
 		</SettingsEntry>
 
 		<SettingsEntry label="Context window">

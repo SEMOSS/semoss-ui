@@ -10,6 +10,7 @@ import {
 	type ModelMetadata,
 	ModelOverviewCards,
 	SettingsEntry,
+	type StaticModelMetadata,
 } from "./engine-metadata-display";
 
 interface EngineOverviewProps {
@@ -17,10 +18,6 @@ interface EngineOverviewProps {
 	permission: Role;
 	refresh: () => void;
 }
-
-type StaticModelMetadata = {
-	description?: string | null;
-};
 
 export const getModelOverviewDescription = (
 	catalogDescription: unknown,
