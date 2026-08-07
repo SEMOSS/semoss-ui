@@ -1,24 +1,7 @@
 {
+	"extends": "@semoss/config/tsconfig.base.json",
 	"compilerOptions": {
-		/* Lang and Env */
-		"lib": ["ES2022", "dom"],
-		"target": "es6",
-		"jsx": "react-jsx",
 		"types": ["vitest/globals", "@testing-library/jest-dom/vitest"],
-
-		/* Modules */
-		"module": "esnext",
-		"moduleResolution": "bundler",
-		"allowSyntheticDefaultImports": true,
-		"resolveJsonModule": true,
-
-		/* Skip */
-		"skipLibCheck": true,
-		"allowJs": true,
-		"esModuleInterop": true,
-		"isolatedModules": true,
-
-		/* Lang and Env */
 		"paths": {
 			"@/assets/img/*": ["../../libs/shared/src/assets/img/*"],
 			"@/assets/loginProviders/*": [

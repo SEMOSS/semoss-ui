@@ -7,30 +7,29 @@
         ".": "./src/index.ts"
     },
     "scripts": {
-        "dev": "vite --mode development",
-        "build": "vite build --mode production",
-        "build:dev": "vite build --mode development",
+        "dev": "vite --configLoader runner --mode development",
+        "build": "vite build --configLoader runner --mode production",
+        "build:dev": "vite build --configLoader runner --mode development",
         "type-check": "tsc --pretty --noEmit",
-        "test": "vitest run --passWithNoTests"
+        "test": "vitest run --passWithNoTests --configLoader runner"
     },
     "dependencies": {
         "@semoss/i18n": "workspace:*",
         "@semoss/sdk": "workspace:*",
         "@semoss/shared": "workspace:*",
         "@semoss/ui": "workspace:*",
-        "@tailwindcss/vite": "^4.1.14",
         "flexlayout-react": "^0.8.1",
         "lucide-react": "^0.545.0",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
-        "tailwindcss": "^4.1.14"
+        "tailwindcss": "^4.3.3"
     },
     "devDependencies": {
+        "@semoss/config": "workspace:*",
         "@types/react": "^19.0.0",
         "@types/react-dom": "^19.0.0",
-        "@vitejs/plugin-react": "^4.6.0",
         "typescript": "~5.5.2",
-        "vite": "^7.0.0",
-        "vitest": "^4.1.8"
+        "vite": "^8.2.1",
+        "vitest": "^4.1.10"
     }
 }

@@ -40,7 +40,6 @@
       "flatted": "3.4.2",
       "@crxjs/vite-plugin>rollup": "2.80.0",
       "archiver-utils>lodash": "4.18.1",
-      "rollup-plugin-postcss>cssnano": "8.0.1",
       "mocha>serialize-javascript": "7.0.5"
     }
   }
