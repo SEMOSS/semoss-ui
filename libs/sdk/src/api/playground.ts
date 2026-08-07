@@ -84,9 +84,11 @@ export interface PlaygroundResponse {
  */
 export const createPlaygroundRoom = async (
 	insightId: string,
-	workspaceId: string,
+	workspaceId?: string,
 ): Promise<PlaygroundRoom> => {
-	const pixel = `CreatePlaygroundRoom(workspaceId="${workspaceId}");`;
+	const pixel = workspaceId
+		? `CreatePlaygroundRoom(workspaceId="${workspaceId}");`
+		: `CreatePlaygroundRoom();`;
 	const { errors, pixelReturn } = await runPixel<[PlaygroundRoom]>(
 		pixel,
 		insightId,
