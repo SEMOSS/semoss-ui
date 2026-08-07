@@ -2,6 +2,7 @@
 	"extends": "@semoss/config/tsconfig.base.json",
 	"compilerOptions": {
 		"types": ["vitest/globals", "@testing-library/jest-dom/vitest"],
+		"rootDir": "./src",
 		"declaration": true,
 		"outDir": "./dist",
 		"declarationDir": "./dist/types",

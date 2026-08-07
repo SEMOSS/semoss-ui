@@ -11,6 +11,8 @@
 		"moduleResolution": "bundler",
 		"resolveJsonModule": true,
 		"allowSyntheticDefaultImports": true,
+		"noUncheckedSideEffectImports": false,
+		"types": ["chrome"],
 		"rootDir": "./src",
 		"outDir": "./dist"
 	},

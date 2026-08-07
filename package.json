@@ -28,7 +28,7 @@
     "jsdom": "~22.1.0",
     "lefthook": "^1.12.2",
     "turbo": "^2.9.14",
-    "typescript": "~5.5.2"
+    "typescript": "~6.0.0"
   },
   "packageManager": "pnpm@10.13.1",
   "engines": {

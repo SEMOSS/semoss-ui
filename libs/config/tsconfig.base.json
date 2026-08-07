@@ -10,6 +10,9 @@
 		"skipLibCheck": true,
 		"allowJs": true,
 		"esModuleInterop": true,
-		"isolatedModules": true
+		"isolatedModules": true,
+		"strict": false,
+		"noUncheckedSideEffectImports": false,
+		"types": []
 	}
 }

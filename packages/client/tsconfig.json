@@ -1,7 +1,12 @@
 {
 	"extends": "@semoss/config/tsconfig.base.json",
 	"compilerOptions": {
-		"types": ["vitest/globals", "@testing-library/jest-dom/vitest"],
+		"types": [
+			"node",
+			"vite/client",
+			"vitest/globals",
+			"@testing-library/jest-dom/vitest"
+		],
 		"paths": {
 			"@/assets/img/*": ["../../libs/shared/src/assets/img/*"],
 			"@/assets/loginProviders/*": [

@@ -6,7 +6,10 @@
 		"strict": true,
 		"target": "es2022",
 		"module": "esnext",
-		"moduleResolution": "bundler"
+		"moduleResolution": "bundler",
+		"skipLibCheck": true,
+		"noUncheckedSideEffectImports": false,
+		"types": ["node"]
 	},
 	"include": ["./src/**/*"],
 	"ts-node": {
