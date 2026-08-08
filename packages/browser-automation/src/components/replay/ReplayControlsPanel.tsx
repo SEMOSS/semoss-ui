@@ -8,13 +8,16 @@ import {
 import {
 	Badge,
 	Button,
+	Muted,
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
+	Small,
 	Spinner,
 } from "@semoss/ui/next";
+import { getRecordingDisplayName } from "../../domain/recording";
 import type { PlaybackController } from "../../hooks/usePlaybackController";
 
 export function ReplayControlsPanel({
@@ -23,7 +26,7 @@ export function ReplayControlsPanel({
 	playback: PlaybackController;
 }) {
 	return (
-		<section className="border-line border-b">
+		<section className="border-border border-b">
 			<div className="flex items-center gap-2 px-2 py-1.5">
 				<Button
 					size="icon-sm"
@@ -35,21 +38,14 @@ export function ReplayControlsPanel({
 				>
 					{playback.controlsOpen ? <ChevronDown /> : <ChevronRight />}
 				</Button>
-				<span className="flex-1 font-semibold text-sm">
-					Replay controls
-				</span>
+				<Small className="flex-1">Replay controls</Small>
 				{playback.isPaused && (
-					<Badge
-						variant="outline"
-						className="border-warning text-warning"
-					>
-						Paused
-					</Badge>
+					<Badge variant="destructive">Paused</Badge>
 				)}
 				{playback.isRunning && <Badge>Running</Badge>}
 			</div>
 			{playback.controlsOpen && (
-				<div className="flex flex-col gap-2 border-line border-t p-2">
+				<div className="flex flex-col gap-2 border-border border-t p-2">
 					<Select
 						value={playback.project?.value ?? ""}
 						onValueChange={(value) =>
@@ -70,10 +66,20 @@ export function ReplayControlsPanel({
 								}
 							/>
 						</SelectTrigger>
-						<SelectContent>
+						<SelectContent className="w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-1rem)]">
 							{playback.projects.map((item) => (
-								<SelectItem key={item.value} value={item.value}>
-									{item.label}
+								<SelectItem
+									key={item.value}
+									value={item.value}
+									textValue={item.label}
+									className="min-w-0"
+								>
+									<Muted
+										className="block truncate text-foreground"
+										title={item.label}
+									>
+										{item.label}
+									</Muted>
 								</SelectItem>
 							))}
 						</SelectContent>
@@ -94,12 +100,26 @@ export function ReplayControlsPanel({
 								}
 							/>
 						</SelectTrigger>
-						<SelectContent>
-							{playback.files.map((file) => (
-								<SelectItem key={file} value={file}>
-									{file}
-								</SelectItem>
-							))}
+						<SelectContent className="w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-1rem)]">
+							{playback.files.map((file) => {
+								const displayName =
+									getRecordingDisplayName(file);
+								return (
+									<SelectItem
+										key={file}
+										value={file}
+										textValue={displayName}
+										className="min-w-0"
+									>
+										<Muted
+											className="block truncate text-foreground"
+											title={displayName}
+										>
+											{displayName}
+										</Muted>
+									</SelectItem>
+								);
+							})}
 						</SelectContent>
 					</Select>
 					<div className="grid grid-cols-[1fr_1fr_auto] gap-2">

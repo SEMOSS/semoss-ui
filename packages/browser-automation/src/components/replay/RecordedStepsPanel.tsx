@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { Badge, Button } from "@semoss/ui/next";
+import { Badge, Button, Muted, Small } from "@semoss/ui/next";
 import type { RemoteBrowserRecordedStep } from "../../types/browserEvents";
 
 function recordedStepType(step: RemoteBrowserRecordedStep): string {
@@ -45,7 +45,7 @@ export function RecordedStepsPanel({
 	onSave,
 }: RecordedStepsPanelProps) {
 	return (
-		<section className="border-line border-b bg-surface-raised/20">
+		<section className="border-border border-b bg-muted">
 			<div className="flex items-center gap-2 px-2 py-1.5">
 				<Button
 					size="icon-sm"
@@ -56,10 +56,10 @@ export function RecordedStepsPanel({
 					{open ? <ChevronDown /> : <ChevronRight />}
 				</Button>
 				<div className="min-w-0 flex-1">
-					<div className="font-semibold text-sm">Recorded steps</div>
-					<div className="text-muted-foreground text-xs">
+					<Small>Recorded steps</Small>
+					<Muted className="block text-xs">
 						Current unsaved recording window
-					</div>
+					</Muted>
 				</div>
 				<Badge variant="secondary">{steps.length}</Badge>
 				<Button
@@ -72,32 +72,33 @@ export function RecordedStepsPanel({
 				</Button>
 			</div>
 			{open && (
-				<div className="space-y-1.5 border-line border-t bg-canvas/40 p-2">
+				<div className="space-y-1.5 border-border border-t bg-background p-2">
 					{steps.length === 0 ? (
-						<p className="p-4 text-muted-foreground text-sm">
+						<Muted className="block p-4">
 							{isRecording
 								? "Interact with the browser to see recorded steps."
 								: "Start recording to preview captured steps."}
-						</p>
+						</Muted>
 					) : (
 						steps.map((step, index) => {
 							const value = recordedStepValue(step);
 							return (
 								<div
 									key={`${step.timestamp ?? index}-${index}`}
-									className="flex items-start gap-2 rounded-md border border-line bg-surface px-2.5 py-2 shadow-sm"
+									className="flex items-start gap-2 rounded-md border border-border bg-card px-2.5 py-2 shadow-sm"
 								>
-									<span className="grid size-6 shrink-0 place-items-center rounded-full bg-accent/10 font-semibold text-accent text-xs">
+									<Badge
+										variant="secondary"
+										className="size-6 rounded-full p-0"
+									>
 										{index + 1}
-									</span>
+									</Badge>
 									<div className="min-w-0 flex-1">
-										<div className="font-semibold text-sm">
-											{recordedStepType(step)}
-										</div>
+										<Small>{recordedStepType(step)}</Small>
 										{value && (
-											<div className="mt-0.5 break-words text-muted-foreground text-xs">
+											<Muted className="mt-0.5 block break-words text-xs">
 												{value}
-											</div>
+											</Muted>
 										)}
 									</div>
 								</div>

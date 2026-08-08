@@ -14,6 +14,8 @@ import {
 	AlertDescription,
 	Badge,
 	Button,
+	Muted,
+	Small,
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
@@ -2279,9 +2281,9 @@ export default function App() {
 	const pendingSelectionContext = pendingTextSelection?.context ?? null;
 
 	return (
-		<div className="flex h-screen flex-col overflow-hidden bg-canvas text-ink">
+		<div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
 			{/* Toolbar row */}
-			<div className="flex min-h-[38px] flex-wrap items-center gap-1 border-line border-b bg-surface px-1 py-0.5">
+			<div className="flex min-h-[38px] flex-wrap items-center gap-1 border-border border-b bg-background px-1 py-0.5">
 				<BrowserToolbar
 					currentUrl={currentUrl}
 					connectionState={connectionState}
@@ -2405,19 +2407,16 @@ export default function App() {
 						>
 							<Circle
 								className={
-									isRecording ? "fill-danger text-danger" : ""
+									isRecording
+										? "fill-destructive text-destructive"
+										: ""
 								}
 							/>
 							Recorded ({recordedSteps.length})
 						</Button>
 					)}
 					{playback.isPaused && (
-						<Badge
-							variant="outline"
-							className="border-warning text-warning"
-						>
-							Paused
-						</Badge>
+						<Badge variant="destructive">Paused</Badge>
 					)}
 					{playback.isRunning && (
 						<Badge>Step {playback.runningStepId ?? ""}</Badge>
@@ -2456,35 +2455,12 @@ export default function App() {
 			<div className="relative flex min-h-0 flex-1 overflow-hidden">
 				{/* Click-to-fill loading indicator */}
 				{isAutomationGenerating && automationClickPos && (
-					<AutomationActionIndicator
-						localX={automationClickPos.localX}
-						localY={automationClickPos.localY}
-					/>
+					<AutomationActionIndicator />
 				)}
 				{pendingTextSelection && (
-					<div
-						className="fixed z-50 w-72 rounded-lg border border-line bg-surface p-3 text-ink shadow-xl"
-						style={{
-							left: Math.max(
-								8,
-								Math.min(
-									pendingTextSelection.clientX + 10,
-									window.innerWidth - 296,
-								),
-							),
-							top: Math.max(
-								8,
-								Math.min(
-									pendingTextSelection.clientY + 10,
-									window.innerHeight - 180,
-								),
-							),
-						}}
-					>
+					<div className="fixed right-4 bottom-4 z-50 w-72 rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-xl">
 						<div className="mb-2 flex items-center justify-between gap-2">
-							<p className="font-medium text-sm">
-								Selected website text
-							</p>
+							<Small>Selected website text</Small>
 							<Button
 								size="icon-sm"
 								variant="ghost"
@@ -2496,9 +2472,9 @@ export default function App() {
 						</div>
 						{pendingSelectionContext ? (
 							<>
-								<p className="mb-3 line-clamp-3 text-ink-muted text-xs leading-5">
+								<Muted className="mb-3 line-clamp-3 text-xs leading-5">
 									{pendingSelectionContext.content}
-								</p>
+								</Muted>
 								<div className="flex justify-end gap-2">
 									<Button
 										size="sm"
@@ -2529,9 +2505,9 @@ export default function App() {
 								</div>
 							</>
 						) : (
-							<div className="flex items-center gap-2 text-ink-muted text-sm">
+							<div className="flex items-center gap-2 text-muted-foreground">
 								<Spinner />
-								Reading selected text…
+								<Muted>Reading selected text…</Muted>
 							</div>
 						)}
 					</div>

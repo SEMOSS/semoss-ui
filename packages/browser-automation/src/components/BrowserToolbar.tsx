@@ -10,7 +10,11 @@ import {
 import React, { useState } from "react";
 import {
 	Button,
-	Input,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupButton,
+	InputGroupInput,
+	Muted,
 	Spinner,
 	Tooltip,
 	TooltipContent,
@@ -83,7 +87,7 @@ export const BrowserToolbar: React.FC<BrowserToolbarProps> = ({
 
 	return (
 		<div className="flex w-full min-w-0 flex-wrap items-center gap-1.5 xl:w-auto xl:flex-1 xl:flex-nowrap">
-			<div className="flex shrink-0 items-center gap-0.5 rounded-md border border-line bg-surface-raised/70 p-0.5">
+			<div className="flex shrink-0 items-center gap-0.5 rounded-md border border-border bg-muted p-0.5">
 				<ToolbarTip label="Back">
 					<Button
 						size="icon-sm"
@@ -116,33 +120,35 @@ export const BrowserToolbar: React.FC<BrowserToolbarProps> = ({
 				</ToolbarTip>
 			</div>
 
-			<div className="flex h-9 min-w-40 flex-[1_1_16rem] items-center gap-1 rounded-md border border-line bg-canvas px-1 shadow-black/20 shadow-inner focus-within:border-accent/70 focus-within:ring-2 focus-within:ring-accent/15">
-				<Input
+			<InputGroup className="min-w-40 flex-[1_1_16rem] bg-background">
+				<InputGroupInput
 					value={urlInput}
 					onChange={(event) => setUrlInput(event.target.value)}
 					onKeyDown={(event) => event.key === "Enter" && submit()}
 					placeholder="https://example.com"
 					aria-label="Browser URL"
-					className="h-7 min-w-0 flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0"
 				/>
-				<ToolbarTip label={isActive ? "Go" : "Start browser"}>
-					<Button
-						size="icon-sm"
-						disabled={isLoading}
-						onClick={submit}
-					>
-						{isCreating || isLoading ? (
-							<Spinner />
-						) : isActive ? (
-							<Send />
-						) : (
-							<Play />
-						)}
-					</Button>
-				</ToolbarTip>
-			</div>
+				<InputGroupAddon align="inline-end">
+					<ToolbarTip label={isActive ? "Go" : "Start browser"}>
+						<InputGroupButton
+							size="icon-sm"
+							variant="default"
+							disabled={isLoading}
+							onClick={submit}
+						>
+							{isCreating || isLoading ? (
+								<Spinner />
+							) : isActive ? (
+								<Send />
+							) : (
+								<Play />
+							)}
+						</InputGroupButton>
+					</ToolbarTip>
+				</InputGroupAddon>
+			</InputGroup>
 
-			<div className="flex shrink-0 items-center gap-1.5 border-line border-l pl-2">
+			<div className="flex shrink-0 items-center gap-1.5 border-border border-l pl-2">
 				<ToolbarTip
 					label={
 						isRecording
@@ -155,20 +161,17 @@ export const BrowserToolbar: React.FC<BrowserToolbarProps> = ({
 						variant={isRecording ? "destructive" : "outline"}
 						disabled={connectionState !== "connected"}
 						onClick={onToggleRecording}
-						className={
-							isRecording
-								? "shadow-[0_0_18px_rgba(240,82,103,0.34)]"
-								: ""
-						}
 					>
 						<Circle
 							className={
-								isRecording ? "fill-current" : "text-danger"
+								isRecording
+									? "fill-current"
+									: "text-destructive"
 							}
 						/>
-						<span className="hidden sm:inline">
+						<Muted className="hidden text-inherit sm:inline">
 							{isRecording ? "RECORDING" : "Record"}
-						</span>
+						</Muted>
 					</Button>
 				</ToolbarTip>
 				<ToolbarTip label="Save recording to project recordings folder">
@@ -179,7 +182,9 @@ export const BrowserToolbar: React.FC<BrowserToolbarProps> = ({
 						onClick={onOpenSaveRecording}
 					>
 						{isSaving ? <Spinner /> : <Save />}
-						<span className="hidden sm:inline">Save</span>
+						<Muted className="hidden text-inherit sm:inline">
+							Save
+						</Muted>
 					</Button>
 				</ToolbarTip>
 			</div>

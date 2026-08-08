@@ -8,6 +8,7 @@ import {
 	DialogTitle,
 	Input,
 	Label,
+	Muted,
 	Progress,
 	Select,
 	SelectContent,
@@ -84,7 +85,10 @@ export function SaveRecordingDialog(props: SaveRecordingDialogProps) {
 							onValueChange={selectProject}
 							disabled={props.isLoadingProjects}
 						>
-							<SelectTrigger className="w-full">
+							<SelectTrigger
+								className="w-full"
+								aria-label="Project"
+							>
 								<SelectValue
 									placeholder={
 										props.isLoadingProjects
@@ -104,10 +108,10 @@ export function SaveRecordingDialog(props: SaveRecordingDialogProps) {
 								))}
 							</SelectContent>
 						</Select>
-						<p className="text-muted-foreground text-xs">
+						<Muted className="text-xs">
 							Apps you can edit are shown. Agents and skills are
 							excluded.
-						</p>
+						</Muted>
 					</div>
 					<div className="grid gap-2">
 						<Label>AI model</Label>
@@ -119,7 +123,10 @@ export function SaveRecordingDialog(props: SaveRecordingDialogProps) {
 								props.isGeneratingMetadata
 							}
 						>
-							<SelectTrigger className="w-full">
+							<SelectTrigger
+								className="w-full"
+								aria-label="AI model"
+							>
 								<SelectValue
 									placeholder={
 										props.isLoadingModels
@@ -140,9 +147,9 @@ export function SaveRecordingDialog(props: SaveRecordingDialogProps) {
 							</SelectContent>
 						</Select>
 						<div className="flex items-center justify-between gap-2">
-							<p className="text-muted-foreground text-xs">
+							<Muted className="text-xs">
 								Used only when generating recording metadata.
-							</p>
+							</Muted>
 							<Button
 								variant="link"
 								size="sm"
@@ -177,9 +184,9 @@ export function SaveRecordingDialog(props: SaveRecordingDialogProps) {
 								value={props.fileName}
 								disabled
 							/>
-							<p className="text-muted-foreground text-xs">
+							<Muted className="text-xs">
 								Generated from title and today's date.
-							</p>
+							</Muted>
 						</div>
 						<div className="grid gap-2">
 							<Label htmlFor={descriptionId}>Description</Label>
@@ -210,7 +217,7 @@ export function SaveRecordingDialog(props: SaveRecordingDialogProps) {
 							/>
 						</div>
 						{props.isGeneratingMetadata && (
-							<div className="absolute inset-0 z-10 flex items-center justify-center bg-background/75">
+							<div className="absolute inset-0 z-10 flex items-center justify-center bg-background">
 								<Progress
 									value={60}
 									className="absolute top-0"

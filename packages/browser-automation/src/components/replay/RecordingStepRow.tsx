@@ -4,6 +4,7 @@ import {
 	Button,
 	Input,
 	Label,
+	Muted,
 	Spinner,
 	Tooltip,
 	TooltipContent,
@@ -30,50 +31,58 @@ export function RecordingStepRow({
 	const isDone = stepId !== undefined && playback.executedStepIds.has(stepId);
 	const disabled =
 		playback.isRunning || step.shouldRun === false || stepId === undefined;
-	const isType = step.type === "TYPE" && stepId !== undefined;
+	const isType =
+		String(step.type || "").toUpperCase() === "TYPE" &&
+		stepId !== undefined;
+	const isPassword = step.isPassword === true;
 	const displayValue =
 		stepId !== undefined
 			? (playback.editedTypeValues[stepId] ?? step.text ?? "")
 			: (step.text ?? "");
 	const isEditing = isType && playback.editingStepId === stepId;
 	const needsValue = isType && playback.valueRequiredStepId === stepId;
+	const typeDetail = isType
+		? [
+				typeof step.label === "string" ? step.label.trim() : "",
+				isPassword
+					? "Password value hidden"
+					: typeof displayValue === "string" && displayValue
+						? `"${displayValue}"`
+						: "",
+			]
+				.filter(Boolean)
+				.join(" · ")
+		: "";
 	return (
 		<div
-			className={`border-line border-b ${needsValue ? "border-warning bg-warning/10" : ""}`}
+			className={`border-border border-b ${needsValue ? "bg-muted" : ""}`}
 		>
 			<div className="flex items-start gap-2 p-2">
-				<button
+				<Button
 					type="button"
+					variant={isRunning ? "secondary" : "ghost"}
 					disabled={disabled}
 					onClick={() => void playback.runStep(tabId, step)}
-					className={`min-w-0 flex-1 rounded p-1 text-left hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-60 ${isRunning ? "bg-primary/10" : ""}`}
+					className="h-auto min-w-0 flex-1 flex-col items-stretch whitespace-normal p-1 text-left"
 				>
-					<div className="flex flex-wrap items-center gap-2 font-semibold text-sm">
-						#{stepId ?? index + 1} {step.type || "STEP"}
+					<div className="flex flex-wrap items-center gap-2">
+						<Muted className="text-foreground">
+							#{stepId ?? index + 1} {step.type || "STEP"}
+						</Muted>
 						{isRunning && <Spinner />}
-						{isDone && <Badge className="bg-success">done</Badge>}
+						{isDone && <Badge>done</Badge>}
 						{step.shouldRun === false && (
 							<Badge variant="secondary">skipped</Badge>
 						)}
 						{needsValue && (
-							<Badge
-								variant="outline"
-								className="border-warning text-warning"
-							>
-								value required
-							</Badge>
+							<Badge variant="destructive">value required</Badge>
 						)}
 					</div>
-					<div className="mt-1 break-words text-muted-foreground text-xs">
+					<Muted className="mt-1 line-clamp-2 text-xs">
 						{tabId}
-						{typeof step.label === "string" && step.label
-							? ` · ${step.label}`
-							: ""}
-						{typeof displayValue === "string" && displayValue
-							? ` · "${displayValue}"`
-							: ""}
-					</div>
-				</button>
+						{typeDetail ? ` · ${typeDetail}` : ""}
+					</Muted>
+				</Button>
 				{isType && (
 					<Tooltip>
 						<TooltipTrigger asChild>
@@ -107,9 +116,7 @@ export function RecordingStepRow({
 						<Input
 							id={`step-${stepId}`}
 							autoFocus={needsValue}
-							type={
-								step.isPassword === true ? "password" : "text"
-							}
+							type={isPassword ? "password" : "text"}
 							value={playback.editedTypeValues[stepId] ?? ""}
 							aria-invalid={needsValue}
 							onChange={(event) =>
@@ -143,11 +150,9 @@ export function RecordingStepRow({
 							<RotateCcw />
 						</Button>
 					</div>
-					<p
+					<Muted
 						className={
-							needsValue
-								? "text-warning text-xs"
-								: "text-muted-foreground text-xs"
+							needsValue ? "text-destructive text-xs" : "text-xs"
 						}
 					>
 						{needsValue
@@ -156,7 +161,7 @@ export function RecordingStepRow({
 									step.description
 								? step.description
 								: "This value is used when replaying this TYPE step."}
-					</p>
+					</Muted>
 				</div>
 			)}
 		</div>

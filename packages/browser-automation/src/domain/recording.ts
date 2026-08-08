@@ -5,6 +5,11 @@ import type {
 } from "../types/browserEvents";
 import { normalizeBrowserUrl } from "./browser-url";
 
+/** Returns a recording name suitable for UI labels without its file extension. */
+export function getRecordingDisplayName(fileName: string): string {
+	return fileName.replace(/\.json$/i, "");
+}
+
 export function flattenEnvelopeSteps(
 	envelope: Pick<StepsEnvelope, "steps">,
 ): Array<Record<string, unknown>> {
