@@ -6,6 +6,7 @@ import {
 	getStepSelector,
 	wait,
 } from "../domain/replay-step";
+import { scrollDeltaForViewport } from "../domain/scroll";
 import type {
 	ClientToServerEvent,
 	LoadedRecording,
@@ -586,10 +587,8 @@ export function usePlaybackController({
 							typeof viewport?.height === "number"
 								? viewport.height
 								: 768;
-						const fallbackDeltaY = Math.max(
-							1,
-							Math.round(viewportHeight * 0.3),
-						);
+						const fallbackDeltaY =
+							scrollDeltaForViewport(viewportHeight);
 						await replay({
 							type: "wheel",
 							x: coords?.x ?? 0,

@@ -37,6 +37,7 @@ import {
 	enrichEnvelopeForRoomSave,
 	getRecordingStartUrl,
 } from "./domain/recording";
+import { SCROLL_SCREEN_PERCENT } from "./domain/scroll";
 import {
 	appendBoundedSelectedContext,
 	MAX_SELECTED_CONTEXT_CHARS,
@@ -67,12 +68,14 @@ import type {
 	BrowserScrollMetrics,
 	BrowserTabInfo,
 	ClientToServerEvent,
+	GeneratedRecordingMetadata,
 	LoadedRecordingStep,
 	McpToolContext,
 	RecordingMetadataModelOption,
 	RemoteBrowserRecordedStep,
 	SelectedTextContext,
 	SelectionBounds,
+	StepsEnvelope,
 } from "./types/browserEvents";
 
 /** Seconds a finished replay stays on screen before the session is closed. */
@@ -1379,6 +1382,99 @@ export default function App() {
 		void prepareSaveDialog();
 	}, [prepareSaveDialog]);
 
+	/**
+	 * Writes the recording, its metadata and the regenerated room MCP entry into
+	 * the Playground room. Both "Save recording" and "Return to Playground" go
+	 * through here so the two paths cannot drift apart.
+	 *
+	 * Metadata and the file name are resolved by the caller because they differ:
+	 * the save dialog supplies values typed by the user, while Return to
+	 * Playground generates them from the recorded actions. Both are resolved
+	 * after the room insight is bound, since generation needs that insight ID.
+	 */
+	const saveRecordingToRoom = useCallback(
+		async (
+			resolveMetadata: (
+				insightId: string,
+			) => Promise<GeneratedRecordingMetadata | null>,
+			resolveFileName: (envelope: StepsEnvelope) => string,
+		): Promise<{
+			insightId: string;
+			envelope: StepsEnvelope;
+			fileName: string;
+			roomPath: string;
+		}> => {
+			if (!session) {
+				throw new Error(
+					"No active browser session is available to save",
+				);
+			}
+			if (!toolContext?.roomId) {
+				throw new Error(
+					"No Playground room ID is available for room file save",
+				);
+			}
+			await bindSemossInsightToRoom(toolContext.roomId);
+			const insightId = getSemossInsightId() || effectiveInsightId;
+			if (!insightId) {
+				throw new Error(
+					"No SEMOSS insight is available for room file save",
+				);
+			}
+			const envelope = await getRecordingEnvelope();
+			if (!envelope) {
+				throw new Error("No recording envelope is available");
+			}
+			const enrichedEnvelope = applyGeneratedRecordingMetadata(
+				enrichEnvelopeForRoomSave(
+					envelope,
+					session.sessionId,
+					mcpRecordingNameHint,
+					mcpStartUrl,
+				),
+				await resolveMetadata(insightId),
+			);
+			const saved = await saveRoomRecording(
+				insightId,
+				resolveFileName(enrichedEnvelope),
+				enrichedEnvelope,
+			);
+			if (!saved) {
+				throw new Error(
+					"Failed to save recording to the Playground room",
+				);
+			}
+			// Regenerate mcp/pixel_mcp.json from all room recordings. This is
+			// part of a successful save, not a best-effort step. No separate
+			// registration is needed: the backend picks up a room's
+			// mcp/pixel_mcp.json automatically, so writing the file is enough
+			// for the LLM to see the new tools on the next message.
+			await saveRoomMcpEntry(
+				insightId,
+				saved.fileName,
+				enrichedEnvelope,
+				toolContext.roomId,
+				toolContext.projectId,
+			);
+			return {
+				insightId,
+				envelope: enrichedEnvelope,
+				fileName: saved.fileName,
+				roomPath: saved.roomPath,
+			};
+		},
+		[
+			effectiveInsightId,
+			getRecordingEnvelope,
+			mcpRecordingNameHint,
+			mcpStartUrl,
+			saveRoomMcpEntry,
+			saveRoomRecording,
+			session,
+			toolContext,
+		],
+	);
+
 	const handleSaveRecording = useCallback(async () => {
 		const title = saveTitle.trim();
 		const description = saveDescription.trim();
@@ -1414,48 +1510,11 @@ export default function App() {
 			let roomPath = "";
 			let roomBoundInsightId = effectiveInsightId;
 			if (saveToPlayground) {
-				if (!toolContext?.roomId) {
-					throw new Error(
-						"No Playground room ID is available for room file save",
-					);
-				}
-				await bindSemossInsightToRoom(toolContext.roomId);
-				roomBoundInsightId = getSemossInsightId() || effectiveInsightId;
-				if (!roomBoundInsightId) {
-					throw new Error(
-						"No SEMOSS insight is available for room file save",
-					);
-				}
-				const envelope = await getRecordingEnvelope();
-				if (!envelope) {
-					throw new Error("No recording envelope is available");
-				}
-				const enrichedEnvelope = applyGeneratedRecordingMetadata(
-					enrichEnvelopeForRoomSave(
-						envelope,
-						session.sessionId,
-						mcpRecordingNameHint,
-						mcpStartUrl,
-					),
-					{ success: true, title, description, intent },
+				const roomSaved = await saveRecordingToRoom(
+					async () => ({ success: true, title, description, intent }),
+					() => defaultRecordingName,
 				);
-				const roomSaved = await saveRoomRecording(
-					roomBoundInsightId,
-					defaultRecordingName,
-					enrichedEnvelope,
-				);
-				if (!roomSaved) {
-					throw new Error(
-						"Failed to save recording to the Playground room",
-					);
-				}
-				await saveRoomMcpEntry(
-					roomBoundInsightId,
-					roomSaved.fileName,
-					enrichedEnvelope,
-					toolContext.roomId,
-					toolContext.projectId,
-				);
+				roomBoundInsightId = roomSaved.insightId;
 				roomPath = roomSaved.roomPath;
 			}
 
@@ -1512,22 +1571,17 @@ export default function App() {
 		closeBrowserSession,
 		defaultRecordingName,
 		effectiveInsightId,
-		getRecordingEnvelope,
 		isPlaygroundMode,
-		mcpRecordingNameHint,
-		mcpStartUrl,
 		saveDescription,
 		saveDestination,
 		saveIntent,
 		saveProject,
 		saveRecording,
 		saveProjectMcpEntry,
-		saveRoomMcpEntry,
-		saveRoomRecording,
+		saveRecordingToRoom,
 		saveTitle,
 		sendRecordingControlEvent,
 		session,
-		toolContext,
 		playback.selectSavedRecording,
 	]);
 
@@ -1546,19 +1600,7 @@ export default function App() {
 			if (!toolContext) {
 				throw new Error("No Playground tool context is available");
 			}
-			if (!toolContext.roomId) {
-				throw new Error(
-					"No Playground room ID is available for room file save",
-				);
-			}
-			await bindSemossInsightToRoom(toolContext.roomId);
-			const roomBoundInsightId =
-				getSemossInsightId() || effectiveInsightId;
-			if (!roomBoundInsightId) {
-				throw new Error(
-					"No SEMOSS insight is available for room file save",
-				);
-			}
+			const roomId = toolContext.roomId;
 			if (!session) {
 				throw new Error(
 					"No active browser session is available to save",
@@ -1575,59 +1617,25 @@ export default function App() {
 				setIsRecording(false);
 			}
 
-			const envelope = await getRecordingEnvelope();
-			if (!envelope) {
-				throw new Error("No recording envelope is available");
-			}
+			const saved = await saveRecordingToRoom(
+				(insightId) =>
+					generatePlaywrightRecordingMetadata({
+						sessionId: session.sessionId,
+						roomId,
+						recordingNameHint: mcpRecordingNameHint,
+						insightId,
+						historyLimit: 8,
+					}),
+				(enrichedEnvelope) =>
+					buildRecordingFileName(
+						enrichedEnvelope,
+						mcpRecordingNameHint,
+						mcpStartUrl,
+						enrichedEnvelope.meta?.title || "",
+					),
+			);
+			const enrichedEnvelope = saved.envelope;
 
-			const generatedMetadata = await generatePlaywrightRecordingMetadata(
-				{
-					sessionId: session.sessionId,
-					roomId: toolContext.roomId,
-					recordingNameHint: mcpRecordingNameHint,
-					insightId: roomBoundInsightId,
-					historyLimit: 8,
-				},
-			);
-			const enrichedEnvelope = applyGeneratedRecordingMetadata(
-				enrichEnvelopeForRoomSave(
-					envelope,
-					session.sessionId,
-					mcpRecordingNameHint,
-					mcpStartUrl,
-				),
-				generatedMetadata,
-			);
-			const fileName = buildRecordingFileName(
-				enrichedEnvelope,
-				mcpRecordingNameHint,
-				mcpStartUrl,
-				enrichedEnvelope.meta?.title || "",
-			);
-			const saved = await saveRoomRecording(
-				roomBoundInsightId,
-				fileName,
-				enrichedEnvelope,
-			);
-			if (!saved) {
-				throw new Error(
-					"Failed to save recording to the Playground room",
-				);
-			}
-
-			// Regenerate mcp/pixel_mcp.json from all room recordings. This is part
-			// of a successful Return to Playground operation, not a best-effort step.
-			await saveRoomMcpEntry(
-				roomBoundInsightId,
-				saved.fileName,
-				enrichedEnvelope,
-				toolContext.roomId,
-				toolContext.projectId,
-			);
-
-			// No registration step: the backend picks up a room's
-			// mcp/pixel_mcp.json automatically, so writing the file above is
-			// enough for the LLM to see the new tools on the next message.
 			await closeBrowserSession();
 			browserClosed = true;
 
@@ -1641,7 +1649,7 @@ export default function App() {
 					recordingPath: saved.roomPath,
 					fileName: saved.fileName,
 					sessionId: session.sessionId,
-					roomId: toolContext.roomId,
+					roomId,
 					startUrl: getRecordingStartUrl(
 						enrichedEnvelope,
 						mcpStartUrl,
@@ -1690,13 +1698,10 @@ export default function App() {
 		}
 	}, [
 		closeBrowserSession,
-		getRecordingEnvelope,
-		effectiveInsightId,
 		isRecording,
 		mcpRecordingNameHint,
 		mcpStartUrl,
-		saveRoomMcpEntry,
-		saveRoomRecording,
+		saveRecordingToRoom,
 		selectedTextContexts,
 		sendRecordingControlEvent,
 		session,
@@ -2144,7 +2149,7 @@ export default function App() {
 					iteration,
 					type,
 					label,
-					value: `${deltaY < 0 ? "up" : "down"} ${typeof action.screenPercent === "number" ? action.screenPercent : 30}%`,
+					value: `${deltaY < 0 ? "up" : "down"} ${typeof action.screenPercent === "number" ? action.screenPercent : SCROLL_SCREEN_PERCENT}%`,
 					pageUrl: expectedUrl || "",
 					reason,
 				};

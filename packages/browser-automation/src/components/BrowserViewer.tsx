@@ -7,6 +7,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { scrollDeltaForViewport } from "../domain/scroll";
 import type {
 	BrowserScrollMetrics,
 	ClientToServerEvent,
@@ -344,7 +345,7 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 				x: remoteWidth / 2,
 				y: remoteHeight / 2,
 				deltaX: 0,
-				deltaY: direction * remoteHeight * 0.3,
+				deltaY: direction * scrollDeltaForViewport(remoteHeight),
 			});
 		},
 		[onUserInput, remoteHeight, remoteWidth, sendEvent],
