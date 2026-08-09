@@ -1,5 +1,7 @@
 import { Plus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { Role } from "@semoss/sdk";
+import { useIteratorApi } from "@semoss/sdk/react";
 import { AppCatalogAvatar, EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Button,
@@ -25,8 +27,7 @@ import {
 	type UserInsightAccess,
 	type UserResourceAccess,
 } from "@/api";
-import { useAPI, useIteratorApi, useSettings } from "@/hooks";
-import type { Role } from "@/types";
+import { useAPI, useSettings } from "@/hooks";
 import type { GrantCandidate } from "./user-access-grant-overlay";
 import { UserAccessGrantOverlay } from "./user-access-grant-overlay";
 import { UserAccessTable } from "./user-access-table";
