@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import {
 	Button,
 	Tooltip,
@@ -14,6 +14,7 @@ interface BrowserTabStripProps {
 	isRecording: boolean;
 	onSwitch: (tabId: string) => void;
 	onClose: (tabId: string) => void;
+	onNew: () => void;
 }
 
 export function BrowserTabStrip({
@@ -23,13 +24,17 @@ export function BrowserTabStrip({
 	isRecording,
 	onSwitch,
 	onClose,
+	onNew,
 }: BrowserTabStripProps) {
 	if (tabs.length === 0) return null;
 	return (
 		<div className="order-[-1] flex items-end gap-0.5 overflow-x-auto border-line border-b bg-surface-hover px-1 pt-1">
 			{tabs.map((tab) => {
 				const active = tab.tabId === activeTabId;
-				const label = tab.title.trim() || tab.url || tab.tabId;
+				const label =
+					tab.title.trim() ||
+					(tab.url === "about:blank" ? "New tab" : tab.url) ||
+					tab.tabId;
 				const status =
 					connectionState === "connected"
 						? isRecording
@@ -84,20 +89,22 @@ export function BrowserTabStrip({
 						{tabs.length > 1 && (
 							<Tooltip>
 								<TooltipTrigger asChild>
-									<Button
-										size="icon-sm"
-										variant="ghost"
-										aria-label={`Close ${label}`}
-										disabled={isRecording}
-										onClick={() => onClose(tab.tabId)}
-										className="mr-1 size-6"
-									>
-										<X className="size-3.5" />
-									</Button>
+									<div className="mr-1 inline-flex">
+										<Button
+											size="icon-sm"
+											variant="ghost"
+											aria-label={`Close ${label}`}
+											disabled={isRecording}
+											onClick={() => onClose(tab.tabId)}
+											className="size-6"
+										>
+											<X className="size-3.5" />
+										</Button>
+									</div>
 								</TooltipTrigger>
 								<TooltipContent>
 									{isRecording
-										? "Stop recording before closing tabs"
+										? "Tab closing is unavailable while recording"
 										: "Close tab"}
 								</TooltipContent>
 							</Tooltip>
@@ -105,6 +112,21 @@ export function BrowserTabStrip({
 					</div>
 				);
 			})}
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<Button
+						size="icon-sm"
+						variant="ghost"
+						aria-label="Open new tab"
+						disabled={connectionState !== "connected"}
+						onClick={onNew}
+						className="mb-1 shrink-0"
+					>
+						<Plus className="size-4" />
+					</Button>
+				</TooltipTrigger>
+				<TooltipContent>Open new tab</TooltipContent>
+			</Tooltip>
 		</div>
 	);
 }
