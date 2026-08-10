@@ -129,9 +129,7 @@ export const ToolsDefaultView = observer(
 		// Separate required and optional fields
 		const showResponse = tool.status === "SUCCESS";
 		const toolFailed =
-			tool.status === "ERROR" ||
-			tool.status === "CANCELLED" ||
-			tool.status === "PAUSED";
+			tool.status === "ERROR" || tool.status === "CANCELLED";
 		const requiredFields = Object.entries(properties).filter(
 			([fieldName]) => required.includes(fieldName),
 		);
@@ -447,9 +445,7 @@ export const ToolsDefaultView = observer(
 									`status.${
 										tool.status === "ERROR"
 											? "failed"
-											: tool.status === "CANCELLED"
-												? "cancelled"
-												: "paused"
+											: "cancelled"
 									}`,
 								)}
 							</Label>
