@@ -1,3 +1,5 @@
+import type { Role } from "@semoss/sdk";
+
 export interface Engine {
 	engine_id: string;
 	engine_name: string;
@@ -341,36 +343,6 @@ export interface ThemeMap {
 			enableTableExport?: boolean;
 		};
 	};
-}
-
-export type Role = "OWNER" | "EDIT" | "READ_ONLY" | "DISCOVERABLE";
-
-/**
- * User permission entry for adding/editing permissions
- */
-export interface PostUser {
-	userid: string;
-	permission: Role;
-}
-
-/**
- * User details with permission information
- */
-export interface User {
-	date_added?: string;
-	name: string;
-	permission: Role;
-	id: string;
-	type?: string;
-	email?: string;
-}
-
-/**
- * User access request for approval
- */
-export interface UserAccessRequest {
-	id: string;
-	permission: Role;
 }
 
 export interface MCP {

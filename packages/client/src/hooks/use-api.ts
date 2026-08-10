@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import * as SharedAPI from "@semoss/shared/api";
+import { getUserEnginePermission, getUserProjectPermission } from "@semoss/sdk";
 import * as API from "@/api";
 
-type ApiType = typeof API & typeof SharedAPI;
+// Only the sdk functions actually called through useAPI's string-keyed
+// lookup below — not `import * as` from @semoss/sdk, since that namespace
+// also exports non-function values (Env, constants, classes) that would
+// break the (...args: any) => any constraint on ApiType[A].
+const SdkAPI = { getUserEnginePermission, getUserProjectPermission };
+
+type ApiType = typeof API & typeof SdkAPI;
 
 interface APIState<A extends keyof ApiType> {
 	/** Status of the api call */
@@ -118,7 +124,7 @@ export function useAPI<A extends keyof ApiType>(
 			try {
 				const [func, ...args] = api;
 
-				// This is a bit of a hack to allow us to call both the client and shared API without worrying about where the function is coming from. We check the client API first, then the shared API.
+				// This is a bit of a hack to allow us to call both the client and sdk API without worrying about where the function is coming from. We check the client API first, then the sdk API.
 				const response = await (
 					(
 						API as {
@@ -128,7 +134,7 @@ export function useAPI<A extends keyof ApiType>(
 						}
 					)[func] ??
 					(
-						SharedAPI as {
+						SdkAPI as {
 							[key: string]: (
 								...args: unknown[]
 							) => Promise<unknown>;
