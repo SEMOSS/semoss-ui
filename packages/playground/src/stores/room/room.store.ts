@@ -960,8 +960,16 @@ export class RoomStore {
 	 * Ask a message to the room
 	 * @param prompt - user message
 	 * @param files - files
+	 * @param askOptions.visible - whether the user's bubble renders (default
+	 *   true); pass false for a silent kickoff turn — the reply still shows.
 	 */
-	askMessage = async (prompt: string, files: File[] = []): Promise<void> => {
+	askMessage = async (
+		prompt: string,
+		files: File[] = [],
+		askOptions: { visible?: boolean } = {},
+	): Promise<void> => {
+		const { visible = true } = askOptions;
+
 		if (!this.model) {
 			throw new Error("Model is required");
 		}
@@ -978,7 +986,7 @@ export class RoomStore {
 			io: "INPUT",
 			type: "INPUT_TEXT",
 			messageId: "ASK_PLACEHOLDER_ID",
-			visible: true,
+			visible,
 			platform_generated: true,
 			modelId: this.model?.engine_id,
 			modelType: this.model?.engine_type,

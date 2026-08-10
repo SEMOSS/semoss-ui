@@ -339,6 +339,8 @@ export interface ThemeMap {
 			enableFeedbackText?: boolean;
 			/** Whether to show an export button on tables rendered in chat responses. Defaults to false. */
 			enableTableExport?: boolean;
+			/** Whether workspaces auto-open with a silent kickoff message when selected. Defaults to false. */
+			enableAutoGreeting?: boolean;
 		};
 	};
 }

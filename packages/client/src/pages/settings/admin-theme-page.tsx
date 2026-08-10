@@ -174,6 +174,7 @@ const EMPTY_PLAYGROUND: ThemeMap["playground"] = {
 		showActivityLog: true,
 		showPlatformLinks: true,
 		enableTableExport: false,
+		enableAutoGreeting: false,
 	},
 };
 
@@ -201,6 +202,7 @@ const FEATURE_FLAGS: {
 	{ key: "showPlatformLinks", label: "Show Platform Links" },
 	{ key: "enableFeedbackText", label: "Enable Feedback Text" },
 	{ key: "enableTableExport", label: "Enable Table Export" },
+	{ key: "enableAutoGreeting", label: "Enable Auto Greeting" },
 ];
 
 const IMAGE_FIELDS: {
