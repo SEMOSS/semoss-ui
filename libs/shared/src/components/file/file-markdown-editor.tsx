@@ -88,6 +88,19 @@ export const FileMarkdownEditor: React.FC<FileMarkdownEditorProps> = ({
 		<div className="relative flex h-full w-full flex-col overflow-hidden bg-background">
 			{/* Unified toolbar — always visible */}
 			<div className="flex w-full shrink-0 items-center gap-1.5 border-border border-b px-2 py-1">
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => editorActionsRef.current?.refresh()}
+							aria-label="Refresh"
+						>
+							<RefreshCwIcon className="size-3" />
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>Refresh</TooltipContent>
+				</Tooltip>
 				<Tabs
 					value={tab}
 					onValueChange={(v) =>
@@ -101,21 +114,6 @@ export const FileMarkdownEditor: React.FC<FileMarkdownEditorProps> = ({
 				</Tabs>
 				<div className="flex-1" />
 				<div className="flex items-center gap-1.5">
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={() =>
-									editorActionsRef.current?.refresh()
-								}
-								aria-label="Refresh"
-							>
-								<RefreshCwIcon className="size-3" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>Refresh</TooltipContent>
-					</Tooltip>
 					{!readOnly && (
 						<>
 							<Tooltip>

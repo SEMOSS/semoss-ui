@@ -501,6 +501,23 @@ export const FileCodeEditor = forwardRef<
 				{/* Toolbar */}
 				{!hideToolbar && (
 					<div className="flex w-full shrink-0 items-center justify-between gap-1.5 border-border border-b px-2 py-1">
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="sm"
+									disabled={
+										isLoading ||
+										getFile.status !== "SUCCESS"
+									}
+									onClick={() => getFile.refresh()}
+									aria-label="Refresh"
+								>
+									<RefreshCwIcon className="size-3" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>Refresh</TooltipContent>
+						</Tooltip>
 						<div className="flex items-center gap-1">
 							{leadingToolbar}
 							{language === "json" && jsonErrors.length > 0 && (
@@ -528,23 +545,6 @@ export const FileCodeEditor = forwardRef<
 								)}
 						</div>
 						<div className="flex items-center gap-1.5">
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										variant="ghost"
-										size="sm"
-										disabled={
-											isLoading ||
-											getFile.status !== "SUCCESS"
-										}
-										onClick={() => getFile.refresh()}
-										aria-label="Refresh"
-									>
-										<RefreshCwIcon className="size-3" />
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent>Refresh</TooltipContent>
-							</Tooltip>
 							{!readOnly && (
 								<Tooltip>
 									<TooltipTrigger asChild>
