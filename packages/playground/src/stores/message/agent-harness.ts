@@ -1,6 +1,7 @@
 import { runInAction } from "mobx";
 import type {
 	AgentRunItemEvent,
+	AgentRunItemsState,
 	AgentRunSnapshot,
 	AgentRunStatusValue,
 } from "@semoss/sdk";
@@ -86,18 +87,27 @@ const buildToolCallPart = (item: {
  * Apply one canonical agent-run item event onto the response message. Must
  * already be inside a mobx action.
  *
- * message/reasoning: text arrives two ways (see AgentRunStreamService on the
- * backend) — either deltas (item.started with empty text, then
- * item.updated.delta chunks) or all-at-once (item.started already carries the
- * full text, no item.updated at all — e.g. the post-tool resume path when
- * nothing streamed incrementally). Handling both without double-counting: an
- * item.started with non-empty text is saved immediately; deltas are saved as
- * they arrive; item.completed never re-saves text, since one of the two paths
- * above already built it.
+ * `items` is the SDK's own assembled state for this event (subscribeAgentRun
+ * runs applyAgentRunItemEvent internally and hands back the result) — tool
+ * status reads come from there rather than from the raw event, so Playground
+ * never has to know whether a given update was a delta or a patch, or how
+ * multiple patches merge together; that's protocol-level knowledge the SDK
+ * already owns.
+ *
+ * message/reasoning text is the one exception: it's read straight off the
+ * event rather than off `items`, because the raw event already gives exactly
+ * what needs to be appended in either case text can arrive (see
+ * AgentRunStreamService on the backend) — deltas (item.started with empty
+ * text, then item.updated.delta chunks) or all-at-once (item.started already
+ * carries the full text, no item.updated at all — e.g. a resume path where
+ * nothing streamed incrementally). savePart's own merge-consecutive-parts
+ * behavior does the accumulation; item.completed never re-saves text, since
+ * one of the two paths above already built it.
  */
 const applyAgentRunItem = (
 	responseMessage: ResponseMessageStore,
 	event: AgentRunItemEvent,
+	items: AgentRunItemsState,
 ) => {
 	const room = responseMessage.room;
 
@@ -135,12 +145,11 @@ const applyAgentRunItem = (
 				type: "THINKING",
 				thinking: event.delta,
 			});
-		} else if (event.kind === "tool" && event.patch) {
+		} else if (event.kind === "tool") {
 			const tool = room.getTool(event.itemId);
+			const merged = items.itemsById[event.itemId];
 			const status =
-				typeof event.patch.status === "string"
-					? mapToolStatus(event.patch.status)
-					: null;
+				merged?.kind === "tool" ? mapToolStatus(merged.status) : null;
 			if (tool && status) {
 				tool.status = status;
 			}
@@ -281,9 +290,9 @@ export const runAgentMessage = async (
 			};
 
 			subscription = subscribeAgentRun(handle.runId, {
-				onEvent: (event) => {
+				onEvent: (event, items) => {
 					runInAction(() => {
-						applyAgentRunItem(responseMessage, event);
+						applyAgentRunItem(responseMessage, event, items);
 					});
 				},
 				onSnapshot: () => {

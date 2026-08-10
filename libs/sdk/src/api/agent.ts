@@ -317,6 +317,86 @@ export const decideAgentRunAction = async (
 	return response.pixelReturn[0].output;
 };
 
+/**
+ * Accumulated view of every item seen so far in a run, in the order each
+ * first started. The generic, provider-neutral projection of the raw event
+ * stream — the piece every consumer would otherwise have to reimplement
+ * itself (see applyAgentRunItemEvent).
+ */
+export interface AgentRunItemsState {
+	itemsById: Record<string, AgentRunItem>;
+	itemOrder: string[];
+}
+
+export const createAgentRunItemsState = (): AgentRunItemsState => ({
+	itemsById: {},
+	itemOrder: [],
+});
+
+/**
+ * Apply one item event onto an items-state accumulator, returning a new
+ * state (the input is never mutated). Pure and idempotent — safe to call
+ * once per event already deduped/ordered by subscribeAgentRun (which does
+ * this internally; call it yourself only if consuming pollAgentRun directly).
+ *
+ * Centralizes protocol-level knowledge every consumer would otherwise have
+ * to reimplement: message/reasoning text arrives either as incremental
+ * deltas (item.started with empty text, then item.updated.delta chunks) or
+ * all at once (item.started already carries the full text, no
+ * item.updated — e.g. a resume path where nothing streamed incrementally);
+ * tool/subagent item.updated always carries a patch merged onto the last
+ * known item, never a delta.
+ */
+export const applyAgentRunItemEvent = (
+	state: AgentRunItemsState,
+	event: AgentRunItemEvent,
+): AgentRunItemsState => {
+	if (event.type === "item.started") {
+		const { item } = event;
+		if (state.itemsById[item.id]) {
+			return state;
+		}
+		return {
+			itemsById: { ...state.itemsById, [item.id]: item },
+			itemOrder: [...state.itemOrder, item.id],
+		};
+	}
+
+	if (event.type === "item.updated") {
+		const existing = state.itemsById[event.itemId];
+		if (!existing) {
+			return state;
+		}
+		let updated: AgentRunItem = existing;
+		if (event.delta !== undefined) {
+			if (existing.kind === "message") {
+				updated = { ...existing, text: existing.text + event.delta };
+			} else if (existing.kind === "reasoning") {
+				updated = {
+					...existing,
+					summary: existing.summary + event.delta,
+				};
+			}
+		} else if (event.patch) {
+			updated = { ...existing, ...event.patch } as AgentRunItem;
+		}
+		return {
+			...state,
+			itemsById: { ...state.itemsById, [event.itemId]: updated },
+		};
+	}
+
+	// item.completed
+	const { item } = event;
+	const alreadyKnown = Boolean(state.itemsById[item.id]);
+	return {
+		itemsById: { ...state.itemsById, [item.id]: item },
+		itemOrder: alreadyKnown
+			? state.itemOrder
+			: [...state.itemOrder, item.id],
+	};
+};
+
 const TERMINAL_RUN_STATUSES: ReadonlySet<AgentRunStatusValue> = new Set([
 	"COMPLETED",
 	"FAILED",
@@ -324,8 +404,13 @@ const TERMINAL_RUN_STATUSES: ReadonlySet<AgentRunStatusValue> = new Set([
 ]);
 
 export interface AgentRunSubscriptionHandlers {
-	/** Fires once per new item event, deduped by eventId and delivered in sequence order. */
-	onEvent: (event: AgentRunItemEvent) => void;
+	/**
+	 * Fires once per new item event, deduped by eventId and delivered in
+	 * sequence order, alongside the items-state freshly updated with it — so
+	 * callers get both the raw event (e.g. for delta-based animation) and the
+	 * already-assembled current item without running the reducer themselves.
+	 */
+	onEvent: (event: AgentRunItemEvent, items: AgentRunItemsState) => void;
 	/** Fires on every successful poll with the run's current durable snapshot. */
 	onSnapshot: (snapshot: AgentRunSnapshot) => void;
 	/**
@@ -353,6 +438,11 @@ export interface AgentRunSubscriptionOptions {
 export interface AgentRunSubscription {
 	/** Stop polling/watching this run locally. Does not cancel the run itself. */
 	stop: () => void;
+	/**
+	 * The current assembled items-state, for seeding a late-joining renderer
+	 * without waiting for the next event (e.g. a UI element mounted mid-run).
+	 */
+	getItems: () => AgentRunItemsState;
 }
 
 /**
@@ -381,6 +471,7 @@ export const subscribeAgentRun = (
 	let reconciledStatus: AgentRunStatusValue | null = null;
 	const seenEventIds = new Set<string>();
 	let consecutiveFailures = 0;
+	let itemsState = createAgentRunItemsState();
 
 	const stop = () => {
 		if (stopped) {
@@ -420,7 +511,8 @@ export const subscribeAgentRun = (
 						continue;
 					}
 					seenEventIds.add(event.eventId);
-					onEvent(event);
+					itemsState = applyAgentRunItemEvent(itemsState, event);
+					onEvent(event, itemsState);
 				}
 
 				onSnapshot(run);
@@ -454,5 +546,5 @@ export const subscribeAgentRun = (
 
 	void loop();
 
-	return { stop };
+	return { stop, getItems: () => itemsState };
 };
