@@ -1,9 +1,14 @@
 import { runInAction } from "mobx";
+import type {
+	AgentRunItemEvent,
+	AgentRunSnapshot,
+	AgentRunStatusValue,
+} from "@semoss/sdk";
+import { submitAgentRun, subscribeAgentRun } from "@semoss/sdk/react";
 import { STREAMING_PLACEHOLDER_ID } from "@/constants";
-import type { ResponsePixelMessage } from "@/types";
+import type { PixelMessageToolCallPart, ResponsePixelMessage } from "@/types";
 import type { InputMessageStore } from "./input-message.store";
 import { ResponseMessageStore } from "./response-message.store";
-import { applyToolStreamChunk } from "./tool-stream";
 
 /**
  * Agent harness type sent to the backend RunAgent reactor.
@@ -11,57 +16,170 @@ import { applyToolStreamChunk } from "./tool-stream";
 export const AGENT_HARNESS_TYPE = "semoss";
 
 /**
- * Final result of the RunAgent reactor (the async job's `getPixelAsyncResult`
- * payload).
- *
- * Unlike AskPlayground — which returns a paired `{ inputMessage, responseMessage }`
- * of full pixel messages — RunAgent runs the full agentic loop server-side and
- * returns a single flat summary. The live token/tool stream arrives over the
- * same job-streaming channel (polled by jobId), while this summary gives us the
- * persisted message ids and terminal status to reconcile against once the run
- * finishes.
+ * Maps an AgentToolItem's status onto ToolStore's status enum. ToolStore has
+ * no dedicated "waiting on a human decision" state (see PendingAgentAction /
+ * approval UI — not yet built), so INPUT_REQUIRED is approximated as LOADING:
+ * honestly "still in progress" without falsely reading as done. QUEUED has no
+ * branch here — it's ToolStore's own default status for a freshly synced
+ * tool, so nothing needs setting.
  */
-interface RunAgentOutput {
-	/** Whether the run exceeded the server wait window before finishing. */
-	waitTimedOut: boolean;
-	/** Terminal run status, e.g. "COMPLETED". */
-	status: string;
-	/** The user's input text, echoed back. */
-	input: string;
-	/** Server message id for the persisted input message. */
-	inputMessageId: string;
-	/** The agent's final assistant text. */
-	finalText: string;
-	/** Server message id for the persisted final response message. */
-	finalOutputMessageId: string;
-	/** Engine/model id the agent ran against. */
-	modelId: string;
-	/** Harness type that produced this run. */
-	harnessType: string;
-	roomId: string;
-	runId: string;
-	jobId: string;
-	userId: string;
-	startedAt: string;
-	completedAt: string;
-	dateCreated: string;
-	/** Files / outputs produced by the run (e.g. generated documents). */
-	artifacts: unknown[];
-}
+const mapToolStatus = (
+	status: string,
+): "LOADING" | "SUCCESS" | "ERROR" | "CANCELLED" | null => {
+	switch (status) {
+		case "RUNNING":
+		case "INPUT_REQUIRED":
+			return "LOADING";
+		case "COMPLETED":
+			return "SUCCESS";
+		case "FAILED":
+			return "ERROR";
+		case "REJECTED":
+		case "CANCELLED":
+			return "CANCELLED";
+		default:
+			return null;
+	}
+};
+
+/**
+ * Build a TOOL_CALL part from a fully-parsed AgentToolItem. Unlike the
+ * OpenAI-delta tool stream (tool-stream.ts), agent-run tool items always
+ * arrive complete — full name/arguments/metadata — so there's no placeholder
+ * phase to manage here.
+ *
+ * SMSS_MCP_EXECUTION is forced to "disabled" regardless of what the item's
+ * metadata carries: the backend harness already executed this tool itself
+ * (HarnessToolExecutor / AgentToolDecisionHandler). The FE must never queue it
+ * for its own client-side dispatch (continueToolExecution's auto-run path) —
+ * that would re-run a tool the backend already ran.
+ */
+const buildToolCallPart = (item: {
+	id: string;
+	name: string;
+	arguments: Record<string, unknown>;
+	metadata?: Record<string, unknown>;
+}): PixelMessageToolCallPart => ({
+	type: "TOOL_CALL",
+	toolCall: {
+		id: item.id,
+		type: "function",
+		name: item.name,
+		arguments: item.arguments,
+		_tool_found: true,
+		original_name: item.name,
+		description: "",
+		...(item.metadata as Record<string, unknown>),
+		_meta: {
+			SMSS_ENGINE_NAME: "",
+			SMSS_ENGINE_ID: "",
+			SMSS_ENGINE_TYPE: "",
+			SMSS_PROJECT_NAME: "",
+			SMSS_PROJECT_ID: "",
+			...(item.metadata?._meta as Record<string, unknown>),
+			SMSS_MCP_EXECUTION: "disabled",
+		},
+	} as PixelMessageToolCallPart["toolCall"],
+});
+
+/**
+ * Apply one canonical agent-run item event onto the response message. Must
+ * already be inside a mobx action.
+ *
+ * message/reasoning: text arrives two ways (see AgentRunStreamService on the
+ * backend) — either deltas (item.started with empty text, then
+ * item.updated.delta chunks) or all-at-once (item.started already carries the
+ * full text, no item.updated at all — e.g. the post-tool resume path when
+ * nothing streamed incrementally). Handling both without double-counting: an
+ * item.started with non-empty text is saved immediately; deltas are saved as
+ * they arrive; item.completed never re-saves text, since one of the two paths
+ * above already built it.
+ */
+const applyAgentRunItem = (
+	responseMessage: ResponseMessageStore,
+	event: AgentRunItemEvent,
+) => {
+	const room = responseMessage.room;
+
+	if (event.type === "item.started") {
+		const { item } = event;
+		if (item.kind === "message" && item.text) {
+			responseMessage.savePart({
+				type: "TEXT",
+				text: item.text,
+				uiText: item.text,
+			});
+		} else if (item.kind === "reasoning" && item.summary) {
+			responseMessage.savePart({
+				type: "THINKING",
+				thinking: item.summary,
+			});
+		} else if (item.kind === "tool") {
+			const part = buildToolCallPart(item);
+			responseMessage.parts.push(part);
+			room.syncTool(item.id, responseMessage, part);
+		}
+		// subagent: not yet rendered — see AgentSubagentItem/tools-view follow-up.
+		return;
+	}
+
+	if (event.type === "item.updated") {
+		if (event.kind === "message" && event.delta) {
+			responseMessage.savePart({
+				type: "TEXT",
+				text: event.delta,
+				uiText: event.delta,
+			});
+		} else if (event.kind === "reasoning" && event.delta) {
+			responseMessage.savePart({
+				type: "THINKING",
+				thinking: event.delta,
+			});
+		} else if (event.kind === "tool" && event.patch) {
+			const tool = room.getTool(event.itemId);
+			const status =
+				typeof event.patch.status === "string"
+					? mapToolStatus(event.patch.status)
+					: null;
+			if (tool && status) {
+				tool.status = status;
+			}
+		}
+		// subagent: not yet rendered.
+		return;
+	}
+
+	// item.completed
+	const { item } = event;
+	if (item.kind === "tool") {
+		const tool = room.getTool(item.id);
+		if (!tool) {
+			return;
+		}
+		const status = mapToolStatus(item.status);
+		if (status) {
+			tool.status = status;
+		}
+		tool.response = item.output ?? item.error ?? "";
+	}
+	// message/reasoning completion carries no new text (see comment above).
+	// subagent: not yet rendered.
+};
 
 /**
  * Run a user message through the server-side agent harness (RunAgent).
  *
- * Mirrors the standard chat flow: it wires an input bubble + a thinking response
- * placeholder, then drives the response through the SAME async streaming pixel
- * endpoint AskPlayground uses (runRoomPixelStreaming → runPixelAsync + jobId
- * polling). Content / thinking / tool chunks stream into the response in real
- * time. RunAgent's final async result is a flat summary, so once the stream
- * completes we use it only to adopt the server's canonical message ids and to
- * fall back to its `finalText` if no text streamed.
+ * Submits the run without waiting (wait=false) and drives the response
+ * through the SDK's agent-run subscription: item events (message/reasoning
+ * deltas, tool lifecycle) stream in via applyAgentRunItem, and the durable
+ * snapshot reconciles the turn at INPUT_REQUIRED/terminal boundaries.
  *
- * Kept in its own module because RunAgent's return structure differs from the
- * normal chat reactor and is owned entirely here.
+ * A non-COMPLETED terminal status rejects, matching the prior contract (the
+ * caller removes the optimistic input on failure). INPUT_REQUIRED does not
+ * settle this promise — the turn stays mounted, "thinking," until the run
+ * resumes or finishes. There is no pending-action UI yet (see
+ * PendingAgentAction), so a paused run currently has no way to move forward
+ * from the FE short of a future decideAgentRunAction-backed affordance.
  *
  * @param message - The response message store initiating the turn. Its room is
  *   used and the new messages are wired beneath it.
@@ -102,6 +220,10 @@ export const runAgentMessage = async (
 			},
 		} as ResponsePixelMessage);
 
+	// The old code relied on streamJob.run()'s own showLoading toggle. This
+	// path no longer goes through streamJob, so it owns room.isLoading itself.
+	room.setIsLoading(true);
+
 	try {
 		if (!existingResponse) {
 			// connect to the parent
@@ -123,86 +245,78 @@ export const runAgentMessage = async (
 			return acc;
 		}, "");
 
-		// per-stream map from tool delta `index` → wire `id`, used to associate
-		// arguments/name deltas with the ToolStore created on the opening chunk
-		const toolStreamIndexToId: Record<number, string> = {};
-
-		// run RunAgent through the async streaming endpoint (runPixelAsync +
-		// jobId polling), streaming chunks just like AskPlayground does
-		await room.runRoomPixelStreaming<[RunAgentOutput]>(
-			`RunAgent(
-roomId=["${room.roomId}"],
-engine=["${room.model.engine_id}"],
-command=["<encode>${text}</encode>"],
-harnessType="${AGENT_HARNESS_TYPE}",
-wait=true
-);`,
+		const handle = await submitAgentRun(
 			{
-				onEmit: (chunk) => {
+				roomId: room.roomId,
+				command: text,
+				engine: room.model.engine_id,
+				harnessType: AGENT_HARNESS_TYPE,
+			},
+			room.insightId,
+		);
+
+		await new Promise<void>((resolve, reject) => {
+			let subscription: { stop: () => void } | null = null;
+
+			const settleTerminal = (snapshot: AgentRunSnapshot) => {
+				const status: AgentRunStatusValue = snapshot.status;
+				if (
+					status !== "COMPLETED" &&
+					status !== "FAILED" &&
+					status !== "CANCELLED"
+				) {
+					return;
+				}
+				subscription?.stop();
+				if (status !== "COMPLETED") {
+					reject(
+						new Error(
+							snapshot.errorMessage ||
+								`The agent run did not complete: ${status}`,
+						),
+					);
+					return;
+				}
+				resolve();
+			};
+
+			subscription = subscribeAgentRun(handle.runId, {
+				onEvent: (event) => {
 					runInAction(() => {
-						if (chunk.stream_type === "content") {
-							if (chunk.data.content) {
-								responseMessage.savePart({
-									type: "TEXT",
-									text: chunk.data.content,
-									uiText: chunk.data.content,
-								});
-							}
-						} else if (chunk.stream_type === "thinking") {
-							if (chunk.data.thinking) {
-								responseMessage.savePart({
-									type: "THINKING",
-									thinking: chunk.data.thinking,
-								});
-							}
-						} else if (chunk.stream_type === "tool") {
-							applyToolStreamChunk(
-								responseMessage,
-								toolStreamIndexToId,
-								chunk.data,
-							);
-						} else {
-							console.error(`Unknown stream type`, chunk);
-						}
+						applyAgentRunItem(responseMessage, event);
 					});
 				},
-				onResult: ({ results }) => {
-					const { output } = results[0];
-
-					// surface incomplete runs as errors so the catch removes the
-					// optimistic input and the room reports the failure
-					if (output.waitTimedOut) {
-						throw new Error(
-							"The agent run timed out before completing.",
-						);
-					}
-					if (output.status !== "COMPLETED") {
-						throw new Error(
-							`The agent run did not complete: ${output.status}`,
-						);
-					}
-
+				onSnapshot: () => {
+					// pendingActions surfacing is a follow-up (see PendingAgentAction).
+				},
+				onReconcile: (snapshot) => {
 					runInAction(() => {
-						// adopt the server's canonical ids now that the run is persisted
-						inputMessage.id = output.inputMessageId;
-						responseMessage.id = output.finalOutputMessageId;
+						if (snapshot.inputMessageId) {
+							inputMessage.id = snapshot.inputMessageId;
+						}
+						if (snapshot.finalOutputMessageId) {
+							responseMessage.id = snapshot.finalOutputMessageId;
+						}
 
-						// if nothing streamed as visible text (e.g. only thinking/tools came
-						// over the wire), fall back to the summary's final text
+						// if nothing streamed as visible text, fall back to finalText
 						const hasStreamedText = responseMessage.parts.some(
 							(part) => part.type === "TEXT" && part.text,
 						);
-						if (!hasStreamedText && output.finalText) {
+						if (!hasStreamedText && snapshot.finalText) {
 							responseMessage.savePart({
 								type: "TEXT",
-								text: output.finalText,
-								uiText: output.finalText,
+								text: snapshot.finalText,
+								uiText: snapshot.finalText,
 							});
 						}
 					});
+					settleTerminal(snapshot);
 				},
-			},
-		);
+				onError: (e) => {
+					console.error("Agent run stream error", e);
+				},
+			});
+		});
 	} catch (e) {
 		// remove message if we failed
 		message.removeChild(inputMessage);
@@ -213,5 +327,6 @@ wait=true
 			// turn off thinking
 			responseMessage.isThinking = false;
 		});
+		room.setIsLoading(false);
 	}
 };

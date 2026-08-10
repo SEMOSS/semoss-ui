@@ -1013,10 +1013,12 @@ export class RoomStore {
 	 * Helpers
 	 */
 	/**
-	 * Set the isLoading boolean
+	 * Set the isLoading boolean. Public so callers that don't go through
+	 * streamJob.run() — e.g. the agent-run poll subscription — can still
+	 * participate in the room's loading state.
 	 * @param isLoading - is it loading
 	 */
-	private setIsLoading = (isLoading: boolean): void => {
+	setIsLoading = (isLoading: boolean): void => {
 		this._store.isLoading = isLoading;
 	};
 
