@@ -64,13 +64,8 @@ export class ToolStore {
 	/**
 	 * Status for the tool
 	 */
-	status:
-		| "INITIAL"
-		| "LOADING"
-		| "CANCELLED"
-		| "SUCCESS"
-		| "ERROR"
-		| "PAUSED" = "INITIAL";
+	status: "INITIAL" | "LOADING" | "CANCELLED" | "SUCCESS" | "ERROR" =
+		"INITIAL";
 
 	/**
 	 * Parameters for the tool
@@ -134,6 +129,24 @@ export class ToolStore {
 			original_name: name,
 			description: "",
 		} as PixelMessageToolCallPart["toolCall"];
+	}
+
+	/**
+	 * Whether the server-resolved tool part has synced. Until it has we only
+	 * have wire-level data (id, raw name, partial args) from the SSE stream — no
+	 * friendly title, description, or `_meta` — so the tool should render as a
+	 * generic loading state rather than exposing the raw wire name. Mirrors the
+	 * `json` getter's own resolved check — never key this off a display field
+	 * such as `title`: MCP tools aren't required to declare one, and a titleless
+	 * tool would otherwise never resolve.
+	 *
+	 * Distinct from `argumentsStreaming` (only true while deltas are still
+	 * arriving): a tool stays unresolved through the gap between the terminal
+	 * stream chunk and the final `sync()`, which is what prevents a flicker
+	 * there.
+	 */
+	get isResolved(): boolean {
+		return !!this.toolCall.part && !this.isStreamingPlaceholder;
 	}
 
 	/**
@@ -251,10 +264,13 @@ export class ToolStore {
 			// emitted on success, so default to SUCCESS in that case.
 			if (part.toolResult.toolStatus === "error") {
 				this.status = "ERROR";
-			} else if (part.toolResult.toolStatus === "cancelled") {
+			} else if (
+				part.toolResult.toolStatus === "cancelled" ||
+				// "paused" is a legacy status, retired in favor of cancelled;
+				// surface any persisted paused tools as cancelled.
+				part.toolResult.toolStatus === "paused"
+			) {
 				this.status = "CANCELLED";
-			} else if (part.toolResult.toolStatus === "paused") {
-				this.status = "PAUSED";
 			} else {
 				this.status = "SUCCESS";
 			}

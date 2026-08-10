@@ -5,7 +5,6 @@
 		"completed": "Voltooid",
 		"ready": "Gereed",
 		"autoExecute": "Automatisch uitvoeren",
-		"paused": "Gepauzeerd",
 		"queued": "In wachtrij voor automatische uitvoering",
 		"loadingTool": "Tool laden…",
 		"waitingForArguments": "Wachten op argumenten…"
@@ -21,10 +20,11 @@
 	"group": {
 		"labelClosed": "{{toolName}} + nog {{count}}",
 		"labelOpen": "Uitgevoerde tools ({{count}})",
+		"labelStreaming_one": "{{count}} tool laden…",
+		"labelStreaming_other": "{{count}} tools laden…",
 		"summaryCompleted": "{{count}} voltooid",
 		"summaryError": "{{count}} mislukt",
-		"summaryCancelled": "{{count}} geannuleerd",
-		"summaryPaused": "{{count}} gepauzeerd"
+		"summaryCancelled": "{{count}} geannuleerd"
 	},
 	"form": {
 		"result": "Resultaat",
