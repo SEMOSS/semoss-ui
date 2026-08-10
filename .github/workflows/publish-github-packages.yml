@@ -60,7 +60,18 @@ jobs:
                   const fs = require("fs");
                   const path = require("path");
 
-                  const packageDirs = ["i18n", "sdk", "ui", "shared", "renderer", "chat"];
+                  const libsRoot = path.join(process.cwd(), "libs");
+                  const libraryDirs = fs
+                      .readdirSync(libsRoot, { withFileTypes: true })
+                      .filter((entry) => entry.isDirectory())
+                      .map((entry) => entry.name)
+                      .filter((dir) => fs.existsSync(path.join(libsRoot, dir, "package.json")))
+                      .sort();
+
+                  if (libraryDirs.length === 0) {
+                      throw new Error("No publishable libraries found under libs/*/package.json");
+                  }
+
                   const ownerScope = `@${(process.env.GITHUB_OWNER || "").toLowerCase()}`;
                   const sanitize = (value) =>
                       value
@@ -73,7 +84,7 @@ jobs:
                   const channel = sanitize(process.env.PUBLISH_CHANNEL || "preview");
                   const suffix = `${channel}.${branch}.${process.env.GITHUB_RUN_NUMBER}.${process.env.GITHUB_RUN_ATTEMPT}`;
 
-                  const manifests = packageDirs.map((dir) => {
+                  const manifests = libraryDirs.map((dir) => {
                       const manifestPath = path.join(process.cwd(), "libs", dir, "package.json");
                       const pkg = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
                       const packageBasename = (pkg.name || "").split("/").pop();
@@ -119,14 +130,9 @@ jobs:
                       }
                   };
 
-                  const sourceImportReplacements = {
-                      "@semoss/i18n": `${ownerScope}/i18n`,
-                      "@semoss/sdk": `${ownerScope}/sdk`,
-                      "@semoss/ui": `${ownerScope}/ui`,
-                      "@semoss/shared": `${ownerScope}/shared`,
-                      "@semoss/renderer": `${ownerScope}/renderer`,
-                      "@semoss/chat": `${ownerScope}/chat`,
-                  };
+                  const sourceImportReplacements = Object.fromEntries(
+                      Object.entries(scopedNameMap).filter(([fromScope]) => fromScope),
+                  );
 
                   const rewriteImportsInDir = (dirPath) => {
                       if (!fs.existsSync(dirPath)) {
@@ -188,6 +194,7 @@ jobs:
 
                   const publishPlan = manifests.map(({ dir, pkg }) => ({
                       dir,
+                      path: `libs/${dir}`,
                       name: pkg.name,
                       version: pkg.version,
                   }));
@@ -202,7 +209,7 @@ jobs:
 
             - name: Build packages that emit dist output
               run: |
-                  for package_dir in libs/sdk libs/ui libs/renderer libs/chat; do
+                  for package_dir in $(node -e 'const fs=require("fs"); const p=JSON.parse(fs.readFileSync("publish-plan.json","utf8")); console.log(p.map((x) => x.path).join(" "));'); do
                       echo "Building ${package_dir}"
                       cd "${package_dir}"
                       pnpm run --if-present build
@@ -211,7 +218,7 @@ jobs:
 
             - name: Publish packages to GitHub Packages
               run: |
-                  for package_dir in libs/i18n libs/sdk libs/ui libs/shared libs/renderer libs/chat; do
+                  for package_dir in $(node -e 'const fs=require("fs"); const p=JSON.parse(fs.readFileSync("publish-plan.json","utf8")); console.log(p.map((x) => x.path).join(" "));'); do
                       echo "Publishing ${package_dir}"
                       cd "${package_dir}"
                       pnpm publish --no-git-checks --tag "${PUBLISH_CHANNEL}"
