@@ -28,12 +28,16 @@ export interface UseIteratorApiReturn<T> {
 	hasMore: boolean;
 	/** Advance to the next page (no-op while loading or once exhausted). */
 	next: () => void;
-	/** Clear accumulated pages and re-fetch from offset 0. */
+	/**
+	 * Re-fetch from offset 0. Accumulated pages are left in place (not
+	 * cleared) until the new page-0 result arrives and replaces them
+	 * wholesale — avoids a flash to empty every time this is called.
+	 */
 	reset: () => void;
 	/**
 	 * Patch the already-loaded rows in place (no network call, no scroll reset).
 	 * Use after a confirmed mutation so a single row can be edited or removed
-	 * without `reset()` throwing away accumulated pages and jumping to the top.
+	 * without `reset()`'s eventual page-0 replacement jumping the scroll to top.
 	 */
 	update: (updater: (prev: T[]) => T[]) => void;
 }
@@ -78,8 +82,11 @@ export function useIteratorApi<T>(
 	hasMoreRef.current = hasMore;
 	const mountedRef = useRef(false);
 
+	// Deliberately does not clear `data`: the page-0 fetch this triggers
+	// replaces it wholesale once it resolves (see the `offset === 0` branch
+	// below), so leaving stale rows in place until then avoids a flash to
+	// empty on every reset (search-term change, filter change, etc).
 	const reset = useCallback(() => {
-		setData([]);
 		setOffset(0);
 		setHasMore(true);
 		setResetKey((k) => k + 1);

@@ -1,5 +1,6 @@
 import { Search } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
+import type { Role } from "@semoss/sdk";
 import {
 	Button,
 	Checkbox,
@@ -20,7 +21,6 @@ import {
 	SelectValue,
 	Spinner,
 } from "@semoss/ui/next";
-import type { Role } from "@/types";
 import { ACCESS_PERMISSIONS } from "./user-access-table";
 
 export interface GrantCandidate {

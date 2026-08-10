@@ -1,0 +1,50 @@
+{
+	"dialog": {
+		"title": "Add Members",
+		"description": "Search for users and invite them to this resource."
+	},
+	"search": {
+		"placeholder": "Search by name or email...",
+		"searching": "Searching for users...",
+		"empty": "No users found",
+		"added": "Added"
+	},
+	"selected": {
+		"count_one": "{{count}} user selected",
+		"count_other": "{{count}} users selected",
+		"empty": "No users selected"
+	},
+	"permission": {
+		"viewer": "Viewer",
+		"editor": "Editor",
+		"owner": "Owner"
+	},
+	"restrictions": {
+		"title": "Model Limit Restrictions (for all selected users)",
+		"usageLimitType": "Usage Limit Type",
+		"none": "None",
+		"token": "Token",
+		"computeTime": "Compute time",
+		"maxTokens": "Max Tokens",
+		"maxResponseTime": "Max Response Time",
+		"unit": "Unit",
+		"milliseconds": "milliseconds",
+		"frequency": "Frequency",
+		"daily": "Daily",
+		"weekly": "Weekly",
+		"monthly": "Monthly",
+		"yearly": "Yearly",
+		"allTime": "All time"
+	},
+	"footer": {
+		"add": "Add",
+		"addWithCount": "Add ({{count}})"
+	},
+	"errors": {
+		"loadUsersFailed": "Failed to load users.",
+		"addMembersFailed": "There was an error adding the selected members."
+	},
+	"success": {
+		"membersAdded": "Selected members have been added successfully."
+	}
+}
