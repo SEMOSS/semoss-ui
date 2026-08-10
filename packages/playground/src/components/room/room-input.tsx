@@ -99,6 +99,18 @@ const formatTokens = (tokens: number | undefined) => {
 // TypeScript Interfaces
 // ============================================================================
 
+/**
+ * Appearance of the send/stop button, computed by the parent from the turn +
+ * cancel state:
+ *  - "send"    — idle; submit the prompt (disabled while empty / tools pending)
+ *  - "stop"    — a turn is in flight (model streaming, or tools executing); the
+ *                button cancels it. Cancelling tool execution is a no-op today
+ *                but the affordance stays so it lights up once that's wired.
+ *  - "loading" — a spinner: stop was pressed and is unwinding, or the context is
+ *                busy but has nothing to cancel (the new-room flow).
+ */
+export type SendButtonState = "send" | "stop" | "loading";
+
 interface RoomInputProps {
 	/** Classes to override */
 	className?: string;
@@ -145,14 +157,12 @@ interface RoomInputProps {
 	/** Has outstanding tools */
 	hasOutstandingTools?: boolean;
 
-	/** Whether the pause-on-next-tool flag is armed */
-	hasToolsPaused?: boolean;
+	/** Appearance of the send/stop button. Defaults to "send". */
+	sendState?: SendButtonState;
 
-	/** Toggle the pause-on-next-tool flag */
-	toggleToolsPaused?: () => void;
-
-	/** Hide the pause-on-next-tool button */
-	hidePauseButton?: boolean;
+	/** Cancel the in-flight turn — invoked when the button is in its "stop"
+	 *  state. */
+	onStop?: () => void;
 
 	/** Predefined prompts shown in prompt library */
 	predefinedPrompts?: PromptLibraryItem[];
@@ -239,9 +249,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		onMcpChange,
 		onWorkspaceChange,
 		hasOutstandingTools = false,
-		hasToolsPaused = false,
-		toggleToolsPaused,
-		hidePauseButton = false,
+		sendState = "send",
+		onStop,
 		predefinedPrompts = [],
 		initialValue,
 		tokensUsed,
@@ -604,6 +613,28 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				});
 			}
 		};
+
+		// Button appearance is fully decided by sendState (computed by the
+		// parent from the turn + cancel state); only the idle "send" case needs
+		// the local editor/tool signals to decide enablement + tooltip.
+		const sendDisabled =
+			sendState === "loading" ||
+			(sendState === "send" && (isEmpty || hasOutstandingTools));
+		const handleSendClick = () => {
+			if (sendState === "stop") {
+				onStop?.();
+			} else if (sendState === "send") {
+				promptModel();
+			}
+		};
+		const sendTooltip =
+			sendState === "stop"
+				? t("input.stopTooltip")
+				: isEmpty
+					? t("input.enterQuestion")
+					: hasOutstandingTools
+						? t("input.completeTool")
+						: t("input.ask");
 
 		// ========================================================================
 		// Render
@@ -1024,39 +1055,25 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													variant="default"
 													size="icon-sm"
 													aria-label={
-														isLoading
+														sendState === "stop"
 															? t(
-																	"input.pauseToolsTooltip",
+																	"input.stopLabel",
 																)
 															: t(
 																	"input.askLabel",
 																)
 													}
-													disabled={
-														isLoading
-															? hasToolsPaused ||
-																hidePauseButton
-															: isEmpty ||
-																hasOutstandingTools
-													}
-													onClick={() => {
-														if (isLoading) {
-															toggleToolsPaused?.();
-														} else {
-															promptModel();
-														}
-													}}
+													disabled={sendDisabled}
+													onClick={handleSendClick}
 												>
-													{isLoading ? (
-														hasToolsPaused ||
-														hidePauseButton ? (
-															<Spinner />
-														) : (
-															<Square
-																className="size-3"
-																fill="currentColor"
-															/>
-														)
+													{sendState === "stop" ? (
+														<Square
+															className="size-3"
+															fill="currentColor"
+														/>
+													) : sendState ===
+														"loading" ? (
+														<Spinner />
 													) : (
 														<SendIcon />
 													)}
@@ -1064,29 +1081,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											</span>
 										</TooltipTrigger>
 										<TooltipContent>
-											{(() => {
-												if (isLoading) {
-													return hasToolsPaused ||
-														hidePauseButton
-														? t(
-																"input.thinkingTooltip",
-															)
-														: t(
-																"input.pauseToolsTooltip",
-															);
-												} else if (isEmpty) {
-													return t(
-														"input.enterQuestion",
-													);
-												} else if (
-													hasOutstandingTools
-												) {
-													return t(
-														"input.completeTool",
-													);
-												}
-												return t("input.ask");
-											})()}
+											{sendTooltip}
 										</TooltipContent>
 									</Tooltip>
 								</div>

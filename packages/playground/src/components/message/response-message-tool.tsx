@@ -1,4 +1,4 @@
-import { CheckIcon, CirclePause, HammerIcon, XCircleIcon } from "lucide-react";
+import { CheckIcon, HammerIcon, XCircleIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { useTranslation } from "@semoss/i18n";
@@ -16,8 +16,7 @@ const getToolState = (
 ) => {
 	switch (tool.status) {
 		case "ERROR":
-		case "CANCELLED":
-		case "PAUSED": {
+		case "CANCELLED": {
 			const config = {
 				ERROR: {
 					icon: <XCircleIcon className="size-5" />,
@@ -30,13 +29,6 @@ const getToolState = (
 					icon: <XCircleIcon className="size-5" />,
 					badge: {
 						text: t("status.cancelled"),
-						variant: "muted" as const,
-					},
-				},
-				PAUSED: {
-					icon: <CirclePause className="size-5" />,
-					badge: {
-						text: t("status.paused"),
 						variant: "muted" as const,
 					},
 				},
@@ -131,7 +123,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 
 		useEffect(() => {
 			if (
-				!tool.argumentsStreaming &&
+				tool.isResolved &&
 				tool.display !== "hidden" &&
 				tool.json._meta.SMSS_MCP_UI?.autoOpen === true &&
 				!tool.isOpen
@@ -140,15 +132,15 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			}
 		}, [
 			tool,
-			tool.argumentsStreaming,
+			tool.isResolved,
 			tool.json._meta.SMSS_MCP_UI?.autoOpen,
 			isMobile,
 		]);
 
-		// While the tool call is still streaming in, we don't have title/meta/args
-		// yet — delegate to a dedicated placeholder pill that shows a spinner and
+		// Until the server-resolved part arrives we only have the raw wire name —
+		// delegate to a dedicated placeholder pill that shows a spinner and
 		// optionally expands to preview the accumulating JSON.
-		if (tool.argumentsStreaming) {
+		if (!tool.isResolved) {
 			return <ResponseMessageToolStreaming tool={tool} />;
 		}
 
