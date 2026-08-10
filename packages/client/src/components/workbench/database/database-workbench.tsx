@@ -15,6 +15,7 @@ import {
 	EngineFileExplorerPanel,
 	EngineMcpEditorPanel,
 	EngineSettingsPanel,
+	EngineSettingsToggle,
 } from "../engine";
 import { Workbench } from "../workbench";
 import { WORKBENCH_COMPONENTS } from "../workbench.contants";
@@ -145,15 +146,6 @@ export const DatabaseWorkbench: React.FC = observer(() => {
 							name: "Results",
 							component: WORKBENCH_COMPONENTS.DATABASE_RESULTS,
 							enableClose: false,
-						},
-						{
-							type: "tab",
-							id: WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
-							name: "Settings",
-							component: WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
-							enableClose: false,
-							borderWidth: 800,
-							borderHeight: 1200,
 						},
 					],
 				},
@@ -466,5 +458,11 @@ export const DatabaseWorkbench: React.FC = observer(() => {
 		},
 	};
 
-	return <Workbench model={model} components={components} />;
+	return (
+		<Workbench
+			model={model}
+			components={components}
+			actions={<EngineSettingsToggle model={model} />}
+		/>
+	);
 });

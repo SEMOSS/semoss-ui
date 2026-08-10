@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { Role } from "@semoss/shared";
+import type { Role } from "@semoss/sdk";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import { ProjectAccessControl, ProjectOverview } from "@/components/project";
 import { useProject } from "@/hooks";
@@ -10,6 +10,7 @@ import { AppGithubPage } from "@/pages/app/app-github-page";
 import { AppMcpUsagePage } from "@/pages/app/app-mcp-usage-page";
 import { AppSettingsPage } from "@/pages/app/app-settings-page";
 import { AppSmssPage } from "@/pages/app/app-smss-page";
+import { AgentActivityPage } from "@/pages/project/agent/agent-activity-page";
 import { ProjectDependenciesPage } from "@/pages/project/project-dependencies-page";
 
 interface ProjectDetailTabsProps {
@@ -21,6 +22,7 @@ interface ProjectDetailTabsProps {
 			| "project-dependencies"
 			| "mcp-usage"
 			| "activity"
+			| "agent-activity"
 			| "commits"
 			| "github"
 			| "settings"
@@ -95,6 +97,9 @@ export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
 				)}
 				{activeTab?.component === "mcp-usage" && <AppMcpUsagePage />}
 				{activeTab?.component === "activity" && <AppActivityPage />}
+				{activeTab?.component === "agent-activity" && (
+					<AgentActivityPage />
+				)}
 				{activeTab?.component === "commits" && <AppCommitsPage />}
 				{activeTab?.component === "github" && <AppGithubPage />}
 				{activeTab?.component === "settings" && <AppSettingsPage />}

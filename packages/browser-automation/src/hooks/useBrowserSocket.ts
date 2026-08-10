@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getModulePath } from "../semoss/pixel";
 import type {
+	BrowserScrollMetrics,
 	BrowserTabInfo,
 	ClientToServerEvent,
 	ConnectionState,
@@ -11,8 +12,14 @@ import type {
 
 interface UseBrowserSocketOptions {
 	wsUrl: string | null;
-	onFrame: (data: string, width: number, height: number) => void;
+	onFrame: (
+		data: string,
+		width: number,
+		height: number,
+		scrollMetrics: BrowserScrollMetrics,
+	) => void;
 	onNavigated: (url: string) => void;
+	onLoadingChanged: (isLoading: boolean) => void;
 	onError: (message: string) => void;
 	onTabsChanged: (tabs: BrowserTabInfo[], activeTabId: string) => void;
 	onTabActivated: (tabId: string) => void;
@@ -33,6 +40,9 @@ interface UseBrowserSocketReturn {
 	) => Promise<void>;
 	captureSelectedText: (
 		bounds: SelectionBounds,
+		record?: boolean,
+		label?: string,
+		expectedTabId?: string,
 	) => Promise<SelectedTextContext>;
 }
 
@@ -70,6 +80,7 @@ export function useBrowserSocket({
 	wsUrl,
 	onFrame,
 	onNavigated,
+	onLoadingChanged,
 	onError,
 	onTabsChanged,
 	onTabActivated,
@@ -116,6 +127,7 @@ export function useBrowserSocket({
 
 		ws.onopen = () => {
 			setConnectionState("connected");
+			onLoadingChanged(false);
 		};
 
 		ws.onmessage = (evt: MessageEvent) => {
@@ -127,10 +139,22 @@ export function useBrowserSocket({
 							msg.data,
 							msg.metadata.width,
 							msg.metadata.height,
+							{
+								scrollTop: msg.metadata.scrollTop ?? 0,
+								scrollHeight:
+									msg.metadata.scrollHeight ??
+									msg.metadata.height,
+								viewportHeight:
+									msg.metadata.viewportHeight ??
+									msg.metadata.height,
+							},
 						);
 						break;
 					case "navigated":
 						onNavigated(msg.url);
+						break;
+					case "loading":
+						onLoadingChanged(msg.isLoading);
 						break;
 					case "tab-activated":
 						onTabActivated(msg.tabId);
@@ -222,6 +246,7 @@ export function useBrowserSocket({
 
 		ws.onclose = () => {
 			setConnectionState("closed");
+			onLoadingChanged(false);
 			wsRef.current = null;
 			pendingReplayRef.current.forEach((pending) => {
 				window.clearTimeout(pending.timeout);
@@ -270,6 +295,7 @@ export function useBrowserSocket({
 		buildFullWsUrl,
 		onFrame,
 		onNavigated,
+		onLoadingChanged,
 		onError,
 		onTabsChanged,
 		onTabActivated,
@@ -312,7 +338,12 @@ export function useBrowserSocket({
 	);
 
 	const captureSelectedText = useCallback(
-		(bounds: SelectionBounds): Promise<SelectedTextContext> => {
+		(
+			bounds: SelectionBounds,
+			record = false,
+			label?: string,
+			expectedTabId?: string,
+		): Promise<SelectedTextContext> => {
 			const ws = wsRef.current;
 			if (!ws || ws.readyState !== WebSocket.OPEN) {
 				return Promise.reject(
@@ -344,6 +375,9 @@ export function useBrowserSocket({
 						y: bounds.startY,
 						endX: bounds.endX,
 						endY: bounds.endY,
+						expectedTabId,
+						record,
+						label,
 					}),
 				);
 			});
