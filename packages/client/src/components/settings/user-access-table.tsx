@@ -1,5 +1,6 @@
 import { Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
+import type { Role } from "@semoss/sdk";
 import {
 	Badge,
 	Button,
@@ -17,7 +18,6 @@ import {
 	TableRow,
 } from "@semoss/ui/next";
 import type { UserResourceAccess } from "@/api";
-import type { Role } from "@/types";
 
 /**
  * The permission levels an admin can assign, in priority order. Wire values
