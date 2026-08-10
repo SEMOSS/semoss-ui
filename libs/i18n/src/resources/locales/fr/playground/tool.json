@@ -5,7 +5,6 @@
 		"completed": "Terminé",
 		"ready": "Prêt",
 		"autoExecute": "Exécution automatique en cours",
-		"paused": "En pause",
 		"queued": "En file d'attente pour l'exécution automatique"
 	},
 	"actions": {
@@ -19,10 +18,11 @@
 	"group": {
 		"labelClosed": "{{toolName}} + {{count}} de plus",
 		"labelOpen": "Outils exécutés ({{count}})",
+		"labelStreaming_one": "Chargement de {{count}} outil…",
+		"labelStreaming_other": "Chargement de {{count}} outils…",
 		"summaryCompleted": "{{count}} terminé",
 		"summaryError": "{{count}} échoué",
-		"summaryCancelled": "{{count}} annulé",
-		"summaryPaused": "{{count}} en pause"
+		"summaryCancelled": "{{count}} annulé"
 	},
 	"form": {
 		"result": "Résultat",

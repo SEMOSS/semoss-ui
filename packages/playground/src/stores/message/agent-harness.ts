@@ -129,7 +129,7 @@ export const runAgentMessage = async (
 
 		// run RunAgent through the async streaming endpoint (runPixelAsync +
 		// jobId polling), streaming chunks just like AskPlayground does
-		const response = await room.runRoomPixelStreaming<[RunAgentOutput]>(
+		await room.runRoomPixelStreaming<[RunAgentOutput]>(
 			`RunAgent(
 roomId=["${room.roomId}"],
 engine=["${room.model.engine_id}"],
@@ -137,67 +137,72 @@ command=["<encode>${text}</encode>"],
 harnessType="${AGENT_HARNESS_TYPE}",
 wait=true
 );`,
-			(chunk) => {
-				runInAction(() => {
-					if (chunk.stream_type === "content") {
-						if (chunk.data.content) {
+			{
+				onEmit: (chunk) => {
+					runInAction(() => {
+						if (chunk.stream_type === "content") {
+							if (chunk.data.content) {
+								responseMessage.savePart({
+									type: "TEXT",
+									text: chunk.data.content,
+									uiText: chunk.data.content,
+								});
+							}
+						} else if (chunk.stream_type === "thinking") {
+							if (chunk.data.thinking) {
+								responseMessage.savePart({
+									type: "THINKING",
+									thinking: chunk.data.thinking,
+								});
+							}
+						} else if (chunk.stream_type === "tool") {
+							applyToolStreamChunk(
+								responseMessage,
+								toolStreamIndexToId,
+								chunk.data,
+							);
+						} else {
+							console.error(`Unknown stream type`, chunk);
+						}
+					});
+				},
+				onResult: ({ results }) => {
+					const { output } = results[0];
+
+					// surface incomplete runs as errors so the catch removes the
+					// optimistic input and the room reports the failure
+					if (output.waitTimedOut) {
+						throw new Error(
+							"The agent run timed out before completing.",
+						);
+					}
+					if (output.status !== "COMPLETED") {
+						throw new Error(
+							`The agent run did not complete: ${output.status}`,
+						);
+					}
+
+					runInAction(() => {
+						// adopt the server's canonical ids now that the run is persisted
+						inputMessage.id = output.inputMessageId;
+						responseMessage.id = output.finalOutputMessageId;
+
+						// if nothing streamed as visible text (e.g. only thinking/tools came
+						// over the wire), fall back to the summary's final text
+						const hasStreamedText = responseMessage.parts.some(
+							(part) => part.type === "TEXT" && part.text,
+						);
+						if (!hasStreamedText && output.finalText) {
 							responseMessage.savePart({
 								type: "TEXT",
-								text: chunk.data.content,
-								uiText: chunk.data.content,
+								text: output.finalText,
+								uiText: output.finalText,
 							});
 						}
-					} else if (chunk.stream_type === "thinking") {
-						if (chunk.data.thinking) {
-							responseMessage.savePart({
-								type: "THINKING",
-								thinking: chunk.data.thinking,
-							});
-						}
-					} else if (chunk.stream_type === "tool") {
-						applyToolStreamChunk(
-							responseMessage,
-							toolStreamIndexToId,
-							chunk.data,
-						);
-					} else {
-						console.error(`Unknown stream type`, chunk);
-					}
-				});
+					});
+				},
 			},
 		);
-
-		const { output } = response.results[0];
-
-		// surface incomplete runs as errors so the catch removes the optimistic
-		// input and the room reports the failure
-		if (output.waitTimedOut) {
-			throw new Error("The agent run timed out before completing.");
-		}
-		if (output.status !== "COMPLETED") {
-			throw new Error(`The agent run did not complete: ${output.status}`);
-		}
-
-		runInAction(() => {
-			// adopt the server's canonical ids now that the run is persisted
-			inputMessage.id = output.inputMessageId;
-			responseMessage.id = output.finalOutputMessageId;
-
-			// if nothing streamed as visible text (e.g. only thinking/tools came
-			// over the wire), fall back to the summary's final text
-			const hasStreamedText = responseMessage.parts.some(
-				(part) => part.type === "TEXT" && part.text,
-			);
-			if (!hasStreamedText && output.finalText) {
-				responseMessage.savePart({
-					type: "TEXT",
-					text: output.finalText,
-					uiText: output.finalText,
-				});
-			}
-		});
-
-		return response;
 	} catch (e) {
 		// remove message if we failed
 		message.removeChild(inputMessage);

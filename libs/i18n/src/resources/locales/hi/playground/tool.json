@@ -5,7 +5,6 @@
 		"completed": "पूर्ण",
 		"ready": "तैयार",
 		"autoExecute": "स्वतः निष्पादित हो रहा है",
-		"paused": "रोका गया",
 		"queued": "स्वतः निष्पादन की प्रतीक्षा में"
 	},
 	"actions": {
@@ -19,10 +18,11 @@
 	"group": {
 		"labelClosed": "{{toolName}} + {{count}} और",
 		"labelOpen": "निष्पादित टूल ({{count}})",
+		"labelStreaming_one": "{{count}} टूल लोड हो रहा है…",
+		"labelStreaming_other": "{{count}} टूल लोड हो रहे हैं…",
 		"summaryCompleted": "{{count}} पूर्ण",
 		"summaryError": "{{count}} विफल",
-		"summaryCancelled": "{{count}} रद्द",
-		"summaryPaused": "{{count}} रोका गया"
+		"summaryCancelled": "{{count}} रद्द"
 	},
 	"form": {
 		"result": "परिणाम",
