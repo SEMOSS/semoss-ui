@@ -1,4 +1,5 @@
 import {
+	CheckCircle,
 	ChevronDown,
 	ChevronRight,
 	HelpCircle,
@@ -45,6 +46,7 @@ import {
 	validateNode,
 } from "../../domain/automation-utils";
 import { insight } from "../../semoss/client";
+import type { AutomationToolContext } from "../../types/automation-tool.types";
 import { StatusBadge } from "../status-badge";
 import { AutomationConfigTab } from "./automation-config-tab";
 import { AutomationStepEditorCard } from "./automation-step-editor-card";
@@ -53,7 +55,12 @@ import { NodeResultList } from "./node-result-list";
 import { TriggerStepCard } from "./trigger-step-card";
 
 interface AutomationFormEditorProps {
+	/** The project/app ID for this automation. */
 	appId: string;
+	/** "edit" or "create" when opened by an MCP tool. */
+	mcpMode?: "edit" | "create" | null;
+	/** SMSS_INIT_TOOL context. Present only when mcpMode is set. */
+	mcpContext?: AutomationToolContext;
 }
 
 type TabId = "steps" | "results" | "history" | "config";
@@ -80,7 +87,11 @@ function ensureTriggerNode(nodes: AutomationNode[]): AutomationNode[] {
 
 const EMPTY_GRAPH: AutomationGraph = { nodes: [], edges: [] };
 
-export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
+export function AutomationFormEditor({
+	appId,
+	mcpMode,
+	mcpContext,
+}: AutomationFormEditorProps) {
 	const [saving, setSaving] = useState(false);
 	const [activeTab, setActiveTab] = useState<TabId>("steps");
 	const [description, setDescription] = useState("");
@@ -129,6 +140,10 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 	>(new Set());
 
 	const [isDirty, setIsDirty] = useState(false);
+	const [mcpDone, setMcpDone] = useState(false);
+	const [updateLog, setUpdateLog] = useState<
+		{ id: number; time: string; prompt: string }[]
+	>([]);
 	const [showHelp, setShowHelp] = useState(false);
 	// Set to true after initial server data loads so draft writes don't fire on mount
 	const loadedRef = useRef(false);
@@ -143,10 +158,11 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 				);
 				const serverDescription = doc?.description ?? "";
 
-				// Check for a localStorage draft saved after the server version
+				// Check for a localStorage draft saved after the server version.
+				// Skip in MCP mode — always load fresh server state when opened via a tool.
 				const draftKey = `automation-draft-${appId}`;
 				const raw = localStorage.getItem(draftKey);
-				if (raw) {
+				if (raw && !mcpMode) {
 					try {
 						const draft = JSON.parse(raw) as {
 							steps: AutomationNode[];
@@ -173,11 +189,24 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 								`automation-wizard-seen-${appId}`,
 							) === "true";
 						if (
+							!mcpMode &&
 							!hasSteps &&
 							!draft.description.trim() &&
 							!wizardDismissed
 						) {
 							setShowGenerationWizard(true);
+						}
+						if (mcpMode && mcpContext) {
+							const prompt =
+								mcpMode === "edit"
+									? mcpContext.parameters?.instruction
+									: mcpContext.parameters?.description;
+							if (typeof prompt === "string" && prompt.trim()) {
+								setGenerationPrompt(prompt.trim());
+								if (mcpMode === "edit") setShowEditPanel(true);
+							}
+							if (mcpMode === "create")
+								setShowGenerationWizard(true);
 						}
 						return;
 					} catch {
@@ -194,11 +223,23 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 					localStorage.getItem(`automation-wizard-seen-${appId}`) ===
 					"true";
 				if (
+					!mcpMode &&
 					!hasSteps &&
 					!serverDescription.trim() &&
 					!wizardDismissed
 				) {
 					setShowGenerationWizard(true);
+				}
+				if (mcpMode && mcpContext) {
+					const prompt =
+						mcpMode === "edit"
+							? mcpContext.parameters?.instruction
+							: mcpContext.parameters?.description;
+					if (typeof prompt === "string" && prompt.trim()) {
+						setGenerationPrompt(prompt.trim());
+						if (mcpMode === "edit") setShowEditPanel(true);
+					}
+					if (mcpMode === "create") setShowGenerationWizard(true);
 				}
 			},
 			onError: () => {
@@ -340,10 +381,16 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 				graph: { nodes: steps, edges: [] },
 			};
 			const json = btoa(
-				unescape(encodeURIComponent(JSON.stringify(doc))),
+				encodeURIComponent(JSON.stringify(doc)).replace(
+					/%([0-9A-F]{2})/gi,
+					(_, p1) => String.fromCharCode(parseInt(p1, 16)),
+				),
 			);
 			const configJson = btoa(
-				unescape(encodeURIComponent(JSON.stringify(config))),
+				encodeURIComponent(JSON.stringify(config)).replace(
+					/%([0-9A-F]{2})/gi,
+					(_, p1) => String.fromCharCode(parseInt(p1, 16)),
+				),
 			);
 			await Promise.all([
 				insight.actions.run(
@@ -371,7 +418,10 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		const wasEditPanel = showEditPanel;
 		try {
 			const encodedPrompt = btoa(
-				unescape(encodeURIComponent(generationPrompt.trim())),
+				encodeURIComponent(generationPrompt.trim()).replace(
+					/%([0-9A-F]{2})/gi,
+					(_, p1) => String.fromCharCode(parseInt(p1, 16)),
+				),
 			);
 			let pixel: string;
 			if (wasEditPanel && steps.length > 0) {
@@ -383,7 +433,10 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 					graph: { nodes: steps, edges: [] },
 				};
 				const encodedDoc = btoa(
-					unescape(encodeURIComponent(JSON.stringify(currentDoc))),
+					encodeURIComponent(JSON.stringify(currentDoc)).replace(
+						/%([0-9A-F]{2})/gi,
+						(_, p1) => String.fromCharCode(parseInt(p1, 16)),
+					),
 				);
 				pixel = `GenerateAutomation(project=["${appId}"], description=["${encodedPrompt}"], currentDoc=["${encodedDoc}"]);`;
 			} else {
@@ -392,7 +445,14 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 			const result = await insight.actions.run(pixel);
 			const raw = result.pixelReturn?.[0]?.output as string | null;
 			if (!raw) throw new Error("No response from AI");
-			const doc: AutomationDocument = JSON.parse(raw);
+			let doc: AutomationDocument;
+			try {
+				doc = JSON.parse(raw) as AutomationDocument;
+			} catch {
+				throw new Error(
+					"AI returned an unreadable response — please try again.",
+				);
+			}
 			const generated = ensureTriggerNode(
 				(doc?.graph ?? EMPTY_GRAPH).nodes,
 			);
@@ -401,6 +461,19 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 			localStorage.setItem(`automation-wizard-seen-${appId}`, "true");
 			setShowGenerationWizard(false);
 			setShowEditPanel(false);
+			if (mcpMode === "edit") {
+				setUpdateLog((prev) => [
+					...prev,
+					{
+						id: Date.now(),
+						time: new Date().toLocaleTimeString([], {
+							hour: "2-digit",
+							minute: "2-digit",
+						}),
+						prompt: generationPrompt.trim(),
+					},
+				]);
+			}
 			setGenerationPrompt("");
 			toast.success(
 				wasEditPanel
@@ -412,7 +485,7 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		} finally {
 			setGenerating(false);
 		}
-	}, [appId, description, generationPrompt, showEditPanel, steps]);
+	}, [appId, description, generationPrompt, mcpMode, showEditPanel, steps]);
 
 	/** Merges live run data into per-step UI state (statuses, durations, outputs). Called once the sequential per-node run finishes. */
 	const applyRunData = useCallback(
@@ -642,7 +715,6 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 				setLatestRunStatus("FAILED");
 				setLatestRunError(message);
 				refreshRuns();
-				setRunning(false);
 				return;
 			}
 			const runData = asyncResult.results[0]
@@ -652,15 +724,57 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 			}
 			toast.success(runData?.summary ?? "Automation completed");
 			refreshRuns();
-			setRunning(false);
 		} catch (error) {
 			const message = (error as Error).message ?? "Unknown error";
 			toast.error(`Automation failed: ${message}`);
 			setLatestRunStatus("FAILED");
 			setLatestRunError(message);
+		} finally {
 			setRunning(false);
 		}
 	}, [appId, applyRunData, refreshRuns, save, steps]);
+
+	const handleDoneReturnToChat = useCallback(async () => {
+		if (saving || generating) return;
+		if (!mcpContext) return;
+		if (isDirty) {
+			const saved = await save();
+			if (!saved) return;
+		}
+		const nodeCount = steps.filter((n) => n.type !== "trigger").length;
+		const label = description.trim() || appId;
+		const response = `Automation "${label}" ${mcpMode === "create" ? "created" : "updated"} successfully with ${nodeCount} step${nodeCount !== 1 ? "s" : ""}. Project ID: ${appId}`;
+		window.parent.postMessage(
+			{
+				type: "SMSS_EXEC_TOOL",
+				tool: {
+					type: "MCP",
+					id: mcpContext.id,
+					name: mcpContext.name,
+					message: mcpContext.message,
+					roomId: mcpContext.roomId,
+					response,
+					tool_status: "success",
+					executedParameters: {
+						...mcpContext.parameters,
+						projectId: appId,
+					},
+				},
+			},
+			window.location.origin,
+		);
+		setMcpDone(true);
+	}, [
+		saving,
+		generating,
+		mcpContext,
+		isDirty,
+		save,
+		steps,
+		description,
+		appId,
+		mcpMode,
+	]);
 
 	/** Returns variable names available as inputs to the step at the given index: output vars from preceding steps plus all config keys. */
 	const upstreamVarsFor = useCallback(
@@ -735,6 +849,285 @@ export function AutomationFormEditor({ appId }: AutomationFormEditorProps) {
 		return (
 			<div className="flex h-full items-center justify-center">
 				<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+			</div>
+		);
+	}
+
+	if (mcpDone) {
+		return (
+			<div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
+				<span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+					<CheckCircle className="h-7 w-7 text-primary" />
+				</span>
+				<div>
+					<p className="font-semibold text-base">Automation saved</p>
+					<p className="mt-1 text-muted-foreground text-sm">
+						You can close this panel to return to the chat.
+					</p>
+				</div>
+			</div>
+		);
+	}
+
+	// Focused edit view — shown when the EditAutomation / QuickEditAutomation MCP tool opens this editor.
+	if (mcpMode === "edit" && mcpContext) {
+		const nonTriggerSteps = steps.filter((n) => n.type !== "trigger");
+		return (
+			<div className="flex h-full flex-col bg-background">
+				<div className="border-b px-6 py-4">
+					<p className="font-semibold text-lg leading-tight">
+						{description || "Automation"}
+					</p>
+					<p className="mt-0.5 text-muted-foreground text-xs">
+						{nonTriggerSteps.length} step
+						{nonTriggerSteps.length !== 1 ? "s" : ""}
+						{isDirty && (
+							<span className="ml-2 text-amber-600">
+								· unsaved changes
+							</span>
+						)}
+					</p>
+				</div>
+				<div className="flex-1 overflow-y-auto px-6 py-4 pb-24">
+					<div className="mx-auto max-w-3xl space-y-4">
+						{nonTriggerSteps.length === 0 && (
+							<div className="rounded-2xl border border-dashed bg-card/60 px-6 py-10 text-center text-muted-foreground text-sm">
+								No steps yet — describe what to build in the
+								panel below.
+							</div>
+						)}
+						{nonTriggerSteps.map((step, index, arr) => (
+							<AutomationStepEditorCard
+								key={step.id}
+								step={step}
+								index={index}
+								isExpanded={expandedId === step.id}
+								isFirst={index === 0}
+								isLast={index === arr.length - 1}
+								upstreamVars={upstreamVarsFor(
+									steps.indexOf(step),
+								)}
+								nodeOutputs={nodeOutputs}
+								runStatus={stepStatuses[step.id]}
+								runError={stepErrors[step.id]}
+								runDuration={stepDurations[step.id]}
+								onToggle={() =>
+									setExpandedId((prev) =>
+										prev === step.id ? null : step.id,
+									)
+								}
+								onUpdate={updateStep}
+								onDelete={() => deleteStep(step.id)}
+								onMoveUp={() => moveStep(step.id, -1)}
+								onMoveDown={() => moveStep(step.id, 1)}
+								onSetOutput={setNodeOutput}
+								devMode={devMode}
+								appId={appId}
+							/>
+						))}
+						<div className="rounded-xl border bg-muted/30 px-4 py-4">
+							<div className="mb-3 flex items-center gap-1.5">
+								<Wand2 className="h-3.5 w-3.5 text-muted-foreground" />
+								<span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+									Refine with AI
+								</span>
+							</div>
+							{updateLog.length > 0 && (
+								<div className="mb-3 max-h-32 overflow-y-auto rounded-lg border bg-background/60 px-3 py-2">
+									<div className="flex flex-col gap-1">
+										{updateLog.map((entry, i) => (
+											<div
+												key={entry.id}
+												className="flex items-start gap-2 text-xs"
+											>
+												<span className="shrink-0 text-muted-foreground tabular-nums">
+													{entry.time}
+												</span>
+												<span className="text-foreground/70">
+													{entry.prompt}
+												</span>
+											</div>
+										))}
+									</div>
+								</div>
+							)}
+							<Textarea
+								value={generationPrompt}
+								onChange={(e) =>
+									setGenerationPrompt(e.target.value)
+								}
+								placeholder="Describe a change… e.g. 'Filter the query to the last 30 days' or 'Add a step to send a summary email'"
+								className="mb-3 min-h-[80px] resize-none text-sm"
+								disabled={generating}
+								onKeyDown={(e) => {
+									if (
+										e.key === "Enter" &&
+										(e.metaKey || e.ctrlKey)
+									) {
+										void generate();
+									}
+								}}
+							/>
+							<div className="flex items-center gap-3">
+								<Button
+									size="sm"
+									onClick={() => void generate()}
+									disabled={
+										generating || !generationPrompt.trim()
+									}
+								>
+									{generating ? (
+										<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+									) : (
+										<Wand2 className="mr-1.5 h-3.5 w-3.5" />
+									)}
+									{generating ? "Updating…" : "Update"}
+								</Button>
+								{generating && (
+									<span className="text-muted-foreground text-xs">
+										Applying changes…
+									</span>
+								)}
+							</div>
+						</div>
+					</div>
+				</div>
+				<div className="fixed inset-x-0 bottom-0 z-[60] flex items-center justify-end gap-2 border-t bg-background/95 px-6 py-3 backdrop-blur-sm">
+					<Button
+						size="sm"
+						onClick={() => void handleDoneReturnToChat()}
+						disabled={saving || generating}
+					>
+						{saving ? (
+							<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+						) : (
+							<CheckCircle className="mr-1.5 h-3.5 w-3.5" />
+						)}
+						Save — Return to Chat
+					</Button>
+				</div>
+			</div>
+		);
+	}
+
+	// Focused create view — uses the GenerationWizard UI then full expandable step cards.
+	if (mcpMode === "create" && mcpContext) {
+		const nonTriggerSteps = steps.filter((n) => n.type !== "trigger");
+		const hasGenerated = nonTriggerSteps.length > 0;
+		return (
+			<div className="flex h-full flex-col bg-background">
+				<div className="flex-1 overflow-y-auto px-6 py-6 pb-24">
+					<div className="mx-auto max-w-3xl space-y-4">
+						{(showGenerationWizard || !hasGenerated) && (
+							<div className="rounded-2xl border bg-gradient-to-b from-primary/5 to-card px-6 py-8 text-center shadow-sm">
+								<div className="mb-4 flex justify-center">
+									<span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+										<Sparkles className="h-6 w-6 text-primary" />
+									</span>
+								</div>
+								<h2 className="mb-1 font-semibold text-base">
+									What should this automation do?
+								</h2>
+								<p className="mb-5 text-muted-foreground text-xs leading-relaxed">
+									Describe it in plain language and AI will
+									build a starter workflow.
+									<br />
+									Tip: mention engine names or IDs for best
+									results.
+								</p>
+								<Textarea
+									value={generationPrompt}
+									onChange={(e) =>
+										setGenerationPrompt(e.target.value)
+									}
+									placeholder="e.g. Query the claims database for open cases, summarize them with AI, and save the results"
+									className="mb-4 min-h-[80px] resize-none text-sm"
+									onKeyDown={(e) => {
+										if (
+											e.key === "Enter" &&
+											(e.metaKey || e.ctrlKey)
+										) {
+											void generate();
+										}
+									}}
+								/>
+								<Button
+									size="sm"
+									onClick={() => void generate()}
+									disabled={
+										generating || !generationPrompt.trim()
+									}
+								>
+									{generating ? (
+										<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+									) : (
+										<Sparkles className="mr-1.5 h-3.5 w-3.5" />
+									)}
+									{generating
+										? "Generating…"
+										: hasGenerated
+											? "Regenerate"
+											: "Generate"}
+								</Button>
+							</div>
+						)}
+						{!showGenerationWizard &&
+							hasGenerated &&
+							nonTriggerSteps.map((step, index, arr) => (
+								<AutomationStepEditorCard
+									key={step.id}
+									step={step}
+									index={index}
+									isExpanded={expandedId === step.id}
+									isFirst={index === 0}
+									isLast={index === arr.length - 1}
+									upstreamVars={upstreamVarsFor(
+										steps.indexOf(step),
+									)}
+									nodeOutputs={nodeOutputs}
+									runStatus={stepStatuses[step.id]}
+									runError={stepErrors[step.id]}
+									runDuration={stepDurations[step.id]}
+									onToggle={() =>
+										setExpandedId((prev) =>
+											prev === step.id ? null : step.id,
+										)
+									}
+									onUpdate={updateStep}
+									onDelete={() => deleteStep(step.id)}
+									onMoveUp={() => moveStep(step.id, -1)}
+									onMoveDown={() => moveStep(step.id, 1)}
+									onSetOutput={setNodeOutput}
+									devMode={devMode}
+									appId={appId}
+								/>
+							))}
+						{!showGenerationWizard && hasGenerated && (
+							<button
+								type="button"
+								onClick={() => setShowGenerationWizard(true)}
+								className="flex w-full items-center justify-center gap-2 py-2 text-muted-foreground text-sm hover:text-foreground"
+							>
+								<Wand2 className="h-3.5 w-3.5" />
+								Refine / Regenerate
+							</button>
+						)}
+					</div>
+				</div>
+				<div className="fixed inset-x-0 bottom-0 z-[60] flex items-center justify-end gap-2 border-t bg-background/95 px-6 py-3 backdrop-blur-sm">
+					<Button
+						size="sm"
+						onClick={() => void handleDoneReturnToChat()}
+						disabled={saving || generating || !hasGenerated}
+					>
+						{saving ? (
+							<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+						) : (
+							<CheckCircle className="mr-1.5 h-3.5 w-3.5" />
+						)}
+						Save — Return to Chat
+					</Button>
+				</div>
 			</div>
 		);
 	}

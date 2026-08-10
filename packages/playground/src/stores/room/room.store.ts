@@ -879,6 +879,29 @@ export class RoomStore {
 			const tool = this.getToolByNodeId(action.data.node);
 			if (tool) {
 				tool.setIsOpen(false);
+				// If the tool was still waiting for user input, cancel it so the LLM unblocks
+				if (
+					tool.status !== "SUCCESS" &&
+					tool.status !== "CANCELLED" &&
+					tool.status !== "ERROR"
+				) {
+					const tabNode = this._store.sidebar.model.getNodeById(
+						action.data.node,
+					);
+					const cfg =
+						tabNode instanceof FlexLayout.TabNode
+							? (tabNode.getConfig() as { message?: string })
+							: null;
+					if (cfg?.message) {
+						void this.processTool(
+							cfg.message,
+							tool.id,
+							"",
+							"cancelled",
+							{},
+						);
+					}
+				}
 			}
 		}
 

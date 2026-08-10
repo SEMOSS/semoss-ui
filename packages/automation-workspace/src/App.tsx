@@ -14,6 +14,7 @@ import { useAutomationRun } from "./hooks/use-automation-run";
 import {
 	getMcpToolContext,
 	initSemoss,
+	insight,
 	subscribeToMcpToolContext,
 } from "./semoss/client";
 import type { AutomationToolContext } from "./types/automation-tool.types";
@@ -33,21 +34,81 @@ function useQueryParams(): URLSearchParams {
  */
 export default function App() {
 	const params = useQueryParams();
+	const rawMode = params.get("mode");
+	const mcpMode: "edit" | "create" | null =
+		rawMode === "edit" || rawMode === "create" ? rawMode : null;
+	const readOnly = params.get("readOnly") === "1";
+
 	const [toolContext, setToolContext] =
 		useState<AutomationToolContext | null>(getMcpToolContext());
 	const [ready, setReady] = useState(false);
+	const [createdProjectId, setCreatedProjectId] = useState<string | null>(
+		null,
+	);
+	const [creating, setCreating] = useState(false);
+	const [createError, setCreateError] = useState<string | null>(null);
 
 	useEffect(() => {
 		initSemoss().finally(() => setReady(true));
 		return subscribeToMcpToolContext(setToolContext);
 	}, []);
 
-	const appId = params.get("app") || toolContext?.projectId || "";
-	const readOnly = params.get("readOnly") === "1";
+	// In create mode the project doesn't exist yet — create it once toolContext and
+	// the insight session are both ready, then use the returned ID as the appId.
+	useEffect(() => {
+		if (
+			mcpMode !== "create" ||
+			!ready ||
+			!toolContext ||
+			createdProjectId ||
+			creating
+		)
+			return;
+		const projectName = toolContext.parameters?.projectName as
+			| string
+			| undefined;
+		if (!projectName?.trim()) return;
+		// Validate before injecting into the pixel string — only letters, numbers, spaces; must start with a letter.
+		const cleanName = projectName.trim().replace(/[^a-zA-Z0-9 ]/g, "");
+		if (!cleanName || !/^[a-zA-Z]/.test(cleanName)) {
+			setCreateError(
+				"Project name must start with a letter and contain only letters, numbers, and spaces.",
+			);
+			return;
+		}
+		setCreating(true);
+		void insight.actions
+			.run(
+				`CreateProject(project=["${cleanName}"], projectType=["CODE"], global=[false]);`,
+			)
+			.then((result) => {
+				const projectId = (
+					result.pixelReturn?.[0]?.output as {
+						project_id?: string;
+					} | null
+				)?.project_id;
+				if (projectId) {
+					setCreatedProjectId(projectId);
+				} else {
+					setCreateError(
+						"Project was created but no ID was returned.",
+					);
+				}
+			})
+			.catch((err: Error) => {
+				setCreateError(
+					err.message ?? "Failed to create automation project.",
+				);
+			})
+			.finally(() => setCreating(false));
+	}, [mcpMode, ready, toolContext, createdProjectId, creating]);
+
+	const appId =
+		params.get("app") || createdProjectId || toolContext?.projectId || "";
 
 	const { data: automationDoc, status: automationStatus } =
 		usePixel<AutomationDocument | null>(
-			appId ? `GetAutomation(project=["${appId}"]);` : "",
+			appId && ready ? `GetAutomation(project=["${appId}"]);` : "",
 			{ data: null },
 		);
 
@@ -73,6 +134,27 @@ export default function App() {
 	// run completes so the tool call is marked done and the LLM can continue.
 	// playground/room-content.tsx listens for SMSS_EXEC_TOOL with the MCPToolResponse
 	// nested under the "tool" key.
+	// When project creation fails in create mode, notify the playground so the tool call is marked done.
+	useEffect(() => {
+		if (!createError || !toolContext) return;
+		window.parent.postMessage(
+			{
+				type: "SMSS_EXEC_TOOL",
+				tool: {
+					type: "MCP",
+					id: toolContext.id,
+					name: toolContext.name,
+					message: toolContext.message,
+					roomId: toolContext.roomId,
+					response: createError,
+					tool_status: "error",
+					executedParameters: toolContext.parameters,
+				},
+			},
+			window.location.origin,
+		);
+	}, [createError, toolContext]);
+
 	useEffect(() => {
 		if (!toolContext || (!summary && !error)) return;
 		window.parent.postMessage(
@@ -93,15 +175,46 @@ export default function App() {
 					executedParameters: toolContext.parameters,
 				},
 			},
-			"*",
+			window.location.origin,
 		);
 	}, [summary, error, llmContext, toolContext]);
+
+	if (
+		mcpMode === "create" &&
+		(creating || (!createdProjectId && !createError))
+	) {
+		return (
+			<div className="flex h-full items-center justify-center gap-2 text-muted-foreground text-sm">
+				<Loader2 className="h-5 w-5 animate-spin" />
+				Creating automation…
+			</div>
+		);
+	}
+
+	if (mcpMode === "create" && createError) {
+		return (
+			<div className="flex h-full items-center justify-center px-6 text-center text-destructive text-sm">
+				{createError}
+			</div>
+		);
+	}
 
 	if (!appId) {
 		return (
 			<div className="flex h-full items-center justify-center px-6 text-center text-muted-foreground text-sm">
 				No automation app was specified.
 			</div>
+		);
+	}
+
+	// MCP editor mode — opened by EditAutomation or CreateAutomation MCP tool
+	if ((mcpMode === "edit" || mcpMode === "create") && ready && !readOnly) {
+		return (
+			<AutomationFormEditor
+				appId={appId}
+				mcpMode={mcpMode}
+				mcpContext={toolContext ?? undefined}
+			/>
 		);
 	}
 

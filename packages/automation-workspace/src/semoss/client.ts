@@ -75,9 +75,8 @@ function setToolContext(nextToolContext: unknown) {
 
 if (typeof window !== "undefined") {
 	window.addEventListener("message", (event) => {
-		if (!event?.data || event.data.type !== "SMSS_INIT_TOOL") {
-			return;
-		}
+		if (event.origin !== window.location.origin) return;
+		if (!event?.data || event.data.type !== "SMSS_INIT_TOOL") return;
 		setToolContext(event.data.tool);
 	});
 }

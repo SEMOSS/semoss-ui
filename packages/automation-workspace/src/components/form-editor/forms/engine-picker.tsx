@@ -1,6 +1,6 @@
 import { CheckIcon, ChevronDown, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useIteratorPixel } from "@semoss/sdk/react";
+import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
 import { EngineSubtypeIcon } from "@semoss/shared";
 import {
@@ -39,6 +39,20 @@ export function AutomationEngineSelect({
 }: AutomationEngineSelectProps) {
 	const [open, setOpen] = useState(false);
 	const [search, setSearch] = useState("");
+
+	// When an engine ID is already set (e.g. from AI generation) but the display
+	// name wasn't persisted, resolve it via a one-shot pixel call.
+	const { data: resolvedEngines } = usePixel<Engine[] | null>(
+		value && !name
+			? `META | MyEngines(engine=["${value}"], limit=[1], offset=[0]);`
+			: "",
+		{ data: null },
+	);
+	const resolvedName = resolvedEngines?.[0]
+		? resolvedEngines[0].engine_display_name ||
+			resolvedEngines[0].engine_name ||
+			""
+		: "";
 	const debouncedSearch = useDebouncedValue(search);
 
 	const getEngines = useIteratorPixel<Engine[], Engine>(
@@ -90,7 +104,7 @@ export function AutomationEngineSelect({
 					className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
 				>
 					<span className="truncate text-left">
-						{name || "Select engine…"}
+						{name || resolvedName || "Select engine…"}
 					</span>
 					<ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
 				</button>
