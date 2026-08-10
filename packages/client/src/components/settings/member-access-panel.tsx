@@ -1,5 +1,6 @@
 import { ChevronDown, Copy, Lock } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useIteratorApi } from "@semoss/sdk/react";
 import { AppCatalogAvatar } from "@semoss/shared";
 import {
 	Avatar,
@@ -26,7 +27,7 @@ import {
 	useInfiniteScroll,
 } from "@semoss/ui/next";
 import { getProjects, setUserLocked } from "@/api";
-import { useIteratorApi, useSettings } from "@/hooks";
+import { useSettings } from "@/hooks";
 import { MemberProfileForm } from "./member-profile-form";
 import { MemberResourceAccess } from "./member-resource-access";
 import type { SETTINGS_MEMBER } from "./settings.types";
@@ -281,7 +282,7 @@ export const MemberAccessPanel = ({
 								</PopoverTrigger>
 								<PopoverContent
 									align="start"
-									className="w-[var(--radix-popover-trigger-width)] min-w-72 p-0"
+									className="w-(--radix-popover-trigger-width) min-w-72 p-0"
 								>
 									<Command shouldFilter={false}>
 										<CommandInput
