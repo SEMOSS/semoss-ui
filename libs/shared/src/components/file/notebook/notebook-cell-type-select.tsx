@@ -5,18 +5,18 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import type { CellType } from "./notebook.utility";
+import type { JupyterCellType } from "./notebook.types";
 
 /** Compact dropdown for switching a cell between code / markdown / raw. */
 export const NotebookCellTypeSelect: React.FC<{
-	value: CellType;
-	onChange: (type: CellType) => void;
+	value: JupyterCellType;
+	onChange: (type: JupyterCellType) => void;
 	disabled?: boolean;
 }> = ({ value, onChange, disabled }) => {
 	return (
 		<Select
 			value={value}
-			onValueChange={(next) => onChange(next as CellType)}
+			onValueChange={(next) => onChange(next as JupyterCellType)}
 			disabled={disabled}
 		>
 			<SelectTrigger

@@ -3,17 +3,16 @@ import { type ComponentProps, useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useDebouncedValue } from "@semoss/sdk/react";
 import {
-	buildChatExecutionOutputs,
 	CellOutputBlock,
 	createCodeCellFromExecution,
-	createEmptyNotebook,
-	createNotebookFilePath,
 	type FileItem,
 	insertCell,
+	type JupyterNotebook,
 	nextExecutionCount,
 	notifyNotebookFileRefresh,
-	parseNotebook,
+	toCellOutputs,
 	unwrapPixelOutput,
+	validateNotebook,
 } from "@semoss/shared";
 import {
 	Button,
@@ -49,14 +48,40 @@ interface ExecuteResult {
 }
 
 interface CodePreviewBlockProps {
+	/** The code block's source text. */
 	code: string;
 	/** Shiki-safe language used for syntax highlighting */
 	language: ComponentProps<typeof Code>["language"];
 	/** Original language token from the fence (used for label + filename) */
 	rawLanguage?: string;
+	/** Room store used to execute code and save/append to notebooks. */
 	room?: RoomStore;
 }
 
+/** Build a normalized `.ipynb` path from user input. */
+const createNotebookFilePath = (name: string): string => {
+	const baseName = name.trim().replace(/\.ipynb$/i, "");
+	const safeName = baseName
+		.replace(/[\\/:*?"<>|]/g, "-")
+		.replace(/\s+/g, "-");
+	const resolvedName = safeName || `notebook-${Date.now()}`;
+	return `${resolvedName}.ipynb`;
+};
+
+/** Create a minimal, valid nbformat notebook object. */
+const createEmptyNotebook = (): JupyterNotebook => ({
+	nbformat: 4,
+	nbformat_minor: 5,
+	metadata: {},
+	cells: [],
+});
+
+/**
+ * A chat code block with actions: syntax-highlighted preview, run server-side
+ * (Python / R / pixel), copy, save to the room, a full-screen view, and an
+ * "Add to Notebook" flow that appends the run as a cell to a new or existing
+ * .ipynb.
+ */
 export const CodePreviewBlock = ({
 	code,
 	language,
@@ -88,6 +113,10 @@ export const CodePreviewBlock = ({
 	const executePixel = buildExecutePixel(langStr, code);
 	const canExecute = executePixel !== null;
 
+	/**
+	 * Run the code block server-side, streaming console logs into state and
+	 * mapping the final result (or error) into the output panel.
+	 */
 	const execute = async () => {
 		if (!room || !executePixel) return;
 		setIsExecuting(true);
@@ -149,6 +178,7 @@ export const CodePreviewBlock = ({
 		}
 	};
 
+	/** Save the code block to the room's insight assets as a timestamped file. */
 	const saveInRoom = async () => {
 		if (!room || !code) return;
 		const filePath = createCodeFilePath(langStr);
@@ -167,6 +197,7 @@ export const CodePreviewBlock = ({
 		}
 	};
 
+	/** Open (or focus) a room sidebar tab with the file editor for `path`. */
 	const openNotebookTab = (path: string) => {
 		if (!room) return;
 		const fileName = path.split("/").pop() ?? path;
@@ -182,6 +213,7 @@ export const CodePreviewBlock = ({
 		});
 	};
 
+	/** Write `content` to `path`, refresh any open editor for it, and open its tab. */
 	const saveToNotebookPath = async (path: string, content: string) => {
 		if (!room) return;
 		await room.runRoomPixel(
@@ -233,6 +265,7 @@ export const CodePreviewBlock = ({
 		};
 	}, [isAddToNotebookDialogOpen, debouncedNotebookSearch, room]);
 
+	/** Reset the Add to Notebook dialog's state and open it. */
 	const openAddToNotebookDialog = () => {
 		setSelectedNotebookPath(null);
 		setNewNotebookName("");
@@ -241,8 +274,11 @@ export const CodePreviewBlock = ({
 		setIsAddToNotebookDialogOpen(true);
 	};
 
-	// Always appends the generated cell - the notebook editor itself lets the
-	// user freely reorder cells, so there's no need for row-targeting here.
+	/**
+	 * Append the last execution as a code cell to the selected or newly-created
+	 * notebook, then save and open it. Always appends — the notebook editor lets
+	 * the user reorder cells, so there's no need for row-targeting here.
+	 */
 	const confirmAddToNotebook = async () => {
 		if (!room || !code) return;
 		if (!selectedNotebookPath && !newNotebookName.trim()) return;
@@ -264,12 +300,12 @@ export const CodePreviewBlock = ({
 				);
 				const existingContent =
 					loadResponse.pixelReturn[0]?.output ?? "";
-				const parsed = parseNotebook(existingContent);
-				if (!parsed.notebook) {
-					toast.error(parsed.error ?? "Failed to parse notebook");
+				try {
+					notebook = validateNotebook(existingContent);
+				} catch (e) {
+					toast.error(getErrorMessage(e));
 					return;
 				}
-				notebook = parsed.notebook;
 			} else {
 				// Guard against silently overwriting a file that happens to
 				// already exist under this exact generated name (e.g. the user
@@ -285,9 +321,10 @@ export const CodePreviewBlock = ({
 					const existingContent =
 						loadResponse.pixelReturn[0]?.output ?? "";
 					if (existingContent.trim()) {
-						const parsed = parseNotebook(existingContent);
-						if (parsed.notebook) {
-							notebook = parsed.notebook;
+						try {
+							notebook = validateNotebook(existingContent);
+						} catch {
+							// Not a valid notebook — start a new one.
 						}
 					}
 				} catch {
@@ -300,7 +337,7 @@ export const CodePreviewBlock = ({
 			// saw.
 			const executionCount = nextExecutionCount(notebook);
 			const outputs = executeResult
-				? buildChatExecutionOutputs(
+				? toCellOutputs(
 						executeResult.logs,
 						executeResult.rawOutput ?? executeResult.output,
 						executeResult.isError,
@@ -439,7 +476,7 @@ export const CodePreviewBlock = ({
 			</div>
 
 			<Dialog open={isFullViewOpen} onOpenChange={setIsFullViewOpen}>
-				<DialogContent className="h-[100dvh] max-h-[100dvh] w-[100dvw] max-w-[100dvw] grid-rows-[auto_1fr] overflow-hidden rounded-none border-0 p-3 sm:w-[100dvw] sm:max-w-[100dvw]">
+				<DialogContent className="h-dvh max-h-dvh w-dvw max-w-dvw grid-rows-[auto_1fr] overflow-hidden rounded-none border-0 p-3 sm:w-dvw sm:max-w-dvw">
 					<DialogHeader>
 						<DialogTitle>{langLabel}</DialogTitle>
 					</DialogHeader>

@@ -4,22 +4,20 @@
 // live Notebook editor. Everything else (subcomponents) stays internal.
 export { Notebook } from "./notebook";
 export type {
-	CellType,
 	JupyterCell,
+	JupyterCellType,
 	JupyterCodeCell,
 	JupyterNotebook,
 	JupyterOutput,
-	RunCellResult,
-} from "./notebook.utility";
+} from "./notebook.types";
 export {
-	buildChatExecutionOutputs,
 	createCodeCellFromExecution,
-	createEmptyNotebook,
-	createNotebookFilePath,
+	exportAsPythonScript,
 	insertCell,
 	nextExecutionCount,
 	normalizeSource,
-	parseNotebook,
+	toCellOutputs,
 	unwrapPixelOutput,
+	validateNotebook,
 } from "./notebook.utility";
 export { notifyNotebookFileRefresh } from "./notebook-events";

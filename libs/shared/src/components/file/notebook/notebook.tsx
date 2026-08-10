@@ -1,15 +1,15 @@
 import {
 	ArrowDownIcon,
-	ArrowDownToLineIcon,
 	ArrowUpIcon,
-	ArrowUpToLineIcon,
-	ChevronsUpIcon,
 	DownloadIcon,
+	EraserIcon,
+	FileCode2Icon,
 	GripVerticalIcon,
 	PlayIcon,
 	PlusIcon,
 	RefreshCwIcon,
 	SaveIcon,
+	SquareIcon,
 	Trash2Icon,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -23,48 +23,26 @@ import {
 	useInsight,
 	usePixel,
 } from "@semoss/sdk/react";
-import {
-	Button,
-	ContextMenu,
-	ContextMenuContent,
-	ContextMenuItem,
-	ContextMenuRadioGroup,
-	ContextMenuRadioItem,
-	ContextMenuSeparator,
-	ContextMenuSub,
-	ContextMenuSubContent,
-	ContextMenuSubTrigger,
-	ContextMenuTrigger,
-	Muted,
-	Spinner,
-	toast,
-} from "@semoss/ui/next";
+import { Button, Muted, Spinner, toast } from "@semoss/ui/next";
 import type { FileMode } from "../file.types";
 import { getFileOperationErrorMessage } from "../file-explorer.utils";
 import type {
-	CellType,
-	JupyterCodeCell,
+	JupyterCell,
+	JupyterCellType,
 	JupyterNotebook,
-	RunCellResult,
-} from "./notebook.utility";
+	JupyterOutput,
+} from "./notebook.types";
 import {
-	applyRunResult,
-	changeCellType,
 	createCell,
-	deleteCell,
-	extractInlineImageOutputs,
+	exportAsPythonScript,
 	insertCell,
-	moveCell,
 	nextExecutionCount,
 	normalizeSource,
-	parseNotebook,
-	setCellSource,
-	toErrorOutput,
-	toRuntimeOutputs,
+	toCellOutputs,
 	unwrapPixelOutput,
-	wrapPythonSourceForImageCapture,
+	validateNotebook,
 } from "./notebook.utility";
-import { NotebookCellView } from "./notebook-cell-view";
+import { NotebookCell } from "./notebook-cell";
 import { useNotebookFileRefresh } from "./notebook-events";
 
 interface NotebookProps {
@@ -102,15 +80,22 @@ export const Notebook: React.FC<NotebookProps> = ({
 		null,
 	);
 	const [isRunningAll, setIsRunningAll] = useState(false);
+	const [activeCellIndex, setActiveCellIndex] = useState<number | null>(null);
+	const [runAllProgress, setRunAllProgress] = useState<{
+		current: number;
+		total: number;
+	} | null>(null);
 
 	// Native drag-and-drop reorder state: the cell being dragged and the current
 	// drop target.
 	const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
 	const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
-	// Tracks the last raw content we seeded state from, so a re-render (or a
-	// refresh returning identical bytes) doesn't clobber in-progress run outputs.
-	const seededRawRef = useRef<string | null>(null);
+	// Per-cell DOM refs for scroll-to-cell.
+	const cellRefs = useRef<Record<number, HTMLDivElement | null>>({});
+	// Tracks the in-flight async job so the Stop button can cancel it.
+	const currentJobIdRef = useRef<string | null>(null);
+	const abortRequestedRef = useRef(false);
 
 	const targetInsightId =
 		mode.type === "INSIGHT"
@@ -130,261 +115,482 @@ export const Notebook: React.FC<NotebookProps> = ({
 		getFilePixel = `GetUserAssets(filePath=["${path}"]);`;
 	}
 
-	const getFile = usePixel<string>(getFilePixel, {}, targetInsightId);
+	// Validate the fetched file into notebook state on load / refresh; a file that
+	// fails validation surfaces an error and a toast instead of rendering.
+	const getFile = usePixel<string>(
+		getFilePixel,
+		{
+			onSuccess: (raw) => {
+				try {
+					const validated = validateNotebook(raw ?? "");
+					setNotebook(validated);
+					setParseError(null);
+				} catch (e) {
+					const message =
+						e instanceof Error ? e.message : "Invalid notebook";
+					setNotebook(null);
+					setParseError(message);
+					toast.error(message);
+				}
+			},
+			onError: () => {
+				setNotebook(null);
+			},
+		},
+		targetInsightId,
+	);
 
-	// Seed the editable notebook state from the fetched file content, but only
-	// when the underlying content actually changes (initial load / refresh).
-	useEffect(() => {
-		if (getFile.status !== "SUCCESS") return;
-		const raw = getFile.data ?? "";
-		if (seededRawRef.current === raw) return;
-		seededRawRef.current = raw;
-		const parsed = parseNotebook(raw);
-		setNotebook(parsed.notebook);
-		setParseError(parsed.error);
-	}, [getFile.status, getFile.data]);
+	console.log(getFile.status, getFile.data, getFile.error);
 
 	// Reload from disk when this exact file is written from outside this editor
 	// (e.g. the chat "Add to Notebook" action), so an already-open tab doesn't
 	// silently go stale.
-	useNotebookFileRefresh(path, () => {
-		seededRawRef.current = null;
-		getFile.refresh();
-	});
+	useNotebookFileRefresh(path, () => getFile.refresh());
+
+	// A stable ref so the Ctrl+S listener always calls the latest saveNotebook.
+	const saveNotebookRef = useRef<() => Promise<void>>();
+
+	useEffect(() => {
+		const onKeyDown = (e: KeyboardEvent) => {
+			if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+				e.preventDefault();
+				void saveNotebookRef.current?.();
+			}
+		};
+		window.addEventListener("keydown", onKeyDown);
+		return () => window.removeEventListener("keydown", onKeyDown);
+	}, []);
+
+	// Scroll the running / newly-activated cell into view.
+	useEffect(() => {
+		const idx = runningCellIndex ?? activeCellIndex;
+		if (idx === null) return;
+		const el = cellRefs.current[idx];
+		el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+	}, [runningCellIndex, activeCellIndex]);
 
 	const isBusy =
 		isSaving || isDownloading || isRunningAll || runningCellIndex !== null;
 
-	// Execute a code cell server-side via the Py() reactor and map the Pixel
-	// response into nbformat outputs. Only Python is wired up here; a cell-level
-	// Python error comes back as an nbformat "error" output rather than throwing.
-	//
-	// Uses the async job + console-polling pattern (mirroring the Blocks
-	// workspace's cell.state.ts) rather than a single synchronous Pixel call,
-	// since that's what reliably surfaces a cell's full stdout - required both
-	// for print() output and for the matplotlib image-capture shim below, which
-	// streams captured figures out through marker-prefixed print() lines.
+	/**
+	 * Persist an edited notebook to state and flag the file as modified.
+	 */
+	const updateNotebook = (next: JupyterNotebook) => {
+		setNotebook(next);
+		onChange(JSON.stringify(next, null, 2), true);
+	};
+
+	/**
+	 * Run a single code cell against `source` (the latest cells; defaults to
+	 * current state): build its Pixel, execute it, map the streamed result into
+	 * nbformat outputs, and commit them back onto the cell. Returns the updated
+	 * notebook so sequential runners can thread the newest cells forward. A
+	 * cell-level Python error (or a thrown network error) becomes an nbformat
+	 * "error" output rather than propagating.
+	 */
 	const executeCell = async (
-		cell: JupyterCodeCell,
-		executionCount: number,
-	): Promise<RunCellResult> => {
-		const source = normalizeSource(cell.source);
-		if (!source.trim()) {
-			return { executionCount, outputs: [] };
+		index: number,
+		source?: JupyterNotebook,
+	): Promise<JupyterNotebook | null> => {
+		const current = source ?? notebook;
+		const cell = current?.cells[index];
+		if (!current || !cell || cell.cell_type !== "code") {
+			return current;
 		}
 
-		const pixel = `Py("<encode>${wrapPythonSourceForImageCapture(source)}</encode>");`;
+		setRunningCellIndex(index);
+		const executionCount = nextExecutionCount(current);
 
+		let outputs: JupyterOutput[] = [];
 		try {
-			const { jobId } = await runPixelAsync(pixel, targetInsightId);
+			const cellSource = normalizeSource(cell.source);
+			const pixel = cellSource.trim()
+				? `Py("<encode>${cellSource}</encode>");`
+				: "";
 
-			const logs: string[] = [];
-			let isPolling = true;
-			while (isPolling) {
-				const { message: messages, status } =
-					await getPixelConsole(jobId);
-				logs.push(...messages);
+			let logs: string[] = [];
+			let value: unknown;
+			let isError = false;
+			let wasInterrupted = false;
 
-				if (
-					status === "ProgressComplete" ||
-					status === "Streaming" ||
-					status === "Complete"
-				) {
-					isPolling = false;
-				} else {
-					await new Promise((resolve) => setTimeout(resolve, 1000));
+			if (pixel) {
+				const { jobId } = await runPixelAsync(pixel, targetInsightId);
+				currentJobIdRef.current = jobId;
+
+				logs = [];
+				let isPolling = true;
+				while (isPolling) {
+					if (abortRequestedRef.current) {
+						wasInterrupted = true;
+						isPolling = false;
+						break;
+					}
+					const { message: messages, status } =
+						await getPixelConsole(jobId);
+					logs.push(...messages);
+
+					if (
+						status === "ProgressComplete" ||
+						status === "Streaming" ||
+						status === "Complete"
+					) {
+						isPolling = false;
+					} else {
+						await new Promise((resolve) =>
+							setTimeout(resolve, 1000),
+						);
+					}
+				}
+
+				if (!wasInterrupted) {
+					// Final flush — pull any logs written after the last poll.
+					const { message: finalMessages } =
+						await getPixelConsole(jobId);
+					logs.push(...finalMessages);
+
+					const { errors, results } =
+						await getPixelAsyncResult<[unknown]>(jobId);
+					const last = results[results.length - 1];
+					isError =
+						errors.length > 0 ||
+						(last?.operationType ?? []).includes("ERROR");
+					value = isError
+						? errors.join("\n") ||
+							String(unwrapPixelOutput(last) ?? "Execution error")
+						: unwrapPixelOutput(last);
 				}
 			}
 
-			// Final flush - pull any logs (including the image-capture
-			// markers) written after the last poll.
-			const { message: finalMessages } = await getPixelConsole(jobId);
-			logs.push(...finalMessages);
-
-			const { errors, results } =
-				await getPixelAsyncResult<[unknown]>(jobId);
-
-			const { cleanedLogs, images } = extractInlineImageOutputs(logs);
-			const last = results[results.length - 1];
-			const operationType = last?.operationType ?? [];
-
-			if (errors.length > 0 || operationType.includes("ERROR")) {
-				const message =
-					errors.join("\n") ||
-					String(unwrapPixelOutput(last) ?? "Execution error");
-				return {
-					executionCount,
-					outputs: [...images, toErrorOutput(message)],
-				};
-			}
-
-			const outputs: RunCellResult["outputs"] = [...images];
-			const stdout = cleanedLogs.join("\n").trim();
-			if (stdout) {
-				outputs.push({
-					output_type: "stream",
-					name: "stdout",
-					text: cleanedLogs,
-				});
-			}
-			outputs.push(
-				...toRuntimeOutputs(unwrapPixelOutput(last), executionCount),
-			);
-
-			return { executionCount, outputs };
+			outputs = wasInterrupted
+				? toCellOutputs([], "Interrupted", true, executionCount)
+				: toCellOutputs(logs, value, isError, executionCount);
 		} catch (e) {
-			return {
-				executionCount,
-				outputs: [
-					toErrorOutput(e instanceof Error ? e.message : String(e)),
-				],
-			};
-		}
-	};
-
-	// Run a single code cell and store its outputs back on the notebook.
-	const runCell = async (index: number) => {
-		if (!notebook || isBusy) return;
-		const cell = notebook.cells[index];
-		if (!cell || cell.cell_type !== "code") return;
-
-		setRunningCellIndex(index);
-		try {
-			const result = await executeCell(
-				cell,
-				nextExecutionCount(notebook),
-			);
-			const next = applyRunResult(notebook, index, result);
-			setNotebook(next);
-			onChange(JSON.stringify(next, null, 2), true);
+			const message = e instanceof Error ? e.message : String(e);
+			outputs = toCellOutputs([], message, true, executionCount);
 		} finally {
-			setRunningCellIndex(null);
+			currentJobIdRef.current = null;
 		}
+
+		const next: JupyterNotebook = {
+			...current,
+			cells: current.cells.map((c, i) =>
+				i === index && c.cell_type === "code"
+					? { ...c, outputs, execution_count: executionCount }
+					: c,
+			),
+		};
+
+		updateNotebook(next);
+		setRunningCellIndex(null);
+
+		return next;
 	};
 
-	// Run every code cell top-to-bottom, threading a working copy so each cell's
-	// outputs appear as it finishes (and later cells see earlier updates).
 	const runAllCells = async () => {
 		if (!notebook || isBusy) return;
 
+		const codeCellCount = notebook.cells.filter(
+			(c) => c.cell_type === "code",
+		).length;
+		abortRequestedRef.current = false;
+		setRunAllProgress({ current: 0, total: codeCellCount });
 		setIsRunningAll(true);
 		try {
-			let working = notebook;
-			for (let index = 0; index < working.cells.length; index += 1) {
-				const cell = working.cells[index];
-				if (cell.cell_type !== "code") continue;
-
-				setRunningCellIndex(index);
-				const result = await executeCell(
-					cell,
-					nextExecutionCount(working),
-				);
-				working = applyRunResult(working, index, result);
-				setNotebook(working);
+			let working: JupyterNotebook = notebook;
+			const count = working.cells.length;
+			let ran = 0;
+			for (let index = 0; index < count; index += 1) {
+				if (abortRequestedRef.current) break;
+				if (working.cells[index]?.cell_type === "code") {
+					working = (await executeCell(index, working)) ?? working;
+					ran += 1;
+					setRunAllProgress({ current: ran, total: codeCellCount });
+				}
 			}
-			onChange(JSON.stringify(working, null, 2), true);
 		} finally {
-			setRunningCellIndex(null);
 			setIsRunningAll(false);
+			setRunAllProgress(null);
 		}
 	};
 
-	// Run every code cell above `index` top-to-bottom, leaving the current cell
-	// untouched. Threads a working copy so each cell's outputs appear as it runs.
+	/** Run every code cell above `index`, leaving that cell untouched. */
 	const runCellsAbove = async (index: number) => {
+		if (!notebook || isBusy) {
+			return;
+		}
+
+		const codeCellCount = notebook.cells
+			.slice(0, index)
+			.filter((c) => c.cell_type === "code").length;
+		abortRequestedRef.current = false;
+		setRunAllProgress({ current: 0, total: codeCellCount });
+		setIsRunningAll(true);
+		try {
+			let working: JupyterNotebook = notebook;
+			let ran = 0;
+			for (let i = 0; i < index; i += 1) {
+				if (abortRequestedRef.current) break;
+				if (working.cells[i]?.cell_type === "code") {
+					working = (await executeCell(i, working)) ?? working;
+					ran += 1;
+					setRunAllProgress({ current: ran, total: codeCellCount });
+				}
+			}
+		} finally {
+			setIsRunningAll(false);
+			setRunAllProgress(null);
+		}
+	};
+
+	/** Run every code cell below `index`, leaving that cell untouched. */
+	const runCellsBelow = async (index: number) => {
 		if (!notebook || isBusy) return;
 
+		const codeCellCount = notebook.cells
+			.slice(index + 1)
+			.filter((c) => c.cell_type === "code").length;
+		abortRequestedRef.current = false;
+		setRunAllProgress({ current: 0, total: codeCellCount });
 		setIsRunningAll(true);
 		try {
-			let working = notebook;
-			for (let i = 0; i < index && i < working.cells.length; i += 1) {
-				const cell = working.cells[i];
-				if (cell.cell_type !== "code") continue;
-
-				setRunningCellIndex(i);
-				const result = await executeCell(
-					cell,
-					nextExecutionCount(working),
-				);
-				working = applyRunResult(working, i, result);
-				setNotebook(working);
+			let working: JupyterNotebook = notebook;
+			const count = working.cells.length;
+			let ran = 0;
+			for (let i = index + 1; i < count; i += 1) {
+				if (abortRequestedRef.current) break;
+				if (working.cells[i]?.cell_type === "code") {
+					working = (await executeCell(i, working)) ?? working;
+					ran += 1;
+					setRunAllProgress({ current: ran, total: codeCellCount });
+				}
 			}
-			onChange(JSON.stringify(working, null, 2), true);
 		} finally {
-			setRunningCellIndex(null);
 			setIsRunningAll(false);
+			setRunAllProgress(null);
 		}
 	};
 
-	// Persist an edited cell source (code or markdown) back into notebook state
-	// and flag the file as modified so it can be saved.
+	/** Wrapper for single-cell runs that resets the abort flag first. */
+	const runCell = (index: number) => {
+		abortRequestedRef.current = false;
+		void executeCell(index);
+	};
+
+	/** Run a cell then advance focus; inserts nothing — stays at last cell if already there. */
+	const runAndAdvanceCell = async (index: number) => {
+		if (!notebook) return;
+		abortRequestedRef.current = false;
+		await executeCell(index);
+		if (index < notebook.cells.length - 1) {
+			setActiveCellIndex(index + 1);
+		}
+	};
+
+	/** Cancel the in-flight execution via StopPixelExecution. */
+	const interruptExecution = async () => {
+		abortRequestedRef.current = true;
+		const jobId = currentJobIdRef.current;
+		if (jobId) {
+			try {
+				await runPixel(
+					`StopPixelExecution(id=["${jobId}"]);`,
+					targetInsightId,
+				);
+			} catch {
+				// ignore — abort flag already set
+			}
+		}
+	};
+
+	/** Clear outputs for a single code cell. */
+	const clearCellOutputs = (index: number) => {
+		if (!notebook) return;
+		updateNotebook({
+			...notebook,
+			cells: notebook.cells.map((cell, i) =>
+				i === index && cell.cell_type === "code"
+					? { ...cell, outputs: [] }
+					: cell,
+			),
+		});
+	};
+
+	/** Clear outputs on every code cell at once. */
+	const clearAllOutputs = () => {
+		if (!notebook) return;
+		updateNotebook({
+			...notebook,
+			cells: notebook.cells.map((cell) =>
+				cell.cell_type === "code" ? { ...cell, outputs: [] } : cell,
+			),
+		});
+	};
+
+	/** Deep-copy a cell with a new id and insert it immediately below. */
+	const duplicateCell = (index: number) => {
+		if (!notebook || isBusy) return;
+		const cell = notebook.cells[index];
+		if (!cell) return;
+		const copy: JupyterCell = {
+			...cell,
+			id: crypto.randomUUID(),
+			...(cell.cell_type === "code"
+				? { outputs: [], execution_count: null }
+				: {}),
+		} as JupyterCell;
+		updateNotebook(insertCell(notebook, copy, index + 1));
+	};
+
+	/** Trigger a browser download of the notebook as a .py script. */
+	const exportAsPython = () => {
+		if (!notebook) return;
+		const content = exportAsPythonScript(notebook);
+		const fileName = (path.split("/").pop() ?? "notebook").replace(
+			/\.ipynb$/,
+			".py",
+		);
+		const blob = new Blob([content], { type: "text/x-python" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = fileName;
+		a.click();
+		URL.revokeObjectURL(url);
+	};
+
+	/** Persist an edited cell source (code or markdown) so it can be saved. */
 	const updateCellSource = (index: number, source: string) => {
-		if (!notebook) return;
-		const next = setCellSource(notebook, index, source);
-		setNotebook(next);
-		onChange(JSON.stringify(next, null, 2), true);
+		if (!notebook || isBusy) {
+			return;
+		}
+
+		updateNotebook({
+			...notebook,
+			cells: notebook.cells.map((cell, cellIndex) => {
+				if (cellIndex !== index) {
+					return cell;
+				}
+				if (cell.cell_type === "code") {
+					return { ...cell, source };
+				}
+				if (cell.cell_type === "markdown") {
+					return { ...cell, source };
+				}
+				return { ...cell, source };
+			}),
+		});
 	};
 
-	// Reorder: move the dragged cell to the drop target's position.
-	const handleMoveCell = (from: number, to: number) => {
-		if (!notebook) return;
-		const next = moveCell(notebook, from, to);
-		if (next === notebook) return;
-		setNotebook(next);
-		onChange(JSON.stringify(next, null, 2), true);
+	/** Move the cell at `from` to `to`, ignoring out-of-range / no-op moves. */
+	const moveCell = (from: number, to: number) => {
+		if (!notebook || isBusy) {
+			return;
+		}
+		const { length } = notebook.cells;
+		if (
+			from === to ||
+			from < 0 ||
+			to < 0 ||
+			from >= length ||
+			to >= length
+		) {
+			return;
+		}
+		const cells = [...notebook.cells];
+		const [moved] = cells.splice(from, 1);
+		cells.splice(to, 0, moved);
+
+		updateNotebook({
+			...notebook,
+			cells,
+		});
 	};
 
-	// Delete a cell from the notebook.
-	const handleDeleteCell = (index: number) => {
-		if (!notebook) return;
-		const next = deleteCell(notebook, index);
-		setNotebook(next);
-		onChange(JSON.stringify(next, null, 2), true);
+	/** Delete the cell at `index`. */
+	const deleteCell = (index: number) => {
+		if (!notebook || isBusy) {
+			return;
+		}
+		updateNotebook({
+			...notebook,
+			cells: notebook.cells.filter((_, i) => i !== index),
+		});
 	};
 
+	/** Drop the dragged cell onto the target position. */
 	const handleDrop = (index: number) => {
 		if (draggingIndex !== null) {
-			handleMoveCell(draggingIndex, index);
+			moveCell(draggingIndex, index);
 		}
 		setDraggingIndex(null);
 		setDragOverIndex(null);
 	};
 
-	// Insert a new empty cell of the given type directly above `index`.
-	const handleInsertCellAbove = (index: number, type: CellType) => {
-		if (!notebook) return;
-		const next = insertCell(notebook, createCell(type), index);
-		setNotebook(next);
-		onChange(JSON.stringify(next, null, 2), true);
+	/** Insert a new empty cell of `type` at `at`, appending when omitted. */
+	const addCell = (type: JupyterCellType, index?: number) => {
+		if (!notebook || isBusy) {
+			return;
+		}
+
+		const cell = createCell(type);
+		const cells = [...notebook.cells];
+		const at =
+			index === undefined || index < 0 || index > cells.length
+				? cells.length
+				: index;
+
+		cells.splice(at, 0, cell);
+
+		updateNotebook({
+			...notebook,
+			cells,
+		});
 	};
 
-	// Insert a new empty cell of the given type directly below `index`.
-	const handleInsertCellBelow = (index: number, type: CellType) => {
-		if (!notebook) return;
-		const next = insertCell(notebook, createCell(type), index + 1);
-		setNotebook(next);
-		onChange(JSON.stringify(next, null, 2), true);
+	/** Switch a cell to a different type, preserving its source. */
+	const changeType = (index: number, type: JupyterCellType) => {
+		if (!notebook || isBusy) {
+			return;
+		}
+		updateNotebook({
+			...notebook,
+			cells: notebook.cells.map((cell, cellIndex) => {
+				if (cellIndex !== index || cell.cell_type === type) {
+					return cell;
+				}
+				const base = {
+					id: cell.id,
+					metadata: cell.metadata,
+					source: cell.source,
+				};
+
+				if (type === "markdown") {
+					return {
+						...base,
+						cell_type: "markdown" as const,
+					};
+				}
+				if (type === "raw") {
+					return {
+						...base,
+						cell_type: "raw" as const,
+					};
+				}
+				return {
+					...base,
+					cell_type: "code" as const,
+					execution_count: null,
+					outputs: [],
+				};
+			}),
+		});
 	};
 
-	// Add a new empty cell of the given type to the end of the notebook.
-	const handleAddCell = (type: CellType) => {
-		if (!notebook) return;
-		const next = insertCell(notebook, createCell(type));
-		setNotebook(next);
-		onChange(JSON.stringify(next, null, 2), true);
-	};
-
-	// Switch a cell to a different type, preserving its source.
-	const handleChangeCellType = (index: number, type: CellType) => {
-		if (!notebook) return;
-		const next = changeCellType(notebook, index, type);
-		setNotebook(next);
-		onChange(JSON.stringify(next, null, 2), true);
-	};
-
-	// Serialize the in-memory notebook and write it back to the asset store.
+	/** Serialize the in-memory notebook and write it back to the asset store. */
 	const saveNotebook = async () => {
-		if (!notebook) return;
+		if (!notebook || isBusy) {
+			return;
+		}
 
 		setIsSaving(true);
 		try {
@@ -425,8 +631,10 @@ export const Notebook: React.FC<NotebookProps> = ({
 			setIsSaving(false);
 		}
 	};
+	// Update on every render so the Ctrl+S listener always calls the latest version.
+	saveNotebookRef.current = saveNotebook;
 
-	// Download the raw .ipynb file through the asset store's download flow.
+	/** Download the raw .ipynb file through the asset store's download flow. */
 	const downloadNotebook = async () => {
 		setIsDownloading(true);
 		try {
@@ -476,6 +684,11 @@ export const Notebook: React.FC<NotebookProps> = ({
 	const hasCodeCells = Boolean(
 		notebook?.cells.some((cell) => cell.cell_type === "code"),
 	);
+	const hasCellOutputs = Boolean(
+		notebook?.cells.some(
+			(cell) => cell.cell_type === "code" && cell.outputs.length > 0,
+		),
+	);
 
 	return (
 		<div className="relative flex h-full w-full flex-col overflow-hidden bg-background">
@@ -489,30 +702,39 @@ export const Notebook: React.FC<NotebookProps> = ({
 						variant="outline"
 						size="sm"
 						disabled={getFile.status === "LOADING" || isBusy}
-						onClick={() => {
-							// Force a reseed so Refresh reloads from disk and
-							// discards local edits / run outputs.
-							seededRawRef.current = null;
-							getFile.refresh();
-						}}
+						onClick={() => getFile.refresh()}
 					>
 						<RefreshCwIcon className="size-4" />
 						Refresh
 					</Button>
-					<Button
-						variant="outline"
-						size="sm"
-						disabled={!hasCodeCells || isBusy}
-						onClick={() => runAllCells()}
-					>
-						<PlayIcon className="size-4" />
-						{isRunningAll ? "Running…" : "Run All"}
-					</Button>
+					{isRunningAll || runningCellIndex !== null ? (
+						<Button
+							variant="outline"
+							size="sm"
+							className="text-destructive hover:text-destructive"
+							onClick={() => void interruptExecution()}
+						>
+							<SquareIcon className="size-4" />
+							Stop
+							{runAllProgress &&
+								` (${runAllProgress.current} / ${runAllProgress.total})`}
+						</Button>
+					) : (
+						<Button
+							variant="outline"
+							size="sm"
+							disabled={!hasCodeCells || isBusy}
+							onClick={() => runAllCells()}
+						>
+							<PlayIcon className="size-4" />
+							Run All
+						</Button>
+					)}
 					<Button
 						variant="outline"
 						size="sm"
 						disabled={!notebook || isBusy}
-						onClick={() => saveNotebook()}
+						onClick={() => void saveNotebook()}
 					>
 						<SaveIcon className="size-4" />
 						Save
@@ -521,10 +743,30 @@ export const Notebook: React.FC<NotebookProps> = ({
 						variant="outline"
 						size="sm"
 						disabled={getFile.status !== "SUCCESS" || isBusy}
-						onClick={() => downloadNotebook()}
+						onClick={() => void downloadNotebook()}
 					>
 						<DownloadIcon className="size-4" />
 						Download
+					</Button>
+					{hasCellOutputs && (
+						<Button
+							variant="outline"
+							size="sm"
+							disabled={isBusy}
+							onClick={() => clearAllOutputs()}
+						>
+							<EraserIcon className="size-4" />
+							Clear All
+						</Button>
+					)}
+					<Button
+						variant="outline"
+						size="sm"
+						disabled={!notebook}
+						onClick={() => exportAsPython()}
+					>
+						<FileCode2Icon className="size-4" />
+						Export .py
 					</Button>
 				</div>
 			</div>
@@ -554,6 +796,9 @@ export const Notebook: React.FC<NotebookProps> = ({
 						{notebook.cells.map((cell, index) => (
 							<div
 								key={cell.id}
+								ref={(el) => {
+									cellRefs.current[index] = el;
+								}}
 								className={`relative flex gap-1.5 ${
 									draggingIndex === index ? "opacity-50" : ""
 								}`}
@@ -566,7 +811,7 @@ export const Notebook: React.FC<NotebookProps> = ({
 										className="size-6 text-muted-foreground/60 hover:text-foreground"
 										disabled={isBusy || index === 0}
 										onClick={() =>
-											handleMoveCell(index, index - 1)
+											moveCell(index, index - 1)
 										}
 										title="Move cell up"
 										aria-label="Move cell up"
@@ -605,7 +850,7 @@ export const Notebook: React.FC<NotebookProps> = ({
 											index === notebook.cells.length - 1
 										}
 										onClick={() =>
-											handleMoveCell(index, index + 1)
+											moveCell(index, index + 1)
 										}
 										title="Move cell down"
 										aria-label="Move cell down"
@@ -617,7 +862,7 @@ export const Notebook: React.FC<NotebookProps> = ({
 										size="icon-sm"
 										className="size-6 text-muted-foreground/60 hover:text-destructive"
 										disabled={isBusy}
-										onClick={() => handleDeleteCell(index)}
+										onClick={() => deleteCell(index)}
 										title="Delete cell"
 										aria-label="Delete cell"
 									>
@@ -625,112 +870,41 @@ export const Notebook: React.FC<NotebookProps> = ({
 									</Button>
 								</div>
 
-								{/* Cell body */}
-								<ContextMenu>
-									<ContextMenuTrigger asChild>
-										<div className="min-w-0 flex-1">
-											<NotebookCellView
-												cell={cell}
-												index={index}
-												isRunning={
-													runningCellIndex === index
-												}
-												disabled={isBusy}
-												onRun={runCell}
-												onSourceChange={
-													updateCellSource
-												}
-												onChangeType={
-													handleChangeCellType
-												}
-											/>
-										</div>
-									</ContextMenuTrigger>
-									<ContextMenuContent className="w-52">
-										<ContextMenuItem
-											disabled={isBusy}
-											onSelect={() =>
-												handleInsertCellAbove(
-													index,
-													"code",
-												)
-											}
-										>
-											<ArrowUpToLineIcon className="size-4" />
-											Insert Cell Above
-										</ContextMenuItem>
-										<ContextMenuItem
-											disabled={isBusy}
-											onSelect={() =>
-												handleInsertCellBelow(
-													index,
-													"code",
-												)
-											}
-										>
-											<ArrowDownToLineIcon className="size-4" />
-											Insert Cell Below
-										</ContextMenuItem>
-										<ContextMenuSeparator />
-										<ContextMenuSub>
-											<ContextMenuSubTrigger
-												disabled={isBusy}
-											>
-												Change Cell Type
-											</ContextMenuSubTrigger>
-											<ContextMenuSubContent>
-												<ContextMenuRadioGroup
-													value={cell.cell_type}
-													onValueChange={(value) =>
-														handleChangeCellType(
-															index,
-															value as CellType,
-														)
-													}
-												>
-													<ContextMenuRadioItem value="code">
-														Code
-													</ContextMenuRadioItem>
-													<ContextMenuRadioItem value="markdown">
-														Markdown
-													</ContextMenuRadioItem>
-													<ContextMenuRadioItem value="raw">
-														Raw
-													</ContextMenuRadioItem>
-												</ContextMenuRadioGroup>
-											</ContextMenuSubContent>
-										</ContextMenuSub>
-										<ContextMenuSeparator />
-										<ContextMenuItem
-											disabled={
-												isBusy ||
-												!notebook.cells
-													.slice(0, index)
-													.some(
-														(above) =>
-															above.cell_type ===
-															"code",
-													)
-											}
-											onSelect={() =>
-												runCellsAbove(index)
-											}
-										>
-											<ChevronsUpIcon className="size-4" />
-											Execute Cells Above
-										</ContextMenuItem>
-										<ContextMenuItem
-											disabled={
-												isBusy ||
-												cell.cell_type !== "code"
-											}
-											onSelect={() => runCell(index)}
-										>
-											<PlayIcon className="size-4" />
-											Run Cell
-										</ContextMenuItem>
-									</ContextMenuContent>
-								</ContextMenu>
+								<NotebookCell
+									cell={cell}
+									index={index}
+									isRunning={runningCellIndex === index}
+									disabled={isBusy}
+									isActive={activeCellIndex === index}
+									canRunAbove={notebook.cells
+										.slice(0, index)
+										.some(
+											(above) =>
+												above.cell_type === "code",
+										)}
+									canRunBelow={notebook.cells
+										.slice(index + 1)
+										.some(
+											(below) =>
+												below.cell_type === "code",
+										)}
+									onRun={runCell}
+									onRunAndAdvance={runAndAdvanceCell}
+									onInterrupt={interruptExecution}
+									onRunAbove={runCellsAbove}
+									onRunBelow={runCellsBelow}
+									onDuplicate={duplicateCell}
+									onClearOutput={clearCellOutputs}
+									onActivate={setActiveCellIndex}
+									onSourceChange={updateCellSource}
+									onChangeType={changeType}
+									onInsertAbove={(i, type) =>
+										addCell(type, i)
+									}
+									onInsertBelow={(i, type) =>
+										addCell(type, i + 1)
+									}
+								/>
 
 								{/* Drop zone — mounted only while dragging so it
 									    never blocks editing, and layered above the
@@ -764,7 +938,7 @@ export const Notebook: React.FC<NotebookProps> = ({
 								variant="outline"
 								size="sm"
 								disabled={isBusy}
-								onClick={() => handleAddCell("code")}
+								onClick={() => addCell("code")}
 							>
 								<PlusIcon className="size-4" />
 								Code
@@ -773,7 +947,7 @@ export const Notebook: React.FC<NotebookProps> = ({
 								variant="outline"
 								size="sm"
 								disabled={isBusy}
-								onClick={() => handleAddCell("markdown")}
+								onClick={() => addCell("markdown")}
 							>
 								<PlusIcon className="size-4" />
 								Markdown

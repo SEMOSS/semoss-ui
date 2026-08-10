@@ -1,6 +1,6 @@
 import type { OnMount } from "@monaco-editor/react";
 import type * as monaco from "monaco-editor";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useTheme } from "@semoss/ui/next";
 import { MonacoEditor } from "../../monaco";
 
@@ -17,9 +17,25 @@ export const NotebookCodeCellView: React.FC<{
 	value: string;
 	onChange: (value: string) => void;
 	language?: string;
-}> = ({ value, onChange, language = "python" }) => {
+	onRunInPlace?: () => void;
+	onRunAndAdvance?: () => void;
+}> = ({
+	value,
+	onChange,
+	language = "python",
+	onRunInPlace,
+	onRunAndAdvance,
+}) => {
 	const { resolvedTheme } = useTheme();
 	const [height, setHeight] = useState(MIN_HEIGHT);
+
+	// Stable refs so the one-time addCommand closures always call the latest handlers.
+	const onRunInPlaceRef = useRef(onRunInPlace);
+	const onRunAndAdvanceRef = useRef(onRunAndAdvance);
+	useEffect(() => {
+		onRunInPlaceRef.current = onRunInPlace;
+		onRunAndAdvanceRef.current = onRunAndAdvance;
+	});
 
 	// Clamp the editor height to its content so short cells stay compact and
 	// long cells scroll internally instead of stretching the whole notebook.
@@ -32,9 +48,17 @@ export const NotebookCodeCellView: React.FC<{
 		);
 	};
 
-	const handleMount: OnMount = (editor) => {
+	const handleMount: OnMount = (editor, monacoInstance) => {
 		syncHeight(editor);
 		editor.onDidContentSizeChange(() => syncHeight(editor));
+		editor.addCommand(
+			monacoInstance.KeyMod.CtrlCmd | monacoInstance.KeyCode.Enter,
+			() => onRunInPlaceRef.current?.(),
+		);
+		editor.addCommand(
+			monacoInstance.KeyMod.Shift | monacoInstance.KeyCode.Enter,
+			() => onRunAndAdvanceRef.current?.(),
+		);
 	};
 
 	return (
