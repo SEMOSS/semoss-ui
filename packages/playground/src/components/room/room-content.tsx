@@ -66,8 +66,13 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		await room.askMessage(prompt, files);
 
 		// re-sync room options from backend after message completes,
-		// preserving workspace MCPs that are only held in memory
-		await room.syncRoomOptions();
+		// preserving workspace MCPs that are only held in memory. Skipped when
+		// the turn just errored (e.g. a cancel that failed to persist) — a
+		// successful sync clears the room's error state, which would otherwise
+		// wipe the message the user just needs to see.
+		if (!room.error) {
+			await room.syncRoomOptions();
+		}
 
 		return true;
 	};
@@ -190,7 +195,10 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					tool.message,
 					tool.id,
 					tool.response,
-					tool.tool_status,
+					// "paused" is retired — fold any legacy iframe status into cancelled
+					tool.tool_status === "paused"
+						? "cancelled"
+						: tool.tool_status,
 					tool.executedParameters ?? {},
 				);
 			} catch {
@@ -385,13 +393,27 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									return null;
 								}
 
+								// A settled empty response is only meaningful as a
+								// direct reply to a user turn. When its nearest
+								// non-hidden ancestor is another response — e.g. the
+								// empty assistant message the backend commits after
+								// a stopped tool phase — it's just noise, so skip
+								// it. (Still-thinking placeholders are left alone so
+								// a streaming post-tool reply isn't hidden.)
+								if (
+									m.type === "OUTPUT" &&
+									!m.hasVisibleContent &&
+									!m.isThinking &&
+									m.findAncestor((a) => a.visible)?.type ===
+										"OUTPUT"
+								)
+									return null;
+
 								const showModelName = (() => {
 									// find the most recent ancestor that actually has a model
-									let ancestor = m.parent;
-									while (ancestor) {
-										if (ancestor.modelId) break;
-										ancestor = ancestor.parent;
-									}
+									const ancestor = m.findAncestor(
+										(a) => !!a.modelId,
+									);
 									// If no ancestor has a model, show the model name for this message
 									if (!ancestor) return true;
 									// Only show the model name if it's different from the ancestor's model to reduce clutter
@@ -495,7 +517,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					predefinedPrompts={room.options.predefinedPrompts}
 					className="max-h-56 min-h-24"
 					isLoading={showLoadingState}
-					hidePauseButton={!room.numberOfTools}
 					model={room.model}
 					room={room}
 					setModel={(model) => {
@@ -571,10 +592,14 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					hasOutstandingTools={
 						room.latestResponseMessage.hasUnfinishedTools
 					}
-					hasToolsPaused={room.latestResponseMessage.isPaused}
-					toggleToolsPaused={
-						room.latestResponseMessage.toggleIsPaused
+					sendState={
+						room.isCancelling
+							? "loading"
+							: room.canCancel || showLoadingState
+								? "stop"
+								: "send"
 					}
+					onStop={room.cancelActiveJob}
 					tokensUsed={room.tokensUsed}
 					tokensMax={chat.models.contextWindow}
 					totalTokens={room.totalTokensConsumed}
