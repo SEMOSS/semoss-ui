@@ -1,5 +1,6 @@
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Badge, Button } from "@semoss/ui/next";
+import { SCROLL_SCREEN_PERCENT } from "../../domain/scroll";
 import type { RemoteBrowserRecordedStep } from "../../types/browserEvents";
 
 function recordedStepType(step: RemoteBrowserRecordedStep): string {
@@ -23,7 +24,7 @@ function recordedStepValue(step: RemoteBrowserRecordedStep): string | null {
 		const height = step.viewport?.height ?? 0;
 		const percentage = height
 			? Math.max(1, Math.round((Math.abs(delta) / height) * 100))
-			: 70;
+			: SCROLL_SCREEN_PERCENT;
 		return `${delta < 0 ? "Up" : "Down"} ${percentage}% of screen`;
 	}
 	return null;
