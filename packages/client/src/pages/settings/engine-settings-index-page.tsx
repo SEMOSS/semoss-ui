@@ -185,6 +185,7 @@ export const EngineSettingsIndexPage = (
 								isFavorited={false}
 								showFavorite={false}
 								showGlobal={false}
+								showInfo={false}
 								showDelete={
 									adminMode ||
 									isOwnerPermission(
@@ -192,6 +193,7 @@ export const EngineSettingsIndexPage = (
 									)
 								}
 								onFavorite={() => null}
+								onInfo={() => null}
 								onGlobalToggle={() => null}
 								onDelete={(engine) => setEngineToDelete(engine)}
 							/>

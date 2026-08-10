@@ -60,7 +60,8 @@ const DELIVERY_LIMIT = 20;
  */
 export const AppGithubPage = () => {
 	const { t } = useTranslation("githubApp");
-	const { appId } = useProject();
+	const { project } = useProject();
+	const appId = project.project_id;
 	const { monolithStore } = useRootStore();
 	const location = useLocation();
 

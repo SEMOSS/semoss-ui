@@ -1,25 +1,26 @@
 import { observer } from "mobx-react-lite";
-import { useParams } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { InsightProvider } from "@semoss/sdk/react";
-import type { Project } from "@semoss/shared";
 import { Workspace } from "@/components/workspace";
-import { usePage } from "@/hooks";
+import { usePage, useProject } from "@/hooks";
 
-interface ProjectEditProps {
-	type: Project["project_type"];
-}
-
-export const ProjectEdit = observer(({ type: _type }: ProjectEditProps) => {
-	const { appId } = useParams();
+export const ProjectEdit = observer(() => {
+	const { project, permission, catalog } = useProject();
 
 	usePage({
 		showNavbarLogo: false,
 	});
 
+	if (permission === "DISCOVERABLE") {
+		return (
+			<Navigate to={`${catalog.path}/${project.project_id}`} replace />
+		);
+	}
+
 	return (
 		<div className="absolute inset-0">
 			<InsightProvider>
-				<Workspace app={appId as string} />
+				<Workspace app={project.project_id} />
 			</InsightProvider>
 		</div>
 	);

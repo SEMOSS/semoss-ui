@@ -7,7 +7,6 @@ import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
 import { buildListener, buildShowField } from "../block-defaults.shared";
 import type { BlockSettingsConfig } from "../settings.types";
 
-
 const FileTypes: string[] = [
 	".csv",
 	".txt",
