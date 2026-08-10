@@ -276,7 +276,7 @@ export function PublishedPage() {
 											{app.published ? (
 												<span className="inline-flex items-center gap-1.5 font-medium text-[11px] text-emerald-600">
 													<span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{" "}
-													Live
+													Public
 												</span>
 											) : (
 												<span className="inline-flex items-center gap-1 font-medium text-[11px] text-stone-400">
