@@ -64,7 +64,7 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 	const isNotebook = ext === "ipynb";
 
 	return (
-		<div className="relative flex h-full w-full flex-col overflow-hidden bg-background py-1">
+		<div className="relative flex h-full w-full flex-col overflow-hidden bg-background">
 			{isImage && <FileImageViewer key={path} mode={mode} path={path} />}
 			{isPdf && <FilePdfViewer key={path} mode={mode} path={path} />}
 			{isNotRendered && (

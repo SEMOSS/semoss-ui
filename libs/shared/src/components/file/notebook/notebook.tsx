@@ -23,7 +23,20 @@ import {
 	useInsight,
 	usePixel,
 } from "@semoss/sdk/react";
-import { Button, Muted, Spinner, toast } from "@semoss/ui/next";
+import {
+	Button,
+	ContextMenu,
+	ContextMenuContent,
+	ContextMenuItem,
+	ContextMenuSeparator,
+	ContextMenuTrigger,
+	Muted,
+	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+	toast,
+} from "@semoss/ui/next";
 import type { FileMode } from "../file.types";
 import { getFileOperationErrorMessage } from "../file-explorer.utils";
 import type {
@@ -691,271 +704,353 @@ export const Notebook: React.FC<NotebookProps> = ({
 	);
 
 	return (
-		<div className="relative flex h-full w-full flex-col overflow-hidden bg-background">
-			{/* Toolbar */}
-			<div className="flex w-full shrink-0 items-center justify-between gap-2 border-border border-b px-3 pt-[4px] pb-[7px]">
-				<span className="truncate font-medium text-muted-foreground text-xs">
-					{path.split("/").pop()}
-				</span>
-				<div className="flex items-center gap-1.5">
-					<Button
-						variant="outline"
-						size="sm"
-						disabled={getFile.status === "LOADING" || isBusy}
-						onClick={() => getFile.refresh()}
-					>
-						<RefreshCwIcon className="size-4" />
-						Refresh
-					</Button>
-					{isRunningAll || runningCellIndex !== null ? (
-						<Button
-							variant="outline"
-							size="sm"
-							className="text-destructive hover:text-destructive"
-							onClick={() => void interruptExecution()}
-						>
-							<SquareIcon className="size-4" />
-							Stop
-							{runAllProgress &&
-								` (${runAllProgress.current} / ${runAllProgress.total})`}
-						</Button>
-					) : (
-						<Button
-							variant="outline"
-							size="sm"
-							disabled={!hasCodeCells || isBusy}
-							onClick={() => runAllCells()}
-						>
-							<PlayIcon className="size-4" />
-							Run All
-						</Button>
-					)}
-					<Button
-						variant="outline"
-						size="sm"
-						disabled={!notebook || isBusy}
-						onClick={() => void saveNotebook()}
-					>
-						<SaveIcon className="size-4" />
-						Save
-					</Button>
-					<Button
-						variant="outline"
-						size="sm"
-						disabled={getFile.status !== "SUCCESS" || isBusy}
-						onClick={() => void downloadNotebook()}
-					>
-						<DownloadIcon className="size-4" />
-						Download
-					</Button>
-					{hasCellOutputs && (
-						<Button
-							variant="outline"
-							size="sm"
-							disabled={isBusy}
-							onClick={() => clearAllOutputs()}
-						>
-							<EraserIcon className="size-4" />
-							Clear All
-						</Button>
-					)}
-					<Button
-						variant="outline"
-						size="sm"
-						disabled={!notebook}
-						onClick={() => exportAsPython()}
-					>
-						<FileCode2Icon className="size-4" />
-						Export .py
-					</Button>
-				</div>
-			</div>
-
-			{/* Notebook body */}
-			<div className="flex-1 overflow-y-auto">
-				{getFile.status === "LOADING" && (
-					<div className="flex h-full w-full items-center justify-center">
-						<Spinner />
-					</div>
-				)}
-				{getFile.status === "ERROR" && (
-					<div className="flex h-full w-full items-center justify-center">
-						<Muted className="text-destructive">
-							{getFile.error?.message ||
-								t("fileExplorer.failedToLoadFiles")}
-						</Muted>
-					</div>
-				)}
-				{getFile.status === "SUCCESS" && parseError && (
-					<div className="flex h-full w-full items-center justify-center">
-						<Muted className="text-destructive">{parseError}</Muted>
-					</div>
-				)}
-				{getFile.status === "SUCCESS" && !parseError && notebook && (
-					<div className="mx-auto flex w-full max-w-4xl flex-col gap-3 px-6 py-4">
-						{notebook.cells.map((cell, index) => (
-							<div
-								key={cell.id}
-								ref={(el) => {
-									cellRefs.current[index] = el;
-								}}
-								className={`relative flex gap-1.5 ${
-									draggingIndex === index ? "opacity-50" : ""
-								}`}
-							>
-								{/* Reorder / delete gutter */}
-								<div className="flex w-6 shrink-0 flex-col items-center gap-0.5 pt-1">
-									<Button
-										variant="ghost"
-										size="icon-sm"
-										className="size-6 text-muted-foreground/60 hover:text-foreground"
-										disabled={isBusy || index === 0}
-										onClick={() =>
-											moveCell(index, index - 1)
-										}
-										title="Move cell up"
-										aria-label="Move cell up"
-									>
-										<ArrowUpIcon className="size-4" />
-									</Button>
-									<Button
-										variant="ghost"
-										size="icon-sm"
-										className="size-6 cursor-grab text-muted-foreground/60 hover:text-foreground"
-										draggable={!isBusy}
-										onDragStart={(e) => {
-											setDraggingIndex(index);
-											e.dataTransfer.effectAllowed =
-												"move";
-											e.dataTransfer.setData(
-												"text/plain",
-												String(index),
-											);
-										}}
-										onDragEnd={() => {
-											setDraggingIndex(null);
-											setDragOverIndex(null);
-										}}
-										title="Drag to reorder"
-										aria-label="Drag to reorder cell"
-									>
-										<GripVerticalIcon className="size-4" />
-									</Button>
-									<Button
-										variant="ghost"
-										size="icon-sm"
-										className="size-6 text-muted-foreground/60 hover:text-foreground"
-										disabled={
-											isBusy ||
-											index === notebook.cells.length - 1
-										}
-										onClick={() =>
-											moveCell(index, index + 1)
-										}
-										title="Move cell down"
-										aria-label="Move cell down"
-									>
-										<ArrowDownIcon className="size-4" />
-									</Button>
-									<Button
-										variant="ghost"
-										size="icon-sm"
-										className="size-6 text-muted-foreground/60 hover:text-destructive"
-										disabled={isBusy}
-										onClick={() => deleteCell(index)}
-										title="Delete cell"
-										aria-label="Delete cell"
-									>
-										<Trash2Icon className="size-4" />
-									</Button>
-								</div>
-
-								<NotebookCell
-									cell={cell}
-									index={index}
-									isRunning={runningCellIndex === index}
-									disabled={isBusy}
-									isActive={activeCellIndex === index}
-									canRunAbove={notebook.cells
-										.slice(0, index)
-										.some(
-											(above) =>
-												above.cell_type === "code",
-										)}
-									canRunBelow={notebook.cells
-										.slice(index + 1)
-										.some(
-											(below) =>
-												below.cell_type === "code",
-										)}
-									onRun={runCell}
-									onRunAndAdvance={runAndAdvanceCell}
-									onInterrupt={interruptExecution}
-									onRunAbove={runCellsAbove}
-									onRunBelow={runCellsBelow}
-									onDuplicate={duplicateCell}
-									onClearOutput={clearCellOutputs}
-									onActivate={setActiveCellIndex}
-									onSourceChange={updateCellSource}
-									onChangeType={changeType}
-									onInsertAbove={(i, type) =>
-										addCell(type, i)
+		<ContextMenu>
+			<ContextMenuTrigger asChild>
+				<div className="relative flex h-full w-full flex-col overflow-hidden bg-background">
+					{/* Toolbar */}
+					<div className="flex w-full shrink-0 items-center gap-1.5 border-border border-b px-2 py-1">
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="sm"
+									disabled={
+										getFile.status === "LOADING" || isBusy
 									}
-									onInsertBelow={(i, type) =>
-										addCell(type, i + 1)
-									}
-								/>
+									onClick={() => getFile.refresh()}
+									aria-label="Refresh"
+								>
+									<RefreshCwIcon className="size-3" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>Refresh</TooltipContent>
+						</Tooltip>
+						<div className="flex-1" />
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="sm"
+									disabled={!notebook || isBusy}
+									onClick={() => void saveNotebook()}
+									aria-label="Save"
+								>
+									<SaveIcon className="size-3" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>Save</TooltipContent>
+						</Tooltip>
+						{isRunningAll || runningCellIndex !== null ? (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="outline"
+										size="sm"
+										className="text-destructive hover:text-destructive"
+										onClick={() =>
+											void interruptExecution()
+										}
+										aria-label={
+											runAllProgress
+												? `Stop (${runAllProgress.current} / ${runAllProgress.total})`
+												: "Stop"
+										}
+									>
+										Stop <SquareIcon className="size-3" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									{runAllProgress
+										? `Stop (${runAllProgress.current} / ${runAllProgress.total})`
+										: "Stop"}
+								</TooltipContent>
+							</Tooltip>
+						) : (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="outline"
+										size="sm"
+										disabled={!hasCodeCells || isBusy}
+										onClick={() => runAllCells()}
+										aria-label="Run all"
+									>
+										Run <PlayIcon className="size-3" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>Run all</TooltipContent>
+							</Tooltip>
+						)}
+					</div>
 
-								{/* Drop zone — mounted only while dragging so it
+					{/* Notebook body */}
+					<div className="flex-1 overflow-y-auto">
+						{getFile.status === "LOADING" && (
+							<div className="flex h-full w-full items-center justify-center">
+								<Spinner />
+							</div>
+						)}
+						{getFile.status === "ERROR" && (
+							<div className="flex h-full w-full items-center justify-center">
+								<Muted className="text-destructive">
+									{getFile.error?.message ||
+										t("fileExplorer.failedToLoadFiles")}
+								</Muted>
+							</div>
+						)}
+						{getFile.status === "SUCCESS" && parseError && (
+							<div className="flex h-full w-full items-center justify-center">
+								<Muted className="text-destructive">
+									{parseError}
+								</Muted>
+							</div>
+						)}
+						{getFile.status === "SUCCESS" &&
+							!parseError &&
+							notebook && (
+								<div className="mx-auto flex w-full max-w-4xl flex-col gap-3 px-6 py-4">
+									{notebook.cells.map((cell, index) => (
+										<div
+											key={cell.id}
+											ref={(el) => {
+												cellRefs.current[index] = el;
+											}}
+											className={`relative flex gap-1.5 ${
+												draggingIndex === index
+													? "opacity-50"
+													: ""
+											}`}
+										>
+											{/* Reorder / delete gutter */}
+											<div className="flex w-6 shrink-0 flex-col items-center gap-0.5 pt-1">
+												<Button
+													variant="ghost"
+													size="icon-sm"
+													className="size-6 text-muted-foreground/60 hover:text-foreground"
+													disabled={
+														isBusy || index === 0
+													}
+													onClick={() =>
+														moveCell(
+															index,
+															index - 1,
+														)
+													}
+													title="Move cell up"
+													aria-label="Move cell up"
+												>
+													<ArrowUpIcon className="size-4" />
+												</Button>
+												<Button
+													variant="ghost"
+													size="icon-sm"
+													className="size-6 cursor-grab text-muted-foreground/60 hover:text-foreground"
+													draggable={!isBusy}
+													onDragStart={(e) => {
+														setDraggingIndex(index);
+														e.dataTransfer.effectAllowed =
+															"move";
+														e.dataTransfer.setData(
+															"text/plain",
+															String(index),
+														);
+													}}
+													onDragEnd={() => {
+														setDraggingIndex(null);
+														setDragOverIndex(null);
+													}}
+													title="Drag to reorder"
+													aria-label="Drag to reorder cell"
+												>
+													<GripVerticalIcon className="size-4" />
+												</Button>
+												<Button
+													variant="ghost"
+													size="icon-sm"
+													className="size-6 text-muted-foreground/60 hover:text-foreground"
+													disabled={
+														isBusy ||
+														index ===
+															notebook.cells
+																.length -
+																1
+													}
+													onClick={() =>
+														moveCell(
+															index,
+															index + 1,
+														)
+													}
+													title="Move cell down"
+													aria-label="Move cell down"
+												>
+													<ArrowDownIcon className="size-4" />
+												</Button>
+												<Button
+													variant="ghost"
+													size="icon-sm"
+													className="size-6 text-muted-foreground/60 hover:text-destructive"
+													disabled={isBusy}
+													onClick={() =>
+														deleteCell(index)
+													}
+													title="Delete cell"
+													aria-label="Delete cell"
+												>
+													<Trash2Icon className="size-4" />
+												</Button>
+											</div>
+
+											<NotebookCell
+												cell={cell}
+												index={index}
+												isRunning={
+													runningCellIndex === index
+												}
+												disabled={isBusy}
+												isActive={
+													activeCellIndex === index
+												}
+												canRunAbove={notebook.cells
+													.slice(0, index)
+													.some(
+														(above) =>
+															above.cell_type ===
+															"code",
+													)}
+												canRunBelow={notebook.cells
+													.slice(index + 1)
+													.some(
+														(below) =>
+															below.cell_type ===
+															"code",
+													)}
+												onRun={runCell}
+												onRunAndAdvance={
+													runAndAdvanceCell
+												}
+												onInterrupt={interruptExecution}
+												onRunAbove={runCellsAbove}
+												onRunBelow={runCellsBelow}
+												onDuplicate={duplicateCell}
+												onClearOutput={clearCellOutputs}
+												onActivate={setActiveCellIndex}
+												onSourceChange={
+													updateCellSource
+												}
+												onChangeType={changeType}
+												onInsertAbove={(i, type) =>
+													addCell(type, i)
+												}
+												onInsertBelow={(i, type) =>
+													addCell(type, i + 1)
+												}
+											/>
+
+											{/* Drop zone — mounted only while dragging so it
 									    never blocks editing, and layered above the
 									    editor so the drop lands here instead of inside
 									    Monaco. */}
-								{draggingIndex !== null &&
-									draggingIndex !== index && (
-										// biome-ignore lint/a11y/noStaticElementInteractions: native drag-and-drop drop target
-										<div
-											className="absolute inset-0 z-10"
-											onDragOver={(e) => {
-												e.preventDefault();
-												setDragOverIndex(index);
-											}}
-											onDrop={(e) => {
-												e.preventDefault();
-												handleDrop(index);
-											}}
-										>
-											{dragOverIndex === index && (
-												<div className="pointer-events-none absolute inset-0 rounded-md ring-2 ring-primary" />
-											)}
+											{draggingIndex !== null &&
+												draggingIndex !== index && (
+													// biome-ignore lint/a11y/noStaticElementInteractions: native drag-and-drop drop target
+													<div
+														className="absolute inset-0 z-10"
+														onDragOver={(e) => {
+															e.preventDefault();
+															setDragOverIndex(
+																index,
+															);
+														}}
+														onDrop={(e) => {
+															e.preventDefault();
+															handleDrop(index);
+														}}
+													>
+														{dragOverIndex ===
+															index && (
+															<div className="pointer-events-none absolute inset-0 rounded-md ring-2 ring-primary" />
+														)}
+													</div>
+												)}
 										</div>
-									)}
-							</div>
-						))}
+									))}
 
-						{/* Add cell */}
-						<div className="flex items-center justify-center gap-2 pt-1">
-							<Button
-								variant="outline"
-								size="sm"
-								disabled={isBusy}
-								onClick={() => addCell("code")}
-							>
-								<PlusIcon className="size-4" />
-								Code
-							</Button>
-							<Button
-								variant="outline"
-								size="sm"
-								disabled={isBusy}
-								onClick={() => addCell("markdown")}
-							>
-								<PlusIcon className="size-4" />
-								Markdown
-							</Button>
-						</div>
+									{/* Add cell */}
+									<div className="flex items-center justify-center gap-2 pt-1">
+										<Button
+											variant="outline"
+											size="sm"
+											disabled={isBusy}
+											onClick={() => addCell("code")}
+										>
+											<PlusIcon className="size-4" />
+											Code
+										</Button>
+										<Button
+											variant="outline"
+											size="sm"
+											disabled={isBusy}
+											onClick={() => addCell("markdown")}
+										>
+											<PlusIcon className="size-4" />
+											Markdown
+										</Button>
+									</div>
+								</div>
+							)}
 					</div>
+				</div>
+			</ContextMenuTrigger>
+			<ContextMenuContent>
+				<ContextMenuItem
+					disabled={getFile.status === "LOADING" || isBusy}
+					onClick={() => getFile.refresh()}
+				>
+					<RefreshCwIcon className="size-4" />
+					Refresh
+				</ContextMenuItem>
+				<ContextMenuItem
+					disabled={!notebook || isBusy}
+					onClick={() => void saveNotebook()}
+				>
+					<SaveIcon className="size-4" />
+					Save
+				</ContextMenuItem>
+
+				<ContextMenuSeparator />
+				<ContextMenuItem
+					disabled={getFile.status !== "SUCCESS" || isBusy}
+					onClick={() => void downloadNotebook()}
+				>
+					<DownloadIcon className="size-4" />
+					Export
+				</ContextMenuItem>
+				<ContextMenuItem
+					disabled={!notebook || isBusy}
+					onClick={() => exportAsPython()}
+				>
+					<FileCode2Icon className="size-4" />
+					Export as .py
+				</ContextMenuItem>
+				<ContextMenuSeparator />
+				<ContextMenuItem
+					disabled={!hasCodeCells || isBusy}
+					onClick={() => runAllCells()}
+				>
+					<PlayIcon className="size-4" />
+					Run All
+				</ContextMenuItem>
+				{hasCellOutputs && (
+					<ContextMenuItem
+						disabled={isBusy}
+						onClick={() => clearAllOutputs()}
+					>
+						<EraserIcon className="size-4" />
+						Clear All
+					</ContextMenuItem>
 				)}
-			</div>
-		</div>
+			</ContextMenuContent>
+		</ContextMenu>
 	);
 };
