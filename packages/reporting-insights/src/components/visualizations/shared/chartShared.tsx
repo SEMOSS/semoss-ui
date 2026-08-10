@@ -6,7 +6,11 @@
  */
 
 import { formatValue } from "@/lib/formatValue";
-import type { SymbolType, VisualizationConfig } from "@/types/dashboard";
+import type {
+	AxisConfig,
+	SymbolType,
+	VisualizationConfig,
+} from "@/types/dashboard";
 
 /** Default categorical chart palette. Re-exported by `DashboardVisualization`. */
 export const CHART_COLORS = [
@@ -398,4 +402,57 @@ export function renderChartSymbol(
 		default:
 			return <circle cx={cx} cy={cy} r={size} fill={fill} />;
 	}
+}
+
+/**
+ * Builds a Recharts axis label config respecting `titleAlign` and `titleOffset`.
+ * Returns `undefined` when `labelText` is falsy.
+ */
+export function buildAxisLabelProps(
+	labelText: string | undefined,
+	cfg: Pick<AxisConfig, "fontSize" | "titleAlign" | "titleOffset">,
+	axis: "x" | "y",
+): Record<string, unknown> | undefined {
+	if (!labelText) return undefined;
+	const align = cfg.titleAlign ?? "center";
+	const base = {
+		value: labelText,
+		fontSize: cfg.fontSize ?? 11,
+		fill: "#64748b",
+	};
+	if (axis === "x") {
+		const posMap = {
+			start: "insideBottomLeft",
+			center: "insideBottom",
+			end: "insideBottomRight",
+		} as const;
+		const anchorMap = {
+			start: "start",
+			center: "middle",
+			end: "end",
+		} as const;
+		return {
+			...base,
+			position: posMap[align],
+			offset: cfg.titleOffset ?? -4,
+			textAnchor: anchorMap[align],
+		};
+	}
+	const posMap = {
+		start: "insideTopLeft",
+		center: "insideLeft",
+		end: "insideBottomLeft",
+	} as const;
+	const anchorMap = {
+		start: "start",
+		center: "middle",
+		end: "end",
+	} as const;
+	return {
+		...base,
+		angle: -90,
+		position: posMap[align],
+		offset: cfg.titleOffset ?? 0,
+		textAnchor: anchorMap[align],
+	};
 }

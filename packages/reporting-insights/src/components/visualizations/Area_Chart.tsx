@@ -24,6 +24,7 @@ import {
 import {
 	AXIS_STYLE,
 	aggregateChartData,
+	buildAxisLabelProps,
 	buildDefaultYAxisTitle,
 	CHART_COLORS,
 	ChartTooltip,
@@ -928,17 +929,11 @@ export function Area_Chart({
 									textAnchor={
 										xCfg.rotateValues ? "end" : "middle"
 									}
-									label={
-										xAxisLabel
-											? {
-													value: xAxisLabel,
-													position: "insideBottom",
-													offset: -4,
-													fontSize: 11,
-													fill: "#64748b",
-												}
-											: undefined
-									}
+									label={buildAxisLabelProps(
+										xAxisLabel,
+										xCfg,
+										"x",
+									)}
 									tickFormatter={(v: unknown) =>
 										formatValue(v, xKey, formatRules)
 									}
@@ -962,17 +957,11 @@ export function Area_Chart({
 									domain={yDomain}
 									allowDataOverflow={yBrushActive}
 									allowDecimals={zoomY ? false : undefined}
-									label={
-										yAxisLabel
-											? {
-													value: yAxisLabel,
-													angle: -90,
-													position: "insideLeft",
-													fontSize: 11,
-													fill: "#64748b",
-												}
-											: undefined
-									}
+									label={buildAxisLabelProps(
+										yAxisLabel,
+										yCfg,
+										"y",
+									)}
 									tickFormatter={(v: unknown) =>
 										formatValue(
 											v,

@@ -165,6 +165,47 @@ export function AxisSettings({
 					</button>
 				</div>
 			)}
+			<div>
+				<label className="mb-1.5 block font-semibold text-stone-600 text-xs">
+					Title Placement
+				</label>
+				<div className="flex overflow-hidden rounded border border-stone-200 text-xs">
+					{(["start", "center", "end"] as const).map((opt) => (
+						<button
+							key={opt}
+							type="button"
+							onClick={() =>
+								onChange({
+									titleAlign:
+										opt === "center" ? undefined : opt,
+								})
+							}
+							className={`flex-1 py-1 capitalize transition-colors ${
+								(cfg.titleAlign ?? "center") === opt
+									? "bg-indigo-500 font-medium text-white"
+									: "bg-white text-stone-600 hover:bg-stone-50"
+							}`}
+						>
+							{opt}
+						</button>
+					))}
+				</div>
+			</div>
+			<div>
+				<label className="mb-1 block font-semibold text-stone-600 text-xs">
+					Title Offset (px)
+				</label>
+				<input
+					type="number"
+					value={cfg.titleOffset ?? (axis === "x" ? -4 : 0)}
+					onChange={(e) =>
+						onChange({
+							titleOffset: Number(e.target.value) || undefined,
+						})
+					}
+					className="w-full rounded border border-stone-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
+				/>
+			</div>
 			{onReset && (
 				<div className="pt-1">
 					<ResetButton onReset={onReset} />

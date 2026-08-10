@@ -52,6 +52,20 @@ const DEFAULT_PALETTES: ColorPaletteType[] = [
 		isCustom: false,
 	},
 	{
+		label: "Semoss",
+		colors: [
+			"#42a0ff",
+			"#9c74b7",
+			"#fbb93b",
+			"#f1872f",
+			"#50aca7",
+			"#187537",
+			"#cd5498",
+			"#364990",
+		],
+		isCustom: false,
+	},
+	{
 		label: "Vibrant",
 		colors: [
 			"#FF5733",

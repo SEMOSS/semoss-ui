@@ -35,6 +35,7 @@ import {
 import {
 	AXIS_STYLE,
 	aggregateChartData,
+	buildAxisLabelProps,
 	buildDefaultYAxisTitle,
 	CHART_COLORS,
 	ChartTooltip,
@@ -806,17 +807,11 @@ export function Combo_Chart({
 									tickFormatter={(v: unknown) =>
 										formatValue(v, xKey, formatRules)
 									}
-									label={
-										xAxisLabel
-											? {
-													value: xAxisLabel,
-													position: "insideBottom",
-													offset: -4,
-													fontSize: 11,
-													fill: "#64748b",
-												}
-											: undefined
-									}
+									label={buildAxisLabelProps(
+										xAxisLabel,
+										xCfg,
+										"x",
+									)}
 								/>
 								<YAxis
 									tick={
@@ -847,17 +842,11 @@ export function Combo_Chart({
 											formatRules,
 										)
 									}
-									label={
-										yAxisLabel
-											? {
-													value: yAxisLabel,
-													angle: -90,
-													position: "insideLeft",
-													fontSize: 11,
-													fill: "#64748b",
-												}
-											: undefined
-									}
+									label={buildAxisLabelProps(
+										yAxisLabel,
+										yCfg,
+										"y",
+									)}
 								/>
 							</>
 						)}

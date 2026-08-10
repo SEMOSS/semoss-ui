@@ -114,7 +114,6 @@ const SheetCanvas = memo(function SheetCanvas({
 		() => makeSaveModel(sheet.id),
 		[makeSaveModel, sheet.id],
 	);
-	useTabColors(sheet.visualizations);
 	return (
 		<Layout
 			model={model}
@@ -126,10 +125,15 @@ const SheetCanvas = memo(function SheetCanvas({
 				)?.vizId;
 				if (!vizId) return;
 				const viz = sheet.visualizations.find((v) => v.id === vizId);
+				const label = (
+					<span className="max-w-[110px] truncate">
+						{viz?.title || "Untitled"}
+					</span>
+				);
 				if (viz?.phi) {
 					rv.content = (
 						<span data-pii="true" style={{ display: "contents" }}>
-							{rv.content}
+							{label}
 						</span>
 					);
 				} else if (viz?.tabColor) {
@@ -138,9 +142,11 @@ const SheetCanvas = memo(function SheetCanvas({
 							data-tab-id={vizId}
 							style={{ display: "contents" }}
 						>
-							{rv.content}
+							{label}
 						</span>
 					);
+				} else {
+					rv.content = label;
 				}
 			}}
 			classNameMapper={(defaultName: string) => defaultName}
@@ -170,6 +176,7 @@ export function DashboardPage() {
 	const [showShare, setShowShare] = useState(false);
 	const dashboard = def ?? meta;
 	const sheets = dashboard ? getDashboardSheets(dashboard) : [];
+	useTabColors(sheets.flatMap((s) => s.visualizations));
 
 	// Permission (from the listing). Read-only users can't load the working copy
 	// (GetAppAssets needs edit access) and get no management actions, so we send

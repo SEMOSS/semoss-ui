@@ -1,11 +1,21 @@
 import {
 	Actions,
 	DockLocation,
+	type ILayoutApi,
 	Layout,
 	type Model,
 	type TabNode,
 } from "flexlayout-react";
-import { Globe, Loader2, Lock, Menu, Plus, Save, X } from "lucide-react";
+import {
+	Globe,
+	Loader2,
+	Lock,
+	Menu,
+	Pencil,
+	Plus,
+	Save,
+	X,
+} from "lucide-react";
 import React, {
 	useCallback,
 	useEffect,
@@ -185,6 +195,57 @@ function initSheets(existingDashboard: Dashboard | undefined): Sheet[] {
 	return [makeSheet("Sheet 1", SHEET_COLORS[0])];
 }
 
+// Simple pub/sub store for layout selection state. React context doesn't
+// propagate through flexlayout's createPortal boundaries.
+function createLayoutSelectionStore() {
+	let selectedId: string | null = null;
+	const listeners = new Set<() => void>();
+	return {
+		getSelectedId: () => selectedId,
+		select: (id: string) => {
+			selectedId = selectedId === id ? null : id;
+			for (const l of listeners) l();
+		},
+		clear: () => {
+			selectedId = null;
+			for (const l of listeners) l();
+		},
+		subscribe: (listener: () => void) => {
+			listeners.add(listener);
+			return () => listeners.delete(listener);
+		},
+	};
+}
+const layoutSelectionStore = createLayoutSelectionStore();
+
+/** Wraps a viz inside the flexlayout factory with click-to-select. */
+function LayoutVizWrapper({
+	vizId,
+	children,
+}: {
+	vizId: string;
+	children: React.ReactNode;
+}) {
+	const selectedId = React.useSyncExternalStore(
+		layoutSelectionStore.subscribe,
+		layoutSelectionStore.getSelectedId,
+	);
+	const isSelected = selectedId === vizId;
+	return (
+		<div
+			className="relative h-full w-full"
+			onPointerDownCapture={() => {
+				layoutSelectionStore.select(vizId);
+			}}
+		>
+			{children}
+			{isSelected && (
+				<div className="pointer-events-none absolute inset-0 z-[9999] border-2 border-indigo-500" />
+			)}
+		</div>
+	);
+}
+
 function collectVizLevelPalettes(sheets: Sheet[]): ColorPaletteType[] {
 	const seen = new Set<string>();
 	const result: ColorPaletteType[] = [];
@@ -321,9 +382,55 @@ export function NewDashboardPage() {
 			?.id ?? "",
 	);
 	const [editingVizId, setEditingVizId] = useState<string | null>(null);
+	const editingVizIdRef = useRef<string | null>(null);
+	const layoutTabRef = useRef<ILayoutApi | null>(null);
+
+	// Keep ref in sync so onRenderTab (which reads the ref) always has the latest value.
+	editingVizIdRef.current = editingVizId;
+
+	// Redraw tabs, focus the input, and wire up click-outside dismiss.
+	useEffect(() => {
+		if (!editingVizId) return;
+		layoutTabRef.current?.redraw();
+
+		const focusTimer = setTimeout(() => {
+			const el = document.querySelector(
+				'input[data-viz-rename="true"]',
+			) as HTMLInputElement | null;
+			el?.focus();
+		}, 60);
+
+		let dismiss: ((e: PointerEvent) => void) | null = null;
+		const listenerTimer = setTimeout(() => {
+			dismiss = (e: PointerEvent) => {
+				if (!(e.target as Element)?.closest("[data-viz-rename]")) {
+					setEditingVizId(null);
+				}
+			};
+			document.addEventListener("pointerdown", dismiss, true);
+		}, 120);
+
+		return () => {
+			clearTimeout(focusTimer);
+			clearTimeout(listenerTimer);
+			if (dismiss)
+				document.removeEventListener("pointerdown", dismiss, true);
+		};
+	}, [editingVizId]);
+
 	const [editorTab, setEditorTab] = useState<"visualize" | "layout">(
 		"visualize",
 	);
+	// Read layout selection imperatively — useSyncExternalStore may not
+	// re-render in time for the Build button click handler.
+	const layoutSelectedVizIdRef = useRef<string | null>(null);
+	useEffect(() => {
+		return layoutSelectionStore.subscribe(() => {
+			layoutSelectedVizIdRef.current =
+				layoutSelectionStore.getSelectedId();
+		});
+	}, []);
+
 	// Tracks raw height input strings so users can clear the field; validated at save time
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const [heightStrings, _setHeightStrings] = useState<Record<string, string>>(
@@ -555,6 +662,7 @@ export function NewDashboardPage() {
 
 	const switchSheet = (sheetId: string) => {
 		if (sheetId === activeSheetId) return;
+		layoutSelectionStore.clear();
 		setActiveSheetId(sheetId);
 		const sheet = sheets.find((s) => s.id === sheetId);
 		// The Parameters sheet has no layout view — always land on the Build panel.
@@ -843,7 +951,28 @@ export function NewDashboardPage() {
 		updates: Partial<Visualization>,
 	) => {
 		setVisualizations((prev) =>
-			prev.map((v) => (v.id === vizId ? { ...v, ...updates } : v)),
+			prev.map((v) => {
+				if (v.id !== vizId) return v;
+				const merged = { ...v, ...updates };
+				// When switching to filter type for the first time, pre-select all same-sheet non-filter vizzes.
+				if (
+					updates.visualizationType === "filter" &&
+					!v.config?.filterTargets?.length
+				) {
+					const sheetIds = prev
+						.filter(
+							(s) =>
+								s.id !== vizId &&
+								s.visualizationType !== "filter",
+						)
+						.map((s) => s.id);
+					merged.config = {
+						...(merged.config ?? {}),
+						filterTargets: sheetIds,
+					};
+				}
+				return merged;
+			}),
 		);
 		// Keep the flexlayout panel header in sync live when the Title changes, so the
 		// rename shows immediately (the cached model isn't rebuilt on every edit).
@@ -1378,7 +1507,14 @@ export function NewDashboardPage() {
 					{!activeSheet?.isParamSheet && (
 						<div className="inline-flex items-center gap-0.5 rounded-lg bg-stone-100 p-0.5">
 							<button
-								onClick={() => setEditorTab("visualize")}
+								onClick={() => {
+									const sel = layoutSelectedVizIdRef.current;
+									if (sel) {
+										setSelectedVizId(sel);
+										layoutSelectionStore.clear();
+									}
+									setEditorTab("visualize");
+								}}
 								className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 font-medium text-xs transition-colors ${editorTab === "visualize" ? "bg-white text-stone-800 shadow-soft" : "text-stone-500 hover:text-stone-700"}`}
 							>
 								Build
@@ -1718,6 +1854,7 @@ export function NewDashboardPage() {
 										</div>
 									) : (
 										<Layout
+											ref={layoutTabRef}
 											key={activeSheetId}
 											model={getFlexModel(activeSheet)}
 											factory={(node: TabNode) => {
@@ -1761,8 +1898,11 @@ export function NewDashboardPage() {
 																return obj;
 															})
 														: undefined;
+												const vizId = cfg?.vizId ?? "";
 												return (
-													<div className="h-full">
+													<LayoutVizWrapper
+														vizId={vizId}
+													>
 														{preloadedData ? (
 															<DashboardVisualization
 																visualization={
@@ -1919,7 +2059,7 @@ export function NewDashboardPage() {
 																</p>
 															</div>
 														)}
-													</div>
+													</LayoutVizWrapper>
 												);
 											}}
 											onModelChange={(
@@ -1963,6 +2103,86 @@ export function NewDashboardPage() {
 												const viz = visualizations.find(
 													(v) => v.id === vizId,
 												);
+
+												const inner =
+													editingVizIdRef.current ===
+													vizId ? (
+														<input
+															data-viz-rename="true"
+															defaultValue={
+																viz?.title ?? ""
+															}
+															onChange={(e) =>
+																updateVisualization(
+																	vizId,
+																	{
+																		title: e
+																			.target
+																			.value,
+																	},
+																)
+															}
+															onPointerDown={(
+																e,
+															) =>
+																e.stopPropagation()
+															}
+															onMouseDown={(e) =>
+																e.stopPropagation()
+															}
+															onClick={(e) =>
+																e.stopPropagation()
+															}
+															onKeyDown={(e) => {
+																if (
+																	e.key ===
+																		"Enter" ||
+																	e.key ===
+																		"Escape"
+																) {
+																	e.preventDefault();
+																	setEditingVizId(
+																		null,
+																	);
+																}
+															}}
+															placeholder="Untitled"
+															className="w-24 border-indigo-400 border-b bg-transparent px-1 py-0 text-stone-800 text-xs outline-none"
+														/>
+													) : (
+														<span className="group/tabrename flex items-center gap-1">
+															<span className="max-w-[110px] truncate">
+																{viz?.title ||
+																	"Untitled"}
+															</span>
+															<button
+																type="button"
+																onPointerDown={(
+																	e,
+																) =>
+																	e.stopPropagation()
+																}
+																onMouseDown={(
+																	e,
+																) =>
+																	e.stopPropagation()
+																}
+																onClick={(
+																	e,
+																) => {
+																	e.stopPropagation();
+																	setEditingVizId(
+																		vizId,
+																	);
+																}}
+																title="Rename"
+																className="rounded p-0.5 text-stone-400 opacity-0 transition-opacity hover:text-indigo-600 group-hover/tabrename:opacity-100"
+															>
+																<Pencil className="h-3 w-3" />
+															</button>
+														</span>
+													);
+
 												if (viz?.phi) {
 													rv.content = (
 														<span
@@ -1974,7 +2194,7 @@ export function NewDashboardPage() {
 																fontWeight: 700,
 															}}
 														>
-															{rv.content}
+															{inner}
 														</span>
 													);
 												} else if (viz?.tabColor) {
@@ -1987,9 +2207,11 @@ export function NewDashboardPage() {
 																	"contents",
 															}}
 														>
-															{rv.content}
+															{inner}
 														</span>
 													);
+												} else {
+													rv.content = inner;
 												}
 											}}
 										/>

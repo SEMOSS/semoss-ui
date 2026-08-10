@@ -98,6 +98,7 @@ export function DashboardNav({
 						Sheets & charts
 					</span>
 					<button
+						type="button"
 						onClick={onClose}
 						className="rounded-md p-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-700"
 					>
@@ -189,7 +190,7 @@ export function DashboardNav({
 
 									{editingSheetId === sheet.id ? (
 										<input
-											autoFocus
+											ref={(el) => el?.focus()}
 											value={sheet.name}
 											onChange={(e) =>
 												onRenameSheet(
@@ -297,7 +298,10 @@ export function DashboardNav({
 													/>
 													{editingVizId === viz.id ? (
 														<input
-															autoFocus
+															ref={(el) =>
+																el?.focus()
+															}
+															data-viz-rename="true"
 															value={viz.title}
 															onChange={(e) =>
 																onRenameViz(
@@ -306,9 +310,17 @@ export function DashboardNav({
 																		.value,
 																)
 															}
-															onBlur={() =>
-																onEditViz(null)
-															}
+															onBlur={(e) => {
+																if (
+																	(
+																		e.relatedTarget as Element
+																	)?.closest?.(
+																		"[data-viz-rename]",
+																	)
+																)
+																	return;
+																onEditViz(null);
+															}}
 															onKeyDown={(e) => {
 																if (
 																	e.key ===

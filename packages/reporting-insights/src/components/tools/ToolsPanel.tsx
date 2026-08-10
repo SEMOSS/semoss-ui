@@ -1741,8 +1741,6 @@ export function ToolsPanel({
 	const mlTrendlineOn = styling.multiline?.showTrendline === true;
 	const mlTooltipOn = styling.multiline?.showTooltip !== false;
 	const mlCurveType = styling.multiline?.curveType ?? "monotone";
-	const mlXCfg = styling.multiline?.xAxisConfig ?? {};
-	const mlYCfg = styling.multiline?.yAxisConfig ?? {};
 	const multilineTools = (
 		<>
 			<ToolAccordion title="Average Line">
@@ -1843,247 +1841,27 @@ export function ToolsPanel({
 			</ToolAccordion>
 
 			<ToolAccordion title="X Axis Settings">
-				<div className="flex flex-col gap-3 px-1 py-1">
-					<div>
-						<label className="mb-1 block font-semibold text-stone-600 text-xs">
-							Axis Title
-						</label>
-						<input
-							type="text"
-							value={mlXCfg.title ?? ""}
-							onChange={(e) =>
-								updateMultilineXAxis({
-									title: e.target.value || undefined,
-								})
-							}
-							className="w-full rounded border border-stone-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
-							placeholder="Axis label..."
-						/>
-					</div>
-					<div>
-						<label className="mb-1 block font-semibold text-stone-600 text-xs">
-							Font Size
-						</label>
-						<input
-							type="number"
-							min={8}
-							max={20}
-							value={mlXCfg.fontSize ?? 11}
-							onChange={(e) =>
-								updateMultilineXAxis({
-									fontSize: Number(e.target.value),
-								})
-							}
-							className="w-full rounded border border-stone-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
-						/>
-					</div>
-					<div>
-						<label className="mb-1 block font-semibold text-stone-600 text-xs">
-							Axis Gap
-						</label>
-						<input
-							type="number"
-							value={mlXCfg.axisGap ?? 0}
-							onChange={(e) =>
-								updateMultilineXAxis({
-									axisGap: Number(e.target.value),
-								})
-							}
-							className="w-full rounded border border-stone-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
-						/>
-					</div>
-					<div className="flex items-center justify-between">
-						<span className="text-stone-600 text-xs">
-							Show Labels
-						</span>
-						<button
-							type="button"
-							onClick={() =>
-								updateMultilineXAxis({
-									showLabels: !(mlXCfg.showLabels !== false),
-								})
-							}
-							className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-								mlXCfg.showLabels !== false
-									? "bg-indigo-500"
-									: "bg-stone-300"
-							}`}
-						>
-							<span
-								className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
-									mlXCfg.showLabels !== false
-										? "translate-x-[18px]"
-										: "translate-x-[2px]"
-								}`}
-							/>
-						</button>
-					</div>
-					<div>
-						<label className="mb-1 block font-semibold text-stone-600 text-xs">
-							Rotate Values (°)
-						</label>
-						<input
-							type="number"
-							min={-90}
-							max={90}
-							value={mlXCfg.rotateValues ?? 0}
-							onChange={(e) =>
-								updateMultilineXAxis({
-									rotateValues: Number(e.target.value),
-								})
-							}
-							className="w-full rounded border border-stone-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
-						/>
-					</div>
-					<div className="flex items-center justify-between">
-						<span className="text-stone-600 text-xs">
-							Flip Axis
-						</span>
-						<button
-							type="button"
-							onClick={() =>
-								updateMultilineXAxis({
-									flipAxis: !mlXCfg.flipAxis,
-								})
-							}
-							className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-								mlXCfg.flipAxis
-									? "bg-indigo-500"
-									: "bg-stone-300"
-							}`}
-						>
-							<span
-								className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
-									mlXCfg.flipAxis
-										? "translate-x-[18px]"
-										: "translate-x-[2px]"
-								}`}
-							/>
-						</button>
-					</div>
-				</div>
+				<AxisSettings
+					axis="x"
+					value={styling.multiline?.xAxisConfig}
+					onChange={updateMultilineXAxis}
+					showFlipAxis
+					onReset={() =>
+						updateMultilineStyling({ xAxisConfig: undefined })
+					}
+				/>
 			</ToolAccordion>
 
 			<ToolAccordion title="Y Axis Settings">
-				<div className="flex flex-col gap-3 px-1 py-1">
-					<div>
-						<label className="mb-1 block font-semibold text-stone-600 text-xs">
-							Axis Title
-						</label>
-						<input
-							type="text"
-							value={mlYCfg.title ?? ""}
-							onChange={(e) =>
-								updateMultilineYAxis({
-									title: e.target.value || undefined,
-								})
-							}
-							className="w-full rounded border border-stone-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
-							placeholder="Axis label..."
-						/>
-					</div>
-					<div>
-						<label className="mb-1 block font-semibold text-stone-600 text-xs">
-							Font Size
-						</label>
-						<input
-							type="number"
-							min={8}
-							max={20}
-							value={mlYCfg.fontSize ?? 11}
-							onChange={(e) =>
-								updateMultilineYAxis({
-									fontSize: Number(e.target.value),
-								})
-							}
-							className="w-full rounded border border-stone-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
-						/>
-					</div>
-					<div>
-						<label className="mb-1 block font-semibold text-stone-600 text-xs">
-							Axis Gap
-						</label>
-						<input
-							type="number"
-							value={mlYCfg.axisGap ?? 0}
-							onChange={(e) =>
-								updateMultilineYAxis({
-									axisGap: Number(e.target.value),
-								})
-							}
-							className="w-full rounded border border-stone-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
-						/>
-					</div>
-					<div className="flex items-center justify-between">
-						<span className="text-stone-600 text-xs">
-							Show Labels
-						</span>
-						<button
-							type="button"
-							onClick={() =>
-								updateMultilineYAxis({
-									showLabels: !(mlYCfg.showLabels !== false),
-								})
-							}
-							className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-								mlYCfg.showLabels !== false
-									? "bg-indigo-500"
-									: "bg-stone-300"
-							}`}
-						>
-							<span
-								className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
-									mlYCfg.showLabels !== false
-										? "translate-x-[18px]"
-										: "translate-x-[2px]"
-								}`}
-							/>
-						</button>
-					</div>
-					<div>
-						<label className="mb-1 block font-semibold text-stone-600 text-xs">
-							Rotate Values (°)
-						</label>
-						<input
-							type="number"
-							min={-90}
-							max={90}
-							value={mlYCfg.rotateValues ?? 0}
-							onChange={(e) =>
-								updateMultilineYAxis({
-									rotateValues: Number(e.target.value),
-								})
-							}
-							className="w-full rounded border border-stone-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
-						/>
-					</div>
-					<div className="flex items-center justify-between">
-						<span className="text-stone-600 text-xs">
-							Flip Axis
-						</span>
-						<button
-							type="button"
-							onClick={() =>
-								updateMultilineYAxis({
-									flipAxis: !mlYCfg.flipAxis,
-								})
-							}
-							className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-								mlYCfg.flipAxis
-									? "bg-indigo-500"
-									: "bg-stone-300"
-							}`}
-						>
-							<span
-								className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
-									mlYCfg.flipAxis
-										? "translate-x-[18px]"
-										: "translate-x-[2px]"
-								}`}
-							/>
-						</button>
-					</div>
-				</div>
+				<AxisSettings
+					axis="y"
+					value={styling.multiline?.yAxisConfig}
+					onChange={updateMultilineYAxis}
+					showFlipAxis
+					onReset={() =>
+						updateMultilineStyling({ yAxisConfig: undefined })
+					}
+				/>
 			</ToolAccordion>
 
 			<ToolAccordion title="Tooltips">

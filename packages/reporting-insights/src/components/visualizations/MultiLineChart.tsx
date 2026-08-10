@@ -17,6 +17,7 @@ import {
 	YAxis,
 } from "recharts";
 import {
+	buildAxisLabelProps,
 	ChartTooltip,
 	compareColorRule,
 } from "@/components/visualizations/shared/chartShared";
@@ -225,16 +226,7 @@ export function MultiLineChart({ data, config }: MultiLineChartProps) {
 					textAnchor={xCfg?.rotateValues ? "end" : "middle"}
 					hide={xCfg?.showLabels === false}
 					reversed={xCfg?.flipAxis === true}
-					label={
-						xCfg?.title
-							? {
-									value: xCfg.title,
-									position: "insideBottomRight",
-									offset: -10,
-									fontSize: 11,
-								}
-							: undefined
-					}
+					label={buildAxisLabelProps(xCfg?.title, xCfg, "x")}
 					tickFormatter={(v: unknown) =>
 						formatValue(
 							v,
@@ -248,16 +240,7 @@ export function MultiLineChart({ data, config }: MultiLineChartProps) {
 					tick={{ fontSize: yCfg?.fontSize ?? 11 }}
 					hide={yCfg?.showLabels === false}
 					reversed={yCfg?.flipAxis === true}
-					label={
-						yCfg?.title
-							? {
-									value: yCfg.title,
-									angle: -90,
-									position: "insideLeft",
-									fontSize: 11,
-								}
-							: undefined
-					}
+					label={buildAxisLabelProps(yCfg?.title, yCfg, "y")}
 					tickFormatter={(v: unknown) =>
 						formatValue(
 							v,

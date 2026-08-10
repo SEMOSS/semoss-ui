@@ -193,6 +193,10 @@ export interface AxisConfig {
 	flipAxis?: boolean;
 	/** Whether to render small tick marks at each axis label (default true). */
 	showTicks?: boolean;
+	/** Where along the axis the title sits: start / center (default) / end. */
+	titleAlign?: "start" | "center" | "end";
+	/** Additional offset (px) between the axis title and the axis line/ticks. */
+	titleOffset?: number;
 }
 
 /**
@@ -1207,5 +1211,5 @@ export interface JoinSpec {
 
 export interface QueryResult {
 	headers: string[];
-	data: any[][];
+	data: unknown[][];
 }

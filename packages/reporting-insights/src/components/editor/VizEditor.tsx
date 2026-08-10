@@ -107,7 +107,7 @@ export interface VizLike {
 		defaultValue: string;
 		placeholder?: string;
 		required?: boolean;
-		inputType?: string;
+		inputType?: "text" | "dropdown" | "multiselect" | "date";
 		useCurrentDate?: boolean;
 		options?: string[];
 		optionsQuery?: string;
