@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { Role } from "@semoss/shared";
+import type { Role } from "@semoss/sdk";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import { useEngine } from "@/hooks";
 import { EngineActivityPage } from "@/pages/engine/engine-activity-page";
