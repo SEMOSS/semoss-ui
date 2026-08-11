@@ -22,6 +22,7 @@ import {
 	useInfiniteScroll,
 } from "@semoss/ui/next";
 import { CHECKBOX_CLASS, ChatRow, type RoomItem } from "@/components";
+import { SYSTEM__PLAYGROUND } from "@/constants";
 import { useChat, useGlobalBreadcrumbs } from "@/hooks";
 import {
 	DATE_BUCKET_ORDER,
@@ -91,8 +92,8 @@ export const ChatsPage = observer(() => {
 	>(
 		(limit, offset) =>
 			debouncedSearch
-				? `META | SearchRoomMessages(search="<encode>${debouncedSearch}</encode>", project="SYSTEM__PLAYGROUND", limit=${limit}, offset=${offset}, includeMessageText=false);`
-				: `META | Return(value=[]);`,
+				? `META | SearchRoomMessages(search=["<encode>${debouncedSearch}</encode>"], project=["${SYSTEM__PLAYGROUND}"], limit=[${limit}], offset=[${offset}], includeMessageText=[false]);`
+				: "",
 		// Same short-page-means-last-page heuristic as getRooms above — the
 		// backend already dedupes to one row per room before limit/offset, so a
 		// full page here means "there may be more matching rooms."
