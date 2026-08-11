@@ -2,17 +2,9 @@ import { closestCenter, DndContext, type DragEndEvent } from "@dnd-kit/core";
 import { restrictToParentElement } from "@dnd-kit/modifiers";
 import {
 	SortableContext,
-	useSortable,
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import {
-	EraserIcon,
-	FileCode2Icon,
-	GripVerticalIcon,
-	PlayIcon,
-	PlusIcon,
-} from "lucide-react";
+import { EraserIcon, FileCode2Icon, PlayIcon, PlusIcon } from "lucide-react";
 import React, {
 	forwardRef,
 	useEffect,
@@ -57,6 +49,7 @@ import { NotebookCellSeparator } from "./notebook-cell-separator";
 import { NotebookCodeCell } from "./notebook-code-cell";
 import { NotebookMarkdownCell } from "./notebook-markdown-cell";
 import { NotebookRawCell } from "./notebook-raw-cell";
+import { SortableCell } from "./notebook-sortable-cell";
 
 interface NotebookProps {
 	/** Raw `.ipynb` JSON that seeds the in-memory editor. */
@@ -103,80 +96,6 @@ export interface NotebookHandle {
 }
 
 /**
- * dnd-kit sortable wrapper for one cell: applies the drag transform, injects the
- * drag-handle props (attributes + listeners) so only the grip starts a drag, and
- * shrinks to a compact chip while dragging so tall cells don't hide the drop gap.
- */
-const SortableCell: React.FC<{
-	id: string;
-	disabled?: boolean;
-	/** Label shown on the drag chip (e.g. "Moving code cell"). */
-	label?: string;
-	/** Registers the sortable node so the parent can scroll it into view. */
-	onNodeRef?: (node: HTMLDivElement | null) => void;
-	children: React.ReactElement;
-}> = ({ id, disabled, label, onNodeRef, children }) => {
-	const {
-		attributes,
-		listeners,
-		setNodeRef,
-		transform,
-		transition,
-		isDragging,
-	} = useSortable({ id, disabled });
-
-	const style: React.CSSProperties = {
-		transform: CSS.Translate.toString(transform),
-		transition,
-	};
-
-	const setRef = (node: HTMLDivElement | null) => {
-		setNodeRef(node);
-		onNodeRef?.(node);
-	};
-
-	if (isDragging) {
-		return (
-			<div ref={setRef} style={style} className="relative z-10">
-				<div
-					{...attributes}
-					{...listeners}
-					className="flex w-full cursor-grabbing items-center gap-2 rounded-md border border-primary border-dashed bg-primary/5 px-3 py-2 text-muted-foreground text-xs shadow-sm"
-				>
-					<GripVerticalIcon className="size-3.5" />
-					<span className="font-mono">{label ?? "Moving cell"}</span>
-				</div>
-			</div>
-		);
-	}
-
-	return (
-		<div ref={setRef} style={style}>
-			{React.cloneElement(children, {
-				dragHandleProps: { ...attributes, ...listeners },
-			})}
-		</div>
-	);
-};
-
-/** Parse raw notebook JSON for the in-memory seed; empty content = no seed. */
-const parseRawNotebook = (
-	content: string,
-): { notebook: JupyterNotebook | null; error: string | null } => {
-	if (!content.trim()) {
-		return { notebook: null, error: null };
-	}
-	try {
-		return { notebook: validateNotebook(content), error: null };
-	} catch (e) {
-		return {
-			notebook: null,
-			error: e instanceof Error ? e.message : "Invalid notebook",
-		};
-	}
-};
-
-/**
  * Interactive, in-memory `.ipynb` viewer/editor. Seeds from a raw `content`
  * JSON string, parses it into an in-memory notebook, and renders each cell
  * (markdown / raw / code). Code and markdown sources are editable; code cells
@@ -198,12 +117,8 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 	) => {
 		const insight = useInsight();
 
-		const [notebook, setNotebook] = useState<JupyterNotebook | null>(
-			() => parseRawNotebook(content).notebook,
-		);
-		const [parseError, setParseError] = useState<string | null>(
-			() => parseRawNotebook(content).error,
-		);
+		const [notebook, setNotebook] = useState<JupyterNotebook | null>(null);
+		const [parseError, setParseError] = useState<string | null>(null);
 		const [runningCellIndex, setRunningCellIndex] = useState<number | null>(
 			null,
 		);
@@ -233,9 +148,22 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 
 		// Re-seed the in-memory notebook whenever the raw content changes.
 		useEffect(() => {
-			const parsed = parseRawNotebook(content);
-			setNotebook(parsed.notebook);
-			setParseError(parsed.error);
+			if (!content.trim()) {
+				setNotebook(null);
+				setParseError(null);
+				return;
+			}
+
+			try {
+				const validated = validateNotebook(content);
+				setNotebook(validated);
+				setParseError(null);
+			} catch (e) {
+				setNotebook(null);
+				setParseError(
+					e instanceof Error ? e.message : "Invalid notebook",
+				);
+			}
 		}, [content]);
 
 		// Scroll the running / newly-activated cell into view.
@@ -344,8 +272,6 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 						isError =
 							errors.length > 0 ||
 							(last?.operationType ?? []).includes("ERROR");
-
-						console.log(value);
 
 						value = isError
 							? errors.join("\n") ||

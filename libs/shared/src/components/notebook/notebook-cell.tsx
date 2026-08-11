@@ -25,6 +25,7 @@ import {
 	ContextMenuSubContent,
 	ContextMenuSubTrigger,
 	ContextMenuTrigger,
+	cn,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
@@ -403,11 +404,12 @@ export const NotebookCell: React.FC<NotebookCellProps> = ({
 						{/* Toolbar — floats above top-right; revealed on hover, pinned when active. */}
 						{showToolbar && (
 							<div
-								className={`-top-3 absolute right-0 z-20 flex items-center gap-0.5 rounded-md border border-border bg-background p-0.5 shadow-sm transition-opacity ${
+								className={cn(
+									"-top-3 absolute right-0 z-20 flex items-center gap-0.5 rounded-md border border-border bg-background p-0.5 shadow-sm transition-opacity",
 									isActive
 										? "opacity-100"
-										: "opacity-0 focus-within:opacity-100 group-hover:opacity-100"
-								}`}
+										: "opacity-0 focus-within:opacity-100 group-hover:opacity-100",
+								)}
 							>
 								{primaryAction}
 								{!readOnly && (
@@ -461,9 +463,10 @@ export const NotebookCell: React.FC<NotebookCellProps> = ({
 						{/* biome-ignore lint/a11y/noStaticElementInteractions: click anywhere on the cell activates it */}
 						{/* biome-ignore lint/a11y/useKeyWithClickEvents: click anywhere on the cell activates it */}
 						<div
-							className={`min-w-0 flex-1 overflow-hidden rounded-md border border-border/60 transition-colors hover:border-border ${
-								isActive ? "ring-2 ring-primary/40" : ""
-							}`}
+							className={cn(
+								"min-w-0 flex-1 overflow-hidden rounded-md border border-border/60 transition-colors hover:border-border",
+								isActive && "ring-2 ring-primary/40",
+							)}
 							onClick={() => onActivate(index)}
 						>
 							{/* Name header — always visible; double-click to rename. */}

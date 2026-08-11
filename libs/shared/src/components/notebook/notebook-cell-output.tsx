@@ -1,4 +1,4 @@
-import { Markdown, Muted } from "@semoss/ui/next";
+import { cn, Markdown, Muted } from "@semoss/ui/next";
 import { IMAGE_MIME_TYPES } from "../../utility/image";
 import type { JupyterOutput } from "./notebook.types";
 import { normalizeSource } from "./notebook.utility";
@@ -40,11 +40,12 @@ export const NotebookCellOutput: React.FC<NotebookCellOutputProps> = ({
 		return (
 			<div className="w-full px-2 pb-2">
 				<pre
-					className={`overflow-x-auto whitespace-pre-wrap rounded bg-muted/50 p-3 font-mono text-xs ${
+					className={cn(
+						"overflow-x-auto whitespace-pre-wrap rounded bg-muted/50 p-3 font-mono text-xs",
 						output.name === "stderr"
 							? "text-destructive"
-							: "text-foreground"
-					}`}
+							: "text-foreground",
+					)}
 				>
 					{stripAnsi(normalizeSource(output.text))}
 				</pre>
