@@ -9,3 +9,4 @@ export * from "./file-explorer-item";
 export * from "./file-image-viewer";
 export * from "./file-markdown-editor";
 export * from "./file-pdf-viewer";
+export * from "./notebook";
