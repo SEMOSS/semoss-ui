@@ -12,8 +12,7 @@
 		"compactError": "Failed to compact conversation",
 		"compacting": "Compacting conversation...",
 		"compactedAbove": "Conversation compacted",
-		"compactedAboveTooltip": "Earlier messages were summarized to reduce context size",
-		"compactTooltip": "Compress your conversation to save tokens. Your previous messages stay as is."
+		"compactedAboveTooltip": "Earlier messages were summarized to reduce context size"
 	},
 	"form": {
 		"modelLabel": "Model",
