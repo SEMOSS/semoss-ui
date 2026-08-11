@@ -428,17 +428,10 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 											"image/png",
 									});
 								} else if (p.mediaInfo.fileLocation) {
-									room.addSidebarNode(
-										`FILE--${p.mediaInfo.fileLocation}`,
+									room.openFileEditorSidebarNode(
+										p.mediaInfo.fileLocation,
 										{
-											type: "tab",
 											name: p.mediaInfo.fileName,
-											component: "room-file-editor",
-											config: {
-												name: p.mediaInfo.fileName,
-												path: p.mediaInfo.fileLocation,
-											},
-											enableClose: true,
 										},
 									);
 								} else if (p.mediaInfo.base64Data) {
