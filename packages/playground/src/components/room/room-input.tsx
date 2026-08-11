@@ -717,13 +717,55 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													// representation alongside text in the clipboard. If text
 													// content is present, filter out those images so the text
 													// is pasted normally instead of attaching a screenshot.
-													const hasText =
+													//
+													// Exception: Microsoft Teams copies images with a
+													// text/html entry that is just an <img> wrapper with no
+													// real text content. In that case we should keep the
+													// image files and let them be attached.
+													const hasPlainText =
 														e.clipboardData.types.includes(
 															"text/plain",
-														) ||
-														e.clipboardData.types.includes(
-															"text/html",
-														);
+														) &&
+														e.clipboardData
+															.getData(
+																"text/plain",
+															)
+															.trim().length > 0;
+
+													// text/html is only "real text" if it contains
+													// meaningful content beyond just an <img> tag
+													// (Teams wraps copied images in bare <img> html).
+													const htmlHasMeaningfulText =
+														(() => {
+															if (
+																!e.clipboardData.types.includes(
+																	"text/html",
+																)
+															)
+																return false;
+															const div =
+																document.createElement(
+																	"div",
+																);
+															div.innerHTML =
+																e.clipboardData.getData(
+																	"text/html",
+																);
+															div.querySelectorAll(
+																"img",
+															).forEach((img) => {
+																img.remove();
+															});
+															return (
+																(div.textContent?.trim()
+																	.length ??
+																	0) > 0
+															);
+														})();
+
+													const hasText =
+														hasPlainText ||
+														htmlHasMeaningfulText;
 
 													const updated = hasText
 														? clipboardFiles.filter(
