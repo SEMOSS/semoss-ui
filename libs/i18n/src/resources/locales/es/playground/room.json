@@ -19,8 +19,8 @@
 		"toolboxLabel": "Cajas de herramientas"
 	},
 	"modes": {
-		"ask": "Preguntar",
-		"agent": "Arnés de agente"
+		"ask": "Modo Chat",
+		"agent": "Modo Arnés de agente"
 	},
 	"workspace": {
 		"publishTooltip": "Publicar como agente",

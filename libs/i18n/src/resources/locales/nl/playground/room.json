@@ -23,8 +23,8 @@
 		"toolboxLabel": "Toolboxes"
 	},
 	"modes": {
-		"ask": "Vragen",
-		"agent": "Agent Harness"
+		"ask": "Chatmodus",
+		"agent": "Agent Harness-modus"
 	},
 	"workspace": {
 		"publishTooltip": "Publiceren als agent",

@@ -16,8 +16,8 @@
 		"toolboxLabel": "Boîtes à outils"
 	},
 	"modes": {
-		"ask": "Demander",
-		"agent": "Harnais d'agent"
+		"ask": "Mode Chat",
+		"agent": "Mode Harnais d'agent"
 	},
 	"workspace": {
 		"publishTooltip": "Publier en tant qu'agent",
