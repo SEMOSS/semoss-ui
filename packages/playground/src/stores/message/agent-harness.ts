@@ -6,7 +6,7 @@ import type {
 	AgentRunStatusValue,
 } from "@semoss/sdk";
 import { submitAgentRun, subscribeAgentRun } from "@semoss/sdk/react";
-import { STREAMING_PLACEHOLDER_ID } from "@/constants";
+import { MCP_EXECUTION_AGENT, STREAMING_PLACEHOLDER_ID } from "@/constants";
 import type { PixelMessageToolCallPart, ResponsePixelMessage } from "@/types";
 import type { InputMessageStore } from "./input-message.store";
 import { ResponseMessageStore } from "./response-message.store";
@@ -44,8 +44,11 @@ const mapToolStatus = (
  * Agent-run tool items arrive fully parsed, unlike the OpenAI-delta tool
  * stream (tool-stream.ts) — no placeholder phase needed.
  *
- * SMSS_MCP_EXECUTION is forced to "disabled": the backend already executed
- * this tool. The FE must never queue it for its own auto-run path.
+ * `item.metadata` is the tool's real `_meta` block (SMSS_ORIGINAL_TOOL_NAME,
+ * SMSS_ENGINE_ID, etc.), passed through as-is by the backend — not wrapped in
+ * another `_meta`. SMSS_MCP_EXECUTION is forced to MCP_EXECUTION_AGENT
+ * regardless of what it carries: the backend already executed this tool, so
+ * the FE must never queue it for its own auto-run path.
  */
 const buildToolCallPart = (item: {
 	id: string;
@@ -62,15 +65,14 @@ const buildToolCallPart = (item: {
 		_tool_found: true,
 		original_name: item.name,
 		description: "",
-		...(item.metadata as Record<string, unknown>),
 		_meta: {
 			SMSS_ENGINE_NAME: "",
 			SMSS_ENGINE_ID: "",
 			SMSS_ENGINE_TYPE: "",
 			SMSS_PROJECT_NAME: "",
 			SMSS_PROJECT_ID: "",
-			...(item.metadata?._meta as Record<string, unknown>),
-			SMSS_MCP_EXECUTION: "disabled",
+			...item.metadata,
+			SMSS_MCP_EXECUTION: MCP_EXECUTION_AGENT,
 		},
 	} as PixelMessageToolCallPart["toolCall"],
 });

@@ -2,6 +2,8 @@ export const MODEL_KEY = "SMSS-SELECTED-MODEL-V3";
 
 export const MCP_EXECUTION_AUTO = "auto";
 export const MCP_EXECUTION_ASK = "ask";
+/** Executed by the backend agent harness, not client-dispatched. */
+export const MCP_EXECUTION_AGENT = "agent";
 
 export const MCP_DISPLAY_INLINE = "inline";
 export const MCP_DISPLAY_SIDEBAR = "sidebar";

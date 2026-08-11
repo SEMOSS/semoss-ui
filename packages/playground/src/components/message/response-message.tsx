@@ -312,8 +312,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			// gap before the final sync) fold into the group so they show as one
 			// loading cluster rather than separate raw-named pills
 			if (!tool.isResolved) return true;
-			// auto-execute tools should always be grouped
-			if (tool.json._meta.SMSS_MCP_EXECUTION === "auto") return true;
+			// non-interactive tools (auto-execute, or backend-executed e.g.
+			// agent-run tools) should always be grouped
+			if (tool.json._meta.SMSS_MCP_EXECUTION !== "ask") return true;
 			// ask tools only enter group when there are no unfinished tools
 			return !message.hasUnfinishedTools;
 		};
