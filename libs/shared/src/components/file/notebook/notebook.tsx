@@ -60,7 +60,10 @@ import {
 	unwrapPixelOutput,
 	validateNotebook,
 } from "./notebook.utility";
-import { NotebookCell } from "./notebook-cell";
+import type { NotebookCellBaseProps } from "./notebook-cell";
+import { NotebookCodeCell } from "./notebook-code-cell";
+import { NotebookMarkdownCell } from "./notebook-markdown-cell";
+import { NotebookRawCell } from "./notebook-raw-cell";
 
 interface NotebookProps {
 	/** Mode of file editor */
@@ -159,6 +162,10 @@ export const Notebook: React.FC<NotebookProps> = ({
 		current: number;
 		total: number;
 	} | null>(null);
+	// Live console output per cell id while running; shown but never persisted.
+	const [streamingLogs, setStreamingLogs] = useState<
+		Record<string, string[]>
+	>({});
 
 	// Per-cell DOM refs for scroll-to-cell.
 	const cellRefs = useRef<Record<number, HTMLDivElement | null>>({});
@@ -263,6 +270,7 @@ export const Notebook: React.FC<NotebookProps> = ({
 		}
 
 		setRunningCellIndex(index);
+		setStreamingLogs((prev) => ({ ...prev, [cell.id]: [] }));
 		const executionCount = nextExecutionCount(current);
 
 		let outputs: JupyterOutput[] = [];
@@ -292,6 +300,10 @@ export const Notebook: React.FC<NotebookProps> = ({
 					const { message: messages, status } =
 						await getPixelConsole(jobId);
 					logs.push(...messages);
+					setStreamingLogs((prev) => ({
+						...prev,
+						[cell.id]: [...logs],
+					}));
 
 					if (
 						status === "ProgressComplete" ||
@@ -311,6 +323,10 @@ export const Notebook: React.FC<NotebookProps> = ({
 					const { message: finalMessages } =
 						await getPixelConsole(jobId);
 					logs.push(...finalMessages);
+					setStreamingLogs((prev) => ({
+						...prev,
+						[cell.id]: [...logs],
+					}));
 
 					const { errors, results } =
 						await getPixelAsyncResult<[unknown]>(jobId);
@@ -325,9 +341,11 @@ export const Notebook: React.FC<NotebookProps> = ({
 				}
 			}
 
+			// Streamed console logs live only in the transient Console block, so
+			// persist just the final result/error value here.
 			outputs = wasInterrupted
 				? toCellOutputs([], "Interrupted", true, executionCount)
-				: toCellOutputs(logs, value, isError, executionCount);
+				: toCellOutputs([], value, isError, executionCount);
 		} catch (e) {
 			const message = e instanceof Error ? e.message : String(e);
 			outputs = toCellOutputs([], message, true, executionCount);
@@ -395,6 +413,7 @@ export const Notebook: React.FC<NotebookProps> = ({
 			for (let i = 0; i < index; i += 1) {
 				if (abortRequestedRef.current) break;
 				if (working.cells[i]?.cell_type === "code") {
+					clearCellOutputs(i);
 					working = (await executeCell(i, working)) ?? working;
 					ran += 1;
 					setRunAllProgress({ current: ran, total: codeCellCount });
@@ -423,6 +442,7 @@ export const Notebook: React.FC<NotebookProps> = ({
 			for (let i = index + 1; i < count; i += 1) {
 				if (abortRequestedRef.current) break;
 				if (working.cells[i]?.cell_type === "code") {
+					clearCellOutputs(i);
 					working = (await executeCell(i, working)) ?? working;
 					ran += 1;
 					setRunAllProgress({ current: ran, total: codeCellCount });
@@ -436,6 +456,7 @@ export const Notebook: React.FC<NotebookProps> = ({
 
 	/** Wrapper for single-cell runs that resets the abort flag first. */
 	const runCell = (index: number) => {
+		clearCellOutputs(index);
 		abortRequestedRef.current = false;
 		void executeCell(index);
 	};
@@ -443,6 +464,7 @@ export const Notebook: React.FC<NotebookProps> = ({
 	/** Run a cell then advance focus; inserts nothing — stays at last cell if already there. */
 	const runAndAdvanceCell = async (index: number) => {
 		if (!notebook) return;
+		clearCellOutputs(index);
 		abortRequestedRef.current = false;
 		await executeCell(index);
 		if (index < notebook.cells.length - 1) {
@@ -466,9 +488,18 @@ export const Notebook: React.FC<NotebookProps> = ({
 		}
 	};
 
-	/** Clear outputs for a single code cell. */
+	/** Clear outputs for a single code cell (and its live console). */
 	const clearCellOutputs = (index: number) => {
 		if (!notebook) return;
+		const cellId = notebook.cells[index]?.id;
+		if (cellId) {
+			setStreamingLogs((prev) => {
+				if (!(cellId in prev)) return prev;
+				const next = { ...prev };
+				delete next[cellId];
+				return next;
+			});
+		}
 		updateNotebook({
 			...notebook,
 			cells: notebook.cells.map((cell, i) =>
@@ -479,9 +510,10 @@ export const Notebook: React.FC<NotebookProps> = ({
 		});
 	};
 
-	/** Clear outputs on every code cell at once. */
+	/** Clear outputs on every code cell at once (and all live consoles). */
 	const clearAllOutputs = () => {
 		if (!notebook) return;
+		setStreamingLogs({});
 		updateNotebook({
 			...notebook,
 			cells: notebook.cells.map((cell) =>
@@ -872,118 +904,162 @@ export const Notebook: React.FC<NotebookProps> = ({
 										items={notebook.cells.map((c) => c.id)}
 										strategy={verticalListSortingStrategy}
 									>
-										<div className="container mx-auto flex w-full flex-col gap-3 py-4 pr-12 pl-2">
+										<div className="container mx-auto flex w-full flex-col gap-3 pt-4 pr-12 pb-20 pl-2">
 											{notebook.cells.map(
-												(cell, index) => (
-													<SortableCell
-														key={cell.id}
-														id={cell.id}
-														disabled={isBusy}
-														label={`Moving ${cell.metadata.name || "cell"}`}
-														onNodeRef={(node) => {
-															cellRefs.current[
-																index
-															] = node;
-														}}
-													>
-														<NotebookCell
-															cell={cell}
-															index={index}
-															isRunning={
-																runningCellIndex ===
-																index
-															}
-															disabled={isBusy}
-															isActive={
+												(cell, index) => {
+													const commonCellProps: NotebookCellBaseProps =
+														{
+															index,
+															disabled: isBusy,
+															isActive:
 																activeCellIndex ===
-																index
-															}
-															canRunAbove={notebook.cells
-																.slice(0, index)
-																.some(
-																	(above) =>
-																		above.cell_type ===
-																		"code",
-																)}
-															canRunBelow={notebook.cells
-																.slice(
-																	index + 1,
-																)
-																.some(
-																	(below) =>
-																		below.cell_type ===
-																		"code",
-																)}
-															onRun={runCell}
-															onRunAndAdvance={
-																runAndAdvanceCell
-															}
-															onInterrupt={
-																interruptExecution
-															}
-															onRunAbove={
-																runCellsAbove
-															}
-															onRunBelow={
-																runCellsBelow
-															}
-															onDuplicate={
-																duplicateCell
-															}
-															onClearOutput={
-																clearCellOutputs
-															}
-															onActivate={
-																setActiveCellIndex
-															}
-															onSourceChange={
-																updateCellSource
-															}
-															onChangeType={
-																changeType
-															}
-															onInsertAbove={(
+																index,
+															onActivate:
+																setActiveCellIndex,
+															onChangeType:
+																changeType,
+															onInsertAbove: (
 																i,
 																type,
 															) =>
-																addCell(type, i)
-															}
-															onInsertBelow={(
+																addCell(
+																	type,
+																	i,
+																),
+															onInsertBelow: (
 																i,
 																type,
 															) =>
 																addCell(
 																	type,
 																	i + 1,
-																)
-															}
-															onDelete={
-																deleteCell
-															}
-															onMoveUp={(i) =>
+																),
+															onDuplicate:
+																duplicateCell,
+															onDelete:
+																deleteCell,
+															onMoveUp: (i) =>
 																moveCell(
 																	i,
 																	i - 1,
-																)
-															}
-															onMoveDown={(i) =>
+																),
+															onMoveDown: (i) =>
 																moveCell(
 																	i,
 																	i + 1,
-																)
-															}
-															canMoveUp={
-																index > 0
-															}
-															canMoveDown={
+																),
+															canMoveUp:
+																index > 0,
+															canMoveDown:
 																index <
 																notebook.cells
 																	.length -
-																	1
-															}
-														/>
-													</SortableCell>
-												),
+																	1,
+														};
+
+													let cellBody: React.ReactElement;
+													if (
+														cell.cell_type ===
+														"code"
+													) {
+														cellBody = (
+															<NotebookCodeCell
+																cell={cell}
+																{...commonCellProps}
+																isRunning={
+																	runningCellIndex ===
+																	index
+																}
+																canRunAbove={notebook.cells
+																	.slice(
+																		0,
+																		index,
+																	)
+																	.some(
+																		(
+																			above,
+																		) =>
+																			above.cell_type ===
+																			"code",
+																	)}
+																canRunBelow={notebook.cells
+																	.slice(
+																		index +
+																			1,
+																	)
+																	.some(
+																		(
+																			below,
+																		) =>
+																			below.cell_type ===
+																			"code",
+																	)}
+																onRun={runCell}
+																onRunAndAdvance={
+																	runAndAdvanceCell
+																}
+																onInterrupt={
+																	interruptExecution
+																}
+																onRunAbove={
+																	runCellsAbove
+																}
+																onRunBelow={
+																	runCellsBelow
+																}
+																onClearOutput={
+																	clearCellOutputs
+																}
+																onSourceChange={
+																	updateCellSource
+																}
+																streamingLogs={
+																	streamingLogs[
+																		cell.id
+																	]
+																}
+															/>
+														);
+													} else if (
+														cell.cell_type ===
+														"markdown"
+													) {
+														cellBody = (
+															<NotebookMarkdownCell
+																cell={cell}
+																{...commonCellProps}
+																onSourceChange={
+																	updateCellSource
+																}
+															/>
+														);
+													} else {
+														cellBody = (
+															<NotebookRawCell
+																cell={cell}
+																{...commonCellProps}
+															/>
+														);
+													}
+
+													return (
+														<SortableCell
+															key={cell.id}
+															id={cell.id}
+															disabled={isBusy}
+															label={`Moving ${cell.metadata.name || "cell"}`}
+															onNodeRef={(
+																node,
+															) => {
+																cellRefs.current[
+																	index
+																] = node;
+															}}
+														>
+															{cellBody}
+														</SortableCell>
+													);
+												},
 											)}
 
 											{/* Add cell */}

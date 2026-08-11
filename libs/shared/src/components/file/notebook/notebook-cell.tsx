@@ -5,16 +5,9 @@ import {
 	ArrowUpToLineIcon,
 	ChevronDownIcon,
 	ChevronRightIcon,
-	ChevronsDownIcon,
-	ChevronsUpIcon,
 	CopyIcon,
-	EraserIcon,
-	EyeIcon,
 	GripVerticalIcon,
 	MoreHorizontalIcon,
-	PencilIcon,
-	PlayIcon,
-	SquareIcon,
 	Trash2Icon,
 } from "lucide-react";
 import { useState } from "react";
@@ -45,48 +38,39 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import type { JupyterCell, JupyterCellType } from "./notebook.types";
-import { NotebookCellInput } from "./notebook-cell-input";
-import { NotebookCellOutput } from "./notebook-cell-output";
 
-interface NotebookCellProps {
-	/** The cell to render. */
-	cell: JupyterCell;
+/** A type-specific cell action rendered in both the ellipsis and context menus. */
+export interface NotebookCellAction {
+	/** Stable key. */
+	id: string;
+	/** Menu label. */
+	label: string;
+	/** Leading icon. */
+	icon: React.ReactNode;
+	/** Invoked when the item is selected. */
+	onSelect: () => void;
+	/** Disable the item. */
+	disabled?: boolean;
+}
+
+/** Chrome/menu props shared by every cell-type component and forwarded to the frame. */
+export interface NotebookCellBaseProps {
 	/** Position of this cell in the notebook. */
 	index: number;
-	/** True while this cell is executing. */
-	isRunning: boolean;
 	/** Disable actions while the notebook is busy. */
 	disabled: boolean;
 	/** Whether this cell is the active/focused cell. */
 	isActive: boolean;
-	/** Whether at least one code cell exists above this one. */
-	canRunAbove: boolean;
-	/** Whether at least one code cell exists below this one. */
-	canRunBelow: boolean;
-	/** Run this code cell. */
-	onRun: (index: number) => void;
-	/** Run and advance focus to the next cell. */
-	onRunAndAdvance: (index: number) => void;
-	/** Interrupt a running execution. */
-	onInterrupt: (index: number) => void;
-	/** Run every code cell above this one. */
-	onRunAbove: (index: number) => void;
-	/** Run every code cell below this one. */
-	onRunBelow: (index: number) => void;
-	/** Duplicate this cell, inserting the copy below. */
-	onDuplicate: (index: number) => void;
-	/** Clear outputs for this code cell. */
-	onClearOutput: (index: number) => void;
 	/** Mark this cell as active. */
 	onActivate: (index: number) => void;
-	/** Persist an edited cell source. */
-	onSourceChange: (index: number, source: string) => void;
 	/** Switch this cell to a different type. */
 	onChangeType: (index: number, type: JupyterCellType) => void;
 	/** Insert a new cell of the given type above this one. */
 	onInsertAbove: (index: number, type: JupyterCellType) => void;
 	/** Insert a new cell of the given type below this one. */
 	onInsertBelow: (index: number, type: JupyterCellType) => void;
+	/** Duplicate this cell, inserting the copy below. */
+	onDuplicate: (index: number) => void;
 	/** Delete this cell. */
 	onDelete: (index: number) => void;
 	/** Move this cell one position up. */
@@ -101,50 +85,221 @@ interface NotebookCellProps {
 	dragHandleProps?: React.HTMLAttributes<HTMLElement>;
 }
 
+interface NotebookCellProps extends NotebookCellBaseProps {
+	/** The cell to render. */
+	cell: JupyterCell;
+	/** Type-specific primary toolbar control (Run/Stop, Edit/Preview). */
+	primaryAction?: React.ReactNode;
+	/** Type-specific menu actions appended to both menus. */
+	actions?: NotebookCellAction[];
+	/** The cell body (editor / preview / outputs). */
+	children: React.ReactNode;
+}
+
+const CELL_TYPES: { value: JupyterCellType; label: string }[] = [
+	{ value: "code", label: "Code" },
+	{ value: "markdown", label: "Markdown" },
+	{ value: "raw", label: "Raw" },
+];
+
 /**
- * A single notebook cell: its header (collapse toggle, type select, execution
- * count), its editable body (`NotebookCellInput`), and — for code cells — a
- * collapsible list of `NotebookCellOutput`s. A floating top-right toolbar holds
- * the primary action (Run/Stop for code, Edit/Preview for markdown), Delete, and
- * an ellipsis menu; a right-click context menu mirrors those cell actions.
+ * Positioning + chrome frame shared by every cell type: the drag/collapse
+ * gutter, the floating top-right toolbar (a `primaryAction` slot, Delete, and an
+ * ellipsis menu), the whole-cell right-click menu, and the active-ring content
+ * column that renders the type-specific `children`. Structural actions (insert /
+ * duplicate / move / change type) plus the type-specific `actions` are declared
+ * once and rendered into both menus so they never drift apart.
  */
 export const NotebookCell: React.FC<NotebookCellProps> = ({
 	cell,
 	index,
-	isRunning,
 	disabled,
 	isActive,
-	canRunAbove,
-	canRunBelow,
-	onRun,
-	onRunAndAdvance,
-	onInterrupt,
-	onRunAbove,
-	onRunBelow,
-	onDuplicate,
-	onClearOutput,
 	onActivate,
-	onSourceChange,
 	onChangeType,
 	onInsertAbove,
 	onInsertBelow,
+	onDuplicate,
 	onDelete,
 	onMoveUp,
 	onMoveDown,
 	canMoveUp,
 	canMoveDown,
 	dragHandleProps,
+	primaryAction,
+	actions,
+	children,
 }) => {
-	// Initialise collapse state from nbformat cell tags (hide-input / hide-output).
+	// Initialise collapse state from the nbformat hide-input cell tag.
 	const [inputCollapsed, setInputCollapsed] = useState<boolean>(() => {
-		const t = cell.metadata.tags;
-		return Array.isArray(t) && (t as string[]).includes("hide-input");
+		const tags = cell.metadata.tags;
+		return Array.isArray(tags) && (tags as string[]).includes("hide-input");
 	});
-	const [outputsCollapsed, setOutputsCollapsed] = useState<boolean>(() => {
-		const t = cell.metadata.tags;
-		return Array.isArray(t) && (t as string[]).includes("hide-output");
-	});
-	const [isEditing, setIsEditing] = useState(false);
+
+	// Structural items shared by both menus; declared once so they stay in sync.
+	const structuralActions: NotebookCellAction[] = [
+		{
+			id: "insert-above",
+			label: "Insert Cell Above",
+			icon: <ArrowUpToLineIcon className="size-4" />,
+			onSelect: () => onInsertAbove(index, "code"),
+			disabled,
+		},
+		{
+			id: "insert-below",
+			label: "Insert Cell Below",
+			icon: <ArrowDownToLineIcon className="size-4" />,
+			onSelect: () => onInsertBelow(index, "code"),
+			disabled,
+		},
+		{
+			id: "duplicate",
+			label: "Duplicate Cell",
+			icon: <CopyIcon className="size-4" />,
+			onSelect: () => onDuplicate(index),
+			disabled,
+		},
+	];
+
+	const moveActions: NotebookCellAction[] = [
+		{
+			id: "move-up",
+			label: "Move Cell Up",
+			icon: <ArrowUpIcon className="size-4" />,
+			onSelect: () => onMoveUp(index),
+			disabled: disabled || !canMoveUp,
+		},
+		{
+			id: "move-down",
+			label: "Move Cell Down",
+			icon: <ArrowDownIcon className="size-4" />,
+			onSelect: () => onMoveDown(index),
+			disabled: disabled || !canMoveDown,
+		},
+	];
+
+	const typeActions = actions ?? [];
+
+	// The dropdown and context menus share these items (different item widgets).
+	const dropdownItems = (
+		<>
+			{structuralActions.map((action) => (
+				<DropdownMenuItem
+					key={action.id}
+					disabled={action.disabled}
+					onSelect={action.onSelect}
+				>
+					{action.icon}
+					{action.label}
+				</DropdownMenuItem>
+			))}
+			<DropdownMenuSeparator />
+			{moveActions.map((action) => (
+				<DropdownMenuItem
+					key={action.id}
+					disabled={action.disabled}
+					onSelect={action.onSelect}
+				>
+					{action.icon}
+					{action.label}
+				</DropdownMenuItem>
+			))}
+			<DropdownMenuSeparator />
+			<DropdownMenuSub>
+				<DropdownMenuSubTrigger disabled={disabled}>
+					Change Cell Type
+				</DropdownMenuSubTrigger>
+				<DropdownMenuSubContent>
+					<DropdownMenuRadioGroup
+						value={cell.cell_type}
+						onValueChange={(value) =>
+							onChangeType(index, value as JupyterCellType)
+						}
+					>
+						{CELL_TYPES.map((type) => (
+							<DropdownMenuRadioItem
+								key={type.value}
+								value={type.value}
+							>
+								{type.label}
+							</DropdownMenuRadioItem>
+						))}
+					</DropdownMenuRadioGroup>
+				</DropdownMenuSubContent>
+			</DropdownMenuSub>
+			{typeActions.length > 0 && <DropdownMenuSeparator />}
+			{typeActions.map((action) => (
+				<DropdownMenuItem
+					key={action.id}
+					disabled={action.disabled}
+					onSelect={action.onSelect}
+				>
+					{action.icon}
+					{action.label}
+				</DropdownMenuItem>
+			))}
+		</>
+	);
+
+	const contextItems = (
+		<>
+			{structuralActions.map((action) => (
+				<ContextMenuItem
+					key={action.id}
+					disabled={action.disabled}
+					onSelect={action.onSelect}
+				>
+					{action.icon}
+					{action.label}
+				</ContextMenuItem>
+			))}
+			<ContextMenuSeparator />
+			{moveActions.map((action) => (
+				<ContextMenuItem
+					key={action.id}
+					disabled={action.disabled}
+					onSelect={action.onSelect}
+				>
+					{action.icon}
+					{action.label}
+				</ContextMenuItem>
+			))}
+			<ContextMenuSeparator />
+			<ContextMenuSub>
+				<ContextMenuSubTrigger disabled={disabled}>
+					Change Cell Type
+				</ContextMenuSubTrigger>
+				<ContextMenuSubContent>
+					<ContextMenuRadioGroup
+						value={cell.cell_type}
+						onValueChange={(value) =>
+							onChangeType(index, value as JupyterCellType)
+						}
+					>
+						{CELL_TYPES.map((type) => (
+							<ContextMenuRadioItem
+								key={type.value}
+								value={type.value}
+							>
+								{type.label}
+							</ContextMenuRadioItem>
+						))}
+					</ContextMenuRadioGroup>
+				</ContextMenuSubContent>
+			</ContextMenuSub>
+			{typeActions.length > 0 && <ContextMenuSeparator />}
+			{typeActions.map((action) => (
+				<ContextMenuItem
+					key={action.id}
+					disabled={action.disabled}
+					onSelect={action.onSelect}
+				>
+					{action.icon}
+					{action.label}
+				</ContextMenuItem>
+			))}
+		</>
+	);
 
 	return (
 		<ContextMenu>
@@ -179,7 +334,7 @@ export const NotebookCell: React.FC<NotebookCellProps> = ({
 					</div>
 					{/* Cell content column. */}
 					<div className="relative min-w-0 flex-1">
-						{/* Toolbar — floats above top-right of cell; revealed on hover, pinned when active. */}
+						{/* Toolbar — floats above top-right; revealed on hover, pinned when active. */}
 						<div
 							className={`-top-3 absolute right-0 z-20 flex items-center gap-0.5 rounded-md border border-border bg-background p-0.5 shadow-sm transition-opacity ${
 								isActive
@@ -187,80 +342,7 @@ export const NotebookCell: React.FC<NotebookCellProps> = ({
 									: "opacity-0 focus-within:opacity-100 group-hover:opacity-100"
 							}`}
 						>
-							{cell.cell_type === "code" &&
-								(isRunning ? (
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<Button
-												variant="ghost"
-												size="icon-sm"
-												className="size-7 text-destructive hover:text-destructive"
-												onClick={(e) => {
-													e.stopPropagation();
-													onInterrupt(index);
-												}}
-												aria-label="Stop execution"
-											>
-												<SquareIcon className="size-3.5" />
-											</Button>
-										</TooltipTrigger>
-										<TooltipContent>
-											Stop execution
-										</TooltipContent>
-									</Tooltip>
-								) : (
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<Button
-												variant="ghost"
-												size="icon-sm"
-												className="size-7"
-												disabled={disabled}
-												onClick={(e) => {
-													e.stopPropagation();
-													onRun(index);
-												}}
-												aria-label="Run cell"
-											>
-												<PlayIcon className="size-3.5" />
-											</Button>
-										</TooltipTrigger>
-										<TooltipContent>
-											Run cell
-										</TooltipContent>
-									</Tooltip>
-								))}
-							{cell.cell_type === "markdown" && (
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											variant="ghost"
-											size="icon-sm"
-											className="size-7"
-											onClick={(e) => {
-												e.stopPropagation();
-												setIsEditing((prev) => !prev);
-											}}
-											aria-label={
-												isEditing
-													? "Switch to preview"
-													: "Edit markdown"
-											}
-										>
-											{isEditing ? (
-												<EyeIcon className="size-3.5" />
-											) : (
-												<PencilIcon className="size-3.5" />
-											)}
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent>
-										{isEditing
-											? "Switch to preview"
-											: "Edit markdown"}
-									</TooltipContent>
-								</Tooltip>
-							)}
+							{primaryAction}
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<Button
@@ -296,112 +378,7 @@ export const NotebookCell: React.FC<NotebookCellProps> = ({
 									align="end"
 									className="w-52"
 								>
-									<DropdownMenuItem
-										disabled={disabled}
-										onSelect={() =>
-											onInsertAbove(index, "code")
-										}
-									>
-										<ArrowUpToLineIcon className="size-4" />
-										Insert Cell Above
-									</DropdownMenuItem>
-									<DropdownMenuItem
-										disabled={disabled}
-										onSelect={() =>
-											onInsertBelow(index, "code")
-										}
-									>
-										<ArrowDownToLineIcon className="size-4" />
-										Insert Cell Below
-									</DropdownMenuItem>
-									<DropdownMenuItem
-										disabled={disabled}
-										onSelect={() => onDuplicate(index)}
-									>
-										<CopyIcon className="size-4" />
-										Duplicate Cell
-									</DropdownMenuItem>
-									{cell.cell_type === "code" &&
-										cell.outputs.length > 0 && (
-											<DropdownMenuItem
-												disabled={disabled}
-												onSelect={() =>
-													onClearOutput(index)
-												}
-											>
-												<EraserIcon className="size-4" />
-												Clear Output
-											</DropdownMenuItem>
-										)}
-									<DropdownMenuSeparator />
-									<DropdownMenuItem
-										disabled={disabled || !canMoveUp}
-										onSelect={() => onMoveUp(index)}
-									>
-										<ArrowUpIcon className="size-4" />
-										Move Cell Up
-									</DropdownMenuItem>
-									<DropdownMenuItem
-										disabled={disabled || !canMoveDown}
-										onSelect={() => onMoveDown(index)}
-									>
-										<ArrowDownIcon className="size-4" />
-										Move Cell Down
-									</DropdownMenuItem>
-									<DropdownMenuSeparator />
-									<DropdownMenuSub>
-										<DropdownMenuSubTrigger
-											disabled={disabled}
-										>
-											Change Cell Type
-										</DropdownMenuSubTrigger>
-										<DropdownMenuSubContent>
-											<DropdownMenuRadioGroup
-												value={cell.cell_type}
-												onValueChange={(value) =>
-													onChangeType(
-														index,
-														value as JupyterCellType,
-													)
-												}
-											>
-												<DropdownMenuRadioItem value="code">
-													Code
-												</DropdownMenuRadioItem>
-												<DropdownMenuRadioItem value="markdown">
-													Markdown
-												</DropdownMenuRadioItem>
-												<DropdownMenuRadioItem value="raw">
-													Raw
-												</DropdownMenuRadioItem>
-											</DropdownMenuRadioGroup>
-										</DropdownMenuSubContent>
-									</DropdownMenuSub>
-									<DropdownMenuSeparator />
-									<DropdownMenuItem
-										disabled={
-											disabled ||
-											cell.cell_type !== "code"
-										}
-										onSelect={() => onRun(index)}
-									>
-										<PlayIcon className="size-4" />
-										Run Cell
-									</DropdownMenuItem>
-									<DropdownMenuItem
-										disabled={disabled || !canRunAbove}
-										onSelect={() => onRunAbove(index)}
-									>
-										<ChevronsUpIcon className="size-4" />
-										Run Cells Above
-									</DropdownMenuItem>
-									<DropdownMenuItem
-										disabled={disabled || !canRunBelow}
-										onSelect={() => onRunBelow(index)}
-									>
-										<ChevronsDownIcon className="size-4" />
-										Run Cells Below
-									</DropdownMenuItem>
+									{dropdownItems}
 								</DropdownMenuContent>
 							</DropdownMenu>
 						</div>
@@ -413,7 +390,7 @@ export const NotebookCell: React.FC<NotebookCellProps> = ({
 							}`}
 							onClick={() => onActivate(index)}
 						>
-							{inputCollapsed && (
+							{inputCollapsed ? (
 								<div className="flex items-center gap-2 px-3 py-2 text-muted-foreground text-xs">
 									{cell.cell_type === "code" && (
 										<span className="font-mono">
@@ -427,148 +404,15 @@ export const NotebookCell: React.FC<NotebookCellProps> = ({
 											: cell.cell_type}
 									</span>
 								</div>
-							)}
-							{!inputCollapsed && (
-								<>
-									<NotebookCellInput
-										cell={cell}
-										isEditing={isEditing}
-										onChange={(next) =>
-											onSourceChange(index, next)
-										}
-										onRunInPlace={() => onRun(index)}
-										onRunAndAdvance={() =>
-											onRunAndAdvance(index)
-										}
-									/>
-
-									{/* Outputs (code only) */}
-									{cell.cell_type === "code" &&
-										cell.outputs.length > 0 && (
-											<div className="border-border border-t">
-												<button
-													type="button"
-													onClick={(e) => {
-														e.stopPropagation();
-														setOutputsCollapsed(
-															(prev) => !prev,
-														);
-													}}
-													className="flex h-auto w-full items-center justify-start gap-1 rounded-none px-1 py-1.5 font-normal text-muted-foreground text-xs hover:text-foreground"
-												>
-													{outputsCollapsed ? (
-														<ChevronRightIcon className="size-3" />
-													) : (
-														<ChevronDownIcon className="size-3" />
-													)}
-													<span>
-														{outputsCollapsed
-															? `Output (${cell.outputs.length} hidden)`
-															: "Output"}
-													</span>
-												</button>
-												{!outputsCollapsed && (
-													<div className="flex flex-col gap-1">
-														{cell.outputs.map(
-															(
-																output,
-																outputIndex,
-															) => (
-																<NotebookCellOutput
-																	key={`${output.output_type}-${outputIndex}`}
-																	output={
-																		output
-																	}
-																/>
-															),
-														)}
-													</div>
-												)}
-											</div>
-										)}
-								</>
+							) : (
+								children
 							)}
 						</div>
 					</div>
 				</div>
 			</ContextMenuTrigger>
 			<ContextMenuContent className="w-52">
-				<ContextMenuItem
-					disabled={disabled}
-					onSelect={() => onInsertAbove(index, "code")}
-				>
-					<ArrowUpToLineIcon className="size-4" />
-					Insert Cell Above
-				</ContextMenuItem>
-				<ContextMenuItem
-					disabled={disabled}
-					onSelect={() => onInsertBelow(index, "code")}
-				>
-					<ArrowDownToLineIcon className="size-4" />
-					Insert Cell Below
-				</ContextMenuItem>
-				<ContextMenuItem
-					disabled={disabled}
-					onSelect={() => onDuplicate(index)}
-				>
-					<CopyIcon className="size-4" />
-					Duplicate Cell
-				</ContextMenuItem>
-				{cell.cell_type === "code" && cell.outputs.length > 0 && (
-					<ContextMenuItem
-						disabled={disabled}
-						onSelect={() => onClearOutput(index)}
-					>
-						<EraserIcon className="size-4" />
-						Clear Output
-					</ContextMenuItem>
-				)}
-				<ContextMenuSeparator />
-				<ContextMenuSub>
-					<ContextMenuSubTrigger disabled={disabled}>
-						Change Cell Type
-					</ContextMenuSubTrigger>
-					<ContextMenuSubContent>
-						<ContextMenuRadioGroup
-							value={cell.cell_type}
-							onValueChange={(value) =>
-								onChangeType(index, value as JupyterCellType)
-							}
-						>
-							<ContextMenuRadioItem value="code">
-								Code
-							</ContextMenuRadioItem>
-							<ContextMenuRadioItem value="markdown">
-								Markdown
-							</ContextMenuRadioItem>
-							<ContextMenuRadioItem value="raw">
-								Raw
-							</ContextMenuRadioItem>
-						</ContextMenuRadioGroup>
-					</ContextMenuSubContent>
-				</ContextMenuSub>
-				<ContextMenuSeparator />
-				<ContextMenuItem
-					disabled={disabled || cell.cell_type !== "code"}
-					onSelect={() => onRun(index)}
-				>
-					<PlayIcon className="size-4" />
-					Run Cell
-				</ContextMenuItem>
-				<ContextMenuItem
-					disabled={disabled || !canRunAbove}
-					onSelect={() => onRunAbove(index)}
-				>
-					<ChevronsUpIcon className="size-4" />
-					Run Cells Above
-				</ContextMenuItem>
-				<ContextMenuItem
-					disabled={disabled || !canRunBelow}
-					onSelect={() => onRunBelow(index)}
-				>
-					<ChevronsDownIcon className="size-4" />
-					Run Cells Below
-				</ContextMenuItem>
+				{contextItems}
 			</ContextMenuContent>
 		</ContextMenu>
 	);
