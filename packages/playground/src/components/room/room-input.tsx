@@ -725,12 +725,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													const hasPlainText =
 														e.clipboardData.types.includes(
 															"text/plain",
-														) &&
-														e.clipboardData
-															.getData(
-																"text/plain",
-															)
-															.trim().length > 0;
+														);
 
 													// text/html is only "real text" if it contains
 													// meaningful content beyond just an <img> tag
