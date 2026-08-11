@@ -20,4 +20,3 @@ export {
 	unwrapPixelOutput,
 	validateNotebook,
 } from "./notebook.utility";
-export { notifyNotebookFileRefresh } from "./notebook-events";

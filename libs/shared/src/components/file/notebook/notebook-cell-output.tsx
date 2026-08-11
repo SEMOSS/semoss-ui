@@ -78,7 +78,7 @@ export const NotebookCellOutput: React.FC<NotebookCellOutputProps> = ({
 		return (
 			<img
 				alt="Notebook cell output"
-				className="max-w-full rounded border border-border"
+				className="mr-auto max-w-auto rounded"
 				src={`data:${imageMime};base64,${base64}`}
 			/>
 		);

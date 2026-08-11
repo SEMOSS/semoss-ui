@@ -1,6 +1,12 @@
+import { closestCenter, DndContext, type DragEndEvent } from "@dnd-kit/core";
+import { restrictToParentElement } from "@dnd-kit/modifiers";
 import {
-	ArrowDownIcon,
-	ArrowUpIcon,
+	SortableContext,
+	useSortable,
+	verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
 	DownloadIcon,
 	EraserIcon,
 	FileCode2Icon,
@@ -10,9 +16,8 @@ import {
 	RefreshCwIcon,
 	SaveIcon,
 	SquareIcon,
-	Trash2Icon,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	download,
@@ -56,7 +61,6 @@ import {
 	validateNotebook,
 } from "./notebook.utility";
 import { NotebookCell } from "./notebook-cell";
-import { useNotebookFileRefresh } from "./notebook-events";
 
 interface NotebookProps {
 	/** Mode of file editor */
@@ -68,6 +72,63 @@ interface NotebookProps {
 	/** Callback when the file is changed */
 	onChange?: (content: string, isModified: boolean) => void;
 }
+
+/**
+ * dnd-kit sortable wrapper for one cell: applies the drag transform, injects the
+ * drag-handle props (attributes + listeners) so only the grip starts a drag, and
+ * shrinks to a compact chip while dragging so tall cells don't hide the drop gap.
+ */
+const SortableCell: React.FC<{
+	id: string;
+	disabled?: boolean;
+	/** Label shown on the drag chip (e.g. "Moving code cell"). */
+	label?: string;
+	/** Registers the sortable node so the parent can scroll it into view. */
+	onNodeRef?: (node: HTMLDivElement | null) => void;
+	children: React.ReactElement;
+}> = ({ id, disabled, label, onNodeRef, children }) => {
+	const {
+		attributes,
+		listeners,
+		setNodeRef,
+		transform,
+		transition,
+		isDragging,
+	} = useSortable({ id, disabled });
+
+	const style: React.CSSProperties = {
+		transform: CSS.Translate.toString(transform),
+		transition,
+	};
+
+	const setRef = (node: HTMLDivElement | null) => {
+		setNodeRef(node);
+		onNodeRef?.(node);
+	};
+
+	if (isDragging) {
+		return (
+			<div ref={setRef} style={style} className="relative z-10">
+				<div
+					{...attributes}
+					{...listeners}
+					className="flex w-full cursor-grabbing items-center gap-2 rounded-md border border-primary border-dashed bg-primary/5 px-3 py-2 text-muted-foreground text-xs shadow-sm"
+				>
+					<GripVerticalIcon className="size-3.5" />
+					<span className="font-mono">{label ?? "Moving cell"}</span>
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<div ref={setRef} style={style}>
+			{React.cloneElement(children, {
+				dragHandleProps: { ...attributes, ...listeners },
+			})}
+		</div>
+	);
+};
 
 /**
  * Interactive `.ipynb` viewer/editor — the notebook counterpart to
@@ -98,11 +159,6 @@ export const Notebook: React.FC<NotebookProps> = ({
 		current: number;
 		total: number;
 	} | null>(null);
-
-	// Native drag-and-drop reorder state: the cell being dragged and the current
-	// drop target.
-	const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
-	const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
 	// Per-cell DOM refs for scroll-to-cell.
 	const cellRefs = useRef<Record<number, HTMLDivElement | null>>({});
@@ -153,13 +209,6 @@ export const Notebook: React.FC<NotebookProps> = ({
 		targetInsightId,
 	);
 
-	console.log(getFile.status, getFile.data, getFile.error);
-
-	// Reload from disk when this exact file is written from outside this editor
-	// (e.g. the chat "Add to Notebook" action), so an already-open tab doesn't
-	// silently go stale.
-	useNotebookFileRefresh(path, () => getFile.refresh());
-
 	// A stable ref so the Ctrl+S listener always calls the latest saveNotebook.
 	const saveNotebookRef = useRef<() => Promise<void>>();
 
@@ -177,7 +226,9 @@ export const Notebook: React.FC<NotebookProps> = ({
 	// Scroll the running / newly-activated cell into view.
 	useEffect(() => {
 		const idx = runningCellIndex ?? activeCellIndex;
-		if (idx === null) return;
+		if (idx === null) {
+			return;
+		}
 		const el = cellRefs.current[idx];
 		el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
 	}, [runningCellIndex, activeCellIndex]);
@@ -530,13 +581,17 @@ export const Notebook: React.FC<NotebookProps> = ({
 		});
 	};
 
-	/** Drop the dragged cell onto the target position. */
-	const handleDrop = (index: number) => {
-		if (draggingIndex !== null) {
-			moveCell(draggingIndex, index);
+	/** Reorder cells when a drag ends over a different cell. */
+	const handleDragEnd = (event: DragEndEvent) => {
+		const { active, over } = event;
+		if (!over || active.id === over.id) {
+			return;
 		}
-		setDraggingIndex(null);
-		setDragOverIndex(null);
+		const from = notebook?.cells.findIndex((c) => c.id === active.id) ?? -1;
+		const to = notebook?.cells.findIndex((c) => c.id === over.id) ?? -1;
+		if (from !== -1 && to !== -1) {
+			moveCell(from, to);
+		}
 	};
 
 	/** Insert a new empty cell of `type` at `at`, appending when omitted. */
@@ -808,196 +863,157 @@ export const Notebook: React.FC<NotebookProps> = ({
 						{getFile.status === "SUCCESS" &&
 							!parseError &&
 							notebook && (
-								<div className="mx-auto flex w-full max-w-4xl flex-col gap-3 px-6 py-4">
-									{notebook.cells.map((cell, index) => (
-										<div
-											key={cell.id}
-											ref={(el) => {
-												cellRefs.current[index] = el;
-											}}
-											className={`relative flex gap-1.5 ${
-												draggingIndex === index
-													? "opacity-50"
-													: ""
-											}`}
-										>
-											{/* Reorder / delete gutter */}
-											<div className="flex w-6 shrink-0 flex-col items-center gap-0.5 pt-1">
-												<Button
-													variant="ghost"
-													size="icon-sm"
-													className="size-6 text-muted-foreground/60 hover:text-foreground"
-													disabled={
-														isBusy || index === 0
-													}
-													onClick={() =>
-														moveCell(
-															index,
-															index - 1,
-														)
-													}
-													title="Move cell up"
-													aria-label="Move cell up"
-												>
-													<ArrowUpIcon className="size-4" />
-												</Button>
-												<Button
-													variant="ghost"
-													size="icon-sm"
-													className="size-6 cursor-grab text-muted-foreground/60 hover:text-foreground"
-													draggable={!isBusy}
-													onDragStart={(e) => {
-														setDraggingIndex(index);
-														e.dataTransfer.effectAllowed =
-															"move";
-														e.dataTransfer.setData(
-															"text/plain",
-															String(index),
-														);
-													}}
-													onDragEnd={() => {
-														setDraggingIndex(null);
-														setDragOverIndex(null);
-													}}
-													title="Drag to reorder"
-													aria-label="Drag to reorder cell"
-												>
-													<GripVerticalIcon className="size-4" />
-												</Button>
-												<Button
-													variant="ghost"
-													size="icon-sm"
-													className="size-6 text-muted-foreground/60 hover:text-foreground"
-													disabled={
-														isBusy ||
-														index ===
-															notebook.cells
-																.length -
-																1
-													}
-													onClick={() =>
-														moveCell(
-															index,
-															index + 1,
-														)
-													}
-													title="Move cell down"
-													aria-label="Move cell down"
-												>
-													<ArrowDownIcon className="size-4" />
-												</Button>
-												<Button
-													variant="ghost"
-													size="icon-sm"
-													className="size-6 text-muted-foreground/60 hover:text-destructive"
-													disabled={isBusy}
-													onClick={() =>
-														deleteCell(index)
-													}
-													title="Delete cell"
-													aria-label="Delete cell"
-												>
-													<Trash2Icon className="size-4" />
-												</Button>
-											</div>
-
-											<NotebookCell
-												cell={cell}
-												index={index}
-												isRunning={
-													runningCellIndex === index
-												}
-												disabled={isBusy}
-												isActive={
-													activeCellIndex === index
-												}
-												canRunAbove={notebook.cells
-													.slice(0, index)
-													.some(
-														(above) =>
-															above.cell_type ===
-															"code",
-													)}
-												canRunBelow={notebook.cells
-													.slice(index + 1)
-													.some(
-														(below) =>
-															below.cell_type ===
-															"code",
-													)}
-												onRun={runCell}
-												onRunAndAdvance={
-													runAndAdvanceCell
-												}
-												onInterrupt={interruptExecution}
-												onRunAbove={runCellsAbove}
-												onRunBelow={runCellsBelow}
-												onDuplicate={duplicateCell}
-												onClearOutput={clearCellOutputs}
-												onActivate={setActiveCellIndex}
-												onSourceChange={
-													updateCellSource
-												}
-												onChangeType={changeType}
-												onInsertAbove={(i, type) =>
-													addCell(type, i)
-												}
-												onInsertBelow={(i, type) =>
-													addCell(type, i + 1)
-												}
-											/>
-
-											{/* Drop zone — mounted only while dragging so it
-									    never blocks editing, and layered above the
-									    editor so the drop lands here instead of inside
-									    Monaco. */}
-											{draggingIndex !== null &&
-												draggingIndex !== index && (
-													// biome-ignore lint/a11y/noStaticElementInteractions: native drag-and-drop drop target
-													<div
-														className="absolute inset-0 z-10"
-														onDragOver={(e) => {
-															e.preventDefault();
-															setDragOverIndex(
-																index,
-															);
-														}}
-														onDrop={(e) => {
-															e.preventDefault();
-															handleDrop(index);
+								<DndContext
+									collisionDetection={closestCenter}
+									modifiers={[restrictToParentElement]}
+									onDragEnd={handleDragEnd}
+								>
+									<SortableContext
+										items={notebook.cells.map((c) => c.id)}
+										strategy={verticalListSortingStrategy}
+									>
+										<div className="container mx-auto flex w-full flex-col gap-3 py-4 pr-12 pl-2">
+											{notebook.cells.map(
+												(cell, index) => (
+													<SortableCell
+														key={cell.id}
+														id={cell.id}
+														disabled={isBusy}
+														label={`Moving ${cell.metadata.name || "cell"}`}
+														onNodeRef={(node) => {
+															cellRefs.current[
+																index
+															] = node;
 														}}
 													>
-														{dragOverIndex ===
-															index && (
-															<div className="pointer-events-none absolute inset-0 rounded-md ring-2 ring-primary" />
-														)}
-													</div>
-												)}
-										</div>
-									))}
+														<NotebookCell
+															cell={cell}
+															index={index}
+															isRunning={
+																runningCellIndex ===
+																index
+															}
+															disabled={isBusy}
+															isActive={
+																activeCellIndex ===
+																index
+															}
+															canRunAbove={notebook.cells
+																.slice(0, index)
+																.some(
+																	(above) =>
+																		above.cell_type ===
+																		"code",
+																)}
+															canRunBelow={notebook.cells
+																.slice(
+																	index + 1,
+																)
+																.some(
+																	(below) =>
+																		below.cell_type ===
+																		"code",
+																)}
+															onRun={runCell}
+															onRunAndAdvance={
+																runAndAdvanceCell
+															}
+															onInterrupt={
+																interruptExecution
+															}
+															onRunAbove={
+																runCellsAbove
+															}
+															onRunBelow={
+																runCellsBelow
+															}
+															onDuplicate={
+																duplicateCell
+															}
+															onClearOutput={
+																clearCellOutputs
+															}
+															onActivate={
+																setActiveCellIndex
+															}
+															onSourceChange={
+																updateCellSource
+															}
+															onChangeType={
+																changeType
+															}
+															onInsertAbove={(
+																i,
+																type,
+															) =>
+																addCell(type, i)
+															}
+															onInsertBelow={(
+																i,
+																type,
+															) =>
+																addCell(
+																	type,
+																	i + 1,
+																)
+															}
+															onDelete={
+																deleteCell
+															}
+															onMoveUp={(i) =>
+																moveCell(
+																	i,
+																	i - 1,
+																)
+															}
+															onMoveDown={(i) =>
+																moveCell(
+																	i,
+																	i + 1,
+																)
+															}
+															canMoveUp={
+																index > 0
+															}
+															canMoveDown={
+																index <
+																notebook.cells
+																	.length -
+																	1
+															}
+														/>
+													</SortableCell>
+												),
+											)}
 
-									{/* Add cell */}
-									<div className="flex items-center justify-center gap-2 pt-1">
-										<Button
-											variant="outline"
-											size="sm"
-											disabled={isBusy}
-											onClick={() => addCell("code")}
-										>
-											<PlusIcon className="size-4" />
-											Code
-										</Button>
-										<Button
-											variant="outline"
-											size="sm"
-											disabled={isBusy}
-											onClick={() => addCell("markdown")}
-										>
-											<PlusIcon className="size-4" />
-											Markdown
-										</Button>
-									</div>
-								</div>
+											{/* Add cell */}
+											<div className="flex items-center justify-center gap-2 pt-1">
+												<Button
+													variant="outline"
+													size="sm"
+													disabled={isBusy}
+													onClick={() =>
+														addCell("code")
+													}
+												>
+													<PlusIcon className="size-4" />
+													Code
+												</Button>
+												<Button
+													variant="outline"
+													size="sm"
+													disabled={isBusy}
+													onClick={() =>
+														addCell("markdown")
+													}
+												>
+													<PlusIcon className="size-4" />
+													Markdown
+												</Button>
+											</div>
+										</div>
+									</SortableContext>
+								</DndContext>
 							)}
 					</div>
 				</div>

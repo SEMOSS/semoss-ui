@@ -67,7 +67,7 @@ export const KNOWN_SHIKI_LANGS = new Set([
 	"plaintext",
 ]);
 
-const CODE_LANG_EXT: Record<string, string> = {
+export const CODE_LANG_EXT: Record<string, string> = {
 	javascript: "js",
 	typescript: "ts",
 	python: "py",
@@ -186,12 +186,6 @@ export const CODE_LANG_LABELS: Record<string, string> = {
 /** Build a timestamped file path for saving an HTML response to the asset store. */
 export const createHtmlResponseFilePath = (): string => {
 	return `save-html-response-${Date.now()}.html`;
-};
-
-/** Build a timestamped file path for saving a code block; extension derived from `lang`. */
-export const createCodeFilePath = (lang: string): string => {
-	const ext = CODE_LANG_EXT[lang] ?? lang;
-	return `save-code-response-${Date.now()}.${ext}`;
 };
 
 /**

@@ -1,7 +1,7 @@
 import { Markdown } from "@semoss/ui/next";
 import type { JupyterCell } from "./notebook.types";
 import { normalizeSource } from "./notebook.utility";
-import { NotebookCodeCellView } from "./notebook-code-cell-view";
+import { NotebookCellInputCode } from "./notebook-cell-input-code";
 
 interface NotebookCellInputProps {
 	/** The cell whose editable body is rendered. */
@@ -54,7 +54,7 @@ export const NotebookCellInput: React.FC<NotebookCellInputProps> = ({
 	}
 
 	return (
-		<NotebookCodeCellView
+		<NotebookCellInputCode
 			value={source}
 			language={cell.cell_type === "markdown" ? "markdown" : "python"}
 			onChange={onChange}
