@@ -1,6 +1,7 @@
 import {
 	ChevronDownIcon,
 	CopyIcon,
+	ExpandIcon,
 	FileCodeIcon,
 	NotebookPenIcon,
 	PlayIcon,
@@ -186,7 +187,7 @@ export const CodePreviewBlock = ({
 									) : (
 										<PlayIcon className="size-3" />
 									)}
-									{isExecuting ? "Running..." : "Execute"}
+									{isExecuting ? "Running" : "Run"}
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent>Run the script</TooltipContent>
@@ -268,6 +269,20 @@ export const CodePreviewBlock = ({
 						</TooltipTrigger>
 						<TooltipContent>Copy</TooltipContent>
 					</Tooltip>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								className="text-muted-foreground text-xs hover:text-foreground"
+								variant="ghost"
+								size="sm"
+								disabled={!code}
+								onClick={() => setIsFullViewOpen(true)}
+							>
+								<ExpandIcon className="size-3" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent side="bottom">Full view</TooltipContent>
+					</Tooltip>
 				</BlockHeader>
 				{!isCollapsed && (
 					<div className="p-3">
@@ -289,7 +304,7 @@ export const CodePreviewBlock = ({
 								variant="ghost"
 								size="sm"
 								disabled={isExecuting}
-								onClick={() => setExecuteResult(null)}
+								onClick={() => setExecuteResult(undefined)}
 							>
 								Clear
 							</Button>

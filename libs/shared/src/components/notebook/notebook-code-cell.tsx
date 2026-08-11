@@ -71,9 +71,18 @@ export const NotebookCodeCell: React.FC<NotebookCodeCellProps> = ({
 	onClearOutput,
 	onSourceChange,
 	streamingLogs,
-	...chrome
+	...otherProps
 }) => {
-	const { index, disabled } = chrome;
+	const { index, disabled, readOnly } = otherProps;
+
+	const hasError = cell.outputs.some((o) => o.output_type === "error");
+	const executionStatus =
+		isRunning || cell.execution_count === null
+			? null
+			: hasError
+				? "error"
+				: "success";
+
 	const [outputsCollapsed, setOutputsCollapsed] = useState<boolean>(() => {
 		const tags = cell.metadata.tags;
 		return (
@@ -157,7 +166,7 @@ export const NotebookCodeCell: React.FC<NotebookCodeCellProps> = ({
 			disabled: disabled || !canRunBelow,
 		},
 	];
-	if (hasOutputs || hasStreaming) {
+	if (!readOnly && (hasOutputs || hasStreaming)) {
 		actions.push({
 			id: "clear-output",
 			label: "Clear Output",
@@ -179,13 +188,15 @@ export const NotebookCodeCell: React.FC<NotebookCodeCellProps> = ({
 	return (
 		<NotebookCell
 			cell={cell}
-			{...chrome}
+			{...otherProps}
 			primaryAction={primaryAction}
 			actions={actions}
+			executionStatus={executionStatus}
 		>
 			<NotebookCellInputCode
 				value={normalizeSource(cell.source)}
 				language="python"
+				readOnly={readOnly}
 				onChange={(next) => onSourceChange(index, next)}
 				onRunInPlace={() => {
 					onClearOutput(index);
