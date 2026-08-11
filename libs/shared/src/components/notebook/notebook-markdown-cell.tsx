@@ -75,7 +75,7 @@ export const NotebookMarkdownCell: React.FC<NotebookMarkdownCellProps> = ({
 					{source.trim() ? (
 						<Markdown>{source}</Markdown>
 					) : (
-						<span className="text-muted-foreground text-sm italic">
+						<span className="text-muted-foreground text-xs italic">
 							Empty markdown cell — double-click to edit.
 						</span>
 					)}

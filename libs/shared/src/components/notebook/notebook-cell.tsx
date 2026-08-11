@@ -5,6 +5,8 @@ import {
 	ArrowUpToLineIcon,
 	ChevronDownIcon,
 	ChevronRightIcon,
+	CircleCheckIcon,
+	CircleXIcon,
 	CopyIcon,
 	GripVerticalIcon,
 	MoreHorizontalIcon,
@@ -65,6 +67,8 @@ export interface NotebookCellBaseProps {
 	onActivate: (index: number) => void;
 	/** Switch this cell to a different type. */
 	onChangeType: (index: number, type: JupyterCellType) => void;
+	/** Persist an edited display name; empty clears back to the type default. */
+	onRename: (index: number, name: string) => void;
 	/** Insert a new cell of the given type above this one. */
 	onInsertAbove: (index: number, type: JupyterCellType) => void;
 	/** Insert a new cell of the given type below this one. */
@@ -94,6 +98,8 @@ interface NotebookCellProps extends NotebookCellBaseProps {
 	actions?: NotebookCellAction[];
 	/** The cell body (editor / preview / outputs). */
 	children: React.ReactNode;
+	/** Result of the last execution; null means never run or currently running. */
+	executionStatus?: "success" | "error" | null;
 }
 
 const CELL_TYPES: { value: JupyterCellType; label: string }[] = [
@@ -117,6 +123,7 @@ export const NotebookCell: React.FC<NotebookCellProps> = ({
 	isActive,
 	onActivate,
 	onChangeType,
+	onRename,
 	onInsertAbove,
 	onInsertBelow,
 	onDuplicate,
@@ -129,12 +136,29 @@ export const NotebookCell: React.FC<NotebookCellProps> = ({
 	primaryAction,
 	actions,
 	children,
+	executionStatus,
 }) => {
 	// Initialise collapse state from the nbformat hide-input cell tag.
 	const [inputCollapsed, setInputCollapsed] = useState<boolean>(() => {
 		const tags = cell.metadata.tags;
 		return Array.isArray(tags) && (tags as string[]).includes("hide-input");
 	});
+
+	const [isEditingName, setIsEditingName] = useState(false);
+	const cellTypeLabel =
+		CELL_TYPES.find((type) => type.value === cell.cell_type)?.label ??
+		cell.cell_type;
+	const cellName =
+		typeof cell.metadata.name === "string" ? cell.metadata.name : "";
+
+	/** Commit the edited name (trimmed); unchanged closes the input as a no-op. */
+	const commitName = (value: string) => {
+		setIsEditingName(false);
+		const trimmed = value.trim();
+		if (trimmed !== cellName) {
+			onRename(index, trimmed);
+		}
+	};
 
 	// Structural items shared by both menus; declared once so they stay in sync.
 	const structuralActions: NotebookCellAction[] = [
@@ -334,6 +358,24 @@ export const NotebookCell: React.FC<NotebookCellProps> = ({
 					</div>
 					{/* Cell content column. */}
 					<div className="relative min-w-0 flex-1">
+						{/* Status indicator — floats above top-left */}
+						{executionStatus && (
+							<div className="-right-6 absolute top-2.5 z-20 rounded-full bg-background">
+								{executionStatus === "success" && (
+									<CircleCheckIcon
+										className="size-3.5 text-success"
+										aria-label="Cell succeeded"
+									/>
+								)}
+								{executionStatus === "error" && (
+									<CircleXIcon
+										className="size-3.5 text-destructive"
+										aria-label="Cell errored"
+									/>
+								)}
+							</div>
+						)}
+
 						{/* Toolbar — floats above top-right; revealed on hover, pinned when active. */}
 						<div
 							className={`-top-3 absolute right-0 z-20 flex items-center gap-0.5 rounded-md border border-border bg-background p-0.5 shadow-sm transition-opacity ${
@@ -390,19 +432,56 @@ export const NotebookCell: React.FC<NotebookCellProps> = ({
 							}`}
 							onClick={() => onActivate(index)}
 						>
+							{/* Name header — always visible; double-click to rename. */}
+							<div className="-top-2 absolute left-2 z-20 flex h-4 items-center rounded-md border border-border/60 bg-background hover:border-border">
+								{isEditingName ? (
+									<input
+										// biome-ignore lint/a11y/noAutofocus: this is okay
+										autoFocus
+										defaultValue={cellName}
+										placeholder={cellTypeLabel}
+										className="h-4 min-w-0 rounded-sm border-0 bg-transparent p-0 px-1 text-[10px] text-muted-foreground leading-4 outline-none [field-sizing:content] focus-visible:ring-2 focus-visible:ring-ring/50"
+										onClick={(e) => e.stopPropagation()}
+										onFocus={(e) =>
+											e.currentTarget.select()
+										}
+										onBlur={(e) =>
+											commitName(e.currentTarget.value)
+										}
+										onKeyDown={(e) => {
+											if (e.key === "Enter") {
+												e.currentTarget.blur();
+											} else if (e.key === "Escape") {
+												setIsEditingName(false);
+											}
+										}}
+									/>
+								) : (
+									// biome-ignore lint/a11y/noStaticElementInteractions: double-click enters edit mode
+									// biome-ignore lint/a11y/useKeyWithClickEvents: double-click enters edit mode
+									<span
+										className="h-4 cursor-text truncate px-1 text-[10px] text-muted-foreground leading-4"
+										title="Double-click to rename"
+										onClick={(e) => e.stopPropagation()}
+										onDoubleClick={(e) => {
+											e.stopPropagation();
+											if (!disabled) {
+												setIsEditingName(true);
+											}
+										}}
+									>
+										{cellName || cellTypeLabel}
+									</span>
+								)}
+							</div>
 							{inputCollapsed ? (
-								<div className="flex items-center gap-2 px-3 py-2 text-muted-foreground text-xs">
+								<div className="flex items-center gap-2 px-3 py-2 text-muted-foreground text-xs italic">
 									{cell.cell_type === "code" && (
-										<span className="font-mono">
-											In [{cell.execution_count ?? " "}]:
+										<span className="font-mono not-italic">
+											In [{cell.execution_count ?? " "}]
 										</span>
 									)}
-									<span className="truncate font-mono">
-										{typeof cell.metadata.name ===
-											"string" && cell.metadata.name
-											? cell.metadata.name
-											: cell.cell_type}
-									</span>
+									<span>&nbsp;</span>
 								</div>
 							) : (
 								children

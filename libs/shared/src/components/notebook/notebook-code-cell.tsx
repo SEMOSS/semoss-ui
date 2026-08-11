@@ -71,9 +71,18 @@ export const NotebookCodeCell: React.FC<NotebookCodeCellProps> = ({
 	onClearOutput,
 	onSourceChange,
 	streamingLogs,
-	...chrome
+	...otherProps
 }) => {
-	const { index, disabled } = chrome;
+	const { index, disabled } = otherProps;
+
+	const hasError = cell.outputs.some((o) => o.output_type === "error");
+	const executionStatus =
+		isRunning || cell.execution_count === null
+			? null
+			: hasError
+				? "error"
+				: "success";
+
 	const [outputsCollapsed, setOutputsCollapsed] = useState<boolean>(() => {
 		const tags = cell.metadata.tags;
 		return (
@@ -179,9 +188,10 @@ export const NotebookCodeCell: React.FC<NotebookCodeCellProps> = ({
 	return (
 		<NotebookCell
 			cell={cell}
-			{...chrome}
+			{...otherProps}
 			primaryAction={primaryAction}
 			actions={actions}
+			executionStatus={executionStatus}
 		>
 			<NotebookCellInputCode
 				value={normalizeSource(cell.source)}

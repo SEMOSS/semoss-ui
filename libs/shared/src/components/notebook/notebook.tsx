@@ -53,6 +53,7 @@ import {
 	validateNotebook,
 } from "./notebook.utility";
 import type { NotebookCellBaseProps } from "./notebook-cell";
+import { NotebookCellSeparator } from "./notebook-cell-separator";
 import { NotebookCodeCell } from "./notebook-code-cell";
 import { NotebookMarkdownCell } from "./notebook-markdown-cell";
 import { NotebookRawCell } from "./notebook-raw-cell";
@@ -696,6 +697,30 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 			});
 		};
 
+		/** Persist an edited cell display name; empty clears back to the type default. */
+		const renameCell = (index: number, name: string) => {
+			if (!notebook || isBusy) {
+				return;
+			}
+			const trimmed = name.trim();
+			updateNotebook({
+				...notebook,
+				cells: notebook.cells.map((cell, cellIndex) => {
+					if (cellIndex !== index) {
+						return cell;
+					}
+					if (!trimmed) {
+						const { name: _omit, ...restMetadata } = cell.metadata;
+						return { ...cell, metadata: restMetadata };
+					}
+					return {
+						...cell,
+						metadata: { ...cell.metadata, name: trimmed },
+					};
+				}),
+			});
+		};
+
 		// Expose running + serialization so a wrapper (e.g. FileNotebook) can drive
 		// the notebook from its own toolbar and persist the current state.
 		useImperativeHandle(ref, () => ({
@@ -746,7 +771,7 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 										items={notebook.cells.map((c) => c.id)}
 										strategy={verticalListSortingStrategy}
 									>
-										<div className="container mx-auto flex w-full flex-col gap-3 pt-4 pr-12 pb-20 pl-2">
+										<div className="container mx-auto flex w-full flex-col pt-4 pr-12 pb-20 pl-2">
 											{notebook.cells.map(
 												(cell, index) => {
 													const commonCellProps: NotebookCellBaseProps =
@@ -760,6 +785,8 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 																setActiveCellIndex,
 															onChangeType:
 																changeType,
+															onRename:
+																renameCell,
 															onInsertAbove: (
 																i,
 																type,
@@ -885,27 +912,51 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 													}
 
 													return (
-														<SortableCell
+														<React.Fragment
 															key={cell.id}
-															id={cell.id}
-															disabled={isBusy}
-															label={`Moving ${cell.metadata.name || "cell"}`}
-															onNodeRef={(
-																node,
-															) => {
-																cellRefs.current[
-																	index
-																] = node;
-															}}
 														>
-															{cellBody}
-														</SortableCell>
+															<SortableCell
+																id={cell.id}
+																disabled={
+																	isBusy
+																}
+																label={`Moving ${cell.metadata.name || "cell"}`}
+																onNodeRef={(
+																	node,
+																) => {
+																	cellRefs.current[
+																		index
+																	] = node;
+																}}
+															>
+																{cellBody}
+															</SortableCell>
+															{index <
+																notebook.cells
+																	.length -
+																	1 && (
+																<NotebookCellSeparator
+																	disabled={
+																		isBusy
+																	}
+																	onInsert={(
+																		type,
+																	) =>
+																		addCell(
+																			type,
+																			index +
+																				1,
+																		)
+																	}
+																/>
+															)}
+														</React.Fragment>
 													);
 												},
 											)}
 
 											{/* Add cell */}
-											<div className="flex items-center justify-center gap-2 pt-1">
+											<div className="mt-2 flex items-center justify-center gap-2 pt-1">
 												<Button
 													variant="outline"
 													size="sm"

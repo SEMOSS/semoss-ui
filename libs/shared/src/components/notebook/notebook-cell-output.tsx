@@ -38,15 +38,17 @@ export const NotebookCellOutput: React.FC<NotebookCellOutputProps> = ({
 }) => {
 	if (output.output_type === "stream") {
 		return (
-			<pre
-				className={`overflow-x-auto whitespace-pre-wrap rounded bg-muted/30 p-3 font-mono text-xs ${
-					output.name === "stderr"
-						? "text-destructive"
-						: "text-foreground"
-				}`}
-			>
-				{stripAnsi(normalizeSource(output.text))}
-			</pre>
+			<div className="w-full px-2 pb-2">
+				<pre
+					className={`overflow-x-auto whitespace-pre-wrap rounded bg-muted/50 p-3 font-mono text-xs ${
+						output.name === "stderr"
+							? "text-destructive"
+							: "text-foreground"
+					}`}
+				>
+					{stripAnsi(normalizeSource(output.text))}
+				</pre>
+			</div>
 		);
 	}
 
@@ -56,9 +58,11 @@ export const NotebookCellOutput: React.FC<NotebookCellOutputProps> = ({
 				? output.traceback.join("\n")
 				: `${output.ename}: ${output.evalue}`;
 		return (
-			<pre className="overflow-x-auto whitespace-pre-wrap rounded border border-destructive/40 bg-destructive/5 p-3 font-mono text-destructive text-xs">
-				{stripAnsi(traceback)}
-			</pre>
+			<div className="w-full px-2 pb-2">
+				<pre className="overflow-x-auto whitespace-pre-wrap rounded bg-destructive/5 p-3 font-mono text-destructive text-xs">
+					{stripAnsi(traceback)}
+				</pre>
+			</div>
 		);
 	}
 
@@ -107,8 +111,12 @@ export const NotebookCellOutput: React.FC<NotebookCellOutputProps> = ({
 
 	const plain = getMimeString(data, "text/plain");
 	return (
-		<pre className="overflow-x-auto whitespace-pre-wrap rounded bg-muted/30 p-3 font-mono text-foreground text-xs">
-			{plain !== null ? stripAnsi(plain) : JSON.stringify(data, null, 2)}
-		</pre>
+		<div className="w-full px-2 pb-2">
+			<pre className="overflow-x-auto whitespace-pre-wrap rounded bg-muted/50 p-3 font-mono text-foreground text-xs">
+				{plain !== null
+					? stripAnsi(plain)
+					: JSON.stringify(data, null, 2)}
+			</pre>
+		</div>
 	);
 };
