@@ -121,12 +121,8 @@ export const createMarkdownComponents = (
 							config: {},
 							enableClose: true,
 						});
-						room.addSidebarNode(`FILE--${path}`, {
-							type: "tab",
+						room.openFileEditorSidebarNode(path, {
 							name: filename,
-							component: "room-file-editor",
-							config: { name: filename, path },
-							enableClose: true,
 						});
 					}}
 				>
