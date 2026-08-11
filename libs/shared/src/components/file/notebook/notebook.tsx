@@ -74,6 +74,12 @@ interface NotebookProps {
 
 	/** Callback when the file is changed */
 	onChange?: (content: string, isModified: boolean) => void;
+
+	/**
+	 * Raw `.ipynb` JSON to seed the editor in-memory instead of fetching `path`
+	 * from the asset store. Running cells and saving still target `mode`/`path`.
+	 */
+	content?: string;
 }
 
 /**
@@ -133,24 +139,51 @@ const SortableCell: React.FC<{
 	);
 };
 
+/** Parse raw notebook JSON for the in-memory seed; `undefined` content = no seed. */
+const parseRawNotebook = (
+	content: string | undefined,
+): { notebook: JupyterNotebook | null; error: string | null } => {
+	if (content === undefined) {
+		return { notebook: null, error: null };
+	}
+	try {
+		return { notebook: validateNotebook(content), error: null };
+	} catch (e) {
+		return {
+			notebook: null,
+			error: e instanceof Error ? e.message : "Invalid notebook",
+		};
+	}
+};
+
 /**
  * Interactive `.ipynb` viewer/editor — the notebook counterpart to
- * `FileCodeEditor`. Loads the file through Pixel, parses it into an in-memory
- * notebook, and renders each cell (markdown / raw / code). Code and markdown
- * sources are editable; code cells run server-side (Python via the `Py()`
- * reactor) with their outputs mapped back to nbformat. The toolbar refreshes
- * from disk, runs all cells, saves, and downloads.
+ * `FileCodeEditor`. Loads the file through Pixel (or seeds from a raw `content`
+ * string for in-memory previews), parses it into an in-memory notebook, and
+ * renders each cell (markdown / raw / code). Code and markdown sources are
+ * editable; code cells run server-side (Python via the `Py()` reactor) with
+ * their outputs mapped back to nbformat. The toolbar refreshes, runs all cells,
+ * saves, and downloads.
  */
 export const Notebook: React.FC<NotebookProps> = ({
 	mode,
 	path,
 	onChange = () => null,
+	content,
 }) => {
 	const insight = useInsight();
 	const { t } = useTranslation("common");
 
-	const [notebook, setNotebook] = useState<JupyterNotebook | null>(null);
-	const [parseError, setParseError] = useState<string | null>(null);
+	// When `content` is provided the notebook is seeded in-memory from that JSON
+	// instead of fetched from the asset store; save/run still target mode/path.
+	const isRawContent = content !== undefined;
+
+	const [notebook, setNotebook] = useState<JupyterNotebook | null>(
+		() => parseRawNotebook(content).notebook,
+	);
+	const [parseError, setParseError] = useState<string | null>(
+		() => parseRawNotebook(content).error,
+	);
 	const [isSaving, setIsSaving] = useState(false);
 	const [isDownloading, setIsDownloading] = useState(false);
 	const [runningCellIndex, setRunningCellIndex] = useState<number | null>(
@@ -179,16 +212,19 @@ export const Notebook: React.FC<NotebookProps> = ({
 			: insight.insightId;
 
 	// Build the mode-scoped Pixel that reads this file's contents from the
-	// matching asset store (app / engine / insight / user).
+	// matching asset store (app / engine / insight / user). Skipped in
+	// raw-content mode, where the notebook is seeded from `content`.
 	let getFilePixel = "";
-	if (mode.type === "APP") {
-		getFilePixel = `GetAppAssets(filePath=["${path}"], project=["${mode.app}"]);`;
-	} else if (mode.type === "ENGINE") {
-		getFilePixel = `GetEngineAssets(filePath=["${path}"], engine=["${mode.engine}"]);`;
-	} else if (mode.type === "INSIGHT" && targetInsightId) {
-		getFilePixel = `GetInsightAssets(filePath=["${path}"]);`;
-	} else if (mode.type === "USER") {
-		getFilePixel = `GetUserAssets(filePath=["${path}"]);`;
+	if (!isRawContent) {
+		if (mode.type === "APP") {
+			getFilePixel = `GetAppAssets(filePath=["${path}"], project=["${mode.app}"]);`;
+		} else if (mode.type === "ENGINE") {
+			getFilePixel = `GetEngineAssets(filePath=["${path}"], engine=["${mode.engine}"]);`;
+		} else if (mode.type === "INSIGHT" && targetInsightId) {
+			getFilePixel = `GetInsightAssets(filePath=["${path}"]);`;
+		} else if (mode.type === "USER") {
+			getFilePixel = `GetUserAssets(filePath=["${path}"]);`;
+		}
 	}
 
 	// Validate the fetched file into notebook state on load / refresh; a file that
@@ -215,6 +251,32 @@ export const Notebook: React.FC<NotebookProps> = ({
 		},
 		targetInsightId,
 	);
+
+	// In raw-content mode there is no fetch, so drive the body/toolbar off the
+	// seeded state rather than the (idle) pixel status.
+	const loadStatus = isRawContent ? "SUCCESS" : getFile.status;
+
+	// Re-seed the in-memory notebook when the raw content changes.
+	useEffect(() => {
+		if (content === undefined) {
+			return;
+		}
+		const parsed = parseRawNotebook(content);
+		setNotebook(parsed.notebook);
+		setParseError(parsed.error);
+	}, [content]);
+
+	/** Reload the notebook: re-fetch from the asset store, or re-seed from raw
+	 *  content in in-memory preview mode. */
+	const refresh = () => {
+		if (isRawContent) {
+			const parsed = parseRawNotebook(content);
+			setNotebook(parsed.notebook);
+			setParseError(parsed.error);
+			return;
+		}
+		getFile.refresh();
+	};
 
 	// A stable ref so the Ctrl+S listener always calls the latest saveNotebook.
 	const saveNotebookRef = useRef<() => Promise<void>>();
@@ -802,9 +864,9 @@ export const Notebook: React.FC<NotebookProps> = ({
 									variant="ghost"
 									size="sm"
 									disabled={
-										getFile.status === "LOADING" || isBusy
+										loadStatus === "LOADING" || isBusy
 									}
-									onClick={() => getFile.refresh()}
+									onClick={refresh}
 									aria-label="Refresh"
 								>
 									<RefreshCwIcon className="size-3" />
@@ -872,12 +934,12 @@ export const Notebook: React.FC<NotebookProps> = ({
 
 					{/* Notebook body */}
 					<div className="flex-1 overflow-y-auto">
-						{getFile.status === "LOADING" && (
+						{loadStatus === "LOADING" && (
 							<div className="flex h-full w-full items-center justify-center">
 								<Spinner />
 							</div>
 						)}
-						{getFile.status === "ERROR" && (
+						{loadStatus === "ERROR" && (
 							<div className="flex h-full w-full items-center justify-center">
 								<Muted className="text-destructive">
 									{getFile.error?.message ||
@@ -885,14 +947,14 @@ export const Notebook: React.FC<NotebookProps> = ({
 								</Muted>
 							</div>
 						)}
-						{getFile.status === "SUCCESS" && parseError && (
+						{loadStatus === "SUCCESS" && parseError && (
 							<div className="flex h-full w-full items-center justify-center">
 								<Muted className="text-destructive">
 									{parseError}
 								</Muted>
 							</div>
 						)}
-						{getFile.status === "SUCCESS" &&
+						{loadStatus === "SUCCESS" &&
 							!parseError &&
 							notebook && (
 								<DndContext
@@ -1096,8 +1158,8 @@ export const Notebook: React.FC<NotebookProps> = ({
 			</ContextMenuTrigger>
 			<ContextMenuContent>
 				<ContextMenuItem
-					disabled={getFile.status === "LOADING" || isBusy}
-					onClick={() => getFile.refresh()}
+					disabled={loadStatus === "LOADING" || isBusy}
+					onClick={refresh}
 				>
 					<RefreshCwIcon className="size-4" />
 					Refresh
@@ -1112,7 +1174,9 @@ export const Notebook: React.FC<NotebookProps> = ({
 
 				<ContextMenuSeparator />
 				<ContextMenuItem
-					disabled={getFile.status !== "SUCCESS" || isBusy}
+					disabled={
+						loadStatus !== "SUCCESS" || isRawContent || isBusy
+					}
 					onClick={() => void downloadNotebook()}
 				>
 					<DownloadIcon className="size-4" />
