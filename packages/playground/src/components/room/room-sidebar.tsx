@@ -67,12 +67,8 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 					`RenameInsightAsset(filePath=["${path}"], newValue=["${newPath}"]);`,
 				);
 				room.removeSidebarNode(id);
-				room.addSidebarNode(`FILE--${newPath}`, {
-					type: "tab",
+				room.openFileEditorSidebarNode(newPath, {
 					name: newName,
-					component: "room-file-editor",
-					config: { name: newName, path: newPath },
-					enableClose: true,
 				});
 				setExplorerRefreshKey((k) => k + 1);
 			} catch (e) {
@@ -342,8 +338,18 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 								} else if (component === "audit-log-report") {
 									return <RoomAuditLogReport room={room} />;
 								} else if (component === "room-file-editor") {
+									const editorConfig = node.getConfig() as
+										| {
+												path?: string;
+												refreshKey?: number;
+										  }
+										| undefined;
+									const editorPath = editorConfig?.path ?? "";
+									const editorRefreshKey =
+										editorConfig?.refreshKey ?? 0;
 									return (
 										<RoomFileEditor
+											key={`${node.getId()}:${editorPath}:${editorRefreshKey}`}
 											node={node}
 											room={room}
 										/>

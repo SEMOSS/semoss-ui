@@ -1,19 +1,7 @@
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import { Muted, Spinner } from "@semoss/ui/next";
+import { getImageMimeType } from "../../utility/image";
 import type { FileMode } from "./file.types";
-
-const getMimeType = (extension: string): string => {
-	const mimeTypes: Record<string, string> = {
-		png: "image/png",
-		jpg: "image/jpeg",
-		jpeg: "image/jpeg",
-		gif: "image/gif",
-		webp: "image/webp",
-		svg: "image/svg+xml",
-		bmp: "image/bmp",
-	};
-	return mimeTypes[extension.toLowerCase()] || "image/png";
-};
 
 interface FileImageViewerProps {
 	/** Mode of file editor */
@@ -64,7 +52,7 @@ export const FileImageViewer: React.FC<FileImageViewerProps> = ({
 			{getFile.status === "SUCCESS" && (
 				<div className="flex flex-1 items-center justify-center overflow-hidden p-4">
 					<img
-						src={`data:${getMimeType(ext)};base64,${getFile.data}`}
+						src={`data:${getImageMimeType(ext)};base64,${getFile.data}`}
 						alt={`Preview of ${path}`}
 					/>
 				</div>
