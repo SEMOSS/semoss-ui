@@ -30,6 +30,10 @@ interface FileNotebookProps {
 
 	/** Callback when the file is changed */
 	onChange?: (content: string, isModified: boolean) => void;
+
+	/** When true, the editor is rendered in a read-only, view-only mode:
+	 * content cannot be edited and the Save action is hidden. Defaults to false. */
+	readOnly?: boolean;
 }
 
 /**
@@ -42,6 +46,7 @@ export const FileNotebook: React.FC<FileNotebookProps> = ({
 	mode,
 	path,
 	onChange = () => null,
+	readOnly = false,
 }) => {
 	const insight = useInsight();
 	const { t } = useTranslation("common");
@@ -152,6 +157,10 @@ export const FileNotebook: React.FC<FileNotebookProps> = ({
 	saveNotebookRef.current = saveNotebook;
 
 	useEffect(() => {
+		if (readOnly) {
+			return;
+		}
+
 		const onKeyDown = (e: KeyboardEvent) => {
 			if ((e.ctrlKey || e.metaKey) && e.key === "s") {
 				e.preventDefault();
@@ -160,7 +169,7 @@ export const FileNotebook: React.FC<FileNotebookProps> = ({
 		};
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
-	}, []);
+	}, [readOnly]);
 
 	/** Download the raw .ipynb file through the asset store's download flow. */
 	const downloadNotebook = async () => {
@@ -280,37 +289,43 @@ export const FileNotebook: React.FC<FileNotebookProps> = ({
 						<TooltipContent>Run all</TooltipContent>
 					</Tooltip>
 				)}
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<Button
-							variant="ghost"
-							size="sm"
-							disabled={content === null || fileActionsDisabled}
-							onClick={() => void saveNotebook()}
-							aria-label="Save"
-						>
-							<SaveIcon className="size-3" />
-						</Button>
-					</TooltipTrigger>
-					<TooltipContent>Save</TooltipContent>
-				</Tooltip>
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<Button
-							variant="ghost"
-							size="sm"
-							disabled={
-								getFile.status !== "SUCCESS" ||
-								fileActionsDisabled
-							}
-							onClick={() => void downloadNotebook()}
-							aria-label="Download"
-						>
-							<DownloadIcon className="size-3" />
-						</Button>
-					</TooltipTrigger>
-					<TooltipContent>Download</TooltipContent>
-				</Tooltip>
+				{!readOnly && (
+					<>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="sm"
+									disabled={
+										content === null || fileActionsDisabled
+									}
+									onClick={() => void saveNotebook()}
+									aria-label="Save"
+								>
+									<SaveIcon className="size-3" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>Save</TooltipContent>
+						</Tooltip>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="sm"
+									disabled={
+										getFile.status !== "SUCCESS" ||
+										fileActionsDisabled
+									}
+									onClick={() => void downloadNotebook()}
+									aria-label="Download"
+								>
+									<DownloadIcon className="size-3" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>Download</TooltipContent>
+						</Tooltip>
+					</>
+				)}
 			</div>
 
 			{/* Body */}
@@ -340,6 +355,7 @@ export const FileNotebook: React.FC<FileNotebookProps> = ({
 						}
 						onChange={handleChange}
 						onStateChange={setNotebookState}
+						readOnly={readOnly}
 					/>
 				)}
 			</div>

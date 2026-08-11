@@ -85,6 +85,8 @@ export interface NotebookCellBaseProps {
 	canMoveUp: boolean;
 	/** Whether this cell can move down (not already last). */
 	canMoveDown: boolean;
+	/** Lock editing and structure; only running stays available. */
+	readOnly?: boolean;
 	/** dnd-kit drag-handle props applied to the grip (attributes + listeners). */
 	dragHandleProps?: React.HTMLAttributes<HTMLElement>;
 }
@@ -132,6 +134,7 @@ export const NotebookCell: React.FC<NotebookCellProps> = ({
 	onMoveDown,
 	canMoveUp,
 	canMoveDown,
+	readOnly = false,
 	dragHandleProps,
 	primaryAction,
 	actions,
@@ -203,55 +206,67 @@ export const NotebookCell: React.FC<NotebookCellProps> = ({
 	];
 
 	const typeActions = actions ?? [];
+	// In read-only mode only run actions remain; hide the toolbar/menus when a
+	// cell has none, and drop the ellipsis when there are no menu actions.
+	const showToolbar =
+		!readOnly || Boolean(primaryAction) || typeActions.length > 0;
+	const showEllipsis = !readOnly || typeActions.length > 0;
 
 	// The dropdown and context menus share these items (different item widgets).
 	const dropdownItems = (
 		<>
-			{structuralActions.map((action) => (
-				<DropdownMenuItem
-					key={action.id}
-					disabled={action.disabled}
-					onSelect={action.onSelect}
-				>
-					{action.icon}
-					{action.label}
-				</DropdownMenuItem>
-			))}
-			<DropdownMenuSeparator />
-			{moveActions.map((action) => (
-				<DropdownMenuItem
-					key={action.id}
-					disabled={action.disabled}
-					onSelect={action.onSelect}
-				>
-					{action.icon}
-					{action.label}
-				</DropdownMenuItem>
-			))}
-			<DropdownMenuSeparator />
-			<DropdownMenuSub>
-				<DropdownMenuSubTrigger disabled={disabled}>
-					Change Cell Type
-				</DropdownMenuSubTrigger>
-				<DropdownMenuSubContent>
-					<DropdownMenuRadioGroup
-						value={cell.cell_type}
-						onValueChange={(value) =>
-							onChangeType(index, value as JupyterCellType)
-						}
-					>
-						{CELL_TYPES.map((type) => (
-							<DropdownMenuRadioItem
-								key={type.value}
-								value={type.value}
+			{!readOnly && (
+				<>
+					{structuralActions.map((action) => (
+						<DropdownMenuItem
+							key={action.id}
+							disabled={action.disabled}
+							onSelect={action.onSelect}
+						>
+							{action.icon}
+							{action.label}
+						</DropdownMenuItem>
+					))}
+					<DropdownMenuSeparator />
+					{moveActions.map((action) => (
+						<DropdownMenuItem
+							key={action.id}
+							disabled={action.disabled}
+							onSelect={action.onSelect}
+						>
+							{action.icon}
+							{action.label}
+						</DropdownMenuItem>
+					))}
+					<DropdownMenuSeparator />
+					<DropdownMenuSub>
+						<DropdownMenuSubTrigger disabled={disabled}>
+							Change Cell Type
+						</DropdownMenuSubTrigger>
+						<DropdownMenuSubContent>
+							<DropdownMenuRadioGroup
+								value={cell.cell_type}
+								onValueChange={(value) =>
+									onChangeType(
+										index,
+										value as JupyterCellType,
+									)
+								}
 							>
-								{type.label}
-							</DropdownMenuRadioItem>
-						))}
-					</DropdownMenuRadioGroup>
-				</DropdownMenuSubContent>
-			</DropdownMenuSub>
-			{typeActions.length > 0 && <DropdownMenuSeparator />}
+								{CELL_TYPES.map((type) => (
+									<DropdownMenuRadioItem
+										key={type.value}
+										value={type.value}
+									>
+										{type.label}
+									</DropdownMenuRadioItem>
+								))}
+							</DropdownMenuRadioGroup>
+						</DropdownMenuSubContent>
+					</DropdownMenuSub>
+					{typeActions.length > 0 && <DropdownMenuSeparator />}
+				</>
+			)}
 			{typeActions.map((action) => (
 				<DropdownMenuItem
 					key={action.id}
@@ -267,51 +282,58 @@ export const NotebookCell: React.FC<NotebookCellProps> = ({
 
 	const contextItems = (
 		<>
-			{structuralActions.map((action) => (
-				<ContextMenuItem
-					key={action.id}
-					disabled={action.disabled}
-					onSelect={action.onSelect}
-				>
-					{action.icon}
-					{action.label}
-				</ContextMenuItem>
-			))}
-			<ContextMenuSeparator />
-			{moveActions.map((action) => (
-				<ContextMenuItem
-					key={action.id}
-					disabled={action.disabled}
-					onSelect={action.onSelect}
-				>
-					{action.icon}
-					{action.label}
-				</ContextMenuItem>
-			))}
-			<ContextMenuSeparator />
-			<ContextMenuSub>
-				<ContextMenuSubTrigger disabled={disabled}>
-					Change Cell Type
-				</ContextMenuSubTrigger>
-				<ContextMenuSubContent>
-					<ContextMenuRadioGroup
-						value={cell.cell_type}
-						onValueChange={(value) =>
-							onChangeType(index, value as JupyterCellType)
-						}
-					>
-						{CELL_TYPES.map((type) => (
-							<ContextMenuRadioItem
-								key={type.value}
-								value={type.value}
+			{!readOnly && (
+				<>
+					{structuralActions.map((action) => (
+						<ContextMenuItem
+							key={action.id}
+							disabled={action.disabled}
+							onSelect={action.onSelect}
+						>
+							{action.icon}
+							{action.label}
+						</ContextMenuItem>
+					))}
+					<ContextMenuSeparator />
+					{moveActions.map((action) => (
+						<ContextMenuItem
+							key={action.id}
+							disabled={action.disabled}
+							onSelect={action.onSelect}
+						>
+							{action.icon}
+							{action.label}
+						</ContextMenuItem>
+					))}
+					<ContextMenuSeparator />
+					<ContextMenuSub>
+						<ContextMenuSubTrigger disabled={disabled}>
+							Change Cell Type
+						</ContextMenuSubTrigger>
+						<ContextMenuSubContent>
+							<ContextMenuRadioGroup
+								value={cell.cell_type}
+								onValueChange={(value) =>
+									onChangeType(
+										index,
+										value as JupyterCellType,
+									)
+								}
 							>
-								{type.label}
-							</ContextMenuRadioItem>
-						))}
-					</ContextMenuRadioGroup>
-				</ContextMenuSubContent>
-			</ContextMenuSub>
-			{typeActions.length > 0 && <ContextMenuSeparator />}
+								{CELL_TYPES.map((type) => (
+									<ContextMenuRadioItem
+										key={type.value}
+										value={type.value}
+									>
+										{type.label}
+									</ContextMenuRadioItem>
+								))}
+							</ContextMenuRadioGroup>
+						</ContextMenuSubContent>
+					</ContextMenuSub>
+					{typeActions.length > 0 && <ContextMenuSeparator />}
+				</>
+			)}
 			{typeActions.map((action) => (
 				<ContextMenuItem
 					key={action.id}
@@ -331,13 +353,15 @@ export const NotebookCell: React.FC<NotebookCellProps> = ({
 				<div className="group relative flex gap-1.5">
 					{/* Gutter — drag handle + collapse toggle, shown on hover. */}
 					<div className="flex shrink-0 flex-row items-start gap-0.5 pt-2 opacity-0 transition-opacity group-hover:opacity-100">
-						<div
-							title="Drag to reorder"
-							className="flex size-5 cursor-grab items-center justify-center text-muted-foreground/60 hover:text-foreground"
-							{...dragHandleProps}
-						>
-							<GripVerticalIcon className="size-4" />
-						</div>
+						{!readOnly && (
+							<div
+								title="Drag to reorder"
+								className="flex size-5 cursor-grab items-center justify-center text-muted-foreground/60 hover:text-foreground"
+								{...dragHandleProps}
+							>
+								<GripVerticalIcon className="size-4" />
+							</div>
+						)}
 						<button
 							type="button"
 							className="flex size-5 cursor-pointer items-center justify-center rounded text-muted-foreground/60 transition-colors hover:text-foreground"
@@ -377,53 +401,63 @@ export const NotebookCell: React.FC<NotebookCellProps> = ({
 						)}
 
 						{/* Toolbar — floats above top-right; revealed on hover, pinned when active. */}
-						<div
-							className={`-top-3 absolute right-0 z-20 flex items-center gap-0.5 rounded-md border border-border bg-background p-0.5 shadow-sm transition-opacity ${
-								isActive
-									? "opacity-100"
-									: "opacity-0 focus-within:opacity-100 group-hover:opacity-100"
-							}`}
-						>
-							{primaryAction}
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										variant="ghost"
-										size="icon-sm"
-										className="size-7 text-muted-foreground hover:text-destructive"
-										disabled={disabled}
-										onClick={(e) => {
-											e.stopPropagation();
-											onDelete(index);
-										}}
-										aria-label="Delete cell"
-									>
-										<Trash2Icon className="size-3.5" />
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent>Delete cell</TooltipContent>
-							</Tooltip>
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button
-										variant="ghost"
-										size="icon-sm"
-										className="size-7 text-muted-foreground hover:text-foreground"
-										title="More actions"
-										onClick={(e) => e.stopPropagation()}
-										aria-label="More actions"
-									>
-										<MoreHorizontalIcon className="size-3.5" />
-									</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent
-									align="end"
-									className="w-52"
-								>
-									{dropdownItems}
-								</DropdownMenuContent>
-							</DropdownMenu>
-						</div>
+						{showToolbar && (
+							<div
+								className={`-top-3 absolute right-0 z-20 flex items-center gap-0.5 rounded-md border border-border bg-background p-0.5 shadow-sm transition-opacity ${
+									isActive
+										? "opacity-100"
+										: "opacity-0 focus-within:opacity-100 group-hover:opacity-100"
+								}`}
+							>
+								{primaryAction}
+								{!readOnly && (
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<Button
+												variant="ghost"
+												size="icon-sm"
+												className="size-7 text-muted-foreground hover:text-destructive"
+												disabled={disabled}
+												onClick={(e) => {
+													e.stopPropagation();
+													onDelete(index);
+												}}
+												aria-label="Delete cell"
+											>
+												<Trash2Icon className="size-3.5" />
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent>
+											Delete cell
+										</TooltipContent>
+									</Tooltip>
+								)}
+								{showEllipsis && (
+									<DropdownMenu>
+										<DropdownMenuTrigger asChild>
+											<Button
+												variant="ghost"
+												size="icon-sm"
+												className="size-7 text-muted-foreground hover:text-foreground"
+												title="More actions"
+												onClick={(e) =>
+													e.stopPropagation()
+												}
+												aria-label="More actions"
+											>
+												<MoreHorizontalIcon className="size-3.5" />
+											</Button>
+										</DropdownMenuTrigger>
+										<DropdownMenuContent
+											align="end"
+											className="w-52"
+										>
+											{dropdownItems}
+										</DropdownMenuContent>
+									</DropdownMenu>
+								)}
+							</div>
+						)}
 						{/* biome-ignore lint/a11y/noStaticElementInteractions: click anywhere on the cell activates it */}
 						{/* biome-ignore lint/a11y/useKeyWithClickEvents: click anywhere on the cell activates it */}
 						<div
@@ -465,7 +499,7 @@ export const NotebookCell: React.FC<NotebookCellProps> = ({
 										onClick={(e) => e.stopPropagation()}
 										onDoubleClick={(e) => {
 											e.stopPropagation();
-											if (!disabled) {
+											if (!disabled && !readOnly) {
 												setIsEditingName(true);
 											}
 										}}
@@ -490,9 +524,11 @@ export const NotebookCell: React.FC<NotebookCellProps> = ({
 					</div>
 				</div>
 			</ContextMenuTrigger>
-			<ContextMenuContent className="w-52">
-				{contextItems}
-			</ContextMenuContent>
+			{(!readOnly || typeActions.length > 0) && (
+				<ContextMenuContent className="w-52">
+					{contextItems}
+				</ContextMenuContent>
+			)}
 		</ContextMenu>
 	);
 };

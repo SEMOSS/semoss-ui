@@ -70,6 +70,9 @@ interface NotebookProps {
 
 	/** Fires whenever the notebook's state changes (for an external toolbar). */
 	onStateChange?: (state: NotebookState) => void;
+
+	/** When true, lock editing/structure so only running cells is allowed. */
+	readOnly?: boolean;
 }
 
 /** A snapshot of the notebook's live state, emitted whenever it changes. */
@@ -183,7 +186,16 @@ const parseRawNotebook = (
  * File I/O (load / save / download) is owned by the `FileNotebook` wrapper.
  */
 export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
-	({ content, onChange = () => null, insightId, onStateChange }, ref) => {
+	(
+		{
+			content,
+			onChange = () => null,
+			insightId,
+			onStateChange,
+			readOnly = false,
+		},
+		ref,
+	) => {
 		const insight = useInsight();
 
 		const [notebook, setNotebook] = useState<JupyterNotebook | null>(
@@ -778,6 +790,7 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 														{
 															index,
 															disabled: isBusy,
+															readOnly,
 															isActive:
 																activeCellIndex ===
 																index,
@@ -918,7 +931,8 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 															<SortableCell
 																id={cell.id}
 																disabled={
-																	isBusy
+																	isBusy ||
+																	readOnly
 																}
 																label={`Moving ${cell.metadata.name || "cell"}`}
 																onNodeRef={(
@@ -936,6 +950,9 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 																	.length -
 																	1 && (
 																<NotebookCellSeparator
+																	readOnly={
+																		readOnly
+																	}
 																	disabled={
 																		isBusy
 																	}
@@ -956,30 +973,32 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 											)}
 
 											{/* Add cell */}
-											<div className="mt-2 flex items-center justify-center gap-2 pt-1">
-												<Button
-													variant="outline"
-													size="sm"
-													disabled={isBusy}
-													onClick={() =>
-														addCell("code")
-													}
-												>
-													<PlusIcon className="size-4" />
-													Code
-												</Button>
-												<Button
-													variant="outline"
-													size="sm"
-													disabled={isBusy}
-													onClick={() =>
-														addCell("markdown")
-													}
-												>
-													<PlusIcon className="size-4" />
-													Markdown
-												</Button>
-											</div>
+											{!readOnly && (
+												<div className="mt-2 flex items-center justify-center gap-2 pt-1">
+													<Button
+														variant="outline"
+														size="sm"
+														disabled={isBusy}
+														onClick={() =>
+															addCell("code")
+														}
+													>
+														<PlusIcon className="size-4" />
+														Code
+													</Button>
+													<Button
+														variant="outline"
+														size="sm"
+														disabled={isBusy}
+														onClick={() =>
+															addCell("markdown")
+														}
+													>
+														<PlusIcon className="size-4" />
+														Markdown
+													</Button>
+												</div>
+											)}
 										</div>
 									</SortableContext>
 								</DndContext>
@@ -988,14 +1007,18 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 					</div>
 				</ContextMenuTrigger>
 				<ContextMenuContent>
-					<ContextMenuItem
-						disabled={!notebook || isBusy}
-						onClick={() => exportAsPython()}
-					>
-						<FileCode2Icon className="size-4" />
-						Export as .py
-					</ContextMenuItem>
-					<ContextMenuSeparator />
+					{!readOnly && (
+						<>
+							<ContextMenuItem
+								disabled={!notebook || isBusy}
+								onClick={() => exportAsPython()}
+							>
+								<FileCode2Icon className="size-4" />
+								Export as .py
+							</ContextMenuItem>
+							<ContextMenuSeparator />
+						</>
+					)}
 					<ContextMenuItem
 						disabled={!hasCodeCells || isBusy}
 						onClick={() => runAllCells()}
@@ -1003,7 +1026,7 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 						<PlayIcon className="size-4" />
 						Run All
 					</ContextMenuItem>
-					{hasCellOutputs && (
+					{!readOnly && hasCellOutputs && (
 						<ContextMenuItem
 							disabled={isBusy}
 							onClick={() => clearAllOutputs()}

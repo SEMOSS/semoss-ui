@@ -91,6 +91,7 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 					mode={mode}
 					path={path}
 					onChange={onChange}
+					readOnly={readOnly}
 				/>
 			)}
 			{!isImage &&

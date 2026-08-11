@@ -7,6 +7,8 @@ export interface NotebookCellSeparatorProps {
 	onInsert: (type: JupyterCellType) => void;
 	/** Disable inserting while the notebook is busy. */
 	disabled?: boolean;
+	/** When true, lock editing/structure so only running cells is allowed. */
+	readOnly?: boolean;
 }
 
 /**
@@ -17,34 +19,39 @@ export interface NotebookCellSeparatorProps {
 export const NotebookCellSeparator: React.FC<NotebookCellSeparatorProps> = ({
 	onInsert,
 	disabled,
+	readOnly,
 }) => {
 	return (
 		<div className="group/gap relative flex h-6 items-center justify-center">
-			<div className="mx-auto h-px w-[60%] bg-transparent transition-colors group-hover/gap:bg-border" />
-			<div className="pointer-events-none absolute z-10 flex items-center gap-1 opacity-0 transition-opacity group-hover/gap:pointer-events-auto group-hover/gap:opacity-100">
-				<Button
-					type="button"
-					variant="outline"
-					size="sm"
-					disabled={disabled}
-					className="h-5 gap-1 bg-background px-1 text-xs"
-					onClick={() => onInsert("code")}
-				>
-					<PlusIcon className="size-3" />
-					Code
-				</Button>
-				<Button
-					type="button"
-					variant="outline"
-					size="sm"
-					disabled={disabled}
-					className="h-5 gap-1 bg-background px-1 text-xs"
-					onClick={() => onInsert("markdown")}
-				>
-					<PlusIcon className="size-3" />
-					Markdown
-				</Button>
-			</div>
+			{!readOnly && (
+				<>
+					<div className="mx-auto h-px w-[60%] bg-transparent transition-colors group-hover/gap:bg-border" />
+					<div className="pointer-events-none absolute z-10 flex items-center gap-1 opacity-0 transition-opacity group-hover/gap:pointer-events-auto group-hover/gap:opacity-100">
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							disabled={disabled}
+							className="h-5 gap-1 bg-background px-1 text-xs"
+							onClick={() => onInsert("code")}
+						>
+							<PlusIcon className="size-3" />
+							Code
+						</Button>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							disabled={disabled}
+							className="h-5 gap-1 bg-background px-1 text-xs"
+							onClick={() => onInsert("markdown")}
+						>
+							<PlusIcon className="size-3" />
+							Markdown
+						</Button>
+					</div>
+				</>
+			)}
 		</div>
 	);
 };
