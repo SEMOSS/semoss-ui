@@ -41,6 +41,12 @@ const GPT_5_STATIC_METADATA = {
 	benchmarks: [{ name: "SWE-Bench", score: 74.9 }],
 };
 
+const OTHER_OPENAI: ModelVersionDefinition = {
+	name: "other-openai",
+	display: "Other",
+	icon: "/src/assets/img/OPEN_AI.svg",
+};
+
 const getField = (fields: FieldDefinition[], key: string) => {
 	const field = fields.find((candidate) => candidate.key === key);
 	expect(field, `${key} field should exist`).toBeDefined();
@@ -50,6 +56,28 @@ const getField = (fields: FieldDefinition[], key: string) => {
 describe("static model metadata defaults", () => {
 	it("looks up models using the catalog model key", () => {
 		expect(getStaticModelMetadataLookup(GPT_5)).toEqual({
+			key: "gpt-5",
+			modelId: "gpt-5",
+		});
+	});
+
+	it("ignores a resolved catalog key for a card that names its own model", () => {
+		expect(
+			getStaticModelMetadataLookup(GPT_5, "claude-sonnet-4-5"),
+		).toEqual({
+			key: "gpt-5",
+			modelId: "gpt-5",
+		});
+	});
+
+	it("has nothing to look up for an Other card until an entry resolves", () => {
+		expect(getStaticModelMetadataLookup(OTHER_OPENAI)).toBeNull();
+		expect(getStaticModelMetadataLookup(OTHER_OPENAI, null)).toBeNull();
+		expect(getStaticModelMetadataLookup(OTHER_OPENAI, "   ")).toBeNull();
+	});
+
+	it("looks up the resolved catalog entry for an Other card", () => {
+		expect(getStaticModelMetadataLookup(OTHER_OPENAI, "gpt-5")).toEqual({
 			key: "gpt-5",
 			modelId: "gpt-5",
 		});
@@ -99,19 +127,15 @@ describe("static model metadata defaults", () => {
 			"IMAGE",
 			"PDF",
 		]);
-		expect(getField(fields, "INPUT_MODALITIES").disabledOptions).toEqual([
+		expect(getField(fields, "INPUT_MODALITIES").warningOptions).toEqual([
 			"AUDIO",
 			"VIDEO",
-			"VECTOR",
-			"FILE",
 		]);
 		expect(getField(fields, "OUTPUT_MODALITIES").default).toEqual(["TEXT"]);
-		expect(getField(fields, "OUTPUT_MODALITIES").disabledOptions).toEqual([
+		expect(getField(fields, "OUTPUT_MODALITIES").warningOptions).toEqual([
 			"IMAGE",
 			"AUDIO",
 			"VIDEO",
-			"VECTOR",
-			"FILE",
 			"PDF",
 		]);
 		expect(getField(fields, "MAX_TOKENS").default).toBe(128000);
@@ -135,14 +159,14 @@ describe("static model metadata defaults", () => {
 		);
 	});
 
-	it("leaves every modality enabled when static metadata is unavailable", () => {
+	it("warns on no modality when static metadata is unavailable", () => {
 		const fields = buildModelMetadataFields("OpenAI", GPT_5, null);
 
 		expect(
-			getField(fields, "INPUT_MODALITIES").disabledOptions,
+			getField(fields, "INPUT_MODALITIES").warningOptions,
 		).toBeUndefined();
 		expect(
-			getField(fields, "OUTPUT_MODALITIES").disabledOptions,
+			getField(fields, "OUTPUT_MODALITIES").warningOptions,
 		).toBeUndefined();
 		expect(
 			fields.some((field) => field.key === "SUPPORTED_PARAMETERS"),

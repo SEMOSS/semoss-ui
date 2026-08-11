@@ -1,5 +1,6 @@
 export * from "./room-compaction-indicator";
 export * from "./room-content";
+export * from "./room-context-usage-indicator";
 export * from "./room-inline-tool";
 export * from "./room-input";
 export * from "./room-input-menu-file-explorer";
