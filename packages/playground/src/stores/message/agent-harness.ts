@@ -17,12 +17,9 @@ import { ResponseMessageStore } from "./response-message.store";
 export const AGENT_HARNESS_TYPE = "semoss";
 
 /**
- * Maps an AgentToolItem's status onto ToolStore's status enum. ToolStore has
- * no dedicated "waiting on a human decision" state (see PendingAgentAction /
- * approval UI — not yet built), so INPUT_REQUIRED is approximated as LOADING:
- * honestly "still in progress" without falsely reading as done. QUEUED has no
- * branch here — it's ToolStore's own default status for a freshly synced
- * tool, so nothing needs setting.
+ * ToolStore has no "waiting on a human decision" state yet, so
+ * INPUT_REQUIRED is approximated as LOADING. QUEUED has no branch — it's
+ * ToolStore's own default status.
  */
 const mapToolStatus = (
 	status: string,
@@ -44,16 +41,11 @@ const mapToolStatus = (
 };
 
 /**
- * Build a TOOL_CALL part from a fully-parsed AgentToolItem. Unlike the
- * OpenAI-delta tool stream (tool-stream.ts), agent-run tool items always
- * arrive complete — full name/arguments/metadata — so there's no placeholder
- * phase to manage here.
+ * Agent-run tool items arrive fully parsed, unlike the OpenAI-delta tool
+ * stream (tool-stream.ts) — no placeholder phase needed.
  *
- * SMSS_MCP_EXECUTION is forced to "disabled" regardless of what the item's
- * metadata carries: the backend harness already executed this tool itself
- * (HarnessToolExecutor / AgentToolDecisionHandler). The FE must never queue it
- * for its own client-side dispatch (continueToolExecution's auto-run path) —
- * that would re-run a tool the backend already ran.
+ * SMSS_MCP_EXECUTION is forced to "disabled": the backend already executed
+ * this tool. The FE must never queue it for its own auto-run path.
  */
 const buildToolCallPart = (item: {
 	id: string;
@@ -84,25 +76,14 @@ const buildToolCallPart = (item: {
 });
 
 /**
- * Apply one canonical agent-run item event onto the response message. Must
- * already be inside a mobx action.
+ * Apply one agent-run item event onto the response message. Must already be
+ * inside a mobx action.
  *
- * `items` is the SDK's own assembled state for this event (subscribeAgentRun
- * runs applyAgentRunItemEvent internally and hands back the result) — tool
- * status reads come from there rather than from the raw event, so Playground
- * never has to know whether a given update was a delta or a patch, or how
- * multiple patches merge together; that's protocol-level knowledge the SDK
- * already owns.
- *
- * message/reasoning text is the one exception: it's read straight off the
- * event rather than off `items`, because the raw event already gives exactly
- * what needs to be appended in either case text can arrive (see
- * AgentRunStreamService on the backend) — deltas (item.started with empty
- * text, then item.updated.delta chunks) or all-at-once (item.started already
- * carries the full text, no item.updated at all — e.g. a resume path where
- * nothing streamed incrementally). savePart's own merge-consecutive-parts
- * behavior does the accumulation; item.completed never re-saves text, since
- * one of the two paths above already built it.
+ * Tool status reads from `items` (the SDK's already-merged state) rather
+ * than the raw event, so Playground never handles patch merging itself.
+ * Text is read straight off the event — item.started carries either empty
+ * text (deltas follow) or the full text (nothing streamed incrementally);
+ * item.completed never re-saves text either way.
  */
 const applyAgentRunItem = (
 	responseMessage: ResponseMessageStore,
@@ -178,24 +159,10 @@ const applyAgentRunItem = (
 /**
  * Run a user message through the server-side agent harness (RunAgent).
  *
- * Submits the run without waiting (wait=false) and drives the response
- * through the SDK's agent-run subscription: item events (message/reasoning
- * deltas, tool lifecycle) stream in via applyAgentRunItem, and the durable
- * snapshot reconciles the turn at INPUT_REQUIRED/terminal boundaries.
- *
- * A non-COMPLETED terminal status rejects, matching the prior contract (the
- * caller removes the optimistic input on failure). INPUT_REQUIRED does not
- * settle this promise — the turn stays mounted, "thinking," until the run
- * resumes or finishes. There is no pending-action UI yet (see
- * PendingAgentAction), so a paused run currently has no way to move forward
- * from the FE short of a future decideAgentRunAction-backed affordance.
- *
- * @param message - The response message store initiating the turn. Its room is
- *   used and the new messages are wired beneath it.
- * @param inputMessage - The user input message to send to the agent.
- * @param existingResponse - Optional pre-created response placeholder already
- *   wired into the message tree. When provided, skips creating a new
- *   ResponseMessageStore and the addChild setup.
+ * Submits without waiting (wait=false), then drives the response via
+ * subscribeAgentRun. A non-COMPLETED terminal status rejects (caller removes
+ * the optimistic input). INPUT_REQUIRED leaves the turn mounted and pending —
+ * there's no approval UI yet, so a paused run has no way to move forward.
  */
 export const runAgentMessage = async (
 	message: ResponseMessageStore,
@@ -229,8 +196,7 @@ export const runAgentMessage = async (
 			},
 		} as ResponsePixelMessage);
 
-	// The old code relied on streamJob.run()'s own showLoading toggle. This
-	// path no longer goes through streamJob, so it owns room.isLoading itself.
+	// This path doesn't go through streamJob, so it owns isLoading itself.
 	room.setIsLoading(true);
 
 	try {
