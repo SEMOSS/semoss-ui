@@ -63,6 +63,7 @@ import type { RoomStore } from "@/stores";
 import type { Engine, MCPConfig, Workspace } from "@/types";
 import { isKnowledgeMcp } from "@/utility/mcp-utils";
 import { PromptOptimizer } from "../../components/prompt/PromptOptimizer";
+import { RoomContextUsageIndicator } from "./room-context-usage-indicator";
 
 type WorkspaceRef = Pick<Workspace, "workspace_id"> &
 	Partial<Pick<Workspace, "name">>;
@@ -79,21 +80,6 @@ try {
 // ============================================================================
 
 const noop = () => {};
-
-/**
- * Format token counts for display
- * Converts large numbers to readable format (e.g., 1500 -> 1.5k, 2000000 -> 2.0M)
- */
-const formatTokens = (tokens: number | undefined) => {
-	if (tokens === undefined) return "0";
-	if (tokens >= 1000000) {
-		return `${(tokens / 1000000).toFixed(1)}M`;
-	}
-	if (tokens >= 1000) {
-		return `${(tokens / 1000).toFixed(1)}k`;
-	}
-	return tokens.toString();
-};
 
 // ============================================================================
 // TypeScript Interfaces
@@ -190,37 +176,6 @@ interface RoomInputProps {
 	/** Callback to open the room settings/configuration panel */
 	onOpenSettings?: () => void;
 }
-
-// ============================================================================
-// CompactButton
-// ============================================================================
-
-const CompactButton: React.FC<{
-	disabled: boolean;
-	tooltipText: string;
-	onClick: (e: React.MouseEvent) => void;
-}> = ({ disabled, tooltipText, onClick }) => {
-	const { t } = useTranslation("room");
-
-	return (
-		<Tooltip>
-			<TooltipTrigger asChild>
-				<span className="w-full">
-					<Button
-						size="sm"
-						variant="outline"
-						className="w-full text-foreground"
-						disabled={disabled}
-						onClick={onClick}
-					>
-						{t("settings.compact")}
-					</Button>
-				</span>
-			</TooltipTrigger>
-			<TooltipContent>{tooltipText}</TooltipContent>
-		</Tooltip>
-	);
-};
 
 // ============================================================================
 // Main Component
@@ -356,84 +311,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// touch a response until it's done growing new tool-result messages
 		const latestResponseHasTools =
 			room.latestResponseMessage?.hasTools ?? false;
-
-		// ========================================================================
-		// Context Window Tooltip
-		// ========================================================================
-
-		const contextTooltipContent = useMemo(() => {
-			const contextUsedPercent =
-				tokensMax && tokensUsed !== undefined
-					? (tokensUsed / tokensMax) * 100
-					: undefined;
-
-			if (contextUsedPercent === undefined && !onCompact) return null;
-
-			const descriptionKey =
-				contextUsedPercent !== undefined
-					? contextUsedPercent >= 100
-						? "contextWindow.descriptionExceeded"
-						: contextUsedPercent < 50
-							? "contextWindow.descriptionLow"
-							: contextUsedPercent < 75
-								? "contextWindow.descriptionMedium"
-								: "contextWindow.descriptionHigh"
-					: null;
-
-			return (
-				<div className="w-full space-y-1">
-					{contextUsedPercent !== undefined && descriptionKey && (
-						<p className="w-full">{t(descriptionKey)}</p>
-					)}
-					{contextUsedPercent !== undefined && (
-						<p className="flex w-full items-baseline justify-between gap-3">
-							<span>{t("contextWindow.memoryUsedTitle")}</span>
-							<span className="whitespace-nowrap text-end tabular-nums">
-								{t("contextWindow.memoryUsedValue", {
-									used: formatTokens(tokensUsed),
-									total: formatTokens(tokensMax),
-									percent: contextUsedPercent.toFixed(1),
-								})}
-							</span>
-						</p>
-					)}
-					{totalTokens !== undefined && (
-						<p className="flex w-full items-baseline justify-between gap-3">
-							<span>{t("contextWindow.totalUsedTitle")}</span>
-							<span className="whitespace-nowrap text-end tabular-nums">
-								{t("contextWindow.totalUsedValue", {
-									total: formatTokens(totalTokens),
-								})}
-							</span>
-						</p>
-					)}
-					{onCompact && (
-						<CompactButton
-							disabled={isLoading || latestResponseHasTools}
-							tooltipText={
-								isLoading
-									? t("input.thinkingTooltip")
-									: latestResponseHasTools
-										? t("input.completeTool")
-										: t("settings.compactTooltip")
-							}
-							onClick={(e) => {
-								e.stopPropagation();
-								onCompact();
-							}}
-						/>
-					)}
-				</div>
-			);
-		}, [
-			tokensUsed,
-			tokensMax,
-			totalTokens,
-			onCompact,
-			t,
-			isLoading,
-			latestResponseHasTools,
-		]);
 
 		// ========================================================================
 		// Speech Recognition Setup
@@ -981,7 +858,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								    until chips-region collapses; then clip from the
 								    left (justify-end + overflow-hidden). */}
 									<div className="flex min-w-0 items-center justify-end gap-2 overflow-hidden">
-										<div data-tour="tour-model">
+										<div
+											data-tour="tour-model"
+											className="flex items-center gap-1.5"
+										>
 											{root.theme.featureFlags
 												?.enableModelSelect && (
 												<EngineSelect
@@ -1004,14 +884,22 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													popoverContentProps={{
 														align: "start",
 													}}
-													tokensUsed={tokensUsed}
-													tokensMax={tokensMax}
-													contextTooltipContent={
-														contextTooltipContent
-													}
 												/>
 											)}
 										</div>
+										<RoomContextUsageIndicator
+											// -ms-1 to make spacing between engine select and context usage look more like spacing between it and mic
+											// this is because engine select is ghost
+											className="-ms-1"
+											tokensUsed={tokensUsed}
+											tokensMax={tokensMax}
+											totalTokens={totalTokens}
+											onCompact={onCompact}
+											isLoading={isLoading}
+											latestResponseHasTools={
+												latestResponseHasTools
+											}
+										/>
 										{predefinedPrompts.length > 0 ? (
 											<Tooltip>
 												<TooltipTrigger asChild>
@@ -1052,9 +940,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 															recognitionRef.current?.start();
 														}
 													}}
-													// -ms-1 to make spacing between engine select and mic look more like spacing between mic and send
-													// this is because engine select and mic are ghost
-													className="-ms-1"
 												>
 													<MicIcon
 														className={`${isListening ? "animate-pulse text-destructive" : ""}`}
