@@ -1,5 +1,5 @@
 import { Markdown, Muted } from "@semoss/ui/next";
-import { IMAGE_MIME_TYPES } from "../../../utility/image";
+import { IMAGE_MIME_TYPES } from "../../utility/image";
 import type { JupyterOutput } from "./notebook.types";
 import { normalizeSource } from "./notebook.utility";
 

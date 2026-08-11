@@ -2,7 +2,7 @@ import type { BeforeMount, OnMount } from "@monaco-editor/react";
 import type * as monaco from "monaco-editor";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useTheme } from "@semoss/ui/next";
-import { MonacoEditor } from "../../monaco";
+import { MonacoEditor } from "../monaco";
 
 // Monaco needs an explicit height. A notebook code cell should grow with its
 // content (up to a cap, after which it scrolls internally) instead of sitting at

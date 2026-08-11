@@ -187,7 +187,7 @@ export const CodePreviewBlock = ({
 									) : (
 										<PlayIcon className="size-3" />
 									)}
-									{isExecuting ? "Running" : "Execute"}
+									{isExecuting ? "Running" : "Run"}
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent>Run the script</TooltipContent>
