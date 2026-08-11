@@ -233,7 +233,11 @@ export const hasCatalogEntry = (
  * text output - so the catalog staying silent about them says nothing about
  * support and must never produce a warning.
  */
-const CATALOG_MODALITIES = ["TEXT", "IMAGE", "AUDIO", "VIDEO", "PDF"];
+/**
+ * Modalities the catalog can actually list. VECTOR and FILE never appear there,
+ * so their absence says nothing and selecting them is never flagged.
+ */
+export const CATALOG_MODALITIES = ["TEXT", "IMAGE", "AUDIO", "VIDEO", "PDF"];
 
 /**
  * Normalize the catalog's lowercase modality values ("text", "pdf") into the

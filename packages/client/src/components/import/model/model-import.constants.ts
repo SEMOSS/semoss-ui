@@ -34,7 +34,12 @@ export interface FieldDefinition {
 	// optional extras seen in the constants
 	value?: string | string[];
 	options?: string[];
-	disabledOptions?: string[];
+	/**
+	 * Options the model catalog does not list for this field. Still selectable -
+	 * choosing one only surfaces an advisory note, since the catalog is
+	 * hand-maintained and a deployment can legitimately differ from it.
+	 */
+	warningOptions?: string[];
 	optionLabels?: Record<string, string>;
 	disabled?: boolean;
 	default?: string | string[] | number | boolean;
