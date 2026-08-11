@@ -19,6 +19,7 @@ export const RoomFileEditor: React.FC<RoomFileEditorProps> = observer(
 
 		return (
 			<FileEditor
+				key={`${config.path}-${room.sidebar.fileKeys[config.path] ?? 0}`}
 				mode={{
 					type: "INSIGHT",
 				}}

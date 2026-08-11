@@ -13,8 +13,8 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
+import { copyToClipboard } from "@/utility/clipboard";
 import { BlockHeader } from "./block-header";
-import { copyToClipboard, getErrorMessage } from "./clipboard";
 import { createHtmlResponseFilePath } from "./constants";
 import { SandpackHtmlPreview } from "./sandpack-html-preview";
 
@@ -201,7 +201,11 @@ export const HtmlPreviewBlock = ({
 
 			toast.success(`Saved in room as ${filePath}`);
 		} catch (error) {
-			toast.error(getErrorMessage(error));
+			const message =
+				error instanceof Error && error.message
+					? error.message
+					: "Error";
+			toast.error(message);
 		} finally {
 			setIsSavingToRoom(false);
 		}

@@ -142,6 +142,9 @@ interface RoomStoreInterface {
 		 * Count of the model;
 		 */
 		counter: number;
+
+		/** Per-path counter used to force-remount file editor tabs */
+		fileKeys: Record<string, number>;
 	};
 }
 
@@ -177,6 +180,7 @@ export class RoomStore {
 		},
 		sidebar: {
 			isOpen: false,
+			fileKeys: {},
 			model: FlexLayout.Model.fromJson({
 				global: {
 					borderEnableTabScrollbar: true,
@@ -497,6 +501,7 @@ export class RoomStore {
 			...metadata,
 		};
 	};
+
 	/** Actions */
 	/**
 	 * Initialize the room and load messages and options if they are there
@@ -898,6 +903,65 @@ export class RoomStore {
 				true,
 			),
 		);
+	};
+
+	/**
+	 * Open or focus a sidebar file-editor tab for a path.
+	 *
+	 * When `forceRefresh` is true and the tab already exists, increments a
+	 * config `refreshKey` to force a remount of the editor for that tab.
+	 */
+	openFileEditorSidebarNode = (
+		path: string,
+		options?: {
+			name?: string;
+			forceRefresh?: boolean;
+		},
+	): void => {
+		const fileName =
+			options?.name ?? path.split("/").filter(Boolean).pop() ?? path;
+		const model = this._store.sidebar.model;
+
+		const matchedNodes: FlexLayout.TabNode[] = [];
+		model.visitNodes((node) => {
+			if (
+				matchedNodes.length > 0 ||
+				!(node instanceof FlexLayout.TabNode)
+			) {
+				return;
+			}
+
+			const config = node.getConfig() as { path?: string } | undefined;
+			if (
+				node.getComponent() === "room-file-editor" &&
+				config?.path === path
+			) {
+				matchedNodes.push(node);
+			}
+		});
+
+		const selectedNode = matchedNodes[0];
+		if (selectedNode) {
+			if (options?.forceRefresh) {
+				const prev = this._store.sidebar.fileKeys[path] ?? 0;
+				this._store.sidebar.fileKeys[path] = prev + 1;
+			}
+
+			model.doAction(FlexLayout.Actions.selectTab(selectedNode.getId()));
+			this._store.sidebar.isOpen = true;
+			return;
+		}
+
+		this.addSidebarNode(`FILE--${path}`, {
+			type: "tab",
+			name: fileName,
+			component: "room-file-editor",
+			config: {
+				name: fileName,
+				path,
+			},
+			enableClose: true,
+		});
 	};
 
 	/**

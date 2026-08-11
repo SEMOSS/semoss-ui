@@ -10,11 +10,8 @@ import {
 import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
-import {
-	countInlineImages,
-	hasInlineImage,
-	InlineImageSegments,
-} from "./inline-image";
+import { countInlineImages, hasInlineImage } from "../../utility/image";
+import { InlineImageSegments } from "./inline-image";
 import { JsonViewer } from "./json-viewer";
 
 export interface CellOutputBlockProps {

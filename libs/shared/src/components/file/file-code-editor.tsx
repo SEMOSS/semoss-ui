@@ -19,7 +19,15 @@ import {
 } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { download, runPixel, useInsight, usePixel } from "@semoss/sdk/react";
-import { Button, Muted, Spinner, toast } from "@semoss/ui/next";
+import {
+	Button,
+	Muted,
+	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+	toast,
+} from "@semoss/ui/next";
 import {
 	MONACO_CONFIG,
 	MONACO_EXT_LANGUAGE_MAPPING,
@@ -492,7 +500,24 @@ export const FileCodeEditor = forwardRef<
 			<div className="relative flex h-full w-full flex-col items-center bg-background [&_.quick-input-widget]:mx-0!">
 				{/* Toolbar */}
 				{!hideToolbar && (
-					<div className="flex w-full shrink-0 items-center justify-between gap-2 border-border border-b px-3 pt-1.5 pb-2.25">
+					<div className="flex w-full shrink-0 items-center justify-between gap-1.5 border-border border-b px-2 py-1">
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="sm"
+									disabled={
+										isLoading ||
+										getFile.status !== "SUCCESS"
+									}
+									onClick={() => getFile.refresh()}
+									aria-label="Refresh"
+								>
+									<RefreshCwIcon className="size-3" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>Refresh</TooltipContent>
+						</Tooltip>
 						<div className="flex items-center gap-1">
 							{leadingToolbar}
 							{language === "json" && jsonErrors.length > 0 && (
@@ -520,42 +545,42 @@ export const FileCodeEditor = forwardRef<
 								)}
 						</div>
 						<div className="flex items-center gap-1.5">
-							<Button
-								variant="outline"
-								size="sm"
-								disabled={
-									isLoading || getFile.status !== "SUCCESS"
-								}
-								onClick={() => getFile.refresh()}
-							>
-								<RefreshCwIcon className="size-4" />
-								Refresh
-							</Button>
 							{!readOnly && (
-								<Button
-									variant="outline"
-									size="sm"
-									disabled={
-										isLoading ||
-										getFile.status !== "SUCCESS"
-									}
-									onClick={() => saveFile()}
-								>
-									<SaveIcon className="size-4" />
-									Save
-								</Button>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="sm"
+											disabled={
+												isLoading ||
+												getFile.status !== "SUCCESS"
+											}
+											onClick={() => saveFile()}
+											aria-label="Save"
+										>
+											<SaveIcon className="size-3" />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>Save</TooltipContent>
+								</Tooltip>
 							)}
-							<Button
-								variant="outline"
-								size="sm"
-								disabled={
-									isLoading || getFile.status !== "SUCCESS"
-								}
-								onClick={() => downloadFile()}
-							>
-								<DownloadIcon className="size-4" />
-								Download
-							</Button>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="sm"
+										disabled={
+											isLoading ||
+											getFile.status !== "SUCCESS"
+										}
+										onClick={() => downloadFile()}
+										aria-label="Download"
+									>
+										<DownloadIcon className="size-3" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>Download</TooltipContent>
+							</Tooltip>
 						</div>
 					</div>
 				)}
