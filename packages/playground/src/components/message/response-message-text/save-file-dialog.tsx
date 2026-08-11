@@ -83,7 +83,7 @@ export const SaveFileDialog = ({
 		>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>Save code file</DialogTitle>
+					<DialogTitle>Save file</DialogTitle>
 				</DialogHeader>
 				<Input
 					value={fileName}
