@@ -133,7 +133,10 @@ export const MembersTable = ({
 			if (editRestriction !== "null") {
 				payload.usageRestriction = editRestriction;
 			}
-			if (editRestriction === "token") {
+			if (
+				editRestriction === "token" ||
+				editRestriction === "token_cache"
+			) {
 				payload.maxTokens = Number(editMaxTokens);
 			}
 			if (editRestriction === "compute") {
@@ -314,6 +317,9 @@ export const MembersTable = ({
 												<SelectItem value="token">
 													Token
 												</SelectItem>
+												<SelectItem value="token_cache">
+													Token + Cache
+												</SelectItem>
 												<SelectItem value="compute">
 													Compute time
 												</SelectItem>
@@ -321,7 +327,8 @@ export const MembersTable = ({
 										</Select>
 									</div>
 
-									{editRestriction === "token" && (
+									{(editRestriction === "token" ||
+										editRestriction === "token_cache") && (
 										<div className="flex flex-col gap-1.5">
 											<Label>Max Tokens</Label>
 											<Input

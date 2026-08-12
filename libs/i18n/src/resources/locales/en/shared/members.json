@@ -24,6 +24,7 @@
 		"usageLimitType": "Usage Limit Type",
 		"none": "None",
 		"token": "Token",
+		"tokenCache": "Token + Cache",
 		"computeTime": "Compute time",
 		"maxTokens": "Max Tokens",
 		"maxResponseTime": "Max Response Time",

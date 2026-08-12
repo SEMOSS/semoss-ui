@@ -81,6 +81,7 @@ const formatValue = (input?: string) => {
 	if (!input) return "—";
 	const mappings: Record<string, string> = {
 		TOKEN: "Token",
+		TOKEN_CACHE: "Token + Cache",
 		COMPUTE: "Compute time",
 		DAY: "Daily",
 		WEEK: "Weekly",
@@ -215,7 +216,11 @@ export const MembersList = ({
 			const r = user.usage_restriction;
 			if (r && r !== "null") {
 				payload.usageRestriction = r;
-				if (r.toUpperCase() === "TOKEN" && user.max_tokens != null)
+				if (
+					(r.toUpperCase() === "TOKEN" ||
+						r.toUpperCase() === "TOKEN_CACHE") &&
+					user.max_tokens != null
+				)
 					payload.maxTokens = user.max_tokens;
 				if (
 					r.toUpperCase() === "COMPUTE" &&
@@ -545,12 +550,15 @@ export const MembersList = ({
 										</TableCell>
 										{type === "MODEL" &&
 											(() => {
+												const restriction =
+													user.usage_restriction?.toUpperCase();
 												const limitValue =
-													user.usage_restriction?.toUpperCase() ===
-													"COMPUTE"
+													restriction === "COMPUTE"
 														? `${user.max_response_time?.toLocaleString() ?? "—"} ms`
-														: user.usage_restriction?.toUpperCase() ===
-																"TOKEN"
+														: restriction ===
+																	"TOKEN" ||
+																restriction ===
+																	"TOKEN_CACHE"
 															? (user.max_tokens?.toLocaleString() ??
 																"—")
 															: "—";

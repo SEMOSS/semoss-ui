@@ -191,7 +191,8 @@ export const AddMembersOverlay = ({
 				...(restriction !== "null" && {
 					usageRestriction: restriction,
 				}),
-				...(restriction === "token" && {
+				...((restriction === "token" ||
+					restriction === "token_cache") && {
 					maxTokens: Number(maxTokens),
 				}),
 				...(restriction === "compute" && {
