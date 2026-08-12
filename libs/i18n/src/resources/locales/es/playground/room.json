@@ -8,8 +8,7 @@
 		"edit": "Editar configuración",
 		"compact": "Compactar mensajes de herramientas",
 		"compactSuccess": "Mensajes de herramientas compactados correctamente",
-		"compactError": "Error al compactar los mensajes de herramientas",
-		"compactTooltip": "Compacta tu conversación para ahorrar tokens. Tus mensajes anteriores permanecen igual."
+		"compactError": "Error al compactar los mensajes de herramientas"
 	},
 	"form": {
 		"modelLabel": "Modelo",
