@@ -184,6 +184,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 	const usageRestritctionTypes: Record<string, string> = {
 		null: "None",
 		token: "Token",
+		token_cache: "Token + Cache",
 		compute: "Compute time",
 	};
 	const frequencyTypes: Record<string, string> = {
@@ -214,7 +215,10 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 					  }
 					| null = null;
 
-				if (data.model_usage_restriction === "token") {
+				if (
+					data.model_usage_restriction === "token" ||
+					data.model_usage_restriction === "token_cache"
+				) {
 					data.model_max_response_time = null;
 				}
 				if (data.model_usage_restriction === "compute") {
@@ -671,7 +675,8 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 									);
 								}}
 							/>
-							{limitType === "token" && (
+							{(limitType === "token" ||
+								limitType === "token_cache") && (
 								<Controller
 									name="model_max_tokens"
 									control={control}

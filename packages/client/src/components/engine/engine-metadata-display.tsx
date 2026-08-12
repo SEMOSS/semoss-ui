@@ -27,6 +27,10 @@ export type ModelMetadata = {
 	contextWindow?: number | null;
 	maxInputTokens?: number | null;
 	maxOutputTokens?: number | null;
+	/** Percentage of a normal token a cache-read token counts as toward a member's token usage limit. */
+	cacheReadWeight?: number | null;
+	/** Percentage of a normal token a cache-write (creation) token counts as toward a member's token usage limit. */
+	cacheWriteWeight?: number | null;
 	builtinTools?: string[] | null;
 	family?: string | null;
 	attachment?: boolean | null;
@@ -606,6 +610,9 @@ export interface ModelSettingsValues {
 	/** Digits only; formatted with separators at render time. */
 	contextWindow: string;
 	maxOutputTokens: string;
+	/** Digits only, 0-1000. Empty means the 100% default applies. */
+	cacheReadWeight: string;
+	cacheWriteWeight: string;
 	builtinTools: string[];
 }
 
@@ -647,6 +654,16 @@ export const toModelSettingsValues = (
 			metadata?.maxOutputTokens !== null &&
 			metadata?.maxOutputTokens !== undefined
 				? String(metadata.maxOutputTokens)
+				: "",
+		cacheReadWeight:
+			metadata?.cacheReadWeight !== null &&
+			metadata?.cacheReadWeight !== undefined
+				? String(metadata.cacheReadWeight)
+				: "",
+		cacheWriteWeight:
+			metadata?.cacheWriteWeight !== null &&
+			metadata?.cacheWriteWeight !== undefined
+				? String(metadata.cacheWriteWeight)
 				: "",
 		builtinTools: normalizeStringArray(metadata?.builtinTools),
 	};
@@ -762,6 +779,17 @@ const TokenValue = ({ value }: { value: string }) =>
 	);
 
 /**
+ * Cache token weight as a percentage. Unlike token limits, an empty value is
+ * not "not set" - it is the 100% default, so it is shown rather than treated
+ * as missing.
+ */
+const WeightValue = ({ value }: { value: string }) => (
+	<span className="text-sm">
+		{value !== "" ? formatDigits(value) : "100"}%
+	</span>
+);
+
+/**
  * Read-only rendering of the model settings fields. Shared between the
  * Overview page (always read-only) and the Model Settings card (read mode)
  * so the two never drift apart.
@@ -855,6 +883,14 @@ export const ModelMetadataFields = ({
 
 		<SettingsEntry label="Max output tokens">
 			<TokenValue value={values.maxOutputTokens} />
+		</SettingsEntry>
+
+		<SettingsEntry label="Cache read weight">
+			<WeightValue value={values.cacheReadWeight} />
+		</SettingsEntry>
+
+		<SettingsEntry label="Cache write weight">
+			<WeightValue value={values.cacheWriteWeight} />
 		</SettingsEntry>
 	</>
 );

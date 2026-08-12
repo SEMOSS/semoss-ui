@@ -79,13 +79,16 @@ export const ModelRestrictionFields = ({
 							<SelectItem value="token">
 								{t("restrictions.token")}
 							</SelectItem>
+							<SelectItem value="token_cache">
+								{t("restrictions.tokenCache")}
+							</SelectItem>
 							<SelectItem value="compute">
 								{t("restrictions.computeTime")}
 							</SelectItem>
 						</SelectContent>
 					</Select>
 				</div>
-				{restriction === "token" && (
+				{(restriction === "token" || restriction === "token_cache") && (
 					<div className="flex flex-col gap-1.5">
 						<Label>{t("restrictions.maxTokens")}</Label>
 						<Input

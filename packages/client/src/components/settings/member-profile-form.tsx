@@ -37,6 +37,7 @@ interface ProfileForm {
 const RESTRICTION_LABELS: Record<string, string> = {
 	null: "None",
 	token: "Token",
+	token_cache: "Token + Cache",
 	compute: "Compute time",
 };
 
@@ -144,7 +145,8 @@ export const MemberProfileForm = ({
 				payload.model_usage_restriction = form.restriction;
 				payload.model_usage_frequency = form.frequency;
 				payload.model_max_tokens =
-					form.restriction === "token"
+					form.restriction === "token" ||
+					form.restriction === "token_cache"
 						? Number(form.maxTokens) || null
 						: null;
 				payload.model_max_response_time =
@@ -175,7 +177,8 @@ export const MemberProfileForm = ({
 							? undefined
 							: form.frequency,
 					model_max_tokens:
-						form.restriction === "token"
+						form.restriction === "token" ||
+						form.restriction === "token_cache"
 							? Number(form.maxTokens) || undefined
 							: undefined,
 					model_max_response_time:
@@ -343,7 +346,8 @@ export const MemberProfileForm = ({
 						</p>
 					) : (
 						<div className="grid grid-cols-2 gap-2.5">
-							{form.restriction === "token" ? (
+							{form.restriction === "token" ||
+							form.restriction === "token_cache" ? (
 								<Field label="Max Tokens">
 									<Input
 										type="number"

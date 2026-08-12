@@ -88,6 +88,28 @@ const parseOptionalPositiveInteger = (label: string, value: string) => {
 };
 
 /**
+ * Cache weights are percentages, so unlike a token limit, 0 is a valid value
+ * (e.g. cache reads counting for nothing toward the limit). The 1000% ceiling
+ * matches the backend's validation in SecurityModelMetadataUtils.
+ */
+const parseOptionalWeightPercentage = (label: string, value: string) => {
+	if (value === "") {
+		return null;
+	}
+
+	if (!/^\d+$/.test(value)) {
+		throw new Error(`${label} must be a whole number.`);
+	}
+
+	const parsed = Number(value);
+	if (parsed > 1000) {
+		throw new Error(`${label} must be between 0 and 1000.`);
+	}
+
+	return parsed;
+};
+
+/**
  * Advisory note under a field. Purely informational - nothing is disabled and
  * saving is never blocked, since the catalog is hand-curated and a deployment
  * can legitimately differ from it.
@@ -148,6 +170,8 @@ export const EngineModelSettings = ({
 	const modelIdFieldId = `${fieldId}-model-id`;
 	const contextWindowFieldId = `${fieldId}-context-window`;
 	const maxOutputTokensFieldId = `${fieldId}-max-output-tokens`;
+	const cacheReadWeightFieldId = `${fieldId}-cache-read-weight`;
+	const cacheWriteWeightFieldId = `${fieldId}-cache-write-weight`;
 	const reasoningFieldId = `${fieldId}-reasoning`;
 
 	const [isSaving, setIsSaving] = useState(false);
@@ -355,6 +379,14 @@ export const EngineModelSettings = ({
 				MAX_TOKENS: parseOptionalPositiveInteger(
 					"Max output tokens",
 					form.maxOutputTokens,
+				),
+				CACHE_READ_WEIGHT: parseOptionalWeightPercentage(
+					"Cache read weight",
+					form.cacheReadWeight,
+				),
+				CACHE_WRITE_WEIGHT: parseOptionalWeightPercentage(
+					"Cache write weight",
+					form.cacheWriteWeight,
 				),
 				BUILTIN_TOOLS: normalizeStringArray(form.builtinTools),
 			};
@@ -787,6 +819,61 @@ export const EngineModelSettings = ({
 									message={maxOutputTokensWarning}
 									testId="engine-model-settings--max-output-tokens-warning"
 								/>
+							</Field>
+						</div>
+
+						<div className="grid gap-7 sm:grid-cols-2 sm:gap-4">
+							<Field>
+								<FieldLabel htmlFor={cacheReadWeightFieldId}>
+									Cache read weight
+								</FieldLabel>
+								<Input
+									id={cacheReadWeightFieldId}
+									type="text"
+									inputMode="numeric"
+									placeholder="e.g. 10"
+									value={formatDigits(form.cacheReadWeight)}
+									onChange={(event) =>
+										updateForm(
+											"cacheReadWeight",
+											event.target.value.replace(
+												/[^\d]/g,
+												"",
+											),
+										)
+									}
+								/>
+								<FieldDescription>
+									Percent of a normal token a cache-read token
+									counts as toward a member's token usage
+									limit. Blank uses 100%.
+								</FieldDescription>
+							</Field>
+							<Field>
+								<FieldLabel htmlFor={cacheWriteWeightFieldId}>
+									Cache write weight
+								</FieldLabel>
+								<Input
+									id={cacheWriteWeightFieldId}
+									type="text"
+									inputMode="numeric"
+									placeholder="e.g. 125"
+									value={formatDigits(form.cacheWriteWeight)}
+									onChange={(event) =>
+										updateForm(
+											"cacheWriteWeight",
+											event.target.value.replace(
+												/[^\d]/g,
+												"",
+											),
+										)
+									}
+								/>
+								<FieldDescription>
+									Percent of a normal token a cache-write
+									token counts as toward a member's token
+									usage limit. Blank uses 100%.
+								</FieldDescription>
 							</Field>
 						</div>
 
