@@ -14,8 +14,10 @@ import {
 	DialogTitle,
 	Label,
 	Textarea,
+	toast,
 } from "@semoss/ui/next";
 import { ResponseMessageStore, type RoomStore, type ToolStore } from "@/stores";
+import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import { getToolEngineId, isAskExecutionMode } from "@/utility/mcp-utils";
 import { ToolField } from "./tool-field";
 
@@ -236,6 +238,21 @@ export const ToolsDefaultView = observer(
 			}
 
 			setIsSubmitting(true);
+
+			// An agent-run tool paused on a decision must resume through the
+			// AGENT_RUN_ACTION row, not the legacy room-write paths below —
+			// see decideAgentToolAction.
+			if (tool.pendingAction) {
+				try {
+					await decideAgentToolAction(tool, "submit", data);
+				} catch (error) {
+					toast.error((error as Error).toString());
+				} finally {
+					setIsSubmitting(false);
+				}
+				return;
+			}
+
 			let success = false;
 			let output = "";
 			try {

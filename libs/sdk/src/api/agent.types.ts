@@ -189,4 +189,11 @@ export interface AgentRunSubscription {
 	stop: () => void;
 	/** Current assembled items-state, for seeding a late-joining renderer. */
 	getItems: () => AgentRunItemsState;
+	/**
+	 * Poll immediately instead of waiting out the current interval. Use after
+	 * an action this client knows changed the run (e.g. deciding a paused tool
+	 * call) so INPUT_REQUIRED's slower interval doesn't delay picking it up.
+	 * A no-op once polling has stopped.
+	 */
+	pokeNow: () => void;
 }

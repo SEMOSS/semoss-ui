@@ -30,6 +30,7 @@ import {
 } from "@/components";
 import { useChat, useGracefulErrors } from "@/hooks";
 import { ResponseMessageStore, type RoomStore } from "@/stores";
+import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomSuggestions } from "./room-suggestions";
 
@@ -190,6 +191,22 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 				}
 
 				const tool = event.data.tool;
+
+				// An agent-run tool paused on a decision must resume through
+				// the AGENT_RUN_ACTION row, not room.processTool's legacy
+				// room-write path — see decideAgentToolAction.
+				const liveTool = room.getTool(tool.id);
+				if (liveTool?.pendingAction) {
+					const isCancelled =
+						tool.tool_status === "cancelled" ||
+						tool.tool_status === "paused";
+					await decideAgentToolAction(
+						liveTool,
+						isCancelled ? "reject" : "submit",
+						tool.executedParameters ?? {},
+					);
+					return;
+				}
 
 				room.processTool(
 					tool.message,

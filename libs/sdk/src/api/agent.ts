@@ -250,6 +250,10 @@ export const subscribeAgentRun = (
 	const seenEventIds = new Set<string>();
 	let consecutiveFailures = 0;
 	let itemsState = createAgentRunItemsState();
+	// Set while the loop is between polls, so pokeNow can cut the current wait
+	// short instead of leaving the caller stuck behind INPUT_REQUIRED's slower
+	// interval for a change it already knows just happened.
+	let wake: (() => void) | null = null;
 
 	const stop = () => {
 		if (stopped) {
@@ -257,7 +261,23 @@ export const subscribeAgentRun = (
 		}
 		stopped = true;
 		signal?.removeEventListener("abort", stop);
+		wake?.();
 	};
+
+	const pokeNow = () => wake?.();
+
+	const sleep = (ms: number) =>
+		new Promise<void>((resolve) => {
+			const timer = setTimeout(() => {
+				wake = null;
+				resolve();
+			}, ms);
+			wake = () => {
+				clearTimeout(timer);
+				wake = null;
+				resolve();
+			};
+		});
 
 	signal?.addEventListener("abort", stop);
 
@@ -318,11 +338,11 @@ export const subscribeAgentRun = (
 			if (stopped) {
 				break;
 			}
-			await new Promise((resolve) => setTimeout(resolve, waitMs));
+			await sleep(waitMs);
 		}
 	};
 
 	void loop();
 
-	return { stop, getItems: () => itemsState };
+	return { stop, getItems: () => itemsState, pokeNow };
 };

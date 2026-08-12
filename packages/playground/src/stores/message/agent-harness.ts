@@ -4,9 +4,14 @@ import type {
 	AgentRunItemsState,
 	AgentRunSnapshot,
 	AgentRunStatusValue,
+	AgentRunSubscription,
 	PendingAgentAction,
 } from "@semoss/sdk";
-import { submitAgentRun, subscribeAgentRun } from "@semoss/sdk/react";
+import {
+	decideAgentRunAction,
+	submitAgentRun,
+	subscribeAgentRun,
+} from "@semoss/sdk/react";
 import {
 	MCP_EXECUTION_AGENT_ASK,
 	MCP_EXECUTION_AGENT_AUTO,
@@ -14,6 +19,7 @@ import {
 	STREAMING_PLACEHOLDER_ID,
 } from "@/constants";
 import type { PixelMessageToolCallPart, ResponsePixelMessage } from "@/types";
+import type { ToolStore } from "../tool/tool.store";
 import type { InputMessageStore } from "./input-message.store";
 import { ResponseMessageStore } from "./response-message.store";
 
@@ -270,6 +276,56 @@ const syncPendingActions = (
 };
 
 /**
+ * Live subscriptions for runs currently being driven by runAgentMessage,
+ * keyed by runId. Lets decideAgentToolAction — called from UI far away from
+ * the subscription itself — poke the poll loop instead of waiting out
+ * INPUT_REQUIRED's slower interval for a change this tab just caused.
+ */
+const activeSubscriptions = new Map<string, AgentRunSubscription>();
+
+/**
+ * Resolve a tool call paused on a human decision. The legacy ask-tool paths
+ * (message.saveToolExecution, room.processTool, RunMCPTool by
+ * project/function) all write straight into room history and never touch the
+ * AGENT_RUN_ACTION row — calling them here would leave the backend run stuck
+ * at INPUT_REQUIRED forever while a stray, unrelated tool result lands in the
+ * room. This is the only call that actually resumes the run.
+ *
+ * "approve" vs "edit" is derived from whether paramValues differs from the
+ * call's original arguments — the backend only accepts paramValues for edit
+ * (see decideAgentRunAction). Callers don't need to track that distinction
+ * themselves.
+ */
+export const decideAgentToolAction = async (
+	tool: ToolStore,
+	decision: "reject" | "submit",
+	paramValues?: Record<string, unknown>,
+): Promise<void> => {
+	const pendingAction = tool.pendingAction;
+	if (!pendingAction) {
+		return;
+	}
+	const resolvedDecision =
+		decision === "reject"
+			? "reject"
+			: JSON.stringify(paramValues ?? {}) ===
+					JSON.stringify(pendingAction.toolArgs ?? {})
+				? "approve"
+				: "edit";
+	await decideAgentRunAction(
+		{
+			actionId: pendingAction.actionId,
+			decision: resolvedDecision,
+			paramValues: resolvedDecision === "edit" ? paramValues : undefined,
+		},
+		tool.room.insightId,
+	);
+	// The run resumed the instant the backend applied this decision — poll now
+	// rather than waiting out INPUT_REQUIRED's slower interval to notice.
+	activeSubscriptions.get(pendingAction.runId)?.pokeNow();
+};
+
+/**
  * Run a user message through the server-side agent harness (RunAgent).
  *
  * Submits without waiting (wait=false), then drives the response via
@@ -344,7 +400,7 @@ export const runAgentMessage = async (
 		);
 
 		await new Promise<void>((resolve, reject) => {
-			let subscription: { stop: () => void } | null = null;
+			let subscription: AgentRunSubscription | null = null;
 
 			const settleTerminal = (snapshot: AgentRunSnapshot) => {
 				const status: AgentRunStatusValue = snapshot.status;
@@ -356,6 +412,7 @@ export const runAgentMessage = async (
 					return;
 				}
 				subscription?.stop();
+				activeSubscriptions.delete(handle.runId);
 				if (status !== "COMPLETED") {
 					reject(
 						new Error(
@@ -414,6 +471,7 @@ export const runAgentMessage = async (
 					console.error("Agent run stream error", e);
 				},
 			});
+			activeSubscriptions.set(handle.runId, subscription);
 		});
 	} catch (e) {
 		// remove message if we failed
