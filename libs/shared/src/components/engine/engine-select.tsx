@@ -50,15 +50,6 @@ interface EngineSelectProps {
 	/** Props forwarded to the PopoverContent component */
 	popoverContentProps?: React.ComponentProps<typeof PopoverContent>;
 
-	/** Current token usage for context window indicator */
-	tokensUsed?: number;
-
-	/** Maximum token capacity for context window */
-	tokensMax?: number;
-
-	/** Optional tooltip content to show when hovering context percentage */
-	contextTooltipContent?: React.ReactNode;
-
 	/** Show the engine ID under the engine name instead of the description */
 	showEngineId?: boolean;
 
@@ -89,9 +80,6 @@ export const EngineSelect = ({
 	engineTypes,
 	metaFilters,
 	popoverContentProps = {},
-	tokensUsed,
-	tokensMax,
-	contextTooltipContent,
 	showEngineId,
 	showEngineIcon = true,
 }: EngineSelectProps) => {
@@ -101,25 +89,6 @@ export const EngineSelect = ({
 
 	const [open, setOpen] = useState(false);
 	const [search, setSearch] = useState("");
-	const [contextOpen, setContextOpen] = useState(false);
-	const contextCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(
-		null,
-	);
-	const isHoveringContext = useRef(false);
-
-	const openContext = () => {
-		isHoveringContext.current = true;
-		if (contextCloseTimer.current) clearTimeout(contextCloseTimer.current);
-		setContextOpen(true);
-	};
-
-	const scheduleContextClose = () => {
-		isHoveringContext.current = false;
-		contextCloseTimer.current = setTimeout(
-			() => setContextOpen(false),
-			150,
-		);
-	};
 
 	// Debounce search to avoid excessive queries while typing
 	const debouncedSearch = useDebouncedValue(search);
@@ -211,32 +180,6 @@ export const EngineSelect = ({
 	);
 
 	// ========================================================================
-	// Context Window Calculation
-	// ========================================================================
-
-	const contextUsedPercent =
-		tokensMax && tokensUsed !== undefined
-			? (tokensUsed / tokensMax) * 100
-			: undefined;
-
-	const showContextIndicator =
-		contextUsedPercent !== undefined && contextUsedPercent > 0;
-
-	// Calculate pie chart geometry
-	const roundedPercent =
-		contextUsedPercent !== undefined && contextUsedPercent > 0
-			? Math.max(12.5, Math.round(contextUsedPercent / 12.5) * 12.5)
-			: 0;
-	const radius = 8;
-	const cx = 9;
-	const cy = 9;
-	const angle = (roundedPercent / 100) * 360;
-	const radians = (angle * Math.PI) / 180;
-	const x = cx + radius * Math.cos(radians - Math.PI / 2);
-	const y = cy + radius * Math.sin(radians - Math.PI / 2);
-	const largeArc = angle > 180 ? 1 : 0;
-
-	// ========================================================================
 	// Render
 	// ========================================================================
 
@@ -254,86 +197,6 @@ export const EngineSelect = ({
 					)}
 				>
 					<div className="flex w-full min-w-0 items-center gap-2 overflow-hidden">
-						{showContextIndicator && (
-							<Popover
-								open={contextOpen}
-								onOpenChange={(o) => {
-									if (!o && isHoveringContext.current) return;
-									setContextOpen(o);
-								}}
-							>
-								<PopoverTrigger asChild>
-									<button
-										type="button"
-										className="flex shrink-0 cursor-pointer items-center"
-										onClick={(e) => e.stopPropagation()}
-										onMouseEnter={openContext}
-										onMouseLeave={scheduleContextClose}
-									>
-										{/** biome-ignore lint/a11y/noSvgWithoutTitle: click interaction is provided by the parent button */}
-										<svg
-											width={18}
-											height={18}
-											viewBox="0 0 18 18"
-										>
-											{/* Outer ring - always visible */}
-											<circle
-												cx={cx}
-												cy={cy}
-												r={radius}
-												fill="none"
-												className={
-													roundedPercent >= 75
-														? "stroke-destructive"
-														: "stroke-muted-foreground"
-												}
-												strokeWidth={1.5}
-												opacity={0.3}
-											/>
-											{/* Inner fill showing percentage */}
-											{roundedPercent >= 100 ? (
-												<circle
-													cx={cx}
-													cy={cy}
-													r={radius - 1}
-													className={
-														roundedPercent >= 75
-															? "fill-destructive"
-															: "fill-muted-foreground"
-													}
-													opacity={0.6}
-												/>
-											) : (
-												<path
-													d={`M ${cx} ${cy} L ${cx} ${cy - (radius - 1)} A ${radius - 1} ${radius - 1} 0 ${largeArc} 1 ${x * 0.875 + cx * 0.125} ${y * 0.875 + cy * 0.125} Z`}
-													className={
-														roundedPercent >= 75
-															? "fill-destructive"
-															: "fill-muted-foreground"
-													}
-													opacity={0.6}
-												/>
-											)}
-										</svg>
-									</button>
-								</PopoverTrigger>
-								{contextTooltipContent && (
-									<PopoverContent
-										side="top"
-										align="start"
-										className="w-[24rem] text-wrap text-sm"
-										onMouseEnter={openContext}
-										onMouseLeave={scheduleContextClose}
-										onClick={(e) => e.stopPropagation()}
-										onOpenAutoFocus={(e) =>
-											e.preventDefault()
-										}
-									>
-										{contextTooltipContent}
-									</PopoverContent>
-								)}
-							</Popover>
-						)}
 						<span className="min-w-0 truncate">
 							{name || "Select"}
 						</span>

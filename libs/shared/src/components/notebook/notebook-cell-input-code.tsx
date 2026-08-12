@@ -2,7 +2,7 @@ import type { BeforeMount, OnMount } from "@monaco-editor/react";
 import type * as monaco from "monaco-editor";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useTheme } from "@semoss/ui/next";
-import { MonacoEditor } from "../../monaco";
+import { MonacoEditor } from "../monaco";
 
 // Monaco needs an explicit height. A notebook code cell should grow with its
 // content (up to a cap, after which it scrolls internally) instead of sitting at
@@ -35,12 +35,15 @@ export const NotebookCellInputCode: React.FC<{
 	language?: string;
 	onRunInPlace?: () => void;
 	onRunAndAdvance?: () => void;
+	/** Render the editor read-only; run keybindings still fire. */
+	readOnly?: boolean;
 }> = ({
 	value,
 	onChange,
 	language = "python",
 	onRunInPlace,
 	onRunAndAdvance,
+	readOnly = false,
 }) => {
 	const { resolvedTheme } = useTheme();
 	const [height, setHeight] = useState(MIN_HEIGHT);
@@ -130,6 +133,7 @@ export const NotebookCellInputCode: React.FC<{
 				}
 				value={value}
 				options={{
+					readOnly,
 					// Suppress Monaco's own right-click menu so the notebook cell
 					// context menu shows across the whole cell instead.
 					contextmenu: false,
