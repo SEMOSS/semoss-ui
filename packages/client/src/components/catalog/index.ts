@@ -19,3 +19,7 @@ export {
 	CatalogTabs,
 	type CatalogTabsProps,
 } from "./catalog-tabs";
+export {
+	CatalogTagInput,
+	type CatalogTagInputProps,
+} from "./catalog-tag-input";

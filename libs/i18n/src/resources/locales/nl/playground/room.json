@@ -12,8 +12,7 @@
 		"compactError": "Comprimeren van gesprek mislukt",
 		"compacting": "Gesprek comprimeren...",
 		"compactedAbove": "Gesprek gecomprimeerd",
-		"compactedAboveTooltip": "Eerdere berichten zijn samengevat om de contextgrootte te verkleinen",
-		"compactTooltip": "Comprimeer je gesprek om tokens te besparen. Je eerdere berichten blijven ongewijzigd."
+		"compactedAboveTooltip": "Eerdere berichten zijn samengevat om de contextgrootte te verkleinen"
 	},
 	"form": {
 		"modelLabel": "Model",
