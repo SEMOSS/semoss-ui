@@ -60,6 +60,7 @@ import {
 import { useFileDrag } from "@/contexts";
 import { useGracefulErrors, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
+import { AGENT_HARNESS_TYPE } from "@/stores/message/agent-harness";
 import type { Engine, MCPConfig, Workspace } from "@/types";
 import { isKnowledgeMcp } from "@/utility/mcp-utils";
 import { PromptOptimizer } from "../../components/prompt/PromptOptimizer";
@@ -175,6 +176,13 @@ interface RoomInputProps {
 
 	/** Callback to open the room settings/configuration panel */
 	onOpenSettings?: () => void;
+
+	/**
+	 * Callback for the /agent-harness slash command. Defaults to switching
+	 * `room` into agent mode directly — override on the new-room page, where
+	 * mode lives in local state until the room is actually created.
+	 */
+	onSwitchToAgentHarness?: () => void;
 }
 
 // ============================================================================
@@ -215,6 +223,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		onCompact,
 		excludeCommandIds,
 		onOpenSettings,
+		onSwitchToAgentHarness,
 	}) => {
 		// ========================================================================
 		// Hooks & State
@@ -241,6 +250,27 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				setMcpOverlay({ open: true, defaultTab }),
 			[],
 		);
+
+		// Default for an already-created room: flip mode now (takes effect on the
+		// next message) and persist harnessType so it survives a reload.
+		const handleSwitchToAgentHarness =
+			onSwitchToAgentHarness ??
+			(() => {
+				room.setMode("agent");
+				(async () => {
+					try {
+						await room.updateRoomOptions({
+							...room.options,
+							harnessType: AGENT_HARNESS_TYPE,
+						});
+					} catch (e) {
+						console.error(
+							"Failed to persist agent harness mode",
+							e,
+						);
+					}
+				})();
+			});
 
 		const knowledgeCount = useMemo(
 			() => options.mcp.filter(isKnowledgeMcp).length,
@@ -524,6 +554,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					onCompact={onCompact ?? noop}
 					onAttachDocument={() => setShouldStayOpen(true)}
 					onOpenSettings={onOpenSettings ?? noop}
+					onSwitchToAgentHarness={handleSwitchToAgentHarness}
 					excludeCommandIds={excludeCommandIds}
 				>
 					<LexicalComposer

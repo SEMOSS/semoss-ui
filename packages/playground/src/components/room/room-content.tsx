@@ -605,7 +605,13 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					totalTokens={room.totalTokensConsumed}
 					onCompact={handleCompactMessages}
 					onOpenSettings={handleOpenSettings}
-					excludeCommandIds={["agent", "workspace"]}
+					excludeCommandIds={[
+						"agent",
+						"workspace",
+						...(room.theme.featureFlags?.enableAgentHarness
+							? []
+							: ["agent-harness", "harness"]),
+					]}
 				/>
 			</div>
 		</div>

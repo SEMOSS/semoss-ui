@@ -498,7 +498,16 @@ export const NewRoomPage = observer(() => {
 
 										return true;
 									}}
-									excludeCommandIds={["compact"]}
+									excludeCommandIds={[
+										"compact",
+										...(root.theme.featureFlags
+											?.enableAgentHarness
+											? []
+											: ["agent-harness", "harness"]),
+									]}
+									onSwitchToAgentHarness={() =>
+										setMode("agent")
+									}
 									// The new-room flow has no cancellable turn, so
 									// it's only ever busy (spinner) or idle (send).
 									sendState={isLoading ? "loading" : "send"}
