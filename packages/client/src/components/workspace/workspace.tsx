@@ -24,6 +24,11 @@ const AgentWorkspace = lazy(() =>
 		default: m.AgentWorkspace,
 	})),
 );
+const NotebookWorkspace = lazy(() =>
+	import("@/components/notebook-workspace").then((m) => ({
+		default: m.NotebookWorkspace,
+	})),
+);
 
 import { useRootStore } from "@/hooks";
 import type { WorkspaceStore } from "@/stores";
@@ -117,6 +122,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
 				{workspace.type === "BLOCKS" && <BlocksWorkspace />}
 				{workspace.type === "SKILL" && <SkillWorkspace />}
 				{workspace.type === "WORKSPACE" && <AgentWorkspace />}
+				{workspace.type === "NOTEBOOK" && <NotebookWorkspace />}
 			</Suspense>
 		</WorkspaceContext.Provider>
 	);
