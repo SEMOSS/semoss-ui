@@ -519,12 +519,10 @@ export const buildModelMetadataFields = (
 		{
 			key: "BUILTIN_TOOLS",
 			label: "Built-in Tools",
-			type: "text",
+			type: "builtin-tools",
 			required: false,
 			category: "Settings",
-			default: "",
-			helperText:
-				"Optional comma-separated canonical names, such as web_search, image_generation.",
+			helperText: "Provider-hosted tools the model can call natively.",
 		},
 	];
 
