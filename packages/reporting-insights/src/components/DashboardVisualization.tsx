@@ -52,6 +52,7 @@ import { PolarBarChart } from "@/components/visualizations/PolarBarChart";
 import { PuckChart } from "@/components/visualizations/PuckChart";
 import { StretchFill } from "@/components/visualizations/StretchFill";
 import { SunburstChart } from "@/components/visualizations/SunburstChart";
+import { PaginatedLegend } from "@/components/visualizations/shared/PaginatedLegend";
 import { TableView } from "@/components/visualizations/TableView";
 import { WordCloud } from "@/components/visualizations/WordCloud";
 import { WorldMapChart } from "@/components/visualizations/WorldMapChart";
@@ -1665,6 +1666,7 @@ export function DashboardVisualization({
 						/>
 						<Tooltip
 							cursor={{ strokeDasharray: "3 3" }}
+							wrapperStyle={{ zIndex: 10 }}
 							content={({ payload }) => {
 								if (!payload?.length) return null;
 								const data = payload[0].payload;
@@ -1780,6 +1782,7 @@ export function DashboardVisualization({
 						)}
 						{colorCategories.length > 1 && (
 							<Legend
+								content={<PaginatedLegend />}
 								wrapperStyle={{
 									fontSize: 11,
 									color: "#64748b",
@@ -1850,6 +1853,7 @@ export function DashboardVisualization({
 						))}
 						{yKeys.length > 1 && (
 							<Legend
+								content={<PaginatedLegend />}
 								wrapperStyle={{
 									fontSize: 11,
 									color: "#64748b",
@@ -1860,6 +1864,7 @@ export function DashboardVisualization({
 							content={
 								<ChartTooltip config={visualization.config} />
 							}
+							wrapperStyle={{ zIndex: 10 }}
 						/>
 					</RadarChart>
 				</ResponsiveContainer>
@@ -1962,6 +1967,7 @@ export function DashboardVisualization({
 							content={
 								<ChartTooltip config={visualization.config} />
 							}
+							wrapperStyle={{ zIndex: 10 }}
 						/>
 					</Treemap>
 				</ResponsiveContainer>

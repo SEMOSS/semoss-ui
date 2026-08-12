@@ -21,6 +21,7 @@ import {
 	ChartTooltip,
 	compareColorRule,
 } from "@/components/visualizations/shared/chartShared";
+import { PaginatedLegend } from "@/components/visualizations/shared/PaginatedLegend";
 import { formatValue } from "@/lib/formatValue";
 import type { ColorRule, VisualizationConfig } from "@/types/dashboard";
 
@@ -237,6 +238,7 @@ export function MultiLineChart({ data, config }: MultiLineChartProps) {
 				/>
 
 				<YAxis
+					width={48}
 					tick={{ fontSize: yCfg?.fontSize ?? 11 }}
 					hide={yCfg?.showLabels === false}
 					reversed={yCfg?.flipAxis === true}
@@ -251,9 +253,18 @@ export function MultiLineChart({ data, config }: MultiLineChartProps) {
 				/>
 
 				{showTooltip && (
-					<Tooltip content={<ChartTooltip config={config} />} />
+					<Tooltip
+						content={<ChartTooltip config={config} />}
+						wrapperStyle={{ zIndex: 10 }}
+					/>
 				)}
-				<Legend />
+				<Legend
+					content={
+						<PaginatedLegend
+							leftPadding={(yCfg?.title ? 12 : 0) + 48 - 20}
+						/>
+					}
+				/>
 
 				{categories.map((cat, i) => {
 					const lineColor = paletteColors[i % paletteColors.length];

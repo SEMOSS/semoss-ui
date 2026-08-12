@@ -730,11 +730,28 @@ export function NewDashboardPage() {
 		const q = createQuery({ name: `Query ${queries.length + 1}` });
 		const viz: Visualization = { ...makeVisualization(), queryId: q.id };
 		setSheets((prev) =>
-			prev.map((s) =>
-				s.id === sheetId
-					? { ...s, visualizations: [...s.visualizations, viz] }
-					: s,
-			),
+			prev.map((s) => {
+				if (s.id !== sheetId) return s;
+				const newVizId = viz.id;
+				// Auto-include new viz in any existing filter targets on this sheet
+				const updatedVisualizations = [...s.visualizations, viz].map(
+					(v) =>
+						v.visualizationType === "filter" &&
+						v.config?.filterTargets?.length
+							? {
+									...v,
+									config: {
+										...v.config,
+										filterTargets: [
+											...v.config.filterTargets,
+											newVizId,
+										],
+									},
+								}
+							: v,
+				);
+				return { ...s, visualizations: updatedVisualizations };
+			}),
 		);
 		setActiveSheetId(sheetId);
 		setSelectedVizId(viz.id);
@@ -802,25 +819,41 @@ export function NewDashboardPage() {
 				// Model operation failed — fall back to full rebuild below
 			}
 			setSheets((prev) =>
-				prev.map((s) =>
-					s.id === target
-						? {
-								...s,
-								visualizations: [...s.visualizations, newViz],
-								layout: [
-									...s.layout,
-									{
-										vizId: newViz.id,
-										colSpan: 12 as ColSpan,
-										order: s.layout.length,
+				prev.map((s) => {
+					if (s.id !== target) return s;
+					const newVizId = newViz.id;
+					const updatedVisualizations = [
+						...s.visualizations,
+						newViz,
+					].map((v) =>
+						v.visualizationType === "filter" &&
+						v.config?.filterTargets?.length
+							? {
+									...v,
+									config: {
+										...v.config,
+										filterTargets: [
+											...v.config.filterTargets,
+											newVizId,
+										],
 									},
-								],
-								...(newFlexLayout
-									? { flexLayout: newFlexLayout }
-									: {}),
-							}
-						: s,
-				),
+								}
+							: v,
+					);
+					return {
+						...s,
+						visualizations: updatedVisualizations,
+						layout: [
+							...s.layout,
+							{
+								vizId: newViz.id,
+								colSpan: 12 as ColSpan,
+								order: s.layout.length,
+							},
+						],
+						...(newFlexLayout ? { flexLayout: newFlexLayout } : {}),
+					};
+				}),
 			);
 			if (!newFlexLayout) invalidateFlexModel(target);
 			setActiveSheetId(target);

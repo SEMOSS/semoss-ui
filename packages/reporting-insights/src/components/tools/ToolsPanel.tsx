@@ -1647,6 +1647,69 @@ export function ToolsPanel({
 					onReset={() => updateBoxPlotStyling({ zoomY: undefined })}
 				/>
 			</ToolAccordion>
+			<ToolAccordion title="Show Outliers">
+				<ShowTooltipToggle
+					label="Show outliers"
+					value={styling.boxplot?.showOutliers ?? true}
+					onChange={(v) => updateBoxPlotStyling({ showOutliers: v })}
+					onReset={() =>
+						updateBoxPlotStyling({ showOutliers: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Whisker Type">
+				<div className="flex flex-col gap-3 px-1 py-1">
+					<div className="flex overflow-hidden rounded border border-stone-200 text-xs">
+						{(["iqr", "minmax"] as const).map((opt) => (
+							<button
+								key={opt}
+								type="button"
+								onClick={() =>
+									updateBoxPlotStyling({ whiskerType: opt })
+								}
+								className={`flex-1 py-1 capitalize transition-colors ${
+									(styling.boxplot?.whiskerType ?? "iqr") ===
+									opt
+										? "bg-indigo-500 font-medium text-white"
+										: "bg-white text-stone-600 hover:bg-stone-50"
+								}`}
+							>
+								{opt === "iqr" ? "IQR (1.5×)" : "Min – Max"}
+							</button>
+						))}
+					</div>
+					<p className="text-[11px] text-stone-400">
+						{(styling.boxplot?.whiskerType ?? "iqr") === "iqr"
+							? "Whiskers extend to 1.5× IQR; points beyond are outliers."
+							: "Whiskers extend to data min/max; no outliers are plotted."}
+					</p>
+				</div>
+			</ToolAccordion>
+			<ToolAccordion title="Fill Opacity">
+				<div className="flex flex-col gap-2 px-1 py-1">
+					<div className="flex items-center gap-3">
+						<input
+							type="range"
+							min={0}
+							max={1}
+							step={0.05}
+							value={styling.boxplot?.fillOpacity ?? 0.6}
+							onChange={(e) =>
+								updateBoxPlotStyling({
+									fillOpacity: parseFloat(e.target.value),
+								})
+							}
+							className="flex-1 accent-indigo-500"
+						/>
+						<span className="w-8 text-right text-stone-600 text-xs tabular-nums">
+							{Math.round(
+								(styling.boxplot?.fillOpacity ?? 0.6) * 100,
+							)}
+							%
+						</span>
+					</div>
+				</div>
+			</ToolAccordion>
 		</>
 	);
 

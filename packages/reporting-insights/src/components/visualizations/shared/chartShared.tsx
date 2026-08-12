@@ -444,9 +444,9 @@ export function buildAxisLabelProps(
 		end: "insideBottomLeft",
 	} as const;
 	const anchorMap = {
-		start: "start",
+		start: "end",
 		center: "middle",
-		end: "end",
+		end: "start",
 	} as const;
 	return {
 		...base,

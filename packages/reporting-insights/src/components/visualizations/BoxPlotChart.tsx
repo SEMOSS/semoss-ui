@@ -842,7 +842,7 @@ export function BoxPlotChart({
 						margin={{
 							top: 8,
 							right: 8,
-							left: 0,
+							left: yAxisLabel && !flipAxis ? 12 : 0,
 							bottom: xAxisLabel && !flipAxis ? 16 : 4,
 						}}
 					>

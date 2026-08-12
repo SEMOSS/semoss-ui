@@ -108,7 +108,9 @@ export function ParamControl({
 				onKeyDown={(e) => e.key === "Enter" && onEnter?.()}
 				className={`${cls} ${value ? "pr-8" : ""}`}
 				placeholder={
-					param.placeholder || param.defaultValue || param.name
+					param.placeholder ||
+					param.defaultValue ||
+					(param.required ? "Required" : param.name)
 				}
 			/>
 			{value && (

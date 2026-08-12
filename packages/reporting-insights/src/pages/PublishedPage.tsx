@@ -7,8 +7,9 @@ import {
 	Plus,
 	RefreshCw,
 	Rocket,
+	SlidersHorizontal,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { accentFor } from "@/components/DashboardCard";
 import { FolderRail, type FolderSel } from "@/components/FolderRail";
@@ -45,6 +46,7 @@ export function PublishedPage() {
 		loading,
 		error,
 		reload,
+		loadDashboard,
 	} = useWorkspace();
 	// Every dashboard you can access (access is enforced by SEMOSS — apps shared
 	// with no one but their owner never appear for other users).
@@ -60,6 +62,34 @@ export function PublishedPage() {
 			})),
 		[dashboards],
 	);
+
+	const [paramDashboardIds, setParamDashboardIds] = useState<Set<string>>(
+		new Set(),
+	);
+	useEffect(() => {
+		if (!dashboards.length) return;
+		void Promise.all(
+			dashboards.map(async (d) => {
+				try {
+					const full = await loadDashboard(d.id);
+					const has =
+						full.sheets.some((s) => s.isParamSheet) ||
+						full.queries?.some(
+							(q) => (q.parameters?.length ?? 0) > 0,
+						) ||
+						false;
+					return has ? d.id : null;
+				} catch {
+					return null;
+				}
+			}),
+		).then((results) => {
+			setParamDashboardIds(
+				new Set(results.filter((id): id is string => id !== null)),
+			);
+		});
+	}, [dashboards, loadDashboard]);
+
 	const [query, setQuery] = useState("");
 	const [folderSel, setFolderSel] = useState<FolderSel>("all");
 	const [folderToDelete, setFolderToDelete] = useState<string | null>(null);
@@ -282,6 +312,14 @@ export function PublishedPage() {
 												<span className="inline-flex items-center gap-1 font-medium text-[11px] text-stone-400">
 													<Lock className="h-3 w-3" />{" "}
 													Private
+												</span>
+											)}
+											{paramDashboardIds.has(app.id) && (
+												<span
+													className="inline-flex items-center gap-1 font-medium text-[11px] text-violet-500"
+													title="This dashboard has parameters"
+												>
+													<SlidersHorizontal className="h-3 w-3" />
 												</span>
 											)}
 											<span className="flex-1" />

@@ -23,6 +23,7 @@ import { Bar_Chart } from "@/components/visualizations/Bar_Chart";
 import { BoxPlotChart } from "@/components/visualizations/BoxPlotChart";
 import { BubbleChart } from "@/components/visualizations/BubbleChart";
 import { ClusterChart } from "@/components/visualizations/ClusterChart";
+import { Combo_Chart } from "@/components/visualizations/Combo_Chart";
 import { HalfDonutChart } from "@/components/visualizations/HalfDonutChart";
 import { HeatmapChart } from "@/components/visualizations/HeatmapChart";
 import { HtmlBlockVisualization } from "@/components/visualizations/HtmlBlockVisualization";
@@ -33,6 +34,8 @@ import { Pie_Chart } from "@/components/visualizations/Pie_Chart";
 import { PivotTable } from "@/components/visualizations/PivotTable";
 import { PolarBarChart } from "@/components/visualizations/PolarBarChart";
 import { SunburstChart } from "@/components/visualizations/SunburstChart";
+import { ChartTooltip } from "@/components/visualizations/shared/chartShared";
+import { PaginatedLegend } from "@/components/visualizations/shared/PaginatedLegend";
 import { TableView } from "@/components/visualizations/TableView";
 import { WordCloud } from "@/components/visualizations/WordCloud";
 import { WorldMapChart } from "@/components/visualizations/WorldMapChart";
@@ -235,8 +238,14 @@ export function ChartPreview({
 							fillOpacity={0.25}
 						/>
 					))}
-					<Tooltip />
-					<Legend />
+					<Tooltip
+						content={<ChartTooltip config={config as any} />}
+						wrapperStyle={{ zIndex: 10 }}
+					/>
+					<Legend
+						content={<PaginatedLegend />}
+						wrapperStyle={{ fontSize: 11, color: "#64748b" }}
+					/>
 				</RadarChart>
 			</ResponsiveContainer>,
 		);
@@ -284,7 +293,12 @@ export function ChartPreview({
 							)}
 						</g>
 					)}
-				/>
+				>
+					<Tooltip
+						content={<ChartTooltip config={config as any} />}
+						wrapperStyle={{ zIndex: 10 }}
+					/>
+				</Treemap>
 			</ResponsiveContainer>,
 		);
 	}
@@ -316,7 +330,11 @@ export function ChartPreview({
 							fontSize: 11,
 						}}
 					/>
-					<Tooltip cursor={{ strokeDasharray: "3 3" }} />
+					<Tooltip
+						content={<ChartTooltip config={config as any} />}
+						wrapperStyle={{ zIndex: 10 }}
+						cursor={{ strokeDasharray: "3 3" }}
+					/>
 					<Scatter
 						data={data}
 						fill={PALETTE[0]}
@@ -357,6 +375,10 @@ export function ChartPreview({
 		return withTitle(
 			<Bar_Chart data={data} config={config as any} stacked />,
 		);
+	}
+
+	if (vt === "combo") {
+		return withTitle(<Combo_Chart data={data} config={config as any} />);
 	}
 
 	// default: bar

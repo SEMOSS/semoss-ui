@@ -26,6 +26,7 @@ import {
 	ChartTooltip,
 	compareColorRule,
 } from "@/components/visualizations/shared/chartShared";
+import { PaginatedLegend } from "@/components/visualizations/shared/PaginatedLegend";
 import { formatValue } from "@/lib/formatValue";
 import {
 	type ColorPalette as ColorPaletteType,
@@ -145,10 +146,16 @@ export function Pie_Chart({ data, config }: PieChartVizProps) {
 					))}
 				</Pie>
 				{showTooltip && (
-					<Tooltip content={<ChartTooltip config={config} />} />
+					<Tooltip
+						content={<ChartTooltip config={config} />}
+						wrapperStyle={{ zIndex: 10 }}
+					/>
 				)}
 				{showLegend && (
-					<Legend wrapperStyle={{ fontSize: 11, color: "#64748b" }} />
+					<Legend
+						content={<PaginatedLegend />}
+						wrapperStyle={{ fontSize: 11, color: "#64748b" }}
+					/>
 				)}
 			</PieChart>
 		</ResponsiveContainer>

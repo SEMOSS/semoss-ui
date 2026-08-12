@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Input } from "@/components/ui";
 /**
  * Shared X / Y axis settings editor used by Multi-Line, Bar, and Line charts.
@@ -13,6 +14,36 @@ import { Input } from "@/components/ui";
  */
 import type { AxisConfig } from "@/types/dashboard";
 import { ResetButton } from "./ResetButton";
+
+// Allows the user to clear a number input entirely while editing; commits on blur.
+function DraftNumberInput({
+	value,
+	onCommit,
+	min,
+	max,
+}: {
+	value: number;
+	onCommit: (n: number) => void;
+	min?: number;
+	max?: number;
+}) {
+	const [draft, setDraft] = useState<string | null>(null);
+	return (
+		<input
+			type="number"
+			min={min}
+			max={max}
+			value={draft ?? value}
+			className="w-full rounded border border-stone-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
+			onChange={(e) => setDraft(e.target.value)}
+			onBlur={(e) => {
+				setDraft(null);
+				const n = parseFloat(e.target.value);
+				onCommit(Number.isNaN(n) ? 0 : n);
+			}}
+		/>
+	);
+}
 
 interface AxisSettingsProps {
 	axis: "x" | "y";
@@ -62,28 +93,20 @@ export function AxisSettings({
 				<label className="mb-1 block font-semibold text-stone-600 text-xs">
 					Font Size
 				</label>
-				<Input
-					type="number"
+				<DraftNumberInput
+					value={cfg.fontSize ?? 11}
 					min={8}
 					max={20}
-					value={cfg.fontSize ?? 11}
-					onChange={(e) =>
-						onChange({ fontSize: Number(e.target.value) })
-					}
-					className="w-full rounded border border-stone-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
+					onCommit={(n) => onChange({ fontSize: n })}
 				/>
 			</div>
 			<div>
 				<label className="mb-1 block font-semibold text-stone-600 text-xs">
 					Axis Gap
 				</label>
-				<Input
-					type="number"
+				<DraftNumberInput
 					value={cfg.axisGap ?? 0}
-					onChange={(e) =>
-						onChange({ axisGap: Number(e.target.value) })
-					}
-					className="w-full rounded border border-stone-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
+					onCommit={(n) => onChange({ axisGap: n })}
 				/>
 			</div>
 			<div className="flex items-center justify-between">
@@ -112,15 +135,11 @@ export function AxisSettings({
 				<label className="mb-1 block font-semibold text-stone-600 text-xs">
 					Rotate Values (°)
 				</label>
-				<Input
-					type="number"
+				<DraftNumberInput
+					value={cfg.rotateValues ?? 0}
 					min={-90}
 					max={90}
-					value={cfg.rotateValues ?? 0}
-					onChange={(e) =>
-						onChange({ rotateValues: Number(e.target.value) })
-					}
-					className="w-full rounded border border-stone-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
+					onCommit={(n) => onChange({ rotateValues: n })}
 				/>
 			</div>
 			<div className="flex items-center justify-between">
@@ -195,15 +214,9 @@ export function AxisSettings({
 				<label className="mb-1 block font-semibold text-stone-600 text-xs">
 					Title Offset (px)
 				</label>
-				<input
-					type="number"
-					value={cfg.titleOffset ?? (axis === "x" ? -4 : 0)}
-					onChange={(e) =>
-						onChange({
-							titleOffset: Number(e.target.value) || undefined,
-						})
-					}
-					className="w-full rounded border border-stone-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
+				<DraftNumberInput
+					value={cfg.titleOffset ?? (axis === "x" ? 3 : 0)}
+					onCommit={(n) => onChange({ titleOffset: n })}
 				/>
 			</div>
 			{onReset && (

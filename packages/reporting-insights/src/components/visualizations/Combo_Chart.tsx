@@ -44,6 +44,7 @@ import {
 	renderChartSymbol,
 	strokeDashFor,
 } from "@/components/visualizations/shared/chartShared";
+import { PaginatedLegend } from "@/components/visualizations/shared/PaginatedLegend";
 import { formatValue } from "@/lib/formatValue";
 import {
 	type ColorPalette as ColorPaletteType,
@@ -696,7 +697,7 @@ export function Combo_Chart({
 									: showMinMax && flipAxis
 										? 50
 										: 8,
-							left: 0,
+							left: yAxisLabel && !flipAxis ? 12 : 0,
 							bottom: 4,
 						}}
 					>
@@ -853,9 +854,26 @@ export function Combo_Chart({
 						<Tooltip
 							content={<ChartTooltip config={config} />}
 							cursor={false}
+							wrapperStyle={{ zIndex: 10 }}
 						/>
 						{showLegend && (
 							<Legend
+								content={
+									<PaginatedLegend
+										leftPadding={
+											!flipAxis
+												? Math.max(
+														0,
+														(yAxisLabel ? 12 : 0) +
+															48 -
+															(showAverage
+																? 48
+																: 8),
+													)
+												: 0
+										}
+									/>
+								}
 								wrapperStyle={{
 									fontSize: 11,
 									color: "#64748b",

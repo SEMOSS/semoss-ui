@@ -50,6 +50,7 @@ import {
 	aggregateChartData,
 	ChartTooltip,
 } from "@/components/visualizations/shared/chartShared";
+import { PaginatedLegend } from "@/components/visualizations/shared/PaginatedLegend";
 import { TableView } from "@/components/visualizations/TableView";
 import { WordCloud } from "@/components/visualizations/WordCloud";
 import { WorldMapChart } from "@/components/visualizations/WorldMapChart";
@@ -111,7 +112,7 @@ function exportCsv(
 	vizType: string,
 	config?: VisualizationConfig,
 ): void {
-	const escape = (v: unknown) => {
+	const escapeCsv = (v: unknown) => {
 		const s = String(v ?? "");
 		return s.includes(",") || s.includes('"') || s.includes("\n")
 			? `"${s.replace(/"/g, '""')}"`
@@ -129,7 +130,7 @@ function exportCsv(
 		const flat = yKeys.map((col) =>
 			String(aggregateKpiValue(rows, col, config as any)),
 		);
-		dataRows = [flat.map(escape).join(",")];
+		dataRows = [flat.map(escapeCsv).join(",")];
 	} else if (vizType === "pivot") {
 		// Flatten the pivot result into rows for CSV (mirrors DashboardVisualization.exportData)
 		const rows = toChartData(result);
@@ -159,7 +160,7 @@ function exportCsv(
 		if (pivot.grandTotalRow) flatRows.push(flatten(pivot.grandTotalRow));
 		headers = flatRows.length ? Object.keys(flatRows[0]) : [];
 		dataRows = flatRows.map((r) =>
-			headers.map((h) => escape(r[h])).join(","),
+			headers.map((h) => escapeCsv(r[h])).join(","),
 		);
 	} else {
 		const tableColumns = config?.tableColumns;
@@ -179,7 +180,7 @@ function exportCsv(
 		);
 		if (aggregated) {
 			dataRows = aggregated.map((r) =>
-				headers.map((h) => escape(r[h])).join(","),
+				headers.map((h) => escapeCsv(r[h])).join(","),
 			);
 		} else {
 			dataRows = result.values.map((row) => {
@@ -187,12 +188,12 @@ function exportCsv(
 				result.headers.forEach((h, i) => {
 					obj[h] = row[i];
 				});
-				return headers.map((h) => escape(obj[h])).join(",");
+				return headers.map((h) => escapeCsv(obj[h])).join(",");
 			});
 		}
 	}
 
-	const csv = [headers.map(escape).join(","), ...dataRows].join("\n");
+	const csv = [headers.map(escapeCsv).join(","), ...dataRows].join("\n");
 	const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement("a");
@@ -1160,8 +1161,14 @@ function ChartOrTable({
 								fillOpacity={0.25}
 							/>
 						))}
-						<Tooltip />
-						<Legend />
+						<Tooltip
+							content={<ChartTooltip config={config as any} />}
+							wrapperStyle={{ zIndex: 10 }}
+						/>
+						<Legend
+							content={<PaginatedLegend />}
+							wrapperStyle={{ fontSize: 11, color: "#64748b" }}
+						/>
 					</RadarChart>
 				</ResponsiveContainer>
 			</div>
@@ -1268,7 +1275,11 @@ function ChartOrTable({
 								fontSize: 11,
 							}}
 						/>
-						<Tooltip cursor={{ strokeDasharray: "3 3" }} />
+						<Tooltip
+							content={<ChartTooltip config={config as any} />}
+							wrapperStyle={{ zIndex: 10 }}
+							cursor={{ strokeDasharray: "3 3" }}
+						/>
 						<Scatter
 							data={data}
 							fill={COLORS[0]}
@@ -1322,7 +1333,7 @@ function ChartOrTable({
 
 	if (vizType === "multiline") {
 		return (
-			<div className="h-[380px]">
+			<div className="h-full w-full">
 				<MultiLineChart data={data} config={config as any} />
 			</div>
 		);
