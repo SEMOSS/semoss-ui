@@ -20,6 +20,7 @@ import { BlockHeader } from "./block-header";
 import { CodePreviewBlock } from "./code-preview-block";
 import { KNOWN_SHIKI_LANGS } from "./constants";
 import { MermaidBlock } from "./mermaid-block";
+import { NotebookPreviewBlock } from "./notebook-preview-block";
 
 type MarkdownComponents = NonNullable<
 	ComponentProps<typeof Markdown>["components"]
@@ -121,12 +122,8 @@ export const createMarkdownComponents = (
 							config: {},
 							enableClose: true,
 						});
-						room.addSidebarNode(`FILE--${path}`, {
-							type: "tab",
+						room.openFileEditorSidebarNode(path, {
 							name: filename,
-							component: "room-file-editor",
-							config: { name: filename, path },
-							enableClose: true,
 						});
 					}}
 				>
@@ -233,6 +230,16 @@ export const createMarkdownComponents = (
 			return (
 				<MermaidBlock
 					code={code}
+					isLoading={isHtmlPreviewLoading}
+					room={room}
+				/>
+			);
+		}
+
+		if (rawLang === "ipynb" || rawLang === "notebook") {
+			return (
+				<NotebookPreviewBlock
+					content={code}
 					isLoading={isHtmlPreviewLoading}
 					room={room}
 				/>

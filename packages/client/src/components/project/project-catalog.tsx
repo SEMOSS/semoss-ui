@@ -72,17 +72,24 @@ const SYSTEM_APPS: {
 	href: string;
 }[] = [
 	{
+		id: "bi-system-app",
+		name: "BI",
+		description: "Develop dashboards and visualizations to view data",
+		href: "../../legacy/dist/",
+	},
+	{
+		id: "browser-automation-system-app",
+		name: "Browser Automation",
+		description:
+			"Drive a remote browser, record what you do, and replay it later",
+		href: "../../browser-automation/dist/",
+	},
+	{
 		id: "playground-system-app",
 		name: "Playground",
 		description:
 			"Experiment with AI agents, tools, and MCP integrations in an interactive workspace.",
 		href: "../../playground/dist/",
-	},
-	{
-		id: "bi-system-app",
-		name: "BI",
-		description: "Develop dashboards and visualizations to view data",
-		href: "../../legacy/dist/",
 	},
 	{
 		id: "terminal-system-app",

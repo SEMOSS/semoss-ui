@@ -9,6 +9,7 @@ import type {
 	PixelMessageToolCallPart,
 	PixelMessageToolResultPart,
 } from "@/types";
+import { getToolAppId } from "@/utility/mcp-utils";
 
 /**
  * Build a synthetic toolCall payload for server tools (e.g. provider-side
@@ -63,13 +64,8 @@ export class ToolStore {
 	/**
 	 * Status for the tool
 	 */
-	status:
-		| "INITIAL"
-		| "LOADING"
-		| "CANCELLED"
-		| "SUCCESS"
-		| "ERROR"
-		| "PAUSED" = "INITIAL";
+	status: "INITIAL" | "LOADING" | "CANCELLED" | "SUCCESS" | "ERROR" =
+		"INITIAL";
 
 	/**
 	 * Parameters for the tool
@@ -96,6 +92,13 @@ export class ToolStore {
 	streamingName: string = "";
 
 	/**
+	 * Whether the stored TOOL_CALL part is the placeholder pushed while the call
+	 * streams in, rather than the final part synced from the response. The
+	 * placeholder carries a stubbed `_meta`, so `json` must not hand it out.
+	 */
+	isStreamingPlaceholder: boolean = false;
+
+	/**
 	 * Json for the tool
 	 */
 	get json() {
@@ -105,10 +108,12 @@ export class ToolStore {
 		if (part?.server_tool) {
 			return buildServerToolJson(part);
 		}
-		// If the real part has arrived (has a title), use it. Otherwise (placeholder
-		// pushed during streaming, or no part at all) synthesize from streamingName
-		// so the pill renders the wire name until the final sync swaps it.
-		if (part?.title) {
+		// If the final part has arrived, use it. Otherwise (placeholder pushed
+		// during streaming, or no part at all) synthesize from streamingName so
+		// the pill renders the wire name until the final sync swaps it. Never key
+		// this off a display field such as `title`: MCP tools are not required to
+		// declare one, and a real part without a title would lose its `_meta`.
+		if (part && !this.isStreamingPlaceholder) {
 			return part;
 		}
 		const name = this.streamingName;
@@ -124,6 +129,44 @@ export class ToolStore {
 			original_name: name,
 			description: "",
 		} as PixelMessageToolCallPart["toolCall"];
+	}
+
+	/**
+	 * Whether the server-resolved tool part has synced. Until it has we only
+	 * have wire-level data (id, raw name, partial args) from the SSE stream — no
+	 * friendly title, description, or `_meta` — so the tool should render as a
+	 * generic loading state rather than exposing the raw wire name. Mirrors the
+	 * `json` getter's own resolved check — never key this off a display field
+	 * such as `title`: MCP tools aren't required to declare one, and a titleless
+	 * tool would otherwise never resolve.
+	 *
+	 * Distinct from `argumentsStreaming` (only true while deltas are still
+	 * arriving): a tool stays unresolved through the gap between the terminal
+	 * stream chunk and the final `sync()`, which is what prevents a flicker
+	 * there.
+	 */
+	get isResolved(): boolean {
+		return !!this.toolCall.part && !this.isStreamingPlaceholder;
+	}
+
+	/**
+	 * Label to render for the tool. `title` is optional in MCP and the backend
+	 * only stamps it on when the tool declares one, so fall back to the name.
+	 * `_meta.SMSS_ORIGINAL_TOOL_NAME` is the name the tool declared before the
+	 * backend rewrote it for the model, so it is preferred over `original_name`
+	 * and `name`, which hold the rewritten wire name whenever the tool has no
+	 * explicit function-name indirection. While streaming, all we have is the
+	 * wire name.
+	 */
+	get displayName(): string {
+		const json = this.json;
+		return (
+			json.title ||
+			json._meta?.SMSS_ORIGINAL_TOOL_NAME ||
+			json.original_name ||
+			json.name ||
+			""
+		);
 	}
 
 	/**
@@ -176,15 +219,19 @@ export class ToolStore {
 	 * Update the tool with the new message information
 	 * @param message - the message that contains the tool call information
 	 * @param part - the part of the message that contains the tool call or result information
+	 * @param options.placeholder - the part is the stub pushed while the call streams in
 	 */
 	syncMessage = (
 		message: InputMessageStore | ResponseMessageStore,
 		part: PixelMessageToolCallPart | PixelMessageToolResultPart,
+		options?: { placeholder?: boolean },
 	) => {
 		if (
 			part.type === "TOOL_CALL" &&
 			message instanceof ResponseMessageStore
 		) {
+			this.isStreamingPlaceholder = options?.placeholder === true;
+
 			// set the display — server tools default to sidebar since they have
 			// no SMSS_MCP_UI block
 			this.display =
@@ -199,10 +246,12 @@ export class ToolStore {
 				part,
 			};
 
-			// the final part has arrived — clear streaming bookkeeping
-			this.argumentsStreaming = false;
-			this.argumentsBuffer = "";
-			this.streamingName = "";
+			// once the final part has arrived, clear streaming bookkeeping
+			if (!this.isStreamingPlaceholder) {
+				this.argumentsStreaming = false;
+				this.argumentsBuffer = "";
+				this.streamingName = "";
+			}
 		} else if (part.type === "TOOL_RESULT") {
 			// Server tool results don't echo back toolParameterValues — keep the
 			// args we already captured from the matching TOOL_CALL sync.
@@ -215,10 +264,13 @@ export class ToolStore {
 			// emitted on success, so default to SUCCESS in that case.
 			if (part.toolResult.toolStatus === "error") {
 				this.status = "ERROR";
-			} else if (part.toolResult.toolStatus === "cancelled") {
+			} else if (
+				part.toolResult.toolStatus === "cancelled" ||
+				// "paused" is a legacy status, retired in favor of cancelled;
+				// surface any persisted paused tools as cancelled.
+				part.toolResult.toolStatus === "paused"
+			) {
 				this.status = "CANCELLED";
-			} else if (part.toolResult.toolStatus === "paused") {
-				this.status = "PAUSED";
 			} else {
 				this.status = "SUCCESS";
 			}
@@ -303,10 +355,10 @@ export class ToolStore {
 			// Default to sidebar
 			this.room.addSidebarNode(this.nodeId, {
 				type: "tab",
-				name: this.json.title,
+				name: this.displayName,
 				component: "room-tool",
 				config: {
-					app: this.json._meta.SMSS_PROJECT_ID,
+					app: getToolAppId(this.json._meta),
 					message: this.toolCall.message?.id,
 					toolId: this.json.id,
 				},

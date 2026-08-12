@@ -20,6 +20,9 @@ import {
 import { useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 
+/** Pinned so the measured height and the rendered lines cannot drift apart. */
+const EDITOR_LINE_HEIGHT = 18;
+
 interface UpdateSMSSFormProps {
 	/**
 	 * Type of setting
@@ -66,7 +69,11 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 
 	const editorHeight = useMemo(() => {
 		const lineCount = Math.max(1, value.split(/\r?\n/).length);
-		const LINE_HEIGHT = 22;
+		// Must match the lineHeight passed to Monaco below, or the container is
+		// sized for taller lines than are rendered and the difference shows up as
+		// blank space under the last line.
+		const LINE_HEIGHT = EDITOR_LINE_HEIGHT;
+		// Room for the horizontal scrollbar.
 		const BASE_PADDING = 24;
 		const MIN_HEIGHT = 240;
 		const MAX_HEIGHT = 720;
@@ -108,7 +115,7 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 
 	return (
 		<div className="w-full overflow-hidden rounded-md border border-input bg-transparent dark:bg-input/30">
-			<div className="flex w-full flex-row items-center gap-1 border-input border-b bg-muted p-4 text-muted-foreground">
+			<div className="flex w-full flex-row items-center gap-1 border-input border-b bg-muted px-4 py-2 text-muted-foreground">
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<Button
@@ -151,6 +158,7 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 						<Button
 							aria-label={"Update SMSS Properties"}
 							disabled={readOnly || getSMSS.data === value}
+							size="sm"
 							onClick={() => {
 								updateSMSSProperties();
 							}}
@@ -197,17 +205,21 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 						height={editorHeight}
 						theme={resolvedTheme === "dark" ? "vs-dark" : "vs"}
 						options={{
+							lineHeight: EDITOR_LINE_HEIGHT,
 							minimap: {
 								enabled: false,
 							},
 							scrollBeyondLastLine: false,
 							readOnly: readOnly,
 							contextmenu: false,
+							scrollbar: {
+								alwaysConsumeMouseWheel: false,
+							},
 						}}
 						value={value}
 						language={"plaintext"}
 						onChange={(newValue) => {
-							setValue(newValue);
+							setValue(newValue || "");
 						}}
 						data-test-id="SMSS-editor"
 					/>

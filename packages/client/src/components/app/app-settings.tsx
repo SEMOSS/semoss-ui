@@ -346,13 +346,13 @@ export const AppSettings = (props: AppSettingsProps) => {
 				</div>
 			</div>
 
-			{/* MCP Usage */}
+			{/* MCP */}
 			<div className="w-full rounded-md bg-background shadow-sm">
 				<div className="block shrink-0 grow basis-0 p-4">
 					<Collapsible open={openMcp} onOpenChange={setOpenMcp}>
 						<div className="flex flex-row items-center justify-between">
 							<div className="flex w-[19.75rem] flex-col items-start pb-2">
-								<Large>MCP Usage</Large>
+								<Large>MCP</Large>
 							</div>
 							<CollapsibleTrigger asChild>
 								<Button

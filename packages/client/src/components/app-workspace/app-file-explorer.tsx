@@ -1,6 +1,6 @@
 import { CloudUploadIcon, HammerIcon, PencilIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { download, useInsight } from "@semoss/sdk/react";
 import {
 	FileExplorer,
@@ -19,6 +19,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { MCP } from "@/constants";
+import { readMCPFile, toFileText } from "../shared";
 
 interface AppFileExplorerProps {
 	/** Node */
@@ -30,42 +31,15 @@ interface AppFileExplorerProps {
 	/** App */
 	app: string;
 
-	/**
-	 * Optional callback when visible asset paths change in the browser
-	 */
-	onVisibleAssetPathsChange?: (payload: {
-		path: string;
-		paths: string[];
-	}) => void;
-
-	/**
-	 * Optional callback when the file explorer panel is mounted/unmounted
-	 */
-	onOpenStateChange?: (isOpen: boolean) => void;
-
 	/** Initial directory path to open to (defaults to "/") */
 	initialPath?: string;
 }
 
 export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
-	({
-		layout,
-		node,
-		app,
-		onVisibleAssetPathsChange,
-		onOpenStateChange,
-		initialPath,
-	}) => {
+	({ layout, node, app, initialPath }) => {
 		const insight = useInsight();
 
 		const [isPublishing, setIsPublishing] = useState(false);
-
-		useEffect(() => {
-			onOpenStateChange?.(true);
-			return () => {
-				onOpenStateChange?.(false);
-			};
-		}, [onOpenStateChange]);
 
 		const getTabPath = (
 			config: { path?: string; data?: { path?: string } } | undefined,
@@ -291,6 +265,24 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 		};
 
 		/**
+		 * Re-read an MCP file so the editor's refresh action can pick up edits
+		 * made outside of it.
+		 */
+		const readMCPAsset = async (
+			itemPath: string,
+		): Promise<string | null> => {
+			try {
+				const { pixelReturn } = await insight.actions.run<[string]>(
+					`GetAppAssets(filePath=["${itemPath}"], project=["${app}"]);`,
+				);
+				return toFileText(pixelReturn?.[0]?.output);
+			} catch (e) {
+				console.error(e);
+				return null;
+			}
+		};
+
+		/**
 		 * Add the editor tab
 		 */
 		const addMCPEditorTab = async (itemPath: string) => {
@@ -301,31 +293,10 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 				`GetAppAssets(filePath=["${itemPath}"], project=["${app}"]);`,
 			);
 
-			let json: { _meta: Record<string, string>; tools: unknown[] } = {
-				_meta: {},
-				tools: [],
-			};
-			try {
-				const output = pixelReturn[0].output;
-				if (output && typeof output === "object") {
-					const o = output as Record<string, unknown>;
-					json = {
-						_meta: (o._meta as Record<string, string>) ?? {},
-						tools: (o.tools as unknown[]) ?? [],
-					};
-				} else if (typeof output === "string" && output.trim()) {
-					const parsed = JSON.parse(output) as Record<
-						string,
-						unknown
-					>;
-					json = {
-						_meta: (parsed._meta as Record<string, string>) ?? {},
-						tools: (parsed.tools as unknown[]) ?? [],
-					};
-				}
-			} catch (e) {
-				console.error(`Failed to parse MCP JSON: ${e}`);
-			}
+			// A parse failure is handed to the editor rather than swallowed, so
+			// a malformed file opens as raw text instead of an empty tool list
+			// that the next save would write straight over it.
+			const loaded = readMCPFile(pixelReturn?.[0]?.output);
 
 			addNode(`APP_MCP_EDITOR--${itemPath}`, {
 				type: "tab",
@@ -334,7 +305,10 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 				config: {
 					path: itemPath,
 					data: {
-						initialData: json,
+						initialData: loaded.initialData,
+						rawContent: loaded.rawContent,
+						loadError: loaded.loadError,
+						onRefresh: () => readMCPAsset(itemPath),
 						onSave: async (data, path) => {
 							try {
 								await insight.actions.run(
@@ -361,12 +335,6 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 					app: app,
 				}}
 				initialPath={initialPath}
-				onVisibleItemsChange={({ path, items }) => {
-					onVisibleAssetPathsChange?.({
-						path,
-						paths: items.map((item) => item.path),
-					});
-				}}
 				headerActions={
 					<Tooltip>
 						<TooltipTrigger asChild>

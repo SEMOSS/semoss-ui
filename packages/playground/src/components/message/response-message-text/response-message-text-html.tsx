@@ -50,7 +50,6 @@ export const ResponseMessageTextHtml: React.FC<
 			isLoading={status === "active"}
 			copyTooltip="Copy"
 			copySuccessMessage={t("notifications.copySuccess")}
-			copyLabel="Copy"
 		/>
 	);
 };

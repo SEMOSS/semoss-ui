@@ -36,13 +36,6 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						enableClose: false,
 						config: {},
 					},
-					{
-						id: "settings",
-						type: "tab",
-						name: "Settings",
-						component: "settingsPanel",
-						config: {},
-					},
 				],
 			},
 			{
@@ -120,39 +113,47 @@ export const AgentWorkspace: React.FC = observer(() => {
 					node={node}
 					layout={layout}
 					app={workspace.appId}
-					onOpenStateChange={workspace.setFileBrowserOpen}
-					onVisibleAssetPathsChange={({ path, paths }) => {
-						workspace.setFileBrowserVisiblePaths(path, paths);
-					}}
 				/>
 			);
 		} else if (component === "app-file-editor") {
 			return <AppFileEditor node={node} app={workspace.appId} />;
 		} else if (component === "mcpJsonEditor") {
 			return <MCPJsonEditor dataMap={config.data} />;
-		} else if (component === "settingsPanel") {
+		} else if (component === "settings-panel") {
 			return (
 				<ProjectDetailTabs
-					type="WORKSPACE"
 					tabs={[
-						{ name: "Overview", path: "" },
+						{ name: "Overview", component: "project-overview" },
+						{
+							name: "MCP",
+							component: "mcp-usage",
+							restrict: ["OWNER", "EDIT", "READ_ONLY"],
+						},
 						{
 							name: "Commits",
-							path: "commits",
+							component: "commits",
 							restrict: ["OWNER", "EDIT"],
 						},
-						{ name: "GitHub", path: "github", restrict: ["OWNER"] },
 						{
-							name: "Settings",
-							path: "settings",
+							name: "GitHub",
+							component: "github",
 							restrict: ["OWNER"],
 						},
 						{
+							name: "Agent Activity",
+							component: "agent-activity",
+							restrict: ["OWNER", "EDIT", "READ_ONLY"],
+						},
+						{
 							name: "Access Control",
-							path: "access-control",
+							component: "access-control",
 							restrict: ["OWNER", "EDIT"],
 						},
-						{ name: "SMSS", path: "smss", restrict: ["OWNER"] },
+						{
+							name: "SMSS",
+							component: "smss",
+							restrict: ["OWNER"],
+						},
 					]}
 				/>
 			);

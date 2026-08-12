@@ -55,6 +55,16 @@ const LOGIN_PASSWORD_RESET_TYPES = ["native", "ldap", "linotp"] as const;
 type LoginPasswordResetType = (typeof LOGIN_PASSWORD_RESET_TYPES)[number];
 type LoginPasswordResetApiType = "NATIVE" | "LDAP" | "LINOTP";
 
+/**
+ * Default labels for the username / password logins. The provider keys stay
+ * as the backend defines them, only what the user reads changes.
+ */
+const LOGIN_TYPE_LABELS: Record<LoginPasswordResetType, string> = {
+	native: "Native",
+	ldap: "Active Directory",
+	linotp: "LinOTP",
+};
+
 export const LoginPage = observer(() => {
 	const { configStore } = useRootStore();
 	const { resolvedTheme } = useTheme();
@@ -81,8 +91,13 @@ export const LoginPage = observer(() => {
 		Record<string, string>
 	>({});
 	const [heroImage, setHeroImage] = useState<string>(loginHero);
+	const customLightHeroImage = configStore.theme.loginHeroImage.trim();
+	const customDarkHeroImage = configStore.theme.loginHeroImageDark.trim();
+	const includeNameWithLogo = configStore.theme.includeNameWithLogo;
 	const isDarkMode = resolvedTheme === "dark";
-	const activeHeroImage = isDarkMode ? loginDarkHero : heroImage;
+	const activeHeroImage = isDarkMode
+		? customDarkHeroImage || customLightHeroImage || loginDarkHero
+		: customLightHeroImage || heroImage;
 
 	const {
 		control,
@@ -167,6 +182,14 @@ export const LoginPage = observer(() => {
 		loginType as LoginPasswordResetType,
 	);
 
+	// prefer the display name the backend sends (e.g. ldap_display_name)
+	const getLoginTypeLabel = (type: LoginPasswordResetType) =>
+		availableProvidersMap[type]?.name || LOGIN_TYPE_LABELS[type];
+
+	const loginTypeLabel = loginType
+		? getLoginTypeLabel(loginType as LoginPasswordResetType)
+		: "";
+
 	useEffect(() => {
 		if (isNative) {
 			setLoginType("native");
@@ -214,7 +237,7 @@ export const LoginPage = observer(() => {
 	}, [oauthProvidersSignature]);
 
 	useEffect(() => {
-		if (isDarkMode) return;
+		if (isDarkMode || customLightHeroImage) return;
 
 		const timeoutId = window.setTimeout(() => {
 			import("@/assets/img/login-gif.gif")
@@ -223,7 +246,7 @@ export const LoginPage = observer(() => {
 		}, 1200);
 
 		return () => window.clearTimeout(timeoutId);
-	}, [isDarkMode]);
+	}, [isDarkMode, customLightHeroImage]);
 
 	const login = handleSubmit(async (data: TypeUserLogin): Promise<void> => {
 		setIsLoading(true);
@@ -384,7 +407,7 @@ export const LoginPage = observer(() => {
 
 		if (!canRequestPasswordReset) {
 			setResetPasswordError(
-				"Password reset is only available for Native, LDAP, and LinOTP logins.",
+				"Password reset is only available for Native, Active Directory, and LinOTP logins.",
 			);
 			return;
 		}
@@ -475,9 +498,11 @@ export const LoginPage = observer(() => {
 											}
 										/>
 									) : null}
-									<span className="font-bold text-xl">
-										{configStore.theme.name}
-									</span>
+									{includeNameWithLogo ? (
+										<span className="font-bold text-xl">
+											{configStore.theme.name}
+										</span>
+									) : null}
 								</div>
 								<h4 className="mb-2 min-h-[2.2rem] scroll-m-20 font-semibold text-2xl tracking-tight md:min-h-[2.6rem] md:text-3xl">
 									{register
@@ -600,7 +625,9 @@ export const LoginPage = observer(() => {
 																)}
 																data-testid="loginPage-button-native"
 															>
-																Native
+																{getLoginTypeLabel(
+																	"native",
+																)}
 															</button>
 														)}
 														{isLdap && (
@@ -626,7 +653,9 @@ export const LoginPage = observer(() => {
 																)}
 																data-testid="loginPage-button-ldap"
 															>
-																LDAP
+																{getLoginTypeLabel(
+																	"ldap",
+																)}
 															</button>
 														)}
 														{isLinOTP && (
@@ -652,7 +681,9 @@ export const LoginPage = observer(() => {
 																)}
 																data-testid="loginPage-button-linotp"
 															>
-																LinOTP
+																{getLoginTypeLabel(
+																	"linotp",
+																)}
 															</button>
 														)}
 													</div>
@@ -1478,7 +1509,7 @@ export const LoginPage = observer(() => {
 					<div className="flex flex-col gap-3">
 						<p className="text-muted-foreground text-sm">
 							Enter the email associated with your{" "}
-							{loginType.toUpperCase()} login.
+							{loginTypeLabel} login.
 						</p>
 						<div className="flex flex-col gap-1.5">
 							<Label htmlFor={`${uid}-forgot-password-email`}>

@@ -1,4 +1,5 @@
 import { AlertCircle, Loader2 } from "lucide-react";
+import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
@@ -15,6 +16,7 @@ import {
 	Textarea,
 } from "@semoss/ui/next";
 import { ResponseMessageStore, type RoomStore, type ToolStore } from "@/stores";
+import { getToolEngineId } from "@/utility/mcp-utils";
 import { ToolField } from "./tool-field";
 
 export interface ToolsDefaultViewProps {
@@ -82,14 +84,14 @@ export const ToolsDefaultView = observer(
 		);
 		const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 		const [showOptional, setShowOptional] = useState<boolean>(false);
+		// Parameters that were passed into an executed call are shown by default,
+		// next to the result, so the output can be read in context.
+		const [showParameters, setShowParameters] = useState<boolean>(true);
 		const [required, setRequired] = useState<string[]>([]);
 
 		const [properties, setProperties] = useState<
 			Record<string, FieldSchema>
 		>({});
-		const [response, setResponse] = useState<string | undefined>(
-			tool.status === "SUCCESS" ? tool.response : undefined,
-		);
 		const [showExtensionDialog, setShowExtensionDialog] =
 			useState<boolean>(false);
 		const [extensionCheckRetrying, setExtensionCheckRetrying] =
@@ -127,20 +129,40 @@ export const ToolsDefaultView = observer(
 		// Separate required and optional fields
 		const showResponse = tool.status === "SUCCESS";
 		const toolFailed =
-			tool.status === "ERROR" ||
-			tool.status === "CANCELLED" ||
-			tool.status === "PAUSED";
+			tool.status === "ERROR" || tool.status === "CANCELLED";
 		const requiredFields = Object.entries(properties).filter(
 			([fieldName]) => required.includes(fieldName),
 		);
 		const optionalFields = Object.entries(properties).filter(
 			([fieldName]) => !required.includes(fieldName),
 		);
-		const title = tool?.json.title || "";
+		const title = tool?.displayName || "";
 		const description = tool?.json.description || "";
 		const isAutoExecuting =
 			tool?.json._meta.SMSS_MCP_EXECUTION !== "ask" &&
 			tool.status !== "SUCCESS";
+
+		// The call is over (succeeded or not), so the form is no longer actionable
+		// and the arguments it ran with become part of the record to display.
+		const hasExecuted = showResponse || toolFailed;
+		const executedParameters = toJS(tool.parameters || {});
+		const executedParameterKeys = Object.keys(executedParameters);
+		// Prefer the declared schema so each argument keeps its type and
+		// description; fall back to raw JSON when the schema is missing or the
+		// call carried keys the schema never declared.
+		const schemaCoversParameters =
+			executedParameterKeys.length > 0 &&
+			executedParameterKeys.every((key) => key in properties);
+		// Only the keys the call actually carried, so a declared-but-unused
+		// optional field is not shown as an empty input that was "used".
+		const executedParameterFields = Object.entries(properties).filter(
+			([fieldName]) => fieldName in executedParameters,
+		);
+		const executedParametersJson = JSON.stringify(
+			executedParameters,
+			null,
+			2,
+		);
 
 		/*
 		 * Functions
@@ -256,7 +278,7 @@ export const ToolsDefaultView = observer(
 				} else {
 					// Normal MCP tool execution for non-Playwright tools
 					const response = await room.runRoomPixel<[unknown]>(
-						`RunMCPTool(project = [ "${app}" ], function=[ "${
+						`RunMCPTool(project = [ "${getToolEngineId(tool.json._meta) || app}" ], roomId=${JSON.stringify(room.roomId)}, function=[ "${
 							tool?.json.name
 						}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
 						false,
@@ -276,6 +298,8 @@ export const ToolsDefaultView = observer(
 			const m = room.getMessage(message);
 			// Only process the tool response if the tool is still open
 			if (m && m instanceof ResponseMessageStore && tool.isOpen) {
+				// The store owns the response and the executed parameters from
+				// here on, so this view renders straight off the tool.
 				room.processTool(
 					m.id,
 					tool.id,
@@ -283,15 +307,16 @@ export const ToolsDefaultView = observer(
 					success ? "success" : "error",
 					data,
 				);
-				setResponse(output);
 			}
 			setIsSubmitting(false);
 		};
 
-		// Render a group of fields
+		// Render a group of fields. `values` overrides the editable form state so
+		// an executed call can render the arguments it actually ran with.
 		const renderFields = (
 			fields: [string, FieldSchema][],
 			required: boolean,
+			values?: Record<string, unknown>,
 		) =>
 			fields.map(([fieldName, fieldSchema]) => (
 				<ToolField
@@ -299,8 +324,8 @@ export const ToolsDefaultView = observer(
 					fieldName={fieldName}
 					fieldSchema={fieldSchema}
 					required={required && !showResponse && !isAutoExecuting}
-					disabled={showResponse || !!isAutoExecuting}
-					value={data[fieldName] ?? ""}
+					disabled={showResponse || !!isAutoExecuting || !!values}
+					value={(values ?? data)[fieldName] ?? ""}
 					onChange={(val) => handleChange(fieldName, val)}
 				/>
 			));
@@ -336,6 +361,65 @@ export const ToolsDefaultView = observer(
 				</div>
 
 				<div className="flex-1 space-y-4 overflow-y-auto px-1">
+					{hasExecuted && (
+						/* The call is done, so show the arguments it ran with
+						   above the result rather than an input form that can no
+						   longer be submitted. */
+						<div className="flex flex-col space-y-2">
+							<div className="flex items-center justify-between gap-2">
+								<Label className="shrink-0 font-semibold">
+									{t("form.parameters")}
+								</Label>
+								{executedParameterKeys.length > 0 && (
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										onClick={() =>
+											setShowParameters(!showParameters)
+										}
+									>
+										{t(
+											showParameters
+												? "actions.collapse"
+												: "actions.expand",
+										)}
+									</Button>
+								)}
+							</div>
+							{executedParameterKeys.length === 0 ? (
+								<p className="text-muted-foreground text-sm">
+									{t("form.noParameters")}
+								</p>
+							) : (
+								showParameters &&
+								(schemaCoversParameters ? (
+									<div className="space-y-4">
+										{renderFields(
+											executedParameterFields,
+											false,
+											executedParameters,
+										)}
+									</div>
+								) : (
+									<Textarea
+										readOnly
+										className="w-full resize-none font-mono text-sm"
+										rows={Math.min(
+											12,
+											Math.max(
+												3,
+												executedParametersJson.split(
+													"\n",
+												).length,
+											),
+										)}
+										value={executedParametersJson}
+									/>
+								))
+							)}
+						</div>
+					)}
 					{showResponse && (
 						<div className="flex flex-col space-y-2">
 							<Label
@@ -347,7 +431,7 @@ export const ToolsDefaultView = observer(
 							<Textarea
 								readOnly
 								className="w-full flex-1 resize-none"
-								value={response}
+								value={tool.response}
 							/>
 						</div>
 					)}
@@ -361,9 +445,7 @@ export const ToolsDefaultView = observer(
 									`status.${
 										tool.status === "ERROR"
 											? "failed"
-											: tool.status === "CANCELLED"
-												? "cancelled"
-												: "paused"
+											: "cancelled"
 									}`,
 								)}
 							</Label>
@@ -374,7 +456,8 @@ export const ToolsDefaultView = observer(
 							/>
 						</div>
 					)}
-					{getMCP.status === "ERROR" ? (
+					{/* Input form, only while the call can still be submitted */}
+					{hasExecuted ? null : getMCP.status === "ERROR" ? (
 						<div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
 							<div className="text-destructive">
 								<p className="font-semibold text-lg">
@@ -386,118 +469,76 @@ export const ToolsDefaultView = observer(
 							</div>
 						</div>
 					) : getMCP.status === "SUCCESS" ? (
-						showResponse ? (
-							Object.keys(properties).length > 0 && (
-								<>
-									<Button
-										type="button"
-										variant="outline"
-										size="sm"
-										onClick={() =>
-											setShowOptional(!showOptional)
-										}
-										className="w-full"
-									>
-										{t(
-											showOptional
-												? "form.hideParameters"
-												: "form.showParameters",
-											{
-												count: Object.keys(properties)
-													.length,
-											},
-										)}
-									</Button>
+						<form onSubmit={handleSubmit}>
+							<div className="space-y-4">
+								{Object.keys(properties).length === 0 &&
+									!scriptForBrowserAutomation && (
+										<p className="py-8 text-center text-muted-foreground text-sm">
+											{t("form.noParameters")}
+										</p>
+									)}
 
-									{showOptional &&
-										renderFields(
-											Object.entries(properties),
-											false,
-										)}
-								</>
-							)
-						) : (
-							<form onSubmit={handleSubmit}>
-								<div className="space-y-4">
-									{Object.keys(properties).length === 0 &&
-										!scriptForBrowserAutomation && (
-											<p className="py-8 text-center text-muted-foreground text-sm">
-												{t("form.noParameters")}
-											</p>
-										)}
+								{/* Required fields */}
+								{renderFields(requiredFields, true)}
 
-									{/* Required fields */}
-									{renderFields(requiredFields, true)}
-
-									{/* Playwright Script Details */}
-									{scriptForBrowserAutomation && (
-										<div className="space-y-3 rounded-md border bg-muted/50 p-4">
-											<h3 className="font-semibold text-base">
-												{t("playwright.details")}
-											</h3>
-											<div className="space-y-2 text-sm">
-												<div>
-													<span className="font-medium">
-														{t(
-															"playwright.projectId",
-														)}
-														:
-													</span>
-													<span className="ms-2 text-muted-foreground">
-														{app}
-													</span>
-												</div>
-												<div>
-													<span className="font-medium">
-														{t(
-															"playwright.recordedFile",
-														)}
-														:
-													</span>
-													<span className="ms-2 text-muted-foreground">
-														{
-															scriptForBrowserAutomation
-														}
-													</span>
-												</div>
+								{/* Playwright Script Details */}
+								{scriptForBrowserAutomation && (
+									<div className="space-y-3 rounded-md border bg-muted/50 p-4">
+										<h3 className="font-semibold text-base">
+											{t("playwright.details")}
+										</h3>
+										<div className="space-y-2 text-sm">
+											<div>
+												<span className="font-medium">
+													{t("playwright.projectId")}:
+												</span>
+												<span className="ms-2 text-muted-foreground">
+													{app}
+												</span>
+											</div>
+											<div>
+												<span className="font-medium">
+													{t(
+														"playwright.recordedFile",
+													)}
+													:
+												</span>
+												<span className="ms-2 text-muted-foreground">
+													{scriptForBrowserAutomation}
+												</span>
 											</div>
 										</div>
-									)}
+									</div>
+								)}
 
-									{/* Optional fields toggle */}
-									{optionalFields.length > 0 && (
-										<>
-											<Button
-												type="button"
-												variant="outline"
-												size="sm"
-												onClick={() =>
-													setShowOptional(
-														!showOptional,
-													)
-												}
-												className="w-full"
-											>
-												{t(
-													showOptional
-														? "form.hideOptionalFields"
-														: "form.showOptionalFields",
-													{
-														count: optionalFields.length,
-													},
-												)}
-											</Button>
+								{/* Optional fields toggle */}
+								{optionalFields.length > 0 && (
+									<>
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											onClick={() =>
+												setShowOptional(!showOptional)
+											}
+											className="w-full"
+										>
+											{t(
+												showOptional
+													? "form.hideOptionalFields"
+													: "form.showOptionalFields",
+												{
+													count: optionalFields.length,
+												},
+											)}
+										</Button>
 
-											{showOptional &&
-												renderFields(
-													optionalFields,
-													false,
-												)}
-										</>
-									)}
-								</div>
-							</form>
-						)
+										{showOptional &&
+											renderFields(optionalFields, false)}
+									</>
+								)}
+							</div>
+						</form>
 					) : (
 						<div className="flex flex-col items-center justify-center gap-2 py-12">
 							<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

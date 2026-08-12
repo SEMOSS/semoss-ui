@@ -1,7 +1,6 @@
 import { makeAutoObservable, runInAction } from "mobx";
-// TODO: Pull from sdk
+import { getUserProjectPermission as getUserProjectLevelPermission } from "@semoss/sdk";
 import { Env, logout, runPixel } from "@semoss/sdk/react";
-import { getUserProjectPermission as getUserProjectLevelPermission } from "@semoss/shared/api";
 import { registerUser } from "@/api";
 import type { AppMetadata } from "@/components/app";
 import { THEME } from "@/constants";
@@ -269,6 +268,9 @@ export class ConfigStore {
 		name: string;
 		logo: string;
 		logoLight: string;
+		includeNameWithLogo: boolean;
+		loginHeroImage: string;
+		loginHeroImageDark: string;
 		banner: string | undefined;
 		landingPageName: string;
 		isLogoUrl: boolean;
@@ -289,6 +291,9 @@ export class ConfigStore {
 			name: THEME.name,
 			logo: THEME.logo,
 			logoLight: THEME.logoLight,
+			includeNameWithLogo: true,
+			loginHeroImage: "",
+			loginHeroImageDark: "",
 			banner: undefined,
 			landingPageName: THEME.name,
 			isLogoUrl: false,
@@ -581,6 +586,13 @@ export class ConfigStore {
 		return true;
 	}
 
+	/**
+	 * Allow the user to login with ldap
+	 *
+	 * @param username - username to login with
+	 * @param password - password to login with
+	 * @returns true if successful
+	 */
 	async loginLDAP(username: string, password: string): Promise<boolean> {
 		const { monolithStore } = this._root;
 

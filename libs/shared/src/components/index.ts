@@ -16,6 +16,7 @@ export * from "./login-provider-icon";
 export * from "./mcp";
 export * from "./members";
 export * from "./monaco";
+export * from "./notebook";
 export * from "./paired-file-upload";
 export * from "./prompts";
 export * from "./skills";

@@ -32,6 +32,7 @@ import {
 	INPUT_BLOCK_TYPES,
 	useBlocks,
 } from "@semoss/renderer";
+import { FlexLayout } from "@semoss/shared";
 import {
 	Button,
 	DropdownMenu,
@@ -49,7 +50,6 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import DuplicateIcon from "@/assets/img/Duplicate.svg";
-import { FlexLayout } from "@/components/flex-layout";
 import { AddVariableModal } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
 import { useDesigner, useWorkspace } from "@/hooks";

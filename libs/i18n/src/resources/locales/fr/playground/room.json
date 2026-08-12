@@ -5,8 +5,7 @@
 		"description": "Mettez à jour les paramètres de la salle et modifiez le comportement du chat",
 		"open": "Ouvrir les paramètres de la salle",
 		"close": "Fermer les paramètres de la salle",
-		"edit": "Modifier les paramètres de la salle",
-		"compactTooltip": "Compactez votre conversation pour économiser des jetons. Vos messages précédents restent inchangés."
+		"edit": "Modifier les paramètres de la salle"
 	},
 	"form": {
 		"modelLabel": "Modèle",
@@ -48,8 +47,9 @@
 		"completeTool": "Veuillez compléter le(s) outil(s) pour continuer",
 		"ask": "Demander",
 		"errorProcessing": "Erreur de traitement du chat",
-		"pauseTools": "Suspendre les outils",
-		"pauseToolsTooltip": "Suspendre toute l'exécution des outils jusqu'après le prochain message"
+		"stopLabel": "Arrêter la réponse",
+		"stopTooltip": "Arrêter",
+		"stoppingTooltip": "Arrêt en cours"
 	},
 	"content": {
 		"scrollToTop": "Défiler vers le haut",

@@ -169,6 +169,23 @@ export abstract class AbstractMessageStore {
 		return this.children[this.activeChildPosition] || null;
 	}
 
+	/**
+	 * Walk up the parent chain and return the nearest ancestor matching
+	 * `predicate`, or null if none does.
+	 */
+	findAncestor(
+		predicate: (message: AbstractMessageStore) => boolean,
+	): AbstractMessageStore | null {
+		let ancestor = this.parent;
+		while (ancestor) {
+			if (predicate(ancestor)) {
+				return ancestor;
+			}
+			ancestor = ancestor.parent;
+		}
+		return null;
+	}
+
 	/** Actions */
 	/**
 	 * Sync store properties from the pixel message

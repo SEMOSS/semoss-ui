@@ -318,7 +318,7 @@ const replaceInNotebook = (
 // ----------------------------
 // Main API
 // ----------------------------
-export function replaceDependentReferences(
+function replaceDependentReferences(
 	state: StateStore,
 	replacements: Replacements,
 	targets: ReplaceTargets,
@@ -388,26 +388,4 @@ export const replaceInBlocks = (
 	replaceDependentReferences(state, replacements, targets, {
 		...options,
 		replaceSection: "blocks",
-	});
-
-export const replaceInNotebooks = (
-	state: StateStore,
-	replacements: Replacements,
-	targets: ReplaceTargets,
-	options?: Omit<ReplaceOptions, "replaceSection">,
-): StateStore =>
-	replaceDependentReferences(state, replacements, targets, {
-		...options,
-		replaceSection: "notebooks",
-	});
-
-export const replaceInVariables = (
-	state: StateStore,
-	replacements: Replacements,
-	targets: ReplaceTargets,
-	options?: Omit<ReplaceOptions, "replaceSection">,
-): StateStore =>
-	replaceDependentReferences(state, replacements, targets, {
-		...options,
-		replaceSection: "variables",
 	});
