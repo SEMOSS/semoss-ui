@@ -52,8 +52,7 @@ export interface BuiltinToolDefinition {
  * Stored selection for one provider built-in tool: the catalog definition
  * copied as-is, with a `value` on any parameter the user changed from its
  * default. Kept catalog-shaped on purpose, so whatever reads the stored
- * JSON can render the tool's options without a second catalog lookup. All
- * fields are optional because a legacy name-list entry stores nothing.
+ * JSON can render the tool's options without a second catalog lookup.
  */
 export interface BuiltinToolSelection {
 	alias?: string;
@@ -73,8 +72,8 @@ export type ModelMetadata = {
 	contextWindow?: number | null;
 	maxInputTokens?: number | null;
 	maxOutputTokens?: number | null;
-	/** Legacy flat name list, or the keyed selection object. */
-	builtinTools?: string[] | Record<string, BuiltinToolSelection> | null;
+	/** Selected built-in tools, keyed by canonical tool name. */
+	builtinTools?: Record<string, BuiltinToolSelection> | null;
 	family?: string | null;
 	attachment?: boolean | null;
 	reasoning?: boolean | null;
@@ -506,28 +505,6 @@ export const normalizeStringArray = (value: unknown): string[] => {
 };
 
 /**
- * Tool names from either stored built-in tools shape - the legacy flat list
- * or the keyed selection object.
- */
-export const normalizeBuiltinToolNames = (value: unknown): string[] => {
-	if (value && typeof value === "object" && !Array.isArray(value)) {
-		return Object.keys(value);
-	}
-	return normalizeStringArray(value);
-};
-
-/**
- * The stored selection object, or null when the legacy name list (or
- * nothing) is stored.
- */
-export const toBuiltinToolsConfig = (
-	value: unknown,
-): Record<string, BuiltinToolSelection> | null =>
-	value && typeof value === "object" && !Array.isArray(value)
-		? (value as Record<string, BuiltinToolSelection>)
-		: null;
-
-/**
  * Format a catalog date ("2026-04-23") for display. Parsed in local time on
  * purpose: these are calendar dates, not instants, so a UTC->local conversion
  * would shift them a day backwards for western timezones.
@@ -723,8 +700,8 @@ export const toModelSettingsValues = (
 			metadata?.maxOutputTokens !== undefined
 				? String(metadata.maxOutputTokens)
 				: "",
-		builtinTools: normalizeBuiltinToolNames(metadata?.builtinTools),
-		builtinToolsConfig: toBuiltinToolsConfig(metadata?.builtinTools),
+		builtinTools: Object.keys(metadata?.builtinTools ?? {}),
+		builtinToolsConfig: metadata?.builtinTools ?? null,
 	};
 };
 

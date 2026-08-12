@@ -26,7 +26,7 @@ export interface ModelBuiltinTools {
 	modelProvider?: string;
 	servingProvider?: string;
 	tools?: Record<string, BuiltinToolDefinition>;
-	selected?: Record<string, BuiltinToolSelection> | string[];
+	selected?: Record<string, BuiltinToolSelection>;
 }
 
 /**
@@ -42,31 +42,12 @@ const buildDefaultSelection = (
 	params: (definition.params ?? []).map((param) => ({ ...param })),
 });
 
-/**
- * The selection shown before any edit when only the legacy name list is
- * stored: names the catalog knows get their defaults, the rest carry no
- * configuration. Nothing is saved until the user actually edits.
- */
-const seedSelection = (
-	tools: Record<string, BuiltinToolDefinition>,
-	legacyNames: string[],
-): Record<string, BuiltinToolSelection> => {
-	const seeded: Record<string, BuiltinToolSelection> = {};
-	for (const name of legacyNames) {
-		seeded[name] = tools[name] ? buildDefaultSelection(tools[name]) : {};
-	}
-	return seeded;
-};
-
 interface EngineBuiltinToolsFieldProps {
 	/** Catalog tools offered for this engine's providers, keyed by tool name */
 	tools: Record<string, BuiltinToolDefinition>;
 
-	/** Stored selection; null when only the legacy name list exists */
+	/** Stored selection; null when nothing has been saved yet */
 	value: Record<string, BuiltinToolSelection> | null;
-
-	/** Legacy tool names used to seed the selection when no config is stored */
-	legacyNames: string[];
 
 	/** Called with the full selection object on every edit */
 	onChange: (next: Record<string, BuiltinToolSelection>) => void;
@@ -83,11 +64,10 @@ interface EngineBuiltinToolsFieldProps {
 export const EngineBuiltinToolsField = ({
 	tools,
 	value,
-	legacyNames,
 	onChange,
 	testId,
 }: EngineBuiltinToolsFieldProps) => {
-	const selection = value ?? seedSelection(tools, legacyNames);
+	const selection = value ?? {};
 
 	/**
 	 * Rebuild the selection with catalog tools in catalog order, so the same

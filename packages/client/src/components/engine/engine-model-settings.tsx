@@ -27,7 +27,6 @@ import {
 	ToggleGroupItem,
 	toast,
 } from "@semoss/ui/next";
-import { CatalogTagInput } from "@/components/catalog";
 import { useRootStore } from "@/hooks";
 import {
 	EngineBuiltinToolsField,
@@ -336,15 +335,11 @@ export const EngineModelSettings = ({
 	};
 
 	/**
-	 * Whether the built-in tools selection differs from the persisted values,
-	 * across both the legacy name list and the keyed configuration.
+	 * Whether the built-in tools selection differs from the persisted value.
 	 */
 	const isBuiltinToolsDirty = () =>
-		JSON.stringify([form.builtinTools, form.builtinToolsConfig]) !==
-		JSON.stringify([
-			initialForm.builtinTools,
-			initialForm.builtinToolsConfig,
-		]);
+		JSON.stringify(form.builtinToolsConfig) !==
+		JSON.stringify(initialForm.builtinToolsConfig);
 
 	/**
 	 * Drop any unsaved edits and go back to the persisted values. The
@@ -393,11 +388,7 @@ export const EngineModelSettings = ({
 				// to a bare name list while the tool catalog is still
 				// loading.
 				...(isBuiltinToolsDirty()
-					? {
-							BUILTIN_TOOLS: hasBuiltinToolsCatalog
-								? (form.builtinToolsConfig ?? {})
-								: normalizeStringArray(form.builtinTools),
-						}
+					? { BUILTIN_TOOLS: form.builtinToolsConfig ?? {} }
 					: {}),
 			};
 
@@ -834,16 +825,22 @@ export const EngineModelSettings = ({
 
 						<Field>
 							<FieldLabel>Built-in tools</FieldLabel>
-							{hasBuiltinToolsCatalog ? (
+							{/*
+							 * A stored selection stays editable even when the
+							 * catalog has nothing to offer, so it can still
+							 * be switched off.
+							 */}
+							{hasBuiltinToolsCatalog ||
+							Object.keys(form.builtinToolsConfig ?? {}).length >
+								0 ? (
 								<EngineBuiltinToolsField
 									key={`builtin-tools-${discardRevision}`}
 									tools={builtinToolsCatalog}
 									value={form.builtinToolsConfig}
-									legacyNames={form.builtinTools}
 									onChange={(next) =>
-										// The name list shadows the selection
-										// keys so read mode and the dirty
-										// check stay coherent.
+										// Read mode renders names, so keep
+										// them in step with the selection
+										// keys.
 										setForm((prev) => ({
 											...prev,
 											builtinToolsConfig: next,
@@ -853,19 +850,19 @@ export const EngineModelSettings = ({
 									testId="engine-model-settings--builtin-tools"
 								/>
 							) : (
-								<CatalogTagInput
-									value={form.builtinTools}
-									onChange={(value) =>
-										updateForm("builtinTools", value)
-									}
-									placeholder="Press enter to add a tool"
-									testId="engine-model-settings--builtin-tools"
-								/>
+								<p
+									className="text-muted-foreground text-sm"
+									data-testid="engine-model-settings--builtin-tools-empty"
+								>
+									{getModelBuiltinTools.status === "SUCCESS"
+										? "No provider-hosted tools are available for this model."
+										: "Checking for provider-hosted tools..."}
+								</p>
 							)}
 							<FieldDescription>
-								{hasBuiltinToolsCatalog
-									? "Provider-hosted tools this model can call natively. Selections and their settings are saved with the model."
-									: "Provider-hosted tools the model can call natively."}
+								Provider-hosted tools this model can call
+								natively. Selections and their settings are
+								saved with the model.
 							</FieldDescription>
 						</Field>
 					</FieldGroup>

@@ -29,7 +29,6 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
-import { CatalogTagInput } from "@/components/catalog";
 import {
 	EngineBuiltinToolsField,
 	type ModelBuiltinTools,
@@ -937,9 +936,6 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 											BuiltinToolSelection
 										>)
 									: null;
-							const legacyNames = Array.isArray(field.value)
-								? field.value.map(String)
-								: [];
 							return (
 								<Field data-testid={fieldWrapperTestId}>
 									<FieldLabel htmlFor={f.key}>
@@ -949,21 +945,20 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 										<EngineBuiltinToolsField
 											tools={builtinToolsCatalog}
 											value={selection}
-											legacyNames={legacyNames}
 											onChange={(next) =>
 												field.onChange(next)
 											}
 											testId={fieldInputTestId}
 										/>
 									) : (
-										<CatalogTagInput
-											value={legacyNames}
-											onChange={(value) =>
-												field.onChange(value)
-											}
-											placeholder="Press enter to add a tool"
-											testId={fieldInputTestId}
-										/>
+										<p
+											className="text-muted-foreground text-sm"
+											data-testid={fieldInputTestId}
+										>
+											No provider-hosted tools are
+											available for this provider and
+											model.
+										</p>
 									)}
 									{f.helperText && (
 										<FieldDescription
