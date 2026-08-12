@@ -2,7 +2,7 @@
 // nbformat types/helpers external callers (e.g. chat's "Add to Notebook")
 // need to build/append cells using the same single source of truth as the
 // live Notebook editor. Everything else (subcomponents) stays internal.
-export { Notebook } from "./notebook";
+export { Notebook, type NotebookHandle, type NotebookState } from "./notebook";
 export type {
 	JupyterCell,
 	JupyterCellType,
