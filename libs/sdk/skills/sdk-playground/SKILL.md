@@ -213,3 +213,142 @@ while (true) {
 // 6. Fetch the full structured result
 const { errors, results } = await getPixelAsyncResult(jobId);
 ```
+
+---
+
+### `addPlaygroundToolExecution(insightId, params)`
+
+Submits a tool execution result back to the playground and fires a follow-up LLM
+completion turn. Call this after your application has run an MCP tool and has its output.
+Returns `{ jobId }` — use `getPixelJobStreaming` and `getPixelAsyncResult` exactly as you
+would after `askPlayground`.
+
+```ts
+import type { AddPlaygroundToolExecutionParams } from "@semoss/sdk";
+
+const params: AddPlaygroundToolExecutionParams = {
+    engine: "my-app-id",        // room.model.app_id — the engine that owns the room
+    roomId: room.roomId,
+    parentMessageId: responseMessage.id,  // the response message that contains the tool call
+    toolId: tool.id,            // tool call ID from the TOOL_CALL message part
+    toolName: tool.json.name,
+    toolExecutionResponse: toolOutput,    // raw string output from the tool
+    mcpToolStatus: "success",   // "success" | "error" | "cancelled" | "paused"
+    toolParameterValues: tool.parameters, // params actually passed to the tool
+    // paramValues defaults to [{}] — pass only if you need extra model params
+};
+
+const { jobId } = await addPlaygroundToolExecution(insightId, params);
+
+// Stream tokens from the follow-up LLM response
+const TERMINAL: PixelJobStreamingStatus[] = [
+    "Complete", "ProgressComplete", "Canceled", "Error", "UnknownJob",
+];
+while (true) {
+    const { message, status } = await getPixelJobStreaming(jobId);
+    for (const chunk of message) {
+        if (chunk.stream_type === "content" && chunk.data.content) {
+            setContent(prev => prev + chunk.data.content);
+        } else if (chunk.stream_type === "thinking" && chunk.data.thinking) {
+            setThinking(prev => prev + chunk.data.thinking);
+        }
+    }
+    if (TERMINAL.includes(status)) break;
+}
+
+const { errors, results } = await getPixelAsyncResult(jobId);
+const output = results[0].output;
+
+if (typeof output.responseMessage === "string") {
+    // More tool calls are still pending in the same turn.
+    // Continue executing the next queued tool — do NOT create a new
+    // response bubble yet.
+    runNextTool();
+} else {
+    // All tools for this turn are complete. The backend has returned the
+    // final input + response message pair.
+    // Sync your local message state and begin executing any new tool calls
+    // that appear in the new responseMessage.
+    syncMessages(output.inputMessage, output.responseMessage);
+    continueToolExecution(output.responseMessage);
+}
+```
+
+**`AddPlaygroundToolExecutionParams` fields:**
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `engine` | Yes | The engine/app ID (`room.model.app_id`) |
+| `roomId` | Yes | ID of the room the tool call belongs to |
+| `parentMessageId` | No | ID of the response message containing the tool call |
+| `toolId` | Yes | The tool call ID from the `TOOL_CALL` message part |
+| `toolName` | Yes | The tool's function name |
+| `toolExecutionResponse` | Yes | Raw string output of the tool (encoded automatically) |
+| `mcpToolStatus` | Yes | `"success"` \| `"error"` \| `"cancelled"` \| `"paused"` |
+| `toolParameterValues` | Yes | The parameters that were actually used when calling the tool |
+| `paramValues` | No | Extra model parameters; defaults to `[{}]` |
+
+---
+
+## Tool Execution Call Stack
+
+This section documents how `addPlaygroundToolExecution` fits into the full
+tool-call lifecycle so you can replicate the same flow outside the playground app.
+
+```
+AskPlayground → stream chunks → getPixelAsyncResult
+    │
+    └─ responseMessage.parts contains TOOL_CALL entries
+           │
+           ├─ For each TOOL_CALL with SMSS_MCP_EXECUTION === "AUTO":
+           │       │
+           │       ├─ RunMCPTool(project, roomId, function, paramValues)
+           │       │       └─ Returns raw tool output string
+           │       │
+           │       └─ addPlaygroundToolExecution(insightId, {
+           │               engine,          ← room.model.app_id
+           │               roomId,
+           │               parentMessageId, ← the response message's ID
+           │               toolId,          ← part.toolCall.id
+           │               toolName,        ← tool.json.name
+           │               toolExecutionResponse, ← output from RunMCPTool
+           │               mcpToolStatus,   ← "success" | "error" | ...
+           │               toolParameterValues,
+           │           })
+           │               │
+           │               └─ stream chunks (content / thinking / tool)
+           │                       │
+           │                       ├─ Partial output { responseMessage: string }
+           │                       │       └─ More tools pending → run next tool
+           │                       │
+           │                       └─ Final output { inputMessage, responseMessage }
+           │                               └─ Sync messages, run continueToolExecution()
+           │                                  on the new responseMessage (may trigger
+           │                                  another round of tool calls)
+           │
+           └─ Repeat until responseMessage has no INITIAL/LOADING tool calls
+```
+
+### Key rules
+
+1. **`engine` vs `model.engine_id`**: `addPlaygroundToolExecution` uses
+   `room.model.app_id` (the *app* engine ID), not `room.model.engine_id` (the
+   *LLM* engine ID) that `askPlayground` uses. These are different IDs.
+
+2. **Partial vs final output**: Check `typeof output.responseMessage === "string"`.
+   A string means the backend is still aggregating tool results and wants you to
+   keep running tools. An object means the turn is complete.
+
+3. **Error wrapping**: If the tool itself throws, set `mcpToolStatus: "error"` and
+   pass the error message as `toolExecutionResponse` so the model can reason about
+   the failure. If `addPlaygroundToolExecution` itself throws while saving a
+   successful result, retry with `mcpToolStatus: "error"` and wrap the save-error
+   message in `toolExecutionResponse`.
+
+4. **Paused / cancelled tools**: Use `mcpToolStatus: "paused"` or `"cancelled"` to
+   tell the model the tool was skipped without executing. The model will receive a
+   standard prompt explaining why execution was halted.
+
+5. **Concurrency limit**: A room has a `toolAutoExecutionLimit` (default 5). Track
+   how many tools are currently `LOADING` and only dispatch up to the limit at a
+   time. Re-check after each tool completes.

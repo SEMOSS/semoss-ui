@@ -1,75 +1,11 @@
+import type {
+	AddPlaygroundToolExecutionParams,
+	AskPlaygroundParams,
+	PlaygroundMessage,
+	PlaygroundRoom,
+	PlaygroundRoomOptions,
+} from "../types";
 import { runPixel, runPixelAsync } from "./base";
-
-// -------------------------------------------------------------------------------------------------
-// INTERFACES
-// -------------------------------------------------------------------------------------------------
-
-/**
- * @description Workspace reference embedded within room options
- */
-export interface PlaygroundWorkspace {
-	workspace_id: string;
-	name: string;
-}
-
-/**
- * @description Configuration options for a playground room
- */
-export interface PlaygroundRoomOptions {
-	predefinedPrompts: string[];
-	instructions: string;
-	mcp: string[];
-	workspace: PlaygroundWorkspace;
-	modelId: string;
-}
-
-/**
- * @description A playground room
- */
-export interface PlaygroundRoom {
-	roomId: string;
-	name: string;
-	[key: string]: unknown;
-}
-
-/**
- * @description A single message within a playground room
- */
-export interface PlaygroundMessage {
-	messageId: string;
-	content: string;
-	role: string;
-	[key: string]: unknown;
-}
-
-/**
- * @description Params for the AskPlayground reactor
- */
-export interface AskPlaygroundParams {
-	/** Engine (model) ID to route the request to */
-	engine: string;
-	/** Room ID the message belongs to */
-	roomId: string;
-	/** The user message or command text (will be encoded) */
-	command: string;
-	/** System context / instructions (will be encoded) */
-	context: string;
-	/** Optional base64 image strings */
-	image?: string[];
-	/** Parent message ID; use "ROOT_PLACEHOLDER_ID" for new threads */
-	parentMessageId: string;
-	/** Additional param values passed to the model */
-	paramValues?: Record<string, unknown>[];
-}
-
-/**
- * @description The model response returned by AskPlayground
- */
-export interface PlaygroundResponse {
-	messageId: string;
-	content: string;
-	[key: string]: unknown;
-}
 
 // -------------------------------------------------------------------------------------------------
 // API FUNCTIONS
@@ -241,6 +177,97 @@ export const askPlayground = async (
 	} = params;
 
 	const pixel = `AskPlayground(engine=["${engine}"], roomId=["${roomId}"], command=["<encode>${command}</encode>"], context=["<encode>${context}</encode>"], image=${JSON.stringify(image)}, parentMessageId=["${parentMessageId}"], paramValues=${JSON.stringify(paramValues)})`;
+
+	return runPixelAsync(pixel, insightId);
+};
+
+/**
+ * Submits a tool execution result to the playground and returns the job ID for
+ * streaming the model's follow-up response. The reactor feeds the tool output
+ * back into the conversation and triggers a new LLM completion turn.
+ *
+ * Poll the job using {@link getPixelJobStreaming} until the status reaches a
+ * terminal state ("Complete", "ProgressComplete", "Canceled", "Error",
+ * "UnknownJob"), then call {@link getPixelAsyncResult} for the full structured
+ * response. The settled output is either:
+ * - `{ responseMessage: string }` — more tool calls are still pending; the
+ *   caller should continue executing the next queued tool without yet creating
+ *   a new response bubble.
+ * - `{ inputMessage: InputPixelMessage; responseMessage: ResponsePixelMessage }`
+ *   — all tools for the turn are done; sync the messages and start the next
+ *   tool-execution cycle on the new `responseMessage`.
+ *
+ * @param insightId - The active SEMOSS insight ID.
+ * @param params - Parameters for the tool execution submission.
+ * @returns The async job ID to pass to {@link getPixelJobStreaming}.
+ *
+ * @example
+ * ```ts
+ * const { jobId } = await addPlaygroundToolExecution(insightId, {
+ *     engine: room.model.app_id,
+ *     roomId: room.roomId,
+ *     parentMessageId: responseMessage.id,
+ *     toolId: tool.id,
+ *     toolName: tool.json.name,
+ *     toolExecutionResponse: toolOutput,
+ *     mcpToolStatus: "success",
+ *     toolParameterValues: tool.parameters,
+ * });
+ *
+ * // Stream tokens from the follow-up LLM turn
+ * const TERMINAL: PixelJobStreamingStatus[] = [
+ *     "Complete", "ProgressComplete", "Canceled", "Error", "UnknownJob",
+ * ];
+ * while (true) {
+ *     const { message, status } = await getPixelJobStreaming(jobId);
+ *     for (const chunk of message) {
+ *         if (chunk.stream_type === "content" && chunk.data.content) {
+ *             setContent(prev => prev + chunk.data.content);
+ *         }
+ *     }
+ *     if (TERMINAL.includes(status)) break;
+ * }
+ *
+ * const { errors, results } = await getPixelAsyncResult(jobId);
+ * const output = results[0].output;
+ * if (typeof output.responseMessage === "string") {
+ *     // More tools pending — continue executing next tool
+ * } else {
+ *     // Final response — sync messages and run continueToolExecution()
+ * }
+ * ```
+ */
+export const addPlaygroundToolExecution = async (
+	insightId: string,
+	params: AddPlaygroundToolExecutionParams,
+): Promise<{ jobId: string }> => {
+	const {
+		engine,
+		roomId,
+		parentMessageId,
+		toolId,
+		toolName,
+		toolExecutionResponse,
+		mcpToolStatus,
+		toolParameterValues,
+		paramValues = [{}],
+	} = params;
+
+	const lines: string[] = [
+		`AddPlaygroundToolExecution(`,
+		`engine=["${engine}"],`,
+		`roomId=["${roomId}"],`,
+		...(parentMessageId ? [`parentMessageId=["${parentMessageId}"],`] : []),
+		`toolId=["${toolId}"],`,
+		`toolName=["${toolName}"],`,
+		`toolExecutionResponse=["<encode>${toolExecutionResponse}</encode>"],`,
+		`paramValues=${JSON.stringify(paramValues)},`,
+		`mcpToolStatus=${JSON.stringify(mcpToolStatus)},`,
+		`toolParameterValues=[${JSON.stringify(toolParameterValues)}]`,
+		`);`,
+	];
+
+	const pixel = lines.join("\n");
 
 	return runPixelAsync(pixel, insightId);
 };
