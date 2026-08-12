@@ -1,6 +1,7 @@
 import { ChevronRight, UploadIcon, X } from "lucide-react";
 import { useId, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { runPixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Breadcrumb,
@@ -23,11 +24,9 @@ import {
 } from "@semoss/ui/next";
 import { UploadProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useRootStore } from "@/hooks";
 
 export const CreateNotebookPage = () => {
 	const navigate = useNavigate();
-	const { monolithStore } = useRootStore();
 	const [isUploadOpen, setIsUploadOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const [tagInput, setTagInput] = useState("");
@@ -59,13 +58,11 @@ export const CreateNotebookPage = () => {
 		try {
 			setIsLoading(true);
 
-			const { errors, pixelReturn } = await monolithStore.runQuery<
+			const { errors, pixelReturn } = await runPixel<
 				{
 					project_id: string;
 				}[]
-			>(
-				`CreateNotebook(project=[${JSON.stringify(form.name)}], notebookName=[/public/main.ipynb]);`,
-			);
+			>(`CreateNotebook(project=[${JSON.stringify(form.name)}]);`);
 
 			if (errors.length > 0) throw new Error(errors.join(","));
 
@@ -74,12 +71,11 @@ export const CreateNotebookPage = () => {
 
 			const hasMeta = form.tags.length > 0 || !!form.description;
 			if (hasMeta) {
-				const { pixelReturn: metaReturn } =
-					await monolithStore.runQuery(
-						`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
-							{ tag: form.tags, description: form.description },
-						)}])`,
-					);
+				const { pixelReturn: metaReturn } = await runPixel(
+					`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
+						{ tag: form.tags, description: form.description },
+					)}])`,
+				);
 
 				const operationType = metaReturn[0].operationType[0];
 				if (operationType.indexOf("ERROR") > -1) {

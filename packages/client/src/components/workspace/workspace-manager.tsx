@@ -74,7 +74,12 @@ type WorkspaceManagerProps = {
 };
 
 export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
-	({ options, factory = () => null, onAction, readOnly = false }) => {
+	({
+		options,
+		factory = () => null,
+		onAction = (action: FlexLayout.Action) => action,
+		readOnly = false,
+	}) => {
 		const { workspace } = useWorkspace();
 		const layoutRef = useRef<FlexLayout.Layout | null>(null);
 		const containerRef = useRef<HTMLDivElement | null>(null);
