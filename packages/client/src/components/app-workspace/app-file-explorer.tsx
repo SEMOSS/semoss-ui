@@ -33,10 +33,13 @@ interface AppFileExplorerProps {
 
 	/** Initial directory path to open to (defaults to "/") */
 	initialPath?: string;
+
+	/** Render the explorer in read-only, browse-only mode */
+	readOnly?: boolean;
 }
 
 export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
-	({ layout, node, app, initialPath }) => {
+	({ layout, node, app, initialPath, readOnly = false }) => {
 		const insight = useInsight();
 
 		const [isPublishing, setIsPublishing] = useState(false);
@@ -335,46 +338,49 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 					app: app,
 				}}
 				initialPath={initialPath}
+				readOnly={readOnly}
 				headerActions={
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								onClick={async () => {
-									try {
-										setIsPublishing(true);
+					readOnly ? undefined : (
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									onClick={async () => {
+										try {
+											setIsPublishing(true);
 
-										// Seperate calls so we reload successfully compiled classes before publishing
-										await insight.actions.run(
-											`ReloadInsightClasses(project='${app}', release=false);`,
-										);
+											// Seperate calls so we reload successfully compiled classes before publishing
+											await insight.actions.run(
+												`ReloadInsightClasses(project='${app}', release=false);`,
+											);
 
-										await insight.actions.run(
-											`PublishProject(project='${app}', release=true);`,
-										);
+											await insight.actions.run(
+												`PublishProject(project='${app}', release=true);`,
+											);
 
-										toast.success(
-											"Successfully compiled and published",
-										);
-									} catch (e) {
-										toast.error(`Error: ${e}`);
-									} finally {
-										setIsPublishing(false);
-									}
-								}}
-							>
-								{isPublishing ? (
-									<Spinner className="size-3" />
-								) : (
-									<CloudUploadIcon className="size-3" />
-								)}
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>
-							Compile and publish the app
-						</TooltipContent>
-					</Tooltip>
+											toast.success(
+												"Successfully compiled and published",
+											);
+										} catch (e) {
+											toast.error(`Error: ${e}`);
+										} finally {
+											setIsPublishing(false);
+										}
+									}}
+								>
+									{isPublishing ? (
+										<Spinner className="size-3" />
+									) : (
+										<CloudUploadIcon className="size-3" />
+									)}
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
+								Compile and publish the app
+							</TooltipContent>
+						</Tooltip>
+					)
 				}
 				onItemSelect={(item) => {
 					// don't open directories
@@ -407,7 +413,7 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 						MCP.DRIVER_PATHS.some((f) => item.path === f);
 					return (
 						<FileExplorerItem
-							draggable={item.type !== "directory"}
+							draggable={!readOnly && item.type !== "directory"}
 							item={item}
 							refresh={refresh}
 							onDragStart={(e) => {
@@ -458,7 +464,7 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 							}}
 							{...otherProps}
 							actions={[
-								isDriverFile
+								!readOnly && isDriverFile
 									? {
 											name: "Create",
 											icon: <HammerIcon />,
@@ -483,9 +489,11 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 											},
 										}
 									: null,
+								!readOnly &&
 								MCP.JSON_PATHS.some((f) =>
 									item.path.startsWith(f),
-								) && item.type !== "directory"
+								) &&
+								item.type !== "directory"
 									? {
 											name: "Edit",
 											icon: <PencilIcon />,
@@ -537,21 +545,23 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 											},
 										}
 									: null,
-								{
-									name: "Delete",
-									action: async (item) => {
-										await insight.actions.run(
-											`DeleteAppAssets(project=["${app}"], filePath=["${item.path}"]);`,
-										);
+								readOnly
+									? null
+									: {
+											name: "Delete",
+											action: async (item) => {
+												await insight.actions.run(
+													`DeleteAppAssets(project=["${app}"], filePath=["${item.path}"]);`,
+												);
 
-										removeDeletedTabs(
-											item.path,
-											item.type === "directory",
-										);
+												removeDeletedTabs(
+													item.path,
+													item.type === "directory",
+												);
 
-										refresh();
-									},
-								},
+												refresh();
+											},
+										},
 							]}
 						/>
 					);
