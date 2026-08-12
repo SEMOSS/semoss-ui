@@ -4,8 +4,13 @@ import type {
 	PlaygroundMessage,
 	PlaygroundRoom,
 	PlaygroundRoomOptions,
+	RunAgentOutput,
+	RunAgentParams,
 } from "../types";
 import { runPixel, runPixelAsync } from "./base";
+
+/** The harness type value the SEMOSS backend recognises for agent runs. */
+const AGENT_HARNESS_TYPE = "semoss";
 
 // -------------------------------------------------------------------------------------------------
 // API FUNCTIONS
@@ -314,4 +319,76 @@ export const getPlaygroundRooms = async (
 	}
 
 	return output;
+};
+
+/**
+ * Sends a message to the server-side agent harness and returns the job ID for
+ * streaming. The backend runs the entire agentic loop (model completions, tool
+ * calls, re-prompting) autonomously — the client streams tokens as they arrive
+ * and receives a single settled summary once the run completes.
+ *
+ * Use this instead of {@link askPlayground} when the room was created with
+ * `harnessType: "semoss"` in its options.
+ *
+ * Poll the job using {@link getPixelJobStreaming} until a terminal status is
+ * reached, then call {@link getPixelAsyncResult} to get the {@link RunAgentOutput}.
+ *
+ * @param insightId - The active SEMOSS insight ID.
+ * @param params - Parameters for the agent run.
+ * @returns The async job ID to pass to {@link getPixelJobStreaming}.
+ *
+ * @example
+ * ```ts
+ * const { jobId } = await runAgent(insightId, {
+ *     engine: room.model.engine_id,
+ *     roomId: room.roomId,
+ *     command: "Analyze this dataset and produce a summary report.",
+ * });
+ *
+ * const TERMINAL: PixelJobStreamingStatus[] = [
+ *     "Complete", "ProgressComplete", "Canceled", "Error", "UnknownJob",
+ * ];
+ * while (true) {
+ *     const { message, status } = await getPixelJobStreaming(jobId);
+ *     for (const chunk of message) {
+ *         if (chunk.stream_type === "content" && chunk.data.content) {
+ *             setContent(prev => prev + chunk.data.content);
+ *         }
+ *     }
+ *     if (TERMINAL.includes(status)) break;
+ * }
+ *
+ * const { errors, results } = await getPixelAsyncResult<[RunAgentOutput]>(jobId);
+ * const output = results[0].output;
+ *
+ * if (output.waitTimedOut || output.status !== "COMPLETED") {
+ *     throw new Error(`Agent run did not complete: ${output.status}`);
+ * }
+ *
+ * // output.inputMessageId  — server ID for the persisted user message
+ * // output.finalOutputMessageId — server ID for the persisted response
+ * // output.finalText        — full response text (fallback if nothing streamed)
+ * // output.artifacts        — any files the agent produced
+ * ```
+ */
+export const runAgent = async (
+	insightId: string,
+	params: RunAgentParams,
+): Promise<{ jobId: string }> => {
+	const {
+		engine,
+		roomId,
+		command,
+		harnessType = AGENT_HARNESS_TYPE,
+	} = params;
+
+	const pixel = `RunAgent(
+roomId=["${roomId}"],
+engine=["${engine}"],
+command=["<encode>${command}</encode>"],
+harnessType="${harnessType}",
+wait=true
+);`;
+
+	return runPixelAsync(pixel, insightId);
 };

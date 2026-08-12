@@ -1,9 +1,9 @@
 ---
 name: sdk-playground
-description: "How to use the @semoss/sdk playground API. Use for: creating or listing playground rooms, sending messages (AskPlayground), fetching room messages or options, binding a room to an insight, updating room config. Covers imports, typed parameters, error handling, and usage patterns for all playground pixel wrappers."
+description: "How to use the @semoss/sdk playground API. Use for: creating or listing playground rooms, sending messages (AskPlayground or RunAgent), fetching room messages or options, binding a room to an insight, updating room config, toggling between chat and agent-harness mode. Covers imports, typed parameters, error handling, and usage patterns for all chat pixel wrappers."
 ---
 
-# @semoss/sdk — Playground API
+# @semoss/sdk — Playground / Chat API
 
 All playground functions are exported from `@semoss/sdk`. They wrap the underlying SEMOSS pixel
 reactors so consuming applications never need to write pixel strings directly.
@@ -19,17 +19,24 @@ import {
     setRoomForInsight,
     updateRoomOptions,
     askPlayground,
+    addPlaygroundToolExecution,
+    runAgent,
     getPixelJobStreaming,
     getPixelAsyncResult,
 } from "@semoss/sdk";
 
-// Types (all exported alongside functions)
+// Types (exported from @semoss/sdk)
 import type {
     PlaygroundRoom,
     PlaygroundMessage,
     PlaygroundRoomOptions,
     PlaygroundWorkspace,
+    MCPToolConfig,
+    PredefinedPrompt,
     AskPlaygroundParams,
+    AddPlaygroundToolExecutionParams,
+    RunAgentParams,
+    RunAgentOutput,
     PixelStreamMessage,
     PixelJobStreamingStatus,
 } from "@semoss/sdk";
@@ -101,16 +108,34 @@ Replaces a room's configuration. Pass the full options array. Returns `void`.
 ```ts
 const newOptions: PlaygroundRoomOptions[] = [
     {
-        predefinedPrompts: ["Summarize this", "Explain simply"],
+        // PredefinedPrompt objects, not plain strings
+        predefinedPrompts: [
+            { id: "p1", title: "Summarize", context: "Summarize this for me" },
+            { id: "p2", title: "Explain",   context: "Explain this simply" },
+        ],
         instructions: "You are a helpful assistant.",
+        // MCPToolConfig objects — empty array means no tools
         mcp: [],
+        // workspace is optional; omit for a plain chat room
         workspace: { workspace_id: "ws-123", name: "My Workspace" },
         modelId: "gpt-4o",
+        // harnessType: "semoss"  ← set this to enable agent-harness mode
     },
 ];
 
 await updateRoomOptions(insightId, room.roomId, newOptions);
 ```
+
+**Key `PlaygroundRoomOptions` fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `predefinedPrompts` | `PredefinedPrompt[]` | Quick-start prompt chips shown in the chat input |
+| `instructions` | `string` | System persona / instructions injected into every turn |
+| `mcp` | `MCPToolConfig[]` | MCP tool servers and knowledge sources enabled for the room |
+| `workspace` | `PlaygroundWorkspace?` | Agent workspace linked to the room (omit for plain chat) |
+| `modelId` | `string` | Engine ID of the model to use |
+| `harnessType` | `string?` | Set to `"semoss"` to run via the server-side RunAgent harness |
 
 ---
 
@@ -142,7 +167,15 @@ while (true) {
 
     for (const chunk of message) {
         if (chunk.stream_type === "content" && chunk.data.content) {
+            // Plain text token from the model
             setMessage(prev => prev + chunk.data.content);
+        } else if (chunk.stream_type === "thinking" && chunk.data.thinking) {
+            // Reasoning token (extended-thinking models only)
+            setThinking(prev => prev + chunk.data.thinking);
+        } else if (chunk.stream_type === "tool") {
+            // The model is streaming a tool call — name / arguments arrive
+            // incrementally. Track by chunk.data.index to correlate deltas.
+            // You typically buffer these and act once the job completes.
         }
     }
 
@@ -287,6 +320,99 @@ if (typeof output.responseMessage === "string") {
 | `mcpToolStatus` | Yes | `"success"` \| `"error"` \| `"cancelled"` \| `"paused"` |
 | `toolParameterValues` | Yes | The parameters that were actually used when calling the tool |
 | `paramValues` | No | Extra model parameters; defaults to `[{}]` |
+
+---
+
+## Chat mode vs Agent-harness mode
+
+The SDK supports two ways to send a message. The choice is made **at room creation**
+by setting `harnessType` in `PlaygroundRoomOptions`, and is persisted with the room.
+
+| | **Chat mode** (`askPlayground`) | **Agent-harness mode** (`runAgent`) |
+|---|---|---|
+| Who drives the tool loop | **Client** — browser executes each tool and submits results | **Server** — backend runs the full agentic cycle autonomously |
+| Tool calls | Client calls `RunMCPTool`, then `addPlaygroundToolExecution` per tool | Server handles all tool calls internally |
+| Result shape | `{ inputMessage, responseMessage }` — full message objects | `RunAgentOutput` — flat summary with IDs, status, `finalText`, artifacts |
+| Use when | Standard Q&A, simple tool use, full client control needed | Complex multi-step agents, subagent chains, audit logging, long-running jobs |
+| `harnessType` option | omit / `undefined` | `"semoss"` |
+
+### Creating a room in agent-harness mode
+
+```ts
+await updateRoomOptions(insightId, room.roomId, [{
+    predefinedPrompts: [],
+    instructions: "You are a research agent.",
+    mcp: [],
+    modelId: "gpt-4o",
+    harnessType: "semoss", // ← this is the toggle
+}]);
+```
+
+Once `harnessType` is persisted on the room, send all messages via `runAgent`.
+To switch back to chat mode, update the room options with `harnessType: undefined`.
+
+### `runAgent(insightId, params)`
+
+Sends a message to the server-side agent harness. The backend runs the entire
+agentic loop; the client streams tokens and receives a single `RunAgentOutput`
+summary when done.
+
+```ts
+const { jobId } = await runAgent(insightId, {
+    engine: "my-model-engine-id",  // room.model.engine_id
+    roomId: room.roomId,
+    command: "Analyze this dataset and produce a summary report.",
+    // harnessType defaults to "semoss" — only override if targeting a different harness
+});
+
+const TERMINAL: PixelJobStreamingStatus[] = [
+    "Complete", "ProgressComplete", "Canceled", "Error", "UnknownJob",
+];
+while (true) {
+    const { message, status } = await getPixelJobStreaming(jobId);
+    for (const chunk of message) {
+        if (chunk.stream_type === "content" && chunk.data.content) {
+            setContent(prev => prev + chunk.data.content);
+        } else if (chunk.stream_type === "thinking" && chunk.data.thinking) {
+            setThinking(prev => prev + chunk.data.thinking);
+        }
+    }
+    if (TERMINAL.includes(status)) break;
+}
+
+const { errors, results } = await getPixelAsyncResult<[RunAgentOutput]>(jobId);
+const output = results[0].output;
+
+if (output.waitTimedOut || output.status !== "COMPLETED") {
+    throw new Error(`Agent run did not complete: ${output.status}`);
+}
+
+// Adopt the server-assigned message IDs
+console.log(output.inputMessageId);        // persisted user message ID
+console.log(output.finalOutputMessageId);  // persisted response message ID
+console.log(output.finalText);             // full response (fallback if stream was empty)
+console.log(output.artifacts);             // any files the agent produced
+```
+
+**`RunAgentParams` fields:**
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `engine` | Yes | Engine (model) ID — use `room.model.engine_id` |
+| `roomId` | Yes | ID of the room |
+| `command` | Yes | The user message (encoded automatically) |
+| `harnessType` | No | Defaults to `"semoss"` |
+
+**`RunAgentOutput` key fields:**
+
+| Field | Description |
+|-------|-------------|
+| `status` | `"COMPLETED"` on success; other values indicate failure |
+| `waitTimedOut` | `true` if the server wait window was exceeded |
+| `inputMessageId` | Server-assigned ID for the persisted user message |
+| `finalOutputMessageId` | Server-assigned ID for the persisted response |
+| `finalText` | The agent's full response text |
+| `artifacts` | Files / outputs produced by the run |
 
 ---
 
