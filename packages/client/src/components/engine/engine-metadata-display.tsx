@@ -17,6 +17,52 @@ import {
 	TableRow,
 } from "@semoss/ui/next";
 
+/**
+ * One configurable parameter of a provider built-in tool, as written in the
+ * meta/builtin-tools.json catalog. Unknown keys pass through untouched.
+ */
+export interface BuiltinToolParam {
+	alias: string;
+	display_name?: string;
+	type?: "required" | "optional";
+	input?: "string" | "number" | "boolean" | "list" | "map";
+	options?: (string | number | boolean)[];
+	default?: unknown;
+	show_in_ui?: boolean;
+	/** The user's chosen value; the catalog `default` applies when absent. */
+	value?: unknown;
+	[key: string]: unknown;
+}
+
+/**
+ * One provider built-in tool from the meta/builtin-tools.json catalog.
+ * Unknown keys pass through untouched, which also makes a definition
+ * directly storable as a {@link BuiltinToolSelection}.
+ */
+export interface BuiltinToolDefinition {
+	alias: string;
+	display_name?: string;
+	description?: string;
+	params?: BuiltinToolParam[];
+	constraints?: { api?: string; models?: string[]; regions?: string[] };
+	[key: string]: unknown;
+}
+
+/**
+ * Stored selection for one provider built-in tool: the catalog definition
+ * copied as-is, with a `value` on any parameter the user changed from its
+ * default. Kept catalog-shaped on purpose, so whatever reads the stored
+ * JSON can render the tool's options without a second catalog lookup. All
+ * fields are optional because a legacy name-list entry stores nothing.
+ */
+export interface BuiltinToolSelection {
+	alias?: string;
+	display_name?: string;
+	description?: string;
+	params?: BuiltinToolParam[];
+	[key: string]: unknown;
+}
+
 /** Shape returned by the GetModelMetadata pixel. */
 export type ModelMetadata = {
 	engineId?: string;
@@ -27,7 +73,8 @@ export type ModelMetadata = {
 	contextWindow?: number | null;
 	maxInputTokens?: number | null;
 	maxOutputTokens?: number | null;
-	builtinTools?: string[] | null;
+	/** Legacy flat name list, or the keyed selection object. */
+	builtinTools?: string[] | Record<string, BuiltinToolSelection> | null;
 	family?: string | null;
 	attachment?: boolean | null;
 	reasoning?: boolean | null;
@@ -459,6 +506,28 @@ export const normalizeStringArray = (value: unknown): string[] => {
 };
 
 /**
+ * Tool names from either stored built-in tools shape - the legacy flat list
+ * or the keyed selection object.
+ */
+export const normalizeBuiltinToolNames = (value: unknown): string[] => {
+	if (value && typeof value === "object" && !Array.isArray(value)) {
+		return Object.keys(value);
+	}
+	return normalizeStringArray(value);
+};
+
+/**
+ * The stored selection object, or null when the legacy name list (or
+ * nothing) is stored.
+ */
+export const toBuiltinToolsConfig = (
+	value: unknown,
+): Record<string, BuiltinToolSelection> | null =>
+	value && typeof value === "object" && !Array.isArray(value)
+		? (value as Record<string, BuiltinToolSelection>)
+		: null;
+
+/**
  * Format a catalog date ("2026-04-23") for display. Parsed in local time on
  * purpose: these are calendar dates, not instants, so a UTC->local conversion
  * would shift them a day backwards for western timezones.
@@ -607,6 +676,12 @@ export interface ModelSettingsValues {
 	contextWindow: string;
 	maxOutputTokens: string;
 	builtinTools: string[];
+	/**
+	 * Keyed tool selection when the stored value carries configurations;
+	 * null for the legacy name list, which keeps `builtinTools` above
+	 * authoritative for display.
+	 */
+	builtinToolsConfig: Record<string, BuiltinToolSelection> | null;
 }
 
 /**
@@ -648,7 +723,8 @@ export const toModelSettingsValues = (
 			metadata?.maxOutputTokens !== undefined
 				? String(metadata.maxOutputTokens)
 				: "",
-		builtinTools: normalizeStringArray(metadata?.builtinTools),
+		builtinTools: normalizeBuiltinToolNames(metadata?.builtinTools),
+		builtinToolsConfig: toBuiltinToolsConfig(metadata?.builtinTools),
 	};
 };
 

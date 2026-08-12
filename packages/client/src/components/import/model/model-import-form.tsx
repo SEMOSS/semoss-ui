@@ -2,8 +2,9 @@
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: legacy click handlers */
 
 import { ChevronDown, ChevronUp, TriangleAlert, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -28,6 +29,12 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
+import { CatalogTagInput } from "@/components/catalog";
+import {
+	EngineBuiltinToolsField,
+	type ModelBuiltinTools,
+} from "@/components/engine/engine-builtin-tools-field";
+import type { BuiltinToolSelection } from "@/components/engine/engine-metadata-display";
 import { useRootStore, useStepper } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId } from "@/utility";
@@ -117,7 +124,13 @@ const getModelFieldTestId = (
 const getDefaultFieldValue = (field: FieldDefinition) =>
 	field.default ??
 	field.value ??
-	(field.type === "boolean" ? false : field.type === "multiselect" ? [] : "");
+	(field.type === "boolean"
+		? false
+		: field.type === "multiselect"
+			? []
+			: field.type === "builtin-tools"
+				? null
+				: "");
 
 export const hasSelectedMultiselectValue = (value: unknown) =>
 	Array.isArray(value) && value.length > 0;
@@ -194,6 +207,73 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 
 		reset(defaults, { keepDirtyValues: true, keepErrors: true });
 	}, [fields, advanced, reset]);
+
+	// The provider pair drives which built-in tools the catalog can offer.
+	// Both selects are user-editable, so the live form values are what count.
+	const [watchedServingProvider, watchedModelProvider, watchedModelId] =
+		useWatch({
+			control,
+			name: ["SERVING_PROVIDER", "MODEL_PROVIDER", "MODEL"],
+		});
+
+	// Let a typed model id settle before asking the catalog about it.
+	const [settledModelId, setSettledModelId] = useState("");
+	useEffect(() => {
+		const modelId =
+			typeof watchedModelId === "string" ? watchedModelId.trim() : "";
+		const timeout = setTimeout(
+			() => setSettledModelId(modelId),
+			MODEL_ID_LOOKUP_DEBOUNCE_MS,
+		);
+		return () => clearTimeout(timeout);
+	}, [watchedModelId]);
+
+	const hasBuiltinToolsField = [...fields, ...advanced].some(
+		(f) => f.type === "builtin-tools",
+	);
+
+	// Provider-hosted tools for the picked providers, fetched while the engine
+	// does not exist yet. An "OTHER" model provider is withheld so the backend
+	// infers the maker from the model id instead. Optional data - no match
+	// just leaves the free-text editor in place.
+	const builtinToolsPixel = useMemo(() => {
+		if (!hasBuiltinToolsField) {
+			return "";
+		}
+		const args: string[] = [];
+		const servingProvider =
+			typeof watchedServingProvider === "string"
+				? watchedServingProvider.trim()
+				: "";
+		const modelProvider =
+			typeof watchedModelProvider === "string"
+				? watchedModelProvider.trim()
+				: "";
+		if (servingProvider !== "") {
+			args.push(`servingProvider=[${JSON.stringify(servingProvider)}]`);
+		}
+		if (modelProvider !== "" && modelProvider !== "OTHER") {
+			args.push(`modelProvider=[${JSON.stringify(modelProvider)}]`);
+		}
+		if (settledModelId !== "") {
+			args.push(`modelId=[${JSON.stringify(settledModelId)}]`);
+		}
+		return args.length > 0
+			? `GetModelBuiltinTools(${args.join(", ")});`
+			: "";
+	}, [
+		hasBuiltinToolsField,
+		watchedServingProvider,
+		watchedModelProvider,
+		settledModelId,
+	]);
+
+	const getModelBuiltinTools = usePixel<ModelBuiltinTools>(builtinToolsPixel);
+	const builtinToolsCatalog =
+		getModelBuiltinTools.status === "SUCCESS"
+			? (getModelBuiltinTools.data?.tools ?? {})
+			: {};
+	const hasBuiltinToolsCatalog = Object.keys(builtinToolsCatalog).length > 0;
 
 	const getHelperText = (error, val) => {
 		if (!error) return val.helperText || "";
@@ -847,6 +927,54 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									/>
 								</Field>
 							);
+						case "builtin-tools": {
+							const selection =
+								field.value &&
+								typeof field.value === "object" &&
+								!Array.isArray(field.value)
+									? (field.value as Record<
+											string,
+											BuiltinToolSelection
+										>)
+									: null;
+							const legacyNames = Array.isArray(field.value)
+								? field.value.map(String)
+								: [];
+							return (
+								<Field data-testid={fieldWrapperTestId}>
+									<FieldLabel htmlFor={f.key}>
+										{f.label}
+									</FieldLabel>
+									{hasBuiltinToolsCatalog ? (
+										<EngineBuiltinToolsField
+											tools={builtinToolsCatalog}
+											value={selection}
+											legacyNames={legacyNames}
+											onChange={(next) =>
+												field.onChange(next)
+											}
+											testId={fieldInputTestId}
+										/>
+									) : (
+										<CatalogTagInput
+											value={legacyNames}
+											onChange={(value) =>
+												field.onChange(value)
+											}
+											placeholder="Press enter to add a tool"
+											testId={fieldInputTestId}
+										/>
+									)}
+									{f.helperText && (
+										<FieldDescription
+											data-testid={fieldErrorTestId}
+										>
+											{f.helperText}
+										</FieldDescription>
+									)}
+								</Field>
+							);
+						}
 						case "select":
 							return (
 								<Field data-testid={fieldWrapperTestId}>
