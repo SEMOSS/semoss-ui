@@ -123,7 +123,11 @@ export const getAgentRun = async <
 		throw new Error(response.errors.join(""));
 	}
 
-	return response.pixelReturn[0].output;
+	const output = response.pixelReturn[0].output;
+
+	// The backend only sets pendingActions while INPUT_REQUIRED — normalize it
+	// here so this always matches AgentRunSnapshot's contract for every caller.
+	return { ...output, pendingActions: output.pendingActions ?? [] };
 };
 
 /**

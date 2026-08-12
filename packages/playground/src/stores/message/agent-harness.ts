@@ -4,6 +4,7 @@ import type {
 	AgentRunItemsState,
 	AgentRunSnapshot,
 	AgentRunStatusValue,
+	PendingAgentAction,
 } from "@semoss/sdk";
 import { submitAgentRun, subscribeAgentRun } from "@semoss/sdk/react";
 import { MCP_EXECUTION_AGENT, STREAMING_PLACEHOLDER_ID } from "@/constants";
@@ -111,6 +112,14 @@ const applyAgentRunItem = (
 			const part = buildToolCallPart(item);
 			responseMessage.parts.push(part);
 			room.syncTool(item.id, responseMessage, part);
+			// syncMessage's TOOL_CALL branch never sets status, so seed it here —
+			// otherwise a tool with no item.updated in between sits at "INITIAL"
+			// (no loading UI) until it jumps straight to item.completed's status.
+			const tool = room.getTool(item.id);
+			const status = mapToolStatus(item.status);
+			if (tool && status) {
+				tool.status = status;
+			}
 		}
 		// subagent: not yet rendered — see AgentSubagentItem/tools-view follow-up.
 		return;
@@ -159,12 +168,39 @@ const applyAgentRunItem = (
 };
 
 /**
+ * Sync each tool's pendingAction from the run's current snapshot. Matched by
+ * toolCallId; a tool not in `pendingActions` is cleared (its decision has
+ * been made, or it was never a pending call).
+ */
+const syncPendingActions = (
+	responseMessage: ResponseMessageStore,
+	pendingActions: readonly PendingAgentAction[] | undefined,
+) => {
+	const room = responseMessage.room;
+	const byToolCallId = new Map(
+		(pendingActions ?? [])
+			.filter((action) => action.toolCallId)
+			.map((action) => [action.toolCallId, action]),
+	);
+	responseMessage.parts.forEach((part) => {
+		if (part.type !== "TOOL_CALL") {
+			return;
+		}
+		const tool = room.getTool(part.toolCall.id);
+		if (!tool) {
+			return;
+		}
+		tool.pendingAction = byToolCallId.get(tool.id) ?? null;
+	});
+};
+
+/**
  * Run a user message through the server-side agent harness (RunAgent).
  *
  * Submits without waiting (wait=false), then drives the response via
  * subscribeAgentRun. A non-COMPLETED terminal status rejects (caller removes
- * the optimistic input). INPUT_REQUIRED leaves the turn mounted and pending —
- * there's no approval UI yet, so a paused run has no way to move forward.
+ * the optimistic input). INPUT_REQUIRED leaves the turn mounted and pending;
+ * paused tool calls surface via ToolStore.pendingAction for the approval UI.
  */
 export const runAgentMessage = async (
 	message: ResponseMessageStore,
@@ -263,8 +299,13 @@ export const runAgentMessage = async (
 						applyAgentRunItem(responseMessage, event, items);
 					});
 				},
-				onSnapshot: () => {
-					// pendingActions surfacing is a follow-up (see PendingAgentAction).
+				onSnapshot: (snapshot) => {
+					runInAction(() => {
+						syncPendingActions(
+							responseMessage,
+							snapshot.pendingActions,
+						);
+					});
 				},
 				onReconcile: (snapshot) => {
 					runInAction(() => {
@@ -286,6 +327,11 @@ export const runAgentMessage = async (
 								uiText: snapshot.finalText,
 							});
 						}
+
+						syncPendingActions(
+							responseMessage,
+							snapshot.pendingActions,
+						);
 					});
 					settleTerminal(snapshot);
 				},
