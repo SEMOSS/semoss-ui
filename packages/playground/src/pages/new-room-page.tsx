@@ -3,6 +3,7 @@ import {
 	CheckIcon,
 	MessageCircleIcon,
 	Settings2Icon,
+	SparklesIcon,
 	XIcon,
 } from "lucide-react";
 import { runInAction } from "mobx";
@@ -549,7 +550,7 @@ export const NewRoomPage = observer(() => {
 																);
 															}}
 														>
-															<BotIcon />
+															<SparklesIcon />
 															<span className="flex-1">
 																{t(
 																	"room:modes.agent",

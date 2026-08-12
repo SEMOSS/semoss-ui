@@ -735,6 +735,12 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								    first when squeezed. Chips inside are shrink-0 and
 								    clip past the region's right edge. */}
 									<div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+										{room.mode === "agent" && (
+											<div className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs">
+												<SparklesIcon className="size-3.5 shrink-0" />
+												<span>{t("modes.agent")}</span>
+											</div>
+										)}
 										{agentChipWorkspace && (
 											<div className="inline-flex h-7 shrink-0 items-center overflow-hidden rounded-md border border-border bg-background text-xs">
 												{onWorkspaceChange ? (
