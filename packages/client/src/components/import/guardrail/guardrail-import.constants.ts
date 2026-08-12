@@ -1,4 +1,3 @@
-import Detoxify from "@assets/img/DETOXIFY.svg";
 import Gliner from "@/assets/img/HUGGINGFACE_COLOR.svg";
 import Python from "@/assets/img/PYTHON.svg";
 export const GUARDRAIL_CONNECTION = {
@@ -117,87 +116,9 @@ export const GUARDRAIL_CONNECTION = {
 			],
 		},
 		{
-			name: "On Topic",
-			disable: false,
-			icon: Detoxify,
-			description:
-				"Checks whether a prompt is on-topic by performing a similarity search against a pre-loaded vector database of example on-topic content. Prompts whose best similarity score falls below the configured threshold are rejected.",
-			fields: [
-				{
-					key: "MODEL_NAME",
-					label: "Catalog Name",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: true,
-					category: "General",
-					rules: {
-						pattern: {
-							value: /^[\w\-\s]+$/,
-							message:
-								"Catalog names can only contain alphanumeric characters and dashes.",
-						},
-						custom_rules: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
-							message:
-								"This Catalog name has already been used, please try another.",
-						},
-					},
-				},
-				{
-					key: "VECTOR_ENGINE_ID",
-					label: "Vector Database",
-					value: "",
-					type: "select",
-					options: [],
-					optionRule: {
-						pixel: `MyEngines(engineTypes=['VECTOR']);`,
-						optionDisplay: "engine_name",
-						optionValue: "engine_id",
-					},
-					disabled: false,
-					required: true,
-					category: "Settings",
-					helperText:
-						"The vector database pre-loaded with on-topic example prompts/documents used for similarity search.",
-				},
-				{
-					key: "DEFAULT_THRESHOLD",
-					label: "Default Threshold",
-					value: "0.5",
-					type: "number",
-					disabled: false,
-					required: false,
-					category: "Settings",
-					helperText:
-						"Minimum similarity score (0-1) for a prompt to be considered on-topic. Defaults to 0.5.",
-				},
-				{
-					key: "LIMIT",
-					label: "Nearest Neighbour Limit",
-					value: "5",
-					type: "number",
-					disabled: false,
-					required: false,
-					category: "Settings",
-					helperText:
-						"Number of nearest neighbours retrieved from the vector database per query. Defaults to 5.",
-				},
-				{
-					key: "GUARDRAIL_TYPE",
-					label: "Guardrail Type",
-					value: "EMBEDDED_ON_TOPIC",
-					type: "text",
-					disabled: true,
-					required: false,
-					category: "Settings",
-				},
-			],
-		},
-		{
 			name: "Aggressive / Self-Harm",
 			disable: false,
-			icon: Detoxify,
+			icon: Python,
 			description:
 				"Detects aggressive, violent, or self-harm content in user prompts by routing the check through a configured LLM.",
 			fields: [
