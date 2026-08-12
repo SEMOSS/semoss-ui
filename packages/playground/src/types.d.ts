@@ -184,7 +184,12 @@ export interface PixelMessageToolCallPart {
 			SMSS_ENGINE_TYPE: string;
 			SMSS_PROJECT_NAME: string;
 			SMSS_PROJECT_ID: string;
-			SMSS_MCP_EXECUTION: "auto" | "ask" | "disabled" | "agent";
+			SMSS_MCP_EXECUTION:
+				| "auto"
+				| "ask"
+				| "disabled"
+				| "agent-ask"
+				| "agent-auto";
 			// The tool's declared name, before the backend rewrote it into the
 			// LLM-facing name. On length-limited providers that rewrite is not
 			// reversible (short engine-id prefix plus truncation), so this is the

@@ -46,6 +46,7 @@ import {
 	type RoomStore,
 	type ToolStore,
 } from "@/stores";
+import { isAskExecutionMode } from "@/utility/mcp-utils";
 import { ResponseMessageText } from "./response-message-text";
 import { ResponseMessageThinking } from "./response-message-thinking";
 import { ResponseMessageTool } from "./response-message-tool";
@@ -314,7 +315,8 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			if (!tool.isResolved) return true;
 			// non-interactive tools (auto-execute, or backend-executed e.g.
 			// agent-run tools) should always be grouped
-			if (tool.json._meta.SMSS_MCP_EXECUTION !== "ask") return true;
+			if (!isAskExecutionMode(tool.json._meta.SMSS_MCP_EXECUTION))
+				return true;
 			// ask tools only enter group when there are no unfinished tools
 			return !message.hasUnfinishedTools;
 		};
@@ -333,7 +335,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 					if (getShouldGroupTool(tool)) {
 						groupedTools.push(tool);
 					}
-					if (tool.json._meta.SMSS_MCP_EXECUTION === "ask") {
+					if (
+						isAskExecutionMode(tool.json._meta.SMSS_MCP_EXECUTION)
+					) {
 						hasAskTools = true;
 					}
 				});

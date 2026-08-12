@@ -16,7 +16,7 @@ import {
 	Textarea,
 } from "@semoss/ui/next";
 import { ResponseMessageStore, type RoomStore, type ToolStore } from "@/stores";
-import { getToolEngineId } from "@/utility/mcp-utils";
+import { getToolEngineId, isAskExecutionMode } from "@/utility/mcp-utils";
 import { ToolField } from "./tool-field";
 
 export interface ToolsDefaultViewProps {
@@ -139,7 +139,7 @@ export const ToolsDefaultView = observer(
 		const title = tool?.displayName || "";
 		const description = tool?.json.description || "";
 		const isAutoExecuting =
-			tool?.json._meta.SMSS_MCP_EXECUTION !== "ask" &&
+			!isAskExecutionMode(tool?.json._meta.SMSS_MCP_EXECUTION) &&
 			tool.status !== "SUCCESS";
 
 		// The call is over (succeeded or not), so the form is no longer actionable

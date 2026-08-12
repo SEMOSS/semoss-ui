@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Env, type MCPToolRequest, usePixel } from "@semoss/sdk/react";
 import { Skeleton } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
+import { isAskExecutionMode } from "@/utility/mcp-utils";
 import { ToolsDefaultView } from "./tools-default-view";
 import { ToolsServerView } from "./tools-server-view";
 
@@ -145,7 +146,10 @@ export const ToolsView = observer(
 				}
 
 				// Auto-executing tool that hasn't completed yet — show default view
-				if (tool._meta.SMSS_MCP_EXECUTION !== "ask" && !toolResponse) {
+				if (
+					!isAskExecutionMode(tool._meta.SMSS_MCP_EXECUTION) &&
+					!toolResponse
+				) {
 					setUrl("");
 					setIsLoading(false);
 					return;

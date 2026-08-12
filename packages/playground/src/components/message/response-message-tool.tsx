@@ -5,6 +5,7 @@ import { useTranslation } from "@semoss/i18n";
 import { Button, cn, Spinner, useIsMobile } from "@semoss/ui/next";
 import { useLoadingMessage } from "@/hooks";
 import type { ResponseMessageStore, ToolStore } from "@/stores";
+import { isAskExecutionMode } from "@/utility/mcp-utils";
 import { RoomInlineTool } from "../room";
 import { ResponseMessageToolMenu } from "./response-message-tool-menu";
 import { ResponseMessageToolStreaming } from "./response-message-tool-streaming";
@@ -69,7 +70,7 @@ const getToolState = (
 				showCancelInMenu: false,
 			};
 		default:
-			if (tool.json._meta.SMSS_MCP_EXECUTION === "ask") {
+			if (isAskExecutionMode(tool.json._meta.SMSS_MCP_EXECUTION)) {
 				return {
 					icon: <HammerIcon className="size-5" />,
 					iconClassName: "bg-primary/10 text-primary",
