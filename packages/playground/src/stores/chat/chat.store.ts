@@ -214,57 +214,43 @@ export class ChatStore {
 
 	getUser = async (): Promise<void> => {
 		try {
-			// Run GetUserInfo and GetUserMetadata in parallel.
+			// Send both pixels in a single request.
 			// GetUserMetadata bypasses the cache that GetUserInfo has, so it
 			// always returns the latest saved text-generation-model value.
-			const [userInfoResult, userMetaResult] = await Promise.allSettled([
-				this._actions.run<
-					[
-						Record<
-							string,
-							{
-								id: string;
-								name: string;
-								lastLogin?: string;
-							}
-						>,
-					]
-				>(`META | GetUserInfo();`),
-				this._actions.run<[Record<string, string[]>]>(
-					`META | GetUserMetadata();`,
-				),
-			]);
+			const result = await this._actions.run<
+				[
+					Record<
+						string,
+						{ id: string; name: string; lastLogin?: string }
+					>,
+					{ "text-generation-model"?: string | string[] },
+				]
+			>(`META | GetUserInfo(); META | GetUserMetadata();`);
 
 			// Extract user id, name, lastLogin from GetUserInfo
-			if (userInfoResult.status === "fulfilled") {
-				const providerData = Object.values(
-					userInfoResult.value.pixelReturn[0].output,
-				)[0];
-				if (providerData) {
-					runInAction(() => {
-						this._store.user = {
-							id: providerData.id,
-							name: providerData.name,
-							lastLogin: providerData.lastLogin,
-						};
-					});
-				}
+			const providerData = Object.values(result.pixelReturn[0].output)[0];
+			if (providerData) {
+				runInAction(() => {
+					this._store.user = {
+						id: providerData.id,
+						name: providerData.name,
+						lastLogin: providerData.lastLogin,
+					};
+				});
 			}
 
 			// Extract profile default model from GetUserMetadata (bypasses cache)
-			if (userMetaResult.status === "fulfilled") {
-				const meta = userMetaResult.value.pixelReturn[0].output;
-				const metaValue = meta?.["text-generation-model"];
-				const profileDefaultModelId = Array.isArray(metaValue)
-					? (metaValue[0] as string) || ""
-					: typeof metaValue === "string"
-						? metaValue
-						: "";
+			const meta = result.pixelReturn[1].output;
+			const metaValue = meta?.["text-generation-model"];
+			const profileDefaultModelId = Array.isArray(metaValue)
+				? (metaValue[0] as string) || ""
+				: typeof metaValue === "string"
+					? metaValue
+					: "";
 
-				runInAction(() => {
-					this._store.profileDefaultModelId = profileDefaultModelId;
-				});
-			}
+			runInAction(() => {
+				this._store.profileDefaultModelId = profileDefaultModelId;
+			});
 		} catch (e) {
 			console.error(e);
 		}
@@ -504,9 +490,9 @@ export class ChatStore {
 	refreshProfileDefaultModel = async (): Promise<void> => {
 		try {
 			// Use GetUserMetadata to bypass the GetUserInfo cache
-			const result = await this._actions.run<[Record<string, string[]>]>(
-				`META | GetUserMetadata();`,
-			);
+			const result = await this._actions.run<
+				[{ "text-generation-model"?: string | string[] }]
+			>(`META | GetUserMetadata();`);
 
 			const meta = result.pixelReturn[0].output;
 			const metaValue = meta?.["text-generation-model"];
