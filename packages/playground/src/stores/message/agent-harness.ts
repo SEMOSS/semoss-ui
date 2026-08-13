@@ -20,7 +20,7 @@ import {
 } from "@/constants";
 import type { PixelMessageToolCallPart, ResponsePixelMessage } from "@/types";
 import type { ToolStore } from "../tool/tool.store";
-import type { InputMessageStore } from "./input-message.store";
+import { InputMessageStore } from "./input-message.store";
 import { ResponseMessageStore } from "./response-message.store";
 
 /**
@@ -276,14 +276,6 @@ const syncPendingActions = (
 };
 
 /**
- * Live subscriptions for runs currently being driven by runAgentMessage,
- * keyed by runId. Lets decideAgentToolAction — called from UI far away from
- * the subscription itself — poke the poll loop instead of waiting out
- * INPUT_REQUIRED's slower interval for a change this tab just caused.
- */
-const activeSubscriptions = new Map<string, AgentRunSubscription>();
-
-/**
  * Resolve a tool call paused on a human decision. The legacy ask-tool paths
  * (message.saveToolExecution, room.processTool, RunMCPTool by
  * project/function) all write straight into room history and never touch the
@@ -291,10 +283,8 @@ const activeSubscriptions = new Map<string, AgentRunSubscription>();
  * at INPUT_REQUIRED forever while a stray, unrelated tool result lands in the
  * room. This is the only call that actually resumes the run.
  *
- * "approve" vs "edit" is derived from whether paramValues differs from the
- * call's original arguments — the backend only accepts paramValues for edit
- * (see decideAgentRunAction). Callers don't need to track that distinction
- * themselves.
+ * Thin wrapper over the SDK's decideAgentRunAction — approve-vs-edit
+ * resolution and poking the run's live subscription both happen there.
  */
 export const decideAgentToolAction = async (
 	tool: ToolStore,
@@ -305,25 +295,96 @@ export const decideAgentToolAction = async (
 	if (!pendingAction) {
 		return;
 	}
-	const resolvedDecision =
-		decision === "reject"
-			? "reject"
-			: JSON.stringify(paramValues ?? {}) ===
-					JSON.stringify(pendingAction.toolArgs ?? {})
-				? "approve"
-				: "edit";
 	await decideAgentRunAction(
-		{
-			actionId: pendingAction.actionId,
-			decision: resolvedDecision,
-			paramValues: resolvedDecision === "edit" ? paramValues : undefined,
-		},
+		{ pendingAction, decision, paramValues },
 		tool.room.insightId,
 	);
-	// The run resumed the instant the backend applied this decision — poll now
-	// rather than waiting out INPUT_REQUIRED's slower interval to notice.
-	activeSubscriptions.get(pendingAction.runId)?.pokeNow();
 };
+
+/**
+ * Poll a run to completion, applying its events/snapshots onto
+ * responseMessage. Shared between a fresh submit (runAgentMessage) and
+ * reconnecting to one already in progress after a page reload
+ * (reconnectAgentRun) — the wiring is identical either way, only how the
+ * runId was obtained differs.
+ */
+const watchAgentRun = (
+	runId: string,
+	responseMessage: ResponseMessageStore,
+	inputMessage: InputMessageStore | null,
+): Promise<void> =>
+	new Promise<void>((resolve, reject) => {
+		let subscription: AgentRunSubscription | null = null;
+
+		const settleTerminal = (snapshot: AgentRunSnapshot) => {
+			const status: AgentRunStatusValue = snapshot.status;
+			if (
+				status !== "COMPLETED" &&
+				status !== "FAILED" &&
+				status !== "CANCELLED"
+			) {
+				return;
+			}
+			subscription?.stop();
+			if (status !== "COMPLETED") {
+				reject(
+					new Error(
+						snapshot.errorMessage ||
+							`The agent run did not complete: ${status}`,
+					),
+				);
+				return;
+			}
+			resolve();
+		};
+
+		subscription = subscribeAgentRun(runId, {
+			onEvent: (event, items) => {
+				runInAction(() => {
+					applyAgentRunItem(responseMessage, event, items);
+				});
+			},
+			onSnapshot: (snapshot) => {
+				runInAction(() => {
+					syncPendingActions(
+						responseMessage,
+						snapshot.pendingActions,
+					);
+				});
+			},
+			onReconcile: (snapshot) => {
+				runInAction(() => {
+					if (inputMessage && snapshot.inputMessageId) {
+						inputMessage.id = snapshot.inputMessageId;
+					}
+					if (snapshot.finalOutputMessageId) {
+						responseMessage.id = snapshot.finalOutputMessageId;
+					}
+
+					// if nothing streamed as visible text, fall back to finalText
+					const hasStreamedText = responseMessage.parts.some(
+						(part) => part.type === "TEXT" && part.text,
+					);
+					if (!hasStreamedText && snapshot.finalText) {
+						responseMessage.savePart({
+							type: "TEXT",
+							text: snapshot.finalText,
+							uiText: snapshot.finalText,
+						});
+					}
+
+					syncPendingActions(
+						responseMessage,
+						snapshot.pendingActions,
+					);
+				});
+				settleTerminal(snapshot);
+			},
+			onError: (e) => {
+				console.error("Agent run stream error", e);
+			},
+		});
+	});
 
 /**
  * Run a user message through the server-side agent harness (RunAgent).
@@ -399,80 +460,7 @@ export const runAgentMessage = async (
 			room.insightId,
 		);
 
-		await new Promise<void>((resolve, reject) => {
-			let subscription: AgentRunSubscription | null = null;
-
-			const settleTerminal = (snapshot: AgentRunSnapshot) => {
-				const status: AgentRunStatusValue = snapshot.status;
-				if (
-					status !== "COMPLETED" &&
-					status !== "FAILED" &&
-					status !== "CANCELLED"
-				) {
-					return;
-				}
-				subscription?.stop();
-				activeSubscriptions.delete(handle.runId);
-				if (status !== "COMPLETED") {
-					reject(
-						new Error(
-							snapshot.errorMessage ||
-								`The agent run did not complete: ${status}`,
-						),
-					);
-					return;
-				}
-				resolve();
-			};
-
-			subscription = subscribeAgentRun(handle.runId, {
-				onEvent: (event, items) => {
-					runInAction(() => {
-						applyAgentRunItem(responseMessage, event, items);
-					});
-				},
-				onSnapshot: (snapshot) => {
-					runInAction(() => {
-						syncPendingActions(
-							responseMessage,
-							snapshot.pendingActions,
-						);
-					});
-				},
-				onReconcile: (snapshot) => {
-					runInAction(() => {
-						if (snapshot.inputMessageId) {
-							inputMessage.id = snapshot.inputMessageId;
-						}
-						if (snapshot.finalOutputMessageId) {
-							responseMessage.id = snapshot.finalOutputMessageId;
-						}
-
-						// if nothing streamed as visible text, fall back to finalText
-						const hasStreamedText = responseMessage.parts.some(
-							(part) => part.type === "TEXT" && part.text,
-						);
-						if (!hasStreamedText && snapshot.finalText) {
-							responseMessage.savePart({
-								type: "TEXT",
-								text: snapshot.finalText,
-								uiText: snapshot.finalText,
-							});
-						}
-
-						syncPendingActions(
-							responseMessage,
-							snapshot.pendingActions,
-						);
-					});
-					settleTerminal(snapshot);
-				},
-				onError: (e) => {
-					console.error("Agent run stream error", e);
-				},
-			});
-			activeSubscriptions.set(handle.runId, subscription);
-		});
+		await watchAgentRun(handle.runId, responseMessage, inputMessage);
 	} catch (e) {
 		// remove message if we failed
 		message.removeChild(inputMessage);
@@ -485,4 +473,47 @@ export const runAgentMessage = async (
 		});
 		room.setIsLoading(false);
 	}
+};
+
+/**
+ * Re-establish live polling for a room's most recent agent run after a page
+ * reload. subscribeAgentRun only ever starts from runAgentMessage's own
+ * submit, so without this a turn still in progress (or paused on a decision)
+ * goes unwatched after a refresh: pendingActions never repopulate, so
+ * decideAgentToolAction silently no-ops, and the tool UI falls through to its
+ * legacy per-tool execution path instead — which never touches this run, so
+ * it never resumes.
+ *
+ * Fire-and-forget: there is no caller waiting on this, it just needs to start.
+ * A no-op if the message was never part of an agent run, or if it already
+ * settled (the very first poll will find a terminal status and reconcile
+ * once, harmlessly).
+ */
+export const reconnectAgentRun = (responseMessage: ResponseMessageStore) => {
+	const runId = responseMessage.ornaments.agentRunId;
+	if (!runId) {
+		return;
+	}
+
+	const room = responseMessage.room;
+	const inputMessage =
+		responseMessage.parent instanceof InputMessageStore
+			? responseMessage.parent
+			: null;
+
+	room.setIsLoading(true);
+	runInAction(() => {
+		responseMessage.isThinking = true;
+	});
+
+	watchAgentRun(runId, responseMessage, inputMessage)
+		.catch((e) => {
+			console.error("Failed to reconnect to agent run", e);
+		})
+		.finally(() => {
+			runInAction(() => {
+				responseMessage.isThinking = false;
+			});
+			room.setIsLoading(false);
+		});
 };

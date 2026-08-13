@@ -12,6 +12,7 @@ import type {
 	AgentRunSubscriptionHandlers,
 	AgentRunSubscriptionOptions,
 	AgentToolDecision,
+	PendingAgentAction,
 } from "./agent.types";
 import { runPixel } from "./base";
 
@@ -131,23 +132,48 @@ export const getAgentRun = async <
 };
 
 /**
- * Decide a pending agent tool call. paramValues is only needed for "edit" or
- * "respond". Resumes the run once every pending action has been decided.
+ * Live subscriptions started by subscribeAgentRun, keyed by runId. Lets
+ * decideAgentRunAction poke a run's poll loop the instant its own decision
+ * resumes the run, rather than that caller waiting out INPUT_REQUIRED's
+ * slower interval for a change it already knows just happened.
+ */
+const activeSubscriptions = new Map<string, AgentRunSubscription>();
+
+/**
+ * Decide a pending agent tool call — resumes the run once every pending
+ * action in the batch has been decided.
+ *
+ * decision "submit" auto-resolves to "approve" (paramValues omitted or
+ * unchanged from pendingAction.toolArgs) or "edit" (paramValues differs) —
+ * the two decisions the backend treats identically except for which
+ * arguments the tool actually runs with. Pass "reject"/"respond" directly for
+ * the non-executing decisions; "approve"/"edit" remain available directly too
+ * for callers that have already done this comparison themselves.
  */
 export const decideAgentRunAction = async (
 	params: {
-		actionId: string;
-		decision: AgentToolDecision;
+		pendingAction: PendingAgentAction;
+		decision: AgentToolDecision | "submit";
 		paramValues?: Record<string, unknown>;
 	},
 	insightId?: string,
 ): Promise<string> => {
-	const { actionId, decision, paramValues } = params;
+	const { pendingAction, decision, paramValues } = params;
+
+	const resolvedDecision: AgentToolDecision =
+		decision !== "submit"
+			? decision
+			: JSON.stringify(paramValues ?? {}) ===
+					JSON.stringify(pendingAction.toolArgs ?? {})
+				? "approve"
+				: "edit";
 
 	const clauses = [
-		`actionId=${JSON.stringify([actionId])}`,
-		`decision=${JSON.stringify([decision])}`,
-		paramValues ? `paramValues=${JSON.stringify(paramValues)}` : null,
+		`actionId=${JSON.stringify([pendingAction.actionId])}`,
+		`decision=${JSON.stringify([resolvedDecision])}`,
+		resolvedDecision === "edit" || resolvedDecision === "respond"
+			? `paramValues=${JSON.stringify(paramValues)}`
+			: null,
 	].filter((clause): clause is string => clause !== null);
 
 	const response = await runPixel<[string]>(
@@ -158,6 +184,10 @@ export const decideAgentRunAction = async (
 	if (response.errors.length > 0) {
 		throw new Error(response.errors.join(""));
 	}
+
+	// The run resumed the instant the backend applied this decision — poll
+	// now rather than waiting out INPUT_REQUIRED's slower interval to notice.
+	activeSubscriptions.get(pendingAction.runId)?.pokeNow();
 
 	return response.pixelReturn[0].output;
 };
@@ -254,6 +284,9 @@ export const subscribeAgentRun = (
 	// short instead of leaving the caller stuck behind INPUT_REQUIRED's slower
 	// interval for a change it already knows just happened.
 	let wake: (() => void) | null = null;
+	// Assigned once, right before returning — referenced here only inside
+	// callbacks that run later, once it's long since been set.
+	let subscription: AgentRunSubscription;
 
 	const stop = () => {
 		if (stopped) {
@@ -262,6 +295,12 @@ export const subscribeAgentRun = (
 		stopped = true;
 		signal?.removeEventListener("abort", stop);
 		wake?.();
+		// Guard against deleting a newer subscription for the same runId that
+		// superseded this one (e.g. reconnecting after this one already
+		// finished) — only remove the registry entry if it's still this one.
+		if (activeSubscriptions.get(runId) === subscription) {
+			activeSubscriptions.delete(runId);
+		}
 	};
 
 	const pokeNow = () => wake?.();
@@ -344,5 +383,7 @@ export const subscribeAgentRun = (
 
 	void loop();
 
-	return { stop, getItems: () => itemsState, pokeNow };
+	subscription = { stop, getItems: () => itemsState, pokeNow };
+	activeSubscriptions.set(runId, subscription);
+	return subscription;
 };

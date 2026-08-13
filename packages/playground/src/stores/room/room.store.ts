@@ -15,6 +15,7 @@ import {
 	ResponseMessageStore,
 	ToolStore,
 } from "@/stores";
+import { reconnectAgentRun } from "@/stores/message/agent-harness";
 import type {
 	Engine,
 	InputPixelMessage,
@@ -696,7 +697,16 @@ export class RoomStore {
 
 			// If the last message is a response and it has tool executions, start them (happens for new rooms and page reloads)
 			if (this.tail.type === "OUTPUT") {
-				this.tail.continueToolExecution();
+				if (this.mode === "agent") {
+					// An agent-run turn is driven entirely server-side and
+					// only ever gets a live subscribeAgentRun connection from
+					// runAgentMessage's own submit — reconnect here so a
+					// reload doesn't leave it (and any paused tool decision)
+					// unwatched. See reconnectAgentRun.
+					reconnectAgentRun(this.tail);
+				} else {
+					this.tail.continueToolExecution();
+				}
 			}
 		} catch (e) {
 			console.error(e);

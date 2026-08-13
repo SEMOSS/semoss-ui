@@ -103,6 +103,8 @@ export interface AbstractPixelMessage {
 	tokens: number;
 	ornaments: {
 		modelName?: string;
+		/** Set on messages tagged as part of an agent run — see agent-harness.ts. */
+		agentRunId?: string;
 	};
 	pruneToolsAbove: boolean;
 }
@@ -128,6 +130,8 @@ export interface ResponsePixelMessage extends AbstractPixelMessage {
 	)[];
 	ornaments: {
 		modelName?: string;
+		/** Set on messages tagged as part of an agent run — see agent-harness.ts. */
+		agentRunId?: string;
 	};
 	feedback?: {
 		rating: boolean;
