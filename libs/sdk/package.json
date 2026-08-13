@@ -1,6 +1,6 @@
 {
     "name": "@semoss/sdk",
-    "version": "1.0.0-beta.43",
+    "version": "1.0.0-beta.44-canary.0",
     "type": "module",
     "main": "./dist/index.mjs",
     "module": "./dist/index.mjs",
@@ -17,8 +17,14 @@
     },
     "files": [
         "src",
-        "dist"
+        "dist",
+        "skills"
     ],
+    "npmSkills": {
+        "publish": {
+            "source": "skills"
+        }
+    },
     "scripts": {
         "dev": "rollup -w -c",
         "build": "rollup -c --environment NODE_ENV:production",
