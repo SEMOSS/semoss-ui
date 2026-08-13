@@ -27,8 +27,11 @@ import {
 	ToggleGroupItem,
 	toast,
 } from "@semoss/ui/next";
-import { CatalogTagInput } from "@/components/catalog";
 import { useRootStore } from "@/hooks";
+import {
+	EngineBuiltinToolsField,
+	type ModelBuiltinTools,
+} from "./engine-builtin-tools-field";
 import {
 	buildReasoningConfigPayload,
 	CAPABILITIES,
@@ -151,6 +154,7 @@ export const EngineModelSettings = ({
 	const reasoningFieldId = `${fieldId}-reasoning`;
 
 	const [isSaving, setIsSaving] = useState(false);
+	const [discardRevision, setDiscardRevision] = useState(0);
 	const [form, setForm] = useState<ModelSettingsValues>(
 		toModelSettingsValues(undefined),
 	);
@@ -242,6 +246,19 @@ export const EngineModelSettings = ({
 		getStaticModelMetadata.status === "SUCCESS" &&
 		!hasCatalogEntry(getStaticModelMetadata.data);
 
+	// Provider-hosted tools this engine's model can use, resolved from the
+	// built-in tools catalog by its serving and model providers. Optional
+	// data - no catalog entry or a failed call just leaves the free-text
+	// editor in place.
+	const getModelBuiltinTools = usePixel<ModelBuiltinTools>(
+		isEditable ? `GetModelBuiltinTools(engine=["${engineId}"]);` : "",
+	);
+	const builtinToolsCatalog =
+		getModelBuiltinTools.status === "SUCCESS"
+			? (getModelBuiltinTools.data?.tools ?? {})
+			: {};
+	const hasBuiltinToolsCatalog = Object.keys(builtinToolsCatalog).length > 0;
+
 	// The stored config drives the effort fields. It is kept whole so unedited
 	// provider keys survive the save.
 	const reasoningConfig = useMemo(
@@ -318,10 +335,20 @@ export const EngineModelSettings = ({
 	};
 
 	/**
-	 * Drop any unsaved edits and go back to the persisted values.
+	 * Whether the built-in tools selection differs from the persisted value.
+	 */
+	const isBuiltinToolsDirty = () =>
+		JSON.stringify(form.builtinToolsConfig) !==
+		JSON.stringify(initialForm.builtinToolsConfig);
+
+	/**
+	 * Drop any unsaved edits and go back to the persisted values. The
+	 * revision bump remounts the built-in tools editor, which holds raw JSON
+	 * drafts that would otherwise survive the reset.
 	 */
 	const handleDiscard = () => {
 		setForm(initialForm);
+		setDiscardRevision((revision) => revision + 1);
 	};
 
 	/**
@@ -356,7 +383,13 @@ export const EngineModelSettings = ({
 					"Max output tokens",
 					form.maxOutputTokens,
 				),
-				BUILTIN_TOOLS: normalizeStringArray(form.builtinTools),
+				// Only sent when edited: the update merges, and rewriting an
+				// untouched selection could downgrade a stored configuration
+				// to a bare name list while the tool catalog is still
+				// loading.
+				...(isBuiltinToolsDirty()
+					? { BUILTIN_TOOLS: form.builtinToolsConfig ?? {} }
+					: {}),
 			};
 
 			const response = await configStore.runPixel(
@@ -792,17 +825,44 @@ export const EngineModelSettings = ({
 
 						<Field>
 							<FieldLabel>Built-in tools</FieldLabel>
-							<CatalogTagInput
-								value={form.builtinTools}
-								onChange={(value) =>
-									updateForm("builtinTools", value)
-								}
-								placeholder="Press enter to add a tool"
-								testId="engine-model-settings--builtin-tools"
-							/>
+							{/*
+							 * A stored selection stays editable even when the
+							 * catalog has nothing to offer, so it can still
+							 * be switched off.
+							 */}
+							{hasBuiltinToolsCatalog ||
+							Object.keys(form.builtinToolsConfig ?? {}).length >
+								0 ? (
+								<EngineBuiltinToolsField
+									key={`builtin-tools-${discardRevision}`}
+									tools={builtinToolsCatalog}
+									value={form.builtinToolsConfig}
+									onChange={(next) =>
+										// Read mode renders names, so keep
+										// them in step with the selection
+										// keys.
+										setForm((prev) => ({
+											...prev,
+											builtinToolsConfig: next,
+											builtinTools: Object.keys(next),
+										}))
+									}
+									testId="engine-model-settings--builtin-tools"
+								/>
+							) : (
+								<p
+									className="text-muted-foreground text-sm"
+									data-testid="engine-model-settings--builtin-tools-empty"
+								>
+									{getModelBuiltinTools.status === "SUCCESS"
+										? "No provider-hosted tools are available for this model."
+										: "Checking for provider-hosted tools..."}
+								</p>
+							)}
 							<FieldDescription>
-								Provider-hosted tools the model can call
-								natively.
+								Provider-hosted tools this model can call
+								natively. Selections and their settings are
+								saved with the model.
 							</FieldDescription>
 						</Field>
 					</FieldGroup>
