@@ -1,18 +1,10 @@
 import { Env } from "../env";
 import { post } from "../utility";
 import type {
-	AgentRunHandle,
-	AgentRunItem,
 	AgentRunItemEvent,
-	AgentRunItemsState,
-	AgentRunPollResponse,
 	AgentRunSnapshot,
 	AgentRunStatusValue,
-	AgentRunSubscription,
-	AgentRunSubscriptionHandlers,
-	AgentRunSubscriptionOptions,
 	AgentToolDecision,
-	PendingAgentAction,
 } from "./agent.types";
 import { runPixel } from "./base";
 
@@ -20,7 +12,20 @@ export type * from "./agent.types";
 
 /**
  * Submit a durable agent run without waiting for it to finish (RunAgent with
- * wait=false). Poll progress with pollAgentRun(handle.runId) or subscribeAgentRun.
+ * wait=false). Poll progress with pollAgentRun(runId) or subscribeAgentRun.
+ *
+ * @param params.roomId - Room the run's messages are written to.
+ * @param params.command - The user's message text.
+ * @param params.engine - Model engine id. Defaults to the room's configured model.
+ * @param params.harnessType - Which agent harness runs the loop (e.g. "semoss").
+ * @param params.workspaceId - Workspace whose tools/config the run should use.
+ * @param params.maxTurns - Cap on model round-trips before the run stops itself.
+ * @param params.maxReflections - Cap on self-reflection turns.
+ * @param params.images - Image file locations to attach to the command.
+ * @param params.urls - URLs to attach to the command.
+ * @param insightId - Insight to run the pixel against.
+ * @returns The submitted run's id, room id, and initial status (always
+ * "SUBMITTED") — not a full snapshot.
  */
 export const submitAgentRun = async (
 	params: {
@@ -35,7 +40,7 @@ export const submitAgentRun = async (
 		urls?: string[];
 	},
 	insightId?: string,
-): Promise<AgentRunHandle> => {
+): Promise<{ runId: string; roomId: string; status: AgentRunStatusValue }> => {
 	const {
 		roomId,
 		command,
@@ -63,34 +68,43 @@ export const submitAgentRun = async (
 		"wait=false",
 	].filter((clause): clause is string => clause !== null);
 
-	const response = await runPixel<[AgentRunHandle]>(
-		`RunAgent(${clauses.join(",\n")});`,
-		insightId,
-	);
+	const response = await runPixel<
+		[{ runId: string; roomId: string; status: AgentRunStatusValue }]
+	>(`RunAgent(${clauses.join(",\n")});`, insightId);
 
 	if (response.errors.length > 0) {
 		throw new Error(response.errors.join(""));
 	}
 
-	return response.pixelReturn[0].output as AgentRunHandle;
+	return response.pixelReturn[0].output;
 };
 
 /**
  * Drain buffered stream events for a run and get its current durable
  * snapshot in one call. Scoped to the run's owner by the backend. Each call
  * removes the drained events — there's no replay.
+ *
+ * @param runId - The run to poll.
+ * @returns `run` — the current durable snapshot; `events` — new item events
+ * since the last drain, unordered; `droppedEvents` — events evicted by the
+ * backend's bounded buffer before this drain could collect them.
  */
 export const pollAgentRun = async (
 	runId: string,
-): Promise<AgentRunPollResponse> => {
+): Promise<{
+	run: AgentRunSnapshot;
+	events: AgentRunItemEvent[];
+	droppedEvents: number;
+}> => {
 	if (!runId) {
 		throw new Error("Missing runId");
 	}
 
-	const response = await post<AgentRunPollResponse>(
-		`${Env.MODULE}/api/engine/agentRunStreaming`,
-		{ runId },
-	);
+	const response = await post<{
+		run: AgentRunSnapshot;
+		events: AgentRunItemEvent[];
+		droppedEvents: number;
+	}>(`${Env.MODULE}/api/engine/agentRunStreaming`, { runId });
 
 	return response.data;
 };
@@ -98,6 +112,12 @@ export const pollAgentRun = async (
 /**
  * Get the durable AgentRun snapshot directly (GetAgentRun), optionally with
  * this run's persisted room messages. For reconciliation, not live progress.
+ *
+ * @param runId - The run to fetch.
+ * @param options.includeMessages - Also fetch this run's persisted room messages.
+ * @param insightId - Insight to run the pixel against.
+ * @returns The durable snapshot; `messages` is only populated when
+ * `includeMessages` is true.
  */
 export const getAgentRun = async <
 	M extends Record<string, unknown> = Record<string, unknown>,
@@ -132,46 +152,31 @@ export const getAgentRun = async <
 };
 
 /**
- * Live subscriptions started by subscribeAgentRun, keyed by runId. Lets
- * decideAgentRunAction poke a run's poll loop the instant its own decision
- * resumes the run, rather than that caller waiting out INPUT_REQUIRED's
- * slower interval for a change it already knows just happened.
- */
-const activeSubscriptions = new Map<string, AgentRunSubscription>();
-
-/**
- * Decide a pending agent tool call — resumes the run once every pending
- * action in the batch has been decided.
+ * Decide a pending agent tool call (RunMCPTool's HITL path) — resumes the run
+ * once every pending action in the batch has been decided. For the common
+ * case of resolving approve vs. edit from submitted params automatically, use
+ * submitAgentToolDecision instead.
  *
- * decision "submit" auto-resolves to "approve" (paramValues omitted or
- * unchanged from pendingAction.toolArgs) or "edit" (paramValues differs) —
- * the two decisions the backend treats identically except for which
- * arguments the tool actually runs with. Pass "reject"/"respond" directly for
- * the non-executing decisions; "approve"/"edit" remain available directly too
- * for callers that have already done this comparison themselves.
+ * @param params.actionId - The PendingAgentAction.actionId being decided.
+ * @param params.decision - "approve"/"edit" execute the tool; "reject"/"respond" don't.
+ * @param params.paramValues - Required for "edit" and "respond"; ignored otherwise.
+ * @param insightId - Insight to run the pixel against.
+ * @returns The tool-result string the decision produced.
  */
 export const decideAgentRunAction = async (
 	params: {
-		pendingAction: PendingAgentAction;
-		decision: AgentToolDecision | "submit";
+		actionId: string;
+		decision: AgentToolDecision;
 		paramValues?: Record<string, unknown>;
 	},
 	insightId?: string,
 ): Promise<string> => {
-	const { pendingAction, decision, paramValues } = params;
-
-	const resolvedDecision: AgentToolDecision =
-		decision !== "submit"
-			? decision
-			: JSON.stringify(paramValues ?? {}) ===
-					JSON.stringify(pendingAction.toolArgs ?? {})
-				? "approve"
-				: "edit";
+	const { actionId, decision, paramValues } = params;
 
 	const clauses = [
-		`actionId=${JSON.stringify([pendingAction.actionId])}`,
-		`decision=${JSON.stringify([resolvedDecision])}`,
-		resolvedDecision === "edit" || resolvedDecision === "respond"
+		`actionId=${JSON.stringify([actionId])}`,
+		`decision=${JSON.stringify([decision])}`,
+		decision === "edit" || decision === "respond"
 			? `paramValues=${JSON.stringify(paramValues)}`
 			: null,
 	].filter((clause): clause is string => clause !== null);
@@ -185,205 +190,5 @@ export const decideAgentRunAction = async (
 		throw new Error(response.errors.join(""));
 	}
 
-	// The run resumed the instant the backend applied this decision — poll
-	// now rather than waiting out INPUT_REQUIRED's slower interval to notice.
-	activeSubscriptions.get(pendingAction.runId)?.pokeNow();
-
 	return response.pixelReturn[0].output;
-};
-
-export const createAgentRunItemsState = (): AgentRunItemsState => ({
-	itemsById: {},
-	itemOrder: [],
-});
-
-/**
- * Apply one item event onto an items-state accumulator, returning a new
- * state. Pure and idempotent. Handles the two ways item text arrives:
- * incremental deltas, or all at once on item.started with no item.updated.
- */
-export const applyAgentRunItemEvent = (
-	state: AgentRunItemsState,
-	event: AgentRunItemEvent,
-): AgentRunItemsState => {
-	if (event.type === "item.started") {
-		const { item } = event;
-		if (state.itemsById[item.id]) {
-			return state;
-		}
-		return {
-			itemsById: { ...state.itemsById, [item.id]: item },
-			itemOrder: [...state.itemOrder, item.id],
-		};
-	}
-
-	if (event.type === "item.updated") {
-		const existing = state.itemsById[event.itemId];
-		if (!existing) {
-			return state;
-		}
-		let updated: AgentRunItem = existing;
-		if (event.delta !== undefined) {
-			if (existing.kind === "message") {
-				updated = { ...existing, text: existing.text + event.delta };
-			} else if (existing.kind === "reasoning") {
-				updated = {
-					...existing,
-					summary: existing.summary + event.delta,
-				};
-			}
-		} else if (event.patch) {
-			updated = { ...existing, ...event.patch } as AgentRunItem;
-		}
-		return {
-			...state,
-			itemsById: { ...state.itemsById, [event.itemId]: updated },
-		};
-	}
-
-	// item.completed
-	const { item } = event;
-	const alreadyKnown = Boolean(state.itemsById[item.id]);
-	return {
-		itemsById: { ...state.itemsById, [item.id]: item },
-		itemOrder: alreadyKnown
-			? state.itemOrder
-			: [...state.itemOrder, item.id],
-	};
-};
-
-const TERMINAL_RUN_STATUSES: ReadonlySet<AgentRunStatusValue> = new Set([
-	"COMPLETED",
-	"FAILED",
-	"CANCELLED",
-]);
-
-/**
- * Poll an agent run to completion, delivering item events and durable
- * snapshots as they arrive. Owns dedup, ordering, reconciliation timing, and
- * retry/backoff — a transport failure never concludes the run failed.
- */
-export const subscribeAgentRun = (
-	runId: string,
-	handlers: AgentRunSubscriptionHandlers,
-	options: AgentRunSubscriptionOptions = {},
-): AgentRunSubscription => {
-	const {
-		pollIntervalMs = 500,
-		inputRequiredIntervalMultiplier = 3,
-		signal,
-	} = options;
-	const { onEvent, onSnapshot, onReconcile, onError } = handlers;
-
-	let stopped = false;
-	let reconciledStatus: AgentRunStatusValue | null = null;
-	const seenEventIds = new Set<string>();
-	let consecutiveFailures = 0;
-	let itemsState = createAgentRunItemsState();
-	// Set while the loop is between polls, so pokeNow can cut the current wait
-	// short instead of leaving the caller stuck behind INPUT_REQUIRED's slower
-	// interval for a change it already knows just happened.
-	let wake: (() => void) | null = null;
-	// Assigned once, right before returning — referenced here only inside
-	// callbacks that run later, once it's long since been set.
-	let subscription: AgentRunSubscription;
-
-	const stop = () => {
-		if (stopped) {
-			return;
-		}
-		stopped = true;
-		signal?.removeEventListener("abort", stop);
-		wake?.();
-		// Guard against deleting a newer subscription for the same runId that
-		// superseded this one (e.g. reconnecting after this one already
-		// finished) — only remove the registry entry if it's still this one.
-		if (activeSubscriptions.get(runId) === subscription) {
-			activeSubscriptions.delete(runId);
-		}
-	};
-
-	const pokeNow = () => wake?.();
-
-	const sleep = (ms: number) =>
-		new Promise<void>((resolve) => {
-			const timer = setTimeout(() => {
-				wake = null;
-				resolve();
-			}, ms);
-			wake = () => {
-				clearTimeout(timer);
-				wake = null;
-				resolve();
-			};
-		});
-
-	signal?.addEventListener("abort", stop);
-
-	const reconcile = async (status: AgentRunStatusValue) => {
-		if (reconciledStatus === status) {
-			return;
-		}
-		reconciledStatus = status;
-		try {
-			const full = await getAgentRun(runId, { includeMessages: true });
-			onReconcile(full);
-		} catch (e) {
-			onError?.(e as Error);
-		}
-	};
-
-	const loop = async () => {
-		while (!stopped) {
-			let waitMs = pollIntervalMs;
-			try {
-				const { run, events } = await pollAgentRun(runId);
-				consecutiveFailures = 0;
-
-				const sorted = [...events].sort(
-					(a, b) => a.sequence - b.sequence,
-				);
-				for (const event of sorted) {
-					if (seenEventIds.has(event.eventId)) {
-						continue;
-					}
-					seenEventIds.add(event.eventId);
-					itemsState = applyAgentRunItemEvent(itemsState, event);
-					onEvent(event, itemsState);
-				}
-
-				onSnapshot(run);
-
-				if (run.status === "INPUT_REQUIRED") {
-					await reconcile(run.status);
-					waitMs = pollIntervalMs * inputRequiredIntervalMultiplier;
-				} else if (TERMINAL_RUN_STATUSES.has(run.status)) {
-					await reconcile(run.status);
-					stop();
-					break;
-				} else {
-					// allow a later pause to reconcile again
-					reconciledStatus = null;
-				}
-			} catch (e) {
-				consecutiveFailures++;
-				onError?.(e as Error);
-				waitMs = Math.min(
-					pollIntervalMs * 2 ** Math.min(consecutiveFailures, 4),
-					10_000,
-				);
-			}
-
-			if (stopped) {
-				break;
-			}
-			await sleep(waitMs);
-		}
-	};
-
-	void loop();
-
-	subscription = { stop, getItems: () => itemsState, pokeNow };
-	activeSubscriptions.set(runId, subscription);
-	return subscription;
 };

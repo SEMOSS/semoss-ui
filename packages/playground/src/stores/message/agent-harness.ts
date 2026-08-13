@@ -8,8 +8,8 @@ import type {
 	PendingAgentAction,
 } from "@semoss/sdk";
 import {
-	decideAgentRunAction,
 	submitAgentRun,
+	submitAgentToolDecision,
 	subscribeAgentRun,
 } from "@semoss/sdk/react";
 import {
@@ -188,7 +188,7 @@ const applyAgentRunItem = (
 				tool.status = status;
 			}
 		}
-		// subagent: not yet rendered — see AgentSubagentItem/tools-view follow-up.
+		// subagent items (kind: "subagent") not yet rendered — tools-view follow-up.
 		return;
 	}
 
@@ -283,7 +283,7 @@ const syncPendingActions = (
  * at INPUT_REQUIRED forever while a stray, unrelated tool result lands in the
  * room. This is the only call that actually resumes the run.
  *
- * Thin wrapper over the SDK's decideAgentRunAction — approve-vs-edit
+ * Thin wrapper over the SDK's submitAgentToolDecision — approve-vs-edit
  * resolution and poking the run's live subscription both happen there.
  */
 export const decideAgentToolAction = async (
@@ -295,8 +295,10 @@ export const decideAgentToolAction = async (
 	if (!pendingAction) {
 		return;
 	}
-	await decideAgentRunAction(
-		{ pendingAction, decision, paramValues },
+	await submitAgentToolDecision(
+		pendingAction,
+		decision,
+		paramValues,
 		tool.room.insightId,
 	);
 };

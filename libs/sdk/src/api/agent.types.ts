@@ -41,63 +41,56 @@ export interface AgentRunSnapshot {
 	pendingActions: PendingAgentAction[];
 }
 
-export type AgentStreamItemKind = "message" | "reasoning" | "tool" | "subagent";
-
-export interface AgentMessageItem {
-	id: string;
-	kind: "message";
-	role: "assistant";
-	text: string;
-	/** Set once persisted; absent while streaming. */
-	messageId?: string;
-}
-
-export interface AgentReasoningItem {
-	id: string;
-	kind: "reasoning";
-	summary: string;
-}
-
-export type AgentToolItemStatus =
-	| "QUEUED"
-	| "RUNNING"
-	| "INPUT_REQUIRED"
-	| "COMPLETED"
-	| "FAILED"
-	| "REJECTED"
-	| "CANCELLED";
-
-export interface AgentToolItem {
-	/** The tool call id. */
-	id: string;
-	kind: "tool";
-	name: string;
-	arguments: Record<string, unknown>;
-	metadata?: Record<string, unknown>;
-	status: AgentToolItemStatus;
-	output?: string;
-	error?: string;
-	durationMs?: number;
-}
-
-export interface AgentSubagentItem {
-	/** Same value as childRunId. */
-	id: string;
-	kind: "subagent";
-	childRunId: string;
-	alias?: string;
-	roomId: string;
-	workspaceId?: string;
-	status: AgentRunStatusValue;
-	error?: string;
-	resultPreview?: string;
-}
-
+/**
+ * One item produced by a run — a model message, a reasoning summary, a tool
+ * call, or a subagent. Each variant's `kind` also doubles as its discriminant
+ * in AgentRunItemEvent.
+ */
 export type AgentRunItem =
-	| AgentMessageItem
-	| AgentReasoningItem
-	| AgentToolItem
-	| AgentSubagentItem;
+	| {
+			id: string;
+			kind: "message";
+			role: "assistant";
+			text: string;
+			/** Set once persisted; absent while streaming. */
+			messageId?: string;
+	  }
+	| {
+			id: string;
+			kind: "reasoning";
+			summary: string;
+	  }
+	| {
+			/** The tool call id. */
+			id: string;
+			kind: "tool";
+			name: string;
+			arguments: Record<string, unknown>;
+			metadata?: Record<string, unknown>;
+			status:
+				| "QUEUED"
+				| "RUNNING"
+				| "INPUT_REQUIRED"
+				| "COMPLETED"
+				| "FAILED"
+				| "REJECTED"
+				| "CANCELLED";
+			output?: string;
+			error?: string;
+			durationMs?: number;
+	  }
+	| {
+			/** Same value as childRunId. */
+			id: string;
+			kind: "subagent";
+			childRunId: string;
+			alias?: string;
+			roomId: string;
+			workspaceId?: string;
+			status: AgentRunStatusValue;
+			error?: string;
+			resultPreview?: string;
+	  };
 
 /**
  * One canonical, provider-neutral stream event. `delta` (message/reasoning)
@@ -121,7 +114,7 @@ export type AgentRunItemEvent =
 			timestamp: string;
 			type: "item.updated";
 			itemId: string;
-			kind: AgentStreamItemKind;
+			kind: AgentRunItem["kind"];
 			delta?: string;
 			patch?: Record<string, unknown>;
 	  }
@@ -135,55 +128,23 @@ export type AgentRunItemEvent =
 			item: AgentRunItem;
 	  };
 
-export interface AgentRunPollResponse {
-	run: AgentRunSnapshot;
-	events: AgentRunItemEvent[];
-	/** Events evicted by the backend's bounded buffer before this drain. */
-	droppedEvents: number;
-}
-
-/** The async submit handle returned by submitAgentRun — not a snapshot. */
-export interface AgentRunHandle {
-	runId: string;
-	roomId: string;
-	status: AgentRunStatusValue;
-}
-
 /** Accumulated view of every item seen so far in a run, in start order. */
 export interface AgentRunItemsState {
 	itemsById: Record<string, AgentRunItem>;
 	itemOrder: string[];
 }
 
-/** A human decision on a paused agent tool call (RunMCPTool's HITL path). */
+/**
+ * A human decision on a paused agent tool call (RunMCPTool's HITL path).
+ * Shared between decideAgentRunAction's raw signature and
+ * submitAgentToolDecision's approve/edit resolution.
+ */
 export type AgentToolDecision = "approve" | "edit" | "reject" | "respond";
 
-export interface AgentRunSubscriptionHandlers {
-	/** Fires per new item event (deduped, in order), with the items-state already updated. */
-	onEvent: (event: AgentRunItemEvent, items: AgentRunItemsState) => void;
-	/** Fires on every successful poll with the run's current durable snapshot. */
-	onSnapshot: (snapshot: AgentRunSnapshot) => void;
-	/**
-	 * Fires once per transition into INPUT_REQUIRED or a terminal status, with
-	 * persisted messages included. Polling continues after INPUT_REQUIRED;
-	 * stops after a terminal status.
-	 */
-	onReconcile: (
-		snapshot: AgentRunSnapshot & { messages?: Record<string, unknown>[] },
-	) => void;
-	/** A transport error on one poll. Non-fatal — polling keeps retrying with backoff. */
-	onError?: (error: Error) => void;
-}
-
-export interface AgentRunSubscriptionOptions {
-	/** Base delay between polls in ms. Defaults to 500. */
-	pollIntervalMs?: number;
-	/** Multiplier on pollIntervalMs while INPUT_REQUIRED. Defaults to 3. */
-	inputRequiredIntervalMultiplier?: number;
-	/** Stops polling without affecting the run itself. */
-	signal?: AbortSignal;
-}
-
+/**
+ * A live subscription started by subscribeAgentRun/submitAgentRun's
+ * subscription helpers.
+ */
 export interface AgentRunSubscription {
 	/** Stop polling locally. Does not cancel the run itself. */
 	stop: () => void;
