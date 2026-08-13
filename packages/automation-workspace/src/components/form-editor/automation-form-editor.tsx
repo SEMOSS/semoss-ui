@@ -29,6 +29,7 @@ import type {
 	AutomationNodeType,
 	AutomationRunDetail,
 	AutomationRunSummary,
+	AutomationToolContext,
 	RunStatus,
 	StepRunStatus,
 } from "../../domain/automation.types";
@@ -46,7 +47,6 @@ import {
 	applyOutputTransform,
 	validateNode,
 } from "../../domain/automation-utils";
-import type { AutomationToolContext } from "../../types/automation-tool.types";
 import { StatusBadge } from "../status-badge";
 import { AutomationConfigTab } from "./automation-config-tab";
 import { AutomationStepEditorCard } from "./automation-step-editor-card";

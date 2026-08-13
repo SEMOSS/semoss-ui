@@ -15,7 +15,7 @@ import type {
 	AutomationNodeType,
 	RunStatus,
 } from "./automation.types";
-import { formatDurationMs } from "./format";
+import { formatDurationMs } from "./automation-utils";
 
 export interface AutomationRunData {
 	STATUS: RunStatus;

@@ -1,5 +1,5 @@
 import { Env, Insight } from "@semoss/sdk";
-import type { AutomationToolContext } from "../types/automation-tool.types";
+import type { AutomationToolContext } from "../domain/automation.types";
 
 type EnvWithTool = typeof Env & { TOOL?: unknown };
 

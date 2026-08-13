@@ -14,9 +14,13 @@ export function CopyButton({ value, label }: CopyButtonProps) {
 		<button
 			type="button"
 			onClick={() => {
-				navigator.clipboard.writeText(value);
-				setCopied(true);
-				setTimeout(() => setCopied(false), 1500);
+				navigator.clipboard
+					.writeText(value)
+					.then(() => {
+						setCopied(true);
+						setTimeout(() => setCopied(false), 1500);
+					})
+					.catch(() => {});
 			}}
 			className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted"
 		>

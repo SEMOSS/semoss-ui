@@ -8,6 +8,7 @@ import { StatusBadge } from "./components/status-badge";
 import type {
 	AutomationDocument,
 	AutomationGraph,
+	AutomationToolContext,
 } from "./domain/automation.types";
 import { getDisplayMeta } from "./domain/automation-display";
 import { useAutomationRun } from "./hooks/use-automation-run";
@@ -17,7 +18,6 @@ import {
 	insight,
 	subscribeToMcpToolContext,
 } from "./semoss/client";
-import type { AutomationToolContext } from "./types/automation-tool.types";
 
 const EMPTY_GRAPH: AutomationGraph = { nodes: [], edges: [] };
 

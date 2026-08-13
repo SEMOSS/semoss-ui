@@ -162,7 +162,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
 				if (operationType.indexOf("ERROR") > -1) {
 					toast.error(output);
-					return false;
+					return;
 				}
 
 				output = response.pixelReturn[1].output;
@@ -170,27 +170,10 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
 				if (operationType.indexOf("ERROR") > -1) {
 					toast.error(output);
+					return;
 				}
 
-				if (data.APP_TAGS.length || data.APP_DESCRIPTION) {
-					const setProjectMetadataResponse =
-						await monolithStore.runQuery(
-							`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
-								{
-									tag: data.APP_TAGS,
-									description: data.APP_DESCRIPTION,
-								},
-							)}])`,
-						);
-
-					output = setProjectMetadataResponse.pixelReturn[0].output;
-					operationType =
-						setProjectMetadataResponse.pixelReturn[0].operationType;
-
-					if (operationType.indexOf("ERROR") > -1) {
-						toast.error(output);
-					}
-				}
+				if (!(await saveMetadata(appId))) return;
 			} else {
 				return;
 			}
@@ -198,7 +181,6 @@ export const NewAppModal = (props: NewAppModalProps) => {
 			if (!appId) throw new Error("Error creating app");
 			onClose(appId);
 		} catch (e) {
-			console.error(e);
 			toast.error(e.message);
 		} finally {
 			setIsLoading(false);

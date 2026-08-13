@@ -9,7 +9,7 @@ import {
 } from "@semoss/ui/next";
 import type { StorageEngineConfig } from "../../../domain/automation.types";
 import { EnginePickerField } from "./engine-picker-field";
-import { BoundInput } from "./shared";
+import { BoundInput } from "./pill-input";
 
 export interface StorageEngineFormProps {
 	/** Current node config */

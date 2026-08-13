@@ -134,6 +134,7 @@ export const AutomationWorkspace = observer(() => {
 							className="h-full w-full border-none"
 							title="Automation Workspace"
 							src={`../../automation-workspace/dist/?app=${encodeURIComponent(workspace.appId)}`}
+							sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
 						/>
 					) : (
 						<div className="h-full overflow-auto">

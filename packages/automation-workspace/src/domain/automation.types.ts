@@ -247,3 +247,13 @@ export interface NodeTypeMeta {
 	defaultConfig: NodeConfig;
 	defaultOutputVar: string;
 }
+
+export interface AutomationToolContext {
+	id: string;
+	name: string;
+	message: string;
+	roomId: string;
+	projectId: string;
+	parameters: Record<string, unknown>;
+	toolResponse?: unknown;
+}

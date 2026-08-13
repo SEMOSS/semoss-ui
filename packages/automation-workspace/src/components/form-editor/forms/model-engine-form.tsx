@@ -3,7 +3,7 @@ import { Field, FieldLabel } from "@semoss/ui/next";
 import type { ModelEngineConfig } from "../../../domain/automation.types";
 import { getPlaygroundParamDescription } from "../../../domain/automation-utils";
 import { EnginePickerField } from "./engine-picker-field";
-import { BoundInput } from "./shared";
+import { BoundInput } from "./pill-input";
 
 /** Maps engine_subtype values to the operations they support. */
 const SUBTYPE_OPERATIONS: Record<string, ModelEngineConfig["operation"][]> = {

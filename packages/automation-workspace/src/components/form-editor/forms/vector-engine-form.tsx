@@ -12,7 +12,7 @@ import {
 import type { VectorEngineConfig } from "../../../domain/automation.types";
 import { getPlaygroundParamDescription } from "../../../domain/automation-utils";
 import { EnginePickerField } from "./engine-picker-field";
-import { BoundInput } from "./shared";
+import { BoundInput } from "./pill-input";
 
 export interface VectorEngineFormProps {
 	/** Current node config */

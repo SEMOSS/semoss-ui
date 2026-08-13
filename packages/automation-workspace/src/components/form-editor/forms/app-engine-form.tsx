@@ -4,8 +4,8 @@ import { runPixel } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
 import { Field, FieldLabel, Input } from "@semoss/ui/next";
 import type { AppConfig, ReactorParam } from "../../../domain/automation.types";
+import { BoundInput } from "./pill-input";
 import { AutomationProjectSelect } from "./project-select";
-import { BoundInput } from "./shared";
 
 /** Appends a trailing semicolon if the pixel string ends with `)` and lacks one. */
 function ensureSemicolon(pixel: string): string {

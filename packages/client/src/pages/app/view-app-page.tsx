@@ -210,6 +210,7 @@ export const ViewAppPage = observer(() => {
 							className="h-full w-full border-none"
 							title="Automation Workspace"
 							src={`../../automation-workspace/dist/?app=${encodeURIComponent(project.project_id)}&readOnly=1`}
+							sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
 						/>
 					) : null}
 				</Suspense>

@@ -12,9 +12,9 @@ import { AppEngineForm } from "./forms/app-engine-form";
 import { DatabaseEngineForm } from "./forms/database-engine-form";
 import { FunctionEngineForm } from "./forms/function-engine-form";
 import { ModelEngineForm } from "./forms/model-engine-form";
+import { PillInput } from "./forms/pill-input";
 import { StorageEngineForm } from "./forms/storage-engine-form";
 import { VectorEngineForm } from "./forms/vector-engine-form";
-import { WaitForm } from "./forms/wait-form";
 
 interface StepFormProps {
 	step: AutomationNode;
@@ -107,14 +107,24 @@ export function StepForm({
 					devMode={devMode}
 				/>
 			);
-		case "wait":
+		case "wait": {
+			const c = step.config as WaitConfig;
 			return (
-				<WaitForm
-					config={step.config as WaitConfig}
-					upstreamVars={upstreamVars}
-					onChange={update}
-				/>
+				<div className="flex flex-col gap-4">
+					<PillInput
+						label="Seconds to Wait"
+						value={c.seconds}
+						placeholder="30"
+						onChange={(v) => update({ ...c, seconds: v })}
+						upstreamVars={upstreamVars}
+					/>
+					<p className="text-muted-foreground text-xs">
+						Maximum 3600 seconds (1 hour). You can reference an
+						earlier step's output — see Help for details.
+					</p>
+				</div>
 			);
+		}
 		default:
 			return (
 				<div className="text-muted-foreground text-xs">

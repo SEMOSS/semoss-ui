@@ -148,6 +148,7 @@ const MIN_H_MAP: Record<number, string> = {
 	4: "min-h-[6rem]",
 	5: "min-h-[7.5rem]",
 	6: "min-h-[9rem]",
+	7: "min-h-[10.5rem]",
 	8: "min-h-[12rem]",
 };
 
@@ -184,6 +185,7 @@ export function PillInput({
 
 	// Close picker on outside click
 	useEffect(() => {
+		if (!showPicker) return;
 		const handler = (e: MouseEvent) => {
 			if (
 				pickerRef.current &&
@@ -194,7 +196,7 @@ export function PillInput({
 		};
 		document.addEventListener("mousedown", handler);
 		return () => document.removeEventListener("mousedown", handler);
-	}, []);
+	}, [showPicker]);
 
 	const detectAutocomplete = useCallback(
 		(el: HTMLElement) => {
@@ -497,3 +499,6 @@ export function PillInput({
 		</div>
 	);
 }
+
+export type { PillInputProps as BoundInputProps };
+export { PillInput as BoundInput };

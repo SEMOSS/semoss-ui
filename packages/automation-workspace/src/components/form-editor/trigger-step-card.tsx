@@ -2,7 +2,7 @@ import { ChevronDown, ChevronRight, Zap } from "lucide-react";
 import { Field, FieldLabel, Textarea } from "@semoss/ui/next";
 import type { AutomationNode } from "../../domain/automation.types";
 import { AiSuggestButton } from "./ai-suggest-button";
-import { TriggerForm } from "./forms/trigger-form";
+import { CopyButton } from "./forms/copy-button";
 
 interface TriggerStepCardProps {
 	step: AutomationNode;
@@ -94,7 +94,25 @@ export function TriggerStepCard({
 							className="resize-none overflow-y-auto text-sm"
 						/>
 					</Field>
-					<TriggerForm appId={appId} />
+					<div className="flex flex-col gap-4">
+						<div className="rounded-md border border-border bg-muted/30 p-3">
+							<p className="mb-1.5 font-medium text-xs">
+								Trigger from another app
+							</p>
+							<div className="flex items-center gap-2">
+								<code className="flex-1 break-all rounded bg-muted px-2 py-1 font-mono text-[10px]">
+									{`TriggerAutomation(project=["${appId}"])`}
+								</code>
+								<CopyButton
+									value={`TriggerAutomation(project=["${appId}"])`}
+								/>
+							</div>
+							<p className="mt-1.5 text-[10px] text-muted-foreground">
+								Copy this code into any button or app to start
+								this automation.
+							</p>
+						</div>
+					</div>
 					<div className="flex items-center justify-between border-t pt-3">
 						<div>
 							<p className="font-medium text-xs">
