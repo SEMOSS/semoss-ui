@@ -71,6 +71,7 @@ import { OnboardingTour } from "../form-editor/onboarding-tour";
 import { TemplateGallery } from "../form-editor/template-gallery";
 import { StatusBadge } from "../status-badge";
 import { AddNodeMenu } from "./add-node-menu";
+import { AutomationDockLayout } from "./automation-dock-layout";
 import { NodeEditDrawer } from "./node-edit-drawer";
 import { AutomationNode as AutomationNodeCard } from "./nodes/automation-node";
 import { TriggerNode } from "./nodes/trigger-node";
@@ -902,9 +903,14 @@ export function AutomationCanvas({
 					data: {
 						label: description.trim() || "Start",
 						devMode,
+						isLast: i === steps.length - 1,
 						onEdit: () => {
 							setShowAddMenu(false);
 							setEditingStepId(step.id);
+						},
+						onAdd: () => {
+							setEditingStepId(null);
+							setShowAddMenu(true);
 						},
 					},
 					draggable: false,
@@ -926,11 +932,16 @@ export function AutomationCanvas({
 							validateNode(step).length > 0 &&
 							!stepStatuses[step.id],
 						locked: running,
+						isLast: i === steps.length - 1,
 						onEdit: () => {
 							setShowAddMenu(false);
 							setEditingStepId(step.id);
 						},
 						onDelete: () => deleteStep(step.id),
+						onAdd: () => {
+							setEditingStepId(null);
+							setShowAddMenu(true);
+						},
 					},
 					style: { width: NODE_WIDTH },
 				});
@@ -1146,260 +1157,252 @@ export function AutomationCanvas({
 
 					{/* ---- Content ---- */}
 					<div className="flex-1 overflow-hidden">
-						{/* Steps tab: canvas with left drawer overlay */}
+						{/* Steps tab */}
 						{activeTab === "steps" && (
-							<div
-								ref={canvasContainerRef}
-								className="relative h-full"
-							>
-								{/* Template gallery (replaces canvas when blank) */}
-								{showGenerationWizard && (
-									<div className="h-full overflow-y-auto px-6 py-6">
-										<div className="mx-auto max-w-3xl">
-											<TemplateGallery
-												onSelectTemplate={loadTemplate}
-												onStartBlank={onStartBlank}
-											/>
-										</div>
-									</div>
-								)}
-
-								{!showGenerationWizard && (
-									<>
-										{/* Banners row above the canvas */}
-										{(running ||
-											(latestRunStatus &&
-												latestRunStatus !==
-													"RUNNING") ||
-											undoSnapshot) && (
-											<div className="absolute inset-x-0 top-0 z-20 space-y-2 px-4 pt-3">
-												{running && (
-													<div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-primary text-xs">
-														<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
-														Running…
-													</div>
-												)}
-												{!running &&
-													latestRunStatus &&
-													latestRunStatus !==
-														"RUNNING" && (
-														<RunBanner
-															status={
-																latestRunStatus
-															}
-															aiSummary={
-																aiRunSummary
-															}
-															generatingAiSummary={
-																generatingAiSummary
-															}
-															onDismiss={
-																dismissRun
-															}
-														/>
-													)}
-												{undoSnapshot && (
-													<UndoBanner
-														onUndo={() => {
-															setSteps(
-																undoSnapshot,
-															);
-															setUndoSnapshot(
-																null,
-															);
-														}}
-														onDismiss={() =>
-															setUndoSnapshot(
-																null,
-															)
+							<AutomationDockLayout
+								isNodeEditorOpen={drawerOpen}
+								onNodeEditorClose={() => {
+									setShowAddMenu(false);
+									setEditingStepId(null);
+								}}
+								canvas={
+									<div
+										ref={canvasContainerRef}
+										className="relative h-full"
+									>
+										{/* Template gallery (replaces canvas when blank) */}
+										{showGenerationWizard && (
+											<div className="h-full overflow-y-auto px-6 py-6">
+												<div className="mx-auto max-w-3xl">
+													<TemplateGallery
+														onSelectTemplate={
+															loadTemplate
+														}
+														onStartBlank={
+															onStartBlank
 														}
 													/>
-												)}
+												</div>
 											</div>
 										)}
 
-										{/* Left drawer overlay */}
-										{drawerOpen && (
-											<div className="absolute top-0 left-0 z-10 h-full w-[420px] overflow-hidden border-r bg-background shadow-lg">
-												{showAddMenu ? (
-													<div className="flex h-full flex-col p-4">
-														<AddNodeMenu
-															onSelect={addStep}
-															onClose={() =>
-																setShowAddMenu(
-																	false,
-																)
-															}
-														/>
-													</div>
-												) : editingStep?.type ===
-													"trigger" ? (
-													<TriggerEditPanel
-														description={
-															description
-														}
-														devMode={devMode}
-														appId={appId}
-														step={editingStep}
-														suggestingDescription={
-															suggestingDescription
-														}
-														hasRunnableSteps={
-															hasRunnableSteps
-														}
-														onDescriptionChange={
-															setDescription
-														}
-														onDevModeChange={
-															handleDevModeChange
-														}
-														onSuggestDescription={() =>
-															void handleSuggestDescription()
-														}
-														onClose={() =>
-															setEditingStepId(
-																null,
-															)
-														}
-													/>
-												) : editingStep ? (
-													<NodeEditDrawer
-														step={editingStep}
-														upstreamVars={upstreamVarsFor(
-															steps.indexOf(
-																editingStep,
-															),
+										{!showGenerationWizard && (
+											<>
+												{/* Banners row above the canvas */}
+												{(running ||
+													(latestRunStatus &&
+														latestRunStatus !==
+															"RUNNING") ||
+													undoSnapshot) && (
+													<div className="absolute inset-x-0 top-0 z-20 space-y-2 px-4 pt-3">
+														{running && (
+															<div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-primary text-xs">
+																<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+																Running…
+															</div>
 														)}
-														nodeOutputs={
-															nodeOutputs
+														{!running &&
+															latestRunStatus &&
+															latestRunStatus !==
+																"RUNNING" && (
+																<RunBanner
+																	status={
+																		latestRunStatus
+																	}
+																	aiSummary={
+																		aiRunSummary
+																	}
+																	generatingAiSummary={
+																		generatingAiSummary
+																	}
+																	onDismiss={
+																		dismissRun
+																	}
+																/>
+															)}
+														{undoSnapshot && (
+															<UndoBanner
+																onUndo={() => {
+																	setSteps(
+																		undoSnapshot,
+																	);
+																	setUndoSnapshot(
+																		null,
+																	);
+																}}
+																onDismiss={() =>
+																	setUndoSnapshot(
+																		null,
+																	)
+																}
+															/>
+														)}
+													</div>
+												)}
+
+												{/* Onboarding tour (fixed popovers) */}
+												<OnboardingTour appId={appId} />
+
+												{/* React Flow canvas */}
+												{/* Suppress RF selection ring */}
+												<style>{`.react-flow__node.selected{box-shadow:none!important;outline:none!important}`}</style>
+												<ReactFlow
+													nodes={rfNodes}
+													edges={rfEdges}
+													nodeTypes={
+														nodeTypes as never
+													}
+													nodesDraggable={
+														canvasMode ===
+														"interact"
+													}
+													nodesConnectable={false}
+													panOnDrag={
+														canvasMode === "pan"
+													}
+													panOnScroll={
+														canvasMode !== "pan"
+													}
+													zoomOnPinch
+													zoomOnScroll={
+														canvasMode === "pan"
+													}
+													minZoom={0.3}
+													maxZoom={1.5}
+													defaultEdgeOptions={{
+														type: "smoothstep",
+														animated: false,
+													}}
+													proOptions={{
+														hideAttribution: true,
+													}}
+													className="h-full"
+													onNodeClick={
+														canvasMode ===
+														"interact"
+															? (_e, node) => {
+																	setShowAddMenu(
+																		false,
+																	);
+																	setEditingStepId(
+																		node.id,
+																	);
+																}
+															: undefined
+													}
+													onNodesChange={
+														onRfNodesChange
+													}
+													onNodeDragStop={
+														onNodeDragStop
+													}
+												>
+													<Background
+														variant={
+															BackgroundVariant.Dots
 														}
-														runStatus={
-															stepStatuses[
-																editingStep.id
-															]
-														}
-														runError={
-															stepErrors[
-																editingStep.id
-															]
-														}
-														runDuration={
-															stepDurations[
-																editingStep.id
-															]
-														}
-														runOutput={
-															stepOutputPreviews[
-																editingStep.id
-															] ?? null
-														}
-														devMode={devMode}
-														appId={appId}
-														onUpdate={updateStep}
-														onDelete={() => {
-															deleteStep(
-																editingStep.id,
-															);
-														}}
-														onSetOutput={
-															setNodeOutput
-														}
-														onClose={() =>
-															setEditingStepId(
-																null,
+														gap={20}
+														size={1}
+														color="#cbd5e1"
+													/>
+												</ReactFlow>
+
+												{/* Mode toggle — bottom left of canvas */}
+												<div className="absolute bottom-4 left-4 z-10 flex items-center overflow-hidden rounded-lg border bg-background shadow-sm">
+													<button
+														type="button"
+														aria-label="Clean up node layout"
+														title="Clean up layout — restore execution order"
+														onClick={cleanUpLayout}
+														className="flex items-center justify-center border-r p-2 text-muted-foreground transition-colors hover:bg-muted"
+													>
+														<RefreshCw className="h-4 w-4" />
+													</button>
+													<button
+														type="button"
+														title="Interact mode — click nodes to edit (V)"
+														onClick={() =>
+															setCanvasMode(
+																"interact",
 															)
 														}
-													/>
-												) : null}
-											</div>
-										)}
-
-										{/* Onboarding tour (fixed popovers) */}
-										<OnboardingTour appId={appId} />
-
-										{/* React Flow canvas */}
-										{/* Suppress RF selection ring */}
-										<style>{`.react-flow__node.selected{box-shadow:none!important;outline:none!important}`}</style>
-										<ReactFlow
-											nodes={rfNodes}
-											edges={rfEdges}
-											nodeTypes={nodeTypes as never}
-											nodesDraggable={
-												canvasMode === "interact"
-											}
-											nodesConnectable={false}
-											panOnDrag={canvasMode === "pan"}
-											panOnScroll={canvasMode !== "pan"}
-											zoomOnPinch
-											zoomOnScroll={canvasMode === "pan"}
-											minZoom={0.3}
-											maxZoom={1.5}
-											defaultEdgeOptions={{
-												type: "smoothstep",
-												animated: false,
-											}}
-											proOptions={{
-												hideAttribution: true,
-											}}
-											className="h-full"
-											onNodeClick={
-												canvasMode === "interact"
-													? (_e, node) => {
-															setShowAddMenu(
-																false,
-															);
-															setEditingStepId(
-																node.id,
-															);
+														className={`flex items-center justify-center p-2 transition-colors ${canvasMode === "interact" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
+													>
+														<MousePointer2 className="h-4 w-4" />
+													</button>
+													<button
+														type="button"
+														title="Pan mode — drag to move canvas (H)"
+														onClick={() =>
+															setCanvasMode("pan")
 														}
-													: undefined
-											}
-											onNodesChange={onRfNodesChange}
-											onNodeDragStop={onNodeDragStop}
-										>
-											<Background
-												variant={BackgroundVariant.Dots}
-												gap={20}
-												size={1}
-												color="#cbd5e1"
-											/>
-										</ReactFlow>
-
-										{/* Mode toggle — bottom left of canvas */}
-										<div className="absolute bottom-4 left-4 z-10 flex items-center overflow-hidden rounded-lg border bg-background shadow-sm">
-											<button
-												type="button"
-												aria-label="Clean up node layout"
-												title="Clean up layout — restore execution order"
-												onClick={cleanUpLayout}
-												className="flex items-center justify-center border-r p-2 text-muted-foreground transition-colors hover:bg-muted"
-											>
-												<RefreshCw className="h-4 w-4" />
-											</button>
-											<button
-												type="button"
-												title="Interact mode — click nodes to edit (V)"
-												onClick={() =>
-													setCanvasMode("interact")
-												}
-												className={`flex items-center justify-center p-2 transition-colors ${canvasMode === "interact" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
-											>
-												<MousePointer2 className="h-4 w-4" />
-											</button>
-											<button
-												type="button"
-												title="Pan mode — drag to move canvas (H)"
-												onClick={() =>
-													setCanvasMode("pan")
-												}
-												className={`flex items-center justify-center p-2 transition-colors ${canvasMode === "pan" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
-											>
-												<Hand className="h-4 w-4" />
-											</button>
+														className={`flex items-center justify-center p-2 transition-colors ${canvasMode === "pan" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
+													>
+														<Hand className="h-4 w-4" />
+													</button>
+												</div>
+											</>
+										)}
+									</div>
+								}
+								nodeEditor={
+									showAddMenu ? (
+										<div className="h-full overflow-y-auto p-4">
+											<AddNodeMenu onSelect={addStep} />
 										</div>
-									</>
-								)}
-							</div>
+									) : editingStep?.type === "trigger" ? (
+										<TriggerEditPanel
+											description={description}
+											devMode={devMode}
+											appId={appId}
+											step={editingStep}
+											suggestingDescription={
+												suggestingDescription
+											}
+											hasRunnableSteps={hasRunnableSteps}
+											onDescriptionChange={setDescription}
+											onDevModeChange={
+												handleDevModeChange
+											}
+											onSuggestDescription={() =>
+												void handleSuggestDescription()
+											}
+											onClose={() =>
+												setEditingStepId(null)
+											}
+										/>
+									) : editingStep ? (
+										<NodeEditDrawer
+											step={editingStep}
+											upstreamVars={upstreamVarsFor(
+												steps.indexOf(editingStep),
+											)}
+											nodeOutputs={nodeOutputs}
+											runStatus={
+												stepStatuses[editingStep.id]
+											}
+											runError={
+												stepErrors[editingStep.id]
+											}
+											runDuration={
+												stepDurations[editingStep.id]
+											}
+											runOutput={
+												stepOutputPreviews[
+													editingStep.id
+												] ?? null
+											}
+											devMode={devMode}
+											appId={appId}
+											onUpdate={updateStep}
+											onDelete={() =>
+												deleteStep(editingStep.id)
+											}
+											onSetOutput={setNodeOutput}
+										/>
+									) : null
+								}
+							/>
 						)}
 
 						{/* History tab */}

@@ -16,6 +16,7 @@
     "@semoss/ui": "workspace:*",
     "@tailwindcss/vite": "^4.1.14",
     "@xyflow/react": "^12.3.6",
+    "flexlayout-react": "^0.8.17",
     "lucide-react": "^0.545.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",

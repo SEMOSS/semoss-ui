@@ -1,5 +1,5 @@
 import { Handle, type NodeProps, Position } from "@xyflow/react";
-import { Loader2, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import type {
 	AutomationNode as AutomationGraphNode,
 	StepRunStatus,
@@ -24,8 +24,10 @@ export type AutomationNodeData = {
 	runOutput?: string | null;
 	isIncomplete?: boolean;
 	locked?: boolean;
+	isLast?: boolean;
 	onEdit?: () => void;
 	onDelete?: () => void;
+	onAdd?: () => void;
 };
 
 const STATUS_LEFT_BORDER: Record<string, string> = {
@@ -174,12 +176,26 @@ export function AutomationNode({ data }: NodeProps) {
 				isConnectable={false}
 				className="!h-2 !w-2 !border-2 !border-background !bg-muted-foreground/40"
 			/>
-			<Handle
-				type="source"
-				position={Position.Bottom}
-				isConnectable={false}
-				className="!h-2 !w-2 !border-2 !border-background !bg-muted-foreground/40"
-			/>
+			{d.isLast && !locked ? (
+				<button
+					type="button"
+					onClick={(event) => {
+						event.stopPropagation();
+						d.onAdd?.();
+					}}
+					className="-bottom-5 -translate-x-1/2 absolute left-1/2 z-10 flex h-7 w-7 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-colors hover:border-primary hover:text-primary"
+					aria-label="Add node"
+				>
+					<Plus className="h-4 w-4" />
+				</button>
+			) : (
+				<Handle
+					type="source"
+					position={Position.Bottom}
+					isConnectable={false}
+					className="!h-2 !w-2 !border-2 !border-background !bg-muted-foreground/40"
+				/>
+			)}
 		</div>
 	);
 }

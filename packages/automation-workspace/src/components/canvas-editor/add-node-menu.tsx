@@ -1,32 +1,20 @@
-import { X } from "lucide-react";
-import { Button } from "@semoss/ui/next";
 import type { AutomationNodeType } from "../../domain/automation.types";
 import { STEP_TYPES } from "../../domain/automation-display";
 
 interface AddNodeMenuProps {
 	onSelect: (type: AutomationNodeType) => void;
-	onClose: () => void;
 }
 
-export function AddNodeMenu({ onSelect, onClose }: AddNodeMenuProps) {
+export function AddNodeMenu({ onSelect }: AddNodeMenuProps) {
 	return (
-		<div className="rounded-2xl border bg-card p-5 shadow-sm">
-			<div className="mb-4 flex items-center justify-between gap-3">
+		<div className="p-5">
+			<div className="mb-4">
 				<div>
 					<p className="font-medium text-sm">Choose step type</p>
 					<p className="text-[11px] text-muted-foreground">
 						Select a step to add to the automation.
 					</p>
 				</div>
-				<Button
-					size="sm"
-					variant="ghost"
-					className="h-8 w-8 p-0"
-					onClick={onClose}
-					aria-label="Close"
-				>
-					<X className="h-4 w-4" />
-				</Button>
 			</div>
 			<div className="grid gap-3 md:grid-cols-2">
 				{STEP_TYPES.map((stepType) => {

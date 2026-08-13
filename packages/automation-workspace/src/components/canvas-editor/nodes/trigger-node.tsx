@@ -1,11 +1,13 @@
 import { Handle, type NodeProps, Position } from "@xyflow/react";
-import { Pencil, Play } from "lucide-react";
+import { Pencil, Play, Plus } from "lucide-react";
 
 export type TriggerNodeData = {
 	label: string;
 	description?: string;
 	devMode?: boolean;
+	isLast?: boolean;
 	onEdit?: () => void;
+	onAdd?: () => void;
 };
 
 export function TriggerNode({ data }: NodeProps) {
@@ -52,12 +54,26 @@ export function TriggerNode({ data }: NodeProps) {
 				)}
 			</div>
 
-			<Handle
-				type="source"
-				position={Position.Bottom}
-				isConnectable={false}
-				className="!h-2 !w-2 !border-2 !border-background !bg-emerald-500/60"
-			/>
+			{d.isLast ? (
+				<button
+					type="button"
+					onClick={(event) => {
+						event.stopPropagation();
+						d.onAdd?.();
+					}}
+					className="-bottom-5 -translate-x-1/2 absolute left-1/2 z-10 flex h-7 w-7 items-center justify-center rounded-full border bg-background text-emerald-600 shadow-sm transition-colors hover:border-emerald-500 hover:bg-emerald-500/10"
+					aria-label="Add node"
+				>
+					<Plus className="h-4 w-4" />
+				</button>
+			) : (
+				<Handle
+					type="source"
+					position={Position.Bottom}
+					isConnectable={false}
+					className="!h-2 !w-2 !border-2 !border-background !bg-emerald-500/60"
+				/>
+			)}
 		</div>
 	);
 }

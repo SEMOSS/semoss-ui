@@ -1,4 +1,4 @@
-import { Loader2, Play, Trash2, X } from "lucide-react";
+import { Loader2, Play, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { runPixel } from "@semoss/sdk";
 import { Button, Field, FieldLabel, Input, Textarea } from "@semoss/ui/next";
@@ -45,7 +45,6 @@ export interface NodeEditDrawerProps {
 	onUpdate: (step: AutomationNode) => void;
 	onDelete: () => void;
 	onSetOutput: (outputVar: string, value: string) => void;
-	onClose: () => void;
 }
 
 export function NodeEditDrawer({
@@ -60,7 +59,6 @@ export function NodeEditDrawer({
 	onUpdate,
 	onDelete,
 	onSetOutput,
-	onClose,
 }: NodeEditDrawerProps) {
 	const [generatingLabel, setGeneratingLabel] = useState(false);
 	const [runningStepTest, setRunningStepTest] = useState(false);
@@ -147,15 +145,6 @@ export function NodeEditDrawer({
 						aria-label="Delete step"
 					>
 						<Trash2 className="h-3.5 w-3.5" />
-					</Button>
-					<Button
-						size="sm"
-						variant="ghost"
-						className="h-8 w-8 p-0"
-						onClick={onClose}
-						aria-label="Close"
-					>
-						<X className="h-4 w-4" />
 					</Button>
 				</div>
 			</div>
