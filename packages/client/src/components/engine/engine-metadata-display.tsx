@@ -17,6 +17,51 @@ import {
 	TableRow,
 } from "@semoss/ui/next";
 
+/**
+ * One configurable parameter of a provider built-in tool, as written in the
+ * meta/builtin-tools.json catalog. Unknown keys pass through untouched.
+ */
+export interface BuiltinToolParam {
+	alias: string;
+	display_name?: string;
+	type?: "required" | "optional";
+	input?: "string" | "number" | "boolean" | "list" | "map";
+	options?: (string | number | boolean)[];
+	default?: unknown;
+	show_in_ui?: boolean;
+	/** The user's chosen value; the catalog `default` applies when absent. */
+	value?: unknown;
+	[key: string]: unknown;
+}
+
+/**
+ * One provider built-in tool from the meta/builtin-tools.json catalog.
+ * Unknown keys pass through untouched, which also makes a definition
+ * directly storable as a {@link BuiltinToolSelection}.
+ */
+export interface BuiltinToolDefinition {
+	alias: string;
+	display_name?: string;
+	description?: string;
+	params?: BuiltinToolParam[];
+	constraints?: { api?: string; models?: string[]; regions?: string[] };
+	[key: string]: unknown;
+}
+
+/**
+ * Stored selection for one provider built-in tool: the catalog definition
+ * copied as-is, with a `value` on any parameter the user changed from its
+ * default. Kept catalog-shaped on purpose, so whatever reads the stored
+ * JSON can render the tool's options without a second catalog lookup.
+ */
+export interface BuiltinToolSelection {
+	alias?: string;
+	display_name?: string;
+	description?: string;
+	params?: BuiltinToolParam[];
+	[key: string]: unknown;
+}
+
 /** Shape returned by the GetModelMetadata pixel. */
 export type ModelMetadata = {
 	engineId?: string;
@@ -27,7 +72,8 @@ export type ModelMetadata = {
 	contextWindow?: number | null;
 	maxInputTokens?: number | null;
 	maxOutputTokens?: number | null;
-	builtinTools?: string[] | null;
+	/** Selected built-in tools, keyed by canonical tool name. */
+	builtinTools?: Record<string, BuiltinToolSelection> | null;
 	family?: string | null;
 	attachment?: boolean | null;
 	reasoning?: boolean | null;
@@ -607,6 +653,12 @@ export interface ModelSettingsValues {
 	contextWindow: string;
 	maxOutputTokens: string;
 	builtinTools: string[];
+	/**
+	 * Keyed tool selection when the stored value carries configurations;
+	 * null for the legacy name list, which keeps `builtinTools` above
+	 * authoritative for display.
+	 */
+	builtinToolsConfig: Record<string, BuiltinToolSelection> | null;
 }
 
 /**
@@ -648,7 +700,8 @@ export const toModelSettingsValues = (
 			metadata?.maxOutputTokens !== undefined
 				? String(metadata.maxOutputTokens)
 				: "",
-		builtinTools: normalizeStringArray(metadata?.builtinTools),
+		builtinTools: Object.keys(metadata?.builtinTools ?? {}),
+		builtinToolsConfig: metadata?.builtinTools ?? null,
 	};
 };
 
