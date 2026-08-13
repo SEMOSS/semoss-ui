@@ -1,7 +1,8 @@
 import { ChevronRightIcon, Share2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { FlexLayout } from "@semoss/shared";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -16,17 +17,19 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
+import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
 import { ProjectDetailTabs } from "@/components/project";
 import { ShareOverlay } from "@/components/ui";
 import { useProject, useWorkspace } from "@/hooks";
+import type { WorkspaceOptions } from "@/stores";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
+import { WorkspaceManager } from "../workspace";
 
-type ActiveView = "editor" | "settings";
-
-const VIEWS: ActiveView[] = ["editor", "settings"];
-const AUTOMATION_WORKSPACE_URL = import.meta.env.DEV
-	? "http://localhost:5177/"
-	: "../../automation-workspace/dist/";
+const AUTOMATION_WORKSPACE_URL =
+	window.location.port === "5173"
+		? "http://localhost:5177/"
+		: "../../automation-workspace/dist/";
 
 /** Same tabs as CodeWorkspace's settings panel — shared config should be centralized if these drift. */
 const SETTINGS_TABS: React.ComponentProps<typeof ProjectDetailTabs>["tabs"] = [
@@ -47,12 +50,146 @@ const SETTINGS_TABS: React.ComponentProps<typeof ProjectDetailTabs>["tabs"] = [
 	{ name: "SMSS", component: "smss", restrict: ["OWNER"] },
 ];
 
-/** Edit-mode wrapper for AUTOMATION app type. Provides hamburger, breadcrumb, share, and an in-page Settings tab backed by ProjectDetailTabs. */
+const DEFAULT_OPTIONS: WorkspaceOptions = {
+	version: "",
+	layout: {
+		global: {
+			tabEnableClose: false,
+			tabEnableRename: false,
+		},
+		borders: [
+			{
+				type: "border",
+				location: "left",
+				selected: -1,
+				size: 320,
+				children: [
+					{
+						id: "file-explorer",
+						type: "tab",
+						name: "Files",
+						component: "app-file-explorer",
+						enableClose: false,
+						config: {},
+					},
+				],
+			},
+		],
+		layout: {
+			type: "row",
+			weight: 100,
+			children: [
+				{
+					type: "tabset",
+					weight: 100,
+					selected: 0,
+					enableTabStrip: false,
+					children: [
+						{
+							id: "automation-editor",
+							type: "tab",
+							name: "Editor",
+							component: "automation-editor",
+							enableClose: false,
+							config: {},
+						},
+					],
+				},
+			],
+		},
+	},
+};
+
+/** Edit-mode workspace for AUTOMATION apps with a persistent canvas editor and dockable supporting panels. */
 export const AutomationWorkspace = observer(() => {
 	const { workspace } = useWorkspace();
 	const { catalog, project } = useProject();
 	const [shareOpen, setShareOpen] = useState(false);
-	const [activeView, setActiveView] = useState<ActiveView>("editor");
+	const [showEditorTabs, setShowEditorTabs] = useState(false);
+
+	useEffect(() => {
+		const model = workspace.model;
+		const legacySettingsTab = model?.getNodeById("settings-panel");
+
+		if (legacySettingsTab instanceof FlexLayout.TabNode) {
+			legacySettingsTab
+				.getModel()
+				.doAction(
+					FlexLayout.Actions.deleteTab(legacySettingsTab.getId()),
+				);
+		}
+	}, [workspace.model]);
+
+	useEffect(() => {
+		const model = workspace.model;
+		if (!model) return;
+
+		const updateTabStrip = () => {
+			const editorTab = model.getNodeById("automation-editor");
+			const editorTabset = editorTab?.getParent();
+			if (editorTabset instanceof FlexLayout.TabSetNode) {
+				setShowEditorTabs(editorTabset.getChildren().length > 1);
+			}
+		};
+
+		updateTabStrip();
+		model.addChangeListener(updateTabStrip);
+		return () => model.removeChangeListener(updateTabStrip);
+	}, [workspace.model]);
+
+	useEffect(() => {
+		const editorTab = workspace.model?.getNodeById("automation-editor");
+		const editorTabset = editorTab?.getParent();
+		if (editorTabset instanceof FlexLayout.TabSetNode) {
+			editorTabset.getModel().doAction(
+				FlexLayout.Actions.updateNodeAttributes(editorTabset.getId(), {
+					enableTabStrip: showEditorTabs,
+				}),
+			);
+		}
+	}, [showEditorTabs, workspace.model]);
+
+	const factory: React.ComponentProps<typeof WorkspaceManager>["factory"] = (
+		node,
+		layout,
+	) => {
+		const component = node.getComponent();
+
+		if (component === "automation-editor") {
+			return (
+				<iframe
+					className="h-full w-full border-none"
+					title="Automation Workspace"
+					src={`${AUTOMATION_WORKSPACE_URL}?app=${encodeURIComponent(workspace.appId)}`}
+					sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
+				/>
+			);
+		}
+
+		if (component === "app-file-explorer") {
+			return (
+				<AppFileExplorer
+					node={node}
+					layout={layout}
+					app={workspace.appId}
+				/>
+			);
+		}
+
+		if (component === "app-file-editor") {
+			return <AppFileEditor node={node} app={workspace.appId} />;
+		}
+
+		if (component === "settings-panel") {
+			return <ProjectDetailTabs tabs={SETTINGS_TABS} />;
+		}
+
+		return null;
+	};
+
+	if (!project) {
+		return null;
+	}
 
 	return (
 		<>
@@ -60,25 +197,36 @@ export const AutomationWorkspace = observer(() => {
 				<NavbarHeader logo={null} />
 				<Breadcrumb>
 					<BreadcrumbList>
+						{catalog && (
+							<>
+								<BreadcrumbItem>
+									<BreadcrumbLink asChild>
+										<Link to={catalog.path}>
+											{catalog.name} Catalog
+										</Link>
+									</BreadcrumbLink>
+								</BreadcrumbItem>
+								<BreadcrumbSeparator>
+									<ChevronRightIcon />
+								</BreadcrumbSeparator>
+							</>
+						)}
 						<BreadcrumbItem>
-							<BreadcrumbLink asChild>
-								<Link to={catalog.path}>
-									{catalog.name} Catalog
-								</Link>
-							</BreadcrumbLink>
-						</BreadcrumbItem>
-						<BreadcrumbSeparator>
-							<ChevronRightIcon />
-						</BreadcrumbSeparator>
-						<BreadcrumbItem>
-							<BreadcrumbLink asChild>
-								<Link
-									to={`${catalog.path}/${project.project_id}`}
-								>
+							{catalog ? (
+								<BreadcrumbLink asChild>
+									<Link
+										to={`${catalog.path}/${project.project_id}`}
+									>
+										{project.project_display_name ||
+											project.project_name}
+									</Link>
+								</BreadcrumbLink>
+							) : (
+								<BreadcrumbPage>
 									{project.project_display_name ||
 										project.project_name}
-								</Link>
-							</BreadcrumbLink>
+								</BreadcrumbPage>
+							)}
 						</BreadcrumbItem>
 						<BreadcrumbSeparator>
 							<ChevronRightIcon />
@@ -114,38 +262,7 @@ export const AutomationWorkspace = observer(() => {
 					</DialogContent>
 				</Dialog>
 			</NavbarRight>
-			<div className="absolute inset-0 flex flex-col">
-				<div className="flex shrink-0 items-center gap-1 border-b px-4">
-					{VIEWS.map((view) => (
-						<button
-							key={view}
-							type="button"
-							onClick={() => setActiveView(view)}
-							className={`-mb-px border-b-2 px-3 py-2 font-medium text-sm transition-colors ${
-								activeView === view
-									? "border-primary text-foreground"
-									: "border-transparent text-muted-foreground hover:text-foreground"
-							}`}
-						>
-							{view === "editor" ? "Editor" : "Settings"}
-						</button>
-					))}
-				</div>
-				<div className="relative flex-1 overflow-hidden">
-					{activeView === "editor" ? (
-						<iframe
-							className="h-full w-full border-none"
-							title="Automation Workspace"
-							src={`${AUTOMATION_WORKSPACE_URL}?app=${encodeURIComponent(workspace.appId)}`}
-							sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
-						/>
-					) : (
-						<div className="h-full overflow-auto">
-							<ProjectDetailTabs tabs={SETTINGS_TABS} />
-						</div>
-					)}
-				</div>
-			</div>
+			<WorkspaceManager options={DEFAULT_OPTIONS} factory={factory} />
 		</>
 	);
 });
