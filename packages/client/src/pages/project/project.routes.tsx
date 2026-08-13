@@ -1,22 +1,29 @@
 import { Outlet } from "react-router-dom";
-import { ProjectCatalog, ProjectEdit } from "@/components/project";
 import {
-	AppAccessControlPage,
+	ProjectAccessControl,
+	ProjectCatalog,
+	ProjectEdit,
+} from "@/components/project";
+import {
 	AppCommitsPage,
 	AppFilesPage,
 	AppGithubPage,
 	AppGithubSelectRepoPage,
 	AppMcpUsagePage,
-	AppOverviewPage,
 	AppSettingsPage,
 	AppSmssPage,
 	NewPromptBuilderAppPage,
 	ViewAppPage,
 } from "../app";
+import { AgentActivityPage } from "./agent/agent-activity-page";
 import { CreateAgentPage } from "./agent/create-agent-page";
 import { CreateAppPage } from "./app/create-app-page";
+import { CreateNotebookPage } from "./notebook/create-notebook-page";
+import { ViewNotebookPage } from "./notebook/view-notebook-page";
 import { ProjectDependenciesPage } from "./project-dependencies-page";
-import { ProjectDetailLayout } from "./project-detail-layout";
+import { ProjectLayout } from "./project-layout";
+import { ProjectOverviewPage } from "./project-overview-page";
+import { ProjectTabsLayout } from "./project-tabs-layout";
 import { CreateSkillPage } from "./skill/create-skill-page";
 import { ViewSkillPage } from "./skill/view-skill-page";
 
@@ -47,99 +54,116 @@ export const PROJECT_ROUTES: {
 				element: <NewPromptBuilderAppPage />,
 			},
 			{
-				path: ":appId/edit",
-				element: <ProjectEdit type="CODE" />,
-			},
-			{
-				path: ":appId/view",
-				element: <ViewAppPage />,
-			},
-			{
 				path: ":appId",
-				element: (
-					<ProjectDetailLayout
-						type="CODE"
-						tabs={[
-							{ name: "Overview", path: "" },
-							{
-								name: "Dependencies",
-								path: "dependencies",
-								restrict: ["OWNER", "EDIT", "READ_ONLY"],
-							},
-							{
-								name: "MCP Usage",
-								path: "mcp-usage",
-								restrict: ["OWNER", "EDIT", "READ_ONLY"],
-							},
-							{
-								name: "Commits",
-								path: "commits",
-								restrict: ["OWNER", "EDIT"],
-							},
-							{
-								name: "GitHub",
-								path: "github",
-								restrict: ["OWNER"],
-							},
-							{
-								name: "Settings",
-								path: "settings",
-								restrict: ["OWNER"],
-							},
-							{
-								name: "Access Control",
-								path: "access-control",
-								restrict: ["OWNER", "EDIT"],
-							},
-							{
-								name: "Files",
-								path: "files",
-								restrict: ["OWNER", "EDIT"],
-							},
-							{ name: "SMSS", path: "smss", restrict: ["OWNER"] },
-						]}
-					/>
-				),
+				element: <ProjectLayout type="CODE" />,
 				children: [
 					{
-						path: "",
-						element: <AppOverviewPage />,
+						path: "edit",
+						element: <ProjectEdit />,
 					},
 					{
-						path: "dependencies",
-						element: <ProjectDependenciesPage />,
+						path: "view",
+						element: <ViewAppPage />,
 					},
 					{
-						path: "mcp-usage",
-						element: <AppMcpUsagePage />,
-					},
-					{
-						path: "commits",
-						element: <AppCommitsPage />,
-					},
-					{
-						path: "github",
-						element: <AppGithubPage />,
-					},
-					{
-						path: "github/select-repo",
-						element: <AppGithubSelectRepoPage />,
-					},
-					{
-						path: "settings",
-						element: <AppSettingsPage />,
-					},
-					{
-						path: "access-control",
-						element: <AppAccessControlPage />,
-					},
-					{
-						path: "files",
-						element: <AppFilesPage />,
-					},
-					{
-						path: "smss",
-						element: <AppSmssPage />,
+						path: "*",
+						element: (
+							<ProjectTabsLayout
+								tabs={[
+									{ name: "Overview", path: "" },
+									{
+										name: "Dependencies",
+										path: "dependencies",
+										restrict: [
+											"OWNER",
+											"EDIT",
+											"READ_ONLY",
+										],
+									},
+									{
+										name: "MCP",
+										path: "mcp-usage",
+										restrict: [
+											"OWNER",
+											"EDIT",
+											"READ_ONLY",
+										],
+									},
+									{
+										name: "Commits",
+										path: "commits",
+										restrict: ["OWNER", "EDIT"],
+									},
+									{
+										name: "GitHub",
+										path: "github",
+										restrict: ["OWNER"],
+									},
+									{
+										name: "Settings",
+										path: "settings",
+										restrict: ["OWNER"],
+									},
+									{
+										name: "Access Control",
+										path: "access-control",
+										restrict: ["OWNER", "EDIT"],
+									},
+									{
+										name: "Files",
+										path: "files",
+										restrict: ["OWNER", "EDIT"],
+									},
+									{
+										name: "SMSS",
+										path: "smss",
+										restrict: ["OWNER"],
+									},
+								]}
+							/>
+						),
+						children: [
+							{
+								path: "",
+								element: <ProjectOverviewPage />,
+							},
+							{
+								path: "dependencies",
+								element: <ProjectDependenciesPage />,
+							},
+							{
+								path: "mcp-usage",
+								element: <AppMcpUsagePage />,
+							},
+							{
+								path: "commits",
+								element: <AppCommitsPage />,
+							},
+							{
+								path: "github",
+								element: <AppGithubPage />,
+							},
+							{
+								path: "github/select-repo",
+								element: <AppGithubSelectRepoPage />,
+							},
+							{
+								path: "settings",
+								element: <AppSettingsPage />,
+							},
+							{
+								path: "access-control",
+								element: <ProjectAccessControl />,
+							},
+							{
+								path: "files",
+								element: <AppFilesPage />,
+							},
+							{
+								path: "smss",
+								element: <AppSmssPage />,
+							},
+						],
 					},
 				],
 			},
@@ -158,65 +182,175 @@ export const PROJECT_ROUTES: {
 				element: <CreateSkillPage />,
 			},
 			{
-				path: ":appId/edit",
-				element: <ProjectEdit type="SKILL" />,
+				path: ":appId",
+				element: <ProjectLayout type="SKILL" />,
+				children: [
+					{
+						path: "edit",
+						element: <ProjectEdit />,
+					},
+					{
+						path: "view",
+						element: <ViewSkillPage />,
+					},
+					{
+						path: "*",
+						element: (
+							<ProjectTabsLayout
+								tabs={[
+									{ name: "Overview", path: "" },
+									{
+										name: "MCP",
+										path: "mcp-usage",
+										restrict: [
+											"OWNER",
+											"EDIT",
+											"READ_ONLY",
+										],
+									},
+									{
+										name: "Commits",
+										path: "commits",
+										restrict: ["OWNER", "EDIT"],
+									},
+									{
+										name: "GitHub",
+										path: "github",
+										restrict: ["OWNER"],
+									},
+									{
+										name: "Access Control",
+										path: "access-control",
+										restrict: ["OWNER", "EDIT"],
+									},
+									{
+										name: "SMSS",
+										path: "smss",
+										restrict: ["OWNER"],
+									},
+								]}
+							/>
+						),
+						children: [
+							{
+								path: "",
+								element: <ProjectOverviewPage />,
+							},
+							{
+								// a skill serves its own tools, so there is no
+								// remote endpoint to repoint it at
+								path: "mcp-usage",
+								element: (
+									<AppMcpUsagePage
+										showRemoteConnection={false}
+									/>
+								),
+							},
+							{
+								path: "commits",
+								element: <AppCommitsPage />,
+							},
+							{
+								path: "github",
+								element: <AppGithubPage />,
+							},
+							{
+								path: "github/select-repo",
+								element: <AppGithubSelectRepoPage />,
+							},
+							{
+								path: "access-control",
+								element: <ProjectAccessControl />,
+							},
+							{
+								path: "smss",
+								element: <AppSmssPage />,
+							},
+						],
+					},
+				],
+			},
+		],
+	},
+	{
+		path: "notebook",
+		element: <Outlet />,
+		children: [
+			{
+				path: "",
+				element: <ProjectCatalog type="NOTEBOOK" />,
 			},
 			{
-				path: ":appId/view",
-				element: <ViewSkillPage />,
+				path: "new",
+				element: <CreateNotebookPage />,
 			},
 			{
 				path: ":appId",
-				element: (
-					<ProjectDetailLayout
-						type="SKILL"
-						tabs={[
-							{ name: "Overview", path: "" },
-							{
-								name: "Commits",
-								path: "commits",
-								restrict: ["OWNER", "EDIT"],
-							},
-							{
-								name: "GitHub",
-								path: "github",
-								restrict: ["OWNER"],
-							},
-							{
-								name: "Access Control",
-								path: "access-control",
-								restrict: ["OWNER", "EDIT"],
-							},
-							{ name: "SMSS", path: "smss", restrict: ["OWNER"] },
-						]}
-					/>
-				),
+				element: <ProjectLayout type="NOTEBOOK" />,
 				children: [
 					{
-						path: "",
-						element: <AppOverviewPage />,
-					},
-
-					{
-						path: "commits",
-						element: <AppCommitsPage />,
+						path: "edit",
+						element: <ProjectEdit />,
 					},
 					{
-						path: "github",
-						element: <AppGithubPage />,
+						path: "view",
+						element: <ViewNotebookPage />,
 					},
 					{
-						path: "github/select-repo",
-						element: <AppGithubSelectRepoPage />,
-					},
-					{
-						path: "access-control",
-						element: <AppAccessControlPage />,
-					},
-
-					{
-						path: "smss",
-						element: <AppSmssPage />,
+						path: "*",
+						element: (
+							<ProjectTabsLayout
+								tabs={[
+									{ name: "Overview", path: "" },
+									{
+										name: "Commits",
+										path: "commits",
+										restrict: ["OWNER", "EDIT"],
+									},
+									{
+										name: "GitHub",
+										path: "github",
+										restrict: ["OWNER"],
+									},
+									{
+										name: "Access Control",
+										path: "access-control",
+										restrict: ["OWNER", "EDIT"],
+									},
+									{
+										name: "SMSS",
+										path: "smss",
+										restrict: ["OWNER"],
+									},
+								]}
+							/>
+						),
+						children: [
+							{
+								path: "",
+								element: <ProjectOverviewPage />,
+							},
+							{
+								path: "commits",
+								element: <AppCommitsPage />,
+							},
+							{
+								path: "github",
+								element: <AppGithubPage />,
+							},
+							{
+								path: "github/select-repo",
+								element: <AppGithubSelectRepoPage />,
+							},
+							{
+								path: "access-control",
+								element: <ProjectAccessControl />,
+							},
+							{
+								path: "smss",
+								element: <AppSmssPage />,
+							},
+						],
 					},
 				],
 			},
@@ -235,61 +369,81 @@ export const PROJECT_ROUTES: {
 				element: <CreateAgentPage />,
 			},
 			{
-				path: ":appId/edit",
-				element: <ProjectEdit type="WORKSPACE" />,
-			},
-			{
 				path: ":appId",
-				element: (
-					<ProjectDetailLayout
-						type="WORKSPACE"
-						tabs={[
-							{ name: "Overview", path: "" },
-							{
-								name: "Commits",
-								path: "commits",
-								restrict: ["OWNER", "EDIT"],
-							},
-							{
-								name: "GitHub",
-								path: "github",
-								restrict: ["OWNER"],
-							},
-							{
-								name: "Access Control",
-								path: "access-control",
-								restrict: ["OWNER", "EDIT"],
-							},
-							{ name: "SMSS", path: "smss", restrict: ["OWNER"] },
-						]}
-					/>
-				),
+				element: <ProjectLayout type="WORKSPACE" />,
 				children: [
 					{
-						path: "",
-						element: <AppOverviewPage />,
-					},
-
-					{
-						path: "commits",
-						element: <AppCommitsPage />,
+						path: "edit",
+						element: <ProjectEdit />,
 					},
 					{
-						path: "github",
-						element: <AppGithubPage />,
-					},
-					{
-						path: "github/select-repo",
-						element: <AppGithubSelectRepoPage />,
-					},
-					{
-						path: "access-control",
-						element: <AppAccessControlPage />,
-					},
-
-					{
-						path: "smss",
-						element: <AppSmssPage />,
+						path: "*",
+						element: (
+							<ProjectTabsLayout
+								tabs={[
+									{ name: "Overview", path: "" },
+									{
+										name: "Commits",
+										path: "commits",
+										restrict: ["OWNER", "EDIT"],
+									},
+									{
+										name: "GitHub",
+										path: "github",
+										restrict: ["OWNER"],
+									},
+									{
+										name: "Agent Activity",
+										path: "agent-activity",
+										restrict: [
+											"OWNER",
+											"EDIT",
+											"READ_ONLY",
+										],
+									},
+									{
+										name: "Access Control",
+										path: "access-control",
+										restrict: ["OWNER", "EDIT"],
+									},
+									{
+										name: "SMSS",
+										path: "smss",
+										restrict: ["OWNER"],
+									},
+								]}
+							/>
+						),
+						children: [
+							{
+								path: "",
+								element: <ProjectOverviewPage />,
+							},
+							{
+								path: "commits",
+								element: <AppCommitsPage />,
+							},
+							{
+								path: "github",
+								element: <AppGithubPage />,
+							},
+							{
+								path: "github/select-repo",
+								element: <AppGithubSelectRepoPage />,
+							},
+							{
+								path: "agent-activity",
+								element: <AgentActivityPage />,
+							},
+							{
+								path: "access-control",
+								element: <ProjectAccessControl />,
+							},
+							{
+								path: "smss",
+								element: <AppSmssPage />,
+							},
+						],
 					},
 				],
 			},

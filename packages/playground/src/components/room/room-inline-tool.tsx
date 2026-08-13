@@ -14,6 +14,7 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import type { ResponseMessageStore, RoomStore, ToolStore } from "@/stores";
+import { getToolAppId } from "@/utility/mcp-utils";
 import { ToolsView } from "../mcp";
 
 interface RoomInlineToolProps {
@@ -121,7 +122,7 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 					<div className="w-full flex-1 overflow-hidden">
 						<ToolsView
 							room={room}
-							app={tool.json._meta.SMSS_PROJECT_ID}
+							app={getToolAppId(tool.json._meta)}
 							message={message.id}
 							toolId={tool.json.id}
 						/>

@@ -182,8 +182,7 @@ export class MonolithStore {
 			);
 
 			if (
-				response &&
-				response.data &&
+				response?.data &&
 				typeof response.data === "object" &&
 				"errorMessage" in response.data
 			) {

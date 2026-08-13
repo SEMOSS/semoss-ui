@@ -8,7 +8,11 @@ import { useWorkspace } from "@/hooks";
 import type { WorkspaceOptions } from "../../stores";
 import { CodeWorkspaceActions } from "../code-workspace/code-workspace-actions";
 import { MCPJsonEditor } from "../shared";
-import { WorkspaceManager, WorkspaceTerminal } from "../workspace";
+import {
+	WorkspaceManager,
+	WorkspaceNavbar,
+	WorkspaceTerminal,
+} from "../workspace";
 
 const SKILL_MD_TAB_ID = "SKILL_MD";
 
@@ -50,16 +54,6 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						component: "terminal",
 						enableClose: false,
 						config: {},
-					},
-					{
-						id: "settings",
-						type: "tab",
-						name: "Settings",
-						component: "settings-panel",
-						config: {},
-						enableClose: false,
-						borderWidth: 800,
-						borderHeight: 1200,
 					},
 				],
 			},
@@ -110,10 +104,6 @@ export const SkillWorkspace: React.FC = observer(() => {
 					node={node}
 					layout={layout}
 					app={workspace.appId}
-					onOpenStateChange={workspace.setFileBrowserOpen}
-					onVisibleAssetPathsChange={({ path, paths }) => {
-						workspace.setFileBrowserVisiblePaths(path, paths);
-					}}
 				/>
 			);
 		} else if (component === "app-file-editor") {
@@ -123,26 +113,33 @@ export const SkillWorkspace: React.FC = observer(() => {
 		} else if (component === "settings-panel") {
 			return (
 				<ProjectDetailTabs
-					type="SKILL"
 					tabs={[
-						{ name: "Overview", path: "" },
+						{ name: "Overview", component: "project-overview" },
 						{
 							name: "MCP",
-							path: "mcp-usage",
+							component: "mcp-usage",
 							restrict: ["OWNER", "EDIT", "READ_ONLY"],
 						},
 						{
 							name: "Commits",
-							path: "commits",
+							component: "commits",
 							restrict: ["OWNER", "EDIT"],
 						},
-						{ name: "GitHub", path: "github", restrict: ["OWNER"] },
+						{
+							name: "GitHub",
+							component: "github",
+							restrict: ["OWNER"],
+						},
 						{
 							name: "Access Control",
-							path: "access-control",
+							component: "access-control",
 							restrict: ["OWNER", "EDIT"],
 						},
-						{ name: "SMSS", path: "smss", restrict: ["OWNER"] },
+						{
+							name: "SMSS",
+							component: "smss",
+							restrict: ["OWNER"],
+						},
 					]}
 				/>
 			);
@@ -210,11 +207,13 @@ export const SkillWorkspace: React.FC = observer(() => {
 	};
 
 	return (
-		<WorkspaceManager
-			navbarActions={<CodeWorkspaceActions />}
-			options={DEFAULT_OPTIONS}
-			factory={FACTORY}
-			onAction={handleAction}
-		/>
+		<>
+			<WorkspaceNavbar actions={<CodeWorkspaceActions />} />
+			<WorkspaceManager
+				options={DEFAULT_OPTIONS}
+				factory={FACTORY}
+				onAction={handleAction}
+			/>
+		</>
 	);
 });

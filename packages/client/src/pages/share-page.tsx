@@ -1,92 +1,63 @@
 import { observer } from "mobx-react-lite";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { runPixel } from "@semoss/sdk/react";
-import { getUserProjectPermission as getUserProjectLevelPermission } from "@semoss/shared";
 import { Spinner, toast } from "@semoss/ui/next";
-import type { AppMetadata, AppType } from "@/components/app";
+import { ProjectView } from "@/components/project";
 import { PlatformMessages } from "@/components/shared";
-import { useNavigate } from "@/hooks/useNavigate";
-
-const Renderer = lazy(() =>
-	import("@semoss/renderer").then((m) => ({ default: m.Renderer })),
-);
-const CodeRenderer = lazy(() =>
-	import("@/components/code-workspace").then((m) => ({
-		default: m.CodeRenderer,
-	})),
-);
-
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
+import type { WorkspaceStore } from "@/stores";
 
+/** Project types the share page can render a read-only view for. */
+const SHAREABLE_TYPES = new Set<WorkspaceStore["type"]>([
+	"CODE",
+	"BLOCKS",
+	"SKILL",
+	"NOTEBOOK",
+]);
+
+/**
+ * Render a shared project's read-only view (navbar-free) for the `#/s/:appId` route.
+ */
 export const SharePage = observer(() => {
 	// App ID Needed for pixel calls
 	const { appId } = useParams();
-	const { monolithStore } = useRootStore();
+	const { configStore } = useRootStore();
 
 	const navigate = useNavigate();
 
-	const [type, setType] = useState<AppType | null>(null);
-	const [insightId, setInsightId] = useState("");
+	const [workspace, setWorkspace] = useState<WorkspaceStore | null>(null);
 
-	/**
-	 * Load an app
-	 *
-	 * @param appId - id of app to load into the workspace
-	 */
-	const loadApp = async (appId: string) => {
-		try {
-			// clear the type
-			setType(null);
-
-			// get the role and throw an error if it is missing
-			const role = await getUserProjectLevelPermission(appId);
-			if (!role) {
-				throw new Error("Unauthorized");
-			}
-
-			const { insightId: iId } = await runPixel(
-				`SetContext("${appId}")`,
-				"new",
-			);
-			setInsightId(iId);
-
-			// get the metadata
-			const getAppInfo = await monolithStore.runQuery<[AppMetadata]>(
-				`ProjectInfo(project=["${appId}"]);`,
-				iId,
-			);
-
-			// throw the errors if there are any
-			if (getAppInfo.errors.length > 0) {
-				throw new Error(getAppInfo.errors.join(""));
-			}
-
-			const metadata = {
-				...getAppInfo.pixelReturn[0].output,
-			};
-
-			let type: AppType = "CODE";
-			// set it as blocks
-			if (metadata.project_type === "BLOCKS") {
-				type = "BLOCKS";
-			}
-
-			setType(type);
-		} catch (e) {
-			toast.error(e.message);
-			navigate("/");
-		}
-	};
-
-	// load the app
+	// load the shared project into a workspace
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — reruns on appId change only
 	useEffect(() => {
-		loadApp(appId);
+		if (!appId) {
+			navigate("/");
+			return;
+		}
+
+		// clear out the old workspace
+		setWorkspace(null);
+
+		configStore
+			.createWorkspace(appId)
+			.then((loadedWorkspace) => {
+				// only render project types that have a read-only view
+				if (!SHAREABLE_TYPES.has(loadedWorkspace.type)) {
+					toast.error("This project type cannot be shared.");
+					navigate("/");
+					return;
+				}
+				setWorkspace(loadedWorkspace);
+			})
+			.catch((e) => {
+				toast.error(e.message);
+				navigate("/");
+			});
 	}, [appId]);
 
 	// hide the screen while it loads
-	if (!type) {
+	if (!workspace) {
 		return (
 			<div className="flex h-screen w-screen items-center justify-center">
 				<Spinner />
@@ -95,19 +66,8 @@ export const SharePage = observer(() => {
 	}
 
 	return (
-		<div className="flex h-screen w-screen overflow-hidden">
-			<Suspense
-				fallback={
-					<div className="flex h-screen w-screen items-center justify-center">
-						<Spinner />
-					</div>
-				}
-			>
-				{type === "CODE" ? <CodeRenderer appId={appId} /> : null}
-				{type === "BLOCKS" ? (
-					<Renderer appId={appId} insightId={insightId} />
-				) : null}
-			</Suspense>
+		<div className="relative flex h-screen w-screen overflow-hidden">
+			<ProjectView workspace={workspace} />
 			<PlatformMessages />
 		</div>
 	);

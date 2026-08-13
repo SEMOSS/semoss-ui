@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
+import type { Role } from "@semoss/sdk";
 import { MembersTable } from "@semoss/shared";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import {
@@ -9,7 +10,7 @@ import {
 } from "@/components/settings";
 import { useAPI, useSettings } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
-import type { ALL_TYPES, Role } from "@/types";
+import type { ALL_TYPES } from "@/types";
 
 type VIEW = "CURRENT" | "PENDING";
 
@@ -21,9 +22,7 @@ interface EngineSettingsDetailPageProps {
 	type: ALL_TYPES;
 }
 
-export const EngineSettingsUserDetailPage = (
-	props: EngineSettingsDetailPageProps,
-) => {
+const EngineSettingsUserDetailPage = (props: EngineSettingsDetailPageProps) => {
 	const { type } = props;
 
 	const { id } = useParams();
@@ -44,16 +43,13 @@ export const EngineSettingsUserDetailPage = (
 			return;
 		}
 
-		if (
-			!getUserEnginePermission.data ||
-			!getUserEnginePermission.data.permission
-		) {
+		if (!getUserEnginePermission.data) {
 			setPermission(null);
 			return;
 		}
 
 		// set the permission
-		setPermission(getUserEnginePermission.data.permission);
+		setPermission(getUserEnginePermission.data);
 	}, [getUserEnginePermission.status, getUserEnginePermission.data]);
 
 	// if there is no permission, ignore
@@ -108,7 +104,7 @@ export const EngineSettingsUserDetailPage = (
 	);
 };
 
-export const EngineSettingsAdminDetailPage = (
+const EngineSettingsAdminDetailPage = (
 	props: EngineSettingsDetailPageProps,
 ) => {
 	const { type } = props;

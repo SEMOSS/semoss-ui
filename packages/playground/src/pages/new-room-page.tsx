@@ -130,6 +130,7 @@ export const NewRoomPage = observer(() => {
 		| {
 				engine_id: string;
 				engine_name: string;
+				engine_display_name?: string;
 		  }[]
 		| null
 	>(
@@ -345,7 +346,10 @@ export const NewRoomPage = observer(() => {
 		const knowledgeMcp = {
 			id: knowledgeId,
 			type: "VECTOR" as const,
-			name: getKnowledge.data[0].engine_name || knowledgeId,
+			name:
+				getKnowledge.data[0].engine_display_name ||
+				getKnowledge.data[0].engine_name ||
+				knowledgeId,
 		};
 
 		tempRoomStore.setOptions({
@@ -503,8 +507,10 @@ export const NewRoomPage = observer(() => {
 
 										return true;
 									}}
-									hidePauseButton
 									excludeCommandIds={["compact"]}
+									// The new-room flow has no cancellable turn, so
+									// it's only ever busy (spinner) or idle (send).
+									sendState={isLoading ? "loading" : "send"}
 									onOpenSettings={() =>
 										setIsConfgurationOpen(true)
 									}
