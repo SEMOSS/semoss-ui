@@ -94,8 +94,7 @@ export function AppEngineForm({
 				}
 			})
 			.catch(() => setNoParamInfo(true));
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [reactorName, effectiveProjectId]);
+	}, [reactorName, effectiveProjectId, reactorParams.length]);
 
 	const { data: reactorData, status: reactorStatus } = usePixel<string[]>(
 		effectiveProjectId

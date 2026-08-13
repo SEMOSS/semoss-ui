@@ -2,7 +2,7 @@ import { Loader2, Play } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
 import { Button } from "@semoss/ui/next";
-import { AutomationFormEditor } from "./components/form-editor/automation-form-editor";
+import { AutomationCanvas } from "./components/canvas-editor/automation-canvas";
 import { OutputPreview } from "./components/form-editor/output-preview";
 import { StatusBadge } from "./components/status-badge";
 import type {
@@ -207,20 +207,15 @@ export default function App() {
 		);
 	}
 
-	// MCP editor mode — opened by EditAutomation or CreateAutomation MCP tool
-	if ((mcpMode === "edit" || mcpMode === "create") && ready && !readOnly) {
+	// Editor mode — canvas editor (iframed by workspace.tsx without ?readOnly)
+	if (!readOnly && ready) {
 		return (
-			<AutomationFormEditor
+			<AutomationCanvas
 				appId={appId}
 				mcpMode={mcpMode}
 				mcpContext={toolContext ?? undefined}
 			/>
 		);
-	}
-
-	// Editor mode — full form editor (iframed by workspace.tsx without ?readOnly)
-	if (!readOnly && ready) {
-		return <AutomationFormEditor appId={appId} />;
 	}
 
 	if (loading) {

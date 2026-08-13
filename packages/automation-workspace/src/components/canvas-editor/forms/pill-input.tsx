@@ -344,12 +344,13 @@ export function PillInput({
 					acPartialStart >= 0
 				) {
 					const textNode = anchor as Text;
+					const textContent = textNode.textContent ?? "";
 					const caretOffset = range.startOffset;
 					const before = document.createTextNode(
-						textNode.textContent!.slice(0, acPartialStart),
+						textContent.slice(0, acPartialStart),
 					);
 					const after = document.createTextNode(
-						textNode.textContent!.slice(caretOffset),
+						textContent.slice(caretOffset),
 					);
 					const pill = makePill(varName);
 					el.insertBefore(after, textNode);

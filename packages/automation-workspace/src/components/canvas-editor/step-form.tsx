@@ -20,13 +20,9 @@ interface StepFormProps {
 	step: AutomationNode;
 	upstreamVars: string[];
 	onUpdate: (step: AutomationNode) => void;
-	/** Fields in this node's config currently marked as playground-fillable */
 	playgroundFillable: string[];
-	/** Called when the set of playground-fillable fields changes */
 	onPlaygroundFieldsChange: (fields: string[]) => void;
-	/** When false (business mode), advanced JSON fields are hidden in forms that support it */
 	devMode?: boolean;
-	/** The automation's own project ID — passed to app node forms for reactor discovery */
 	appId?: string;
 }
 
@@ -44,7 +40,6 @@ export function StepForm({
 
 	switch (step.type) {
 		case "trigger":
-			// Rendered by TriggerStepCard above the steps list — not via this component
 			return null;
 		case "database-engine":
 			return (

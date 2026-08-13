@@ -15,6 +15,7 @@
     "@semoss/shared": "workspace:*",
     "@semoss/ui": "workspace:*",
     "@tailwindcss/vite": "^4.1.14",
+    "@xyflow/react": "^12.3.6",
     "lucide-react": "^0.545.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
