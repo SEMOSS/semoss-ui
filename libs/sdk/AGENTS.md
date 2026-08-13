@@ -79,3 +79,43 @@ router):
 pnpm --filter @semoss/sdk test
 pnpm --filter @semoss/sdk build
 ```
+
+## Chat / Playground API (`api/chat.ts`)
+
+The chat API wraps the SEMOSS pixel reactors for creating rooms, sending messages, and
+handling tool execution. All functions are exported from `@semoss/sdk` (and re-exported by
+`@semoss/sdk/react`). Types live in `src/types.ts`.
+
+> **Full usage guide, streaming loops, and mode comparison:** see the
+> [sdk-playground skill](./skills/sdk-playground/SKILL.md).
+
+### Two messaging modes
+
+| Mode | Function | When to use |
+|------|----------|-------------|
+| **Chat** (client-driven) | `askPlayground` + `addPlaygroundToolExecution` | Standard Q&A, simple tools, client owns the loop |
+| **Agent harness** (server-driven) | `runAgent` | Complex agents, subagent chains, long-running jobs, audit logging |
+
+The mode is set at room creation via `harnessType` in `PlaygroundRoomOptions`:
+- omit / `undefined` → chat mode
+- `"semoss"` → agent-harness mode (`RunAgent` reactor, server drives all tool calls)
+
+### Streaming pattern
+
+Both `askPlayground` and `runAgent` return `{ jobId }`. The caller then:
+1. Polls `getPixelJobStreaming(jobId)` in a loop, handling `content` / `thinking` / `tool` chunks
+2. Breaks when `status` reaches a terminal value (`"Complete"`, `"ProgressComplete"`, `"Canceled"`, `"Error"`, `"UnknownJob"`)
+3. Calls `getPixelAsyncResult(jobId)` to get the settled typed result
+
+### Key distinctions between modes
+
+- **`askPlayground`** settled result: `{ inputMessage, responseMessage }` — full pixel message objects. The client then calls `addPlaygroundToolExecution` for each `TOOL_CALL` part.
+- **`runAgent`** settled result: `RunAgentOutput` — flat summary (`inputMessageId`, `finalOutputMessageId`, `finalText`, `status`, `artifacts`). No tool loop on the client.
+- `addPlaygroundToolExecution` uses `room.model.app_id` (the *app* engine ID), **not** `engine_id` (the LLM engine ID) that `askPlayground` uses.
+
+### Adding new chat API functions
+
+1. Add the function to `src/api/chat.ts`.
+2. Add any new types to `src/types.ts` under the `// CHAT / PLAYGROUND TYPES` section.
+3. Keep TSDoc concise: one-line description, `@param` / `@returns`, and a `@see` pointing to the skill for deep detail.
+4. Update the [sdk-playground skill](./skills/sdk-playground/SKILL.md) with the full usage example and any behaviour notes.

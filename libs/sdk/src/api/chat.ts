@@ -145,27 +145,13 @@ export const updateRoomOptions = async (
 
 /**
  * Sends a message to the playground and returns the job ID for streaming.
- * Poll the job using {@link getPixelJobStreaming} until the status reaches a
- * terminal state ("Complete", "ProgressComplete", "Canceled", "Error", "UnknownJob").
+ * Poll with {@link getPixelJobStreaming} until a terminal status, then fetch
+ * the full result with {@link getPixelAsyncResult}.
  *
  * @param insightId - The active SEMOSS insight ID.
- * @param params - Parameters for the playground request.
- * @returns The async job ID to pass to {@link getPixelJobStreaming}.
- *
- * @example
- * ```ts
- * const { jobId } = await askPlayground(insightId, params);
- *
- * while (true) {
- *   const { message, status } = await getPixelJobStreaming(jobId);
- *   for (const chunk of message) {
- *     if (chunk.stream_type === "content" && chunk.data.content) {
- *       setMessage(prev => prev + chunk.data.content);
- *     }
- *   }
- *   if (["Complete", "ProgressComplete", "Canceled", "Error", "UnknownJob"].includes(status)) break;
- * }
- * ```
+ * @param params - Message parameters. See {@link AskPlaygroundParams}.
+ * @returns `{ jobId }` to pass to {@link getPixelJobStreaming}.
+ * @see sdk-playground skill for the full streaming loop and chat-vs-agent guide.
  */
 export const askPlayground = async (
 	insightId: string,
@@ -187,60 +173,13 @@ export const askPlayground = async (
 };
 
 /**
- * Submits a tool execution result to the playground and returns the job ID for
- * streaming the model's follow-up response. The reactor feeds the tool output
- * back into the conversation and triggers a new LLM completion turn.
- *
- * Poll the job using {@link getPixelJobStreaming} until the status reaches a
- * terminal state ("Complete", "ProgressComplete", "Canceled", "Error",
- * "UnknownJob"), then call {@link getPixelAsyncResult} for the full structured
- * response. The settled output is either:
- * - `{ responseMessage: string }` — more tool calls are still pending; the
- *   caller should continue executing the next queued tool without yet creating
- *   a new response bubble.
- * - `{ inputMessage: InputPixelMessage; responseMessage: ResponsePixelMessage }`
- *   — all tools for the turn are done; sync the messages and start the next
- *   tool-execution cycle on the new `responseMessage`.
+ * Submits a completed tool result back to the playground, triggering a
+ * follow-up LLM turn. Returns a job ID for streaming the response.
  *
  * @param insightId - The active SEMOSS insight ID.
- * @param params - Parameters for the tool execution submission.
- * @returns The async job ID to pass to {@link getPixelJobStreaming}.
- *
- * @example
- * ```ts
- * const { jobId } = await addPlaygroundToolExecution(insightId, {
- *     engine: room.model.app_id,
- *     roomId: room.roomId,
- *     parentMessageId: responseMessage.id,
- *     toolId: tool.id,
- *     toolName: tool.json.name,
- *     toolExecutionResponse: toolOutput,
- *     mcpToolStatus: "success",
- *     toolParameterValues: tool.parameters,
- * });
- *
- * // Stream tokens from the follow-up LLM turn
- * const TERMINAL: PixelJobStreamingStatus[] = [
- *     "Complete", "ProgressComplete", "Canceled", "Error", "UnknownJob",
- * ];
- * while (true) {
- *     const { message, status } = await getPixelJobStreaming(jobId);
- *     for (const chunk of message) {
- *         if (chunk.stream_type === "content" && chunk.data.content) {
- *             setContent(prev => prev + chunk.data.content);
- *         }
- *     }
- *     if (TERMINAL.includes(status)) break;
- * }
- *
- * const { errors, results } = await getPixelAsyncResult(jobId);
- * const output = results[0].output;
- * if (typeof output.responseMessage === "string") {
- *     // More tools pending — continue executing next tool
- * } else {
- *     // Final response — sync messages and run continueToolExecution()
- * }
- * ```
+ * @param params - Tool execution details. See {@link AddPlaygroundToolExecutionParams}.
+ * @returns `{ jobId }` to pass to {@link getPixelJobStreaming}.
+ * @see sdk-playground skill for the full tool-execution call stack.
  */
 export const addPlaygroundToolExecution = async (
 	insightId: string,
@@ -322,54 +261,17 @@ export const getPlaygroundRooms = async (
 };
 
 /**
- * Sends a message to the server-side agent harness and returns the job ID for
- * streaming. The backend runs the entire agentic loop (model completions, tool
- * calls, re-prompting) autonomously — the client streams tokens as they arrive
- * and receives a single settled summary once the run completes.
+ * Sends a message to the server-side agent harness (RunAgent). The backend
+ * drives the entire agentic loop autonomously; the client streams tokens and
+ * receives a single {@link RunAgentOutput} summary once complete.
  *
- * Use this instead of {@link askPlayground} when the room was created with
- * `harnessType: "semoss"` in its options.
- *
- * Poll the job using {@link getPixelJobStreaming} until a terminal status is
- * reached, then call {@link getPixelAsyncResult} to get the {@link RunAgentOutput}.
+ * Use instead of {@link askPlayground} when the room has `harnessType: "semoss"`
+ * in its options.
  *
  * @param insightId - The active SEMOSS insight ID.
- * @param params - Parameters for the agent run.
- * @returns The async job ID to pass to {@link getPixelJobStreaming}.
- *
- * @example
- * ```ts
- * const { jobId } = await runAgent(insightId, {
- *     engine: room.model.engine_id,
- *     roomId: room.roomId,
- *     command: "Analyze this dataset and produce a summary report.",
- * });
- *
- * const TERMINAL: PixelJobStreamingStatus[] = [
- *     "Complete", "ProgressComplete", "Canceled", "Error", "UnknownJob",
- * ];
- * while (true) {
- *     const { message, status } = await getPixelJobStreaming(jobId);
- *     for (const chunk of message) {
- *         if (chunk.stream_type === "content" && chunk.data.content) {
- *             setContent(prev => prev + chunk.data.content);
- *         }
- *     }
- *     if (TERMINAL.includes(status)) break;
- * }
- *
- * const { errors, results } = await getPixelAsyncResult<[RunAgentOutput]>(jobId);
- * const output = results[0].output;
- *
- * if (output.waitTimedOut || output.status !== "COMPLETED") {
- *     throw new Error(`Agent run did not complete: ${output.status}`);
- * }
- *
- * // output.inputMessageId  — server ID for the persisted user message
- * // output.finalOutputMessageId — server ID for the persisted response
- * // output.finalText        — full response text (fallback if nothing streamed)
- * // output.artifacts        — any files the agent produced
- * ```
+ * @param params - Agent run parameters. See {@link RunAgentParams}.
+ * @returns `{ jobId }` to pass to {@link getPixelJobStreaming}.
+ * @see sdk-playground skill for the chat-vs-agent-harness comparison and full example.
  */
 export const runAgent = async (
 	insightId: string,
