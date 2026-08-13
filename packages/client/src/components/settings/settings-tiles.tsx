@@ -212,6 +212,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 				};
 				const isWorkspace = projectData?.project_type === "WORKSPACE";
 				const isSkill = projectData?.project_type === "SKILL";
+				const isNotebook = projectData?.project_type === "NOTEBOOK";
 
 				if (isWorkspace) {
 					deletePixel = `DeleteWorkspace(workspaceId=['${id}']);`;
@@ -219,6 +220,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 				} else if (isSkill) {
 					deletePixel = `DeleteSkill(skillId=['${id}']);`;
 					entityLabel = "skill";
+				} else if (isNotebook) {
+					deletePixel = `DeleteProject(project=['${id}']);`;
+					entityLabel = "notebook";
 				} else {
 					deletePixel = `DeleteProject(project=['${id}']);`;
 					entityLabel = "app";

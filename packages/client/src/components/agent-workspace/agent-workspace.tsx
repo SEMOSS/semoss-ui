@@ -9,7 +9,11 @@ import { useWorkspace } from "@/hooks";
 import type { WorkspaceOptions } from "../../stores";
 import { CodeWorkspaceActions } from "../code-workspace/code-workspace-actions";
 import { MCPJsonEditor } from "../shared";
-import { WorkspaceManager, WorkspaceTerminal } from "../workspace";
+import {
+	WorkspaceManager,
+	WorkspaceNavbar,
+	WorkspaceTerminal,
+} from "../workspace";
 import { AgentEditor } from "./agent-editor";
 
 const DEFAULT_BORDER_SIZE = 300;
@@ -221,11 +225,13 @@ export const AgentWorkspace: React.FC = observer(() => {
 	};
 
 	return (
-		<WorkspaceManager
-			navbarActions={<CodeWorkspaceActions />}
-			options={DEFAULT_OPTIONS}
-			factory={FACTORY}
-			onAction={handleAction}
-		/>
+		<>
+			<WorkspaceNavbar actions={<CodeWorkspaceActions />} />
+			<WorkspaceManager
+				options={DEFAULT_OPTIONS}
+				factory={FACTORY}
+				onAction={handleAction}
+			/>
+		</>
 	);
 });

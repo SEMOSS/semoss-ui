@@ -39,6 +39,9 @@ const DIALOG_CONFIG = {
 	AGENT: {
 		name: "Agent",
 	},
+	NOTEBOOK: {
+		name: "Notebook",
+	},
 } as const;
 
 /**
