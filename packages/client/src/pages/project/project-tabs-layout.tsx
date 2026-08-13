@@ -39,7 +39,7 @@ interface ProjectTabsLayoutProps {
  * Wrap the project routes and render the catalog header + tab navigation
  */
 export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
-	const { catalog, project, permission, refresh } = useProject();
+	const { catalog, project, permission, refresh, type } = useProject();
 
 	const navigate = useNavigate();
 	const { pathname } = useLocation();
@@ -73,6 +73,10 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 	}, [visibleTabs, resolvedPath, pathname]);
 
 	const activeTab = activeTabIdx >= 0 ? visibleTabs[activeTabIdx] : undefined;
+	const openProjectPath =
+		type === "AUTOMATION"
+			? `${catalog.path}/${project.project_id}/edit`
+			: `${catalog.path}/${project.project_id}/view`;
 
 	return (
 		<div className="w-full">
@@ -143,9 +147,7 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 										className="gap-2"
 										data-testid="appDetail-open-btn"
 									>
-										<Link
-											to={`${catalog.path}/${project.project_id}/view`}
-										>
+										<Link to={openProjectPath}>
 											<SquareArrowOutUpRight className="size-4" />
 											Open {catalog.name}
 										</Link>

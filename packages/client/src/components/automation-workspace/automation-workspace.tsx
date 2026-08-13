@@ -166,7 +166,7 @@ export const AutomationWorkspace = observer(() => {
 				<iframe
 					className="h-full w-full border-none"
 					title="Automation Workspace"
-					src={`${AUTOMATION_WORKSPACE_URL}?app=${encodeURIComponent(appId)}&mode=edit&readOnly=0`}
+					src={`${AUTOMATION_WORKSPACE_URL}?app=${encodeURIComponent(appId)}&mode=edit`}
 					sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
 				/>
 			);

@@ -1,5 +1,6 @@
 import * as FlexLayout from "flexlayout-react";
 import { type ReactNode, useCallback, useState } from "react";
+import "flexlayout-react/style/light.css";
 import "@semoss/shared/flexlayout.css";
 
 const CANVAS_TAB_ID = "AUTOMATION_CANVAS";
@@ -95,7 +96,7 @@ export function AutomationDockLayout({
 	if (!isNodeEditorOpen) return canvas;
 
 	return (
-		<div className="relative h-full">
+		<div className="flexlayout__theme_smss relative h-full w-full overflow-hidden">
 			<FlexLayout.Layout
 				model={model}
 				factory={factory}

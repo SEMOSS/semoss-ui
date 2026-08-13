@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import {
 	ProjectAccessControl,
 	ProjectCatalog,
@@ -378,11 +378,7 @@ export const PROJECT_ROUTES: {
 						element: <ProjectEdit />,
 					},
 					{
-						path: "view",
-						element: <ViewAppPage />,
-					},
-					{
-						path: "*",
+						path: "",
 						element: (
 							<ProjectTabsLayout
 								tabs={[
@@ -407,6 +403,11 @@ export const PROJECT_ROUTES: {
 										restrict: ["OWNER"],
 									},
 									{
+										name: "Settings",
+										path: "settings",
+										restrict: ["OWNER"],
+									},
+									{
 										name: "Access Control",
 										path: "access-control",
 										restrict: ["OWNER", "EDIT"],
@@ -422,7 +423,7 @@ export const PROJECT_ROUTES: {
 						children: [
 							{
 								path: "",
-								element: <ProjectOverviewPage />,
+								element: <Navigate to="settings" replace />,
 							},
 							{
 								path: "mcp-usage",
@@ -439,6 +440,10 @@ export const PROJECT_ROUTES: {
 							{
 								path: "github/select-repo",
 								element: <AppGithubSelectRepoPage />,
+							},
+							{
+								path: "settings",
+								element: <AppSettingsPage />,
 							},
 							{
 								path: "access-control",

@@ -28,7 +28,10 @@ import {
 } from "@semoss/ui/next";
 import { setProjectFavorite } from "@/api";
 import { ShareOverlay } from "@/components/ui";
+import { usePage, useProject, useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
+import type { WorkspaceStore } from "@/stores";
+import { NavbarHeader, NavbarLeft, NavbarRight } from "../../components/shared";
 
 const Renderer = lazy(() =>
 	import("@semoss/renderer").then((m) => ({ default: m.Renderer })),
@@ -38,13 +41,6 @@ const CodeRenderer = lazy(() =>
 		default: m.CodeRenderer,
 	})),
 );
-const AUTOMATION_WORKSPACE_URL = import.meta.env.DEV
-	? "http://localhost:5177/"
-	: "../../automation-workspace/dist/";
-
-import { usePage, useProject, useRootStore } from "@/hooks";
-import type { WorkspaceStore } from "@/stores";
-import { NavbarHeader, NavbarLeft, NavbarRight } from "../../components/shared";
 
 const AppViewLoadingState = () => {
 	return (
@@ -203,16 +199,6 @@ export const ViewAppPage = observer(() => {
 					) : null}
 					{type === "CODE" ? (
 						<CodeRenderer appId={project.project_id} />
-					) : null}
-					{workspace.type === "AUTOMATION" ? (
-						// Shared "system app" (like Playwright's browser-sockets app) — the exact
-						// same bundle playground iframes for the TriggerAutomation MCP tool sidebar.
-						<iframe
-							className="h-full w-full border-none"
-							title="Automation Workspace"
-							src={`${AUTOMATION_WORKSPACE_URL}?app=${encodeURIComponent(project.project_id)}&readOnly=1`}
-							sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
-						/>
 					) : null}
 				</Suspense>
 			</div>
