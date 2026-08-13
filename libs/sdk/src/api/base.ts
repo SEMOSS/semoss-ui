@@ -207,73 +207,12 @@ export const console = async (insightId: string) => {
 	return response.data;
 };
 
-/** A content chunk from a streaming pixel job */
-export type PixelStreamContentMessage = {
-	stream_type: "content";
-	data: {
-		/** Incremental content chunk from the LLM */
-		content?: string;
-		/** Stop reason */
-		finish_reason?: string;
-	};
-};
-
-/** A tool-call chunk from a streaming pixel job */
-export type PixelStreamToolMessage = {
-	stream_type: "tool";
-	data: {
-		/** Index of the tool call within this turn */
-		index?: number;
-		/** Tool call id; present on the opening chunk for a given index */
-		id?: string;
-		/** Tool call type, typically "function" */
-		type?: string;
-		/** Function delta — name arrives once, arguments arrive as JSON string chunks */
-		function?: {
-			name?: string;
-			arguments?: string;
-		};
-		/** Stop reason; present on the final tool chunk */
-		finish_reason?: string;
-	};
-};
-
-/** A thinking chunk from a streaming pixel job */
-export type PixelStreamThinkingMessage = {
-	stream_type: "thinking";
-	data: {
-		/** Incremental thinking chunk from the LLM */
-		thinking?: string;
-		/** Stop reason */
-		finish_reason?: string;
-	};
-};
-
-/** Union of all message chunk types yielded by a streaming pixel job */
-export type PixelStreamMessage =
-	| PixelStreamContentMessage
-	| PixelStreamToolMessage
-	| PixelStreamThinkingMessage;
-
-/** Status values returned by the pixelJobStreaming endpoint */
-export type PixelJobStreamingStatus =
-	| "Created"
-	| "Submitted"
-	| "Canceled"
-	| "InProgress"
-	| "ProgressComplete"
-	| "Streaming"
-	| "Complete"
-	| "Paused"
-	| "Error"
-	| "UnknownJob";
-
 /**
- * Fetch the latest message chunks and status for an async pixel job.
- * Each call returns only the chunks received since the last poll.
- * For a managed polling loop use {@link streamPixelJob} instead.
+ * Get streaming output from an async pixel job (LLM responses)
+ * Poll this endpoint until a message with `finish_reason` is received
  *
  * @param jobId - The job ID returned from runPixelAsync
+ * @returns Streaming response with message chunks and status
  */
 export const getPixelJobStreaming = async (jobId: string) => {
 	if (!jobId) {
@@ -281,8 +220,65 @@ export const getPixelJobStreaming = async (jobId: string) => {
 	}
 
 	const response = await post<{
-		message: PixelStreamMessage[];
-		status: PixelJobStreamingStatus;
+		/** Array of streaming messages received since last poll */
+		message: (
+			| {
+					/** Type of stream message */
+					stream_type: "content";
+					/** Data payload for the message */
+					data: {
+						/** Incremental content chunk from the LLM */
+						content?: string;
+
+						/** Stop reason*/
+						finish_reason?: string;
+					};
+			  }
+			| {
+					/** Type of stream message */
+					stream_type: "tool";
+					/** Data payload for the message */
+					data: {
+						/** Index of the tool call within this turn (used to associate deltas) */
+						index?: number;
+						/** Tool call id; present on the opening chunk for a given index */
+						id?: string;
+						/** Tool call type, typically "function" */
+						type?: string;
+						/** Function delta — name arrives once, arguments arrive as JSON string chunks */
+						function?: {
+							name?: string;
+							arguments?: string;
+						};
+						/** Stop reason; present on the final tool chunk */
+						finish_reason?: string;
+					};
+			  }
+			| {
+					/** Type of stream message */
+					stream_type: "thinking";
+					/** Data payload for the message */
+					data: {
+						/** Incremental content chunk from the LLM */
+						thinking?: string;
+
+						/** Stop reason*/
+						finish_reason?: string;
+					};
+			  }
+		)[];
+		/** Status of the streaming job */
+		status:
+			| "Created"
+			| "Submitted"
+			| "Canceled"
+			| "InProgress"
+			| "ProgressComplete"
+			| "Streaming"
+			| "Complete"
+			| "Paused"
+			| "Error"
+			| "UnknownJob";
 	}>(`${Env.MODULE}/api/engine/pixelJobStreaming`, { jobId });
 
 	return response.data;

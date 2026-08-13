@@ -2,7 +2,6 @@ export * from "./agent";
 export * from "./app";
 export * from "./auth";
 export * from "./base";
-export * from "./chat";
 export * from "./engine";
 export * from "./file";
 export * from "./insight";
