@@ -231,3 +231,79 @@ export interface RunAgentOutput {
 	/** Files / artifacts produced by the run (e.g. generated documents) */
 	artifacts: unknown[];
 }
+
+// -------------------------------------------------------------------------------------------------
+// ROOM CONSTRUCT TYPES
+// -------------------------------------------------------------------------------------------------
+
+/**
+ * A single streaming chunk emitted by {@link Room.ask} or {@link Room.askAgent}
+ * as the model responds.
+ */
+export interface RoomStreamChunk {
+	/** Chunk category */
+	type: "content" | "thinking" | "tool";
+	/** Plain text token — present when type is "content" */
+	content?: string;
+	/** Reasoning token — present when type is "thinking" (extended-thinking models) */
+	thinking?: string;
+	/** Raw tool-call delta — present when type is "tool" */
+	toolData?: unknown;
+}
+
+/**
+ * Options for {@link Room.ask}
+ */
+export interface RoomAskOptions {
+	/** Called for each streaming chunk as it arrives. */
+	onChunk?: (chunk: RoomStreamChunk) => void;
+	/**
+	 * Parent response message ID to continue an existing thread.
+	 * Defaults to `"ROOT_PLACEHOLDER_ID"` (start a new thread) if omitted
+	 * and no prior message has been sent on this Room instance.
+	 */
+	parentMessageId?: string;
+	/** Base64-encoded image strings to attach to the message. */
+	image?: string[];
+	/**
+	 * System context / instructions for this request.
+	 * Defaults to the room's configured `instructions`.
+	 */
+	context?: string;
+}
+
+/**
+ * Options for {@link Room.askAgent}
+ */
+export interface RoomAskAgentOptions {
+	/** Called for each streaming chunk as it arrives. */
+	onChunk?: (chunk: RoomStreamChunk) => void;
+}
+
+/**
+ * Settled result returned by {@link Room.ask}
+ */
+export interface RoomAskResult {
+	/** Server-assigned ID of the persisted user input message */
+	inputMessageId: string;
+	/** Server-assigned ID of the persisted model response message */
+	responseMessageId: string;
+	/** Full response text extracted from all TEXT parts */
+	text: string;
+}
+
+/**
+ * Settled result returned by {@link Room.askAgent}
+ */
+export interface RoomAskAgentResult {
+	/** Server-assigned ID of the persisted user input message */
+	inputMessageId: string;
+	/** Server-assigned ID of the persisted final response message */
+	responseMessageId: string;
+	/** The agent's full response text */
+	text: string;
+	/** Terminal run status — `"COMPLETED"` on success */
+	status: string;
+	/** Files / artifacts produced by the agent run */
+	artifacts: unknown[];
+}

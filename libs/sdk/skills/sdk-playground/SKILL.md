@@ -42,6 +42,104 @@ import type {
 } from "@semoss/sdk";
 ```
 
+---
+
+## Room construct (managed state)
+
+The `Room` class wraps all the low-level API functions and handles the streaming poll loop,
+conversation threading, and options state for you. Use it when you want to get up and running
+quickly without managing job IDs or polling yourself.
+
+Both approaches are valid — pick whichever fits your app:
+
+| | **Raw API** (`askPlayground`, `runAgent`, …) | **Room construct** (`createRoom`, `room.ask`, …) |
+|---|---|---|
+| State management | Caller manages job IDs, parentMessageId, options | Room handles it internally |
+| Control | Full — every parameter exposed | Opinionated defaults with optional overrides |
+| Good for | Custom UI, existing state layer (MobX, Redux, etc.) | Rapid integration, scripts, simple chat UIs |
+
+### Quick start
+
+```ts
+import { createRoom } from "@semoss/sdk";
+import type { RoomStreamChunk } from "@semoss/sdk";
+
+// 1. Create a room (handles insight binding automatically)
+const room = await createRoom(insightId);
+
+// 2. Configure it
+await room.updateOptions({
+    modelId: "gpt-4o",
+    instructions: "You are a helpful assistant.",
+});
+
+// 3. Chat — threads automatically from the previous response
+const result = await room.ask("What is the capital of France?", {
+    onChunk: (chunk: RoomStreamChunk) => {
+        if (chunk.type === "content") process.stdout.write(chunk.content ?? "");
+        if (chunk.type === "thinking") process.stdout.write(chunk.thinking ?? "");
+    },
+});
+console.log(result.text);           // "Paris"
+console.log(result.responseMessageId); // server-assigned message ID
+
+// 4. Follow-up — parentMessageId is set automatically
+const followUp = await room.ask("And Germany?");
+console.log(followUp.text); // "Berlin"
+```
+
+### Agent-harness mode
+
+```ts
+// Enable agent harness by setting harnessType in options
+await room.updateOptions({
+    modelId: "gpt-4o",
+    instructions: "You are a research agent.",
+    harnessType: "semoss",
+});
+
+// Use askAgent instead of ask — server drives the full agentic loop
+const result = await room.askAgent("Summarize the latest news on AI.", {
+    onChunk: (chunk) => {
+        if (chunk.type === "content") appendToUI(chunk.content ?? "");
+    },
+});
+
+console.log(result.text);      // full response
+console.log(result.artifacts); // any files the agent produced
+console.log(result.status);    // "COMPLETED"
+```
+
+### Getting messages
+
+```ts
+const messages = await room.getMessages();
+```
+
+### Room method reference
+
+| Method | Description |
+|--------|-------------|
+| `createRoom(insightId, workspaceId?)` | Factory — creates a room and binds it to the insight |
+| `room.updateOptions(partial)` | Merge-update room config; persists to backend |
+| `room.getMessages()` | Fetch full message history |
+| `room.ask(command, options?)` | Chat mode — client-driven via AskPlayground |
+| `room.askAgent(command, options?)` | Agent-harness mode — server-driven via RunAgent |
+| `room.options` | Read-only getter for the current `PlaygroundRoomOptions` |
+| `room.roomId` | The room's server ID |
+| `room.insightId` | The insight the room is bound to |
+
+**`RoomAskOptions`** (second arg to `room.ask`):
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `onChunk` | — | Streaming callback; receives `RoomStreamChunk` |
+| `parentMessageId` | last response ID | Override to fork the thread |
+| `image` | `[]` | Base64 image attachments |
+| `context` | `room.options.instructions` | System instructions override for this request |
+
+---
+
 ## Functions
 
 ### `createPlaygroundRoom(insightId, workspaceId)`
