@@ -9,10 +9,13 @@ interface AppFileEditorProps {
 
 	/** App */
 	app: string;
+
+	/** Render the file in read-only, view-only mode */
+	readOnly?: boolean;
 }
 
 export const AppFileEditor: React.FC<AppFileEditorProps> = observer(
-	({ node, app }) => {
+	({ node, app, readOnly = false }) => {
 		const config: {
 			name: string;
 			path: string;
@@ -29,6 +32,7 @@ export const AppFileEditor: React.FC<AppFileEditorProps> = observer(
 					app: app,
 				}}
 				path={config.path}
+				readOnly={readOnly}
 				leadingToolbar={
 					isDriverFile ? <MetadataHelpDialog compact /> : undefined
 				}

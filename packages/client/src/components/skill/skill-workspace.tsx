@@ -8,7 +8,11 @@ import { useWorkspace } from "@/hooks";
 import type { WorkspaceOptions } from "../../stores";
 import { CodeWorkspaceActions } from "../code-workspace/code-workspace-actions";
 import { MCPJsonEditor } from "../shared";
-import { WorkspaceManager, WorkspaceTerminal } from "../workspace";
+import {
+	WorkspaceManager,
+	WorkspaceNavbar,
+	WorkspaceTerminal,
+} from "../workspace";
 
 const SKILL_MD_TAB_ID = "SKILL_MD";
 
@@ -203,11 +207,13 @@ export const SkillWorkspace: React.FC = observer(() => {
 	};
 
 	return (
-		<WorkspaceManager
-			navbarActions={<CodeWorkspaceActions />}
-			options={DEFAULT_OPTIONS}
-			factory={FACTORY}
-			onAction={handleAction}
-		/>
+		<>
+			<WorkspaceNavbar actions={<CodeWorkspaceActions />} />
+			<WorkspaceManager
+				options={DEFAULT_OPTIONS}
+				factory={FACTORY}
+				onAction={handleAction}
+			/>
+		</>
 	);
 });

@@ -830,6 +830,8 @@ export class ConfigStore {
 			workspace.type = "SKILL";
 		} else if (metadata.project_type === "WORKSPACE") {
 			workspace.type = "WORKSPACE";
+		} else if (metadata.project_type === "NOTEBOOK") {
+			workspace.type = "NOTEBOOK";
 		}
 
 		// create the newly loaded workspace
