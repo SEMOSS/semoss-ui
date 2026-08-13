@@ -28,7 +28,10 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
-import { CATALOG_MODALITIES } from "@/components/engine/engine-metadata-display";
+import {
+	CATALOG_MODALITIES,
+	toReasoningConfig,
+} from "@/components/engine/engine-metadata-display";
 import type {
 	CatalogMatchState,
 	CatalogMatchSuggestion,
@@ -46,6 +49,7 @@ import {
 	MODEL_VERSIONS,
 	UNKNOWN_MODEL_BRAND,
 } from "@/components/import/model/model-import.constants";
+import { hasConfigurableReasoning } from "@/components/import/model/model-reasoning-config-field";
 import {
 	ModelEngineIcon,
 	ModelTileCard,
@@ -627,16 +631,33 @@ export const buildModelMetadataFields = (
 		);
 	}
 
-	if (
-		staticMetadata?.reasoning_config &&
-		typeof staticMetadata.reasoning_config === "object" &&
-		!Array.isArray(staticMetadata.reasoning_config) &&
-		Object.keys(staticMetadata.reasoning_config).length > 0
-	) {
+	// A catalog entry that names efforts (or makes reasoning mandatory) is worth
+	// editing before the model is created, so it gets the same editor the model
+	// settings tab uses. Anything sparser stays a hidden field - there would be
+	// nothing on screen but an empty box.
+	const reasoningConfig = toReasoningConfig(staticMetadata?.reasoning_config);
+
+	if (hasConfigurableReasoning(reasoningConfig)) {
+		// The editor owns the reasoning switch but writes it back to REASONING,
+		// so that field has to exist even when the catalog said nothing about
+		// support - which, for a model that documents its efforts, means yes.
+		if (typeof staticMetadata?.reasoning !== "boolean") {
+			addHiddenMetadataField("REASONING", "Reasoning Support", true);
+		}
+
+		metadataFields.push({
+			key: "REASONING_CONFIG",
+			label: "Reasoning",
+			type: "reasoning-config",
+			required: false,
+			category: "Settings",
+			default: reasoningConfig,
+		});
+	} else if (reasoningConfig !== null) {
 		addHiddenMetadataField(
 			"REASONING_CONFIG",
 			"Reasoning Configuration",
-			JSON.stringify(staticMetadata.reasoning_config),
+			JSON.stringify(reasoningConfig),
 		);
 	}
 

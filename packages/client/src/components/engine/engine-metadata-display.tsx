@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { CheckIcon, XIcon } from "lucide-react";
+import { CheckIcon, TriangleAlert, XIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
 	Badge,
@@ -16,6 +16,11 @@ import {
 	TableHeader,
 	TableRow,
 } from "@semoss/ui/next";
+import {
+	getOptionLabels,
+	MODEL_PROVIDER_OPTIONS,
+	SERVING_PROVIDER_OPTIONS,
+} from "@/model-metadata.constants";
 
 /**
  * One configurable parameter of a provider built-in tool, as written in the
@@ -66,6 +71,10 @@ export interface BuiltinToolSelection {
 export type ModelMetadata = {
 	engineId?: string;
 	modelId?: string | null;
+	/** Organization that created the model, e.g. ANTHROPIC. */
+	modelProvider?: string | null;
+	/** Platform serving the model, e.g. AWS_BEDROCK. */
+	servingProvider?: string | null;
 	capability?: string | null;
 	inputModalities?: string[] | null;
 	outputModalities?: string[] | null;
@@ -171,6 +180,34 @@ export const formatModalityLabel = (value: string) =>
 /** Display label for a reasoning effort, title cased for unknown values. */
 export const formatEffortLabel = (value: string) =>
 	REASONING_EFFORT_LABELS[value] || formatEnumLabel(value);
+
+const MODEL_PROVIDER_LABELS = getOptionLabels(MODEL_PROVIDER_OPTIONS);
+const SERVING_PROVIDER_LABELS = getOptionLabels(SERVING_PROVIDER_OPTIONS);
+
+/** Display label for a model provider, title cased for unknown values. */
+export const formatModelProviderLabel = (value: string) =>
+	MODEL_PROVIDER_LABELS[value] || formatEnumLabel(value);
+
+/** Display label for a serving provider, title cased for unknown values. */
+export const formatServingProviderLabel = (value: string) =>
+	SERVING_PROVIDER_LABELS[value] || formatEnumLabel(value);
+
+/**
+ * The selectable provider values: the curated list, plus whatever is currently
+ * stored. A value the list never had - an older enum, or one written straight
+ * to the column - still has to render, or opening the form would silently
+ * rewrite it to something else.
+ */
+export const getProviderOptions = (
+	options: readonly { value: string }[],
+	current: string,
+): string[] => {
+	const values = options.map(({ value }) => value);
+
+	return current !== "" && !values.includes(current)
+		? [...values, current]
+		: values;
+};
 
 /** Lowercase, deduped effort values - the stored config is provider-supplied. */
 export const normalizeEfforts = (value: unknown): string[] => [
@@ -638,6 +675,9 @@ export const formatBenchmarkDetail = (benchmark: ModelBenchmark) =>
 
 /** Normalized, display/edit-ready view of the editable model metadata. */
 export interface ModelSettingsValues {
+	/** Empty string means the nullable column has no value stored. */
+	modelProvider: string;
+	servingProvider: string;
 	capability: string;
 	inputModalities: string[];
 	outputModalities: string[];
@@ -670,6 +710,14 @@ export const toModelSettingsValues = (
 	const reasoningConfig = toReasoningConfig(metadata?.reasoningConfig);
 
 	return {
+		modelProvider:
+			typeof metadata?.modelProvider === "string"
+				? metadata.modelProvider.trim()
+				: "",
+		servingProvider:
+			typeof metadata?.servingProvider === "string"
+				? metadata.servingProvider.trim()
+				: "",
 		capability:
 			typeof metadata?.capability === "string"
 				? metadata.capability.trim()
@@ -727,6 +775,50 @@ export const buildReasoningConfigPayload = (
 				: null,
 		supported_efforts: values.reasoningSupportedEfforts,
 	};
+};
+
+/**
+ * The outline toggle marks its selected state with a faint muted fill, which
+ * reads as "greyed out" next to the white unselected buttons - the opposite of
+ * what it means. Selected items get a primary outline and label instead, so on
+ * and off are unmistakable without filling the button.
+ */
+export const TOGGLE_ON_CLASS =
+	"data-[state=on]:border-primary data-[state=on]:bg-transparent data-[state=on]:text-primary data-[state=on]:ring-1 data-[state=on]:ring-primary data-[state=on]:hover:bg-primary/10 data-[state=on]:hover:text-primary";
+
+/**
+ * Advisory note under a field. Purely informational - nothing is disabled and
+ * saving is never blocked, since the catalog is hand-curated and a deployment
+ * can legitimately differ from it.
+ */
+export const SettingsWarning = ({
+	message,
+	testId,
+	tone = "advisory",
+}: {
+	message: string;
+	testId: string;
+	/** "danger" is for a documented hard requirement, not a hunch. */
+	tone?: "advisory" | "danger";
+}) => {
+	if (message === "") {
+		return null;
+	}
+
+	return (
+		<p
+			className={cn(
+				"flex items-start gap-1.5 text-xs",
+				tone === "danger"
+					? "font-medium text-destructive"
+					: "text-amber-600 dark:text-amber-400",
+			)}
+			data-testid={testId}
+		>
+			<TriangleAlert className="mt-px size-3.5 shrink-0" />
+			<span>{message}</span>
+		</p>
+	);
 };
 
 /** Shared placeholder for read-mode fields without a value. */
@@ -830,6 +922,26 @@ export const ModelMetadataFields = ({
 		<SettingsEntry label="Model ID" className="sm:col-span-2">
 			{modelId ? (
 				<span className="break-all font-mono text-sm">{modelId}</span>
+			) : (
+				<EmptyValue />
+			)}
+		</SettingsEntry>
+
+		<SettingsEntry label="Model provider">
+			{values.modelProvider !== "" ? (
+				<Badge variant="secondary">
+					{formatModelProviderLabel(values.modelProvider)}
+				</Badge>
+			) : (
+				<EmptyValue />
+			)}
+		</SettingsEntry>
+
+		<SettingsEntry label="Serving provider">
+			{values.servingProvider !== "" ? (
+				<Badge variant="secondary">
+					{formatServingProviderLabel(values.servingProvider)}
+				</Badge>
 			) : (
 				<EmptyValue />
 			)}

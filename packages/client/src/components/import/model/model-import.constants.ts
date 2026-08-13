@@ -1,5 +1,7 @@
 // Removed unused import (was: import { link } from "fs");
 // biome-ignore-all lint/suspicious/noTemplateCurlyInString: TODO
+import type { ReasoningConfig } from "@/components/engine/engine-metadata-display";
+
 type FieldType =
 	| "text"
 	| "hidden"
@@ -11,7 +13,8 @@ type FieldType =
 	| "multiselect"
 	| "textarea"
 	| "file-upload"
-	| "builtin-tools";
+	| "builtin-tools"
+	| "reasoning-config";
 
 type categoryType = "General" | "Credentials" | "Settings";
 
@@ -43,7 +46,11 @@ export interface FieldDefinition {
 	warningOptions?: string[];
 	optionLabels?: Record<string, string>;
 	disabled?: boolean;
-	default?: string | string[] | number | boolean;
+	/**
+	 * A "reasoning-config" field carries the model catalog's reasoning config
+	 * here, which is both the starting value and the list of efforts on offer.
+	 */
+	default?: string | string[] | number | boolean | ReasoningConfig;
 	rules?: FieldRules;
 	helperText?: string;
 }
