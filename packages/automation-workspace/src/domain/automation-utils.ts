@@ -421,7 +421,7 @@ export function validateNode(node: AutomationNode): string[] {
 	if (type === "database-engine") {
 		const c = config as DatabaseEngineConfig;
 		if (!c.engineId) errors.push("A database engine is required");
-		if (!c.expression?.trim()) errors.push("A SQL expression is required");
+		if (!c.expression?.trim()) errors.push("A database query is required");
 	} else if (type === "model-engine") {
 		const c = config as ModelEngineConfig;
 		if (!c.engineId) errors.push("A model engine is required");
@@ -444,7 +444,7 @@ export function validateNode(node: AutomationNode): string[] {
 		if (!c.engineId) errors.push("A function engine is required");
 	} else if (type === "app") {
 		const c = config as AppConfig;
-		if (!c.pixel?.trim()) errors.push("A pixel expression is required");
+		if (!c.pixel?.trim()) errors.push("A function call is required");
 	} else if (type === "wait") {
 		const c = config as WaitConfig;
 		if (!c.seconds?.trim()) errors.push("A wait duration is required");

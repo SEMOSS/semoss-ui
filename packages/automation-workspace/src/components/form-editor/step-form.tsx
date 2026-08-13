@@ -54,6 +54,7 @@ export function StepForm({
 					onChange={update}
 					playgroundFillable={playgroundFillable}
 					onPlaygroundFieldsChange={onPlaygroundFieldsChange}
+					devMode={devMode}
 				/>
 			);
 		case "model-engine":
@@ -103,6 +104,7 @@ export function StepForm({
 					upstreamVars={upstreamVars}
 					onChange={update}
 					currentAppId={appId}
+					devMode={devMode}
 				/>
 			);
 		case "wait":

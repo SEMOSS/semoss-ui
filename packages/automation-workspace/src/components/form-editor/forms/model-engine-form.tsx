@@ -1,16 +1,9 @@
 import { useEffect, useId, useMemo } from "react";
-import {
-	Field,
-	FieldLabel,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@semoss/ui/next";
+import { Field, FieldLabel } from "@semoss/ui/next";
 import type { ModelEngineConfig } from "../../../domain/automation.types";
 import { getPlaygroundParamDescription } from "../../../domain/automation-utils";
-import { BoundInput, EnginePickerField } from "./shared";
+import { EnginePickerField } from "./engine-picker-field";
+import { BoundInput } from "./shared";
 
 /** Maps engine_subtype values to the operations they support. */
 const SUBTYPE_OPERATIONS: Record<string, ModelEngineConfig["operation"][]> = {
@@ -25,8 +18,8 @@ const ALL_OPERATIONS: {
 	value: ModelEngineConfig["operation"];
 	label: string;
 }[] = [
-	{ value: "llm", label: "LLM (chat)" },
-	{ value: "embeddings", label: "Embeddings" },
+	{ value: "llm", label: "Chat / Generate text" },
+	{ value: "embeddings", label: "Generate Embeddings" },
 	{ value: "vision", label: "Vision" },
 	{ value: "ner", label: "Extract Entities" },
 ];
@@ -95,34 +88,36 @@ export function ModelEngineForm({
 			/>
 			<Field>
 				<FieldLabel>Operation</FieldLabel>
-				{singleOp ? (
-					<p className="text-muted-foreground text-sm">
-						{availableOps[0].label}
-						<span className="ml-2 text-[11px]">
-							(only operation supported by this engine type)
-						</span>
+				<div className="flex flex-wrap gap-2">
+					{availableOps.map((op) => {
+						const isActive = config.operation === op.value;
+						return (
+							<button
+								key={op.value}
+								type="button"
+								disabled={singleOp}
+								onClick={() =>
+									onChange({
+										...config,
+										operation: op.value,
+									})
+								}
+								className={`rounded-full border px-3 py-1 text-[11px] transition-colors ${
+									isActive
+										? "border-primary bg-primary/10 font-medium text-primary"
+										: "hover:border-primary/40"
+								} disabled:cursor-default`}
+							>
+								{op.label}
+							</button>
+						);
+					})}
+				</div>
+				{singleOp && (
+					<p className="mt-1 text-[11px] text-muted-foreground">
+						This engine only supports{" "}
+						{availableOps[0]?.label ?? "one operation"}.
 					</p>
-				) : (
-					<Select
-						value={config.operation}
-						onValueChange={(v) =>
-							onChange({
-								...config,
-								operation: v as ModelEngineConfig["operation"],
-							})
-						}
-					>
-						<SelectTrigger>
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							{availableOps.map((op) => (
-								<SelectItem key={op.value} value={op.value}>
-									{op.label}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
 				)}
 			</Field>
 			{config.operation === "llm" && (
@@ -135,39 +130,45 @@ export function ModelEngineForm({
 						upstreamVars={upstreamVars}
 						mono
 					/>
-					<div className="flex items-center gap-2">
-						<input
-							type="checkbox"
-							id={pgFillId}
-							checked={playgroundFillable.includes("command")}
-							onChange={(e) => {
-								const next = e.target.checked
-									? [...playgroundFillable, "command"]
-									: playgroundFillable.filter(
-											(f) => f !== "command",
-										);
-								onPlaygroundFieldsChange(next);
-							}}
-							className="h-3.5 w-3.5 cursor-pointer accent-primary"
-						/>
-						<label
-							htmlFor={pgFillId}
-							className="cursor-pointer text-muted-foreground text-xs"
-							title={getPlaygroundParamDescription(
-								"model-engine",
-								"command",
-							)}
-						>
-							Let Playground fill this field
-						</label>
-					</div>
-					{playgroundFillable.includes("command") &&
-						config.command && (
-							<p className="text-amber-600 text-xs dark:text-amber-400">
-								Current value will be overwritten if Playground
-								provides input
-							</p>
-						)}
+					{devMode && (
+						<>
+							<div className="flex items-center gap-2">
+								<input
+									type="checkbox"
+									id={pgFillId}
+									checked={playgroundFillable.includes(
+										"command",
+									)}
+									onChange={(e) => {
+										const next = e.target.checked
+											? [...playgroundFillable, "command"]
+											: playgroundFillable.filter(
+													(f) => f !== "command",
+												);
+										onPlaygroundFieldsChange(next);
+									}}
+									className="h-3.5 w-3.5 cursor-pointer accent-primary"
+								/>
+								<label
+									htmlFor={pgFillId}
+									className="cursor-pointer text-muted-foreground text-xs"
+									title={getPlaygroundParamDescription(
+										"model-engine",
+										"command",
+									)}
+								>
+									Let Playground fill this field
+								</label>
+							</div>
+							{playgroundFillable.includes("command") &&
+								config.command && (
+									<p className="text-amber-600 text-xs dark:text-amber-400">
+										Current value will be overwritten if
+										Playground provides input
+									</p>
+								)}
+						</>
+					)}
 					<BoundInput
 						label="System Instructions (optional)"
 						value={config.context}

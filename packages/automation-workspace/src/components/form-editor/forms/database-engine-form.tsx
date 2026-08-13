@@ -6,12 +6,13 @@ import {
 	Search,
 	Sparkles,
 } from "lucide-react";
-import { useEffect, useId, useState } from "react";
-import { Input, Textarea } from "@semoss/ui/next";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { runPixel } from "@semoss/sdk";
+import { FieldLabel, Input, Textarea } from "@semoss/ui/next";
 import type { DatabaseEngineConfig } from "../../../domain/automation.types";
 import { getPlaygroundParamDescription } from "../../../domain/automation-utils";
-import { insight } from "../../../semoss/client";
-import { BoundInput, EnginePickerField } from "./shared";
+import { EnginePickerField } from "./engine-picker-field";
+import { BoundInput } from "./shared";
 
 interface TableStructure {
 	table: string;
@@ -29,6 +30,8 @@ export interface DatabaseEngineFormProps {
 	playgroundFillable: string[];
 	/** Called when the set of playground-fillable fields changes */
 	onPlaygroundFieldsChange: (fields: string[]) => void;
+	/** When false (business mode), schema browser and advanced fields are hidden */
+	devMode?: boolean;
 }
 
 export function DatabaseEngineForm({
@@ -37,6 +40,7 @@ export function DatabaseEngineForm({
 	onChange,
 	playgroundFillable,
 	onPlaygroundFieldsChange,
+	devMode = false,
 }: DatabaseEngineFormProps) {
 	const pgFillId = useId();
 	const [structure, setStructure] = useState<TableStructure[]>([]);
@@ -47,10 +51,12 @@ export function DatabaseEngineForm({
 		Record<string, boolean>
 	>({});
 
-	// AI SQL generation state
+	// Dev mode: AI SQL generation popup
 	const [showAiPrompt, setShowAiPrompt] = useState(false);
-	const [aiPrompt, setAiPrompt] = useState("");
 	const [aiLoading, setAiLoading] = useState(false);
+
+	// Business mode: "View SQL" disclosure
+	const [showSql, setShowSql] = useState(false);
 
 	useEffect(() => {
 		if (!config.engineId) {
@@ -60,11 +66,10 @@ export function DatabaseEngineForm({
 		}
 		setSchemaLoading(true);
 		setSchemaError(false);
-		insight.actions
-			.run(
-				`META|GetDatabaseTableStructure(database=["${config.engineId}"]);`,
-			)
-			.then((res: { pixelReturn?: { output: unknown }[] }) => {
+		runPixel(
+			`META|GetDatabaseTableStructure(database=["${config.engineId}"]);`,
+		)
+			.then((res) => {
 				const rows = res.pixelReturn?.[0]?.output as unknown[][] | null;
 				if (!Array.isArray(rows)) return;
 				const byTable: Record<
@@ -95,17 +100,15 @@ export function DatabaseEngineForm({
 			.finally(() => setSchemaLoading(false));
 	}, [config.engineId]);
 
-	const searchedStructure = searchTerm
-		? structure.filter(
-				(t) =>
-					t.table.toLowerCase().includes(searchTerm.toLowerCase()) ||
-					t.columns.some((c) =>
-						c.column
-							.toLowerCase()
-							.includes(searchTerm.toLowerCase()),
-					),
-			)
-		: structure;
+	const searchedStructure = useMemo(() => {
+		if (!searchTerm) return structure;
+		const term = searchTerm.toLowerCase();
+		return structure.filter(
+			(t) =>
+				t.table.toLowerCase().includes(term) ||
+				t.columns.some((c) => c.column.toLowerCase().includes(term)),
+		);
+	}, [structure, searchTerm]);
 
 	const toggleTable = (table: string) =>
 		setExpandedTables((prev) => ({ ...prev, [table]: !prev[table] }));
@@ -116,20 +119,43 @@ export function DatabaseEngineForm({
 	const insertColumn = (table: string, column: string) =>
 		onChange({ ...config, expression: `SELECT ${column} FROM ${table}` });
 
-	const handleAiGenerate = async () => {
-		if (!aiPrompt.trim() || !config.engineId) return;
+	const modelEngineIdRef = useRef<string | null | undefined>(undefined);
+
+	const resolveModelEngine = async (): Promise<string | null> => {
+		if (modelEngineIdRef.current !== undefined)
+			return modelEngineIdRef.current;
+		try {
+			const res = await runPixel(`MyEngines(engineTypes=["MODEL"]);`);
+			const engines = res.pixelReturn?.[0]?.output as Array<{
+				engine_id: string;
+			}> | null;
+			modelEngineIdRef.current = engines?.[0]?.engine_id ?? null;
+		} catch {
+			modelEngineIdRef.current = null;
+		}
+		return modelEngineIdRef.current;
+	};
+
+	const handleAiGenerate = async (prompt: string) => {
+		if (!prompt.trim() || !config.engineId) return;
 		setAiLoading(true);
 		try {
-			const encoded = btoa(unescape(encodeURIComponent(aiPrompt.trim())));
-			const result = await insight.actions.run(
-				`GenerateSQL(database=["${config.engineId}"], description=["${encoded}"]);`,
+			const modelId = await resolveModelEngine();
+			if (!modelId) return;
+			const escaped = prompt
+				.trim()
+				.replace(/\\/g, "\\\\")
+				.replace(/"/g, '\\"');
+			const result = await runPixel(
+				`TextToSQL(database=["${config.engineId}"], model=["${modelId}"], command=["${escaped}"]);`,
 			);
-			const raw =
-				result.pixelReturn?.[result.pixelReturn.length - 1]?.output;
-			if (typeof raw === "string" && raw.trim()) {
-				onChange({ ...config, expression: raw.trim() });
-				setShowAiPrompt(false);
-				setAiPrompt("");
+			const output = result.pixelReturn?.[result.pixelReturn.length - 1]
+				?.output as Record<string, string> | null;
+			const sql = output?.sql?.trim();
+			if (sql) {
+				onChange({ ...config, expression: sql });
+				if (!devMode) setShowSql(true);
+				else setShowAiPrompt(false);
 			}
 		} catch {
 			// leave expression unchanged
@@ -154,111 +180,208 @@ export function DatabaseEngineForm({
 				}
 			/>
 
-			<div className="flex flex-col gap-1">
-				<BoundInput
-					label="Database Query"
-					value={config.expression}
-					placeholder="e.g. SELECT * FROM CLAIMS WHERE STATUS = 'pending' LIMIT 100"
-					onChange={(v) => onChange({ ...config, expression: v })}
-					upstreamVars={upstreamVars}
-					mono
-				/>
+			{devMode ? (
+				/* Dev mode: SQL textarea is primary */
+				<div className="flex flex-col gap-1">
+					<BoundInput
+						label="Database Query"
+						value={config.expression}
+						placeholder="e.g. SELECT * FROM CLAIMS WHERE STATUS = 'pending' LIMIT 100"
+						onChange={(v) => onChange({ ...config, expression: v })}
+						upstreamVars={upstreamVars}
+						mono
+						minRows={6}
+					/>
 
-				{/* AI help — only shown when a DB engine is selected */}
-				{config.engineId && !showAiPrompt && (
-					<button
-						type="button"
-						onClick={() => setShowAiPrompt(true)}
-						className="flex items-center gap-1 self-start text-[11px] text-muted-foreground transition-colors hover:text-primary"
-					>
-						<Sparkles className="h-3 w-3" />
-						Help me write this query
-					</button>
-				)}
-
-				{showAiPrompt && (
-					<div className="mt-1 flex flex-col gap-2 rounded-lg border bg-muted/30 p-3">
-						<p className="text-[11px] text-muted-foreground">
-							Describe what data you need and the AI will write
-							the SQL for you.
-						</p>
-						<Textarea
-							value={aiPrompt}
-							onChange={(e) => setAiPrompt(e.target.value)}
-							placeholder="e.g. Get all open claims submitted in the last 7 days, showing claim ID, status, and date"
-							className="min-h-[60px] resize-none text-xs"
-							onKeyDown={(e) => {
-								if (
-									e.key === "Enter" &&
-									(e.metaKey || e.ctrlKey)
-								) {
-									handleAiGenerate();
-								}
-							}}
-						/>
-						<div className="flex items-center gap-2">
-							<button
-								type="button"
-								disabled={!aiPrompt.trim() || aiLoading}
-								onClick={handleAiGenerate}
-								className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 font-medium text-[11px] text-primary-foreground transition-opacity disabled:opacity-50"
-							>
-								{aiLoading ? (
-									<Loader2 className="h-3 w-3 animate-spin" />
-								) : (
-									<Sparkles className="h-3 w-3" />
-								)}
-								Generate
-							</button>
-							<button
-								type="button"
-								onClick={() => {
-									setShowAiPrompt(false);
-									setAiPrompt("");
-								}}
-								className="text-[11px] text-muted-foreground hover:text-foreground"
-							>
-								Cancel
-							</button>
-						</div>
-					</div>
-				)}
-			</div>
-
-			<div className="flex items-center gap-2">
-				<input
-					type="checkbox"
-					id={pgFillId}
-					checked={playgroundFillable.includes("expression")}
-					onChange={(e) => {
-						const next = e.target.checked
-							? [...playgroundFillable, "expression"]
-							: playgroundFillable.filter(
-									(f) => f !== "expression",
-								);
-						onPlaygroundFieldsChange(next);
-					}}
-					className="h-3.5 w-3.5 cursor-pointer accent-primary"
-				/>
-				<label
-					htmlFor={pgFillId}
-					className="cursor-pointer text-muted-foreground text-xs"
-					title={getPlaygroundParamDescription(
-						"database-engine",
-						"expression",
+					{config.engineId && !showAiPrompt && (
+						<button
+							type="button"
+							onClick={() => setShowAiPrompt(true)}
+							className="flex items-center gap-1 self-start text-[11px] text-muted-foreground transition-colors hover:text-primary"
+						>
+							<Sparkles className="h-3 w-3" />
+							Help me write this query
+						</button>
 					)}
-				>
-					Let Playground fill this field
-				</label>
-			</div>
-			{playgroundFillable.includes("expression") && config.expression && (
-				<p className="text-amber-600 text-xs dark:text-amber-400">
-					Current value will be overwritten if Playground provides
-					input
-				</p>
+
+					{showAiPrompt && (
+						<div className="mt-1 flex flex-col gap-2 rounded-lg border bg-muted/30 p-3">
+							<p className="text-[11px] text-muted-foreground">
+								Describe what data you need and the AI will
+								write the SQL for you.
+							</p>
+							<Textarea
+								value={config.nlPrompt ?? ""}
+								onChange={(e) =>
+									onChange({
+										...config,
+										nlPrompt: e.target.value,
+									})
+								}
+								placeholder="e.g. Get all open claims submitted in the last 7 days, showing claim ID, status, and date"
+								className="min-h-[60px] resize-none text-xs"
+								onKeyDown={(e) => {
+									if (
+										e.key === "Enter" &&
+										(e.metaKey || e.ctrlKey)
+									) {
+										handleAiGenerate(config.nlPrompt ?? "");
+									}
+								}}
+							/>
+							<div className="flex items-center gap-2">
+								<button
+									type="button"
+									disabled={
+										!config.nlPrompt?.trim() || aiLoading
+									}
+									onClick={() =>
+										handleAiGenerate(config.nlPrompt ?? "")
+									}
+									className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 font-medium text-[11px] text-primary-foreground transition-opacity disabled:opacity-50"
+								>
+									{aiLoading ? (
+										<Loader2 className="h-3 w-3 animate-spin" />
+									) : (
+										<Sparkles className="h-3 w-3" />
+									)}
+									Generate
+								</button>
+								<button
+									type="button"
+									onClick={() => setShowAiPrompt(false)}
+									className="text-[11px] text-muted-foreground hover:text-foreground"
+								>
+									Cancel
+								</button>
+							</div>
+						</div>
+					)}
+				</div>
+			) : (
+				/* Business mode: NL prompt is primary, SQL is a collapsible disclosure */
+				<div className="flex flex-col gap-2">
+					<div>
+						<FieldLabel className="text-xs">
+							What data do you need?
+						</FieldLabel>
+						<Textarea
+							value={config.nlPrompt ?? ""}
+							onChange={(e) =>
+								onChange({
+									...config,
+									nlPrompt: e.target.value,
+								})
+							}
+							placeholder="e.g. Get all open claims submitted in the last 7 days, showing claim ID, status, and date"
+							className="mt-1 resize-none text-sm"
+							rows={3}
+						/>
+					</div>
+
+					{config.engineId && (
+						<button
+							type="button"
+							disabled={!config.nlPrompt?.trim() || aiLoading}
+							onClick={() =>
+								handleAiGenerate(config.nlPrompt ?? "")
+							}
+							className="flex items-center gap-1.5 self-start rounded-md bg-primary px-3 py-1.5 font-medium text-primary-foreground text-xs transition-opacity disabled:opacity-50"
+						>
+							{aiLoading ? (
+								<Loader2 className="h-3.5 w-3.5 animate-spin" />
+							) : (
+								<Sparkles className="h-3.5 w-3.5" />
+							)}
+							Generate SQL
+						</button>
+					)}
+
+					{config.nlPrompt?.trim() &&
+						!config.expression &&
+						!aiLoading && (
+							<p className="text-[11px] text-amber-600 dark:text-amber-400">
+								Click "Generate SQL" to prepare this step before
+								running.
+							</p>
+						)}
+
+					{config.expression && (
+						<div className="rounded-lg border">
+							<button
+								type="button"
+								onClick={() => setShowSql((p) => !p)}
+								className="flex w-full items-center gap-1.5 px-3 py-2 text-left text-[11px] text-muted-foreground hover:text-foreground"
+							>
+								{showSql ? (
+									<ChevronDown className="h-3 w-3 shrink-0" />
+								) : (
+									<ChevronRight className="h-3 w-3 shrink-0" />
+								)}
+								View SQL
+							</button>
+							{showSql && (
+								<div className="border-t px-3 pt-2 pb-3">
+									<BoundInput
+										label=""
+										value={config.expression}
+										placeholder=""
+										onChange={(v) =>
+											onChange({
+												...config,
+												expression: v,
+											})
+										}
+										upstreamVars={upstreamVars}
+										mono
+										minRows={4}
+									/>
+								</div>
+							)}
+						</div>
+					)}
+				</div>
 			)}
 
-			{config.engineId && (
+			{devMode && (
+				<>
+					<div className="flex items-center gap-2">
+						<input
+							type="checkbox"
+							id={pgFillId}
+							checked={playgroundFillable.includes("expression")}
+							onChange={(e) => {
+								const next = e.target.checked
+									? [...playgroundFillable, "expression"]
+									: playgroundFillable.filter(
+											(f) => f !== "expression",
+										);
+								onPlaygroundFieldsChange(next);
+							}}
+							className="h-3.5 w-3.5 cursor-pointer accent-primary"
+						/>
+						<label
+							htmlFor={pgFillId}
+							className="cursor-pointer text-muted-foreground text-xs"
+							title={getPlaygroundParamDescription(
+								"database-engine",
+								"expression",
+							)}
+						>
+							Let Playground fill this field
+						</label>
+					</div>
+					{playgroundFillable.includes("expression") &&
+						config.expression && (
+							<p className="text-amber-600 text-xs dark:text-amber-400">
+								Current value will be overwritten if Playground
+								provides input
+							</p>
+						)}
+				</>
+			)}
+
+			{devMode && config.engineId && (
 				<div className="flex flex-col gap-2">
 					<div className="flex items-center gap-2">
 						<span className="font-medium text-muted-foreground text-xs">

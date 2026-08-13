@@ -87,7 +87,7 @@ export function HelpModal({ open, onClose }: HelpModalProps) {
 								</code>
 							</div>
 							<p className="mt-1.5 text-[11px] text-muted-foreground">
-								Mark a setting as sensitive to encrypt it.
+								Mark a setting as sensitive to mask its value.
 								Sensitive values are never shown in run history.
 							</p>
 						</section>

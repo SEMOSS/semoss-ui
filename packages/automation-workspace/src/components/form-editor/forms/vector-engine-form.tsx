@@ -11,7 +11,8 @@ import {
 } from "@semoss/ui/next";
 import type { VectorEngineConfig } from "../../../domain/automation.types";
 import { getPlaygroundParamDescription } from "../../../domain/automation-utils";
-import { BoundInput, EnginePickerField } from "./shared";
+import { EnginePickerField } from "./engine-picker-field";
+import { BoundInput } from "./shared";
 
 export interface VectorEngineFormProps {
 	/** Current node config */

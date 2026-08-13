@@ -10,6 +10,16 @@ export type AutomationNodeType =
 	| "app"
 	| "wait";
 
+// ─── shared form types ────────────────────────────────────────────────────────
+
+/** A single parameter in a reactor's signature, as returned by GetReactorSignature. */
+export interface ReactorParam {
+	name: string;
+	type: string;
+	required: boolean;
+	description?: string;
+}
+
 // ─── node configs (one per node type) ────────────────────────────────────────
 
 export interface TriggerConfig {
@@ -24,6 +34,8 @@ export interface DatabaseEngineConfig {
 	expression: string;
 	limit: number;
 	commit: boolean;
+	/** Natural-language description of what data is needed — drives AI SQL generation in business mode. */
+	nlPrompt?: string;
 }
 
 export interface StorageEngineConfig {
@@ -115,6 +127,8 @@ export interface AutomationNode {
 	config: NodeConfig;
 	outputTransform?: OutputTransform;
 	playgroundFillable?: string[];
+	/** Optional per-step notes for documentation purposes. */
+	notes?: string;
 }
 
 export interface AutomationEdge {

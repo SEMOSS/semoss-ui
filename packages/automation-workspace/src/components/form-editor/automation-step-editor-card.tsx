@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronRight, Loader2, Play, Trash2 } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
-import { Button, Field, FieldLabel, Input } from "@semoss/ui/next";
+import { useMemo, useState } from "react";
+import { runPixel } from "@semoss/sdk";
+import { Button, Field, FieldLabel, Input, Textarea } from "@semoss/ui/next";
 import type {
 	AutomationNode,
 	StepRunStatus,
@@ -19,8 +20,25 @@ import {
 	TRANSFORM_ENABLED,
 	TRANSFORM_MODES,
 } from "../../domain/automation-utils";
-import { insight } from "../../semoss/client";
 import { StatusIcon } from "../status-icon";
+import { AiSuggestButton } from "./ai-suggest-button";
+
+/** Converts a step label to a snake_case outputVar slug. */
+function toLabelSlug(label: string): string {
+	return label
+		.trim()
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, "_")
+		.replace(/^_+|_+$/g, "");
+}
+
+/** Returns true if outputVar still tracks the label (not manually customized). */
+function isOutputVarLinkedToLabel(outputVar: string, label: string): boolean {
+	if (outputVar === toLabelSlug(label)) return true;
+	// Matches default type-based pattern e.g. "db_out_3", "model_out_1"
+	return /^[a-z]+_out_\d+$/.test(outputVar);
+}
+
 import { OutputPreview } from "./output-preview";
 import { StepForm } from "./step-form";
 
@@ -31,9 +49,13 @@ export interface AutomationStepEditorCardProps {
 	isFirst: boolean;
 	isLast: boolean;
 	upstreamVars: string[];
+	/** Live node output values from the last test run, keyed by outputVar name — used for variable autocomplete substitution */
 	nodeOutputs: Record<string, string>;
+	/** Result status of this step's last full-automation run */
 	runStatus?: StepRunStatus;
+	/** Error message from this step's last full-automation run */
 	runError?: string;
+	/** Duration in milliseconds of this step's last full-automation run */
 	runDuration?: number;
 	onToggle: () => void;
 	onUpdate: (step: AutomationNode) => void;
@@ -45,6 +67,12 @@ export interface AutomationStepEditorCardProps {
 	devMode?: boolean;
 	/** The automation's own project ID — passed to app node forms for reactor discovery */
 	appId?: string;
+	/** True when the node has unfilled required fields — shows an amber dot on the step number badge */
+	isIncomplete?: boolean;
+	/** Short output preview from the last automation run — shown inline in the header when step succeeded */
+	runOutput?: string | null;
+	/** When true, move and delete controls are disabled (e.g. while a run is in progress) */
+	locked?: boolean;
 }
 
 export function AutomationStepEditorCard({
@@ -66,14 +94,15 @@ export function AutomationStepEditorCard({
 	onSetOutput,
 	devMode = false,
 	appId = "",
+	isIncomplete = false,
+	runOutput = null,
+	locked = false,
 }: AutomationStepEditorCardProps) {
 	const [runningStepTest, setRunningStepTest] = useState(false);
-	const [runOutput, setRunOutput] = useState<string | null>(null);
-	const [runOutputExpanded, setRunOutputExpanded] = useState(false);
+	const [stepTestOutput, setStepTestOutput] = useState<string | null>(null);
+	const [stepTestOutputExpanded, setStepTestOutputExpanded] = useState(false);
 	const [mockValues, setMockValues] = useState<Record<string, string>>({});
-	const [editingVar, setEditingVar] = useState(false);
-	const [varDraft, setVarDraft] = useState("");
-	const varInputRef = useRef<HTMLInputElement>(null);
+	const [generatingLabel, setGeneratingLabel] = useState(false);
 	const meta = getDisplayMeta(step.type);
 	const Icon = meta.icon;
 	const pixelPreview = useMemo(() => buildPixelPreview(step), [step]);
@@ -82,16 +111,38 @@ export function AutomationStepEditorCard({
 	const borderClass =
 		STEP_STATUS_BORDER[runStatus ?? "idle"] ?? STEP_STATUS_BORDER.idle;
 
+	/** Calls GenerateNodeLabel to propose an AI-generated step label based on the current config. */
+	const handleGenerateLabel = async () => {
+		if (!appId || generatingLabel) return;
+		setGeneratingLabel(true);
+		try {
+			const configB64 = btoa(
+				unescape(encodeURIComponent(JSON.stringify(step.config))),
+			);
+			const pixel = `GenerateNodeLabel(project=["${appId}"], type=["${step.type}"], config=["${configB64}"]);`;
+			const result = await runPixel(pixel);
+			const output = result.pixelReturn?.[0]?.output;
+			if (typeof output === "string" && output.trim()) {
+				onUpdate({ ...step, label: output.trim() });
+			}
+		} catch {
+			// silently fail — user's current label is unchanged
+		} finally {
+			setGeneratingLabel(false);
+		}
+	};
+
+	/** Runs the step's current pixel directly (dev test mode), substituting mock values for unresolved upstream variables. Streams result back to the parent via onSetOutput. */
 	const handleRunStep = async () => {
 		if (!pixelPreview || pixelPreview.startsWith("//")) return;
 
 		const allValues = { ...nodeOutputs, ...mockValues };
 		const pixel = substituteVars(pixelPreview, allValues);
 		setRunningStepTest(true);
-		setRunOutput(null);
+		setStepTestOutput(null);
 
 		try {
-			const result = await insight.actions.run(pixel);
+			const result = await runPixel(pixel);
 			const pixelReturns = result.pixelReturn ?? [];
 			const lastReturn = pixelReturns[pixelReturns.length - 1];
 			const output = lastReturn?.output;
@@ -103,12 +154,12 @@ export function AutomationStepEditorCard({
 				rawOutput,
 				step.outputTransform,
 			);
-			setRunOutput(transformed);
+			setStepTestOutput(transformed);
 			if (step.outputVar) {
 				onSetOutput(step.outputVar, transformed);
 			}
 		} catch (error) {
-			setRunOutput(`Error: ${(error as Error).message}`);
+			setStepTestOutput(`Error: ${(error as Error).message}`);
 		} finally {
 			setRunningStepTest(false);
 		}
@@ -122,8 +173,11 @@ export function AutomationStepEditorCard({
 					onClick={onToggle}
 					className="flex min-w-0 flex-1 items-center gap-3 text-left transition-colors hover:text-foreground"
 				>
-					<span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-[11px] text-muted-foreground">
+					<span className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-[11px] text-muted-foreground">
 						{index + 1}
+						{isIncomplete && runStatus === undefined && (
+							<span className="-top-0.5 -right-0.5 absolute h-2 w-2 rounded-full bg-amber-500 ring-1 ring-background" />
+						)}
 					</span>
 					<span
 						className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted ${meta.color}`}
@@ -135,49 +189,14 @@ export function AutomationStepEditorCard({
 							<span className="font-medium text-sm">
 								{getStepHeaderLabel(step)}
 							</span>
-							{step.outputVar &&
-								(editingVar ? (
-									<input
-										ref={varInputRef}
-										className="w-32 rounded-full bg-muted px-2.5 py-1 font-mono text-[10px] text-muted-foreground outline-none ring-1 ring-primary/40"
-										value={varDraft}
-										onChange={(e) =>
-											setVarDraft(e.target.value)
-										}
-										onBlur={() => {
-											const trimmed = varDraft.trim();
-											if (trimmed)
-												onUpdate({
-													...step,
-													outputVar: trimmed,
-												});
-											setEditingVar(false);
-										}}
-										onKeyDown={(e) => {
-											if (e.key === "Enter") {
-												e.currentTarget.blur();
-											} else if (e.key === "Escape") {
-												setEditingVar(false);
-											}
-										}}
-									/>
-								) : (
-									<button
-										type="button"
-										title="Click to rename this output variable"
-										onClick={(e) => {
-											e.stopPropagation();
-											setVarDraft(step.outputVar);
-											setEditingVar(true);
-											requestAnimationFrame(() =>
-												varInputRef.current?.select(),
-											);
-										}}
-										className="rounded-full bg-muted px-2.5 py-1 font-mono text-[10px] text-muted-foreground transition-all hover:bg-muted/70 hover:ring-1 hover:ring-primary/30"
-									>
-										{step.outputVar}
-									</button>
-								))}
+							{step.outputVar && (
+								<span
+									title="Output of this step — reference it in later steps with ${...}"
+									className="rounded-full bg-muted px-2.5 py-1 font-mono text-[10px] text-muted-foreground"
+								>
+									{step.outputVar}
+								</span>
+							)}
 						</div>
 						<div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
 							<span>{meta.label}</span>
@@ -225,7 +244,7 @@ export function AutomationStepEditorCard({
 						variant="ghost"
 						className="h-8 px-2 text-xs"
 						onClick={onMoveUp}
-						disabled={isFirst}
+						disabled={isFirst || locked}
 					>
 						↑
 					</Button>
@@ -234,7 +253,7 @@ export function AutomationStepEditorCard({
 						variant="ghost"
 						className="h-8 px-2 text-xs"
 						onClick={onMoveDown}
-						disabled={isLast}
+						disabled={isLast || locked}
 					>
 						↓
 					</Button>
@@ -243,6 +262,7 @@ export function AutomationStepEditorCard({
 						variant="ghost"
 						className="h-8 w-8 p-0 text-destructive hover:text-destructive"
 						onClick={onDelete}
+						disabled={locked}
 					>
 						<Trash2 className="h-3.5 w-3.5" />
 					</Button>
@@ -251,6 +271,15 @@ export function AutomationStepEditorCard({
 
 			{isExpanded && (
 				<div className="border-t px-4 pt-4 pb-5">
+					{runStatus === "success" && runOutput && (
+						<div
+							title={runOutput}
+							className="mb-4 truncate rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 font-mono text-[11px] text-emerald-700 dark:text-emerald-300"
+						>
+							{runOutput}
+						</div>
+					)}
+
 					{runStatus === "error" && runError && (
 						<div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 font-mono text-[11px] text-destructive">
 							{runError}
@@ -259,17 +288,80 @@ export function AutomationStepEditorCard({
 
 					<div className="mb-4">
 						<Field>
-							<FieldLabel className="text-xs">Label</FieldLabel>
+							<div className="flex items-center justify-between">
+								<FieldLabel className="text-xs">
+									Label
+								</FieldLabel>
+								{appId && (
+									<AiSuggestButton
+										onClick={handleGenerateLabel}
+										loading={generatingLabel}
+										title="Suggest a label based on this step's configuration"
+									/>
+								)}
+							</div>
 							<Input
 								className="h-9 text-sm"
 								value={step.label}
+								onChange={(event) => {
+									const newLabel = event.target.value;
+									const updated: AutomationNode = {
+										...step,
+										label: newLabel,
+									};
+									if (
+										step.outputVar !== undefined &&
+										isOutputVarLinkedToLabel(
+											step.outputVar,
+											step.label,
+										)
+									) {
+										const slug = toLabelSlug(newLabel);
+										if (slug) updated.outputVar = slug;
+									}
+									onUpdate(updated);
+								}}
+								placeholder="Step label"
+							/>
+						</Field>
+					</div>
+
+					{devMode && step.outputVar !== undefined && (
+						<div className="mb-4">
+							<Field>
+								<FieldLabel className="text-xs">
+									Save result as
+								</FieldLabel>
+								<Input
+									className="h-9 font-mono text-sm"
+									value={step.outputVar}
+									onChange={(event) => {
+										const v = event.target.value.trim();
+										if (v)
+											onUpdate({ ...step, outputVar: v });
+									}}
+									placeholder="output_var"
+								/>
+							</Field>
+						</div>
+					)}
+
+					<div className="mb-4">
+						<Field>
+							<FieldLabel className="text-xs">
+								Notes (optional)
+							</FieldLabel>
+							<Textarea
+								className="resize-none text-xs"
+								rows={2}
+								value={step.notes ?? ""}
 								onChange={(event) =>
 									onUpdate({
 										...step,
-										label: event.target.value,
+										notes: event.target.value || undefined,
 									})
 								}
-								placeholder="Step label"
+								placeholder="Notes about this step…"
 							/>
 						</Field>
 					</div>
@@ -286,7 +378,7 @@ export function AutomationStepEditorCard({
 						appId={appId}
 					/>
 
-					{TRANSFORM_ENABLED.has(step.type) && (
+					{devMode && TRANSFORM_ENABLED.has(step.type) && (
 						<div className="mt-4">
 							<p className="mb-2 font-medium text-[11px] text-muted-foreground">
 								How to store the result:
@@ -442,13 +534,15 @@ export function AutomationStepEditorCard({
 										</div>
 									)}
 
-									{runOutput !== null && (
+									{stepTestOutput !== null && (
 										<div className="mt-3">
 											<OutputPreview
-												value={runOutput}
-												expanded={runOutputExpanded}
+												value={stepTestOutput}
+												expanded={
+													stepTestOutputExpanded
+												}
 												onToggle={() =>
-													setRunOutputExpanded(
+													setStepTestOutputExpanded(
 														(prev) => !prev,
 													)
 												}

@@ -48,7 +48,7 @@ export function AutomationConfigTab({
 						</span>
 						<span
 							className="font-medium text-muted-foreground text-xs"
-							title="Sensitive values are stored encrypted and never shown in run history"
+							title="Sensitive values are masked and never shown in run history"
 						>
 							Private
 						</span>
@@ -110,7 +110,7 @@ export function AutomationConfigTab({
 										})
 									}
 									className="h-3.5 w-3.5 rounded border-border"
-									title="Mark as private — value will be stored encrypted and hidden in run history"
+									title="Mark as private — value will be masked and hidden in run history"
 								/>
 							</div>
 							<button

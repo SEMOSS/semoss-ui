@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronRight, Zap } from "lucide-react";
-import { Field, FieldLabel, Input } from "@semoss/ui/next";
+import { Field, FieldLabel, Textarea } from "@semoss/ui/next";
 import type { AutomationNode } from "../../domain/automation.types";
+import { AiSuggestButton } from "./ai-suggest-button";
 import { TriggerForm } from "./forms/trigger-form";
 
 interface TriggerStepCardProps {
@@ -9,6 +10,9 @@ interface TriggerStepCardProps {
 	appId: string;
 	description: string;
 	onDescriptionChange: (v: string) => void;
+	/** When provided, shows a Suggest button next to the Description label. */
+	onSuggestDescription?: () => void;
+	suggestingDescription?: boolean;
 	onToggle: () => void;
 	devMode: boolean;
 	onDevModeChange: (v: boolean) => void;
@@ -20,12 +24,17 @@ export function TriggerStepCard({
 	appId,
 	description,
 	onDescriptionChange,
+	onSuggestDescription,
+	suggestingDescription = false,
 	onToggle,
 	devMode,
 	onDevModeChange,
 }: TriggerStepCardProps) {
 	return (
-		<div className="rounded-2xl border bg-card shadow-sm ring-1 ring-primary/20">
+		<div
+			data-tour="trigger-card"
+			className="rounded-2xl border bg-card shadow-sm ring-1 ring-primary/20"
+		>
 			{/* header */}
 			<button
 				type="button"
@@ -63,14 +72,26 @@ export function TriggerStepCard({
 			{isExpanded && (
 				<div className="space-y-4 border-t px-4 pt-4 pb-4">
 					<Field>
-						<FieldLabel className="text-xs">Description</FieldLabel>
-						<Input
+						<div className="flex items-center justify-between">
+							<FieldLabel className="text-xs">
+								Description
+							</FieldLabel>
+							{onSuggestDescription && (
+								<AiSuggestButton
+									onClick={onSuggestDescription}
+									loading={suggestingDescription}
+									title="Suggest a description based on your automation steps"
+								/>
+							)}
+						</div>
+						<Textarea
 							value={description}
 							onChange={(e) =>
 								onDescriptionChange(e.target.value)
 							}
 							placeholder="What does this automation do? e.g. Queries open claims and sends a daily summary email"
-							className="h-9 text-sm"
+							rows={3}
+							className="resize-none overflow-y-auto text-sm"
 						/>
 					</Field>
 					<TriggerForm appId={appId} />
@@ -94,6 +115,7 @@ export function TriggerStepCard({
 							}`}
 							role="switch"
 							aria-checked={devMode}
+							aria-label="Toggle developer mode"
 						>
 							<span
 								className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm ring-0 transition-transform ${

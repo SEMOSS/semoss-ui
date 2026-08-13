@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, Clock3 } from "lucide-react";
+import { ChevronDown, ChevronRight, Clock3, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 import type {
 	AutomationNode,
@@ -18,26 +18,47 @@ export interface NodeResultListProps {
 	expandedNodes: Set<string>;
 	/** Called with a node id when its output preview is expanded/collapsed */
 	onToggleNode: (nodeId: string) => void;
+	/** Called when the user requests AI assistance fixing a failed step */
+	onAiFix?: (nodeId: string, errorMessage: string) => void;
 }
 
-function ErrorDetail({ message }: { message: string }) {
+function ErrorDetail({
+	message,
+	onAiFix,
+}: {
+	message: string;
+	onAiFix?: () => void;
+}) {
 	const [expanded, setExpanded] = useState(false);
 	return (
 		<div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-[11px] text-destructive">
 			<div className="flex items-center justify-between gap-2">
 				<span className="font-medium">Step failed</span>
-				<button
-					type="button"
-					onClick={() => setExpanded((p) => !p)}
-					className="flex items-center gap-0.5 text-destructive/70 hover:text-destructive"
-				>
-					{expanded ? (
-						<ChevronDown className="h-3 w-3" />
-					) : (
-						<ChevronRight className="h-3 w-3" />
+				<div className="flex items-center gap-2">
+					{onAiFix && (
+						<button
+							type="button"
+							onClick={onAiFix}
+							className="flex items-center gap-0.5 text-primary/80 hover:text-primary"
+							title="Ask AI to suggest a fix"
+						>
+							<Sparkles className="h-3 w-3" />
+							AI Fix
+						</button>
 					)}
-					{expanded ? "Hide details" : "Show details"}
-				</button>
+					<button
+						type="button"
+						onClick={() => setExpanded((p) => !p)}
+						className="flex items-center gap-0.5 text-destructive/70 hover:text-destructive"
+					>
+						{expanded ? (
+							<ChevronDown className="h-3 w-3" />
+						) : (
+							<ChevronRight className="h-3 w-3" />
+						)}
+						{expanded ? "Hide details" : "Show details"}
+					</button>
+				</div>
 			</div>
 			{expanded && (
 				<pre className="mt-2 whitespace-pre-wrap break-all font-mono text-[10px] opacity-80">
@@ -53,6 +74,7 @@ export function NodeResultList({
 	results,
 	expandedNodes,
 	onToggleNode,
+	onAiFix,
 }: NodeResultListProps) {
 	const stepMap = useMemo(
 		() => new Map(steps.map((step) => [step.id, step])),
@@ -105,6 +127,15 @@ export function NodeResultList({
 									{result.ERROR_MESSAGE && (
 										<ErrorDetail
 											message={result.ERROR_MESSAGE}
+											onAiFix={
+												onAiFix
+													? () =>
+															onAiFix(
+																result.NODE_ID,
+																result.ERROR_MESSAGE!,
+															)
+													: undefined
+											}
 										/>
 									)}
 									{result.OUTPUT_PREVIEW && (

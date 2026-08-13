@@ -1,15 +1,38 @@
 import { Loader2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { runPixel } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
 import { Field, FieldLabel, Input } from "@semoss/ui/next";
-import type { AppConfig } from "../../../domain/automation.types";
-import { insight } from "../../../semoss/client";
-import { AutomationProjectSelect } from "./engine-picker";
+import type { AppConfig, ReactorParam } from "../../../domain/automation.types";
+import { AutomationProjectSelect } from "./project-select";
 import { BoundInput } from "./shared";
 
+/** Appends a trailing semicolon if the pixel string ends with `)` and lacks one. */
 function ensureSemicolon(pixel: string): string {
 	const trimmed = pixel.trimEnd();
 	return trimmed.endsWith(")") ? `${trimmed};` : pixel;
+}
+
+/** Extract key → value pairs from a pixel string like `Foo(a=["x"], b=["y"])`. */
+function parsePixelParams(pixel: string): Record<string, string> {
+	const result: Record<string, string> = {};
+	for (const match of pixel.matchAll(/(\w+)=\["([^"]*)"\]/g)) {
+		result[match[1]] = match[2];
+	}
+	return result;
+}
+
+/** Compose a pixel string from a reactor name, param definitions, and current values. */
+function buildPixel(
+	name: string,
+	params: ReactorParam[],
+	values: Record<string, string>,
+): string {
+	if (params.length === 0) return `${name}();`;
+	const args = params
+		.map((p) => `${p.name}=["${values[p.name] ?? ""}"]`)
+		.join(", ");
+	return `${name}(${args});`;
 }
 
 export interface AppEngineFormProps {
@@ -21,6 +44,8 @@ export interface AppEngineFormProps {
 	onChange: (c: AppConfig) => void;
 	/** The automation's own project ID — used to fetch reactors when no app context is selected */
 	currentAppId: string;
+	/** When false (business mode), raw pixel textarea is hidden when labeled param fields are available */
+	devMode?: boolean;
 }
 
 export function AppEngineForm({
@@ -28,20 +53,49 @@ export function AppEngineForm({
 	upstreamVars,
 	onChange,
 	currentAppId,
+	devMode = false,
 }: AppEngineFormProps) {
 	const [reactorSearch, setReactorSearch] = useState("");
 	const [sigLoading, setSigLoading] = useState<string | null>(null);
 	const [reactorDescription, setReactorDescription] = useState("");
-	const [reactorParams, setReactorParams] = useState<
-		{
-			name: string;
-			type: string;
-			required: boolean;
-			description?: string;
-		}[]
-	>([]);
+	// Derive reactor name from existing config.pixel so labeled fields survive collapse/reopen
+	const [reactorName, setReactorName] = useState<string>(
+		() => config.pixel.match(/^(\w+)\s*\(/)?.[1] ?? "",
+	);
+	const [reactorParams, setReactorParams] = useState<ReactorParam[]>([]);
+	const [paramValues, setParamValues] = useState<Record<string, string>>(() =>
+		parsePixelParams(config.pixel),
+	);
+	const [noParamInfo, setNoParamInfo] = useState(false);
 
 	const effectiveProjectId = config.appId || currentAppId;
+
+	// When a reactor name was derived from config.pixel on mount (i.e. after a collapse/reopen),
+	// silently re-fetch its signature so labeled param fields are restored in business mode.
+	useEffect(() => {
+		if (!reactorName || !effectiveProjectId || reactorParams.length > 0)
+			return;
+		runPixel(
+			`GetReactorSignature(project=["${effectiveProjectId}"], reactor=["${reactorName}"]);`,
+		)
+			.then((res) => {
+				const raw =
+					res.pixelReturn?.[res.pixelReturn.length - 1]?.output;
+				if (typeof raw === "string") {
+					const parsed = JSON.parse(raw) as {
+						description?: string;
+						params?: ReactorParam[];
+					};
+					if (parsed.params?.length) setReactorParams(parsed.params);
+					if (parsed.description)
+						setReactorDescription(parsed.description);
+				} else {
+					setNoParamInfo(true);
+				}
+			})
+			.catch(() => setNoParamInfo(true));
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [reactorName, effectiveProjectId]);
 
 	const { data: reactorData, status: reactorStatus } = usePixel<string[]>(
 		effectiveProjectId
@@ -52,6 +106,8 @@ export function AppEngineForm({
 
 	const reactors = reactorData ?? [];
 
+	// GetProjectAvailableReactors doesn't support a filterWord param, so we filter client-side.
+	// The list is bounded by project reactor count and never approaches a problematic size.
 	const filteredReactors = useMemo(() => {
 		const q = reactorSearch.trim().toLowerCase();
 		if (!q) return reactors;
@@ -60,16 +116,19 @@ export function AppEngineForm({
 
 	const loading = reactorStatus === "INITIAL" || reactorStatus === "LOADING";
 
+	/** Fetches the reactor's signature via GetReactorSignature (with a 2s timeout), then initializes per-param state and updates config.pixel with the reactor template. Falls back to a bare call if the signature is unavailable. */
 	const handleReactorClick = async (name: string) => {
 		setSigLoading(name);
 		setReactorDescription("");
 		setReactorParams([]);
+		setReactorName(name);
+		setNoParamInfo(false);
 		try {
 			const timeout = new Promise<never>((_, reject) =>
 				setTimeout(() => reject(new Error("timeout")), 2000),
 			);
 			const result = await Promise.race([
-				insight.actions.run(
+				runPixel(
 					`GetReactorSignature(project=["${effectiveProjectId}"], reactor=["${name}"]);`,
 				),
 				timeout,
@@ -80,29 +139,43 @@ export function AppEngineForm({
 				const parsed = JSON.parse(raw) as {
 					template?: string;
 					description?: string;
-					params?: {
-						name: string;
-						type: string;
-						required: boolean;
-						description?: string;
-					}[];
+					params?: ReactorParam[];
 				};
+				const template = parsed.template ?? `${name}()`;
+				const initial = parsePixelParams(template);
+				setParamValues(initial);
 				onChange({
 					...config,
-					pixel: ensureSemicolon(parsed.template ?? `${name}()`),
+					pixel: ensureSemicolon(template),
 				});
 				if (parsed.description)
 					setReactorDescription(parsed.description);
 				if (parsed.params?.length) setReactorParams(parsed.params);
 			} else {
+				setParamValues({});
 				onChange({ ...config, pixel: ensureSemicolon(`${name}()`) });
+				setNoParamInfo(true);
 			}
 		} catch {
+			setParamValues({});
 			onChange({ ...config, pixel: ensureSemicolon(`${name}()`) });
+			setNoParamInfo(true);
 		} finally {
 			setSigLoading(null);
 		}
 	};
+
+	const handleParamChange = (name: string, value: string) => {
+		const next = { ...paramValues, [name]: value };
+		setParamValues(next);
+		onChange({
+			...config,
+			pixel: buildPixel(reactorName, reactorParams, next),
+		});
+	};
+
+	// Show labeled param fields in business mode when params are available this session
+	const showParamFields = !devMode && reactorParams.length > 0;
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -125,7 +198,13 @@ export function AppEngineForm({
 				</p>
 			</Field>
 
-			{/* Custom reactor browser */}
+			{/* Reactor browser */}
+			{!loading && reactors.length === 0 && (
+				<p className="text-[11px] text-muted-foreground">
+					No custom functions found for this app. Enter a function
+					call manually below.
+				</p>
+			)}
 			{(loading || reactors.length > 0) && (
 				<Field>
 					<FieldLabel>Custom Functions</FieldLabel>
@@ -177,68 +256,100 @@ export function AppEngineForm({
 				</Field>
 			)}
 
-			<div className="relative">
-				<BoundInput
-					label="Function Call"
-					value={config.pixel}
-					placeholder='MyFunction(param=[""])'
-					onChange={(v) =>
-						onChange({ ...config, pixel: ensureSemicolon(v) })
-					}
-					upstreamVars={upstreamVars}
-					mono
-				/>
-				{sigLoading !== null && (
-					<div className="absolute inset-0 flex items-center justify-center rounded-lg bg-background/60">
-						<Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-					</div>
-				)}
-			</div>
-			{(reactorDescription || reactorParams.length > 0) && (
-				<div className="flex flex-col gap-2">
-					{reactorDescription && (
+			{reactorDescription && (
+				<p className="text-[11px] text-muted-foreground">
+					{reactorDescription}
+				</p>
+			)}
+
+			{/* Business mode: labeled param fields */}
+			{showParamFields && (
+				<div className="flex flex-col gap-3">
+					{reactorParams.map((p) => (
+						<BoundInput
+							key={p.name}
+							label={`${p.name}${p.required ? "" : " (optional)"}`}
+							value={paramValues[p.name] ?? ""}
+							placeholder={p.description ?? ""}
+							onChange={(v) => handleParamChange(p.name, v)}
+							upstreamVars={upstreamVars}
+						/>
+					))}
+					{noParamInfo && (
 						<p className="text-[11px] text-muted-foreground">
-							{reactorDescription}
+							No parameter info available. Edit the function call
+							in developer mode.
 						</p>
 					)}
-					{reactorParams.length > 0 && (
-						<div className="rounded-lg border bg-muted/30 px-3 py-2">
-							<p className="mb-1.5 font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-								Parameters
-							</p>
-							<div className="flex flex-col gap-1">
-								{reactorParams.map((p) => (
-									<div
-										key={p.name}
-										className="flex items-baseline gap-2 text-[11px]"
-									>
-										<code className="font-mono text-foreground">
-											{p.name}
-										</code>
-										<span className="text-muted-foreground/70">
-											{p.type}
-										</span>
-										<span
-											className={
-												p.required
-													? "text-foreground/60"
-													: "text-muted-foreground/50"
-											}
-										>
-											{p.required
-												? "required"
-												: "optional"}
-										</span>
-										{p.description && (
-											<span className="text-muted-foreground/60">
-												— {p.description}
-											</span>
-										)}
-									</div>
-								))}
-							</div>
+				</div>
+			)}
+
+			{/* Raw pixel textarea: always in dev mode; fallback in business mode when no params */}
+			{(devMode || !showParamFields) && (
+				<div className="relative">
+					<BoundInput
+						label="Function Call"
+						value={config.pixel}
+						placeholder='MyFunction(param=[""])'
+						onChange={(v) =>
+							onChange({ ...config, pixel: ensureSemicolon(v) })
+						}
+						upstreamVars={upstreamVars}
+						mono
+					/>
+					{sigLoading !== null && (
+						<div className="absolute inset-0 flex items-center justify-center rounded-lg bg-background/60">
+							<Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
 						</div>
 					)}
+				</div>
+			)}
+
+			{!showParamFields &&
+				noParamInfo &&
+				!reactorDescription &&
+				reactorParams.length === 0 && (
+					<p className="text-[11px] text-muted-foreground">
+						No parameter info available for this function. Edit the
+						call manually above.
+					</p>
+				)}
+
+			{/* Dev mode: show param reference panel */}
+			{devMode && reactorParams.length > 0 && (
+				<div className="rounded-lg border bg-muted/30 px-3 py-2">
+					<p className="mb-1.5 font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+						Parameters
+					</p>
+					<div className="flex flex-col gap-1">
+						{reactorParams.map((p) => (
+							<div
+								key={p.name}
+								className="flex items-baseline gap-2 text-[11px]"
+							>
+								<code className="font-mono text-foreground">
+									{p.name}
+								</code>
+								<span className="text-muted-foreground/70">
+									{p.type}
+								</span>
+								<span
+									className={
+										p.required
+											? "text-foreground/60"
+											: "text-muted-foreground/50"
+									}
+								>
+									{p.required ? "required" : "optional"}
+								</span>
+								{p.description && (
+									<span className="text-muted-foreground/60">
+										— {p.description}
+									</span>
+								)}
+							</div>
+						))}
+					</div>
 				</div>
 			)}
 		</div>

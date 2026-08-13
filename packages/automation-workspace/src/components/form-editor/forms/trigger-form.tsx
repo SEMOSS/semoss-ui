@@ -1,4 +1,4 @@
-import { CopyButton } from "./shared";
+import { CopyButton } from "./copy-button";
 
 export interface TriggerFormProps {
 	/** Id of the app the trigger pixel call targets */
