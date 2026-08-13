@@ -5,8 +5,7 @@
 		"description": "ルーム設定を更新し、チャットの動作を変更します",
 		"open": "ルーム設定を開く",
 		"close": "ルーム設定を閉じる",
-		"edit": "ルーム設定を編集",
-		"compactTooltip": "会話を圧縮してトークンを節約します。これまでのメッセージはそのまま残ります。"
+		"edit": "ルーム設定を編集"
 	},
 	"form": {
 		"modelLabel": "モデル",
@@ -49,8 +48,9 @@
 		"completeTool": "続行するにはツールを完了してください",
 		"ask": "質問",
 		"errorProcessing": "チャットの処理中にエラーが発生しました",
-		"pauseTools": "ツールを一時停止",
-		"pauseToolsTooltip": "次のメッセージの後まですべてのツール実行を一時停止"
+		"stopLabel": "応答を停止",
+		"stopTooltip": "停止",
+		"stoppingTooltip": "停止中"
 	},
 	"content": {
 		"scrollToTop": "一番上にスクロール",

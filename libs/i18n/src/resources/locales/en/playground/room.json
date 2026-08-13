@@ -12,8 +12,7 @@
 		"compactError": "Failed to compact conversation",
 		"compacting": "Compacting conversation...",
 		"compactedAbove": "Conversation compacted",
-		"compactedAboveTooltip": "Earlier messages were summarized to reduce context size",
-		"compactTooltip": "Compress your conversation to save tokens. Your previous messages stay as is."
+		"compactedAboveTooltip": "Earlier messages were summarized to reduce context size"
 	},
 	"form": {
 		"modelLabel": "Model",
@@ -56,8 +55,9 @@
 		"completeTool": "Please complete the tool(s) to proceed",
 		"ask": "Ask",
 		"errorProcessing": "Error processing chat",
-		"pauseTools": "Pause tools",
-		"pauseToolsTooltip": "Pause all tool execution until after the next message"
+		"stopLabel": "Stop the response",
+		"stopTooltip": "Stop",
+		"stoppingTooltip": "Stopping"
 	},
 	"content": {
 		"scrollToTop": "Scroll to top",

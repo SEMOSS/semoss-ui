@@ -1,7 +1,6 @@
 import {
 	CheckIcon,
 	ChevronDownIcon,
-	CirclePause,
 	HammerIcon,
 	XCircleIcon,
 } from "lucide-react";
@@ -23,9 +22,6 @@ const groupStatusConfig = {
 	CANCELLED: {
 		icon: <XCircleIcon className="size-5" />,
 	},
-	PAUSED: {
-		icon: <CirclePause className="size-5" />,
-	},
 	SUCCESS: {
 		icon: <CheckIcon className="size-5" />,
 	},
@@ -37,12 +33,17 @@ const analyzeTools = (tools: ToolStore[]) => {
 		LOADING: 0,
 		ERROR: 0,
 		CANCELLED: 0,
-		PAUSED: 0,
 		INITIAL: 0,
 	};
 	const loadingOptions: string[] = [];
 
+	// "Resolving" (the call is still streaming in, or in the gap before the
+	// final sync) is distinct from status LOADING (the call is done, the tool is
+	// executing). Both drive the same spinner, but the header copy differs.
+	let isResolving = false;
+
 	for (const tool of tools) {
+		if (!tool.isResolved) isResolving = true;
 		counts[tool.status] = (counts[tool.status] ?? 0) + 1;
 		if (
 			tool.status === "LOADING" &&
@@ -54,11 +55,10 @@ const analyzeTools = (tools: ToolStore[]) => {
 
 	let status: keyof typeof groupStatusConfig = "SUCCESS";
 	if (counts.LOADING > 0) status = "LOADING";
+	else if (counts.CANCELLED > 0) status = "CANCELLED";
 	else if (counts.ERROR > 0) status = "ERROR";
-	else if (counts.PAUSED > 0) status = "PAUSED";
-	else if (counts.CANCELLED === tools.length) status = "CANCELLED";
 
-	return { status, counts, loadingOptions };
+	return { status, counts, loadingOptions, isResolving };
 };
 
 interface ResponseMessageToolGroupProps {
@@ -74,8 +74,11 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 		const { t } = useTranslation("tool");
 		const [isOpen, setIsOpen] = useState(false);
 
-		const { status, counts, loadingOptions } = analyzeTools(tools);
-		const { icon } = groupStatusConfig[status];
+		const { status, counts, loadingOptions, isResolving } =
+			analyzeTools(tools);
+		// While still resolving, tools sit at INITIAL (which would otherwise
+		// resolve to the SUCCESS check) — force the spinner instead.
+		const icon = isResolving ? <Spinner /> : groupStatusConfig[status].icon;
 		const isLoading = status === "LOADING";
 
 		const { loadingMessage } = useLoadingMessage(isLoading, loadingOptions);
@@ -88,8 +91,6 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 				t("group.summaryError", { count: counts.ERROR }),
 			counts.CANCELLED > 0 &&
 				t("group.summaryCancelled", { count: counts.CANCELLED }),
-			counts.PAUSED > 0 &&
-				t("group.summaryPaused", { count: counts.PAUSED }),
 		].filter((s): s is string => Boolean(s));
 
 		return (
@@ -110,10 +111,14 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 					<span className="-ms-1.5 truncate text-muted-foreground text-sm">
 						{isOpen
 							? t("group.labelOpen", { count: tools.length })
-							: t("group.labelClosed", {
-									toolName: tools[0].json.title,
-									count: tools.length - 1,
-								})}
+							: isResolving
+								? t("group.labelStreaming", {
+										count: tools.length,
+									})
+								: t("group.labelClosed", {
+										toolName: tools[0].displayName,
+										count: tools.length - 1,
+									})}
 					</span>
 					{isLoading && !isOpen && loadingMessage && (
 						<span className="shrink-0 text-muted-foreground text-sm italic">

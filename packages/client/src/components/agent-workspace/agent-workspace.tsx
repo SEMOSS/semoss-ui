@@ -9,7 +9,11 @@ import { useWorkspace } from "@/hooks";
 import type { WorkspaceOptions } from "../../stores";
 import { CodeWorkspaceActions } from "../code-workspace/code-workspace-actions";
 import { MCPJsonEditor } from "../shared";
-import { WorkspaceManager, WorkspaceTerminal } from "../workspace";
+import {
+	WorkspaceManager,
+	WorkspaceNavbar,
+	WorkspaceTerminal,
+} from "../workspace";
 import { AgentEditor } from "./agent-editor";
 
 const DEFAULT_BORDER_SIZE = 300;
@@ -50,16 +54,6 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						component: "terminal",
 						enableClose: false,
 						config: {},
-					},
-					{
-						id: "settings",
-						type: "tab",
-						name: "Settings",
-						component: "settings-panel",
-						config: {},
-						enableClose: false,
-						borderWidth: 800,
-						borderHeight: 1200,
 					},
 				],
 			},
@@ -150,6 +144,11 @@ export const AgentWorkspace: React.FC = observer(() => {
 							restrict: ["OWNER"],
 						},
 						{
+							name: "Agent Activity",
+							component: "agent-activity",
+							restrict: ["OWNER", "EDIT", "READ_ONLY"],
+						},
+						{
 							name: "Access Control",
 							component: "access-control",
 							restrict: ["OWNER", "EDIT"],
@@ -226,11 +225,13 @@ export const AgentWorkspace: React.FC = observer(() => {
 	};
 
 	return (
-		<WorkspaceManager
-			navbarActions={<CodeWorkspaceActions />}
-			options={DEFAULT_OPTIONS}
-			factory={FACTORY}
-			onAction={handleAction}
-		/>
+		<>
+			<WorkspaceNavbar actions={<CodeWorkspaceActions />} />
+			<WorkspaceManager
+				options={DEFAULT_OPTIONS}
+				factory={FACTORY}
+				onAction={handleAction}
+			/>
+		</>
 	);
 });

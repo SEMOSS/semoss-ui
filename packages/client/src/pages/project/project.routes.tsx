@@ -15,8 +15,11 @@ import {
 	NewPromptBuilderAppPage,
 	ViewAppPage,
 } from "../app";
+import { AgentActivityPage } from "./agent/agent-activity-page";
 import { CreateAgentPage } from "./agent/create-agent-page";
 import { CreateAppPage } from "./app/create-app-page";
+import { CreateNotebookPage } from "./notebook/create-notebook-page";
+import { ViewNotebookPage } from "./notebook/view-notebook-page";
 import { ProjectDependenciesPage } from "./project-dependencies-page";
 import { ProjectLayout } from "./project-layout";
 import { ProjectOverviewPage } from "./project-overview-page";
@@ -251,24 +254,28 @@ export const PROJECT_ROUTES: {
 		],
 	},
 	{
-		path: "agent",
+		path: "notebook",
 		element: <Outlet />,
 		children: [
 			{
 				path: "",
-				element: <ProjectCatalog type="WORKSPACE" />,
+				element: <ProjectCatalog type="NOTEBOOK" />,
 			},
 			{
 				path: "new",
-				element: <CreateAgentPage />,
+				element: <CreateNotebookPage />,
 			},
 			{
 				path: ":appId",
-				element: <ProjectLayout type="WORKSPACE" />,
+				element: <ProjectLayout type="NOTEBOOK" />,
 				children: [
 					{
 						path: "edit",
 						element: <ProjectEdit />,
+					},
+					{
+						path: "view",
+						element: <ViewNotebookPage />,
 					},
 					{
 						path: "*",
@@ -315,6 +322,99 @@ export const PROJECT_ROUTES: {
 							{
 								path: "github/select-repo",
 								element: <AppGithubSelectRepoPage />,
+							},
+							{
+								path: "access-control",
+								element: <ProjectAccessControl />,
+							},
+							{
+								path: "smss",
+								element: <AppSmssPage />,
+							},
+						],
+					},
+				],
+			},
+		],
+	},
+	{
+		path: "agent",
+		element: <Outlet />,
+		children: [
+			{
+				path: "",
+				element: <ProjectCatalog type="WORKSPACE" />,
+			},
+			{
+				path: "new",
+				element: <CreateAgentPage />,
+			},
+			{
+				path: ":appId",
+				element: <ProjectLayout type="WORKSPACE" />,
+				children: [
+					{
+						path: "edit",
+						element: <ProjectEdit />,
+					},
+					{
+						path: "*",
+						element: (
+							<ProjectTabsLayout
+								tabs={[
+									{ name: "Overview", path: "" },
+									{
+										name: "Commits",
+										path: "commits",
+										restrict: ["OWNER", "EDIT"],
+									},
+									{
+										name: "GitHub",
+										path: "github",
+										restrict: ["OWNER"],
+									},
+									{
+										name: "Agent Activity",
+										path: "agent-activity",
+										restrict: [
+											"OWNER",
+											"EDIT",
+											"READ_ONLY",
+										],
+									},
+									{
+										name: "Access Control",
+										path: "access-control",
+										restrict: ["OWNER", "EDIT"],
+									},
+									{
+										name: "SMSS",
+										path: "smss",
+										restrict: ["OWNER"],
+									},
+								]}
+							/>
+						),
+						children: [
+							{
+								path: "",
+								element: <ProjectOverviewPage />,
+							},
+							{
+								path: "commits",
+								element: <AppCommitsPage />,
+							},
+							{
+								path: "github",
+								element: <AppGithubPage />,
+							},
+							{
+								path: "github/select-repo",
+								element: <AppGithubSelectRepoPage />,
+							},
+							{
+								path: "agent-activity",
+								element: <AgentActivityPage />,
 							},
 							{
 								path: "access-control",

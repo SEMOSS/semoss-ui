@@ -1,9 +1,10 @@
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: legacy click handlers */
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: legacy click handlers */
 
-import { ChevronDown, ChevronUp, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { ChevronDown, ChevronUp, TriangleAlert, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -28,9 +29,16 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
+import {
+	EngineBuiltinToolsField,
+	type ModelBuiltinTools,
+} from "@/components/engine/engine-builtin-tools-field";
+import type { BuiltinToolSelection } from "@/components/engine/engine-metadata-display";
 import { useRootStore, useStepper } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId } from "@/utility";
+import type { CatalogMatchState } from "./model-catalog-match";
+import { ModelCatalogMatch } from "./model-catalog-match";
 import type { CategoryTexts, FieldDefinition } from "./model-import.constants";
 
 interface ModelImportFormProps {
@@ -50,11 +58,61 @@ interface ModelImportFormProps {
 	selectedProvider: string;
 
 	importableModelsCategory: CategoryTexts;
+
+	/**
+	 * Only supplied when the Model ID is the user's to type. Reports the ID as it
+	 * settles so the page can look it up in the model catalog.
+	 */
+	onModelIdChange?: (modelId: string) => void;
+
+	/** What the catalog lookup came back with, or null when there is no lookup. */
+	catalogMatch?: CatalogMatchState | null;
+
+	/** The catalog entry the user picked by hand, null when they have not. */
+	pickedCatalogKey?: string | null;
+
+	onPickCatalogKey?: (catalogKey: string | null) => void;
 }
+
+/** How long to let the Model ID settle before looking it up. */
+const MODEL_ID_LOOKUP_DEBOUNCE_MS = 400;
+
+/** Join labels into "Image", "Image or PDF", "Image, Audio or PDF". */
+const formatOptionList = (labels: string[]) =>
+	labels.length < 2
+		? labels.join("")
+		: `${labels.slice(0, -1).join(", ")} or ${labels[labels.length - 1]}`;
+
+/**
+ * Advisory copy for selected options the model catalog does not list.
+ *
+ * Returns "" when there is nothing to say. Nothing here blocks the import - the
+ * catalog is hand-curated, so a deployment can legitimately offer what it omits,
+ * and the model settings tab warns on the same mismatch rather than disabling it.
+ */
+export const getUnlistedOptionWarning = (
+	field: FieldDefinition,
+	selectedValues: string[],
+) => {
+	const unlisted = (field.warningOptions || []).filter((option) =>
+		selectedValues.includes(option),
+	);
+
+	if (unlisted.length === 0) {
+		return "";
+	}
+
+	const pronoun = unlisted.length > 1 ? "them" : "it";
+	const labels = unlisted.map(
+		(option) => field.optionLabels?.[option] || option,
+	);
+
+	return `The model catalog does not list ${formatOptionList(labels)} among ${field.label} for this model. You can still keep ${pronoun} selected, but the provider may reject requests that use ${pronoun}.`;
+};
 
 const getModelFieldTestId = (
 	fieldKey: string,
-	target: "field" | "input" | "error" | "option" | "label",
+	target: "field" | "input" | "error" | "option" | "label" | "warning",
 	optionValue?: string,
 ) => {
 	const base = `model-import-form-${target}-${fieldKey}`;
@@ -65,7 +123,13 @@ const getModelFieldTestId = (
 const getDefaultFieldValue = (field: FieldDefinition) =>
 	field.default ??
 	field.value ??
-	(field.type === "boolean" ? false : field.type === "multiselect" ? [] : "");
+	(field.type === "boolean"
+		? false
+		: field.type === "multiselect"
+			? []
+			: field.type === "builtin-tools"
+				? null
+				: "");
 
 export const hasSelectedMultiselectValue = (value: unknown) =>
 	Array.isArray(value) && value.length > 0;
@@ -77,6 +141,10 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		onComplete,
 		selectedProvider,
 		importableModelsCategory,
+		onModelIdChange,
+		catalogMatch,
+		pickedCatalogKey = null,
+		onPickCatalogKey,
 	} = props;
 
 	const { monolithStore, configStore } = useRootStore();
@@ -126,14 +194,85 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		return acc;
 	}, {});
 
-	// reset defaults when fields change
+	// Reset defaults when fields change. The field list is rebuilt whenever the page
+	// resolves new catalog metadata, which happens while the form is being filled in,
+	// so anything the user has already edited is carried across the reset - otherwise
+	// looking up a model ID would clear their API key.
 	useEffect(() => {
 		const defaults: Record<string, unknown> = {};
 		[...fields, ...advanced].forEach((f) => {
 			defaults[f.key] = getDefaultFieldValue(f);
 		});
-		reset(defaults);
+
+		reset(defaults, { keepDirtyValues: true, keepErrors: true });
 	}, [fields, advanced, reset]);
+
+	// The provider pair drives which built-in tools the catalog can offer.
+	// Both selects are user-editable, so the live form values are what count.
+	const [watchedServingProvider, watchedModelProvider, watchedModelId] =
+		useWatch({
+			control,
+			name: ["SERVING_PROVIDER", "MODEL_PROVIDER", "MODEL"],
+		});
+
+	// Let a typed model id settle before asking the catalog about it.
+	const [settledModelId, setSettledModelId] = useState("");
+	useEffect(() => {
+		const modelId =
+			typeof watchedModelId === "string" ? watchedModelId.trim() : "";
+		const timeout = setTimeout(
+			() => setSettledModelId(modelId),
+			MODEL_ID_LOOKUP_DEBOUNCE_MS,
+		);
+		return () => clearTimeout(timeout);
+	}, [watchedModelId]);
+
+	const hasBuiltinToolsField = [...fields, ...advanced].some(
+		(f) => f.type === "builtin-tools",
+	);
+
+	// Provider-hosted tools for the picked providers, fetched while the engine
+	// does not exist yet. An "OTHER" model provider is withheld so the backend
+	// infers the maker from the model id instead. Optional data - no match
+	// just leaves the free-text editor in place.
+	const builtinToolsPixel = useMemo(() => {
+		if (!hasBuiltinToolsField) {
+			return "";
+		}
+		const args: string[] = [];
+		const servingProvider =
+			typeof watchedServingProvider === "string"
+				? watchedServingProvider.trim()
+				: "";
+		const modelProvider =
+			typeof watchedModelProvider === "string"
+				? watchedModelProvider.trim()
+				: "";
+		if (servingProvider !== "") {
+			args.push(`servingProvider=[${JSON.stringify(servingProvider)}]`);
+		}
+		if (modelProvider !== "" && modelProvider !== "OTHER") {
+			args.push(`modelProvider=[${JSON.stringify(modelProvider)}]`);
+		}
+		if (settledModelId !== "") {
+			args.push(`modelId=[${JSON.stringify(settledModelId)}]`);
+		}
+		return args.length > 0
+			? `GetModelBuiltinTools(${args.join(", ")});`
+			: "";
+	}, [
+		hasBuiltinToolsField,
+		watchedServingProvider,
+		watchedModelProvider,
+		settledModelId,
+	]);
+
+	const getModelBuiltinTools = usePixel<ModelBuiltinTools>(builtinToolsPixel);
+	const builtinToolsCatalog =
+		getModelBuiltinTools.status === "SUCCESS"
+			? (getModelBuiltinTools.data?.tools ?? {})
+			: {};
+	const hasBuiltinToolsCatalog = Object.keys(builtinToolsCatalog).length > 0;
 
 	const getHelperText = (error, val) => {
 		if (!error) return val.helperText || "";
@@ -387,6 +526,12 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 						case "text": {
 							const isReadOnlyInitScript =
 								f.key === "INIT_MODEL_ENGINE" && !!f.disabled;
+							// the catalog lookup only applies to an ID the user types;
+							// a card that pins its own model ID is already known
+							const isMatchableModelId =
+								f.key === "MODEL" &&
+								!f.disabled &&
+								!!onModelIdChange;
 							return (
 								<Field data-testid={fieldWrapperTestId}>
 									<FieldLabel htmlFor={f.key}>
@@ -402,6 +547,25 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 										value={field.value ?? ""}
 										onChange={(v) => {
 											field.onChange(v);
+											if (isMatchableModelId) {
+												const lookupKey = `${f.key}__catalog`;
+												if (
+													debounceTimeoutsRef.current[
+														lookupKey
+													]
+												) {
+													clearTimeout(
+														debounceTimeoutsRef
+															.current[lookupKey],
+													);
+												}
+												const typed = v.target.value;
+												debounceTimeoutsRef.current[
+													lookupKey
+												] = setTimeout(() => {
+													onModelIdChange(typed);
+												}, MODEL_ID_LOOKUP_DEBOUNCE_MS);
+											}
 											if (f.rules?.custom_rules) {
 												if (
 													debounceTimeoutsRef.current[
@@ -478,6 +642,15 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									>
 										{getHelperText(errors?.[f.key], f)}
 									</FieldDescription>
+									{isMatchableModelId && (
+										<ModelCatalogMatch
+											state={catalogMatch ?? null}
+											pickedKey={pickedCatalogKey}
+											onPick={(catalogKey) =>
+												onPickCatalogKey?.(catalogKey)
+											}
+										/>
+									)}
 								</Field>
 							);
 						}
@@ -753,6 +926,50 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									/>
 								</Field>
 							);
+						case "builtin-tools": {
+							const selection =
+								field.value &&
+								typeof field.value === "object" &&
+								!Array.isArray(field.value)
+									? (field.value as Record<
+											string,
+											BuiltinToolSelection
+										>)
+									: null;
+							return (
+								<Field data-testid={fieldWrapperTestId}>
+									<FieldLabel htmlFor={f.key}>
+										{f.label}
+									</FieldLabel>
+									{hasBuiltinToolsCatalog ? (
+										<EngineBuiltinToolsField
+											tools={builtinToolsCatalog}
+											value={selection}
+											onChange={(next) =>
+												field.onChange(next)
+											}
+											testId={fieldInputTestId}
+										/>
+									) : (
+										<p
+											className="text-muted-foreground text-sm"
+											data-testid={fieldInputTestId}
+										>
+											No provider-hosted tools are
+											available for this provider and
+											model.
+										</p>
+									)}
+									{f.helperText && (
+										<FieldDescription
+											data-testid={fieldErrorTestId}
+										>
+											{f.helperText}
+										</FieldDescription>
+									)}
+								</Field>
+							);
+						}
 						case "select":
 							return (
 								<Field data-testid={fieldWrapperTestId}>
@@ -803,6 +1020,10 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 							const selectedValues = Array.isArray(field.value)
 								? field.value.map(String)
 								: [];
+							const optionWarning = getUnlistedOptionWarning(
+								f,
+								selectedValues,
+							);
 							return (
 								<Field data-testid={fieldWrapperTestId}>
 									<FieldLabel>
@@ -816,11 +1037,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									<div className="grid grid-cols-2 gap-2 rounded-md border border-border p-3">
 										{(f.options || []).map((opt) => {
 											const optionId = `${f.key}-${opt}`;
-											const optionDisabled =
-												!!f.disabled ||
-												f.disabledOptions?.includes(
-													opt,
-												);
+											const optionDisabled = !!f.disabled;
 											return (
 												<div
 													key={opt}
@@ -874,6 +1091,18 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 											);
 										})}
 									</div>
+									{optionWarning !== "" && (
+										<p
+											className="flex items-start gap-1.5 text-amber-600 text-xs dark:text-amber-400"
+											data-testid={getModelFieldTestId(
+												f.key,
+												"warning",
+											)}
+										>
+											<TriangleAlert className="mt-px size-3.5 shrink-0" />
+											<span>{optionWarning}</span>
+										</p>
+									)}
 									{error && (
 										<P
 											className="text-destructive text-sm"

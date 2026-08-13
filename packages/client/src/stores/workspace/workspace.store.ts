@@ -1,8 +1,8 @@
 import { makeAutoObservable } from "mobx";
+import type { Role } from "@semoss/sdk";
 import { FlexLayout } from "@semoss/shared";
 import type { AppMetadata } from "@/components/app";
 import type { RootStore, WorkspaceOptions } from "@/stores";
-import type { Role } from "@/types";
 
 export interface WorkspaceStoreInterface {
 	/**
@@ -38,7 +38,7 @@ export interface WorkspaceStoreInterface {
 	/**
 	 * Type of the app
 	 */
-	type: "BLOCKS" | "CODE" | "SKILL" | "WORKSPACE";
+	type: "BLOCKS" | "CODE" | "SKILL" | "WORKSPACE" | "NOTEBOOK";
 
 	/**
 	 * Model associated with the layout
@@ -73,7 +73,7 @@ export interface WorkspaceConfigInterface {
 	/**
 	 * Type of the app
 	 */
-	type: "BLOCKS" | "CODE" | "SKILL" | "WORKSPACE";
+	type: "BLOCKS" | "CODE" | "SKILL" | "WORKSPACE" | "NOTEBOOK";
 
 	/**
 	 * Metadata associated with the loaded app
@@ -203,7 +203,7 @@ export class WorkspaceStore {
 	 * The key for the local storage cache
 	 */
 	get cacheKey() {
-		return `smss-workspace--${this._store.appId}-v6`;
+		return `smss-workspace--${this._store.appId}-v7`;
 	}
 
 	/**

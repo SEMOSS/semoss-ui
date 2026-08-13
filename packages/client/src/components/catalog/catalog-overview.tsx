@@ -1,6 +1,6 @@
 import { Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { Role } from "@semoss/shared";
+import type { Role } from "@semoss/sdk";
 import {
 	Badge,
 	Button,
@@ -13,8 +13,8 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
-import { MarkdownEditor } from "@/components/common";
-import { normalizeTagArray, removeUnderscores, toTitleCase } from "@/utility";
+import { MarkdownEditor, NoDetailsEmptyState } from "@/components/common";
+import { metakeyToLabel, normalizeTagArray } from "@/utility";
 import { formatDateToLocal } from "@/utility/date";
 import { CatalogTagInput } from "./catalog-tag-input";
 import { CatalogTags } from "./catalog-tags";
@@ -50,6 +50,37 @@ const normalizeArrayValue = (value: unknown): string[] => {
 	return [];
 };
 
+/**
+ * Format a read-mode value, adding locale thousands separators when it is a
+ * number (contextWindow, maxOutputTokens). Values that are merely numeric
+ * strings are only formatted when the metakey declares input_type "number", so
+ * ids, years, and version strings keep their raw text.
+ *
+ * @param value Raw form value.
+ * @param isNumericField Whether the metakey is configured as a number input.
+ * @returns Display string for the value.
+ */
+const formatDisplayValue = (value: unknown, isNumericField: boolean) => {
+	const text = String(value).trim();
+
+	if (typeof value !== "number" && !(isNumericField && /^\d+$/.test(text))) {
+		return text;
+	}
+
+	const parsed = typeof value === "number" ? value : Number(text);
+
+	return Number.isFinite(parsed) ? parsed.toLocaleString() : text;
+};
+
+/**
+ * Shared placeholder for a read-mode field with no value. Every empty field
+ * routes through this so the wording and type scale stay identical, including
+ * the CatalogTags empty state.
+ */
+const EmptyValue = () => (
+	<div className="text-muted-foreground text-sm">None</div>
+);
+
 export interface CatalogOverviewProps {
 	/** ID of the catalog */
 	id: string;
@@ -72,6 +103,12 @@ export interface CatalogOverviewProps {
 		metakey: string;
 		single_multi: string;
 		display_values?: string;
+		/** Human-authored label; falls back to a formatted metakey when absent */
+		display_label?: string;
+		/** Reserved: not yet enforced by the edit form */
+		read_only?: boolean;
+		/** Reserved: not yet applied to the rendered input */
+		input_type?: string;
 	}[];
 	/** Values */
 	metaValues: {
@@ -291,45 +328,66 @@ export const CatalogOverview = ({
 	 * @param metakey Metadata key being rendered.
 	 * @param displayOption Rendering mode from metadata configuration.
 	 * @param label User-facing label for this field.
+	 * @param inputType Configured input type, used to format numeric values.
 	 * @returns Field input/display element for current edit mode.
 	 */
 	const renderDynamicField = (
 		metakey: string,
 		displayOption: string,
 		label: string,
+		inputType?: string,
 	) => {
 		const rawValue = form[metakey];
-		const textValue = typeof rawValue === "string" ? rawValue : "";
+		// Numeric metadata (contextWindow, maxOutputTokens) arrives as a number, so
+		// it has to be stringified or the text inputs render blank in edit mode.
+		// Arrays/objects are excluded here; they render through arrayValue instead.
+		const textValue =
+			rawValue === null ||
+			rawValue === undefined ||
+			typeof rawValue === "object"
+				? ""
+				: String(rawValue);
 		const arrayValue = normalizeArrayValue(rawValue);
 		const options = filterOptions[metakey] || [];
 
 		if (!isEditing) {
 			// Read mode honors markdown rendering when requested by metadata config.
 			if (displayOption === "markdown") {
-				return rawValue ? (
+				return String(rawValue ?? "").trim() ? (
 					<Markdown>{String(rawValue)}</Markdown>
 				) : (
-					<div className="text-muted-foreground text-sm">None</div>
+					<EmptyValue />
 				);
 			}
 
 			if (Array.isArray(rawValue)) {
-				return (
+				return arrayValue.length > 0 ? (
 					<div className="flex flex-wrap gap-2">
-						{rawValue.map((tag) => (
+						{arrayValue.map((tag) => (
 							<Badge key={tag} variant="outline">
 								{tag}
 							</Badge>
 						))}
 					</div>
+				) : (
+					<EmptyValue />
 				);
 			}
 
-			if (typeof rawValue === "string" && rawValue.trim() !== "") {
-				return <div className="text-sm">{rawValue}</div>;
+			// Covers numbers and booleans too, not just strings, so populated
+			// numeric metadata (contextWindow, maxOutputTokens) is not shown as None.
+			if (rawValue !== null && rawValue !== undefined) {
+				const displayValue = formatDisplayValue(
+					rawValue,
+					inputType === "number",
+				);
+
+				if (displayValue !== "") {
+					return <div className="text-sm">{displayValue}</div>;
+				}
 			}
 
-			return <div className="text-muted-foreground text-xs">None</div>;
+			return <EmptyValue />;
 		}
 
 		if (displayOption === "markdown") {
@@ -420,6 +478,24 @@ export const CatalogOverview = ({
 			);
 		}
 
+		// Numeric fields display separators while editing, but only digits are
+		// stored so the save-time positive-integer parse still accepts the value.
+		if (inputType === "number") {
+			return (
+				<Input
+					type="text"
+					inputMode="numeric"
+					value={formatDisplayValue(textValue, true)}
+					onChange={(event) =>
+						updateForm(
+							metakey,
+							event.target.value.replace(/[^\d]/g, ""),
+						)
+					}
+				/>
+			);
+		}
+
 		return (
 			<Input
 				type="text"
@@ -504,7 +580,8 @@ export const CatalogOverview = ({
 				</Field>
 
 				{dynamicMetaKeys.map((meta) => {
-					const label = toTitleCase(removeUnderscores(meta.metakey));
+					const label =
+						meta.display_label || metakeyToLabel(meta.metakey);
 
 					if (
 						(meta.display_options === "multi-typeahead" ||
@@ -537,19 +614,23 @@ export const CatalogOverview = ({
 								meta.metakey,
 								meta.display_options,
 								label,
+								meta.input_type,
 							)}
-							{(filterOptions[meta.metakey] || []).length > 0 && (
-								<datalist id={`${meta.metakey}-list`}>
-									{(filterOptions[meta.metakey] || []).map(
-										(option) => (
+							{/* Only edit-mode inputs reference the datalist. */}
+							{isEditing &&
+								(filterOptions[meta.metakey] || []).length >
+									0 && (
+									<datalist id={`${meta.metakey}-list`}>
+										{(
+											filterOptions[meta.metakey] || []
+										).map((option) => (
 											<option
 												key={option}
 												value={option}
 											/>
-										),
-									)}
-								</datalist>
-							)}
+										))}
+									</datalist>
+								)}
 						</Field>
 					);
 				})}
@@ -620,14 +701,19 @@ export const CatalogOverview = ({
 					</div>
 				) : (
 					<div className="space-y-6 lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(16rem,24rem)] lg:gap-x-8 lg:space-y-0">
-						{form.markdown ? (
+						{String(form.markdown || "").trim() ? (
 							<div>
 								<Field>
 									<Markdown>{String(form.markdown)}</Markdown>
 								</Field>
 							</div>
 						) : (
-							<> &nbsp; </>
+							// self-start keeps the placeholder near the top of the row
+							// instead of centering it against a tall metadata sidebar.
+							<NoDetailsEmptyState
+								className="self-start"
+								data-testid="catalog-overview--markdown-empty"
+							/>
 						)}
 						<div>
 							<div className="space-y-6 lg:rounded-xl lg:border lg:bg-card lg:p-4">
