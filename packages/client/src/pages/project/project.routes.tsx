@@ -55,7 +55,7 @@ export const PROJECT_ROUTES: {
 			},
 			{
 				path: ":appId",
-				element: <ProjectLayout type="CODE" />,
+				element: <ProjectLayout />,
 				children: [
 					{
 						path: "edit",
@@ -183,7 +183,7 @@ export const PROJECT_ROUTES: {
 			},
 			{
 				path: ":appId",
-				element: <ProjectLayout type="SKILL" />,
+				element: <ProjectLayout />,
 				children: [
 					{
 						path: "edit",
@@ -286,7 +286,7 @@ export const PROJECT_ROUTES: {
 			},
 			{
 				path: ":appId",
-				element: <ProjectLayout type="NOTEBOOK" />,
+				element: <ProjectLayout />,
 				children: [
 					{
 						path: "edit",
@@ -370,7 +370,7 @@ export const PROJECT_ROUTES: {
 			},
 			{
 				path: ":appId",
-				element: <ProjectLayout type="WORKSPACE" />,
+				element: <ProjectLayout />,
 				children: [
 					{
 						path: "edit",
