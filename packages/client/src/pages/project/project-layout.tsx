@@ -20,6 +20,10 @@ export const DETAIL_CONFIG = {
 		name: "Agent",
 		basePath: "/agent",
 	},
+	NOTEBOOK: {
+		name: "Notebook",
+		basePath: "/notebook",
+	},
 } as const;
 
 interface ProjectLayoutProps {

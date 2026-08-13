@@ -117,6 +117,10 @@ These rules apply to **all** packages. They are adopted incrementally — see
   (it holds most shared components, utilities, and types), then the other libs.
 - Comment non-obvious code. Add TSDoc (`/** ... */`) to all functions and document component
   props on their type/interface.
+- Do not use files, components, hooks, or APIs marked `@deprecated` in their TSDoc. Use the
+  replacement named in the deprecation notice instead — e.g. `@semoss/ui/next` components over
+  the legacy `@semoss/ui` exports, and `@semoss/sdk` primitives over the deprecated client
+  `monolithStore`. Migrate any deprecated usage you touch.
 
 ### TypeScript
 
@@ -247,6 +251,18 @@ Standard `src/` layout (use only the folders a package needs):
 - **`turbo.json`** - Affects build caching and task dependencies
 - **`biome.json`** - Changes affect all packages
 - **Root `package.json`** - Engine constraints affect all developers
+
+### Mandatory Audit Before Handoff
+
+Before marking work complete, always perform and report a quick audit for touched files:
+- **Standards audit**: confirm naming, exports, Tailwind/style rules, TypeScript safety,
+  API-call patterns, and accessibility requirements from this guide.
+- **Deprecation audit**: confirm no new usage of `@deprecated` files/components/hooks/APIs
+  was introduced; migrate touched deprecated usage when in scope.
+- **Risk audit**: call out possible regressions, edge cases, and missing tests.
+- **Validation audit**: run relevant checks/tests for the scope and summarize outcomes.
+
+Do not skip this audit, even for small changes.
 
 ### Testing Changes
 

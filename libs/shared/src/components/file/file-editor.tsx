@@ -106,6 +106,7 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 						onChange={onChange}
 						onRun={onRun}
 						leadingToolbar={leadingToolbar}
+						readOnly={readOnly}
 					/>
 				)}
 		</div>

@@ -10,7 +10,8 @@ type FieldType =
 	| "boolean"
 	| "multiselect"
 	| "textarea"
-	| "file-upload";
+	| "file-upload"
+	| "builtin-tools";
 
 type categoryType = "General" | "Credentials" | "Settings";
 
