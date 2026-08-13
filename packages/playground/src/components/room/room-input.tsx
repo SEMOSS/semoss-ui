@@ -16,7 +16,6 @@ import {
 import {
 	BookOpenIcon,
 	Bot,
-	ExternalLinkIcon,
 	HammerIcon,
 	MicIcon,
 	PlusIcon,
@@ -69,6 +68,18 @@ import { RoomContextUsageIndicator } from "./room-context-usage-indicator";
 
 type WorkspaceRef = Pick<Workspace, "workspace_id"> &
 	Partial<Pick<Workspace, "name">>;
+
+/** One section of the combined chip — see chipSections below. */
+interface ChipSection {
+	key: string;
+	icon: React.ComponentType<{ className?: string }>;
+	/** Swaps in for `icon` on hover — e.g. the harness section's X-to-exit. */
+	hoverIcon?: React.ComponentType<{ className?: string }>;
+	label: string;
+	/** Absent renders the section as plain, non-interactive text. */
+	onClick?: () => void;
+	title?: string;
+}
 
 let isIframed = false;
 try {
@@ -289,6 +300,46 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// Agent chip indicates a current selection. The Agent tab inside the
 		// modal is always visible; editability is gated on `onWorkspaceChange`.
 		const agentChipWorkspace = options.workspace ?? null;
+
+		// One combined chip, sections divided by a border rather than each
+		// being its own separate chip. A section with no onClick renders as
+		// plain (non-interactive) text — e.g. the harness label on an
+		// existing room, where there's nothing for a click to do.
+		const rawChipSections: (ChipSection | false)[] = [
+			room.mode === "agent" && {
+				key: "harness",
+				icon: SparklesIcon,
+				hoverIcon: onExitAgentHarness ? XIcon : undefined,
+				label: t("modes.agent"),
+				onClick: onExitAgentHarness,
+				title: onExitAgentHarness ? t("modes.exitAgent") : undefined,
+			},
+			agentChipWorkspace && {
+				key: "agent",
+				icon: Bot,
+				label:
+					agentChipWorkspace.name || agentChipWorkspace.workspace_id,
+				onClick: onWorkspaceChange
+					? () => handleOpenMcpOverlay("AGENT")
+					: undefined,
+				title: agentChipWorkspace.name ?? undefined,
+			},
+			toolboxCount > 0 && {
+				key: "tools",
+				icon: HammerIcon,
+				label: String(toolboxCount),
+				onClick: () => handleOpenMcpOverlay("TOOLBOX"),
+			},
+			knowledgeCount > 0 && {
+				key: "knowledge",
+				icon: BookOpenIcon,
+				label: String(knowledgeCount),
+				onClick: () => handleOpenMcpOverlay("KNOWLEDGE"),
+			},
+		];
+		const chipSections = rawChipSections.filter(
+			(section): section is ChipSection => !!section,
+		);
 
 		// Refs for DOM elements and Lexical editor
 		const ref = useRef<HTMLDivElement>(null);
@@ -775,110 +826,71 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								    first when squeezed. Chips inside are shrink-0 and
 								    clip past the region's right edge. */}
 									<div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-										{room.mode === "agent" && (
+										{chipSections.length > 0 && (
 											<div className="inline-flex h-7 shrink-0 items-center overflow-hidden rounded-md border border-border bg-background text-xs">
-												<div className="flex h-full items-center gap-1.5 px-2.5">
-													<SparklesIcon className="size-3.5 shrink-0" />
-													<span>
-														{t("modes.agent")}
-													</span>
-												</div>
-												{onExitAgentHarness && (
-													<button
-														type="button"
-														onClick={
-															onExitAgentHarness
-														}
-														className="flex h-full items-center border-border border-s px-1.5 transition-colors hover:bg-muted/50"
-														title={t(
-															"modes.exitAgent",
-														)}
-													>
-														<XIcon className="size-3" />
-													</button>
+												{chipSections.map(
+													(section, idx) => {
+														const Icon =
+															section.icon;
+														const HoverIcon =
+															section.hoverIcon;
+														const content = (
+															<>
+																{HoverIcon ? (
+																	<span className="relative inline-flex size-3.5 shrink-0 items-center justify-center">
+																		<Icon className="size-3.5 group-hover:hidden" />
+																		<HoverIcon className="hidden size-3.5 group-hover:block" />
+																	</span>
+																) : (
+																	<Icon className="size-3.5 shrink-0" />
+																)}
+																<span className="max-w-32 truncate">
+																	{
+																		section.label
+																	}
+																</span>
+															</>
+														);
+														return section.onClick ? (
+															<button
+																key={
+																	section.key
+																}
+																type="button"
+																onClick={
+																	section.onClick
+																}
+																title={
+																	section.title
+																}
+																className={cn(
+																	"group flex h-full items-center gap-1.5 px-2.5 transition-colors hover:bg-muted/50",
+																	idx > 0 &&
+																		"border-border border-s",
+																)}
+															>
+																{content}
+															</button>
+														) : (
+															<div
+																key={
+																	section.key
+																}
+																title={
+																	section.title
+																}
+																className={cn(
+																	"flex h-full items-center gap-1.5 px-2.5",
+																	idx > 0 &&
+																		"border-border border-s",
+																)}
+															>
+																{content}
+															</div>
+														);
+													},
 												)}
 											</div>
-										)}
-										{agentChipWorkspace && (
-											<div className="inline-flex h-7 shrink-0 items-center overflow-hidden rounded-md border border-border bg-background text-xs">
-												{onWorkspaceChange ? (
-													<button
-														type="button"
-														onClick={() =>
-															handleOpenMcpOverlay(
-																"AGENT",
-															)
-														}
-														className="flex h-full items-center gap-1.5 px-2.5 transition-colors hover:bg-muted/50"
-														title={
-															agentChipWorkspace.name ??
-															undefined
-														}
-													>
-														<Bot className="size-3.5 shrink-0" />
-														<span className="max-w-32 truncate">
-															{agentChipWorkspace.name ||
-																agentChipWorkspace.workspace_id}
-														</span>
-													</button>
-												) : (
-													<div
-														className="flex h-full items-center gap-1.5 px-2.5"
-														title={
-															agentChipWorkspace.name ??
-															undefined
-														}
-													>
-														<Bot className="size-3.5 shrink-0" />
-														<span className="max-w-32 truncate">
-															{agentChipWorkspace.name ||
-																agentChipWorkspace.workspace_id}
-														</span>
-													</div>
-												)}
-												{root.theme.featureFlags
-													?.showPlatformLinks && (
-													<a
-														target="_blank"
-														rel="noopener noreferrer"
-														href={`#/agent/${agentChipWorkspace.workspace_id}`}
-														className="flex h-full items-center border-border border-s px-1.5 transition-colors hover:bg-muted/50"
-														onClick={(e) =>
-															e.stopPropagation()
-														}
-													>
-														<ExternalLinkIcon className="size-3" />
-													</a>
-												)}
-											</div>
-										)}
-										{knowledgeCount > 0 && (
-											<button
-												type="button"
-												onClick={() =>
-													handleOpenMcpOverlay(
-														"KNOWLEDGE",
-													)
-												}
-												className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs transition-colors hover:bg-muted/50"
-											>
-												<BookOpenIcon className="size-3.5" />
-												<span>{knowledgeCount}</span>
-											</button>
-										)}
-										{toolboxCount > 0 && (
-											<button
-												type="button"
-												onClick={() =>
-													handleOpenMcpOverlay(
-														"TOOLBOX",
-													)
-												}
-												className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs transition-colors hover:bg-muted/50"
-											>
-												<HammerIcon className="size-3.5" />
-												<span>{toolboxCount}</span>
-											</button>
 										)}
 									</div>
 									{/* Middle controls — sit at natural width on the right
