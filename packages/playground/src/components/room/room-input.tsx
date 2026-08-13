@@ -23,6 +23,7 @@ import {
 	SendIcon,
 	SparklesIcon,
 	Square,
+	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
@@ -183,6 +184,13 @@ interface RoomInputProps {
 	 * mode lives in local state until the room is actually created.
 	 */
 	onSwitchToAgentHarness?: () => void;
+
+	/**
+	 * Shows an X button on the agent-mode chip to leave agent harness mode.
+	 * Only passed on the new-room page — once a room exists its harness type
+	 * is a persisted, committed choice, not something to back out of inline.
+	 */
+	onExitAgentHarness?: () => void;
 }
 
 // ============================================================================
@@ -224,6 +232,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		excludeCommandIds,
 		onOpenSettings,
 		onSwitchToAgentHarness,
+		onExitAgentHarness,
 	}) => {
 		// ========================================================================
 		// Hooks & State
@@ -767,9 +776,27 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								    clip past the region's right edge. */}
 									<div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
 										{room.mode === "agent" && (
-											<div className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs">
-												<SparklesIcon className="size-3.5 shrink-0" />
-												<span>{t("modes.agent")}</span>
+											<div className="inline-flex h-7 shrink-0 items-center overflow-hidden rounded-md border border-border bg-background text-xs">
+												<div className="flex h-full items-center gap-1.5 px-2.5">
+													<SparklesIcon className="size-3.5 shrink-0" />
+													<span>
+														{t("modes.agent")}
+													</span>
+												</div>
+												{onExitAgentHarness && (
+													<button
+														type="button"
+														onClick={
+															onExitAgentHarness
+														}
+														className="flex h-full items-center border-border border-s px-1.5 transition-colors hover:bg-muted/50"
+														title={t(
+															"modes.exitAgent",
+														)}
+													>
+														<XIcon className="size-3" />
+													</button>
+												)}
 											</div>
 										)}
 										{agentChipWorkspace && (

@@ -16,7 +16,8 @@
 	},
 	"modes": {
 		"ask": "Mode Chat",
-		"agent": "Mode Harnais d'agent"
+		"agent": "Mode Harnais d'agent",
+		"exitAgent": "Quitter le mode harnais d'agent"
 	},
 	"workspace": {
 		"publishTooltip": "Publier en tant qu'agent",

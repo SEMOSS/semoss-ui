@@ -23,7 +23,8 @@
 	},
 	"modes": {
 		"ask": "Chatmodus",
-		"agent": "Agent Harness-modus"
+		"agent": "Agent Harness-modus",
+		"exitAgent": "Agent Harness-modus verlaten"
 	},
 	"workspace": {
 		"publishTooltip": "Publiceren als agent",

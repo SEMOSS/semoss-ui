@@ -19,7 +19,8 @@
 	},
 	"modes": {
 		"ask": "Modo Chat",
-		"agent": "Modo Arnés de agente"
+		"agent": "Modo Arnés de agente",
+		"exitAgent": "Salir del modo arnés de agente"
 	},
 	"workspace": {
 		"publishTooltip": "Publicar como agente",

@@ -110,6 +110,14 @@ export const NewRoomPage = observer(() => {
 	);
 	const submittedRef = useRef(false);
 	const [mode, setMode] = useState<"chat" | "agent">("chat");
+
+	// tempRoomStore is only created once (createRoom below builds the real,
+	// separate room), so RoomInput's agent-harness chip — keyed off
+	// room.mode — needs this synced explicitly rather than reading straight
+	// off local mode state.
+	useEffect(() => {
+		tempRoomStore.setMode(mode);
+	}, [mode, tempRoomStore]);
 	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
 	const [prompts, setPrompts] = useState<string[]>([]);
 	const previewPrompts = useMemo(
@@ -508,6 +516,7 @@ export const NewRoomPage = observer(() => {
 									onSwitchToAgentHarness={() =>
 										setMode("agent")
 									}
+									onExitAgentHarness={() => setMode("chat")}
 									// The new-room flow has no cancellable turn, so
 									// it's only ever busy (spinner) or idle (send).
 									sendState={isLoading ? "loading" : "send"}
