@@ -20,7 +20,7 @@ export const ProjectEdit = observer(() => {
 	return (
 		<div className="absolute inset-0">
 			<InsightProvider>
-				<Workspace app={project.project_id} />
+				<Workspace />
 			</InsightProvider>
 		</div>
 	);

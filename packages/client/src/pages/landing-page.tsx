@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import type { Variable } from "@semoss/renderer";
 import { STATE_VERSION } from "@semoss/renderer/version";
 import { Button, H4, Muted } from "@semoss/ui/next";
@@ -48,9 +48,6 @@ export const LandingPage: React.FC = observer(() => {
 		"PROJECT",
 		"add",
 	);
-	if (isRestricted) {
-		return <Navigate to="/" replace />;
-	}
 
 	return (
 		<>
@@ -70,76 +67,81 @@ export const LandingPage: React.FC = observer(() => {
 						to: "../../playground/dist/",
 					}}
 				/>
-				<div className="flex w-full flex-col gap-6">
-					<div className="flex grow flex-row gap-6">
-						<div className="flex w-full flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
-							<div className="flex flex-col gap-1">
-								<H4 className="font-bold text-foreground">
-									Get started with our tool
-								</H4>
-								<Muted>
-									Start building your app in the way that
-									works best for you.
-								</Muted>
+				{!isRestricted && (
+					<div className="flex w-full flex-col gap-6">
+						<div className="flex grow flex-row gap-6">
+							<div className="flex w-full flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+								<div className="flex flex-col gap-1">
+									<H4 className="font-bold text-foreground">
+										Get started with our tool
+									</H4>
+									<Muted>
+										Start building your app in the way that
+										works best for you.
+									</Muted>
+								</div>
+								<Button
+									asChild
+									variant="ghost"
+									size="default"
+									className="shrink-0 text-primary hover:bg-transparent hover:text-primary"
+								>
+									<Link to="/app/new">
+										Browse Templates
+										<ArrowRight className="size-4" />
+									</Link>
+								</Button>
 							</div>
-							<Button
-								asChild
-								variant="ghost"
-								size="default"
-								className="shrink-0 text-primary hover:bg-transparent hover:text-primary"
-							>
-								<Link to="/app/new">
-									Browse Templates
-									<ArrowRight className="size-4" />
-								</Link>
-							</Button>
 						</div>
-					</div>
-					{isNameOpen ? (
-						<NewAppModal
-							open={isNameOpen}
-							options={newAppOptions}
-							onClose={(appId) => {
-								if (appId) {
-									navigate(`/app/${appId}/edit`);
-								} else {
-									// close the modal
-									setNewAppOptions(null);
+						{isNameOpen ? (
+							<NewAppModal
+								open={isNameOpen}
+								options={newAppOptions}
+								onClose={(appId) => {
+									if (appId) {
+										navigate(`/app/${appId}/edit`);
+									} else {
+										// close the modal
+										setNewAppOptions(null);
+									}
+								}}
+							/>
+						) : null}
+						<LandingHeader
+							isAdmin={configStore.store.user.admin && adminMode}
+							onCreate={(type) => {
+								if (type === "blocks") {
+									setNewAppOptions({
+										type: "blocks",
+										state: {
+											version: STATE_VERSION,
+											variables:
+												BASE_APP_VARIABLES as Record<
+													string,
+													Variable
+												>,
+											queries: BASE_APP_QUERIES,
+											blocks: BASE_PAGE_BLOCKS,
+											executionOrder: [],
+										},
+									});
+								} else if (type === "code") {
+									setNewAppOptions({
+										type: "code",
+									});
+								} else if (type === "agent") {
+									navigate("/app/new/prompt");
+								} else if (type === "automation") {
+									setNewAppOptions({
+										type: "automation",
+									});
+								} else if (type === "notebook") {
+									navigate("/notebook");
 								}
 							}}
 						/>
-					) : null}
-					<LandingHeader
-						isAdmin={configStore.store.user.admin && adminMode}
-						onCreate={(type) => {
-							if (type === "blocks") {
-								setNewAppOptions({
-									type: "blocks",
-									state: {
-										version: STATE_VERSION,
-										variables: BASE_APP_VARIABLES as Record<
-											string,
-											Variable
-										>,
-										queries: BASE_APP_QUERIES,
-										blocks: BASE_PAGE_BLOCKS,
-										executionOrder: [],
-									},
-								});
-							} else if (type === "code") {
-								setNewAppOptions({
-									type: "code",
-								});
-							} else if (type === "agent") {
-								navigate("/app/new/prompt");
-							} else if (type === "automation") {
-								setNewAppOptions({
-									type: "automation",
-								});
-							}
-						}}
-					/>
-				</div>
+					</div>
+				)}
 
 				<div className="flex w-full flex-col gap-3">
 					<div className="flex-col gap-1">

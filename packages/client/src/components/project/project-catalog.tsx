@@ -61,6 +61,16 @@ const CATALOG_CONFIG = {
 
 		showSystemTab: false,
 	},
+	NOTEBOOK: {
+		name: "Notebook",
+		description:
+			"Write and execute code cells, visualize data, and document your analysis in a live, interactive notebook environment. Organize and share notebooks across your team.",
+		createPath: "/notebook/new",
+		basePath: "/notebook",
+		itemSubPath: "view",
+		pixelFilter: 'projectType=["NOTEBOOK"]',
+		showSystemTab: false,
+	},
 } as const;
 
 type TabMode = "Mine" | "Discoverable" | "System";

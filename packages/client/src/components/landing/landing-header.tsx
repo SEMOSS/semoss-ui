@@ -15,6 +15,8 @@ import Appcode from "@/assets/img/Appcode.svg";
 import AppcodeDark from "@/assets/img/Appcode-dark.svg";
 import Appdragdrop from "@/assets/img/Appdragdrop.svg";
 import AppdragdropDark from "@/assets/img/Appdragdrop-dark.svg";
+import AppNotebook from "@/assets/img/Appnotebook.svg";
+import AppNotebookDark from "@/assets/img/Appnotebook-dark.svg";
 
 const BASE_CARDS = [
 	{
@@ -57,11 +59,23 @@ const BASE_CARDS = [
 		testId: "new-app-automation-btn",
 		adminOnly: true,
 	},
+	{
+		title: "Run interactive notebooks",
+		description:
+			"Write and execute code cells, visualize data, and document your analysis in a live, interactive notebook environment.",
+		image: AppNotebook,
+		darkImage: AppNotebookDark,
+		type: "notebook",
+		testId: "new-notebook-btn",
+		adminOnly: false,
+	},
 ] as const;
 
 interface LandingHeaderProps {
 	/** Trigger creation of a new app */
-	onCreate: (type: "blocks" | "code" | "agent" | "automation") => void;
+	onCreate: (
+		type: "blocks" | "code" | "agent" | "automation" | "notebook",
+	) => void;
 	/** Whether the current user is an admin — gates admin-only cards */
 	isAdmin: boolean;
 }

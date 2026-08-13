@@ -45,7 +45,14 @@ export interface Project {
 	project_id: string;
 	project_name: string;
 	project_display_name?: string;
-	project_type: "SKILL" | "WORKSPACE" | "BLOCKS" | "CODE" | "INSIGHT";
+	project_type:
+		| "SKILL"
+		| "WORKSPACE"
+		| "BLOCKS"
+		| "CODE"
+		| "INSIGHT"
+		| "NOTEBOOK"
+		| "AUTOMATION";
 	project_cost?: string;
 	project_global?: string;
 	project_created_by?: string;

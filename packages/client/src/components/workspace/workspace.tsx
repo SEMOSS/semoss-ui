@@ -29,14 +29,14 @@ const AutomationWorkspace = lazy(() =>
 		default: m.AutomationWorkspace,
 	})),
 );
+const NotebookWorkspace = lazy(() =>
+	import("@/components/notebook-workspace").then((m) => ({
+		default: m.NotebookWorkspace,
+	})),
+);
 
-import { useRootStore } from "@/hooks";
+import { useProject, useRootStore } from "@/hooks";
 import type { WorkspaceStore } from "@/stores";
-
-interface WorkspaceProps {
-	/** App to load */
-	app: string;
-}
 
 const WorkspaceLoadingState = () => {
 	return (
@@ -46,14 +46,16 @@ const WorkspaceLoadingState = () => {
 	);
 };
 
-export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
+export const Workspace: React.FC = () => {
 	const insight = useInsight();
 	const { configStore } = useRootStore();
+	const { project, permission, type } = useProject();
 
 	const navigate = useNavigate();
 
 	const [workspace, setWorkspace] = useState<WorkspaceStore | null>(null);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: project/permission are stable within a loaded project context
 	useEffect(() => {
 		// clear out the old app
 		setWorkspace(null);
@@ -63,17 +65,16 @@ export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
 		}
 
 		configStore
-			.createWorkspace(app, insight.insightId)
+			.createWorkspace(project, permission, insight.insightId)
 			.then((loadedWorkspace) => {
 				setWorkspace(loadedWorkspace);
 			})
 			.catch((_e) => {
 				toast.error("Failed to load app, returning to home page.");
-
 				navigate("/");
 			});
 	}, [
-		app,
+		project.project_id,
 		insight.isReady,
 		insight.insightId,
 		configStore.createWorkspace,
@@ -82,8 +83,8 @@ export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
 
 	// check the dependencies
 	usePixel(
-		insight.isReady && app
-			? `ValidateUserProjectDependencies(project="${app}");`
+		insight.isReady && project.project_id
+			? `ValidateUserProjectDependencies(project="${project.project_id}");`
 			: "",
 		{
 			onSuccess: (data: Record<string, boolean>) => {
@@ -118,11 +119,12 @@ export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
 			}}
 		>
 			<Suspense fallback={<WorkspaceLoadingState />}>
-				{workspace.type === "CODE" && <CodeWorkspace />}
-				{workspace.type === "BLOCKS" && <BlocksWorkspace />}
-				{workspace.type === "SKILL" && <SkillWorkspace />}
-				{workspace.type === "WORKSPACE" && <AgentWorkspace />}
-				{workspace.type === "AUTOMATION" && <AutomationWorkspace />}
+				{type === "CODE" && <CodeWorkspace />}
+				{type === "BLOCKS" && <BlocksWorkspace />}
+				{type === "SKILL" && <SkillWorkspace />}
+				{type === "WORKSPACE" && <AgentWorkspace />}
+				{type === "NOTEBOOK" && <NotebookWorkspace />}
+				{type === "AUTOMATION" && <AutomationWorkspace />}
 			</Suspense>
 		</WorkspaceContext.Provider>
 	);

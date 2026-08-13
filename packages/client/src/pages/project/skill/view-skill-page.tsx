@@ -31,7 +31,7 @@ const PUBLIC_ROOT_PATH = "/public";
 export const ViewSkillPage = observer(() => {
 	const { configStore } = useRootStore();
 	const navigate = useNavigate();
-	const { project, catalog } = useProject();
+	const { project, catalog, permission } = useProject();
 
 	const [workspace, setWorkspace] = useState<WorkspaceStore | null>(null);
 	const [selectedPath, setSelectedPath] = useState<string | null>(null);
@@ -48,7 +48,7 @@ export const ViewSkillPage = observer(() => {
 		hasAutoSelectedRef.current = false;
 
 		configStore
-			.createWorkspace(project.project_id)
+			.createWorkspace(project, permission)
 			.then((loadedWorkspace) => {
 				setWorkspace(loadedWorkspace);
 			})
@@ -135,7 +135,7 @@ export const ViewSkillPage = observer(() => {
 					</TooltipTrigger>
 					<TooltipContent>Settings</TooltipContent>
 				</Tooltip>
-				{(workspace.role === "OWNER" || workspace.role === "EDIT") && (
+				{(permission === "OWNER" || permission === "EDIT") && (
 					<Button
 						variant="default"
 						size="sm"

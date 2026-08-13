@@ -7,7 +7,7 @@ import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
 import { ProjectDetailTabs } from "@/components/project";
 import { useWorkspace } from "@/hooks";
-import { WorkspaceManager } from "../../components/workspace";
+import { WorkspaceManager, WorkspaceNavbar } from "../../components/workspace";
 import { WorkspaceTerminal } from "../../components/workspace/panels";
 import type { WorkspaceOptions } from "../../stores";
 import { MCPJsonEditor } from "../shared";
@@ -283,11 +283,13 @@ export const CodeWorkspace: React.FC = observer(() => {
 	};
 
 	return (
-		<WorkspaceManager
-			navbarActions={<CodeWorkspaceActions />}
-			options={DEFAULT_OPTIONS}
-			factory={FACTORY}
-			onAction={handleAction}
-		/>
+		<>
+			<WorkspaceNavbar actions={<CodeWorkspaceActions />} />
+			<WorkspaceManager
+				options={DEFAULT_OPTIONS}
+				factory={FACTORY}
+				onAction={handleAction}
+			/>
+		</>
 	);
 });
