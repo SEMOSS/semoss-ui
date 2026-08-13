@@ -1,6 +1,6 @@
 ---
 description: "Use when building, scaffolding, or editing a React form in this SEMOSS codebase. Creates react-hook-form + zod forms where useForm, zodResolver, and z are all imported from @semoss/ui/next, fields are composed from the @semoss/ui/next Form component and Form* wrappers (FormInput, FormSelect, etc. that bake in the Field primitives, labels, descriptions, and validation errors), read data is fetched via usePixel from @semoss/sdk/react, the Form component owns the native form element and validates through its onSubmit prop (which receives already-validated values), the completion callback prop is onSubmit(id?), and submit buttons show a Spinner while formState.isSubmitting."
-name: "React Form Builder"
+name: "react-form-builder"
 tools: [read, search, edit, execute]
 argument-hint: "Describe the form: its fields, where it lives, and what submit does"
 user-invocable: true
