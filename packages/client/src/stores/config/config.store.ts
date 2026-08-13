@@ -1,14 +1,10 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import { getUserProjectPermission as getUserProjectLevelPermission } from "@semoss/sdk";
+import type { Role } from "@semoss/sdk";
 import { Env, logout, runPixel } from "@semoss/sdk/react";
+import type { Project } from "@semoss/shared";
 import { registerUser } from "@/api";
-import type { AppMetadata } from "@/components/app";
 import { THEME } from "@/constants";
-import {
-	type RootStore,
-	type WorkspaceConfigInterface,
-	WorkspaceStore,
-} from "@/stores";
+import { type RootStore, WorkspaceStore } from "@/stores";
 import type { ALL_TYPES } from "@/types";
 
 interface ConfigStoreInterface {
@@ -790,52 +786,24 @@ export class ConfigStore {
 	/**
 	 * Load an app into a new workspace
 	 *
-	 * @param appId - id of app to load into the workspace
+	 * @param project - project metadata from the caller's context
+	 * @param role - the caller's resolved permission for this project
+	 * @param insightId - insight to bind the workspace to
 	 */
-	async createWorkspace(appId: string, insightId: string = "new") {
-		// get the role and throw an error if it is missing
-		const role = await getUserProjectLevelPermission(appId);
-		if (!role) {
-			throw new Error("Unauthorized");
-		}
-
-		// set the context
-		await runPixel(`SetContext("${appId}")`, insightId);
-
-		// get the metadata
-		const getAppInfo = await this._root.monolithStore.runQuery<
-			[AppMetadata]
-		>(`ProjectInfo(project=["${appId}"]);`, insightId);
-
-		// throw the errors if there are any
-		if (getAppInfo.errors.length > 0) {
-			throw new Error(getAppInfo.errors.join(""));
-		}
-
-		const metadata = {
-			...getAppInfo.pixelReturn[0].output,
-		};
-
-		const workspace: WorkspaceConfigInterface = {
-			appId: appId,
-			insightId: insightId,
-			type: "CODE",
-			role: role,
-			metadata: metadata,
-		};
-
-		if (metadata.project_type === "BLOCKS") {
-			workspace.type = "BLOCKS";
-		} else if (metadata.project_type === "SKILL") {
-			workspace.type = "SKILL";
-		} else if (metadata.project_type === "WORKSPACE") {
-			workspace.type = "WORKSPACE";
-		} else if (metadata.project_type === "NOTEBOOK") {
-			workspace.type = "NOTEBOOK";
-		}
+	async createWorkspace(
+		project: Project,
+		role: Role,
+		insightId: string = "new",
+	) {
+		// set the backend context for this insight
+		await runPixel(`SetContext("${project.project_id}")`, insightId);
 
 		// create the newly loaded workspace
-		return new WorkspaceStore(this._root, workspace);
+		return new WorkspaceStore(this._root, {
+			insightId,
+			role,
+			metadata: project,
+		});
 	}
 
 	/**
