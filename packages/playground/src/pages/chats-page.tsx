@@ -92,7 +92,7 @@ export const ChatsPage = observer(() => {
 	>(
 		(limit, offset) =>
 			debouncedSearch
-				? `META | SearchRoomMessages(search=["<encode>${debouncedSearch}</encode>"], project=["${SYSTEM__PLAYGROUND}"], limit=[${limit}], offset=[${offset}], includeMessageText=[false]);`
+				? `META | SearchRoomMessages(search=[${JSON.stringify(debouncedSearch)}], project=["${SYSTEM__PLAYGROUND}"], limit=[${limit}], offset=[${offset}], includeMessageText=[false]);`
 				: "",
 		// Same short-page-means-last-page heuristic as getRooms above — the
 		// backend already dedupes to one row per room before limit/offset, so a
