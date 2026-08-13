@@ -200,6 +200,15 @@ export const PROJECT_ROUTES: {
 								tabs={[
 									{ name: "Overview", path: "" },
 									{
+										name: "MCP",
+										path: "mcp-usage",
+										restrict: [
+											"OWNER",
+											"EDIT",
+											"READ_ONLY",
+										],
+									},
+									{
 										name: "Commits",
 										path: "commits",
 										restrict: ["OWNER", "EDIT"],
@@ -226,6 +235,16 @@ export const PROJECT_ROUTES: {
 							{
 								path: "",
 								element: <ProjectOverviewPage />,
+							},
+							{
+								// a skill serves its own tools, so there is no
+								// remote endpoint to repoint it at
+								path: "mcp-usage",
+								element: (
+									<AppMcpUsagePage
+										showRemoteConnection={false}
+									/>
+								),
 							},
 							{
 								path: "commits",

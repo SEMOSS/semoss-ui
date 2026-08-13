@@ -43,9 +43,24 @@ const hasPixelError = (operationType?: string[] | string): boolean => {
 	return false;
 };
 
-export const AppMcpUsagePage = () => {
-	const { project } = useProject();
+export interface AppMcpUsagePageProps {
+	/**
+	 * Whether to offer the remote MCP connection editor, which repoints this
+	 * project's MCP at an external endpoint. Defaults to true; pass false where
+	 * the project serves its own tools and repointing it makes no sense (skills).
+	 */
+	showRemoteConnection?: boolean;
+}
+
+export const AppMcpUsagePage = ({
+	showRemoteConnection = true,
+}: AppMcpUsagePageProps = {}) => {
+	const { project, type } = useProject();
 	const { monolithStore } = useRootStore();
+
+	// the same page serves the app and skill catalogs, so name what the reader
+	// is actually looking at
+	const entityLabel = type === "SKILL" ? "skill" : "app";
 
 	const [mcpTools, setMcpTools] = useState<MCPToolDefinition[]>([]);
 	const [mcpToolsLoading, setMcpToolsLoading] = useState(false);
@@ -66,7 +81,7 @@ export const AppMcpUsagePage = () => {
 					const errorMessage =
 						typeof result?.output === "string"
 							? result.output
-							: "Unable to load MCP tools for this app.";
+							: "Unable to load MCP tools.";
 					setMcpTools([]);
 					setMcpToolsError(errorMessage);
 					return;
@@ -82,7 +97,7 @@ export const AppMcpUsagePage = () => {
 				const message =
 					error instanceof Error
 						? error.message
-						: "Unable to load MCP tools for this app.";
+						: "Unable to load MCP tools.";
 				setMcpTools([]);
 				setMcpToolsError(message);
 				toast.error(message);
@@ -107,7 +122,8 @@ export const AppMcpUsagePage = () => {
 					<div className="mb-4">
 						<H4>Available Tools</H4>
 						<p className="text-muted-foreground text-sm">
-							These MCP tools are currently exposed by this app.
+							These MCP tools are currently exposed by this{" "}
+							{entityLabel}.
 						</p>
 					</div>
 
@@ -140,8 +156,8 @@ export const AppMcpUsagePage = () => {
 									No tools available
 								</p>
 								<p className="mt-1 text-muted-foreground text-sm">
-									This app does not currently expose MCP
-									tools.
+									This {entityLabel} does not currently expose
+									MCP tools.
 								</p>
 							</div>
 						)}
@@ -234,7 +250,7 @@ export const AppMcpUsagePage = () => {
 						)}
 				</div>
 
-				{!!project.project_id && (
+				{showRemoteConnection && !!project.project_id && (
 					<div className="rounded-2xl border border-base p-6 shadow-xs">
 						<RemoteMcpConnection
 							projectId={project.project_id}
