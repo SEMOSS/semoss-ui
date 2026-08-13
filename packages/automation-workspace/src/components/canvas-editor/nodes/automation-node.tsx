@@ -173,7 +173,7 @@ export function AutomationNode({ data }: NodeProps) {
 			<Handle
 				type="target"
 				position={Position.Top}
-				isConnectable={false}
+				isConnectable={!locked}
 				className="!h-2 !w-2 !border-2 !border-background !bg-muted-foreground/40"
 			/>
 			{d.isLast && !locked ? (
@@ -192,7 +192,7 @@ export function AutomationNode({ data }: NodeProps) {
 				<Handle
 					type="source"
 					position={Position.Bottom}
-					isConnectable={false}
+					isConnectable={!locked}
 					className="!h-2 !w-2 !border-2 !border-background !bg-muted-foreground/40"
 				/>
 			)}

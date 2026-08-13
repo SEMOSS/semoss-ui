@@ -31,10 +31,9 @@ import {
 } from "../shared";
 import { WorkspaceManager } from "../workspace";
 
-const AUTOMATION_WORKSPACE_URL =
-	window.location.port === "5173"
-		? "http://localhost:5177/"
-		: "../../automation-workspace/dist/";
+const AUTOMATION_WORKSPACE_URL = import.meta.env.DEV
+	? "http://localhost:5177/"
+	: "../../automation-workspace/dist/";
 
 /** Same tabs as CodeWorkspace's settings panel — shared config should be centralized if these drift. */
 const SETTINGS_TABS: React.ComponentProps<typeof ProjectDetailTabs>["tabs"] = [
@@ -110,6 +109,7 @@ export const AutomationWorkspace = observer(() => {
 	const { workspace } = useWorkspace();
 	const { catalog, project } = useProject();
 	const [shareOpen, setShareOpen] = useState(false);
+	const appId = workspace.appId || project.project_id;
 	const [showEditorTabs, setShowEditorTabs] = useState(false);
 
 	useEffect(() => {
@@ -166,7 +166,7 @@ export const AutomationWorkspace = observer(() => {
 				<iframe
 					className="h-full w-full border-none"
 					title="Automation Workspace"
-					src={`${AUTOMATION_WORKSPACE_URL}?app=${encodeURIComponent(workspace.appId)}`}
+					src={`${AUTOMATION_WORKSPACE_URL}?app=${encodeURIComponent(appId)}&mode=edit&readOnly=0`}
 					sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
 				/>
 			);

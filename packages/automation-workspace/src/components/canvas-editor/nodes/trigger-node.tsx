@@ -70,7 +70,7 @@ export function TriggerNode({ data }: NodeProps) {
 				<Handle
 					type="source"
 					position={Position.Bottom}
-					isConnectable={false}
+					isConnectable
 					className="!h-2 !w-2 !border-2 !border-background !bg-emerald-500/60"
 				/>
 			)}

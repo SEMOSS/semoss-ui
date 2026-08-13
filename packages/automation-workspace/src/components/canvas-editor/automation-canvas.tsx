@@ -1,6 +1,7 @@
 import {
 	Background,
 	BackgroundVariant,
+	type Connection,
 	type Edge,
 	MarkerType,
 	type Node,
@@ -41,6 +42,7 @@ import {
 import type {
 	AutomationConfigEntry,
 	AutomationDocument,
+	AutomationEdge,
 	AutomationGraph,
 	AutomationNode,
 	AutomationNodeResult,
@@ -100,21 +102,40 @@ type TabId = "steps" | "history" | "config";
 
 // ---- Helpers ----
 function ensureTriggerNode(nodes: AutomationNode[]): AutomationNode[] {
-	if (nodes.some((n) => n.type === "trigger")) return nodes;
-	const triggerMeta = NODE_TYPE_META.find((m) => m.type === "trigger");
-	if (!triggerMeta) return nodes;
-	const triggerNode: AutomationNode = {
-		id: `trigger-${crypto.randomUUID()}`,
-		type: "trigger",
-		label: "Start",
-		position: { x: 0, y: 0 },
-		outputVar: triggerMeta.defaultOutputVar,
-		config: { ...triggerMeta.defaultConfig },
-	};
-	return [triggerNode, ...nodes];
+	let withTrigger = nodes;
+	if (!nodes.some((node) => node.type === "trigger")) {
+		const triggerMeta = NODE_TYPE_META.find(
+			(meta) => meta.type === "trigger",
+		);
+		if (!triggerMeta) return nodes;
+		const triggerNode: AutomationNode = {
+			id: `trigger-${crypto.randomUUID()}`,
+			type: "trigger",
+			label: "Start",
+			position: { x: 0, y: 0 },
+			outputVar: triggerMeta.defaultOutputVar,
+			config: { ...triggerMeta.defaultConfig },
+		};
+		withTrigger = [triggerNode, ...nodes];
+	}
+
+	// Starter definitions created before canvas positioning did not include
+	// `position`. Start every unpositioned node at the origin so layoutNodes()
+	// can place the full workflow after the canvas mounts.
+	return withTrigger.map((node) =>
+		node.position ? node : { ...node, position: { x: 0, y: 0 } },
+	);
 }
 
 const EMPTY_GRAPH: AutomationGraph = { nodes: [], edges: [] };
+
+function defaultEdges(nodes: AutomationNode[]): AutomationEdge[] {
+	return nodes.slice(0, -1).map((node, index) => ({
+		id: `e-${node.id}-${nodes[index + 1].id}`,
+		source: node.id,
+		target: nodes[index + 1].id,
+	}));
+}
 
 // ---- Component ----
 export function AutomationCanvas({
@@ -137,7 +158,10 @@ export function AutomationCanvas({
 	const [stepDurations, setStepDurations] = useState<Record<string, number>>(
 		{},
 	);
-	const [steps, setSteps] = useState<AutomationNode[]>([]);
+	const [steps, setSteps] = useState<AutomationNode[]>(() =>
+		ensureTriggerNode(EMPTY_GRAPH.nodes),
+	);
+	const [graphEdges, setGraphEdges] = useState<AutomationEdge[]>([]);
 	const [config, setConfig] = useState<AutomationConfigEntry[]>([]);
 	const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
 	const [nodeOutputs, setNodeOutputsState] = useState<Record<string, string>>(
@@ -176,6 +200,7 @@ export function AutomationCanvas({
 	const [expandedHistoryNodes, setExpandedHistoryNodes] = useState<
 		Set<string>
 	>(new Set());
+	const [showExecutedDefinition, setShowExecutedDefinition] = useState(false);
 	const [isDirty, setIsDirty] = useState(false);
 	const [mcpDone, setMcpDone] = useState(false);
 	const [undoSnapshot, setUndoSnapshot] = useState<AutomationNode[] | null>(
@@ -202,6 +227,37 @@ export function AutomationCanvas({
 		return nodeElement?.offsetHeight ?? DEFAULT_NODE_HEIGHT;
 	}, []);
 
+	const onConnect = useCallback((connection: Connection) => {
+		if (
+			!connection.source ||
+			!connection.target ||
+			connection.source === connection.target
+		) {
+			return;
+		}
+		setGraphEdges((previous) => {
+			if (
+				previous.some(
+					(edge) =>
+						edge.source === connection.source &&
+						edge.target === connection.target,
+				)
+			) {
+				return previous;
+			}
+			return [
+				...previous,
+				{
+					id: `e-${connection.source}-${connection.target}-${crypto.randomUUID()}`,
+					source: connection.source,
+					target: connection.target,
+					sourceHandle: connection.sourceHandle ?? undefined,
+					targetHandle: connection.targetHandle ?? undefined,
+				},
+			];
+		});
+	}, []);
+
 	const layoutNodes = useCallback(
 		(nodes: AutomationNode[]): AutomationNode[] => {
 			const containerWidth =
@@ -226,7 +282,7 @@ export function AutomationCanvas({
 	);
 
 	// ---- Data loading ----
-	const { status: automationStatus } = usePixel<AutomationDocument | null>(
+	usePixel<AutomationDocument | null>(
 		`GetAutomation(project=["${appId}"]);`,
 		{
 			data: null,
@@ -241,10 +297,12 @@ export function AutomationCanvas({
 					try {
 						const draft = JSON.parse(raw) as {
 							steps: AutomationNode[];
+							edges?: AutomationEdge[];
 							description: string;
 							savedAt: number;
 						};
 						setSteps(draft.steps);
+						setGraphEdges(draft.edges ?? defaultEdges(draft.steps));
 						setDescription(draft.description);
 						setIsDirty(true);
 						setTimeout(() => {
@@ -257,47 +315,25 @@ export function AutomationCanvas({
 									"Your unsaved changes have been restored.",
 							},
 						);
-						const hasSteps = draft.steps.some(
-							(n) => n.type !== "trigger",
-						);
-						const wizardDismissed =
-							sessionStorage.getItem(
-								`automation-wizard-seen-${appId}`,
-							) === "true";
-						if (
-							(!mcpMode || mcpMode === "create") &&
-							!hasSteps &&
-							!draft.description.trim() &&
-							!wizardDismissed
-						) {
-							setShowGenerationWizard(true);
-						}
 						return;
 					} catch {
 						localStorage.removeItem(draftKey);
 					}
 				}
 				setSteps(serverSteps);
+				setGraphEdges(
+					doc?.graph.edges?.length
+						? doc.graph.edges
+						: defaultEdges(serverSteps),
+				);
 				setDescription(serverDescription);
 				setTimeout(() => {
 					loadedRef.current = true;
 				}, 0);
-				const hasSteps = serverSteps.some((n) => n.type !== "trigger");
-				const wizardDismissed =
-					sessionStorage.getItem(
-						`automation-wizard-seen-${appId}`,
-					) === "true";
-				if (
-					(!mcpMode || mcpMode === "create") &&
-					!hasSteps &&
-					!serverDescription.trim() &&
-					!wizardDismissed
-				) {
-					setShowGenerationWizard(true);
-				}
 			},
 			onError: () => {
 				setSteps(ensureTriggerNode(EMPTY_GRAPH.nodes));
+				setGraphEdges([]);
 				setTimeout(() => {
 					loadedRef.current = true;
 				}, 0);
@@ -305,19 +341,12 @@ export function AutomationCanvas({
 		},
 	);
 
-	const { status: automationConfigStatus } = usePixel<
-		AutomationConfigEntry[]
-	>(`GetAutomationConfig(project=["${appId}"]);`, {
-		data: [],
-		onSuccess: (configList) => setConfig(configList ?? []),
-	});
-
-	const loading = useMemo(
-		() =>
-			[automationStatus, automationConfigStatus].some(
-				(s) => s === "INITIAL" || s === "LOADING",
-			),
-		[automationStatus, automationConfigStatus],
+	usePixel<AutomationConfigEntry[]>(
+		`GetAutomationConfig(project=["${appId}"]);`,
+		{
+			data: [],
+			onSuccess: (configList) => setConfig(configList ?? []),
+		},
 	);
 
 	const {
@@ -345,13 +374,18 @@ export function AutomationCanvas({
 	// Draft persistence
 	useEffect(() => {
 		if (!loadedRef.current) return;
-		const draft = { steps, description, savedAt: Date.now() };
+		const draft = {
+			steps,
+			edges: graphEdges,
+			description,
+			savedAt: Date.now(),
+		};
 		localStorage.setItem(
 			`automation-draft-${appId}`,
 			JSON.stringify(draft),
 		);
 		setIsDirty(true);
-	}, [steps, description, appId]);
+	}, [steps, graphEdges, description, appId]);
 
 	// ---- Derived values ----
 	const stepOutputPreviews = useMemo(
@@ -407,6 +441,16 @@ export function AutomationCanvas({
 				config: { ...meta.defaultConfig },
 			};
 			setSteps((prev) => [...prev, newStep]);
+			if (previousStep) {
+				setGraphEdges((previous) => [
+					...previous,
+					{
+						id: `e-${previousStep.id}-${id}`,
+						source: previousStep.id,
+						target: id,
+					},
+				]);
+			}
 			setShowAddMenu(false);
 			setEditingStepId(id);
 			setActiveTab("steps");
@@ -435,6 +479,37 @@ export function AutomationCanvas({
 
 	const deleteStep = useCallback((id: string) => {
 		setSteps((prev) => prev.filter((s) => s.id !== id));
+		setGraphEdges((previous) => {
+			const predecessors = previous
+				.filter((edge) => edge.target === id)
+				.map((edge) => edge.source);
+			const successors = previous
+				.filter((edge) => edge.source === id)
+				.map((edge) => edge.target);
+			const remaining = previous.filter(
+				(edge) => edge.source !== id && edge.target !== id,
+			);
+
+			for (const source of predecessors) {
+				for (const target of successors) {
+					if (
+						source !== target &&
+						!remaining.some(
+							(edge) =>
+								edge.source === source &&
+								edge.target === target,
+						)
+					) {
+						remaining.push({
+							id: `e-${source}-${target}-${crypto.randomUUID()}`,
+							source,
+							target,
+						});
+					}
+				}
+			}
+			return remaining;
+		});
 		setEditingStepId((prev) => (prev === id ? null : prev));
 		setStepStatuses((prev) => {
 			const next = { ...prev };
@@ -459,7 +534,10 @@ export function AutomationCanvas({
 			const stepVars = steps
 				.slice(0, index)
 				.map((s) => s.outputVar)
-				.filter((v) => v.length > 0);
+				.filter(
+					(value): value is string =>
+						typeof value === "string" && value.length > 0,
+				);
 			const configVars = config.map((entry) => `config.${entry.key}`);
 			return [...stepVars, ...configVars];
 		},
@@ -474,7 +552,7 @@ export function AutomationCanvas({
 				...(description.trim()
 					? { description: description.trim() }
 					: {}),
-				graph: { nodes: steps, edges: [] },
+				graph: { nodes: steps, edges: graphEdges },
 			};
 			const json = btoa(
 				encodeURIComponent(JSON.stringify(doc)).replace(
@@ -508,7 +586,7 @@ export function AutomationCanvas({
 		} finally {
 			setSaving(false);
 		}
-	}, [appId, config, description, steps]);
+	}, [appId, config, description, graphEdges, steps]);
 
 	// Cmd+S / Ctrl+S
 	useEffect(() => {
@@ -817,6 +895,7 @@ export function AutomationCanvas({
 		(nodes: AutomationNode[], automationDescription: string) => {
 			const fresh = ensureTriggerNode(nodes);
 			setSteps(fresh);
+			setGraphEdges(defaultEdges(fresh));
 			setDescription(automationDescription);
 			sessionStorage.setItem(`automation-wizard-seen-${appId}`, "true");
 			setShowGenerationWizard(false);
@@ -835,11 +914,13 @@ export function AutomationCanvas({
 				setExpandedHistoryRunId(null);
 				setExpandedHistoryRun(null);
 				setExpandedHistoryNodes(new Set());
+				setShowExecutedDefinition(false);
 				return;
 			}
 			setExpandedHistoryRunId(runId);
 			setExpandedHistoryRun(null);
 			setExpandedHistoryNodes(new Set());
+			setShowExecutedDefinition(false);
 			setHistoryDetailLoading(true);
 			try {
 				const response = await runPixel(
@@ -947,11 +1028,11 @@ export function AutomationCanvas({
 				});
 			}
 
-			if (i < steps.length - 1) {
+			for (const edge of graphEdges.filter(
+				(item) => item.source === step.id,
+			)) {
 				newEdges.push({
-					id: `e-${step.id}`,
-					source: step.id,
-					target: steps[i + 1].id,
+					...edge,
 					type: "smoothstep",
 					markerEnd: {
 						type: MarkerType.ArrowClosed,
@@ -975,6 +1056,7 @@ export function AutomationCanvas({
 		description,
 		devMode,
 		running,
+		graphEdges,
 		deleteStep,
 		layoutNodes,
 		setRfNodes,
@@ -1001,15 +1083,6 @@ export function AutomationCanvas({
 		setSteps(layoutNodes);
 		setIsDirty(true);
 	}, [layoutNodes]);
-
-	// ---- Loading / done screens ----
-	if (loading) {
-		return (
-			<div className="flex h-full items-center justify-center">
-				<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-			</div>
-		);
-	}
 
 	if (mcpDone) {
 		return (
@@ -1138,19 +1211,31 @@ export function AutomationCanvas({
 								);
 							})}
 							{activeTab === "steps" && !showGenerationWizard && (
-								<button
-									data-tour="add-step"
-									type="button"
-									onClick={() => {
-										setEditingStepId(null);
-										setShowAddMenu(true);
-									}}
-									disabled={running}
-									className="ml-auto flex items-center gap-1.5 rounded-full border border-dashed px-3 py-1.5 text-muted-foreground text-xs transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
-								>
-									<Plus className="h-3 w-3" />
-									Add Step
-								</button>
+								<div className="ml-auto flex items-center gap-2">
+									<button
+										type="button"
+										onClick={() =>
+											setShowGenerationWizard(true)
+										}
+										disabled={running}
+										className="rounded-full px-3 py-1.5 text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+									>
+										Templates
+									</button>
+									<button
+										data-tour="add-step"
+										type="button"
+										onClick={() => {
+											setEditingStepId(null);
+											setShowAddMenu(true);
+										}}
+										disabled={running}
+										className="flex items-center gap-1.5 rounded-full border border-dashed px-3 py-1.5 text-muted-foreground text-xs transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+									>
+										<Plus className="h-3 w-3" />
+										Add Step
+									</button>
+								</div>
 							)}
 						</div>
 					</div>
@@ -1256,7 +1341,11 @@ export function AutomationCanvas({
 														canvasMode ===
 														"interact"
 													}
-													nodesConnectable={false}
+													nodesConnectable={
+														canvasMode ===
+															"interact" &&
+														!running
+													}
 													panOnDrag={
 														canvasMode === "pan"
 													}
@@ -1296,6 +1385,7 @@ export function AutomationCanvas({
 													onNodeDragStop={
 														onNodeDragStop
 													}
+													onConnect={onConnect}
 												>
 													<Background
 														variant={
@@ -1504,21 +1594,68 @@ export function AutomationCanvas({
 																		<Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
 																	</div>
 																) : expandedHistoryRun ? (
-																	<NodeResultList
-																		steps={
-																			steps
-																		}
-																		results={
-																			expandedHistoryRun.nodeResults ??
-																			[]
-																		}
-																		expandedNodes={
-																			expandedHistoryNodes
-																		}
-																		onToggleNode={
-																			toggleHistoryNode
-																		}
-																	/>
+																	<div className="space-y-4">
+																		{expandedHistoryRun.DEFINITION_HASH && (
+																			<div className="rounded-lg border bg-background px-3 py-2 text-[11px]">
+																				<div className="flex items-center justify-between gap-3">
+																					<span className="text-muted-foreground">
+																						Executed
+																						definition
+																						{expandedHistoryRun.DEFINITION_VERSION !=
+																						null
+																							? ` v${expandedHistoryRun.DEFINITION_VERSION}`
+																							: ""}
+																					</span>
+																					<Button
+																						size="sm"
+																						variant="ghost"
+																						className="h-7 px-2 text-[11px]"
+																						onClick={() =>
+																							setShowExecutedDefinition(
+																								(
+																									previous,
+																								) =>
+																									!previous,
+																							)
+																						}
+																					>
+																						{showExecutedDefinition
+																							? "Hide definition"
+																							: "View definition"}
+																					</Button>
+																				</div>
+																				<p className="mt-1 break-all font-mono text-muted-foreground">
+																					SHA-256:{" "}
+																					{
+																						expandedHistoryRun.DEFINITION_HASH
+																					}
+																				</p>
+																				{showExecutedDefinition &&
+																					expandedHistoryRun.DEFINITION_SNAPSHOT && (
+																						<pre className="mt-2 max-h-80 overflow-auto rounded-md bg-muted p-3 text-[10px] leading-relaxed">
+																							{
+																								expandedHistoryRun.DEFINITION_SNAPSHOT
+																							}
+																						</pre>
+																					)}
+																			</div>
+																		)}
+																		<NodeResultList
+																			steps={
+																				steps
+																			}
+																			results={
+																				expandedHistoryRun.nodeResults ??
+																				[]
+																			}
+																			expandedNodes={
+																				expandedHistoryNodes
+																			}
+																			onToggleNode={
+																				toggleHistoryNode
+																			}
+																		/>
+																	</div>
 																) : null}
 															</div>
 														)}
@@ -1535,7 +1672,10 @@ export function AutomationCanvas({
 						{activeTab === "config" && (
 							<AutomationConfigTab
 								config={config}
-								onChange={setConfig}
+								onChange={(nextConfig) => {
+									setConfig(nextConfig);
+									setIsDirty(true);
+								}}
 							/>
 						)}
 					</div>

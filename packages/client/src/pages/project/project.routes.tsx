@@ -381,6 +381,75 @@ export const PROJECT_ROUTES: {
 						path: "view",
 						element: <ViewAppPage />,
 					},
+					{
+						path: "*",
+						element: (
+							<ProjectTabsLayout
+								tabs={[
+									{ name: "Overview", path: "" },
+									{
+										name: "MCP",
+										path: "mcp-usage",
+										restrict: [
+											"OWNER",
+											"EDIT",
+											"READ_ONLY",
+										],
+									},
+									{
+										name: "Commits",
+										path: "commits",
+										restrict: ["OWNER", "EDIT"],
+									},
+									{
+										name: "GitHub",
+										path: "github",
+										restrict: ["OWNER"],
+									},
+									{
+										name: "Access Control",
+										path: "access-control",
+										restrict: ["OWNER", "EDIT"],
+									},
+									{
+										name: "SMSS",
+										path: "smss",
+										restrict: ["OWNER"],
+									},
+								]}
+							/>
+						),
+						children: [
+							{
+								path: "",
+								element: <ProjectOverviewPage />,
+							},
+							{
+								path: "mcp-usage",
+								element: <AppMcpUsagePage />,
+							},
+							{
+								path: "commits",
+								element: <AppCommitsPage />,
+							},
+							{
+								path: "github",
+								element: <AppGithubPage />,
+							},
+							{
+								path: "github/select-repo",
+								element: <AppGithubSelectRepoPage />,
+							},
+							{
+								path: "access-control",
+								element: <ProjectAccessControl />,
+							},
+							{
+								path: "smss",
+								element: <AppSmssPage />,
+							},
+						],
+					},
 				],
 			},
 		],

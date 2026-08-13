@@ -193,6 +193,8 @@ export interface AutomationRunSummary {
 	FAILED_NODE_ID?: string;
 	ERROR_MESSAGE?: string | null;
 	RESULT_SUMMARY?: string | null;
+	DEFINITION_VERSION?: number;
+	DEFINITION_HASH?: string;
 }
 
 export interface AutomationNodeResult {
@@ -205,6 +207,7 @@ export interface AutomationNodeResult {
 }
 
 export interface AutomationRunDetail extends AutomationRunSummary {
+	DEFINITION_SNAPSHOT?: string;
 	nodeResults: AutomationNodeResult[];
 }
 
