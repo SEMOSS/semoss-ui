@@ -1,25 +1,25 @@
-import { Check, Folder, FolderPlus } from "lucide-react";
+import { Folder, FolderPlus } from "lucide-react";
 import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@semoss/ui/next";
 import { Input } from "@/components/ui";
 import type { WorkspaceFolder } from "@/services/workspaceStore";
 
 /**
- * Multi-folder picker shown on dashboard cards. A dashboard can live in many
- * folders at once (folders are tags). Toggling a folder adds/removes that tag;
- * a new folder can be created inline (it's just a new tag).
+ * Single-folder picker shown on dashboard cards. A dashboard lives in exactly
+ * one folder at a time. Selecting a folder replaces the previous one; a new
+ * folder can be created inline and becomes the selected folder immediately.
  */
 export function MoveToFolder({
 	folders,
 	selected,
-	onToggle,
+	onSelect,
 	className,
 }: {
 	folders: WorkspaceFolder[];
 	/** Tags currently on this dashboard. */
 	selected: string[];
-	/** Add (on=true) or remove (on=false) a folder tag. */
-	onToggle: (folderId: string, on: boolean) => void;
+	/** Select a folder (replaces current) or pass null to deselect. */
+	onSelect: (folderId: string | null) => void;
 	className?: string;
 }) {
 	const [open, setOpen] = useState(false);
@@ -29,7 +29,7 @@ export function MoveToFolder({
 	const addNew = () => {
 		const name = draft.trim();
 		if (!name) return;
-		onToggle(name, true);
+		onSelect(name);
 		setDraft("");
 	};
 
@@ -75,14 +75,16 @@ export function MoveToFolder({
 								onClick={(e) => {
 									e.stopPropagation();
 									e.preventDefault();
-									onToggle(f.id, !on);
+									onSelect(on ? null : f.id);
 								}}
 								className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-[13px] transition-colors hover:bg-stone-50 ${on ? "font-semibold text-indigo-600" : "text-stone-700"}`}
 							>
 								<span
-									className={`grid h-4 w-4 flex-shrink-0 place-items-center rounded border ${on ? "border-indigo-500 bg-indigo-500 text-white" : "border-stone-300"}`}
+									className={`grid h-4 w-4 flex-shrink-0 place-items-center rounded-full border ${on ? "border-indigo-500 bg-indigo-500" : "border-stone-300"}`}
 								>
-									{on && <Check className="h-3 w-3" />}
+									{on && (
+										<span className="h-2 w-2 rounded-full bg-white" />
+									)}
 								</span>
 								<span className="min-w-0 flex-1 truncate">
 									{f.name}

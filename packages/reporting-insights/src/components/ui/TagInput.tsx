@@ -14,6 +14,8 @@ interface Props {
 	suggestions?: string[];
 	placeholder?: string;
 	className?: string;
+	/** Cap the number of tags. When value.length >= max, input is hidden. */
+	max?: number;
 }
 
 export function TagInput({
@@ -22,12 +24,16 @@ export function TagInput({
 	suggestions = [],
 	placeholder = "Add a tag…",
 	className = "",
+	max,
 }: Props) {
 	const [draft, setDraft] = useState("");
 	const [open, setOpen] = useState(false);
 	const inputRef = useRef<HTMLInputElement>(null);
 
+	const atMax = max !== undefined && value.length >= max;
+
 	const add = (raw: string) => {
+		if (atMax) return;
 		const t = raw.trim();
 		if (!t) return;
 		if (!value.some((v) => v.toLowerCase() === t.toLowerCase()))
@@ -68,36 +74,40 @@ export function TagInput({
 						</button>
 					</span>
 				))}
-				<input
-					ref={inputRef}
-					value={draft}
-					onChange={(e) => {
-						setDraft(e.target.value);
-						setOpen(true);
-					}}
-					onFocus={() => setOpen(true)}
-					onBlur={() => {
-						// Commit a typed-but-not-Entered tag so it isn't silently lost
-						// when the user clicks away (e.g. straight onto Save).
-						if (draft.trim()) add(draft);
-						setTimeout(() => setOpen(false), 120);
-					}}
-					onKeyDown={(e) => {
-						if (e.key === "Enter" || e.key === ",") {
-							e.preventDefault();
-							add(draft);
-						} else if (
-							e.key === "Backspace" &&
-							!draft &&
-							value.length
-						)
-							remove(value[value.length - 1]);
-					}}
-					placeholder={value.length ? "" : placeholder}
-					className="min-w-[80px] flex-1 bg-transparent px-1 py-0.5 text-[13px] text-stone-700 placeholder:text-stone-300 focus:outline-none"
-				/>
+				{atMax ? (
+					<span className="py-0.5 text-[11px] text-stone-400 italic">
+						Remove the current tag to assign a different folder.
+					</span>
+				) : (
+					<input
+						ref={inputRef}
+						value={draft}
+						onChange={(e) => {
+							setDraft(e.target.value);
+							setOpen(true);
+						}}
+						onFocus={() => setOpen(true)}
+						onBlur={() => {
+							if (draft.trim()) add(draft);
+							setTimeout(() => setOpen(false), 120);
+						}}
+						onKeyDown={(e) => {
+							if (e.key === "Enter" || e.key === ",") {
+								e.preventDefault();
+								add(draft);
+							} else if (
+								e.key === "Backspace" &&
+								!draft &&
+								value.length
+							)
+								remove(value[value.length - 1]);
+						}}
+						placeholder={value.length ? "" : placeholder}
+						className="min-w-[80px] flex-1 bg-transparent px-1 py-0.5 text-[13px] text-stone-700 placeholder:text-stone-300 focus:outline-none"
+					/>
+				)}
 			</div>
-			{open && matches.length > 0 && (
+			{!atMax && open && matches.length > 0 && (
 				<ul className="absolute z-20 mt-1 max-h-44 w-full overflow-auto rounded-md border border-stone-200 bg-white py-1 shadow-soft-lg">
 					{matches.map((s) => (
 						<li key={s}>

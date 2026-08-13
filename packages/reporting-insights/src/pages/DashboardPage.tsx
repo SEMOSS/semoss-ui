@@ -28,6 +28,7 @@ import {
 	resolveQuery,
 } from "@/lib/resolveQuery";
 import { useTabColors } from "@/lib/tabColors";
+import { GROUP_PERM_NUM } from "@/services/permissionsApi";
 import type {
 	Dashboard,
 	DashboardQuery,
@@ -181,13 +182,17 @@ export function DashboardPage() {
 	// Permission (from the listing). Read-only users can't load the working copy
 	// (GetAppAssets needs edit access) and get no management actions, so we send
 	// them straight to the deployed portal instead of the in-app editor view.
-	const perm = String(
+	const permNum = Number(
 		Array.isArray(dashboard?.permission)
 			? (dashboard?.permission?.[0] ?? "")
 			: (dashboard?.permission ?? ""),
-	).toUpperCase();
+	);
+	const perm = Object.keys(GROUP_PERM_NUM).find(
+		(key) => GROUP_PERM_NUM[key] === permNum,
+	);
 	const isReadOnly =
 		perm === "READ_ONLY" || perm === "VIEWER" || perm === "DISCOVERABLE";
+	const isOwner = perm === "OWNER";
 	const canManage = !isReadOnly;
 	const canEdit = !isReadOnly;
 	// Redeploy is offered to anyone who can manage (same gate as Share/Edit). The
@@ -580,7 +585,7 @@ export function DashboardPage() {
 									<Share2 className="h-3.5 w-3.5" /> Share
 								</Button>
 							)}
-							{canManage && (
+							{isOwner && (
 								<Button
 									variant="secondary"
 									size="sm"
@@ -604,7 +609,7 @@ export function DashboardPage() {
 									<Edit className="h-3.5 w-3.5" /> Edit
 								</Link>
 							)}
-							{canManage && (
+							{isOwner && (
 								<Button
 									variant="ghost"
 									size="sm"

@@ -28,7 +28,11 @@ import { useToast } from "@/components/ui/Toast";
 import { appPublicBaseUrl } from "@/lib/portalUrl";
 import { HOST_ARTIFACT_VERSION } from "@/services/mcpManifest";
 import { isAdminUser } from "@/services/permissionsApi";
-import { type DashboardMeta, ProjectStore } from "@/services/projectStore";
+import {
+	type DashboardMeta,
+	LANDING_PAGE_TAG,
+	ProjectStore,
+} from "@/services/projectStore";
 import type { FolderKind, WorkspaceFolder } from "@/services/workspaceStore";
 import type { Dashboard } from "@/types/dashboard";
 
@@ -483,7 +487,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 	// ── Derived folders (the distinct tags across everything I can see) ─────────
 	const folders = useMemo<WorkspaceFolder[]>(() => {
 		const names = new Set<string>();
-		for (const d of dashboards) for (const t of d.tags ?? []) names.add(t);
+		for (const d of dashboards)
+			for (const t of d.tags ?? [])
+				if (t !== LANDING_PAGE_TAG) names.add(t);
 		return [...names]
 			.sort((a, b) => a.localeCompare(b))
 			.map((name, i) => ({

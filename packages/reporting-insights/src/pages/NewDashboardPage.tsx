@@ -7,6 +7,7 @@ import {
 	type TabNode,
 } from "flexlayout-react";
 import {
+	BookOpen,
 	Globe,
 	Loader2,
 	Lock,
@@ -68,6 +69,7 @@ import {
 	grantProjectUser,
 	type Role,
 } from "@/services/permissionsApi";
+import { LANDING_PAGE_TAG } from "@/services/projectStore";
 import type {
 	ColorPalette as ColorPaletteType,
 	ColSpan,
@@ -274,6 +276,7 @@ export function NewDashboardPage() {
 		getDashboard,
 		loadDashboard,
 		folders,
+		dashboards,
 		isAdmin,
 	} = useWorkspace();
 	const tagSuggestions = useMemo(
@@ -313,10 +316,13 @@ export function NewDashboardPage() {
 	const [description, setDescription] = useState(
 		seedSource?.description ?? "",
 	);
-	const [tags, setTags] = useState<string[]>(seedSource?.tags ?? []);
+	const seedTags = (seedSource?.tags ?? []).filter(
+		(t) => t !== LANDING_PAGE_TAG,
+	);
+	const [tags, setTags] = useState<string[]>(seedTags);
 	// Mirror tags in a ref so a Save click reads the latest value synchronously —
 	// even a tag just committed on blur in the same click (state would be stale).
-	const tagsRef = useRef<string[]>(seedSource?.tags ?? []);
+	const tagsRef = useRef<string[]>(seedTags);
 	const applyTags = useCallback((next: string[]) => {
 		tagsRef.current = next;
 		setTags(next);
@@ -326,8 +332,19 @@ export function NewDashboardPage() {
 	const [navOpen, setNavOpen] = useState(false);
 	const [showPublishDialog, setShowPublishDialog] = useState(false);
 	const [publishVisibility, setPublishVisibility] = useState<
-		"public" | "private"
+		"public" | "private" | "landing"
 	>("public");
+
+	// When Landing Page type is selected, only suggest folders where every
+	// dashboard in that folder is also Landing Page type.
+	const effectiveTagSuggestions = useMemo(() => {
+		if (publishVisibility !== "landing") return tagSuggestions;
+		return tagSuggestions.filter((tag) =>
+			dashboards
+				.filter((d) => (d.tags ?? []).includes(tag))
+				.every((d) => (d.tags ?? []).includes(LANDING_PAGE_TAG)),
+		);
+	}, [publishVisibility, tagSuggestions, dashboards]);
 	// People granted access when creating a PRIVATE dashboard (applied after the
 	// project is created, since grants need a real project id).
 	const [grants, setGrants] = useState<
@@ -1405,13 +1422,32 @@ export function NewDashboardPage() {
 					await redeployDashboard(id, dashboardData);
 					navigate(`/dashboard/${id}`);
 				} else {
+					if (
+						publishVisibility === "landing" &&
+						tagsRef.current.length === 0
+					) {
+						toast.error(
+							"Add at least one folder tag so this insight appears in the correct Landing Page category.",
+							"Folder required for Landing Page",
+						);
+						setSaving(false);
+						return;
+					}
 					// Finishing a new dashboard saves it as a project. Public → everyone with
 					// access sees it immediately; Private → only you until you share it with
 					// specific people from the dashboard's Share dialog.
-					const isPublic = publishVisibility === "public";
+					const isPublic =
+						publishVisibility === "public" ||
+						publishVisibility === "landing";
+					const saveTags = [
+						...tagsRef.current,
+						...(publishVisibility === "landing"
+							? [LANDING_PAGE_TAG]
+							: []),
+					];
 					const newId = await createDashboard(dashboardData, {
 						published: isPublic,
-						tags: tagsRef.current,
+						tags: saveTags,
 					});
 					// For a private dashboard, grant the chosen people + teams access to the
 					// new project so they can see it (and its folder). Teams get View only.
@@ -2289,30 +2325,15 @@ export function NewDashboardPage() {
 							<TagInput
 								value={tags}
 								onChange={applyTags}
-								suggestions={tagSuggestions}
+								suggestions={effectiveTagSuggestions}
 								placeholder="Type a folder name and press Enter…"
+								max={1}
 							/>
 							<p className="mt-1.5 text-[11px] text-stone-400">
-								Tags become folders under{" "}
-								<span className="font-medium text-stone-500">
-									Dashboards
-								</span>
-								. Reuse a tag to file it in that same folder, or
-								leave empty to keep it unfiled.
+								{tags.length >= 1
+									? "Remove the current tag to assign a different folder."
+									: "You can add one folder; Type a name and press Enter."}
 							</p>
-							{tags.length > 0 && (
-								<p className="mt-2 text-[12px] text-stone-500">
-									Appears in:{" "}
-									{tags.map((t) => (
-										<span
-											key={t}
-											className="mx-0.5 rounded bg-indigo-50 px-1.5 py-0.5 font-medium text-[11px] text-indigo-700"
-										>
-											{t}
-										</span>
-									))}
-								</p>
-							)}
 						</div>
 
 						{/* Visibility */}
@@ -2320,7 +2341,9 @@ export function NewDashboardPage() {
 							<label className="mb-1 block font-semibold text-[11px] text-stone-400 uppercase tracking-widest">
 								Who can access
 							</label>
-							<div className="grid grid-cols-2 gap-2">
+							<div
+								className={`grid gap-2 ${isAdmin ? "grid-cols-3" : "grid-cols-2"}`}
+							>
 								<button
 									type="button"
 									onClick={() =>
@@ -2363,7 +2386,37 @@ export function NewDashboardPage() {
 										</span>
 									</span>
 								</button>
+								{isAdmin && (
+									<button
+										type="button"
+										onClick={() =>
+											setPublishVisibility("landing")
+										}
+										className={`flex items-start gap-2 rounded-lg border p-3 text-left transition-colors ${publishVisibility === "landing" ? "border-violet-400 bg-violet-50/60 ring-1 ring-violet-500/20" : "border-stone-200 hover:border-stone-300"}`}
+									>
+										<BookOpen
+											className={`mt-0.5 h-4 w-4 ${publishVisibility === "landing" ? "text-violet-600" : "text-stone-400"}`}
+										/>
+										<span>
+											<span
+												className={`block font-semibold text-[13px] ${publishVisibility === "landing" ? "text-violet-900" : "text-stone-800"}`}
+											>
+												Landing Page
+											</span>
+											<span className="block text-[11px] text-stone-500">
+												Pinned to the Insights Portal
+											</span>
+										</span>
+									</button>
+								)}
 							</div>
+							{publishVisibility === "landing" && (
+								<p className="mt-2 text-[11px] text-violet-600">
+									A folder tag is required — it determines
+									which category this insight appears under in
+									the Insights Portal.
+								</p>
+							)}
 							{publishVisibility === "private" && (
 								<div className="mt-3 space-y-2.5 rounded-lg border border-stone-200 bg-stone-50/60 p-3">
 									<p className="text-[12px] text-stone-500">
@@ -2585,7 +2638,11 @@ export function NewDashboardPage() {
 							</button>
 							<button
 								onClick={handleSave}
-								disabled={saving}
+								disabled={
+									saving ||
+									(publishVisibility === "landing" &&
+										tags.length === 0)
+								}
 								className={`${buttonClasses("primary", "sm")} disabled:cursor-not-allowed disabled:opacity-60`}
 							>
 								{saving ? (
@@ -2595,9 +2652,11 @@ export function NewDashboardPage() {
 								)}
 								{saving
 									? "Saving…"
-									: publishVisibility === "public"
+									: publishVisibility === "landing"
 										? "Save & publish"
-										: "Save (private)"}
+										: publishVisibility === "public"
+											? "Save & publish"
+											: "Save (private)"}
 							</button>
 						</div>
 					</DialogContent>

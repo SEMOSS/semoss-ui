@@ -367,7 +367,7 @@ export interface GroupMember extends GroupInfo {
 	permission: string; // normalized Role string
 }
 
-const GROUP_PERM_NUM: Record<string, number> = {
+export const GROUP_PERM_NUM: Record<string, number> = {
 	OWNER: 1,
 	EDIT: 2,
 	EDITOR: 2,
