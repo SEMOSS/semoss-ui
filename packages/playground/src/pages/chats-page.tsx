@@ -79,8 +79,7 @@ export const ChatsPage = observer(() => {
 	);
 
 	// Content-match rooms from SearchRoomMessages — rooms whose message text
-	// matches the keyword but whose name may not. Refetches on roomCounter
-	// change so renames/creates/deletes don't leave stale results.
+	// matches the keyword but whose name may not.
 	const getContentMatches = useIteratorPixel<
 		{
 			room_id: string;
@@ -111,7 +110,7 @@ export const ChatsPage = observer(() => {
 				}));
 		},
 		{ limit: 50 },
-		[debouncedSearch, chat.keys.roomCounter],
+		[debouncedSearch],
 	);
 
 	const { setScroll } = useInfiniteScroll({
@@ -235,8 +234,14 @@ export const ChatsPage = observer(() => {
 			return;
 		}
 		getRooms.reset();
+		getContentMatches.reset();
 		getPinnedRooms.refresh();
-	}, [getRooms.reset, getPinnedRooms.refresh, chat.keys.roomCounter]);
+	}, [
+		getRooms.reset,
+		getContentMatches.reset,
+		getPinnedRooms.refresh,
+		chat.keys.roomCounter,
+	]);
 
 	// Keyboard shortcuts: Esc clears the current selection;
 	// Cmd/Ctrl+A selects all visible chats (only when focus isn't
