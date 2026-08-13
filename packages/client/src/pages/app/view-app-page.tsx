@@ -38,6 +38,9 @@ const CodeRenderer = lazy(() =>
 		default: m.CodeRenderer,
 	})),
 );
+const AUTOMATION_WORKSPACE_URL = import.meta.env.DEV
+	? "http://localhost:5177/"
+	: "../../automation-workspace/dist/";
 
 import { usePage, useProject, useRootStore } from "@/hooks";
 import type { WorkspaceStore } from "@/stores";
@@ -207,7 +210,7 @@ export const ViewAppPage = observer(() => {
 						<iframe
 							className="h-full w-full border-none"
 							title="Automation Workspace"
-							src={`../../automation-workspace/dist/?app=${encodeURIComponent(project.project_id)}&readOnly=1`}
+							src={`${AUTOMATION_WORKSPACE_URL}?app=${encodeURIComponent(project.project_id)}&readOnly=1`}
 							sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
 						/>
 					) : null}

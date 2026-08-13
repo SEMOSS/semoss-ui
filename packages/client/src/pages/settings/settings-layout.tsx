@@ -240,6 +240,9 @@ export const SettingsLayout = observer(() => {
 			if (projectType === "NOTEBOOK") {
 				return `/notebook/${id}/edit`;
 			}
+			if (projectType === "AUTOMATION") {
+				return `/automation/${id}/edit`;
+			}
 			return `/app/${id}`;
 		}
 		return null;

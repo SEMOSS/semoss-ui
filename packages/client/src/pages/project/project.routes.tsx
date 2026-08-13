@@ -18,6 +18,7 @@ import {
 import { AgentActivityPage } from "./agent/agent-activity-page";
 import { CreateAgentPage } from "./agent/create-agent-page";
 import { CreateAppPage } from "./app/create-app-page";
+import { CreateAutomationPage } from "./automation/create-automation-page";
 import { CreateNotebookPage } from "./notebook/create-notebook-page";
 import { ViewNotebookPage } from "./notebook/view-notebook-page";
 import { ProjectDependenciesPage } from "./project-dependencies-page";
@@ -351,6 +352,34 @@ export const PROJECT_ROUTES: {
 								element: <AppSmssPage />,
 							},
 						],
+					},
+				],
+			},
+		],
+	},
+	{
+		path: "automation",
+		element: <Outlet />,
+		children: [
+			{
+				path: "",
+				element: <ProjectCatalog type="AUTOMATION" />,
+			},
+			{
+				path: "new",
+				element: <CreateAutomationPage />,
+			},
+			{
+				path: ":appId",
+				element: <ProjectLayout />,
+				children: [
+					{
+						path: "edit",
+						element: <ProjectEdit />,
+					},
+					{
+						path: "view",
+						element: <ViewAppPage />,
 					},
 				],
 			},

@@ -24,6 +24,9 @@ import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
 type ActiveView = "editor" | "settings";
 
 const VIEWS: ActiveView[] = ["editor", "settings"];
+const AUTOMATION_WORKSPACE_URL = import.meta.env.DEV
+	? "http://localhost:5177/"
+	: "../../automation-workspace/dist/";
 
 /** Same tabs as CodeWorkspace's settings panel — shared config should be centralized if these drift. */
 const SETTINGS_TABS: React.ComponentProps<typeof ProjectDetailTabs>["tabs"] = [
@@ -133,7 +136,7 @@ export const AutomationWorkspace = observer(() => {
 						<iframe
 							className="h-full w-full border-none"
 							title="Automation Workspace"
-							src={`../../automation-workspace/dist/?app=${encodeURIComponent(workspace.appId)}`}
+							src={`${AUTOMATION_WORKSPACE_URL}?app=${encodeURIComponent(workspace.appId)}`}
 							sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
 						/>
 					) : (

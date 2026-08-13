@@ -16,6 +16,7 @@ export const CATALOG: Record<
 	SKILL: { name: "Skill", path: "/skill" },
 	WORKSPACE: { name: "Agent", path: "/agent" },
 	NOTEBOOK: { name: "Notebook", path: "/notebook" },
+	AUTOMATION: { name: "Automation", path: "/automation" },
 	INSIGHT: { name: "App", path: "/app" },
 } as const;
 

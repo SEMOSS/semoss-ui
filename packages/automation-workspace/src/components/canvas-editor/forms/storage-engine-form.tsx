@@ -75,9 +75,17 @@ export function StorageEngineForm({
 			{(config.operation === "download" ||
 				config.operation === "upload") && (
 				<BoundInput
-					label="File Path"
+					label={
+						config.operation === "download"
+							? "Workspace Folder"
+							: "Workspace File or Folder"
+					}
 					value={config.filePath}
-					placeholder="/path/to/file.csv"
+					placeholder={
+						config.operation === "download"
+							? "downloads"
+							: "input/report.csv"
+					}
 					onChange={(v) => onChange({ ...config, filePath: v })}
 					upstreamVars={upstreamVars}
 				/>

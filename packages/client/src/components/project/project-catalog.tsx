@@ -24,7 +24,7 @@ import {
 import { CatalogFilterBox } from "@/components/catalog/catalog-filter-box";
 import { Help } from "@/components/help";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
-import { useAdminMode, useRootStore } from "@/hooks";
+import { useRootStore } from "@/hooks";
 import { getProjectLabel, isOwnerPermission } from "@/utility/catalog";
 import { NavbarHeader, NavbarLeft } from "../shared";
 import { ProjectGridItem } from "./project-grid-item";
@@ -39,6 +39,16 @@ const CATALOG_CONFIG = {
 		itemSubPath: "view",
 		pixelFilter: 'projectType=["CODE", "BLOCKS"]',
 		showSystemTab: true,
+	},
+	AUTOMATION: {
+		name: "Automation",
+		description:
+			"Design, run, and govern repeatable workflows that connect your data, tools, models, and applications.",
+		createPath: "/automation/new",
+		basePath: "/automation",
+		itemSubPath: "edit",
+		pixelFilter: 'projectType=["AUTOMATION"]',
+		showSystemTab: false,
 	},
 	SKILL: {
 		name: "Skill",
@@ -117,13 +127,7 @@ export const ProjectCatalog = observer(
 	({ type }: ProjectCatalogProps): JSX.Element => {
 		const config = CATALOG_CONFIG[type as keyof typeof CATALOG_CONFIG];
 		const { configStore } = useRootStore();
-		const adminMode = useAdminMode();
-		// Shows AUTOMATION apps in the App catalog for admins.
-		// AUTOMATION has no dedicated catalog entry yet; apps open via the existing App routes.
-		const pixelFilter =
-			type === "CODE" && adminMode
-				? 'projectType=["CODE", "BLOCKS", "AUTOMATION"]'
-				: config.pixelFilter;
+		const pixelFilter = config.pixelFilter;
 
 		// get metakeys of the ones we want
 		const metaKeys = configStore.store.config.projectMetaKeys

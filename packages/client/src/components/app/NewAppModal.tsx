@@ -112,7 +112,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
 				if (!(await saveMetadata(appId))) return;
 			} else if (type === "automation") {
-				const pixel = `CreateProject(project=["${data.APP_NAME}"], portal=[true], projectType=["AUTOMATION"]);`;
+				const pixel = `CreateAutomation(projectName=["${data.APP_NAME}"]);`;
 				const { errors, pixelReturn } =
 					await monolithStore.runQuery<[Project]>(pixel);
 

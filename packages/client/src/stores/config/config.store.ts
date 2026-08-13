@@ -795,8 +795,11 @@ export class ConfigStore {
 		role: Role,
 		insightId: string = "new",
 	) {
-		// set the backend context for this insight
-		await runPixel(`SetContext("${project.project_id}")`, insightId);
+		// Automation reactors authorize their explicit project argument and run in the
+		// system-app iframe, so they must not depend on the legacy global app context.
+		if (project.project_type !== "AUTOMATION") {
+			await runPixel(`SetContext("${project.project_id}")`, insightId);
+		}
 
 		// create the newly loaded workspace
 		return new WorkspaceStore(this._root, {
