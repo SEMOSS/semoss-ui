@@ -23,7 +23,12 @@ import { ProjectDetailTabs } from "@/components/project";
 import { ShareOverlay } from "@/components/ui";
 import { useProject, useWorkspace } from "@/hooks";
 import type { WorkspaceOptions } from "@/stores";
-import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
+import {
+	MCPJsonEditor,
+	NavbarHeader,
+	NavbarLeft,
+	NavbarRight,
+} from "../shared";
 import { WorkspaceManager } from "../workspace";
 
 const AUTOMATION_WORKSPACE_URL =
@@ -154,6 +159,7 @@ export const AutomationWorkspace = observer(() => {
 		layout,
 	) => {
 		const component = node.getComponent();
+		const config = node.getConfig();
 
 		if (component === "automation-editor") {
 			return (
@@ -178,6 +184,10 @@ export const AutomationWorkspace = observer(() => {
 
 		if (component === "app-file-editor") {
 			return <AppFileEditor node={node} app={workspace.appId} />;
+		}
+
+		if (component === "mcpJsonEditor") {
+			return <MCPJsonEditor dataMap={config.data} />;
 		}
 
 		if (component === "settings-panel") {
