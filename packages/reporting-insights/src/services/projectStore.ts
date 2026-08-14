@@ -54,10 +54,6 @@ const MODULE = "/Monolith";
  */
 export const APP_TAG = "reporting-insights--app";
 
-/** Marker tag that identifies dashboards pinned to the Landing Page portal view.
- *  These are always global/public but only creatable by admins. */
-export const LANDING_PAGE_TAG = "landing-page--insight";
-
 /** Older marker(s) still recognised so previously-published apps keep appearing. */
 const LEGACY_APP_TAGS = ["data--insight"];
 

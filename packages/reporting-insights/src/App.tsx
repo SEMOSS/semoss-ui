@@ -16,7 +16,6 @@ import { MainLayout } from "./layouts/MainLayout";
 import { AiBuilderPage } from "./pages/AiBuilderPage";
 import { AuthenticatedLayout } from "./pages/AuthenticatedLayout";
 import { DashboardPage } from "./pages/DashboardPage";
-import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
 import { McpCreatePage } from "./pages/McpCreatePage";
 import { NewDashboardChoicePage } from "./pages/NewDashboardChoicePage";
@@ -73,7 +72,7 @@ function App() {
 									<Route
 										index
 										element={
-											<Navigate to="/landing" replace />
+											<Navigate to="/published" replace />
 										}
 									/>
 									<Route
@@ -103,10 +102,6 @@ function App() {
 									<Route
 										path="published"
 										element={<PublishedPage />}
-									/>
-									<Route
-										path="landing"
-										element={<LandingPage />}
 									/>
 									{/* Admin/Permissions page removed — redirect any old links. */}
 									<Route

@@ -23,7 +23,6 @@ import {
 	LoadingState,
 } from "@/components/ui";
 import { useToast } from "@/components/ui/Toast";
-import { LANDING_PAGE_TAG } from "@/services/projectStore";
 import { useWorkspace } from "@/workspace/WorkspaceProvider";
 
 // Public portal URL for a published project — must point at the SEMOSS backend.
@@ -263,21 +262,11 @@ export function PublishedPage() {
 												folders={folders}
 												selected={app.tags}
 												onSelect={(folderId) => {
-													const systemTags =
-														app.tags.filter(
-															(t) =>
-																t ===
-																LANDING_PAGE_TAG,
-														);
-													const newTags = folderId
-														? [
-																...systemTags,
-																folderId,
-															]
-														: systemTags;
 													setDashboardTags(
 														app.id,
-														newTags,
+														folderId
+															? [folderId]
+															: [],
 													);
 												}}
 												className="rounded-md bg-white/80 p-1.5 text-stone-400 backdrop-blur-sm transition-colors hover:bg-indigo-50 hover:text-indigo-600"
@@ -314,16 +303,8 @@ export function PublishedPage() {
 
 										{/* Footer is a SIBLING of the card Link so it can hold a real
                                             anchor (an <a> nested inside <Link> would be invalid). */}
-										<div className="mt-auto flex items-center gap-2 border-stone-100 border-t bg-stone-50/60 px-2 py-2.5">
-											{app.published &&
-											(app.tags ?? []).includes(
-												LANDING_PAGE_TAG,
-											) ? (
-												<span className="inline-flex items-center gap-1.5 font-medium text-[11px] text-emerald-600">
-													<span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{" "}
-													Landing Page
-												</span>
-											) : app.published ? (
+										<div className="mt-auto flex items-center gap-2 border-stone-100 border-t bg-stone-50/60 px-4 py-2.5">
+											{app.published ? (
 												<span className="inline-flex items-center gap-1.5 font-medium text-[11px] text-emerald-600">
 													<span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{" "}
 													Public

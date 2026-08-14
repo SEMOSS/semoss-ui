@@ -8,15 +8,7 @@
  *     Users without access never see the app (MyProjects filters by permission).
  */
 
-import {
-	BookOpen,
-	Globe,
-	Loader2,
-	Lock,
-	Plus,
-	Trash2,
-	Users,
-} from "lucide-react";
+import { Globe, Loader2, Lock, Plus, Trash2, Users } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	Dialog,
@@ -42,7 +34,6 @@ import {
 	revokeProjectGroup,
 	revokeProjectUser,
 } from "@/services/permissionsApi";
-import { LANDING_PAGE_TAG } from "@/services/projectStore";
 import type { Dashboard } from "@/types/dashboard";
 import { useWorkspace } from "@/workspace/WorkspaceProvider";
 
@@ -69,21 +60,11 @@ export function ShareDialog({
 		useWorkspace();
 	const toast = useToast();
 
-	const [visibility, setVisibility] = useState<
-		"public" | "private" | "landing"
-	>(
-		(dashboard.tags ?? []).includes(LANDING_PAGE_TAG)
-			? "landing"
-			: dashboard.published
-				? "public"
-				: "private",
+	const [visibility, setVisibility] = useState<"public" | "private">(
+		dashboard.published ? "public" : "private",
 	);
-	// LANDING_PAGE_TAG is tracked via visibility state, never shown as a tag chip.
-	const visibleTags = (dashboard.tags ?? []).filter(
-		(t) => t !== LANDING_PAGE_TAG,
-	);
-	const [tags, setTags] = useState<string[]>(visibleTags);
-	const tagsRef = useRef<string[]>(visibleTags);
+	const [tags, setTags] = useState<string[]>(dashboard.tags ?? []);
+	const tagsRef = useRef<string[]>(dashboard.tags ?? []);
 	const applyTags = useCallback((next: string[]) => {
 		tagsRef.current = next;
 		setTags(next);
@@ -215,23 +196,10 @@ export function ShareDialog({
 	};
 
 	const save = async () => {
-		if (visibility === "landing" && tagsRef.current.length === 0) {
-			toast.error(
-				"Add at least one folder tag so this insight appears in the correct Landing Page category.",
-				"Folder required for Landing Page",
-			);
-			return;
-		}
 		setSaving(true);
 		try {
-			const isLandingPage = visibility === "landing";
-			const saveTags = [
-				...tagsRef.current,
-				...(isLandingPage ? [LANDING_PAGE_TAG] : []),
-			];
-			setDashboardTags(dashboard.id, saveTags);
-			// Landing page dashboards are always public.
-			const shouldBePublic = visibility === "public" || isLandingPage;
+			setDashboardTags(dashboard.id, tagsRef.current);
+			const shouldBePublic = visibility === "public";
 			if (shouldBePublic !== !!dashboard.published) {
 				await publishDashboard(dashboard.id, shouldBePublic);
 			}
@@ -279,12 +247,7 @@ export function ShareDialog({
 						placeholder="Add a folder tag…"
 						max={1}
 					/>
-					{visibility === "landing" && tags.length === 0 ? (
-						<p className="mt-1 text-[11px] text-violet-600">
-							A folder tag is required; It determines which
-							category this insight appears under in the portal.
-						</p>
-					) : tags.length >= 1 ? (
+					{tags.length >= 1 ? (
 						<p className="mt-1 text-[11px] text-stone-400">
 							Remove the current tag to move this dashboard to a
 							different folder.
@@ -302,9 +265,7 @@ export function ShareDialog({
 					<label className="mb-1 block font-semibold text-[11px] text-stone-400 uppercase tracking-widest">
 						Who can access
 					</label>
-					<div
-						className={`grid gap-2 ${isAdmin ? "grid-cols-3" : "grid-cols-2"}`}
-					>
+					<div className="grid grid-cols-2 gap-2">
 						<VisCard
 							active={visibility === "public"}
 							onClick={() => setVisibility("public")}
@@ -319,16 +280,6 @@ export function ShareDialog({
 							title="Private"
 							desc="Only people you choose"
 						/>
-						{isAdmin && (
-							<VisCard
-								active={visibility === "landing"}
-								onClick={() => setVisibility("landing")}
-								icon={<BookOpen className="h-4 w-4" />}
-								title="Landing Page"
-								desc="Insights Portal view"
-								accent="violet"
-							/>
-						)}
 					</div>
 				</div>
 
@@ -524,10 +475,7 @@ export function ShareDialog({
 					<Button
 						size="sm"
 						onClick={() => void save()}
-						disabled={
-							saving ||
-							(visibility === "landing" && tags.length === 0)
-						}
+						disabled={saving}
 					>
 						{saving && (
 							<Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -546,34 +494,26 @@ function VisCard({
 	icon,
 	title,
 	desc,
-	accent = "indigo",
 }: {
 	active: boolean;
 	onClick: () => void;
 	icon: React.ReactNode;
 	title: string;
 	desc: string;
-	accent?: "indigo" | "violet";
 }) {
-	const ring =
-		accent === "violet"
-			? "border-violet-400 bg-violet-50/60 ring-1 ring-violet-500/20"
-			: "border-indigo-400 bg-indigo-50/60 ring-1 ring-indigo-500/20";
-	const iconColor =
-		accent === "violet" ? "text-violet-600" : "text-indigo-600";
-	const titleColor =
-		accent === "violet" ? "text-violet-900" : "text-indigo-900";
 	return (
 		<button
 			onClick={onClick}
-			className={`flex items-start gap-2 rounded-lg border p-3 text-left transition-colors ${active ? ring : "border-stone-200 bg-white hover:border-stone-300"}`}
+			className={`flex items-start gap-2 rounded-lg border p-3 text-left transition-colors ${active ? "border-indigo-400 bg-indigo-50/60 ring-1 ring-indigo-500/20" : "border-stone-200 bg-white hover:border-stone-300"}`}
 		>
-			<span className={`mt-0.5 ${active ? iconColor : "text-stone-400"}`}>
+			<span
+				className={`mt-0.5 ${active ? "text-indigo-600" : "text-stone-400"}`}
+			>
 				{icon}
 			</span>
 			<span className="min-w-0">
 				<span
-					className={`block font-semibold text-[13px] ${active ? titleColor : "text-stone-800"}`}
+					className={`block font-semibold text-[13px] ${active ? "text-indigo-900" : "text-stone-800"}`}
 				>
 					{title}
 				</span>
