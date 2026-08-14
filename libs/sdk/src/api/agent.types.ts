@@ -142,6 +142,34 @@ export interface AgentRunItemsState {
 export type AgentToolDecision = "approve" | "edit" | "reject" | "respond";
 
 /**
+ * A direct subagent run, as durably stored in AGENT_RUN — unlike the
+ * ephemeral subagent stream items on the parent's own poll, this survives a
+ * page reload (see getSubagentRuns).
+ */
+export interface SubagentRunSummary {
+	runId: string;
+	parentRunId: string | null;
+	roomId: string;
+	roomName: string | null;
+	workspaceId: string | null;
+	modelId: string | null;
+	harnessType: string | null;
+	/** Always equal to runId — the model-facing handle for this run. */
+	jobId: string;
+	status: AgentRunStatusValue;
+	input: string | null;
+	inputMessageId: string | null;
+	finalText: string | null;
+	finalOutputMessageId: string | null;
+	errorMessage: string | null;
+	dateCreated: string | null;
+	startedAt: string | null;
+	completedAt: string | null;
+	userId: string;
+	artifacts: unknown[];
+}
+
+/**
  * A live subscription started by subscribeAgentRun/submitAgentRun's
  * subscription helpers.
  */

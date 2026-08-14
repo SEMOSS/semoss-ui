@@ -147,7 +147,7 @@ export const ToolsView = observer(
 
 				// Auto-executing tool that hasn't completed yet — show default view
 				if (
-					!isAskExecutionMode(tool._meta.SMSS_MCP_EXECUTION) &&
+					!isAskExecutionMode(tool._meta?.SMSS_MCP_EXECUTION) &&
 					!toolResponse
 				) {
 					setUrl("");
@@ -181,7 +181,7 @@ export const ToolsView = observer(
 
 				setIsLoading(true);
 
-				if (!tool._meta.SMSS_MCP_UI) {
+				if (!tool._meta?.SMSS_MCP_UI) {
 					// Legacy, check for portals
 
 					if (getAppInfo.data.project_type === "BLOCKS") {
@@ -213,7 +213,7 @@ export const ToolsView = observer(
 					);
 				} else {
 					// Modern
-					const resourceURI = tool._meta.SMSS_MCP_UI?.resourceURI;
+					const resourceURI = tool._meta?.SMSS_MCP_UI?.resourceURI;
 					if (!resourceURI) {
 						// No UI defined, show form
 						setUrl("");

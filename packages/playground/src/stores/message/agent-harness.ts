@@ -8,6 +8,7 @@ import type {
 	PendingAgentAction,
 } from "@semoss/sdk";
 import {
+	getSubagentRuns,
 	submitAgentRun,
 	submitAgentToolDecision,
 	subscribeAgentRun,
@@ -23,6 +24,7 @@ import type {
 	PixelMessageToolCallPart,
 	ResponsePixelMessage,
 } from "@/types";
+import type { RoomStore } from "../room/room.store";
 import type { ToolStore } from "../tool/tool.store";
 import { InputMessageStore } from "./input-message.store";
 import { ResponseMessageStore } from "./response-message.store";
@@ -505,6 +507,105 @@ export const runAgentMessage = async (
 			responseMessage.isThinking = false;
 		});
 		room.setIsLoading(false);
+	}
+};
+
+/**
+ * Find the message whose TOOL_CALL spawned childRunId, by matching the
+ * TOOL_RESULT whose output carries a `jobId`/`runId` equal to it.
+ */
+const findSpawningMessage = (
+	messages: (InputMessageStore | ResponseMessageStore)[],
+	childRunId: string,
+): ResponseMessageStore | undefined => {
+	let toolCallId: string | undefined;
+	for (const message of messages) {
+		if (!(message instanceof InputMessageStore)) continue;
+		for (const part of message.parts) {
+			if (part.type !== "TOOL_RESULT") continue;
+			try {
+				const output = JSON.parse(part.toolResult.output) as {
+					jobId?: string;
+					runId?: string;
+				};
+				if (
+					output.jobId === childRunId ||
+					output.runId === childRunId
+				) {
+					toolCallId = part.toolResult.toolCallId;
+					break;
+				}
+			} catch {
+				// not JSON — not a spawn result
+			}
+		}
+		if (toolCallId) break;
+	}
+	if (!toolCallId) {
+		return undefined;
+	}
+	return messages.find(
+		(message): message is ResponseMessageStore =>
+			message instanceof ResponseMessageStore &&
+			message.parts.some(
+				(part) =>
+					part.type === "TOOL_CALL" &&
+					part.toolCall.id === toolCallId,
+			),
+	);
+};
+
+/**
+ * Reconstruct every subagent spawned across this room's history from the
+ * durable AGENT_RUN table (GetSubagentRuns) — one query per distinct
+ * agentRunId, not just the tail's, since live subagent items only ever exist
+ * in memory and don't survive a reload otherwise.
+ *
+ * Each part is placed on the message that spawned it (see
+ * findSpawningMessage), falling back to the run's last message. Uses the same
+ * part shape/id as the live path so a still-running child's later updates
+ * find and mutate this same part instead of duplicating it.
+ */
+export const reconstructAllSubagents = async (room: RoomStore) => {
+	const messagesByRunId = new Map<
+		string,
+		(InputMessageStore | ResponseMessageStore)[]
+	>();
+	for (const message of room.history) {
+		const runId = message.ornaments.agentRunId;
+		if (!runId) continue;
+		const messages = messagesByRunId.get(runId) ?? [];
+		messages.push(message);
+		messagesByRunId.set(runId, messages);
+	}
+
+	for (const [runId, messages] of messagesByRunId) {
+		try {
+			const subagents = await getSubagentRuns(runId, room.insightId);
+			runInAction(() => {
+				for (const subagent of subagents) {
+					const responseMessages = messages.filter(
+						(message): message is ResponseMessageStore =>
+							message instanceof ResponseMessageStore,
+					);
+					const target =
+						findSpawningMessage(messages, subagent.runId) ??
+						responseMessages[responseMessages.length - 1];
+					if (!target || findSubagentPart(target, subagent.runId)) {
+						continue;
+					}
+					target.parts.push({
+						type: "SUBAGENT",
+						subagent: {
+							id: subagent.runId,
+							status: subagent.status,
+						},
+					});
+				}
+			});
+		} catch (e) {
+			console.error("Failed to reconstruct subagent runs", e);
+		}
 	}
 };
 

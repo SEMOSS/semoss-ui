@@ -141,7 +141,7 @@ export const ToolsDefaultView = observer(
 		const title = tool?.displayName || "";
 		const description = tool?.json.description || "";
 		const isAutoExecuting =
-			!isAskExecutionMode(tool?.json._meta.SMSS_MCP_EXECUTION) &&
+			!isAskExecutionMode(tool?.json._meta?.SMSS_MCP_EXECUTION) &&
 			tool.status !== "SUCCESS";
 
 		// The call is over (succeeded or not), so the form is no longer actionable

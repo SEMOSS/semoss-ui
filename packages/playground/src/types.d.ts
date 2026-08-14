@@ -184,7 +184,11 @@ export interface PixelMessageToolCallPart {
 		// (e.g. web_search). Server tools lack the MCP `_meta`
 		// block and their TOOL_RESULT lands in the same response message.
 		server_tool?: boolean;
-		_meta: {
+		// Optional in practice, not just in MCP: platform-synthesized tools (e.g.
+		// SpawnSubAgent/CheckSubAgentStatus/WaitForSubAgent) don't get the usual
+		// MCP-project metadata enrichment, so their persisted TOOL_CALL omits it
+		// entirely. Always optional-chain reads of this field.
+		_meta?: {
 			SMSS_ENGINE_NAME: string;
 			SMSS_ENGINE_ID: string;
 			SMSS_ENGINE_TYPE: string;
@@ -207,6 +211,13 @@ export interface PixelMessageToolCallPart {
 				resourceURI?: string;
 				autoOpen?: boolean;
 			};
+			// Set only on platform-synthesized subagent tools (spawn/named/check/
+			// wait) — see SubAgentToolSynthesizer.
+			SMSS_TOOL_KIND?:
+				| "semoss_subagent_spawn"
+				| "semoss_subagent_named"
+				| "semoss_subagent_check"
+				| "semoss_subagent_wait";
 		};
 	};
 }

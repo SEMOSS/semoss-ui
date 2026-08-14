@@ -5,6 +5,7 @@ import type {
 	AgentRunSnapshot,
 	AgentRunStatusValue,
 	AgentToolDecision,
+	SubagentRunSummary,
 } from "./agent.types";
 import { runPixel } from "./base";
 
@@ -183,6 +184,36 @@ export const decideAgentRunAction = async (
 
 	const response = await runPixel<[string]>(
 		`RunMCPTool(${clauses.join(",\n")});`,
+		insightId,
+	);
+
+	if (response.errors.length > 0) {
+		throw new Error(response.errors.join(""));
+	}
+
+	return response.pixelReturn[0].output;
+};
+
+/**
+ * List every direct subagent run spawned by a parent run, newest first —
+ * durable and DB-backed (GetSubagentRuns), unlike the ephemeral subagent item
+ * events on the parent's own stream. Use to reconstruct subagent state after
+ * a reload, where the stream has nothing left to replay.
+ *
+ * @param runId - The parent run whose direct subagent runs should be returned.
+ * @param insightId - Insight to run the pixel against.
+ * @returns Every direct child run, newest first.
+ */
+export const getSubagentRuns = async (
+	runId: string,
+	insightId?: string,
+): Promise<SubagentRunSummary[]> => {
+	if (!runId) {
+		throw new Error("Missing runId");
+	}
+
+	const response = await runPixel<[SubagentRunSummary[]]>(
+		`GetSubagentRuns(runId=${JSON.stringify([runId])});`,
 		insightId,
 	);
 

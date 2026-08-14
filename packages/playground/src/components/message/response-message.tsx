@@ -316,7 +316,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			if (!tool.isResolved) return true;
 			// non-interactive tools (auto-execute, or backend-executed e.g.
 			// agent-run tools) should always be grouped
-			if (!isAskExecutionMode(tool.json._meta.SMSS_MCP_EXECUTION))
+			if (!isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION))
 				return true;
 			// ask tools only enter group when there are no unfinished tools
 			return !message.hasUnfinishedTools;
@@ -337,7 +337,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						groupedTools.push(tool);
 					}
 					if (
-						isAskExecutionMode(tool.json._meta.SMSS_MCP_EXECUTION)
+						isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION)
 					) {
 						hasAskTools = true;
 					}

@@ -15,7 +15,10 @@ import {
 	ResponseMessageStore,
 	ToolStore,
 } from "@/stores";
-import { reconnectAgentRun } from "@/stores/message/agent-harness";
+import {
+	reconnectAgentRun,
+	reconstructAllSubagents,
+} from "@/stores/message/agent-harness";
 import type {
 	Engine,
 	InputPixelMessage,
@@ -606,6 +609,40 @@ export class RoomStore {
 			// options
 			const newOptions = { ...optionsOutput.OPTIONS };
 
+			runInAction(() => {
+				// Restore agent-harness mode from the persisted options so a
+				// reloaded agent room keeps sending messages via RunAgent. Only
+				// promote to "agent" here — never demote — so that a freshly
+				// created room whose mode was set via setMode() before its
+				// options have been persisted (createRoom runs initialize()
+				// before updateRoomOptions) keeps its explicitly-set mode.
+				if (newOptions.harnessType) {
+					this.setMode("agent");
+				}
+
+				// store it
+				this._store.root = root;
+			});
+
+			// Fired here, before the workspace/model round trips below, since
+			// neither depends on them — waiting on those was delaying subagent
+			// boxes and live status for no reason.
+			if (this.mode === "agent") {
+				void reconstructAllSubagents(this);
+			}
+			if (this.tail.type === "OUTPUT") {
+				if (this.mode === "agent") {
+					// An agent-run turn is driven entirely server-side and
+					// only ever gets a live subscribeAgentRun connection from
+					// runAgentMessage's own submit — reconnect here so a
+					// reload doesn't leave it (and any paused tool decision)
+					// unwatched. See reconnectAgentRun.
+					reconnectAgentRun(this.tail);
+				} else {
+					this.tail.continueToolExecution();
+				}
+			}
+
 			if (!newOptions.workspace?.workspace_id) {
 				delete newOptions.workspace;
 			} else {
@@ -680,34 +717,7 @@ export class RoomStore {
 				if (optionsOutput.ROOM_NAME) {
 					this.setMetadata({ name: optionsOutput.ROOM_NAME });
 				}
-
-				// Restore agent-harness mode from the persisted options so a
-				// reloaded agent room keeps sending messages via RunAgent. Only
-				// promote to "agent" here — never demote — so that a freshly
-				// created room whose mode was set via setMode() before its
-				// options have been persisted (createRoom runs initialize()
-				// before updateRoomOptions) keeps its explicitly-set mode.
-				if (newOptions.harnessType) {
-					this.setMode("agent");
-				}
-
-				// store it
-				this._store.root = root;
 			});
-
-			// If the last message is a response and it has tool executions, start them (happens for new rooms and page reloads)
-			if (this.tail.type === "OUTPUT") {
-				if (this.mode === "agent") {
-					// An agent-run turn is driven entirely server-side and
-					// only ever gets a live subscribeAgentRun connection from
-					// runAgentMessage's own submit — reconnect here so a
-					// reload doesn't leave it (and any paused tool decision)
-					// unwatched. See reconnectAgentRun.
-					reconnectAgentRun(this.tail);
-				} else {
-					this.tail.continueToolExecution();
-				}
-			}
 		} catch (e) {
 			console.error(e);
 			runInAction(() => {
