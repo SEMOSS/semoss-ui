@@ -1,4 +1,4 @@
-import { EyeOff, LockKeyhole, Trash2 } from "lucide-react";
+import { Copy, EyeOff, LockKeyhole, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
 	Button,
@@ -15,6 +15,7 @@ import {
 	setEngineGlobal,
 	setEngineVisiblity,
 	setProjectGlobal,
+	setProjectTemplate,
 	setProjectVisiblity,
 } from "@/api";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
@@ -97,6 +98,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 	const [deleteModal, setDeleteModal] = useState(false);
 	const [discoverable, setDiscoverable] = useState(true);
 	const [global, setGlobal] = useState(true);
+	const [isTemplate, setIsTemplate] = useState(false);
 	const [loading, setLoading] = useState(false);
 
 	const isEngineType =
@@ -151,10 +153,12 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 			const data = engineInfo.data as {
 				project_global: boolean;
 				project_discoverable: boolean;
+				project_is_template: boolean;
 			};
 
 			setDiscoverable(data.project_discoverable);
 			setGlobal(data.project_global);
+			setIsTemplate(data.project_is_template === true);
 		}
 	}, [engineInfo.status, engineInfo.data, type]);
 
@@ -368,6 +372,61 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 		}
 	};
 
+	/**
+	 * Toggle whether viewers may clone this project as a template.
+	 */
+	const changeTemplate = async () => {
+		try {
+			setLoading(true);
+			const response = await setProjectTemplate(
+				adminMode,
+				id,
+				!isTemplate,
+			);
+			if (response.data.success) {
+				setIsTemplate(!isTemplate);
+				toast.success(
+					isTemplate
+						? `Successfully removed ${name} as a template`
+						: `Successfully enabled ${name} as a template`,
+				);
+			} else {
+				toast.error(`Error updating template status for ${name}`);
+			}
+		} catch (e) {
+			toast.error(String(e));
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const templateTile =
+		type === "PROJECT" ? (
+			<AlertTile
+				setBounds={direction === "column"}
+				icon={<Copy aria-hidden />}
+				title="Use as template"
+				description="Allow users who can view this project to create their own independent copy. This does not make the project public."
+				action={
+					<Switch
+						aria-label={`Use ${name} as a template`}
+						title={
+							isTemplate
+								? `Stop using ${name} as a template`
+								: `Use ${name} as a template`
+						}
+						checked={isTemplate}
+						data-testid={formatToDataTestId(
+							`settingsTiles-${name}-use-as-template-switch`,
+						)}
+						onCheckedChange={() => {
+							changeTemplate();
+						}}
+					/>
+				}
+			/>
+		) : null;
+
 	/** LOADING */
 	if (loading) {
 		return (
@@ -490,6 +549,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 							}
 						/>
 					)}
+					{templateTile}
 					<AlertTile
 						setBounds={direction === "column"}
 						icon={<Trash2 className="mt-0.5 h-[22px] w-[22px]" />}
@@ -643,6 +703,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 							}
 						/>
 					)}
+					{templateTile}
 					{onDelete ? (
 						<>
 							<AlertTile
