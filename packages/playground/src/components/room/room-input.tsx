@@ -155,26 +155,12 @@ interface RoomInputProps {
 
 	/** Initial value from prompt library */
 	initialValue?: string;
-	/** Current token usage for context window indicator */
-	tokensUsed?: number;
 
-	/** Maximum token capacity for context window */
-	tokensMax?: number;
-
-	/** Total tokens consumed across the entire chat */
-	totalTokens?: number;
-
-	/** Room store for prompt optimizer */
+	/** Room store for prompt optimizer and context usage indicator */
 	room: RoomStore;
 
-	/** Callback to compact conversation; passed through to EngineSelect context tooltip */
-	onCompact?: () => void;
-
-	/** Currently selected compaction strategy */
-	compactionStrategy?: "TOOL_PRUNE" | "SUMMARY" | "AUTO";
-
-	/** Called when the user changes the compaction strategy in the picker */
-	onStrategyChange?: (strategy: "TOOL_PRUNE" | "SUMMARY" | "AUTO") => void;
+	/** Callback to compact conversation; also passed through to the slash menu */
+	onCompact?: (strategy?: "TOOL_PRUNE" | "SUMMARY" | "AUTO") => void;
 
 	/** Command IDs to suppress from the slash menu */
 	excludeCommandIds?: string[];
@@ -214,13 +200,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		onStop,
 		predefinedPrompts = [],
 		initialValue,
-		tokensUsed,
-		tokensMax,
-		totalTokens,
 		room,
 		onCompact,
-		compactionStrategy,
-		onStrategyChange,
 		excludeCommandIds,
 		onOpenSettings,
 	}) => {
@@ -862,18 +843,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											// -ms-1 to make spacing between engine select and context usage look more like spacing between it and mic
 											// this is because engine select is ghost
 											className="-ms-1"
-											tokensUsed={tokensUsed}
-											tokensMax={tokensMax}
-											totalTokens={totalTokens}
+											room={room}
 											onCompact={onCompact}
-											compactionStrategy={
-												compactionStrategy
-											}
-											onStrategyChange={onStrategyChange}
 											isLoading={isLoading}
-											latestResponseHasTools={
-												latestResponseHasTools
-											}
 										/>
 										{predefinedPrompts.length > 0 ? (
 											<Tooltip>

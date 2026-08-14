@@ -28,7 +28,7 @@ import {
 	RoomInputMenuMCP,
 	RoomInputMenuUpload,
 } from "@/components";
-import { useChat, useGracefulErrors, useRoot } from "@/hooks";
+import { useChat, useGracefulErrors } from "@/hooks";
 import { ResponseMessageStore, type RoomStore } from "@/stores";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomSuggestions } from "./room-suggestions";
@@ -46,7 +46,6 @@ interface RoomContentProps {
  */
 export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const { chat } = useChat();
-	const { root } = useRoot();
 	const { t } = useTranslation("room");
 	const { getGracefulErrorMessage } = useGracefulErrors();
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
@@ -55,9 +54,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const [showScrollup, setShowScrollup] = useState(false);
 	const [showScrolldown, setShowScrolldown] = useState(false);
 	const [isScrollLocked, setIsScrollLocked] = useState(false);
-	const [compactionStrategy, setCompactionStrategy] = useState<
-		"TOOL_PRUNE" | "SUMMARY" | "AUTO"
-	>(root.theme.defaultCompactionStrategy ?? "AUTO");
 
 	/**
 	 * Functions
@@ -110,9 +106,11 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	/**
 	 * Compact messages in the room
 	 */
-	const handleCompactMessages = async () => {
+	const handleCompactMessages = async (
+		strategy?: "TOOL_PRUNE" | "SUMMARY" | "AUTO",
+	) => {
 		try {
-			const result = await room.compactMessages(compactionStrategy);
+			const result = await room.compactMessages(strategy);
 			if (result === "skipped") {
 				toast.info(t("settings.compactSkipped"));
 			} else {
@@ -604,12 +602,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 								: "send"
 					}
 					onStop={room.cancelActiveJob}
-					tokensUsed={room.tokensUsed}
-					tokensMax={chat.models.contextWindow}
-					totalTokens={room.totalTokensConsumed}
 					onCompact={handleCompactMessages}
-					compactionStrategy={compactionStrategy}
-					onStrategyChange={setCompactionStrategy}
 					onOpenSettings={handleOpenSettings}
 					excludeCommandIds={["agent", "workspace"]}
 				/>

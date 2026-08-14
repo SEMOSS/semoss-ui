@@ -1,4 +1,5 @@
 import { ChevronDownIcon, InfoIcon } from "lucide-react";
+import { observer } from "mobx-react-lite";
 import { useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
@@ -11,6 +12,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { useChat, useRoot } from "@/hooks";
+import type { RoomStore } from "@/stores";
 
 type CompactionStrategy = "TOOL_PRUNE" | "SUMMARY" | "AUTO";
 
@@ -18,29 +21,14 @@ interface RoomContextUsageIndicatorProps {
 	/** CSS classes for styling customization */
 	className?: string;
 
-	/** Current token usage for context window indicator */
-	tokensUsed?: number;
-
-	/** Maximum token capacity for context window */
-	tokensMax?: number;
-
-	/** Total tokens consumed across the entire chat */
-	totalTokens?: number;
+	/** Room whose usage this indicator reflects */
+	room: RoomStore;
 
 	/** Callback to compact the conversation */
-	onCompact?: () => void;
+	onCompact?: (strategy?: CompactionStrategy) => void;
 
 	/** Whether a response is currently streaming — compaction is disabled while thinking */
 	isLoading?: boolean;
-
-	/** Whether the latest response still has outstanding tool calls — compaction can't touch it yet */
-	latestResponseHasTools?: boolean;
-
-	/** Currently selected compaction strategy */
-	compactionStrategy?: CompactionStrategy;
-
-	/** Called when the user changes the compaction strategy in the picker */
-	onStrategyChange?: (strategy: CompactionStrategy) => void;
 }
 
 /**
@@ -153,167 +141,176 @@ const CompactStrategyPicker: React.FC<{
  * Hovering (or the popover content itself) keeps the popover open via a short close
  * delay, so the mouse can travel from the donut into the popover.
  */
-export const RoomContextUsageIndicator = ({
-	className,
-	tokensUsed,
-	tokensMax,
-	totalTokens,
-	onCompact,
-	isLoading = false,
-	latestResponseHasTools = false,
-	compactionStrategy = "AUTO",
-	onStrategyChange,
-}: RoomContextUsageIndicatorProps) => {
-	const { t } = useTranslation("room");
-	const [open, setOpen] = useState(false);
-	const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const isHovering = useRef(false);
+export const RoomContextUsageIndicator = observer(
+	({
+		className,
+		room,
+		onCompact,
+		isLoading = false,
+	}: RoomContextUsageIndicatorProps) => {
+		const { t } = useTranslation("room");
+		const { chat } = useChat();
+		const { root } = useRoot();
+		const [open, setOpen] = useState(false);
+		const [compactionStrategy, setCompactionStrategy] =
+			useState<CompactionStrategy>(
+				root.theme.defaultCompactionStrategy ?? "AUTO",
+			);
+		const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+		const isHovering = useRef(false);
 
-	const handleOpen = () => {
-		isHovering.current = true;
-		if (closeTimer.current) clearTimeout(closeTimer.current);
-		setOpen(true);
-	};
+		const tokensUsed = room.tokensUsed;
+		const tokensMax = chat.models.contextWindow;
+		const totalTokens = room.totalTokensConsumed;
+		const latestResponseHasTools =
+			room.latestResponseMessage?.hasUnfinishedTools ?? false;
 
-	const scheduleClose = () => {
-		isHovering.current = false;
-		closeTimer.current = setTimeout(() => setOpen(false), 150);
-	};
+		const handleOpen = () => {
+			isHovering.current = true;
+			if (closeTimer.current) clearTimeout(closeTimer.current);
+			setOpen(true);
+		};
 
-	const usedPercent =
-		tokensMax && tokensUsed !== undefined
-			? (tokensUsed / tokensMax) * 100
-			: undefined;
+		const scheduleClose = () => {
+			isHovering.current = false;
+			closeTimer.current = setTimeout(() => setOpen(false), 150);
+		};
 
-	if (usedPercent === undefined || usedPercent <= 0) {
-		return null;
-	}
+		const usedPercent =
+			tokensMax && tokensUsed !== undefined
+				? (tokensUsed / tokensMax) * 100
+				: undefined;
 
-	// Calculate donut chart geometry, rounded to the nearest 12.5% increment
-	const roundedPercent = Math.max(
-		12.5,
-		Math.round(usedPercent / 12.5) * 12.5,
-	);
-	const radius = 8;
-	const cx = 9;
-	const cy = 9;
-	const angle = (roundedPercent / 100) * 360;
-	const radians = (angle * Math.PI) / 180;
-	const x = cx + radius * Math.cos(radians - Math.PI / 2);
-	const y = cy + radius * Math.sin(radians - Math.PI / 2);
-	const largeArc = angle > 180 ? 1 : 0;
+		if (usedPercent === undefined || usedPercent <= 0) {
+			return null;
+		}
 
-	const descriptionKey =
-		usedPercent >= 100
-			? "contextWindow.descriptionExceeded"
-			: usedPercent < 50
-				? "contextWindow.descriptionLow"
-				: usedPercent < 75
-					? "contextWindow.descriptionMedium"
-					: "contextWindow.descriptionHigh";
+		// Calculate donut chart geometry, rounded to the nearest 12.5% increment
+		const roundedPercent = Math.max(
+			12.5,
+			Math.round(usedPercent / 12.5) * 12.5,
+		);
+		const radius = 8;
+		const cx = 9;
+		const cy = 9;
+		const angle = (roundedPercent / 100) * 360;
+		const radians = (angle * Math.PI) / 180;
+		const x = cx + radius * Math.cos(radians - Math.PI / 2);
+		const y = cy + radius * Math.sin(radians - Math.PI / 2);
+		const largeArc = angle > 180 ? 1 : 0;
 
-	return (
-		<Popover
-			open={open}
-			onOpenChange={(o) => {
-				if (!o && isHovering.current) return;
-				setOpen(o);
-			}}
-		>
-			<PopoverTrigger asChild>
-				<button
-					type="button"
-					className={cn(
-						"flex shrink-0 cursor-pointer items-center",
-						className,
-					)}
-					onClick={(e) => e.stopPropagation()}
-					onMouseEnter={handleOpen}
-					onMouseLeave={scheduleClose}
-				>
-					{/** biome-ignore lint/a11y/noSvgWithoutTitle: click interaction is provided by the parent button */}
-					<svg width={18} height={18} viewBox="0 0 18 18">
-						{/* Outer ring - always visible */}
-						<circle
-							cx={cx}
-							cy={cy}
-							r={radius}
-							fill="none"
-							className={
-								roundedPercent >= 75
-									? "stroke-destructive"
-									: "stroke-muted-foreground"
-							}
-							strokeWidth={1.5}
-							opacity={0.3}
-						/>
-						{/* Inner fill showing percentage */}
-						{roundedPercent >= 100 ? (
+		const descriptionKey =
+			usedPercent >= 100
+				? "contextWindow.descriptionExceeded"
+				: usedPercent < 50
+					? "contextWindow.descriptionLow"
+					: usedPercent < 75
+						? "contextWindow.descriptionMedium"
+						: "contextWindow.descriptionHigh";
+
+		return (
+			<Popover
+				open={open}
+				onOpenChange={(o) => {
+					if (!o && isHovering.current) return;
+					setOpen(o);
+				}}
+			>
+				<PopoverTrigger asChild>
+					<button
+						type="button"
+						className={cn(
+							"flex shrink-0 cursor-pointer items-center",
+							className,
+						)}
+						onClick={(e) => e.stopPropagation()}
+						onMouseEnter={handleOpen}
+						onMouseLeave={scheduleClose}
+					>
+						{/** biome-ignore lint/a11y/noSvgWithoutTitle: click interaction is provided by the parent button */}
+						<svg width={18} height={18} viewBox="0 0 18 18">
+							{/* Outer ring - always visible */}
 							<circle
 								cx={cx}
 								cy={cy}
-								r={radius - 1}
+								r={radius}
+								fill="none"
 								className={
 									roundedPercent >= 75
-										? "fill-destructive"
-										: "fill-muted-foreground"
+										? "stroke-destructive"
+										: "stroke-muted-foreground"
 								}
-								opacity={0.6}
+								strokeWidth={1.5}
+								opacity={0.3}
 							/>
-						) : (
-							<path
-								d={`M ${cx} ${cy} L ${cx} ${cy - (radius - 1)} A ${radius - 1} ${radius - 1} 0 ${largeArc} 1 ${x * 0.875 + cx * 0.125} ${y * 0.875 + cy * 0.125} Z`}
-								className={
-									roundedPercent >= 75
-										? "fill-destructive"
-										: "fill-muted-foreground"
-								}
-								opacity={0.6}
-							/>
-						)}
-					</svg>
-				</button>
-			</PopoverTrigger>
-			<PopoverContent
-				side="top"
-				className="w-[24rem] text-wrap text-sm"
-				onMouseEnter={handleOpen}
-				onMouseLeave={scheduleClose}
-				onClick={(e) => e.stopPropagation()}
-				onOpenAutoFocus={(e) => e.preventDefault()}
-			>
-				<div className="w-full space-y-1">
-					<p className="w-full">{t(descriptionKey)}</p>
-					<p className="flex w-full items-baseline justify-between gap-3">
-						<span>{t("contextWindow.memoryUsedTitle")}</span>
-						<span className="whitespace-nowrap text-end tabular-nums">
-							{t("contextWindow.memoryUsedValue", {
-								used: formatTokens(tokensUsed),
-								total: formatTokens(tokensMax),
-								percent: usedPercent.toFixed(1),
-							})}
-						</span>
-					</p>
-					{totalTokens !== undefined && (
+							{/* Inner fill showing percentage */}
+							{roundedPercent >= 100 ? (
+								<circle
+									cx={cx}
+									cy={cy}
+									r={radius - 1}
+									className={
+										roundedPercent >= 75
+											? "fill-destructive"
+											: "fill-muted-foreground"
+									}
+									opacity={0.6}
+								/>
+							) : (
+								<path
+									d={`M ${cx} ${cy} L ${cx} ${cy - (radius - 1)} A ${radius - 1} ${radius - 1} 0 ${largeArc} 1 ${x * 0.875 + cx * 0.125} ${y * 0.875 + cy * 0.125} Z`}
+									className={
+										roundedPercent >= 75
+											? "fill-destructive"
+											: "fill-muted-foreground"
+									}
+									opacity={0.6}
+								/>
+							)}
+						</svg>
+					</button>
+				</PopoverTrigger>
+				<PopoverContent
+					side="top"
+					className="w-[24rem] text-wrap text-sm"
+					onMouseEnter={handleOpen}
+					onMouseLeave={scheduleClose}
+					onClick={(e) => e.stopPropagation()}
+					onOpenAutoFocus={(e) => e.preventDefault()}
+				>
+					<div className="w-full space-y-1">
+						<p className="w-full">{t(descriptionKey)}</p>
 						<p className="flex w-full items-baseline justify-between gap-3">
-							<span>{t("contextWindow.totalUsedTitle")}</span>
+							<span>{t("contextWindow.memoryUsedTitle")}</span>
 							<span className="whitespace-nowrap text-end tabular-nums">
-								{t("contextWindow.totalUsedValue", {
-									total: formatTokens(totalTokens),
+								{t("contextWindow.memoryUsedValue", {
+									used: formatTokens(tokensUsed),
+									total: formatTokens(tokensMax),
+									percent: usedPercent.toFixed(1),
 								})}
 							</span>
 						</p>
-					)}
-					{onCompact && (
-						<CompactStrategyPicker
-							disabled={isLoading || latestResponseHasTools}
-							strategy={compactionStrategy}
-							onPickStrategy={(s) => onStrategyChange?.(s)}
-							onCompact={onCompact}
-						/>
-					)}
-				</div>
-			</PopoverContent>
-		</Popover>
-	);
-};
+						{totalTokens !== undefined && (
+							<p className="flex w-full items-baseline justify-between gap-3">
+								<span>{t("contextWindow.totalUsedTitle")}</span>
+								<span className="whitespace-nowrap text-end tabular-nums">
+									{t("contextWindow.totalUsedValue", {
+										total: formatTokens(totalTokens),
+									})}
+								</span>
+							</p>
+						)}
+						{onCompact && (
+							<CompactStrategyPicker
+								disabled={isLoading || latestResponseHasTools}
+								strategy={compactionStrategy}
+								onPickStrategy={setCompactionStrategy}
+								onCompact={() => onCompact(compactionStrategy)}
+							/>
+						)}
+					</div>
+				</PopoverContent>
+			</Popover>
+		);
+	},
+);
