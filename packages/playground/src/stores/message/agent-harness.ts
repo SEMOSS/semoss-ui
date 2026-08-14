@@ -207,10 +207,15 @@ const applyAgentRunItem = (
 				tool.status = status;
 			}
 		} else if (item.kind === "subagent") {
-			// WIP: status only — no alias/result/error rendering yet, see SubagentBox.
 			responseMessage.parts.push({
 				type: "SUBAGENT",
-				subagent: { id: item.id, status: item.status },
+				subagent: {
+					id: item.id,
+					status: item.status,
+					alias: item.alias,
+					resultPreview: item.resultPreview,
+					error: item.error,
+				},
 			});
 		}
 		return;
@@ -241,6 +246,8 @@ const applyAgentRunItem = (
 			const part = findSubagentPart(responseMessage, event.itemId);
 			if (part && merged?.kind === "subagent") {
 				part.subagent.status = merged.status;
+				part.subagent.resultPreview = merged.resultPreview;
+				part.subagent.error = merged.error;
 			}
 		}
 		return;
@@ -262,6 +269,8 @@ const applyAgentRunItem = (
 		const part = findSubagentPart(responseMessage, item.id);
 		if (part) {
 			part.subagent.status = item.status;
+			part.subagent.resultPreview = item.resultPreview;
+			part.subagent.error = item.error;
 		}
 	}
 	// message/reasoning completion carries no new text (see comment above).
@@ -599,6 +608,8 @@ export const reconstructAllSubagents = async (room: RoomStore) => {
 						subagent: {
 							id: subagent.runId,
 							status: subagent.status,
+							resultPreview: subagent.finalText ?? undefined,
+							error: subagent.errorMessage ?? undefined,
 						},
 					});
 				}

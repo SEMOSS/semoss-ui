@@ -1,3 +1,5 @@
+import type { AgentRunStatusValue } from "@semoss/sdk";
+
 export interface Engine {
 	engine_id: string;
 	engine_name: string;
@@ -241,7 +243,13 @@ export interface PixelMessageSubagentPart {
 	type: "SUBAGENT";
 	subagent: {
 		id: string;
-		status: string;
+		status: AgentRunStatusValue;
+		/** Named-subagent alias, when spawned via a named tool. Live only — never persisted, so absent after a reload. */
+		alias?: string;
+		/** Set once status is COMPLETED. */
+		resultPreview?: string;
+		/** Set once status is FAILED. */
+		error?: string;
 	};
 }
 

@@ -24,6 +24,7 @@ import type {
 	InputPixelMessage,
 	MCPConfig,
 	PixelMessage,
+	PixelMessageSubagentPart,
 	PixelMessageToolCallPart,
 	PixelMessageToolResultPart,
 	Prompt,
@@ -853,6 +854,29 @@ export class RoomStore {
 
 		//get the tool based on the id
 		return this._store.tools[toolId] || null;
+	};
+
+	/**
+	 * Find a spawned subagent's part by id, wherever it falls in the room's
+	 * history. Looked up live (not snapshotted) so a panel showing it stays in
+	 * sync with status/result updates while open.
+	 */
+	getSubagentPart = (
+		subagentId: string,
+	): PixelMessageSubagentPart["subagent"] | undefined => {
+		for (const message of this.history) {
+			if (!(message instanceof ResponseMessageStore)) {
+				continue;
+			}
+			const part = message.parts.find(
+				(p): p is PixelMessageSubagentPart =>
+					p.type === "SUBAGENT" && p.subagent.id === subagentId,
+			);
+			if (part) {
+				return part.subagent;
+			}
+		}
+		return undefined;
 	};
 
 	/**

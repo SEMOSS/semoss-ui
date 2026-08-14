@@ -549,7 +549,11 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							);
 						} else if (p.type === "SUBAGENT") {
 							return (
-								<ResponseMessageSubagent key={key} part={p} />
+								<ResponseMessageSubagent
+									key={key}
+									message={message}
+									part={p}
+								/>
 							);
 						}
 
