@@ -98,26 +98,54 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 	useEffect(() => {
 		const container = sidebarRef.current;
 		if (!container) return;
+
+		const handleRenameTextbox = (el: HTMLElement) => {
+			const input = el.classList.contains(
+				"flexlayout__tab_button_textbox",
+			)
+				? (el as HTMLInputElement)
+				: (el.querySelector(
+						".flexlayout__tab_button_textbox",
+					) as HTMLInputElement | null);
+			if (!input) return;
+			requestAnimationFrame(() => {
+				const dot = input.value.lastIndexOf(".");
+				input.setSelectionRange(0, dot > 0 ? dot : input.value.length);
+			});
+		};
+
+		// FlexLayout shows an overflow ("N more") menu button whenever tabs
+		// don't all fit, with no prop to disable it. Hide it as it mounts so
+		// the tab strip just scrolls instead.
+		const hideOverflowButton = (el: HTMLElement) => {
+			if (el.classList.contains("flexlayout__tab_button_overflow")) {
+				el.style.display = "none";
+				return;
+			}
+			el.querySelectorAll<HTMLElement>(
+				".flexlayout__tab_button_overflow",
+			).forEach((overflowButton) => {
+				overflowButton.style.display = "none";
+			});
+		};
+
+		// The tab strip's fixed-height tab buttons default to top-aligned
+		// (align-items: stretch has no effect on a fixed cross-size item),
+		// while our toolbar buttons end up centered. Force the row to center
+		// everything so they line up. This node persists for the tabset's
+		// lifetime, so a single pass on mount covers it.
+		container
+			.querySelectorAll<HTMLElement>(".flexlayout__tabset_tabbar_outer")
+			.forEach((el) => {
+				el.style.alignItems = "center";
+			});
+
 		const observer = new MutationObserver((mutations) => {
 			for (const mutation of mutations) {
 				for (const added of Array.from(mutation.addedNodes)) {
 					if (!(added instanceof HTMLElement)) continue;
-					const input = added.classList.contains(
-						"flexlayout__tab_button_textbox",
-					)
-						? (added as HTMLInputElement)
-						: (added.querySelector(
-								".flexlayout__tab_button_textbox",
-							) as HTMLInputElement | null);
-					if (!input) continue;
-					requestAnimationFrame(() => {
-						const dot = input.value.lastIndexOf(".");
-						input.setSelectionRange(
-							0,
-							dot > 0 ? dot : input.value.length,
-						);
-					});
-					return;
+					handleRenameTextbox(added);
+					hideOverflowButton(added);
 				}
 			}
 		});
@@ -141,7 +169,7 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 				className={`flex flex-col overflow-hidden rounded-lg border border-border bg-background shadow-sm transition-all duration-200 ease-in-out ${isMaximized ? "fixed inset-4 z-50" : "h-full w-full"}`}
 			>
 				<div className="w-full flex-1 overflow-hidden rounded-md">
-					<div className="room-sidebar-flexlayout flexlayout__theme_smss relative h-full w-full overflow-hidden">
+					<div className="flexlayout__theme_smss relative h-full w-full overflow-hidden">
 						<FlexLayout.Layout
 							ref={layoutRef}
 							model={room.sidebar.model}

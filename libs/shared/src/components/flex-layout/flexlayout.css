@@ -314,19 +314,6 @@
     @apply border-b border-muted;
 }
 
-/**
- * Room sidebar: keep the maximize/inline/close buttons centered against the
- * tab row and pinned to the right edge, with no overflow ("N more") menu —
- * tabs that don't fit simply scroll.
- */
-.room-sidebar-flexlayout .flexlayout__tabset_tabbar_outer {
-    align-items: center;
-}
-
-.room-sidebar-flexlayout .flexlayout__tab_button_overflow {
-    display: none;
-}
-
 .flexlayout__theme_smss .flexlayout__tab_button {
     @apply flex h-8 px-2 py-3 justify-center items-center gap-2 rounded-md bg-background;
 }
