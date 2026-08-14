@@ -86,7 +86,7 @@ export const ViewAppPage = observer(() => {
 		setWorkspace(undefined);
 
 		configStore
-			.createWorkspace(project, permission)
+			.createWorkspace(project)
 			.then((loadedWorkspace) => {
 				setWorkspace(loadedWorkspace);
 				setBookmarked(Boolean(project.project_favorite));

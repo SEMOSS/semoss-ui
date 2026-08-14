@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
+import type { Project } from "@semoss/shared";
 import { Spinner, toast } from "@semoss/ui/next";
 import { ProjectView } from "@/components/project";
 import { PlatformMessages } from "@/components/shared";
@@ -8,7 +9,7 @@ import { useNavigate } from "@/hooks/useNavigate";
 import type { WorkspaceStore } from "@/stores";
 
 /** Project types the share page can render a read-only view for. */
-const SHAREABLE_TYPES = new Set<WorkspaceStore["type"]>([
+const SHAREABLE_TYPES = new Set<Project["project_type"]>([
 	"CODE",
 	"BLOCKS",
 	"SKILL",
@@ -20,7 +21,7 @@ const SHAREABLE_TYPES = new Set<WorkspaceStore["type"]>([
  */
 export const SharePage = observer(() => {
 	const { configStore } = useRootStore();
-	const { project, permission } = useProject();
+	const { project } = useProject();
 
 	const navigate = useNavigate();
 
@@ -31,7 +32,7 @@ export const SharePage = observer(() => {
 		setWorkspace(null);
 
 		configStore
-			.createWorkspace(project, permission)
+			.createWorkspace(project)
 			.then((loadedWorkspace) => {
 				if (!SHAREABLE_TYPES.has(project.project_type)) {
 					toast.error("This project type cannot be shared.");

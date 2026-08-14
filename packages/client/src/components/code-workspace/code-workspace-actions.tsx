@@ -10,10 +10,10 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { ShareOverlay } from "@/components/ui";
-import { useWorkspace } from "@/hooks";
+import { useProject } from "@/hooks";
 
 export const CodeWorkspaceActions = observer(() => {
-	const { workspace } = useWorkspace();
+	const { project } = useProject();
 	const [shareOpen, setShareOpen] = useState(false);
 
 	return (
@@ -37,7 +37,7 @@ export const CodeWorkspaceActions = observer(() => {
 			>
 				<DialogContent className="max-w-lg p-0">
 					<ShareOverlay
-						appId={workspace.appId}
+						appId={project.project_id}
 						onClose={() => setShareOpen(false)}
 					/>
 				</DialogContent>

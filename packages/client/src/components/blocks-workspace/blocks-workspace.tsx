@@ -16,7 +16,7 @@ import { Spinner, toast } from "@semoss/ui/next";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
 import { ProjectDetailTabs } from "@/components/project";
-import { useWorkspace } from "@/hooks";
+import { useProject, useWorkspace } from "@/hooks";
 import { DesignerStore, type WorkspaceOptions } from "@/stores";
 import { WorkspaceManager, WorkspaceNavbar } from "../../components/workspace";
 import { WorkspaceTerminal } from "../../components/workspace/panels";
@@ -187,6 +187,7 @@ const ACTIVE = "page-1";
  */
 export const BlocksWorkspace: React.FC = observer(() => {
 	const { workspace } = useWorkspace();
+	const { project } = useProject();
 	const insight = useInsight();
 	const [state, setState] = useState<StateStore>();
 
@@ -222,7 +223,7 @@ export const BlocksWorkspace: React.FC = observer(() => {
 
 		// load the app
 		runPixel<[SerializedState]>(
-			`GetAppBlocksJson ( project=["${workspace.appId}"]);`,
+			`GetAppBlocksJson ( project=["${project.project_id}"]);`,
 			workspace.insightId ? workspace.insightId : "new",
 		)
 			.then(async ({ pixelReturn, errors, insightId }) => {
@@ -345,11 +346,11 @@ export const BlocksWorkspace: React.FC = observer(() => {
 				<AppFileExplorer
 					node={node}
 					layout={layout}
-					app={workspace.appId}
+					app={project.project_id}
 				/>
 			);
 		} else if (component === "app-file-editor") {
-			return <AppFileEditor node={node} app={workspace.appId} />;
+			return <AppFileEditor node={node} app={project.project_id} />;
 		} else if (component === "mcpJsonEditor") {
 			return <MCPJsonEditor dataMap={config.data} />;
 		} else if (component === "notebook-explorer") {
@@ -359,7 +360,7 @@ export const BlocksWorkspace: React.FC = observer(() => {
 		} else if (component === "notebook-viewer") {
 			return <NotebookViewerPanel id={config.id} />;
 		} else if (component === "terminal") {
-			return <WorkspaceTerminal appId={workspace.appId} />;
+			return <WorkspaceTerminal appId={project.project_id} />;
 		} else if (component === "graph") {
 			return <GraphPanel />;
 		} else if (component === "settings-panel") {
@@ -430,7 +431,7 @@ export const BlocksWorkspace: React.FC = observer(() => {
 		(async () => {
 			try {
 				await insight.actions.run(
-					`RenameAppAsset(project=["${workspace.appId}"], filePath=["${path}"], newValue=["${newPath}"]);`,
+					`RenameAppAsset(project=["${project.project_id}"], filePath=["${path}"], newValue=["${newPath}"]);`,
 				);
 				const tabsetId =
 					tabNode.getParent()?.getId() ??

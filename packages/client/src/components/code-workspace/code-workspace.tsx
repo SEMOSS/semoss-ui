@@ -6,7 +6,7 @@ import { Spinner } from "@semoss/ui/next";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
 import { ProjectDetailTabs } from "@/components/project";
-import { useWorkspace } from "@/hooks";
+import { useProject, useWorkspace } from "@/hooks";
 import { WorkspaceManager, WorkspaceNavbar } from "../../components/workspace";
 import { WorkspaceTerminal } from "../../components/workspace/panels";
 import type { WorkspaceOptions } from "../../stores";
@@ -122,6 +122,7 @@ const InsightFilesPanel = observer(() => {
  */
 export const CodeWorkspace: React.FC = observer(() => {
 	const { workspace } = useWorkspace();
+	const { project } = useProject();
 	const insight = useInsight();
 
 	// Inject the Insight tab into the left border if it was loaded from a
@@ -165,11 +166,11 @@ export const CodeWorkspace: React.FC = observer(() => {
 				<AppFileExplorer
 					node={node}
 					layout={layout}
-					app={workspace.appId}
+					app={project.project_id}
 				/>
 			);
 		} else if (component === "app-file-editor") {
-			return <AppFileEditor node={node} app={workspace.appId} />;
+			return <AppFileEditor node={node} app={project.project_id} />;
 		} else if (component === "mcpJsonEditor") {
 			return <MCPJsonEditor dataMap={config.data} />;
 		} else if (component === "renderer") {
@@ -217,7 +218,7 @@ export const CodeWorkspace: React.FC = observer(() => {
 		} else if (component === "terminal") {
 			return (
 				<WorkspaceTerminal
-					appId={workspace.appId}
+					appId={project.project_id}
 					onActiveInsightChange={workspace.setActiveTerminalInsightId}
 				/>
 			);
@@ -250,7 +251,7 @@ export const CodeWorkspace: React.FC = observer(() => {
 		(async () => {
 			try {
 				await insight.actions.run(
-					`RenameAppAsset(project=["${workspace.appId}"], filePath=["${path}"], newValue=["${newPath}"]);`,
+					`RenameAppAsset(project=["${project.project_id}"], filePath=["${path}"], newValue=["${newPath}"]);`,
 				);
 				const tabsetId =
 					tabNode.getParent()?.getId() ??

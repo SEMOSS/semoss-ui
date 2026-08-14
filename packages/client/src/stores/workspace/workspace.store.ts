@@ -1,6 +1,4 @@
 import { makeAutoObservable } from "mobx";
-import type { Role } from "@semoss/sdk";
-import type { Project } from "@semoss/shared";
 import { FlexLayout } from "@semoss/shared";
 import type { RootStore, WorkspaceOptions } from "@/stores";
 
@@ -16,14 +14,9 @@ export interface WorkspaceStoreInterface {
 	isLoading: boolean;
 
 	/**
-	 * User's role relative to the app
+	 * ID of the loaded project
 	 */
-	role: Role;
-
-	/**
-	 * Metadata associated with the loaded app
-	 */
-	metadata: Project;
+	projectId: string;
 
 	/**
 	 * Optional Model Engine to use
@@ -51,14 +44,9 @@ export interface WorkspaceConfigInterface {
 	insightId: string;
 
 	/**
-	 * User's role relative to the app
+	 * ID of the loaded project
 	 */
-	role: Role;
-
-	/**
-	 * Metadata associated with the loaded app
-	 */
-	metadata: Project;
+	projectId: string;
 }
 
 /**
@@ -70,13 +58,8 @@ export class WorkspaceStore {
 	private _store: WorkspaceStoreInterface = {
 		insightId: "",
 		isLoading: false,
-		role: "READ_ONLY",
+		projectId: "",
 		agentModelEngine: "",
-		metadata: {
-			project_id: "",
-			project_name: "",
-			project_type: "CODE",
-		},
 		model: null,
 		activeTerminalInsightId: null,
 	};
@@ -87,14 +70,7 @@ export class WorkspaceStore {
 
 		this._store.insightId = config.insightId;
 
-		// update the data
-		if (config.role) {
-			this._store.role = config.role;
-		}
-
-		if (config.role) {
-			this._store.metadata = config.metadata;
-		}
+		this._store.projectId = config.projectId;
 
 		// make it observable
 		makeAutoObservable(this);
@@ -103,10 +79,6 @@ export class WorkspaceStore {
 	/**
 	 * Getters
 	 */
-	get appId() {
-		return this._store.metadata.project_id;
-	}
-
 	/**
 	 * Get the ID of the workspace insight
 	 */
@@ -136,23 +108,6 @@ export class WorkspaceStore {
 	}
 
 	/**
-	 * Get the user's role in relation to the app
-	 */
-	get role() {
-		return this._store.role;
-	}
-	get type() {
-		return this._store.metadata.project_type;
-	}
-
-	/**
-	 * Get metadata associated with the app
-	 */
-	get metadata() {
-		return this._store.metadata;
-	}
-
-	/**
 	 * insightId of the active terminal tab (or null before one is ready). The
 	 * Insight file explorer binds to this so its listing/upload stay in sync
 	 * with the terminal the user is running commands in.
@@ -165,7 +120,7 @@ export class WorkspaceStore {
 	 * The key for the local storage cache
 	 */
 	get cacheKey() {
-		return `smss-workspace--${this._store.metadata.project_id}-v7`;
+		return `smss-workspace--${this._store.projectId}-v7`;
 	}
 
 	/**

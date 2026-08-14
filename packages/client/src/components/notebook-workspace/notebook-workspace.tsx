@@ -4,7 +4,7 @@ import { FlexLayout } from "@semoss/shared";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
 import { ProjectDetailTabs } from "@/components/project";
-import { useWorkspace } from "@/hooks";
+import { useProject, useWorkspace } from "@/hooks";
 import type { WorkspaceOptions } from "../../stores";
 import { CodeWorkspaceActions } from "../code-workspace/code-workspace-actions";
 import { MCPJsonEditor } from "../shared";
@@ -89,6 +89,7 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 
 export const NotebookWorkspace: React.FC = observer(() => {
 	const { workspace } = useWorkspace();
+	const { project } = useProject();
 	const insight = useInsight();
 
 	const FACTORY: React.ComponentProps<typeof WorkspaceManager>["factory"] = (
@@ -103,11 +104,11 @@ export const NotebookWorkspace: React.FC = observer(() => {
 				<AppFileExplorer
 					node={node}
 					layout={layout}
-					app={workspace.appId}
+					app={project.project_id}
 				/>
 			);
 		} else if (component === "app-file-editor") {
-			return <AppFileEditor node={node} app={workspace.appId} />;
+			return <AppFileEditor node={node} app={project.project_id} />;
 		} else if (component === "mcpJsonEditor") {
 			return <MCPJsonEditor dataMap={config.data} />;
 		} else if (component === "settings-panel") {
@@ -144,7 +145,7 @@ export const NotebookWorkspace: React.FC = observer(() => {
 				/>
 			);
 		} else if (component === "terminal") {
-			return <WorkspaceTerminal appId={workspace.appId} />;
+			return <WorkspaceTerminal appId={project.project_id} />;
 		}
 
 		return <>{component}</>;
@@ -174,7 +175,7 @@ export const NotebookWorkspace: React.FC = observer(() => {
 		(async () => {
 			try {
 				await insight.actions.run(
-					`RenameAppAsset(project=["${workspace.appId}"], filePath=["${path}"], newValue=["${newPath}"]);`,
+					`RenameAppAsset(project=["${project.project_id}"], filePath=["${path}"], newValue=["${newPath}"]);`,
 				);
 				const tabsetId =
 					tabNode.getParent()?.getId() ??

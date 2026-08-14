@@ -48,7 +48,7 @@ export const ViewSkillPage = observer(() => {
 		hasAutoSelectedRef.current = false;
 
 		configStore
-			.createWorkspace(project, permission)
+			.createWorkspace(project)
 			.then((loadedWorkspace) => {
 				setWorkspace(loadedWorkspace);
 			})

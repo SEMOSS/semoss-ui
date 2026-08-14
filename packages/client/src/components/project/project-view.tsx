@@ -7,6 +7,7 @@ import { Spinner } from "@semoss/ui/next";
 import { NotebookViewWorkspace } from "@/components/notebook-workspace";
 import { SkillFileViewer } from "@/components/skill";
 import { WorkspaceContext } from "@/contexts";
+import { useProject } from "@/hooks";
 import type { WorkspaceStore } from "@/stores";
 
 const Renderer = lazy(() =>
@@ -32,6 +33,8 @@ interface ProjectViewProps {
  * project content and never the `Navbar*`/`usePage` chrome the full view pages use.
  */
 export const ProjectView = observer(({ workspace }: ProjectViewProps) => {
+	const { project, type } = useProject();
+
 	// SKILL selection state — hooks stay unconditional even though only SKILL uses them
 	const [selectedPath, setSelectedPath] = useState<string | null>(null);
 	const hasAutoSelectedRef = useRef(false);
@@ -65,12 +68,12 @@ export const ProjectView = observer(({ workspace }: ProjectViewProps) => {
 		}
 	};
 
-	switch (workspace.type) {
+	switch (type) {
 		case "CODE":
 			return (
 				<div className="absolute inset-0">
 					<Suspense fallback={loadingFallback}>
-						<CodeRenderer appId={workspace.appId} />
+						<CodeRenderer appId={project.project_id} />
 					</Suspense>
 				</div>
 			);
@@ -79,7 +82,7 @@ export const ProjectView = observer(({ workspace }: ProjectViewProps) => {
 				<div className="absolute inset-0">
 					<Suspense fallback={loadingFallback}>
 						<Renderer
-							appId={workspace.appId}
+							appId={project.project_id}
 							insightId={workspace.insightId}
 						/>
 					</Suspense>
@@ -96,7 +99,7 @@ export const ProjectView = observer(({ workspace }: ProjectViewProps) => {
 							<FileExplorer
 								mode={{
 									type: "APP",
-									app: workspace.appId,
+									app: project.project_id,
 								}}
 								initialPath={PUBLIC_ROOT_PATH}
 								readOnly
@@ -107,7 +110,7 @@ export const ProjectView = observer(({ workspace }: ProjectViewProps) => {
 							/>
 						</div>
 						<SkillFileViewer
-							projectId={workspace.appId}
+							projectId={project.project_id}
 							insightId={workspace.insightId}
 							path={selectedPath}
 						/>

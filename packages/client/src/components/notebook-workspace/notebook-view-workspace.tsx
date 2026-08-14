@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
-import { useWorkspace } from "@/hooks";
+import { useProject } from "@/hooks";
 import type { WorkspaceOptions } from "../../stores";
 import { WorkspaceManager } from "../workspace";
 
@@ -64,7 +64,7 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 };
 
 export const NotebookViewWorkspace: React.FC = observer(() => {
-	const { workspace } = useWorkspace();
+	const { project } = useProject();
 
 	const FACTORY: React.ComponentProps<typeof WorkspaceManager>["factory"] = (
 		node,
@@ -77,13 +77,15 @@ export const NotebookViewWorkspace: React.FC = observer(() => {
 				<AppFileExplorer
 					node={node}
 					layout={layout}
-					app={workspace.appId}
+					app={project.project_id}
 					initialPath={PUBLIC_ROOT_PATH}
 					readOnly
 				/>
 			);
 		} else if (component === "app-file-editor") {
-			return <AppFileEditor node={node} app={workspace.appId} readOnly />;
+			return (
+				<AppFileEditor node={node} app={project.project_id} readOnly />
+			);
 		}
 
 		return <>{component}</>;

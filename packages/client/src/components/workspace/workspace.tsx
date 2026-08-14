@@ -44,7 +44,7 @@ const WorkspaceLoadingState = () => {
 export const Workspace: React.FC = () => {
 	const insight = useInsight();
 	const { configStore } = useRootStore();
-	const { project, permission, type } = useProject();
+	const { project, type } = useProject();
 
 	const navigate = useNavigate();
 
@@ -60,7 +60,7 @@ export const Workspace: React.FC = () => {
 		}
 
 		configStore
-			.createWorkspace(project, permission, insight.insightId)
+			.createWorkspace(project, insight.insightId)
 			.then((loadedWorkspace) => {
 				setWorkspace(loadedWorkspace);
 			})

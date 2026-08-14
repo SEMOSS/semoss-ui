@@ -41,7 +41,7 @@ export const ViewNotebookPage = observer(() => {
 		setWorkspace(null);
 
 		configStore
-			.createWorkspace(project, permission)
+			.createWorkspace(project)
 			.then((loadedWorkspace) => {
 				setWorkspace(loadedWorkspace);
 			})

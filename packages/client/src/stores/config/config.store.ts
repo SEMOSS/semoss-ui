@@ -1,5 +1,4 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import type { Role } from "@semoss/sdk";
 import { Env, logout, runPixel } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import { registerUser } from "@/api";
@@ -787,22 +786,19 @@ export class ConfigStore {
 	 * Load an app into a new workspace
 	 *
 	 * @param project - project metadata from the caller's context
-	 * @param role - the caller's resolved permission for this project
 	 * @param insightId - insight to bind the workspace to
 	 */
-	async createWorkspace(
-		project: Project,
-		role: Role,
-		insightId: string = "new",
-	) {
+	async createWorkspace(project: Project, insightId: string = "new") {
 		// set the backend context for this insight
-		await runPixel(`SetContext("${project.project_id}")`, insightId);
+		const response = await runPixel(
+			`SetContext("${project.project_id}")`,
+			insightId,
+		);
 
 		// create the newly loaded workspace
 		return new WorkspaceStore(this._root, {
-			insightId,
-			role,
-			metadata: project,
+			insightId: response.insightId,
+			projectId: project.project_id,
 		});
 	}
 
