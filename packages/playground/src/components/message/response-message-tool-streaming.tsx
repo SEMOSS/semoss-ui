@@ -33,24 +33,27 @@ export const ResponseMessageToolStreaming: React.FC<ResponseMessageToolStreaming
 		const [isOpen, setIsOpen] = useState(false);
 
 		return (
-			<div className="flex flex-col rounded-lg border border-border bg-background hover:bg-accent">
+			<div className="flex flex-col rounded-lg border border-border bg-sidebar">
 				<div className="flex items-center">
 					<button
 						type="button"
 						className="flex min-w-0 flex-1 items-center gap-3 p-2 text-start"
 						onClick={() => setIsOpen((prev) => !prev)}
 					>
-						<div className="flex size-9 shrink-0 items-center justify-center rounded-sm bg-muted text-muted-foreground">
+						<div className="flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground">
 							<Spinner />
 						</div>
-						<div className="flex min-w-0 flex-1 flex-col">
-							<span className="truncate font-medium text-foreground text-sm">
-								{t("status.loadingTool")}
+						<div className="-ms-1.5 flex min-w-0 flex-1 items-center gap-2">
+							<span
+								className="truncate text-muted-foreground text-sm"
+								title={tool.json.title || undefined}
+							>
+								{tool.json.title || t("status.loadingTool")}
 							</span>
 						</div>
 						<ChevronDown
 							className={cn(
-								"size-4 shrink-0 text-muted-foreground transition-transform",
+								"me-1 size-4 shrink-0 text-muted-foreground transition-transform",
 								isOpen && "rotate-180",
 							)}
 						/>
