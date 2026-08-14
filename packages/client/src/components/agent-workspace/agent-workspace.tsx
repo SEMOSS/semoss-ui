@@ -29,7 +29,9 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 			{
 				type: "border",
 				location: "left",
-				selected: 0,
+				// Keep file management available from the edge tab without taking
+				// space away from the agent editor on first load.
+				selected: -1,
 				size: 400,
 				children: [
 					{
