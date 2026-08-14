@@ -6,4 +6,5 @@ export { ProjectDetailTabs } from "./project-detail-tabs";
 export { ProjectEdit } from "./project-edit";
 export { ProjectGridItem } from "./project-grid-item";
 export { ProjectOverview } from "./project-overview";
+export { ProjectView } from "./project-view";
 export { UploadProjectDialog } from "./upload-project-dialog";

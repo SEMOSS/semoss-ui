@@ -6,7 +6,6 @@
 		"open": "Ouvrir les paramètres de la salle",
 		"close": "Fermer les paramètres de la salle",
 		"edit": "Modifier les paramètres de la salle",
-		"compactTooltip": "Compactez votre conversation pour économiser des jetons. Vos messages précédents restent inchangés.",
 		"compactButton": "Compact",
 		"compactionOptions": "Compaction Options",
 		"advancedOptions": "Advanced Options",

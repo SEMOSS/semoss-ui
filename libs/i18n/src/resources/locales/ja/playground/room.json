@@ -6,7 +6,6 @@
 		"open": "ルーム設定を開く",
 		"close": "ルーム設定を閉じる",
 		"edit": "ルーム設定を編集",
-		"compactTooltip": "会話を圧縮してトークンを節約します。これまでのメッセージはそのまま残ります。",
 		"compactButton": "Compact",
 		"compactionOptions": "Compaction Options",
 		"advancedOptions": "Advanced Options",

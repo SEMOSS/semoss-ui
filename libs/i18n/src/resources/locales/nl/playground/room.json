@@ -13,7 +13,6 @@
 		"compacting": "Gesprek comprimeren...",
 		"compactedAbove": "Gesprek gecomprimeerd",
 		"compactedAboveTooltip": "Eerdere berichten zijn samengevat om de contextgrootte te verkleinen",
-		"compactTooltip": "Comprimeer je gesprek om tokens te besparen. Je eerdere berichten blijven ongewijzigd.",
 		"compactButton": "Compact",
 		"compactionOptions": "Compaction Options",
 		"advancedOptions": "Advanced Options",

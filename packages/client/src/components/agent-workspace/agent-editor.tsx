@@ -41,8 +41,11 @@ type GetWorkspaceResponse = {
 	known_hook_kinds?: string[];
 	config_json?: {
 		model_id?: string;
+		use_default_agent_tools?: boolean;
 		budgets?: {
 			max_turns?: number;
+			max_reflections?: number;
+			max_seconds?: number;
 		};
 		spawn_policy?: {
 			max_subagent_depth?: number;
@@ -90,8 +93,16 @@ export const AgentEditor = () => {
 					description: data.description ?? "",
 					instructions: data.system_prompt ?? "",
 					modelId: data.config_json?.model_id ?? "",
+					useDefaultAgentTools:
+						data.config_json?.use_default_agent_tools ?? true,
 					maxTurns:
 						data.config_json?.budgets?.max_turns?.toString() ?? "",
+					maxReflections:
+						data.config_json?.budgets?.max_reflections?.toString() ??
+						"",
+					maxSeconds:
+						data.config_json?.budgets?.max_seconds?.toString() ??
+						"",
 					maxSubagentDepth:
 						data.config_json?.spawn_policy?.max_subagent_depth?.toString() ??
 						"",
