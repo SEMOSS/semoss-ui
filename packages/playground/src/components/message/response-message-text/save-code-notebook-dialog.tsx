@@ -1,4 +1,4 @@
-import { PlusIcon } from "lucide-react";
+import { CheckIcon, ChevronDownIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import {
@@ -12,17 +12,22 @@ import {
 } from "@semoss/shared";
 import {
 	Button,
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+	cn,
 	Dialog,
 	DialogContent,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	Input,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+	Spinner,
 	toast,
 } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
@@ -73,6 +78,7 @@ export const SaveCodeNotebookDialog = ({
 	const [newNotebookName, setNewNotebookName] = useState("");
 	const [notebookSearch, setNotebookSearch] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
+	const [popoverOpen, setPopoverOpen] = useState(false);
 
 	const debouncedSearch = useDebouncedValue(notebookSearch, 300);
 
@@ -91,10 +97,24 @@ export const SaveCodeNotebookDialog = ({
 			item.path.toLowerCase().endsWith(".ipynb"),
 	);
 
+	// True when the typed name matches an existing notebook — creating would duplicate it.
+	const nameExists =
+		notebookSearch.trim().length > 0 &&
+		notebooks.some(
+			(item) =>
+				(item.path.split("/").pop() ?? item.path).toLowerCase() ===
+				createNotebookFilePath(notebookSearch).toLowerCase(),
+		);
+
 	const isNew = selectedValue === NEW_NOTEBOOK_VALUE;
 	const canSave = isNew
 		? newNotebookName.trim().length > 0
 		: selectedValue.length > 0;
+
+	/** Label shown on the combobox trigger for the current selection. */
+	const triggerLabel = isNew
+		? createNotebookFilePath(newNotebookName)
+		: selectedValue || "Select a notebook";
 
 	/** Persists `content` to `path` and opens/refeshes its editor tab. */
 	const saveToPath = async (path: string, content: string) => {
@@ -211,6 +231,7 @@ export const SaveCodeNotebookDialog = ({
 			setSelectedValue("");
 			setNewNotebookName("");
 			setNotebookSearch("");
+			setPopoverOpen(false);
 		}
 		onOpenChange(next);
 	};
@@ -222,62 +243,90 @@ export const SaveCodeNotebookDialog = ({
 					<DialogTitle>Add to Notebook</DialogTitle>
 				</DialogHeader>
 				<div className="space-y-3">
-					<Input
-						value={notebookSearch}
-						onChange={(event) => {
-							setNotebookSearch(event.target.value);
-							setSelectedValue("");
-						}}
-						placeholder="Search .ipynb files…"
-					/>
-					<Select
-						value={selectedValue}
-						onValueChange={(value) => {
-							setSelectedValue(value);
-							if (value !== NEW_NOTEBOOK_VALUE) {
-								setNewNotebookName("");
-							}
-						}}
-					>
-						<SelectTrigger>
-							<SelectValue placeholder="Select a notebook" />
-						</SelectTrigger>
-						<SelectContent>
-							{getNotebooks.status === "LOADING" && (
-								<SelectItem value="__loading__" disabled>
-									Searching…
-								</SelectItem>
-							)}
-							{getNotebooks.status !== "LOADING" &&
-								notebooks.map((item) => (
-									<SelectItem
-										key={item.path}
-										value={item.path}
-									>
-										{item.path}
-									</SelectItem>
-								))}
-							<SelectItem value={NEW_NOTEBOOK_VALUE}>
-								<PlusIcon className="size-3.5" />
-								New notebook…
-							</SelectItem>
-						</SelectContent>
-					</Select>
-					{isNew && (
-						<Input
-							value={newNotebookName}
-							onChange={(event) => {
-								setNewNotebookName(event.target.value);
-							}}
-							placeholder="my-notebook (.ipynb added automatically)"
-							onKeyDown={(event) => {
-								if (event.key === "Enter") {
-									event.preventDefault();
-									void confirmSave();
-								}
-							}}
-						/>
-					)}
+					<Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+						<PopoverTrigger asChild>
+							<Button
+								variant="outline"
+								role="combobox"
+								aria-expanded={popoverOpen}
+								aria-label="Select or create a notebook"
+								className="w-full justify-between font-normal hover:bg-transparent hover:text-foreground"
+							>
+								<span
+									className={cn(
+										"min-w-0 truncate",
+										!selectedValue &&
+											"text-muted-foreground",
+									)}
+								>
+									{triggerLabel}
+								</span>
+								<ChevronDownIcon className="size-4 shrink-0 opacity-50" />
+							</Button>
+						</PopoverTrigger>
+						<PopoverContent
+							align="start"
+							className="w-(--radix-popover-trigger-width) p-0"
+						>
+							<Command shouldFilter={false}>
+								<CommandInput
+									value={notebookSearch}
+									onValueChange={setNotebookSearch}
+									placeholder="Search or name a notebook…"
+								/>
+								<CommandList>
+									<CommandEmpty>
+										{getNotebooks.status === "LOADING" ? (
+											<div className="flex items-center justify-center py-4">
+												<Spinner />
+											</div>
+										) : (
+											"No notebooks found"
+										)}
+									</CommandEmpty>
+									<CommandGroup>
+										{notebooks.map((item) => (
+											<CommandItem
+												key={item.path}
+												value={item.path}
+												onSelect={() => {
+													setSelectedValue(item.path);
+													setNewNotebookName("");
+													setPopoverOpen(false);
+												}}
+											>
+												<span className="min-w-0 truncate">
+													{item.path}
+												</span>
+												{selectedValue ===
+													item.path && (
+													<CheckIcon className="ms-auto size-4 shrink-0" />
+												)}
+											</CommandItem>
+										))}
+										{notebookSearch.trim().length > 0 && (
+											<CommandItem
+												value={NEW_NOTEBOOK_VALUE}
+												disabled={nameExists}
+												onSelect={() => {
+													setSelectedValue(
+														NEW_NOTEBOOK_VALUE,
+													);
+													setNewNotebookName(
+														notebookSearch,
+													);
+													setPopoverOpen(false);
+												}}
+											>
+												<PlusIcon className="size-3.5" />
+												{`Create "${createNotebookFilePath(notebookSearch)}"`}
+											</CommandItem>
+										)}
+									</CommandGroup>
+								</CommandList>
+							</Command>
+						</PopoverContent>
+					</Popover>
 				</div>
 				<DialogFooter>
 					<Button

@@ -2,6 +2,7 @@ import { X } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import type { SerializedState } from "@semoss/renderer";
+import type { Project } from "@semoss/shared";
 import {
 	Badge,
 	Button,
@@ -18,7 +19,6 @@ import {
 } from "@semoss/ui/next";
 import { uploadImage } from "@/api";
 import { useRootStore } from "@/hooks";
-import type { AppMetadata } from "./app.types";
 
 type NewAppForm = {
 	APP_NAME: string;
@@ -68,7 +68,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 					throw new Error("State is missing from the blocks app");
 
 				const { errors, pixelReturn } = await monolithStore.runQuery<
-					[AppMetadata]
+					[Project]
 				>(
 					`CreateAppFromBlocks ( project = [ "${
 						data.APP_NAME
@@ -112,7 +112,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 			} else if (type === "code") {
 				const pixel = `CreateProject(project=["${data.APP_NAME}"], portal=[true], projectType=["CODE"]);`;
 				const { errors, pixelReturn } =
-					await monolithStore.runQuery<[AppMetadata]>(pixel);
+					await monolithStore.runQuery<[Project]>(pixel);
 
 				if (errors.length > 0) throw new Error(errors.join(","));
 

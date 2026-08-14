@@ -5,7 +5,7 @@
  * into `@semoss/shared`.
  */
 
-import { splitInlineImages } from "../../../utility/image";
+import { IMAGE_MIME_TYPES, splitInlineImages } from "../../utility/image";
 import type {
 	JupyterCell,
 	JupyterCellType,
@@ -13,6 +13,62 @@ import type {
 	JupyterNotebook,
 	JupyterOutput,
 } from "./notebook.types";
+
+// Built from a char code to avoid a control character in a regex literal.
+const ANSI_ESCAPE = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g");
+
+/** Read a MIME entry from an output data bundle as a single string. */
+export const getMimeString = (
+	data: Record<string, unknown>,
+	mimeType: string,
+): string | null => {
+	const value = data[mimeType];
+	if (typeof value === "string") return value;
+	if (Array.isArray(value)) {
+		return value.map((entry) => String(entry)).join("");
+	}
+	return null;
+};
+
+/** Strip ANSI SGR escape sequences so colored logs/tracebacks render as plain text. */
+export const stripAnsi = (value: string): string =>
+	value.replace(ANSI_ESCAPE, "");
+
+/**
+ * The plain-text representation of an output for the clipboard, or null when
+ * there is nothing useful to copy (image-only or widget output).
+ */
+export const getOutputCopyText = (output: JupyterOutput): string | null => {
+	if (output.output_type === "stream") {
+		return stripAnsi(normalizeSource(output.text));
+	}
+
+	if (output.output_type === "error") {
+		const traceback =
+			Array.isArray(output.traceback) && output.traceback.length
+				? output.traceback.join("\n")
+				: `${output.ename}: ${output.evalue}`;
+		return stripAnsi(traceback);
+	}
+
+	const { data } = output;
+	const plain = getMimeString(data, "text/plain");
+	if (plain !== null) {
+		return stripAnsi(plain);
+	}
+
+	// Image-only, HTML-only, and widget outputs have no useful plain text.
+	const hasImage = IMAGE_MIME_TYPES.some(
+		(mime) => getMimeString(data, mime) !== null,
+	);
+	const hasHtml = getMimeString(data, "text/html") !== null;
+	const isWidget = "application/vnd.jupyter.widget-view+json" in data;
+	if (hasImage || hasHtml || isWidget) {
+		return null;
+	}
+
+	return JSON.stringify(data, null, 2);
+};
 
 /** nbformat allows `source`/`text` as either a string or an array of lines. */
 export const normalizeSource = (source: string | string[]): string =>
