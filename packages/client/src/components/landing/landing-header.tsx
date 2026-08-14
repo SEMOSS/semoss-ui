@@ -13,7 +13,8 @@ import Appcode from "@/assets/img/Appcode.svg";
 import AppcodeDark from "@/assets/img/Appcode-dark.svg";
 import Appdragdrop from "@/assets/img/Appdragdrop.svg";
 import AppdragdropDark from "@/assets/img/Appdragdrop-dark.svg";
-import Notebook from "@/assets/img/NOTEBOOK.svg";
+import AppNotebook from "@/assets/img/Appnotebook.svg";
+import AppNotebookDark from "@/assets/img/Appnotebook-dark.svg";
 
 const CARDS = [
 	{
@@ -47,8 +48,8 @@ const CARDS = [
 		title: "Run interactive notebooks",
 		description:
 			"Write and execute code cells, visualize data, and document your analysis in a live, interactive notebook environment.",
-		image: Notebook,
-		darkImage: Notebook,
+		image: AppNotebook,
+		darkImage: AppNotebookDark,
 		type: "notebook",
 		testId: "new-notebook-btn",
 	},
