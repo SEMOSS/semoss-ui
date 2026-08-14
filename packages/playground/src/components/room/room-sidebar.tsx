@@ -8,7 +8,7 @@ import {
 	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { type CSSProperties, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import {
@@ -24,7 +24,6 @@ const getFileTabIcon = (fileName: string) => {
 
 import {
 	Button,
-	Separator,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -46,9 +45,7 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 	const insight = useInsight();
 	const layoutRef = useRef<FlexLayout.Layout | null>(null);
 	const sidebarRef = useRef<HTMLDivElement | null>(null);
-	const controlsRef = useRef<HTMLDivElement | null>(null);
 	const [isMaximized, setIsMaximized] = useState(false);
-	const [controlsWidth, setControlsWidth] = useState(85);
 	const [explorerRefreshKey, setExplorerRefreshKey] = useState(0);
 	const [pendingRename, setPendingRename] = useState<{
 		id: string;
@@ -128,39 +125,6 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 		return () => observer.disconnect();
 	}, []);
 
-	/**
-	 * Keep tab-strip spacing in sync with the top-right controls width so tabs never hide behind overlay buttons.
-	 */
-	useEffect(() => {
-		const controls = controlsRef.current;
-		if (!controls) {
-			return;
-		}
-
-		const updateControlsWidth = () => {
-			const measuredWidth = Math.ceil(
-				controls.getBoundingClientRect().width,
-			);
-			const nextWidth = Math.max(85, measuredWidth + 8);
-			setControlsWidth((prev) => (prev === nextWidth ? prev : nextWidth));
-		};
-
-		updateControlsWidth();
-
-		if (typeof ResizeObserver === "undefined") {
-			return;
-		}
-
-		const resizeObserver = new ResizeObserver(() => {
-			updateControlsWidth();
-		});
-		resizeObserver.observe(controls);
-
-		return () => {
-			resizeObserver.disconnect();
-		};
-	}, []);
-
 	return (
 		<div
 			ref={sidebarRef}
@@ -176,98 +140,98 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 			<div
 				className={`flex flex-col overflow-hidden rounded-lg border border-border bg-background shadow-sm transition-all duration-200 ease-in-out ${isMaximized ? "fixed inset-4 z-50" : "h-full w-full"}`}
 			>
-				<div
-					ref={controlsRef}
-					className="absolute end-0 top-0 z-10 flex h-12.5 flex-row items-center gap-1.5 overflow-hidden pe-2"
-				>
-					{activeTool && (
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									type="button"
-									size="icon-sm"
-									variant="ghost"
-									onClick={(e) => {
-										e.stopPropagation();
-
-										if (!activeTool) {
-											return;
-										}
-
-										// turn off maximized state
-										setIsMaximized(false);
-
-										// add to inline
-										activeTool.openTool("inline");
-									}}
-								>
-									<PanelBottomIcon />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>
-								{t("actions.openInline")}
-							</TooltipContent>
-						</Tooltip>
-					)}
-
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								onClick={() => {
-									setIsMaximized(!isMaximized);
-								}}
-							>
-								{isMaximized ? (
-									<MonitorXIcon />
-								) : (
-									<TvMinimalIcon />
-								)}
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>
-							{isMaximized
-								? t("actions.minimize")
-								: t("actions.maximize")}
-						</TooltipContent>
-					</Tooltip>
-					<Separator
-						orientation="vertical"
-						style={{ height: "17px" }}
-					/>
-
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								onClick={() => {
-									// turn off maximized state
-									setIsMaximized(false);
-
-									// close sidebar
-									room.closeSidebar();
-								}}
-							>
-								<XIcon />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>{t("actions.close")}</TooltipContent>
-					</Tooltip>
-				</div>
 				<div className="w-full flex-1 overflow-hidden rounded-md">
-					<div
-						className="flexlayout__theme_smss relative h-full w-full overflow-hidden"
-						style={
-							{
-								"--room-sidebar-controls-width": `${controlsWidth}px`,
-							} as CSSProperties
-						}
-					>
+					<div className="room-sidebar-flexlayout flexlayout__theme_smss relative h-full w-full overflow-hidden">
 						<FlexLayout.Layout
 							ref={layoutRef}
 							model={room.sidebar.model}
+							onRenderTabSet={(tabSetNode, renderValues) => {
+								if (
+									!(
+										tabSetNode instanceof
+										FlexLayout.TabSetNode
+									)
+								) {
+									return;
+								}
+
+								if (activeTool) {
+									renderValues.buttons.push(
+										<Tooltip key="open-inline">
+											<TooltipTrigger asChild>
+												<Button
+													type="button"
+													size="icon-sm"
+													variant="ghost"
+													onClick={(e) => {
+														e.stopPropagation();
+
+														// turn off maximized state
+														setIsMaximized(false);
+
+														// add to inline
+														activeTool.openTool(
+															"inline",
+														);
+													}}
+												>
+													<PanelBottomIcon />
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent>
+												{t("actions.openInline")}
+											</TooltipContent>
+										</Tooltip>,
+									);
+								}
+
+								renderValues.buttons.push(
+									<Tooltip key="maximize">
+										<TooltipTrigger asChild>
+											<Button
+												variant="ghost"
+												size="icon-sm"
+												onClick={() => {
+													setIsMaximized(
+														(prev) => !prev,
+													);
+												}}
+											>
+												{isMaximized ? (
+													<MonitorXIcon />
+												) : (
+													<TvMinimalIcon />
+												)}
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent>
+											{isMaximized
+												? t("actions.minimize")
+												: t("actions.maximize")}
+										</TooltipContent>
+									</Tooltip>,
+									<Tooltip key="close">
+										<TooltipTrigger asChild>
+											<Button
+												variant="ghost"
+												size="icon-sm"
+												onClick={() => {
+													// turn off maximized state
+													setIsMaximized(false);
+
+													// close sidebar
+													room.closeSidebar();
+												}}
+											>
+												<XIcon />
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent>
+											{t("actions.close")}
+										</TooltipContent>
+									</Tooltip>,
+								);
+							}}
 							onRenderTab={(node, renderValues) => {
 								const component = node.getComponent();
 								if (component === "room-tool") {
