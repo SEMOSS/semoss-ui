@@ -164,6 +164,17 @@ export const ToolsView = observer(
 					return;
 				}
 
+				// No app to resolve (e.g. platform-synthesized tools like the
+				// subagent control tools, which aren't backed by any MCP
+				// project/engine) -- usePixel never leaves "INITIAL" for an
+				// empty pixel string, so this must be checked before the
+				// loading gate below or it waits forever.
+				if (!app) {
+					setUrl("");
+					setIsLoading(false);
+					return;
+				}
+
 				// Finish loading
 				if (
 					getAppInfo.status === "INITIAL" ||
@@ -173,7 +184,7 @@ export const ToolsView = observer(
 				}
 
 				// Ignore if the app metadata could not be resolved
-				if (!app || getAppInfo.status === "ERROR") {
+				if (getAppInfo.status === "ERROR") {
 					setUrl("");
 					setIsLoading(false);
 					return;
