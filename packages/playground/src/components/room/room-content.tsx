@@ -27,6 +27,7 @@ import {
 	RoomInputMenuFileExplorer,
 	RoomInputMenuMCP,
 	RoomInputMenuUpload,
+	type SendButtonState,
 } from "@/components";
 import { useChat, useGracefulErrors } from "@/hooks";
 import { ResponseMessageStore, type RoomStore } from "@/stores";
@@ -389,6 +390,17 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		room.latestResponseMessage.isThinking ||
 		isAutoExecutingTools;
 
+	// Agent-run turns can't actually be interrupted server-side yet, so show a
+	// plain spinner instead of a Stop button that would look actionable but do
+	// nothing.
+	const sendState: SendButtonState = room.isCancelling
+		? "loading"
+		: room.mode === "agent" && showLoadingState
+			? "loading"
+			: room.canCancel || showLoadingState
+				? "stop"
+				: "send";
+
 	return (
 		<div className="flex h-full w-full flex-col bg-background transition-all duration-200 ease-in-out">
 			<div className="relative w-full flex-1 overflow-hidden">
@@ -609,13 +621,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					hasOutstandingTools={
 						room.latestResponseMessage.hasUnfinishedTools
 					}
-					sendState={
-						room.isCancelling
-							? "loading"
-							: room.canCancel || showLoadingState
-								? "stop"
-								: "send"
-					}
+					sendState={sendState}
 					onStop={room.cancelActiveJob}
 					tokensUsed={room.tokensUsed}
 					tokensMax={chat.models.contextWindow}
