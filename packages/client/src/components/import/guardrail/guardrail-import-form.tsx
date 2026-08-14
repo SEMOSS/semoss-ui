@@ -46,20 +46,6 @@ import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import { computeVisibility } from "../shared/import-form.utils";
 
-export interface ParsedResult {
-	headers: string[];
-	dataTypes: Record<string, string>;
-	cleanHeaders: string[];
-	positions: Record<string, { left: number; top: number }>;
-	relation: {
-		relName: string;
-		fromTable: string;
-		toTable: string;
-		toCol: string;
-	}[];
-	nodeProp: Record<string, string[]>;
-}
-
 const LOCAL_PYTHON_GUARDRAIL_RETURN_STRUCTURE = `{
   "pass": true,
   "returnPrompt": "optional prompt to continue with",

@@ -368,7 +368,7 @@ export const buildInstallAppUrl = (projectId: string): string =>
  * GitHub returns through a backend callback that lands the browser back on the
  * project page, where the picker flow can be retried.
  */
-export const buildUserAuthorizeUrl = (projectId: string): string =>
+const buildUserAuthorizeUrl = (projectId: string): string =>
 	buildUrl("/github/user/authorize", { projectId });
 
 /** Sends the browser to the per-user GitHub authorization flow. */

@@ -55,6 +55,16 @@ const LOGIN_PASSWORD_RESET_TYPES = ["native", "ldap", "linotp"] as const;
 type LoginPasswordResetType = (typeof LOGIN_PASSWORD_RESET_TYPES)[number];
 type LoginPasswordResetApiType = "NATIVE" | "LDAP" | "LINOTP";
 
+/**
+ * Default labels for the username / password logins. The provider keys stay
+ * as the backend defines them, only what the user reads changes.
+ */
+const LOGIN_TYPE_LABELS: Record<LoginPasswordResetType, string> = {
+	native: "Native",
+	ldap: "Active Directory",
+	linotp: "LinOTP",
+};
+
 export const LoginPage = observer(() => {
 	const { configStore } = useRootStore();
 	const { resolvedTheme } = useTheme();
@@ -171,6 +181,14 @@ export const LoginPage = observer(() => {
 	const canRequestPasswordReset = LOGIN_PASSWORD_RESET_TYPES.includes(
 		loginType as LoginPasswordResetType,
 	);
+
+	// prefer the display name the backend sends (e.g. ldap_display_name)
+	const getLoginTypeLabel = (type: LoginPasswordResetType) =>
+		availableProvidersMap[type]?.name || LOGIN_TYPE_LABELS[type];
+
+	const loginTypeLabel = loginType
+		? getLoginTypeLabel(loginType as LoginPasswordResetType)
+		: "";
 
 	useEffect(() => {
 		if (isNative) {
@@ -389,7 +407,7 @@ export const LoginPage = observer(() => {
 
 		if (!canRequestPasswordReset) {
 			setResetPasswordError(
-				"Password reset is only available for Native, LDAP, and LinOTP logins.",
+				"Password reset is only available for Native, Active Directory, and LinOTP logins.",
 			);
 			return;
 		}
@@ -607,7 +625,9 @@ export const LoginPage = observer(() => {
 																)}
 																data-testid="loginPage-button-native"
 															>
-																Native
+																{getLoginTypeLabel(
+																	"native",
+																)}
 															</button>
 														)}
 														{isLdap && (
@@ -633,7 +653,9 @@ export const LoginPage = observer(() => {
 																)}
 																data-testid="loginPage-button-ldap"
 															>
-																LDAP
+																{getLoginTypeLabel(
+																	"ldap",
+																)}
 															</button>
 														)}
 														{isLinOTP && (
@@ -659,7 +681,9 @@ export const LoginPage = observer(() => {
 																)}
 																data-testid="loginPage-button-linotp"
 															>
-																LinOTP
+																{getLoginTypeLabel(
+																	"linotp",
+																)}
 															</button>
 														)}
 													</div>
@@ -1485,7 +1509,7 @@ export const LoginPage = observer(() => {
 					<div className="flex flex-col gap-3">
 						<p className="text-muted-foreground text-sm">
 							Enter the email associated with your{" "}
-							{loginType.toUpperCase()} login.
+							{loginTypeLabel} login.
 						</p>
 						<div className="flex flex-col gap-1.5">
 							<Label htmlFor={`${uid}-forgot-password-email`}>

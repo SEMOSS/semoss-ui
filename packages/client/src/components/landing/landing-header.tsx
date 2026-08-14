@@ -7,12 +7,14 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@semoss/ui/next";
-import AppagentDark from "@/assets/img/Appagent-dark.svg";
 import Appagent from "@/assets/img/Appagent.svg";
-import AppcodeDark from "@/assets/img/Appcode-dark.svg";
+import AppagentDark from "@/assets/img/Appagent-dark.svg";
 import Appcode from "@/assets/img/Appcode.svg";
-import AppdragdropDark from "@/assets/img/Appdragdrop-dark.svg";
+import AppcodeDark from "@/assets/img/Appcode-dark.svg";
 import Appdragdrop from "@/assets/img/Appdragdrop.svg";
+import AppdragdropDark from "@/assets/img/Appdragdrop-dark.svg";
+import AppNotebook from "@/assets/img/Appnotebook.svg";
+import AppNotebookDark from "@/assets/img/Appnotebook-dark.svg";
 
 const CARDS = [
 	{
@@ -42,18 +44,27 @@ const CARDS = [
 		type: "agent",
 		testId: "new-app-agent-btn",
 	},
+	{
+		title: "Run interactive notebooks",
+		description:
+			"Write and execute code cells, visualize data, and document your analysis in a live, interactive notebook environment.",
+		image: AppNotebook,
+		darkImage: AppNotebookDark,
+		type: "notebook",
+		testId: "new-notebook-btn",
+	},
 ] as const;
 
 interface LandingHeaderProps {
 	/** Trigger creation of a new app */
-	onCreate: (type: "blocks" | "code" | "agent") => void;
+	onCreate: (type: "blocks" | "code" | "agent" | "notebook") => void;
 }
 
 export const LandingHeader: React.FC<LandingHeaderProps> = ({
 	onCreate = () => null,
 }) => {
 	return (
-		<div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3">
+		<div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
 			{CARDS.map((card) => (
 				<Card
 					key={card.title}

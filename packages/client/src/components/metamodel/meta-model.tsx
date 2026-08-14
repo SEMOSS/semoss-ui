@@ -1029,5 +1029,3 @@ export const Metamodel = (props: MetamodelProps) => {
 		</MetamodelContext.Provider>
 	);
 };
-
-export default Metamodel;

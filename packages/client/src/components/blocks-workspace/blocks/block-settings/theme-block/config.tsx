@@ -1,5 +1,5 @@
 import { Copy, ExternalLink, X } from "lucide-react";
-import { type CSSProperties, useState } from "react";
+import { useState } from "react";
 import {
 	Button,
 	Dialog,
@@ -27,14 +27,6 @@ import {
 } from "../../settings";
 import { BLOCK_TYPE_THEME } from "../block-defaults.constants";
 import type { BlockSettingsConfig } from "../settings.types";
-
-export const DefaultStyles: CSSProperties = {
-	display: "flex",
-	flexDirection: "column",
-	padding: "24px",
-	gap: "8px",
-	fontFamily: "roboto",
-};
 
 const capitalize = (s) => {
 	return String(s[0]).toUpperCase() + String(s).slice(1);
