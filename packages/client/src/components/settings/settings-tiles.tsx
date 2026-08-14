@@ -592,11 +592,11 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 		);
 	} else {
 		return (
-			<div className="flex-1">
+			<div className="@container flex-1">
 				<div
 					className={`grid gap-6 ${
 						direction === "row"
-							? "grid-cols-1 md:grid-cols-3"
+							? "@6xl:grid-cols-4 @xl:grid-cols-2 grid-cols-1"
 							: "grid-cols-1"
 					}`}
 				>
