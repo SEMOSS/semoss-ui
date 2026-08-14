@@ -47,6 +47,7 @@ import {
 	type ToolStore,
 } from "@/stores";
 import { isAskExecutionMode } from "@/utility/mcp-utils";
+import { ResponseMessageSubagent } from "./response-message-subagent";
 import { ResponseMessageText } from "./response-message-text";
 import { ResponseMessageThinking } from "./response-message-thinking";
 import { ResponseMessageTool } from "./response-message-tool";
@@ -545,6 +546,10 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										/>
 									)}
 								</Fragment>
+							);
+						} else if (p.type === "SUBAGENT") {
+							return (
+								<ResponseMessageSubagent key={key} part={p} />
 							);
 						}
 

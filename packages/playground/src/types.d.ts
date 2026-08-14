@@ -99,6 +99,7 @@ export interface AbstractPixelMessage {
 		| PixelMessageMediaPart
 		| PixelMessageToolCallPart
 		| PixelMessageToolResultPart
+		| PixelMessageSubagentPart
 	)[];
 	tokens: number;
 	ornaments: {
@@ -127,6 +128,7 @@ export interface ResponsePixelMessage extends AbstractPixelMessage {
 		| PixelMessageMediaPart
 		| PixelMessageToolCallPart
 		| PixelMessageToolResultPart
+		| PixelMessageSubagentPart
 	)[];
 	ornaments: {
 		modelName?: string;
@@ -217,6 +219,18 @@ export interface PixelMessageToolResultPart {
 		output: string;
 		toolParameterValues: Record<string, unknown>;
 		toolStatus: "success" | "error" | "cancelled" | "paused";
+	};
+}
+
+/**
+ * A subagent spawned by an agent-run turn — see agent-harness.ts. WIP: status
+ * only, no alias/result/error rendering yet.
+ */
+export interface PixelMessageSubagentPart {
+	type: "SUBAGENT";
+	subagent: {
+		id: string;
+		status: string;
 	};
 }
 

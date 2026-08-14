@@ -18,7 +18,11 @@ import {
 	MCP_EXECUTION_ASK,
 	STREAMING_PLACEHOLDER_ID,
 } from "@/constants";
-import type { PixelMessageToolCallPart, ResponsePixelMessage } from "@/types";
+import type {
+	PixelMessageSubagentPart,
+	PixelMessageToolCallPart,
+	ResponsePixelMessage,
+} from "@/types";
 import type { ToolStore } from "../tool/tool.store";
 import { InputMessageStore } from "./input-message.store";
 import { ResponseMessageStore } from "./response-message.store";
@@ -135,6 +139,19 @@ const buildPendingToolCallPart = (
 });
 
 /**
+ * Find an already-pushed SUBAGENT part by its item id, for item.updated/
+ * item.completed to mutate in place.
+ */
+const findSubagentPart = (
+	responseMessage: ResponseMessageStore,
+	id: string,
+): PixelMessageSubagentPart | undefined =>
+	responseMessage.parts.find(
+		(part): part is PixelMessageSubagentPart =>
+			part.type === "SUBAGENT" && part.subagent.id === id,
+	);
+
+/**
  * Apply one agent-run item event onto the response message. Must already be
  * inside a mobx action.
  *
@@ -187,8 +204,13 @@ const applyAgentRunItem = (
 			if (tool && status) {
 				tool.status = status;
 			}
+		} else if (item.kind === "subagent") {
+			// WIP: status only — no alias/result/error rendering yet, see SubagentBox.
+			responseMessage.parts.push({
+				type: "SUBAGENT",
+				subagent: { id: item.id, status: item.status },
+			});
 		}
-		// subagent items (kind: "subagent") not yet rendered — tools-view follow-up.
 		return;
 	}
 
@@ -212,8 +234,13 @@ const applyAgentRunItem = (
 			if (tool && status) {
 				tool.status = status;
 			}
+		} else if (event.kind === "subagent") {
+			const merged = items.itemsById[event.itemId];
+			const part = findSubagentPart(responseMessage, event.itemId);
+			if (part && merged?.kind === "subagent") {
+				part.subagent.status = merged.status;
+			}
 		}
-		// subagent: not yet rendered.
 		return;
 	}
 
@@ -229,9 +256,13 @@ const applyAgentRunItem = (
 			tool.status = status;
 		}
 		tool.response = item.output ?? item.error ?? "";
+	} else if (item.kind === "subagent") {
+		const part = findSubagentPart(responseMessage, item.id);
+		if (part) {
+			part.subagent.status = item.status;
+		}
 	}
 	// message/reasoning completion carries no new text (see comment above).
-	// subagent: not yet rendered.
 };
 
 /**
