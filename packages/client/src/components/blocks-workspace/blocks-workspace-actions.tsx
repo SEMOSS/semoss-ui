@@ -15,7 +15,7 @@ import {
 } from "@semoss/ui/next";
 import { ShareOverlay } from "@/components/ui";
 import { PreviewDialog } from "@/components/workspace";
-import { useRootStore, useWorkspace } from "@/hooks";
+import { useProject, useRootStore, useWorkspace } from "@/hooks";
 import { LLMSelectDialog } from "../llms";
 
 export const BlocksWorkspaceActions = observer(() => {
@@ -23,6 +23,7 @@ export const BlocksWorkspaceActions = observer(() => {
 
 	const { monolithStore } = useRootStore();
 	const { workspace } = useWorkspace();
+	const { permission } = useProject();
 
 	const [shareOpen, setShareOpen] = useState(false);
 	const [shareDiffs, setShareDiffs] = useState(false);
@@ -52,7 +53,7 @@ export const BlocksWorkspaceActions = observer(() => {
 	 */
 	const selectModel = async () => {
 		let modelList = [];
-		if (workspace.role === "OWNER" || workspace.role === "EDIT") {
+		if (permission === "OWNER" || permission === "EDIT") {
 			const pixel = `MyEngines(engineTypes=["MODEL"])`;
 			const res = await runPixel(pixel);
 
@@ -145,7 +146,7 @@ export const BlocksWorkspaceActions = observer(() => {
 			let isChanged = false;
 
 			// only get the json if the user can edit
-			if (workspace.role === "OWNER" || workspace.role === "EDIT") {
+			if (permission === "OWNER" || permission === "EDIT") {
 				const { pixelReturn, errors } = await monolithStore.runQuery<
 					[true]
 				>(`GetAppBlocksJson ( project=['${workspace.appId}']);`);

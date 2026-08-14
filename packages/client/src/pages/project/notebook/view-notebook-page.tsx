@@ -28,7 +28,7 @@ import type { WorkspaceStore } from "@/stores";
 export const ViewNotebookPage = observer(() => {
 	const { configStore } = useRootStore();
 	const navigate = useNavigate();
-	const { project, catalog } = useProject();
+	const { project, catalog, permission } = useProject();
 
 	const [workspace, setWorkspace] = useState<WorkspaceStore | null>(null);
 
@@ -41,7 +41,7 @@ export const ViewNotebookPage = observer(() => {
 		setWorkspace(null);
 
 		configStore
-			.createWorkspace(project.project_id)
+			.createWorkspace(project, permission)
 			.then((loadedWorkspace) => {
 				setWorkspace(loadedWorkspace);
 			})
@@ -105,7 +105,7 @@ export const ViewNotebookPage = observer(() => {
 					</TooltipTrigger>
 					<TooltipContent>Settings</TooltipContent>
 				</Tooltip>
-				{(workspace.role === "OWNER" || workspace.role === "EDIT") && (
+				{(permission === "OWNER" || permission === "EDIT") && (
 					<Button
 						variant="default"
 						size="sm"
