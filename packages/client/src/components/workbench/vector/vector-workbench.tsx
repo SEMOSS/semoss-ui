@@ -4,8 +4,10 @@ import {
 	MessageSquareIcon,
 	SettingsIcon,
 } from "lucide-react";
-import { useMemo } from "react";
-import { FlexLayout, getFileIconComponent } from "@semoss/shared";
+import { useEffect, useMemo } from "react";
+import { type FlexLayout, getFileIconComponent } from "@semoss/shared";
+import { useWorkbench } from "@/hooks";
+import type { WorkbenchPanelConfig } from "@/stores/workbench";
 import {
 	EngineFileEditorPanel,
 	EngineFileExplorerPanel,
@@ -14,7 +16,7 @@ import {
 	EngineSettingsToggle,
 } from "../engine";
 import { Workbench } from "../workbench";
-import { WORKBENCH_COMPONENTS } from "../workbench.contants";
+import { WORKBENCH_COMPONENTS } from "../workbench.constants";
 import { VectorChatPanel } from "./vector-chat-panel";
 import { VectorDocumentsPanel } from "./vector-documents-panel";
 
@@ -24,8 +26,10 @@ import { VectorDocumentsPanel } from "./vector-documents-panel";
  * page so its file operations share a single insight.
  */
 export const VectorWorkbench: React.FC = () => {
-	const model = useMemo(() => {
-		return FlexLayout.Model.fromJson({
+	const registerCommand = useWorkbench((state) => state.registerCommand);
+
+	const layout = useMemo<FlexLayout.IJsonModel>(() => {
+		return {
 			global: {
 				tabSetEnableDeleteWhenEmpty: true,
 				tabEnableRename: false,
@@ -78,26 +82,26 @@ export const VectorWorkbench: React.FC = () => {
 					},
 				],
 			},
-		});
+		};
 	}, []);
 
-	const components = {
+	const components: Record<string, WorkbenchPanelConfig> = {
 		[WORKBENCH_COMPONENTS.FILE_EXPLORER]: {
 			tab: () => <FolderTreeIcon className="size-4" />,
-			panel: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => {
+			view: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => {
 				return <EngineFileExplorerPanel layout={layout} node={node} />;
 			},
 		},
 		[WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS]: {
 			tab: () => <FileTextIcon className="size-4" />,
-			panel: () => <VectorDocumentsPanel />,
+			view: () => <VectorDocumentsPanel />,
 		},
 		[WORKBENCH_COMPONENTS.FILE_EDITOR]: {
 			tab: (node: FlexLayout.TabNode) => {
 				const Icon = getFileIconComponent(node.getName());
 				return <Icon className="size-4" />;
 			},
-			panel: (node: FlexLayout.TabNode) => {
+			view: (node: FlexLayout.TabNode) => {
 				return <EngineFileEditorPanel node={node} />;
 			},
 		},
@@ -106,17 +110,17 @@ export const VectorWorkbench: React.FC = () => {
 				const Icon = getFileIconComponent(node.getName());
 				return <Icon className="size-4" />;
 			},
-			panel: (node: FlexLayout.TabNode) => {
+			view: (node: FlexLayout.TabNode) => {
 				return <EngineMcpEditorPanel node={node} />;
 			},
 		},
 		[WORKBENCH_COMPONENTS.VECTOR_CHAT]: {
 			tab: () => <MessageSquareIcon className="size-4" />,
-			panel: () => <VectorChatPanel />,
+			view: () => <VectorChatPanel />,
 		},
 		[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: {
 			tab: () => <SettingsIcon className="size-4" />,
-			panel: () => (
+			view: () => (
 				<EngineSettingsPanel
 					tabs={[
 						{
@@ -160,11 +164,75 @@ export const VectorWorkbench: React.FC = () => {
 		},
 	};
 
+	useEffect(() => {
+		return registerCommand([
+			{
+				id: "workbench.file-explorer.open",
+				label: "Open File Explorer",
+				icon: <FolderTreeIcon />,
+				handler: (get) => {
+					get().openPanel(WORKBENCH_COMPONENTS.FILE_EXPLORER, {
+						type: "tab",
+						name: "Files",
+						component: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+						helpText: "File Explorer",
+						enableClose: false,
+					});
+				},
+			},
+			{
+				id: "workbench.settings.open",
+				label: "Open Settings",
+				icon: <SettingsIcon />,
+				handler: (get) => {
+					get().openPanel(WORKBENCH_COMPONENTS.ENGINE_SETTINGS, {
+						type: "tab",
+						name: "Settings",
+						component: WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
+						helpText: "Settings",
+						enableClose: false,
+					});
+				},
+			},
+			{
+				id: "workbench.vector-documents.open",
+				label: "Open Documents",
+				icon: <FileTextIcon />,
+				handler: async (get) => {
+					get().openPanel(
+						WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS,
+						{
+							type: "tab",
+							id: WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS,
+							name: "Documents",
+							component: WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS,
+							config: {},
+							helpText: "Documents",
+							enableClose: false,
+						},
+						{
+							type: "BORDER",
+							location: "left",
+						},
+					);
+				},
+			},
+			{
+				id: "workbench.vector-chat.open",
+				label: "Open Q&A",
+				icon: <MessageSquareIcon />,
+				handler: async (get) => {
+					get().openPanel(WORKBENCH_COMPONENTS.VECTOR_CHAT);
+				},
+			},
+		]);
+	}, [registerCommand]);
+
 	return (
 		<Workbench
-			model={model}
+			layout={layout}
 			components={components}
-			actions={<EngineSettingsToggle model={model} />}
+			actions={<EngineSettingsToggle />}
 		/>
 	);
 };

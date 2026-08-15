@@ -18,6 +18,7 @@ import {
 	StorageWorkbench,
 	VectorWorkbench,
 } from "@/components/workbench";
+import { WorkbenchProvider } from "@/contexts";
 import { useEngine } from "@/hooks";
 
 const WORKBENCH_MAP = {
@@ -36,8 +37,8 @@ export const EngineWorkbenchPage = () => {
 		return <Navigate to={`${catalog.path}/${engine.engine_id}`} replace />;
 	}
 
-	const WorkbenchComponent = WORKBENCH_MAP[type];
-	if (!WorkbenchComponent) {
+	const Workbench = WORKBENCH_MAP[type];
+	if (!Workbench) {
 		return <Navigate to={`${catalog.path}/${engine.engine_id}`} replace />;
 	}
 
@@ -77,7 +78,9 @@ export const EngineWorkbenchPage = () => {
 				</Breadcrumb>
 			</NavbarLeft>
 			<InsightProvider>
-				<WorkbenchComponent />
+				<WorkbenchProvider id={engine.engine_id}>
+					<Workbench />
+				</WorkbenchProvider>
 			</InsightProvider>
 		</>
 	);

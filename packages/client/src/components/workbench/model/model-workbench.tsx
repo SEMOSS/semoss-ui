@@ -1,6 +1,8 @@
 import { FolderTreeIcon, MessageSquareIcon, SettingsIcon } from "lucide-react";
-import { useMemo } from "react";
-import { FlexLayout, getFileIconComponent } from "@semoss/shared";
+import { useEffect, useMemo } from "react";
+import { type FlexLayout, getFileIconComponent } from "@semoss/shared";
+import { useWorkbench } from "@/hooks";
+import type { WorkbenchPanelConfig } from "@/stores";
 import {
 	EngineFileEditorPanel,
 	EngineFileExplorerPanel,
@@ -9,7 +11,7 @@ import {
 	EngineSettingsToggle,
 } from "../engine";
 import { Workbench } from "../workbench";
-import { WORKBENCH_COMPONENTS } from "../workbench.contants";
+import { WORKBENCH_COMPONENTS } from "../workbench.constants";
 import { ModelChatPanel } from "./model-chat-panel";
 
 /**
@@ -18,8 +20,10 @@ import { ModelChatPanel } from "./model-chat-panel";
  * the chat and file operations share a single insight.
  */
 export const ModelWorkbench: React.FC = () => {
-	const model = useMemo(() => {
-		return FlexLayout.Model.fromJson({
+	const registerCommand = useWorkbench((state) => state.registerCommand);
+
+	const layout = useMemo<FlexLayout.IJsonModel>(() => {
+		return {
 			global: {
 				tabSetEnableDeleteWhenEmpty: true,
 				tabEnableRename: false,
@@ -62,13 +66,13 @@ export const ModelWorkbench: React.FC = () => {
 					},
 				],
 			},
-		});
+		};
 	}, []);
 
-	const components = {
+	const components: Record<string, WorkbenchPanelConfig> = {
 		[WORKBENCH_COMPONENTS.FILE_EXPLORER]: {
 			tab: () => <FolderTreeIcon className="size-4" />,
-			panel: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => {
+			view: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => {
 				return <EngineFileExplorerPanel layout={layout} node={node} />;
 			},
 		},
@@ -77,7 +81,7 @@ export const ModelWorkbench: React.FC = () => {
 				const Icon = getFileIconComponent(node.getName());
 				return <Icon className="size-4" />;
 			},
-			panel: (node: FlexLayout.TabNode) => {
+			view: (node: FlexLayout.TabNode) => {
 				return <EngineFileEditorPanel node={node} />;
 			},
 		},
@@ -86,17 +90,13 @@ export const ModelWorkbench: React.FC = () => {
 				const Icon = getFileIconComponent(node.getName());
 				return <Icon className="size-4" />;
 			},
-			panel: (node: FlexLayout.TabNode) => {
+			view: (node: FlexLayout.TabNode) => {
 				return <EngineMcpEditorPanel node={node} />;
 			},
 		},
-		[WORKBENCH_COMPONENTS.MODEL_CHAT]: {
-			tab: () => <MessageSquareIcon className="size-4" />,
-			panel: () => <ModelChatPanel />,
-		},
 		[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: {
 			tab: () => <SettingsIcon className="size-4" />,
-			panel: () => (
+			view: () => (
 				<EngineSettingsPanel
 					tabs={[
 						{
@@ -138,13 +138,66 @@ export const ModelWorkbench: React.FC = () => {
 				/>
 			),
 		},
+		[WORKBENCH_COMPONENTS.MODEL_CHAT]: {
+			tab: () => <MessageSquareIcon className="size-4" />,
+			view: () => {
+				return <ModelChatPanel />;
+			},
+		},
 	};
+
+	useEffect(() => {
+		return registerCommand([
+			{
+				id: "workbench.file-explorer.open",
+				label: "Open File Explorer",
+				icon: <FolderTreeIcon />,
+				handler: (get) => {
+					get().openPanel(WORKBENCH_COMPONENTS.FILE_EXPLORER, {
+						type: "tab",
+						name: "Files",
+						component: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+						helpText: "File Explorer",
+						enableClose: false,
+					});
+				},
+			},
+			{
+				id: "workbench.settings.open",
+				label: "Open Settings",
+				icon: <SettingsIcon />,
+				handler: (get) => {
+					get().openPanel(WORKBENCH_COMPONENTS.ENGINE_SETTINGS, {
+						type: "tab",
+						name: "Settings",
+						component: WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
+						helpText: "Settings",
+						enableClose: false,
+					});
+				},
+			},
+			{
+				id: "workbench.model-chat.open",
+				label: "Open Model Chat",
+				icon: <MessageSquareIcon />,
+				handler: (get) => {
+					get().openPanel(WORKBENCH_COMPONENTS.MODEL_CHAT, {
+						type: "tab",
+						name: "Model Chat",
+						component: WORKBENCH_COMPONENTS.MODEL_CHAT,
+						helpText: "Model Chat",
+						enableClose: false,
+					});
+				},
+			},
+		]);
+	}, [registerCommand]);
 
 	return (
 		<Workbench
-			model={model}
+			layout={layout}
 			components={components}
-			actions={<EngineSettingsToggle model={model} />}
+			actions={<EngineSettingsToggle />}
 		/>
 	);
 };

@@ -6,10 +6,11 @@ import {
 	Table2Icon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type ColumnInterface, runPixel, usePixel } from "@semoss/sdk/react";
-import { FlexLayout, getFileIconComponent } from "@semoss/shared";
-import { useEngine } from "@/hooks";
+import { type FlexLayout, getFileIconComponent } from "@semoss/shared";
+import { useEngine, useWorkbench } from "@/hooks";
+import type { WorkbenchPanelConfig } from "@/stores/workbench";
 import {
 	EngineFileEditorPanel,
 	EngineFileExplorerPanel,
@@ -18,13 +19,84 @@ import {
 	EngineSettingsToggle,
 } from "../engine";
 import { Workbench } from "../workbench";
-import { WORKBENCH_COMPONENTS } from "../workbench.contants";
+import { WORKBENCH_COMPONENTS } from "../workbench.constants";
 import { DatabaseColumnsPanel } from "./database-columns-panel";
 import { DatabaseQueryPanel } from "./database-query-panel";
 import { DatabaseQueryResultsPanel } from "./database-query-results-panel";
 
 /** FlexLayout tabset that hosts both file editors and query editors */
 const MAIN_TABSET = "MAIN_TABSET";
+
+const DATABASE_WORKBENCH_LAYOUT: FlexLayout.IJsonModel = {
+	global: {
+		tabSetEnableDeleteWhenEmpty: true,
+		tabEnableRename: false,
+	},
+	borders: [
+		{
+			type: "border",
+			location: "left",
+			size: 300,
+			selected: 0,
+			children: [
+				{
+					type: "tab",
+					id: WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
+					name: "Columns",
+					component: WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
+					helpText: "Database Structure",
+					enableClose: false,
+				},
+				{
+					type: "tab",
+					id: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+					name: "Files",
+					component: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+					config: {},
+					helpText: "File Explorer",
+					enableClose: false,
+				},
+			],
+		},
+		{
+			type: "border",
+			location: "bottom",
+			size: 300,
+			selected: -1,
+			children: [
+				{
+					type: "tab",
+					id: WORKBENCH_COMPONENTS.DATABASE_RESULTS,
+					name: "Results",
+					component: WORKBENCH_COMPONENTS.DATABASE_RESULTS,
+					enableClose: false,
+				},
+			],
+		},
+	],
+	layout: {
+		type: "row",
+		weight: 100,
+		children: [
+			{
+				type: "tabset",
+				id: MAIN_TABSET,
+				weight: 100,
+				enableDeleteWhenEmpty: false,
+				children: [
+					{
+						type: "tab",
+						id: WORKBENCH_COMPONENTS.DATABASE_QUERY,
+						name: "Query",
+						component: WORKBENCH_COMPONENTS.DATABASE_QUERY,
+						enableClose: false,
+						enableRename: true,
+					},
+				],
+			},
+		],
+	},
+};
 
 /**
  * Database workbench that combines the file editor with an inline SQL/SPARQL
@@ -33,7 +105,11 @@ const MAIN_TABSET = "MAIN_TABSET";
  * category/structure pixels and query execution share a single insight.
  */
 export const DatabaseWorkbench: React.FC = observer(() => {
+	const openPanel = useWorkbench((state) => state.openPanel);
+	const registerCommand = useWorkbench((state) => state.registerCommand);
+
 	const { engine } = useEngine();
+	const model = useWorkbench((state) => state.model);
 
 	// Derive the query language from the database category (RDF -> SPARQL).
 	const getDatabaseCategory = usePixel<string>(
@@ -102,79 +178,6 @@ export const DatabaseWorkbench: React.FC = observer(() => {
 
 	const panelCounterRef = useRef(1);
 
-	const model = useMemo(() => {
-		return FlexLayout.Model.fromJson({
-			global: {
-				tabSetEnableDeleteWhenEmpty: true,
-				tabEnableRename: false,
-			},
-			borders: [
-				{
-					type: "border",
-					location: "left",
-					size: 300,
-					selected: 0,
-					children: [
-						{
-							type: "tab",
-							id: WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
-							name: "Columns",
-							component: WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
-							helpText: "Database Structure",
-							enableClose: false,
-						},
-						{
-							type: "tab",
-							id: WORKBENCH_COMPONENTS.FILE_EXPLORER,
-							name: "Files",
-							component: WORKBENCH_COMPONENTS.FILE_EXPLORER,
-							config: {},
-							helpText: "File Explorer",
-							enableClose: false,
-						},
-					],
-				},
-				{
-					type: "border",
-					location: "bottom",
-					size: 300,
-					selected: -1,
-					children: [
-						{
-							type: "tab",
-							id: WORKBENCH_COMPONENTS.DATABASE_RESULTS,
-							name: "Results",
-							component: WORKBENCH_COMPONENTS.DATABASE_RESULTS,
-							enableClose: false,
-						},
-					],
-				},
-			],
-			layout: {
-				type: "row",
-				weight: 100,
-				children: [
-					{
-						type: "tabset",
-						id: MAIN_TABSET,
-						weight: 100,
-						enableDeleteWhenEmpty: false,
-						children: [
-							{
-								type: "tab",
-								id: WORKBENCH_COMPONENTS.DATABASE_QUERY,
-								name: "Query",
-								component: WORKBENCH_COMPONENTS.DATABASE_QUERY,
-								enableClose: false,
-								enableRename: true,
-							},
-						],
-					},
-				],
-			},
-		});
-	}, []);
-
 	/**
 	 * Execute a query and display the results in the results panel.
 	 * @param query - the query text to run
@@ -190,20 +193,16 @@ export const DatabaseWorkbench: React.FC = observer(() => {
 		setIsRunning(true);
 
 		try {
-			// reveal the results panel if it is not already visible
-			const resultsTab = model.getNodeById(
+			openPanel(
 				WORKBENCH_COMPONENTS.DATABASE_RESULTS,
+				{
+					type: "tab",
+					name: "Results",
+					component: WORKBENCH_COMPONENTS.DATABASE_RESULTS,
+					enableClose: false,
+				},
+				{ type: "BORDER", location: "bottom" },
 			);
-			const isResultsSelected =
-				resultsTab instanceof FlexLayout.TabNode &&
-				resultsTab.isVisible();
-			if (!isResultsSelected) {
-				model.doAction(
-					FlexLayout.Actions.selectTab(
-						WORKBENCH_COMPONENTS.DATABASE_RESULTS,
-					),
-				);
-			}
 
 			const pixel =
 				mode === "SPARQL"
@@ -296,40 +295,30 @@ export const DatabaseWorkbench: React.FC = observer(() => {
 	 * @param initialQuery - seed text for the new editor
 	 * @param name - tab label for the new editor
 	 */
-	const addQueryPanel = (initialQuery: string, name: string) => {
-		const tabsetNode = model.getNodeById(MAIN_TABSET);
-		const targetTabsetId =
-			tabsetNode?.getId() ?? model.getActiveTabset()?.getId() ?? "";
+	const addQueryPanel = useCallback(
+		(initialQuery: string, name: string) => {
+			let panelId = "";
+			do {
+				panelCounterRef.current += 1;
+				panelId = `${WORKBENCH_COMPONENTS.DATABASE_QUERY}_${panelCounterRef.current}`;
+			} while (model.getNodeById(panelId));
 
-		if (!targetTabsetId) {
-			return;
-		}
+			openPanel(panelId, {
+				type: "tab",
+				name,
+				component: WORKBENCH_COMPONENTS.DATABASE_QUERY,
+				config: { initialQuery },
+				enableClose: true,
+				enableRename: true,
+			});
+		},
+		[openPanel, model],
+	);
 
-		panelCounterRef.current += 1;
-
-		model.doAction(
-			FlexLayout.Actions.addNode(
-				{
-					type: "tab",
-					id: `${WORKBENCH_COMPONENTS.DATABASE_QUERY}_${panelCounterRef.current}`,
-					name,
-					component: WORKBENCH_COMPONENTS.DATABASE_QUERY,
-					config: { initialQuery },
-					enableClose: true,
-					enableRename: true,
-				},
-				targetTabsetId,
-				FlexLayout.DockLocation.CENTER,
-				-1,
-				true,
-			),
-		);
-	};
-
-	const components = {
+	const components: Record<string, WorkbenchPanelConfig> = {
 		[WORKBENCH_COMPONENTS.FILE_EXPLORER]: {
 			tab: () => <FolderTreeIcon className="size-4" />,
-			panel: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => {
+			view: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => {
 				return <EngineFileExplorerPanel layout={layout} node={node} />;
 			},
 		},
@@ -338,7 +327,7 @@ export const DatabaseWorkbench: React.FC = observer(() => {
 				const Icon = getFileIconComponent(node.getName());
 				return <Icon className="size-4" />;
 			},
-			panel: (node: FlexLayout.TabNode) => {
+			view: (node: FlexLayout.TabNode) => {
 				return <EngineFileEditorPanel node={node} />;
 			},
 		},
@@ -347,13 +336,13 @@ export const DatabaseWorkbench: React.FC = observer(() => {
 				const Icon = getFileIconComponent(node.getName());
 				return <Icon className="size-4" />;
 			},
-			panel: (node: FlexLayout.TabNode) => {
+			view: (node: FlexLayout.TabNode) => {
 				return <EngineMcpEditorPanel node={node} />;
 			},
 		},
 		[WORKBENCH_COMPONENTS.DATABASE_COLUMNS]: {
 			tab: () => <DatabaseIcon className="size-4" />,
-			panel: () => {
+			view: () => {
 				return (
 					<div className="h-full w-full overflow-hidden">
 						<DatabaseColumnsPanel
@@ -377,7 +366,7 @@ export const DatabaseWorkbench: React.FC = observer(() => {
 		},
 		[WORKBENCH_COMPONENTS.DATABASE_QUERY]: {
 			tab: () => <CodeIcon className="size-4" />,
-			panel: (node: FlexLayout.TabNode) => {
+			view: (node: FlexLayout.TabNode) => {
 				return (
 					<div className="h-full w-full overflow-hidden">
 						<DatabaseQueryPanel
@@ -393,7 +382,7 @@ export const DatabaseWorkbench: React.FC = observer(() => {
 		},
 		[WORKBENCH_COMPONENTS.DATABASE_RESULTS]: {
 			tab: () => <Table2Icon className="size-4" />,
-			panel: () => {
+			view: () => {
 				return (
 					<div className="h-full w-full overflow-hidden">
 						<DatabaseQueryResultsPanel
@@ -409,7 +398,7 @@ export const DatabaseWorkbench: React.FC = observer(() => {
 		},
 		[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: {
 			tab: () => <SettingsIcon className="size-4" />,
-			panel: () => (
+			view: () => (
 				<EngineSettingsPanel
 					tabs={[
 						{
@@ -458,11 +447,80 @@ export const DatabaseWorkbench: React.FC = observer(() => {
 		},
 	};
 
+	useEffect(() => {
+		return registerCommand([
+			{
+				id: "workbench.file-explorer.open",
+				label: "Open File Explorer",
+				icon: <FolderTreeIcon />,
+				handler: (get) => {
+					get().openPanel(WORKBENCH_COMPONENTS.FILE_EXPLORER, {
+						type: "tab",
+						name: "Files",
+						component: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+						helpText: "File Explorer",
+						enableClose: false,
+					});
+				},
+			},
+			{
+				id: "workbench.settings.open",
+				label: "Open Settings",
+				icon: <SettingsIcon />,
+				handler: (get) => {
+					get().openPanel(WORKBENCH_COMPONENTS.ENGINE_SETTINGS, {
+						type: "tab",
+						name: "Settings",
+						component: WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
+						helpText: "Settings",
+						enableClose: false,
+					});
+				},
+			},
+			{
+				id: "workbench.database-columns.open",
+				label: "Open Columns",
+				icon: <DatabaseIcon />,
+				handler: (get) => {
+					get().openPanel(WORKBENCH_COMPONENTS.DATABASE_COLUMNS, {
+						type: "tab",
+						name: "Columns",
+						component: WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
+						helpText: "Database Columns",
+						enableClose: false,
+					});
+				},
+			},
+			{
+				id: "workbench.database-query.open",
+				label: "Open New Query",
+				icon: <CodeIcon />,
+				handler: () => {
+					addQueryPanel("", `Query ${panelCounterRef.current + 1}`);
+				},
+			},
+			{
+				id: "workbench.database-results.open",
+				label: "Open Results",
+				icon: <Table2Icon />,
+				handler: (get) => {
+					get().openPanel(WORKBENCH_COMPONENTS.DATABASE_RESULTS, {
+						type: "tab",
+						name: "Results",
+						component: WORKBENCH_COMPONENTS.DATABASE_RESULTS,
+						helpText: "Database Results",
+						enableClose: false,
+					});
+				},
+			},
+		]);
+	}, [registerCommand, addQueryPanel]);
+
 	return (
 		<Workbench
-			model={model}
+			layout={DATABASE_WORKBENCH_LAYOUT}
 			components={components}
-			actions={<EngineSettingsToggle model={model} />}
+			actions={<EngineSettingsToggle />}
 		/>
 	);
 });

@@ -1,3 +1,4 @@
+/** Component IDs shared by workbench state, commands, and renderers. */
 export const WORKBENCH_COMPONENTS = {
 	FILE_EXPLORER: "engine-file-explorer",
 	FILE_EDITOR: "engine-file-editor",

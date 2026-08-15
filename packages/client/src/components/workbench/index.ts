@@ -5,5 +5,6 @@ export * from "./guardrail";
 export * from "./model";
 export * from "./storage";
 export * from "./vector";
-export { Workbench } from "./workbench";
-export * from "./workbench.contants";
+export * from "./workbench";
+export * from "./workbench.constants";
+export * from "./workbench-command-palette";

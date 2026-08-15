@@ -1,5 +1,4 @@
 import { SettingsIcon } from "lucide-react";
-import { useEffect, useState } from "react";
 import { FlexLayout } from "@semoss/shared";
 import {
 	Button,
@@ -8,33 +7,24 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { WORKBENCH_COMPONENTS } from "../workbench.contants";
-
-interface EngineSettingsToggleProps {
-	/** Workbench layout model whose settings tab is toggled */
-	model: FlexLayout.Model;
-}
+import { useWorkbench } from "@/hooks";
+import {
+	WORKBENCH_COMPONENTS,
+	WORKBENCH_PANEL_TABS,
+} from "../workbench.constants";
 
 /**
  * Toggles the shared engine settings tab within a workbench layout — opening,
  * selecting, or closing it — and highlights while it is the active tab.
  */
-export const EngineSettingsToggle: React.FC<EngineSettingsToggleProps> = ({
-	model,
-}) => {
-	// FlexLayout's model is not observable — re-render on change so the toggle
-	// reflects the settings tab being opened, selected, closed, or moved.
-	const [, setKey] = useState(0);
-
-	useEffect(() => {
-		const listener = () => setKey((key) => key + 1);
-		model.addChangeListener(listener);
-		return () => model.removeChangeListener(listener);
-	}, [model]);
-
-	const isSettingsOpen =
-		model.getNodeById(WORKBENCH_COMPONENTS.ENGINE_SETTINGS) instanceof
-		FlexLayout.TabNode;
+export const EngineSettingsToggle: React.FC = () => {
+	const closePanel = useWorkbench((state) => state.closePanel);
+	const openPanel = useWorkbench((state) => state.openPanel);
+	const model = useWorkbench((state) => state.model);
+	useWorkbench((state) => state.modelRevision);
+	const settingsId = WORKBENCH_COMPONENTS.ENGINE_SETTINGS;
+	const settingsNode = model.getNodeById(settingsId);
+	const isSettingsOpen = settingsNode instanceof FlexLayout.TabNode;
 
 	return (
 		<Tooltip>
@@ -45,62 +35,34 @@ export const EngineSettingsToggle: React.FC<EngineSettingsToggleProps> = ({
 					aria-label="Settings"
 					data-testid="workbench-settings-toggle"
 					onClick={() => {
-						const settingsId = WORKBENCH_COMPONENTS.ENGINE_SETTINGS;
-
-						const node = model.getNodeById(settingsId);
-
-						if (node instanceof FlexLayout.TabNode) {
-							const parent = node.getParent();
+						if (settingsNode instanceof FlexLayout.TabNode) {
+							const parent = settingsNode.getParent();
 
 							if (parent instanceof FlexLayout.TabSetNode) {
 								if (
 									parent.getSelectedNode()?.getId() ===
 									settingsId
 								) {
-									model.doAction(
-										FlexLayout.Actions.deleteTab(
-											settingsId,
-										),
-									);
+									closePanel({ componentId: settingsId });
 									return;
 								}
 
-								model.doAction(
-									FlexLayout.Actions.selectTab(settingsId),
-								);
+								openPanel({
+									componentId: settingsId,
+									tab: WORKBENCH_PANEL_TABS.ENGINE_SETTINGS,
+									target: { type: "MAIN" },
+								});
 								return;
 							}
 
-							// Dragged into a border — remove it so it reopens as a full tab.
-							model.doAction(
-								FlexLayout.Actions.deleteTab(settingsId),
-							);
+							closePanel({ componentId: settingsId });
 						}
 
-						const targetTabsetId =
-							model.getActiveTabset()?.getId() ??
-							model.getRoot().getChildren()[0]?.getId() ??
-							"";
-
-						if (!targetTabsetId) {
-							return;
-						}
-
-						model.doAction(
-							FlexLayout.Actions.addNode(
-								{
-									type: "tab",
-									id: settingsId,
-									name: "Settings",
-									component: settingsId,
-									enableClose: true,
-								},
-								targetTabsetId,
-								FlexLayout.DockLocation.CENTER,
-								-1,
-								true,
-							),
-						);
+						openPanel({
+							componentId: settingsId,
+							tab: WORKBENCH_PANEL_TABS.ENGINE_SETTINGS,
+							target: { type: "MAIN" },
+						});
 					}}
 					className={cn(
 						"border",

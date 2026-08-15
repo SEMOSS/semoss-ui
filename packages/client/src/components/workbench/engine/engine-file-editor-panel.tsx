@@ -1,17 +1,21 @@
 import { observer } from "mobx-react-lite";
-import { FileEditor, FlexLayout } from "@semoss/shared";
+import { useEffect } from "react";
+import { FileEditor, type FlexLayout } from "@semoss/shared";
 import { MetadataHelpDialog } from "@/components/shared";
 import { MCP } from "@/constants";
-import { useEngine } from "@/hooks";
+import { useEngine, useWorkbench } from "@/hooks";
 
 interface EngineFileEditorPanelProps {
-	/** Node */
+	/** FlexLayout tab node backing the file editor. */
 	node: FlexLayout.TabNode;
 }
 
 export const EngineFileEditorPanel: React.FC<EngineFileEditorPanelProps> =
 	observer(({ node }) => {
 		const { engine, permission } = useEngine();
+		const registerCommand = useWorkbench((state) => state.registerCommand);
+		const renamePanel = useWorkbench((state) => state.renamePanel);
+
 		const readOnly = !(permission === "OWNER" || permission === "EDIT");
 
 		const config: {
@@ -24,6 +28,20 @@ export const EngineFileEditorPanel: React.FC<EngineFileEditorPanelProps> =
 		const isDriverFile = MCP.DRIVER_PATHS.some((f) =>
 			config.path.endsWith(f),
 		);
+
+		useEffect(() => {
+			const panelId = node.getId();
+
+			return registerCommand({
+				id: `workbench.engine-file-editor.${panelId}.close`,
+				label: `Close ${node.getName()}`,
+				description: "Close this database query panel.",
+				icon: null,
+				handler: (get) => {
+					get().closePanel(panelId);
+				},
+			});
+		}, [node, registerCommand]);
 
 		if (config.fileMode === "INSIGHT" && config.insightId) {
 			return (
@@ -39,10 +57,7 @@ export const EngineFileEditorPanel: React.FC<EngineFileEditorPanelProps> =
 							? `${config.name}*`
 							: config.name;
 
-						// rename the tab
-						node.getModel().doAction(
-							FlexLayout.Actions.renameTab(node.getId(), updated),
-						);
+						renamePanel(node.getId(), updated);
 					}}
 				/>
 			);
@@ -64,10 +79,7 @@ export const EngineFileEditorPanel: React.FC<EngineFileEditorPanelProps> =
 						? `${config.name}*`
 						: config.name;
 
-					// rename the tab
-					node.getModel().doAction(
-						FlexLayout.Actions.renameTab(node.getId(), updated),
-					);
+					renamePanel(node.getId(), updated);
 				}}
 			/>
 		);
