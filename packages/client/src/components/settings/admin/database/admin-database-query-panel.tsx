@@ -1,5 +1,6 @@
 import type React from "react";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import type { ColumnInterface } from "@semoss/sdk";
 import {
 	type FlexLayout,
 	MonacoEditor,
@@ -10,7 +11,7 @@ import {
 	SPARQL_THEME_LIGHT,
 } from "@semoss/shared";
 import { Button, Spinner, useTheme } from "@semoss/ui/next";
-import { useDatabaseWorkbench } from "@/hooks";
+import type { DatabaseType } from "@/components/workbench/database/database-script-templates";
 
 const SQL_KEYWORDS = [
 	"SELECT",
@@ -44,32 +45,31 @@ const SQL_KEYWORDS = [
 	"DELETE",
 ];
 
-interface DatabaseQueryPanelProps {
+interface AdminDatabaseQueryPanelProps {
 	/** The FlexLayout tab node backing this editor panel */
 	node: FlexLayout.TabNode;
+	/** Query language for this workspace */
+	mode: DatabaseType;
+	/** Structure */
+	structure: {
+		table: string;
+		columns: ColumnInterface[];
+	}[];
+	/** Whether a query is currently running (shared across panels) */
+	isRunning: boolean;
+
+	/** Runs a query and routes its results to the shared results panel */
+	onRun: (query: string, panelId: string, raw?: boolean) => void;
 }
 
 /**
- * A self-contained query editor bound to a single FlexLayout tab. Each panel
- * owns its own query text and (for SPARQL) raw toggle, seeded from the tab
- * config, so multiple panels can coexist without sharing editor state.
+ * Admin variant of the query editor, decoupled from the workbench store. Each panel
+ * owns its own query text and (for SPARQL) raw toggle, seeded from the tab config, so
+ * multiple panels can coexist without sharing editor state.
  */
-export const DatabaseQueryPanel: React.FC<DatabaseQueryPanelProps> = ({
-	node,
-}) => {
-	const mode = useDatabaseWorkbench((state) => state.mode);
-	const structure = useDatabaseWorkbench((state) => state.structure.data);
-	const onQuery = useDatabaseWorkbench((state) => state.onQuery);
-	const isRunning = useDatabaseWorkbench(
-		(state) => state.runningPanels[node.getId()] ?? false,
-	);
-	const onRun = useCallback(
-		(query: string, panelId: string, raw?: boolean) => {
-			onQuery({ panelId, query, raw });
-		},
-		[onQuery],
-	);
-
+export const AdminDatabaseQueryPanel: React.FC<
+	AdminDatabaseQueryPanelProps
+> = ({ node, mode, structure, isRunning, onRun }) => {
 	const { resolvedTheme } = useTheme();
 	const panelId = node.getId();
 	const initialQuery =

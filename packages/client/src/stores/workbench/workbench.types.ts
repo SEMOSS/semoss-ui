@@ -18,10 +18,8 @@ export type WorkbenchPanelConfig = {
 	view: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => ReactNode;
 };
 
-/** Zustand state creator for one workbench slice. */
-export type WorkbenchSlice<Output> = StateCreator<
-	WorkbenchState,
-	[],
-	[],
-	Output
->;
+/** Zustand state creator for one workbench slice, optionally against a wider store shape. */
+export type WorkbenchSlice<
+	Output,
+	FullState extends WorkbenchState = WorkbenchState,
+> = StateCreator<FullState, [], [], Output>;

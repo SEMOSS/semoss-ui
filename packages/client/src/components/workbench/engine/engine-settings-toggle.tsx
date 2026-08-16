@@ -21,7 +21,6 @@ export const EngineSettingsToggle: React.FC = () => {
 	const closePanel = useWorkbench((state) => state.closePanel);
 	const openPanel = useWorkbench((state) => state.openPanel);
 	const model = useWorkbench((state) => state.model);
-	useWorkbench((state) => state.modelRevision);
 	const settingsId = WORKBENCH_COMPONENTS.ENGINE_SETTINGS;
 	const settingsNode = model.getNodeById(settingsId);
 	const isSettingsOpen = settingsNode instanceof FlexLayout.TabNode;
@@ -43,26 +42,24 @@ export const EngineSettingsToggle: React.FC = () => {
 									parent.getSelectedNode()?.getId() ===
 									settingsId
 								) {
-									closePanel({ componentId: settingsId });
+									closePanel(settingsId);
 									return;
 								}
 
-								openPanel({
-									componentId: settingsId,
-									tab: WORKBENCH_PANEL_TABS.ENGINE_SETTINGS,
-									target: { type: "MAIN" },
-								});
+								openPanel(
+									settingsId,
+									WORKBENCH_PANEL_TABS.ENGINE_SETTINGS,
+								);
 								return;
 							}
 
-							closePanel({ componentId: settingsId });
+							closePanel(settingsId);
 						}
 
-						openPanel({
-							componentId: settingsId,
-							tab: WORKBENCH_PANEL_TABS.ENGINE_SETTINGS,
-							target: { type: "MAIN" },
-						});
+						openPanel(
+							settingsId,
+							WORKBENCH_PANEL_TABS.ENGINE_SETTINGS,
+						);
 					}}
 					className={cn(
 						"border",
@@ -71,7 +68,7 @@ export const EngineSettingsToggle: React.FC = () => {
 							: "border-transparent text-muted-foreground",
 					)}
 				>
-					<SettingsIcon className="size-4" />
+					<SettingsIcon />
 				</Button>
 			</TooltipTrigger>
 			<TooltipContent side="right">Settings</TooltipContent>

@@ -2,6 +2,12 @@ import type { WorkbenchCommand, WorkbenchSlice } from "../workbench.types";
 
 /** Commands and panel definitions registered with the workbench. */
 export interface WorkbenchCommandSliceState {
+	/** Whether the command palette is open for this workbench instance. */
+	isCommandOpen: boolean;
+
+	/** Set whether the command palette is open for this workbench instance. */
+	setCommandOpen: (isOpen: boolean) => void;
+
 	/** Commands registered by all workbench components. */
 	commands: Record<string, WorkbenchCommand>;
 
@@ -27,6 +33,10 @@ export interface WorkbenchCommandSliceState {
  */
 export const createWorkbenchCommandSlice =
 	(): WorkbenchSlice<WorkbenchCommandSliceState> => (set, get) => ({
+		isCommandOpen: false,
+		setCommandOpen: (isOpen) => {
+			set({ isCommandOpen: isOpen });
+		},
 		commands: {},
 		registerCommand: (command) => {
 			const commandList = Array.isArray(command) ? command : [command];

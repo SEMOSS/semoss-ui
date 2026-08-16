@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { TableInterface } from "@semoss/sdk";
+import type { ColumnInterface, TableInterface } from "@semoss/sdk";
 import { DataTypeIcon } from "@semoss/shared";
 import {
 	Alert,
@@ -39,14 +39,15 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useDatabaseWorkbench, useEngine } from "@/hooks";
 import {
 	type DatabaseColumnAction,
 	type DatabaseTableAction,
+	type DatabaseType,
 	getColumnActionGroups,
 	getTableActionGroups,
-} from "./database-script-templates";
-import { DatabaseUploadCsv } from "./database-upload-file";
+} from "@/components/workbench/database/database-script-templates";
+import { DatabaseUploadCsv } from "@/components/workbench/database/database-upload-file";
+import { useEngine } from "@/hooks/useEngine";
 
 function getActionKey(action: { label: string }): string {
 	return action.label
@@ -55,25 +56,34 @@ function getActionKey(action: { label: string }): string {
 		.replace(/^-+|-+$/g, "");
 }
 
-export const DatabaseColumnsPanel: React.FC = () => {
-	const { permission } = useEngine();
-	const mode = useDatabaseWorkbench((state) => state.mode);
-	const structure = useDatabaseWorkbench((state) => state.structure.data);
-	const isLoading = useDatabaseWorkbench(
-		(state) => state.structure.status === "LOADING",
-	);
-	const error = useDatabaseWorkbench((state) =>
-		state.structure.status === "ERROR"
-			? (state.structure.error ?? "Failed to fetch database structure")
-			: "",
-	);
-	const refreshStructure = useDatabaseWorkbench(
-		(state) => state.structure.refresh,
-	);
-	const onCreateQueryPanel = useDatabaseWorkbench(
-		(state) => state.addQueryPanel,
-	);
+interface AdminDatabaseColumnsPanelProps {
+	/** Mode of the engine */
+	mode: DatabaseType;
 
+	/** Track loading state of the database structure */
+	isLoading: boolean;
+
+	/** Error message if fetching the database structure failed */
+	error: string;
+
+	/** Refresh the structure */
+	refresh: () => void;
+
+	/** Structure */
+	structure: {
+		table: string;
+		columns: ColumnInterface[];
+	}[];
+
+	/** Opens a new query panel with generated script text */
+	onCreateQueryPanel: (query: string, name: string) => void;
+}
+
+/** Admin variant of the database columns browser, decoupled from the workbench store. */
+export const AdminDatabaseColumnsPanel: React.FC<
+	AdminDatabaseColumnsPanelProps
+> = ({ mode, isLoading, error, refresh, structure, onCreateQueryPanel }) => {
+	const { permission } = useEngine();
 	const readOnly = !(permission === "OWNER" || permission === "EDIT");
 	const [searchTerm, setSearchTerm] = useState("");
 	const [expandedTables, setExpandedTables] = useState<
@@ -254,7 +264,7 @@ export const DatabaseColumnsPanel: React.FC = () => {
 								<Button
 									variant="ghost"
 									size="icon-sm"
-									onClick={() => refreshStructure()}
+									onClick={() => refresh()}
 									disabled={isLoading}
 									data-testid="database-columns--refresh-btn"
 								>
@@ -534,7 +544,7 @@ export const DatabaseColumnsPanel: React.FC = () => {
 				open={uploadDialogOpen}
 				onClose={(success) => {
 					if (success) {
-						refreshStructure();
+						refresh();
 					}
 
 					setUploadDialogOpen(false);

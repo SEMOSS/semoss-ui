@@ -17,13 +17,14 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import {
-	DatabaseColumnsPanel,
-	DatabaseQueryPanel,
-	DatabaseQueryResultsPanel,
-	WORKBENCH_COMPONENTS,
-} from "@/components/workbench";
+import { WORKBENCH_COMPONENTS } from "@/components/workbench";
 import { useEngine } from "@/hooks";
+import {
+	AdminDatabaseColumnsPanel,
+	AdminDatabaseQueryPanel,
+	type AdminDatabaseQueryResult,
+	AdminDatabaseQueryResultsPanel,
+} from "./database";
 
 /** FlexLayout tabset that hosts both file editors and query editors */
 const MAIN_TABSET = "MAIN_TABSET";
@@ -163,10 +164,7 @@ export const AdminQueryWorkspace: React.FC = observer(() => {
 	}, [getDatabaseStructure.status, getDatabaseStructure.data]);
 
 	const [isRunning, setIsRunning] = useState(false);
-	const [result, setResult] =
-		useState<
-			React.ComponentProps<typeof DatabaseQueryResultsPanel>["result"]
-		>(null);
+	const [result, setResult] = useState<AdminDatabaseQueryResult | null>(null);
 
 	/**
 	 * Execute an admin SQL query and display the results in the results panel.
@@ -201,9 +199,7 @@ export const AdminQueryWorkspace: React.FC = observer(() => {
 
 			const response = await runPixel(pixel);
 
-			let nextResult: React.ComponentProps<
-				typeof DatabaseQueryResultsPanel
-			>["result"] = null;
+			let nextResult: AdminDatabaseQueryResult;
 
 			const output = response.pixelReturn[0].output;
 			const timeToRun = response.pixelReturn[0].timeToRun;
@@ -212,7 +208,6 @@ export const AdminQueryWorkspace: React.FC = observer(() => {
 				nextResult = {
 					type: "ERROR",
 					query: q,
-					raw: false,
 					sourcePanel: panelId,
 					message: response.errors.join("\n"),
 					timeToRun: timeToRun,
@@ -229,7 +224,6 @@ export const AdminQueryWorkspace: React.FC = observer(() => {
 				nextResult = {
 					type: "TABLE",
 					query: q,
-					raw: false,
 					sourcePanel: panelId,
 					output: output.data as {
 						headers: string[];
@@ -241,7 +235,6 @@ export const AdminQueryWorkspace: React.FC = observer(() => {
 				nextResult = {
 					type: "MESSAGE",
 					query: q,
-					raw: false,
 					sourcePanel: panelId,
 					message: String(output ?? ""),
 					timeToRun: timeToRun,
@@ -250,7 +243,6 @@ export const AdminQueryWorkspace: React.FC = observer(() => {
 				nextResult = {
 					type: "JSON",
 					query: q,
-					raw: false,
 					sourcePanel: panelId,
 					output: output,
 					timeToRun: timeToRun,
@@ -270,7 +262,6 @@ export const AdminQueryWorkspace: React.FC = observer(() => {
 			setResult({
 				type: "ERROR",
 				query: q,
-				raw: false,
 				sourcePanel: panelId,
 				message: message,
 				timeToRun: 0,
@@ -429,7 +420,7 @@ export const AdminQueryWorkspace: React.FC = observer(() => {
 								) {
 									return (
 										<div className="h-full w-full overflow-hidden bg-card">
-											<DatabaseColumnsPanel
+											<AdminDatabaseColumnsPanel
 												mode="SQL"
 												isLoading={
 													getDatabaseStructure.status ===
@@ -461,7 +452,7 @@ export const AdminQueryWorkspace: React.FC = observer(() => {
 								) {
 									return (
 										<div className="h-full w-full overflow-hidden bg-card">
-											<DatabaseQueryPanel
+											<AdminDatabaseQueryPanel
 												node={node}
 												mode="SQL"
 												structure={structure}
@@ -477,9 +468,7 @@ export const AdminQueryWorkspace: React.FC = observer(() => {
 								) {
 									return (
 										<div className="h-full w-full overflow-hidden">
-											<DatabaseQueryResultsPanel
-												mode="SQL"
-												variant="admin"
+											<AdminDatabaseQueryResultsPanel
 												model={model}
 												isRunning={isRunning}
 												result={result}

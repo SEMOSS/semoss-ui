@@ -26,6 +26,18 @@ export interface WorkbenchLayoutSliceState {
 	onModelChange: (model: FlexLayout.Model, action: FlexLayout.Action) => void;
 
 	/**
+	 * Registers a listener invoked with every FlexLayout action after it is
+	 * applied to the model (e.g. to react to a native tab rename or close).
+	 * Domain slices use this instead of reading `model` from components.
+	 *
+	 * @param listener - Callback invoked with the applied action.
+	 * @return Cleanup callback that unregisters the listener.
+	 */
+	onModelAction: (
+		listener: (model: FlexLayout.Model, action: FlexLayout.Action) => void,
+	) => () => void;
+
+	/**
 	 * Opens an existing panel or select it
 	 *
 	 * @param id - Unique ID of the panel to open.
@@ -78,6 +90,11 @@ export interface WorkbenchLayoutSliceState {
 export const createWorkbenchLayoutSlice = (
 	id: string,
 ): WorkbenchSlice<WorkbenchLayoutSliceState> => {
+	// Not part of the public state shape - listeners don't need to trigger re-renders.
+	const listeners = new Set<
+		(model: FlexLayout.Model, action: FlexLayout.Action) => void
+	>();
+
 	return (set, get) => ({
 		id: id,
 		model: FlexLayout.Model.fromJson({
@@ -93,7 +110,7 @@ export const createWorkbenchLayoutSlice = (
 				model: FlexLayout.Model.fromJson(layout),
 			}));
 		},
-		onModelChange: (model) => {
+		onModelChange: (model, action) => {
 			// Find the currently active tabset or check specific nodes
 			const activeTabset = model.getActiveTabset();
 			if (activeTabset) {
@@ -106,6 +123,11 @@ export const createWorkbenchLayoutSlice = (
 						activePanel: activeNode.getId(),
 					}));
 				}
+			}
+
+			// trigger the listeners
+			for (const listener of listeners) {
+				listener(model, action);
 			}
 		},
 		openPanel: (
@@ -122,10 +144,22 @@ export const createWorkbenchLayoutSlice = (
 
 			// select the node if there
 			const selectedNode = model.getNodeById(id);
-			if (selectedNode) {
-				model.doAction(
-					FlexLayout.Actions.selectTab(selectedNode.getId()),
-				);
+			if (selectedNode instanceof FlexLayout.TabNode) {
+				const parent = selectedNode.getParent();
+
+				// Border tabs TOGGLE on SELECT_TAB (flexlayout-react), so re-selecting an
+				// already-selected border tab would hide/close it - skip the dispatch.
+				const alreadySelected =
+					parent instanceof FlexLayout.BorderNode
+						? parent.getSelected() ===
+							parent.getChildren().indexOf(selectedNode)
+						: parent instanceof FlexLayout.TabSetNode
+							? parent.getSelectedNode()?.getId() === id
+							: false;
+
+				if (!alreadySelected) {
+					model.doAction(FlexLayout.Actions.selectTab(id));
+				}
 
 				return;
 			}
@@ -240,6 +274,12 @@ export const createWorkbenchLayoutSlice = (
 			model.doAction(
 				FlexLayout.Actions.updateNodeAttributes(nodeId, options),
 			);
+		},
+		onModelAction: (listener) => {
+			listeners.add(listener);
+			return () => {
+				listeners.delete(listener);
+			};
 		},
 	});
 };

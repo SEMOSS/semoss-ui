@@ -1,4 +1,5 @@
 import { useAPI } from "./use-api";
+import { useDatabaseWorkbench } from "./use-database-workbench";
 import { usePixel } from "./use-pixel";
 import { useProject } from "./use-project";
 import { useTabBarScroll } from "./use-tab-bar-scroll";
@@ -20,6 +21,7 @@ import { useWorkspace } from "./useWorkspace";
 // increases production bundle size.
 export {
 	useAPI,
+	useDatabaseWorkbench,
 	useDesigner,
 	useEngine,
 	useMetamodel,
