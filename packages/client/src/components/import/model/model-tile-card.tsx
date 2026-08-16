@@ -25,6 +25,7 @@ const MODEL_PROVIDER_SUBTYPE_BY_NAME: Record<string, string> = {
 	"Self Hosted": "HUGGINGFACE",
 	Perplexity: "PERPLEXITY",
 	Embedded: "BRAIN",
+	"Model Router": "SEMOSS",
 };
 
 const MODEL_SUBTYPE_BY_ICON_FILE_NAME: Record<string, string> = {

@@ -1289,15 +1289,17 @@ export const ModelImportPage: React.FC = () => {
 							};
 						}
 
-						mergeModelMetadataFields(
-							fields,
-							advanced,
-							buildModelMetadataFields(
-								selectedProvider,
-								selectedModelMetadata,
-								selectedStaticMetadata,
-							),
-						);
+						if (!selectedModelMetadata?.skipCatalogMetadata) {
+							mergeModelMetadataFields(
+								fields,
+								advanced,
+								buildModelMetadataFields(
+									selectedProvider,
+									selectedModelMetadata,
+									selectedStaticMetadata,
+								),
+							);
+						}
 
 						// Only a hand-picked entry is saved. An ID that resolved on
 						// its own can be resolved again from the ID, so storing it
