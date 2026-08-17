@@ -109,6 +109,7 @@ export const MembersTable = ({
 	const [editRestriction, setEditRestriction] = useState<string>("null");
 	const [editMaxTokens, setEditMaxTokens] = useState<string>("");
 	const [editMaxTime, setEditMaxTime] = useState<string>("");
+	const [editMaxCredits, setEditMaxCredits] = useState<string>("");
 	const [editFrequency, setEditFrequency] = useState<string>("DAY");
 
 	const openEditDialog = (user: MemberUser) => {
@@ -117,6 +118,7 @@ export const MembersTable = ({
 		setEditRestriction(user.usage_restriction?.toLowerCase() ?? "null");
 		setEditMaxTokens(user.max_tokens?.toString() ?? "");
 		setEditMaxTime(user.max_response_time?.toString() ?? "");
+		setEditMaxCredits(user.max_credits?.toString() ?? "");
 		setEditFrequency(user.usage_frequency ?? "DAY");
 	};
 
@@ -138,6 +140,9 @@ export const MembersTable = ({
 			}
 			if (editRestriction === "compute") {
 				payload.maxResponseTime = Number(editMaxTime);
+			}
+			if (editRestriction === "credit") {
+				payload.maxCredits = Number(editMaxCredits);
 			}
 			if (editRestriction !== "null") {
 				payload.usageFrequency = editFrequency;
@@ -302,6 +307,7 @@ export const MembersTable = ({
 												setEditRestriction(val);
 												setEditMaxTokens("");
 												setEditMaxTime("");
+												setEditMaxCredits("");
 											}}
 										>
 											<SelectTrigger className="w-full">
@@ -316,6 +322,9 @@ export const MembersTable = ({
 												</SelectItem>
 												<SelectItem value="compute">
 													Compute time
+												</SelectItem>
+												<SelectItem value="credit">
+													Credit
 												</SelectItem>
 											</SelectContent>
 										</Select>
@@ -365,6 +374,26 @@ export const MembersTable = ({
 													readOnly
 												/>
 											</div>
+										</div>
+									)}
+
+									{editRestriction === "credit" && (
+										<div className="flex flex-col gap-1.5">
+											<Label>Max Credits</Label>
+											<Input
+												type="text"
+												inputMode="numeric"
+												value={formatNum(
+													editMaxCredits,
+												)}
+												onChange={(e) =>
+													setEditMaxCredits(
+														parseNum(
+															e.target.value,
+														),
+													)
+												}
+											/>
 										</div>
 									)}
 
