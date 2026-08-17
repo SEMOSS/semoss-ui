@@ -55,7 +55,7 @@ export const createWorkbenchStore = <
 			>
 		)(...args),
 		...(
-			createWorkbenchChatSlice() as WorkbenchSlice<
+			createWorkbenchChatSlice(id) as WorkbenchSlice<
 				WorkbenchChatSliceState,
 				WorkbenchState & TExtra
 			>
