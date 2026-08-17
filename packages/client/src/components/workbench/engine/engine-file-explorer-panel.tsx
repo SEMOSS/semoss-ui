@@ -1,6 +1,5 @@
 import { HammerIcon, PencilIcon } from "lucide-react";
-import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { download, useInsight } from "@semoss/sdk/react";
 import {
@@ -15,30 +14,33 @@ import {
 import { toast } from "@semoss/ui/next";
 import { MCP } from "@/constants";
 import { useEngine } from "@/hooks";
-import { WORKBENCH_COMPONENTS } from "../workbench.contants";
+import { useWorkbench } from "@/hooks/use-workbench";
+import { WORKBENCH_COMPONENTS } from "../workbench.constants";
 
 interface EngineFileExplorerPanelProps {
-	/** Node */
+	/** Live FlexLayout instance used for drag-and-drop file tabs. */
 	layout: FlexLayout.Layout;
 
-	/** Node */
+	/** FlexLayout tab node backing the file explorer. */
 	node: FlexLayout.TabNode;
 }
 
-export const EngineFileExplorerPanel: React.FC<EngineFileExplorerPanelProps> =
-	observer(({ layout, node }) => {
-		const { engine, permission } = useEngine();
-		// Only OWNER/EDIT users can mutate engine assets; READ_ONLY users get
-		// browse/open/download behavior without create/delete actions.
-		const readOnly = !(permission === "OWNER" || permission === "EDIT");
-		const insight = useInsight();
-		const [searchParams, setSearchParams] = useSearchParams();
-		const [refreshKey, setRefreshKey] = useState(0);
+export const EngineFileExplorerPanel: React.FC<
+	EngineFileExplorerPanelProps
+> = ({ layout, node }) => {
+	const { engine, permission } = useEngine();
+	// Only OWNER/EDIT users can mutate engine assets; READ_ONLY users get
+	// browse/open/download behavior without create/delete actions.
+	const readOnly = !(permission === "OWNER" || permission === "EDIT");
+	const insight = useInsight();
+	const [searchParams, setSearchParams] = useSearchParams();
 
-		const getMovedPath = (
-			path: string,
-			movedItem: FileExplorerMovedItem,
-		) => {
+	const openPanel = useWorkbench((state) => state.openPanel);
+	const closePanel = useWorkbench((state) => state.closePanel);
+	const updatePanel = useWorkbench((state) => state.updatePanel);
+
+	const getMovedPath = useCallback(
+		(path: string, movedItem: FileExplorerMovedItem) => {
 			const oldPathWithSlash = movedItem.oldPath.endsWith("/")
 				? movedItem.oldPath
 				: `${movedItem.oldPath}/`;
@@ -58,12 +60,12 @@ export const EngineFileExplorerPanel: React.FC<EngineFileExplorerPanelProps> =
 			}
 
 			return null;
-		};
+		},
+		[],
+	);
 
-		const updateTabPath = (
-			tabNode: FlexLayout.TabNode,
-			newPath: string,
-		) => {
+	const updateTabPath = useCallback(
+		(tabNode: FlexLayout.TabNode, newPath: string) => {
 			const config = tabNode.getConfig() as
 				| {
 						fileMode?: "ENGINE" | "INSIGHT";
@@ -90,27 +92,24 @@ export const EngineFileExplorerPanel: React.FC<EngineFileExplorerPanelProps> =
 			const tabName = tabNode.getName();
 			const displayName = tabName.endsWith("*") ? `${newName}*` : newName;
 
-			tabNode.getModel().doAction(
-				FlexLayout.Actions.updateNodeAttributes(tabNode.getId(), {
-					config: {
-						...config,
-						name: newName,
-						path: newPath,
-					},
-				}),
-			);
-			tabNode
-				.getModel()
-				.doAction(
-					FlexLayout.Actions.renameTab(tabNode.getId(), displayName),
-				);
+			updatePanel(tabNode.getId(), {
+				name: displayName,
+				config: {
+					...config,
+					name: newName,
+					path: newPath,
+				},
+			});
 
 			if (oldPath) {
 				notifyFileEditorPathMoved(oldPath, newPath, scope);
 			}
-		};
+		},
+		[updatePanel, insight, engine.engine_id],
+	);
 
-		const migrateMovedTabs = (movedItems: FileExplorerMovedItem[]) => {
+	const migrateMovedTabs = useCallback(
+		(movedItems: FileExplorerMovedItem[]) => {
 			const model = node.getModel();
 			let migrated = false;
 
@@ -144,367 +143,275 @@ export const EngineFileExplorerPanel: React.FC<EngineFileExplorerPanelProps> =
 			});
 
 			return migrated;
-		};
+		},
+		[node, getMovedPath, updateTabPath],
+	);
 
-		/**
-		 * Remove tabs that are open for a file that has been deleted. If it's a directory, remove all tabs that are open for files within that directory
-		 * @param deletedPath the path of the deleted file or directory
-		 * @param isDirectory whether the deleted path is a directory
-		 */
-		const removeDeletedTabs = useCallback(
-			(deletedPath: string, isDirectory: boolean) => {
-				const model = node.getModel();
-				const deletedPathWithSlash =
-					isDirectory && !deletedPath.endsWith("/")
-						? `${deletedPath}/`
-						: deletedPath;
-				const tabsToRemove: string[] = [];
+	const removeDeletedTabs = useCallback(
+		(path: string, isDirectory: boolean) => {
+			const model = node.getModel();
+			const directoryPath = path.endsWith("/") ? path : `${path}/`;
 
-				model.visitNodes((currentNode) => {
-					if (!(currentNode instanceof FlexLayout.TabNode)) {
-						return;
-					}
-
-					const config = currentNode.getConfig() as
-						| { path?: string }
-						| undefined;
-					const path = config?.path;
-					if (!path) {
-						return;
-					}
-					if (
-						isDirectory
-							? path === deletedPath ||
-								path.startsWith(deletedPathWithSlash)
-							: path === deletedPath
-					) {
-						tabsToRemove.push(currentNode.getId());
-					}
-				});
-
-				tabsToRemove.forEach((tabId) => {
-					model.doAction(FlexLayout.Actions.deleteTab(tabId));
-				});
-			},
-			[node],
-		);
-
-		/**
-		 * Add a node to the layout
-		 * @param nodeId
-		 * @param options
-		 * @returns
-		 */
-
-		const addNode = useCallback(
-			(
-				nodeId: string,
-				options: {
-					[key: string]: unknown;
-				},
-			) => {
-				const model = node.getModel();
-
-				// select the node if there
-				let selectedNode = model.getNodeById(nodeId);
-				const targetConfig = options.config as
-					| { path?: string }
-					| undefined;
-				const targetPath = targetConfig?.path;
-				if (!selectedNode && targetPath) {
-					model.visitNodes((currentNode) => {
-						if (
-							selectedNode ||
-							!(currentNode instanceof FlexLayout.TabNode)
-						) {
-							return;
-						}
-
-						const config = currentNode.getConfig() as
-							| { path?: string }
-							| undefined;
-						if (
-							currentNode.getComponent() === options.component &&
-							config?.path === targetPath
-						) {
-							selectedNode = currentNode;
-						}
-					});
-				}
-				if (selectedNode) {
-					model.doAction(
-						FlexLayout.Actions.selectTab(selectedNode.getId()),
-					);
+			model.visitNodes((currentNode) => {
+				if (!(currentNode instanceof FlexLayout.TabNode)) {
 					return;
 				}
 
-				// create the node if it is not there
-				// where to add the node
-				const addId =
-					model.getActiveTabset()?.getId() ||
-					model.getRoot().getChildren()[0]?.getId() ||
-					"";
+				const config = currentNode.getConfig() as
+					| { path?: string }
+					| undefined;
+				const tabPath = config?.path;
+				if (!tabPath) {
+					return;
+				}
 
-				// create and select the panel
-				model.doAction(
-					FlexLayout.Actions.addNode(
-						{
-							...options,
-							id: nodeId,
-						},
-						addId,
-						FlexLayout.DockLocation.CENTER,
-						-1,
-						true,
-					),
-				);
-			},
-			[node],
-		);
+				// Close if exact match or if it's in the deleted directory
+				if (
+					tabPath === path ||
+					(isDirectory && tabPath.startsWith(directoryPath))
+				) {
+					closePanel(currentNode.getId());
+				}
+			});
+		},
+		[node, closePanel],
+	);
 
-		useEffect(() => {
-			const mcpParam = searchParams.get("mcp");
-			if (mcpParam === "Generate") {
-				const mcpFilePath = "/mcp/pixel_mcp.json";
-				addNode(`${WORKBENCH_COMPONENTS.MCP_EDITOR}--${mcpFilePath}`, {
+	useEffect(() => {
+		const mcpParam = searchParams.get("mcp");
+		if (mcpParam === "Generate") {
+			const mcpFilePath = "/mcp/pixel_mcp.json";
+			openPanel(`${WORKBENCH_COMPONENTS.MCP_EDITOR}--${mcpFilePath}`, {
+				type: "tab",
+				name: `Toolbox Editor - pixel_mcp.json`,
+				component: WORKBENCH_COMPONENTS.MCP_EDITOR,
+				config: {
+					name: "pixel_mcp.json",
+					path: mcpFilePath,
+				},
+				enableClose: true,
+			});
+			toast.success("MCP generated");
+			searchParams.delete("mcp");
+			setSearchParams(searchParams);
+		}
+	}, [searchParams, openPanel, setSearchParams]);
+
+	return (
+		<FileExplorer
+			readOnly={readOnly}
+			mode={{
+				type: "ENGINE",
+				engine: engine.engine_id,
+			}}
+			onItemSelect={(item) => {
+				// don't open directories
+				if (item.type === "directory") {
+					return;
+				}
+
+				// this will select if there or open if not
+				openPanel(`${WORKBENCH_COMPONENTS.FILE_EDITOR}--${item.path}`, {
 					type: "tab",
-					name: `Toolbox Editor - pixel_mcp.json`,
-					component: WORKBENCH_COMPONENTS.MCP_EDITOR,
+					name: item.name,
+					component: WORKBENCH_COMPONENTS.FILE_EDITOR,
 					config: {
-						name: "pixel_mcp.json",
-						path: mcpFilePath,
+						name: item.name,
+						path: item.path,
 					},
 					enableClose: true,
 				});
-				toast.success("MCP generated");
-				setRefreshKey((prev) => prev + 1);
-				searchParams.delete("mcp");
-				setSearchParams(searchParams);
-			}
-		}, [searchParams, addNode, setSearchParams]);
-
-		return (
-			<FileExplorer
-				key={refreshKey}
-				readOnly={readOnly}
-				mode={{
-					type: "ENGINE",
-					engine: engine.engine_id,
-				}}
-				onItemSelect={(item) => {
-					// don't open directories
-					if (item.type === "directory") {
-						return;
-					}
-
-					// this will select if there or open if not
-					addNode(
+			}}
+			onItemsMoved={migrateMovedTabs}
+			onItemsDeleted={(items) => {
+				items.forEach((item) => {
+					closePanel(
 						`${WORKBENCH_COMPONENTS.FILE_EDITOR}--${item.path}`,
-						{
-							type: "tab",
-							name: item.name,
-							component: WORKBENCH_COMPONENTS.FILE_EDITOR,
-							config: {
-								name: item.name,
-								path: item.path,
-							},
-							enableClose: true,
-						},
 					);
-				}}
-				onItemsMoved={migrateMovedTabs}
-				onItemsDeleted={(items) => {
-					items.forEach((item) => {
-						removeDeletedTabs(item.path, item.type === "directory");
-					});
-				}}
-				ItemComponent={({ item, refresh, ...otherProps }) => {
-					const isDriverFile =
-						item.type !== "directory" &&
-						MCP.DRIVER_PATHS.some((f) => item.path === f);
-					const actions = [];
 
-					if (isDriverFile && !readOnly) {
-						actions.push({
-							name: "Create",
-							icon: <HammerIcon />,
-							tooltip: "Create Toolbox",
-							action: async () => {
-								try {
-									await insight.actions.run(
-										`MakePythonMCP(engine=["${engine.engine_id}"]);`,
-									);
+					removeDeletedTabs(item.path, item.type === "directory");
+				});
+			}}
+			ItemComponent={({ item, refresh, ...otherProps }) => {
+				const isDriverFile =
+					item.type !== "directory" &&
+					MCP.DRIVER_PATHS.some((f) => item.path === f);
+				const actions = [];
 
-									// refresh the explorer
-									refresh();
-								} catch (e) {
-									toast.error(`Error: ${e}`);
-								}
-
-								// open the editor for the created file (always, even if MakePythonMCP fails)
-								addNode(
-									`${WORKBENCH_COMPONENTS.MCP_EDITOR}--/mcp/py_mcp.json`,
-									{
-										type: "tab",
-										name: `Toolbox Editor - py_mcp.json`,
-										component:
-											WORKBENCH_COMPONENTS.MCP_EDITOR,
-										config: {
-											name: "py_mcp.json",
-											path: "/mcp/py_mcp.json",
-										},
-										enableClose: true,
-									},
-								);
-							},
-						});
-					}
-
-					if (
-						MCP.JSON_PATHS.some((f) => item.path.startsWith(f)) &&
-						item.type !== "directory"
-					) {
-						actions.push({
-							name: "Edit",
-							icon: <PencilIcon />,
-							tooltip: "Edit Toolbox",
-							action: async (item: FileItem) => {
-								// this will select if there or open if not
-								addNode(
-									`${WORKBENCH_COMPONENTS.MCP_EDITOR}--${item.path}`,
-									{
-										type: "tab",
-										name: `Toolbox Editor - ${item.name}`,
-										component:
-											WORKBENCH_COMPONENTS.MCP_EDITOR,
-										config: {
-											name: item.name,
-											path: item.path,
-										},
-										enableClose: true,
-									},
-								);
-							},
-						});
-					}
-
-					const secondaryActions = [
-						{
-							name: "Copy Path",
-							action: async (item: FileItem) => {
-								try {
-									await navigator.clipboard.writeText(
-										item.path,
-									);
-								} catch (_e) {
-									throw new Error(
-										"Failed to copy to clipboard",
-									);
-								}
-							},
-						},
-					];
-
-					if (item.type !== "directory") {
-						secondaryActions.push({
-							name: "Download",
-							action: async (item: FileItem) => {
-								// save it
-								const { pixelReturn } =
-									await insight.actions.run<[string]>(
-										`DownloadEngineAsset(engine=["${engine.engine_id}"], filePath=["${item.path}"]);`,
-									);
-
-								// get the file key
-								const fileKey = pixelReturn[0].output;
-
-								// download the file
-								await download(insight.insightId, fileKey);
-
-								refresh();
-							},
-						});
-					}
-
-					if (!readOnly) {
-						secondaryActions.push({
-							name: "Delete",
-							action: async (item: FileItem) => {
+				if (isDriverFile && !readOnly) {
+					actions.push({
+						name: "Create",
+						icon: <HammerIcon />,
+						tooltip: "Create Toolbox",
+						action: async () => {
+							try {
 								await insight.actions.run(
-									`DeleteEngineAssets(engine=["${engine.engine_id}"], filePath=["${item.path}"]);`,
+									`MakePythonMCP(engine=["${engine.engine_id}"]);`,
 								);
-								removeDeletedTabs(
-									item.path,
-									item.type === "directory",
-								);
+
+								// refresh the explorer
 								refresh();
-							},
-						});
-					}
+							} catch (e) {
+								toast.error(`Error: ${e}`);
+							}
 
-					return (
-						<FileExplorerItem
-							draggable={item.type !== "directory"}
-							item={item}
-							refresh={refresh}
-							onDragStart={(e) => {
-								// cannot drag directories
-								if (item.type === "directory") {
-									return;
-								}
+							// open the editor for the created file (always, even if MakePythonMCP fails)
+							openPanel(
+								`${WORKBENCH_COMPONENTS.MCP_EDITOR}--/mcp/py_mcp.json`,
+								{
+									type: "tab",
+									name: `Toolbox Editor - py_mcp.json`,
+									component: WORKBENCH_COMPONENTS.MCP_EDITOR,
+									config: {
+										name: "py_mcp.json",
+										path: "/mcp/py_mcp.json",
+									},
+									enableClose: true,
+								},
+							);
+						},
+					});
+				}
 
-								// add to layout
-								layout.addTabWithDragAndDrop(
-									e as unknown as DragEvent,
-									{
-										type: "tab",
+				if (
+					MCP.JSON_PATHS.some((f) => item.path.startsWith(f)) &&
+					item.type !== "directory"
+				) {
+					actions.push({
+						name: "Edit",
+						icon: <PencilIcon />,
+						tooltip: "Edit Toolbox",
+						action: async (item: FileItem) => {
+							// this will select if there or open if not
+							openPanel(
+								`${WORKBENCH_COMPONENTS.MCP_EDITOR}--${item.path}`,
+								{
+									type: "tab",
+									name: `Toolbox Editor - ${item.name}`,
+									component: WORKBENCH_COMPONENTS.MCP_EDITOR,
+									config: {
 										name: item.name,
-										component:
-											WORKBENCH_COMPONENTS.FILE_EDITOR,
-										config: {
-											name: item.name,
-											path: item.path,
-										},
-										enableClose: true,
+										path: item.path,
 									},
-								);
-							}}
-							onAfterRename={(oldPath, newPath) => {
-								const migrated = migrateMovedTabs([
-									{
-										item,
-										oldPath,
-										newPath,
-									},
-								]);
-								if (migrated) {
-									return;
-								}
+									enableClose: true,
+								},
+							);
+						},
+					});
+				}
 
-								const newName =
-									newPath.split("/").filter(Boolean).pop() ??
-									newPath;
-								addNode(
-									`${WORKBENCH_COMPONENTS.FILE_EDITOR}--${newPath}`,
-									{
-										type: "tab",
-										name: newName,
-										component:
-											WORKBENCH_COMPONENTS.FILE_EDITOR,
-										config: {
-											name: newName,
-											path: newPath,
-										},
-										enableClose: true,
+				const secondaryActions = [
+					{
+						name: "Copy Path",
+						action: async (item: FileItem) => {
+							try {
+								await navigator.clipboard.writeText(item.path);
+							} catch (_e) {
+								throw new Error("Failed to copy to clipboard");
+							}
+						},
+					},
+				];
+
+				if (item.type !== "directory") {
+					secondaryActions.push({
+						name: "Download",
+						action: async (item: FileItem) => {
+							// save it
+							const { pixelReturn } = await insight.actions.run<
+								[string]
+							>(
+								`DownloadEngineAsset(engine=["${engine.engine_id}"], filePath=["${item.path}"]);`,
+							);
+
+							// get the file key
+							const fileKey = pixelReturn[0].output;
+
+							// download the file
+							await download(insight.insightId, fileKey);
+
+							refresh();
+						},
+					});
+				}
+
+				if (!readOnly) {
+					secondaryActions.push({
+						name: "Delete",
+						action: async (item: FileItem) => {
+							await insight.actions.run(
+								`DeleteEngineAssets(engine=["${engine.engine_id}"], filePath=["${item.path}"]);`,
+							);
+							removeDeletedTabs(
+								item.path,
+								item.type === "directory",
+							);
+							refresh();
+						},
+					});
+				}
+
+				return (
+					<FileExplorerItem
+						draggable={item.type !== "directory"}
+						item={item}
+						refresh={refresh}
+						onDragStart={(e) => {
+							// cannot drag directories
+							if (item.type === "directory") {
+								return;
+							}
+
+							// add to layout
+							layout.addTabWithDragAndDrop(
+								e as unknown as DragEvent,
+								{
+									type: "tab",
+									name: item.name,
+									component: WORKBENCH_COMPONENTS.FILE_EDITOR,
+									config: {
+										name: item.name,
+										path: item.path,
 									},
-								);
-							}}
-							{...otherProps}
-							actions={actions}
-							secondaryActions={secondaryActions}
-						/>
-					);
-				}}
-			/>
-		);
-	});
+									enableClose: true,
+								},
+							);
+						}}
+						onAfterRename={(oldPath, newPath) => {
+							const migrated = migrateMovedTabs([
+								{
+									item,
+									oldPath,
+									newPath,
+								},
+							]);
+							if (migrated) {
+								return;
+							}
+
+							const newName =
+								newPath.split("/").filter(Boolean).pop() ??
+								newPath;
+							openPanel(
+								`${WORKBENCH_COMPONENTS.FILE_EDITOR}--${newPath}`,
+								{
+									type: "tab",
+									name: newName,
+									component: WORKBENCH_COMPONENTS.FILE_EDITOR,
+									config: {
+										name: newName,
+										path: newPath,
+									},
+									enableClose: true,
+								},
+							);
+						}}
+						{...otherProps}
+						actions={actions}
+						secondaryActions={secondaryActions}
+					/>
+				);
+			}}
+		/>
+	);
+};

@@ -1,7 +1,10 @@
-import { FolderTreeIcon, SettingsIcon } from "lucide-react";
-import { useMemo } from "react";
-import { FlexLayout, getFileIconComponent } from "@semoss/shared";
-import { useEngine } from "@/hooks";
+import { FolderTreeIcon, MessageSquareIcon, SettingsIcon } from "lucide-react";
+import { useEffect, useMemo } from "react";
+import { type FlexLayout, getFileIconComponent } from "@semoss/shared";
+import { useEngine, useWorkbench } from "@/hooks";
+import { useWorkbenchChatConfig } from "@/hooks/use-workbench-chat-config";
+import type { WorkbenchPanelConfig } from "@/stores";
+import { WORKBENCH_CHAT_PANEL } from "../chat";
 import {
 	EngineFileEditorPanel,
 	EngineFileExplorerPanel,
@@ -10,7 +13,8 @@ import {
 	EngineSettingsToggle,
 } from "../engine";
 import { Workbench } from "../workbench";
-import { WORKBENCH_COMPONENTS } from "../workbench.contants";
+import { WORKBENCH_COMPONENTS } from "../workbench.constants";
+import { ModelChatPanel } from "./model-chat-panel";
 
 /**
  * Model workbench that combines a chat panel with the shared file explorer,
@@ -18,9 +22,11 @@ import { WORKBENCH_COMPONENTS } from "../workbench.contants";
  * the chat and file operations share a single insight.
  */
 export const ModelWorkbench: React.FC = () => {
+	const registerCommand = useWorkbench((state) => state.registerCommand);
 	const { engine } = useEngine();
-	const model = useMemo(() => {
-		return FlexLayout.Model.fromJson({
+
+	const layout = useMemo<FlexLayout.IJsonModel>(() => {
+		return {
 			global: {
 				tabSetEnableDeleteWhenEmpty: true,
 				tabEnableRename: false,
@@ -57,18 +63,6 @@ export const ModelWorkbench: React.FC = () => {
 							helpText: "Chat",
 							enableClose: false,
 							enableRenderOnDemand: false,
-							config: {
-								systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user inspect, test, and configure this model. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
-								mcp: [
-									{
-										type: "MODEL",
-										id: engine.engine_id,
-										name:
-											engine.engine_display_name ||
-											engine.engine_name,
-									},
-								],
-							},
 						},
 					],
 				},
@@ -85,13 +79,34 @@ export const ModelWorkbench: React.FC = () => {
 					},
 				],
 			},
-		});
-	}, [engine.engine_display_name, engine.engine_id, engine.engine_name]);
+		};
+	}, []);
 
-	const components = {
+	const configureChat = useWorkbenchChatConfig((state) => state.configure);
+
+	// keep the assistant's system prompt/tools in sync with the active engine
+	useEffect(() => {
+		configureChat({
+			systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user inspect, test, and configure this model. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
+			mcp: [
+				{
+					type: "MODEL",
+					id: engine.engine_id,
+					name: engine.engine_display_name || engine.engine_name,
+				},
+			],
+		});
+	}, [
+		configureChat,
+		engine.engine_display_name,
+		engine.engine_id,
+		engine.engine_name,
+	]);
+
+	const components: Record<string, WorkbenchPanelConfig> = {
 		[WORKBENCH_COMPONENTS.FILE_EXPLORER]: {
 			tab: () => <FolderTreeIcon className="size-4" />,
-			panel: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => {
+			view: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => {
 				return <EngineFileExplorerPanel layout={layout} node={node} />;
 			},
 		},
@@ -100,7 +115,7 @@ export const ModelWorkbench: React.FC = () => {
 				const Icon = getFileIconComponent(node.getName());
 				return <Icon className="size-4" />;
 			},
-			panel: (node: FlexLayout.TabNode) => {
+			view: (node: FlexLayout.TabNode) => {
 				return <EngineFileEditorPanel node={node} />;
 			},
 		},
@@ -109,13 +124,13 @@ export const ModelWorkbench: React.FC = () => {
 				const Icon = getFileIconComponent(node.getName());
 				return <Icon className="size-4" />;
 			},
-			panel: (node: FlexLayout.TabNode) => {
+			view: (node: FlexLayout.TabNode) => {
 				return <EngineMcpEditorPanel node={node} />;
 			},
 		},
 		[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: {
 			tab: () => <SettingsIcon className="size-4" />,
-			panel: () => (
+			view: () => (
 				<EngineSettingsPanel
 					tabs={[
 						{
@@ -157,13 +172,67 @@ export const ModelWorkbench: React.FC = () => {
 				/>
 			),
 		},
+		[WORKBENCH_COMPONENTS.MODEL_CHAT]: {
+			tab: () => <MessageSquareIcon className="size-4" />,
+			view: () => {
+				return <ModelChatPanel />;
+			},
+		},
+		[WORKBENCH_COMPONENTS.CHAT]: WORKBENCH_CHAT_PANEL,
 	};
+
+	useEffect(() => {
+		return registerCommand([
+			{
+				id: "workbench.file-explorer.open",
+				label: "Open File Explorer",
+				icon: <FolderTreeIcon />,
+				handler: (get) => {
+					get().openPanel(WORKBENCH_COMPONENTS.FILE_EXPLORER, {
+						type: "tab",
+						name: "Files",
+						component: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+						helpText: "File Explorer",
+						enableClose: false,
+					});
+				},
+			},
+			{
+				id: "workbench.settings.open",
+				label: "Open Settings",
+				icon: <SettingsIcon />,
+				handler: (get) => {
+					get().openPanel(WORKBENCH_COMPONENTS.ENGINE_SETTINGS, {
+						type: "tab",
+						name: "Settings",
+						component: WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
+						helpText: "Settings",
+						enableClose: false,
+					});
+				},
+			},
+			{
+				id: "workbench.model-chat.open",
+				label: "Open Model Chat",
+				icon: <MessageSquareIcon />,
+				handler: (get) => {
+					get().openPanel(WORKBENCH_COMPONENTS.MODEL_CHAT, {
+						type: "tab",
+						name: "Model Chat",
+						component: WORKBENCH_COMPONENTS.MODEL_CHAT,
+						helpText: "Model Chat",
+						enableClose: false,
+					});
+				},
+			},
+		]);
+	}, [registerCommand]);
 
 	return (
 		<Workbench
-			model={model}
+			layout={layout}
 			components={components}
-			actions={<EngineSettingsToggle model={model} />}
+			actions={<EngineSettingsToggle />}
 		/>
 	);
 };

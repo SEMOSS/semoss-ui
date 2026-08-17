@@ -1,3 +1,4 @@
+/** Component IDs shared by workbench state, commands, and renderers. */
 export const WORKBENCH_COMPONENTS = {
 	CHAT: "workbench-chat",
 	FILE_EXPLORER: "engine-file-explorer",
@@ -9,5 +10,6 @@ export const WORKBENCH_COMPONENTS = {
 	VECTOR_CHAT: "vector-chat",
 	VECTOR_DOCUMENTS: "vector-documents",
 	STORAGE_EXPLORER: "storage-file-explorer",
+	MODEL_CHAT: "model-chat",
 	ENGINE_SETTINGS: "engine-settings",
 } as const;

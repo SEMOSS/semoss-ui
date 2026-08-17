@@ -4,3 +4,4 @@ export * from "./workbench-chat.types";
 export * from "./workbench-chat-attachments";
 export * from "./workbench-chat-options";
 export * from "./workbench-chat-panel";
+export * from "./workbench-chat-view";

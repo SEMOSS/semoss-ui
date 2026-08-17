@@ -1,126 +1,123 @@
-import { MessageSquareIcon, XIcon } from "lucide-react";
-import { useMemo, useRef } from "react";
+import { XIcon } from "lucide-react";
+import { type FC, type ReactNode, useLayoutEffect, useRef } from "react";
 import { FlexLayout } from "@semoss/shared";
-import { cn } from "@semoss/ui/next";
-import { useTabBarScroll } from "@/hooks";
-import type { WorkbenchChatConfig } from "./chat";
-import { WorkbenchChatPanel } from "./chat";
-import { WORKBENCH_COMPONENTS } from "./workbench.contants";
+import { cn, Spinner } from "@semoss/ui/next";
+import { useTabBarScroll, useWorkbench } from "@/hooks";
+import type { WorkbenchPanelConfig } from "@/stores";
+import { WorkbenchCommandPalette } from "./workbench-command-palette";
 
 export interface WorkbenchProps {
-	/** Model */
-	model: FlexLayout.Model;
+	/** Initial layout used to create the FlexLayout model. */
+	layout: FlexLayout.IJsonModel;
 
-	/** Components */
-	components: Record<
-		string,
-		{
-			tab: (
-				node: FlexLayout.TabNode,
-				layout: FlexLayout.Layout,
-			) => React.ReactNode;
-			panel: (
-				node: FlexLayout.TabNode,
-				layout: FlexLayout.Layout,
-			) => React.ReactNode;
-		}
-	>;
+	/** Panel renderers and their static command definitions. */
+	components: Record<string, WorkbenchPanelConfig>;
 
-	/** Floating actions rendered over the bottom-left of the layout */
-	actions?: React.ReactNode;
+	/** Floating actions rendered over the bottom-left of the layout. */
+	actions?: ReactNode;
 }
 
-export const Workbench: React.FC<WorkbenchProps> = ({
-	model,
+/** Initialize and render one workbench inside the nearest scoped provider. */
+export const Workbench: FC<WorkbenchProps> = ({
+	layout,
 	components,
 	actions,
 }) => {
+	const model = useWorkbench((state) => state.model);
+	const setModel = useWorkbench((state) => state.setModel);
+	const onModelChange = useWorkbench((state) => state.onModelChange);
+
+	const isLoading = useWorkbench((state) => state.isLoading);
 	const layoutRef = useRef<FlexLayout.Layout | null>(null);
 	const containerRef = useRef<HTMLDivElement | null>(null);
 
 	useTabBarScroll(containerRef);
 
-	// Offset the actions above the bottom border tab strip when one exists.
-	const hasBottomBorder = useMemo(
-		() =>
-			model
-				.toJson()
-				.borders?.some((border) => border.location === "bottom") ??
-			false,
-		[model],
-	);
+	// set the initial layout
+	useLayoutEffect(() => {
+		setModel(layout);
+	}, [setModel, layout]);
 
-	const getComponent = (componentName: string) => {
-		if (componentName === WORKBENCH_COMPONENTS.CHAT) {
-			return {
-				tab: () => <MessageSquareIcon className="size-4" />,
-				panel: (node: FlexLayout.TabNode) => (
-					<WorkbenchChatPanel
-						{...(node.getConfig() as WorkbenchChatConfig)}
-					/>
-				),
-			};
-		}
+	if (!model) {
+		return (
+			<div className="absolute inset-0 flex items-center justify-center">
+				<Spinner />
+			</div>
+		);
+	}
 
-		return components[componentName];
-	};
+	const hasBottomBorder = model
+		.getBorderSet()
+		.getBorders()
+		.some((border) => border.getLocation().getName() === "bottom");
 
 	return (
-		<div ref={containerRef} className="absolute inset-0 overflow-hidden">
-			<div className="flexlayout__theme_smss relative h-full w-full overflow-hidden">
-				<FlexLayout.Layout
-					ref={layoutRef}
-					model={model}
-					onRenderTab={(node, renderValues) => {
-						const componentName = node.getComponent();
-						if (!componentName) {
-							return null;
-						}
-
-						if (!layoutRef.current) {
-							return null;
-						}
-
-						const component = getComponent(componentName);
-						if (component) {
-							renderValues.leading = component.tab(
-								node,
-								layoutRef.current,
-							);
-						}
-					}}
-					factory={(node) => {
-						const componentName = node.getComponent();
-						if (!componentName) {
-							return null;
-						}
-
-						const component = getComponent(componentName);
-						if (!component) {
-							return null;
-						}
-
-						if (!layoutRef.current) {
-							return null;
-						}
-
-						return component.panel(node, layoutRef.current);
-					}}
-					icons={{
-						close: <XIcon className="size-4" />,
-					}}
-				/>
-				{actions ? (
-					<div
-						className={cn(
-							"absolute left-2 z-10",
-							hasBottomBorder ? "bottom-14" : "bottom-2",
-						)}
-					>
-						{actions}
+		<>
+			<WorkbenchCommandPalette />
+			<div
+				ref={containerRef}
+				className="absolute inset-0 overflow-hidden"
+			>
+				{isLoading ? (
+					<div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-black/50">
+						<Spinner />
 					</div>
 				) : null}
+				<div className="flexlayout__theme_smss relative h-full w-full overflow-hidden">
+					<FlexLayout.Layout
+						ref={layoutRef}
+						model={model}
+						onModelChange={onModelChange}
+						onRenderTab={(node, renderValues) => {
+							const componentName = node.getComponent();
+							if (!componentName || !layoutRef.current) {
+								return;
+							}
+
+							const component = components[componentName];
+							if (component) {
+								renderValues.leading = component.tab(
+									node,
+									layoutRef.current,
+								);
+							}
+						}}
+						factory={(node) => {
+							const componentName = node.getComponent();
+							if (!componentName || !layoutRef.current) {
+								return;
+							}
+
+							const component = components[componentName];
+							if (component) {
+								return (
+									<div className="h-full w-full">
+										{component.view(
+											node,
+											layoutRef.current,
+										)}
+									</div>
+								);
+							}
+
+							return null;
+						}}
+						icons={{
+							close: <XIcon className="size-4" />,
+						}}
+					/>
+					{actions ? (
+						<div
+							className={cn(
+								"absolute left-2 z-10",
+								hasBottomBorder ? "bottom-14" : "bottom-2",
+							)}
+						>
+							{actions}
+						</div>
+					) : null}
+				</div>
 			</div>
-		</div>
+		</>
 	);
 };
