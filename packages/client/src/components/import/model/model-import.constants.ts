@@ -243,6 +243,8 @@ export interface RouterRouteFormValue {
 	/** Comma-separated in the editor; split into an array on serialize. */
 	keywords: string;
 	weight: number;
+	/** What the LLM classifier reads; required in llm mode. */
+	description: string;
 }
 
 export interface RouterEngineRefFormValue {
@@ -272,6 +274,7 @@ export const createRouterRoute = (): RouterRouteFormValue => ({
 	engine_id: "",
 	keywords: "",
 	weight: 0,
+	description: "",
 });
 
 export const createRouterEngineRef = (): RouterEngineRefFormValue => ({
@@ -359,7 +362,7 @@ export const IMPORTABLE_MODELS = {
 			General:
 				"Create a single catalog entry that routes each request to one of your existing model engines.",
 			Settings:
-				"Define the routing rules as JSON - mode, routes, fallbacks. The configuration is saved as router.json in the engine's assets folder.",
+				"Choose how requests are routed - keyword, LLM classifier, or weighted - and pick which engines serve, classify, and back up each route. Saved as router.json in the engine's assets folder.",
 			Credentials:
 				"No credentials needed - the router delegates to model engines that are already configured.",
 		},
@@ -2524,7 +2527,7 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 		{
 			name: "model-router",
 			display: "Model Router",
-			icon: "/src/assets/img/SEMOSS_BLUE_LOGO.svg",
+			icon: "/src/assets/img/model_routing.svg",
 			modelBrand: "SEMOSS",
 			embedding: false,
 			skipCatalogMetadata: true,

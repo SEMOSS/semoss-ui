@@ -13,6 +13,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Switch,
+	Textarea,
 } from "@semoss/ui/next";
 import {
 	createDefaultRouterConfigValue,
@@ -46,7 +47,7 @@ const ROUTING_MODES: Array<{
 		value: "llm",
 		label: "LLM Classifier",
 		description:
-			"A classifier model picks the best route by name and falls back to keyword matching when classification fails.",
+			"A classifier model reads each route's description to pick the best route, falling back to keyword matching when classification fails.",
 	},
 	{
 		value: "weighted",
@@ -71,6 +72,7 @@ const normalizeRoute = (route: unknown): RouterRouteFormValue => {
 			typeof r.weight === "number" && Number.isFinite(r.weight)
 				? r.weight
 				: 0,
+		description: typeof r.description === "string" ? r.description : "",
 	};
 };
 
@@ -127,12 +129,92 @@ export const validateRouterConfig = (raw: unknown): true | string => {
 		return "LLM Classifier mode needs a classifier engine.";
 	}
 	if (
+		value.mode === "llm" &&
+		value.routes.some((route) => !route.description.trim())
+	) {
+		return "LLM Classifier mode needs a 'when to use' description on every route.";
+	}
+	if (
 		value.mode === "weighted" &&
 		!value.routes.some((route) => route.weight > 0)
 	) {
 		return "Weighted mode needs at least one route with a weight above zero.";
 	}
 	return true;
+};
+
+/** Parse stored router.json content (string or object) into an editor value. */
+export const routerConfigFromJson = (raw: unknown): RouterConfigFormValue => {
+	let parsed: unknown = raw;
+	if (typeof raw === "string") {
+		try {
+			parsed = JSON.parse(raw);
+		} catch {
+			parsed = null;
+		}
+	}
+	if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+		return createDefaultRouterConfigValue();
+	}
+	const cfg = parsed as Record<string, unknown>;
+	const routes = Array.isArray(cfg.routes)
+		? cfg.routes.map((route) => {
+				const base = createRouterRoute();
+				if (!route || typeof route !== "object") {
+					return base;
+				}
+				const r = route as Record<string, unknown>;
+				return {
+					...base,
+					name: typeof r.name === "string" ? r.name : "",
+					engine_id:
+						typeof r.engine_id === "string" ? r.engine_id : "",
+					keywords: Array.isArray(r.keywords)
+						? r.keywords
+								.filter(
+									(keyword) => typeof keyword === "string",
+								)
+								.join(", ")
+						: "",
+					weight:
+						typeof r.weight === "number" &&
+						Number.isFinite(r.weight)
+							? r.weight
+							: 0,
+					description:
+						typeof r.description === "string" ? r.description : "",
+				};
+			})
+		: [];
+	return {
+		mode:
+			cfg.mode === "llm" || cfg.mode === "weighted"
+				? cfg.mode
+				: "keyword",
+		sticky: typeof cfg.sticky === "boolean" ? cfg.sticky : true,
+		default_route:
+			typeof cfg.default_route === "string" ? cfg.default_route : "",
+		classifier_engine:
+			typeof cfg.classifier_engine === "string"
+				? cfg.classifier_engine
+				: "",
+		embeddings_engine:
+			typeof cfg.embeddings_engine === "string"
+				? cfg.embeddings_engine
+				: "",
+		fallbacks: Array.isArray(cfg.fallbacks)
+			? cfg.fallbacks
+					.filter(
+						(engineId) =>
+							typeof engineId === "string" && engineId !== "",
+					)
+					.map((engineId) => ({
+						...createRouterEngineRef(),
+						engine_id: engineId as string,
+					}))
+			: [],
+		routes: routes.length > 0 ? routes : [createRouterRoute()],
+	};
 };
 
 /** Serialize the editor value to the minified router.json contract. */
@@ -150,6 +232,10 @@ export const routerConfigToJson = (raw: unknown): string => {
 				name: route.name.trim() || `route_${index}`,
 				engine_id: route.engine_id,
 			};
+			const description = route.description.trim();
+			if (description) {
+				entry.description = description;
+			}
 			if (keywords.length > 0) {
 				entry.keywords = keywords;
 			}
@@ -182,6 +268,11 @@ export interface RouterConfigFieldProps {
 	onChange: (next: RouterConfigFormValue) => void;
 	disabled?: boolean;
 	testId?: string;
+	/**
+	 * Engine id to leave out of the engine dropdowns - the settings page
+	 * passes the router's own id, since a router cannot route to itself.
+	 */
+	excludeEngineId?: string;
 }
 
 /**
@@ -194,6 +285,7 @@ export const RouterConfigField = ({
 	onChange,
 	disabled,
 	testId,
+	excludeEngineId,
 }: RouterConfigFieldProps) => {
 	const baseId = useId();
 	const config = normalizeRouterConfigValue(value);
@@ -201,7 +293,9 @@ export const RouterConfigField = ({
 	const engines = usePixel<EngineOption[]>(
 		`MyEngines(engineTypes=["MODEL"]);`,
 	);
-	const engineOptions = engines.data ?? [];
+	const engineOptions = (engines.data ?? []).filter(
+		(engine) => engine.engine_id !== excludeEngineId,
+	);
 	const enginesLoading = engines.status === "LOADING";
 
 	const update = (partial: Partial<RouterConfigFormValue>) =>
@@ -340,10 +434,27 @@ export const RouterConfigField = ({
 								"Select the model engine for this route",
 								false,
 							)}
+							{config.mode === "llm" && (
+								<Textarea
+									id={`${baseId}-route-${index}-description`}
+									placeholder="When to use this route (required) - e.g. Programming questions: debugging, writing and reviewing code"
+									value={route.description}
+									onChange={(event) =>
+										updateRoute(route.id, {
+											description: event.target.value,
+										})
+									}
+									disabled={disabled}
+								/>
+							)}
 							{config.mode !== "weighted" && (
 								<Input
 									id={`${baseId}-route-${index}-keywords`}
-									placeholder="Keywords, comma separated (e.g. java, python, debug)"
+									placeholder={
+										config.mode === "llm"
+											? "Fallback keywords, comma separated (optional)"
+											: "Keywords, comma separated (e.g. java, python, debug)"
+									}
 									value={route.keywords}
 									onChange={(event) =>
 										updateRoute(route.id, {

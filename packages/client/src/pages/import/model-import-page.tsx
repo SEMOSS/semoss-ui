@@ -74,6 +74,7 @@ const MODEL_PROVIDER_SUBTYPE_BY_NAME: Record<string, string> = {
 	"Self Hosted": "HUGGINGFACE",
 	Perplexity: "PERPLEXITY",
 	Embedded: "BRAIN",
+	"Model Router": "MODEL_ROUTER",
 };
 
 /**
