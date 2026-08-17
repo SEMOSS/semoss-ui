@@ -309,6 +309,13 @@ export const MainLayout = observer(() => {
 												fetchpriority="high"
 												style={{
 													opacity: isActive ? 1 : 0,
+													// visibility:hidden removes the iframe from
+													// the browser touch hit-test pipeline on
+													// mobile (opacity:0 alone does not), so
+													// inactive iframes no longer intercept swipe
+													visibility: isActive
+														? "visible"
+														: "hidden",
 													pointerEvents: isActive
 														? "auto"
 														: "none",
