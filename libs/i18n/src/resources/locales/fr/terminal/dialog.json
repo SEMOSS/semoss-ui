@@ -2,6 +2,7 @@
 	"help": {
 		"title": "Aide du Terminal",
 		"emptyMessage": "Aucun exemple d'utilisation structuré n'a été renvoyé pour {{type}}.",
+		"pendingMessage": "Les exemples d'utilisation pour les moteurs {{type}} ne sont pas encore documentés.",
 		"rawResponse": "Réponse brute",
 		"copy": "Copier",
 		"copied": "Copié",
