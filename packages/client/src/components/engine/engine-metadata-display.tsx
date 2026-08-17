@@ -85,6 +85,10 @@ export type ModelMetadata = {
 	supportedParameters?: string[] | null;
 	reasoningConfig?: Record<string, unknown> | null;
 	benchmarks?: Record<string, unknown>[] | null;
+	inputTokenCredit?: number | null;
+	outputTokenCredit?: number | null;
+	cacheReadMultiplier?: number | null;
+	cacheWriteMultiplier?: number | null;
 };
 
 /**
@@ -921,9 +925,10 @@ const BENCHMARK_PREVIEW_COUNT = 5;
  */
 const OverviewCard = ({
 	title,
+	className,
 	children,
-}: React.PropsWithChildren<{ title: string }>) => (
-	<Card className="min-w-72 flex-1 gap-4 py-5">
+}: React.PropsWithChildren<{ title: string; className?: string }>) => (
+	<Card className={cn("min-w-72 flex-1 gap-4 py-5", className)}>
 		<CardHeader className="px-5">
 			<CardTitle>{title}</CardTitle>
 		</CardHeader>
@@ -1169,6 +1174,82 @@ const BenchmarksCard = ({ benchmarks }: { benchmarks: ModelBenchmark[] }) => {
 	);
 };
 
+/** Format a credit rate for display: null → null, otherwise trim to 6 sig figs. */
+const formatCreditRate = (value: number | null | undefined): string | null => {
+	if (value == null) return null;
+	if (value === 0) return "0";
+	const per1m = value * 1_000_000;
+	return per1m % 1 === 0
+		? per1m.toLocaleString()
+		: parseFloat(per1m.toPrecision(6)).toLocaleString();
+};
+
+/** A single rate row: label left, value right. */
+const RateRow = ({ label, value }: { label: string; value: string }) => (
+	<div className="flex items-baseline justify-between gap-4">
+		<span className="text-muted-foreground text-sm">{label}</span>
+		<span className="font-mono text-sm tabular-nums">
+			{value}{" "}
+			<span className="text-muted-foreground text-xs">/ 1M tokens</span>
+		</span>
+	</div>
+);
+
+/** Credit multipliers stored on the model — how many credits each token type costs. */
+const CREDIT_RATES_CARD_CLASS = "flex-none max-w-sm";
+
+const CreditRatesCard = ({
+	inputTokenCredit,
+	outputTokenCredit,
+	cacheReadMultiplier,
+	cacheWriteMultiplier,
+}: {
+	inputTokenCredit: number | null | undefined;
+	outputTokenCredit: number | null | undefined;
+	cacheReadMultiplier: number | null | undefined;
+	cacheWriteMultiplier: number | null | undefined;
+}) => {
+	const inputRate = formatCreditRate(inputTokenCredit);
+	const outputRate = formatCreditRate(outputTokenCredit);
+	const cacheReadRate = formatCreditRate(
+		inputTokenCredit != null && cacheReadMultiplier != null
+			? inputTokenCredit * cacheReadMultiplier
+			: null,
+	);
+	const cacheWriteRate = formatCreditRate(
+		inputTokenCredit != null && cacheWriteMultiplier != null
+			? inputTokenCredit * cacheWriteMultiplier
+			: null,
+	);
+
+	if (!inputRate && !outputRate) return null;
+
+	return (
+		<OverviewCard title="Credit rates" className={CREDIT_RATES_CARD_CLASS}>
+			<div className="flex flex-col gap-4">
+				<p className="text-muted-foreground text-xs">
+					Credits track usage across models with different costs or
+					capabilities. Rates are configured by system administrators.
+				</p>
+				<div className="flex flex-col gap-2.5">
+					{inputRate && (
+						<RateRow label="Input tokens" value={inputRate} />
+					)}
+					{outputRate && (
+						<RateRow label="Output tokens" value={outputRate} />
+					)}
+					{cacheReadRate && (
+						<RateRow label="Cache read" value={cacheReadRate} />
+					)}
+					{cacheWriteRate && (
+						<RateRow label="Cache write" value={cacheWriteRate} />
+					)}
+				</div>
+			</div>
+		</OverviewCard>
+	);
+};
+
 /**
  * The overview's card row. Every card - and every field inside a card - is
  * omitted when the provider did not report it, so a sparse model renders a
@@ -1198,28 +1279,49 @@ export const ModelOverviewCards = ({
 		releaseDate !== "" ||
 		knowledgeCutoff !== "";
 
-	if (!hasSpecification && !hasLimits && benchmarks.length === 0) {
+	const hasCreditRates =
+		metadata?.inputTokenCredit != null ||
+		metadata?.outputTokenCredit != null;
+
+	if (
+		!hasSpecification &&
+		!hasLimits &&
+		benchmarks.length === 0 &&
+		!hasCreditRates
+	) {
 		return null;
 	}
 
 	return (
-		<div className="flex flex-wrap items-start gap-4">
-			{hasSpecification && (
-				<SpecificationCard
-					values={values}
-					capabilityFlags={capabilityFlags}
-				/>
+		<div className="flex flex-col gap-4">
+			{(hasSpecification || hasLimits || benchmarks.length > 0) && (
+				<div className="flex flex-wrap items-start gap-4">
+					{hasSpecification && (
+						<SpecificationCard
+							values={values}
+							capabilityFlags={capabilityFlags}
+						/>
+					)}
+					{hasLimits && (
+						<LimitsCard
+							contextWindow={values.contextWindow}
+							maxOutputTokens={values.maxOutputTokens}
+							releaseDate={releaseDate}
+							knowledgeCutoff={knowledgeCutoff}
+						/>
+					)}
+					{benchmarks.length > 0 && (
+						<BenchmarksCard benchmarks={benchmarks} />
+					)}
+				</div>
 			)}
-			{hasLimits && (
-				<LimitsCard
-					contextWindow={values.contextWindow}
-					maxOutputTokens={values.maxOutputTokens}
-					releaseDate={releaseDate}
-					knowledgeCutoff={knowledgeCutoff}
+			{hasCreditRates && (
+				<CreditRatesCard
+					inputTokenCredit={metadata?.inputTokenCredit}
+					outputTokenCredit={metadata?.outputTokenCredit}
+					cacheReadMultiplier={metadata?.cacheReadMultiplier}
+					cacheWriteMultiplier={metadata?.cacheWriteMultiplier}
 				/>
-			)}
-			{benchmarks.length > 0 && (
-				<BenchmarksCard benchmarks={benchmarks} />
 			)}
 		</div>
 	);
