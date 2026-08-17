@@ -7,6 +7,11 @@ import {
 } from "lucide-react";
 import { useEffect } from "react";
 import { type FlexLayout, getFileIconComponent } from "@semoss/shared";
+import {
+	WORKBENCH_COMPONENTS,
+	Workbench,
+	WorkbenchCommandMenuButton,
+} from "@/components/workbench";
 import { useDatabaseWorkbench, useEngine, useWorkbench } from "@/hooks";
 import { useWorkbenchChatConfig } from "@/hooks/use-workbench-chat-config";
 import type { WorkbenchPanelConfig } from "@/stores/workbench";
@@ -18,8 +23,6 @@ import {
 	EngineSettingsPanel,
 	EngineSettingsToggle,
 } from "../engine";
-import { Workbench } from "../workbench";
-import { WORKBENCH_COMPONENTS } from "../workbench.constants";
 import { DatabaseColumnsPanel } from "./database-columns-panel";
 import { DatabaseNewQueryButton } from "./database-new-query-button";
 import { DatabaseQueryPanel } from "./database-query-panel";
@@ -317,10 +320,11 @@ export const DatabaseWorkbench: React.FC = () => {
 			layout={DATABASE_WORKBENCH_LAYOUT}
 			components={components}
 			actions={
-				<div className="flex flex-col gap-1">
+				<>
 					<DatabaseNewQueryButton />
+					<WorkbenchCommandMenuButton />
 					<EngineSettingsToggle />
-				</div>
+				</>
 			}
 		/>
 	);

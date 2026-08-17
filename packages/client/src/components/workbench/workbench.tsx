@@ -1,9 +1,10 @@
 import { XIcon } from "lucide-react";
 import { type FC, type ReactNode, useLayoutEffect, useRef } from "react";
 import { FlexLayout } from "@semoss/shared";
-import { cn, Spinner } from "@semoss/ui/next";
+import { Spinner } from "@semoss/ui/next";
 import { useTabBarScroll, useWorkbench } from "@/hooks";
 import type { WorkbenchPanelConfig } from "@/stores";
+import { WorkbenchActions } from "./workbench-actions";
 import { WorkbenchCommandPalette } from "./workbench-command-palette";
 
 export interface WorkbenchProps {
@@ -45,11 +46,6 @@ export const Workbench: FC<WorkbenchProps> = ({
 			</div>
 		);
 	}
-
-	const hasBottomBorder = model
-		.getBorderSet()
-		.getBorders()
-		.some((border) => border.getLocation().getName() === "bottom");
 
 	return (
 		<>
@@ -106,16 +102,7 @@ export const Workbench: FC<WorkbenchProps> = ({
 							close: <XIcon className="size-4" />,
 						}}
 					/>
-					{actions ? (
-						<div
-							className={cn(
-								"absolute left-2 z-10",
-								hasBottomBorder ? "bottom-14" : "bottom-2",
-							)}
-						>
-							{actions}
-						</div>
-					) : null}
+					<WorkbenchActions actions={actions} />
 				</div>
 			</div>
 		</>

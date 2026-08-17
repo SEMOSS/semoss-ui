@@ -1,6 +1,11 @@
 import { FolderTreeIcon, SettingsIcon } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { type FlexLayout, getFileIconComponent } from "@semoss/shared";
+import {
+	WORKBENCH_COMPONENTS,
+	Workbench,
+	WorkbenchCommandMenuButton,
+} from "@/components/workbench";
 import { useEngine, useWorkbench } from "@/hooks";
 import { useWorkbenchChatConfig } from "@/hooks/use-workbench-chat-config";
 import type { WorkbenchPanelConfig } from "@/stores";
@@ -12,8 +17,6 @@ import {
 	EngineSettingsPanel,
 	EngineSettingsToggle,
 } from "../engine";
-import { Workbench } from "../workbench";
-import { WORKBENCH_COMPONENTS } from "../workbench.constants";
 
 /**
  * Guardrail workbench that exposes the engine's files through the shared file
@@ -206,7 +209,12 @@ export const GuardrailWorkbench: React.FC = () => {
 		<Workbench
 			layout={layout}
 			components={components}
-			actions={<EngineSettingsToggle />}
+			actions={
+				<>
+					<WorkbenchCommandMenuButton />
+					<EngineSettingsToggle />
+				</>
+			}
 		/>
 	);
 };

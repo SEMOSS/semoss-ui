@@ -9,6 +9,9 @@ export interface WorkbenchLayoutSliceState {
 	/** Mutable FlexLayout model owned by this workbench. */
 	model: FlexLayout.Model;
 
+	/** Revision incremented after every change to the mutable FlexLayout model. */
+	key: number;
+
 	/** Current active panel */
 	activePanel: string;
 
@@ -104,26 +107,27 @@ export const createWorkbenchLayoutSlice = (
 				children: [],
 			},
 		}),
+		key: 0,
 		activePanel: "",
 		setModel: (layout) => {
-			set(() => ({
+			set((state) => ({
 				model: FlexLayout.Model.fromJson(layout),
+				key: state.key + 1,
 			}));
 		},
 		onModelChange: (model, action) => {
 			// Find the currently active tabset or check specific nodes
 			const activeTabset = model.getActiveTabset();
-			if (activeTabset) {
-				const selectedIndex = activeTabset.getSelected();
-				const children = activeTabset.getChildren();
-				const activeNode = children[selectedIndex];
+			const selectedIndex = activeTabset?.getSelected();
+			const activeNode =
+				selectedIndex === undefined
+					? undefined
+					: activeTabset?.getChildren()[selectedIndex];
 
-				if (activeNode) {
-					set(() => ({
-						activePanel: activeNode.getId(),
-					}));
-				}
-			}
+			set((state) => ({
+				key: state.key + 1,
+				activePanel: activeNode?.getId() ?? "",
+			}));
 
 			// trigger the listeners
 			for (const listener of listeners) {

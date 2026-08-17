@@ -15,16 +15,16 @@ export const WorkbenchCommandMenuButton = () => {
 		<Tooltip>
 			<TooltipTrigger asChild>
 				<Button
-					aria-label="Open command menu"
 					variant="ghost"
-					size="icon"
-					className="text-muted-foreground"
+					size="icon-sm"
+					aria-label="Open command menu"
 					onClick={() => setCommandOpen(true)}
+					className="border border-transparent text-muted-foreground"
 				>
 					<CommandIcon />
 				</Button>
 			</TooltipTrigger>
-			<TooltipContent>Commands</TooltipContent>
+			<TooltipContent side="right">Commands</TooltipContent>
 		</Tooltip>
 	);
 };

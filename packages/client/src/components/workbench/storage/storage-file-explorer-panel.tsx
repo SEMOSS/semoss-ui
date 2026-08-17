@@ -11,11 +11,7 @@ import {
 	notifyFileEditorPathMoved,
 } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
-import {
-	useEngine,
-	useWorkbench,
-	useWorkbenchFileExplorerRevision,
-} from "@/hooks";
+import { useEngine, useWorkbench } from "@/hooks";
 import { WORKBENCH_COMPONENTS } from "../workbench.constants";
 
 interface StorageFileExplorerPanelProps {
@@ -30,16 +26,9 @@ export const StorageFileExplorerPanel: React.FC<
 	const readOnly = !(permission === "OWNER" || permission === "EDIT");
 	const insight = useInsight();
 	const [searchParams, setSearchParams] = useSearchParams();
-	const updateTabConfig = useWorkbench((state) => state.updateTabConfig);
-	const renamePanel = useWorkbench((state) => state.renamePanel);
-	const closeFile = useWorkbench((state) => state.closeFile);
-	const openFile = useWorkbench((state) => state.openFile);
-	const refreshFileExplorer = useWorkbench(
-		(state) => state.refreshFileExplorer,
-	);
-	const refreshKey = useWorkbenchFileExplorerRevision(
-		WORKBENCH_COMPONENTS.STORAGE_EXPLORER,
-	);
+	const openPanel = useWorkbench((state) => state.openPanel);
+	const closePanel = useWorkbench((state) => state.closePanel);
+	const updatePanel = useWorkbench((state) => state.updatePanel);
 
 	const getMovedPath = (path: string, movedItem: FileExplorerMovedItem) => {
 		const oldPathWithSlash = movedItem.oldPath.endsWith("/")
@@ -90,12 +79,14 @@ export const StorageFileExplorerPanel: React.FC<
 		const tabName = tabNode.getName();
 		const displayName = tabName.endsWith("*") ? `${newName}*` : newName;
 
-		updateTabConfig(tabNode.getId(), {
-			...config,
-			name: newName,
-			path: newPath,
+		updatePanel(tabNode.getId(), {
+			name: displayName,
+			config: {
+				...config,
+				name: newName,
+				path: newPath,
+			},
 		});
-		renamePanel(tabNode.getId(), displayName);
 
 		if (oldPath) {
 			notifyFileEditorPathMoved(oldPath, newPath, scope);
@@ -143,12 +134,33 @@ export const StorageFileExplorerPanel: React.FC<
 	 */
 	const removeDeletedTabs = useCallback(
 		(deletedPath: string, isDirectory: boolean) => {
-			closeFile({
-				path: deletedPath,
-				directory: isDirectory,
+			const model = node.getModel();
+			const directoryPath = deletedPath.endsWith("/")
+				? deletedPath
+				: `${deletedPath}/`;
+
+			model.visitNodes((currentNode) => {
+				if (!(currentNode instanceof FlexLayout.TabNode)) {
+					return;
+				}
+
+				const config = currentNode.getConfig() as
+					| { path?: string }
+					| undefined;
+				const tabPath = config?.path;
+				if (!tabPath) {
+					return;
+				}
+
+				if (
+					tabPath === deletedPath ||
+					(isDirectory && tabPath.startsWith(directoryPath))
+				) {
+					closePanel(currentNode.getId());
+				}
 			});
 		},
-		[closeFile],
+		[node, closePanel],
 	);
 
 	/**
@@ -160,14 +172,9 @@ export const StorageFileExplorerPanel: React.FC<
 
 	const addNode = useCallback(
 		(nodeId: string, options: FlexLayout.IJsonTabNode) => {
-			openFile({
-				file: {
-					...options,
-					id: nodeId,
-				},
-			});
+			openPanel(nodeId, options);
 		},
-		[openFile],
+		[openPanel],
 	);
 
 	useEffect(() => {
@@ -185,15 +192,13 @@ export const StorageFileExplorerPanel: React.FC<
 				enableClose: true,
 			});
 			toast.success("MCP generated");
-			refreshFileExplorer(WORKBENCH_COMPONENTS.STORAGE_EXPLORER);
 			searchParams.delete("mcp");
 			setSearchParams(searchParams);
 		}
-	}, [searchParams, addNode, refreshFileExplorer, setSearchParams]);
+	}, [searchParams, addNode, setSearchParams]);
 
 	return (
 		<FileExplorer
-			key={refreshKey}
 			readOnly={readOnly}
 			mode={{
 				type: "STORAGE",

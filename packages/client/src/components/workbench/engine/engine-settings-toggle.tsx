@@ -21,9 +21,9 @@ export const EngineSettingsToggle: React.FC = () => {
 	const closePanel = useWorkbench((state) => state.closePanel);
 	const openPanel = useWorkbench((state) => state.openPanel);
 	const model = useWorkbench((state) => state.model);
+	const activePanel = useWorkbench((state) => state.activePanel);
 	const settingsId = WORKBENCH_COMPONENTS.ENGINE_SETTINGS;
 	const settingsNode = model.getNodeById(settingsId);
-	const isSettingsOpen = settingsNode instanceof FlexLayout.TabNode;
 
 	return (
 		<Tooltip>
@@ -63,7 +63,7 @@ export const EngineSettingsToggle: React.FC = () => {
 					}}
 					className={cn(
 						"border",
-						isSettingsOpen
+						activePanel === settingsId
 							? "border-input text-primary shadow-xs dark:bg-input/30"
 							: "border-transparent text-muted-foreground",
 					)}

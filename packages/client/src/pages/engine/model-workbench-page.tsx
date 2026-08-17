@@ -9,11 +9,8 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 } from "@semoss/ui/next";
-import { NavbarHeader, NavbarLeft, NavbarRight } from "@/components/shared";
-import {
-	ModelWorkbench,
-	WorkbenchCommandMenuButton,
-} from "@/components/workbench";
+import { NavbarHeader, NavbarLeft } from "@/components/shared";
+import { ModelWorkbench } from "@/components/workbench";
 import { WorkbenchProvider } from "@/contexts";
 import { useEngine } from "@/hooks";
 
@@ -60,9 +57,6 @@ export const ModelWorkbenchPage = () => {
 						</BreadcrumbList>
 					</Breadcrumb>
 				</NavbarLeft>
-				<NavbarRight>
-					<WorkbenchCommandMenuButton />
-				</NavbarRight>
 				<ModelWorkbench />
 			</WorkbenchProvider>
 		</InsightProvider>

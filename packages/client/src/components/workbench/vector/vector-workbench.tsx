@@ -6,6 +6,11 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { type FlexLayout, getFileIconComponent } from "@semoss/shared";
+import {
+	WORKBENCH_COMPONENTS,
+	Workbench,
+	WorkbenchCommandMenuButton,
+} from "@/components/workbench";
 import { useEngine, useWorkbench } from "@/hooks";
 import { useWorkbenchChatConfig } from "@/hooks/use-workbench-chat-config";
 import type { WorkbenchPanelConfig } from "@/stores/workbench";
@@ -17,8 +22,6 @@ import {
 	EngineSettingsPanel,
 	EngineSettingsToggle,
 } from "../engine";
-import { Workbench } from "../workbench";
-import { WORKBENCH_COMPONENTS } from "../workbench.constants";
 import { VectorChatPanel } from "./vector-chat-panel";
 import { VectorDocumentsPanel } from "./vector-documents-panel";
 
@@ -275,7 +278,12 @@ export const VectorWorkbench: React.FC = () => {
 		<Workbench
 			layout={layout}
 			components={components}
-			actions={<EngineSettingsToggle />}
+			actions={
+				<>
+					<WorkbenchCommandMenuButton />
+					<EngineSettingsToggle />
+				</>
+			}
 		/>
 	);
 };
