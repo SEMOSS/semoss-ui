@@ -40,6 +40,11 @@ import { formatToDataTestId } from "@/utility";
 import type { CatalogMatchState } from "./model-catalog-match";
 import { ModelCatalogMatch } from "./model-catalog-match";
 import type { CategoryTexts, FieldDefinition } from "./model-import.constants";
+import {
+	RouterConfigField,
+	routerConfigToJson,
+	validateRouterConfig,
+} from "./router-config-field";
 
 interface ModelImportFormProps {
 	/**
@@ -287,6 +292,35 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 	const onSubmit = async (data: Record<string, unknown>) => {
 		const { FILE, ...newFormData } = data;
 
+		// The backend writes the router config onto a single SMSS line, so it must
+		// be valid JSON and cannot contain raw newlines - validate and minify here.
+		// The router-config editor holds a structured object; a plain string is
+		// still accepted for safety.
+		if (typeof newFormData.ROUTER_CONFIG_JSON === "string") {
+			try {
+				newFormData.ROUTER_CONFIG_JSON = JSON.stringify(
+					JSON.parse(newFormData.ROUTER_CONFIG_JSON),
+				);
+			} catch {
+				toast.error("Routing Configuration must be valid JSON.");
+				return;
+			}
+		} else if (
+			newFormData.ROUTER_CONFIG_JSON !== undefined &&
+			newFormData.ROUTER_CONFIG_JSON !== null
+		) {
+			const validation = validateRouterConfig(
+				newFormData.ROUTER_CONFIG_JSON,
+			);
+			if (validation !== true) {
+				toast.error(validation);
+				return;
+			}
+			newFormData.ROUTER_CONFIG_JSON = routerConfigToJson(
+				newFormData.ROUTER_CONFIG_JSON,
+			);
+		}
+
 		setIsLoading(true);
 		let pixel = `CreateModelEngine(model=["${
 			newFormData.NAME
@@ -514,6 +548,12 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 								validate: (value: unknown) =>
 									hasSelectedMultiselectValue(value) ||
 									`Select at least one ${f.label.toLowerCase()}.`,
+							}
+						: {}),
+					...(f.type === "router-config"
+						? {
+								validate: (value: unknown) =>
+									validateRouterConfig(value),
 							}
 						: {}),
 				}}
@@ -970,6 +1010,34 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 								</Field>
 							);
 						}
+						case "router-config":
+							return (
+								<Field data-testid={fieldWrapperTestId}>
+									<FieldLabel htmlFor={f.key}>
+										{f.label}
+										{f.required && (
+											<span className="text-destructive">
+												*
+											</span>
+										)}
+									</FieldLabel>
+									<RouterConfigField
+										value={field.value}
+										onChange={(next) =>
+											field.onChange(next)
+										}
+										disabled={f.disabled}
+										testId={fieldInputTestId}
+									/>
+									{(error || f.helperText) && (
+										<FieldDescription
+											data-testid={fieldErrorTestId}
+										>
+											{getHelperText(error, f)}
+										</FieldDescription>
+									)}
+								</Field>
+							);
 						case "select":
 							return (
 								<Field data-testid={fieldWrapperTestId}>
