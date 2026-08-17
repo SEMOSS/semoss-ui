@@ -11,7 +11,8 @@ type FieldType =
 	| "multiselect"
 	| "textarea"
 	| "file-upload"
-	| "builtin-tools";
+	| "builtin-tools"
+	| "router-config";
 
 type categoryType = "General" | "Credentials" | "Settings";
 
@@ -43,7 +44,7 @@ export interface FieldDefinition {
 	warningOptions?: string[];
 	optionLabels?: Record<string, string>;
 	disabled?: boolean;
-	default?: string | string[] | number | boolean;
+	default?: string | string[] | number | boolean | RouterConfigFormValue;
 	rules?: FieldRules;
 	helperText?: string;
 }
@@ -103,6 +104,13 @@ interface ModelVersionDefinition {
 	disable?: boolean;
 	audio?: boolean;
 	image?: boolean;
+	/**
+	 * Meta-engines (e.g. the Model Router) only point at engines that already
+	 * exist, so the catalog metadata questions (model/serving provider,
+	 * capability, modalities, built-in tools) do not apply and are not added
+	 * to the import form.
+	 */
+	skipCatalogMetadata?: boolean;
 	formConfig?: ModelFormConfig;
 }
 
@@ -224,6 +232,66 @@ const OTHER_MODEL_FORM_CONFIG_BY_PROVIDER: Record<string, ModelFormConfig> = {
 	},
 };
 
+// Structured editor value for the Model Router's routing configuration. The
+// router-config field holds this object in form state; on submit it is
+// serialized to the minified JSON the backend writes to router.json. The `id`
+// fields only exist for stable React list keys and are never serialized.
+export interface RouterRouteFormValue {
+	id: string;
+	name: string;
+	engine_id: string;
+	/** Comma-separated in the editor; split into an array on serialize. */
+	keywords: string;
+	weight: number;
+	/** What the LLM classifier reads; required in llm mode. */
+	description: string;
+}
+
+export interface RouterEngineRefFormValue {
+	id: string;
+	engine_id: string;
+}
+
+export interface RouterConfigFormValue {
+	mode: "keyword" | "llm" | "weighted";
+	sticky: boolean;
+	default_route: string;
+	classifier_engine: string;
+	embeddings_engine: string;
+	fallbacks: RouterEngineRefFormValue[];
+	routes: RouterRouteFormValue[];
+}
+
+let routerFieldIdSeed = 0;
+const nextRouterFieldId = () => {
+	routerFieldIdSeed += 1;
+	return `router-field-${routerFieldIdSeed}`;
+};
+
+export const createRouterRoute = (): RouterRouteFormValue => ({
+	id: nextRouterFieldId(),
+	name: "",
+	engine_id: "",
+	keywords: "",
+	weight: 0,
+	description: "",
+});
+
+export const createRouterEngineRef = (): RouterEngineRefFormValue => ({
+	id: nextRouterFieldId(),
+	engine_id: "",
+});
+
+export const createDefaultRouterConfigValue = (): RouterConfigFormValue => ({
+	mode: "keyword",
+	sticky: true,
+	default_route: "",
+	classifier_engine: "",
+	embeddings_engine: "",
+	fallbacks: [],
+	routes: [createRouterRoute()],
+});
+
 export const IMPORTABLE_MODELS = {
 	categoryTexts: {
 		Anthropic: {
@@ -289,6 +357,14 @@ export const IMPORTABLE_MODELS = {
 				"Set your model, token limits, and init configuration for OpenAI-compatible Perplexity API usage.",
 			Credentials:
 				"Enter your Perplexity API key and verify the fixed endpoint for secure access to Perplexity models.",
+		},
+		"Model Router": {
+			General:
+				"Create a single catalog entry that routes each request to one of your existing model engines.",
+			Settings:
+				"Choose how requests are routed - keyword, LLM classifier, or weighted - and pick which engines serve, classify, and back up each route. Saved as router.json in the engine's assets folder.",
+			Credentials:
+				"No credentials needed - the router delegates to model engines that are already configured.",
 		},
 	},
 
@@ -2223,6 +2299,79 @@ export const IMPORTABLE_MODELS = {
 				},
 			],
 		},
+		{
+			name: "Model Router",
+			types: [
+				{
+					model_types: ["llm"],
+					fields: [
+						{
+							key: "NAME",
+							label: "Catalog Name",
+							type: "text",
+							required: true,
+							category: "General",
+						},
+						{
+							key: "DESCRIPTION",
+							label: "Description",
+							type: "textarea",
+							required: false,
+							category: "General",
+							helperText:
+								"Optional catalog description shown to users browsing this model.",
+						},
+						{
+							key: "MODEL_TYPE",
+							label: "Model Type",
+							type: "hidden",
+							disabled: true,
+							required: true,
+							default: "MODEL_ROUTER",
+							category: "General",
+						},
+						{
+							key: "MODEL",
+							label: "Model Name",
+							type: "hidden",
+							disabled: true,
+							required: true,
+							default: "model-router",
+							category: "General",
+						},
+						{
+							key: "ROUTER_CONFIG_JSON",
+							label: "Routing",
+							type: "router-config",
+							required: true,
+							default: createDefaultRouterConfigValue(),
+							helperText:
+								"Saved as router.json in the engine's assets folder.",
+							category: "Settings",
+						},
+						{
+							key: "KEEP_INPUT_OUTPUT",
+							label: "Record Questions and Responses",
+							type: "select",
+							options: ["true", "false"],
+							required: true,
+							default: "true",
+							category: "Settings",
+						},
+						{
+							key: "KEEP_CONVERSATION_HISTORY",
+							label: "Keep Conversation History",
+							type: "select",
+							options: ["true", "false"],
+							required: true,
+							default: "true",
+							category: "Settings",
+						},
+					],
+					advanced: [],
+				},
+			],
+		},
 	],
 };
 
@@ -2374,6 +2523,18 @@ const withModelTokenLimits = (
 	};
 };
 export const MODEL_VERSIONS: ModelVersionsByProvider = {
+	"Model Router": [
+		{
+			name: "model-router",
+			display: "Model Router",
+			icon: "/src/assets/img/model_routing.svg",
+			modelBrand: "SEMOSS",
+			embedding: false,
+			skipCatalogMetadata: true,
+			description:
+				"Route requests across your existing model engines by keyword, LLM classification, or weighted round-robin - with failover and sticky conversations.",
+		},
+	],
 	Anthropic: [
 		{
 			name: "claude-haiku-4-5-20251001",

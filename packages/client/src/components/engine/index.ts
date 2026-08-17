@@ -6,4 +6,5 @@ export * from "./engine-grid-item";
 export * from "./engine-metadata-display";
 export * from "./engine-model-settings";
 export * from "./engine-overview";
+export * from "./engine-router-settings";
 export * from "./engine-tags-settings";

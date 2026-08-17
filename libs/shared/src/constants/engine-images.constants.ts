@@ -43,6 +43,7 @@ export const ENGINE_IMAGES: Record<string, EngineImageEntry[]> = {
 		{ name: "GEMINI", icon: "GEMINI_COLOR.svg" },
 		{ name: "HUGGINGFACE", icon: "HUGGINGFACE_COLOR.svg" },
 		{ name: "META", icon: "META_COLOR.svg" },
+		{ name: "MODEL_ROUTER", icon: "model_routing.svg" },
 		{ name: "NEMO", icon: "NEMO.png" },
 		{ name: "OPEN_AI", icon: "OPEN_AI.svg" },
 		{ name: "PERPLEXITY", icon: "PERPLEXITY.svg" },
