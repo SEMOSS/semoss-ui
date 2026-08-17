@@ -1,6 +1,7 @@
 import { FolderTreeIcon, SettingsIcon } from "lucide-react";
 import { useMemo } from "react";
 import { FlexLayout, getFileIconComponent } from "@semoss/shared";
+import { useEngine } from "@/hooks";
 import {
 	EngineFileEditorPanel,
 	EngineFileExplorerPanel,
@@ -17,6 +18,7 @@ import { WORKBENCH_COMPONENTS } from "../workbench.contants";
  * page so its file operations share a single insight.
  */
 export const GuardrailWorkbench: React.FC = () => {
+	const { engine } = useEngine();
 	const model = useMemo(() => {
 		return FlexLayout.Model.fromJson({
 			global: {
@@ -41,6 +43,28 @@ export const GuardrailWorkbench: React.FC = () => {
 						},
 					],
 				},
+				{
+					type: "border",
+					location: "right",
+					size: 400,
+					minSize: 320,
+					selected: -1,
+					children: [
+						{
+							type: "tab",
+							id: WORKBENCH_COMPONENTS.CHAT,
+							name: "Chat",
+							component: WORKBENCH_COMPONENTS.CHAT,
+							helpText: "Chat",
+							enableClose: false,
+							enableRenderOnDemand: false,
+							config: {
+								systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user understand, test, and configure this guardrail. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
+								mcp: [],
+							},
+						},
+					],
+				},
 			],
 			layout: {
 				type: "row",
@@ -55,7 +79,7 @@ export const GuardrailWorkbench: React.FC = () => {
 				],
 			},
 		});
-	}, []);
+	}, [engine.engine_display_name, engine.engine_id, engine.engine_name]);
 
 	const components = {
 		[WORKBENCH_COMPONENTS.FILE_EXPLORER]: {

@@ -1,3 +1,4 @@
+export * from "./chat";
 export * from "./database";
 export * from "./engine";
 export * from "./function";

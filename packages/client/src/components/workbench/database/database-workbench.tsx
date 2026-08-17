@@ -149,6 +149,36 @@ export const DatabaseWorkbench: React.FC = observer(() => {
 						},
 					],
 				},
+				{
+					type: "border",
+					location: "right",
+					size: 400,
+					minSize: 320,
+					selected: -1,
+					children: [
+						{
+							type: "tab",
+							id: WORKBENCH_COMPONENTS.CHAT,
+							name: "Chat",
+							component: WORKBENCH_COMPONENTS.CHAT,
+							helpText: "Chat",
+							enableClose: false,
+							enableRenderOnDemand: false,
+							config: {
+								systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user understand and work with this database. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
+								mcp: [
+									{
+										type: "DATABASE",
+										id: engine.engine_id,
+										name:
+											engine.engine_display_name ||
+											engine.engine_name,
+									},
+								],
+							},
+						},
+					],
+				},
 			],
 			layout: {
 				type: "row",
@@ -173,7 +203,7 @@ export const DatabaseWorkbench: React.FC = observer(() => {
 				],
 			},
 		});
-	}, []);
+	}, [engine.engine_display_name, engine.engine_id, engine.engine_name]);
 
 	/**
 	 * Execute a query and display the results in the results panel.

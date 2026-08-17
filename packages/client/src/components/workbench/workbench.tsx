@@ -1,11 +1,13 @@
-import { XIcon } from "lucide-react";
-import { observer } from "mobx-react-lite";
+import { MessageSquareIcon, XIcon } from "lucide-react";
 import { useMemo, useRef } from "react";
 import { FlexLayout } from "@semoss/shared";
 import { cn } from "@semoss/ui/next";
 import { useTabBarScroll } from "@/hooks";
+import type { WorkbenchChatConfig } from "./chat";
+import { WorkbenchChatPanel } from "./chat";
+import { WORKBENCH_COMPONENTS } from "./workbench.contants";
 
-interface WorkbenchProps {
+export interface WorkbenchProps {
 	/** Model */
 	model: FlexLayout.Model;
 
@@ -28,83 +30,97 @@ interface WorkbenchProps {
 	actions?: React.ReactNode;
 }
 
-export const Workbench: React.FC<WorkbenchProps> = observer(
-	({ model, components, actions }) => {
-		const layoutRef = useRef<FlexLayout.Layout | null>(null);
-		const containerRef = useRef<HTMLDivElement | null>(null);
+export const Workbench: React.FC<WorkbenchProps> = ({
+	model,
+	components,
+	actions,
+}) => {
+	const layoutRef = useRef<FlexLayout.Layout | null>(null);
+	const containerRef = useRef<HTMLDivElement | null>(null);
 
-		useTabBarScroll(containerRef);
+	useTabBarScroll(containerRef);
 
-		// Offset the actions above the bottom border tab strip when one exists.
-		const hasBottomBorder = useMemo(
-			() =>
-				model
-					.toJson()
-					.borders?.some((border) => border.location === "bottom") ??
-				false,
-			[model],
-		);
+	// Offset the actions above the bottom border tab strip when one exists.
+	const hasBottomBorder = useMemo(
+		() =>
+			model
+				.toJson()
+				.borders?.some((border) => border.location === "bottom") ??
+			false,
+		[model],
+	);
 
-		return (
-			<div
-				ref={containerRef}
-				className="absolute inset-0 overflow-hidden"
-			>
-				<div className="flexlayout__theme_smss relative h-full w-full overflow-hidden">
-					<FlexLayout.Layout
-						ref={layoutRef}
-						model={model}
-						onRenderTab={(node, renderValues) => {
-							const componentName = node.getComponent();
-							if (!componentName) {
-								return null;
-							}
-
-							if (!layoutRef.current) {
-								return null;
-							}
-
-							const component = components[componentName];
-							if (component) {
-								renderValues.leading = component.tab(
-									node,
-									layoutRef.current,
-								);
-							}
-						}}
-						factory={(node) => {
-							const componentName = node.getComponent();
-							if (!componentName) {
-								return null;
-							}
-
-							const component = components[componentName];
-							if (!component) {
-								return null;
-							}
-
-							if (!layoutRef.current) {
-								return null;
-							}
-
-							return component.panel(node, layoutRef.current);
-						}}
-						icons={{
-							close: <XIcon className="size-4" />,
-						}}
+	const getComponent = (componentName: string) => {
+		if (componentName === WORKBENCH_COMPONENTS.CHAT) {
+			return {
+				tab: () => <MessageSquareIcon className="size-4" />,
+				panel: (node: FlexLayout.TabNode) => (
+					<WorkbenchChatPanel
+						{...(node.getConfig() as WorkbenchChatConfig)}
 					/>
-					{actions ? (
-						<div
-							className={cn(
-								"absolute left-2 z-10",
-								hasBottomBorder ? "bottom-14" : "bottom-2",
-							)}
-						>
-							{actions}
-						</div>
-					) : null}
-				</div>
+				),
+			};
+		}
+
+		return components[componentName];
+	};
+
+	return (
+		<div ref={containerRef} className="absolute inset-0 overflow-hidden">
+			<div className="flexlayout__theme_smss relative h-full w-full overflow-hidden">
+				<FlexLayout.Layout
+					ref={layoutRef}
+					model={model}
+					onRenderTab={(node, renderValues) => {
+						const componentName = node.getComponent();
+						if (!componentName) {
+							return null;
+						}
+
+						if (!layoutRef.current) {
+							return null;
+						}
+
+						const component = getComponent(componentName);
+						if (component) {
+							renderValues.leading = component.tab(
+								node,
+								layoutRef.current,
+							);
+						}
+					}}
+					factory={(node) => {
+						const componentName = node.getComponent();
+						if (!componentName) {
+							return null;
+						}
+
+						const component = getComponent(componentName);
+						if (!component) {
+							return null;
+						}
+
+						if (!layoutRef.current) {
+							return null;
+						}
+
+						return component.panel(node, layoutRef.current);
+					}}
+					icons={{
+						close: <XIcon className="size-4" />,
+					}}
+				/>
+				{actions ? (
+					<div
+						className={cn(
+							"absolute left-2 z-10",
+							hasBottomBorder ? "bottom-14" : "bottom-2",
+						)}
+					>
+						{actions}
+					</div>
+				) : null}
 			</div>
-		);
-	},
-);
+		</div>
+	);
+};
