@@ -1,14 +1,18 @@
 import { Check, Copy } from "lucide-react";
 import {
 	Children,
+	type ComponentProps,
+	createContext,
 	isValidElement,
 	type ReactNode,
+	useContext,
 	useEffect,
 	useState,
 } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import {
+	Code,
 	CodeContainer,
 	Dialog,
 	DialogContent,
@@ -35,6 +39,154 @@ type EngineType = (typeof ENGINE_TYPES)[number];
 
 type UsageEntry = { code?: string; label?: string; type?: string };
 type UsageMap = Record<string, UsageEntry>;
+
+/**
+ * Short tab titles per usage channel. The backend `label` is a full sentence
+ * ("How to use in JavaScript/TypeScript with the @semoss/sdk"), too long for a
+ * tab trigger, so it stays as the panel heading and these drive the trigger.
+ */
+const CHANNEL_TITLES: Record<string, string> = {
+	introduction: "Overview",
+	pixel: "Pixel",
+	javascript: "JavaScript",
+	python: "Python",
+	java: "Java",
+	langchain: "LangChain",
+	openai: "OpenAI",
+	anthropic: "Anthropic",
+	ollama: "Ollama",
+};
+
+/** Backend marker for a channel whose documentation has not been written yet. */
+const PENDING_CODE = "documentation pending";
+
+/**
+ * True while rendering inside a fenced block. react-markdown uses the same
+ * `code` element for inline spans and fenced blocks and (since v9) no longer
+ * passes an `inline` flag, so the `pre` renderer flags it for the `code` one.
+ */
+const FencedCodeContext = createContext(false);
+
+/** Title-case an unrecognized channel so new backend integrations still read well. */
+const getChannelTitle = (key: string, entry: UsageEntry) => {
+	const type = entry.type || key;
+	const known = CHANNEL_TITLES[type.toLowerCase()];
+	if (known) {
+		return known;
+	}
+
+	return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+};
+
+/**
+ * True for a placeholder channel. Engine types the backend has not documented
+ * yet come back with every channel set to this marker rather than being omitted.
+ */
+const isPendingEntry = (entry: UsageEntry) =>
+	(entry.code ?? "").trim().toLowerCase() === PENDING_CODE;
+
+/**
+ * Markdown renderers for the channel panels.
+ *
+ * The kit's `Markdown` wrapper leans on `prose` utility classes, but the
+ * Tailwind typography plugin is not installed, so those classes are inert and
+ * every element has to be styled explicitly. These mirror the SEMOSS docs
+ * portal: a hairline rule under each section heading, chip-styled inline code,
+ * and spacing tuned to the dialog's text-sm body copy.
+ */
+const MARKDOWN_COMPONENTS = {
+	pre: ({ children }: { children?: ReactNode }) => (
+		<FencedCodeContext.Provider value={true}>
+			<CodeBlockWithCopy>{children}</CodeBlockWithCopy>
+		</FencedCodeContext.Provider>
+	),
+	code: ({
+		children,
+		className,
+		...props
+	}: {
+		children?: ReactNode;
+		className?: string;
+	}) => {
+		const isFenced = useContext(FencedCodeContext);
+		const language = /language-(\w+)/.exec(className || "")?.[1];
+
+		// A fenced block goes back to the kit so Shiki highlights it (when the
+		// fence names a language) and CodeBlockWithCopy can read the code off
+		// the rendered element. Only genuinely inline code gets the chip - a
+		// chip's horizontal padding would otherwise indent the first line of
+		// every block, since an inline box only pads where it starts.
+		if (isFenced) {
+			return (
+				<Code
+					code={String(children)}
+					language={
+						language as ComponentProps<typeof Code>["language"]
+					}
+					{...props}
+				/>
+			);
+		}
+
+		return (
+			<code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[0.85em] text-foreground">
+				{children}
+			</code>
+		);
+	},
+	p: ({ children }: { children?: ReactNode }) => (
+		<p className="my-3 text-foreground">{children}</p>
+	),
+	h1: ({ children }: { children?: ReactNode }) => (
+		<h1 className="mb-4 border-border border-b pb-[0.4rem] font-semibold text-[1.9rem] text-foreground leading-tight">
+			{children}
+		</h1>
+	),
+	h2: ({ children }: { children?: ReactNode }) => (
+		<h2 className="mt-8 mb-3 border-border border-b pb-[0.3rem] font-semibold text-[1.4rem] text-foreground leading-tight">
+			{children}
+		</h2>
+	),
+	h3: ({ children }: { children?: ReactNode }) => (
+		<h3 className="mt-6 mb-2 font-semibold text-[1.15rem] text-foreground leading-tight">
+			{children}
+		</h3>
+	),
+	h4: ({ children }: { children?: ReactNode }) => (
+		<h4 className="mt-5 mb-2 font-semibold text-base text-foreground leading-tight">
+			{children}
+		</h4>
+	),
+	ul: ({ children }: { children?: ReactNode }) => (
+		<ul className="my-3 list-disc ps-6 text-foreground marker:text-muted-foreground">
+			{children}
+		</ul>
+	),
+	ol: ({ children }: { children?: ReactNode }) => (
+		<ol className="my-3 list-decimal ps-6 text-foreground marker:text-muted-foreground">
+			{children}
+		</ol>
+	),
+	li: ({ children }: { children?: ReactNode }) => (
+		<li className="my-1">{children}</li>
+	),
+	blockquote: ({ children }: { children?: ReactNode }) => (
+		<blockquote className="my-4 border-border border-s-[3px] px-4 py-1 text-muted-foreground">
+			{children}
+		</blockquote>
+	),
+	hr: () => <hr className="my-8 border-border border-t" />,
+	a: ({ children, href }: { children?: ReactNode; href?: string }) => (
+		<a
+			href={href}
+			target="_blank"
+			rel="noopener noreferrer"
+			className="text-primary no-underline hover:underline"
+		>
+			{children}
+		</a>
+	),
+};
 
 interface FetchedUsage {
 	/** Parsed `{label, code}` entries, if the backend returned the expected shape. */
@@ -182,55 +334,76 @@ const UsagePane = ({
 	if (!fetched) return null;
 	const usage = fetched.usage;
 	const entries = usage ? Object.entries(usage) : [];
-	const hasRenderableEntries = entries.some(([, v]) => v?.code);
+	const renderable = entries.filter(([, v]) => v?.code);
+	// placeholder channels get their own message rather than an empty tab
+	const documented = renderable.filter(([, v]) => !isPendingEntry(v));
+	const hasPendingDocs =
+		documented.length < renderable.length &&
+		documented.every(
+			([key, v]) => (v.type || key).toLowerCase() === "introduction",
+		);
 
-	if (hasRenderableEntries) {
+	if (documented.length > 0) {
 		return (
-			<div className="flex flex-col gap-4 py-4">
-				{entries.map(([key, entry], idx) => {
-					if (!entry?.code) return null;
-					return (
-						<div key={key} className="flex flex-col gap-2">
-							{idx > 0 && (
-								<div className="border-border border-t" />
-							)}
-							{entry.label && (
-								<h3 className="font-semibold text-foreground text-sm">
-									{entry.label}
-								</h3>
-							)}
-							<Markdown
-								components={{
-									pre: ({ children }) => (
-										<CodeBlockWithCopy>
-											{children}
-										</CodeBlockWithCopy>
-									),
-									p: ({ children }) => (
-										<p className="mt-0 text-foreground text-sm leading-relaxed">
-											{children}
-										</p>
-									),
-								}}
-							>
-								{entry.code}
-							</Markdown>
-						</div>
-					);
-				})}
-			</div>
+			<Tabs
+				key={type}
+				defaultValue={documented[0][0]}
+				className="gap-3 py-4"
+			>
+				{hasPendingDocs && (
+					<p className="text-muted-foreground text-sm">
+						{t("help.pendingMessage", { type })}
+					</p>
+				)}
+
+				<TabsList className="h-auto flex-wrap justify-start">
+					{documented.map(([key, entry]) => (
+						<TabsTrigger key={key} value={key}>
+							{getChannelTitle(key, entry)}
+						</TabsTrigger>
+					))}
+				</TabsList>
+
+				{documented.map(([key, entry]) => (
+					<TabsContent
+						key={key}
+						value={key}
+						className="flex flex-col gap-2"
+					>
+						{entry.label && (
+							/* acts as the document title, so it is sized
+							   above the h2 rules inside the body */
+							<h2 className="border-border border-b pb-[0.4rem] font-semibold text-[1.9rem] text-foreground leading-tight">
+								{entry.label}
+							</h2>
+						)}
+						<Markdown
+							className="w-full text-sm leading-[1.65]"
+							components={MARKDOWN_COMPONENTS}
+						>
+							{entry.code}
+						</Markdown>
+					</TabsContent>
+				))}
+			</Tabs>
 		);
 	}
 
-	// No structured entries — either the backend returned an unexpected
-	// shape, or there genuinely is no documented usage for this engine
-	// type. Surface the raw payload so the user can copy whatever's there
-	// instead of staring at an empty pane.
-	const hasRaw = fetched.raw !== undefined && fetched.raw !== null;
+	// Nothing renderable: either every channel is still a placeholder, or the
+	// backend returned an unexpected shape. Say which, then surface the raw
+	// payload so the user can copy whatever's there instead of staring at an
+	// empty pane.
+	const isDocumentationPending = renderable.length > 0;
+	const hasRaw =
+		!isDocumentationPending &&
+		fetched.raw !== undefined &&
+		fetched.raw !== null;
 	return (
 		<div className="flex flex-col gap-3 py-4">
 			<p className="text-muted-foreground text-sm">
-				{t("help.emptyMessage", { type })}
+				{isDocumentationPending
+					? t("help.pendingMessage", { type })
+					: t("help.emptyMessage", { type })}
 			</p>
 			{hasRaw && (
 				<div className="overflow-hidden rounded-md border border-border">
@@ -319,10 +492,16 @@ const CodeBlockWithCopy = ({ children }: { children: ReactNode }) => {
 			const props = child.props as {
 				language?: string;
 				code?: string;
+				className?: string;
 				children?: ReactNode;
 			};
 			if (!language && typeof props.language === "string") {
 				language = props.language;
+			}
+			// react-markdown carries the fence language as `language-<lang>`
+			// on the element's className rather than as a prop
+			if (!language && typeof props.className === "string") {
+				language = /language-(\w+)/.exec(props.className)?.[1];
 			}
 			if (typeof props.code === "string") {
 				code += props.code;
