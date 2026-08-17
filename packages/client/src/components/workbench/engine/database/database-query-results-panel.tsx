@@ -21,7 +21,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useDatabaseWorkbench, useEngine, useRootStore } from "@/hooks";
-import { WORKBENCH_COMPONENTS } from "../workbench.constants";
+import { WORKBENCH_COMPONENTS } from "../../workbench.constants";
 
 interface DatabaseQueryResultsPanelProps {
 	/** The FlexLayout tab node backing this results panel */

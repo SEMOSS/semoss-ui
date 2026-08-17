@@ -45,8 +45,8 @@ import {
 	type DatabaseType,
 	getColumnActionGroups,
 	getTableActionGroups,
-} from "@/components/workbench/database/database-script-templates";
-import { DatabaseUploadCsv } from "@/components/workbench/database/database-upload-file";
+} from "@/components/workbench/engine/database/database-script-templates";
+import { DatabaseUploadCsv } from "@/components/workbench/engine/database/database-upload-file";
 import { useEngine } from "@/hooks/useEngine";
 
 function getActionKey(action: { label: string }): string {

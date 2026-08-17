@@ -9,14 +9,14 @@ import {
 import { useEngine, useWorkbench } from "@/hooks";
 import { useWorkbenchChatConfig } from "@/hooks/use-workbench-chat-config";
 import type { WorkbenchPanelConfig } from "@/stores";
-import { WORKBENCH_CHAT_PANEL } from "../chat";
+import { WORKBENCH_CHAT_PANEL } from "../../chat";
 import {
 	EngineFileEditorPanel,
 	EngineFileExplorerPanel,
 	EngineMcpEditorPanel,
 	EngineSettingsPanel,
 	EngineSettingsToggle,
-} from "../engine";
+} from "..";
 
 /**
  * Function workbench that exposes the engine's files through the shared file

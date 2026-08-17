@@ -1,9 +1,4 @@
-import {
-	FileTextIcon,
-	FolderTreeIcon,
-	MessageSquareIcon,
-	SettingsIcon,
-} from "lucide-react";
+import { FolderTreeIcon, MessageSquareIcon, SettingsIcon } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { type FlexLayout, getFileIconComponent } from "@semoss/shared";
 import {
@@ -13,24 +8,23 @@ import {
 } from "@/components/workbench";
 import { useEngine, useWorkbench } from "@/hooks";
 import { useWorkbenchChatConfig } from "@/hooks/use-workbench-chat-config";
-import type { WorkbenchPanelConfig } from "@/stores/workbench";
-import { WORKBENCH_CHAT_PANEL } from "../chat";
+import type { WorkbenchPanelConfig } from "@/stores";
+import { WORKBENCH_CHAT_PANEL } from "../../chat";
 import {
 	EngineFileEditorPanel,
 	EngineFileExplorerPanel,
 	EngineMcpEditorPanel,
 	EngineSettingsPanel,
 	EngineSettingsToggle,
-} from "../engine";
-import { VectorChatPanel } from "./vector-chat-panel";
-import { VectorDocumentsPanel } from "./vector-documents-panel";
+} from "..";
+import { ModelChatPanel } from "./model-chat-panel";
 
 /**
- * Vector workbench that exposes the engine's files through the shared file
- * explorer, editor, and MCP editor. Rendered inside an InsightProvider by the
- * page so its file operations share a single insight.
+ * Model workbench that combines a chat panel with the shared file explorer,
+ * editor, and MCP editor. Rendered inside an InsightProvider by the page so
+ * the chat and file operations share a single insight.
  */
-export const VectorWorkbench: React.FC = () => {
+export const ModelWorkbench: React.FC = () => {
 	const registerCommand = useWorkbench((state) => state.registerCommand);
 	const { engine } = useEngine();
 
@@ -45,17 +39,7 @@ export const VectorWorkbench: React.FC = () => {
 					type: "border",
 					location: "left",
 					size: 300,
-					selected: 0,
 					children: [
-						{
-							type: "tab",
-							id: WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS,
-							name: "Documents",
-							component: WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS,
-							config: {},
-							helpText: "Documents",
-							enableClose: false,
-						},
 						{
 							type: "tab",
 							id: WORKBENCH_COMPONENTS.FILE_EXPLORER,
@@ -94,15 +78,7 @@ export const VectorWorkbench: React.FC = () => {
 						type: "tabset",
 						weight: 100,
 						enableDeleteWhenEmpty: false,
-						children: [
-							{
-								type: "tab",
-								id: WORKBENCH_COMPONENTS.VECTOR_CHAT,
-								name: "Q&A",
-								component: WORKBENCH_COMPONENTS.VECTOR_CHAT,
-								enableClose: false,
-							},
-						],
+						children: [],
 					},
 				],
 			},
@@ -114,10 +90,10 @@ export const VectorWorkbench: React.FC = () => {
 	// keep the assistant's system prompt/tools in sync with the active engine
 	useEffect(() => {
 		configureChat({
-			systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user inspect and work with this vector database. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
+			systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user inspect, test, and configure this model. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
 			mcp: [
 				{
-					type: "VECTOR",
+					type: "MODEL",
 					id: engine.engine_id,
 					name: engine.engine_display_name || engine.engine_name,
 				},
@@ -137,10 +113,6 @@ export const VectorWorkbench: React.FC = () => {
 				return <EngineFileExplorerPanel layout={layout} node={node} />;
 			},
 		},
-		[WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS]: {
-			tab: () => <FileTextIcon className="size-4" />,
-			view: () => <VectorDocumentsPanel />,
-		},
 		[WORKBENCH_COMPONENTS.FILE_EDITOR]: {
 			tab: (node: FlexLayout.TabNode) => {
 				const Icon = getFileIconComponent(node.getName());
@@ -158,10 +130,6 @@ export const VectorWorkbench: React.FC = () => {
 			view: (node: FlexLayout.TabNode) => {
 				return <EngineMcpEditorPanel node={node} />;
 			},
-		},
-		[WORKBENCH_COMPONENTS.VECTOR_CHAT]: {
-			tab: () => <MessageSquareIcon className="size-4" />,
-			view: () => <VectorChatPanel />,
 		},
 		[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: {
 			tab: () => <SettingsIcon className="size-4" />,
@@ -207,6 +175,12 @@ export const VectorWorkbench: React.FC = () => {
 				/>
 			),
 		},
+		[WORKBENCH_COMPONENTS.MODEL_CHAT]: {
+			tab: () => <MessageSquareIcon className="size-4" />,
+			view: () => {
+				return <ModelChatPanel />;
+			},
+		},
 		[WORKBENCH_COMPONENTS.CHAT]: WORKBENCH_CHAT_PANEL,
 	};
 
@@ -241,34 +215,17 @@ export const VectorWorkbench: React.FC = () => {
 				},
 			},
 			{
-				id: "workbench.vector-documents.open",
-				label: "Open Documents",
-				icon: <FileTextIcon />,
-				handler: async (get) => {
-					get().openPanel(
-						WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS,
-						{
-							type: "tab",
-							id: WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS,
-							name: "Documents",
-							component: WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS,
-							config: {},
-							helpText: "Documents",
-							enableClose: false,
-						},
-						{
-							type: "BORDER",
-							location: "left",
-						},
-					);
-				},
-			},
-			{
-				id: "workbench.vector-chat.open",
-				label: "Open Q&A",
+				id: "workbench.model-chat.open",
+				label: "Open Model Chat",
 				icon: <MessageSquareIcon />,
-				handler: async (get) => {
-					get().openPanel(WORKBENCH_COMPONENTS.VECTOR_CHAT);
+				handler: (get) => {
+					get().openPanel(WORKBENCH_COMPONENTS.MODEL_CHAT, {
+						type: "tab",
+						name: "Model Chat",
+						component: WORKBENCH_COMPONENTS.MODEL_CHAT,
+						helpText: "Model Chat",
+						enableClose: false,
+					});
 				},
 			},
 		]);

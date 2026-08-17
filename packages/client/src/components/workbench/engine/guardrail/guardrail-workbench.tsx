@@ -1,4 +1,4 @@
-import { CloudIcon, FolderTreeIcon, SettingsIcon } from "lucide-react";
+import { FolderTreeIcon, SettingsIcon } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { type FlexLayout, getFileIconComponent } from "@semoss/shared";
 import {
@@ -9,21 +9,21 @@ import {
 import { useEngine, useWorkbench } from "@/hooks";
 import { useWorkbenchChatConfig } from "@/hooks/use-workbench-chat-config";
 import type { WorkbenchPanelConfig } from "@/stores";
-import { WORKBENCH_CHAT_PANEL } from "../chat";
+import { WORKBENCH_CHAT_PANEL } from "../../chat";
 import {
 	EngineFileEditorPanel,
 	EngineFileExplorerPanel,
 	EngineMcpEditorPanel,
 	EngineSettingsPanel,
 	EngineSettingsToggle,
-} from "../engine";
+} from "..";
 
 /**
- * Storage workbench that exposes the engine's files through the shared file
+ * Guardrail workbench that exposes the engine's files through the shared file
  * explorer, editor, and MCP editor. Rendered inside an InsightProvider by the
  * page so its file operations share a single insight.
  */
-export const StorageWorkbench: React.FC = () => {
+export const GuardrailWorkbench: React.FC = () => {
 	const registerCommand = useWorkbench((state) => state.registerCommand);
 	const { engine } = useEngine();
 
@@ -40,15 +40,6 @@ export const StorageWorkbench: React.FC = () => {
 					size: 300,
 					selected: 0,
 					children: [
-						{
-							type: "tab",
-							id: WORKBENCH_COMPONENTS.STORAGE_EXPLORER,
-							name: "Storage",
-							component: WORKBENCH_COMPONENTS.STORAGE_EXPLORER,
-							config: {},
-							helpText: "Storage Explorer",
-							enableClose: false,
-						},
 						{
 							type: "tab",
 							id: WORKBENCH_COMPONENTS.FILE_EXPLORER,
@@ -96,17 +87,11 @@ export const StorageWorkbench: React.FC = () => {
 
 	const configureChat = useWorkbenchChatConfig((state) => state.configure);
 
-	// keep the assistant's system prompt/tools in sync with the active engine
+	// keep the assistant's system prompt in sync with the active engine
 	useEffect(() => {
 		configureChat({
-			systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user inspect and manage this storage engine. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
-			mcp: [
-				{
-					type: "STORAGE",
-					id: engine.engine_id,
-					name: engine.engine_display_name || engine.engine_name,
-				},
-			],
+			systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user understand, test, and configure this guardrail. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
+			mcp: [],
 		});
 	}, [
 		configureChat,
@@ -116,12 +101,6 @@ export const StorageWorkbench: React.FC = () => {
 	]);
 
 	const components: Record<string, WorkbenchPanelConfig> = {
-		[WORKBENCH_COMPONENTS.STORAGE_EXPLORER]: {
-			tab: () => <CloudIcon className="size-4" />,
-			view: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => {
-				return <EngineFileExplorerPanel layout={layout} node={node} />;
-			},
-		},
 		[WORKBENCH_COMPONENTS.FILE_EXPLORER]: {
 			tab: () => <FolderTreeIcon className="size-4" />,
 			view: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => {
@@ -205,20 +184,6 @@ export const StorageWorkbench: React.FC = () => {
 						name: "Files",
 						component: WORKBENCH_COMPONENTS.FILE_EXPLORER,
 						helpText: "File Explorer",
-						enableClose: false,
-					});
-				},
-			},
-			{
-				id: "workbench.storage-explorer.open",
-				label: "Open Storage Explorer",
-				icon: <CloudIcon />,
-				handler: (get) => {
-					get().openPanel(WORKBENCH_COMPONENTS.STORAGE_EXPLORER, {
-						type: "tab",
-						name: "Storage",
-						component: WORKBENCH_COMPONENTS.STORAGE_EXPLORER,
-						helpText: "Storage Explorer",
 						enableClose: false,
 					});
 				},

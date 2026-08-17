@@ -15,14 +15,14 @@ import {
 import { useDatabaseWorkbench, useEngine, useWorkbench } from "@/hooks";
 import { useWorkbenchChatConfig } from "@/hooks/use-workbench-chat-config";
 import type { WorkbenchPanelConfig } from "@/stores/workbench";
-import { WORKBENCH_CHAT_PANEL } from "../chat";
+import { WORKBENCH_CHAT_PANEL } from "../../chat";
 import {
 	EngineFileEditorPanel,
 	EngineFileExplorerPanel,
 	EngineMcpEditorPanel,
 	EngineSettingsPanel,
 	EngineSettingsToggle,
-} from "../engine";
+} from "..";
 import { DatabaseColumnsPanel } from "./database-columns-panel";
 import { DatabaseNewQueryButton } from "./database-new-query-button";
 import { DatabaseQueryPanel } from "./database-query-panel";

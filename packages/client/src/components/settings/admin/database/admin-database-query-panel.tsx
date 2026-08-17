@@ -11,7 +11,7 @@ import {
 	SPARQL_THEME_LIGHT,
 } from "@semoss/shared";
 import { Button, Spinner, useTheme } from "@semoss/ui/next";
-import type { DatabaseType } from "@/components/workbench/database/database-script-templates";
+import type { DatabaseType } from "@/components/workbench/engine/database/database-script-templates";
 
 const SQL_KEYWORDS = [
 	"SELECT",

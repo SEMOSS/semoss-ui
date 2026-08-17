@@ -1,4 +1,4 @@
-import { FolderTreeIcon, MessageSquareIcon, SettingsIcon } from "lucide-react";
+import { CloudIcon, FolderTreeIcon, SettingsIcon } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { type FlexLayout, getFileIconComponent } from "@semoss/shared";
 import {
@@ -9,22 +9,21 @@ import {
 import { useEngine, useWorkbench } from "@/hooks";
 import { useWorkbenchChatConfig } from "@/hooks/use-workbench-chat-config";
 import type { WorkbenchPanelConfig } from "@/stores";
-import { WORKBENCH_CHAT_PANEL } from "../chat";
+import { WORKBENCH_CHAT_PANEL } from "../../chat";
 import {
 	EngineFileEditorPanel,
 	EngineFileExplorerPanel,
 	EngineMcpEditorPanel,
 	EngineSettingsPanel,
 	EngineSettingsToggle,
-} from "../engine";
-import { ModelChatPanel } from "./model-chat-panel";
+} from "..";
 
 /**
- * Model workbench that combines a chat panel with the shared file explorer,
- * editor, and MCP editor. Rendered inside an InsightProvider by the page so
- * the chat and file operations share a single insight.
+ * Storage workbench that exposes the engine's files through the shared file
+ * explorer, editor, and MCP editor. Rendered inside an InsightProvider by the
+ * page so its file operations share a single insight.
  */
-export const ModelWorkbench: React.FC = () => {
+export const StorageWorkbench: React.FC = () => {
 	const registerCommand = useWorkbench((state) => state.registerCommand);
 	const { engine } = useEngine();
 
@@ -39,7 +38,17 @@ export const ModelWorkbench: React.FC = () => {
 					type: "border",
 					location: "left",
 					size: 300,
+					selected: 0,
 					children: [
+						{
+							type: "tab",
+							id: WORKBENCH_COMPONENTS.STORAGE_EXPLORER,
+							name: "Storage",
+							component: WORKBENCH_COMPONENTS.STORAGE_EXPLORER,
+							config: {},
+							helpText: "Storage Explorer",
+							enableClose: false,
+						},
 						{
 							type: "tab",
 							id: WORKBENCH_COMPONENTS.FILE_EXPLORER,
@@ -90,10 +99,10 @@ export const ModelWorkbench: React.FC = () => {
 	// keep the assistant's system prompt/tools in sync with the active engine
 	useEffect(() => {
 		configureChat({
-			systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user inspect, test, and configure this model. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
+			systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user inspect and manage this storage engine. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
 			mcp: [
 				{
-					type: "MODEL",
+					type: "STORAGE",
 					id: engine.engine_id,
 					name: engine.engine_display_name || engine.engine_name,
 				},
@@ -107,6 +116,12 @@ export const ModelWorkbench: React.FC = () => {
 	]);
 
 	const components: Record<string, WorkbenchPanelConfig> = {
+		[WORKBENCH_COMPONENTS.STORAGE_EXPLORER]: {
+			tab: () => <CloudIcon className="size-4" />,
+			view: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => {
+				return <EngineFileExplorerPanel layout={layout} node={node} />;
+			},
+		},
 		[WORKBENCH_COMPONENTS.FILE_EXPLORER]: {
 			tab: () => <FolderTreeIcon className="size-4" />,
 			view: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => {
@@ -175,12 +190,6 @@ export const ModelWorkbench: React.FC = () => {
 				/>
 			),
 		},
-		[WORKBENCH_COMPONENTS.MODEL_CHAT]: {
-			tab: () => <MessageSquareIcon className="size-4" />,
-			view: () => {
-				return <ModelChatPanel />;
-			},
-		},
 		[WORKBENCH_COMPONENTS.CHAT]: WORKBENCH_CHAT_PANEL,
 	};
 
@@ -201,6 +210,20 @@ export const ModelWorkbench: React.FC = () => {
 				},
 			},
 			{
+				id: "workbench.storage-explorer.open",
+				label: "Open Storage Explorer",
+				icon: <CloudIcon />,
+				handler: (get) => {
+					get().openPanel(WORKBENCH_COMPONENTS.STORAGE_EXPLORER, {
+						type: "tab",
+						name: "Storage",
+						component: WORKBENCH_COMPONENTS.STORAGE_EXPLORER,
+						helpText: "Storage Explorer",
+						enableClose: false,
+					});
+				},
+			},
+			{
 				id: "workbench.settings.open",
 				label: "Open Settings",
 				icon: <SettingsIcon />,
@@ -210,20 +233,6 @@ export const ModelWorkbench: React.FC = () => {
 						name: "Settings",
 						component: WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
 						helpText: "Settings",
-						enableClose: false,
-					});
-				},
-			},
-			{
-				id: "workbench.model-chat.open",
-				label: "Open Model Chat",
-				icon: <MessageSquareIcon />,
-				handler: (get) => {
-					get().openPanel(WORKBENCH_COMPONENTS.MODEL_CHAT, {
-						type: "tab",
-						name: "Model Chat",
-						component: WORKBENCH_COMPONENTS.MODEL_CHAT,
-						helpText: "Model Chat",
 						enableClose: false,
 					});
 				},

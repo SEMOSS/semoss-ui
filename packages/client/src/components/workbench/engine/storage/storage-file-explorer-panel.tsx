@@ -12,7 +12,7 @@ import {
 } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
 import { useEngine, useWorkbench } from "@/hooks";
-import { WORKBENCH_COMPONENTS } from "../workbench.constants";
+import { WORKBENCH_COMPONENTS } from "../../workbench.constants";
 
 interface StorageFileExplorerPanelProps {
 	/** FlexLayout tab node backing the storage explorer. */

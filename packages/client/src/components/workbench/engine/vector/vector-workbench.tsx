@@ -1,4 +1,9 @@
-import { FolderTreeIcon, SettingsIcon } from "lucide-react";
+import {
+	FileTextIcon,
+	FolderTreeIcon,
+	MessageSquareIcon,
+	SettingsIcon,
+} from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { type FlexLayout, getFileIconComponent } from "@semoss/shared";
 import {
@@ -8,22 +13,24 @@ import {
 } from "@/components/workbench";
 import { useEngine, useWorkbench } from "@/hooks";
 import { useWorkbenchChatConfig } from "@/hooks/use-workbench-chat-config";
-import type { WorkbenchPanelConfig } from "@/stores";
-import { WORKBENCH_CHAT_PANEL } from "../chat";
+import type { WorkbenchPanelConfig } from "@/stores/workbench";
+import { WORKBENCH_CHAT_PANEL } from "../../chat";
 import {
 	EngineFileEditorPanel,
 	EngineFileExplorerPanel,
 	EngineMcpEditorPanel,
 	EngineSettingsPanel,
 	EngineSettingsToggle,
-} from "../engine";
+} from "..";
+import { VectorChatPanel } from "./vector-chat-panel";
+import { VectorDocumentsPanel } from "./vector-documents-panel";
 
 /**
- * Guardrail workbench that exposes the engine's files through the shared file
+ * Vector workbench that exposes the engine's files through the shared file
  * explorer, editor, and MCP editor. Rendered inside an InsightProvider by the
  * page so its file operations share a single insight.
  */
-export const GuardrailWorkbench: React.FC = () => {
+export const VectorWorkbench: React.FC = () => {
 	const registerCommand = useWorkbench((state) => state.registerCommand);
 	const { engine } = useEngine();
 
@@ -40,6 +47,15 @@ export const GuardrailWorkbench: React.FC = () => {
 					size: 300,
 					selected: 0,
 					children: [
+						{
+							type: "tab",
+							id: WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS,
+							name: "Documents",
+							component: WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS,
+							config: {},
+							helpText: "Documents",
+							enableClose: false,
+						},
 						{
 							type: "tab",
 							id: WORKBENCH_COMPONENTS.FILE_EXPLORER,
@@ -78,7 +94,15 @@ export const GuardrailWorkbench: React.FC = () => {
 						type: "tabset",
 						weight: 100,
 						enableDeleteWhenEmpty: false,
-						children: [],
+						children: [
+							{
+								type: "tab",
+								id: WORKBENCH_COMPONENTS.VECTOR_CHAT,
+								name: "Q&A",
+								component: WORKBENCH_COMPONENTS.VECTOR_CHAT,
+								enableClose: false,
+							},
+						],
 					},
 				],
 			},
@@ -87,11 +111,17 @@ export const GuardrailWorkbench: React.FC = () => {
 
 	const configureChat = useWorkbenchChatConfig((state) => state.configure);
 
-	// keep the assistant's system prompt in sync with the active engine
+	// keep the assistant's system prompt/tools in sync with the active engine
 	useEffect(() => {
 		configureChat({
-			systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user understand, test, and configure this guardrail. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
-			mcp: [],
+			systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user inspect and work with this vector database. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
+			mcp: [
+				{
+					type: "VECTOR",
+					id: engine.engine_id,
+					name: engine.engine_display_name || engine.engine_name,
+				},
+			],
 		});
 	}, [
 		configureChat,
@@ -106,6 +136,10 @@ export const GuardrailWorkbench: React.FC = () => {
 			view: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => {
 				return <EngineFileExplorerPanel layout={layout} node={node} />;
 			},
+		},
+		[WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS]: {
+			tab: () => <FileTextIcon className="size-4" />,
+			view: () => <VectorDocumentsPanel />,
 		},
 		[WORKBENCH_COMPONENTS.FILE_EDITOR]: {
 			tab: (node: FlexLayout.TabNode) => {
@@ -124,6 +158,10 @@ export const GuardrailWorkbench: React.FC = () => {
 			view: (node: FlexLayout.TabNode) => {
 				return <EngineMcpEditorPanel node={node} />;
 			},
+		},
+		[WORKBENCH_COMPONENTS.VECTOR_CHAT]: {
+			tab: () => <MessageSquareIcon className="size-4" />,
+			view: () => <VectorChatPanel />,
 		},
 		[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: {
 			tab: () => <SettingsIcon className="size-4" />,
@@ -200,6 +238,37 @@ export const GuardrailWorkbench: React.FC = () => {
 						helpText: "Settings",
 						enableClose: false,
 					});
+				},
+			},
+			{
+				id: "workbench.vector-documents.open",
+				label: "Open Documents",
+				icon: <FileTextIcon />,
+				handler: async (get) => {
+					get().openPanel(
+						WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS,
+						{
+							type: "tab",
+							id: WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS,
+							name: "Documents",
+							component: WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS,
+							config: {},
+							helpText: "Documents",
+							enableClose: false,
+						},
+						{
+							type: "BORDER",
+							location: "left",
+						},
+					);
+				},
+			},
+			{
+				id: "workbench.vector-chat.open",
+				label: "Open Q&A",
+				icon: <MessageSquareIcon />,
+				handler: async (get) => {
+					get().openPanel(WORKBENCH_COMPONENTS.VECTOR_CHAT);
 				},
 			},
 		]);

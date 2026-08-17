@@ -22,7 +22,7 @@ one `<Domain>Workbench` component and one isolated store instance scoped by an `
 | `workbench.constants.ts` | Re-exports `WORKBENCH_COMPONENTS`; defines `WORKBENCH_PANEL_TABS` (shared tab payloads) |
 | `workbench-command-palette.tsx` | Cmd/Ctrl+Shift+P or F1 palette over `state.commands` |
 | `engine/` | Panels/controls shared across domains: file explorer, file editor, MCP editor, settings panel + toggle |
-| `<domain>/` (`database/`, `function/`, `model/`, `project/`, `storage/`, `vector/`, `guardrail/`) | One `<Domain>Workbench` per engine type |
+| `engine/<domain>/` (`database/`, `function/`, `model/`, `project/`, `storage/`, `vector/`, `guardrail/`) | One `<Domain>Workbench` per engine type |
 | `stores/workbench/workbench.store.ts` | `createWorkbenchStore(id, domainSlice?)` merges base slices + optional domain slice |
 | `stores/workbench/slices/` | `layout` (FlexLayout model, open/close/rename/update panel), `loading` (`isLoading`), `command` (registry) |
 | `stores/workbench/<domain>/` | Optional namespaced domain slice (only `database/` has one) |
