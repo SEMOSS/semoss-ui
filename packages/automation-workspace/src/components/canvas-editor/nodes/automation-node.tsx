@@ -39,7 +39,15 @@ const STATUS_LEFT_BORDER: Record<string, string> = {
 
 export function AutomationNode({ data }: NodeProps) {
 	const d = data as AutomationNodeData;
-	const { step, runStatus, runDuration, isIncomplete, locked } = d;
+	const {
+		step,
+		runError,
+		runOutput,
+		runStatus,
+		runDuration,
+		isIncomplete,
+		locked,
+	} = d;
 
 	const meta = getDisplayMeta(step.type);
 	const Icon = meta.icon;
@@ -49,6 +57,8 @@ export function AutomationNode({ data }: NodeProps) {
 
 	const pixelPreview = buildPixelPreview(step);
 	const varRefs = extractVarRefs(pixelPreview);
+	const outputPreview = runOutput?.replace(/\s+/g, " ").trim();
+	const errorPreview = runError?.replace(/\s+/g, " ").trim();
 
 	const subtitle = (() => {
 		const c = step.config as unknown as Record<string, unknown>;
@@ -120,14 +130,32 @@ export function AutomationNode({ data }: NodeProps) {
 
 					{/* Run status indicator */}
 					{runStatus && runStatus !== "idle" && (
-						<div className="ml-auto shrink-0">
+						<div className="ml-auto flex shrink-0 items-center gap-1 text-[10px]">
 							{runStatus === "running" ? (
-								<Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+								<>
+									<Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+									<span className="text-primary">
+										Running
+									</span>
+								</>
 							) : (
-								<StatusIcon
-									status={runStatus}
-									className="h-3.5 w-3.5"
-								/>
+								<>
+									<StatusIcon
+										status={runStatus}
+										className="h-3.5 w-3.5"
+									/>
+									<span
+										className={
+											runStatus === "success"
+												? "text-emerald-700 dark:text-emerald-400"
+												: "text-destructive"
+										}
+									>
+										{runStatus === "success"
+											? "Done"
+											: "Failed"}
+									</span>
+								</>
 							)}
 						</div>
 					)}
@@ -166,6 +194,34 @@ export function AutomationNode({ data }: NodeProps) {
 						<span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[9px] text-muted-foreground">
 							{step.outputVar}
 						</span>
+					</div>
+				)}
+
+				{runStatus === "running" && (
+					<div className="mt-3 h-1 overflow-hidden rounded-full bg-primary/10">
+						<div className="h-full w-1/2 animate-pulse rounded-full bg-primary" />
+					</div>
+				)}
+
+				{runStatus === "success" && outputPreview && (
+					<div className="mt-3 rounded-lg border bg-muted/40 px-2.5 py-2">
+						<p className="font-medium text-[9px] text-muted-foreground uppercase tracking-wide">
+							Output
+						</p>
+						<p className="mt-1 line-clamp-3 break-words text-[11px] leading-relaxed">
+							{outputPreview}
+						</p>
+					</div>
+				)}
+
+				{runStatus === "error" && errorPreview && (
+					<div className="mt-3 rounded-lg border border-destructive/25 bg-destructive/5 px-2.5 py-2">
+						<p className="font-medium text-[9px] text-destructive uppercase tracking-wide">
+							Error
+						</p>
+						<p className="mt-1 line-clamp-3 break-words text-[11px] text-destructive leading-relaxed">
+							{errorPreview}
+						</p>
 					</div>
 				)}
 			</div>

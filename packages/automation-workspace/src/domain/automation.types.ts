@@ -8,7 +8,8 @@ export type AutomationNodeType =
 	| "model-engine"
 	| "function-engine"
 	| "app"
-	| "wait";
+	| "wait"
+	| "python-step";
 
 // ─── shared form types ────────────────────────────────────────────────────────
 
@@ -27,7 +28,39 @@ export interface TriggerConfig {
 	mode: "manual";
 }
 
-export interface DatabaseEngineConfig {
+export type GeneratedSetupValue = string | number | boolean | null;
+
+/**
+ * Stable, generation-relevant setup values captured when Python source is
+ * generated or applied. Runtime input mappings are intentionally excluded.
+ */
+export type GeneratedSetupSnapshot = Record<string, GeneratedSetupValue>;
+
+export interface GeneratedStepMetadata {
+	source?: string;
+	actionId?: string;
+	description?: string;
+	usage?: string;
+	/** Hash of the Python source last written by the generator. */
+	sourceHash?: string;
+	/** Backend fingerprint of the setup used for the last generation. */
+	setupHash?: string;
+	/** Backend generator template version used for the last generation. */
+	templateVersion?: string;
+	/** Client-side setup snapshot used to determine whether review is needed. */
+	generatedSetup?: GeneratedSetupSnapshot;
+}
+
+export interface GeneratedStepConfig {
+	/** Project-relative path to the generated Python step. */
+	stepRef?: string;
+	/** Details returned when this step was most recently generated. */
+	generatedStep?: GeneratedStepMetadata;
+	/** Runtime values resolved from upstream node outputs before the Python file runs. */
+	inputs?: Record<string, string>;
+}
+
+export interface DatabaseEngineConfig extends GeneratedStepConfig {
 	engineId: string;
 	engineName?: string;
 	operation: "query" | "write";
@@ -38,7 +71,7 @@ export interface DatabaseEngineConfig {
 	nlPrompt?: string;
 }
 
-export interface StorageEngineConfig {
+export interface StorageEngineConfig extends GeneratedStepConfig {
 	engineId: string;
 	engineName?: string;
 	operation: "list" | "download" | "upload" | "delete" | "read-base64";
@@ -47,7 +80,7 @@ export interface StorageEngineConfig {
 	metadata: string;
 }
 
-export interface VectorEngineConfig {
+export interface VectorEngineConfig extends GeneratedStepConfig {
 	engineId: string;
 	engineName?: string;
 	operation:
@@ -69,7 +102,7 @@ export interface VectorEngineConfig {
 	fileNames: string;
 }
 
-export interface ModelEngineConfig {
+export interface ModelEngineConfig extends GeneratedStepConfig {
 	engineId: string;
 	engineName?: string;
 	engineSubtype?: string;
@@ -83,21 +116,29 @@ export interface ModelEngineConfig {
 	entities: string;
 }
 
-export interface FunctionEngineConfig {
+export interface FunctionEngineConfig extends GeneratedStepConfig {
 	engineId: string;
 	engineName?: string;
 	operation: "execute" | "streaming";
 	params: string;
 }
 
-export interface AppConfig {
+export interface AppConfig extends GeneratedStepConfig {
 	pixel: string;
 	appId?: string;
 	appName?: string;
 }
 
-export interface WaitConfig {
+export interface WaitConfig extends GeneratedStepConfig {
 	seconds: string;
+}
+
+export interface PythonStepConfig extends GeneratedStepConfig {
+	inputs: Record<string, string>;
+	/** Plain-language action specification supplied before source is authored. */
+	purpose: string;
+	/** Plain-language description of the JSON-serializable value returned by run(). */
+	outputDescription: string;
 }
 
 export type NodeConfig =
@@ -108,7 +149,20 @@ export type NodeConfig =
 	| ModelEngineConfig
 	| FunctionEngineConfig
 	| AppConfig
-	| WaitConfig;
+	| WaitConfig
+	| PythonStepConfig;
+
+export type NodeConfigByType = {
+	trigger: TriggerConfig;
+	"database-engine": DatabaseEngineConfig;
+	"storage-engine": StorageEngineConfig;
+	"vector-engine": VectorEngineConfig;
+	"model-engine": ModelEngineConfig;
+	"function-engine": FunctionEngineConfig;
+	app: AppConfig;
+	wait: WaitConfig;
+	"python-step": PythonStepConfig;
+};
 
 // ─── graph primitives ─────────────────────────────────────────────────────────
 
@@ -129,6 +183,21 @@ export interface AutomationNode {
 	playgroundFillable?: string[];
 	/** Optional per-step notes for documentation purposes. */
 	notes?: string;
+}
+
+export type AutomationNodeForType<T extends AutomationNodeType> = Omit<
+	AutomationNode,
+	"type" | "config"
+> & {
+	type: T;
+	config: NodeConfigByType[T];
+};
+
+export function isAutomationNodeType<T extends AutomationNodeType>(
+	node: AutomationNode,
+	type: T,
+): node is AutomationNodeForType<T> {
+	return node.type === type;
 }
 
 export interface AutomationEdge {

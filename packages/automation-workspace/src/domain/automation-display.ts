@@ -2,6 +2,7 @@ import {
 	Archive,
 	Bolt,
 	Clock,
+	Code2,
 	Cpu,
 	Database,
 	LayoutGrid,
@@ -76,6 +77,14 @@ export const STEP_TYPES: {
 		color: "text-slate-600",
 	},
 	{
+		type: "python-step",
+		label: "Python Step",
+		description:
+			"Set up and generate Python for a custom integration or action",
+		icon: Code2,
+		color: "text-indigo-600",
+	},
+	{
 		type: "wait",
 		label: "Delay",
 		description: "Pause execution for a fixed number of seconds",
@@ -125,7 +134,8 @@ export const TYPE_DISPLAY_META: Record<
 	"storage-engine": STEP_TYPES[3],
 	"function-engine": STEP_TYPES[4],
 	app: STEP_TYPES[5],
-	wait: STEP_TYPES[6],
+	"python-step": STEP_TYPES[6],
+	wait: STEP_TYPES[7],
 };
 
 /**

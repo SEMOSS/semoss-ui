@@ -15,7 +15,6 @@ import {
 	TRANSFORM_ENABLED,
 	TRANSFORM_MODES,
 } from "../../domain/automation-utils";
-import { AiSuggestButton } from "../form-editor/ai-suggest-button";
 import { OutputPreview } from "../form-editor/output-preview";
 import { StepForm } from "./step-form";
 
@@ -60,7 +59,6 @@ export function NodeEditDrawer({
 	onDelete,
 	onSetOutput,
 }: NodeEditDrawerProps) {
-	const [generatingLabel, setGeneratingLabel] = useState(false);
 	const [runningStepTest, setRunningStepTest] = useState(false);
 	const [stepTestOutput, setStepTestOutput] = useState<string | null>(null);
 	const [stepTestOutputExpanded, setStepTestOutputExpanded] = useState(false);
@@ -72,27 +70,6 @@ export function NodeEditDrawer({
 	const pixelPreview = useMemo(() => buildPixelPreview(step), [step]);
 	const varRefs = useMemo(() => extractVarRefs(pixelPreview), [pixelPreview]);
 	const unresolvedVars = varRefs.filter((v) => !nodeOutputs[v]);
-
-	const handleGenerateLabel = async () => {
-		if (!appId || generatingLabel) return;
-		setGeneratingLabel(true);
-		try {
-			const configB64 = btoa(
-				unescape(encodeURIComponent(JSON.stringify(step.config))),
-			);
-			const result = await runPixel(
-				`GenerateNodeLabel(project=["${appId}"], type=["${step.type}"], config=["${configB64}"]);`,
-			);
-			const output = result.pixelReturn?.[0]?.output;
-			if (typeof output === "string" && output.trim()) {
-				onUpdate({ ...step, label: output.trim() });
-			}
-		} catch {
-			// silently fail
-		} finally {
-			setGeneratingLabel(false);
-		}
-	};
 
 	const handleRunStep = async () => {
 		if (!pixelPreview || pixelPreview.startsWith("//")) return;
@@ -182,16 +159,7 @@ export function NodeEditDrawer({
 
 					{/* Label */}
 					<Field>
-						<div className="flex items-center justify-between">
-							<FieldLabel className="text-xs">Label</FieldLabel>
-							{appId && (
-								<AiSuggestButton
-									onClick={handleGenerateLabel}
-									loading={generatingLabel}
-									title="Suggest a label based on this step's configuration"
-								/>
-							)}
-						</div>
+						<FieldLabel className="text-xs">Label</FieldLabel>
 						<Input
 							className="h-9 text-sm"
 							value={step.label}

@@ -4,9 +4,13 @@ import type {
 	AutomationNodeType,
 	DatabaseEngineConfig,
 	FunctionEngineConfig,
+	GeneratedSetupSnapshot,
+	GeneratedStepConfig,
 	ModelEngineConfig,
 	OutputTransform,
+	PythonStepConfig,
 	StorageEngineConfig,
+	TriggerConfig,
 	VectorEngineConfig,
 	WaitConfig,
 } from "./automation.types";
@@ -32,7 +36,55 @@ export const TRANSFORM_ENABLED: Set<AutomationNodeType> = new Set([
 	"storage-engine",
 	"function-engine",
 	"app",
+	"python-step",
 ]);
+
+const GENERATED_SETUP_FIELDS = new Set(["stepRef", "generatedStep", "inputs"]);
+
+export function getGeneratedSetupSnapshot(
+	config: GeneratedStepConfig,
+): GeneratedSetupSnapshot {
+	const setup: GeneratedSetupSnapshot = {};
+
+	for (const [key, value] of Object.entries(config)) {
+		if (GENERATED_SETUP_FIELDS.has(key)) continue;
+		if (
+			value === null ||
+			typeof value === "string" ||
+			typeof value === "number" ||
+			typeof value === "boolean"
+		) {
+			setup[key] = value;
+		}
+	}
+
+	return setup;
+}
+
+export function getGeneratedSetupFingerprint(
+	setup: GeneratedSetupSnapshot,
+): string {
+	const canonicalSetup: GeneratedSetupSnapshot = {};
+
+	for (const key of Object.keys(setup).sort()) {
+		canonicalSetup[key] = setup[key];
+	}
+
+	return JSON.stringify(canonicalSetup);
+}
+
+export function isGeneratedSetupStale(
+	config: GeneratedStepConfig | TriggerConfig,
+): boolean {
+	if (!("stepRef" in config)) return false;
+	const generatedSetup = config.generatedStep?.generatedSetup;
+	return Boolean(
+		config.stepRef?.trim() &&
+			generatedSetup &&
+			getGeneratedSetupFingerprint(generatedSetup) !==
+				getGeneratedSetupFingerprint(getGeneratedSetupSnapshot(config)),
+	);
+}
 
 export function formatDurationMs(
 	ms?: number | null,
@@ -267,6 +319,14 @@ const NODE_DESCRIPTORS: Record<AutomationNodeType, NodeDescriptor> = {
 			return has(c.seconds);
 		},
 	},
+
+	"python-step": {
+		buildPixel: () => "",
+		isReady(node) {
+			const c = node.config as PythonStepConfig;
+			return Boolean(c.stepRef?.trim() && c.purpose?.trim());
+		},
+	},
 };
 
 /** Assemble the correct SEMOSS pixel for a node from its config fields. */
@@ -456,7 +516,32 @@ export function validateNode(node: AutomationNode): string[] {
 	} else if (type === "wait") {
 		const c = config as WaitConfig;
 		if (!c.seconds?.trim()) errors.push("A wait duration is required");
+	} else if (type === "python-step") {
+		const c = config as PythonStepConfig;
+		if (
+			!c.stepRef ||
+			!/^automation\/steps\/[A-Za-z0-9][A-Za-z0-9_.-]*\.py$/.test(
+				c.stepRef,
+			)
+		) {
+			errors.push("A Python step file is required");
+		}
+		if (!c.purpose?.trim()) {
+			errors.push("Describe what this Python step does in Setup");
+		}
+	}
+	if (isGeneratedSetupStale(config)) {
+		errors.push("Review the generated Python update");
 	}
 
 	return errors;
+}
+
+/** Validates fields a user configures before generating a Python step. */
+export function validateNodeSetup(node: AutomationNode): string[] {
+	if (node.type !== "python-step") return validateNode(node);
+
+	return validateNode(node).filter(
+		(error) => error !== "A Python step file is required",
+	);
 }

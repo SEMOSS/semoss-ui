@@ -10,9 +10,10 @@ export function AddNodeMenu({ onSelect }: AddNodeMenuProps) {
 		<div className="p-5">
 			<div className="mb-4">
 				<div>
-					<p className="font-medium text-sm">Choose step type</p>
+					<p className="font-medium text-sm">Add an action</p>
 					<p className="text-[11px] text-muted-foreground">
-						Select a step to add to the automation.
+						Use a governed SEMOSS action or generate custom Python
+						for an integration.
 					</p>
 				</div>
 			</div>

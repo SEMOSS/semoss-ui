@@ -1,18 +1,18 @@
+import type { ReactNode } from "react";
 import type {
-	AppConfig,
 	AutomationNode,
-	DatabaseEngineConfig,
-	FunctionEngineConfig,
-	ModelEngineConfig,
-	StorageEngineConfig,
-	VectorEngineConfig,
-	WaitConfig,
+	AutomationNodeForType,
+	AutomationNodeType,
+	NodeConfigByType,
 } from "../../domain/automation.types";
+import { isAutomationNodeType } from "../../domain/automation.types";
 import { AppEngineForm } from "./forms/app-engine-form";
 import { DatabaseEngineForm } from "./forms/database-engine-form";
 import { FunctionEngineForm } from "./forms/function-engine-form";
+import { GeneratePythonStep } from "./forms/generate-python-step";
 import { ModelEngineForm } from "./forms/model-engine-form";
 import { PillInput } from "./forms/pill-input";
+import { PythonStepForm } from "./forms/python-step-form";
 import { StorageEngineForm } from "./forms/storage-engine-form";
 import { VectorEngineForm } from "./forms/vector-engine-form";
 
@@ -24,6 +24,35 @@ interface StepFormProps {
 	onPlaygroundFieldsChange: (fields: string[]) => void;
 	devMode?: boolean;
 	appId?: string;
+}
+
+interface StepFormContentProps<
+	T extends Exclude<AutomationNodeType, "trigger">,
+> {
+	appId: string;
+	children: ReactNode;
+	onUpdate: (step: AutomationNode) => void;
+	step: AutomationNodeForType<T>;
+}
+
+function StepFormContent<T extends Exclude<AutomationNodeType, "trigger">>({
+	appId,
+	children,
+	onUpdate,
+	step,
+}: StepFormContentProps<T>) {
+	return (
+		<div className="space-y-4">
+			{children}
+			<GeneratePythonStep
+				projectId={appId}
+				step={step}
+				onChange={(config: NodeConfigByType[T]) =>
+					onUpdate({ ...step, config })
+				}
+			/>
+		</div>
+	);
 }
 
 export function StepForm({
@@ -38,79 +67,104 @@ export function StepForm({
 	const update = (config: AutomationNode["config"]) =>
 		onUpdate({ ...step, config });
 
-	switch (step.type) {
-		case "trigger":
-			return null;
-		case "database-engine":
-			return (
+	if (isAutomationNodeType(step, "trigger")) return null;
+
+	if (isAutomationNodeType(step, "database-engine")) {
+		return (
+			<StepFormContent appId={appId} step={step} onUpdate={onUpdate}>
 				<DatabaseEngineForm
-					config={step.config as DatabaseEngineConfig}
+					config={step.config}
 					upstreamVars={upstreamVars}
 					onChange={update}
 					playgroundFillable={playgroundFillable}
 					onPlaygroundFieldsChange={onPlaygroundFieldsChange}
 					devMode={devMode}
 				/>
-			);
-		case "model-engine":
-			return (
+			</StepFormContent>
+		);
+	}
+
+	if (isAutomationNodeType(step, "model-engine")) {
+		return (
+			<StepFormContent appId={appId} step={step} onUpdate={onUpdate}>
 				<ModelEngineForm
-					config={step.config as ModelEngineConfig}
+					config={step.config}
 					upstreamVars={upstreamVars}
 					onChange={update}
 					playgroundFillable={playgroundFillable}
 					onPlaygroundFieldsChange={onPlaygroundFieldsChange}
 					devMode={devMode}
 				/>
-			);
-		case "vector-engine":
-			return (
+			</StepFormContent>
+		);
+	}
+
+	if (isAutomationNodeType(step, "vector-engine")) {
+		return (
+			<StepFormContent appId={appId} step={step} onUpdate={onUpdate}>
 				<VectorEngineForm
-					config={step.config as VectorEngineConfig}
+					config={step.config}
 					upstreamVars={upstreamVars}
 					onChange={update}
 					playgroundFillable={playgroundFillable}
 					onPlaygroundFieldsChange={onPlaygroundFieldsChange}
 					devMode={devMode}
 				/>
-			);
-		case "storage-engine":
-			return (
+			</StepFormContent>
+		);
+	}
+
+	if (isAutomationNodeType(step, "storage-engine")) {
+		return (
+			<StepFormContent appId={appId} step={step} onUpdate={onUpdate}>
 				<StorageEngineForm
-					config={step.config as StorageEngineConfig}
+					config={step.config}
 					upstreamVars={upstreamVars}
 					onChange={update}
 				/>
-			);
-		case "function-engine":
-			return (
+			</StepFormContent>
+		);
+	}
+
+	if (isAutomationNodeType(step, "function-engine")) {
+		return (
+			<StepFormContent appId={appId} step={step} onUpdate={onUpdate}>
 				<FunctionEngineForm
-					config={step.config as FunctionEngineConfig}
+					config={step.config}
 					upstreamVars={upstreamVars}
 					onChange={update}
 					playgroundFillable={playgroundFillable}
 					onPlaygroundFieldsChange={onPlaygroundFieldsChange}
 				/>
-			);
-		case "app":
-			return (
+			</StepFormContent>
+		);
+	}
+
+	if (isAutomationNodeType(step, "app")) {
+		return (
+			<StepFormContent appId={appId} step={step} onUpdate={onUpdate}>
 				<AppEngineForm
-					config={step.config as AppConfig}
+					config={step.config}
 					upstreamVars={upstreamVars}
 					onChange={update}
 					currentAppId={appId}
 					devMode={devMode}
 				/>
-			);
-		case "wait": {
-			const c = step.config as WaitConfig;
-			return (
+			</StepFormContent>
+		);
+	}
+
+	if (isAutomationNodeType(step, "wait")) {
+		return (
+			<StepFormContent appId={appId} step={step} onUpdate={onUpdate}>
 				<div className="flex flex-col gap-4">
 					<PillInput
 						label="Seconds to Wait"
-						value={c.seconds}
+						value={step.config.seconds}
 						placeholder="30"
-						onChange={(v) => update({ ...c, seconds: v })}
+						onChange={(seconds) =>
+							update({ ...step.config, seconds })
+						}
 						upstreamVars={upstreamVars}
 					/>
 					<p className="text-muted-foreground text-xs">
@@ -118,13 +172,21 @@ export function StepForm({
 						earlier step's output — see Help for details.
 					</p>
 				</div>
-			);
-		}
-		default:
-			return (
-				<div className="text-muted-foreground text-xs">
-					No form for type: {step.type}
-				</div>
-			);
+			</StepFormContent>
+		);
 	}
+
+	if (isAutomationNodeType(step, "python-step")) {
+		return (
+			<StepFormContent appId={appId} step={step} onUpdate={onUpdate}>
+				<PythonStepForm config={step.config} onChange={update} />
+			</StepFormContent>
+		);
+	}
+
+	return (
+		<div className="text-muted-foreground text-xs">
+			No form for type: {step.type}
+		</div>
+	);
 }

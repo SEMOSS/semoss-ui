@@ -4,6 +4,7 @@ import type {
 	FunctionEngineConfig,
 	ModelEngineConfig,
 	NodeTypeMeta,
+	PythonStepConfig,
 	StorageEngineConfig,
 	TriggerConfig,
 	VectorEngineConfig,
@@ -126,6 +127,21 @@ export const NODE_TYPE_META: NodeTypeMeta[] = [
 		category: "engine",
 		defaultConfig: { pixel: "", appId: "" } as AppConfig,
 		defaultOutputVar: "pixel_out",
+	},
+	{
+		type: "python-step",
+		label: "Python Step",
+		description:
+			"Generate Python for a custom integration, transformation, or external API call.",
+		tooltip:
+			"Generates a project-owned Python file under automation/steps after you define its setup. The graph controls when it runs and maps inputs.",
+		category: "logic",
+		defaultConfig: {
+			inputs: {},
+			purpose: "",
+			outputDescription: "",
+		} as PythonStepConfig,
+		defaultOutputVar: "python_out",
 	},
 	{
 		type: "wait",
