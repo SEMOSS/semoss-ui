@@ -1,3 +1,10 @@
+import type {
+	AutomationDataType,
+	AutomationNodeCodeMode,
+	AutomationWorkflowNodeConfig,
+	AutomationWorkflowNodeType,
+} from "./automation-workflow.types";
+
 // ─── node types ───────────────────────────────────────────────────────────────
 
 export type AutomationNodeType =
@@ -125,6 +132,13 @@ export interface AutomationNode {
 	label: string;
 	outputVar: string;
 	config: NodeConfig;
+	/**
+	 * The persisted workflow type and configuration. `type` and `config` remain the
+	 * canvas compatibility projection used by the established business forms.
+	 */
+	workflowType?: AutomationWorkflowNodeType;
+	workflowConfig?: AutomationWorkflowNodeConfig;
+	workflowCodeMode?: AutomationNodeCodeMode;
 	outputTransform?: OutputTransform;
 	playgroundFillable?: string[];
 	/** Optional per-step notes for documentation purposes. */
@@ -137,6 +151,8 @@ export interface AutomationEdge {
 	target: string;
 	sourceHandle?: string;
 	targetHandle?: string;
+	kind?: "control" | "data";
+	dataType?: AutomationDataType;
 }
 
 export interface AutomationGraph {

@@ -24,13 +24,7 @@ import {
 	X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-	getPixelAsyncResult,
-	getPixelJobStreaming,
-	runPixel,
-	runPixelAsync,
-} from "@semoss/sdk";
-import { usePixel } from "@semoss/sdk/react";
+import { runPixel } from "@semoss/sdk";
 import {
 	Button,
 	Field,
@@ -40,33 +34,35 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import type {
-	AutomationConfigEntry,
-	AutomationDocument,
 	AutomationEdge,
-	AutomationGraph,
 	AutomationNode,
 	AutomationNodeResult,
-	AutomationNodeType,
 	AutomationRunDetail,
 	AutomationRunSummary,
 	AutomationToolContext,
 	RunStatus,
 	StepRunStatus,
 } from "../../domain/automation.types";
-import { NODE_TYPE_META } from "../../domain/automation-constants";
 import type { AutomationRunData } from "../../domain/automation-display";
 import {
 	formatRelativeTime,
 	formatRunDuration,
 	formatTimestamp,
 	getDisplayMeta,
-	newStepId,
 } from "../../domain/automation-display";
+import type {
+	AutomationWorkflowDocument,
+	AutomationWorkflowNodeType,
+	TriggerBinding,
+} from "../../domain/automation-workflow.types";
 import {
-	applyOutputTransform,
-	validateNode,
-} from "../../domain/automation-utils";
-import { AutomationConfigTab } from "../form-editor/automation-config-tab";
+	canvasDocumentFromWorkflow,
+	canvasDocumentToWorkflow,
+	createCanvasWorkflowNode,
+	createInitialCanvasWorkflowDocument,
+	getWorkflowNodeDefinition,
+	validateCanvasWorkflowNode,
+} from "../../domain/automation-workflow-adapter";
 import { HelpModal } from "../form-editor/help-modal";
 import { NodeResultList } from "../form-editor/node-result-list";
 import { OnboardingTour } from "../form-editor/onboarding-tour";
@@ -101,23 +97,50 @@ interface AutomationCanvasProps {
 
 type TabId = "steps" | "history" | "config";
 
+interface TriggerAutomationOutput extends Partial<AutomationRunData> {
+	STATUS?: RunStatus;
+	status?: RunStatus;
+}
+
+interface CanvasWorkflowDraft {
+	steps: AutomationNode[];
+	edges: AutomationEdge[];
+	description: string;
+	source: string;
+	triggerBindings: TriggerBinding[];
+	savedAt: number;
+}
+
+function isWorkflowDocument(
+	value: unknown,
+): value is AutomationWorkflowDocument {
+	if (!value || typeof value !== "object") return false;
+	const document = value as Partial<AutomationWorkflowDocument>;
+	return (
+		document.formatVersion === 2 &&
+		Array.isArray(document.triggerBindings) &&
+		Array.isArray(document.graph?.nodes) &&
+		Array.isArray(document.graph?.edges)
+	);
+}
+
 // ---- Helpers ----
 function ensureTriggerNode(nodes: AutomationNode[]): AutomationNode[] {
-	let withTrigger = nodes;
-	if (!nodes.some((node) => node.type === "trigger")) {
-		const triggerMeta = NODE_TYPE_META.find(
-			(meta) => meta.type === "trigger",
-		);
-		if (!triggerMeta) return nodes;
-		const triggerNode: AutomationNode = {
-			id: `trigger-${crypto.randomUUID()}`,
-			type: "trigger",
-			label: "Start",
-			position: { x: 0, y: 0 },
-			outputVar: triggerMeta.defaultOutputVar,
-			config: { ...triggerMeta.defaultConfig },
-		};
-		withTrigger = [triggerNode, ...nodes];
+	let withTrigger = nodes.map((node) =>
+		node.type === "trigger" && !node.workflowType
+			? {
+					...node,
+					workflowType: "trigger.start" as const,
+					workflowConfig: {},
+					workflowCodeMode: "generated" as const,
+				}
+			: node,
+	);
+	if (!withTrigger.some((node) => node.workflowType === "trigger.start")) {
+		withTrigger = [
+			createCanvasWorkflowNode("trigger.start", 0),
+			...withTrigger,
+		];
 	}
 
 	// Starter definitions created before canvas positioning did not include
@@ -128,7 +151,12 @@ function ensureTriggerNode(nodes: AutomationNode[]): AutomationNode[] {
 	);
 }
 
-const EMPTY_GRAPH: AutomationGraph = { nodes: [], edges: [] };
+function encodeBase64(value: string): string {
+	const bytes = new TextEncoder().encode(value);
+	let binary = "";
+	for (const byte of bytes) binary += String.fromCharCode(byte);
+	return btoa(binary);
+}
 
 function defaultEdges(nodes: AutomationNode[]): AutomationEdge[] {
 	return nodes.slice(0, -1).map((node, index) => ({
@@ -180,15 +208,17 @@ export function AutomationCanvas({
 	const [stepDurations, setStepDurations] = useState<Record<string, number>>(
 		{},
 	);
-	const [steps, setSteps] = useState<AutomationNode[]>(() =>
-		ensureTriggerNode(EMPTY_GRAPH.nodes),
+	const [steps, setSteps] = useState<AutomationNode[]>(
+		() => createInitialCanvasWorkflowDocument().steps,
 	);
 	const [graphEdges, setGraphEdges] = useState<AutomationEdge[]>([]);
-	const [config, setConfig] = useState<AutomationConfigEntry[]>([]);
-	const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
-	const [nodeOutputs, setNodeOutputsState] = useState<Record<string, string>>(
-		{},
+	const [source, setSource] = useState(
+		() => createInitialCanvasWorkflowDocument().source,
 	);
+	const [triggerBindings, setTriggerBindings] = useState<TriggerBinding[]>(
+		() => createInitialCanvasWorkflowDocument().triggerBindings,
+	);
+	const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
 	const [showAddMenu, setShowAddMenu] = useState(false);
 
 	// Drawer state — which step is being edited
@@ -203,14 +233,15 @@ export function AutomationCanvas({
 	const [latestRunStatus, setLatestRunStatus] = useState<RunStatus | null>(
 		null,
 	);
-	const [latestRunId, setLatestRunId] = useState<string | null>(null);
-	const [_latestRunError, setLatestRunError] = useState<string | null>(null);
 	const [latestRunResults, setLatestRunResults] = useState<
 		AutomationNodeResult[]
 	>([]);
 	const [aiRunSummary, setAiRunSummary] = useState<string | null>(null);
 	const [generatingAiSummary, setGeneratingAiSummary] = useState(false);
 	const [runs, setRuns] = useState<AutomationRunSummary[]>([]);
+	const [runDetails, setRunDetails] = useState<
+		Record<string, AutomationRunDetail>
+	>({});
 	const [expandedHistoryRunId, setExpandedHistoryRunId] = useState<
 		string | null
 	>(null);
@@ -325,95 +356,78 @@ export function AutomationCanvas({
 		[getNodeHeight],
 	);
 
-	// ---- Data loading ----
-	usePixel<AutomationDocument | null>(
-		`GetAutomation(project=["${appId}"]);`,
-		{
-			data: null,
-			onSuccess: (doc) => {
-				const serverSteps = ensureTriggerNode(
-					(doc?.graph ?? EMPTY_GRAPH).nodes,
+	// ---- Workflow definition loading ----
+	useEffect(() => {
+		let cancelled = false;
+		loadedRef.current = false;
+		void runPixel(`GetAutomation(project=["${appId}"]);`)
+			.then((response) => {
+				if (cancelled) return;
+				const output = response.pixelReturn?.[0]?.output as
+					| (AutomationWorkflowDocument & { source?: string })
+					| undefined;
+				const saved = isWorkflowDocument(output)
+					? canvasDocumentFromWorkflow(
+							output,
+							output.source ??
+								createInitialCanvasWorkflowDocument().source,
+						)
+					: createInitialCanvasWorkflowDocument();
+				const rawDraft = localStorage.getItem(
+					`automation-draft-${appId}`,
 				);
-				const serverDescription = doc?.description ?? "";
-				const draftKey = `automation-draft-${appId}`;
-				const raw = localStorage.getItem(draftKey);
-				if (raw && !mcpMode) {
+				if (rawDraft && !mcpMode) {
 					try {
-						const draft = JSON.parse(raw) as {
-							steps: AutomationNode[];
-							edges?: AutomationEdge[];
-							description: string;
-							savedAt: number;
-						};
-						setSteps(draft.steps);
-						setGraphEdges(draft.edges ?? defaultEdges(draft.steps));
+						const draft = JSON.parse(
+							rawDraft,
+						) as CanvasWorkflowDraft;
+						setSteps(ensureTriggerNode(draft.steps));
+						setGraphEdges(draft.edges);
 						setDescription(draft.description);
+						setSource(draft.source);
+						setTriggerBindings(draft.triggerBindings);
 						setIsDirty(true);
-						setTimeout(() => {
-							loadedRef.current = true;
-						}, 0);
 						toast.success(
 							"Draft restored from your previous session",
-							{
-								description:
-									"Your unsaved changes have been restored.",
-							},
 						);
 						return;
 					} catch {
-						localStorage.removeItem(draftKey);
+						localStorage.removeItem(`automation-draft-${appId}`);
 					}
 				}
-				setSteps(serverSteps);
-				setGraphEdges(
-					doc?.graph.edges?.length
-						? doc.graph.edges
-						: defaultEdges(serverSteps),
-				);
-				setDescription(serverDescription);
-				setTimeout(() => {
-					loadedRef.current = true;
-				}, 0);
-			},
-			onError: () => {
-				setSteps(ensureTriggerNode(EMPTY_GRAPH.nodes));
-				setGraphEdges([]);
-				setTimeout(() => {
-					loadedRef.current = true;
-				}, 0);
-			},
-		},
-	);
+				setSteps(ensureTriggerNode(saved.steps));
+				setGraphEdges(saved.edges);
+				setDescription(saved.description);
+				setSource(saved.source);
+				setTriggerBindings(saved.triggerBindings);
+			})
+			.catch((error: Error) => {
+				if (!cancelled) {
+					toast.error(
+						error.message ||
+							"Unable to load this Python automation.",
+					);
+					const initial = createInitialCanvasWorkflowDocument();
+					setSteps(initial.steps);
+					setGraphEdges(initial.edges);
+					setDescription(initial.description);
+					setSource(initial.source);
+					setTriggerBindings(initial.triggerBindings);
+				}
+			})
+			.finally(() => {
+				if (!cancelled) loadedRef.current = true;
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [appId, mcpMode]);
 
-	usePixel<AutomationConfigEntry[]>(
-		`GetAutomationConfig(project=["${appId}"]);`,
-		{
-			data: [],
-			onSuccess: (configList) => setConfig(configList ?? []),
-		},
+	const historyLoading = false;
+	const hasRunnableSteps = steps.some(
+		(step) => step.workflowType !== "trigger.start",
 	);
-
-	const {
-		data: runsData,
-		status: runsStatus,
-		refresh: refreshRuns,
-	} = usePixel<AutomationRunSummary[]>(
-		`ListAutomationRuns(project=["${appId}"], limit=[25]);`,
-		{
-			data: [],
-			onError: (_data, error) =>
-				toast.error(
-					`Failed to load run history: ${error.message ?? "Unknown error"}`,
-				),
-		},
-	);
-	const historyLoading = runsStatus === "INITIAL" || runsStatus === "LOADING";
-	const hasRunnableSteps = steps.some((s) => s.type !== "trigger");
-
-	useEffect(() => {
-		setRuns(runsData ?? []);
-		if (runsData) setLastRefreshed(new Date());
-	}, [runsData]);
+	const refreshRuns = useCallback(() => setLastRefreshed(new Date()), []);
 
 	// Draft persistence
 	useEffect(() => {
@@ -422,6 +436,8 @@ export function AutomationCanvas({
 			steps,
 			edges: graphEdges,
 			description,
+			source,
+			triggerBindings,
 			savedAt: Date.now(),
 		};
 		localStorage.setItem(
@@ -429,7 +445,7 @@ export function AutomationCanvas({
 			JSON.stringify(draft),
 		);
 		setIsDirty(true);
-	}, [steps, graphEdges, description, appId]);
+	}, [steps, graphEdges, description, source, triggerBindings, appId]);
 
 	// ---- Derived values ----
 	const stepOutputPreviews = useMemo(
@@ -445,16 +461,14 @@ export function AutomationCanvas({
 	const incompleteCount = useMemo(
 		() =>
 			steps.filter(
-				(s) => s.type !== "trigger" && validateNode(s).length > 0,
+				(step) =>
+					step.workflowType !== "trigger.start" &&
+					validateCanvasWorkflowNode(step).length > 0,
 			).length,
 		[steps],
 	);
 
 	// ---- Callbacks ----
-	const setNodeOutput = useCallback((outputVar: string, value: string) => {
-		setNodeOutputsState((prev) => ({ ...prev, [outputVar]: value }));
-	}, []);
-
 	const handleDevModeChange = useCallback(
 		(value: boolean) => {
 			setDevMode(value);
@@ -464,27 +478,19 @@ export function AutomationCanvas({
 	);
 
 	const addStep = useCallback(
-		(type: AutomationNodeType) => {
-			const meta = NODE_TYPE_META.find((item) => item.type === type);
-			if (!meta) return;
-			const id = newStepId(type);
+		(type: AutomationWorkflowNodeType) => {
 			const previousStep = steps[steps.length - 1];
-			const newStep: AutomationNode = {
-				id,
-				type,
-				position: {
-					x: previousStep?.position.x ?? centerXRef.current,
-					y: previousStep
-						? previousStep.position.y +
-							getNodeHeight(previousStep.id) +
-							NODE_ARROW_GAP
-						: 0,
-				},
-				label: getDisplayMeta(type).label,
-				outputVar: `${meta.defaultOutputVar}_${steps.length + 1}`,
-				config: { ...meta.defaultConfig },
+			const newStep = createCanvasWorkflowNode(type, steps.length);
+			const id = newStep.id;
+			newStep.position = {
+				x: previousStep?.position.x ?? centerXRef.current,
+				y: previousStep
+					? previousStep.position.y +
+						getNodeHeight(previousStep.id) +
+						NODE_ARROW_GAP
+					: 0,
 			};
-			setSteps((prev) => [...prev, newStep]);
+			setSteps((previous) => [...previous, newStep]);
 			if (previousStep) {
 				setGraphEdges((previous) => [
 					...previous,
@@ -502,18 +508,18 @@ export function AutomationCanvas({
 	);
 
 	const updateStep = useCallback((updated: AutomationNode) => {
-		setSteps((prev) =>
-			prev.map((s) => (s.id === updated.id ? updated : s)),
+		setSteps((previous) =>
+			previous.map((step) => (step.id === updated.id ? updated : step)),
 		);
-		if (validateNode(updated).length === 0) {
-			setStepErrors((prev) => {
-				const next = { ...prev };
+		if (validateCanvasWorkflowNode(updated).length === 0) {
+			setStepErrors((previous) => {
+				const next = { ...previous };
 				delete next[updated.id];
 				return next;
 			});
-			setStepStatuses((prev) => {
-				if (prev[updated.id] !== "error") return prev;
-				const next = { ...prev };
+			setStepStatuses((previous) => {
+				if (previous[updated.id] !== "error") return previous;
+				const next = { ...previous };
 				delete next[updated.id];
 				return next;
 			});
@@ -573,63 +579,42 @@ export function AutomationCanvas({
 	}, []);
 
 	const upstreamVarsFor = useCallback(
-		(index: number) => {
-			const stepVars = steps
+		(index: number) =>
+			steps
 				.slice(0, index)
-				.map((s) => s.outputVar)
+				.map((step) => step.outputVar)
 				.filter(
 					(value): value is string =>
 						typeof value === "string" && value.length > 0,
-				);
-			const configVars = config.map((entry) => `config.${entry.key}`);
-			return [...stepVars, ...configVars];
-		},
-		[steps, config],
+				),
+		[steps],
 	);
 
 	const save = useCallback(async (): Promise<boolean> => {
 		setSaving(true);
 		try {
-			const doc: AutomationDocument = {
-				version: 1,
-				...(description.trim()
-					? { description: description.trim() }
-					: {}),
-				graph: { nodes: steps, edges: graphEdges },
-			};
-			const json = btoa(
-				encodeURIComponent(JSON.stringify(doc)).replace(
-					/%([0-9A-F]{2})/gi,
-					(_, p1) => String.fromCharCode(parseInt(p1, 16)),
-				),
+			const definition = canvasDocumentToWorkflow({
+				description,
+				triggerBindings,
+				steps,
+				edges: graphEdges,
+			});
+			await runPixel(
+				`SaveAutomation(project=["${appId}"], json=["${encodeBase64(JSON.stringify(definition))}"], source=["${encodeBase64(source)}"]);`,
 			);
-			const configJson = btoa(
-				encodeURIComponent(JSON.stringify(config)).replace(
-					/%([0-9A-F]{2})/gi,
-					(_, p1) => String.fromCharCode(parseInt(p1, 16)),
-				),
-			);
-			await Promise.all([
-				runPixel(
-					`SaveAutomation(project=["${appId}"], json=["${json}"]);`,
-				),
-				runPixel(
-					`SaveAutomationConfig(project=["${appId}"], config=["${configJson}"]);`,
-				),
-			]);
 			localStorage.removeItem(`automation-draft-${appId}`);
 			setIsDirty(false);
 			toast.success("Automation saved");
 			return true;
-		} catch (e) {
+		} catch (error) {
 			toast.error(
-				`Save failed: ${e instanceof Error ? e.message : "Unknown error"}`,
+				`Save failed: ${error instanceof Error ? error.message : "Unknown error"}`,
 			);
 			return false;
 		} finally {
 			setSaving(false);
 		}
-	}, [appId, config, description, graphEdges, steps]);
+	}, [appId, description, graphEdges, source, steps, triggerBindings]);
 
 	// Cmd+S / Ctrl+S
 	useEffect(() => {
@@ -646,8 +631,6 @@ export function AutomationCanvas({
 	const dismissRun = useCallback(() => {
 		setLatestRunResults([]);
 		setLatestRunStatus(null);
-		setLatestRunId(null);
-		setLatestRunError(null);
 		setStepStatuses({});
 		setStepErrors({});
 		setStepDurations({});
@@ -656,68 +639,62 @@ export function AutomationCanvas({
 
 	const applyRunData = useCallback(
 		(runData: AutomationRunData) => {
-			const nodeResultsMap = new Map(
-				(runData.nodeResults ?? []).map((r) => [r.NODE_ID, r]),
+			const nodeResults = runData.nodeResults ?? [];
+			const resultByNodeId = new Map(
+				nodeResults.map((result) => [result.NODE_ID, result]),
 			);
-			const newStatuses: Record<string, StepRunStatus> = {};
-			const newErrors: Record<string, string> = {};
-			const newDurations: Record<string, number> = {};
-			const newOutputs: Record<string, string> = {};
+			const statuses: Record<string, StepRunStatus> = {};
+			const errors: Record<string, string> = {};
+			const durations: Record<string, number> = {};
 			for (const step of steps) {
-				const r = nodeResultsMap.get(step.id);
-				if (!r) continue;
-				if (r.STATUS === "SUCCESS" || r.STATUS === "SKIPPED")
-					newStatuses[step.id] = "success";
-				else if (r.STATUS === "RUNNING")
-					newStatuses[step.id] = "running";
-				else if (r.STATUS === "FAILED") newStatuses[step.id] = "error";
-				if (r.ERROR_MESSAGE) newErrors[step.id] = r.ERROR_MESSAGE;
-				if (r.DURATION_MS != null)
-					newDurations[step.id] = r.DURATION_MS;
-				if (r.OUTPUT_PREVIEW && step.outputVar) {
-					newOutputs[step.outputVar] = applyOutputTransform(
-						r.OUTPUT_PREVIEW,
-						step.outputTransform,
-					);
-				}
+				const result = resultByNodeId.get(step.id);
+				if (!result) continue;
+				statuses[step.id] =
+					result.STATUS === "FAILED"
+						? "error"
+						: result.STATUS === "RUNNING"
+							? "running"
+							: "success";
+				if (result.ERROR_MESSAGE)
+					errors[step.id] = result.ERROR_MESSAGE;
+				durations[step.id] = result.DURATION_MS;
 			}
-			setStepStatuses((prev) => ({ ...prev, ...newStatuses }));
-			setStepErrors((prev) => ({ ...prev, ...newErrors }));
-			setStepDurations((prev) => ({ ...prev, ...newDurations }));
-			setNodeOutputsState((prev) => ({ ...prev, ...newOutputs }));
+			setStepStatuses(statuses);
+			setStepErrors(errors);
+			setStepDurations(durations);
 			setLatestRunStatus(runData.STATUS);
-			setLatestRunId(runData.RUN_ID ?? null);
-			setLatestRunError(runData.ERROR_MESSAGE ?? null);
-			setLatestRunResults(runData.nodeResults ?? []);
+			setLatestRunResults(nodeResults);
 		},
 		[steps],
 	);
 
 	const run = useCallback(async () => {
-		if (steps.length === 0) return;
-		const invalidSteps = steps.filter((s) => s.type !== "trigger");
-		const validationErrors: Record<string, string> = {};
-		for (const step of invalidSteps) {
-			const errs = validateNode(step);
-			if (errs.length > 0)
-				validationErrors[step.id] = `${errs.join(". ")}.`;
-		}
-		if (Object.keys(validationErrors).length > 0) {
-			setStepStatuses((prev) => {
-				const next = { ...prev };
-				for (const id of Object.keys(validationErrors))
-					next[id] = "error";
-				return next;
-			});
-			setStepErrors((prev) => ({ ...prev, ...validationErrors }));
-			const count = Object.keys(validationErrors).length;
+		const invalidSteps = steps.filter(
+			(step) =>
+				step.workflowType !== "trigger.start" &&
+				validateCanvasWorkflowNode(step).length > 0,
+		);
+		if (invalidSteps.length > 0) {
+			setStepStatuses(
+				Object.fromEntries(
+					invalidSteps.map((step) => [step.id, "error"] as const),
+				),
+			);
+			setStepErrors(
+				Object.fromEntries(
+					invalidSteps.map((step) => [
+						step.id,
+						validateCanvasWorkflowNode(step).join(". "),
+					]),
+				),
+			);
 			toast.error(
-				`Fix ${count} step${count > 1 ? "s" : ""} before running`,
+				`Fix ${invalidSteps.length} step${invalidSteps.length === 1 ? "" : "s"} before running`,
 			);
 			return;
 		}
-		const saved = await save();
-		if (!saved) return;
+		if (!(await save())) return;
+
 		setRunning(true);
 		setAiRunSummary(null);
 		setGeneratingAiSummary(false);
@@ -725,154 +702,69 @@ export function AutomationCanvas({
 		setStepErrors({});
 		setStepDurations({});
 		setLatestRunStatus("RUNNING");
-		setLatestRunId(null);
-		setLatestRunError(null);
 		setLatestRunResults([]);
 		try {
-			let localRunId: string | null = null;
-			const { jobId } = await runPixelAsync(
+			const response = await runPixel(
 				`TriggerAutomation(project=["${appId}"]);`,
 			);
-			for (let i = 0; i < 10; i++) {
-				await new Promise<void>((resolve) => setTimeout(resolve, 300));
-				try {
-					const activeRes = await runPixel(
-						`GetActiveAutomationRun(project=["${appId}"]);`,
-					);
-					const activeData = activeRes.pixelReturn?.[0]?.output as {
-						RUN_ID?: string;
-					} | null;
-					if (activeData?.RUN_ID) {
-						localRunId = activeData.RUN_ID;
-						setLatestRunId(activeData.RUN_ID);
-						break;
-					}
-				} catch {
-					/* keep polling */
-				}
-			}
-			let polling = true;
-			while (polling) {
-				const streamRes = await getPixelJobStreaming(jobId);
-				for (const message of streamRes.message) {
-					const msg = message as unknown as {
-						stream_type?: string;
-						data?: Partial<AutomationNodeResult> & {
-							NODE_ID?: string;
-						};
-					};
-					if (msg.stream_type !== "automation" || !msg.data?.NODE_ID)
-						continue;
-					const { data } = msg;
-					const nodeId = data.NODE_ID as string;
-					setStepStatuses((prev) => ({
-						...prev,
-						[nodeId]:
-							data.STATUS === "FAILED"
-								? "error"
-								: data.STATUS === "RUNNING"
-									? "running"
-									: "success",
-					}));
-					if (data.DURATION_MS != null)
-						setStepDurations((prev) => ({
-							...prev,
-							[nodeId]: data.DURATION_MS as number,
-						}));
-					if (data.ERROR_MESSAGE)
-						setStepErrors((prev) => ({
-							...prev,
-							[nodeId]: data.ERROR_MESSAGE as string,
-						}));
-					setLatestRunResults((prev) => {
-						const step = steps.find((s) => s.id === nodeId);
-						const entry: AutomationNodeResult = {
-							NODE_ID: nodeId,
-							NODE_LABEL:
-								data.NODE_LABEL ?? step?.label ?? nodeId,
-							STATUS: (data.STATUS ??
-								"RUNNING") as AutomationNodeResult["STATUS"],
-							DURATION_MS: data.DURATION_MS ?? 0,
-							OUTPUT_PREVIEW: data.OUTPUT_PREVIEW ?? null,
-							ERROR_MESSAGE: data.ERROR_MESSAGE ?? null,
-						};
-						const idx = prev.findIndex((r) => r.NODE_ID === nodeId);
-						if (idx === -1) return [...prev, entry];
-						const next = [...prev];
-						next[idx] = entry;
-						return next;
-					});
-					if (data.OUTPUT_PREVIEW) {
-						const step = steps.find((s) => s.id === nodeId);
-						if (step?.outputVar)
-							setNodeOutputsState((prev) => ({
-								...prev,
-								[step.outputVar]: applyOutputTransform(
-									data.OUTPUT_PREVIEW as string,
-									step.outputTransform,
-								),
-							}));
-					}
-				}
-				if (
-					streamRes.status === "ProgressComplete" ||
-					streamRes.status === "Complete"
-				) {
-					polling = false;
-				} else if (streamRes.status === "Error") {
-					throw new Error("Automation run encountered an error");
-				} else {
-					await new Promise((resolve) => setTimeout(resolve, 500));
-				}
-			}
-			const asyncResult = await getPixelAsyncResult(jobId);
-			if (asyncResult.errors.length > 0) {
-				const message = asyncResult.errors[0] ?? "Automation failed";
-				setLatestRunStatus("FAILED");
-				setLatestRunError(message);
-				refreshRuns();
-				if (localRunId) {
-					setGeneratingAiSummary(true);
-					runPixel(
-						`GenerateRunSummary(project=["${appId}"], runId=["${localRunId}"]);`,
-					)
-						.then((res) => {
-							const text = res.pixelReturn?.[0]?.output;
-							if (typeof text === "string" && text.trim())
-								setAiRunSummary(text.trim());
-						})
-						.catch(() => {})
-						.finally(() => setGeneratingAiSummary(false));
-				}
-				return;
-			}
-			const runData = asyncResult.results[0]
-				?.output as AutomationRunData | null;
-			if (runData) applyRunData(runData);
-			toast.success(runData?.summary ?? "Automation completed");
-			refreshRuns();
-			const completedRunId = runData?.RUN_ID ?? null;
-			if (completedRunId) {
-				setGeneratingAiSummary(true);
-				runPixel(
-					`GenerateRunSummary(project=["${appId}"], runId=["${completedRunId}"]);`,
-				)
-					.then((res) => {
-						const text = res.pixelReturn?.[0]?.output;
-						if (typeof text === "string" && text.trim())
-							setAiRunSummary(text.trim());
-					})
-					.catch(() => {})
-					.finally(() => setGeneratingAiSummary(false));
+			const output = response.pixelReturn?.[0]
+				?.output as TriggerAutomationOutput | null;
+			const status = output?.STATUS ?? output?.status ?? "SUCCESS";
+			const runId = output?.RUN_ID ?? crypto.randomUUID();
+			const nodeResults =
+				output?.nodeResults ??
+				steps.map(
+					(step): AutomationNodeResult => ({
+						NODE_ID: step.id,
+						NODE_LABEL: step.label,
+						STATUS: status === "FAILED" ? "FAILED" : "SUCCESS",
+						DURATION_MS: 0,
+						OUTPUT_PREVIEW: null,
+						ERROR_MESSAGE:
+							status === "FAILED"
+								? (output?.ERROR_MESSAGE ?? "Automation failed")
+								: null,
+					}),
+				);
+			const runData: AutomationRunData = {
+				STATUS: status,
+				RUN_ID: runId,
+				nodeResults,
+				ERROR_MESSAGE: output?.ERROR_MESSAGE,
+				summary: output?.summary,
+			};
+			applyRunData(runData);
+			setAiRunSummary(runData.summary ?? null);
+			const completedAt = new Date().toISOString();
+			const summary: AutomationRunSummary = {
+				RUN_ID: runId,
+				PROJECT_ID: appId,
+				STARTED_AT: completedAt,
+				COMPLETED_AT: completedAt,
+				STATUS: status,
+				RESULT_SUMMARY: runData.summary,
+			};
+			setRuns((previous) => [summary, ...previous]);
+			setRunDetails((previous) => ({
+				...previous,
+				[runId]: { ...summary, nodeResults },
+			}));
+			setLastRefreshed(new Date());
+			if (status === "SUCCESS") {
+				toast.success(runData.summary ?? "Automation completed");
+			} else {
+				toast.error(runData.ERROR_MESSAGE ?? "Automation failed");
 			}
 		} catch (error) {
-			const message = (error as Error).message ?? "Unknown error";
+			const message =
+				error instanceof Error ? error.message : "Automation failed";
 			setLatestRunStatus("FAILED");
-			setLatestRunError(message);
+			setAiRunSummary(null);
+			toast.error(message);
 		} finally {
 			setRunning(false);
 		}
-	}, [appId, applyRunData, refreshRuns, save, steps]);
+	}, [appId, applyRunData, save, steps]);
 
 	const handleDoneReturnToChat = useCallback(async () => {
 		if (saving) return;
@@ -906,32 +798,26 @@ export function AutomationCanvas({
 		setMcpDone(true);
 	}, [saving, mcpContext, isDirty, save, steps, description, appId, mcpMode]);
 
-	const handleSuggestDescription = useCallback(async () => {
-		if (suggestingDescription || !appId) return;
+	const handleSuggestDescription = useCallback(() => {
+		if (suggestingDescription) return;
 		setSuggestingDescription(true);
-		try {
-			const docJson = JSON.stringify({
-				graph: { nodes: steps, edges: [] },
-			});
-			const contentB64 = btoa(
-				unescape(
-					encodeURIComponent(docJson).replace(
-						/%([0-9A-F]{2})/gi,
-						(_, p1) => String.fromCharCode(parseInt(p1, 16)),
-					),
-				),
-			);
-			const result = await runPixel(
-				`ExplainAutomation(project=["${appId}"], content=["${contentB64}"]);`,
-			);
-			const text = result.pixelReturn?.[0]?.output as string | null;
-			if (text?.trim()) setDescription(text.trim());
-		} catch {
-			/* silently fail */
-		} finally {
-			setSuggestingDescription(false);
-		}
-	}, [appId, steps, suggestingDescription]);
+		const labels = steps
+			.filter((step) => step.workflowType !== "trigger.start")
+			.map(
+				(step) =>
+					step.label ??
+					(step.workflowType
+						? getWorkflowNodeDefinition(step.workflowType)?.label
+						: undefined),
+			)
+			.filter((label): label is string => Boolean(label));
+		setDescription(
+			labels.length > 0
+				? `Automation that runs ${labels.join(", ")}.`
+				: "Python automation workflow.",
+		);
+		setSuggestingDescription(false);
+	}, [steps, suggestingDescription]);
 
 	const loadTemplate = useCallback(
 		(nodes: AutomationNode[], automationDescription: string) => {
@@ -951,7 +837,7 @@ export function AutomationCanvas({
 	}, [appId]);
 
 	const selectHistoryRun = useCallback(
-		async (runId: string) => {
+		(runId: string) => {
 			if (expandedHistoryRunId === runId) {
 				setExpandedHistoryRunId(null);
 				setExpandedHistoryRun(null);
@@ -964,20 +850,10 @@ export function AutomationCanvas({
 			setExpandedHistoryNodes(new Set());
 			setShowExecutedDefinition(false);
 			setHistoryDetailLoading(true);
-			try {
-				const response = await runPixel(
-					`GetAutomationRun(project=["${appId}"], runId=["${runId}"]);`,
-				);
-				const detail = response.pixelReturn?.[0]
-					?.output as AutomationRunDetail | null;
-				if (detail) setExpandedHistoryRun(detail);
-			} catch {
-				toast.error("Failed to load run detail");
-			} finally {
-				setHistoryDetailLoading(false);
-			}
+			setExpandedHistoryRun(runDetails[runId] ?? null);
+			setHistoryDetailLoading(false);
 		},
-		[appId, expandedHistoryRunId],
+		[expandedHistoryRunId, runDetails],
 	);
 
 	const toggleHistoryNode = useCallback((nodeId: string) => {
@@ -1024,7 +900,9 @@ export function AutomationCanvas({
 		}
 
 		steps.forEach((step, i) => {
-			const nonTriggerSteps = steps.filter((s) => s.type !== "trigger");
+			const nonTriggerSteps = steps.filter(
+				(step) => step.workflowType !== "trigger.start",
+			);
 			const ntIndex = nonTriggerSteps.findIndex((s) => s.id === step.id);
 
 			if (step.type === "trigger") {
@@ -1061,7 +939,7 @@ export function AutomationCanvas({
 						runDuration: stepDurations[step.id],
 						runOutput: stepOutputPreviews[step.id] ?? null,
 						isIncomplete:
-							validateNode(step).length > 0 &&
+							validateCanvasWorkflowNode(step).length > 0 &&
 							!stepStatuses[step.id],
 						locked: running,
 						isLast: i === steps.length - 1,
@@ -1225,38 +1103,24 @@ export function AutomationCanvas({
 											: "Save"}
 									</Button>
 								</div>
-								{running && latestRunId ? (
-									<Button
-										size="sm"
-										variant="destructive"
-										onClick={() => {
-											void runPixel(
-												`CancelAutomationRun(project=["${appId}"], runId=["${latestRunId}"]);`,
-											);
-										}}
-									>
-										Cancel
-									</Button>
-								) : (
-									<Button
-										data-tour="run"
-										size="sm"
-										onClick={run}
-										disabled={running || !hasRunnableSteps}
-										title={
-											!hasRunnableSteps
-												? "Add at least one step before running"
-												: undefined
-										}
-									>
-										{running ? (
-											<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-										) : (
-											<Play className="mr-1.5 h-3.5 w-3.5" />
-										)}
-										Run
-									</Button>
-								)}
+								<Button
+									data-tour="run"
+									size="sm"
+									onClick={run}
+									disabled={running || !hasRunnableSteps}
+									title={
+										!hasRunnableSteps
+											? "Add at least one step before running"
+											: undefined
+									}
+								>
+									{running ? (
+										<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+									) : (
+										<Play className="mr-1.5 h-3.5 w-3.5" />
+									)}
+									Run
+								</Button>
 							</div>
 						</div>
 					</div>
@@ -1274,8 +1138,19 @@ export function AutomationCanvas({
 													Workflow score
 												</p>
 												<p className="text-[11px] text-muted-foreground">
-													{steps.length - 1} action
-													{steps.length - 1 === 1
+													{
+														steps.filter(
+															(step) =>
+																step.workflowType !==
+																"trigger.start",
+														).length
+													}{" "}
+													action
+													{steps.filter(
+														(step) =>
+															step.workflowType !==
+															"trigger.start",
+													).length === 1
 														? ""
 														: "s"}{" "}
 													in this graph
@@ -1292,13 +1167,21 @@ export function AutomationCanvas({
 												const meta = getDisplayMeta(
 													step.type,
 												);
+												const workflowDefinition =
+													step.workflowType
+														? getWorkflowNodeDefinition(
+																step.workflowType,
+															)
+														: undefined;
 												const Icon = meta.icon;
 												const selected =
 													editingStepId === step.id;
 												const incomplete =
-													step.type !== "trigger" &&
-													validateNode(step).length >
-														0;
+													step.workflowType !==
+														"trigger.start" &&
+													validateCanvasWorkflowNode(
+														step,
+													).length > 0;
 												return (
 													<button
 														key={step.id}
@@ -1325,10 +1208,11 @@ export function AutomationCanvas({
 																	meta.label}
 															</span>
 															<span className="block truncate text-[10px] text-muted-foreground">
-																{step.type ===
-																"trigger"
+																{step.workflowType ===
+																"trigger.start"
 																	? "Manual trigger"
-																	: meta.label}
+																	: (workflowDefinition?.label ??
+																		meta.label)}
 															</span>
 														</span>
 														{incomplete && (
@@ -1379,13 +1263,12 @@ export function AutomationCanvas({
 											</div>
 											<div className="rounded-xl border border-dashed p-3">
 												<p className="font-medium text-xs">
-													Not available yet
+													Developer workflows
 												</p>
 												<p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
-													Conditions, else paths,
-													loops, retries, and event
-													triggers are intentionally
-													not authorable here yet.
+													Use the Add Node catalog for
+													wait actions and custom
+													Python steps.
 												</p>
 											</div>
 											<div className="space-y-2">
@@ -1419,23 +1302,15 @@ export function AutomationCanvas({
 									</div>
 								}
 								config={
-									<div className="h-full overflow-y-auto">
-										<div className="border-b px-4 py-3">
-											<p className="font-semibold text-sm">
-												Workflow variables
-											</p>
-											<p className="mt-0.5 text-[11px] text-muted-foreground">
-												Reusable values available to
-												every action.
-											</p>
-										</div>
-										<AutomationConfigTab
-											config={config}
-											onChange={(nextConfig) => {
-												setConfig(nextConfig);
-												setIsDirty(true);
-											}}
-										/>
+									<div className="h-full overflow-y-auto p-4">
+										<p className="font-semibold text-sm">
+											Node configuration
+										</p>
+										<p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
+											Select a node to configure its
+											engine, operation, inputs, and
+											outputs in the Inspector.
+										</p>
 									</div>
 								}
 								inspector={
@@ -1447,8 +1322,7 @@ export function AutomationCanvas({
 										<TriggerEditPanel
 											description={description}
 											devMode={devMode}
-											appId={appId}
-											step={editingStep}
+											source={source}
 											suggestingDescription={
 												suggestingDescription
 											}
@@ -1457,6 +1331,7 @@ export function AutomationCanvas({
 											onDevModeChange={
 												handleDevModeChange
 											}
+											onSourceChange={setSource}
 											onSuggestDescription={() =>
 												void handleSuggestDescription()
 											}
@@ -1467,18 +1342,15 @@ export function AutomationCanvas({
 									) : editingStep ? (
 										<NodeEditDrawer
 											step={editingStep}
+											appId={appId}
 											upstreamVars={upstreamVarsFor(
 												steps.indexOf(editingStep),
 											)}
-											nodeOutputs={nodeOutputs}
 											runStatus={
 												stepStatuses[editingStep.id]
 											}
 											runError={
 												stepErrors[editingStep.id]
-											}
-											runDuration={
-												stepDurations[editingStep.id]
 											}
 											runOutput={
 												stepOutputPreviews[
@@ -1486,12 +1358,12 @@ export function AutomationCanvas({
 												] ?? null
 											}
 											devMode={devMode}
-											appId={appId}
+											source={source}
+											onSourceChange={setSource}
 											onUpdate={updateStep}
 											onDelete={() =>
 												deleteStep(editingStep.id)
 											}
-											onSetOutput={setNodeOutput}
 										/>
 									) : (
 										<div className="flex h-full flex-col items-center justify-center px-6 text-center">
@@ -1526,10 +1398,11 @@ export function AutomationCanvas({
 											{steps
 												.filter(
 													(step) =>
-														step.type !==
-															"trigger" &&
-														validateNode(step)
-															.length > 0,
+														step.workflowType !==
+															"trigger.start" &&
+														validateCanvasWorkflowNode(
+															step,
+														).length > 0,
 												)
 												.map((step) => (
 													<button
@@ -1552,7 +1425,7 @@ export function AutomationCanvas({
 																).label}
 														</p>
 														<p className="mt-1 text-[11px] text-muted-foreground">
-															{validateNode(
+															{validateCanvasWorkflowNode(
 																step,
 															).join(". ")}
 														</p>
@@ -2046,13 +1919,10 @@ export function AutomationCanvas({
 
 						{/* Config tab */}
 						{activeTab === "config" && (
-							<AutomationConfigTab
-								config={config}
-								onChange={(nextConfig) => {
-									setConfig(nextConfig);
-									setIsDirty(true);
-								}}
-							/>
+							<div className="p-6 text-muted-foreground text-sm">
+								Node configuration is managed in the Inspector.
+								in the Inspector.
+							</div>
 						)}
 					</div>
 				</div>
@@ -2068,12 +1938,12 @@ export function AutomationCanvas({
 interface TriggerEditPanelProps {
 	description: string;
 	devMode: boolean;
-	appId: string;
-	step: AutomationNode;
+	source: string;
 	suggestingDescription: boolean;
 	hasRunnableSteps: boolean;
 	onDescriptionChange: (v: string) => void;
 	onDevModeChange: (v: boolean) => void;
+	onSourceChange: (source: string) => void;
 	onSuggestDescription: () => void;
 	onClose: () => void;
 }
@@ -2081,12 +1951,12 @@ interface TriggerEditPanelProps {
 function TriggerEditPanel({
 	description,
 	devMode,
-	appId,
-	step,
+	source,
 	suggestingDescription,
 	hasRunnableSteps,
 	onDescriptionChange,
 	onDevModeChange,
+	onSourceChange,
 	onSuggestDescription,
 	onClose,
 }: TriggerEditPanelProps) {
@@ -2146,8 +2016,8 @@ function TriggerEditPanel({
 						<div>
 							<p className="font-medium text-sm">Dev Mode</p>
 							<p className="text-[11px] text-muted-foreground">
-								Unlock advanced options: output variables,
-								transforms, step testing, Pixel preview.
+								View and edit the Python source artifact used by
+								the automation.
 							</p>
 						</div>
 						<Switch
@@ -2156,18 +2026,19 @@ function TriggerEditPanel({
 						/>
 					</div>
 					{devMode && (
-						<div>
+						<Field>
 							<p className="mb-1 font-medium text-[11px] text-muted-foreground">
-								Pixel reference
+								Python source artifact
 							</p>
-							<pre className="whitespace-pre-wrap break-all rounded-lg border bg-muted/40 px-3 py-2 font-mono text-[11px]">
-								{`TriggerAutomation(project=["${appId}"]);`}
-							</pre>
-							<p className="mt-1 text-[10px] text-muted-foreground">
-								Step output variable:{" "}
-								<code>{step.outputVar ?? "trigger_out"}</code>
-							</p>
-						</div>
+							<Textarea
+								className="min-h-48 font-mono text-xs"
+								rows={12}
+								value={source}
+								onChange={(event) =>
+									onSourceChange(event.target.value)
+								}
+							/>
+						</Field>
 					)}
 				</div>
 			</div>

@@ -13,6 +13,7 @@ import {
 	extractVarRefs,
 	formatDurationMs,
 } from "../../../domain/automation-utils";
+import { getWorkflowNodeDefinition } from "../../../domain/automation-workflow-adapter";
 import { StatusIcon } from "../../status-icon";
 
 export type AutomationNodeData = {
@@ -42,12 +43,16 @@ export function AutomationNode({ data }: NodeProps) {
 	const { step, runStatus, runDuration, isIncomplete, locked } = d;
 
 	const meta = getDisplayMeta(step.type);
+	const workflowDefinition = step.workflowType
+		? getWorkflowNodeDefinition(step.workflowType)
+		: undefined;
 	const Icon = meta.icon;
-	const label = getStepHeaderLabel(step);
+	const label =
+		step.label || workflowDefinition?.label || getStepHeaderLabel(step);
 	const borderClass =
 		STATUS_LEFT_BORDER[runStatus ?? "idle"] ?? STATUS_LEFT_BORDER.idle;
 
-	const pixelPreview = buildPixelPreview(step);
+	const pixelPreview = step.workflowType ? "" : buildPixelPreview(step);
 	const varRefs = extractVarRefs(pixelPreview);
 
 	const subtitle = (() => {
@@ -55,7 +60,7 @@ export function AutomationNode({ data }: NodeProps) {
 		const parts: string[] = [];
 		if (c.engineName) parts.push(c.engineName as string);
 		if (c.operation) parts.push(c.operation as string);
-		return parts.join(" · ") || meta.label;
+		return parts.join(" · ") || workflowDefinition?.label || meta.label;
 	})();
 
 	return (
