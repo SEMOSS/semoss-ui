@@ -130,9 +130,9 @@ export interface PlaygroundMessage {
 }
 
 /**
- * Params for the AskPlayground reactor
+ * Params for the AskRoom reactor
  */
-export interface AskPlaygroundParams {
+export interface AskRoomParams {
 	/** Engine (model) ID to route the request to */
 	engine: string;
 	/** Room ID the message belongs to */
@@ -159,9 +159,9 @@ export interface PlaygroundResponse {
 }
 
 /**
- * Params for the AddPlaygroundToolExecution reactor
+ * Params for the AddRoomToolExecution reactor
  */
-export interface AddPlaygroundToolExecutionParams {
+export interface AddRoomToolExecutionParams {
 	/** Engine (model app) ID */
 	engine: string;
 	/** Room ID the tool execution belongs to */

@@ -14,9 +14,9 @@ import {
 	type PixelJobStreamingStatus,
 } from "./base";
 import {
-	askPlayground,
+	askRoom,
 	createPlaygroundRoom,
-	getPlaygroundMessages,
+	getRoomMessages,
 	runAgent,
 	setRoomForInsight,
 	updateRoomOptions,
@@ -154,12 +154,12 @@ export class Room {
 	 * @returns The full message history.
 	 */
 	async getMessages(): Promise<PlaygroundMessage[]> {
-		return getPlaygroundMessages(this.insightId, this.roomId);
+		return getRoomMessages(this.insightId, this.roomId);
 	}
 
 	/**
 	 * Send a chat message and stream the model's response (client-driven,
-	 * AskPlayground). Automatically continues the conversation thread from the
+	 * AskRoom). Automatically continues the conversation thread from the
 	 * previous response unless `parentMessageId` is overridden in options.
 	 *
 	 * @param command - The message text to send.
@@ -178,7 +178,7 @@ export class Room {
 			context = this._options.instructions,
 		} = options;
 
-		const { jobId } = await askPlayground(this.insightId, {
+		const { jobId } = await askRoom(this.insightId, {
 			engine: this._options.modelId,
 			roomId: this.roomId,
 			command,

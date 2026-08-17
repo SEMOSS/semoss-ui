@@ -1,6 +1,6 @@
 import type {
-	AddPlaygroundToolExecutionParams,
-	AskPlaygroundParams,
+	AddRoomToolExecutionParams,
+	AskRoomParams,
 	PlaygroundMessage,
 	PlaygroundRoom,
 	PlaygroundRoomOptions,
@@ -28,8 +28,8 @@ export const createPlaygroundRoom = async (
 	workspaceId?: string,
 ): Promise<PlaygroundRoom> => {
 	const pixel = workspaceId
-		? `CreatePlaygroundRoom(workspaceId="${workspaceId}");`
-		: `CreatePlaygroundRoom();`;
+		? `CreateRoom(workspaceId="${workspaceId}");`
+		: `CreateRoom();`;
 	const { errors, pixelReturn } = await runPixel<[PlaygroundRoom]>(
 		pixel,
 		insightId,
@@ -41,7 +41,7 @@ export const createPlaygroundRoom = async (
 
 	const output = pixelReturn[0]?.output;
 	if (!output) {
-		throw new Error("CreatePlaygroundRoom returned no data");
+		throw new Error("CreateRoom returned no data");
 	}
 
 	return output;
@@ -54,11 +54,11 @@ export const createPlaygroundRoom = async (
  * @param roomId - The ID of the room to fetch messages for.
  * @returns The list of messages in the room.
  */
-export const getPlaygroundMessages = async (
+export const getRoomMessages = async (
 	insightId: string,
 	roomId: string,
 ): Promise<PlaygroundMessage[]> => {
-	const pixel = `GetPlaygroundMessages(roomId=["${roomId}"]);`;
+	const pixel = `GetRoomMessages(roomId=["${roomId}"]);`;
 	const { errors, pixelReturn } = await runPixel<[PlaygroundMessage[]]>(
 		pixel,
 		insightId,
@@ -70,7 +70,7 @@ export const getPlaygroundMessages = async (
 
 	const output = pixelReturn[0]?.output;
 	if (!output) {
-		throw new Error("GetPlaygroundMessages returned no data");
+		throw new Error("GetRoomMessages returned no data");
 	}
 
 	return output;
@@ -153,9 +153,9 @@ export const updateRoomOptions = async (
  * @returns `{ jobId }` to pass to {@link getPixelJobStreaming}.
  * @see sdk-playground skill for the full streaming loop and chat-vs-agent guide.
  */
-export const askPlayground = async (
+export const askRoom = async (
 	insightId: string,
-	params: AskPlaygroundParams,
+	params: AskRoomParams,
 ): Promise<{ jobId: string }> => {
 	const {
 		engine,
@@ -167,7 +167,7 @@ export const askPlayground = async (
 		paramValues = [{}],
 	} = params;
 
-	const pixel = `AskPlayground(engine=["${engine}"], roomId=["${roomId}"], command=["<encode>${command}</encode>"], context=["<encode>${context}</encode>"], image=${JSON.stringify(image)}, parentMessageId=["${parentMessageId}"], paramValues=${JSON.stringify(paramValues)})`;
+	const pixel = `AskRoom(engine=["${engine}"], roomId=["${roomId}"], command=["<encode>${command}</encode>"], context=["<encode>${context}</encode>"], image=${JSON.stringify(image)}, parentMessageId=["${parentMessageId}"], paramValues=${JSON.stringify(paramValues)})`;
 
 	return runPixelAsync(pixel, insightId);
 };
@@ -181,9 +181,9 @@ export const askPlayground = async (
  * @returns `{ jobId }` to pass to {@link getPixelJobStreaming}.
  * @see sdk-playground skill for the full tool-execution call stack.
  */
-export const addPlaygroundToolExecution = async (
+export const addRoomToolExecution = async (
 	insightId: string,
-	params: AddPlaygroundToolExecutionParams,
+	params: AddRoomToolExecutionParams,
 ): Promise<{ jobId: string }> => {
 	const {
 		engine,
@@ -198,7 +198,7 @@ export const addPlaygroundToolExecution = async (
 	} = params;
 
 	const lines: string[] = [
-		`AddPlaygroundToolExecution(`,
+		`AddRoomToolExecution(`,
 		`engine=["${engine}"],`,
 		`roomId=["${roomId}"],`,
 		...(parentMessageId ? [`parentMessageId=["${parentMessageId}"],`] : []),
@@ -225,7 +225,7 @@ export const addPlaygroundToolExecution = async (
  * @param options.sort - Sort direction for the returned rooms.
  * @returns The list of playground rooms.
  */
-export const getPlaygroundRooms = async (
+export const getUserRooms = async (
 	insightId: string,
 	options: {
 		pinned?: boolean;
@@ -242,7 +242,7 @@ export const getPlaygroundRooms = async (
 	}
 
 	const args = parts.length > 0 ? `(${parts.join(", ")})` : "()";
-	const pixel = `META | GetPlaygroundRooms${args};`;
+	const pixel = `META | GetUserConversationRoomsReactor${args};`;
 	const { errors, pixelReturn } = await runPixel<[PlaygroundRoom[]]>(
 		pixel,
 		insightId,
@@ -254,7 +254,7 @@ export const getPlaygroundRooms = async (
 
 	const output = pixelReturn[0]?.output;
 	if (!output) {
-		throw new Error("GetPlaygroundRooms returned no data");
+		throw new Error("GetUserConversationRoomsReactor returned no data");
 	}
 
 	return output;

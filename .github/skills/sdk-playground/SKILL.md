@@ -1,24 +1,24 @@
 ---
 name: sdk-playground
-description: "How to use the @semoss/sdk playground API. Use for: creating or listing playground rooms, sending messages (AskPlayground), fetching room messages or options, binding a room to an insight, updating room config. Covers imports, typed parameters, error handling, and usage patterns for all playground pixel wrappers."
+description: "How to use the @semoss/sdk room API. Use for: creating or listing rooms, sending messages (AskRoom), fetching room messages or options, binding a room to an insight, updating room config. Covers imports, typed parameters, error handling, and usage patterns for all room pixel wrappers."
 ---
 
-# @semoss/sdk — Playground API
+# @semoss/sdk — Room API
 
-All playground functions are exported from `@semoss/sdk`. They wrap the underlying SEMOSS pixel
+All room functions are exported from `@semoss/sdk`. They wrap the underlying SEMOSS pixel
 reactors so consuming applications never need to write pixel strings directly.
 
 ## Imports
 
 ```ts
 import {
-    createPlaygroundRoom,
-    getPlaygroundRooms,
-    getPlaygroundMessages,
+    createRoom,
+    getUserRooms,
+    getRoomMessages,
     getRoomOptions,
     setRoomForInsight,
     updateRoomOptions,
-    askPlayground,
+    askRoom,
     getPixelJobStreaming,
     getPixelAsyncResult,
 } from "@semoss/sdk";
@@ -29,7 +29,7 @@ import type {
     PlaygroundMessage,
     PlaygroundRoomOptions,
     PlaygroundWorkspace,
-    AskPlaygroundParams,
+    AskRoomParams,
     PixelStreamMessage,
     PixelJobStreamingStatus,
 } from "@semoss/sdk";
@@ -37,37 +37,37 @@ import type {
 
 ## Functions
 
-### `createPlaygroundRoom(insightId, workspaceId)`
+### `createRoom(insightId, workspaceId?)`
 
 Creates a new room tied to a workspace. Returns the created `PlaygroundRoom`.
 
 ```ts
-const room = await createPlaygroundRoom(insightId, "workspace-abc");
+const room = await createRoom(insightId, "workspace-abc");
 console.log(room.roomId);
 ```
 
 ---
 
-### `getPlaygroundRooms(insightId, options?)`
+### `getUserRooms(insightId, options?)`
 
 Lists all rooms. Optionally filter by pinned status or sort direction.
 
 ```ts
 // All rooms
-const rooms = await getPlaygroundRooms(insightId);
+const rooms = await getUserRooms(insightId);
 
 // Pinned rooms, newest first
-const pinned = await getPlaygroundRooms(insightId, { pinned: true, sort: "DESC" });
+const pinned = await getUserRooms(insightId, { pinned: true, sort: "DESC" });
 ```
 
 ---
 
-### `getPlaygroundMessages(insightId, roomId)`
+### `getRoomMessages(insightId, roomId)`
 
 Returns all messages in a room as `PlaygroundMessage[]`.
 
 ```ts
-const messages = await getPlaygroundMessages(insightId, room.roomId);
+const messages = await getRoomMessages(insightId, room.roomId);
 ```
 
 ---
@@ -114,14 +114,14 @@ await updateRoomOptions(insightId, room.roomId, newOptions);
 
 ---
 
-### `askPlayground(insightId, params)`
+### `askRoom(insightId, params)`
 
-Fires the `AskPlayground` reactor asynchronously and returns `{ jobId }`. Use
+Fires the `AskRoom` reactor asynchronously and returns `{ jobId }`. Use
 `getPixelJobStreaming` to stream tokens as they arrive, then `getPixelAsyncResult`
 to fetch the full structured result once the job completes.
 
 ```ts
-const params: AskPlaygroundParams = {
+const params: AskRoomParams = {
     engine: "gpt-4o",
     roomId: room.roomId,
     command: "What is the capital of France?",
@@ -130,7 +130,7 @@ const params: AskPlaygroundParams = {
 };
 
 // 1. Start the async job
-const { jobId } = await askPlayground(insightId, params);
+const { jobId } = await askRoom(insightId, params);
 
 // 2. Stream tokens as they arrive
 const TERMINAL: PixelJobStreamingStatus[] = [
@@ -153,7 +153,7 @@ while (true) {
 const { errors, results } = await getPixelAsyncResult(jobId);
 ```
 
-**Optional fields on `AskPlaygroundParams`:**
+**Optional fields on `AskRoomParams`:**
 | Field | Default | Description |
 |-------|---------|-------------|
 | `image` | `[]` | Base64-encoded image strings |
@@ -179,7 +179,7 @@ try {
 
 ```ts
 // 1. Create or load a room
-const room = await createPlaygroundRoom(insightId, workspaceId);
+const room = await createRoom(insightId, workspaceId);
 
 // 2. Bind the room to the insight
 await setRoomForInsight(insightId, room.roomId);
@@ -188,7 +188,7 @@ await setRoomForInsight(insightId, room.roomId);
 await updateRoomOptions(insightId, room.roomId, [{ ... }]);
 
 // 4. Send a message and get the job ID
-const { jobId } = await askPlayground(insightId, {
+const { jobId } = await askRoom(insightId, {
     engine: "gpt-4o",
     roomId: room.roomId,
     command: "Hello!",
