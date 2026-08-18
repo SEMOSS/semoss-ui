@@ -5,7 +5,9 @@
 		"completed": "Completado",
 		"ready": "Listo",
 		"autoExecute": "Ejecutando automáticamente",
-		"queued": "En cola para ejecutarse automáticamente"
+		"queued": "En cola para ejecutarse automáticamente",
+		"running": "En ejecución",
+		"waitingForInput": "Esperando entrada"
 	},
 	"actions": {
 		"cancel": "Cancelar",
@@ -42,6 +44,11 @@
 		"details": "Detalles del script de Playwright",
 		"projectId": "ID del proyecto",
 		"recordedFile": "Archivo grabado"
+	},
+	"subagent": {
+		"title": "Subagente",
+		"notFound": "Subagente no encontrado",
+		"noResult": "Aún no hay respuesta"
 	},
 	"extension": {
 		"required": "Extensión de navegador requerida",

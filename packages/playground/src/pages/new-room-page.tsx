@@ -3,6 +3,7 @@ import {
 	CheckIcon,
 	MessageCircleIcon,
 	Settings2Icon,
+	SparklesIcon,
 	XIcon,
 } from "lucide-react";
 import { runInAction } from "mobx";
@@ -108,7 +109,15 @@ export const NewRoomPage = observer(() => {
 		null,
 	);
 	const submittedRef = useRef(false);
-	const [mode, setMode] = useState<"chat" | "agent" | "workspace">("chat");
+	const [mode, setMode] = useState<"chat" | "agent">("chat");
+
+	// tempRoomStore is only created once (createRoom below builds the real,
+	// separate room), so RoomInput's agent-harness chip — keyed off
+	// room.mode — needs this synced explicitly rather than reading straight
+	// off local mode state.
+	useEffect(() => {
+		tempRoomStore.setMode(mode);
+	}, [mode, tempRoomStore]);
 	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
 	const [prompts, setPrompts] = useState<string[]>([]);
 	const previewPrompts = useMemo(
@@ -117,9 +126,7 @@ export const NewRoomPage = observer(() => {
 	);
 
 	const getWorkspace = usePixel<Workspace | null>(
-		mode === "workspace" && selectedWorkspaceId
-			? `GetWorkspace("${selectedWorkspaceId}");`
-			: "",
+		selectedWorkspaceId ? `GetWorkspace("${selectedWorkspaceId}");` : "",
 		{
 			data: null,
 		},
@@ -141,7 +148,7 @@ export const NewRoomPage = observer(() => {
 	);
 
 	const getPrompts = usePixel<Prompt[]>(
-		mode === "workspace" && selectedWorkspaceId && prompts.length > 0
+		selectedWorkspaceId && prompts.length > 0
 			? `META | ListPrompt(filters=[Filter( (PROMPT__ID == [${prompts.map((p) => `"${p}"`).join(", ")}]) )])`
 			: "",
 		{
@@ -186,7 +193,7 @@ export const NewRoomPage = observer(() => {
 			};
 
 			// add workspace id and name
-			if (mode === "workspace") {
+			if (selectedWorkspaceId) {
 				options.workspace = {
 					workspace_id: getWorkspace.data?.workspace_id || "",
 					name: getWorkspace.data?.name,
@@ -258,9 +265,7 @@ export const NewRoomPage = observer(() => {
 	 */
 	// Handle workspace data loading
 	useEffect(() => {
-		// If workspaceId came from URL, update the mode
 		if (workspaceIdSearchParams) {
-			setMode("workspace");
 			setSelectedWorkspaceId(workspaceIdSearchParams);
 		}
 	}, [workspaceIdSearchParams]);
@@ -268,7 +273,7 @@ export const NewRoomPage = observer(() => {
 	// Handle workspace data loading from RoomWorkspace component selection
 	useEffect(() => {
 		if (
-			mode !== "workspace" ||
+			!selectedWorkspaceId ||
 			getWorkspace.status !== "SUCCESS" ||
 			!getWorkspace.data
 		) {
@@ -315,7 +320,12 @@ export const NewRoomPage = observer(() => {
 				name: getWorkspace.data.name,
 			},
 		});
-	}, [mode, getWorkspace.status, getWorkspace.data, tempRoomStore]);
+	}, [
+		selectedWorkspaceId,
+		getWorkspace.status,
+		getWorkspace.data,
+		tempRoomStore,
+	]);
 
 	// Handle knowledge vector engine from URL parameter
 	useEffect(() => {
@@ -380,16 +390,16 @@ export const NewRoomPage = observer(() => {
 		});
 	}, [getPrompts.status, getPrompts.data, tempRoomStore]);
 
-	// Clear instructions and workspace MCPs when switching away from workspace mode
+	// Clear instructions and workspace MCPs when no workspace is selected
 	useEffect(() => {
-		if (mode !== "workspace") {
+		if (!selectedWorkspaceId) {
 			tempRoomStore.setOptions({
 				...tempRoomStore.options,
 				instructions: "",
 				mcp: [...(root.theme.defaultTools || [])], // Remove workspace MCPs
 			});
 		}
-	}, [mode, root.theme.defaultTools, tempRoomStore]);
+	}, [selectedWorkspaceId, root.theme.defaultTools, tempRoomStore]);
 
 	// Close the configuration panel when the file-explorer sidebar opens.
 	useEffect(() => {
@@ -479,7 +489,6 @@ export const NewRoomPage = observer(() => {
 									}
 									onWorkspaceChange={(next) => {
 										if (next) {
-											setMode("workspace");
 											setSelectedWorkspaceId(
 												next.workspace_id,
 											);
@@ -488,7 +497,6 @@ export const NewRoomPage = observer(() => {
 												workspace: next,
 											});
 										} else {
-											setMode("chat");
 											setSelectedWorkspaceId("");
 											tempRoomStore.setOptions({
 												...tempRoomStore.options,
@@ -501,7 +509,17 @@ export const NewRoomPage = observer(() => {
 
 										return true;
 									}}
-									excludeCommandIds={["compact"]}
+									excludeCommandIds={[
+										"compact",
+										...(root.theme.featureFlags
+											?.enableAgentHarness
+											? []
+											: ["agent-harness", "harness"]),
+									]}
+									onSwitchToAgentHarness={() =>
+										setMode("agent")
+									}
+									onExitAgentHarness={() => setMode("chat")}
 									// The new-room flow has no cancellable turn, so
 									// it's only ever busy (spinner) or idle (send).
 									sendState={isLoading ? "loading" : "send"}
@@ -553,7 +571,7 @@ export const NewRoomPage = observer(() => {
 																);
 															}}
 														>
-															<BotIcon />
+															<SparklesIcon />
 															<span className="flex-1">
 																{t(
 																	"room:modes.agent",
@@ -567,6 +585,7 @@ export const NewRoomPage = observer(() => {
 																</div>
 															) : null}
 														</DropdownMenuItem>
+														<DropdownMenuSeparator />
 													</>
 												)}
 												<DropdownMenuItem
@@ -739,15 +758,11 @@ export const NewRoomPage = observer(() => {
 													if (!opts) return;
 													if ("workspace" in opts) {
 														if (opts.workspace) {
-															setMode(
-																"workspace",
-															);
 															setSelectedWorkspaceId(
 																opts.workspace
 																	.workspace_id,
 															);
 														} else {
-															setMode("chat");
 															setSelectedWorkspaceId(
 																"",
 															);

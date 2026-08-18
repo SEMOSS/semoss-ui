@@ -23,8 +23,9 @@
 		"temperatureLabel": "Temperature"
 	},
 	"modes": {
-		"ask": "Ask",
-		"agent": "Agent Harness"
+		"ask": "Chat Mode",
+		"agent": "Agent Harness Mode",
+		"exitAgent": "Exit agent harness mode"
 	},
 	"workspace": {
 		"publishTooltip": "Publish as Agent",

@@ -47,9 +47,9 @@ const analyzeTools = (tools: ToolStore[]) => {
 		counts[tool.status] = (counts[tool.status] ?? 0) + 1;
 		if (
 			tool.status === "LOADING" &&
-			tool.json._meta.SMSS_MCP_UI?.loadingMessage
+			tool.json._meta?.SMSS_MCP_UI?.loadingMessage
 		) {
-			loadingOptions.push(tool.json._meta.SMSS_MCP_UI.loadingMessage);
+			loadingOptions.push(tool.json._meta?.SMSS_MCP_UI.loadingMessage);
 		}
 	}
 
