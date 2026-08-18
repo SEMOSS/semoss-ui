@@ -3,6 +3,7 @@ export * from "./engine-builtin-tools-field";
 export * from "./engine-description-settings";
 export * from "./engine-export-button";
 export * from "./engine-grid-item";
+export * from "./engine-guardrail-settings";
 export * from "./engine-metadata-display";
 export * from "./engine-model-settings";
 export * from "./engine-overview";
