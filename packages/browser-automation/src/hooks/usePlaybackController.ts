@@ -8,11 +8,14 @@ import {
 } from "../domain/replay-step";
 import { scrollDeltaForViewport } from "../domain/scroll";
 import type {
+	BrowserDownload,
 	ClientToServerEvent,
+	DownloadError,
 	LoadedRecording,
 	LoadedRecordingStep,
 	RecordingProjectOption,
 	RemoteBrowserSessionInfo,
+	ReplaySocketResult,
 	ReplayStepResult,
 } from "../types/browserEvents";
 
@@ -64,13 +67,18 @@ interface UsePlaybackControllerOptions {
 	) => Promise<ReplayStepResult>;
 	sendReplayEvent: (
 		event: ClientToServerEvent & { requestId: string },
-	) => Promise<void>;
+	) => Promise<ReplaySocketResult>;
 	sendTabControlEvent: (
 		event: ClientToServerEvent & { requestId: string },
 	) => Promise<void>;
 	replayContextStep: (step: LoadedRecordingStep) => Promise<void>;
+	onContextError: (stepId: number, error: unknown) => void;
 	onError: (message: string) => void;
 	onMessage: (message: string) => void;
+	onReplayDownloads: (
+		downloads: BrowserDownload[],
+		errors: DownloadError[],
+	) => void;
 }
 
 interface ResolvedRecordingSelection {
@@ -130,8 +138,10 @@ export function usePlaybackController({
 	sendReplayEvent,
 	sendTabControlEvent,
 	replayContextStep,
+	onContextError,
 	onError,
 	onMessage,
+	onReplayDownloads,
 }: UsePlaybackControllerOptions) {
 	const [appProjects, setAppProjects] = useState<PlaybackProject[]>([]);
 	const [roomFiles, setRoomFiles] = useState<string[]>([]);
@@ -510,8 +520,17 @@ export function usePlaybackController({
 				trigger?.isTrue === true && typeof trigger.tabId === "string"
 					? trigger.tabId
 					: undefined;
-			const replay = (event: ClientToServerEvent) =>
-				sendReplayEvent({ ...event, requestId: crypto.randomUUID() });
+			const replay = (event: ClientToServerEvent) => {
+				const replayEvent = {
+					...event,
+					requestId: crypto.randomUUID(),
+				} as ClientToServerEvent & {
+					requestId: string;
+					stepId?: number;
+				};
+				if (typeof step.id === "number") replayEvent.stepId = step.id;
+				return sendReplayEvent(replayEvent);
+			};
 
 			try {
 				switch (type) {
@@ -532,12 +551,12 @@ export function usePlaybackController({
 						});
 						return true;
 					}
-					case "CLICK":
+					case "CLICK": {
 						if (!coords && !selector)
 							throw new Error(
 								`Step ${step.id ?? ""} is missing a click target`,
 							);
-						await replay({
+						const replayResult = await replay({
 							type: "mouse-click",
 							x: coords?.x ?? 0,
 							y: coords?.y ?? 0,
@@ -545,9 +564,28 @@ export function usePlaybackController({
 							record: false,
 							selector,
 							replayTriggerTabId,
+							downloadExpected: step.downloadExpected === true,
 							waitAfterMs: getReplayWaitAfterMs(step, 400),
 						});
+						if (replayResult.downloadWaitTimedOut) {
+							onReplayDownloads(
+								[],
+								[
+									{
+										stepId:
+											typeof step.id === "number"
+												? step.id
+												: undefined,
+										status: "capture-timeout",
+										error:
+											replayResult.downloadWaitError ||
+											"No browser download was observed after the replay click",
+									},
+								],
+							);
+						}
 						return true;
+					}
 					case "TYPE": {
 						const text =
 							typeof step.id === "number"
@@ -782,6 +820,7 @@ export function usePlaybackController({
 			} catch (error) {
 				setRunningStepId(null);
 				if (isContextStep) {
+					onContextError(step.id, error);
 					setExecutedStepIds((current) =>
 						new Set(current).add(step.id as number),
 					);
@@ -807,6 +846,7 @@ export function usePlaybackController({
 					await replayContextStep(step);
 					onMessage(`Extracted context at optional step ${step.id}`);
 				} catch (error) {
+					onContextError(step.id, error);
 					onError(
 						`Optional context step ${step.id} failed: ${
 							error instanceof Error
@@ -867,6 +907,12 @@ export function usePlaybackController({
 				onError(result.error || `Failed running step ${step.id}`);
 				return false;
 			}
+			if (result.downloads?.length || result.downloadErrors?.length) {
+				onReplayDownloads(
+					result.downloads ?? [],
+					result.downloadErrors ?? [],
+				);
+			}
 			setExecutedStepIds((current) =>
 				new Set(current).add(step.id as number),
 			);
@@ -884,8 +930,10 @@ export function usePlaybackController({
 			editedTypeValues,
 			flattenedSteps,
 			insightId,
+			onContextError,
 			onError,
 			onMessage,
+			onReplayDownloads,
 			project,
 			replayRoomStep,
 			replayContextStep,
@@ -939,6 +987,7 @@ export function usePlaybackController({
 		loadedRecording,
 		onError,
 		onMessage,
+		onReplayDownloads,
 		project,
 		runStep,
 		selectedRecording,

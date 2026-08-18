@@ -2,6 +2,7 @@ import {
 	ArrowLeft,
 	ArrowRight,
 	Circle,
+	FileText,
 	Play,
 	RefreshCw,
 	Save,
@@ -33,6 +34,8 @@ interface BrowserToolbarProps {
 	canSaveRecording: boolean;
 	onToggleRecording: () => void;
 	onOpenSaveRecording: () => void;
+	isCapturingFullPage: boolean;
+	onCaptureFullPage: () => void;
 }
 
 function ToolbarTip({
@@ -65,6 +68,8 @@ export const BrowserToolbar: React.FC<BrowserToolbarProps> = ({
 	canSaveRecording,
 	onToggleRecording,
 	onOpenSaveRecording,
+	isCapturingFullPage,
+	onCaptureFullPage,
 }) => {
 	const [urlInput, setUrlInput] = useState(currentUrl);
 	const isActive =
@@ -180,6 +185,23 @@ export const BrowserToolbar: React.FC<BrowserToolbarProps> = ({
 					>
 						{isSaving ? <Spinner /> : <Save />}
 						<span className="hidden sm:inline">Save</span>
+					</Button>
+				</ToolbarTip>
+				<ToolbarTip label="Auto-scroll and capture full page text">
+					<Button
+						size="sm"
+						variant="outline"
+						disabled={
+							connectionState !== "connected" ||
+							isLoading ||
+							isCapturingFullPage
+						}
+						onClick={onCaptureFullPage}
+					>
+						{isCapturingFullPage ? <Spinner /> : <FileText />}
+						<span className="hidden sm:inline">
+							{isCapturingFullPage ? "Capturing" : "Page text"}
+						</span>
 					</Button>
 				</ToolbarTip>
 			</div>

@@ -20,6 +20,12 @@
 						"type": "string",
 						"title": "Recording Name Hint",
 						"description": "Provide a concise semantic name derived from the user's request, such as Google homepage or customer login flow. This is saved with the recording for later discovery."
+					},
+					"capture_full_page_at_end": {
+						"type": "boolean",
+						"title": "Capture Full Page At End",
+						"description": "When returning the recording to Playground, auto-scroll the final page and return its rendered text as context. Best effort; capture errors do not fail the save.",
+						"default": false
 					}
 				},
 				"required": ["start_url"]
@@ -62,7 +68,7 @@
 		{
 			"name": "replay_browser_recording",
 			"title": "Replay Browser Recording",
-			"description": "Open the remote browser and replay a confirmed recording from the current Playground room. Prefer an exact recording_file selected from find_browser_recordings. If only a natural-language description is available, call find_browser_recordings first, explain the closest candidates, and ask the user to confirm before opening this tool.",
+			"description": "Open the remote browser and replay a confirmed recording from the current Playground room. Prefer an exact recording_file selected from find_browser_recordings. Native browser downloads are captured automatically, saved as individual assets in the current insight under /browser-downloads/<run-id>/, and returned as insight paths with per-file errors; binary contents are not placed in MCP JSON. If only a natural-language description is available, call find_browser_recordings first, explain the closest candidates, and ask the user to confirm before opening this tool.",
 			"inputSchema": {
 				"type": "object",
 				"title": "replay_browser_recording_Arguments",
@@ -86,6 +92,12 @@
 						"type": "string",
 						"title": "Start URL",
 						"description": "Optional URL override to open before replaying the recording."
+					},
+					"capture_full_page_at_end": {
+						"type": "boolean",
+						"title": "Capture Full Page At End",
+						"description": "After successful replay, auto-scroll the final page and return its rendered text as context. Native browser downloads are automatically saved to the current insight and returned as individual insight paths. Best effort; capture errors do not fail replay.",
+						"default": false
 					}
 				},
 				"required": []

@@ -1,6 +1,7 @@
 import type { SelectedTextContext } from "../types/browserEvents";
 
 export const MAX_SELECTED_CONTEXT_CHARS = 8_000;
+export const MAX_FULL_PAGE_CONTEXT_CHARS = 100_000;
 
 const MAX_SELECTED_CONTEXTS = 10;
 const MAX_RETURNED_CONTEXT_CHARS = 24_000;
@@ -16,7 +17,7 @@ export function renderSelectedTextContext(
 		`Title: ${context.title}`,
 		`Extraction: ${context.extractionMethod}`,
 		"",
-		"SELECTED TEXT",
+		context.kind === "full-page-text" ? "FULL PAGE TEXT" : "SELECTED TEXT",
 		context.content,
 	].join("\n");
 }

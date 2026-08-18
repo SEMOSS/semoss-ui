@@ -20,6 +20,7 @@ export interface BrowserScrollMetrics {
 
 type ReplayMetadata = {
 	requestId?: string;
+	stepId?: number;
 	waitAfterMs?: number;
 	selector?: BrowserSelector;
 	expectedUrl?: string;
@@ -27,6 +28,7 @@ type ReplayMetadata = {
 	recordedViewportWidth?: number;
 	recordedViewportHeight?: number;
 	replayTriggerTabId?: string;
+	downloadExpected?: boolean;
 };
 
 export type ClientToServerEvent =
@@ -119,12 +121,27 @@ export type ClientToServerEvent =
 			record?: boolean;
 			label?: string;
 	  }
+	| {
+			type: "full-page-text-context";
+			requestId: string;
+			expectedTabId?: string;
+	  }
 	| { type: "switch-tab"; targetTabId: string; requestId?: string }
 	| { type: "switch-replay-tab"; targetTabId: string; requestId?: string }
 	| { type: "new-tab"; targetTabId?: string; requestId?: string }
 	| { type: "prepare-replay"; requestId?: string; reuseActiveTab?: boolean }
 	| { type: "close-tab"; targetTabId: string; requestId?: string }
 	| { type: "close-session" };
+
+export interface ReplaySocketResult {
+	type: "replay-step-result";
+	requestId: string;
+	success: boolean;
+	url?: string;
+	error?: string;
+	downloadWaitTimedOut?: boolean;
+	downloadWaitError?: string;
+}
 
 // ─── Events sent from Java backend → React ───────────────────────────────────
 
@@ -160,13 +177,7 @@ export type ServerToClientEvent =
 			success: boolean;
 			error?: string;
 	  }
-	| {
-			type: "replay-step-result";
-			requestId: string;
-			success: boolean;
-			url?: string;
-			error?: string;
-	  }
+	| ReplaySocketResult
 	| {
 			type: "selected-text-context-result";
 			requestId: string;
@@ -174,7 +185,62 @@ export type ServerToClientEvent =
 			context?: SelectedTextContext;
 			error?: string;
 	  }
+	| {
+			type: "full-page-text-context-result";
+			requestId: string;
+			success: boolean;
+			context?: SelectedTextContext;
+			error?: string;
+	  }
+	| { type: "download-ready"; download: BrowserDownload }
 	| { type: "error"; message: string };
+
+export type BrowserDownloadStatus =
+	| "downloading"
+	| "ready"
+	| "saved"
+	| "failed"
+	| "save-failed";
+
+export interface BrowserDownload {
+	downloadId: string;
+	runId: string;
+	order: number;
+	fileName: string;
+	originalFileName?: string;
+	status: BrowserDownloadStatus;
+	sourceUrl?: string;
+	pageUrl?: string;
+	tabId?: string;
+	triggerRequestId?: string;
+	triggerStepId?: number;
+	startedAt?: string;
+	completedAt?: string;
+	downloadedAt?: string;
+	savedAt?: string;
+	sizeBytes?: number;
+	sha256?: string;
+	mimeType?: string;
+	insightPath?: string;
+	error?: string;
+}
+
+export interface DownloadError {
+	downloadId?: string;
+	runId?: string;
+	stepId?: number;
+	fileName?: string;
+	status?: string;
+	error: string;
+}
+
+export interface DownloadSaveResponse {
+	runId: string;
+	downloadSummary?: string;
+	downloadCount: number;
+	downloads: BrowserDownload[];
+	downloadErrors: DownloadError[];
+}
 
 export interface SelectionBounds {
 	startX: number;
@@ -185,14 +251,14 @@ export interface SelectionBounds {
 
 export interface SelectedTextContext {
 	version: string;
-	kind: "selected-text";
+	kind: "selected-text" | "full-page-text";
 	id: string;
 	label?: string;
 	capturedAt: number;
 	url: string;
 	title: string;
 	throughStepId: number;
-	extractionMethod: "dom-range" | "dom-rectangle";
+	extractionMethod: "dom-range" | "dom-rectangle" | "full-page-dom";
 	bounds: SelectionBounds;
 	content: string;
 	edited: boolean;
@@ -203,6 +269,10 @@ export interface SelectedTextContext {
 		fragmentCount: number;
 		scannedTextNodes: number;
 		truncated: boolean;
+		scrollCount?: number;
+		scrollHeight?: number;
+		viewportHeight?: number;
+		scrollLimitReached?: boolean;
 	};
 }
 
@@ -270,6 +340,7 @@ export interface LoadedRecordingStep {
 	type?: string;
 	shouldRun?: boolean;
 	required?: boolean;
+	downloadExpected?: boolean;
 	[key: string]: unknown;
 }
 
@@ -315,6 +386,10 @@ export interface ReplayStepResult {
 	isNewTab?: boolean;
 	newTabId?: string;
 	tabTitle?: string;
+	downloadSummary?: string;
+	downloadCount?: number;
+	downloads?: BrowserDownload[];
+	downloadErrors?: DownloadError[];
 	error?: string;
 }
 

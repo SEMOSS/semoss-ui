@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getModulePath } from "../semoss/pixel";
 import type {
+	BrowserDownload,
 	BrowserScrollMetrics,
 	BrowserTabInfo,
 	ClientToServerEvent,
 	ConnectionState,
+	ReplaySocketResult,
 	SelectedTextContext,
 	SelectionBounds,
 	ServerToClientEvent,
@@ -24,6 +26,7 @@ interface UseBrowserSocketOptions {
 	onTabsChanged: (tabs: BrowserTabInfo[], activeTabId: string) => void;
 	onTabActivated: (tabId: string) => void;
 	onCursorChanged: (cursor: string) => void;
+	onDownload: (download: BrowserDownload) => void;
 }
 
 interface UseBrowserSocketReturn {
@@ -31,7 +34,7 @@ interface UseBrowserSocketReturn {
 	sendEvent: (event: ClientToServerEvent) => void;
 	sendReplayEvent: (
 		event: ClientToServerEvent & { requestId: string },
-	) => Promise<void>;
+	) => Promise<ReplaySocketResult>;
 	sendTabControlEvent: (
 		event: ClientToServerEvent & { requestId: string },
 	) => Promise<void>;
@@ -44,10 +47,13 @@ interface UseBrowserSocketReturn {
 		label?: string,
 		expectedTabId?: string,
 	) => Promise<SelectedTextContext>;
+	captureFullPageText: (
+		expectedTabId?: string,
+	) => Promise<SelectedTextContext>;
 }
 
 interface PendingReplay {
-	resolve: () => void;
+	resolve: (result: ReplaySocketResult) => void;
 	reject: (error: Error) => void;
 	timeout: number;
 }
@@ -85,6 +91,7 @@ export function useBrowserSocket({
 	onTabsChanged,
 	onTabActivated,
 	onCursorChanged,
+	onDownload,
 }: UseBrowserSocketOptions): UseBrowserSocketReturn {
 	const [connectionState, setConnectionState] =
 		useState<ConnectionState>("idle");
@@ -92,6 +99,9 @@ export function useBrowserSocket({
 	const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const pendingReplayRef = useRef<Map<string, PendingReplay>>(new Map());
 	const pendingSelectedTextRef = useRef<Map<string, PendingSelectedText>>(
+		new Map(),
+	);
+	const pendingFullPageTextRef = useRef<Map<string, PendingSelectedText>>(
 		new Map(),
 	);
 	const pendingTabControlRef = useRef<Map<string, PendingTabControl>>(
@@ -168,6 +178,9 @@ export function useBrowserSocket({
 					case "cursor-changed":
 						onCursorChanged(msg.cursor);
 						break;
+					case "download-ready":
+						onDownload(msg.download);
+						break;
 					case "tab-control-result": {
 						const pending = pendingTabControlRef.current.get(
 							msg.requestId,
@@ -209,7 +222,7 @@ export function useBrowserSocket({
 						window.clearTimeout(pending.timeout);
 						pendingReplayRef.current.delete(msg.requestId);
 						if (msg.success) {
-							pending.resolve();
+							pending.resolve(msg);
 						} else {
 							pending.reject(
 								new Error(msg.error || "Replay step failed"),
@@ -230,6 +243,25 @@ export function useBrowserSocket({
 							pending.reject(
 								new Error(
 									msg.error || "Selected text capture failed",
+								),
+							);
+						}
+						break;
+					}
+					case "full-page-text-context-result": {
+						const pending = pendingFullPageTextRef.current.get(
+							msg.requestId,
+						);
+						if (!pending) break;
+						window.clearTimeout(pending.timeout);
+						pendingFullPageTextRef.current.delete(msg.requestId);
+						if (msg.success && msg.context) {
+							pending.resolve(msg.context);
+						} else {
+							pending.reject(
+								new Error(
+									msg.error ||
+										"Full-page text capture failed",
 								),
 							);
 						}
@@ -264,6 +296,15 @@ export function useBrowserSocket({
 				);
 			});
 			pendingSelectedTextRef.current.clear();
+			pendingFullPageTextRef.current.forEach((pending) => {
+				window.clearTimeout(pending.timeout);
+				pending.reject(
+					new Error(
+						"Browser connection closed during full-page text capture",
+					),
+				);
+			});
+			pendingFullPageTextRef.current.clear();
 			pendingTabControlRef.current.forEach((pending) => {
 				window.clearTimeout(pending.timeout);
 				pending.reject(
@@ -300,6 +341,7 @@ export function useBrowserSocket({
 		onTabsChanged,
 		onTabActivated,
 		onCursorChanged,
+		onDownload,
 	]);
 
 	const sendEvent = useCallback((event: ClientToServerEvent) => {
@@ -310,14 +352,16 @@ export function useBrowserSocket({
 	}, []);
 
 	const sendReplayEvent = useCallback(
-		(event: ClientToServerEvent & { requestId: string }): Promise<void> => {
+		(
+			event: ClientToServerEvent & { requestId: string },
+		): Promise<ReplaySocketResult> => {
 			const ws = wsRef.current;
 			if (!ws || ws.readyState !== WebSocket.OPEN) {
 				return Promise.reject(
 					new Error("Browser connection is not ready for replay"),
 				);
 			}
-			return new Promise<void>((resolve, reject) => {
+			return new Promise<ReplaySocketResult>((resolve, reject) => {
 				const timeout = window.setTimeout(() => {
 					pendingReplayRef.current.delete(event.requestId);
 					reject(
@@ -378,6 +422,43 @@ export function useBrowserSocket({
 						expectedTabId,
 						record,
 						label,
+					}),
+				);
+			});
+		},
+		[],
+	);
+
+	const captureFullPageText = useCallback(
+		(expectedTabId?: string): Promise<SelectedTextContext> => {
+			const ws = wsRef.current;
+			if (!ws || ws.readyState !== WebSocket.OPEN) {
+				return Promise.reject(
+					new Error(
+						"Browser connection is not ready for full-page text capture",
+					),
+				);
+			}
+			const requestId = crypto.randomUUID();
+			return new Promise<SelectedTextContext>((resolve, reject) => {
+				const timeout = window.setTimeout(() => {
+					pendingFullPageTextRef.current.delete(requestId);
+					reject(
+						new Error(
+							"Timed out while capturing full-page website text",
+						),
+					);
+				}, 60_000);
+				pendingFullPageTextRef.current.set(requestId, {
+					resolve,
+					reject,
+					timeout,
+				});
+				ws.send(
+					JSON.stringify({
+						type: "full-page-text-context",
+						requestId,
+						expectedTabId,
 					}),
 				);
 			});
@@ -446,5 +527,6 @@ export function useBrowserSocket({
 		sendTabControlEvent,
 		sendRecordingControlEvent,
 		captureSelectedText,
+		captureFullPageText,
 	};
 }

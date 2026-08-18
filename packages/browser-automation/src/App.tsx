@@ -19,6 +19,7 @@ import {
 } from "@semoss/ui/next";
 import { AutomationActionIndicator } from "./components/AutomationActionIndicator";
 import { AutomationControls } from "./components/AutomationControls";
+import { BrowserDownloadsTray } from "./components/BrowserDownloadsTray";
 import { BrowserTabStrip } from "./components/BrowserTabStrip";
 import { BrowserToolbar } from "./components/BrowserToolbar";
 import { BrowserViewer } from "./components/BrowserViewer";
@@ -40,11 +41,13 @@ import {
 import { SCROLL_SCREEN_PERCENT } from "./domain/scroll";
 import {
 	appendBoundedSelectedContext,
+	MAX_FULL_PAGE_CONTEXT_CHARS,
 	MAX_SELECTED_CONTEXT_CHARS,
 	renderSelectedTextContext,
 	selectedContextsForPlayground,
 } from "./domain/selected-text";
 import {
+	getToolBooleanParameter,
 	getToolStringMapParameter,
 	getToolStringParameter,
 	isPlayRecordingTool,
@@ -65,9 +68,11 @@ import {
 } from "./semoss/client";
 import { runPixel } from "./semoss/pixel";
 import type {
+	BrowserDownload,
 	BrowserScrollMetrics,
 	BrowserTabInfo,
 	ClientToServerEvent,
+	DownloadError,
 	GeneratedRecordingMetadata,
 	LoadedRecordingStep,
 	McpToolContext,
@@ -113,6 +118,11 @@ type PendingTextSelection = {
 	clientY: number;
 };
 
+type ReplayContextCaptureError = {
+	stepId: number | null;
+	error: string;
+};
+
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -136,6 +146,8 @@ export default function App() {
 		loadRecording,
 		replaySingleStep,
 		getRecordedSteps,
+		listDownloads,
+		saveDownloadsToInsight,
 		saveRoomMcpEntry,
 		saveProjectMcpEntry,
 	} = useRemoteBrowserSession();
@@ -190,6 +202,7 @@ export default function App() {
 	>([]);
 	const [selectedTextContextsOpen, setSelectedTextContextsOpen] =
 		useState(false);
+	const [isCapturingFullPage, setIsCapturingFullPage] = useState(false);
 	const [pendingTextSelection, setPendingTextSelection] =
 		useState<PendingTextSelection | null>(null);
 	const [pendingNavigationCount, setPendingNavigationCount] = useState(0);
@@ -199,6 +212,9 @@ export default function App() {
 		number | null
 	>(null);
 	const [playbackStepsRun, setPlaybackStepsRun] = useState(0);
+	const [downloads, setDownloads] = useState<BrowserDownload[]>([]);
+	const [downloadErrors, setDownloadErrors] = useState<DownloadError[]>([]);
+	const [downloadsOpen, setDownloadsOpen] = useState(false);
 
 	// ── Automation mode ──────────────────────────────────────────────────────
 	const [automationMode, setAutomationMode] = useState(false);
@@ -233,10 +249,19 @@ export default function App() {
 	const autoPlaybackErrorSentRef = useRef(false);
 	const returningToPlaygroundRef = useRef(false);
 	const selectedContextSequenceRef = useRef(0);
+	const selectedTextContextsRef = useRef<SelectedTextContext[]>([]);
+	const replayContextsRef = useRef<SelectedTextContext[]>([]);
+	const replayContextCaptureErrorsRef = useRef<ReplayContextCaptureError[]>(
+		[],
+	);
 	const textSelectionRequestRef = useRef(0);
 	const activeToolExecutionRef = useRef("");
 	const automationRunTokenRef = useRef(0);
 	const automationGoalExecutionRef = useRef("");
+	const downloadsRef = useRef<BrowserDownload[]>([]);
+	const downloadErrorsRef = useRef<DownloadError[]>([]);
+	const pendingDownloadIdsRef = useRef<Set<string>>(new Set());
+	const downloadSaveInFlightRef = useRef<Promise<void> | null>(null);
 
 	useEffect(() => {
 		if (!snackError) return;
@@ -264,10 +289,19 @@ export default function App() {
 		getToolStringParameter(toolContext, "recordingFile") ||
 		getToolStringParameter(toolContext, "file_name") ||
 		getToolStringParameter(toolContext, "fileName");
+	const captureFullPageAtEnd =
+		getToolBooleanParameter(toolContext, "capture_full_page_at_end") ||
+		getToolBooleanParameter(toolContext, "captureFullPageAtEnd");
 	const mcpPlaybackProjectId =
 		getToolStringParameter(toolContext, "project_id") ||
-		getToolStringParameter(toolContext, "projectId");
+		getToolStringParameter(toolContext, "projectId") ||
+		// Generated MCP calls may omit schema defaults from their parameter
+		// payload. The tool envelope still carries the owning project in _meta.
+		toolContext?.projectId ||
+		"";
 	const effectiveInsightId = getSemossInsightId() || insightId;
+	const effectiveInsightIdRef = useRef(effectiveInsightId);
+	effectiveInsightIdRef.current = effectiveInsightId;
 
 	// Frame callback - stable reference so it doesn't re-trigger the socket effect
 	const handleFrame = useCallback(
@@ -324,9 +358,216 @@ export default function App() {
 		});
 	}, []);
 
+	const mergeDownloads = useCallback((incoming: BrowserDownload[]) => {
+		if (!incoming.length) return;
+		const byId = new Map(
+			downloadsRef.current.map((download) => [
+				download.downloadId,
+				download,
+			]),
+		);
+		incoming.forEach((download) => {
+			if (download?.downloadId) byId.set(download.downloadId, download);
+		});
+		const next = Array.from(byId.values()).sort(
+			(left, right) => left.order - right.order,
+		);
+		downloadsRef.current = next;
+		setDownloads(next);
+	}, []);
+
+	const applyDownloadSaveResponse = useCallback(
+		(response: {
+			downloads?: BrowserDownload[];
+			downloadErrors?: DownloadError[];
+		}) => {
+			mergeDownloads(response.downloads ?? []);
+			const errors = response.downloadErrors ?? [];
+			downloadErrorsRef.current = errors;
+			setDownloadErrors(errors);
+			if (errors.length) {
+				const byId = new Map(
+					downloadsRef.current.map((download) => [
+						download.downloadId,
+						download,
+					]),
+				);
+				errors.forEach((error) => {
+					if (!error.downloadId) return;
+					const current = byId.get(error.downloadId);
+					if (current) {
+						byId.set(error.downloadId, {
+							...current,
+							status: "save-failed",
+							error: error.error,
+						});
+					}
+				});
+				const next = Array.from(byId.values()).sort(
+					(left, right) => left.order - right.order,
+				);
+				downloadsRef.current = next;
+				setDownloads(next);
+			}
+		},
+		[mergeDownloads],
+	);
+
+	const queueDownloadSave = useCallback(
+		(downloadIds: string[] = []): Promise<void> => {
+			downloadIds.forEach((id) => {
+				pendingDownloadIdsRef.current.add(id);
+			});
+			if (downloadSaveInFlightRef.current) {
+				return downloadSaveInFlightRef.current;
+			}
+			const work = (async () => {
+				while (pendingDownloadIdsRef.current.size > 0) {
+					const targetInsightId = effectiveInsightIdRef.current;
+					if (!targetInsightId) return;
+					const ids = Array.from(pendingDownloadIdsRef.current);
+					pendingDownloadIdsRef.current.clear();
+					const response = await saveDownloadsToInsight(
+						targetInsightId,
+						ids,
+					);
+					if (!response) {
+						const errors = ids.map((downloadId) => ({
+							downloadId,
+							error: "Could not save browser download to the current insight",
+						}));
+						downloadErrorsRef.current = errors;
+						setDownloadErrors(errors);
+						return;
+					}
+					applyDownloadSaveResponse(response);
+				}
+			})();
+			let tracked: Promise<void>;
+			tracked = work.finally(() => {
+				if (downloadSaveInFlightRef.current === tracked) {
+					downloadSaveInFlightRef.current = null;
+				}
+			});
+			downloadSaveInFlightRef.current = tracked;
+			return tracked;
+		},
+		[applyDownloadSaveResponse, saveDownloadsToInsight],
+	);
+
+	const flushDownloads = useCallback(
+		async (waitForExpectedDownload = false) => {
+			const deadline =
+				Date.now() + (waitForExpectedDownload ? 15_000 : 1_500);
+			let listed = await listDownloads();
+			while (true) {
+				mergeDownloads(listed);
+				const readyIds = listed
+					.filter(
+						(download) =>
+							download.status === "ready" ||
+							download.status === "save-failed",
+					)
+					.map((download) => download.downloadId);
+				if (readyIds.length) {
+					await queueDownloadSave(readyIds);
+					listed = await listDownloads();
+					mergeDownloads(listed);
+				}
+
+				const hasDownloading = listed.some(
+					(download) => download.status === "downloading",
+				);
+				const hasUnpersistedReady = listed.some(
+					(download) =>
+						download.status === "ready" ||
+						download.status === "save-failed",
+				);
+				const hasObservedDownload = listed.length > 0;
+				if (
+					!hasDownloading &&
+					!hasUnpersistedReady &&
+					(!waitForExpectedDownload || hasObservedDownload)
+				) {
+					break;
+				}
+				if (Date.now() >= deadline) break;
+				await new Promise((resolve) => window.setTimeout(resolve, 250));
+				listed = await listDownloads();
+			}
+			mergeDownloads(listed);
+		},
+		[listDownloads, mergeDownloads, queueDownloadSave],
+	);
+
+	const downloadMcpPayload = useCallback(() => {
+		const saved = downloadsRef.current.filter(
+			(download) => download.status === "saved" && !!download.insightPath,
+		);
+		const errors = [...downloadErrorsRef.current];
+		const errorDownloadIds = new Set(
+			errors
+				.filter((error) => !!error.downloadId)
+				.map((error) => error.downloadId as string),
+		);
+		downloadsRef.current
+			.filter(
+				(download) =>
+					(download.status === "failed" ||
+						download.status === "save-failed") &&
+					!!download.error,
+			)
+			.forEach((download) => {
+				if (!errorDownloadIds.has(download.downloadId)) {
+					errors.push({
+						downloadId: download.downloadId,
+						runId: download.runId,
+						fileName: download.fileName,
+						status: download.status,
+						error: download.error || "Browser download failed",
+					});
+					errorDownloadIds.add(download.downloadId);
+				}
+			});
+		const runId = saved[0]?.runId || downloadsRef.current[0]?.runId || "";
+		return {
+			downloadSummary: saved.length
+				? `Downloaded ${saved.length} file${saved.length === 1 ? "" : "s"} and saved them to the current insight under /browser-downloads/${runId}/`
+				: "No browser downloads were saved to the current insight",
+			downloadCount: saved.length,
+			downloads: saved,
+			downloadErrors: errors,
+		};
+	}, []);
+
+	const resetDownloads = useCallback(() => {
+		downloadsRef.current = [];
+		downloadErrorsRef.current = [];
+		pendingDownloadIdsRef.current.clear();
+		setDownloads([]);
+		setDownloadErrors([]);
+		setDownloadsOpen(false);
+	}, []);
+
+	const handleDownload = useCallback(
+		(download: BrowserDownload) => {
+			mergeDownloads([download]);
+			if (download.status === "ready") {
+				void queueDownloadSave([download.downloadId]);
+			}
+		},
+		[mergeDownloads, queueDownloadSave],
+	);
+
 	useEffect(() => {
 		setBrowserCursor("default");
 	}, [session?.sessionId]);
+
+	useEffect(() => {
+		if (effectiveInsightId) {
+			void queueDownloadSave();
+		}
+	}, [effectiveInsightId, queueDownloadSave]);
 
 	const {
 		connectionState,
@@ -335,6 +576,7 @@ export default function App() {
 		sendTabControlEvent,
 		sendRecordingControlEvent,
 		captureSelectedText,
+		captureFullPageText,
 	} = useBrowserSocket({
 		wsUrl: session?.webSocketUrl ?? null,
 		onFrame: handleFrame,
@@ -344,17 +586,20 @@ export default function App() {
 		onTabsChanged: handleTabsChanged,
 		onTabActivated: handleTabActivated,
 		onCursorChanged: setBrowserCursor,
+		onDownload: handleDownload,
 	});
 	const storeSelectedTextContext = useCallback(
-		(context: SelectedTextContext) => {
+		(context: SelectedTextContext): SelectedTextContext => {
 			selectedContextSequenceRef.current += 1;
 			const title = (context.title || "Website text").trim().slice(0, 72);
-			const boundedContent = context.content
-				.trim()
-				.slice(0, MAX_SELECTED_CONTEXT_CHARS);
+			const maxChars =
+				context.kind === "full-page-text"
+					? MAX_FULL_PAGE_CONTEXT_CHARS
+					: MAX_SELECTED_CONTEXT_CHARS;
+			const boundedContent = context.content.trim().slice(0, maxChars);
 			const stored: SelectedTextContext = {
 				...context,
-				label: `${title} - Selection ${selectedContextSequenceRef.current}`,
+				label: `${title} - ${context.kind === "full-page-text" ? "Full page" : "Selection"} ${selectedContextSequenceRef.current}`,
 				content: boundedContent,
 				text: renderSelectedTextContext({
 					...context,
@@ -368,13 +613,48 @@ export default function App() {
 						context.content.length > boundedContent.length,
 				},
 			};
-			setSelectedTextContexts((current) =>
-				appendBoundedSelectedContext(current, stored),
+			const next = appendBoundedSelectedContext(
+				selectedTextContextsRef.current,
+				stored,
 			);
+			selectedTextContextsRef.current = next;
+			setSelectedTextContexts(next);
 			setSelectedTextContextsOpen(true);
 			setSnackMessage(
 				`Captured ${boundedContent.length} characters of website text`,
 			);
+			return stored;
+		},
+		[],
+	);
+	const captureAndStoreFullPage = useCallback(async () => {
+		setIsCapturingFullPage(true);
+		try {
+			const context = await captureFullPageText(
+				activeBrowserTabIdRef.current,
+			);
+			const stored = storeSelectedTextContext(context);
+			if (isMcpPlaybackMode) {
+				replayContextsRef.current = appendBoundedSelectedContext(
+					replayContextsRef.current,
+					stored,
+				);
+			}
+			return stored;
+		} finally {
+			setIsCapturingFullPage(false);
+		}
+	}, [captureFullPageText, isMcpPlaybackMode, storeSelectedTextContext]);
+	const recordReplayContextCaptureError = useCallback(
+		(stepId: number, error: unknown) => {
+			const message =
+				error instanceof Error
+					? error.message
+					: "Could not capture selected website text";
+			replayContextCaptureErrorsRef.current.push({
+				stepId,
+				error: message,
+			});
 		},
 		[],
 	);
@@ -425,7 +705,11 @@ export default function App() {
 				undefined,
 				activeBrowserTabIdRef.current,
 			);
-			storeSelectedTextContext(context);
+			const stored = storeSelectedTextContext(context);
+			replayContextsRef.current = appendBoundedSelectedContext(
+				replayContextsRef.current,
+				stored,
+			);
 		},
 		[
 			captureSelectedText,
@@ -451,8 +735,11 @@ export default function App() {
 		sendReplayEvent,
 		sendTabControlEvent,
 		replayContextStep,
+		onContextError: recordReplayContextCaptureError,
 		onError: setSnackError,
 		onMessage: setSnackMessage,
+		onReplayDownloads: (downloads, errors) =>
+			applyDownloadSaveResponse({ downloads, downloadErrors: errors }),
 	});
 
 	// The playback resolution effect below is guarded to run once per tool
@@ -478,8 +765,6 @@ export default function App() {
 	// swaps in a new insight id, so depending on the value would invalidate the
 	// resolution effect at the exact moment its fetch is in flight. The effect
 	// triggers on readiness instead, which only transitions once.
-	const effectiveInsightIdRef = useRef(effectiveInsightId);
-	effectiveInsightIdRef.current = effectiveInsightId;
 	const isInsightReady = !!effectiveInsightId;
 
 	const toolExecutionKey = toolContext
@@ -512,13 +797,15 @@ export default function App() {
 		returningToPlaygroundRef.current = false;
 		setIsReturningToPlayground(false);
 		setSaveDialogOpen(false);
+		selectedTextContextsRef.current = [];
 		setSelectedTextContexts([]);
+		resetDownloads();
 		setRecordedSteps([]);
 		setAutomationGoal("");
 		setAutomationGoalGenerationError("");
 		automationGoalExecutionRef.current = "";
 		playback.resetExecution();
-	}, [playback.resetExecution, toolExecutionKey]);
+	}, [playback.resetExecution, resetDownloads, toolExecutionKey]);
 
 	const runBrowserAction = useCallback(
 		async (event: ClientToServerEvent) => {
@@ -633,6 +920,7 @@ export default function App() {
 			);
 			setLatestFrame(null);
 			setIsRecording(false);
+			resetDownloads();
 		});
 	}, [
 		createSession,
@@ -643,6 +931,7 @@ export default function App() {
 		playback.startUrl,
 		semossContextReady,
 		session,
+		resetDownloads,
 	]);
 
 	useEffect(() => {
@@ -763,7 +1052,11 @@ export default function App() {
 				.filter(Boolean)
 				.pop();
 
-			if (exactFileName) {
+			// A project-backed MCP tool must resolve against its project first. The
+			// room path is only valid for room-saved recordings; probing it for a
+			// project file can raise a misleading missing-/playwright asset error
+			// before the project resolver gets a chance to find the recording.
+			if (exactFileName && !mcpPlaybackProjectId) {
 				const directRoomPath = `/playwright/${exactFileName}`;
 				for (let attempt = 0; attempt < 2; attempt += 1) {
 					const envelope = await getRoomRecordingEnvelope(
@@ -1064,45 +1357,60 @@ export default function App() {
 		],
 	);
 
-	const handleDeleteSelectedContext = useCallback(
-		(contextId: string) => {
-			const next = selectedTextContexts.filter(
-				(context) => context.id !== contextId,
-			);
-			setSelectedTextContexts(next);
-			if (!next.length) setSelectedTextContextsOpen(false);
-		},
-		[selectedTextContexts],
-	);
+	const handleDeleteSelectedContext = useCallback((contextId: string) => {
+		const next = selectedTextContextsRef.current.filter(
+			(context) => context.id !== contextId,
+		);
+		selectedTextContextsRef.current = next;
+		setSelectedTextContexts(next);
+		if (!next.length) setSelectedTextContextsOpen(false);
+	}, []);
 
 	const handleSaveSelectedContext = useCallback(
 		(contextId: string, content: string) => {
-			const bounded = content.trim().slice(0, MAX_SELECTED_CONTEXT_CHARS);
-			setSelectedTextContexts((current) =>
-				current.map((context) => {
-					if (context.id !== contextId) return context;
-					const updated = {
-						...context,
-						content: bounded,
-						edited: true,
-						stats: {
-							...context.stats,
-							characterCount: bounded.length,
-							truncated:
-								context.stats.truncated ||
-								content.trim().length > bounded.length,
-						},
-					};
-					return {
-						...updated,
-						text: renderSelectedTextContext(updated),
-					};
-				}),
-			);
+			const current = selectedTextContextsRef.current;
+			const next = current.map((context) => {
+				if (context.id !== contextId) return context;
+				const maxChars =
+					context.kind === "full-page-text"
+						? MAX_FULL_PAGE_CONTEXT_CHARS
+						: MAX_SELECTED_CONTEXT_CHARS;
+				const bounded = content.trim().slice(0, maxChars);
+				const updated = {
+					...context,
+					content: bounded,
+					edited: true,
+					stats: {
+						...context.stats,
+						characterCount: bounded.length,
+						truncated:
+							context.stats.truncated ||
+							content.trim().length > bounded.length,
+					},
+				};
+				return {
+					...updated,
+					text: renderSelectedTextContext(updated),
+				};
+			});
+			selectedTextContextsRef.current = next;
+			setSelectedTextContexts(next);
 			setSnackMessage("Captured context updated");
 		},
 		[],
 	);
+
+	const handleCaptureFullPage = useCallback(async () => {
+		try {
+			await captureAndStoreFullPage();
+		} catch (error) {
+			setSnackError(
+				error instanceof Error
+					? error.message
+					: "Could not capture full-page website text",
+			);
+		}
+	}, [captureAndStoreFullPage]);
 
 	// --- Toolbar handlers ---------------------------------------------------
 	const handleStart = useCallback(
@@ -1111,6 +1419,8 @@ export default function App() {
 			setCurrentUrl(normalizedUrl);
 			const info = await createSession(normalizedUrl);
 			if (info) {
+				resetDownloads();
+				selectedTextContextsRef.current = [];
 				setSelectedTextContexts([]);
 				setSelectedTextContextsOpen(false);
 				selectedContextSequenceRef.current = 0;
@@ -1123,7 +1433,7 @@ export default function App() {
 				setIsRecording(false);
 			}
 		},
-		[createSession, playback.resetReplayPreparation],
+		[createSession, playback.resetReplayPreparation, resetDownloads],
 	);
 
 	const handleStartMcpSession = useCallback(async () => {
@@ -1144,6 +1454,8 @@ export default function App() {
 		}
 
 		setCurrentUrl(info.currentUrl || targetUrl);
+		resetDownloads();
+		selectedTextContextsRef.current = [];
 		setSelectedTextContexts([]);
 		setSelectedTextContextsOpen(false);
 		selectedContextSequenceRef.current = 0;
@@ -1153,7 +1465,12 @@ export default function App() {
 		setActiveBrowserTabId("tab-1");
 		playback.resetReplayPreparation();
 		setIsRecording(false);
-	}, [createSession, mcpStartUrlInput, playback.resetReplayPreparation]);
+	}, [
+		createSession,
+		mcpStartUrlInput,
+		playback.resetReplayPreparation,
+		resetDownloads,
+	]);
 
 	const closeBrowserSession = useCallback(async () => {
 		sendEvent({ type: "close-session" });
@@ -1167,7 +1484,13 @@ export default function App() {
 		setIsRecording(false);
 		setSaveDialogOpen(false);
 		setStopRecordingDialogOpen(false);
-	}, [closeSession, playback.resetReplayPreparation, sendEvent]);
+		resetDownloads();
+	}, [
+		closeSession,
+		playback.resetReplayPreparation,
+		resetDownloads,
+		sendEvent,
+	]);
 
 	// Held in a ref so the countdown effect below depends only on the tick value.
 	// Depending on the callback identity would restart the timer on unrelated
@@ -1298,6 +1621,7 @@ export default function App() {
 
 	const handleToggleRecording = useCallback(() => {
 		if (!isRecording) {
+			resetDownloads();
 			sendEvent({ type: "recording-control", recording: true });
 			playback.resetReplayPreparation();
 			setSaveTitle("");
@@ -1308,7 +1632,12 @@ export default function App() {
 			return;
 		}
 		setStopRecordingDialogOpen(true);
-	}, [isRecording, playback.resetReplayPreparation, sendEvent]);
+	}, [
+		isRecording,
+		playback.resetReplayPreparation,
+		resetDownloads,
+		sendEvent,
+	]);
 
 	const handleDiscardRecording = useCallback(() => {
 		sendEvent({
@@ -1421,6 +1750,9 @@ export default function App() {
 					"No SEMOSS insight is available for room file save",
 				);
 			}
+			// Let any download callback triggered by the final recorded click mark
+			// that click before the envelope is serialized.
+			await flushDownloads();
 			const envelope = await getRecordingEnvelope();
 			if (!envelope) {
 				throw new Error("No recording envelope is available");
@@ -1465,6 +1797,7 @@ export default function App() {
 		},
 		[
 			effectiveInsightId,
+			flushDownloads,
 			getRecordingEnvelope,
 			mcpRecordingNameHint,
 			mcpStartUrl,
@@ -1509,6 +1842,12 @@ export default function App() {
 
 			let roomPath = "";
 			let roomBoundInsightId = effectiveInsightId;
+			// App-only saves clear the server recording buffer immediately. Drain
+			// native downloads first so a delayed download callback can still mark the
+			// producing click before the JSON is written.
+			if (!saveToPlayground) {
+				await flushDownloads();
+			}
 			if (saveToPlayground) {
 				const roomSaved = await saveRecordingToRoom(
 					async () => ({ success: true, title, description, intent }),
@@ -1536,6 +1875,12 @@ export default function App() {
 				playback.selectSavedRecording(saveProject, appSaved.fileName);
 				appFileName = appSaved.fileName;
 			}
+			// Recording can begin before a room insight is bound. Once the recording
+			// save has established the target insight, drain any staged downloads
+			// before closing the browser session (which removes staged files).
+			effectiveInsightIdRef.current =
+				roomBoundInsightId || effectiveInsightIdRef.current;
+			await flushDownloads();
 
 			setSaveDialogOpen(false);
 			await closeBrowserSession();
@@ -1582,6 +1927,7 @@ export default function App() {
 		saveTitle,
 		sendRecordingControlEvent,
 		session,
+		flushDownloads,
 		playback.selectSavedRecording,
 	]);
 
@@ -1596,6 +1942,7 @@ export default function App() {
 
 		let recordingStopped = false;
 		let browserClosed = false;
+		const contextCaptureErrors: ReplayContextCaptureError[] = [];
 		try {
 			if (!toolContext) {
 				throw new Error("No Playground tool context is available");
@@ -1616,6 +1963,17 @@ export default function App() {
 				recordingStopped = true;
 				setIsRecording(false);
 			}
+			if (captureFullPageAtEnd) {
+				try {
+					await captureAndStoreFullPage();
+				} catch (error) {
+					const message =
+						error instanceof Error
+							? error.message
+							: "Could not capture full-page website text";
+					contextCaptureErrors.push({ stepId: null, error: message });
+				}
+			}
 
 			const saved = await saveRecordingToRoom(
 				(insightId) =>
@@ -1635,6 +1993,9 @@ export default function App() {
 					),
 			);
 			const enrichedEnvelope = saved.envelope;
+			effectiveInsightIdRef.current = saved.insightId;
+			await flushDownloads();
+			const downloadPayload = downloadMcpPayload();
 
 			await closeBrowserSession();
 			browserClosed = true;
@@ -1656,9 +2017,12 @@ export default function App() {
 					),
 					title: enrichedEnvelope.meta?.title,
 					description: enrichedEnvelope.meta?.description,
-					contextCount: selectedTextContexts.length,
-					contexts:
-						selectedContextsForPlayground(selectedTextContexts),
+					contextCount: selectedTextContextsRef.current.length,
+					contexts: selectedContextsForPlayground(
+						selectedTextContextsRef.current,
+					),
+					contextCaptureErrors,
+					...downloadPayload,
 				},
 				"success",
 				toolContext.parameters,
@@ -1698,11 +2062,14 @@ export default function App() {
 		}
 	}, [
 		closeBrowserSession,
+		captureAndStoreFullPage,
+		captureFullPageAtEnd,
+		downloadMcpPayload,
+		flushDownloads,
 		isRecording,
 		mcpRecordingNameHint,
 		mcpStartUrl,
 		saveRecordingToRoom,
-		selectedTextContexts,
 		sendRecordingControlEvent,
 		session,
 		toolContext,
@@ -1744,6 +2111,9 @@ export default function App() {
 		autoPlaybackRunStartedRef.current = true;
 		playback.setControlsOpen(true);
 		playback.setLoadedRecordingOpen(true);
+		resetDownloads();
+		replayContextsRef.current = [];
+		replayContextCaptureErrorsRef.current = [];
 
 		(async () => {
 			try {
@@ -1755,11 +2125,40 @@ export default function App() {
 				// The session stays open briefly so the page can be inspected on the
 				// last executed step, then the countdown closes it to release the
 				// remote browser rather than waiting for the server side TTL.
+				if (result.completed && captureFullPageAtEnd) {
+					try {
+						const fullPage = await captureFullPageText(
+							activeBrowserTabIdRef.current,
+						);
+						replayContextsRef.current =
+							appendBoundedSelectedContext(
+								replayContextsRef.current,
+								fullPage,
+							);
+					} catch (error) {
+						replayContextCaptureErrorsRef.current.push({
+							stepId: null,
+							error:
+								error instanceof Error
+									? `Full-page capture failed: ${error.message}`
+									: "Full-page capture failed",
+						});
+					}
+				}
 				if (result.completed) {
 					setPlaybackStepsRun(result.stepsRun);
-					setPlaybackCloseCountdown(PLAYBACK_CLOSE_SECONDS);
 				}
+				await flushDownloads(
+					result.completed &&
+						playback.flattenedSteps.some(
+							({ step }) => step.downloadExpected === true,
+						),
+				);
+				const downloadPayload = downloadMcpPayload();
 
+				const contexts = selectedContextsForPlayground(
+					replayContextsRef.current,
+				);
 				sendMcpResponseToPlayground(
 					{
 						played: result.completed,
@@ -1770,10 +2169,18 @@ export default function App() {
 						pausedAtStepId: result.pausedAtStepId ?? null,
 						sessionId: session.sessionId,
 						roomId: toolContext.roomId,
+						contextCount: contexts.length,
+						contexts,
+						contextCaptureErrors:
+							replayContextCaptureErrorsRef.current,
+						...downloadPayload,
 					},
 					result.completed ? "success" : "paused",
 					toolContext.parameters,
 				);
+				if (result.completed) {
+					setPlaybackCloseCountdown(PLAYBACK_CLOSE_SECONDS);
+				}
 			} catch (error) {
 				const message =
 					error instanceof Error
@@ -1781,8 +2188,9 @@ export default function App() {
 						: "Failed to play recording";
 				setSnackError(message);
 				try {
+					const downloadPayload = downloadMcpPayload();
 					sendMcpResponseToPlayground(
-						{ played: false, error: message },
+						{ played: false, error: message, ...downloadPayload },
 						"error",
 						toolContext.parameters,
 					);
@@ -1791,7 +2199,18 @@ export default function App() {
 				}
 			}
 		})();
-	}, [connectionState, isMcpPlaybackMode, playback, session, toolContext]);
+	}, [
+		captureFullPageAtEnd,
+		captureFullPageText,
+		downloadMcpPayload,
+		flushDownloads,
+		connectionState,
+		isMcpPlaybackMode,
+		playback,
+		resetDownloads,
+		session,
+		toolContext,
+	]);
 
 	const remoteWidth = session?.viewport.width ?? 1365;
 	const remoteHeight = session?.viewport.height ?? 768;
@@ -2364,6 +2783,8 @@ export default function App() {
 					canSaveRecording={!!session && isRecording}
 					onToggleRecording={handleToggleRecording}
 					onOpenSaveRecording={handleOpenSaveRecording}
+					isCapturingFullPage={isCapturingFullPage}
+					onCaptureFullPage={() => void handleCaptureFullPage()}
 				/>
 				<div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-1">
 					{isPlaygroundMode && session && (
@@ -2425,11 +2846,20 @@ export default function App() {
 							Contexts ({selectedTextContexts.length})
 						</Button>
 					)}
+					{(downloads.length > 0 || downloadErrors.length > 0) && (
+						<BrowserDownloadsTray
+							downloads={downloads}
+							errors={downloadErrors}
+							open={downloadsOpen}
+							onToggle={() => setDownloadsOpen((open) => !open)}
+						/>
+					)}
 					{isPlaygroundMode && session && (
 						<Button
 							size="sm"
 							disabled={
 								isReturningToPlayground ||
+								isCapturingFullPage ||
 								isSaving ||
 								isSavingRecording
 							}

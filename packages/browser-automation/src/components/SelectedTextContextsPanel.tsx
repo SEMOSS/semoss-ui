@@ -31,8 +31,8 @@ interface SelectedTextContextsPanelProps {
 function contextLabel(context: SelectedTextContext, index: number): string {
 	if (context.label?.trim()) return context.label;
 	if (context.title?.trim())
-		return `${context.title} · Selection ${index + 1}`;
-	return `Selected text ${index + 1}`;
+		return `${context.title} · ${context.kind === "full-page-text" ? "Full page" : "Selection"} ${index + 1}`;
+	return `${context.kind === "full-page-text" ? "Full page text" : "Selected text"} ${index + 1}`;
 }
 
 export const SelectedTextContextsPanel: React.FC<
@@ -110,12 +110,20 @@ export const SelectedTextContextsPanel: React.FC<
 										</AccordionTrigger>
 										<AccordionContent className="border-line border-t px-3 pt-3 pb-3">
 											<div className="mb-2 flex flex-wrap gap-1">
-												<Badge>Selected text</Badge>
+												<Badge>
+													{context.kind ===
+													"full-page-text"
+														? "Full page"
+														: "Selected text"}
+												</Badge>
 												<Badge variant="secondary">
 													{context.extractionMethod ===
 													"dom-range"
 														? "Exact range"
-														: "Area text"}
+														: context.extractionMethod ===
+																"full-page-dom"
+															? "Auto-scrolled DOM"
+															: "Area text"}
 												</Badge>
 												<Badge variant="outline">
 													{context.content.length}{" "}
