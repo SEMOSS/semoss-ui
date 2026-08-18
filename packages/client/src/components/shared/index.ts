@@ -4,6 +4,13 @@ import { NavbarHeader } from "./navbar-header";
 import { PlatformMessages } from "./platform-messages";
 export { PlatformMessages, NavbarLeft, NavbarRight, NavbarHeader };
 export {
+	MARKDOWN_COMPONENTS,
+	MarkdownDocument,
+	type MarkdownDocumentProps,
+	type ParsedFrontmatter,
+	parseFrontmatter,
+} from "./markdown-document";
+export {
 	type LoadedMCPFile,
 	type MCPJsonData,
 	MCPJsonEditor,
