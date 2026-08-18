@@ -5,7 +5,8 @@ import type {
 	StorageEngineConfig,
 	VectorEngineConfig,
 } from "./automation.types";
-import { newStepId } from "./automation-display";
+import type { AutomationWorkflowNodeType } from "./automation-workflow.types";
+import { createCanvasWorkflowNode } from "./automation-workflow-adapter";
 
 export interface AutomationTemplate {
 	id: string;
@@ -16,13 +17,21 @@ export interface AutomationTemplate {
 }
 
 function triggerNode(): AutomationNode {
+	return createCanvasWorkflowNode("trigger.start", 0);
+}
+
+function workflowNode(
+	type: AutomationWorkflowNodeType,
+	label: string,
+	outputVar: string,
+	config: AutomationNode["config"],
+): AutomationNode {
+	const node = createCanvasWorkflowNode(type, 0);
 	return {
-		id: newStepId("trigger"),
-		type: "trigger",
-		position: { x: 0, y: 0 },
-		label: "Trigger",
-		outputVar: "trigger_out",
-		config: { mode: "manual" },
+		...node,
+		label,
+		outputVar,
+		config,
 	};
 }
 
@@ -31,20 +40,18 @@ function dbNode(
 	outputVar: string,
 	operation: DatabaseEngineConfig["operation"] = "query",
 ): AutomationNode {
-	return {
-		id: newStepId("database-engine"),
-		type: "database-engine",
-		position: { x: 0, y: 0 },
+	return workflowNode(
+		operation === "write" ? "database.update" : "database.query",
 		label,
 		outputVar,
-		config: {
+		{
 			engineId: "",
 			operation,
 			expression: "",
 			limit: 50,
 			commit: operation === "write",
 		} as DatabaseEngineConfig,
-	};
+	);
 }
 
 function modelNode(
@@ -52,24 +59,17 @@ function modelNode(
 	outputVar: string,
 	command = "",
 ): AutomationNode {
-	return {
-		id: newStepId("model-engine"),
-		type: "model-engine",
-		position: { x: 0, y: 0 },
-		label,
-		outputVar,
-		config: {
-			engineId: "",
-			operation: "llm",
-			command,
-			context: "",
-			paramValues: "",
-			values: "",
-			image: "",
-			prompt: "",
-			entities: "",
-		} as ModelEngineConfig,
-	};
+	return workflowNode("model.chat", label, outputVar, {
+		engineId: "",
+		operation: "llm",
+		command,
+		context: "",
+		paramValues: "",
+		values: "",
+		image: "",
+		prompt: "",
+		entities: "",
+	} as ModelEngineConfig);
 }
 
 function storageNode(
@@ -77,20 +77,18 @@ function storageNode(
 	outputVar: string,
 	operation: StorageEngineConfig["operation"] = "list",
 ): AutomationNode {
-	return {
-		id: newStepId("storage-engine"),
-		type: "storage-engine",
-		position: { x: 0, y: 0 },
+	return workflowNode(
+		`storage.${operation === "read-base64" ? "read" : operation}` as AutomationWorkflowNodeType,
 		label,
 		outputVar,
-		config: {
+		{
 			engineId: "",
 			operation,
 			storagePath: "/",
 			filePath: "",
 			metadata: "",
 		} as StorageEngineConfig,
-	};
+	);
 }
 
 function vectorNode(
@@ -98,27 +96,26 @@ function vectorNode(
 	outputVar: string,
 	operation: VectorEngineConfig["operation"] = "search",
 ): AutomationNode {
-	return {
-		id: newStepId("vector-engine"),
-		type: "vector-engine",
-		position: { x: 0, y: 0 },
-		label,
-		outputVar,
-		config: {
-			engineId: "",
-			operation,
-			command: "",
-			limit: 5,
-			filters: "",
-			metaFilters: "",
-			filePath: "",
-			source: "",
-			space: "",
-			filePaths: "",
-			paramValues: "",
-			fileNames: "",
-		} as VectorEngineConfig,
-	};
+	const type =
+		operation === "search"
+			? "vector.search"
+			: operation === "delete"
+				? "vector.delete"
+				: "vector.add";
+	return workflowNode(type, label, outputVar, {
+		engineId: "",
+		operation,
+		command: "",
+		limit: 5,
+		filters: "",
+		metaFilters: "",
+		filePath: "",
+		source: "",
+		space: "",
+		filePaths: "",
+		paramValues: "",
+		fileNames: "",
+	} as VectorEngineConfig);
 }
 
 export const AUTOMATION_TEMPLATES: AutomationTemplate[] = [

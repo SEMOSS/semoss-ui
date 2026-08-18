@@ -171,6 +171,7 @@ export function DatabaseEngineForm({
 				name={config.engineName || ""}
 				value={config.engineId}
 				engineTypes={["DATABASE"]}
+				required
 				onChange={(e) =>
 					onChange({
 						...config,
@@ -185,6 +186,7 @@ export function DatabaseEngineForm({
 				<div className="flex flex-col gap-1">
 					<BoundInput
 						label="Database Query"
+						required
 						value={config.expression}
 						placeholder="e.g. SELECT * FROM CLAIMS WHERE STATUS = 'pending' LIMIT 100"
 						onChange={(v) => onChange({ ...config, expression: v })}

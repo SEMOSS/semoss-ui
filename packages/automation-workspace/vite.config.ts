@@ -9,7 +9,9 @@ export default defineConfig(({ mode }) => {
 		base: "./",
 		build: {
 			outDir: "dist",
-			emptyOutDir: true,
+			// A cached iframe entry bundle can still request its previous hashed Monaco
+			// chunks after a local rebuild. Keep development chunks until Tomcat reloads.
+			emptyOutDir: mode !== "development",
 		},
 		define: {
 			// Baked in at build time. Served from the web app rather than from a

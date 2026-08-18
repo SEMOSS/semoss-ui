@@ -6,6 +6,7 @@ import {
 	MarkerType,
 	type Node,
 	ReactFlow,
+	type ReactFlowInstance,
 	useEdgesState,
 	useNodesState,
 } from "@xyflow/react";
@@ -17,7 +18,6 @@ import {
 	Loader2,
 	MousePointer2,
 	Play,
-	Plus,
 	RefreshCw,
 	Save,
 	Sparkles,
@@ -27,6 +27,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { runPixel } from "@semoss/sdk";
 import {
 	Button,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
 	Field,
 	FieldLabel,
 	Switch,
@@ -34,6 +40,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import type {
+	AutomationConfigEntry,
 	AutomationEdge,
 	AutomationNode,
 	AutomationNodeResult,
@@ -60,9 +67,11 @@ import {
 	canvasDocumentToWorkflow,
 	createCanvasWorkflowNode,
 	createInitialCanvasWorkflowDocument,
+	getCanvasNodeSources,
 	getWorkflowNodeDefinition,
 	validateCanvasWorkflowNode,
 } from "../../domain/automation-workflow-adapter";
+import { AutomationConfigTab } from "../form-editor/automation-config-tab";
 import { HelpModal } from "../form-editor/help-modal";
 import { NodeResultList } from "../form-editor/node-result-list";
 import { OnboardingTour } from "../form-editor/onboarding-tour";
@@ -84,7 +93,7 @@ const nodeTypes = {
 } as const;
 
 // ---- Layout constants ----
-const NODE_WIDTH = 480;
+const NODE_WIDTH = 280;
 const DEFAULT_NODE_HEIGHT = 120;
 const NODE_ARROW_GAP = 40;
 
@@ -95,8 +104,6 @@ interface AutomationCanvasProps {
 	mcpContext?: AutomationToolContext;
 }
 
-type TabId = "steps" | "history" | "config";
-
 interface TriggerAutomationOutput extends Partial<AutomationRunData> {
 	STATUS?: RunStatus;
 	status?: RunStatus;
@@ -106,7 +113,6 @@ interface CanvasWorkflowDraft {
 	steps: AutomationNode[];
 	edges: AutomationEdge[];
 	description: string;
-	source: string;
 	triggerBindings: TriggerBinding[];
 	savedAt: number;
 }
@@ -163,6 +169,9 @@ function defaultEdges(nodes: AutomationNode[]): AutomationEdge[] {
 		id: `e-${node.id}-${nodes[index + 1].id}`,
 		source: node.id,
 		target: nodes[index + 1].id,
+		sourceHandle: `out-${node.id}`,
+		targetHandle: `in-${nodes[index + 1].id}`,
+		kind: "control",
 	}));
 }
 
@@ -194,12 +203,18 @@ export function AutomationCanvas({
 	mcpContext,
 }: AutomationCanvasProps) {
 	const [saving, setSaving] = useState(false);
-	const [activeTab] = useState<TabId>("steps");
+	const [activeTab] = useState<"steps" | "history" | "config">("steps");
 	const [description, setDescription] = useState("");
 	const [devMode, setDevMode] = useState(
 		() => localStorage.getItem(`automation-devmode-${appId}`) === "true",
 	);
-	const [showGenerationWizard, setShowGenerationWizard] = useState(false);
+	const [activeDockTab, setActiveDockTab] = useState<
+		"inspector" | "config" | "validation" | "trace" | "history"
+	>("inspector");
+	const [pendingTemplate, setPendingTemplate] = useState<{
+		nodes: AutomationNode[];
+		description: string;
+	} | null>(null);
 	const [running, setRunning] = useState(false);
 	const [stepStatuses, setStepStatuses] = useState<
 		Record<string, StepRunStatus>
@@ -212,14 +227,16 @@ export function AutomationCanvas({
 		() => createInitialCanvasWorkflowDocument().steps,
 	);
 	const [graphEdges, setGraphEdges] = useState<AutomationEdge[]>([]);
-	const [source, setSource] = useState(
-		() => createInitialCanvasWorkflowDocument().source,
-	);
 	const [triggerBindings, setTriggerBindings] = useState<TriggerBinding[]>(
 		() => createInitialCanvasWorkflowDocument().triggerBindings,
 	);
+	const [config, setConfig] = useState<AutomationConfigEntry[]>([]);
 	const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
+	const [historyLoading, setHistoryLoading] = useState(false);
+	const [historyRefreshToken, setHistoryRefreshToken] = useState(0);
+	const [workflowRefreshToken, setWorkflowRefreshToken] = useState(0);
 	const [showAddMenu, setShowAddMenu] = useState(false);
+	const [showTemplateBrowser, setShowTemplateBrowser] = useState(false);
 
 	// Drawer state — which step is being edited
 	const [editingStepId, setEditingStepId] = useState<string | null>(null);
@@ -262,13 +279,54 @@ export function AutomationCanvas({
 	);
 	const [suggestingDescription, setSuggestingDescription] = useState(false);
 	const [showHelp, setShowHelp] = useState(false);
+
+	useEffect(() => {
+		if (editingStepId) setActiveDockTab("inspector");
+	}, [editingStepId]);
 	const loadedRef = useRef(false);
+	const skipDraftPersistenceRef = useRef(true);
 
 	// React Flow state
 	const [rfNodes, setRfNodes, onRfNodesChange] = useNodesState<Node>([]);
 	const [rfEdges, setRfEdges] = useEdgesState<Edge>([]);
 	const canvasContainerRef = useRef<HTMLDivElement>(null);
+	const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
+	const [canvasInitialized, setCanvasInitialized] = useState(false);
+	const historyRequestRef = useRef(0);
 	const centerXRef = useRef(0);
+	const initialViewFittedRef = useRef(false);
+
+	useEffect(() => {
+		const parentOrigin = new URLSearchParams(window.location.search).get(
+			"parentOrigin",
+		);
+		const handleMessage = (event: MessageEvent<unknown>) => {
+			if (
+				event.source !== window.parent ||
+				(parentOrigin !== null && event.origin !== parentOrigin) ||
+				typeof event.data !== "object" ||
+				event.data === null
+			) {
+				return;
+			}
+			const message = event.data as {
+				type?: unknown;
+				projectId?: unknown;
+			};
+			if (
+				message.type !== "SEMOSS_AUTOMATION_REFRESH" ||
+				message.projectId !== appId
+			) {
+				return;
+			}
+
+			localStorage.removeItem(`automation-draft-${appId}`);
+			setEditingStepId(null);
+			setWorkflowRefreshToken((value) => value + 1);
+		};
+		window.addEventListener("message", handleMessage);
+		return () => window.removeEventListener("message", handleMessage);
+	}, [appId]);
 
 	const getNodeHeight = useCallback((nodeId: string): number => {
 		const nodeElements =
@@ -324,8 +382,13 @@ export function AutomationCanvas({
 						id: `e-${connection.source}-${connection.target}-${crypto.randomUUID()}`,
 						source: connection.source,
 						target: connection.target,
-						sourceHandle: connection.sourceHandle ?? undefined,
-						targetHandle: connection.targetHandle ?? undefined,
+						sourceHandle:
+							connection.sourceHandle ??
+							`out-${connection.source}`,
+						targetHandle:
+							connection.targetHandle ??
+							`in-${connection.target}`,
+						kind: "control",
 					},
 				];
 			});
@@ -360,23 +423,23 @@ export function AutomationCanvas({
 	useEffect(() => {
 		let cancelled = false;
 		loadedRef.current = false;
+		skipDraftPersistenceRef.current = true;
+		initialViewFittedRef.current = false;
 		void runPixel(`GetAutomation(project=["${appId}"]);`)
 			.then((response) => {
 				if (cancelled) return;
 				const output = response.pixelReturn?.[0]?.output as
-					| (AutomationWorkflowDocument & { source?: string })
+					| (AutomationWorkflowDocument & {
+							nodeSources?: Record<string, string>;
+					  })
 					| undefined;
 				const saved = isWorkflowDocument(output)
-					? canvasDocumentFromWorkflow(
-							output,
-							output.source ??
-								createInitialCanvasWorkflowDocument().source,
-						)
+					? canvasDocumentFromWorkflow(output, output.nodeSources)
 					: createInitialCanvasWorkflowDocument();
 				const rawDraft = localStorage.getItem(
 					`automation-draft-${appId}`,
 				);
-				if (rawDraft && !mcpMode) {
+				if (rawDraft && !mcpMode && workflowRefreshToken === 0) {
 					try {
 						const draft = JSON.parse(
 							rawDraft,
@@ -384,7 +447,6 @@ export function AutomationCanvas({
 						setSteps(ensureTriggerNode(draft.steps));
 						setGraphEdges(draft.edges);
 						setDescription(draft.description);
-						setSource(draft.source);
 						setTriggerBindings(draft.triggerBindings);
 						setIsDirty(true);
 						toast.success(
@@ -398,8 +460,8 @@ export function AutomationCanvas({
 				setSteps(ensureTriggerNode(saved.steps));
 				setGraphEdges(saved.edges);
 				setDescription(saved.description);
-				setSource(saved.source);
 				setTriggerBindings(saved.triggerBindings);
+				setIsDirty(false);
 			})
 			.catch((error: Error) => {
 				if (!cancelled) {
@@ -411,7 +473,6 @@ export function AutomationCanvas({
 					setSteps(initial.steps);
 					setGraphEdges(initial.edges);
 					setDescription(initial.description);
-					setSource(initial.source);
 					setTriggerBindings(initial.triggerBindings);
 				}
 			})
@@ -421,22 +482,87 @@ export function AutomationCanvas({
 		return () => {
 			cancelled = true;
 		};
-	}, [appId, mcpMode]);
+	}, [appId, mcpMode, workflowRefreshToken]);
 
-	const historyLoading = false;
+	useEffect(() => {
+		let cancelled = false;
+		void runPixel(`GetAutomationConfig(project=["${appId}"]);`)
+			.then((response) => {
+				if (cancelled) return;
+				const output = response.pixelReturn?.[0]?.output;
+				setConfig(
+					Array.isArray(output)
+						? (output as AutomationConfigEntry[])
+						: [],
+				);
+			})
+			.catch((error: Error) => {
+				if (!cancelled) {
+					toast.error(
+						error.message || "Unable to load workflow variables.",
+					);
+				}
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [appId]);
+
 	const hasRunnableSteps = steps.some(
 		(step) => step.workflowType !== "trigger.start",
 	);
-	const refreshRuns = useCallback(() => setLastRefreshed(new Date()), []);
+	const refreshRuns = useCallback(() => {
+		setHistoryRefreshToken((previous) => {
+			const next = previous + 1;
+			historyRequestRef.current = next;
+			return next;
+		});
+	}, []);
+
+	useEffect(() => {
+		let cancelled = false;
+		const requestId = historyRefreshToken;
+		setHistoryLoading(true);
+		void runPixel(`ListAutomationRuns(project=["${appId}"], limit=["50"]);`)
+			.then((response) => {
+				if (cancelled || requestId !== historyRequestRef.current)
+					return;
+				const output = response.pixelReturn?.[0]?.output;
+				setRuns(
+					Array.isArray(output)
+						? (output as AutomationRunSummary[])
+						: [],
+				);
+				setLastRefreshed(new Date());
+			})
+			.catch((error: Error) => {
+				if (!cancelled && requestId === historyRequestRef.current) {
+					toast.error(
+						error.message || "Unable to load automation history.",
+					);
+				}
+			})
+			.finally(() => {
+				if (!cancelled && requestId === historyRequestRef.current) {
+					setHistoryLoading(false);
+				}
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [appId, historyRefreshToken]);
 
 	// Draft persistence
 	useEffect(() => {
 		if (!loadedRef.current) return;
+		if (skipDraftPersistenceRef.current) {
+			skipDraftPersistenceRef.current = false;
+			return;
+		}
 		const draft = {
 			steps,
 			edges: graphEdges,
 			description,
-			source,
 			triggerBindings,
 			savedAt: Date.now(),
 		};
@@ -445,7 +571,7 @@ export function AutomationCanvas({
 			JSON.stringify(draft),
 		);
 		setIsDirty(true);
-	}, [steps, graphEdges, description, source, triggerBindings, appId]);
+	}, [steps, graphEdges, description, triggerBindings, appId]);
 
 	// ---- Derived values ----
 	const stepOutputPreviews = useMemo(
@@ -458,15 +584,16 @@ export function AutomationCanvas({
 		[latestRunResults],
 	);
 
-	const incompleteCount = useMemo(
+	const validationIssues = useMemo(
 		() =>
-			steps.filter(
-				(step) =>
-					step.workflowType !== "trigger.start" &&
-					validateCanvasWorkflowNode(step).length > 0,
-			).length,
+			steps.flatMap((step) => {
+				if (step.workflowType === "trigger.start") return [];
+				const issues = validateCanvasWorkflowNode(step);
+				return issues.length > 0 ? [{ step, issues }] : [];
+			}),
 		[steps],
 	);
+	const incompleteCount = validationIssues.length;
 
 	// ---- Callbacks ----
 	const handleDevModeChange = useCallback(
@@ -498,10 +625,14 @@ export function AutomationCanvas({
 						id: `e-${previousStep.id}-${id}`,
 						source: previousStep.id,
 						target: id,
+						sourceHandle: `out-${previousStep.id}`,
+						targetHandle: `in-${id}`,
+						kind: "control",
 					},
 				]);
 			}
 			setShowAddMenu(false);
+			setShowTemplateBrowser(false);
 			setEditingStepId(id);
 		},
 		[getNodeHeight, steps],
@@ -579,15 +710,19 @@ export function AutomationCanvas({
 	}, []);
 
 	const upstreamVarsFor = useCallback(
-		(index: number) =>
-			steps
+		(index: number) => [
+			...steps
 				.slice(0, index)
 				.map((step) => step.outputVar)
 				.filter(
 					(value): value is string =>
 						typeof value === "string" && value.length > 0,
 				),
-		[steps],
+			...config
+				.filter((entry) => entry.key.trim().length > 0)
+				.map((entry) => `config.${entry.key.trim()}`),
+		],
+		[config, steps],
 	);
 
 	const save = useCallback(async (): Promise<boolean> => {
@@ -599,9 +734,35 @@ export function AutomationCanvas({
 				steps,
 				edges: graphEdges,
 			});
-			await runPixel(
-				`SaveAutomation(project=["${appId}"], json=["${encodeBase64(JSON.stringify(definition))}"], source=["${encodeBase64(source)}"]);`,
-			);
+			const nodeSources = getCanvasNodeSources(steps);
+			const [response] = await Promise.all([
+				runPixel(
+					`SaveAutomation(project=["${appId}"], json=["${encodeBase64(JSON.stringify(definition))}"], nodeSources=["${encodeBase64(JSON.stringify(nodeSources))}"]);`,
+				),
+				runPixel(
+					`SaveAutomationConfig(project=["${appId}"], config=["${encodeBase64(JSON.stringify(config))}"]);`,
+				),
+			]);
+			const output = response.pixelReturn?.[0]?.output as
+				| { nodeSources?: Record<string, string> }
+				| undefined;
+			if (output?.nodeSources) {
+				skipDraftPersistenceRef.current = true;
+				setSteps((previous) =>
+					previous.map((step) => {
+						const source = output.nodeSources?.[step.id];
+						return typeof source === "string"
+							? {
+									...step,
+									workflowConfig: {
+										...step.workflowConfig,
+										pythonSource: source,
+									},
+								}
+							: step;
+					}),
+				);
+			}
 			localStorage.removeItem(`automation-draft-${appId}`);
 			setIsDirty(false);
 			toast.success("Automation saved");
@@ -614,7 +775,7 @@ export function AutomationCanvas({
 		} finally {
 			setSaving(false);
 		}
-	}, [appId, description, graphEdges, source, steps, triggerBindings]);
+	}, [appId, config, description, graphEdges, steps, triggerBindings]);
 
 	// Cmd+S / Ctrl+S
 	useEffect(() => {
@@ -675,22 +836,10 @@ export function AutomationCanvas({
 				validateCanvasWorkflowNode(step).length > 0,
 		);
 		if (invalidSteps.length > 0) {
-			setStepStatuses(
-				Object.fromEntries(
-					invalidSteps.map((step) => [step.id, "error"] as const),
-				),
-			);
-			setStepErrors(
-				Object.fromEntries(
-					invalidSteps.map((step) => [
-						step.id,
-						validateCanvasWorkflowNode(step).join(". "),
-					]),
-				),
-			);
 			toast.error(
 				`Fix ${invalidSteps.length} step${invalidSteps.length === 1 ? "" : "s"} before running`,
 			);
+			setActiveDockTab("validation");
 			return;
 		}
 		if (!(await save())) return;
@@ -749,7 +898,7 @@ export function AutomationCanvas({
 				...previous,
 				[runId]: { ...summary, nodeResults },
 			}));
-			setLastRefreshed(new Date());
+			refreshRuns();
 			if (status === "SUCCESS") {
 				toast.success(runData.summary ?? "Automation completed");
 			} else {
@@ -764,7 +913,7 @@ export function AutomationCanvas({
 		} finally {
 			setRunning(false);
 		}
-	}, [appId, applyRunData, save, steps]);
+	}, [appId, applyRunData, refreshRuns, save, steps]);
 
 	const handleDoneReturnToChat = useCallback(async () => {
 		if (saving) return;
@@ -825,19 +974,12 @@ export function AutomationCanvas({
 			setSteps(fresh);
 			setGraphEdges(defaultEdges(fresh));
 			setDescription(automationDescription);
-			sessionStorage.setItem(`automation-wizard-seen-${appId}`, "true");
-			setShowGenerationWizard(false);
 		},
-		[appId],
+		[],
 	);
 
-	const onStartBlank = useCallback(() => {
-		sessionStorage.setItem(`automation-wizard-seen-${appId}`, "true");
-		setShowGenerationWizard(false);
-	}, [appId]);
-
 	const selectHistoryRun = useCallback(
-		(runId: string) => {
+		async (runId: string) => {
 			if (expandedHistoryRunId === runId) {
 				setExpandedHistoryRunId(null);
 				setExpandedHistoryRun(null);
@@ -850,11 +992,52 @@ export function AutomationCanvas({
 			setExpandedHistoryNodes(new Set());
 			setShowExecutedDefinition(false);
 			setHistoryDetailLoading(true);
-			setExpandedHistoryRun(runDetails[runId] ?? null);
-			setHistoryDetailLoading(false);
+			const cached = runDetails[runId];
+			if (cached) {
+				setExpandedHistoryRun(cached);
+				setHistoryDetailLoading(false);
+				return;
+			}
+			try {
+				const response = await runPixel(
+					`GetAutomationRun(project=["${appId}"], runId=["${runId}"]);`,
+				);
+				const detail = response.pixelReturn?.[0]?.output as
+					| AutomationRunDetail
+					| undefined;
+				if (!detail?.RUN_ID) {
+					throw new Error("Automation run details were not found.");
+				}
+				setRunDetails((previous) => ({
+					...previous,
+					[runId]: detail,
+				}));
+				setExpandedHistoryRun(detail);
+			} catch (error) {
+				toast.error(
+					error instanceof Error
+						? error.message
+						: "Unable to load automation run details.",
+				);
+				setExpandedHistoryRunId(null);
+			} finally {
+				setHistoryDetailLoading(false);
+			}
 		},
-		[expandedHistoryRunId, runDetails],
+		[appId, expandedHistoryRunId, runDetails],
 	);
+
+	const takeToValidationStep = useCallback((stepId: string) => {
+		setShowAddMenu(false);
+		setShowTemplateBrowser(false);
+		setEditingStepId(stepId);
+		setActiveDockTab("inspector");
+		reactFlowInstanceRef.current?.fitView({
+			nodes: [{ id: stepId }],
+			padding: 0.5,
+			duration: 250,
+		});
+	}, []);
 
 	const toggleHistoryNode = useCallback((nodeId: string) => {
 		setExpandedHistoryNodes((prev) => {
@@ -916,14 +1099,16 @@ export function AutomationCanvas({
 						isLast: i === steps.length - 1,
 						onEdit: () => {
 							setShowAddMenu(false);
+							setShowTemplateBrowser(false);
 							setEditingStepId(step.id);
 						},
 						onAdd: () => {
 							setEditingStepId(null);
+							setShowTemplateBrowser(false);
 							setShowAddMenu(true);
 						},
 					},
-					draggable: false,
+					draggable: true,
 					style: { width: NODE_WIDTH },
 				});
 			} else {
@@ -945,11 +1130,13 @@ export function AutomationCanvas({
 						isLast: i === steps.length - 1,
 						onEdit: () => {
 							setShowAddMenu(false);
+							setShowTemplateBrowser(false);
 							setEditingStepId(step.id);
 						},
 						onDelete: () => deleteStep(step.id),
 						onAdd: () => {
 							setEditingStepId(null);
+							setShowTemplateBrowser(false);
 							setShowAddMenu(true);
 						},
 					},
@@ -992,10 +1179,32 @@ export function AutomationCanvas({
 		setRfEdges,
 	]);
 
+	useEffect(() => {
+		const initialNode = rfNodes[0];
+		const containerWidth = canvasContainerRef.current?.clientWidth ?? 0;
+		if (
+			initialViewFittedRef.current ||
+			!canvasInitialized ||
+			steps.length !== 1 ||
+			rfNodes.length !== 1 ||
+			!initialNode ||
+			(containerWidth > NODE_WIDTH && initialNode.position.x === 0)
+		) {
+			return;
+		}
+		const frame = requestAnimationFrame(() => {
+			reactFlowInstanceRef.current?.fitView({
+				nodes: [{ id: initialNode.id }],
+				padding: 0.8,
+			});
+			initialViewFittedRef.current = true;
+		});
+		return () => cancelAnimationFrame(frame);
+	}, [canvasInitialized, rfNodes, steps.length]);
+
 	// ---- Persist canvas positions ----
 	const onNodeDragStop = useCallback(
 		(_event: React.MouseEvent, draggedNode: Node) => {
-			if (draggedNode.type !== "automation") return;
 			setSteps((previousSteps) =>
 				previousSteps.map((step) =>
 					step.id === draggedNode.id
@@ -1034,295 +1243,40 @@ export function AutomationCanvas({
 		<>
 			<div className="flex h-full overflow-hidden">
 				<div className="flex min-w-0 flex-1 flex-col bg-background">
-					{/* ---- Header ---- */}
-					<div className="border-b px-6 py-4">
-						<div className="flex items-center justify-between">
-							<div>
-								<span className="font-semibold">
-									Automation studio
-								</span>
-								<p className="mt-0.5 text-[11px] text-muted-foreground">
-									Compose a clear, repeatable action graph.
-								</p>
-							</div>
-							<div className="flex items-center gap-2">
-								<button
-									type="button"
-									onClick={() => setShowHelp(true)}
-									className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-muted-foreground text-xs transition-colors hover:bg-muted"
-								>
-									<HelpCircle className="h-3.5 w-3.5" />
-									Help
-								</button>
-								<Button
-									size="sm"
-									variant="ghost"
-									onClick={() =>
-										setShowGenerationWizard(true)
-									}
-									disabled={running}
-								>
-									Templates
-								</Button>
-								<Button
-									data-tour="add-step"
-									size="sm"
-									variant="outline"
-									onClick={() => {
-										setEditingStepId(null);
-										setShowAddMenu(true);
-									}}
-									disabled={running}
-								>
-									<Plus className="mr-1.5 h-3.5 w-3.5" />
-									Add step
-								</Button>
-								<div className="relative" data-tour="save">
-									<Button
-										size="sm"
-										variant="outline"
-										onClick={() =>
-											void (mcpMode && mcpContext
-												? handleDoneReturnToChat()
-												: save())
-										}
-										disabled={saving}
-									>
-										<span className="relative mr-1.5">
-											{saving ? (
-												<Loader2 className="h-3.5 w-3.5 animate-spin" />
-											) : (
-												<Save className="h-3.5 w-3.5" />
-											)}
-											{isDirty && !saving && (
-												<span className="-top-1 -right-1 absolute h-2 w-2 rounded-full bg-amber-500 ring-1 ring-background" />
-											)}
-										</span>
-										{mcpMode && mcpContext
-											? "Save — Return to Chat"
-											: "Save"}
-									</Button>
-								</div>
-								<Button
-									data-tour="run"
-									size="sm"
-									onClick={run}
-									disabled={running || !hasRunnableSteps}
-									title={
-										!hasRunnableSteps
-											? "Add at least one step before running"
-											: undefined
-									}
-								>
-									{running ? (
-										<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-									) : (
-										<Play className="mr-1.5 h-3.5 w-3.5" />
-									)}
-									Run
-								</Button>
-							</div>
-						</div>
-					</div>
-
 					{/* ---- Content ---- */}
 					<div className="flex-1 overflow-hidden">
 						{/* Steps tab */}
 						{activeTab === "steps" && (
 							<AutomationDockLayout
-								workflow={
-									<div className="h-full overflow-y-auto p-3">
-										<div className="mb-3 flex items-center justify-between px-1">
-											<div>
-												<p className="font-semibold text-sm">
-													Workflow score
-												</p>
-												<p className="text-[11px] text-muted-foreground">
-													{
-														steps.filter(
-															(step) =>
-																step.workflowType !==
-																"trigger.start",
-														).length
-													}{" "}
-													action
-													{steps.filter(
-														(step) =>
-															step.workflowType !==
-															"trigger.start",
-													).length === 1
-														? ""
-														: "s"}{" "}
-													in this graph
-												</p>
-											</div>
-											{incompleteCount > 0 && (
-												<span className="rounded-full bg-amber-500/15 px-2 py-1 font-medium text-[10px] text-amber-700">
-													{incompleteCount} to finish
-												</span>
-											)}
-										</div>
-										<div className="space-y-1">
-											{steps.map((step) => {
-												const meta = getDisplayMeta(
-													step.type,
-												);
-												const workflowDefinition =
-													step.workflowType
-														? getWorkflowNodeDefinition(
-																step.workflowType,
-															)
-														: undefined;
-												const Icon = meta.icon;
-												const selected =
-													editingStepId === step.id;
-												const incomplete =
-													step.workflowType !==
-														"trigger.start" &&
-													validateCanvasWorkflowNode(
-														step,
-													).length > 0;
-												return (
-													<button
-														key={step.id}
-														type="button"
-														aria-pressed={selected}
-														onClick={() => {
-															setShowAddMenu(
-																false,
-															);
-															setEditingStepId(
-																step.id,
-															);
-														}}
-														className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left transition-colors ${selected ? "bg-primary/10 text-primary" : "hover:bg-muted"}`}
-													>
-														<span
-															className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted ${meta.color}`}
-														>
-															<Icon className="h-3.5 w-3.5" />
-														</span>
-														<span className="min-w-0 flex-1">
-															<span className="block truncate font-medium text-xs">
-																{step.label ||
-																	meta.label}
-															</span>
-															<span className="block truncate text-[10px] text-muted-foreground">
-																{step.workflowType ===
-																"trigger.start"
-																	? "Manual trigger"
-																	: (workflowDefinition?.label ??
-																		meta.label)}
-															</span>
-														</span>
-														{incomplete && (
-															<span className="h-2 w-2 shrink-0 rounded-full bg-amber-500" />
-														)}
-													</button>
-												);
-											})}
-										</div>
-										<Button
-											size="sm"
-											variant="outline"
-											className="mt-3 w-full"
-											disabled={running}
-											onClick={() => {
-												setEditingStepId(null);
-												setShowAddMenu(true);
-											}}
-										>
-											<Plus className="mr-1.5 h-3.5 w-3.5" />
-											Add action
-										</Button>
+								addNode={
+									<div className="h-full overflow-y-auto">
+										<AddNodeMenu onSelect={addStep} />
 									</div>
 								}
-								guidance={
+								template={
 									<div className="h-full overflow-y-auto p-4">
-										<div className="space-y-4">
-											<div>
-												<p className="font-semibold text-sm">
-													Choreograph the essentials
-												</p>
-												<p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
-													Start with a manual trigger,
-													then add actions and connect
-													their dependencies.
-												</p>
-											</div>
-											<div className="rounded-xl border bg-muted/30 p-3">
-												<p className="font-medium text-xs">
-													Supported execution model
-												</p>
-												<p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
-													Trigger and action nodes
-													form an acyclic graph. Every
-													connection represents a
-													runtime dependency.
-												</p>
-											</div>
-											<div className="rounded-xl border border-dashed p-3">
-												<p className="font-medium text-xs">
-													Developer workflows
-												</p>
-												<p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
-													Use the Add Node catalog for
-													wait actions and custom
-													Python steps.
-												</p>
-											</div>
-											<div className="space-y-2">
-												<Button
-													size="sm"
-													className="w-full"
-													disabled={running}
-													onClick={() => {
-														setEditingStepId(null);
-														setShowAddMenu(true);
-													}}
-												>
-													<Plus className="mr-1.5 h-3.5 w-3.5" />
-													Add step
-												</Button>
-												<Button
-													size="sm"
-													variant="outline"
-													className="w-full"
-													disabled={running}
-													onClick={() =>
-														setShowGenerationWizard(
-															true,
-														)
-													}
-												>
-													Browse templates
-												</Button>
-											</div>
-										</div>
-									</div>
-								}
-								config={
-									<div className="h-full overflow-y-auto p-4">
-										<p className="font-semibold text-sm">
-											Node configuration
-										</p>
-										<p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
-											Select a node to configure its
-											engine, operation, inputs, and
-											outputs in the Inspector.
-										</p>
+										<TemplateGallery
+											onSelectTemplate={(
+												nodes,
+												templateDescription,
+											) =>
+												setPendingTemplate({
+													nodes,
+													description:
+														templateDescription,
+												})
+											}
+											onStartBlank={() =>
+												setShowTemplateBrowser(false)
+											}
+										/>
 									</div>
 								}
 								inspector={
-									showAddMenu ? (
-										<div className="h-full overflow-y-auto p-4">
-											<AddNodeMenu onSelect={addStep} />
-										</div>
-									) : editingStep?.type === "trigger" ? (
+									editingStep?.type === "trigger" ? (
 										<TriggerEditPanel
 											description={description}
 											devMode={devMode}
-											source={source}
 											suggestingDescription={
 												suggestingDescription
 											}
@@ -1331,7 +1285,6 @@ export function AutomationCanvas({
 											onDevModeChange={
 												handleDevModeChange
 											}
-											onSourceChange={setSource}
 											onSuggestDescription={() =>
 												void handleSuggestDescription()
 											}
@@ -1358,8 +1311,6 @@ export function AutomationCanvas({
 												] ?? null
 											}
 											devMode={devMode}
-											source={source}
-											onSourceChange={setSource}
 											onUpdate={updateStep}
 											onDelete={() =>
 												deleteStep(editingStep.id)
@@ -1378,68 +1329,139 @@ export function AutomationCanvas({
 										</div>
 									)
 								}
+								variables={
+									<div className="h-full overflow-y-auto">
+										<div className="border-b px-4 py-3">
+											<p className="font-semibold text-sm">
+												Workflow variables
+											</p>
+											<p className="mt-0.5 text-[11px] text-muted-foreground">
+												Reusable values available to
+												every action.
+											</p>
+										</div>
+										<AutomationConfigTab
+											config={config}
+											onChange={(nextConfig) => {
+												setConfig(nextConfig);
+												setIsDirty(true);
+											}}
+										/>
+									</div>
+								}
 								validation={
 									<div className="h-full overflow-y-auto p-4">
-										<div className="space-y-4">
-											<div className="rounded-xl border bg-muted/30 p-3">
-												<p className="font-semibold text-sm">
-													{incompleteCount > 0
-														? "Needs attention"
-														: "Ready to run"}
-												</p>
-												<p className="mt-1 text-[11px] text-muted-foreground">
-													{incompleteCount > 0
-														? `${incompleteCount} action${incompleteCount === 1 ? "" : "s"} need configuration.`
-														: hasRunnableSteps
-															? "All action fields pass local authoring checks."
-															: "Add an action to create a runnable automation."}
-												</p>
-											</div>
-											{steps
-												.filter(
-													(step) =>
-														step.workflowType !==
-															"trigger.start" &&
-														validateCanvasWorkflowNode(
-															step,
-														).length > 0,
-												)
-												.map((step) => (
-													<button
-														key={step.id}
-														type="button"
-														onClick={() => {
-															setShowAddMenu(
-																false,
-															);
-															setEditingStepId(
-																step.id,
-															);
-														}}
-														className="w-full rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-left hover:bg-amber-500/10"
+										<div className="mx-auto max-w-2xl space-y-4">
+											<div className="rounded-xl border bg-card p-4 shadow-sm">
+												<div className="flex items-start justify-between gap-3">
+													<div className="flex items-center gap-3">
+														<span
+															className={`flex size-8 items-center justify-center rounded-lg ${incompleteCount > 0 ? "bg-amber-500/10 text-amber-700" : "bg-emerald-500/10 text-emerald-700"}`}
+														>
+															<CheckCircle className="size-4" />
+														</span>
+														<div>
+															<p className="font-semibold text-sm">
+																{incompleteCount >
+																0
+																	? "Configuration review"
+																	: "Ready for review"}
+															</p>
+															<p className="mt-0.5 text-[11px] text-muted-foreground">
+																{incompleteCount >
+																0
+																	? `${incompleteCount} action${incompleteCount === 1 ? "" : "s"} need configuration before they can run.`
+																	: hasRunnableSteps
+																		? "All actions pass local authoring checks."
+																		: "Add an action to create a runnable automation."}
+															</p>
+														</div>
+													</div>
+													<span
+														className={`rounded-full px-2 py-1 font-medium text-[10px] ${incompleteCount > 0 ? "bg-amber-500/10 text-amber-700" : "bg-emerald-500/10 text-emerald-700"}`}
 													>
-														<p className="font-medium text-xs">
-															{step.label ||
-																getDisplayMeta(
-																	step.type,
-																).label}
+														{incompleteCount > 0
+															? "Action required"
+															: "No issues"}
+													</span>
+												</div>
+											</div>
+
+											{validationIssues.length > 0 && (
+												<div className="overflow-hidden rounded-xl border bg-card">
+													<div className="border-b px-4 py-3">
+														<p className="font-semibold text-xs">
+															Items to complete
 														</p>
-														<p className="mt-1 text-[11px] text-muted-foreground">
-															{validateCanvasWorkflowNode(
+													</div>
+													<div className="divide-y">
+														{validationIssues.map(
+															({
 																step,
-															).join(". ")}
-														</p>
-													</button>
-												))}
-											<div className="rounded-xl border border-dashed p-3">
+																issues,
+															}) => (
+																<div
+																	key={
+																		step.id
+																	}
+																	className="px-4 py-3"
+																>
+																	<div className="flex items-start justify-between gap-3">
+																		<div className="min-w-0">
+																			<p className="font-medium text-xs">
+																				{step.label ||
+																					getDisplayMeta(
+																						step.type,
+																					)
+																						.label}
+																			</p>
+																			<ul className="mt-1 space-y-0.5 text-[11px] text-muted-foreground">
+																				{issues.map(
+																					(
+																						issue,
+																					) => (
+																						<li
+																							key={
+																								issue
+																							}
+																						>
+																							{
+																								issue
+																							}
+																						</li>
+																					),
+																				)}
+																			</ul>
+																		</div>
+																		<Button
+																			size="sm"
+																			variant="outline"
+																			className="h-7 shrink-0 text-[11px]"
+																			onClick={() =>
+																				takeToValidationStep(
+																					step.id,
+																				)
+																			}
+																		>
+																			Open
+																		</Button>
+																	</div>
+																</div>
+															),
+														)}
+													</div>
+												</div>
+											)}
+
+											<div className="rounded-xl border border-dashed bg-muted/20 px-4 py-3">
 												<p className="font-medium text-xs">
-													Graph contract
+													Graph rules
 												</p>
 												<p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
-													The canvas accepts trigger
-													and action DAGs only. Cycles
-													and links into the trigger
-													are blocked.
+													Automations use a directed,
+													acyclic graph. Connections
+													into the start trigger and
+													cycles are blocked.
 												</p>
 											</div>
 										</div>
@@ -1515,10 +1537,19 @@ export function AutomationCanvas({
 										}
 									/>
 								}
-								onInspectorClose={() => {
+								activeTab={activeDockTab}
+								focusKey={editingStepId}
+								isAddNodeOpen={showAddMenu}
+								isTemplateOpen={showTemplateBrowser}
+								onActiveTabChange={(tab) => {
+									setActiveDockTab(tab);
 									setShowAddMenu(false);
-									setEditingStepId(null);
+									setShowTemplateBrowser(false);
 								}}
+								onAddNodeTabClose={() => setShowAddMenu(false)}
+								onTemplateTabClose={() =>
+									setShowTemplateBrowser(false)
+								}
 								canvas={
 									<div
 										ref={canvasContainerRef}
@@ -1607,10 +1638,18 @@ export function AutomationCanvas({
 												hideAttribution: true,
 											}}
 											className="h-full"
+											onInit={(instance) => {
+												reactFlowInstanceRef.current =
+													instance;
+												setCanvasInitialized(true);
+											}}
 											onNodeClick={
 												canvasMode === "interact"
 													? (_e, node) => {
 															setShowAddMenu(
+																false,
+															);
+															setShowTemplateBrowser(
 																false,
 															);
 															setEditingStepId(
@@ -1621,6 +1660,10 @@ export function AutomationCanvas({
 											}
 											onNodesChange={onRfNodesChange}
 											onNodeDragStop={onNodeDragStop}
+											onPaneClick={() => {
+												setShowAddMenu(false);
+												setShowTemplateBrowser(false);
+											}}
 											onConnect={onConnect}
 										>
 											<Background
@@ -1631,7 +1674,61 @@ export function AutomationCanvas({
 											/>
 										</ReactFlow>
 
-										{/* Mode toggle — bottom left of canvas */}
+										<div className="absolute top-4 right-4 z-30 flex items-center gap-2">
+											<div
+												className="relative"
+												data-tour="save"
+											>
+												<Button
+													size="sm"
+													variant="outline"
+													className="bg-background shadow-sm"
+													onClick={() =>
+														void (mcpMode &&
+														mcpContext
+															? handleDoneReturnToChat()
+															: save())
+													}
+													disabled={saving}
+												>
+													<span className="relative mr-1.5">
+														{saving ? (
+															<Loader2 className="h-3.5 w-3.5 animate-spin" />
+														) : (
+															<Save className="h-3.5 w-3.5" />
+														)}
+														{isDirty && !saving && (
+															<span className="-top-1 -right-1 absolute h-2 w-2 rounded-full bg-amber-500 ring-1 ring-background" />
+														)}
+													</span>
+													{mcpMode && mcpContext
+														? "Save — Return to Chat"
+														: "Save"}
+												</Button>
+											</div>
+											<Button
+												data-tour="run"
+												size="sm"
+												className="shadow-sm"
+												onClick={run}
+												disabled={
+													running || !hasRunnableSteps
+												}
+												title={
+													!hasRunnableSteps
+														? "Add at least one step before running"
+														: undefined
+												}
+											>
+												{running ? (
+													<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+												) : (
+													<Play className="mr-1.5 h-3.5 w-3.5" />
+												)}
+												Run
+											</Button>
+										</div>
+
 										<div className="absolute bottom-4 left-4 z-10 flex items-center overflow-hidden rounded-lg border bg-background shadow-sm">
 											<button
 												type="button"
@@ -1662,83 +1759,35 @@ export function AutomationCanvas({
 											>
 												<Hand className="h-4 w-4" />
 											</button>
+											<button
+												type="button"
+												aria-label="Browse automation templates"
+												title="Browse automation templates"
+												onClick={() => {
+													setShowAddMenu(false);
+													setShowTemplateBrowser(
+														true,
+													);
+												}}
+												disabled={running}
+												className="flex items-center gap-1.5 border-l px-2 py-2 text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+											>
+												<Sparkles className="h-4 w-4" />
+												Templates
+											</button>
+											<button
+												type="button"
+												aria-label="Open automation help"
+												title="Automation help"
+												onClick={() =>
+													setShowHelp(true)
+												}
+												className="flex items-center gap-1.5 border-l px-2 py-2 text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground"
+											>
+												<HelpCircle className="h-4 w-4" />
+												Help
+											</button>
 										</div>
-										{!hasRunnableSteps &&
-											!showGenerationWizard && (
-												<div className="absolute inset-0 z-10 flex items-center justify-center p-6">
-													<div className="max-w-sm rounded-2xl border bg-card/95 p-6 text-center shadow-lg backdrop-blur">
-														<p className="font-semibold text-base">
-															Begin your
-															automation
-														</p>
-														<p className="mt-2 text-muted-foreground text-xs leading-relaxed">
-															Add an action to the
-															manual trigger, or
-															start from a tested
-															template. This
-															workspace currently
-															authors action DAGs
-															only.
-														</p>
-														<div className="mt-4 flex justify-center gap-2">
-															<Button
-																size="sm"
-																onClick={() => {
-																	setEditingStepId(
-																		null,
-																	);
-																	setShowAddMenu(
-																		true,
-																	);
-																}}
-															>
-																<Plus className="mr-1.5 h-3.5 w-3.5" />
-																Add step
-															</Button>
-															<Button
-																size="sm"
-																variant="outline"
-																onClick={() =>
-																	setShowGenerationWizard(
-																		true,
-																	)
-																}
-															>
-																Templates
-															</Button>
-														</div>
-													</div>
-												</div>
-											)}
-										{showGenerationWizard && (
-											<div className="absolute inset-0 z-30 overflow-y-auto bg-background/95 p-6 backdrop-blur">
-												<div className="mx-auto max-w-3xl">
-													<div className="mb-3 flex justify-end">
-														<Button
-															size="sm"
-															variant="ghost"
-															onClick={() =>
-																setShowGenerationWizard(
-																	false,
-																)
-															}
-														>
-															<X className="mr-1.5 h-3.5 w-3.5" />
-															Keep current
-															workflow
-														</Button>
-													</div>
-													<TemplateGallery
-														onSelectTemplate={
-															loadTemplate
-														}
-														onStartBlank={
-															onStartBlank
-														}
-													/>
-												</div>
-											</div>
-										)}
 									</div>
 								}
 							/>
@@ -1928,6 +1977,44 @@ export function AutomationCanvas({
 				</div>
 			</div>
 
+			<Dialog
+				open={pendingTemplate !== null}
+				onOpenChange={(open) => {
+					if (!open) setPendingTemplate(null);
+				}}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Replace current automation?</DialogTitle>
+						<DialogDescription>
+							Applying this template replaces the current nodes,
+							connections, and description.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setPendingTemplate(null)}
+						>
+							Cancel
+						</Button>
+						<Button
+							onClick={() => {
+								if (!pendingTemplate) return;
+								loadTemplate(
+									pendingTemplate.nodes,
+									pendingTemplate.description,
+								);
+								setPendingTemplate(null);
+								setShowTemplateBrowser(false);
+							}}
+						>
+							Replace automation
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
 			{/* ---- Help modal ---- */}
 			<HelpModal open={showHelp} onClose={() => setShowHelp(false)} />
 		</>
@@ -1938,12 +2025,10 @@ export function AutomationCanvas({
 interface TriggerEditPanelProps {
 	description: string;
 	devMode: boolean;
-	source: string;
 	suggestingDescription: boolean;
 	hasRunnableSteps: boolean;
 	onDescriptionChange: (v: string) => void;
 	onDevModeChange: (v: boolean) => void;
-	onSourceChange: (source: string) => void;
 	onSuggestDescription: () => void;
 	onClose: () => void;
 }
@@ -1951,12 +2036,10 @@ interface TriggerEditPanelProps {
 function TriggerEditPanel({
 	description,
 	devMode,
-	source,
 	suggestingDescription,
 	hasRunnableSteps,
 	onDescriptionChange,
 	onDevModeChange,
-	onSourceChange,
 	onSuggestDescription,
 	onClose,
 }: TriggerEditPanelProps) {
@@ -2016,8 +2099,7 @@ function TriggerEditPanel({
 						<div>
 							<p className="font-medium text-sm">Dev Mode</p>
 							<p className="text-[11px] text-muted-foreground">
-								View and edit the Python source artifact used by
-								the automation.
+								Show Python source editors on executable nodes.
 							</p>
 						</div>
 						<Switch
@@ -2025,21 +2107,6 @@ function TriggerEditPanel({
 							onCheckedChange={onDevModeChange}
 						/>
 					</div>
-					{devMode && (
-						<Field>
-							<p className="mb-1 font-medium text-[11px] text-muted-foreground">
-								Python source artifact
-							</p>
-							<Textarea
-								className="min-h-48 font-mono text-xs"
-								rows={12}
-								value={source}
-								onChange={(event) =>
-									onSourceChange(event.target.value)
-								}
-							/>
-						</Field>
-					)}
 				</div>
 			</div>
 		</div>

@@ -1,12 +1,23 @@
-import { Trash2 } from "lucide-react";
-import { useState } from "react";
-import { Button, Field, FieldLabel, Input, Textarea } from "@semoss/ui/next";
+import { Code2, Maximize2, Minimize2, Trash2 } from "lucide-react";
+import { Suspense, useState } from "react";
+import { MonacoEditor } from "@semoss/shared";
+import {
+	Button,
+	Field,
+	FieldLabel,
+	Input,
+	Textarea,
+	useTheme,
+} from "@semoss/ui/next";
 import type {
 	AutomationNode,
 	StepRunStatus,
 } from "../../domain/automation.types";
 import { getDisplayMeta } from "../../domain/automation-display";
-import { getWorkflowNodeDefinition } from "../../domain/automation-workflow-adapter";
+import {
+	getGeneratedPythonPreview,
+	getWorkflowNodeDefinition,
+} from "../../domain/automation-workflow-adapter";
 import { OutputPreview } from "../form-editor/output-preview";
 import { StepForm } from "./step-form";
 
@@ -18,8 +29,6 @@ export interface NodeEditDrawerProps {
 	runError?: string;
 	runOutput?: string | null;
 	devMode?: boolean;
-	source: string;
-	onSourceChange: (source: string) => void;
 	onUpdate: (step: AutomationNode) => void;
 	onDelete: () => void;
 }
@@ -46,16 +55,27 @@ export function NodeEditDrawer({
 	runError,
 	runOutput,
 	devMode = false,
-	source,
-	onSourceChange,
 	onUpdate,
 	onDelete,
 }: NodeEditDrawerProps) {
 	const [outputExpanded, setOutputExpanded] = useState(false);
+	const [editorMode, setEditorMode] = useState<"form" | "python">("form");
 	const meta = getDisplayMeta(step.type);
 	const workflowDefinition = step.workflowType
 		? getWorkflowNodeDefinition(step.workflowType)
 		: undefined;
+	const isCustomSource = step.workflowCodeMode === "custom";
+	const canRevertToGenerated =
+		isCustomSource && workflowDefinition?.defaultCodeMode === "generated";
+	const persistedPythonSource =
+		typeof step.workflowConfig?.pythonSource === "string"
+			? step.workflowConfig.pythonSource
+			: "";
+	const pythonSource =
+		persistedPythonSource ||
+		(isCustomSource ? "" : getGeneratedPythonPreview(step));
+	const { resolvedTheme } = useTheme();
+	const [pythonExpanded, setPythonExpanded] = useState(false);
 	const Icon = meta.icon;
 
 	return (
@@ -144,42 +164,201 @@ export function NodeEditDrawer({
 						/>
 					</Field>
 
-					{supportsBusinessForm(step) && (
-						<StepForm
-							step={step}
-							upstreamVars={upstreamVars}
-							onUpdate={onUpdate}
-							playgroundFillable={step.playgroundFillable ?? []}
-							onPlaygroundFieldsChange={(fields) =>
-								onUpdate({
-									...step,
-									playgroundFillable: fields,
-								})
-							}
-							devMode={devMode}
-							appId={appId}
-						/>
-					)}
+					<div className="space-y-3 border-t pt-4">
+						<div className="flex items-center justify-between gap-3">
+							<div>
+								<p className="font-medium text-sm">
+									Configuration
+								</p>
+								<p className="text-[11px] text-muted-foreground">
+									{isCustomSource
+										? "This node uses custom Python."
+										: "Use the form or inspect the generated Python."}
+								</p>
+							</div>
+							<div className="flex rounded-md border bg-muted/40 p-0.5">
+								<button
+									type="button"
+									aria-pressed={editorMode === "form"}
+									onClick={() => setEditorMode("form")}
+									className={`rounded px-2.5 py-1 font-medium text-[11px] transition-colors ${editorMode === "form" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+								>
+									Form
+								</button>
+								<button
+									type="button"
+									aria-pressed={editorMode === "python"}
+									onClick={() => setEditorMode("python")}
+									className={`rounded px-2.5 py-1 font-medium text-[11px] transition-colors ${editorMode === "python" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+								>
+									Python
+								</button>
+							</div>
+						</div>
 
-					{devMode && (
-						<Field>
-							<FieldLabel className="text-xs">
-								Python source artifact
-							</FieldLabel>
-							<Textarea
-								className="min-h-48 font-mono text-xs"
-								rows={12}
-								value={source}
-								onChange={(event) =>
-									onSourceChange(event.target.value)
-								}
-							/>
-							<p className="text-muted-foreground text-xs">
-								This source is saved with the Python automation
-								definition.
-							</p>
-						</Field>
-					)}
+						{editorMode === "form" &&
+							(isCustomSource ? (
+								<div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+									<p className="font-medium text-xs">
+										Custom Python is active
+									</p>
+									<p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
+										The form is unavailable because this
+										node&apos;s custom source controls its
+										behavior.
+									</p>
+									{canRevertToGenerated ? (
+										<Button
+											size="sm"
+											variant="outline"
+											className="mt-3 h-7 text-[11px]"
+											onClick={() => {
+												const {
+													pythonSource: _pythonSource,
+													...workflowConfig
+												} = step.workflowConfig ?? {};
+												onUpdate({
+													...step,
+													workflowCodeMode:
+														"generated",
+													workflowConfig,
+												});
+											}}
+										>
+											Revert to generated default
+										</Button>
+									) : (
+										<Button
+											size="sm"
+											variant="outline"
+											className="mt-3 h-7 text-[11px]"
+											onClick={() =>
+												setEditorMode("python")
+											}
+										>
+											View Python source
+										</Button>
+									)}
+								</div>
+							) : supportsBusinessForm(step) ? (
+								<StepForm
+									step={step}
+									upstreamVars={upstreamVars}
+									onUpdate={onUpdate}
+									playgroundFillable={
+										step.playgroundFillable ?? []
+									}
+									onPlaygroundFieldsChange={(fields) =>
+										onUpdate({
+											...step,
+											playgroundFillable: fields,
+										})
+									}
+									devMode={devMode}
+									appId={appId}
+								/>
+							) : (
+								<p className="rounded-lg border border-dashed px-3 py-2 text-[11px] text-muted-foreground">
+									This node is configured in Python.
+								</p>
+							))}
+
+						{editorMode === "python" && (
+							<Field>
+								<div className="flex items-center justify-between">
+									<FieldLabel className="flex items-center gap-1.5 text-xs">
+										<Code2 className="h-3.5 w-3.5 text-primary" />
+										Python source
+									</FieldLabel>
+									{pythonSource && (
+										<Button
+											size="sm"
+											variant="ghost"
+											className="h-7 gap-1 px-2 text-[11px]"
+											onClick={() =>
+												setPythonExpanded(
+													(value) => !value,
+												)
+											}
+										>
+											{pythonExpanded ? (
+												<Minimize2 className="h-3.5 w-3.5" />
+											) : (
+												<Maximize2 className="h-3.5 w-3.5" />
+											)}
+											{pythonExpanded
+												? "Collapse"
+												: "Expand"}
+										</Button>
+									)}
+								</div>
+								{pythonSource ? (
+									<div
+										className={`overflow-hidden rounded-lg border bg-muted/30 ${
+											pythonExpanded
+												? "h-[560px]"
+												: "h-[300px]"
+										}`}
+									>
+										<Suspense
+											fallback={
+												<pre className="h-full overflow-auto p-3 font-mono text-xs">
+													{pythonSource}
+												</pre>
+											}
+										>
+											<MonacoEditor
+												height="100%"
+												width="100%"
+												language="python"
+												theme={
+													resolvedTheme === "dark"
+														? "vs-dark"
+														: "vs"
+												}
+												value={pythonSource}
+												onChange={(value) =>
+													onUpdate({
+														...step,
+														workflowCodeMode:
+															"custom",
+														workflowConfig: {
+															...step.workflowConfig,
+															pythonSource:
+																value ?? "",
+														},
+													})
+												}
+												options={{
+													automaticLayout: true,
+													fontSize: 13,
+													lineNumbers: "on",
+													minimap: { enabled: false },
+													folding: true,
+													scrollBeyondLastLine: false,
+													wordWrap: "on",
+													padding: {
+														top: 12,
+														bottom: 12,
+													},
+												}}
+											/>
+										</Suspense>
+									</div>
+								) : (
+									<div className="rounded-lg border border-dashed bg-muted/20 p-3 text-muted-foreground text-xs">
+										Add Python source to create this custom
+										node.
+									</div>
+								)}
+								<p className="text-muted-foreground text-xs">
+									{isCustomSource
+										? "This custom source is saved with the node."
+										: "Editing generated source creates a custom node."}
+								</p>
+							</Field>
+						)}
+					</div>
 				</div>
 			</div>
 		</div>

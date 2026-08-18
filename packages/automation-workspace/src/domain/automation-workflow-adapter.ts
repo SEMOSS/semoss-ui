@@ -17,13 +17,25 @@ import type {
 
 export interface CanvasWorkflowDocument {
 	description: string;
-	source: string;
 	triggerBindings: TriggerBinding[];
 	steps: AutomationNode[];
 	edges: AutomationEdge[];
 }
 
+export type AutomationNodeSources = Record<string, string>;
+
 const MANUAL_TRIGGER: TriggerBinding = { id: "manual", type: "manual" };
+const PYTHON_RESOLVE_HELPER = `import re
+
+def resolve(value, scope):
+    if not isinstance(value, str):
+        return value
+    return re.sub(
+        r"\\$\\{([^}]+)\\}",
+        lambda match: scope.get(match.group(1), match.group(0)),
+        value,
+    )
+`;
 
 function stringValue(value: unknown): string {
 	return typeof value === "string" ? value : "";
@@ -33,6 +45,106 @@ function numberValue(value: unknown, fallback: number): number {
 	return typeof value === "number" && Number.isFinite(value)
 		? value
 		: fallback;
+}
+
+function pythonLiteral(value: unknown): string {
+	return JSON.stringify(value ?? "");
+}
+
+/**
+ * Shows the direct SDK implementation before the server has persisted its canonical copy.
+ * Saving a generated node always replaces this preview with the authoritative backend renderer.
+ */
+export function getGeneratedPythonPreview(step: AutomationNode): string {
+	const type = step.workflowType;
+	const config = type
+		? mergeCanvasConfig(type, step.config, step.workflowConfig ?? {})
+		: {};
+	if (type?.startsWith("database.")) {
+		return `${PYTHON_RESOLVE_HELPER}
+from ai_server import DatabaseEngine
+
+ENGINE_ID = ${pythonLiteral(config.engineId)}
+QUERY = ${pythonLiteral(config.query)}
+
+def run(scope):
+    database = DatabaseEngine(engine_id=resolve(ENGINE_ID, scope))
+    return database.execQuery(query=resolve(QUERY, scope), return_pandas=False)
+`;
+	}
+	if (type?.startsWith("model.")) {
+		return `${PYTHON_RESOLVE_HELPER}
+from ai_server import ModelEngine
+
+ENGINE_ID = ${pythonLiteral(config.engineId)}
+PROMPT = ${pythonLiteral(config.prompt ?? config.text)}
+
+def run(scope):
+    model = ModelEngine(engine_id=resolve(ENGINE_ID, scope))
+    return model.ask(command=resolve(PROMPT, scope))
+`;
+	}
+	if (type?.startsWith("storage.")) {
+		return `${PYTHON_RESOLVE_HELPER}
+from ai_server import StorageEngine
+
+ENGINE_ID = ${pythonLiteral(config.engineId)}
+STORAGE_PATH = ${pythonLiteral(config.path)}
+
+def run(scope):
+    storage = StorageEngine(engine_id=resolve(ENGINE_ID, scope))
+    return storage.list(resolve(STORAGE_PATH, scope))
+`;
+	}
+	if (type?.startsWith("vector.")) {
+		return `${PYTHON_RESOLVE_HELPER}
+from ai_server import VectorEngine
+
+ENGINE_ID = ${pythonLiteral(config.engineId)}
+QUERY = ${pythonLiteral(config.value)}
+
+def run(scope):
+    vector = VectorEngine(engine_id=resolve(ENGINE_ID, scope))
+    return vector.nearestNeighbor(search_statement=resolve(QUERY, scope), limit=5)
+`;
+	}
+	if (type === "function.execute") {
+		return `${PYTHON_RESOLVE_HELPER}
+from ai_server import FunctionEngine
+import json
+
+ENGINE_ID = ${pythonLiteral(config.engineId)}
+ARGUMENTS = ${pythonLiteral(config.arguments)}
+
+def run(scope):
+    function = FunctionEngine(engine_id=resolve(ENGINE_ID, scope))
+    return function.execute(parameterMap=json.loads(resolve(ARGUMENTS, scope)))
+`;
+	}
+	if (type === "app.pixel") {
+		return `${PYTHON_RESOLVE_HELPER}
+from semoss import Insight
+
+PIXEL = ${pythonLiteral(config.pixel)}
+
+def run(scope):
+    return Insight().run_pixel(resolve(PIXEL, scope))
+`;
+	}
+	if (type === "control.wait") {
+		return `import time
+
+SECONDS = ${pythonLiteral(config.durationSeconds)}
+
+def run(scope):
+    seconds = float(SECONDS)
+    time.sleep(seconds)
+    return {"waitedSeconds": seconds}
+`;
+	}
+	return `def run(scope):
+    return {}
+`;
 }
 
 function canvasTypeForWorkflow(
@@ -109,7 +221,14 @@ function defaultCanvasConfig(
 	if (type.startsWith("vector.")) {
 		return {
 			engineId,
-			operation: type === "vector.search" ? "search" : "list",
+			operation:
+				type === "vector.search"
+					? "search"
+					: type === "vector.add"
+						? "add-file"
+						: type === "vector.delete"
+							? "delete"
+							: "list",
 			command: stringValue(config.value),
 			limit: 5,
 			filters: "",
@@ -136,6 +255,17 @@ function defaultCanvasConfig(
 		pixel: stringValue(config.pixel) || stringValue(config.code),
 		appId: stringValue(config.appId),
 	};
+}
+
+function withPythonSource(
+	type: AutomationWorkflowNodeType,
+	config: AutomationWorkflowNodeConfig,
+): AutomationWorkflowNodeConfig {
+	if (type === "trigger.start") return config;
+	const pythonSource =
+		stringValue(config.pythonSource) ||
+		(type === "developer.python" ? stringValue(config.code) : "");
+	return pythonSource ? { ...config, pythonSource } : config;
 }
 
 function canvasTypeToWorkflow(
@@ -247,7 +377,10 @@ export function createCanvasWorkflowNode(
 ): AutomationNode {
 	const definition = getWorkflowNodeDefinition(type);
 	if (!definition) throw new Error(`Unknown automation node type: ${type}`);
-	const workflowConfig = structuredClone(definition.defaultConfig);
+	const workflowConfig = withPythonSource(
+		type,
+		structuredClone(definition.defaultConfig),
+	);
 	return {
 		id: `${type.replace(".", "-")}-${crypto.randomUUID()}`,
 		type: canvasTypeForWorkflow(type),
@@ -261,16 +394,30 @@ export function createCanvasWorkflowNode(
 	};
 }
 
-function canvasNodeFromWorkflow(node: AutomationWorkflowNode): AutomationNode {
+function canvasNodeFromWorkflow(
+	node: AutomationWorkflowNode,
+	nodeSources: AutomationNodeSources,
+): AutomationNode {
+	const persistedConfig = withPythonSource(
+		node.type,
+		structuredClone(node.config),
+	);
+	const workflowConfig =
+		node.type === "trigger.start" ||
+		typeof nodeSources[node.id] !== "string"
+			? persistedConfig
+			: { ...persistedConfig, pythonSource: nodeSources[node.id] };
 	return {
 		id: node.id,
 		type: canvasTypeForWorkflow(node.type),
 		label: node.label,
 		position: node.position,
-		outputVar: `${node.type.replace(/\./g, "_")}_${node.id.slice(-6)}`,
-		config: defaultCanvasConfig(node.type, node.config),
+		outputVar:
+			node.outputVar ??
+			`${node.type.replace(/\./g, "_")}_${node.id.slice(-6)}`,
+		config: defaultCanvasConfig(node.type, workflowConfig),
 		workflowType: node.type,
-		workflowConfig: structuredClone(node.config),
+		workflowConfig,
 		workflowCodeMode: node.codeMode,
 	};
 }
@@ -279,9 +426,6 @@ export function createInitialCanvasWorkflowDocument(): CanvasWorkflowDocument {
 	const trigger = createCanvasWorkflowNode("trigger.start", 0);
 	return {
 		description: "",
-		source: `def run(inputs):
-    return {"status": "ok"}
-`,
 		triggerBindings: [MANUAL_TRIGGER],
 		steps: [trigger],
 		edges: [],
@@ -290,15 +434,16 @@ export function createInitialCanvasWorkflowDocument(): CanvasWorkflowDocument {
 
 export function canvasDocumentFromWorkflow(
 	document: AutomationWorkflowDocument,
-	source: string,
+	nodeSources: AutomationNodeSources = {},
 ): CanvasWorkflowDocument {
-	const steps = document.graph.nodes.map(canvasNodeFromWorkflow);
+	const steps = document.graph.nodes.map((node) =>
+		canvasNodeFromWorkflow(node, nodeSources),
+	);
 	if (!steps.some((node) => node.workflowType === "trigger.start")) {
 		steps.unshift(createCanvasWorkflowNode("trigger.start", 0));
 	}
 	return {
 		description: document.description ?? "",
-		source,
 		triggerBindings:
 			document.triggerBindings.length > 0
 				? document.triggerBindings
@@ -308,12 +453,39 @@ export function canvasDocumentFromWorkflow(
 			id: edge.id,
 			source: edge.source,
 			target: edge.target,
-			sourceHandle: edge.sourcePort,
-			targetHandle: edge.targetPort,
+			sourceHandle:
+				edge.sourcePort === "out" || edge.sourcePort === "next"
+					? `out-${edge.source}`
+					: edge.sourcePort,
+			targetHandle:
+				edge.targetPort === "in"
+					? `in-${edge.target}`
+					: edge.targetPort,
 			kind: edge.kind,
 			...(edge.kind === "data" ? { dataType: edge.dataType } : {}),
 		})),
 	};
+}
+
+export function getCanvasNodeSources(
+	steps: AutomationNode[],
+): AutomationNodeSources {
+	return Object.fromEntries(
+		steps.flatMap((step) => {
+			const type = step.workflowType ?? canvasTypeToWorkflow(step.type);
+			if (
+				type === "trigger.start" ||
+				step.workflowCodeMode !== "custom"
+			) {
+				return [];
+			}
+			const source = step.workflowConfig?.pythonSource;
+			if (typeof source !== "string" || source.trim() === "") {
+				return [];
+			}
+			return [[step.id, source]];
+		}),
+	);
 }
 
 export function canvasDocumentToWorkflow({
@@ -321,7 +493,7 @@ export function canvasDocumentToWorkflow({
 	triggerBindings,
 	steps,
 	edges,
-}: Omit<CanvasWorkflowDocument, "source">): AutomationWorkflowDocument {
+}: CanvasWorkflowDocument): AutomationWorkflowDocument {
 	const nodes = steps.map((step): AutomationWorkflowNode => {
 		const type = step.workflowType ?? canvasTypeToWorkflow(step.type);
 		const definition = getWorkflowNodeDefinition(type);
@@ -332,12 +504,14 @@ export function canvasDocumentToWorkflow({
 			step.config,
 			step.workflowConfig ?? structuredClone(definition.defaultConfig),
 		);
+		const { pythonSource: _pythonSource, ...persistedConfig } = config;
 		return {
 			id: step.id,
 			type,
 			label: step.label || definition.label,
+			...(type === "trigger.start" ? {} : { outputVar: step.outputVar }),
 			position: step.position,
-			config,
+			config: persistedConfig,
 			codeMode: step.workflowCodeMode ?? definition.defaultCodeMode,
 		};
 	});
@@ -351,17 +525,25 @@ export function canvasDocumentToWorkflow({
 						kind: "data",
 						dataType: edge.dataType ?? "unknown",
 						source: edge.source,
-						sourcePort: edge.sourceHandle ?? "result",
+						sourcePort: edge.sourceHandle?.startsWith("out-")
+							? "out"
+							: (edge.sourceHandle ?? "result"),
 						target: edge.target,
-						targetPort: edge.targetHandle ?? "in",
+						targetPort: edge.targetHandle?.startsWith("in-")
+							? "in"
+							: (edge.targetHandle ?? "in"),
 					}
 				: {
 						id: edge.id,
 						kind: "control",
 						source: edge.source,
-						sourcePort: edge.sourceHandle ?? "out",
+						sourcePort: edge.sourceHandle?.startsWith("out-")
+							? "out"
+							: (edge.sourceHandle ?? "out"),
 						target: edge.target,
-						targetPort: edge.targetHandle ?? "in",
+						targetPort: edge.targetHandle?.startsWith("in-")
+							? "in"
+							: (edge.targetHandle ?? "in"),
 					},
 		);
 	return {
@@ -382,12 +564,33 @@ export function validateCanvasWorkflowNode(node: AutomationNode): string[] {
 		node.config,
 		node.workflowConfig ?? definition.defaultConfig,
 	);
-	return Object.entries(definition.configSchema).flatMap(([key, schema]) => {
-		if (!schema.required) return [];
-		const value = config[key];
-		if (value === "" || value === undefined) {
-			return [`${schema.label} is required`];
+	const errors = Object.entries(definition.configSchema).flatMap(
+		([key, schema]) => {
+			const value = config[key];
+			if (
+				schema.required &&
+				(value === undefined ||
+					(typeof value === "string" && value.trim() === ""))
+			) {
+				return [`${schema.label} is required`];
+			}
+			if (
+				schema.minimum !== undefined &&
+				(typeof value !== "number" ||
+					!Number.isFinite(value) ||
+					value < schema.minimum)
+			) {
+				return [`${schema.label} must be at least ${schema.minimum}`];
+			}
+			return [];
+		},
+	);
+	if (type === "function.execute" && typeof config.arguments === "string") {
+		try {
+			JSON.parse(config.arguments);
+		} catch {
+			errors.push("JSON arguments must be valid JSON");
 		}
-		return [];
-	});
+	}
+	return errors;
 }

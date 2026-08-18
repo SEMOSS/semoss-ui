@@ -79,17 +79,15 @@ export const AUTOMATION_WORKFLOW_NODE_REGISTRY: readonly AutomationNodeDefinitio
 			category: "database",
 			defaultConfig: {
 				engineId: "",
-				table: "",
-				columns: [],
+				query: "",
 				commit: true,
 			},
 			configSchema: {
 				engineId: engine,
-				table: { type: "string", label: "Table", required: true },
-				columns: {
-					type: "string[]",
-					label: "Columns",
-					placeholder: "name, email",
+				query: {
+					type: "code",
+					label: "Insert SQL",
+					required: true,
 				},
 				commit: { type: "boolean", label: "Commit changes" },
 			},
@@ -102,16 +100,15 @@ export const AUTOMATION_WORKFLOW_NODE_REGISTRY: readonly AutomationNodeDefinitio
 			label: "Update database rows",
 			description: "Update matching records in a database table.",
 			category: "database",
-			defaultConfig: { engineId: "", table: "", values: "", where: "" },
+			defaultConfig: { engineId: "", query: "", commit: true },
 			configSchema: {
 				engineId: engine,
-				table: { type: "string", label: "Table", required: true },
-				values: {
-					type: "textarea",
-					label: "Values to update",
+				query: {
+					type: "code",
+					label: "Update SQL",
 					required: true,
 				},
-				where: { type: "string", label: "Matching rows" },
+				commit: { type: "boolean", label: "Commit changes" },
 			},
 			inputs: [controlIn],
 			outputs: [controlOut],
@@ -126,7 +123,6 @@ export const AUTOMATION_WORKFLOW_NODE_REGISTRY: readonly AutomationNodeDefinitio
 				engineId: "",
 				systemPrompt: "",
 				prompt: "",
-				temperature: 0.2,
 			},
 			configSchema: {
 				engineId: engine,
@@ -138,11 +134,6 @@ export const AUTOMATION_WORKFLOW_NODE_REGISTRY: readonly AutomationNodeDefinitio
 					type: "textarea",
 					label: "What should the model do?",
 					required: true,
-				},
-				temperature: {
-					type: "number",
-					label: "Creativity",
-					minimum: 0,
 				},
 			},
 			inputs: [controlIn],
@@ -217,11 +208,13 @@ export const AUTOMATION_WORKFLOW_NODE_REGISTRY: readonly AutomationNodeDefinitio
 					path: {
 						type: "string" as const,
 						label: "File or folder path",
-						required: true,
+						required: operation !== "list",
 					},
 					destination: {
 						type: "string" as const,
 						label: "Destination",
+						required:
+							operation === "upload" || operation === "download",
 					},
 				},
 				inputs: [controlIn],
@@ -234,17 +227,13 @@ export const AUTOMATION_WORKFLOW_NODE_REGISTRY: readonly AutomationNodeDefinitio
 			label: `${operation[0].toUpperCase()}${operation.slice(1)} vectors`,
 			description: `${operation[0].toUpperCase()}${operation.slice(1)} records in a vector database.`,
 			category: "vector" as const,
-			defaultConfig: { engineId: "", collection: "", value: "" },
+			defaultConfig: { engineId: "", value: "" },
 			configSchema: {
 				engineId: engine,
-				collection: {
-					type: "string" as const,
-					label: "Collection",
-					required: true,
-				},
 				value: {
 					type: "textarea" as const,
 					label: operation === "search" ? "Search query" : "Records",
+					required: true,
 				},
 			},
 			inputs: [controlIn],
@@ -256,15 +245,14 @@ export const AUTOMATION_WORKFLOW_NODE_REGISTRY: readonly AutomationNodeDefinitio
 			label: "Execute function",
 			description: "Call a reusable function engine.",
 			category: "function",
-			defaultConfig: { engineId: "", functionName: "", arguments: "" },
+			defaultConfig: { engineId: "", arguments: "{}" },
 			configSchema: {
 				engineId: engine,
-				functionName: {
-					type: "string",
-					label: "Function name",
+				arguments: {
+					type: "textarea",
+					label: "JSON arguments",
 					required: true,
 				},
-				arguments: { type: "textarea", label: "Arguments" },
 			},
 			inputs: [controlIn],
 			outputs: [controlOut, textOut],
@@ -277,11 +265,6 @@ export const AUTOMATION_WORKFLOW_NODE_REGISTRY: readonly AutomationNodeDefinitio
 			category: "app",
 			defaultConfig: { appId: "", pixel: "" },
 			configSchema: {
-				appId: {
-					type: "string",
-					label: "Application ID",
-					required: true,
-				},
 				pixel: { type: "code", label: "Pixel command", required: true },
 			},
 			inputs: [controlIn],
@@ -313,11 +296,8 @@ export const AUTOMATION_WORKFLOW_NODE_REGISTRY: readonly AutomationNodeDefinitio
 			category: "developer",
 			defaultConfig: {
 				template: { id: "semoss.python.function", version: "1.0.0" },
-				code: "def run(inputs):\n    return {}",
 			},
-			configSchema: {
-				code: { type: "code", label: "Python code", required: true },
-			},
+			configSchema: {},
 			inputs: [controlIn],
 			outputs: [controlOut, textOut],
 			defaultCodeMode: "custom",

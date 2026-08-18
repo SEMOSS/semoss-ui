@@ -13,6 +13,8 @@ export interface EnginePickerFieldProps {
 	engineTypes: Engine["engine_type"][];
 	/** Called with the full engine object when the user selects an engine */
 	onChange: (e: Engine) => void;
+	/** Whether a selected engine is required before the automation can run */
+	required?: boolean;
 }
 
 export function EnginePickerField({
@@ -21,10 +23,18 @@ export function EnginePickerField({
 	value,
 	engineTypes,
 	onChange,
+	required = false,
 }: EnginePickerFieldProps) {
 	return (
 		<Field>
-			<FieldLabel>{label}</FieldLabel>
+			<FieldLabel>
+				{label}
+				{required && (
+					<span className="ml-1 text-destructive" aria-hidden>
+						*
+					</span>
+				)}
+			</FieldLabel>
 			<AutomationEngineSelect
 				name={name}
 				value={value}

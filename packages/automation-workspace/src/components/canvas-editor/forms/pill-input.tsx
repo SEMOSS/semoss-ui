@@ -17,6 +17,8 @@ export interface PillInputProps {
 	mono?: boolean;
 	/** Minimum rows height hint for mono mode (default 4) */
 	minRows?: number;
+	/** Whether the form must be completed before the automation can run */
+	required?: boolean;
 }
 
 const VAR_REGEX = /\$\{([^}]+)\}/g;
@@ -160,6 +162,7 @@ export function PillInput({
 	placeholder,
 	mono,
 	minRows = 4,
+	required = false,
 }: PillInputProps) {
 	const editorRef = useRef<HTMLDivElement>(null);
 	const lastValueRef = useRef<string>(value);
@@ -387,7 +390,14 @@ export function PillInput({
 	return (
 		<div className="flex flex-col gap-1">
 			<div className="flex items-center justify-between">
-				<FieldLabel>{label}</FieldLabel>
+				<FieldLabel>
+					{label}
+					{required && (
+						<span className="ml-1 text-destructive" aria-hidden>
+							*
+						</span>
+					)}
+				</FieldLabel>
 				{upstreamVars.length > 0 && (
 					<div ref={pickerRef} className="relative">
 						<button

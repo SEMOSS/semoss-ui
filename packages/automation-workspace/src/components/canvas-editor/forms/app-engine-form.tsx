@@ -268,6 +268,7 @@ export function AppEngineForm({
 						<BoundInput
 							key={p.name}
 							label={`${p.name}${p.required ? "" : " (optional)"}`}
+							required={p.required}
 							value={paramValues[p.name] ?? ""}
 							placeholder={p.description ?? ""}
 							onChange={(v) => handleParamChange(p.name, v)}
@@ -288,6 +289,7 @@ export function AppEngineForm({
 				<div className="relative">
 					<BoundInput
 						label="Function Call"
+						required
 						value={config.pixel}
 						placeholder='MyFunction(param=[""])'
 						onChange={(v) =>

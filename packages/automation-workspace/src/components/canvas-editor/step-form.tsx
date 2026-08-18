@@ -108,6 +108,7 @@ export function StepForm({
 				<div className="flex flex-col gap-4">
 					<PillInput
 						label="Seconds to Wait"
+						required
 						value={c.seconds}
 						placeholder="30"
 						onChange={(v) => update({ ...c, seconds: v })}

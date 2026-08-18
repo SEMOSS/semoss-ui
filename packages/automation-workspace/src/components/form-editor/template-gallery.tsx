@@ -12,12 +12,11 @@ export function TemplateGallery({
 }: TemplateGalleryProps) {
 	return (
 		<div className="rounded-2xl border bg-card px-6 py-6 shadow-sm">
-			<div className="mb-5 text-center">
-				<p className="font-semibold text-base">
-					How would you like to start?
-				</p>
+			<div className="mb-5">
+				<p className="font-semibold text-base">Automation templates</p>
 				<p className="mt-0.5 text-muted-foreground text-xs">
-					Pick a template to get started.
+					Start from a tested workflow. Applying a template replaces
+					the current canvas.
 				</p>
 			</div>
 			<div className="grid gap-3 sm:grid-cols-2">
@@ -47,7 +46,7 @@ export function TemplateGallery({
 				onClick={onStartBlank}
 				className="mt-4 w-full text-center text-muted-foreground text-sm hover:text-foreground hover:underline"
 			>
-				Start blank
+				Continue without a template
 			</button>
 		</div>
 	);

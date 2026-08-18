@@ -72,10 +72,19 @@ export interface PythonTemplateMetadata extends PythonTemplateReference {
 	outputs: readonly AutomationPort[];
 }
 
-export type AutomationWorkflowNodeConfig = Record<
-	string,
-	boolean | number | string | string[] | PythonTemplateReference
->;
+export interface AutomationWorkflowNodeConfig
+	extends Record<
+		string,
+		| boolean
+		| number
+		| string
+		| string[]
+		| PythonTemplateReference
+		| undefined
+	> {
+	/** Python artifact executed for this non-trigger node. */
+	pythonSource?: string;
+}
 
 export interface AutomationWorkflowNode<
 	T extends AutomationWorkflowNodeType = AutomationWorkflowNodeType,
@@ -83,6 +92,7 @@ export interface AutomationWorkflowNode<
 	id: string;
 	type: T;
 	label: string;
+	outputVar?: string;
 	position: { x: number; y: number };
 	config: AutomationWorkflowNodeConfig;
 	codeMode: AutomationNodeCodeMode;

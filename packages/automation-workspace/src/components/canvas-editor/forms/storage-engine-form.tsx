@@ -32,6 +32,7 @@ export function StorageEngineForm({
 				name={config.engineName || ""}
 				value={config.engineId}
 				engineTypes={["STORAGE"]}
+				required
 				onChange={(e) =>
 					onChange({
 						...config,
@@ -66,7 +67,8 @@ export function StorageEngineForm({
 				</Select>
 			</Field>
 			<BoundInput
-				label="Storage Path"
+				label={`Storage Path${config.operation === "list" ? " (optional)" : ""}`}
+				required={config.operation !== "list"}
 				value={config.storagePath}
 				placeholder="/documents/${folder}"
 				onChange={(v) => onChange({ ...config, storagePath: v })}
@@ -80,6 +82,7 @@ export function StorageEngineForm({
 							? "Workspace Folder"
 							: "Workspace File or Folder"
 					}
+					required
 					value={config.filePath}
 					placeholder={
 						config.operation === "download"

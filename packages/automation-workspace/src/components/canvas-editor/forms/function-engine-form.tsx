@@ -41,6 +41,7 @@ export function FunctionEngineForm({
 				name={config.engineName || ""}
 				value={config.engineId}
 				engineTypes={["FUNCTION"]}
+				required
 				onChange={(e) =>
 					onChange({
 						...config,
@@ -71,6 +72,7 @@ export function FunctionEngineForm({
 			</Field>
 			<BoundInput
 				label="Input Parameters"
+				required
 				value={config.params}
 				placeholder='{"input": "${files}"}'
 				onChange={(v) => onChange({ ...config, params: v })}

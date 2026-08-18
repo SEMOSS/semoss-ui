@@ -1,8 +1,8 @@
 import { ChevronRightIcon, Share2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { FlexLayout } from "@semoss/shared";
+import { FlexLayout, type MCPConfig } from "@semoss/shared";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -17,6 +17,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { runWorkbenchRoomMcpTool } from "@/api/rooms";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
 import { ProjectDetailTabs } from "@/components/project";
@@ -29,6 +30,8 @@ import {
 	NavbarLeft,
 	NavbarRight,
 } from "../shared";
+import type { WorkbenchChatToolHandler } from "../workbench/chat/workbench-chat.types";
+import { WorkbenchChatPanel } from "../workbench/chat/workbench-chat-panel";
 import { WorkspaceManager } from "../workspace";
 
 const AUTOMATION_WORKSPACE_URL = import.meta.env.DEV
@@ -78,6 +81,24 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 					},
 				],
 			},
+			{
+				type: "border",
+				location: "right",
+				selected: 0,
+				size: 400,
+				minSize: 320,
+				children: [
+					{
+						id: "automation-chat",
+						type: "tab",
+						name: "Chat",
+						component: "automation-chat",
+						enableClose: false,
+						enableRenderOnDemand: false,
+						config: {},
+					},
+				],
+			},
 		],
 		layout: {
 			type: "row",
@@ -111,6 +132,42 @@ export const AutomationWorkspace = observer(() => {
 	const [shareOpen, setShareOpen] = useState(false);
 	const appId = workspace.appId || project.project_id;
 	const [showEditorTabs, setShowEditorTabs] = useState(false);
+	const automationFrameRef = useRef<HTMLIFrameElement>(null);
+
+	const automationMcp = useMemo<MCPConfig[]>(
+		() => [
+			{
+				id: appId,
+				name: "Automation Project Tools",
+				type: "PROJECT",
+			},
+		],
+		[appId],
+	);
+
+	const notifyAutomationChanged = useCallback(() => {
+		const canvasOrigin = new URL(
+			AUTOMATION_WORKSPACE_URL,
+			window.location.origin,
+		).origin;
+		automationFrameRef.current?.contentWindow?.postMessage(
+			{ type: "SEMOSS_AUTOMATION_REFRESH", projectId: appId },
+			canvasOrigin,
+		);
+	}, [appId]);
+
+	const runAutomationMutation = useCallback<WorkbenchChatToolHandler>(
+		async (_parameters, context) => {
+			const output = await runWorkbenchRoomMcpTool(
+				context.insightId,
+				context.roomId,
+				context.toolCall,
+			);
+			notifyAutomationChanged();
+			return output;
+		},
+		[notifyAutomationChanged],
+	);
 
 	useEffect(() => {
 		const model = workspace.model;
@@ -124,6 +181,45 @@ export const AutomationWorkspace = observer(() => {
 				);
 		}
 	}, [workspace.model]);
+
+	useEffect(() => {
+		const model = workspace.model;
+		if (!model || model.getNodeById("automation-chat")) {
+			return;
+		}
+		const layout = model.toJson();
+		const rightBorder = layout.borders?.find(
+			(border) => border.location === "right",
+		);
+		const chatTab = {
+			id: "automation-chat",
+			type: "tab" as const,
+			name: "Chat",
+			component: "automation-chat",
+			enableClose: false,
+			enableRenderOnDemand: false,
+			config: {},
+		};
+
+		if (rightBorder) {
+			rightBorder.selected = rightBorder.children.length;
+			rightBorder.children.push(chatTab);
+		} else {
+			layout.borders = [
+				...(layout.borders ?? []),
+				{
+					type: "border",
+					location: "right",
+					selected: 0,
+					size: 400,
+					minSize: 320,
+					children: [chatTab],
+				},
+			];
+		}
+		workspace.load({ version: "", layout });
+		workspace.saveToCache();
+	}, [workspace.load, workspace.model, workspace.saveToCache]);
 
 	useEffect(() => {
 		const model = workspace.model;
@@ -164,10 +260,25 @@ export const AutomationWorkspace = observer(() => {
 		if (component === "automation-editor") {
 			return (
 				<iframe
+					ref={automationFrameRef}
 					className="h-full w-full border-none"
 					title="Automation Workspace"
-					src={`${AUTOMATION_WORKSPACE_URL}?app=${encodeURIComponent(appId)}&mode=edit`}
+					src={`${AUTOMATION_WORKSPACE_URL}?app=${encodeURIComponent(appId)}&mode=edit&parentOrigin=${encodeURIComponent(window.location.origin)}`}
 					sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
+				/>
+			);
+		}
+
+		if (component === "automation-chat") {
+			return (
+				<WorkbenchChatPanel
+					systemPrompt={`You create and modify the ${project.project_display_name || project.project_name} automation. Use the Automation Project Tools to make changes. AddAutomationStep requires nodeType, config, label, and outputVar. Prefer supported engine-backed nodes: database.* queries a selected database; model.* calls a selected AI model; storage.* manages files in selected storage; vector.* searches or manages selected documents; function.execute invokes a selected function engine; app.pixel runs Pixel; control.wait pauses. Every engine-backed node requires a real selected engineId--never invent one or create an engine node without it. Use developer.python only when no supported engine action can perform a public external integration, such as calling the GitHub REST API. Its config must provide source defining run(scope); do not use it for database, model, storage, vector, or function work. Use output placeholders such as \${prior_output} in downstream configuration. Use UpdateAutomationStep to change a generated node. Use UpdateAutomationCustomStep only for nodes explicitly marked custom and only when you have its source hash. Never embed credentials, edit project files directly, or claim a workflow change succeeded before its tool result confirms it.`}
+					mcp={automationMcp}
+					toolHandlers={{
+						AddAutomationStep: runAutomationMutation,
+						UpdateAutomationStep: runAutomationMutation,
+						UpdateAutomationCustomStep: runAutomationMutation,
+					}}
 				/>
 			);
 		}

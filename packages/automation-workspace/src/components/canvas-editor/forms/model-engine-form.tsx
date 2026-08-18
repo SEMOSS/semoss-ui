@@ -77,6 +77,7 @@ export function ModelEngineForm({
 				name={config.engineName || ""}
 				value={config.engineId}
 				engineTypes={["MODEL"]}
+				required
 				onChange={(e) =>
 					onChange({
 						...config,
@@ -124,6 +125,7 @@ export function ModelEngineForm({
 				<>
 					<BoundInput
 						label="Prompt"
+						required
 						value={config.command}
 						placeholder="Summarize: ${text}"
 						onChange={(v) => onChange({ ...config, command: v })}
@@ -194,6 +196,7 @@ export function ModelEngineForm({
 			{config.operation === "embeddings" && (
 				<BoundInput
 					label="Text to Embed"
+					required
 					value={config.values}
 					placeholder="${text_to_embed}"
 					onChange={(v) => onChange({ ...config, values: v })}
@@ -204,6 +207,7 @@ export function ModelEngineForm({
 				<>
 					<BoundInput
 						label="Command"
+						required
 						value={config.command}
 						placeholder="Describe what you see in this image."
 						onChange={(v) => onChange({ ...config, command: v })}
@@ -212,6 +216,7 @@ export function ModelEngineForm({
 					/>
 					<BoundInput
 						label="Image URL / Path"
+						required
 						value={config.image}
 						placeholder="${image_url}"
 						onChange={(v) => onChange({ ...config, image: v })}
@@ -223,6 +228,7 @@ export function ModelEngineForm({
 				<>
 					<BoundInput
 						label="Prompt"
+						required
 						value={config.prompt}
 						placeholder="Extract entities from: ${text}"
 						onChange={(v) => onChange({ ...config, prompt: v })}
@@ -231,6 +237,7 @@ export function ModelEngineForm({
 					/>
 					<BoundInput
 						label="Entities (JSON)"
+						required
 						value={config.entities}
 						placeholder='["PERSON", "ORG", "DATE"]'
 						onChange={(v) => onChange({ ...config, entities: v })}

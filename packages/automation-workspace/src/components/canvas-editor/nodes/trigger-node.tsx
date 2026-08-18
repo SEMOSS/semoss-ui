@@ -10,7 +10,7 @@ export type TriggerNodeData = {
 	onAdd?: () => void;
 };
 
-export function TriggerNode({ data }: NodeProps) {
+export function TriggerNode({ data, id }: NodeProps) {
 	const d = data as TriggerNodeData;
 
 	return (
@@ -56,6 +56,7 @@ export function TriggerNode({ data }: NodeProps) {
 
 			{d.isLast ? (
 				<button
+					data-tour="add-step"
 					type="button"
 					onClick={(event) => {
 						event.stopPropagation();
@@ -68,6 +69,7 @@ export function TriggerNode({ data }: NodeProps) {
 				</button>
 			) : (
 				<Handle
+					id={`out-${id}`}
 					type="source"
 					position={Position.Bottom}
 					isConnectable

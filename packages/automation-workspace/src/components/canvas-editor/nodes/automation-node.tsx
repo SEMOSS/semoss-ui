@@ -176,6 +176,7 @@ export function AutomationNode({ data }: NodeProps) {
 			</div>
 
 			<Handle
+				id={`in-${step.id}`}
 				type="target"
 				position={Position.Top}
 				isConnectable={!locked}
@@ -183,6 +184,7 @@ export function AutomationNode({ data }: NodeProps) {
 			/>
 			{d.isLast && !locked ? (
 				<button
+					data-tour="add-step"
 					type="button"
 					onClick={(event) => {
 						event.stopPropagation();
@@ -195,6 +197,7 @@ export function AutomationNode({ data }: NodeProps) {
 				</button>
 			) : (
 				<Handle
+					id={`out-${step.id}`}
 					type="source"
 					position={Position.Bottom}
 					isConnectable={!locked}

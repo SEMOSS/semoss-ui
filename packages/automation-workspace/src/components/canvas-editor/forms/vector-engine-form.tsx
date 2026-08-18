@@ -45,6 +45,7 @@ export function VectorEngineForm({
 				name={config.engineName || ""}
 				value={config.engineId}
 				engineTypes={["VECTOR"]}
+				required
 				onChange={(e) =>
 					onChange({
 						...config,
@@ -83,6 +84,7 @@ export function VectorEngineForm({
 				<>
 					<BoundInput
 						label="What to search for"
+						required
 						value={config.command}
 						placeholder="e.g. find documents about claims filed in 2024"
 						onChange={(v) => onChange({ ...config, command: v })}
