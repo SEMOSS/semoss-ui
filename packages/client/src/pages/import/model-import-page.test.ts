@@ -151,9 +151,12 @@ describe("static model metadata defaults", () => {
 		expect(getField(fields, "SUPPORTED_PARAMETERS").default).toBe(
 			JSON.stringify(GPT_5_STATIC_METADATA.supported_parameters),
 		);
-		expect(getField(fields, "REASONING_CONFIG").default).toBe(
-			JSON.stringify(GPT_5_STATIC_METADATA.reasoning_config),
-		);
+		// A config that names efforts gets the visible editor, holding the
+		// config object itself - it is only stringified on submit.
+		expect(getField(fields, "REASONING_CONFIG")).toMatchObject({
+			type: "reasoning-config",
+			default: GPT_5_STATIC_METADATA.reasoning_config,
+		});
 		expect(getField(fields, "BENCHMARKS").default).toBe(
 			JSON.stringify(GPT_5_STATIC_METADATA.benchmarks),
 		);
