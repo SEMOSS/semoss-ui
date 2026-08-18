@@ -3,8 +3,8 @@ import { useWorkbench } from "./use-workbench";
 
 /**
  * Typed accessor for the base `chat` slice merged into every workbench store,
- * used to drive the CHAT border panel's system prompt, MCP servers, and tool
- * handlers from workbench state instead of static FlexLayout tab config.
+ * used to drive the CHAT border panel's system prompt and room preparation
+ * from workbench state instead of static FlexLayout tab config.
  */
 export const useWorkbenchChatConfig = <T>(
 	selector: (state: WorkbenchChatSliceState["chat"]) => T,

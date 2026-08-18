@@ -113,3 +113,21 @@ export const createWorkbenchRoom = async (
 	await setRoomForInsight(insightId, roomId);
 	return roomId;
 };
+
+/**
+ * Generate the active engine's allowed tools in the room bound to an insight.
+ *
+ * @name makeEngineRoomMcp
+ * @param insightId - Insight already bound to the target room.
+ * @param engineId - Engine whose room-scoped tool profile should be generated.
+ */
+export const makeEngineRoomMcp = async (
+	insightId: string,
+	engineId: string,
+): Promise<void> => {
+	const response = await runPixel<[boolean]>(
+		`MakeEngineRoomMCP(engine=[${JSON.stringify(engineId)}]);`,
+		insightId,
+	);
+	assertPixelSuccess(response.errors);
+};

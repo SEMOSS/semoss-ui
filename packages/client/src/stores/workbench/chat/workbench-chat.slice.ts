@@ -1,7 +1,6 @@
 import type {
 	AgentRunRecord,
 	AgentRunStreamSnapshot,
-	AgentToolDefinition,
 	ConversationRoom,
 } from "@semoss/sdk/react";
 import {
@@ -23,7 +22,7 @@ import {
 	updateRoomOptions,
 	uploadInsight,
 } from "@semoss/sdk/react";
-import type { Engine, MCPConfig } from "@semoss/shared";
+import type { Engine } from "@semoss/shared";
 import {
 	createWorkbenchRoom,
 	getDefaultWorkbenchChatModel,
@@ -86,10 +85,8 @@ export const effortToThinkingBudget = (level: EffortLevel): string | null => {
 export interface WorkbenchChatConfig {
 	/** System prompt sent to the assistant. */
 	systemPrompt?: string;
-	/** MCP servers exposed to the assistant. */
-	mcp?: MCPConfig[];
-	/** Inline tool definitions injected on every run. */
-	tools?: AgentToolDefinition[];
+	/** Prepare the bound room's tools before an agent run starts. */
+	prepareRoom?: (insightId: string) => Promise<void>;
 }
 
 /** Transient system feedback rendered inline on the Build tab timeline. */
@@ -120,10 +117,8 @@ export interface WorkbenchChatSliceState {
 
 		/** System prompt sent to the assistant for this workbench's CHAT panel. */
 		systemPrompt: string;
-		/** MCP servers exposed to the assistant for this workbench's CHAT panel. */
-		mcp: MCPConfig[];
-		/** Inline tool definitions injected by the workbench (RequestUserInput is always added). */
-		tools: AgentToolDefinition[];
+		/** Prepare the bound room's tools before an agent run starts. */
+		prepareRoom: ((insightId: string) => Promise<void>) | null;
 
 		/** Model engine used for new runs. */
 		model: Engine | null;
@@ -168,7 +163,7 @@ export interface WorkbenchChatSliceState {
 		/** Abort every live watcher (view unmount / insight change). */
 		dispose: () => void;
 		/**
-		 * Update one or more chat config fields (systemPrompt, mcp, tools)
+		 * Update one or more chat config fields (systemPrompt, prepareRoom)
 		 * for this workbench instance; omitted fields keep their values.
 		 */
 		configure: (config: WorkbenchChatConfig) => void;
@@ -310,9 +305,9 @@ const toErrorMessage = (error: unknown): string =>
 
 /**
  * Creates the base `chat` slice merged into every workbench store: the
- * workbench-injected agent config (system prompt, MCP servers, inline tools)
- * plus the full RunAgent runtime — durable run projections fed by the
- * agentRunStreaming poll loop, conversation history, and room usage.
+ * workbench-injected system prompt and room preparation plus the full RunAgent
+ * runtime — durable run projections fed by the agentRunStreaming poll loop,
+ * conversation history, and room usage.
  *
  * @name createWorkbenchChatSlice
  * @param workbenchId - Engine/workbench id persisted onto room options to scope conversation history.
@@ -472,8 +467,7 @@ export const createWorkbenchChatSlice = (
 				initError: null,
 
 				systemPrompt: "",
-				mcp: [],
-				tools: [],
+				prepareRoom: null,
 
 				model: null,
 				maxTurns: DEFAULT_MAX_TURNS,
@@ -559,6 +553,13 @@ export const createWorkbenchChatSlice = (
 						);
 						return false;
 					}
+					if (!chat.prepareRoom) {
+						pushNotice(
+							"Room tools are not ready yet. Please try again.",
+							"error",
+						);
+						return false;
+					}
 
 					const command = prompt.trim();
 					if (!command && files.length === 0) {
@@ -584,18 +585,12 @@ export const createWorkbenchChatSlice = (
 							}));
 						}
 
+						await chat.prepareRoom(insightId);
+
 						await updateRoomOptions(insightId, roomId, {
 							instructions: get().chat.systemPrompt,
-							mcp: get()
-								.chat.mcp.filter(
-									(mcp) =>
-										!mcp.fromWorkspace && !mcp.fromRoom,
-								)
-								.map((mcp) => ({
-									id: mcp.id,
-									name: mcp.name,
-									type: mcp.type,
-								})),
+							// Engine tools are loaded exclusively from the room's MCP file.
+							mcp: [],
 							predefinedPrompts: [],
 							modelId: model.engine_id,
 							harnessType: "semoss",
@@ -616,10 +611,8 @@ export const createWorkbenchChatSlice = (
 								permissionMode: get().chat.permissionMode,
 								thinking,
 								...(effortParam ? { effort: effortParam } : {}),
-								tools: [
-									REQUEST_USER_INPUT_TOOL,
-									...get().chat.tools,
-								],
+								// Platform control tool; engine tools come from the room MCP.
+								tools: [REQUEST_USER_INPUT_TOOL],
 							},
 							image: attachments
 								.map((attachment) => attachment.fileLocation)
