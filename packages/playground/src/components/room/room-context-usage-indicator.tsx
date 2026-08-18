@@ -8,6 +8,8 @@ import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
+	RadioGroup,
+	RadioGroupItem,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -70,7 +72,6 @@ const CompactStrategyPicker: React.FC<{
 				disabled={disabled}
 				onClick={(e) => {
 					e.stopPropagation();
-					onPickStrategy(strategy);
 					onCompact();
 				}}
 			>
@@ -92,7 +93,13 @@ const CompactStrategyPicker: React.FC<{
 					: t("settings.advancedOptions")}
 			</button>
 			{expanded && (
-				<div className="space-y-1 pl-1">
+				<RadioGroup
+					value={strategy}
+					onValueChange={(v) =>
+						onPickStrategy(v as CompactionStrategy)
+					}
+					className="gap-1 pl-1"
+				>
 					{(
 						[
 							"SUMMARY",
@@ -100,21 +107,20 @@ const CompactStrategyPicker: React.FC<{
 							"AUTO",
 						] as CompactionStrategy[]
 					).map((s) => (
-						<label
+						<div
 							key={s}
-							className="flex cursor-pointer items-center gap-2 rounded-sm px-1 py-0.5 text-sm hover:bg-accent"
+							className="flex items-center gap-2 rounded-sm px-1 py-0.5 text-sm hover:bg-accent"
 						>
-							<input
-								type="radio"
-								name="compaction-strategy"
+							<RadioGroupItem
 								value={s}
-								checked={strategy === s}
-								onChange={() => onPickStrategy(s)}
-								className="accent-primary"
+								id={`compaction-strategy-${s}`}
 							/>
-							<span className="flex-1">
+							<label
+								htmlFor={`compaction-strategy-${s}`}
+								className="flex-1 cursor-pointer"
+							>
 								{t(`settings.strategyLabel.${s}`)}
-							</span>
+							</label>
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<InfoIcon className="size-3.5 shrink-0 text-muted-foreground" />
@@ -126,9 +132,9 @@ const CompactStrategyPicker: React.FC<{
 									{t(`settings.strategyTooltip.${s}`)}
 								</TooltipContent>
 							</Tooltip>
-						</label>
+						</div>
 					))}
-				</div>
+				</RadioGroup>
 			)}
 		</div>
 	);

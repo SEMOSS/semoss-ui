@@ -6,18 +6,18 @@
 		"open": "रूम सेटिंग्स खोलें",
 		"close": "रूम सेटिंग्स बंद करें",
 		"edit": "रूम सेटिंग्स संपादित करें",
-		"compactButton": "Compact",
-		"compactionOptions": "Compaction Options",
-		"advancedOptions": "Advanced Options",
+		"compactButton": "संकुचित करें",
+		"compactionOptions": "संकुचन विकल्प",
+		"advancedOptions": "उन्नत विकल्प",
 		"strategyLabel": {
-			"SUMMARY": "Summarize",
-			"TOOL_PRUNE": "Prune Tools",
-			"AUTO": "Auto"
+			"SUMMARY": "सारांशित करें",
+			"TOOL_PRUNE": "टूल्स छाँटें",
+			"AUTO": "स्वचालित"
 		},
 		"strategyTooltip": {
-			"SUMMARY": "Replaces older messages with an AI-generated summary. Preserves the overall context of the conversation while freeing up token space.",
-			"TOOL_PRUNE": "Removes verbose tool call results from the conversation history. Best when tool outputs are large and the details are no longer needed.",
-			"AUTO": "Will select summarization or tool pruning based on the current conversation."
+			"SUMMARY": "पुराने संदेशों को AI द्वारा जनरेट किए गए सारांश से बदल देता है। टोकन स्थान खाली करते हुए बातचीत का समग्र संदर्भ बनाए रखता है।",
+			"TOOL_PRUNE": "बातचीत के इतिहास से विस्तृत टूल कॉल परिणामों को हटा देता है। यह तब सबसे अच्छा है जब टूल आउटपुट बड़े हों और विवरण की अब आवश्यकता न हो।",
+			"AUTO": "मौजूदा बातचीत के आधार पर सारांशीकरण या टूल छँटाई में से चुना जाएगा।"
 		}
 	},
 	"form": {

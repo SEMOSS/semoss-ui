@@ -6,18 +6,18 @@
 		"open": "فتح إعدادات الغرفة",
 		"close": "إغلاق إعدادات الغرفة",
 		"edit": "تعديل إعدادات الغرفة",
-		"compactButton": "Compact",
-		"compactionOptions": "Compaction Options",
-		"advancedOptions": "Advanced Options",
+		"compactButton": "ضغط",
+		"compactionOptions": "خيارات الضغط",
+		"advancedOptions": "خيارات متقدمة",
 		"strategyLabel": {
-			"SUMMARY": "Summarize",
-			"TOOL_PRUNE": "Prune Tools",
-			"AUTO": "Auto"
+			"SUMMARY": "تلخيص",
+			"TOOL_PRUNE": "تقليم الأدوات",
+			"AUTO": "تلقائي"
 		},
 		"strategyTooltip": {
-			"SUMMARY": "Replaces older messages with an AI-generated summary. Preserves the overall context of the conversation while freeing up token space.",
-			"TOOL_PRUNE": "Removes verbose tool call results from the conversation history. Best when tool outputs are large and the details are no longer needed.",
-			"AUTO": "Will select summarization or tool pruning based on the current conversation."
+			"SUMMARY": "يستبدل الرسائل الأقدم بملخص تم إنشاؤه بالذكاء الاصطناعي. يحافظ على السياق العام للمحادثة مع توفير مساحة من الرموز.",
+			"TOOL_PRUNE": "يزيل نتائج استدعاء الأدوات المطولة من سجل المحادثة. مناسب عندما تكون مخرجات الأدوات كبيرة ولم تعد التفاصيل ضرورية.",
+			"AUTO": "سيتم اختيار التلخيص أو تقليم الأدوات بناءً على المحادثة الحالية."
 		}
 	},
 	"form": {

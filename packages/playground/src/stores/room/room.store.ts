@@ -1458,7 +1458,7 @@ export class RoomStore {
 		try {
 			const compactionTypesParam =
 				strategy && strategy !== "AUTO"
-					? `, compactionTypes=["${strategy}"]`
+					? `, compactionTypes=${JSON.stringify([strategy])}`
 					: "";
 			const response = await this.runRoomPixel<
 				(SummaryResponse | ToolPruneResponse)[][]

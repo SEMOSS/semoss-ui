@@ -13,18 +13,18 @@
 		"compacting": "Gesprek comprimeren...",
 		"compactedAbove": "Gesprek gecomprimeerd",
 		"compactedAboveTooltip": "Eerdere berichten zijn samengevat om de contextgrootte te verkleinen",
-		"compactButton": "Compact",
-		"compactionOptions": "Compaction Options",
-		"advancedOptions": "Advanced Options",
+		"compactButton": "Comprimeren",
+		"compactionOptions": "Compressieopties",
+		"advancedOptions": "Geavanceerde opties",
 		"strategyLabel": {
-			"SUMMARY": "Summarize",
-			"TOOL_PRUNE": "Prune Tools",
-			"AUTO": "Auto"
+			"SUMMARY": "Samenvatten",
+			"TOOL_PRUNE": "Tools opschonen",
+			"AUTO": "Automatisch"
 		},
 		"strategyTooltip": {
-			"SUMMARY": "Replaces older messages with an AI-generated summary. Preserves the overall context of the conversation while freeing up token space.",
-			"TOOL_PRUNE": "Removes verbose tool call results from the conversation history. Best when tool outputs are large and the details are no longer needed.",
-			"AUTO": "Will select summarization or tool pruning based on the current conversation."
+			"SUMMARY": "Vervangt oudere berichten door een door AI gegenereerde samenvatting. Behoudt de algemene context van het gesprek en maakt tokenruimte vrij.",
+			"TOOL_PRUNE": "Verwijdert uitgebreide toolresultaten uit de gespreksgeschiedenis. Het beste wanneer tooloutputs groot zijn en de details niet meer nodig zijn.",
+			"AUTO": "Kiest samenvatten of tools opschonen op basis van het huidige gesprek."
 		}
 	},
 	"form": {
