@@ -24,7 +24,6 @@ import {
 import { NavbarHeader, NavbarLeft, NavbarRight } from "@/components/shared";
 import { SkillFileViewer } from "@/components/skill";
 import { usePage, useProject, useRootStore } from "@/hooks";
-import type { WorkspaceStore } from "@/stores";
 
 const PUBLIC_ROOT_PATH = "/public";
 
@@ -33,7 +32,7 @@ export const ViewSkillPage = observer(() => {
 	const navigate = useNavigate();
 	const { project, catalog, permission } = useProject();
 
-	const [workspace, setWorkspace] = useState<WorkspaceStore | null>(null);
+	const [insightId, setInsightId] = useState<string | null>(null);
 	const [selectedPath, setSelectedPath] = useState<string | null>(null);
 	const hasAutoSelectedRef = useRef(false);
 
@@ -42,15 +41,15 @@ export const ViewSkillPage = observer(() => {
 	});
 
 	useEffect(() => {
-		// clear out the old workspace/selection
-		setWorkspace(null);
+		// clear out the old insight/selection
+		setInsightId(null);
 		setSelectedPath(null);
 		hasAutoSelectedRef.current = false;
 
 		configStore
-			.createWorkspace(project)
-			.then((loadedWorkspace) => {
-				setWorkspace(loadedWorkspace);
+			.createProjectInsight(project)
+			.then((loadedInsightId) => {
+				setInsightId(loadedInsightId);
 			})
 			.catch((e) => {
 				toast.error(e.message);
@@ -81,7 +80,7 @@ export const ViewSkillPage = observer(() => {
 		}
 	};
 
-	if (!workspace || !project.project_id) {
+	if (!insightId || !project.project_id) {
 		return (
 			<div className="absolute inset-0 flex flex-1 items-center justify-center">
 				<Spinner />
@@ -151,7 +150,7 @@ export const ViewSkillPage = observer(() => {
 			</NavbarRight>
 			<div className="w-full pb-2">
 				<InsightProvider
-					options={{ insightId: workspace.insightId }}
+					options={{ insightId: insightId }}
 					destroyOnUnmount={false}
 				>
 					<div className="mb-6 max-h-[35vh] overflow-auto rounded-md border border-border">
@@ -168,7 +167,7 @@ export const ViewSkillPage = observer(() => {
 					</div>
 					<SkillFileViewer
 						projectId={project.project_id}
-						insightId={workspace.insightId}
+						insightId={insightId}
 						path={selectedPath}
 					/>
 				</InsightProvider>

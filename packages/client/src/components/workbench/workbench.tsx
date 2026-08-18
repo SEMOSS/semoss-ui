@@ -16,6 +16,12 @@ export interface WorkbenchProps {
 
 	/** Floating actions rendered over the bottom-left of the layout. */
 	actions?: ReactNode;
+
+	/**
+	 * Hides layout-mutating chrome (the reset control). Set by view-only
+	 * workbenches, which still persist their own layout under their own id.
+	 */
+	readOnly?: boolean;
 }
 
 /** Initialize and render one workbench inside the nearest scoped provider. */
@@ -23,9 +29,10 @@ export const Workbench: FC<WorkbenchProps> = ({
 	layout,
 	components,
 	actions,
+	readOnly = false,
 }) => {
 	const model = useWorkbench((state) => state.model);
-	const setModel = useWorkbench((state) => state.setModel);
+	const loadLayout = useWorkbench((state) => state.loadLayout);
 	const onModelChange = useWorkbench((state) => state.onModelChange);
 
 	const isLoading = useWorkbench((state) => state.isLoading);
@@ -34,10 +41,10 @@ export const Workbench: FC<WorkbenchProps> = ({
 
 	useTabBarScroll(containerRef);
 
-	// set the initial layout
+	// restore the cached layout, falling back to the default
 	useLayoutEffect(() => {
-		setModel(layout);
-	}, [setModel, layout]);
+		loadLayout(layout);
+	}, [loadLayout, layout]);
 
 	if (!model) {
 		return (
@@ -102,7 +109,11 @@ export const Workbench: FC<WorkbenchProps> = ({
 							close: <XIcon className="size-4" />,
 						}}
 					/>
-					<WorkbenchActions actions={actions} />
+					<WorkbenchActions
+						actions={actions}
+						layout={layout}
+						readOnly={readOnly}
+					/>
 				</div>
 			</div>
 		</>

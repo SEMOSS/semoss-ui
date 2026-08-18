@@ -1,5 +1,6 @@
 import { FlexLayout } from "@semoss/shared";
-import type { WorkbenchSlice } from "../workbench.types";
+import { getWorkbenchCacheKey } from "../workbench.constants";
+import type { WorkbenchCacheOptions, WorkbenchSlice } from "../workbench.types";
 
 /** FlexLayout state owned by each workbench instance. */
 export interface WorkbenchLayoutSliceState {
@@ -15,10 +16,25 @@ export interface WorkbenchLayoutSliceState {
 	/** Current active panel */
 	activePanel: string;
 
+	/** localStorage key holding this workbench's persisted layout. */
+	cacheKey: string;
+
 	/**
-	 * Sets the FlexLayout model for this workbench.
+	 * Sets the FlexLayout model for this workbench and persists it. The Model is
+	 * recreated here, so FlexLayout's `onModelChange` never fires for this path.
 	 */
 	setModel: (layout: FlexLayout.IJsonModel) => void;
+
+	/**
+	 * Restores this workbench's cached layout, falling back to the supplied
+	 * default when nothing usable is cached.
+	 *
+	 * @param layout - Default layout used when the cache is empty or unusable.
+	 */
+	loadLayout: (layout: FlexLayout.IJsonModel) => void;
+
+	/** Persists the current FlexLayout model to localStorage. */
+	saveToCache: () => void;
 
 	/**
 	 * Callback invoked when the FlexLayout model changes.
@@ -86,8 +102,6 @@ export interface WorkbenchLayoutSliceState {
  *
  * @name createWorkbenchLayoutSlice
  * @param id - Unique workbench ID used to isolate the cache.
- * @param model - Initial FlexLayout model loaded from cache or defaults.
- * @param isInitialized - Whether the model already contains the owning layout.
  * @return Zustand state creator for the workbench layout slice.
  */
 export const createWorkbenchLayoutSlice = (
@@ -97,6 +111,9 @@ export const createWorkbenchLayoutSlice = (
 	const listeners = new Set<
 		(model: FlexLayout.Model, action: FlexLayout.Action) => void
 	>();
+
+	// `id` never changes for a store instance, so the key can be built once.
+	const cacheKey = getWorkbenchCacheKey(id);
 
 	return (set, get) => ({
 		id: id,
@@ -109,11 +126,58 @@ export const createWorkbenchLayoutSlice = (
 		}),
 		key: 0,
 		activePanel: "",
+		cacheKey: cacheKey,
 		setModel: (layout) => {
 			set((state) => ({
 				model: FlexLayout.Model.fromJson(layout),
 				key: state.key + 1,
 			}));
+
+			// trigger the save manually as the Model is recreated
+			get().saveToCache();
+		},
+		loadLayout: (layout) => {
+			let cached: FlexLayout.IJsonModel | null = null;
+			try {
+				const item = localStorage.getItem(cacheKey);
+				if (item) {
+					const options = JSON.parse(item) as WorkbenchCacheOptions;
+
+					// a parseable entry with no layout would otherwise leave the
+					// model empty and render a blank workbench
+					if (options?.layout) {
+						cached = options.layout;
+					}
+				}
+			} catch (e) {
+				console.error(e);
+			}
+
+			if (cached) {
+				try {
+					get().setModel(cached);
+					return;
+				} catch (e) {
+					// a cached layout can reference a component that no longer exists
+					console.error(e);
+				}
+			}
+
+			// Deep-copy so the shared default layout is untouched - Model.fromJson
+			// keeps references into the JSON it is given.
+			get().setModel(JSON.parse(JSON.stringify(layout)));
+		},
+		saveToCache: () => {
+			try {
+				const options: WorkbenchCacheOptions = {
+					version: "",
+					layout: get().model.toJson(),
+				};
+
+				localStorage.setItem(cacheKey, JSON.stringify(options));
+			} catch (e) {
+				console.error(e);
+			}
 		},
 		onModelChange: (model, action) => {
 			// Find the currently active tabset or check specific nodes
@@ -133,6 +197,8 @@ export const createWorkbenchLayoutSlice = (
 			for (const listener of listeners) {
 				listener(model, action);
 			}
+
+			get().saveToCache();
 		},
 		openPanel: (
 			id,
@@ -146,10 +212,30 @@ export const createWorkbenchLayoutSlice = (
 				return;
 			}
 
-			// select the node if there
-			const selectedNode = model.getNodeById(id);
+			// select the node if there. A tab keeps the node id it was created
+			// with, so after a file moves its id still encodes the *old* path —
+			// fall back to matching on component + config.path so a renamed file
+			// re-selects its open editor instead of opening a duplicate.
+			let selectedNode = model.getNodeById(id);
+			if (!selectedNode && options.component && options.config?.path) {
+				model.visitNodes((node) => {
+					if (selectedNode || !(node instanceof FlexLayout.TabNode)) {
+						return;
+					}
+
+					if (
+						node.getComponent() === options.component &&
+						node.getConfig()?.path === options.config?.path
+					) {
+						selectedNode = node;
+					}
+				});
+			}
+
 			if (selectedNode instanceof FlexLayout.TabNode) {
 				const parent = selectedNode.getParent();
+				// may differ from `id` when matched by config.path above
+				const selectedId = selectedNode.getId();
 
 				// Border tabs TOGGLE on SELECT_TAB (flexlayout-react), so re-selecting an
 				// already-selected border tab would hide/close it - skip the dispatch.
@@ -158,11 +244,11 @@ export const createWorkbenchLayoutSlice = (
 						? parent.getSelected() ===
 							parent.getChildren().indexOf(selectedNode)
 						: parent instanceof FlexLayout.TabSetNode
-							? parent.getSelectedNode()?.getId() === id
+							? parent.getSelectedNode()?.getId() === selectedId
 							: false;
 
 				if (!alreadySelected) {
-					model.doAction(FlexLayout.Actions.selectTab(id));
+					model.doAction(FlexLayout.Actions.selectTab(selectedId));
 				}
 
 				return;

@@ -15,14 +15,13 @@ import { FlexLayout } from "@semoss/shared";
 import { Spinner, toast } from "@semoss/ui/next";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
-import { ProjectDetailTabs } from "@/components/project";
+import { ProjectDetailTabs, ProjectNavbar } from "@/components/project";
 import { useProject, useWorkspace } from "@/hooks";
 import { DesignerStore, type WorkspaceOptions } from "@/stores";
-import { WorkspaceManager, WorkspaceNavbar } from "../../components/workspace";
+import { WorkspaceManager } from "../../components/workspace";
 import { WorkspaceTerminal } from "../../components/workspace/panels";
 import { DesignerContext } from "../../contexts";
 import { MCPJsonEditor } from "../shared";
-import { GraphPanel } from "../workspace/panels/graph-panel";
 import { BlocksWorkspaceDev } from "./BlocksWorkspaceDev";
 import { BlocksWorkspaceActions } from "./blocks-workspace-actions";
 import { DEFAULT_MENU } from "./menus/default-menu";
@@ -41,8 +40,6 @@ const DEFAULT_BORDER_SIZE = 300;
 const BLOCK_SETTINGS_MIN_WIDTH = 450;
 
 const DEFAULT_OPTIONS: WorkspaceOptions = {
-	version: "",
-
 	layout: {
 		global: { tabEnableClose: false, tabEnableRename: false },
 		borders: [
@@ -361,8 +358,6 @@ export const BlocksWorkspace: React.FC = observer(() => {
 			return <NotebookViewerPanel id={config.id} />;
 		} else if (component === "terminal") {
 			return <WorkspaceTerminal appId={project.project_id} />;
-		} else if (component === "graph") {
-			return <GraphPanel />;
 		} else if (component === "settings-panel") {
 			return (
 				<ProjectDetailTabs
@@ -422,7 +417,7 @@ export const BlocksWorkspace: React.FC = observer(() => {
 			!(tabNode instanceof FlexLayout.TabNode) ||
 			tabNode.getComponent() !== "app-file-editor"
 		)
-			return undefined;
+			return action;
 		const cfg = tabNode.getConfig() as { path?: string };
 		if (!cfg?.path) return action;
 		const path = cfg.path;
@@ -470,7 +465,7 @@ export const BlocksWorkspace: React.FC = observer(() => {
 					designer: designer,
 				}}
 			>
-				<WorkspaceNavbar actions={<BlocksWorkspaceActions />} />
+				<ProjectNavbar actions={<BlocksWorkspaceActions />} />
 				<WorkspaceManager
 					options={DEFAULT_OPTIONS}
 					factory={FACTORY}

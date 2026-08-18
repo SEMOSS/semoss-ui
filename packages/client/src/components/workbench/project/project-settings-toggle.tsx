@@ -1,0 +1,77 @@
+import { SettingsIcon } from "lucide-react";
+import { FlexLayout } from "@semoss/shared";
+import {
+	Button,
+	cn,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
+import { useWorkbench } from "@/hooks";
+import {
+	WORKBENCH_COMPONENTS,
+	WORKBENCH_PANEL_TABS,
+} from "../workbench.constants";
+
+/**
+ * Toggles the shared project settings tab within a workbench layout — opening,
+ * selecting, or closing it — and highlights while it is the active tab.
+ */
+export const ProjectSettingsToggle: React.FC = () => {
+	const closePanel = useWorkbench((state) => state.closePanel);
+	const openPanel = useWorkbench((state) => state.openPanel);
+	const model = useWorkbench((state) => state.model);
+	const activePanel = useWorkbench((state) => state.activePanel);
+	const settingsId = WORKBENCH_COMPONENTS.PROJECT_SETTINGS;
+	const settingsNode = model.getNodeById(settingsId);
+
+	return (
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<Button
+					variant="ghost"
+					size="icon-sm"
+					aria-label="Settings"
+					data-testid="workbench-project-settings-toggle"
+					onClick={() => {
+						if (settingsNode instanceof FlexLayout.TabNode) {
+							const parent = settingsNode.getParent();
+
+							if (parent instanceof FlexLayout.TabSetNode) {
+								if (
+									parent.getSelectedNode()?.getId() ===
+									settingsId
+								) {
+									closePanel(settingsId);
+									return;
+								}
+
+								openPanel(
+									settingsId,
+									WORKBENCH_PANEL_TABS.PROJECT_SETTINGS,
+								);
+								return;
+							}
+
+							closePanel(settingsId);
+						}
+
+						openPanel(
+							settingsId,
+							WORKBENCH_PANEL_TABS.PROJECT_SETTINGS,
+						);
+					}}
+					className={cn(
+						"border",
+						activePanel === settingsId
+							? "border-input text-primary shadow-xs dark:bg-input/30"
+							: "border-transparent text-muted-foreground",
+					)}
+				>
+					<SettingsIcon />
+				</Button>
+			</TooltipTrigger>
+			<TooltipContent side="right">Settings</TooltipContent>
+		</Tooltip>
+	);
+};

@@ -788,6 +788,27 @@ export class ConfigStore {
 	 * @param project - project metadata from the caller's context
 	 * @param insightId - insight to bind the workspace to
 	 */
+	/**
+	 * Bind an insight to a project and return its id. Read-only surfaces use
+	 * this instead of `createWorkspace` — they only need the insight, not a
+	 * whole `WorkspaceStore`.
+	 *
+	 * @param project - project metadata from the caller's context
+	 * @param insightId - insight to bind, or "new" to create one
+	 * @return insightId the project context was set on
+	 */
+	async createProjectInsight(
+		project: Project,
+		insightId: string = "new",
+	): Promise<string> {
+		const response = await runPixel(
+			`SetContext("${project.project_id}")`,
+			insightId,
+		);
+
+		return response.insightId;
+	}
+
 	async createWorkspace(project: Project, insightId: string = "new") {
 		// set the backend context for this insight
 		const response = await runPixel(

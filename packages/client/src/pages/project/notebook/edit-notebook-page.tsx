@@ -1,5 +1,5 @@
-import { ChevronRightIcon, InfoIcon, PencilIcon } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ChevronRightIcon, EyeIcon } from "lucide-react";
+import { Link, Navigate } from "react-router-dom";
 import { InsightProvider } from "@semoss/sdk/react";
 import {
 	Breadcrumb,
@@ -13,26 +13,33 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { ProjectShareButton } from "@/components/project";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "@/components/shared";
-import { NotebookViewWorkbench } from "@/components/workbench";
+import { NotebookWorkbench } from "@/components/workbench";
 import { WorkbenchProvider } from "@/contexts";
 import { usePage, useProject } from "@/hooks";
 
 /**
- * Read-only surface for a NOTEBOOK project. Owns the insight (bound to the
- * project so pixels run in its context) and its own workbench store, kept
- * separate from the editable workbench's.
+ * Editable surface for a NOTEBOOK project. Owns the insight (bound to the
+ * project so pixels run in its context) and the workbench store, then renders
+ * the notebook workbench.
  */
-export const ViewNotebookPage = () => {
-	const { project, catalog, permission } = useProject();
+export const EditNotebookPage = () => {
+	const { project, permission, catalog } = useProject();
 
 	usePage({
 		showNavbarLogo: false,
 	});
 
+	if (permission === "DISCOVERABLE") {
+		return (
+			<Navigate to={`${catalog.path}/${project.project_id}`} replace />
+		);
+	}
+
 	return (
 		<InsightProvider options={{ app: project.project_id }}>
-			<WorkbenchProvider id={`${project.project_id}-view`}>
+			<WorkbenchProvider id={project.project_id}>
 				<NavbarLeft>
 					<NavbarHeader logo={null} />
 					<Breadcrumb>
@@ -62,36 +69,24 @@ export const ViewNotebookPage = () => {
 					</Breadcrumb>
 				</NavbarLeft>
 				<NavbarRight>
+					<ProjectShareButton />
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button
 								variant="ghost"
 								size="icon"
-								data-testid={"settings"}
+								data-testid="editNotebookPage-view-btn"
 								asChild
 							>
-								<Link to={`..`}>
-									<InfoIcon className="size-4" />
+								<Link to="../view">
+									<EyeIcon className="size-4" />
 								</Link>
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent>Settings</TooltipContent>
+						<TooltipContent>View</TooltipContent>
 					</Tooltip>
-					{(permission === "OWNER" || permission === "EDIT") && (
-						<Button
-							variant="default"
-							size="sm"
-							data-testid={"viewNotebookPage-edit-btn"}
-							asChild
-						>
-							<Link to={`../edit`}>
-								<PencilIcon className="mr-1 size-4" />
-								Edit
-							</Link>
-						</Button>
-					)}
 				</NavbarRight>
-				<NotebookViewWorkbench />
+				<NotebookWorkbench />
 			</WorkbenchProvider>
 		</InsightProvider>
 	);

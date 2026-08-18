@@ -13,16 +13,13 @@ import {
 import { useProject } from "@/hooks";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
 
-interface WorkspaceNavbarProps {
+interface ProjectNavbarProps {
 	/** Actions to render on the right side of the navbar */
 	actions?: React.ReactNode;
-
-	/** Final breadcrumb label for the workspace (defaults to "Edit") */
-	label?: string;
 }
 
-export const WorkspaceNavbar: React.FC<WorkspaceNavbarProps> = observer(
-	({ actions, label = "Edit" }) => {
+export const ProjectNavbar: React.FC<ProjectNavbarProps> = observer(
+	({ actions }) => {
 		const { catalog, project } = useProject();
 
 		return (
@@ -55,7 +52,7 @@ export const WorkspaceNavbar: React.FC<WorkspaceNavbarProps> = observer(
 								<ChevronRightIcon />
 							</BreadcrumbSeparator>
 							<BreadcrumbItem>
-								<BreadcrumbPage>{label}</BreadcrumbPage>
+								<BreadcrumbPage>Edit</BreadcrumbPage>
 							</BreadcrumbItem>
 						</BreadcrumbList>
 					</Breadcrumb>

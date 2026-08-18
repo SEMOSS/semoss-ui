@@ -4,17 +4,16 @@ import { InsightProvider } from "@semoss/sdk/react";
 import type { FileItem } from "@semoss/shared";
 import { FileExplorer } from "@semoss/shared";
 import { Spinner } from "@semoss/ui/next";
-import { NotebookViewWorkspace } from "@/components/notebook-workspace";
 import { SkillFileViewer } from "@/components/skill";
-import { WorkspaceContext } from "@/contexts";
+import { NotebookViewWorkbench } from "@/components/workbench";
+import { WorkbenchProvider } from "@/contexts";
 import { useProject } from "@/hooks";
-import type { WorkspaceStore } from "@/stores";
 
 const Renderer = lazy(() =>
 	import("@semoss/renderer").then((m) => ({ default: m.Renderer })),
 );
 const CodeRenderer = lazy(() =>
-	import("@/components/code-workspace").then((m) => ({
+	import("@/components/project").then((m) => ({
 		default: m.CodeRenderer,
 	})),
 );
@@ -22,8 +21,8 @@ const CodeRenderer = lazy(() =>
 const PUBLIC_ROOT_PATH = "/public";
 
 interface ProjectViewProps {
-	/** Loaded workspace whose read-only project view should be rendered */
-	workspace: WorkspaceStore;
+	/** Insight the read-only project view runs its pixels against */
+	insightId: string;
 }
 
 /**
@@ -32,7 +31,7 @@ interface ProjectViewProps {
  * Intended for navbar-free surfaces (e.g. the share page): it renders only the
  * project content and never the `Navbar*`/`usePage` chrome the full view pages use.
  */
-export const ProjectView = observer(({ workspace }: ProjectViewProps) => {
+export const ProjectView = observer(({ insightId }: ProjectViewProps) => {
 	const { project, type } = useProject();
 
 	// SKILL selection state — hooks stay unconditional even though only SKILL uses them
@@ -83,7 +82,7 @@ export const ProjectView = observer(({ workspace }: ProjectViewProps) => {
 					<Suspense fallback={loadingFallback}>
 						<Renderer
 							appId={project.project_id}
-							insightId={workspace.insightId}
+							insightId={insightId}
 						/>
 					</Suspense>
 				</div>
@@ -92,7 +91,7 @@ export const ProjectView = observer(({ workspace }: ProjectViewProps) => {
 			return (
 				<div className="h-full w-full overflow-auto p-2">
 					<InsightProvider
-						options={{ insightId: workspace.insightId }}
+						options={{ insightId }}
 						destroyOnUnmount={false}
 					>
 						<div className="mb-6 max-h-[35vh] overflow-auto rounded-md border border-border">
@@ -111,7 +110,7 @@ export const ProjectView = observer(({ workspace }: ProjectViewProps) => {
 						</div>
 						<SkillFileViewer
 							projectId={project.project_id}
-							insightId={workspace.insightId}
+							insightId={insightId}
 							path={selectedPath}
 						/>
 					</InsightProvider>
@@ -119,16 +118,14 @@ export const ProjectView = observer(({ workspace }: ProjectViewProps) => {
 			);
 		case "NOTEBOOK":
 			return (
-				<div className="absolute inset-0">
-					<WorkspaceContext.Provider value={{ workspace }}>
-						<InsightProvider
-							options={{ insightId: workspace.insightId }}
-							destroyOnUnmount={false}
-						>
-							<NotebookViewWorkspace />
-						</InsightProvider>
-					</WorkspaceContext.Provider>
-				</div>
+				<InsightProvider
+					options={{ insightId }}
+					destroyOnUnmount={false}
+				>
+					<WorkbenchProvider id={`${project.project_id}-share`}>
+						<NotebookViewWorkbench />
+					</WorkbenchProvider>
+				</InsightProvider>
 			);
 		default:
 			return null;

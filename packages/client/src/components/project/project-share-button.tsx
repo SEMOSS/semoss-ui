@@ -12,7 +12,7 @@ import {
 import { ShareOverlay } from "@/components/ui";
 import { useProject } from "@/hooks";
 
-export const CodeWorkspaceActions = observer(() => {
+export const ProjectShareButton = observer(() => {
 	const { project } = useProject();
 	const [shareOpen, setShareOpen] = useState(false);
 

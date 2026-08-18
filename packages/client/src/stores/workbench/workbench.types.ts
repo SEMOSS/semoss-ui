@@ -18,6 +18,12 @@ export type WorkbenchPanelConfig = {
 	view: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => ReactNode;
 };
 
+/** Layout payload persisted to localStorage for one workbench instance. */
+export interface WorkbenchCacheOptions {
+	version: string;
+	layout: FlexLayout.IJsonModel;
+}
+
 /** Zustand state creator for one workbench slice, optionally against a wider store shape. */
 export type WorkbenchSlice<
 	Output,

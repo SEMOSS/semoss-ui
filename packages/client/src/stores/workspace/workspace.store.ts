@@ -2,7 +2,7 @@ import { makeAutoObservable } from "mobx";
 import { FlexLayout } from "@semoss/shared";
 import type { RootStore, WorkspaceOptions } from "@/stores";
 
-export interface WorkspaceStoreInterface {
+interface WorkspaceStoreInterface {
 	/**
 	 * ID of Workspace Insight
 	 */
@@ -27,14 +27,6 @@ export interface WorkspaceStoreInterface {
 	 * Model associated with the layout
 	 **/
 	model: FlexLayout.Model | null;
-
-	/**
-	 * insightId of the active terminal tab. Each terminal tab owns its own
-	 * insight; the "Insight" file explorer binds to this so INSIGHT-scoped
-	 * browsing/upload targets the same insight the user runs commands in.
-	 * `null` until a terminal tab's insight is ready.
-	 */
-	activeTerminalInsightId: string | null;
 }
 
 export interface WorkspaceConfigInterface {
@@ -61,7 +53,6 @@ export class WorkspaceStore {
 		projectId: "",
 		agentModelEngine: "",
 		model: null,
-		activeTerminalInsightId: null,
 	};
 
 	constructor(root: RootStore, config: WorkspaceConfigInterface) {
@@ -108,15 +99,6 @@ export class WorkspaceStore {
 	}
 
 	/**
-	 * insightId of the active terminal tab (or null before one is ready). The
-	 * Insight file explorer binds to this so its listing/upload stay in sync
-	 * with the terminal the user is running commands in.
-	 */
-	get activeTerminalInsightId() {
-		return this._store.activeTerminalInsightId;
-	}
-
-	/**
 	 * The key for the local storage cache
 	 */
 	get cacheKey() {
@@ -147,8 +129,6 @@ export class WorkspaceStore {
 	 * Load from the cache
 	 */
 	loadFromCache = (): boolean => {
-		// TODO::Version Check
-
 		let isLoaded = false;
 		try {
 			const item = localStorage.getItem(this.cacheKey);
@@ -174,7 +154,6 @@ export class WorkspaceStore {
 			}
 
 			const options: WorkspaceOptions = {
-				version: "",
 				layout: this._store.model.toJson(),
 			};
 
@@ -211,14 +190,5 @@ export class WorkspaceStore {
 	 */
 	setAgentModelEngine = (id: string) => {
 		this._store.agentModelEngine = id;
-	};
-
-	/**
-	 * Record the insightId of the active terminal tab so the Insight file
-	 * explorer can bind to it. Called by the terminal panel as tabs are
-	 * focused/opened/closed.
-	 */
-	setActiveTerminalInsightId = (insightId: string | null) => {
-		this._store.activeTerminalInsightId = insightId;
 	};
 }
