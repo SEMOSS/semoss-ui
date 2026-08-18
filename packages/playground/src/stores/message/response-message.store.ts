@@ -599,7 +599,9 @@ paramValues=[{}]`;
 		for (const part of this.parts) {
 			if (part.type === "TOOL_CALL") {
 				const tool = this.room.getTool(part.toolCall.id);
-				if (tool.json._meta.SMSS_MCP_EXECUTION === MCP_EXECUTION_AUTO) {
+				if (
+					tool.json._meta?.SMSS_MCP_EXECUTION === MCP_EXECUTION_AUTO
+				) {
 					if (tool.status === "INITIAL") {
 						toolsToRun.push(tool);
 					} else if (tool.status === "LOADING") {
@@ -626,7 +628,7 @@ paramValues=[{}]`;
 		if (
 			!tool ||
 			tool.status !== "INITIAL" ||
-			tool.json._meta.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO
+			tool.json._meta?.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO
 		) {
 			// skip
 			return;

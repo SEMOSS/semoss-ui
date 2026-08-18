@@ -77,6 +77,8 @@ export abstract class AbstractMessageStore {
 	 */
 	ornaments: {
 		modelName?: string;
+		/** Set on messages tagged as part of an agent run — see agent-harness.ts. */
+		agentRunId?: string;
 	};
 
 	/**
@@ -102,6 +104,7 @@ export abstract class AbstractMessageStore {
 		this.modelType = message.modelType;
 		this.ornaments = {
 			modelName: message.ornaments?.modelName,
+			agentRunId: message.ornaments?.agentRunId,
 		};
 
 		makeObservable(this, {

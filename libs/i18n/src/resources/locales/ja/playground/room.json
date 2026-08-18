@@ -15,8 +15,9 @@
 		"toolboxLabel": "ツールボックス"
 	},
 	"modes": {
-		"ask": "質問",
-		"agent": "エージェントハーネス"
+		"ask": "チャットモード",
+		"agent": "エージェントハーネスモード",
+		"exitAgent": "エージェントハーネスモードを終了"
 	},
 	"workspace": {
 		"publishTooltip": "エージェントとして公開",

@@ -5,7 +5,9 @@
 		"completed": "完了",
 		"ready": "準備完了",
 		"autoExecute": "自動実行中",
-		"queued": "自動実行のキュー待ち"
+		"queued": "自動実行のキュー待ち",
+		"running": "実行中",
+		"waitingForInput": "入力待ち"
 	},
 	"actions": {
 		"cancel": "キャンセル",
@@ -42,6 +44,11 @@
 		"details": "Playwright スクリプトの詳細",
 		"projectId": "プロジェクト ID",
 		"recordedFile": "記録済みファイル"
+	},
+	"subagent": {
+		"title": "サブエージェント",
+		"notFound": "サブエージェントが見つかりません",
+		"noResult": "まだ応答がありません"
 	},
 	"extension": {
 		"required": "ブラウザー拡張機能が必要です",
