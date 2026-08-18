@@ -97,10 +97,6 @@ export const ModelReasoningConfigField = ({
 	const supportedEfforts = normalizeEfforts(config.supported_efforts);
 	const defaultEffort = getDefaultEffort(config);
 
-	// Offered from the catalog rather than the live selection: deselecting an
-	// effort must not remove its button, or it could never be put back. The
-	// default-effort list carries the current value along so a catalog default
-	// outside the supported list still renders instead of leaving it blank.
 	const effortOptions = getEffortOptions(
 		normalizeEfforts(catalogConfig?.supported_efforts),
 		supportedEfforts,

@@ -632,21 +632,13 @@ export const buildModelMetadataFields = (
 		);
 	}
 
-	// A catalog entry that names efforts (or makes reasoning mandatory) is worth
-	// editing before the model is created, so it gets the same editor the model
-	// settings tab uses. Anything sparser stays a hidden field - there would be
-	// nothing on screen but an empty box.
 	const reasoningConfig = toReasoningConfig(staticMetadata?.reasoning_config);
 
 	if (hasConfigurableReasoning(reasoningConfig)) {
-		// The editor owns the reasoning switch but writes it back to REASONING,
-		// so that field has to exist even when the catalog said nothing about
-		// support - which, for a model that documents its efforts, means yes.
 		if (typeof staticMetadata?.reasoning !== "boolean") {
 			addHiddenMetadataField("REASONING", "Reasoning Support", true);
 		}
 
-		// Placed above Built-in Tools, which reads as the tail of the settings.
 		const builtinToolsIndex = metadataFields.findIndex(
 			(field) => field.key === "BUILTIN_TOOLS",
 		);

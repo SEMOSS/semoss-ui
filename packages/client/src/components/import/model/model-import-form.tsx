@@ -333,9 +333,6 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 			);
 		}
 
-		// The reasoning editor works on the config as an object; the engine has
-		// always been handed it as a JSON string, same as every other structured
-		// value the catalog fills in.
 		if (
 			newFormData.REASONING_CONFIG &&
 			typeof newFormData.REASONING_CONFIG === "object"
@@ -1069,8 +1066,6 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 								!Array.isArray(raw)
 									? (raw as ReasoningConfig)
 									: null;
-							// No Field wrapper: the editor renders its own, and
-							// nesting them would double the field spacing.
 							return (
 								<div data-testid={fieldWrapperTestId}>
 									<ModelReasoningConfigField
