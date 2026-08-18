@@ -646,14 +646,24 @@ export const buildModelMetadataFields = (
 			addHiddenMetadataField("REASONING", "Reasoning Support", true);
 		}
 
-		metadataFields.push({
-			key: "REASONING_CONFIG",
-			label: "Reasoning",
-			type: "reasoning-config",
-			required: false,
-			category: "Settings",
-			default: reasoningConfig,
-		});
+		// Placed above Built-in Tools, which reads as the tail of the settings.
+		const builtinToolsIndex = metadataFields.findIndex(
+			(field) => field.key === "BUILTIN_TOOLS",
+		);
+		metadataFields.splice(
+			builtinToolsIndex === -1
+				? metadataFields.length
+				: builtinToolsIndex,
+			0,
+			{
+				key: "REASONING_CONFIG",
+				label: "Reasoning",
+				type: "reasoning-config",
+				required: false,
+				category: "Settings",
+				default: reasoningConfig,
+			},
+		);
 	} else if (reasoningConfig !== null) {
 		addHiddenMetadataField(
 			"REASONING_CONFIG",
