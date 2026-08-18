@@ -9,9 +9,9 @@ import type {
 } from "@semoss/sdk";
 import {
 	getSubagentRuns,
-	submitAgentRun,
+	runAgent,
 	submitAgentToolDecision,
-	subscribeAgentRun,
+	subscribeRunAgent,
 } from "@semoss/sdk/react";
 import {
 	MCP_EXECUTION_AGENT_ASK,
@@ -382,7 +382,7 @@ const watchAgentRun = (
 			resolve();
 		};
 
-		subscription = subscribeAgentRun(runId, {
+		subscription = subscribeRunAgent(runId, {
 			onEvent: (event, items) => {
 				runInAction(() => {
 					applyAgentRunItem(responseMessage, event, items);
@@ -434,7 +434,7 @@ const watchAgentRun = (
  * Run a user message through the server-side agent harness (RunAgent).
  *
  * Submits without waiting (wait=false), then drives the response via
- * subscribeAgentRun. A non-COMPLETED terminal status rejects (caller removes
+ * subscribeRunAgent. A non-COMPLETED terminal status rejects (caller removes
  * the optimistic input). INPUT_REQUIRED leaves the turn mounted and pending;
  * paused tool calls surface via ToolStore.pendingAction for the approval UI.
  */
@@ -494,13 +494,13 @@ export const runAgentMessage = async (
 			return acc;
 		}, "");
 
-		const handle = await submitAgentRun(
+		const handle = await runAgent(
 			{
 				roomId: room.roomId,
 				command: text,
 				engine: room.model.engine_id,
 				harnessType: AGENT_HARNESS_TYPE,
-				workspaceId: room.options.workspace?.workspace_id,
+				agentId: room.options.workspace?.workspace_id,
 			},
 			room.insightId,
 		);
@@ -623,7 +623,7 @@ export const reconstructAllSubagents = async (room: RoomStore) => {
 
 /**
  * Re-establish live polling for a room's most recent agent run after a page
- * reload. subscribeAgentRun only ever starts from runAgentMessage's own
+ * reload. subscribeRunAgent only ever starts from runAgentMessage's own
  * submit, so without this a turn still in progress (or paused on a decision)
  * goes unwatched after a refresh: pendingActions never repopulate, so
  * decideAgentToolAction silently no-ops, and the tool UI falls through to its

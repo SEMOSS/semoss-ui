@@ -11,7 +11,7 @@ import type {
 } from "./agent.types";
 
 /**
- * Live subscriptions started by subscribeAgentRun, keyed by runId. Lets
+ * Live subscriptions started by subscribeRunAgent, keyed by runId. Lets
  * submitAgentToolDecision poke a run's poll loop the instant its own decision
  * resumes the run, rather than that caller waiting out INPUT_REQUIRED's
  * slower interval for a change it already knows just happened.
@@ -19,7 +19,7 @@ import type {
 const activeSubscriptions = new Map<string, AgentRunSubscription>();
 
 /**
- * @returns A fresh, empty items-state to seed subscribeAgentRun's caller or a
+ * @returns A fresh, empty items-state to seed subscribeRunAgent's caller or a
  * standalone reducer loop.
  */
 export const createAgentRunItemsState = (): AgentRunItemsState => ({
@@ -109,7 +109,7 @@ const TERMINAL_RUN_STATUSES: ReadonlySet<AgentRunStatusValue> = new Set([
  * @returns A handle to stop polling early, read the current items-state, or
  * force an immediate poll.
  */
-export const subscribeAgentRun = (
+export const subscribeRunAgent = (
 	runId: string,
 	handlers: {
 		onEvent: (event: AgentRunItemEvent, items: AgentRunItemsState) => void;

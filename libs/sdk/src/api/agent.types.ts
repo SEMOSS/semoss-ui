@@ -242,8 +242,7 @@ export interface SubagentRunSummary {
 }
 
 /**
- * A live subscription started by subscribeAgentRun/submitAgentRun's
- * subscription helpers.
+ * A live subscription started by subscribeRunAgent.
  */
 export interface AgentRunSubscription {
 	/** Stop polling locally. Does not cancel the run itself. */

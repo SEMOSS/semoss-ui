@@ -13,13 +13,15 @@ export type * from "./agent.types";
 
 /**
  * Submit a durable agent run without waiting for it to finish (RunAgent with
- * wait=false). Poll progress with pollAgentRun(runId) or subscribeAgentRun.
+ * wait=false). Poll progress with pollAgentRun(runId) or subscribeRunAgent.
  *
  * @param params.roomId - Room the run's messages are written to.
  * @param params.command - The user's message text.
  * @param params.engine - Model engine id. Defaults to the room's configured model.
  * @param params.harnessType - Which agent harness runs the loop (e.g. "semoss").
- * @param params.workspaceId - Workspace whose tools/config the run should use.
+ * @param params.agentId - The agent whose tools/config the run should use. Sent
+ * to the backend as `workspaceId` -- a workspace IS the backend's agent record,
+ * but "agent" is the term callers should use here.
  * @param params.maxTurns - Cap on model round-trips before the run stops itself.
  * @param params.maxReflections - Cap on self-reflection turns.
  * @param params.images - Image file locations to attach to the command.
@@ -28,13 +30,13 @@ export type * from "./agent.types";
  * @returns The submitted run's id, room id, and initial status (always
  * "SUBMITTED") — not a full snapshot.
  */
-export const submitAgentRun = async (
+export const runAgent = async (
 	params: {
 		roomId: string;
 		command: string;
 		engine?: string;
 		harnessType?: string;
-		workspaceId?: string;
+		agentId?: string;
 		maxTurns?: number;
 		maxReflections?: number;
 		images?: string[];
@@ -47,7 +49,7 @@ export const submitAgentRun = async (
 		command,
 		engine,
 		harnessType,
-		workspaceId,
+		agentId,
 		maxTurns,
 		maxReflections,
 		images,
@@ -59,7 +61,9 @@ export const submitAgentRun = async (
 		`command=${JSON.stringify([command])}`,
 		engine ? `engine=${JSON.stringify([engine])}` : null,
 		harnessType ? `harnessType=${JSON.stringify(harnessType)}` : null,
-		workspaceId ? `workspaceId=${JSON.stringify([workspaceId])}` : null,
+		// The backend's RunAgent pixel calls this workspaceId -- see the agentId
+		// param doc above for why the public name here differs.
+		agentId ? `workspaceId=${JSON.stringify([agentId])}` : null,
 		maxTurns !== undefined ? `maxTurns=${JSON.stringify(maxTurns)}` : null,
 		maxReflections !== undefined
 			? `maxReflections=${JSON.stringify(maxReflections)}`
