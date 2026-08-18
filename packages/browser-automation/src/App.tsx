@@ -50,7 +50,10 @@ import {
 	isPlayRecordingTool,
 } from "./domain/tool-context";
 import { useBrowserSocket } from "./hooks/useBrowserSocket";
-import { usePlaybackController } from "./hooks/usePlaybackController";
+import {
+	type PlaybackRunResult,
+	usePlaybackController,
+} from "./hooks/usePlaybackController";
 import { useRemoteBrowserSession } from "./hooks/useRemoteBrowserSession";
 import {
 	bindSemossInsightToRoom,
@@ -111,6 +114,14 @@ type PendingTextSelection = {
 	context: SelectedTextContext | null;
 	clientX: number;
 	clientY: number;
+};
+
+type PendingMcpPlaybackCompletion = Pick<PlaybackRunResult, "stepsRun"> & {
+	recordingFile: string;
+	projectId: string | null;
+	sessionId: string;
+	roomId: string;
+	executedParameters: Record<string, unknown>;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -232,6 +243,10 @@ export default function App() {
 	const autoPlaybackRunStartedRef = useRef(false);
 	const autoPlaybackErrorSentRef = useRef(false);
 	const returningToPlaygroundRef = useRef(false);
+	const selectedTextContextsRef = useRef<SelectedTextContext[]>([]);
+	const pendingMcpPlaybackCompletionRef =
+		useRef<PendingMcpPlaybackCompletion | null>(null);
+	const mcpPlaybackResponseSentRef = useRef(false);
 	const selectedContextSequenceRef = useRef(0);
 	const textSelectionRequestRef = useRef(0);
 	const activeToolExecutionRef = useRef("");
@@ -368,9 +383,12 @@ export default function App() {
 						context.content.length > boundedContent.length,
 				},
 			};
-			setSelectedTextContexts((current) =>
-				appendBoundedSelectedContext(current, stored),
+			const next = appendBoundedSelectedContext(
+				selectedTextContextsRef.current,
+				stored,
 			);
+			selectedTextContextsRef.current = next;
+			setSelectedTextContexts(next);
 			setSelectedTextContextsOpen(true);
 			setSnackMessage(
 				`Captured ${boundedContent.length} characters of website text`,
@@ -510,9 +528,13 @@ export default function App() {
 		autoPlaybackRunStartedRef.current = false;
 		autoPlaybackErrorSentRef.current = false;
 		returningToPlaygroundRef.current = false;
+		pendingMcpPlaybackCompletionRef.current = null;
+		mcpPlaybackResponseSentRef.current = false;
 		setIsReturningToPlayground(false);
 		setSaveDialogOpen(false);
+		selectedTextContextsRef.current = [];
 		setSelectedTextContexts([]);
+		setPlaybackCloseCountdown(null);
 		setRecordedSteps([]);
 		setAutomationGoal("");
 		setAutomationGoalGenerationError("");
@@ -1064,41 +1086,39 @@ export default function App() {
 		],
 	);
 
-	const handleDeleteSelectedContext = useCallback(
-		(contextId: string) => {
-			const next = selectedTextContexts.filter(
-				(context) => context.id !== contextId,
-			);
-			setSelectedTextContexts(next);
-			if (!next.length) setSelectedTextContextsOpen(false);
-		},
-		[selectedTextContexts],
-	);
+	const handleDeleteSelectedContext = useCallback((contextId: string) => {
+		const next = selectedTextContextsRef.current.filter(
+			(context) => context.id !== contextId,
+		);
+		selectedTextContextsRef.current = next;
+		setSelectedTextContexts(next);
+		if (!next.length) setSelectedTextContextsOpen(false);
+	}, []);
 
 	const handleSaveSelectedContext = useCallback(
 		(contextId: string, content: string) => {
 			const bounded = content.trim().slice(0, MAX_SELECTED_CONTEXT_CHARS);
-			setSelectedTextContexts((current) =>
-				current.map((context) => {
-					if (context.id !== contextId) return context;
-					const updated = {
-						...context,
-						content: bounded,
-						edited: true,
-						stats: {
-							...context.stats,
-							characterCount: bounded.length,
-							truncated:
-								context.stats.truncated ||
-								content.trim().length > bounded.length,
-						},
-					};
-					return {
-						...updated,
-						text: renderSelectedTextContext(updated),
-					};
-				}),
-			);
+			const next = selectedTextContextsRef.current.map((context) => {
+				if (context.id !== contextId) return context;
+				const updated = {
+					...context,
+					content: bounded,
+					edited: true,
+					stats: {
+						...context.stats,
+						characterCount: bounded.length,
+						truncated:
+							context.stats.truncated ||
+							content.trim().length > bounded.length,
+					},
+				};
+				return {
+					...updated,
+					text: renderSelectedTextContext(updated),
+				};
+			});
+			selectedTextContextsRef.current = next;
+			setSelectedTextContexts(next);
 			setSnackMessage("Captured context updated");
 		},
 		[],
@@ -1111,6 +1131,7 @@ export default function App() {
 			setCurrentUrl(normalizedUrl);
 			const info = await createSession(normalizedUrl);
 			if (info) {
+				selectedTextContextsRef.current = [];
 				setSelectedTextContexts([]);
 				setSelectedTextContextsOpen(false);
 				selectedContextSequenceRef.current = 0;
@@ -1144,6 +1165,7 @@ export default function App() {
 		}
 
 		setCurrentUrl(info.currentUrl || targetUrl);
+		selectedTextContextsRef.current = [];
 		setSelectedTextContexts([]);
 		setSelectedTextContextsOpen(false);
 		selectedContextSequenceRef.current = 0;
@@ -1175,13 +1197,59 @@ export default function App() {
 	const closeBrowserSessionRef = useRef(closeBrowserSession);
 	closeBrowserSessionRef.current = closeBrowserSession;
 
+	/**
+	 * Completes a finished MCP replay exactly once. Keeping the browser open leaves
+	 * this completion pending so later text selections can be included when the
+	 * user explicitly returns to Playground.
+	 */
+	const completePendingMcpPlayback = useCallback(
+		async (closeBrowser: boolean) => {
+			const pending = pendingMcpPlaybackCompletionRef.current;
+			if (!pending || mcpPlaybackResponseSentRef.current) return;
+
+			const contexts = selectedContextsForPlayground(
+				selectedTextContextsRef.current,
+			);
+			sendMcpResponseToPlayground(
+				{
+					played: true,
+					status: "completed",
+					recordingFile: pending.recordingFile,
+					projectId: pending.projectId,
+					stepsRun: pending.stepsRun,
+					pausedAtStepId: null,
+					sessionId: pending.sessionId,
+					roomId: pending.roomId,
+					contextCount: contexts.length,
+					contexts,
+				},
+				"success",
+				pending.executedParameters,
+			);
+			mcpPlaybackResponseSentRef.current = true;
+			pendingMcpPlaybackCompletionRef.current = null;
+			setPlaybackCloseCountdown(null);
+
+			if (closeBrowser) {
+				await closeBrowserSessionRef.current();
+			}
+		},
+		[],
+	);
+
 	useEffect(() => {
 		if (playbackCloseCountdown === null) {
 			return;
 		}
 		if (playbackCloseCountdown <= 0) {
 			setPlaybackCloseCountdown(null);
-			void closeBrowserSessionRef.current();
+			void completePendingMcpPlayback(true).catch((error) => {
+				setSnackError(
+					error instanceof Error
+						? error.message
+						: "Failed to return playback to Playground",
+				);
+			});
 			return;
 		}
 		const timer = window.setTimeout(() => {
@@ -1190,16 +1258,25 @@ export default function App() {
 			);
 		}, 1000);
 		return () => window.clearTimeout(timer);
-	}, [playbackCloseCountdown]);
+	}, [completePendingMcpPlayback, playbackCloseCountdown]);
 
 	const handleKeepPlaybackOpen = useCallback(() => {
 		setPlaybackCloseCountdown(null);
+		setSnackMessage(
+			"Browser kept open. Capture any context, then return to Playground when ready.",
+		);
 	}, []);
 
-	const handleClosePlaybackNow = useCallback(() => {
+	const handleClosePlaybackAndReturn = useCallback(() => {
 		setPlaybackCloseCountdown(null);
-		void closeBrowserSessionRef.current();
-	}, []);
+		void completePendingMcpPlayback(true).catch((error) => {
+			setSnackError(
+				error instanceof Error
+					? error.message
+					: "Failed to return playback to Playground",
+			);
+		});
+	}, [completePendingMcpPlayback]);
 
 	const handleSwitchBrowserTab = useCallback(
 		async (tabId: string) => {
@@ -1593,6 +1670,31 @@ export default function App() {
 		if (returningToPlaygroundRef.current) return;
 		returningToPlaygroundRef.current = true;
 		setIsReturningToPlayground(true);
+		if (isMcpPlaybackMode) {
+			try {
+				if (!pendingMcpPlaybackCompletionRef.current) {
+					throw new Error(
+						playback.isRunning
+							? "Playback is still running"
+							: "No completed playback is waiting to return",
+					);
+				}
+				await completePendingMcpPlayback(true);
+				setSnackMessage(
+					"Playback and captured context returned to Playground",
+				);
+			} catch (error) {
+				setSnackError(
+					error instanceof Error
+						? error.message
+						: "Failed to return playback to Playground",
+				);
+			} finally {
+				setIsReturningToPlayground(false);
+				returningToPlaygroundRef.current = false;
+			}
+			return;
+		}
 
 		let recordingStopped = false;
 		let browserClosed = false;
@@ -1639,6 +1741,9 @@ export default function App() {
 			await closeBrowserSession();
 			browserClosed = true;
 
+			const contexts = selectedContextsForPlayground(
+				selectedTextContextsRef.current,
+			);
 			sendMcpResponseToPlayground(
 				{
 					saved: true,
@@ -1656,9 +1761,8 @@ export default function App() {
 					),
 					title: enrichedEnvelope.meta?.title,
 					description: enrichedEnvelope.meta?.description,
-					contextCount: selectedTextContexts.length,
-					contexts:
-						selectedContextsForPlayground(selectedTextContexts),
+					contextCount: contexts.length,
+					contexts,
 				},
 				"success",
 				toolContext.parameters,
@@ -1698,11 +1802,13 @@ export default function App() {
 		}
 	}, [
 		closeBrowserSession,
+		completePendingMcpPlayback,
 		isRecording,
+		isMcpPlaybackMode,
 		mcpRecordingNameHint,
 		mcpStartUrl,
+		playback.isRunning,
 		saveRecordingToRoom,
-		selectedTextContexts,
 		sendRecordingControlEvent,
 		session,
 		toolContext,
@@ -1744,6 +1850,7 @@ export default function App() {
 		autoPlaybackRunStartedRef.current = true;
 		playback.setControlsOpen(true);
 		playback.setLoadedRecordingOpen(true);
+		const selectedRecording = playback.selectedRecording;
 
 		(async () => {
 			try {
@@ -1752,26 +1859,40 @@ export default function App() {
 					throw new Error("Playback did not start");
 				}
 
-				// The session stays open briefly so the page can be inspected on the
-				// last executed step, then the countdown closes it to release the
-				// remote browser rather than waiting for the server side TTL.
+				// A completed replay remains pending during the inspection window. The
+				// response is sent only when the countdown closes the browser, the user
+				// closes it now, or they keep it open and explicitly return later.
 				if (result.completed) {
+					pendingMcpPlaybackCompletionRef.current = {
+						recordingFile: selectedRecording,
+						projectId: playback.project?.value ?? null,
+						stepsRun: result.stepsRun,
+						sessionId: session.sessionId,
+						roomId: toolContext.roomId,
+						executedParameters: toolContext.parameters,
+					};
 					setPlaybackStepsRun(result.stepsRun);
 					setPlaybackCloseCountdown(PLAYBACK_CLOSE_SECONDS);
+					return;
 				}
 
+				const contexts = selectedContextsForPlayground(
+					selectedTextContextsRef.current,
+				);
 				sendMcpResponseToPlayground(
 					{
-						played: result.completed,
-						status: result.completed ? "completed" : "paused",
-						recordingFile: playback.selectedRecording,
+						played: false,
+						status: "paused",
+						recordingFile: selectedRecording,
 						projectId: playback.project?.value ?? null,
 						stepsRun: result.stepsRun,
 						pausedAtStepId: result.pausedAtStepId ?? null,
 						sessionId: session.sessionId,
 						roomId: toolContext.roomId,
+						contextCount: contexts.length,
+						contexts,
 					},
-					result.completed ? "success" : "paused",
+					"paused",
 					toolContext.parameters,
 				);
 			} catch (error) {
@@ -2660,7 +2781,7 @@ export default function App() {
 				secondsRemaining={playbackCloseCountdown}
 				stepsRun={playbackStepsRun}
 				onKeepOpen={handleKeepPlaybackOpen}
-				onCloseNow={handleClosePlaybackNow}
+				onCloseAndReturn={handleClosePlaybackAndReturn}
 			/>
 
 			<SaveRecordingDialog
