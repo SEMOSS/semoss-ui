@@ -27,9 +27,11 @@ import {
 	RoomInputMenuFileExplorer,
 	RoomInputMenuMCP,
 	RoomInputMenuUpload,
+	type SendButtonState,
 } from "@/components";
 import { useChat, useGracefulErrors } from "@/hooks";
 import { ResponseMessageStore, type RoomStore } from "@/stores";
+import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomSuggestions } from "./room-suggestions";
 
@@ -192,6 +194,22 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 				}
 
 				const tool = event.data.tool;
+
+				// An agent-run tool paused on a decision must resume through
+				// the AGENT_RUN_ACTION row, not room.processTool's legacy
+				// room-write path — see decideAgentToolAction.
+				const liveTool = room.getTool(tool.id);
+				if (liveTool?.pendingAction) {
+					const isCancelled =
+						tool.tool_status === "cancelled" ||
+						tool.tool_status === "paused";
+					await decideAgentToolAction(
+						liveTool,
+						isCancelled ? "reject" : "submit",
+						tool.executedParameters ?? {},
+					);
+					return;
+				}
 
 				room.processTool(
 					tool.message,
@@ -373,6 +391,17 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		room.isLoading ||
 		room.latestResponseMessage.isThinking ||
 		isAutoExecutingTools;
+
+	// Agent-run turns can't actually be interrupted server-side yet, so show a
+	// plain spinner instead of a Stop button that would look actionable but do
+	// nothing.
+	const sendState: SendButtonState = room.isCancelling
+		? "loading"
+		: room.mode === "agent" && showLoadingState
+			? "loading"
+			: room.canCancel || showLoadingState
+				? "stop"
+				: "send";
 
 	return (
 		<div className="flex h-full w-full flex-col bg-background transition-all duration-200 ease-in-out">
@@ -594,17 +623,17 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					hasOutstandingTools={
 						room.latestResponseMessage.hasUnfinishedTools
 					}
-					sendState={
-						room.isCancelling
-							? "loading"
-							: room.canCancel || showLoadingState
-								? "stop"
-								: "send"
-					}
+					sendState={sendState}
 					onStop={room.cancelActiveJob}
 					onCompact={handleCompactMessages}
 					onOpenSettings={handleOpenSettings}
-					excludeCommandIds={["agent", "workspace"]}
+					excludeCommandIds={[
+						"agent",
+						"workspace",
+						...(room.theme.featureFlags?.enableAgentHarness
+							? []
+							: ["agent-harness", "harness"]),
+					]}
 				/>
 			</div>
 		</div>

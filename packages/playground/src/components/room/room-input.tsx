@@ -16,13 +16,13 @@ import {
 import {
 	BookOpenIcon,
 	Bot,
-	ExternalLinkIcon,
 	HammerIcon,
 	MicIcon,
 	PlusIcon,
 	SendIcon,
 	SparklesIcon,
 	Square,
+	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
@@ -60,6 +60,7 @@ import {
 import { useFileDrag } from "@/contexts";
 import { useGracefulErrors, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
+import { AGENT_HARNESS_TYPE } from "@/stores/message/agent-harness";
 import type { Engine, MCPConfig, Workspace } from "@/types";
 import { isKnowledgeMcp } from "@/utility/mcp-utils";
 import { PromptOptimizer } from "../../components/prompt/PromptOptimizer";
@@ -67,6 +68,18 @@ import { RoomContextUsageIndicator } from "./room-context-usage-indicator";
 
 type WorkspaceRef = Pick<Workspace, "workspace_id"> &
 	Partial<Pick<Workspace, "name">>;
+
+/** One section of the combined chip — see chipSections below. */
+interface ChipSection {
+	key: string;
+	icon: React.ComponentType<{ className?: string }>;
+	/** Swaps in for `icon` on hover — e.g. the harness section's X-to-exit. */
+	hoverIcon?: React.ComponentType<{ className?: string }>;
+	label: string;
+	/** Absent renders the section as plain, non-interactive text. */
+	onClick?: () => void;
+	title?: string;
+}
 
 let isIframed = false;
 try {
@@ -167,6 +180,20 @@ interface RoomInputProps {
 
 	/** Callback to open the room settings/configuration panel */
 	onOpenSettings?: () => void;
+
+	/**
+	 * Callback for the /agent-harness slash command. Defaults to switching
+	 * `room` into agent mode directly — override on the new-room page, where
+	 * mode lives in local state until the room is actually created.
+	 */
+	onSwitchToAgentHarness?: () => void;
+
+	/**
+	 * Shows an X button on the agent-mode chip to leave agent harness mode.
+	 * Only passed on the new-room page — once a room exists its harness type
+	 * is a persisted, committed choice, not something to back out of inline.
+	 */
+	onExitAgentHarness?: () => void;
 }
 
 // ============================================================================
@@ -204,6 +231,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		onCompact,
 		excludeCommandIds,
 		onOpenSettings,
+		onSwitchToAgentHarness,
+		onExitAgentHarness,
 	}) => {
 		// ========================================================================
 		// Hooks & State
@@ -231,6 +260,27 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			[],
 		);
 
+		// Default for an already-created room: flip mode now (takes effect on the
+		// next message) and persist harnessType so it survives a reload.
+		const handleSwitchToAgentHarness =
+			onSwitchToAgentHarness ??
+			(() => {
+				room.setMode("agent");
+				(async () => {
+					try {
+						await room.updateRoomOptions({
+							...room.options,
+							harnessType: AGENT_HARNESS_TYPE,
+						});
+					} catch (e) {
+						console.error(
+							"Failed to persist agent harness mode",
+							e,
+						);
+					}
+				})();
+			});
+
 		const knowledgeCount = useMemo(
 			() => options.mcp.filter(isKnowledgeMcp).length,
 			[options.mcp],
@@ -239,6 +289,46 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// Agent chip indicates a current selection. The Agent tab inside the
 		// modal is always visible; editability is gated on `onWorkspaceChange`.
 		const agentChipWorkspace = options.workspace ?? null;
+
+		// One combined chip, sections divided by a border rather than each
+		// being its own separate chip. A section with no onClick renders as
+		// plain (non-interactive) text — e.g. the harness label on an
+		// existing room, where there's nothing for a click to do.
+		const rawChipSections: (ChipSection | false)[] = [
+			room.mode === "agent" && {
+				key: "harness",
+				icon: SparklesIcon,
+				hoverIcon: onExitAgentHarness ? XIcon : undefined,
+				label: t("modes.agent"),
+				onClick: onExitAgentHarness,
+				title: onExitAgentHarness ? t("modes.exitAgent") : undefined,
+			},
+			agentChipWorkspace && {
+				key: "agent",
+				icon: Bot,
+				label:
+					agentChipWorkspace.name || agentChipWorkspace.workspace_id,
+				onClick: onWorkspaceChange
+					? () => handleOpenMcpOverlay("AGENT")
+					: undefined,
+				title: agentChipWorkspace.name ?? undefined,
+			},
+			toolboxCount > 0 && {
+				key: "tools",
+				icon: HammerIcon,
+				label: String(toolboxCount),
+				onClick: () => handleOpenMcpOverlay("TOOLBOX"),
+			},
+			knowledgeCount > 0 && {
+				key: "knowledge",
+				icon: BookOpenIcon,
+				label: String(knowledgeCount),
+				onClick: () => handleOpenMcpOverlay("KNOWLEDGE"),
+			},
+		];
+		const chipSections = rawChipSections.filter(
+			(section): section is ChipSection => !!section,
+		);
 
 		// Refs for DOM elements and Lexical editor
 		const ref = useRef<HTMLDivElement>(null);
@@ -513,6 +603,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					onCompact={onCompact ?? noop}
 					onAttachDocument={() => setShouldStayOpen(true)}
 					onOpenSettings={onOpenSettings ?? noop}
+					onSwitchToAgentHarness={handleSwitchToAgentHarness}
 					excludeCommandIds={excludeCommandIds}
 				>
 					<LexicalComposer
@@ -724,86 +815,71 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								    first when squeezed. Chips inside are shrink-0 and
 								    clip past the region's right edge. */}
 									<div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-										{agentChipWorkspace && (
+										{chipSections.length > 0 && (
 											<div className="inline-flex h-7 shrink-0 items-center overflow-hidden rounded-md border border-border bg-background text-xs">
-												{onWorkspaceChange ? (
-													<button
-														type="button"
-														onClick={() =>
-															handleOpenMcpOverlay(
-																"AGENT",
-															)
-														}
-														className="flex h-full items-center gap-1.5 px-2.5 transition-colors hover:bg-muted/50"
-														title={
-															agentChipWorkspace.name ??
-															undefined
-														}
-													>
-														<Bot className="size-3.5 shrink-0" />
-														<span className="max-w-32 truncate">
-															{agentChipWorkspace.name ||
-																agentChipWorkspace.workspace_id}
-														</span>
-													</button>
-												) : (
-													<div
-														className="flex h-full items-center gap-1.5 px-2.5"
-														title={
-															agentChipWorkspace.name ??
-															undefined
-														}
-													>
-														<Bot className="size-3.5 shrink-0" />
-														<span className="max-w-32 truncate">
-															{agentChipWorkspace.name ||
-																agentChipWorkspace.workspace_id}
-														</span>
-													</div>
-												)}
-												{root.theme.featureFlags
-													?.showPlatformLinks && (
-													<a
-														target="_blank"
-														rel="noopener noreferrer"
-														href={`#/agent/${agentChipWorkspace.workspace_id}`}
-														className="flex h-full items-center border-border border-s px-1.5 transition-colors hover:bg-muted/50"
-														onClick={(e) =>
-															e.stopPropagation()
-														}
-													>
-														<ExternalLinkIcon className="size-3" />
-													</a>
+												{chipSections.map(
+													(section, idx) => {
+														const Icon =
+															section.icon;
+														const HoverIcon =
+															section.hoverIcon;
+														const content = (
+															<>
+																{HoverIcon ? (
+																	<span className="relative inline-flex size-3.5 shrink-0 items-center justify-center">
+																		<Icon className="size-3.5 group-hover:hidden" />
+																		<HoverIcon className="hidden size-3.5 group-hover:block" />
+																	</span>
+																) : (
+																	<Icon className="size-3.5 shrink-0" />
+																)}
+																<span className="max-w-32 truncate">
+																	{
+																		section.label
+																	}
+																</span>
+															</>
+														);
+														return section.onClick ? (
+															<button
+																key={
+																	section.key
+																}
+																type="button"
+																onClick={
+																	section.onClick
+																}
+																title={
+																	section.title
+																}
+																className={cn(
+																	"group flex h-full items-center gap-1.5 px-2.5 transition-colors hover:bg-muted/50",
+																	idx > 0 &&
+																		"border-border border-s",
+																)}
+															>
+																{content}
+															</button>
+														) : (
+															<div
+																key={
+																	section.key
+																}
+																title={
+																	section.title
+																}
+																className={cn(
+																	"flex h-full items-center gap-1.5 px-2.5",
+																	idx > 0 &&
+																		"border-border border-s",
+																)}
+															>
+																{content}
+															</div>
+														);
+													},
 												)}
 											</div>
-										)}
-										{knowledgeCount > 0 && (
-											<button
-												type="button"
-												onClick={() =>
-													handleOpenMcpOverlay(
-														"KNOWLEDGE",
-													)
-												}
-												className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs transition-colors hover:bg-muted/50"
-											>
-												<BookOpenIcon className="size-3.5" />
-												<span>{knowledgeCount}</span>
-											</button>
-										)}
-										{toolboxCount > 0 && (
-											<button
-												type="button"
-												onClick={() =>
-													handleOpenMcpOverlay(
-														"TOOLBOX",
-													)
-												}
-												className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs transition-colors hover:bg-muted/50"
-											>
-												<HammerIcon className="size-3.5" />
-												<span>{toolboxCount}</span>
-											</button>
 										)}
 									</div>
 									{/* Middle controls — sit at natural width on the right
