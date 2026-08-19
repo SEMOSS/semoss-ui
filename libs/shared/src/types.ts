@@ -1,3 +1,5 @@
+import type { Role } from "@semoss/sdk";
+
 export interface Engine {
 	engine_id: string;
 	engine_name: string;
@@ -16,12 +18,15 @@ export interface Engine {
 	engine_user_permission?: number;
 	engine_group_permission?: number;
 	engine_date_created?: string;
+	engine_created_by?: string;
 	engine_date_last_edited?: string;
 	engine_cost?: string;
 	low_engine_name?: string;
-	description?: string;
 	tag?: string;
-
+	description?: string;
+	markdown?: string;
+	"data classification"?: string[];
+	"data restrictions"?: string[];
 	/** @deprecated legacy keys from MyEngines */
 	app_id?: string;
 	/** @deprecated legacy keys from MyEngines */
@@ -40,7 +45,13 @@ export interface Project {
 	project_id: string;
 	project_name: string;
 	project_display_name?: string;
-	project_type: "SKILL" | "WORKSPACE" | "BLOCKS" | "CODE" | "INSIGHT";
+	project_type:
+		| "SKILL"
+		| "WORKSPACE"
+		| "BLOCKS"
+		| "CODE"
+		| "INSIGHT"
+		| "NOTEBOOK";
 	project_cost?: string;
 	project_global?: string;
 	project_created_by?: string;
@@ -342,38 +353,11 @@ export interface ThemeMap {
 	};
 }
 
-export type Role = "OWNER" | "EDIT" | "READ_ONLY" | "DISCOVERABLE";
-
-/**
- * User permission entry for adding/editing permissions
- */
-export interface PostUser {
-	userid: string;
-	permission: Role;
-}
-
-/**
- * User details with permission information
- */
-export interface User {
-	date_added?: string;
-	name: string;
-	permission: Role;
-	id: string;
-	type?: string;
-	email?: string;
-}
-
-/**
- * User access request for approval
- */
-export interface UserAccessRequest {
-	id: string;
-	permission: Role;
-}
-
 export interface MCP {
-	/** Type of the mcp */
+	/**
+	 * Type of the mcp. Every value but ROOM is an engine or project catalog type.
+	 * ROOM is the room's own toolbox, which has no catalog entry behind it.
+	 */
 	type:
 		| "PROJECT"
 		| "STORAGE"
@@ -381,7 +365,8 @@ export interface MCP {
 		| "FUNCTION"
 		| "MODEL"
 		| "VECTOR"
-		| "GUARDRAIL";
+		| "GUARDRAIL"
+		| "ROOM";
 	/** Id of the mcp */
 	id: string;
 	/** Name of the mcp */
@@ -398,6 +383,12 @@ export interface MCP {
 export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {
 	/** Flag to indicate if this MCP comes from a workspace */
 	fromWorkspace?: boolean;
+	/**
+	 * Set by the backend on the room's own toolbox, which is derived from the tool
+	 * definitions in the room folder rather than stored in room options. Not
+	 * persisted.
+	 */
+	fromRoom?: boolean;
 };
 
 export interface Skill {

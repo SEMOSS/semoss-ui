@@ -20,6 +20,7 @@ import {
 	InputGroupAddon,
 	InputGroupInput,
 	P,
+	Spinner,
 	Tabs,
 	TabsContent,
 	TabsList,
@@ -27,24 +28,40 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
+import {
+	CATALOG_MODALITIES,
+	toReasoningConfig,
+} from "@/components/engine/engine-metadata-display";
+import type {
+	CatalogMatchState,
+	CatalogMatchSuggestion,
+} from "@/components/import/model/model-catalog-match";
 import type {
 	AppendedModelField,
 	CategoryTexts,
 	FieldDefinition,
 	ImportableModels,
 	ModelFieldOverride,
+	ModelVersionDefinition,
 } from "@/components/import/model/model-import.constants";
 import {
 	IMPORTABLE_MODELS,
 	MODEL_VERSIONS,
 	UNKNOWN_MODEL_BRAND,
 } from "@/components/import/model/model-import.constants";
+import { hasConfigurableReasoning } from "@/components/import/model/model-reasoning-config-field";
 import {
 	ModelEngineIcon,
 	ModelTileCard,
 } from "@/components/import/model/model-tile-card";
+import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
+import {
+	getOptionLabels,
+	MODEL_PROVIDER_OPTIONS,
+	SERVING_PROVIDER_OPTIONS,
+} from "@/model-metadata.constants";
 import { formatToDataTestId } from "@/utility";
 import { ModelImportDetailsPage } from "./model-import-details-page";
 
@@ -61,6 +78,7 @@ const MODEL_PROVIDER_SUBTYPE_BY_NAME: Record<string, string> = {
 	"Self Hosted": "HUGGINGFACE",
 	Perplexity: "PERPLEXITY",
 	Embedded: "BRAIN",
+	"Model Router": "MODEL_ROUTER",
 };
 
 /**
@@ -108,6 +126,51 @@ const sortProvidersForTabs = (providers: Array<{ name: string }>) => {
 };
 
 const ALL_PROVIDERS_FILTER = "ALL";
+
+const MODEL_MODALITIES = [
+	"TEXT",
+	"IMAGE",
+	"AUDIO",
+	"VIDEO",
+	"VECTOR",
+	"FILE",
+	"PDF",
+] as const;
+
+type ModelModality = (typeof MODEL_MODALITIES)[number];
+
+interface StaticModelMetadata {
+	id?: string;
+	description?: string | null;
+	capability?: string | null;
+	input_modalities?: string[] | null;
+	output_modalities?: string[] | null;
+	context_length?: number | null;
+	max_input_tokens?: number | null;
+	max_output_tokens?: number | null;
+	family?: string | null;
+	attachment?: boolean | null;
+	reasoning?: boolean | null;
+	tool_call?: boolean | null;
+	structured_output?: boolean | null;
+	temperature?: boolean | null;
+	knowledge_cutoff?: string | null;
+	release_date?: string | null;
+	supported_parameters?: string[] | null;
+	reasoning_config?: Record<string, unknown> | null;
+	benchmarks?: Record<string, unknown>[] | null;
+}
+
+interface StaticModelMetadataLookup {
+	key: string;
+	modelId: string;
+}
+
+interface StaticModelMetadataState {
+	lookupKey: string | null;
+	status: "INITIAL" | "LOADING" | "SUCCESS" | "ERROR";
+	data: StaticModelMetadata | null;
+}
 
 const applyFieldOverrides = (
 	baseFields: FieldDefinition[],
@@ -160,6 +223,495 @@ const applyFieldOverrides = (
 	return nextFields;
 };
 
+const MODEL_PROVIDER_BY_BRAND: Record<string, string> = {
+	AZURE_OPEN_AI: "OPENAI",
+	CLAUDE: "ANTHROPIC",
+	FALCON: "TII",
+	FLAN_T5_LARGE: "GOOGLE",
+	GEMINI: "GOOGLE",
+	HUGGINGFACE: "OTHER",
+	META: "META",
+	MOSAIC_ML: "DATABRICKS",
+	NEMO: "NVIDIA",
+	OPEN_AI: "OPENAI",
+	ORCA: "MICROSOFT",
+	PERPLEXITY: "PERPLEXITY",
+	REPLIT_CODE_MODEL: "REPLIT",
+	STABLITY_AI: "STABILITY_AI",
+};
+
+const SERVING_PROVIDER_BY_NAME: Record<string, string> = {
+	Anthropic: "ANTHROPIC",
+	"AWS Bedrock": "AWS_BEDROCK",
+	"Azure OpenAI": "AZURE_OPENAI",
+	Embedded: "LOCAL",
+	"Google Gemini": "GOOGLE_VERTEX",
+	"NVIDIA NIM": "NVIDIA_NIM",
+	OpenAI: "OPENAI",
+	Perplexity: "PERPLEXITY",
+	"Self Hosted": "SELF_HOSTED",
+};
+
+const inferModelProvider = (
+	provider: string,
+	model: ModelVersionDefinition | null,
+) => {
+	const brand = model?.modelBrand?.toUpperCase();
+	if (brand && brand !== "BEDROCK")
+		return MODEL_PROVIDER_BY_BRAND[brand] || "OTHER";
+
+	const modelName = model?.name.toLowerCase() || "";
+	if (modelName.includes("anthropic") || modelName.includes("claude"))
+		return "ANTHROPIC";
+	if (modelName.includes("amazon") || modelName.includes("nova"))
+		return "AMAZON";
+	if (
+		modelName.includes("openai") ||
+		modelName.includes("gpt") ||
+		modelName.includes("text-embedding-3")
+	)
+		return "OPENAI";
+	if (modelName.includes("gemini") || modelName.includes("veo"))
+		return "GOOGLE";
+	if (modelName.includes("meta") || modelName.includes("llama"))
+		return "META";
+	if (provider === "Google Gemini") return "GOOGLE";
+	if (provider === "Azure OpenAI") return "OPENAI";
+	return "OTHER";
+};
+
+const inferCapability = (model: ModelVersionDefinition | null) => {
+	const modelName = model?.name.toLowerCase() || "";
+	if (model?.embedding) return "EMBEDDING";
+	if (modelName.includes("rerank")) return "RERANKING";
+	if (modelName.includes("whisper") || modelName.includes("transcribe"))
+		return "TRANSCRIPTION";
+	if (modelName.includes("tts") || modelName.includes("text-to-speech"))
+		return "SPEECH_SYNTHESIS";
+	if (
+		modelName.includes("veo") ||
+		modelName.includes("reel") ||
+		modelName.includes("video")
+	)
+		return "VIDEO_GENERATION";
+	if (
+		model?.image ||
+		modelName.includes("image") ||
+		modelName.includes("canvas")
+	)
+		return "IMAGE_GENERATION";
+	return "TEXT_GENERATION";
+};
+
+const getDefaultModalities = (
+	capability: string,
+	model: ModelVersionDefinition | null,
+) => {
+	switch (capability) {
+		case "EMBEDDING":
+			return { input: ["TEXT"], output: ["VECTOR"] };
+		case "IMAGE_GENERATION":
+			return { input: ["TEXT", "IMAGE"], output: ["IMAGE"] };
+		case "VIDEO_GENERATION":
+			return { input: ["TEXT", "IMAGE"], output: ["VIDEO"] };
+		case "TRANSCRIPTION":
+			return { input: ["AUDIO"], output: ["TEXT"] };
+		case "SPEECH_SYNTHESIS":
+			return { input: ["TEXT"], output: ["AUDIO"] };
+		default:
+			return model?.audio
+				? { input: ["TEXT", "AUDIO"], output: ["TEXT", "AUDIO"] }
+				: { input: ["TEXT"], output: ["TEXT"] };
+	}
+};
+
+const normalizeStaticModalities = (
+	modalities: string[] | null | undefined,
+): ModelModality[] => {
+	if (!Array.isArray(modalities)) return [];
+
+	return [
+		...new Set(
+			modalities
+				.map((modality) => modality.trim().toUpperCase())
+				.filter((modality): modality is ModelModality =>
+					MODEL_MODALITIES.includes(modality as ModelModality),
+				),
+		),
+	];
+};
+
+/**
+ * Modalities the catalog entry does not list for one direction.
+ *
+ * Advisory only - the model settings tab warns on the same mismatch rather than
+ * blocking it, and the catalog is hand-maintained, so a deployment can serve a
+ * modality the entry omits. Returns undefined when the entry lists nothing for
+ * the direction, since silence there is not a claim about anything.
+ */
+const getUnlistedModalityOptions = (
+	staticModalities: ModelModality[],
+): string[] | undefined => {
+	if (staticModalities.length === 0) {
+		return undefined;
+	}
+
+	const unlisted = CATALOG_MODALITIES.filter(
+		(modality) => !staticModalities.includes(modality as ModelModality),
+	);
+
+	return unlisted.length > 0 ? unlisted : undefined;
+};
+
+const inferStaticCapability = (
+	metadata: StaticModelMetadata | null,
+	model: ModelVersionDefinition | null,
+) => {
+	const declaredCapability = metadata?.capability
+		?.trim()
+		.toLowerCase()
+		.replaceAll(/[\s-]+/g, "_");
+	const inputModalities = normalizeStaticModalities(
+		metadata?.input_modalities,
+	);
+	const outputModalities = normalizeStaticModalities(
+		metadata?.output_modalities,
+	);
+
+	if (outputModalities.includes("VECTOR")) return "EMBEDDING";
+	if (outputModalities.includes("VIDEO")) return "VIDEO_GENERATION";
+	if (outputModalities.includes("IMAGE")) return "IMAGE_GENERATION";
+	if (outputModalities.includes("AUDIO") && inputModalities.includes("TEXT"))
+		return "SPEECH_SYNTHESIS";
+	if (declaredCapability === "embedding") return "EMBEDDING";
+	if (declaredCapability === "reranking") return "RERANKING";
+	if (declaredCapability === "moderation") return "MODERATION";
+	if (declaredCapability === "transcription") return "TRANSCRIPTION";
+	if (declaredCapability === "speech_synthesis") return "SPEECH_SYNTHESIS";
+
+	return inferCapability(model);
+};
+
+/**
+ * Which catalog entry to pull metadata from for the model being imported.
+ *
+ * A card that names a specific model looks itself up. An "other-" card carries
+ * no model ID of its own, so it resolves to whatever the user typed - by way of
+ * the entry they picked, or the one their ID matched on its own. Returning null
+ * means there is nothing to look up and the metadata fields stay unpopulated.
+ */
+export const getStaticModelMetadataLookup = (
+	model: ModelVersionDefinition | null,
+	resolvedCatalogKey?: string | null,
+): StaticModelMetadataLookup | null => {
+	const modelId = model?.name.trim();
+
+	if (!modelId) {
+		return null;
+	}
+
+	if (modelId.startsWith("other-")) {
+		const catalogKey = resolvedCatalogKey?.trim();
+		return catalogKey ? { key: catalogKey, modelId: catalogKey } : null;
+	}
+
+	return {
+		key: modelId,
+		modelId,
+	};
+};
+
+export const buildModelMetadataFields = (
+	provider: string,
+	model: ModelVersionDefinition | null,
+	staticMetadata: StaticModelMetadata | null,
+): FieldDefinition[] => {
+	const capability = inferStaticCapability(staticMetadata, model);
+	const inferredModalities = getDefaultModalities(capability, model);
+	const staticInputModalities = normalizeStaticModalities(
+		staticMetadata?.input_modalities,
+	);
+	const staticOutputModalities = normalizeStaticModalities(
+		staticMetadata?.output_modalities,
+	);
+	const unlistedInputModalities = getUnlistedModalityOptions(
+		staticInputModalities,
+	);
+	const unlistedOutputModalities = getUnlistedModalityOptions(
+		staticOutputModalities,
+	);
+	const metadataFields: FieldDefinition[] = [
+		{
+			key: "DESCRIPTION",
+			label: "Description",
+			type: "textarea",
+			required: false,
+			category: "General",
+			default: staticMetadata?.description?.trim() || "",
+			helperText:
+				"Optional catalog description shown to users browsing this model.",
+		},
+		{
+			key: "MODEL_PROVIDER",
+			label: "Model Provider",
+			type: "select",
+			required: true,
+			category: "Settings",
+			default: inferModelProvider(provider, model),
+			options: MODEL_PROVIDER_OPTIONS.map(({ value }) => value),
+			optionLabels: getOptionLabels(MODEL_PROVIDER_OPTIONS),
+			helperText:
+				"Organization that created the model, such as OPENAI or ANTHROPIC.",
+		},
+		{
+			key: "SERVING_PROVIDER",
+			label: "Serving Provider",
+			type: "select",
+			required: true,
+			category: "Settings",
+			default:
+				SERVING_PROVIDER_BY_NAME[provider] ||
+				provider.toUpperCase().replaceAll(/[^A-Z0-9]+/g, "_"),
+			options: SERVING_PROVIDER_OPTIONS.map(({ value }) => value),
+			optionLabels: getOptionLabels(SERVING_PROVIDER_OPTIONS),
+			helperText:
+				"Platform serving the model, such as AWS_BEDROCK or GOOGLE_VERTEX.",
+		},
+		{
+			key: "CAPABILITY",
+			label: "Primary Capability",
+			type: "select",
+			required: true,
+			category: "Settings",
+			default: capability,
+			options: [
+				"TEXT_GENERATION",
+				"IMAGE_GENERATION",
+				"VIDEO_GENERATION",
+				"EMBEDDING",
+				"TRANSCRIPTION",
+				"SPEECH_SYNTHESIS",
+				"RERANKING",
+				"MODERATION",
+			],
+		},
+		{
+			key: "INPUT_MODALITIES",
+			label: "Input Modalities",
+			type: "multiselect",
+			required: true,
+			category: "Settings",
+			default:
+				staticInputModalities.length > 0
+					? staticInputModalities
+					: inferredModalities.input,
+			options: [...MODEL_MODALITIES],
+			warningOptions: unlistedInputModalities,
+		},
+		{
+			key: "OUTPUT_MODALITIES",
+			label: "Output Modalities",
+			type: "multiselect",
+			required: true,
+			category: "Settings",
+			default:
+				staticOutputModalities.length > 0
+					? staticOutputModalities
+					: inferredModalities.output,
+			options: [...MODEL_MODALITIES],
+			warningOptions: unlistedOutputModalities,
+		},
+		{
+			key: "BUILTIN_TOOLS",
+			label: "Built-in Tools",
+			type: "builtin-tools",
+			required: false,
+			category: "Settings",
+			helperText: "Provider-hosted tools the model can call natively.",
+		},
+	];
+
+	if (
+		typeof staticMetadata?.context_length === "number" &&
+		Number.isSafeInteger(staticMetadata.context_length) &&
+		staticMetadata.context_length > 0
+	) {
+		metadataFields.push({
+			key: "CONTEXT_WINDOW",
+			label: "Context Window",
+			type: "number",
+			required: true,
+			category: "Settings",
+			default: staticMetadata.context_length,
+		});
+	}
+
+	if (
+		typeof staticMetadata?.max_output_tokens === "number" &&
+		Number.isSafeInteger(staticMetadata.max_output_tokens) &&
+		staticMetadata.max_output_tokens > 0
+	) {
+		metadataFields.push({
+			key: "MAX_TOKENS",
+			label: "Max Tokens (Max Completion Tokens)",
+			type: "number",
+			required: true,
+			category: "Settings",
+			default: staticMetadata.max_output_tokens,
+		});
+	}
+
+	const addHiddenMetadataField = (
+		key: string,
+		label: string,
+		value: FieldDefinition["default"],
+	) => {
+		metadataFields.push({
+			key,
+			label,
+			type: "hidden",
+			required: false,
+			category: "Settings",
+			default: value,
+		});
+	};
+
+	if (
+		typeof staticMetadata?.max_input_tokens === "number" &&
+		Number.isSafeInteger(staticMetadata.max_input_tokens) &&
+		staticMetadata.max_input_tokens > 0
+	) {
+		addHiddenMetadataField(
+			"MAX_INPUT_TOKENS",
+			"Max Input Tokens",
+			staticMetadata.max_input_tokens,
+		);
+	}
+
+	if (staticMetadata?.family) {
+		addHiddenMetadataField("FAMILY", "Model Family", staticMetadata.family);
+	}
+
+	for (const [key, label, value] of [
+		["ATTACHMENT", "Attachment Support", staticMetadata?.attachment],
+		["REASONING", "Reasoning Support", staticMetadata?.reasoning],
+		["TOOL_CALL", "Tool Call Support", staticMetadata?.tool_call],
+		[
+			"STRUCTURED_OUTPUT",
+			"Structured Output Support",
+			staticMetadata?.structured_output,
+		],
+		["TEMPERATURE", "Temperature Support", staticMetadata?.temperature],
+	] as const) {
+		if (typeof value === "boolean") {
+			addHiddenMetadataField(key, label, value);
+		}
+	}
+
+	for (const [key, label, value] of [
+		[
+			"KNOWLEDGE_CUTOFF",
+			"Knowledge Cutoff",
+			staticMetadata?.knowledge_cutoff,
+		],
+		["RELEASE_DATE", "Release Date", staticMetadata?.release_date],
+	] as const) {
+		if (value) {
+			addHiddenMetadataField(key, label, value);
+		}
+	}
+
+	if (
+		Array.isArray(staticMetadata?.supported_parameters) &&
+		staticMetadata.supported_parameters.length > 0
+	) {
+		addHiddenMetadataField(
+			"SUPPORTED_PARAMETERS",
+			"Supported Parameters",
+			JSON.stringify(staticMetadata.supported_parameters),
+		);
+	}
+
+	const reasoningConfig = toReasoningConfig(staticMetadata?.reasoning_config);
+
+	if (hasConfigurableReasoning(reasoningConfig)) {
+		if (typeof staticMetadata?.reasoning !== "boolean") {
+			addHiddenMetadataField("REASONING", "Reasoning Support", true);
+		}
+
+		const builtinToolsIndex = metadataFields.findIndex(
+			(field) => field.key === "BUILTIN_TOOLS",
+		);
+		metadataFields.splice(
+			builtinToolsIndex === -1
+				? metadataFields.length
+				: builtinToolsIndex,
+			0,
+			{
+				key: "REASONING_CONFIG",
+				label: "Reasoning",
+				type: "reasoning-config",
+				required: false,
+				category: "Settings",
+				default: reasoningConfig,
+			},
+		);
+	} else if (reasoningConfig !== null) {
+		addHiddenMetadataField(
+			"REASONING_CONFIG",
+			"Reasoning Configuration",
+			JSON.stringify(reasoningConfig),
+		);
+	}
+
+	if (
+		Array.isArray(staticMetadata?.benchmarks) &&
+		staticMetadata.benchmarks.length > 0
+	) {
+		addHiddenMetadataField(
+			"BENCHMARKS",
+			"Benchmarks",
+			JSON.stringify(staticMetadata.benchmarks),
+		);
+	}
+
+	return metadataFields;
+};
+
+export const mergeModelMetadataFields = (
+	fields: FieldDefinition[],
+	advanced: FieldDefinition[],
+	metadataFields: FieldDefinition[],
+) => {
+	for (const metadataField of metadataFields) {
+		const fieldIndex = fields.findIndex(
+			(field) => field.key === metadataField.key,
+		);
+		if (fieldIndex !== -1) {
+			fields[fieldIndex] = {
+				...fields[fieldIndex],
+				default: metadataField.default,
+				warningOptions: metadataField.warningOptions,
+			};
+			continue;
+		}
+
+		const advancedIndex = advanced.findIndex(
+			(field) => field.key === metadataField.key,
+		);
+		if (advancedIndex !== -1) {
+			advanced[advancedIndex] = {
+				...advanced[advancedIndex],
+				default: metadataField.default,
+				warningOptions: metadataField.warningOptions,
+			};
+			continue;
+		}
+
+		fields.push(metadataField);
+	}
+};
+
 export const ModelImportPage: React.FC = () => {
 	const navigate = useNavigate();
 
@@ -174,6 +726,20 @@ export const ModelImportPage: React.FC = () => {
 	const [providerFilter, setProviderFilter] =
 		useState<string>(ALL_PROVIDERS_FILTER);
 	const [selectedModel, setSelectedModel] = useState<string | null>(null);
+	const [staticModelMetadata, setStaticModelMetadata] =
+		useState<StaticModelMetadataState>({
+			lookupKey: null,
+			status: "INITIAL",
+			data: null,
+		});
+	// the Model ID as typed on an "other-" card, debounced by the form
+	const [typedModelId, setTypedModelId] = useState("");
+	const [catalogMatch, setCatalogMatch] = useState<CatalogMatchState | null>(
+		null,
+	);
+	const [pickedCatalogKey, setPickedCatalogKey] = useState<string | null>(
+		null,
+	);
 	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
 	const [formLoading, setFormLoading] = useState(false);
 	const [filedata, setFiledata] = useState(null);
@@ -287,6 +853,184 @@ export const ModelImportPage: React.FC = () => {
 			) || null
 		);
 	}, [selectedProvider, selectedModel]);
+
+	// only an "other-" card leaves the Model ID to the user, and only then is there
+	// anything to match against the catalog
+	const isTypedModelId = !!selectedModelMetadata?.name.startsWith("other-");
+
+	// Start over whenever the user backs out to a different card - a catalog entry
+	// picked for one model must not carry over to the next.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: the deps are the reset trigger, not values the body reads
+	useEffect(() => {
+		setTypedModelId("");
+		setCatalogMatch(null);
+		setPickedCatalogKey(null);
+	}, [selectedModel, selectedProvider]);
+
+	useEffect(() => {
+		const modelId = typedModelId.trim();
+		if (!isTypedModelId || !modelId) {
+			setCatalogMatch(null);
+			return;
+		}
+
+		let isCancelled = false;
+		setCatalogMatch({
+			modelId,
+			status: "LOADING",
+			exactMatch: null,
+			suggestions: [],
+			allKeys: [],
+		});
+
+		const pixel = `MatchStaticModelMetadata(modelId=${JSON.stringify(
+			modelId,
+		)});`;
+
+		monolithStore
+			.runQuery(pixel)
+			.then((response) => {
+				if (isCancelled) return;
+
+				const result = response.pixelReturn?.[0];
+				if (!result || result.operationType.indexOf("ERROR") > -1) {
+					throw new Error(
+						String(result?.output || "Unable to match model ID."),
+					);
+				}
+
+				const output = result.output as {
+					exactMatch?: string;
+					matches?: CatalogMatchSuggestion[];
+					allKeys?: string[];
+				};
+				const exactMatch = output?.exactMatch?.trim() || null;
+
+				setCatalogMatch({
+					modelId,
+					status: exactMatch ? "MATCHED" : "UNMATCHED",
+					exactMatch,
+					suggestions: Array.isArray(output?.matches)
+						? output.matches
+						: [],
+					allKeys: Array.isArray(output?.allKeys)
+						? output.allKeys
+						: [],
+				});
+			})
+			.catch(() => {
+				if (isCancelled) return;
+				setCatalogMatch({
+					modelId,
+					status: "ERROR",
+					exactMatch: null,
+					suggestions: [],
+					allKeys: [],
+				});
+			});
+
+		return () => {
+			isCancelled = true;
+		};
+	}, [monolithStore, typedModelId, isTypedModelId]);
+
+	// a hand-picked entry wins; otherwise a typed ID that resolved on its own is
+	// just as good a source of metadata, it simply is not worth storing
+	const resolvedCatalogKey =
+		pickedCatalogKey ||
+		(catalogMatch?.modelId === typedModelId.trim()
+			? catalogMatch?.exactMatch
+			: null) ||
+		null;
+
+	const staticMetadataLookup = useMemo(
+		() =>
+			getStaticModelMetadataLookup(
+				selectedModelMetadata,
+				resolvedCatalogKey,
+			),
+		[selectedModelMetadata, resolvedCatalogKey],
+	);
+
+	useEffect(() => {
+		if (!staticMetadataLookup) {
+			setStaticModelMetadata({
+				lookupKey: null,
+				status: "INITIAL",
+				data: null,
+			});
+			return;
+		}
+
+		let isCancelled = false;
+		setStaticModelMetadata({
+			lookupKey: staticMetadataLookup.key,
+			status: "LOADING",
+			data: null,
+		});
+
+		const pixel = `GetStaticModelMetadata(modelId=${JSON.stringify(
+			staticMetadataLookup.modelId,
+		)});`;
+
+		monolithStore
+			.runQuery(pixel)
+			.then((response) => {
+				if (isCancelled) return;
+
+				const result = response.pixelReturn?.[0];
+				if (!result || result.operationType.indexOf("ERROR") > -1) {
+					throw new Error(
+						String(
+							result?.output ||
+								"Unable to retrieve static model metadata.",
+						),
+					);
+				}
+
+				const output = result.output;
+				if (
+					typeof output !== "object" ||
+					output === null ||
+					Array.isArray(output)
+				) {
+					throw new Error("Static model metadata must be an object.");
+				}
+
+				setStaticModelMetadata({
+					lookupKey: staticMetadataLookup.key,
+					status: "SUCCESS",
+					data: output as StaticModelMetadata,
+				});
+			})
+			.catch(() => {
+				if (isCancelled) return;
+				setStaticModelMetadata({
+					lookupKey: staticMetadataLookup.key,
+					status: "ERROR",
+					data: null,
+				});
+			});
+
+		return () => {
+			isCancelled = true;
+		};
+	}, [monolithStore, staticMetadataLookup]);
+
+	// A typed Model ID is looked up while the form is already on screen, so blocking
+	// on it would tear the form down and lose whatever has been filled in. Only the
+	// card flow, which resolves before the form is ever rendered, waits on a spinner.
+	const isStaticMetadataLoading =
+		!isTypedModelId &&
+		staticMetadataLookup !== null &&
+		(staticModelMetadata.lookupKey !== staticMetadataLookup.key ||
+			staticModelMetadata.status === "LOADING");
+	const selectedStaticMetadata =
+		staticMetadataLookup !== null &&
+		staticModelMetadata.lookupKey === staticMetadataLookup.key &&
+		staticModelMetadata.status === "SUCCESS"
+			? staticModelMetadata.data
+			: null;
 
 	const handleFileUpload = (flag: boolean) => {
 		// Open or close the file upload modal based on the provided flag
@@ -468,6 +1212,14 @@ export const ModelImportPage: React.FC = () => {
 					</div>
 				);
 			default: {
+				if (isStaticMetadataLoading) {
+					return (
+						<div className="flex min-h-64 items-center justify-center">
+							<Spinner />
+						</div>
+					);
+				}
+
 				// Find the provider definition for the selected provider
 				const providerDef = importableModels?.providers.find(
 					(p) => p.name === selectedProvider,
@@ -560,6 +1312,33 @@ export const ModelImportPage: React.FC = () => {
 								disabled: true,
 							};
 						}
+
+						if (!selectedModelMetadata?.skipCatalogMetadata) {
+							mergeModelMetadataFields(
+								fields,
+								advanced,
+								buildModelMetadataFields(
+									selectedProvider,
+									selectedModelMetadata,
+									selectedStaticMetadata,
+								),
+							);
+						}
+
+						// Only a hand-picked entry is saved. An ID that resolved on
+						// its own can be resolved again from the ID, so storing it
+						// would just be another value to keep in sync.
+						if (pickedCatalogKey) {
+							fields.push({
+								key: "CATALOG_MODEL_KEY",
+								label: "Catalog Model Key",
+								type: "hidden",
+								required: false,
+								category: "Settings",
+								default: pickedCatalogKey,
+								value: pickedCatalogKey,
+							});
+						}
 					}
 				}
 
@@ -569,6 +1348,12 @@ export const ModelImportPage: React.FC = () => {
 						advanced={advanced}
 						selectedProvider={selectedProvider}
 						importableModelsCategory={importableModelsCategory}
+						onModelIdChange={
+							isTypedModelId ? setTypedModelId : undefined
+						}
+						catalogMatch={catalogMatch}
+						pickedCatalogKey={pickedCatalogKey}
+						onPickCatalogKey={setPickedCatalogKey}
 					/>
 				);
 			}
@@ -582,12 +1367,18 @@ export const ModelImportPage: React.FC = () => {
 		sortedProviders,
 		visibleProviderSections,
 		selectedModelMetadata,
+		isStaticMetadataLoading,
+		selectedStaticMetadata,
+		isTypedModelId,
+		catalogMatch,
+		pickedCatalogKey,
 	]);
 
 	return (
 		<div ref={pageTopRef}>
-			<div className="flex flex-col gap-1">
-				<Breadcrumb className="mb-4">
+			<NavbarLeft>
+				<NavbarHeader logo={null} />
+				<Breadcrumb>
 					<BreadcrumbList>
 						<BreadcrumbItem>
 							<BreadcrumbLink asChild>
@@ -631,7 +1422,8 @@ export const ModelImportPage: React.FC = () => {
 						)}
 					</BreadcrumbList>
 				</Breadcrumb>
-
+			</NavbarLeft>
+			<div className="flex flex-col gap-1">
 				{/* File Upload Modal */}
 				<Dialog
 					open={isFileUploadModalOpen}

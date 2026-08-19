@@ -67,7 +67,7 @@ export const KNOWN_SHIKI_LANGS = new Set([
 	"plaintext",
 ]);
 
-const CODE_LANG_EXT: Record<string, string> = {
+export const CODE_LANG_EXT: Record<string, string> = {
 	javascript: "js",
 	typescript: "ts",
 	python: "py",
@@ -183,13 +183,9 @@ export const CODE_LANG_LABELS: Record<string, string> = {
 	pixel: "Pixel",
 };
 
+/** Build a timestamped file path for saving an HTML response to the asset store. */
 export const createHtmlResponseFilePath = (): string => {
 	return `save-html-response-${Date.now()}.html`;
-};
-
-export const createCodeFilePath = (lang: string): string => {
-	const ext = CODE_LANG_EXT[lang] ?? lang;
-	return `save-code-response-${Date.now()}.${ext}`;
 };
 
 /**
@@ -223,31 +219,6 @@ export const buildExecutePixel = (
  * the component, so normal large responses stay fully visible.
  */
 export const MAX_EXECUTE_LOG_CHARS = 100_000;
-
-/**
- * Mirror of the terminal REPL's output unwrap (terminal-console.tsx), which in
- * turn mirrors cell.state.ts in libs/renderer. Each operationType stores its
- * payload in a slightly different shape; pick the right slot so the value we
- * render is the user-facing result rather than the envelope.
- */
-export const unwrapPixelOutput = (last: {
-	operationType?: string[];
-	output?: unknown;
-}): unknown => {
-	if (!last) return undefined;
-	const op = last.operationType ?? [];
-	// biome-ignore lint/suspicious/noExplicitAny: pixel envelope shapes
-	const out: any = last.output;
-	if (op.indexOf("CUSTOM_DATA_STRUCTURE") > -1) return out;
-	if (op.indexOf("FORMATTED_DATA_SET") > -1) return out?.[0];
-	if (op.indexOf("CODE_EXECUTION") > -1) return out?.[0]?.output;
-	if (op.indexOf("CODE") > -1) return out?.[0]?.value?.[0];
-	if (op.indexOf("ERROR") > -1) return out?.[0];
-	if (op.indexOf("CONST_STRING") > -1) return out?.[0];
-	if (op.indexOf("INVALID_SYNTAX") > -1) return out?.[0];
-	if (op.indexOf("VECTOR") > -1) return out?.[0];
-	return out;
-};
 
 /**
  * Mirror of the terminal REPL's formatOutputForDisplay. Coerces an unwrapped

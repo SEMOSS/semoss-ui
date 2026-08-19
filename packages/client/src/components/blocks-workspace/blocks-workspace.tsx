@@ -18,7 +18,7 @@ import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
 import { ProjectDetailTabs } from "@/components/project";
 import { useWorkspace } from "@/hooks";
 import { DesignerStore, type WorkspaceOptions } from "@/stores";
-import { WorkspaceManager } from "../../components/workspace";
+import { WorkspaceManager, WorkspaceNavbar } from "../../components/workspace";
 import { WorkspaceTerminal } from "../../components/workspace/panels";
 import { DesignerContext } from "../../contexts";
 import { MCPJsonEditor } from "../shared";
@@ -133,18 +133,6 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						component: "terminal",
 						enableClose: false,
 						config: {},
-					},
-					{
-						type: "tab",
-						id: "settings",
-						name: "Settings",
-						component: "settings-panel",
-						config: {},
-						// maxWidth: 1,
-						helpText: "Settings",
-						enableClose: false,
-						borderWidth: 800,
-						borderHeight: 1200,
 					},
 				],
 			},
@@ -358,10 +346,6 @@ export const BlocksWorkspace: React.FC = observer(() => {
 					node={node}
 					layout={layout}
 					app={workspace.appId}
-					onOpenStateChange={workspace.setFileBrowserOpen}
-					onVisibleAssetPathsChange={({ path, paths }) => {
-						workspace.setFileBrowserVisiblePaths(path, paths);
-					}}
 				/>
 			);
 		} else if (component === "app-file-editor") {
@@ -381,31 +365,38 @@ export const BlocksWorkspace: React.FC = observer(() => {
 		} else if (component === "settings-panel") {
 			return (
 				<ProjectDetailTabs
-					type="CODE"
 					tabs={[
-						{ name: "Overview", path: "" },
+						{ name: "Overview", component: "project-overview" },
 						{
 							name: "MCP",
-							path: "mcp-usage",
+							component: "mcp-usage",
 							restrict: ["OWNER", "EDIT", "READ_ONLY"],
 						},
 						{
 							name: "Commits",
-							path: "commits",
+							component: "commits",
 							restrict: ["OWNER", "EDIT"],
 						},
-						{ name: "GitHub", path: "github", restrict: ["OWNER"] },
+						{
+							name: "GitHub",
+							component: "github",
+							restrict: ["OWNER"],
+						},
 						{
 							name: "Settings",
-							path: "settings",
+							component: "settings",
 							restrict: ["OWNER"],
 						},
 						{
 							name: "Access Control",
-							path: "access-control",
+							component: "access-control",
 							restrict: ["OWNER", "EDIT"],
 						},
-						{ name: "SMSS", path: "smss", restrict: ["OWNER"] },
+						{
+							name: "SMSS",
+							component: "smss",
+							restrict: ["OWNER"],
+						},
 					]}
 				/>
 			);
@@ -478,8 +469,8 @@ export const BlocksWorkspace: React.FC = observer(() => {
 					designer: designer,
 				}}
 			>
+				<WorkspaceNavbar actions={<BlocksWorkspaceActions />} />
 				<WorkspaceManager
-					navbarActions={<BlocksWorkspaceActions />}
 					options={DEFAULT_OPTIONS}
 					factory={FACTORY}
 					onAction={handleAction}

@@ -8,4 +8,5 @@ export * from "./file-explorer.utils";
 export * from "./file-explorer-item";
 export * from "./file-image-viewer";
 export * from "./file-markdown-editor";
+export * from "./file-notebook";
 export * from "./file-pdf-viewer";

@@ -9,17 +9,17 @@ import { download } from "@semoss/sdk/react";
 import {
 	MCP_EXECUTION_AUTO,
 	STREAMING_PLACEHOLDER_ID,
-	TOOL_CANCELLATION_PROMPT,
-	TOOL_ERROR_PROMPT,
-	TOOL_OUTPUT_UNREADABLE_PROMPT,
-	TOOL_PAUSE_PROMPT,
+	TURN_CANCELLATION_PROMPT,
 } from "@/constants";
 import type { ToolStore } from "@/stores";
 import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
+import { getToolEngineId } from "@/utility/mcp-utils";
 import { AbstractMessageStore } from "./abstract-message.store";
 import { runAgentMessage } from "./agent-harness";
 import { InputMessageStore } from "./input-message.store";
+import { ToolSaveController } from "./tool-save-controller";
 import { applyToolStreamChunk } from "./tool-stream";
+import { type CancelCommitOutput, spliceHiddenMessages } from "./utility";
 
 /**
  * Response Message Store
@@ -36,6 +36,12 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	 *  Track if the message is thinking
 	 */
 	isThinking: boolean = false;
+
+	/**
+	 * Serializes and coalesces this response's tool-result writes (and owns the
+	 * tool-phase stop). Extracted for size; see {@link ToolSaveController}.
+	 */
+	private readonly toolSaves = new ToolSaveController(this);
 
 	/**
 	 * Response to an execution
@@ -68,11 +74,6 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	};
 
 	/**
-	 * Whether the user has indicated to pause running tools
-	 */
-	isPaused: boolean = false;
-
-	/**
 	 * Whether this conversation is compacted above this message
 	 */
 	conversationCompactedAbove: boolean = false;
@@ -95,20 +96,20 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			isThinking: observable,
 			parts: observable,
 			feedback: observable,
-			isPaused: observable,
 			conversationCompactedAbove: observable,
 			isCompacting: observable,
 			runMessage: action,
 			savePart: action,
 			recordFeedback: action,
 			rewriteMessage: action,
+			hasVisibleContent: computed,
 			hasUnfinishedTools: computed,
 			hasTools: computed,
 			continueToolExecution: action,
 			saveToolExecution: action,
+			cancelPendingTools: action,
 			setConversationCompactedAbove: action,
 			setIsCompacting: action,
-			toggleIsPaused: action,
 		});
 
 		// sync the message
@@ -244,25 +245,28 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			// arguments/name deltas with the ToolStore created on the opening chunk
 			const toolStreamIndexToId: Record<number, string> = {};
 
+			// Shared param block for the turn. On a stop, recordCancelledTurn
+			// must replay the exact same params, so both the live AskPlayground
+			// call and the cancel-commit call are built from this single string —
+			// the cancel call just adds responseParts + hiddenMessage.
+			const turnParams = `engine=["${room.model.engine_id}"],
+roomId=["${room.roomId}"],
+command=["<encode>${text}</encode>"],
+${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
+${media.length ? `image=${JSON.stringify(media)},` : "image=[],"}
+${this.id ? `parentMessageId=["${this.id}"],` : ""}
+paramValues=[{}]`;
+
 			// wait for the pixel to run with streaming
-			const response = await room.runRoomPixelStreaming<
+			await room.runRoomPixelStreaming<
 				[
 					{
 						inputMessage: InputPixelMessage;
 						responseMessage: ResponsePixelMessage;
 					},
 				]
-			>(
-				`AskPlayground(
-engine=["${room.model.engine_id}"],
-roomId=["${room.roomId}"],
-command=["<encode>${text}</encode>"],
-${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
-${media.length ? `image=${JSON.stringify(media)},` : "image=[],"}
-${this.id ? `parentMessageId=["${this.id}"],` : ""}
-paramValues=[{}]
-);`,
-				(chunk) => {
+			>(`AskPlayground(${turnParams});`, {
+				onEmit: (chunk) => {
 					runInAction(() => {
 						if (chunk.stream_type === "content") {
 							if (chunk.data.content) {
@@ -290,18 +294,25 @@ paramValues=[{}]
 						}
 					});
 				},
-			);
+				onResult: ({ results }) => {
+					const { output } = results[0];
 
-			const { output } = response.results[0];
+					// sync with the results
+					inputMessage.sync(output.inputMessage);
+					responseMessage.sync(output.responseMessage);
 
-			// sync with the results
-			inputMessage.sync(output.inputMessage);
-			responseMessage.sync(output.responseMessage);
-
-			// start running tools if there are any
-			responseMessage.continueToolExecution();
-
-			return response;
+					// start running tools if there are any
+					responseMessage.continueToolExecution();
+				},
+				// The user stopped the stream mid-response: persist what they
+				// saw, rather than treating it as a result or error.
+				onCancel: () =>
+					this.recordCancelledTurn(
+						turnParams,
+						inputMessage,
+						responseMessage,
+					),
+			});
 		} catch (e) {
 			// remove message if we failed
 			this.removeChild(inputMessage);
@@ -314,6 +325,50 @@ paramValues=[{}]
 			});
 		}
 	};
+
+	/**
+	 * Commit a stopped turn. Cancelling the AskPlayground stream leaves nothing
+	 * persisted on the backend, so we replay the turn's exact params through a
+	 * second AskPlayground call carrying `responseParts` (what the user actually
+	 * saw) and a `hiddenMessage` note. The backend skips the LLM call, persists
+	 * the turn, and appends a hidden user-note/assistant-ack pair so the model
+	 * sees next turn that its response was cut short. We sync the visible pair
+	 * from the result and splice the returned hidden pair(s) into the tree so
+	 * the room's parent chain stays aligned with the backend's provider history.
+	 */
+	private recordCancelledTurn = async (
+		turnParams: string,
+		inputMessage: InputMessageStore,
+		responseMessage: ResponseMessageStore,
+	): Promise<void> => {
+		const room = this.room;
+
+		try {
+			const response = await room.runRoomPixel<[CancelCommitOutput]>(
+				`AskPlayground(${turnParams}, responseParts=${JSON.stringify(responseMessage.parts)}, hiddenMessage=["<encode>${TURN_CANCELLATION_PROMPT}</encode>"]);`,
+			);
+
+			const { output } = response.pixelReturn[0];
+
+			// sync the visible pair with the committed result
+			inputMessage.sync(output.inputMessage);
+			responseMessage.sync(output.responseMessage);
+
+			spliceHiddenMessages(responseMessage, output.extraMessages);
+		} catch (e) {
+			// Rethrown so stop() (StreamJobController), which awaits this as the
+			// job's onCancel, surfaces the failure as a room error — this is the
+			// user's only signal that the cancelled turn didn't actually persist.
+			console.error("Failed to record cancelled turn", e);
+			throw e;
+		}
+	};
+
+	/**
+	 * Hard-stop the tool phase — see {@link ToolSaveController.cancelPending}.
+	 * Called by the room when the user stops with tool calls still outstanding.
+	 */
+	cancelPendingTools = (): Promise<void> => this.toolSaves.cancelPending();
 
 	/**
 	 * Append a message part during streaming
@@ -358,35 +413,6 @@ paramValues=[{}]
 	 */
 	setIsCompacting = (compacting: boolean) => {
 		this.isCompacting = compacting;
-	};
-
-	/**
-	 * Toggle the stopped tools flag
-	 */
-	toggleIsPaused = () => {
-		if (!this.isPaused) {
-			this.isPaused = true;
-			// If we are currently running tools, then we want to stop them. So we should mark any loading or initial tools as paused
-			for (const part of this.parts) {
-				if (part.type === "TOOL_CALL") {
-					const tool = this.room.getTool(part.toolCall.id);
-					if (
-						tool.status === "LOADING" ||
-						tool.status === "INITIAL"
-					) {
-						this.saveToolExecution(
-							tool,
-							"",
-							"paused",
-							tool.parameters,
-							false,
-						);
-					}
-				}
-			}
-		} else {
-			this.isPaused = false;
-		}
 	};
 
 	/**
@@ -512,6 +538,22 @@ paramValues=[{}]
 	};
 
 	/**
+	 * Whether the message has anything worth rendering — non-whitespace text,
+	 * media, or a tool call. An empty response (e.g. the placeholder the backend
+	 * commits after a stopped tool phase) has none.
+	 */
+	get hasVisibleContent(): boolean {
+		return this.parts.some(
+			(part) =>
+				(part.type === "TEXT" &&
+					part.text.replace(/[\s\u00AD\u200B-\u200D\u2060]/g, "")
+						.length > 0) ||
+				part.type === "MEDIA" ||
+				part.type === "TOOL_CALL",
+		);
+	}
+
+	/**
 	 * Execution
 	 */
 	/**
@@ -545,13 +587,21 @@ paramValues=[{}]
 	 * Run tools associated with the message
 	 */
 	continueToolExecution = () => {
+		// A stop halts the loop — don't spawn new tool runs once a cancel has
+		// been issued and the in-flight streams are still unwinding.
+		if (this.room.isCancelling) {
+			return;
+		}
+
 		// Find the tools that can be run
 		let numRunningTools: number = 0;
 		const toolsToRun: ToolStore[] = [];
 		for (const part of this.parts) {
 			if (part.type === "TOOL_CALL") {
 				const tool = this.room.getTool(part.toolCall.id);
-				if (tool.json._meta.SMSS_MCP_EXECUTION === MCP_EXECUTION_AUTO) {
+				if (
+					tool.json._meta?.SMSS_MCP_EXECUTION === MCP_EXECUTION_AUTO
+				) {
 					if (tool.status === "INITIAL") {
 						toolsToRun.push(tool);
 					} else if (tool.status === "LOADING") {
@@ -578,21 +628,9 @@ paramValues=[{}]
 		if (
 			!tool ||
 			tool.status !== "INITIAL" ||
-			tool.json._meta.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO
+			tool.json._meta?.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO
 		) {
 			// skip
-			return;
-		}
-
-		if (this.isPaused) {
-			// If the user has indicated to pause running tools, mark this tool as cancelled and save the response without running the tool
-			await this.saveToolExecution(
-				tool,
-				"",
-				"paused",
-				tool.parameters,
-				false,
-			);
 			return;
 		}
 
@@ -608,7 +646,7 @@ paramValues=[{}]
 			try {
 				// wait for the pixel to run
 				const response = await this.room.runRoomPixel<[unknown]>(
-					`RunMCPTool(project = [ "${tool.json._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
+					`RunMCPTool(project = [ "${getToolEngineId(tool.json._meta)}" ], roomId=${JSON.stringify(this.room.roomId)}, function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
 					false,
 					false,
 				);
@@ -637,235 +675,23 @@ paramValues=[{}]
 	};
 
 	/**
-	 * Save a tool execution response
-	 * @param tool - tool to save
-	 * @param toolResponse - response of the tool
-	 * @param toolStatus - status of the tool
+	 * Queue a tool result to be written to room history — delegated to the
+	 * {@link ToolSaveController}, which serializes and coalesces the writes and
+	 * streams the final (model-invoking) one. Resolves when the batch carrying
+	 * this result settles.
 	 */
-	saveToolExecution = async (
+	saveToolExecution = (
 		tool: ToolStore,
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled" | "paused" = "success",
+		toolStatus: "success" | "error" | "cancelled" = "success",
 		executedParameters: Record<string, unknown>,
 		errorDuringSaving: boolean = false,
-	): Promise<void> => {
-		const room = this.room;
-
-		// wrap the message
-		if (toolStatus === "error") {
-			toolResponse = `${errorDuringSaving ? TOOL_OUTPUT_UNREADABLE_PROMPT : TOOL_ERROR_PROMPT}${toolResponse ? `\n\nError Details: ${toolResponse}` : ""}`;
-		} else if (toolStatus === "cancelled") {
-			toolResponse = `${TOOL_CANCELLATION_PROMPT}${toolResponse ? `\n\nCancellation Details: ${toolResponse}` : ""}`;
-		} else if (toolStatus === "paused") {
-			toolResponse = `${TOOL_PAUSE_PROMPT}${toolResponse ? `\n\nDetails: ${toolResponse}` : ""}`;
-		}
-
-		// skip if the tool is already completed
-		if (
-			tool.status === "SUCCESS" ||
-			tool.status === "CANCELLED" ||
-			tool.status === "PAUSED" ||
-			tool.status === "ERROR"
-		) {
-			// this must be an outdated call, skip
-			return;
-		}
-
-		// save the response
-		runInAction(() => {
-			tool.response = toolResponse;
-			tool.parameters = executedParameters;
-			if (toolStatus === "success") {
-				tool.status = "SUCCESS";
-			} else if (toolStatus === "cancelled") {
-				tool.status = "CANCELLED";
-			} else if (toolStatus === "error") {
-				tool.status = "ERROR";
-			} else if (toolStatus === "paused") {
-				tool.status = "PAUSED";
-			}
-		});
-
-		// if there is no responseMessage create it. This will hold it.
-		let responseMessage = this.toolResponseMessage;
-		if (!responseMessage) {
-			this.toolResponseMessage = new ResponseMessageStore(room, {
-				io: "OUTPUT",
-				messageId: STREAMING_PLACEHOLDER_ID,
-				visible: true,
-				platform_generated: true,
-				modelId: this.room.model.app_id,
-				dateCreated: new Date().toISOString(),
-				// Add blank thinking part for loading if this is the last tool
-				// We've already updated this tool's status optimistically, so can check
-				// hasUnfinishedTools to see if it was the last tool
-				parts: this.hasUnfinishedTools
-					? []
-					: [
-							{
-								type: "THINKING",
-								thinking: "",
-							},
-						],
-				tokens: 0,
-				ornaments: {
-					modelName:
-						room.model.engine_display_name || room.model.app_name,
-				},
-			} as ResponsePixelMessage);
-
-			// add as a child
-			this.addChild(this.toolResponseMessage);
-
-			// save it
-			responseMessage = this.toolResponseMessage;
-		}
-
-		type PartialResponse = {
-			responseMessage: string;
-		};
-		type TotalResponse = {
-			responseMessage: ResponsePixelMessage;
-			inputMessage: InputPixelMessage;
-		};
-
-		try {
-			// turn on thinking
-			responseMessage.isThinking = true;
-
-			// per-stream map from tool delta `index` → wire `id` for the post-exec stream
-			const toolStreamIndexToId: Record<number, string> = {};
-
-			// wait for the pixel to run
-			const response = await room.runRoomPixelStreaming<
-				[PartialResponse | TotalResponse]
-			>(
-				`AddPlaygroundToolExecution(
-engine=["${room.model.app_id}"],
-roomId = ["${room.roomId}"],
-${this.id ? `parentMessageId=["${this.id}"],` : ""}
-toolId = ["${tool.id}"],
-toolName=["${tool.json.name}"],
-toolExecutionResponse=["<encode>${toolResponse}</encode>"],
-paramValues=[${JSON.stringify({})}],
-mcpToolStatus=${JSON.stringify(toolStatus)},
-toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
-);`,
-				(chunk) => {
-					runInAction(() => {
-						if (chunk.stream_type === "content") {
-							if (chunk.data.content) {
-								responseMessage.savePart({
-									type: "TEXT",
-									text: chunk.data.content,
-									uiText: chunk.data.content,
-								});
-							}
-						} else if (chunk.stream_type === "thinking") {
-							if (chunk.data.thinking) {
-								responseMessage.savePart({
-									type: "THINKING",
-									thinking: chunk.data.thinking,
-								});
-							}
-						} else if (chunk.stream_type === "tool") {
-							applyToolStreamChunk(
-								responseMessage,
-								toolStreamIndexToId,
-								chunk.data,
-							);
-						} else {
-							console.error(`Unknown stream type`, chunk);
-						}
-					});
-				},
-				true,
-				toolStatus !== "success", // If the tool execution succeeds but saving it failed, we will try to save it again with an error status, so dont error the room yet
-			);
-
-			const { output } = response.results[0];
-
-			// If the output is a string (as opposed to a tool response message), continue tool execution. Otherwise, create the response message
-			if (
-				typeof output === "string" ||
-				typeof output.responseMessage === "string"
-			) {
-				// Keep executing tools
-				this.continueToolExecution();
-			} else {
-				const inputMessage = (output as TotalResponse).inputMessage;
-
-				// create the response and link to the message
-				responseMessage.sync(output.responseMessage);
-
-				// We don't create INPUT_TOOL_EXEC messages, so stamp the server's cumulative
-				// input token count onto this response message as a proxy. tokensUsed() in
-				// room.store relies on finding a (cumulative, incremental) pair when walking back.
-				runInAction(() => {
-					this.tokens = inputMessage.tokens;
-				});
-
-				// edge case handling: it's possible that the user paused tools while this tool was running
-				// mark the new response as paused if that is the case
-				if (this.isPaused) {
-					runInAction(() => {
-						responseMessage.isPaused = true;
-					});
-				}
-
-				// start running tools if there are any
-				responseMessage.continueToolExecution();
-
-				// clear it
-				this.toolResponseMessage = null;
-			}
-		} catch (e) {
-			if (toolStatus === "success") {
-				// Attempt to save the error response
-
-				// set status back to loading so that the error response can be saved
-				runInAction(() => {
-					tool.status = "LOADING";
-				});
-
-				await this.saveToolExecution(
-					tool,
-					`Failed to save tool response: ${e}`,
-					"error",
-					executedParameters,
-					true,
-				);
-			} else {
-				// set error status
-				runInAction(() => {
-					tool.status = "ERROR";
-				});
-
-				// remove as a child
-				this.removeChild(responseMessage);
-
-				// clear it
-				this.toolResponseMessage = null;
-			}
-
-			throw e;
-		} finally {
-			// turn off thinking unless there are other tools still running
-			let hasOtherRunningTools = false;
-			for (const part of this.parts) {
-				if (part.type === "TOOL_CALL") {
-					const tool = this.room.getTool(part.toolCall.id);
-					if (tool && tool.status === "LOADING") {
-						hasOtherRunningTools = true;
-						break;
-					}
-				}
-			}
-			if (!hasOtherRunningTools) {
-				runInAction(() => {
-					responseMessage.isThinking = false;
-				});
-			}
-		}
-	};
+	): Promise<void> =>
+		this.toolSaves.save(
+			tool,
+			toolResponse,
+			toolStatus,
+			executedParameters,
+			errorDuringSaving,
+		);
 }

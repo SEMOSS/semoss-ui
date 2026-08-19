@@ -1,126 +1,42 @@
-import { Pencil } from "lucide-react";
-import { createElement, useCallback, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
-import { usePixel } from "@semoss/sdk/react";
-import type { Project, ProjectDependency, Role } from "@semoss/shared";
-import {
-	Button,
-	Dialog,
-	DialogContent,
-	Spinner,
-	Tabs,
-	TabsList,
-	TabsTrigger,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@semoss/ui/next";
-import { ResourceNotFound } from "@/components/common/resource-not-found";
-import { EditProjectDetailDialog } from "@/components/project";
-import { ShareOverlay } from "@/components/ui";
-import { ProjectContext } from "@/contexts";
-import { useAPI, useRootStore } from "@/hooks";
-import { AppAccessControlPage } from "@/pages/app/app-access-control-page";
+import { useMemo, useState } from "react";
+import type { Role } from "@semoss/sdk";
+import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
+import { ProjectAccessControl, ProjectOverview } from "@/components/project";
+import { useProject } from "@/hooks";
 import { AppActivityPage } from "@/pages/app/app-activity-page";
 import { AppCommitsPage } from "@/pages/app/app-commits-page";
 import { AppFilesPage } from "@/pages/app/app-files-page";
 import { AppGithubPage } from "@/pages/app/app-github-page";
 import { AppMcpUsagePage } from "@/pages/app/app-mcp-usage-page";
-import { AppOverviewPage } from "@/pages/app/app-overview-page";
 import { AppSettingsPage } from "@/pages/app/app-settings-page";
 import { AppSmssPage } from "@/pages/app/app-smss-page";
+import { AgentActivityPage } from "@/pages/project/agent/agent-activity-page";
 import { ProjectDependenciesPage } from "@/pages/project/project-dependencies-page";
-import { normalizeTagArray } from "@/utility";
-
-const EMBEDDED_TAB_COMPONENTS: Record<string, React.FunctionComponent> = {
-	"": AppOverviewPage,
-	dependencies: ProjectDependenciesPage,
-	"mcp-usage": AppMcpUsagePage,
-	activity: AppActivityPage,
-	commits: AppCommitsPage,
-	github: AppGithubPage,
-	settings: AppSettingsPage,
-	"access-control": AppAccessControlPage,
-	files: AppFilesPage,
-	smss: AppSmssPage,
-};
 
 interface ProjectDetailTabsProps {
-	/** Type of the route */
-	type: Project["project_type"];
-
 	/** Tabs to show */
 	tabs: {
 		name: string;
-		path: string;
+		component:
+			| "project-overview"
+			| "project-dependencies"
+			| "mcp-usage"
+			| "activity"
+			| "agent-activity"
+			| "commits"
+			| "github"
+			| "settings"
+			| "access-control"
+			| "files"
+			| "smss";
 		restrict?: Role[];
 	}[];
 }
 
-export const ProjectDetailTabs = ({
-	type: _type,
-	tabs,
-}: ProjectDetailTabsProps) => {
-	const { appId } = useParams();
-
-	const { configStore } = useRootStore();
+export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
+	const { project, type, permission, refresh } = useProject();
 
 	const [selectedTabName, setSelectedTabName] = useState<string>("Overview");
-	const [isShareOverlayOpen, setIsShareOverlayOpen] = useState(false);
-	const [isEditDetailsModalOpen, setIsEditDetailsModalOpen] = useState(false);
-
-	// get a user's permission
-	const getUserEnginePermission = useAPI(
-		appId ? ["getUserProjectPermission", appId] : null,
-		{
-			data: undefined,
-		},
-	);
-
-	// get dependencies for the project
-	const getDependencies = usePixel<{
-		engines: ProjectDependency[];
-		dependencies: string[];
-	}>(appId ? `GetProjectDependencies(project=["${appId}"]);` : "");
-
-	// the core metadata keys plus any dynamic ones from the project config
-	const metaKeys = useMemo(() => {
-		const dynamicKeys = configStore.store.config.projectMetaKeys
-			.map((k) => k.metakey)
-			.filter(
-				(key) =>
-					key !== "description" &&
-					key !== "markdown" &&
-					key !== "tag" &&
-					key !== "tags",
-			);
-		return ["description", "markdown", "tag", ...dynamicKeys];
-	}, [configStore.store.config.projectMetaKeys]);
-
-	// get the metadata for the project
-	const getMetadata = usePixel<Project>(
-		appId
-			? `GetProjectMetadata(project=["${appId}"], metaKeys=${JSON.stringify(metaKeys)});`
-			: "",
-	);
-
-	/**
-	 * Refresh the project data
-	 */
-	const refresh = useCallback(async () => {
-		getDependencies.refresh();
-		getUserEnginePermission.refresh();
-		getMetadata.refresh();
-	}, [
-		getDependencies.refresh,
-		getUserEnginePermission.refresh,
-		getMetadata.refresh,
-	]);
-
-	const tags = useMemo(
-		() => normalizeTagArray(getMetadata.data?.tag),
-		[getMetadata.data?.tag],
-	);
 
 	// see all the visible tabs
 	const visibleTabs = useMemo(() => {
@@ -128,12 +44,12 @@ export const ProjectDetailTabs = ({
 			if (!tab.restrict || tab.restrict.length === 0) {
 				return true;
 			}
-			if (!getUserEnginePermission.data) {
+			if (!permission) {
 				return false;
 			}
-			return tab.restrict.includes(getUserEnginePermission.data);
+			return tab.restrict.includes(permission);
 		});
-	}, [tabs, getUserEnginePermission.data]);
+	}, [tabs, permission]);
 
 	// the current active tab index based on the current pathname
 	const activeTabIdx = useMemo(() => {
@@ -141,119 +57,62 @@ export const ProjectDetailTabs = ({
 		return idx >= 0 ? idx : 0;
 	}, [visibleTabs, selectedTabName]);
 
-	if (
-		getUserEnginePermission.status === "ERROR" ||
-		getDependencies.status === "ERROR" ||
-		getMetadata.status === "ERROR"
-	) {
-		return <ResourceNotFound path="/app" />;
-	}
-
-	if (
-		getUserEnginePermission.status !== "SUCCESS" ||
-		!getUserEnginePermission.data ||
-		getDependencies.status !== "SUCCESS" ||
-		getMetadata.status !== "SUCCESS"
-	) {
-		return (
-			<div className="flex h-full w-full items-center justify-center">
-				<Spinner />
-			</div>
-		);
-	}
-
 	const activeTab = activeTabIdx >= 0 ? visibleTabs[activeTabIdx] : undefined;
-	const embeddedComponent = activeTab
-		? EMBEDDED_TAB_COMPONENTS[activeTab.path]
-		: undefined;
 
 	return (
-		<ProjectContext.Provider
-			value={{
-				appId: getMetadata.data.project_id || "",
-				project: getMetadata.data,
-				permission: getUserEnginePermission.data,
-				dependencies: getDependencies.data?.engines || [],
-				tags,
-				refresh,
-			}}
+		<div
+			className={`flex h-full w-full flex-col gap-2 overflow-hidden bg-card p-2`}
 		>
-			<div
-				className={`flex h-full w-full flex-col gap-2 overflow-hidden bg-card p-2`}
-			>
-				{visibleTabs.length > 0 && (
-					<Tabs value={activeTab?.path ?? ""}>
-						<div className="w-full overflow-x-auto">
-							<TabsList className="w-max flex-nowrap gap-2">
-								{visibleTabs.map((tab) => (
-									<TabsTrigger
-										key={tab.name}
-										value={tab.path}
-										onClick={() => {
-											setSelectedTabName(tab.name);
-										}}
-										data-testid={`appDetail-${tab.name}-tab`}
-									>
-										{tab.name}
-									</TabsTrigger>
-								))}
-							</TabsList>
-						</div>
-					</Tabs>
-				)}
-				<div className="w-full flex-1 overflow-auto bg-card p-2">
-					{activeTab?.path === "" &&
-						getUserEnginePermission.data !== "DISCOVERABLE" &&
-						getUserEnginePermission.data !== "READ_ONLY" && (
-							<div className="flex justify-end">
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											variant="outline"
-											size="icon"
-											aria-label="Edit"
-											onClick={() => {
-												setIsEditDetailsModalOpen(true);
-											}}
-											data-testid="appDetail-edit-btn"
-										>
-											<Pencil className="size-4" />
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent>Edit</TooltipContent>
-								</Tooltip>
-							</div>
-						)}
-					{embeddedComponent
-						? createElement(embeddedComponent, {})
-						: null}
-				</div>
-			</div>
-
-			<Dialog
-				open={isShareOverlayOpen}
-				onOpenChange={(o) => !o && setIsShareOverlayOpen(false)}
-			>
-				<DialogContent className="max-w-lg p-0">
-					<ShareOverlay
-						appId={appId || ""}
-						diffs={false}
-						onClose={() => setIsShareOverlayOpen(false)}
+			{visibleTabs.length > 0 && (
+				<Tabs value={activeTab?.component ?? ""}>
+					<div className="w-full overflow-x-auto">
+						<TabsList className="w-max flex-nowrap gap-2">
+							{visibleTabs.map((tab) => (
+								<TabsTrigger
+									key={tab.name}
+									value={tab.component}
+									onClick={() => {
+										setSelectedTabName(tab.name);
+									}}
+									data-testid={`appDetail-${tab.name}-tab`}
+								>
+									{tab.name}
+								</TabsTrigger>
+							))}
+						</TabsList>
+					</div>
+				</Tabs>
+			)}
+			<div className="w-full flex-1 overflow-auto bg-card p-2">
+				{/** TODO: should not be loading in Page. Load in the component directly */}
+				{activeTab?.component === "project-overview" && (
+					<ProjectOverview
+						project={project}
+						permission={permission}
+						refresh={refresh}
 					/>
-				</DialogContent>
-			</Dialog>
-
-			<EditProjectDetailDialog
-				open={isEditDetailsModalOpen}
-				project={getMetadata.data}
-				onClose={(success) => {
-					if (success) {
-						refresh();
-					}
-
-					setIsEditDetailsModalOpen(false);
-				}}
-			/>
-		</ProjectContext.Provider>
+				)}
+				{activeTab?.component === "project-dependencies" && (
+					<ProjectDependenciesPage />
+				)}
+				{activeTab?.component === "mcp-usage" && (
+					// a skill serves its own tools, so there is no remote
+					// endpoint to repoint it at
+					<AppMcpUsagePage showRemoteConnection={type !== "SKILL"} />
+				)}
+				{activeTab?.component === "activity" && <AppActivityPage />}
+				{activeTab?.component === "agent-activity" && (
+					<AgentActivityPage />
+				)}
+				{activeTab?.component === "commits" && <AppCommitsPage />}
+				{activeTab?.component === "github" && <AppGithubPage />}
+				{activeTab?.component === "settings" && <AppSettingsPage />}
+				{activeTab?.component === "access-control" && (
+					<ProjectAccessControl />
+				)}
+				{activeTab?.component === "files" && <AppFilesPage />}
+				{activeTab?.component === "smss" && <AppSmssPage />}
+			</div>
+		</div>
 	);
 };

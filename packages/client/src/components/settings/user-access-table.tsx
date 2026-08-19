@@ -1,5 +1,6 @@
 import { Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
+import type { Role } from "@semoss/sdk";
 import {
 	Badge,
 	Button,
@@ -17,7 +18,6 @@ import {
 	TableRow,
 } from "@semoss/ui/next";
 import type { UserResourceAccess } from "@/api";
-import type { Role } from "@/types";
 
 /**
  * The permission levels an admin can assign, in priority order. Wire values
@@ -29,10 +29,6 @@ export const ACCESS_PERMISSIONS: { value: Role; label: string }[] = [
 	{ value: "EDIT", label: "Editor" },
 	{ value: "READ_ONLY", label: "Read-Only" },
 ];
-
-export const permissionLabel = (permission: string): string =>
-	ACCESS_PERMISSIONS.find((option) => option.value === permission)?.label ??
-	permission;
 
 export interface UserAccessTableProps {
 	/** Resources the selected user currently has access to */
