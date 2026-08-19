@@ -20,11 +20,12 @@ export const WORKBENCH_COMPONENTS = {
 	PROJECT_INSIGHT_EXPLORER: "project-insight-explorer",
 	PROJECT_APP_RENDERER: "project-app-renderer",
 	PROJECT_AGENT_EDITOR: "project-agent-editor",
+	PROJECT_ENGINES: "project-engines",
 } as const;
 
 /**
- * localStorage key for one workbench's persisted layout. The `-v1` suffix is a manual
+ * localStorage key for one workbench's persisted layout. The `-v3` suffix is a manual
  * cache-bust — bump it whenever a default layout changes shape; old entries are orphaned,
  * not migrated (same convention as `smss-workspace--<projectId>-v7`).
  */
-export const getWorkbenchCacheKey = (id: string) => `smss-workbench--${id}-v1`;
+export const getWorkbenchCacheKey = (id: string) => `smss-workbench--${id}-v3`;

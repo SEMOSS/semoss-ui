@@ -14,10 +14,10 @@ import {
 	CollapsibleContent,
 	CollapsibleTrigger,
 	cn,
-	Markdown,
 } from "@semoss/ui/next";
 import type { BuildTool } from "@/stores/workbench";
 import { formatMs, formatToolArgs } from "./workbench-chat-format";
+import { WorkbenchChatMarkdown } from "./workbench-chat-markdown";
 import type { ToolFamily } from "./workbench-chat-tools";
 import {
 	displayToolName,
@@ -151,7 +151,9 @@ const ToolRow = ({ tool }: ToolRowProps) => {
 									Output
 								</p>
 								<div className="max-h-[360px] overflow-y-auto text-xs">
-									<Markdown>{tool.output}</Markdown>
+									<WorkbenchChatMarkdown>
+										{tool.output}
+									</WorkbenchChatMarkdown>
 								</div>
 							</div>
 						) : null}

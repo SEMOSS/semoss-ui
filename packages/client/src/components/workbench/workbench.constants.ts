@@ -29,6 +29,15 @@ export const WORKBENCH_PANEL_TABS = {
 		helpText: "Terminal",
 		enableClose: false,
 	},
+	PROJECT_ENGINES: {
+		type: "tab",
+		id: WORKBENCH_COMPONENTS.PROJECT_ENGINES,
+		name: "Engines",
+		component: WORKBENCH_COMPONENTS.PROJECT_ENGINES,
+		config: {},
+		helpText: "Available engines",
+		enableClose: false,
+	},
 	PROJECT_SETTINGS: {
 		type: "tab",
 		id: WORKBENCH_COMPONENTS.PROJECT_SETTINGS,

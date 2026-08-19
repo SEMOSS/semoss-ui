@@ -1,6 +1,7 @@
 export * from "./agent";
 export * from "./code";
 export * from "./notebook";
+export { ProjectEnginesPanel } from "./project-engines-panel";
 export { ProjectFileEditorPanel } from "./project-file-editor-panel";
 export { ProjectFileExplorerPanel } from "./project-file-explorer-panel";
 export { ProjectInsightExplorerPanel } from "./project-insight-explorer-panel";

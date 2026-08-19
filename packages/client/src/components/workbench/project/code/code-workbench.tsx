@@ -1,4 +1,5 @@
 import {
+	BlocksIcon,
 	FlaskConicalIcon,
 	FolderTreeIcon,
 	PanelsTopLeftIcon,
@@ -21,6 +22,7 @@ import { useWorkbenchChatConfig } from "@/hooks/use-workbench-chat-config";
 import type { BuildRun, WorkbenchPanelConfig } from "@/stores/workbench";
 import { WORKBENCH_CHAT_PANEL } from "../../chat";
 import {
+	ProjectEnginesPanel,
 	ProjectFileEditorPanel,
 	ProjectFileExplorerPanel,
 	ProjectInsightExplorerPanel,
@@ -157,6 +159,7 @@ export const CodeWorkbench: React.FC = () => {
 							enableClose: false,
 							enableRenderOnDemand: false,
 						},
+						WORKBENCH_PANEL_TABS.PROJECT_ENGINES,
 					],
 				},
 			],
@@ -240,6 +243,10 @@ export const CodeWorkbench: React.FC = () => {
 				return <ProjectMcpEditorPanel node={node} />;
 			},
 		},
+		[WORKBENCH_COMPONENTS.PROJECT_ENGINES]: {
+			tab: () => <BlocksIcon className="size-4" />,
+			view: () => <ProjectEnginesPanel />,
+		},
 		[WORKBENCH_COMPONENTS.PROJECT_TERMINAL]: {
 			tab: () => <SquareTerminalIcon className="size-4" />,
 			view: () => {
@@ -258,6 +265,11 @@ export const CodeWorkbench: React.FC = () => {
 				<ProjectDetailTabs
 					tabs={[
 						{ name: "Overview", component: "project-overview" },
+						{
+							name: "Dependencies",
+							component: "project-dependencies",
+							restrict: ["OWNER", "EDIT", "READ_ONLY"],
+						},
 						{
 							name: "MCP",
 							component: "mcp-usage",
@@ -341,6 +353,18 @@ export const CodeWorkbench: React.FC = () => {
 						WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
 						WORKBENCH_PANEL_TABS.PROJECT_TERMINAL,
 						{ type: "BORDER", location: "bottom" },
+					);
+				},
+			},
+			{
+				id: "workbench.project-engines.open",
+				label: "Open Available Engines",
+				icon: <BlocksIcon />,
+				handler: (get) => {
+					get().openPanel(
+						WORKBENCH_COMPONENTS.PROJECT_ENGINES,
+						WORKBENCH_PANEL_TABS.PROJECT_ENGINES,
+						{ type: "BORDER", location: "right" },
 					);
 				},
 			},

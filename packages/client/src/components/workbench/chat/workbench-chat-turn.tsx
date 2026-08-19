@@ -18,7 +18,6 @@ import {
 	CollapsibleContent,
 	CollapsibleTrigger,
 	cn,
-	Markdown,
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
@@ -34,6 +33,7 @@ import {
 	isTerminalAgentRunStatus,
 } from "@/stores/workbench";
 import { formatLongMs, formatTime, parseTime } from "./workbench-chat-format";
+import { WorkbenchChatMarkdown } from "./workbench-chat-markdown";
 import { WorkbenchChatPendingActions } from "./workbench-chat-pending-actions";
 import { WorkbenchChatSubagent } from "./workbench-chat-subagent";
 import { WorkbenchChatToolPhase } from "./workbench-chat-tool-phase";
@@ -288,8 +288,10 @@ const FeedItems = ({ run, nested = false }: FeedItemsProps) => {
 			activity.message.kind === "reasoning" ? (
 				<ThinkingBlock message={activity.message} />
 			) : (
-				<div className="min-w-0 text-sm leading-6">
-					<Markdown>{activity.message.text}</Markdown>
+				<div className="min-w-0 text-sm">
+					<WorkbenchChatMarkdown>
+						{activity.message.text}
+					</WorkbenchChatMarkdown>
 				</div>
 			)
 		) : activity.kind === "phase" ? (
@@ -315,8 +317,8 @@ const FeedItems = ({ run, nested = false }: FeedItemsProps) => {
 	) : null;
 
 	const finalBlock = showFinal ? (
-		<div className="min-w-0 text-sm leading-6">
-			<Markdown>{run.finalText ?? ""}</Markdown>
+		<div className="min-w-0 text-sm">
+			<WorkbenchChatMarkdown>{run.finalText ?? ""}</WorkbenchChatMarkdown>
 		</div>
 	) : null;
 
