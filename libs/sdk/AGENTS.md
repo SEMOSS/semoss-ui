@@ -93,25 +93,44 @@ handling tool execution. All functions are exported from `@semoss/sdk` (and re-e
 
 | Mode | Function | When to use |
 |------|----------|-------------|
-| **Chat** (client-driven) | `askPlayground` + `addPlaygroundToolExecution` | Standard Q&A, simple tools, client owns the loop |
-| **Agent harness** (server-driven) | `runAgent` | Complex agents, subagent chains, long-running jobs, audit logging |
+| **Chat** (client-driven) | `askRoom` + `addRoomToolExecution` | Standard Q&A, simple tools, client owns the loop |
+| **Agent harness** (server-driven) | `runAgent` (`api/agent.ts`) | Complex agents, subagent chains, long-running jobs, audit logging |
 
 The mode is set at room creation via `harnessType` in `PlaygroundRoomOptions`:
 - omit / `undefined` → chat mode
 - `"semoss"` → agent-harness mode (`RunAgent` reactor, server drives all tool calls)
 
-### Streaming pattern
+Chat mode and agent-harness mode use **two different wire protocols** — they are not
+interchangeable and don't share a streaming loop. Don't reintroduce a job-streaming path for
+agent-harness mode; the backend's `RunAgent` reactor has no such path (see below).
 
-Both `askPlayground` and `runAgent` return `{ jobId }`. The caller then:
+### Streaming pattern — chat mode
+
+`askRoom` returns `{ jobId }`. The caller then:
 1. Polls `getPixelJobStreaming(jobId)` in a loop, handling `content` / `thinking` / `tool` chunks
 2. Breaks when `status` reaches a terminal value (`"Complete"`, `"ProgressComplete"`, `"Canceled"`, `"Error"`, `"UnknownJob"`)
 3. Calls `getPixelAsyncResult(jobId)` to get the settled typed result
 
+### Streaming pattern — agent-harness mode
+
+`runAgent` (`api/agent.ts`) submits with `wait=false` and returns `{ runId, roomId, status }`
+immediately — there is no `jobId` and no job-streaming loop here. The backend's `RunAgent`
+reactor only supports an immediate handle (`wait=false`) or a server-side blocking wait
+(`wait=true`, which returns the full result in one shot with no partial progress) — never a
+pollable job. The caller then:
+1. Polls `pollAgentRun(runId)` (`api/agent.ts`) directly, or uses `subscribeRunAgent(runId, handlers)`
+   (`api/agent-subscription.ts`) to have polling, dedup, backoff, and INPUT_REQUIRED reconciliation
+   handled for you
+2. Item events (`message` / `reasoning` / `tool` / `subagent`) arrive as `AgentRunItemEvent`s, not
+   raw content/thinking/tool chunks
+3. `getAgentRun(runId, { includeMessages })` (`api/agent.ts`) fetches the durable `AgentRunSnapshot`
+   directly for reconciliation once the run reaches a terminal status or `INPUT_REQUIRED`
+
 ### Key distinctions between modes
 
-- **`askPlayground`** settled result: `{ inputMessage, responseMessage }` — full pixel message objects. The client then calls `addPlaygroundToolExecution` for each `TOOL_CALL` part.
-- **`runAgent`** settled result: `RunAgentOutput` — flat summary (`inputMessageId`, `finalOutputMessageId`, `finalText`, `status`, `artifacts`). No tool loop on the client.
-- `addPlaygroundToolExecution` uses `room.model.app_id` (the *app* engine ID), **not** `engine_id` (the LLM engine ID) that `askPlayground` uses.
+- **`askRoom`** settled result: `{ inputMessage, responseMessage }` — full pixel message objects. The client then calls `addRoomToolExecution` for each `TOOL_CALL` part.
+- **`runAgent`** settled state: `AgentRunSnapshot` (`inputMessageId`, `finalOutputMessageId`, `finalText`, `status`, `pendingActions`) — reached by polling, not returned directly from `runAgent` itself. No tool loop on the client for auto-executed tools; paused (HITL) tool calls surface via `pendingActions` and are resolved with `decideAgentRunAction` / `submitAgentToolDecision`.
+- `addRoomToolExecution` uses `room.model.app_id` (the *app* engine ID), **not** `engine_id` (the LLM engine ID) that `askRoom` uses.
 
 ### Adding new chat API functions
 

@@ -131,7 +131,7 @@ export interface PlaygroundRoomOptions {
 	/** ID of the model (engine) to use for this room */
 	modelId: string;
 	/** Set to "semoss" to run messages via the server-side RunAgent harness;
-	 *  omit (or leave undefined) for the standard streaming AskPlayground flow */
+	 *  omit (or leave undefined) for the standard streaming AskRoom flow */
 	harnessType?: string;
 }
 
@@ -175,7 +175,7 @@ export interface AskRoomParams {
 }
 
 /**
- * The model response returned by AskPlayground
+ * The model response returned by AskRoom
  */
 export interface PlaygroundResponse {
 	messageId: string;
@@ -205,56 +205,6 @@ export interface AddRoomToolExecutionParams {
 	toolParameterValues: Record<string, unknown>;
 	/** Additional param values forwarded to the model */
 	paramValues?: Record<string, unknown>[];
-}
-
-/**
- * Params for the RunAgent reactor (server-side agent harness)
- */
-export interface RunAgentParams {
-	/** Engine (model) ID to run the agent against */
-	engine: string;
-	/** Room ID the agent run belongs to */
-	roomId: string;
-	/** The user message or command text (will be encoded) */
-	command: string;
-	/**
-	 * Harness type — always "semoss" for the standard SEMOSS agent harness.
-	 * Omit to use the default.
-	 */
-	harnessType?: string;
-}
-
-/**
- * Settled result returned by the RunAgent reactor once the full agentic loop
- * completes on the server. Streamed tokens arrive via {@link getPixelJobStreaming}
- * during the run; this summary is fetched once via {@link getPixelAsyncResult}.
- */
-export interface RunAgentOutput {
-	/** Whether the run exceeded the server wait window before finishing */
-	waitTimedOut: boolean;
-	/** Terminal run status, e.g. "COMPLETED" */
-	status: string;
-	/** The user's input text, echoed back */
-	input: string;
-	/** Server-assigned message ID for the persisted input message */
-	inputMessageId: string;
-	/** The agent's final assistant response text */
-	finalText: string;
-	/** Server-assigned message ID for the persisted final response message */
-	finalOutputMessageId: string;
-	/** Engine/model ID the agent ran against */
-	modelId: string;
-	/** Harness type that produced this run */
-	harnessType: string;
-	roomId: string;
-	runId: string;
-	jobId: string;
-	userId: string;
-	startedAt: string;
-	completedAt: string;
-	dateCreated: string;
-	/** Files / artifacts produced by the run (e.g. generated documents) */
-	artifacts: unknown[];
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -329,6 +279,4 @@ export interface RoomAskAgentResult {
 	text: string;
 	/** Terminal run status — `"COMPLETED"` on success */
 	status: string;
-	/** Files / artifacts produced by the agent run */
-	artifacts: unknown[];
 }
