@@ -15,11 +15,11 @@ interface PlaybackCompleteDialogProps {
 	/** Number of steps the replay executed, shown for context. */
 	stepsRun: number;
 
-	/** Stop the countdown and leave the remote browser open. */
+	/** Stop the countdown and keep the MCP response pending for more context. */
 	onKeepOpen: () => void;
 
-	/** Skip the remaining countdown and close the session now. */
-	onCloseNow: () => void;
+	/** Complete the MCP response and close the remote browser immediately. */
+	onCloseAndReturn: () => void;
 }
 
 /**
@@ -31,7 +31,7 @@ export function PlaybackCompleteDialog({
 	secondsRemaining,
 	stepsRun,
 	onKeepOpen,
-	onCloseNow,
+	onCloseAndReturn,
 }: PlaybackCompleteDialogProps) {
 	const open = secondsRemaining !== null;
 
@@ -42,16 +42,18 @@ export function PlaybackCompleteDialog({
 					<DialogTitle>Playback complete</DialogTitle>
 					<DialogDescription>
 						{stepsRun} step{stepsRun === 1 ? "" : "s"} replayed. The
-						script will now close in {secondsRemaining ?? 0} second
-						{secondsRemaining === 1 ? "" : "s"} to free up the
-						remote browser.
+						browser will close and return this result to Playground
+						in {secondsRemaining ?? 0} second
+						{secondsRemaining === 1 ? "" : "s"}. Keep it open to
+						inspect the page or capture more context before
+						returning manually.
 					</DialogDescription>
 				</DialogHeader>
 				<DialogFooter>
 					<Button variant="outline" onClick={onKeepOpen}>
 						Keep open
 					</Button>
-					<Button onClick={onCloseNow}>Close now</Button>
+					<Button onClick={onCloseAndReturn}>Close and return</Button>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>

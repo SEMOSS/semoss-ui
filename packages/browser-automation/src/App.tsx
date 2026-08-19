@@ -123,6 +123,15 @@ type ReplayContextCaptureError = {
 	error: string;
 };
 
+type PendingMcpPlaybackCompletion = {
+	recordingFile: string;
+	projectId: string | null;
+	stepsRun: number;
+	sessionId: string;
+	roomId: string;
+	executedParameters: Record<string, unknown>;
+};
+
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -250,10 +259,13 @@ export default function App() {
 	const returningToPlaygroundRef = useRef(false);
 	const selectedContextSequenceRef = useRef(0);
 	const selectedTextContextsRef = useRef<SelectedTextContext[]>([]);
-	const replayContextsRef = useRef<SelectedTextContext[]>([]);
 	const replayContextCaptureErrorsRef = useRef<ReplayContextCaptureError[]>(
 		[],
 	);
+	const pendingMcpPlaybackCompletionRef =
+		useRef<PendingMcpPlaybackCompletion | null>(null);
+	const mcpPlaybackCompletionPromiseRef = useRef<Promise<void> | null>(null);
+	const mcpPlaybackResponseSentRef = useRef(false);
 	const textSelectionRequestRef = useRef(0);
 	const activeToolExecutionRef = useRef("");
 	const automationRunTokenRef = useRef(0);
@@ -634,17 +646,11 @@ export default function App() {
 				activeBrowserTabIdRef.current,
 			);
 			const stored = storeSelectedTextContext(context);
-			if (isMcpPlaybackMode) {
-				replayContextsRef.current = appendBoundedSelectedContext(
-					replayContextsRef.current,
-					stored,
-				);
-			}
 			return stored;
 		} finally {
 			setIsCapturingFullPage(false);
 		}
-	}, [captureFullPageText, isMcpPlaybackMode, storeSelectedTextContext]);
+	}, [captureFullPageText, storeSelectedTextContext]);
 	const recordReplayContextCaptureError = useCallback(
 		(stepId: number, error: unknown) => {
 			const message =
@@ -705,11 +711,7 @@ export default function App() {
 				undefined,
 				activeBrowserTabIdRef.current,
 			);
-			const stored = storeSelectedTextContext(context);
-			replayContextsRef.current = appendBoundedSelectedContext(
-				replayContextsRef.current,
-				stored,
-			);
+			storeSelectedTextContext(context);
 		},
 		[
 			captureSelectedText,
@@ -794,7 +796,11 @@ export default function App() {
 		autoPlaybackLoadStartedRef.current = false;
 		autoPlaybackRunStartedRef.current = false;
 		autoPlaybackErrorSentRef.current = false;
+		pendingMcpPlaybackCompletionRef.current = null;
+		mcpPlaybackCompletionPromiseRef.current = null;
+		mcpPlaybackResponseSentRef.current = false;
 		returningToPlaygroundRef.current = false;
+		setPlaybackCloseCountdown(null);
 		setIsReturningToPlayground(false);
 		setSaveDialogOpen(false);
 		selectedTextContextsRef.current = [];
@@ -1498,13 +1504,78 @@ export default function App() {
 	const closeBrowserSessionRef = useRef(closeBrowserSession);
 	closeBrowserSessionRef.current = closeBrowserSession;
 
+	/**
+	 * Completes a finished MCP replay exactly once. Keeping the browser open leaves
+	 * this response pending so context captured during inspection is included.
+	 */
+	const completePendingMcpPlayback = useCallback(
+		async (closeBrowser: boolean) => {
+			if (mcpPlaybackCompletionPromiseRef.current) {
+				return mcpPlaybackCompletionPromiseRef.current;
+			}
+			const pending = pendingMcpPlaybackCompletionRef.current;
+			if (!pending || mcpPlaybackResponseSentRef.current) return;
+
+			const completion = (async () => {
+				// Downloads may finish or be triggered while the completed page is kept
+				// open. Persist and snapshot them before closing resets local state.
+				await flushDownloads();
+				const contexts = selectedContextsForPlayground(
+					selectedTextContextsRef.current,
+				);
+				const downloadPayload = downloadMcpPayload();
+				sendMcpResponseToPlayground(
+					{
+						played: true,
+						status: "completed",
+						recordingFile: pending.recordingFile,
+						projectId: pending.projectId,
+						stepsRun: pending.stepsRun,
+						pausedAtStepId: null,
+						sessionId: pending.sessionId,
+						roomId: pending.roomId,
+						contextCount: contexts.length,
+						contexts,
+						contextCaptureErrors:
+							replayContextCaptureErrorsRef.current,
+						...downloadPayload,
+					},
+					"success",
+					pending.executedParameters,
+				);
+				mcpPlaybackResponseSentRef.current = true;
+				pendingMcpPlaybackCompletionRef.current = null;
+				setPlaybackCloseCountdown(null);
+
+				if (closeBrowser) {
+					await closeBrowserSessionRef.current();
+				}
+			})();
+			mcpPlaybackCompletionPromiseRef.current = completion;
+			try {
+				await completion;
+			} finally {
+				if (mcpPlaybackCompletionPromiseRef.current === completion) {
+					mcpPlaybackCompletionPromiseRef.current = null;
+				}
+			}
+		},
+		[downloadMcpPayload, flushDownloads],
+	);
+
 	useEffect(() => {
 		if (playbackCloseCountdown === null) {
 			return;
 		}
 		if (playbackCloseCountdown <= 0) {
 			setPlaybackCloseCountdown(null);
-			void closeBrowserSessionRef.current();
+			void completePendingMcpPlayback(true).catch((error) => {
+				setSnackError(
+					error instanceof Error
+						? error.message
+						: "Failed to return playback to Playground",
+				);
+			});
 			return;
 		}
 		const timer = window.setTimeout(() => {
@@ -1513,16 +1584,25 @@ export default function App() {
 			);
 		}, 1000);
 		return () => window.clearTimeout(timer);
-	}, [playbackCloseCountdown]);
+	}, [completePendingMcpPlayback, playbackCloseCountdown]);
 
 	const handleKeepPlaybackOpen = useCallback(() => {
 		setPlaybackCloseCountdown(null);
+		setSnackMessage(
+			"Browser kept open. Capture any context, then return to Playground when ready.",
+		);
 	}, []);
 
-	const handleClosePlaybackNow = useCallback(() => {
+	const handleClosePlaybackAndReturn = useCallback(() => {
 		setPlaybackCloseCountdown(null);
-		void closeBrowserSessionRef.current();
-	}, []);
+		void completePendingMcpPlayback(true).catch((error) => {
+			setSnackError(
+				error instanceof Error
+					? error.message
+					: "Failed to return playback to Playground",
+			);
+		});
+	}, [completePendingMcpPlayback]);
 
 	const handleSwitchBrowserTab = useCallback(
 		async (tabId: string) => {
@@ -1939,6 +2019,31 @@ export default function App() {
 		if (returningToPlaygroundRef.current) return;
 		returningToPlaygroundRef.current = true;
 		setIsReturningToPlayground(true);
+		if (isMcpPlaybackMode) {
+			try {
+				if (!pendingMcpPlaybackCompletionRef.current) {
+					throw new Error(
+						playback.isRunning
+							? "Playback is still running"
+							: "No completed playback is waiting to return",
+					);
+				}
+				await completePendingMcpPlayback(true);
+				setSnackMessage(
+					"Playback and captured context returned to Playground",
+				);
+			} catch (error) {
+				setSnackError(
+					error instanceof Error
+						? error.message
+						: "Failed to return playback to Playground",
+				);
+			} finally {
+				setIsReturningToPlayground(false);
+				returningToPlaygroundRef.current = false;
+			}
+			return;
+		}
 
 		let recordingStopped = false;
 		let browserClosed = false;
@@ -2062,16 +2167,19 @@ export default function App() {
 		}
 	}, [
 		closeBrowserSession,
+		completePendingMcpPlayback,
 		captureAndStoreFullPage,
 		captureFullPageAtEnd,
 		downloadMcpPayload,
 		flushDownloads,
+		isMcpPlaybackMode,
 		isRecording,
 		mcpRecordingNameHint,
 		mcpStartUrl,
 		saveRecordingToRoom,
 		sendRecordingControlEvent,
 		session,
+		playback.isRunning,
 		toolContext,
 	]);
 
@@ -2112,8 +2220,12 @@ export default function App() {
 		playback.setControlsOpen(true);
 		playback.setLoadedRecordingOpen(true);
 		resetDownloads();
-		replayContextsRef.current = [];
 		replayContextCaptureErrorsRef.current = [];
+		const selectedRecording = playback.selectedRecording;
+		const selectedProjectId = playback.project?.value ?? null;
+		const expectsDownload = playback.flattenedSteps.some(
+			({ step }) => step.downloadExpected === true,
+		);
 
 		(async () => {
 			try {
@@ -2122,19 +2234,9 @@ export default function App() {
 					throw new Error("Playback did not start");
 				}
 
-				// The session stays open briefly so the page can be inspected on the
-				// last executed step, then the countdown closes it to release the
-				// remote browser rather than waiting for the server side TTL.
 				if (result.completed && captureFullPageAtEnd) {
 					try {
-						const fullPage = await captureFullPageText(
-							activeBrowserTabIdRef.current,
-						);
-						replayContextsRef.current =
-							appendBoundedSelectedContext(
-								replayContextsRef.current,
-								fullPage,
-							);
+						await captureAndStoreFullPage();
 					} catch (error) {
 						replayContextCaptureErrorsRef.current.push({
 							stepId: null,
@@ -2145,26 +2247,36 @@ export default function App() {
 						});
 					}
 				}
+				await flushDownloads(result.completed && expectsDownload);
+
+				// Completed replay remains pending while the final page is available for
+				// inspection. The response is built only when the user returns or the
+				// countdown expires, so later context and downloads are included.
 				if (result.completed) {
+					pendingMcpPlaybackCompletionRef.current = {
+						recordingFile: selectedRecording,
+						projectId: selectedProjectId,
+						stepsRun: result.stepsRun,
+						sessionId: session.sessionId,
+						roomId: toolContext.roomId,
+						executedParameters: toolContext.parameters,
+					};
 					setPlaybackStepsRun(result.stepsRun);
+					setPlaybackCloseCountdown(PLAYBACK_CLOSE_SECONDS);
+					return;
 				}
-				await flushDownloads(
-					result.completed &&
-						playback.flattenedSteps.some(
-							({ step }) => step.downloadExpected === true,
-						),
-				);
+
 				const downloadPayload = downloadMcpPayload();
 
 				const contexts = selectedContextsForPlayground(
-					replayContextsRef.current,
+					selectedTextContextsRef.current,
 				);
 				sendMcpResponseToPlayground(
 					{
-						played: result.completed,
-						status: result.completed ? "completed" : "paused",
-						recordingFile: playback.selectedRecording,
-						projectId: playback.project?.value ?? null,
+						played: false,
+						status: "paused",
+						recordingFile: selectedRecording,
+						projectId: selectedProjectId,
 						stepsRun: result.stepsRun,
 						pausedAtStepId: result.pausedAtStepId ?? null,
 						sessionId: session.sessionId,
@@ -2175,12 +2287,9 @@ export default function App() {
 							replayContextCaptureErrorsRef.current,
 						...downloadPayload,
 					},
-					result.completed ? "success" : "paused",
+					"paused",
 					toolContext.parameters,
 				);
-				if (result.completed) {
-					setPlaybackCloseCountdown(PLAYBACK_CLOSE_SECONDS);
-				}
 			} catch (error) {
 				const message =
 					error instanceof Error
@@ -2200,8 +2309,8 @@ export default function App() {
 			}
 		})();
 	}, [
+		captureAndStoreFullPage,
 		captureFullPageAtEnd,
-		captureFullPageText,
 		downloadMcpPayload,
 		flushDownloads,
 		connectionState,
@@ -3090,7 +3199,7 @@ export default function App() {
 				secondsRemaining={playbackCloseCountdown}
 				stepsRun={playbackStepsRun}
 				onKeepOpen={handleKeepPlaybackOpen}
-				onCloseNow={handleClosePlaybackNow}
+				onCloseAndReturn={handleClosePlaybackAndReturn}
 			/>
 
 			<SaveRecordingDialog
