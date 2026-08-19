@@ -414,11 +414,14 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 							data-test-id="SMSS-editor-menu"
 						>
 							{/*
-							 * The editing items carry a lock while the editor is
-							 * read-only so their disabled state reads as "unlock
-							 * first" rather than as broken. The items that stay
-							 * enabled are inset by the same amount so every label
-							 * lines up either way.
+							 * The editing items lead with a lock while the editor
+							 * is read-only so their disabled state reads as "unlock
+							 * first" rather than as broken, and the items that stay
+							 * enabled are inset by the width that lock occupies so
+							 * the labels hold one column either way. The inset has
+							 * to fall back to undefined rather than false: the kit
+							 * renders it as a data attribute, and data-inset="false"
+							 * still matches the selector that pads the item.
 							 */}
 							<ContextMenuItem
 								disabled={readOnly}
@@ -431,7 +434,7 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 								</ContextMenuShortcut>
 							</ContextMenuItem>
 							<ContextMenuItem
-								inset={readOnly}
+								inset={readOnly || undefined}
 								onSelect={() => copySelection(false)}
 							>
 								Copy
@@ -451,7 +454,7 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 							</ContextMenuItem>
 							<ContextMenuSeparator />
 							<ContextMenuItem
-								inset={readOnly}
+								inset={readOnly || undefined}
 								onSelect={() => runEditorAction("actions.find")}
 							>
 								Find
