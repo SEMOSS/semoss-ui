@@ -1,12 +1,31 @@
-import { LockIcon, RefreshCwIcon, UnlockIcon } from "lucide-react";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import {
+	LockIcon,
+	RefreshCwIcon,
+	UnlockIcon,
+	WrapTextIcon,
+} from "lucide-react";
+import {
+	Suspense,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { usePixel } from "@semoss/sdk/react";
-import { MonacoEditor } from "@semoss/shared";
+import { MonacoEditor, type monaco, type OnMount } from "@semoss/shared";
 import {
 	Button,
+	ContextMenu,
+	ContextMenuContent,
+	ContextMenuItem,
+	ContextMenuSeparator,
+	ContextMenuShortcut,
+	ContextMenuTrigger,
 	Label,
 	Muted,
 	Spinner,
+	Toggle,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -22,6 +41,18 @@ import type { ALL_TYPES } from "@/types";
 
 /** Pinned so the measured height and the rendered lines cannot drift apart. */
 const EDITOR_LINE_HEIGHT = 18;
+const MIN_EDITOR_HEIGHT = 240;
+const MAX_EDITOR_HEIGHT = 720;
+
+const clampEditorHeight = (height: number) =>
+	Math.min(MAX_EDITOR_HEIGHT, Math.max(MIN_EDITOR_HEIGHT, height));
+
+// The menu below replaces Monaco's own, so the shortcut hints are ours to
+// label. Monaco keys replace off alt on a mac and off h everywhere else.
+const IS_MAC =
+	typeof navigator !== "undefined" && navigator.userAgent.includes("Mac");
+const MODIFIER_KEY = IS_MAC ? "Cmd" : "Ctrl";
+const REPLACE_SHORTCUT = IS_MAC ? "Cmd+Alt+F" : "Ctrl+H";
 
 interface UpdateSMSSFormProps {
 	/**
@@ -41,6 +72,9 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 
 	const [value, setValue] = useState("");
 	const [readOnly, setReadOnly] = useState(true);
+	const [wordWrap, setWordWrap] = useState(false);
+	const [contentHeight, setContentHeight] = useState<number | null>(null);
+	const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 
 	const getSMSS = usePixel<string>(
 		type === "DATABASE" ||
@@ -67,7 +101,10 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 		setValue(getSMSS.data);
 	}, [getSMSS.status, getSMSS.data]);
 
-	const editorHeight = useMemo(() => {
+	// Sizes the loading and error placeholders, and the editor until it reports
+	// what it actually laid out. Counts logical lines, so it undercounts once
+	// word wrap splits them - the mounted editor corrects that.
+	const estimatedHeight = useMemo(() => {
 		const lineCount = Math.max(1, value.split(/\r?\n/).length);
 		// Must match the lineHeight passed to Monaco below, or the container is
 		// sized for taller lines than are rendered and the difference shows up as
@@ -75,12 +112,124 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 		const LINE_HEIGHT = EDITOR_LINE_HEIGHT;
 		// Room for the horizontal scrollbar.
 		const BASE_PADDING = 24;
-		const MIN_HEIGHT = 240;
-		const MAX_HEIGHT = 720;
 
-		const computedHeight = lineCount * LINE_HEIGHT + BASE_PADDING;
-		return `${Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, computedHeight))}px`;
+		return clampEditorHeight(lineCount * LINE_HEIGHT + BASE_PADDING);
 	}, [value]);
+
+	const editorHeight = `${clampEditorHeight(contentHeight ?? estimatedHeight)}px`;
+
+	// Word wrap turns one long property - INIT_MODEL_ENGINE especially - into
+	// several visual lines, so the container has to follow what Monaco laid out
+	// or the wrapped text hides behind a vertical scrollbar. Monaco's content
+	// height already accounts for the horizontal scrollbar when there is one.
+	const handleEditorMount = useCallback<OnMount>((editor) => {
+		editorRef.current = editor;
+
+		const syncContentHeight = () => {
+			setContentHeight(editor.getContentHeight());
+		};
+
+		syncContentHeight();
+		editor.onDidContentSizeChange(syncContentHeight);
+	}, []);
+
+	/**
+	 * Radix hands focus back to the trigger as the menu closes, so the editor
+	 * has to be refocused a tick later or the command lands on a blurred
+	 * editor and the cursor position is lost.
+	 */
+	const withEditor = (
+		run: (editor: monaco.editor.IStandaloneCodeEditor) => void,
+	) => {
+		window.setTimeout(() => {
+			const editor = editorRef.current;
+			if (!editor) {
+				return;
+			}
+
+			editor.focus();
+			run(editor);
+		}, 0);
+	};
+
+	/**
+	 * What cut and copy act on: the selection, or the whole line - its newline
+	 * included - when there is no selection, the way an editor is expected to
+	 * behave. Both share the range so a cut always removes exactly what it put
+	 * on the clipboard.
+	 */
+	const getCopyRange = (
+		editor: monaco.editor.IStandaloneCodeEditor,
+	): monaco.IRange | null => {
+		const model = editor.getModel();
+		const selection = editor.getSelection();
+		if (!model || !selection) {
+			return null;
+		}
+		if (!selection.isEmpty()) {
+			return selection;
+		}
+
+		const line = selection.startLineNumber;
+		const isLastLine = line >= model.getLineCount();
+		return {
+			startLineNumber: line,
+			startColumn: 1,
+			endLineNumber: isLastLine ? line : line + 1,
+			endColumn: isLastLine ? model.getLineMaxColumn(line) : 1,
+		};
+	};
+
+	const copySelection = (cut: boolean) => {
+		withEditor(async (editor) => {
+			const model = editor.getModel();
+			const range = getCopyRange(editor);
+			if (!model || !range) {
+				return;
+			}
+
+			const text = model.getValueInRange(range);
+			if (!text) {
+				return;
+			}
+
+			try {
+				await navigator.clipboard.writeText(text);
+			} catch {
+				toast.error("The browser blocked clipboard access");
+				return;
+			}
+
+			if (cut) {
+				editor.executeEdits("smss-context-menu", [{ range, text: "" }]);
+			}
+		});
+	};
+
+	const pasteFromClipboard = () => {
+		withEditor(async (editor) => {
+			let text = "";
+			try {
+				text = await navigator.clipboard.readText();
+			} catch {
+				// firefox does not expose clipboard reads to the page at all
+				toast.error(
+					`The browser blocked clipboard access - use ${MODIFIER_KEY}+V to paste`,
+				);
+				return;
+			}
+
+			if (text) {
+				editor.trigger("smss-context-menu", "paste", { text });
+			}
+		});
+	};
+
+	const runEditorAction = (actionId: string) => {
+		withEditor((editor) => {
+			editor.getAction(actionId)?.run();
+		});
+	};
 
 	/**
 	 * @name updateSMSSProperties
@@ -129,6 +278,24 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 					<TooltipContent>Refresh</TooltipContent>
 				</Tooltip>
 				<Label className="flex-1 truncate">SMSS Editor</Label>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Toggle
+							aria-label={
+								wordWrap
+									? "Disable Word Wrap"
+									: "Enable Word Wrap"
+							}
+							size="sm"
+							pressed={wordWrap}
+							onPressedChange={setWordWrap}
+							data-test-id="updateSMSS-wordWrap-btn"
+						>
+							<WrapTextIcon />
+						</Toggle>
+					</TooltipTrigger>
+					<TooltipContent>Word Wrap</TooltipContent>
+				</Tooltip>
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<Button
@@ -200,29 +367,114 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 					</div>
 				)}
 				{getSMSS.status === "SUCCESS" && (
-					<MonacoEditor
-						width={"100%"}
-						height={editorHeight}
-						theme={resolvedTheme === "dark" ? "vs-dark" : "vs"}
-						options={{
-							lineHeight: EDITOR_LINE_HEIGHT,
-							minimap: {
-								enabled: false,
-							},
-							scrollBeyondLastLine: false,
-							readOnly: readOnly,
-							contextmenu: false,
-							scrollbar: {
-								alwaysConsumeMouseWheel: false,
-							},
-						}}
-						value={value}
-						language={"plaintext"}
-						onChange={(newValue) => {
-							setValue(newValue || "");
-						}}
-						data-test-id="SMSS-editor"
-					/>
+					<ContextMenu>
+						<ContextMenuTrigger asChild>
+							<div className="w-full">
+								<MonacoEditor
+									width={"100%"}
+									height={editorHeight}
+									theme={
+										resolvedTheme === "dark"
+											? "vs-dark"
+											: "vs"
+									}
+									options={{
+										lineHeight: EDITOR_LINE_HEIGHT,
+										minimap: {
+											enabled: false,
+										},
+										scrollBeyondLastLine: false,
+										readOnly: readOnly,
+										// off so the right-click reaches the menu
+										// below instead. Monaco still moves the
+										// cursor to the click, and it leaves the
+										// event alone for the trigger to pick up
+										contextmenu: false,
+										wordWrap: wordWrap ? "on" : "off",
+										// the wrap column follows the editor
+										// width, so the lines have to be re-laid
+										// out when the panel resizes
+										automaticLayout: true,
+										scrollbar: {
+											alwaysConsumeMouseWheel: false,
+										},
+									}}
+									value={value}
+									language={"plaintext"}
+									onMount={handleEditorMount}
+									onChange={(newValue) => {
+										setValue(newValue || "");
+									}}
+									data-test-id="SMSS-editor"
+								/>
+							</div>
+						</ContextMenuTrigger>
+						<ContextMenuContent
+							className="w-52"
+							data-test-id="SMSS-editor-menu"
+						>
+							{/*
+							 * The editing items carry a lock while the editor is
+							 * read-only so their disabled state reads as "unlock
+							 * first" rather than as broken. The items that stay
+							 * enabled are inset by the same amount so every label
+							 * lines up either way.
+							 */}
+							<ContextMenuItem
+								disabled={readOnly}
+								onSelect={() => copySelection(true)}
+							>
+								{readOnly && <LockIcon />}
+								Cut
+								<ContextMenuShortcut>
+									{`${MODIFIER_KEY}+X`}
+								</ContextMenuShortcut>
+							</ContextMenuItem>
+							<ContextMenuItem
+								inset={readOnly}
+								onSelect={() => copySelection(false)}
+							>
+								Copy
+								<ContextMenuShortcut>
+									{`${MODIFIER_KEY}+C`}
+								</ContextMenuShortcut>
+							</ContextMenuItem>
+							<ContextMenuItem
+								disabled={readOnly}
+								onSelect={pasteFromClipboard}
+							>
+								{readOnly && <LockIcon />}
+								Paste
+								<ContextMenuShortcut>
+									{`${MODIFIER_KEY}+V`}
+								</ContextMenuShortcut>
+							</ContextMenuItem>
+							<ContextMenuSeparator />
+							<ContextMenuItem
+								inset={readOnly}
+								onSelect={() => runEditorAction("actions.find")}
+							>
+								Find
+								<ContextMenuShortcut>
+									{`${MODIFIER_KEY}+F`}
+								</ContextMenuShortcut>
+							</ContextMenuItem>
+							<ContextMenuItem
+								disabled={readOnly}
+								onSelect={() =>
+									runEditorAction(
+										"editor.action.startFindReplaceAction",
+									)
+								}
+							>
+								{readOnly && <LockIcon />}
+								Replace
+								<ContextMenuShortcut>
+									{REPLACE_SHORTCUT}
+								</ContextMenuShortcut>
+							</ContextMenuItem>
+						</ContextMenuContent>
+					</ContextMenu>
 				)}
 			</Suspense>
 		</div>
