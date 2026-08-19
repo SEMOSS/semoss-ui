@@ -17,7 +17,7 @@ import {
 	askRoom,
 	createPlaygroundRoom,
 	getRoomMessages,
-	runAgent,
+	runAgentViaJobStream,
 	setRoomForInsight,
 	updateRoomOptions,
 } from "./chat";
@@ -228,7 +228,7 @@ export class Room {
 	): Promise<RoomAskAgentResult> {
 		const { onChunk } = options;
 
-		const { jobId } = await runAgent(this.insightId, {
+		const { jobId } = await runAgentViaJobStream(this.insightId, {
 			engine: this._options.modelId,
 			roomId: this.roomId,
 			command,

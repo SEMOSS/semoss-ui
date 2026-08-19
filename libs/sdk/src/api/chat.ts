@@ -273,7 +273,7 @@ export const getUserRooms = async (
  * @returns `{ jobId }` to pass to {@link getPixelJobStreaming}.
  * @see sdk-playground skill for the chat-vs-agent-harness comparison and full example.
  */
-export const runAgent = async (
+export const runAgentViaJobStream = async (
 	insightId: string,
 	params: RunAgentParams,
 ): Promise<{ jobId: string }> => {
