@@ -5,7 +5,7 @@ import type {
 	FormEvent,
 	KeyboardEvent,
 } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	Button,
 	cn,
@@ -17,6 +17,8 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useWorkbench } from "@/hooks/use-workbench";
+import type { SlashSuggestion } from "@/stores/workbench";
+import { getSlashSuggestions } from "@/stores/workbench";
 import { WorkbenchChatUsage } from "./workbench-chat-usage";
 
 const MAX_ATTACHMENTS = 5;
@@ -135,6 +137,8 @@ export const WorkbenchChatComposer = () => {
 	const [files, setFiles] = useState<PendingFile[]>([]);
 	const [isDraggingFiles, setIsDraggingFiles] = useState(false);
 	const [isStopping, setIsStopping] = useState(false);
+	const [suggestionIndex, setSuggestionIndex] = useState(0);
+	const [menuDismissed, setMenuDismissed] = useState(false);
 
 	const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -142,6 +146,33 @@ export const WorkbenchChatComposer = () => {
 
 	const isComposerDisabled = isInitializing || !roomId;
 	const isSendDisabled = (!draft.trim() && files.length === 0) || isSending;
+
+	// Slash-command menu: entries for the current draft, reset whenever the
+	// draft changes so Escape-dismissal and the highlight don't go stale.
+	const suggestions = useMemo(() => getSlashSuggestions(draft), [draft]);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: reset selection and dismissal per draft edit, not per suggestion identity.
+	useEffect(() => {
+		setSuggestionIndex(0);
+		setMenuDismissed(false);
+	}, [draft]);
+	const isMenuOpen =
+		suggestions.length > 0 && !menuDismissed && !isComposerDisabled;
+
+	const acceptSuggestion = (suggestion: SlashSuggestion) => {
+		// A trailing space means the command still needs an argument — keep
+		// composing. A complete command executes immediately instead of
+		// sitting in the box waiting for a second Enter.
+		if (suggestion.insertText.endsWith(" ")) {
+			setDraft(suggestion.insertText);
+			textareaRef.current?.focus();
+			return;
+		}
+		setDraft("");
+		void submit(suggestion.insertText).then((ok) => {
+			if (!ok) setDraft(suggestion.insertText);
+		});
+		textareaRef.current?.focus();
+	};
 
 	useEffect(() => {
 		filesRef.current = files;
@@ -284,6 +315,32 @@ export const WorkbenchChatComposer = () => {
 			return;
 		}
 
+		if (isMenuOpen) {
+			if (event.key === "ArrowDown") {
+				event.preventDefault();
+				setSuggestionIndex((index) => (index + 1) % suggestions.length);
+				return;
+			}
+			if (event.key === "ArrowUp") {
+				event.preventDefault();
+				setSuggestionIndex(
+					(index) =>
+						(index - 1 + suggestions.length) % suggestions.length,
+				);
+				return;
+			}
+			if (event.key === "Tab" || event.key === "Enter") {
+				event.preventDefault();
+				acceptSuggestion(suggestions[suggestionIndex]);
+				return;
+			}
+			if (event.key === "Escape") {
+				event.preventDefault();
+				setMenuDismissed(true);
+				return;
+			}
+		}
+
 		if (event.key === "Enter" && !event.shiftKey) {
 			event.preventDefault();
 			void handleSend();
@@ -321,11 +378,43 @@ export const WorkbenchChatComposer = () => {
 		>
 			<div
 				className={cn(
-					"flex w-full flex-col overflow-hidden rounded-md border border-input bg-card shadow-lg transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
+					"relative flex w-full flex-col rounded-md border border-input bg-card shadow-lg transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
 					isDraggingFiles &&
 						"border-primary bg-primary/5 ring-[3px] ring-primary/20",
 				)}
 			>
+				{isMenuOpen ? (
+					<div
+						role="listbox"
+						aria-label="Slash commands"
+						className="absolute bottom-full left-0 z-20 mb-2 w-72 max-w-full overflow-hidden rounded-md border border-border bg-popover py-1 shadow-md"
+					>
+						{suggestions.map((suggestion, index) => (
+							<button
+								type="button"
+								role="option"
+								aria-selected={index === suggestionIndex}
+								key={suggestion.label}
+								className={cn(
+									"flex w-full items-baseline gap-2 px-3 py-1.5 text-left text-xs",
+									index === suggestionIndex && "bg-accent",
+								)}
+								onMouseEnter={() => setSuggestionIndex(index)}
+								// Keep the textarea focused through the click.
+								onMouseDown={(event) => event.preventDefault()}
+								onClick={() => acceptSuggestion(suggestion)}
+							>
+								<span className="shrink-0 font-medium font-mono">
+									{suggestion.label}
+								</span>
+								<span className="min-w-0 flex-1 truncate text-muted-foreground">
+									{suggestion.description}
+								</span>
+							</button>
+						))}
+					</div>
+				) : null}
+
 				<PendingFileStrip
 					files={files}
 					onRemove={removePendingFile}
@@ -336,7 +425,7 @@ export const WorkbenchChatComposer = () => {
 					ref={textareaRef}
 					value={draft}
 					aria-label="Chat message"
-					placeholder="Type a message…"
+					placeholder="Type a message… (/ for commands)"
 					disabled={isComposerDisabled}
 					onChange={(event) => setDraft(event.target.value)}
 					onKeyDown={handleKeyDown}

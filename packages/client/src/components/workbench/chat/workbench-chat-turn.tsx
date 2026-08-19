@@ -395,7 +395,7 @@ const FeedItems = ({ run, nested = false }: FeedItemsProps) => {
 };
 
 /** Display name for the assistant in run headers. */
-const ASSISTANT_LABEL = "Assistant";
+const ASSISTANT_LABEL = "Agent";
 
 interface RunHeaderProps {
 	/** The run whose identity, status, and duration are rendered */

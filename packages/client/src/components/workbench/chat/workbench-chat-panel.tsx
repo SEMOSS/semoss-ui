@@ -1,4 +1,10 @@
-import { HammerIcon, HistoryIcon, PlusIcon, Settings2Icon } from "lucide-react";
+import {
+	ArrowLeftIcon,
+	HammerIcon,
+	HistoryIcon,
+	PlusIcon,
+	Settings2Icon,
+} from "lucide-react";
 import { useState } from "react";
 import {
 	Alert,
@@ -62,9 +68,34 @@ export const WorkbenchChatPanel = () => {
 			data-testid="workbench-chat-panel"
 		>
 			<header className="flex h-11 shrink-0 items-center gap-2 border-border border-b px-3">
-				<h2 className="min-w-0 flex-1 truncate font-medium text-sm">
-					{roomName || "New chat"}
-				</h2>
+				{view !== "chat" ? (
+					<>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon-sm"
+									aria-label="Back to chat"
+									className="-ms-1.5"
+									onClick={() => setView("chat")}
+								>
+									<ArrowLeftIcon />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>Back to chat</TooltipContent>
+						</Tooltip>
+						<h2 className="min-w-0 flex-1 truncate font-medium text-sm">
+							{view === "conversations"
+								? "Conversations"
+								: "Settings"}
+						</h2>
+					</>
+				) : (
+					<h2 className="min-w-0 flex-1 truncate font-medium text-sm">
+						{roomName || "New chat"}
+					</h2>
+				)}
 				{onRebuild ? (
 					<Tooltip>
 						<TooltipTrigger asChild>

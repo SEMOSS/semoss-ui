@@ -54,6 +54,7 @@ import {
 	calculateRoomUsage,
 	findLatestCompactableResponseId,
 } from "./workbench-chat.usage";
+import { parseSlashCommands } from "./workbench-chat-commands";
 
 /** Turn budget used when none is configured. */
 const DEFAULT_MAX_TURNS = 30;
@@ -213,10 +214,13 @@ export interface WorkbenchChatSliceState {
 		 */
 		configure: (config: WorkbenchChatConfig) => void;
 		/**
-		 * Send a prompt with optional image files: uploads the files,
-		 * persists room options, starts the durable run, and drains its
-		 * stream to completion. Failures surface as error notices. Resolves
-		 * true when a run was started, false when nothing was sent.
+		 * Send a prompt with optional image files: applies any leading slash
+		 * commands (/effort, /thinking, /mode, /compact — see
+		 * workbench-chat-commands.ts), uploads the files, persists room
+		 * options, starts the durable run, and drains its stream to
+		 * completion. Failures surface as error notices. Resolves true when
+		 * a run was started or commands were applied, false when nothing
+		 * happened (so the composer restores the draft).
 		 */
 		submit: (prompt: string, files?: File[]) => Promise<boolean>;
 		/**
@@ -751,6 +755,54 @@ export const createWorkbenchChatSlice = (
 					) {
 						return false;
 					}
+
+					// Apply slash commands and strip them from the outgoing
+					// message before any send-readiness checks — a
+					// commands-only submission needs no model or tools.
+					const parsed = parseSlashCommands(prompt);
+					const settingsPatch: Partial<
+						WorkbenchChatSliceState["chat"]
+					> = {};
+					if (parsed.effort !== undefined) {
+						settingsPatch.effort = parsed.effort;
+					}
+					if (parsed.thinking !== undefined) {
+						settingsPatch.thinking = parsed.thinking;
+					}
+					if (parsed.permissionMode !== undefined) {
+						settingsPatch.permissionMode = parsed.permissionMode;
+					}
+					if (Object.keys(settingsPatch).length > 0) {
+						setChat(settingsPatch);
+					}
+					for (const message of parsed.feedback) {
+						pushNotice(message);
+					}
+					for (const message of parsed.errors) {
+						pushNotice(message, "error");
+					}
+					if (parsed.compact) {
+						if (get().chat.activeRunId) {
+							pushNotice(
+								"Wait for the current run to finish before compacting.",
+								"error",
+							);
+						} else {
+							await get().chat.compact();
+						}
+					}
+
+					const command = parsed.text.trim();
+					if (!command && files.length === 0) {
+						// Nothing left to send; true when commands were
+						// handled so the composer clears the draft.
+						return (
+							parsed.compact ||
+							parsed.feedback.length > 0 ||
+							parsed.errors.length > 0
+						);
+					}
+
 					if (!chat.model) {
 						pushNotice(
 							"Select a model in the Agent tab before sending.",
@@ -763,11 +815,6 @@ export const createWorkbenchChatSlice = (
 							"Room tools are not ready yet. Please try again.",
 							"error",
 						);
-						return false;
-					}
-
-					const command = prompt.trim();
-					if (!command && files.length === 0) {
 						return false;
 					}
 
@@ -808,21 +855,33 @@ export const createWorkbenchChatSlice = (
 
 						// Harness/run parameters: the workbench's static params
 						// plus the user's run controls, omitting anything unset
-						// so harness/model defaults apply.
+						// so harness/model defaults apply. "ultrathink" in the
+						// message one-shots maximum reasoning without changing
+						// the saved settings.
 						const chatNow = get().chat;
+						const effectiveEffort = parsed.ultrathink
+							? "max"
+							: chatNow.effort;
+						const effectiveThinking = parsed.ultrathink
+							? true
+							: chatNow.thinking;
+						if (parsed.ultrathink) {
+							pushNotice(
+								"Ultrathink: maximum reasoning for this run.",
+							);
+						}
 						const paramValues: Record<string, unknown> = {
 							...chatNow.runParams,
 						};
 						if (chatNow.permissionMode) {
 							paramValues.permissionMode = chatNow.permissionMode;
 						}
-						if (chatNow.thinking != null) {
-							paramValues.thinking = chatNow.thinking;
+						if (effectiveThinking != null) {
+							paramValues.thinking = effectiveThinking;
 						}
-						if (chatNow.effort) {
-							paramValues.effort = effortParamValue(
-								chatNow.effort,
-							);
+						if (effectiveEffort) {
+							paramValues.effort =
+								effortParamValue(effectiveEffort);
 						}
 
 						const record = await runAgent(
