@@ -71,6 +71,7 @@ export const Router = observer(() => {
 			<Routes>
 				<Route path="/" element={<AuthenticatedLayout />}>
 					<Route path="s/:appId" element={<ProjectLayout />}>
+						<Route index element={<SharePage />} />
 						<Route path="*" element={<SharePage />} />
 					</Route>
 					<Route path="*" element={<PageLayout />}>
