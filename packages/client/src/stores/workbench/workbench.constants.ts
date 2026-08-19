@@ -7,7 +7,6 @@ export const WORKBENCH_COMPONENTS = {
 	DATABASE_COLUMNS: "database-columns",
 	DATABASE_QUERY: "database-query",
 	DATABASE_RESULTS: "database-results",
-	VECTOR_CHAT: "vector-chat",
 	VECTOR_DOCUMENTS: "vector-documents",
 	STORAGE_EXPLORER: "storage-file-explorer",
 	MODEL_CHAT: "model-chat",
@@ -23,8 +22,8 @@ export const WORKBENCH_COMPONENTS = {
 } as const;
 
 /**
- * localStorage key for one workbench's persisted layout. The `-v1` suffix is a manual
+ * localStorage key for one workbench's persisted layout. The `-v2` suffix is a manual
  * cache-bust — bump it whenever a default layout changes shape; old entries are orphaned,
  * not migrated (same convention as `smss-workspace--<projectId>-v7`).
  */
-export const getWorkbenchCacheKey = (id: string) => `smss-workbench--${id}-v1`;
+export const getWorkbenchCacheKey = (id: string) => `smss-workbench--${id}-v2`;

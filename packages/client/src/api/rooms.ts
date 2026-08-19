@@ -522,7 +522,7 @@ export const makeEngineRoomMcp = async (
 	engineId: string,
 ): Promise<void> => {
 	const response = await runPixel<[boolean]>(
-		`MakeEngineRoomMCP(engine=[${JSON.stringify(engineId)}]);`,
+		`MakeDefaultRoomToolsForEngine(engine=[${JSON.stringify(engineId)}]);`,
 		insightId,
 	);
 	assertPixelSuccess(response.errors);
