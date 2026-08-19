@@ -1,8 +1,9 @@
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
+import { useTheme } from "@semoss/ui/next";
 import appImage from "@/assets/img/app.svg";
 import logoImage from "@/assets/img/logo.svg";
-import { useIsDark, useRoot } from "@/hooks";
+import { useRoot } from "@/hooks";
 
 interface AppLogoProps {
 	/**
@@ -14,7 +15,8 @@ interface AppLogoProps {
 export const AppLogo: React.FC<AppLogoProps> = observer(({ full = false }) => {
 	const { t } = useTranslation("common");
 	const { root } = useRoot();
-	const isDark = useIsDark();
+	const { resolvedTheme } = useTheme();
+	const isDarkMode = resolvedTheme === "dark";
 
 	const lightSrc = full
 		? root.theme.images.app || appImage
@@ -22,8 +24,8 @@ export const AppLogo: React.FC<AppLogoProps> = observer(({ full = false }) => {
 	const darkSrc = full
 		? root.theme.images.appDark
 		: root.theme.images.logoDark;
-	const src = isDark && darkSrc ? darkSrc : lightSrc;
-	const imgClass = isDark && !darkSrc ? "brightness-0 invert" : "";
+	const src = isDarkMode && darkSrc ? darkSrc : lightSrc;
+	const imgClass = isDarkMode && !darkSrc ? "brightness-0 invert" : "";
 
 	return (
 		<div

@@ -1,7 +1,6 @@
 import { Link, matchPath, useLocation } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
-import { SidebarMenuButton, SidebarMenuItem } from "@semoss/ui/next";
-import { useIsDark } from "@/hooks";
+import { SidebarMenuButton, SidebarMenuItem, useTheme } from "@semoss/ui/next";
 
 interface GlobalNavItemProps {
 	/** Name of the item */
@@ -52,13 +51,14 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 }) => {
 	const { pathname } = useLocation();
 	const { t } = useTranslation("sidebar");
-	const isDark = useIsDark();
+	const { resolvedTheme } = useTheme();
+	const isDarkMode = resolvedTheme === "dark";
 
 	// Use the dark asset when available; otherwise keep the light asset and
 	// let the JS-driven filter invert it. Both src and filter use the same
 	// isDark value so they can never be out of sync.
-	const activeIcon = isDark && iconDark ? iconDark : icon;
-	const imgClass = `size-4 select-none${isDark && !iconDark ? " brightness-0 invert" : ""}`;
+	const activeIcon = isDarkMode && iconDark ? iconDark : icon;
+	const imgClass = `size-4 select-none${isDarkMode && !iconDark ? " brightness-0 invert" : ""}`;
 
 	// Priority: 1) tooltip prop from theme, 2) i18n translation, 3) fallback to name
 	const tooltipKey = KNOWN_TOOLTIP_KEYS[name];
