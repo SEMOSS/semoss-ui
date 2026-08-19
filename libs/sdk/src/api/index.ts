@@ -1,3 +1,5 @@
+export * from "./agent";
+export * from "./agent-subscription";
 export * from "./app";
 export * from "./auth";
 export * from "./base";
@@ -5,6 +7,7 @@ export * from "./chat";
 export * from "./engine";
 export * from "./file";
 export * from "./insight";
+export * from "./permissions";
 export * from "./room";
 export * from "./user";
 export * from "./websocket";

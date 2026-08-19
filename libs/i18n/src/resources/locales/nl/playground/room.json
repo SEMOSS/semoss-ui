@@ -12,8 +12,7 @@
 		"compactError": "Comprimeren van gesprek mislukt",
 		"compacting": "Gesprek comprimeren...",
 		"compactedAbove": "Gesprek gecomprimeerd",
-		"compactedAboveTooltip": "Eerdere berichten zijn samengevat om de contextgrootte te verkleinen",
-		"compactTooltip": "Comprimeer je gesprek om tokens te besparen. Je eerdere berichten blijven ongewijzigd."
+		"compactedAboveTooltip": "Eerdere berichten zijn samengevat om de contextgrootte te verkleinen"
 	},
 	"form": {
 		"modelLabel": "Model",
@@ -23,8 +22,9 @@
 		"toolboxLabel": "Toolboxes"
 	},
 	"modes": {
-		"ask": "Vragen",
-		"agent": "Agent Harness"
+		"ask": "Chatmodus",
+		"agent": "Agent Harness-modus",
+		"exitAgent": "Agent Harness-modus verlaten"
 	},
 	"workspace": {
 		"publishTooltip": "Publiceren als agent",
@@ -55,8 +55,9 @@
 		"completeTool": "Voltooi de tool(s) om door te gaan",
 		"ask": "Vragen",
 		"errorProcessing": "Fout bij het verwerken van de chat",
-		"pauseTools": "Tools pauzeren",
-		"pauseToolsTooltip": "Pauzeer alle tooluitvoering tot na het volgende bericht"
+		"stopLabel": "Het antwoord stoppen",
+		"stopTooltip": "Stoppen",
+		"stoppingTooltip": "Bezig met stoppen"
 	},
 	"content": {
 		"scrollToTop": "Scroll naar boven",

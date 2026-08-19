@@ -46,6 +46,8 @@ import {
 	type RoomStore,
 	type ToolStore,
 } from "@/stores";
+import { isAskExecutionMode } from "@/utility/mcp-utils";
+import { ResponseMessageSubagent } from "./response-message-subagent";
 import { ResponseMessageText } from "./response-message-text";
 import { ResponseMessageThinking } from "./response-message-thinking";
 import { ResponseMessageTool } from "./response-message-tool";
@@ -308,8 +310,14 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		// part index (regardless of completion) so the group always renders at
 		// the top of the tool list even when an auto-execute tool completes first.
 		const getShouldGroupTool = (tool: ToolStore) => {
-			// auto-execute tools should always be grouped
-			if (tool.json._meta.SMSS_MCP_EXECUTION === "auto") return true;
+			// tools whose call hasn't resolved yet (still streaming in, or in the
+			// gap before the final sync) fold into the group so they show as one
+			// loading cluster rather than separate raw-named pills
+			if (!tool.isResolved) return true;
+			// non-interactive tools (auto-execute, or backend-executed e.g.
+			// agent-run tools) should always be grouped
+			if (!isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION))
+				return true;
 			// ask tools only enter group when there are no unfinished tools
 			return !message.hasUnfinishedTools;
 		};
@@ -328,7 +336,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 					if (getShouldGroupTool(tool)) {
 						groupedTools.push(tool);
 					}
-					if (tool.json._meta.SMSS_MCP_EXECUTION === "ask") {
+					if (
+						isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION)
+					) {
 						hasAskTools = true;
 					}
 				});
@@ -342,14 +352,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 
 		const hasText = message.parts.some((part) => part.type === "TEXT");
 
-		const hasVisibleContent = message.parts.some(
-			(part) =>
-				(part.type === "TEXT" &&
-					part.text.replace(/[\s\u00AD\u200B-\u200D\u2060]/g, "")
-						.length > 0) ||
-				part.type === "MEDIA" ||
-				part.type === "TOOL_CALL",
-		);
+		const hasVisibleContent = message.hasVisibleContent;
 
 		const hasImage = message.parts.some(
 			(part) => part.type === "MEDIA" && part.mediaInfo.base64Data,
@@ -431,17 +434,10 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 											"image/png",
 									});
 								} else if (p.mediaInfo.fileLocation) {
-									room.addSidebarNode(
-										`FILE--${p.mediaInfo.fileLocation}`,
+									room.openFileEditorSidebarNode(
+										p.mediaInfo.fileLocation,
 										{
-											type: "tab",
 											name: p.mediaInfo.fileName,
-											component: "room-file-editor",
-											config: {
-												name: p.mediaInfo.fileName,
-												path: p.mediaInfo.fileLocation,
-											},
-											enableClose: true,
 										},
 									);
 								} else if (p.mediaInfo.base64Data) {
@@ -517,7 +513,12 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								<Fragment key={key}>
 									{pIdx === firstToolPartIdx &&
 										groupedTools.length > 0 &&
-										(groupedTools.length > 1 ? (
+										// A single tool renders as a group only while it's
+										// still resolving (so it shows as one loading
+										// cluster); once resolved it collapses back to its
+										// own pill.
+										(groupedTools.length > 1 ||
+										!groupedTools[0].isResolved ? (
 											<ResponseMessageToolGroup
 												key={`${key}-group`}
 												message={message}
@@ -545,6 +546,14 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										/>
 									)}
 								</Fragment>
+							);
+						} else if (p.type === "SUBAGENT") {
+							return (
+								<ResponseMessageSubagent
+									key={key}
+									message={message}
+									part={p}
+								/>
 							);
 						}
 

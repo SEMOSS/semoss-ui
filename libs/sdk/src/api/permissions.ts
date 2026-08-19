@@ -1,5 +1,6 @@
-import { Env, get, post } from "@semoss/sdk/react";
+import { Env } from "../env";
 import type { PostUser, Role, User, UserAccessRequest } from "../types";
+import { get, post } from "../utility";
 
 /**
  * Get the current user's permission for a project
@@ -103,71 +104,50 @@ export const getProjectUsers = async (
 };
 
 /**
- * Get users without access to a project
- * @param projectId - The project ID
+ * Get users with access to an engine
+ * @param engineId - The engine ID
  * @param admin - Whether to use admin endpoint
- * @param searchTerm - Optional search term to filter users by
+ * @param userId - Optional user ID to filter by
+ * @param permission - Optional permission level to filter by
  * @param limit - Optional limit for pagination
  * @param offset - Optional offset for pagination
- * @returns Array of users without project credentials
+ * @returns Object containing members array and total count
  */
-export const getProjectUsersNoCredentials = async (
-	projectId: string,
+export const getEngineUsers = async (
+	engineId: string,
 	admin = false,
-	searchTerm?: string,
+	userId?: string,
+	permission?: string,
 	limit?: number,
 	offset?: number,
-): Promise<User[]> => {
+): Promise<{
+	totalMembers: number;
+	members: User[];
+}> => {
 	let url = `${Env.MODULE}/api/auth/`;
 	if (admin) {
 		url += "admin/";
 	}
 
-	url += "project/getProjectUsersNoCredentials?";
-	url += `projectId=${projectId}`;
-	url += searchTerm ? `&searchTerm=${searchTerm}` : "";
-	url += limit !== undefined ? `&limit=${limit}` : "";
+	url += "engine/getEngineUsers?";
+	url += `engineId=${engineId}`;
+	url += userId ? `&searchTerm=${userId}` : "";
+	url += permission ? `&permission=${permission}` : "";
 	url += offset !== undefined ? `&offset=${offset}` : "";
+	url += limit !== undefined ? `&limit=${limit}` : "";
 
-	const response = await get<User[]>(url).catch((error) => {
+	const response = await get<{
+		members: User[];
+		totalMembers: number;
+	}>(url).catch((error) => {
 		throw Error(error);
 	});
 
 	if (!response) {
-		throw Error("No Response to get non credentialed users");
+		throw Error("No Response to get users associated with engine");
 	}
 
 	return response.data;
-};
-
-/**
- * Add user permissions to a project
- * @param projectId - The project ID
- * @param users - Array of users with their permissions to add
- * @param admin - Whether to use admin endpoint
- * @returns Whether the operation was successful
- */
-export const addProjectUserPermissions = async (
-	projectId: string,
-	users: PostUser[],
-	admin = false,
-): Promise<boolean> => {
-	let url = `${Env.MODULE}/api/auth/`;
-	if (admin) {
-		url += "admin/";
-	}
-	url += "project/addProjectUserPermissions";
-
-	const response = await post<{ success: boolean }>(
-		url,
-		{
-			projectId,
-			userpermissions: users,
-		},
-		{},
-	);
-
-	return response.data.success;
 };
 
 /**
@@ -201,6 +181,36 @@ export const editProjectUserPermissions = async (
 };
 
 /**
+ * Edit user permissions for an engine
+ * @param engineId - The engine ID
+ * @param users - Array of users with their updated permissions
+ * @param admin - Whether to use admin endpoint
+ * @returns Whether the operation was successful
+ */
+export const editEngineUserPermissions = async (
+	engineId: string,
+	users: PostUser[],
+	admin = false,
+): Promise<boolean> => {
+	let url = `${Env.MODULE}/api/auth/`;
+	if (admin) {
+		url += "admin/";
+	}
+	url += "engine/editEngineUserPermissions";
+
+	const response = await post<{ success: boolean }>(
+		url,
+		{
+			engineId,
+			userpermissions: users,
+		},
+		{},
+	);
+
+	return response.data.success;
+};
+
+/**
  * Remove user permissions from a project
  * @param projectId - The project ID
  * @param userIds - Array of user IDs to remove
@@ -222,6 +232,36 @@ export const removeProjectUserPermissions = async (
 		url,
 		{
 			projectId,
+			ids: userIds,
+		},
+		{},
+	);
+
+	return response.data.success;
+};
+
+/**
+ * Remove user permissions from an engine
+ * @param engineId - The engine ID
+ * @param userIds - Array of user IDs to remove
+ * @param admin - Whether to use admin endpoint
+ * @returns Whether the operation was successful
+ */
+export const removeEngineUserPermissions = async (
+	engineId: string,
+	userIds: string[],
+	admin = false,
+): Promise<boolean> => {
+	let url = `${Env.MODULE}/api/auth/`;
+	if (admin) {
+		url += "admin/";
+	}
+	url += "engine/removeEngineUserPermissions";
+
+	const response = await post<{ success: boolean }>(
+		url,
+		{
+			engineId,
 			ids: userIds,
 		},
 		{},
@@ -312,6 +352,142 @@ export const propagateUserPermissions = async (
 		url,
 		{
 			projectId,
+			userpermissions: users,
+		},
+		{},
+	);
+
+	return response.data.success;
+};
+
+/**
+ * Get users without access to a project
+ * @param projectId - The project ID
+ * @param admin - Whether to use admin endpoint
+ * @param searchTerm - Optional search term to filter users by
+ * @param limit - Optional limit for pagination
+ * @param offset - Optional offset for pagination
+ * @returns Array of users without project credentials
+ */
+export const getProjectUsersNoCredentials = async (
+	projectId: string,
+	admin = false,
+	searchTerm?: string,
+	limit?: number,
+	offset?: number,
+): Promise<User[]> => {
+	let url = `${Env.MODULE}/api/auth/`;
+	if (admin) {
+		url += "admin/";
+	}
+
+	url += "project/getProjectUsersNoCredentials?";
+	url += `projectId=${projectId}`;
+	url += searchTerm ? `&searchTerm=${searchTerm}` : "";
+	url += limit !== undefined ? `&limit=${limit}` : "";
+	url += offset !== undefined ? `&offset=${offset}` : "";
+
+	const response = await get<User[]>(url).catch((error) => {
+		throw Error(error);
+	});
+
+	if (!response) {
+		throw Error("No Response to get non credentialed users");
+	}
+
+	return response.data;
+};
+
+/**
+ * Get users without access to an engine
+ * @param engineId - The engine ID
+ * @param admin - Whether to use admin endpoint
+ * @param searchTerm - Optional search term to filter users by
+ * @param limit - Optional limit for pagination
+ * @param offset - Optional offset for pagination
+ * @returns Array of users without engine credentials
+ */
+export const getEngineUsersNoCredentials = async (
+	engineId: string,
+	admin = false,
+	searchTerm?: string,
+	limit?: number,
+	offset?: number,
+): Promise<User[]> => {
+	let url = `${Env.MODULE}/api/auth/`;
+	if (admin) {
+		url += "admin/";
+	}
+
+	url += "engine/getEngineUsersNoCredentials?";
+	url += `engineId=${engineId}`;
+	url += searchTerm ? `&searchTerm=${searchTerm}` : "";
+	url += limit !== undefined ? `&limit=${limit}` : "";
+	url += offset !== undefined ? `&offset=${offset}` : "";
+
+	const response = await get<User[]>(url).catch((error) => {
+		throw Error(error);
+	});
+
+	if (!response) {
+		throw Error("No Response to get non credentialed users");
+	}
+
+	return response.data;
+};
+
+/**
+ * Add user permissions to a project
+ * @param projectId - The project ID
+ * @param users - Array of users with their permissions to add
+ * @param admin - Whether to use admin endpoint
+ * @returns Whether the operation was successful
+ */
+export const addProjectUserPermissions = async (
+	projectId: string,
+	users: PostUser[],
+	admin = false,
+): Promise<boolean> => {
+	let url = `${Env.MODULE}/api/auth/`;
+	if (admin) {
+		url += "admin/";
+	}
+	url += "project/addProjectUserPermissions";
+
+	const response = await post<{ success: boolean }>(
+		url,
+		{
+			projectId,
+			userpermissions: users,
+		},
+		{},
+	);
+
+	return response.data.success;
+};
+
+/**
+ * Add user permissions to an engine
+ * @param engineId - The engine ID
+ * @param users - Array of users with their permissions to add
+ * @param admin - Whether to use admin endpoint
+ * @returns Whether the operation was successful
+ */
+export const addEngineUserPermissions = async (
+	engineId: string,
+	users: PostUser[],
+	admin = false,
+): Promise<boolean> => {
+	let url = `${Env.MODULE}/api/auth/`;
+	if (admin) {
+		url += "admin/";
+	}
+	url += "engine/addEngineUserPermissions";
+
+	const response = await post<{ success: boolean }>(
+		url,
+		{
+			engineId,
 			userpermissions: users,
 		},
 		{},

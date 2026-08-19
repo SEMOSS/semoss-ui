@@ -117,24 +117,13 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 															p.mediaInfo
 																.fileLocation
 														) {
-															room.addSidebarNode(
-																`FILE--${p.mediaInfo.fileLocation}`,
+															room.openFileEditorSidebarNode(
+																p.mediaInfo
+																	.fileLocation,
 																{
-																	type: "tab",
 																	name: p
 																		.mediaInfo
 																		.fileName,
-																	component:
-																		"room-file-editor",
-																	config: {
-																		name: p
-																			.mediaInfo
-																			.fileName,
-																		path: p
-																			.mediaInfo
-																			.fileLocation,
-																	},
-																	enableClose: true,
 																},
 															);
 														} else if (

@@ -4,38 +4,25 @@ import { usePixel } from "@semoss/sdk/react";
 import type { Project, ProjectDependency } from "@semoss/shared";
 import { Spinner } from "@semoss/ui/next";
 import { ResourceNotFound } from "@/components/common/resource-not-found";
-import { ProjectContext } from "@/contexts";
+import { ProjectContext, type ProjectContextType } from "@/contexts";
 import { useAPI, useRootStore } from "@/hooks";
 
-export const DETAIL_CONFIG = {
-	CODE: {
-		name: "App",
-		basePath: "/app",
-	},
-	SKILL: {
-		name: "Skill",
-		basePath: "/skill",
-	},
-	WORKSPACE: {
-		name: "Agent",
-		basePath: "/agent",
-	},
+export const CATALOG: Record<
+	Project["project_type"],
+	ProjectContextType["catalog"]
+> = {
+	CODE: { name: "App", path: "/app" },
+	BLOCKS: { name: "App", path: "/app" },
+	SKILL: { name: "Skill", path: "/skill" },
+	WORKSPACE: { name: "Agent", path: "/agent" },
+	NOTEBOOK: { name: "Notebook", path: "/notebook" },
+	INSIGHT: { name: "App", path: "/app" },
 } as const;
-
-interface ProjectLayoutProps {
-	/** Type of the route */
-	type: Project["project_type"];
-}
 
 /**
  * Wrap the project routes and provide the ProjectContext + permission gate
  */
-export const ProjectLayout = ({ type }: ProjectLayoutProps) => {
-	const config = DETAIL_CONFIG[type as keyof typeof DETAIL_CONFIG];
-	const catalog = useMemo(
-		() => ({ name: config.name, path: config.basePath }),
-		[config.name, config.basePath],
-	);
+export const ProjectLayout = () => {
 	const { appId } = useParams();
 
 	const { configStore } = useRootStore();
@@ -88,6 +75,15 @@ export const ProjectLayout = ({ type }: ProjectLayoutProps) => {
 		getMetadata.refresh,
 	]);
 
+	/**
+	 * Get the catalog data
+	 */
+	const catalog = useMemo(() => {
+		return getMetadata.data?.project_type
+			? CATALOG[getMetadata.data?.project_type]
+			: { name: "", path: "/" };
+	}, [getMetadata.data?.project_type]);
+
 	if (
 		!appId ||
 		getUserProjectPermission.status === "ERROR" ||
@@ -113,7 +109,7 @@ export const ProjectLayout = ({ type }: ProjectLayoutProps) => {
 	return (
 		<ProjectContext.Provider
 			value={{
-				type,
+				type: getMetadata.data.project_type,
 				catalog,
 				project: getMetadata.data,
 				permission: getUserProjectPermission.data,

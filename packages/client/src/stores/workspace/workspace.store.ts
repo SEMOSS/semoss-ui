@@ -1,15 +1,10 @@
 import { makeAutoObservable } from "mobx";
+import type { Role } from "@semoss/sdk";
+import type { Project } from "@semoss/shared";
 import { FlexLayout } from "@semoss/shared";
-import type { AppMetadata } from "@/components/app";
 import type { RootStore, WorkspaceOptions } from "@/stores";
-import type { Role } from "@/types";
 
 export interface WorkspaceStoreInterface {
-	/**
-	 * ID of App
-	 */
-	appId: string;
-
 	/**
 	 * ID of Workspace Insight
 	 */
@@ -28,17 +23,12 @@ export interface WorkspaceStoreInterface {
 	/**
 	 * Metadata associated with the loaded app
 	 */
-	metadata: AppMetadata;
+	metadata: Project;
 
 	/**
 	 * Optional Model Engine to use
 	 */
 	agentModelEngine: string;
-
-	/**
-	 * Type of the app
-	 */
-	type: "BLOCKS" | "CODE" | "SKILL" | "WORKSPACE";
 
 	/**
 	 * Model associated with the layout
@@ -56,11 +46,6 @@ export interface WorkspaceStoreInterface {
 
 export interface WorkspaceConfigInterface {
 	/**
-	 * Get the ID of the connected app
-	 */
-	appId: string;
-
-	/**
 	 * Get the ID of the Insight tied to app workspace
 	 */
 	insightId: string;
@@ -71,14 +56,9 @@ export interface WorkspaceConfigInterface {
 	role: Role;
 
 	/**
-	 * Type of the app
-	 */
-	type: "BLOCKS" | "CODE" | "SKILL" | "WORKSPACE";
-
-	/**
 	 * Metadata associated with the loaded app
 	 */
-	metadata: AppMetadata;
+	metadata: Project;
 }
 
 /**
@@ -88,23 +68,14 @@ export class WorkspaceStore {
 	// biome-ignore lint/correctness/noUnusedPrivateClassMembers: kept for future use
 	private _root: RootStore;
 	private _store: WorkspaceStoreInterface = {
-		appId: "",
 		insightId: "",
 		isLoading: false,
 		role: "READ_ONLY",
-		type: "CODE",
 		agentModelEngine: "",
 		metadata: {
 			project_id: "",
 			project_name: "",
-			project_type: "",
-			project_cost: "",
-			project_global: "",
-			project_catalog_name: "",
-			project_created_by: "",
-			project_date_last_edited: "",
-			project_created_by_type: "",
-			project_date_created: "",
+			project_type: "CODE",
 		},
 		model: null,
 		activeTerminalInsightId: null,
@@ -114,10 +85,7 @@ export class WorkspaceStore {
 		// register the root
 		this._root = root;
 
-		// set the app and insight Id
-		this._store.appId = config.appId;
 		this._store.insightId = config.insightId;
-		this._store.type = config.type;
 
 		// update the data
 		if (config.role) {
@@ -135,11 +103,8 @@ export class WorkspaceStore {
 	/**
 	 * Getters
 	 */
-	/**
-	 * Get the ID of the connected app
-	 */
 	get appId() {
-		return this._store.appId;
+		return this._store.metadata.project_id;
 	}
 
 	/**
@@ -176,11 +141,8 @@ export class WorkspaceStore {
 	get role() {
 		return this._store.role;
 	}
-	/**
-	 * Type of the app
-	 */
 	get type() {
-		return this._store.type;
+		return this._store.metadata.project_type;
 	}
 
 	/**
@@ -203,7 +165,7 @@ export class WorkspaceStore {
 	 * The key for the local storage cache
 	 */
 	get cacheKey() {
-		return `smss-workspace--${this._store.appId}-v7`;
+		return `smss-workspace--${this._store.metadata.project_id}-v7`;
 	}
 
 	/**
