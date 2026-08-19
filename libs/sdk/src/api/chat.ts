@@ -4,13 +4,8 @@ import type {
 	PlaygroundMessage,
 	PlaygroundRoom,
 	PlaygroundRoomOptions,
-	RunAgentOutput,
-	RunAgentParams,
 } from "../types";
 import { runPixel, runPixelAsync } from "./base";
-
-/** The harness type value the SEMOSS backend recognises for agent runs. */
-const AGENT_HARNESS_TYPE = "semoss";
 
 // -------------------------------------------------------------------------------------------------
 // API FUNCTIONS
@@ -149,7 +144,7 @@ export const updateRoomOptions = async (
  * the full result with {@link getPixelAsyncResult}.
  *
  * @param insightId - The active SEMOSS insight ID.
- * @param params - Message parameters. See {@link AskPlaygroundParams}.
+ * @param params - Message parameters. See {@link AskRoomParams}.
  * @returns `{ jobId }` to pass to {@link getPixelJobStreaming}.
  * @see sdk-playground skill for the full streaming loop and chat-vs-agent guide.
  */
@@ -177,7 +172,7 @@ export const askRoom = async (
  * follow-up LLM turn. Returns a job ID for streaming the response.
  *
  * @param insightId - The active SEMOSS insight ID.
- * @param params - Tool execution details. See {@link AddPlaygroundToolExecutionParams}.
+ * @param params - Tool execution details. See {@link AddRoomToolExecutionParams}.
  * @returns `{ jobId }` to pass to {@link getPixelJobStreaming}.
  * @see sdk-playground skill for the full tool-execution call stack.
  */
@@ -258,39 +253,4 @@ export const getUserRooms = async (
 	}
 
 	return output;
-};
-
-/**
- * Sends a message to the server-side agent harness (RunAgent). The backend
- * drives the entire agentic loop autonomously; the client streams tokens and
- * receives a single {@link RunAgentOutput} summary once complete.
- *
- * Use instead of {@link askPlayground} when the room has `harnessType: "semoss"`
- * in its options.
- *
- * @param insightId - The active SEMOSS insight ID.
- * @param params - Agent run parameters. See {@link RunAgentParams}.
- * @returns `{ jobId }` to pass to {@link getPixelJobStreaming}.
- * @see sdk-playground skill for the chat-vs-agent-harness comparison and full example.
- */
-export const runAgentViaJobStream = async (
-	insightId: string,
-	params: RunAgentParams,
-): Promise<{ jobId: string }> => {
-	const {
-		engine,
-		roomId,
-		command,
-		harnessType = AGENT_HARNESS_TYPE,
-	} = params;
-
-	const pixel = `RunAgent(
-roomId=["${roomId}"],
-engine=["${engine}"],
-command=["<encode>${command}</encode>"],
-harnessType="${harnessType}",
-wait=true
-);`;
-
-	return runPixelAsync(pixel, insightId);
 };

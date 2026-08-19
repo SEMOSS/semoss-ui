@@ -6,8 +6,10 @@ import type {
 	RoomAskOptions,
 	RoomAskResult,
 	RoomStreamChunk,
-	RunAgentOutput,
 } from "../types";
+import { runAgent } from "./agent";
+import type { AgentRunSnapshot } from "./agent.types";
+import { subscribeRunAgent } from "./agent-subscription";
 import {
 	getPixelAsyncResult,
 	getPixelJobStreaming,
@@ -17,7 +19,6 @@ import {
 	askRoom,
 	createPlaygroundRoom,
 	getRoomMessages,
-	runAgentViaJobStream,
 	setRoomForInsight,
 	updateRoomOptions,
 } from "./chat";
@@ -32,7 +33,7 @@ const TERMINAL_STATUSES: PixelJobStreamingStatus[] = [
 ];
 
 /**
- * Minimal shape of the AskPlayground settled output used internally to extract
+ * Minimal shape of the AskRoom settled output used internally to extract
  * message IDs and response text. Not exported — consumers receive RoomAskResult.
  */
 interface AskSettledOutput {
@@ -213,50 +214,105 @@ export class Room {
 
 	/**
 	 * Send a message via the server-side agent harness (RunAgent). The backend
-	 * drives the full agentic loop; the client streams tokens as they arrive.
+	 * drives the full agentic loop, polling its durable run to completion;
+	 * item events (message/reasoning/tool) are surfaced through `onChunk` as
+	 * they arrive.
 	 *
 	 * Requires the room to have `harnessType: "semoss"` in its options.
 	 *
 	 * @param command - The message text to send.
 	 * @param options - Streaming callback.
-	 * @returns Settled message IDs, response text, status, and any artifacts.
+	 * @returns Settled message IDs, response text, and status.
 	 * @see sdk-playground skill for the chat-vs-agent-harness guide.
 	 */
 	async askAgent(
 		command: string,
 		options: RoomAskAgentOptions = {},
 	): Promise<RoomAskAgentResult> {
-		const { onChunk } = options;
+		const { onChunk, onPendingActions } = options;
 
-		const { jobId } = await runAgentViaJobStream(this.insightId, {
-			engine: this._options.modelId,
-			roomId: this.roomId,
-			command,
-		});
+		const { runId } = await runAgent(
+			{ roomId: this.roomId, command, engine: this._options.modelId },
+			this.insightId,
+		);
 
-		await this._stream(jobId, onChunk);
+		const snapshot = await new Promise<AgentRunSnapshot>(
+			(resolve, reject) => {
+				const subscription = subscribeRunAgent(runId, {
+					onEvent: (event) => {
+						if (!onChunk) {
+							return;
+						}
+						if (event.type === "item.updated") {
+							if (event.kind === "message" && event.delta) {
+								onChunk({
+									type: "content",
+									content: event.delta,
+								});
+							} else if (
+								event.kind === "reasoning" &&
+								event.delta
+							) {
+								onChunk({
+									type: "thinking",
+									thinking: event.delta,
+								});
+							} else if (event.patch) {
+								onChunk({
+									type: "tool",
+									toolData: event.patch,
+								});
+							}
+						} else if (event.item.kind === "tool") {
+							onChunk({ type: "tool", toolData: event.item });
+						}
+					},
+					onSnapshot: () => {},
+					onReconcile: (full) => {
+						if (full.status === "INPUT_REQUIRED") {
+							if (onPendingActions) {
+								onPendingActions(full.pendingActions);
+							} else {
+								subscription.stop();
+								reject(
+									new Error(
+										"Agent run paused awaiting a tool decision (INPUT_REQUIRED), but no onPendingActions handler was provided to askAgent — pass one and resolve each action with decideAgentRunAction/submitAgentToolDecision, or the run has no way to resume.",
+									),
+								);
+							}
+							return;
+						}
+						if (
+							full.status === "COMPLETED" ||
+							full.status === "FAILED" ||
+							full.status === "CANCELLED"
+						) {
+							resolve(full);
+						}
+					},
+					onError: (error) => {
+						console.error("Agent run stream error", error);
+					},
+				});
+			},
+		);
 
-		const { errors, results } =
-			await getPixelAsyncResult<[RunAgentOutput]>(jobId);
-
-		if (errors.length > 0) {
-			throw new Error(errors.join(", "));
+		if (snapshot.status !== "COMPLETED") {
+			throw new Error(
+				`Agent run did not complete: ${snapshot.status}${
+					snapshot.errorMessage ? ` — ${snapshot.errorMessage}` : ""
+				}`,
+			);
 		}
 
-		const output = results[0].output;
-
-		if (output.waitTimedOut || output.status !== "COMPLETED") {
-			throw new Error(`Agent run did not complete: ${output.status}`);
-		}
-
-		this._lastResponseMessageId = output.finalOutputMessageId;
+		this._lastResponseMessageId =
+			snapshot.finalOutputMessageId ?? this._lastResponseMessageId;
 
 		return {
-			inputMessageId: output.inputMessageId,
-			responseMessageId: output.finalOutputMessageId,
-			text: output.finalText,
-			status: output.status,
-			artifacts: output.artifacts,
+			inputMessageId: snapshot.inputMessageId ?? "",
+			responseMessageId: snapshot.finalOutputMessageId ?? "",
+			text: snapshot.finalText ?? "",
+			status: snapshot.status,
 		};
 	}
 
