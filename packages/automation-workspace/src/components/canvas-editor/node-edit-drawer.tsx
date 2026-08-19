@@ -1,8 +1,12 @@
-import { Code2, Maximize2, Minimize2, Trash2 } from "lucide-react";
+import { Code2, Maximize2, Trash2 } from "lucide-react";
 import { Suspense, useState } from "react";
 import { MonacoEditor } from "@semoss/shared";
 import {
 	Button,
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
 	Field,
 	FieldLabel,
 	Input,
@@ -65,6 +69,7 @@ export function NodeEditDrawer({
 		? getWorkflowNodeDefinition(step.workflowType)
 		: undefined;
 	const isCustomSource = step.workflowCodeMode === "custom";
+	const isDeveloperPython = step.workflowType === "developer.python";
 	const canRevertToGenerated =
 		isCustomSource && workflowDefinition?.defaultCodeMode === "generated";
 	const persistedPythonSource =
@@ -75,7 +80,7 @@ export function NodeEditDrawer({
 		persistedPythonSource ||
 		(isCustomSource ? "" : getGeneratedPythonPreview(step));
 	const { resolvedTheme } = useTheme();
-	const [pythonExpanded, setPythonExpanded] = useState(false);
+	const [isPythonDialogOpen, setIsPythonDialogOpen] = useState(false);
 	const Icon = meta.icon;
 
 	return (
@@ -168,35 +173,42 @@ export function NodeEditDrawer({
 						<div className="flex items-center justify-between gap-3">
 							<div>
 								<p className="font-medium text-sm">
-									Configuration
+									{isDeveloperPython
+										? "Python source"
+										: "Configuration"}
 								</p>
 								<p className="text-[11px] text-muted-foreground">
-									{isCustomSource
-										? "This node uses custom Python."
-										: "Use the form or inspect the generated Python."}
+									{isDeveloperPython
+										? "This node runs its custom Python source."
+										: isCustomSource
+											? "This node uses custom Python."
+											: "Use the form or inspect the generated Python."}
 								</p>
 							</div>
-							<div className="flex rounded-md border bg-muted/40 p-0.5">
-								<button
-									type="button"
-									aria-pressed={editorMode === "form"}
-									onClick={() => setEditorMode("form")}
-									className={`rounded px-2.5 py-1 font-medium text-[11px] transition-colors ${editorMode === "form" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-								>
-									Form
-								</button>
-								<button
-									type="button"
-									aria-pressed={editorMode === "python"}
-									onClick={() => setEditorMode("python")}
-									className={`rounded px-2.5 py-1 font-medium text-[11px] transition-colors ${editorMode === "python" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-								>
-									Python
-								</button>
-							</div>
+							{!isDeveloperPython && (
+								<div className="flex rounded-md border bg-muted/40 p-0.5">
+									<button
+										type="button"
+										aria-pressed={editorMode === "form"}
+										onClick={() => setEditorMode("form")}
+										className={`rounded px-2.5 py-1 font-medium text-[11px] transition-colors ${editorMode === "form" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+									>
+										Form
+									</button>
+									<button
+										type="button"
+										aria-pressed={editorMode === "python"}
+										onClick={() => setEditorMode("python")}
+										className={`rounded px-2.5 py-1 font-medium text-[11px] transition-colors ${editorMode === "python" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+									>
+										Python
+									</button>
+								</div>
+							)}
 						</div>
 
-						{editorMode === "form" &&
+						{!isDeveloperPython &&
+							editorMode === "form" &&
 							(isCustomSource ? (
 								<div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
 									<p className="font-medium text-xs">
@@ -263,7 +275,7 @@ export function NodeEditDrawer({
 								</p>
 							))}
 
-						{editorMode === "python" && (
+						{(isDeveloperPython || editorMode === "python") && (
 							<Field>
 								<div className="flex items-center justify-between">
 									<FieldLabel className="flex items-center gap-1.5 text-xs">
@@ -276,30 +288,16 @@ export function NodeEditDrawer({
 											variant="ghost"
 											className="h-7 gap-1 px-2 text-[11px]"
 											onClick={() =>
-												setPythonExpanded(
-													(value) => !value,
-												)
+												setIsPythonDialogOpen(true)
 											}
 										>
-											{pythonExpanded ? (
-												<Minimize2 className="h-3.5 w-3.5" />
-											) : (
-												<Maximize2 className="h-3.5 w-3.5" />
-											)}
-											{pythonExpanded
-												? "Collapse"
-												: "Expand"}
+											<Maximize2 className="h-3.5 w-3.5" />
+											Open editor
 										</Button>
 									)}
 								</div>
 								{pythonSource ? (
-									<div
-										className={`overflow-hidden rounded-lg border bg-muted/30 ${
-											pythonExpanded
-												? "h-[560px]"
-												: "h-[300px]"
-										}`}
-									>
+									<div className="h-[300px] overflow-hidden rounded-lg border bg-muted/30">
 										<Suspense
 											fallback={
 												<pre className="h-full overflow-auto p-3 font-mono text-xs">
@@ -361,6 +359,44 @@ export function NodeEditDrawer({
 					</div>
 				</div>
 			</div>
+			<Dialog
+				open={isPythonDialogOpen}
+				onOpenChange={setIsPythonDialogOpen}
+			>
+				<DialogContent className="flex h-[85vh] max-w-6xl flex-col">
+					<DialogHeader>
+						<DialogTitle>Python source</DialogTitle>
+					</DialogHeader>
+					<div className="min-h-0 flex-1 overflow-hidden rounded-lg border">
+						<MonacoEditor
+							height="100%"
+							width="100%"
+							language="python"
+							theme={resolvedTheme === "dark" ? "vs-dark" : "vs"}
+							value={pythonSource}
+							onChange={(value) =>
+								onUpdate({
+									...step,
+									workflowCodeMode: "custom",
+									workflowConfig: {
+										...step.workflowConfig,
+										pythonSource: value ?? "",
+									},
+								})
+							}
+							options={{
+								automaticLayout: true,
+								fontSize: 13,
+								lineNumbers: "on",
+								minimap: { enabled: false },
+								folding: true,
+								scrollBeyondLastLine: false,
+								wordWrap: "on",
+							}}
+						/>
+					</div>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }

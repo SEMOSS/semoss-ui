@@ -41,8 +41,6 @@ export interface DatabaseEngineConfig {
 	expression: string;
 	limit: number;
 	commit: boolean;
-	/** Natural-language description of what data is needed — drives AI SQL generation in business mode. */
-	nlPrompt?: string;
 }
 
 export interface StorageEngineConfig {

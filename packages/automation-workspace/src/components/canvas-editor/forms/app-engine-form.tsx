@@ -48,6 +48,31 @@ export interface AppEngineFormProps {
 	devMode?: boolean;
 }
 
+interface ReactorSignature {
+	template?: string;
+	description?: string;
+	params?: ReactorParam[];
+}
+
+function getReactorSignature(
+	projectId: string,
+	reactorName: string,
+): Promise<ReactorSignature> {
+	return runPixel(
+		`GetProjectReactorSignature(project=["${projectId}"], reactor=["${reactorName}"]);`,
+	).then((response) => {
+		const output =
+			response.pixelReturn?.[response.pixelReturn.length - 1]?.output;
+		if (typeof output === "string") {
+			return JSON.parse(output) as ReactorSignature;
+		}
+		if (output && typeof output === "object") {
+			return output as ReactorSignature;
+		}
+		throw new Error("No reactor signature response.");
+	});
+}
+
 export function AppEngineForm({
 	config,
 	upstreamVars,
@@ -75,23 +100,12 @@ export function AppEngineForm({
 	useEffect(() => {
 		if (!reactorName || !effectiveProjectId || reactorParams.length > 0)
 			return;
-		runPixel(
-			`GetReactorSignature(project=["${effectiveProjectId}"], reactor=["${reactorName}"]);`,
-		)
-			.then((res) => {
-				const raw =
-					res.pixelReturn?.[res.pixelReturn.length - 1]?.output;
-				if (typeof raw === "string") {
-					const parsed = JSON.parse(raw) as {
-						description?: string;
-						params?: ReactorParam[];
-					};
-					if (parsed.params?.length) setReactorParams(parsed.params);
-					if (parsed.description)
-						setReactorDescription(parsed.description);
-				} else {
-					setNoParamInfo(true);
-				}
+		getReactorSignature(effectiveProjectId, reactorName)
+			.then((signature) => {
+				if (signature.params?.length)
+					setReactorParams(signature.params);
+				if (signature.description)
+					setReactorDescription(signature.description);
 			})
 			.catch(() => setNoParamInfo(true));
 	}, [reactorName, effectiveProjectId, reactorParams.length]);
@@ -115,7 +129,7 @@ export function AppEngineForm({
 
 	const loading = reactorStatus === "INITIAL" || reactorStatus === "LOADING";
 
-	/** Fetches the reactor's signature via GetReactorSignature (with a 2s timeout), then initializes per-param state and updates config.pixel with the reactor template. Falls back to a bare call if the signature is unavailable. */
+	/** Loads the project reactor's MCP-derived parameter signature, with a bounded fallback to a bare call. */
 	const handleReactorClick = async (name: string) => {
 		setSigLoading(name);
 		setReactorDescription("");
@@ -126,30 +140,22 @@ export function AppEngineForm({
 			const timeout = new Promise<never>((_, reject) =>
 				setTimeout(() => reject(new Error("timeout")), 2000),
 			);
-			const result = await Promise.race([
-				runPixel(
-					`GetReactorSignature(project=["${effectiveProjectId}"], reactor=["${name}"]);`,
-				),
+			const signature = await Promise.race([
+				getReactorSignature(effectiveProjectId, name),
 				timeout,
 			]);
-			const pixelReturns = result.pixelReturn ?? [];
-			const raw = pixelReturns[pixelReturns.length - 1]?.output;
-			if (typeof raw === "string") {
-				const parsed = JSON.parse(raw) as {
-					template?: string;
-					description?: string;
-					params?: ReactorParam[];
-				};
-				const template = parsed.template ?? `${name}()`;
+			if (signature) {
+				const template = signature.template ?? `${name}()`;
 				const initial = parsePixelParams(template);
 				setParamValues(initial);
 				onChange({
 					...config,
 					pixel: ensureSemicolon(template),
 				});
-				if (parsed.description)
-					setReactorDescription(parsed.description);
-				if (parsed.params?.length) setReactorParams(parsed.params);
+				if (signature.description)
+					setReactorDescription(signature.description);
+				if (signature.params?.length)
+					setReactorParams(signature.params);
 			} else {
 				setParamValues({});
 				onChange({ ...config, pixel: ensureSemicolon(`${name}()`) });

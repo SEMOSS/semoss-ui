@@ -68,9 +68,18 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 			{
 				type: "border",
 				location: "left",
-				selected: -1,
+				selected: 0,
 				size: 320,
 				children: [
+					{
+						id: "automation-inspector",
+						type: "tab",
+						name: "Inspector",
+						component: "automation-inspector",
+						enableClose: false,
+						enableRenderOnDemand: false,
+						config: {},
+					},
 					{
 						id: "file-explorer",
 						type: "tab",
@@ -93,6 +102,15 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						type: "tab",
 						name: "Chat",
 						component: "automation-chat",
+						enableClose: false,
+						enableRenderOnDemand: false,
+						config: {},
+					},
+					{
+						id: "automation-trace",
+						type: "tab",
+						name: "Run details",
+						component: "automation-trace",
 						enableClose: false,
 						enableRenderOnDemand: false,
 						config: {},
@@ -133,6 +151,9 @@ export const AutomationWorkspace = observer(() => {
 	const appId = workspace.appId || project.project_id;
 	const [showEditorTabs, setShowEditorTabs] = useState(false);
 	const automationFrameRef = useRef<HTMLIFrameElement>(null);
+	const traceFrameRef = useRef<HTMLIFrameElement>(null);
+	const inspectorFrameRef = useRef<HTMLIFrameElement>(null);
+	const [traceSnapshot, setTraceSnapshot] = useState<unknown>(null);
 
 	const automationMcp = useMemo<MCPConfig[]>(
 		() => [
@@ -155,6 +176,71 @@ export const AutomationWorkspace = observer(() => {
 			canvasOrigin,
 		);
 	}, [appId]);
+
+	useEffect(() => {
+		const handleMessage = (event: MessageEvent<unknown>) => {
+			if (
+				event.origin !== window.location.origin ||
+				typeof event.data !== "object" ||
+				event.data === null
+			) {
+				return;
+			}
+			const message = event.data as {
+				type?: unknown;
+				snapshot?: unknown;
+			};
+			if (
+				event.source === automationFrameRef.current?.contentWindow &&
+				message.type === "SEMOSS_AUTOMATION_TRACE"
+			) {
+				setTraceSnapshot(message.snapshot);
+			}
+			if (
+				event.source === traceFrameRef.current?.contentWindow &&
+				message.type === "SEMOSS_AUTOMATION_TRACE_READY"
+			) {
+				traceFrameRef.current?.contentWindow?.postMessage(
+					{
+						type: "SEMOSS_AUTOMATION_TRACE",
+						snapshot: traceSnapshot,
+					},
+					window.location.origin,
+				);
+			}
+		};
+		window.addEventListener("message", handleMessage);
+		return () => window.removeEventListener("message", handleMessage);
+	}, [traceSnapshot]);
+
+	useEffect(() => {
+		const model = workspace.model;
+		if (!model || model.getNodeById("automation-inspector")) return;
+		const layout = model.toJson();
+		const leftBorder = layout.borders?.find(
+			(border) => border.location === "left",
+		);
+		if (!leftBorder) return;
+		leftBorder.children.unshift({
+			id: "automation-inspector",
+			type: "tab",
+			name: "Inspector",
+			component: "automation-inspector",
+			enableClose: false,
+			enableRenderOnDemand: false,
+			config: {},
+		});
+		leftBorder.selected = 0;
+		workspace.load({ version: "", layout });
+		workspace.saveToCache();
+	}, [workspace.load, workspace.model, workspace.saveToCache]);
+
+	useEffect(() => {
+		traceFrameRef.current?.contentWindow?.postMessage(
+			{ type: "SEMOSS_AUTOMATION_TRACE", snapshot: traceSnapshot },
+			window.location.origin,
+		);
+	}, [traceSnapshot]);
 
 	const runAutomationMutation = useCallback<WorkbenchChatToolHandler>(
 		async (_parameters, context) => {
@@ -183,8 +269,29 @@ export const AutomationWorkspace = observer(() => {
 	}, [workspace.model]);
 
 	useEffect(() => {
+		const traceTab = workspace.model?.getNodeById("automation-trace");
+		if (
+			traceTab instanceof FlexLayout.TabNode &&
+			traceTab.getName() !== "Run details"
+		) {
+			traceTab
+				.getModel()
+				.doAction(
+					FlexLayout.Actions.renameTab(
+						traceTab.getId(),
+						"Run details",
+					),
+				);
+		}
+	}, [workspace.model]);
+
+	useEffect(() => {
 		const model = workspace.model;
-		if (!model || model.getNodeById("automation-chat")) {
+		if (
+			!model ||
+			(model.getNodeById("automation-chat") &&
+				model.getNodeById("automation-trace"))
+		) {
 			return;
 		}
 		const layout = model.toJson();
@@ -200,10 +307,24 @@ export const AutomationWorkspace = observer(() => {
 			enableRenderOnDemand: false,
 			config: {},
 		};
+		const traceTab = {
+			id: "automation-trace",
+			type: "tab" as const,
+			name: "Run details",
+			component: "automation-trace",
+			enableClose: false,
+			enableRenderOnDemand: false,
+			config: {},
+		};
 
 		if (rightBorder) {
-			rightBorder.selected = rightBorder.children.length;
-			rightBorder.children.push(chatTab);
+			if (!model.getNodeById("automation-chat")) {
+				rightBorder.children.push(chatTab);
+			}
+			if (!model.getNodeById("automation-trace")) {
+				rightBorder.children.push(traceTab);
+			}
+			rightBorder.selected = rightBorder.children.length - 1;
 		} else {
 			layout.borders = [
 				...(layout.borders ?? []),
@@ -213,7 +334,7 @@ export const AutomationWorkspace = observer(() => {
 					selected: 0,
 					size: 400,
 					minSize: 320,
-					children: [chatTab],
+					children: [chatTab, traceTab],
 				},
 			];
 		}
@@ -279,6 +400,30 @@ export const AutomationWorkspace = observer(() => {
 						UpdateAutomationStep: runAutomationMutation,
 						UpdateAutomationCustomStep: runAutomationMutation,
 					}}
+				/>
+			);
+		}
+
+		if (component === "automation-trace") {
+			return (
+				<iframe
+					ref={traceFrameRef}
+					className="h-full w-full border-none"
+					title="Automation run details"
+					src={`${AUTOMATION_WORKSPACE_URL}?app=${encodeURIComponent(appId)}&mode=trace&parentOrigin=${encodeURIComponent(window.location.origin)}`}
+					sandbox="allow-scripts allow-same-origin"
+				/>
+			);
+		}
+
+		if (component === "automation-inspector") {
+			return (
+				<iframe
+					ref={inspectorFrameRef}
+					className="h-full w-full border-none"
+					title="Automation inspector"
+					src={`${AUTOMATION_WORKSPACE_URL}?app=${encodeURIComponent(appId)}&mode=inspector&parentOrigin=${encodeURIComponent(window.location.origin)}`}
+					sandbox="allow-scripts allow-same-origin"
 				/>
 			);
 		}

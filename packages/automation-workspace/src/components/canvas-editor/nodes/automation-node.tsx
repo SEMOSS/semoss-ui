@@ -14,6 +14,7 @@ import {
 	formatDurationMs,
 } from "../../../domain/automation-utils";
 import { getWorkflowNodeDefinition } from "../../../domain/automation-workflow-adapter";
+import { getWorkflowNodeDisplay } from "../../../domain/automation-workflow-display";
 import { StatusIcon } from "../../status-icon";
 
 export type AutomationNodeData = {
@@ -46,7 +47,10 @@ export function AutomationNode({ data }: NodeProps) {
 	const workflowDefinition = step.workflowType
 		? getWorkflowNodeDefinition(step.workflowType)
 		: undefined;
-	const Icon = meta.icon;
+	const workflowDisplay = step.workflowType
+		? getWorkflowNodeDisplay(step.workflowType)
+		: null;
+	const Icon = workflowDisplay?.icon ?? meta.icon;
 	const label =
 		step.label || workflowDefinition?.label || getStepHeaderLabel(step);
 	const borderClass =
@@ -108,7 +112,7 @@ export function AutomationNode({ data }: NodeProps) {
 
 					{/* Icon */}
 					<span
-						className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted ${meta.color}`}
+						className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted ${workflowDisplay?.color ?? meta.color}`}
 					>
 						<Icon className="h-3.5 w-3.5" />
 					</span>

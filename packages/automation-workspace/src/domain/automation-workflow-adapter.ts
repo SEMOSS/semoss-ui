@@ -25,18 +25,6 @@ export interface CanvasWorkflowDocument {
 export type AutomationNodeSources = Record<string, string>;
 
 const MANUAL_TRIGGER: TriggerBinding = { id: "manual", type: "manual" };
-const PYTHON_RESOLVE_HELPER = `import re
-
-def resolve(value, scope):
-    if not isinstance(value, str):
-        return value
-    return re.sub(
-        r"\\$\\{([^}]+)\\}",
-        lambda match: scope.get(match.group(1), match.group(0)),
-        value,
-    )
-`;
-
 function stringValue(value: unknown): string {
 	return typeof value === "string" ? value : "";
 }
@@ -61,8 +49,7 @@ export function getGeneratedPythonPreview(step: AutomationNode): string {
 		? mergeCanvasConfig(type, step.config, step.workflowConfig ?? {})
 		: {};
 	if (type?.startsWith("database.")) {
-		return `${PYTHON_RESOLVE_HELPER}
-from ai_server import DatabaseEngine
+		return `from ai_server import DatabaseEngine
 
 ENGINE_ID = ${pythonLiteral(config.engineId)}
 QUERY = ${pythonLiteral(config.query)}
@@ -73,8 +60,7 @@ def run(scope):
 `;
 	}
 	if (type?.startsWith("model.")) {
-		return `${PYTHON_RESOLVE_HELPER}
-from ai_server import ModelEngine
+		return `from ai_server import ModelEngine
 
 ENGINE_ID = ${pythonLiteral(config.engineId)}
 PROMPT = ${pythonLiteral(config.prompt ?? config.text)}
@@ -85,8 +71,7 @@ def run(scope):
 `;
 	}
 	if (type?.startsWith("storage.")) {
-		return `${PYTHON_RESOLVE_HELPER}
-from ai_server import StorageEngine
+		return `from ai_server import StorageEngine
 
 ENGINE_ID = ${pythonLiteral(config.engineId)}
 STORAGE_PATH = ${pythonLiteral(config.path)}
@@ -97,8 +82,7 @@ def run(scope):
 `;
 	}
 	if (type?.startsWith("vector.")) {
-		return `${PYTHON_RESOLVE_HELPER}
-from ai_server import VectorEngine
+		return `from ai_server import VectorEngine
 
 ENGINE_ID = ${pythonLiteral(config.engineId)}
 QUERY = ${pythonLiteral(config.value)}
@@ -109,8 +93,7 @@ def run(scope):
 `;
 	}
 	if (type === "function.execute") {
-		return `${PYTHON_RESOLVE_HELPER}
-from ai_server import FunctionEngine
+		return `from ai_server import FunctionEngine
 import json
 
 ENGINE_ID = ${pythonLiteral(config.engineId)}
@@ -122,8 +105,7 @@ def run(scope):
 `;
 	}
 	if (type === "app.pixel") {
-		return `${PYTHON_RESOLVE_HELPER}
-from semoss import Insight
+		return `from semoss import Insight
 
 PIXEL = ${pythonLiteral(config.pixel)}
 

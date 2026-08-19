@@ -1,6 +1,10 @@
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AutomationCanvas } from "./components/canvas-editor/automation-canvas";
+import {
+	type AutomationTraceSnapshot,
+	TraceTab,
+} from "./components/canvas-editor/tabs/trace-tab";
 import type { AutomationToolContext } from "./domain/automation.types";
 import {
 	getMcpToolContext,
@@ -25,6 +29,8 @@ export default function App() {
 	const rawMode = params.get("mode");
 	const mcpMode: "edit" | "create" | null =
 		rawMode === "edit" || rawMode === "create" ? rawMode : null;
+	const traceMode = rawMode === "trace";
+	const inspectorMode = rawMode === "inspector";
 
 	const [toolContext, setToolContext] =
 		useState<AutomationToolContext | null>(getMcpToolContext());
@@ -91,6 +97,42 @@ export default function App() {
 	const appId =
 		params.get("app") || createdProjectId || toolContext?.projectId || "";
 
+	const [traceSnapshot, setTraceSnapshot] =
+		useState<AutomationTraceSnapshot | null>(null);
+	const [expandedTraceNodes, setExpandedTraceNodes] = useState<Set<string>>(
+		new Set(),
+	);
+
+	useEffect(() => {
+		if (!traceMode) return;
+		const handleTrace = (event: MessageEvent<unknown>) => {
+			if (
+				event.source !== window.parent ||
+				event.origin !== window.location.origin ||
+				typeof event.data !== "object" ||
+				event.data === null
+			) {
+				return;
+			}
+			const message = event.data as {
+				type?: unknown;
+				snapshot?: AutomationTraceSnapshot;
+			};
+			if (
+				message.type === "SEMOSS_AUTOMATION_TRACE" &&
+				message.snapshot
+			) {
+				setTraceSnapshot(message.snapshot);
+			}
+		};
+		window.addEventListener("message", handleTrace);
+		window.parent.postMessage(
+			{ type: "SEMOSS_AUTOMATION_TRACE_READY" },
+			window.location.origin,
+		);
+		return () => window.removeEventListener("message", handleTrace);
+	}, [traceMode]);
+
 	useEffect(() => {
 		if (!createError || !toolContext) return;
 		window.parent.postMessage(
@@ -140,6 +182,42 @@ export default function App() {
 	}
 
 	if (ready) {
+		if (inspectorMode) {
+			return (
+				<div className="flex h-full flex-col items-center justify-center px-6 text-center">
+					<p className="font-semibold text-sm">Select a step</p>
+					<p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
+						Choose the trigger or an action on the Editor canvas to
+						inspect its configuration.
+					</p>
+				</div>
+			);
+		}
+		if (traceMode) {
+			const snapshot = traceSnapshot;
+			if (!snapshot) {
+				return (
+					<div className="flex h-full items-center justify-center px-6 text-center text-muted-foreground text-sm">
+						Run the automation to view its trace.
+					</div>
+				);
+			}
+			return (
+				<TraceTab
+					{...snapshot}
+					expandedNodes={expandedTraceNodes}
+					onDismiss={() => undefined}
+					onToggleNode={(nodeId) =>
+						setExpandedTraceNodes((nodes) => {
+							const next = new Set(nodes);
+							if (next.has(nodeId)) next.delete(nodeId);
+							else next.add(nodeId);
+							return next;
+						})
+					}
+				/>
+			);
+		}
 		return (
 			<AutomationCanvas
 				appId={appId}

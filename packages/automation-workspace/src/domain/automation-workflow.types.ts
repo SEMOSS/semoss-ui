@@ -16,6 +16,7 @@ export type AutomationWorkflowNodeType =
 	| "vector.add"
 	| "vector.delete"
 	| "function.execute"
+	| "agent.run"
 	| "app.pixel"
 	| "control.wait"
 	| "developer.python";
@@ -59,19 +60,6 @@ export type TriggerBinding =
 	| { id: string; type: "webhook"; path: string; secretId?: string }
 	| { id: string; type: "event"; eventName: string; source?: string };
 
-export interface PythonTemplateReference {
-	id: string;
-	version: string;
-}
-
-export interface PythonTemplateMetadata extends PythonTemplateReference {
-	runtime: "python";
-	entrypoint: string;
-	description: string;
-	inputs: readonly AutomationPort[];
-	outputs: readonly AutomationPort[];
-}
-
 export interface AutomationWorkflowNodeConfig
 	extends Record<
 		string,
@@ -79,11 +67,18 @@ export interface AutomationWorkflowNodeConfig
 		| number
 		| string
 		| string[]
-		| PythonTemplateReference
+		| AutomationGlobalVariable[]
 		| undefined
 	> {
 	/** Python artifact executed for this non-trigger node. */
 	pythonSource?: string;
+}
+
+/** A trigger-owned input available to every downstream node at runtime. */
+export interface AutomationGlobalVariable {
+	name: string;
+	defaultValue: string;
+	description?: string;
 }
 
 export interface AutomationWorkflowNode<
@@ -139,8 +134,7 @@ export type ConfigFieldType =
 	| "string"
 	| "string[]"
 	| "textarea"
-	| "code"
-	| "python-template";
+	| "code";
 
 export interface ConfigFieldSchema {
 	type: ConfigFieldType;

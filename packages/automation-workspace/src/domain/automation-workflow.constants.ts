@@ -2,7 +2,6 @@ import type {
 	AutomationNodeDefinition,
 	AutomationPort,
 	AutomationWorkflowNodeType,
-	PythonTemplateMetadata,
 } from "./automation-workflow.types";
 
 const controlIn: AutomationPort = {
@@ -30,19 +29,6 @@ const engine = {
 	placeholder: "Choose an engine ID",
 	required: true,
 };
-
-export const PYTHON_TEMPLATE_METADATA: readonly PythonTemplateMetadata[] = [
-	{
-		id: "semoss.python.function",
-		version: "1.0.0",
-		runtime: "python",
-		entrypoint: "run",
-		description:
-			"A Python function that receives inputs and returns outputs.",
-		inputs: [],
-		outputs: [textOut],
-	},
-];
 
 export const AUTOMATION_WORKFLOW_NODE_REGISTRY: readonly AutomationNodeDefinition[] =
 	[
@@ -259,6 +245,28 @@ export const AUTOMATION_WORKFLOW_NODE_REGISTRY: readonly AutomationNodeDefinitio
 			defaultCodeMode: "generated",
 		},
 		{
+			type: "agent.run",
+			label: "Run agent",
+			description: "Run a configured SEMOSS agent with a prompt.",
+			category: "model",
+			defaultConfig: { agentId: "", prompt: "" },
+			configSchema: {
+				agentId: {
+					type: "string",
+					label: "Agent ID",
+					required: true,
+				},
+				prompt: {
+					type: "textarea",
+					label: "Prompt",
+					required: true,
+				},
+			},
+			inputs: [controlIn],
+			outputs: [controlOut, textOut],
+			defaultCodeMode: "generated",
+		},
+		{
 			type: "app.pixel",
 			label: "Run app Pixel",
 			description: "Run a Pixel command in an application.",
@@ -294,9 +302,7 @@ export const AUTOMATION_WORKFLOW_NODE_REGISTRY: readonly AutomationNodeDefinitio
 			label: "Python",
 			description: "Run custom Python for advanced transformations.",
 			category: "developer",
-			defaultConfig: {
-				template: { id: "semoss.python.function", version: "1.0.0" },
-			},
+			defaultConfig: {},
 			configSchema: {},
 			inputs: [controlIn],
 			outputs: [controlOut, textOut],
