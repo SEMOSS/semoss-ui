@@ -49,6 +49,10 @@ import {
 	formatTimestamp,
 } from "../../domain/automation-display";
 import type {
+	AutomationInspectorAction,
+	AutomationInspectorSnapshot,
+} from "../../domain/automation-inspector";
+import type {
 	AutomationWorkflowDocument,
 	AutomationWorkflowNodeType,
 	TriggerBinding,
@@ -212,7 +216,7 @@ export function AutomationCanvas({
 	const [canvasMode, setCanvasMode] = useState<"interact" | "pan">(
 		"interact",
 	);
-	const _editingStep = useMemo(
+	const editingStep = useMemo(
 		() => steps.find((s) => s.id === editingStepId) ?? null,
 		[steps, editingStepId],
 	);
@@ -571,7 +575,7 @@ export function AutomationCanvas({
 	}, [activeDockTab, incompleteCount]);
 
 	// ---- Callbacks ----
-	const _handleDevModeChange = useCallback(
+	const handleDevModeChange = useCallback(
 		(value: boolean) => {
 			setDevMode(value);
 			localStorage.setItem(`automation-devmode-${appId}`, String(value));
@@ -612,7 +616,7 @@ export function AutomationCanvas({
 		[getNodeHeight, steps],
 	);
 
-	const _updateStep = useCallback((updated: AutomationNode) => {
+	const updateStep = useCallback((updated: AutomationNode) => {
 		setSteps((previous) =>
 			previous.map((step) => (step.id === updated.id ? updated : step)),
 		);
@@ -683,7 +687,7 @@ export function AutomationCanvas({
 		setLatestRunResults((prev) => prev.filter((r) => r.NODE_ID !== id));
 	}, []);
 
-	const _upstreamVarsFor = useCallback(
+	const upstreamVarsFor = useCallback(
 		(index: number) => [
 			...steps
 				.slice(0, index)
@@ -696,7 +700,102 @@ export function AutomationCanvas({
 		[steps],
 	);
 
+	useEffect(() => {
+		const parentOrigin = new URLSearchParams(window.location.search).get(
+			"parentOrigin",
+		);
+		if (!parentOrigin || window.parent === window) return;
+		const stepIndex = editingStep
+			? steps.findIndex((step) => step.id === editingStep.id)
+			: -1;
+		const snapshot: AutomationInspectorSnapshot = {
+			description,
+			devMode,
+			editingStep,
+			upstreamVars: stepIndex >= 0 ? upstreamVarsFor(stepIndex) : [],
+			stepRunStatus: editingStep
+				? stepStatuses[editingStep.id]
+				: undefined,
+			stepRunError: editingStep ? stepErrors[editingStep.id] : undefined,
+			stepRunOutput: editingStep
+				? (stepOutputPreviews[editingStep.id] ?? null)
+				: null,
+		};
+		window.parent.postMessage(
+			{ type: "SEMOSS_AUTOMATION_INSPECTOR", snapshot },
+			parentOrigin,
+		);
+	}, [
+		description,
+		devMode,
+		editingStep,
+		stepErrors,
+		stepOutputPreviews,
+		stepStatuses,
+		steps,
+		upstreamVarsFor,
+	]);
+
+	useEffect(() => {
+		const parentOrigin = new URLSearchParams(window.location.search).get(
+			"parentOrigin",
+		);
+		const handleMessage = (event: MessageEvent<unknown>) => {
+			if (
+				event.source !== window.parent ||
+				(parentOrigin !== null && event.origin !== parentOrigin) ||
+				typeof event.data !== "object" ||
+				event.data === null
+			) {
+				return;
+			}
+			const message = event.data as {
+				type?: unknown;
+				action?: AutomationInspectorAction;
+			};
+			if (
+				message.type !== "SEMOSS_AUTOMATION_INSPECTOR_ACTION" ||
+				!message.action
+			) {
+				return;
+			}
+
+			const action = message.action;
+			switch (action.type) {
+				case "update-step":
+					updateStep(action.step);
+					break;
+				case "delete-step":
+					deleteStep(action.stepId);
+					break;
+				case "update-description":
+					setDescription(action.description);
+					break;
+				case "update-dev-mode":
+					handleDevModeChange(action.devMode);
+					break;
+				case "close":
+					setEditingStepId(null);
+					break;
+			}
+		};
+		window.addEventListener("message", handleMessage);
+		return () => window.removeEventListener("message", handleMessage);
+	}, [deleteStep, handleDevModeChange, updateStep]);
+
 	const save = useCallback(async (): Promise<boolean> => {
+		const invalidSteps = steps.filter(
+			(step) =>
+				step.workflowType !== "trigger.start" &&
+				validateCanvasWorkflowNode(step).length > 0,
+		);
+		if (invalidSteps.length > 0) {
+			setEditingStepId(invalidSteps[0].id);
+			toast.error(
+				`Complete ${invalidSteps.length} step${invalidSteps.length === 1 ? "" : "s"} before saving`,
+			);
+			return false;
+		}
 		setSaving(true);
 		try {
 			const definition = canvasDocumentToWorkflow({
@@ -709,6 +808,9 @@ export function AutomationCanvas({
 			const response = await runPixel(
 				`SaveAutomation(project=["${appId}"], json=["${encodeBase64(JSON.stringify(definition))}"], nodeSources=["${encodeBase64(JSON.stringify(nodeSources))}"]);`,
 			);
+			if (response.errors.length > 0) {
+				throw new Error(response.errors.join("\n"));
+			}
 			const output = response.pixelReturn?.[0]?.output as
 				| { nodeSources?: Record<string, string> }
 				| undefined;

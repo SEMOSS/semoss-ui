@@ -154,6 +154,16 @@ export const AutomationWorkspace = observer(() => {
 	const traceFrameRef = useRef<HTMLIFrameElement>(null);
 	const inspectorFrameRef = useRef<HTMLIFrameElement>(null);
 	const [traceSnapshot, setTraceSnapshot] = useState<unknown>(null);
+	const [inspectorSnapshot, setInspectorSnapshot] = useState<unknown>(null);
+	const automationWorkspaceOrigin = useMemo(
+		() => new URL(AUTOMATION_WORKSPACE_URL, window.location.origin).origin,
+		[],
+	);
+
+	useEffect(() => {
+		if (!appId) return;
+		setInspectorSnapshot(null);
+	}, [appId]);
 
 	const automationMcp = useMemo<MCPConfig[]>(
 		() => [
@@ -167,20 +177,16 @@ export const AutomationWorkspace = observer(() => {
 	);
 
 	const notifyAutomationChanged = useCallback(() => {
-		const canvasOrigin = new URL(
-			AUTOMATION_WORKSPACE_URL,
-			window.location.origin,
-		).origin;
 		automationFrameRef.current?.contentWindow?.postMessage(
 			{ type: "SEMOSS_AUTOMATION_REFRESH", projectId: appId },
-			canvasOrigin,
+			automationWorkspaceOrigin,
 		);
-	}, [appId]);
+	}, [appId, automationWorkspaceOrigin]);
 
 	useEffect(() => {
 		const handleMessage = (event: MessageEvent<unknown>) => {
 			if (
-				event.origin !== window.location.origin ||
+				event.origin !== automationWorkspaceOrigin ||
 				typeof event.data !== "object" ||
 				event.data === null
 			) {
@@ -205,13 +211,50 @@ export const AutomationWorkspace = observer(() => {
 						type: "SEMOSS_AUTOMATION_TRACE",
 						snapshot: traceSnapshot,
 					},
-					window.location.origin,
+					automationWorkspaceOrigin,
+				);
+			}
+			if (
+				event.source === automationFrameRef.current?.contentWindow &&
+				message.type === "SEMOSS_AUTOMATION_INSPECTOR"
+			) {
+				setInspectorSnapshot(message.snapshot);
+			}
+			if (
+				event.source === inspectorFrameRef.current?.contentWindow &&
+				message.type === "SEMOSS_AUTOMATION_INSPECTOR_READY"
+			) {
+				inspectorFrameRef.current?.contentWindow?.postMessage(
+					{
+						type: "SEMOSS_AUTOMATION_INSPECTOR",
+						snapshot: inspectorSnapshot,
+					},
+					automationWorkspaceOrigin,
+				);
+			}
+			if (
+				event.source === inspectorFrameRef.current?.contentWindow &&
+				message.type === "SEMOSS_AUTOMATION_INSPECTOR_ACTION"
+			) {
+				automationFrameRef.current?.contentWindow?.postMessage(
+					message,
+					automationWorkspaceOrigin,
 				);
 			}
 		};
 		window.addEventListener("message", handleMessage);
 		return () => window.removeEventListener("message", handleMessage);
-	}, [traceSnapshot]);
+	}, [automationWorkspaceOrigin, inspectorSnapshot, traceSnapshot]);
+
+	useEffect(() => {
+		inspectorFrameRef.current?.contentWindow?.postMessage(
+			{
+				type: "SEMOSS_AUTOMATION_INSPECTOR",
+				snapshot: inspectorSnapshot,
+			},
+			automationWorkspaceOrigin,
+		);
+	}, [automationWorkspaceOrigin, inspectorSnapshot]);
 
 	useEffect(() => {
 		const model = workspace.model;
@@ -238,9 +281,9 @@ export const AutomationWorkspace = observer(() => {
 	useEffect(() => {
 		traceFrameRef.current?.contentWindow?.postMessage(
 			{ type: "SEMOSS_AUTOMATION_TRACE", snapshot: traceSnapshot },
-			window.location.origin,
+			automationWorkspaceOrigin,
 		);
-	}, [traceSnapshot]);
+	}, [automationWorkspaceOrigin, traceSnapshot]);
 
 	const runAutomationMutation = useCallback<WorkbenchChatToolHandler>(
 		async (_parameters, context) => {

@@ -1,11 +1,16 @@
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AutomationCanvas } from "./components/canvas-editor/automation-canvas";
+import { InspectorTab } from "./components/canvas-editor/tabs/inspector-tab";
 import {
 	type AutomationTraceSnapshot,
 	TraceTab,
 } from "./components/canvas-editor/tabs/trace-tab";
 import type { AutomationToolContext } from "./domain/automation.types";
+import type {
+	AutomationInspectorAction,
+	AutomationInspectorSnapshot,
+} from "./domain/automation-inspector";
 import {
 	getMcpToolContext,
 	initSemoss,
@@ -27,6 +32,7 @@ function useQueryParams(): URLSearchParams {
 export default function App() {
 	const params = useQueryParams();
 	const rawMode = params.get("mode");
+	const parentOrigin = params.get("parentOrigin") || window.location.origin;
 	const mcpMode: "edit" | "create" | null =
 		rawMode === "edit" || rawMode === "create" ? rawMode : null;
 	const traceMode = rawMode === "trace";
@@ -102,13 +108,42 @@ export default function App() {
 	const [expandedTraceNodes, setExpandedTraceNodes] = useState<Set<string>>(
 		new Set(),
 	);
+	const [inspectorSnapshot, setInspectorSnapshot] =
+		useState<AutomationInspectorSnapshot | null>(null);
+
+	useEffect(() => {
+		if (!inspectorMode) return;
+		const handleInspector = (event: MessageEvent<unknown>) => {
+			if (
+				event.source !== window.parent ||
+				event.origin !== parentOrigin ||
+				typeof event.data !== "object" ||
+				event.data === null
+			) {
+				return;
+			}
+			const message = event.data as {
+				type?: unknown;
+				snapshot?: AutomationInspectorSnapshot | null;
+			};
+			if (message.type === "SEMOSS_AUTOMATION_INSPECTOR") {
+				setInspectorSnapshot(message.snapshot ?? null);
+			}
+		};
+		window.addEventListener("message", handleInspector);
+		window.parent.postMessage(
+			{ type: "SEMOSS_AUTOMATION_INSPECTOR_READY" },
+			parentOrigin,
+		);
+		return () => window.removeEventListener("message", handleInspector);
+	}, [inspectorMode, parentOrigin]);
 
 	useEffect(() => {
 		if (!traceMode) return;
 		const handleTrace = (event: MessageEvent<unknown>) => {
 			if (
 				event.source !== window.parent ||
-				event.origin !== window.location.origin ||
+				event.origin !== parentOrigin ||
 				typeof event.data !== "object" ||
 				event.data === null
 			) {
@@ -128,10 +163,10 @@ export default function App() {
 		window.addEventListener("message", handleTrace);
 		window.parent.postMessage(
 			{ type: "SEMOSS_AUTOMATION_TRACE_READY" },
-			window.location.origin,
+			parentOrigin,
 		);
 		return () => window.removeEventListener("message", handleTrace);
-	}, [traceMode]);
+	}, [parentOrigin, traceMode]);
 
 	useEffect(() => {
 		if (!createError || !toolContext) return;
@@ -183,14 +218,59 @@ export default function App() {
 
 	if (ready) {
 		if (inspectorMode) {
+			const sendInspectorAction = (action: AutomationInspectorAction) => {
+				window.parent.postMessage(
+					{ type: "SEMOSS_AUTOMATION_INSPECTOR_ACTION", action },
+					parentOrigin,
+				);
+			};
+			const snapshot = inspectorSnapshot;
 			return (
-				<div className="flex h-full flex-col items-center justify-center px-6 text-center">
-					<p className="font-semibold text-sm">Select a step</p>
-					<p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
-						Choose the trigger or an action on the Editor canvas to
-						inspect its configuration.
-					</p>
-				</div>
+				<InspectorTab
+					appId={appId}
+					description={snapshot?.description ?? ""}
+					devMode={snapshot?.devMode ?? false}
+					editingStep={snapshot?.editingStep ?? null}
+					upstreamVars={snapshot?.upstreamVars ?? []}
+					stepRunStatus={snapshot?.stepRunStatus}
+					stepRunError={snapshot?.stepRunError}
+					stepRunOutput={snapshot?.stepRunOutput}
+					onDescriptionChange={(description) => {
+						setInspectorSnapshot((current) =>
+							current ? { ...current, description } : current,
+						);
+						sendInspectorAction({
+							type: "update-description",
+							description,
+						});
+					}}
+					onDevModeChange={(devMode) => {
+						setInspectorSnapshot((current) =>
+							current ? { ...current, devMode } : current,
+						);
+						sendInspectorAction({
+							type: "update-dev-mode",
+							devMode,
+						});
+					}}
+					onClose={() => sendInspectorAction({ type: "close" })}
+					onUpdate={(step) => {
+						setInspectorSnapshot((current) =>
+							current
+								? { ...current, editingStep: step }
+								: current,
+						);
+						sendInspectorAction({ type: "update-step", step });
+					}}
+					onDelete={(stepId) => {
+						setInspectorSnapshot((current) =>
+							current
+								? { ...current, editingStep: null }
+								: current,
+						);
+						sendInspectorAction({ type: "delete-step", stepId });
+					}}
+				/>
 			);
 		}
 		if (traceMode) {
