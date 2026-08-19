@@ -119,6 +119,22 @@ console.log(result.text);   // full response
 console.log(result.status); // "COMPLETED"
 ```
 
+If a tool call needs a human decision (status `INPUT_REQUIRED`), pass `onPendingActions` —
+otherwise `askAgent` rejects as soon as the run pauses, since there'd be no way to unpause it:
+
+```ts
+const result = await room.askAgent("Delete all rows where status is 'archived'.", {
+    onPendingActions: (pendingActions) => {
+        for (const action of pendingActions) {
+            // Import decideAgentRunAction / submitAgentToolDecision from "@semoss/sdk".
+            // Use action.runId, not room.roomId — a paused subagent's action
+            // belongs to the subagent's own run.
+            submitAgentToolDecision(action, "submit"); // or "reject"
+        }
+    },
+});
+```
+
 ### Getting messages
 
 ```ts
@@ -146,6 +162,13 @@ const messages = await room.getMessages();
 | `parentMessageId` | last response ID | Override to fork the thread |
 | `image` | `[]` | Base64 image attachments |
 | `context` | `room.options.instructions` | System instructions override for this request |
+
+**`RoomAskAgentOptions`** (second arg to `room.askAgent`):
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `onChunk` | — | Streaming callback; receives `RoomStreamChunk` |
+| `onPendingActions` | — | Called with the paused `PendingAgentAction[]` when the run hits `INPUT_REQUIRED`. Omit only if the room's tools never require approval — otherwise `askAgent` rejects the moment the run pauses, since without a handler there's no way to resume it. |
 
 ---
 

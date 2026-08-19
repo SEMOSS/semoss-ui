@@ -1,3 +1,5 @@
+import type { PendingAgentAction } from "./api/agent.types";
+
 /**
  * Script object
  */
@@ -253,6 +255,17 @@ export interface RoomAskOptions {
 export interface RoomAskAgentOptions {
 	/** Called for each streaming chunk as it arrives. */
 	onChunk?: (chunk: RoomStreamChunk) => void;
+	/**
+	 * Called when the run pauses on one or more tool calls awaiting a human
+	 * decision (status `"INPUT_REQUIRED"`). Resolve each one with
+	 * `decideAgentRunAction` or `submitAgentToolDecision` (imported from
+	 * `@semoss/sdk`, using `pendingAction.runId` — not this Room's `roomId`)
+	 * to let the run resume.
+	 *
+	 * If omitted, `askAgent` rejects as soon as the run pauses, since there
+	 * would otherwise be no way to unpause it and the call would hang forever.
+	 */
+	onPendingActions?: (pendingActions: PendingAgentAction[]) => void;
 }
 
 /**

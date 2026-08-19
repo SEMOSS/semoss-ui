@@ -229,49 +229,73 @@ export class Room {
 		command: string,
 		options: RoomAskAgentOptions = {},
 	): Promise<RoomAskAgentResult> {
-		const { onChunk } = options;
+		const { onChunk, onPendingActions } = options;
 
 		const { runId } = await runAgent(
 			{ roomId: this.roomId, command, engine: this._options.modelId },
 			this.insightId,
 		);
 
-		const snapshot = await new Promise<AgentRunSnapshot>((resolve) => {
-			subscribeRunAgent(runId, {
-				onEvent: (event) => {
-					if (!onChunk) {
-						return;
-					}
-					if (event.type === "item.updated") {
-						if (event.kind === "message" && event.delta) {
-							onChunk({ type: "content", content: event.delta });
-						} else if (event.kind === "reasoning" && event.delta) {
-							onChunk({
-								type: "thinking",
-								thinking: event.delta,
-							});
-						} else if (event.patch) {
-							onChunk({ type: "tool", toolData: event.patch });
+		const snapshot = await new Promise<AgentRunSnapshot>(
+			(resolve, reject) => {
+				const subscription = subscribeRunAgent(runId, {
+					onEvent: (event) => {
+						if (!onChunk) {
+							return;
 						}
-					} else if (event.item.kind === "tool") {
-						onChunk({ type: "tool", toolData: event.item });
-					}
-				},
-				onSnapshot: () => {},
-				onReconcile: (full) => {
-					if (
-						full.status === "COMPLETED" ||
-						full.status === "FAILED" ||
-						full.status === "CANCELLED"
-					) {
-						resolve(full);
-					}
-				},
-				onError: (error) => {
-					console.error("Agent run stream error", error);
-				},
-			});
-		});
+						if (event.type === "item.updated") {
+							if (event.kind === "message" && event.delta) {
+								onChunk({
+									type: "content",
+									content: event.delta,
+								});
+							} else if (
+								event.kind === "reasoning" &&
+								event.delta
+							) {
+								onChunk({
+									type: "thinking",
+									thinking: event.delta,
+								});
+							} else if (event.patch) {
+								onChunk({
+									type: "tool",
+									toolData: event.patch,
+								});
+							}
+						} else if (event.item.kind === "tool") {
+							onChunk({ type: "tool", toolData: event.item });
+						}
+					},
+					onSnapshot: () => {},
+					onReconcile: (full) => {
+						if (full.status === "INPUT_REQUIRED") {
+							if (onPendingActions) {
+								onPendingActions(full.pendingActions);
+							} else {
+								subscription.stop();
+								reject(
+									new Error(
+										"Agent run paused awaiting a tool decision (INPUT_REQUIRED), but no onPendingActions handler was provided to askAgent — pass one and resolve each action with decideAgentRunAction/submitAgentToolDecision, or the run has no way to resume.",
+									),
+								);
+							}
+							return;
+						}
+						if (
+							full.status === "COMPLETED" ||
+							full.status === "FAILED" ||
+							full.status === "CANCELLED"
+						) {
+							resolve(full);
+						}
+					},
+					onError: (error) => {
+						console.error("Agent run stream error", error);
+					},
+				});
+			},
+		);
 
 		if (snapshot.status !== "COMPLETED") {
 			throw new Error(
