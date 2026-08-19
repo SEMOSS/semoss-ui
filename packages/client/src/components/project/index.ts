@@ -1,9 +1,10 @@
 export { EditProjectDependenciesDialog } from "./edit-project-dependencies-dialog";
-export { EditProjectDetailDialog } from "./edit-project-detail-dialog";
+export { ProjectAccessControl } from "./project-access-control";
 export { ProjectAccessRequestButton } from "./project-access-request-button";
 export { ProjectCatalog } from "./project-catalog";
 export { ProjectDetailTabs } from "./project-detail-tabs";
 export { ProjectEdit } from "./project-edit";
-export { ProjectExportButton } from "./project-export-button";
 export { ProjectGridItem } from "./project-grid-item";
+export { ProjectOverview } from "./project-overview";
+export { ProjectView } from "./project-view";
 export { UploadProjectDialog } from "./upload-project-dialog";

@@ -5,10 +5,11 @@ import { Spinner } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import { AuthenticatedLayout } from "./authenticated-layout";
 import { CookieNoticePage } from "./cookie-notice-page";
-import { ENGINE_ROUTES, EngineRedirect, EngineRouter } from "./engine";
+import { ENGINE_ROUTES, EngineRedirect } from "./engine";
 import { LandingPage } from "./landing-page";
 import { PageLayout } from "./page-layout";
 import { PrivacyNoticePage } from "./privacy-notice-page";
+import { ProjectLayout } from "./project/project-layout";
 
 const PromptRouter = lazy(() =>
 	import("./prompt/PromptRouter").then((m) => ({ default: m.PromptRouter })),
@@ -34,7 +35,7 @@ type RouteConfig = {
 	element: React.ReactNode;
 
 	/** Child routes */
-	children?: (typeof PROJECT_ROUTES)[number][];
+	children?: RouteConfig[];
 };
 
 const renderRoute = (route: RouteConfig): React.ReactElement => {
@@ -69,20 +70,15 @@ export const Router = observer(() => {
 		<Suspense fallback={<PageSpinner />}>
 			<Routes>
 				<Route path="/" element={<AuthenticatedLayout />}>
-					<Route path="s/:appId/*" element={<SharePage />} />
+					<Route path="s/:appId" element={<ProjectLayout />}>
+						<Route path="*" element={<SharePage />} />
+					</Route>
 					<Route path="*" element={<PageLayout />}>
 						<Route index element={<LandingPage />} />
 
 						{PROJECT_ROUTES.map(renderRoute)}
 						<Route path="engine/*" element={<EngineRedirect />} />
-						{/* Top-level engine routes - generated from ENGINE_ROUTES */}
-						{ENGINE_ROUTES.map((route) => (
-							<Route
-								key={route.path}
-								path={`${route.path}/*`}
-								element={<EngineRouter route={route} />}
-							/>
-						))}
+						{ENGINE_ROUTES.map(renderRoute)}
 						<Route path="prompt/*" element={<PromptRouter />} />
 						<Route path="settings/*" element={<SettingsRouter />} />
 						<Route path="*" element={<Navigate to="/" replace />} />

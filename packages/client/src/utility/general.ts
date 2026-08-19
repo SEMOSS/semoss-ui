@@ -24,10 +24,33 @@ export const splitAtPeriod = (str, side = "left") => {
  * @desc capitalizes every word that is spaced
  * "hello world" --> "Hello World"
  */
-export const toTitleCase = (str) => {
+export const toTitleCase = (str: string) => {
 	return str.replace(/\w\S*/g, (txt) => {
 		return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
 	});
+};
+
+/**
+ * @desc Formats a raw metadata key into a display label. Splits on underscores
+ * AND camelCase boundaries, then capitalizes each word. Casing of the rest of
+ * each word is preserved so acronyms survive ("MCP" stays "MCP").
+ * "data_classification" --> "Data Classification"
+ * "maxOutputTokens" --> "Max Output Tokens"
+ */
+export const metakeyToLabel = (metakey: string) => {
+	const spaced = metakey
+		.replace(/_/g, " ")
+		// "maxOutput" --> "max Output"
+		.replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+		// "MCPServer" --> "MCP Server"
+		.replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
+		.replace(/\s+/g, " ")
+		.trim();
+
+	return spaced.replace(
+		/\S+/g,
+		(word) => word.charAt(0).toUpperCase() + word.slice(1),
+	);
 };
 
 /**
@@ -77,20 +100,6 @@ MODULE="${Env.MODULE}"
 ACCESS_KEY="${accessKey ? accessKey : "<your access key>"}"
 SECRET_KEY="${secretKey ? secretKey : "<your secret key>"}"`;
 	}
-};
-
-const debounce = (func, wait) => {
-	let timeout: ReturnType<typeof setTimeout>;
-
-	return function executedFunction(...args) {
-		const later = () => {
-			clearTimeout(timeout);
-			func(...args);
-		};
-
-		clearTimeout(timeout);
-		timeout = setTimeout(later, wait);
-	};
 };
 
 /**

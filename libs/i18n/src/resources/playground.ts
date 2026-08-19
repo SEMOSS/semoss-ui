@@ -11,6 +11,7 @@ export const playgroundResources: LazyResources = {
 		"validation",
 		"prompts",
 		"auditlog",
+		"members",
 		"mcp",
 		"chat",
 		"knowledge",
@@ -19,6 +20,7 @@ export const playgroundResources: LazyResources = {
 		"tool",
 		"tour",
 		"workspace",
+		"mobile",
 	],
 	load: {
 		// core
@@ -28,6 +30,7 @@ export const playgroundResources: LazyResources = {
 		// shared
 		prompts: (l) => import(`./locales/${l}/shared/prompts.json`),
 		auditlog: (l) => import(`./locales/${l}/shared/auditlog.json`),
+		members: (l) => import(`./locales/${l}/shared/members.json`),
 		// playground (note: playground/mcp.json overrides shared/mcp.json)
 		mcp: (l) => import(`./locales/${l}/playground/mcp.json`),
 		chat: (l) => import(`./locales/${l}/playground/chat.json`),
@@ -37,5 +40,6 @@ export const playgroundResources: LazyResources = {
 		tool: (l) => import(`./locales/${l}/playground/tool.json`),
 		tour: (l) => import(`./locales/${l}/playground/tour.json`),
 		workspace: (l) => import(`./locales/${l}/playground/workspace.json`),
+		mobile: (l) => import(`./locales/${l}/playground/mobile.json`),
 	},
 };

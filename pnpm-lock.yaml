@@ -239,6 +239,18 @@ importers:
 
   libs/shared:
     dependencies:
+      '@dnd-kit/core':
+        specifier: ^6.3.1
+        version: 6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@dnd-kit/modifiers':
+        specifier: ^9.0.0
+        version: 9.0.0(@dnd-kit/core@6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+      '@dnd-kit/sortable':
+        specifier: ^10.0.0
+        version: 10.0.0(@dnd-kit/core@6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+      '@dnd-kit/utilities':
+        specifier: ^3.2.2
+        version: 3.2.2(react@18.3.1)
       '@iconify-icons/vscode-icons':
         specifier: ^1.1.18
         version: 1.2.29
@@ -555,6 +567,64 @@ importers:
         specifier: ^4.5.0
         version: 4.5.0(rollup@4.59.0)(typescript@5.9.3)(vite@7.2.4(@types/node@25.9.3)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.48.0))
 
+  packages/browser-automation:
+    dependencies:
+      '@semoss/sdk':
+        specifier: workspace:*
+        version: link:../../libs/sdk
+      '@semoss/ui':
+        specifier: workspace:*
+        version: link:../../libs/ui
+      '@tailwindcss/vite':
+        specifier: ^4.1.14
+        version: 4.1.17(vite@7.2.4(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.48.0))
+      lucide-react:
+        specifier: ^0.545.0
+        version: 0.545.0(react@18.3.1)
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: 18.3.1
+        version: 18.3.1(react@18.3.1)
+      tailwindcss:
+        specifier: ^4.1.14
+        version: 4.1.17
+    devDependencies:
+      '@eslint/js':
+        specifier: ^9.33.0
+        version: 9.39.4
+      '@types/node':
+        specifier: ^24.3.1
+        version: 24.12.2
+      '@types/react':
+        specifier: 18.3.1
+        version: 18.3.1
+      '@types/react-dom':
+        specifier: 18.3.0
+        version: 18.3.0
+      '@vitejs/plugin-react':
+        specifier: ^4.6.0
+        version: 4.7.0(vite@7.2.4(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.48.0))
+      eslint:
+        specifier: ^9.33.0
+        version: 9.39.4(jiti@2.6.1)
+      eslint-plugin-react-hooks:
+        specifier: ^5.2.0
+        version: 5.2.0(eslint@9.39.4(jiti@2.6.1))
+      eslint-plugin-react-refresh:
+        specifier: ^0.4.20
+        version: 0.4.26(eslint@9.39.4(jiti@2.6.1))
+      globals:
+        specifier: ^16.3.0
+        version: 16.5.0
+      typescript:
+        specifier: ~5.5.2
+        version: 5.5.4
+      vite:
+        specifier: ^7.0.0
+        version: 7.2.4(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.48.0)
+
   packages/chrome-extension:
     dependencies:
       '@semoss/sdk':
@@ -846,64 +916,6 @@ importers:
       vitest:
         specifier: ^4.1.6
         version: 4.1.8(@types/node@25.9.3)(@vitest/browser-playwright@4.1.8)(@vitest/coverage-v8@4.1.8)(@vitest/ui@4.1.8)(jsdom@22.1.0)(vite@7.2.4(@types/node@25.9.3)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.48.0))
-
-  packages/playwright-browser-sockets:
-    dependencies:
-      '@semoss/sdk':
-        specifier: workspace:*
-        version: link:../../libs/sdk
-      '@semoss/ui':
-        specifier: workspace:*
-        version: link:../../libs/ui
-      '@tailwindcss/vite':
-        specifier: ^4.1.14
-        version: 4.1.17(vite@7.2.4(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.48.0))
-      lucide-react:
-        specifier: ^0.545.0
-        version: 0.545.0(react@18.3.1)
-      react:
-        specifier: 18.3.1
-        version: 18.3.1
-      react-dom:
-        specifier: 18.3.1
-        version: 18.3.1(react@18.3.1)
-      tailwindcss:
-        specifier: ^4.1.14
-        version: 4.1.17
-    devDependencies:
-      '@eslint/js':
-        specifier: ^9.33.0
-        version: 9.39.4
-      '@types/node':
-        specifier: ^24.3.1
-        version: 24.12.2
-      '@types/react':
-        specifier: 18.3.1
-        version: 18.3.1
-      '@types/react-dom':
-        specifier: 18.3.0
-        version: 18.3.0
-      '@vitejs/plugin-react':
-        specifier: ^4.6.0
-        version: 4.7.0(vite@7.2.4(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.48.0))
-      eslint:
-        specifier: ^9.33.0
-        version: 9.39.4(jiti@2.6.1)
-      eslint-plugin-react-hooks:
-        specifier: ^5.2.0
-        version: 5.2.0(eslint@9.39.4(jiti@2.6.1))
-      eslint-plugin-react-refresh:
-        specifier: ^0.4.20
-        version: 0.4.26(eslint@9.39.4(jiti@2.6.1))
-      globals:
-        specifier: ^16.3.0
-        version: 16.5.0
-      typescript:
-        specifier: ~5.5.2
-        version: 5.5.4
-      vite:
-        specifier: ^7.0.0
-        version: 7.2.4(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.48.0)
 
   packages/terminal:
     dependencies:
@@ -17609,7 +17621,7 @@ snapshots:
     dependencies:
       fast-json-patch: 3.1.1
       json-stringify-pretty-compact: 2.0.0
-      semver: 7.7.3
+      semver: 7.8.4
       vega: 6.2.0
       vega-lite: 6.4.1(vega@6.2.0)
       vega-schema-url-parser: 1.1.0

@@ -5,10 +5,11 @@
 		"completed": "Completed",
 		"ready": "Ready",
 		"autoExecute": "Auto-executing",
-		"paused": "Paused",
 		"queued": "In queue to auto-execute",
 		"loadingTool": "Loading tool…",
-		"waitingForArguments": "Waiting for arguments…"
+		"waitingForArguments": "Waiting for arguments…",
+		"running": "Running",
+		"waitingForInput": "Waiting for input"
 	},
 	"actions": {
 		"cancel": "Cancel",
@@ -21,13 +22,15 @@
 	"group": {
 		"labelClosed": "{{toolName}} + {{count}} more",
 		"labelOpen": "Executed Tools ({{count}})",
+		"labelStreaming_one": "Loading {{count}} tool…",
+		"labelStreaming_other": "Loading {{count}} tools…",
 		"summaryCompleted": "{{count}} completed",
 		"summaryError": "{{count}} failed",
-		"summaryCancelled": "{{count}} cancelled",
-		"summaryPaused": "{{count}} paused"
+		"summaryCancelled": "{{count}} cancelled"
 	},
 	"form": {
 		"result": "Result",
+		"parameters": "Parameters",
 		"schemaLoadFailed": "Failed to load tool schema",
 		"schemaLoadFailedDescription": "Unable to retrieve tool configuration. Please try again later.",
 		"schemaLoading": "Loading tool schema...",
@@ -43,6 +46,11 @@
 		"details": "Playwright Script Details",
 		"projectId": "Project ID",
 		"recordedFile": "Recorded File"
+	},
+	"subagent": {
+		"title": "Subagent",
+		"notFound": "Subagent not found",
+		"noResult": "No response yet"
 	},
 	"extension": {
 		"required": "Browser Extension Required",

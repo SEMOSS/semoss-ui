@@ -164,6 +164,24 @@ export const setProjectGlobal = async (admin, appId, global: boolean) => {
 	return response;
 };
 
+export const setProjectTemplate = async (
+	admin: boolean,
+	appId: string,
+	isTemplate: boolean,
+) => {
+	let url = `${Env.MODULE}/api/auth/`;
+	const postData = {
+		projectId: appId,
+		template: isTemplate,
+	};
+	if (admin) {
+		url += "admin/";
+	}
+	url += "project/setProjectTemplate";
+
+	return post<{ success: boolean }>(url, postData, {});
+};
+
 export const setProjectVisiblity = async (admin, appId, visible) => {
 	let url = `${Env.MODULE}/api/auth/`;
 

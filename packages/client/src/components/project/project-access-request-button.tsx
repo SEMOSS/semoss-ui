@@ -1,7 +1,8 @@
 import { LockKeyhole, RefreshCcw } from "lucide-react";
 import { useState } from "react";
+import type { Role } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
-import type { Project, Role } from "@semoss/shared";
+import type { Project } from "@semoss/shared";
 import { Button, Spinner } from "@semoss/ui/next";
 import { ProjectAccessRequestDialog } from "./project-access-request-dialog";
 

@@ -1,6 +1,6 @@
 import { Plus } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
@@ -37,7 +37,7 @@ const CATALOG_CONFIG = {
 		createPath: "/app/new",
 		basePath: "/app",
 		itemSubPath: "view",
-		pixelFilter: 'projectType=["CODE", "BLOCKS"]',
+		projectTypes: ["CODE", "BLOCKS"],
 		showSystemTab: true,
 	},
 	SKILL: {
@@ -47,7 +47,7 @@ const CATALOG_CONFIG = {
 		createPath: "/skill/new",
 		basePath: "/skill",
 		itemSubPath: "view",
-		pixelFilter: 'projectType=["SKILL"]',
+		projectTypes: ["SKILL"],
 		showSystemTab: false,
 	},
 	WORKSPACE: {
@@ -57,8 +57,17 @@ const CATALOG_CONFIG = {
 		createPath: "/agent/new",
 		basePath: "/agent",
 		itemSubPath: "edit",
-		pixelFilter: 'projectType=["WORKSPACE"]',
-
+		projectTypes: ["WORKSPACE"],
+		showSystemTab: false,
+	},
+	NOTEBOOK: {
+		name: "Notebook",
+		description:
+			"Write and execute code cells, visualize data, and document your analysis in a live, interactive notebook environment. Organize and share notebooks across your team.",
+		createPath: "/notebook/new",
+		basePath: "/notebook",
+		itemSubPath: "view",
+		projectTypes: ["NOTEBOOK"],
 		showSystemTab: false,
 	},
 } as const;
@@ -72,6 +81,19 @@ const SYSTEM_APPS: {
 	href: string;
 }[] = [
 	{
+		id: "bi-system-app",
+		name: "BI",
+		description: "Develop dashboards and visualizations to view data",
+		href: "../../legacy/dist/",
+	},
+	{
+		id: "browser-automation-system-app",
+		name: "Browser Automation",
+		description:
+			"Drive a remote browser, record what you do, and replay it later",
+		href: "../../browser-automation/dist/",
+	},
+	{
 		id: "playground-system-app",
 		name: "Playground",
 		description:
@@ -79,23 +101,10 @@ const SYSTEM_APPS: {
 		href: "../../playground/dist/",
 	},
 	{
-		id: "bi-system-app",
-		name: "BI",
-		description: "Develop dashboards and visualizations to view data",
-		href: "../../legacy/dist/",
-	},
-	{
 		id: "terminal-system-app",
 		name: "Terminal",
 		description: "Execute commands and see a response",
 		href: "../../terminal/dist/",
-	},
-	{
-		id: "playwright-system-app",
-		name: "Playwright Browser",
-		description:
-			"Drive a remote browser, record what you do, and replay it later",
-		href: "../../playwright-browser-sockets/dist/",
 	},
 ];
 
@@ -149,13 +158,22 @@ export const ProjectCatalog = observer(
 
 		const metaKeysDescription = [...metaKeys, "description"];
 
+		// The project types this view lists. Shared by the MyProjects calls below
+		// and by the filter box's GetProjectMetaValues call, so the filter options
+		// are always counted over exactly the projects the view can show.
+		const projectTypes = useMemo(
+			() => [...config.projectTypes],
+			[config.projectTypes],
+		);
+		const projectTypeFilter = `projectType=${JSON.stringify(projectTypes)}`;
+
 		const getFavoriteProjects = usePixel<Project[]>(
 			tab === "Mine"
 				? `MyProjects(metaKeys = ${JSON.stringify(
 						metaKeysDescription,
 					)}, metaFilters=[${JSON.stringify(
 						metaFilters,
-					)}], filterWord=["${debouncedSearch}"], sort=[{"${sortValue}" : "${sortOrder}"}], ${config.pixelFilter}, onlyFavorites=[true]);`
+					)}], filterWord=["${debouncedSearch}"], sort=[{"${sortValue}" : "${sortOrder}"}], ${projectTypeFilter}, onlyFavorites=[true]);`
 				: "",
 			{
 				data: [],
@@ -178,7 +196,7 @@ export const ProjectCatalog = observer(
 					metaKeysDescription,
 				)}, metaFilters=[${JSON.stringify(
 					metaFilters,
-				)}], filterWord=["${debouncedSearch}"], sort=[{"${sortValue}" : "${sortOrder}"}], ${config.pixelFilter}, limit=[${limit}], offset=[${offset}]);`;
+				)}], filterWord=["${debouncedSearch}"], sort=[{"${sortValue}" : "${sortOrder}"}], ${projectTypeFilter}, limit=[${limit}], offset=[${offset}]);`;
 			},
 			(response) => {
 				// if its less than the limit, we know its the end
@@ -446,6 +464,7 @@ export const ProjectCatalog = observer(
 							<CatalogFilterBox
 								key={filterKey}
 								type={type}
+								projectTypes={projectTypes}
 								filters={
 									metaFilters as Record<string, string[]>
 								}

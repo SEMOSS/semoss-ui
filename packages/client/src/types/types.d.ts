@@ -1,5 +1,3 @@
-export type Role = "OWNER" | "EDIT" | "READ_ONLY" | "DISCOVERABLE";
-
 export interface PixelCommand {
 	type: string;
 	components: unknown[];
