@@ -258,7 +258,11 @@ export interface SelectedTextContext {
 	url: string;
 	title: string;
 	throughStepId: number;
-	extractionMethod: "dom-range" | "dom-rectangle" | "full-page-dom";
+	extractionMethod:
+		| "dom-native-selection"
+		| "dom-range"
+		| "dom-rectangle"
+		| "full-page-dom";
 	bounds: SelectionBounds;
 	content: string;
 	edited: boolean;

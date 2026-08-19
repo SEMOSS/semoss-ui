@@ -118,12 +118,15 @@ export const SelectedTextContextsPanel: React.FC<
 												</Badge>
 												<Badge variant="secondary">
 													{context.extractionMethod ===
-													"dom-range"
-														? "Exact range"
+													"dom-native-selection"
+														? "Browser selection"
 														: context.extractionMethod ===
-																"full-page-dom"
-															? "Auto-scrolled DOM"
-															: "Area text"}
+																"dom-range"
+															? "Exact range"
+															: context.extractionMethod ===
+																	"full-page-dom"
+																? "Auto-scrolled DOM"
+																: "Area text"}
 												</Badge>
 												<Badge variant="outline">
 													{context.content.length}{" "}
