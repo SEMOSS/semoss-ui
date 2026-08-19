@@ -202,13 +202,38 @@ export const resolveWorkbenchChatModel = async (
 };
 
 /**
+ * The first text-generation model visible to the user, in MyEngines' default
+ * order — the same order the model picker lists them in.
+ *
+ * @name getFirstWorkbenchChatModel
+ * @param insightId - Insight the pixel executes against.
+ * @return The first available engine, or null when the user can access no
+ * text-generation models at all.
+ */
+export const getFirstWorkbenchChatModel = async (
+	insightId: string,
+): Promise<Engine | null> => {
+	const modelsResponse = await runPixel<[Engine[]]>(
+		`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
+		insightId,
+	);
+	assertPixelSuccess(modelsResponse.errors);
+
+	return modelsResponse.pixelReturn[0]?.output[0] ?? null;
+};
+
+/**
  * Resolve the user's configured default text-generation model by reading the
- * "text-generation-model" entry from their profile metadata.
+ * "text-generation-model" entry from their profile metadata. When no default
+ * is configured — or the configured model no longer resolves (deleted or no
+ * longer visible) — falls back to the first text-generation model available
+ * to the user.
  *
  * @name getDefaultWorkbenchChatModel
  * @param insightId - Insight the pixels execute against.
- * @return The user's default engine, or null when none is configured or it
- * cannot be resolved.
+ * @return The user's default engine, the first available engine when no
+ * default resolves, or null when the user can access no text-generation
+ * models at all.
  */
 export const getDefaultWorkbenchChatModel = async (
 	insightId: string,
@@ -226,7 +251,12 @@ export const getDefaultWorkbenchChatModel = async (
 		provider?.meta?.["text-generation-model"],
 	);
 
-	return resolveWorkbenchChatModel(insightId, modelId);
+	const configured = await resolveWorkbenchChatModel(insightId, modelId);
+	if (configured) {
+		return configured;
+	}
+
+	return getFirstWorkbenchChatModel(insightId);
 };
 
 /**

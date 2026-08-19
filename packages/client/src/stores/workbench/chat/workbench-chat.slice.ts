@@ -1,13 +1,23 @@
-import type { AgentRunSnapshot } from "@semoss/sdk/react";
+import type {
+	AgentRunItemEvent,
+	AgentRunSnapshot,
+	AgentRunSubscription,
+} from "@semoss/sdk/react";
 import {
 	decideAgentRunAction,
 	getAgentRun,
 	getSubagentRuns,
 	runAgent,
+	stopAgentRun,
+	subscribeRunAgent,
 	uploadInsight,
 } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
-import type { ConversationRoom, PlaygroundMessage } from "@/api/rooms";
+import type {
+	ConversationRoom,
+	PlaygroundMessage,
+	RoomMcpEntry,
+} from "@/api/rooms";
 import {
 	compactRoomMessages,
 	createWorkbenchRoom,
@@ -44,7 +54,6 @@ import {
 	calculateRoomUsage,
 	findLatestCompactableResponseId,
 } from "./workbench-chat.usage";
-import { watchAgentRun } from "./workbench-chat.watcher";
 
 /** Turn budget used when none is configured. */
 const DEFAULT_MAX_TURNS = 30;
@@ -52,12 +61,68 @@ const DEFAULT_MAX_TURNS = 30;
 /** Character budget for the client-derived room name on the first turn. */
 const AUTO_NAME_MAX_LENGTH = 60;
 
+/** Delay between streaming polls while a run is in flight. */
+const POLL_INTERVAL_MS = 300;
+
+/**
+ * Agent (workspace) every workbench chat run executes under — the backend's
+ * app-builder agent record. Sent as the RunAgent pixel's workspaceId.
+ */
+const WORKBENCH_AGENT_ID = "app-builder";
+
+/** Permission mode forwarded to the agent harness for each run. */
+export type WorkbenchChatPermissionMode =
+	| "default"
+	| "acceptEdits"
+	| "plan"
+	| "bypassPermissions";
+
+/** Reasoning-effort level forwarded to the model provider for each run. */
+export type WorkbenchChatEffort = "low" | "medium" | "high" | "max";
+
+/**
+ * The pixel value for a reasoning-effort level — the harness names the top
+ * tier "xhigh" while the UI calls it "max".
+ *
+ * @name effortParamValue
+ * @param effort - The user-facing effort level.
+ * @return The value the harness expects.
+ */
+const effortParamValue = (effort: WorkbenchChatEffort): string =>
+	effort === "max" ? "xhigh" : effort;
+
 /** Configuration each workbench injects for its CHAT panel. */
 export interface WorkbenchChatConfig {
 	/** System prompt sent to the assistant. */
 	systemPrompt?: string;
 	/** Prepare the bound room's tools before an agent run starts. */
 	prepareRoom?: (insightId: string) => Promise<void>;
+	/**
+	 * MCP servers persisted onto the room's options before each run (e.g. a
+	 * project workbench exposing the project's own tools). An alternative to
+	 * prepareRoom — a workbench must provide at least one of the two.
+	 */
+	mcp?: RoomMcpEntry[];
+	/**
+	 * Harness parameters merged into every run's paramValues — e.g.
+	 * { project: projectId } so the semoss harness scopes file tools and the
+	 * git-commit hook to the project.
+	 */
+	runParams?: Record<string, unknown>;
+	/** Default permission mode for runs; the user can change it in settings. */
+	permissionMode?: WorkbenchChatPermissionMode | null;
+	/**
+	 * Called after a root run reaches a terminal status and its durable
+	 * reconcile lands, with the run and the full run map (so the workbench can
+	 * scan subagent activity too — e.g. to refresh a preview after a publish).
+	 */
+	onRunCompleted?: (run: BuildRun, runs: Record<string, BuildRun>) => void;
+	/**
+	 * Manually rebuild the artifact this workbench previews (e.g. compile and
+	 * publish the app). When set, the chat header shows a rebuild button;
+	 * failures it throws surface as an error toast.
+	 */
+	onRebuild?: () => Promise<void>;
 }
 
 /** Transient system feedback rendered inline on the Build tab timeline. */
@@ -90,11 +155,27 @@ export interface WorkbenchChatSliceState {
 		systemPrompt: string;
 		/** Prepare the bound room's tools before an agent run starts. */
 		prepareRoom: ((insightId: string) => Promise<void>) | null;
+		/** MCP servers persisted onto the room's options before each run. */
+		mcp: RoomMcpEntry[];
+		/** Harness parameters merged into every run's paramValues. */
+		runParams: Record<string, unknown>;
+		/** Called after a root run reaches a terminal status and reconciles. */
+		onRunCompleted:
+			| ((run: BuildRun, runs: Record<string, BuildRun>) => void)
+			| null;
+		/** Rebuild action surfaced as a chat-header button when set. */
+		onRebuild: (() => Promise<void>) | null;
 
 		/** Model engine used for new runs. */
 		model: Engine | null;
 		/** Turn budget passed to RunAgent. */
 		maxTurns: number;
+		/** Permission mode for new runs; null defers to the harness default. */
+		permissionMode: WorkbenchChatPermissionMode | null;
+		/** Reasoning effort for new runs; null defers to the model default. */
+		effort: WorkbenchChatEffort | null;
+		/** Extended thinking for new runs; null defers to the model default. */
+		thinking: boolean | null;
 
 		/** Every known run (roots and subagents) keyed by run id. */
 		runs: Record<string, BuildRun>;
@@ -126,8 +207,9 @@ export interface WorkbenchChatSliceState {
 		/** Abort every live watcher (view unmount / insight change). */
 		dispose: () => void;
 		/**
-		 * Update one or more chat config fields (systemPrompt, prepareRoom)
-		 * for this workbench instance; omitted fields keep their values.
+		 * Update one or more chat config fields (systemPrompt, prepareRoom,
+		 * mcp, runParams, permissionMode, onRunCompleted) for this workbench
+		 * instance; omitted fields keep their values.
 		 */
 		configure: (config: WorkbenchChatConfig) => void;
 		/**
@@ -199,6 +281,20 @@ export interface WorkbenchChatSliceState {
 		setModel: (model: Engine) => void;
 		/** Set the turn budget; invalid values fall back to the default. */
 		setMaxTurns: (maxTurns: number) => void;
+		/** Set the permission mode for new runs (null = harness default). */
+		setPermissionMode: (
+			permissionMode: WorkbenchChatPermissionMode | null,
+		) => void;
+		/** Set the reasoning effort for new runs (null = model default). */
+		setEffort: (effort: WorkbenchChatEffort | null) => void;
+		/** Set extended thinking for new runs (null = model default). */
+		setThinking: (thinking: boolean | null) => void;
+		/**
+		 * Cancel the active run (StopAgentRun). The run's stream observes the
+		 * CANCELLED status and reconciles; failures surface as error notices.
+		 * Resolves when the stop request has been applied.
+		 */
+		stop: () => Promise<void>;
 		/**
 		 * Recompute `usage` from the room's durable messages. Failures are
 		 * logged, not surfaced. Resolves when the refresh settles.
@@ -267,8 +363,17 @@ const toErrorMessage = (error: unknown): string =>
 export const createWorkbenchChatSlice = (
 	workbenchId: string,
 ): WorkbenchSlice<WorkbenchChatSliceState> => {
-	// Runtime owned by this store instance, deliberately outside reactive state.
-	const activeWatchers = new Map<string, Promise<AgentRunSnapshot>>();
+	// Runtime owned by this store instance, deliberately outside reactive
+	// state. Each entry pairs the live SDK subscription (for pokeNow/stop)
+	// with a promise that resolves at the run's first pause or terminal
+	// status — what submit() awaits before reporting the outcome.
+	const activeWatchers = new Map<
+		string,
+		{
+			subscription: AgentRunSubscription;
+			promise: Promise<AgentRunSnapshot>;
+		}
+	>();
 	let abortController = new AbortController();
 	let initialization: { insightId: string; promise: Promise<void> } | null =
 		null;
@@ -342,37 +447,177 @@ export const createWorkbenchChatSlice = (
 		};
 
 		/**
-		 * Attach (or dedup onto) the poll watcher for a run, wiring stream
-		 * batches and durable reconciles into the run store. Rejects when
-		 * the chat is not initialized.
+		 * Attach (or dedup onto) the SDK stream subscription for a run,
+		 * wiring poll batches and durable reconciles into the run store and
+		 * recursively subscribing to discovered subagent runs. The
+		 * subscription keeps polling through INPUT_REQUIRED (at the SDK's
+		 * slower pause interval), so a decision resumes the same stream — no
+		 * re-attach needed. Rejects when the chat is not initialized.
 		 *
 		 * @name attachWatcher
 		 * @param runId - Durable id of the run to watch.
 		 * @param knownChildRunIds - Child run ids to watch immediately.
-		 * @return The final run snapshot once the watcher drains.
+		 * @return A promise resolving at the run's first pause
+		 * (INPUT_REQUIRED) or terminal status with the snapshot observed
+		 * there; polling continues past a pause resolution.
 		 */
 		const attachWatcher = (
 			runId: string,
 			knownChildRunIds?: string[],
 		): Promise<AgentRunSnapshot> => {
+			const existing = activeWatchers.get(runId);
+			if (existing) return existing.promise;
+
 			const insightId = get().chat.insightId;
 			if (!insightId) {
 				return Promise.reject(new Error("Chat is not initialized"));
 			}
-			return watchAgentRun({
-				runId,
-				insightId,
-				signal: abortController.signal,
-				activeWatchers,
-				knownChildRunIds,
-				applyBatch: (payload) => {
-					updateRunStore((store) => applyStreamBatch(store, payload));
-				},
-				mergeDurable: (payload) => {
-					updateRunStore((store) => mergeDurableRun(store, payload));
-				},
-				getRun: (id) => get().chat.runs[id],
+
+			// Assigned synchronously by the Promise executor below.
+			let resolvePause: (snapshot: AgentRunSnapshot) => void = () =>
+				undefined;
+			const pausePromise = new Promise<AgentRunSnapshot>((resolve) => {
+				resolvePause = resolve;
 			});
+
+			/**
+			 * Mount a watcher for a discovered subagent run unless one is
+			 * live or the child is already terminal and reconciled.
+			 *
+			 * @name watchChild
+			 * @param childRunId - Durable id of the child run to watch.
+			 */
+			const watchChild = (childRunId?: string) => {
+				if (!childRunId || childRunId === runId) return;
+				if (activeWatchers.has(childRunId)) return;
+				const child = get().chat.runs[childRunId];
+				if (
+					child &&
+					isTerminalAgentRunStatus(child.status) &&
+					child.reconciled
+				) {
+					return;
+				}
+				void attachWatcher(childRunId, child?.childRunIds).catch(
+					(error) => {
+						console.warn(
+							`Unable to watch subagent run ${childRunId}:`,
+							error,
+						);
+					},
+				);
+			};
+
+			// Children already known (e.g. from a resumed room) drain
+			// immediately rather than waiting to be rediscovered.
+			(knownChildRunIds ?? []).forEach(watchChild);
+
+			// Events buffered between polls; the SDK fires onEvent per event
+			// and onSnapshot once per successful poll (after its events), so
+			// flushing here reconstitutes the poll batch — one store update
+			// per poll instead of one per event.
+			let pendingEvents: AgentRunItemEvent[] = [];
+
+			const subscription = subscribeRunAgent(
+				runId,
+				{
+					onEvent: (event) => {
+						pendingEvents.push(event);
+					},
+					onSnapshot: (snapshot, meta) => {
+						const events = pendingEvents;
+						pendingEvents = [];
+						updateRunStore((store) =>
+							applyStreamBatch(store, {
+								runId,
+								snapshot: {
+									...snapshot,
+									// The streaming snapshot omits the field
+									// outside INPUT_REQUIRED — [] clears any
+									// pending actions a decision resolved.
+									pendingActions:
+										snapshot.pendingActions ?? [],
+								},
+								events,
+								droppedEvents: meta.droppedEvents,
+							}),
+						);
+						for (const event of events) {
+							if (
+								event.type !== "item.updated" &&
+								event.item.kind === "subagent"
+							) {
+								watchChild(event.item.childRunId);
+							}
+						}
+						get().chat.runs[runId]?.childRunIds.forEach(watchChild);
+						if (snapshot.status === "INPUT_REQUIRED") {
+							resolvePause(snapshot);
+						}
+					},
+					onReconcile: (record) => {
+						const projected = createBuildRunFromRecord(record);
+						attachDurableMessages(
+							{ [runId]: projected },
+							(record.messages ?? []) as PlaygroundMessage[],
+						);
+						updateRunStore((store) =>
+							mergeDurableRun(store, {
+								record,
+								messages: projected.messages,
+								tools: projected.tools,
+								reconciled: true,
+							}),
+						);
+						if (!isTerminalAgentRunStatus(record.status)) return;
+
+						const chat = get().chat;
+						const run = chat.runs[runId];
+						if (run && !run.parentRunId && chat.onRunCompleted) {
+							try {
+								chat.onRunCompleted(run, chat.runs);
+							} catch (error) {
+								console.warn(
+									"onRunCompleted handler failed:",
+									error,
+								);
+							}
+						}
+					},
+					onError: (error) => {
+						console.warn(`Agent run stream ${runId}:`, error);
+					},
+				},
+				{
+					pollIntervalMs: POLL_INTERVAL_MS,
+					signal: abortController.signal,
+				},
+			);
+
+			// First pause or terminal, whichever lands first. done never
+			// rejects; a null last-snapshot (stopped before any poll) falls
+			// back to a synthetic SUBMITTED snapshot.
+			const promise = Promise.race([
+				pausePromise,
+				subscription.done.then(
+					(snapshot) =>
+						snapshot ?? {
+							runId,
+							roomId: get().chat.roomId ?? "",
+							status: "SUBMITTED" as const,
+							pendingActions: [],
+						},
+				),
+			]);
+
+			activeWatchers.set(runId, { subscription, promise });
+			void subscription.done.finally(() => {
+				if (activeWatchers.get(runId)?.subscription === subscription) {
+					activeWatchers.delete(runId);
+				}
+			});
+
+			return promise;
 		};
 
 		/**
@@ -425,9 +670,16 @@ export const createWorkbenchChatSlice = (
 
 				systemPrompt: "",
 				prepareRoom: null,
+				mcp: [],
+				runParams: {},
+				onRunCompleted: null,
+				onRebuild: null,
 
 				model: null,
 				maxTurns: DEFAULT_MAX_TURNS,
+				permissionMode: null,
+				effort: null,
+				thinking: null,
 
 				runs: {},
 				roomRunIds: [],
@@ -506,7 +758,7 @@ export const createWorkbenchChatSlice = (
 						);
 						return false;
 					}
-					if (!chat.prepareRoom) {
+					if (!chat.prepareRoom && chat.mcp.length === 0) {
 						pushNotice(
 							"Room tools are not ready yet. Please try again.",
 							"error",
@@ -538,17 +790,40 @@ export const createWorkbenchChatSlice = (
 							}));
 						}
 
-						await chat.prepareRoom(insightId);
+						if (chat.prepareRoom) {
+							await chat.prepareRoom(insightId);
+						}
 
 						await updateRoomOptions(insightId, roomId, {
 							instructions: get().chat.systemPrompt,
-							// Engine tools are loaded exclusively from the room's MCP file.
-							mcp: [],
+							// Engine workbenches load tools from the room's MCP
+							// file (prepareRoom); project workbenches pass their
+							// MCP entries directly.
+							mcp: get().chat.mcp,
 							predefinedPrompts: [],
 							modelId: model.engine_id,
 							harnessType: "semoss",
 							workbench: workbenchId,
 						});
+
+						// Harness/run parameters: the workbench's static params
+						// plus the user's run controls, omitting anything unset
+						// so harness/model defaults apply.
+						const chatNow = get().chat;
+						const paramValues: Record<string, unknown> = {
+							...chatNow.runParams,
+						};
+						if (chatNow.permissionMode) {
+							paramValues.permissionMode = chatNow.permissionMode;
+						}
+						if (chatNow.thinking != null) {
+							paramValues.thinking = chatNow.thinking;
+						}
+						if (chatNow.effort) {
+							paramValues.effort = effortParamValue(
+								chatNow.effort,
+							);
+						}
 
 						const record = await runAgent(
 							{
@@ -556,6 +831,9 @@ export const createWorkbenchChatSlice = (
 								command,
 								engine: model.engine_id,
 								harnessType: "semoss",
+								// The SDK forwards agentId as the pixel's
+								// workspaceId.
+								agentId: WORKBENCH_AGENT_ID,
 								maxTurns: get().chat.maxTurns,
 								maxReflections: 0,
 								images: attachments
@@ -565,6 +843,10 @@ export const createWorkbenchChatSlice = (
 									.filter((path): path is string =>
 										Boolean(path),
 									),
+								paramValues:
+									Object.keys(paramValues).length > 0
+										? paramValues
+										: undefined,
 							},
 							insightId,
 						);
@@ -582,6 +864,10 @@ export const createWorkbenchChatSlice = (
 						);
 						const isFirstTurn = get().chat.roomRunIds.length === 1;
 
+						// The signal active when this run attached — the outer
+						// abortController is re-armed on room switches, so the
+						// captured one tells us whether THIS run was abandoned.
+						const runSignal = abortController.signal;
 						const finalSnapshot = await attachWatcher(record.runId);
 
 						const finalStatus = (finalSnapshot.status ?? "")
@@ -596,6 +882,17 @@ export const createWorkbenchChatSlice = (
 									finalSnapshot,
 									get().chat.maxTurns,
 								),
+								"error",
+							);
+						} else if (
+							(finalStatus === "SUBMITTED" ||
+								finalStatus === "RUNNING") &&
+							!runSignal.aborted
+						) {
+							// The stream ended without the run pausing or
+							// finishing — the poll transport gave up.
+							pushNotice(
+								"Lost connection to the agent run stream. The run may still be executing — resume this conversation to reconnect.",
 								"error",
 							);
 						}
@@ -663,7 +960,16 @@ export const createWorkbenchChatSlice = (
 						{ actionId, decision },
 						insightId,
 					);
-					await get().chat.reconcileRun(runId);
+					// The live subscription is still polling through the
+					// pause — poke it to pick the resumed run up immediately.
+					// Without one (stale pause from a resumed room), fall back
+					// to a reconcile, which re-attaches the stream.
+					const watcher = activeWatchers.get(runId);
+					if (watcher) {
+						watcher.subscription.pokeNow();
+					} else {
+						await get().chat.reconcileRun(runId);
+					}
 				},
 
 				respondUserInput: async (runId, actionId, answers) => {
@@ -674,7 +980,12 @@ export const createWorkbenchChatSlice = (
 						{ actionId, decision: "respond", paramValues: answers },
 						insightId,
 					);
-					await get().chat.reconcileRun(runId);
+					const watcher = activeWatchers.get(runId);
+					if (watcher) {
+						watcher.subscription.pokeNow();
+					} else {
+						await get().chat.reconcileRun(runId);
+					}
 				},
 
 				fetchRun: async (runId) => {
@@ -694,8 +1005,10 @@ export const createWorkbenchChatSlice = (
 						if (!record) return;
 						if (isTerminalAgentRunStatus(record.status)) return;
 
-						// The run resumed after a decision — make it active again
-						// (root runs only) and re-attach its drain watcher.
+						// Still live (running or paused) — make sure it is the
+						// active run again (root runs only) and that a stream
+						// subscription is attached; attachWatcher dedups onto
+						// any existing one.
 						const run = get().chat.runs[runId];
 						if (run && !run.parentRunId) {
 							setChat({ activeRunId: runId });
@@ -934,6 +1247,24 @@ export const createWorkbenchChatSlice = (
 								? Math.floor(maxTurns)
 								: DEFAULT_MAX_TURNS,
 					}),
+				setPermissionMode: (permissionMode) =>
+					setChat({ permissionMode }),
+				setEffort: (effort) => setChat({ effort }),
+				setThinking: (thinking) => setChat({ thinking }),
+
+				stop: async () => {
+					const { insightId, activeRunId } = get().chat;
+					if (!insightId || !activeRunId) return;
+
+					try {
+						await stopAgentRun(activeRunId, insightId);
+						// The stream observes the CANCELLED snapshot on its
+						// next poll — poke it so the UI settles immediately.
+						activeWatchers.get(activeRunId)?.subscription.pokeNow();
+					} catch (error) {
+						pushNotice(toErrorMessage(error), "error");
+					}
+				},
 
 				refreshUsage: async () => {
 					const { insightId, roomId } = get().chat;

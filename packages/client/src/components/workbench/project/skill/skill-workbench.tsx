@@ -139,6 +139,7 @@ export const SkillWorkbench: React.FC = () => {
 					name: name,
 				},
 			],
+			runParams: { project: project.project_id },
 		});
 	}, [
 		configureChat,

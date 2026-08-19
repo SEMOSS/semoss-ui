@@ -99,11 +99,20 @@ export const WorkbenchChatTimeline = () => {
 
 	const entries = useMemo<TimelineEntry[]>(() => {
 		const merged: TimelineEntry[] = [];
+		// roomRunIds is the authoritative conversation order — clamp each
+		// run's time to be monotonically non-decreasing so a missing or
+		// unparseable dateCreated can never hoist a run above an earlier
+		// one. Notices still interleave by their own timestamps.
+		let lastRunTime = 0;
 		for (const runId of roomRunIds) {
+			lastRunTime = Math.max(
+				lastRunTime,
+				parseTime(runs[runId]?.dateCreated),
+			);
 			merged.push({
 				type: "run",
 				key: `run-${runId}`,
-				time: parseTime(runs[runId]?.dateCreated),
+				time: lastRunTime,
 				runId,
 			});
 		}
@@ -214,12 +223,23 @@ export const WorkbenchChatTimeline = () => {
 	if (!hasContent) {
 		return (
 			<div className="relative min-h-0 flex-1">
-				<div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
-					<div className="flex size-10 items-center justify-center rounded-md bg-muted text-muted-foreground">
-						<SparklesIcon className="size-5" />
+				<div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
+					<div className="flex size-16 items-center justify-center rounded-2xl bg-muted">
+						<SparklesIcon className="size-8 text-emerald-500" />
 					</div>
-					<p className="font-medium text-foreground text-sm">
-						How can I help?
+					<div className="flex max-w-sm flex-col gap-2">
+						<p className="font-semibold text-foreground text-lg">
+							Describe what you want to build
+						</p>
+						<p className="text-muted-foreground text-sm">
+							Share a workflow, paste requirements, or ask for
+							changes in plain language.
+						</p>
+					</div>
+					<p className="max-w-sm text-muted-foreground/80 text-xs">
+						Examples: &quot;Create an intake app for internal
+						requests&quot; or &quot;Turn this spreadsheet into a
+						dashboard.&quot;
 					</p>
 				</div>
 			</div>

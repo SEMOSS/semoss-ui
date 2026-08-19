@@ -12,12 +12,43 @@ import {
 	FieldLabel,
 	Input,
 	ScrollArea,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Separator,
 	Spinner,
 } from "@semoss/ui/next";
 import { useWorkbench } from "@/hooks/use-workbench";
+import type {
+	WorkbenchChatEffort,
+	WorkbenchChatPermissionMode,
+} from "@/stores/workbench";
 
 const DEFAULT_MAX_TURNS = 30;
+
+/** Sentinel Select value for "unset — defer to the harness/model default". */
+const INHERIT = "inherit";
+
+/** Permission modes the semoss harness accepts, with display labels. */
+const PERMISSION_MODE_OPTIONS: {
+	value: WorkbenchChatPermissionMode;
+	label: string;
+}[] = [
+	{ value: "default", label: "Ask before edits" },
+	{ value: "acceptEdits", label: "Accept edits" },
+	{ value: "plan", label: "Plan first" },
+	{ value: "bypassPermissions", label: "Bypass permissions" },
+];
+
+/** Reasoning-effort levels, with display labels. */
+const EFFORT_OPTIONS: { value: WorkbenchChatEffort; label: string }[] = [
+	{ value: "low", label: "Low" },
+	{ value: "medium", label: "Medium" },
+	{ value: "high", label: "High" },
+	{ value: "max", label: "Max" },
+];
 
 /**
  * Chat settings view: model picker, conversation compaction, and advanced
@@ -32,8 +63,16 @@ export const WorkbenchChatSettings = () => {
 	const activeRunId = useWorkbench((state) => state.chat.activeRunId);
 	const compact = useWorkbench((state) => state.chat.compact);
 	const maxTurns = useWorkbench((state) => state.chat.maxTurns);
+	const permissionMode = useWorkbench((state) => state.chat.permissionMode);
+	const effort = useWorkbench((state) => state.chat.effort);
+	const thinking = useWorkbench((state) => state.chat.thinking);
 	const setModel = useWorkbench((state) => state.chat.setModel);
 	const setMaxTurns = useWorkbench((state) => state.chat.setMaxTurns);
+	const setPermissionMode = useWorkbench(
+		(state) => state.chat.setPermissionMode,
+	);
+	const setEffort = useWorkbench((state) => state.chat.setEffort);
+	const setThinking = useWorkbench((state) => state.chat.setThinking);
 
 	const fieldId = useId();
 	const maxTurnsId = `${fieldId}-max-turns`;
@@ -120,7 +159,7 @@ export const WorkbenchChatSettings = () => {
 						<div>
 							<p className="font-medium text-sm">Advanced</p>
 							<p className="text-muted-foreground text-xs">
-								Run limits.
+								Run limits and agent behavior.
 							</p>
 						</div>
 						<ChevronDownIcon
@@ -150,6 +189,114 @@ export const WorkbenchChatSettings = () => {
 								<FieldDescription className="text-xs">
 									Maximum agent turns per run (default{" "}
 									{DEFAULT_MAX_TURNS}).
+								</FieldDescription>
+							</Field>
+
+							<Field>
+								<FieldLabel>Permission mode</FieldLabel>
+								<Select
+									value={permissionMode ?? INHERIT}
+									onValueChange={(value) =>
+										setPermissionMode(
+											value === INHERIT
+												? null
+												: (value as WorkbenchChatPermissionMode),
+										)
+									}
+								>
+									<SelectTrigger className="w-full">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value={INHERIT}>
+											Harness default
+										</SelectItem>
+										{PERMISSION_MODE_OPTIONS.map(
+											(option) => (
+												<SelectItem
+													key={option.value}
+													value={option.value}
+												>
+													{option.label}
+												</SelectItem>
+											),
+										)}
+									</SelectContent>
+								</Select>
+								<FieldDescription className="text-xs">
+									How the agent handles gated tool calls:
+									pause for approval, auto-accept edits, plan
+									before acting, or skip the gates entirely.
+								</FieldDescription>
+							</Field>
+
+							<Field>
+								<FieldLabel>Reasoning effort</FieldLabel>
+								<Select
+									value={effort ?? INHERIT}
+									onValueChange={(value) =>
+										setEffort(
+											value === INHERIT
+												? null
+												: (value as WorkbenchChatEffort),
+										)
+									}
+								>
+									<SelectTrigger className="w-full">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value={INHERIT}>
+											Model default
+										</SelectItem>
+										{EFFORT_OPTIONS.map((option) => (
+											<SelectItem
+												key={option.value}
+												value={option.value}
+											>
+												{option.label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								<FieldDescription className="text-xs">
+									How much reasoning the model spends per
+									turn, when the model supports it.
+								</FieldDescription>
+							</Field>
+
+							<Field>
+								<FieldLabel>Extended thinking</FieldLabel>
+								<Select
+									value={
+										thinking == null
+											? INHERIT
+											: thinking
+												? "on"
+												: "off"
+									}
+									onValueChange={(value) =>
+										setThinking(
+											value === INHERIT
+												? null
+												: value === "on",
+										)
+									}
+								>
+									<SelectTrigger className="w-full">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value={INHERIT}>
+											Model default
+										</SelectItem>
+										<SelectItem value="on">On</SelectItem>
+										<SelectItem value="off">Off</SelectItem>
+									</SelectContent>
+								</Select>
+								<FieldDescription className="text-xs">
+									Let the model think before responding, when
+									the model supports it.
 								</FieldDescription>
 							</Field>
 						</div>

@@ -1,4 +1,4 @@
-import { PaperclipIcon, SendIcon, XIcon } from "lucide-react";
+import { PaperclipIcon, SendIcon, SquareIcon, XIcon } from "lucide-react";
 import type {
 	ChangeEvent,
 	ClipboardEvent,
@@ -127,11 +127,14 @@ export const WorkbenchChatComposer = () => {
 	const roomId = useWorkbench((state) => state.chat.roomId);
 	const isInitializing = useWorkbench((state) => state.chat.isInitializing);
 	const isSending = useWorkbench((state) => state.chat.isSending);
+	const activeRunId = useWorkbench((state) => state.chat.activeRunId);
 	const submit = useWorkbench((state) => state.chat.submit);
+	const stop = useWorkbench((state) => state.chat.stop);
 
 	const [draft, setDraft] = useState("");
 	const [files, setFiles] = useState<PendingFile[]>([]);
 	const [isDraggingFiles, setIsDraggingFiles] = useState(false);
+	const [isStopping, setIsStopping] = useState(false);
 
 	const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -267,6 +270,15 @@ export const WorkbenchChatComposer = () => {
 		void handleSend();
 	};
 
+	const handleStop = async () => {
+		setIsStopping(true);
+		try {
+			await stop();
+		} finally {
+			setIsStopping(false);
+		}
+	};
+
 	const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
 		if (event.nativeEvent.isComposing) {
 			return;
@@ -324,7 +336,7 @@ export const WorkbenchChatComposer = () => {
 					ref={textareaRef}
 					value={draft}
 					aria-label="Chat message"
-					placeholder="What do you want to do?"
+					placeholder="Type a message…"
 					disabled={isComposerDisabled}
 					onChange={(event) => setDraft(event.target.value)}
 					onKeyDown={handleKeyDown}
@@ -365,18 +377,40 @@ export const WorkbenchChatComposer = () => {
 
 					<div className="min-w-0 flex-1" />
 
-					<Button
-						type="submit"
-						size="icon-sm"
-						disabled={isSendDisabled || isComposerDisabled}
-						aria-label="Send message"
-					>
-						{isSending ? (
-							<Spinner className="size-4" />
-						) : (
-							<SendIcon />
-						)}
-					</Button>
+					{activeRunId ? (
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									type="button"
+									size="icon-sm"
+									variant="outline"
+									disabled={isStopping}
+									onClick={() => void handleStop()}
+									aria-label="Stop run"
+								>
+									{isStopping ? (
+										<Spinner className="size-4" />
+									) : (
+										<SquareIcon className="fill-current" />
+									)}
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>Stop the agent run</TooltipContent>
+						</Tooltip>
+					) : (
+						<Button
+							type="submit"
+							size="icon-sm"
+							disabled={isSendDisabled || isComposerDisabled}
+							aria-label="Send message"
+						>
+							{isSending ? (
+								<Spinner className="size-4" />
+							) : (
+								<SendIcon />
+							)}
+						</Button>
+					)}
 				</div>
 			</div>
 		</form>

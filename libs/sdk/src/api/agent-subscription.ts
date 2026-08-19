@@ -98,22 +98,32 @@ const TERMINAL_RUN_STATUSES: ReadonlySet<AgentRunStatusValue> = new Set([
  * snapshots as they arrive. Owns dedup, ordering, reconciliation timing, and
  * retry/backoff — a transport failure never concludes the run failed.
  *
+ * The underlying drain is destructive (two pollers would steal each other's
+ * events), so subscriptions are deduped per runId: when a live subscription
+ * for the run already exists, that existing handle is returned and the new
+ * handlers are NOT registered. Once a subscription ends (terminal status,
+ * stop(), abort, or the failure cap) a fresh call creates a new one.
+ *
  * @param runId - The run to subscribe to.
  * @param handlers.onEvent - Fires per new item event (deduped, in order), with the items-state already updated.
- * @param handlers.onSnapshot - Fires on every successful poll with the run's current durable snapshot.
+ * @param handlers.onSnapshot - Fires on every successful poll with the run's current durable snapshot and the count of events the backend evicted before this drain (`meta.droppedEvents`) — nonzero means the feed has gaps a durable reconcile would fill.
  * @param handlers.onReconcile - Fires once per transition into INPUT_REQUIRED or a terminal status, with persisted messages included. Polling continues after INPUT_REQUIRED; stops after a terminal status.
- * @param handlers.onError - A transport error on one poll. Non-fatal — polling keeps retrying with backoff.
+ * @param handlers.onError - A transport error on one poll. Non-fatal — polling keeps retrying with backoff until the consecutive-failure cap.
  * @param options.pollIntervalMs - Base delay between polls in ms. Defaults to 500.
  * @param options.inputRequiredIntervalMultiplier - Multiplier on pollIntervalMs while INPUT_REQUIRED. Defaults to 3.
  * @param options.signal - Stops polling without affecting the run itself.
- * @returns A handle to stop polling early, read the current items-state, or
- * force an immediate poll.
+ * @param options.maxConsecutiveFailures - Consecutive poll failures tolerated before the subscription attempts one durable reconcile and stops. Defaults to 8.
+ * @returns A handle to stop polling early, read the current items-state,
+ * force an immediate poll, or await the poll loop's end (`done`).
  */
 export const subscribeRunAgent = (
 	runId: string,
 	handlers: {
 		onEvent: (event: AgentRunItemEvent, items: AgentRunItemsState) => void;
-		onSnapshot: (snapshot: AgentRunSnapshot) => void;
+		onSnapshot: (
+			snapshot: AgentRunSnapshot,
+			meta: { droppedEvents: number },
+		) => void;
 		onReconcile: (
 			snapshot: AgentRunSnapshot & {
 				messages?: Record<string, unknown>[];
@@ -125,16 +135,26 @@ export const subscribeRunAgent = (
 		pollIntervalMs?: number;
 		inputRequiredIntervalMultiplier?: number;
 		signal?: AbortSignal;
+		maxConsecutiveFailures?: number;
 	} = {},
 ): AgentRunSubscription => {
+	// The drain is destructive — never mount a second poll loop on a run that
+	// already has a live one.
+	const existing = activeSubscriptions.get(runId);
+	if (existing) {
+		return existing;
+	}
+
 	const {
 		pollIntervalMs = 500,
 		inputRequiredIntervalMultiplier = 3,
 		signal,
+		maxConsecutiveFailures = 8,
 	} = options;
 	const { onEvent, onSnapshot, onReconcile, onError } = handlers;
 
 	let stopped = false;
+	let lastSnapshot: AgentRunSnapshot | null = null;
 	let reconciledStatus: AgentRunStatusValue | null = null;
 	const seenEventIds = new Set<string>();
 	let consecutiveFailures = 0;
@@ -196,12 +216,15 @@ export const subscribeRunAgent = (
 		while (!stopped) {
 			let waitMs = pollIntervalMs;
 			try {
-				const { run, events } = await pollAgentRun(runId);
+				const { run, events, droppedEvents } =
+					await pollAgentRun(runId);
 				consecutiveFailures = 0;
+				lastSnapshot = run;
 
 				const sorted = [...events].sort(
 					(a, b) => a.sequence - b.sequence,
 				);
+				let deliveredEvents = 0;
 				for (const event of sorted) {
 					if (seenEventIds.has(event.eventId)) {
 						continue;
@@ -209,17 +232,25 @@ export const subscribeRunAgent = (
 					seenEventIds.add(event.eventId);
 					itemsState = applyAgentRunItemEvent(itemsState, event);
 					onEvent(event, itemsState);
+					deliveredEvents++;
 				}
 
-				onSnapshot(run);
+				onSnapshot(run, { droppedEvents });
 
 				if (run.status === "INPUT_REQUIRED") {
 					await reconcile(run.status);
 					waitMs = pollIntervalMs * inputRequiredIntervalMultiplier;
 				} else if (TERMINAL_RUN_STATUSES.has(run.status)) {
-					await reconcile(run.status);
-					stop();
-					break;
+					if (deliveredEvents > 0) {
+						// The backend can still be flushing final item events
+						// when the status first reads terminal — keep draining
+						// on a short interval until a drain comes back empty.
+						waitMs = Math.min(pollIntervalMs, 100);
+					} else {
+						await reconcile(run.status);
+						stop();
+						break;
+					}
 				} else {
 					// allow a later pause to reconcile again
 					reconciledStatus = null;
@@ -227,6 +258,22 @@ export const subscribeRunAgent = (
 			} catch (e) {
 				consecutiveFailures++;
 				onError?.(e as Error);
+				if (consecutiveFailures >= maxConsecutiveFailures) {
+					// Transport is persistently failing — fall back to one
+					// durable reconcile so the caller gets the truth, then stop.
+					try {
+						const full = await getAgentRun(runId, {
+							includeMessages: true,
+						});
+						lastSnapshot = full;
+						reconciledStatus = full.status;
+						onReconcile(full);
+					} catch (reconcileError) {
+						onError?.(reconcileError as Error);
+					}
+					stop();
+					break;
+				}
 				waitMs = Math.min(
 					pollIntervalMs * 2 ** Math.min(consecutiveFailures, 4),
 					10_000,
@@ -240,9 +287,12 @@ export const subscribeRunAgent = (
 		}
 	};
 
-	void loop();
+	const done = loop().then(
+		() => lastSnapshot,
+		() => lastSnapshot,
+	);
 
-	subscription = { stop, getItems: () => itemsState, pokeNow };
+	subscription = { stop, getItems: () => itemsState, pokeNow, done };
 	activeSubscriptions.set(runId, subscription);
 	return subscription;
 };
@@ -267,11 +317,14 @@ export const submitAgentToolDecision = async (
 	paramValues?: Record<string, unknown>,
 	insightId?: string,
 ): Promise<string> => {
+	// No paramValues means "run it as called" — approve, never a
+	// paramValues-less edit (which the backend cannot execute).
 	const resolvedDecision: AgentToolDecision =
 		decision === "reject"
 			? "reject"
-			: JSON.stringify(paramValues ?? {}) ===
-					JSON.stringify(pendingAction.toolArgs ?? {})
+			: paramValues === undefined ||
+					JSON.stringify(paramValues) ===
+						JSON.stringify(pendingAction.toolArgs ?? {})
 				? "approve"
 				: "edit";
 

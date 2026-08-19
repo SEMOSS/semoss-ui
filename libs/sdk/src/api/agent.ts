@@ -26,6 +26,11 @@ export type * from "./agent.types";
  * @param params.maxReflections - Cap on self-reflection turns.
  * @param params.images - Image file locations to attach to the command.
  * @param params.urls - URLs to attach to the command.
+ * @param params.paramValues - Extra run parameters forwarded to the harness.
+ * The semoss harness honors `project` (project the run edits; also drives the
+ * git-commit hook), `permissionMode` ("default" | "acceptEdits" | "plan" |
+ * "bypassPermissions"), and strips its known keys before passing the rest
+ * (e.g. `thinking`, `effort`) through to the model provider.
  * @param insightId - Insight to run the pixel against.
  * @returns The submitted run's id, room id, and initial status (always
  * "SUBMITTED") — not a full snapshot.
@@ -41,6 +46,7 @@ export const runAgent = async (
 		maxReflections?: number;
 		images?: string[];
 		urls?: string[];
+		paramValues?: Record<string, unknown>;
 	},
 	insightId?: string,
 ): Promise<{ runId: string; roomId: string; status: AgentRunStatusValue }> => {
@@ -54,6 +60,7 @@ export const runAgent = async (
 		maxReflections,
 		images,
 		urls,
+		paramValues,
 	} = params;
 
 	const clauses = [
@@ -70,6 +77,9 @@ export const runAgent = async (
 			: null,
 		images && images.length > 0 ? `image=${JSON.stringify(images)}` : null,
 		urls && urls.length > 0 ? `url=${JSON.stringify(urls)}` : null,
+		paramValues && Object.keys(paramValues).length > 0
+			? `paramValues=[${JSON.stringify(paramValues)}]`
+			: null,
 		"wait=false",
 	].filter((clause): clause is string => clause !== null);
 
@@ -157,6 +167,40 @@ export const getAgentRun = async <
 };
 
 /**
+ * Cancel a durable agent run (StopAgentRun). The backend interrupts the
+ * harness, marks the run CANCELLED unless it already reached a terminal
+ * status, and notifies its stream — a live subscription observes the
+ * CANCELLED snapshot on its next poll (pokeNow() it for immediacy).
+ *
+ * @param runId - The run to cancel.
+ * @param insightId - Insight to run the pixel against.
+ * @returns The run's durable snapshot after the stop was applied.
+ */
+export const stopAgentRun = async (
+	runId: string,
+	insightId?: string,
+): Promise<AgentRunSnapshot> => {
+	if (!runId) {
+		throw new Error("Missing runId");
+	}
+
+	const response = await runPixel<[AgentRunSnapshot]>(
+		`StopAgentRun(runId=${JSON.stringify([runId])});`,
+		insightId,
+	);
+
+	if (response.errors.length > 0) {
+		throw new Error(response.errors.join(""));
+	}
+
+	const output = response.pixelReturn[0].output;
+
+	// Same normalization as getAgentRun — the backend omits pendingActions
+	// unless the run is INPUT_REQUIRED.
+	return { ...output, pendingActions: output.pendingActions ?? [] };
+};
+
+/**
  * Decide a pending agent tool call (RunMCPTool's HITL path) — resumes the run
  * once every pending action in the batch has been decided. For the common
  * case of resolving approve vs. edit from submitted params automatically, use
@@ -182,7 +226,7 @@ export const decideAgentRunAction = async (
 		`actionId=${JSON.stringify([actionId])}`,
 		`decision=${JSON.stringify([decision])}`,
 		decision === "edit" || decision === "respond"
-			? `paramValues=${JSON.stringify(paramValues)}`
+			? `paramValues=${JSON.stringify(paramValues ?? {})}`
 			: null,
 	].filter((clause): clause is string => clause !== null);
 

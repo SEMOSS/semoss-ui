@@ -124,6 +124,7 @@ export const AgentWorkbench: React.FC = () => {
 					name: name,
 				},
 			],
+			runParams: { project: project.project_id },
 		});
 	}, [
 		configureChat,

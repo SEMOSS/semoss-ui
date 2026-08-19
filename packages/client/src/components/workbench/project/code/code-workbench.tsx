@@ -5,8 +5,10 @@ import {
 	SettingsIcon,
 	SquareTerminalIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useInsight } from "@semoss/sdk/react";
 import { type FlexLayout, getFileIconComponent } from "@semoss/shared";
+import { toast } from "@semoss/ui/next";
 import { ProjectDetailTabs } from "@/components/project";
 import {
 	WORKBENCH_COMPONENTS,
@@ -16,7 +18,7 @@ import {
 } from "@/components/workbench";
 import { useProject, useWorkbench } from "@/hooks";
 import { useWorkbenchChatConfig } from "@/hooks/use-workbench-chat-config";
-import type { WorkbenchPanelConfig } from "@/stores/workbench";
+import type { BuildRun, WorkbenchPanelConfig } from "@/stores/workbench";
 import { WORKBENCH_CHAT_PANEL } from "../../chat";
 import {
 	ProjectFileEditorPanel,
@@ -33,6 +35,42 @@ import { CodeAppRendererPanel } from "./code-app-renderer-panel";
 const MAIN_TABSET = "MAIN_TABSET";
 
 /**
+ * Tool names that publish the app's frontend, matched case-insensitively on
+ * the (possibly MCP-aliased) tool name.
+ */
+const PUBLISH_TOOL_RE = /buildandpublishapp|publishproject/i;
+
+/**
+ * Whether a completed run — or any subagent run in its tree — invoked a tool
+ * that published the app's frontend, meaning the preview iframe is stale.
+ *
+ * @name runTreePublished
+ * @param run - The completed root run.
+ * @param runs - The chat slice's full run map, for resolving subagents.
+ * @return Whether any tool in the run tree published the frontend.
+ */
+const runTreePublished = (
+	run: BuildRun,
+	runs: Record<string, BuildRun>,
+): boolean => {
+	const stack: BuildRun[] = [run];
+	const seen = new Set<string>();
+	while (stack.length > 0) {
+		const current = stack.pop();
+		if (!current || seen.has(current.runId)) continue;
+		seen.add(current.runId);
+		if (current.tools.some((tool) => PUBLISH_TOOL_RE.test(tool.name))) {
+			return true;
+		}
+		for (const childRunId of current.childRunIds) {
+			const child = runs[childRunId];
+			if (child) stack.push(child);
+		}
+	}
+	return false;
+};
+
+/**
  * Code workbench — the editable surface for a CODE project. Shows a live
  * preview of the published app alongside the project file explorer, the
  * terminal's insight file explorer, a Pixel terminal, and the shared assistant
@@ -41,12 +79,40 @@ const MAIN_TABSET = "MAIN_TABSET";
 export const CodeWorkbench: React.FC = () => {
 	const registerCommand = useWorkbench((state) => state.registerCommand);
 	const { project } = useProject();
+	const insight = useInsight();
 
 	// insightId of the active terminal tab, published by the terminal panel so
 	// the Insight file explorer browses the same insight commands run in
 	const [terminalInsightId, setTerminalInsightId] = useState<string | null>(
 		null,
 	);
+
+	// Bumped when an agent run publishes the frontend; keys the preview panel
+	// so its iframe remounts on the freshly published assets.
+	const [previewVersion, setPreviewVersion] = useState(0);
+
+	const handleRunCompleted = useCallback(
+		(run: BuildRun, runs: Record<string, BuildRun>) => {
+			if (!runTreePublished(run, runs)) return;
+			// Give the publish a beat to finish moving assets before the
+			// preview remounts.
+			window.setTimeout(() => {
+				setPreviewVersion((version) => version + 1);
+			}, 500);
+		},
+		[],
+	);
+
+	// Manual "rebuild the app" from the chat header — the same full compile +
+	// publish the agent's publish tool performs. Thrown errors surface as an
+	// error toast in the chat panel.
+	const handleRebuild = useCallback(async () => {
+		await insight.actions.run(
+			`BuildAndPublishApp(project='${project.project_id}');`,
+		);
+		setPreviewVersion((version) => version + 1);
+		toast.success("App rebuilt and published.");
+	}, [insight.actions, project.project_id]);
 
 	const layout = useMemo<FlexLayout.IJsonModel>(() => {
 		return {
@@ -77,7 +143,10 @@ export const CodeWorkbench: React.FC = () => {
 					location: "right",
 					size: 400,
 					minSize: 320,
-					selected: -1,
+					// Chat is the primary build surface for a CODE project —
+					// open by default (a cached layout still wins for users
+					// who closed it).
+					selected: 0,
 					children: [
 						{
 							type: "tab",
@@ -122,9 +191,15 @@ export const CodeWorkbench: React.FC = () => {
 					name: name,
 				},
 			],
+			runParams: { project: project.project_id },
+			permissionMode: "acceptEdits",
+			onRunCompleted: handleRunCompleted,
+			onRebuild: handleRebuild,
 		});
 	}, [
 		configureChat,
+		handleRebuild,
+		handleRunCompleted,
 		project.project_display_name,
 		project.project_id,
 		project.project_name,
@@ -133,7 +208,7 @@ export const CodeWorkbench: React.FC = () => {
 	const components: Record<string, WorkbenchPanelConfig> = {
 		[WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER]: {
 			tab: () => <PanelsTopLeftIcon className="size-4" />,
-			view: () => <CodeAppRendererPanel />,
+			view: () => <CodeAppRendererPanel key={previewVersion} />,
 		},
 		[WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER]: {
 			tab: () => <FolderTreeIcon className="size-4" />,

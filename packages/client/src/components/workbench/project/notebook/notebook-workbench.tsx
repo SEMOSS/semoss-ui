@@ -123,6 +123,7 @@ export const NotebookWorkbench: React.FC = () => {
 					name: name,
 				},
 			],
+			runParams: { project: project.project_id },
 		});
 	}, [
 		configureChat,

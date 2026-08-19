@@ -1,13 +1,15 @@
-import { HistoryIcon, PlusIcon, Settings2Icon } from "lucide-react";
+import { HammerIcon, HistoryIcon, PlusIcon, Settings2Icon } from "lucide-react";
 import { useState } from "react";
 import {
 	Alert,
 	AlertDescription,
 	Button,
 	cn,
+	Spinner,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	toast,
 } from "@semoss/ui/next";
 import { useWorkbench } from "@/hooks/use-workbench";
 import { WorkbenchChatComposer } from "./workbench-chat-composer";
@@ -34,10 +36,24 @@ export const WorkbenchChatPanel = () => {
 	const isInitializing = useWorkbench((state) => state.chat.isInitializing);
 	const isSending = useWorkbench((state) => state.chat.isSending);
 	const newRoom = useWorkbench((state) => state.chat.newRoom);
+	const onRebuild = useWorkbench((state) => state.chat.onRebuild);
 	const [view, setView] = useState<WorkbenchChatView>("chat");
+	const [isRebuilding, setIsRebuilding] = useState(false);
 
 	const toggleView = (target: WorkbenchChatView) => {
 		setView((current) => (current === target ? "chat" : target));
+	};
+
+	const handleRebuild = async () => {
+		if (!onRebuild || isRebuilding) return;
+		setIsRebuilding(true);
+		try {
+			await onRebuild();
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : String(error));
+		} finally {
+			setIsRebuilding(false);
+		}
 	};
 
 	return (
@@ -49,6 +65,27 @@ export const WorkbenchChatPanel = () => {
 				<h2 className="min-w-0 flex-1 truncate font-medium text-sm">
 					{roomName || "New chat"}
 				</h2>
+				{onRebuild ? (
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon-sm"
+								aria-label="Rebuild the app"
+								disabled={isRebuilding}
+								onClick={() => void handleRebuild()}
+							>
+								{isRebuilding ? (
+									<Spinner className="size-3.5" />
+								) : (
+									<HammerIcon />
+								)}
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>Rebuild the app</TooltipContent>
+					</Tooltip>
+				) : null}
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<Button

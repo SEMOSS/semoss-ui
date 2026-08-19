@@ -53,22 +53,21 @@ export interface WorkbenchRunRecord {
 }
 
 /**
- * Whether an agent run status ends the streaming poll loop. Treats
- * INPUT_REQUIRED as terminal because the stream stays idle until the user
- * decides on the pending action.
+ * Whether an agent run can never produce activity again. INPUT_REQUIRED is
+ * NOT terminal — the SDK subscription keeps polling (at a slower interval)
+ * through the pause and picks the run back up when a decision resumes it, so
+ * a paused run stays active and re-attaches its watcher on resume.
  *
  * @name isTerminalAgentRunStatus
  * @param status - Run status to test; compared case-insensitively.
- * @return Whether the status is COMPLETED, FAILED, CANCELLED, or
- * INPUT_REQUIRED.
+ * @return Whether the status is COMPLETED, FAILED, or CANCELLED.
  */
 export const isTerminalAgentRunStatus = (status?: string): boolean => {
 	const normalized = (status ?? "").trim().toUpperCase();
 	return (
 		normalized === "COMPLETED" ||
 		normalized === "FAILED" ||
-		normalized === "CANCELLED" ||
-		normalized === "INPUT_REQUIRED"
+		normalized === "CANCELLED"
 	);
 };
 
@@ -383,9 +382,20 @@ const mergeRecord = (
 	if (record.finalOutputMessageId) {
 		run.finalOutputMessageId = record.finalOutputMessageId;
 	}
-	if (record.dateCreated) run.dateCreated = record.dateCreated;
-	if (record.startedAt) run.startedAt = record.startedAt;
-	if (record.completedAt) run.completedAt = record.completedAt;
+	// Durable records carry raw java.sql.Timestamp strings
+	// ("2026-08-19 12:34:56.789") — normalize or Date.parse returns NaN in
+	// Safari and the timeline sorts the run to the top.
+	if (record.dateCreated) {
+		run.dateCreated =
+			normalizeTimestamp(record.dateCreated) || run.dateCreated;
+	}
+	if (record.startedAt) {
+		run.startedAt = normalizeTimestamp(record.startedAt) || run.startedAt;
+	}
+	if (record.completedAt) {
+		run.completedAt =
+			normalizeTimestamp(record.completedAt) || run.completedAt;
+	}
 	if (record.pendingActions) {
 		run.pendingActions = record.pendingActions.map((action) => ({
 			...action,
