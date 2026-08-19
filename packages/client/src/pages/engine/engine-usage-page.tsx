@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import {
 	H4,
 	Markdown,
+	MarkdownDocumentTitle,
 	P,
 	Separator,
 	Spinner,
@@ -11,7 +12,6 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
-import { MARKDOWN_COMPONENTS } from "@/components/shared";
 import { useEngine, usePixel } from "@/hooks";
 
 /** One usage channel returned by `GetEngineUsage`. */
@@ -207,14 +207,12 @@ export const EngineUsagePage = () => {
 							value={section.value}
 							className="flex min-w-0 flex-col gap-3"
 						>
-							{/* acts as the document title, so it is sized
-							    above the h2 rules inside the body */}
-							<h2 className="border-border border-b pb-[0.4rem] font-semibold text-[1.9rem] text-foreground leading-tight">
+							<MarkdownDocumentTitle>
 								{section.label}
-							</h2>
+							</MarkdownDocumentTitle>
 							<Markdown
-								className="w-full text-sm leading-[1.65]"
-								components={MARKDOWN_COMPONENTS}
+								className="w-full text-sm leading-relaxed"
+								variant="document"
 							>
 								{section.code}
 							</Markdown>
