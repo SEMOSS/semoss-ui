@@ -646,6 +646,12 @@ export class RoomStore {
 				}
 			}
 
+			// The agent's default model, read below off the workspace this room
+			// was started from. It only stands in for a room that has never
+			// named a model of its own - a room the user has already chatted in
+			// keeps the model those messages ran on.
+			let agentDefaultModelId = "";
+
 			if (!newOptions.workspace?.workspace_id) {
 				delete newOptions.workspace;
 			} else {
@@ -663,6 +669,9 @@ export class RoomStore {
 				if (workspaceOutput?.name && newOptions.workspace) {
 					newOptions.workspace.name = workspaceOutput.name;
 				}
+
+				agentDefaultModelId =
+					workspaceOutput?.config_json?.model_id ?? "";
 
 				// Merge workspace MCPs into the mcp array with fromWorkspace flag
 				if (
@@ -700,15 +709,20 @@ export class RoomStore {
 				}
 			}
 
-			// set the model based on the history
-			if (activeModelId) {
+			// set the model based on the history, or on the agent's default when
+			// the room has never named one
+			const modelIdToLoad = activeModelId || agentDefaultModelId;
+			if (modelIdToLoad) {
 				const { pixelReturn } = await this.runRoomPixel<[Engine[]]>(
-					`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=['MODEL'], filterWord=${JSON.stringify(activeModelId)})`,
+					`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=['MODEL'], filterWord=${JSON.stringify(modelIdToLoad)})`,
 				);
 
-				runInAction(() => {
-					this.setModel(pixelReturn[0].output[0]);
-				});
+				const model = pixelReturn[0].output[0];
+				if (model) {
+					runInAction(() => {
+						this.setModel(model);
+					});
+				}
 			}
 
 			runInAction(() => {
