@@ -1,6 +1,7 @@
 import {
 	ArrowLeft,
 	ArrowRight,
+	Bug,
 	Circle,
 	FileText,
 	Play,
@@ -36,6 +37,8 @@ interface BrowserToolbarProps {
 	onOpenSaveRecording: () => void;
 	isCapturingFullPage: boolean;
 	onCaptureFullPage: () => void;
+	isDebugOpen: boolean;
+	onToggleDebug: () => void;
 }
 
 function ToolbarTip({
@@ -70,6 +73,8 @@ export const BrowserToolbar: React.FC<BrowserToolbarProps> = ({
 	onOpenSaveRecording,
 	isCapturingFullPage,
 	onCaptureFullPage,
+	isDebugOpen,
+	onToggleDebug,
 }) => {
 	const [urlInput, setUrlInput] = useState(currentUrl);
 	const isActive =
@@ -202,6 +207,17 @@ export const BrowserToolbar: React.FC<BrowserToolbarProps> = ({
 						<span className="hidden sm:inline">
 							{isCapturingFullPage ? "Capturing" : "Page text"}
 						</span>
+					</Button>
+				</ToolbarTip>
+				<ToolbarTip label="Inspect browser network and console events">
+					<Button
+						size="sm"
+						variant={isDebugOpen ? "default" : "outline"}
+						disabled={connectionState !== "connected"}
+						onClick={onToggleDebug}
+					>
+						<Bug />
+						<span className="hidden sm:inline">Debug</span>
 					</Button>
 				</ToolbarTip>
 			</div>

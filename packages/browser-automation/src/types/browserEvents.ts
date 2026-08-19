@@ -131,6 +131,12 @@ export type ClientToServerEvent =
 	| { type: "new-tab"; targetTabId?: string; requestId?: string }
 	| { type: "prepare-replay"; requestId?: string; reuseActiveTab?: boolean }
 	| { type: "close-tab"; targetTabId: string; requestId?: string }
+	| {
+			type: "debug-control";
+			requestId: string;
+			debugEnabled?: boolean;
+			clear?: boolean;
+	  }
 	| { type: "close-session" };
 
 export interface ReplaySocketResult {
@@ -193,7 +199,59 @@ export type ServerToClientEvent =
 			error?: string;
 	  }
 	| { type: "download-ready"; download: BrowserDownload }
+	| {
+			type: "debug-control-result";
+			requestId: string;
+			success: boolean;
+			enabled: boolean;
+			error?: string;
+	  }
+	| {
+			type: "debug-events";
+			events: BrowserDebugEvent[];
+			droppedCount?: number;
+	  }
 	| { type: "error"; message: string };
+
+export interface BrowserNetworkDebugEvent {
+	id: string;
+	kind: "network";
+	phase: "request" | "response" | "failed";
+	requestId: string;
+	timestamp: number;
+	tabId: string;
+	method: string;
+	url: string;
+	resourceType: string;
+	status?: number;
+	statusText?: string;
+	durationMs?: number;
+	error?: string;
+}
+
+export interface BrowserConsoleDebugEvent {
+	id: string;
+	kind: "console";
+	timestamp: number;
+	tabId: string;
+	level: string;
+	message: string;
+	source?: string;
+}
+
+export interface BrowserPageErrorDebugEvent {
+	id: string;
+	kind: "page-error";
+	timestamp: number;
+	tabId: string;
+	level: "error";
+	message: string;
+}
+
+export type BrowserDebugEvent =
+	| BrowserNetworkDebugEvent
+	| BrowserConsoleDebugEvent
+	| BrowserPageErrorDebugEvent;
 
 export type BrowserDownloadStatus =
 	| "downloading"

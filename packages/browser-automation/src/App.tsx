@@ -23,6 +23,7 @@ import { BrowserDownloadsTray } from "./components/BrowserDownloadsTray";
 import { BrowserTabStrip } from "./components/BrowserTabStrip";
 import { BrowserToolbar } from "./components/BrowserToolbar";
 import { BrowserViewer } from "./components/BrowserViewer";
+import { BrowserDebugPanel } from "./components/browser-debug-panel";
 import { PlaybackCompleteDialog } from "./components/dialogs/PlaybackCompleteDialog";
 import {
 	type RecordingSaveDestination,
@@ -68,6 +69,7 @@ import {
 } from "./semoss/client";
 import { runPixel } from "./semoss/pixel";
 import type {
+	BrowserDebugEvent,
 	BrowserDownload,
 	BrowserScrollMetrics,
 	BrowserTabInfo,
@@ -85,6 +87,7 @@ import type {
 
 /** Seconds a finished replay stays on screen before the session is closed. */
 const PLAYBACK_CLOSE_SECONDS = 10;
+const MAX_DEBUG_EVENTS = 1_000;
 
 type ResolvedPlaywrightRecording = {
 	source: "project" | "room";
@@ -224,6 +227,11 @@ export default function App() {
 	const [downloads, setDownloads] = useState<BrowserDownload[]>([]);
 	const [downloadErrors, setDownloadErrors] = useState<DownloadError[]>([]);
 	const [downloadsOpen, setDownloadsOpen] = useState(false);
+	const [debugEvents, setDebugEvents] = useState<BrowserDebugEvent[]>([]);
+	const [debugDroppedCount, setDebugDroppedCount] = useState(0);
+	const [debugOpen, setDebugOpen] = useState(false);
+	const [debugPaused, setDebugPaused] = useState(false);
+	const debugSessionIdRef = useRef<string | undefined>(undefined);
 
 	// ── Automation mode ──────────────────────────────────────────────────────
 	const [automationMode, setAutomationMode] = useState(false);
@@ -571,8 +579,28 @@ export default function App() {
 		[mergeDownloads, queueDownloadSave],
 	);
 
+	const handleDebugEvents = useCallback(
+		(incoming: BrowserDebugEvent[], droppedCount: number) => {
+			if (incoming.length > 0) {
+				setDebugEvents((current) =>
+					[...current, ...incoming].slice(-MAX_DEBUG_EVENTS),
+				);
+			}
+			if (droppedCount > 0) {
+				setDebugDroppedCount((current) => current + droppedCount);
+			}
+		},
+		[],
+	);
+
 	useEffect(() => {
+		if (debugSessionIdRef.current === session?.sessionId) return;
+		debugSessionIdRef.current = session?.sessionId;
 		setBrowserCursor("default");
+		setDebugEvents([]);
+		setDebugDroppedCount(0);
+		setDebugOpen(false);
+		setDebugPaused(false);
 	}, [session?.sessionId]);
 
 	useEffect(() => {
@@ -587,6 +615,7 @@ export default function App() {
 		sendReplayEvent,
 		sendTabControlEvent,
 		sendRecordingControlEvent,
+		setDebugEnabled,
 		captureSelectedText,
 		captureFullPageText,
 	} = useBrowserSocket({
@@ -599,7 +628,53 @@ export default function App() {
 		onTabActivated: handleTabActivated,
 		onCursorChanged: setBrowserCursor,
 		onDownload: handleDownload,
+		onDebugEvents: handleDebugEvents,
 	});
+
+	const handleToggleDebug = useCallback(async () => {
+		const nextOpen = !debugOpen;
+		setDebugOpen(nextOpen);
+		setDebugPaused(false);
+		try {
+			await setDebugEnabled(nextOpen);
+		} catch (error) {
+			setDebugOpen(!nextOpen);
+			setSnackError(
+				error instanceof Error
+					? error.message
+					: "Could not update browser debug mode",
+			);
+		}
+	}, [debugOpen, setDebugEnabled]);
+
+	const handleToggleDebugPause = useCallback(async () => {
+		const nextPaused = !debugPaused;
+		setDebugPaused(nextPaused);
+		try {
+			await setDebugEnabled(!nextPaused);
+		} catch (error) {
+			setDebugPaused(!nextPaused);
+			setSnackError(
+				error instanceof Error
+					? error.message
+					: "Could not update browser debug capture",
+			);
+		}
+	}, [debugPaused, setDebugEnabled]);
+
+	const handleClearDebug = useCallback(async () => {
+		setDebugEvents([]);
+		setDebugDroppedCount(0);
+		try {
+			await setDebugEnabled(!debugPaused, true);
+		} catch (error) {
+			setSnackError(
+				error instanceof Error
+					? error.message
+					: "Could not clear browser debug events",
+			);
+		}
+	}, [debugPaused, setDebugEnabled]);
 	const storeSelectedTextContext = useCallback(
 		(context: SelectedTextContext): SelectedTextContext => {
 			selectedContextSequenceRef.current += 1;
@@ -2894,6 +2969,8 @@ export default function App() {
 					onOpenSaveRecording={handleOpenSaveRecording}
 					isCapturingFullPage={isCapturingFullPage}
 					onCaptureFullPage={() => void handleCaptureFullPage()}
+					isDebugOpen={debugOpen}
+					onToggleDebug={() => void handleToggleDebug()}
 				/>
 				<div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-1">
 					{isPlaygroundMode && session && (
@@ -3060,132 +3137,144 @@ export default function App() {
 					/>
 				)}
 
-			<div className="relative flex min-h-0 flex-1 overflow-hidden">
-				{/* Click-to-fill loading indicator */}
-				{isAutomationGenerating && automationClickPos && (
-					<AutomationActionIndicator
-						localX={automationClickPos.localX}
-						localY={automationClickPos.localY}
-					/>
-				)}
-				{pendingTextSelection && (
-					<div
-						className="fixed z-50 w-72 rounded-lg border border-line bg-surface p-3 text-ink shadow-xl"
-						style={{
-							left: Math.max(
-								8,
-								Math.min(
-									pendingTextSelection.clientX + 10,
-									window.innerWidth - 296,
+			<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+				<div className="relative flex min-h-0 flex-1 overflow-hidden">
+					{/* Click-to-fill loading indicator */}
+					{isAutomationGenerating && automationClickPos && (
+						<AutomationActionIndicator
+							localX={automationClickPos.localX}
+							localY={automationClickPos.localY}
+						/>
+					)}
+					{pendingTextSelection && (
+						<div
+							className="fixed z-50 w-72 rounded-lg border border-line bg-surface p-3 text-ink shadow-xl"
+							style={{
+								left: Math.max(
+									8,
+									Math.min(
+										pendingTextSelection.clientX + 10,
+										window.innerWidth - 296,
+									),
 								),
-							),
-							top: Math.max(
-								8,
-								Math.min(
-									pendingTextSelection.clientY + 10,
-									window.innerHeight - 180,
+								top: Math.max(
+									8,
+									Math.min(
+										pendingTextSelection.clientY + 10,
+										window.innerHeight - 180,
+									),
 								),
-							),
-						}}
-					>
-						<div className="mb-2 flex items-center justify-between gap-2">
-							<p className="font-medium text-sm">
-								Selected website text
-							</p>
-							<Button
-								size="icon-sm"
-								variant="ghost"
-								aria-label="Dismiss selected text"
-								onClick={dismissPendingTextSelection}
-							>
-								<X />
-							</Button>
-						</div>
-						{pendingSelectionContext ? (
-							<>
-								<p className="mb-3 line-clamp-3 text-ink-muted text-xs leading-5">
-									{pendingSelectionContext.content}
+							}}
+						>
+							<div className="mb-2 flex items-center justify-between gap-2">
+								<p className="font-medium text-sm">
+									Selected website text
 								</p>
-								<div className="flex justify-end gap-2">
-									<Button
-										size="sm"
-										variant="outline"
-										onClick={() => {
-											void (async () => {
-												await handleCopySelectedContext(
+								<Button
+									size="icon-sm"
+									variant="ghost"
+									aria-label="Dismiss selected text"
+									onClick={dismissPendingTextSelection}
+								>
+									<X />
+								</Button>
+							</div>
+							{pendingSelectionContext ? (
+								<>
+									<p className="mb-3 line-clamp-3 text-ink-muted text-xs leading-5">
+										{pendingSelectionContext.content}
+									</p>
+									<div className="flex justify-end gap-2">
+										<Button
+											size="sm"
+											variant="outline"
+											onClick={() => {
+												void (async () => {
+													await handleCopySelectedContext(
+														pendingSelectionContext,
+													);
+													dismissPendingTextSelection();
+												})();
+											}}
+										>
+											<Copy />
+											Copy
+										</Button>
+										<Button
+											size="sm"
+											onClick={() => {
+												void handleAddSelectedContext(
 													pendingSelectionContext,
 												);
-												dismissPendingTextSelection();
-											})();
-										}}
-									>
-										<Copy />
-										Copy
-									</Button>
-									<Button
-										size="sm"
-										onClick={() => {
-											void handleAddSelectedContext(
-												pendingSelectionContext,
-											);
-										}}
-									>
-										<ScanLine />
-										Add as context
-									</Button>
+											}}
+										>
+											<ScanLine />
+											Add as context
+										</Button>
+									</div>
+								</>
+							) : (
+								<div className="flex items-center gap-2 text-ink-muted text-sm">
+									<Spinner />
+									Reading selected text…
 								</div>
-							</>
-						) : (
-							<div className="flex items-center gap-2 text-ink-muted text-sm">
-								<Spinner />
-								Reading selected text…
-							</div>
-						)}
-					</div>
-				)}
-				{/* Browser canvas */}
-				<BrowserViewer
-					connectionState={connectionState}
-					remoteWidth={remoteWidth}
-					remoteHeight={remoteHeight}
-					latestFrame={latestFrame}
-					scrollMetrics={browserScrollMetrics}
-					browserCursor={browserCursor}
-					sendEvent={sendViewerEvent}
-					onTextDragComplete={handleTextDragComplete}
-					onUserInput={() => {
-						playback.requestPause(
-							"Playback will pause after your interaction",
-						);
-						if (pendingTextSelection) {
-							dismissPendingTextSelection();
+							)}
+						</div>
+					)}
+					{/* Browser canvas */}
+					<BrowserViewer
+						connectionState={connectionState}
+						remoteWidth={remoteWidth}
+						remoteHeight={remoteHeight}
+						latestFrame={latestFrame}
+						scrollMetrics={browserScrollMetrics}
+						browserCursor={browserCursor}
+						sendEvent={sendViewerEvent}
+						onTextDragComplete={handleTextDragComplete}
+						onUserInput={() => {
+							playback.requestPause(
+								"Playback will pause after your interaction",
+							);
+							if (pendingTextSelection) {
+								dismissPendingTextSelection();
+							}
+							if (isGoalAutomationRunning) cancelGoalAutomation();
+						}}
+						automationMode={
+							automationMode && automationSubMode === "click"
 						}
-						if (isGoalAutomationRunning) cancelGoalAutomation();
-					}}
-					automationMode={
-						automationMode && automationSubMode === "click"
-					}
-					onAutomationClick={handleFieldAutomationTarget}
-				/>
+						onAutomationClick={handleFieldAutomationTarget}
+					/>
 
-				<ReplaySidebar
-					playback={playback}
-					recordedStepsOpen={recordedStepsOpen}
-					recordedSteps={recordedSteps}
-					isRecording={isRecording}
-					onToggleRecordedSteps={() =>
-						setRecordedStepsOpen((open) => !open)
-					}
-					onSaveRecording={handleOpenSaveRecording}
-					selectedTextContextsOpen={selectedTextContextsOpen}
-					selectedTextContexts={selectedTextContexts}
-					onToggleSelectedTextContexts={() =>
-						setSelectedTextContextsOpen((open) => !open)
-					}
-					onCopySelectedContext={handleCopySelectedContext}
-					onDeleteSelectedContext={handleDeleteSelectedContext}
-					onSaveSelectedContext={handleSaveSelectedContext}
-				/>
+					<ReplaySidebar
+						playback={playback}
+						recordedStepsOpen={recordedStepsOpen}
+						recordedSteps={recordedSteps}
+						isRecording={isRecording}
+						onToggleRecordedSteps={() =>
+							setRecordedStepsOpen((open) => !open)
+						}
+						onSaveRecording={handleOpenSaveRecording}
+						selectedTextContextsOpen={selectedTextContextsOpen}
+						selectedTextContexts={selectedTextContexts}
+						onToggleSelectedTextContexts={() =>
+							setSelectedTextContextsOpen((open) => !open)
+						}
+						onCopySelectedContext={handleCopySelectedContext}
+						onDeleteSelectedContext={handleDeleteSelectedContext}
+						onSaveSelectedContext={handleSaveSelectedContext}
+					/>
+				</div>
+				{debugOpen && (
+					<BrowserDebugPanel
+						events={debugEvents}
+						droppedCount={debugDroppedCount}
+						isPaused={debugPaused}
+						onTogglePause={() => void handleToggleDebugPause()}
+						onClear={() => void handleClearDebug()}
+						onClose={() => void handleToggleDebug()}
+					/>
+				)}
 			</div>
 
 			<StopRecordingDialog

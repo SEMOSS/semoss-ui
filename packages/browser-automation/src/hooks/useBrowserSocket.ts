@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getModulePath } from "../semoss/pixel";
 import type {
+	BrowserDebugEvent,
 	BrowserDownload,
 	BrowserScrollMetrics,
 	BrowserTabInfo,
@@ -27,6 +28,7 @@ interface UseBrowserSocketOptions {
 	onTabActivated: (tabId: string) => void;
 	onCursorChanged: (cursor: string) => void;
 	onDownload: (download: BrowserDownload) => void;
+	onDebugEvents: (events: BrowserDebugEvent[], droppedCount: number) => void;
 }
 
 interface UseBrowserSocketReturn {
@@ -41,6 +43,7 @@ interface UseBrowserSocketReturn {
 	sendRecordingControlEvent: (
 		event: ClientToServerEvent & { requestId: string },
 	) => Promise<void>;
+	setDebugEnabled: (enabled: boolean, clear?: boolean) => Promise<void>;
 	captureSelectedText: (
 		bounds: SelectionBounds,
 		record?: boolean,
@@ -76,6 +79,12 @@ interface PendingRecordingControl {
 	timeout: number;
 }
 
+interface PendingDebugControl {
+	resolve: () => void;
+	reject: (error: Error) => void;
+	timeout: number;
+}
+
 const WS_PROTOCOL = window.location.protocol === "https:" ? "wss:" : "ws:";
 
 const getWsBase = (): string =>
@@ -92,6 +101,7 @@ export function useBrowserSocket({
 	onTabActivated,
 	onCursorChanged,
 	onDownload,
+	onDebugEvents,
 }: UseBrowserSocketOptions): UseBrowserSocketReturn {
 	const [connectionState, setConnectionState] =
 		useState<ConnectionState>("idle");
@@ -110,6 +120,9 @@ export function useBrowserSocket({
 	const pendingRecordingControlRef = useRef<
 		Map<string, PendingRecordingControl>
 	>(new Map());
+	const pendingDebugControlRef = useRef<Map<string, PendingDebugControl>>(
+		new Map(),
+	);
 
 	// Build the full WS URL from the relative path returned by the REST API
 	const buildFullWsUrl = useCallback((path: string): string => {
@@ -181,6 +194,25 @@ export function useBrowserSocket({
 					case "download-ready":
 						onDownload(msg.download);
 						break;
+					case "debug-events":
+						onDebugEvents(msg.events, msg.droppedCount ?? 0);
+						break;
+					case "debug-control-result": {
+						const pending = pendingDebugControlRef.current.get(
+							msg.requestId,
+						);
+						if (!pending) break;
+						window.clearTimeout(pending.timeout);
+						pendingDebugControlRef.current.delete(msg.requestId);
+						if (msg.success) pending.resolve();
+						else
+							pending.reject(
+								new Error(
+									msg.error || "Debug state update failed",
+								),
+							);
+						break;
+					}
 					case "tab-control-result": {
 						const pending = pendingTabControlRef.current.get(
 							msg.requestId,
@@ -321,6 +353,13 @@ export function useBrowserSocket({
 				);
 			});
 			pendingRecordingControlRef.current.clear();
+			pendingDebugControlRef.current.forEach((pending) => {
+				window.clearTimeout(pending.timeout);
+				pending.reject(
+					new Error("Browser connection closed during debug update"),
+				);
+			});
+			pendingDebugControlRef.current.clear();
 		};
 
 		ws.onerror = () => {
@@ -342,6 +381,7 @@ export function useBrowserSocket({
 		onTabActivated,
 		onCursorChanged,
 		onDownload,
+		onDebugEvents,
 	]);
 
 	const sendEvent = useCallback((event: ClientToServerEvent) => {
@@ -520,12 +560,47 @@ export function useBrowserSocket({
 		[],
 	);
 
+	const setDebugEnabled = useCallback(
+		(enabled: boolean, clear = false): Promise<void> => {
+			const ws = wsRef.current;
+			if (!ws || ws.readyState !== WebSocket.OPEN) {
+				return Promise.reject(
+					new Error("Browser connection is not ready"),
+				);
+			}
+			const requestId = crypto.randomUUID();
+			return new Promise<void>((resolve, reject) => {
+				const timeout = window.setTimeout(() => {
+					pendingDebugControlRef.current.delete(requestId);
+					reject(
+						new Error("Timed out waiting for debug state update"),
+					);
+				}, 10_000);
+				pendingDebugControlRef.current.set(requestId, {
+					resolve,
+					reject,
+					timeout,
+				});
+				ws.send(
+					JSON.stringify({
+						type: "debug-control",
+						requestId,
+						debugEnabled: enabled,
+						clear,
+					}),
+				);
+			});
+		},
+		[],
+	);
+
 	return {
 		connectionState,
 		sendEvent,
 		sendReplayEvent,
 		sendTabControlEvent,
 		sendRecordingControlEvent,
+		setDebugEnabled,
 		captureSelectedText,
 		captureFullPageText,
 	};
