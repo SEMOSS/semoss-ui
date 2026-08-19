@@ -9,6 +9,7 @@ import { DatabaseWorkbenchPage } from "./database-workbench-page";
 import { EngineActivityPage } from "./engine-activity-page";
 import { EngineCommitsPage } from "./engine-commits-page";
 import { EngineDescriptionSettingsPage } from "./engine-description-settings-page";
+import { EngineGuardrailSettingsPage } from "./engine-guardrail-settings-page";
 import { EngineIndexPage } from "./engine-index-page";
 import { EngineLayout } from "./engine-layout";
 import { EngineMcpUsagePage } from "./engine-mcp-usage-page";
@@ -293,6 +294,12 @@ export const ENGINE_ROUTES: {
 										path: "description",
 										element: (
 											<EngineDescriptionSettingsPage />
+										),
+									},
+									{
+										path: "guardrails",
+										element: (
+											<EngineGuardrailSettingsPage />
 										),
 									},
 									{

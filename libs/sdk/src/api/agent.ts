@@ -1,449 +1,229 @@
 import { Env } from "../env";
 import { post } from "../utility";
+import type {
+	AgentRunItemEvent,
+	AgentRunSnapshot,
+	AgentRunStatusValue,
+	AgentToolDecision,
+	SubagentRunSummary,
+} from "./agent.types";
 import { runPixel } from "./base";
-import type { PlaygroundMessage } from "./room";
+
+export type * from "./agent.types";
 
 /**
- * Throw when a pixel response contains an operation error. No-op when the
- * error list is empty.
+ * Submit a durable agent run without waiting for it to finish (RunAgent with
+ * wait=false). Poll progress with pollAgentRun(runId) or subscribeRunAgent.
  *
- * @name assertPixelSuccess
- * @param errors - Operation errors collected from a runPixel response.
- */
-const assertPixelSuccess = (errors: string[]): void => {
-	if (errors.length > 0) {
-		throw new Error(errors.join(""));
-	}
-};
-
-/** Lifecycle status of a durable agent run. */
-export type AgentRunStatus =
-	| "SUBMITTED"
-	| "RUNNING"
-	| "INPUT_REQUIRED"
-	| "COMPLETED"
-	| "FAILED"
-	| "CANCELLED"
-	| (string & {});
-
-/** Action awaiting a user decision while a run is INPUT_REQUIRED. */
-export type AgentPendingAction = Record<string, unknown> & {
-	/** Durable id used to approve/reject/respond via RunMCPTool. */
-	actionId?: string;
-	/** Name of the tool the agent wants to invoke. */
-	toolName?: string;
-	/** Arguments the agent supplied for the tool call. */
-	toolArgs?: Record<string, unknown> | unknown;
-	/** Tool metadata (`_meta`) forwarded from the tool definition. */
-	toolMeta?: Record<string, unknown>;
-	/** True when the action renders a custom UI instead of a plain prompt. */
-	hasUi?: boolean;
-	/** URL of the custom UI to render for the action. */
-	uiUrl?: string;
-	/** Current lifecycle status of the pending action. */
-	status?: string;
-};
-
-/** Durable agent run record returned by RunAgent / GetAgentRun. */
-export interface AgentRunRecord {
-	/** Durable id of the run. */
-	runId: string;
-	/** Id of the parent run when this run is a delegated subagent. */
-	parentRunId?: string | null;
-	/** Display alias for a subagent run. */
-	alias?: string;
-	/** Room the run executed against. */
-	roomId?: string;
-	/** Workspace the run executed within. */
-	workspaceId?: string;
-	/** Engine id of the model that served the run. */
-	modelId?: string;
-	/** Agent harness that executed the run (e.g. "semoss"). */
-	harnessType?: string;
-	/** Lifecycle status of the run. */
-	status?: AgentRunStatus;
-	/** User prompt that started the run. */
-	input?: string;
-	/** Durable message id of the persisted input message. */
-	inputMessageId?: string;
-	/** Final assistant text produced by the run. */
-	finalText?: string;
-	/** Durable message id of the persisted final output message. */
-	finalOutputMessageId?: string;
-	/** Backend failure reason for FAILED / CANCELLED runs. */
-	errorMessage?: string;
-	/** When the run record was created. */
-	dateCreated?: string;
-	/** When the run started executing. */
-	startedAt?: string;
-	/** When the run reached a terminal status. */
-	completedAt?: string;
-	/** Actions awaiting a user decision while INPUT_REQUIRED. */
-	pendingActions?: AgentPendingAction[];
-	/** Legacy job id; used as the run id when `runId` is absent. */
-	jobId?: string;
-}
-
-/** Durable run record with its persisted messages attached. */
-export type AgentRunRecordWithMessages = AgentRunRecord & {
-	/** Persisted playground messages attached to the run. */
-	messages?: PlaygroundMessage[];
-};
-
-/** One item in an agent run's live activity stream. */
-export interface AgentStreamItem {
-	/** Stream-scoped id of the item (durable message id once completed). */
-	id: string;
-	/** Category of the item on the activity feed. */
-	kind: "message" | "reasoning" | "tool" | "subagent";
-	/** Author role for message items. */
-	role?: string;
-	/** Accumulated text for message/reasoning items. */
-	text?: string;
-	/** Durable message id assigned when a message item completes. */
-	messageId?: string;
-	/** Reasoning summary text. */
-	summary?: string;
-	/** Tool name for tool items. */
-	name?: string;
-	/** Display title for tool items. */
-	title?: string;
-	/** Tool description for tool items. */
-	description?: string;
-	/** Arguments supplied to the tool call. */
-	arguments?: Record<string, unknown>;
-	/** Tool metadata forwarded from the tool definition. */
-	metadata?: Record<string, unknown>;
-	/** Current status of the tool call or subagent run. */
-	status?: string;
-	/** Tool output once the call completes. */
-	output?: string;
-	/** Failure reason for the tool call or subagent run. */
-	error?: string;
-	/** Wall-clock duration of the tool call in milliseconds. */
-	durationMs?: number;
-	/** Durable run id of a delegated subagent. */
-	childRunId?: string;
-	/** Display alias of a delegated subagent. */
-	alias?: string;
-	/** Room a subagent run executed against. */
-	roomId?: string;
-	/** Workspace a subagent run executed within. */
-	workspaceId?: string;
-	/** Short preview of a subagent's final result. */
-	resultPreview?: string;
-}
-
-/** One event emitted on an agent run's live activity stream. */
-export interface AgentStreamEvent {
-	/** Stream protocol version. */
-	version: number;
-	/** Unique id of the event. */
-	eventId: string;
-	/** Monotonic position of the event on the run's stream. */
-	sequence: number;
-	/** Run the event belongs to. */
-	runId: string;
-	/** When the event was emitted. */
-	timestamp: string;
-	/** Lifecycle phase of the item the event describes. */
-	type: "item.started" | "item.updated" | "item.completed";
-	/** Full item payload for started/completed events. */
-	item?: AgentStreamItem;
-	/** Id of the item an update event targets. */
-	itemId?: string;
-	/** Kind of the item an update event targets. */
-	kind?: AgentStreamItem["kind"];
-	/** Incremental text appended to a message/reasoning item. */
-	delta?: string;
-	/** Partial fields merged into a tool/subagent item. */
-	patch?: Partial<AgentStreamItem>;
-}
-
-/** Run snapshot included with every streaming poll response. */
-export type AgentRunStreamSnapshot = AgentRunRecord & {
-	/** Room the run executed against (always present on snapshots). */
-	roomId: string;
-	/** Current lifecycle status (always present on snapshots). */
-	status: AgentRunStatus;
-};
-
-/** Response of one agentRunStreaming poll. */
-export interface AgentRunStreamingResponse {
-	/** Latest run snapshot at poll time. */
-	run: AgentRunStreamSnapshot;
-	/** Events emitted since the previous poll. */
-	events: AgentStreamEvent[];
-	/** Count of events evicted before the client could read them. */
-	droppedEvents: number;
-}
-
-/** Inline tool definition forwarded to RunAgent via paramValues.tools. */
-export interface AgentToolDefinition {
-	/** Unique tool name the model calls. */
-	name: string;
-	/** Display title shown in the UI. */
-	title?: string;
-	/** What the tool does; shown to the model. */
-	description?: string;
-	/** JSON schema describing the tool's arguments. */
-	inputSchema: Record<string, unknown>;
-	/** Execution metadata (e.g. SMSS_MCP_EXECUTION) for the harness. */
-	_meta?: Record<string, unknown>;
-}
-
-/** Structured parameters forwarded to RunAgent via paramValues. */
-export interface RunAgentParamValues {
-	/** Tool permission mode for the run (e.g. "default"). */
-	permissionMode?: string;
-	/** Whether extended thinking is enabled. */
-	thinking?: boolean;
-	/** Thinking budget hint (low | medium | high | xhigh). */
-	effort?: string;
-	/** Inline tool definitions exposed to the run. */
-	tools?: AgentToolDefinition[];
-	[key: string]: unknown;
-}
-
-/**
- * True when a run has stopped progressing without user input. Treats
- * INPUT_REQUIRED as terminal because the stream stays idle until the user
- * decides on the pending action.
- *
- * @name isTerminalAgentRunStatus
- * @param status - Run status to test; compared case-insensitively.
- * @return Whether the status is COMPLETED, FAILED, CANCELLED, or
- * INPUT_REQUIRED.
- */
-export const isTerminalAgentRunStatus = (status?: string): boolean => {
-	const normalized = (status ?? "").trim().toUpperCase();
-	return (
-		normalized === "COMPLETED" ||
-		normalized === "FAILED" ||
-		normalized === "CANCELLED" ||
-		normalized === "INPUT_REQUIRED"
-	);
-};
-
-/**
- * Pick the pixel result whose output is the durable run record (carries a
- * string `status`); RunAgent may emit auxiliary outputs alongside it.
- *
- * @name findAgentRunOutput
- * @param results - Pixel return entries from a RunAgent response.
- * @return The run record output, or null when none matches.
- */
-const findAgentRunOutput = (
-	results: { output: unknown }[],
-): AgentRunRecord | null => {
-	for (const result of results) {
-		const output = result?.output;
-		if (
-			output &&
-			typeof output === "object" &&
-			typeof (output as AgentRunRecord).status === "string"
-		) {
-			return output as AgentRunRecord;
-		}
-	}
-	return null;
-};
-
-/**
- * Start a durable agent run against a room (semoss harness, non-blocking).
- *
- * Failures surface as `status: FAILED | CANCELLED` on the returned record —
- * the backend does not throw for them — so callers must inspect the status.
- *
- * @name runAgent
- * @param insightId - Insight the pixel executes against.
- * @param params - Run parameters: target roomId, model engineId, user
- * command, maxTurns budget, structured paramValues, and optional image file
- * paths to attach to the input message.
- * @return The durable run record; `runId` falls back to `jobId` when the
- * backend only returns a job id.
+ * @param params.roomId - Room the run's messages are written to.
+ * @param params.command - The user's message text.
+ * @param params.engine - Model engine id. Defaults to the room's configured model.
+ * @param params.harnessType - Which agent harness runs the loop (e.g. "semoss").
+ * @param params.agentId - The agent whose tools/config the run should use. Sent
+ * to the backend as `workspaceId` -- a workspace IS the backend's agent record,
+ * but "agent" is the term callers should use here.
+ * @param params.maxTurns - Cap on model round-trips before the run stops itself.
+ * @param params.maxReflections - Cap on self-reflection turns.
+ * @param params.images - Image file locations to attach to the command.
+ * @param params.urls - URLs to attach to the command.
+ * @param insightId - Insight to run the pixel against.
+ * @returns The submitted run's id, room id, and initial status (always
+ * "SUBMITTED") — not a full snapshot.
  */
 export const runAgent = async (
-	insightId: string,
 	params: {
 		roomId: string;
-		engineId: string;
 		command: string;
-		maxTurns: number;
-		paramValues: RunAgentParamValues;
-		image?: string[];
+		engine?: string;
+		harnessType?: string;
+		agentId?: string;
+		maxTurns?: number;
+		maxReflections?: number;
+		images?: string[];
+		urls?: string[];
 	},
-): Promise<AgentRunRecord> => {
-	const imagePart = params.image?.length
-		? `, image=${JSON.stringify(params.image)}`
-		: "";
-	const response = await runPixel<[AgentRunRecord]>(
-		`RunAgent(roomId=${JSON.stringify(params.roomId)}, engine=${JSON.stringify(params.engineId)}, command=[${JSON.stringify(`<encode>${params.command}</encode>`)}], harnessType=["semoss"], maxTurns=${params.maxTurns}, maxReflections=0, paramValues=[${JSON.stringify(params.paramValues)}]${imagePart}, wait=false);`,
-		insightId,
-	);
-	assertPixelSuccess(response.errors);
+	insightId?: string,
+): Promise<{ runId: string; roomId: string; status: AgentRunStatusValue }> => {
+	const {
+		roomId,
+		command,
+		engine,
+		harnessType,
+		agentId,
+		maxTurns,
+		maxReflections,
+		images,
+		urls,
+	} = params;
 
-	const record = findAgentRunOutput(response.pixelReturn);
-	if (!record?.runId && !record?.jobId) {
-		throw new Error("RunAgent did not return a durable run ID");
+	const clauses = [
+		`roomId=${JSON.stringify([roomId])}`,
+		`command=${JSON.stringify([command])}`,
+		engine ? `engine=${JSON.stringify([engine])}` : null,
+		harnessType ? `harnessType=${JSON.stringify(harnessType)}` : null,
+		// The backend's RunAgent pixel calls this workspaceId -- see the agentId
+		// param doc above for why the public name here differs.
+		agentId ? `workspaceId=${JSON.stringify([agentId])}` : null,
+		maxTurns !== undefined ? `maxTurns=${JSON.stringify(maxTurns)}` : null,
+		maxReflections !== undefined
+			? `maxReflections=${JSON.stringify(maxReflections)}`
+			: null,
+		images && images.length > 0 ? `image=${JSON.stringify(images)}` : null,
+		urls && urls.length > 0 ? `url=${JSON.stringify(urls)}` : null,
+		"wait=false",
+	].filter((clause): clause is string => clause !== null);
+
+	const response = await runPixel<
+		[{ runId: string; roomId: string; status: AgentRunStatusValue }]
+	>(`RunAgent(${clauses.join(",\n")});`, insightId);
+
+	if (response.errors.length > 0) {
+		throw new Error(response.errors.join(""));
 	}
 
-	return { ...record, runId: record.runId ?? (record.jobId as string) };
+	return response.pixelReturn[0].output;
 };
 
 /**
- * Poll the live activity stream for a run (snapshot + new events). Throws
- * when no run id is provided.
+ * Drain buffered stream events for a run and get its current durable
+ * snapshot in one call. Scoped to the run's owner by the backend. Each call
+ * removes the drained events — there's no replay.
  *
- * @name getAgentRunStreaming
- * @param runId - Durable id of the run to poll.
- * @return The latest run snapshot, events emitted since the previous poll,
- * and the dropped-event count.
+ * @param runId - The run to poll.
+ * @returns `run` — the current durable snapshot; `events` — new item events
+ * since the last drain, unordered; `droppedEvents` — events evicted by the
+ * backend's bounded buffer before this drain could collect them.
  */
-export const getAgentRunStreaming = async (
+export const pollAgentRun = async (
 	runId: string,
-): Promise<AgentRunStreamingResponse> => {
+): Promise<{
+	run: AgentRunSnapshot;
+	events: AgentRunItemEvent[];
+	droppedEvents: number;
+}> => {
 	if (!runId) {
-		throw new Error("No run id provided for streaming");
+		throw new Error("Missing runId");
 	}
 
-	const response = await post<AgentRunStreamingResponse>(
-		`${Env.MODULE}/api/engine/agentRunStreaming`,
-		{ runId },
-	);
+	const response = await post<{
+		run: AgentRunSnapshot;
+		events: AgentRunItemEvent[];
+		droppedEvents: number;
+	}>(`${Env.MODULE}/api/engine/agentRunStreaming`, { runId });
 
 	return response.data;
 };
 
 /**
- * Load the durable record (and optionally messages) for one run.
+ * Get the durable AgentRun snapshot directly (GetAgentRun), optionally with
+ * this run's persisted room messages. For reconciliation, not live progress.
  *
- * @name getAgentRun
- * @param insightId - Insight the pixel executes against.
- * @param runId - Durable id of the run to load.
- * @param includeMessages - Whether to attach the run's persisted messages;
- * defaults to true.
- * @return The run record, or null when the run does not exist.
+ * @param runId - The run to fetch.
+ * @param options.includeMessages - Also fetch this run's persisted room messages.
+ * @param insightId - Insight to run the pixel against.
+ * @returns The durable snapshot; `messages` is only populated when
+ * `includeMessages` is true.
  */
-export const getAgentRun = async (
-	insightId: string,
+export const getAgentRun = async <
+	M extends Record<string, unknown> = Record<string, unknown>,
+>(
 	runId: string,
-	includeMessages = true,
-): Promise<AgentRunRecordWithMessages | null> => {
-	const response = await runPixel<[AgentRunRecordWithMessages]>(
-		`GetAgentRun(runId=${JSON.stringify(runId)}, includeMessages=${includeMessages});`,
+	options: { includeMessages?: boolean } = {},
+	insightId?: string,
+): Promise<AgentRunSnapshot & { messages?: M[] }> => {
+	if (!runId) {
+		throw new Error("Missing runId");
+	}
+
+	const clauses = [
+		`runId=${JSON.stringify([runId])}`,
+		options.includeMessages ? "includeMessages=true" : null,
+	].filter((clause): clause is string => clause !== null);
+
+	const response = await runPixel<[AgentRunSnapshot & { messages?: M[] }]>(
+		`GetAgentRun(${clauses.join(",\n")});`,
 		insightId,
 	);
-	assertPixelSuccess(response.errors);
 
-	return response.pixelReturn[0]?.output ?? null;
+	if (response.errors.length > 0) {
+		throw new Error(response.errors.join(""));
+	}
+
+	const output = response.pixelReturn[0].output;
+
+	// The backend only sets pendingActions while INPUT_REQUIRED — normalize it
+	// here so this always matches AgentRunSnapshot's contract for every caller.
+	return { ...output, pendingActions: output.pendingActions ?? [] };
 };
 
 /**
- * Load every root run for a room, oldest first.
+ * Decide a pending agent tool call (RunMCPTool's HITL path) — resumes the run
+ * once every pending action in the batch has been decided. For the common
+ * case of resolving approve vs. edit from submitted params automatically, use
+ * submitAgentToolDecision instead.
  *
- * @name getAgentRunsForRoom
- * @param insightId - Insight the pixel executes against.
- * @param roomId - Room whose runs to load.
- * @param includeMessages - Whether to attach each run's persisted messages;
- * defaults to true.
- * @return The room's root run records, or an empty array when none exist.
+ * @param params.actionId - The PendingAgentAction.actionId being decided.
+ * @param params.decision - "approve"/"edit" execute the tool; "reject"/"respond" don't.
+ * @param params.paramValues - Required for "edit" and "respond"; ignored otherwise.
+ * @param insightId - Insight to run the pixel against.
+ * @returns The tool-result string the decision produced.
  */
-export const getAgentRunsForRoom = async (
-	insightId: string,
-	roomId: string,
-	includeMessages = true,
-): Promise<AgentRunRecordWithMessages[]> => {
-	const response = await runPixel<[AgentRunRecordWithMessages[]]>(
-		`GetAgentRunsForRoom(roomId=${JSON.stringify(roomId)}, includeMessages=${includeMessages});`,
+export const decideAgentRunAction = async (
+	params: {
+		actionId: string;
+		decision: AgentToolDecision;
+		paramValues?: Record<string, unknown>;
+	},
+	insightId?: string,
+): Promise<string> => {
+	const { actionId, decision, paramValues } = params;
+
+	const clauses = [
+		`actionId=${JSON.stringify([actionId])}`,
+		`decision=${JSON.stringify([decision])}`,
+		decision === "edit" || decision === "respond"
+			? `paramValues=${JSON.stringify(paramValues)}`
+			: null,
+	].filter((clause): clause is string => clause !== null);
+
+	const response = await runPixel<[string]>(
+		`RunMCPTool(${clauses.join(",\n")});`,
 		insightId,
 	);
-	assertPixelSuccess(response.errors);
 
-	const records = response.pixelReturn[0]?.output;
-	return Array.isArray(records) ? records : [];
+	if (response.errors.length > 0) {
+		throw new Error(response.errors.join(""));
+	}
+
+	return response.pixelReturn[0].output;
 };
 
 /**
- * Load the delegated (child) runs spawned by a run.
+ * List every direct subagent run spawned by a parent run, newest first —
+ * durable and DB-backed (GetSubagentRuns), unlike the ephemeral subagent item
+ * events on the parent's own stream. Use to reconstruct subagent state after
+ * a reload, where the stream has nothing left to replay.
  *
- * @name getSubagentRuns
- * @param insightId - Insight the pixel executes against.
- * @param runId - Durable id of the parent run.
- * @return The child run records, or an empty array when none exist.
+ * @param runId - The parent run whose direct subagent runs should be returned.
+ * @param insightId - Insight to run the pixel against.
+ * @returns Every direct child run, newest first.
  */
 export const getSubagentRuns = async (
-	insightId: string,
 	runId: string,
-): Promise<AgentRunRecord[]> => {
-	const response = await runPixel<[AgentRunRecord[]]>(
-		`GetSubagentRuns(runId=${JSON.stringify(runId)});`,
+	insightId?: string,
+): Promise<SubagentRunSummary[]> => {
+	if (!runId) {
+		throw new Error("Missing runId");
+	}
+
+	const response = await runPixel<[SubagentRunSummary[]]>(
+		`GetSubagentRuns(runId=${JSON.stringify([runId])});`,
 		insightId,
 	);
-	assertPixelSuccess(response.errors);
 
-	const records = response.pixelReturn[0]?.output;
-	return Array.isArray(records) ? records : [];
-};
+	if (response.errors.length > 0) {
+		throw new Error(response.errors.join(""));
+	}
 
-/**
- * Request cancellation of an in-flight run.
- *
- * @name stopAgentRun
- * @param insightId - Insight the pixel executes against.
- * @param runId - Durable id of the run to cancel.
- * @return Resolves when the cancellation request is accepted.
- */
-export const stopAgentRun = async (
-	insightId: string,
-	runId: string,
-): Promise<void> => {
-	const response = await runPixel<[unknown]>(
-		`StopAgentRun(runId=${JSON.stringify(runId)});`,
-		insightId,
-	);
-	assertPixelSuccess(response.errors);
-};
-
-/**
- * Approve or reject a pending tool action on an INPUT_REQUIRED run.
- *
- * @name decideAgentAction
- * @param insightId - Insight the pixel executes against.
- * @param actionId - Id of the pending action to decide.
- * @param decision - "approve" to run the tool, "reject" to skip it.
- * @return Resolves when the decision is recorded.
- */
-export const decideAgentAction = async (
-	insightId: string,
-	actionId: string,
-	decision: "approve" | "reject",
-): Promise<void> => {
-	const response = await runPixel<[unknown]>(
-		`RunMCPTool(actionId=[${JSON.stringify(actionId)}], decision=[${JSON.stringify(decision)}]);`,
-		insightId,
-	);
-	assertPixelSuccess(response.errors);
-};
-
-/**
- * Answer a pending RequestUserInput action with structured answers.
- *
- * @name respondToAgentUserInput
- * @param insightId - Insight the pixel executes against.
- * @param actionId - Id of the pending RequestUserInput action.
- * @param answers - Answer map keyed by question id.
- * @return Resolves when the response is delivered to the run.
- */
-export const respondToAgentUserInput = async (
-	insightId: string,
-	actionId: string,
-	answers: Record<string, string | string[] | boolean>,
-): Promise<void> => {
-	const payload = JSON.stringify({ version: 1, answers });
-	const response = await runPixel<[unknown]>(
-		`RunMCPTool(actionId=[${JSON.stringify(actionId)}], decision=["respond"], mcpToolResult=[${JSON.stringify(payload)}]);`,
-		insightId,
-	);
-	assertPixelSuccess(response.errors);
+	return response.pixelReturn[0].output;
 };

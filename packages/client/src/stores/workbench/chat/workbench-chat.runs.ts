@@ -1,12 +1,106 @@
 import type {
-	AgentPendingAction,
-	AgentRunRecord,
-	AgentRunStreamSnapshot,
-	AgentStreamEvent,
-	AgentStreamItem,
-	PlaygroundMessage,
+	AgentRunItem,
+	AgentRunItemEvent,
+	AgentRunSnapshot,
+	PendingAgentAction,
+	SubagentRunSummary,
 } from "@semoss/sdk/react";
-import { isTerminalAgentRunStatus } from "@semoss/sdk/react";
+import type { PlaygroundMessage } from "@/api/rooms";
+
+/**
+ * Durable run record as the workbench projects it. The SDK's AgentRunSnapshot
+ * only carries a subset of these fields; the rest arrive from subagent
+ * summaries, the submit context, or the room's durable messages, and
+ * `mergeRecord` merges defined fields only.
+ */
+export interface WorkbenchRunRecord {
+	/** Durable id of the run. */
+	runId: string;
+	/** Id of the parent run when this run is a delegated subagent. */
+	parentRunId?: string | null;
+	/** Display alias for a subagent run. */
+	alias?: string;
+	/** Room the run executed against. */
+	roomId?: string;
+	/** Workspace the run executed under. */
+	workspaceId?: string;
+	/** Engine id of the model that served the run. */
+	modelId?: string;
+	/** Agent harness that executed the run (e.g. "semoss"). */
+	harnessType?: string;
+	/** Lifecycle status of the run. */
+	status?: string;
+	/** User prompt that started the run. */
+	input?: string;
+	/** Durable message id of the persisted input message. */
+	inputMessageId?: string;
+	/** Final assistant text produced by the run. */
+	finalText?: string;
+	/** Durable message id of the persisted final output message. */
+	finalOutputMessageId?: string;
+	/** Backend failure reason for FAILED / CANCELLED runs. */
+	errorMessage?: string;
+	/** When the run record was created. */
+	dateCreated?: string;
+	/** When the run started executing. */
+	startedAt?: string;
+	/** When the run reached a terminal status. */
+	completedAt?: string;
+	/** Actions awaiting a user decision while INPUT_REQUIRED. */
+	pendingActions?: PendingAgentAction[];
+	/** Job id mirroring the run id. */
+	jobId?: string;
+}
+
+/**
+ * Whether an agent run status ends the streaming poll loop. Treats
+ * INPUT_REQUIRED as terminal because the stream stays idle until the user
+ * decides on the pending action.
+ *
+ * @name isTerminalAgentRunStatus
+ * @param status - Run status to test; compared case-insensitively.
+ * @return Whether the status is COMPLETED, FAILED, CANCELLED, or
+ * INPUT_REQUIRED.
+ */
+export const isTerminalAgentRunStatus = (status?: string): boolean => {
+	const normalized = (status ?? "").trim().toUpperCase();
+	return (
+		normalized === "COMPLETED" ||
+		normalized === "FAILED" ||
+		normalized === "CANCELLED" ||
+		normalized === "INPUT_REQUIRED"
+	);
+};
+
+/**
+ * Project a durable subagent summary into a workbench run record, collapsing
+ * the summary's nullable fields to undefined. Summaries carry no alias — the
+ * projection's "Subagent" fallback covers resumed children.
+ *
+ * @name subagentSummaryToRecord
+ * @param summary - Durable subagent summary from GetSubagentRuns.
+ * @return The equivalent workbench run record.
+ */
+export const subagentSummaryToRecord = (
+	summary: SubagentRunSummary,
+): WorkbenchRunRecord => ({
+	runId: summary.runId,
+	parentRunId: summary.parentRunId ?? undefined,
+	roomId: summary.roomId,
+	workspaceId: summary.workspaceId ?? undefined,
+	modelId: summary.modelId ?? undefined,
+	harnessType: summary.harnessType ?? undefined,
+	status: summary.status,
+	input: summary.input ?? undefined,
+	inputMessageId: summary.inputMessageId ?? undefined,
+	finalText: summary.finalText ?? undefined,
+	finalOutputMessageId: summary.finalOutputMessageId ?? undefined,
+	errorMessage: summary.errorMessage ?? undefined,
+	dateCreated: summary.dateCreated ?? undefined,
+	startedAt: summary.startedAt ?? undefined,
+	completedAt: summary.completedAt ?? undefined,
+	jobId: summary.jobId,
+});
 
 /** File attached to a run's input message. */
 export interface BuildAttachment {
@@ -61,7 +155,7 @@ export interface BuildTool {
 }
 
 /** Action awaiting a user decision (approve/reject/respond). */
-export type BuildPendingAction = AgentPendingAction;
+export type BuildPendingAction = PendingAgentAction;
 
 /** Client-side projection of a durable agent run and its live activity. */
 export interface BuildRun {
@@ -186,8 +280,10 @@ const stringifyOutput = (value: unknown): string | undefined => {
  * @return A new BuildRun projection with empty activity feeds.
  */
 export const createRun = (
-	record: Partial<AgentRunRecord> &
-		Pick<AgentRunRecord, "runId"> & { attachments?: BuildAttachment[] },
+	record: Partial<WorkbenchRunRecord> &
+		Pick<WorkbenchRunRecord, "runId"> & {
+			attachments?: BuildAttachment[];
+		},
 ): BuildRun => ({
 	runId: record.runId,
 	parentRunId: record.parentRunId ?? undefined,
@@ -273,7 +369,7 @@ const createDraft = (runs: Record<string, BuildRun>) => {
  */
 const mergeRecord = (
 	run: BuildRun,
-	record: Partial<AgentRunRecord> | AgentRunStreamSnapshot,
+	record: Partial<WorkbenchRunRecord>,
 ): void => {
 	if (record.parentRunId != null) run.parentRunId = record.parentRunId;
 	if (record.roomId) run.roomId = record.roomId;
@@ -304,8 +400,9 @@ const mergeRecord = (
  * @param item - Stream item being projected.
  * @return "reasoning" for reasoning items, otherwise "text".
  */
-const messageKind = (item: AgentStreamItem): BuildMessage["kind"] =>
-	item.kind === "reasoning" ? "reasoning" : "text";
+const messageKind = (
+	item: Extract<AgentRunItem, { kind: "message" | "reasoning" }>,
+): BuildMessage["kind"] => (item.kind === "reasoning" ? "reasoning" : "text");
 
 /**
  * Insert or update a message on a draft run's feed. On completion the entry
@@ -320,12 +417,13 @@ const messageKind = (item: AgentStreamItem): BuildMessage["kind"] =>
  */
 const upsertMessage = (
 	run: BuildRun,
-	item: AgentStreamItem,
+	item: Extract<AgentRunItem, { kind: "message" | "reasoning" }>,
 	timestamp: string,
 	completed: boolean,
 ): void => {
-	const durableId = completed ? item.messageId : undefined;
-	const text = item.text ?? item.summary;
+	const durableId =
+		completed && item.kind === "message" ? item.messageId : undefined;
+	const text = item.kind === "message" ? item.text : item.summary;
 	const existing = run.messages.find(
 		(message) =>
 			message.id === item.id ||
@@ -363,15 +461,15 @@ const upsertMessage = (
  */
 const upsertTool = (
 	run: BuildRun,
-	item: AgentStreamItem,
+	item: Extract<AgentRunItem, { kind: "tool" }>,
 	timestamp: string,
 ): void => {
 	const existing = run.tools.find((tool) => tool.id === item.id);
 	const next: BuildTool = {
 		id: item.id,
 		name: item.name ?? existing?.name ?? "Tool",
-		title: item.title ?? existing?.title,
-		description: item.description ?? existing?.description,
+		title: existing?.title,
+		description: existing?.description,
 		arguments: item.arguments ?? existing?.arguments,
 		metadata: item.metadata ?? existing?.metadata,
 		status: item.status ?? existing?.status ?? "QUEUED",
@@ -400,7 +498,7 @@ const upsertTool = (
 const ensureChild = (
 	draft: ReturnType<typeof createDraft>,
 	parent: BuildRun,
-	item: AgentStreamItem,
+	item: Extract<AgentRunItem, { kind: "subagent" }>,
 	timestamp: string,
 ): void => {
 	const childRunId = item.childRunId ?? item.id;
@@ -427,6 +525,32 @@ const ensureChild = (
 };
 
 /**
+ * Copy the whitelisted tool fields off an untyped update patch. Mutates the
+ * tool in place; unknown or wrongly-typed patch keys are ignored.
+ *
+ * @name applyToolPatch
+ * @param tool - Tool entry to update.
+ * @param patch - Untyped field patch from an item.updated event.
+ */
+const applyToolPatch = (
+	tool: BuildTool,
+	patch: Record<string, unknown>,
+): void => {
+	if (typeof patch.name === "string") tool.name = patch.name;
+	if (typeof patch.status === "string") tool.status = patch.status;
+	if (typeof patch.output === "string") tool.output = patch.output;
+	if (typeof patch.error === "string") tool.error = patch.error;
+	if (typeof patch.durationMs === "number")
+		tool.durationMs = patch.durationMs;
+	if (patch.arguments && typeof patch.arguments === "object") {
+		tool.arguments = patch.arguments as Record<string, unknown>;
+	}
+	if (patch.metadata && typeof patch.metadata === "object") {
+		tool.metadata = patch.metadata as Record<string, unknown>;
+	}
+};
+
+/**
  * Apply one stream event to a draft run. Unlike agent47's canonical store,
  * `reasoning` items are KEPT (as `kind: "reasoning"` messages) so the UI can
  * render collapsed thinking blocks.
@@ -439,7 +563,7 @@ const ensureChild = (
 const applyEvent = (
 	draft: ReturnType<typeof createDraft>,
 	run: BuildRun,
-	event: AgentStreamEvent,
+	event: AgentRunItemEvent,
 ): void => {
 	if (event.type === "item.updated") {
 		if (event.kind === "message" || event.kind === "reasoning") {
@@ -454,18 +578,22 @@ const applyEvent = (
 		if (event.kind === "tool") {
 			const existing = run.tools.find((tool) => tool.id === event.itemId);
 			if (existing && event.patch) {
-				Object.assign(existing, event.patch);
+				applyToolPatch(existing, event.patch);
 			}
 			return;
 		}
 		if (event.kind === "subagent") {
 			const child = event.itemId ? draft.get(event.itemId) : undefined;
 			if (child && event.patch) {
-				if (event.patch.status) child.status = event.patch.status;
-				if (event.patch.resultPreview) {
+				if (typeof event.patch.status === "string") {
+					child.status = event.patch.status;
+				}
+				if (typeof event.patch.resultPreview === "string") {
 					child.resultPreview = event.patch.resultPreview;
 				}
-				if (event.patch.error) child.errorMessage = event.patch.error;
+				if (typeof event.patch.error === "string") {
+					child.errorMessage = event.patch.error;
+				}
 			}
 		}
 		return;
@@ -532,8 +660,8 @@ export const applyStreamBatch = (
 	store: RunStore,
 	payload: {
 		runId: string;
-		snapshot: AgentRunStreamSnapshot;
-		events: AgentStreamEvent[];
+		snapshot: AgentRunSnapshot;
+		events: AgentRunItemEvent[];
 		droppedEvents?: number;
 	},
 ): RunStore => {
@@ -572,7 +700,7 @@ export const applyStreamBatch = (
 export const mergeDurableRun = (
 	store: RunStore,
 	payload: {
-		record: AgentRunRecord;
+		record: WorkbenchRunRecord;
 		messages?: BuildMessage[];
 		tools?: BuildTool[];
 		childRunIds?: string[];
@@ -764,7 +892,9 @@ export const setRoomRuns = (
  * @param record - Durable run record to project.
  * @return A new BuildRun marked `reconciled: true`.
  */
-export const createBuildRunFromRecord = (record: AgentRunRecord): BuildRun => ({
+export const createBuildRunFromRecord = (
+	record: WorkbenchRunRecord,
+): BuildRun => ({
 	...createRun({
 		...record,
 		status: record.status ?? "COMPLETED",
@@ -937,9 +1067,9 @@ export const projectDurableRoom = ({
 	messages,
 	childrenByParent,
 }: {
-	records: AgentRunRecord[];
+	records: WorkbenchRunRecord[];
 	messages: PlaygroundMessage[];
-	childrenByParent: Record<string, AgentRunRecord[]>;
+	childrenByParent: Record<string, WorkbenchRunRecord[]>;
 }): { runs: BuildRun[]; roomRunIds: string[] } => {
 	const runs: Record<string, BuildRun> = {};
 	const roomRunIds: string[] = [];
@@ -961,6 +1091,7 @@ export const projectDurableRoom = ({
 			const child = createBuildRunFromRecord(record);
 			child.parentRunId = parentRunId;
 			child.alias = record.alias || "Subagent";
+			child.resultPreview = child.resultPreview ?? record.finalText;
 			runs[child.runId] = child;
 			runs[parentRunId].childRunIds.push(child.runId);
 		}

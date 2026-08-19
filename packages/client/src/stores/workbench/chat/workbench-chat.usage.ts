@@ -1,4 +1,4 @@
-import type { PlaygroundMessage } from "@semoss/sdk/react";
+import type { PlaygroundMessage } from "@/api/rooms";
 
 /** Aggregated room token usage shown by the composer's context chip. */
 export type RoomUsageStats = {

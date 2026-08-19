@@ -1,4 +1,3 @@
-import { TriangleAlert } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
 import type { Role } from "@semoss/shared";
@@ -10,7 +9,6 @@ import {
 	CardDescription,
 	CardHeader,
 	CardTitle,
-	cn,
 	Field,
 	FieldDescription,
 	FieldGroup,
@@ -29,6 +27,10 @@ import {
 } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import {
+	MODEL_PROVIDER_OPTIONS,
+	SERVING_PROVIDER_OPTIONS,
+} from "@/model-metadata.constants";
+import {
 	EngineBuiltinToolsField,
 	type ModelBuiltinTools,
 } from "./engine-builtin-tools-field";
@@ -39,10 +41,13 @@ import {
 	formatEffortLabel,
 	formatEnumLabel,
 	formatModalityLabel,
+	formatModelProviderLabel,
+	formatServingProviderLabel,
 	getDefaultEffortWarning,
 	getEffortOptions,
 	getMandatoryReasoningWarning,
 	getModalityWarning,
+	getProviderOptions,
 	getReasoningSupportWarning,
 	getTokenLimitWarning,
 	hasCatalogEntry,
@@ -56,22 +61,18 @@ import {
 	normalizeEfforts,
 	normalizeStringArray,
 	pickNearestEffort,
+	SettingsWarning,
 	type StaticModelMetadata,
+	TOGGLE_ON_CLASS,
 	toModelSettingsValues,
 	toReasoningConfig,
 } from "./engine-metadata-display";
 
-/** Radix Select rejects empty item values, so "unset" needs a sentinel. */
-const CAPABILITY_NONE = "__none__";
-
 /**
- * The outline toggle marks its selected state with a faint muted fill, which
- * reads as "greyed out" next to the white unselected buttons - the opposite of
- * what it means. Selected items get a primary outline and label instead, so on
- * and off are unmistakable without filling the button.
+ * Radix Select rejects empty item values, so the nullable columns need a
+ * sentinel for their "Not set" option.
  */
-const TOGGLE_ON_CLASS =
-	"data-[state=on]:border-primary data-[state=on]:bg-transparent data-[state=on]:text-primary data-[state=on]:ring-1 data-[state=on]:ring-primary data-[state=on]:hover:bg-primary/10 data-[state=on]:hover:text-primary";
+const VALUE_NONE = "__none__";
 
 const parseOptionalPositiveInteger = (label: string, value: string) => {
 	if (value === "") {
@@ -91,39 +92,47 @@ const parseOptionalPositiveInteger = (label: string, value: string) => {
 };
 
 /**
- * Advisory note under a field. Purely informational - nothing is disabled and
- * saving is never blocked, since the catalog is hand-curated and a deployment
- * can legitimately differ from it.
+ * Select for one of the nullable provider columns. Both are free to be unset,
+ * so "Not set" is always offered alongside the curated list.
  */
-const SettingsWarning = ({
-	message,
+const ProviderField = ({
+	label,
+	description,
+	value,
+	options,
+	format,
+	onChange,
 	testId,
-	tone = "advisory",
 }: {
-	message: string;
+	label: string;
+	description: string;
+	value: string;
+	options: string[];
+	format: (value: string) => string;
+	onChange: (value: string) => void;
 	testId: string;
-	/** "danger" is for a documented hard requirement, not a hunch. */
-	tone?: "advisory" | "danger";
-}) => {
-	if (message === "") {
-		return null;
-	}
-
-	return (
-		<p
-			className={cn(
-				"flex items-start gap-1.5 text-xs",
-				tone === "danger"
-					? "font-medium text-destructive"
-					: "text-amber-600 dark:text-amber-400",
-			)}
-			data-testid={testId}
+}) => (
+	<Field>
+		<FieldLabel>{label}</FieldLabel>
+		<Select
+			value={value !== "" ? value : VALUE_NONE}
+			onValueChange={(next) => onChange(next === VALUE_NONE ? "" : next)}
 		>
-			<TriangleAlert className="mt-px size-3.5 shrink-0" />
-			<span>{message}</span>
-		</p>
-	);
-};
+			<SelectTrigger className="w-full" data-testid={testId}>
+				<SelectValue placeholder={`Select a ${label.toLowerCase()}`} />
+			</SelectTrigger>
+			<SelectContent>
+				<SelectItem value={VALUE_NONE}>Not set</SelectItem>
+				{options.map((option) => (
+					<SelectItem key={option} value={option}>
+						{format(option)}
+					</SelectItem>
+				))}
+			</SelectContent>
+		</Select>
+		<FieldDescription>{description}</FieldDescription>
+	</Field>
+);
 
 interface EngineModelSettingsProps {
 	/** Id of the model engine */
@@ -364,6 +373,10 @@ export const EngineModelSettings = ({
 			);
 
 			const payload = {
+				MODEL_PROVIDER:
+					form.modelProvider !== "" ? form.modelProvider : null,
+				SERVING_PROVIDER:
+					form.servingProvider !== "" ? form.servingProvider : null,
 				CAPABILITY: form.capability !== "" ? form.capability : null,
 				INPUT_MODALITIES: normalizeStringArray(form.inputModalities),
 				OUTPUT_MODALITIES: normalizeStringArray(form.outputModalities),
@@ -414,6 +427,9 @@ export const EngineModelSettings = ({
 			toast.success("Successfully updated model settings");
 
 			getModelMetadata.refresh();
+			// The provider pair is what the built-in tools catalog is keyed on,
+			// so a saved provider change makes the offered tools stale.
+			getModelBuiltinTools.refresh();
 			onUpdated?.();
 		} catch (error) {
 			toast.error(
@@ -447,8 +463,8 @@ export const EngineModelSettings = ({
 			<CardHeader className="border-b">
 				<CardTitle>Model Settings</CardTitle>
 				<CardDescription>
-					Identity, capability, modalities, and token limits for this
-					model.
+					Identity, providers, capability, modalities, and token
+					limits for this model.
 				</CardDescription>
 				{/*
 				 * CardAction drops into the header's reserved second column and
@@ -507,18 +523,49 @@ export const EngineModelSettings = ({
 							</FieldDescription>
 						</Field>
 
+						<div className="grid gap-7 sm:grid-cols-2 sm:gap-4">
+							<ProviderField
+								label="Model provider"
+								description="Organization that created the model."
+								value={form.modelProvider}
+								options={getProviderOptions(
+									MODEL_PROVIDER_OPTIONS,
+									form.modelProvider,
+								)}
+								format={formatModelProviderLabel}
+								onChange={(value) =>
+									updateForm("modelProvider", value)
+								}
+								testId="engine-model-settings--model-provider"
+							/>
+							<ProviderField
+								label="Serving provider"
+								description="Platform serving the model."
+								value={form.servingProvider}
+								options={getProviderOptions(
+									SERVING_PROVIDER_OPTIONS,
+									form.servingProvider,
+								)}
+								format={formatServingProviderLabel}
+								onChange={(value) =>
+									updateForm("servingProvider", value)
+								}
+								testId="engine-model-settings--serving-provider"
+							/>
+						</div>
+
 						<Field>
 							<FieldLabel>Capability</FieldLabel>
 							<Select
 								value={
 									form.capability !== ""
 										? form.capability
-										: CAPABILITY_NONE
+										: VALUE_NONE
 								}
 								onValueChange={(value) =>
 									updateForm(
 										"capability",
-										value === CAPABILITY_NONE ? "" : value,
+										value === VALUE_NONE ? "" : value,
 									)
 								}
 							>
@@ -529,7 +576,7 @@ export const EngineModelSettings = ({
 									<SelectValue placeholder="Select a capability" />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value={CAPABILITY_NONE}>
+									<SelectItem value={VALUE_NONE}>
 										Not set
 									</SelectItem>
 									{CAPABILITIES.map((capability) => (

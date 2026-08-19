@@ -1,50 +1,44 @@
-import type {
-	AgentRunRecord,
-	AgentRunStreamSnapshot,
-	ConversationRoom,
-} from "@semoss/sdk/react";
+import type { AgentRunSnapshot } from "@semoss/sdk/react";
 import {
-	compactRoomMessages,
-	decideAgentAction,
-	generateRoomName,
+	decideAgentRunAction,
 	getAgentRun,
-	getAgentRunsForRoom,
-	getPlaygroundMessages,
-	getRoomOptions,
 	getSubagentRuns,
-	getUserConversationRooms,
-	isTerminalAgentRunStatus,
-	renameRoom as renameRoomPixel,
-	respondToAgentUserInput,
 	runAgent,
-	setRoomForInsight,
-	stopAgentRun,
-	updateRoomOptions,
 	uploadInsight,
 } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
+import type { ConversationRoom, PlaygroundMessage } from "@/api/rooms";
 import {
+	compactRoomMessages,
 	createWorkbenchRoom,
 	getDefaultWorkbenchChatModel,
+	getPlaygroundMessages,
+	getRoomOptions,
+	getUserConversationRooms,
+	renameRoom as renameRoomPixel,
 	resolveWorkbenchChatModel,
+	setRoomForInsight,
+	updateRoomOptions,
 } from "@/api/rooms";
 import type { WorkbenchSlice } from "../workbench.types";
 import type {
 	BuildAttachment,
 	BuildRun,
 	RunStore,
+	WorkbenchRunRecord,
 } from "./workbench-chat.runs";
 import {
 	applyStreamBatch,
 	attachDurableMessages,
 	createBuildRunFromRecord,
 	createEmptyRunStore,
+	isTerminalAgentRunStatus,
 	mergeDurableRun,
 	projectDurableRoom,
 	setRoomRuns,
 	startRun,
+	subagentSummaryToRecord,
 } from "./workbench-chat.runs";
-import { REQUEST_USER_INPUT_TOOL } from "./workbench-chat.tools";
 import type { RoomUsageStats } from "./workbench-chat.usage";
 import {
 	calculateRoomUsage,
@@ -55,31 +49,8 @@ import { watchAgentRun } from "./workbench-chat.watcher";
 /** Turn budget used when none is configured. */
 const DEFAULT_MAX_TURNS = 30;
 
-/** Reasoning effort levels selectable in the chat settings. */
-export type EffortLevel = "auto" | "low" | "medium" | "high" | "max";
-
-/**
- * Map an effort level to the backend thinking-budget parameter.
- *
- * @name effortToThinkingBudget
- * @param level - Effort level selected in the chat settings.
- * @return The backend budget string ("max" becomes "xhigh"), or null for
- * "auto" so the backend picks its default.
- */
-export const effortToThinkingBudget = (level: EffortLevel): string | null => {
-	switch (level) {
-		case "auto":
-			return null;
-		case "low":
-			return "low";
-		case "medium":
-			return "medium";
-		case "high":
-			return "high";
-		case "max":
-			return "xhigh";
-	}
-};
+/** Character budget for the client-derived room name on the first turn. */
+const AUTO_NAME_MAX_LENGTH = 60;
 
 /** Configuration each workbench injects for its CHAT panel. */
 export interface WorkbenchChatConfig {
@@ -124,12 +95,6 @@ export interface WorkbenchChatSliceState {
 		model: Engine | null;
 		/** Turn budget passed to RunAgent. */
 		maxTurns: number;
-		/** Tool permission mode passed to RunAgent. */
-		permissionMode: string;
-		/** Reasoning effort level for new runs. */
-		effort: EffortLevel;
-		/** Whether extended thinking is enabled for new runs. */
-		thinkingEnabled: boolean;
 
 		/** Every known run (roots and subagents) keyed by run id. */
 		runs: Record<string, BuildRun>;
@@ -139,8 +104,6 @@ export interface WorkbenchChatSliceState {
 		activeRunId: string | null;
 		/** True while submit() is uploading files and starting the run. */
 		isSending: boolean;
-		/** True while stop() is cancelling the active run. */
-		isStoppingRun: boolean;
 		/** Transient notices rendered inline on the timeline. */
 		notices: WorkbenchChatNotice[];
 		/** Aggregated token usage for the room, when loaded. */
@@ -174,12 +137,6 @@ export interface WorkbenchChatSliceState {
 		 * true when a run was started, false when nothing was sent.
 		 */
 		submit: (prompt: string, files?: File[]) => Promise<boolean>;
-		/**
-		 * Request cancellation of the active run. No-op when nothing is
-		 * running; failures surface as error notices. Resolves when the
-		 * cancellation request settles.
-		 */
-		stop: () => Promise<void>;
 		/**
 		 * Approve or reject the pending action `actionId` on run `runId`,
 		 * then reconcile the run so a resumed stream is re-watched. Resolves
@@ -242,12 +199,6 @@ export interface WorkbenchChatSliceState {
 		setModel: (model: Engine) => void;
 		/** Set the turn budget; invalid values fall back to the default. */
 		setMaxTurns: (maxTurns: number) => void;
-		/** Set the tool permission mode passed to RunAgent. */
-		setPermissionMode: (permissionMode: string) => void;
-		/** Set the reasoning effort level for new runs. */
-		setEffort: (effort: EffortLevel) => void;
-		/** Enable or disable extended thinking for new runs. */
-		setThinking: (enabled: boolean) => void;
 		/**
 		 * Recompute `usage` from the room's durable messages. Failures are
 		 * logged, not surfaced. Resolves when the refresh settles.
@@ -276,7 +227,7 @@ export interface WorkbenchChatSliceState {
  * @return The notice text to show the user.
  */
 const buildRunFailureMessage = (
-	record: Pick<AgentRunRecord, "status" | "errorMessage">,
+	record: Pick<WorkbenchRunRecord, "status" | "errorMessage">,
 	maxTurns: number,
 ): string => {
 	const detail = record.errorMessage?.trim() ?? "";
@@ -317,7 +268,7 @@ export const createWorkbenchChatSlice = (
 	workbenchId: string,
 ): WorkbenchSlice<WorkbenchChatSliceState> => {
 	// Runtime owned by this store instance, deliberately outside reactive state.
-	const activeWatchers = new Map<string, Promise<AgentRunStreamSnapshot>>();
+	const activeWatchers = new Map<string, Promise<AgentRunSnapshot>>();
 	let abortController = new AbortController();
 	let initialization: { insightId: string; promise: Promise<void> } | null =
 		null;
@@ -403,7 +354,7 @@ export const createWorkbenchChatSlice = (
 		const attachWatcher = (
 			runId: string,
 			knownChildRunIds?: string[],
-		): Promise<AgentRunStreamSnapshot> => {
+		): Promise<AgentRunSnapshot> => {
 			const insightId = get().chat.insightId;
 			if (!insightId) {
 				return Promise.reject(new Error("Chat is not initialized"));
@@ -435,11 +386,17 @@ export const createWorkbenchChatSlice = (
 		 */
 		const fetchDurableRun = async (
 			runId: string,
-		): Promise<AgentRunRecord | null> => {
+		): Promise<
+			(AgentRunSnapshot & { messages?: PlaygroundMessage[] }) | null
+		> => {
 			const insightId = get().chat.insightId;
 			if (!insightId) return null;
 
-			const record = await getAgentRun(insightId, runId, true);
+			const record = await getAgentRun<PlaygroundMessage>(
+				runId,
+				{ includeMessages: true },
+				insightId,
+			);
 			if (!record) return null;
 
 			const projected = createBuildRunFromRecord(record);
@@ -471,15 +428,11 @@ export const createWorkbenchChatSlice = (
 
 				model: null,
 				maxTurns: DEFAULT_MAX_TURNS,
-				permissionMode: "default",
-				effort: "auto",
-				thinkingEnabled: true,
 
 				runs: {},
 				roomRunIds: [],
 				activeRunId: null,
 				isSending: false,
-				isStoppingRun: false,
 				notices: [],
 				usage: null,
 				isLoadingUsage: false,
@@ -597,29 +550,24 @@ export const createWorkbenchChatSlice = (
 							workbench: workbenchId,
 						});
 
-						const thinking = get().chat.thinkingEnabled;
-						const effortParam = thinking
-							? effortToThinkingBudget(get().chat.effort)
-							: null;
-
-						const record = await runAgent(insightId, {
-							roomId,
-							engineId: model.engine_id,
-							command,
-							maxTurns: get().chat.maxTurns,
-							paramValues: {
-								permissionMode: get().chat.permissionMode,
-								thinking,
-								...(effortParam ? { effort: effortParam } : {}),
-								// Platform control tool; engine tools come from the room MCP.
-								tools: [REQUEST_USER_INPUT_TOOL],
+						const record = await runAgent(
+							{
+								roomId,
+								command,
+								engine: model.engine_id,
+								harnessType: "semoss",
+								maxTurns: get().chat.maxTurns,
+								maxReflections: 0,
+								images: attachments
+									.map(
+										(attachment) => attachment.fileLocation,
+									)
+									.filter((path): path is string =>
+										Boolean(path),
+									),
 							},
-							image: attachments
-								.map((attachment) => attachment.fileLocation)
-								.filter((path): path is string =>
-									Boolean(path),
-								),
-						});
+							insightId,
+						);
 
 						updateRunStore((store) =>
 							startRun(store, {
@@ -653,41 +601,48 @@ export const createWorkbenchChatSlice = (
 						}
 
 						if (isFirstTurn) {
-							void generateRoomName(
-								insightId,
-								roomId,
-								command,
-								model.engine_id,
-							)
-								.then((name) => {
-									if (!name) return;
-									set((state) => ({
-										chat: {
-											...state.chat,
-											roomName:
-												state.chat.roomId === roomId
-													? name
-													: state.chat.roomName,
-											conversations:
-												state.chat.conversations.map(
-													(room) =>
-														room.roomId === roomId
-															? {
-																	...room,
-																	roomName:
-																		name,
-																}
-															: room,
-												),
-										},
-									}));
-								})
-								.catch((error) => {
-									console.warn(
-										"GenerateRoomName failed:",
-										error,
-									);
-								});
+							// Client-derived name (dev's pattern) — there is no
+							// server-side name-generation reactor.
+							const autoName = command
+								.replace(/\s+/g, " ")
+								.trim()
+								.slice(0, AUTO_NAME_MAX_LENGTH);
+							if (autoName) {
+								void renameRoomPixel(
+									insightId,
+									roomId,
+									autoName,
+								)
+									.then(() => {
+										set((state) => ({
+											chat: {
+												...state.chat,
+												roomName:
+													state.chat.roomId === roomId
+														? autoName
+														: state.chat.roomName,
+												conversations:
+													state.chat.conversations.map(
+														(room) =>
+															room.roomId ===
+															roomId
+																? {
+																		...room,
+																		roomName:
+																			autoName,
+																	}
+																: room,
+													),
+											},
+										}));
+									})
+									.catch((error) => {
+										console.warn(
+											"RenameRoom failed:",
+											error,
+										);
+									});
+							}
 						}
 
 						void get().chat.refreshUsage();
@@ -700,25 +655,14 @@ export const createWorkbenchChatSlice = (
 					}
 				},
 
-				stop: async () => {
-					const { insightId, activeRunId } = get().chat;
-					if (!insightId || !activeRunId) return;
-
-					setChat({ isStoppingRun: true });
-					try {
-						await stopAgentRun(insightId, activeRunId);
-					} catch (error) {
-						pushNotice(toErrorMessage(error), "error");
-					} finally {
-						setChat({ isStoppingRun: false });
-					}
-				},
-
 				decideAction: async (runId, actionId, decision) => {
 					const insightId = get().chat.insightId;
 					if (!insightId) return;
 
-					await decideAgentAction(insightId, actionId, decision);
+					await decideAgentRunAction(
+						{ actionId, decision },
+						insightId,
+					);
 					await get().chat.reconcileRun(runId);
 				},
 
@@ -726,7 +670,10 @@ export const createWorkbenchChatSlice = (
 					const insightId = get().chat.insightId;
 					if (!insightId) return;
 
-					await respondToAgentUserInput(insightId, actionId, answers);
+					await decideAgentRunAction(
+						{ actionId, decision: "respond", paramValues: answers },
+						insightId,
+					);
 					await get().chat.reconcileRun(runId);
 				},
 
@@ -781,7 +728,6 @@ export const createWorkbenchChatSlice = (
 						notices: [],
 						usage: null,
 						isSending: false,
-						isStoppingRun: false,
 					});
 
 					try {
@@ -829,7 +775,6 @@ export const createWorkbenchChatSlice = (
 						notices: [],
 						usage: null,
 						isSending: false,
-						isStoppingRun: false,
 					});
 
 					try {
@@ -855,22 +800,74 @@ export const createWorkbenchChatSlice = (
 							if (model) setChat({ model });
 						}
 
-						const [records, messages] = await Promise.all([
-							getAgentRunsForRoom(insightId, roomId, true),
-							getPlaygroundMessages(insightId, roomId),
-						]);
+						const messages = await getPlaygroundMessages(
+							insightId,
+							roomId,
+						);
+
+						// There is no list-runs-for-room API; root runs are
+						// recovered from the agentRunId ornament the backend
+						// stamps onto each run's persisted messages.
+						const rootRunIds: string[] = [];
+						for (const message of messages) {
+							const runId = message.ornaments?.agentRunId;
+							if (runId && !rootRunIds.includes(runId)) {
+								rootRunIds.push(runId);
+							}
+						}
+
 						const childrenByParent: Record<
 							string,
-							AgentRunRecord[]
+							WorkbenchRunRecord[]
 						> = {};
-						await Promise.all(
-							records.map(async (record) => {
-								childrenByParent[record.runId] =
-									await getSubagentRuns(
-										insightId,
-										record.runId,
-									).catch(() => []);
-							}),
+						const records = await Promise.all(
+							rootRunIds.map(
+								async (runId): Promise<WorkbenchRunRecord> => {
+									const [snapshot, children] =
+										await Promise.all([
+											getAgentRun(
+												runId,
+												{ includeMessages: false },
+												insightId,
+											).catch(() => null),
+											getSubagentRuns(
+												runId,
+												insightId,
+											).catch(() => []),
+										]);
+									childrenByParent[runId] = children.map(
+										subagentSummaryToRecord,
+									);
+
+									// The snapshot carries no input/creation
+									// time; both come from the run's durable
+									// INPUT message.
+									const inputMessage =
+										messages.find(
+											(message) =>
+												message.messageId &&
+												message.messageId ===
+													snapshot?.inputMessageId,
+										) ??
+										messages.find(
+											(message) =>
+												message.io === "INPUT" &&
+												message.ornaments
+													?.agentRunId === runId,
+										);
+									const inputText = inputMessage?.parts?.find(
+										(part) =>
+											part.type === "TEXT" && part.text,
+									)?.text;
+
+									return {
+										...(snapshot ?? {}),
+										runId,
+										input: inputText ?? "",
+										dateCreated: inputMessage?.dateCreated,
+									};
+								},
+							),
 						);
 
 						const projected = projectDurableRoom({
@@ -937,10 +934,6 @@ export const createWorkbenchChatSlice = (
 								? Math.floor(maxTurns)
 								: DEFAULT_MAX_TURNS,
 					}),
-				setPermissionMode: (permissionMode) =>
-					setChat({ permissionMode }),
-				setEffort: (effort) => setChat({ effort }),
-				setThinking: (enabled) => setChat({ thinkingEnabled: enabled }),
 
 				refreshUsage: async () => {
 					const { insightId, roomId } = get().chat;

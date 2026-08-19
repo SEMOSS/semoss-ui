@@ -205,7 +205,7 @@ export const WorkbenchChatPendingActions = ({
 												action.toolName ||
 													"Review action",
 											),
-											action.toolMeta,
+											action.toolMeta ?? undefined,
 										)}
 									</p>
 									{details ? (

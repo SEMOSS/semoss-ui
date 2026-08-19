@@ -5,7 +5,9 @@
 		"completed": "Terminé",
 		"ready": "Prêt",
 		"autoExecute": "Exécution automatique en cours",
-		"queued": "En file d'attente pour l'exécution automatique"
+		"queued": "En file d'attente pour l'exécution automatique",
+		"running": "En cours d'exécution",
+		"waitingForInput": "En attente d'une saisie"
 	},
 	"actions": {
 		"cancel": "Annuler",
@@ -42,6 +44,11 @@
 		"details": "Détails du script Playwright",
 		"projectId": "ID du projet",
 		"recordedFile": "Fichier enregistré"
+	},
+	"subagent": {
+		"title": "Sous-agent",
+		"notFound": "Sous-agent introuvable",
+		"noResult": "Pas encore de réponse"
 	},
 	"extension": {
 		"required": "Extension de navigateur requise",

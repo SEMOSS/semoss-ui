@@ -7,7 +7,9 @@
 		"autoExecute": "Auto-executing",
 		"queued": "In queue to auto-execute",
 		"loadingTool": "Loading tool…",
-		"waitingForArguments": "Waiting for arguments…"
+		"waitingForArguments": "Waiting for arguments…",
+		"running": "Running",
+		"waitingForInput": "Waiting for input"
 	},
 	"actions": {
 		"cancel": "Cancel",
@@ -44,6 +46,11 @@
 		"details": "Playwright Script Details",
 		"projectId": "Project ID",
 		"recordedFile": "Recorded File"
+	},
+	"subagent": {
+		"title": "Subagent",
+		"notFound": "Subagent not found",
+		"noResult": "No response yet"
 	},
 	"extension": {
 		"required": "Browser Extension Required",

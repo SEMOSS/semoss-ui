@@ -8,9 +8,9 @@ import { useRootStore } from "@/hooks";
 import { normalizeTagArray } from "@/utility";
 import { formatDateToLocal } from "@/utility/date";
 import {
+	formatServingProviderLabel,
 	type ModelMetadata,
-	ModelOverviewCards,
-	SettingsEntry,
+	ModelOverviewSections,
 	type StaticModelMetadata,
 } from "./engine-metadata-display";
 
@@ -122,6 +122,10 @@ export const EngineOverview = ({
 		const updatedOn = engine.engine_date_last_edited
 			? formatDateToLocal(engine.engine_date_last_edited)
 			: null;
+		const servingProvider =
+			typeof getModelMetadata.data?.servingProvider === "string"
+				? getModelMetadata.data.servingProvider.trim()
+				: "";
 
 		// Read-only by design: description is edited on Settings > Description,
 		// tags on Settings > Tags, and model metadata on Settings > Model Settings.
@@ -146,11 +150,12 @@ export const EngineOverview = ({
 					</div>
 				)}
 
-				<ModelOverviewCards metadata={getModelMetadata.data} />
+				<ModelOverviewSections metadata={getModelMetadata.data} />
 
 				<Separator />
 
-				<SettingsEntry label="Details">
+				<div className="flex flex-col gap-4">
+					<h3 className="font-semibold">Details</h3>
 					{markdown.trim() ? (
 						<Markdown>{markdown}</Markdown>
 					) : (
@@ -162,13 +167,17 @@ export const EngineOverview = ({
 							model.
 						</p>
 					)}
-				</SettingsEntry>
+				</div>
 
-				{(createdOn || updatedOn) && (
+				{(createdOn || updatedOn || servingProvider !== "") && (
 					<p className="text-muted-foreground text-xs">
 						{[
 							createdOn && `Created ${createdOn}`,
 							updatedOn && `Updated ${updatedOn}`,
+							servingProvider !== "" &&
+								`Served by ${formatServingProviderLabel(
+									servingProvider,
+								)}`,
 						]
 							.filter(Boolean)
 							.join(" · ")}

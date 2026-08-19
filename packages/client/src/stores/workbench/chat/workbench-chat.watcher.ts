@@ -1,18 +1,16 @@
+import type { AgentRunItemEvent, AgentRunSnapshot } from "@semoss/sdk/react";
+import { getAgentRun, pollAgentRun } from "@semoss/sdk/react";
+import type { PlaygroundMessage } from "@/api/rooms";
 import type {
-	AgentRunRecord,
-	AgentRunStreamingResponse,
-	AgentRunStreamSnapshot,
-	AgentStreamEvent,
-} from "@semoss/sdk/react";
-import {
-	getAgentRun,
-	getAgentRunStreaming,
-	isTerminalAgentRunStatus,
-} from "@semoss/sdk/react";
-import type { BuildMessage, BuildRun, BuildTool } from "./workbench-chat.runs";
+	BuildMessage,
+	BuildRun,
+	BuildTool,
+	WorkbenchRunRecord,
+} from "./workbench-chat.runs";
 import {
 	attachDurableMessages,
 	createBuildRunFromRecord,
+	isTerminalAgentRunStatus,
 } from "./workbench-chat.runs";
 
 /** Delay between streaming polls while a run is in flight. */
@@ -29,17 +27,17 @@ export interface WatchAgentRunArgs {
 	/** Aborts the poll loop (new room, resume, unmount). */
 	signal: AbortSignal;
 	/** Per-store dedup registry so each run has exactly one drain consumer. */
-	activeWatchers: Map<string, Promise<AgentRunStreamSnapshot>>;
+	activeWatchers: Map<string, Promise<AgentRunSnapshot>>;
 	/** Merge one streaming poll into the run store. */
 	applyBatch: (payload: {
 		runId: string;
-		snapshot: AgentRunStreamSnapshot;
-		events: AgentStreamEvent[];
+		snapshot: AgentRunSnapshot;
+		events: AgentRunItemEvent[];
 		droppedEvents?: number;
 	}) => void;
 	/** Merge a durable reconcile into the run store. */
 	mergeDurable: (payload: {
-		record: AgentRunRecord;
+		record: WorkbenchRunRecord;
 		messages?: BuildMessage[];
 		tools?: BuildTool[];
 		reconciled: boolean;
@@ -72,9 +70,13 @@ const wait = (durationMs: number) =>
  */
 const reconcileDurableRun = async (
 	args: WatchAgentRunArgs,
-): Promise<AgentRunRecord | null> => {
+): Promise<(AgentRunSnapshot & { messages?: PlaygroundMessage[] }) | null> => {
 	try {
-		const record = await getAgentRun(args.insightId, args.runId, true);
+		const record = await getAgentRun<PlaygroundMessage>(
+			args.runId,
+			{ includeMessages: true },
+			args.insightId,
+		);
 		if (!record) return null;
 
 		const projected = createBuildRunFromRecord(record);
@@ -111,12 +113,13 @@ const reconcileDurableRun = async (
  */
 const watchInternal = async (
 	args: WatchAgentRunArgs,
-): Promise<AgentRunStreamSnapshot> => {
-	const childPromises = new Map<string, Promise<AgentRunStreamSnapshot>>();
-	let latestSnapshot: AgentRunStreamSnapshot = {
+): Promise<AgentRunSnapshot> => {
+	const childPromises = new Map<string, Promise<AgentRunSnapshot>>();
+	let latestSnapshot: AgentRunSnapshot = {
 		runId: args.runId,
 		roomId: "",
 		status: "SUBMITTED",
+		pendingActions: [],
 	};
 	let sawTerminalWithEvents = false;
 	let consecutivePollFailures = 0;
@@ -149,9 +152,9 @@ const watchInternal = async (
 	(args.knownChildRunIds ?? []).forEach(startChildWatcher);
 
 	while (!args.signal.aborted) {
-		let response: AgentRunStreamingResponse;
+		let response: Awaited<ReturnType<typeof pollAgentRun>>;
 		try {
-			response = await getAgentRunStreaming(args.runId);
+			response = await pollAgentRun(args.runId);
 			consecutivePollFailures = 0;
 		} catch (error) {
 			if (args.signal.aborted) break;
@@ -184,23 +187,30 @@ const watchInternal = async (
 		if (args.signal.aborted) break;
 
 		latestSnapshot = response.run;
+		// Drains are unordered on the wire; deltas must apply in sequence order.
+		const events = [...(response.events ?? [])].sort(
+			(a, b) => a.sequence - b.sequence,
+		);
 		args.applyBatch({
 			runId: args.runId,
 			snapshot: response.run,
-			events: response.events ?? [],
+			events,
 			droppedEvents: response.droppedEvents,
 		});
 
-		for (const event of response.events ?? []) {
-			if (event.item?.kind === "subagent") {
-				startChildWatcher(event.item.childRunId ?? event.item.id);
+		for (const event of events) {
+			if (
+				event.type !== "item.updated" &&
+				event.item.kind === "subagent"
+			) {
+				startChildWatcher(event.item.childRunId);
 			}
 		}
 		args.getRun(args.runId)?.childRunIds.forEach(startChildWatcher);
 
 		const terminal = isTerminalAgentRunStatus(response.run.status);
 		if (response.run.status === "INPUT_REQUIRED") break;
-		if (terminal && (response.events?.length ?? 0) === 0) break;
+		if (terminal && events.length === 0) break;
 		if (terminal) sawTerminalWithEvents = true;
 
 		await wait(sawTerminalWithEvents ? 100 : POLL_INTERVAL_MS);
@@ -238,7 +248,7 @@ const watchInternal = async (
  */
 export const watchAgentRun = (
 	args: WatchAgentRunArgs,
-): Promise<AgentRunStreamSnapshot> => {
+): Promise<AgentRunSnapshot> => {
 	const existing = args.activeWatchers.get(args.runId);
 	if (existing) return existing;
 

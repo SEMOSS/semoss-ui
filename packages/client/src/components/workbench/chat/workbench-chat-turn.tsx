@@ -1,6 +1,5 @@
 import { Loader2Icon, PaperclipIcon } from "lucide-react";
 import { useMemo, useState } from "react";
-import { isTerminalAgentRunStatus } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -17,7 +16,10 @@ import type {
 	BuildRun,
 	BuildTool,
 } from "@/stores/workbench";
-import { isRequestUserInputAction } from "@/stores/workbench";
+import {
+	isRequestUserInputAction,
+	isTerminalAgentRunStatus,
+} from "@/stores/workbench";
 import { parseTime } from "./workbench-chat-format";
 import { WorkbenchChatPendingActions } from "./workbench-chat-pending-actions";
 import { WorkbenchChatSubagent } from "./workbench-chat-subagent";

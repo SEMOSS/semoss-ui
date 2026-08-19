@@ -1,4 +1,4 @@
-import { PaperclipIcon, SendIcon, SquareIcon, XIcon } from "lucide-react";
+import { PaperclipIcon, SendIcon, XIcon } from "lucide-react";
 import type {
 	ChangeEvent,
 	ClipboardEvent,
@@ -126,11 +126,8 @@ const PendingFileStrip = ({
 export const WorkbenchChatComposer = () => {
 	const roomId = useWorkbench((state) => state.chat.roomId);
 	const isInitializing = useWorkbench((state) => state.chat.isInitializing);
-	const activeRunId = useWorkbench((state) => state.chat.activeRunId);
 	const isSending = useWorkbench((state) => state.chat.isSending);
-	const isStoppingRun = useWorkbench((state) => state.chat.isStoppingRun);
 	const submit = useWorkbench((state) => state.chat.submit);
-	const stop = useWorkbench((state) => state.chat.stop);
 
 	const [draft, setDraft] = useState("");
 	const [files, setFiles] = useState<PendingFile[]>([]);
@@ -368,31 +365,18 @@ export const WorkbenchChatComposer = () => {
 
 					<div className="min-w-0 flex-1" />
 
-					{activeRunId ? (
-						<Button
-							type="button"
-							size="icon-sm"
-							variant="outline"
-							disabled={isStoppingRun}
-							onClick={() => void stop()}
-							aria-label="Stop"
-						>
-							{isStoppingRun ? (
-								<Spinner className="size-4" />
-							) : (
-								<SquareIcon className="fill-current" />
-							)}
-						</Button>
-					) : (
-						<Button
-							type="submit"
-							size="icon-sm"
-							disabled={isSendDisabled || isComposerDisabled}
-							aria-label="Send message"
-						>
+					<Button
+						type="submit"
+						size="icon-sm"
+						disabled={isSendDisabled || isComposerDisabled}
+						aria-label="Send message"
+					>
+						{isSending ? (
+							<Spinner className="size-4" />
+						) : (
 							<SendIcon />
-						</Button>
-					)}
+						)}
+					</Button>
 				</div>
 			</div>
 		</form>
