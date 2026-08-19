@@ -46,6 +46,8 @@ import {
 	type RoomStore,
 	type ToolStore,
 } from "@/stores";
+import { isAskExecutionMode } from "@/utility/mcp-utils";
+import { ResponseMessageSubagent } from "./response-message-subagent";
 import { ResponseMessageText } from "./response-message-text";
 import { ResponseMessageThinking } from "./response-message-thinking";
 import { ResponseMessageTool } from "./response-message-tool";
@@ -312,8 +314,10 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			// gap before the final sync) fold into the group so they show as one
 			// loading cluster rather than separate raw-named pills
 			if (!tool.isResolved) return true;
-			// auto-execute tools should always be grouped
-			if (tool.json._meta.SMSS_MCP_EXECUTION === "auto") return true;
+			// non-interactive tools (auto-execute, or backend-executed e.g.
+			// agent-run tools) should always be grouped
+			if (!isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION))
+				return true;
 			// ask tools only enter group when there are no unfinished tools
 			return !message.hasUnfinishedTools;
 		};
@@ -332,7 +336,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 					if (getShouldGroupTool(tool)) {
 						groupedTools.push(tool);
 					}
-					if (tool.json._meta.SMSS_MCP_EXECUTION === "ask") {
+					if (
+						isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION)
+					) {
 						hasAskTools = true;
 					}
 				});
@@ -540,6 +546,14 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										/>
 									)}
 								</Fragment>
+							);
+						} else if (p.type === "SUBAGENT") {
+							return (
+								<ResponseMessageSubagent
+									key={key}
+									message={message}
+									part={p}
+								/>
 							);
 						}
 

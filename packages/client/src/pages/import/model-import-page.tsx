@@ -28,7 +28,10 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
-import { CATALOG_MODALITIES } from "@/components/engine/engine-metadata-display";
+import {
+	CATALOG_MODALITIES,
+	toReasoningConfig,
+} from "@/components/engine/engine-metadata-display";
 import type {
 	CatalogMatchState,
 	CatalogMatchSuggestion,
@@ -46,6 +49,7 @@ import {
 	MODEL_VERSIONS,
 	UNKNOWN_MODEL_BRAND,
 } from "@/components/import/model/model-import.constants";
+import { hasConfigurableReasoning } from "@/components/import/model/model-reasoning-config-field";
 import {
 	ModelEngineIcon,
 	ModelTileCard,
@@ -74,6 +78,7 @@ const MODEL_PROVIDER_SUBTYPE_BY_NAME: Record<string, string> = {
 	"Self Hosted": "HUGGINGFACE",
 	Perplexity: "PERPLEXITY",
 	Embedded: "BRAIN",
+	"Model Router": "MODEL_ROUTER",
 };
 
 /**
@@ -627,16 +632,35 @@ export const buildModelMetadataFields = (
 		);
 	}
 
-	if (
-		staticMetadata?.reasoning_config &&
-		typeof staticMetadata.reasoning_config === "object" &&
-		!Array.isArray(staticMetadata.reasoning_config) &&
-		Object.keys(staticMetadata.reasoning_config).length > 0
-	) {
+	const reasoningConfig = toReasoningConfig(staticMetadata?.reasoning_config);
+
+	if (hasConfigurableReasoning(reasoningConfig)) {
+		if (typeof staticMetadata?.reasoning !== "boolean") {
+			addHiddenMetadataField("REASONING", "Reasoning Support", true);
+		}
+
+		const builtinToolsIndex = metadataFields.findIndex(
+			(field) => field.key === "BUILTIN_TOOLS",
+		);
+		metadataFields.splice(
+			builtinToolsIndex === -1
+				? metadataFields.length
+				: builtinToolsIndex,
+			0,
+			{
+				key: "REASONING_CONFIG",
+				label: "Reasoning",
+				type: "reasoning-config",
+				required: false,
+				category: "Settings",
+				default: reasoningConfig,
+			},
+		);
+	} else if (reasoningConfig !== null) {
 		addHiddenMetadataField(
 			"REASONING_CONFIG",
 			"Reasoning Configuration",
-			JSON.stringify(staticMetadata.reasoning_config),
+			JSON.stringify(reasoningConfig),
 		);
 	}
 
@@ -1289,15 +1313,17 @@ export const ModelImportPage: React.FC = () => {
 							};
 						}
 
-						mergeModelMetadataFields(
-							fields,
-							advanced,
-							buildModelMetadataFields(
-								selectedProvider,
-								selectedModelMetadata,
-								selectedStaticMetadata,
-							),
-						);
+						if (!selectedModelMetadata?.skipCatalogMetadata) {
+							mergeModelMetadataFields(
+								fields,
+								advanced,
+								buildModelMetadataFields(
+									selectedProvider,
+									selectedModelMetadata,
+									selectedStaticMetadata,
+								),
+							);
+						}
 
 						// Only a hand-picked entry is saved. An ID that resolved on
 						// its own can be resolved again from the ID, so storing it
