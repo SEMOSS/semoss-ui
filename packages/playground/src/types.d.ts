@@ -55,6 +55,15 @@ export interface Workspace {
 	mcp: MCPConfig[];
 	skills: SkillConfig[];
 	prompts: string[];
+
+	/** Agent settings saved on the workspace by the agent editor. */
+	config_json?: {
+		/**
+		 * The agent's default model. Absent or empty means the agent has no
+		 * opinion and the room's own model is used.
+		 */
+		model_id?: string;
+	};
 }
 
 /**
