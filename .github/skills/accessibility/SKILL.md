@@ -22,6 +22,9 @@ Do not use this skill for:
 
 Target WCAG 2.2 Level AA.
 
+Follow [DESIGN.md](../../../DESIGN.md) for the shared component, state, responsive, and visual
+contracts. This skill specializes those rules for semantic and assistive-technology behavior.
+
 The implementation and review must explicitly account for these success criteria:
 - 1.1.1 Non-text Content
 - 1.3.1 Info and Relationships
@@ -62,7 +65,8 @@ The implementation and review must explicitly account for these success criteria
 - Error messages must be textual, specific, and associated with the field.
 - Required fields must be identified clearly.
 - Validation feedback should be announced when possible.
-- Follow the repo's `react-hook-form` skill and field wrapper pattern for form controls.
+- Compose controls with `Field`, `FieldLabel`, `FieldDescription`, and `FieldError` from
+	`@semoss/ui/next`, following the owning feature's form-state pattern.
 
 ### Status and Dynamic Updates
 - Use `aria-live` for success, loading, and error status messages that update without focus movement.
@@ -107,19 +111,16 @@ For UI implementation or UI review tasks, conclude with:
 
 ## Automated Testing Guidance
 
-Prefer one of these:
-- Page-level audit: run the app locally, then audit a route with axe CLI
-- Component-level audit: run the Vitest accessibility suite that uses Testing Library with `jest-axe`
+Prefer the affected package's existing Testing Library/Vitest suite. Add `jest-axe` coverage
+only where that package already provides the dependency and setup; do not invent a command or
+silently install a tool during validation. At minimum, run the package test command and record
+the keyboard and screen-reader checks performed manually.
 
-Example page-level commands:
+Example for the client:
 
 ```bash
-pnpm --dir client test:a11y
-npx @axe-core/cli http://localhost:5173
-npx @axe-core/cli http://localhost:5173/personnel
+pnpm --filter @semoss/client test
 ```
-
-Prefer the component-level test suite for repeatable regression coverage, then use axe CLI for route-level verification.
 
 ## Project-Conscious Expectations
 
@@ -127,5 +128,5 @@ Prefer the component-level test suite for repeatable regression coverage, then u
 - Keep accessibility fixes minimal, specific, and semantic.
 - Avoid adding ARIA when native semantics already solve the problem.
 - When a custom widget is necessary, implement the full keyboard interaction model rather than a partial approximation.
-- Use the `jsdoc` skill when new functions or handlers are added.
-- Use the `react-hook-form` skill when building or changing forms.
+- Follow root TSDoc and form conventions directly; no additional repository skill is currently
+	defined for those patterns.
