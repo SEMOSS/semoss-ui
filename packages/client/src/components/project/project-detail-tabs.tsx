@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { Role } from "@semoss/shared";
+import type { Role } from "@semoss/sdk";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import { ProjectAccessControl, ProjectOverview } from "@/components/project";
 import { useProject } from "@/hooks";
@@ -34,7 +34,7 @@ interface ProjectDetailTabsProps {
 }
 
 export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
-	const { project, permission, refresh } = useProject();
+	const { project, type, permission, refresh } = useProject();
 
 	const [selectedTabName, setSelectedTabName] = useState<string>("Overview");
 
@@ -95,7 +95,11 @@ export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
 				{activeTab?.component === "project-dependencies" && (
 					<ProjectDependenciesPage />
 				)}
-				{activeTab?.component === "mcp-usage" && <AppMcpUsagePage />}
+				{activeTab?.component === "mcp-usage" && (
+					// a skill serves its own tools, so there is no remote
+					// endpoint to repoint it at
+					<AppMcpUsagePage showRemoteConnection={type !== "SKILL"} />
+				)}
 				{activeTab?.component === "activity" && <AppActivityPage />}
 				{activeTab?.component === "agent-activity" && (
 					<AgentActivityPage />

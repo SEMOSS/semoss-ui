@@ -19,6 +19,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { MCP } from "@/constants";
+import { readMCPFile, toFileText } from "../shared";
 
 interface AppFileExplorerProps {
 	/** Node */
@@ -32,10 +33,13 @@ interface AppFileExplorerProps {
 
 	/** Initial directory path to open to (defaults to "/") */
 	initialPath?: string;
+
+	/** Render the explorer in read-only, browse-only mode */
+	readOnly?: boolean;
 }
 
 export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
-	({ layout, node, app, initialPath }) => {
+	({ layout, node, app, initialPath, readOnly = false }) => {
 		const insight = useInsight();
 
 		const [isPublishing, setIsPublishing] = useState(false);
@@ -264,6 +268,24 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 		};
 
 		/**
+		 * Re-read an MCP file so the editor's refresh action can pick up edits
+		 * made outside of it.
+		 */
+		const readMCPAsset = async (
+			itemPath: string,
+		): Promise<string | null> => {
+			try {
+				const { pixelReturn } = await insight.actions.run<[string]>(
+					`GetAppAssets(filePath=["${itemPath}"], project=["${app}"]);`,
+				);
+				return toFileText(pixelReturn?.[0]?.output);
+			} catch (e) {
+				console.error(e);
+				return null;
+			}
+		};
+
+		/**
 		 * Add the editor tab
 		 */
 		const addMCPEditorTab = async (itemPath: string) => {
@@ -274,31 +296,10 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 				`GetAppAssets(filePath=["${itemPath}"], project=["${app}"]);`,
 			);
 
-			let json: { _meta: Record<string, string>; tools: unknown[] } = {
-				_meta: {},
-				tools: [],
-			};
-			try {
-				const output = pixelReturn[0].output;
-				if (output && typeof output === "object") {
-					const o = output as Record<string, unknown>;
-					json = {
-						_meta: (o._meta as Record<string, string>) ?? {},
-						tools: (o.tools as unknown[]) ?? [],
-					};
-				} else if (typeof output === "string" && output.trim()) {
-					const parsed = JSON.parse(output) as Record<
-						string,
-						unknown
-					>;
-					json = {
-						_meta: (parsed._meta as Record<string, string>) ?? {},
-						tools: (parsed.tools as unknown[]) ?? [],
-					};
-				}
-			} catch (e) {
-				console.error(`Failed to parse MCP JSON: ${e}`);
-			}
+			// A parse failure is handed to the editor rather than swallowed, so
+			// a malformed file opens as raw text instead of an empty tool list
+			// that the next save would write straight over it.
+			const loaded = readMCPFile(pixelReturn?.[0]?.output);
 
 			addNode(`APP_MCP_EDITOR--${itemPath}`, {
 				type: "tab",
@@ -307,7 +308,10 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 				config: {
 					path: itemPath,
 					data: {
-						initialData: json,
+						initialData: loaded.initialData,
+						rawContent: loaded.rawContent,
+						loadError: loaded.loadError,
+						onRefresh: () => readMCPAsset(itemPath),
 						onSave: async (data, path) => {
 							try {
 								await insight.actions.run(
@@ -334,46 +338,49 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 					app: app,
 				}}
 				initialPath={initialPath}
+				readOnly={readOnly}
 				headerActions={
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								onClick={async () => {
-									try {
-										setIsPublishing(true);
+					readOnly ? undefined : (
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									onClick={async () => {
+										try {
+											setIsPublishing(true);
 
-										// Seperate calls so we reload successfully compiled classes before publishing
-										await insight.actions.run(
-											`ReloadInsightClasses(project='${app}', release=false);`,
-										);
+											// Seperate calls so we reload successfully compiled classes before publishing
+											await insight.actions.run(
+												`ReloadInsightClasses(project='${app}', release=false);`,
+											);
 
-										await insight.actions.run(
-											`PublishProject(project='${app}', release=true);`,
-										);
+											await insight.actions.run(
+												`PublishProject(project='${app}', release=true);`,
+											);
 
-										toast.success(
-											"Successfully compiled and published",
-										);
-									} catch (e) {
-										toast.error(`Error: ${e}`);
-									} finally {
-										setIsPublishing(false);
-									}
-								}}
-							>
-								{isPublishing ? (
-									<Spinner className="size-3" />
-								) : (
-									<CloudUploadIcon className="size-3" />
-								)}
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>
-							Compile and publish the app
-						</TooltipContent>
-					</Tooltip>
+											toast.success(
+												"Successfully compiled and published",
+											);
+										} catch (e) {
+											toast.error(`Error: ${e}`);
+										} finally {
+											setIsPublishing(false);
+										}
+									}}
+								>
+									{isPublishing ? (
+										<Spinner className="size-3" />
+									) : (
+										<CloudUploadIcon className="size-3" />
+									)}
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
+								Compile and publish the app
+							</TooltipContent>
+						</Tooltip>
+					)
 				}
 				onItemSelect={(item) => {
 					// don't open directories
@@ -406,7 +413,7 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 						MCP.DRIVER_PATHS.some((f) => item.path === f);
 					return (
 						<FileExplorerItem
-							draggable={item.type !== "directory"}
+							draggable={!readOnly && item.type !== "directory"}
 							item={item}
 							refresh={refresh}
 							onDragStart={(e) => {
@@ -457,7 +464,7 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 							}}
 							{...otherProps}
 							actions={[
-								isDriverFile
+								!readOnly && isDriverFile
 									? {
 											name: "Create",
 											icon: <HammerIcon />,
@@ -482,9 +489,11 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 											},
 										}
 									: null,
+								!readOnly &&
 								MCP.JSON_PATHS.some((f) =>
 									item.path.startsWith(f),
-								) && item.type !== "directory"
+								) &&
+								item.type !== "directory"
 									? {
 											name: "Edit",
 											icon: <PencilIcon />,
@@ -536,21 +545,23 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 											},
 										}
 									: null,
-								{
-									name: "Delete",
-									action: async (item) => {
-										await insight.actions.run(
-											`DeleteAppAssets(project=["${app}"], filePath=["${item.path}"]);`,
-										);
+								readOnly
+									? null
+									: {
+											name: "Delete",
+											action: async (item) => {
+												await insight.actions.run(
+													`DeleteAppAssets(project=["${app}"], filePath=["${item.path}"]);`,
+												);
 
-										removeDeletedTabs(
-											item.path,
-											item.type === "directory",
-										);
+												removeDeletedTabs(
+													item.path,
+													item.type === "directory",
+												);
 
-										refresh();
-									},
-								},
+												refresh();
+											},
+										},
 							]}
 						/>
 					);

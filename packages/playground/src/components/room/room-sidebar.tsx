@@ -1,4 +1,5 @@
 import {
+	BotIcon,
 	FolderTreeIcon,
 	HammerIcon,
 	MonitorXIcon,
@@ -34,6 +35,7 @@ import { RoomAuditLogReport } from "./room-audit-log-report";
 import { RoomConfiguration } from "./room-configuration";
 import { RoomFileEditor } from "./room-file-editor";
 import { RoomFileExplorer } from "./room-file-explorer";
+import { RoomSubagent } from "./room-subagent";
 import { RoomTool } from "./room-tool";
 
 interface RoomSidebarProps {
@@ -67,12 +69,8 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 					`RenameInsightAsset(filePath=["${path}"], newValue=["${newPath}"]);`,
 				);
 				room.removeSidebarNode(id);
-				room.addSidebarNode(`FILE--${newPath}`, {
-					type: "tab",
+				room.openFileEditorSidebarNode(newPath, {
 					name: newName,
-					component: "room-file-editor",
-					config: { name: newName, path: newPath },
-					enableClose: true,
 				});
 				setExplorerRefreshKey((k) => k + 1);
 			} catch (e) {
@@ -290,6 +288,10 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 									renderValues.leading = getFileTabIcon(
 										node.getName(),
 									);
+								} else if (component === "room-subagent") {
+									renderValues.leading = (
+										<BotIcon className="size-4 text-foreground" />
+									);
 								}
 							}}
 							onAction={(action) => {
@@ -328,6 +330,10 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 
 								if (component === "room-tool") {
 									return <RoomTool node={node} room={room} />;
+								} else if (component === "room-subagent") {
+									return (
+										<RoomSubagent node={node} room={room} />
+									);
 								} else if (component === "room-file-explorer") {
 									return (
 										<RoomFileExplorer
@@ -342,8 +348,18 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 								} else if (component === "audit-log-report") {
 									return <RoomAuditLogReport room={room} />;
 								} else if (component === "room-file-editor") {
+									const editorConfig = node.getConfig() as
+										| {
+												path?: string;
+												refreshKey?: number;
+										  }
+										| undefined;
+									const editorPath = editorConfig?.path ?? "";
+									const editorRefreshKey =
+										editorConfig?.refreshKey ?? 0;
 									return (
 										<RoomFileEditor
+											key={`${node.getId()}:${editorPath}:${editorRefreshKey}`}
 											node={node}
 											room={room}
 										/>

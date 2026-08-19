@@ -7,7 +7,7 @@ import {
 	useLocation,
 	useResolvedPath,
 } from "react-router-dom";
-import type { Role } from "@semoss/shared";
+import type { Role } from "@semoss/sdk";
 import { AppCatalogAvatar, EntityHeader } from "@semoss/shared";
 import {
 	Breadcrumb,

@@ -115,11 +115,13 @@ export type ClientToServerEvent =
 			y: number;
 			endX: number;
 			endY: number;
+			expectedTabId?: string;
 			record?: boolean;
 			label?: string;
 	  }
 	| { type: "switch-tab"; targetTabId: string; requestId?: string }
 	| { type: "switch-replay-tab"; targetTabId: string; requestId?: string }
+	| { type: "new-tab"; targetTabId?: string; requestId?: string }
 	| { type: "prepare-replay"; requestId?: string; reuseActiveTab?: boolean }
 	| { type: "close-tab"; targetTabId: string; requestId?: string }
 	| { type: "close-session" };

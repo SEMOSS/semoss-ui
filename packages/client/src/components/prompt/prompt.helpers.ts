@@ -4,8 +4,8 @@ import {
 	type NotebookStateConfig,
 	type SerializedState,
 } from "@semoss/renderer";
+import type { Project } from "@semoss/shared";
 import type { MonolithStore } from "@/stores";
-import type { AppMetadata } from "../app";
 import {
 	INPUT_TYPE_CUSTOM_QUERY,
 	INPUT_TYPE_DATABASE,
@@ -722,7 +722,7 @@ export async function setBlocksAndOpenUIBuilder(
 
 	// create the app
 	const { errors, pixelReturn } =
-		await monolithStore.runQuery<[AppMetadata]>(pixel);
+		await monolithStore.runQuery<[Project]>(pixel);
 
 	if (errors.length > 0) {
 		throw new Error(errors.join(","));

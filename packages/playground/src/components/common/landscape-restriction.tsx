@@ -1,31 +1,54 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
+import { cn } from "@semoss/ui/next";
 
 /**
- * Component that displays a full-screen overlay when the device is in landscape mode on mobile
- * Prevents users from using the app in landscape orientation
+ * Component that displays a full-screen overlay when the device is in landscape mode on mobile.
+ * Prevents users from using the app in landscape orientation.
+ * Has no effect on desktop browsers.
  */
 export const LandscapeRestriction = () => {
+	const { t } = useTranslation("mobile");
 	const [isLandscape, setIsLandscape] = useState(false);
 
 	useEffect(() => {
-		const checkOrientation = (): void => {
-			// Only apply restriction on mobile devices (max-width: 768px)
-			const isMobile = window.innerWidth <= 768;
-			const isLandscapeMode = window.innerHeight < window.innerWidth;
+		// userAgent is the most reliable signal for excluding desktops —
+		// no real desktop browser includes Mobi/Android/iPhone/iPad/iPod.
+		// Devtools device emulation also spoofs the UA, so this works for testing too.
+		const isMobileDevice = /Mobi|Android|iPhone|iPad|iPod/i.test(
+			navigator.userAgent,
+		);
 
-			setIsLandscape(isMobile && isLandscapeMode);
+		// innerWidth > innerHeight is the simplest cross-browser orientation check
+		// and is always accurate once the browser has finished resizing.
+		const checkOrientation = () => {
+			setIsLandscape(
+				isMobileDevice && window.innerWidth > window.innerHeight,
+			);
 		};
 
-		// Check on mount
-		checkOrientation();
+		// orientationchange fires before the browser has updated its dimensions
+		// on many devices (iOS, some Android). Delaying 100ms lets them settle.
+		const handleOrientationChange = () => {
+			setTimeout(checkOrientation, 100);
+		};
 
-		// Listen for orientation and resize changes
+		checkOrientation();
+		// resize is always fired after dimensions update, so no delay needed.
 		window.addEventListener("resize", checkOrientation);
-		window.addEventListener("orientationchange", checkOrientation);
+		window.addEventListener("orientationchange", handleOrientationChange);
+		screen.orientation?.addEventListener("change", handleOrientationChange);
 
 		return () => {
 			window.removeEventListener("resize", checkOrientation);
-			window.removeEventListener("orientationchange", checkOrientation);
+			window.removeEventListener(
+				"orientationchange",
+				handleOrientationChange,
+			);
+			screen.orientation?.removeEventListener(
+				"change",
+				handleOrientationChange,
+			);
 		};
 	}, []);
 
@@ -35,64 +58,19 @@ export const LandscapeRestriction = () => {
 
 	return (
 		<div
-			style={{
-				position: "fixed",
-				top: 0,
-				left: 0,
-				right: 0,
-				bottom: 0,
-				backgroundColor: "white",
-				zIndex: 9999,
-				display: "flex",
-				flexDirection: "column",
-				alignItems: "center",
-				justifyContent: "center",
-				padding: "2rem",
-				textAlign: "center",
-			}}
+			className={cn(
+				"fixed inset-0 z-[9999]",
+				"flex flex-col items-center justify-center",
+				"bg-background px-8 text-center",
+			)}
 		>
-			<div
-				style={{
-					fontSize: "3rem",
-					marginBottom: "1rem",
-					animation: "rotate 2s ease-in-out infinite",
-				}}
-			>
-				📱
-			</div>
-			<h1
-				style={{
-					fontSize: "1.5rem",
-					fontWeight: "bold",
-					marginBottom: "1rem",
-					color: "#1f2937",
-				}}
-			>
-				Please Rotate Your Device
+			<span className="mb-4 animate-spin text-5xl">📱</span>
+			<h1 className="mb-4 font-bold text-2xl text-foreground">
+				{t("messages.rotateDevice")}
 			</h1>
-			<p
-				style={{
-					fontSize: "1rem",
-					color: "#6b7280",
-					maxWidth: "400px",
-					lineHeight: "1.5",
-				}}
-			>
-				We don't support landscape mode yet. Please go back to portrait
-				mode for the best experience.
+			<p className="max-w-sm text-base text-muted-foreground leading-relaxed">
+				{t("messages.noLandscapeMode")}
 			</p>
-			<style>
-				{`
-					@keyframes rotate {
-						0%, 100% {
-							transform: rotate(0deg);
-						}
-						50% {
-							transform: rotate(90deg);
-						}
-					}
-				`}
-			</style>
 		</div>
 	);
 };
