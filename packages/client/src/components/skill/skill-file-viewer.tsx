@@ -1,6 +1,7 @@
 import { usePixel } from "@semoss/sdk/react";
 import { FileCodeEditor } from "@semoss/shared";
-import { Markdown, Muted, Spinner } from "@semoss/ui/next";
+import { Muted, Spinner } from "@semoss/ui/next";
+import { MarkdownDocument } from "@/components/shared";
 
 interface SkillFileViewerProps {
 	projectId: string;
@@ -58,8 +59,8 @@ export const SkillFileViewer: React.FC<SkillFileViewerProps> = ({
 		}
 
 		return (
-			<div className="h-full w-full">
-				<Markdown>{fileContent.data}</Markdown>
+			<div className="h-full w-full overflow-y-auto px-1 text-sm">
+				<MarkdownDocument>{fileContent.data}</MarkdownDocument>
 			</div>
 		);
 	}
