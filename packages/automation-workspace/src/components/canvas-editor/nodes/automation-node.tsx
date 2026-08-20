@@ -187,18 +187,26 @@ export function AutomationNode({ data }: NodeProps) {
 				className="!h-2 !w-2 !border-2 !border-background !bg-muted-foreground/40"
 			/>
 			{d.isLast && !locked ? (
-				<button
-					data-tour="add-step"
-					type="button"
-					onClick={(event) => {
-						event.stopPropagation();
-						d.onAdd?.();
-					}}
-					className="-bottom-5 -translate-x-1/2 absolute left-1/2 z-10 flex h-7 w-7 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-colors hover:border-primary hover:text-primary"
-					aria-label="Add node"
-				>
-					<Plus className="h-4 w-4" />
-				</button>
+				<>
+					<Handle
+						id={`out-${step.id}`}
+						type="source"
+						position={Position.Bottom}
+						isConnectable
+						onClick={(event) => {
+							event.stopPropagation();
+							d.onAdd?.();
+						}}
+						aria-label="Add node or drag to connect"
+						className="!h-7 !w-7 !border !border-border !bg-background hover:!border-primary shadow-sm transition-colors"
+					/>
+					<span
+						data-tour="add-step"
+						className="-translate-x-1/2 pointer-events-none absolute bottom-0 left-1/2 z-10 flex h-7 w-7 translate-y-1/2 items-center justify-center text-muted-foreground"
+					>
+						<Plus className="h-4 w-4" />
+					</span>
+				</>
 			) : (
 				<Handle
 					id={`out-${step.id}`}

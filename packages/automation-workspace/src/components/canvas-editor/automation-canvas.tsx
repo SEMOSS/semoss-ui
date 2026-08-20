@@ -1,8 +1,12 @@
 import {
 	Background,
 	BackgroundVariant,
+	BaseEdge,
 	type Connection,
 	type Edge,
+	EdgeLabelRenderer,
+	type EdgeProps,
+	getSmoothStepPath,
 	MarkerType,
 	type Node,
 	ReactFlow,
@@ -80,6 +84,55 @@ import { UndoBanner } from "./undo-banner";
 const nodeTypes = {
 	trigger: TriggerNode,
 	automation: AutomationNodeCard,
+} as const;
+
+interface DeletableEdgeData {
+	onDelete: (edgeId: string) => void;
+}
+
+function DeletableEdge({
+	id,
+	sourceX,
+	sourceY,
+	sourcePosition,
+	targetX,
+	targetY,
+	targetPosition,
+	style,
+	markerEnd,
+	data,
+}: EdgeProps<Edge<DeletableEdgeData>>) {
+	const [edgePath, labelX, labelY] = getSmoothStepPath({
+		sourceX,
+		sourceY,
+		sourcePosition,
+		targetX,
+		targetY,
+		targetPosition,
+	});
+
+	return (
+		<>
+			<BaseEdge path={edgePath} markerEnd={markerEnd} style={style} />
+			<EdgeLabelRenderer>
+				<button
+					type="button"
+					className="nodrag nopan pointer-events-auto absolute flex size-5 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm hover:border-destructive/50 hover:text-destructive"
+					style={{
+						transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
+					}}
+					onClick={() => data?.onDelete(id)}
+					aria-label="Remove connection"
+				>
+					<X className="size-3" />
+				</button>
+			</EdgeLabelRenderer>
+		</>
+	);
+}
+
+const edgeTypes = {
+	deletable: DeletableEdge,
 } as const;
 
 // ---- Layout constants ----
@@ -175,6 +228,101 @@ function createsCycle(
 	return false;
 }
 
+function getStepDisplayOrder(
+	steps: AutomationNode[],
+	edges: AutomationEdge[],
+): Map<string, number> {
+	const stepIds = new Set(steps.map((step) => step.id));
+	const originalOrder = new Map(steps.map((step, index) => [step.id, index]));
+	const incomingCounts = new Map(steps.map((step) => [step.id, 0]));
+	const outgoing = new Map<string, string[]>(
+		steps.map((step) => [step.id, []]),
+	);
+
+	for (const edge of edges) {
+		if (!stepIds.has(edge.source) || !stepIds.has(edge.target)) continue;
+		outgoing.get(edge.source)?.push(edge.target);
+		incomingCounts.set(
+			edge.target,
+			(incomingCounts.get(edge.target) ?? 0) + 1,
+		);
+	}
+
+	const queue = steps
+		.filter((step) => incomingCounts.get(step.id) === 0)
+		.map((step) => step.id);
+	const orderedIds: string[] = [];
+
+	while (queue.length > 0) {
+		queue.sort(
+			(left, right) =>
+				(originalOrder.get(left) ?? 0) -
+				(originalOrder.get(right) ?? 0),
+		);
+		const current = queue.shift();
+		if (!current) continue;
+		orderedIds.push(current);
+		for (const target of outgoing.get(current) ?? []) {
+			const remaining = (incomingCounts.get(target) ?? 0) - 1;
+			incomingCounts.set(target, remaining);
+			if (remaining === 0) queue.push(target);
+		}
+	}
+
+	return new Map(
+		orderedIds
+			.filter(
+				(id) =>
+					steps.find((step) => step.id === id)?.workflowType !==
+					"trigger.start",
+			)
+			.map((id, index) => [id, index]),
+	);
+}
+
+function upstreamVariablesFor(
+	steps: AutomationNode[],
+	edges: AutomationEdge[],
+	targetId: string,
+): string[] {
+	const byId = new Map(steps.map((step) => [step.id, step]));
+	const trigger = steps.find((step) => step.workflowType === "trigger.start");
+	const triggerGlobals = Array.isArray(trigger?.workflowConfig?.globals)
+		? trigger.workflowConfig.globals
+				.map((global) =>
+					typeof global === "object" &&
+					global !== null &&
+					typeof global.name === "string"
+						? global.name
+						: null,
+				)
+				.filter((name): name is string => name !== null)
+		: [];
+	const incoming = new Map<string, string>();
+
+	for (const edge of edges) {
+		if (edge.kind === "control") incoming.set(edge.target, edge.source);
+	}
+
+	const outputVars: string[] = [];
+	const visited = new Set<string>();
+	let currentId = incoming.get(targetId);
+	while (currentId && !visited.has(currentId)) {
+		visited.add(currentId);
+		const step = byId.get(currentId);
+		if (
+			step?.workflowType !== "trigger.start" &&
+			typeof step?.outputVar === "string" &&
+			step.outputVar.length > 0
+		) {
+			outputVars.unshift(step.outputVar);
+		}
+		currentId = incoming.get(currentId);
+	}
+
+	return [...triggerGlobals, ...outputVars];
+}
+
 // ---- Component ----
 export function AutomationCanvas({
 	appId,
@@ -210,6 +358,7 @@ export function AutomationCanvas({
 	const [historyRefreshToken, setHistoryRefreshToken] = useState(0);
 	const [workflowRefreshToken, setWorkflowRefreshToken] = useState(0);
 	const [showAddMenu, setShowAddMenu] = useState(false);
+	const [addAfterStepId, setAddAfterStepId] = useState<string | null>(null);
 
 	// Drawer state — which step is being edited
 	const [editingStepId, setEditingStepId] = useState<string | null>(null);
@@ -250,6 +399,10 @@ export function AutomationCanvas({
 	const [showHelp, setShowHelp] = useState(false);
 	const hasRunnableSteps = steps.some(
 		(step) => step.workflowType !== "trigger.start",
+	);
+	const stepDisplayOrder = useMemo(
+		() => getStepDisplayOrder(steps, graphEdges),
+		[graphEdges, steps],
 	);
 
 	useEffect(() => {
@@ -395,6 +548,12 @@ export function AutomationCanvas({
 		},
 		[steps],
 	);
+
+	const deleteEdge = useCallback((edgeId: string) => {
+		setGraphEdges((previous) =>
+			previous.filter((edge) => edge.id !== edgeId),
+		);
+	}, []);
 
 	const layoutNodes = useCallback(
 		(nodes: AutomationNode[]): AutomationNode[] => {
@@ -585,7 +744,9 @@ export function AutomationCanvas({
 
 	const addStep = useCallback(
 		(type: AutomationWorkflowNodeType) => {
-			const previousStep = steps[steps.length - 1];
+			const previousStep =
+				steps.find((step) => step.id === addAfterStepId) ??
+				steps[steps.length - 1];
 			const newStep = createCanvasWorkflowNode(type, steps.length);
 			const id = newStep.id;
 			newStep.position = {
@@ -611,9 +772,10 @@ export function AutomationCanvas({
 				]);
 			}
 			setShowAddMenu(false);
+			setAddAfterStepId(null);
 			setEditingStepId(id);
 		},
-		[getNodeHeight, steps],
+		[addAfterStepId, getNodeHeight, steps],
 	);
 
 	const updateStep = useCallback((updated: AutomationNode) => {
@@ -688,16 +850,8 @@ export function AutomationCanvas({
 	}, []);
 
 	const upstreamVarsFor = useCallback(
-		(index: number) => [
-			...steps
-				.slice(0, index)
-				.map((step) => step.outputVar)
-				.filter(
-					(value): value is string =>
-						typeof value === "string" && value.length > 0,
-				),
-		],
-		[steps],
+		(stepId: string) => upstreamVariablesFor(steps, graphEdges, stepId),
+		[graphEdges, steps],
 	);
 
 	useEffect(() => {
@@ -705,14 +859,11 @@ export function AutomationCanvas({
 			"parentOrigin",
 		);
 		if (!parentOrigin || window.parent === window) return;
-		const stepIndex = editingStep
-			? steps.findIndex((step) => step.id === editingStep.id)
-			: -1;
 		const snapshot: AutomationInspectorSnapshot = {
 			description,
 			devMode,
 			editingStep,
-			upstreamVars: stepIndex >= 0 ? upstreamVarsFor(stepIndex) : [],
+			upstreamVars: editingStep ? upstreamVarsFor(editingStep.id) : [],
 			stepRunStatus: editingStep
 				? stepStatuses[editingStep.id]
 				: undefined,
@@ -732,7 +883,6 @@ export function AutomationCanvas({
 		stepErrors,
 		stepOutputPreviews,
 		stepStatuses,
-		steps,
 		upstreamVarsFor,
 	]);
 
@@ -1109,12 +1259,7 @@ export function AutomationCanvas({
 			setSteps(layoutNodes);
 		}
 
-		steps.forEach((step, i) => {
-			const nonTriggerSteps = steps.filter(
-				(step) => step.workflowType !== "trigger.start",
-			);
-			const ntIndex = nonTriggerSteps.findIndex((s) => s.id === step.id);
-
+		steps.forEach((step) => {
 			if (step.type === "trigger") {
 				newNodes.push({
 					id: step.id,
@@ -1123,13 +1268,16 @@ export function AutomationCanvas({
 					data: {
 						label: description.trim() || "Start",
 						devMode,
-						isLast: i === steps.length - 1,
+						isLast: !graphEdges.some(
+							(edge) => edge.source === step.id,
+						),
 						onEdit: () => {
 							setShowAddMenu(false);
 							setEditingStepId(step.id);
 						},
 						onAdd: () => {
 							setEditingStepId(null);
+							setAddAfterStepId(step.id);
 							setShowAddMenu(true);
 						},
 					},
@@ -1143,7 +1291,7 @@ export function AutomationCanvas({
 					position: step.position,
 					data: {
 						step,
-						index: ntIndex,
+						index: stepDisplayOrder.get(step.id) ?? 0,
 						runStatus: stepStatuses[step.id],
 						runError: stepErrors[step.id],
 						runDuration: stepDurations[step.id],
@@ -1152,7 +1300,9 @@ export function AutomationCanvas({
 							validateCanvasWorkflowNode(step).length > 0 &&
 							!stepStatuses[step.id],
 						locked: running,
-						isLast: i === steps.length - 1,
+						isLast: !graphEdges.some(
+							(edge) => edge.source === step.id,
+						),
 						onEdit: () => {
 							setShowAddMenu(false);
 							setEditingStepId(step.id);
@@ -1160,6 +1310,7 @@ export function AutomationCanvas({
 						onDelete: () => deleteStep(step.id),
 						onAdd: () => {
 							setEditingStepId(null);
+							setAddAfterStepId(step.id);
 							setShowAddMenu(true);
 						},
 					},
@@ -1172,7 +1323,7 @@ export function AutomationCanvas({
 			)) {
 				newEdges.push({
 					...edge,
-					type: "smoothstep",
+					type: "deletable",
 					markerEnd: {
 						type: MarkerType.ArrowClosed,
 						width: 12,
@@ -1180,6 +1331,7 @@ export function AutomationCanvas({
 						color: "#94a3b8",
 					},
 					style: { stroke: "#94a3b8", strokeWidth: 1.5 },
+					data: { onDelete: deleteEdge },
 				});
 			}
 		});
@@ -1196,7 +1348,9 @@ export function AutomationCanvas({
 		devMode,
 		running,
 		graphEdges,
+		stepDisplayOrder,
 		deleteStep,
+		deleteEdge,
 		layoutNodes,
 		setRfNodes,
 		setRfEdges,
@@ -1338,6 +1492,7 @@ export function AutomationCanvas({
 											nodes={rfNodes}
 											edges={rfEdges}
 											nodeTypes={nodeTypes as never}
+											edgeTypes={edgeTypes as never}
 											nodesDraggable={
 												canvasMode === "interact"
 											}

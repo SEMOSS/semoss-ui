@@ -55,18 +55,26 @@ export function TriggerNode({ data, id }: NodeProps) {
 			</div>
 
 			{d.isLast ? (
-				<button
-					data-tour="add-step"
-					type="button"
-					onClick={(event) => {
-						event.stopPropagation();
-						d.onAdd?.();
-					}}
-					className="-bottom-5 -translate-x-1/2 absolute left-1/2 z-10 flex h-7 w-7 items-center justify-center rounded-full border bg-background text-emerald-600 shadow-sm transition-colors hover:border-emerald-500 hover:bg-emerald-500/10"
-					aria-label="Add node"
-				>
-					<Plus className="h-4 w-4" />
-				</button>
+				<>
+					<Handle
+						id={`out-${id}`}
+						type="source"
+						position={Position.Bottom}
+						isConnectable
+						onClick={(event) => {
+							event.stopPropagation();
+							d.onAdd?.();
+						}}
+						aria-label="Add node or drag to connect"
+						className="!h-7 !w-7 !border !border-emerald-500/40 !bg-background hover:!border-emerald-500 shadow-sm transition-colors"
+					/>
+					<span
+						data-tour="add-step"
+						className="-translate-x-1/2 pointer-events-none absolute bottom-0 left-1/2 z-10 flex h-7 w-7 translate-y-1/2 items-center justify-center text-emerald-600"
+					>
+						<Plus className="h-4 w-4" />
+					</span>
+				</>
 			) : (
 				<Handle
 					id={`out-${id}`}

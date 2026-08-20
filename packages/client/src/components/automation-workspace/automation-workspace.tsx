@@ -160,6 +160,25 @@ export const AutomationWorkspace = observer(() => {
 		[],
 	);
 
+	const activateInspector = useCallback(() => {
+		const inspectorTab = workspace.model?.getNodeById(
+			"automation-inspector",
+		);
+		if (inspectorTab instanceof FlexLayout.TabNode) {
+			const inspectorBorder = inspectorTab.getParent();
+			if (
+				inspectorBorder instanceof FlexLayout.BorderNode &&
+				inspectorBorder.getSelectedNode()?.getId() ===
+					inspectorTab.getId()
+			) {
+				return;
+			}
+			inspectorTab
+				.getModel()
+				.doAction(FlexLayout.Actions.selectTab(inspectorTab.getId()));
+		}
+	}, [workspace.model]);
+
 	useEffect(() => {
 		if (!appId) return;
 		setInspectorSnapshot(null);
@@ -219,6 +238,14 @@ export const AutomationWorkspace = observer(() => {
 				message.type === "SEMOSS_AUTOMATION_INSPECTOR"
 			) {
 				setInspectorSnapshot(message.snapshot);
+				if (
+					typeof message.snapshot === "object" &&
+					message.snapshot !== null &&
+					"editingStep" in message.snapshot &&
+					message.snapshot.editingStep
+				) {
+					activateInspector();
+				}
 			}
 			if (
 				event.source === inspectorFrameRef.current?.contentWindow &&
@@ -244,7 +271,12 @@ export const AutomationWorkspace = observer(() => {
 		};
 		window.addEventListener("message", handleMessage);
 		return () => window.removeEventListener("message", handleMessage);
-	}, [automationWorkspaceOrigin, inspectorSnapshot, traceSnapshot]);
+	}, [
+		activateInspector,
+		automationWorkspaceOrigin,
+		inspectorSnapshot,
+		traceSnapshot,
+	]);
 
 	useEffect(() => {
 		inspectorFrameRef.current?.contentWindow?.postMessage(

@@ -1,12 +1,8 @@
-import { Code2, Maximize2, Trash2 } from "lucide-react";
+import { ChevronDown, Code2, Trash2 } from "lucide-react";
 import { Suspense, useState } from "react";
 import { MonacoEditor } from "@semoss/shared";
 import {
 	Button,
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
 	Field,
 	FieldLabel,
 	Input,
@@ -80,8 +76,57 @@ export function NodeEditDrawer({
 		persistedPythonSource ||
 		(isCustomSource ? "" : getGeneratedPythonPreview(step));
 	const { resolvedTheme } = useTheme();
-	const [isPythonDialogOpen, setIsPythonDialogOpen] = useState(false);
+	const [showPythonVariablePicker, setShowPythonVariablePicker] =
+		useState(false);
 	const Icon = meta.icon;
+	const insertPythonVariable = (variable: string) => {
+		const separator =
+			pythonSource.length === 0 || pythonSource.endsWith("\n")
+				? ""
+				: "\n";
+		onUpdate({
+			...step,
+			workflowCodeMode: "custom",
+			workflowConfig: {
+				...step.workflowConfig,
+				pythonSource: `${pythonSource}${separator}\${${variable}}`,
+			},
+		});
+	};
+	const pythonVariablePicker = (
+		<div className="relative">
+			<Button
+				size="sm"
+				variant="ghost"
+				className="h-7 gap-0.5 px-1.5 text-[10px] text-primary"
+				onClick={() => setShowPythonVariablePicker((isOpen) => !isOpen)}
+			>
+				+ Variable
+				<ChevronDown className="size-3" />
+			</Button>
+			{showPythonVariablePicker && (
+				<div className="absolute top-full right-0 z-50 mt-1 min-w-[180px] rounded-md border bg-popover py-1 shadow-md">
+					{upstreamVars.map((variable) => (
+						<button
+							key={variable}
+							type="button"
+							onMouseDown={(event) => {
+								event.preventDefault();
+								insertPythonVariable(variable);
+								setShowPythonVariablePicker(false);
+							}}
+							className="flex w-full items-center gap-1.5 px-3 py-1.5 text-left font-mono text-xs hover:bg-accent hover:text-accent-foreground"
+						>
+							<span className="text-[10px] text-muted-foreground">
+								{"${}"}
+							</span>
+							{variable}
+						</button>
+					))}
+				</div>
+			)}
+		</div>
+	);
 
 	return (
 		<div className="flex h-full flex-col bg-background">
@@ -282,73 +327,54 @@ export function NodeEditDrawer({
 										<Code2 className="h-3.5 w-3.5 text-primary" />
 										Python source
 									</FieldLabel>
-									{pythonSource && (
-										<Button
-											size="sm"
-											variant="ghost"
-											className="h-7 gap-1 px-2 text-[11px]"
-											onClick={() =>
-												setIsPythonDialogOpen(true)
-											}
-										>
-											<Maximize2 className="h-3.5 w-3.5" />
-											Open editor
-										</Button>
-									)}
+									{upstreamVars.length > 0 &&
+										pythonVariablePicker}
 								</div>
-								{pythonSource ? (
-									<div className="h-[300px] overflow-hidden rounded-lg border bg-muted/30">
-										<Suspense
-											fallback={
-												<pre className="h-full overflow-auto p-3 font-mono text-xs">
-													{pythonSource}
-												</pre>
+								<div className="h-[300px] overflow-hidden rounded-lg border bg-muted/30">
+									<Suspense
+										fallback={
+											<pre className="h-full overflow-auto p-3 font-mono text-xs">
+												{pythonSource}
+											</pre>
+										}
+									>
+										<MonacoEditor
+											height="100%"
+											width="100%"
+											language="python"
+											theme={
+												resolvedTheme === "dark"
+													? "vs-dark"
+													: "vs"
 											}
-										>
-											<MonacoEditor
-												height="100%"
-												width="100%"
-												language="python"
-												theme={
-													resolvedTheme === "dark"
-														? "vs-dark"
-														: "vs"
-												}
-												value={pythonSource}
-												onChange={(value) =>
-													onUpdate({
-														...step,
-														workflowCodeMode:
-															"custom",
-														workflowConfig: {
-															...step.workflowConfig,
-															pythonSource:
-																value ?? "",
-														},
-													})
-												}
-												options={{
-													automaticLayout: true,
-													fontSize: 13,
-													lineNumbers: "on",
-													minimap: { enabled: false },
-													folding: true,
-													scrollBeyondLastLine: false,
-													wordWrap: "on",
-													padding: {
-														top: 12,
-														bottom: 12,
+											value={pythonSource}
+											onChange={(value) =>
+												onUpdate({
+													...step,
+													workflowCodeMode: "custom",
+													workflowConfig: {
+														...step.workflowConfig,
+														pythonSource:
+															value ?? "",
 													},
-												}}
-											/>
-										</Suspense>
-									</div>
-								) : (
-									<div className="rounded-lg border border-dashed bg-muted/20 p-3 text-muted-foreground text-xs">
-										Add Python source to create this custom
-										node.
-									</div>
-								)}
+												})
+											}
+											options={{
+												automaticLayout: true,
+												fontSize: 13,
+												lineNumbers: "on",
+												minimap: { enabled: false },
+												folding: true,
+												scrollBeyondLastLine: false,
+												wordWrap: "on",
+												padding: {
+													top: 12,
+													bottom: 12,
+												},
+											}}
+										/>
+									</Suspense>
+								</div>
 								<p className="text-muted-foreground text-xs">
 									{isCustomSource
 										? "This custom source is saved with the node."
@@ -359,44 +385,6 @@ export function NodeEditDrawer({
 					</div>
 				</div>
 			</div>
-			<Dialog
-				open={isPythonDialogOpen}
-				onOpenChange={setIsPythonDialogOpen}
-			>
-				<DialogContent className="flex h-[85vh] max-w-6xl flex-col">
-					<DialogHeader>
-						<DialogTitle>Python source</DialogTitle>
-					</DialogHeader>
-					<div className="min-h-0 flex-1 overflow-hidden rounded-lg border">
-						<MonacoEditor
-							height="100%"
-							width="100%"
-							language="python"
-							theme={resolvedTheme === "dark" ? "vs-dark" : "vs"}
-							value={pythonSource}
-							onChange={(value) =>
-								onUpdate({
-									...step,
-									workflowCodeMode: "custom",
-									workflowConfig: {
-										...step.workflowConfig,
-										pythonSource: value ?? "",
-									},
-								})
-							}
-							options={{
-								automaticLayout: true,
-								fontSize: 13,
-								lineNumbers: "on",
-								minimap: { enabled: false },
-								folding: true,
-								scrollBeyondLastLine: false,
-								wordWrap: "on",
-							}}
-						/>
-					</div>
-				</DialogContent>
-			</Dialog>
 		</div>
 	);
 }
