@@ -156,6 +156,7 @@ const EMPTY_PLAYGROUND: ThemeMap["playground"] = {
 		footerItems: [],
 	},
 	toolAutoExecutionLimit: undefined,
+	defaultCompactionStrategy: undefined,
 	defaultTools: [],
 	gracefulErrors: [],
 	featureFlags: {
@@ -994,6 +995,34 @@ const PlaygroundForm: React.FC<FormProps> = ({
 									});
 								}}
 							/>
+						</Field>
+						<Field>
+							<FieldLabel>Default compaction strategy</FieldLabel>
+							<Select
+								disabled={disabled}
+								value={pg?.defaultCompactionStrategy ?? "AUTO"}
+								onValueChange={(value) =>
+									updateTheme((d) => {
+										ensurePlayground(
+											d,
+										).defaultCompactionStrategy =
+											value as ThemeMap["playground"]["defaultCompactionStrategy"];
+									})
+								}
+							>
+								<SelectTrigger className="w-full sm:w-[320px]">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="AUTO">Auto</SelectItem>
+									<SelectItem value="SUMMARY">
+										Summarize
+									</SelectItem>
+									<SelectItem value="TOOL_PRUNE">
+										Prune Tools
+									</SelectItem>
+								</SelectContent>
+							</Select>
 						</Field>
 					</FieldGroup>
 				</FormSection>

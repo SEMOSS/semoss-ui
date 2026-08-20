@@ -5,7 +5,27 @@
 		"description": "Mettez à jour les paramètres de la salle et modifiez le comportement du chat",
 		"open": "Ouvrir les paramètres de la salle",
 		"close": "Fermer les paramètres de la salle",
-		"edit": "Modifier les paramètres de la salle"
+		"edit": "Modifier les paramètres de la salle",
+		"compact": "Compacter la conversation",
+		"compactSuccess": "Conversation compactée avec succès",
+		"compactSkipped": "Rien à compacter — la conversation est déjà concise",
+		"compactError": "Échec de la compaction de la conversation",
+		"compacting": "Compactage de la conversation...",
+		"compactedAbove": "Conversation compactée",
+		"compactedAboveTooltip": "Les messages précédents ont été résumés pour réduire la taille du contexte",
+		"compactButton": "Compacter",
+		"compactionOptions": "Options de compactage",
+		"advancedOptions": "Options avancées",
+		"strategyLabel": {
+			"SUMMARY": "Résumer",
+			"TOOL_PRUNE": "Élaguer les outils",
+			"AUTO": "Auto"
+		},
+		"strategyTooltip": {
+			"SUMMARY": "Remplace les anciens messages par un résumé généré par l'IA. Préserve le contexte général de la conversation tout en libérant de l'espace de jetons.",
+			"TOOL_PRUNE": "Supprime les résultats détaillés des appels d'outils de l'historique de la conversation. Idéal lorsque les sorties d'outils sont volumineuses et que les détails ne sont plus nécessaires.",
+			"AUTO": "Choisira le résumé ou l'élagage des outils selon la conversation en cours."
+		}
 	},
 	"form": {
 		"modelLabel": "Modèle",
