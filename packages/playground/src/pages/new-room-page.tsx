@@ -73,6 +73,13 @@ export const NewRoomPage = observer(() => {
 	const { chat } = useChat();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
+
+	// Re-fetch the user's profile default model each time this page mounts so
+	// changes made in the token-usage embed are reflected immediately.
+	useEffect(() => {
+		chat.refreshProfileDefaultModel();
+	}, [chat]);
+
 	const initialPrompt = searchParams.get("prompt") ?? "";
 
 	const workspaceIdSearchParams = searchParams.get("workspaceId");
