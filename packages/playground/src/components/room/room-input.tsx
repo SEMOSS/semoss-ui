@@ -168,20 +168,12 @@ interface RoomInputProps {
 
 	/** Initial value from prompt library */
 	initialValue?: string;
-	/** Current token usage for context window indicator */
-	tokensUsed?: number;
 
-	/** Maximum token capacity for context window */
-	tokensMax?: number;
-
-	/** Total tokens consumed across the entire chat */
-	totalTokens?: number;
-
-	/** Room store for prompt optimizer */
+	/** Room store for prompt optimizer and context usage indicator */
 	room: RoomStore;
 
-	/** Callback to compact conversation; passed through to EngineSelect context tooltip */
-	onCompact?: () => void;
+	/** Callback to compact conversation; also passed through to the slash menu */
+	onCompact?: (strategy?: "TOOL_PRUNE" | "SUMMARY" | "AUTO") => void;
 
 	/** Command IDs to suppress from the slash menu */
 	excludeCommandIds?: string[];
@@ -235,9 +227,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		onStop,
 		predefinedPrompts = [],
 		initialValue,
-		tokensUsed,
-		tokensMax,
-		totalTokens,
 		room,
 		onCompact,
 		excludeCommandIds,
@@ -397,10 +386,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		};
 		const recognitionRef = useRef<SpeechRecognition | null>(null);
 
-		// Whether the latest response has any tool calls — compaction can't
-		// touch a response until it's done growing new tool-result messages
+		// Whether the latest response has unfinished tools — compaction can't
+		// touch a response until all tool calls have resolved
 		const latestResponseHasTools =
-			room.latestResponseMessage?.hasTools ?? false;
+			room.latestResponseMessage?.hasUnfinishedTools ?? false;
 
 		// ========================================================================
 		// Speech Recognition Setup
@@ -718,10 +707,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													)}
 												>
 													{/* Inline-block + align-middle makes the icon
-											    flow with text: when the placeholder wraps,
-											    only the text after the icon wraps to the
-											    next line, instead of the whole text
-											    jumping below the icon. */}
+													    flow with text: when the placeholder wraps,
+													    only the text after the icon wraps to the
+													    next line, instead of the whole text
+													    jumping below the icon. */}
 													<SparklesIcon className="-translate-y-px me-1 inline-block size-4 align-middle" />
 													{isLoading
 														? t("input.thinking")
@@ -929,14 +918,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										<RoomContextUsageIndicator
 											// -ms-1 to make spacing look more consistent due to ghost icons
 											className="-ms-1"
-											tokensUsed={tokensUsed}
-											tokensMax={tokensMax}
-											totalTokens={totalTokens}
+											room={room}
 											onCompact={onCompact}
 											isLoading={isLoading}
-											latestResponseHasTools={
-												latestResponseHasTools
-											}
 										/>
 										{predefinedPrompts.length > 0 ? (
 											<Tooltip>
@@ -1013,7 +997,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										)}
 									</div>
 								</div>
-								{/* Send button — pinned bottom-right, sibling of body */}
+								{/* Send / compact — pinned bottom-right, sibling of body */}
 								<div className="shrink-0">
 									<Tooltip>
 										<TooltipTrigger asChild>

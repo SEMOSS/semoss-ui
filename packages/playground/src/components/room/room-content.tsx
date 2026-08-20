@@ -108,9 +108,11 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	/**
 	 * Compact messages in the room
 	 */
-	const handleCompactMessages = async () => {
+	const handleCompactMessages = async (
+		strategy?: "TOOL_PRUNE" | "SUMMARY" | "AUTO",
+	) => {
 		try {
-			const result = await room.compactMessages();
+			const result = await room.compactMessages(strategy);
 			if (result === "skipped") {
 				toast.info(t("settings.compactSkipped"));
 			} else {
@@ -623,9 +625,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					}
 					sendState={sendState}
 					onStop={room.cancelActiveJob}
-					tokensUsed={room.tokensUsed}
-					tokensMax={chat.models.contextWindow}
-					totalTokens={room.totalTokensConsumed}
 					onCompact={handleCompactMessages}
 					onOpenSettings={handleOpenSettings}
 					excludeCommandIds={[
