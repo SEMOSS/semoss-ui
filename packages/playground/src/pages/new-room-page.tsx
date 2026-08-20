@@ -119,6 +119,8 @@ export const NewRoomPage = observer(() => {
 		tempRoomStore.setMode(mode);
 	}, [mode, tempRoomStore]);
 	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
+	// The agent whose default model has already been applied to the picker
+	const appliedAgentModelRef = useRef<string>("");
 	const [prompts, setPrompts] = useState<string[]>([]);
 	const previewPrompts = useMemo(
 		() => tempRoomStore.options.predefinedPrompts.slice(0, 5),
@@ -272,11 +274,20 @@ export const NewRoomPage = observer(() => {
 
 	// Handle workspace data loading from RoomWorkspace component selection
 	useEffect(() => {
-		if (
-			!selectedWorkspaceId ||
-			getWorkspace.status !== "SUCCESS" ||
-			!getWorkspace.data
-		) {
+		if (!selectedWorkspaceId) {
+			// clearing the agent clears the guard below, so picking the same
+			// agent again applies its default model again
+			appliedAgentModelRef.current = "";
+			return;
+		}
+		if (getWorkspace.status !== "SUCCESS" || !getWorkspace.data) {
+			return;
+		}
+		// Switching agents changes selectedWorkspaceId a render before the
+		// pixel catches up, so this effect fires once holding the outgoing
+		// agent's data. Applying it would merge the wrong agent's settings and,
+		// worse, mark the incoming agent as already handled below.
+		if (getWorkspace.data.workspace_id !== selectedWorkspaceId) {
 			return;
 		}
 
@@ -302,6 +313,19 @@ export const NewRoomPage = observer(() => {
 			}
 		}
 
+		// An agent that names a default model switches the picker to it, once
+		// per selection - the ref keeps a refetch from overriding a model the
+		// user picked by hand afterwards. An agent with no default leaves the
+		// current model alone.
+		const agentModelId = getWorkspace.data.config_json?.model_id ?? "";
+		if (
+			agentModelId &&
+			appliedAgentModelRef.current !== selectedWorkspaceId
+		) {
+			appliedAgentModelRef.current = selectedWorkspaceId;
+			void chat.selectModelById(agentModelId);
+		}
+
 		setPrompts(
 			Array.isArray(getWorkspace.data.prompts)
 				? getWorkspace.data.prompts.map((p) =>
@@ -325,6 +349,7 @@ export const NewRoomPage = observer(() => {
 		getWorkspace.status,
 		getWorkspace.data,
 		tempRoomStore,
+		chat,
 	]);
 
 	// Handle knowledge vector engine from URL parameter
