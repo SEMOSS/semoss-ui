@@ -43,6 +43,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import {
+	BackspacePlugin,
 	EnterPlugin,
 	FocusPlugin,
 	MCPOverlay,
@@ -1132,6 +1133,16 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						<FocusPlugin />
 						<EditorRefPlugin editorRef={editorRef} />
 						<EnterPlugin onEnter={() => promptModel()} />
+						<BackspacePlugin
+							onBackspace={(event) => {
+								if (!isEmpty || files.length === 0) {
+									return false;
+								}
+								event.preventDefault();
+								removeFile(files.length - 1);
+								return true;
+							}}
+						/>
 						<AutoScrollOnPastePlugin
 							scrollContainerRef={scrollViewportRef}
 						/>
