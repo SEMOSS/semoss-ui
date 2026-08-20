@@ -68,7 +68,7 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 	const [requestedRole, setRequestedRole] = useState<Role>("READ_ONLY");
 	const [comment, setComment] = useState<string>("");
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: engine.engine_id is a trigger dep to close on id change, not read inside the effect
+	// close when the id changes
 	useEffect(() => {
 		setOpen(false);
 	}, [engine.engine_id]);

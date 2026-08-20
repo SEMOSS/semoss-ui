@@ -28,10 +28,7 @@ import {
 } from "@semoss/ui/next";
 import { setProjectFavorite } from "@/api";
 import { ShareOverlay } from "@/components/ui";
-import { usePage, useProject, useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
-import type { WorkspaceStore } from "@/stores";
-import { NavbarHeader, NavbarLeft, NavbarRight } from "../../components/shared";
 
 const Renderer = lazy(() =>
 	import("@semoss/renderer").then((m) => ({ default: m.Renderer })),
@@ -41,6 +38,10 @@ const CodeRenderer = lazy(() =>
 		default: m.CodeRenderer,
 	})),
 );
+
+import { usePage, useProject, useRootStore } from "@/hooks";
+import type { WorkspaceStore } from "@/stores";
+import { NavbarHeader, NavbarLeft, NavbarRight } from "../../components/shared";
 
 const AppViewLoadingState = () => {
 	return (
