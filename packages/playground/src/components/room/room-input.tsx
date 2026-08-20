@@ -314,7 +314,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				onClick: onExitAgentHarness,
 				title: onExitAgentHarness ? t("modes.exitAgent") : undefined,
 			},
-			agentChipWorkspace && {
+			agentChipWorkspace !== null && {
 				key: "agent",
 				icon: Bot,
 				label:
@@ -691,36 +691,42 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													// real text content. In that case we should keep the
 													// image files and let them be attached.
 													const hasPlainText =
-														e.clipboardData.types.includes(
-															"text/plain",
-														);
+														e.clipboardData
+															.getData(
+																"text/plain",
+															)
+															.trim().length > 0;
 
 													// text/html is only "real text" if it contains
 													// meaningful content beyond just an <img> tag
 													// (Teams wraps copied images in bare <img> html).
+													// Parsed with DOMParser into an inert, disconnected
+													// document (no browsing context) so any <img> tags
+													// never load and their attribute handlers never run.
 													const htmlHasMeaningfulText =
 														(() => {
-															if (
-																!e.clipboardData.types.includes(
-																	"text/html",
-																)
-															)
-																return false;
-															const div =
-																document.createElement(
-																	"div",
-																);
-															div.innerHTML =
+															const html =
 																e.clipboardData.getData(
 																	"text/html",
 																);
-															div.querySelectorAll(
-																"img",
-															).forEach((img) => {
-																img.remove();
-															});
+															if (!html)
+																return false;
+															const parsed =
+																new DOMParser().parseFromString(
+																	html,
+																	"text/html",
+																);
+															parsed.body
+																.querySelectorAll(
+																	"img",
+																)
+																.forEach(
+																	(img) => {
+																		img.remove();
+																	},
+																);
 															return (
-																(div.textContent?.trim()
+																(parsed.body.textContent?.trim()
 																	.length ??
 																	0) > 0
 															);
