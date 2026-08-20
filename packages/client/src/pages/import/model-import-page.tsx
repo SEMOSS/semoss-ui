@@ -28,6 +28,14 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
+import {
+	CATALOG_MODALITIES,
+	toReasoningConfig,
+} from "@/components/engine/engine-metadata-display";
+import type {
+	CatalogMatchState,
+	CatalogMatchSuggestion,
+} from "@/components/import/model/model-catalog-match";
 import type {
 	AppendedModelField,
 	CategoryTexts,
@@ -41,6 +49,7 @@ import {
 	MODEL_VERSIONS,
 	UNKNOWN_MODEL_BRAND,
 } from "@/components/import/model/model-import.constants";
+import { hasConfigurableReasoning } from "@/components/import/model/model-reasoning-config-field";
 import {
 	ModelEngineIcon,
 	ModelTileCard,
@@ -69,6 +78,7 @@ const MODEL_PROVIDER_SUBTYPE_BY_NAME: Record<string, string> = {
 	"Self Hosted": "HUGGINGFACE",
 	Perplexity: "PERPLEXITY",
 	Embedded: "BRAIN",
+	"Model Router": "MODEL_ROUTER",
 };
 
 /**
@@ -331,6 +341,28 @@ const normalizeStaticModalities = (
 	];
 };
 
+/**
+ * Modalities the catalog entry does not list for one direction.
+ *
+ * Advisory only - the model settings tab warns on the same mismatch rather than
+ * blocking it, and the catalog is hand-maintained, so a deployment can serve a
+ * modality the entry omits. Returns undefined when the entry lists nothing for
+ * the direction, since silence there is not a claim about anything.
+ */
+const getUnlistedModalityOptions = (
+	staticModalities: ModelModality[],
+): string[] | undefined => {
+	if (staticModalities.length === 0) {
+		return undefined;
+	}
+
+	const unlisted = CATALOG_MODALITIES.filter(
+		(modality) => !staticModalities.includes(modality as ModelModality),
+	);
+
+	return unlisted.length > 0 ? unlisted : undefined;
+};
+
 const inferStaticCapability = (
 	metadata: StaticModelMetadata | null,
 	model: ModelVersionDefinition | null,
@@ -360,13 +392,27 @@ const inferStaticCapability = (
 	return inferCapability(model);
 };
 
+/**
+ * Which catalog entry to pull metadata from for the model being imported.
+ *
+ * A card that names a specific model looks itself up. An "other-" card carries
+ * no model ID of its own, so it resolves to whatever the user typed - by way of
+ * the entry they picked, or the one their ID matched on its own. Returning null
+ * means there is nothing to look up and the metadata fields stay unpopulated.
+ */
 export const getStaticModelMetadataLookup = (
 	model: ModelVersionDefinition | null,
+	resolvedCatalogKey?: string | null,
 ): StaticModelMetadataLookup | null => {
 	const modelId = model?.name.trim();
 
-	if (!modelId || modelId.startsWith("other-")) {
+	if (!modelId) {
 		return null;
+	}
+
+	if (modelId.startsWith("other-")) {
+		const catalogKey = resolvedCatalogKey?.trim();
+		return catalogKey ? { key: catalogKey, modelId: catalogKey } : null;
 	}
 
 	return {
@@ -388,18 +434,12 @@ export const buildModelMetadataFields = (
 	const staticOutputModalities = normalizeStaticModalities(
 		staticMetadata?.output_modalities,
 	);
-	const disabledInputModalities =
-		staticInputModalities.length > 0
-			? MODEL_MODALITIES.filter(
-					(modality) => !staticInputModalities.includes(modality),
-				)
-			: undefined;
-	const disabledOutputModalities =
-		staticOutputModalities.length > 0
-			? MODEL_MODALITIES.filter(
-					(modality) => !staticOutputModalities.includes(modality),
-				)
-			: undefined;
+	const unlistedInputModalities = getUnlistedModalityOptions(
+		staticInputModalities,
+	);
+	const unlistedOutputModalities = getUnlistedModalityOptions(
+		staticOutputModalities,
+	);
 	const metadataFields: FieldDefinition[] = [
 		{
 			key: "DESCRIPTION",
@@ -466,7 +506,7 @@ export const buildModelMetadataFields = (
 					? staticInputModalities
 					: inferredModalities.input,
 			options: [...MODEL_MODALITIES],
-			disabledOptions: disabledInputModalities,
+			warningOptions: unlistedInputModalities,
 		},
 		{
 			key: "OUTPUT_MODALITIES",
@@ -479,17 +519,15 @@ export const buildModelMetadataFields = (
 					? staticOutputModalities
 					: inferredModalities.output,
 			options: [...MODEL_MODALITIES],
-			disabledOptions: disabledOutputModalities,
+			warningOptions: unlistedOutputModalities,
 		},
 		{
 			key: "BUILTIN_TOOLS",
 			label: "Built-in Tools",
-			type: "text",
+			type: "builtin-tools",
 			required: false,
 			category: "Settings",
-			default: "",
-			helperText:
-				"Optional comma-separated canonical names, such as web_search, image_generation.",
+			helperText: "Provider-hosted tools the model can call natively.",
 		},
 	];
 
@@ -594,16 +632,35 @@ export const buildModelMetadataFields = (
 		);
 	}
 
-	if (
-		staticMetadata?.reasoning_config &&
-		typeof staticMetadata.reasoning_config === "object" &&
-		!Array.isArray(staticMetadata.reasoning_config) &&
-		Object.keys(staticMetadata.reasoning_config).length > 0
-	) {
+	const reasoningConfig = toReasoningConfig(staticMetadata?.reasoning_config);
+
+	if (hasConfigurableReasoning(reasoningConfig)) {
+		if (typeof staticMetadata?.reasoning !== "boolean") {
+			addHiddenMetadataField("REASONING", "Reasoning Support", true);
+		}
+
+		const builtinToolsIndex = metadataFields.findIndex(
+			(field) => field.key === "BUILTIN_TOOLS",
+		);
+		metadataFields.splice(
+			builtinToolsIndex === -1
+				? metadataFields.length
+				: builtinToolsIndex,
+			0,
+			{
+				key: "REASONING_CONFIG",
+				label: "Reasoning",
+				type: "reasoning-config",
+				required: false,
+				category: "Settings",
+				default: reasoningConfig,
+			},
+		);
+	} else if (reasoningConfig !== null) {
 		addHiddenMetadataField(
 			"REASONING_CONFIG",
 			"Reasoning Configuration",
-			JSON.stringify(staticMetadata.reasoning_config),
+			JSON.stringify(reasoningConfig),
 		);
 	}
 
@@ -634,7 +691,7 @@ export const mergeModelMetadataFields = (
 			fields[fieldIndex] = {
 				...fields[fieldIndex],
 				default: metadataField.default,
-				disabledOptions: metadataField.disabledOptions,
+				warningOptions: metadataField.warningOptions,
 			};
 			continue;
 		}
@@ -646,7 +703,7 @@ export const mergeModelMetadataFields = (
 			advanced[advancedIndex] = {
 				...advanced[advancedIndex],
 				default: metadataField.default,
-				disabledOptions: metadataField.disabledOptions,
+				warningOptions: metadataField.warningOptions,
 			};
 			continue;
 		}
@@ -675,6 +732,14 @@ export const ModelImportPage: React.FC = () => {
 			status: "INITIAL",
 			data: null,
 		});
+	// the Model ID as typed on an "other-" card, debounced by the form
+	const [typedModelId, setTypedModelId] = useState("");
+	const [catalogMatch, setCatalogMatch] = useState<CatalogMatchState | null>(
+		null,
+	);
+	const [pickedCatalogKey, setPickedCatalogKey] = useState<string | null>(
+		null,
+	);
 	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
 	const [formLoading, setFormLoading] = useState(false);
 	const [filedata, setFiledata] = useState(null);
@@ -789,9 +854,102 @@ export const ModelImportPage: React.FC = () => {
 		);
 	}, [selectedProvider, selectedModel]);
 
+	// only an "other-" card leaves the Model ID to the user, and only then is there
+	// anything to match against the catalog
+	const isTypedModelId = !!selectedModelMetadata?.name.startsWith("other-");
+
+	// Start over whenever the user backs out to a different card - a catalog entry
+	// picked for one model must not carry over to the next.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: the deps are the reset trigger, not values the body reads
+	useEffect(() => {
+		setTypedModelId("");
+		setCatalogMatch(null);
+		setPickedCatalogKey(null);
+	}, [selectedModel, selectedProvider]);
+
+	useEffect(() => {
+		const modelId = typedModelId.trim();
+		if (!isTypedModelId || !modelId) {
+			setCatalogMatch(null);
+			return;
+		}
+
+		let isCancelled = false;
+		setCatalogMatch({
+			modelId,
+			status: "LOADING",
+			exactMatch: null,
+			suggestions: [],
+			allKeys: [],
+		});
+
+		const pixel = `MatchStaticModelMetadata(modelId=${JSON.stringify(
+			modelId,
+		)});`;
+
+		monolithStore
+			.runQuery(pixel)
+			.then((response) => {
+				if (isCancelled) return;
+
+				const result = response.pixelReturn?.[0];
+				if (!result || result.operationType.indexOf("ERROR") > -1) {
+					throw new Error(
+						String(result?.output || "Unable to match model ID."),
+					);
+				}
+
+				const output = result.output as {
+					exactMatch?: string;
+					matches?: CatalogMatchSuggestion[];
+					allKeys?: string[];
+				};
+				const exactMatch = output?.exactMatch?.trim() || null;
+
+				setCatalogMatch({
+					modelId,
+					status: exactMatch ? "MATCHED" : "UNMATCHED",
+					exactMatch,
+					suggestions: Array.isArray(output?.matches)
+						? output.matches
+						: [],
+					allKeys: Array.isArray(output?.allKeys)
+						? output.allKeys
+						: [],
+				});
+			})
+			.catch(() => {
+				if (isCancelled) return;
+				setCatalogMatch({
+					modelId,
+					status: "ERROR",
+					exactMatch: null,
+					suggestions: [],
+					allKeys: [],
+				});
+			});
+
+		return () => {
+			isCancelled = true;
+		};
+	}, [monolithStore, typedModelId, isTypedModelId]);
+
+	// a hand-picked entry wins; otherwise a typed ID that resolved on its own is
+	// just as good a source of metadata, it simply is not worth storing
+	const resolvedCatalogKey =
+		pickedCatalogKey ||
+		(catalogMatch?.modelId === typedModelId.trim()
+			? catalogMatch?.exactMatch
+			: null) ||
+		null;
+
 	const staticMetadataLookup = useMemo(
-		() => getStaticModelMetadataLookup(selectedModelMetadata),
-		[selectedModelMetadata],
+		() =>
+			getStaticModelMetadataLookup(
+				selectedModelMetadata,
+				resolvedCatalogKey,
+			),
+		[selectedModelMetadata, resolvedCatalogKey],
 	);
 
 	useEffect(() => {
@@ -859,7 +1017,11 @@ export const ModelImportPage: React.FC = () => {
 		};
 	}, [monolithStore, staticMetadataLookup]);
 
+	// A typed Model ID is looked up while the form is already on screen, so blocking
+	// on it would tear the form down and lose whatever has been filled in. Only the
+	// card flow, which resolves before the form is ever rendered, waits on a spinner.
 	const isStaticMetadataLoading =
+		!isTypedModelId &&
 		staticMetadataLookup !== null &&
 		(staticModelMetadata.lookupKey !== staticMetadataLookup.key ||
 			staticModelMetadata.status === "LOADING");
@@ -1151,15 +1313,32 @@ export const ModelImportPage: React.FC = () => {
 							};
 						}
 
-						mergeModelMetadataFields(
-							fields,
-							advanced,
-							buildModelMetadataFields(
-								selectedProvider,
-								selectedModelMetadata,
-								selectedStaticMetadata,
-							),
-						);
+						if (!selectedModelMetadata?.skipCatalogMetadata) {
+							mergeModelMetadataFields(
+								fields,
+								advanced,
+								buildModelMetadataFields(
+									selectedProvider,
+									selectedModelMetadata,
+									selectedStaticMetadata,
+								),
+							);
+						}
+
+						// Only a hand-picked entry is saved. An ID that resolved on
+						// its own can be resolved again from the ID, so storing it
+						// would just be another value to keep in sync.
+						if (pickedCatalogKey) {
+							fields.push({
+								key: "CATALOG_MODEL_KEY",
+								label: "Catalog Model Key",
+								type: "hidden",
+								required: false,
+								category: "Settings",
+								default: pickedCatalogKey,
+								value: pickedCatalogKey,
+							});
+						}
 					}
 				}
 
@@ -1169,6 +1348,12 @@ export const ModelImportPage: React.FC = () => {
 						advanced={advanced}
 						selectedProvider={selectedProvider}
 						importableModelsCategory={importableModelsCategory}
+						onModelIdChange={
+							isTypedModelId ? setTypedModelId : undefined
+						}
+						catalogMatch={catalogMatch}
+						pickedCatalogKey={pickedCatalogKey}
+						onPickCatalogKey={setPickedCatalogKey}
 					/>
 				);
 			}
@@ -1184,6 +1369,9 @@ export const ModelImportPage: React.FC = () => {
 		selectedModelMetadata,
 		isStaticMetadataLoading,
 		selectedStaticMetadata,
+		isTypedModelId,
+		catalogMatch,
+		pickedCatalogKey,
 	]);
 
 	return (

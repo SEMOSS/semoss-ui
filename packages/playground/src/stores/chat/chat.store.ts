@@ -498,6 +498,40 @@ export class ChatStore {
 		this.loadEngineContextWindow(model.engine_id);
 	};
 
+	/**
+	 * Select a model named by something other than the picker - an agent's
+	 * default model, say - resolving the id against the models the user can
+	 * actually see so a stale or unshared id cannot leave the room pointed at a
+	 * model that will not run.
+	 *
+	 * @returns whether the selection changed
+	 */
+	selectModelById = async (engineId: string): Promise<boolean> => {
+		const id = engineId?.trim();
+		if (!id || this._store.models.selected?.engine_id === id) {
+			return false;
+		}
+
+		try {
+			const { pixelReturn } = await this._actions.run<[Engine[]]>(
+				`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"], engine=[${JSON.stringify(id)}]);`,
+			);
+
+			const model = pixelReturn[0].output?.find(
+				(m) => m.engine_id === id,
+			);
+			if (!model) {
+				return false;
+			}
+
+			this.setSelectedModel(model);
+			return true;
+		} catch (e) {
+			console.error(e);
+			return false;
+		}
+	};
+
 	private loadEngineContextWindow = async (engineId: string) => {
 		runInAction(() => {
 			this._store.models.contextWindow = undefined;

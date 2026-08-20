@@ -2,7 +2,6 @@ import { makeAutoObservable, runInAction } from "mobx";
 import {
 	getPixelAsyncResult,
 	console as getPixelConsole,
-	getPixelJobStreaming,
 	runPixel,
 	runPixelAsync,
 	uploadInsight,
@@ -16,17 +15,27 @@ import {
 	ResponseMessageStore,
 	ToolStore,
 } from "@/stores";
+import {
+	reconnectAgentRun,
+	reconstructAllSubagents,
+} from "@/stores/message/agent-harness";
 import type {
 	Engine,
 	InputPixelMessage,
 	MCPConfig,
 	PixelMessage,
+	PixelMessageSubagentPart,
 	PixelMessageToolCallPart,
 	PixelMessageToolResultPart,
 	Prompt,
 	ResponsePixelMessage,
 	Workspace,
 } from "@/types";
+import {
+	type StreamHandlers,
+	StreamJobController,
+	type StreamOptions,
+} from "./stream-job-controller";
 
 interface RoomStoreInterface {
 	/**
@@ -138,6 +147,9 @@ interface RoomStoreInterface {
 		 * Count of the model;
 		 */
 		counter: number;
+
+		/** Per-path counter used to force-remount file editor tabs */
+		fileKeys: Record<string, number>;
 	};
 }
 
@@ -146,6 +158,14 @@ interface RoomStoreInterface {
  */
 export class RoomStore {
 	private _theme: ThemeMap["playground"];
+	readonly streamJob = new StreamJobController({
+		getInsightId: () => this._store.insightId,
+		setLoading: (isLoading) => this.setIsLoading(isLoading),
+		setError: (error) =>
+			runInAction(() => {
+				this._store.error = error;
+			}),
+	});
 	private _store: RoomStoreInterface = {
 		roomId: "",
 		insightId: "new",
@@ -165,6 +185,7 @@ export class RoomStore {
 		},
 		sidebar: {
 			isOpen: false,
+			fileKeys: {},
 			model: FlexLayout.Model.fromJson({
 				global: {
 					borderEnableTabScrollbar: true,
@@ -232,11 +253,48 @@ export class RoomStore {
 	}
 
 	/**
+	 * A tool-phase stop is committing (cancelling the remaining tool calls). The
+	 * stream cancel state lives in the controller; this covers the tool phase,
+	 * where there's no stream job to track.
+	 */
+	private cancellingTools = false;
+
+	/**
+	 * Whether there's something the user can still stop: a cancellable streaming
+	 * call (e.g. AskPlayground / the post-tool response), or a turn parked on
+	 * unfinished tool calls — and a stop isn't already underway.
+	 */
+	get canCancel() {
+		return (
+			this.streamJob.canCancel ||
+			(!this.cancellingTools &&
+				Boolean(this.latestResponseMessage?.hasUnfinishedTools))
+		);
+	}
+
+	/** A stop has been issued and it's still unwinding. */
+	get isCancelling() {
+		return this.streamJob.isCancelling || this.cancellingTools;
+	}
+
+	/**
 	 * Get the error of the room
 	 */
 	get error() {
 		return this._store.error;
 	}
+
+	/**
+	 * Surface an error on the room. Public so callers outside this store — e.g.
+	 * ToolSaveController, when a tool-phase stop fails to persist — can report a
+	 * failure that isn't already caught by runRoomPixel/streamJob's own
+	 * setErrorOnFail handling.
+	 */
+	setError = (error: Error): void => {
+		runInAction(() => {
+			this._store.error = error;
+		});
+	};
 
 	/**
 	 * Get the mode of the room
@@ -448,6 +506,7 @@ export class RoomStore {
 			...metadata,
 		};
 	};
+
 	/** Actions */
 	/**
 	 * Initialize the room and load messages and options if they are there
@@ -551,6 +610,46 @@ export class RoomStore {
 			// options
 			const newOptions = { ...optionsOutput.OPTIONS };
 
+			runInAction(() => {
+				// Restore agent-harness mode from the persisted options so a
+				// reloaded agent room keeps sending messages via RunAgent. Only
+				// promote to "agent" here — never demote — so that a freshly
+				// created room whose mode was set via setMode() before its
+				// options have been persisted (createRoom runs initialize()
+				// before updateRoomOptions) keeps its explicitly-set mode.
+				if (newOptions.harnessType) {
+					this.setMode("agent");
+				}
+
+				// store it
+				this._store.root = root;
+			});
+
+			// Fired here, before the workspace/model round trips below, since
+			// neither depends on them — waiting on those was delaying subagent
+			// boxes and live status for no reason.
+			if (this.mode === "agent") {
+				void reconstructAllSubagents(this);
+			}
+			if (this.tail.type === "OUTPUT") {
+				if (this.mode === "agent") {
+					// An agent-run turn is driven entirely server-side and
+					// only ever gets a live subscribeRunAgent connection from
+					// runAgentMessage's own submit — reconnect here so a
+					// reload doesn't leave it (and any paused tool decision)
+					// unwatched. See reconnectAgentRun.
+					reconnectAgentRun(this.tail);
+				} else {
+					this.tail.continueToolExecution();
+				}
+			}
+
+			// The agent's default model, read below off the workspace this room
+			// was started from. It only stands in for a room that has never
+			// named a model of its own - a room the user has already chatted in
+			// keeps the model those messages ran on.
+			let agentDefaultModelId = "";
+
 			if (!newOptions.workspace?.workspace_id) {
 				delete newOptions.workspace;
 			} else {
@@ -568,6 +667,9 @@ export class RoomStore {
 				if (workspaceOutput?.name && newOptions.workspace) {
 					newOptions.workspace.name = workspaceOutput.name;
 				}
+
+				agentDefaultModelId =
+					workspaceOutput?.config_json?.model_id ?? "";
 
 				// Merge workspace MCPs into the mcp array with fromWorkspace flag
 				if (
@@ -605,15 +707,20 @@ export class RoomStore {
 				}
 			}
 
-			// set the model based on the history
-			if (activeModelId) {
+			// set the model based on the history, or on the agent's default when
+			// the room has never named one
+			const modelIdToLoad = activeModelId || agentDefaultModelId;
+			if (modelIdToLoad) {
 				const { pixelReturn } = await this.runRoomPixel<[Engine[]]>(
-					`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=['MODEL'], filterWord=${JSON.stringify(activeModelId)})`,
+					`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=['MODEL'], filterWord=${JSON.stringify(modelIdToLoad)})`,
 				);
 
-				runInAction(() => {
-					this.setModel(pixelReturn[0].output[0]);
-				});
+				const model = pixelReturn[0].output[0];
+				if (model) {
+					runInAction(() => {
+						this.setModel(model);
+					});
+				}
 			}
 
 			runInAction(() => {
@@ -625,25 +732,7 @@ export class RoomStore {
 				if (optionsOutput.ROOM_NAME) {
 					this.setMetadata({ name: optionsOutput.ROOM_NAME });
 				}
-
-				// Restore agent-harness mode from the persisted options so a
-				// reloaded agent room keeps sending messages via RunAgent. Only
-				// promote to "agent" here — never demote — so that a freshly
-				// created room whose mode was set via setMode() before its
-				// options have been persisted (createRoom runs initialize()
-				// before updateRoomOptions) keeps its explicitly-set mode.
-				if (newOptions.harnessType) {
-					this.setMode("agent");
-				}
-
-				// store it
-				this._store.root = root;
 			});
-
-			// If the last message is a response and it has tool executions, start them (happens for new rooms and page reloads)
-			if (this.tail.type === "OUTPUT") {
-				this.tail.continueToolExecution();
-			}
 		} catch (e) {
 			console.error(e);
 			runInAction(() => {
@@ -782,6 +871,29 @@ export class RoomStore {
 	};
 
 	/**
+	 * Find a spawned subagent's part by id, wherever it falls in the room's
+	 * history. Looked up live (not snapshotted) so a panel showing it stays in
+	 * sync with status/result updates while open.
+	 */
+	getSubagentPart = (
+		subagentId: string,
+	): PixelMessageSubagentPart["subagent"] | undefined => {
+		for (const message of this.history) {
+			if (!(message instanceof ResponseMessageStore)) {
+				continue;
+			}
+			const part = message.parts.find(
+				(p): p is PixelMessageSubagentPart =>
+					p.type === "SUBAGENT" && p.subagent.id === subagentId,
+			);
+			if (part) {
+				return part.subagent;
+			}
+		}
+		return undefined;
+	};
+
+	/**
 	 * Sidebar
 	 */
 	/**
@@ -852,6 +964,65 @@ export class RoomStore {
 	};
 
 	/**
+	 * Open or focus a sidebar file-editor tab for a path.
+	 *
+	 * When `forceRefresh` is true and the tab already exists, increments a
+	 * config `refreshKey` to force a remount of the editor for that tab.
+	 */
+	openFileEditorSidebarNode = (
+		path: string,
+		options?: {
+			name?: string;
+			forceRefresh?: boolean;
+		},
+	): void => {
+		const fileName =
+			options?.name ?? path.split("/").filter(Boolean).pop() ?? path;
+		const model = this._store.sidebar.model;
+
+		const matchedNodes: FlexLayout.TabNode[] = [];
+		model.visitNodes((node) => {
+			if (
+				matchedNodes.length > 0 ||
+				!(node instanceof FlexLayout.TabNode)
+			) {
+				return;
+			}
+
+			const config = node.getConfig() as { path?: string } | undefined;
+			if (
+				node.getComponent() === "room-file-editor" &&
+				config?.path === path
+			) {
+				matchedNodes.push(node);
+			}
+		});
+
+		const selectedNode = matchedNodes[0];
+		if (selectedNode) {
+			if (options?.forceRefresh) {
+				const prev = this._store.sidebar.fileKeys[path] ?? 0;
+				this._store.sidebar.fileKeys[path] = prev + 1;
+			}
+
+			model.doAction(FlexLayout.Actions.selectTab(selectedNode.getId()));
+			this._store.sidebar.isOpen = true;
+			return;
+		}
+
+		this.addSidebarNode(`FILE--${path}`, {
+			type: "tab",
+			name: fileName,
+			component: "room-file-editor",
+			config: {
+				name: fileName,
+				path,
+			},
+			enableClose: true,
+		});
+	};
+
+	/**
 	 * Remove a sidebar node and close if last one
 	 * @param node - node to remove
 	 */
@@ -900,10 +1071,12 @@ export class RoomStore {
 	 * Helpers
 	 */
 	/**
-	 * Set the isLoading boolean
+	 * Set the isLoading boolean. Public so callers that don't go through
+	 * streamJob.run() — e.g. the agent-run poll subscription — can still
+	 * participate in the room's loading state.
 	 * @param isLoading - is it loading
 	 */
-	private setIsLoading = (isLoading: boolean): void => {
+	setIsLoading = (isLoading: boolean): void => {
 		this._store.isLoading = isLoading;
 	};
 
@@ -1078,7 +1251,7 @@ export class RoomStore {
 		messageId: string,
 		toolId: string,
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled" | "paused" = "success",
+		toolStatus: "success" | "error" | "cancelled" = "success",
 		executedParameters: Record<string, unknown>,
 	): Promise<void> => {
 		try {
@@ -1112,11 +1285,18 @@ export class RoomStore {
 	/**
 	 * Run a pixel
 	 * @param pixel - pixel
+	 * @param showLoading - toggle the room's loading state around the run
+	 * @param setErrorOnFail - surface a thrown failure on the room's error state
+	 * @param throwOnError - when true (default), throw if any statement returns
+	 *   an error. Pass false for multi-statement pixels where the caller wants to
+	 *   inspect per-statement outcomes (each `pixelReturn` entry's `operationType`
+	 *   contains "ERROR" on failure) rather than get an all-or-nothing throw.
 	 */
 	runRoomPixel = async <O extends [] | unknown[]>(
 		pixel: string,
 		showLoading: boolean = true,
 		setErrorOnFail: boolean = true,
+		throwOnError: boolean = true,
 	): Promise<{
 		errors: string[];
 		insightId: string;
@@ -1138,7 +1318,7 @@ export class RoomStore {
 			// get the response
 			const response = await runPixel<O>(pixel, this._store.insightId);
 
-			if (response.errors.length > 0) {
+			if (throwOnError && response.errors.length > 0) {
 				throw new Error(response.errors.join(""));
 			}
 
@@ -1242,90 +1422,41 @@ export class RoomStore {
 	};
 
 	/**
-	 * Run a pixel with streaming support for LLM responses
-	 * @param pixel - pixel to execute
-	 * @param onPoll - callback for each streaming chunk
+	 * Run a pixel with streaming support for LLM responses. Pass `onCancel` in
+	 * the handlers to make the job cancellable via {@link cancelActiveJob}
+	 * (AskPlayground); omit it for fire-to-completion jobs (tool execution,
+	 * agent harness).
 	 */
-	runRoomPixelStreaming = async <O extends unknown[] | []>(
+	runRoomPixelStreaming = <O extends unknown[] | []>(
 		pixel: string,
-		onPoll: (
-			message: Awaited<
-				ReturnType<typeof getPixelJobStreaming>
-			>["message"][number],
-		) => void,
-		showLoading: boolean = true,
-		setErrorOnFail: boolean = true,
-	) => {
-		try {
-			if (showLoading) {
-				this.setIsLoading(true);
-			}
+		handlers: StreamHandlers<O>,
+		options?: StreamOptions,
+	): Promise<void> => this.streamJob.run<O>(pixel, handlers, options);
 
-			// Start async execution to get job ID
-			const { jobId } = await runPixelAsync(pixel, this._store.insightId);
+	/**
+	 * Stop whatever the current turn is doing. A live cancellable stream (e.g.
+	 * AskPlayground / the post-tool response) takes priority; otherwise, if the
+	 * turn is parked on unfinished tool calls, hard-stop the tool phase. No-op
+	 * when nothing is cancellable, so it's safe to wire to an always-visible
+	 * button.
+	 */
+	cancelActiveJob = async (): Promise<void> => {
+		if (this.streamJob.canCancel) {
+			await this.streamJob.stop();
+			return;
+		}
 
-			if (!jobId) {
-				throw new Error("No job ID returned from pixel execution");
-			}
-
-			// Poll for streaming content
-			let isPolling = true;
-
-			const pollingInterval = 500; // 500ms between streaming polls
-
-			while (isPolling) {
-				try {
-					const response = await getPixelJobStreaming(jobId);
-
-					if (response && response.message.length > 0) {
-						for (const message of response.message) {
-							onPoll(message);
-						}
-					}
-
-					// Check status for completion
-					if (
-						response.status === "ProgressComplete" ||
-						response.status === "Complete"
-					) {
-						isPolling = false;
-					} else if (response.status === "Error") {
-						throw new Error("Streaming job encountered an error");
-					}
-
-					if (isPolling) {
-						await new Promise((resolve) =>
-							setTimeout(resolve, pollingInterval),
-						);
-					}
-				} catch (error) {
-					isPolling = false;
-					throw error;
-				}
-			}
-
-			// get the final result
-			const result = await getPixelAsyncResult<O>(jobId);
-
-			if (result.errors.length > 0) {
-				throw new Error(result.errors.join(""));
-			}
-
-			return result;
-		} catch (e) {
-			console.error(e);
-
-			if (setErrorOnFail) {
-				// show the error
+		const message = this.latestResponseMessage;
+		if (message?.hasUnfinishedTools && !this.cancellingTools) {
+			runInAction(() => {
+				this.cancellingTools = true;
+			});
+			try {
+				await message.cancelPendingTools();
+			} finally {
 				runInAction(() => {
-					this._store.error = e as Error;
+					this.cancellingTools = false;
 				});
-			}
-
-			throw e;
-		} finally {
-			if (showLoading) {
-				this.setIsLoading(false);
 			}
 		}
 	};
@@ -1334,16 +1465,10 @@ export class RoomStore {
 	 * Compact the messages in the room
 	 */
 	compactMessages = async () => {
-		// Find the last response message in the chain
-		let cur: AbstractMessageStore | null = this.tail;
-		while (cur !== null) {
-			if (cur instanceof ResponseMessageStore) break;
-			cur = cur.parent;
-		}
+		// Compact into the last real response in the chain.
+		const curResponse = this.latestResponseMessage;
 
-		if (!cur) throw new Error();
-
-		const curResponse = cur as ResponseMessageStore;
+		if (!curResponse) throw new Error("No response message to compact");
 
 		if (curResponse.hasTools) {
 			throw new Error(
@@ -1373,7 +1498,7 @@ export class RoomStore {
 			const response = await this.runRoomPixel<
 				(SummaryResponse | ToolPruneResponse)[][]
 			>(
-				`CompactRoomMessages(roomId=${JSON.stringify(this.roomId)}, parentMessageId=${JSON.stringify(cur.id)});`,
+				`CompactRoomMessages(roomId=${JSON.stringify(this.roomId)}, parentMessageId=${JSON.stringify(curResponse.id)});`,
 				true,
 			);
 

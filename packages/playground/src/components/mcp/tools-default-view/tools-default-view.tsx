@@ -14,9 +14,11 @@ import {
 	DialogTitle,
 	Label,
 	Textarea,
+	toast,
 } from "@semoss/ui/next";
 import { ResponseMessageStore, type RoomStore, type ToolStore } from "@/stores";
-import { getToolEngineId } from "@/utility/mcp-utils";
+import { decideAgentToolAction } from "@/stores/message/agent-harness";
+import { getToolEngineId, isAskExecutionMode } from "@/utility/mcp-utils";
 import { ToolField } from "./tool-field";
 
 export interface ToolsDefaultViewProps {
@@ -129,9 +131,7 @@ export const ToolsDefaultView = observer(
 		// Separate required and optional fields
 		const showResponse = tool.status === "SUCCESS";
 		const toolFailed =
-			tool.status === "ERROR" ||
-			tool.status === "CANCELLED" ||
-			tool.status === "PAUSED";
+			tool.status === "ERROR" || tool.status === "CANCELLED";
 		const requiredFields = Object.entries(properties).filter(
 			([fieldName]) => required.includes(fieldName),
 		);
@@ -141,7 +141,7 @@ export const ToolsDefaultView = observer(
 		const title = tool?.displayName || "";
 		const description = tool?.json.description || "";
 		const isAutoExecuting =
-			tool?.json._meta.SMSS_MCP_EXECUTION !== "ask" &&
+			!isAskExecutionMode(tool?.json._meta?.SMSS_MCP_EXECUTION) &&
 			tool.status !== "SUCCESS";
 
 		// The call is over (succeeded or not), so the form is no longer actionable
@@ -238,6 +238,21 @@ export const ToolsDefaultView = observer(
 			}
 
 			setIsSubmitting(true);
+
+			// An agent-run tool paused on a decision must resume through the
+			// AGENT_RUN_ACTION row, not the legacy room-write paths below —
+			// see decideAgentToolAction.
+			if (tool.pendingAction) {
+				try {
+					await decideAgentToolAction(tool, "submit", data);
+				} catch (error) {
+					toast.error((error as Error).toString());
+				} finally {
+					setIsSubmitting(false);
+				}
+				return;
+			}
+
 			let success = false;
 			let output = "";
 			try {
@@ -447,9 +462,7 @@ export const ToolsDefaultView = observer(
 									`status.${
 										tool.status === "ERROR"
 											? "failed"
-											: tool.status === "CANCELLED"
-												? "cancelled"
-												: "paused"
+											: "cancelled"
 									}`,
 								)}
 							</Label>

@@ -5,8 +5,9 @@
 		"completed": "पूर्ण",
 		"ready": "तैयार",
 		"autoExecute": "स्वतः निष्पादित हो रहा है",
-		"paused": "रोका गया",
-		"queued": "स्वतः निष्पादन की प्रतीक्षा में"
+		"queued": "स्वतः निष्पादन की प्रतीक्षा में",
+		"running": "चल रहा है",
+		"waitingForInput": "इनपुट की प्रतीक्षा में"
 	},
 	"actions": {
 		"cancel": "रद्द करें",
@@ -19,10 +20,11 @@
 	"group": {
 		"labelClosed": "{{toolName}} + {{count}} और",
 		"labelOpen": "निष्पादित टूल ({{count}})",
+		"labelStreaming_one": "{{count}} टूल लोड हो रहा है…",
+		"labelStreaming_other": "{{count}} टूल लोड हो रहे हैं…",
 		"summaryCompleted": "{{count}} पूर्ण",
 		"summaryError": "{{count}} विफल",
-		"summaryCancelled": "{{count}} रद्द",
-		"summaryPaused": "{{count}} रोका गया"
+		"summaryCancelled": "{{count}} रद्द"
 	},
 	"form": {
 		"result": "परिणाम",
@@ -42,6 +44,11 @@
 		"details": "Playwright स्क्रिप्ट विवरण",
 		"projectId": "प्रोजेक्ट ID",
 		"recordedFile": "रिकॉर्ड किया गया फ़ाइल"
+	},
+	"subagent": {
+		"title": "सब-एजेंट",
+		"notFound": "सब-एजेंट नहीं मिला",
+		"noResult": "अभी तक कोई प्रतिक्रिया नहीं"
 	},
 	"extension": {
 		"required": "ब्राउज़र एक्सटेंशन आवश्यक है",

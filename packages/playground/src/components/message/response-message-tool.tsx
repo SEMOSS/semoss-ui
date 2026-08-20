@@ -1,10 +1,11 @@
-import { CheckIcon, CirclePause, HammerIcon, XCircleIcon } from "lucide-react";
+import { CheckIcon, HammerIcon, XCircleIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Button, cn, Spinner, useIsMobile } from "@semoss/ui/next";
 import { useLoadingMessage } from "@/hooks";
 import type { ResponseMessageStore, ToolStore } from "@/stores";
+import { isAskExecutionMode } from "@/utility/mcp-utils";
 import { RoomInlineTool } from "../room";
 import { ResponseMessageToolMenu } from "./response-message-tool-menu";
 import { ResponseMessageToolStreaming } from "./response-message-tool-streaming";
@@ -16,8 +17,7 @@ const getToolState = (
 ) => {
 	switch (tool.status) {
 		case "ERROR":
-		case "CANCELLED":
-		case "PAUSED": {
+		case "CANCELLED": {
 			const config = {
 				ERROR: {
 					icon: <XCircleIcon className="size-5" />,
@@ -30,13 +30,6 @@ const getToolState = (
 					icon: <XCircleIcon className="size-5" />,
 					badge: {
 						text: t("status.cancelled"),
-						variant: "muted" as const,
-					},
-				},
-				PAUSED: {
-					icon: <CirclePause className="size-5" />,
-					badge: {
-						text: t("status.paused"),
 						variant: "muted" as const,
 					},
 				},
@@ -77,7 +70,7 @@ const getToolState = (
 				showCancelInMenu: false,
 			};
 		default:
-			if (tool.json._meta.SMSS_MCP_EXECUTION === "ask") {
+			if (isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION)) {
 				return {
 					icon: <HammerIcon className="size-5" />,
 					iconClassName: "bg-primary/10 text-primary",
@@ -124,31 +117,31 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 
 		const { loadingMessage: toolExecutionMessage } = useLoadingMessage(
 			tool.status === "LOADING",
-			tool.json._meta.SMSS_MCP_UI?.loadingMessage
+			tool.json._meta?.SMSS_MCP_UI?.loadingMessage
 				? [tool.json._meta.SMSS_MCP_UI.loadingMessage]
 				: [],
 		);
 
 		useEffect(() => {
 			if (
-				!tool.argumentsStreaming &&
+				tool.isResolved &&
 				tool.display !== "hidden" &&
-				tool.json._meta.SMSS_MCP_UI?.autoOpen === true &&
+				tool.json._meta?.SMSS_MCP_UI?.autoOpen === true &&
 				!tool.isOpen
 			) {
 				tool.openTool(isMobile ? "inline" : undefined);
 			}
 		}, [
 			tool,
-			tool.argumentsStreaming,
-			tool.json._meta.SMSS_MCP_UI?.autoOpen,
+			tool.isResolved,
+			tool.json._meta?.SMSS_MCP_UI?.autoOpen,
 			isMobile,
 		]);
 
-		// While the tool call is still streaming in, we don't have title/meta/args
-		// yet — delegate to a dedicated placeholder pill that shows a spinner and
+		// Until the server-resolved part arrives we only have the raw wire name —
+		// delegate to a dedicated placeholder pill that shows a spinner and
 		// optionally expands to preview the accumulating JSON.
-		if (tool.argumentsStreaming) {
+		if (!tool.isResolved) {
 			return <ResponseMessageToolStreaming tool={tool} />;
 		}
 

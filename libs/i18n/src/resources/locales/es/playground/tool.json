@@ -5,8 +5,9 @@
 		"completed": "Completado",
 		"ready": "Listo",
 		"autoExecute": "Ejecutando automáticamente",
-		"paused": "En pausa",
-		"queued": "En cola para ejecutarse automáticamente"
+		"queued": "En cola para ejecutarse automáticamente",
+		"running": "En ejecución",
+		"waitingForInput": "Esperando entrada"
 	},
 	"actions": {
 		"cancel": "Cancelar",
@@ -19,10 +20,11 @@
 	"group": {
 		"labelClosed": "{{toolName}} + {{count}} más",
 		"labelOpen": "Herramientas ejecutadas ({{count}})",
+		"labelStreaming_one": "Cargando {{count}} herramienta…",
+		"labelStreaming_other": "Cargando {{count}} herramientas…",
 		"summaryCompleted": "{{count}} completado",
 		"summaryError": "{{count}} fallido",
-		"summaryCancelled": "{{count}} cancelado",
-		"summaryPaused": "{{count}} en pausa"
+		"summaryCancelled": "{{count}} cancelado"
 	},
 	"form": {
 		"result": "Resultado",
@@ -42,6 +44,11 @@
 		"details": "Detalles del script de Playwright",
 		"projectId": "ID del proyecto",
 		"recordedFile": "Archivo grabado"
+	},
+	"subagent": {
+		"title": "Subagente",
+		"notFound": "Subagente no encontrado",
+		"noResult": "Aún no hay respuesta"
 	},
 	"extension": {
 		"required": "Extensión de navegador requerida",
