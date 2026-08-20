@@ -7,7 +7,9 @@
 		"autoExecute": "Automatisch uitvoeren",
 		"queued": "In wachtrij voor automatische uitvoering",
 		"loadingTool": "Tool laden…",
-		"waitingForArguments": "Wachten op argumenten…"
+		"waitingForArguments": "Wachten op argumenten…",
+		"running": "Bezig",
+		"waitingForInput": "Wachten op invoer"
 	},
 	"actions": {
 		"cancel": "Annuleren",
@@ -44,6 +46,11 @@
 		"details": "Details van Playwright-script",
 		"projectId": "Project-ID",
 		"recordedFile": "Opgenomen bestand"
+	},
+	"subagent": {
+		"title": "Subagent",
+		"notFound": "Subagent niet gevonden",
+		"noResult": "Nog geen antwoord"
 	},
 	"extension": {
 		"required": "Browserextensie vereist",

@@ -2,6 +2,7 @@
 	"help": {
 		"title": "Terminalhulp",
 		"emptyMessage": "Er zijn geen gestructureerde gebruiksvoorbeelden geretourneerd voor {{type}}.",
+		"pendingMessage": "Gebruiksvoorbeelden voor {{type}}-engines zijn nog niet gedocumenteerd.",
 		"rawResponse": "Onbewerkt antwoord",
 		"copy": "Kopiëren",
 		"copied": "Gekopieerd",

@@ -29,11 +29,11 @@ export const NotebookMarkdownCell: React.FC<NotebookMarkdownCellProps> = ({
 	onSourceChange,
 	...chrome
 }) => {
-	const { index } = chrome;
+	const { index, readOnly } = chrome;
 	const [isEditing, setIsEditing] = useState(false);
 	const source = normalizeSource(cell.source);
 
-	const primaryAction = (
+	const primaryAction = readOnly ? undefined : (
 		<Tooltip>
 			<TooltipTrigger asChild>
 				<Button
@@ -71,11 +71,18 @@ export const NotebookMarkdownCell: React.FC<NotebookMarkdownCellProps> = ({
 				/>
 			) : (
 				// biome-ignore lint/a11y/noStaticElementInteractions: double-click enters edit mode
-				<div className="p-4" onDoubleClick={() => setIsEditing(true)}>
+				<div
+					className="p-4"
+					onDoubleClick={() => {
+						if (!readOnly) {
+							setIsEditing(true);
+						}
+					}}
+				>
 					{source.trim() ? (
 						<Markdown>{source}</Markdown>
 					) : (
-						<span className="text-muted-foreground text-sm italic">
+						<span className="text-muted-foreground text-xs italic">
 							Empty markdown cell — double-click to edit.
 						</span>
 					)}
