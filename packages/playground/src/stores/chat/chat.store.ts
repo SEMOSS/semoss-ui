@@ -37,6 +37,9 @@ interface ChatStoreInterface {
 
 		/** The current context window */
 		contextWindow?: number;
+
+		/** All available models fetched from the backend */
+		available: Engine[];
 	};
 
 	/**
@@ -100,6 +103,7 @@ export class ChatStore {
 		models: {
 			selected: null as unknown as Engine,
 			contextWindow: undefined,
+			available: [],
 		},
 		rooms: {},
 		optimisticRooms: {},
@@ -210,35 +214,34 @@ export class ChatStore {
 
 	getUser = async (): Promise<void> => {
 		try {
+			// Send both pixels in a single request.
+			// GetUserMetadata bypasses the cache that GetUserInfo has, so it
+			// always returns the latest saved text-generation-model value.
 			const result = await this._actions.run<
 				[
 					Record<
 						string,
-						{
-							id: string;
-							name: string;
-							lastLogin?: string;
-							meta?: Record<string, unknown>;
-						}
+						{ id: string; name: string; lastLogin?: string }
 					>,
+					{ "text-generation-model"?: string | string[] },
 				]
-			>(`META | GetUserInfo();`);
+			>(`META | GetUserInfo(); META | GetUserMetadata();`);
 
-			if (!result) return;
-
+			// Extract user id, name, lastLogin from GetUserInfo
 			const providerData = Object.values(result.pixelReturn[0].output)[0];
-			if (!providerData) return;
+			if (providerData) {
+				runInAction(() => {
+					this._store.user = {
+						id: providerData.id,
+						name: providerData.name,
+						lastLogin: providerData.lastLogin,
+					};
+				});
+			}
 
-			runInAction(() => {
-				this._store.user = {
-					id: providerData.id,
-					name: providerData.name,
-					lastLogin: providerData.lastLogin,
-				};
-			});
-
-			// extract the profile default text-generation model set via Settings > My Profile
-			const metaValue = providerData.meta?.["text-generation-model"];
+			// Extract profile default model from GetUserMetadata (bypasses cache)
+			const meta = result.pixelReturn[1].output;
+			const metaValue = meta?.["text-generation-model"];
 			const profileDefaultModelId = Array.isArray(metaValue)
 				? (metaValue[0] as string) || ""
 				: typeof metaValue === "string"
@@ -483,6 +486,51 @@ export class ChatStore {
 	};
 
 	/**
+	 * Re-fetch the user's profile default text-generation model from the backend
+	 * and update the selected model if it has changed. Called when the new-room
+	 * page mounts so any change made in the token-usage page (embed) is picked
+	 * up without requiring a logout/login cycle.
+	 */
+	refreshProfileDefaultModel = async (): Promise<void> => {
+		try {
+			// Use GetUserMetadata to bypass the GetUserInfo cache
+			const result = await this._actions.run<
+				[{ "text-generation-model"?: string | string[] }]
+			>(`META | GetUserMetadata();`);
+
+			const meta = result.pixelReturn[0].output;
+			const metaValue = meta?.["text-generation-model"];
+			const newModelId = Array.isArray(metaValue)
+				? (metaValue[0] as string) || ""
+				: typeof metaValue === "string"
+					? metaValue
+					: "";
+
+			// Only update if the default has actually changed
+			if (
+				!newModelId ||
+				newModelId === this._store.profileDefaultModelId
+			) {
+				return;
+			}
+
+			runInAction(() => {
+				this._store.profileDefaultModelId = newModelId;
+			});
+
+			const match = this._store.models.available.find(
+				(m) => m.engine_id === newModelId,
+			);
+
+			if (match) {
+				this.setSelectedModel(match);
+			}
+		} catch (e) {
+			console.error("[ChatStore] refreshProfileDefaultModel failed:", e);
+		}
+	};
+
+	/**
 	 * Set the selected model
 	 */
 	setSelectedModel = (model: Engine): void => {
@@ -654,6 +702,10 @@ export class ChatStore {
 
 		runInAction(() => {
 			const { output } = pixelReturn[0];
+
+			// Cache the full list so setProfileDefaultModel() can resolve an id to an Engine later
+			this._store.models.available = output;
+
 			// profileDefaultModelId is already set by getUser(), which runs before this
 			const profileDefaultModelId = this._store.profileDefaultModelId;
 			let isSelected = false;
