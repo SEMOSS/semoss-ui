@@ -1477,7 +1477,7 @@ export class RoomStore {
 	/**
 	 * Compact the messages in the room
 	 */
-	compactMessages = async () => {
+	compactMessages = async (strategy?: "TOOL_PRUNE" | "SUMMARY" | "AUTO") => {
 		// Compact into the last real response in the chain.
 		const curResponse = this.latestResponseMessage;
 
@@ -1508,10 +1508,14 @@ export class RoomStore {
 		};
 
 		try {
+			const compactionTypesParam =
+				strategy && strategy !== "AUTO"
+					? `, compactionTypes=${JSON.stringify([strategy])}`
+					: "";
 			const response = await this.runRoomPixel<
 				(SummaryResponse | ToolPruneResponse)[][]
 			>(
-				`CompactRoomMessages(roomId=${JSON.stringify(this.roomId)}, parentMessageId=${JSON.stringify(curResponse.id)});`,
+				`CompactRoomMessages(roomId=${JSON.stringify(this.roomId)}, parentMessageId=${JSON.stringify(curResponse.id)}${compactionTypesParam});`,
 				true,
 			);
 
