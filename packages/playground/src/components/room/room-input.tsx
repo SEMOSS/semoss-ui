@@ -937,7 +937,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											{root.theme.featureFlags
 												?.enableModelSelect && (
 												<EngineSelect
-													className="h-8 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
+													className="h-8 w-auto gap-0.5 border-none bg-transparent px-2 py-1 text-xs shadow-none hover:bg-accent dark:hover:bg-accent/50 [&>svg]:hidden"
 													name={
 														model?.engine_display_name ||
 														model?.app_name ||
