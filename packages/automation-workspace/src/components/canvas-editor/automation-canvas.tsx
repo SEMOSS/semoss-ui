@@ -27,7 +27,12 @@ import {
 	X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { runPixel } from "@semoss/sdk";
+import {
+	getPixelAsyncResult,
+	getPixelJobStreaming,
+	runPixel,
+	runPixelAsync,
+} from "@semoss/sdk";
 import {
 	Button,
 	Dialog,
@@ -46,7 +51,6 @@ import type {
 	RunStatus,
 	StepRunStatus,
 } from "../../domain/automation.types";
-import type { AutomationRunData } from "../../domain/automation-display";
 import {
 	formatRelativeTime,
 	formatRunDuration,
@@ -147,9 +151,16 @@ interface AutomationCanvasProps {
 	mcpContext?: AutomationToolContext;
 }
 
-interface TriggerAutomationOutput extends Partial<AutomationRunData> {
-	STATUS?: RunStatus;
-	status?: RunStatus;
+type TriggerAutomationOutput = AutomationRunDetail;
+
+interface AutomationNodeStreamData {
+	kind?: string;
+	NODE_ID?: string;
+	NODE_LABEL?: string;
+	STATUS?: AutomationNodeResult["STATUS"];
+	DURATION_MS?: number;
+	OUTPUT_PREVIEW?: string | null;
+	ERROR_MESSAGE?: string | null;
 }
 
 interface CanvasWorkflowDraft {
@@ -1017,7 +1028,10 @@ export function AutomationCanvas({
 	}, []);
 
 	const applyRunData = useCallback(
-		(runData: AutomationRunData) => {
+		(runData: {
+			STATUS: RunStatus;
+			nodeResults?: AutomationNodeResult[];
+		}) => {
 			const nodeResults = runData.nodeResults ?? [];
 			const resultByNodeId = new Map(
 				nodeResults.map((result) => [result.NODE_ID, result]),
@@ -1033,10 +1047,14 @@ export function AutomationCanvas({
 						? "error"
 						: result.STATUS === "RUNNING"
 							? "running"
-							: "success";
+							: result.STATUS === "SUCCESS"
+								? "success"
+								: "idle";
 				if (result.ERROR_MESSAGE)
 					errors[step.id] = result.ERROR_MESSAGE;
-				durations[step.id] = result.DURATION_MS;
+				if (typeof result.DURATION_MS === "number") {
+					durations[step.id] = result.DURATION_MS;
+				}
 			}
 			setStepStatuses(statuses);
 			setStepErrors(errors);
@@ -1045,6 +1063,65 @@ export function AutomationCanvas({
 			setLatestRunResults(nodeResults);
 		},
 		[steps],
+	);
+
+	const applyNodeProgress = useCallback(
+		(progress: AutomationNodeStreamData) => {
+			const { NODE_ID: nodeId, STATUS: status } = progress;
+			if (!nodeId || !status) return;
+			const stepStatus: StepRunStatus =
+				status === "FAILED"
+					? "error"
+					: status === "RUNNING"
+						? "running"
+						: status === "SUCCESS"
+							? "success"
+							: "idle";
+			setStepStatuses((previous) => ({
+				...previous,
+				[nodeId]: stepStatus,
+			}));
+			const errorMessage = progress.ERROR_MESSAGE;
+			if (errorMessage) {
+				setStepErrors((previous) => ({
+					...previous,
+					[nodeId]: errorMessage,
+				}));
+			}
+			const durationMs = progress.DURATION_MS;
+			if (typeof durationMs === "number") {
+				setStepDurations((previous) => ({
+					...previous,
+					[nodeId]: durationMs,
+				}));
+			}
+			setLatestRunResults((previous) => {
+				const existing = previous.find(
+					(result) => result.NODE_ID === nodeId,
+				);
+				const next: AutomationNodeResult = {
+					NODE_ID: nodeId,
+					NODE_LABEL:
+						progress.NODE_LABEL ?? existing?.NODE_LABEL ?? nodeId,
+					STATUS: status,
+					DURATION_MS: durationMs ?? existing?.DURATION_MS ?? 0,
+					OUTPUT_PREVIEW:
+						progress.OUTPUT_PREVIEW ??
+						existing?.OUTPUT_PREVIEW ??
+						null,
+					ERROR_MESSAGE:
+						progress.ERROR_MESSAGE ??
+						existing?.ERROR_MESSAGE ??
+						null,
+				};
+				return existing
+					? previous.map((result) =>
+							result.NODE_ID === nodeId ? next : result,
+						)
+					: [...previous, next];
+			});
+		},
+		[],
 	);
 
 	const run = useCallback(async () => {
@@ -1071,56 +1148,66 @@ export function AutomationCanvas({
 		setLatestRunStatus("RUNNING");
 		setLatestRunResults([]);
 		try {
-			const response = await runPixel(
-				`TriggerAutomation(project=["${appId}"]);`,
+			const { jobId } = await runPixelAsync(
+				`TriggerAutomation(project=${JSON.stringify([appId])});`,
 			);
-			const output = response.pixelReturn?.[0]
-				?.output as TriggerAutomationOutput | null;
-			const status = output?.STATUS ?? output?.status ?? "SUCCESS";
-			const runId = output?.RUN_ID ?? crypto.randomUUID();
-			const nodeResults =
-				output?.nodeResults ??
-				steps.map(
-					(step): AutomationNodeResult => ({
-						NODE_ID: step.id,
-						NODE_LABEL: step.label,
-						STATUS: status === "FAILED" ? "FAILED" : "SUCCESS",
-						DURATION_MS: 0,
-						OUTPUT_PREVIEW: null,
-						ERROR_MESSAGE:
-							status === "FAILED"
-								? (output?.ERROR_MESSAGE ?? "Automation failed")
-								: null,
-					}),
+			if (!jobId) throw new Error("Automation did not return a job ID.");
+
+			let complete = false;
+			while (!complete) {
+				const stream = await getPixelJobStreaming(jobId);
+				for (const message of stream.message) {
+					const event = message as unknown as {
+						stream_type?: string;
+						data?: AutomationNodeStreamData;
+					};
+					if (
+						event.stream_type === "automation" &&
+						event.data?.kind === "node-status"
+					) {
+						applyNodeProgress(event.data);
+					}
+				}
+
+				if (
+					stream.status === "Complete" ||
+					stream.status === "ProgressComplete"
+				) {
+					complete = true;
+				} else if (stream.status === "Error") {
+					throw new Error("Automation job failed.");
+				} else if (stream.status === "Canceled") {
+					throw new Error("Automation job ended before completion.");
+				} else {
+					await new Promise((resolve) => setTimeout(resolve, 500));
+				}
+			}
+
+			const asyncResult =
+				await getPixelAsyncResult<[TriggerAutomationOutput]>(jobId);
+			if (asyncResult.errors.length > 0) {
+				throw new Error(asyncResult.errors.join(""));
+			}
+			const finalDetail = asyncResult.results[0]?.output;
+			if (!finalDetail?.RUN_ID || !finalDetail.STATUS) {
+				throw new Error(
+					"Automation did not return completed run details.",
 				);
-			const runData: AutomationRunData = {
-				STATUS: status,
-				RUN_ID: runId,
-				nodeResults,
-				ERROR_MESSAGE: output?.ERROR_MESSAGE,
-				summary: output?.summary,
-			};
-			applyRunData(runData);
-			setAiRunSummary(runData.summary ?? null);
-			const completedAt = new Date().toISOString();
-			const summary: AutomationRunSummary = {
-				RUN_ID: runId,
-				PROJECT_ID: appId,
-				STARTED_AT: completedAt,
-				COMPLETED_AT: completedAt,
-				STATUS: status,
-				RESULT_SUMMARY: runData.summary,
-			};
-			setRuns((previous) => [summary, ...previous]);
+			}
+			applyRunData(finalDetail);
+			setAiRunSummary(finalDetail.RESULT_SUMMARY ?? null);
+			setRuns((previous) => [finalDetail, ...previous]);
 			setRunDetails((previous) => ({
 				...previous,
-				[runId]: { ...summary, nodeResults },
+				[finalDetail.RUN_ID]: finalDetail,
 			}));
 			refreshRuns();
-			if (status === "SUCCESS") {
-				toast.success(runData.summary ?? "Automation completed");
+			if (finalDetail.STATUS === "SUCCESS") {
+				toast.success(
+					finalDetail.RESULT_SUMMARY ?? "Automation completed",
+				);
 			} else {
-				toast.error(runData.ERROR_MESSAGE ?? "Automation failed");
+				toast.error(finalDetail.ERROR_MESSAGE ?? "Automation failed");
 			}
 		} catch (error) {
 			const message =
@@ -1131,7 +1218,7 @@ export function AutomationCanvas({
 		} finally {
 			setRunning(false);
 		}
-	}, [appId, applyRunData, refreshRuns, save, steps]);
+	}, [appId, applyNodeProgress, applyRunData, refreshRuns, save, steps]);
 
 	const handleDoneReturnToChat = useCallback(async () => {
 		if (saving) return;
