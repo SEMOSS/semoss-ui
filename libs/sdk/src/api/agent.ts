@@ -24,7 +24,9 @@ export type * from "./agent.types";
  * but "agent" is the term callers should use here.
  * @param params.maxTurns - Cap on model round-trips before the run stops itself.
  * @param params.maxReflections - Cap on self-reflection turns.
- * @param params.images - Image file locations to attach to the command.
+ * @param params.media - Media file locations to attach to the command. Any
+ * file type the model accepts (image, pdf, document, spreadsheet, audio,
+ * video), or base64 image/PDF data URIs.
  * @param params.urls - URLs to attach to the command.
  * @param params.paramValues - Extra run parameters forwarded to the harness.
  * The semoss harness honors `project` (project the run edits; also drives the
@@ -44,7 +46,7 @@ export const runAgent = async (
 		agentId?: string;
 		maxTurns?: number;
 		maxReflections?: number;
-		images?: string[];
+		media?: string[];
 		urls?: string[];
 		paramValues?: Record<string, unknown>;
 	},
@@ -58,7 +60,7 @@ export const runAgent = async (
 		agentId,
 		maxTurns,
 		maxReflections,
-		images,
+		media,
 		urls,
 		paramValues,
 	} = params;
@@ -75,7 +77,7 @@ export const runAgent = async (
 		maxReflections !== undefined
 			? `maxReflections=${JSON.stringify(maxReflections)}`
 			: null,
-		images && images.length > 0 ? `image=${JSON.stringify(images)}` : null,
+		media && media.length > 0 ? `media=${JSON.stringify(media)}` : null,
 		urls && urls.length > 0 ? `url=${JSON.stringify(urls)}` : null,
 		paramValues && Object.keys(paramValues).length > 0
 			? `paramValues=[${JSON.stringify(paramValues)}]`

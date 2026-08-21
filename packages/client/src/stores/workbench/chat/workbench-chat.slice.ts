@@ -895,7 +895,7 @@ export const createWorkbenchChatSlice = (
 								agentId: WORKBENCH_AGENT_ID,
 								maxTurns: get().chat.maxTurns,
 								maxReflections: 0,
-								images: attachments
+								media: attachments
 									.map(
 										(attachment) => attachment.fileLocation,
 									)
