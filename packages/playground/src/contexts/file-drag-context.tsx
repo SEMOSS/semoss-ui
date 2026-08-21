@@ -3,11 +3,14 @@ import {
 	createContext,
 	useCallback,
 	useContext,
+	useEffect,
 	useRef,
 	useState,
 } from "react";
 
 interface FileDragContextType {
+	/** True while a file is being dragged over the provider's territory. */
+	isDragging: boolean;
 	files: File[];
 	addFiles: (files: File[]) => void;
 	removeFile: (index: number) => void;
@@ -21,8 +24,10 @@ export const FileDragContext = createContext<FileDragContextType | undefined>(
 );
 
 export const FileDragProvider = ({ children }: { children: ReactNode }) => {
+	const [isDragging, setIsDragging] = useState(false);
 	const [files, setFiles] = useState<File[]>([]);
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const abandonTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const addFiles = useCallback(
 		(newFiles: File[]) => setFiles((prev) => [...prev, ...newFiles]),
@@ -36,9 +41,22 @@ export const FileDragProvider = ({ children }: { children: ReactNode }) => {
 	const clearFiles = useCallback(() => setFiles([]), []);
 	const openFilePicker = useCallback(() => fileInputRef.current?.click(), []);
 
+	useEffect(() => {
+		return () => {
+			if (abandonTimerRef.current) clearTimeout(abandonTimerRef.current);
+		};
+	}, []);
+
 	return (
 		<FileDragContext.Provider
-			value={{ files, addFiles, removeFile, clearFiles, openFilePicker }}
+			value={{
+				isDragging,
+				files,
+				addFiles,
+				removeFile,
+				clearFiles,
+				openFilePicker,
+			}}
 		>
 			<div
 				role="none"
@@ -46,10 +64,24 @@ export const FileDragProvider = ({ children }: { children: ReactNode }) => {
 				onDragOver={(e) => {
 					if (!e.dataTransfer.types.includes("Files")) return;
 					e.preventDefault();
+					setIsDragging(true);
+
+					// dragleave doesn't reliably fire (e.g. the pointer leaves the
+					// window entirely), so treat the drag as abandoned if no new
+					// dragover arrives within this window.
+					if (abandonTimerRef.current)
+						clearTimeout(abandonTimerRef.current);
+					abandonTimerRef.current = setTimeout(
+						() => setIsDragging(false),
+						300,
+					);
 				}}
 				onDrop={(e) => {
 					if (!e.dataTransfer.types.includes("Files")) return;
 					e.preventDefault();
+					if (abandonTimerRef.current)
+						clearTimeout(abandonTimerRef.current);
+					setIsDragging(false);
 					const dropped = Array.from(e.dataTransfer.files);
 					if (dropped.length > 0) addFiles(dropped);
 				}}

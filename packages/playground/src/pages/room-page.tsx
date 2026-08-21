@@ -158,7 +158,7 @@ export const RoomPage = observer(() => {
 					direction="horizontal"
 					className="w-full flex-1 overflow-hidden"
 				>
-					<ResizablePanel className="h-full w-full flex-1 overflow-hidden p-2">
+					<ResizablePanel className="h-full w-full flex-1 overflow-hidden">
 						<FileDragProvider>
 							<RoomContent room={room} />
 						</FileDragProvider>

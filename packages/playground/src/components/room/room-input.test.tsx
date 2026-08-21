@@ -39,6 +39,7 @@ vi.mock("@/contexts", async (importOriginal) => {
 	return {
 		...actual,
 		useFileDrag: () => ({
+			isDragging: false,
 			files: [],
 			addFiles: vi.fn(),
 			removeFile: vi.fn(),
