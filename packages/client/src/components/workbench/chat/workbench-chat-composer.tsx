@@ -19,6 +19,7 @@ import {
 import { useWorkbench } from "@/hooks/use-workbench";
 import type { SlashSuggestion } from "@/stores/workbench";
 import { getSlashSuggestions } from "@/stores/workbench";
+import { ensureBrowserNotificationPermission } from "@/utility";
 import { WorkbenchChatUsage } from "./workbench-chat-usage";
 
 const MAX_ATTACHMENTS = 5;
@@ -262,6 +263,11 @@ export const WorkbenchChatComposer = () => {
 
 	const handleSend = async () => {
 		if (isSendDisabled || isComposerDisabled) return;
+
+		// Prime notification permission from this gesture — Safari rejects the
+		// request without one. Fire-and-forget so it never delays the send;
+		// repeat calls are deduped once permission has been decided.
+		void ensureBrowserNotificationPermission();
 
 		const submittedDraft = draft;
 		const submittedFiles = files;

@@ -1,5 +1,10 @@
 import { createStore, type StoreApi } from "zustand";
-import { createWorkbenchChatSlice, type WorkbenchChatSliceState } from "./chat";
+import {
+	createWorkbenchChatNotificationSlice,
+	createWorkbenchChatSlice,
+	type WorkbenchChatNotificationSliceState,
+	type WorkbenchChatSliceState,
+} from "./chat";
 import {
 	createWorkbenchCommandSlice,
 	createWorkbenchLayoutSlice,
@@ -15,7 +20,8 @@ export interface WorkbenchState
 	extends WorkbenchLayoutSliceState,
 		WorkbenchLoadingSliceState,
 		WorkbenchCommandSliceState,
-		WorkbenchChatSliceState {}
+		WorkbenchChatSliceState,
+		WorkbenchChatNotificationSliceState {}
 
 /**
  * Creates an isolated vanilla Zustand store for one workbench ID, optionally merging in one
@@ -25,10 +31,13 @@ export interface WorkbenchState
  * @name createWorkbenchStore
  * @param id - Unique workbench ID used to isolate the cache.
  * @param createDomainSlice - Optional namespaced domain slice merged into the same store.
- * @return Scoped workbench store composed from layout, loading, command, and optional extra slices.
+ * @return Scoped workbench store composed from layout, loading, command, chat,
+ * chat-notification, and optional extra slices.
  */
 export const createWorkbenchStore = <
-	TExtra extends object = Record<string, never>,
+	// Record<never, never> is `{}`; Record<string, never> would add an index
+	// signature that collapses Partial<WorkbenchState & TExtra> to never.
+	TExtra extends object = Record<never, never>,
 >(
 	id: string,
 	createDomainSlice?: WorkbenchSlice<TExtra, WorkbenchState & TExtra>,
@@ -57,6 +66,14 @@ export const createWorkbenchStore = <
 		...(
 			createWorkbenchChatSlice(id) as WorkbenchSlice<
 				WorkbenchChatSliceState,
+				WorkbenchState & TExtra
+			>
+		)(...args),
+		// Subscribes to this store, so it is composed after the chat slice it
+		// watches.
+		...(
+			createWorkbenchChatNotificationSlice() as WorkbenchSlice<
+				WorkbenchChatNotificationSliceState,
 				WorkbenchState & TExtra
 			>
 		)(...args),
