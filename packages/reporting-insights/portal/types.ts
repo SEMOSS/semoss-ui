@@ -81,8 +81,14 @@ export interface VisualizationConfig {
 	tooltipAggregation?: string;
 	/** Multi-line: the column whose unique values become separate lines */
 	categoryKey?: string;
+	/** Treemap: the column whose unique values become the parent groups (series) */
+	seriesKey?: string;
+	/** Half-donut: optional target/goal column (single aggregated value shown as a wedge marker) */
+	targetKey?: string;
 	/** Stacked bar: the column whose unique values become the stacked series (facet). */
 	facetKey?: string;
+	/** Pie: column whose aggregated value drives heat-gradient slice coloring */
+	heatKey?: string;
 	/** Sunburst: ordered hierarchy dimension columns (innermost first) */
 	sunburstLevels?: string[];
 	/** Puck: ordered group dimension columns (outermost first) */

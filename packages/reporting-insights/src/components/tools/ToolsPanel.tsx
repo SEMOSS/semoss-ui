@@ -13,8 +13,10 @@ import {
 	buildDefaultYAxisTitle,
 } from "@/components/visualizations/shared/chartShared";
 import type {
+	AxisConfig,
 	ColorPalette as ColorPaletteType,
-	ColorRule,
+	TreemapStyling,
+	TreemapTextConfig,
 	VisualizationStyling,
 	VisualizationType,
 } from "@/types/dashboard";
@@ -37,6 +39,7 @@ import { ColorByValue } from "./shared/ColorByValue";
 import { ColorPalette, type ColorPalettePatch } from "./shared/ColorPalette";
 import { FilterVisualization } from "./shared/FilterVisualization";
 import { FormatDataValues } from "./shared/FormatDataValues";
+import { ResetButton } from "./shared/ResetButton";
 import { ShowLabelsToggle } from "./shared/ShowLabelsToggle";
 import { ShowLegendToggle } from "./shared/ShowLegendToggle";
 import { ShowTooltipToggle } from "./shared/ShowTooltipToggle";
@@ -64,6 +67,7 @@ import { RowsPerPage } from "./table/RowsPerPage";
 import { WrapText } from "./table/WrapText";
 import { CloudShapeControl } from "./wordcloud/CloudShapeControl";
 import { RotationControl } from "./wordcloud/RotationControl";
+import { MapLayerControl } from "./worldmap/MapLayerControl";
 import { MarkerSizeControl } from "./worldmap/MarkerSizeControl";
 
 function collectAndSort(nodes: ReactNode[]): ReactNode {
@@ -191,8 +195,8 @@ export function ToolsPanel({
 		return result;
 	}, [rows, xKey, yKeys, columnAggregations, columnValues]);
 
-	// Combo chart: compute resolved column keys, human-readable labels, and aggregated
-	// value suggestions for ColorByValue.
+	// Combo chart: compute resolved column keys, human-readable labels, and aggregated value
+	// suggestions for ColorByValue — supports same column in both zones with different aggregations.
 	const comboColorColumns = useMemo(() => {
 		if (visualizationType !== "combo") return null;
 		const barDisplayKeys = styling.combo?.barKeys ?? [];
@@ -235,12 +239,8 @@ export function ToolsPanel({
 				? rows.map((row) => {
 						const out = { ...row } as Record<string, unknown>;
 						for (const k of sharedCols) {
-							out[`${k}__combo_bar`] = (
-								row as Record<string, unknown>
-							)[k];
-							out[`${k}__combo_line`] = (
-								row as Record<string, unknown>
-							)[k];
+							out[`${k}__combo_bar`] = (row as any)[k];
+							out[`${k}__combo_line`] = (row as any)[k];
 						}
 						return out;
 					})
@@ -250,7 +250,7 @@ export function ToolsPanel({
 		if (processedRows.length > 0 && xKey && cols.length > 0) {
 			const chartData = aggregateChartData(processedRows, xKey, cols, {
 				columnAggregations: aggMap,
-			} as never);
+			} as any);
 			for (const rk of cols) {
 				if (aggMap[rk]) {
 					values[rk] = [
@@ -266,18 +266,19 @@ export function ToolsPanel({
 			}
 		}
 
+		// "Select Column of Values": all raw columns + aggregated series, deduped.
+		// Non-shared resolved keys equal the raw column name → already in columns, just gets labeled.
+		// Shared resolved keys ("rev__combo_bar") are distinct from raw "rev" → appear as extra entries.
 		const valueColumnList = [...new Set([...columns, ...cols])];
+
+		// Merge raw distinct values and aggregated value suggestions for the datalist
 		const mergedValues: Record<string, string[]> = { ...values };
 		for (const col of columns) {
 			if (!mergedValues[col]) {
 				const rawVals = [
 					...new Set(
 						rows
-							.map((r) =>
-								String(
-									(r as Record<string, unknown>)[col] ?? "",
-								),
-							)
+							.map((r) => String((r as any)[col] ?? ""))
 							.filter(Boolean),
 					),
 				].sort();
@@ -337,6 +338,15 @@ export function ToolsPanel({
 	) => {
 		updateStyling({ heatmap: { ...styling.heatmap, ...updates } });
 	};
+
+	const updateHeatmapXAxis = (updates: Partial<AxisConfig>) =>
+		updateHeatmapStyling({
+			xAxisConfig: { ...styling.heatmap?.xAxisConfig, ...updates },
+		});
+	const updateHeatmapYAxis = (updates: Partial<AxisConfig>) =>
+		updateHeatmapStyling({
+			yAxisConfig: { ...styling.heatmap?.yAxisConfig, ...updates },
+		});
 
 	const updateWorldmapStyling = (
 		updates: Partial<NonNullable<VisualizationStyling["worldmap"]>>,
@@ -417,6 +427,12 @@ export function ToolsPanel({
 		updateStyling({ polarbar: { ...styling.polarbar, ...updates } });
 	};
 
+	const updateRadarStyling = (
+		updates: Partial<NonNullable<VisualizationStyling["radar"]>>,
+	) => {
+		updateStyling({ radar: { ...styling.radar, ...updates } });
+	};
+
 	const updateClusterStyling = (
 		updates: Partial<NonNullable<VisualizationStyling["cluster"]>>,
 	) => {
@@ -428,6 +444,18 @@ export function ToolsPanel({
 	) => {
 		updateStyling({ multiline: { ...styling.multiline, ...updates } });
 	};
+
+	const updateTreemapStyling = (updates: Partial<TreemapStyling>) => {
+		updateStyling({ treemap: { ...styling.treemap, ...updates } });
+	};
+	const updateTreemapHeaderLabel = (u: Partial<TreemapTextConfig>) =>
+		updateTreemapStyling({
+			headerLabel: { ...styling.treemap?.headerLabel, ...u },
+		});
+	const updateTreemapTileLabel = (u: Partial<TreemapTextConfig>) =>
+		updateTreemapStyling({
+			tileLabel: { ...styling.treemap?.tileLabel, ...u },
+		});
 
 	const updateMultilineXAxis = (
 		updates: Partial<
@@ -817,99 +845,233 @@ export function ToolsPanel({
 	// Heatmap-specific tools
 	const heatmapTools = (
 		<>
-			<ToolAccordion title="Color Scale">
-				<div className="space-y-3">
-					<div>
-						<label className="mb-1.5 block font-semibold text-stone-600 text-xs">
-							Low Value Color
-						</label>
-						<div className="flex items-center gap-2">
-							<input
-								type="color"
-								value={styling.heatmap?.minColor ?? "#dbeafe"}
-								onChange={(e) =>
-									updateHeatmapStyling({
-										minColor: e.target.value,
-									})
-								}
-								className="h-9 w-9 cursor-pointer rounded-lg border border-stone-200 bg-white p-0.5"
-							/>
-							<span className="font-mono text-stone-500 text-xs">
-								{styling.heatmap?.minColor ?? "#dbeafe"}
-							</span>
-							<button
-								onClick={() =>
-									updateHeatmapStyling({
-										minColor: undefined,
-									})
-								}
-								className="ml-auto text-[10px] text-stone-400 underline hover:text-stone-600"
-							>
-								Reset
-							</button>
-						</div>
+			<ToolAccordion title="Bucket">
+				<div className="space-y-2">
+					<div className="flex items-center justify-between">
+						<span className="text-stone-600 text-xs">
+							Top categories
+						</span>
+						<span className="font-semibold text-stone-700 text-xs">
+							{styling.heatmap?.bucket ?? "All"}
+						</span>
 					</div>
-					<div>
-						<label className="mb-1.5 block font-semibold text-stone-600 text-xs">
-							High Value Color
-						</label>
-						<div className="flex items-center gap-2">
-							<input
-								type="color"
-								value={styling.heatmap?.maxColor ?? "#1d4ed8"}
-								onChange={(e) =>
-									updateHeatmapStyling({
-										maxColor: e.target.value,
-									})
-								}
-								className="h-9 w-9 cursor-pointer rounded-lg border border-stone-200 bg-white p-0.5"
-							/>
-							<span className="font-mono text-stone-500 text-xs">
-								{styling.heatmap?.maxColor ?? "#1d4ed8"}
-							</span>
-							<button
-								onClick={() =>
-									updateHeatmapStyling({
-										maxColor: undefined,
-									})
-								}
-								className="ml-auto text-[10px] text-stone-400 underline hover:text-stone-600"
-							>
-								Reset
-							</button>
-						</div>
-					</div>
+					<input
+						type="range"
+						min={1}
+						max={20}
+						value={styling.heatmap?.bucket ?? 20}
+						onChange={(e) =>
+							updateHeatmapStyling({
+								bucket:
+									Number(e.target.value) === 20 &&
+									!styling.heatmap?.bucket
+										? undefined
+										: Number(e.target.value),
+							})
+						}
+						className="w-full accent-indigo-500"
+					/>
+					<p className="text-[10px] text-stone-400">
+						Limits the X axis to the top-N categories by value sum.
+					</p>
+					{styling.heatmap?.bucket && (
+						<button
+							type="button"
+							onClick={() =>
+								updateHeatmapStyling({ bucket: undefined })
+							}
+							className="text-[10px] text-stone-400 underline hover:text-stone-600"
+						>
+							Show all
+						</button>
+					)}
 				</div>
 			</ToolAccordion>
 
-			<ToolAccordion title="Show Values in Cells">
-				<div className="flex items-center justify-between">
-					<span className="text-stone-600 text-xs">
-						Display value labels
-					</span>
-					<button
-						onClick={() =>
-							updateHeatmapStyling({
-								showValues: !(
-									styling.heatmap?.showValues ?? false
-								),
-							})
-						}
-						className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-							styling.heatmap?.showValues
-								? "bg-indigo-600"
-								: "bg-stone-200"
-						}`}
-					>
-						<span
-							className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-								styling.heatmap?.showValues
-									? "translate-x-4"
-									: "translate-x-0.5"
-							}`}
-						/>
-					</button>
+			<ToolAccordion title="Color Palette">
+				<ColorPalette
+					value={styling.colorPalette}
+					customPalettes={customColorPalettes}
+					onChange={handleColorPalettePatch}
+				/>
+			</ToolAccordion>
+
+			<ToolAccordion title="Expand / Fit">
+				<div className="space-y-2">
+					{(
+						[
+							[
+								"expand",
+								"Expand",
+								"Expand cells to fill the full panel",
+							],
+							[
+								"fitHorizontal",
+								"Fit Horizontal",
+								"Compress cell width so all X labels fit on screen",
+							],
+							[
+								"fitVertical",
+								"Fit Vertical",
+								"Compress cell height so all Y labels fit on screen",
+							],
+						] as const
+					).map(([key, label, desc]) => (
+						<label
+							key={key}
+							className="flex cursor-pointer items-start gap-2"
+						>
+							<input
+								type="checkbox"
+								checked={
+									key === "expand"
+										? styling.heatmap?.expand !== false
+										: (styling.heatmap?.[key] ?? false)
+								}
+								onChange={(e) =>
+									updateHeatmapStyling({
+										[key]: e.target.checked,
+									})
+								}
+								className="mt-0.5 h-4 w-4 rounded border-stone-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500/20"
+							/>
+							<span>
+								<span className="font-medium text-stone-700 text-xs">
+									{label}
+								</span>
+								<span className="block text-[10px] text-stone-400">
+									{desc}
+								</span>
+							</span>
+						</label>
+					))}
 				</div>
+			</ToolAccordion>
+
+			<ToolAccordion title="Heat Range">
+				<div className="space-y-3">
+					<label className="flex cursor-pointer items-center gap-2">
+						<input
+							type="checkbox"
+							checked={styling.heatmap?.heatMinEnabled ?? false}
+							onChange={(e) =>
+								updateHeatmapStyling({
+									heatMinEnabled: e.target.checked,
+								})
+							}
+							className="h-4 w-4 rounded border-stone-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500/20"
+						/>
+						<span className="text-stone-600 text-xs">
+							Custom heat minimum
+						</span>
+					</label>
+					{styling.heatmap?.heatMinEnabled && (
+						<input
+							type="number"
+							value={styling.heatmap?.heatMin ?? ""}
+							onChange={(e) =>
+								updateHeatmapStyling({
+									heatMin:
+										e.target.value === ""
+											? undefined
+											: Number(e.target.value),
+								})
+							}
+							placeholder="Min value"
+							className="w-full rounded border border-stone-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
+						/>
+					)}
+					<label className="flex cursor-pointer items-center gap-2">
+						<input
+							type="checkbox"
+							checked={styling.heatmap?.heatMaxEnabled ?? false}
+							onChange={(e) =>
+								updateHeatmapStyling({
+									heatMaxEnabled: e.target.checked,
+								})
+							}
+							className="h-4 w-4 rounded border-stone-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500/20"
+						/>
+						<span className="text-stone-600 text-xs">
+							Custom heat maximum
+						</span>
+					</label>
+					{styling.heatmap?.heatMaxEnabled && (
+						<input
+							type="number"
+							value={styling.heatmap?.heatMax ?? ""}
+							onChange={(e) =>
+								updateHeatmapStyling({
+									heatMax:
+										e.target.value === ""
+											? undefined
+											: Number(e.target.value),
+								})
+							}
+							placeholder="Max value"
+							className="w-full rounded border border-stone-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
+						/>
+					)}
+				</div>
+			</ToolAccordion>
+
+			<ToolAccordion title="Label Settings">
+				<LineValueLabelEditor
+					value={styling.heatmap?.valueLabel}
+					onChange={(v) => updateHeatmapStyling({ valueLabel: v })}
+					onReset={() =>
+						updateHeatmapStyling({ valueLabel: undefined })
+					}
+					variant="heatmap"
+				/>
+			</ToolAccordion>
+
+			<ToolAccordion title="X Axis Settings">
+				<AxisSettings
+					axis="x"
+					value={styling.heatmap?.xAxisConfig}
+					onChange={updateHeatmapXAxis}
+					onReset={() =>
+						updateHeatmapStyling({ xAxisConfig: undefined })
+					}
+				/>
+			</ToolAccordion>
+
+			<ToolAccordion title="Y Axis Settings">
+				<AxisSettings
+					axis="y"
+					value={styling.heatmap?.yAxisConfig}
+					onChange={updateHeatmapYAxis}
+					onReset={() =>
+						updateHeatmapStyling({ yAxisConfig: undefined })
+					}
+				/>
+			</ToolAccordion>
+
+			<ToolAccordion title="Zoom X Axis">
+				<ZoomXAxis
+					value={styling.heatmap?.zoomX}
+					onChange={(v) => updateHeatmapStyling({ zoomX: v })}
+					onReset={() =>
+						updateHeatmapStyling({
+							zoomX: undefined,
+							savedZoomX: undefined,
+						})
+					}
+				/>
+			</ToolAccordion>
+
+			<ToolAccordion title="Zoom Y Axis">
+				<ZoomYAxis
+					value={styling.heatmap?.zoomY}
+					onChange={(v) => updateHeatmapStyling({ zoomY: v })}
+					onReset={() =>
+						updateHeatmapStyling({
+							zoomY: undefined,
+							savedZoomY: undefined,
+						})
+					}
+				/>
 			</ToolAccordion>
 		</>
 	);
@@ -917,6 +1079,16 @@ export function ToolsPanel({
 	// World Map–specific tools
 	const worldmapTools = (
 		<>
+			<ToolAccordion title="Map Layer">
+				<MapLayerControl
+					value={styling.worldmap?.mapLayer}
+					onChange={(mapLayer) => updateWorldmapStyling({ mapLayer })}
+					onReset={() =>
+						updateWorldmapStyling({ mapLayer: undefined })
+					}
+				/>
+			</ToolAccordion>
+
 			<ToolAccordion title="Color Palette">
 				<ColorPalette
 					value={styling.colorPalette}
@@ -1169,8 +1341,32 @@ export function ToolsPanel({
 	};
 
 	const currentInnerR = styling.sunburst?.innerRadius ?? 0;
+	// Dropped columns (group levels + value column) from active drop zones.
+	// columnLabels renames the raw value key to its aggregated display label in the UI.
+	const sbDroppedColumns = sortableColumns ?? columns;
 	const sunburstTools = (
 		<>
+			<ToolAccordion title="Color Palette">
+				<ColorPalette
+					value={styling.colorPalette}
+					customPalettes={customColorPalettes}
+					onChange={handleColorPalettePatch}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Color by Value">
+				<ColorByValue
+					columns={sbDroppedColumns}
+					valueColumns={sbDroppedColumns}
+					visualizationType="sunburst"
+					value={(styling.sunburst?.colorRules as any) ?? []}
+					onChange={(rules) =>
+						updateSunburstStyling({ colorRules: rules as any })
+					}
+					onReset={() => updateSunburstStyling({ colorRules: [] })}
+					columnValues={columnValues}
+					columnLabels={yKeyColumnLabels}
+				/>
+			</ToolAccordion>
 			<ToolAccordion title="Inner Radius (Donut)">
 				<div className="flex flex-col gap-2 px-1 py-1">
 					<div className="flex items-center justify-between">
@@ -1197,32 +1393,14 @@ export function ToolsPanel({
 				</div>
 			</ToolAccordion>
 			<ToolAccordion title="Value Labels">
-				<div className="flex items-center justify-between px-1 py-1">
-					<span className="text-stone-600 text-xs">
-						Show arc labels
-					</span>
-					<button
-						type="button"
-						onClick={() =>
-							updateSunburstStyling({
-								showLabels: !styling.sunburst?.showLabels,
-							})
-						}
-						className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-							styling.sunburst?.showLabels
-								? "bg-indigo-500"
-								: "bg-stone-300"
-						}`}
-					>
-						<span
-							className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
-								styling.sunburst?.showLabels
-									? "translate-x-[18px]"
-									: "translate-x-[2px]"
-							}`}
-						/>
-					</button>
-				</div>
+				<LineValueLabelEditor
+					value={styling.sunburst?.valueLabel}
+					onChange={(v) => updateSunburstStyling({ valueLabel: v })}
+					onReset={() =>
+						updateSunburstStyling({ valueLabel: undefined })
+					}
+					variant="pie"
+				/>
 			</ToolAccordion>
 		</>
 	);
@@ -1296,10 +1474,18 @@ export function ToolsPanel({
 
 	const hdLabelsOn = styling.halfdonut?.showLabels !== false;
 	const hdValuesOn = styling.halfdonut?.showValues === true;
+	const hdPercentOn = styling.halfdonut?.showPercentage !== false;
 	const hdLegendOn = styling.halfdonut?.showLegend !== false;
 	const hdInnerRadius = styling.halfdonut?.innerRadius ?? 0.55;
 	const halfDonutTools = (
 		<>
+			<ToolAccordion title="Color Palette">
+				<ColorPalette
+					value={styling.colorPalette}
+					customPalettes={customColorPalettes}
+					onChange={handleColorPalettePatch}
+				/>
+			</ToolAccordion>
 			<ToolAccordion title="Inner Radius">
 				<div className="space-y-2 px-4 py-3">
 					<div className="mb-1 flex items-center justify-between">
@@ -1346,8 +1532,8 @@ export function ToolsPanel({
 					</label>
 				</div>
 			</ToolAccordion>
-			<ToolAccordion title="Show Values">
-				<div className="space-y-2 px-4 py-3">
+			<ToolAccordion title="Show Labels">
+				<div className="space-y-3 px-4 py-3">
 					<label className="flex cursor-pointer items-center gap-3">
 						<div
 							className={`relative h-5 w-10 rounded-full transition-colors ${hdValuesOn ? "bg-indigo-500" : "bg-stone-200"}`}
@@ -1362,10 +1548,90 @@ export function ToolsPanel({
 							/>
 						</div>
 						<span className="text-stone-600 text-xs">
-							{hdValuesOn ? "Values visible" : "Values hidden"}
+							{hdValuesOn
+								? "Labels visible inside arcs"
+								: "Labels hidden"}
 						</span>
 					</label>
+					{hdValuesOn && (
+						<div className="flex items-center gap-3">
+							<span className="flex-1 text-stone-500 text-xs">
+								Show as
+							</span>
+							<div className="flex overflow-hidden rounded-md border border-stone-200 font-medium text-[11px]">
+								<button
+									type="button"
+									onClick={() =>
+										updateHalfDonutStyling({
+											showPercentage: true,
+										})
+									}
+									className={`px-2.5 py-1 transition-colors ${hdPercentOn ? "bg-indigo-500 text-white" : "bg-white text-stone-500 hover:bg-stone-50"}`}
+								>
+									%
+								</button>
+								<button
+									type="button"
+									onClick={() =>
+										updateHalfDonutStyling({
+											showPercentage: false,
+										})
+									}
+									className={`border-stone-200 border-l px-2.5 py-1 transition-colors ${!hdPercentOn ? "bg-indigo-500 text-white" : "bg-white text-stone-500 hover:bg-stone-50"}`}
+								>
+									Value
+								</button>
+							</div>
+						</div>
+					)}
 				</div>
+			</ToolAccordion>
+			<ToolAccordion title="Target Wedge">
+				<div className="space-y-2 px-4 py-3">
+					<label className="mb-1.5 block font-semibold text-stone-600 text-xs">
+						Wedge Color
+					</label>
+					<div className="flex items-center gap-2">
+						<input
+							type="color"
+							value={
+								styling.halfdonut?.targetWedgeColor ?? "#1e293b"
+							}
+							onChange={(e) =>
+								updateHalfDonutStyling({
+									targetWedgeColor: e.target.value,
+								})
+							}
+							className="h-9 w-9 cursor-pointer rounded-lg border border-stone-200 bg-white p-0.5"
+						/>
+						<span className="font-mono text-stone-500 text-xs">
+							{styling.halfdonut?.targetWedgeColor ?? "#1e293b"}
+						</span>
+						{styling.halfdonut?.targetWedgeColor && (
+							<button
+								type="button"
+								onClick={() =>
+									updateHalfDonutStyling({
+										targetWedgeColor: undefined,
+									})
+								}
+								className="ml-auto text-[11px] text-stone-400 hover:text-stone-600"
+							>
+								Reset
+							</button>
+						)}
+					</div>
+				</div>
+			</ToolAccordion>
+			<ToolAccordion title="Tooltips">
+				<ShowTooltipToggle
+					value={styling.halfdonut?.showTooltip}
+					description="Show a popover with slice details on hover."
+					onChange={(v) => updateHalfDonutStyling({ showTooltip: v })}
+					onReset={() =>
+						updateHalfDonutStyling({ showTooltip: undefined })
+					}
+				/>
 			</ToolAccordion>
 			<ToolAccordion title="Value Labels">
 				<div className="space-y-2 px-4 py-3">
@@ -1383,7 +1649,9 @@ export function ToolsPanel({
 							/>
 						</div>
 						<span className="text-stone-600 text-xs">
-							{hdLabelsOn ? "Labels visible" : "Labels hidden"}
+							{hdLabelsOn
+								? "Category labels visible"
+								: "Category labels hidden"}
 						</span>
 					</label>
 				</div>
@@ -1564,6 +1832,149 @@ export function ToolsPanel({
 		</>
 	);
 
+	// Radar chart–specific tools
+	const radarAreaOn = styling.radar?.showArea === true;
+	const radarPolygon = styling.radar?.shapePolygon !== false;
+	const radarTools = (
+		<>
+			<ToolAccordion title="Area Fill">
+				<div className="space-y-3 px-4 py-3">
+					<label className="flex cursor-pointer items-center gap-3">
+						<div
+							className={`relative h-5 w-10 rounded-full transition-colors ${radarAreaOn ? "bg-indigo-500" : "bg-stone-200"}`}
+							onClick={() =>
+								updateRadarStyling({ showArea: !radarAreaOn })
+							}
+						>
+							<span
+								className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${radarAreaOn ? "translate-x-5" : "translate-x-0.5"}`}
+							/>
+						</div>
+						<span className="text-stone-600 text-xs">
+							{radarAreaOn ? "Area fill on" : "Area fill off"}
+						</span>
+					</label>
+					{radarAreaOn && (
+						<div className="flex flex-col gap-2 pt-1">
+							<div className="flex items-center justify-between">
+								<span className="text-stone-500 text-xs">
+									Fill opacity
+								</span>
+								<span className="font-medium text-stone-700 text-xs">
+									{Math.round(
+										(styling.radar?.fillOpacity ?? 0.25) *
+											100,
+									)}
+									%
+								</span>
+							</div>
+							<input
+								type="range"
+								min={5}
+								max={100}
+								step={5}
+								value={Math.round(
+									(styling.radar?.fillOpacity ?? 0.25) * 100,
+								)}
+								onChange={(e) =>
+									updateRadarStyling({
+										fillOpacity:
+											Number(e.target.value) / 100,
+									})
+								}
+								className="w-full accent-indigo-500"
+							/>
+						</div>
+					)}
+				</div>
+			</ToolAccordion>
+
+			<ToolAccordion title="Shape">
+				<div className="px-4 py-3">
+					<div className="flex gap-2">
+						<button
+							className={`flex-1 rounded-md border py-1.5 font-medium text-xs transition-colors ${radarPolygon ? "border-indigo-500 bg-indigo-50 text-indigo-700" : "border-stone-200 text-stone-500 hover:border-stone-300"}`}
+							onClick={() =>
+								updateRadarStyling({ shapePolygon: true })
+							}
+						>
+							Polygon
+						</button>
+						<button
+							className={`flex-1 rounded-md border py-1.5 font-medium text-xs transition-colors ${!radarPolygon ? "border-indigo-500 bg-indigo-50 text-indigo-700" : "border-stone-200 text-stone-500 hover:border-stone-300"}`}
+							onClick={() =>
+								updateRadarStyling({ shapePolygon: false })
+							}
+						>
+							Circle
+						</button>
+					</div>
+				</div>
+			</ToolAccordion>
+
+			<ToolAccordion title="Tooltips">
+				<ShowTooltipToggle
+					value={styling.radar?.showTooltip}
+					description="Displays data values on hover."
+					onChange={(showTooltip) =>
+						updateRadarStyling({ showTooltip })
+					}
+					onReset={() =>
+						updateRadarStyling({ showTooltip: undefined })
+					}
+				/>
+			</ToolAccordion>
+
+			<ToolAccordion title="Color Palette">
+				<ColorPalette
+					value={styling.colorPalette}
+					customPalettes={customColorPalettes}
+					onChange={handleColorPalettePatch}
+				/>
+			</ToolAccordion>
+
+			<ToolAccordion title="Color by Value">
+				<ColorByValue
+					columns={yKeys}
+					valueColumns={columns}
+					visualizationType="radar"
+					columnValues={yKeyAggregatedColumnValues}
+					columnLabels={yKeyColumnLabels}
+					value={styling.radar?.colorRules || []}
+					onChange={(colorRules) =>
+						updateRadarStyling({ colorRules: colorRules as any })
+					}
+					onReset={() => updateRadarStyling({ colorRules: [] })}
+				/>
+			</ToolAccordion>
+
+			<ToolAccordion title="Value Labels">
+				<LineValueLabelEditor
+					value={styling.radar?.valueLabel}
+					onChange={(v) => updateRadarStyling({ valueLabel: v })}
+					onReset={() =>
+						updateRadarStyling({ valueLabel: undefined })
+					}
+					variant="bar"
+				/>
+			</ToolAccordion>
+
+			<ToolAccordion title="Normalize Axes">
+				<ShowTooltipToggle
+					value={styling.radar?.normalizeAxes}
+					label="Normalize axes"
+					description="Scales all spoke axes to a shared 0–max domain for cross-axis comparison."
+					onChange={(normalizeAxes) =>
+						updateRadarStyling({ normalizeAxes })
+					}
+					onReset={() =>
+						updateRadarStyling({ normalizeAxes: undefined })
+					}
+				/>
+			</ToolAccordion>
+		</>
+	);
+
 	// Box plot–specific tools
 	const boxPlotTools = (
 		<>
@@ -1583,9 +1994,7 @@ export function ToolsPanel({
 					columnLabels={yKeyColumnLabels}
 					value={styling.boxplot?.colorRules || []}
 					onChange={(colorRules) =>
-						updateBoxPlotStyling({
-							colorRules: colorRules as ColorRule[],
-						})
+						updateBoxPlotStyling({ colorRules: colorRules as any })
 					}
 					onReset={() => updateBoxPlotStyling({ colorRules: [] })}
 				/>
@@ -1799,36 +2208,26 @@ export function ToolsPanel({
 	);
 
 	// Multi-line–specific tools
-	const mlAvgOn = styling.multiline?.showAverage === true;
-	const mlValueLabelsOn = styling.multiline?.showValueLabels === true;
-	const mlTrendlineOn = styling.multiline?.showTrendline === true;
 	const mlTooltipOn = styling.multiline?.showTooltip !== false;
-	const mlCurveType = styling.multiline?.curveType ?? "monotone";
 	const multilineTools = (
 		<>
 			<ToolAccordion title="Average Line">
-				<div className="flex items-center justify-between px-1 py-1">
-					<span className="text-stone-600 text-xs">
-						Show average reference line
-					</span>
-					<button
-						type="button"
-						onClick={() =>
-							updateMultilineStyling({ showAverage: !mlAvgOn })
-						}
-						className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-							mlAvgOn ? "bg-indigo-500" : "bg-stone-300"
-						}`}
-					>
-						<span
-							className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
-								mlAvgOn
-									? "translate-x-[18px]"
-									: "translate-x-[2px]"
-							}`}
-						/>
-					</button>
-				</div>
+				<AverageToggle
+					value={styling.multiline?.showAverage}
+					onChange={(v) => updateMultilineStyling({ showAverage: v })}
+					onReset={() =>
+						updateMultilineStyling({ showAverage: undefined })
+					}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Min / Max Markers">
+				<MinMaxToggle
+					value={styling.multiline?.showMinMax}
+					onChange={(v) => updateMultilineStyling({ showMinMax: v })}
+					onReset={() =>
+						updateMultilineStyling({ showMinMax: undefined })
+					}
+				/>
 			</ToolAccordion>
 
 			<ToolAccordion title="Color by Value">
@@ -1855,74 +2254,87 @@ export function ToolsPanel({
 				/>
 			</ToolAccordion>
 
-			<ToolAccordion title="Curve Type">
-				<div className="px-1 py-1">
-					<select
-						value={mlCurveType}
-						onChange={(e) =>
-							updateMultilineStyling({
-								curveType: e.target.value as any,
-							})
-						}
-						className="w-full rounded border border-stone-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
-					>
-						<option value="linear">Linear</option>
-						<option value="monotone">Monotone</option>
-						<option value="natural">Natural</option>
-						<option value="step">Step</option>
-						<option value="stepAfter">Step After</option>
-						<option value="stepBefore">Step Before</option>
-					</select>
-				</div>
-			</ToolAccordion>
-
-			<ToolAccordion title="Value Labels">
-				<div className="flex items-center justify-between px-1 py-1">
-					<span className="text-stone-600 text-xs">
-						Show data labels on points
-					</span>
-					<button
-						type="button"
-						onClick={() =>
-							updateMultilineStyling({
-								showValueLabels: !mlValueLabelsOn,
-							})
-						}
-						className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-							mlValueLabelsOn ? "bg-indigo-500" : "bg-stone-300"
-						}`}
-					>
-						<span
-							className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
-								mlValueLabelsOn
-									? "translate-x-[18px]"
-									: "translate-x-[2px]"
-							}`}
-						/>
-					</button>
-				</div>
-			</ToolAccordion>
-
-			<ToolAccordion title="X Axis Settings">
-				<AxisSettings
-					axis="x"
-					value={styling.multiline?.xAxisConfig}
-					onChange={updateMultilineXAxis}
-					showFlipAxis
+			<ToolAccordion title="Legend">
+				<ShowLegendToggle
+					value={styling.multiline?.showLegend}
+					onChange={(v) => updateMultilineStyling({ showLegend: v })}
 					onReset={() =>
-						updateMultilineStyling({ xAxisConfig: undefined })
+						updateMultilineStyling({ showLegend: undefined })
 					}
 				/>
 			</ToolAccordion>
 
-			<ToolAccordion title="Y Axis Settings">
-				<AxisSettings
-					axis="y"
-					value={styling.multiline?.yAxisConfig}
-					onChange={updateMultilineYAxis}
-					showFlipAxis
+			<ToolAccordion title="Line Styling">
+				<LineStyle
+					value={{
+						curveType: styling.multiline?.curveType,
+						lineType: styling.multiline?.lineType,
+						lineWidth: styling.multiline?.lineWidth,
+					}}
+					onChange={(updates) =>
+						updateMultilineStyling(updates as any)
+					}
 					onReset={() =>
-						updateMultilineStyling({ yAxisConfig: undefined })
+						updateMultilineStyling({
+							curveType: undefined,
+							lineType: undefined,
+							lineWidth: undefined,
+						})
+					}
+				/>
+			</ToolAccordion>
+
+			<ToolAccordion title="Save Zoom">
+				<SaveZoom
+					value={styling.multiline?.saveZoom}
+					savedZoomX={styling.multiline?.savedZoomX}
+					savedZoomY={styling.multiline?.savedZoomY}
+					zoomXEnabled={styling.multiline?.zoomX}
+					zoomYEnabled={styling.multiline?.zoomY}
+					onChange={(v) => updateMultilineStyling({ saveZoom: v })}
+					onReset={() =>
+						updateMultilineStyling({
+							saveZoom: undefined,
+							savedZoomX: undefined,
+							savedZoomY: undefined,
+						})
+					}
+				/>
+			</ToolAccordion>
+
+			<ToolAccordion title="Symbol Style">
+				<SymbolStyle
+					symbolType={styling.multiline?.symbolType}
+					symbolSize={styling.multiline?.symbolSize}
+					defaultSymbolType="circle"
+					onChange={(updates) =>
+						updateMultilineStyling(updates as any)
+					}
+					onReset={() =>
+						updateMultilineStyling({
+							symbolType: undefined,
+							symbolSize: undefined,
+						})
+					}
+				/>
+			</ToolAccordion>
+
+			<ToolAccordion title="Target Areas">
+				<TargetArea
+					value={styling.multiline?.targetAreas ?? []}
+					onChange={(v) => updateMultilineStyling({ targetAreas: v })}
+					onReset={() =>
+						updateMultilineStyling({ targetAreas: undefined })
+					}
+				/>
+			</ToolAccordion>
+
+			<ToolAccordion title="Target Lines">
+				<TargetLine
+					value={styling.multiline?.targetLines ?? []}
+					onChange={(v) => updateMultilineStyling({ targetLines: v })}
+					onReset={() =>
+						updateMultilineStyling({ targetLines: undefined })
 					}
 				/>
 			</ToolAccordion>
@@ -1955,30 +2367,397 @@ export function ToolsPanel({
 			</ToolAccordion>
 
 			<ToolAccordion title="Trendline">
-				<div className="flex items-center justify-between px-1 py-1">
+				<Trendline
+					value={
+						styling.multiline?.trendlineType ??
+						(styling.multiline?.showTrendline ? "exact" : undefined)
+					}
+					onChange={(v) =>
+						updateMultilineStyling({
+							trendlineType: v as any,
+							showTrendline: undefined,
+						})
+					}
+					onReset={() =>
+						updateMultilineStyling({
+							trendlineType: undefined,
+							showTrendline: undefined,
+						})
+					}
+				/>
+			</ToolAccordion>
+
+			<ToolAccordion title="Value Labels">
+				<LineValueLabelEditor
+					value={
+						styling.multiline?.valueLabel ??
+						(styling.multiline?.showValueLabels
+							? { show: true }
+							: undefined)
+					}
+					onChange={(v) =>
+						updateMultilineStyling({
+							valueLabel: v,
+							showValueLabels: undefined,
+						})
+					}
+					onReset={() =>
+						updateMultilineStyling({
+							valueLabel: undefined,
+							showValueLabels: undefined,
+						})
+					}
+					variant="line"
+				/>
+			</ToolAccordion>
+
+			<ToolAccordion title="X Axis Settings">
+				<AxisSettings
+					axis="x"
+					value={styling.multiline?.xAxisConfig}
+					onChange={updateMultilineXAxis}
+					showFlipAxis
+					onReset={() =>
+						updateMultilineStyling({ xAxisConfig: undefined })
+					}
+				/>
+			</ToolAccordion>
+
+			<ToolAccordion title="Y Axis Settings">
+				<AxisSettings
+					axis="y"
+					value={styling.multiline?.yAxisConfig}
+					onChange={updateMultilineYAxis}
+					showFlipAxis
+					onReset={() =>
+						updateMultilineStyling({ yAxisConfig: undefined })
+					}
+				/>
+			</ToolAccordion>
+
+			<ToolAccordion title="Zoom X Axis">
+				<ZoomXAxis
+					value={styling.multiline?.zoomX}
+					onChange={(v) => updateMultilineStyling({ zoomX: v })}
+					onReset={() => updateMultilineStyling({ zoomX: undefined })}
+				/>
+			</ToolAccordion>
+
+			<ToolAccordion title="Zoom Y Axis">
+				<ZoomYAxis
+					value={styling.multiline?.zoomY}
+					onChange={(v) => updateMultilineStyling({ zoomY: v })}
+					onReset={() => updateMultilineStyling({ zoomY: undefined })}
+				/>
+			</ToolAccordion>
+		</>
+	);
+
+	// Treemap-specific tools
+	const tmTooltipOn = styling.treemap?.showTooltip !== false;
+	const tmParentsOn = styling.treemap?.showParentRelationships !== false;
+	const tmAllColumns = [
+		xKey,
+		...yKeys,
+		...columns.filter((c) => c !== xKey && !yKeys.includes(c)),
+	].filter(Boolean) as string[];
+	const tmFontFamilies = [
+		"Inter",
+		"Arial",
+		"Helvetica",
+		"Georgia",
+		"Times New Roman",
+		"Courier New",
+		"Monaco",
+	];
+	const tmFontWeights = [
+		{ label: "Normal", value: "normal" },
+		{ label: "Medium", value: "500" },
+		{ label: "Semibold", value: "600" },
+		{ label: "Bold", value: "bold" },
+	];
+	const tmInputCls =
+		"w-full rounded border border-stone-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400";
+	const tmSelectCls = `${tmInputCls} bg-white`;
+	const tmLabelCls = "block text-xs font-semibold text-stone-600 mb-1";
+	const treemapTools = (
+		<>
+			<ToolAccordion title="Color Palette">
+				<ColorPalette
+					value={styling.colorPalette}
+					customPalettes={customColorPalettes}
+					onChange={handleColorPalettePatch}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Color by Value">
+				<ColorByValue
+					columns={tmAllColumns}
+					valueColumns={columns}
+					visualizationType="treemap"
+					value={(styling.treemap?.colorRules as any) ?? []}
+					onChange={(rules) =>
+						updateTreemapStyling({ colorRules: rules as any })
+					}
+					onReset={() => updateTreemapStyling({ colorRules: [] })}
+					columnValues={columnValues}
+					columnLabels={yKeyColumnLabels}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Tile Labels">
+				<div className="space-y-3">
+					<div>
+						<label className={tmLabelCls}>Font Family</label>
+						<select
+							value={
+								styling.treemap?.tileLabel?.fontFamily ??
+								"Inter"
+							}
+							onChange={(e) =>
+								updateTreemapTileLabel({
+									fontFamily: e.target.value,
+								})
+							}
+							className={tmSelectCls}
+						>
+							{tmFontFamilies.map((f) => (
+								<option key={f} value={f}>
+									{f}
+								</option>
+							))}
+						</select>
+					</div>
+					<div>
+						<label className={tmLabelCls}>Font Size</label>
+						<input
+							type="number"
+							min={6}
+							max={32}
+							value={styling.treemap?.tileLabel?.fontSize ?? 10}
+							onChange={(e) =>
+								updateTreemapTileLabel({
+									fontSize: Number(e.target.value) || 10,
+								})
+							}
+							className={tmInputCls}
+						/>
+					</div>
+					<div>
+						<label className={tmLabelCls}>Font Weight</label>
+						<select
+							value={
+								styling.treemap?.tileLabel?.fontWeight ?? "600"
+							}
+							onChange={(e) =>
+								updateTreemapTileLabel({
+									fontWeight: e.target.value,
+								})
+							}
+							className={tmSelectCls}
+						>
+							{tmFontWeights.map((w) => (
+								<option key={w.value} value={w.value}>
+									{w.label}
+								</option>
+							))}
+						</select>
+					</div>
+					<div>
+						<label className={tmLabelCls}>Color</label>
+						<div className="flex items-center gap-2">
+							<input
+								type="color"
+								value={
+									styling.treemap?.tileLabel?.color ??
+									"#ffffff"
+								}
+								onChange={(e) =>
+									updateTreemapTileLabel({
+										color: e.target.value,
+									})
+								}
+								className="h-9 w-9 cursor-pointer rounded-lg border border-stone-200 bg-white p-0.5"
+							/>
+							<span className="font-mono text-stone-500 text-xs">
+								{styling.treemap?.tileLabel?.color ?? "#ffffff"}
+							</span>
+						</div>
+					</div>
+					<div className="pt-1">
+						<ResetButton
+							onReset={() =>
+								updateTreemapStyling({ tileLabel: undefined })
+							}
+						/>
+					</div>
+				</div>
+			</ToolAccordion>
+			<ToolAccordion title="Tooltips">
+				<div className="flex items-center justify-between">
 					<span className="text-stone-600 text-xs">
-						Show linear trendline
+						Show tooltip on hover
 					</span>
 					<button
 						type="button"
 						onClick={() =>
-							updateMultilineStyling({
-								showTrendline: !mlTrendlineOn,
-							})
+							updateTreemapStyling({ showTooltip: !tmTooltipOn })
 						}
 						className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-							mlTrendlineOn ? "bg-indigo-500" : "bg-stone-300"
+							tmTooltipOn ? "bg-indigo-500" : "bg-stone-300"
 						}`}
 					>
 						<span
-							className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
-								mlTrendlineOn
-									? "translate-x-[18px]"
-									: "translate-x-[2px]"
+							className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
+								tmTooltipOn
+									? "translate-x-4"
+									: "translate-x-0.5"
 							}`}
 						/>
 					</button>
 				</div>
+			</ToolAccordion>
+			<ToolAccordion title="Show Parent Relationships">
+				<div className="flex items-center justify-between">
+					<span className="text-stone-600 text-xs">
+						Show parent group tiles
+					</span>
+					<button
+						type="button"
+						onClick={() =>
+							updateTreemapStyling({
+								showParentRelationships: !tmParentsOn,
+							})
+						}
+						className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+							tmParentsOn ? "bg-indigo-500" : "bg-stone-300"
+						}`}
+					>
+						<span
+							className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
+								tmParentsOn
+									? "translate-x-4"
+									: "translate-x-0.5"
+							}`}
+						/>
+					</button>
+				</div>
+				{tmParentsOn && (
+					<div className="mt-4 space-y-3 border-stone-100 border-t pt-3">
+						<p className="font-semibold text-stone-600 text-xs">
+							Header Style
+						</p>
+						<div>
+							<label className={tmLabelCls}>Background</label>
+							<div className="flex items-center gap-2">
+								<input
+									type="color"
+									value={
+										styling.treemap?.headerFill ?? "#e2e8f0"
+									}
+									onChange={(e) =>
+										updateTreemapStyling({
+											headerFill: e.target.value,
+										})
+									}
+									className="h-9 w-9 cursor-pointer rounded-lg border border-stone-200 bg-white p-0.5"
+								/>
+								<span className="font-mono text-stone-500 text-xs">
+									{styling.treemap?.headerFill ?? "#e2e8f0"}
+								</span>
+							</div>
+						</div>
+						<div>
+							<label className={tmLabelCls}>Font Family</label>
+							<select
+								value={
+									styling.treemap?.headerLabel?.fontFamily ??
+									"Inter"
+								}
+								onChange={(e) =>
+									updateTreemapHeaderLabel({
+										fontFamily: e.target.value,
+									})
+								}
+								className={tmSelectCls}
+							>
+								{tmFontFamilies.map((f) => (
+									<option key={f} value={f}>
+										{f}
+									</option>
+								))}
+							</select>
+						</div>
+						<div>
+							<label className={tmLabelCls}>Font Size</label>
+							<input
+								type="number"
+								min={6}
+								max={32}
+								value={
+									styling.treemap?.headerLabel?.fontSize ?? 11
+								}
+								onChange={(e) =>
+									updateTreemapHeaderLabel({
+										fontSize: Number(e.target.value) || 11,
+									})
+								}
+								className={tmInputCls}
+							/>
+						</div>
+						<div>
+							<label className={tmLabelCls}>Font Weight</label>
+							<select
+								value={
+									styling.treemap?.headerLabel?.fontWeight ??
+									"bold"
+								}
+								onChange={(e) =>
+									updateTreemapHeaderLabel({
+										fontWeight: e.target.value,
+									})
+								}
+								className={tmSelectCls}
+							>
+								{tmFontWeights.map((w) => (
+									<option key={w.value} value={w.value}>
+										{w.label}
+									</option>
+								))}
+							</select>
+						</div>
+						<div>
+							<label className={tmLabelCls}>Text Color</label>
+							<div className="flex items-center gap-2">
+								<input
+									type="color"
+									value={
+										styling.treemap?.headerLabel?.color ??
+										"#0f172a"
+									}
+									onChange={(e) =>
+										updateTreemapHeaderLabel({
+											color: e.target.value,
+										})
+									}
+									className="h-9 w-9 cursor-pointer rounded-lg border border-stone-200 bg-white p-0.5"
+								/>
+								<span className="font-mono text-stone-500 text-xs">
+									{styling.treemap?.headerLabel?.color ??
+										"#0f172a"}
+								</span>
+							</div>
+						</div>
+						<div className="pt-1">
+							<ResetButton
+								onReset={() =>
+									updateTreemapStyling({
+										headerFill: undefined,
+										headerLabel: undefined,
+									})
+								}
+							/>
+						</div>
+					</div>
+				)}
 			</ToolAccordion>
 		</>
 	);
@@ -2814,6 +3593,81 @@ export function ToolsPanel({
 	// Pie-specific tools
 	const pieTools = (
 		<>
+			<ToolAccordion title="Animation">
+				<div className="space-y-2 px-1">
+					{(
+						[
+							"none",
+							"linear",
+							"exponential",
+							"elastic",
+							"expansion",
+						] as const
+					).map((type) => (
+						<label
+							key={type}
+							className="flex cursor-pointer items-center gap-2 text-xs"
+						>
+							<input
+								type="radio"
+								name="pieAnimation"
+								className="accent-indigo-500"
+								checked={
+									(styling.pie?.animation?.type ?? "none") ===
+									type
+								}
+								onChange={() =>
+									updatePieStyling({
+										animation:
+											type === "none"
+												? undefined
+												: { type },
+									})
+								}
+							/>
+							<span className="text-stone-700 capitalize">
+								{type.charAt(0).toUpperCase() + type.slice(1)}
+							</span>
+						</label>
+					))}
+					<div className="pt-1">
+						<ResetButton
+							onReset={() =>
+								updatePieStyling({ animation: undefined })
+							}
+						/>
+					</div>
+				</div>
+			</ToolAccordion>
+			<ToolAccordion title="Bucket">
+				<div className="space-y-3 px-1 py-1">
+					<div className="flex items-center justify-between">
+						<span className="text-stone-500 text-xs">Buckets</span>
+						<span className="font-medium text-stone-700 text-xs">
+							{styling.pie?.bucket != null
+								? styling.pie.bucket
+								: "All"}
+						</span>
+					</div>
+					<input
+						type="range"
+						min={1}
+						max={20}
+						step={1}
+						value={styling.pie?.bucket ?? 20}
+						onChange={(e) =>
+							updatePieStyling({ bucket: Number(e.target.value) })
+						}
+						className="w-full accent-indigo-500"
+					/>
+					<p className="text-stone-500 text-xs">
+						Top N slices by value; remaining merged into "Other".
+					</p>
+					<ResetButton
+						onReset={() => updatePieStyling({ bucket: undefined })}
+					/>
+				</div>
+			</ToolAccordion>
 			<ToolAccordion title="Color Palette">
 				<ColorPalette
 					value={styling.colorPalette}
@@ -2835,6 +3689,76 @@ export function ToolsPanel({
 					onChange={(v) => updatePieStyling({ showLegend: v })}
 					onReset={() => updatePieStyling({ showLegend: undefined })}
 				/>
+			</ToolAccordion>
+			<ToolAccordion title="Pie Radius">
+				<div className="space-y-3 px-1 py-1">
+					<div className="flex items-center justify-between">
+						<span className="text-stone-500 text-xs">
+							Outer Radius
+						</span>
+						<span className="font-medium text-stone-700 text-xs">
+							{styling.pie?.outerRadius ?? 68}%
+						</span>
+					</div>
+					<input
+						type="range"
+						min={20}
+						max={100}
+						step={1}
+						value={styling.pie?.outerRadius ?? 68}
+						onChange={(e) =>
+							updatePieStyling({
+								outerRadius: Number(e.target.value),
+							})
+						}
+						className="w-full accent-indigo-500"
+					/>
+					<ResetButton
+						onReset={() =>
+							updatePieStyling({ outerRadius: undefined })
+						}
+					/>
+				</div>
+			</ToolAccordion>
+			<ToolAccordion title="Rose">
+				<div className="space-y-2 px-1">
+					{(
+						[
+							["default", "Default"],
+							["roseRadius", "Rose Radius"],
+							["roseArea", "Rose Area"],
+						] as const
+					).map(([val, label]) => (
+						<label
+							key={val}
+							className="flex cursor-pointer items-center gap-2 text-xs"
+						>
+							<input
+								type="radio"
+								name="pieRose"
+								className="accent-indigo-500"
+								checked={
+									(styling.pie?.roseType ?? "default") === val
+								}
+								onChange={() =>
+									updatePieStyling({
+										roseType:
+											val === "default" ? undefined : val,
+									})
+								}
+							/>
+							<span className="text-stone-700">{label}</span>
+						</label>
+					))}
+					<p className="pt-1 text-stone-500 text-xs">
+						Rose: equal-angle wedges with radius representing value.
+					</p>
+					<ResetButton
+						onReset={() =>
+							updatePieStyling({ roseType: undefined })
+						}
+					/>
+				</div>
 			</ToolAccordion>
 			<ToolAccordion title="Tooltips">
 				<ShowTooltipToggle
@@ -2893,9 +3817,7 @@ export function ToolsPanel({
 					columnLabels={comboColorColumns?.labels ?? {}}
 					value={styling.combo?.colorRules || []}
 					onChange={(colorRules) =>
-						updateComboStyling({
-							colorRules: colorRules as ColorRule[],
-						})
+						updateComboStyling({ colorRules: colorRules as any })
 					}
 					onReset={() => updateComboStyling({ colorRules: [] })}
 				/>
@@ -3130,11 +4052,15 @@ export function ToolsPanel({
 							visualizationType === "polarbar"
 								? polarBarTools
 								: null,
+							visualizationType === "radar" ? radarTools : null,
 							visualizationType === "cluster"
 								? clusterTools
 								: null,
 							visualizationType === "multiline"
 								? multilineTools
+								: null,
+							visualizationType === "treemap"
+								? treemapTools
 								: null,
 							visualizationType === "area" ? areaTools : null,
 							visualizationType === "bar" ? barTools : null,
@@ -3145,11 +4071,6 @@ export function ToolsPanel({
 							visualizationType === "pie" ? pieTools : null,
 							visualizationType === "combo" ? comboTools : null,
 						].filter(Boolean) as ReactNode[],
-					)}
-					{visualizationType === "pivot" && (
-						<div className="px-5 py-8 text-center text-sm text-stone-400">
-							Pivot table tools coming soon
-						</div>
 					)}
 				</div>
 			</div>

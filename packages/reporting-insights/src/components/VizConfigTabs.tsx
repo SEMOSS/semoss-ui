@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@semoss/ui/next";
 import type {
 	ColorPalette as ColorPaletteType,
 	VisualizationType,
@@ -73,75 +72,107 @@ export function VizConfigTabs({
 	const [activeTab, setActiveTab] = useState<TabId>("data");
 
 	return (
-		<Tabs
-			value={activeTab}
-			onValueChange={(v) => setActiveTab(v as TabId)}
-			className="flex h-full flex-col gap-0"
-		>
-			<TabsList className="w-full justify-start rounded-none border-stone-200 border-b bg-stone-100/70 px-2">
-				<TabsTrigger value="data">Data</TabsTrigger>
-				<TabsTrigger value="tools">Tools</TabsTrigger>
-			</TabsList>
+		<div className="flex h-full flex-col">
+			{/* Tab header */}
+			<div className="flex border-stone-200 border-b bg-stone-50/50">
+				<button
+					onClick={() => setActiveTab("data")}
+					className={`-mb-px border-b-2 px-5 py-2.5 font-semibold text-sm transition-colors ${
+						activeTab === "data"
+							? "border-indigo-500 bg-white text-indigo-600"
+							: "border-transparent text-stone-500 hover:bg-stone-50 hover:text-stone-700"
+					}`}
+				>
+					Data
+				</button>
+				<button
+					onClick={() => setActiveTab("tools")}
+					className={`-mb-px border-b-2 px-5 py-2.5 font-semibold text-sm transition-colors ${
+						activeTab === "tools"
+							? "border-indigo-500 bg-white text-indigo-600"
+							: "border-transparent text-stone-500 hover:bg-stone-50 hover:text-stone-700"
+					}`}
+				>
+					Tools
+				</button>
+			</div>
 
-			<TabsContent
-				value="data"
-				className="min-h-0 flex-1 overflow-hidden bg-white"
-			>
-				<VizConfigDropZones
-					columns={columns}
-					visualizationType={visualizationType}
-					value={value}
-					onChange={onChange}
-				/>
-			</TabsContent>
-			<TabsContent
-				value="tools"
-				className="min-h-0 flex-1 overflow-hidden bg-white"
-			>
-				<ToolsPanel
-					visualizationType={visualizationType}
-					styling={value.styling}
-					columns={columns.map((col) => col.name)}
-					sortableColumns={activeDropZoneColumns(value)}
-					rows={rows}
-					metricColumns={(value.metrics ?? []).map((c) => c.name)}
-					hasSizeColumn={Boolean(value.size?.[0]?.name)}
-					xKey={value.xAxis?.[0]?.name}
-					yKeys={
-						visualizationType === "combo"
-							? [
-									...new Set([
-										...(value.barSeries ?? []).map(
-											(c) => c.name,
-										),
-										...(value.lineSeries ?? []).map(
-											(c) => c.name,
-										),
-									]),
-								]
-							: (value.yAxis ?? []).map((c) => c.name)
-					}
-					columnAggregations={Object.fromEntries(
-						(visualizationType === "combo"
-							? [
-									...(value.barSeries ?? []),
-									...(value.lineSeries ?? []),
-								]
-							: (value.yAxis ?? [])
-						)
-							.filter((c) => c.aggregation)
-							.map((c) => [c.name, c.aggregation as string]),
-					)}
-					customColorPalettes={customColorPalettes}
-					onCustomColorPalettesChange={onCustomColorPalettesChange}
-					onChange={(styling) => {
-						onChange({
-							...value,
-							styling,
-						} as DropZoneDataWithTable);
-					}}
-				/>
-			</TabsContent>
-		</Tabs>
+			{/* Tab content */}
+			<div className="flex-1 overflow-hidden bg-white">
+				{activeTab === "data" && (
+					<VizConfigDropZones
+						columns={columns}
+						visualizationType={visualizationType}
+						value={value}
+						onChange={onChange}
+					/>
+				)}
+				{activeTab === "tools" && (
+					<ToolsPanel
+						visualizationType={visualizationType}
+						styling={value.styling}
+						columns={columns.map((col) => col.name)}
+						sortableColumns={activeDropZoneColumns(value)}
+						rows={rows}
+						// KPI: configured metric columns (used by the per-card title selector)
+						metricColumns={(value.metrics ?? []).map((c) => c.name)}
+						// World Map: signal whether the user has dropped a column into the Size zone
+						// — used to enable/disable the marker-size sliders.
+						hasSizeColumn={Boolean(value.size?.[0]?.name)}
+						// Bar / Line / Combo / Treemap: drop-zone columns + per-column aggregations.
+						xKey={
+							visualizationType === "treemap"
+								? value.label?.[0]?.name
+								: value.xAxis?.[0]?.name
+						}
+						yKeys={
+							visualizationType === "combo"
+								? [
+										...new Set([
+											...(value.barSeries ?? []).map(
+												(c) => c.name,
+											),
+											...(value.lineSeries ?? []).map(
+												(c) => c.name,
+											),
+										]),
+									]
+								: visualizationType === "treemap"
+									? (value.size ?? []).map((c) => c.name)
+									: visualizationType === "sunburst" ||
+											visualizationType === "pie"
+										? (value.value ?? []).map((c) => c.name)
+										: (value.yAxis ?? []).map((c) => c.name)
+						}
+						columnAggregations={Object.fromEntries(
+							(visualizationType === "combo"
+								? [
+										...(value.barSeries ?? []),
+										...(value.lineSeries ?? []),
+									]
+								: visualizationType === "treemap"
+									? (value.size ?? [])
+									: visualizationType === "sunburst" ||
+											visualizationType === "pie"
+										? (value.value ?? [])
+										: (value.yAxis ?? [])
+							)
+								.filter((c) => c.aggregation)
+								.map((c) => [c.name, c.aggregation as string]),
+						)}
+						customColorPalettes={customColorPalettes}
+						onCustomColorPalettesChange={
+							onCustomColorPalettesChange
+						}
+						onChange={(styling) => {
+							onChange({
+								...value,
+								styling,
+							} as DropZoneDataWithTable);
+						}}
+					/>
+				)}
+			</div>
+		</div>
 	);
 }

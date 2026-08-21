@@ -88,6 +88,8 @@ export interface VisualizationConfig {
 	size?: string;
 	/** Scatter: color column for point coloring */
 	color?: string;
+	/** Pie: column whose aggregated value drives heat-gradient slice coloring */
+	heatKey?: string;
 	/** Tooltip: additional columns to show on hover, each with its own aggregation */
 	tooltips?: Array<{ column: string; aggregation: string }>;
 	/** @deprecated Use tooltips[] — kept for reading legacy saved configs */
@@ -137,6 +139,10 @@ export interface VisualizationConfig {
 	pivotValues?: string[];
 	/** Multi-line: the column whose unique values become separate lines */
 	categoryKey?: string;
+	/** Treemap: the column whose unique values become the parent groups (series) */
+	seriesKey?: string;
+	/** Half-donut: optional target/goal column (single aggregated value shown as a wedge marker) */
+	targetKey?: string;
 	/** Stacked bar: the column whose unique values become the stacked series (facet). */
 	facetKey?: string;
 	/** Facet navigation: column whose unique values are paginated through at the bottom of the chart. Applied to all chart types except stackbar (which uses facetKey for stacking). */
@@ -179,6 +185,23 @@ export interface VisualizationConfig {
 	filterTargets?: string[];
 	/** Filter widget: values pre-selected when the dashboard loads (saved from editor preview) */
 	filterDefaultValues?: string[];
+	/** Filter widget: how filter values are presented to the viewer */
+	filterDisplayType?:
+		| "dropdown"
+		| "checklist"
+		| "slider"
+		| "typeahead"
+		| "datepicker"
+		| "button"
+		| "float";
+	/** Filter widget: allow selecting multiple values (not applicable to typeahead) */
+	filterMultiSelect?: boolean;
+	/** Filter widget: apply filter immediately on selection or require Apply button click */
+	filterAutoRun?: boolean;
+	/** Filter widget (float type): rules applied to all selected target visualizations */
+	filterFloatRules?: VizFilterGroup;
+	/** Filter widget (float type): cached column names from target viz schemas */
+	filterFloatColumns?: string[];
 	/** Visual styling and behavior configuration for the visualization */
 	styling?: VisualizationStyling;
 }
@@ -314,21 +337,37 @@ export interface ComboStyling {
 
 /** Multi-line chart–specific styling configuration */
 export interface MultiLineStyling {
+	/** Show a per-category average reference line. */
 	showAverage?: boolean;
-	curveType?:
-		| "linear"
-		| "monotone"
-		| "natural"
-		| "step"
-		| "stepAfter"
-		| "stepBefore";
+	/** Show min/max value markers on each category line. */
+	showMinMax?: boolean;
+	/** Curve interpolation. Default 'smooth'. */
+	curveType?: CurveType;
+	/** Value label config (position/font/color). Supersedes showValueLabels. */
+	valueLabel?: ValueLabelConfig;
+	/** @deprecated Use valueLabel instead. */
 	showValueLabels?: boolean;
 	xAxisConfig?: AxisConfig;
 	yAxisConfig?: AxisConfig;
+	/** Trendline curve type. 'none' hides it. Default 'none'. */
+	trendlineType?: CurveType | "none";
+	/** @deprecated Use trendlineType instead. */
 	showTrendline?: boolean;
 	showTooltip?: boolean;
-	/** Conditional color rules — colors a line whose category name matches the rule value */
+	/** Conditional color rules: colors a line whose category name matches the rule value */
 	colorRules?: ColorRule[];
+	lineType?: "solid" | "dashed" | "dotted";
+	lineWidth?: number;
+	symbolType?: SymbolType;
+	symbolSize?: number;
+	showLegend?: boolean;
+	targetAreas?: TargetArea[];
+	targetLines?: TargetLine[];
+	zoomX?: boolean;
+	zoomY?: boolean;
+	saveZoom?: boolean;
+	savedZoomX?: [number, number];
+	savedZoomY?: [number, number];
 }
 
 /** Box plot–specific styling configuration */
@@ -416,6 +455,8 @@ export interface VisualizationStyling {
 	halfdonut?: HalfDonutStyling;
 	/** Box plot–specific styling and behavior configuration */
 	boxplot?: BoxPlotStyling;
+	/** Radar chart–specific styling and behavior configuration */
+	radar?: RadarStyling;
 	/** Polar Bar–specific styling and behavior configuration */
 	polarbar?: PolarBarStyling;
 	/** Cluster chart–specific styling and behavior configuration */
@@ -432,6 +473,8 @@ export interface VisualizationStyling {
 	puck?: PuckStyling;
 	/** Sunburst–specific styling and behavior configuration */
 	sunburst?: SunburstStyling;
+	/** Treemap–specific styling and behavior configuration */
+	treemap?: TreemapStyling;
 	/** Stacked bar chart–specific styling and behavior configuration */
 	stackbar?: StackBarStyling;
 	/** Bar chart–specific styling and behavior configuration */
@@ -633,13 +676,43 @@ export interface KpiStyling {
 /** World Map–specific styling configuration */
 /** Heatmap-specific styling configuration */
 export interface HeatmapStyling {
-	/** Color for the lowest value (default: light blue #dbeafe) */
 	minColor?: string;
-	/** Color for the highest value (default: dark blue #1d4ed8) */
 	maxColor?: string;
-	/** Show numeric value labels inside each cell */
 	showValues?: boolean;
+	bucket?: number;
+	xAxisConfig?: AxisConfig;
+	yAxisConfig?: AxisConfig;
+	valueLabel?: ValueLabelConfig;
+	heatMinEnabled?: boolean;
+	heatMin?: number;
+	heatMaxEnabled?: boolean;
+	heatMax?: number;
+	expand?: boolean;
+	fitHorizontal?: boolean;
+	fitVertical?: boolean;
+	zoomX?: boolean;
+	zoomY?: boolean;
+	savedZoomX?: [number, number];
+	savedZoomY?: [number, number];
 }
+
+export const DEFAULT_HEATMAP_STYLING = {
+	expand: true,
+	fitHorizontal: false,
+	fitVertical: false,
+} satisfies Pick<HeatmapStyling, "expand" | "fitHorizontal" | "fitVertical">;
+
+export type WorldMapLayer =
+	| "streets"
+	| "openstreet"
+	| "satellite-esri"
+	| "streets-esri"
+	| "light"
+	| "city-lights"
+	| "dark"
+	| "topographic"
+	| "no-label"
+	| "none";
 
 export interface WorldMapStyling {
 	/** Whether to render a tooltip on hover (default true) */
@@ -653,9 +726,29 @@ export interface WorldMapStyling {
 	markerSizeMin?: number;
 	/** Upper bound marker radius (px) when Size column drives sizing. Default 18. */
 	markerSizeMax?: number;
+	/** Tile layer shown as the map background. Default 'streets'. */
+	mapLayer?: WorldMapLayer;
 }
 
 /** Default WorldMap styling values, applied as fallbacks at render time. */
+
+/** Radar chart–specific styling configuration */
+export interface RadarStyling {
+	/** Fill the polygon area */
+	showArea?: boolean;
+	/** Fill opacity when showArea is true, 0–1 (default 0.25) */
+	fillOpacity?: number;
+	/** (show/position/size/color) */
+	valueLabel?: ValueLabelConfig;
+	/** Conditional color rules evaluated per series */
+	colorRules?: ColorRule[];
+	/** Whether to render a hover tooltip (default true) */
+	showTooltip?: boolean;
+	/** Scale all spoke axes to a shared raw-value domain (default false = per-column 0→max scaling) */
+	normalizeAxes?: boolean;
+	/** Grid shape: true = polygon (default), false = circle */
+	shapePolygon?: boolean;
+}
 
 /** Polar Bar–specific styling configuration */
 export interface PolarBarStyling {
@@ -689,6 +782,7 @@ export const DEFAULT_WORLDMAP_STYLING: Required<
 		| "markerSize"
 		| "markerSizeMin"
 		| "markerSizeMax"
+		| "mapLayer"
 	>
 > = {
 	showTooltip: true,
@@ -696,18 +790,25 @@ export const DEFAULT_WORLDMAP_STYLING: Required<
 	markerSize: 8,
 	markerSizeMin: 4,
 	markerSizeMax: 18,
+	mapLayer: "streets",
 };
 
 /** Half Donut–specific styling configuration */
 export interface HalfDonutStyling {
 	/** Whether to render category name labels outside arcs (default true) */
 	showLabels?: boolean;
-	/** Whether to render value labels inside arcs (default false) */
+	/** Whether to render labels inside arcs (default false) */
 	showValues?: boolean;
+	/** When showValues is true: true = show percentage, false = show raw value (default true) */
+	showPercentage?: boolean;
+	/** Fill color of the target wedge marker (default #1e293b) */
+	targetWedgeColor?: string;
 	/** Whether to render a compact horizontal legend below the chart (default true) */
 	showLegend?: boolean;
 	/** Donut hole size as a fraction of the outer radius, 0.3–0.8 (default 0.55) */
 	innerRadius?: number;
+	/** Whether to render a hover tooltip on slice/target hover (default true) */
+	showTooltip?: boolean;
 }
 
 /**
@@ -777,6 +878,28 @@ export interface SunburstStyling {
 	innerRadius?: number;
 	/** Whether to render text labels on arc segments (default false). */
 	showLabels?: boolean;
+	/** font, size, rotation, color. */
+	valueLabel?: ValueLabelConfig;
+	/** Conditional color rules applied per wedge. */
+	colorRules?: ColorRule[];
+}
+
+/** Treemap text (label) styling */
+export interface TreemapTextConfig {
+	fontFamily?: string;
+	fontSize?: number;
+	fontWeight?: string;
+	color?: string;
+}
+
+/** Treemap-specific styling configuration */
+export interface TreemapStyling {
+	colorRules?: ColorRule[];
+	showTooltip?: boolean;
+	showParentRelationships?: boolean;
+	headerFill?: string;
+	headerLabel?: TreemapTextConfig;
+	tileLabel?: TreemapTextConfig;
 }
 
 export interface BubbleStyling {
@@ -998,6 +1121,16 @@ export interface PieStyling {
 	showLegend?: boolean;
 	/** Conditional color rules — target column = Name, value column = Value / Name */
 	colorRules?: ColorRule[];
+	/** Animation easing type; undefined / 'none' = no animation */
+	animation?: {
+		type: "none" | "linear" | "exponential" | "elastic" | "expansion";
+	};
+	/** Top-N slices to show; remaining slices merged into "Other" */
+	bucket?: number;
+	/** Outer radius as an integer percent 20–100 (default 68) */
+	outerRadius?: number;
+	/** Rose chart mode: equal-angle wedges with variable radius */
+	roseType?: "default" | "roseRadius" | "roseArea";
 }
 
 /** Default Pie chart styling values, applied as fallbacks at render time. */

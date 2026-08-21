@@ -15,13 +15,13 @@ import {
 	Legend,
 	PolarAngleAxis,
 	PolarGrid,
+	PolarRadiusAxis,
 	Radar,
 	RadarChart,
 	ResponsiveContainer,
 	Scatter,
 	ScatterChart,
 	Tooltip,
-	Treemap,
 	XAxis,
 	YAxis,
 } from "recharts";
@@ -46,12 +46,10 @@ import { PolarBarChart } from "@/components/visualizations/PolarBarChart";
 import { PuckChart } from "@/components/visualizations/PuckChart";
 import { StretchFill } from "@/components/visualizations/StretchFill";
 import { SunburstChart } from "@/components/visualizations/SunburstChart";
-import {
-	aggregateChartData,
-	ChartTooltip,
-} from "@/components/visualizations/shared/chartShared";
+import { aggregateChartData } from "@/components/visualizations/shared/chartShared";
 import { PaginatedLegend } from "@/components/visualizations/shared/PaginatedLegend";
 import { TableView } from "@/components/visualizations/TableView";
+import { TreemapChart } from "@/components/visualizations/TreemapChart";
 import { WordCloud } from "@/components/visualizations/WordCloud";
 import { WorldMapChart } from "@/components/visualizations/WorldMapChart";
 import { CsvExportButton } from "@/components/widgets/CsvExportButton";
@@ -63,6 +61,7 @@ import {
 	useAppliedFilters,
 	useFilterStore,
 } from "@/lib/dashboardFilters";
+import { formatValue } from "@/lib/formatValue";
 import {
 	computeParamGroups,
 	ensureParamSheet,
@@ -74,6 +73,7 @@ import { useTabColors } from "@/lib/tabColors";
 import { aggregateTableRows } from "@/lib/tableAggregate";
 import { filterRowMatrix } from "@/lib/vizFilter";
 import { contentSizeStyles, hasContentSize } from "@/lib/vizSize";
+import { applyVizSort } from "@/lib/vizSort";
 import { buildFlexModel } from "@/utils/dashboardLayout";
 import { runDatabaseQuery } from "../api";
 import { usePortalStore } from "../store";
@@ -1043,6 +1043,15 @@ function VizContent({
 				column={(viz.config as any)?.filterColumn ?? ""}
 				targets={(viz.config as any)?.filterTargets ?? []}
 				rows={toChartData(result) as Record<string, any>[]}
+				displayType={
+					(viz.config as any)?.filterDisplayType ?? "dropdown"
+				}
+				multiSelect={(viz.config as any)?.filterMultiSelect ?? true}
+				autoRun={(viz.config as any)?.filterAutoRun ?? true}
+				filterFloatRules={(viz.config as any)?.filterFloatRules}
+				floatSchemaColumns={
+					(viz.config as any)?.filterFloatColumns ?? []
+				}
 			/>,
 		);
 	}
@@ -1145,30 +1154,248 @@ function ChartOrTable({
 	const chartY = result.headers.slice(1);
 
 	if (vizType === "radar") {
+		const radarXKey = (config as any)?.xKey || chartX;
+		const radarYKeys: string[] = (config as any)?.yKeys?.length
+			? (config as any).yKeys
+			: chartY;
+		const radarStyling = (config as any)?.styling?.radar;
+		const radarAggs: Record<string, string> =
+			(config as any)?.columnAggregations ?? {};
+		const radarAggNames: Record<string, string> = {
+			sum: "Sum",
+			avg: "Average",
+			count: "Count",
+			countUnique: "Count Unique",
+			min: "Min",
+			max: "Max",
+			median: "Median",
+			last: "Last",
+		};
+		const radarAxisLabel = (col: string) => {
+			const agg = radarAggs[col];
+			return agg ? `${radarAggNames[agg] ?? agg} of ${col}` : col;
+		};
+		const radarColors = (config as any)?.styling?.colorPalette?.colors
+			?.length
+			? (config as any).styling.colorPalette.colors
+			: COLORS;
+		const radarFmtRules = (config as any)?.styling?.formatRules ?? [];
+		// Apply sort rules before aggregation (mirrors DashboardVisualization behavior)
+		const radarSortedData = applyVizSort(
+			data,
+			(config as any)?.styling?.sortValues,
+		);
+		// Aggregate sorted rows by dimension column, then pivot so value columns become axes
+		const aggregated = aggregateChartData(
+			radarSortedData,
+			radarXKey,
+			radarYKeys,
+			config as any,
+		);
+		const radarSeries = radarXKey
+			? [...new Set(aggregated.map((r) => String(r[radarXKey] ?? "")))]
+			: ["Value"];
+		// Raw pivot — always holds original aggregated values (for labels & tooltip)
+		const radarPivoted = radarYKeys.map((col) => {
+			const entry: Record<string, unknown> = {
+				_axis: radarAxisLabel(col),
+				_col: col,
+			};
+			if (radarXKey) {
+				for (const row of aggregated) {
+					entry[String(row[radarXKey] ?? "")] = row[col] ?? 0;
+				}
+			} else {
+				entry.Value = aggregated[0]?.[col] ?? 0;
+			}
+			return entry;
+		});
+		const radarShowArea = radarStyling?.showArea ?? false;
+		const radarFillOpacity = radarStyling?.fillOpacity ?? 0.25;
+		const radarShowTooltip = radarStyling?.showTooltip ?? true;
+		const radarShapePolygon = radarStyling?.shapePolygon !== false;
+		const radarValueLabel = radarStyling?.valueLabel;
+		const radarShowValueLabels = radarValueLabel?.show ?? false;
+		// normalizeAxes=false (default): per-column [0, colMax] → all spokes fill to outer ring
+		// normalizeAxes=true: raw values → shared Recharts domain → scale differences visible
+		const radarNormalize = radarStyling?.normalizeAxes ?? false;
+		const radarDisplayPivoted = radarNormalize
+			? radarPivoted
+			: radarPivoted.map((row) => {
+					const vals = radarSeries.map((s) => Number(row[s] ?? 0));
+					const colMax = Math.max(...vals, 0.0001);
+					const norm: Record<string, unknown> = {
+						_axis: row._axis,
+						_col: row._col,
+					};
+					for (const s of radarSeries) {
+						norm[s] = Number(row[s] ?? 0) / colMax;
+					}
+					return norm;
+				});
 		return (
 			<div className="h-full w-full">
 				<ResponsiveContainer width="100%" height="100%">
-					<RadarChart data={data}>
-						<PolarGrid />
-						<PolarAngleAxis dataKey={chartX} />
-						{chartY.map((k, i) => (
-							<Radar
-								key={k}
-								dataKey={k}
-								isAnimationActive={false}
-								stroke={COLORS[i % COLORS.length]}
-								fill={COLORS[i % COLORS.length]}
-								fillOpacity={0.25}
+					<RadarChart data={radarDisplayPivoted}>
+						<PolarGrid
+							gridType={radarShapePolygon ? "polygon" : "circle"}
+						/>
+						<PolarAngleAxis dataKey="_axis" />
+						{!radarNormalize && (
+							<PolarRadiusAxis
+								domain={[0, 1]}
+								tick={false}
+								axisLine={false}
 							/>
-						))}
-						<Tooltip
-							content={<ChartTooltip config={config as any} />}
-							wrapperStyle={{ zIndex: 10 }}
-						/>
-						<Legend
-							content={<PaginatedLegend />}
-							wrapperStyle={{ fontSize: 11, color: "#64748b" }}
-						/>
+						)}
+						{radarSeries.map((s, i) => {
+							const color = radarColors[i % radarColors.length];
+							return (
+								<Radar
+									key={s}
+									name={s}
+									dataKey={s}
+									isAnimationActive={false}
+									stroke={color}
+									fill={radarShowArea ? color : "transparent"}
+									fillOpacity={
+										radarShowArea ? radarFillOpacity : 0
+									}
+									label={
+										radarShowValueLabels
+											? (props: any) => {
+													const raw =
+														radarPivoted[
+															props.index
+														]?.[s];
+													if (
+														raw === undefined ||
+														raw === null
+													)
+														return null;
+													const col = String(
+														radarPivoted[
+															props.index
+														]?._col ?? "",
+													);
+													const pos =
+														radarValueLabel?.position ??
+														"top";
+													const dy =
+														pos === "bottom"
+															? 14
+															: pos === "inside"
+																? 4
+																: -8;
+													const fwMap: Record<
+														string,
+														number
+													> = {
+														normal: 400,
+														medium: 500,
+														semibold: 600,
+														bold: 700,
+													};
+													return (
+														<text
+															key={`rl-${s}-${props.index}`}
+															x={props.x}
+															y={props.y + dy}
+															textAnchor="middle"
+															fill={
+																radarValueLabel?.color ??
+																color
+															}
+															fontSize={
+																radarValueLabel?.fontSize ??
+																10
+															}
+															fontWeight={
+																fwMap[
+																	radarValueLabel?.fontWeight ??
+																		""
+																] ?? 500
+															}
+														>
+															{formatValue(
+																raw,
+																col,
+																radarFmtRules,
+															)}
+														</text>
+													);
+												}
+											: undefined
+									}
+								/>
+							);
+						})}
+						{radarSeries.length > 1 && (
+							<Legend
+								content={<PaginatedLegend />}
+								wrapperStyle={{
+									fontSize: 11,
+									color: "#64748b",
+								}}
+							/>
+						)}
+						{radarShowTooltip && (
+							<Tooltip
+								wrapperStyle={{ zIndex: 10 }}
+								content={(props: any) => {
+									if (!props.active || !props.payload?.length)
+										return null;
+									const spoke = props.payload[0]?.payload;
+									return (
+										<div className="min-w-[120px] rounded-md border border-slate-200 bg-white p-2 text-xs shadow-md">
+											<p className="mb-1.5 truncate font-semibold text-slate-700">
+												{spoke?._axis ?? ""}
+											</p>
+											{props.payload.map((p: any) => {
+												const rawEntry =
+													radarPivoted.find(
+														(r) =>
+															r._axis ===
+															spoke?._axis,
+													);
+												const rawVal =
+													rawEntry?.[p.dataKey];
+												const col = String(
+													rawEntry?._col ?? "",
+												);
+												return (
+													<div
+														key={p.dataKey}
+														className="flex items-center gap-2 py-0.5"
+													>
+														<span
+															className="h-2 w-2 flex-shrink-0 rounded-full"
+															style={{
+																background:
+																	p.color,
+															}}
+														/>
+														<span className="flex-1 text-slate-500">
+															{p.name}:
+														</span>
+														<span className="font-medium text-slate-700">
+															{rawVal !==
+															undefined
+																? formatValue(
+																		rawVal,
+																		col,
+																		radarFmtRules,
+																	)
+																: ""}
+														</span>
+													</div>
+												);
+											})}
+										</div>
+									);
+								}}
+							/>
+						)}
 					</RadarChart>
 				</ResponsiveContainer>
 			</div>
@@ -1176,115 +1403,326 @@ function ChartOrTable({
 	}
 
 	if (vizType === "treemap") {
-		const aggregated = aggregateChartData(
-			data,
-			chartX,
-			[chartY[0]],
-			config as any,
-		);
-		const tm = aggregated.map((r) => {
-			const d: Record<string, any> = {
-				name: String(r[chartX]),
-				size: Number(r[chartY[0]]) || 1,
-			};
-			for (const k of Object.keys(r)) {
-				if (k.startsWith("_tooltip_")) d[k] = r[k];
-			}
-			return d;
-		});
 		return (
 			<div className="h-full w-full">
-				<ResponsiveContainer width="100%" height="100%">
-					<Treemap
-						data={tm}
-						dataKey="size"
-						nameKey="name"
-						isAnimationActive={false}
-						content={({
-							x,
-							y,
-							width,
-							height: h,
-							name,
-							index,
-						}: any) => (
-							<g>
-								<rect
-									x={x}
-									y={y}
-									width={width}
-									height={h}
-									style={{
-										fill: COLORS[
-											(index ?? 0) % COLORS.length
-										],
-										stroke: "#fff",
-										strokeWidth: 2,
-									}}
-								/>
-								{width > 40 && h > 20 && (
-									<text
-										x={x + width / 2}
-										y={y + h / 2}
-										textAnchor="middle"
-										dominantBaseline="middle"
-										fill="#fff"
-										fontSize={11}
-										fontWeight={600}
-									>
-										{name}
-									</text>
-								)}
-							</g>
-						)}
-					>
-						<Tooltip
-							content={<ChartTooltip config={config as any} />}
-						/>
-					</Treemap>
-				</ResponsiveContainer>
+				<TreemapChart
+					data={data}
+					config={config as any}
+					height="100%"
+				/>
 			</div>
 		);
 	}
 
 	if (vizType === "scatter") {
+		const scatterCfg = config as any;
+		const labelKey: string = scatterCfg?.label || "";
+		const sizeKey: string = scatterCfg?.size || "";
+		const colorKey: string = scatterCfg?.color || "";
+		const fmtRules = scatterCfg?.styling?.formatRules ?? [];
+		const scatterTooltipCols: Array<{
+			column: string;
+			aggregation: string;
+		}> = scatterCfg?.tooltips?.length
+			? scatterCfg.tooltips
+			: scatterCfg?.tooltip
+				? [
+						{
+							column: scatterCfg.tooltip,
+							aggregation:
+								scatterCfg?.tooltipAggregation ||
+								scatterCfg?.columnAggregations?.[
+									scatterCfg.tooltip
+								] ||
+								"count",
+						},
+					]
+				: [];
+
+		const aggVal = (vals: any[], type: string): number => {
+			const nums = vals.map(Number).filter((n) => !isNaN(n));
+			if (!nums.length) return 0;
+			switch (type) {
+				case "avg":
+					return nums.reduce((a, b) => a + b, 0) / nums.length;
+				case "count":
+					return nums.length;
+				case "max":
+					return Math.max(...nums);
+				case "min":
+					return Math.min(...nums);
+				default:
+					return nums.reduce((a, b) => a + b, 0);
+			}
+		};
+
+		let scatterData: any[] = [];
+
+		if (labelKey && data.length > 0) {
+			const grouped = new Map<string, any>();
+			data.forEach((row) => {
+				const labelValue = String(row[labelKey] ?? "");
+				if (!grouped.has(labelValue)) {
+					const _ttVals: Record<string, any[]> = {};
+					for (const { column } of scatterTooltipCols)
+						_ttVals[column] = [];
+					grouped.set(labelValue, {
+						label: labelValue,
+						_xValues: [] as any[],
+						_yValues: [] as any[],
+						_sizeValues: [] as any[],
+						_ttVals,
+						colorCategory: colorKey ? row[colorKey] : undefined,
+					});
+				}
+				const g = grouped.get(labelValue)!;
+				g._xValues.push(row[chartX]);
+				g._yValues.push(row[chartY[0]]);
+				if (sizeKey) g._sizeValues.push(row[sizeKey]);
+				for (const { column } of scatterTooltipCols)
+					g._ttVals[column].push(row[column]);
+			});
+
+			scatterData = Array.from(grouped.values()).map((g) => {
+				const point: any = { label: g.label };
+				const xAgg = scatterCfg?.columnAggregations?.[chartX] || "avg";
+				point[chartX] = aggVal(g._xValues, xAgg);
+				const yAgg =
+					scatterCfg?.columnAggregations?.[chartY[0]] || "avg";
+				point[chartY[0]] = aggVal(g._yValues, yAgg);
+				if (sizeKey && g._sizeValues.length > 0) {
+					const sizeAgg =
+						scatterCfg?.columnAggregations?.[sizeKey] || "avg";
+					point[sizeKey] = aggVal(g._sizeValues, sizeAgg);
+					point.sizeValue = point[sizeKey];
+				}
+				for (const { column, aggregation } of scatterTooltipCols) {
+					const vals = g._ttVals[column] ?? [];
+					if (vals.length)
+						point[`_tooltip_${column}`] = aggVal(vals, aggregation);
+				}
+				if (colorKey) point.colorCategory = g.colorCategory;
+				return point;
+			});
+		} else {
+			scatterData = data.map((row) => {
+				const point: any = {
+					[chartX]: row[chartX],
+					[chartY[0]]: row[chartY[0]],
+				};
+				if (sizeKey && row[sizeKey] != null) {
+					point[sizeKey] = Number(row[sizeKey]);
+					point.sizeValue = point[sizeKey];
+				}
+				if (colorKey && row[colorKey])
+					point.colorCategory = row[colorKey];
+				return point;
+			});
+		}
+
+		const colorCategories = colorKey
+			? Array.from(
+					new Set(
+						scatterData.map((d) => d.colorCategory).filter(Boolean),
+					),
+				)
+			: [];
+
+		if (sizeKey) {
+			const sizes = scatterData
+				.map((d) => d[sizeKey])
+				.filter((s) => s != null);
+			if (sizes.length > 0) {
+				const minSize = Math.min(...sizes);
+				const maxSize = Math.max(...sizes);
+				const range = maxSize - minSize || 1;
+				scatterData.forEach((d) => {
+					d.size =
+						d[sizeKey] != null
+							? 3 + ((d[sizeKey] - minSize) / range) * 12
+							: 5;
+				});
+			} else {
+				scatterData.forEach((d) => (d.size = 5));
+			}
+		} else {
+			scatterData.forEach((d) => (d.size = 5));
+		}
+
 		return (
 			<div className="h-full w-full">
 				<ResponsiveContainer width="100%" height="100%">
-					<ScatterChart>
+					<ScatterChart
+						margin={{ top: 8, right: 8, left: 0, bottom: 8 }}
+					>
 						<CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
 						<XAxis
+							type="number"
 							dataKey={chartX}
 							name={chartX}
-							tick={{ fontSize: 11 }}
-							label={{
-								value: (config as any)?.xLabel,
-								position: "insideBottom",
-								offset: -4,
-								fontSize: 11,
-							}}
+							tick={{ fontSize: 11, fill: "#94a3b8" }}
+							axisLine={false}
+							tickLine={false}
+							tickFormatter={(v: unknown) =>
+								formatValue(v, chartX, fmtRules)
+							}
+							label={
+								scatterCfg?.xLabel
+									? {
+											value: scatterCfg.xLabel,
+											position: "insideBottom",
+											offset: -4,
+											fontSize: 11,
+											fill: "#94a3b8",
+										}
+									: undefined
+							}
 						/>
 						<YAxis
+							type="number"
 							dataKey={chartY[0]}
 							name={chartY[0]}
-							tick={{ fontSize: 11 }}
-							label={{
-								value: (config as any)?.yLabel,
-								angle: -90,
-								position: "insideLeft",
-								fontSize: 11,
-							}}
+							tick={{ fontSize: 11, fill: "#94a3b8" }}
+							axisLine={false}
+							tickLine={false}
+							width={48}
+							tickFormatter={(v: unknown) =>
+								formatValue(v, chartY[0] ?? "", fmtRules)
+							}
+							label={
+								scatterCfg?.yLabel
+									? {
+											value: scatterCfg.yLabel,
+											angle: -90,
+											position: "insideLeft",
+											fontSize: 11,
+											fill: "#94a3b8",
+										}
+									: undefined
+							}
 						/>
 						<Tooltip
-							content={<ChartTooltip config={config as any} />}
-							wrapperStyle={{ zIndex: 10 }}
 							cursor={{ strokeDasharray: "3 3" }}
+							wrapperStyle={{ zIndex: 10 }}
+							content={({ payload }) => {
+								if (!payload?.length) return null;
+								const d = payload[0].payload;
+								const xAgg =
+									scatterCfg?.columnAggregations?.[chartX] ||
+									"avg";
+								const yAgg =
+									scatterCfg?.columnAggregations?.[
+										chartY[0]
+									] || "avg";
+								const sizeAgg = sizeKey
+									? scatterCfg?.columnAggregations?.[
+											sizeKey
+										] || "avg"
+									: "";
+								const activeTtCols = scatterTooltipCols.filter(
+									({ column }) =>
+										d[`_tooltip_${column}`] !== undefined,
+								);
+								return (
+									<div className="rounded border border-slate-200 bg-white p-2 text-xs shadow-lg">
+										{labelKey && d.label && (
+											<div className="mb-1 font-semibold">
+												{formatValue(
+													d.label,
+													labelKey,
+													fmtRules,
+												)}
+											</div>
+										)}
+										<div>{`${chartX} (${xAgg}): ${formatValue(d[chartX], chartX, fmtRules)}`}</div>
+										<div>{`${chartY[0]} (${yAgg}): ${formatValue(d[chartY[0]], chartY[0], fmtRules)}`}</div>
+										{sizeKey && d[sizeKey] != null && (
+											<div>{`${sizeKey} (${sizeAgg}): ${formatValue(d[sizeKey], sizeKey, fmtRules)}`}</div>
+										)}
+										{colorKey && d.colorCategory && (
+											<div>{`${colorKey}: ${formatValue(d.colorCategory, colorKey, fmtRules)}`}</div>
+										)}
+										{activeTtCols.length > 0 && (
+											<div className="mt-1 border-slate-200 border-t pt-1">
+												{activeTtCols.map(
+													({
+														column,
+														aggregation,
+													}) => (
+														<div
+															key={column}
+														>{`${column} (${aggregation}): ${formatValue(d[`_tooltip_${column}`], column, fmtRules)}`}</div>
+													),
+												)}
+											</div>
+										)}
+									</div>
+								);
+							}}
 						/>
-						<Scatter
-							data={data}
-							fill={COLORS[0]}
-							isAnimationActive={false}
-						/>
+						{colorCategories.length > 0 ? (
+							colorCategories.map((category, idx) => (
+								<Scatter
+									key={String(category)}
+									name={String(category)}
+									isAnimationActive={false}
+									data={scatterData.filter(
+										(d) => d.colorCategory === category,
+									)}
+									fill={COLORS[idx % COLORS.length]}
+									fillOpacity={0.75}
+									shape={(props: any) => {
+										const { cx, cy, payload } = props;
+										const r = payload.size || 5;
+										return (
+											<circle
+												cx={cx}
+												cy={cy}
+												r={r}
+												fill={
+													COLORS[idx % COLORS.length]
+												}
+												fillOpacity={0.75}
+												stroke="#fff"
+												strokeWidth={1}
+											/>
+										);
+									}}
+								/>
+							))
+						) : (
+							<Scatter
+								data={scatterData}
+								isAnimationActive={false}
+								fill={COLORS[0]}
+								fillOpacity={0.75}
+								shape={(props: any) => {
+									const { cx, cy, payload } = props;
+									const r = payload.size || 5;
+									return (
+										<circle
+											cx={cx}
+											cy={cy}
+											r={r}
+											fill={COLORS[0]}
+											fillOpacity={0.75}
+											stroke="#fff"
+											strokeWidth={1}
+										/>
+									);
+								}}
+							/>
+						)}
+						{colorCategories.length > 1 && (
+							<Legend
+								content={<PaginatedLegend />}
+								wrapperStyle={{
+									fontSize: 11,
+									color: "#64748b",
+									paddingTop: 8,
+								}}
+							/>
+						)}
 					</ScatterChart>
 				</ResponsiveContainer>
 			</div>
@@ -1293,15 +1731,19 @@ function ChartOrTable({
 
 	if (vizType === "heatmap") {
 		return (
-			<div className="h-[340px]">
-				<HeatmapChart data={data} config={config as any} />
+			<div className="h-full w-full">
+				<HeatmapChart
+					data={data}
+					config={config as any}
+					formatRules={(config as any)?.styling?.formatRules ?? []}
+				/>
 			</div>
 		);
 	}
 
 	if (vizType === "halfdonut") {
 		return (
-			<div className="h-[280px]">
+			<div className="h-full w-full">
 				<HalfDonutChart data={data} config={config as any} />
 			</div>
 		);
@@ -1375,8 +1817,12 @@ function ChartOrTable({
 
 	if (vizType === "sunburst") {
 		return (
-			<div className="h-[380px]">
-				<SunburstChart data={data} config={config as any} />
+			<div className="h-full w-full">
+				<SunburstChart
+					data={data}
+					config={config as any}
+					formatRules={(config as any)?.styling?.formatRules}
+				/>
 			</div>
 		);
 	}

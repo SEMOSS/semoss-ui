@@ -40,6 +40,7 @@ import {
 	type ColorPalette as ColorPaletteType,
 	type ColorRule,
 	curveTypeToRecharts,
+	type FormatRule,
 	type VisualizationConfig,
 } from "@/types/dashboard";
 
@@ -449,7 +450,7 @@ function TotalLabels({
 	xDataKey: string;
 	flipAxis: boolean;
 	yKey: string;
-	formatRules: unknown[];
+	formatRules: FormatRule[];
 }) {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const xScale = useXAxisScale() as any;

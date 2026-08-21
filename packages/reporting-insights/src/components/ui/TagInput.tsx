@@ -16,6 +16,8 @@ interface Props {
 	className?: string;
 	/** Cap the number of tags. When value.length >= max, input is hidden. */
 	max?: number;
+	/** When true, the remove button is hidden if only one tag remains. */
+	preventEmpty?: boolean;
 }
 
 export function TagInput({
@@ -25,6 +27,7 @@ export function TagInput({
 	placeholder = "Add a tag…",
 	className = "",
 	max,
+	preventEmpty,
 }: Props) {
 	const [draft, setDraft] = useState("");
 	const [open, setOpen] = useState(false);
@@ -64,14 +67,16 @@ export function TagInput({
 						className="inline-flex items-center gap-1 rounded bg-indigo-50 px-1.5 py-0.5 font-medium text-[11px] text-indigo-700"
 					>
 						{t}
-						<button
-							type="button"
-							onClick={() => remove(t)}
-							className="text-indigo-400 hover:text-indigo-700"
-							aria-label={`Remove ${t}`}
-						>
-							<X className="h-3 w-3" />
-						</button>
+						{!(preventEmpty && value.length <= 1) && (
+							<button
+								type="button"
+								onClick={() => remove(t)}
+								className="text-indigo-400 hover:text-indigo-700"
+								aria-label={`Remove ${t}`}
+							>
+								<X className="h-3 w-3" />
+							</button>
+						)}
 					</span>
 				))}
 				{atMax ? (

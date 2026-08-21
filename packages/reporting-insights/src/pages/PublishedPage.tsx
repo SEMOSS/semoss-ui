@@ -9,7 +9,7 @@ import {
 	Rocket,
 	SlidersHorizontal,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { accentFor } from "@/components/DashboardCard";
 import { FolderRail, type FolderSel } from "@/components/FolderRail";
@@ -19,22 +19,12 @@ import {
 	ConfirmDialog,
 	EmptyState,
 	ErrorState,
-	Input,
 	LoadingState,
 } from "@/components/ui";
 import { useToast } from "@/components/ui/Toast";
+import { publishedPortalUrl } from "@/lib/portalUrl";
+import { LANDING_PAGE_TAG } from "@/services/projectStore";
 import { useWorkspace } from "@/workspace/WorkspaceProvider";
-
-// Public portal URL for a published project — must point at the SEMOSS backend.
-const BACKEND_ORIGIN = String(import.meta.env.ENDPOINT || "").replace(
-	/\/+$/,
-	"",
-);
-const MODULE_PATH = (
-	String(import.meta.env.MODULE || "") || "/Monolith"
-).replace(/\/+$/, "");
-const publishedUrl = (id: string) =>
-	`${(BACKEND_ORIGIN || window.location.origin) + MODULE_PATH}/public_home/${encodeURIComponent(id)}/portals/`;
 
 export function PublishedPage() {
 	const {
@@ -47,6 +37,7 @@ export function PublishedPage() {
 		error,
 		reload,
 		loadDashboard,
+		isAdmin,
 	} = useWorkspace();
 	// Every dashboard you can access (access is enforced by SEMOSS — apps shared
 	// with no one but their owner never appear for other users).
@@ -56,7 +47,7 @@ export function PublishedPage() {
 				id: d.id,
 				name: d.name,
 				description: d.description ?? "",
-				url: publishedUrl(d.id),
+				url: publishedPortalUrl(d.id),
 				published: !!d.published,
 				tags: d.tags ?? [],
 			})),
@@ -66,29 +57,38 @@ export function PublishedPage() {
 	const [paramDashboardIds, setParamDashboardIds] = useState<Set<string>>(
 		new Set(),
 	);
+	// Track IDs we've already checked so re-renders (e.g. when a definition loads
+	// and updates dashboards state) don't re-fire GetAppAssets for known dashboards.
+	const checkedIdsRef = useRef(new Set<string>());
+	const loadDashboardRef = useRef(loadDashboard);
+	loadDashboardRef.current = loadDashboard;
 	useEffect(() => {
-		if (!dashboards.length) return;
+		const newIds = dashboards
+			.map((d) => d.id)
+			.filter((id) => !checkedIdsRef.current.has(id));
+		if (!newIds.length) return;
+		newIds.forEach((id) => checkedIdsRef.current.add(id));
 		void Promise.all(
-			dashboards.map(async (d) => {
+			newIds.map(async (id) => {
 				try {
-					const full = await loadDashboard(d.id);
+					const full = await loadDashboardRef.current(id);
 					const has =
 						full.sheets.some((s) => s.isParamSheet) ||
 						full.queries?.some(
 							(q) => (q.parameters?.length ?? 0) > 0,
 						) ||
 						false;
-					return has ? d.id : null;
+					return has ? id : null;
 				} catch {
 					return null;
 				}
 			}),
 		).then((results) => {
-			setParamDashboardIds(
-				new Set(results.filter((id): id is string => id !== null)),
-			);
+			const found = results.filter((id): id is string => id !== null);
+			if (found.length)
+				setParamDashboardIds((prev) => new Set([...prev, ...found]));
 		});
-	}, [dashboards, loadDashboard]);
+	}, [dashboards]);
 
 	const [query, setQuery] = useState("");
 	const [folderSel, setFolderSel] = useState<FolderSel>("all");
@@ -190,7 +190,7 @@ export function PublishedPage() {
 				{/* Main column */}
 				<div className="min-w-0 flex-1 space-y-4">
 					{apps.length > 0 && (
-						<Input
+						<input
 							type="text"
 							placeholder="Search published apps…"
 							value={query}
@@ -262,13 +262,35 @@ export function PublishedPage() {
 												folders={folders}
 												selected={app.tags}
 												onSelect={(folderId) => {
+													const systemTags =
+														app.tags.filter(
+															(t) =>
+																t ===
+																LANDING_PAGE_TAG,
+														);
+													if (
+														!folderId &&
+														systemTags.length > 0
+													)
+														return;
+													const newTags = folderId
+														? [
+																...systemTags,
+																folderId,
+															]
+														: systemTags;
 													setDashboardTags(
 														app.id,
-														folderId
-															? [folderId]
-															: [],
+														newTags,
 													);
 												}}
+												disabled={
+													!isAdmin &&
+													app.tags.includes(
+														LANDING_PAGE_TAG,
+													)
+												}
+												disabledTooltip="Only admins can edit the folder for landing page dashboards"
 												className="rounded-md bg-white/80 p-1.5 text-stone-400 backdrop-blur-sm transition-colors hover:bg-indigo-50 hover:text-indigo-600"
 											/>
 										</div>
@@ -303,8 +325,16 @@ export function PublishedPage() {
 
 										{/* Footer is a SIBLING of the card Link so it can hold a real
                                             anchor (an <a> nested inside <Link> would be invalid). */}
-										<div className="mt-auto flex items-center gap-2 border-stone-100 border-t bg-stone-50/60 px-4 py-2.5">
-											{app.published ? (
+										<div className="mt-auto flex items-center gap-2 border-stone-100 border-t bg-stone-50/60 px-2 py-2.5">
+											{app.published &&
+											(app.tags ?? []).includes(
+												LANDING_PAGE_TAG,
+											) ? (
+												<span className="inline-flex items-center gap-1.5 font-medium text-[11px] text-emerald-600">
+													<span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{" "}
+													Landing Page
+												</span>
+											) : app.published ? (
 												<span className="inline-flex items-center gap-1.5 font-medium text-[11px] text-emerald-600">
 													<span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{" "}
 													Public

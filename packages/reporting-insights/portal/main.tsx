@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
+import "leaflet/dist/leaflet.css";
 import "./index.css";
 
 // ── MCP tool parameter capture (must run BEFORE React mounts) ────────────────

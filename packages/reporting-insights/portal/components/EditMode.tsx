@@ -833,7 +833,7 @@ export function EditMode() {
 											/>
 											{editingVizId === viz.id ? (
 												<input
-													autoFocus
+													ref={(el) => el?.focus()}
 													value={viz.title}
 													onChange={(e) =>
 														updateViz(viz.id, {
@@ -1083,6 +1083,31 @@ export function EditMode() {
 																		{}),
 																	filterDefaultValues:
 																		values,
+																},
+															})
+														}
+														onMultilineStylingChange={(
+															updates,
+														) =>
+															updateViz(viz.id, {
+																config: {
+																	...(viz.config ??
+																		{}),
+																	styling: {
+																		...(viz
+																			.config
+																			?.styling ??
+																			{}),
+																		multiline:
+																			{
+																				...(viz
+																					.config
+																					?.styling
+																					?.multiline ??
+																					{}),
+																				...updates,
+																			},
+																	},
 																},
 															})
 														}
@@ -1447,9 +1472,27 @@ function VizCard({
 						},
 					];
 				}
+				if (viz.config?.heatKey) {
+					const hk = viz.config.heatKey;
+					data.heat = [
+						{
+							name: hk,
+							dataType: typeMap[hk] || "NUMBER",
+							aggregation:
+								viz.config?.columnAggregations?.[hk] || "avg",
+						},
+					];
+				}
 			} else if (vt === "treemap") {
+				if (viz.config?.seriesKey)
+					data.series = [
+						{
+							name: viz.config.seriesKey,
+							dataType: typeMap[viz.config.seriesKey] || "STRING",
+						},
+					];
 				if (viz.config?.xKey)
-					data.name = [
+					data.label = [
 						{
 							name: viz.config.xKey,
 							dataType: typeMap[viz.config.xKey] || "STRING",
@@ -1466,6 +1509,51 @@ function VizCard({
 								(typeMap[c] === "NUMBER" ? "sum" : "count"),
 						},
 					];
+				}
+			} else if (vt === "halfdonut") {
+				if (viz.config?.xKey)
+					data.xAxis = [
+						{
+							name: viz.config.xKey,
+							dataType: typeMap[viz.config.xKey] || "STRING",
+						},
+					];
+				if (viz.config?.yKeys?.[0]) {
+					const c = viz.config.yKeys[0];
+					data.yAxis = [
+						{
+							name: c,
+							dataType: typeMap[c] || "STRING",
+							aggregation:
+								viz.config?.columnAggregations?.[c] || "sum",
+						},
+					];
+				}
+				if (viz.config?.targetKey) {
+					const c = viz.config.targetKey;
+					data.target = [
+						{
+							name: c,
+							dataType: typeMap[c] || "STRING",
+							aggregation:
+								viz.config?.columnAggregations?.[c] || "sum",
+						},
+					];
+				}
+				if (viz.config?.tooltips?.length) {
+					data.tooltip = viz.config.tooltips.map(
+						({
+							column,
+							aggregation,
+						}: {
+							column: string;
+							aggregation: string;
+						}) => ({
+							name: column,
+							dataType: typeMap[column] || "STRING",
+							aggregation,
+						}),
+					);
 				}
 			} else if (vt === "pivot") {
 				if (viz.config?.xKey)
@@ -1766,9 +1854,41 @@ function VizCard({
 			} else if (vt === "pie") {
 				newCfg.xKey = data.name?.[0]?.name || "";
 				newCfg.yKeys = data.value?.[0] ? [data.value[0].name] : [];
+				newCfg.columnAggregations = newCfg.columnAggregations || {};
+				if (data.value?.[0]?.aggregation) {
+					newCfg.columnAggregations[data.value[0].name] =
+						data.value[0].aggregation;
+				}
+				newCfg.heatKey = data.heat?.[0]?.name || undefined;
+				if (data.heat?.[0]?.aggregation) {
+					newCfg.columnAggregations[data.heat[0].name] =
+						data.heat[0].aggregation;
+				}
 			} else if (vt === "treemap") {
-				newCfg.xKey = data.name?.[0]?.name || "";
+				newCfg.seriesKey = data.series?.[0]?.name || "";
+				newCfg.xKey = data.label?.[0]?.name || "";
 				newCfg.yKeys = data.size?.[0] ? [data.size[0].name] : [];
+				newCfg.columnAggregations = {};
+				if (data.size?.[0]?.aggregation)
+					newCfg.columnAggregations[data.size[0].name] =
+						data.size[0].aggregation;
+			} else if (vt === "halfdonut") {
+				newCfg.xKey = data.xAxis?.[0]?.name || "";
+				newCfg.yKeys = data.yAxis?.[0] ? [data.yAxis[0].name] : [];
+				newCfg.targetKey = data.target?.[0]?.name || undefined;
+				newCfg.columnAggregations = {};
+				[...(data.yAxis ?? []), ...(data.target ?? [])].forEach(
+					(c: any) => {
+						if (c.aggregation)
+							newCfg.columnAggregations![c.name] = c.aggregation;
+					},
+				);
+				if (data.tooltip?.length) {
+					newCfg.tooltips = data.tooltip.map((c: any) => ({
+						column: c.name,
+						aggregation: c.aggregation,
+					}));
+				}
 			} else if (vt === "pivot") {
 				// Pivot: rows → pivotRows, columns → pivotColumns, values → pivotValues
 				newCfg.pivotRows = data.rows?.map((c: any) => c.name) || [];
@@ -1964,6 +2084,21 @@ function VizCard({
 								config: {
 									...(viz.config ?? {}),
 									filterDefaultValues: values,
+								},
+							})
+						}
+						onMultilineStylingChange={(updates) =>
+							onUpdate({
+								config: {
+									...(viz.config ?? {}),
+									styling: {
+										...(viz.config?.styling ?? {}),
+										multiline: {
+											...(viz.config?.styling
+												?.multiline ?? {}),
+											...updates,
+										},
+									},
 								},
 							})
 						}

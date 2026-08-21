@@ -10,7 +10,6 @@ import {
 	RefreshCw,
 	ScatterChart as ScatterChartIcon,
 	SlidersHorizontal,
-	TreeDeciduous,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -26,7 +25,6 @@ import {
 	Scatter,
 	ScatterChart,
 	Tooltip,
-	Treemap,
 	XAxis,
 	YAxis,
 } from "recharts";
@@ -54,6 +52,7 @@ import { StretchFill } from "@/components/visualizations/StretchFill";
 import { SunburstChart } from "@/components/visualizations/SunburstChart";
 import { PaginatedLegend } from "@/components/visualizations/shared/PaginatedLegend";
 import { TableView } from "@/components/visualizations/TableView";
+import { TreemapChart } from "@/components/visualizations/TreemapChart";
 import { WordCloud } from "@/components/visualizations/WordCloud";
 import { WorldMapChart } from "@/components/visualizations/WorldMapChart";
 import { CsvExportButton } from "@/components/widgets/CsvExportButton";
@@ -68,13 +67,14 @@ import { formatValue } from "@/lib/formatValue";
 import { escapeSqlForPixel } from "@/lib/pixel";
 import { type QuerySource, resolveParamDefault } from "@/lib/resolveQuery";
 import { aggregateTableRows } from "@/lib/tableAggregate";
-import { applyVizFilter } from "@/lib/vizFilter";
+import { applyVizFilter, type VizFilterGroup } from "@/lib/vizFilter";
 import { contentSizeStyles, hasContentSize } from "@/lib/vizSize";
 import { applyVizSort } from "@/lib/vizSort";
 import type {
 	AreaStyling,
 	ComboStyling,
 	LineStyling,
+	MultiLineStyling,
 	StackBarStyling,
 	Visualization,
 } from "@/types/dashboard";
@@ -93,95 +93,6 @@ export const CHART_COLORS = [
 
 // ── PERF DIAGNOSTIC flag (temporary) ──────────────────────────────────────────
 // const PERF = true;
-
-// ── Custom tooltip ────────────────────────────────────────────────────────────
-function ChartTooltip({
-	active,
-	payload,
-	label,
-	config,
-}: {
-	active?: boolean;
-	payload?: any[];
-	label?: string;
-	config?: any;
-}) {
-	if (!active || !payload?.length) return null;
-	const tooltipCols: Array<{ column: string; aggregation: string }> = config
-		?.tooltips?.length
-		? config.tooltips
-		: config?.tooltip
-			? [
-					{
-						column: config.tooltip,
-						aggregation:
-							config.tooltipAggregation ||
-							config?.columnAggregations?.[config.tooltip] ||
-							"count",
-					},
-				]
-			: [];
-	const rowData = payload[0].payload;
-	const activeTooltips = tooltipCols.filter(
-		({ column }) => rowData[`_tooltip_${column}`] !== undefined,
-	);
-
-	return (
-		<div className="min-w-[140px] rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-lg">
-			{label !== undefined && (
-				<p className="mb-2 max-w-[200px] truncate border-slate-100 border-b pb-2 font-semibold text-slate-700">
-					{String(label)}
-				</p>
-			)}
-			<div className="space-y-1">
-				{payload.map((entry: any) => (
-					<div
-						key={entry.dataKey}
-						className="flex items-center justify-between gap-4"
-					>
-						<div className="flex items-center gap-1.5">
-							<span
-								className="h-2 w-2 flex-shrink-0 rounded-full"
-								style={{ background: entry.color }}
-							/>
-							<span className="text-slate-500 text-xs">
-								{entry.dataKey}
-							</span>
-						</div>
-						<span className="font-semibold text-slate-900 text-xs tabular-nums">
-							{formatValue(
-								entry.value,
-								entry.dataKey,
-								config?.styling?.formatRules ?? [],
-							)}
-						</span>
-					</div>
-				))}
-			</div>
-			{activeTooltips.length > 0 && (
-				<div className="mt-2 space-y-1 border-slate-100 border-t pt-2">
-					{activeTooltips.map(({ column, aggregation }) => (
-						<div
-							key={column}
-							className="flex items-center justify-between gap-4"
-						>
-							<span className="text-slate-500 text-xs capitalize">
-								{aggregation} of {column}:
-							</span>
-							<span className="font-semibold text-slate-700 text-xs tabular-nums">
-								{formatValue(
-									rowData[`_tooltip_${column}`],
-									column,
-									config?.styling?.formatRules ?? [],
-								)}
-							</span>
-						</div>
-					))}
-				</div>
-			)}
-		</div>
-	);
-}
 
 // Shared axis/grid styles
 const AXIS_STYLE = { fontSize: 11, fill: "#94a3b8" };
@@ -242,6 +153,8 @@ interface Props {
 	 * so the editor can persist the selection as the default for view mode.
 	 */
 	onFilterDefaultValuesChange?: (vizId: string, values: string[]) => void;
+	/** Called when the user saves float rules in the editor, to persist them to config. */
+	onFilterFloatRulesChange?: (vizId: string, rules: VizFilterGroup) => void;
 	/**
 	 * Called when the stackbar chart requests a styling update (e.g. save-zoom on brush release).
 	 */
@@ -258,6 +171,10 @@ interface Props {
 	 * Called when the combo chart requests a styling update (e.g. save-zoom on brush release).
 	 */
 	onComboStylingChange?: (updates: Partial<ComboStyling>) => void;
+	/**
+	 * Called when the multiline chart requests a styling update (e.g. save-zoom on brush release).
+	 */
+	onMultilineStylingChange?: (updates: Partial<MultiLineStyling>) => void;
 }
 
 // Facet navigation bar
@@ -419,10 +336,12 @@ export function DashboardVisualization({
 	hasParamSheet = false,
 	loadAfterParams = false,
 	onFilterDefaultValuesChange,
+	onFilterFloatRulesChange,
 	onStackbarStylingChange,
 	onAreaStylingChange,
 	onLineStylingChange,
 	onComboStylingChange,
+	onMultilineStylingChange,
 }: Props) {
 	const { actions } = useInsight();
 	const sharedRun = useQueryRunner();
@@ -1004,7 +923,8 @@ export function DashboardVisualization({
 			!facetData.length ||
 			vt === "table" ||
 			vt === "kpi" ||
-			vt === "pivot"
+			vt === "pivot" ||
+			vt === "treemap"
 		)
 			return facetData;
 		if (!xKey || !yKeys.length) return facetData;
@@ -1172,6 +1092,27 @@ export function DashboardVisualization({
 									)
 							: undefined
 					}
+					displayType={
+						visualization.config?.filterDisplayType ?? "dropdown"
+					}
+					multiSelect={
+						visualization.config?.filterMultiSelect ?? true
+					}
+					autoRun={visualization.config?.filterAutoRun ?? true}
+					filterFloatRules={visualization.config?.filterFloatRules}
+					floatSchemaColumns={
+						visualization.config?.filterFloatColumns ?? []
+					}
+					isEditing={!!onFilterDefaultValuesChange}
+					onFloatRulesSave={
+						onFilterFloatRulesChange
+							? (rules) =>
+									onFilterFloatRulesChange(
+										visualization.id,
+										rules,
+									)
+							: undefined
+					}
 				/>
 			);
 		}
@@ -1287,6 +1228,7 @@ export function DashboardVisualization({
 				<MultiLineChart
 					data={facetData}
 					config={visualization.config}
+					onStylingChange={onMultilineStylingChange}
 				/>
 			);
 		}
@@ -1797,7 +1739,7 @@ export function DashboardVisualization({
 
 		// Radar
 		if (vt === "radar") {
-			if (!xKey || !yKeys.length) {
+			if (!yKeys.length) {
 				return (
 					<div className="flex h-full items-center justify-center">
 						<div className="px-6 text-center text-slate-400">
@@ -1806,52 +1748,185 @@ export function DashboardVisualization({
 								No data configured
 							</p>
 							<p className="mt-1 text-xs">
-								Drag columns to X-Axis and Y-Axis drop zones
+								Drag columns to the Dimensions and Values drop
+								zones
 							</p>
 						</div>
 					</div>
 				);
 			}
+			const radarStyling = visualization.config?.styling?.radar;
+			const radarFmtRules =
+				visualization.config?.styling?.formatRules ?? [];
+			const radarAggs = visualization.config?.columnAggregations ?? {};
+			const radarAggNames: Record<string, string> = {
+				sum: "Sum",
+				avg: "Average",
+				count: "Count",
+				countUnique: "Count Unique",
+				min: "Min",
+				max: "Max",
+				median: "Median",
+				last: "Last",
+			};
+			const radarAxisLabel = (col: string) => {
+				const agg = radarAggs[col];
+				return agg ? `${radarAggNames[agg] ?? agg} of ${col}` : col;
+			};
+			const radarColors = visualization.config?.styling?.colorPalette
+				?.colors?.length
+				? visualization.config.styling.colorPalette.colors
+				: CHART_COLORS;
+			const radarShowArea = radarStyling?.showArea ?? false;
+			const radarFillOpacity = radarStyling?.fillOpacity ?? 0.25;
+			const radarShowTooltip = radarStyling?.showTooltip ?? true;
+			const radarShapePolygon = radarStyling?.shapePolygon !== false;
+			const radarValueLabel = radarStyling?.valueLabel;
+			const radarShowValueLabels = radarValueLabel?.show ?? false;
+			const radarNormalize = radarStyling?.normalizeAxes ?? false;
+			// Pivot: value columns become the radar axes; xKey distinct values become polygon series
+			const radarSeries = xKey
+				? [...new Set(chartData.map((r) => String(r[xKey] ?? "")))]
+				: ["Value"];
+			// Raw pivot — always holds original aggregated values
+			const radarPivoted = yKeys.map((col) => {
+				const entry: Record<string, unknown> = {
+					_axis: radarAxisLabel(col),
+					_col: col,
+				};
+				if (xKey) {
+					for (const row of chartData) {
+						entry[String(row[xKey] ?? "")] = row[col] ?? 0;
+					}
+				} else {
+					entry["Value"] = chartData[0]?.[col] ?? 0;
+				}
+				return entry;
+			});
+			// Non-normalized: per-column [0,max] so all spokes fill to the same outer ring
+			const radarDisplayPivoted = radarNormalize
+				? radarPivoted
+				: radarPivoted.map((row) => {
+						const vals = radarSeries.map((s) =>
+							Number(row[s] ?? 0),
+						);
+						const colMax = Math.max(...vals, 0.0001);
+						const norm: Record<string, unknown> = {
+							_axis: row._axis,
+							_col: row._col,
+						};
+						for (const s of radarSeries) {
+							norm[s] = Number(row[s] ?? 0) / colMax;
+						}
+						return norm;
+					});
 			return (
 				<ResponsiveContainer width="100%" height={chartHeight}>
-					<RadarChart data={chartData}>
-						<PolarGrid stroke="#f1f5f9" />
-						<PolarAngleAxis
-							dataKey={xKey}
-							tick={AXIS_STYLE}
-							tickFormatter={(v: unknown) =>
-								formatValue(
-									v,
-									xKey,
-									visualization.config?.styling
-										?.formatRules ?? [],
-								)
-							}
+					<RadarChart data={radarDisplayPivoted}>
+						<PolarGrid
+							gridType={radarShapePolygon ? "polygon" : "circle"}
+							stroke="#f1f5f9"
 						/>
-						<PolarRadiusAxis
-							tick={{ fontSize: 10, fill: "#94a3b8" }}
-							axisLine={false}
-							tickFormatter={(v: unknown) =>
-								formatValue(
-									v,
-									yKeys[0] ?? "",
-									visualization.config?.styling
-										?.formatRules ?? [],
-								)
-							}
-						/>
-						{yKeys.map((k, i) => (
-							<Radar
-								key={k}
-								name={k}
-								dataKey={k}
-								isAnimationActive={false}
-								stroke={CHART_COLORS[i % CHART_COLORS.length]}
-								fill={CHART_COLORS[i % CHART_COLORS.length]}
-								fillOpacity={0.25}
+						<PolarAngleAxis dataKey="_axis" tick={AXIS_STYLE} />
+						{!radarNormalize && (
+							<PolarRadiusAxis
+								domain={[0, 1]}
+								tick={false}
+								axisLine={false}
 							/>
-						))}
-						{yKeys.length > 1 && (
+						)}
+						{radarSeries.map((s, i) => {
+							const color = radarColors[i % radarColors.length];
+							return (
+								<Radar
+									key={s}
+									name={s}
+									dataKey={s}
+									isAnimationActive={false}
+									stroke={color}
+									fill={radarShowArea ? color : "transparent"}
+									fillOpacity={
+										radarShowArea ? radarFillOpacity : 0
+									}
+									label={
+										radarShowValueLabels
+											? (
+													props: Record<
+														string,
+														unknown
+													>,
+												) => {
+													const idx =
+														props.index as number;
+													const raw =
+														radarPivoted[idx]?.[s];
+													if (
+														raw === undefined ||
+														raw === null
+													)
+														return null;
+													const col = String(
+														radarPivoted[idx]
+															?._col ?? "",
+													);
+													const pos =
+														radarValueLabel?.position ??
+														"top";
+													const dy =
+														pos === "bottom"
+															? 14
+															: pos === "inside"
+																? 4
+																: -8;
+													const fwMap: Record<
+														string,
+														number
+													> = {
+														normal: 400,
+														medium: 500,
+														semibold: 600,
+														bold: 700,
+													};
+													return (
+														<text
+															key={`rl-${s}-${idx}`}
+															x={
+																props.x as number
+															}
+															y={
+																(props.y as number) +
+																dy
+															}
+															textAnchor="middle"
+															fill={
+																radarValueLabel?.color ??
+																color
+															}
+															fontSize={
+																radarValueLabel?.fontSize ??
+																10
+															}
+															fontWeight={
+																fwMap[
+																	radarValueLabel?.fontWeight ??
+																		""
+																] ?? 500
+															}
+														>
+															{formatValue(
+																raw,
+																col,
+																radarFmtRules,
+															)}
+														</text>
+													);
+												}
+											: undefined
+									}
+								/>
+							);
+						})}
+						{radarSeries.length > 1 && (
 							<Legend
 								content={<PaginatedLegend />}
 								wrapperStyle={{
@@ -1860,12 +1935,68 @@ export function DashboardVisualization({
 								}}
 							/>
 						)}
-						<Tooltip
-							content={
-								<ChartTooltip config={visualization.config} />
-							}
-							wrapperStyle={{ zIndex: 10 }}
-						/>
+						{radarShowTooltip && (
+							<Tooltip
+								wrapperStyle={{ zIndex: 10 }}
+								content={(props: Record<string, unknown>) => {
+									const tProps = props as {
+										active?: boolean;
+										payload?: Array<{
+											payload?: Record<string, unknown>;
+											dataKey?: string;
+											name?: string;
+											color?: string;
+										}>;
+									};
+									if (
+										!tProps.active ||
+										!tProps.payload?.length
+									)
+										return null;
+									const spoke = tProps.payload[0]?.payload;
+									const col = String(spoke?._col ?? "");
+									return (
+										<div className="min-w-[120px] rounded-md border border-slate-200 bg-white p-2 text-xs shadow-md">
+											<p className="mb-1.5 truncate font-semibold text-slate-700">
+												{String(spoke?._axis ?? "")}
+											</p>
+											{tProps.payload.map((p) => {
+												const rawVal =
+													radarPivoted.find(
+														(r) =>
+															r._axis ===
+															spoke?._axis,
+													)?.[p.dataKey ?? ""];
+												return (
+													<div
+														key={p.dataKey}
+														className="flex items-center gap-2 py-0.5"
+													>
+														<span
+															className="h-2 w-2 flex-shrink-0 rounded-full"
+															style={{
+																background:
+																	p.color,
+															}}
+														/>
+														<span className="flex-1 text-slate-500">
+															{p.name}:
+														</span>
+														<span className="font-medium text-slate-700">
+															{formatValue(
+																rawVal,
+																col,
+																radarFmtRules,
+															)}
+														</span>
+													</div>
+												);
+											})}
+										</div>
+									);
+								}}
+							/>
+						)}
 					</RadarChart>
 				</ResponsiveContainer>
 			);
@@ -1873,104 +2004,12 @@ export function DashboardVisualization({
 
 		// Treemap
 		if (vt === "treemap") {
-			if (!xKey || !yKeys.length) {
-				return (
-					<div className="flex h-full items-center justify-center">
-						<div className="px-6 text-center text-slate-400">
-							<TreeDeciduous className="mx-auto mb-3 h-12 w-12 opacity-30" />
-							<p className="font-medium text-sm">
-								No data configured
-							</p>
-							<p className="mt-1 text-xs">
-								Drag columns to Category and Value drop zones
-							</p>
-						</div>
-					</div>
-				);
-			}
-			const tmData = chartData
-				.map((r) => {
-					const d: Record<string, any> = {
-						name: String(r[xKey] ?? ""),
-						size: Math.max(0, Number(r[yKeys[0]]) || 0),
-					};
-					for (const k of Object.keys(r)) {
-						if (k.startsWith("_tooltip_")) d[k] = r[k];
-					}
-					return d;
-				})
-				.filter((d) => d.size > 0)
-				.sort((a, b) => b.size - a.size);
 			return (
-				<ResponsiveContainer width="100%" height={chartHeight}>
-					<Treemap
-						data={tmData}
-						dataKey="size"
-						isAnimationActive={false}
-						stroke="#fff"
-						content={({
-							x,
-							y,
-							width,
-							height,
-							name,
-							value,
-							index,
-						}: any) => (
-							<g>
-								<rect
-									x={x}
-									y={y}
-									width={width}
-									height={height}
-									fill={
-										CHART_COLORS[
-											(index ?? 0) % CHART_COLORS.length
-										]
-									}
-									rx={3}
-								/>
-								{width > 40 && height > 24 && (
-									<>
-										<text
-											x={x + 6}
-											y={y + 15}
-											fill="#fff"
-											fontSize={11}
-											fontWeight={600}
-											style={{ pointerEvents: "none" }}
-										>
-											{String(name).length > 14
-												? String(name).slice(0, 12) +
-													"…"
-												: name}
-										</text>
-										{height > 34 && (
-											<text
-												x={x + 6}
-												y={y + 28}
-												fill="rgba(255,255,255,.75)"
-												fontSize={10}
-												style={{
-													pointerEvents: "none",
-												}}
-											>
-												{Number(value).toLocaleString()}
-											</text>
-										)}
-									</>
-								)}
-							</g>
-						)}
-					>
-						<Tooltip
-							content={
-								<ChartTooltip config={visualization.config} />
-							}
-							wrapperStyle={{ zIndex: 10 }}
-						/>
-					</Treemap>
-				</ResponsiveContainer>
+				<TreemapChart
+					data={chartData}
+					config={visualization.config}
+					height={chartHeight}
+				/>
 			);
 		}
 

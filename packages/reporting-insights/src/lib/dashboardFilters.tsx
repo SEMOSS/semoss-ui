@@ -17,8 +17,14 @@
  *     useSyncExternalStore bails out of re-rendering any component whose
  *     snapshot is unchanged — so untargeted visualizations stay put.
  */
+
 import type React from "react";
 import { createContext, useContext, useRef, useSyncExternalStore } from "react";
+import {
+	applyVizFilter,
+	type VizFilterGroup,
+	vizFilterIsActive,
+} from "@/lib/vizFilter";
 
 export interface AppliedFilter {
 	/** The filter widget's own visualization id (one active filter per widget). */
@@ -29,6 +35,8 @@ export interface AppliedFilter {
 	values: string[];
 	/** Visualization ids this filter applies to. */
 	targets: string[];
+	/** Float display type: author defined rule tree applied instead of column+values. */
+	rules?: VizFilterGroup;
 }
 
 /** A visualization's currently-loaded rows, published so filter widgets can read
@@ -94,7 +102,8 @@ class FilterStore {
 			...(prev?.targets ?? []),
 			...next.targets,
 		]);
-		if (next.values.length) this.filters.set(next.id, next);
+		if (next.values.length || vizFilterIsActive(next.rules))
+			this.filters.set(next.id, next);
 		else this.filters.delete(next.id);
 		affected.forEach((v) => this.bump(v));
 		this.emit();
@@ -118,8 +127,9 @@ class FilterStore {
 	getFiltersFor(vizId: string): AppliedFilter[] {
 		const out: AppliedFilter[] = [];
 		this.filters.forEach((f) => {
-			if (f.values.length && f.column && f.targets.includes(vizId))
-				out.push(f);
+			const isActive =
+				(f.column && f.values.length > 0) || vizFilterIsActive(f.rules);
+			if (isActive && f.targets.includes(vizId)) out.push(f);
 		});
 		return out;
 	}
@@ -219,22 +229,38 @@ export function distinctValuesFor(
 	return out.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 }
 
-/** Apply client-side multi-value (IN) filters to a set of rows. */
+/** Apply client-side multi-value (IN) filters and rule trees to a set of rows. */
 export function applyFilters<T extends Record<string, any>>(
 	rows: T[],
 	filters: AppliedFilter[],
 ): T[] {
 	if (!filters.length || !Array.isArray(rows) || !rows.length) return rows;
-	const sets = filters.map((f) => ({
-		column: f.column,
-		set: new Set(f.values.map(String)),
-	}));
-	return rows.filter((row) =>
-		sets.every((f) => {
-			const cell = row?.[f.column];
-			return cell != null && f.set.has(String(cell));
-		}),
+	let result = rows;
+	// Column + values (IN) pass
+	const columnFilters = filters.filter(
+		(f) => f.column && f.values.length > 0,
 	);
+	if (columnFilters.length) {
+		const sets = columnFilters.map((f) => ({
+			column: f.column,
+			set: new Set(f.values.map(String)),
+		}));
+		result = result.filter((row) =>
+			sets.every((f) => {
+				const cell = row?.[f.column];
+				return cell != null && f.set.has(String(cell));
+			}),
+		);
+	}
+	// Rule tree pass (float display type)
+	for (const f of filters) {
+		if (vizFilterIsActive(f.rules))
+			result = applyVizFilter(
+				result as Record<string, unknown>[],
+				f.rules,
+			) as T[];
+	}
+	return result;
 }
 
 export type { FilterStore };

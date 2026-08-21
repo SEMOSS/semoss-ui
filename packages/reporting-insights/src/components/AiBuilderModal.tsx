@@ -664,3 +664,24 @@ export function AiBuilder({ onGenerated, onCancel, onSwitchToManual }: Props) {
 		</div>
 	);
 }
+
+interface AiBuilderModalProps {
+	open: boolean;
+	onClose: () => void;
+	onGenerated: (dashboard: Dashboard) => void;
+}
+
+export function AiBuilderModal({
+	open,
+	onClose,
+	onGenerated,
+}: AiBuilderModalProps) {
+	if (!open) return null;
+	return (
+		<AiBuilder
+			onGenerated={onGenerated}
+			onCancel={onClose}
+			onSwitchToManual={onClose}
+		/>
+	);
+}

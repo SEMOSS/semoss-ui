@@ -1,4 +1,3 @@
-import { Input, Select } from "@/components/ui";
 import type { ValueLabelConfig } from "@/types/dashboard";
 import { ResetButton } from "../shared/ResetButton";
 
@@ -6,8 +5,8 @@ interface ValueLabelEditorProps {
 	value?: ValueLabelConfig;
 	onChange: (value: ValueLabelConfig) => void;
 	onReset: () => void;
-	/** Subset to expose. `'line'` includes alignment + weight, `'pie'` hides them, `'bar'` uses bar-specific positions. */
-	variant?: "line" | "pie" | "bar";
+	/** Subset to expose. `'line'` includes alignment + weight, `'pie'` hides them, `'bar'` uses bar-specific positions, `'heatmap'` hides position/rotate/alignment. */
+	variant?: "line" | "pie" | "bar" | "heatmap";
 }
 
 const POSITION_OPTIONS_LINE: {
@@ -78,6 +77,7 @@ export function ValueLabelEditor({
 			: variant === "bar"
 				? POSITION_OPTIONS_BAR
 				: POSITION_OPTIONS_LINE;
+	const isHeatmap = variant === "heatmap";
 
 	return (
 		<div className="space-y-3">
@@ -102,50 +102,56 @@ export function ValueLabelEditor({
 				</button>
 			</div>
 
-			<div>
-				<label className="mb-1 block font-semibold text-stone-600 text-xs">
-					Position
-				</label>
-				<Select
-					value={
-						cfg.position ??
-						(variant === "pie"
-							? "outside"
-							: variant === "bar"
-								? "center"
-								: "top")
-					}
-					onChange={(e) =>
-						set({
-							position: e.target
-								.value as ValueLabelConfig["position"],
-						})
-					}
-					className="w-full rounded border border-stone-200 bg-white px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
-				>
-					{positionOptions.map((o) => (
-						<option key={o.value} value={o.value}>
-							{o.label}
-						</option>
-					))}
-				</Select>
-			</div>
+			{!isHeatmap && (
+				<div>
+					<label className="mb-1 block font-semibold text-stone-600 text-xs">
+						Position
+					</label>
+					<select
+						value={
+							cfg.position ??
+							(variant === "pie"
+								? "outside"
+								: variant === "bar"
+									? "center"
+									: "top")
+						}
+						onChange={(e) =>
+							set({
+								position: e.target
+									.value as ValueLabelConfig["position"],
+							})
+						}
+						className="w-full rounded border border-stone-200 bg-white px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
+					>
+						{positionOptions.map((o) => (
+							<option key={o.value} value={o.value}>
+								{o.label}
+							</option>
+						))}
+					</select>
+				</div>
+			)}
 
-			<div>
-				<label className="mb-1 block font-semibold text-stone-600 text-xs">
-					Rotate (°)
-				</label>
-				<Input
-					type="number"
-					min={-90}
-					max={90}
-					value={cfg.rotate ?? 0}
-					onChange={(e) => set({ rotate: Number(e.target.value) })}
-					className="w-full rounded border border-stone-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
-				/>
-			</div>
+			{!isHeatmap && (
+				<div>
+					<label className="mb-1 block font-semibold text-stone-600 text-xs">
+						Rotate (°)
+					</label>
+					<input
+						type="number"
+						min={-90}
+						max={90}
+						value={cfg.rotate ?? 0}
+						onChange={(e) =>
+							set({ rotate: Number(e.target.value) })
+						}
+						className="w-full rounded border border-stone-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
+					/>
+				</div>
+			)}
 
-			{variant !== "pie" && variant !== "bar" && (
+			{variant !== "pie" && variant !== "bar" && !isHeatmap && (
 				<div>
 					<label className="mb-1 block font-semibold text-stone-600 text-xs">
 						Alignment
@@ -173,7 +179,7 @@ export function ValueLabelEditor({
 				<label className="mb-1 block font-semibold text-stone-600 text-xs">
 					Font Family
 				</label>
-				<Select
+				<select
 					value={cfg.fontFamily ?? "Inter"}
 					onChange={(e) => set({ fontFamily: e.target.value })}
 					className="w-full rounded border border-stone-200 bg-white px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
@@ -183,14 +189,14 @@ export function ValueLabelEditor({
 							{f}
 						</option>
 					))}
-				</Select>
+				</select>
 			</div>
 
 			<div>
 				<label className="mb-1 block font-semibold text-stone-600 text-xs">
 					Font Size
 				</label>
-				<Input
+				<input
 					type="number"
 					min={8}
 					max={32}
@@ -205,7 +211,7 @@ export function ValueLabelEditor({
 					<label className="mb-1 block font-semibold text-stone-600 text-xs">
 						Font Weight
 					</label>
-					<Select
+					<select
 						value={cfg.fontWeight ?? "normal"}
 						onChange={(e) =>
 							set({
@@ -220,7 +226,7 @@ export function ValueLabelEditor({
 								{w.label}
 							</option>
 						))}
-					</Select>
+					</select>
 				</div>
 			)}
 
@@ -229,7 +235,7 @@ export function ValueLabelEditor({
 					Color
 				</label>
 				<div className="flex items-center gap-2">
-					<Input
+					<input
 						type="color"
 						value={cfg.color ?? "#64748b"}
 						onChange={(e) => set({ color: e.target.value })}

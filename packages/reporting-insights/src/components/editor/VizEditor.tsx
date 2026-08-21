@@ -63,14 +63,8 @@ import { VizTypeSelect } from "@/components/editor/VizTypeSelect";
 import { HtmlBlockEditor } from "@/components/HtmlBlockEditor";
 import { QueryParameters } from "@/components/QueryParameters";
 import { ColorPicker } from "@/components/tools/shared/ColorPicker";
-import {
-	Button,
-	Checkbox,
-	cx,
-	Input,
-	SearchableSelect,
-	Select,
-} from "@/components/ui";
+import { FilterVisualization } from "@/components/tools/shared/FilterVisualization";
+import { Button, cx, Input, SearchableSelect, Select } from "@/components/ui";
 import {
 	type Column,
 	type DropZoneDataWithTable,
@@ -78,6 +72,17 @@ import {
 } from "@/components/VizConfigTabs";
 import { placeholderNames } from "@/lib/paramInference";
 import { isDataProduct } from "@/lib/queryPixel";
+import { makeVizFilterGroup } from "@/lib/vizFilter";
+
+const FILTER_DISPLAY_TYPE_OPTIONS = [
+	{ value: "dropdown", label: "Dropdown" },
+	{ value: "button", label: "Button group" },
+	{ value: "checklist", label: "Checklist" },
+	{ value: "datepicker", label: "Date picker" },
+	{ value: "slider", label: "Slider" },
+	{ value: "typeahead", label: "Typeahead" },
+	{ value: "float", label: "Float (rule builder)" },
+];
 
 const SQL_EDITOR_OPTIONS = {
 	minimap: { enabled: false },
@@ -231,33 +236,6 @@ interface BrowserTable {
 }
 
 // Chart types that don't take a free X/Y axis label (radial, tabular, single-value, etc.)
-const NO_AXIS_LABELS = new Set([
-	"table",
-	"pivot",
-	"pie",
-	"treemap",
-	"kpi",
-	"worldmap",
-	"heatmap",
-	"halfdonut",
-	"boxplot",
-	"polarbar",
-	"cluster",
-	"htmlblock",
-	"multiline",
-	"wordcloud",
-	"bubble",
-	"puck",
-	"bar",
-	"stackbar",
-	"line",
-	"area",
-	"combo",
-	"sunburst",
-	"csvexport",
-	"filter",
-]);
-
 /**
  * When switching between table ↔ csvexport, carry the column list and
  * aggregations across instead of losing them. Aggregation values are
@@ -477,8 +455,6 @@ export function VizEditor(props: VizEditorProps) {
 
 	const isHtml = viz.visualizationType === "htmlblock";
 	const canRun = !!viz.databaseId && !!viz.query.trim();
-	const patchConfig = (patch: Record<string, unknown>) =>
-		onUpdate({ config: { ...viz.config, ...patch } });
 
 	const [paramsOpen, setParamsOpen] = useState(false);
 	const [queryBuilderOpen, setQueryBuilderOpen] = useState(false);
@@ -659,35 +635,6 @@ export function VizEditor(props: VizEditorProps) {
 					/>
 				)}
 			</div>
-
-			{/* Axis labels + KPI format — compact, contextual */}
-			{!NO_AXIS_LABELS.has(viz.visualizationType) && (
-				<div className="flex-shrink-0 space-y-2 border-stone-200 border-t px-3 py-2.5">
-					<SubLabel>Axis Labels</SubLabel>
-					<div className="grid grid-cols-2 gap-2">
-						<Input
-							placeholder="X label"
-							value={viz.config?.xLabel ?? ""}
-							onChange={(e) =>
-								patchConfig({
-									xLabel: e.target.value || undefined,
-								})
-							}
-							className="py-1.5 text-xs"
-						/>
-						<Input
-							placeholder="Y label"
-							value={viz.config?.yLabel ?? ""}
-							onChange={(e) =>
-								patchConfig({
-									yLabel: e.target.value || undefined,
-								})
-							}
-							className="py-1.5 text-xs"
-						/>
-					</div>
-				</div>
-			)}
 		</div>
 	);
 
@@ -1632,11 +1579,24 @@ function FilterConfigPanel({
 	const patch = (p: Record<string, unknown>) =>
 		onUpdate({ config: { ...viz.config, ...p } });
 	const targets: string[] = viz.config?.filterTargets ?? [];
+	const displayType = viz.config?.filterDisplayType ?? "dropdown";
 	const toggleTarget = (id: string) =>
 		patch({
 			filterTargets: targets.includes(id)
 				? targets.filter((t) => t !== id)
 				: [...targets, id],
+		});
+
+	const [vizSearch, setVizSearch] = useState("");
+	const [expandedSheets, setExpandedSheets] = useState<Set<string>>(
+		new Set(),
+	);
+	const toggleSheet = (name: string) =>
+		setExpandedSheets((prev) => {
+			const next = new Set(prev);
+			if (next.has(name)) next.delete(name);
+			else next.add(name);
+			return next;
 		});
 
 	// Filterable siblings = anything that holds data (exclude other filters / export buttons).
@@ -1650,6 +1610,20 @@ function FilterConfigPanel({
 		arr.push(s);
 		bySheet.set(key, arr);
 	}
+
+	// Search filter across sheets and viz names
+	const sq = vizSearch.trim().toLowerCase();
+	const filteredBySheet = new Map<string, typeof targetable>();
+	for (const [sheetName, vizs] of bySheet) {
+		const sheetMatches = !sq || sheetName.toLowerCase().includes(sq);
+		const matchingVizs = sheetMatches
+			? vizs
+			: vizs.filter((v) => v.title.toLowerCase().includes(sq));
+		if (matchingVizs.length) filteredBySheet.set(sheetName, matchingVizs);
+	}
+	const sheetsToExpand = sq
+		? new Set([...filteredBySheet.keys()])
+		: expandedSheets;
 
 	// The filter column comes from the TARGETED visualizations' columns (the filter
 	// applies to THEIR loaded rows) — no query of its own is needed. Union the columns
@@ -1678,33 +1652,128 @@ function FilterConfigPanel({
 		return out;
 	})();
 
+	// When Float is selected, persist the current schema column list to config
+	useEffect(() => {
+		if (displayType !== "float" || !columnOptions.length) return;
+		const cached = (viz.config?.filterFloatColumns ?? []).join(",");
+		if (cached === columnOptions.join(",")) return;
+		patch({ filterFloatColumns: columnOptions });
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [displayType, columnOptions.join(",")]);
+
 	return (
 		<div className="space-y-4 p-3">
+			{/* Display Type */}
 			<div>
-				<SubLabel>Filter column</SubLabel>
+				<SubLabel>Display Type</SubLabel>
 				<SearchableSelect
-					value={viz.config?.filterColumn ?? ""}
-					ariaLabel="Filter column"
-					placeholder="Select a column…"
-					onChange={(v) => patch({ filterColumn: v || undefined })}
-					options={(() => {
-						const opts = columnOptions.map((name) => ({
-							value: name,
-							label: name,
-						}));
-						const cur = viz.config?.filterColumn;
-						if (cur && !columnOptions.includes(cur))
-							opts.unshift({ value: cur, label: cur });
-						return opts;
-					})()}
+					value={displayType}
+					ariaLabel="Display type"
+					placeholder="Select a display type…"
+					onChange={(v) => {
+						const next = v || "dropdown";
+						patch({
+							filterDisplayType: next,
+							...(next !== "float"
+								? {
+										filterFloatRules: undefined,
+										filterFloatColumns: undefined,
+									}
+								: {}),
+						});
+					}}
+					options={FILTER_DISPLAY_TYPE_OPTIONS}
 				/>
-				<p className="mt-1 text-[11px] text-stone-400">
-					{targets.length
-						? "Columns come from the visualizations this filter targets. Distinct values from their loaded rows become the options — no query needed here."
-						: "Pick the target visualizations below — the filter column is chosen from their columns. No query needed on this widget."}
-				</p>
 			</div>
 
+			{/* Multiple selection (not available for typeahead or float) */}
+			{displayType !== "typeahead" && displayType !== "float" && (
+				<label className="flex cursor-pointer select-none items-center gap-2 text-[13px] text-stone-700">
+					<input
+						type="checkbox"
+						checked={viz.config?.filterMultiSelect ?? true}
+						onChange={(e) =>
+							patch({
+								filterMultiSelect: e.target.checked,
+							})
+						}
+						className="h-4 w-4 rounded border-stone-300 text-indigo-600 focus:ring-indigo-500"
+					/>
+					Allow multiple selection
+				</label>
+			)}
+
+			{/* Auto-run (not relevant for float) */}
+			{displayType !== "float" && (
+				<label className="flex cursor-pointer select-none items-center gap-2 text-[13px] text-stone-700">
+					<input
+						type="checkbox"
+						checked={viz.config?.filterAutoRun ?? true}
+						onChange={(e) =>
+							patch({ filterAutoRun: e.target.checked })
+						}
+						className="h-4 w-4 rounded border-stone-300 text-indigo-600 focus:ring-indigo-500"
+					/>
+					<span>
+						Auto-run on selection{" "}
+						<span className="text-[11px] text-stone-400">
+							(uncheck to show Apply button)
+						</span>
+					</span>
+				</label>
+			)}
+
+			{/* Filter column (not used for float) */}
+			{displayType !== "float" && (
+				<div>
+					<SubLabel>Filter column</SubLabel>
+					<SearchableSelect
+						value={viz.config?.filterColumn ?? ""}
+						ariaLabel="Filter column"
+						placeholder="Select a column…"
+						onChange={(v) =>
+							patch({ filterColumn: v || undefined })
+						}
+						options={(() => {
+							const opts = columnOptions.map((name) => ({
+								value: name,
+								label: name,
+							}));
+							const cur = viz.config?.filterColumn;
+							if (cur && !columnOptions.includes(cur))
+								opts.unshift({ value: cur, label: cur });
+							return opts;
+						})()}
+					/>
+					<p className="mt-1 text-[11px] text-stone-400">
+						{targets.length
+							? "Columns come from the visualizations this filter targets. Distinct values from their loaded rows become the options — no query needed here."
+							: "Pick the target visualizations below — the filter column is chosen from their columns. No query needed on this widget."}
+					</p>
+				</div>
+			)}
+
+			{/* Rule builder for float display type */}
+			{displayType === "float" && (
+				<div>
+					<SubLabel>Filter Rules</SubLabel>
+					<FilterVisualization
+						columns={columnOptions}
+						value={
+							viz.config?.filterFloatRules ??
+							makeVizFilterGroup("AND")
+						}
+						onChange={(rules) => patch({ filterFloatRules: rules })}
+						onReset={() =>
+							patch({
+								filterFloatRules: makeVizFilterGroup("AND"),
+							})
+						}
+					/>
+				</div>
+			)}
+
+			{/* Visualization target list */}
 			<div>
 				<div className="mb-1.5 flex items-center justify-between">
 					<SubLabel>
@@ -1739,41 +1808,115 @@ function FilterConfigPanel({
 					</p>
 				) : (
 					<div className="space-y-2">
-						{[...bySheet.entries()].map(([sheetName, vizs]) => (
-							<div key={sheetName}>
-								<p className="px-2 pb-0.5 font-semibold text-[10px] text-stone-400 uppercase tracking-widest">
-									{sheetName}
-								</p>
-								<div className="space-y-0.5">
-									{vizs.map((s) => (
-										<label
-											key={s.id}
-											className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-stone-700 hover:bg-stone-50"
+						{/* Search bar */}
+						<div className="relative">
+							<input
+								type="text"
+								value={vizSearch}
+								onChange={(e) => setVizSearch(e.target.value)}
+								placeholder="Search sheets or visualizations…"
+								className="w-full rounded-md border border-stone-200 bg-white px-3 py-1.5 text-[13px] placeholder:text-stone-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+							/>
+							{vizSearch && (
+								<button
+									type="button"
+									onClick={() => setVizSearch("")}
+									className="-translate-y-1/2 absolute top-1/2 right-2 text-stone-400 hover:text-stone-600"
+								>
+									<X className="h-3.5 w-3.5" />
+								</button>
+							)}
+						</div>
+
+						{/* Accordion list */}
+						<div className="overflow-hidden rounded-lg border border-stone-200">
+							{[...filteredBySheet.entries()].map(
+								([sheetName, vizs], i) => {
+									const isOpen =
+										sheetsToExpand.has(sheetName);
+									const sheetSelectedCount = vizs.filter(
+										(v) => targets.includes(v.id),
+									).length;
+									return (
+										<div
+											key={sheetName}
+											className={
+												i > 0
+													? "border-stone-200 border-t"
+													: ""
+											}
 										>
-											<Checkbox
-												type="checkbox"
-												checked={targets.includes(s.id)}
-												onChange={() =>
-													toggleTarget(s.id)
+											<button
+												type="button"
+												onClick={() =>
+													toggleSheet(sheetName)
 												}
-												className="h-4 w-4 rounded border-stone-300 text-indigo-600 focus:ring-indigo-500"
-											/>
-											<span className="truncate">
-												{s.title || "Untitled"}
-											</span>
-											{s.queryName && (
-												<span
-													className="truncate text-[11px] text-stone-400/70"
-													title={`Query: ${s.queryName}`}
-												>
-													· {s.queryName}
+												className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-stone-50"
+											>
+												<span className="font-semibold text-[12px] text-stone-600">
+													{sheetName}
 												</span>
+												<div className="flex items-center gap-2">
+													{sheetSelectedCount > 0 && (
+														<span className="font-medium text-[11px] text-indigo-600">
+															{sheetSelectedCount}{" "}
+															selected
+														</span>
+													)}
+													<ChevronDown
+														className={`h-3.5 w-3.5 text-stone-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
+													/>
+												</div>
+											</button>
+											{isOpen && (
+												<div className="border-stone-100 border-t bg-stone-50/50">
+													{vizs.map((s) => (
+														<label
+															key={s.id}
+															className="flex cursor-pointer items-center gap-2 px-3 py-1.5 text-[13px] text-stone-700 hover:bg-stone-100"
+														>
+															<input
+																type="checkbox"
+																checked={targets.includes(
+																	s.id,
+																)}
+																onChange={() =>
+																	toggleTarget(
+																		s.id,
+																	)
+																}
+																className="h-4 w-4 rounded border-stone-300 text-indigo-600 focus:ring-indigo-500"
+															/>
+															<span className="truncate">
+																{s.title ||
+																	"Untitled"}
+															</span>
+															{s.queryName && (
+																<span
+																	className="truncate text-[11px] text-stone-400/70"
+																	title={`Query: ${s.queryName}`}
+																>
+																	·{" "}
+																	{
+																		s.queryName
+																	}
+																</span>
+															)}
+														</label>
+													))}
+												</div>
 											)}
-										</label>
-									))}
-								</div>
-							</div>
-						))}
+										</div>
+									);
+								},
+							)}
+							{filteredBySheet.size === 0 && sq && (
+								<p className="px-3 py-4 text-[12px] text-stone-400">
+									No visualizations match &ldquo;
+									{vizSearch}&rdquo;.
+								</p>
+							)}
+						</div>
 					</div>
 				)}
 				<p className="mt-1.5 text-[11px] text-stone-400">

@@ -1,17 +1,16 @@
 /**
  * URL of a dashboard's deployed SEMOSS portal (the published `public_home` app).
- * Must point at the SEMOSS backend origin, not the dev server.
+ *
+ * Always uses window.location.origin so:
+ *   - In production the URL points at the real server.
+ *   - In dev the Vite proxy forwards url so portal loads without hardcoding the backend.
  */
-const BACKEND_ORIGIN = String(import.meta.env.ENDPOINT || "").replace(
-	/\/+$/,
-	"",
-);
 const MODULE_PATH = (
 	String(import.meta.env.MODULE || "") || "/Monolith"
 ).replace(/\/+$/, "");
 
 export const publishedPortalUrl = (id: string): string =>
-	`${(BACKEND_ORIGIN || window.location.origin) + MODULE_PATH}/public_home/${encodeURIComponent(id)}/portals/`;
+	`${window.location.origin + MODULE_PATH}/public_home/${encodeURIComponent(id)}/portals/`;
 
 /**
  * Absolute URL this app is served from — the URL baked into MCP tool `resourceURI`s

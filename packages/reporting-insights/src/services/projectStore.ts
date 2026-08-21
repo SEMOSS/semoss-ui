@@ -54,6 +54,9 @@ const MODULE = "/Monolith";
  */
 export const APP_TAG = "reporting-insights--app";
 
+/** Tag that marks a dashboard for display on the portal landing page. */
+export const LANDING_PAGE_TAG = "landing-page--insight";
+
 /** Older marker(s) still recognised so previously-published apps keep appearing. */
 const LEGACY_APP_TAGS = ["data--insight"];
 
@@ -388,6 +391,15 @@ export class ProjectStore {
 			output?.project_id ?? output?.id ?? output?.app_id ?? tempId;
 		// (No temp-zip cleanup: this instance has no DeleteInsightFile reactor and the
 		// temp upload is discarded with the insight session anyway.)
+
+		// 2b. Override the sanitized name baked into the .smss with the real dashboard name.
+		try {
+			await this.run(
+				`SetProjectDisplayName(project=["${escapeForPixel(projectId)}"], name=["${escapeForPixel(dashboard.name.trim())}"]);`,
+			);
+		} catch {
+			/* non-fatal — project was created successfully, just with the sanitized fallback name */
+		}
 
 		// 3. Re-write dashboard.json with the real id so future saves target it.
 		const finalDashboard = {

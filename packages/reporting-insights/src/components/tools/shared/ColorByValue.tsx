@@ -25,14 +25,17 @@ interface ColorByValueProps {
 		| "pie"
 		| "puck"
 		| "polarbar"
-		| "area";
+		| "radar"
+		| "area"
+		| "treemap"
+		| "sunburst";
 	value: ColorRule[] | KpiColorRule[];
 	onChange: (rules: ColorRule[] | KpiColorRule[]) => void;
 	onReset: () => void;
 	/** Unique values per column derived from query rows — drives the value input dropdown suggestions. */
 	columnValues?: Record<string, string[]>;
 	/**
-	 * Display labels for columns — maps raw column key to a human-readable label
+	 * Display labels for `columns` entries — maps raw column key to a human-readable label
 	 * (e.g. `"Number" → "Average of Number"`). The option `value` stays the raw key
 	 * so `rule.valueColumn` resolves correctly against chart data at render time.
 	 */
@@ -72,7 +75,9 @@ export function ColorByValue({
 		visualizationType === "pie" ||
 		visualizationType === "puck" ||
 		visualizationType === "polarbar" ||
-		visualizationType === "area";
+		visualizationType === "area" ||
+		visualizationType === "treemap" ||
+		visualizationType === "sunburst";
 	const addRule = () => {
 		if (isTableShape) {
 			const newRule: ColorRule = {

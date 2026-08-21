@@ -14,7 +14,6 @@ import {
 	Scatter,
 	ScatterChart,
 	Tooltip,
-	Treemap,
 	XAxis,
 	YAxis,
 } from "recharts";
@@ -37,6 +36,7 @@ import { SunburstChart } from "@/components/visualizations/SunburstChart";
 import { ChartTooltip } from "@/components/visualizations/shared/chartShared";
 import { PaginatedLegend } from "@/components/visualizations/shared/PaginatedLegend";
 import { TableView } from "@/components/visualizations/TableView";
+import { TreemapChart } from "@/components/visualizations/TreemapChart";
 import { WordCloud } from "@/components/visualizations/WordCloud";
 import { WorldMapChart } from "@/components/visualizations/WorldMapChart";
 import { CsvExportButton } from "@/components/widgets/CsvExportButton";
@@ -44,6 +44,7 @@ import { FilterWidget } from "@/components/widgets/FilterWidget";
 import { usePivotTransform } from "@/hooks/usePivotTransform";
 import { applyVizFilter } from "@/lib/vizFilter";
 import { applyVizSort } from "@/lib/vizSort";
+import type { MultiLineStyling } from "@/types/dashboard";
 import type { VisualizationConfig, VisualizationType } from "../types";
 
 const PALETTE = [
@@ -70,6 +71,8 @@ interface Props {
 	filterDefaultValues?: string[];
 	/** Filter widget: called when the user changes the selection so the editor can persist it. */
 	onFilterDefaultValuesChange?: (values: string[]) => void;
+	/** MultiLine chart: called when zoom/brush interaction updates styling state (e.g. saved zoom fractions). */
+	onMultilineStylingChange?: (updates: Partial<MultiLineStyling>) => void;
 }
 
 export function ChartPreview({
@@ -79,6 +82,7 @@ export function ChartPreview({
 	height = "100%",
 	filterDefaultValues,
 	onFilterDefaultValuesChange,
+	onMultilineStylingChange,
 }: Props) {
 	// Author-defined per-viz filter (Filter Visualization tool) applies before render.
 	const data = applyVizSort(
@@ -172,7 +176,13 @@ export function ChartPreview({
 	const common = { data, margin };
 
 	if (vt === "heatmap") {
-		return withTitle(<HeatmapChart data={data} config={config as any} />);
+		return withTitle(
+			<HeatmapChart
+				data={data}
+				config={config as any}
+				formatRules={(config as any)?.styling?.formatRules ?? []}
+			/>,
+		);
 	}
 	if (vt === "halfdonut") {
 		return withTitle(<HalfDonutChart data={data} config={config as any} />);
@@ -191,7 +201,13 @@ export function ChartPreview({
 	}
 
 	if (vt === "multiline") {
-		return withTitle(<MultiLineChart data={data} config={config as any} />);
+		return withTitle(
+			<MultiLineChart
+				data={data}
+				config={config as any}
+				onStylingChange={onMultilineStylingChange}
+			/>,
+		);
 	}
 
 	if (vt === "worldmap") {
@@ -252,54 +268,8 @@ export function ChartPreview({
 	}
 
 	if (vt === "treemap") {
-		const tm = data.map((r) => ({
-			name: String(r[xKey]),
-			size: Number(r[yKeys[0]]) || 1,
-		}));
 		return withTitle(
-			<ResponsiveContainer width="100%" height={height}>
-				<Treemap
-					data={tm}
-					dataKey="size"
-					nameKey="name"
-					isAnimationActive={false}
-					content={({ x, y, width, height: h, name, index }: any) => (
-						<g>
-							<rect
-								x={x}
-								y={y}
-								width={width}
-								height={h}
-								style={{
-									fill: PALETTE[
-										(index ?? 0) % PALETTE.length
-									],
-									stroke: "#fff",
-									strokeWidth: 2,
-								}}
-							/>
-							{width > 40 && h > 20 && (
-								<text
-									x={x + width / 2}
-									y={y + h / 2}
-									textAnchor="middle"
-									dominantBaseline="middle"
-									fill="#fff"
-									fontSize={11}
-									fontWeight={600}
-								>
-									{name}
-								</text>
-							)}
-						</g>
-					)}
-				>
-					<Tooltip
-						content={<ChartTooltip config={config as any} />}
-						wrapperStyle={{ zIndex: 10 }}
-					/>
-				</Treemap>
-			</ResponsiveContainer>,
+			<TreemapChart data={data} config={config as any} height={height} />,
 		);
 	}
 

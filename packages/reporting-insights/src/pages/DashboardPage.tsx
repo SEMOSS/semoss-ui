@@ -1,6 +1,7 @@
 import { Layout, type Model, type TabNode } from "flexlayout-react";
 import {
 	ArrowLeft,
+	CopyPlus,
 	Edit,
 	Loader2,
 	Share2,
@@ -14,6 +15,7 @@ import { DashboardVisualization } from "@/components/DashboardVisualization";
 import { formatSqlList, isParamSatisfied } from "@/components/ParamControl";
 import { ParamSheet } from "@/components/ParamSheet";
 import { QueryRunnerProvider } from "@/components/QueryRunner";
+import { SaveAsDialog } from "@/components/SaveAsDialog";
 import { ShareDialog } from "@/components/ShareDialog";
 import { Button, buttonClasses, ConfirmDialog } from "@/components/ui";
 import { useToast } from "@/components/ui/Toast";
@@ -175,6 +177,7 @@ export function DashboardPage() {
 	const [def, setDef] = useState<Dashboard | null>(null);
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const [showShare, setShowShare] = useState(false);
+	const [showSaveAs, setShowSaveAs] = useState(false);
 	const dashboard = def ?? meta;
 	const sheets = dashboard ? getDashboardSheets(dashboard) : [];
 	useTabColors(sheets.flatMap((s) => s.visualizations));
@@ -190,11 +193,10 @@ export function DashboardPage() {
 	const perm = Object.keys(GROUP_PERM_NUM).find(
 		(key) => GROUP_PERM_NUM[key] === permNum,
 	);
-	const isReadOnly =
-		perm === "READ_ONLY" || perm === "VIEWER" || perm === "DISCOVERABLE";
+	const canEdit = perm === "OWNER" || perm === "EDIT" || perm === "EDITOR";
 	const isOwner = perm === "OWNER";
-	const canManage = !isReadOnly;
-	const canEdit = !isReadOnly;
+	const canManage = canEdit;
+	const isReadOnly = !canEdit;
 	// Redeploy is offered to anyone who can manage (same gate as Share/Edit). The
 	// release step is owner-gated server-side and non-fatal for non-owners.
 	const handleRedeploy = async () => {
@@ -585,6 +587,16 @@ export function DashboardPage() {
 									<Share2 className="h-3.5 w-3.5" /> Share
 								</Button>
 							)}
+							{canEdit && (
+								<Button
+									variant="secondary"
+									size="sm"
+									onClick={() => setShowSaveAs(true)}
+									title="Save a copy of this dashboard with a new name and settings"
+								>
+									<CopyPlus className="h-3.5 w-3.5" /> Save As
+								</Button>
+							)}
 							{isOwner && (
 								<Button
 									variant="secondary"
@@ -765,6 +777,12 @@ export function DashboardPage() {
 						<ShareDialog
 							dashboard={dashboard}
 							onClose={() => setShowShare(false)}
+						/>
+					)}
+					{showSaveAs && (
+						<SaveAsDialog
+							dashboard={dashboard}
+							onClose={() => setShowSaveAs(false)}
 						/>
 					)}
 

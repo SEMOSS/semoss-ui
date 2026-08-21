@@ -25,10 +25,12 @@ import {
 } from "react";
 import { useInsight } from "@semoss/sdk-react";
 import { useToast } from "@/components/ui/Toast";
-import { appPublicBaseUrl } from "@/lib/portalUrl";
-import { HOST_ARTIFACT_VERSION } from "@/services/mcpManifest";
 import { isAdminUser } from "@/services/permissionsApi";
-import { type DashboardMeta, ProjectStore } from "@/services/projectStore";
+import {
+	type DashboardMeta,
+	LANDING_PAGE_TAG,
+	ProjectStore,
+} from "@/services/projectStore";
 import type { FolderKind, WorkspaceFolder } from "@/services/workspaceStore";
 import type { Dashboard } from "@/types/dashboard";
 
@@ -61,8 +63,6 @@ interface WorkspaceContextValue {
 		dashboard: Dashboard,
 		opts: { published: boolean; tags: string[] },
 	) => Promise<string>;
-	/** Find a dashboard already deployed for a request signature (MCP create idempotency). */
-	findDashboardBySignature: (signature: string) => Promise<string | null>;
 	/** Merge updates into an existing dashboard and persist (definition + metadata). */
 	updateDashboard: (id: string, updates: Partial<Dashboard>) => void;
 	/** Re-push the current portal bundle + definition to an existing project (owner-only release). */
@@ -140,6 +140,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
 	const viewerRef = useRef<{ userId: string; isAdmin: boolean } | null>(null);
 	const defsCache = useRef<Map<string, Dashboard>>(new Map());
+	// Mirror of dashboards state in a ref so loadDashboard can read the latest
+	// metadata without capturing dashboards in its dep array (which would recreate
+	// loadDashboard on every definition load and cause cascading re-fetches).
+	const dashboardsRef = useRef<Dashboard[]>([]);
 
 	// ── Load identity (once) ─────────────────────────────────────────────────
 	const ensureViewer = useCallback(async () => {
@@ -194,41 +198,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 		void reload();
 	}, [reload]);
 
-	// Register the reporting-insights app itself as an MCP host project so the playground
-	// can discover it and call its create/list/update dashboard tools.
-	// The self-heal (re-upload driver + manifest + redirect, then republish) is EXPENSIVE,
-	// so only run it when the host artifacts (HOST_ARTIFACT_VERSION) or the app URL have
-	// changed since this browser last synced — otherwise a plain reload would re-upload +
-	// republish the host on every load (the DeleteAsset/upload/PublishProject noise).
-	const mcpRegisteredRef = useRef(false);
+	// Keep dashboardsRef in sync so loadDashboard can read the latest metadata
+	// without capturing dashboards in its dep array.
 	useEffect(() => {
-		if (mcpRegisteredRef.current) return;
-		mcpRegisteredRef.current = true;
-		// Deployment-correct app URL (VITE_APP_URL, else window.location). Baked into
-		// the host's tool resourceURIs + redirect so the playground can open the app.
-		const appBaseUrl = appPublicBaseUrl();
-		const syncKey = `${HOST_ARTIFACT_VERSION}|${appBaseUrl}`;
-		let alreadySynced = false;
-		try {
-			alreadySynced =
-				localStorage.getItem("ri-mcp-host-sync") === syncKey;
-		} catch {
-			/* storage unavailable — fall through and sync (once per mount) */
-		}
-		if (alreadySynced) return; // host already up to date for this version + URL
-		void store
-			.ensureMcpHost(appBaseUrl, true)
-			.then(() => {
-				try {
-					localStorage.setItem("ri-mcp-host-sync", syncKey);
-				} catch {
-					/* ignore */
-				}
-			})
-			.catch(() => {
-				/* non-fatal: playground registration is best-effort */
-			});
-	}, [store]);
+		dashboardsRef.current = dashboards;
+	}, [dashboards]);
 
 	const writeThrough = useCallback((p: Promise<unknown>) => {
 		p.catch((e: any) => setError(e?.message ?? "Failed to save change."));
@@ -239,7 +213,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 		async (id: string): Promise<Dashboard> => {
 			const cached = defsCache.current.get(id);
 			if (cached && cached.sheets?.length) return cached;
-			const meta = dashboards.find((d) => d.id === id);
+			// Read metadata from the ref (not the dashboards state) so this callback
+			// stays stable across renders and doesn't retrigger effects that depend on it.
+			const meta = dashboardsRef.current.find((d) => d.id === id);
 			const def = await store.loadDefinition(
 				id,
 				meta?.published ?? false,
@@ -260,7 +236,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 			);
 			return full;
 		},
-		[store, dashboards],
+		[store],
 	);
 
 	const getDashboard = useCallback(
@@ -483,7 +459,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 	// ── Derived folders (the distinct tags across everything I can see) ─────────
 	const folders = useMemo<WorkspaceFolder[]>(() => {
 		const names = new Set<string>();
-		for (const d of dashboards) for (const t of d.tags ?? []) names.add(t);
+		for (const d of dashboards)
+			for (const t of d.tags ?? [])
+				if (t !== LANDING_PAGE_TAG) names.add(t);
 		return [...names]
 			.sort((a, b) => a.localeCompare(b))
 			.map((name, i) => ({
@@ -531,11 +509,6 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 		[dashboards],
 	);
 
-	const findDashboardBySignature = useCallback(
-		(signature: string) => store.findBySignature(signature),
-		[store],
-	);
-
 	const value = useMemo<WorkspaceContextValue>(
 		() => ({
 			dashboards,
@@ -549,7 +522,6 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 			getDashboard,
 			loadDashboard,
 			createDashboard,
-			findDashboardBySignature,
 			updateDashboard,
 			redeployDashboard,
 			deleteDashboard,
@@ -573,7 +545,6 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 			getDashboard,
 			loadDashboard,
 			createDashboard,
-			findDashboardBySignature,
 			updateDashboard,
 			redeployDashboard,
 			deleteDashboard,

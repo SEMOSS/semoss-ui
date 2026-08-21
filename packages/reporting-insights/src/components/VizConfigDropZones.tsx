@@ -22,6 +22,13 @@ interface DropZone {
 	placeholder?: string;
 }
 
+const TypeIcon = ({ dt }: { dt: string }) =>
+	normalizeDataType(dt) === "NUMBER" ? (
+		<Hash className="h-4 w-4 flex-shrink-0 text-emerald-500" />
+	) : (
+		<Type className="h-4 w-4 flex-shrink-0 text-stone-400" />
+	);
+
 const DROP_ZONES_CONFIG: Record<VisualizationType, DropZone[]> = {
 	kpi: [
 		{
@@ -242,6 +249,13 @@ const DROP_ZONES_CONFIG: Record<VisualizationType, DropZone[]> = {
 			placeholder: "Drag one dimension",
 		},
 		{
+			id: "heat",
+			label: "Heat (Optional)",
+			multiColumn: false,
+			aggregation: true,
+			placeholder: "Drag a numeric column to color by heat",
+		},
+		{
 			id: "tooltip",
 			label: "Tooltip (Optional)",
 			multiColumn: true,
@@ -258,16 +272,16 @@ const DROP_ZONES_CONFIG: Record<VisualizationType, DropZone[]> = {
 	radar: [
 		{
 			id: "xAxis",
-			label: "X-Axis (Category)",
+			label: "Dimensions",
 			multiColumn: false,
-			placeholder: "Drag one dimension",
+			placeholder: "Drag one column: Groups series on each axis",
 		},
 		{
 			id: "yAxis",
-			label: "Y-Axis (Values)",
+			label: "Values",
 			multiColumn: true,
 			aggregation: true,
-			placeholder: "Drag one or more dimensions",
+			placeholder: "Drag one or more columns: Each becomes a radar axis",
 		},
 		{
 			id: "tooltip",
@@ -285,17 +299,25 @@ const DROP_ZONES_CONFIG: Record<VisualizationType, DropZone[]> = {
 	],
 	treemap: [
 		{
-			id: "name",
-			label: "Name (Category)",
+			id: "series",
+			label: "Series",
 			multiColumn: false,
-			placeholder: "Drag one dimension",
+			aggregation: false,
+			placeholder: "Drag one column (parent grouping)",
+		},
+		{
+			id: "label",
+			label: "Label",
+			multiColumn: false,
+			aggregation: false,
+			placeholder: "Drag one column (child label)",
 		},
 		{
 			id: "size",
 			label: "Size (Numeric)",
 			multiColumn: false,
 			aggregation: true,
-			placeholder: "Drag one dimension",
+			placeholder: "Drag one numeric column",
 		},
 		{
 			id: "tooltip",
@@ -347,26 +369,54 @@ const DROP_ZONES_CONFIG: Record<VisualizationType, DropZone[]> = {
 			placeholder: "Drag a categorical column",
 		},
 		{
-			id: "value",
-			label: "Value (Required)",
+			id: "heat",
+			label: "Heat (Required)",
 			multiColumn: false,
 			aggregation: true,
 			placeholder: "Drag a numeric column",
+		},
+		{
+			id: "facet",
+			label: "Facet (Optional)",
+			multiColumn: false,
+			placeholder: "Drag a column to slice data by its values",
+		},
+		{
+			id: "tooltip",
+			label: "Tooltip (Optional)",
+			multiColumn: true,
+			aggregation: true,
+			placeholder: "Drag one or more columns",
 		},
 	],
 	halfdonut: [
 		{
 			id: "xAxis",
-			label: "Category (Required)",
+			label: "Label",
 			multiColumn: false,
+			aggregation: false,
 			placeholder: "Drag a categorical column",
 		},
 		{
 			id: "yAxis",
-			label: "Values (Required)",
+			label: "Value",
 			multiColumn: false,
 			aggregation: true,
 			placeholder: "Drag a numeric column",
+		},
+		{
+			id: "target",
+			label: "Target Value",
+			multiColumn: false,
+			aggregation: true,
+			placeholder: "Drag a target/goal column (optional)",
+		},
+		{
+			id: "tooltip",
+			label: "Tooltip (Optional)",
+			multiColumn: true,
+			aggregation: true,
+			placeholder: "Drag columns to show in tooltip",
 		},
 	],
 	worldmap: [
@@ -573,7 +623,7 @@ const DROP_ZONES_CONFIG: Record<VisualizationType, DropZone[]> = {
 	sunburst: [
 		{
 			id: "levels",
-			label: "Hierarchy Levels (Required)",
+			label: "Group",
 			multiColumn: true,
 			placeholder: "Drag columns — first = innermost ring",
 		},
@@ -662,13 +712,6 @@ interface VizConfigDropZonesProps {
 	value: DropZoneDataWithTable;
 	onChange: (data: DropZoneDataWithTable) => void;
 }
-
-const TypeIcon = ({ dt }: { dt: string }) =>
-	normalizeDataType(dt) === "NUMBER" ? (
-		<Hash className="h-4 w-4 flex-shrink-0 text-emerald-500" />
-	) : (
-		<Type className="h-4 w-4 flex-shrink-0 text-stone-400" />
-	);
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export function VizConfigDropZones({

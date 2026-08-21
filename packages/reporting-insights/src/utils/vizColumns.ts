@@ -17,6 +17,7 @@ export function vizConfigColumns(viz: { config?: any }): string[] {
 	for (const k of c.pivotColumns ?? []) out.add(k);
 	for (const k of c.pivotValues ?? []) out.add(k);
 	if (c.xKey) out.add(c.xKey);
+	if (c.seriesKey) out.add(c.seriesKey);
 	if (c.label) out.add(c.label);
 	if (c.size) out.add(c.size);
 	if (c.colorKey) out.add(c.colorKey);
