@@ -243,9 +243,6 @@ export const WorkbenchChatComposer = () => {
 		const clipboardFiles = Array.from(event.clipboardData.files);
 		if (clipboardFiles.length === 0) return;
 
-		// When text rides along (e.g. copying from a document), let the text
-		// paste through and attach only the non-image files; a bare file paste
-		// (screenshot, file from the OS) attaches everything.
 		const hasText =
 			event.clipboardData.types.includes("text/plain") ||
 			event.clipboardData.types.includes("text/html");
@@ -267,6 +264,7 @@ export const WorkbenchChatComposer = () => {
 		const submittedFiles = files;
 
 		setDraft("");
+		setFiles([]);
 
 		const ok = await submit(
 			submittedDraft,
@@ -278,20 +276,13 @@ export const WorkbenchChatComposer = () => {
 					URL.revokeObjectURL(attachment.previewUrl);
 				}
 			}
-			setFiles((current) =>
-				current.filter(
-					(attachment) =>
-						!submittedFiles.some(
-							(submitted) => submitted.id === attachment.id,
-						),
-				),
-			);
 		} else {
 			setDraft((current) =>
 				current.trim()
 					? `${submittedDraft.trimEnd()} ${current}`.trim()
 					: submittedDraft,
 			);
+			setFiles((current) => [...submittedFiles, ...current]);
 		}
 		textareaRef.current?.focus();
 	};
