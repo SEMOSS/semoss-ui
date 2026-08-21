@@ -29,7 +29,6 @@ import {
 import landingImage from "@/assets/img/landing.png";
 import landingDarkImage from "@/assets/img/landing-darkmode.png";
 import {
-	FileDragOverlay,
 	RoomInput,
 	RoomInputMenuFileExplorer,
 	RoomInputMenuMCP,
@@ -460,7 +459,6 @@ export const NewRoomPage = observer(() => {
 			<ResizablePanelGroup direction="horizontal" className="flex-1">
 				<ResizablePanel className="relative">
 					<FileDragProvider>
-						<FileDragOverlay />
 						<img
 							src={landingSrc}
 							alt="Background"

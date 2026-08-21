@@ -363,7 +363,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		};
 
 		// File handling
-		const { files, addFiles, removeFile, clearFiles, setShouldStayOpen } =
+		const { files, addFiles, removeFile, clearFiles, openFilePicker } =
 			useFileDrag();
 
 		// Speech-to-text
@@ -544,7 +544,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					root.append(paragraphNode);
 				});
 				clearFiles();
-				setShouldStayOpen(false);
 
 				// Submit to parent handler
 				const result = Boolean(await onPrompt(userInput, userFiles));
@@ -602,7 +601,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				<SlashCommandProvider
 					onOpenMcpOverlay={handleOpenMcpOverlay}
 					onCompact={onCompact ?? noop}
-					onAttachDocument={() => setShouldStayOpen(true)}
+					onAttachDocument={openFilePicker}
 					onOpenSettings={onOpenSettings ?? noop}
 					onSwitchToAgentHarness={handleSwitchToAgentHarness}
 					excludeCommandIds={excludeCommandIds}

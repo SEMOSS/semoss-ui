@@ -39,16 +39,11 @@ vi.mock("@/contexts", async (importOriginal) => {
 	return {
 		...actual,
 		useFileDrag: () => ({
-			isDragging: false,
-			setIsDragging: vi.fn(),
-			shouldStayOpen: false,
-			setShouldStayOpen: vi.fn(),
 			files: [],
 			addFiles: vi.fn(),
 			removeFile: vi.fn(),
 			clearFiles: vi.fn(),
-			fileInputRef: { current: null },
-			containerRef: { current: null },
+			openFilePicker: vi.fn(),
 		}),
 	};
 });
