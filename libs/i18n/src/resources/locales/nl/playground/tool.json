@@ -5,10 +5,11 @@
 		"completed": "Voltooid",
 		"ready": "Gereed",
 		"autoExecute": "Automatisch uitvoeren",
-		"paused": "Gepauzeerd",
 		"queued": "In wachtrij voor automatische uitvoering",
 		"loadingTool": "Tool laden…",
-		"waitingForArguments": "Wachten op argumenten…"
+		"waitingForArguments": "Wachten op argumenten…",
+		"running": "Bezig",
+		"waitingForInput": "Wachten op invoer"
 	},
 	"actions": {
 		"cancel": "Annuleren",
@@ -21,13 +22,15 @@
 	"group": {
 		"labelClosed": "{{toolName}} + nog {{count}}",
 		"labelOpen": "Uitgevoerde tools ({{count}})",
+		"labelStreaming_one": "{{count}} tool laden…",
+		"labelStreaming_other": "{{count}} tools laden…",
 		"summaryCompleted": "{{count}} voltooid",
 		"summaryError": "{{count}} mislukt",
-		"summaryCancelled": "{{count}} geannuleerd",
-		"summaryPaused": "{{count}} gepauzeerd"
+		"summaryCancelled": "{{count}} geannuleerd"
 	},
 	"form": {
 		"result": "Resultaat",
+		"parameters": "Parameters",
 		"schemaLoadFailed": "Laden van toolschema mislukt",
 		"schemaLoadFailedDescription": "Kan toolconfiguratie niet ophalen. Probeer het later opnieuw.",
 		"schemaLoading": "Toolschema laden...",
@@ -43,6 +46,11 @@
 		"details": "Details van Playwright-script",
 		"projectId": "Project-ID",
 		"recordedFile": "Opgenomen bestand"
+	},
+	"subagent": {
+		"title": "Subagent",
+		"notFound": "Subagent niet gevonden",
+		"noResult": "Nog geen antwoord"
 	},
 	"extension": {
 		"required": "Browserextensie vereist",

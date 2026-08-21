@@ -1,6 +1,14 @@
 import { ChevronDown, Pencil, Star, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Env, get, post } from "@semoss/sdk";
+import {
+	editEngineUserPermissions,
+	editProjectUserPermissions,
+	getEngineUsers,
+	getProjectUsers,
+	type PostUser,
+	removeEngineUserPermissions,
+	removeProjectUserPermissions,
+} from "@semoss/sdk";
 import {
 	Avatar,
 	Button,
@@ -149,28 +157,33 @@ export const MembersList = ({
 		async function fetchUserData() {
 			isFetchingRef.current = true;
 			setUserDataLoading(true);
-			const authBase = `${Env.MODULE}/api/auth${adminMode ? "/admin" : ""}`;
 			const isProject = type === "PROJECT" || type === "WORKSPACE";
 			try {
-				const response = await get(
-					`${authBase}/${isProject ? "project" : "engine"}/${isProject ? "getProjectUsers" : "getEngineUsers"}?${isProject ? "projectId" : "engineId"}=${id}&limit=50&offset=${offset}${search !== "" ? `&userId=${search}` : ""}`,
-				).catch((error) => {
-					throw Error(error);
-				});
+				const data = await (isProject
+					? getProjectUsers(
+							id,
+							adminMode,
+							search || undefined,
+							undefined,
+							50,
+							offset,
+						)
+					: getEngineUsers(
+							id,
+							adminMode,
+							search || undefined,
+							undefined,
+							50,
+							offset,
+						));
 				if (fetchVersionRef.current !== version) return;
-				if (response?.data) {
-					const data = response.data as {
-						members?: MemberUser[];
-						totalMembers?: number;
-					};
-					const page: MemberUser[] = data.members || [];
-					const total: number = data.totalMembers || 0;
-					setUserData((prev) =>
-						offset === 0 ? page : [...prev, ...page],
-					);
-					setTotalMembers(total);
-					canLoadMoreRef.current = offset + page.length < total;
-				}
+				const page = (data.members || []) as unknown as MemberUser[];
+				const total = data.totalMembers || 0;
+				setUserData((prev) =>
+					offset === 0 ? page : [...prev, ...page],
+				);
+				setTotalMembers(total);
+				canLoadMoreRef.current = offset + page.length < total;
 			} catch (error) {
 				if (fetchVersionRef.current !== version) return;
 				console.error("Error fetching user data:", error);
@@ -193,9 +206,7 @@ export const MembersList = ({
 		user: MemberUser,
 		permission: string,
 	) => {
-		const authBase = `${Env.MODULE}/api/auth${adminMode ? "/admin" : ""}`;
 		const isProject = type === "PROJECT" || type === "WORKSPACE";
-		const url = `${authBase}/${isProject ? "project" : "engine"}/${isProject ? "editProjectUserPermissions" : "editEngineUserPermissions"}`;
 		const payload: Record<string, unknown> = {
 			userid: user.id,
 			permission,
@@ -214,14 +225,22 @@ export const MembersList = ({
 				payload.usageFrequency = user.usage_frequency;
 			}
 		}
-		const response = await post(url, {
-			[isProject ? "projectId" : "engineId"]: id,
-			userpermissions: [payload],
-		}).catch((error: Error) => {
+		const success = await (isProject
+			? editProjectUserPermissions(
+					id,
+					[payload] as unknown as PostUser[],
+					adminMode,
+				)
+			: editEngineUserPermissions(
+					id,
+					[payload] as unknown as PostUser[],
+					adminMode,
+				)
+		).catch((error: Error) => {
 			toast.error(error?.message || "Error updating user permission.");
-			return undefined;
+			return false;
 		});
-		if ((response?.data as { success?: boolean })?.success) {
+		if (success) {
 			setUserData((prev) =>
 				prev.map((u) => (u.id === user.id ? { ...u, permission } : u)),
 			);
@@ -236,16 +255,13 @@ export const MembersList = ({
 	};
 
 	const deleteSelectedMembers = () => {
-		const authBase = `${Env.MODULE}/api/auth${adminMode ? "/admin" : ""}`;
 		const isProjectDel = type === "PROJECT" || type === "WORKSPACE";
-		const usersUrl = isProjectDel
-			? "removeProjectUserPermissions"
-			: "removeEngineUserPermissions";
+		const userIds = usersToDelete.map((u) => u.id);
 
-		post(`${authBase}/${isProjectDel ? "project" : "engine"}/${usersUrl}`, {
-			[isProjectDel ? "projectId" : "engineId"]: id,
-			ids: usersToDelete.map((u) => u.id),
-		})
+		(isProjectDel
+			? removeProjectUserPermissions(id, userIds, adminMode)
+			: removeEngineUserPermissions(id, userIds, adminMode)
+		)
 			.then(() => {
 				toast.success(
 					"Selected members have been deleted successfully.",

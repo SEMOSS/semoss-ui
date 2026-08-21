@@ -8,7 +8,7 @@ import {
 	User,
 } from "lucide-react";
 import { useState } from "react";
-import type { Role } from "@semoss/shared";
+import type { Role } from "@semoss/sdk";
 import { AppCatalogAvatar, EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Badge,

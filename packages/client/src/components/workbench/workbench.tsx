@@ -1,7 +1,8 @@
 import { XIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { FlexLayout } from "@semoss/shared";
+import { cn } from "@semoss/ui/next";
 import { useTabBarScroll } from "@/hooks";
 
 interface WorkbenchProps {
@@ -22,14 +23,27 @@ interface WorkbenchProps {
 			) => React.ReactNode;
 		}
 	>;
+
+	/** Floating actions rendered over the bottom-left of the layout */
+	actions?: React.ReactNode;
 }
 
 export const Workbench: React.FC<WorkbenchProps> = observer(
-	({ model, components }) => {
+	({ model, components, actions }) => {
 		const layoutRef = useRef<FlexLayout.Layout | null>(null);
 		const containerRef = useRef<HTMLDivElement | null>(null);
 
 		useTabBarScroll(containerRef);
+
+		// Offset the actions above the bottom border tab strip when one exists.
+		const hasBottomBorder = useMemo(
+			() =>
+				model
+					.toJson()
+					.borders?.some((border) => border.location === "bottom") ??
+				false,
+			[model],
+		);
 
 		return (
 			<div
@@ -79,6 +93,16 @@ export const Workbench: React.FC<WorkbenchProps> = observer(
 							close: <XIcon className="size-4" />,
 						}}
 					/>
+					{actions ? (
+						<div
+							className={cn(
+								"absolute left-2 z-10",
+								hasBottomBorder ? "bottom-14" : "bottom-2",
+							)}
+						>
+							{actions}
+						</div>
+					) : null}
 				</div>
 			</div>
 		);

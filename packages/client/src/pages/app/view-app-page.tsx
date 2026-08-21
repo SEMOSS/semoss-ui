@@ -54,7 +54,7 @@ const AppViewLoadingState = () => {
 export const ViewAppPage = observer(() => {
 	// App ID Needed for pixel calls
 	const { configStore } = useRootStore();
-	const { project, permission, catalog } = useProject();
+	const { project, permission, catalog, type } = useProject();
 
 	const navigate = useNavigate();
 
@@ -86,12 +86,10 @@ export const ViewAppPage = observer(() => {
 		setWorkspace(undefined);
 
 		configStore
-			.createWorkspace(project.project_id)
+			.createWorkspace(project, permission)
 			.then((loadedWorkspace) => {
 				setWorkspace(loadedWorkspace);
-				setBookmarked(
-					Boolean(loadedWorkspace.metadata.project_favorite),
-				);
+				setBookmarked(Boolean(project.project_favorite));
 			})
 			.catch((e) => {
 				toast.error(e.message);
@@ -194,13 +192,13 @@ export const ViewAppPage = observer(() => {
 			</NavbarRight>
 			<div className="absolute inset-0">
 				<Suspense fallback={<AppViewLoadingState />}>
-					{workspace.type === "BLOCKS" ? (
+					{type === "BLOCKS" ? (
 						<Renderer
 							appId={project.project_id}
 							insightId={workspace.insightId}
 						/>
 					) : null}
-					{workspace.type === "CODE" ? (
+					{type === "CODE" ? (
 						<CodeRenderer appId={project.project_id} />
 					) : null}
 				</Suspense>

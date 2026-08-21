@@ -18,7 +18,7 @@ import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
 import { ProjectDetailTabs } from "@/components/project";
 import { useWorkspace } from "@/hooks";
 import { DesignerStore, type WorkspaceOptions } from "@/stores";
-import { WorkspaceManager } from "../../components/workspace";
+import { WorkspaceManager, WorkspaceNavbar } from "../../components/workspace";
 import { WorkspaceTerminal } from "../../components/workspace/panels";
 import { DesignerContext } from "../../contexts";
 import { MCPJsonEditor } from "../shared";
@@ -133,18 +133,6 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						component: "terminal",
 						enableClose: false,
 						config: {},
-					},
-					{
-						type: "tab",
-						id: "settings",
-						name: "Settings",
-						component: "settings-panel",
-						config: {},
-						// maxWidth: 1,
-						helpText: "Settings",
-						enableClose: false,
-						borderWidth: 800,
-						borderHeight: 1200,
 					},
 				],
 			},
@@ -481,8 +469,8 @@ export const BlocksWorkspace: React.FC = observer(() => {
 					designer: designer,
 				}}
 			>
+				<WorkspaceNavbar actions={<BlocksWorkspaceActions />} />
 				<WorkspaceManager
-					navbarActions={<BlocksWorkspaceActions />}
 					options={DEFAULT_OPTIONS}
 					factory={FACTORY}
 					onAction={handleAction}

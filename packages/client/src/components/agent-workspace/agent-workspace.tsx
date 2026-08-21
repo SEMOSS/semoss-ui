@@ -9,7 +9,11 @@ import { useWorkspace } from "@/hooks";
 import type { WorkspaceOptions } from "../../stores";
 import { CodeWorkspaceActions } from "../code-workspace/code-workspace-actions";
 import { MCPJsonEditor } from "../shared";
-import { WorkspaceManager, WorkspaceTerminal } from "../workspace";
+import {
+	WorkspaceManager,
+	WorkspaceNavbar,
+	WorkspaceTerminal,
+} from "../workspace";
 import { AgentEditor } from "./agent-editor";
 
 const DEFAULT_BORDER_SIZE = 300;
@@ -25,7 +29,9 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 			{
 				type: "border",
 				location: "left",
-				selected: 0,
+				// Keep file management available from the edge tab without taking
+				// space away from the agent editor on first load.
+				selected: -1,
 				size: 400,
 				children: [
 					{
@@ -50,16 +56,6 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						component: "terminal",
 						enableClose: false,
 						config: {},
-					},
-					{
-						id: "settings",
-						type: "tab",
-						name: "Settings",
-						component: "settings-panel",
-						config: {},
-						enableClose: false,
-						borderWidth: 800,
-						borderHeight: 1200,
 					},
 				],
 			},
@@ -231,11 +227,13 @@ export const AgentWorkspace: React.FC = observer(() => {
 	};
 
 	return (
-		<WorkspaceManager
-			navbarActions={<CodeWorkspaceActions />}
-			options={DEFAULT_OPTIONS}
-			factory={FACTORY}
-			onAction={handleAction}
-		/>
+		<>
+			<WorkspaceNavbar actions={<CodeWorkspaceActions />} />
+			<WorkspaceManager
+				options={DEFAULT_OPTIONS}
+				factory={FACTORY}
+				onAction={handleAction}
+			/>
+		</>
 	);
 });
