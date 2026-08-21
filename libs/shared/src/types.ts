@@ -201,6 +201,8 @@ export interface ThemeMap {
 		 */
 		toolAutoExecutionLimit?: number | null;
 
+		defaultCompactionStrategy?: "TOOL_PRUNE" | "SUMMARY" | "AUTO";
+
 		/**
 		 * The uploaded files that should be added to the file tool in the room
 		 */
