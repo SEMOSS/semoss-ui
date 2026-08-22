@@ -77,7 +77,9 @@ export default function App() {
 		}
 		setCreating(true);
 		void insight.actions
-			.run(`CreateAutomation(projectName=["${cleanName}"]);`)
+			.run(
+				`CreateAutomation(projectName=${JSON.stringify([cleanName])});`,
+			)
 			.then((result) => {
 				const projectId = (
 					result.pixelReturn?.[0]?.output as {

@@ -622,7 +622,7 @@ export function AutomationCanvas({
 		loadedRef.current = false;
 		skipDraftPersistenceRef.current = true;
 		initialViewFittedRef.current = false;
-		void runPixel(`GetAutomation(project=["${appId}"]);`)
+		void runPixel(`GetAutomation(project=${JSON.stringify([appId])});`)
 			.then((response) => {
 				if (cancelled) return;
 				const output = response.pixelReturn?.[0]?.output as
@@ -707,7 +707,9 @@ export function AutomationCanvas({
 		let cancelled = false;
 		const requestId = historyRefreshToken;
 		setHistoryLoading(true);
-		void runPixel(`ListAutomationRuns(project=["${appId}"], limit=["50"]);`)
+		void runPixel(
+			`ListAutomationRuns(project=${JSON.stringify([appId])}, limit=["50"]);`,
+		)
 			.then((response) => {
 				if (cancelled || requestId !== historyRequestRef.current)
 					return;
@@ -1007,8 +1009,12 @@ export function AutomationCanvas({
 				edges: graphEdges,
 			});
 			const nodeSources = getCanvasNodeSources(steps);
+			const definitionPayload = encodeBase64(JSON.stringify(definition));
+			const nodeSourcesPayload = encodeBase64(
+				JSON.stringify(nodeSources),
+			);
 			const response = await runPixel(
-				`SaveAutomation(project=["${appId}"], json=["${encodeBase64(JSON.stringify(definition))}"], nodeSources=["${encodeBase64(JSON.stringify(nodeSources))}"]);`,
+				`SaveAutomation(project=${JSON.stringify([appId])}, json=${JSON.stringify([definitionPayload])}, nodeSources=${JSON.stringify([nodeSourcesPayload])});`,
 			);
 			if (response.errors.length > 0) {
 				throw new Error(response.errors.join("\n"));
@@ -1315,7 +1321,7 @@ export function AutomationCanvas({
 			}
 			try {
 				const response = await runPixel(
-					`GetAutomationRun(project=["${appId}"], runId=["${runId}"]);`,
+					`GetAutomationRun(project=${JSON.stringify([appId])}, runId=${JSON.stringify([runId])});`,
 				);
 				const detail = response.pixelReturn?.[0]?.output as
 					| AutomationRunDetail
