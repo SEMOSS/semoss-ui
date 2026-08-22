@@ -239,10 +239,11 @@ function createsCycle(
 	return false;
 }
 
-function getStepDisplayOrder(
+function getControlOrderedSteps(
 	steps: AutomationNode[],
 	edges: AutomationEdge[],
-): Map<string, number> {
+): AutomationNode[] {
+	const byId = new Map(steps.map((step) => [step.id, step]));
 	const stepIds = new Set(steps.map((step) => step.id));
 	const originalOrder = new Map(steps.map((step, index) => [step.id, index]));
 	const incomingCounts = new Map(steps.map((step) => [step.id, 0]));
@@ -280,15 +281,33 @@ function getStepDisplayOrder(
 		}
 	}
 
+	const ordered = orderedIds
+		.map((id) => byId.get(id))
+		.filter((step): step is AutomationNode => step !== undefined);
+	const orderedIdSet = new Set(orderedIds);
+	return [...ordered, ...steps.filter((step) => !orderedIdSet.has(step.id))];
+}
+
+function getStepDisplayOrder(
+	steps: AutomationNode[],
+	edges: AutomationEdge[],
+): Map<string, number> {
 	return new Map(
-		orderedIds
-			.filter(
-				(id) =>
-					steps.find((step) => step.id === id)?.workflowType !==
-					"trigger.start",
-			)
-			.map((id, index) => [id, index]),
+		getControlOrderedSteps(steps, edges)
+			.filter((step) => step.workflowType !== "trigger.start")
+			.map((step, index) => [step.id, index]),
 	);
+}
+
+function graphStructureSignature(
+	steps: AutomationNode[],
+	edges: AutomationEdge[],
+): string {
+	const nodeIds = steps.map((step) => step.id).sort();
+	const edgeKeys = edges
+		.map((edge) => `${edge.kind}:${edge.source}:${edge.target}`)
+		.sort();
+	return JSON.stringify([nodeIds, edgeKeys]);
 }
 
 function upstreamVariablesFor(
@@ -459,6 +478,10 @@ export function AutomationCanvas({
 	const historyRequestRef = useRef(0);
 	const centerXRef = useRef(0);
 	const initialViewFittedRef = useRef(false);
+	const loadedGraphStructureRef = useRef<{
+		appId: string;
+		signature: string;
+	} | null>(null);
 
 	useEffect(() => {
 		const parentOrigin = new URLSearchParams(window.location.search).get(
@@ -567,7 +590,10 @@ export function AutomationCanvas({
 	}, []);
 
 	const layoutNodes = useCallback(
-		(nodes: AutomationNode[]): AutomationNode[] => {
+		(
+			nodes: AutomationNode[],
+			edges: AutomationEdge[],
+		): AutomationNode[] => {
 			const containerWidth =
 				canvasContainerRef.current?.clientWidth ?? 900;
 			const centerX = Math.max(
@@ -576,15 +602,16 @@ export function AutomationCanvas({
 			);
 			centerXRef.current = centerX;
 
+			const positions = new Map<string, { x: number; y: number }>();
 			let y = 0;
-			return nodes.map((node) => {
-				const positionedNode = {
-					...node,
-					position: { x: centerX, y },
-				};
+			for (const node of getControlOrderedSteps(nodes, edges)) {
+				positions.set(node.id, { x: centerX, y });
 				y += getNodeHeight(node.id) + NODE_ARROW_GAP;
-				return positionedNode;
-			});
+			}
+			return nodes.map((node) => ({
+				...node,
+				position: positions.get(node.id) ?? node.position,
+			}));
 		},
 		[getNodeHeight],
 	);
@@ -606,6 +633,16 @@ export function AutomationCanvas({
 				const saved = isWorkflowDocument(output)
 					? canvasDocumentFromWorkflow(output, output.nodeSources)
 					: createInitialCanvasWorkflowDocument();
+				const loadedSteps = ensureTriggerNode(saved.steps);
+				const signature = graphStructureSignature(
+					loadedSteps,
+					saved.edges,
+				);
+				const previousStructure = loadedGraphStructureRef.current;
+				const structureChanged =
+					previousStructure?.appId === appId &&
+					previousStructure.signature !== signature;
+				loadedGraphStructureRef.current = { appId, signature };
 				const rawDraft = localStorage.getItem(
 					`automation-draft-${appId}`,
 				);
@@ -627,7 +664,11 @@ export function AutomationCanvas({
 						localStorage.removeItem(`automation-draft-${appId}`);
 					}
 				}
-				setSteps(ensureTriggerNode(saved.steps));
+				setSteps(
+					structureChanged
+						? layoutNodes(loadedSteps, saved.edges)
+						: loadedSteps,
+				);
 				setGraphEdges(saved.edges);
 				setDescription(saved.description);
 				setTriggerBindings(saved.triggerBindings);
@@ -652,7 +693,7 @@ export function AutomationCanvas({
 		return () => {
 			cancelled = true;
 		};
-	}, [appId, mcpMode, workflowRefreshToken]);
+	}, [appId, layoutNodes, mcpMode, workflowRefreshToken]);
 
 	const refreshRuns = useCallback(() => {
 		setHistoryRefreshToken((previous) => {
@@ -1343,7 +1384,7 @@ export function AutomationCanvas({
 				(step) => step.position.x === 0 && step.position.y === 0,
 			)
 		) {
-			setSteps(layoutNodes);
+			setSteps((previous) => layoutNodes(previous, graphEdges));
 		}
 
 		steps.forEach((step) => {
@@ -1482,9 +1523,9 @@ export function AutomationCanvas({
 	);
 
 	const cleanUpLayout = useCallback(() => {
-		setSteps(layoutNodes);
+		setSteps((previous) => layoutNodes(previous, graphEdges));
 		setIsDirty(true);
-	}, [layoutNodes]);
+	}, [graphEdges, layoutNodes]);
 
 	if (mcpDone) {
 		return (
