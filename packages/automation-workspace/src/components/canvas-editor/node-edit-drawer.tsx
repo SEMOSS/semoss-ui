@@ -42,6 +42,7 @@ function supportsBusinessForm(step: AutomationNode): boolean {
 				type.startsWith("storage.") ||
 				type.startsWith("vector.") ||
 				type === "function.execute" ||
+				type === "agent.run" ||
 				type === "app.pixel" ||
 				type === "control.wait"),
 	);

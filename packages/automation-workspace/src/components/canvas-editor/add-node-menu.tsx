@@ -1,4 +1,5 @@
 import {
+	Bot,
 	Braces,
 	Database,
 	FolderOpen,
@@ -26,6 +27,7 @@ const CATEGORY_ORDER: readonly AutomationNodeCategory[] = [
 	"trigger",
 	"database",
 	"model",
+	"agent",
 	"storage",
 	"vector",
 	"function",
@@ -41,6 +43,7 @@ const CATEGORY_META: Record<
 	trigger: { label: "Trigger", icon: Braces },
 	database: { label: "Database", icon: Database },
 	model: { label: "AI models", icon: Sparkles },
+	agent: { label: "Agents", icon: Bot },
 	storage: { label: "Storage", icon: FolderOpen },
 	vector: { label: "Vector", icon: Network },
 	function: { label: "Functions", icon: FunctionSquare },

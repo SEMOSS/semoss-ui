@@ -230,6 +230,13 @@ function defaultCanvasConfig(
 			params: stringValue(config.arguments),
 		};
 	}
+	if (type === "agent.run") {
+		return {
+			workspaceId:
+				stringValue(config.workspaceId) || stringValue(config.agentId),
+			command: stringValue(config.command) || stringValue(config.prompt),
+		};
+	}
 	if (type === "control.wait") {
 		return { seconds: String(numberValue(config.durationSeconds, 5)) };
 	}
@@ -330,6 +337,15 @@ function mergeCanvasConfig(
 	if (type === "function.execute") {
 		const params = getConfigValue(config, "params");
 		if (typeof params === "string") next.arguments = params;
+	}
+	if (type === "agent.run") {
+		const workspaceId = getConfigValue(config, "workspaceId");
+		const command = getConfigValue(config, "command");
+		if (typeof workspaceId === "string") next.workspaceId = workspaceId;
+		if (typeof command === "string") next.command = command;
+		next.wait = true;
+		delete next.agentId;
+		delete next.prompt;
 	}
 	if (type === "app.pixel") {
 		const pixel = getConfigValue(config, "pixel");

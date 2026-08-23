@@ -1,4 +1,5 @@
 import {
+	Bot,
 	Braces,
 	Database,
 	FolderOpen,
@@ -28,6 +29,9 @@ export function getWorkflowNodeDisplay(
 	}
 	if (type.startsWith("model.")) {
 		return { icon: Sparkles, color: "text-purple-600" };
+	}
+	if (type === "agent.run") {
+		return { icon: Bot, color: "text-indigo-600" };
 	}
 	if (type.startsWith("storage.")) {
 		return { icon: FolderOpen, color: "text-emerald-600" };

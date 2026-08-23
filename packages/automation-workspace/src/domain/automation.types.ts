@@ -101,6 +101,12 @@ export interface AppConfig {
 	appName?: string;
 }
 
+export interface AgentRunConfig {
+	workspaceId: string;
+	workspaceName?: string;
+	command: string;
+}
+
 export interface WaitConfig {
 	seconds: string;
 }
@@ -113,6 +119,7 @@ export type NodeConfig =
 	| ModelEngineConfig
 	| FunctionEngineConfig
 	| AppConfig
+	| AgentRunConfig
 	| WaitConfig;
 
 // ─── graph primitives ─────────────────────────────────────────────────────────

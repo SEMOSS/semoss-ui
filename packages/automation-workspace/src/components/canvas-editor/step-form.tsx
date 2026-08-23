@@ -1,4 +1,5 @@
 import type {
+	AgentRunConfig,
 	AppConfig,
 	AutomationNode,
 	DatabaseEngineConfig,
@@ -8,6 +9,7 @@ import type {
 	VectorEngineConfig,
 	WaitConfig,
 } from "../../domain/automation.types";
+import { AgentRunForm } from "./forms/agent-run-form";
 import { AppEngineForm } from "./forms/app-engine-form";
 import { DatabaseEngineForm } from "./forms/database-engine-form";
 import { FunctionEngineForm } from "./forms/function-engine-form";
@@ -37,6 +39,15 @@ export function StepForm({
 }: StepFormProps) {
 	const update = (config: AutomationNode["config"]) =>
 		onUpdate({ ...step, config });
+	if (step.workflowType === "agent.run") {
+		return (
+			<AgentRunForm
+				config={step.config as AgentRunConfig}
+				upstreamVars={upstreamVars}
+				onChange={update}
+			/>
+		);
+	}
 
 	switch (step.type) {
 		case "trigger":

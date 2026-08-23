@@ -47,6 +47,7 @@ export type AutomationNodeCategory =
 	| "trigger"
 	| "database"
 	| "model"
+	| "agent"
 	| "storage"
 	| "vector"
 	| "function"
