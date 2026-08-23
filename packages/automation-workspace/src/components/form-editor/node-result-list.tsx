@@ -89,7 +89,11 @@ function TraceDetail({
 		agentRunId && workspaceId
 			? systemAppUrl(
 					"client",
-					`/agent/${encodeURIComponent(workspaceId)}/agent-activity`,
+					`/agent/${encodeURIComponent(workspaceId)}/agent-activity${
+						roomId
+							? `?roomId=${encodeURIComponent(roomId)}&runId=${encodeURIComponent(agentRunId)}`
+							: ""
+					}`,
 				)
 			: null;
 
