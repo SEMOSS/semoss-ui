@@ -633,16 +633,6 @@ export const ENGINE_ROUTES: {
 										],
 									},
 									{
-										name: "Storage Viewer",
-										path: "storage-viewer",
-										restrict: [
-											"READ_ONLY",
-											"EDIT",
-											"OWNER",
-											"DISCOVERABLE",
-										],
-									},
-									{
 										name: "Access Control",
 										path: "access-control",
 										restrict: ["EDIT", "OWNER"],
