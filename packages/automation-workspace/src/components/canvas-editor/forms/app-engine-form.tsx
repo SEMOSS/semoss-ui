@@ -189,6 +189,7 @@ export function AppEngineForm({
 				<AutomationProjectSelect
 					name={config.appName || ""}
 					value={config.appId || ""}
+					projectTypes={["CODE", "BLOCKS"]}
 					onChange={(projectId, projectName) =>
 						onChange({
 							...config,

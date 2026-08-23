@@ -106,11 +106,17 @@ def run(scope):
 	}
 	if (type === "app.pixel") {
 		return `from semoss import Insight
+import json
 
+APP_ID = ${pythonLiteral(config.appId)}
 PIXEL = ${pythonLiteral(config.pixel)}
 
 def run(scope):
-    return Insight().run_pixel(resolve(PIXEL, scope))
+    app_id = resolve(APP_ID, scope)
+    pixel = resolve(PIXEL, scope)
+    if app_id:
+        pixel = "LoadApp(project=" + json.dumps(app_id) + "); " + pixel
+    return Insight().run_pixel(pixel, raw=False)
 `;
 	}
 	if (type === "control.wait") {
