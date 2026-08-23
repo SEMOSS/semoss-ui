@@ -80,8 +80,26 @@ export const StorageForm = ({
 		return acc;
 	}, {});
 
-	const onFormSubmit = async (formData) => {
+	// smss files are java properties files, so a value holding newlines or
+	// backslashes does not come back out the way it went in. A field marked
+	// encode: "base64" is sent encoded and the engine decodes it on open
+	const encodeMarkedFields = (formData) => {
+		const encoded = { ...formData };
+		for (const f of [...defaultFields, ...(advancedFields ?? [])]) {
+			if (f.encode !== "base64") continue;
+			const raw = encoded[f.key];
+			if (typeof raw === "string" && raw.length > 0) {
+				encoded[f.key] = btoa(
+					String.fromCharCode(...new TextEncoder().encode(raw)),
+				);
+			}
+		}
+		return encoded;
+	};
+
+	const onFormSubmit = async (rawFormData) => {
 		setLoading(true);
+		const formData = encodeMarkedFields(rawFormData);
 		const pixel = `CreateStorageEngine(storage=["${formData.NAME}"],storageDetails=[${JSON.stringify(formData)}])`;
 
 		monolithStore.runQuery(pixel).then(async (response) => {

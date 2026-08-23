@@ -41,7 +41,7 @@ export const STORAGE_CONNECTIONS = {
 				{
 					key: "STORAGE_TYPE",
 					label: "Storage Type",
-					value: "AMAZON_S3",
+					value: "S3",
 					hidden: true,
 					type: "text",
 					disabled: true,
@@ -70,16 +70,21 @@ export const STORAGE_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "S3_ACCESS_KEY",
+					// leaving both keys empty falls back to the environment's
+					// credentials, which is how an instance profile or IRSA is
+					// picked up. One without the other is rejected
+					key: "S3_ACCESS",
 					label: "Access Key",
 					value: "",
 					type: "text",
 					disabled: false,
 					required: false,
+					helperText:
+						"Leave the access key and secret key empty to use the credentials of the environment the server runs in.",
 					category: "Credentials",
 				},
 				{
-					key: "S3_SECRET_KEY",
+					key: "S3_SECRET",
 					label: "Secret Key",
 					value: "",
 					type: "password",
@@ -103,6 +108,15 @@ export const STORAGE_CONNECTIONS = {
 					type: "text",
 					disabled: false,
 					required: true,
+					category: "Settings",
+				},
+				{
+					key: "S3_KMS_ID",
+					label: "KMS Key ID",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
 					category: "Settings",
 				},
 			],
@@ -146,25 +160,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "CEPH_ENDPOINT",
-					label: "Endpoint",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: true,
-					category: "Settings",
-				},
-				{
-					key: "CEPH_BUCKET",
-					label: "Root Bucket Path",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: false,
-					category: "Settings",
-				},
-				{
-					key: "CEPH_ACCESS_KEY",
+					key: "S3_ACCESS",
 					label: "Access Key",
 					value: "",
 					type: "text",
@@ -173,13 +169,51 @@ export const STORAGE_CONNECTIONS = {
 					category: "Credentials",
 				},
 				{
-					key: "CEPH_SECRET_KEY",
+					key: "S3_SECRET",
 					label: "Secret Key",
 					value: "",
 					type: "password",
 					disabled: false,
 					required: true,
 					category: "Credentials",
+				},
+				{
+					key: "S3_ENDPOINT",
+					label: "Endpoint",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					category: "Settings",
+				},
+				{
+					// a custom endpoint cannot resolve bucket-as-subdomain, so the bucket
+					// has to go in the url path
+					key: "S3_PATH_STYLE_ACCESS",
+					label: "Path Style Access",
+					value: "true",
+					type: "text",
+					disabled: false,
+					required: true,
+					category: "Settings",
+				},
+				{
+					key: "S3_REGION",
+					label: "Region",
+					value: "us-east-1",
+					type: "text",
+					disabled: false,
+					required: true,
+					category: "Settings",
+				},
+				{
+					key: "S3_BUCKET",
+					label: "Root Bucket Path",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					category: "Settings",
 				},
 			],
 		},
@@ -231,7 +265,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "Settings",
 				},
 				{
-					key: "S3_ACCESS_KEY",
+					key: "S3_ACCESS",
 					label: "S3 Access Key",
 					value: "",
 					type: "text",
@@ -240,7 +274,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "Credentials",
 				},
 				{
-					key: "S3_SECRET_KEY",
+					key: "S3_SECRET",
 					label: "S3 Secret Key",
 					value: "",
 					type: "password",
@@ -261,7 +295,7 @@ export const STORAGE_CONNECTIONS = {
 		},
 		{
 			name: "Dropbox",
-			disable: false,
+			disable: true,
 			icon: DROPBOX,
 			description:
 				"Dropbox is a cloud storage service that allows you to save files online and sync them to your devices, making file sharing and collaboration easy.",
@@ -298,7 +332,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "S3_ACCESS_KEY",
+					key: "S3_ACCESS",
 					label: "S3 Access Key",
 					value: "",
 					type: "text",
@@ -307,7 +341,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "Credentials",
 				},
 				{
-					key: "S3_SECRET_KEY",
+					key: "S3_SECRET",
 					label: "S3 Secret Key",
 					value: "",
 					type: "password",
@@ -374,21 +408,41 @@ export const STORAGE_CONNECTIONS = {
 					category: "General",
 				},
 				{
+					// base64 encoded on submit, since the json does not survive being
+					// stored in an smss as is. The engine decodes it on open
+					key: "GCS_SERVICE_ACCOUNT_JSON",
+					label: "Service Account JSON",
+					value: "",
+					type: "password",
+					encode: "base64",
+					disabled: false,
+					required: false,
+					helperText:
+						"Paste the contents of the service account key file. Leave empty to point at a file on the server instead.",
+					category: "Credentials",
+				},
+				{
 					key: "GCS_SERVICE_ACCOUNT_FILE",
 					label: "Service Account File",
 					value: "",
 					type: "text",
 					disabled: false,
-					required: true,
+					required: false,
+					helperText:
+						"Path to the service account key file on the server. Only used when the JSON above is empty.",
 					category: "Credentials",
 				},
 				{
-					key: "GCS_REGION",
-					label: "Region",
+					// the service account file carries a project_id, which the engine
+					// falls back to when this is left empty
+					key: "GCS_PROJECT_ID",
+					label: "Project ID",
 					value: "",
 					type: "text",
 					disabled: false,
-					required: true,
+					required: false,
+					helperText:
+						"Leave empty to use the project the service account file belongs to.",
 					category: "Settings",
 				},
 				{
@@ -397,7 +451,7 @@ export const STORAGE_CONNECTIONS = {
 					value: "",
 					type: "text",
 					disabled: false,
-					required: false,
+					required: true,
 					category: "Settings",
 				},
 			],
@@ -496,31 +550,44 @@ export const STORAGE_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "AZ_PRIMARY_KEY",
-					label: "Primary Key",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: true,
-					category: "Credentials",
-				},
-				{
+					// the engine takes whichever one of these is filled in, in this
+					// order: connection string, then SAS url, then managed identity
 					key: "AZ_CONN_STRING",
 					label: "Connection String",
 					value: "",
-					type: "text",
+					type: "password",
 					disabled: false,
-					required: true,
+					required: false,
+					helperText:
+						"Set one of connection string, SAS URL, or managed identity with an account name.",
 					category: "Credentials",
 				},
 				{
-					key: "AZ_GENERATE_DYNAMIC_SAS",
-					label: "Generate Dynamic SAS",
-					value: "false",
-					type: "text",
+					// a SAS url that names a container scopes the engine to that
+					// container, and it becomes the root. An account level SAS has no
+					// container in its path, so the root stays the account
+					key: "SAS_URL",
+					label: "SAS URL",
+					value: "",
+					type: "password",
 					disabled: false,
-					required: true,
-					category: "Settings",
+					required: false,
+					helperText:
+						"Include the whole url with its query string. A url that names a container limits this engine to that container.",
+					category: "Credentials",
+				},
+				{
+					key: "AZ_USE_MSI",
+					label: "Use Managed Identity",
+					value: "false",
+					type: "options",
+					options: [
+						{ display: "No", value: "false" },
+						{ display: "Yes", value: "true" },
+					],
+					disabled: false,
+					required: false,
+					category: "Credentials",
 				},
 				{
 					key: "AZ_ACCOUNT_NAME",
@@ -528,8 +595,10 @@ export const STORAGE_CONNECTIONS = {
 					value: "",
 					type: "text",
 					disabled: false,
-					required: true,
-					category: "Settings",
+					required: false,
+					helperText:
+						"Required with managed identity, which carries no address of its own. Ignored otherwise.",
+					category: "Credentials",
 				},
 			],
 		},
@@ -571,7 +640,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "S3_ACCESS_KEY",
+					key: "S3_ACCESS",
 					label: "S3 Access Key",
 					value: "",
 					type: "text",
@@ -580,7 +649,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "Credentials",
 				},
 				{
-					key: "S3_SECRET_KEY",
+					key: "S3_SECRET",
 					label: "S3 Secret Key",
 					value: "",
 					type: "password",
@@ -647,7 +716,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "MINIO_ACCESS_KEY",
+					key: "S3_ACCESS",
 					label: "Access Key",
 					value: "",
 					type: "text",
@@ -656,7 +725,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "Credentials",
 				},
 				{
-					key: "MINIO_SECRET_KEY",
+					key: "S3_SECRET",
 					label: "Secret Key",
 					value: "",
 					type: "password",
@@ -665,7 +734,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "Credentials",
 				},
 				{
-					key: "MINIO_ENDPOINT",
+					key: "S3_ENDPOINT",
 					label: "Endpoint",
 					value: "",
 					type: "text",
@@ -674,7 +743,18 @@ export const STORAGE_CONNECTIONS = {
 					category: "Settings",
 				},
 				{
-					key: "MINIO_REGION",
+					// MinIO does not resolve bucket-as-subdomain, so the bucket has to go
+					// in the url path. Without this the connection fails looking like DNS
+					key: "S3_PATH_STYLE_ACCESS",
+					label: "Path Style Access",
+					value: "true",
+					type: "text",
+					disabled: false,
+					required: true,
+					category: "Settings",
+				},
+				{
+					key: "S3_REGION",
 					label: "Region",
 					value: "us-east-1",
 					type: "text",
@@ -683,12 +763,12 @@ export const STORAGE_CONNECTIONS = {
 					category: "Settings",
 				},
 				{
-					key: "MINIO_BUCKET",
+					key: "S3_BUCKET",
 					label: "Root Bucket Path",
 					value: "",
 					type: "text",
 					disabled: false,
-					required: false,
+					required: true,
 					category: "Settings",
 				},
 			],
