@@ -187,6 +187,13 @@ export type NodeStatus =
 	| "FAILED"
 	| "SKIPPED";
 
+/** Durable references to the SEMOSS activity produced by one automation node. */
+export interface AutomationNodeTrace {
+	roomId?: string;
+	modelMessageId?: string;
+	agentRunId?: string;
+}
+
 /**
  * How a run was initiated.
  * - MANUAL: triggered by a user clicking Run in the editor.
@@ -218,6 +225,7 @@ export interface AutomationNodeResult {
 	DURATION_MS: number;
 	OUTPUT_PREVIEW: string | null;
 	ERROR_MESSAGE: string | null;
+	trace?: AutomationNodeTrace;
 }
 
 export interface AutomationRunDetail extends AutomationRunSummary {

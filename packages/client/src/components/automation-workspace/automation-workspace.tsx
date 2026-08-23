@@ -518,7 +518,7 @@ export const AutomationWorkspace = observer(() => {
 					className="h-full w-full border-none"
 					title="Automation run details"
 					src={`${AUTOMATION_WORKSPACE_URL}?app=${encodeURIComponent(appId)}&mode=trace&parentOrigin=${encodeURIComponent(window.location.origin)}`}
-					sandbox="allow-scripts allow-same-origin"
+					sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
 				/>
 			);
 		}
@@ -530,7 +530,7 @@ export const AutomationWorkspace = observer(() => {
 					className="h-full w-full border-none"
 					title="Automation history"
 					src={`${AUTOMATION_WORKSPACE_URL}?app=${encodeURIComponent(appId)}&mode=history&parentOrigin=${encodeURIComponent(window.location.origin)}`}
-					sandbox="allow-scripts allow-same-origin"
+					sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
 				/>
 			);
 		}
