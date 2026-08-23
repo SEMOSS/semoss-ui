@@ -249,11 +249,21 @@ export const AUTOMATION_WORKFLOW_NODE_REGISTRY: readonly AutomationNodeDefinitio
 			label: "Run agent",
 			description: "Run a configured SEMOSS agent with a prompt.",
 			category: "agent",
-			defaultConfig: { workspaceId: "", command: "", wait: true },
+			defaultConfig: {
+				workspaceId: "",
+				engineId: "",
+				command: "",
+				wait: true,
+			},
 			configSchema: {
 				workspaceId: {
 					type: "string",
 					label: "Agent",
+					required: true,
+				},
+				engineId: {
+					type: "string",
+					label: "Execution model",
 					required: true,
 				},
 				command: {

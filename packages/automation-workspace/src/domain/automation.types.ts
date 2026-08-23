@@ -104,6 +104,8 @@ export interface AppConfig {
 export interface AgentRunConfig {
 	workspaceId: string;
 	workspaceName?: string;
+	engineId: string;
+	engineName?: string;
 	command: string;
 }
 

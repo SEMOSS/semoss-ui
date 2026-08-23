@@ -234,6 +234,7 @@ function defaultCanvasConfig(
 		return {
 			workspaceId:
 				stringValue(config.workspaceId) || stringValue(config.agentId),
+			engineId,
 			command: stringValue(config.command) || stringValue(config.prompt),
 		};
 	}

@@ -1,5 +1,6 @@
 import { Field, FieldLabel } from "@semoss/ui/next";
 import type { AgentRunConfig } from "../../../domain/automation.types";
+import { EnginePickerField } from "./engine-picker-field";
 import { BoundInput } from "./pill-input";
 import { AutomationProjectSelect } from "./project-select";
 
@@ -44,6 +45,27 @@ export function AgentRunForm({
 					Only SEMOSS agents you can access are shown.
 				</p>
 			</Field>
+			<div>
+				<EnginePickerField
+					label="Execution model"
+					name={config.engineName ?? ""}
+					value={config.engineId}
+					engineTypes={["MODEL"]}
+					required
+					onChange={(engine) =>
+						onChange({
+							...config,
+							engineId: engine.engine_id,
+							engineName:
+								engine.engine_display_name ??
+								engine.engine_name,
+						})
+					}
+				/>
+				<p className="mt-1 text-[11px] text-muted-foreground">
+					The selected model runs this agent for every automation run.
+				</p>
+			</div>
 			<BoundInput
 				label="Instruction"
 				required
