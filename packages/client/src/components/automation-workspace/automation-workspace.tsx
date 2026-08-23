@@ -115,6 +115,15 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						enableRenderOnDemand: false,
 						config: {},
 					},
+					{
+						id: "automation-history",
+						type: "tab",
+						name: "History",
+						component: "automation-history",
+						enableClose: false,
+						enableRenderOnDemand: false,
+						config: {},
+					},
 				],
 			},
 		],
@@ -152,6 +161,7 @@ export const AutomationWorkspace = observer(() => {
 	const [showEditorTabs, setShowEditorTabs] = useState(false);
 	const automationFrameRef = useRef<HTMLIFrameElement>(null);
 	const traceFrameRef = useRef<HTMLIFrameElement>(null);
+	const historyFrameRef = useRef<HTMLIFrameElement>(null);
 	const inspectorFrameRef = useRef<HTMLIFrameElement>(null);
 	const [traceSnapshot, setTraceSnapshot] = useState<unknown>(null);
 	const [inspectorSnapshot, setInspectorSnapshot] = useState<unknown>(null);
@@ -220,6 +230,15 @@ export const AutomationWorkspace = observer(() => {
 				message.type === "SEMOSS_AUTOMATION_TRACE"
 			) {
 				setTraceSnapshot(message.snapshot);
+			}
+			if (
+				event.source === automationFrameRef.current?.contentWindow &&
+				message.type === "SEMOSS_AUTOMATION_HISTORY_REFRESH"
+			) {
+				historyFrameRef.current?.contentWindow?.postMessage(
+					message,
+					automationWorkspaceOrigin,
+				);
 			}
 			if (
 				event.source === traceFrameRef.current?.contentWindow &&
@@ -365,7 +384,8 @@ export const AutomationWorkspace = observer(() => {
 		if (
 			!model ||
 			(model.getNodeById("automation-chat") &&
-				model.getNodeById("automation-trace"))
+				model.getNodeById("automation-trace") &&
+				model.getNodeById("automation-history"))
 		) {
 			return;
 		}
@@ -391,6 +411,15 @@ export const AutomationWorkspace = observer(() => {
 			enableRenderOnDemand: false,
 			config: {},
 		};
+		const historyTab = {
+			id: "automation-history",
+			type: "tab" as const,
+			name: "History",
+			component: "automation-history",
+			enableClose: false,
+			enableRenderOnDemand: false,
+			config: {},
+		};
 
 		if (rightBorder) {
 			if (!model.getNodeById("automation-chat")) {
@@ -399,7 +428,9 @@ export const AutomationWorkspace = observer(() => {
 			if (!model.getNodeById("automation-trace")) {
 				rightBorder.children.push(traceTab);
 			}
-			rightBorder.selected = rightBorder.children.length - 1;
+			if (!model.getNodeById("automation-history")) {
+				rightBorder.children.push(historyTab);
+			}
 		} else {
 			layout.borders = [
 				...(layout.borders ?? []),
@@ -409,7 +440,7 @@ export const AutomationWorkspace = observer(() => {
 					selected: 0,
 					size: 400,
 					minSize: 320,
-					children: [chatTab, traceTab],
+					children: [chatTab, traceTab, historyTab],
 				},
 			];
 		}
@@ -487,6 +518,18 @@ export const AutomationWorkspace = observer(() => {
 					className="h-full w-full border-none"
 					title="Automation run details"
 					src={`${AUTOMATION_WORKSPACE_URL}?app=${encodeURIComponent(appId)}&mode=trace&parentOrigin=${encodeURIComponent(window.location.origin)}`}
+					sandbox="allow-scripts allow-same-origin"
+				/>
+			);
+		}
+
+		if (component === "automation-history") {
+			return (
+				<iframe
+					ref={historyFrameRef}
+					className="h-full w-full border-none"
+					title="Automation history"
+					src={`${AUTOMATION_WORKSPACE_URL}?app=${encodeURIComponent(appId)}&mode=history&parentOrigin=${encodeURIComponent(window.location.origin)}`}
 					sandbox="allow-scripts allow-same-origin"
 				/>
 			);

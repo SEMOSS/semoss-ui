@@ -1,6 +1,7 @@
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AutomationCanvas } from "./components/canvas-editor/automation-canvas";
+import { HistoryTab } from "./components/canvas-editor/tabs/history-tab";
 import { InspectorTab } from "./components/canvas-editor/tabs/inspector-tab";
 import {
 	type AutomationTraceSnapshot,
@@ -37,6 +38,7 @@ export default function App() {
 		rawMode === "edit" || rawMode === "create" ? rawMode : null;
 	const traceMode = rawMode === "trace";
 	const inspectorMode = rawMode === "inspector";
+	const historyMode = rawMode === "history";
 
 	const [toolContext, setToolContext] =
 		useState<AutomationToolContext | null>(getMcpToolContext());
@@ -112,6 +114,28 @@ export default function App() {
 	);
 	const [inspectorSnapshot, setInspectorSnapshot] =
 		useState<AutomationInspectorSnapshot | null>(null);
+	const [historyRefreshToken, setHistoryRefreshToken] = useState(0);
+
+	useEffect(() => {
+		if (!historyMode) return;
+		const handleHistoryRefresh = (event: MessageEvent<unknown>) => {
+			if (
+				event.source !== window.parent ||
+				event.origin !== parentOrigin ||
+				typeof event.data !== "object" ||
+				event.data === null
+			) {
+				return;
+			}
+			const message = event.data as { type?: unknown };
+			if (message.type === "SEMOSS_AUTOMATION_HISTORY_REFRESH") {
+				setHistoryRefreshToken((token) => token + 1);
+			}
+		};
+		window.addEventListener("message", handleHistoryRefresh);
+		return () =>
+			window.removeEventListener("message", handleHistoryRefresh);
+	}, [historyMode, parentOrigin]);
 
 	useEffect(() => {
 		if (!inspectorMode) return;
@@ -219,6 +243,11 @@ export default function App() {
 	}
 
 	if (ready) {
+		if (historyMode) {
+			return (
+				<HistoryTab appId={appId} refreshToken={historyRefreshToken} />
+			);
+		}
 		if (inspectorMode) {
 			const sendInspectorAction = (action: AutomationInspectorAction) => {
 				window.parent.postMessage(

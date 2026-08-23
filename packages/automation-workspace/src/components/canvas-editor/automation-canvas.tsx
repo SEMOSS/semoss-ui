@@ -46,16 +46,10 @@ import type {
 	AutomationNode,
 	AutomationNodeResult,
 	AutomationRunDetail,
-	AutomationRunSummary,
 	AutomationToolContext,
 	RunStatus,
 	StepRunStatus,
 } from "../../domain/automation.types";
-import {
-	formatRelativeTime,
-	formatRunDuration,
-	formatTimestamp,
-} from "../../domain/automation-display";
 import type {
 	AutomationInspectorAction,
 	AutomationInspectorSnapshot,
@@ -74,9 +68,7 @@ import {
 	validateCanvasWorkflowNode,
 } from "../../domain/automation-workflow-adapter";
 import { HelpModal } from "../form-editor/help-modal";
-import { NodeResultList } from "../form-editor/node-result-list";
 import { OnboardingTour } from "../form-editor/onboarding-tour";
-import { StatusBadge } from "../status-badge";
 import { AddNodeMenu } from "./add-node-menu";
 import { AutomationDockLayout } from "./automation-dock-layout";
 import { AutomationNode as AutomationNodeCard } from "./nodes/automation-node";
@@ -360,7 +352,6 @@ export function AutomationCanvas({
 	mcpContext,
 }: AutomationCanvasProps) {
 	const [saving, setSaving] = useState(false);
-	const [activeTab] = useState<"steps" | "history" | "config">("steps");
 	const [description, setDescription] = useState("");
 	const [devMode, setDevMode] = useState(
 		() => localStorage.getItem(`automation-devmode-${appId}`) === "true",
@@ -383,9 +374,6 @@ export function AutomationCanvas({
 	const [triggerBindings, setTriggerBindings] = useState<TriggerBinding[]>(
 		() => createInitialCanvasWorkflowDocument().triggerBindings,
 	);
-	const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
-	const [historyLoading, setHistoryLoading] = useState(false);
-	const [historyRefreshToken, setHistoryRefreshToken] = useState(0);
 	const [workflowRefreshToken, setWorkflowRefreshToken] = useState(0);
 	const [showAddMenu, setShowAddMenu] = useState(false);
 	const [addAfterStepId, setAddAfterStepId] = useState<string | null>(null);
@@ -407,20 +395,6 @@ export function AutomationCanvas({
 	>([]);
 	const [aiRunSummary, setAiRunSummary] = useState<string | null>(null);
 	const [generatingAiSummary, setGeneratingAiSummary] = useState(false);
-	const [runs, setRuns] = useState<AutomationRunSummary[]>([]);
-	const [runDetails, setRunDetails] = useState<
-		Record<string, AutomationRunDetail>
-	>({});
-	const [expandedHistoryRunId, setExpandedHistoryRunId] = useState<
-		string | null
-	>(null);
-	const [expandedHistoryRun, setExpandedHistoryRun] =
-		useState<AutomationRunDetail | null>(null);
-	const [historyDetailLoading, setHistoryDetailLoading] = useState(false);
-	const [expandedHistoryNodes, setExpandedHistoryNodes] = useState<
-		Set<string>
-	>(new Set());
-	const [showExecutedDefinition, setShowExecutedDefinition] = useState(false);
 	const [isDirty, setIsDirty] = useState(false);
 	const [mcpDone, setMcpDone] = useState(false);
 	const [undoSnapshot, setUndoSnapshot] = useState<AutomationNode[] | null>(
@@ -463,6 +437,20 @@ export function AutomationCanvas({
 		steps,
 	]);
 
+	const notifyHistoryChanged = useCallback(() => {
+		const parentOrigin = new URLSearchParams(window.location.search).get(
+			"parentOrigin",
+		);
+		if (!parentOrigin || window.parent === window) return;
+		window.parent.postMessage(
+			{
+				type: "SEMOSS_AUTOMATION_HISTORY_REFRESH",
+				projectId: appId,
+			},
+			parentOrigin,
+		);
+	}, [appId]);
+
 	useEffect(() => {
 		if (editingStepId) setActiveDockTab("inspector");
 	}, [editingStepId]);
@@ -475,7 +463,6 @@ export function AutomationCanvas({
 	const canvasContainerRef = useRef<HTMLDivElement>(null);
 	const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
 	const [canvasInitialized, setCanvasInitialized] = useState(false);
-	const historyRequestRef = useRef(0);
 	const centerXRef = useRef(0);
 	const initialViewFittedRef = useRef(false);
 	const loadedGraphStructureRef = useRef<{
@@ -694,49 +681,6 @@ export function AutomationCanvas({
 			cancelled = true;
 		};
 	}, [appId, layoutNodes, mcpMode, workflowRefreshToken]);
-
-	const refreshRuns = useCallback(() => {
-		setHistoryRefreshToken((previous) => {
-			const next = previous + 1;
-			historyRequestRef.current = next;
-			return next;
-		});
-	}, []);
-
-	useEffect(() => {
-		let cancelled = false;
-		const requestId = historyRefreshToken;
-		setHistoryLoading(true);
-		void runPixel(
-			`ListAutomationRuns(project=${JSON.stringify([appId])}, limit=["50"]);`,
-		)
-			.then((response) => {
-				if (cancelled || requestId !== historyRequestRef.current)
-					return;
-				const output = response.pixelReturn?.[0]?.output;
-				setRuns(
-					Array.isArray(output)
-						? (output as AutomationRunSummary[])
-						: [],
-				);
-				setLastRefreshed(new Date());
-			})
-			.catch((error: Error) => {
-				if (!cancelled && requestId === historyRequestRef.current) {
-					toast.error(
-						error.message || "Unable to load automation history.",
-					);
-				}
-			})
-			.finally(() => {
-				if (!cancelled && requestId === historyRequestRef.current) {
-					setHistoryLoading(false);
-				}
-			});
-		return () => {
-			cancelled = true;
-		};
-	}, [appId, historyRefreshToken]);
 
 	// Draft persistence
 	useEffect(() => {
@@ -1243,12 +1187,7 @@ export function AutomationCanvas({
 			}
 			applyRunData(finalDetail);
 			setAiRunSummary(finalDetail.RESULT_SUMMARY ?? null);
-			setRuns((previous) => [finalDetail, ...previous]);
-			setRunDetails((previous) => ({
-				...previous,
-				[finalDetail.RUN_ID]: finalDetail,
-			}));
-			refreshRuns();
+			notifyHistoryChanged();
 			if (finalDetail.STATUS === "SUCCESS") {
 				toast.success(
 					finalDetail.RESULT_SUMMARY ?? "Automation completed",
@@ -1265,7 +1204,14 @@ export function AutomationCanvas({
 		} finally {
 			setRunning(false);
 		}
-	}, [appId, applyNodeProgress, applyRunData, refreshRuns, save, steps]);
+	}, [
+		appId,
+		applyNodeProgress,
+		applyRunData,
+		notifyHistoryChanged,
+		save,
+		steps,
+	]);
 
 	const handleDoneReturnToChat = useCallback(async () => {
 		if (saving) return;
@@ -1299,55 +1245,6 @@ export function AutomationCanvas({
 		setMcpDone(true);
 	}, [saving, mcpContext, isDirty, save, steps, description, appId, mcpMode]);
 
-	const selectHistoryRun = useCallback(
-		async (runId: string) => {
-			if (expandedHistoryRunId === runId) {
-				setExpandedHistoryRunId(null);
-				setExpandedHistoryRun(null);
-				setExpandedHistoryNodes(new Set());
-				setShowExecutedDefinition(false);
-				return;
-			}
-			setExpandedHistoryRunId(runId);
-			setExpandedHistoryRun(null);
-			setExpandedHistoryNodes(new Set());
-			setShowExecutedDefinition(false);
-			setHistoryDetailLoading(true);
-			const cached = runDetails[runId];
-			if (cached) {
-				setExpandedHistoryRun(cached);
-				setHistoryDetailLoading(false);
-				return;
-			}
-			try {
-				const response = await runPixel(
-					`GetAutomationRun(project=${JSON.stringify([appId])}, runId=${JSON.stringify([runId])});`,
-				);
-				const detail = response.pixelReturn?.[0]?.output as
-					| AutomationRunDetail
-					| undefined;
-				if (!detail?.RUN_ID) {
-					throw new Error("Automation run details were not found.");
-				}
-				setRunDetails((previous) => ({
-					...previous,
-					[runId]: detail,
-				}));
-				setExpandedHistoryRun(detail);
-			} catch (error) {
-				toast.error(
-					error instanceof Error
-						? error.message
-						: "Unable to load automation run details.",
-				);
-				setExpandedHistoryRunId(null);
-			} finally {
-				setHistoryDetailLoading(false);
-			}
-		},
-		[appId, expandedHistoryRunId, runDetails],
-	);
-
 	const _takeToValidationStep = useCallback((stepId: string) => {
 		setShowAddMenu(false);
 		setEditingStepId(stepId);
@@ -1356,15 +1253,6 @@ export function AutomationCanvas({
 			nodes: [{ id: stepId }],
 			padding: 0.5,
 			duration: 250,
-		});
-	}, []);
-
-	const toggleHistoryNode = useCallback((nodeId: string) => {
-		setExpandedHistoryNodes((prev) => {
-			const next = new Set(prev);
-			if (next.has(nodeId)) next.delete(nodeId);
-			else next.add(nodeId);
-			return next;
 		});
 	}, []);
 
@@ -1556,412 +1444,209 @@ export function AutomationCanvas({
 				<div className="flex min-w-0 flex-1 flex-col bg-background">
 					{/* ---- Content ---- */}
 					<div className="flex-1 overflow-hidden">
-						{/* Steps tab */}
-						{activeTab === "steps" && (
-							<AutomationDockLayout
-								canvas={
-									<div
-										ref={canvasContainerRef}
-										className="relative h-full"
-									>
-										{/* Banners row above the canvas */}
-										{(running ||
-											(latestRunStatus &&
+						<AutomationDockLayout
+							canvas={
+								<div
+									ref={canvasContainerRef}
+									className="relative h-full"
+								>
+									{/* Banners row above the canvas */}
+									{(running ||
+										(latestRunStatus &&
+											latestRunStatus !== "RUNNING") ||
+										undoSnapshot) && (
+										<div className="absolute inset-x-0 top-0 z-20 space-y-2 px-4 pt-3">
+											{running && (
+												<div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-primary text-xs">
+													<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+													Running…
+												</div>
+											)}
+											{!running &&
+												latestRunStatus &&
 												latestRunStatus !==
-													"RUNNING") ||
-											undoSnapshot) && (
-											<div className="absolute inset-x-0 top-0 z-20 space-y-2 px-4 pt-3">
-												{running && (
-													<div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-primary text-xs">
-														<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
-														Running…
-													</div>
-												)}
-												{!running &&
-													latestRunStatus &&
-													latestRunStatus !==
-														"RUNNING" && (
-														<RunBanner
-															status={
-																latestRunStatus
-															}
-															aiSummary={
-																aiRunSummary
-															}
-															generatingAiSummary={
-																generatingAiSummary
-															}
-															onDismiss={
-																dismissRun
-															}
-														/>
-													)}
-												{undoSnapshot && (
-													<UndoBanner
-														onUndo={() => {
-															setSteps(
-																undoSnapshot,
-															);
-															setUndoSnapshot(
-																null,
-															);
-														}}
-														onDismiss={() =>
-															setUndoSnapshot(
-																null,
-															)
+													"RUNNING" && (
+													<RunBanner
+														status={latestRunStatus}
+														aiSummary={aiRunSummary}
+														generatingAiSummary={
+															generatingAiSummary
 														}
+														onDismiss={dismissRun}
 													/>
 												)}
-											</div>
-										)}
-
-										{/* Onboarding tour (fixed popovers) */}
-										<OnboardingTour appId={appId} />
-
-										{/* React Flow canvas */}
-										{/* Suppress RF selection ring */}
-										<style>{`.react-flow__node.selected{box-shadow:none!important;outline:none!important}`}</style>
-										<ReactFlow
-											nodes={rfNodes}
-											edges={rfEdges}
-											nodeTypes={nodeTypes as never}
-											edgeTypes={edgeTypes as never}
-											nodesDraggable={
-												canvasMode === "interact"
-											}
-											nodesConnectable={
-												canvasMode === "interact" &&
-												!running
-											}
-											panOnDrag={canvasMode === "pan"}
-											panOnScroll={canvasMode !== "pan"}
-											zoomOnPinch
-											zoomOnScroll={canvasMode === "pan"}
-											minZoom={0.3}
-											maxZoom={1.5}
-											defaultEdgeOptions={{
-												type: "smoothstep",
-												animated: false,
-											}}
-											proOptions={{
-												hideAttribution: true,
-											}}
-											className="h-full"
-											onInit={(instance) => {
-												reactFlowInstanceRef.current =
-													instance;
-												setCanvasInitialized(true);
-											}}
-											onNodeClick={
-												canvasMode === "interact"
-													? (_e, node) => {
-															setShowAddMenu(
-																false,
-															);
-															setEditingStepId(
-																node.id,
-															);
-														}
-													: undefined
-											}
-											onNodesChange={onRfNodesChange}
-											onNodeDragStop={onNodeDragStop}
-											onPaneClick={() => {
-												setShowAddMenu(false);
-											}}
-											onConnect={onConnect}
-										>
-											<Background
-												variant={BackgroundVariant.Dots}
-												gap={20}
-												size={1}
-												color="#cbd5e1"
-											/>
-										</ReactFlow>
-
-										<div className="absolute top-4 right-4 z-30 flex items-center gap-2">
-											<div
-												className="relative"
-												data-tour="save"
-											>
-												<Button
-													size="sm"
-													variant="outline"
-													className="bg-background shadow-sm"
-													onClick={() =>
-														void (mcpMode &&
-														mcpContext
-															? handleDoneReturnToChat()
-															: save())
+											{undoSnapshot && (
+												<UndoBanner
+													onUndo={() => {
+														setSteps(undoSnapshot);
+														setUndoSnapshot(null);
+													}}
+													onDismiss={() =>
+														setUndoSnapshot(null)
 													}
-													disabled={saving}
-												>
-													<span className="relative mr-1.5">
-														{saving ? (
-															<Loader2 className="h-3.5 w-3.5 animate-spin" />
-														) : (
-															<Save className="h-3.5 w-3.5" />
-														)}
-														{isDirty && !saving && (
-															<span className="-top-1 -right-1 absolute h-2 w-2 rounded-full bg-amber-500 ring-1 ring-background" />
-														)}
-													</span>
-													{mcpMode && mcpContext
-														? "Save — Return to Chat"
-														: "Save"}
-												</Button>
-											</div>
-											<Button
-												data-tour="run"
-												size="sm"
-												className="shadow-sm"
-												onClick={run}
-												disabled={
-													running || !hasRunnableSteps
-												}
-												title={
-													!hasRunnableSteps
-														? "Add at least one step before running"
-														: undefined
-												}
-											>
-												{running ? (
-													<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-												) : (
-													<Play className="mr-1.5 h-3.5 w-3.5" />
-												)}
-												Run
-											</Button>
-										</div>
-
-										<div className="absolute bottom-4 left-4 z-10 flex items-center overflow-hidden rounded-lg border bg-background shadow-sm">
-											<button
-												type="button"
-												aria-label="Clean up node layout"
-												title="Clean up layout — restore execution order"
-												onClick={cleanUpLayout}
-												className="flex items-center justify-center border-r p-2 text-muted-foreground transition-colors hover:bg-muted"
-											>
-												<RefreshCw className="h-4 w-4" />
-											</button>
-											<button
-												type="button"
-												title="Interact mode — click nodes to edit (V)"
-												onClick={() =>
-													setCanvasMode("interact")
-												}
-												className={`flex items-center justify-center p-2 transition-colors ${canvasMode === "interact" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
-											>
-												<MousePointer2 className="h-4 w-4" />
-											</button>
-											<button
-												type="button"
-												title="Pan mode — drag to move canvas (H)"
-												onClick={() =>
-													setCanvasMode("pan")
-												}
-												className={`flex items-center justify-center p-2 transition-colors ${canvasMode === "pan" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
-											>
-												<Hand className="h-4 w-4" />
-											</button>
-											<button
-												type="button"
-												aria-label="Open automation help"
-												title="Automation help"
-												onClick={() =>
-													setShowHelp(true)
-												}
-												className="flex items-center gap-1.5 border-l px-2 py-2 text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground"
-											>
-												<HelpCircle className="h-4 w-4" />
-												Help
-											</button>
-										</div>
-									</div>
-								}
-							/>
-						)}
-
-						{activeTab === "history" && (
-							<div className="h-full overflow-y-auto px-6 py-6">
-								<div className="mx-auto max-w-3xl space-y-4">
-									<div className="flex items-center justify-between gap-3">
-										<div>
-											<h2 className="font-semibold text-sm">
-												Automation History
-											</h2>
-											<p className="text-[11px] text-muted-foreground">
-												Review recent automation runs
-												and inspect per-node outputs.
-											</p>
-										</div>
-										<div className="flex flex-col items-end gap-0.5">
-											<Button
-												size="sm"
-												variant="ghost"
-												className="h-8 px-2 text-xs"
-												onClick={refreshRuns}
-											>
-												<RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-												Refresh
-											</Button>
-											{lastRefreshed && (
-												<span className="text-[10px] text-muted-foreground/60">
-													Updated{" "}
-													{formatRelativeTime(
-														lastRefreshed.toISOString(),
-													)}
-												</span>
+												/>
 											)}
 										</div>
-									</div>
-									{historyLoading ? (
-										<div className="flex h-40 items-center justify-center rounded-2xl border bg-card">
-											<Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-										</div>
-									) : runs.length === 0 ? (
-										<div className="rounded-2xl border border-dashed bg-card/60 px-6 py-14 text-center">
-											<p className="font-semibold text-sm">
-												No runs yet
-											</p>
-											<p className="mt-2 text-muted-foreground text-xs leading-relaxed">
-												Each time the automation runs,
-												results appear here so you can
-												review what happened.
-											</p>
-										</div>
-									) : (
-										<div className="divide-y rounded-2xl border bg-card">
-											{runs.map((run) => {
-												const isExpanded =
-													expandedHistoryRunId ===
-													run.RUN_ID;
-												return (
-													<div key={run.RUN_ID}>
-														<button
-															type="button"
-															onClick={() =>
-																void selectHistoryRun(
-																	run.RUN_ID,
-																)
-															}
-															className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-muted/40"
-														>
-															<StatusBadge
-																status={
-																	run.STATUS
-																}
-															/>
-															<div className="flex-1 space-y-0.5">
-																<p className="font-medium text-xs">
-																	{formatTimestamp(
-																		run.STARTED_AT,
-																	)}
-																</p>
-																{run.COMPLETED_AT && (
-																	<p className="text-[11px] text-muted-foreground">
-																		{formatRunDuration(
-																			run.STARTED_AT,
-																			run.COMPLETED_AT,
-																		)}
-																	</p>
-																)}
-															</div>
-															{isExpanded ? (
-																<X className="h-3.5 w-3.5 text-muted-foreground" />
-															) : (
-																<Play className="h-3.5 w-3.5 text-muted-foreground" />
-															)}
-														</button>
-														{isExpanded && (
-															<div className="border-t bg-muted/20 px-4 py-4">
-																{historyDetailLoading ? (
-																	<div className="flex h-20 items-center justify-center">
-																		<Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-																	</div>
-																) : expandedHistoryRun ? (
-																	<div className="space-y-4">
-																		{expandedHistoryRun.DEFINITION_HASH && (
-																			<div className="rounded-lg border bg-background px-3 py-2 text-[11px]">
-																				<div className="flex items-center justify-between gap-3">
-																					<span className="text-muted-foreground">
-																						Executed
-																						definition
-																						{expandedHistoryRun.DEFINITION_VERSION !=
-																						null
-																							? ` v${expandedHistoryRun.DEFINITION_VERSION}`
-																							: ""}
-																					</span>
-																					<Button
-																						size="sm"
-																						variant="ghost"
-																						className="h-7 px-2 text-[11px]"
-																						onClick={() =>
-																							setShowExecutedDefinition(
-																								(
-																									previous,
-																								) =>
-																									!previous,
-																							)
-																						}
-																					>
-																						{showExecutedDefinition
-																							? "Hide definition"
-																							: "View definition"}
-																					</Button>
-																				</div>
-																				<p className="mt-1 break-all font-mono text-muted-foreground">
-																					SHA-256:{" "}
-																					{
-																						expandedHistoryRun.DEFINITION_HASH
-																					}
-																				</p>
-																				{showExecutedDefinition &&
-																					expandedHistoryRun.DEFINITION_SNAPSHOT && (
-																						<pre className="mt-2 max-h-80 overflow-auto rounded-md bg-muted p-3 text-[10px] leading-relaxed">
-																							{
-																								expandedHistoryRun.DEFINITION_SNAPSHOT
-																							}
-																						</pre>
-																					)}
-																			</div>
-																		)}
-																		<NodeResultList
-																			steps={
-																				steps
-																			}
-																			results={
-																				expandedHistoryRun.nodeResults ??
-																				[]
-																			}
-																			expandedNodes={
-																				expandedHistoryNodes
-																			}
-																			onToggleNode={
-																				toggleHistoryNode
-																			}
-																		/>
-																	</div>
-																) : null}
-															</div>
-														)}
-													</div>
-												);
-											})}
-										</div>
 									)}
-								</div>
-							</div>
-						)}
 
-						{/* Config tab */}
-						{activeTab === "config" && (
-							<div className="p-6 text-muted-foreground text-sm">
-								Node configuration is managed in the Inspector.
-								in the Inspector.
-							</div>
-						)}
+									{/* Onboarding tour (fixed popovers) */}
+									<OnboardingTour appId={appId} />
+
+									{/* React Flow canvas */}
+									{/* Suppress RF selection ring */}
+									<style>{`.react-flow__node.selected{box-shadow:none!important;outline:none!important}`}</style>
+									<ReactFlow
+										nodes={rfNodes}
+										edges={rfEdges}
+										nodeTypes={nodeTypes as never}
+										edgeTypes={edgeTypes as never}
+										nodesDraggable={
+											canvasMode === "interact"
+										}
+										nodesConnectable={
+											canvasMode === "interact" &&
+											!running
+										}
+										panOnDrag={canvasMode === "pan"}
+										panOnScroll={canvasMode !== "pan"}
+										zoomOnPinch
+										zoomOnScroll={canvasMode === "pan"}
+										minZoom={0.3}
+										maxZoom={1.5}
+										defaultEdgeOptions={{
+											type: "smoothstep",
+											animated: false,
+										}}
+										proOptions={{
+											hideAttribution: true,
+										}}
+										className="h-full"
+										onInit={(instance) => {
+											reactFlowInstanceRef.current =
+												instance;
+											setCanvasInitialized(true);
+										}}
+										onNodeClick={
+											canvasMode === "interact"
+												? (_e, node) => {
+														setShowAddMenu(false);
+														setEditingStepId(
+															node.id,
+														);
+													}
+												: undefined
+										}
+										onNodesChange={onRfNodesChange}
+										onNodeDragStop={onNodeDragStop}
+										onPaneClick={() => {
+											setShowAddMenu(false);
+										}}
+										onConnect={onConnect}
+									>
+										<Background
+											variant={BackgroundVariant.Dots}
+											gap={20}
+											size={1}
+											color="#cbd5e1"
+										/>
+									</ReactFlow>
+
+									<div className="absolute top-4 right-4 z-30 flex items-center gap-2">
+										<div
+											className="relative"
+											data-tour="save"
+										>
+											<Button
+												size="sm"
+												variant="outline"
+												className="bg-background shadow-sm"
+												onClick={() =>
+													void (mcpMode && mcpContext
+														? handleDoneReturnToChat()
+														: save())
+												}
+												disabled={saving}
+											>
+												<span className="relative mr-1.5">
+													{saving ? (
+														<Loader2 className="h-3.5 w-3.5 animate-spin" />
+													) : (
+														<Save className="h-3.5 w-3.5" />
+													)}
+													{isDirty && !saving && (
+														<span className="-top-1 -right-1 absolute h-2 w-2 rounded-full bg-amber-500 ring-1 ring-background" />
+													)}
+												</span>
+												{mcpMode && mcpContext
+													? "Save — Return to Chat"
+													: "Save"}
+											</Button>
+										</div>
+										<Button
+											data-tour="run"
+											size="sm"
+											className="shadow-sm"
+											onClick={run}
+											disabled={
+												running || !hasRunnableSteps
+											}
+											title={
+												!hasRunnableSteps
+													? "Add at least one step before running"
+													: undefined
+											}
+										>
+											{running ? (
+												<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+											) : (
+												<Play className="mr-1.5 h-3.5 w-3.5" />
+											)}
+											Run
+										</Button>
+									</div>
+
+									<div className="absolute bottom-4 left-4 z-10 flex items-center overflow-hidden rounded-lg border bg-background shadow-sm">
+										<button
+											type="button"
+											aria-label="Clean up node layout"
+											title="Clean up layout — restore execution order"
+											onClick={cleanUpLayout}
+											className="flex items-center justify-center border-r p-2 text-muted-foreground transition-colors hover:bg-muted"
+										>
+											<RefreshCw className="h-4 w-4" />
+										</button>
+										<button
+											type="button"
+											title="Interact mode — click nodes to edit (V)"
+											onClick={() =>
+												setCanvasMode("interact")
+											}
+											className={`flex items-center justify-center p-2 transition-colors ${canvasMode === "interact" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
+										>
+											<MousePointer2 className="h-4 w-4" />
+										</button>
+										<button
+											type="button"
+											title="Pan mode — drag to move canvas (H)"
+											onClick={() => setCanvasMode("pan")}
+											className={`flex items-center justify-center p-2 transition-colors ${canvasMode === "pan" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
+										>
+											<Hand className="h-4 w-4" />
+										</button>
+										<button
+											type="button"
+											aria-label="Open automation help"
+											title="Automation help"
+											onClick={() => setShowHelp(true)}
+											className="flex items-center gap-1.5 border-l px-2 py-2 text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground"
+										>
+											<HelpCircle className="h-4 w-4" />
+											Help
+										</button>
+									</div>
+								</div>
+							}
+						/>
 					</div>
 				</div>
 			</div>
