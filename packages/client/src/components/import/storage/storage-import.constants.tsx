@@ -73,7 +73,7 @@ export const STORAGE_CONNECTIONS = {
 					// leaving both keys empty falls back to the environment's
 					// credentials, which is how an instance profile or IRSA is
 					// picked up. One without the other is rejected
-					key: "S3_ACCESS",
+					key: "S3_ACCESS_KEY",
 					label: "Access Key",
 					value: "",
 					type: "text",
@@ -84,7 +84,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "Credentials",
 				},
 				{
-					key: "S3_SECRET",
+					key: "S3_SECRET_KEY",
 					label: "Secret Key",
 					value: "",
 					type: "password",
@@ -160,7 +160,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "S3_ACCESS",
+					key: "S3_ACCESS_KEY",
 					label: "Access Key",
 					value: "",
 					type: "text",
@@ -169,7 +169,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "Credentials",
 				},
 				{
-					key: "S3_SECRET",
+					key: "S3_SECRET_KEY",
 					label: "Secret Key",
 					value: "",
 					type: "password",
@@ -265,7 +265,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "Settings",
 				},
 				{
-					key: "S3_ACCESS",
+					key: "S3_ACCESS_KEY",
 					label: "S3 Access Key",
 					value: "",
 					type: "text",
@@ -274,7 +274,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "Credentials",
 				},
 				{
-					key: "S3_SECRET",
+					key: "S3_SECRET_KEY",
 					label: "S3 Secret Key",
 					value: "",
 					type: "password",
@@ -332,7 +332,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "S3_ACCESS",
+					key: "S3_ACCESS_KEY",
 					label: "S3 Access Key",
 					value: "",
 					type: "text",
@@ -341,7 +341,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "Credentials",
 				},
 				{
-					key: "S3_SECRET",
+					key: "S3_SECRET_KEY",
 					label: "S3 Secret Key",
 					value: "",
 					type: "password",
@@ -640,7 +640,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "S3_ACCESS",
+					key: "S3_ACCESS_KEY",
 					label: "S3 Access Key",
 					value: "",
 					type: "text",
@@ -649,7 +649,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "Credentials",
 				},
 				{
-					key: "S3_SECRET",
+					key: "S3_SECRET_KEY",
 					label: "S3 Secret Key",
 					value: "",
 					type: "password",
@@ -716,7 +716,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "S3_ACCESS",
+					key: "S3_ACCESS_KEY",
 					label: "Access Key",
 					value: "",
 					type: "text",
@@ -725,7 +725,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "Credentials",
 				},
 				{
-					key: "S3_SECRET",
+					key: "S3_SECRET_KEY",
 					label: "Secret Key",
 					value: "",
 					type: "password",
