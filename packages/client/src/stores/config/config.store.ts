@@ -788,7 +788,8 @@ export class ConfigStore {
 	 *
 	 * @param project - project metadata from the caller's context
 	 * @param role - the caller's resolved permission for this project
-	 * @param insightId - insight to bind the workspace to
+	 * @param insightId - insight to bind the workspace to, or "new" to have one
+	 * created
 	 */
 	async createWorkspace(
 		project: Project,
@@ -796,11 +797,17 @@ export class ConfigStore {
 		insightId: string = "new",
 	) {
 		// set the backend context for this insight
-		await runPixel(`SetContext("${project.project_id}")`, insightId);
-
-		// create the newly loaded workspace
-		return new WorkspaceStore(this._root, {
+		const response = await runPixel(
+			`SetContext("${project.project_id}")`,
 			insightId,
+		);
+
+		// the workspace is built around the insight the backend answered with.
+		// Asking for "new" means the id only exists in that response, and
+		// anything the workspace hands to the backend later (downloads, asset
+		// reads) has to name the real insight
+		return new WorkspaceStore(this._root, {
+			insightId: response.insightId,
 			role,
 			metadata: project,
 		});
