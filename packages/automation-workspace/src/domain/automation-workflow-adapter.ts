@@ -572,14 +572,14 @@ export function validateCanvasWorkflowNode(node: AutomationNode): string[] {
 	const errors = Object.entries(definition.configSchema).flatMap(
 		([key, schema]) => {
 			const value = config[key];
-			if (
-				schema.required &&
-				(value === undefined ||
-					(typeof value === "string" && value.trim() === ""))
-			) {
+			const missing =
+				value === undefined ||
+				(typeof value === "string" && value.trim() === "");
+			if (schema.required && missing) {
 				return [`${schema.label} is required`];
 			}
 			if (
+				!missing &&
 				schema.minimum !== undefined &&
 				(typeof value !== "number" ||
 					!Number.isFinite(value) ||

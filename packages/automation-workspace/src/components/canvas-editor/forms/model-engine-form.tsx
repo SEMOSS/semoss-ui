@@ -1,28 +1,8 @@
-import { useEffect, useId, useMemo } from "react";
-import { Field, FieldLabel } from "@semoss/ui/next";
+import { useId } from "react";
 import type { ModelEngineConfig } from "../../../domain/automation.types";
 import { getPlaygroundParamDescription } from "../../../domain/automation-utils";
 import { EnginePickerField } from "./engine-picker-field";
 import { BoundInput } from "./pill-input";
-
-/** Maps engine_subtype values to the operations they support. */
-const SUBTYPE_OPERATIONS: Record<string, ModelEngineConfig["operation"][]> = {
-	TEXT_EMBEDDINGS: ["embeddings"],
-	KSERVE_IMAGE_EMBED: ["embeddings"],
-	NER: ["ner"],
-	KSERVE_VISION: ["vision"],
-	KSERVE_IMAGE: ["vision"],
-};
-
-const ALL_OPERATIONS: {
-	value: ModelEngineConfig["operation"];
-	label: string;
-}[] = [
-	{ value: "llm", label: "Chat / Generate text" },
-	{ value: "embeddings", label: "Generate Embeddings" },
-	{ value: "vision", label: "Vision" },
-	{ value: "ner", label: "Extract Entities" },
-];
 
 export interface ModelEngineFormProps {
 	/** Current node config */
@@ -49,27 +29,6 @@ export function ModelEngineForm({
 }: ModelEngineFormProps) {
 	const pgFillId = useId();
 
-	// Derive which operations the selected engine supports based on its subtype
-	const availableOps = useMemo(() => {
-		if (!config.engineId) return ALL_OPERATIONS;
-		const subtype = (config.engineSubtype ?? "").toUpperCase();
-		const allowed = SUBTYPE_OPERATIONS[subtype];
-		if (!allowed) return ALL_OPERATIONS;
-		return ALL_OPERATIONS.filter((op) => allowed.includes(op.value));
-	}, [config.engineId, config.engineSubtype]);
-
-	// Auto-select the only available operation when the engine constrains it
-	useEffect(() => {
-		if (
-			availableOps.length === 1 &&
-			config.operation !== availableOps[0].value
-		) {
-			onChange({ ...config, operation: availableOps[0].value });
-		}
-	}, [availableOps, config, onChange]);
-
-	const singleOp = availableOps.length === 1;
-
 	return (
 		<div className="flex flex-col gap-4">
 			<EnginePickerField
@@ -87,40 +46,6 @@ export function ModelEngineForm({
 					})
 				}
 			/>
-			<Field>
-				<FieldLabel>Operation</FieldLabel>
-				<div className="flex flex-wrap gap-2">
-					{availableOps.map((op) => {
-						const isActive = config.operation === op.value;
-						return (
-							<button
-								key={op.value}
-								type="button"
-								disabled={singleOp}
-								onClick={() =>
-									onChange({
-										...config,
-										operation: op.value,
-									})
-								}
-								className={`rounded-full border px-3 py-1 text-[11px] transition-colors ${
-									isActive
-										? "border-primary bg-primary/10 font-medium text-primary"
-										: "hover:border-primary/40"
-								} disabled:cursor-default`}
-							>
-								{op.label}
-							</button>
-						);
-					})}
-				</div>
-				{singleOp && (
-					<p className="mt-1 text-[11px] text-muted-foreground">
-						This engine only supports{" "}
-						{availableOps[0]?.label ?? "one operation"}.
-					</p>
-				)}
-			</Field>
 			{config.operation === "llm" && (
 				<>
 					<BoundInput

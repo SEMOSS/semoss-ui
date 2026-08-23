@@ -1,13 +1,4 @@
 import { useId } from "react";
-import {
-	Field,
-	FieldLabel,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@semoss/ui/next";
 import type { FunctionEngineConfig } from "../../../domain/automation.types";
 import { getPlaygroundParamDescription } from "../../../domain/automation-utils";
 import { EnginePickerField } from "./engine-picker-field";
@@ -50,26 +41,6 @@ export function FunctionEngineForm({
 					})
 				}
 			/>
-			<Field>
-				<FieldLabel>Operation</FieldLabel>
-				<Select
-					value={config.operation}
-					onValueChange={(v) =>
-						onChange({
-							...config,
-							operation: v as FunctionEngineConfig["operation"],
-						})
-					}
-				>
-					<SelectTrigger>
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="execute">Execute</SelectItem>
-						<SelectItem value="streaming">Streaming</SelectItem>
-					</SelectContent>
-				</Select>
-			</Field>
 			<BoundInput
 				label="Input Parameters"
 				required

@@ -1,14 +1,5 @@
 import { useId } from "react";
-import {
-	Field,
-	FieldLabel,
-	Input,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@semoss/ui/next";
+import { Field, FieldLabel, Input } from "@semoss/ui/next";
 import type { VectorEngineConfig } from "../../../domain/automation.types";
 import { getPlaygroundParamDescription } from "../../../domain/automation-utils";
 import { EnginePickerField } from "./engine-picker-field";
@@ -54,32 +45,6 @@ export function VectorEngineForm({
 					})
 				}
 			/>
-			<Field>
-				<FieldLabel>Operation</FieldLabel>
-				<Select
-					value={config.operation}
-					onValueChange={(v) =>
-						onChange({
-							...config,
-							operation: v as VectorEngineConfig["operation"],
-						})
-					}
-				>
-					<SelectTrigger>
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="search">Search with AI</SelectItem>
-						<SelectItem value="add-file">Add Document</SelectItem>
-						<SelectItem value="add-csv">Add CSV File</SelectItem>
-						<SelectItem value="list">List Documents</SelectItem>
-						<SelectItem value="delete">Delete Documents</SelectItem>
-						<SelectItem value="download">
-							Download Document
-						</SelectItem>
-					</SelectContent>
-				</Select>
-			</Field>
 			{config.operation === "search" && (
 				<>
 					<BoundInput

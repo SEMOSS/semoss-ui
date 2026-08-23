@@ -1,12 +1,3 @@
-import {
-	Field,
-	FieldLabel,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@semoss/ui/next";
 import type { StorageEngineConfig } from "../../../domain/automation.types";
 import { EnginePickerField } from "./engine-picker-field";
 import { BoundInput } from "./pill-input";
@@ -41,31 +32,6 @@ export function StorageEngineForm({
 					})
 				}
 			/>
-			<Field>
-				<FieldLabel>Operation</FieldLabel>
-				<Select
-					value={config.operation}
-					onValueChange={(v) =>
-						onChange({
-							...config,
-							operation: v as StorageEngineConfig["operation"],
-						})
-					}
-				>
-					<SelectTrigger>
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="list">List</SelectItem>
-						<SelectItem value="download">Download</SelectItem>
-						<SelectItem value="upload">Upload</SelectItem>
-						<SelectItem value="delete">Delete</SelectItem>
-						<SelectItem value="read-base64">
-							Read as Encoded Text
-						</SelectItem>
-					</SelectContent>
-				</Select>
-			</Field>
 			<BoundInput
 				label={`Storage Path${config.operation === "list" ? " (optional)" : ""}`}
 				required={config.operation !== "list"}
