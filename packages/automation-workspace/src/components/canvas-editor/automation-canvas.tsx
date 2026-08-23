@@ -437,6 +437,32 @@ export function AutomationCanvas({
 		steps,
 	]);
 
+	useEffect(() => {
+		const parentOrigin = new URLSearchParams(window.location.search).get(
+			"parentOrigin",
+		);
+		if (!parentOrigin || window.parent === window) return;
+		window.parent.postMessage(
+			{
+				type: "SEMOSS_AUTOMATION_DIRTY_STATE",
+				projectId: appId,
+				isDirty,
+			},
+			parentOrigin,
+		);
+	}, [appId, isDirty]);
+
+	useEffect(() => {
+		if (!isDirty) return;
+		const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+			event.preventDefault();
+			event.returnValue = "";
+		};
+		window.addEventListener("beforeunload", handleBeforeUnload);
+		return () =>
+			window.removeEventListener("beforeunload", handleBeforeUnload);
+	}, [isDirty]);
+
 	const notifyHistoryChanged = useCallback(() => {
 		const parentOrigin = new URLSearchParams(window.location.search).get(
 			"parentOrigin",
@@ -493,6 +519,12 @@ export function AutomationCanvas({
 			) {
 				return;
 			}
+			if (isDirty) {
+				toast.error(
+					"The automation changed outside the editor. Your unsaved draft was preserved; save it before refreshing.",
+				);
+				return;
+			}
 
 			localStorage.removeItem(`automation-draft-${appId}`);
 			setEditingStepId(null);
@@ -500,7 +532,7 @@ export function AutomationCanvas({
 		};
 		window.addEventListener("message", handleMessage);
 		return () => window.removeEventListener("message", handleMessage);
-	}, [appId]);
+	}, [appId, isDirty]);
 
 	const getNodeHeight = useCallback((nodeId: string): number => {
 		const nodeElements =

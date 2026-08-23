@@ -165,6 +165,7 @@ export const AutomationWorkspace = observer(() => {
 	const inspectorFrameRef = useRef<HTMLIFrameElement>(null);
 	const [traceSnapshot, setTraceSnapshot] = useState<unknown>(null);
 	const [inspectorSnapshot, setInspectorSnapshot] = useState<unknown>(null);
+	const [automationDirty, setAutomationDirty] = useState(false);
 	const automationWorkspaceOrigin = useMemo(
 		() => new URL(AUTOMATION_WORKSPACE_URL, window.location.origin).origin,
 		[],
@@ -192,7 +193,19 @@ export const AutomationWorkspace = observer(() => {
 	useEffect(() => {
 		if (!appId) return;
 		setInspectorSnapshot(null);
+		setAutomationDirty(false);
 	}, [appId]);
+
+	useEffect(() => {
+		if (!automationDirty) return;
+		const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+			event.preventDefault();
+			event.returnValue = "";
+		};
+		window.addEventListener("beforeunload", handleBeforeUnload);
+		return () =>
+			window.removeEventListener("beforeunload", handleBeforeUnload);
+	}, [automationDirty]);
 
 	const automationMcp = useMemo<MCPConfig[]>(
 		() => [
@@ -224,7 +237,17 @@ export const AutomationWorkspace = observer(() => {
 			const message = event.data as {
 				type?: unknown;
 				snapshot?: unknown;
+				projectId?: unknown;
+				isDirty?: unknown;
 			};
+			if (
+				event.source === automationFrameRef.current?.contentWindow &&
+				message.type === "SEMOSS_AUTOMATION_DIRTY_STATE" &&
+				message.projectId === appId &&
+				typeof message.isDirty === "boolean"
+			) {
+				setAutomationDirty(message.isDirty);
+			}
 			if (
 				event.source === automationFrameRef.current?.contentWindow &&
 				message.type === "SEMOSS_AUTOMATION_TRACE"
@@ -292,6 +315,7 @@ export const AutomationWorkspace = observer(() => {
 		return () => window.removeEventListener("message", handleMessage);
 	}, [
 		activateInspector,
+		appId,
 		automationWorkspaceOrigin,
 		inspectorSnapshot,
 		traceSnapshot,
@@ -338,6 +362,11 @@ export const AutomationWorkspace = observer(() => {
 
 	const runAutomationMutation = useCallback<WorkbenchChatToolHandler>(
 		async (_parameters, context) => {
+			if (automationDirty) {
+				throw new Error(
+					"Save the unsaved editor changes before using chat to modify this automation.",
+				);
+			}
 			const output = await runWorkbenchRoomMcpTool(
 				context.insightId,
 				context.roomId,
@@ -346,7 +375,7 @@ export const AutomationWorkspace = observer(() => {
 			notifyAutomationChanged();
 			return output;
 		},
-		[notifyAutomationChanged],
+		[automationDirty, notifyAutomationChanged],
 	);
 
 	useEffect(() => {
