@@ -1,5 +1,7 @@
 import {
+	BracesIcon,
 	DownloadIcon,
+	NotebookIcon,
 	PlayIcon,
 	RefreshCwIcon,
 	SaveIcon,
@@ -19,6 +21,7 @@ import {
 } from "@semoss/ui/next";
 import { Notebook, type NotebookHandle, type NotebookState } from "../notebook";
 import type { FileMode } from "./file.types";
+import { FileCodeEditor } from "./file-code-editor";
 import { getFileOperationErrorMessage } from "./file-explorer.utils";
 
 interface FileNotebookProps {
@@ -55,6 +58,8 @@ export const FileNotebook: React.FC<FileNotebookProps> = ({
 	// Latest edited content, used as a save fallback before the ref is ready.
 	const latestContentRef = useRef("");
 	const [content, setContent] = useState<string | null>(null);
+	// show the .ipynb as it is stored rather than as rendered cells
+	const [showRaw, setShowRaw] = useState(false);
 	// Bumped on every load so the Notebook remounts and re-seeds even when the
 	// refetched bytes are identical (i.e. Refresh discards in-memory edits).
 	const [reloadToken, setReloadToken] = useState(0);
@@ -92,6 +97,9 @@ export const FileNotebook: React.FC<FileNotebookProps> = ({
 				setContent(next);
 				latestContentRef.current = next;
 				setReloadToken((prev) => prev + 1);
+				// the cells now match the file, so drop any dirty marker the
+				// caller is showing - Refresh has discarded the edits
+				onChange(next, false);
 			},
 			onError: () => setContent(null),
 		},
@@ -222,6 +230,71 @@ export const FileNotebook: React.FC<FileNotebookProps> = ({
 	// File actions are also blocked while cells are executing.
 	const fileActionsDisabled = isBusy || notebookState.isRunning;
 
+	/**
+	 * Both views work on the same in memory copy, so switching keeps whatever has
+	 * been typed. Leaving the raw editor remounts the notebook so the cells are
+	 * rebuilt from the edited json. Nothing is written to the file until Save,
+	 * and Refresh is what throws the edits away.
+	 */
+	const toggleRaw = () => {
+		setShowRaw((shown) => {
+			if (shown) {
+				setReloadToken((token) => token + 1);
+			}
+			return !shown;
+		});
+	};
+
+	/** Raw json edits update the same working copy the cells are built from. */
+	const handleRawChange = (nextContent: string, isModified: boolean) => {
+		setContent(nextContent);
+		latestContentRef.current = nextContent;
+		onChange(nextContent, isModified);
+	};
+
+	const rawToggle = (
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<Button
+					variant={showRaw ? "secondary" : "ghost"}
+					size="sm"
+					disabled={getFile.status !== "SUCCESS"}
+					onClick={toggleRaw}
+					aria-label={showRaw ? "Show notebook" : "Show raw JSON"}
+					aria-pressed={showRaw}
+				>
+					{showRaw ? (
+						<NotebookIcon className="size-3" />
+					) : (
+						<BracesIcon className="size-3" />
+					)}
+				</Button>
+			</TooltipTrigger>
+			<TooltipContent>
+				{showRaw ? "Show notebook" : "Show raw JSON"}
+			</TooltipContent>
+		</Tooltip>
+	);
+
+	// The raw view is the ordinary code editor pointed at the same file, so the
+	// json can be edited and saved. It brings its own refresh / save / download
+	// rather than borrowing the notebook's, which serialize from cell state and
+	// would not see hand edits.
+	if (showRaw) {
+		return (
+			<div className="relative flex h-full w-full flex-col overflow-hidden bg-background">
+				<FileCodeEditor
+					mode={mode}
+					path={path}
+					value={content ?? undefined}
+					onChange={handleRawChange}
+					readOnly={readOnly}
+					toolbarStart={rawToggle}
+				/>
+			</div>
+		);
+	}
+
 	return (
 		<div className="relative flex h-full w-full flex-col overflow-hidden bg-background">
 			{/* File toolbar — refresh / save / download */}
@@ -243,6 +316,7 @@ export const FileNotebook: React.FC<FileNotebookProps> = ({
 					</TooltipTrigger>
 					<TooltipContent>Refresh</TooltipContent>
 				</Tooltip>
+				{rawToggle}
 				<div className="flex-1" />
 				{notebookState.isRunning ? (
 					<Tooltip>
