@@ -1,4 +1,5 @@
 import { Play, Plus, Trash2, X } from "lucide-react";
+import { useState } from "react";
 import {
 	Button,
 	Field,
@@ -21,6 +22,15 @@ interface TriggerEditPanelProps {
 	onUpdate: (step: AutomationNode) => void;
 }
 
+interface GlobalInputRow {
+	id: string;
+	value: AutomationGlobalVariable;
+}
+
+function createGlobalInputRow(value: AutomationGlobalVariable): GlobalInputRow {
+	return { id: crypto.randomUUID(), value };
+}
+
 export function TriggerEditPanel({
 	description,
 	devMode,
@@ -30,14 +40,22 @@ export function TriggerEditPanel({
 	step,
 	onUpdate,
 }: TriggerEditPanelProps) {
-	const globals = Array.isArray(step.workflowConfig?.globals)
-		? (step.workflowConfig.globals as AutomationGlobalVariable[])
-		: [];
-	const updateGlobals = (nextGlobals: AutomationGlobalVariable[]) =>
+	const [globalRows, setGlobalRows] = useState<GlobalInputRow[]>(() => {
+		const globals = Array.isArray(step.workflowConfig?.globals)
+			? (step.workflowConfig.globals as AutomationGlobalVariable[])
+			: [];
+		return globals.map(createGlobalInputRow);
+	});
+	const updateGlobals = (nextRows: GlobalInputRow[]) => {
+		setGlobalRows(nextRows);
 		onUpdate({
 			...step,
-			workflowConfig: { ...step.workflowConfig, globals: nextGlobals },
+			workflowConfig: {
+				...step.workflowConfig,
+				globals: nextRows.map((row) => row.value),
+			},
 		});
+	};
 
 	return (
 		<div className="flex h-full flex-col bg-background">
@@ -80,22 +98,26 @@ export function TriggerEditPanel({
 								are the inputs Playground asks for.
 							</p>
 						</div>
-						{globals.map((global, index) => (
+						{globalRows.map((row) => (
 							<div
-								key={`${global.name}-${index}`}
+								key={row.id}
 								className="grid grid-cols-[1fr_1fr_auto] gap-2"
 							>
 								<Input
-									value={global.name}
+									value={row.value.name}
 									placeholder="variable_name"
 									onChange={(event) =>
 										updateGlobals(
-											globals.map((item, itemIndex) =>
-												itemIndex === index
+											globalRows.map((item) =>
+												item.id === row.id
 													? {
 															...item,
-															name: event.target
-																.value,
+															value: {
+																...item.value,
+																name: event
+																	.target
+																	.value,
+															},
 														}
 													: item,
 											),
@@ -103,17 +125,20 @@ export function TriggerEditPanel({
 									}
 								/>
 								<Input
-									value={global.defaultValue}
+									value={row.value.defaultValue}
 									placeholder="Default value"
 									onChange={(event) =>
 										updateGlobals(
-											globals.map((item, itemIndex) =>
-												itemIndex === index
+											globalRows.map((item) =>
+												item.id === row.id
 													? {
 															...item,
-															defaultValue:
-																event.target
-																	.value,
+															value: {
+																...item.value,
+																defaultValue:
+																	event.target
+																		.value,
+															},
 														}
 													: item,
 											),
@@ -123,12 +148,11 @@ export function TriggerEditPanel({
 								<Button
 									size="sm"
 									variant="ghost"
-									aria-label={`Remove ${global.name || "global input"}`}
+									aria-label={`Remove ${row.value.name || "global input"}`}
 									onClick={() =>
 										updateGlobals(
-											globals.filter(
-												(_, itemIndex) =>
-													itemIndex !== index,
+											globalRows.filter(
+												(item) => item.id !== row.id,
 											),
 										)
 									}
@@ -143,8 +167,11 @@ export function TriggerEditPanel({
 							className="self-start"
 							onClick={() =>
 								updateGlobals([
-									...globals,
-									{ name: "", defaultValue: "" },
+									...globalRows,
+									createGlobalInputRow({
+										name: "",
+										defaultValue: "",
+									}),
 								])
 							}
 						>
