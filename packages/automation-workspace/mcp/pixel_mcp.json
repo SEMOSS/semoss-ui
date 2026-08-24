@@ -23,7 +23,7 @@
 				"SMSS_MCP_EXECUTION": "ask",
 				"SMSS_MCP_UI": {
 					"displayLocation": "sidebar",
-					"resourceURI": "system://automation-workspace/"
+					"resourceURI": "system://automation-workspace/?readOnly=1"
 				},
 				"SMSS_FUNCTION_NAME": "TriggerAutomation"
 			}
