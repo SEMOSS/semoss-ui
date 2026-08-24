@@ -175,7 +175,13 @@ export const ENGINE_IMAGES: Record<string, EngineImageEntry[]> = {
 		{ name: "MICROSOFT_ONEDRIVE", icon: "ONEDRIVE.png" },
 		{ name: "MINIO", icon: "MINIO.png" },
 		{ name: "NETWORK_FILE_SYSTEM", icon: "NETWORK_FILE_SYSTEM.png" },
+		{ name: "RCLONE_AZURE", icon: "AZURE_BLOB.svg" },
+		{ name: "RCLONE_GOOGLE", icon: "GOOGLE_CLOUD_STORAGE.svg" },
+		{ name: "RCLONE_MINIO", icon: "MINIO.png" },
+		{ name: "RCLONE_S3", icon: "AMAZON_S3.png" },
+		{ name: "S3", icon: "AMAZON_S3.png" },
 		{ name: "SFTP", icon: "SFTP.png" },
+		{ name: "SMB_CIFS", icon: "NETWORK_FILE_SYSTEM.png" },
 		{ name: "ZIP", icon: "ZIP.svg" },
 	],
 };
