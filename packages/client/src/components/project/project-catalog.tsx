@@ -80,6 +80,7 @@ const CATALOG_PERMISSION_TYPE = {
 	CODE: "PROJECT",
 	SKILL: "SKILL",
 	WORKSPACE: "WORKSPACE",
+	NOTEBOOK: "PROJECT",
 } as const;
 
 type TabMode = "Mine" | "Discoverable" | "System";
