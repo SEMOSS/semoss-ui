@@ -255,6 +255,7 @@ export interface RouterRouteFormValue {
 	engine_id: string;
 	/** Comma-separated in the editor; split into an array on serialize. */
 	keywords: string;
+	/** Percent of traffic in weighted mode; the editor requires the routes to total 100. */
 	weight: number;
 	/** What the LLM classifier reads; required in llm mode. */
 	description: string;
