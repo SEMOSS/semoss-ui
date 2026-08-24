@@ -22,6 +22,7 @@ import { MonacoEditor } from "@semoss/shared";
 import {
 	Button,
 	Field,
+	FieldDescription,
 	FieldGroup,
 	FieldLabel,
 	Input,
@@ -813,12 +814,383 @@ const ensurePlayground = (d: FullTheme): ThemeMap["playground"] => {
 	return d.playground;
 };
 
+/**
+ * Declarative description of one Playground form field. `PlaygroundFieldRenderer`
+ * switches on `type` to pick the input; `description` is optional helper text.
+ */
+type PlaygroundField =
+	| {
+			type: "text";
+			label: string;
+			description?: string;
+			placeholder?: string;
+			value: string;
+			onChange: (value: string) => void;
+	  }
+	| {
+			type: "textarea";
+			label: string;
+			description?: string;
+			rows?: number;
+			value: string;
+			onChange: (value: string) => void;
+	  }
+	| {
+			type: "color";
+			label: string;
+			description?: string;
+			value: string;
+			onChange: (value: string) => void;
+	  }
+	| {
+			type: "switch";
+			label: string;
+			description?: string;
+			checked: boolean;
+			onChange: (value: boolean) => void;
+	  }
+	| {
+			type: "number";
+			label: string;
+			description?: string;
+			min?: number;
+			placeholder?: string;
+			value: number | undefined;
+			onChange: (value: number | undefined) => void;
+	  }
+	| {
+			type: "select";
+			label: string;
+			description?: string;
+			value: string;
+			options: { value: string; label: string }[];
+			onChange: (value: string) => void;
+	  }
+	| {
+			type: "html";
+			label: string;
+			description?: string;
+			rows?: number;
+			value: string;
+			onChange: (value: string) => void;
+	  };
+
+type PlaygroundFieldSection = {
+	title: string;
+	description?: string;
+	layout?: "list" | "grid";
+	fields: PlaygroundField[];
+};
+
+const PlaygroundFieldRenderer: React.FC<{
+	field: PlaygroundField;
+	disabled: boolean;
+}> = ({ field, disabled }) => {
+	switch (field.type) {
+		case "text":
+			return (
+				<Field className="gap-1.5">
+					<FieldLabel>{field.label}</FieldLabel>
+					{field.description && (
+						<FieldDescription>{field.description}</FieldDescription>
+					)}
+					<Input
+						disabled={disabled}
+						value={field.value}
+						placeholder={field.placeholder}
+						onChange={(e) => field.onChange(e.target.value)}
+					/>
+				</Field>
+			);
+		case "textarea":
+			return (
+				<Field className="gap-1.5">
+					<FieldLabel>{field.label}</FieldLabel>
+					{field.description && (
+						<FieldDescription>{field.description}</FieldDescription>
+					)}
+					<Textarea
+						disabled={disabled}
+						value={field.value}
+						rows={field.rows ?? 3}
+						onChange={(e) => field.onChange(e.target.value)}
+					/>
+				</Field>
+			);
+		case "color":
+			return (
+				<ColorField
+					label={field.label}
+					description={field.description}
+					value={field.value}
+					disabled={disabled}
+					onChange={field.onChange}
+				/>
+			);
+		case "switch":
+			return (
+				<SwitchField
+					label={field.label}
+					description={field.description}
+					checked={field.checked}
+					disabled={disabled}
+					onChange={field.onChange}
+				/>
+			);
+		case "number":
+			return (
+				<Field className="gap-1.5">
+					<FieldLabel>{field.label}</FieldLabel>
+					{field.description && (
+						<FieldDescription>{field.description}</FieldDescription>
+					)}
+					<Input
+						type="number"
+						min={field.min}
+						disabled={disabled}
+						value={field.value == null ? "" : String(field.value)}
+						placeholder={field.placeholder}
+						onChange={(e) => {
+							const raw = e.target.value;
+							if (raw === "") {
+								field.onChange(undefined);
+								return;
+							}
+							const n = Number(raw);
+							field.onChange(Number.isFinite(n) ? n : undefined);
+						}}
+					/>
+				</Field>
+			);
+		case "select":
+			return (
+				<Field className="gap-1.5">
+					<FieldLabel>{field.label}</FieldLabel>
+					{field.description && (
+						<FieldDescription>{field.description}</FieldDescription>
+					)}
+					<Select
+						disabled={disabled}
+						value={field.value}
+						onValueChange={field.onChange}
+					>
+						<SelectTrigger className="w-full sm:w-[320px]">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{field.options.map((option) => (
+								<SelectItem
+									key={option.value}
+									value={option.value}
+								>
+									{option.label}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</Field>
+			);
+		case "html":
+			return (
+				<HtmlTextareaField
+					label={field.label}
+					description={field.description}
+					disabled={disabled}
+					value={field.value}
+					rows={field.rows}
+					onChange={field.onChange}
+				/>
+			);
+		default:
+			return null;
+	}
+};
+
 const PlaygroundForm: React.FC<FormProps> = ({
 	theme,
 	disabled,
 	updateTheme,
 }) => {
 	const pg = theme.playground;
+
+	const sections: PlaygroundFieldSection[] = [
+		{
+			title: "General",
+			fields: [
+				{
+					type: "text",
+					label: "Playground Name",
+					value: pg?.name ?? "",
+					onChange: (value) =>
+						updateTheme((d) => {
+							ensurePlayground(d).name = value;
+						}),
+				},
+				{
+					type: "text",
+					label: "Banner",
+					value: pg?.banner ?? "",
+					onChange: (value) =>
+						updateTheme((d) => {
+							ensurePlayground(d).banner = value;
+						}),
+				},
+				{
+					type: "textarea",
+					label: "Description",
+					rows: 3,
+					value: pg?.description ?? "",
+					onChange: (value) =>
+						updateTheme((d) => {
+							ensurePlayground(d).description = value;
+						}),
+				},
+			],
+		},
+		{
+			title: "Colors",
+			description: "Hex (e.g. #4f46e5), CSS variables, or named colors.",
+			fields: [
+				{
+					type: "color",
+					label: "Background",
+					value: pg?.variables?.backgroundColor ?? "",
+					onChange: (value) =>
+						updateTheme((d) => {
+							ensurePlayground(d).variables.backgroundColor =
+								value;
+						}),
+				},
+				{
+					type: "color",
+					label: "Primary",
+					value: pg?.variables?.primaryColor ?? "",
+					onChange: (value) =>
+						updateTheme((d) => {
+							ensurePlayground(d).variables.primaryColor = value;
+						}),
+				},
+				{
+					type: "color",
+					label: "Secondary",
+					value: pg?.variables?.secondaryColor ?? "",
+					onChange: (value) =>
+						updateTheme((d) => {
+							ensurePlayground(d).variables.secondaryColor =
+								value;
+						}),
+				},
+			],
+		},
+		{
+			title: "Images",
+			description:
+				"URLs, relative paths, or data URIs used throughout the app.",
+			fields: IMAGE_FIELDS.map(({ key, label }) => ({
+				type: "text",
+				label,
+				placeholder: `https://… or /path/to/${key}.png`,
+				value: pg?.images?.[key] ?? "",
+				onChange: (value: string) =>
+					updateTheme((d) => {
+						ensurePlayground(d).images[key] = value;
+					}),
+			})),
+		},
+		{
+			title: "Behavior",
+			fields: [
+				{
+					type: "switch",
+					label: "Sidebar expanded by default",
+					checked: pg?.sidebar?.expandedByDefault ?? false,
+					onChange: (value) =>
+						updateTheme((d) => {
+							ensurePlayground(d).sidebar.expandedByDefault =
+								value;
+						}),
+				},
+				{
+					type: "switch",
+					label: "Show chat history date",
+					checked: pg?.sidebar?.chatHistoryDate ?? false,
+					onChange: (value) =>
+						updateTheme((d) => {
+							ensurePlayground(d).sidebar.chatHistoryDate = value;
+						}),
+				},
+				{
+					type: "number",
+					label: "Tool auto-execution limit",
+					min: 0,
+					placeholder: "Leave empty for default",
+					value: pg?.toolAutoExecutionLimit,
+					onChange: (value) =>
+						updateTheme((d) => {
+							ensurePlayground(d).toolAutoExecutionLimit = value;
+						}),
+				},
+				{
+					type: "select",
+					label: "Default compaction strategy",
+					value: pg?.defaultCompactionStrategy ?? "AUTO",
+					options: [
+						{ value: "AUTO", label: "Auto" },
+						{ value: "SUMMARY", label: "Summarize" },
+						{ value: "TOOL_PRUNE", label: "Prune Tools" },
+					],
+					onChange: (value) =>
+						updateTheme((d) => {
+							ensurePlayground(d).defaultCompactionStrategy =
+								value as ThemeMap["playground"]["defaultCompactionStrategy"];
+						}),
+				},
+			],
+		},
+		{
+			title: "Feature Flags",
+			layout: "grid",
+			fields: FEATURE_FLAGS.map(({ key, label }) => ({
+				type: "switch",
+				label,
+				checked: pg?.featureFlags?.[key] ?? false,
+				onChange: (value: boolean) =>
+					updateTheme((d) => {
+						const p = ensurePlayground(d);
+						if (!p.featureFlags) {
+							p.featureFlags = {};
+						}
+						p.featureFlags[key] = value;
+					}),
+			})),
+		},
+		{
+			title: "HTML Content",
+			description: "Free-form HTML rendered in the app.",
+			fields: [
+				{
+					type: "html",
+					label: "Footer HTML",
+					rows: 4,
+					value: pg?.footer ?? "",
+					onChange: (value) =>
+						updateTheme((d) => {
+							ensurePlayground(d).footer = value;
+						}),
+				},
+				{
+					type: "html",
+					label: "Landing HTML",
+					rows: 4,
+					value: pg?.landing ?? "",
+					onChange: (value) =>
+						updateTheme((d) => {
+							ensurePlayground(d).landing = value;
+						}),
+				},
+			],
+		},
+	];
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -828,256 +1200,35 @@ const PlaygroundForm: React.FC<FormProps> = ({
 			</div>
 
 			<div className="flex flex-col gap-6">
-				<FormSection title="General">
-					<FieldGroup>
-						<Field>
-							<FieldLabel>Playground Name</FieldLabel>
-							<Input
-								disabled={disabled}
-								value={pg?.name ?? ""}
-								onChange={(e) =>
-									updateTheme((d) => {
-										ensurePlayground(d).name =
-											e.target.value;
-									})
-								}
-							/>
-						</Field>
-						<Field>
-							<FieldLabel>Banner</FieldLabel>
-							<Input
-								disabled={disabled}
-								value={pg?.banner ?? ""}
-								onChange={(e) =>
-									updateTheme((d) => {
-										ensurePlayground(d).banner =
-											e.target.value;
-									})
-								}
-							/>
-						</Field>
-						<Field>
-							<FieldLabel>Description</FieldLabel>
-							<Textarea
-								disabled={disabled}
-								value={pg?.description ?? ""}
-								rows={3}
-								onChange={(e) =>
-									updateTheme((d) => {
-										ensurePlayground(d).description =
-											e.target.value;
-									})
-								}
-							/>
-						</Field>
-					</FieldGroup>
-				</FormSection>
-
-				<FormSection
-					title="Colors"
-					description="Hex (e.g. #4f46e5), CSS variables, or named colors."
-				>
-					<FieldGroup>
-						<ColorField
-							label="Background"
-							value={pg?.variables?.backgroundColor ?? ""}
-							disabled={disabled}
-							onChange={(v) =>
-								updateTheme((d) => {
-									ensurePlayground(
-										d,
-									).variables.backgroundColor = v;
-								})
-							}
-						/>
-						<ColorField
-							label="Primary"
-							value={pg?.variables?.primaryColor ?? ""}
-							disabled={disabled}
-							onChange={(v) =>
-								updateTheme((d) => {
-									ensurePlayground(d).variables.primaryColor =
-										v;
-								})
-							}
-						/>
-						<ColorField
-							label="Secondary"
-							value={pg?.variables?.secondaryColor ?? ""}
-							disabled={disabled}
-							onChange={(v) =>
-								updateTheme((d) => {
-									ensurePlayground(
-										d,
-									).variables.secondaryColor = v;
-								})
-							}
-						/>
-					</FieldGroup>
-				</FormSection>
-
-				<FormSection
-					title="Images"
-					description="URLs, relative paths, or data URIs used throughout the app."
-				>
-					<FieldGroup>
-						{IMAGE_FIELDS.map(({ key, label }) => (
-							<Field key={key}>
-								<FieldLabel>{label}</FieldLabel>
-								<Input
-									disabled={disabled}
-									value={pg?.images?.[key] ?? ""}
-									placeholder={`https://… or /path/to/${key}.png`}
-									onChange={(e) =>
-										updateTheme((d) => {
-											ensurePlayground(d).images[key] =
-												e.target.value;
-										})
-									}
-								/>
-							</Field>
-						))}
-					</FieldGroup>
-				</FormSection>
-
-				<FormSection title="Behavior">
-					<FieldGroup>
-						<SwitchField
-							label="Sidebar expanded by default"
-							checked={pg?.sidebar?.expandedByDefault ?? false}
-							disabled={disabled}
-							onChange={(v) =>
-								updateTheme((d) => {
-									ensurePlayground(
-										d,
-									).sidebar.expandedByDefault = v;
-								})
-							}
-						/>
-						<SwitchField
-							label="Show chat history date"
-							checked={pg?.sidebar?.chatHistoryDate ?? false}
-							disabled={disabled}
-							onChange={(v) =>
-								updateTheme((d) => {
-									ensurePlayground(
-										d,
-									).sidebar.chatHistoryDate = v;
-								})
-							}
-						/>
-						<Field>
-							<FieldLabel>Tool auto-execution limit</FieldLabel>
-							<Input
-								type="number"
-								min={0}
-								disabled={disabled}
-								value={
-									pg?.toolAutoExecutionLimit == null
-										? ""
-										: String(pg.toolAutoExecutionLimit)
-								}
-								placeholder="Leave empty for default"
-								onChange={(e) => {
-									const raw = e.target.value;
-									updateTheme((d) => {
-										const p = ensurePlayground(d);
-										if (raw === "") {
-											p.toolAutoExecutionLimit =
-												undefined;
-										} else {
-											const n = Number(raw);
-											p.toolAutoExecutionLimit =
-												Number.isFinite(n)
-													? n
-													: undefined;
-										}
-									});
-								}}
-							/>
-						</Field>
-						<Field>
-							<FieldLabel>Default compaction strategy</FieldLabel>
-							<Select
-								disabled={disabled}
-								value={pg?.defaultCompactionStrategy ?? "AUTO"}
-								onValueChange={(value) =>
-									updateTheme((d) => {
-										ensurePlayground(
-											d,
-										).defaultCompactionStrategy =
-											value as ThemeMap["playground"]["defaultCompactionStrategy"];
-									})
-								}
-							>
-								<SelectTrigger className="w-full sm:w-[320px]">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="AUTO">Auto</SelectItem>
-									<SelectItem value="SUMMARY">
-										Summarize
-									</SelectItem>
-									<SelectItem value="TOOL_PRUNE">
-										Prune Tools
-									</SelectItem>
-								</SelectContent>
-							</Select>
-						</Field>
-					</FieldGroup>
-				</FormSection>
-
-				<FormSection title="Feature Flags">
-					<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-						{FEATURE_FLAGS.map(({ key, label }) => (
-							<SwitchField
-								key={key}
-								label={label}
-								checked={pg?.featureFlags?.[key] ?? false}
-								disabled={disabled}
-								onChange={(v) =>
-									updateTheme((d) => {
-										const p = ensurePlayground(d);
-										if (!p.featureFlags) {
-											p.featureFlags = {};
-										}
-										p.featureFlags[key] = v;
-									})
-								}
-							/>
-						))}
-					</div>
-				</FormSection>
-
-				<FormSection
-					title="HTML Content"
-					description="Free-form HTML rendered in the app."
-				>
-					<FieldGroup>
-						<HtmlTextareaField
-							label="Footer HTML"
-							disabled={disabled}
-							value={pg?.footer ?? ""}
-							rows={4}
-							onChange={(value) =>
-								updateTheme((d) => {
-									ensurePlayground(d).footer = value;
-								})
-							}
-						/>
-						<HtmlTextareaField
-							label="Landing HTML"
-							disabled={disabled}
-							value={pg?.landing ?? ""}
-							rows={4}
-							onChange={(value) =>
-								updateTheme((d) => {
-									ensurePlayground(d).landing = value;
-								})
-							}
-						/>
-					</FieldGroup>
-				</FormSection>
+				{sections.map((section) => (
+					<FormSection
+						key={section.title}
+						title={section.title}
+						description={section.description}
+					>
+						{section.layout === "grid" ? (
+							<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+								{section.fields.map((field) => (
+									<PlaygroundFieldRenderer
+										key={field.label}
+										field={field}
+										disabled={disabled}
+									/>
+								))}
+							</div>
+						) : (
+							<FieldGroup>
+								{section.fields.map((field) => (
+									<PlaygroundFieldRenderer
+										key={field.label}
+										field={field}
+										disabled={disabled}
+									/>
+								))}
+							</FieldGroup>
+						)}
+					</FormSection>
+				))}
 			</div>
 		</div>
 	);
@@ -1741,17 +1892,26 @@ const FormSection: React.FC<{
 
 const HtmlTextareaField: React.FC<{
 	label: string;
+	description?: string;
 	value: string;
 	disabled?: boolean;
 	rows?: number;
 	placeholder?: string;
 	onChange: (v: string) => void;
-}> = ({ label, value, disabled, rows = 4, placeholder, onChange }) => {
+}> = ({
+	label,
+	description,
+	value,
+	disabled,
+	rows = 4,
+	placeholder,
+	onChange,
+}) => {
 	const [showPreview, setShowPreview] = useState(false);
 	const hasHtml = value.trim().length > 0;
 
 	return (
-		<Field>
+		<Field className="gap-1.5">
 			<div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
 				<FieldLabel>{label}</FieldLabel>
 				<Button
@@ -1764,6 +1924,7 @@ const HtmlTextareaField: React.FC<{
 					{showPreview ? "Edit HTML" : "Preview HTML"}
 				</Button>
 			</div>
+			{description && <FieldDescription>{description}</FieldDescription>}
 			{showPreview ? (
 				<div className="space-y-2">
 					<div className="overflow-hidden rounded-md border">
@@ -1799,36 +1960,42 @@ const HtmlTextareaField: React.FC<{
 
 const SwitchField: React.FC<{
 	label: string;
+	description?: string;
 	checked: boolean;
 	disabled?: boolean;
 	onChange: (v: boolean) => void;
-}> = ({ label, checked, disabled, onChange }) => {
+}> = ({ label, description, checked, disabled, onChange }) => {
 	const id = useId();
 	return (
-		<div className="flex items-center justify-between gap-3 rounded-md border p-2 text-sm">
-			<label htmlFor={id} className="cursor-pointer">
-				{label}
-			</label>
-			<Switch
-				id={id}
-				checked={checked}
-				disabled={disabled}
-				onCheckedChange={onChange}
-			/>
+		<div className="flex flex-col gap-1.5 rounded-md border p-2 text-sm">
+			<div className="flex items-center justify-between gap-3">
+				<label htmlFor={id} className="cursor-pointer">
+					{label}
+				</label>
+				<Switch
+					id={id}
+					checked={checked}
+					disabled={disabled}
+					onCheckedChange={onChange}
+				/>
+			</div>
+			{description && <FieldDescription>{description}</FieldDescription>}
 		</div>
 	);
 };
 
 const ColorField: React.FC<{
 	label: string;
+	description?: string;
 	value: string;
 	disabled?: boolean;
 	onChange: (v: string) => void;
-}> = ({ label, value, disabled, onChange }) => {
+}> = ({ label, description, value, disabled, onChange }) => {
 	const colorForPicker = HEX_REGEX.test(value) ? value : "#000000";
 	return (
-		<Field>
+		<Field className="gap-1.5">
 			<FieldLabel>{label}</FieldLabel>
+			{description && <FieldDescription>{description}</FieldDescription>}
 			<div className="flex items-center gap-2">
 				<input
 					type="color"
