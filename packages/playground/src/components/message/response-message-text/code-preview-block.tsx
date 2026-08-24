@@ -38,9 +38,11 @@ import {
 	CODE_LANG_LABELS,
 	formatExecuteOutput,
 	MAX_EXECUTE_LOG_CHARS,
+	RESPONSE_BLOCK_MAX_HEIGHT,
 } from "./constants";
 import { SaveCodeNotebookDialog } from "./save-code-notebook-dialog";
 import { SaveFileDialog } from "./save-file-dialog";
+import { useStickToBottom } from "./use-stick-to-bottom";
 
 interface CodePreviewBlockProps {
 	/** The code block's source text. */
@@ -70,6 +72,8 @@ export const CodePreviewBlock = ({
 	const [isAddToNotebookOpen, setIsAddToNotebookOpen] = useState(false);
 	const [isSaveCodeDialogOpen, setIsSaveCodeDialogOpen] = useState(false);
 	const [isCollapsed, setIsCollapsed] = useState(false);
+	// the block is height capped, so it follows its own newest line
+	const codeScroll = useStickToBottom(code);
 	const [isExecuting, setIsExecuting] = useState(false);
 	const [executeResult, setExecuteResult] = useState<
 		| React.ComponentProps<typeof SaveCodeNotebookDialog>["result"]
@@ -285,7 +289,15 @@ export const CodePreviewBlock = ({
 					</Tooltip>
 				</BlockHeader>
 				{!isCollapsed && (
-					<div className="p-3">
+					// capped to the height an html preview uses, so a long block
+					// scrolls inside the message instead of pushing the rest of the
+					// conversation off screen
+					<div
+						ref={codeScroll.ref}
+						onScroll={codeScroll.onScroll}
+						className="overflow-auto p-3"
+						style={{ maxHeight: RESPONSE_BLOCK_MAX_HEIGHT }}
+					>
 						<Code code={code} language={language ?? "txt"} />
 					</div>
 				)}
