@@ -64,12 +64,6 @@
 	"images": {
 		"logoAlt": "logo"
 	},
-	"fileDrag": {
-		"title": "Sleep bestanden hierheen om aan het bericht toe te voegen",
-		"modalTitle": "Documenten toevoegen",
-		"browse": "Bladeren",
-		"done": "Klaar"
-	},
 	"fileExplorer": {
 		"search": "Zoeken",
 		"name": "Naam",
