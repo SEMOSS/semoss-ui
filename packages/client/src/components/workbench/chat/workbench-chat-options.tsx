@@ -192,7 +192,7 @@ export const WorkbenchChatOptions = ({
 						<Field>
 							<FieldLabel>Model</FieldLabel>
 							<EngineSelect
-								className="h-9 w-full max-w-none justify-start border border-input px-3 shadow-xs"
+								className="h-9 w-full min-w-0 max-w-full shrink justify-start border border-input px-3 shadow-xs"
 								name={modelName}
 								value={model?.engine_id || ""}
 								engineTypes={["MODEL"]}

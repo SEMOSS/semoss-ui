@@ -482,6 +482,8 @@ export function AutomationCanvas({
 	}, [editingStepId]);
 	const loadedRef = useRef(false);
 	const skipDraftPersistenceRef = useRef(true);
+	const initialLayoutAppliedRef = useRef(false);
+	const [workflowLoaded, setWorkflowLoaded] = useState(false);
 
 	// React Flow state
 	const [rfNodes, setRfNodes, onRfNodesChange] = useNodesState<Node>([]);
@@ -639,6 +641,8 @@ export function AutomationCanvas({
 	useEffect(() => {
 		let cancelled = false;
 		loadedRef.current = false;
+		setWorkflowLoaded(false);
+		initialLayoutAppliedRef.current = false;
 		skipDraftPersistenceRef.current = true;
 		initialViewFittedRef.current = false;
 		void runPixel(`GetAutomation(project=${JSON.stringify([appId])});`)
@@ -707,12 +711,34 @@ export function AutomationCanvas({
 				}
 			})
 			.finally(() => {
-				if (!cancelled) loadedRef.current = true;
+				if (!cancelled) {
+					loadedRef.current = true;
+					setWorkflowLoaded(true);
+				}
 			});
 		return () => {
 			cancelled = true;
 		};
 	}, [appId, layoutNodes, mcpMode, workflowRefreshToken]);
+
+	useEffect(() => {
+		if (
+			!workflowLoaded ||
+			!canvasInitialized ||
+			initialLayoutAppliedRef.current ||
+			steps.length === 0
+		)
+			return;
+		initialLayoutAppliedRef.current = true;
+		initialViewFittedRef.current = false;
+		setSteps((previous) => layoutNodes(previous, graphEdges));
+	}, [
+		canvasInitialized,
+		graphEdges,
+		layoutNodes,
+		steps.length,
+		workflowLoaded,
+	]);
 
 	// Draft persistence
 	useEffect(() => {
@@ -1411,27 +1437,45 @@ export function AutomationCanvas({
 	]);
 
 	useEffect(() => {
-		const initialNode = rfNodes[0];
-		const containerWidth = canvasContainerRef.current?.clientWidth ?? 0;
+		const initialNode =
+			rfNodes.find((node) => node.type === "trigger") ?? rfNodes[0];
 		if (
 			initialViewFittedRef.current ||
 			!canvasInitialized ||
-			steps.length !== 1 ||
-			rfNodes.length !== 1 ||
-			!initialNode ||
-			(containerWidth > NODE_WIDTH && initialNode.position.x === 0)
+			!initialNode
 		) {
 			return;
 		}
-		const frame = requestAnimationFrame(() => {
+
+		let frame = 0;
+		let attempts = 0;
+		const fitStartNode = () => {
+			const nodeElement = canvasContainerRef.current?.querySelector(
+				`.react-flow__node[data-id="${initialNode.id}"]`,
+			);
+			if (
+				(!nodeElement ||
+					!(nodeElement instanceof HTMLElement) ||
+					nodeElement.offsetWidth === 0 ||
+					nodeElement.offsetHeight === 0) &&
+				attempts < 10
+			) {
+				attempts += 1;
+				frame = requestAnimationFrame(fitStartNode);
+				return;
+			}
+			if (!nodeElement) return;
 			reactFlowInstanceRef.current?.fitView({
 				nodes: [{ id: initialNode.id }],
 				padding: 0.8,
+				duration: 250,
 			});
 			initialViewFittedRef.current = true;
-		});
+		};
+
+		frame = requestAnimationFrame(fitStartNode);
 		return () => cancelAnimationFrame(frame);
-	}, [canvasInitialized, rfNodes, steps.length]);
+	}, [canvasInitialized, rfNodes]);
 
 	// ---- Persist canvas positions ----
 	const onNodeDragStop = useCallback(
@@ -1449,6 +1493,7 @@ export function AutomationCanvas({
 	);
 
 	const cleanUpLayout = useCallback(() => {
+		initialViewFittedRef.current = false;
 		setSteps((previous) => layoutNodes(previous, graphEdges));
 		setIsDirty(true);
 	}, [graphEdges, layoutNodes]);

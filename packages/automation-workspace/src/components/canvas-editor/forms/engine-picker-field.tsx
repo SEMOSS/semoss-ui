@@ -1,6 +1,6 @@
 import type { Engine } from "@semoss/shared";
+import { EngineSelect } from "@semoss/shared";
 import { Field, FieldLabel } from "@semoss/ui/next";
-import { AutomationEngineSelect } from "./engine-select";
 
 export interface EnginePickerFieldProps {
 	/** Field label shown above the engine picker */
@@ -35,7 +35,7 @@ export function EnginePickerField({
 					</span>
 				)}
 			</FieldLabel>
-			<AutomationEngineSelect
+			<EngineSelect
 				name={name}
 				value={value}
 				engineTypes={engineTypes}
