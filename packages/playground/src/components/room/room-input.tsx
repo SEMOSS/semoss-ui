@@ -964,8 +964,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											)}
 										</div>
 										<RoomContextUsageIndicator
-											// -ms-1 to make spacing between engine select and context usage look more like spacing between it and mic
-											// this is because engine select is ghost
+											// -ms-1 to make spacing look more consistent due to ghost icons
 											className="-ms-1"
 											room={room}
 											onCompact={onCompact}
@@ -1026,16 +1025,23 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 										{root.theme.featureFlags
 											?.enablePromptOptimizer && (
-											<PromptOptimizer
-												input={inputText}
-												setInput={setInputFromOptimizer}
-												disabled={hasOutstandingTools}
-												modelId={
-													model?.engine_id ||
-													undefined
-												}
-												room={room}
-											/>
+											// -ms-2 to make spacing look more consistent due to ghost icons
+											<div className="-ms-2">
+												<PromptOptimizer
+													input={inputText}
+													setInput={
+														setInputFromOptimizer
+													}
+													disabled={
+														hasOutstandingTools
+													}
+													modelId={
+														model?.engine_id ||
+														undefined
+													}
+													room={room}
+												/>
+											</div>
 										)}
 									</div>
 								</div>
