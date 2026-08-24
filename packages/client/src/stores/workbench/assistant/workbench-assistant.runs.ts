@@ -206,7 +206,7 @@ export interface BuildRun {
 	reconciled: boolean;
 }
 
-/** Single-room run store held on the workbench chat slice. */
+/** Single-room run store held on the workbench assistant slice. */
 export interface RunStore {
 	/** Every known run (roots and subagents) keyed by run id. */
 	runs: Record<string, BuildRun>;

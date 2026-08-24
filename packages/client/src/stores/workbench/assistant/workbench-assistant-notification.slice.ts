@@ -1,18 +1,18 @@
 import favicon from "@/assets/favicon.svg";
 import { notifyIfPageInactive } from "@/utility";
 import type { WorkbenchSlice } from "../workbench.types";
-import type { BuildRun } from "./workbench-chat.runs";
-import { isTerminalAgentRunStatus } from "./workbench-chat.runs";
-import { isRequestUserInputAction } from "./workbench-chat.tools";
+import type { BuildRun } from "./workbench-assistant.runs";
+import { isTerminalAgentRunStatus } from "./workbench-assistant.runs";
+import { isRequestUserInputAction } from "./workbench-assistant.tools";
 
 /** Max characters of assistant text quoted in a notification body. */
 const BODY_MAX_LENGTH = 120;
 
 /** Room label used before the room has been named. */
-const DEFAULT_ROOM_LABEL = "Workbench chat";
+const DEFAULT_ROOM_LABEL = "Workbench assistant";
 
-/** Namespaced state contributed by the chat notification slice. */
-export interface WorkbenchChatNotificationSliceState {
+/** Namespaced state contributed by the assistant notification slice. */
+export interface WorkbenchAssistantNotificationSliceState {
 	notifications: {
 		/**
 		 * Stop watching run transitions. The subscription otherwise lives as
@@ -60,10 +60,10 @@ const summarize = (text: string | undefined, fallback: string): string => {
  */
 const describePendingActions = (run: BuildRun): string => {
 	if (run.pendingActions.some(isRequestUserInputAction)) {
-		return "The agent needs an answer to continue.";
+		return "The assistant needs an answer to continue.";
 	}
 	const count = run.pendingActions.length;
-	if (count === 0) return "The agent is waiting for your input.";
+	if (count === 0) return "The assistant is waiting for your input.";
 	return count === 1
 		? "1 approval is required to continue."
 		: `${count} approvals are required to continue.`;
@@ -105,7 +105,10 @@ export const describeTransition = (
 	if (next === "COMPLETED") {
 		return {
 			title: `${room} — Response ready`,
-			body: summarize(run.finalText, "The agent completed your request."),
+			body: summarize(
+				run.finalText,
+				"The assistant completed your request.",
+			),
 		};
 	}
 	if (next === "CANCELLED") {
@@ -122,7 +125,7 @@ export const describeTransition = (
 
 /**
  * Creates the `notifications` slice: a store subscription that raises a browser
- * notification when a root chat run pauses for input or finishes, but only
+ * notification when a root assistant run pauses for input or finishes, but only
  * while the user is away from the page.
  *
  * Lives in the store rather than a React effect so it is active for the store's
@@ -130,27 +133,27 @@ export const describeTransition = (
  * without mounting anything. Zustand builds `subscribe` before it invokes this
  * creator, so subscribing here is safe.
  *
- * Only root runs (`chat.roomRunIds`) are considered, so a subagent finishing
+ * Only root runs (`assistant.roomRunIds`) are considered, so a subagent finishing
  * mid-run never notifies. Runs with no previous entry are skipped — resuming a
  * room replaces the run store wholesale, and that guard is what keeps a room
  * full of already-finished runs silent.
  *
- * @name createWorkbenchChatNotificationSlice
+ * @name createWorkbenchAssistantNotificationSlice
  * @return Zustand state creator contributing the `notifications` key.
  */
-export const createWorkbenchChatNotificationSlice =
-	(): WorkbenchSlice<WorkbenchChatNotificationSliceState> =>
+export const createWorkbenchAssistantNotificationSlice =
+	(): WorkbenchSlice<WorkbenchAssistantNotificationSliceState> =>
 	(_set, _get, api) => {
 		const unsubscribe = api.subscribe((state, previous) => {
 			// State is always defined once the store is built; this only
 			// guards the theoretical case of a set() during construction.
-			if (!state?.chat || !previous?.chat) return;
+			if (!state?.assistant || !previous?.assistant) return;
 
-			const room = state.chat.roomName || DEFAULT_ROOM_LABEL;
+			const room = state.assistant.roomName || DEFAULT_ROOM_LABEL;
 
-			for (const runId of state.chat.roomRunIds) {
-				const run = state.chat.runs[runId];
-				const before = previous.chat.runs[runId];
+			for (const runId of state.assistant.roomRunIds) {
+				const run = state.assistant.runs[runId];
+				const before = previous.assistant.runs[runId];
 				if (!run || !before) continue;
 
 				const notification = describeTransition(

@@ -20,7 +20,7 @@ import { useWorkbench } from "@/hooks/use-workbench";
 import type { SlashSuggestion } from "@/stores/workbench";
 import { getSlashSuggestions } from "@/stores/workbench";
 import { ensureBrowserNotificationPermission } from "@/utility";
-import { WorkbenchChatUsage } from "./workbench-chat-usage";
+import { WorkbenchAssistantUsage } from "./workbench-assistant-usage";
 
 const MAX_ATTACHMENTS = 5;
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
@@ -117,22 +117,24 @@ const PendingFileStrip = ({
 };
 
 /**
- * The CHAT panel footer: pending file attachments, the prompt textarea with
+ * The ASSISTANT panel footer: pending file attachments, the prompt textarea with
  * attach/usage affordances (file picker, paste, and drag-and-drop), and the
  * send/stop button. Enter sends (Shift+Enter inserts a newline), a failed
  * submit restores the draft and its attachments, and image previews revoke
  * their object URLs on removal, send, and unmount.
  *
- * @name WorkbenchChatComposer
- * @return The chat composer footer.
+ * @name WorkbenchAssistantComposer
+ * @return The assistant composer footer.
  */
-export const WorkbenchChatComposer = () => {
-	const roomId = useWorkbench((state) => state.chat.roomId);
-	const isInitializing = useWorkbench((state) => state.chat.isInitializing);
-	const isSending = useWorkbench((state) => state.chat.isSending);
-	const activeRunId = useWorkbench((state) => state.chat.activeRunId);
-	const submit = useWorkbench((state) => state.chat.submit);
-	const stop = useWorkbench((state) => state.chat.stop);
+export const WorkbenchAssistantComposer = () => {
+	const roomId = useWorkbench((state) => state.assistant.roomId);
+	const isInitializing = useWorkbench(
+		(state) => state.assistant.isInitializing,
+	);
+	const isSending = useWorkbench((state) => state.assistant.isSending);
+	const activeRunId = useWorkbench((state) => state.assistant.activeRunId);
+	const submit = useWorkbench((state) => state.assistant.submit);
+	const stop = useWorkbench((state) => state.assistant.stop);
 
 	const [draft, setDraft] = useState("");
 	const [files, setFiles] = useState<PendingFile[]>([]);
@@ -421,7 +423,7 @@ export const WorkbenchChatComposer = () => {
 				<Textarea
 					ref={textareaRef}
 					value={draft}
-					aria-label="Chat message"
+					aria-label="Message the assistant"
 					placeholder="Type a message… (/ for commands)"
 					disabled={isComposerDisabled}
 					onChange={(event) => setDraft(event.target.value)}
@@ -459,7 +461,7 @@ export const WorkbenchChatComposer = () => {
 						<TooltipContent>Attach files</TooltipContent>
 					</Tooltip>
 
-					<WorkbenchChatUsage />
+					<WorkbenchAssistantUsage />
 
 					<div className="min-w-0 flex-1" />
 
@@ -481,7 +483,7 @@ export const WorkbenchChatComposer = () => {
 									)}
 								</Button>
 							</TooltipTrigger>
-							<TooltipContent>Stop the agent run</TooltipContent>
+							<TooltipContent>Stop the assistant</TooltipContent>
 						</Tooltip>
 					) : (
 						<Button

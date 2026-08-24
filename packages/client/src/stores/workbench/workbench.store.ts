@@ -1,10 +1,10 @@
 import { createStore, type StoreApi } from "zustand";
 import {
-	createWorkbenchChatNotificationSlice,
-	createWorkbenchChatSlice,
-	type WorkbenchChatNotificationSliceState,
-	type WorkbenchChatSliceState,
-} from "./chat";
+	createWorkbenchAssistantNotificationSlice,
+	createWorkbenchAssistantSlice,
+	type WorkbenchAssistantNotificationSliceState,
+	type WorkbenchAssistantSliceState,
+} from "./assistant";
 import {
 	createWorkbenchCommandSlice,
 	createWorkbenchLayoutSlice,
@@ -20,8 +20,8 @@ export interface WorkbenchState
 	extends WorkbenchLayoutSliceState,
 		WorkbenchLoadingSliceState,
 		WorkbenchCommandSliceState,
-		WorkbenchChatSliceState,
-		WorkbenchChatNotificationSliceState {}
+		WorkbenchAssistantSliceState,
+		WorkbenchAssistantNotificationSliceState {}
 
 /**
  * Creates an isolated vanilla Zustand store for one workbench ID, optionally merging in one
@@ -31,8 +31,8 @@ export interface WorkbenchState
  * @name createWorkbenchStore
  * @param id - Unique workbench ID used to isolate the cache.
  * @param createDomainSlice - Optional namespaced domain slice merged into the same store.
- * @return Scoped workbench store composed from layout, loading, command, chat,
- * chat-notification, and optional extra slices.
+ * @return Scoped workbench store composed from layout, loading, command, assistant,
+ * assistant-notification, and optional extra slices.
  */
 export const createWorkbenchStore = <
 	// Record<never, never> is `{}`; Record<string, never> would add an index
@@ -64,16 +64,16 @@ export const createWorkbenchStore = <
 			>
 		)(...args),
 		...(
-			createWorkbenchChatSlice(id) as WorkbenchSlice<
-				WorkbenchChatSliceState,
+			createWorkbenchAssistantSlice(id) as WorkbenchSlice<
+				WorkbenchAssistantSliceState,
 				WorkbenchState & TExtra
 			>
 		)(...args),
-		// Subscribes to this store, so it is composed after the chat slice it
+		// Subscribes to this store, so it is composed after the assistant slice it
 		// watches.
 		...(
-			createWorkbenchChatNotificationSlice() as WorkbenchSlice<
-				WorkbenchChatNotificationSliceState,
+			createWorkbenchAssistantNotificationSlice() as WorkbenchSlice<
+				WorkbenchAssistantNotificationSliceState,
 				WorkbenchState & TExtra
 			>
 		)(...args),

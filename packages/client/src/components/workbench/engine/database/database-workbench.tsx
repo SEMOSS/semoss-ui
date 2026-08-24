@@ -14,9 +14,9 @@ import {
 	WorkbenchCommandMenuButton,
 } from "@/components/workbench";
 import { useDatabaseWorkbench, useEngine, useWorkbench } from "@/hooks";
-import { useWorkbenchChatConfig } from "@/hooks/use-workbench-chat-config";
+import { useWorkbenchAssistantConfig } from "@/hooks/use-workbench-assistant-config";
 import type { WorkbenchPanelConfig } from "@/stores/workbench";
-import { WORKBENCH_CHAT_PANEL } from "../../chat";
+import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
 import {
 	EngineFileEditorPanel,
 	EngineFileExplorerPanel,
@@ -79,10 +79,10 @@ const DATABASE_WORKBENCH_LAYOUT: FlexLayout.IJsonModel = {
 			children: [
 				{
 					type: "tab",
-					id: WORKBENCH_COMPONENTS.CHAT,
-					name: "Chat",
-					component: WORKBENCH_COMPONENTS.CHAT,
-					helpText: "Chat",
+					id: WORKBENCH_COMPONENTS.ASSISTANT,
+					name: "Assistant",
+					component: WORKBENCH_COMPONENTS.ASSISTANT,
+					helpText: "Assistant",
 					enableClose: false,
 					enableRenderOnDemand: false,
 				},
@@ -133,17 +133,19 @@ export const DatabaseWorkbench: React.FC = () => {
 		initialize(engine.engine_id);
 	}, [engine.engine_id, initialize]);
 
-	const configureChat = useWorkbenchChatConfig((state) => state.configure);
+	const configureAssistant = useWorkbenchAssistantConfig(
+		(state) => state.configure,
+	);
 
 	// Keep the assistant prompt and room tools in sync with the active engine.
 	useEffect(() => {
-		configureChat({
+		configureAssistant({
 			systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user understand and work with this database. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
 			prepareRoom: (insightId) =>
 				makeEngineRoomMcp(insightId, engine.engine_id),
 		});
 	}, [
-		configureChat,
+		configureAssistant,
 		engine.engine_display_name,
 		engine.engine_id,
 		engine.engine_name,
@@ -253,7 +255,7 @@ export const DatabaseWorkbench: React.FC = () => {
 				/>
 			),
 		},
-		[WORKBENCH_COMPONENTS.CHAT]: WORKBENCH_CHAT_PANEL,
+		[WORKBENCH_COMPONENTS.ASSISTANT]: WORKBENCH_ASSISTANT_PANEL,
 	};
 
 	useEffect(() => {

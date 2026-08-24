@@ -14,9 +14,9 @@ import {
 	WorkbenchCommandMenuButton,
 } from "@/components/workbench";
 import { useProject, useWorkbench } from "@/hooks";
-import { useWorkbenchChatConfig } from "@/hooks/use-workbench-chat-config";
+import { useWorkbenchAssistantConfig } from "@/hooks/use-workbench-assistant-config";
 import type { WorkbenchPanelConfig } from "@/stores/workbench";
-import { WORKBENCH_CHAT_PANEL } from "../../chat";
+import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
 import {
 	ProjectFileEditorPanel,
 	ProjectFileExplorerPanel,
@@ -37,7 +37,7 @@ const SKILL_NAME = "SKILL.md";
 /**
  * Skill workbench — the editable surface for a SKILL project. Opens `SKILL.md`
  * in the main tabset alongside the project file explorer, the active terminal's
- * insight explorer, a Pixel terminal, and the shared assistant chat panel.
+ * insight explorer, a Pixel terminal, and the shared assistant panel.
  */
 export const SkillWorkbench: React.FC = () => {
 	const registerCommand = useWorkbench((state) => state.registerCommand);
@@ -82,10 +82,10 @@ export const SkillWorkbench: React.FC = () => {
 					children: [
 						{
 							type: "tab",
-							id: WORKBENCH_COMPONENTS.CHAT,
-							name: "Chat",
-							component: WORKBENCH_COMPONENTS.CHAT,
-							helpText: "Chat",
+							id: WORKBENCH_COMPONENTS.ASSISTANT,
+							name: "Assistant",
+							component: WORKBENCH_COMPONENTS.ASSISTANT,
+							helpText: "Assistant",
 							enableClose: false,
 							enableRenderOnDemand: false,
 						},
@@ -124,13 +124,15 @@ export const SkillWorkbench: React.FC = () => {
 		};
 	}, []);
 
-	const configureChat = useWorkbenchChatConfig((state) => state.configure);
+	const configureAssistant = useWorkbenchAssistantConfig(
+		(state) => state.configure,
+	);
 
 	// keep the assistant's system prompt/tools in sync with the active skill
 	useEffect(() => {
 		const name = project.project_display_name || project.project_name;
 
-		configureChat({
+		configureAssistant({
 			systemPrompt: `You are the assistant for the ${name} skill workbench (${project.project_id}). Your role is to help the user build and run this skill and the rest of the project's files. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active project.`,
 			mcp: [
 				{
@@ -142,7 +144,7 @@ export const SkillWorkbench: React.FC = () => {
 			runParams: { project: project.project_id },
 		});
 	}, [
-		configureChat,
+		configureAssistant,
 		project.project_display_name,
 		project.project_id,
 		project.project_name,
@@ -226,7 +228,7 @@ export const SkillWorkbench: React.FC = () => {
 				/>
 			),
 		},
-		[WORKBENCH_COMPONENTS.CHAT]: WORKBENCH_CHAT_PANEL,
+		[WORKBENCH_COMPONENTS.ASSISTANT]: WORKBENCH_ASSISTANT_PANEL,
 	};
 
 	useEffect(() => {

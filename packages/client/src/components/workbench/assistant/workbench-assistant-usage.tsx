@@ -22,15 +22,17 @@ const formatTokenCount = (tokens: number): string =>
 /**
  * The room's token/context display: a compact context-token chip with a
  * breakdown tooltip (current context, total processed, messages, cache
- * reads/writes, thinking), reading usage state from the chat slice. Renders
+ * reads/writes, thinking), reading usage state from the assistant slice. Renders
  * nothing until usage data exists or is being loaded.
  *
- * @name WorkbenchChatUsage
+ * @name WorkbenchAssistantUsage
  * @return The usage chip with its breakdown tooltip, or null.
  */
-export const WorkbenchChatUsage = () => {
-	const usage = useWorkbench((state) => state.chat.usage);
-	const isLoadingUsage = useWorkbench((state) => state.chat.isLoadingUsage);
+export const WorkbenchAssistantUsage = () => {
+	const usage = useWorkbench((state) => state.assistant.usage);
+	const isLoadingUsage = useWorkbench(
+		(state) => state.assistant.isLoadingUsage,
+	);
 
 	if (!usage && !isLoadingUsage) {
 		return null;

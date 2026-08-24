@@ -3,10 +3,10 @@ import type { KeyboardEvent } from "react";
 import { useEffect, useState } from "react";
 import { Button, cn, Input, ScrollArea, Spinner, toast } from "@semoss/ui/next";
 import { useWorkbench } from "@/hooks/use-workbench";
-import { formatSessionDate } from "./workbench-chat-format";
+import { formatSessionDate } from "./workbench-assistant-format";
 
-interface WorkbenchChatConversationsProps {
-	/** Called after a room is resumed or created so the panel can return to the chat view */
+interface WorkbenchAssistantConversationsProps {
+	/** Called after a room is resumed or created so the panel can return to the assistant view */
 	onConversationSelected: () => void;
 }
 
@@ -16,25 +16,27 @@ interface WorkbenchChatConversationsProps {
  * and resumes a room on click. Loads the conversation list on mount and
  * offers a new-conversation action above the list.
  *
- * @name WorkbenchChatConversations
+ * @name WorkbenchAssistantConversations
  * @param onConversationSelected - Called after a room is resumed or created
- * so the panel can return to the chat view.
+ * so the panel can return to the assistant view.
  * @return The conversation history list view.
  */
-export const WorkbenchChatConversations = ({
+export const WorkbenchAssistantConversations = ({
 	onConversationSelected,
-}: WorkbenchChatConversationsProps) => {
-	const activeRoomId = useWorkbench((state) => state.chat.roomId);
-	const conversations = useWorkbench((state) => state.chat.conversations);
+}: WorkbenchAssistantConversationsProps) => {
+	const activeRoomId = useWorkbench((state) => state.assistant.roomId);
+	const conversations = useWorkbench(
+		(state) => state.assistant.conversations,
+	);
 	const isLoadingConversations = useWorkbench(
-		(state) => state.chat.isLoadingConversations,
+		(state) => state.assistant.isLoadingConversations,
 	);
 	const loadConversations = useWorkbench(
-		(state) => state.chat.loadConversations,
+		(state) => state.assistant.loadConversations,
 	);
-	const resumeRoom = useWorkbench((state) => state.chat.resumeRoom);
-	const renameRoom = useWorkbench((state) => state.chat.renameRoom);
-	const newRoom = useWorkbench((state) => state.chat.newRoom);
+	const resumeRoom = useWorkbench((state) => state.assistant.resumeRoom);
+	const renameRoom = useWorkbench((state) => state.assistant.renameRoom);
+	const newRoom = useWorkbench((state) => state.assistant.newRoom);
 
 	const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
 	const [draftRoomName, setDraftRoomName] = useState("");
@@ -155,7 +157,8 @@ export const WorkbenchChatConversations = ({
 										className="flex min-w-0 flex-1 flex-col items-start gap-1.5 text-left"
 									>
 										<span className="line-clamp-2 w-full font-medium leading-snug">
-											{room.roomName || "New chat"}
+											{room.roomName ||
+												"New conversation"}
 										</span>
 										<span className="text-muted-foreground text-xs">
 											{formatSessionDate(

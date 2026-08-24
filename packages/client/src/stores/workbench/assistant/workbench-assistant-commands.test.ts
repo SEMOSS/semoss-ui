@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	getSlashSuggestions,
 	parseSlashCommands,
-} from "./workbench-chat-commands";
+} from "./workbench-assistant-commands";
 
 describe("parseSlashCommands", () => {
 	it("applies a leading command and keeps the message", () => {

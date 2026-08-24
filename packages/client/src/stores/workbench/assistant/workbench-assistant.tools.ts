@@ -1,4 +1,4 @@
-import type { BuildPendingAction } from "./workbench-chat.runs";
+import type { BuildPendingAction } from "./workbench-assistant.runs";
 
 /** One selectable option in a RequestUserInput question. */
 export type UserInputOption = {

@@ -32,12 +32,16 @@ import {
 	isRequestUserInputAction,
 	isTerminalAgentRunStatus,
 } from "@/stores/workbench";
-import { formatLongMs, formatTime, parseTime } from "./workbench-chat-format";
-import { WorkbenchChatMarkdown } from "./workbench-chat-markdown";
-import { WorkbenchChatPendingActions } from "./workbench-chat-pending-actions";
-import { WorkbenchChatSubagent } from "./workbench-chat-subagent";
-import { WorkbenchChatToolPhase } from "./workbench-chat-tool-phase";
-import { WorkbenchChatUserInputCard } from "./workbench-chat-user-input-card";
+import {
+	formatLongMs,
+	formatTime,
+	parseTime,
+} from "./workbench-assistant-format";
+import { WorkbenchAssistantMarkdown } from "./workbench-assistant-markdown";
+import { WorkbenchAssistantPendingActions } from "./workbench-assistant-pending-actions";
+import { WorkbenchAssistantSubagent } from "./workbench-assistant-subagent";
+import { WorkbenchAssistantToolPhase } from "./workbench-assistant-tool-phase";
+import { WorkbenchAssistantUserInputCard } from "./workbench-assistant-user-input-card";
 
 /** A single run event (message, tool call, or child run) before grouping. */
 type Activity =
@@ -185,7 +189,7 @@ interface FeedItemsProps {
  * @return The ordered activity feed for the run.
  */
 const FeedItems = ({ run, nested = false }: FeedItemsProps) => {
-	const runs = useWorkbench((state) => state.chat.runs);
+	const runs = useWorkbench((state) => state.assistant.runs);
 
 	const activities = useMemo<Activity[]>(() => {
 		const items: Activity[] = [];
@@ -289,15 +293,15 @@ const FeedItems = ({ run, nested = false }: FeedItemsProps) => {
 				<ThinkingBlock message={activity.message} />
 			) : (
 				<div className="min-w-0 text-sm">
-					<WorkbenchChatMarkdown>
+					<WorkbenchAssistantMarkdown>
 						{activity.message.text}
-					</WorkbenchChatMarkdown>
+					</WorkbenchAssistantMarkdown>
 				</div>
 			)
 		) : activity.kind === "phase" ? (
-			<WorkbenchChatToolPhase tools={activity.tools} />
+			<WorkbenchAssistantToolPhase tools={activity.tools} />
 		) : (
-			<WorkbenchChatSubagent
+			<WorkbenchAssistantSubagent
 				childRunId={activity.childRunId}
 				renderFeed={(childRun) => <FeedItems run={childRun} nested />}
 			/>
@@ -305,9 +309,9 @@ const FeedItems = ({ run, nested = false }: FeedItemsProps) => {
 
 	const pendingBlock = inputRequired ? (
 		<div className="flex flex-col gap-2">
-			<WorkbenchChatPendingActions run={run} />
+			<WorkbenchAssistantPendingActions run={run} />
 			{userInputActions.map((action, index) => (
-				<WorkbenchChatUserInputCard
+				<WorkbenchAssistantUserInputCard
 					key={action.actionId ?? `input-${index}`}
 					run={run}
 					action={action}
@@ -318,7 +322,9 @@ const FeedItems = ({ run, nested = false }: FeedItemsProps) => {
 
 	const finalBlock = showFinal ? (
 		<div className="min-w-0 text-sm">
-			<WorkbenchChatMarkdown>{run.finalText ?? ""}</WorkbenchChatMarkdown>
+			<WorkbenchAssistantMarkdown>
+				{run.finalText ?? ""}
+			</WorkbenchAssistantMarkdown>
 		</div>
 	) : null;
 
@@ -397,7 +403,7 @@ const FeedItems = ({ run, nested = false }: FeedItemsProps) => {
 };
 
 /** Display name for the assistant in run headers. */
-const ASSISTANT_LABEL = "Agent";
+const ASSISTANT_LABEL = "Assistant";
 
 interface RunHeaderProps {
 	/** The run whose identity, status, and duration are rendered */
@@ -532,23 +538,25 @@ const RunFailureDetails = ({ run }: RunFailureDetailsProps) => {
 	);
 };
 
-interface WorkbenchChatTurnProps {
-	/** ID of the run to render; resolved against the chat slice's run map */
+interface WorkbenchAssistantTurnProps {
+	/** ID of the run to render; resolved against the assistant slice's run map */
 	runId: string;
 }
 
 /**
- * One turn of the room conversation, rendered flat like a normal chat: the
+ * One turn of the room conversation, rendered flat like a normal assistant: the
  * right-aligned user bubble (with attachment chips), the run's activity in
  * order, an error alert on failure, and a trailing working indicator while
  * the run is still in flight. Renders nothing when the run ID is unknown.
  *
- * @name WorkbenchChatTurn
- * @param runId - ID of the run to render from the chat slice's run map.
+ * @name WorkbenchAssistantTurn
+ * @param runId - ID of the run to render from the assistant slice's run map.
  * @return The rendered conversation turn, or null for an unknown run.
  */
-export const WorkbenchChatTurn = ({ runId }: WorkbenchChatTurnProps) => {
-	const run = useWorkbench((state) => state.chat.runs[runId]);
+export const WorkbenchAssistantTurn = ({
+	runId,
+}: WorkbenchAssistantTurnProps) => {
+	const run = useWorkbench((state) => state.assistant.runs[runId]);
 
 	if (!run) return null;
 

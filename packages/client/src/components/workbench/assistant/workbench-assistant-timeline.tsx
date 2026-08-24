@@ -10,9 +10,9 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { useWorkbench } from "@/hooks/use-workbench";
-import type { WorkbenchChatNotice } from "@/stores/workbench";
-import { parseTime } from "./workbench-chat-format";
-import { WorkbenchChatTurn } from "./workbench-chat-turn";
+import type { WorkbenchAssistantNotice } from "@/stores/workbench";
+import { parseTime } from "./workbench-assistant-format";
+import { WorkbenchAssistantTurn } from "./workbench-assistant-turn";
 
 /** A run or system notice positioned on the timeline by timestamp. */
 type TimelineEntry =
@@ -21,12 +21,12 @@ type TimelineEntry =
 			type: "notice";
 			key: string;
 			time: number;
-			notice: WorkbenchChatNotice;
+			notice: WorkbenchAssistantNotice;
 	  };
 
 interface NoticeCardProps {
 	/** The system notice to display */
-	notice: WorkbenchChatNotice;
+	notice: WorkbenchAssistantNotice;
 
 	/** Called with the notice ID when the user dismisses an error notice */
 	onDismiss: (id: string) => void;
@@ -73,23 +73,27 @@ const NoticeCard = ({ notice, onDismiss }: NoticeCardProps) => {
 };
 
 /**
- * The scrollable chat region: runs and system notices merged in timestamp
+ * The scrollable assistant region: runs and system notices merged in timestamp
  * order, an empty state before the first prompt, and scroll pinning — only
  * user wheel/touch scrolls unpin, content growth auto-scrolls while pinned,
  * and a floating scroll-to-latest button appears when activity arrives while
- * scrolled away. Shows a spinner during chat initialization and an empty
+ * scrolled away. Shows a spinner during assistant initialization and an empty
  * state before the first prompt.
  *
- * @name WorkbenchChatTimeline
- * @return The scrollable chat timeline region.
+ * @name WorkbenchAssistantTimeline
+ * @return The scrollable assistant timeline region.
  */
-export const WorkbenchChatTimeline = () => {
-	const roomRunIds = useWorkbench((state) => state.chat.roomRunIds);
-	const runs = useWorkbench((state) => state.chat.runs);
-	const notices = useWorkbench((state) => state.chat.notices);
-	const isInitializing = useWorkbench((state) => state.chat.isInitializing);
-	const activeRunId = useWorkbench((state) => state.chat.activeRunId);
-	const dismissNotice = useWorkbench((state) => state.chat.dismissNotice);
+export const WorkbenchAssistantTimeline = () => {
+	const roomRunIds = useWorkbench((state) => state.assistant.roomRunIds);
+	const runs = useWorkbench((state) => state.assistant.runs);
+	const notices = useWorkbench((state) => state.assistant.notices);
+	const isInitializing = useWorkbench(
+		(state) => state.assistant.isInitializing,
+	);
+	const activeRunId = useWorkbench((state) => state.assistant.activeRunId);
+	const dismissNotice = useWorkbench(
+		(state) => state.assistant.dismissNotice,
+	);
 
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const pinnedRef = useRef(true);
@@ -252,7 +256,7 @@ export const WorkbenchChatTimeline = () => {
 				<div className="flex min-h-full flex-col gap-2 px-4 py-6">
 					{entries.map((entry) =>
 						entry.type === "run" ? (
-							<WorkbenchChatTurn
+							<WorkbenchAssistantTurn
 								key={entry.key}
 								runId={entry.runId}
 							/>

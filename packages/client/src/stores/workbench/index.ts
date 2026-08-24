@@ -1,4 +1,4 @@
-export * from "./chat";
+export * from "./assistant";
 export * from "./workbench.constants";
 export {
 	createWorkbenchStore,

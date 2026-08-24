@@ -19,7 +19,7 @@ import {
 import { useWorkbench } from "@/hooks/use-workbench";
 import type { BuildPendingAction, BuildRun } from "@/stores/workbench";
 import { isRequestUserInputAction } from "@/stores/workbench";
-import { actionDetails, friendlyToolName } from "./workbench-chat-tools";
+import { actionDetails, friendlyToolName } from "./workbench-assistant-tools";
 
 /**
  * Extract a user-facing message from a thrown value.
@@ -73,7 +73,7 @@ const ActionRequestDetails = ({ details }: ActionRequestDetailsProps) => {
 	);
 };
 
-interface WorkbenchChatPendingActionsProps {
+interface WorkbenchAssistantPendingActionsProps {
 	/** The run whose pending review actions are shown */
 	run: BuildRun;
 }
@@ -85,15 +85,15 @@ interface WorkbenchChatPendingActionsProps {
  * decisions made elsewhere (or a resumed run) are picked up. Renders nothing
  * when the run has no review actions.
  *
- * @name WorkbenchChatPendingActions
+ * @name WorkbenchAssistantPendingActions
  * @param run - The run whose pending review actions are shown.
  * @return The pending-actions review panel, or null when there are none.
  */
-export const WorkbenchChatPendingActions = ({
+export const WorkbenchAssistantPendingActions = ({
 	run,
-}: WorkbenchChatPendingActionsProps) => {
-	const decideAction = useWorkbench((state) => state.chat.decideAction);
-	const reconcileRun = useWorkbench((state) => state.chat.reconcileRun);
+}: WorkbenchAssistantPendingActionsProps) => {
+	const decideAction = useWorkbench((state) => state.assistant.decideAction);
+	const reconcileRun = useWorkbench((state) => state.assistant.reconcileRun);
 	const [busyActionId, setBusyActionId] = useState<string | null>(null);
 	const [approvingAll, setApprovingAll] = useState(false);
 	const [approveAllProgress, setApproveAllProgress] = useState(0);

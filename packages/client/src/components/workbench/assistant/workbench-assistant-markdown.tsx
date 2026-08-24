@@ -2,14 +2,14 @@ import type { ComponentProps } from "react";
 import { Markdown } from "@semoss/ui/next";
 
 /**
- * Chat-scale element overrides for the shared Markdown component. The
+ * Assistant-scale element overrides for the shared Markdown component. The
  * default preset is tuned for long-form document pages (24px paragraph gaps,
- * page-scale headings, roomy lists) — in a ~400px chat panel that reads as
+ * page-scale headings, roomy lists) — in a ~400px assistant panel that reads as
  * sparse and oversized. These keep the same semantics at conversation scale:
  * compact paragraph rhythm, modest heading steps, and tight lists. Code,
  * links, and tables keep the preset's rendering.
  */
-const CHAT_COMPONENTS: ComponentProps<typeof Markdown>["components"] = {
+const ASSISTANT_COMPONENTS: ComponentProps<typeof Markdown>["components"] = {
 	p: ({ children, ...props }) => (
 		<p className="leading-relaxed [&:not(:first-child)]:mt-2.5" {...props}>
 			{children}
@@ -73,13 +73,15 @@ const CHAT_COMPONENTS: ComponentProps<typeof Markdown>["components"] = {
 };
 
 /**
- * The shared Markdown renderer with chat-scale typography — used for
- * assistant replies and tool output inside the chat panel.
+ * The shared Markdown renderer with assistant-scale typography — used for
+ * assistant replies and tool output inside the assistant panel.
  *
- * @name WorkbenchChatMarkdown
+ * @name WorkbenchAssistantMarkdown
  * @param children - Markdown content to render.
- * @return The chat-scaled markdown.
+ * @return The assistant-scaled markdown.
  */
-export const WorkbenchChatMarkdown = ({ children }: { children: string }) => (
-	<Markdown components={CHAT_COMPONENTS}>{children}</Markdown>
-);
+export const WorkbenchAssistantMarkdown = ({
+	children,
+}: {
+	children: string;
+}) => <Markdown components={ASSISTANT_COMPONENTS}>{children}</Markdown>;

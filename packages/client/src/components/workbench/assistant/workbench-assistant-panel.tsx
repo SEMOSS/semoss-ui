@@ -18,36 +18,38 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useWorkbench } from "@/hooks/use-workbench";
-import { WorkbenchChatComposer } from "./workbench-chat-composer";
-import { WorkbenchChatConversations } from "./workbench-chat-conversations";
-import { WorkbenchChatSettings } from "./workbench-chat-settings";
-import { WorkbenchChatTimeline } from "./workbench-chat-timeline";
+import { WorkbenchAssistantComposer } from "./workbench-assistant-composer";
+import { WorkbenchAssistantConversations } from "./workbench-assistant-conversations";
+import { WorkbenchAssistantSettings } from "./workbench-assistant-settings";
+import { WorkbenchAssistantTimeline } from "./workbench-assistant-timeline";
 
 /** Which body the panel is currently showing. */
-type WorkbenchChatView = "chat" | "conversations" | "settings";
+type WorkbenchAssistantView = "assistant" | "conversations" | "settings";
 
 /**
- * The workbench CHAT border panel shell: a header with the room title,
- * conversation-history and settings toggles, and a new-chat action; the body
- * swaps between the chat timeline + composer, conversation history, and chat
- * settings. Toggling an already-active view returns to the chat, and
+ * The workbench ASSISTANT border panel shell: a header with the room title,
+ * conversation-history and settings toggles, and a new-assistant action; the body
+ * swaps between the assistant timeline + composer, conversation history, and assistant
+ * settings. Toggling an already-active view returns to the assistant, and
  * initialization errors surface as a destructive alert under the header.
  *
- * @name WorkbenchChatPanel
- * @return The chat panel shell with its header and active body view.
+ * @name WorkbenchAssistantPanel
+ * @return The assistant panel shell with its header and active body view.
  */
-export const WorkbenchChatPanel = () => {
-	const roomName = useWorkbench((state) => state.chat.roomName);
-	const initError = useWorkbench((state) => state.chat.initError);
-	const isInitializing = useWorkbench((state) => state.chat.isInitializing);
-	const isSending = useWorkbench((state) => state.chat.isSending);
-	const newRoom = useWorkbench((state) => state.chat.newRoom);
-	const onRebuild = useWorkbench((state) => state.chat.onRebuild);
-	const [view, setView] = useState<WorkbenchChatView>("chat");
+export const WorkbenchAssistantPanel = () => {
+	const roomName = useWorkbench((state) => state.assistant.roomName);
+	const initError = useWorkbench((state) => state.assistant.initError);
+	const isInitializing = useWorkbench(
+		(state) => state.assistant.isInitializing,
+	);
+	const isSending = useWorkbench((state) => state.assistant.isSending);
+	const newRoom = useWorkbench((state) => state.assistant.newRoom);
+	const onRebuild = useWorkbench((state) => state.assistant.onRebuild);
+	const [view, setView] = useState<WorkbenchAssistantView>("assistant");
 	const [isRebuilding, setIsRebuilding] = useState(false);
 
-	const toggleView = (target: WorkbenchChatView) => {
-		setView((current) => (current === target ? "chat" : target));
+	const toggleView = (target: WorkbenchAssistantView) => {
+		setView((current) => (current === target ? "assistant" : target));
 	};
 
 	const handleRebuild = async () => {
@@ -65,10 +67,10 @@ export const WorkbenchChatPanel = () => {
 	return (
 		<div
 			className="flex h-full min-h-0 w-full flex-col bg-background"
-			data-testid="workbench-chat-panel"
+			data-testid="workbench-assistant-panel"
 		>
 			<header className="flex h-11 shrink-0 items-center gap-2 border-border border-b px-3">
-				{view !== "chat" ? (
+				{view !== "assistant" ? (
 					<>
 						<Tooltip>
 							<TooltipTrigger asChild>
@@ -76,14 +78,14 @@ export const WorkbenchChatPanel = () => {
 									type="button"
 									variant="ghost"
 									size="icon-sm"
-									aria-label="Back to chat"
+									aria-label="Back to assistant"
 									className="-ms-1.5"
-									onClick={() => setView("chat")}
+									onClick={() => setView("assistant")}
 								>
 									<ArrowLeftIcon />
 								</Button>
 							</TooltipTrigger>
-							<TooltipContent>Back to chat</TooltipContent>
+							<TooltipContent>Back to assistant</TooltipContent>
 						</Tooltip>
 						<h2 className="min-w-0 flex-1 truncate font-medium text-sm">
 							{view === "conversations"
@@ -93,7 +95,7 @@ export const WorkbenchChatPanel = () => {
 					</>
 				) : (
 					<h2 className="min-w-0 flex-1 truncate font-medium text-sm">
-						{roomName || "New chat"}
+						{roomName || "New conversation"}
 					</h2>
 				)}
 				{onRebuild ? (
@@ -140,14 +142,14 @@ export const WorkbenchChatPanel = () => {
 							type="button"
 							variant="ghost"
 							size="icon-sm"
-							aria-label="Chat settings"
+							aria-label="Assistant settings"
 							className={cn(view === "settings" && "bg-accent")}
 							onClick={() => toggleView("settings")}
 						>
 							<Settings2Icon />
 						</Button>
 					</TooltipTrigger>
-					<TooltipContent>Chat settings</TooltipContent>
+					<TooltipContent>Assistant settings</TooltipContent>
 				</Tooltip>
 				<Tooltip>
 					<TooltipTrigger asChild>
@@ -155,17 +157,17 @@ export const WorkbenchChatPanel = () => {
 							type="button"
 							variant="ghost"
 							size="icon-sm"
-							aria-label="Start a new chat"
+							aria-label="Start a new conversation"
 							disabled={isInitializing || isSending}
 							onClick={() => {
 								void newRoom();
-								setView("chat");
+								setView("assistant");
 							}}
 						>
 							<PlusIcon />
 						</Button>
 					</TooltipTrigger>
-					<TooltipContent>Start a new chat</TooltipContent>
+					<TooltipContent>Start a new conversation</TooltipContent>
 				</Tooltip>
 			</header>
 
@@ -180,17 +182,17 @@ export const WorkbenchChatPanel = () => {
 				</Alert>
 			) : null}
 
-			{view === "chat" ? (
+			{view === "assistant" ? (
 				<>
-					<WorkbenchChatTimeline />
-					<WorkbenchChatComposer />
+					<WorkbenchAssistantTimeline />
+					<WorkbenchAssistantComposer />
 				</>
 			) : view === "conversations" ? (
-				<WorkbenchChatConversations
-					onConversationSelected={() => setView("chat")}
+				<WorkbenchAssistantConversations
+					onConversationSelected={() => setView("assistant")}
 				/>
 			) : (
-				<WorkbenchChatSettings />
+				<WorkbenchAssistantSettings />
 			)}
 		</div>
 	);

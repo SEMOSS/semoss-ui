@@ -68,10 +68,10 @@ describe("workbench layout cache", () => {
 		const store = createWorkbenchStore("proj-1");
 		store.getState().loadLayout(LAYOUT);
 
-		expect(store.getState().cacheKey).toBe("smss-workbench--proj-1-v3");
+		expect(store.getState().cacheKey).toBe("smss-workbench--proj-1-v4");
 		expect(
 			JSON.parse(
-				localStorage.getItem("smss-workbench--proj-1-v3") as string,
+				localStorage.getItem("smss-workbench--proj-1-v4") as string,
 			),
 		).toMatchObject({ version: "" });
 	});
@@ -97,12 +97,12 @@ describe("workbench layout cache", () => {
 
 		expect(view.getState().model.getNodeById("b")).toBeUndefined();
 		expect(
-			localStorage.getItem("smss-workbench--proj-1-view-v3"),
+			localStorage.getItem("smss-workbench--proj-1-view-v4"),
 		).toBeTruthy();
 	});
 
 	it("falls back to the default on unparseable JSON", () => {
-		localStorage.setItem("smss-workbench--proj-1-v3", "{");
+		localStorage.setItem("smss-workbench--proj-1-v4", "{");
 		const spy = vi.spyOn(console, "error").mockImplementation(() => {});
 
 		const store = createWorkbenchStore("proj-1");
@@ -114,7 +114,7 @@ describe("workbench layout cache", () => {
 
 	it("falls back to the default when the entry has no layout", () => {
 		localStorage.setItem(
-			"smss-workbench--proj-1-v3",
+			"smss-workbench--proj-1-v4",
 			JSON.stringify({ version: "", layout: null }),
 		);
 
@@ -126,7 +126,7 @@ describe("workbench layout cache", () => {
 
 	it("falls back to the default when the cached layout is structurally invalid", () => {
 		localStorage.setItem(
-			"smss-workbench--proj-1-v3",
+			"smss-workbench--proj-1-v4",
 			JSON.stringify({ version: "", layout: { nonsense: true } }),
 		);
 		const spy = vi.spyOn(console, "error").mockImplementation(() => {});

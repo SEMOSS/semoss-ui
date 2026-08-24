@@ -1,4 +1,4 @@
-export * from "./chat";
+export * from "./assistant";
 export * from "./engine";
 export * from "./project";
 export * from "./workbench";

@@ -18,9 +18,9 @@ import {
 	WorkbenchCommandMenuButton,
 } from "@/components/workbench";
 import { useProject, useWorkbench } from "@/hooks";
-import { useWorkbenchChatConfig } from "@/hooks/use-workbench-chat-config";
+import { useWorkbenchAssistantConfig } from "@/hooks/use-workbench-assistant-config";
 import type { BuildRun, WorkbenchPanelConfig } from "@/stores/workbench";
-import { WORKBENCH_CHAT_PANEL } from "../../chat";
+import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
 import {
 	ProjectEnginesPanel,
 	ProjectFileEditorPanel,
@@ -48,7 +48,7 @@ const PUBLISH_TOOL_RE = /buildandpublishapp|publishproject/i;
  *
  * @name runTreePublished
  * @param run - The completed root run.
- * @param runs - The chat slice's full run map, for resolving subagents.
+ * @param runs - The assistant slice's full run map, for resolving subagents.
  * @return Whether any tool in the run tree published the frontend.
  */
 const runTreePublished = (
@@ -76,7 +76,7 @@ const runTreePublished = (
  * Code workbench — the editable surface for a CODE project. Shows a live
  * preview of the published app alongside the project file explorer, the
  * terminal's insight file explorer, a Pixel terminal, and the shared assistant
- * chat panel.
+ * assistant panel.
  */
 export const CodeWorkbench: React.FC = () => {
 	const registerCommand = useWorkbench((state) => state.registerCommand);
@@ -105,9 +105,9 @@ export const CodeWorkbench: React.FC = () => {
 		[],
 	);
 
-	// Manual "rebuild the app" from the chat header — the same full compile +
+	// Manual "rebuild the app" from the assistant header — the same full compile +
 	// publish the agent's publish tool performs. Thrown errors surface as an
-	// error toast in the chat panel.
+	// error toast in the assistant panel.
 	const handleRebuild = useCallback(async () => {
 		await insight.actions.run(
 			`BuildAndPublishApp(project='${project.project_id}');`,
@@ -145,17 +145,17 @@ export const CodeWorkbench: React.FC = () => {
 					location: "right",
 					size: 400,
 					minSize: 320,
-					// Chat is the primary build surface for a CODE project —
+					// The assistant is the primary build surface for a CODE project —
 					// open by default (a cached layout still wins for users
 					// who closed it).
 					selected: 0,
 					children: [
 						{
 							type: "tab",
-							id: WORKBENCH_COMPONENTS.CHAT,
-							name: "Chat",
-							component: WORKBENCH_COMPONENTS.CHAT,
-							helpText: "Chat",
+							id: WORKBENCH_COMPONENTS.ASSISTANT,
+							name: "Assistant",
+							component: WORKBENCH_COMPONENTS.ASSISTANT,
+							helpText: "Assistant",
 							enableClose: false,
 							enableRenderOnDemand: false,
 						},
@@ -179,13 +179,15 @@ export const CodeWorkbench: React.FC = () => {
 		};
 	}, []);
 
-	const configureChat = useWorkbenchChatConfig((state) => state.configure);
+	const configureAssistant = useWorkbenchAssistantConfig(
+		(state) => state.configure,
+	);
 
 	// keep the assistant's system prompt/tools in sync with the active app
 	useEffect(() => {
 		const name = project.project_display_name || project.project_name;
 
-		configureChat({
+		configureAssistant({
 			systemPrompt: `You are the assistant for the ${name} code workbench (${project.project_id}). Your role is to help the user build and run this app and the rest of the project's files. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active project.`,
 			mcp: [
 				{
@@ -200,7 +202,7 @@ export const CodeWorkbench: React.FC = () => {
 			onRebuild: handleRebuild,
 		});
 	}, [
-		configureChat,
+		configureAssistant,
 		handleRebuild,
 		handleRunCompleted,
 		project.project_display_name,
@@ -304,7 +306,7 @@ export const CodeWorkbench: React.FC = () => {
 				/>
 			),
 		},
-		[WORKBENCH_COMPONENTS.CHAT]: WORKBENCH_CHAT_PANEL,
+		[WORKBENCH_COMPONENTS.ASSISTANT]: WORKBENCH_ASSISTANT_PANEL,
 	};
 
 	useEffect(() => {

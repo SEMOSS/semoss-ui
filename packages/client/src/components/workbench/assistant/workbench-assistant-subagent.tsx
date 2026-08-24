@@ -8,9 +8,9 @@ import {
 	isCompleteStatus,
 	isToolActive,
 	statusLabel,
-} from "./workbench-chat-tools";
+} from "./workbench-assistant-tools";
 
-interface WorkbenchChatSubagentProps {
+interface WorkbenchAssistantSubagentProps {
 	/** ID of the delegated child run to display */
 	childRunId: string;
 
@@ -29,19 +29,19 @@ interface WorkbenchChatSubagentProps {
  * record when it hasn't been reconciled yet, then renders a nested run feed
  * via the `renderFeed` prop.
  *
- * @name WorkbenchChatSubagent
+ * @name WorkbenchAssistantSubagent
  * @param childRunId - ID of the delegated child run to display.
  * @param renderFeed - Renders the nested run feed for the expanded child.
  * @return The expandable subagent card.
  */
-export const WorkbenchChatSubagent = ({
+export const WorkbenchAssistantSubagent = ({
 	childRunId,
 	renderFeed,
-}: WorkbenchChatSubagentProps) => {
-	const child = useWorkbench((state) => state.chat.runs[childRunId]) as
+}: WorkbenchAssistantSubagentProps) => {
+	const child = useWorkbench((state) => state.assistant.runs[childRunId]) as
 		| BuildRun
 		| undefined;
-	const fetchRun = useWorkbench((state) => state.chat.fetchRun);
+	const fetchRun = useWorkbench((state) => state.assistant.fetchRun);
 	const status = child?.status ?? "SUBMITTED";
 	const failed = status === "FAILED";
 	const attention = failed || status === "INPUT_REQUIRED";

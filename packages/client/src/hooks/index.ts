@@ -4,7 +4,7 @@ import { usePixel } from "./use-pixel";
 import { useProject } from "./use-project";
 import { useTabBarScroll } from "./use-tab-bar-scroll";
 import { useWorkbench } from "./use-workbench";
-import { useWorkbenchChatConfig } from "./use-workbench-chat-config";
+import { useWorkbenchAssistantConfig } from "./use-workbench-assistant-config";
 import { useDesigner } from "./useDesigner";
 import { useEngine } from "./useEngine";
 import { useMetamodel } from "./useMetamodel";
@@ -35,7 +35,7 @@ export {
 	useTabBarScroll,
 	useThemeLogo,
 	useWorkbench,
-	useWorkbenchChatConfig,
+	useWorkbenchAssistantConfig,
 	useWorkspace,
 	useProject,
 };

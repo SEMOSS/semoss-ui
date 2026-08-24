@@ -21,7 +21,7 @@ import type {
 	BuildRun,
 	UserInputQuestion,
 } from "@/stores/workbench";
-import { parseUserInputRequest } from "./workbench-chat-tools";
+import { parseUserInputRequest } from "./workbench-assistant-tools";
 
 /** A single question's answer: text, selected values, or a confirmation. */
 type UserInputAnswer = string | string[] | boolean;
@@ -42,7 +42,7 @@ const RecommendedBadge = () => (
 	</Badge>
 );
 
-interface WorkbenchChatUserInputCardProps {
+interface WorkbenchAssistantUserInputCardProps {
 	/** The run awaiting the user's answers */
 	run: BuildRun;
 
@@ -57,17 +57,17 @@ interface WorkbenchChatUserInputCardProps {
  * answer back to the run via `respondUserInput`, and falls back to an error
  * card when the action's request payload cannot be parsed.
  *
- * @name WorkbenchChatUserInputCard
+ * @name WorkbenchAssistantUserInputCard
  * @param run - The run awaiting the user's answers.
  * @param action - The pending RequestUserInput action defining the form.
  * @return The user-input form card, or an invalid-request notice.
  */
-export const WorkbenchChatUserInputCard = ({
+export const WorkbenchAssistantUserInputCard = ({
 	run,
 	action,
-}: WorkbenchChatUserInputCardProps) => {
+}: WorkbenchAssistantUserInputCardProps) => {
 	const respondUserInput = useWorkbench(
-		(state) => state.chat.respondUserInput,
+		(state) => state.assistant.respondUserInput,
 	);
 	const request = useMemo(() => parseUserInputRequest(action), [action]);
 	const [answers, setAnswers] = useState<Record<string, UserInputAnswer>>({});

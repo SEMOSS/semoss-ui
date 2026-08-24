@@ -22,8 +22,8 @@ import {
 } from "@semoss/ui/next";
 import { useWorkbench } from "@/hooks/use-workbench";
 import type {
-	WorkbenchChatEffort,
-	WorkbenchChatPermissionMode,
+	WorkbenchAssistantEffort,
+	WorkbenchAssistantPermissionMode,
 } from "@/stores/workbench";
 
 const DEFAULT_MAX_TURNS = 30;
@@ -33,7 +33,7 @@ const INHERIT = "inherit";
 
 /** Permission modes the semoss harness accepts, with display labels. */
 const PERMISSION_MODE_OPTIONS: {
-	value: WorkbenchChatPermissionMode;
+	value: WorkbenchAssistantPermissionMode;
 	label: string;
 }[] = [
 	{ value: "default", label: "Ask before edits" },
@@ -43,7 +43,7 @@ const PERMISSION_MODE_OPTIONS: {
 ];
 
 /** Reasoning-effort levels, with display labels. */
-const EFFORT_OPTIONS: { value: WorkbenchChatEffort; label: string }[] = [
+const EFFORT_OPTIONS: { value: WorkbenchAssistantEffort; label: string }[] = [
 	{ value: "low", label: "Low" },
 	{ value: "medium", label: "Medium" },
 	{ value: "high", label: "High" },
@@ -51,28 +51,30 @@ const EFFORT_OPTIONS: { value: WorkbenchChatEffort; label: string }[] = [
 ];
 
 /**
- * Chat settings view: model picker, conversation compaction, and advanced
+ * Assistant settings view: model picker, conversation compaction, and advanced
  * controls (max turns). The compact action is disabled while a run is active.
  *
- * @name WorkbenchChatSettings
- * @return The scrollable chat settings view.
+ * @name WorkbenchAssistantSettings
+ * @return The scrollable assistant settings view.
  */
-export const WorkbenchChatSettings = () => {
-	const model = useWorkbench((state) => state.chat.model);
-	const roomId = useWorkbench((state) => state.chat.roomId);
-	const activeRunId = useWorkbench((state) => state.chat.activeRunId);
-	const compact = useWorkbench((state) => state.chat.compact);
-	const maxTurns = useWorkbench((state) => state.chat.maxTurns);
-	const permissionMode = useWorkbench((state) => state.chat.permissionMode);
-	const effort = useWorkbench((state) => state.chat.effort);
-	const thinking = useWorkbench((state) => state.chat.thinking);
-	const setModel = useWorkbench((state) => state.chat.setModel);
-	const setMaxTurns = useWorkbench((state) => state.chat.setMaxTurns);
-	const setPermissionMode = useWorkbench(
-		(state) => state.chat.setPermissionMode,
+export const WorkbenchAssistantSettings = () => {
+	const model = useWorkbench((state) => state.assistant.model);
+	const roomId = useWorkbench((state) => state.assistant.roomId);
+	const activeRunId = useWorkbench((state) => state.assistant.activeRunId);
+	const compact = useWorkbench((state) => state.assistant.compact);
+	const maxTurns = useWorkbench((state) => state.assistant.maxTurns);
+	const permissionMode = useWorkbench(
+		(state) => state.assistant.permissionMode,
 	);
-	const setEffort = useWorkbench((state) => state.chat.setEffort);
-	const setThinking = useWorkbench((state) => state.chat.setThinking);
+	const effort = useWorkbench((state) => state.assistant.effort);
+	const thinking = useWorkbench((state) => state.assistant.thinking);
+	const setModel = useWorkbench((state) => state.assistant.setModel);
+	const setMaxTurns = useWorkbench((state) => state.assistant.setMaxTurns);
+	const setPermissionMode = useWorkbench(
+		(state) => state.assistant.setPermissionMode,
+	);
+	const setEffort = useWorkbench((state) => state.assistant.setEffort);
+	const setThinking = useWorkbench((state) => state.assistant.setThinking);
 
 	const fieldId = useId();
 	const maxTurnsId = `${fieldId}-max-turns`;
@@ -118,7 +120,7 @@ export const WorkbenchChatSettings = () => {
 						}}
 					/>
 					<FieldDescription className="text-xs">
-						Model used for every agent run in this room.
+						Model used for every assistant run in this room.
 					</FieldDescription>
 				</Field>
 
@@ -159,7 +161,7 @@ export const WorkbenchChatSettings = () => {
 						<div>
 							<p className="font-medium text-sm">Advanced</p>
 							<p className="text-muted-foreground text-xs">
-								Run limits and agent behavior.
+								Run limits and assistant behavior.
 							</p>
 						</div>
 						<ChevronDownIcon
@@ -187,7 +189,7 @@ export const WorkbenchChatSettings = () => {
 									onBlur={commitMaxTurns}
 								/>
 								<FieldDescription className="text-xs">
-									Maximum agent turns per run (default{" "}
+									Maximum assistant turns per run (default{" "}
 									{DEFAULT_MAX_TURNS}).
 								</FieldDescription>
 							</Field>
@@ -200,7 +202,7 @@ export const WorkbenchChatSettings = () => {
 										setPermissionMode(
 											value === INHERIT
 												? null
-												: (value as WorkbenchChatPermissionMode),
+												: (value as WorkbenchAssistantPermissionMode),
 										)
 									}
 								>
@@ -224,7 +226,7 @@ export const WorkbenchChatSettings = () => {
 									</SelectContent>
 								</Select>
 								<FieldDescription className="text-xs">
-									How the agent handles gated tool calls:
+									How the assistant handles gated tool calls:
 									pause for approval, auto-accept edits, plan
 									before acting, or skip the gates entirely.
 								</FieldDescription>
@@ -238,7 +240,7 @@ export const WorkbenchChatSettings = () => {
 										setEffort(
 											value === INHERIT
 												? null
-												: (value as WorkbenchChatEffort),
+												: (value as WorkbenchAssistantEffort),
 										)
 									}
 								>

@@ -18,7 +18,7 @@ const PUBLIC_ROOT_PATH = "/public";
 /**
  * Read-only notebook workbench used by the notebook view page and the share
  * page. Shows `main.ipynb` and the published `/public` files without the
- * terminal, chat, or settings surfaces of the editable workbench.
+ * terminal, assistant, or settings surfaces of the editable workbench.
  */
 export const NotebookViewWorkbench: React.FC = () => {
 	const layout = useMemo<FlexLayout.IJsonModel>(() => {

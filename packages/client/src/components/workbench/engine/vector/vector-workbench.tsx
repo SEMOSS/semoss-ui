@@ -13,9 +13,9 @@ import {
 	WorkbenchCommandMenuButton,
 } from "@/components/workbench";
 import { useEngine, useWorkbench } from "@/hooks";
-import { useWorkbenchChatConfig } from "@/hooks/use-workbench-chat-config";
+import { useWorkbenchAssistantConfig } from "@/hooks/use-workbench-assistant-config";
 import type { WorkbenchPanelConfig } from "@/stores/workbench";
-import { WORKBENCH_CHAT_PANEL } from "../../chat";
+import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
 import {
 	EngineFileEditorPanel,
 	EngineFileExplorerPanel,
@@ -73,10 +73,10 @@ export const VectorWorkbench: React.FC = () => {
 						children: [
 							{
 								type: "tab",
-								id: WORKBENCH_COMPONENTS.CHAT,
-								name: "Chat",
-								component: WORKBENCH_COMPONENTS.CHAT,
-								helpText: "Vector workbench chat",
+								id: WORKBENCH_COMPONENTS.ASSISTANT,
+								name: "Assistant",
+								component: WORKBENCH_COMPONENTS.ASSISTANT,
+								helpText: "Vector workbench assistant",
 								enableClose: false,
 								enableRenderOnDemand: false,
 							},
@@ -95,17 +95,19 @@ export const VectorWorkbench: React.FC = () => {
 		};
 	}, []);
 
-	const configureChat = useWorkbenchChatConfig((state) => state.configure);
+	const configureAssistant = useWorkbenchAssistantConfig(
+		(state) => state.configure,
+	);
 
 	// Keep the assistant prompt and room tools in sync with the active engine.
 	useEffect(() => {
-		configureChat({
+		configureAssistant({
 			systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} vector workbench (${engine.engine_id}, subtype ${engine.engine_subtype || "unknown"}). Use only the tools provided in this room and decide whether a tool is needed for each request. For questions about indexed content, call VectorDatabaseQuery before answering, ground the answer only in its returned chunks, and cite the Source and Divider when available. Use ListDocumentsInVectorDatabase when the user asks what is indexed. For requests to add, download, or remove vector documents, or to inspect or change engine asset files, use the matching room tool; honor its approval requirement and the user's permissions. When the user attaches a file and asks to index it, use the available attachment path with the document embedding tool. Simple greetings or general guidance that do not require engine data can be answered without a tool. Do not invent unsupported parameters, and never claim an operation succeeded unless its tool result confirms success.`,
 			prepareRoom: (insightId) =>
 				makeEngineRoomMcp(insightId, engine.engine_id),
 		});
 	}, [
-		configureChat,
+		configureAssistant,
 		engine.engine_display_name,
 		engine.engine_id,
 		engine.engine_name,
@@ -185,7 +187,7 @@ export const VectorWorkbench: React.FC = () => {
 				/>
 			),
 		},
-		[WORKBENCH_COMPONENTS.CHAT]: WORKBENCH_CHAT_PANEL,
+		[WORKBENCH_COMPONENTS.ASSISTANT]: WORKBENCH_ASSISTANT_PANEL,
 	};
 
 	useEffect(() => {
@@ -239,18 +241,18 @@ export const VectorWorkbench: React.FC = () => {
 				},
 			},
 			{
-				id: "workbench.vector-chat.open",
-				label: "Open Chat",
+				id: "workbench.vector-assistant.open",
+				label: "Open Assistant",
 				icon: <MessageSquareIcon />,
 				handler: (get) => {
 					get().openPanel(
-						WORKBENCH_COMPONENTS.CHAT,
+						WORKBENCH_COMPONENTS.ASSISTANT,
 						{
 							type: "tab",
-							id: WORKBENCH_COMPONENTS.CHAT,
-							name: "Chat",
-							component: WORKBENCH_COMPONENTS.CHAT,
-							helpText: "Vector workbench chat",
+							id: WORKBENCH_COMPONENTS.ASSISTANT,
+							name: "Assistant",
+							component: WORKBENCH_COMPONENTS.ASSISTANT,
+							helpText: "Vector workbench assistant",
 							enableClose: false,
 							enableRenderOnDemand: false,
 						},

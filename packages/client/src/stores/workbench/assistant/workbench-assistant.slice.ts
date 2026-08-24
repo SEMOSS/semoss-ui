@@ -21,12 +21,12 @@ import type {
 import {
 	compactRoomMessages,
 	createWorkbenchRoom,
-	getDefaultWorkbenchChatModel,
+	getDefaultWorkbenchAssistantModel,
 	getPlaygroundMessages,
 	getRoomOptions,
 	getUserConversationRooms,
 	renameRoom as renameRoomPixel,
-	resolveWorkbenchChatModel,
+	resolveWorkbenchAssistantModel,
 	setRoomForInsight,
 	updateRoomOptions,
 } from "@/api/rooms";
@@ -36,7 +36,7 @@ import type {
 	BuildRun,
 	RunStore,
 	WorkbenchRunRecord,
-} from "./workbench-chat.runs";
+} from "./workbench-assistant.runs";
 import {
 	applyStreamBatch,
 	attachDurableMessages,
@@ -48,13 +48,13 @@ import {
 	setRoomRuns,
 	startRun,
 	subagentSummaryToRecord,
-} from "./workbench-chat.runs";
-import type { RoomUsageStats } from "./workbench-chat.usage";
+} from "./workbench-assistant.runs";
+import type { RoomUsageStats } from "./workbench-assistant.usage";
 import {
 	calculateRoomUsage,
 	findLatestCompactableResponseId,
-} from "./workbench-chat.usage";
-import { parseSlashCommands } from "./workbench-chat-commands";
+} from "./workbench-assistant.usage";
+import { parseSlashCommands } from "./workbench-assistant-commands";
 
 /** Turn budget used when none is configured. */
 const DEFAULT_MAX_TURNS = 30;
@@ -66,20 +66,20 @@ const AUTO_NAME_MAX_LENGTH = 60;
 const POLL_INTERVAL_MS = 300;
 
 /**
- * Agent (workspace) every workbench chat run executes under — the backend's
+ * Agent (workspace) every workbench assistant run executes under — the backend's
  * app-builder agent record. Sent as the RunAgent pixel's workspaceId.
  */
 const WORKBENCH_AGENT_ID = "app-builder";
 
 /** Permission mode forwarded to the agent harness for each run. */
-export type WorkbenchChatPermissionMode =
+export type WorkbenchAssistantPermissionMode =
 	| "default"
 	| "acceptEdits"
 	| "plan"
 	| "bypassPermissions";
 
 /** Reasoning-effort level forwarded to the model provider for each run. */
-export type WorkbenchChatEffort = "low" | "medium" | "high" | "max";
+export type WorkbenchAssistantEffort = "low" | "medium" | "high" | "max";
 
 /**
  * The pixel value for a reasoning-effort level — the harness names the top
@@ -89,11 +89,11 @@ export type WorkbenchChatEffort = "low" | "medium" | "high" | "max";
  * @param effort - The user-facing effort level.
  * @return The value the harness expects.
  */
-const effortParamValue = (effort: WorkbenchChatEffort): string =>
+const effortParamValue = (effort: WorkbenchAssistantEffort): string =>
 	effort === "max" ? "xhigh" : effort;
 
-/** Configuration each workbench injects for its CHAT panel. */
-export interface WorkbenchChatConfig {
+/** Configuration each workbench injects for its ASSISTANT panel. */
+export interface WorkbenchAssistantConfig {
 	/** System prompt sent to the assistant. */
 	systemPrompt?: string;
 	/** Prepare the bound room's tools before an agent run starts. */
@@ -111,7 +111,7 @@ export interface WorkbenchChatConfig {
 	 */
 	runParams?: Record<string, unknown>;
 	/** Default permission mode for runs; the user can change it in settings. */
-	permissionMode?: WorkbenchChatPermissionMode | null;
+	permissionMode?: WorkbenchAssistantPermissionMode | null;
 	/**
 	 * Called after a root run reaches a terminal status and its durable
 	 * reconcile lands, with the run and the full run map (so the workbench can
@@ -120,14 +120,14 @@ export interface WorkbenchChatConfig {
 	onRunCompleted?: (run: BuildRun, runs: Record<string, BuildRun>) => void;
 	/**
 	 * Manually rebuild the artifact this workbench previews (e.g. compile and
-	 * publish the app). When set, the chat header shows a rebuild button;
+	 * publish the app). When set, the assistant header shows a rebuild button;
 	 * failures it throws surface as an error toast.
 	 */
 	onRebuild?: () => Promise<void>;
 }
 
 /** Transient system feedback rendered inline on the Build tab timeline. */
-export interface WorkbenchChatNotice {
+export interface WorkbenchAssistantNotice {
 	/** Store-unique id used for dismissal. */
 	id: string;
 	/** Notice text shown to the user. */
@@ -138,9 +138,9 @@ export interface WorkbenchChatNotice {
 	timestamp: string;
 }
 
-/** Namespaced domain state contributed by the base chat slice. */
-export interface WorkbenchChatSliceState {
-	chat: {
+/** Namespaced domain state contributed by the base assistant slice. */
+export interface WorkbenchAssistantSliceState {
+	assistant: {
 		/** Insight the room and every agent pixel is scoped to. */
 		insightId: string | null;
 		/** Room the conversation is bound to, once created or resumed. */
@@ -152,7 +152,7 @@ export interface WorkbenchChatSliceState {
 		/** Failure message when initialization did not complete. */
 		initError: string | null;
 
-		/** System prompt sent to the assistant for this workbench's CHAT panel. */
+		/** System prompt sent to the assistant for this workbench's ASSISTANT panel. */
 		systemPrompt: string;
 		/** Prepare the bound room's tools before an agent run starts. */
 		prepareRoom: ((insightId: string) => Promise<void>) | null;
@@ -164,7 +164,7 @@ export interface WorkbenchChatSliceState {
 		onRunCompleted:
 			| ((run: BuildRun, runs: Record<string, BuildRun>) => void)
 			| null;
-		/** Rebuild action surfaced as a chat-header button when set. */
+		/** Rebuild action surfaced as a assistant-header button when set. */
 		onRebuild: (() => Promise<void>) | null;
 
 		/** Model engine used for new runs. */
@@ -172,9 +172,9 @@ export interface WorkbenchChatSliceState {
 		/** Turn budget passed to RunAgent. */
 		maxTurns: number;
 		/** Permission mode for new runs; null defers to the harness default. */
-		permissionMode: WorkbenchChatPermissionMode | null;
+		permissionMode: WorkbenchAssistantPermissionMode | null;
 		/** Reasoning effort for new runs; null defers to the model default. */
-		effort: WorkbenchChatEffort | null;
+		effort: WorkbenchAssistantEffort | null;
 		/** Extended thinking for new runs; null defers to the model default. */
 		thinking: boolean | null;
 
@@ -187,7 +187,7 @@ export interface WorkbenchChatSliceState {
 		/** True while submit() is uploading files and starting the run. */
 		isSending: boolean;
 		/** Transient notices rendered inline on the timeline. */
-		notices: WorkbenchChatNotice[];
+		notices: WorkbenchAssistantNotice[];
 		/** Aggregated token usage for the room, when loaded. */
 		usage: RoomUsageStats | null;
 		/** True while refreshUsage() is loading messages. */
@@ -208,15 +208,15 @@ export interface WorkbenchChatSliceState {
 		/** Abort every live watcher (view unmount / insight change). */
 		dispose: () => void;
 		/**
-		 * Update one or more chat config fields (systemPrompt, prepareRoom,
+		 * Update one or more assistant config fields (systemPrompt, prepareRoom,
 		 * mcp, runParams, permissionMode, onRunCompleted) for this workbench
 		 * instance; omitted fields keep their values.
 		 */
-		configure: (config: WorkbenchChatConfig) => void;
+		configure: (config: WorkbenchAssistantConfig) => void;
 		/**
 		 * Send a prompt with optional image files: applies any leading slash
 		 * commands (/effort, /thinking, /mode, /compact — see
-		 * workbench-chat-commands.ts), uploads the files, persists room
+		 * workbench-assistant-commands.ts), uploads the files, persists room
 		 * options, starts the durable run, and drains its stream to
 		 * completion. Failures surface as error notices. Resolves true when
 		 * a run was started or commands were applied, false when nothing
@@ -287,10 +287,10 @@ export interface WorkbenchChatSliceState {
 		setMaxTurns: (maxTurns: number) => void;
 		/** Set the permission mode for new runs (null = harness default). */
 		setPermissionMode: (
-			permissionMode: WorkbenchChatPermissionMode | null,
+			permissionMode: WorkbenchAssistantPermissionMode | null,
 		) => void;
 		/** Set the reasoning effort for new runs (null = model default). */
-		setEffort: (effort: WorkbenchChatEffort | null) => void;
+		setEffort: (effort: WorkbenchAssistantEffort | null) => void;
 		/** Set extended thinking for new runs (null = model default). */
 		setThinking: (thinking: boolean | null) => void;
 		/**
@@ -332,16 +332,16 @@ const buildRunFailureMessage = (
 ): string => {
 	const detail = record.errorMessage?.trim() ?? "";
 	if (/max turns/i.test(detail)) {
-		return `The agent stopped after reaching its limit of ${maxTurns} turns before completing your request. Send "continue" to keep going, or raise the limit in the Agent tab.`;
+		return `The assistant stopped after reaching its limit of ${maxTurns} turns before completing your request. Send "continue" to keep going, or raise the limit in the assistant settings.`;
 	}
 	if (record.status?.trim().toUpperCase() === "CANCELLED") {
 		return detail
-			? `The agent run was cancelled: ${detail}`
-			: "The agent run was cancelled.";
+			? `The assistant run was cancelled: ${detail}`
+			: "The assistant run was cancelled.";
 	}
 	return detail
-		? `The agent didn't finish your request: ${detail}`
-		: "The agent didn't finish your request. Please try again.";
+		? `The assistant didn't finish your request: ${detail}`
+		: "The assistant didn't finish your request. Please try again.";
 };
 
 /**
@@ -355,18 +355,18 @@ const toErrorMessage = (error: unknown): string =>
 	error instanceof Error ? error.message : String(error);
 
 /**
- * Creates the base `chat` slice merged into every workbench store: the
+ * Creates the base `assistant` slice merged into every workbench store: the
  * workbench-injected system prompt and room preparation plus the full RunAgent
  * runtime — durable run projections fed by the agentRunStreaming poll loop,
  * conversation history, and room usage.
  *
- * @name createWorkbenchChatSlice
+ * @name createWorkbenchAssistantSlice
  * @param workbenchId - Engine/workbench id persisted onto room options to scope conversation history.
- * @return Zustand state creator contributing the `chat` key to the workbench store.
+ * @return Zustand state creator contributing the `assistant` key to the workbench store.
  */
-export const createWorkbenchChatSlice = (
+export const createWorkbenchAssistantSlice = (
 	workbenchId: string,
-): WorkbenchSlice<WorkbenchChatSliceState> => {
+): WorkbenchSlice<WorkbenchAssistantSliceState> => {
 	// Runtime owned by this store instance, deliberately outside reactive
 	// state. Each entry pairs the live SDK subscription (for pokeNow/stop)
 	// with a promise that resolves at the run's first pause or terminal
@@ -385,20 +385,20 @@ export const createWorkbenchChatSlice = (
 
 	return (set, get) => {
 		/**
-		 * Shallow-merge a partial update into the `chat` slice state.
+		 * Shallow-merge a partial update into the `assistant` slice state.
 		 *
-		 * @name setChat
-		 * @param partial - Chat state fields to overwrite.
+		 * @name setAssistant
+		 * @param partial - Assistant state fields to overwrite.
 		 */
-		const setChat = (
-			partial: Partial<WorkbenchChatSliceState["chat"]>,
+		const setAssistant = (
+			partial: Partial<WorkbenchAssistantSliceState["assistant"]>,
 		): void => {
-			set((state) => ({ chat: { ...state.chat, ...partial } }));
+			set((state) => ({ assistant: { ...state.assistant, ...partial } }));
 		};
 
 		/**
 		 * Apply a pure RunStore transition to the run fields (`runs`,
-		 * `roomRunIds`, `activeRunId`) of the chat state.
+		 * `roomRunIds`, `activeRunId`) of the assistant state.
 		 *
 		 * @name updateRunStore
 		 * @param transition - Pure function from the current RunStore to the
@@ -407,11 +407,11 @@ export const createWorkbenchChatSlice = (
 		const updateRunStore = (transition: (store: RunStore) => RunStore) => {
 			set((state) => {
 				const next = transition({
-					runs: state.chat.runs,
-					roomRunIds: state.chat.roomRunIds,
-					activeRunId: state.chat.activeRunId,
+					runs: state.assistant.runs,
+					roomRunIds: state.assistant.roomRunIds,
+					activeRunId: state.assistant.activeRunId,
 				});
-				return { chat: { ...state.chat, ...next } };
+				return { assistant: { ...state.assistant, ...next } };
 			});
 		};
 
@@ -424,16 +424,16 @@ export const createWorkbenchChatSlice = (
 		 */
 		const pushNotice = (text: string, tone: "info" | "error" = "info") => {
 			noticeCounter += 1;
-			const notice: WorkbenchChatNotice = {
+			const notice: WorkbenchAssistantNotice = {
 				id: `notice-${noticeCounter}`,
 				text,
 				tone,
 				timestamp: new Date().toISOString(),
 			};
 			set((state) => ({
-				chat: {
-					...state.chat,
-					notices: [...state.chat.notices, notice],
+				assistant: {
+					...state.assistant,
+					notices: [...state.assistant.notices, notice],
 				},
 			}));
 		};
@@ -456,7 +456,7 @@ export const createWorkbenchChatSlice = (
 		 * recursively subscribing to discovered subagent runs. The
 		 * subscription keeps polling through INPUT_REQUIRED (at the SDK's
 		 * slower pause interval), so a decision resumes the same stream — no
-		 * re-attach needed. Rejects when the chat is not initialized.
+		 * re-attach needed. Rejects when the assistant is not initialized.
 		 *
 		 * @name attachWatcher
 		 * @param runId - Durable id of the run to watch.
@@ -472,9 +472,11 @@ export const createWorkbenchChatSlice = (
 			const existing = activeWatchers.get(runId);
 			if (existing) return existing.promise;
 
-			const insightId = get().chat.insightId;
+			const insightId = get().assistant.insightId;
 			if (!insightId) {
-				return Promise.reject(new Error("Chat is not initialized"));
+				return Promise.reject(
+					new Error("Assistant is not initialized"),
+				);
 			}
 
 			// Assigned synchronously by the Promise executor below.
@@ -494,7 +496,7 @@ export const createWorkbenchChatSlice = (
 			const watchChild = (childRunId?: string) => {
 				if (!childRunId || childRunId === runId) return;
 				if (activeWatchers.has(childRunId)) return;
-				const child = get().chat.runs[childRunId];
+				const child = get().assistant.runs[childRunId];
 				if (
 					child &&
 					isTerminalAgentRunStatus(child.status) &&
@@ -554,7 +556,9 @@ export const createWorkbenchChatSlice = (
 								watchChild(event.item.childRunId);
 							}
 						}
-						get().chat.runs[runId]?.childRunIds.forEach(watchChild);
+						get().assistant.runs[runId]?.childRunIds.forEach(
+							watchChild,
+						);
 						if (snapshot.status === "INPUT_REQUIRED") {
 							resolvePause(snapshot);
 						}
@@ -575,11 +579,15 @@ export const createWorkbenchChatSlice = (
 						);
 						if (!isTerminalAgentRunStatus(record.status)) return;
 
-						const chat = get().chat;
-						const run = chat.runs[runId];
-						if (run && !run.parentRunId && chat.onRunCompleted) {
+						const assistant = get().assistant;
+						const run = assistant.runs[runId];
+						if (
+							run &&
+							!run.parentRunId &&
+							assistant.onRunCompleted
+						) {
 							try {
-								chat.onRunCompleted(run, chat.runs);
+								assistant.onRunCompleted(run, assistant.runs);
 							} catch (error) {
 								console.warn(
 									"onRunCompleted handler failed:",
@@ -607,7 +615,7 @@ export const createWorkbenchChatSlice = (
 					(snapshot) =>
 						snapshot ?? {
 							runId,
-							roomId: get().chat.roomId ?? "",
+							roomId: get().assistant.roomId ?? "",
 							status: "SUBMITTED" as const,
 							pendingActions: [],
 						},
@@ -630,7 +638,7 @@ export const createWorkbenchChatSlice = (
 		 *
 		 * @name fetchDurableRun
 		 * @param runId - Durable id of the run to fetch.
-		 * @return The durable record, or null when the chat is not
+		 * @return The durable record, or null when the assistant is not
 		 * initialized or the run does not exist.
 		 */
 		const fetchDurableRun = async (
@@ -638,7 +646,7 @@ export const createWorkbenchChatSlice = (
 		): Promise<
 			(AgentRunSnapshot & { messages?: PlaygroundMessage[] }) | null
 		> => {
-			const insightId = get().chat.insightId;
+			const insightId = get().assistant.insightId;
 			if (!insightId) return null;
 
 			const record = await getAgentRun<PlaygroundMessage>(
@@ -665,7 +673,7 @@ export const createWorkbenchChatSlice = (
 		};
 
 		return {
-			chat: {
+			assistant: {
 				insightId: null,
 				roomId: null,
 				roomName: null,
@@ -702,7 +710,7 @@ export const createWorkbenchChatSlice = (
 					}
 
 					resetRuntime();
-					setChat({
+					setAssistant({
 						insightId,
 						isInitializing: true,
 						initError: null,
@@ -713,19 +721,21 @@ export const createWorkbenchChatSlice = (
 						try {
 							const [roomId, model] = await Promise.all([
 								createWorkbenchRoom(insightId),
-								get().chat.model
-									? Promise.resolve(get().chat.model)
-									: getDefaultWorkbenchChatModel(insightId),
+								get().assistant.model
+									? Promise.resolve(get().assistant.model)
+									: getDefaultWorkbenchAssistantModel(
+											insightId,
+										),
 							]);
-							setChat({
+							setAssistant({
 								roomId,
 								roomName: null,
-								model: model ?? get().chat.model,
+								model: model ?? get().assistant.model,
 								isInitializing: false,
 							});
 						} catch (error) {
 							initialization = null;
-							setChat({
+							setAssistant({
 								isInitializing: false,
 								initError: toErrorMessage(error),
 							});
@@ -742,16 +752,18 @@ export const createWorkbenchChatSlice = (
 				},
 
 				configure: (config) => {
-					set((state) => ({ chat: { ...state.chat, ...config } }));
+					set((state) => ({
+						assistant: { ...state.assistant, ...config },
+					}));
 				},
 
 				submit: async (prompt, files = []) => {
-					const chat = get().chat;
+					const assistant = get().assistant;
 					if (
-						!chat.insightId ||
-						!chat.roomId ||
-						chat.isSending ||
-						chat.isInitializing
+						!assistant.insightId ||
+						!assistant.roomId ||
+						assistant.isSending ||
+						assistant.isInitializing
 					) {
 						return false;
 					}
@@ -761,7 +773,7 @@ export const createWorkbenchChatSlice = (
 					// commands-only submission needs no model or tools.
 					const parsed = parseSlashCommands(prompt);
 					const settingsPatch: Partial<
-						WorkbenchChatSliceState["chat"]
+						WorkbenchAssistantSliceState["assistant"]
 					> = {};
 					if (parsed.effort !== undefined) {
 						settingsPatch.effort = parsed.effort;
@@ -773,7 +785,7 @@ export const createWorkbenchChatSlice = (
 						settingsPatch.permissionMode = parsed.permissionMode;
 					}
 					if (Object.keys(settingsPatch).length > 0) {
-						setChat(settingsPatch);
+						setAssistant(settingsPatch);
 					}
 					for (const message of parsed.feedback) {
 						pushNotice(message);
@@ -782,13 +794,13 @@ export const createWorkbenchChatSlice = (
 						pushNotice(message, "error");
 					}
 					if (parsed.compact) {
-						if (get().chat.activeRunId) {
+						if (get().assistant.activeRunId) {
 							pushNotice(
 								"Wait for the current run to finish before compacting.",
 								"error",
 							);
 						} else {
-							await get().chat.compact();
+							await get().assistant.compact();
 						}
 					}
 
@@ -803,14 +815,14 @@ export const createWorkbenchChatSlice = (
 						);
 					}
 
-					if (!chat.model) {
+					if (!assistant.model) {
 						pushNotice(
-							"Select a model in the Agent tab before sending.",
+							"Select a model in the assistant settings before sending.",
 							"error",
 						);
 						return false;
 					}
-					if (!chat.prepareRoom && chat.mcp.length === 0) {
+					if (!assistant.prepareRoom && assistant.mcp.length === 0) {
 						pushNotice(
 							"Room tools are not ready yet. Please try again.",
 							"error",
@@ -818,10 +830,10 @@ export const createWorkbenchChatSlice = (
 						return false;
 					}
 
-					const insightId = chat.insightId;
-					const roomId = chat.roomId;
-					const model = chat.model;
-					setChat({ isSending: true });
+					const insightId = assistant.insightId;
+					const roomId = assistant.roomId;
+					const model = assistant.model;
+					setAssistant({ isSending: true });
 
 					try {
 						let attachments: BuildAttachment[] = [];
@@ -837,16 +849,16 @@ export const createWorkbenchChatSlice = (
 							}));
 						}
 
-						if (chat.prepareRoom) {
-							await chat.prepareRoom(insightId);
+						if (assistant.prepareRoom) {
+							await assistant.prepareRoom(insightId);
 						}
 
 						await updateRoomOptions(insightId, roomId, {
-							instructions: get().chat.systemPrompt,
+							instructions: get().assistant.systemPrompt,
 							// Engine workbenches load tools from the room's MCP
 							// file (prepareRoom); project workbenches pass their
 							// MCP entries directly.
-							mcp: get().chat.mcp,
+							mcp: get().assistant.mcp,
 							predefinedPrompts: [],
 							modelId: model.engine_id,
 							harnessType: "semoss",
@@ -858,23 +870,24 @@ export const createWorkbenchChatSlice = (
 						// so harness/model defaults apply. "ultrathink" in the
 						// message one-shots maximum reasoning without changing
 						// the saved settings.
-						const chatNow = get().chat;
+						const assistantNow = get().assistant;
 						const effectiveEffort = parsed.ultrathink
 							? "max"
-							: chatNow.effort;
+							: assistantNow.effort;
 						const effectiveThinking = parsed.ultrathink
 							? true
-							: chatNow.thinking;
+							: assistantNow.thinking;
 						if (parsed.ultrathink) {
 							pushNotice(
 								"Ultrathink: maximum reasoning for this run.",
 							);
 						}
 						const paramValues: Record<string, unknown> = {
-							...chatNow.runParams,
+							...assistantNow.runParams,
 						};
-						if (chatNow.permissionMode) {
-							paramValues.permissionMode = chatNow.permissionMode;
+						if (assistantNow.permissionMode) {
+							paramValues.permissionMode =
+								assistantNow.permissionMode;
 						}
 						if (effectiveThinking != null) {
 							paramValues.thinking = effectiveThinking;
@@ -893,7 +906,7 @@ export const createWorkbenchChatSlice = (
 								// The SDK forwards agentId as the pixel's
 								// workspaceId.
 								agentId: WORKBENCH_AGENT_ID,
-								maxTurns: get().chat.maxTurns,
+								maxTurns: get().assistant.maxTurns,
 								maxReflections: 0,
 								media: attachments
 									.map(
@@ -921,7 +934,8 @@ export const createWorkbenchChatSlice = (
 								status: record.status ?? "SUBMITTED",
 							}),
 						);
-						const isFirstTurn = get().chat.roomRunIds.length === 1;
+						const isFirstTurn =
+							get().assistant.roomRunIds.length === 1;
 
 						// The signal active when this run attached — the outer
 						// abortController is re-armed on room switches, so the
@@ -939,7 +953,7 @@ export const createWorkbenchChatSlice = (
 							pushNotice(
 								buildRunFailureMessage(
 									finalSnapshot,
-									get().chat.maxTurns,
+									get().assistant.maxTurns,
 								),
 								"error",
 							);
@@ -951,7 +965,7 @@ export const createWorkbenchChatSlice = (
 							// The stream ended without the run pausing or
 							// finishing — the poll transport gave up.
 							pushNotice(
-								"Lost connection to the agent run stream. The run may still be executing — resume this conversation to reconnect.",
+								"Lost connection to the assistant run stream. The run may still be executing — resume this conversation to reconnect.",
 								"error",
 							);
 						}
@@ -971,14 +985,16 @@ export const createWorkbenchChatSlice = (
 								)
 									.then(() => {
 										set((state) => ({
-											chat: {
-												...state.chat,
+											assistant: {
+												...state.assistant,
 												roomName:
-													state.chat.roomId === roomId
+													state.assistant.roomId ===
+													roomId
 														? autoName
-														: state.chat.roomName,
+														: state.assistant
+																.roomName,
 												conversations:
-													state.chat.conversations.map(
+													state.assistant.conversations.map(
 														(room) =>
 															room.roomId ===
 															roomId
@@ -1001,18 +1017,18 @@ export const createWorkbenchChatSlice = (
 							}
 						}
 
-						void get().chat.refreshUsage();
+						void get().assistant.refreshUsage();
 						return true;
 					} catch (error) {
 						pushNotice(toErrorMessage(error), "error");
 						return false;
 					} finally {
-						setChat({ isSending: false });
+						setAssistant({ isSending: false });
 					}
 				},
 
 				decideAction: async (runId, actionId, decision) => {
-					const insightId = get().chat.insightId;
+					const insightId = get().assistant.insightId;
 					if (!insightId) return;
 
 					await decideAgentRunAction(
@@ -1027,12 +1043,12 @@ export const createWorkbenchChatSlice = (
 					if (watcher) {
 						watcher.subscription.pokeNow();
 					} else {
-						await get().chat.reconcileRun(runId);
+						await get().assistant.reconcileRun(runId);
 					}
 				},
 
 				respondUserInput: async (runId, actionId, answers) => {
-					const insightId = get().chat.insightId;
+					const insightId = get().assistant.insightId;
 					if (!insightId) return;
 
 					await decideAgentRunAction(
@@ -1043,7 +1059,7 @@ export const createWorkbenchChatSlice = (
 					if (watcher) {
 						watcher.subscription.pokeNow();
 					} else {
-						await get().chat.reconcileRun(runId);
+						await get().assistant.reconcileRun(runId);
 					}
 				},
 
@@ -1068,9 +1084,9 @@ export const createWorkbenchChatSlice = (
 						// active run again (root runs only) and that a stream
 						// subscription is attached; attachWatcher dedups onto
 						// any existing one.
-						const run = get().chat.runs[runId];
+						const run = get().assistant.runs[runId];
 						if (run && !run.parentRunId) {
-							setChat({ activeRunId: runId });
+							setAssistant({ activeRunId: runId });
 						}
 						void attachWatcher(runId, run?.childRunIds).catch(
 							(error) => {
@@ -1089,11 +1105,11 @@ export const createWorkbenchChatSlice = (
 				},
 
 				newRoom: async () => {
-					const insightId = get().chat.insightId;
+					const insightId = get().assistant.insightId;
 					if (!insightId) return;
 
 					resetRuntime();
-					setChat({
+					setAssistant({
 						...createEmptyRunStore(),
 						roomId: null,
 						roomName: null,
@@ -1104,43 +1120,43 @@ export const createWorkbenchChatSlice = (
 
 					try {
 						const roomId = await createWorkbenchRoom(insightId);
-						setChat({ roomId });
+						setAssistant({ roomId });
 					} catch (error) {
 						pushNotice(toErrorMessage(error), "error");
 					}
 				},
 
 				loadConversations: async () => {
-					const insightId = get().chat.insightId;
+					const insightId = get().assistant.insightId;
 					if (!insightId) return;
 
-					setChat({ isLoadingConversations: true });
+					setAssistant({ isLoadingConversations: true });
 					try {
 						const conversations = await getUserConversationRooms(
 							insightId,
 							workbenchId,
 						);
-						setChat({ conversations });
+						setAssistant({ conversations });
 					} catch (error) {
 						console.warn(
 							"Failed to load conversation history:",
 							error,
 						);
 					} finally {
-						setChat({ isLoadingConversations: false });
+						setAssistant({ isLoadingConversations: false });
 					}
 				},
 
 				resumeRoom: async (roomId) => {
-					const insightId = get().chat.insightId;
-					if (!insightId || get().chat.roomId === roomId) return;
+					const insightId = get().assistant.insightId;
+					if (!insightId || get().assistant.roomId === roomId) return;
 
 					resetRuntime();
 					const roomName =
-						get().chat.conversations.find(
+						get().assistant.conversations.find(
 							(room) => room.roomId === roomId,
 						)?.roomName ?? null;
-					setChat({
+					setAssistant({
 						...createEmptyRunStore(),
 						roomId,
 						roomName,
@@ -1163,13 +1179,14 @@ export const createWorkbenchChatSlice = (
 								: "";
 						if (
 							persistedModelId &&
-							persistedModelId !== get().chat.model?.engine_id
+							persistedModelId !==
+								get().assistant.model?.engine_id
 						) {
-							const model = await resolveWorkbenchChatModel(
+							const model = await resolveWorkbenchAssistantModel(
 								insightId,
 								persistedModelId,
 							).catch(() => null);
-							if (model) setChat({ model });
+							if (model) setAssistant({ model });
 						}
 
 						const messages = await getPlaygroundMessages(
@@ -1267,14 +1284,14 @@ export const createWorkbenchChatSlice = (
 							});
 						}
 
-						void get().chat.refreshUsage();
+						void get().assistant.refreshUsage();
 					} catch (error) {
 						pushNotice(toErrorMessage(error), "error");
 					}
 				},
 
 				renameRoom: async (roomId, name) => {
-					const insightId = get().chat.insightId;
+					const insightId = get().assistant.insightId;
 					const trimmed = name.trim();
 					if (!insightId || !trimmed) {
 						throw new Error("Room name is required");
@@ -1282,13 +1299,13 @@ export const createWorkbenchChatSlice = (
 
 					await renameRoomPixel(insightId, roomId, trimmed);
 					set((state) => ({
-						chat: {
-							...state.chat,
+						assistant: {
+							...state.assistant,
 							roomName:
-								state.chat.roomId === roomId
+								state.assistant.roomId === roomId
 									? trimmed
-									: state.chat.roomName,
-							conversations: state.chat.conversations.map(
+									: state.assistant.roomName,
+							conversations: state.assistant.conversations.map(
 								(room) =>
 									room.roomId === roomId
 										? { ...room, roomName: trimmed }
@@ -1298,21 +1315,21 @@ export const createWorkbenchChatSlice = (
 					}));
 				},
 
-				setModel: (model) => setChat({ model }),
+				setModel: (model) => setAssistant({ model }),
 				setMaxTurns: (maxTurns) =>
-					setChat({
+					setAssistant({
 						maxTurns:
 							Number.isFinite(maxTurns) && maxTurns > 0
 								? Math.floor(maxTurns)
 								: DEFAULT_MAX_TURNS,
 					}),
 				setPermissionMode: (permissionMode) =>
-					setChat({ permissionMode }),
-				setEffort: (effort) => setChat({ effort }),
-				setThinking: (thinking) => setChat({ thinking }),
+					setAssistant({ permissionMode }),
+				setEffort: (effort) => setAssistant({ effort }),
+				setThinking: (thinking) => setAssistant({ thinking }),
 
 				stop: async () => {
-					const { insightId, activeRunId } = get().chat;
+					const { insightId, activeRunId } = get().assistant;
 					if (!insightId || !activeRunId) return;
 
 					try {
@@ -1326,25 +1343,25 @@ export const createWorkbenchChatSlice = (
 				},
 
 				refreshUsage: async () => {
-					const { insightId, roomId } = get().chat;
+					const { insightId, roomId } = get().assistant;
 					if (!insightId || !roomId) return;
 
-					setChat({ isLoadingUsage: true });
+					setAssistant({ isLoadingUsage: true });
 					try {
 						const messages = await getPlaygroundMessages(
 							insightId,
 							roomId,
 						);
-						setChat({ usage: calculateRoomUsage(messages) });
+						setAssistant({ usage: calculateRoomUsage(messages) });
 					} catch (error) {
 						console.warn("Failed to refresh room usage:", error);
 					} finally {
-						setChat({ isLoadingUsage: false });
+						setAssistant({ isLoadingUsage: false });
 					}
 				},
 
 				compact: async () => {
-					const { insightId, roomId } = get().chat;
+					const { insightId, roomId } = get().assistant;
 					if (!insightId || !roomId) return;
 
 					try {
@@ -1381,7 +1398,7 @@ export const createWorkbenchChatSlice = (
 						} else {
 							pushNotice("Room context compacted.");
 						}
-						void get().chat.refreshUsage();
+						void get().assistant.refreshUsage();
 					} catch (error) {
 						pushNotice(toErrorMessage(error), "error");
 					}
@@ -1389,9 +1406,9 @@ export const createWorkbenchChatSlice = (
 
 				dismissNotice: (id) => {
 					set((state) => ({
-						chat: {
-							...state.chat,
-							notices: state.chat.notices.filter(
+						assistant: {
+							...state.assistant,
+							notices: state.assistant.notices.filter(
 								(notice) => notice.id !== id,
 							),
 						},
