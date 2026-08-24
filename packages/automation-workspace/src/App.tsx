@@ -34,6 +34,8 @@ export default function App() {
 	const params = useQueryParams();
 	const rawMode = params.get("mode");
 	const parentOrigin = params.get("parentOrigin") || window.location.origin;
+	const rawReadOnly = params.get("readOnly");
+	const readOnly = rawReadOnly === "1" || rawReadOnly === "true";
 	const mcpMode: "edit" | "create" | null =
 		rawMode === "edit" || rawMode === "create" ? rawMode : null;
 	const traceMode = rawMode === "trace";
@@ -249,13 +251,38 @@ export default function App() {
 			);
 		}
 		if (inspectorMode) {
+			const snapshot = inspectorSnapshot;
+			if (readOnly) {
+				const step = snapshot?.editingStep;
+				if (!step) {
+					return (
+						<div className="flex h-full items-center justify-center px-6 text-center text-muted-foreground text-sm">
+							Select a step on the canvas to inspect it.
+						</div>
+					);
+				}
+				return (
+					<div className="h-full overflow-y-auto p-4">
+						<p className="font-semibold text-sm">{step.label}</p>
+						<p className="mt-1 text-muted-foreground text-xs">
+							{step.workflowType ?? step.type}
+						</p>
+						<pre className="mt-4 overflow-auto whitespace-pre-wrap rounded-md border bg-muted/30 p-3 font-mono text-xs">
+							{JSON.stringify(
+								step.workflowConfig ?? step.config ?? {},
+								null,
+								2,
+							)}
+						</pre>
+					</div>
+				);
+			}
 			const sendInspectorAction = (action: AutomationInspectorAction) => {
 				window.parent.postMessage(
 					{ type: "SEMOSS_AUTOMATION_INSPECTOR_ACTION", action },
 					parentOrigin,
 				);
 			};
-			const snapshot = inspectorSnapshot;
 			return (
 				<InspectorTab
 					appId={appId}
@@ -332,6 +359,7 @@ export default function App() {
 		return (
 			<AutomationCanvas
 				appId={appId}
+				readOnly={readOnly}
 				mcpMode={mcpMode}
 				mcpContext={toolContext ?? undefined}
 			/>

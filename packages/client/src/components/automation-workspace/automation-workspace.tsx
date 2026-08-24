@@ -155,9 +155,10 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 /** Edit-mode workspace for AUTOMATION apps with a persistent canvas editor and dockable supporting panels. */
 export const AutomationWorkspace = observer(() => {
 	const { workspace } = useWorkspace();
-	const { catalog, project } = useProject();
+	const { catalog, permission, project } = useProject();
 	const [shareOpen, setShareOpen] = useState(false);
 	const appId = workspace.appId || project.project_id;
+	const readOnly = permission !== "OWNER" && permission !== "EDIT";
 	const [showEditorTabs, setShowEditorTabs] = useState(false);
 	const automationFrameRef = useRef<HTMLIFrameElement>(null);
 	const traceFrameRef = useRef<HTMLIFrameElement>(null);
@@ -208,14 +209,17 @@ export const AutomationWorkspace = observer(() => {
 	}, [automationDirty]);
 
 	const automationMcp = useMemo<MCPConfig[]>(
-		() => [
-			{
-				id: appId,
-				name: "Automation Project Tools",
-				type: "PROJECT",
-			},
-		],
-		[appId],
+		() =>
+			readOnly
+				? []
+				: [
+						{
+							id: appId,
+							name: "Automation Project Tools",
+							type: "PROJECT",
+						},
+					],
+		[appId, readOnly],
 	);
 
 	const notifyAutomationChanged = useCallback(() => {
@@ -332,6 +336,7 @@ export const AutomationWorkspace = observer(() => {
 	}, [automationWorkspaceOrigin, inspectorSnapshot]);
 
 	useEffect(() => {
+		if (readOnly) return;
 		const model = workspace.model;
 		if (!model || model.getNodeById("automation-inspector")) return;
 		const layout = model.toJson();
@@ -351,7 +356,7 @@ export const AutomationWorkspace = observer(() => {
 		leftBorder.selected = 0;
 		workspace.load({ version: "", layout });
 		workspace.saveToCache();
-	}, [workspace.load, workspace.model, workspace.saveToCache]);
+	}, [readOnly, workspace.load, workspace.model, workspace.saveToCache]);
 
 	useEffect(() => {
 		traceFrameRef.current?.contentWindow?.postMessage(
@@ -362,6 +367,11 @@ export const AutomationWorkspace = observer(() => {
 
 	const runAutomationMutation = useCallback<WorkbenchChatToolHandler>(
 		async (_parameters, context) => {
+			if (readOnly) {
+				throw new Error(
+					"You have read-only access to this automation.",
+				);
+			}
 			if (automationDirty) {
 				throw new Error(
 					"Save the unsaved editor changes before using chat to modify this automation.",
@@ -375,10 +385,11 @@ export const AutomationWorkspace = observer(() => {
 			notifyAutomationChanged();
 			return output;
 		},
-		[automationDirty, notifyAutomationChanged],
+		[automationDirty, notifyAutomationChanged, readOnly],
 	);
 
 	useEffect(() => {
+		if (readOnly) return;
 		const model = workspace.model;
 		const legacySettingsTab = model?.getNodeById("settings-panel");
 
@@ -389,9 +400,10 @@ export const AutomationWorkspace = observer(() => {
 					FlexLayout.Actions.deleteTab(legacySettingsTab.getId()),
 				);
 		}
-	}, [workspace.model]);
+	}, [readOnly, workspace.model]);
 
 	useEffect(() => {
+		if (readOnly) return;
 		const traceTab = workspace.model?.getNodeById("automation-trace");
 		if (
 			traceTab instanceof FlexLayout.TabNode &&
@@ -406,9 +418,10 @@ export const AutomationWorkspace = observer(() => {
 					),
 				);
 		}
-	}, [workspace.model]);
+	}, [readOnly, workspace.model]);
 
 	useEffect(() => {
+		if (readOnly) return;
 		const model = workspace.model;
 		if (
 			!model ||
@@ -475,7 +488,7 @@ export const AutomationWorkspace = observer(() => {
 		}
 		workspace.load({ version: "", layout });
 		workspace.saveToCache();
-	}, [workspace.load, workspace.model, workspace.saveToCache]);
+	}, [readOnly, workspace.load, workspace.model, workspace.saveToCache]);
 
 	useEffect(() => {
 		const model = workspace.model;
@@ -495,6 +508,7 @@ export const AutomationWorkspace = observer(() => {
 	}, [workspace.model]);
 
 	useEffect(() => {
+		if (readOnly) return;
 		const editorTab = workspace.model?.getNodeById("automation-editor");
 		const editorTabset = editorTab?.getParent();
 		if (editorTabset instanceof FlexLayout.TabSetNode) {
@@ -504,7 +518,7 @@ export const AutomationWorkspace = observer(() => {
 				}),
 			);
 		}
-	}, [showEditorTabs, workspace.model]);
+	}, [readOnly, showEditorTabs, workspace.model]);
 
 	const factory: React.ComponentProps<typeof WorkspaceManager>["factory"] = (
 		node,
@@ -519,16 +533,23 @@ export const AutomationWorkspace = observer(() => {
 					ref={automationFrameRef}
 					className="h-full w-full border-none"
 					title="Automation Workspace"
-					src={`${AUTOMATION_WORKSPACE_URL}?app=${encodeURIComponent(appId)}&mode=edit&parentOrigin=${encodeURIComponent(window.location.origin)}`}
+					src={`${AUTOMATION_WORKSPACE_URL}?app=${encodeURIComponent(appId)}&mode=edit&readOnly=${readOnly ? "1" : "0"}&parentOrigin=${encodeURIComponent(window.location.origin)}`}
 					sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
 				/>
 			);
 		}
 
 		if (component === "automation-chat") {
+			if (readOnly) {
+				return (
+					<div className="flex h-full items-center justify-center px-6 text-center text-muted-foreground text-sm">
+						Automation chat is unavailable with read-only access.
+					</div>
+				);
+			}
 			return (
 				<WorkbenchChatPanel
-					systemPrompt={`You create and modify the ${project.project_display_name || project.project_name} automation. Use the Automation Project Tools to make changes. AddAutomationStep requires nodeType, config, label, and outputVar. Prefer supported engine-backed nodes: database.* queries a selected database; model.* calls a selected AI model; storage.* manages files in selected storage; vector.* searches or manages selected documents; function.execute invokes a selected function engine; app.pixel runs Pixel in a selected app; agent.run invokes a selected WORKSPACE agent; control.wait pauses. Every engine-backed node requires a real selected engineId--never invent one or create an engine node without it. Before adding or updating app.pixel, call MyProjects with projectType=["CODE","BLOCKS"], use the returned project_id exactly as appId, call GetProjectAvailableReactors, then call GetProjectReactorSignature for the exact case-sensitive reactor. Use its returned template and supply every required parameter; ask the user when a required value or valid upstream placeholder is unavailable. Keep appId separate from pixel and never put APP or LoadApp inside the Pixel expression. Before adding or updating agent.run, call MyProjects with projectType=["WORKSPACE"], choose an agent the user can access, and use its returned project_id exactly as workspaceId; also select its MODEL engineId with MyEngines. For app-building requests, use the accessible App Building Agent returned by MyProjects. Never invent an app, reactor, agent, or engine ID; never import an agent client or emulate agent.run in Python. Use developer.python only when no supported engine action can perform a public external integration, such as calling the GitHub REST API. Its config must provide source defining run(scope); do not use it for database, model, storage, vector, function, app, or agent work. Use output placeholders such as \${prior_output} in downstream configuration. Use UpdateAutomationStep to change a generated node. For UpdateAutomationCustomStep, first call GetAutomation and pass its exact sourceHashes[nodeId] value as expectedSourceHash. If any requested mutation fails, say the automation is only partially updated and identify the unresolved change. Never embed credentials, edit project files directly, or claim a workflow change succeeded before its tool result confirms it.`}
+					systemPrompt={`You create and modify the ${project.project_display_name || project.project_name} automation. Use the Automation Project Tools to make changes. AddAutomationStep requires nodeType, config, label, and outputVar. Prefer supported engine-backed nodes: database.* queries a selected database; model.* calls a selected AI model; storage.* manages files in selected storage; vector.* searches or manages selected documents; function.execute invokes a selected function engine; app.pixel runs Pixel in a selected app; agent.run invokes a selected WORKSPACE agent; control.wait pauses. Every engine-backed node requires a real selected engineId--never invent one or create an engine node without it. Before adding or updating app.pixel, call MyProjects with projectType=["CODE","BLOCKS"], use the returned project_id exactly as appId, call GetProjectAvailableReactors, then call GetProjectReactorSignature for the exact case-sensitive reactor. Use its returned template and supply every required parameter; ask the user when a required concrete value is unavailable. Keep appId separate from pixel and never put APP or LoadApp inside the Pixel expression. Before adding or updating agent.run, call MyProjects with projectType=["WORKSPACE"], choose an agent the user can access, and use its returned project_id exactly as workspaceId; also select its MODEL engineId with MyEngines. For app-building requests, use the accessible App Building Agent returned by MyProjects. Never invent an app, reactor, agent, or engine ID; never import an agent client or emulate agent.run in Python. Use developer.python only when no supported engine action can perform a public external integration, such as calling the GitHub REST API, or when a dynamic Pixel expression requires runtime values. Its config must provide source defining run(scope). scope is the current run's read-only inputs, globals, metadata, and prior outputs keyed by outputVar; custom Python reads it directly, such as scope["prior_output"]. Return a value to pass data forward; \${...} is not resolved in custom source. Do not use developer.python for database, model, storage, vector, function, agent, or concrete app.pixel work. Use output placeholders such as \${prior_output} only in supported downstream generated-node configuration. Use UpdateAutomationStep to change a generated node. For UpdateAutomationCustomStep, first call GetAutomation and pass its exact sourceHashes[nodeId] value as expectedSourceHash. If any requested mutation fails, say the automation is only partially updated and identify the unresolved change. Never embed credentials, edit project files directly, or claim a workflow change succeeded before its tool result confirms it.`}
 					mcp={automationMcp}
 					toolHandlers={{
 						AddAutomationStep: runAutomationMutation,
@@ -570,7 +591,7 @@ export const AutomationWorkspace = observer(() => {
 					ref={inspectorFrameRef}
 					className="h-full w-full border-none"
 					title="Automation inspector"
-					src={`${AUTOMATION_WORKSPACE_URL}?app=${encodeURIComponent(appId)}&mode=inspector&parentOrigin=${encodeURIComponent(window.location.origin)}`}
+					src={`${AUTOMATION_WORKSPACE_URL}?app=${encodeURIComponent(appId)}&mode=inspector&readOnly=${readOnly ? "1" : "0"}&parentOrigin=${encodeURIComponent(window.location.origin)}`}
 					sandbox="allow-scripts allow-same-origin"
 				/>
 			);
@@ -582,16 +603,23 @@ export const AutomationWorkspace = observer(() => {
 					node={node}
 					layout={layout}
 					app={workspace.appId}
+					readOnly={readOnly}
 				/>
 			);
 		}
 
 		if (component === "app-file-editor") {
-			return <AppFileEditor node={node} app={workspace.appId} />;
+			return (
+				<AppFileEditor
+					node={node}
+					app={workspace.appId}
+					readOnly={readOnly}
+				/>
+			);
 		}
 
 		if (component === "mcpJsonEditor") {
-			return <MCPJsonEditor dataMap={config.data} />;
+			return <MCPJsonEditor dataMap={config.data} readOnly={readOnly} />;
 		}
 
 		if (component === "settings-panel") {
@@ -646,7 +674,9 @@ export const AutomationWorkspace = observer(() => {
 							<ChevronRightIcon />
 						</BreadcrumbSeparator>
 						<BreadcrumbItem>
-							<BreadcrumbPage>Edit</BreadcrumbPage>
+							<BreadcrumbPage>
+								{readOnly ? "View" : "Edit"}
+							</BreadcrumbPage>
 						</BreadcrumbItem>
 					</BreadcrumbList>
 				</Breadcrumb>
@@ -657,6 +687,7 @@ export const AutomationWorkspace = observer(() => {
 						<Button
 							variant="ghost"
 							size="icon"
+							className={readOnly ? "hidden" : undefined}
 							onClick={() => setShareOpen(true)}
 						>
 							<Share2 className="size-4" />
@@ -676,7 +707,11 @@ export const AutomationWorkspace = observer(() => {
 					</DialogContent>
 				</Dialog>
 			</NavbarRight>
-			<WorkspaceManager options={DEFAULT_OPTIONS} factory={factory} />
+			<WorkspaceManager
+				options={DEFAULT_OPTIONS}
+				factory={factory}
+				readOnly={readOnly}
+			/>
 		</>
 	);
 });

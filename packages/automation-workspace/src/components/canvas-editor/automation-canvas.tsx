@@ -20,6 +20,7 @@ import {
 	Hand,
 	HelpCircle,
 	Loader2,
+	Lock,
 	MousePointer2,
 	Play,
 	RefreshCw,
@@ -84,6 +85,7 @@ const nodeTypes = {
 
 interface DeletableEdgeData {
 	onDelete: (edgeId: string) => void;
+	readOnly?: boolean;
 }
 
 function DeletableEdge({
@@ -113,7 +115,7 @@ function DeletableEdge({
 			<EdgeLabelRenderer>
 				<button
 					type="button"
-					className="nodrag nopan pointer-events-auto absolute flex size-5 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm hover:border-destructive/50 hover:text-destructive"
+					className={`nodrag nopan pointer-events-auto absolute size-5 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm hover:border-destructive/50 hover:text-destructive ${data?.readOnly ? "hidden" : "flex"}`}
 					style={{
 						transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
 					}}
@@ -139,6 +141,7 @@ const NODE_ARROW_GAP = 40;
 // ---- Types ----
 interface AutomationCanvasProps {
 	appId: string;
+	readOnly?: boolean;
 	mcpMode?: "edit" | "create" | null;
 	mcpContext?: AutomationToolContext;
 }
@@ -348,6 +351,7 @@ function upstreamVariablesFor(
 // ---- Component ----
 export function AutomationCanvas({
 	appId,
+	readOnly = false,
 	mcpMode,
 	mcpContext,
 }: AutomationCanvasProps) {
@@ -549,6 +553,7 @@ export function AutomationCanvas({
 
 	const onConnect = useCallback(
 		(connection: Connection) => {
+			if (readOnly) return;
 			if (
 				!connection.source ||
 				!connection.target ||
@@ -601,7 +606,7 @@ export function AutomationCanvas({
 				];
 			});
 		},
-		[steps],
+		[readOnly, steps],
 	);
 
 	const deleteEdge = useCallback((edgeId: string) => {
@@ -669,7 +674,12 @@ export function AutomationCanvas({
 				const rawDraft = localStorage.getItem(
 					`automation-draft-${appId}`,
 				);
-				if (rawDraft && !mcpMode && workflowRefreshToken === 0) {
+				if (
+					rawDraft &&
+					!readOnly &&
+					!mcpMode &&
+					workflowRefreshToken === 0
+				) {
 					try {
 						const draft = JSON.parse(
 							rawDraft,
@@ -719,7 +729,7 @@ export function AutomationCanvas({
 		return () => {
 			cancelled = true;
 		};
-	}, [appId, layoutNodes, mcpMode, workflowRefreshToken]);
+	}, [appId, layoutNodes, mcpMode, readOnly, workflowRefreshToken]);
 
 	useEffect(() => {
 		if (
@@ -742,7 +752,7 @@ export function AutomationCanvas({
 
 	// Draft persistence
 	useEffect(() => {
-		if (!loadedRef.current) return;
+		if (!loadedRef.current || readOnly) return;
 		if (skipDraftPersistenceRef.current) {
 			skipDraftPersistenceRef.current = false;
 			return;
@@ -759,7 +769,7 @@ export function AutomationCanvas({
 			JSON.stringify(draft),
 		);
 		setIsDirty(true);
-	}, [steps, graphEdges, description, triggerBindings, appId]);
+	}, [steps, graphEdges, description, triggerBindings, appId, readOnly]);
 
 	// ---- Derived values ----
 	const stepOutputPreviews = useMemo(
@@ -792,14 +802,16 @@ export function AutomationCanvas({
 	// ---- Callbacks ----
 	const handleDevModeChange = useCallback(
 		(value: boolean) => {
+			if (readOnly) return;
 			setDevMode(value);
 			localStorage.setItem(`automation-devmode-${appId}`, String(value));
 		},
-		[appId],
+		[appId, readOnly],
 	);
 
 	const addStep = useCallback(
 		(type: AutomationWorkflowNodeType) => {
+			if (readOnly) return;
 			const previousStep =
 				steps.find((step) => step.id === addAfterStepId) ??
 				steps[steps.length - 1];
@@ -831,7 +843,7 @@ export function AutomationCanvas({
 			setAddAfterStepId(null);
 			setEditingStepId(id);
 		},
-		[addAfterStepId, getNodeHeight, steps],
+		[addAfterStepId, getNodeHeight, readOnly, steps],
 	);
 
 	const updateStep = useCallback((updated: AutomationNode) => {
@@ -967,6 +979,7 @@ export function AutomationCanvas({
 			}
 
 			const action = message.action;
+			if (readOnly && action.type !== "close") return;
 			switch (action.type) {
 				case "update-step":
 					updateStep(action.step);
@@ -987,9 +1000,13 @@ export function AutomationCanvas({
 		};
 		window.addEventListener("message", handleMessage);
 		return () => window.removeEventListener("message", handleMessage);
-	}, [deleteStep, handleDevModeChange, updateStep]);
+	}, [deleteStep, handleDevModeChange, readOnly, updateStep]);
 
 	const save = useCallback(async (): Promise<boolean> => {
+		if (readOnly) {
+			toast.error("You have read-only access to this automation.");
+			return false;
+		}
 		const invalidSteps = steps.filter(
 			(step) =>
 				step.workflowType !== "trigger.start" &&
@@ -1053,10 +1070,11 @@ export function AutomationCanvas({
 		} finally {
 			setSaving(false);
 		}
-	}, [appId, description, graphEdges, steps, triggerBindings]);
+	}, [appId, description, graphEdges, readOnly, steps, triggerBindings]);
 
 	// Cmd+S / Ctrl+S
 	useEffect(() => {
+		if (readOnly) return;
 		const handler = (e: KeyboardEvent) => {
 			if ((e.metaKey || e.ctrlKey) && e.key === "s") {
 				e.preventDefault();
@@ -1065,7 +1083,7 @@ export function AutomationCanvas({
 		};
 		document.addEventListener("keydown", handler);
 		return () => document.removeEventListener("keydown", handler);
-	}, [save]);
+	}, [readOnly, save]);
 
 	const dismissRun = useCallback(() => {
 		setLatestRunResults([]);
@@ -1174,6 +1192,10 @@ export function AutomationCanvas({
 	);
 
 	const run = useCallback(async () => {
+		if (readOnly) {
+			toast.error("You have read-only access to this automation.");
+			return;
+		}
 		const invalidSteps = steps.filter(
 			(step) =>
 				step.workflowType !== "trigger.start" &&
@@ -1267,12 +1289,13 @@ export function AutomationCanvas({
 		applyNodeProgress,
 		applyRunData,
 		notifyHistoryChanged,
+		readOnly,
 		save,
 		steps,
 	]);
 
 	const handleDoneReturnToChat = useCallback(async () => {
-		if (saving) return;
+		if (readOnly || saving) return;
 		if (!mcpContext) return;
 		if (isDirty) {
 			const saved = await save();
@@ -1301,7 +1324,17 @@ export function AutomationCanvas({
 			window.location.origin,
 		);
 		setMcpDone(true);
-	}, [saving, mcpContext, isDirty, save, steps, description, appId, mcpMode]);
+	}, [
+		saving,
+		readOnly,
+		mcpContext,
+		isDirty,
+		save,
+		steps,
+		description,
+		appId,
+		mcpMode,
+	]);
 
 	const _takeToValidationStep = useCallback((stepId: string) => {
 		setShowAddMenu(false);
@@ -1348,13 +1381,15 @@ export function AutomationCanvas({
 					data: {
 						label: description.trim() || "Start",
 						devMode,
-						isLast: !graphEdges.some(
-							(edge) => edge.source === step.id,
-						),
-						onEdit: () => {
-							setShowAddMenu(false);
-							setEditingStepId(step.id);
-						},
+						isLast:
+							!readOnly &&
+							!graphEdges.some((edge) => edge.source === step.id),
+						onEdit: readOnly
+							? undefined
+							: () => {
+									setShowAddMenu(false);
+									setEditingStepId(step.id);
+								},
 						onAdd: () => {
 							setEditingStepId(null);
 							setAddAfterStepId(step.id);
@@ -1379,7 +1414,7 @@ export function AutomationCanvas({
 						isIncomplete:
 							validateCanvasWorkflowNode(step).length > 0 &&
 							!stepStatuses[step.id],
-						locked: running,
+						locked: running || readOnly,
 						isLast: !graphEdges.some(
 							(edge) => edge.source === step.id,
 						),
@@ -1411,7 +1446,7 @@ export function AutomationCanvas({
 						color: "#94a3b8",
 					},
 					style: { stroke: "#94a3b8", strokeWidth: 1.5 },
-					data: { onDelete: deleteEdge },
+					data: { onDelete: deleteEdge, readOnly },
 				});
 			}
 		});
@@ -1427,6 +1462,7 @@ export function AutomationCanvas({
 		description,
 		devMode,
 		running,
+		readOnly,
 		graphEdges,
 		stepDisplayOrder,
 		deleteStep,
@@ -1480,6 +1516,7 @@ export function AutomationCanvas({
 	// ---- Persist canvas positions ----
 	const onNodeDragStop = useCallback(
 		(_event: React.MouseEvent, draggedNode: Node) => {
+			if (readOnly) return;
 			setSteps((previousSteps) =>
 				previousSteps.map((step) =>
 					step.id === draggedNode.id
@@ -1489,14 +1526,15 @@ export function AutomationCanvas({
 			);
 			setIsDirty(true);
 		},
-		[],
+		[readOnly],
 	);
 
 	const cleanUpLayout = useCallback(() => {
 		initialViewFittedRef.current = false;
+		if (readOnly) return;
 		setSteps((previous) => layoutNodes(previous, graphEdges));
 		setIsDirty(true);
-	}, [graphEdges, layoutNodes]);
+	}, [graphEdges, layoutNodes, readOnly]);
 
 	if (mcpDone) {
 		return (
@@ -1527,6 +1565,12 @@ export function AutomationCanvas({
 									ref={canvasContainerRef}
 									className="relative h-full"
 								>
+									{readOnly && (
+										<div className="absolute top-4 left-4 z-30 flex items-center gap-1.5 rounded-md border bg-background px-2.5 py-1.5 text-muted-foreground text-xs shadow-sm">
+											<Lock className="size-3.5" />
+											Read-only
+										</div>
+									)}
 									{/* Banners row above the canvas */}
 									{(running ||
 										(latestRunStatus &&
@@ -1567,7 +1611,9 @@ export function AutomationCanvas({
 									)}
 
 									{/* Onboarding tour (fixed popovers) */}
-									<OnboardingTour appId={appId} />
+									{!readOnly && (
+										<OnboardingTour appId={appId} />
+									)}
 
 									{/* React Flow canvas */}
 									{/* Suppress RF selection ring */}
@@ -1578,9 +1624,11 @@ export function AutomationCanvas({
 										nodeTypes={nodeTypes as never}
 										edgeTypes={edgeTypes as never}
 										nodesDraggable={
+											!readOnly &&
 											canvasMode === "interact"
 										}
 										nodesConnectable={
+											!readOnly &&
 											canvasMode === "interact" &&
 											!running
 										}
@@ -1628,7 +1676,9 @@ export function AutomationCanvas({
 										/>
 									</ReactFlow>
 
-									<div className="absolute top-4 right-4 z-30 flex items-center gap-2">
+									<div
+										className={`absolute top-4 right-4 z-30 items-center gap-2 ${readOnly ? "hidden" : "flex"}`}
+									>
 										<div
 											className="relative"
 											data-tour="save"
@@ -1688,7 +1738,7 @@ export function AutomationCanvas({
 											aria-label="Clean up node layout"
 											title="Clean up layout — restore execution order"
 											onClick={cleanUpLayout}
-											className="flex items-center justify-center border-r p-2 text-muted-foreground transition-colors hover:bg-muted"
+											className={`${readOnly ? "hidden" : "flex"} items-center justify-center border-r p-2 text-muted-foreground transition-colors hover:bg-muted`}
 										>
 											<RefreshCw className="h-4 w-4" />
 										</button>
@@ -1728,7 +1778,10 @@ export function AutomationCanvas({
 				</div>
 			</div>
 
-			<Dialog open={showAddMenu} onOpenChange={setShowAddMenu}>
+			<Dialog
+				open={!readOnly && showAddMenu}
+				onOpenChange={setShowAddMenu}
+			>
 				<DialogContent className="flex h-[80vh] max-w-3xl flex-col p-0">
 					<DialogHeader className="sr-only">
 						<DialogTitle>Add workflow node</DialogTitle>
