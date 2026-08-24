@@ -82,8 +82,11 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 	room.sidebar.counter;
 
 	// get the node and do a type check
+	const activeTabset = room.sidebar.model.getActiveTabset();
+	const activeTabsetId = activeTabset?.getId() ?? null;
+
 	let activeNode: FlexLayout.TabNode | null = null;
-	const node = room.sidebar.model.getActiveTabset()?.getSelectedNode();
+	const node = activeTabset?.getSelectedNode();
 	if (node instanceof FlexLayout.TabNode) {
 		activeNode = node;
 	}
@@ -155,6 +158,13 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 										FlexLayout.TabSetNode
 									)
 								) {
+									return;
+								}
+
+								// only the active tabset gets the sidebar-level
+								// controls — otherwise splitting the sidebar
+								// duplicates maximize/close on every tab bar
+								if (tabSetNode.getId() !== activeTabsetId) {
 									return;
 								}
 
