@@ -116,38 +116,11 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 			});
 		};
 
-		// FlexLayout shows an overflow ("N more") menu button whenever tabs
-		// don't all fit, with no prop to disable it. Hide it as it mounts so
-		// the tab strip just scrolls instead.
-		const hideOverflowButton = (el: HTMLElement) => {
-			if (el.classList.contains("flexlayout__tab_button_overflow")) {
-				el.style.display = "none";
-				return;
-			}
-			el.querySelectorAll<HTMLElement>(
-				".flexlayout__tab_button_overflow",
-			).forEach((overflowButton) => {
-				overflowButton.style.display = "none";
-			});
-		};
-
-		// The tab strip's fixed-height tab buttons default to top-aligned
-		// (align-items: stretch has no effect on a fixed cross-size item),
-		// while our toolbar buttons end up centered. Force the row to center
-		// everything so they line up. This node persists for the tabset's
-		// lifetime, so a single pass on mount covers it.
-		container
-			.querySelectorAll<HTMLElement>(".flexlayout__tabset_tabbar_outer")
-			.forEach((el) => {
-				el.style.alignItems = "center";
-			});
-
 		const observer = new MutationObserver((mutations) => {
 			for (const mutation of mutations) {
 				for (const added of Array.from(mutation.addedNodes)) {
 					if (!(added instanceof HTMLElement)) continue;
 					handleRenameTextbox(added);
-					hideOverflowButton(added);
 				}
 			}
 		});
