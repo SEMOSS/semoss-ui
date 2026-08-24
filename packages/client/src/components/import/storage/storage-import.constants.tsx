@@ -7,6 +7,8 @@ import GOOGLE_CLOUD from "@/assets/img/GOOGLE_CLOUD_STORAGE.svg";
 import GOOGLE_DRIVE from "@/assets/img/GOOGLE_DRIVE.png";
 import LOCAL_FILE_SYSTEM from "@/assets/img/LOCAL_FILE_SYSTEM.png";
 import MINIO from "@/assets/img/MINIO.png";
+import MS_SHAREPOINT from "@/assets/img/MS_SHAREPOINT.svg";
+import MS_TEAMS from "@/assets/img/MS_TEAMS.svg";
 import NETWORK_FILE_SYSTEM from "@/assets/img/NETWORK_FILE_SYSTEM.png";
 import ONEDRIVE from "@/assets/img/ONEDRIVE.png";
 import SFTP from "@/assets/img/SFTP.png";
@@ -673,6 +675,247 @@ export const STORAGE_CONNECTIONS = {
 					type: "text",
 					disabled: false,
 					required: true,
+					category: "Settings",
+				},
+			],
+		},
+		{
+			name: "Microsoft SharePoint",
+			disable: false,
+			icon: MS_SHAREPOINT,
+			description:
+				"A SharePoint document library, reached through Microsoft Graph. The catalog connects as an application rather than as the signed in user, so every read and write is carried out by the configured service identity.",
+			fields: [
+				{
+					key: "STORAGE_TYPE",
+					label: "Storage Type",
+					value: "SHAREPOINT",
+					hidden: true,
+					type: "text",
+					disabled: true,
+					required: true,
+					category: "General",
+				},
+				{
+					key: "NAME",
+					label: "Catalog Name",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+					category: "General",
+				},
+				{
+					key: "SP_TENANT",
+					label: "Tenant",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					helperText:
+						"Azure AD tenant id or domain that owns the app registration.",
+					category: "Credentials",
+				},
+				{
+					key: "SP_CLIENT_ID",
+					label: "Client ID",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					category: "Credentials",
+				},
+				{
+					key: "SP_CLIENT_SECRET",
+					label: "Client Secret",
+					value: "",
+					type: "password",
+					disabled: false,
+					required: true,
+					helperText:
+						"The app registration needs the Sites.ReadWrite.All application permission with admin consent granted, or Sites.Read.All for a read only catalog.",
+					category: "Credentials",
+				},
+				{
+					key: "SP_SITE",
+					label: "Site",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					helperText:
+						"Site url, for example https://contoso.sharepoint.com/sites/Marketing. A Graph site id or a bare hostname is also accepted.",
+					category: "Settings",
+				},
+				{
+					key: "SP_LIBRARY",
+					label: "Document Library",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Display name of the library, for example Documents. Leave empty to use the site's default library.",
+					category: "Settings",
+				},
+				{
+					key: "SP_FOLDER",
+					label: "Folder",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Optional folder within the library to use as the root of this catalog. Leave empty to use the whole library.",
+					category: "Settings",
+				},
+				{
+					key: "MS_CONFLICT_BEHAVIOR",
+					label: "On Name Conflict",
+					value: "replace",
+					type: "select",
+					disabled: false,
+					required: false,
+					options: [
+						{
+							value: "replace",
+							display: "Replace the existing file",
+						},
+						{
+							value: "rename",
+							display: "Keep both, rename the upload",
+						},
+						{ value: "fail", display: "Fail the upload" },
+					],
+					helperText:
+						"What to do when an upload targets a name that already exists.",
+					category: "Settings",
+				},
+			],
+		},
+		{
+			name: "Microsoft Teams",
+			disable: false,
+			icon: MS_TEAMS,
+			description:
+				"The file store behind a Microsoft Teams channel. Channel files live in the team's SharePoint document library, and the catalog is rooted at the channel folder so every path is relative to the channel.",
+			fields: [
+				{
+					key: "STORAGE_TYPE",
+					label: "Storage Type",
+					value: "MICROSOFT_TEAMS",
+					hidden: true,
+					type: "text",
+					disabled: true,
+					required: true,
+					category: "General",
+				},
+				{
+					key: "NAME",
+					label: "Catalog Name",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+					category: "General",
+				},
+				{
+					key: "MS_TEAMS_TENANT",
+					label: "Tenant",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					helperText:
+						"Azure AD tenant id or domain that owns the app registration.",
+					category: "Credentials",
+				},
+				{
+					key: "MS_TEAMS_CLIENT_ID",
+					label: "Client ID",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					category: "Credentials",
+				},
+				{
+					key: "MS_TEAMS_CLIENT_SECRET",
+					label: "Client Secret",
+					value: "",
+					type: "password",
+					disabled: false,
+					required: true,
+					helperText:
+						"The app registration needs the Team.ReadBasic.All, Channel.ReadBasic.All and Files.ReadWrite.All application permissions with admin consent granted.",
+					category: "Credentials",
+				},
+				{
+					key: "MS_TEAMS_TEAM",
+					label: "Team",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					helperText:
+						"Team display name, or the team id if more than one team shares the name.",
+					category: "Settings",
+				},
+				{
+					key: "MS_TEAMS_CHANNEL",
+					label: "Channel",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Channel display name, or the channel id. Leave empty to use the team's whole document library, which shows every channel as a folder.",
+					category: "Settings",
+				},
+				{
+					key: "MS_CONFLICT_BEHAVIOR",
+					label: "On Name Conflict",
+					value: "replace",
+					type: "select",
+					disabled: false,
+					required: false,
+					options: [
+						{
+							value: "replace",
+							display: "Replace the existing file",
+						},
+						{
+							value: "rename",
+							display: "Keep both, rename the upload",
+						},
+						{ value: "fail", display: "Fail the upload" },
+					],
+					helperText:
+						"What to do when an upload targets a name that already exists.",
 					category: "Settings",
 				},
 			],
