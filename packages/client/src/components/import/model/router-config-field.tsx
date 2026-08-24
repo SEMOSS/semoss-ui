@@ -7,6 +7,10 @@ import {
 	FieldDescription,
 	FieldLabel,
 	Input,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
+	InputGroupText,
 	Select,
 	SelectContent,
 	SelectItem,
@@ -53,7 +57,7 @@ const ROUTING_MODES: Array<{
 		value: "weighted",
 		label: "Weighted Round-Robin",
 		description:
-			"Requests are split across routes in exact proportion to their weights.",
+			"Each route serves a percentage of requests. Percentages must add up to 100.",
 	},
 ];
 
@@ -134,14 +138,18 @@ export const validateRouterConfig = (raw: unknown): true | string => {
 	) {
 		return "LLM Classifier mode needs a 'when to use' description on every route.";
 	}
-	if (
-		value.mode === "weighted" &&
-		!value.routes.some((route) => route.weight > 0)
-	) {
-		return "Weighted mode needs at least one route with a weight above zero.";
+	if (value.mode === "weighted") {
+		const total = sumRouteWeights(value.routes);
+		if (total !== 100) {
+			return `Weighted mode splits traffic by percentage - the route percentages must add up to 100 (currently ${total}).`;
+		}
 	}
 	return true;
 };
+
+/** Total of the positive route weights - the backend ignores weights <= 0. */
+export const sumRouteWeights = (routes: RouterRouteFormValue[]): number =>
+	routes.reduce((total, route) => total + Math.max(0, route.weight), 0);
 
 /** Parse stored router.json content (string or object) into an editor value. */
 export const routerConfigFromJson = (raw: unknown): RouterConfigFormValue => {
@@ -301,6 +309,23 @@ export const RouterConfigField = ({
 	const update = (partial: Partial<RouterConfigFormValue>) =>
 		onChange({ ...config, ...partial });
 
+	const weightTotal = sumRouteWeights(config.routes);
+
+	// Weights are percentages that must total 100, so entering weighted mode
+	// with no weights set seeds the first route with all of the traffic.
+	const updateMode = (mode: RouterConfigFormValue["mode"]) => {
+		if (mode === "weighted" && weightTotal === 0) {
+			update({
+				mode,
+				routes: config.routes.map((route, index) =>
+					index === 0 ? { ...route, weight: 100 } : route,
+				),
+			});
+			return;
+		}
+		update({ mode });
+	};
+
 	const updateRoute = (
 		routeId: string,
 		partial: Partial<RouterRouteFormValue>,
@@ -352,7 +377,7 @@ export const RouterConfigField = ({
 				<Select
 					value={config.mode}
 					onValueChange={(mode) =>
-						update({ mode: mode as RouterConfigFormValue["mode"] })
+						updateMode(mode as RouterConfigFormValue["mode"])
 					}
 					disabled={disabled}
 				>
@@ -465,26 +490,31 @@ export const RouterConfigField = ({
 								/>
 							)}
 							{config.mode === "weighted" && (
-								<Input
-									id={`${baseId}-route-${index}-weight`}
-									inputMode="numeric"
-									placeholder="Weight (e.g. 70)"
-									value={
-										route.weight > 0
-											? String(route.weight)
-											: ""
-									}
-									onChange={(event) =>
-										updateRoute(route.id, {
-											weight:
-												Number.parseInt(
-													event.target.value,
-													10,
-												) || 0,
-										})
-									}
-									disabled={disabled}
-								/>
+								<InputGroup>
+									<InputGroupInput
+										id={`${baseId}-route-${index}-weight`}
+										inputMode="numeric"
+										placeholder="Percent of traffic (e.g. 70)"
+										value={
+											route.weight > 0
+												? String(route.weight)
+												: ""
+										}
+										onChange={(event) =>
+											updateRoute(route.id, {
+												weight:
+													Number.parseInt(
+														event.target.value,
+														10,
+													) || 0,
+											})
+										}
+										disabled={disabled}
+									/>
+									<InputGroupAddon align="inline-end">
+										<InputGroupText>%</InputGroupText>
+									</InputGroupAddon>
+								</InputGroup>
 							)}
 						</div>
 					))}
@@ -504,6 +534,17 @@ export const RouterConfigField = ({
 					<Plus className="h-4 w-4" />
 					Add Route
 				</Button>
+				{config.mode === "weighted" && (
+					<FieldDescription
+						className={
+							weightTotal === 100 ? undefined : "text-destructive"
+						}
+					>
+						Each route serves its percentage of traffic. Total:{" "}
+						{weightTotal}%{" "}
+						{weightTotal === 100 ? "" : "(must be 100%)"}
+					</FieldDescription>
+				)}
 			</Field>
 
 			{config.mode === "llm" && (
