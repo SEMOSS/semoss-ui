@@ -162,20 +162,20 @@ const EMPTY_PLAYGROUND: ThemeMap["playground"] = {
 	gracefulErrors: [],
 	featureFlags: {
 		enableAgent: true,
-		enableModelSelect: true,
-		enableAgentHarness: false,
-		enableSuggestions: false,
-		enableRewrite: true,
-		enableDarkMode: true,
-		enablePromptOptimizer: true,
-		hideToolsInIframe: false,
-		enableKnowledgeMCP: true,
-		allowEmbeddingOptions: true,
 		showKnowledgeMenu: true,
 		showToolboxMenu: true,
+		enableModelSelect: true,
+		enableSuggestions: false,
+		enablePromptOptimizer: true,
+		enableAgentHarness: false,
 		showActivityLog: true,
-		showPlatformLinks: true,
+		enableRewrite: true,
 		enableTableExport: false,
+		enableKnowledgeMCP: true,
+		allowEmbeddingOptions: true,
+		showPlatformLinks: true,
+		enableDarkMode: true,
+		hideToolsInIframe: false,
 	},
 };
 
@@ -188,16 +188,38 @@ const FEATURE_FLAGS: {
 	label: string;
 	description: string;
 }[] = [
+	// Sidebar navigation items
 	{
 		key: "enableAgent",
 		label: "Enable Agent",
 		description: "Shows the Agent item in the sidebar navigation.",
 	},
 	{
+		key: "showKnowledgeMenu",
+		label: "Show Knowledge Menu",
+		description: "Shows the Knowledge item in the sidebar navigation.",
+	},
+	{
+		key: "showToolboxMenu",
+		label: "Show Toolbox Menu",
+		description: "Shows the Toolbox item in the sidebar navigation.",
+	},
+	// Room and chat input behavior
+	{
 		key: "enableModelSelect",
 		label: "Enable Model Select",
 		description:
 			"Shows a model picker in the room input and settings, letting users choose which model to chat with. When off, the theme's default model is always used.",
+	},
+	{
+		key: "enableSuggestions",
+		label: "Enable Suggestions",
+		description: "Shows suggested prompt chips in the room.",
+	},
+	{
+		key: "enablePromptOptimizer",
+		label: "Enable Prompt Optimizer",
+		description: "Shows the prompt optimizer control in the room input.",
 	},
 	{
 		key: "enableAgentHarness",
@@ -206,31 +228,28 @@ const FEATURE_FLAGS: {
 			"Lets a new room be started in agent mode, where messages run server-side via RunAgent instead of the normal chat flow.",
 	},
 	{
-		key: "enableSuggestions",
-		label: "Enable Suggestions",
-		description: "Shows suggested prompt chips in the room.",
+		key: "showActivityLog",
+		label: "Show Activity Log",
+		description: "Shows the activity log panel/toggle in the room.",
 	},
+	// Assistant response actions
 	{
 		key: "enableRewrite",
 		label: "Enable Rewrite",
 		description: "Shows the rewrite action on assistant responses.",
 	},
 	{
-		key: "enableDarkMode",
-		label: "Enable Dark Mode",
-		description: "Shows the dark mode toggle in the user menu.",
+		key: "enableFeedbackText",
+		label: "Enable Feedback Text",
+		description: "Shows the feedback text option on assistant responses.",
 	},
 	{
-		key: "enablePromptOptimizer",
-		label: "Enable Prompt Optimizer",
-		description: "Shows the prompt optimizer control in the room input.",
-	},
-	{
-		key: "hideToolsInIframe",
-		label: "Hide Tools In Iframe",
+		key: "enableTableExport",
+		label: "Enable Table Export",
 		description:
-			"When the app is embedded in an iframe, hides the New Chat nav item, the tools (+) menu, and slash commands in the room input.",
+			"Shows the export button on tables rendered in assistant responses.",
 	},
+	// Knowledge and MCP
 	{
 		key: "enableKnowledgeMCP",
 		label: "Enable Knowledge MCP",
@@ -244,36 +263,22 @@ const FEATURE_FLAGS: {
 			"Exposes embedding model options in the new knowledge form.",
 	},
 	{
-		key: "showKnowledgeMenu",
-		label: "Show Knowledge Menu",
-		description: "Shows the Knowledge item in the sidebar navigation.",
-	},
-	{
-		key: "showToolboxMenu",
-		label: "Show Toolbox Menu",
-		description: "Shows the Toolbox item in the sidebar navigation.",
-	},
-	{
-		key: "showActivityLog",
-		label: "Show Activity Log",
-		description: "Shows the activity log panel/toggle in the room.",
-	},
-	{
 		key: "showPlatformLinks",
 		label: "Show Platform Links",
 		description:
 			"Shows links to the base platform alongside MCPs in the workspace, MCP list, and message input.",
 	},
+	// Appearance and embedding
 	{
-		key: "enableFeedbackText",
-		label: "Enable Feedback Text",
-		description: "Shows the feedback text option on assistant responses.",
+		key: "enableDarkMode",
+		label: "Enable Dark Mode",
+		description: "Shows the dark mode toggle in the user menu.",
 	},
 	{
-		key: "enableTableExport",
-		label: "Enable Table Export",
+		key: "hideToolsInIframe",
+		label: "Hide Tools In Iframe",
 		description:
-			"Shows the export button on tables rendered in assistant responses.",
+			"When the app is embedded in an iframe, hides the New Chat nav item, the tools (+) menu, and slash commands in the room input.",
 	},
 ];
 
