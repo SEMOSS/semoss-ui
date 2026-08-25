@@ -253,7 +253,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 roomId=["${room.roomId}"],
 command=["<encode>${text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
-${media.length ? `image=${JSON.stringify(media)},` : "image=[],"}
+${media.length ? `media=${JSON.stringify(media)},` : "media=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 paramValues=[${JSON.stringify(
 				room.theme.featureFlags?.enableTemperature &&

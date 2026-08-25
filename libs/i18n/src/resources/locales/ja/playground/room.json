@@ -5,7 +5,27 @@
 		"description": "ルーム設定を更新し、チャットの動作を変更します",
 		"open": "ルーム設定を開く",
 		"close": "ルーム設定を閉じる",
-		"edit": "ルーム設定を編集"
+		"edit": "ルーム設定を編集",
+		"compact": "会話を圧縮",
+		"compactSuccess": "会話を圧縮しました",
+		"compactSkipped": "圧縮する内容がありません — 会話はすでに簡潔です",
+		"compactError": "会話の圧縮に失敗しました",
+		"compacting": "会話を圧縮しています...",
+		"compactedAbove": "会話が圧縮されました",
+		"compactedAboveTooltip": "コンテキストサイズを削減するため、以前のメッセージが要約されました",
+		"compactButton": "圧縮",
+		"compactionOptions": "圧縮オプション",
+		"advancedOptions": "詳細オプション",
+		"strategyLabel": {
+			"SUMMARY": "要約",
+			"TOOL_PRUNE": "ツール整理",
+			"AUTO": "自動"
+		},
+		"strategyTooltip": {
+			"SUMMARY": "古いメッセージをAIが生成した要約に置き換えます。トークンの使用量を減らしながら、会話全体の文脈を保持します。",
+			"TOOL_PRUNE": "会話履歴から冗長なツール呼び出しの結果を削除します。ツールの出力が大きく、詳細が不要になった場合に最適です。",
+			"AUTO": "現在の会話内容に基づいて、要約またはツール整理のいずれかを選択します。"
+		}
 	},
 	"form": {
 		"modelLabel": "モデル",
