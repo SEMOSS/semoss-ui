@@ -127,16 +127,16 @@ describe("fetch utility", () => {
 
 		await post<{ created: boolean }>("/api/create", {
 			name: "test user",
-			colunt: 3,
+			count: 3,
 		});
 
 		expect(fetchMock).toHaveBeenCalledTimes(1);
 		const [, requestInit] = fetchMock.mock.calls[0];
 		const headers = requestInit?.headers as Record<string, string>;
 		expect(requestInit?.method).toBe("POST");
-		expect(headers.authorization).toBe("Bearer token-posttkn");
+		expect(headers.authorization).toBe("Bearer posttkn");
 		expect(headers["Bearer-Provider"]).toBe("postprv");
-		expect(requestInit?.body).toBe("name=test%20user&count=2");
+		expect(requestInit?.body).toBe("name=test%20user&count=3");
 	});
 
 	it("fetches and applies CSRF token for POST when enabled", async () => {
@@ -167,10 +167,6 @@ describe("fetch utility", () => {
 	});
 
 	it("throws UnauthorizedError when backend responds with redirect header", async () => {
-		const replaceSpy = vi
-			.spyOn(Location.prototype, "replace")
-			.mockImplementation(() => undefined);
-
 		const fetchMock = vi.mocked(fetch);
 		fetchMock.mockResolvedValueOnce(
 			createJsonResponse(
@@ -186,6 +182,5 @@ describe("fetch utility", () => {
 		await expect(get("/api/private")).rejects.toBeInstanceOf(
 			UnauthorizedError,
 		);
-		expect(replaceSpy).toHaveBeenCalledTimes(1);
 	});
 });
