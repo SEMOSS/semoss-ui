@@ -1,4 +1,5 @@
 import { Maximize2 } from "lucide-react";
+import type { ReactNode } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
@@ -7,17 +8,14 @@ import {
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
+	ScrollArea,
 	TabsContent,
 	TabsList,
 	TabsTrigger,
 	Textarea,
 } from "@semoss/ui/next";
 
-/**
- * Title shown above the tab strip. Shared by every tool card view
- * (ToolsDefaultView, ToolsServerView) so the header stays visually
- * consistent regardless of which view renders the card.
- */
+/** Title shown above the tab strip, shared by every tool card view. */
 export const ToolCardHeader = ({ title }: { title: string }) => (
 	<div className="shrink-0 px-4 pt-4 pb-2">
 		<h2 className="font-semibold text-foreground text-xl">{title}</h2>
@@ -38,6 +36,24 @@ export const ToolCardTabsList = () => {
 	);
 };
 
+/**
+ * Fills a bounded TabsContent panel with the app's styled scrollbar. `h-full`
+ * on the inner column keeps flex children (e.g. a fill-height Textarea)
+ * sized the way they were with plain `overflow-auto`. `px-3` on both sides
+ * keeps the gap even on both ends, since the scrollbar renders inside it.
+ */
+export const ToolTabScrollArea = ({ children }: { children: ReactNode }) => (
+	<ScrollArea className="h-full w-full">
+		<div className="flex h-full flex-col space-y-2 px-3 pb-4">
+			{children}
+		</div>
+	</ScrollArea>
+);
+
+/** Shared sizing for every tab panel; ScrollArea owns the scrolling. */
+export const TOOL_CARD_TAB_CONTENT_CLASS =
+	"flex min-h-0 flex-1 flex-col overflow-hidden px-1";
+
 /** Description tab body: the tool's description, or a placeholder. */
 export const ToolDescriptionTabContent = ({
 	description,
@@ -46,25 +62,24 @@ export const ToolDescriptionTabContent = ({
 }) => {
 	const { t } = useTranslation("tool");
 	return (
-		<TabsContent value="description" className="mx-4 overflow-auto pb-4">
-			{description ? (
-				<p className="text-muted-foreground text-sm">{description}</p>
-			) : (
-				<p className="py-8 text-center text-muted-foreground text-sm">
-					{t("form.noDescription")}
-				</p>
-			)}
+		<TabsContent
+			value="description"
+			className={TOOL_CARD_TAB_CONTENT_CLASS}
+		>
+			<ToolTabScrollArea>
+				{description ? (
+					<p className="text-muted-foreground text-sm">
+						{description}
+					</p>
+				) : (
+					<p className="py-8 text-center text-muted-foreground text-sm">
+						{t("form.noDescription")}
+					</p>
+				)}
+			</ToolTabScrollArea>
 		</TabsContent>
 	);
 };
-
-/**
- * Any TabsContent holding a Textarea uses mx-3 + px-1 instead of mx-4 —
- * split that way (rather than one mx-4) so the textarea's focus shadow has
- * room to render without getting clipped by the tab panel's edge.
- */
-export const TOOL_CARD_TEXTAREA_TAB_CLASS =
-	"mx-3 flex min-h-0 flex-1 flex-col space-y-2 overflow-auto px-1 pb-4";
 
 /**
  * A read-only, monospace textarea for tool output with an "Expand" button
@@ -127,9 +142,11 @@ export const ToolOutputDialog = ({
 						{t("form.outputDialogTitle", { title })}
 					</DialogTitle>
 				</DialogHeader>
-				<pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap rounded-md bg-muted p-4 font-mono text-sm">
-					{text}
-				</pre>
+				<ScrollArea className="min-h-0 flex-1 rounded-md bg-muted">
+					<pre className="whitespace-pre-wrap p-4 font-mono text-sm">
+						{text}
+					</pre>
+				</ScrollArea>
 			</DialogContent>
 		</Dialog>
 	);

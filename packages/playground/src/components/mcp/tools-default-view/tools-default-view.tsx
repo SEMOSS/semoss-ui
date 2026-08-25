@@ -22,12 +22,13 @@ import { ResponseMessageStore, type RoomStore, type ToolStore } from "@/stores";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import { getToolEngineId, isAskExecutionMode } from "@/utility/mcp-utils";
 import {
-	TOOL_CARD_TEXTAREA_TAB_CLASS,
+	TOOL_CARD_TAB_CONTENT_CLASS,
 	ToolCardHeader,
 	ToolCardTabsList,
 	ToolDescriptionTabContent,
 	ToolOutputDialog,
 	ToolOutputText,
+	ToolTabScrollArea,
 } from "../tool-card-tabs";
 import { ToolField } from "./tool-field";
 
@@ -409,194 +410,200 @@ export const ToolsDefaultView = observer(
 					{/* Inputs tab */}
 					<TabsContent
 						value="inputs"
-						className={TOOL_CARD_TEXTAREA_TAB_CLASS}
+						className={TOOL_CARD_TAB_CONTENT_CLASS}
 					>
-						{hasExecuted ? (
-							/* Executed — show read-only parameters */
-							<div className="flex flex-col space-y-2">
-								{executedParameterKeys.length === 0 ? (
-									<p className="py-8 text-center text-muted-foreground text-sm">
-										{t("form.noParameters")}
+						<ToolTabScrollArea>
+							{hasExecuted ? (
+								/* Executed — show read-only parameters */
+								<div className="flex flex-col space-y-2">
+									{executedParameterKeys.length === 0 ? (
+										<p className="py-8 text-center text-muted-foreground text-sm">
+											{t("form.noParameters")}
+										</p>
+									) : schemaCoversParameters ? (
+										<div className="space-y-4">
+											{renderFields(
+												executedParameterFields,
+												false,
+												executedParameters,
+											)}
+										</div>
+									) : (
+										<Textarea
+											readOnly
+											className="w-full resize-none font-mono text-sm"
+											rows={Math.min(
+												12,
+												Math.max(
+													3,
+													executedParametersJson.split(
+														"\n",
+													).length,
+												),
+											)}
+											value={executedParametersJson}
+										/>
+									)}
+								</div>
+							) : getMCP.status === "ERROR" ? (
+								<div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+									<p className="font-semibold text-destructive text-lg">
+										{t("form.schemaLoadFailed")}
 									</p>
-								) : schemaCoversParameters ? (
-									<div className="space-y-4">
-										{renderFields(
-											executedParameterFields,
-											false,
-											executedParameters,
-										)}
-									</div>
-								) : (
-									<Textarea
-										readOnly
-										className="w-full resize-none font-mono text-sm"
-										rows={Math.min(
-											12,
-											Math.max(
-												3,
-												executedParametersJson.split(
-													"\n",
-												).length,
-											),
-										)}
-										value={executedParametersJson}
-									/>
-								)}
-							</div>
-						) : getMCP.status === "ERROR" ? (
-							<div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-								<p className="font-semibold text-destructive text-lg">
-									{t("form.schemaLoadFailed")}
-								</p>
-								<p className="text-muted-foreground text-sm">
-									{t("form.schemaLoadFailedDescription")}
-								</p>
-							</div>
-						) : getMCP.status === "SUCCESS" ? (
-							<div className="flex flex-1 flex-col">
-								<form
-									className="flex-1 space-y-4"
-									onSubmit={handleSubmit}
-								>
-									{Object.keys(properties).length === 0 &&
-										!scriptForBrowserAutomation && (
-											<p className="py-8 text-center text-muted-foreground text-sm">
-												{t("form.noParameters")}
-											</p>
-										)}
+									<p className="text-muted-foreground text-sm">
+										{t("form.schemaLoadFailedDescription")}
+									</p>
+								</div>
+							) : getMCP.status === "SUCCESS" ? (
+								<div className="flex flex-1 flex-col">
+									<form
+										className="flex-1 space-y-4"
+										onSubmit={handleSubmit}
+									>
+										{Object.keys(properties).length === 0 &&
+											!scriptForBrowserAutomation && (
+												<p className="py-8 text-center text-muted-foreground text-sm">
+													{t("form.noParameters")}
+												</p>
+											)}
 
-									{renderFields(requiredFields, true)}
+										{renderFields(requiredFields, true)}
 
-									{scriptForBrowserAutomation && (
-										<div className="space-y-3 rounded-md border bg-muted/50 p-4">
-											<h3 className="font-semibold text-base">
-												{t("playwright.details")}
-											</h3>
-											<div className="space-y-2 text-sm">
-												<div>
-													<span className="font-medium">
-														{t(
-															"playwright.projectId",
-														)}
-														:
-													</span>
-													<span className="ms-2 text-muted-foreground">
-														{app}
-													</span>
-												</div>
-												<div>
-													<span className="font-medium">
-														{t(
-															"playwright.recordedFile",
-														)}
-														:
-													</span>
-													<span className="ms-2 text-muted-foreground">
-														{
-															scriptForBrowserAutomation
-														}
-													</span>
+										{scriptForBrowserAutomation && (
+											<div className="space-y-3 rounded-md border bg-muted/50 p-4">
+												<h3 className="font-semibold text-base">
+													{t("playwright.details")}
+												</h3>
+												<div className="space-y-2 text-sm">
+													<div>
+														<span className="font-medium">
+															{t(
+																"playwright.projectId",
+															)}
+															:
+														</span>
+														<span className="ms-2 text-muted-foreground">
+															{app}
+														</span>
+													</div>
+													<div>
+														<span className="font-medium">
+															{t(
+																"playwright.recordedFile",
+															)}
+															:
+														</span>
+														<span className="ms-2 text-muted-foreground">
+															{
+																scriptForBrowserAutomation
+															}
+														</span>
+													</div>
 												</div>
 											</div>
-										</div>
-									)}
+										)}
 
-									{optionalFields.length > 0 && (
-										<>
+										{optionalFields.length > 0 && (
+											<>
+												<Button
+													type="button"
+													variant="outline"
+													size="sm"
+													onClick={() =>
+														setShowOptional(
+															!showOptional,
+														)
+													}
+													className="w-full"
+												>
+													{t(
+														showOptional
+															? "form.hideOptionalFields"
+															: "form.showOptionalFields",
+														{
+															count: optionalFields.length,
+														},
+													)}
+												</Button>
+												{showOptional &&
+													renderFields(
+														optionalFields,
+														false,
+													)}
+											</>
+										)}
+									</form>
+
+									{!isAutoExecuting && (
+										<div className="shrink-0 pt-4">
 											<Button
 												type="button"
-												variant="outline"
-												size="sm"
-												onClick={() =>
-													setShowOptional(
-														!showOptional,
-													)
-												}
 												className="w-full"
+												size="lg"
+												onClick={handleSubmit}
+												disabled={isSubmitting}
 											>
-												{t(
-													showOptional
-														? "form.hideOptionalFields"
-														: "form.showOptionalFields",
-													{
-														count: optionalFields.length,
-													},
+												{isSubmitting ? (
+													<>
+														<Loader2 className="animate-spin" />
+														{t("form.executing")}
+													</>
+												) : (
+													t("form.execute")
 												)}
 											</Button>
-											{showOptional &&
-												renderFields(
-													optionalFields,
-													false,
-												)}
-										</>
+										</div>
 									)}
-								</form>
-
-								{!isAutoExecuting && (
-									<div className="shrink-0 pt-4">
-										<Button
-											type="button"
-											className="w-full"
-											size="lg"
-											onClick={handleSubmit}
-											disabled={isSubmitting}
-										>
-											{isSubmitting ? (
-												<>
-													<Loader2 className="animate-spin" />
-													{t("form.executing")}
-												</>
-											) : (
-												t("form.execute")
-											)}
-										</Button>
-									</div>
-								)}
-							</div>
-						) : (
-							<div className="flex flex-col items-center justify-center gap-2 py-12">
-								<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-								<p className="text-muted-foreground text-sm">
-									{t("form.schemaLoading")}
-								</p>
-							</div>
-						)}
+								</div>
+							) : (
+								<div className="flex flex-col items-center justify-center gap-2 py-12">
+									<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+									<p className="text-muted-foreground text-sm">
+										{t("form.schemaLoading")}
+									</p>
+								</div>
+							)}
+						</ToolTabScrollArea>
 					</TabsContent>
 
 					{/* Output tab */}
 					<TabsContent
 						value="output"
-						className={TOOL_CARD_TEXTAREA_TAB_CLASS}
+						className={TOOL_CARD_TAB_CONTENT_CLASS}
 					>
-						{showResponse && (
-							<ToolOutputText
-								text={formattedResponse}
-								onExpand={() => setShowOutputDialog(true)}
-							/>
-						)}
-						{toolFailed && tool.response && (
-							<div className="flex flex-col space-y-2">
-								<Label className="shrink-0 font-semibold text-destructive">
-									{t(
-										`status.${
-											tool.status === "ERROR"
-												? "failed"
-												: "cancelled"
-										}`,
-									)}
-								</Label>
+						<ToolTabScrollArea>
+							{showResponse && (
 								<ToolOutputText
 									text={formattedResponse}
-									destructive
 									onExpand={() => setShowOutputDialog(true)}
 								/>
-							</div>
-						)}
-						{!showResponse && !toolFailed && (
-							<p className="py-8 text-center text-muted-foreground text-sm">
-								{t("form.noOutput")}
-							</p>
-						)}
+							)}
+							{toolFailed && tool.response && (
+								<div className="flex flex-col space-y-2">
+									<Label className="shrink-0 font-semibold text-destructive">
+										{t(
+											`status.${
+												tool.status === "ERROR"
+													? "failed"
+													: "cancelled"
+											}`,
+										)}
+									</Label>
+									<ToolOutputText
+										text={formattedResponse}
+										destructive
+										onExpand={() =>
+											setShowOutputDialog(true)
+										}
+									/>
+								</div>
+							)}
+							{!showResponse && !toolFailed && (
+								<p className="py-8 text-center text-muted-foreground text-sm">
+									{t("form.noOutput")}
+								</p>
+							)}
+						</ToolTabScrollArea>
 					</TabsContent>
 				</Tabs>
 

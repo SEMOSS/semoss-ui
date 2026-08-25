@@ -4,12 +4,13 @@ import { useTranslation } from "@semoss/i18n";
 import { Label, Tabs, TabsContent, Textarea } from "@semoss/ui/next";
 import type { ToolStore } from "@/stores";
 import {
-	TOOL_CARD_TEXTAREA_TAB_CLASS,
+	TOOL_CARD_TAB_CONTENT_CLASS,
 	ToolCardHeader,
 	ToolCardTabsList,
 	ToolDescriptionTabContent,
 	ToolOutputDialog,
 	ToolOutputText,
+	ToolTabScrollArea,
 } from "./tool-card-tabs";
 
 interface ToolsServerViewProps {
@@ -81,36 +82,40 @@ export const ToolsServerView = observer(({ tool }: ToolsServerViewProps) => {
 
 				<TabsContent
 					value="inputs"
-					className={TOOL_CARD_TEXTAREA_TAB_CLASS}
+					className={TOOL_CARD_TAB_CONTENT_CLASS}
 				>
-					<Label className="shrink-0 font-semibold">
-						{t("form.parameters")}
-					</Label>
-					<Textarea
-						readOnly
-						className="w-full resize-none font-mono text-sm"
-						rows={Math.min(
-							12,
-							Math.max(3, parametersText.split("\n").length),
-						)}
-						value={parametersText || "{}"}
-					/>
+					<ToolTabScrollArea>
+						<Label className="shrink-0 font-semibold">
+							{t("form.parameters")}
+						</Label>
+						<Textarea
+							readOnly
+							className="w-full resize-none font-mono text-sm"
+							rows={Math.min(
+								12,
+								Math.max(3, parametersText.split("\n").length),
+							)}
+							value={parametersText || "{}"}
+						/>
+					</ToolTabScrollArea>
 				</TabsContent>
 
 				<TabsContent
 					value="output"
-					className={TOOL_CARD_TEXTAREA_TAB_CLASS}
+					className={TOOL_CARD_TAB_CONTENT_CLASS}
 				>
-					{hasResponse ? (
-						<ToolOutputText
-							text={responseText}
-							onExpand={() => setShowOutputDialog(true)}
-						/>
-					) : (
-						<p className="py-8 text-center text-muted-foreground text-sm">
-							{t("form.noOutput")}
-						</p>
-					)}
+					<ToolTabScrollArea>
+						{hasResponse ? (
+							<ToolOutputText
+								text={responseText}
+								onExpand={() => setShowOutputDialog(true)}
+							/>
+						) : (
+							<p className="py-8 text-center text-muted-foreground text-sm">
+								{t("form.noOutput")}
+							</p>
+						)}
+					</ToolTabScrollArea>
 				</TabsContent>
 			</Tabs>
 
