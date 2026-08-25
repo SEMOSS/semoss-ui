@@ -40,6 +40,10 @@ import {
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
+	Switch,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import type {
@@ -1733,43 +1737,94 @@ export function AutomationCanvas({
 									</div>
 
 									<div className="absolute bottom-4 left-4 z-10 flex items-center overflow-hidden rounded-lg border bg-background shadow-sm">
-										<button
-											type="button"
-											aria-label="Clean up node layout"
-											title="Clean up layout — restore execution order"
-											onClick={cleanUpLayout}
-											className={`${readOnly ? "hidden" : "flex"} items-center justify-center border-r p-2 text-muted-foreground transition-colors hover:bg-muted`}
-										>
-											<RefreshCw className="h-4 w-4" />
-										</button>
-										<button
-											type="button"
-											title="Interact mode — click nodes to edit (V)"
-											onClick={() =>
-												setCanvasMode("interact")
-											}
-											className={`flex items-center justify-center p-2 transition-colors ${canvasMode === "interact" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
-										>
-											<MousePointer2 className="h-4 w-4" />
-										</button>
-										<button
-											type="button"
-											title="Pan mode — drag to move canvas (H)"
-											onClick={() => setCanvasMode("pan")}
-											className={`flex items-center justify-center p-2 transition-colors ${canvasMode === "pan" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
-										>
-											<Hand className="h-4 w-4" />
-										</button>
-										<button
-											type="button"
-											aria-label="Open automation help"
-											title="Automation help"
-											onClick={() => setShowHelp(true)}
-											className="flex items-center gap-1.5 border-l px-2 py-2 text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground"
-										>
-											<HelpCircle className="h-4 w-4" />
-											Help
-										</button>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<button
+													type="button"
+													aria-label="Clean up node layout"
+													onClick={cleanUpLayout}
+													className={`${readOnly ? "hidden" : "flex"} items-center justify-center border-r p-2 text-muted-foreground transition-colors hover:bg-muted`}
+												>
+													<RefreshCw className="h-4 w-4" />
+												</button>
+											</TooltipTrigger>
+											<TooltipContent side="top">
+												Clean up layout
+											</TooltipContent>
+										</Tooltip>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<button
+													type="button"
+													aria-label="Interact mode"
+													onClick={() =>
+														setCanvasMode(
+															"interact",
+														)
+													}
+													className={`flex items-center justify-center p-2 transition-colors ${canvasMode === "interact" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
+												>
+													<MousePointer2 className="h-4 w-4" />
+												</button>
+											</TooltipTrigger>
+											<TooltipContent side="top">
+												Interact mode — click nodes to
+												edit (V)
+											</TooltipContent>
+										</Tooltip>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<button
+													type="button"
+													aria-label="Pan mode"
+													onClick={() =>
+														setCanvasMode("pan")
+													}
+													className={`flex items-center justify-center p-2 transition-colors ${canvasMode === "pan" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
+												>
+													<Hand className="h-4 w-4" />
+												</button>
+											</TooltipTrigger>
+											<TooltipContent side="top">
+												Pan mode — drag to move canvas
+												(H)
+											</TooltipContent>
+										</Tooltip>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<div className="flex cursor-pointer items-center gap-1.5 border-l px-2 py-2 text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground">
+													<Switch
+														checked={devMode}
+														onCheckedChange={
+															handleDevModeChange
+														}
+													/>
+													Dev
+												</div>
+											</TooltipTrigger>
+											<TooltipContent side="top">
+												Show Python source editors on
+												executable nodes
+											</TooltipContent>
+										</Tooltip>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<button
+													type="button"
+													aria-label="Open automation help"
+													onClick={() =>
+														setShowHelp(true)
+													}
+													className="flex items-center gap-1.5 border-l px-2 py-2 text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground"
+												>
+													<HelpCircle className="h-4 w-4" />
+													Help
+												</button>
+											</TooltipTrigger>
+											<TooltipContent side="top">
+												Automation help
+											</TooltipContent>
+										</Tooltip>
 									</div>
 								</div>
 							}

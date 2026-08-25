@@ -16,7 +16,6 @@ interface InspectorTabProps {
 	stepRunError?: string;
 	stepRunOutput?: string | null;
 	onDescriptionChange: (value: string) => void;
-	onDevModeChange: (value: boolean) => void;
 	onClose: () => void;
 	onUpdate: (step: AutomationNode) => void;
 	onDelete: (stepId: string) => void;
@@ -32,7 +31,6 @@ export function InspectorTab({
 	stepRunError,
 	stepRunOutput,
 	onDescriptionChange,
-	onDevModeChange,
 	onClose,
 	onUpdate,
 	onDelete,
@@ -41,9 +39,7 @@ export function InspectorTab({
 		return (
 			<TriggerEditPanel
 				description={description}
-				devMode={devMode}
 				onDescriptionChange={onDescriptionChange}
-				onDevModeChange={onDevModeChange}
 				onClose={onClose}
 				step={editingStep}
 				onUpdate={onUpdate}

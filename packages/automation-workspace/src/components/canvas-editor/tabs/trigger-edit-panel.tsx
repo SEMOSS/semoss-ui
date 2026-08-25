@@ -1,22 +1,13 @@
 import { Play, Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
-import {
-	Button,
-	Field,
-	FieldLabel,
-	Input,
-	Switch,
-	Textarea,
-} from "@semoss/ui/next";
+import { Button, Field, FieldLabel, Input, Textarea } from "@semoss/ui/next";
 import type { AutomationNode } from "../../../domain/automation.types";
 import type { AutomationGlobalVariable } from "../../../domain/automation-workflow.types";
 
 /** Props for the trigger inspector panel. */
 interface TriggerEditPanelProps {
 	description: string;
-	devMode: boolean;
 	onDescriptionChange: (value: string) => void;
-	onDevModeChange: (value: boolean) => void;
 	onClose: () => void;
 	step: AutomationNode;
 	onUpdate: (step: AutomationNode) => void;
@@ -33,9 +24,7 @@ function createGlobalInputRow(value: AutomationGlobalVariable): GlobalInputRow {
 
 export function TriggerEditPanel({
 	description,
-	devMode,
 	onDescriptionChange,
-	onDevModeChange,
 	onClose,
 	step,
 	onUpdate,
@@ -178,18 +167,6 @@ export function TriggerEditPanel({
 							<Plus className="mr-1.5 size-4" />
 							Add input
 						</Button>
-					</div>
-					<div className="flex items-center justify-between rounded-lg border px-3 py-2">
-						<div>
-							<p className="font-medium text-sm">Dev Mode</p>
-							<p className="text-[11px] text-muted-foreground">
-								Show Python source editors on executable nodes.
-							</p>
-						</div>
-						<Switch
-							checked={devMode}
-							onCheckedChange={onDevModeChange}
-						/>
 					</div>
 				</div>
 			</div>

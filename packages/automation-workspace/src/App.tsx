@@ -302,15 +302,6 @@ export default function App() {
 							description,
 						});
 					}}
-					onDevModeChange={(devMode) => {
-						setInspectorSnapshot((current) =>
-							current ? { ...current, devMode } : current,
-						);
-						sendInspectorAction({
-							type: "update-dev-mode",
-							devMode,
-						});
-					}}
 					onClose={() => sendInspectorAction({ type: "close" })}
 					onUpdate={(step) => {
 						setInspectorSnapshot((current) =>
