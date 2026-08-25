@@ -606,7 +606,7 @@ export function JobsPage() {
 				</Alert>
 			)}
 
-			<hr className="border-gray-200" />
+			<hr className="border-border" />
 
 			<div className="flex flex-col gap-3">
 				<div className="flex items-center justify-end gap-2">

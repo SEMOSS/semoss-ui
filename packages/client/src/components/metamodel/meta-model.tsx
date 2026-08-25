@@ -10,7 +10,7 @@ import {
 } from "@xyflow/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "@xyflow/react/dist/style.css";
-import { Button, Input } from "@semoss/ui/next";
+import { Button, Input, useTheme } from "@semoss/ui/next";
 import { MetamodelContext } from "@/contexts";
 import type {
 	ColumnOption,
@@ -228,6 +228,8 @@ export const Metamodel = (props: MetamodelProps) => {
 	const [flowNodes, setFlowNodes, onFlowNodesChange] =
 		useNodesState(initialFlowNodes);
 	const [flowEdges, setFlowEdges, onFlowEdgesChange] = useEdgesState(edges);
+	const { resolvedTheme } = useTheme();
+	const isDarkTheme = resolvedTheme === "dark";
 
 	const effectiveSearchTerm =
 		searchValue ?? highlightSearchTerm ?? internalSearchTerm;
@@ -940,6 +942,7 @@ export const Metamodel = (props: MetamodelProps) => {
 				<ReactFlow
 					nodes={flowNodes}
 					edges={flowEdges}
+					colorMode={isDarkTheme ? "dark" : "light"}
 					nodeTypes={nodeTypes}
 					edgeTypes={edgeTypes}
 					onInit={(instance) => {
@@ -952,8 +955,15 @@ export const Metamodel = (props: MetamodelProps) => {
 					onEdgesChange={onFlowEdgesChange}
 					defaultViewport={{ x: 70, y: 50, zoom: 0.75 }}
 				>
-					<MiniMap pannable zoomable />
-					<Controls showInteractive={false} />
+					<MiniMap
+						pannable
+						zoomable
+						className="rounded-md border border-border bg-card"
+					/>
+					<Controls
+						showInteractive={false}
+						className="rounded-md border border-border bg-card text-foreground shadow-sm"
+					/>
 				</ReactFlow>
 
 				{callback && (
@@ -1019,5 +1029,3 @@ export const Metamodel = (props: MetamodelProps) => {
 		</MetamodelContext.Provider>
 	);
 };
-
-export default Metamodel;

@@ -173,6 +173,41 @@ const runMCPTool = (name, parameters,)  => {
 };
 ```
 
+## Testing
+
+This package uses [Vitest](https://vitest.dev/) for unit tests.
+
+### Running Tests
+
+```sh
+# run all tests
+npx vitest
+
+# run in watch mode
+npx vitest --watch
+
+# run with coverage
+npx vitest --coverage
+```
+
+### What's Tested
+
+| Area | Files | Notes |
+|---|---|---|
+| Utilities | `src/utility/fetch.ts`, `src/utility/error.ts`, `src/utility/embed-auth.ts` | HTTP wrappers, custom errors, embed auth flow |
+| Environment | `src/env.ts` | Singleton getters and `update()` |
+| API wrappers | `src/api/base.ts`, `src/api/auth.ts`, `src/api/file.ts`, and others | Fetch is mocked via `vi.stubGlobal` |
+| React hooks | `src/js-frameworks/react/hooks/` | Rendered with `@testing-library/react`; timers use `vi.useFakeTimers()` |
+
+### Writing Tests
+
+Place test files next to the source file they cover, e.g.:
+
+```
+src/utility/fetch.ts
+src/utility/fetch.test.ts
+```
+
 ## 🔄 Migration Guide
 
 ### For Users Migrating from @semoss/sdk-react
@@ -313,3 +348,69 @@ const hello = (name) => {
     console.log(output);
 };
 ```
+
+## AI Coding Assistant Setup
+
+`@semoss/sdk` ships AI agent skills alongside its source code. These skills give your AI
+coding assistant (GitHub Copilot, Claude Code, Cursor, etc.) built-in knowledge of the SDK's
+APIs — including the playground, pixel calls, and hook patterns — without you having to paste
+docs into chat.
+
+Skills are bundled under `node_modules/@semoss/sdk/skills/` and follow the
+[Agent Skills](https://agentskills.io/) open standard, making them compatible with
+[`npm-skills`](https://www.npmjs.com/package/npm-skills) and
+[`skills-npm`](https://github.com/antfu/skills-npm).
+
+### One-time extraction
+
+Run extraction into your agent's discovery directory after installing the SDK:
+
+```sh
+# GitHub Copilot
+npx npm-skills extract --output .github/skills
+
+# Claude Code / generic agents
+npx npm-skills extract --output .agents/skills
+
+# Cursor
+npx npm-skills extract --output .cursor/skills
+```
+
+### Keep skills in sync automatically
+
+Add a `postinstall` script so skills update whenever you upgrade the SDK:
+
+```json
+{
+    "scripts": {
+        "postinstall": "npm-skills extract --skip-production --override --output .github/skills"
+    },
+    "devDependencies": {
+        "npm-skills": "latest"
+    }
+}
+```
+
+Or configure the output path once and just run `npm run skills:extract`:
+
+```json
+{
+    "scripts": {
+        "skills:extract": "npm-skills extract --override"
+    },
+    "npmSkills": {
+        "consume": {
+            "output": ".github/skills"
+        }
+    }
+}
+```
+
+### What gets installed
+
+| Skill | Covers |
+|-------|--------|
+| `sdk-playground` | Creating rooms, sending messages, fetching room options, updating config, binding rooms to insights |
+
+Skills are versioned with the SDK — upgrading `@semoss/sdk` and re-running extraction keeps
+your assistant's knowledge current.

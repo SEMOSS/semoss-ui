@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import {
 	approveProjectUserAccessRequest,
 	denyProjectUserAccessRequest,
-} from "@semoss/shared";
+} from "@semoss/sdk";
 import {
 	Button,
 	Checkbox,

@@ -157,7 +157,7 @@ const renderHighlightedLabel = (
 		return (
 			<>
 				{before}
-				<span className="rounded bg-yellow-200 text-foreground">
+				<span className="rounded bg-primary/20 text-foreground">
 					{match}
 				</span>
 				{after}
@@ -170,7 +170,7 @@ const renderHighlightedLabel = (
 		normalizeSearchValue(displayValue).includes(normalizedSearchTerm)
 	) {
 		return (
-			<span className="rounded bg-yellow-200 text-foreground">
+			<span className="rounded bg-primary/20 text-foreground">
 				{displayValue}
 			</span>
 		);
@@ -242,7 +242,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 
 			{/* Table Header */}
 			<div
-				className="flex w-full items-center justify-between gap-2 self-stretch rounded-t-xl bg-purple-50 px-3 py-2 text-foreground"
+				className="flex w-full items-center justify-between gap-2 self-stretch rounded-t-xl border-border/60 border-b bg-muted/40 px-3 py-2 text-foreground"
 				data-testid={`metamodel-node-${id}-header`}
 			>
 				<div className="flex items-center gap-2">
@@ -272,17 +272,10 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 						className="h-7 w-7 flex-shrink-0"
 						onClick={(e) => {
 							e.stopPropagation();
-							if (data?.openEditTable) {
-								data.openEditTable({
-									nodeId: id,
-									name: data.name,
-								});
-							} else {
-								console.warn(
-									"openEditTable not injected for node",
-									id,
-								);
-							}
+							data?.openEditTable?.({
+								nodeId: id,
+								name: data.name,
+							});
 						}}
 						onMouseDown={(e) => e.stopPropagation()}
 						title="Edit table"
@@ -292,9 +285,6 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 					</Button>
 				)}
 			</div>
-
-			{/* Divider */}
-			<div className="h-px w-full border-border border-t" />
 
 			{/* Table Content */}
 			<CardContent className="w-full p-0">

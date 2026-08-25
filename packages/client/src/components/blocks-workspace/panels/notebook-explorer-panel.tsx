@@ -3,9 +3,9 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useMemo, useState } from "react";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
-import { Button, toast } from "@semoss/ui/next";
-import { FlexLayout } from "@/components/flex-layout";
-import { NewNotebookOverlay } from "@/components/notebook";
+import { FlexLayout } from "@semoss/shared";
+import { Button, Dialog, DialogContent, toast } from "@semoss/ui/next";
+import { NewNotebookDialog } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
 import { useWorkspace } from "@/hooks";
 import { NotebookExplorerItem } from "./notebook-explorer-panel-item";
@@ -32,6 +32,8 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 
 		// filter word for the search
 		const [filterWord, setFilterWord] = useState<string>("");
+		const [newNotebookDialogOpen, setNewNotebookDialogOpen] =
+			useState(false);
 
 		/**
 		 * Refresh the notebooks
@@ -44,17 +46,7 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 		 * Open the add modal
 		 */
 		const handleOpenCreateNotebook = () => {
-			workspace.openOverlay(() => (
-				<NewNotebookOverlay
-					onClose={(newQueryId?: string) => {
-						if (newQueryId) {
-							createPanel(newQueryId);
-							refreshNotebooks();
-						}
-						workspace.closeOverlay();
-					}}
-				/>
-			));
+			setNewNotebookDialogOpen(true);
 		};
 
 		/**
@@ -302,7 +294,7 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 		return (
 			<Panel
 				actions={
-					<div className="flex w-full flex-col bg-white p-0">
+					<div className="flex w-full flex-col bg-background p-0 text-foreground">
 						<div className="flex min-h-12 items-center justify-between px-3 pt-3 pb-2">
 							<p className="m-0 font-semibold text-sm">{title}</p>
 							<Button
@@ -326,7 +318,7 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 			>
 				<div
 					key={counter}
-					className="flex h-full flex-col overflow-auto bg-white"
+					className="flex h-full flex-col overflow-auto bg-background"
 				>
 					{filteredNotebooks.map((q) => {
 						return (
@@ -346,6 +338,24 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 						);
 					})}
 				</div>
+				<Dialog
+					open={newNotebookDialogOpen}
+					onOpenChange={(open) => {
+						setNewNotebookDialogOpen(open);
+					}}
+				>
+					<DialogContent className="max-w-sm p-0">
+						<NewNotebookDialog
+							onClose={(newQueryId?: string) => {
+								if (newQueryId) {
+									createPanel(newQueryId);
+									refreshNotebooks();
+								}
+								setNewNotebookDialogOpen(false);
+							}}
+						/>
+					</DialogContent>
+				</Dialog>
 			</Panel>
 		);
 	});

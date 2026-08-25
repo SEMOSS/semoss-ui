@@ -25,6 +25,8 @@
 	"results": {
 		"successNoOutput": "✓ Succesvol uitgevoerd (geen uitvoer)",
 		"insightNotReady": "Insight niet gereed",
-		"unknownError": "Onbekende fout"
+		"unknownError": "Onbekende fout",
+		"fileDownloadStarted": "✓ Bestandsdownload gestart",
+		"downloadFailed": "Kan bestand niet downloaden"
 	}
 }

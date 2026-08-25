@@ -15,7 +15,6 @@
 		"type": "Tipo",
 		"model": "Modelo",
 		"instructions": "Instrucciones",
-		"temperature": "Temperatura",
 		"maxToken": "Token máximo"
 	},
 	"placeholders": {
@@ -23,7 +22,6 @@
 		"enterDescription": "Ingrese la descripción",
 		"enterInstructions": "Ingrese las instrucciones",
 		"updateInstructions": "Actualizar instrucciones",
-		"updateTokenLength": "Actualizar longitud del token",
 		"uploadFiles": "Subir archivos",
 		"search": "Buscar...",
 		"enterPromptLibraryTag": "Ingresar etiqueta de biblioteca de indicaciones"
@@ -65,12 +63,6 @@
 	},
 	"images": {
 		"logoAlt": "logo"
-	},
-	"fileDrag": {
-		"title": "Suelta archivos aquí para adjuntar al mensaje",
-		"modalTitle": "Agregar documentos",
-		"browse": "Explorar",
-		"done": "Listo"
 	},
 	"fileExplorer": {
 		"search": "Buscar",
@@ -210,6 +202,9 @@
 			"formatted": "CON FORMATO",
 			"raw": "EN BRUTO"
 		},
+		"image": {
+			"alt": "Imagen generada {{index}}"
+		},
 		"copy": {
 			"command": "Copiar comando",
 			"logs": "Copiar registros",
@@ -221,6 +216,8 @@
 		"collapseAll": "Contraer todo",
 		"close": "Cerrar",
 		"lines_one": "{{count}} línea",
-		"lines_other": "{{count}} líneas"
+		"lines_other": "{{count}} líneas",
+		"images_one": "{{count}} imagen",
+		"images_other": "{{count}} imágenes"
 	}
 }

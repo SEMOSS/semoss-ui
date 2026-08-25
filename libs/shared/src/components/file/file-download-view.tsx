@@ -1,8 +1,15 @@
-import { CodeIcon, DownloadIcon, FileIcon } from "lucide-react";
+import { ArrowLeftIcon, CodeIcon, DownloadIcon, FileIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { download, runPixel, useInsight } from "@semoss/sdk/react";
-import { Button, Muted, toast } from "@semoss/ui/next";
+import {
+	Button,
+	Muted,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+	toast,
+} from "@semoss/ui/next";
 import type { FileMode } from "./file.types";
 import { FileCodeEditor } from "./file-code-editor";
 
@@ -78,17 +85,27 @@ export const FileDownloadView: React.FC<FileDownloadViewProps> = ({
 	if (showRaw) {
 		return (
 			<div className="flex h-full w-full flex-col">
-				<div className="flex shrink-0 items-center justify-between border-border border-b px-3 py-1.5">
+				<div className="flex w-full shrink-0 items-center gap-1.5 border-border border-b px-2 py-1">
 					<Muted className="text-xs">{filename}</Muted>
-					<Button
-						type="button"
-						variant="ghost"
-						size="sm"
-						onClick={() => setShowRaw(false)}
-					>
-						<DownloadIcon className="me-1.5 size-3" />
-						{t("fileExplorer.binaryView.backToDownload")}
-					</Button>
+					<div className="flex-1" />
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								onClick={() => setShowRaw(false)}
+								aria-label={t(
+									"fileExplorer.binaryView.backToDownload",
+								)}
+							>
+								<ArrowLeftIcon className="size-3" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>
+							{t("fileExplorer.binaryView.backToDownload")}
+						</TooltipContent>
+					</Tooltip>
 				</div>
 				<div className="min-h-0 flex-1">
 					<FileCodeEditor

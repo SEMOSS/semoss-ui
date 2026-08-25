@@ -13,7 +13,19 @@
 		"compacting": "Compacting conversation...",
 		"compactedAbove": "Conversation compacted",
 		"compactedAboveTooltip": "Earlier messages were summarized to reduce context size",
-		"compactTooltip": "Compress your conversation to save tokens. Your previous messages stay as is."
+		"compactButton": "Compact",
+		"compactionOptions": "Compaction Options",
+		"advancedOptions": "Advanced Options",
+		"strategyLabel": {
+			"SUMMARY": "Summarize",
+			"TOOL_PRUNE": "Prune Tools",
+			"AUTO": "Auto"
+		},
+		"strategyTooltip": {
+			"SUMMARY": "Replaces older messages with an AI-generated summary. Preserves the overall context of the conversation while freeing up token space.",
+			"TOOL_PRUNE": "Removes verbose tool call results from the conversation history. Best when tool outputs are large and the details are no longer needed.",
+			"AUTO": "Will select summarization or tool pruning based on the current conversation."
+		}
 	},
 	"form": {
 		"modelLabel": "Model",
@@ -21,12 +33,12 @@
 		"agentLabel": "Agent",
 		"knowledgeLabel": "Knowledge",
 		"toolboxLabel": "Toolboxes",
-		"maxTokenLabel": "Max Token",
 		"temperatureLabel": "Temperature"
 	},
 	"modes": {
-		"ask": "Ask",
-		"agent": "Agent Harness"
+		"ask": "Chat Mode",
+		"agent": "Agent Harness Mode",
+		"exitAgent": "Exit agent harness mode"
 	},
 	"workspace": {
 		"publishTooltip": "Publish as Agent",
@@ -57,8 +69,9 @@
 		"completeTool": "Please complete the tool(s) to proceed",
 		"ask": "Ask",
 		"errorProcessing": "Error processing chat",
-		"pauseTools": "Pause tools",
-		"pauseToolsTooltip": "Pause all tool execution until after the next message"
+		"stopLabel": "Stop the response",
+		"stopTooltip": "Stop",
+		"stoppingTooltip": "Stopping"
 	},
 	"content": {
 		"scrollToTop": "Scroll to top",

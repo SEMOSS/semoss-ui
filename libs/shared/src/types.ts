@@ -1,3 +1,5 @@
+import type { Role } from "@semoss/sdk";
+
 export interface Engine {
 	engine_id: string;
 	engine_name: string;
@@ -16,12 +18,15 @@ export interface Engine {
 	engine_user_permission?: number;
 	engine_group_permission?: number;
 	engine_date_created?: string;
+	engine_created_by?: string;
 	engine_date_last_edited?: string;
 	engine_cost?: string;
 	low_engine_name?: string;
-	description?: string;
 	tag?: string;
-
+	description?: string;
+	markdown?: string;
+	"data classification"?: string[];
+	"data restrictions"?: string[];
 	/** @deprecated legacy keys from MyEngines */
 	app_id?: string;
 	/** @deprecated legacy keys from MyEngines */
@@ -40,7 +45,13 @@ export interface Project {
 	project_id: string;
 	project_name: string;
 	project_display_name?: string;
-	project_type: "SKILL" | "WORKSPACE" | "BLOCKS" | "CODE" | "INSIGHT";
+	project_type:
+		| "SKILL"
+		| "WORKSPACE"
+		| "BLOCKS"
+		| "CODE"
+		| "INSIGHT"
+		| "NOTEBOOK";
 	project_cost?: string;
 	project_global?: string;
 	project_created_by?: string;
@@ -65,6 +76,7 @@ export interface Project {
 	"data restrictions"?: string[];
 	tag?: string | string[];
 	description?: string;
+	markdown?: string;
 }
 
 export interface App {
@@ -181,14 +193,16 @@ export interface ThemeMap {
 		 */
 		defaultRoomSettings?: {
 			model?: Engine;
+			/** Default temperature for new rooms (0–1). Only used when enableTemperature is true. */
 			temperature?: number;
-			tokenLength?: number;
 		};
 
 		/**
 		 * The number of tools that should be auto-executed at once
 		 */
 		toolAutoExecutionLimit?: number | null;
+
+		defaultCompactionStrategy?: "TOOL_PRUNE" | "SUMMARY" | "AUTO";
 
 		/**
 		 * The uploaded files that should be added to the file tool in the room
@@ -335,42 +349,17 @@ export interface ThemeMap {
 			enableFeedbackText?: boolean;
 			/** Whether to show an export button on tables rendered in chat responses. Defaults to false. */
 			enableTableExport?: boolean;
+			/** Whether to show the temperature slider in room settings. Defaults to false. */
+			enableTemperature?: boolean;
 		};
 	};
 }
 
-export type Role = "OWNER" | "EDIT" | "READ_ONLY";
-
-/**
- * User permission entry for adding/editing permissions
- */
-export interface PostUser {
-	userid: string;
-	permission: Role;
-}
-
-/**
- * User details with permission information
- */
-export interface User {
-	date_added?: string;
-	name: string;
-	permission: Role;
-	id: string;
-	type?: string;
-	email?: string;
-}
-
-/**
- * User access request for approval
- */
-export interface UserAccessRequest {
-	id: string;
-	permission: Role;
-}
-
 export interface MCP {
-	/** Type of the mcp */
+	/**
+	 * Type of the mcp. Every value but ROOM is an engine or project catalog type.
+	 * ROOM is the room's own toolbox, which has no catalog entry behind it.
+	 */
 	type:
 		| "PROJECT"
 		| "STORAGE"
@@ -378,7 +367,8 @@ export interface MCP {
 		| "FUNCTION"
 		| "MODEL"
 		| "VECTOR"
-		| "GUARDRAIL";
+		| "GUARDRAIL"
+		| "ROOM";
 	/** Id of the mcp */
 	id: string;
 	/** Name of the mcp */
@@ -395,6 +385,12 @@ export interface MCP {
 export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {
 	/** Flag to indicate if this MCP comes from a workspace */
 	fromWorkspace?: boolean;
+	/**
+	 * Set by the backend on the room's own toolbox, which is derived from the tool
+	 * definitions in the room folder rather than stored in room options. Not
+	 * persisted.
+	 */
+	fromRoom?: boolean;
 };
 
 export interface Skill {
@@ -417,19 +413,13 @@ export interface Skill {
 export type SkillConfig = Pick<Skill, "id" | "name">;
 
 export interface ProjectDependency {
-	engine_type:
-		| "PROJECT"
-		| "STORAGE"
-		| "DATABASE"
-		| "FUNCTION"
-		| "MODEL"
-		| "VECTOR";
+	engine_type: Project["project_type"] | Engine["engine_type"];
 	engine_id: string;
 	engine_name: string;
 	engine_subtype?: string;
 	description?: string;
 	engine_discoverable?: boolean;
-	permission_name?: "READ_ONLY" | "EDIT" | "OWNER";
+	permission_name?: Role;
 	engine_global?: boolean;
 	access_permission?: number;
 	tags?: string;

@@ -15,7 +15,6 @@
 		"type": "Type",
 		"model": "Modèle",
 		"instructions": "Instructions",
-		"temperature": "Température",
 		"maxToken": "Jeton maximum"
 	},
 	"placeholders": {
@@ -23,7 +22,6 @@
 		"enterDescription": "Entrer la description",
 		"enterInstructions": "Entrer les instructions",
 		"updateInstructions": "Mettre à jour les instructions",
-		"updateTokenLength": "Mettre à jour la longueur du jeton",
 		"uploadFiles": "Téléverser des fichiers",
 		"search": "Rechercher...",
 		"enterPromptLibraryTag": "Entrer l'étiquette de la bibliothèque d'invites"
@@ -65,12 +63,6 @@
 	},
 	"images": {
 		"logoAlt": "logo"
-	},
-	"fileDrag": {
-		"title": "Déposez des fichiers ici pour les joindre au message",
-		"modalTitle": "Ajouter des documents",
-		"browse": "Parcourir",
-		"done": "Terminé"
 	},
 	"fileExplorer": {
 		"search": "Rechercher",
@@ -210,6 +202,9 @@
 			"formatted": "FORMATÉ",
 			"raw": "BRUT"
 		},
+		"image": {
+			"alt": "Image générée {{index}}"
+		},
 		"copy": {
 			"command": "Copier la commande",
 			"logs": "Copier les journaux",
@@ -221,6 +216,8 @@
 		"collapseAll": "Tout réduire",
 		"close": "Fermer",
 		"lines_one": "{{count}} ligne",
-		"lines_other": "{{count}} lignes"
+		"lines_other": "{{count}} lignes",
+		"images_one": "{{count}} image",
+		"images_other": "{{count}} images"
 	}
 }

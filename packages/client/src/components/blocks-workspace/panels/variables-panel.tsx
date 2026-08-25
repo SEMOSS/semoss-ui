@@ -312,7 +312,7 @@ export const VariablesPanel = observer(
 		return (
 			<Panel
 				actions={
-					<div className="flex w-full flex-col bg-white p-0">
+					<div className="flex w-full flex-col bg-background p-0">
 						<div className="flex min-h-12 items-center justify-between px-3 pt-3 pb-2">
 							<p className="m-0 font-semibold text-sm">{title}</p>
 							<div className="flex flex-row gap-1">
@@ -404,7 +404,7 @@ export const VariablesPanel = observer(
 					</div>
 				}
 			>
-				<div className="flex h-full flex-col overflow-auto bg-white">
+				<div className="flex h-full flex-col overflow-auto bg-background">
 					<Accordion
 						type="multiple"
 						value={Object.keys(expandedItems).filter(

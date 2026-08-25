@@ -37,7 +37,7 @@ const IconButtonWrapper = ({
 			flexDirection: "column",
 			alignItems: "center",
 			gap: 10,
-			border: "1px solid #E6E6E6",
+			border: "1px solid var(--border)",
 			borderRadius: 8,
 			boxSizing: "border-box",
 			cursor: "pointer",
@@ -149,7 +149,7 @@ const Vector = () => (
 		<title>CSS Icon</title>
 		<path
 			d="M3.33333 0.833333C3.33333 1.10667 3.10667 1.33333 2.83333 1.33333C2.61333 1.33333 2.43333 1.19333 2.36 1H1V3H2.36C2.42667 2.80667 2.61333 2.66667 2.83333 2.66667C3.10667 2.66667 3.33333 2.89333 3.33333 3.16667V3.33333C3.33333 3.7 3.03333 4 2.66667 4H0.666667C0.3 4 0 3.7 0 3.33333V0.666667C0 0.3 0.3 0 0.666667 0H2.66667C3.03333 0 3.33333 0.3 3.33333 0.666667V0.833333ZM6.69333 1C6.76 1.19333 6.94667 1.33333 7.16667 1.33333C7.44 1.33333 7.66667 1.10667 7.66667 0.833333V0.666667C7.66667 0.3 7.36667 0 7 0H5C4.63333 0 4.33333 0.3 4.33333 0.666667V1.66667C4.33333 2.03333 4.63333 2.33333 5 2.33333H6.66667V3H5.30667C5.24 2.80667 5.05333 2.66667 4.83333 2.66667C4.56 2.66667 4.33333 2.89333 4.33333 3.16667V3.33333C4.33333 3.7 4.63333 4 5 4H7C7.36667 4 7.66667 3.7 7.66667 3.33333V2.33333C7.66667 1.96667 7.36667 1.66667 7 1.66667H5.33333V1H6.69333ZM11.0267 1C11.0933 1.19333 11.28 1.33333 11.5 1.33333C11.7733 1.33333 12 1.10667 12 0.833333V0.666667C12 0.3 11.7 0 11.3333 0H9.33333C8.96667 0 8.66667 0.3 8.66667 0.666667V1.66667C8.66667 2.03333 8.96667 2.33333 9.33333 2.33333H11V3H9.64C9.57333 2.80667 9.38667 2.66667 9.16667 2.66667C8.89333 2.66667 8.66667 2.89333 8.66667 3.16667V3.33333C8.66667 3.7 8.96667 4 9.33333 4H11.3333C11.7 4 12 3.7 12 3.33333V2.33333C12 1.96667 11.7 1.66667 11.3333 1.66667H9.66667V1H11.0267Z"
-			fill="rgba(0, 0, 0, 0.54)"
+			fill="var(--muted-foreground)"
 		/>
 	</svg>
 );
@@ -332,7 +332,7 @@ export const SelectedBlockPanel = observer(() => {
 		return (
 			<Panel>
 				<div className="p-4">
-					<div className="flex items-center gap-3 rounded bg-[#F5F5F5] p-3">
+					<div className="flex items-center gap-3 rounded bg-muted p-3">
 						<div className="flex h-[22px] w-[22px] items-start">
 							<img
 								src={MultiBlockIcon}
@@ -344,7 +344,7 @@ export const SelectedBlockPanel = observer(() => {
 								className="font-medium"
 								style={{
 									alignSelf: "stretch",
-									color: "#666",
+									color: "var(--muted-foreground)",
 									fontFamily:
 										'"Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
 									fontSize: "16px",
@@ -358,7 +358,7 @@ export const SelectedBlockPanel = observer(() => {
 							<p
 								style={{
 									alignSelf: "stretch",
-									color: "#666",
+									color: "var(--muted-foreground)",
 									fontFamily:
 										'"Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
 									fontSize: "14px",
@@ -381,7 +381,7 @@ export const SelectedBlockPanel = observer(() => {
 		return (
 			<Panel>
 				<div className="p-4">
-					<div className="flex items-center gap-3 rounded bg-[#F5F5F5] p-3">
+					<div className="flex items-center gap-3 rounded bg-muted p-3">
 						<div className="flex h-[22px] w-[22px] items-start">
 							<img src={GroupIcon} alt="No Blocks Selected" />
 						</div>
@@ -390,7 +390,7 @@ export const SelectedBlockPanel = observer(() => {
 								className="font-medium"
 								style={{
 									alignSelf: "stretch",
-									color: "#666",
+									color: "var(--muted-foreground)",
 									fontFamily:
 										'"Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
 									fontSize: "16px",
@@ -404,7 +404,7 @@ export const SelectedBlockPanel = observer(() => {
 							<p
 								style={{
 									alignSelf: "stretch",
-									color: "#666",
+									color: "var(--muted-foreground)",
 									fontFamily:
 										'"Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
 									fontSize: "14px",
@@ -572,7 +572,7 @@ export const SelectedBlockPanel = observer(() => {
 										<div className="mt-4 flex flex-col gap-2">
 											<textarea
 												rows={8}
-												className="w-full resize-y rounded border border-input px-2 py-1 font-mono text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+												className="w-full resize-y rounded border border-input bg-background px-2 py-1 font-mono text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring"
 												style={{
 													minHeight: "8rem",
 													maxHeight: "20rem",
@@ -587,9 +587,10 @@ export const SelectedBlockPanel = observer(() => {
 												<button
 													type="button"
 													style={{
-														background: "#f5f5f5",
-														color: "#666",
-														border: "none",
+														background:
+															"var(--secondary)",
+														color: "var(--secondary-foreground)",
+														border: "1px solid var(--border)",
 														borderRadius: 4,
 														padding: "6px 16px",
 														cursor: "pointer",
@@ -617,8 +618,9 @@ export const SelectedBlockPanel = observer(() => {
 												<button
 													type="button"
 													style={{
-														background: "#1260DD",
-														color: "#fff",
+														background:
+															"var(--primary)",
+														color: "var(--primary-foreground)",
 														border: "none",
 														borderRadius: 4,
 														padding: "6px 16px",

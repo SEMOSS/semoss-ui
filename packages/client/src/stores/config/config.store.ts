@@ -1,15 +1,10 @@
 import { makeAutoObservable, runInAction } from "mobx";
-// TODO: Pull from sdk
+import type { Role } from "@semoss/sdk";
 import { Env, logout, runPixel } from "@semoss/sdk/react";
-import { getUserProjectPermission as getUserProjectLevelPermission } from "@semoss/shared/api";
+import type { Project } from "@semoss/shared";
 import { registerUser } from "@/api";
-import type { AppMetadata } from "@/components/app";
 import { THEME } from "@/constants";
-import {
-	type RootStore,
-	type WorkspaceConfigInterface,
-	WorkspaceStore,
-} from "@/stores";
+import { type RootStore, WorkspaceStore } from "@/stores";
 import type { ALL_TYPES } from "@/types";
 
 interface ConfigStoreInterface {
@@ -132,6 +127,16 @@ interface ConfigStoreInterface {
 		adminOnlyProjectDelete: boolean;
 		adminOnlyProjectSetDiscoverable: boolean;
 		adminOnlyProjectSetPublic: boolean;
+		adminOnlyWorkspaceAdd: boolean;
+		adminOnlyWorkspaceAddAccess: boolean;
+		adminOnlyWorkspaceDelete: boolean;
+		adminOnlyWorkspaceSetDiscoverable: boolean;
+		adminOnlyWorkspaceSetPublic: boolean;
+		adminOnlySkillAdd: boolean;
+		adminOnlySkillAddAccess: boolean;
+		adminOnlySkillDelete: boolean;
+		adminOnlySkillSetDiscoverable: boolean;
+		adminOnlySkillSetPublic: boolean;
 		adminOnlyStorageAdd: boolean;
 		adminOnlyStorageAddAccess: boolean;
 		adminOnlyStorageDelete: false;
@@ -210,6 +215,16 @@ export class ConfigStore {
 			adminOnlyProjectDelete: false,
 			adminOnlyProjectSetDiscoverable: false,
 			adminOnlyProjectSetPublic: false,
+			adminOnlyWorkspaceAdd: false,
+			adminOnlyWorkspaceAddAccess: false,
+			adminOnlyWorkspaceDelete: false,
+			adminOnlyWorkspaceSetDiscoverable: false,
+			adminOnlyWorkspaceSetPublic: false,
+			adminOnlySkillAdd: false,
+			adminOnlySkillAddAccess: false,
+			adminOnlySkillDelete: false,
+			adminOnlySkillSetDiscoverable: false,
+			adminOnlySkillSetPublic: false,
 			adminOnlyStorageAdd: false,
 			adminOnlyStorageAddAccess: false,
 			adminOnlyStorageDelete: false,
@@ -268,6 +283,10 @@ export class ConfigStore {
 	get theme(): {
 		name: string;
 		logo: string;
+		logoLight: string;
+		includeNameWithLogo: boolean;
+		loginHeroImage: string;
+		loginHeroImageDark: string;
 		banner: string | undefined;
 		landingPageName: string;
 		isLogoUrl: boolean;
@@ -287,6 +306,10 @@ export class ConfigStore {
 		const defaultTheme = {
 			name: THEME.name,
 			logo: THEME.logo,
+			logoLight: THEME.logoLight,
+			includeNameWithLogo: true,
+			loginHeroImage: "",
+			loginHeroImageDark: "",
 			banner: undefined,
 			landingPageName: THEME.name,
 			isLogoUrl: false,
@@ -336,6 +359,8 @@ export class ConfigStore {
 
 		const moduleMap = {
 			PROJECT: "Project",
+			WORKSPACE: "Workspace",
+			SKILL: "Skill",
 			DATABASE: "Db",
 			FUNCTION: "Function",
 			MODEL: "Model",
@@ -579,6 +604,13 @@ export class ConfigStore {
 		return true;
 	}
 
+	/**
+	 * Allow the user to login with ldap
+	 *
+	 * @param username - username to login with
+	 * @param password - password to login with
+	 * @returns true if successful
+	 */
 	async loginLDAP(username: string, password: string): Promise<boolean> {
 		const { monolithStore } = this._root;
 
@@ -776,50 +808,31 @@ export class ConfigStore {
 	/**
 	 * Load an app into a new workspace
 	 *
-	 * @param appId - id of app to load into the workspace
+	 * @param project - project metadata from the caller's context
+	 * @param role - the caller's resolved permission for this project
+	 * @param insightId - insight to bind the workspace to, or "new" to have one
+	 * created
 	 */
-	async createWorkspace(appId: string, insightId: string = "new") {
-		// get the role and throw an error if it is missing
-		const role = await getUserProjectLevelPermission(appId);
-		if (!role) {
-			throw new Error("Unauthorized");
-		}
+	async createWorkspace(
+		project: Project,
+		role: Role,
+		insightId: string = "new",
+	) {
+		// set the backend context for this insight
+		const response = await runPixel(
+			`SetContext("${project.project_id}")`,
+			insightId,
+		);
 
-		// set the context
-		await runPixel(`SetContext("${appId}")`, insightId);
-
-		// get the metadata
-		const getAppInfo = await this._root.monolithStore.runQuery<
-			[AppMetadata]
-		>(`ProjectInfo(project=["${appId}"]);`, insightId);
-
-		// throw the errors if there are any
-		if (getAppInfo.errors.length > 0) {
-			throw new Error(getAppInfo.errors.join(""));
-		}
-
-		const metadata = {
-			...getAppInfo.pixelReturn[0].output,
-		};
-
-		const workspace: WorkspaceConfigInterface = {
-			appId: appId,
-			insightId: insightId,
-			type: "CODE",
-			role: role,
-			metadata: metadata,
-		};
-
-		if (metadata.project_type === "BLOCKS") {
-			workspace.type = "BLOCKS";
-		} else if (metadata.project_type === "SKILL") {
-			workspace.type = "SKILL";
-		} else if (metadata.project_type === "WORKSPACE") {
-			workspace.type = "WORKSPACE";
-		}
-
-		// create the newly loaded workspace
-		return new WorkspaceStore(this._root, workspace);
+		// the workspace is built around the insight the backend answered with.
+		// Asking for "new" means the id only exists in that response, and
+		// anything the workspace hands to the backend later (downloads, asset
+		// reads) has to name the real insight
+		return new WorkspaceStore(this._root, {
+			insightId: response.insightId,
+			role,
+			metadata: project,
+		});
 	}
 
 	/**

@@ -1,8 +1,7 @@
-import { Copy } from "lucide-react";
 import { Env } from "@semoss/sdk/react";
-import { Button, H4, Markdown, P, toast } from "@semoss/ui/next";
+import { H4, Markdown, P } from "@semoss/ui/next";
 
-export const getMcpUsage = (id, name = "backend-mcp") => {
+const getMcpUsage = (id, name = "backend-mcp") => {
 	const mcpUrl = `${window.location.origin}${Env.MODULE}/api/ext/mcp/${id}/comms`;
 	const mcpKey =
 		name
@@ -135,17 +134,12 @@ export const getMcpUsage = (id, name = "backend-mcp") => {
 export const McpUsage = ({ id, name }: { id: string; name?: string }) => {
 	const usageData = getMcpUsage(id, name);
 
-	const copyCode = (text: string) => {
-		const cleanCode = text.replace(/```[a-z]*\n|```/g, "");
-		navigator.clipboard.writeText(cleanCode);
-		toast.success("Successfully copied to clipboard");
-	};
 	return (
 		<div className="space-y-4 md:space-y-6">
 			{usageData.map((item) => (
 				<div
 					key={item.Label}
-					className="rounded-2xl border border-base p-4 shadow-xs md:p-6"
+					className="rounded-2xl border border-border bg-card p-4 text-card-foreground shadow-xs md:p-6"
 				>
 					<div className="grid gap-4 md:grid-cols-2 md:gap-8">
 						{/* LEFT SIDE */}
@@ -162,7 +156,7 @@ export const McpUsage = ({ id, name }: { id: string; name?: string }) => {
 								</P>
 							)}
 
-							<ul className="mt-3 list-disc space-y-1 pl-5 text-gray-700 text-sm">
+							<ul className="mt-3 list-disc space-y-1 pl-5 text-muted-foreground text-sm">
 								{item.usage.map((point) => (
 									<li
 										data-testid={`mcp-usage-point-${item.Label}-${point}`}
@@ -175,33 +169,14 @@ export const McpUsage = ({ id, name }: { id: string; name?: string }) => {
 						</div>
 
 						{/* RIGHT SIDE */}
-						<div className="min-w-0 overflow-hidden rounded-xl border border-base shadow-xs">
-							<div className="flex items-center justify-end border-border border-b bg-gray-100 px-2 py-1">
-								<Button
-									aria-label="copy"
-									color="default"
-									variant="ghost"
-									size="icon-sm"
-									type="button"
-									data-testid={`mcp-usage-copy-button-${item.Label}`}
-									onClick={() => copyCode(item.code)}
-								>
-									<Copy className="size-3.5" />
-								</Button>
-							</div>
+						{/* The document variant's code block supplies the border, language
+						    label, and copy button; this wrapper only adds the vertical cap so
+						    a long snippet scrolls in place. */}
+						<div className="max-h-72 min-w-0 overflow-y-auto">
 							<Markdown
-								components={{
-									pre: ({ children }) => (
-										<div className="max-h-64 overflow-x-auto overflow-y-auto bg-gray-50 p-4 text-sm">
-											{children}
-										</div>
-									),
-									code: ({ children }) => (
-										<code className="block whitespace-pre font-mono text-xs leading-relaxed">
-											{children}
-										</code>
-									),
-								}}
+								className="text-sm"
+								variant="document"
+								data-testid={`mcp-usage-code-${item.Label}`}
 							>
 								{item.code}
 							</Markdown>

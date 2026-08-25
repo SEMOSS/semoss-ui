@@ -1,3 +1,4 @@
+export * from "./file.types";
 export * from "./file-code-editor";
 export * from "./file-download-view";
 export * from "./file-editor";
@@ -5,6 +6,8 @@ export * from "./file-editor-path-events";
 export * from "./file-explorer";
 export * from "./file-explorer.utils";
 export * from "./file-explorer-item";
+export * from "./file-html-editor";
 export * from "./file-image-viewer";
 export * from "./file-markdown-editor";
+export * from "./file-notebook";
 export * from "./file-pdf-viewer";

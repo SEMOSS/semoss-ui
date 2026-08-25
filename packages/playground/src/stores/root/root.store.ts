@@ -1,7 +1,6 @@
 import { configure, makeAutoObservable } from "mobx";
 import type React from "react";
 import type { ThemeMap } from "@semoss/shared";
-import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 
 configure({
 	enforceActions: "always",
@@ -82,8 +81,6 @@ export class RootStore {
 			toolAutoExecutionLimit: null,
 			defaultRoomSettings: {
 				model: undefined,
-				temperature: TEMPERATURE,
-				tokenLength: TOKEN_LENGTH,
 			},
 			allowedFileTypes: [],
 			allowedUrlPrefixes: [],
@@ -106,6 +103,7 @@ export class RootStore {
 				showActivityLog: true,
 				showPlatformLinks: true,
 				enableFeedbackText: true,
+				enableTemperature: false,
 			},
 		},
 	};
@@ -305,6 +303,9 @@ export class RootStore {
 			toolAutoExecutionLimit:
 				theme?.toolAutoExecutionLimit ||
 				this._store.theme.toolAutoExecutionLimit,
+			defaultCompactionStrategy:
+				theme?.defaultCompactionStrategy ??
+				this._store.theme.defaultCompactionStrategy,
 			allowedFileTypes:
 				theme?.allowedFileTypes ||
 				this._store.theme.allowedFileTypes ||

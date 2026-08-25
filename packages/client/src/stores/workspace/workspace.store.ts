@@ -1,16 +1,10 @@
 import { makeAutoObservable } from "mobx";
-import { runPixel } from "@semoss/sdk/react";
-import type { AppMetadata } from "@/components/app";
-import { FlexLayout } from "@/components/flex-layout";
+import type { Role } from "@semoss/sdk";
+import type { Project } from "@semoss/shared";
+import { FlexLayout } from "@semoss/shared";
 import type { RootStore, WorkspaceOptions } from "@/stores";
-import type { Role } from "@/types";
 
 export interface WorkspaceStoreInterface {
-	/**
-	 * ID of App
-	 */
-	appId: string;
-
 	/**
 	 * ID of Workspace Insight
 	 */
@@ -29,7 +23,7 @@ export interface WorkspaceStoreInterface {
 	/**
 	 * Metadata associated with the loaded app
 	 */
-	metadata: AppMetadata;
+	metadata: Project;
 
 	/**
 	 * Optional Model Engine to use
@@ -37,68 +31,9 @@ export interface WorkspaceStoreInterface {
 	agentModelEngine: string;
 
 	/**
-	 * Type of the app
-	 */
-	type: "BLOCKS" | "CODE" | "SKILL" | "WORKSPACE";
-
-	/**
 	 * Model associated with the layout
 	 **/
 	model: FlexLayout.Model | null;
-
-	/**
-	 * Overlay information
-	 **/
-	overlay: {
-		/**
-		 * Track if the overlay is open or closed
-		 */
-		open: boolean;
-
-		/**
-		 * Options associated with the overlay
-		 */
-		options: {
-			/**
-			 * Set the maxWidth of the overlay
-			 */
-			maxWidth:
-				| "sm"
-				| "md"
-				| "lg"
-				| "xl"
-				| "2xl"
-				| "3xl"
-				| "4xl"
-				| "5xl"
-				| null;
-		};
-
-		/**
-		 * Content to display in the overlay
-		 */
-		content: () => JSX.Element;
-	};
-
-	/**
-	 * File browser state used to sync asset path suggestions to terminal
-	 */
-	fileBrowser: {
-		/**
-		 * True while the app file browser panel is mounted/open
-		 */
-		isOpen: boolean;
-
-		/**
-		 * Current directory path shown by the browser
-		 */
-		path: string;
-
-		/**
-		 * Visible asset paths currently rendered in the browser tree
-		 */
-		visiblePaths: string[];
-	};
 
 	/**
 	 * insightId of the active terminal tab. Each terminal tab owns its own
@@ -111,11 +46,6 @@ export interface WorkspaceStoreInterface {
 
 export interface WorkspaceConfigInterface {
 	/**
-	 * Get the ID of the connected app
-	 */
-	appId: string;
-
-	/**
 	 * Get the ID of the Insight tied to app workspace
 	 */
 	insightId: string;
@@ -126,14 +56,9 @@ export interface WorkspaceConfigInterface {
 	role: Role;
 
 	/**
-	 * Type of the app
-	 */
-	type: "BLOCKS" | "CODE" | "SKILL" | "WORKSPACE";
-
-	/**
 	 * Metadata associated with the loaded app
 	 */
-	metadata: AppMetadata;
+	metadata: Project;
 }
 
 /**
@@ -143,37 +68,16 @@ export class WorkspaceStore {
 	// biome-ignore lint/correctness/noUnusedPrivateClassMembers: kept for future use
 	private _root: RootStore;
 	private _store: WorkspaceStoreInterface = {
-		appId: "",
 		insightId: "",
 		isLoading: false,
 		role: "READ_ONLY",
-		type: "CODE",
 		agentModelEngine: "",
 		metadata: {
 			project_id: "",
 			project_name: "",
-			project_type: "",
-			project_cost: "",
-			project_global: "",
-			project_catalog_name: "",
-			project_created_by: "",
-			project_date_last_edited: "",
-			project_created_by_type: "",
-			project_date_created: "",
+			project_type: "CODE",
 		},
 		model: null,
-		overlay: {
-			open: false,
-			options: {
-				maxWidth: "sm",
-			},
-			content: () => null,
-		},
-		fileBrowser: {
-			isOpen: false,
-			path: "/",
-			visiblePaths: [],
-		},
 		activeTerminalInsightId: null,
 	};
 
@@ -181,10 +85,7 @@ export class WorkspaceStore {
 		// register the root
 		this._root = root;
 
-		// set the app and insight Id
-		this._store.appId = config.appId;
 		this._store.insightId = config.insightId;
-		this._store.type = config.type;
 
 		// update the data
 		if (config.role) {
@@ -202,11 +103,8 @@ export class WorkspaceStore {
 	/**
 	 * Getters
 	 */
-	/**
-	 * Get the ID of the connected app
-	 */
 	get appId() {
-		return this._store.appId;
+		return this._store.metadata.project_id;
 	}
 
 	/**
@@ -243,11 +141,8 @@ export class WorkspaceStore {
 	get role() {
 		return this._store.role;
 	}
-	/**
-	 * Type of the app
-	 */
 	get type() {
-		return this._store.type;
+		return this._store.metadata.project_type;
 	}
 
 	/**
@@ -255,13 +150,6 @@ export class WorkspaceStore {
 	 */
 	get metadata() {
 		return this._store.metadata;
-	}
-
-	/**
-	 * Get the file browser snapshot used for terminal suggestion sync
-	 */
-	get fileBrowser() {
-		return this._store.fileBrowser;
 	}
 
 	/**
@@ -277,20 +165,12 @@ export class WorkspaceStore {
 	 * The key for the local storage cache
 	 */
 	get cacheKey() {
-		return `smss-workspace--${this._store.appId}-v5`;
+		return `smss-workspace--${this._store.metadata.project_id}-v7`;
 	}
 
 	/**
 	 * Actions
 	 */
-
-	/**
-	 * runs pixel off of workspace insight
-	 */
-	runWorkspacePixel = async (command: string) => {
-		return await runPixel(command, this._store.insightId);
-	};
-
 	/**
 	 * Load the workspace
 	 * @param options - options to configure the workspace with
@@ -334,6 +214,10 @@ export class WorkspaceStore {
 	 */
 	saveToCache = (): void => {
 		try {
+			if (!this._store.model) {
+				return;
+			}
+
 			const options: WorkspaceOptions = {
 				version: "",
 				layout: this._store.model.toJson(),
@@ -368,72 +252,10 @@ export class WorkspaceStore {
 	};
 
 	/**
-	 * Open the overlay
-	 */
-	openOverlay = (
-		content: WorkspaceStoreInterface["overlay"]["content"],
-		options: WorkspaceStoreInterface["overlay"]["options"] = {
-			maxWidth: "sm",
-		},
-	) => {
-		// open the overlay
-		this._store.overlay.open = true;
-
-		// set the content
-		this._store.overlay.content = content;
-		this._store.overlay.options = options;
-	};
-
-	/**
-	 * Close the overlay
-	 */
-	closeOverlay = () => {
-		// close the overlay
-		this._store.overlay.open = false;
-
-		// clear the content
-		this._store.overlay.content = null;
-	};
-
-	/**
-	 * Helpers
-	 */
-	/**
-	 * Get overlay information associated with the workspace
-	 */
-	get overlay() {
-		return this._store.overlay;
-	}
-
-	/**
 	 * Set the agentModelEngine
 	 */
 	setAgentModelEngine = (id: string) => {
 		this._store.agentModelEngine = id;
-	};
-
-	/**
-	 * Track whether the app file browser is open/mounted
-	 */
-	setFileBrowserOpen = (isOpen: boolean) => {
-		this._store.fileBrowser.isOpen = isOpen;
-
-		if (!isOpen) {
-			this._store.fileBrowser.path = "/";
-			this._store.fileBrowser.visiblePaths = [];
-		}
-	};
-
-	/**
-	 * Update the latest visible paths from the app file browser
-	 */
-	setFileBrowserVisiblePaths = (path: string, visiblePaths: string[]) => {
-		const normalized = Array.from(
-			new Set(visiblePaths.map((value) => value.trim()).filter(Boolean)),
-		);
-
-		this._store.fileBrowser.path = path || "/";
-		this._store.fileBrowser.visiblePaths = normalized;
 	};
 
 	/**

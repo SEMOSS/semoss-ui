@@ -1,0 +1,203 @@
+name: Delete GitHub Packages
+
+on:
+    workflow_dispatch:
+        inputs:
+            branch:
+                description: Branch whose published package versions should be removed
+                required: true
+                default: dev
+                type: string
+            channel:
+                description: Channel used when the versions were published
+                required: true
+                default: preview
+                type: string
+            dry_run:
+                description: When true, list matches only and do not delete anything
+                required: true
+                default: true
+                type: boolean
+
+permissions:
+    contents: read
+    packages: write
+
+concurrency:
+    group: delete-github-packages-${{ inputs.branch }}-${{ inputs.channel }}
+    cancel-in-progress: false
+
+jobs:
+    delete_packages:
+        runs-on: codebuild-semoss-github-runner-${{ github.run_id }}-${{ github.run_attempt }}
+        container:
+            image: public.ecr.aws/docker/library/node:24-bullseye
+        env:
+            SOURCE_BRANCH: ${{ inputs.branch }}
+            PUBLISH_CHANNEL: ${{ inputs.channel }}
+            DRY_RUN: ${{ inputs.dry_run }}
+            PACKAGE_ADMIN_TOKEN: ${{ secrets.SEMOSS_GITHUB_PAT }}
+            FALLBACK_GITHUB_TOKEN: ${{ github.token }}
+            GITHUB_OWNER: ${{ github.repository_owner }}
+        steps:
+            - name: Delete matching package versions
+              run: |
+                  node <<'NODE'
+                  const owner = process.env.GITHUB_OWNER;
+                  const ownerScope = `@${(owner || "").toLowerCase()}`;
+                  const packages = [
+                      {
+                          displayName: `${ownerScope}/i18n`,
+                          apiName: "i18n",
+                      },
+                      {
+                          displayName: `${ownerScope}/sdk`,
+                          apiName: "sdk",
+                      },
+                      {
+                          displayName: `${ownerScope}/ui`,
+                          apiName: "ui",
+                      },
+                      {
+                          displayName: `${ownerScope}/shared`,
+                          apiName: "shared",
+                      },
+                      {
+                          displayName: `${ownerScope}/renderer`,
+                          apiName: "renderer",
+                      },
+                      {
+                          displayName: `${ownerScope}/chat`,
+                          apiName: "chat",
+                      },
+                  ];
+
+                  const token =
+                      process.env.PACKAGE_ADMIN_TOKEN || process.env.FALLBACK_GITHUB_TOKEN;
+
+                  if (!token) {
+                      throw new Error("Missing token for package deletion. Provide SEMOSS_GITHUB_PAT or allow github.token.");
+                  }
+
+                  const sanitize = (value) =>
+                      value
+                          .toLowerCase()
+                          .replace(/[^a-z0-9-]+/g, "-")
+                          .replace(/^-+|-+$/g, "")
+                          .replace(/--+/g, "-") || "snapshot";
+
+                  const branch = sanitize(process.env.SOURCE_BRANCH || "dev");
+                  const channel = sanitize(process.env.PUBLISH_CHANNEL || "preview");
+                  const dryRun = (process.env.DRY_RUN || "true") === "true";
+                  const versionFragment = `${channel}.${branch}.`;
+
+                  const headers = {
+                      Authorization: `Bearer ${token}`,
+                      Accept: "application/vnd.github+json",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                  };
+
+                  const getOwnerType = async () => {
+                      const response = await fetch(`https://api.github.com/users/${owner}`, {
+                          headers,
+                      });
+
+                      if (!response.ok) {
+                          throw new Error(`Failed to resolve owner type for ${owner}: ${response.status}`);
+                      }
+
+                      const payload = await response.json();
+                      return payload.type;
+                  };
+
+                  const ownerType = await getOwnerType();
+                  const packageBaseUrl =
+                      ownerType === "Organization"
+                          ? `https://api.github.com/orgs/${owner}/packages/npm`
+                          : `https://api.github.com/users/${owner}/packages/npm`;
+
+                  const listVersions = async ({ displayName, apiName }) => {
+                      const versions = [];
+
+                      for (let page = 1; page <= 10; page += 1) {
+                          const response = await fetch(
+                              `${packageBaseUrl}/${encodeURIComponent(apiName)}/versions?per_page=100&page=${page}`,
+                              { headers },
+                          );
+
+                          if (response.status === 404) {
+                              console.log(`Package not found, skipping: ${displayName}`);
+                              return [];
+                          }
+
+                          if (!response.ok) {
+                              throw new Error(
+                                  `Failed to list versions for ${displayName}: ${response.status}`,
+                              );
+                          }
+
+                          const payload = await response.json();
+                          versions.push(...payload);
+
+                          if (payload.length < 100) {
+                              break;
+                          }
+                      }
+
+                      return versions;
+                  };
+
+                  const deleteVersion = async ({ displayName, apiName }, versionId) => {
+                      const response = await fetch(
+                          `${packageBaseUrl}/${encodeURIComponent(apiName)}/versions/${versionId}`,
+                          {
+                              method: "DELETE",
+                              headers,
+                          },
+                      );
+
+                      if (!response.ok) {
+                          throw new Error(
+                              `Failed to delete ${displayName} version id ${versionId}: ${response.status}`,
+                          );
+                      }
+                  };
+
+                  const matches = [];
+
+                  for (const pkg of packages) {
+                      const versions = await listVersions(pkg);
+                      const matchedVersions = versions
+                          .filter((version) => version.name.includes(versionFragment))
+                          .map((version) => ({
+                              packageName: pkg.displayName,
+                              packageApiName: pkg.apiName,
+                              versionId: version.id,
+                              versionName: version.name,
+                          }));
+
+                      matches.push(...matchedVersions);
+                  }
+
+                  if (matches.length === 0) {
+                      console.log(`No package versions found matching ${versionFragment}`);
+                      process.exit(0);
+                  }
+
+                  console.log(JSON.stringify({ dryRun, matches }, null, 2));
+
+                  if (dryRun) {
+                      process.exit(0);
+                  }
+
+                  for (const match of matches) {
+                      console.log(`Deleting ${match.packageName}@${match.versionName}`);
+                      await deleteVersion(
+                          {
+                              displayName: match.packageName,
+                              apiName: match.packageApiName,
+                          },
+                          match.versionId,
+                      );
+                  }
+                  NODE

@@ -1,7 +1,14 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import { type Insight, runPixel } from "@semoss/sdk/react";
+import { download, type Insight, runPixel } from "@semoss/sdk/react";
 import type { ThemeMap } from "@semoss/shared";
-import type { Engine, MCPConfig, Workspace } from "@/types";
+import type {
+	AbstractPixelMessage,
+	Engine,
+	MCPConfig,
+	PixelMessageTextPart,
+	PixelMessageToolCallPart,
+	Workspace,
+} from "@/types";
 import { RoomStore } from "../room";
 
 const DEFAUlT_MODEL_ID = import.meta.env.VITE_DEFAUlT_MODEL_ID || "";
@@ -37,6 +44,9 @@ interface ChatStoreInterface {
 
 		/** The current context window */
 		contextWindow?: number;
+
+		/** All available models fetched from the backend */
+		available: Engine[];
 	};
 
 	/**
@@ -100,6 +110,7 @@ export class ChatStore {
 		models: {
 			selected: null as unknown as Engine,
 			contextWindow: undefined,
+			available: [],
 		},
 		rooms: {},
 		optimisticRooms: {},
@@ -210,35 +221,34 @@ export class ChatStore {
 
 	getUser = async (): Promise<void> => {
 		try {
+			// Send both pixels in a single request.
+			// GetUserMetadata bypasses the cache that GetUserInfo has, so it
+			// always returns the latest saved text-generation-model value.
 			const result = await this._actions.run<
 				[
 					Record<
 						string,
-						{
-							id: string;
-							name: string;
-							lastLogin?: string;
-							meta?: Record<string, unknown>;
-						}
+						{ id: string; name: string; lastLogin?: string }
 					>,
+					{ "text-generation-model"?: string | string[] },
 				]
-			>(`META | GetUserInfo();`);
+			>(`META | GetUserInfo(); META | GetUserMetadata();`);
 
-			if (!result) return;
-
+			// Extract user id, name, lastLogin from GetUserInfo
 			const providerData = Object.values(result.pixelReturn[0].output)[0];
-			if (!providerData) return;
+			if (providerData) {
+				runInAction(() => {
+					this._store.user = {
+						id: providerData.id,
+						name: providerData.name,
+						lastLogin: providerData.lastLogin,
+					};
+				});
+			}
 
-			runInAction(() => {
-				this._store.user = {
-					id: providerData.id,
-					name: providerData.name,
-					lastLogin: providerData.lastLogin,
-				};
-			});
-
-			// extract the profile default text-generation model set via Settings > My Profile
-			const metaValue = providerData.meta?.["text-generation-model"];
+			// Extract profile default model from GetUserMetadata (bypasses cache)
+			const meta = result.pixelReturn[1].output;
+			const metaValue = meta?.["text-generation-model"];
 			const profileDefaultModelId = Array.isArray(metaValue)
 				? (metaValue[0] as string) || ""
 				: typeof metaValue === "string"
@@ -445,6 +455,102 @@ export class ChatStore {
 		});
 	};
 
+	downloadConversation = async (
+		roomId: string,
+		format: "word" | "pdf",
+	): Promise<void> => {
+		const messagesResponse = await runPixel<AbstractPixelMessage[]>(
+			`GetPlaygroundMessages(roomId=["${roomId}"]);`,
+			"new",
+		);
+
+		if (!messagesResponse?.pixelReturn?.[0]?.output) {
+			throw new Error("Failed to fetch conversation messages");
+		}
+
+		const messageOutput: AbstractPixelMessage[] =
+			messagesResponse.pixelReturn[0].output;
+
+		const formattedMessages = messageOutput
+			.map((message: AbstractPixelMessage) => {
+				const timestamp = message.dateCreated
+					? new Date(message.dateCreated).toLocaleString(undefined, {
+							month: "numeric",
+							day: "numeric",
+							year: "numeric",
+							hour: "numeric",
+							minute: "2-digit",
+							hour12: true,
+						})
+					: null;
+				const ts = timestamp ? `\n*${timestamp}*` : "";
+
+				if (message.io === "INPUT") {
+					const text = message.parts
+						?.filter(
+							(p): p is PixelMessageTextPart => p?.type === "TEXT",
+						)
+						.map((p) => p.text)
+						.join("");
+					return text ? `**You:**${ts}\n\n${text}` : null;
+				}
+				if (message.io === "OUTPUT") {
+					const text = message.parts
+						?.filter(
+							(p): p is PixelMessageTextPart => p?.type === "TEXT",
+						)
+						.map((p) => p.text)
+						.join("");
+					const tools: string[] =
+						message.parts
+							?.filter(
+								(p): p is PixelMessageToolCallPart =>
+									p?.type === "TOOL_CALL",
+							)
+							.map((p) => p.toolCall.title || p.toolCall.name)
+							.filter(Boolean) ?? [];
+					const toolLine =
+						tools.length > 0
+							? `\n\n*Tools used: ${tools.join(", ")}*`
+							: "";
+					return text || tools.length > 0
+						? `**Assistant:**${ts}\n\n${text}${toolLine}`
+						: null;
+				}
+				return null;
+			})
+			.filter(Boolean)
+			.join("\n\n---\n\n");
+
+		if (!formattedMessages) {
+			throw new Error("No conversation content to download");
+		}
+
+		const pixelCommand =
+			format === "word"
+				? `ToDocx(markdown=["<encode>${formattedMessages}</encode>"], fileName="Room Export - ${roomId}");`
+				: `ToPdf(markdown=["<encode>${formattedMessages}</encode>"], fileName="Room Export - ${roomId}");`;
+
+		const downloadResponse = await runPixel<string>(
+			pixelCommand,
+			messagesResponse.insightId,
+		);
+
+		if (!downloadResponse?.pixelReturn?.[0]) {
+			throw new Error("No response received from server");
+		}
+
+		const { operationType, output } = downloadResponse.pixelReturn[0];
+
+		if (!operationType?.includes("FILE_DOWNLOAD")) {
+			throw new Error(
+				`Failed to generate ${format.toUpperCase()} file. Operation type: ${operationType}`,
+			);
+		}
+
+		download(downloadResponse.insightId, output);
+	};
+
 	/**
 	 * Load a room from the store or create a new one
 	 * @param roomId - Room to remove
@@ -479,6 +585,51 @@ export class ChatStore {
 	};
 
 	/**
+	 * Re-fetch the user's profile default text-generation model from the backend
+	 * and update the selected model if it has changed. Called when the new-room
+	 * page mounts so any change made in the token-usage page (embed) is picked
+	 * up without requiring a logout/login cycle.
+	 */
+	refreshProfileDefaultModel = async (): Promise<void> => {
+		try {
+			// Use GetUserMetadata to bypass the GetUserInfo cache
+			const result = await this._actions.run<
+				[{ "text-generation-model"?: string | string[] }]
+			>(`META | GetUserMetadata();`);
+
+			const meta = result.pixelReturn[0].output;
+			const metaValue = meta?.["text-generation-model"];
+			const newModelId = Array.isArray(metaValue)
+				? (metaValue[0] as string) || ""
+				: typeof metaValue === "string"
+					? metaValue
+					: "";
+
+			// Only update if the default has actually changed
+			if (
+				!newModelId ||
+				newModelId === this._store.profileDefaultModelId
+			) {
+				return;
+			}
+
+			runInAction(() => {
+				this._store.profileDefaultModelId = newModelId;
+			});
+
+			const match = this._store.models.available.find(
+				(m) => m.engine_id === newModelId,
+			);
+
+			if (match) {
+				this.setSelectedModel(match);
+			}
+		} catch (e) {
+			console.error("[ChatStore] refreshProfileDefaultModel failed:", e);
+		}
+	};
+
+	/**
 	 * Set the selected model
 	 */
 	setSelectedModel = (model: Engine): void => {
@@ -492,6 +643,40 @@ export class ChatStore {
 		);
 
 		this.loadEngineContextWindow(model.engine_id);
+	};
+
+	/**
+	 * Select a model named by something other than the picker - an agent's
+	 * default model, say - resolving the id against the models the user can
+	 * actually see so a stale or unshared id cannot leave the room pointed at a
+	 * model that will not run.
+	 *
+	 * @returns whether the selection changed
+	 */
+	selectModelById = async (engineId: string): Promise<boolean> => {
+		const id = engineId?.trim();
+		if (!id || this._store.models.selected?.engine_id === id) {
+			return false;
+		}
+
+		try {
+			const { pixelReturn } = await this._actions.run<[Engine[]]>(
+				`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"], engine=[${JSON.stringify(id)}]);`,
+			);
+
+			const model = pixelReturn[0].output?.find(
+				(m) => m.engine_id === id,
+			);
+			if (!model) {
+				return false;
+			}
+
+			this.setSelectedModel(model);
+			return true;
+		} catch (e) {
+			console.error(e);
+			return false;
+		}
 	};
 
 	private loadEngineContextWindow = async (engineId: string) => {
@@ -616,6 +801,10 @@ export class ChatStore {
 
 		runInAction(() => {
 			const { output } = pixelReturn[0];
+
+			// Cache the full list so setProfileDefaultModel() can resolve an id to an Engine later
+			this._store.models.available = output;
+
 			// profileDefaultModelId is already set by getUser(), which runs before this
 			const profileDefaultModelId = this._store.profileDefaultModelId;
 			let isSelected = false;

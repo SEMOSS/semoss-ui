@@ -118,38 +118,8 @@ export const RoomFileExplorer: React.FC<RoomFileExplorerProps> = observer(
 		};
 
 		const openFileTab = (item: { name: string; path: string }) => {
-			let selectedNode: FlexLayout.TabNode | null = null;
-
-			room.sidebar.model.visitNodes((n) => {
-				if (selectedNode || !(n instanceof FlexLayout.TabNode)) {
-					return;
-				}
-
-				const cfg = n.getConfig() as { path?: string } | undefined;
-				if (
-					n.getComponent() === "room-file-editor" &&
-					cfg?.path === item.path
-				) {
-					selectedNode = n;
-				}
-			});
-
-			if (selectedNode) {
-				room.sidebar.model.doAction(
-					FlexLayout.Actions.selectTab(selectedNode.getId()),
-				);
-				return;
-			}
-
-			room.addSidebarNode(`FILE--${item.path}`, {
-				type: "tab",
+			room.openFileEditorSidebarNode(item.path, {
 				name: item.name,
-				component: "room-file-editor",
-				config: {
-					name: item.name,
-					path: item.path,
-				},
-				enableClose: true,
 			});
 		};
 
@@ -210,6 +180,10 @@ export const RoomFileExplorer: React.FC<RoomFileExplorerProps> = observer(
 								onDragStart={(e) => {
 									// cannot drag directories
 									if (item.type === "directory") {
+										return;
+									}
+
+									if (!layout) {
 										return;
 									}
 

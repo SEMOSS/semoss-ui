@@ -25,10 +25,12 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 	toast,
+	useTheme,
 } from "@semoss/ui/next";
 import { setupResetPassword } from "@/api/auth";
-import loginHero from "@/assets/img/login-hero.jpeg";
-import { useRootStore } from "@/hooks";
+import loginDarkHero from "@/assets/img/login-dark-hero.gif";
+import loginHero from "@/assets/img/login-gif.gif";
+import { useRootStore, useThemeLogo } from "@/hooks";
 
 interface TypeUserLogin {
 	USERNAME: string;
@@ -53,8 +55,20 @@ const LOGIN_PASSWORD_RESET_TYPES = ["native", "ldap", "linotp"] as const;
 type LoginPasswordResetType = (typeof LOGIN_PASSWORD_RESET_TYPES)[number];
 type LoginPasswordResetApiType = "NATIVE" | "LDAP" | "LINOTP";
 
+/**
+ * Default labels for the username / password logins. The provider keys stay
+ * as the backend defines them, only what the user reads changes.
+ */
+const LOGIN_TYPE_LABELS: Record<LoginPasswordResetType, string> = {
+	native: "Native",
+	ldap: "Active Directory",
+	linotp: "LinOTP",
+};
+
 export const LoginPage = observer(() => {
 	const { configStore } = useRootStore();
+	const { resolvedTheme } = useTheme();
+	const themeLogo = useThemeLogo();
 	const location = useLocation();
 	const uid = useId();
 
@@ -77,6 +91,13 @@ export const LoginPage = observer(() => {
 		Record<string, string>
 	>({});
 	const [heroImage, setHeroImage] = useState<string>(loginHero);
+	const customLightHeroImage = configStore.theme.loginHeroImage.trim();
+	const customDarkHeroImage = configStore.theme.loginHeroImageDark.trim();
+	const includeNameWithLogo = configStore.theme.includeNameWithLogo;
+	const isDarkMode = resolvedTheme === "dark";
+	const activeHeroImage = isDarkMode
+		? customDarkHeroImage || customLightHeroImage || loginDarkHero
+		: customLightHeroImage || heroImage;
 
 	const {
 		control,
@@ -161,6 +182,14 @@ export const LoginPage = observer(() => {
 		loginType as LoginPasswordResetType,
 	);
 
+	// prefer the display name the backend sends (e.g. ldap_display_name)
+	const getLoginTypeLabel = (type: LoginPasswordResetType) =>
+		availableProvidersMap[type]?.name || LOGIN_TYPE_LABELS[type];
+
+	const loginTypeLabel = loginType
+		? getLoginTypeLabel(loginType as LoginPasswordResetType)
+		: "";
+
 	useEffect(() => {
 		if (isNative) {
 			setLoginType("native");
@@ -208,6 +237,8 @@ export const LoginPage = observer(() => {
 	}, [oauthProvidersSignature]);
 
 	useEffect(() => {
+		if (isDarkMode || customLightHeroImage) return;
+
 		const timeoutId = window.setTimeout(() => {
 			import("@/assets/img/login-gif.gif")
 				.then((module) => setHeroImage(module.default))
@@ -215,7 +246,7 @@ export const LoginPage = observer(() => {
 		}, 1200);
 
 		return () => window.clearTimeout(timeoutId);
-	}, []);
+	}, [isDarkMode, customLightHeroImage]);
 
 	const login = handleSubmit(async (data: TypeUserLogin): Promise<void> => {
 		setIsLoading(true);
@@ -376,7 +407,7 @@ export const LoginPage = observer(() => {
 
 		if (!canRequestPasswordReset) {
 			setResetPasswordError(
-				"Password reset is only available for Native, LDAP, and LinOTP logins.",
+				"Password reset is only available for Native, Active Directory, and LinOTP logins.",
 			);
 			return;
 		}
@@ -429,6 +460,10 @@ export const LoginPage = observer(() => {
 					}
 				}
 
+				.dark .login-grid {
+					background: linear-gradient(48deg, rgba(32, 39, 54, 0.50) 7.37%, rgba(30, 41, 75, 0.49) 39.18%, rgba(120, 133, 213, 0.00) 84.89%);
+				}
+
 				@keyframes loginFeaturePillFadeUp {
 					from {
 						opacity: 0;
@@ -449,30 +484,32 @@ export const LoginPage = observer(() => {
 					}
 				}
 			`}</style>
-			<div className="login-grid relative grid min-h-screen w-full bg-white dark:bg-muted/20">
+			<div className="semoss-login-page login-grid relative grid min-h-screen w-full bg-background">
 				<div className="relative flex min-h-screen w-full flex-col overflow-hidden">
 					<div className="relative z-10 flex w-full flex-1 items-center justify-center overflow-y-auto px-6 pt-4 pb-4 md:px-10 md:pt-8 md:pb-6">
 						<div className="relative w-full max-w-[520px] overflow-hidden rounded-2xl p-6 md:p-8 dark:bg-background/95 dark:shadow-sm">
 							<div className="mb-6">
 								<div className="mb-2 flex flex-row items-center gap-2">
-									{configStore.theme.logo ? (
+									{themeLogo ? (
 										<img
-											src={configStore.theme.logo}
+											src={themeLogo}
 											alt={
 												configStore.theme.name || "logo"
 											}
 										/>
 									) : null}
-									<span className="font-bold text-xl">
-										{configStore.theme.name}
-									</span>
+									{includeNameWithLogo ? (
+										<span className="font-bold text-xl">
+											{configStore.theme.name}
+										</span>
+									) : null}
 								</div>
 								<h4 className="mb-2 min-h-[2.2rem] scroll-m-20 font-semibold text-2xl tracking-tight md:min-h-[2.6rem] md:text-3xl">
 									{register
 										? "Create your account"
 										: "Welcome back"}
 								</h4>
-								<p className="min-h-[1.25rem] text-black text-sm md:text-base dark:text-muted-foreground">
+								<p className="min-h-[1.25rem] text-muted-foreground text-sm md:text-base">
 									{register
 										? "Register to access your workspace."
 										: "Sign in to continue to your workspace."}
@@ -492,7 +529,7 @@ export const LoginPage = observer(() => {
 							)}
 
 							<form>
-								<div className="flex flex-col gap-4 [&_input]:border-[#9ea5af] [&_input]:bg-white [&_input]:shadow-none [&_input]:focus-visible:border-[#0176d3] [&_input]:focus-visible:ring-[#0176d3]/35 dark:[&_input]:border-input dark:[&_input]:bg-background dark:[&_input]:focus-visible:border-primary dark:[&_input]:focus-visible:ring-primary/30 [&_label]:font-medium [&_label]:text-black dark:[&_label]:text-muted-foreground">
+								<div className="flex flex-col gap-4 [&_input]:border-input [&_input]:bg-background [&_input]:text-foreground [&_input]:shadow-none [&_input]:focus-visible:border-primary [&_input]:focus-visible:ring-primary/30 [&_label]:font-medium [&_label]:text-foreground">
 									{!register && hasOAuth && (
 										<>
 											{configStore.store.config.availableProviders.map(
@@ -551,7 +588,7 @@ export const LoginPage = observer(() => {
 											{hasUsernamePassword && (
 												<div className="flex items-center gap-4 py-1">
 													<Separator className="flex-1" />
-													<span className="font-medium text-black text-sm dark:text-muted-foreground">
+													<span className="font-medium text-muted-foreground text-sm">
 														or
 													</span>
 													<Separator className="flex-1" />
@@ -588,7 +625,9 @@ export const LoginPage = observer(() => {
 																)}
 																data-testid="loginPage-button-native"
 															>
-																Native
+																{getLoginTypeLabel(
+																	"native",
+																)}
 															</button>
 														)}
 														{isLdap && (
@@ -614,7 +653,9 @@ export const LoginPage = observer(() => {
 																)}
 																data-testid="loginPage-button-ldap"
 															>
-																LDAP
+																{getLoginTypeLabel(
+																	"ldap",
+																)}
 															</button>
 														)}
 														{isLinOTP && (
@@ -640,7 +681,9 @@ export const LoginPage = observer(() => {
 																)}
 																data-testid="loginPage-button-linotp"
 															>
-																LinOTP
+																{getLoginTypeLabel(
+																	"linotp",
+																)}
 															</button>
 														)}
 													</div>
@@ -1435,7 +1478,7 @@ export const LoginPage = observer(() => {
 				</div>
 				<aside className="relative hidden overflow-hidden lg:block">
 					<img
-						src={heroImage}
+						src={activeHeroImage}
 						alt=""
 						className="absolute inset-0 h-full w-full object-cover"
 						loading="lazy"
@@ -1466,7 +1509,7 @@ export const LoginPage = observer(() => {
 					<div className="flex flex-col gap-3">
 						<p className="text-muted-foreground text-sm">
 							Enter the email associated with your{" "}
-							{loginType.toUpperCase()} login.
+							{loginTypeLabel} login.
 						</p>
 						<div className="flex flex-col gap-1.5">
 							<Label htmlFor={`${uid}-forgot-password-email`}>

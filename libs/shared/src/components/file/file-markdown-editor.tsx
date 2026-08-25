@@ -9,6 +9,9 @@ import {
 	Tabs,
 	TabsList,
 	TabsTrigger,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 import type { FileMode } from "./file.types";
 import type { FileCodeEditorActions } from "./file-code-editor";
@@ -23,12 +26,17 @@ interface FileMarkdownEditorProps {
 
 	/** Callback when the file is changed */
 	onChange?: (content: string, isModified: boolean) => void;
+
+	/** When true, the editor is view-only: content cannot be edited and the
+	 * Save action is hidden. Defaults to false. */
+	readOnly?: boolean;
 }
 
 export const FileMarkdownEditor: React.FC<FileMarkdownEditorProps> = ({
 	mode,
 	path,
 	onChange = () => null,
+	readOnly = false,
 }) => {
 	const insight = useInsight();
 	const [tab, setTab] = useState<"edit" | "preview">("edit");
@@ -79,7 +87,20 @@ export const FileMarkdownEditor: React.FC<FileMarkdownEditorProps> = ({
 	return (
 		<div className="relative flex h-full w-full flex-col overflow-hidden bg-background">
 			{/* Unified toolbar — always visible */}
-			<div className="flex w-full shrink-0 items-center justify-between gap-2 border-border border-b px-3 pt-[4px] pb-[7px]">
+			<div className="flex w-full shrink-0 items-center gap-1.5 border-border border-b px-2 py-1">
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => editorActionsRef.current?.refresh()}
+							aria-label="Refresh"
+						>
+							<RefreshCwIcon className="size-3" />
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>Refresh</TooltipContent>
+				</Tooltip>
 				<Tabs
 					value={tab}
 					onValueChange={(v) =>
@@ -91,31 +112,42 @@ export const FileMarkdownEditor: React.FC<FileMarkdownEditorProps> = ({
 						<TabsTrigger value="preview">Preview</TabsTrigger>
 					</TabsList>
 				</Tabs>
+				<div className="flex-1" />
 				<div className="flex items-center gap-1.5">
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => editorActionsRef.current?.refresh()}
-					>
-						<RefreshCwIcon className="size-4" />
-						Refresh
-					</Button>
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => editorActionsRef.current?.save()}
-					>
-						<SaveIcon className="size-4" />
-						Save
-					</Button>
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => editorActionsRef.current?.download()}
-					>
-						<DownloadIcon className="size-4" />
-						Download
-					</Button>
+					{!readOnly && (
+						<>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() =>
+											editorActionsRef.current?.save()
+										}
+										aria-label="Save"
+									>
+										<SaveIcon className="size-3" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>Save</TooltipContent>
+							</Tooltip>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() =>
+											editorActionsRef.current?.download()
+										}
+										aria-label="Download"
+									>
+										<DownloadIcon className="size-3" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>Download</TooltipContent>
+							</Tooltip>
+						</>
+					)}
 				</div>
 			</div>
 
@@ -133,6 +165,7 @@ export const FileMarkdownEditor: React.FC<FileMarkdownEditorProps> = ({
 					path={path}
 					onChange={handleContentChange}
 					hideToolbar
+					readOnly={readOnly}
 				/>
 			</div>
 

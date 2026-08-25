@@ -24,7 +24,7 @@ import {
 	useParams,
 } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
-import { download, runPixel, useIteratorPixel } from "@semoss/sdk/react";
+import { runPixel, useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	cn,
@@ -62,11 +62,6 @@ import {
 	useSidebar,
 } from "@semoss/ui/next";
 import { useChat, useRoot, useTour } from "@/hooks";
-import type {
-	AbstractPixelMessage,
-	PixelMessageTextPart,
-	PixelMessageToolCallPart,
-} from "@/types";
 import { getDateBucket, normalizeTimestamp } from "@/utility";
 import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
@@ -415,111 +410,11 @@ export const GlobalNav = observer(() => {
 		setDownloadingFormat(format);
 
 		try {
-			// Step 1: Get messages for this room using the pixel command
-			const messagesPixel = `GetPlaygroundMessages(roomId=["${roomId}"]);`;
-
-			const messagesResponse = await runPixel<AbstractPixelMessage[]>(
-				messagesPixel,
-				"new",
+			await chat.downloadConversation(roomId, format);
+			toast.success(
+				`Conversation downloaded successfully as ${format.toUpperCase()}`,
 			);
-
-			if (!messagesResponse?.pixelReturn?.[0]?.output) {
-				throw new Error("Failed to fetch conversation messages");
-			}
-
-			const messageOutput: AbstractPixelMessage[] =
-				messagesResponse.pixelReturn[0].output;
-
-			// Step 2: Format the messages into a conversation
-			const formattedMessages = messageOutput
-				.map((message: AbstractPixelMessage) => {
-					const timestamp = message.dateCreated
-						? new Date(message.dateCreated).toLocaleString(
-								undefined,
-								{
-									month: "numeric",
-									day: "numeric",
-									year: "numeric",
-									hour: "numeric",
-									minute: "2-digit",
-									hour12: true,
-								},
-							)
-						: null;
-					const ts = timestamp ? `\n*${timestamp}*` : "";
-
-					if (message.io === "INPUT") {
-						const text = message.parts
-							?.filter(
-								(p): p is PixelMessageTextPart =>
-									p?.type === "TEXT",
-							)
-							.map((p) => p.text)
-							.join("");
-						return text ? `**You:**${ts}\n\n${text}` : null;
-					}
-					if (message.io === "OUTPUT") {
-						const text = message.parts
-							?.filter(
-								(p): p is PixelMessageTextPart =>
-									p?.type === "TEXT",
-							)
-							.map((p) => p.text)
-							.join("");
-						const tools: string[] =
-							message.parts
-								?.filter(
-									(p): p is PixelMessageToolCallPart =>
-										p?.type === "TOOL_CALL",
-								)
-								.map((p) => p.toolCall.title || p.toolCall.name)
-								.filter(Boolean) ?? [];
-						const toolLine =
-							tools.length > 0
-								? `\n\n*Tools used: ${tools.join(", ")}*`
-								: "";
-						return text || tools.length > 0
-							? `**Assistant:**${ts}\n\n${text}${toolLine}`
-							: null;
-					}
-					return null;
-				})
-				.filter(Boolean)
-				.join("\n\n---\n\n");
-
-			if (!formattedMessages) {
-				throw new Error("No conversation content to download");
-			}
-
-			// Step 3: Generate the document using the same insightId
-			const pixelCommand =
-				format === "word"
-					? `ToDocx(markdown=["<encode>${formattedMessages}</encode>"], fileName="Room Export - ${roomId}");`
-					: `ToPdf(markdown=["<encode>${formattedMessages}</encode>"], fileName="Room Export - ${roomId}");`;
-
-			const downloadResponse = await runPixel<string>(
-				pixelCommand,
-				messagesResponse.insightId, // Reuse the same insightId
-			);
-
-			if (downloadResponse?.pixelReturn?.[0]) {
-				const { operationType, output } =
-					downloadResponse.pixelReturn[0];
-
-				if (operationType?.includes("FILE_DOWNLOAD")) {
-					download(downloadResponse.insightId, output);
-					toast.success(
-						`Conversation downloaded successfully as ${format.toUpperCase()}`,
-					);
-					setDownloadDialogOpen(false);
-				} else {
-					throw new Error(
-						`Failed to generate ${format.toUpperCase()} file. Operation type: ${operationType}`,
-					);
-				}
-			} else {
-				throw new Error("No response received from server");
-			}
+			setDownloadDialogOpen(false);
 		} catch (e) {
 			console.error("Download error:", e);
 			if (e instanceof Error) {

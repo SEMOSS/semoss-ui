@@ -4,12 +4,16 @@ import { useInsight } from "@semoss/sdk/react";
 import { FlexLayout } from "@semoss/shared";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
+import { ProjectDetailTabs } from "@/components/project";
 import { useWorkspace } from "@/hooks";
-import { AppDetailPage } from "@/pages/app/app-detail-page";
 import type { WorkspaceOptions } from "../../stores";
 import { CodeWorkspaceActions } from "../code-workspace/code-workspace-actions";
 import { MCPJsonEditor } from "../shared";
-import { WorkspaceManager, WorkspaceTerminal } from "../workspace";
+import {
+	WorkspaceManager,
+	WorkspaceNavbar,
+	WorkspaceTerminal,
+} from "../workspace";
 import { AgentEditor } from "./agent-editor";
 
 const DEFAULT_BORDER_SIZE = 300;
@@ -25,7 +29,9 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 			{
 				type: "border",
 				location: "left",
-				selected: 0,
+				// Keep file management available from the edge tab without taking
+				// space away from the agent editor on first load.
+				selected: -1,
 				size: 400,
 				children: [
 					{
@@ -34,13 +40,6 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						name: "Files",
 						component: "app-file-explorer",
 						enableClose: false,
-						config: {},
-					},
-					{
-						id: "settings",
-						type: "tab",
-						name: "Settings",
-						component: "settingsPanel",
 						config: {},
 					},
 				],
@@ -120,19 +119,49 @@ export const AgentWorkspace: React.FC = observer(() => {
 					node={node}
 					layout={layout}
 					app={workspace.appId}
-					onOpenStateChange={workspace.setFileBrowserOpen}
-					onVisibleAssetPathsChange={({ path, paths }) => {
-						workspace.setFileBrowserVisiblePaths(path, paths);
-					}}
 				/>
 			);
 		} else if (component === "app-file-editor") {
 			return <AppFileEditor node={node} app={workspace.appId} />;
 		} else if (component === "mcpJsonEditor") {
 			return <MCPJsonEditor dataMap={config.data} />;
-		} else if (component === "settingsPanel") {
+		} else if (component === "settings-panel") {
 			return (
-				<AppDetailPage showNav={false} excludeTabs={["mcp-usage"]} />
+				<ProjectDetailTabs
+					tabs={[
+						{ name: "Overview", component: "project-overview" },
+						{
+							name: "MCP",
+							component: "mcp-usage",
+							restrict: ["OWNER", "EDIT", "READ_ONLY"],
+						},
+						{
+							name: "Commits",
+							component: "commits",
+							restrict: ["OWNER", "EDIT"],
+						},
+						{
+							name: "GitHub",
+							component: "github",
+							restrict: ["OWNER"],
+						},
+						{
+							name: "Agent Activity",
+							component: "agent-activity",
+							restrict: ["OWNER", "EDIT", "READ_ONLY"],
+						},
+						{
+							name: "Access Control",
+							component: "access-control",
+							restrict: ["OWNER", "EDIT"],
+						},
+						{
+							name: "SMSS",
+							component: "smss",
+							restrict: ["OWNER"],
+						},
+					]}
+				/>
 			);
 		} else if (component === "terminal") {
 			return <WorkspaceTerminal appId={workspace.appId} />;
@@ -198,12 +227,13 @@ export const AgentWorkspace: React.FC = observer(() => {
 	};
 
 	return (
-		<WorkspaceManager
-			navbarActions={<CodeWorkspaceActions />}
-			options={DEFAULT_OPTIONS}
-			settingsTabName="Agent Settings"
-			factory={FACTORY}
-			onAction={handleAction}
-		/>
+		<>
+			<WorkspaceNavbar actions={<CodeWorkspaceActions />} />
+			<WorkspaceManager
+				options={DEFAULT_OPTIONS}
+				factory={FACTORY}
+				onAction={handleAction}
+			/>
+		</>
 	);
 });
