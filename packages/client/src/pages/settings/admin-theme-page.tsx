@@ -186,40 +186,159 @@ const EMPTY_THEME: FullTheme = {
 const FEATURE_FLAGS: {
 	key: keyof NonNullable<ThemeMap["playground"]["featureFlags"]>;
 	label: string;
+	description: string;
 }[] = [
-	{ key: "enableAgent", label: "Enable Agent" },
-	{ key: "enableModelSelect", label: "Enable Model Select" },
-	{ key: "enableAgentHarness", label: "Enable Agent Harness" },
-	{ key: "enableSuggestions", label: "Enable Suggestions" },
-	{ key: "enableRewrite", label: "Enable Rewrite" },
-	{ key: "enableDarkMode", label: "Enable Dark Mode" },
-	{ key: "enablePromptOptimizer", label: "Enable Prompt Optimizer" },
-	{ key: "hideToolsInIframe", label: "Hide Tools In Iframe" },
-	{ key: "enableKnowledgeMCP", label: "Enable Knowledge MCP" },
-	{ key: "allowEmbeddingOptions", label: "Allow Embedding Options" },
-	{ key: "showKnowledgeMenu", label: "Show Knowledge Menu" },
-	{ key: "showToolboxMenu", label: "Show Toolbox Menu" },
-	{ key: "showActivityLog", label: "Show Activity Log" },
-	{ key: "showPlatformLinks", label: "Show Platform Links" },
-	{ key: "enableFeedbackText", label: "Enable Feedback Text" },
-	{ key: "enableTableExport", label: "Enable Table Export" },
+	{
+		key: "enableAgent",
+		label: "Enable Agent",
+		description: "Shows the Agent item in the sidebar navigation.",
+	},
+	{
+		key: "enableModelSelect",
+		label: "Enable Model Select",
+		description:
+			"Shows a model picker in the room input and settings, letting users choose which model to chat with. When off, the theme's default model is always used.",
+	},
+	{
+		key: "enableAgentHarness",
+		label: "Enable Agent Harness",
+		description:
+			"Lets a new or existing room switch into agent mode, where messages run server-side via RunAgent instead of the normal chat flow.",
+	},
+	{
+		key: "enableSuggestions",
+		label: "Enable Suggestions",
+		description: "Shows suggested prompt chips in the room.",
+	},
+	{
+		key: "enableRewrite",
+		label: "Enable Rewrite",
+		description: "Shows the rewrite action on assistant responses.",
+	},
+	{
+		key: "enableDarkMode",
+		label: "Enable Dark Mode",
+		description: "Shows the dark mode toggle in the user menu.",
+	},
+	{
+		key: "enablePromptOptimizer",
+		label: "Enable Prompt Optimizer",
+		description: "Shows the prompt optimizer control in the room input.",
+	},
+	{
+		key: "hideToolsInIframe",
+		label: "Hide Tools In Iframe",
+		description:
+			"When the app is embedded in an iframe, hides the New Chat nav item, the tools (+) menu, and slash commands in the room input.",
+	},
+	{
+		key: "enableKnowledgeMCP",
+		label: "Enable Knowledge MCP",
+		description:
+			"When on, the knowledge picker only shows vector engines tagged MCP; when off, it shows all vector engines.",
+	},
+	{
+		key: "allowEmbeddingOptions",
+		label: "Allow Embedding Options",
+		description:
+			"Exposes embedding model options in the new knowledge form.",
+	},
+	{
+		key: "showKnowledgeMenu",
+		label: "Show Knowledge Menu",
+		description: "Shows the Knowledge item in the sidebar navigation.",
+	},
+	{
+		key: "showToolboxMenu",
+		label: "Show Toolbox Menu",
+		description: "Shows the Toolbox item in the sidebar navigation.",
+	},
+	{
+		key: "showActivityLog",
+		label: "Show Activity Log",
+		description: "Shows the activity log panel/toggle in the room.",
+	},
+	{
+		key: "showPlatformLinks",
+		label: "Show Platform Links",
+		description:
+			"Shows links to the base platform alongside MCPs in the workspace, MCP list, and message input.",
+	},
+	{
+		key: "enableFeedbackText",
+		label: "Enable Feedback Text",
+		description: "Shows the feedback text option on assistant responses.",
+	},
+	{
+		key: "enableTableExport",
+		label: "Enable Table Export",
+		description:
+			"Shows the export button on tables rendered in assistant responses.",
+	},
 ];
 
 const IMAGE_FIELDS: {
 	key: keyof ThemeMap["playground"]["images"];
 	label: string;
+	description: string;
 }[] = [
-	{ key: "app", label: "App" },
-	{ key: "logo", label: "Logo" },
-	{ key: "login", label: "Login" },
-	{ key: "loginDark", label: "Login (Dark)" },
-	{ key: "landing", label: "Landing" },
-	{ key: "landingDark", label: "Landing (Dark)" },
-	{ key: "workspace", label: "Workspace" },
-	{ key: "workspaceDark", label: "Workspace (Dark)" },
-	{ key: "tabIcon", label: "Tab Icon" },
-	{ key: "error", label: "Error" },
-	{ key: "errorDark", label: "Error (Dark)" },
+	{
+		key: "app",
+		label: "App",
+		description: "Used alongside Logo in the app logo shown in the header.",
+	},
+	{
+		key: "logo",
+		label: "Logo",
+		description: "Used alongside App in the app logo shown in the header.",
+	},
+	{
+		key: "login",
+		label: "Login",
+		description: "Background image on the login page (light mode).",
+	},
+	{
+		key: "loginDark",
+		label: "Login (Dark)",
+		description: "Background image on the login page (dark mode).",
+	},
+	{
+		key: "landing",
+		label: "Landing",
+		description:
+			"Background image on the landing/new room page (light mode).",
+	},
+	{
+		key: "landingDark",
+		label: "Landing (Dark)",
+		description:
+			"Background image on the landing/new room page (dark mode).",
+	},
+	{
+		key: "workspace",
+		label: "Workspace",
+		description: "Background image on the workspace page (light mode).",
+	},
+	{
+		key: "workspaceDark",
+		label: "Workspace (Dark)",
+		description: "Background image on the workspace page (dark mode).",
+	},
+	{
+		key: "tabIcon",
+		label: "Tab Icon",
+		description: "Browser favicon, used on the app and login page.",
+	},
+	{
+		key: "error",
+		label: "Error",
+		description: "Background image on the error page (light mode).",
+	},
+	{
+		key: "errorDark",
+		label: "Error (Dark)",
+		description: "Background image on the error page (dark mode).",
+	},
 ];
 
 const HEX_REGEX = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
@@ -1020,6 +1139,8 @@ const PlaygroundForm: React.FC<FormProps> = ({
 				{
 					type: "text",
 					label: "Playground Name",
+					description:
+						"Shown as the browser tab title, sidebar header, and login page branding.",
 					value: pg?.name ?? "",
 					onChange: (value) =>
 						updateTheme((d) => {
@@ -1027,17 +1148,10 @@ const PlaygroundForm: React.FC<FormProps> = ({
 						}),
 				},
 				{
-					type: "text",
-					label: "Banner",
-					value: pg?.banner ?? "",
-					onChange: (value) =>
-						updateTheme((d) => {
-							ensurePlayground(d).banner = value;
-						}),
-				},
-				{
 					type: "textarea",
 					label: "Description",
+					description:
+						"Shown under the landing page heading, unless Landing HTML below is set.",
 					rows: 3,
 					value: pg?.description ?? "",
 					onChange: (value) =>
@@ -1054,6 +1168,8 @@ const PlaygroundForm: React.FC<FormProps> = ({
 				{
 					type: "color",
 					label: "Background",
+					description:
+						"Sets the app's --background CSS variable, the base page background.",
 					value: pg?.variables?.backgroundColor ?? "",
 					onChange: (value) =>
 						updateTheme((d) => {
@@ -1064,6 +1180,8 @@ const PlaygroundForm: React.FC<FormProps> = ({
 				{
 					type: "color",
 					label: "Primary",
+					description:
+						"Sets the app's --primary CSS variable, used for buttons and primary accents.",
 					value: pg?.variables?.primaryColor ?? "",
 					onChange: (value) =>
 						updateTheme((d) => {
@@ -1073,6 +1191,8 @@ const PlaygroundForm: React.FC<FormProps> = ({
 				{
 					type: "color",
 					label: "Secondary",
+					description:
+						"Sets the app's --secondary CSS variable, used for secondary accents.",
 					value: pg?.variables?.secondaryColor ?? "",
 					onChange: (value) =>
 						updateTheme((d) => {
@@ -1086,9 +1206,10 @@ const PlaygroundForm: React.FC<FormProps> = ({
 			title: "Images",
 			description:
 				"URLs, relative paths, or data URIs used throughout the app.",
-			fields: IMAGE_FIELDS.map(({ key, label }) => ({
+			fields: IMAGE_FIELDS.map(({ key, label, description }) => ({
 				type: "text",
 				label,
+				description,
 				placeholder: `https://… or /path/to/${key}.png`,
 				value: pg?.images?.[key] ?? "",
 				onChange: (value: string) =>
@@ -1103,6 +1224,8 @@ const PlaygroundForm: React.FC<FormProps> = ({
 				{
 					type: "switch",
 					label: "Sidebar expanded by default",
+					description:
+						"Sets whether the sidebar starts expanded or collapsed on load.",
 					checked: pg?.sidebar?.expandedByDefault ?? false,
 					onChange: (value) =>
 						updateTheme((d) => {
@@ -1113,6 +1236,8 @@ const PlaygroundForm: React.FC<FormProps> = ({
 				{
 					type: "switch",
 					label: "Show chat history date",
+					description:
+						"Shows a date next to each conversation in the sidebar history list.",
 					checked: pg?.sidebar?.chatHistoryDate ?? false,
 					onChange: (value) =>
 						updateTheme((d) => {
@@ -1122,6 +1247,8 @@ const PlaygroundForm: React.FC<FormProps> = ({
 				{
 					type: "number",
 					label: "Tool auto-execution limit",
+					description:
+						"Max number of tool calls that can run at the same time; extra calls wait until fewer than this many are running. Defaults to 5 if left empty.",
 					min: 0,
 					placeholder: "Leave empty for default",
 					value: pg?.toolAutoExecutionLimit,
@@ -1133,6 +1260,8 @@ const PlaygroundForm: React.FC<FormProps> = ({
 				{
 					type: "select",
 					label: "Default compaction strategy",
+					description:
+						"Initial strategy used to compact long conversations to fit context limits.",
 					value: pg?.defaultCompactionStrategy ?? "AUTO",
 					options: [
 						{ value: "AUTO", label: "Auto" },
@@ -1150,9 +1279,10 @@ const PlaygroundForm: React.FC<FormProps> = ({
 		{
 			title: "Feature Flags",
 			layout: "grid",
-			fields: FEATURE_FLAGS.map(({ key, label }) => ({
+			fields: FEATURE_FLAGS.map(({ key, label, description }) => ({
 				type: "switch",
 				label,
+				description,
 				checked: pg?.featureFlags?.[key] ?? false,
 				onChange: (value: boolean) =>
 					updateTheme((d) => {
@@ -1170,7 +1300,21 @@ const PlaygroundForm: React.FC<FormProps> = ({
 			fields: [
 				{
 					type: "html",
+					label: "Banner HTML",
+					description:
+						"Shown in a bar above the landing page content.",
+					rows: 3,
+					value: pg?.banner ?? "",
+					onChange: (value) =>
+						updateTheme((d) => {
+							ensurePlayground(d).banner = value;
+						}),
+				},
+				{
+					type: "html",
 					label: "Footer HTML",
+					description:
+						"Rendered as the app's footer. Leave empty to hide the footer.",
 					rows: 4,
 					value: pg?.footer ?? "",
 					onChange: (value) =>
@@ -1181,6 +1325,8 @@ const PlaygroundForm: React.FC<FormProps> = ({
 				{
 					type: "html",
 					label: "Landing HTML",
+					description:
+						"Shown on the landing page in place of the default welcome heading.",
 					rows: 4,
 					value: pg?.landing ?? "",
 					onChange: (value) =>
