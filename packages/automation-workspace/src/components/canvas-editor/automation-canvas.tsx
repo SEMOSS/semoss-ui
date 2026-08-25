@@ -45,6 +45,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 	toast,
+	useTheme,
 } from "@semoss/ui/next";
 import type {
 	AutomationEdge,
@@ -358,6 +359,11 @@ export function AutomationCanvas({
 	mcpMode,
 	mcpContext,
 }: AutomationCanvasProps) {
+	const { resolvedTheme } = useTheme();
+	const isDark = resolvedTheme === "dark";
+	const edgeColor = isDark ? "#475569" : "#94a3b8";
+	const dotColor = isDark ? "#334155" : "#cbd5e1";
+
 	const [saving, setSaving] = useState(false);
 	const [description, setDescription] = useState("");
 	const [devMode, setDevMode] = useState(
@@ -1435,9 +1441,9 @@ export function AutomationCanvas({
 						type: MarkerType.ArrowClosed,
 						width: 12,
 						height: 12,
-						color: "#94a3b8",
+						color: edgeColor,
 					},
-					style: { stroke: "#94a3b8", strokeWidth: 1.5 },
+					style: { stroke: edgeColor, strokeWidth: 1.5 },
 					data: { onDelete: deleteEdge, readOnly },
 				});
 			}
@@ -1459,6 +1465,7 @@ export function AutomationCanvas({
 		stepDisplayOrder,
 		deleteStep,
 		deleteEdge,
+		edgeColor,
 		layoutNodes,
 		setRfNodes,
 		setRfEdges,
@@ -1640,7 +1647,7 @@ export function AutomationCanvas({
 											variant={BackgroundVariant.Dots}
 											gap={20}
 											size={1}
-											color="#cbd5e1"
+											color={dotColor}
 										/>
 									</ReactFlow>
 

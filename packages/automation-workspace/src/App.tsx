@@ -1,5 +1,6 @@
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useTheme } from "@semoss/ui/next";
 import { AutomationCanvas } from "./components/canvas-editor/automation-canvas";
 import { HistoryTab } from "./components/canvas-editor/tabs/history-tab";
 import { InspectorTab } from "./components/canvas-editor/tabs/inspector-tab";
@@ -41,6 +42,28 @@ export default function App() {
 	const traceMode = rawMode === "trace";
 	const inspectorMode = rawMode === "inspector";
 	const historyMode = rawMode === "history";
+
+	const { setTheme } = useTheme();
+	useEffect(() => {
+		const handleThemeSync = (event: MessageEvent<unknown>) => {
+			if (
+				event.origin !== parentOrigin ||
+				typeof event.data !== "object" ||
+				event.data === null
+			) {
+				return;
+			}
+			const msg = event.data as { type?: unknown; theme?: unknown };
+			if (
+				msg.type === "SEMOSS_THEME_SYNC" &&
+				(msg.theme === "light" || msg.theme === "dark")
+			) {
+				setTheme(msg.theme);
+			}
+		};
+		window.addEventListener("message", handleThemeSync);
+		return () => window.removeEventListener("message", handleThemeSync);
+	}, [parentOrigin, setTheme]);
 
 	const [toolContext, setToolContext] =
 		useState<AutomationToolContext | null>(getMcpToolContext());

@@ -16,6 +16,7 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	useTheme,
 } from "@semoss/ui/next";
 import { runWorkbenchRoomMcpTool } from "@/api/rooms";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
@@ -171,6 +172,22 @@ export const AutomationWorkspace = observer(() => {
 		() => new URL(AUTOMATION_WORKSPACE_URL, window.location.origin).origin,
 		[],
 	);
+
+	const { resolvedTheme } = useTheme();
+	useEffect(() => {
+		const msg = { type: "SEMOSS_THEME_SYNC", theme: resolvedTheme };
+		for (const ref of [
+			automationFrameRef,
+			traceFrameRef,
+			historyFrameRef,
+			inspectorFrameRef,
+		]) {
+			ref.current?.contentWindow?.postMessage(
+				msg,
+				automationWorkspaceOrigin,
+			);
+		}
+	}, [automationWorkspaceOrigin, resolvedTheme]);
 
 	const activateInspector = useCallback(() => {
 		const inspectorTab = workspace.model?.getNodeById(
