@@ -1,7 +1,7 @@
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, Maximize2 } from "lucide-react";
 import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
 import {
@@ -13,6 +13,10 @@ import {
 	DialogHeader,
 	DialogTitle,
 	Label,
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
@@ -86,10 +90,18 @@ export const ToolsDefaultView = observer(
 		);
 		const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 		const [showOptional, setShowOptional] = useState<boolean>(false);
-		// Parameters that were passed into an executed call are shown by default,
-		// next to the result, so the output can be read in context.
-		const [showParameters, setShowParameters] = useState<boolean>(true);
 		const [required, setRequired] = useState<string[]>([]);
+		const [tab, setTab] = useState<string>("inputs");
+		const [showOutputDialog, setShowOutputDialog] = useState(false);
+
+		const formattedResponse = useMemo(() => {
+			if (!tool.response) return "";
+			try {
+				return JSON.stringify(JSON.parse(tool.response), null, 2);
+			} catch {
+				return tool.response;
+			}
+		}, [tool.response]);
 
 		const [properties, setProperties] = useState<
 			Record<string, FieldSchema>
@@ -364,53 +376,118 @@ export const ToolsDefaultView = observer(
 			}
 		}, [getMCP, tool?.json.original_name]);
 
+		// Switch to output tab when execution completes
+		useEffect(() => {
+			if (
+				tool.status === "SUCCESS" ||
+				tool.status === "ERROR" ||
+				tool.status === "CANCELLED"
+			) {
+				setTab("output");
+			}
+		}, [tool.status]);
+
 		return (
-			// px-3 because applying padding on this div was clipping the shadow of the textareas
-			// so we apply px-1 to the inner divs instead
-			<div className="flex h-full w-full flex-col space-y-4 overflow-auto px-3 py-4 text-foreground">
-				<div className="space-y-2 px-1">
-					<h2 className="font-semibold text-2xl text-foreground">
+			<div className="flex h-full w-full flex-col overflow-hidden text-foreground">
+				<div className="shrink-0 px-4 pt-4 pb-2">
+					<h2 className="font-semibold text-foreground text-xl">
 						{title}
 					</h2>
-					{!!description && (
-						<p className="text-muted-foreground">{description}</p>
-					)}
 				</div>
 
-				<div className="flex-1 space-y-4 overflow-y-auto px-1">
-					{hasExecuted && (
-						/* The call is done, so show the arguments it ran with
-						   above the result rather than an input form that can no
-						   longer be submitted. */
-						<div className="flex flex-col space-y-2">
-							<div className="flex items-center justify-between gap-2">
-								<Label className="shrink-0 font-semibold">
-									{t("form.parameters")}
-								</Label>
-								{executedParameterKeys.length > 0 && (
+				<Tabs
+					value={tab}
+					onValueChange={setTab}
+					className="flex min-h-0 flex-1 flex-col"
+				>
+					<TabsList className="mx-4 mb-2 shrink-0 self-start">
+						<TabsTrigger value="output">Output</TabsTrigger>
+						<TabsTrigger value="inputs">Inputs</TabsTrigger>
+						<TabsTrigger value="description">
+							Description
+						</TabsTrigger>
+					</TabsList>
+
+					{/* Output tab */}
+					<TabsContent
+						value="output"
+						className="mx-3 flex min-h-0 flex-1 flex-col space-y-2 overflow-auto px-1"
+					>
+						{showResponse && (
+							<>
+								<div className="flex shrink-0 items-center justify-end">
 									<Button
 										type="button"
 										variant="ghost"
 										size="sm"
+										className="h-6 gap-1 px-2 text-muted-foreground text-xs"
 										onClick={() =>
-											setShowParameters(!showParameters)
+											setShowOutputDialog(true)
 										}
 									>
-										{t(
-											showParameters
-												? "actions.collapse"
-												: "actions.expand",
-										)}
+										<Maximize2 className="size-3" />
+										Expand
 									</Button>
-								)}
+								</div>
+								<Textarea
+									readOnly
+									className="w-full flex-1 resize-none font-mono text-sm"
+									value={formattedResponse}
+								/>
+							</>
+						)}
+						{toolFailed && tool.response && (
+							<div className="flex flex-col space-y-2">
+								<div className="flex items-center justify-between">
+									<Label className="shrink-0 font-semibold text-destructive">
+										{t(
+											`status.${
+												tool.status === "ERROR"
+													? "failed"
+													: "cancelled"
+											}`,
+										)}
+									</Label>
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										className="h-6 gap-1 px-2 text-muted-foreground text-xs"
+										onClick={() =>
+											setShowOutputDialog(true)
+										}
+									>
+										<Maximize2 className="size-3" />
+										Expand
+									</Button>
+								</div>
+								<Textarea
+									readOnly
+									className="w-full flex-1 resize-none font-mono text-sm"
+									value={formattedResponse}
+								/>
 							</div>
-							{executedParameterKeys.length === 0 ? (
-								<p className="text-muted-foreground text-sm">
-									{t("form.noParameters")}
-								</p>
-							) : (
-								showParameters &&
-								(schemaCoversParameters ? (
+						)}
+						{!showResponse && !toolFailed && (
+							<p className="py-8 text-center text-muted-foreground text-sm">
+								No output yet.
+							</p>
+						)}
+					</TabsContent>
+
+					{/* Inputs tab */}
+					<TabsContent
+						value="inputs"
+						className="mx-3 flex min-h-0 flex-1 flex-col overflow-auto px-1"
+					>
+						{hasExecuted ? (
+							/* Executed — show read-only parameters */
+							<div className="flex flex-col space-y-2">
+								{executedParameterKeys.length === 0 ? (
+									<p className="py-8 text-center text-muted-foreground text-sm">
+										{t("form.noParameters")}
+									</p>
+								) : schemaCoversParameters ? (
 									<div className="space-y-4">
 										{renderFields(
 											executedParameterFields,
@@ -433,164 +510,159 @@ export const ToolsDefaultView = observer(
 										)}
 										value={executedParametersJson}
 									/>
-								))
-							)}
-						</div>
-					)}
-					{showResponse && (
-						<div className="flex flex-col space-y-2">
-							<Label
-								htmlFor="tool-response"
-								className="shrink-0 font-semibold"
-							>
-								{t("form.result")}
-							</Label>
-							<Textarea
-								readOnly
-								className="w-full flex-1 resize-none"
-								value={tool.response}
-							/>
-						</div>
-					)}
-					{toolFailed && tool.response && (
-						<div className="flex flex-col space-y-2">
-							<Label
-								htmlFor="tool-response"
-								className="shrink-0 font-semibold text-destructive"
-							>
-								{t(
-									`status.${
-										tool.status === "ERROR"
-											? "failed"
-											: "cancelled"
-									}`,
 								)}
-							</Label>
-							<Textarea
-								readOnly
-								className="w-full flex-1 resize-none border-destructive text-destructive"
-								value={tool.response}
-							/>
-						</div>
-					)}
-					{/* Input form, only while the call can still be submitted */}
-					{hasExecuted ? null : getMCP.status === "ERROR" ? (
-						<div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-							<div className="text-destructive">
-								<p className="font-semibold text-lg">
+							</div>
+						) : getMCP.status === "ERROR" ? (
+							<div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+								<p className="font-semibold text-destructive text-lg">
 									{t("form.schemaLoadFailed")}
 								</p>
 								<p className="text-muted-foreground text-sm">
 									{t("form.schemaLoadFailedDescription")}
 								</p>
 							</div>
-						</div>
-					) : getMCP.status === "SUCCESS" ? (
-						<form onSubmit={handleSubmit}>
-							<div className="space-y-4">
-								{Object.keys(properties).length === 0 &&
-									!scriptForBrowserAutomation && (
-										<p className="py-8 text-center text-muted-foreground text-sm">
-											{t("form.noParameters")}
-										</p>
-									)}
+						) : getMCP.status === "SUCCESS" ? (
+							<div className="flex flex-1 flex-col">
+								<form
+									className="flex-1 space-y-4"
+									onSubmit={handleSubmit}
+								>
+									{Object.keys(properties).length === 0 &&
+										!scriptForBrowserAutomation && (
+											<p className="py-8 text-center text-muted-foreground text-sm">
+												{t("form.noParameters")}
+											</p>
+										)}
 
-								{/* Required fields */}
-								{renderFields(requiredFields, true)}
+									{renderFields(requiredFields, true)}
 
-								{/* Playwright Script Details */}
-								{scriptForBrowserAutomation && (
-									<div className="space-y-3 rounded-md border bg-muted/50 p-4">
-										<h3 className="font-semibold text-base">
-											{t("playwright.details")}
-										</h3>
-										<div className="space-y-2 text-sm">
-											<div>
-												<span className="font-medium">
-													{t("playwright.projectId")}:
-												</span>
-												<span className="ms-2 text-muted-foreground">
-													{app}
-												</span>
-											</div>
-											<div>
-												<span className="font-medium">
-													{t(
-														"playwright.recordedFile",
-													)}
-													:
-												</span>
-												<span className="ms-2 text-muted-foreground">
-													{scriptForBrowserAutomation}
-												</span>
+									{scriptForBrowserAutomation && (
+										<div className="space-y-3 rounded-md border bg-muted/50 p-4">
+											<h3 className="font-semibold text-base">
+												{t("playwright.details")}
+											</h3>
+											<div className="space-y-2 text-sm">
+												<div>
+													<span className="font-medium">
+														{t(
+															"playwright.projectId",
+														)}
+														:
+													</span>
+													<span className="ms-2 text-muted-foreground">
+														{app}
+													</span>
+												</div>
+												<div>
+													<span className="font-medium">
+														{t(
+															"playwright.recordedFile",
+														)}
+														:
+													</span>
+													<span className="ms-2 text-muted-foreground">
+														{
+															scriptForBrowserAutomation
+														}
+													</span>
+												</div>
 											</div>
 										</div>
-									</div>
-								)}
+									)}
 
-								{/* Optional fields toggle */}
-								{optionalFields.length > 0 && (
-									<>
+									{optionalFields.length > 0 && (
+										<>
+											<Button
+												type="button"
+												variant="outline"
+												size="sm"
+												onClick={() =>
+													setShowOptional(
+														!showOptional,
+													)
+												}
+												className="w-full"
+											>
+												{t(
+													showOptional
+														? "form.hideOptionalFields"
+														: "form.showOptionalFields",
+													{
+														count: optionalFields.length,
+													},
+												)}
+											</Button>
+											{showOptional &&
+												renderFields(
+													optionalFields,
+													false,
+												)}
+										</>
+									)}
+								</form>
+
+								{!isAutoExecuting && (
+									<div className="shrink-0 pt-4">
 										<Button
 											type="button"
-											variant="outline"
-											size="sm"
-											onClick={() =>
-												setShowOptional(!showOptional)
-											}
 											className="w-full"
+											size="lg"
+											onClick={handleSubmit}
+											disabled={isSubmitting}
 										>
-											{t(
-												showOptional
-													? "form.hideOptionalFields"
-													: "form.showOptionalFields",
-												{
-													count: optionalFields.length,
-												},
+											{isSubmitting ? (
+												<>
+													<Loader2 className="animate-spin" />
+													{t("form.executing")}
+												</>
+											) : (
+												t("form.execute")
 											)}
 										</Button>
-
-										{showOptional &&
-											renderFields(optionalFields, false)}
-									</>
+									</div>
 								)}
 							</div>
-						</form>
-					) : (
-						<div className="flex flex-col items-center justify-center gap-2 py-12">
-							<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-							<p className="text-muted-foreground text-sm">
-								{t("form.schemaLoading")}
-							</p>
-						</div>
-					)}
-				</div>
+						) : (
+							<div className="flex flex-col items-center justify-center gap-2 py-12">
+								<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+								<p className="text-muted-foreground text-sm">
+									{t("form.schemaLoading")}
+								</p>
+							</div>
+						)}
+					</TabsContent>
 
-				{!showResponse &&
-					!isAutoExecuting &&
-					!toolFailed &&
-					getMCP.status === "SUCCESS" && (
-						<div className="shrink-0 px-1">
-							<Button
-								type="button"
-								className="w-full"
-								size="lg"
-								onClick={() => {
-									handleSubmit();
-								}}
-								disabled={isSubmitting}
-							>
-								{isSubmitting ? (
-									<>
-										<Loader2 className="animate-spin" />
-										{t("form.executing")}
-									</>
-								) : (
-									t("form.execute")
-								)}
-							</Button>
-						</div>
-					)}
+					{/* Description tab */}
+					<TabsContent
+						value="description"
+						className="mx-4 overflow-auto"
+					>
+						{description ? (
+							<p className="text-muted-foreground text-sm">
+								{description}
+							</p>
+						) : (
+							<p className="py-8 text-center text-muted-foreground text-sm">
+								No description provided.
+							</p>
+						)}
+					</TabsContent>
+				</Tabs>
+
+				{/* Output expand dialog */}
+				<Dialog
+					open={showOutputDialog}
+					onOpenChange={setShowOutputDialog}
+				>
+					<DialogContent className="flex max-h-[80vh] max-w-3xl flex-col">
+						<DialogHeader>
+							<DialogTitle>{title} — Output</DialogTitle>
+						</DialogHeader>
+						<pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap rounded-md bg-muted p-4 font-mono text-sm">
+							{formattedResponse}
+						</pre>
+					</DialogContent>
+				</Dialog>
 
 				{/* Extension Not Available Dialog */}
 				<Dialog

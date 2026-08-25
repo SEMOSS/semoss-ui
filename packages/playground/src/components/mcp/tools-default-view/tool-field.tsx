@@ -69,7 +69,7 @@ export const ToolField = ({
 	const displayName = fieldName;
 
 	switch (fieldSchema.type) {
-		case "string":
+		case "string": {
 			if (fieldSchema.enum) {
 				return (
 					<div key={fieldName} className="space-y-1">
@@ -115,7 +115,19 @@ export const ToolField = ({
 					</div>
 				);
 			}
-			if (fieldSchema.maxLength && fieldSchema.maxLength > 100) {
+
+			const stringValue = typeof value === "string" ? value : "";
+			const lineCount = stringValue.split("\n").length;
+			const useTextarea =
+				lineCount > 1 ||
+				stringValue.length > 100 ||
+				(fieldSchema.maxLength !== undefined &&
+					fieldSchema.maxLength > 100);
+
+			if (useTextarea) {
+				const rows = disabled
+					? Math.min(12, Math.max(3, lineCount))
+					: 4;
 				return (
 					<div key={fieldName} className="space-y-1">
 						<div className="mb-2 flex items-center gap-2">
@@ -125,7 +137,6 @@ export const ToolField = ({
 							>
 								{displayName}
 								{required && (
-									// Default: render text input for strings
 									<span className="text-destructive"> *</span>
 								)}
 							</Label>
@@ -135,13 +146,13 @@ export const ToolField = ({
 						</div>
 						<Textarea
 							id={fieldName}
-							value={value as string}
+							value={stringValue}
 							onChange={(e) => onChange(e.target.value)}
 							placeholder={t("tools.enterField", {
 								field: displayName,
 							})}
-							rows={4}
-							className="w-full"
+							rows={rows}
+							className="w-full resize-none font-mono text-sm"
 							readOnly={disabled}
 						/>
 						{fieldSchema.description && (
@@ -152,6 +163,7 @@ export const ToolField = ({
 					</div>
 				);
 			}
+
 			return (
 				<div key={fieldName} className="space-y-1">
 					<div className="mb-2 flex items-center gap-2">
@@ -167,7 +179,7 @@ export const ToolField = ({
 					</div>
 					<Input
 						id={fieldName}
-						value={value as string}
+						value={stringValue}
 						onChange={(e) => onChange(e.target.value)}
 						placeholder={t("tools.enterField", {
 							field: displayName,
@@ -182,6 +194,7 @@ export const ToolField = ({
 					)}
 				</div>
 			);
+		}
 
 		// Numeric fields (number or integer)
 		case "number":

@@ -140,6 +140,24 @@ export const MainLayout = observer(() => {
 		return () => window.removeEventListener("message", handle);
 	}, []);
 
+	// Keep background iframes inert so they don't absorb touch-scroll events on
+	// mobile. pointer-events: none alone is not sufficient for touch in mobile
+	// browsers — inert suppresses all interaction while keeping the iframe loaded.
+	useEffect(() => {
+		for (const [path, iframe] of Object.entries(iframeRefs.current)) {
+			if (!iframe) continue;
+			const isActive = matchPath(
+				{ path: `/embed/${path}`, end: false },
+				pathname,
+			);
+			if (isActive) {
+				iframe.removeAttribute("inert");
+			} else {
+				iframe.setAttribute("inert", "");
+			}
+		}
+	}, [pathname]);
+
 	// Auto-show tour for first-time users (resets when cookies are cleared).
 	// If the welcome dialog is visible, defer until it is acknowledged.
 	useEffect(() => {
