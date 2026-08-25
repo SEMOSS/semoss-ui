@@ -1,5 +1,4 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import { getI18n } from "@semoss/i18n";
 import {
 	getPixelAsyncResult,
 	console as getPixelConsole,
@@ -8,7 +7,6 @@ import {
 	uploadInsight,
 } from "@semoss/sdk/react";
 import { FlexLayout, type ThemeMap } from "@semoss/shared";
-import { toast } from "@semoss/ui/next";
 import { STREAMING_PLACEHOLDER_ID } from "@/constants";
 import {
 	type AbstractMessageStore,
@@ -1178,12 +1176,8 @@ export class RoomStore {
 				// caller can show a "file is in use" message instead of silently
 				// proceeding with no attachment.
 				if (uploaded.length === 0) {
-					const uploadError = new Error(
-						getI18n().t("room:errors.fileInUse"),
-					);
+					const uploadError = new Error("File is in use");
 					uploadError.name = "UploadError";
-					(uploadError as Error & { fileNames: string[] }).fileNames =
-						files.map((f) => f.name);
 					throw uploadError;
 				}
 
@@ -1231,24 +1225,9 @@ export class RoomStore {
 			});
 			parentMessage.removeChild(inputMessage);
 
-			// Show the "file is in use" toast here — in the store — so it fires
-			// regardless of whether askMessage was awaited or fire-and-forgot
-			// (new-room flow calls it without await and swallows the thrown error).
-			const errMsg = (e as Error)?.message ?? "";
-			const isNetworkOrUploadFailure =
-				errMsg.includes("Failed to fetch") ||
-				errMsg.includes("ERR_FAILED") ||
-				errMsg.includes("File is in use") ||
-				errMsg.includes("NetworkError");
-
-			if (isNetworkOrUploadFailure || e instanceof TypeError) {
-				toast.error(getI18n().t("room:errors.fileInUse"));
-				// Tag and re-throw so awaited callers can also react if needed
-				const uploadError = new Error((e as Error).message);
-				uploadError.name = "UploadError";
-				(uploadError as Error & { fileNames: string[] }).fileNames =
-					files.map((f) => f.name);
-				throw uploadError;
+			// Re-throw UploadErrors as-is (e.g. the uploaded.length === 0 case above)
+			if ((e as Error)?.name === "UploadError") {
+				throw e;
 			}
 
 			throw e;

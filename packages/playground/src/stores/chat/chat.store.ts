@@ -366,10 +366,13 @@ export class ChatStore {
 					// increment the roomCounter to force re-render of the nav
 					this._store.keys.roomCounter++;
 				});
-			} catch {
-				// First message never landed — the room has no data and won't
-				// be returned by the refetch, so drop the optimistic entry.
-				this.removeOptimisticRoom(roomId);
+			} catch (e) {
+				// UploadError: the message was never sent but the room still
+				// exists — leave the optimistic entry so the user can retry.
+				// Any other error means the room has no data; drop it.
+				if ((e as Error)?.name !== "UploadError") {
+					this.removeOptimisticRoom(roomId);
+				}
 			}
 		})();
 
