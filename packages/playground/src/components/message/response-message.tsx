@@ -306,9 +306,19 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			{ value: "pdf", label: "PDF Document", extension: ".pdf" },
 		];
 
-		// Pre-compute completed tools for grouping; track the first TOOL_CALL
-		// part index (regardless of completion) so the group always renders at
-		// the top of the tool list even when an auto-execute tool completes first.
+		// Pre-compute completed tools for grouping. Tools cluster per contiguous
+		// run of TOOL_CALL parts: a run ends at the first part that renders
+		// something between them, so a second round of tools in an agent turn
+		// opens its own group in place rather than folding back into the first
+		// one above the text and thinking that preceded it. An empty part (the
+		// thinking placeholder a streaming message is seeded with) renders
+		// nothing, so it never splits a run.
+		const isToolRunBreak = (part: ResponseMessageStore["parts"][number]) =>
+			(part.type === "TEXT" && part.text.length > 0) ||
+			(part.type === "THINKING" && part.thinking.length > 0) ||
+			part.type === "MEDIA" ||
+			part.type === "SUBAGENT";
+
 		const getShouldGroupTool = (tool: ToolStore) => {
 			// tools whose call hasn't resolved yet (still streaming in, or in the
 			// gap before the final sync) fold into the group so they show as one
@@ -321,34 +331,39 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			// ask tools only enter group when there are no unfinished tools
 			return !message.hasUnfinishedTools;
 		};
-		const { groupedTools, hasAskTools, firstToolPartIdx, numTools } =
-			(() => {
-				const groupedTools: ToolStore[] = [];
-				let hasAskTools = false;
-				let firstToolPartIdx = -1;
-				let numTools = 0;
-				message.parts.forEach((p, idx) => {
-					if (p.type !== "TOOL_CALL") return;
-					if (firstToolPartIdx === -1) firstToolPartIdx = idx;
-					const tool = room.getTool(p.toolCall.id);
-					if (!tool) return;
-					numTools++;
-					if (getShouldGroupTool(tool)) {
-						groupedTools.push(tool);
-					}
-					if (
-						isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION)
-					) {
-						hasAskTools = true;
-					}
-				});
-				return {
-					groupedTools,
-					hasAskTools,
-					firstToolPartIdx,
-					numTools,
-				};
-			})();
+		// Grouped tools keyed by the part index the group renders at — the first
+		// TOOL_CALL part of its run (regardless of completion) so the group
+		// always sits at the top of that run's tool list even when an
+		// auto-execute tool completes first.
+		const { groupedToolsByPartIdx, hasAskTools, numTools } = (() => {
+			const groupedToolsByPartIdx = new Map<number, ToolStore[]>();
+			let hasAskTools = false;
+			let numTools = 0;
+			let runPartIdx = -1;
+			message.parts.forEach((p, idx) => {
+				if (p.type !== "TOOL_CALL") {
+					if (isToolRunBreak(p)) runPartIdx = -1;
+					return;
+				}
+				if (runPartIdx === -1) runPartIdx = idx;
+				const tool = room.getTool(p.toolCall.id);
+				if (!tool) return;
+				numTools++;
+				if (getShouldGroupTool(tool)) {
+					const tools = groupedToolsByPartIdx.get(runPartIdx) ?? [];
+					tools.push(tool);
+					groupedToolsByPartIdx.set(runPartIdx, tools);
+				}
+				if (isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION)) {
+					hasAskTools = true;
+				}
+			});
+			return {
+				groupedToolsByPartIdx,
+				hasAskTools,
+				numTools,
+			};
+		})();
 
 		const hasText = message.parts.some((part) => part.type === "TEXT");
 
@@ -509,10 +524,11 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						} else if (p.type === "TOOL_CALL") {
 							const tool = room.getTool(p.toolCall.id);
 							const isGrouped = getShouldGroupTool(tool);
+							const groupedTools =
+								groupedToolsByPartIdx.get(pIdx) ?? [];
 							return (
 								<Fragment key={key}>
-									{pIdx === firstToolPartIdx &&
-										groupedTools.length > 0 &&
+									{groupedTools.length > 0 &&
 										// A single tool renders as a group only while it's
 										// still resolving (so it shows as one loading
 										// cluster); once resolved it collapses back to its
