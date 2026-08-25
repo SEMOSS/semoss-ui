@@ -255,7 +255,12 @@ command=["<encode>${text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
 ${media.length ? `image=${JSON.stringify(media)},` : "image=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
-paramValues=[{}]`;
+paramValues=[${JSON.stringify(
+				room.theme.featureFlags?.enableTemperature &&
+					room.options.temperature !== undefined
+					? { temperature: room.options.temperature }
+					: {},
+			)}]`;
 
 			// wait for the pixel to run with streaming
 			await room.runRoomPixelStreaming<
@@ -265,22 +270,8 @@ paramValues=[{}]`;
 						responseMessage: ResponsePixelMessage;
 					},
 				]
-			>(
-				`AskPlayground(
-engine=["${room.model.engine_id}"],
-roomId=["${room.roomId}"],
-command=["<encode>${text}</encode>"],
-${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
-${media.length ? `image=${JSON.stringify(media)},` : "image=[],"}
-${this.id ? `parentMessageId=["${this.id}"],` : ""}
-paramValues=[${JSON.stringify(
-					room.theme.featureFlags?.enableTemperature &&
-						room.options.temperature !== undefined
-						? { temperature: room.options.temperature }
-						: {},
-				)}]
-);`,
-				(chunk) => {
+			>(`AskPlayground(${turnParams});`, {
+				onEmit: (chunk) => {
 					runInAction(() => {
 						if (chunk.stream_type === "content") {
 							if (chunk.data.content) {
