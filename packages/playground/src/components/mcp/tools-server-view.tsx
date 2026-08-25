@@ -1,21 +1,16 @@
-import { Maximize2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import {
-	Button,
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-	Label,
-	Tabs,
-	TabsContent,
-	TabsList,
-	TabsTrigger,
-	Textarea,
-} from "@semoss/ui/next";
+import { Label, Tabs, TabsContent, Textarea } from "@semoss/ui/next";
 import type { ToolStore } from "@/stores";
+import {
+	TOOL_CARD_TEXTAREA_TAB_CLASS,
+	ToolCardHeader,
+	ToolCardTabsList,
+	ToolDescriptionTabContent,
+	ToolOutputDialog,
+	ToolOutputText,
+} from "./tool-card-tabs";
 
 interface ToolsServerViewProps {
 	/** Connected tool */
@@ -73,43 +68,20 @@ export const ToolsServerView = observer(({ tool }: ToolsServerViewProps) => {
 
 	return (
 		<div className="flex h-full w-full flex-col overflow-hidden text-foreground">
-			<div className="shrink-0 px-4 pt-4 pb-2">
-				<h2 className="font-semibold text-foreground text-xl">
-					{title}
-				</h2>
-			</div>
+			<ToolCardHeader title={title} />
 
 			<Tabs
 				value={tab}
 				onValueChange={setTab}
 				className="flex min-h-0 flex-1 flex-col"
 			>
-				<TabsList className="mx-4 mb-2 shrink-0 self-start">
-					<TabsTrigger value="description">
-						{t("tabs.description")}
-					</TabsTrigger>
-					<TabsTrigger value="inputs">{t("tabs.inputs")}</TabsTrigger>
-					<TabsTrigger value="output">{t("tabs.output")}</TabsTrigger>
-				</TabsList>
+				<ToolCardTabsList />
 
-				<TabsContent
-					value="description"
-					className="mx-4 overflow-auto pb-4"
-				>
-					{description ? (
-						<p className="text-muted-foreground text-sm">
-							{description}
-						</p>
-					) : (
-						<p className="py-8 text-center text-muted-foreground text-sm">
-							{t("form.noDescription")}
-						</p>
-					)}
-				</TabsContent>
+				<ToolDescriptionTabContent description={description} />
 
 				<TabsContent
 					value="inputs"
-					className="mx-4 flex min-h-0 flex-1 flex-col space-y-2 overflow-auto pb-4"
+					className={TOOL_CARD_TEXTAREA_TAB_CLASS}
 				>
 					<Label className="shrink-0 font-semibold">
 						{t("form.parameters")}
@@ -127,28 +99,13 @@ export const ToolsServerView = observer(({ tool }: ToolsServerViewProps) => {
 
 				<TabsContent
 					value="output"
-					className="mx-4 flex min-h-0 flex-1 flex-col space-y-2 overflow-auto pb-4"
+					className={TOOL_CARD_TEXTAREA_TAB_CLASS}
 				>
 					{hasResponse ? (
-						<>
-							<div className="flex shrink-0 items-center justify-end">
-								<Button
-									type="button"
-									variant="ghost"
-									size="sm"
-									className="h-6 gap-1 px-2 text-muted-foreground text-xs"
-									onClick={() => setShowOutputDialog(true)}
-								>
-									<Maximize2 className="size-3" />
-									{t("actions.expand")}
-								</Button>
-							</div>
-							<Textarea
-								readOnly
-								className="w-full flex-1 resize-none font-mono text-sm"
-								value={responseText}
-							/>
-						</>
+						<ToolOutputText
+							text={responseText}
+							onExpand={() => setShowOutputDialog(true)}
+						/>
 					) : (
 						<p className="py-8 text-center text-muted-foreground text-sm">
 							{t("form.noOutput")}
@@ -157,18 +114,12 @@ export const ToolsServerView = observer(({ tool }: ToolsServerViewProps) => {
 				</TabsContent>
 			</Tabs>
 
-			<Dialog open={showOutputDialog} onOpenChange={setShowOutputDialog}>
-				<DialogContent className="flex max-h-[80vh] max-w-3xl flex-col">
-					<DialogHeader>
-						<DialogTitle>
-							{t("form.outputDialogTitle", { title })}
-						</DialogTitle>
-					</DialogHeader>
-					<pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap rounded-md bg-muted p-4 font-mono text-sm">
-						{responseText}
-					</pre>
-				</DialogContent>
-			</Dialog>
+			<ToolOutputDialog
+				title={title}
+				text={responseText}
+				open={showOutputDialog}
+				onOpenChange={setShowOutputDialog}
+			/>
 		</div>
 	);
 });

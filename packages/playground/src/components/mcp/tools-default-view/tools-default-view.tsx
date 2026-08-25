@@ -1,4 +1,4 @@
-import { AlertCircle, Loader2, Maximize2 } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -15,14 +15,20 @@ import {
 	Label,
 	Tabs,
 	TabsContent,
-	TabsList,
-	TabsTrigger,
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
 import { ResponseMessageStore, type RoomStore, type ToolStore } from "@/stores";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import { getToolEngineId, isAskExecutionMode } from "@/utility/mcp-utils";
+import {
+	TOOL_CARD_TEXTAREA_TAB_CLASS,
+	ToolCardHeader,
+	ToolCardTabsList,
+	ToolDescriptionTabContent,
+	ToolOutputDialog,
+	ToolOutputText,
+} from "../tool-card-tabs";
 import { ToolField } from "./tool-field";
 
 export interface ToolsDefaultViewProps {
@@ -389,49 +395,21 @@ export const ToolsDefaultView = observer(
 
 		return (
 			<div className="flex h-full w-full flex-col overflow-hidden text-foreground">
-				<div className="shrink-0 px-4 pt-4 pb-2">
-					<h2 className="font-semibold text-foreground text-xl">
-						{title}
-					</h2>
-				</div>
+				<ToolCardHeader title={title} />
 
 				<Tabs
 					value={tab}
 					onValueChange={setTab}
 					className="flex min-h-0 flex-1 flex-col"
 				>
-					<TabsList className="mx-4 mb-2 shrink-0 self-start">
-						<TabsTrigger value="description">
-							{t("tabs.description")}
-						</TabsTrigger>
-						<TabsTrigger value="inputs">
-							{t("tabs.inputs")}
-						</TabsTrigger>
-						<TabsTrigger value="output">
-							{t("tabs.output")}
-						</TabsTrigger>
-					</TabsList>
+					<ToolCardTabsList />
 
-					{/* Description tab */}
-					<TabsContent
-						value="description"
-						className="mx-4 overflow-auto pb-4"
-					>
-						{description ? (
-							<p className="text-muted-foreground text-sm">
-								{description}
-							</p>
-						) : (
-							<p className="py-8 text-center text-muted-foreground text-sm">
-								{t("form.noDescription")}
-							</p>
-						)}
-					</TabsContent>
+					<ToolDescriptionTabContent description={description} />
 
 					{/* Inputs tab */}
 					<TabsContent
 						value="inputs"
-						className="mx-3 flex min-h-0 flex-1 flex-col overflow-auto px-1 pb-4"
+						className={TOOL_CARD_TEXTAREA_TAB_CLASS}
 					>
 						{hasExecuted ? (
 							/* Executed — show read-only parameters */
@@ -588,60 +566,29 @@ export const ToolsDefaultView = observer(
 					{/* Output tab */}
 					<TabsContent
 						value="output"
-						className="mx-3 flex min-h-0 flex-1 flex-col space-y-2 overflow-auto px-1 pb-4"
+						className={TOOL_CARD_TEXTAREA_TAB_CLASS}
 					>
 						{showResponse && (
-							<>
-								<div className="flex shrink-0 items-center justify-end">
-									<Button
-										type="button"
-										variant="ghost"
-										size="sm"
-										className="h-6 gap-1 px-2 text-muted-foreground text-xs"
-										onClick={() =>
-											setShowOutputDialog(true)
-										}
-									>
-										<Maximize2 className="size-3" />
-										{t("actions.expand")}
-									</Button>
-								</div>
-								<Textarea
-									readOnly
-									className="w-full flex-1 resize-none font-mono text-sm"
-									value={formattedResponse}
-								/>
-							</>
+							<ToolOutputText
+								text={formattedResponse}
+								onExpand={() => setShowOutputDialog(true)}
+							/>
 						)}
 						{toolFailed && tool.response && (
 							<div className="flex flex-col space-y-2">
-								<div className="flex items-center justify-between">
-									<Label className="shrink-0 font-semibold text-destructive">
-										{t(
-											`status.${
-												tool.status === "ERROR"
-													? "failed"
-													: "cancelled"
-											}`,
-										)}
-									</Label>
-									<Button
-										type="button"
-										variant="ghost"
-										size="sm"
-										className="h-6 gap-1 px-2 text-muted-foreground text-xs"
-										onClick={() =>
-											setShowOutputDialog(true)
-										}
-									>
-										<Maximize2 className="size-3" />
-										{t("actions.expand")}
-									</Button>
-								</div>
-								<Textarea
-									readOnly
-									className="w-full flex-1 resize-none border-destructive font-mono text-destructive text-sm"
-									value={formattedResponse}
+								<Label className="shrink-0 font-semibold text-destructive">
+									{t(
+										`status.${
+											tool.status === "ERROR"
+												? "failed"
+												: "cancelled"
+										}`,
+									)}
+								</Label>
+								<ToolOutputText
+									text={formattedResponse}
+									destructive
+									onExpand={() => setShowOutputDialog(true)}
 								/>
 							</div>
 						)}
@@ -653,22 +600,12 @@ export const ToolsDefaultView = observer(
 					</TabsContent>
 				</Tabs>
 
-				{/* Output expand dialog */}
-				<Dialog
+				<ToolOutputDialog
+					title={title}
+					text={formattedResponse}
 					open={showOutputDialog}
 					onOpenChange={setShowOutputDialog}
-				>
-					<DialogContent className="flex max-h-[80vh] max-w-3xl flex-col">
-						<DialogHeader>
-							<DialogTitle>
-								{t("form.outputDialogTitle", { title })}
-							</DialogTitle>
-						</DialogHeader>
-						<pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap rounded-md bg-muted p-4 font-mono text-sm">
-							{formattedResponse}
-						</pre>
-					</DialogContent>
-				</Dialog>
+				/>
 
 				{/* Extension Not Available Dialog */}
 				<Dialog
