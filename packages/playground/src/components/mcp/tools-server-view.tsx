@@ -54,18 +54,21 @@ export const ToolsServerView = observer(({ tool }: ToolsServerViewProps) => {
 		[tool.response],
 	);
 	const hasResponse = tool.status === "SUCCESS" && !!responseText;
+	const toolFailed = tool.status === "ERROR" || tool.status === "CANCELLED";
 
-	const [tab, setTab] = useState<string>(hasResponse ? "output" : "inputs");
+	const [tab, setTab] = useState<string>(
+		hasResponse || toolFailed ? "output" : "inputs",
+	);
 	const [showOutputDialog, setShowOutputDialog] = useState(false);
 
 	// The result can arrive after this view has already mounted (the
 	// provider executes the tool server-side), so switch to the output tab
 	// once it does rather than leaving the user stuck on Inputs.
 	useEffect(() => {
-		if (hasResponse) {
+		if (hasResponse || toolFailed) {
 			setTab("output");
 		}
-	}, [hasResponse]);
+	}, [hasResponse, toolFailed]);
 
 	return (
 		<div className="flex h-full w-full flex-col overflow-hidden text-foreground">
@@ -105,12 +108,31 @@ export const ToolsServerView = observer(({ tool }: ToolsServerViewProps) => {
 					className={TOOL_CARD_TAB_CONTENT_CLASS}
 				>
 					<ToolTabScrollArea>
-						{hasResponse ? (
+						{hasResponse && (
 							<ToolOutputText
 								text={responseText}
 								onExpand={() => setShowOutputDialog(true)}
 							/>
-						) : (
+						)}
+						{toolFailed && responseText && (
+							<div className="flex flex-col space-y-2">
+								<Label className="shrink-0 font-semibold text-destructive">
+									{t(
+										`status.${
+											tool.status === "ERROR"
+												? "failed"
+												: "cancelled"
+										}`,
+									)}
+								</Label>
+								<ToolOutputText
+									text={responseText}
+									destructive
+									onExpand={() => setShowOutputDialog(true)}
+								/>
+							</div>
+						)}
+						{!hasResponse && !toolFailed && (
 							<p className="py-8 text-center text-muted-foreground text-sm">
 								{t("form.noOutput")}
 							</p>
