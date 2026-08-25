@@ -106,6 +106,29 @@ const hasStreamedContent = (message: ResponseMessageStore) =>
 			part.type === "MEDIA",
 	);
 
+/**
+ * One contiguous run of tool calls within a message — a single round of the
+ * agent loop. Grouping decisions are scoped to the run rather than the whole
+ * message, so a later round waiting on a tool decision leaves an earlier
+ * round's rendering alone.
+ */
+interface ToolRun {
+	/** Part index the run's group renders at — its first TOOL_CALL part. */
+	partIdx: number;
+
+	/** Every tool in the run, in part order. */
+	tools: ToolStore[];
+
+	/** The subset of `tools` that renders inside the group. */
+	grouped: ToolStore[];
+
+	/** Whether any tool in the run is still running or awaiting a decision. */
+	hasUnfinishedTools: boolean;
+
+	/** Whether any tool in the run needs a human decision. */
+	hasAskTools: boolean;
+}
+
 interface ResponseMessageProps {
 	/** Room */
 	room: RoomStore;
@@ -319,7 +342,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			part.type === "MEDIA" ||
 			part.type === "SUBAGENT";
 
-		const getShouldGroupTool = (tool: ToolStore) => {
+		const getShouldGroupTool = (tool: ToolStore, run: ToolRun) => {
 			// tools whose call hasn't resolved yet (still streaming in, or in the
 			// gap before the final sync) fold into the group so they show as one
 			// loading cluster rather than separate raw-named pills
@@ -328,42 +351,69 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			// agent-run tools) should always be grouped
 			if (!isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION))
 				return true;
-			// ask tools only enter group when there are no unfinished tools
-			return !message.hasUnfinishedTools;
+			// ask tools only enter the group once their own run has nothing
+			// left running — a later round waiting on a decision must not pull
+			// a settled round's ask tools back out of their group
+			return !run.hasUnfinishedTools;
 		};
-		// Grouped tools keyed by the part index the group renders at — the first
-		// TOOL_CALL part of its run (regardless of completion) so the group
-		// always sits at the top of that run's tool list even when an
-		// auto-execute tool completes first.
-		const { groupedToolsByPartIdx, hasAskTools, numTools } = (() => {
-			const groupedToolsByPartIdx = new Map<number, ToolStore[]>();
+
+		// First pass: split the tool parts into runs. Grouping is decided in a
+		// second pass because it depends on the run as a whole, which isn't
+		// known until the run has been walked.
+		const { toolRuns, hasAskTools, numTools } = (() => {
+			const toolRuns: ToolRun[] = [];
+			let run: ToolRun | null = null;
 			let hasAskTools = false;
 			let numTools = 0;
-			let runPartIdx = -1;
-			message.parts.forEach((p, idx) => {
+			for (let idx = 0; idx < message.parts.length; idx++) {
+				const p = message.parts[idx];
 				if (p.type !== "TOOL_CALL") {
-					if (isToolRunBreak(p)) runPartIdx = -1;
-					return;
+					if (isToolRunBreak(p)) run = null;
+					continue;
 				}
-				if (runPartIdx === -1) runPartIdx = idx;
+				// Opened on the run's first TOOL_CALL part regardless of
+				// completion, so the group always sits at the top of that run's
+				// tool list even when an auto-execute tool completes first.
+				if (!run) {
+					run = {
+						partIdx: idx,
+						tools: [],
+						grouped: [],
+						hasUnfinishedTools: false,
+						hasAskTools: false,
+					};
+					toolRuns.push(run);
+				}
 				const tool = room.getTool(p.toolCall.id);
-				if (!tool) return;
+				if (!tool) continue;
 				numTools++;
-				if (getShouldGroupTool(tool)) {
-					const tools = groupedToolsByPartIdx.get(runPartIdx) ?? [];
-					tools.push(tool);
-					groupedToolsByPartIdx.set(runPartIdx, tools);
+				run.tools.push(tool);
+				// Mirrors ResponseMessageStore.hasUnfinishedTools, narrowed to
+				// this run.
+				if (tool.status === "LOADING" || tool.status === "INITIAL") {
+					run.hasUnfinishedTools = true;
 				}
 				if (isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION)) {
+					run.hasAskTools = true;
 					hasAskTools = true;
 				}
-			});
-			return {
-				groupedToolsByPartIdx,
-				hasAskTools,
-				numTools,
-			};
+			}
+			return { toolRuns, hasAskTools, numTools };
 		})();
+
+		// Second pass: the group renders at the run's first part index, and
+		// every tool in it is skipped where its own part comes up.
+		const groupedToolIds = new Set<string>();
+		const runsByPartIdx = new Map<number, ToolRun>();
+		for (const run of toolRuns) {
+			run.grouped = run.tools.filter((tool) =>
+				getShouldGroupTool(tool, run),
+			);
+			for (const tool of run.grouped) {
+				groupedToolIds.add(tool.id);
+			}
+			runsByPartIdx.set(run.partIdx, run);
+		}
 
 		const hasText = message.parts.some((part) => part.type === "TEXT");
 
@@ -523,12 +573,13 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							);
 						} else if (p.type === "TOOL_CALL") {
 							const tool = room.getTool(p.toolCall.id);
-							const isGrouped = getShouldGroupTool(tool);
-							const groupedTools =
-								groupedToolsByPartIdx.get(pIdx) ?? [];
+							// Only set on the part the run's group renders at.
+							const run = runsByPartIdx.get(pIdx);
+							const groupedTools = run?.grouped ?? [];
 							return (
 								<Fragment key={key}>
-									{groupedTools.length > 0 &&
+									{run &&
+										groupedTools.length > 0 &&
 										// A single tool renders as a group only while it's
 										// still resolving (so it shows as one loading
 										// cluster); once resolved it collapses back to its
@@ -545,15 +596,15 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 												message={message}
 												tool={groupedTools[0]}
 												// getShouldGroupTool dictates that tools are grouped if auto, or all finished
-												// if the group size is 1, then this could be an auto tool and the message has an unfinished ask tool
+												// if the group size is 1, then this could be an auto tool and the run has an unfinished ask tool
 												// we should be large in this case for consistency
 												isLarge={
-													message.hasUnfinishedTools &&
-													hasAskTools
+													run.hasUnfinishedTools &&
+													run.hasAskTools
 												}
 											/>
 										))}
-									{tool && !isGrouped && (
+									{tool && !groupedToolIds.has(tool.id) && (
 										<ResponseMessageTool
 											message={message}
 											tool={tool}
