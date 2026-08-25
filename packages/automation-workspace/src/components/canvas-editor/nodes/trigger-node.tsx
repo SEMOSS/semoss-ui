@@ -1,5 +1,5 @@
 import { Handle, type NodeProps, Position } from "@xyflow/react";
-import { Pencil, Play, Plus } from "lucide-react";
+import { Pencil, Plus, Zap } from "lucide-react";
 
 export type TriggerNodeData = {
 	label: string;
@@ -14,45 +14,38 @@ export function TriggerNode({ data, id }: NodeProps) {
 	const d = data as TriggerNodeData;
 
 	return (
-		<div className="group relative w-[280px] rounded-2xl border-2 border-emerald-500/40 bg-card shadow-sm transition-all hover:shadow-md">
-			{/* Edit button */}
-			{d.onEdit && (
-				<button
-					type="button"
-					onClick={(e) => {
-						e.stopPropagation();
-						d.onEdit?.();
-					}}
-					className="absolute top-2 right-2 z-10 hidden rounded bg-muted p-1 transition-colors hover:bg-muted/80 group-hover:block"
-					aria-label="Edit trigger"
-				>
-					<Pencil className="h-3 w-3 text-muted-foreground" />
-				</button>
-			)}
-
-			<div className="px-4 py-3">
-				<div className="mb-2 flex items-center gap-2">
-					<span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10">
-						<Play className="h-3.5 w-3.5 text-emerald-600" />
-					</span>
-					<span className="font-medium text-[10px] text-emerald-600 uppercase tracking-widest">
-						Trigger
-					</span>
-					{d.devMode && (
-						<span className="ml-auto rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-700">
-							dev
-						</span>
-					)}
-				</div>
-				<p className="line-clamp-3 font-semibold text-sm leading-snug">
-					{d.label || "Start"}
-				</p>
-				{d.description && (
-					<p className="mt-0.5 line-clamp-2 text-[11px] text-muted-foreground">
-						{d.description}
-					</p>
+		<div className="group relative flex flex-col items-center">
+			{/* Diamond shape */}
+			<div className="relative h-[72px] w-[72px] rotate-45 rounded-lg border-2 border-emerald-500/40 bg-card shadow-sm transition-all hover:shadow-md">
+				{/* Edit button */}
+				{d.onEdit && (
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							d.onEdit?.();
+						}}
+						className="-top-2 -right-2 -rotate-45 absolute z-10 hidden rounded-full bg-muted p-1 transition-colors hover:bg-muted/80 group-hover:block"
+						aria-label="Edit trigger"
+					>
+						<Pencil className="h-3 w-3 text-muted-foreground" />
+					</button>
 				)}
+
+				<div className="-rotate-45 flex h-full w-full items-center justify-center">
+					<Zap className="h-5 w-5 text-emerald-600" />
+				</div>
 			</div>
+
+			{/* Label below diamond */}
+			<p className="mt-2 max-w-[120px] text-center font-medium text-foreground text-xs leading-tight">
+				{d.label || "Start"}
+			</p>
+			{d.description && (
+				<p className="mt-0.5 max-w-[120px] text-center text-[10px] text-muted-foreground">
+					{d.description}
+				</p>
+			)}
 
 			{d.isLast ? (
 				<>

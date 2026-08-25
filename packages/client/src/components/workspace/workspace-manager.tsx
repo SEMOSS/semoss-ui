@@ -69,6 +69,12 @@ type WorkspaceManagerProps = {
 	/** Optional action handler — return the action to let FlexLayout process it, return undefined to consume it */
 	onAction?: (action: FlexLayout.Action) => FlexLayout.Action | undefined;
 
+	/** Optional hook to customise tab rendering after default icons are applied */
+	onRenderTab?: (
+		node: FlexLayout.TabNode,
+		renderValues: FlexLayout.ITabRenderValues,
+	) => void;
+
 	/** When true, the workspace is view-only: layout is not persisted to cache and the settings/reset controls are hidden */
 	readOnly?: boolean;
 };
@@ -78,6 +84,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 		options,
 		factory = () => null,
 		onAction = (action: FlexLayout.Action) => action,
+		onRenderTab: externalOnRenderTab,
 		readOnly = false,
 	}) => {
 		const { workspace } = useWorkspace();
@@ -241,6 +248,11 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 									if (tabIcon) {
 										renderValues.leading = tabIcon;
 									}
+
+									externalOnRenderTab?.(
+										tabNode,
+										renderValues,
+									);
 
 									return renderValues;
 								}}

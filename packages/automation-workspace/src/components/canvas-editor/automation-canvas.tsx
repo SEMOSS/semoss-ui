@@ -40,7 +40,12 @@ import {
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
+	Switch,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
+	useTheme,
 } from "@semoss/ui/next";
 import type {
 	AutomationEdge,
@@ -74,7 +79,6 @@ import { AddNodeMenu } from "./add-node-menu";
 import { AutomationDockLayout } from "./automation-dock-layout";
 import { AutomationNode as AutomationNodeCard } from "./nodes/automation-node";
 import { TriggerNode } from "./nodes/trigger-node";
-import { RunBanner } from "./run-banner";
 import { UndoBanner } from "./undo-banner";
 
 // ---- React Flow custom node registry (must be outside component) ----
@@ -355,6 +359,11 @@ export function AutomationCanvas({
 	mcpMode,
 	mcpContext,
 }: AutomationCanvasProps) {
+	const { resolvedTheme } = useTheme();
+	const isDark = resolvedTheme === "dark";
+	const edgeColor = isDark ? "#475569" : "#94a3b8";
+	const dotColor = isDark ? "#334155" : "#cbd5e1";
+
 	const [saving, setSaving] = useState(false);
 	const [description, setDescription] = useState("");
 	const [devMode, setDevMode] = useState(
@@ -481,9 +490,7 @@ export function AutomationCanvas({
 		);
 	}, [appId]);
 
-	useEffect(() => {
-		if (editingStepId) setActiveDockTab("inspector");
-	}, [editingStepId]);
+	useEffect(() => {}, [editingStepId]);
 	const loadedRef = useRef(false);
 	const skipDraftPersistenceRef = useRef(true);
 	const initialLayoutAppliedRef = useRef(false);
@@ -1085,15 +1092,6 @@ export function AutomationCanvas({
 		return () => document.removeEventListener("keydown", handler);
 	}, [readOnly, save]);
 
-	const dismissRun = useCallback(() => {
-		setLatestRunResults([]);
-		setLatestRunStatus(null);
-		setStepStatuses({});
-		setStepErrors({});
-		setStepDurations({});
-		setAiRunSummary(null);
-	}, []);
-
 	const applyRunData = useCallback(
 		(runData: {
 			STATUS: RunStatus;
@@ -1443,9 +1441,9 @@ export function AutomationCanvas({
 						type: MarkerType.ArrowClosed,
 						width: 12,
 						height: 12,
-						color: "#94a3b8",
+						color: edgeColor,
 					},
-					style: { stroke: "#94a3b8", strokeWidth: 1.5 },
+					style: { stroke: edgeColor, strokeWidth: 1.5 },
 					data: { onDelete: deleteEdge, readOnly },
 				});
 			}
@@ -1467,6 +1465,7 @@ export function AutomationCanvas({
 		stepDisplayOrder,
 		deleteStep,
 		deleteEdge,
+		edgeColor,
 		layoutNodes,
 		setRfNodes,
 		setRfEdges,
@@ -1571,42 +1570,18 @@ export function AutomationCanvas({
 											Read-only
 										</div>
 									)}
-									{/* Banners row above the canvas */}
-									{(running ||
-										(latestRunStatus &&
-											latestRunStatus !== "RUNNING") ||
-										undoSnapshot) && (
-										<div className="absolute inset-x-0 top-0 z-20 space-y-2 px-4 pt-3">
-											{running && (
-												<div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-primary text-xs">
-													<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
-													Running…
-												</div>
-											)}
-											{!running &&
-												latestRunStatus &&
-												latestRunStatus !==
-													"RUNNING" && (
-													<RunBanner
-														status={latestRunStatus}
-														aiSummary={aiRunSummary}
-														generatingAiSummary={
-															generatingAiSummary
-														}
-														onDismiss={dismissRun}
-													/>
-												)}
-											{undoSnapshot && (
-												<UndoBanner
-													onUndo={() => {
-														setSteps(undoSnapshot);
-														setUndoSnapshot(null);
-													}}
-													onDismiss={() =>
-														setUndoSnapshot(null)
-													}
-												/>
-											)}
+									{/* Undo banner above the canvas */}
+									{undoSnapshot && (
+										<div className="absolute inset-x-0 top-0 z-20 px-4 pt-3">
+											<UndoBanner
+												onUndo={() => {
+													setSteps(undoSnapshot);
+													setUndoSnapshot(null);
+												}}
+												onDismiss={() =>
+													setUndoSnapshot(null)
+												}
+											/>
 										</div>
 									)}
 
@@ -1672,7 +1647,7 @@ export function AutomationCanvas({
 											variant={BackgroundVariant.Dots}
 											gap={20}
 											size={1}
-											color="#cbd5e1"
+											color={dotColor}
 										/>
 									</ReactFlow>
 
@@ -1733,43 +1708,94 @@ export function AutomationCanvas({
 									</div>
 
 									<div className="absolute bottom-4 left-4 z-10 flex items-center overflow-hidden rounded-lg border bg-background shadow-sm">
-										<button
-											type="button"
-											aria-label="Clean up node layout"
-											title="Clean up layout — restore execution order"
-											onClick={cleanUpLayout}
-											className={`${readOnly ? "hidden" : "flex"} items-center justify-center border-r p-2 text-muted-foreground transition-colors hover:bg-muted`}
-										>
-											<RefreshCw className="h-4 w-4" />
-										</button>
-										<button
-											type="button"
-											title="Interact mode — click nodes to edit (V)"
-											onClick={() =>
-												setCanvasMode("interact")
-											}
-											className={`flex items-center justify-center p-2 transition-colors ${canvasMode === "interact" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
-										>
-											<MousePointer2 className="h-4 w-4" />
-										</button>
-										<button
-											type="button"
-											title="Pan mode — drag to move canvas (H)"
-											onClick={() => setCanvasMode("pan")}
-											className={`flex items-center justify-center p-2 transition-colors ${canvasMode === "pan" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
-										>
-											<Hand className="h-4 w-4" />
-										</button>
-										<button
-											type="button"
-											aria-label="Open automation help"
-											title="Automation help"
-											onClick={() => setShowHelp(true)}
-											className="flex items-center gap-1.5 border-l px-2 py-2 text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground"
-										>
-											<HelpCircle className="h-4 w-4" />
-											Help
-										</button>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<button
+													type="button"
+													aria-label="Clean up node layout"
+													onClick={cleanUpLayout}
+													className={`${readOnly ? "hidden" : "flex"} items-center justify-center border-r p-2 text-muted-foreground transition-colors hover:bg-muted`}
+												>
+													<RefreshCw className="h-4 w-4" />
+												</button>
+											</TooltipTrigger>
+											<TooltipContent side="top">
+												Clean up layout
+											</TooltipContent>
+										</Tooltip>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<button
+													type="button"
+													aria-label="Interact mode"
+													onClick={() =>
+														setCanvasMode(
+															"interact",
+														)
+													}
+													className={`flex items-center justify-center p-2 transition-colors ${canvasMode === "interact" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
+												>
+													<MousePointer2 className="h-4 w-4" />
+												</button>
+											</TooltipTrigger>
+											<TooltipContent side="top">
+												Interact mode — click nodes to
+												edit (V)
+											</TooltipContent>
+										</Tooltip>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<button
+													type="button"
+													aria-label="Pan mode"
+													onClick={() =>
+														setCanvasMode("pan")
+													}
+													className={`flex items-center justify-center p-2 transition-colors ${canvasMode === "pan" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
+												>
+													<Hand className="h-4 w-4" />
+												</button>
+											</TooltipTrigger>
+											<TooltipContent side="top">
+												Pan mode — drag to move canvas
+												(H)
+											</TooltipContent>
+										</Tooltip>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<div className="flex cursor-pointer items-center gap-1.5 border-l px-2 py-2 text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground">
+													<Switch
+														checked={devMode}
+														onCheckedChange={
+															handleDevModeChange
+														}
+													/>
+													Dev
+												</div>
+											</TooltipTrigger>
+											<TooltipContent side="top">
+												Show Python source editors on
+												executable nodes
+											</TooltipContent>
+										</Tooltip>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<button
+													type="button"
+													aria-label="Open automation help"
+													onClick={() =>
+														setShowHelp(true)
+													}
+													className="flex items-center gap-1.5 border-l px-2 py-2 text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground"
+												>
+													<HelpCircle className="h-4 w-4" />
+													Help
+												</button>
+											</TooltipTrigger>
+											<TooltipContent side="top">
+												Automation help
+											</TooltipContent>
+										</Tooltip>
 									</div>
 								</div>
 							}

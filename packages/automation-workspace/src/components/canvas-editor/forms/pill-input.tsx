@@ -13,6 +13,8 @@ export interface PillInputProps {
 	upstreamVars: string[];
 	/** Placeholder text shown when value is empty */
 	placeholder?: string;
+	/** Description text shown below the input */
+	description?: string;
 	/** Monospace font and block layout (for SQL / multi-line content) */
 	mono?: boolean;
 	/** Minimum rows height hint for mono mode (default 4) */
@@ -160,6 +162,7 @@ export function PillInput({
 	onChange,
 	upstreamVars,
 	placeholder,
+	description,
 	mono,
 	minRows = 4,
 	required = false,
@@ -507,6 +510,9 @@ export function PillInput({
 					</div>
 				)}
 			</div>
+			{description && (
+				<p className="text-muted-foreground text-xs">{description}</p>
+			)}
 		</div>
 	);
 }

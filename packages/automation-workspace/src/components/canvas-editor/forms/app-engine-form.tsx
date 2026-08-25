@@ -241,7 +241,7 @@ export function AppEngineForm({
 											key={name}
 											type="button"
 											disabled={sigLoading !== null}
-											className="flex w-full items-center justify-between px-3 py-1.5 text-left font-mono text-xs transition-colors hover:bg-muted disabled:opacity-50"
+											className={`flex w-full items-center justify-between px-3 py-1.5 text-left font-mono text-xs transition-colors disabled:opacity-50 ${reactorName === name ? "bg-primary/10 text-primary" : "hover:bg-muted"}`}
 											onClick={() =>
 												handleReactorClick(name)
 											}
@@ -277,7 +277,7 @@ export function AppEngineForm({
 							label={`${p.name}${p.required ? "" : " (optional)"}`}
 							required={p.required}
 							value={paramValues[p.name] ?? ""}
-							placeholder={p.description ?? ""}
+							description={p.description ?? ""}
 							onChange={(v) => handleParamChange(p.name, v)}
 							upstreamVars={upstreamVars}
 						/>
