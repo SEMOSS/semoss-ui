@@ -79,6 +79,15 @@ try {
  *
  * @component
  */
+const formatTimestamp = (d: Date): string => {
+	const mm = String(d.getMonth() + 1).padStart(2, "0");
+	const dd = String(d.getDate()).padStart(2, "0");
+	const h = d.getHours();
+	const min = String(d.getMinutes()).padStart(2, "0");
+	const ampm = h >= 12 ? "PM" : "AM";
+	return `${mm}-${dd}-${d.getFullYear()} ${h % 12 || 12}:${min} ${ampm}`;
+};
+
 export const GlobalNav = observer(() => {
 	const { t } = useTranslation("sidebar");
 
@@ -618,21 +627,11 @@ export const GlobalNav = observer(() => {
 													t("messages.untitled");
 												const date = root.theme.sidebar
 													.chatHistoryDate
-													? normalizeTimestamp(
-															room.DATE_CREATED,
+													? formatTimestamp(
+															normalizeTimestamp(
+																room.DATE_CREATED,
+															).toDate(),
 														)
-															.toDate()
-															.toLocaleString(
-																undefined,
-																{
-																	month: "numeric",
-																	day: "numeric",
-																	year: "numeric",
-																	hour: "numeric",
-																	minute: "2-digit",
-																	hour12: true,
-																},
-															)
 													: null;
 												const isFavorite =
 													room.PINNED || false;
@@ -970,11 +969,14 @@ export const GlobalNav = observer(() => {
 			{/* Download Conversation Dialog */}
 			<Dialog
 				open={downloadDialogOpen}
-				onOpenChange={setDownloadDialogOpen}
+				onOpenChange={(open) => {
+					setDownloadDialogOpen(open);
+					if (!open) setDownloadRoomId(null);
+				}}
 			>
 				<DialogContent className="sm:max-w-md">
 					<DialogHeader>
-						<DialogTitle>Download Response:</DialogTitle>
+						<DialogTitle>Download Conversation</DialogTitle>
 						<DialogDescription>
 							Choose the format for your download:
 						</DialogDescription>

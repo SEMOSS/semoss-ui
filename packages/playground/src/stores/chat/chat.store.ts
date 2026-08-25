@@ -12,6 +12,15 @@ import type {
 import { RoomStore } from "../room";
 
 const DEFAUlT_MODEL_ID = import.meta.env.VITE_DEFAUlT_MODEL_ID || "";
+
+const formatTimestamp = (d: Date): string => {
+	const mm = String(d.getMonth() + 1).padStart(2, "0");
+	const dd = String(d.getDate()).padStart(2, "0");
+	const h = d.getHours();
+	const min = String(d.getMinutes()).padStart(2, "0");
+	const ampm = h >= 12 ? "PM" : "AM";
+	return `${mm}-${dd}-${d.getFullYear()} ${h % 12 || 12}:${min} ${ampm}`;
+};
 const DEFAUlT_MODEL_NAME = import.meta.env.VITE_DEFAUlT_MODEL_NAME || "";
 
 const SESSION_MODEL_KEY = "smss-playground-session-model";
@@ -474,21 +483,15 @@ export class ChatStore {
 		const formattedMessages = messageOutput
 			.map((message: AbstractPixelMessage) => {
 				const timestamp = message.dateCreated
-					? new Date(message.dateCreated).toLocaleString(undefined, {
-							month: "numeric",
-							day: "numeric",
-							year: "numeric",
-							hour: "numeric",
-							minute: "2-digit",
-							hour12: true,
-						})
+					? formatTimestamp(new Date(message.dateCreated))
 					: null;
 				const ts = timestamp ? `\n*${timestamp}*` : "";
 
 				if (message.io === "INPUT") {
 					const text = message.parts
 						?.filter(
-							(p): p is PixelMessageTextPart => p?.type === "TEXT",
+							(p): p is PixelMessageTextPart =>
+								p?.type === "TEXT",
 						)
 						.map((p) => p.text)
 						.join("");
@@ -497,7 +500,8 @@ export class ChatStore {
 				if (message.io === "OUTPUT") {
 					const text = message.parts
 						?.filter(
-							(p): p is PixelMessageTextPart => p?.type === "TEXT",
+							(p): p is PixelMessageTextPart =>
+								p?.type === "TEXT",
 						)
 						.map((p) => p.text)
 						.join("");
@@ -526,10 +530,11 @@ export class ChatStore {
 			throw new Error("No conversation content to download");
 		}
 
+		const appName = this._theme.name || "Chat";
 		const pixelCommand =
 			format === "word"
-				? `ToDocx(markdown=["<encode>${formattedMessages}</encode>"], fileName="Room Export - ${roomId}");`
-				: `ToPdf(markdown=["<encode>${formattedMessages}</encode>"], fileName="Room Export - ${roomId}");`;
+				? `ToDocx(markdown=["<encode>${formattedMessages}</encode>"], fileName="${appName} Room Export");`
+				: `ToPdf(markdown=["<encode>${formattedMessages}</encode>"], fileName="${appName} Room Export");`;
 
 		const downloadResponse = await runPixel<string>(
 			pixelCommand,
