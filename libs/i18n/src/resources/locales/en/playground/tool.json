@@ -19,6 +19,11 @@
 		"closeInSidebar": "Close sidebar",
 		"openInline": "Open in-line"
 	},
+	"tabs": {
+		"output": "Output",
+		"inputs": "Inputs",
+		"description": "Description"
+	},
 	"group": {
 		"labelClosed": "{{toolName}} + {{count}} more",
 		"labelOpen": "Executed Tools ({{count}})",
@@ -40,7 +45,10 @@
 		"showOptionalFields": "Show Optional Fields ({{count}})",
 		"hideOptionalFields": "Hide Optional Fields ({{count}})",
 		"execute": "Execute Tool",
-		"executing": "Executing..."
+		"executing": "Executing...",
+		"noOutput": "No output yet.",
+		"noDescription": "No description provided.",
+		"outputDialogTitle": "{{title}} — Output"
 	},
 	"playwright": {
 		"details": "Playwright Script Details",

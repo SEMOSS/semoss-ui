@@ -1,6 +1,7 @@
 import { Maximize2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	Dialog,
@@ -45,6 +46,7 @@ const formatJson = (raw: unknown): string => {
  * call's parameters and the raw result payload.
  */
 export const ToolsServerView = observer(({ tool }: ToolsServerViewProps) => {
+	const { t } = useTranslation("tool");
 	const title = tool.displayName;
 	const description = tool.json.description;
 	const parametersText = useMemo(
@@ -60,6 +62,15 @@ export const ToolsServerView = observer(({ tool }: ToolsServerViewProps) => {
 	const [tab, setTab] = useState<string>(hasResponse ? "output" : "inputs");
 	const [showOutputDialog, setShowOutputDialog] = useState(false);
 
+	// The result can arrive after this view has already mounted (the
+	// provider executes the tool server-side), so switch to the output tab
+	// once it does rather than leaving the user stuck on Inputs.
+	useEffect(() => {
+		if (hasResponse) {
+			setTab("output");
+		}
+	}, [hasResponse]);
+
 	return (
 		<div className="flex h-full w-full flex-col overflow-hidden text-foreground">
 			<div className="shrink-0 px-4 pt-4 pb-2">
@@ -74,14 +85,49 @@ export const ToolsServerView = observer(({ tool }: ToolsServerViewProps) => {
 				className="flex min-h-0 flex-1 flex-col"
 			>
 				<TabsList className="mx-4 mb-2 shrink-0 self-start">
-					<TabsTrigger value="output">Output</TabsTrigger>
-					<TabsTrigger value="inputs">Inputs</TabsTrigger>
-					<TabsTrigger value="description">Description</TabsTrigger>
+					<TabsTrigger value="description">
+						{t("tabs.description")}
+					</TabsTrigger>
+					<TabsTrigger value="inputs">{t("tabs.inputs")}</TabsTrigger>
+					<TabsTrigger value="output">{t("tabs.output")}</TabsTrigger>
 				</TabsList>
 
 				<TabsContent
+					value="description"
+					className="mx-4 overflow-auto pb-4"
+				>
+					{description ? (
+						<p className="text-muted-foreground text-sm">
+							{description}
+						</p>
+					) : (
+						<p className="py-8 text-center text-muted-foreground text-sm">
+							{t("form.noDescription")}
+						</p>
+					)}
+				</TabsContent>
+
+				<TabsContent
+					value="inputs"
+					className="mx-4 flex min-h-0 flex-1 flex-col space-y-2 overflow-auto pb-4"
+				>
+					<Label className="shrink-0 font-semibold">
+						{t("form.parameters")}
+					</Label>
+					<Textarea
+						readOnly
+						className="w-full resize-none font-mono text-sm"
+						rows={Math.min(
+							12,
+							Math.max(3, parametersText.split("\n").length),
+						)}
+						value={parametersText || "{}"}
+					/>
+				</TabsContent>
+
+				<TabsContent
 					value="output"
-					className="mx-4 flex min-h-0 flex-1 flex-col space-y-2 overflow-auto"
+					className="mx-4 flex min-h-0 flex-1 flex-col space-y-2 overflow-auto pb-4"
 				>
 					{hasResponse ? (
 						<>
@@ -94,7 +140,7 @@ export const ToolsServerView = observer(({ tool }: ToolsServerViewProps) => {
 									onClick={() => setShowOutputDialog(true)}
 								>
 									<Maximize2 className="size-3" />
-									Expand
+									{t("actions.expand")}
 								</Button>
 							</div>
 							<Textarea
@@ -105,35 +151,7 @@ export const ToolsServerView = observer(({ tool }: ToolsServerViewProps) => {
 						</>
 					) : (
 						<p className="py-8 text-center text-muted-foreground text-sm">
-							No output yet.
-						</p>
-					)}
-				</TabsContent>
-
-				<TabsContent
-					value="inputs"
-					className="mx-4 flex min-h-0 flex-1 flex-col space-y-2 overflow-auto"
-				>
-					<Label className="shrink-0 font-semibold">Parameters</Label>
-					<Textarea
-						readOnly
-						className="w-full resize-none font-mono text-sm"
-						rows={Math.min(
-							12,
-							Math.max(3, parametersText.split("\n").length),
-						)}
-						value={parametersText || "{}"}
-					/>
-				</TabsContent>
-
-				<TabsContent value="description" className="mx-4 overflow-auto">
-					{description ? (
-						<p className="text-muted-foreground text-sm">
-							{description}
-						</p>
-					) : (
-						<p className="py-8 text-center text-muted-foreground text-sm">
-							No description provided.
+							{t("form.noOutput")}
 						</p>
 					)}
 				</TabsContent>
@@ -142,7 +160,9 @@ export const ToolsServerView = observer(({ tool }: ToolsServerViewProps) => {
 			<Dialog open={showOutputDialog} onOpenChange={setShowOutputDialog}>
 				<DialogContent className="flex max-h-[80vh] max-w-3xl flex-col">
 					<DialogHeader>
-						<DialogTitle>{title} — Output</DialogTitle>
+						<DialogTitle>
+							{t("form.outputDialogTitle", { title })}
+						</DialogTitle>
 					</DialogHeader>
 					<pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap rounded-md bg-muted p-4 font-mono text-sm">
 						{responseText}
