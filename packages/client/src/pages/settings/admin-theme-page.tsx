@@ -162,8 +162,6 @@ const EMPTY_PLAYGROUND: ThemeMap["playground"] = {
 	gracefulErrors: [],
 	featureFlags: {
 		enableAgent: true,
-		showKnowledgeMenu: true,
-		showToolboxMenu: true,
 		enableModelSelect: true,
 		enableSuggestions: false,
 		enablePromptOptimizer: true,
@@ -193,16 +191,6 @@ const FEATURE_FLAGS: {
 		key: "enableAgent",
 		label: "Enable Agent",
 		description: "Shows the Agent item in the sidebar navigation.",
-	},
-	{
-		key: "showKnowledgeMenu",
-		label: "Show Knowledge Menu",
-		description: "Shows the Knowledge item in the sidebar navigation.",
-	},
-	{
-		key: "showToolboxMenu",
-		label: "Show Toolbox Menu",
-		description: "Shows the Toolbox item in the sidebar navigation.",
 	},
 	// Room and chat input behavior
 	{

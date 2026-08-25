@@ -98,8 +98,6 @@ export class RootStore {
 				hideToolsInIframe: false,
 				enableKnowledgeMCP: true,
 				allowEmbeddingOptions: true,
-				showKnowledgeMenu: true,
-				showToolboxMenu: true,
 				showActivityLog: true,
 				showPlatformLinks: true,
 				enableFeedbackText: true,
@@ -234,12 +232,6 @@ export class RootStore {
 						allowEmbeddingOptions:
 							legacy.allowEmbeddingOptions as boolean,
 					}
-				: {}),
-			...(legacy.showKnowledgeMenu !== undefined
-				? { showKnowledgeMenu: legacy.showKnowledgeMenu as boolean }
-				: {}),
-			...(legacy.showToolboxMenu !== undefined
-				? { showToolboxMenu: legacy.showToolboxMenu as boolean }
 				: {}),
 			...(legacy.showPlatformLinks !== undefined
 				? { showPlatformLinks: legacy.showPlatformLinks as boolean }
