@@ -69,7 +69,7 @@ settings page is not a dashboard and should not wrap every field group in a card
 
 - Keep global navigation in the owning layout. Page components render one semantic `main` or
   use the shell's existing `main`; never nest `main` landmarks.
-- Start a page with one clear `H1`. Follow heading levels in order (`H2` sections, `H3`
+- Start a page with one clear `H3` and optional description using text-base/leading-normal/medium with muted-foreground. Follow heading levels in order (`H3` sections, `H4`
   subsections); do not select a heading by visual size alone.
 - A standard page header contains title and optional description on the left, with task
   actions on the right. It stacks on narrow screens and aligns horizontally when space
@@ -85,14 +85,14 @@ settings page is not a dashboard and should not wrap every field group in a card
 ### Actions and Controls
 
 - Expose one visually primary action per page or self-contained task. Use `default` for that
-  action, `outline` or `secondary` for supporting actions, `ghost` for low-emphasis chrome,
+  action, `outline` for supporting actions, `ghost` for low-emphasis chrome,
   and `destructive` only for destructive actions.
 - Put the primary action last in a left-to-right action group and first in the natural mobile
   focus sequence only when the layout preserves the same logical order.
 - Use Lucide icons already available in the package. Decorative icons are `aria-hidden`;
   icon-only buttons require an accessible name and a `Tooltip` when the meaning is not
   universally familiar.
-- Use `ButtonGroup`, `ToggleGroup`, `Tabs`, or menus for related choices. Do not represent a
+- Use `ButtonGroup` for related buttons, `ToggleGroup` for buttons that can only be toggled on or off, `Tabs` for changing the display under the tab section, or menus for related choices. Do not represent a
   mode, boolean setting, or option set as a row of unrelated text buttons.
 - Keep destructive actions away from routine primary actions and require confirmation when
   the operation is difficult to reverse.
@@ -102,7 +102,7 @@ settings page is not a dashboard and should not wrap every field group in a card
 - Use `bg-background` for the page, `bg-card` for genuinely framed objects, `bg-muted` for
   subdued regions, and borders or `Separator` before introducing shadows.
 - Cards are for repeated entities, summaries, or tools that need a visual boundary. Page
-  sections are normally unframed. Never nest cards merely to create spacing.
+  sections are normally unframed. Never nest cards merely to create spacing. All cards should follow rounded-x and padding using spacing-6. For primary actions/cards use shadow/sm.
 - Keep control density consistent within a region. Use default component sizes for primary
   workflows, `sm` for dense toolbars and tables, and `lg` only for prominent standalone
   actions.
@@ -135,12 +135,12 @@ settings page is not a dashboard and should not wrap every field group in a card
 
 - Write the unprefixed layout for the narrowest supported viewport, then add `sm:`, `md:`, or
   `lg:` changes when the content needs them. Do not choose breakpoints by device name.
-- At 375 CSS pixels, pages must not scroll horizontally. A table, editor, canvas, or code block
+- At 360 CSS pixels, pages must not scroll horizontally. A table, editor, canvas, or code block
   may scroll inside a clearly bounded and labelled region when preserving its structure is
   more useful than transforming it.
 - Stack page headers, forms, and action groups on narrow screens; allow controls to wrap rather
   than shrinking labels or overflowing. Keep the primary action easy to find without changing
-  the logical focus order between layouts.
+  the logical focus order between layouts. Cards, list items, buttons should stack one on top of each other.
 - For data tables, deliberately choose one approach: horizontal overflow with essential
   columns kept visible, column prioritization, or an alternate small-screen representation.
   Do not automatically turn every table into cards or render two unsynchronized interaction
@@ -178,7 +178,7 @@ Before handing off a UI change, review the affected surface at:
 
 | Check | Required coverage |
 |-------|-------------------|
-| Viewports | 375px wide and a representative desktop width |
+| Viewports | 360px mobile, 1440px laptop and ≥ 1440px desktop width |
 | Themes | Light and dark |
 | Content | Empty, typical, long strings, and dense results |
 | Async states | Loading, success, and failure |
@@ -193,10 +193,12 @@ package's type-check/build commands. Record anything that could not be exercised
 **Need a color?**
 → Use a semantic token class: `bg-primary`, `text-muted-foreground`, `border-border`,
 `text-destructive`, `text-success`, `text-warning`, `bg-sidebar`, `bg-chart-1`…`chart-5`.
+→ For text: Use `text-foreground` for header and subheaders, use`text-muted-foreground` for descriptions.
 → Status/state colors are exactly three: `destructive` (errors/danger), `success`, `warning`.
 → No matching token → use the *closest* semantic token. Never invent a hex value or reach for
 a raw palette shade (`text-blue-600`). If a genuinely new semantic role is needed (e.g.
 `info`), propose adding a token to `globals.css` instead of styling ad hoc.
+→ Single primary accent color `base-primary` carries every primary interactive element and primary CTA. No second brand color exists. 
 
 **Need text styling?**
 → Use a Typography component from `@semoss/ui/next`: `H1`–`H4`, `Lead`, `P`, `Large`,
@@ -205,6 +207,8 @@ utilities for responsive marketing-style headings.
 → Inline tweaks use scale classes only (`text-sm`, `font-medium`, `leading-normal`).
 → Never `text-[13px]`, `text-[1.4rem]`, or micro-sizes like `text-[9px]`/`text-[10px]`/
 `text-[11px]` — the smallest sanctioned size is `text-xs`.
+→ For non-header typography components use 'text-base'. 
+→ Use font weights normal, medium, and bold. 
 
 **Need a modal, popover, or overlay?**
 → Use `Dialog`, `Sheet`, `Drawer`, `Popover`, `HoverCard`, `Tooltip`, `DropdownMenu`,
