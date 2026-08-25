@@ -549,6 +549,7 @@ export const GlobalNav = observer(() => {
 											key={`header-${item.name}-${index}`}
 											name={item.name}
 											icon={item.icon}
+											iconDark={item.iconDark}
 											path={item.path}
 											url={item.url}
 											embed={item.embed}
@@ -935,6 +936,7 @@ export const GlobalNav = observer(() => {
 														key={item.path}
 														name={item.name}
 														icon={item.icon}
+														iconDark={item.iconDark}
 														path={item.path}
 														url={item.url}
 														embed={item.embed}
