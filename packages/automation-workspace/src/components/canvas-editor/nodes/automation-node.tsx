@@ -1,5 +1,6 @@
 import { Handle, type NodeProps, Position } from "@xyflow/react";
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import type {
 	AutomationNode as AutomationGraphNode,
 	StepRunStatus,
@@ -36,6 +37,7 @@ const STATUS_LEFT_BORDER: Record<string, string> = {
 	error: "border-l-destructive/60",
 	success: "border-l-emerald-500/60",
 	running: "border-l-primary/60",
+	incomplete: "border-l-amber-500/60",
 	idle: "border-l-border",
 };
 
@@ -54,7 +56,9 @@ export function AutomationNode({ data }: NodeProps) {
 	const label =
 		step.label || workflowDefinition?.label || getStepHeaderLabel(step);
 	const borderClass =
-		STATUS_LEFT_BORDER[runStatus ?? "idle"] ?? STATUS_LEFT_BORDER.idle;
+		STATUS_LEFT_BORDER[
+			runStatus ?? (isIncomplete ? "incomplete" : "idle")
+		] ?? STATUS_LEFT_BORDER.idle;
 
 	const pixelPreview = step.workflowType ? "" : buildPixelPreview(step);
 	const varRefs = extractVarRefs(pixelPreview);
@@ -101,28 +105,29 @@ export function AutomationNode({ data }: NodeProps) {
 
 			<div className="cursor-pointer px-4 py-3">
 				{/* Header row */}
-				<div className="flex items-start gap-3">
-					{/* Step number badge */}
-					<span className="relative mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-[10px] text-muted-foreground">
-						{d.index + 1}
-						{isIncomplete && !runStatus && (
-							<span className="-top-0.5 -right-0.5 absolute h-2 w-2 rounded-full bg-amber-500 ring-1 ring-background" />
-						)}
-					</span>
-
+				<div className="flex items-center gap-3">
 					{/* Icon */}
 					<span
-						className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted ${workflowDisplay?.color ?? meta.color}`}
+						className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted ${workflowDisplay?.color ?? meta.color}`}
 					>
-						<Icon className="h-3.5 w-3.5" />
+						<Icon className="h-4.5 w-4.5" />
+						{/* Step number badge */}
+						<span className="-top-1.5 -left-1.5 absolute flex h-4 w-4 items-center justify-center rounded-full border border-border bg-muted font-medium text-[9px] text-muted-foreground">
+							{d.index + 1}
+						</span>
 					</span>
 
 					{/* Label + subtitle */}
 					<div className="min-w-0 flex-1">
-						<p className="truncate font-semibold text-sm leading-snug">
-							{label}
-						</p>
-						<p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<p className="truncate font-semibold text-sm leading-snug">
+									{label}
+								</p>
+							</TooltipTrigger>
+							<TooltipContent side="top">{label}</TooltipContent>
+						</Tooltip>
+						<p className="mt-0.5 truncate text-[11px] text-muted-foreground uppercase tracking-wide">
 							{subtitle}
 						</p>
 					</div>
@@ -135,7 +140,7 @@ export function AutomationNode({ data }: NodeProps) {
 							) : (
 								<StatusIcon
 									status={runStatus}
-									className="h-3.5 w-3.5"
+									className={`h-3.5 w-3.5 ${runStatus === "success" ? "text-emerald-500" : runStatus === "error" ? "text-destructive" : ""}`}
 								/>
 							)}
 						</div>
@@ -144,7 +149,7 @@ export function AutomationNode({ data }: NodeProps) {
 
 				{/* Run duration + variable refs */}
 				{(runDuration != null || varRefs.length > 0) && (
-					<div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-[3.5rem]">
+					<div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-12">
 						{runDuration != null && runStatus !== "running" && (
 							<span className="text-[10px] text-muted-foreground/70">
 								{runStatus === "error" ? `failed · ` : ""}
@@ -171,7 +176,7 @@ export function AutomationNode({ data }: NodeProps) {
 
 				{/* Output var pill */}
 				{step.outputVar && (
-					<div className="mt-1.5 flex pl-[3.5rem]">
+					<div className="mt-1.5 flex pl-12">
 						<span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[9px] text-muted-foreground">
 							{step.outputVar}
 						</span>
