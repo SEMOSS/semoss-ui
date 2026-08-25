@@ -1,5 +1,3 @@
-export type Role = "OWNER" | "EDIT" | "READ_ONLY" | "DISCOVERABLE";
-
 export interface PixelCommand {
 	type: string;
 	components: unknown[];
@@ -10,7 +8,7 @@ export interface PixelCommand {
 /**
  * All types used in the app
  */
-export type ALL_TYPES = ENGINE_TYPES | "PROJECT";
+export type ALL_TYPES = ENGINE_TYPES | "PROJECT" | "WORKSPACE" | "SKILL";
 
 /**
  * Engine types used in the app

@@ -2,6 +2,7 @@
 	"help": {
 		"title": "ターミナルヘルプ",
 		"emptyMessage": "{{type}} の構造化された使用例は返されませんでした。",
+		"pendingMessage": "{{type}} エンジンの使用例はまだ文書化されていません。",
 		"rawResponse": "生のレスポンス",
 		"copy": "コピー",
 		"copied": "コピーしました",

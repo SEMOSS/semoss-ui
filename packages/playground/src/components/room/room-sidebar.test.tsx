@@ -16,18 +16,39 @@ vi.mock("@semoss/sdk/react", async (importOriginal) => {
 	};
 });
 
-// Mock @semoss/shared to avoid flexlayout-react instanceof issues in jsdom
+// Mock @semoss/shared to avoid flexlayout-react instanceof issues in jsdom.
+// The mocked Layout invokes onRenderTabSet with a real TabSetNode instance
+// (mirroring flexlayout-react) so the sidebar's toolbar buttons, which are
+// pushed into renderValues.buttons rather than rendered as plain JSX, show up.
 vi.mock("@semoss/shared", () => {
 	class TabNode {}
-	class TabSetNode {}
+	class TabSetNode {
+		constructor(private id: string) {}
+		getId() {
+			return this.id;
+		}
+	}
 	return {
 		FlexLayout: {
-			Layout: () =>
-				React.createElement(
+			Layout: ({
+				onRenderTabSet,
+			}: {
+				onRenderTabSet?: (
+					tabSetNode: TabSetNode,
+					renderValues: { buttons: React.ReactNode[] },
+				) => void;
+			}) => {
+				const tabSetNode = new TabSetNode("active-tabset");
+				const renderValues: { buttons: React.ReactNode[] } = {
+					buttons: [],
+				};
+				onRenderTabSet?.(tabSetNode, renderValues);
+				return React.createElement(
 					"div",
 					{ "data-testid": "flexlayout" },
-					null,
-				),
+					renderValues.buttons,
+				);
+			},
 			TabNode,
 			TabSetNode,
 		},
@@ -50,7 +71,10 @@ const createMockRoom = () => ({
 		isOpen: true,
 		counter: 0,
 		model: {
-			getActiveTabset: vi.fn(() => null),
+			getActiveTabset: vi.fn(() => ({
+				getId: () => "active-tabset",
+				getSelectedNode: () => null,
+			})),
 			getNodeById: vi.fn(() => null),
 		},
 	},

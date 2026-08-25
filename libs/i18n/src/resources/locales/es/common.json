@@ -64,12 +64,6 @@
 	"images": {
 		"logoAlt": "logo"
 	},
-	"fileDrag": {
-		"title": "Suelta archivos aquí para adjuntar al mensaje",
-		"modalTitle": "Agregar documentos",
-		"browse": "Explorar",
-		"done": "Listo"
-	},
 	"fileExplorer": {
 		"search": "Buscar",
 		"name": "Nombre",

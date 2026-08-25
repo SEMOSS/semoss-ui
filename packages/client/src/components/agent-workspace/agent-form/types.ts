@@ -61,7 +61,10 @@ export type AgentFormValues = {
 	description: string;
 	instructions: string;
 	modelId: string;
+	useDefaultAgentTools: boolean;
 	maxTurns: string;
+	maxReflections: string;
+	maxSeconds: string;
 	maxSubagentDepth: string;
 	maxSubagentsPerRun: string;
 	maxSpawnsPerTurn: string;
@@ -78,7 +81,10 @@ export const AGENT_FORM_DEFAULT_VALUES: AgentFormValues = {
 	description: "",
 	instructions: "",
 	modelId: "",
+	useDefaultAgentTools: true,
 	maxTurns: "",
+	maxReflections: "",
+	maxSeconds: "",
 	maxSubagentDepth: "",
 	maxSubagentsPerRun: "",
 	maxSpawnsPerTurn: "",

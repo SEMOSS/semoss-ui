@@ -58,8 +58,13 @@ export const SkillFileViewer: React.FC<SkillFileViewerProps> = ({
 		}
 
 		return (
-			<div className="h-full w-full">
-				<Markdown>{fileContent.data}</Markdown>
+			<div className="h-full w-full overflow-y-auto px-1">
+				<Markdown
+					className="w-full text-sm leading-relaxed"
+					variant="document"
+				>
+					{fileContent.data}
+				</Markdown>
 			</div>
 		);
 	}

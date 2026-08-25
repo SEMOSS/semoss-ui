@@ -2,6 +2,7 @@ import { useTranslation } from "@semoss/i18n";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import { Muted, Spinner } from "@semoss/ui/next";
 import type { FileMode } from "./file.types";
+import { FileDownloadView } from "./file-download-view";
 
 interface FilePdfViewerProps {
 	/** Mode of file editor */
@@ -55,7 +56,7 @@ export const FilePdfViewer: React.FC<FilePdfViewerProps> = ({ mode, path }) => {
 					data={`data:application/pdf;base64,${getFile.data}`}
 					type="application/pdf"
 				>
-					<Muted>{t("fileExplorer.pdfNotSupported")}</Muted>
+					<FileDownloadView mode={mode} path={path} />
 				</object>
 			)}
 		</div>

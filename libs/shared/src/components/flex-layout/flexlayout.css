@@ -308,10 +308,16 @@
 .flexlayout__theme_smss .flexlayout__tabset_tabbar_outer {
     @apply p-2;
     min-height: 51px;
+    /* fixed-height tab buttons don't stretch, so center them against the toolbar buttons instead */
+    align-items: center;
+}
+
+/* no prop to disable flexlayout's overflow ("N more") menu; hide it so the tab strip scrolls instead */
+.flexlayout__theme_smss .flexlayout__tab_button_overflow {
+    display: none;
 }
 
 .flexlayout__theme_smss .flexlayout__tabset_tabbar_outer_top {
-    padding-right: var(--room-sidebar-controls-width, 85px);
     @apply border-b border-muted;
 }
 

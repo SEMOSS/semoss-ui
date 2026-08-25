@@ -5,8 +5,9 @@
 		"completed": "مكتمل",
 		"ready": "جاهز",
 		"autoExecute": "جارٍ التنفيذ التلقائي",
-		"paused": "متوقف مؤقتاً",
-		"queued": "في قائمة الانتظار للتنفيذ التلقائي"
+		"queued": "في قائمة الانتظار للتنفيذ التلقائي",
+		"running": "قيد التشغيل",
+		"waitingForInput": "في انتظار الإدخال"
 	},
 	"actions": {
 		"cancel": "إلغاء",
@@ -19,13 +20,15 @@
 	"group": {
 		"labelClosed": "{{toolName}} + {{count}} أخرى",
 		"labelOpen": "الأدوات المنفذة ({{count}})",
+		"labelStreaming_one": "جارٍ تحميل {{count}} أداة…",
+		"labelStreaming_other": "جارٍ تحميل {{count}} أدوات…",
 		"summaryCompleted": "{{count}} مكتمل",
 		"summaryError": "{{count}} فشل",
-		"summaryCancelled": "{{count}} ملغى",
-		"summaryPaused": "{{count}} متوقف مؤقتاً"
+		"summaryCancelled": "{{count}} ملغى"
 	},
 	"form": {
 		"result": "النتيجة",
+		"parameters": "المعاملات",
 		"schemaLoadFailed": "فشل تحميل مخطط الأداة",
 		"schemaLoadFailedDescription": "تعذّر استرداد تكوين الأداة. يرجى المحاولة مرة أخرى لاحقاً.",
 		"schemaLoading": "جارٍ تحميل مخطط الأداة...",
@@ -41,6 +44,11 @@
 		"details": "تفاصيل سكريبت Playwright",
 		"projectId": "معرّف المشروع",
 		"recordedFile": "الملف المسجّل"
+	},
+	"subagent": {
+		"title": "وكيل فرعي",
+		"notFound": "لم يتم العثور على الوكيل الفرعي",
+		"noResult": "لا توجد استجابة بعد"
 	},
 	"extension": {
 		"required": "إضافة المتصفح مطلوبة",

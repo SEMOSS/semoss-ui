@@ -9,18 +9,32 @@
 		"compact": "Compactar mensajes de herramientas",
 		"compactSuccess": "Mensajes de herramientas compactados correctamente",
 		"compactError": "Error al compactar los mensajes de herramientas",
-		"compactTooltip": "Compacta tu conversación para ahorrar tokens. Tus mensajes anteriores permanecen igual."
+		"compactButton": "Compactar",
+		"compactionOptions": "Opciones de compactación",
+		"advancedOptions": "Opciones avanzadas",
+		"strategyLabel": {
+			"SUMMARY": "Resumir",
+			"TOOL_PRUNE": "Reducir herramientas",
+			"AUTO": "Automático"
+		},
+		"strategyTooltip": {
+			"SUMMARY": "Sustituye los mensajes antiguos por un resumen generado por IA. Preserva el contexto general de la conversación y libera espacio de tokens.",
+			"TOOL_PRUNE": "Elimina los resultados detallados de las llamadas a herramientas del historial de la conversación. Ideal cuando las salidas de las herramientas son extensas y los detalles ya no son necesarios.",
+			"AUTO": "Seleccionará el resumen o la reducción de herramientas según la conversación actual."
+		}
 	},
 	"form": {
 		"modelLabel": "Modelo",
 		"instructionsLabel": "Instrucciones",
 		"agentLabel": "Agente",
 		"knowledgeLabel": "Conocimiento",
-		"toolboxLabel": "Cajas de herramientas"
+		"toolboxLabel": "Cajas de herramientas",
+		"temperatureLabel": "Temperatura"
 	},
 	"modes": {
-		"ask": "Preguntar",
-		"agent": "Arnés de agente"
+		"ask": "Modo Chat",
+		"agent": "Modo Arnés de agente",
+		"exitAgent": "Salir del modo arnés de agente"
 	},
 	"workspace": {
 		"publishTooltip": "Publicar como agente",
@@ -51,8 +65,9 @@
 		"completeTool": "Por favor, completa las herramientas para continuar",
 		"ask": "Preguntar",
 		"errorProcessing": "Error al procesar el chat",
-		"pauseTools": "Pausar herramientas",
-		"pauseToolsTooltip": "Pausar toda la ejecución de herramientas hasta después del siguiente mensaje"
+		"stopLabel": "Detener la respuesta",
+		"stopTooltip": "Detener",
+		"stoppingTooltip": "Deteniendo"
 	},
 	"content": {
 		"scrollToTop": "Ir al inicio",

@@ -16,13 +16,13 @@ import {
 import {
 	BookOpenIcon,
 	Bot,
-	ExternalLinkIcon,
 	HammerIcon,
 	MicIcon,
 	PlusIcon,
 	SendIcon,
 	SparklesIcon,
 	Square,
+	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
@@ -43,6 +43,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import {
+	BackspacePlugin,
 	EnterPlugin,
 	FocusPlugin,
 	MCPOverlay,
@@ -60,12 +61,26 @@ import {
 import { useFileDrag } from "@/contexts";
 import { useGracefulErrors, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
+import { AGENT_HARNESS_TYPE } from "@/stores/message/agent-harness";
 import type { Engine, MCPConfig, Workspace } from "@/types";
 import { isKnowledgeMcp } from "@/utility/mcp-utils";
 import { PromptOptimizer } from "../../components/prompt/PromptOptimizer";
+import { RoomContextUsageIndicator } from "./room-context-usage-indicator";
 
 type WorkspaceRef = Pick<Workspace, "workspace_id"> &
 	Partial<Pick<Workspace, "name">>;
+
+/** One section of the combined chip — see chipSections below. */
+interface ChipSection {
+	key: string;
+	icon: React.ComponentType<{ className?: string }>;
+	/** Swaps in for `icon` on hover — e.g. the harness section's X-to-exit. */
+	hoverIcon?: React.ComponentType<{ className?: string }>;
+	label: string;
+	/** Absent renders the section as plain, non-interactive text. */
+	onClick?: () => void;
+	title?: string;
+}
 
 let isIframed = false;
 try {
@@ -80,24 +95,21 @@ try {
 
 const noop = () => {};
 
-/**
- * Format token counts for display
- * Converts large numbers to readable format (e.g., 1500 -> 1.5k, 2000000 -> 2.0M)
- */
-const formatTokens = (tokens: number | undefined) => {
-	if (tokens === undefined) return "0";
-	if (tokens >= 1000000) {
-		return `${(tokens / 1000000).toFixed(1)}M`;
-	}
-	if (tokens >= 1000) {
-		return `${(tokens / 1000).toFixed(1)}k`;
-	}
-	return tokens.toString();
-};
-
 // ============================================================================
 // TypeScript Interfaces
 // ============================================================================
+
+/**
+ * Appearance of the send/stop button, computed by the parent from the turn +
+ * cancel state:
+ *  - "send"    — idle; submit the prompt (disabled while empty / tools pending)
+ *  - "stop"    — a turn is in flight (model streaming, or tools executing); the
+ *                button cancels it. Cancelling tool execution is a no-op today
+ *                but the affordance stays so it lights up once that's wired.
+ *  - "loading" — a spinner: stop was pressed and is unwinding, or the context is
+ *                busy but has nothing to cancel (the new-room flow).
+ */
+export type SendButtonState = "send" | "stop" | "loading";
 
 interface RoomInputProps {
 	/** Classes to override */
@@ -145,72 +157,45 @@ interface RoomInputProps {
 	/** Has outstanding tools */
 	hasOutstandingTools?: boolean;
 
-	/** Whether the pause-on-next-tool flag is armed */
-	hasToolsPaused?: boolean;
+	/** Appearance of the send/stop button. Defaults to "send". */
+	sendState?: SendButtonState;
 
-	/** Toggle the pause-on-next-tool flag */
-	toggleToolsPaused?: () => void;
-
-	/** Hide the pause-on-next-tool button */
-	hidePauseButton?: boolean;
+	/** Cancel the in-flight turn — invoked when the button is in its "stop"
+	 *  state. */
+	onStop?: () => void;
 
 	/** Predefined prompts shown in prompt library */
 	predefinedPrompts?: PromptLibraryItem[];
 
 	/** Initial value from prompt library */
 	initialValue?: string;
-	/** Current token usage for context window indicator */
-	tokensUsed?: number;
 
-	/** Maximum token capacity for context window */
-	tokensMax?: number;
-
-	/** Total tokens consumed across the entire chat */
-	totalTokens?: number;
-
-	/** Room store for prompt optimizer */
+	/** Room store for prompt optimizer and context usage indicator */
 	room: RoomStore;
 
-	/** Callback to compact conversation; passed through to EngineSelect context tooltip */
-	onCompact?: () => void;
+	/** Callback to compact conversation; also passed through to the slash menu */
+	onCompact?: (strategy?: "TOOL_PRUNE" | "SUMMARY" | "AUTO") => void;
 
 	/** Command IDs to suppress from the slash menu */
 	excludeCommandIds?: string[];
 
 	/** Callback to open the room settings/configuration panel */
 	onOpenSettings?: () => void;
+
+	/**
+	 * Callback for the /agent-harness slash command. Defaults to switching
+	 * `room` into agent mode directly — override on the new-room page, where
+	 * mode lives in local state until the room is actually created.
+	 */
+	onSwitchToAgentHarness?: () => void;
+
+	/**
+	 * Shows an X button on the agent-mode chip to leave agent harness mode.
+	 * Only passed on the new-room page — once a room exists its harness type
+	 * is a persisted, committed choice, not something to back out of inline.
+	 */
+	onExitAgentHarness?: () => void;
 }
-
-// ============================================================================
-// CompactButton
-// ============================================================================
-
-const CompactButton: React.FC<{
-	disabled: boolean;
-	tooltipText: string;
-	onClick: (e: React.MouseEvent) => void;
-}> = ({ disabled, tooltipText, onClick }) => {
-	const { t } = useTranslation("room");
-
-	return (
-		<Tooltip>
-			<TooltipTrigger asChild>
-				<span className="w-full">
-					<Button
-						size="sm"
-						variant="outline"
-						className="w-full text-foreground"
-						disabled={disabled}
-						onClick={onClick}
-					>
-						{t("settings.compact")}
-					</Button>
-				</span>
-			</TooltipTrigger>
-			<TooltipContent>{tooltipText}</TooltipContent>
-		</Tooltip>
-	);
-};
 
 // ============================================================================
 // Main Component
@@ -239,18 +224,16 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		onMcpChange,
 		onWorkspaceChange,
 		hasOutstandingTools = false,
-		hasToolsPaused = false,
-		toggleToolsPaused,
-		hidePauseButton = false,
+		sendState = "send",
+		onStop,
 		predefinedPrompts = [],
 		initialValue,
-		tokensUsed,
-		tokensMax,
-		totalTokens,
 		room,
 		onCompact,
 		excludeCommandIds,
 		onOpenSettings,
+		onSwitchToAgentHarness,
+		onExitAgentHarness,
 	}) => {
 		// ========================================================================
 		// Hooks & State
@@ -278,6 +261,27 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			[],
 		);
 
+		// Default for an already-created room: flip mode now (takes effect on the
+		// next message) and persist harnessType so it survives a reload.
+		const handleSwitchToAgentHarness =
+			onSwitchToAgentHarness ??
+			(() => {
+				room.setMode("agent");
+				(async () => {
+					try {
+						await room.updateRoomOptions({
+							...room.options,
+							harnessType: AGENT_HARNESS_TYPE,
+						});
+					} catch (e) {
+						console.error(
+							"Failed to persist agent harness mode",
+							e,
+						);
+					}
+				})();
+			});
+
 		const knowledgeCount = useMemo(
 			() => options.mcp.filter(isKnowledgeMcp).length,
 			[options.mcp],
@@ -286,6 +290,46 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// Agent chip indicates a current selection. The Agent tab inside the
 		// modal is always visible; editability is gated on `onWorkspaceChange`.
 		const agentChipWorkspace = options.workspace ?? null;
+
+		// One combined chip, sections divided by a border rather than each
+		// being its own separate chip. A section with no onClick renders as
+		// plain (non-interactive) text — e.g. the harness label on an
+		// existing room, where there's nothing for a click to do.
+		const rawChipSections: (ChipSection | false)[] = [
+			room.mode === "agent" && {
+				key: "harness",
+				icon: SparklesIcon,
+				hoverIcon: onExitAgentHarness ? XIcon : undefined,
+				label: t("modes.agent"),
+				onClick: onExitAgentHarness,
+				title: onExitAgentHarness ? t("modes.exitAgent") : undefined,
+			},
+			agentChipWorkspace !== null && {
+				key: "agent",
+				icon: Bot,
+				label:
+					agentChipWorkspace.name || agentChipWorkspace.workspace_id,
+				onClick: onWorkspaceChange
+					? () => handleOpenMcpOverlay("AGENT")
+					: undefined,
+				title: agentChipWorkspace.name ?? undefined,
+			},
+			toolboxCount > 0 && {
+				key: "tools",
+				icon: HammerIcon,
+				label: String(toolboxCount),
+				onClick: () => handleOpenMcpOverlay("TOOLBOX"),
+			},
+			knowledgeCount > 0 && {
+				key: "knowledge",
+				icon: BookOpenIcon,
+				label: String(knowledgeCount),
+				onClick: () => handleOpenMcpOverlay("KNOWLEDGE"),
+			},
+		];
+		const chipSections = rawChipSections.filter(
+			(section): section is ChipSection => !!section,
+		);
 
 		// Refs for DOM elements and Lexical editor
 		const ref = useRef<HTMLDivElement>(null);
@@ -319,7 +363,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		};
 
 		// File handling
-		const { files, addFiles, removeFile, clearFiles, setShouldStayOpen } =
+		const { files, addFiles, removeFile, clearFiles, openFilePicker } =
 			useFileDrag();
 
 		// Speech-to-text
@@ -343,88 +387,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		};
 		const recognitionRef = useRef<SpeechRecognition | null>(null);
 
-		// Whether the latest response has any tool calls — compaction can't
-		// touch a response until it's done growing new tool-result messages
+		// Whether the latest response has unfinished tools — compaction can't
+		// touch a response until all tool calls have resolved
 		const latestResponseHasTools =
-			room.latestResponseMessage?.hasTools ?? false;
-
-		// ========================================================================
-		// Context Window Tooltip
-		// ========================================================================
-
-		const contextTooltipContent = useMemo(() => {
-			const contextUsedPercent =
-				tokensMax && tokensUsed !== undefined
-					? (tokensUsed / tokensMax) * 100
-					: undefined;
-
-			if (contextUsedPercent === undefined && !onCompact) return null;
-
-			const descriptionKey =
-				contextUsedPercent !== undefined
-					? contextUsedPercent >= 100
-						? "contextWindow.descriptionExceeded"
-						: contextUsedPercent < 50
-							? "contextWindow.descriptionLow"
-							: contextUsedPercent < 75
-								? "contextWindow.descriptionMedium"
-								: "contextWindow.descriptionHigh"
-					: null;
-
-			return (
-				<div className="w-full space-y-1">
-					{contextUsedPercent !== undefined && descriptionKey && (
-						<p className="w-full">{t(descriptionKey)}</p>
-					)}
-					{contextUsedPercent !== undefined && (
-						<p className="flex w-full items-baseline justify-between gap-3">
-							<span>{t("contextWindow.memoryUsedTitle")}</span>
-							<span className="whitespace-nowrap text-end tabular-nums">
-								{t("contextWindow.memoryUsedValue", {
-									used: formatTokens(tokensUsed),
-									total: formatTokens(tokensMax),
-									percent: contextUsedPercent.toFixed(1),
-								})}
-							</span>
-						</p>
-					)}
-					{totalTokens !== undefined && (
-						<p className="flex w-full items-baseline justify-between gap-3">
-							<span>{t("contextWindow.totalUsedTitle")}</span>
-							<span className="whitespace-nowrap text-end tabular-nums">
-								{t("contextWindow.totalUsedValue", {
-									total: formatTokens(totalTokens),
-								})}
-							</span>
-						</p>
-					)}
-					{onCompact && (
-						<CompactButton
-							disabled={isLoading || latestResponseHasTools}
-							tooltipText={
-								isLoading
-									? t("input.thinkingTooltip")
-									: latestResponseHasTools
-										? t("input.completeTool")
-										: t("settings.compactTooltip")
-							}
-							onClick={(e) => {
-								e.stopPropagation();
-								onCompact();
-							}}
-						/>
-					)}
-				</div>
-			);
-		}, [
-			tokensUsed,
-			tokensMax,
-			totalTokens,
-			onCompact,
-			t,
-			isLoading,
-			latestResponseHasTools,
-		]);
+			room.latestResponseMessage?.hasUnfinishedTools ?? false;
 
 		// ========================================================================
 		// Speech Recognition Setup
@@ -578,7 +544,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					root.append(paragraphNode);
 				});
 				clearFiles();
-				setShouldStayOpen(false);
 
 				// Submit to parent handler
 				const result = Boolean(await onPrompt(userInput, userFiles));
@@ -605,6 +570,28 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			}
 		};
 
+		// Button appearance is fully decided by sendState (computed by the
+		// parent from the turn + cancel state); only the idle "send" case needs
+		// the local editor/tool signals to decide enablement + tooltip.
+		const sendDisabled =
+			sendState === "loading" ||
+			(sendState === "send" && (isEmpty || hasOutstandingTools));
+		const handleSendClick = () => {
+			if (sendState === "stop") {
+				onStop?.();
+			} else if (sendState === "send") {
+				promptModel();
+			}
+		};
+		const sendTooltip =
+			sendState === "stop"
+				? t("input.stopTooltip")
+				: isEmpty
+					? t("input.enterQuestion")
+					: hasOutstandingTools
+						? t("input.completeTool")
+						: t("input.ask");
+
 		// ========================================================================
 		// Render
 		// ========================================================================
@@ -614,8 +601,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				<SlashCommandProvider
 					onOpenMcpOverlay={handleOpenMcpOverlay}
 					onCompact={onCompact ?? noop}
-					onAttachDocument={() => setShouldStayOpen(true)}
+					onAttachDocument={openFilePicker}
 					onOpenSettings={onOpenSettings ?? noop}
+					onSwitchToAgentHarness={handleSwitchToAgentHarness}
 					excludeCommandIds={excludeCommandIds}
 				>
 					<LexicalComposer
@@ -637,6 +625,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							{files.length > 0 && (
 								// Need pb-1 for scroll bar
 								<div className="bg-card p-4 pb-1">
+									{root.theme.fileDragDisclaimer && (
+										<p className="-mt-1 pb-2 text-muted-foreground text-xs">
+											{root.theme.fileDragDisclaimer}
+										</p>
+									)}
 									<FilePreviewGrid
 										files={files}
 										onRemoveFile={removeFile}
@@ -686,13 +679,56 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													// representation alongside text in the clipboard. If text
 													// content is present, filter out those images so the text
 													// is pasted normally instead of attaching a screenshot.
+													//
+													// Exception: Microsoft Teams copies images with a
+													// text/html entry that is just an <img> wrapper with no
+													// real text content. In that case we should keep the
+													// image files and let them be attached.
+													const hasPlainText =
+														e.clipboardData
+															.getData(
+																"text/plain",
+															)
+															.trim().length > 0;
+
+													// text/html is only "real text" if it contains
+													// meaningful content beyond just an <img> tag
+													// (Teams wraps copied images in bare <img> html).
+													// Parsed with DOMParser into an inert, disconnected
+													// document (no browsing context) so any <img> tags
+													// never load and their attribute handlers never run.
+													const htmlHasMeaningfulText =
+														(() => {
+															const html =
+																e.clipboardData.getData(
+																	"text/html",
+																);
+															if (!html)
+																return false;
+															const parsed =
+																new DOMParser().parseFromString(
+																	html,
+																	"text/html",
+																);
+															parsed.body
+																.querySelectorAll(
+																	"img",
+																)
+																.forEach(
+																	(img) => {
+																		img.remove();
+																	},
+																);
+															return (
+																(parsed.body.textContent?.trim()
+																	.length ??
+																	0) > 0
+															);
+														})();
+
 													const hasText =
-														e.clipboardData.types.includes(
-															"text/plain",
-														) ||
-														e.clipboardData.types.includes(
-															"text/html",
-														);
+														hasPlainText ||
+														htmlHasMeaningfulText;
 
 													const updated = hasText
 														? clipboardFiles.filter(
@@ -719,10 +755,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													)}
 												>
 													{/* Inline-block + align-middle makes the icon
-											    flow with text: when the placeholder wraps,
-											    only the text after the icon wraps to the
-											    next line, instead of the whole text
-											    jumping below the icon. */}
+													    flow with text: when the placeholder wraps,
+													    only the text after the icon wraps to the
+													    next line, instead of the whole text
+													    jumping below the icon. */}
 													<SparklesIcon className="-translate-y-px me-1 inline-block size-4 align-middle" />
 													{isLoading
 														? t("input.thinking")
@@ -827,97 +863,85 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								    first when squeezed. Chips inside are shrink-0 and
 								    clip past the region's right edge. */}
 									<div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-										{agentChipWorkspace && (
+										{chipSections.length > 0 && (
 											<div className="inline-flex h-7 shrink-0 items-center overflow-hidden rounded-md border border-border bg-background text-xs">
-												{onWorkspaceChange ? (
-													<button
-														type="button"
-														onClick={() =>
-															handleOpenMcpOverlay(
-																"AGENT",
-															)
-														}
-														className="flex h-full items-center gap-1.5 px-2.5 transition-colors hover:bg-muted/50"
-														title={
-															agentChipWorkspace.name ??
-															undefined
-														}
-													>
-														<Bot className="size-3.5 shrink-0" />
-														<span className="max-w-32 truncate">
-															{agentChipWorkspace.name ||
-																agentChipWorkspace.workspace_id}
-														</span>
-													</button>
-												) : (
-													<div
-														className="flex h-full items-center gap-1.5 px-2.5"
-														title={
-															agentChipWorkspace.name ??
-															undefined
-														}
-													>
-														<Bot className="size-3.5 shrink-0" />
-														<span className="max-w-32 truncate">
-															{agentChipWorkspace.name ||
-																agentChipWorkspace.workspace_id}
-														</span>
-													</div>
-												)}
-												{root.theme.featureFlags
-													?.showPlatformLinks && (
-													<a
-														target="_blank"
-														rel="noopener noreferrer"
-														href={`#/agent/${agentChipWorkspace.workspace_id}`}
-														className="flex h-full items-center border-border border-s px-1.5 transition-colors hover:bg-muted/50"
-														onClick={(e) =>
-															e.stopPropagation()
-														}
-													>
-														<ExternalLinkIcon className="size-3" />
-													</a>
+												{chipSections.map(
+													(section, idx) => {
+														const Icon =
+															section.icon;
+														const HoverIcon =
+															section.hoverIcon;
+														const content = (
+															<>
+																{HoverIcon ? (
+																	<span className="relative inline-flex size-3.5 shrink-0 items-center justify-center">
+																		<Icon className="size-3.5 group-hover:hidden" />
+																		<HoverIcon className="hidden size-3.5 group-hover:block" />
+																	</span>
+																) : (
+																	<Icon className="size-3.5 shrink-0" />
+																)}
+																<span className="max-w-32 truncate">
+																	{
+																		section.label
+																	}
+																</span>
+															</>
+														);
+														return section.onClick ? (
+															<button
+																key={
+																	section.key
+																}
+																type="button"
+																onClick={
+																	section.onClick
+																}
+																title={
+																	section.title
+																}
+																className={cn(
+																	"group flex h-full items-center gap-1.5 px-2.5 transition-colors hover:bg-muted/50",
+																	idx > 0 &&
+																		"border-border border-s",
+																)}
+															>
+																{content}
+															</button>
+														) : (
+															<div
+																key={
+																	section.key
+																}
+																title={
+																	section.title
+																}
+																className={cn(
+																	"flex h-full items-center gap-1.5 px-2.5",
+																	idx > 0 &&
+																		"border-border border-s",
+																)}
+															>
+																{content}
+															</div>
+														);
+													},
 												)}
 											</div>
-										)}
-										{knowledgeCount > 0 && (
-											<button
-												type="button"
-												onClick={() =>
-													handleOpenMcpOverlay(
-														"KNOWLEDGE",
-													)
-												}
-												className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs transition-colors hover:bg-muted/50"
-											>
-												<BookOpenIcon className="size-3.5" />
-												<span>{knowledgeCount}</span>
-											</button>
-										)}
-										{toolboxCount > 0 && (
-											<button
-												type="button"
-												onClick={() =>
-													handleOpenMcpOverlay(
-														"TOOLBOX",
-													)
-												}
-												className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs transition-colors hover:bg-muted/50"
-											>
-												<HammerIcon className="size-3.5" />
-												<span>{toolboxCount}</span>
-											</button>
 										)}
 									</div>
 									{/* Middle controls — sit at natural width on the right
 								    until chips-region collapses; then clip from the
 								    left (justify-end + overflow-hidden). */}
 									<div className="flex min-w-0 items-center justify-end gap-2 overflow-hidden">
-										<div data-tour="tour-model">
+										<div
+											data-tour="tour-model"
+											className="flex items-center gap-1.5"
+										>
 											{root.theme.featureFlags
 												?.enableModelSelect && (
 												<EngineSelect
-													className="h-8 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
+													className="h-8 w-auto gap-0.5 border-none bg-transparent px-2 py-1 text-xs shadow-none hover:bg-accent dark:hover:bg-accent/50 [&>svg]:hidden"
 													name={
 														model?.engine_display_name ||
 														model?.app_name ||
@@ -936,14 +960,16 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													popoverContentProps={{
 														align: "start",
 													}}
-													tokensUsed={tokensUsed}
-													tokensMax={tokensMax}
-													contextTooltipContent={
-														contextTooltipContent
-													}
 												/>
 											)}
 										</div>
+										<RoomContextUsageIndicator
+											// -ms-1 to make spacing look more consistent due to ghost icons
+											className="-ms-1"
+											room={room}
+											onCompact={onCompact}
+											isLoading={isLoading}
+										/>
 										{predefinedPrompts.length > 0 ? (
 											<Tooltip>
 												<TooltipTrigger asChild>
@@ -984,9 +1010,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 															recognitionRef.current?.start();
 														}
 													}}
-													// -ms-1 to make spacing between engine select and mic look more like spacing between mic and send
-													// this is because engine select and mic are ghost
-													className="-ms-1"
 												>
 													<MicIcon
 														className={`${isListening ? "animate-pulse text-destructive" : ""}`}
@@ -1002,20 +1025,27 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 										{root.theme.featureFlags
 											?.enablePromptOptimizer && (
-											<PromptOptimizer
-												input={inputText}
-												setInput={setInputFromOptimizer}
-												disabled={hasOutstandingTools}
-												modelId={
-													model?.engine_id ||
-													undefined
-												}
-												room={room}
-											/>
+											// -ms-2 to make spacing look more consistent due to ghost icons
+											<div className="-ms-2">
+												<PromptOptimizer
+													input={inputText}
+													setInput={
+														setInputFromOptimizer
+													}
+													disabled={
+														hasOutstandingTools
+													}
+													modelId={
+														model?.engine_id ||
+														undefined
+													}
+													room={room}
+												/>
+											</div>
 										)}
 									</div>
 								</div>
-								{/* Send button — pinned bottom-right, sibling of body */}
+								{/* Send / compact — pinned bottom-right, sibling of body */}
 								<div className="shrink-0">
 									<Tooltip>
 										<TooltipTrigger asChild>
@@ -1024,39 +1054,25 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													variant="default"
 													size="icon-sm"
 													aria-label={
-														isLoading
+														sendState === "stop"
 															? t(
-																	"input.pauseToolsTooltip",
+																	"input.stopLabel",
 																)
 															: t(
 																	"input.askLabel",
 																)
 													}
-													disabled={
-														isLoading
-															? hasToolsPaused ||
-																hidePauseButton
-															: isEmpty ||
-																hasOutstandingTools
-													}
-													onClick={() => {
-														if (isLoading) {
-															toggleToolsPaused?.();
-														} else {
-															promptModel();
-														}
-													}}
+													disabled={sendDisabled}
+													onClick={handleSendClick}
 												>
-													{isLoading ? (
-														hasToolsPaused ||
-														hidePauseButton ? (
-															<Spinner />
-														) : (
-															<Square
-																className="size-3"
-																fill="currentColor"
-															/>
-														)
+													{sendState === "stop" ? (
+														<Square
+															className="size-3"
+															fill="currentColor"
+														/>
+													) : sendState ===
+														"loading" ? (
+														<Spinner />
 													) : (
 														<SendIcon />
 													)}
@@ -1064,29 +1080,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											</span>
 										</TooltipTrigger>
 										<TooltipContent>
-											{(() => {
-												if (isLoading) {
-													return hasToolsPaused ||
-														hidePauseButton
-														? t(
-																"input.thinkingTooltip",
-															)
-														: t(
-																"input.pauseToolsTooltip",
-															);
-												} else if (isEmpty) {
-													return t(
-														"input.enterQuestion",
-													);
-												} else if (
-													hasOutstandingTools
-												) {
-													return t(
-														"input.completeTool",
-													);
-												}
-												return t("input.ask");
-											})()}
+											{sendTooltip}
 										</TooltipContent>
 									</Tooltip>
 								</div>
@@ -1133,6 +1127,16 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						<FocusPlugin />
 						<EditorRefPlugin editorRef={editorRef} />
 						<EnterPlugin onEnter={() => promptModel()} />
+						<BackspacePlugin
+							onBackspace={(event) => {
+								if (!isEmpty || files.length === 0) {
+									return false;
+								}
+								event.preventDefault();
+								removeFile(files.length - 1);
+								return true;
+							}}
+						/>
 						<AutoScrollOnPastePlugin
 							scrollContainerRef={scrollViewportRef}
 						/>

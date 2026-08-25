@@ -1,8 +1,10 @@
 import type { FileMode } from "./file.types";
 import { FileCodeEditor } from "./file-code-editor";
 import { FileDownloadView } from "./file-download-view";
+import { FileHtmlEditor } from "./file-html-editor";
 import { FileImageViewer } from "./file-image-viewer";
 import { FileMarkdownEditor } from "./file-markdown-editor";
+import { FileNotebook } from "./file-notebook";
 import { FilePdfViewer } from "./file-pdf-viewer";
 
 // Extensions that cannot be rendered in the editor — show a download-first view instead
@@ -32,6 +34,10 @@ interface FileEditorProps {
 	/** Optional content rendered at the start of the code editor's toolbar row.
 	 * Only applies to the code editor (other file viewers have no toolbar). */
 	leadingToolbar?: React.ReactNode;
+
+	/** When true, the editor is rendered in a read-only, view-only mode:
+	 * content cannot be edited and the Save action is hidden. Defaults to false. */
+	readOnly?: boolean;
 }
 
 export const FileEditor: React.FC<FileEditorProps> = ({
@@ -40,6 +46,7 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 	onChange = () => null,
 	onRun,
 	leadingToolbar,
+	readOnly = false,
 }) => {
 	const ext = path.split(".").pop()?.toLowerCase() || "";
 
@@ -55,9 +62,11 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 	const isPdf = ext === "pdf";
 	const isNotRendered = NON_RENDERED_EXTENSIONS.has(ext);
 	const isMarkdown = ext === "md" || ext === "markdown";
+	const isNotebook = ext === "ipynb";
+	const isHtml = ext === "html" || ext === "htm";
 
 	return (
-		<div className="relative flex h-full w-full flex-col overflow-hidden bg-background py-1">
+		<div className="relative flex h-full w-full flex-col overflow-hidden bg-background">
 			{isImage && <FileImageViewer key={path} mode={mode} path={path} />}
 			{isPdf && <FilePdfViewer key={path} mode={mode} path={path} />}
 			{isNotRendered && (
@@ -74,18 +83,45 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 					mode={mode}
 					path={path}
 					onChange={onChange}
+					readOnly={readOnly}
 				/>
 			)}
-			{!isImage && !isPdf && !isNotRendered && !isMarkdown && (
-				<FileCodeEditor
+			{/* .ipynb → interactive notebook renderer/runner */}
+			{isNotebook && (
+				<FileNotebook
 					key={path}
 					mode={mode}
 					path={path}
 					onChange={onChange}
-					onRun={onRun}
-					leadingToolbar={leadingToolbar}
+					readOnly={readOnly}
 				/>
 			)}
+			{/* .html -> code editor with a sandboxed preview of the page */}
+			{isHtml && (
+				<FileHtmlEditor
+					key={path}
+					mode={mode}
+					path={path}
+					onChange={onChange}
+					readOnly={readOnly}
+				/>
+			)}
+			{!isImage &&
+				!isPdf &&
+				!isNotRendered &&
+				!isMarkdown &&
+				!isNotebook &&
+				!isHtml && (
+					<FileCodeEditor
+						key={path}
+						mode={mode}
+						path={path}
+						onChange={onChange}
+						onRun={onRun}
+						leadingToolbar={leadingToolbar}
+						readOnly={readOnly}
+					/>
+				)}
 		</div>
 	);
 };

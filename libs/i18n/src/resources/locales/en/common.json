@@ -64,12 +64,6 @@
 	"images": {
 		"logoAlt": "logo"
 	},
-	"fileDrag": {
-		"title": "Drop files here to attach to message",
-		"modalTitle": "Add Documents",
-		"browse": "Browse",
-		"done": "Done"
-	},
 	"fileExplorer": {
 		"search": "Search",
 		"name": "Name",

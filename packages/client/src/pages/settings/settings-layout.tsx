@@ -199,11 +199,7 @@ export const SettingsLayout = observer(() => {
 
 	const hasCatalogAccess = useMemo(() => {
 		if (engineDetailType && id) {
-			const permission = (
-				userEnginePermissionApi.data as
-					| { permission?: string }
-					| undefined
-			)?.permission;
+			const permission = userEnginePermissionApi.data;
 			return userEnginePermissionApi.status === "SUCCESS" && !!permission;
 		}
 		if (isAppDetail && id) {
@@ -244,6 +240,9 @@ export const SettingsLayout = observer(() => {
 			}
 			if (projectType === "SKILL") {
 				return `/skill/${id}/edit`;
+			}
+			if (projectType === "NOTEBOOK") {
+				return `/notebook/${id}/edit`;
 			}
 			return `/app/${id}`;
 		}
@@ -373,7 +372,7 @@ export const SettingsLayout = observer(() => {
 	return (
 		<>
 			<NavbarLeft>
-				<NavbarHeader />
+				<NavbarHeader logo={matchedRoute.path ? null : undefined} />
 			</NavbarLeft>
 			<SettingsContext.Provider
 				value={{
@@ -386,7 +385,7 @@ export const SettingsLayout = observer(() => {
 				<div className="flex flex-col gap-2">
 					<div className="flex flex-col gap-2">
 						{matchedRoute.path && (
-							<div className="flex justify-between">
+							<NavbarLeft>
 								<Breadcrumb>
 									<BreadcrumbList>
 										<BreadcrumbItem>
@@ -459,7 +458,7 @@ export const SettingsLayout = observer(() => {
 										})}
 									</BreadcrumbList>
 								</Breadcrumb>
-							</div>
+							</NavbarLeft>
 						)}
 						<div className="z-1">
 							{(() => {

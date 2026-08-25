@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
+import type { Role } from "@semoss/sdk";
 import { MembersTable } from "@semoss/shared";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import { AppSettings } from "@/components/app";
@@ -10,7 +11,6 @@ import {
 } from "@/components/settings";
 import { useAPI, useSettings } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
-import type { Role } from "@/types";
 
 type VIEW = "CURRENT" | "PENDING" | "APP";
 
@@ -22,25 +22,25 @@ const AppSettingsUserDetailPage = () => {
 	const [view, setView] = useState<VIEW>("CURRENT");
 	const [permission, setPermission] = useState<Role | null>(null);
 
-	const getUserEnginePermission = useAPI(["getUserProjectPermission", id]);
+	const getUserProjectPermission = useAPI(["getUserProjectPermission", id]);
 
 	/**
 	 * @name useEffect
 	 * @desc - Set Permission to see Pending Requests
 	 */
 	useEffect(() => {
-		if (getUserEnginePermission.status !== "SUCCESS") {
+		if (getUserProjectPermission.status !== "SUCCESS") {
 			return;
 		}
 
-		if (!getUserEnginePermission.data) {
+		if (!getUserProjectPermission.data) {
 			setPermission(null);
 			return;
 		}
 
 		// set the permission
-		setPermission(getUserEnginePermission.data);
-	}, [getUserEnginePermission.status, getUserEnginePermission.data]);
+		setPermission(getUserProjectPermission.data);
+	}, [getUserProjectPermission.status, getUserProjectPermission.data]);
 
 	// if there is no permission, ignore
 	if (!permission) {

@@ -85,7 +85,10 @@ export const CreateAgentPage = () => {
 			// as empty and would otherwise wipe them.
 			const hasExecutionSettings =
 				data.modelId ||
+				!data.useDefaultAgentTools ||
 				data.maxTurns ||
+				data.maxReflections ||
+				data.maxSeconds ||
 				data.maxSubagentDepth ||
 				data.maxSubagentsPerRun ||
 				data.maxSpawnsPerTurn ||
@@ -114,16 +117,12 @@ export const CreateAgentPage = () => {
 	return (
 		<>
 			<NavbarLeft>
-				<NavbarHeader />
-			</NavbarLeft>
-			<div className="flex flex-col gap-1">
-				<Breadcrumb className="mb-4">
+				<NavbarHeader logo={null} />
+				<Breadcrumb>
 					<BreadcrumbList>
 						<BreadcrumbItem>
 							<BreadcrumbLink asChild>
-								<Link to="../" className="text-inherit">
-									Agent Catalog
-								</Link>
+								<Link to="../">Agent Catalog</Link>
 							</BreadcrumbLink>
 						</BreadcrumbItem>
 						<BreadcrumbSeparator>
@@ -134,6 +133,8 @@ export const CreateAgentPage = () => {
 						</BreadcrumbItem>
 					</BreadcrumbList>
 				</Breadcrumb>
+			</NavbarLeft>
+			<div className="flex flex-col gap-1">
 				<div className="flex flex-row items-center justify-between gap-2">
 					<H4>New Agent</H4>
 					<Button
