@@ -326,16 +326,36 @@ export interface SelectedTextContext {
 	edited: boolean;
 	sources: Array<Record<string, unknown>>;
 	text: string;
-	stats: {
-		characterCount: number;
-		fragmentCount: number;
-		scannedTextNodes: number;
-		truncated: boolean;
-		scrollCount?: number;
-		scrollHeight?: number;
-		viewportHeight?: number;
-		scrollLimitReached?: boolean;
-	};
+	stats: SelectedTextContextStats;
+}
+
+export interface SelectedTextContextStats {
+	characterCount: number;
+	fragmentCount: number;
+	scannedTextNodes: number;
+	truncated: boolean;
+	// Exact capture accounting; optional so an older backend still loads.
+	originalCharacterCount?: number;
+	includedCharacterCount?: number;
+	omittedCharacterCount?: number;
+	limitChars?: number;
+	truncationReason?: string;
+	scrollCount?: number;
+	scrollHeight?: number;
+	viewportHeight?: number;
+	scrollLimitReached?: boolean;
+	returnIncludedCharacterCount?: number;
+	returnOmittedCharacterCount?: number;
+	returnTruncated?: boolean;
+	returnTruncationReason?: string;
+}
+
+export interface RemoteBrowserContextLimits {
+	selectedCaptureHardLimitChars: number;
+	fullPageCaptureHardLimitChars: number;
+	maxCapturedContexts: number;
+	defaultReturnBudgetChars: number;
+	maximumReturnBudgetChars: number;
 }
 
 // ─── Session info returned by the REST API ───────────────────────────────────
@@ -345,6 +365,7 @@ export interface RemoteBrowserSessionInfo {
 	webSocketUrl: string;
 	viewport: { width: number; height: number };
 	currentUrl?: string;
+	contextLimits?: RemoteBrowserContextLimits;
 }
 
 export interface SaveRecordingRequest {

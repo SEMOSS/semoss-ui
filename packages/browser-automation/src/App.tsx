@@ -41,11 +41,10 @@ import {
 } from "./domain/recording";
 import { SCROLL_SCREEN_PERCENT } from "./domain/scroll";
 import {
-	appendBoundedSelectedContext,
-	MAX_FULL_PAGE_CONTEXT_CHARS,
-	MAX_SELECTED_CONTEXT_CHARS,
+	appendCapturedContext,
+	buildContextReturnPlan,
+	normalizeContextLimits,
 	renderSelectedTextContext,
-	selectedContextsForPlayground,
 } from "./domain/selected-text";
 import {
 	getToolBooleanParameter,
@@ -212,6 +211,12 @@ export default function App() {
 	const [selectedTextContexts, setSelectedTextContexts] = useState<
 		SelectedTextContext[]
 	>([]);
+	const [includedContextIds, setIncludedContextIds] = useState<Set<string>>(
+		() => new Set(),
+	);
+	const [returnBudgetChars, setReturnBudgetChars] = useState(
+		() => normalizeContextLimits(null).defaultReturnBudgetChars,
+	);
 	const [selectedTextContextsOpen, setSelectedTextContextsOpen] =
 		useState(false);
 	const [isCapturingFullPage, setIsCapturingFullPage] = useState(false);
@@ -267,6 +272,9 @@ export default function App() {
 	const returningToPlaygroundRef = useRef(false);
 	const selectedContextSequenceRef = useRef(0);
 	const selectedTextContextsRef = useRef<SelectedTextContext[]>([]);
+	// Refs are required because MCP replay completion runs outside React state.
+	const includedContextIdsRef = useRef<Set<string>>(new Set());
+	const returnBudgetCharsRef = useRef(returnBudgetChars);
 	const replayContextCaptureErrorsRef = useRef<ReplayContextCaptureError[]>(
 		[],
 	);
@@ -294,6 +302,50 @@ export default function App() {
 		toast(snackMessage);
 		setSnackMessage(null);
 	}, [snackMessage]);
+
+	const contextLimits = useMemo(
+		() => normalizeContextLimits(session?.contextLimits),
+		[session?.contextLimits],
+	);
+	const contextLimitsRef = useRef(contextLimits);
+	contextLimitsRef.current = contextLimits;
+	returnBudgetCharsRef.current = returnBudgetChars;
+
+	const resetCapturedContexts = useCallback(() => {
+		selectedTextContextsRef.current = [];
+		setSelectedTextContexts([]);
+		includedContextIdsRef.current = new Set();
+		setIncludedContextIds(new Set());
+		selectedContextSequenceRef.current = 0;
+		const budget = contextLimitsRef.current.defaultReturnBudgetChars;
+		returnBudgetCharsRef.current = budget;
+		setReturnBudgetChars(budget);
+	}, []);
+
+	const contextReturnPlan = useMemo(
+		() =>
+			buildContextReturnPlan(
+				selectedTextContexts,
+				includedContextIds,
+				returnBudgetChars,
+			),
+		[includedContextIds, returnBudgetChars, selectedTextContexts],
+	);
+
+	/** Every MCP return path must build its payload from the latest refs. */
+	const buildContextResponsePayload = useCallback(() => {
+		const plan = buildContextReturnPlan(
+			selectedTextContextsRef.current,
+			includedContextIdsRef.current,
+			returnBudgetCharsRef.current,
+		);
+		return {
+			capturedContextCount: plan.summary.capturedContextCount,
+			contextCount: plan.contexts.length,
+			contexts: plan.contexts,
+			contextBudget: plan.summary,
+		};
+	}, []);
 
 	const isPlaygroundMode = !!toolContext;
 	const isMcpPlaybackMode = isPlayRecordingTool(toolContext);
@@ -679,11 +731,14 @@ export default function App() {
 		(context: SelectedTextContext): SelectedTextContext => {
 			selectedContextSequenceRef.current += 1;
 			const title = (context.title || "Website text").trim().slice(0, 72);
+			const limits = contextLimitsRef.current;
 			const maxChars =
 				context.kind === "full-page-text"
-					? MAX_FULL_PAGE_CONTEXT_CHARS
-					: MAX_SELECTED_CONTEXT_CHARS;
-			const boundedContent = context.content.trim().slice(0, maxChars);
+					? limits.fullPageCaptureHardLimitChars
+					: limits.selectedCaptureHardLimitChars;
+			const trimmed = context.content.trim();
+			const boundedContent = trimmed.slice(0, maxChars);
+			const clientTruncated = trimmed.length > boundedContent.length;
 			const stored: SelectedTextContext = {
 				...context,
 				label: `${title} - ${context.kind === "full-page-text" ? "Full page" : "Selection"} ${selectedContextSequenceRef.current}`,
@@ -695,21 +750,45 @@ export default function App() {
 				stats: {
 					...context.stats,
 					characterCount: boundedContent.length,
-					truncated:
-						context.stats.truncated ||
-						context.content.length > boundedContent.length,
+					truncated: context.stats.truncated || clientTruncated,
+					...(clientTruncated
+						? {
+								originalCharacterCount: trimmed.length,
+								includedCharacterCount: boundedContent.length,
+								omittedCharacterCount:
+									trimmed.length - boundedContent.length,
+								limitChars: maxChars,
+								truncationReason: "capture-character-limit",
+							}
+						: {}),
 				},
 			};
-			const next = appendBoundedSelectedContext(
+			const { contexts: next, removed } = appendCapturedContext(
 				selectedTextContextsRef.current,
 				stored,
+				limits.maxCapturedContexts,
 			);
 			selectedTextContextsRef.current = next;
 			setSelectedTextContexts(next);
+			const included = new Set(includedContextIdsRef.current);
+			included.add(stored.id);
+			if (removed) included.delete(removed.id);
+			includedContextIdsRef.current = included;
+			setIncludedContextIds(included);
 			setSelectedTextContextsOpen(true);
+			const original =
+				stored.stats.originalCharacterCount ?? boundedContent.length;
+			const omitted = stored.stats.omittedCharacterCount ?? 0;
 			setSnackMessage(
-				`Captured ${boundedContent.length} characters of website text`,
+				stored.stats.truncated && omitted > 0
+					? `Captured ${boundedContent.length.toLocaleString()} of ${original.toLocaleString()} source characters. ${omitted.toLocaleString()} were omitted.`
+					: `Captured ${boundedContent.length.toLocaleString()} characters of website text`,
 			);
+			if (removed) {
+				setSnackError(
+					`Removed "${removed.label ?? removed.title}" because only ${limits.maxCapturedContexts} captured contexts are kept.`,
+				);
+			}
 			return stored;
 		},
 		[],
@@ -878,15 +957,19 @@ export default function App() {
 		setPlaybackCloseCountdown(null);
 		setIsReturningToPlayground(false);
 		setSaveDialogOpen(false);
-		selectedTextContextsRef.current = [];
-		setSelectedTextContexts([]);
+		resetCapturedContexts();
 		resetDownloads();
 		setRecordedSteps([]);
 		setAutomationGoal("");
 		setAutomationGoalGenerationError("");
 		automationGoalExecutionRef.current = "";
 		playback.resetExecution();
-	}, [playback.resetExecution, resetDownloads, toolExecutionKey]);
+	}, [
+		playback.resetExecution,
+		resetCapturedContexts,
+		resetDownloads,
+		toolExecutionKey,
+	]);
 
 	const runBrowserAction = useCallback(
 		async (event: ClientToServerEvent) => {
@@ -1444,29 +1527,53 @@ export default function App() {
 		);
 		selectedTextContextsRef.current = next;
 		setSelectedTextContexts(next);
+		const included = new Set(includedContextIdsRef.current);
+		included.delete(contextId);
+		includedContextIdsRef.current = included;
+		setIncludedContextIds(included);
 		if (!next.length) setSelectedTextContextsOpen(false);
+	}, []);
+
+	const handleToggleContextIncluded = useCallback(
+		(contextId: string, include: boolean) => {
+			const included = new Set(includedContextIdsRef.current);
+			if (include) included.add(contextId);
+			else included.delete(contextId);
+			includedContextIdsRef.current = included;
+			setIncludedContextIds(included);
+		},
+		[],
+	);
+
+	const handleReturnBudgetChange = useCallback((chars: number) => {
+		const budget = Math.min(
+			Math.max(1, Math.floor(chars)),
+			contextLimitsRef.current.maximumReturnBudgetChars,
+		);
+		returnBudgetCharsRef.current = budget;
+		setReturnBudgetChars(budget);
 	}, []);
 
 	const handleSaveSelectedContext = useCallback(
 		(contextId: string, content: string) => {
+			const limits = contextLimitsRef.current;
 			const current = selectedTextContextsRef.current;
 			const next = current.map((context) => {
 				if (context.id !== contextId) return context;
 				const maxChars =
 					context.kind === "full-page-text"
-						? MAX_FULL_PAGE_CONTEXT_CHARS
-						: MAX_SELECTED_CONTEXT_CHARS;
-				const bounded = content.trim().slice(0, maxChars);
+						? limits.fullPageCaptureHardLimitChars
+						: limits.selectedCaptureHardLimitChars;
+				const trimmed = content.trim();
+				const bounded = trimmed.slice(0, maxChars);
 				const updated = {
 					...context,
 					content: bounded,
 					edited: true,
+					// Capture-origin truncation metadata is preserved as-is.
 					stats: {
 						...context.stats,
 						characterCount: bounded.length,
-						truncated:
-							context.stats.truncated ||
-							content.trim().length > bounded.length,
 					},
 				};
 				return {
@@ -1501,10 +1608,8 @@ export default function App() {
 			const info = await createSession(normalizedUrl);
 			if (info) {
 				resetDownloads();
-				selectedTextContextsRef.current = [];
-				setSelectedTextContexts([]);
+				resetCapturedContexts();
 				setSelectedTextContextsOpen(false);
-				selectedContextSequenceRef.current = 0;
 				setCurrentUrl(info.currentUrl || normalizedUrl);
 				setLatestFrame(null);
 				setBrowserTabs([]);
@@ -1514,7 +1619,12 @@ export default function App() {
 				setIsRecording(false);
 			}
 		},
-		[createSession, playback.resetReplayPreparation, resetDownloads],
+		[
+			createSession,
+			playback.resetReplayPreparation,
+			resetCapturedContexts,
+			resetDownloads,
+		],
 	);
 
 	const handleStartMcpSession = useCallback(async () => {
@@ -1536,10 +1646,8 @@ export default function App() {
 
 		setCurrentUrl(info.currentUrl || targetUrl);
 		resetDownloads();
-		selectedTextContextsRef.current = [];
-		setSelectedTextContexts([]);
+		resetCapturedContexts();
 		setSelectedTextContextsOpen(false);
-		selectedContextSequenceRef.current = 0;
 		setLatestFrame(null);
 		setBrowserTabs([]);
 		browserTabsRef.current = [];
@@ -1550,6 +1658,7 @@ export default function App() {
 		createSession,
 		mcpStartUrlInput,
 		playback.resetReplayPreparation,
+		resetCapturedContexts,
 		resetDownloads,
 	]);
 
@@ -1595,9 +1704,7 @@ export default function App() {
 				// Downloads may finish or be triggered while the completed page is kept
 				// open. Persist and snapshot them before closing resets local state.
 				await flushDownloads();
-				const contexts = selectedContextsForPlayground(
-					selectedTextContextsRef.current,
-				);
+				const contextPayload = buildContextResponsePayload();
 				const downloadPayload = downloadMcpPayload();
 				sendMcpResponseToPlayground(
 					{
@@ -1609,8 +1716,7 @@ export default function App() {
 						pausedAtStepId: null,
 						sessionId: pending.sessionId,
 						roomId: pending.roomId,
-						contextCount: contexts.length,
-						contexts,
+						...contextPayload,
 						contextCaptureErrors:
 							replayContextCaptureErrorsRef.current,
 						...downloadPayload,
@@ -1635,7 +1741,7 @@ export default function App() {
 				}
 			}
 		},
-		[downloadMcpPayload, flushDownloads],
+		[buildContextResponsePayload, downloadMcpPayload, flushDownloads],
 	);
 
 	useEffect(() => {
@@ -2197,10 +2303,7 @@ export default function App() {
 					),
 					title: enrichedEnvelope.meta?.title,
 					description: enrichedEnvelope.meta?.description,
-					contextCount: selectedTextContextsRef.current.length,
-					contexts: selectedContextsForPlayground(
-						selectedTextContextsRef.current,
-					),
+					...buildContextResponsePayload(),
 					contextCaptureErrors,
 					...downloadPayload,
 				},
@@ -2243,6 +2346,7 @@ export default function App() {
 	}, [
 		closeBrowserSession,
 		completePendingMcpPlayback,
+		buildContextResponsePayload,
 		captureAndStoreFullPage,
 		captureFullPageAtEnd,
 		downloadMcpPayload,
@@ -2343,9 +2447,7 @@ export default function App() {
 
 				const downloadPayload = downloadMcpPayload();
 
-				const contexts = selectedContextsForPlayground(
-					selectedTextContextsRef.current,
-				);
+				const contextPayload = buildContextResponsePayload();
 				sendMcpResponseToPlayground(
 					{
 						played: false,
@@ -2356,8 +2458,7 @@ export default function App() {
 						pausedAtStepId: result.pausedAtStepId ?? null,
 						sessionId: session.sessionId,
 						roomId: toolContext.roomId,
-						contextCount: contexts.length,
-						contexts,
+						...contextPayload,
 						contextCaptureErrors:
 							replayContextCaptureErrorsRef.current,
 						...downloadPayload,
@@ -2384,6 +2485,7 @@ export default function App() {
 			}
 		})();
 	}, [
+		buildContextResponsePayload,
 		captureAndStoreFullPage,
 		captureFullPageAtEnd,
 		downloadMcpPayload,
@@ -3257,12 +3359,18 @@ export default function App() {
 						onSaveRecording={handleOpenSaveRecording}
 						selectedTextContextsOpen={selectedTextContextsOpen}
 						selectedTextContexts={selectedTextContexts}
+						contextLimits={contextLimits}
+						contextReturnPlan={contextReturnPlan}
+						returnBudgetChars={returnBudgetChars}
+						includedContextIds={includedContextIds}
 						onToggleSelectedTextContexts={() =>
 							setSelectedTextContextsOpen((open) => !open)
 						}
 						onCopySelectedContext={handleCopySelectedContext}
 						onDeleteSelectedContext={handleDeleteSelectedContext}
 						onSaveSelectedContext={handleSaveSelectedContext}
+						onToggleContextIncluded={handleToggleContextIncluded}
+						onReturnBudgetChange={handleReturnBudgetChange}
 					/>
 				</div>
 				{debugOpen && (
