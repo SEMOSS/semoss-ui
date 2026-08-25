@@ -674,7 +674,7 @@ export const ToolsDefaultView = observer(
 										{t("extension.checking")}
 									</>
 								) : (
-									t("extensionRetry")
+									t("extension.retry")
 								)}
 							</Button>
 						</DialogFooter>
