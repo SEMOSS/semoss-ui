@@ -167,6 +167,7 @@ const EMPTY_PLAYGROUND: ThemeMap["playground"] = {
 		enablePromptOptimizer: true,
 		enableAgentHarness: false,
 		showActivityLog: true,
+		enableTemperature: false,
 		enableRewrite: true,
 		enableTableExport: false,
 		enableKnowledgeMCP: true,
@@ -219,6 +220,12 @@ const FEATURE_FLAGS: {
 		key: "showActivityLog",
 		label: "Show Activity Log",
 		description: "Shows the activity log panel/toggle in the room.",
+	},
+	{
+		key: "enableTemperature",
+		label: "Enable Temperature",
+		description:
+			"Shows a temperature slider in room settings, letting users control model randomness (0-1).",
 	},
 	// Assistant response actions
 	{
