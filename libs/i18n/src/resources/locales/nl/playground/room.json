@@ -12,14 +12,28 @@
 		"compactError": "Comprimeren van gesprek mislukt",
 		"compacting": "Gesprek comprimeren...",
 		"compactedAbove": "Gesprek gecomprimeerd",
-		"compactedAboveTooltip": "Eerdere berichten zijn samengevat om de contextgrootte te verkleinen"
+		"compactedAboveTooltip": "Eerdere berichten zijn samengevat om de contextgrootte te verkleinen",
+		"compactButton": "Comprimeren",
+		"compactionOptions": "Compressieopties",
+		"advancedOptions": "Geavanceerde opties",
+		"strategyLabel": {
+			"SUMMARY": "Samenvatten",
+			"TOOL_PRUNE": "Tools opschonen",
+			"AUTO": "Automatisch"
+		},
+		"strategyTooltip": {
+			"SUMMARY": "Vervangt oudere berichten door een door AI gegenereerde samenvatting. Behoudt de algemene context van het gesprek en maakt tokenruimte vrij.",
+			"TOOL_PRUNE": "Verwijdert uitgebreide toolresultaten uit de gespreksgeschiedenis. Het beste wanneer tooloutputs groot zijn en de details niet meer nodig zijn.",
+			"AUTO": "Kiest samenvatten of tools opschonen op basis van het huidige gesprek."
+		}
 	},
 	"form": {
 		"modelLabel": "Model",
 		"instructionsLabel": "Instructies",
 		"agentLabel": "Agent",
 		"knowledgeLabel": "Kennis",
-		"toolboxLabel": "Toolboxes"
+		"toolboxLabel": "Toolboxes",
+		"temperatureLabel": "Temperatuur"
 	},
 	"modes": {
 		"ask": "Chatmodus",

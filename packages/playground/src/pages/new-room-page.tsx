@@ -8,12 +8,14 @@ import {
 } from "lucide-react";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
+import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { InsightProvider, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
+	cn,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 	ResizableHandle,
@@ -29,7 +31,6 @@ import {
 import landingImage from "@/assets/img/landing.png";
 import landingDarkImage from "@/assets/img/landing-darkmode.png";
 import {
-	FileDragOverlay,
 	RoomInput,
 	RoomInputMenuFileExplorer,
 	RoomInputMenuMCP,
@@ -38,10 +39,38 @@ import {
 	RoomSidebar,
 } from "@/components";
 import { RoomOptionsForm } from "@/components/room/room-options-form";
-import { FileDragProvider } from "@/contexts";
+import { FileDragProvider, useFileDrag } from "@/contexts";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { RoomStore } from "@/stores";
 import type { MCPConfig, Prompt, Workspace } from "@/types";
+
+/**
+ * Highlights its border while a file is being dragged over it. Must render
+ * inside a FileDragProvider.
+ */
+const DropHighlight = ({
+	className,
+	children,
+}: {
+	className?: string;
+	children: ReactNode;
+}) => {
+	const { isDragging } = useFileDrag();
+
+	return (
+		<div
+			className={cn(
+				className,
+				// Sits above the absolutely positioned background image, which
+				// would otherwise paint over this border regardless of DOM order.
+				"relative border-2 border-transparent transition-all duration-200 ease-in-out",
+				isDragging && "border-primary",
+			)}
+		>
+			{children}
+		</div>
+	);
+};
 
 /**
  * The page to create a new room
@@ -73,6 +102,13 @@ export const NewRoomPage = observer(() => {
 	const { chat } = useChat();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
+
+	// Re-fetch the user's profile default model each time this page mounts so
+	// changes made in the token-usage embed are reflected immediately.
+	useEffect(() => {
+		chat.refreshProfileDefaultModel();
+	}, [chat]);
+
 	const initialPrompt = searchParams.get("prompt") ?? "";
 
 	const workspaceIdSearchParams = searchParams.get("workspaceId");
@@ -119,6 +155,8 @@ export const NewRoomPage = observer(() => {
 		tempRoomStore.setMode(mode);
 	}, [mode, tempRoomStore]);
 	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
+	// The agent whose default model has already been applied to the picker
+	const appliedAgentModelRef = useRef<string>("");
 	const [prompts, setPrompts] = useState<string[]>([]);
 	const previewPrompts = useMemo(
 		() => tempRoomStore.options.predefinedPrompts.slice(0, 5),
@@ -162,6 +200,9 @@ export const NewRoomPage = observer(() => {
 			mcp: [...(root.theme.defaultTools || [])],
 			workspace: undefined,
 			predefinedPrompts: [],
+			temperature: root.theme.featureFlags?.enableTemperature
+				? (root.theme.defaultRoomSettings?.temperature ?? 0)
+				: undefined,
 		});
 	}, [tempRoomStore, root.theme]);
 
@@ -269,11 +310,20 @@ export const NewRoomPage = observer(() => {
 
 	// Handle workspace data loading from RoomWorkspace component selection
 	useEffect(() => {
-		if (
-			!selectedWorkspaceId ||
-			getWorkspace.status !== "SUCCESS" ||
-			!getWorkspace.data
-		) {
+		if (!selectedWorkspaceId) {
+			// clearing the agent clears the guard below, so picking the same
+			// agent again applies its default model again
+			appliedAgentModelRef.current = "";
+			return;
+		}
+		if (getWorkspace.status !== "SUCCESS" || !getWorkspace.data) {
+			return;
+		}
+		// Switching agents changes selectedWorkspaceId a render before the
+		// pixel catches up, so this effect fires once holding the outgoing
+		// agent's data. Applying it would merge the wrong agent's settings and,
+		// worse, mark the incoming agent as already handled below.
+		if (getWorkspace.data.workspace_id !== selectedWorkspaceId) {
 			return;
 		}
 
@@ -299,6 +349,19 @@ export const NewRoomPage = observer(() => {
 			}
 		}
 
+		// An agent that names a default model switches the picker to it, once
+		// per selection - the ref keeps a refetch from overriding a model the
+		// user picked by hand afterwards. An agent with no default leaves the
+		// current model alone.
+		const agentModelId = getWorkspace.data.config_json?.model_id ?? "";
+		if (
+			agentModelId &&
+			appliedAgentModelRef.current !== selectedWorkspaceId
+		) {
+			appliedAgentModelRef.current = selectedWorkspaceId;
+			void chat.selectModelById(agentModelId);
+		}
+
 		setPrompts(
 			Array.isArray(getWorkspace.data.prompts)
 				? getWorkspace.data.prompts.map((p) =>
@@ -322,6 +385,7 @@ export const NewRoomPage = observer(() => {
 		getWorkspace.status,
 		getWorkspace.data,
 		tempRoomStore,
+		chat,
 	]);
 
 	// Handle knowledge vector engine from URL parameter
@@ -428,13 +492,12 @@ export const NewRoomPage = observer(() => {
 			<ResizablePanelGroup direction="horizontal" className="flex-1">
 				<ResizablePanel className="relative">
 					<FileDragProvider>
-						<FileDragOverlay />
 						<img
 							src={landingSrc}
 							alt="Background"
 							className="absolute inset-0 h-full w-full select-none object-cover"
 						/>
-						<div className="flex h-full flex-col items-center justify-center overflow-auto p-2">
+						<DropHighlight className="flex h-full flex-col items-center justify-center overflow-auto p-2">
 							<div className="z-10 mx-auto flex w-full max-w-2xl flex-col gap-6">
 								{root.theme.landing ? (
 									<div
@@ -703,7 +766,7 @@ export const NewRoomPage = observer(() => {
 									</div>
 								) : null}
 							</div>
-						</div>
+						</DropHighlight>
 					</FileDragProvider>
 				</ResizablePanel>
 				{isConfigurationOpen && (

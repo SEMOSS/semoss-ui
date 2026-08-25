@@ -253,9 +253,14 @@ export class ResponseMessageStore extends AbstractMessageStore {
 roomId=["${room.roomId}"],
 command=["<encode>${text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
-${media.length ? `image=${JSON.stringify(media)},` : "image=[],"}
+${media.length ? `media=${JSON.stringify(media)},` : "media=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
-paramValues=[{}]`;
+paramValues=[${JSON.stringify(
+				room.theme.featureFlags?.enableTemperature &&
+					room.options.temperature !== undefined
+					? { temperature: room.options.temperature }
+					: {},
+			)}]`;
 
 			// wait for the pixel to run with streaming
 			await room.runRoomPixelStreaming<
