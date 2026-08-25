@@ -19,7 +19,7 @@ import type {
 	SubagentRun,
 	SubagentRunNode,
 } from "./agent-activity-types";
-import { toMs } from "./agent-activity-types";
+import { isActiveStatus, toMs } from "./agent-activity-types";
 import { AgentRunGraph } from "./agent-run-graph";
 import type { ClaudeCodeTranscriptEvent } from "./claude-code-transcript";
 import { mergeClaudeCodeTranscript } from "./claude-code-transcript";
@@ -390,6 +390,7 @@ export const AgentActivityPage = () => {
 		// Resolve model display names in the background - the graph
 		// falls back to raw engine ids until these land.
 		void resolveEngineInfo(collectModelIds(runDetails));
+		return runDetails;
 	};
 
 	const handleRoomClick = async (room: RoomSummary) => {
@@ -412,6 +413,12 @@ export const AgentActivityPage = () => {
 	 * since the page loaded shows up), then every run in it. The graph stays
 	 * mounted while this happens - only the button spins - so refreshing
 	 * mid-inspection keeps the selected node and the current pan/zoom.
+	 *
+	 * Reports what came back rather than refreshing silently. A run still in
+	 * progress has nothing new to show: the semoss harness only writes its room
+	 * messages at a tool-approval pause or at the end of the run, so a mid-run
+	 * refresh legitimately returns the same graph and would otherwise look like
+	 * a button that does nothing.
 	 */
 	const handleRefresh = async () => {
 		if (!selectedRoom || refreshing || loadingRunDetails) {
@@ -431,7 +438,16 @@ export const AgentActivityPage = () => {
 						[selectedRoom.roomId]:
 							activity[selectedRoom.roomId] ?? [],
 					};
-			await loadRoomRuns(selectedRoom, activityLog);
+			const runDetails = await loadRoomRuns(selectedRoom, activityLog);
+			const label = `${runDetails.length} ${runDetails.length === 1 ? "run" : "runs"}`;
+			const inProgress = runDetails.filter((run) =>
+				isActiveStatus(run.status),
+			).length;
+			toast.success(
+				inProgress > 0
+					? `Refreshed - ${label}, ${inProgress} still in progress`
+					: `Refreshed - ${label}`,
+			);
 		} catch (error) {
 			console.error("Error refreshing agent activity:", error);
 			toast.error(`Error refreshing agent activity: ${error}`);
