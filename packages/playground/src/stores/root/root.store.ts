@@ -105,6 +105,7 @@ export class RootStore {
 				showActivityLog: true,
 				showPlatformLinks: true,
 				enableFeedbackText: true,
+				enableTemperature: false,
 			},
 		},
 	};
