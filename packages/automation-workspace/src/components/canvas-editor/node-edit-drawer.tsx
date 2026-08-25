@@ -1,4 +1,4 @@
-import { ChevronDown, Code2, Trash2 } from "lucide-react";
+import { ChevronDown, Code2, ExternalLink, Trash2 } from "lucide-react";
 import { Suspense, useState } from "react";
 import { MonacoEditor } from "@semoss/shared";
 import {
@@ -7,6 +7,9 @@ import {
 	FieldLabel,
 	Input,
 	Textarea,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	useTheme,
 } from "@semoss/ui/next";
 import type {
@@ -99,7 +102,7 @@ export function NodeEditDrawer({
 			<Button
 				size="sm"
 				variant="ghost"
-				className="h-7 gap-0.5 px-1.5 text-[10px] text-primary"
+				className="h-6 gap-0.5 px-1.5 text-[10px] text-primary"
 				onClick={() => setShowPythonVariablePicker((isOpen) => !isOpen)}
 			>
 				+ Variable
@@ -128,6 +131,21 @@ export function NodeEditDrawer({
 			)}
 		</div>
 	);
+	const openPythonModal = () => {
+		const parentOrigin = new URLSearchParams(window.location.search).get(
+			"parentOrigin",
+		);
+		if (!parentOrigin || window.parent === window) return;
+		window.parent.postMessage(
+			{
+				type: "SEMOSS_AUTOMATION_OPEN_PYTHON_EDITOR",
+				projectId: appId,
+				nodeId: step.id,
+				source: pythonSource,
+			},
+			parentOrigin,
+		);
+	};
 
 	return (
 		<div className="flex h-full flex-col bg-background">
@@ -323,13 +341,32 @@ export function NodeEditDrawer({
 
 						{(isDeveloperPython || editorMode === "python") && (
 							<Field>
-								<div className="flex items-center justify-between">
-									<FieldLabel className="flex items-center gap-1.5 text-xs">
-										<Code2 className="h-3.5 w-3.5 text-primary" />
-										Python source
-									</FieldLabel>
-									{upstreamVars.length > 0 &&
-										pythonVariablePicker}
+								<div>
+									<div className="flex items-center justify-between">
+										<FieldLabel className="flex items-center gap-1.5 text-xs">
+											<Code2 className="h-3.5 w-3.5 text-primary" />
+											Python source
+										</FieldLabel>
+										{upstreamVars.length > 0 &&
+											pythonVariablePicker}
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<Button
+													type="button"
+													size="icon-sm"
+													variant="ghost"
+													className="size-6"
+													onClick={openPythonModal}
+													aria-label="Open bigger Python editor"
+												>
+													<ExternalLink className="size-3.5" />
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent>
+												Open Editor
+											</TooltipContent>
+										</Tooltip>
+									</div>
 								</div>
 								<div className="h-[300px] overflow-hidden rounded-lg border bg-muted/30">
 									<Suspense

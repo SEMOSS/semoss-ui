@@ -167,6 +167,57 @@ export default function App() {
 	}, [inspectorMode, parentOrigin]);
 
 	useEffect(() => {
+		if (!inspectorMode) return;
+		const handlePythonSourceChanged = (event: MessageEvent<unknown>) => {
+			if (
+				event.source !== window.parent ||
+				event.origin !== parentOrigin ||
+				typeof event.data !== "object" ||
+				event.data === null
+			) {
+				return;
+			}
+			const message = event.data as {
+				type?: unknown;
+				projectId?: unknown;
+				nodeId?: unknown;
+				source?: unknown;
+			};
+			if (
+				message.type !== "SEMOSS_AUTOMATION_PYTHON_SOURCE_CHANGED" ||
+				message.projectId !== appId ||
+				typeof message.nodeId !== "string" ||
+				typeof message.source !== "string"
+			) {
+				return;
+			}
+			const step = inspectorSnapshot?.editingStep;
+			if (!step || step.id !== message.nodeId) return;
+			const updatedStep = {
+				...step,
+				workflowCodeMode: "custom" as const,
+				workflowConfig: {
+					...step.workflowConfig,
+					pythonSource: message.source,
+				},
+			};
+			setInspectorSnapshot((current) =>
+				current ? { ...current, editingStep: updatedStep } : current,
+			);
+			window.parent.postMessage(
+				{
+					type: "SEMOSS_AUTOMATION_INSPECTOR_ACTION",
+					action: { type: "update-step", step: updatedStep },
+				},
+				parentOrigin,
+			);
+		};
+		window.addEventListener("message", handlePythonSourceChanged);
+		return () =>
+			window.removeEventListener("message", handlePythonSourceChanged);
+	}, [appId, inspectorMode, inspectorSnapshot, parentOrigin]);
+
+	useEffect(() => {
 		if (!traceMode) return;
 		const handleTrace = (event: MessageEvent<unknown>) => {
 			if (

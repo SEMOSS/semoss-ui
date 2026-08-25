@@ -1,8 +1,15 @@
 import { ChevronRightIcon, Share2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	Suspense,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { Link } from "react-router-dom";
-import { FlexLayout, type MCPConfig } from "@semoss/shared";
+import { FlexLayout, type MCPConfig, MonacoEditor } from "@semoss/shared";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -13,6 +20,9 @@ import {
 	Button,
 	Dialog,
 	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -166,10 +176,28 @@ export const AutomationWorkspace = observer(() => {
 	const inspectorFrameRef = useRef<HTMLIFrameElement>(null);
 	const [traceSnapshot, setTraceSnapshot] = useState<unknown>(null);
 	const [inspectorSnapshot, setInspectorSnapshot] = useState<unknown>(null);
+	const [pythonEditor, setPythonEditor] = useState<{
+		nodeId: string;
+		source: string;
+	} | null>(null);
 	const [automationDirty, setAutomationDirty] = useState(false);
 	const automationWorkspaceOrigin = useMemo(
 		() => new URL(AUTOMATION_WORKSPACE_URL, window.location.origin).origin,
 		[],
+	);
+	const sendPythonEditorSource = useCallback(
+		(source: string, nodeId: string) => {
+			inspectorFrameRef.current?.contentWindow?.postMessage(
+				{
+					type: "SEMOSS_AUTOMATION_PYTHON_SOURCE_CHANGED",
+					projectId: appId,
+					nodeId,
+					source,
+				},
+				automationWorkspaceOrigin,
+			);
+		},
+		[appId, automationWorkspaceOrigin],
 	);
 
 	const activateInspector = useCallback(() => {
@@ -243,6 +271,10 @@ export const AutomationWorkspace = observer(() => {
 				snapshot?: unknown;
 				projectId?: unknown;
 				isDirty?: unknown;
+				nodeId?: unknown;
+				path?: unknown;
+				name?: unknown;
+				source?: unknown;
 			};
 			if (
 				event.source === automationFrameRef.current?.contentWindow &&
@@ -292,6 +324,19 @@ export const AutomationWorkspace = observer(() => {
 				) {
 					activateInspector();
 				}
+			}
+			if (
+				event.source === inspectorFrameRef.current?.contentWindow &&
+				message.type === "SEMOSS_AUTOMATION_OPEN_PYTHON_EDITOR" &&
+				message.projectId === appId &&
+				typeof message.nodeId === "string" &&
+				/^[\w-]+$/.test(message.nodeId) &&
+				typeof message.source === "string"
+			) {
+				setPythonEditor({
+					nodeId: message.nodeId,
+					source: message.source,
+				});
 			}
 			if (
 				event.source === inspectorFrameRef.current?.contentWindow &&
@@ -707,6 +752,81 @@ export const AutomationWorkspace = observer(() => {
 					</DialogContent>
 				</Dialog>
 			</NavbarRight>
+			<Dialog
+				open={pythonEditor !== null}
+				onOpenChange={(open) => {
+					if (!open && pythonEditor) {
+						sendPythonEditorSource(
+							pythonEditor.source,
+							pythonEditor.nodeId,
+						);
+						setPythonEditor(null);
+					}
+				}}
+			>
+				<DialogContent className="flex h-[85vh] w-[min(92vw,80rem)] max-w-none flex-col p-0 sm:max-w-3xl">
+					<DialogHeader className="border-b px-4 py-3">
+						<DialogTitle>Python source</DialogTitle>
+					</DialogHeader>
+					<div className="min-h-0 flex-1 p-4">
+						<div className="h-full overflow-hidden rounded-lg border bg-muted/30">
+							{pythonEditor && (
+								<Suspense
+									fallback={
+										<pre className="h-full overflow-auto p-3 font-mono text-xs">
+											{pythonEditor.source}
+										</pre>
+									}
+								>
+									<MonacoEditor
+										height="100%"
+										width="100%"
+										language="python"
+										value={pythonEditor.source}
+										onChange={(source) => {
+											setPythonEditor((current) =>
+												current
+													? {
+															...current,
+															source:
+																source ?? "",
+														}
+													: current,
+											);
+										}}
+										options={{
+											automaticLayout: true,
+											fontSize: 13,
+											lineNumbers: "on",
+											minimap: { enabled: false },
+											folding: true,
+											scrollBeyondLastLine: false,
+											wordWrap: "on",
+											padding: { top: 12, bottom: 12 },
+										}}
+									/>
+								</Suspense>
+							)}
+						</div>
+					</div>
+					<DialogFooter className="border-t px-4 py-3">
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => {
+								if (!pythonEditor) return;
+								sendPythonEditorSource(
+									pythonEditor.source,
+									pythonEditor.nodeId,
+								);
+								setPythonEditor(null);
+							}}
+						>
+							Save
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 			<WorkspaceManager
 				options={DEFAULT_OPTIONS}
 				factory={factory}
