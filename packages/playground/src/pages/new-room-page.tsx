@@ -200,6 +200,9 @@ export const NewRoomPage = observer(() => {
 			mcp: [...(root.theme.defaultTools || [])],
 			workspace: undefined,
 			predefinedPrompts: [],
+			temperature: root.theme.featureFlags?.enableTemperature
+				? (root.theme.defaultRoomSettings?.temperature ?? 0)
+				: undefined,
 		});
 	}, [tempRoomStore, root.theme]);
 
