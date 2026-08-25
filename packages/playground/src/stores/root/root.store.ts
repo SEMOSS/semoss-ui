@@ -54,6 +54,8 @@ export class RootStore {
 			images: {
 				app: "",
 				logo: "",
+				appDark: "",
+				logoDark: "",
 				login: "",
 				landing: "",
 				tabIcon: "",
