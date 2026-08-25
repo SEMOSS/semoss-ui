@@ -191,6 +191,42 @@ export const AutomationWorkspace = observer(() => {
 		}
 	}, [workspace.model]);
 
+	const runStatus = useMemo(() => {
+		if (
+			typeof traceSnapshot === "object" &&
+			traceSnapshot !== null &&
+			"latestRunStatus" in traceSnapshot &&
+			typeof traceSnapshot.latestRunStatus === "string"
+		) {
+			return traceSnapshot.latestRunStatus;
+		}
+		return null;
+	}, [traceSnapshot]);
+
+	const handleRenderTab = useCallback(
+		(
+			node: FlexLayout.TabNode,
+			renderValues: FlexLayout.ITabRenderValues,
+		) => {
+			if (node.getId() !== "automation-trace" || !runStatus) return;
+			const dotColor =
+				runStatus === "RUNNING"
+					? "bg-blue-500"
+					: runStatus === "SUCCESS"
+						? "bg-emerald-500"
+						: "bg-destructive";
+			renderValues.content = (
+				<span className="relative">
+					{renderValues.content}
+					<span
+						className={`-top-0.5 -right-2.5 absolute h-2 w-2 animate-pulse rounded-full ${dotColor}`}
+					/>
+				</span>
+			);
+		},
+		[runStatus],
+	);
+
 	useEffect(() => {
 		if (!appId) return;
 		setInspectorSnapshot(null);
@@ -710,6 +746,7 @@ export const AutomationWorkspace = observer(() => {
 			<WorkspaceManager
 				options={DEFAULT_OPTIONS}
 				factory={factory}
+				onRenderTab={handleRenderTab}
 				readOnly={readOnly}
 			/>
 		</>

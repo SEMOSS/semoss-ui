@@ -78,7 +78,6 @@ import { AddNodeMenu } from "./add-node-menu";
 import { AutomationDockLayout } from "./automation-dock-layout";
 import { AutomationNode as AutomationNodeCard } from "./nodes/automation-node";
 import { TriggerNode } from "./nodes/trigger-node";
-import { RunBanner } from "./run-banner";
 import { UndoBanner } from "./undo-banner";
 
 // ---- React Flow custom node registry (must be outside component) ----
@@ -485,9 +484,7 @@ export function AutomationCanvas({
 		);
 	}, [appId]);
 
-	useEffect(() => {
-		if (editingStepId) setActiveDockTab("inspector");
-	}, [editingStepId]);
+	useEffect(() => {}, [editingStepId]);
 	const loadedRef = useRef(false);
 	const skipDraftPersistenceRef = useRef(true);
 	const initialLayoutAppliedRef = useRef(false);
@@ -1089,15 +1086,6 @@ export function AutomationCanvas({
 		return () => document.removeEventListener("keydown", handler);
 	}, [readOnly, save]);
 
-	const dismissRun = useCallback(() => {
-		setLatestRunResults([]);
-		setLatestRunStatus(null);
-		setStepStatuses({});
-		setStepErrors({});
-		setStepDurations({});
-		setAiRunSummary(null);
-	}, []);
-
 	const applyRunData = useCallback(
 		(runData: {
 			STATUS: RunStatus;
@@ -1575,42 +1563,18 @@ export function AutomationCanvas({
 											Read-only
 										</div>
 									)}
-									{/* Banners row above the canvas */}
-									{(running ||
-										(latestRunStatus &&
-											latestRunStatus !== "RUNNING") ||
-										undoSnapshot) && (
-										<div className="absolute inset-x-0 top-0 z-20 space-y-2 px-4 pt-3">
-											{running && (
-												<div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-primary text-xs">
-													<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
-													Running…
-												</div>
-											)}
-											{!running &&
-												latestRunStatus &&
-												latestRunStatus !==
-													"RUNNING" && (
-													<RunBanner
-														status={latestRunStatus}
-														aiSummary={aiRunSummary}
-														generatingAiSummary={
-															generatingAiSummary
-														}
-														onDismiss={dismissRun}
-													/>
-												)}
-											{undoSnapshot && (
-												<UndoBanner
-													onUndo={() => {
-														setSteps(undoSnapshot);
-														setUndoSnapshot(null);
-													}}
-													onDismiss={() =>
-														setUndoSnapshot(null)
-													}
-												/>
-											)}
+									{/* Undo banner above the canvas */}
+									{undoSnapshot && (
+										<div className="absolute inset-x-0 top-0 z-20 px-4 pt-3">
+											<UndoBanner
+												onUndo={() => {
+													setSteps(undoSnapshot);
+													setUndoSnapshot(null);
+												}}
+												onDismiss={() =>
+													setUndoSnapshot(null)
+												}
+											/>
 										</div>
 									)}
 
