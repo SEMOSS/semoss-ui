@@ -1052,7 +1052,11 @@ export const createWorkbenchAssistantSlice = (
 					if (!insightId) return;
 
 					await decideAgentRunAction(
-						{ actionId, decision: "respond", paramValues: answers },
+						{
+							actionId,
+							decision: "respond",
+							mcpToolResult: JSON.stringify(answers),
+						},
 						insightId,
 					);
 					const watcher = activeWatchers.get(runId);

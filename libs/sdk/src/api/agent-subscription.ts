@@ -301,19 +301,22 @@ export const subscribeRunAgent = (
  * Decide a tool call paused on a human decision, resolving "submit" to
  * "approve" (paramValues omitted or unchanged from pendingAction.toolArgs) or
  * "edit" (paramValues differs) — the two decisions the backend treats
- * identically except for which arguments the tool actually runs with. Then
- * pokes the run's live subscription (if any) so its poll loop notices the
- * resumed run immediately rather than on its next scheduled interval.
+ * identically except for which arguments the tool actually runs with.
+ * "respond" JSON-stringifies paramValues and sends it as mcpToolResult -
+ * the string a tool like RequestUserInput never actually executes to
+ * produce, so the answer stands in for it. Then pokes the run's live
+ * subscription (if any) so its poll loop notices the resumed run
+ * immediately rather than on its next scheduled interval.
  *
  * @param pendingAction - The paused call being decided.
- * @param decision - "submit" auto-resolves to approve/edit as above; "reject" passes through directly.
- * @param paramValues - The (possibly edited) arguments to run the tool with. Ignored for "reject".
+ * @param decision - "submit" auto-resolves to approve/edit as above; "reject"/"respond" pass through directly.
+ * @param paramValues - The (possibly edited) arguments to run the tool with for "submit", or the answer to JSON-encode for "respond". Ignored for "reject".
  * @param insightId - Insight to run the pixel against.
  * @returns The tool-result string the decision produced.
  */
 export const submitAgentToolDecision = async (
 	pendingAction: PendingAgentAction,
-	decision: "submit" | "reject",
+	decision: "submit" | "reject" | "respond",
 	paramValues?: Record<string, unknown>,
 	insightId?: string,
 ): Promise<string> => {
@@ -322,17 +325,23 @@ export const submitAgentToolDecision = async (
 	const resolvedDecision: AgentToolDecision =
 		decision === "reject"
 			? "reject"
-			: paramValues === undefined ||
-					JSON.stringify(paramValues) ===
-						JSON.stringify(pendingAction.toolArgs ?? {})
-				? "approve"
-				: "edit";
+			: decision === "respond"
+				? "respond"
+				: paramValues === undefined ||
+						JSON.stringify(paramValues) ===
+							JSON.stringify(pendingAction.toolArgs ?? {})
+					? "approve"
+					: "edit";
 
 	const result = await decideAgentRunAction(
 		{
 			actionId: pendingAction.actionId,
 			decision: resolvedDecision,
 			paramValues: resolvedDecision === "edit" ? paramValues : undefined,
+			mcpToolResult:
+				resolvedDecision === "respond"
+					? JSON.stringify(paramValues ?? {})
+					: undefined,
 		},
 		insightId,
 	);

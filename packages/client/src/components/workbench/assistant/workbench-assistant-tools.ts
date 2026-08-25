@@ -1,7 +1,7 @@
+import { parseUserInputRequest as sdkParseUserInputRequest } from "@semoss/sdk";
 import type {
 	BuildPendingAction,
 	BuildTool,
-	UserInputQuestion,
 	UserInputRequest,
 } from "@/stores/workbench";
 
@@ -204,125 +204,12 @@ export const phaseTitle = (tools: BuildTool[]): string => {
 	return "Working through the request";
 };
 
-/**
- * Narrow an unknown value to a plain object record.
- *
- * @name isRecord
- * @param value - The value to test.
- * @return True when the value is a non-null, non-array object.
- */
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-	Boolean(value) && typeof value === "object" && !Array.isArray(value);
-
-/**
- * Normalize one raw question from a RequestUserInput payload: validates the
- * question text, cleans its options, and infers the question type when not
- * declared (options imply single/multi select, otherwise free text).
- *
- * @name normalizeUserInputQuestion
- * @param value - The raw question value from the payload.
- * @param fallbackId - ID used when the question does not declare one.
- * @return The normalized question, or null when it cannot be rendered.
- */
-const normalizeUserInputQuestion = (
-	value: unknown,
-	fallbackId: string,
-): UserInputQuestion | null => {
-	if (!isRecord(value) || typeof value.question !== "string") return null;
-	const question = value.question.trim();
-	if (!question) return null;
-
-	const options = Array.isArray(value.options)
-		? value.options.flatMap((option) => {
-				if (!isRecord(option) || typeof option.label !== "string")
-					return [];
-				const label = option.label.trim();
-				if (!label) return [];
-				return [
-					{
-						label,
-						value:
-							typeof option.value === "string" &&
-							option.value.trim()
-								? option.value.trim()
-								: label,
-						description:
-							typeof option.description === "string"
-								? option.description.trim()
-								: undefined,
-						recommended: option.recommended === true,
-					},
-				];
-			})
-		: [];
-
-	const declaredType = value.type;
-	const type: UserInputQuestion["type"] =
-		declaredType === "single_select" ||
-		declaredType === "multi_select" ||
-		declaredType === "text" ||
-		declaredType === "confirm"
-			? declaredType
-			: options.length > 0
-				? value.multiple === true
-					? "multi_select"
-					: "single_select"
-				: "text";
-
-	return {
-		id:
-			typeof value.id === "string" && value.id.trim()
-				? value.id.trim()
-				: fallbackId,
-		question,
-		type,
-		options: options.length > 0 ? options : undefined,
-		allowOther:
-			typeof value.allowOther === "boolean" ? value.allowOther : true,
-		required: typeof value.required === "boolean" ? value.required : true,
-	};
-};
-
-/**
- * Parse a pending RequestUserInput action's args into a renderable form,
- * accepting the questions as either an array or a keyed record and JSON
- * strings as well as objects.
- *
- * @name parseUserInputRequest
- * @param action - The pending action whose toolArgs hold the request.
- * @return The parsed request, or null when no valid questions exist.
- */
+// Question normalization/parsing for RequestUserInput now lives in
+// @semoss/sdk (shared with playground); re-export it here so existing
+// imports of this module keep working unchanged.
 export const parseUserInputRequest = (
 	action: BuildPendingAction,
-): UserInputRequest | null => {
-	let value: unknown = action.toolArgs;
-	if (typeof value === "string") {
-		try {
-			value = JSON.parse(value);
-		} catch {
-			return null;
-		}
-	}
-	if (!isRecord(value)) return null;
-
-	const rawQuestions = Array.isArray(value.questions)
-		? value.questions.map(
-				(question, index) => [String(index + 1), question] as const,
-			)
-		: isRecord(value.questions)
-			? Object.entries(value.questions)
-			: [];
-	const questions = rawQuestions.flatMap(([fallbackId, question]) => {
-		const normalized = normalizeUserInputQuestion(question, fallbackId);
-		return normalized ? [normalized] : [];
-	});
-	if (questions.length === 0) return null;
-
-	return {
-		title: typeof value.title === "string" ? value.title : undefined,
-		questions,
-	};
-};
+): UserInputRequest | null => sdkParseUserInputRequest(action);
 
 /**
  * Pretty-print a pending action's request payload for the details block:

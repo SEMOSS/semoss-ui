@@ -202,6 +202,20 @@ const FeedItems = ({ run, nested = false }: FeedItemsProps) => {
 			});
 		});
 		run.tools.forEach((tool, order) => {
+			// While a RequestUserInput call is still paused on the user, the
+			// dedicated question card below already represents it - skip it
+			// here so it isn't also shown as a raw tool-phase block. Once
+			// answered (status leaves INPUT_REQUIRED) it flows through
+			// normally, preserving a historical record of what was asked.
+			if (
+				tool.status === "INPUT_REQUIRED" &&
+				isRequestUserInputAction({
+					toolName: tool.name,
+					toolMeta: tool.metadata,
+				})
+			) {
+				return;
+			}
 			items.push({
 				kind: "tool",
 				timestamp: tool.timestamp,

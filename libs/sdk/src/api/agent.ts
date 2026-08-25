@@ -210,7 +210,8 @@ export const stopAgentRun = async (
  *
  * @param params.actionId - The PendingAgentAction.actionId being decided.
  * @param params.decision - "approve"/"edit" execute the tool; "reject"/"respond" don't.
- * @param params.paramValues - Required for "edit" and "respond"; ignored otherwise.
+ * @param params.paramValues - Required for "edit" (the tool's re-run arguments); ignored otherwise.
+ * @param params.mcpToolResult - Required for "respond" (the string the tool "returned", e.g. JSON-stringified answers); ignored otherwise.
  * @param insightId - Insight to run the pixel against.
  * @returns The tool-result string the decision produced.
  */
@@ -219,16 +220,20 @@ export const decideAgentRunAction = async (
 		actionId: string;
 		decision: AgentToolDecision;
 		paramValues?: Record<string, unknown>;
+		mcpToolResult?: string;
 	},
 	insightId?: string,
 ): Promise<string> => {
-	const { actionId, decision, paramValues } = params;
+	const { actionId, decision, paramValues, mcpToolResult } = params;
 
 	const clauses = [
 		`actionId=${JSON.stringify([actionId])}`,
 		`decision=${JSON.stringify([decision])}`,
-		decision === "edit" || decision === "respond"
+		decision === "edit"
 			? `paramValues=${JSON.stringify(paramValues ?? {})}`
+			: null,
+		decision === "respond"
+			? `mcpToolResult=${JSON.stringify([mcpToolResult ?? ""])}`
 			: null,
 	].filter((clause): clause is string => clause !== null);
 

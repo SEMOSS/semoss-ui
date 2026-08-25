@@ -1,5 +1,6 @@
 export * from "./agent";
 export * from "./agent-subscription";
+export * from "./agent-user-input";
 export * from "./app";
 export * from "./auth";
 export * from "./base";
