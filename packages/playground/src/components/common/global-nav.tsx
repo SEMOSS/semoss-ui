@@ -62,6 +62,11 @@ import {
 	useSidebar,
 } from "@semoss/ui/next";
 import { useChat, useRoot, useTour } from "@/hooks";
+import type {
+	AbstractPixelMessage,
+	PixelMessageTextPart,
+	PixelMessageToolCallPart,
+} from "@/types";
 import { getDateBucket, normalizeTimestamp } from "@/utility";
 import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
@@ -304,12 +309,6 @@ export const GlobalNav = observer(() => {
 		}
 	}, [isVisible, setScroll]);
 
-	// Add this useEffect to debug
-	useEffect(() => {
-		console.log("downloadDialogOpen:", downloadDialogOpen);
-		console.log("downloadRoomId:", downloadRoomId);
-	}, [downloadDialogOpen, downloadRoomId]);
-
 	/**
 	 * Bucket the rooms by date
 	 */
@@ -416,50 +415,77 @@ export const GlobalNav = observer(() => {
 		setDownloadingFormat(format);
 
 		try {
-			console.log(
-				"Starting download for roomId:",
-				roomId,
-				"format:",
-				format,
-			);
-
 			// Step 1: Get messages for this room using the pixel command
 			const messagesPixel = `GetPlaygroundMessages(roomId=["${roomId}"]);`;
-			console.log("Fetching messages with pixel:", messagesPixel);
 
-			const messagesResponse = await runPixel<any>(messagesPixel, "new");
-			console.log("Messages response:", messagesResponse);
+			const messagesResponse = await runPixel<AbstractPixelMessage[]>(
+				messagesPixel,
+				"new",
+			);
 
 			if (!messagesResponse?.pixelReturn?.[0]?.output) {
 				throw new Error("Failed to fetch conversation messages");
 			}
 
-			const messageOutput = messagesResponse.pixelReturn[0].output;
-			console.log("Message output:", messageOutput);
+			const messageOutput: AbstractPixelMessage[] =
+				messagesResponse.pixelReturn[0].output;
 
 			// Step 2: Format the messages into a conversation
 			const formattedMessages = messageOutput
-				.map((message: any) => {
+				.map((message: AbstractPixelMessage) => {
+					const timestamp = message.dateCreated
+						? new Date(message.dateCreated).toLocaleString(
+								undefined,
+								{
+									month: "numeric",
+									day: "numeric",
+									year: "numeric",
+									hour: "numeric",
+									minute: "2-digit",
+									hour12: true,
+								},
+							)
+						: null;
+					const ts = timestamp ? `\n*${timestamp}*` : "";
+
 					if (message.io === "INPUT") {
 						const text = message.parts
-							?.filter((p: any) => p?.type === "TEXT")
-							.map((p: any) => p.text)
+							?.filter(
+								(p): p is PixelMessageTextPart =>
+									p?.type === "TEXT",
+							)
+							.map((p) => p.text)
 							.join("");
-						return text ? `**You:** ${text}` : null;
+						return text ? `**You:**${ts}\n\n${text}` : null;
 					}
 					if (message.io === "OUTPUT") {
 						const text = message.parts
-							?.filter((p: any) => p?.type === "TEXT")
-							.map((p: any) => p.text)
+							?.filter(
+								(p): p is PixelMessageTextPart =>
+									p?.type === "TEXT",
+							)
+							.map((p) => p.text)
 							.join("");
-						return text ? `**Assistant:**\n\n${text}` : null;
+						const tools: string[] =
+							message.parts
+								?.filter(
+									(p): p is PixelMessageToolCallPart =>
+										p?.type === "TOOL_CALL",
+								)
+								.map((p) => p.toolCall.title || p.toolCall.name)
+								.filter(Boolean) ?? [];
+						const toolLine =
+							tools.length > 0
+								? `\n\n*Tools used: ${tools.join(", ")}*`
+								: "";
+						return text || tools.length > 0
+							? `**Assistant:**${ts}\n\n${text}${toolLine}`
+							: null;
 					}
 					return null;
 				})
 				.filter(Boolean)
 				.join("\n\n---\n\n");
-
-			console.log("Formatted messages length:", formattedMessages.length);
 
 			if (!formattedMessages) {
 				throw new Error("No conversation content to download");
@@ -468,32 +494,19 @@ export const GlobalNav = observer(() => {
 			// Step 3: Generate the document using the same insightId
 			const pixelCommand =
 				format === "word"
-					? `ToDocx(markdown=["<encode>${formattedMessages}</encode>"], fileName="${roomId}");`
-					: `ToPdf(markdown=["<encode>${formattedMessages}</encode>"], fileName="${roomId}");`;
+					? `ToDocx(markdown=["<encode>${formattedMessages}</encode>"], fileName="Room Export - ${roomId}");`
+					: `ToPdf(markdown=["<encode>${formattedMessages}</encode>"], fileName="Room Export - ${roomId}");`;
 
-			console.log("Generating document with pixel:", pixelCommand);
-			console.log("Using insightId:", messagesResponse.insightId);
-
-			const downloadResponse = await runPixel<any>(
+			const downloadResponse = await runPixel<string>(
 				pixelCommand,
 				messagesResponse.insightId, // Reuse the same insightId
 			);
 
-			console.log("Download response:", downloadResponse);
-
 			if (downloadResponse?.pixelReturn?.[0]) {
 				const { operationType, output } =
 					downloadResponse.pixelReturn[0];
-				console.log("Operation type:", operationType);
-				console.log("Output:", output);
 
 				if (operationType?.includes("FILE_DOWNLOAD")) {
-					console.log(
-						"Triggering download with insightId:",
-						downloadResponse.insightId,
-						"output:",
-						output,
-					);
 					download(downloadResponse.insightId, output);
 					toast.success(
 						`Conversation downloaded successfully as ${format.toUpperCase()}`,
@@ -874,18 +887,11 @@ export const GlobalNav = observer(() => {
 																				e,
 																			) => {
 																				e.stopPropagation();
-																				console.log(
-																					"Download clicked for roomId:",
-																					roomId,
-																				);
 																				setDownloadRoomId(
 																					roomId,
 																				);
 																				setDownloadDialogOpen(
 																					true,
-																				);
-																				console.log(
-																					"Dialog should open now",
 																				);
 																			}}
 																		>
@@ -1069,10 +1075,7 @@ export const GlobalNav = observer(() => {
 			{/* Download Conversation Dialog */}
 			<Dialog
 				open={downloadDialogOpen}
-				onOpenChange={(open) => {
-					console.log("Dialog onOpenChange:", open);
-					setDownloadDialogOpen(open);
-				}}
+				onOpenChange={setDownloadDialogOpen}
 			>
 				<DialogContent className="sm:max-w-md">
 					<DialogHeader>
@@ -1087,7 +1090,6 @@ export const GlobalNav = observer(() => {
 							className="h-auto flex-col gap-1 p-4"
 							disabled={downloadingFormat !== null}
 							onClick={() => {
-								console.log("Word button clicked");
 								if (downloadRoomId) {
 									handleDownloadConversation(
 										downloadRoomId,
@@ -1115,7 +1117,6 @@ export const GlobalNav = observer(() => {
 							className="h-auto flex-col gap-1 p-4"
 							disabled={downloadingFormat !== null}
 							onClick={() => {
-								console.log("PDF button clicked");
 								if (downloadRoomId) {
 									handleDownloadConversation(
 										downloadRoomId,
