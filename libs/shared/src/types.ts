@@ -193,6 +193,8 @@ export interface ThemeMap {
 		 */
 		defaultRoomSettings?: {
 			model?: Engine;
+			/** Default temperature for new rooms (0–1). Only used when enableTemperature is true. */
+			temperature?: number;
 		};
 
 		/**
@@ -347,6 +349,8 @@ export interface ThemeMap {
 			enableFeedbackText?: boolean;
 			/** Whether to show an export button on tables rendered in chat responses. Defaults to false. */
 			enableTableExport?: boolean;
+			/** Whether to show the temperature slider in room settings. Defaults to false. */
+			enableTemperature?: boolean;
 		};
 	};
 }

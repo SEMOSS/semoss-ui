@@ -131,6 +131,11 @@ interface RoomStoreInterface {
 		 * AskPlayground. Persisted so the mode survives a reload.
 		 */
 		harnessType?: string;
+
+		/*
+		 * Temperature of the model (0–1). Only used when enableTemperature is true.
+		 */
+		temperature?: number;
 	};
 
 	/**
@@ -184,6 +189,7 @@ export class RoomStore {
 			predefinedPrompts: [],
 			instructions: "",
 			mcp: [],
+			temperature: undefined,
 		},
 		sidebar: {
 			isOpen: false,
