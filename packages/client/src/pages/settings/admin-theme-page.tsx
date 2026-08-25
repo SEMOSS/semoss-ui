@@ -203,7 +203,7 @@ const FEATURE_FLAGS: {
 		key: "enableAgentHarness",
 		label: "Enable Agent Harness",
 		description:
-			"Lets a new or existing room switch into agent mode, where messages run server-side via RunAgent instead of the normal chat flow.",
+			"Lets a new room be started in agent mode, where messages run server-side via RunAgent instead of the normal chat flow.",
 	},
 	{
 		key: "enableSuggestions",
