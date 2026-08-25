@@ -74,7 +74,7 @@ The implementation and review must explicitly account for these success criteria
 - When content changes after a user action, verify the update is announced or focus is moved intentionally.
 
 ### Visual Accessibility
-- Text must meet minimum contrast.
+- Text must meet minimum contrast ratio of at least 4.5:1 for normal text and 3:1 for large text (at least 18pt) or bold text.
 - Component boundaries, selected states, error states, and focus indicators must meet non-text contrast.
 - Click and tap targets must be at least 24 by 24 CSS pixels or have equivalent spacing.
 
