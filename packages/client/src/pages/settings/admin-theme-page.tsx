@@ -293,6 +293,16 @@ const IMAGE_FIELDS: {
 		description: "Used alongside App in the app logo shown in the header.",
 	},
 	{
+		key: "appDark",
+		label: "App (Dark)",
+		description: "Dark-mode variant of App, shown in the full logo.",
+	},
+	{
+		key: "logoDark",
+		label: "Logo (Dark)",
+		description: "Dark-mode variant of Logo, shown in the collapsed logo.",
+	},
+	{
 		key: "login",
 		label: "Login",
 		description: "Background image on the login page (light mode).",
