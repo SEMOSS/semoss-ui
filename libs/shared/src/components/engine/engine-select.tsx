@@ -437,26 +437,12 @@ export const EngineSelect = ({
 									engine.app_id || engine.engine_id;
 
 								// Greyed out if explicitly disabled (monthly quota)
-								const isQuotaExhausted =
+								const isExhausted =
 									disabledEngineIds.includes(engineId);
 
-								// Greyed out if conversation exceeds context window
-								const engineContextWindow =
-									contextWindows[engineId];
-								const isContextExhausted =
-									conversationTokensUsed !== undefined &&
-									engineContextWindow !== undefined &&
-									conversationTokensUsed >=
-										engineContextWindow;
-
-								const isExhausted =
-									isQuotaExhausted || isContextExhausted;
-
-								const tooltipText = isQuotaExhausted
-									? "Monthly token limit reached"
-									: isContextExhausted
-										? `Conversation exceeds this model's context window (${engineContextWindow?.toLocaleString()} tokens)`
-										: null;
+								const tooltipText = isExhausted
+									? "Token limit reached"
+									: null;
 
 								const item = (
 									<CommandItem
