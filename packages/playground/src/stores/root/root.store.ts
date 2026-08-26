@@ -54,6 +54,8 @@ export class RootStore {
 			images: {
 				app: "",
 				logo: "",
+				appDark: "",
+				logoDark: "",
 				login: "",
 				landing: "",
 				tabIcon: "",
@@ -103,6 +105,7 @@ export class RootStore {
 				showActivityLog: true,
 				showPlatformLinks: true,
 				enableFeedbackText: true,
+				enableTemperature: false,
 			},
 		},
 	};
@@ -302,6 +305,9 @@ export class RootStore {
 			toolAutoExecutionLimit:
 				theme?.toolAutoExecutionLimit ||
 				this._store.theme.toolAutoExecutionLimit,
+			defaultCompactionStrategy:
+				theme?.defaultCompactionStrategy ??
+				this._store.theme.defaultCompactionStrategy,
 			allowedFileTypes:
 				theme?.allowedFileTypes ||
 				this._store.theme.allowedFileTypes ||

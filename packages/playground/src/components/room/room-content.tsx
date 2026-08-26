@@ -11,6 +11,7 @@ import { useTranslation } from "@semoss/i18n";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
 	Button,
+	cn,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 	ScrollArea,
@@ -29,6 +30,7 @@ import {
 	RoomInputMenuUpload,
 	type SendButtonState,
 } from "@/components";
+import { useFileDrag } from "@/contexts";
 import { useChat, useGracefulErrors } from "@/hooks";
 import { ResponseMessageStore, type RoomStore } from "@/stores";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
@@ -50,6 +52,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const { chat } = useChat();
 	const { t } = useTranslation("room");
 	const { getGracefulErrorMessage } = useGracefulErrors();
+	const { isDragging } = useFileDrag();
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
 	const [contentEle, setContentEle] = useState<HTMLDivElement | null>(null);
 	const [contentHeight, setContentHeight] = useState(0);
@@ -108,9 +111,11 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	/**
 	 * Compact messages in the room
 	 */
-	const handleCompactMessages = async () => {
+	const handleCompactMessages = async (
+		strategy?: "TOOL_PRUNE" | "SUMMARY" | "AUTO",
+	) => {
 		try {
-			const result = await room.compactMessages();
+			const result = await room.compactMessages(strategy);
 			if (result === "skipped") {
 				toast.info(t("settings.compactSkipped"));
 			} else {
@@ -402,7 +407,12 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 				: "send";
 
 	return (
-		<div className="flex h-full w-full flex-col bg-background transition-all duration-200 ease-in-out">
+		<div
+			className={cn(
+				"flex h-full w-full flex-col border-2 border-transparent bg-background transition-all duration-200 ease-in-out",
+				isDragging && "border-primary",
+			)}
+		>
 			<div className="relative w-full flex-1 overflow-hidden">
 				<ScrollArea
 					// Force Radix's table-display viewport wrapper to block so wide content can't push the column past the viewport width
@@ -623,9 +633,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					}
 					sendState={sendState}
 					onStop={room.cancelActiveJob}
-					tokensUsed={room.tokensUsed}
-					tokensMax={chat.models.contextWindow}
-					totalTokens={room.totalTokensConsumed}
 					onCompact={handleCompactMessages}
 					onOpenSettings={handleOpenSettings}
 					excludeCommandIds={[

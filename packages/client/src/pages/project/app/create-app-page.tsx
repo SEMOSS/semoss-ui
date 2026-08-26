@@ -5,7 +5,7 @@ import {
 	UploadIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import type { Variable } from "@semoss/renderer";
 import { STATE_VERSION } from "@semoss/renderer/version";
 import {
@@ -36,7 +36,6 @@ import type { Template } from "@/components/app/templates";
 import { LandingHeader } from "@/components/landing";
 import { UploadProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import {
 	BASE_APP_QUERIES,
@@ -47,7 +46,6 @@ import {
 export const CreateAppPage = () => {
 	const navigate = useNavigate();
 
-	const { configStore } = useRootStore();
 	const [search, setSearch] = useState<string>("");
 	const [templates, setTemplates] = useState<Template[]>([]);
 	const [isTemplatesLoading, setIsTemplatesLoading] = useState<boolean>(true);
@@ -105,15 +103,6 @@ export const CreateAppPage = () => {
 			isMounted = false;
 		};
 	}, []);
-
-	const isRestricted = !configStore.isEngineOperationAvailable(
-		"PROJECT",
-		"add",
-	);
-
-	if (isRestricted) {
-		return <Navigate to="/" replace />;
-	}
 
 	return (
 		<>
