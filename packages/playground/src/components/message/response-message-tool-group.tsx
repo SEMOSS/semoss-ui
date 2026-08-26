@@ -9,7 +9,7 @@ import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { cn, Spinner } from "@semoss/ui/next";
 import { useLoadingMessage } from "@/hooks";
-import type { ResponseMessageStore, ToolStore } from "@/stores";
+import type { ToolStore } from "@/stores";
 import { ResponseMessageTool } from "./response-message-tool";
 
 const groupStatusConfig = {
@@ -62,15 +62,12 @@ const analyzeTools = (tools: ToolStore[]) => {
 };
 
 interface ResponseMessageToolGroupProps {
-	/** Message to render */
-	message: ResponseMessageStore;
-
 	/** Tools to group */
 	tools: ToolStore[];
 }
 
 export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
-	observer(({ message, tools }) => {
+	observer(({ tools }) => {
 		const { t } = useTranslation("tool");
 		const [isOpen, setIsOpen] = useState(false);
 
@@ -146,7 +143,6 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 								{tools.map((tool) => (
 									<ResponseMessageTool
 										key={tool.id}
-										message={message}
 										tool={tool}
 									/>
 								))}

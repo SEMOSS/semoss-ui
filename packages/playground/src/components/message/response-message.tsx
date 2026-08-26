@@ -97,8 +97,8 @@ const getExtIcon = (fileName: string) => {
  * a first view (start animations from 0) apart from a return view (jump to the
  * latest part/chunk/content).
  */
-const hasStreamedContent = (message: ResponseMessageStore) =>
-	message.parts.some(
+const hasStreamedContent = (parts: ResponseMessageStore["parts"]) =>
+	parts.some(
 		(part) =>
 			(part.type === "TEXT" && part.text.length > 0) ||
 			(part.type === "THINKING" && part.thinking.length > 0) ||
@@ -135,12 +135,23 @@ interface ResponseMessageProps {
 
 	/** Message to render */
 	message: ResponseMessageStore;
+
+	/** Tool-only messages folded into this one — see room-content.tsx */
+	subsequentTools?: ResponseMessageStore[];
 }
 
 export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
-	({ room, message }) => {
+	({ room, message, subsequentTools = [] }) => {
 		const { t } = useTranslation("chat");
 		const { root } = useRoot();
+
+		const allParts = [
+			...message.parts,
+			...subsequentTools.flatMap((m) => m.parts),
+		];
+
+		const isThinking =
+			message.isThinking || subsequentTools.some((m) => m.isThinking);
 
 		const [previewPdf, setPreviewPdf] = useState<{
 			fileName: string;
@@ -170,7 +181,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		// part/chunk/content. Anchored here at the message level so a late-
 		// mounting part (e.g. text revealed after thinking) still inherits the
 		// correct decision instead of inferring it from its own mount.
-		const [isFirstView] = useState(() => !hasStreamedContent(message));
+		const [isFirstView] = useState(() => !hasStreamedContent(allParts));
 
 		// Sequential reveal queue: parts animate in order, each waiting for the
 		// part above to finish. Text parts type via their own nested typewriter;
@@ -178,8 +189,8 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		// turn. Once the message stops streaming, every part renders in full. On a
 		// return view, seed at the latest part to jump straight to the frontier.
 		const { chunkCallbacks, getChunkStatus } = useActiveIndex(
-			message.parts.length,
-			message.isThinking,
+			allParts.length,
+			isThinking,
 			undefined,
 			!isFirstView,
 		);
@@ -192,9 +203,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		// to the next part until it lands on a text part or a part the hook holds
 		// (the last one while streaming), where the advance call bails harmlessly.
 		useEffect(() => {
-			for (let i = 0; i < message.parts.length; i++) {
+			for (let i = 0; i < allParts.length; i++) {
 				if (getChunkStatus(i) !== "active") continue;
-				if (message.parts[i].type !== "TEXT") {
+				if (allParts[i].type !== "TEXT") {
 					chunkCallbacks[i]();
 				}
 				break;
@@ -365,8 +376,8 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			let run: ToolRun | null = null;
 			let hasAskTools = false;
 			let numTools = 0;
-			for (let idx = 0; idx < message.parts.length; idx++) {
-				const p = message.parts[idx];
+			for (let idx = 0; idx < allParts.length; idx++) {
+				const p = allParts[idx];
 				if (p.type !== "TOOL_CALL") {
 					if (isToolRunBreak(p)) run = null;
 					continue;
@@ -430,7 +441,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		return (
 			<div className="group">
 				<div className="mb-0 flex w-full flex-col gap-2 pe-3 sm:pe-10">
-					{message.parts.map((p, pIdx) => {
+					{allParts.map((p, pIdx) => {
 						const key = `message-part-${pIdx}`;
 						const status = getChunkStatus(pIdx);
 
@@ -588,12 +599,10 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										!groupedTools[0].isResolved ? (
 											<ResponseMessageToolGroup
 												key={`${key}-group`}
-												message={message}
 												tools={groupedTools}
 											/>
 										) : (
 											<ResponseMessageTool
-												message={message}
 												tool={groupedTools[0]}
 												// getShouldGroupTool dictates that tools are grouped if auto, or all finished
 												// if the group size is 1, then this could be an auto tool and the run has an unfinished ask tool
@@ -606,7 +615,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										))}
 									{tool && !groupedToolIds.has(tool.id) && (
 										<ResponseMessageTool
-											message={message}
 											tool={tool}
 											// See logic above, but ungrouped tools are always unfinished ask tools - large
 											isLarge
@@ -626,18 +634,19 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 
 						return null;
 					})}
-					{message.hasUnfinishedTools && !message.isThinking && (
-						<p className="mt-2 flex items-center gap-2 text-muted-foreground text-sm">
-							<CircleAlert className="size-4" />
-							{hasAskTools
-								? t("response.completeToolsAsk", {
-										count: numTools,
-									})
-								: t("response.completeToolsAuto", {
-										count: numTools,
-									})}
-						</p>
-					)}
+					{toolRuns.some((run) => run.hasUnfinishedTools) &&
+						!isThinking && (
+							<p className="mt-2 flex items-center gap-2 text-muted-foreground text-sm">
+								<CircleAlert className="size-4" />
+								{hasAskTools
+									? t("response.completeToolsAsk", {
+											count: numTools,
+										})
+									: t("response.completeToolsAuto", {
+											count: numTools,
+										})}
+							</p>
+						)}
 					{!hasVisibleContent &&
 						message.id !== STREAMING_PLACEHOLDER_ID && (
 							<p className="text-muted-foreground text-sm italic">
@@ -867,7 +876,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 												message.parts.length === 0
 											}
 											onClick={() => {
-												const text = message.parts
+												const text = allParts
 													.map((part) => {
 														if (
 															part.type === "TEXT"

@@ -32,7 +32,11 @@ import {
 } from "@/components";
 import { useFileDrag } from "@/contexts";
 import { useChat, useGracefulErrors } from "@/hooks";
-import { ResponseMessageStore, type RoomStore } from "@/stores";
+import {
+	type InputMessageStore,
+	ResponseMessageStore,
+	type RoomStore,
+} from "@/stores";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomSuggestions } from "./room-suggestions";
@@ -406,6 +410,47 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 				? "stop"
 				: "send";
 
+	// Folds a run of tool-only responses up into the response preceding them.
+	const roomHistoryEntries = (() => {
+		const entries: {
+			message: InputMessageStore | ResponseMessageStore;
+			subsequentTools: ResponseMessageStore[];
+		}[] = [];
+		let anchor: (typeof entries)[number] | null = null;
+
+		for (const m of room.history) {
+			if (!m.visible) {
+				continue;
+			}
+
+			// A settled empty response is only meaningful as a direct reply
+			// to a user turn. When its nearest non-hidden ancestor is
+			// another response — e.g. the empty assistant message the
+			// backend commits after a stopped tool phase — it's just
+			// noise, so skip it. (Still-thinking placeholders are left
+			// alone so a streaming post-tool reply isn't hidden.)
+			if (
+				m.type === "OUTPUT" &&
+				!m.hasVisibleContent &&
+				!m.isThinking &&
+				m.findAncestor((a) => a.visible)?.type === "OUTPUT"
+			) {
+				continue;
+			}
+
+			if (m.type === "OUTPUT" && m.isToolOnly && anchor) {
+				anchor.subsequentTools.push(m);
+				continue;
+			}
+
+			const entry = { message: m, subsequentTools: [] };
+			entries.push(entry);
+			anchor = m.type === "OUTPUT" ? entry : null;
+		}
+
+		return entries;
+	})();
+
 	return (
 		<div
 			className={cn(
@@ -427,69 +472,54 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						}}
 					>
 						<div className="mx-auto flex w-full max-w-[1120px] flex-col gap-2 px-4 py-6 sm:px-8 lg:px-16">
-							{room.history.map((m) => {
-								if (!m.visible) {
-									return null;
-								}
+							{roomHistoryEntries.map(
+								({ message: m, subsequentTools }) => {
+									const showModelName = (() => {
+										// find the most recent ancestor that actually has a model
+										const ancestor = m.findAncestor(
+											(a) => !!a.modelId,
+										);
+										// If no ancestor has a model, show the model name for this message
+										if (!ancestor) return true;
+										// Only show the model name if it's different from the ancestor's model to reduce clutter
+										return m.modelId !== ancestor.modelId;
+									})();
 
-								// A settled empty response is only meaningful as a
-								// direct reply to a user turn. When its nearest
-								// non-hidden ancestor is another response — e.g. the
-								// empty assistant message the backend commits after
-								// a stopped tool phase — it's just noise, so skip
-								// it. (Still-thinking placeholders are left alone so
-								// a streaming post-tool reply isn't hidden.)
-								if (
-									m.type === "OUTPUT" &&
-									!m.hasVisibleContent &&
-									!m.isThinking &&
-									m.findAncestor((a) => a.visible)?.type ===
-										"OUTPUT"
-								)
-									return null;
-
-								const showModelName = (() => {
-									// find the most recent ancestor that actually has a model
-									const ancestor = m.findAncestor(
-										(a) => !!a.modelId,
-									);
-									// If no ancestor has a model, show the model name for this message
-									if (!ancestor) return true;
-									// Only show the model name if it's different from the ancestor's model to reduce clutter
-									return m.modelId !== ancestor.modelId;
-								})();
-
-								return (
-									<React.Fragment key={m.key}>
-										{showModelName && (
-											<div className="relative mb-4 flex flex-col items-center justify-center">
-												<div className="z-10 bg-background px-2 text-muted-foreground text-xs leading-normal">
-													{m.ornaments.modelName}
+									return (
+										<React.Fragment key={m.key}>
+											{showModelName && (
+												<div className="relative mb-4 flex flex-col items-center justify-center">
+													<div className="z-10 bg-background px-2 text-muted-foreground text-xs leading-normal">
+														{m.ornaments.modelName}
+													</div>
+													<Separator className="absolute top-1/2" />
 												</div>
-												<Separator className="absolute top-1/2" />
-											</div>
-										)}
-										{m.type === "INPUT" && (
-											<InputMessage
-												room={room}
-												message={m}
-											/>
-										)}
-										{m.type === "OUTPUT" && (
-											<ResponseMessage
-												room={room}
-												message={m}
-											/>
-										)}
+											)}
+											{m.type === "INPUT" && (
+												<InputMessage
+													room={room}
+													message={m}
+												/>
+											)}
+											{m.type === "OUTPUT" && (
+												<ResponseMessage
+													room={room}
+													message={m}
+													subsequentTools={
+														subsequentTools
+													}
+												/>
+											)}
 
-										{m.type === "OUTPUT" && (
-											<RoomCompactionIndicator
-												message={m}
-											/>
-										)}
-									</React.Fragment>
-								);
-							})}
+											{m.type === "OUTPUT" && (
+												<RoomCompactionIndicator
+													message={m}
+												/>
+											)}
+										</React.Fragment>
+									);
+								},
+							)}
 							{room.theme.featureFlags?.enableSuggestions && (
 								<RoomSuggestions room={room} />
 							)}

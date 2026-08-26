@@ -569,6 +569,21 @@ paramValues=[${JSON.stringify(
 	}
 
 	/**
+	 * Whether this response only has tool calls — allowing TOOL_RESULT too,
+	 * since server tools (e.g. web_search) land their call and result in
+	 * the same response message.
+	 */
+	get isToolOnly() {
+		return (
+			this.hasTools &&
+			this.parts.every(
+				(part) =>
+					part.type === "TOOL_CALL" || part.type === "TOOL_RESULT",
+			)
+		);
+	}
+
+	/**
 	 * Check if there are any unfinished tools
 	 */
 	get hasUnfinishedTools() {

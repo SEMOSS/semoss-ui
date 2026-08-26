@@ -99,9 +99,6 @@ const getToolState = (
 };
 
 interface ResponseMessageToolProps {
-	/** Message to render */
-	message: ResponseMessageStore;
-
 	/** Tool to render */
 	tool: ToolStore;
 
@@ -110,9 +107,9 @@ interface ResponseMessageToolProps {
 }
 
 export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
-	({ message, tool, isLarge }) => {
+	({ tool, isLarge }) => {
 		const { t } = useTranslation("tool");
-		const { room } = message;
+		const { room } = tool;
 		const isMobile = useIsMobile();
 
 		const { loadingMessage: toolExecutionMessage } = useLoadingMessage(
@@ -155,6 +152,9 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 		if (tool.display === "hidden") {
 			return null;
 		}
+
+		// Set once the call resolves (guaranteed by tool.isResolved above).
+		const message = tool.message as ResponseMessageStore;
 
 		const handleCancel = (e: React.MouseEvent) => {
 			e.stopPropagation();
