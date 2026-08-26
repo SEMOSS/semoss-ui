@@ -1,4 +1,12 @@
-import { Bot, Copy, Pencil, RefreshCw, Send, User } from "lucide-react";
+import {
+	Bot,
+	Copy,
+	MessageSquareIcon,
+	Pencil,
+	RefreshCw,
+	Send,
+	User,
+} from "lucide-react";
 import { type MutableRefObject, useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { runPixel, useInsight } from "@semoss/sdk/react";
@@ -20,6 +28,7 @@ import {
 import { FeedbackButtons } from "@/components/engine/FeedbackButtons";
 import { EngineModelTestSidebar } from "@/components/settings";
 import { useEngine } from "@/hooks";
+import type { WorkbenchPanelConfig } from "@/stores/workbench";
 
 interface Message {
 	id: string;
@@ -439,4 +448,18 @@ export const ModelChatPanel = () => {
 			</div>
 		</div>
 	);
+};
+
+/**
+ * Blueprint for the model test-chat panel. keepAlive: the conversation and
+ * settings live in local state and must survive tab switches.
+ */
+export const MODEL_CHAT_PANEL: WorkbenchPanelConfig = {
+	name: "Model Chat",
+	helpText: "Model Chat",
+	icon: ({ className }) => <MessageSquareIcon className={className} />,
+	canClose: false,
+	canRename: false,
+	mount: "keepAlive",
+	content: ModelChatPanel,
 };

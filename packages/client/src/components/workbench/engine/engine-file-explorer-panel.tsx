@@ -1,4 +1,4 @@
-import { HammerIcon, PencilIcon } from "lucide-react";
+import { FolderTreeIcon, HammerIcon, PencilIcon } from "lucide-react";
 import { useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { download, useInsight } from "@semoss/sdk/react";
@@ -7,27 +7,34 @@ import {
 	FileExplorerItem,
 	type FileExplorerMovedItem,
 	type FileItem,
-	FlexLayout,
 	getFileEditorPathScope,
 	notifyFileEditorPathMoved,
 } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
 import { MCP } from "@/constants";
-import { useEngine } from "@/hooks";
-import { useWorkbench } from "@/hooks/use-workbench";
+import { useEngine, useWorkbench } from "@/hooks";
+import type {
+	WorkbenchPanelConfig,
+	WorkbenchPanelRecord,
+} from "@/stores/workbench";
 import { WORKBENCH_COMPONENTS } from "../workbench.constants";
+import type { EngineFileEditorConfig } from "./engine-file-editor-panel";
 
-interface EngineFileExplorerPanelProps {
-	/** Live FlexLayout instance used for drag-and-drop file tabs. */
-	layout: FlexLayout.Layout;
+/**
+ * The explorer walks every open record, so what it finds on a heterogeneous
+ * `config` is at best a partial editor config — hence the cast and `Partial`.
+ */
+type FilePanelConfig = Partial<EngineFileEditorConfig>;
 
-	/** FlexLayout tab node backing the file explorer. */
-	node: FlexLayout.TabNode;
-}
+/** The file a panel is open for, if it is a file-backed panel at all. */
+const filePathOf = (record: WorkbenchPanelRecord): string | undefined =>
+	(record.config as FilePanelConfig | undefined)?.path;
 
-export const EngineFileExplorerPanel: React.FC<
-	EngineFileExplorerPanelProps
-> = ({ layout, node }) => {
+/** Panels a path move or delete can affect. */
+const hasFilePath = (record: WorkbenchPanelRecord): boolean =>
+	Boolean(filePathOf(record));
+
+export const EngineFileExplorerPanel: React.FC = () => {
 	const { engine, permission } = useEngine();
 	// Only OWNER/EDIT users can mutate engine assets; READ_ONLY users get
 	// browse/open/download behavior without create/delete actions.
@@ -35,9 +42,7 @@ export const EngineFileExplorerPanel: React.FC<
 	const insight = useInsight();
 	const [searchParams, setSearchParams] = useSearchParams();
 
-	const openPanel = useWorkbench((state) => state.openPanel);
-	const closePanel = useWorkbench((state) => state.closePanel);
-	const updatePanel = useWorkbench((state) => state.updatePanel);
+	const layoutActions = useWorkbench((s) => s.layout.actions);
 
 	const getMovedPath = useCallback(
 		(path: string, movedItem: FileExplorerMovedItem) => {
@@ -64,20 +69,13 @@ export const EngineFileExplorerPanel: React.FC<
 		[],
 	);
 
-	const updateTabPath = useCallback(
-		(tabNode: FlexLayout.TabNode, newPath: string) => {
-			const config = tabNode.getConfig() as
-				| {
-						fileMode?: "ENGINE" | "INSIGHT";
-						insightId?: string;
-						name?: string;
-						path?: string;
-				  }
-				| undefined;
+	const updatePanelPath = useCallback(
+		(record: WorkbenchPanelRecord, newPath: string) => {
+			const config = (record.config ?? {}) as FilePanelConfig;
 			const newName = newPath.split("/").filter(Boolean).pop() ?? newPath;
-			const oldPath = config?.path;
+			const oldPath = config.path;
 			const scope =
-				config?.fileMode === "INSIGHT"
+				config.fileMode === "INSIGHT"
 					? getFileEditorPathScope(
 							{
 								type: "INSIGHT",
@@ -89,13 +87,13 @@ export const EngineFileExplorerPanel: React.FC<
 							type: "ENGINE",
 							engine: engine.engine_id,
 						});
-			const tabName = tabNode.getName();
-			const displayName = tabName.endsWith("*") ? `${newName}*` : newName;
+			const displayName = record.name.endsWith("*")
+				? `${newName}*`
+				: newName;
 
-			updatePanel(tabNode.getId(), {
+			layoutActions.updatePanel(record.id, {
 				name: displayName,
 				config: {
-					...config,
 					name: newName,
 					path: newPath,
 				},
@@ -105,25 +103,17 @@ export const EngineFileExplorerPanel: React.FC<
 				notifyFileEditorPathMoved(oldPath, newPath, scope);
 			}
 		},
-		[updatePanel, insight, engine.engine_id],
+		[layoutActions, insight, engine.engine_id],
 	);
 
 	const migrateMovedTabs = useCallback(
 		(movedItems: FileExplorerMovedItem[]) => {
-			const model = node.getModel();
 			let migrated = false;
 
-			model.visitNodes((currentNode) => {
-				if (!(currentNode instanceof FlexLayout.TabNode)) {
-					return;
-				}
-
-				const config = currentNode.getConfig() as
-					| { path?: string }
-					| undefined;
-				const path = config?.path;
+			for (const record of layoutActions.findPanels(hasFilePath)) {
+				const path = filePathOf(record);
 				if (!path) {
-					return;
+					continue;
 				}
 
 				const movedPath = movedItems.reduce<string | null>(
@@ -137,65 +127,56 @@ export const EngineFileExplorerPanel: React.FC<
 				);
 
 				if (movedPath && movedPath !== path) {
-					updateTabPath(currentNode, movedPath);
+					updatePanelPath(record, movedPath);
 					migrated = true;
 				}
-			});
+			}
 
 			return migrated;
 		},
-		[node, getMovedPath, updateTabPath],
+		[layoutActions, getMovedPath, updatePanelPath],
 	);
 
+	/** Close every file-backed panel at (or inside) a deleted path. */
 	const removeDeletedTabs = useCallback(
 		(path: string, isDirectory: boolean) => {
-			const model = node.getModel();
 			const directoryPath = path.endsWith("/") ? path : `${path}/`;
 
-			model.visitNodes((currentNode) => {
-				if (!(currentNode instanceof FlexLayout.TabNode)) {
-					return;
-				}
-
-				const config = currentNode.getConfig() as
-					| { path?: string }
-					| undefined;
-				const tabPath = config?.path;
-				if (!tabPath) {
-					return;
-				}
-
-				// Close if exact match or if it's in the deleted directory
-				if (
-					tabPath === path ||
-					(isDirectory && tabPath.startsWith(directoryPath))
-				) {
-					closePanel(currentNode.getId());
-				}
+			// the file itself, or anything under the deleted directory
+			const doomed = layoutActions.findPanels((record) => {
+				const recordPath = filePathOf(record);
+				return (
+					recordPath === path ||
+					Boolean(
+						isDirectory && recordPath?.startsWith(directoryPath),
+					)
+				);
 			});
+
+			for (const record of doomed) {
+				layoutActions.closePanel(record.id);
+			}
 		},
-		[node, closePanel],
+		[layoutActions],
 	);
 
 	useEffect(() => {
 		const mcpParam = searchParams.get("mcp");
 		if (mcpParam === "Generate") {
 			const mcpFilePath = "/mcp/pixel_mcp.json";
-			openPanel(`${WORKBENCH_COMPONENTS.MCP_EDITOR}--${mcpFilePath}`, {
-				type: "tab",
-				name: `Toolbox Editor - pixel_mcp.json`,
-				component: WORKBENCH_COMPONENTS.MCP_EDITOR,
-				config: {
+			layoutActions.selectPanel(
+				WORKBENCH_COMPONENTS.MCP_EDITOR,
+				{
 					name: "pixel_mcp.json",
 					path: mcpFilePath,
 				},
-				enableClose: true,
-			});
+				{ name: "Toolbox Editor - pixel_mcp.json" },
+			);
 			toast.success("MCP generated");
 			searchParams.delete("mcp");
 			setSearchParams(searchParams);
 		}
-	}, [searchParams, openPanel, setSearchParams]);
+	}, [searchParams, layoutActions, setSearchParams]);
 
 	return (
 		<FileExplorer
@@ -211,24 +192,18 @@ export const EngineFileExplorerPanel: React.FC<
 				}
 
 				// this will select if there or open if not
-				openPanel(`${WORKBENCH_COMPONENTS.FILE_EDITOR}--${item.path}`, {
-					type: "tab",
-					name: item.name,
-					component: WORKBENCH_COMPONENTS.FILE_EDITOR,
-					config: {
+				layoutActions.selectPanel(
+					WORKBENCH_COMPONENTS.FILE_EDITOR,
+					{
 						name: item.name,
 						path: item.path,
 					},
-					enableClose: true,
-				});
+					{ name: item.name },
+				);
 			}}
 			onItemsMoved={migrateMovedTabs}
 			onItemsDeleted={(items) => {
 				items.forEach((item) => {
-					closePanel(
-						`${WORKBENCH_COMPONENTS.FILE_EDITOR}--${item.path}`,
-					);
-
 					removeDeletedTabs(item.path, item.type === "directory");
 				});
 			}}
@@ -256,18 +231,13 @@ export const EngineFileExplorerPanel: React.FC<
 							}
 
 							// open the editor for the created file (always, even if MakePythonMCP fails)
-							openPanel(
-								`${WORKBENCH_COMPONENTS.MCP_EDITOR}--/mcp/py_mcp.json`,
+							layoutActions.selectPanel(
+								WORKBENCH_COMPONENTS.MCP_EDITOR,
 								{
-									type: "tab",
-									name: `Toolbox Editor - py_mcp.json`,
-									component: WORKBENCH_COMPONENTS.MCP_EDITOR,
-									config: {
-										name: "py_mcp.json",
-										path: "/mcp/py_mcp.json",
-									},
-									enableClose: true,
+									name: "py_mcp.json",
+									path: "/mcp/py_mcp.json",
 								},
+								{ name: "Toolbox Editor - py_mcp.json" },
 							);
 						},
 					});
@@ -283,18 +253,13 @@ export const EngineFileExplorerPanel: React.FC<
 						tooltip: "Edit Toolbox",
 						action: async (item: FileItem) => {
 							// this will select if there or open if not
-							openPanel(
-								`${WORKBENCH_COMPONENTS.MCP_EDITOR}--${item.path}`,
+							layoutActions.selectPanel(
+								WORKBENCH_COMPONENTS.MCP_EDITOR,
 								{
-									type: "tab",
-									name: `Toolbox Editor - ${item.name}`,
-									component: WORKBENCH_COMPONENTS.MCP_EDITOR,
-									config: {
-										name: item.name,
-										path: item.path,
-									},
-									enableClose: true,
+									name: item.name,
+									path: item.path,
 								},
+								{ name: `Toolbox Editor - ${item.name}` },
 							);
 						},
 					});
@@ -353,30 +318,8 @@ export const EngineFileExplorerPanel: React.FC<
 
 				return (
 					<FileExplorerItem
-						draggable={item.type !== "directory"}
 						item={item}
 						refresh={refresh}
-						onDragStart={(e) => {
-							// cannot drag directories
-							if (item.type === "directory") {
-								return;
-							}
-
-							// add to layout
-							layout.addTabWithDragAndDrop(
-								e as unknown as DragEvent,
-								{
-									type: "tab",
-									name: item.name,
-									component: WORKBENCH_COMPONENTS.FILE_EDITOR,
-									config: {
-										name: item.name,
-										path: item.path,
-									},
-									enableClose: true,
-								},
-							);
-						}}
 						onAfterRename={(oldPath, newPath) => {
 							const migrated = migrateMovedTabs([
 								{
@@ -392,18 +335,13 @@ export const EngineFileExplorerPanel: React.FC<
 							const newName =
 								newPath.split("/").filter(Boolean).pop() ??
 								newPath;
-							openPanel(
-								`${WORKBENCH_COMPONENTS.FILE_EDITOR}--${newPath}`,
+							layoutActions.selectPanel(
+								WORKBENCH_COMPONENTS.FILE_EDITOR,
 								{
-									type: "tab",
 									name: newName,
-									component: WORKBENCH_COMPONENTS.FILE_EDITOR,
-									config: {
-										name: newName,
-										path: newPath,
-									},
-									enableClose: true,
+									path: newPath,
 								},
+								{ name: newName },
 							);
 						}}
 						{...otherProps}
@@ -414,4 +352,18 @@ export const EngineFileExplorerPanel: React.FC<
 			}}
 		/>
 	);
+};
+
+/**
+ * Blueprint for the engine file explorer. keepAlive: the expanded tree and
+ * current directory survive tab switches.
+ */
+export const ENGINE_FILE_EXPLORER_PANEL: WorkbenchPanelConfig = {
+	name: "Files",
+	helpText: "File Explorer",
+	icon: ({ className }) => <FolderTreeIcon className={className} />,
+	canClose: false,
+	canRename: false,
+	mount: "keepAlive",
+	content: EngineFileExplorerPanel,
 };

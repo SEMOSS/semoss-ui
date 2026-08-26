@@ -1,1 +1,1 @@
-export * from "./database-workbench.slice";
+export * from "./database-workbench.store";

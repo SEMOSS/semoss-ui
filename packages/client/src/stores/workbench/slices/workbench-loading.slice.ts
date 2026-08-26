@@ -1,16 +1,25 @@
 import type { WorkbenchSlice } from "../workbench.types";
 
 /** Full-screen loading state owned by each workbench instance. */
-export interface WorkbenchLoadingSliceState {
+export interface WorkbenchLoadingSliceFields {
 	/** Whether the workbench loading screen is visible. */
 	isLoading: boolean;
+}
 
+/** Loading actions exposed under the store's `actions` namespace. */
+export interface WorkbenchLoadingActions {
 	/**
 	 * Set the loading state of the workbench.
 	 *
 	 * @param isLoading - Whether the workbench is currently loading.
 	 */
 	setLoading: (isLoading: boolean) => void;
+}
+
+/** The loading slice: fields plus its `actions` contribution. */
+export interface WorkbenchLoadingSliceState
+	extends WorkbenchLoadingSliceFields {
+	actions: WorkbenchLoadingActions;
 }
 
 /**
@@ -22,9 +31,11 @@ export interface WorkbenchLoadingSliceState {
 export const createWorkbenchLoadingSlice =
 	(): WorkbenchSlice<WorkbenchLoadingSliceState> => (set) => ({
 		isLoading: false,
-		setLoading: (isLoading) => {
-			set(() => ({
-				isLoading: isLoading,
-			}));
+		actions: {
+			setLoading: (isLoading) => {
+				set((root) => ({
+					loading: { ...root.loading, isLoading: isLoading },
+				}));
+			},
 		},
 	});

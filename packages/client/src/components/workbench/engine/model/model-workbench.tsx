@@ -1,24 +1,96 @@
 import { FolderTreeIcon, MessageSquareIcon, SettingsIcon } from "lucide-react";
-import { useEffect, useMemo } from "react";
-import { type FlexLayout, getFileIconComponent } from "@semoss/shared";
+import { useEffect } from "react";
 import { makeEngineRoomMcp } from "@/api/rooms";
+import { useEngine, useWorkbench, useWorkbenchCommands } from "@/hooks";
+import type {
+	WorkbenchLayout,
+	WorkbenchPanelConfigAny,
+} from "@/stores/workbench";
+import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
+import { Workbench } from "../../core";
 import {
 	WORKBENCH_COMPONENTS,
-	Workbench,
-	WorkbenchCommandMenuButton,
-} from "@/components/workbench";
-import { useEngine, useWorkbench } from "@/hooks";
-import { useWorkbenchAssistantConfig } from "@/hooks/use-workbench-assistant-config";
-import type { WorkbenchPanelConfig } from "@/stores";
-import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
-import {
-	EngineFileEditorPanel,
-	EngineFileExplorerPanel,
-	EngineMcpEditorPanel,
-	EngineSettingsPanel,
-	EngineSettingsToggle,
-} from "..";
-import { ModelChatPanel } from "./model-chat-panel";
+	WORKBENCH_PANEL_RECORDS,
+} from "../../workbench.constants";
+import { WorkbenchCommandMenuButton } from "../../workbench-command-menu-button";
+import { ENGINE_FILE_EDITOR_PANEL } from "../engine-file-editor-panel";
+import { ENGINE_FILE_EXPLORER_PANEL } from "../engine-file-explorer-panel";
+import { ENGINE_MCP_EDITOR_PANEL } from "../engine-mcp-editor-panel";
+import { createEngineSettingsPanel } from "../engine-settings-panel";
+import { EngineSettingsToggle } from "../engine-settings-toggle";
+import { MODEL_CHAT_PANEL } from "./model-chat-panel";
+
+/** The default arrangement: files on the left (collapsed), assistant right. */
+const MODEL_WORKBENCH_LAYOUT: WorkbenchLayout = {
+	version: 1,
+	tree: {
+		type: "tabset",
+		id: "main",
+		size: 1,
+		panelIds: [],
+		activeId: null,
+		enableDeleteWhenEmpty: false,
+	},
+	panels: {
+		[WORKBENCH_PANEL_RECORDS.ENGINE_FILE_EXPLORER.id]:
+			WORKBENCH_PANEL_RECORDS.ENGINE_FILE_EXPLORER,
+		[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
+			WORKBENCH_PANEL_RECORDS.ASSISTANT,
+	},
+	borders: {
+		left: {
+			panelIds: [WORKBENCH_COMPONENTS.FILE_EXPLORER],
+			activeId: null,
+			size: 300,
+		},
+		right: {
+			panelIds: [WORKBENCH_COMPONENTS.ASSISTANT],
+			activeId: null,
+			size: 400,
+		},
+	},
+};
+
+/** Blueprints, keyed by type. Module-scope so identities never churn. */
+const MODEL_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
+	[WORKBENCH_COMPONENTS.FILE_EXPLORER]: ENGINE_FILE_EXPLORER_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_EDITOR]: ENGINE_FILE_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.MCP_EDITOR]: ENGINE_MCP_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.MODEL_CHAT]: MODEL_CHAT_PANEL,
+	[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: createEngineSettingsPanel([
+		{
+			name: "Overview",
+			component: "overview",
+			restrict: ["READ_ONLY", "EDIT", "OWNER", "DISCOVERABLE"],
+		},
+		{
+			name: "Usage",
+			component: "usage",
+			restrict: ["READ_ONLY", "EDIT", "OWNER"],
+		},
+		{
+			name: "MCP",
+			component: "mcp-usage",
+			restrict: ["READ_ONLY", "EDIT", "OWNER"],
+		},
+		{
+			name: "Activity Log",
+			component: "activity",
+			restrict: ["READ_ONLY", "EDIT", "OWNER"],
+		},
+		{
+			name: "Access Control",
+			component: "access-control",
+			restrict: ["EDIT", "OWNER"],
+		},
+		{
+			name: "SMSS",
+			component: "smss",
+			restrict: ["OWNER"],
+		},
+	]),
+	[WORKBENCH_COMPONENTS.ASSISTANT]: WORKBENCH_ASSISTANT_PANEL,
+};
 
 /**
  * Model workbench that combines a chat panel with the shared file explorer,
@@ -26,69 +98,9 @@ import { ModelChatPanel } from "./model-chat-panel";
  * the chat and file operations share a single insight.
  */
 export const ModelWorkbench: React.FC = () => {
-	const registerCommand = useWorkbench((state) => state.registerCommand);
 	const { engine } = useEngine();
 
-	const layout = useMemo<FlexLayout.IJsonModel>(() => {
-		return {
-			global: {
-				tabSetEnableDeleteWhenEmpty: true,
-				tabEnableRename: false,
-			},
-			borders: [
-				{
-					type: "border",
-					location: "left",
-					size: 300,
-					children: [
-						{
-							type: "tab",
-							id: WORKBENCH_COMPONENTS.FILE_EXPLORER,
-							name: "Files",
-							component: WORKBENCH_COMPONENTS.FILE_EXPLORER,
-							config: {},
-							helpText: "File Explorer",
-							enableClose: false,
-						},
-					],
-				},
-				{
-					type: "border",
-					location: "right",
-					size: 400,
-					minSize: 320,
-					selected: -1,
-					children: [
-						{
-							type: "tab",
-							id: WORKBENCH_COMPONENTS.ASSISTANT,
-							name: "Assistant",
-							component: WORKBENCH_COMPONENTS.ASSISTANT,
-							helpText: "Assistant",
-							enableClose: false,
-							enableRenderOnDemand: false,
-						},
-					],
-				},
-			],
-			layout: {
-				type: "row",
-				weight: 100,
-				children: [
-					{
-						type: "tabset",
-						weight: 100,
-						enableDeleteWhenEmpty: false,
-						children: [],
-					},
-				],
-			},
-		};
-	}, []);
-
-	const configureAssistant = useWorkbenchAssistantConfig(
-		(state) => state.configure,
-	);
+	const configureAssistant = useWorkbench((s) => s.assistant.configure);
 
 	// Keep the assistant prompt and room tools in sync with the active engine.
 	useEffect(() => {
@@ -104,141 +116,53 @@ export const ModelWorkbench: React.FC = () => {
 		engine.engine_name,
 	]);
 
-	const components: Record<string, WorkbenchPanelConfig> = {
-		[WORKBENCH_COMPONENTS.FILE_EXPLORER]: {
-			tab: () => <FolderTreeIcon className="size-4" />,
-			view: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => {
-				return <EngineFileExplorerPanel layout={layout} node={node} />;
+	useWorkbenchCommands([
+		{
+			id: "workbench.file-explorer.open",
+			label: "Open File Explorer",
+			icon: <FolderTreeIcon />,
+			handler: (get) => {
+				get().layout.actions.selectPanel(
+					WORKBENCH_COMPONENTS.FILE_EXPLORER,
+				);
 			},
 		},
-		[WORKBENCH_COMPONENTS.FILE_EDITOR]: {
-			tab: (node: FlexLayout.TabNode) => {
-				const Icon = getFileIconComponent(node.getName());
-				return <Icon className="size-4" />;
-			},
-			view: (node: FlexLayout.TabNode) => {
-				return <EngineFileEditorPanel node={node} />;
-			},
-		},
-		[WORKBENCH_COMPONENTS.MCP_EDITOR]: {
-			tab: (node: FlexLayout.TabNode) => {
-				const Icon = getFileIconComponent(node.getName());
-				return <Icon className="size-4" />;
-			},
-			view: (node: FlexLayout.TabNode) => {
-				return <EngineMcpEditorPanel node={node} />;
+		{
+			id: "workbench.settings.open",
+			label: "Open Settings",
+			icon: <SettingsIcon />,
+			handler: (get) => {
+				get().layout.actions.selectPanel(
+					WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
+				);
 			},
 		},
-		[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: {
-			tab: () => <SettingsIcon className="size-4" />,
-			view: () => (
-				<EngineSettingsPanel
-					tabs={[
-						{
-							name: "Overview",
-							component: "overview",
-							restrict: [
-								"READ_ONLY",
-								"EDIT",
-								"OWNER",
-								"DISCOVERABLE",
-							],
-						},
-						{
-							name: "Usage",
-							component: "usage",
-							restrict: ["READ_ONLY", "EDIT", "OWNER"],
-						},
-						{
-							name: "MCP",
-							component: "mcp-usage",
-							restrict: ["READ_ONLY", "EDIT", "OWNER"],
-						},
-						{
-							name: "Activity Log",
-							component: "activity",
-							restrict: ["READ_ONLY", "EDIT", "OWNER"],
-						},
-						{
-							name: "Access Control",
-							component: "access-control",
-							restrict: ["EDIT", "OWNER"],
-						},
-						{
-							name: "SMSS",
-							component: "smss",
-							restrict: ["OWNER"],
-						},
-					]}
-				/>
-			),
-		},
-		[WORKBENCH_COMPONENTS.MODEL_CHAT]: {
-			tab: () => <MessageSquareIcon className="size-4" />,
-			view: () => {
-				return <ModelChatPanel />;
+		{
+			id: "workbench.model-chat.open",
+			label: "Open Model Chat",
+			icon: <MessageSquareIcon />,
+			handler: (get) => {
+				get().layout.actions.selectPanel(
+					WORKBENCH_COMPONENTS.MODEL_CHAT,
+				);
 			},
 		},
-		[WORKBENCH_COMPONENTS.ASSISTANT]: WORKBENCH_ASSISTANT_PANEL,
-	};
-
-	useEffect(() => {
-		return registerCommand([
-			{
-				id: "workbench.file-explorer.open",
-				label: "Open File Explorer",
-				icon: <FolderTreeIcon />,
-				handler: (get) => {
-					get().openPanel(WORKBENCH_COMPONENTS.FILE_EXPLORER, {
-						type: "tab",
-						name: "Files",
-						component: WORKBENCH_COMPONENTS.FILE_EXPLORER,
-						helpText: "File Explorer",
-						enableClose: false,
-					});
-				},
-			},
-			{
-				id: "workbench.settings.open",
-				label: "Open Settings",
-				icon: <SettingsIcon />,
-				handler: (get) => {
-					get().openPanel(WORKBENCH_COMPONENTS.ENGINE_SETTINGS, {
-						type: "tab",
-						name: "Settings",
-						component: WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
-						helpText: "Settings",
-						enableClose: false,
-					});
-				},
-			},
-			{
-				id: "workbench.model-chat.open",
-				label: "Open Model Chat",
-				icon: <MessageSquareIcon />,
-				handler: (get) => {
-					get().openPanel(WORKBENCH_COMPONENTS.MODEL_CHAT, {
-						type: "tab",
-						name: "Model Chat",
-						component: WORKBENCH_COMPONENTS.MODEL_CHAT,
-						helpText: "Model Chat",
-						enableClose: false,
-					});
-				},
-			},
-		]);
-	}, [registerCommand]);
+	]);
 
 	return (
 		<Workbench
-			layout={layout}
-			components={components}
-			actions={
-				<>
-					<WorkbenchCommandMenuButton />
-					<EngineSettingsToggle />
-				</>
-			}
+			layout={MODEL_WORKBENCH_LAYOUT}
+			components={MODEL_WORKBENCH_COMPONENTS}
+			borderSlots={{
+				left: {
+					after: (
+						<>
+							<WorkbenchCommandMenuButton />
+							<EngineSettingsToggle />
+						</>
+					),
+				},
+			}}
 		/>
 	);
 };

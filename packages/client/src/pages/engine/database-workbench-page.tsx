@@ -1,5 +1,4 @@
 import { ChevronRightIcon } from "lucide-react";
-import { useMemo } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { InsightProvider } from "@semoss/sdk/react";
 import {
@@ -14,11 +13,9 @@ import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { DatabaseWorkbench } from "@/components/workbench";
 import { WorkbenchProvider } from "@/contexts";
 import { useEngine } from "@/hooks";
-import { createDatabaseWorkbenchSlice } from "@/stores/workbench/database";
 
 export const DatabaseWorkbenchPage = () => {
 	const { engine, permission, catalog } = useEngine();
-	const createDomainSlice = useMemo(() => createDatabaseWorkbenchSlice(), []);
 
 	if (permission === "DISCOVERABLE") {
 		return <Navigate to={`${catalog.path}/${engine.engine_id}`} replace />;
@@ -26,10 +23,7 @@ export const DatabaseWorkbenchPage = () => {
 
 	return (
 		<InsightProvider>
-			<WorkbenchProvider
-				id={engine.engine_id}
-				createDomainSlice={createDomainSlice}
-			>
+			<WorkbenchProvider id={engine.engine_id}>
 				<NavbarLeft>
 					<NavbarHeader logo={null} />
 					<Breadcrumb>

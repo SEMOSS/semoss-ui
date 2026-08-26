@@ -17,20 +17,47 @@ interface WorkbenchPaletteItem {
 
 /** Render and control the command palette for the nearest workbench. */
 export const WorkbenchCommandPalette: FC = () => {
+	const layoutActions = useWorkbench((state) => state.layout.actions);
+
 	// list of all the currently registered commands in the workbench
-	const commandList = useWorkbench((state) => Object.values(state.commands));
+	const commandList = useWorkbench((state) =>
+		Object.values(state.command.commands),
+	);
 
 	// method to execute a command by its ID
-	const executeCommand = useWorkbench((state) => state.executeCommand);
-	const isCommandOpen = useWorkbench((state) => state.isCommandOpen);
-	const setCommandOpen = useWorkbench((state) => state.setCommandOpen);
+	const executeCommand = useWorkbench(
+		(state) => state.command.actions.executeCommand,
+	);
+	const runCommandDirectly = useWorkbench(
+		(state) => state.command.actions.runCommand,
+	);
+	const isCommandOpen = useWorkbench((state) => state.command.isCommandOpen);
+	const setCommandOpen = useWorkbench(
+		(state) => state.command.actions.setCommandOpen,
+	);
 
 	const [search, setSearch] = useState("");
+
+	// layout-derived entries (go-to, reopen, borders, maximize, reset, …) are
+	// built only when the palette opens, never while the store churns
+	const layoutCommands = useMemo(
+		() => (isCommandOpen ? layoutActions.buildLayoutCommands() : []),
+		[isCommandOpen, layoutActions],
+	);
 
 	const filteredItems = useMemo<WorkbenchPaletteItem[]>(() => {
 		const query = search.trim().toLowerCase();
 
-		return [...commandList]
+		// registered commands win over layout-derived ones on id collision
+		const registeredIds = new Set(commandList.map((command) => command.id));
+		const merged = [
+			...commandList,
+			...layoutCommands.filter(
+				(command) => !registeredIds.has(command.id),
+			),
+		];
+
+		return merged
 			.filter((command) => {
 				if (!query) {
 					return true;
@@ -49,7 +76,7 @@ export const WorkbenchCommandPalette: FC = () => {
 				description: command.description,
 				icon: command.icon,
 			}));
-	}, [commandList, search]);
+	}, [commandList, layoutCommands, search]);
 
 	useEffect(() => {
 		const handleKeyDown = (event: KeyboardEvent): void => {
@@ -84,6 +111,22 @@ export const WorkbenchCommandPalette: FC = () => {
 		}
 	};
 
+	const runCommand = (commandId: string): void => {
+		handleOpenChange(false);
+		// registered commands run through the registry; layout-derived ones
+		// execute directly
+		if (commandList.some((command) => command.id === commandId)) {
+			executeCommand(commandId);
+			return;
+		}
+		const layoutCommand = layoutCommands.find(
+			(command) => command.id === commandId,
+		);
+		if (layoutCommand) {
+			runCommandDirectly(layoutCommand);
+		}
+	};
+
 	return (
 		<CommandDialog
 			open={isCommandOpen}
@@ -104,16 +147,20 @@ export const WorkbenchCommandPalette: FC = () => {
 				{filteredItems.map((item) => (
 					<CommandItem
 						key={item.id}
-						value={item.label}
+						value={`${item.label} ${item.id}`}
 						keywords={[item.id, item.description ?? ""]}
 						onSelect={() => {
-							handleOpenChange(false);
-							executeCommand(item.id);
+							runCommand(item.id);
 						}}
 					>
 						{item.icon}
 
 						<span className="min-w-0 truncate">{item.label}</span>
+						{item.description ? (
+							<span className="ml-auto min-w-0 truncate text-muted-foreground text-xs">
+								{item.description}
+							</span>
+						) : null}
 					</CommandItem>
 				))}
 			</CommandList>

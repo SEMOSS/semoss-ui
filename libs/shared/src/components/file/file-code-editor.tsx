@@ -618,6 +618,9 @@ export const FileCodeEditor = forwardRef<
 								accessibilitySupport: "off",
 								padding: { top: 12 },
 								scrollBeyondLastLine: false,
+								// the editor is sized by its container, which
+								// moves whenever a dock is split or resized
+								automaticLayout: true,
 							}}
 							onChange={(value) => {
 								const nextValue = value ?? "";

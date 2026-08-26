@@ -2,6 +2,7 @@ import {
 	AlertCircleIcon,
 	ChevronDown,
 	ChevronsUpDown,
+	NetworkIcon,
 	RefreshCw,
 	SearchIcon,
 	Table,
@@ -40,6 +41,8 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { useDatabaseWorkbench, useEngine } from "@/hooks";
+import type { WorkbenchPanelConfig } from "@/stores/workbench";
+import { getDatabaseWorkbenchStore } from "@/stores/workbench/database";
 import {
 	type DatabaseColumnAction,
 	type DatabaseTableAction,
@@ -542,4 +545,32 @@ export const DatabaseColumnsPanel: React.FC = () => {
 			/>
 		</>
 	);
+};
+
+/**
+ * Blueprint for the database structure panel. keepAlive: search text and
+ * expanded tables survive tab switches.
+ */
+export const DATABASE_COLUMNS_PANEL: WorkbenchPanelConfig = {
+	name: "Columns",
+	helpText: "Database Structure",
+	icon: ({ className }) => <NetworkIcon className={className} />,
+	canClose: false,
+	canRename: false,
+	mount: "keepAlive",
+	content: DatabaseColumnsPanel,
+	// A contributed command runs outside React, so the domain store comes from
+	// `get` rather than `useDatabaseWorkbench`.
+	commands: (panel, get) => [
+		{
+			id: "refresh-structure",
+			label: "Refresh database structure",
+			hint: panel.name,
+			run: () => {
+				void getDatabaseWorkbenchStore(get())
+					?.getState()
+					.structure.refresh();
+			},
+		},
+	],
 };

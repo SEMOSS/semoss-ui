@@ -1,7 +1,6 @@
-import type React from "react";
+import { DatabaseIcon } from "lucide-react";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import {
-	type FlexLayout,
 	MonacoEditor,
 	type monaco,
 	type OnMount,
@@ -11,6 +10,10 @@ import {
 } from "@semoss/shared";
 import { Button, Spinner, useTheme } from "@semoss/ui/next";
 import { useDatabaseWorkbench } from "@/hooks";
+import type {
+	WorkbenchComponent,
+	WorkbenchPanelConfig,
+} from "@/stores/workbench";
 
 const SQL_KEYWORDS = [
 	"SELECT",
@@ -44,24 +47,28 @@ const SQL_KEYWORDS = [
 	"DELETE",
 ];
 
-interface DatabaseQueryPanelProps {
-	/** The FlexLayout tab node backing this editor panel */
-	node: FlexLayout.TabNode;
+/** The config a query-editor instance is opened with. */
+export interface DatabaseQueryConfig {
+	/** Query text the editor starts with. */
+	initialQuery?: string;
+	/** Sequence number behind the default "Query N" name. */
+	queryNumber?: number;
 }
 
 /**
- * A self-contained query editor bound to a single FlexLayout tab. Each panel
- * owns its own query text and (for SPARQL) raw toggle, seeded from the tab
+ * A self-contained query editor bound to a single workbench panel. Each panel
+ * owns its own query text and (for SPARQL) raw toggle, seeded from its
  * config, so multiple panels can coexist without sharing editor state.
  */
-export const DatabaseQueryPanel: React.FC<DatabaseQueryPanelProps> = ({
-	node,
+export const DatabaseQueryPanel: WorkbenchComponent<DatabaseQueryConfig> = ({
+	id,
+	config,
 }) => {
 	const mode = useDatabaseWorkbench((state) => state.mode);
 	const structure = useDatabaseWorkbench((state) => state.structure.data);
 	const onQuery = useDatabaseWorkbench((state) => state.onQuery);
 	const isRunning = useDatabaseWorkbench(
-		(state) => state.runningPanels[node.getId()] ?? false,
+		(state) => state.runningPanels[id] ?? false,
 	);
 	const onRun = useCallback(
 		(query: string, panelId: string, raw?: boolean) => {
@@ -71,10 +78,8 @@ export const DatabaseQueryPanel: React.FC<DatabaseQueryPanelProps> = ({
 	);
 
 	const { resolvedTheme } = useTheme();
-	const panelId = node.getId();
-	const initialQuery =
-		(node.getConfig() as { initialQuery?: string } | undefined)
-			?.initialQuery ?? "";
+	const panelId = id;
+	const initialQuery = config.initialQuery ?? "";
 	const editorTheme =
 		mode === "SPARQL"
 			? resolvedTheme === "dark"
@@ -328,4 +333,16 @@ export const DatabaseQueryPanel: React.FC<DatabaseQueryPanelProps> = ({
 			</div>
 		</div>
 	);
+};
+
+/**
+ * Blueprint for query editor instances — the only user-renamable panel type.
+ * keepAlive: unsent query text and the raw toggle survive tab switches.
+ */
+export const DATABASE_QUERY_PANEL: WorkbenchPanelConfig<DatabaseQueryConfig> = {
+	name: "Query",
+	icon: ({ className }) => <DatabaseIcon className={className} />,
+	canRename: true,
+	mount: "keepAlive",
+	content: DatabaseQueryPanel,
 };

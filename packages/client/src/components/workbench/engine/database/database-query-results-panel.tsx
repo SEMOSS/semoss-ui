@@ -1,8 +1,6 @@
-import { Download } from "lucide-react";
-import type React from "react";
+import { Download, Table2Icon } from "lucide-react";
 import { useState } from "react";
 import { download } from "@semoss/sdk/react";
-import type { FlexLayout } from "@semoss/shared";
 import {
 	Button,
 	Code,
@@ -21,23 +19,25 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useDatabaseWorkbench, useEngine, useRootStore } from "@/hooks";
-import { WORKBENCH_COMPONENTS } from "../../workbench.constants";
+import type {
+	WorkbenchComponent,
+	WorkbenchPanelConfig,
+} from "@/stores/workbench";
+import { DatabaseResultsHeader } from "./database-results-header";
 
-interface DatabaseQueryResultsPanelProps {
-	/** The FlexLayout tab node backing this results panel */
-	node: FlexLayout.TabNode;
+/** The config a results instance is opened with. */
+export interface DatabaseQueryResultsConfig {
+	/** The query panel this results panel is paired 1:1 with. */
+	sourcePanel: string;
 }
 
-export const DatabaseQueryResultsPanel: React.FC<
-	DatabaseQueryResultsPanelProps
-> = ({ node }) => {
+export const DatabaseQueryResultsPanel: WorkbenchComponent<
+	DatabaseQueryResultsConfig
+> = ({ config }) => {
 	const { engine } = useEngine();
 	const { configStore } = useRootStore();
 
-	// Each results tab is paired 1:1 with the query panel that created it.
-	const sourcePanel =
-		(node.getConfig() as { sourcePanel?: string } | undefined)
-			?.sourcePanel ?? WORKBENCH_COMPONENTS.DATABASE_QUERY;
+	const sourcePanel = config.sourcePanel;
 
 	const mode = useDatabaseWorkbench((state) => state.mode);
 	const result = useDatabaseWorkbench(
@@ -192,3 +192,19 @@ export const DatabaseQueryResultsPanel: React.FC<
 		</div>
 	);
 };
+
+/**
+ * Blueprint for results instances. Paired to their query panel through
+ * config.sourcePanel; the header derives its title from the query's live
+ * name. keepAlive: large result tables and scroll survive tab switches.
+ */
+export const DATABASE_RESULTS_PANEL: WorkbenchPanelConfig<DatabaseQueryResultsConfig> =
+	{
+		name: "Results",
+		icon: ({ className }) => <Table2Icon className={className} />,
+		canRename: false,
+		mount: "keepAlive",
+		matches: (a, b) => a.sourcePanel === b.sourcePanel,
+		header: DatabaseResultsHeader,
+		content: DatabaseQueryResultsPanel,
+	};

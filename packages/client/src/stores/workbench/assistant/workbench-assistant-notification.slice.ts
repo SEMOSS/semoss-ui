@@ -13,14 +13,12 @@ const DEFAULT_ROOM_LABEL = "Workbench assistant";
 
 /** Namespaced state contributed by the assistant notification slice. */
 export interface WorkbenchAssistantNotificationSliceState {
-	notifications: {
-		/**
-		 * Stop watching run transitions. The subscription otherwise lives as
-		 * long as the store and is garbage-collected with it, so the app never
-		 * needs to call this — it exists so tests can detach a watcher.
-		 */
-		dispose: () => void;
-	};
+	/**
+	 * Stop watching run transitions. The subscription otherwise lives as long
+	 * as the store and is garbage-collected with it, so the app never needs to
+	 * call this — it exists so tests can detach a watcher.
+	 */
+	dispose: () => void;
 }
 
 /**
@@ -171,9 +169,5 @@ export const createWorkbenchAssistantNotificationSlice =
 			}
 		});
 
-		return {
-			notifications: {
-				dispose: unsubscribe,
-			},
-		};
+		return { dispose: unsubscribe };
 	};

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
-import type { FlexLayout } from "@semoss/shared";
+import { getFileIconComponent } from "@semoss/shared";
 import { Muted, Spinner, toast } from "@semoss/ui/next";
 import {
 	type LoadedMCPFile,
@@ -10,10 +10,15 @@ import {
 	toFileText,
 } from "@/components/shared";
 import { useProject } from "@/hooks";
+import type {
+	WorkbenchComponent,
+	WorkbenchPanelConfig,
+} from "@/stores/workbench";
 
-interface ProjectMcpEditorPanelProps {
-	/** FlexLayout tab node backing the MCP editor. */
-	node: FlexLayout.TabNode;
+/** The config a project MCP-editor instance is opened with. */
+export interface ProjectMcpEditorConfig {
+	name: string;
+	path: string;
 }
 
 /**
@@ -21,16 +26,12 @@ interface ProjectMcpEditorPanelProps {
  * `EngineMcpEditorPanel`, reading and writing the toolbox JSON through
  * `GetAppAssets` / `SaveAppAssets`.
  */
-export const ProjectMcpEditorPanel: React.FC<ProjectMcpEditorPanelProps> = ({
-	node,
-}) => {
+export const ProjectMcpEditorPanel: WorkbenchComponent<
+	ProjectMcpEditorConfig
+> = ({ config }) => {
 	const { project, permission } = useProject();
 	const readOnly = !(permission === "OWNER" || permission === "EDIT");
 	const insight = useInsight();
-	const config: {
-		name: string;
-		path: string;
-	} = node.getConfig();
 
 	const [loaded, setLoaded] = useState<LoadedMCPFile | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
@@ -122,3 +123,20 @@ export const ProjectMcpEditorPanel: React.FC<ProjectMcpEditorPanelProps> = ({
 		</div>
 	);
 };
+
+/**
+ * Blueprint for project MCP-editor instances. Instances dedupe on their file
+ * path; keepAlive preserves in-editor edits across tab switches.
+ */
+export const PROJECT_MCP_EDITOR_PANEL: WorkbenchPanelConfig<ProjectMcpEditorConfig> =
+	{
+		name: "Toolbox Editor",
+		canRename: false,
+		mount: "keepAlive",
+		matches: (a, b) => a.path === b.path,
+		icon: ({ config, className }) => {
+			const Icon = getFileIconComponent(config.name);
+			return <Icon className={className} />;
+		},
+		content: ProjectMcpEditorPanel,
+	};

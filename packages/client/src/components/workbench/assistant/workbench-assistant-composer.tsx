@@ -377,7 +377,7 @@ export const WorkbenchAssistantComposer = () => {
 		>
 			<div
 				className={cn(
-					"relative flex w-full flex-col rounded-md border border-input bg-card shadow-lg transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
+					"relative flex w-full flex-col overflow-hidden rounded-md border border-input bg-card transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
 					isDraggingFiles &&
 						"border-primary bg-primary/5 ring-[3px] ring-primary/20",
 				)}
@@ -429,7 +429,7 @@ export const WorkbenchAssistantComposer = () => {
 					onChange={(event) => setDraft(event.target.value)}
 					onKeyDown={handleKeyDown}
 					onPaste={handlePaste}
-					className="max-h-56 min-h-24 w-full resize-none border-0 bg-card px-4 py-3 shadow-none focus-visible:ring-0"
+					className="max-h-56 min-h-24 w-full resize-none rounded-md border-0 bg-card px-4 py-3 shadow-none focus-visible:ring-0"
 				/>
 
 				<div className="flex items-center gap-2 bg-card p-2">

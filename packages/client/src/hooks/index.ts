@@ -4,7 +4,8 @@ import { usePixel } from "./use-pixel";
 import { useProject } from "./use-project";
 import { useTabBarScroll } from "./use-tab-bar-scroll";
 import { useWorkbench } from "./use-workbench";
-import { useWorkbenchAssistantConfig } from "./use-workbench-assistant-config";
+import { useWorkbenchCommands } from "./use-workbench-commands";
+import { useWorkbenchStoreApi } from "./use-workbench-store-api";
 import { useDesigner } from "./useDesigner";
 import { useEngine } from "./useEngine";
 import { useMetamodel } from "./useMetamodel";
@@ -35,7 +36,8 @@ export {
 	useTabBarScroll,
 	useThemeLogo,
 	useWorkbench,
-	useWorkbenchAssistantConfig,
+	useWorkbenchCommands,
+	useWorkbenchStoreApi,
 	useWorkspace,
 	useProject,
 };

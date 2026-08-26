@@ -1,26 +1,23 @@
 import { RotateCcw } from "lucide-react";
-import type { FlexLayout } from "@semoss/shared";
+import type { FC } from "react";
 import {
 	Button,
+	cn,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { useWorkbench } from "@/hooks";
-
-export interface WorkbenchResetButtonProps {
-	/** Default layout the workbench is reset to */
-	layout: FlexLayout.IJsonModel;
-}
+import { CHROME_BUTTON, CHROME_ICON } from "./core/workbench.chrome";
 
 /**
- * Resets the workbench layout back to its default arrangement, overwriting the
- * cached layout.
+ * Resets the workbench layout back to its default arrangement, overwriting
+ * the cached layout so the reset survives a reload.
  */
-export const WorkbenchResetButton: React.FC<WorkbenchResetButtonProps> = ({
-	layout,
-}) => {
-	const setModel = useWorkbench((state) => state.setModel);
+export const WorkbenchResetButton: FC = () => {
+	const resetLayout = useWorkbench(
+		(state) => state.layout.actions.resetLayout,
+	);
 
 	return (
 		<Tooltip>
@@ -30,18 +27,13 @@ export const WorkbenchResetButton: React.FC<WorkbenchResetButtonProps> = ({
 					size="icon-sm"
 					aria-label="Reset workbench"
 					data-testid="workbench-reset-button"
-					onClick={() => {
-						try {
-							// Deep-copy so the stored default layout is untouched.
-							setModel(JSON.parse(JSON.stringify(layout)));
-						} catch (error) {
-							console.error(error);
-							throw error;
-						}
-					}}
-					className="border border-transparent text-muted-foreground"
+					onClick={resetLayout}
+					className={cn(
+						"border border-transparent text-muted-foreground",
+						CHROME_BUTTON,
+					)}
 				>
-					<RotateCcw />
+					<RotateCcw className={CHROME_ICON} />
 				</Button>
 			</TooltipTrigger>
 			<TooltipContent side="right">Reset workbench</TooltipContent>

@@ -1,15 +1,17 @@
 import { CloudUploadIcon } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Button,
+	cn,
 	Spinner,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useProject, useWorkbench } from "@/hooks";
+import { useProject, useWorkbenchCommands } from "@/hooks";
+import { CHROME_BUTTON, CHROME_ICON } from "../core/workbench.chrome";
 
 /**
  * Compiles and publishes the project, and registers the matching command so the
@@ -20,7 +22,6 @@ import { useProject, useWorkbench } from "@/hooks";
 export const ProjectPublishButton: React.FC = () => {
 	const { project } = useProject();
 	const insight = useInsight();
-	const registerCommand = useWorkbench((state) => state.registerCommand);
 	const [isPublishing, setIsPublishing] = useState(false);
 
 	const publish = useCallback(async () => {
@@ -45,22 +46,19 @@ export const ProjectPublishButton: React.FC = () => {
 		}
 	}, [insight.actions, project.project_id]);
 
-	// The command palette invokes handlers outside React, so route it through a
-	// ref rather than re-registering the command on every publish.
-	const publishRef = useRef(publish);
-	publishRef.current = publish;
-
-	useEffect(() => {
-		return registerCommand({
+	// useWorkbenchCommands delegates handlers through a ref, so the latest
+	// publish closure always runs without re-registering per render.
+	useWorkbenchCommands([
+		{
 			id: "workbench.project.publish",
 			label: "Compile and Publish",
 			description: "Compile the project and publish a new release",
 			icon: <CloudUploadIcon />,
 			handler: () => {
-				void publishRef.current();
+				void publish();
 			},
-		});
-	}, [registerCommand]);
+		},
+	]);
 
 	return (
 		<Tooltip>
@@ -70,15 +68,19 @@ export const ProjectPublishButton: React.FC = () => {
 					size="icon-sm"
 					aria-label="Compile and publish the app"
 					data-testid="workbench-project-publish-button"
+					className={cn(
+						"border border-transparent text-muted-foreground",
+						CHROME_BUTTON,
+					)}
 					disabled={isPublishing}
 					onClick={() => {
 						void publish();
 					}}
 				>
 					{isPublishing ? (
-						<Spinner className="size-3" />
+						<Spinner className={CHROME_ICON} />
 					) : (
-						<CloudUploadIcon className="size-3" />
+						<CloudUploadIcon className={CHROME_ICON} />
 					)}
 				</Button>
 			</TooltipTrigger>
