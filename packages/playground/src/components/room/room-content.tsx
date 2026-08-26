@@ -638,9 +638,10 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					excludeCommandIds={[
 						"agent",
 						"workspace",
-						...(room.theme.featureFlags?.enableAgentHarness
-							? []
-							: ["agent-harness", "harness"]),
+						// A room's mode is fixed at creation — never let an
+						// existing room switch into agent-harness mid-chat.
+						"agent-harness",
+						"harness",
 					]}
 				/>
 			</div>
