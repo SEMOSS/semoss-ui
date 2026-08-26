@@ -211,6 +211,8 @@ export interface WorkbenchControl<P = WorkbenchPanelParams, V = unknown> {
 /** A palette command contributed by a panel instance. */
 export interface WorkbenchPanelCommand {
 	id: string;
+	/** Palette section prefix — commands display as `${category}: ${label}`. */
+	category?: string;
 	label: string;
 	hint?: string | undefined;
 	run: () => void;
@@ -367,9 +369,10 @@ export type WorkbenchPanelOptions = Partial<
 /** Declarative command exposed by a workbench panel. */
 export interface WorkbenchCommand {
 	id: string;
+	/** Palette section prefix — commands display as `${category}: ${label}`. */
+	category?: string;
 	label: string;
 	description?: string;
-	icon?: ReactNode;
 	handler: (get: () => WorkbenchState) => void;
 }
 

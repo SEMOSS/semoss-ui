@@ -1,7 +1,7 @@
 import { FileEditor, getFileIconComponent } from "@semoss/shared";
 import { MetadataHelpDialog } from "@/components/shared";
 import { MCP } from "@/constants";
-import { useProject, useWorkbenchCommands } from "@/hooks";
+import { useProject } from "@/hooks";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
@@ -18,12 +18,12 @@ export interface ProjectFileEditorConfig {
 /**
  * Project-scoped file editor panel — the `APP`-mode twin of
  * `EngineFileEditorPanel`. Marks its tab with a trailing `*` while the file has
- * unsaved changes and registers a command to close itself. A forced view-only
- * mode comes through `config.readOnly` (set by view-only workbenches).
+ * unsaved changes. A forced view-only mode comes through `config.readOnly`
+ * (set by view-only workbenches).
  */
 export const ProjectFileEditorPanel: WorkbenchComponent<
 	ProjectFileEditorConfig
-> = ({ id, config, rename }) => {
+> = ({ config, rename }) => {
 	const { project, permission } = useProject();
 
 	const isReadOnly =
@@ -31,18 +31,6 @@ export const ProjectFileEditorPanel: WorkbenchComponent<
 		!(permission === "OWNER" || permission === "EDIT");
 
 	const isDriverFile = MCP.DRIVER_PATHS.some((f) => config.path.endsWith(f));
-
-	useWorkbenchCommands([
-		{
-			id: `workbench.project-file-editor.${id}.close`,
-			label: `Close ${config.name}`,
-			description: "Close this file editor panel.",
-			icon: null,
-			handler: (get) => {
-				get().layout.actions.closePanel(id);
-			},
-		},
-	]);
 
 	return (
 		<FileEditor

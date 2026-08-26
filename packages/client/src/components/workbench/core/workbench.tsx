@@ -1,17 +1,17 @@
 import { type FC, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { Spinner, useIsMobile } from "@semoss/ui/next";
 import { useWorkbench } from "@/hooks";
-import { WorkbenchCommandPalette } from "../workbench-command-palette";
-import { WorkbenchMobileActions } from "../workbench-mobile-actions";
-import { WorkbenchResetButton } from "../workbench-reset-button";
 import { useWorkbenchEvents } from "./use-workbench-events";
 import type { WorkbenchBorderSlotCtx, WorkbenchProps } from "./workbench.types";
 import { resolveBorderSlot, WorkbenchBorder } from "./workbench-border";
+import { WorkbenchCommandPalette } from "./workbench-command-palette";
 import { WorkbenchContextMenu } from "./workbench-context-menu";
 import { WorkbenchDragLayer } from "./workbench-drag-layer";
 import { WorkbenchMobile } from "./workbench-mobile";
+import { WorkbenchMobileActions } from "./workbench-mobile-actions";
 import { WorkbenchPanelLayer } from "./workbench-panel-layer";
 import { WorkbenchPanelSheet } from "./workbench-panel-sheet";
+import { WorkbenchResetButton } from "./workbench-reset-button";
 import { WorkbenchStage } from "./workbench-stage";
 
 /**

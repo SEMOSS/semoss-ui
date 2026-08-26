@@ -1,4 +1,3 @@
-import { FolderTreeIcon, MessageSquareIcon, SettingsIcon } from "lucide-react";
 import { useEffect } from "react";
 import { makeEngineRoomMcp } from "@/api/rooms";
 import { useEngine, useWorkbench, useWorkbenchCommands } from "@/hooks";
@@ -8,11 +7,11 @@ import type {
 } from "@/stores/workbench";
 import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
 import { Workbench } from "../../core";
+import { WorkbenchCommandMenuButton } from "../../core/workbench-command-menu-button";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
 } from "../../workbench.constants";
-import { WorkbenchCommandMenuButton } from "../../workbench-command-menu-button";
 import { ENGINE_FILE_EDITOR_PANEL } from "../engine-file-editor-panel";
 import { ENGINE_FILE_EXPLORER_PANEL } from "../engine-file-explorer-panel";
 import { ENGINE_MCP_EDITOR_PANEL } from "../engine-mcp-editor-panel";
@@ -119,8 +118,8 @@ export const ModelWorkbench: React.FC = () => {
 	useWorkbenchCommands([
 		{
 			id: "workbench.file-explorer.open",
+			category: "View",
 			label: "Open File Explorer",
-			icon: <FolderTreeIcon />,
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.FILE_EXPLORER,
@@ -129,8 +128,8 @@ export const ModelWorkbench: React.FC = () => {
 		},
 		{
 			id: "workbench.settings.open",
+			category: "View",
 			label: "Open Settings",
-			icon: <SettingsIcon />,
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
@@ -139,8 +138,8 @@ export const ModelWorkbench: React.FC = () => {
 		},
 		{
 			id: "workbench.model-chat.open",
+			category: "View",
 			label: "Open Model Chat",
-			icon: <MessageSquareIcon />,
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.MODEL_CHAT,

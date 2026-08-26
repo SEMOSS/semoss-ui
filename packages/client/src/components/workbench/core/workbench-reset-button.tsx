@@ -8,7 +8,7 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { useWorkbench } from "@/hooks";
-import { CHROME_BUTTON, CHROME_ICON } from "./core/workbench.chrome";
+import { CHROME_BUTTON, CHROME_ICON } from "./workbench.chrome";
 
 /**
  * Resets the workbench layout back to its default arrangement, overwriting

@@ -29,8 +29,9 @@ export function buildWorkbenchLayoutCommands(
 			}
 			list.push({
 				id: `workbench.layout.go.${pid}`,
+				category: "Go to",
 				label: record.name,
-				description: `Go to panel — ${stack.label}`,
+				description: stack.label,
 				handler: () =>
 					actions.activatePanel(
 						{ kind: stack.kind, id: stack.id },
@@ -48,8 +49,8 @@ export function buildWorkbenchLayoutCommands(
 		}
 		list.push({
 			id: `workbench.layout.reopen.${pid}`,
-			label: record.name,
-			description: "Reopen panel",
+			category: "View",
+			label: `Reopen ${record.name}`,
 			handler: () => actions.reopenPanel(pid),
 		});
 	}
@@ -61,8 +62,8 @@ export function buildWorkbenchLayoutCommands(
 		}
 		list.push({
 			id: `workbench.layout.close.${pid}`,
-			label: state.layout.panels[pid]?.name ?? pid,
-			description: "Close panel",
+			category: "View",
+			label: `Close ${state.layout.panels[pid]?.name ?? pid}`,
 			handler: () => actions.closePanel(pid),
 		});
 	}
@@ -78,9 +79,11 @@ export function buildWorkbenchLayoutCommands(
 				.map((pid) => state.layout.panels[pid]?.name)
 				.filter(Boolean)
 				.join(", ");
+			const sideName = side.charAt(0).toUpperCase() + side.slice(1);
 			list.push({
 				id: `workbench.layout.border.${side}`,
-				label: `${border.activeId ? "Collapse" : "Open"} ${side} border`,
+				category: "View",
+				label: `${border.activeId ? "Collapse" : "Open"} ${sideName} Border`,
 				description: names,
 				handler: (getState) => {
 					const current = getState();
@@ -99,18 +102,18 @@ export function buildWorkbenchLayoutCommands(
 	// maximize / restore
 	list.push({
 		id: "workbench.layout.maximize",
+		category: "View",
 		label: state.layout.maximizedTabsetId
-			? "Restore dock"
-			: "Maximize selected dock",
-		description: "Layout",
+			? "Restore Dock"
+			: "Maximize Selected Dock",
 		handler: (getState) => getState().layout.actions.toggleMaximize(),
 	});
 
 	if (!state.layout.readOnly) {
 		list.push({
 			id: "workbench.layout.reset",
-			label: "Reset layout",
-			description: "Back to the starting arrangement",
+			category: "View",
+			label: "Reset Layout",
 			handler: (getState) => getState().layout.actions.resetLayout(),
 		});
 	}
@@ -130,6 +133,7 @@ export function buildWorkbenchLayoutCommands(
 			for (const command of make(panel, get) ?? []) {
 				list.push({
 					id: `workbench.panel.${pid}.${command.id}`,
+					category: command.category,
 					label: command.label,
 					description: command.hint ?? record.name,
 					handler: () => command.run(),

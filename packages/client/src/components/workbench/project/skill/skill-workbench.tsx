@@ -1,9 +1,3 @@
-import {
-	FlaskConicalIcon,
-	FolderTreeIcon,
-	SettingsIcon,
-	SquareTerminalIcon,
-} from "lucide-react";
 import { useEffect } from "react";
 import { useProject, useWorkbench, useWorkbenchCommands } from "@/hooks";
 import type {
@@ -12,11 +6,11 @@ import type {
 } from "@/stores/workbench";
 import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
 import { Workbench } from "../../core";
+import { WorkbenchCommandMenuButton } from "../../core/workbench-command-menu-button";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
 } from "../../workbench.constants";
-import { WorkbenchCommandMenuButton } from "../../workbench-command-menu-button";
 import { PROJECT_FILE_EDITOR_PANEL } from "../project-file-editor-panel";
 import { PROJECT_FILE_EXPLORER_PANEL } from "../project-file-explorer-panel";
 import { PROJECT_INSIGHT_EXPLORER_PANEL } from "../project-insight-explorer-panel";
@@ -159,8 +153,8 @@ export const SkillWorkbench: React.FC = () => {
 	useWorkbenchCommands([
 		{
 			id: "workbench.project-file-explorer.open",
+			category: "View",
 			label: "Open File Explorer",
-			icon: <FolderTreeIcon />,
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER,
@@ -169,8 +163,8 @@ export const SkillWorkbench: React.FC = () => {
 		},
 		{
 			id: "workbench.project-insight-explorer.open",
+			category: "View",
 			label: "Open Insight File Explorer",
-			icon: <FlaskConicalIcon />,
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER,
@@ -179,8 +173,8 @@ export const SkillWorkbench: React.FC = () => {
 		},
 		{
 			id: "workbench.project-terminal.open",
+			category: "View",
 			label: "Open Terminal",
-			icon: <SquareTerminalIcon />,
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
@@ -189,8 +183,8 @@ export const SkillWorkbench: React.FC = () => {
 		},
 		{
 			id: "workbench.project-settings.open",
+			category: "View",
 			label: "Open Settings",
-			icon: <SettingsIcon />,
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.PROJECT_SETTINGS,

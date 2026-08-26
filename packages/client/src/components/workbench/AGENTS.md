@@ -128,9 +128,14 @@ instance. Follow `engine/function/function-workbench.tsx` as the exemplar.
 
 **Commands**: register palette commands with `useWorkbenchCommands([...])` (`hooks/
 use-workbench-commands.ts`) from the component that owns them — a domain workbench or a panel.
-The array may be an inline literal: the hook re-registers only when ids/labels/descriptions
-change and executed handlers always run the latest closures, so there are no effect
-dependencies to manage. Unregistration happens on unmount.
+The array may be an inline literal: the hook re-registers only when
+ids/categories/labels/descriptions change and executed handlers always run the latest closures,
+so there are no effect dependencies to manage. Unregistration happens on unmount.
+
+Commands carry no icons. Every command sets a `category` from the small fixed set — `View`
+(open/close/reopen panels, borders, maximize, reset), `Go to` (panel navigation), `Editor`,
+`Project`, `Database` — and the palette displays it as `Category: Label` (Title Case), sorted
+alphabetically. Don't bake the prefix into `label`.
 
 **Controls**: a panel contributes at most one chrome control with
 `useWorkbenchControl(id, content)` (`hooks/use-workbench-control.tsx`) from inside its body —
@@ -164,10 +169,10 @@ through the shell's `onPanelClose(pid, record)` prop.
 
 | File/folder | Role |
 |---|---|
-| `core/` | The dock core: shell (`workbench.tsx`), stage/tabset/tab/strip/border, panel layer + hosts (never-unmount bodies), drag layer + drop geometry, resizers, context menu, panel sheet, mobile shell, events bridge |
+| `core/` | The dock core: shell (`workbench.tsx`), stage/tabset/tab/strip/border, panel layer + hosts (never-unmount bodies), drag layer + drop geometry, resizers, context menu, panel sheet, mobile shell, events bridge, command palette + menu button, mobile actions + reset button |
 | `workbench.constants.ts` | Re-exports `WORKBENCH_COMPONENTS`; defines `WORKBENCH_PANEL_RECORDS` (shared instance records) |
-| `workbench-command-palette.tsx` | Cmd/Ctrl+Shift+P or F1 palette: registered commands + layout-derived entries (built only while open) |
-| `workbench-mobile-actions.tsx` / `workbench-reset-button.tsx` | On desktop the reset control rides at the end of the left rail, appended to `borderSlots.left.after`; the mobile layout has no rails, so it floats that same content bottom-left. Reset restores the default layout (hidden when `readOnly`) |
+| `core/workbench-command-palette.tsx` | Cmd/Ctrl+Shift+P or F1 palette: registered commands + layout-derived entries (built only while open), icon-less `Category: Label` rows in a deterministic alphabetical order |
+| `core/workbench-mobile-actions.tsx` / `core/workbench-reset-button.tsx` | On desktop the reset control rides at the end of the left rail, appended to `borderSlots.left.after`; the mobile layout has no rails, so it floats that same content bottom-left. Reset restores the default layout (hidden when `readOnly`) |
 | `engine/`, `engine/<domain>/` | Engine-scoped panels + one `<Domain>Workbench` per engine type |
 | `project/`, `project/<domain>/` | Project-scoped (`APP` mode) equivalents; sibling of `engine/`, **not** inside it |
 | `stores/workbench/workbench.types.ts` | Every workbench type: the dock domain (`WorkbenchLayout`, `WorkbenchPanelConfig`, `WorkbenchPanelProps`, `WorkbenchComponent`, …) plus `WorkbenchCommand` and `WorkbenchSlice`. One file — don't start a second |

@@ -51,9 +51,9 @@ export const ProjectPublishButton: React.FC = () => {
 	useWorkbenchCommands([
 		{
 			id: "workbench.project.publish",
+			category: "Project",
 			label: "Compile and Publish",
 			description: "Compile the project and publish a new release",
-			icon: <CloudUploadIcon />,
 			handler: () => {
 				void publish();
 			},

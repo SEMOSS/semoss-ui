@@ -564,7 +564,8 @@ export const DATABASE_COLUMNS_PANEL: WorkbenchPanelConfig = {
 	commands: (panel, get) => [
 		{
 			id: "refresh-structure",
-			label: "Refresh database structure",
+			category: "Database",
+			label: "Refresh Database Structure",
 			hint: panel.name,
 			run: () => {
 				void getDatabaseWorkbenchStore(get())

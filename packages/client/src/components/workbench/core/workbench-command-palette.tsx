@@ -1,18 +1,23 @@
 import { type FC, useEffect, useMemo, useState } from "react";
 import {
-	CommandDialog,
+	Command,
 	CommandEmpty,
 	CommandInput,
 	CommandItem,
 	CommandList,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
 } from "@semoss/ui/next";
 import { useWorkbench } from "@/hooks";
 
 interface WorkbenchPaletteItem {
 	id: string;
-	label: string;
+	/** The full "Category: Label" line the row shows and sorts by. */
+	displayLabel: string;
 	description?: string;
-	icon?: React.ReactNode;
 }
 
 /** Render and control the command palette for the nearest workbench. */
@@ -58,24 +63,30 @@ export const WorkbenchCommandPalette: FC = () => {
 		];
 
 		return merged
-			.filter((command) => {
+			.map((command) => ({
+				id: command.id,
+				displayLabel: command.category
+					? `${command.category}: ${command.label}`
+					: command.label,
+				description: command.description,
+			}))
+			.filter((item) => {
 				if (!query) {
 					return true;
 				}
 
 				const searchContent =
-					`${command.label} ${command.id} ${command.description ?? ""}`
+					`${item.displayLabel} ${item.id} ${item.description ?? ""}`
 						.toLowerCase()
 						.trim();
 				return searchContent.includes(query);
 			})
-			.sort((a, b) => a.label.localeCompare(b.label))
-			.map((command) => ({
-				id: command.id,
-				label: command.label,
-				description: command.description,
-				icon: command.icon,
-			}));
+			.sort(
+				(a, b) =>
+					a.displayLabel.localeCompare(b.displayLabel, undefined, {
+						sensitivity: "base",
+					}) || a.id.localeCompare(b.id),
+			);
 	}, [commandList, layoutCommands, search]);
 
 	useEffect(() => {
@@ -128,42 +139,51 @@ export const WorkbenchCommandPalette: FC = () => {
 	};
 
 	return (
-		<CommandDialog
-			open={isCommandOpen}
-			onOpenChange={handleOpenChange}
-			title="Workbench Command Palette"
-			description="Search commands"
-			showCloseButton={false}
-			className="max-w-sm rounded-lg border"
-		>
-			<CommandInput
-				aria-label="Search workbench commands"
-				placeholder="Search commands"
-				value={search}
-				onValueChange={setSearch}
-			/>
-			<CommandList>
-				<CommandEmpty>No Results Found</CommandEmpty>
-				{filteredItems.map((item) => (
-					<CommandItem
-						key={item.id}
-						value={`${item.label} ${item.id}`}
-						keywords={[item.id, item.description ?? ""]}
-						onSelect={() => {
-							runCommand(item.id);
-						}}
-					>
-						{item.icon}
-
-						<span className="min-w-0 truncate">{item.label}</span>
-						{item.description ? (
-							<span className="ml-auto min-w-0 truncate text-muted-foreground text-xs">
-								{item.description}
-							</span>
-						) : null}
-					</CommandItem>
-				))}
-			</CommandList>
-		</CommandDialog>
+		<Dialog open={isCommandOpen} onOpenChange={handleOpenChange}>
+			<DialogContent
+				className="max-w-md overflow-hidden rounded-lg border p-0"
+				showCloseButton={false}
+			>
+				<DialogHeader className="sr-only">
+					<DialogTitle>Workbench Command Palette</DialogTitle>
+					<DialogDescription>Search commands</DialogDescription>
+				</DialogHeader>
+				{/* shouldFilter off: the memo above is the only filter, so the
+				    alphabetical sort holds while typing instead of cmdk's
+				    fuzzy re-ranking */}
+				<Command
+					shouldFilter={false}
+					className="[&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-1 [&_[cmdk-item]]:text-[13px]"
+				>
+					<CommandInput
+						aria-label="Search workbench commands"
+						placeholder="Search commands"
+						value={search}
+						onValueChange={setSearch}
+					/>
+					<CommandList className="max-h-[320px] p-1">
+						<CommandEmpty>No Results Found</CommandEmpty>
+						{filteredItems.map((item) => (
+							<CommandItem
+								key={item.id}
+								value={item.id}
+								onSelect={() => {
+									runCommand(item.id);
+								}}
+							>
+								<span className="min-w-0 truncate">
+									{item.displayLabel}
+								</span>
+								{item.description ? (
+									<span className="ml-auto shrink-0 pl-3 text-muted-foreground text-xs">
+										{item.description}
+									</span>
+								) : null}
+							</CommandItem>
+						))}
+					</CommandList>
+				</Command>
+			</DialogContent>
+		</Dialog>
 	);
 };

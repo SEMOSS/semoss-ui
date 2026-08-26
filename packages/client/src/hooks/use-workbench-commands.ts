@@ -7,9 +7,9 @@ import { useWorkbench } from "./use-workbench";
  * the calling component (a panel or a domain workbench).
  *
  * The list may be an inline array literal: registration only refreshes when
- * the commands' ids, labels, or descriptions actually change — not on every
- * render — and executed handlers always run the latest closures, so callers
- * never have to think about effect dependencies.
+ * the commands' ids, categories, labels, or descriptions actually change — not
+ * on every render — and executed handlers always run the latest closures, so
+ * callers never have to think about effect dependencies.
  *
  * @name useWorkbenchCommands
  * @param commands - Commands to expose in this workbench's palette.
@@ -28,6 +28,7 @@ export const useWorkbenchCommands = (commands: WorkbenchCommand[]): void => {
 	const signature = JSON.stringify(
 		commands.map((command) => [
 			command.id,
+			command.category ?? "",
 			command.label,
 			command.description ?? "",
 		]),

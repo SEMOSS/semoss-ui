@@ -92,7 +92,7 @@ export const WorkbenchTabRenameInput: FC<{ pid: WorkbenchPanelId }> = ({
  */
 const RAIL_TAB_CELL = "relative w-7 flex-none";
 const RAIL_TAB_TURN =
-	"-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 h-7 w-max max-w-xs";
+	"-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 h-7 w-max max-w-40";
 
 /**
  * One tab, wherever panels are listed: a dock strip, the mobile strip, or a
@@ -203,7 +203,7 @@ export const WorkbenchTab: FC<WorkbenchTabProps> = memo(
 				role="tab"
 				aria-selected={active}
 				tabIndex={active ? 0 : -1}
-				title={record.helpText}
+				title={record.helpText || record.name}
 				onPointerDown={(e) => {
 					// primary button only: on a rail `select` toggles the
 					// panel, so a right-click would collapse it out from
@@ -235,7 +235,7 @@ export const WorkbenchTab: FC<WorkbenchTabProps> = memo(
 				}}
 				className={cn(
 					"group relative flex flex-none touch-none select-none items-center gap-1.5 rounded-md text-xs",
-					"max-w-xs px-2.5",
+					"max-w-40 px-2.5",
 					compact ? "h-10" : "h-7",
 					isDragging && "opacity-40",
 					active

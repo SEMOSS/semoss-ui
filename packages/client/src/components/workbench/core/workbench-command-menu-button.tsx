@@ -7,7 +7,7 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { useWorkbench } from "@/hooks";
-import { CHROME_BUTTON, CHROME_ICON } from "./core/workbench.chrome";
+import { CHROME_BUTTON, CHROME_ICON } from "./workbench.chrome";
 
 /** Open the command palette for the nearest workbench from the global navbar. */
 export const WorkbenchCommandMenuButton = () => {

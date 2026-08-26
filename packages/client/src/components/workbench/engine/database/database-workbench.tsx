@@ -1,9 +1,3 @@
-import {
-	DatabaseIcon,
-	FolderTreeIcon,
-	NetworkIcon,
-	SettingsIcon,
-} from "lucide-react";
 import { useEffect, useState } from "react";
 import type { StoreApi } from "zustand";
 import { makeEngineRoomMcp } from "@/api/rooms";
@@ -23,11 +17,11 @@ import {
 } from "@/stores/workbench/database";
 import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
 import { Workbench } from "../../core";
+import { WorkbenchCommandMenuButton } from "../../core/workbench-command-menu-button";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
 } from "../../workbench.constants";
-import { WorkbenchCommandMenuButton } from "../../workbench-command-menu-button";
 import { ENGINE_FILE_EDITOR_PANEL } from "../engine-file-editor-panel";
 import { ENGINE_FILE_EXPLORER_PANEL } from "../engine-file-explorer-panel";
 import { ENGINE_MCP_EDITOR_PANEL } from "../engine-mcp-editor-panel";
@@ -181,8 +175,8 @@ export const DatabaseWorkbench: React.FC = () => {
 	useWorkbenchCommands([
 		{
 			id: "workbench.file-explorer.open",
+			category: "View",
 			label: "Open File Explorer",
-			icon: <FolderTreeIcon />,
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.FILE_EXPLORER,
@@ -191,8 +185,8 @@ export const DatabaseWorkbench: React.FC = () => {
 		},
 		{
 			id: "workbench.settings.open",
+			category: "View",
 			label: "Open Settings",
-			icon: <SettingsIcon />,
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
@@ -201,8 +195,8 @@ export const DatabaseWorkbench: React.FC = () => {
 		},
 		{
 			id: "workbench.database-columns.open",
+			category: "View",
 			label: "Open Columns",
-			icon: <NetworkIcon />,
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
@@ -211,8 +205,8 @@ export const DatabaseWorkbench: React.FC = () => {
 		},
 		{
 			id: "workbench.database-query.open",
+			category: "Database",
 			label: "New Query",
-			icon: <DatabaseIcon />,
 			handler: () => {
 				databaseStore.getState().addQueryPanel("");
 			},

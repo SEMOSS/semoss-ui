@@ -1,11 +1,3 @@
-import {
-	BlocksIcon,
-	FlaskConicalIcon,
-	FolderTreeIcon,
-	PanelsTopLeftIcon,
-	SettingsIcon,
-	SquareTerminalIcon,
-} from "lucide-react";
 import { useCallback, useEffect } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
@@ -17,11 +9,11 @@ import type {
 } from "@/stores/workbench";
 import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
 import { Workbench } from "../../core";
+import { WorkbenchCommandMenuButton } from "../../core/workbench-command-menu-button";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
 } from "../../workbench.constants";
-import { WorkbenchCommandMenuButton } from "../../workbench-command-menu-button";
 import { PROJECT_ENGINES_PANEL } from "../project-engines-panel";
 import { PROJECT_FILE_EDITOR_PANEL } from "../project-file-editor-panel";
 import { PROJECT_FILE_EXPLORER_PANEL } from "../project-file-explorer-panel";
@@ -258,8 +250,8 @@ export const CodeWorkbench: React.FC = () => {
 	useWorkbenchCommands([
 		{
 			id: "workbench.project-file-explorer.open",
+			category: "View",
 			label: "Open File Explorer",
-			icon: <FolderTreeIcon />,
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER,
@@ -268,8 +260,8 @@ export const CodeWorkbench: React.FC = () => {
 		},
 		{
 			id: "workbench.project-insight-explorer.open",
+			category: "View",
 			label: "Open Insight File Explorer",
-			icon: <FlaskConicalIcon />,
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER,
@@ -278,8 +270,8 @@ export const CodeWorkbench: React.FC = () => {
 		},
 		{
 			id: "workbench.project-app-renderer.open",
+			category: "View",
 			label: "Open App Preview",
-			icon: <PanelsTopLeftIcon />,
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER,
@@ -288,8 +280,8 @@ export const CodeWorkbench: React.FC = () => {
 		},
 		{
 			id: "workbench.project-terminal.open",
+			category: "View",
 			label: "Open Terminal",
-			icon: <SquareTerminalIcon />,
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
@@ -298,8 +290,8 @@ export const CodeWorkbench: React.FC = () => {
 		},
 		{
 			id: "workbench.project-engines.open",
+			category: "View",
 			label: "Open Available Engines",
-			icon: <BlocksIcon />,
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.PROJECT_ENGINES,
@@ -308,8 +300,8 @@ export const CodeWorkbench: React.FC = () => {
 		},
 		{
 			id: "workbench.project-settings.open",
+			category: "View",
 			label: "Open Settings",
-			icon: <SettingsIcon />,
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.PROJECT_SETTINGS,

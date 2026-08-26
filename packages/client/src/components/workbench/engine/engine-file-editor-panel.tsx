@@ -1,7 +1,7 @@
 import { FileEditor, getFileIconComponent } from "@semoss/shared";
 import { MetadataHelpDialog } from "@/components/shared";
 import { MCP } from "@/constants";
-import { useEngine, useWorkbenchCommands } from "@/hooks";
+import { useEngine } from "@/hooks";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
@@ -17,24 +17,12 @@ export interface EngineFileEditorConfig {
 
 export const EngineFileEditorPanel: WorkbenchComponent<
 	EngineFileEditorConfig
-> = ({ id, config, rename }) => {
+> = ({ config, rename }) => {
 	const { engine, permission } = useEngine();
 
 	const readOnly = !(permission === "OWNER" || permission === "EDIT");
 
 	const isDriverFile = MCP.DRIVER_PATHS.some((f) => config.path.endsWith(f));
-
-	useWorkbenchCommands([
-		{
-			id: `workbench.engine-file-editor.${id}.close`,
-			label: `Close ${config.name}`,
-			description: "Close this file editor panel.",
-			icon: null,
-			handler: (get) => {
-				get().layout.actions.closePanel(id);
-			},
-		},
-	]);
 
 	if (config.fileMode === "INSIGHT" && config.insightId) {
 		return (

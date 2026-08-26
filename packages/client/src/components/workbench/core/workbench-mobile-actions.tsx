@@ -1,6 +1,6 @@
 import { useWorkbench } from "@/hooks";
-import type { WorkbenchBorderSlot } from "./core/workbench.types";
-import { resolveBorderSlot } from "./core/workbench-border";
+import type { WorkbenchBorderSlot } from "./workbench.types";
+import { resolveBorderSlot } from "./workbench-border";
 import { WorkbenchResetButton } from "./workbench-reset-button";
 
 export interface WorkbenchMobileActionsProps {
