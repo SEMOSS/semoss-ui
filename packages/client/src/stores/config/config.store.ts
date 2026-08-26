@@ -127,6 +127,16 @@ interface ConfigStoreInterface {
 		adminOnlyProjectDelete: boolean;
 		adminOnlyProjectSetDiscoverable: boolean;
 		adminOnlyProjectSetPublic: boolean;
+		adminOnlyWorkspaceAdd: boolean;
+		adminOnlyWorkspaceAddAccess: boolean;
+		adminOnlyWorkspaceDelete: boolean;
+		adminOnlyWorkspaceSetDiscoverable: boolean;
+		adminOnlyWorkspaceSetPublic: boolean;
+		adminOnlySkillAdd: boolean;
+		adminOnlySkillAddAccess: boolean;
+		adminOnlySkillDelete: boolean;
+		adminOnlySkillSetDiscoverable: boolean;
+		adminOnlySkillSetPublic: boolean;
 		adminOnlyStorageAdd: boolean;
 		adminOnlyStorageAddAccess: boolean;
 		adminOnlyStorageDelete: false;
@@ -205,6 +215,16 @@ export class ConfigStore {
 			adminOnlyProjectDelete: false,
 			adminOnlyProjectSetDiscoverable: false,
 			adminOnlyProjectSetPublic: false,
+			adminOnlyWorkspaceAdd: false,
+			adminOnlyWorkspaceAddAccess: false,
+			adminOnlyWorkspaceDelete: false,
+			adminOnlyWorkspaceSetDiscoverable: false,
+			adminOnlyWorkspaceSetPublic: false,
+			adminOnlySkillAdd: false,
+			adminOnlySkillAddAccess: false,
+			adminOnlySkillDelete: false,
+			adminOnlySkillSetDiscoverable: false,
+			adminOnlySkillSetPublic: false,
 			adminOnlyStorageAdd: false,
 			adminOnlyStorageAddAccess: false,
 			adminOnlyStorageDelete: false,
@@ -339,6 +359,8 @@ export class ConfigStore {
 
 		const moduleMap = {
 			PROJECT: "Project",
+			WORKSPACE: "Workspace",
+			SKILL: "Skill",
 			DATABASE: "Db",
 			FUNCTION: "Function",
 			MODEL: "Model",
@@ -788,7 +810,8 @@ export class ConfigStore {
 	 *
 	 * @param project - project metadata from the caller's context
 	 * @param role - the caller's resolved permission for this project
-	 * @param insightId - insight to bind the workspace to
+	 * @param insightId - insight to bind the workspace to, or "new" to have one
+	 * created
 	 */
 	async createWorkspace(
 		project: Project,
@@ -797,13 +820,24 @@ export class ConfigStore {
 	) {
 		// Automation reactors authorize their explicit project argument and run in the
 		// system-app iframe, so they must not depend on the legacy global app context.
+		let resolvedInsightId = insightId;
 		if (project.project_type !== "AUTOMATION") {
-			await runPixel(`SetContext("${project.project_id}")`, insightId);
+			// set the backend context for this insight
+			const response = await runPixel(
+				`SetContext("${project.project_id}")`,
+				insightId,
+			);
+
+			// the workspace is built around the insight the backend answered
+			// with. Asking for "new" means the id only exists in that
+			// response, and anything the workspace hands to the backend
+			// later (downloads, asset reads) has to name the real insight
+			resolvedInsightId = response.insightId;
 		}
 
 		// create the newly loaded workspace
 		return new WorkspaceStore(this._root, {
-			insightId,
+			insightId: resolvedInsightId,
 			role,
 			metadata: project,
 		});

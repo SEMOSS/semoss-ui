@@ -9,6 +9,7 @@ export * from "./entity-header";
 export * from "./file";
 export * from "./flex-layout";
 export * from "./form";
+export * from "./html";
 export * from "./icon-utils";
 export * from "./import-edit-metamodel";
 export * from "./login-page";
