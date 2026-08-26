@@ -23,12 +23,15 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
+	Slider,
 	Textarea,
 } from "@semoss/ui/next";
 import {
 	type ContextReturnPlan,
 	type ContextReturnPlanItem,
 	estimateTokens,
+	RETURN_BUDGET_MIN_CHARS,
+	RETURN_BUDGET_STEP_CHARS,
 	returnBudgetOptions,
 } from "../domain/selected-text";
 import type {
@@ -119,6 +122,16 @@ export const SelectedTextContextsPanel: React.FC<
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [draft, setDraft] = useState("");
 	const panelId = useId();
+	const budgetOptions = returnBudgetOptions(limits);
+	const [customBudget, setCustomBudget] = useState(
+		() =>
+			!budgetOptions.some((option) => option.chars === returnBudgetChars),
+	);
+	// Tracks the slider while dragging so the readout stays live before commit.
+	const [budgetDraft, setBudgetDraft] = useState(returnBudgetChars);
+	useEffect(() => {
+		setBudgetDraft(returnBudgetChars);
+	}, [returnBudgetChars]);
 	useEffect(() => {
 		if (
 			editingId &&
@@ -128,7 +141,6 @@ export const SelectedTextContextsPanel: React.FC<
 			setDraft("");
 		}
 	}, [contexts, editingId]);
-	const budgetOptions = returnBudgetOptions(limits);
 	const summary = returnPlan.summary;
 	const planById = new Map(
 		returnPlan.items.map((item) => [item.contextId, item]),
@@ -187,10 +199,19 @@ export const SelectedTextContextsPanel: React.FC<
 									Playground return budget
 								</Label>
 								<Select
-									value={String(returnBudgetChars)}
-									onValueChange={(value) =>
-										onReturnBudgetChange(Number(value))
+									value={
+										customBudget
+											? "custom"
+											: String(returnBudgetChars)
 									}
+									onValueChange={(value) => {
+										if (value === "custom") {
+											setCustomBudget(true);
+											return;
+										}
+										setCustomBudget(false);
+										onReturnBudgetChange(Number(value));
+									}}
 								>
 									<SelectTrigger
 										id={`${panelId}-budget`}
@@ -211,8 +232,38 @@ export const SelectedTextContextsPanel: React.FC<
 												k
 											</SelectItem>
 										))}
+										<SelectItem value="custom">
+											Custom
+										</SelectItem>
 									</SelectContent>
 								</Select>
+								{customBudget && (
+									<div className="space-y-1.5 pt-0.5">
+										<Slider
+											aria-label="Custom Playground return budget"
+											value={[budgetDraft]}
+											min={RETURN_BUDGET_MIN_CHARS}
+											max={
+												limits.maximumReturnBudgetChars
+											}
+											step={RETURN_BUDGET_STEP_CHARS}
+											onValueChange={([value]) =>
+												setBudgetDraft(value)
+											}
+											onValueCommit={([value]) =>
+												onReturnBudgetChange(value)
+											}
+										/>
+										<p className="text-muted-foreground text-xs">
+											{budgetDraft.toLocaleString()}{" "}
+											characters · approximately{" "}
+											{estimateTokens(
+												budgetDraft,
+											).toLocaleString()}{" "}
+											tokens (estimate)
+										</p>
+									</div>
+								)}
 								{summary.truncated && (
 									<p className="text-warning text-xs">
 										{summary.omittedChars.toLocaleString()}{" "}

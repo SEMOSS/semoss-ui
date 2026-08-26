@@ -18,6 +18,10 @@ const RETURN_BUDGET_PRESETS = [
 	{ label: "Maximum", chars: 100_000 },
 ];
 
+/** Bounds for the custom return-budget slider. */
+export const RETURN_BUDGET_MIN_CHARS = 1_000;
+export const RETURN_BUDGET_STEP_CHARS = 1_000;
+
 /** Rough characters-per-token ratio used only for display estimates. */
 const CHARS_PER_TOKEN = 4;
 
