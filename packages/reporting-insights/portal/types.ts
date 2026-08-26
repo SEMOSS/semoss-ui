@@ -6,7 +6,7 @@ export interface Parameter {
 	label: string;
 	defaultValue: string;
 	/** 'text' | 'dropdown' | 'multiselect' (SQL IN list) | 'date'. Default 'text'. */
-	inputType?: "text" | "dropdown" | "multiselect" | "date";
+	inputType?: "text" | "dropdown" | "multiselect" | "date" | "event";
 	/** Whether a value is required before the query can run. */
 	required?: boolean;
 	/** Dropdown/multiselect: manual options (merged with SQL-fetched ones). */

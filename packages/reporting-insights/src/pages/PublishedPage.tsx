@@ -74,8 +74,10 @@ export function PublishedPage() {
 					const full = await loadDashboardRef.current(id);
 					const has =
 						full.sheets.some((s) => s.isParamSheet) ||
-						full.queries?.some(
-							(q) => (q.parameters?.length ?? 0) > 0,
+						full.queries?.some((q) =>
+							(q.parameters ?? []).some(
+								(p) => p.inputType !== "event",
+							),
 						) ||
 						false;
 					return has ? id : null;

@@ -197,6 +197,7 @@ export function computeParamGroups(queries: DashboardQuery[]): ParamGroup[] {
 	const map = new Map<string, ParamGroup>();
 	for (const q of queries) {
 		for (const p of q.parameters ?? []) {
+			if (p.inputType === "event") continue;
 			const existing = map.get(p.name);
 			if (existing) {
 				existing.queryIds.push(q.id);
@@ -261,8 +262,15 @@ export function ensureParamSheet<S extends ParamSheetLike>(
 	sheets: S[],
 	queries: DashboardQuery[],
 ): S[] {
+	const hasNonEventParams = queries.some((q) =>
+		(q.parameters ?? []).some((p) => p.inputType !== "event"),
+	);
+	// Remove an existing param sheet when no non-event params remain.
+	if (!hasNonEventParams)
+		return sheets.some((s) => s.isParamSheet)
+			? sheets.filter((s) => !s.isParamSheet)
+			: sheets;
 	if (sheets.some((s) => s.isParamSheet)) return sheets;
-	if (!queries.some((q) => (q.parameters?.length ?? 0) > 0)) return sheets;
 	const id = sheets.some((s) => s.id === PARAM_SHEET_ID)
 		? "sheet-params-auto"
 		: PARAM_SHEET_ID;

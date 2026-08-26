@@ -516,17 +516,23 @@ const DROP_ZONES_CONFIG: Record<VisualizationType, DropZone[]> = {
 	],
 	cluster: [
 		{
-			id: "xAxis",
-			label: "Category (Required)",
+			id: "cluster",
+			label: "Cluster (Required)",
 			multiColumn: false,
-			placeholder: "Drag a categorical column",
+			placeholder: "Drag a column \u2014 values become cluster groups",
 		},
 		{
-			id: "yAxis",
-			label: "Values (Required)",
+			id: "label",
+			label: "Label (Required)",
+			multiColumn: false,
+			placeholder:
+				"Drag a column \u2014 values label dots within clusters",
+		},
+		{
+			id: "tooltip",
+			label: "Tooltip",
 			multiColumn: true,
-			aggregation: false,
-			placeholder: "Drag one or more numeric columns",
+			placeholder: "Drag columns to show in dot tooltip",
 		},
 	],
 	htmlblock: [],
@@ -670,11 +676,13 @@ const NUMERIC_AGGREGATION_OPTIONS = [
 	{ value: "min", label: "Minimum" },
 	{ value: "max", label: "Maximum" },
 	{ value: "median", label: "Median" },
+	{ value: "raw", label: "None (Raw Value)" },
 ];
 
 const STRING_AGGREGATION_OPTIONS = [
 	{ value: "count", label: "Count" },
 	{ value: "countUnique", label: "Unique Count" },
+	{ value: "raw", label: "None (Raw Value)" },
 ];
 
 const getAggregationOptionsForColumn = (dataType: string) => {

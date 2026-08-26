@@ -35,7 +35,9 @@ export function aggregateValue(values: unknown[], aggType: string): number {
 	if (aggType === "count") return values.length;
 	if (aggType === "countUnique") return new Set(values).size;
 
-	const numVals = values.map((v) => Number(v)).filter((v) => !isNaN(v));
+	const numVals = values
+		.map((v) => Number(v))
+		.filter((v) => !Number.isNaN(v));
 	if (!numVals.length) return 0;
 
 	switch (aggType) {
@@ -292,7 +294,6 @@ export function strokeDashFor(
 			return "6 4";
 		case "dotted":
 			return "2 4";
-		case "solid":
 		default:
 			return undefined;
 	}

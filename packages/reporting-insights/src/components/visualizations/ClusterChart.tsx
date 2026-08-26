@@ -1,78 +1,205 @@
 /**
- * ClusterChart — pure SVG jitter-plot / strip-plot / dot-plot.
- * Props: data (array of row objects), config (VisualizationConfig).
+ * ClusterChart — circular packed dot clusters.
  *
  * Config fields used:
- *   config.xKey        — category column (groups the dots)
- *   config.yKeys       — numeric value column(s); multiple = multi-series
- *   config.styling?.cluster — ClusterStyling options
+ *   config.xKey           — cluster grouping column (one circle per distinct value)
+ *   config.yKeys[0]       — label column (each dot's identity shown in tooltip)
+ *   config.tooltips[]     — additional columns shown in the hover tooltip
+ *   config.styling?.cluster — ClusterStyling (dotRadius, fillOpacity, colorRules)
+ *   config.styling?.colorPalette — shared color palette override
  */
-import type { VisualizationConfig } from "@/types/dashboard";
 
-const PALETTE = [
-	"#6366f1",
-	"#8b5cf6",
-	"#ec4899",
-	"#f59e0b",
-	"#10b981",
-	"#3b82f6",
-	"#ef4444",
-	"#14b8a6",
-	"#f97316",
-	"#84cc16",
-];
-
-// ── Component ─────────────────────────────────────────────────────────────────
+import { useMemo, useState } from "react";
+import {
+	CHART_COLORS,
+	compareColorRule,
+} from "@/components/visualizations/shared/chartShared";
+import type {
+	ColorRule,
+	VisualizationConfig,
+	VizTriggerPayload,
+} from "@/types/dashboard";
 
 interface ClusterChartProps {
-	data: any[];
+	data: Record<string, unknown>[];
 	config?: VisualizationConfig;
+	onTrigger?: (payload: VizTriggerPayload) => void;
 }
 
 const SVG_W = 500;
 const SVG_H = 350;
-const PAD_TOP = 20;
-const PAD_BOTTOM = 60;
-const PAD_LEFT = 60;
-const PAD_RIGHT = 20;
-const CHART_W = SVG_W - PAD_LEFT - PAD_RIGHT;
-const CHART_H = SVG_H - PAD_TOP - PAD_BOTTOM;
-const GRID_LINES = 5;
-const JITTER_WIDTH = 60; // max total horizontal spread per cluster
+const PAD = 12;
+const LABEL_RESERVE = 32; // px below cluster center for group name + count
+const DOT_GAP = 2; // px between dot edges
 
-/** Format a Y-axis tick value compactly. */
-function fmtY(v: number): string {
-	if (Math.abs(v) >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
-	if (Math.abs(v) >= 1_000) return `${(v / 1_000).toFixed(1)}k`;
-	return v % 1 === 0 ? String(Math.round(v)) : v.toFixed(1);
+/** Build (dx, dy) positions for N dots packed in concentric rings. */
+function buildRingPositions(
+	n: number,
+	step: number,
+): Array<{ dx: number; dy: number }> {
+	const out: Array<{ dx: number; dy: number }> = [];
+	if (n <= 0) return out;
+	out.push({ dx: 0, dy: 0 });
+	let ring = 1;
+	while (out.length < n) {
+		// Each ring k sits at radius k*step; we fit as many dots as the circumference allows.
+		const radius = ring * step;
+		const capacity = Math.max(1, Math.round((2 * Math.PI * radius) / step));
+		for (let i = 0; i < capacity && out.length < n; i++) {
+			const angle = (2 * Math.PI * i) / capacity;
+			out.push({
+				dx: radius * Math.cos(angle),
+				dy: radius * Math.sin(angle),
+			});
+		}
+		ring++;
+	}
+	return out;
 }
 
-export function ClusterChart({ data, config }: ClusterChartProps) {
+/** Rings needed for N dots (approximate, for sizing). */
+function ringsNeeded(n: number, step: number): number {
+	if (n <= 1) return 0;
+	let ring = 0;
+	let filled = 1;
+	while (filled < n) {
+		ring++;
+		filled += Math.max(1, Math.round((2 * Math.PI * ring * step) / step));
+	}
+	return ring;
+}
+
+interface PlottedDot {
+	row: Record<string, unknown>;
+	cx: number;
+	cy: number;
+	color: string;
+	label: string;
+}
+
+export function ClusterChart({ data, config, onTrigger }: ClusterChartProps) {
 	const xKey = config?.xKey ?? "";
-	const yKeys: string[] =
-		config?.yKeys && config.yKeys.length > 0 ? config.yKeys : [];
+	const labelKey = config?.yKeys?.[0] ?? "";
+	const tooltipEntries = useMemo(
+		() => config?.tooltips ?? [],
+		[config?.tooltips],
+	);
 
 	const clusterStyling = (config?.styling as any)?.cluster ?? {};
-	const dotRadius: number =
+	const preferredRadius: number =
 		typeof clusterStyling.dotRadius === "number"
 			? clusterStyling.dotRadius
 			: 5;
-	const showMean: boolean = clusterStyling.showMean === true;
 	const fillOpacity: number =
 		typeof clusterStyling.fillOpacity === "number"
 			? clusterStyling.fillOpacity
-			: 0.7;
+			: 0.8;
+	const colorRules: ColorRule[] = clusterStyling.colorRules ?? [];
+	const palette: string[] = (config?.styling?.colorPalette as any)?.colors
+		?.length
+		? (config!.styling!.colorPalette as any).colors
+		: CHART_COLORS;
 
-	// ── Unconfigured / no data states ──────────────────────────────────────────
-	if (!xKey || yKeys.length === 0) {
+	const [hovered, setHovered] = useState<{
+		row: Record<string, unknown>;
+		svgX: number;
+		svgY: number;
+	} | null>(null);
+
+	// ── Derived layout (memoised) ────────────────────────────────────────────────
+	const { dots, groups, dotRadius } = useMemo(() => {
+		if (!xKey || !data.length)
+			return {
+				dots: [] as PlottedDot[],
+				groups: [] as Array<[string, number]>,
+				dotRadius: preferredRadius,
+			};
+
+		// Group rows by cluster column (preserve first-seen order)
+		const groupMap = new Map<string, Record<string, unknown>[]>();
+		for (const row of data) {
+			const key = String(row[xKey] ?? "");
+			if (!groupMap.has(key)) groupMap.set(key, []);
+			groupMap.get(key)!.push(row);
+		}
+		const groupEntries = [...groupMap.entries()]; // [name, rows][]
+		const numGroups = groupEntries.length;
+
+		// Available area for all cluster circles
+		const availW = SVG_W - 2 * PAD;
+		const availH = SVG_H - 2 * PAD - LABEL_RESERVE;
+		// Max radius any single cluster can occupy
+		const maxR = Math.min(availH / 2, availW / numGroups / 2) - 4;
+
+		// Find a dotRadius that fits the largest cluster within maxR.
+		// rings * step <= maxR  →  step <= maxR / rings
+		const largestCount = Math.max(...groupEntries.map(([, r]) => r.length));
+		let dr = preferredRadius;
+		for (let attempt = preferredRadius; attempt >= 2; attempt--) {
+			const step = attempt * 2 + DOT_GAP;
+			const rings = ringsNeeded(largestCount, step);
+			if (rings * step <= maxR) {
+				dr = attempt;
+				break;
+			}
+			dr = 2; // floor
+		}
+		const step = dr * 2 + DOT_GAP;
+
+		const resolveColor = (
+			row: Record<string, unknown>,
+			groupIdx: number,
+		): string => {
+			for (const rule of colorRules) {
+				if (
+					compareColorRule(
+						rule.comparator,
+						row[rule.valueColumn],
+						rule.value,
+					)
+				)
+					return rule.color;
+			}
+			return palette[groupIdx % palette.length];
+		};
+
+		const dots: PlottedDot[] = [];
+		const groups: Array<[string, number]> = [];
+		const slotW = availW / numGroups;
+
+		for (let gi = 0; gi < groupEntries.length; gi++) {
+			const [name, rows] = groupEntries[gi];
+			groups.push([name, rows.length]);
+			const cx = PAD + gi * slotW + slotW / 2;
+			const cy = PAD + availH / 2;
+			const ringPositions = buildRingPositions(rows.length, step);
+
+			for (let di = 0; di < rows.length; di++) {
+				const row = rows[di];
+				const { dx, dy } = ringPositions[di] ?? { dx: 0, dy: 0 };
+				const label = labelKey ? String(row[labelKey] ?? "") : "";
+				dots.push({
+					row,
+					cx: cx + dx,
+					cy: cy + dy,
+					color: resolveColor(row, gi),
+					label,
+				});
+			}
+		}
+
+		return { dots, groups, dotRadius: dr };
+	}, [data, xKey, labelKey, preferredRadius, colorRules, palette]);
+
+	// ── Early returns (all hooks above this line) ────────────────────────────────
+	if (!xKey || !labelKey) {
 		return (
 			<div className="flex h-full items-center justify-center text-slate-400 text-sm">
-				Configure a Category column and a Values column to render the
-				cluster chart.
+				Configure a Cluster column and a Label column to render the
+				chart.
 			</div>
 		);
 	}
-
 	if (!data.length) {
 		return (
 			<div className="flex h-full items-center justify-center text-slate-400 text-sm">
@@ -81,297 +208,103 @@ export function ClusterChart({ data, config }: ClusterChartProps) {
 		);
 	}
 
-	// ── Build point list per series ────────────────────────────────────────────
-	interface Point {
-		category: string;
-		value: number;
-		seriesIdx: number;
-	}
-
-	const points: Point[] = [];
-	for (const row of data) {
-		const cat = String(row[xKey] ?? "");
-		for (let si = 0; si < yKeys.length; si++) {
-			const val = Number(row[yKeys[si]]);
-			if (!isNaN(val)) {
-				points.push({ category: cat, value: val, seriesIdx: si });
-			}
-		}
-	}
-
-	if (points.length === 0) {
-		return (
-			<div className="flex h-full items-center justify-center text-slate-400 text-sm">
-				No numeric values in the selected column(s).
-			</div>
-		);
-	}
-
-	// ── Unique categories (order of first appearance) ──────────────────────────
-	const categoriesSet = new Set<string>();
-	for (const row of data) {
-		const cat = String(row[xKey] ?? "");
-		categoriesSet.add(cat);
-	}
-	const categories = Array.from(categoriesSet);
-	const n = categories.length;
-
-	// ── Y scale ───────────────────────────────────────────────────────────────
-	const allValues = points.map((p) => p.value);
-	const rawMin = Math.min(...allValues);
-	const rawMax = Math.max(...allValues);
-	const valueRange = rawMax - rawMin || 1;
-	const yMin = rawMin - valueRange * 0.08;
-	const yMax = rawMax + valueRange * 0.08;
-	const yRange = yMax - yMin;
-
-	const toY = (v: number) =>
-		PAD_TOP + CHART_H - ((v - yMin) / yRange) * CHART_H;
-
-	// ── X layout ──────────────────────────────────────────────────────────────
-	const catIdx = new Map(categories.map((c, i) => [c, i]));
-	const catX = (i: number) => PAD_LEFT + (i + 0.5) * (CHART_W / n);
-
-	// ── Jitter: deterministic horizontal offset within each cluster ───────────
-	// Group points by (category × series) for jitter computation
-	const groupKey = (p: Point) => `${p.category}__${p.seriesIdx}`;
-	const grouped = new Map<string, Point[]>();
-	for (const p of points) {
-		const k = groupKey(p);
-		if (!grouped.has(k)) grouped.set(k, []);
-		grouped.get(k)!.push(p);
-	}
-
-	// Number of series
-	const numSeries = yKeys.length;
-
-	// For multi-series, offset cluster centers slightly to separate them
-	const seriesOffset = (si: number) => {
-		if (numSeries <= 1) return 0;
-		const totalSpread = Math.min(JITTER_WIDTH * 0.6, 30);
-		const step = totalSpread / (numSeries - 1);
-		return -totalSpread / 2 + si * step;
-	};
-
-	interface PlottedPoint extends Point {
-		px: number;
-		py: number;
-	}
-
-	const plottedPoints: PlottedPoint[] = [];
-	for (const [k, group] of grouped.entries()) {
-		const [cat, siStr] = k.split("__");
-		const si = Number(siStr);
-		const ci = catIdx.get(cat) ?? 0;
-		const centerX = catX(ci) + seriesOffset(si);
-
-		// Sort values and spread them deterministically
-		const sorted = [...group].sort((a, b) => a.value - b.value);
-		const N = Math.min(sorted.length, 20);
-		const spacing =
-			sorted.length > 1 ? Math.min(JITTER_WIDTH / sorted.length, 8) : 0;
-
-		sorted.forEach((p, idx) => {
-			const offset =
-				sorted.length > 1
-					? (idx - (sorted.length - 1) / 2) * spacing
-					: 0;
-			const clampedOffset = Math.max(
-				-JITTER_WIDTH / 2,
-				Math.min(JITTER_WIDTH / 2, offset),
-			);
-			plottedPoints.push({
-				...p,
-				px: centerX + clampedOffset,
-				py: toY(p.value),
-			});
-		});
-
-		void N; // used in spread formula comment above
-	}
-
-	// ── Per-category count ────────────────────────────────────────────────────
-	const categoryCounts = new Map<string, number>();
-	for (const row of data) {
-		const cat = String(row[xKey] ?? "");
-		categoryCounts.set(cat, (categoryCounts.get(cat) ?? 0) + 1);
-	}
-
-	// ── Optional mean lines ───────────────────────────────────────────────────
-	interface MeanInfo {
-		ci: number;
-		si: number;
-		mean: number;
-	}
-	const means: MeanInfo[] = [];
-	if (showMean) {
-		for (const [k, group] of grouped.entries()) {
-			const [cat, siStr] = k.split("__");
-			const si = Number(siStr);
-			const ci = catIdx.get(cat) ?? 0;
-			const mean = group.reduce((s, p) => s + p.value, 0) / group.length;
-			means.push({ ci, si, mean });
-		}
-	}
-
-	// ── Grid line values ──────────────────────────────────────────────────────
-	const gridVals = Array.from(
-		{ length: GRID_LINES + 1 },
-		(_, i) => yMin + (i / GRID_LINES) * yRange,
-	);
-
-	// ── Mean line width ───────────────────────────────────────────────────────
-	const meanHalfW = Math.min(20, (CHART_W / n) * 0.3);
+	const numGroups = groups.length;
+	const slotW = (SVG_W - 2 * PAD) / Math.max(numGroups, 1);
+	const clusterCY = PAD + (SVG_H - 2 * PAD - LABEL_RESERVE) / 2;
 
 	return (
-		<svg
-			viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-			className="h-full w-full"
-			style={{ display: "block" }}
-			aria-label="Cluster chart"
-		>
-			{/* Y grid lines + Y axis labels */}
-			{gridVals.map((v, i) => {
-				const y = toY(v);
-				return (
-					<g key={i}>
-						<line
-							x1={PAD_LEFT}
-							x2={PAD_LEFT + CHART_W}
-							y1={y}
-							y2={y}
-							stroke="#e2e8f0"
-							strokeWidth={1}
-						/>
-						<text
-							x={PAD_LEFT - 4}
-							y={y}
-							textAnchor="end"
-							dominantBaseline="middle"
-							fontSize={9}
-							fill="#94a3b8"
-						>
-							{fmtY(v)}
-						</text>
-					</g>
-				);
-			})}
-
-			{/* X axis baseline */}
-			<line
-				x1={PAD_LEFT}
-				x2={PAD_LEFT + CHART_W}
-				y1={PAD_TOP + CHART_H}
-				y2={PAD_TOP + CHART_H}
-				stroke="#cbd5e1"
-				strokeWidth={1}
-			/>
-
-			{/* Dots */}
-			{plottedPoints.map((p, i) => {
-				const color =
-					numSeries > 1
-						? PALETTE[p.seriesIdx % PALETTE.length]
-						: PALETTE[catIdx.get(p.category)! % PALETTE.length];
-				return (
+		<div className="relative h-full w-full overflow-hidden">
+			<svg
+				viewBox={`0 0 ${SVG_W} ${SVG_H}`}
+				className="h-full w-full"
+				style={{ display: "block" }}
+				aria-label="Cluster chart"
+			>
+				{/* Dots */}
+				{dots.map((d, i) => (
 					<circle
 						key={i}
-						cx={p.px}
-						cy={p.py}
+						cx={d.cx}
+						cy={d.cy}
 						r={dotRadius}
-						fill={color}
+						fill={d.color}
 						fillOpacity={fillOpacity}
-						stroke={color}
-						strokeWidth={0.5}
-						strokeOpacity={Math.min(fillOpacity + 0.2, 1)}
+						stroke={d.color}
+						strokeWidth={0.4}
+						strokeOpacity={Math.min(fillOpacity + 0.15, 1)}
+						style={{ cursor: onTrigger ? "pointer" : "default" }}
+						onMouseEnter={() =>
+							setHovered({ row: d.row, svgX: d.cx, svgY: d.cy })
+						}
+						onMouseLeave={() => setHovered(null)}
+						onClick={() =>
+							onTrigger?.({
+								trigger: "click",
+								label: d.label,
+								row: d.row,
+							})
+						}
 					/>
-				);
-			})}
+				))}
 
-			{/* Optional mean lines */}
-			{means.map((m, i) => {
-				const cx = catX(m.ci) + seriesOffset(m.si);
-				const my = toY(m.mean);
-				const color =
-					numSeries > 1
-						? PALETTE[m.si % PALETTE.length]
-						: PALETTE[m.ci % PALETTE.length];
-				return (
-					<line
-						key={i}
-						x1={cx - meanHalfW}
-						x2={cx + meanHalfW}
-						y1={my}
-						y2={my}
-						stroke={color}
-						strokeWidth={2.5}
-						strokeOpacity={0.9}
-					/>
-				);
-			})}
+				{/* Group labels below each cluster */}
+				{groups.map(([name, count], gi) => {
+					const cx = PAD + gi * slotW + slotW / 2;
+					const labelY =
+						clusterCY + (SVG_H - 2 * PAD - LABEL_RESERVE) / 2 + 18;
+					const displayName =
+						name.length > 20 ? name.slice(0, 19) + "…" : name;
+					return (
+						<g key={gi}>
+							<text
+								x={cx}
+								y={labelY}
+								textAnchor="middle"
+								fontSize={11}
+								fontWeight={600}
+								fill="#374151"
+							>
+								{displayName}
+							</text>
+							<text
+								x={cx}
+								y={labelY + 13}
+								textAnchor="middle"
+								fontSize={9}
+								fill="#9ca3af"
+							>
+								n={count}
+							</text>
+						</g>
+					);
+				})}
+			</svg>
 
-			{/* X axis category labels + count */}
-			{categories.map((cat, i) => {
-				const cx = catX(i);
-				const label = cat.length > 14 ? cat.slice(0, 13) + "…" : cat;
-				const count = categoryCounts.get(cat) ?? 0;
-				return (
-					<g key={cat}>
-						<text
-							x={cx}
-							y={PAD_TOP + CHART_H + 14}
-							textAnchor="middle"
-							fontSize={10}
-							fill="#475569"
-						>
-							{label}
-						</text>
-						<text
-							x={cx}
-							y={PAD_TOP + CHART_H + 26}
-							textAnchor="middle"
-							fontSize={8}
-							fill="#94a3b8"
-						>
-							n={count}
-						</text>
-					</g>
-				);
-			})}
-
-			{/* Multi-series legend */}
-			{numSeries > 1 && (
-				<g>
-					{yKeys.map((key, si) => {
-						const legendX = PAD_LEFT + si * 100;
-						const legendY = SVG_H - 8;
-						const color = PALETTE[si % PALETTE.length];
-						if (legendX + 90 > SVG_W - PAD_RIGHT) return null;
-						return (
-							<g key={si}>
-								<circle
-									cx={legendX}
-									cy={legendY}
-									r={4}
-									fill={color}
-									fillOpacity={fillOpacity}
-								/>
-								<text
-									x={legendX + 8}
-									y={legendY}
-									dominantBaseline="middle"
-									fontSize={8}
-									fill="#64748b"
-								>
-									{key.length > 10
-										? key.slice(0, 9) + "…"
-										: key}
-								</text>
-							</g>
-						);
-					})}
-				</g>
+			{/* Hover tooltip */}
+			{hovered && (labelKey || tooltipEntries.length > 0) && (
+				<div
+					className="pointer-events-none absolute z-50 max-w-[220px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-700 text-xs shadow-lg"
+					style={{
+						left: `${(hovered.svgX / SVG_W) * 100}%`,
+						top: `${(hovered.svgY / SVG_H) * 100}%`,
+						transform: "translate(10px, -50%)",
+					}}
+				>
+					{labelKey && (
+						<p className="mb-1 truncate font-semibold">
+							{labelKey}: {String(hovered.row[labelKey] ?? "")}
+						</p>
+					)}
+					{tooltipEntries.map(({ column }) => (
+						<p key={column} className="truncate text-slate-500">
+							<span className="font-medium text-slate-600">
+								{column}:
+							</span>{" "}
+							{String(hovered.row[column] ?? "")}
+						</p>
+					))}
+				</div>
 			)}
-		</svg>
+		</div>
 	);
 }

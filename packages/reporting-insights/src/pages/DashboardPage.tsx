@@ -1,4 +1,10 @@
-import { Layout, type Model, type TabNode } from "flexlayout-react";
+import {
+	Actions,
+	type ILayoutApi,
+	Layout,
+	type Model,
+	type TabNode,
+} from "flexlayout-react";
 import {
 	ArrowLeft,
 	CopyPlus,
@@ -9,7 +15,15 @@ import {
 	Trash2,
 	UploadCloud,
 } from "lucide-react";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	type MutableRefObject,
+	memo,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { DashboardVisualization } from "@/components/DashboardVisualization";
 import { formatSqlList, isParamSatisfied } from "@/components/ParamControl";
@@ -20,6 +34,7 @@ import { ShareDialog } from "@/components/ShareDialog";
 import { Button, buttonClasses, ConfirmDialog } from "@/components/ui";
 import { useToast } from "@/components/ui/Toast";
 import { DashboardFilterProvider } from "@/lib/dashboardFilters";
+import { EventParamProvider, useEventParamStore } from "@/lib/eventParamStore";
 import { fullTimestamp, timeAgo } from "@/lib/format";
 import { publishedPortalUrl } from "@/lib/portalUrl";
 import {
@@ -30,7 +45,6 @@ import {
 	resolveQuery,
 } from "@/lib/resolveQuery";
 import { useTabColors } from "@/lib/tabColors";
-import { GROUP_PERM_NUM } from "@/services/permissionsApi";
 import type {
 	Dashboard,
 	DashboardQuery,
@@ -42,6 +56,7 @@ import {
 	isViewOnlyLayoutAction,
 } from "@/utils/dashboardLayout";
 import { useWorkspace } from "@/workspace/WorkspaceProvider";
+import { GROUP_PERM_NUM } from "../services/permissionsApi";
 
 function getDashboardSheets(dashboard: Dashboard): Sheet[] {
 	if (dashboard.sheets?.length) return dashboard.sheets;
@@ -71,6 +86,7 @@ interface SheetCanvasProps {
 	runKeys: Record<string, number>;
 	hasParamSheet: boolean;
 	makeSaveModel: (sheetId: string) => (model: Model) => void;
+	layoutRef?: MutableRefObject<ILayoutApi | null>;
 }
 const SheetCanvas = memo(function SheetCanvas({
 	sheet,
@@ -80,6 +96,7 @@ const SheetCanvas = memo(function SheetCanvas({
 	runKeys,
 	hasParamSheet,
 	makeSaveModel,
+	layoutRef,
 }: SheetCanvasProps) {
 	const factory = useCallback(
 		(node: TabNode) => {
@@ -119,6 +136,7 @@ const SheetCanvas = memo(function SheetCanvas({
 	);
 	return (
 		<Layout
+			ref={layoutRef}
 			model={model}
 			factory={factory}
 			onModelChange={onModelChange}
@@ -129,7 +147,7 @@ const SheetCanvas = memo(function SheetCanvas({
 				if (!vizId) return;
 				const viz = sheet.visualizations.find((v) => v.id === vizId);
 				const label = (
-					<span className="max-w-[110px] truncate">
+					<span className="max-w-[500px] truncate">
 						{viz?.title || "Untitled"}
 					</span>
 				);
@@ -182,21 +200,27 @@ export function DashboardPage() {
 	const sheets = dashboard ? getDashboardSheets(dashboard) : [];
 	useTabColors(sheets.flatMap((s) => s.visualizations));
 
-	// Permission (from the listing). Read-only users can't load the working copy
-	// (GetAppAssets needs edit access) and get no management actions, so we send
-	// them straight to the deployed portal instead of the in-app editor view.
-	const permNum = Number(
+	// Permission (from the listing). Only OWNER/EDITOR users see the in-app
+	// dashboard view. Everyone else (Viewer, READ_ONLY, etc) is redirected to the deployed portal.
+	const permRaw = String(
 		Array.isArray(dashboard?.permission)
 			? (dashboard?.permission?.[0] ?? "")
 			: (dashboard?.permission ?? ""),
-	);
-	const perm = Object.keys(GROUP_PERM_NUM).find(
-		(key) => GROUP_PERM_NUM[key] === permNum,
-	);
+	).toUpperCase();
+	// permRaw may be a role name ("OWNER") or a numeric string ("1").
+	const permNum = Number(permRaw);
+	const perm = Number.isNaN(permNum)
+		? permRaw in GROUP_PERM_NUM
+			? permRaw
+			: undefined
+		: Object.keys(GROUP_PERM_NUM).find(
+				(key) => GROUP_PERM_NUM[key] === permNum,
+			);
 	const canEdit = perm === "OWNER" || perm === "EDIT" || perm === "EDITOR";
 	const isOwner = perm === "OWNER";
 	const canManage = canEdit;
-	const isReadOnly = !canEdit;
+	// Only treat as read-only once we have actual permission data.
+	const isReadOnly = perm != null && !canEdit;
 	// Redeploy is offered to anyone who can manage (same gate as Share/Edit). The
 	// release step is owner-gated server-side and non-fatal for non-owners.
 	const handleRedeploy = async () => {
@@ -320,6 +344,36 @@ export function DashboardPage() {
 		}
 		return modelCacheRef.current[sheet.id];
 	}, []);
+
+	// Per-sheet Layout API refs (for programmatic tab selection)
+	const layoutRefsRef = useRef<
+		Record<string, MutableRefObject<ILayoutApi | null>>
+	>({});
+	const getLayoutRef = useCallback(
+		(sheetId: string): MutableRefObject<ILayoutApi | null> => {
+			if (!layoutRefsRef.current[sheetId]) {
+				layoutRefsRef.current[sheetId] = { current: null };
+			}
+			return layoutRefsRef.current[sheetId];
+		},
+		[],
+	);
+
+	const handleEventFocus = useCallback(
+		(vizId: string) => {
+			const targetSheet = sheets.find((s) =>
+				s.visualizations.some((v) => v.id === vizId),
+			);
+			if (!targetSheet) return;
+			setActiveSheetId(targetSheet.id);
+			const model = modelCacheRef.current[targetSheet.id];
+			if (model) {
+				const node = model.getNodeById(`tab-${vizId}`);
+				if (node) model.doAction(Actions.selectTab(`tab-${vizId}`));
+			}
+		},
+		[sheets],
+	);
 
 	// NOTE: the flexlayout model is cached per sheet for the lifetime of this mount.
 	// We intentionally do NOT invalidate it on re-render: doing so hands a brand-new
@@ -541,274 +595,306 @@ export function DashboardPage() {
 	return (
 		<QueryRunnerProvider>
 			<DashboardFilterProvider>
-				<div className="flex h-full flex-col gap-3 bg-stone-100 p-3">
-					{/* ── Toolbar — single slim row ── */}
-					<div className="flex h-14 flex-shrink-0 items-center gap-3 rounded-xl border border-stone-200 bg-white px-4 shadow-soft">
-						<Link
-							to="/dashboards"
-							title="Back to dashboards"
-							className="-ml-1 flex-shrink-0 rounded-md p-1.5 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-800"
-						>
-							<ArrowLeft className="h-4 w-4" />
-						</Link>
-						<div className="min-w-0">
-							<h1 className="truncate font-bold text-[15px] text-stone-900 leading-tight tracking-tight">
-								{dashboard.name}
-							</h1>
-							<div className="flex items-center gap-1.5 text-[11px] text-stone-400 leading-tight">
-								<span>
-									{sheets.length} sheet
-									{sheets.length !== 1 ? "s" : ""}
-								</span>
-								<span className="text-stone-300">·</span>
-								<span>
-									{totalVizCount} chart
-									{totalVizCount !== 1 ? "s" : ""}
-								</span>
-								<span className="text-stone-300">·</span>
-								<span
-									title={fullTimestamp(dashboard.updatedAt)}
-								>
-									updated {timeAgo(dashboard.updatedAt)}
-								</span>
-							</div>
-						</div>
-
-						<div className="flex-1" />
-
-						<div className="flex flex-shrink-0 items-center gap-1.5">
-							{canManage && (
-								<Button
-									variant="secondary"
-									size="sm"
-									onClick={() => setShowShare(true)}
-									title="Manage access & folders"
-								>
-									<Share2 className="h-3.5 w-3.5" /> Share
-								</Button>
-							)}
-							{canEdit && (
-								<Button
-									variant="secondary"
-									size="sm"
-									onClick={() => setShowSaveAs(true)}
-									title="Save a copy of this dashboard with a new name and settings"
-								>
-									<CopyPlus className="h-3.5 w-3.5" /> Save As
-								</Button>
-							)}
-							{isOwner && (
-								<Button
-									variant="secondary"
-									size="sm"
-									onClick={handleRedeploy}
-									disabled={redeploying}
-									title="Rebuild & re-upload this dashboard's portal — use after the app's portal has been updated"
-								>
-									{redeploying ? (
-										<Loader2 className="h-3.5 w-3.5 animate-spin" />
-									) : (
-										<UploadCloud className="h-3.5 w-3.5" />
-									)}
-									{redeploying ? "Redeploying…" : "Redeploy"}
-								</Button>
-							)}
-							{canEdit && (
-								<Link
-									to={`/dashboard/${dashboard.id}/edit`}
-									className={buttonClasses("primary", "sm")}
-								>
-									<Edit className="h-3.5 w-3.5" /> Edit
-								</Link>
-							)}
-							{isOwner && (
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={() => setConfirmDelete(true)}
-									className="text-stone-400 hover:bg-red-50 hover:text-red-500"
-									title="Delete dashboard"
-								>
-									<Trash2 className="h-3.5 w-3.5" />
-								</Button>
-							)}
-						</div>
-					</div>
-
-					{/* ── flexlayout-react canvas ── */}
-					<div className="relative min-h-0 flex-1">
-						{/* Param sheet: rendered directly (not via keep-alive canvas) */}
-						{hasParamSheet && activeSheet?.isParamSheet && (
-							<div className="absolute inset-0 overflow-auto bg-stone-50 p-6">
-								<ParamSheet
-									paramGroups={paramGroups}
-									values={sharedParamValues}
-									onChangeValue={handleSharedParamChange}
-									onRunAll={handleRunAll}
-									allSatisfied={allParamsSatisfied}
-									config={activeSheet.paramSheetConfig}
-									isRunning={paramSheetRunning}
-									onParamOptionsChange={setSheetParamOptions}
-								/>
-							</div>
-						)}
-						{!hasVizs && !activeSheet?.isParamSheet && (
-							<div className="absolute inset-0 flex items-center justify-center text-stone-400">
-								No visualizations in this sheet
-							</div>
-						)}
-						{sheets
-							.filter(
-								(s) =>
-									!s.isParamSheet &&
-									visitedSheetIds.has(s.id) &&
-									s.visualizations.length > 0,
-							)
-							.map((sheet) => {
-								const isActive = sheet.id === activeSheetId;
-								return (
-									<div
-										key={sheet.id}
-										className="absolute inset-0"
-										style={
-											isActive
-												? {
-														visibility: "visible",
-														zIndex: 1,
-													}
-												: {
-														visibility: "hidden",
-														zIndex: 0,
-														pointerEvents: "none",
-													}
-										}
+				<EventParamProvider>
+					<EventFocusWatcher onFocus={handleEventFocus} />
+					<div className="flex h-full flex-col gap-3 bg-stone-100 p-3">
+						{/* ── Toolbar — single slim row ── */}
+						<div className="flex h-14 flex-shrink-0 items-center gap-3 rounded-xl border border-stone-200 bg-white px-4 shadow-soft">
+							<Link
+								to="/dashboards"
+								title="Back to dashboards"
+								className="-ml-1 flex-shrink-0 rounded-md p-1.5 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-800"
+							>
+								<ArrowLeft className="h-4 w-4" />
+							</Link>
+							<div className="min-w-0">
+								<h1 className="truncate font-bold text-[15px] text-stone-900 leading-tight tracking-tight">
+									{dashboard.name}
+								</h1>
+								<div className="flex items-center gap-1.5 text-[11px] text-stone-400 leading-tight">
+									<span>
+										{sheets.length} sheet
+										{sheets.length !== 1 ? "s" : ""}
+									</span>
+									<span className="text-stone-300">·</span>
+									<span>
+										{totalVizCount} chart
+										{totalVizCount !== 1 ? "s" : ""}
+									</span>
+									<span className="text-stone-300">·</span>
+									<span
+										title={fullTimestamp(
+											dashboard.updatedAt,
+										)}
 									>
-										<SheetCanvas
-											sheet={sheet}
-											model={getModel(sheet)}
-											queries={dashboard.queries ?? []}
-											paramValues={queryParamValues}
-											runKeys={runKeys}
-											hasParamSheet={hasParamSheet}
-											makeSaveModel={makeSaveModel}
-										/>
-									</div>
-								);
-							})}
-					</div>
+										updated {timeAgo(dashboard.updatedAt)}
+									</span>
+								</div>
+							</div>
 
-					{/* ── Sheet tab bar ── */}
-					{sheets.length > 0 && (
-						<div className="flex-shrink-0 overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
-							<div className="flex items-stretch overflow-x-auto">
-								{sheets.map((sheet) => {
+							<div className="flex-1" />
+
+							<div className="flex flex-shrink-0 items-center gap-1.5">
+								{canManage && (
+									<Button
+										variant="secondary"
+										size="sm"
+										onClick={() => setShowShare(true)}
+										title="Manage access & folders"
+									>
+										<Share2 className="h-3.5 w-3.5" /> Share
+									</Button>
+								)}
+								{canEdit && (
+									<Button
+										variant="secondary"
+										size="sm"
+										onClick={() => setShowSaveAs(true)}
+										title="Save a copy of this dashboard with a new name and settings"
+									>
+										<CopyPlus className="h-3.5 w-3.5" />{" "}
+										Save As
+									</Button>
+								)}
+								{isOwner && (
+									<Button
+										variant="secondary"
+										size="sm"
+										onClick={handleRedeploy}
+										disabled={redeploying}
+										title="Rebuild & re-upload this dashboard's portal — use after the app's portal has been updated"
+									>
+										{redeploying ? (
+											<Loader2 className="h-3.5 w-3.5 animate-spin" />
+										) : (
+											<UploadCloud className="h-3.5 w-3.5" />
+										)}
+										{redeploying
+											? "Redeploying…"
+											: "Redeploy"}
+									</Button>
+								)}
+								{canEdit && (
+									<Link
+										to={`/dashboard/${dashboard.id}/edit`}
+										className={buttonClasses(
+											"primary",
+											"sm",
+										)}
+									>
+										<Edit className="h-3.5 w-3.5" /> Edit
+									</Link>
+								)}
+								{isOwner && (
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() => setConfirmDelete(true)}
+										className="text-stone-400 hover:bg-red-50 hover:text-red-500"
+										title="Delete dashboard"
+									>
+										<Trash2 className="h-3.5 w-3.5" />
+									</Button>
+								)}
+							</div>
+						</div>
+
+						{/* ── flexlayout-react canvas ── */}
+						<div className="relative min-h-0 flex-1">
+							{/* Param sheet: rendered directly (not via keep-alive canvas) */}
+							{hasParamSheet && activeSheet?.isParamSheet && (
+								<div className="absolute inset-0 overflow-auto bg-stone-50 p-6">
+									<ParamSheet
+										paramGroups={paramGroups}
+										values={sharedParamValues}
+										onChangeValue={handleSharedParamChange}
+										onRunAll={handleRunAll}
+										allSatisfied={allParamsSatisfied}
+										config={activeSheet.paramSheetConfig}
+										isRunning={paramSheetRunning}
+										onParamOptionsChange={
+											setSheetParamOptions
+										}
+									/>
+								</div>
+							)}
+							{!hasVizs && !activeSheet?.isParamSheet && (
+								<div className="absolute inset-0 flex items-center justify-center text-stone-400">
+									No visualizations in this sheet
+								</div>
+							)}
+							{sheets
+								.filter(
+									(s) =>
+										!s.isParamSheet &&
+										visitedSheetIds.has(s.id) &&
+										s.visualizations.length > 0,
+								)
+								.map((sheet) => {
 									const isActive = sheet.id === activeSheetId;
-									const tabColor = sheet.isParamSheet
-										? "#6366f1"
-										: (sheet.color ?? "#3b82f6");
 									return (
-										<button
+										<div
 											key={sheet.id}
-											onClick={() => {
-												if (sheet.id !== activeSheetId)
-													switchStartRef.current =
-														performance.now();
-												setActiveSheetId(sheet.id);
-											}}
-											className={`-mt-px flex flex-shrink-0 select-none items-center gap-2 border-stone-200 border-t-2 border-r px-5 py-2.5 text-sm transition-colors ${
-												isActive
-													? "font-semibold text-stone-900"
-													: "border-t-transparent text-stone-500 hover:text-stone-700"
-											}`}
+											className="absolute inset-0"
 											style={
 												isActive
 													? {
-															borderTopColor:
-																tabColor,
-															backgroundColor:
-																tabColor + "26",
+															visibility:
+																"visible",
+															zIndex: 1,
 														}
 													: {
-															backgroundColor:
-																tabColor + "14",
+															visibility:
+																"hidden",
+															zIndex: 0,
+															pointerEvents:
+																"none",
 														}
 											}
 										>
-											{sheet.isParamSheet ? (
-												<SlidersHorizontal
-													className={`h-3 w-3 flex-shrink-0 ${isActive ? "text-indigo-500" : "text-stone-400"}`}
-												/>
-											) : (
-												<span
-													className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
-													style={{
-														backgroundColor:
-															tabColor,
-													}}
-												/>
-											)}
-											{sheet.name}
-											{!sheet.isParamSheet && (
-												<span
-													className={`rounded-full px-1.5 py-0.5 text-xs ${isActive ? "text-white" : "bg-stone-200 text-stone-500"}`}
-													style={
-														isActive
-															? {
-																	backgroundColor:
-																		tabColor,
-																}
-															: undefined
-													}
-												>
-													{
-														sheet.visualizations
-															.length
-													}
-												</span>
-											)}
-										</button>
+											<SheetCanvas
+												sheet={sheet}
+												model={getModel(sheet)}
+												queries={
+													dashboard.queries ?? []
+												}
+												paramValues={queryParamValues}
+												runKeys={runKeys}
+												hasParamSheet={hasParamSheet}
+												makeSaveModel={makeSaveModel}
+												layoutRef={getLayoutRef(
+													sheet.id,
+												)}
+											/>
+										</div>
 									);
 								})}
-							</div>
 						</div>
-					)}
 
-					{showShare && (
-						<ShareDialog
-							dashboard={dashboard}
-							onClose={() => setShowShare(false)}
-						/>
-					)}
-					{showSaveAs && (
-						<SaveAsDialog
-							dashboard={dashboard}
-							onClose={() => setShowSaveAs(false)}
-						/>
-					)}
+						{/* ── Sheet tab bar ── */}
+						{sheets.length > 0 && (
+							<div className="flex-shrink-0 overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+								<div className="flex items-stretch overflow-x-auto">
+									{sheets.map((sheet) => {
+										const isActive =
+											sheet.id === activeSheetId;
+										const tabColor = sheet.isParamSheet
+											? "#6366f1"
+											: (sheet.color ?? "#3b82f6");
+										return (
+											<button
+												key={sheet.id}
+												onClick={() => {
+													if (
+														sheet.id !==
+														activeSheetId
+													)
+														switchStartRef.current =
+															performance.now();
+													setActiveSheetId(sheet.id);
+												}}
+												className={`-mt-px flex flex-shrink-0 select-none items-center gap-2 border-stone-200 border-t-2 border-r px-5 py-2.5 text-sm transition-colors ${
+													isActive
+														? "font-semibold text-stone-900"
+														: "border-t-transparent text-stone-500 hover:text-stone-700"
+												}`}
+												style={
+													isActive
+														? {
+																borderTopColor:
+																	tabColor,
+																backgroundColor: `${tabColor}26`,
+															}
+														: {
+																backgroundColor: `${tabColor}14`,
+															}
+												}
+											>
+												{sheet.isParamSheet ? (
+													<SlidersHorizontal
+														className={`h-3 w-3 flex-shrink-0 ${isActive ? "text-indigo-500" : "text-stone-400"}`}
+													/>
+												) : (
+													<span
+														className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
+														style={{
+															backgroundColor:
+																tabColor,
+														}}
+													/>
+												)}
+												{sheet.name}
+												{!sheet.isParamSheet && (
+													<span
+														className={`rounded-full px-1.5 py-0.5 text-xs ${isActive ? "text-white" : "bg-stone-200 text-stone-500"}`}
+														style={
+															isActive
+																? {
+																		backgroundColor:
+																			tabColor,
+																	}
+																: undefined
+														}
+													>
+														{
+															sheet.visualizations
+																.length
+														}
+													</span>
+												)}
+											</button>
+										);
+									})}
+								</div>
+							</div>
+						)}
 
-					<ConfirmDialog
-						open={confirmDelete}
-						danger
-						title="Delete dashboard?"
-						message={
-							<>
-								<span className="font-medium">
-									{dashboard.name}
-								</span>{" "}
-								will be permanently deleted for everyone it’s
-								shared with. This can’t be undone.
-							</>
-						}
-						confirmLabel="Delete dashboard"
-						onCancel={() => setConfirmDelete(false)}
-						onConfirm={() => {
-							setConfirmDelete(false);
-							deleteDashboard(dashboard.id);
-							navigate("/dashboards");
-						}}
-					/>
-				</div>
+						{showShare && (
+							<ShareDialog
+								dashboard={dashboard}
+								onClose={() => setShowShare(false)}
+							/>
+						)}
+						{showSaveAs && (
+							<SaveAsDialog
+								dashboard={dashboard}
+								onClose={() => setShowSaveAs(false)}
+							/>
+						)}
+
+						<ConfirmDialog
+							open={confirmDelete}
+							danger
+							title="Delete dashboard?"
+							message={
+								<>
+									<span className="font-medium">
+										{dashboard.name}
+									</span>{" "}
+									will be permanently deleted for everyone
+									it’s shared with. This can’t be undone.
+								</>
+							}
+							confirmLabel="Delete dashboard"
+							onCancel={() => setConfirmDelete(false)}
+							onConfirm={() => {
+								setConfirmDelete(false);
+								deleteDashboard(dashboard.id);
+								navigate("/dashboards");
+							}}
+						/>
+					</div>
+				</EventParamProvider>
 			</DashboardFilterProvider>
 		</QueryRunnerProvider>
 	);
+}
+
+function EventFocusWatcher({ onFocus }: { onFocus: (vizId: string) => void }) {
+	const store = useEventParamStore();
+	useEffect(() => {
+		if (!store) return;
+		return store.onFocus(onFocus);
+	}, [store, onFocus]);
+	return null;
 }

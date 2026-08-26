@@ -31,10 +31,10 @@ interface CanvasBarChartProps {
 const PAD = { left: 52, right: 10, top: 10, bottom: 22 };
 
 function niceNum(v: number): string {
-	if (!isFinite(v)) return "";
+	if (!Number.isFinite(v)) return "";
 	const abs = Math.abs(v);
-	if (abs >= 1_000_000) return (v / 1_000_000).toFixed(1) + "M";
-	if (abs >= 1_000) return (v / 1_000).toFixed(1) + "k";
+	if (abs >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+	if (abs >= 1_000) return `${(v / 1_000).toFixed(1)}k`;
 	return Number.isInteger(v) ? String(v) : v.toFixed(1);
 }
 
@@ -199,8 +199,8 @@ export function CanvasBarChart({
 				<div
 					className="pointer-events-none absolute z-10 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs shadow-lg"
 					style={{
-						left: Math.min(hover!.x + 10, size.w - 160),
-						top: Math.max(4, hover!.y - 40),
+						left: Math.min(hover?.x + 10, size.w - 160),
+						top: Math.max(4, hover?.y - 40),
 						maxWidth: 200,
 					}}
 				>

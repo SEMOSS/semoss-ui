@@ -13,7 +13,7 @@ import {
 	compareColorRule,
 } from "@/components/visualizations/shared/chartShared";
 import { formatValue } from "@/lib/formatValue";
-import type { VisualizationConfig } from "@/types/dashboard";
+import type { VisualizationConfig, VizTriggerPayload } from "@/types/dashboard";
 
 // ── Geometry helpers ──────────────────────────────────────────────────────────
 function polarToCartesian(cx: number, cy: number, r: number, angle: number) {
@@ -71,10 +71,11 @@ const GRID_LEVELS = [0.25, 0.5, 0.75, 1.0] as const;
 interface Props {
 	data: any[];
 	config?: VisualizationConfig;
+	onTrigger?: (payload: VizTriggerPayload) => void;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export function PolarBarChart({ data, config }: Props) {
+export function PolarBarChart({ data, config, onTrigger }: Props) {
 	const xKey = config?.xKey ?? "";
 	const yKeys: string[] = config?.yKeys ?? [];
 
@@ -214,7 +215,8 @@ export function PolarBarChart({ data, config }: Props) {
 		setHoveredCat(null);
 		setMouseClientPos(null);
 		setMouseSvgPos(null);
-	}, []);
+		onTrigger?.({ trigger: "mouseout" });
+	}, [onTrigger]);
 
 	// ── Min/max ───────────────────────────────────────────────────────────────
 	const minMaxData = useMemo(() => {
@@ -462,7 +464,32 @@ export function PolarBarChart({ data, config }: Props) {
 							fillOpacity={fillOpacity}
 							stroke="#fff"
 							strokeWidth={0.5}
-							onMouseEnter={() => setHoveredCat(catIdx)}
+							style={{ cursor: "pointer" }}
+							onMouseEnter={() => {
+								setHoveredCat(catIdx);
+								onTrigger?.({
+									trigger: "hover",
+									label: categories[catIdx],
+									row: { [xKey]: categories[catIdx] },
+								});
+							}}
+							onMouseLeave={() =>
+								onTrigger?.({ trigger: "mouseout" })
+							}
+							onClick={() =>
+								onTrigger?.({
+									trigger: "click",
+									label: categories[catIdx],
+									row: { [xKey]: categories[catIdx] },
+								})
+							}
+							onDoubleClick={() =>
+								onTrigger?.({
+									trigger: "dblclick",
+									label: categories[catIdx],
+									row: { [xKey]: categories[catIdx] },
+								})
+							}
 						>
 							<title>{`${formatValue(categories[catIdx], xKey, config?.styling?.formatRules ?? [])} · ${key}: ${formatValue(value, key, config?.styling?.formatRules ?? [])}`}</title>
 						</path>
@@ -578,7 +605,7 @@ export function PolarBarChart({ data, config }: Props) {
 						);
 						const display =
 							formatted.length > 14
-								? formatted.slice(0, 12) + "…"
+								? `${formatted.slice(0, 12)}…`
 								: formatted;
 						return (
 							<text
@@ -628,7 +655,7 @@ export function PolarBarChart({ data, config }: Props) {
 										dominantBaseline="middle"
 									>
 										{key.length > 12
-											? key.slice(0, 10) + "…"
+											? `${key.slice(0, 10)}…`
 											: key}
 									</text>
 								</g>

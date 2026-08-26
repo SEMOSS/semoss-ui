@@ -38,7 +38,7 @@ export default defineConfig(({ mode }) => {
 			"import.meta.env.SECRET_KEY": JSON.stringify(env.SECRET_KEY || ""),
 		},
 		server: {
-			port: parseInt(env.VITE_PORT || "5173"),
+			port: parseInt(env.VITE_PORT || "5178"),
 			host: env.VITE_HOST || "localhost",
 			proxy: {
 				[MODULE]: {

@@ -28,7 +28,8 @@ interface ColorByValueProps {
 		| "radar"
 		| "area"
 		| "treemap"
-		| "sunburst";
+		| "sunburst"
+		| "cluster";
 	value: ColorRule[] | KpiColorRule[];
 	onChange: (rules: ColorRule[] | KpiColorRule[]) => void;
 	onReset: () => void;

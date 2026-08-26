@@ -27,7 +27,7 @@ export interface Parameter {
 	 *  - 'multiselect' many choices → substituted as a SQL list ('a','b') for `IN (...)`
 	 *  - 'date'        date picker
 	 */
-	inputType?: "text" | "dropdown" | "multiselect" | "date";
+	inputType?: "text" | "dropdown" | "multiselect" | "date" | "event";
 	/** Whether a value is required before the query can run. */
 	required?: boolean;
 	/** Dropdown/multiselect: manually-entered options (merged with any SQL-fetched ones). */
@@ -398,6 +398,55 @@ export interface ClusterStyling {
 	showMean?: boolean;
 	/** Dot fill opacity 0–1 (default 0.7) */
 	fillOpacity?: number;
+	/** Conditional color rules applied to dots */
+	colorRules?: ColorRule[];
+}
+
+// Events system
+
+export type EventTrigger =
+	| "click"
+	| "dblclick"
+	| "hover"
+	| "mouseout"
+	| "keypress";
+export type EventAction =
+	| "filter"
+	| "unfilter"
+	| "open_url"
+	| "open_app"
+	| "custom_query";
+export type KeyModifier = "ctrl" | "shift" | "alt";
+
+export interface VizEvent {
+	id: string;
+	name: string;
+	enabled: boolean;
+	trigger: EventTrigger;
+	/** click / dblclick: if set, this modifier key must be held for the event to fire */
+	clickModifier?: KeyModifier;
+	/** keypress: the key that must be pressed while hovering (e.g. "Enter", "NumpadEnter", "F2") */
+	keyBind?: string;
+	applyTo: "all" | "specific";
+	targetVizIds?: string[];
+	action: EventAction;
+	urlTarget?: "tab" | "window";
+	url?: string;
+	appId?: string;
+	appName?: string;
+	/** custom_query: id of the target visualization whose event params will be populated */
+	targetVizId?: string;
+	/** custom_query: maps clicked-row column names to the target viz's event param names */
+	columnParamMap?: Array<{ column: string; paramName: string }>;
+}
+
+export interface VizTriggerPayload {
+	trigger: EventTrigger;
+	label?: string;
+	row?: Record<string, unknown>;
+	modifiers?: { ctrl: boolean; shift: boolean; alt: boolean };
+	/** keypress: the key that was pressed (e.g. "Enter", "NumpadEnter") */
+	key?: string;
 }
 
 /** Styling configuration for visualizations */
@@ -501,6 +550,8 @@ export interface VisualizationStyling {
 	 * (prepend/append, numeric format, date format).
 	 */
 	formatRules?: FormatRule[];
+	/** Shared "Events" tool: interactive trigger→action event definitions. */
+	events?: VizEvent[];
 }
 
 export type SortDirection = "asc" | "desc" | "chronological" | "custom";

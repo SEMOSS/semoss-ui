@@ -33,6 +33,7 @@ import type {
 	ColorRule,
 	FormatRule,
 	VisualizationConfig,
+	VizTriggerPayload,
 } from "@/types/dashboard";
 
 // ── Stats helpers ──────────────────────────────────────────────────────────────
@@ -667,12 +668,14 @@ interface BoxPlotChartProps {
 	data: any[];
 	config?: VisualizationConfig;
 	formatRules?: FormatRule[];
+	onTrigger?: (payload: VizTriggerPayload) => void;
 }
 
 export function BoxPlotChart({
 	data,
 	config,
 	formatRules = [],
+	onTrigger,
 }: BoxPlotChartProps) {
 	const xKey = config?.xKey ?? "";
 	const yKeys = config?.yKeys ?? [];
@@ -695,6 +698,8 @@ export function BoxPlotChart({
 	const xCfg = bpStyling.xAxisConfig ?? {};
 	const yCfg = bpStyling.yAxisConfig ?? {};
 
+	const lastHoveredLabelRef = useRef<string | null>(null);
+
 	// Resolve color palette
 	const palette = useMemo(() => {
 		const cp = config?.styling?.colorPalette as
@@ -710,9 +715,9 @@ export function BoxPlotChart({
 		for (const row of data) {
 			const cat = String(row[xKey] ?? "");
 			const val = Number(row[yKey]);
-			if (!isNaN(val)) {
+			if (!Number.isNaN(val)) {
 				if (!grouped.has(cat)) grouped.set(cat, []);
-				grouped.get(cat)!.push(val);
+				grouped.get(cat)?.push(val);
 			}
 		}
 		return Array.from(grouped.entries()).map(([category, values], i) => {
@@ -844,6 +849,45 @@ export function BoxPlotChart({
 							right: 8,
 							left: yAxisLabel && !flipAxis ? 12 : 0,
 							bottom: xAxisLabel && !flipAxis ? 16 : 4,
+						}}
+						onClick={(e: any) => {
+							if (e?.activeLabel != null)
+								onTrigger?.({
+									trigger: "click",
+									label: String(e.activeLabel),
+									row: { [xKey]: String(e.activeLabel) },
+								});
+						}}
+						onDoubleClick={() => {
+							const label = lastHoveredLabelRef.current;
+							if (label != null)
+								onTrigger?.({
+									trigger: "dblclick",
+									label,
+									row: { [xKey]: label },
+								});
+						}}
+						onMouseMove={(e: any) => {
+							const label = e?.activeLabel
+								? String(e.activeLabel)
+								: null;
+							if (
+								label &&
+								label !== lastHoveredLabelRef.current
+							) {
+								lastHoveredLabelRef.current = label;
+								onTrigger?.({
+									trigger: "hover",
+									label,
+									row: { [xKey]: label },
+								});
+							}
+						}}
+						onMouseLeave={() => {
+							if (lastHoveredLabelRef.current !== null) {
+								lastHoveredLabelRef.current = null;
+								onTrigger?.({ trigger: "mouseout" });
+							}
 						}}
 					>
 						<CartesianGrid

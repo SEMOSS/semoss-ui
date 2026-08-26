@@ -14,7 +14,7 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { formatValue } from "@/lib/formatValue";
-import type { VisualizationConfig } from "@/types/dashboard";
+import type { VisualizationConfig, VizTriggerPayload } from "@/types/dashboard";
 
 // ── Fallback palette ───────────────────────────────────────────────────────────
 const PALETTE = [
@@ -71,6 +71,7 @@ function arcPath(
 interface Props {
 	data: any[];
 	config?: VisualizationConfig;
+	onTrigger?: (payload: VizTriggerPayload) => void;
 }
 
 // ── Slice type ────────────────────────────────────────────────────────────────
@@ -84,7 +85,7 @@ interface Slice {
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export function HalfDonutChart({ data, config }: Props) {
+export function HalfDonutChart({ data, config, onTrigger }: Props) {
 	const xKey = config?.xKey ?? "";
 	const yKey = config?.yKeys?.[0] ?? "";
 	const targetKey = config?.targetKey ?? "";
@@ -105,7 +106,7 @@ export function HalfDonutChart({ data, config }: Props) {
 	// Color palette — prefer shared palette from styling, fall back to PALETTE
 	const palette: string[] = (config?.styling as any)?.colorPalette?.colors
 		?.length
-		? (config!.styling as any).colorPalette.colors
+		? (config?.styling as any).colorPalette.colors
 		: PALETTE;
 
 	// Hover state
@@ -154,7 +155,7 @@ export function HalfDonutChart({ data, config }: Props) {
 	for (const row of data) {
 		const cat = String(row[xKey] ?? "");
 		const v = Number(row[yKey]);
-		if (!isNaN(v)) {
+		if (!Number.isNaN(v)) {
 			catSum.set(cat, (catSum.get(cat) ?? 0) + v);
 			catCount.set(cat, (catCount.get(cat) ?? 0) + 1);
 			catMin.set(cat, Math.min(catMin.get(cat) ?? Infinity, v));
@@ -198,7 +199,7 @@ export function HalfDonutChart({ data, config }: Props) {
 			tMax = -Infinity;
 		for (const row of data) {
 			const v = Number(row[targetKey]);
-			if (!isNaN(v)) {
+			if (!Number.isNaN(v)) {
 				tSum += v;
 				tCount++;
 				tMin = Math.min(tMin, v);
@@ -235,7 +236,7 @@ export function HalfDonutChart({ data, config }: Props) {
 			for (const t of tooltipCols) {
 				const col = (t as any).column;
 				const v = Number(row[col]);
-				if (!isNaN(v)) {
+				if (!Number.isNaN(v)) {
 					if (!acc[col])
 						acc[col] = {
 							sum: 0,
@@ -328,6 +329,7 @@ export function HalfDonutChart({ data, config }: Props) {
 				onMouseLeave={() => {
 					setHovered(null);
 					setTargetHovered(null);
+					onTrigger?.({ trigger: "mouseout" });
 				}}
 			>
 				{/* ── Arcs ── */}
@@ -350,6 +352,13 @@ export function HalfDonutChart({ data, config }: Props) {
 							style={{
 								cursor: showTooltip ? "pointer" : "default",
 							}}
+							onMouseEnter={() =>
+								onTrigger?.({
+									trigger: "hover",
+									label: s.cat,
+									row: { [xKey]: s.cat },
+								})
+							}
 							onMouseMove={(e) =>
 								showTooltip &&
 								setHovered({
@@ -358,7 +367,24 @@ export function HalfDonutChart({ data, config }: Props) {
 									slice: s,
 								})
 							}
-							onMouseLeave={() => setHovered(null)}
+							onMouseLeave={() => {
+								setHovered(null);
+								onTrigger?.({ trigger: "mouseout" });
+							}}
+							onClick={() =>
+								onTrigger?.({
+									trigger: "click",
+									label: s.cat,
+									row: { [xKey]: s.cat },
+								})
+							}
+							onDoubleClick={() =>
+								onTrigger?.({
+									trigger: "dblclick",
+									label: s.cat,
+									row: { [xKey]: s.cat },
+								})
+							}
 						/>
 					);
 				})}
@@ -417,7 +443,7 @@ export function HalfDonutChart({ data, config }: Props) {
 						const formatted = formatValue(s.cat, xKey, fmtRules);
 						const display =
 							formatted.length > 14
-								? formatted.slice(0, 12) + "…"
+								? `${formatted.slice(0, 12)}…`
 								: formatted;
 						return (
 							<text
@@ -491,7 +517,7 @@ export function HalfDonutChart({ data, config }: Props) {
 										);
 										const display =
 											formatted.length > 10
-												? formatted.slice(0, 8) + "…"
+												? `${formatted.slice(0, 8)}…`
 												: formatted;
 										return (
 											<g

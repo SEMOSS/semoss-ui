@@ -12,7 +12,12 @@ import { Check, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui";
 
-export type ParamInputType = "text" | "dropdown" | "multiselect" | "date";
+export type ParamInputType =
+	| "text"
+	| "dropdown"
+	| "multiselect"
+	| "date"
+	| "event";
 
 export interface ParamSpec {
 	name: string;

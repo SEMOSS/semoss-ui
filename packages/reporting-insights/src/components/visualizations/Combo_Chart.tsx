@@ -440,6 +440,9 @@ function ComboCursor({
 interface ComboChartVizProps {
 	data: Record<string, unknown>[];
 	config?: VisualizationConfig;
+	onTrigger?: (
+		payload: import("@/types/dashboard").VizTriggerPayload,
+	) => void;
 	onStylingChange?: (updates: Partial<ComboStyling>) => void;
 }
 
@@ -447,6 +450,7 @@ export function Combo_Chart({
 	data,
 	config,
 	onStylingChange,
+	onTrigger,
 }: ComboChartVizProps) {
 	const xKey = config?.xKey ?? "";
 	const yKeys = config?.yKeys ?? [];
@@ -546,6 +550,8 @@ export function Combo_Chart({
 	const [xBrushFrac, setXBrushFrac] = useState<[number, number]>(() =>
 		saveZoom && s.savedZoomX ? s.savedZoomX : [0, 1],
 	);
+	const lastHoveredLabelRef = useRef<string | null>(null);
+	const lastHoveredPayloadRef = useRef<Record<string, unknown> | null>(null);
 	const xBrushFracRef = useRef(xBrushFrac);
 	xBrushFracRef.current = xBrushFrac;
 	const yBrushFracRef = useRef(yBrushFrac);
@@ -700,6 +706,54 @@ export function Combo_Chart({
 							left: yAxisLabel && !flipAxis ? 12 : 0,
 							bottom: 4,
 						}}
+						onClick={(e: any) => {
+							if (e?.activeLabel != null)
+								onTrigger?.({
+									trigger: "click",
+									label: String(e.activeLabel),
+									row: e.activePayload?.[0]?.payload ?? {
+										[xKey]: String(e.activeLabel),
+									},
+								});
+						}}
+						onDoubleClick={() => {
+							const label = lastHoveredLabelRef.current;
+							if (label != null)
+								onTrigger?.({
+									trigger: "dblclick",
+									label,
+									row: lastHoveredPayloadRef.current ?? {
+										[xKey]: label,
+									},
+								});
+						}}
+						onMouseMove={(e: any) => {
+							const label = e?.activeLabel
+								? String(e.activeLabel)
+								: null;
+							if (
+								label &&
+								label !== lastHoveredLabelRef.current
+							) {
+								lastHoveredLabelRef.current = label;
+								lastHoveredPayloadRef.current =
+									e.activePayload?.[0]?.payload ?? null;
+								onTrigger?.({
+									trigger: "hover",
+									label,
+									row: e.activePayload?.[0]?.payload ?? {
+										[xKey]: label,
+									},
+								});
+							}
+						}}
+						onMouseLeave={() => {
+							if (lastHoveredLabelRef.current !== null) {
+								lastHoveredLabelRef.current = null;
+								lastHoveredPayloadRef.current = null;
+								onTrigger?.({ trigger: "mouseout" });
+							}
+						}}
 					>
 						<defs>
 							{comboSeries.lines.map(
@@ -805,14 +859,14 @@ export function Combo_Chart({
 									textAnchor={
 										xCfg.rotateValues ? "end" : "middle"
 									}
-									tickFormatter={(v: unknown) =>
-										formatValue(v, xKey, formatRules)
-									}
 									label={buildAxisLabelProps(
 										xAxisLabel,
 										xCfg,
 										"x",
 									)}
+									tickFormatter={(v: unknown) =>
+										formatValue(v, xKey, formatRules)
+									}
 								/>
 								<YAxis
 									tick={
@@ -833,6 +887,11 @@ export function Combo_Chart({
 									domain={yDomain}
 									allowDataOverflow={yBrushActive}
 									allowDecimals={zoomY ? false : undefined}
+									label={buildAxisLabelProps(
+										yAxisLabel,
+										yCfg,
+										"y",
+									)}
 									tickFormatter={(v: unknown) =>
 										formatValue(
 											v,
@@ -843,11 +902,6 @@ export function Combo_Chart({
 											formatRules,
 										)
 									}
-									label={buildAxisLabelProps(
-										yAxisLabel,
-										yCfg,
-										"y",
-									)}
 								/>
 							</>
 						)}
@@ -959,7 +1013,11 @@ export function Combo_Chart({
 													return null;
 												const label =
 													typeof value === "number"
-														? value.toLocaleString()
+														? formatValue(
+																value,
+																resolvedKey,
+																formatRules,
+															)
 														: String(value ?? "");
 												const badgeW = Math.max(
 													label.length * 6 + 10,

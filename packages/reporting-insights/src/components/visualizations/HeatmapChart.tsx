@@ -307,6 +307,9 @@ interface Props {
 	config?: VisualizationConfig;
 	formatRules?: FormatRule[];
 	onStylingChange?: (updates: Partial<HeatmapStyling>) => void;
+	onTrigger?: (
+		payload: import("@/types/dashboard").VizTriggerPayload,
+	) => void;
 }
 
 export function HeatmapChart({
@@ -314,6 +317,7 @@ export function HeatmapChart({
 	config = {},
 	formatRules = [],
 	onStylingChange,
+	onTrigger,
 }: Props) {
 	const xKey = config.xKey ?? "";
 	const yKey = config.heatmapYKey ?? "";
@@ -411,7 +415,7 @@ export function HeatmapChart({
 			const k = `${r[xKey]}||${r[yKey]}`;
 			if (!groups[k]) groups[k] = [];
 			const v = Number(r[valueKey]);
-			if (!isNaN(v)) groups[k].push(v);
+			if (!Number.isNaN(v)) groups[k].push(v);
 		});
 		const vm: Record<string, number> = {};
 		for (const [k, vals] of Object.entries(groups)) {
@@ -445,7 +449,7 @@ export function HeatmapChart({
 			result[k] = {};
 			for (const { column, aggregation } of tooltipCols) {
 				const vals = cols[column] ?? [];
-				const numVals = vals.map(Number).filter(isFinite);
+				const numVals = vals.map(Number).filter(Number.isFinite);
 				const agg = aggregation || "avg";
 				if (numVals.length > 0) {
 					if (agg === "sum")
@@ -519,7 +523,7 @@ export function HeatmapChart({
 	// Heat range and color scale
 	const { minVal, maxVal } = useMemo(() => {
 		const vals = Object.values(effectiveValueMap).filter((v): v is number =>
-			isFinite(v as number),
+			Number.isFinite(v as number),
 		);
 		if (!vals.length) return { minVal: 0, maxVal: 1 };
 		let mn = Math.min(...vals);
@@ -783,15 +787,24 @@ export function HeatmapChart({
 												background: bg,
 												height: cellH,
 											}}
-											onMouseEnter={(e) =>
+											onMouseEnter={(e) => {
 												setTooltip({
 													cellKey,
 													x,
 													y,
 													clientX: e.clientX,
 													clientY: e.clientY,
-												})
-											}
+												});
+												onTrigger?.({
+													trigger: "hover",
+													label: x,
+													row: {
+														[xKey]: x,
+														[yKey]: y,
+														[valueKey]: val,
+													},
+												});
+											}}
 											onMouseMove={(e) =>
 												setTooltip((prev) =>
 													prev
@@ -805,8 +818,39 @@ export function HeatmapChart({
 														: null,
 												)
 											}
-											onMouseLeave={() =>
-												setTooltip(null)
+											onMouseLeave={() => {
+												setTooltip(null);
+												onTrigger?.({
+													trigger: "mouseout",
+													label: x,
+													row: {
+														[xKey]: x,
+														[yKey]: y,
+														[valueKey]: val,
+													},
+												});
+											}}
+											onClick={() =>
+												onTrigger?.({
+													trigger: "click",
+													label: x,
+													row: {
+														[xKey]: x,
+														[yKey]: y,
+														[valueKey]: val,
+													},
+												})
+											}
+											onDoubleClick={() =>
+												onTrigger?.({
+													trigger: "dblclick",
+													label: x,
+													row: {
+														[xKey]: x,
+														[yKey]: y,
+														[valueKey]: val,
+													},
+												})
 											}
 										>
 											{showLabel && (

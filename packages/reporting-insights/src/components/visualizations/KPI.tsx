@@ -33,7 +33,9 @@ export function aggregateKpiValue(
 		return uniqueVals.size;
 	}
 
-	const vals = data.map((r) => Number(r[col])).filter((v) => !isNaN(v));
+	const vals = data
+		.map((r) => Number(r[col]))
+		.filter((v) => !Number.isNaN(v));
 	if (!vals.length) return 0;
 
 	switch (agg) {

@@ -8,7 +8,7 @@
  */
 
 import { PieChart as PieChartIcon } from "lucide-react";
-import React, { useMemo } from "react";
+import React, { useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
 	Cell,
@@ -35,7 +35,12 @@ import {
 
 interface PieChartVizProps {
 	data: Record<string, unknown>[];
+	/** Unfiltered raw data — used to compute heat color range so colors stay consistent when filtered. */
+	rawData?: Record<string, unknown>[];
 	config?: VisualizationConfig;
+	onTrigger?: (
+		payload: import("@/types/dashboard").VizTriggerPayload,
+	) => void;
 }
 
 // SVG helpers for rose chart
@@ -94,7 +99,12 @@ const ANIMATION_EASE: Record<string, string> = {
 	expansion: "ease-out",
 };
 
-export function Pie_Chart({ data, config }: PieChartVizProps) {
+export function Pie_Chart({
+	data,
+	rawData,
+	config,
+	onTrigger,
+}: PieChartVizProps) {
 	const xKey = config?.xKey ?? "";
 	const valueKey = config?.yKeys?.[0] ?? "";
 	const heatKey: string = config?.heatKey ?? "";
@@ -149,7 +159,7 @@ export function Pie_Chart({ data, config }: PieChartVizProps) {
 			const name = String(row[xKey] ?? "");
 			if (!grouped.has(name)) grouped.set(name, []);
 			const v = Number(row[heatKey]);
-			if (!isNaN(v)) grouped.get(name)!.push(v);
+			if (!Number.isNaN(v)) grouped.get(name)?.push(v);
 		});
 		const result: Record<string, number> = {};
 		grouped.forEach((vals, name) => {
@@ -158,13 +168,28 @@ export function Pie_Chart({ data, config }: PieChartVizProps) {
 		return result;
 	}, [data, heatKey, xKey, config?.columnAggregations]);
 
+	// Heat range is computed from rawData (unfiltered) so colors stay consistent when filtered.
 	const { minHeat, maxHeat } = useMemo(() => {
-		if (!heatByName) return { minHeat: 0, maxHeat: 1 };
-		const vals = Object.values(heatByName);
+		if (!heatKey || !xKey) return { minHeat: 0, maxHeat: 1 };
+		const source = rawData ?? data;
+		const aggType = config?.columnAggregations?.[heatKey] ?? "avg";
+		const grouped = new Map<string, number[]>();
+		source.forEach((row) => {
+			const name = String(row[xKey] ?? "");
+			if (!grouped.has(name)) grouped.set(name, []);
+			const v = Number(row[heatKey]);
+			if (!Number.isNaN(v)) grouped.get(name)?.push(v);
+		});
+		const vals = Array.from(grouped.values()).map((arr) =>
+			aggregateNums(arr, aggType),
+		);
+		if (!vals.length) return { minHeat: 0, maxHeat: 1 };
 		return { minHeat: Math.min(...vals), maxHeat: Math.max(...vals) };
-	}, [heatByName]);
+	}, [rawData, data, heatKey, xKey, config?.columnAggregations]);
 
 	// All hooks must precede any early return
+	const lastRoseHoveredRef = useRef<string | null>(null);
+	const lastPieClickTimeRef = useRef<number>(0);
 	const [roseHovered, setRoseHovered] = React.useState<{
 		x: number;
 		y: number;
@@ -186,7 +211,7 @@ export function Pie_Chart({ data, config }: PieChartVizProps) {
 	const isAnimActive =
 		!isRadialAnim && !!animationCfg?.type && animationCfg.type !== "none";
 	const animEasing = isAnimActive
-		? (ANIMATION_EASE[animationCfg!.type] ?? "ease")
+		? (ANIMATION_EASE[animationCfg?.type] ?? "ease")
 		: undefined;
 
 	const [scaleState, setScaleState] = React.useState(1);
@@ -344,7 +369,8 @@ export function Pie_Chart({ data, config }: PieChartVizProps) {
 		const roseArcs = chartData.map((row, i) => {
 			const val = Number(row[valueKey] ?? 0);
 			const start = -Math.PI / 2 + i * angleStep;
-			const end = start + angleStep;
+			// Prevent degenerate full-circle arc (SVG arcs with identical start/end points are invisible)
+			const end = start + Math.min(angleStep, 2 * Math.PI - 0.001);
 			const outerR =
 				roseType === "roseArea"
 					? innerR + Math.sqrt(val / maxVal) * (maxR - innerR)
@@ -402,7 +428,11 @@ export function Pie_Chart({ data, config }: PieChartVizProps) {
 					<svg
 						viewBox={`0 0 ${SIZE} ${SIZE}`}
 						className="h-full max-h-full w-full"
-						onMouseLeave={() => setRoseHovered(null)}
+						onMouseLeave={() => {
+							setRoseHovered(null);
+							lastRoseHoveredRef.current = null;
+							onTrigger?.({ trigger: "mouseout" });
+						}}
 					>
 						{roseArcs.map((arc, i) => {
 							const rawLabel = formatValue(
@@ -443,6 +473,20 @@ export function Pie_Chart({ data, config }: PieChartVizProps) {
 											cursor: "pointer",
 											transition: "fill-opacity 0.15s",
 										}}
+										onMouseEnter={() => {
+											if (
+												arc.name !==
+												lastRoseHoveredRef.current
+											) {
+												lastRoseHoveredRef.current =
+													arc.name;
+												onTrigger?.({
+													trigger: "hover",
+													label: arc.name,
+													row: { [xKey]: arc.name },
+												});
+											}
+										}}
 										onMouseMove={(e) =>
 											setRoseHovered({
 												x: e.clientX,
@@ -450,6 +494,20 @@ export function Pie_Chart({ data, config }: PieChartVizProps) {
 												name: arc.name,
 												value: arc.val,
 												fill: arc.fill,
+											})
+										}
+										onClick={() =>
+											onTrigger?.({
+												trigger: "click",
+												label: arc.name,
+												row: { [xKey]: arc.name },
+											})
+										}
+										onDoubleClick={() =>
+											onTrigger?.({
+												trigger: "dblclick",
+												label: arc.name,
+												row: { [xKey]: arc.name },
 											})
 										}
 									/>
@@ -567,6 +625,8 @@ export function Pie_Chart({ data, config }: PieChartVizProps) {
 				nameKey={xKey}
 				cx="50%"
 				cy="50%"
+				startAngle={0}
+				endAngle={359.999}
 				outerRadius={outerRadiusStr}
 				innerRadius={donut ? "35%" : "0%"}
 				paddingAngle={donut ? 2 : 0}
@@ -591,6 +651,37 @@ export function Pie_Chart({ data, config }: PieChartVizProps) {
 				}
 				isAnimationActive={isAnimActive}
 				animationEasing={animEasing as any}
+				onClick={(_, idx) => {
+					const row = chartData[idx];
+					if (!row) return;
+					const label = String(row[xKey] ?? "");
+					const filterRow = { [xKey]: label };
+					const now = Date.now();
+					if (now - lastPieClickTimeRef.current < 300) {
+						onTrigger?.({
+							trigger: "dblclick",
+							label,
+							row: filterRow,
+						});
+					} else {
+						onTrigger?.({
+							trigger: "click",
+							label,
+							row: filterRow,
+						});
+					}
+					lastPieClickTimeRef.current = now;
+				}}
+				onMouseEnter={(_, idx) => {
+					const row = chartData[idx];
+					if (row)
+						onTrigger?.({
+							trigger: "hover",
+							label: String(row[xKey] ?? ""),
+							row: { [xKey]: String(row[xKey] ?? "") },
+						});
+				}}
+				onMouseLeave={() => onTrigger?.({ trigger: "mouseout" })}
 			>
 				{chartData.map((row, i) => (
 					<Cell key={i} fill={colorForSlice(row, i)} />

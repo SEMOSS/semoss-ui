@@ -10,6 +10,7 @@ import {
 	RefreshCw,
 	ScatterChart as ScatterChartIcon,
 	SlidersHorizontal,
+	Zap,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -58,11 +59,13 @@ import { WorldMapChart } from "@/components/visualizations/WorldMapChart";
 import { CsvExportButton } from "@/components/widgets/CsvExportButton";
 import { FilterWidget } from "@/components/widgets/FilterWidget";
 import { usePivotTransform } from "@/hooks/usePivotTransform";
+import { useVizEvents } from "@/hooks/useVizEvents";
 import {
 	applyFilters,
 	useAppliedFilters,
 	useFilterStore,
 } from "@/lib/dashboardFilters";
+import { useEventParamState, useEventParamStore } from "@/lib/eventParamStore";
 import { formatValue } from "@/lib/formatValue";
 import { escapeSqlForPixel } from "@/lib/pixel";
 import { type QuerySource, resolveParamDefault } from "@/lib/resolveQuery";
@@ -90,9 +93,6 @@ export const CHART_COLORS = [
 	"#14b8a6",
 	"#f97316",
 ];
-
-// ── PERF DIAGNOSTIC flag (temporary) ──────────────────────────────────────────
-// const PERF = true;
 
 // Shared axis/grid styles
 const AXIS_STYLE = { fontSize: 11, fill: "#94a3b8" };
@@ -348,8 +348,9 @@ export function DashboardVisualization({
 	// Effective data source: the resolved shared query when provided, else the
 	// viz's own embedded query/database/parameters (legacy / not-yet-migrated).
 	const src: QuerySource = dataSource ?? visualization;
-	// Use the shared query's name when available,
-	// falling back to the visualization title for embedded/legacy queries.
+	const hasEventParams = (src.parameters ?? []).some(
+		(p) => p.inputType === "event",
+	);
 	const [rawData, setRawData] = useState<any[]>(() => preloadedData ?? []);
 	const [showPhiModal, setShowPhiModal] = useState(false);
 	// Cross-frame filters targeting this visualization (re-renders only when its
@@ -358,6 +359,15 @@ export function DashboardVisualization({
 	// Publish loaded rows so Filter widgets can build their options from this
 	// viz's data — no query of their own required.
 	const filterStore = useFilterStore();
+	const eventParamStore = useEventParamStore();
+	const { paramValues: eventParamValues, runCounter: eventRunCounter } =
+		useEventParamState(visualization.id);
+	const { onTrigger } = useVizEvents(
+		visualization.config?.styling?.events,
+		visualization.id,
+		filterStore,
+		eventParamStore,
+	);
 	useEffect(() => {
 		if (!filterStore) return;
 		if (
@@ -573,7 +583,8 @@ export function DashboardVisualization({
 	}, [cfgPageSize]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	useEffect(() => {
-		if (preloadedData) return;
+		// Allow event-triggered re-queries even when preloaded data was supplied.
+		if (preloadedData && !(hasEventParams && eventRunCounter > 0)) return;
 		// HTML blocks render from config — no database query needed
 		if (visualization.visualizationType === "htmlblock") {
 			setLoading(false);
@@ -586,7 +597,11 @@ export function DashboardVisualization({
 			setWaiting(false);
 			return;
 		}
-		if ((hasParams || loadAfterParams) && runKey === 0) {
+		if (
+			(hasParams || loadAfterParams) &&
+			runKey === 0 &&
+			eventRunCounter === 0
+		) {
 			setLoading(false);
 			setWaiting(true);
 			return;
@@ -602,6 +617,7 @@ export function DashboardVisualization({
 		src.query,
 		src.databaseId,
 		runKey,
+		eventRunCounter,
 		visualization.visualizationType,
 		loadAfterParams,
 		paramOptionsReady,
@@ -624,7 +640,9 @@ export function DashboardVisualization({
 			m[p.name] = resolveParamDefault(p);
 		});
 		Object.assign(m, parameterValues);
-		// useCurrentDate always wins — override any stale stored value.
+		// Event param values override everything else (they come from the triggering click event).
+		Object.assign(m, eventParamValues);
+		// useCurrentDate always wins — override any stale stored value that crept in via parameterValues.
 		src.parameters?.forEach((p) => {
 			if (p.useCurrentDate) m[p.name] = resolveParamDefault(p);
 		});
@@ -649,7 +667,9 @@ export function DashboardVisualization({
 	// entry (siblings keep their shared cached rows until their own next run).
 	const refreshNonce = useRef(0);
 
-	/** Map SEMOSS [headers, values[][]] into row objects. */
+	/** Map SEMOSS [headers, values[][]] into row objects. Coerce bare numeric strings to numbers
+	 *  so that downstream consumers (inferColumnType, formatValue) see proper JS number types. */
+	const NUMERIC_RE = /^-?\d+(\.\d+)?([eE][+-]?\d+)?$/;
 	const toRows = (
 		headers: string[],
 		values: any[][],
@@ -657,7 +677,11 @@ export function DashboardVisualization({
 		values.map((row) => {
 			const obj: any = {};
 			headers.forEach((h, i) => {
-				obj[h] = row[i];
+				const v = row[i];
+				obj[h] =
+					typeof v === "string" && NUMERIC_RE.test(v.trim())
+						? Number(v)
+						: v;
 			});
 			return obj;
 		});
@@ -996,6 +1020,22 @@ export function DashboardVisualization({
 			return <HtmlBlockVisualization config={visualization.config} />;
 		}
 
+		// Event param viz: show idle state until the first trigger fires.
+		if (hasEventParams && eventRunCounter === 0 && !preloadedData) {
+			return (
+				<div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
+					<Zap className="h-8 w-8 text-indigo-300" />
+					<p className="font-semibold text-slate-600 text-sm">
+						Awaiting event
+					</p>
+					<p className="max-w-xs text-slate-400 text-xs">
+						Interact with a configured event to load this
+						visualization.
+					</p>
+				</div>
+			);
+		}
+
 		// When a param sheet exists, ALL waiting charts point there — no inline form,
 		// no master pointer. The param sheet is the single source of truth.
 		if (waiting && hasParamSheet)
@@ -1191,7 +1231,11 @@ export function DashboardVisualization({
 		// ── Polar Bar ────────────────────────────────────────────────────────
 		if (vt === "polarbar") {
 			return (
-				<PolarBarChart data={facetData} config={visualization.config} />
+				<PolarBarChart
+					data={facetData}
+					config={visualization.config}
+					onTrigger={onTrigger}
+				/>
 			);
 		}
 
@@ -1204,6 +1248,7 @@ export function DashboardVisualization({
 					data={facetData}
 					config={visualization.config}
 					formatRules={visualization.config?.styling?.formatRules}
+					onTrigger={onTrigger}
 				/>
 			);
 		}
@@ -1213,13 +1258,18 @@ export function DashboardVisualization({
 				<HalfDonutChart
 					data={facetData}
 					config={visualization.config}
+					onTrigger={onTrigger}
 				/>
 			);
 		}
 
 		if (vt === "cluster") {
 			return (
-				<ClusterChart data={facetData} config={visualization.config} />
+				<ClusterChart
+					data={facetData}
+					config={visualization.config}
+					onTrigger={onTrigger}
+				/>
 			);
 		}
 
@@ -1229,6 +1279,7 @@ export function DashboardVisualization({
 					data={facetData}
 					config={visualization.config}
 					onStylingChange={onMultilineStylingChange}
+					onTrigger={onTrigger}
 				/>
 			);
 		}
@@ -1239,6 +1290,8 @@ export function DashboardVisualization({
 					data={facetData}
 					config={visualization.config}
 					formatRules={visualization.config?.styling?.formatRules}
+					onTrigger={onTrigger}
+					events={visualization.config?.styling?.events}
 				/>
 			);
 		}
@@ -1252,6 +1305,7 @@ export function DashboardVisualization({
 					data={facetData}
 					config={visualization.config}
 					formatRules={visualization.config?.styling?.formatRules}
+					onTrigger={onTrigger}
 				/>
 			);
 		}
@@ -1265,6 +1319,7 @@ export function DashboardVisualization({
 					data={facetData}
 					config={visualization.config}
 					formatRules={visualization.config?.styling?.formatRules}
+					onTrigger={onTrigger}
 				/>
 			);
 		}
@@ -1275,6 +1330,7 @@ export function DashboardVisualization({
 					data={facetData}
 					config={visualization.config}
 					formatRules={visualization.config?.styling?.formatRules}
+					onTrigger={onTrigger}
 				/>
 			);
 		}
@@ -1285,6 +1341,7 @@ export function DashboardVisualization({
 					data={facetData}
 					config={visualization.config}
 					formatRules={visualization.config?.styling?.formatRules}
+					onTrigger={onTrigger}
 				/>
 			);
 		}
@@ -1297,6 +1354,7 @@ export function DashboardVisualization({
 					data={facetData}
 					config={visualization.config}
 					formatRules={visualization.config?.styling?.formatRules}
+					onTrigger={onTrigger}
 				/>
 			);
 		}
@@ -1313,6 +1371,7 @@ export function DashboardVisualization({
 					data={facetData}
 					config={visualization.config}
 					onStylingChange={onStackbarStylingChange}
+					onTrigger={onTrigger}
 				/>
 			);
 		}
@@ -1341,6 +1400,7 @@ export function DashboardVisualization({
 					config={visualization.config}
 					stacked
 					onStylingChange={onStackbarStylingChange}
+					onTrigger={onTrigger}
 				/>
 			);
 		}
@@ -1352,6 +1412,7 @@ export function DashboardVisualization({
 					data={facetData}
 					config={visualization.config}
 					onStylingChange={onLineStylingChange}
+					onTrigger={onTrigger}
 				/>
 			);
 		}
@@ -1363,6 +1424,7 @@ export function DashboardVisualization({
 					data={facetData}
 					config={visualization.config}
 					onStylingChange={onComboStylingChange}
+					onTrigger={onTrigger}
 				/>
 			);
 		}
@@ -1390,6 +1452,7 @@ export function DashboardVisualization({
 						data={facetData}
 						config={visualization.config}
 						onStylingChange={onAreaStylingChange}
+						onTrigger={onTrigger}
 					/>
 				</div>
 			);
@@ -1679,6 +1742,12 @@ export function DashboardVisualization({
 									shape={(props: any) => {
 										const { cx, cy, payload } = props;
 										const r = payload.size || 5;
+										const filterRow = labelKey
+											? { [labelKey]: payload.label }
+											: { [xKey]: payload[xKey] };
+										const label = labelKey
+											? String(payload.label ?? "")
+											: String(payload[xKey] ?? "");
 										return (
 											<circle
 												cx={cx}
@@ -1693,6 +1762,26 @@ export function DashboardVisualization({
 												fillOpacity={0.75}
 												stroke="#fff"
 												strokeWidth={1}
+												style={{ cursor: "pointer" }}
+												onClick={() =>
+													onTrigger?.({
+														trigger: "click",
+														label,
+														row: filterRow,
+													})
+												}
+												onMouseEnter={() =>
+													onTrigger?.({
+														trigger: "hover",
+														label,
+														row: filterRow,
+													})
+												}
+												onMouseLeave={() =>
+													onTrigger?.({
+														trigger: "mouseout",
+													})
+												}
 											/>
 										);
 									}}
@@ -1708,6 +1797,12 @@ export function DashboardVisualization({
 								shape={(props: any) => {
 									const { cx, cy, payload } = props;
 									const r = payload.size || 5;
+									const filterRow = labelKey
+										? { [labelKey]: payload.label }
+										: { [xKey]: payload[xKey] };
+									const label = labelKey
+										? String(payload.label ?? "")
+										: String(payload[xKey] ?? "");
 									return (
 										<circle
 											cx={cx}
@@ -1717,6 +1812,26 @@ export function DashboardVisualization({
 											fillOpacity={0.75}
 											stroke="#fff"
 											strokeWidth={1}
+											style={{ cursor: "pointer" }}
+											onClick={() =>
+												onTrigger?.({
+													trigger: "click",
+													label,
+													row: filterRow,
+												})
+											}
+											onMouseEnter={() =>
+												onTrigger?.({
+													trigger: "hover",
+													label,
+													row: filterRow,
+												})
+											}
+											onMouseLeave={() =>
+												onTrigger?.({
+													trigger: "mouseout",
+												})
+											}
 										/>
 									);
 								}}
@@ -1773,37 +1888,45 @@ export function DashboardVisualization({
 				const agg = radarAggs[col];
 				return agg ? `${radarAggNames[agg] ?? agg} of ${col}` : col;
 			};
+			// Resolve color palette — fall back to module CHART_COLORS
 			const radarColors = visualization.config?.styling?.colorPalette
 				?.colors?.length
 				? visualization.config.styling.colorPalette.colors
 				: CHART_COLORS;
+			// Styling flags
 			const radarShowArea = radarStyling?.showArea ?? false;
 			const radarFillOpacity = radarStyling?.fillOpacity ?? 0.25;
 			const radarShowTooltip = radarStyling?.showTooltip ?? true;
 			const radarShapePolygon = radarStyling?.shapePolygon !== false;
 			const radarValueLabel = radarStyling?.valueLabel;
 			const radarShowValueLabels = radarValueLabel?.show ?? false;
+			// normalizeAxes=true → shared raw-value domain (scale differences visible across columns)
+			// normalizeAxes=false (default) → per-column [0, max] so all points extend toward corners
 			const radarNormalize = radarStyling?.normalizeAxes ?? false;
 			// Pivot: value columns become the radar axes; xKey distinct values become polygon series
+			// chartData is pre-aggregated: [{ [xKey]: 'Male', weight: 181, hip: 44 }, ...]
 			const radarSeries = xKey
 				? [...new Set(chartData.map((r) => String(r[xKey] ?? "")))]
 				: ["Value"];
-			// Raw pivot — always holds original aggregated values
+			// Raw pivot — always holds original aggregated values (used for labels & tooltip)
 			const radarPivoted = yKeys.map((col) => {
 				const entry: Record<string, unknown> = {
 					_axis: radarAxisLabel(col),
 					_col: col,
 				};
 				if (xKey) {
-					for (const row of chartData) {
+					chartData.forEach((row) => {
 						entry[String(row[xKey] ?? "")] = row[col] ?? 0;
-					}
+					});
 				} else {
-					entry["Value"] = chartData[0]?.[col] ?? 0;
+					entry.Value = chartData[0]?.[col] ?? 0;
 				}
 				return entry;
 			});
-			// Non-normalized: per-column [0,max] so all spokes fill to the same outer ring
+			// Display pivot:
+			// - Non-normalized (default): each column scaled to [0, colMax] so all spokes fill to the
+			//   same outer ring and differences between series are subtle shape variations near the corners.
+			// - Normalized: raw values passed directly → Recharts shared domain reveals scale differences.
 			const radarDisplayPivoted = radarNormalize
 				? radarPivoted
 				: radarPivoted.map((row) => {
@@ -1815,9 +1938,9 @@ export function DashboardVisualization({
 							_axis: row._axis,
 							_col: row._col,
 						};
-						for (const s of radarSeries) {
+						radarSeries.forEach((s) => {
 							norm[s] = Number(row[s] ?? 0) / colMax;
-						}
+						});
 						return norm;
 					});
 			return (
@@ -1850,24 +1973,20 @@ export function DashboardVisualization({
 									}
 									label={
 										radarShowValueLabels
-											? (
-													props: Record<
-														string,
-														unknown
-													>,
-												) => {
-													const idx =
-														props.index as number;
+											? (props: any) => {
 													const raw =
-														radarPivoted[idx]?.[s];
+														radarPivoted[
+															props.index
+														]?.[s];
 													if (
 														raw === undefined ||
 														raw === null
 													)
 														return null;
 													const col = String(
-														radarPivoted[idx]
-															?._col ?? "",
+														radarPivoted[
+															props.index
+														]?._col ?? "",
 													);
 													const pos =
 														radarValueLabel?.position ??
@@ -1889,14 +2008,9 @@ export function DashboardVisualization({
 													};
 													return (
 														<text
-															key={`rl-${s}-${idx}`}
-															x={
-																props.x as number
-															}
-															y={
-																(props.y as number) +
-																dy
-															}
+															key={`rl-${s}-${props.index}`}
+															x={props.x}
+															y={props.y + dy}
 															textAnchor="middle"
 															fill={
 																radarValueLabel?.color ??
@@ -1938,35 +2052,24 @@ export function DashboardVisualization({
 						{radarShowTooltip && (
 							<Tooltip
 								wrapperStyle={{ zIndex: 10 }}
-								content={(props: Record<string, unknown>) => {
-									const tProps = props as {
-										active?: boolean;
-										payload?: Array<{
-											payload?: Record<string, unknown>;
-											dataKey?: string;
-											name?: string;
-											color?: string;
-										}>;
-									};
-									if (
-										!tProps.active ||
-										!tProps.payload?.length
-									)
+								content={(props: any) => {
+									if (!props.active || !props.payload?.length)
 										return null;
-									const spoke = tProps.payload[0]?.payload;
+									const spoke = props.payload[0]?.payload;
 									const col = String(spoke?._col ?? "");
 									return (
 										<div className="min-w-[120px] rounded-md border border-slate-200 bg-white p-2 text-xs shadow-md">
 											<p className="mb-1.5 truncate font-semibold text-slate-700">
-												{String(spoke?._axis ?? "")}
+												{spoke?._axis ?? ""}
 											</p>
-											{tProps.payload.map((p) => {
+											{props.payload.map((p: any) => {
+												// Always show original raw value regardless of normalization mode
 												const rawVal =
 													radarPivoted.find(
 														(r) =>
 															r._axis ===
 															spoke?._axis,
-													)?.[p.dataKey ?? ""];
+													)?.[p.dataKey];
 												return (
 													<div
 														key={p.dataKey}
@@ -2009,13 +2112,21 @@ export function DashboardVisualization({
 					data={chartData}
 					config={visualization.config}
 					height={chartHeight}
+					onTrigger={onTrigger}
 				/>
 			);
 		}
 
 		// Pie
 		if (vt === "pie") {
-			return <Pie_Chart data={data} config={visualization.config} />;
+			return (
+				<Pie_Chart
+					data={data}
+					rawData={rawData}
+					config={visualization.config}
+					onTrigger={onTrigger}
+				/>
+			);
 		}
 
 		//Pivot table (multi-dimensional crosstab)

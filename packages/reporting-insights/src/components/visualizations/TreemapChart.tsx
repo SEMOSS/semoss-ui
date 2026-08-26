@@ -5,12 +5,17 @@ import {
 	compareColorRule,
 } from "@/components/visualizations/shared/chartShared";
 import { formatValue } from "@/lib/formatValue";
-import type { ColorRule, VisualizationConfig } from "@/types/dashboard";
+import type {
+	ColorRule,
+	VisualizationConfig,
+	VizTriggerPayload,
+} from "@/types/dashboard";
 
 interface TreemapChartProps {
 	data: Record<string, any>[];
 	config?: VisualizationConfig;
 	height?: number | `${number}%`;
+	onTrigger?: (payload: VizTriggerPayload) => void;
 }
 
 const SEP = "\x00";
@@ -61,6 +66,7 @@ export function TreemapChart({
 	data,
 	config,
 	height = "100%",
+	onTrigger,
 }: TreemapChartProps) {
 	const seriesKey = config?.seriesKey;
 	const labelKey = config?.xKey;
@@ -122,7 +128,7 @@ export function TreemapChart({
 					inner.set(lv, []);
 					rowMap.set(`${sv}${SEP}${lv}`, row);
 				}
-				inner.get(lv)!.push(num);
+				inner.get(lv)?.push(num);
 			}
 
 			const seriesRule = sortValues.find((r) => r.column === seriesKey);
@@ -344,6 +350,11 @@ export function TreemapChart({
 							mouseX: e.clientX,
 							mouseY: e.clientY,
 						});
+						onTrigger?.({
+							trigger: "hover",
+							label: info.seriesName,
+							row: { [seriesKey!]: info.seriesName },
+						});
 					}}
 					onMouseMove={(e) => {
 						e.stopPropagation();
@@ -357,11 +368,26 @@ export function TreemapChart({
 								: null,
 						);
 					}}
-					onMouseLeave={() => setHoveredHeader(null)}
-					onClick={() =>
+					onMouseLeave={() => {
+						setHoveredHeader(null);
+						onTrigger?.({ trigger: "mouseout" });
+					}}
+					onClick={() => {
 						setDrillState({
 							level: "series",
 							seriesName: info.seriesName,
+						});
+						onTrigger?.({
+							trigger: "click",
+							label: info.seriesName,
+							row: { [seriesKey!]: info.seriesName },
+						});
+					}}
+					onDoubleClick={() =>
+						onTrigger?.({
+							trigger: "dblclick",
+							label: info.seriesName,
+							row: { [seriesKey!]: info.seriesName },
 						})
 					}
 					style={{ cursor: "pointer" }}
@@ -412,16 +438,44 @@ export function TreemapChart({
 			}
 		}
 
+		const tileRow = {
+			[labelKey!]: info?.labelName ?? rawLabel,
+			...(seriesKey && info?.seriesName
+				? { [seriesKey]: info.seriesName }
+				: {}),
+		};
+		const tileLabel2 = info?.labelName ?? rawLabel;
 		return (
 			<g
+				onMouseEnter={() =>
+					onTrigger?.({
+						trigger: "hover",
+						label: tileLabel2,
+						row: tileRow,
+					})
+				}
+				onMouseLeave={() => onTrigger?.({ trigger: "mouseout" })}
 				onClick={() => {
-					if (!seriesKey || !info?.seriesName) return;
-					setDrillState({
-						level: "tile",
-						seriesName: info.seriesName,
-						labelName: info.labelName,
+					if (seriesKey && info?.seriesName) {
+						setDrillState({
+							level: "tile",
+							seriesName: info.seriesName,
+							labelName: info.labelName,
+						});
+					}
+					onTrigger?.({
+						trigger: "click",
+						label: tileLabel2,
+						row: tileRow,
 					});
 				}}
+				onDoubleClick={() =>
+					onTrigger?.({
+						trigger: "dblclick",
+						label: tileLabel2,
+						row: tileRow,
+					})
+				}
 				style={{ cursor: seriesKey ? "pointer" : "default" }}
 			>
 				<rect

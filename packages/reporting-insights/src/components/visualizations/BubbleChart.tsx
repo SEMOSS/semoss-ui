@@ -13,6 +13,7 @@ import {
 	DEFAULT_BUBBLE_STYLING,
 	type FormatRule,
 	type VisualizationConfig,
+	type VizTriggerPayload,
 } from "@/types/dashboard";
 
 // Default categorical palette
@@ -194,6 +195,7 @@ interface BubbleChartProps {
 	/** Optional explicit palette override (otherwise reads `config.styling.colorPalette`). */
 	palette?: string[];
 	formatRules?: FormatRule[];
+	onTrigger?: (payload: VizTriggerPayload) => void;
 }
 
 interface PlacedBubble extends BubblePoint {
@@ -223,7 +225,7 @@ function truncateToFit(
 	if (maxChars < 1) return "";
 	if (text.length <= maxChars) return text;
 	if (maxChars <= 1) return "…";
-	return text.slice(0, maxChars - 1) + "…";
+	return `${text.slice(0, maxChars - 1)}…`;
 }
 
 function tooltipStyle(x: number, y: number): CSSProperties {
@@ -235,6 +237,7 @@ export function BubbleChart({
 	config,
 	palette,
 	formatRules = [],
+	onTrigger,
 }: BubbleChartProps) {
 	const labelKey = config?.xKey;
 	const sizeKey = config?.yKeys?.[0];
@@ -530,18 +533,44 @@ export function BubbleChart({
 								onMouseEnter={(
 									e: React.MouseEvent<SVGCircleElement>,
 								) => {
-									if (!showTooltip) return;
-									const rect =
-										(e.currentTarget.ownerSVGElement?.getBoundingClientRect?.() as
-											| DOMRect
-											| undefined) ?? { left: 0, top: 0 };
-									setHovered({
-										point: p,
-										x: e.clientX - rect.left,
-										y: e.clientY - rect.top,
+									if (showTooltip) {
+										const rect =
+											(e.currentTarget.ownerSVGElement?.getBoundingClientRect?.() as
+												| DOMRect
+												| undefined) ?? {
+												left: 0,
+												top: 0,
+											};
+										setHovered({
+											point: p,
+											x: e.clientX - rect.left,
+											y: e.clientY - rect.top,
+										});
+									}
+									onTrigger?.({
+										trigger: "hover",
+										label: p.label,
+										row: { [labelKey ?? ""]: p.label },
 									});
 								}}
-								onMouseLeave={() => setHovered(null)}
+								onMouseLeave={() => {
+									setHovered(null);
+									onTrigger?.({ trigger: "mouseout" });
+								}}
+								onClick={() =>
+									onTrigger?.({
+										trigger: "click",
+										label: p.label,
+										row: { [labelKey ?? ""]: p.label },
+									})
+								}
+								onDoubleClick={() =>
+									onTrigger?.({
+										trigger: "dblclick",
+										label: p.label,
+										row: { [labelKey ?? ""]: p.label },
+									})
+								}
 							/>
 							{showLabels &&
 								(() => {
@@ -655,7 +684,7 @@ export function BubbleChart({
 									</span>
 									<span className="font-medium text-slate-700 tabular-nums">
 										{formatValue(
-											hovered.point.tooltipValues![
+											hovered.point.tooltipValues?.[
 												column
 											],
 											column,

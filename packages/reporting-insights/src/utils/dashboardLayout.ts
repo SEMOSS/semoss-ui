@@ -54,7 +54,7 @@ function groupIntoRows(
 
 const GLOBAL = {
 	tabSetTabStripHeight: 26,
-	tabSetMinWidth: 100,
+	tabSetMinWidth: 180,
 	tabSetMinHeight: 80,
 	// Prevent users from closing panels — tabs are driven by viz config, not freeform
 	tabEnableClose: false,

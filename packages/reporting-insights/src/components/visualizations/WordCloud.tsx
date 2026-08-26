@@ -15,6 +15,7 @@ import {
 	DEFAULT_WORDCLOUD_STYLING,
 	type FormatRule,
 	type VisualizationConfig,
+	type VizTriggerPayload,
 	type WordCloudShape,
 } from "@/types/dashboard";
 
@@ -297,6 +298,7 @@ interface WordCloudProps {
 	/** Optional explicit palette override (otherwise reads `config.styling.colorPalette`). */
 	palette?: string[];
 	formatRules?: FormatRule[];
+	onTrigger?: (payload: VizTriggerPayload) => void;
 }
 
 interface HoveredWord {
@@ -310,6 +312,7 @@ export function WordCloud({
 	config,
 	palette,
 	formatRules = [],
+	onTrigger,
 }: WordCloudProps) {
 	const wordsKey = config?.xKey;
 	const sizeKey = config?.yKeys?.[0];
@@ -372,6 +375,10 @@ export function WordCloud({
 		return (v: number) =>
 			fontMin + ((v - lo) / range) * (fontMax - fontMin);
 	}, [words, fontMin, fontMax]);
+
+	// Stable ref for onTrigger — prevents useEffect rebuilding the cloud on parent re-renders
+	const onTriggerRef = useRef(onTrigger);
+	onTriggerRef.current = onTrigger;
 
 	// Container measurement (drives the canvas dimensions)
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -476,17 +483,32 @@ export function WordCloud({
 			shrinkToFit: true,
 			gridSize: Math.max(4, Math.round(8 * dpr)),
 			hover: (item, _dim, evt) => {
-				if (!showTooltip) return;
 				if (!item) {
-					setHovered(null);
+					if (showTooltip) setHovered(null);
+					onTriggerRef.current?.({ trigger: "mouseout" });
 					return;
 				}
 				const payload = item[2] as WordCloudWord | undefined;
 				if (!payload) return;
-				setHovered({
-					word: payload,
-					x: evt.offsetX,
-					y: evt.offsetY,
+				if (showTooltip)
+					setHovered({
+						word: payload,
+						x: evt.offsetX,
+						y: evt.offsetY,
+					});
+				onTriggerRef.current?.({
+					trigger: "hover",
+					label: payload.label,
+					row: { [wordsKey ?? ""]: payload.label },
+				});
+			},
+			click: (item) => {
+				const payload = item?.[2] as WordCloudWord | undefined;
+				if (!payload) return;
+				onTriggerRef.current?.({
+					trigger: "click",
+					label: payload.label,
+					row: { [wordsKey ?? ""]: payload.label },
 				});
 			},
 		});
@@ -593,7 +615,7 @@ export function WordCloud({
 								{column} ({aggregation}):{" "}
 								<span className="font-medium tabular-nums">
 									{formatValue(
-										hovered.word.tooltipValues![column],
+										hovered.word.tooltipValues?.[column],
 										column,
 										formatRules ?? [],
 									)}

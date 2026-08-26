@@ -114,7 +114,7 @@ function evaluateColorRule(
 
 const formatNumber = (v: number | null): string => {
 	if (v == null) return "—";
-	if (!isFinite(v)) return String(v);
+	if (!Number.isFinite(v)) return String(v);
 	// Show sensible precision: integers exact, otherwise up to 2 decimals
 	if (Number.isInteger(v)) return v.toLocaleString();
 	return v.toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -184,7 +184,7 @@ export function PivotTable({
 	const formatDRules = styling?.formatRules ?? [];
 	const fmtCell = (v: number | null, col: string): string => {
 		if (v == null) return "—";
-		if (!isFinite(v)) return String(v);
+		if (!Number.isFinite(v)) return String(v);
 		const hasRule = formatDRules.some((r) => r.column === col);
 		return hasRule ? formatValue(v, col, formatDRules) : formatNumber(v);
 	};
@@ -203,7 +203,7 @@ export function PivotTable({
 			const key = c.columnHeaders.join(SEPARATOR);
 			if (!map.has(key))
 				map.set(key, { headers: c.columnHeaders, cols: [] });
-			map.get(key)!.cols.push(c);
+			map.get(key)?.cols.push(c);
 		});
 		return Array.from(map.values());
 	}, [columns]);

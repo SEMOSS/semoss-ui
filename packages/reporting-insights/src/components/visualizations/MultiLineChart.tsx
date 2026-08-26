@@ -51,6 +51,9 @@ const PALETTE = [
 interface MultiLineChartProps {
 	data: any[];
 	config?: VisualizationConfig;
+	onTrigger?: (
+		payload: import("@/types/dashboard").VizTriggerPayload,
+	) => void;
 	onStylingChange?: (updates: Partial<MultiLineStyling>) => void;
 }
 
@@ -322,9 +325,9 @@ function linearRegression(yValues: number[]): number[] {
 	if (n < 2) return yValues.map(() => NaN);
 	const sumX = (n * (n - 1)) / 2;
 	const sumX2 = (n * (n - 1) * (2 * n - 1)) / 6;
-	const sumY = yValues.reduce((a, b) => a + (isNaN(b) ? 0 : b), 0);
+	const sumY = yValues.reduce((a, b) => a + (Number.isNaN(b) ? 0 : b), 0);
 	const sumXY = yValues.reduce(
-		(acc, y, i) => acc + i * (isNaN(y) ? 0 : y),
+		(acc, y, i) => acc + i * (Number.isNaN(y) ? 0 : y),
 		0,
 	);
 	const slope =
@@ -347,7 +350,6 @@ function aggregateValues(values: number[], aggFn: string): number {
 			return Math.min(...values);
 		case "max":
 			return Math.max(...values);
-		case "sum":
 		default:
 			return values.reduce((a, b) => a + b, 0);
 	}
@@ -357,6 +359,7 @@ export function MultiLineChart({
 	data,
 	config,
 	onStylingChange,
+	onTrigger,
 }: MultiLineChartProps) {
 	const xKey = config?.xKey;
 	const yKey = config?.yKeys?.[0];
@@ -407,7 +410,7 @@ export function MultiLineChart({
 		const y = Number(r[yKey]);
 		if (!bucketMap[x]) bucketMap[x] = {};
 		if (!bucketMap[x][cat]) bucketMap[x][cat] = [];
-		if (!isNaN(y)) bucketMap[x][cat].push(y);
+		if (!Number.isNaN(y)) bucketMap[x][cat].push(y);
 		if (tooltipEntries.length) {
 			if (!tooltipBuckets[x]) tooltipBuckets[x] = {};
 			for (const { column } of tooltipEntries) {
@@ -487,6 +490,8 @@ export function MultiLineChart({
 	const [xBrushFrac, setXBrushFrac] = useState<[number, number]>(() =>
 		saveZoom && ml.savedZoomX ? ml.savedZoomX : [0, 1],
 	);
+	const lastHoveredLabelRef = useRef<string | null>(null);
+	const lastHoveredPayloadRef = useRef<Record<string, unknown> | null>(null);
 	const xBrushFracRef = useRef(xBrushFrac);
 	xBrushFracRef.current = xBrushFrac;
 	const yBrushFracRef = useRef(yBrushFrac);
@@ -548,7 +553,7 @@ export function MultiLineChart({
 				categories.map((cat) => {
 					const vals = pivoted
 						.map((r) => r[cat] as number)
-						.filter((v) => !isNaN(v));
+						.filter((v) => !Number.isNaN(v));
 					const avg = vals.length
 						? vals.reduce((a, b) => a + b, 0) / vals.length
 						: NaN;
@@ -571,7 +576,7 @@ export function MultiLineChart({
 				maxV = -Infinity;
 			visiblePivoted.forEach((row, idx) => {
 				const v = Number((row as Record<string, unknown>)[cat] ?? NaN);
-				if (!isNaN(v)) {
+				if (!Number.isNaN(v)) {
 					if (v < minV) {
 						minV = v;
 						mi[cat] = idx;
@@ -604,7 +609,58 @@ export function MultiLineChart({
 		>
 			<div style={{ flex: 1, display: "flex", minHeight: 0 }}>
 				<ResponsiveContainer width="100%" height="100%">
-					<ComposedChart data={chartData} margin={MARGIN}>
+					<ComposedChart
+						data={chartData}
+						margin={MARGIN}
+						onClick={(e: any) => {
+							if (e?.activeLabel != null)
+								onTrigger?.({
+									trigger: "click",
+									label: String(e.activeLabel),
+									row: e.activePayload?.[0]?.payload ?? {
+										[xKey ?? ""]: String(e.activeLabel),
+									},
+								});
+						}}
+						onDoubleClick={() => {
+							const label = lastHoveredLabelRef.current;
+							if (label != null)
+								onTrigger?.({
+									trigger: "dblclick",
+									label,
+									row: lastHoveredPayloadRef.current ?? {
+										[xKey ?? ""]: label,
+									},
+								});
+						}}
+						onMouseMove={(e: any) => {
+							const label = e?.activeLabel
+								? String(e.activeLabel)
+								: null;
+							if (
+								label &&
+								label !== lastHoveredLabelRef.current
+							) {
+								lastHoveredLabelRef.current = label;
+								lastHoveredPayloadRef.current =
+									e.activePayload?.[0]?.payload ?? null;
+								onTrigger?.({
+									trigger: "hover",
+									label,
+									row: e.activePayload?.[0]?.payload ?? {
+										[xKey ?? ""]: label,
+									},
+								});
+							}
+						}}
+						onMouseLeave={() => {
+							if (lastHoveredLabelRef.current !== null) {
+								lastHoveredLabelRef.current = null;
+								lastHoveredPayloadRef.current = null;
+								onTrigger?.({ trigger: "mouseout" });
+							}
+						}}
+					>
 						<CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
 
 						<XAxis
@@ -720,7 +776,7 @@ export function MultiLineChart({
 						{showAvg &&
 							categories.map((cat, i) => {
 								const avg = categoryAverages[cat];
-								if (isNaN(avg)) return null;
+								if (Number.isNaN(avg)) return null;
 								const color =
 									paletteColors[i % paletteColors.length];
 								const formatted = formatValue(

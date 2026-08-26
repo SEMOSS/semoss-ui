@@ -370,7 +370,8 @@ export function FilterWidget({
 			const t = new Date(o).getTime();
 			return !isNaN(t) && t >= s && t <= e;
 		});
-		stage(inRange);
+		// If nothing matches, stage a sentinel so the filter stays active (empty values = inactive).
+		stage(inRange.length > 0 ? inRange : ["\x00"]);
 	};
 	// When the filter is externally cleared, reset the range inputs.
 	useEffect(() => {
@@ -1153,62 +1154,48 @@ export function FilterWidget({
 						<div className="space-y-2">
 							{multiSelect ? (
 								// Range mode: Start → End date pickers
-								<>
-									<div className="flex items-end gap-2">
-										<div className="flex-1">
-											<p className="mb-1 font-semibold text-[10px] text-stone-400 uppercase tracking-widest">
-												Start
-											</p>
-											<input
-												type="date"
-												value={dateRangeStart}
-												onChange={(e) => {
-													const val = e.target.value;
-													setDateRangeStart(val);
-													applyDateRange(
-														val,
-														dateRangeEnd,
-													);
-												}}
-												className="w-full rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-[13px] focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-											/>
-										</div>
-										<span className="mb-2.5 flex-shrink-0 text-[12px] text-stone-400">
-											to
-										</span>
-										<div className="flex-1">
-											<p className="mb-1 font-semibold text-[10px] text-stone-400 uppercase tracking-widest">
-												End
-											</p>
-											<input
-												type="date"
-												value={dateRangeEnd}
-												min={
-													dateRangeStart || undefined
-												}
-												onChange={(e) => {
-													const val = e.target.value;
-													setDateRangeEnd(val);
-													applyDateRange(
-														dateRangeStart,
-														val,
-													);
-												}}
-												className="w-full rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-[13px] focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-											/>
-										</div>
-									</div>
-									{dateRangeStart && dateRangeEnd && (
-										<p className="text-[11px] text-stone-500">
-											{displaySelected.length} matching
-											value
-											{displaySelected.length === 1
-												? ""
-												: "s"}{" "}
-											in range
+								<div className="flex items-end gap-2">
+									<div className="flex-1">
+										<p className="mb-1 font-semibold text-[10px] text-stone-400 uppercase tracking-widest">
+											Start
 										</p>
-									)}
-								</>
+										<input
+											type="date"
+											value={dateRangeStart}
+											onChange={(e) => {
+												const val = e.target.value;
+												setDateRangeStart(val);
+												applyDateRange(
+													val,
+													dateRangeEnd,
+												);
+											}}
+											className="w-full rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-[13px] focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+										/>
+									</div>
+									<span className="mb-2.5 flex-shrink-0 text-[12px] text-stone-400">
+										to
+									</span>
+									<div className="flex-1">
+										<p className="mb-1 font-semibold text-[10px] text-stone-400 uppercase tracking-widest">
+											End
+										</p>
+										<input
+											type="date"
+											value={dateRangeEnd}
+											min={dateRangeStart || undefined}
+											onChange={(e) => {
+												const val = e.target.value;
+												setDateRangeEnd(val);
+												applyDateRange(
+													dateRangeStart,
+													val,
+												);
+											}}
+											className="w-full rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-[13px] focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+										/>
+									</div>
+								</div>
 							) : (
 								// Single date: controlled input — selected date stays visible
 								<input

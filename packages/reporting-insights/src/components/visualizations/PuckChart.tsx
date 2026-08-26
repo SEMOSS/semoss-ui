@@ -1,7 +1,7 @@
 import { CircleDot } from "lucide-react";
 import {
 	type CSSProperties,
-	useCallback,
+	useLayoutEffect,
 	useMemo,
 	useRef,
 	useState,
@@ -13,6 +13,7 @@ import {
 	DEFAULT_PUCK_STYLING,
 	type FormatRule,
 	type VisualizationConfig,
+	type VizTriggerPayload,
 } from "@/types/dashboard";
 
 const DEFAULT_PALETTE = [
@@ -65,13 +66,13 @@ function compare(
 		case "neq":
 			return cs !== ts;
 		case "gt":
-			return !isNaN(cn) && !isNaN(tn) && cn > tn;
+			return !Number.isNaN(cn) && !Number.isNaN(tn) && cn > tn;
 		case "lt":
-			return !isNaN(cn) && !isNaN(tn) && cn < tn;
+			return !Number.isNaN(cn) && !Number.isNaN(tn) && cn < tn;
 		case "gte":
-			return !isNaN(cn) && !isNaN(tn) && cn >= tn;
+			return !Number.isNaN(cn) && !Number.isNaN(tn) && cn >= tn;
 		case "lte":
-			return !isNaN(cn) && !isNaN(tn) && cn <= tn;
+			return !Number.isNaN(cn) && !Number.isNaN(tn) && cn <= tn;
 		case "contains":
 			return cs.toLowerCase().includes(ts.toLowerCase());
 		default:
@@ -112,7 +113,7 @@ function buildPuckTree(
 		for (const row of subset) {
 			const key = String(row[col] ?? "");
 			if (!grouped.has(key)) grouped.set(key, []);
-			grouped.get(key)!.push(row);
+			grouped.get(key)?.push(row);
 		}
 		return Array.from(grouped.entries()).map(([name, items]) => {
 			const children = recurse(items, depth + 1, [...path, name]);
@@ -304,7 +305,7 @@ function truncateToFit(text: string, maxPx: number, fontSize: number): string {
 		? text
 		: max <= 1
 			? "…"
-			: text.slice(0, max - 1) + "…";
+			: `${text.slice(0, max - 1)}…`;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -313,6 +314,7 @@ interface PuckChartProps {
 	config?: VisualizationConfig;
 	palette?: string[];
 	formatRules?: FormatRule[];
+	onTrigger?: (payload: VizTriggerPayload) => void;
 }
 
 interface HoveredNode {
@@ -326,6 +328,7 @@ export function PuckChart({
 	config,
 	palette,
 	formatRules = [],
+	onTrigger,
 }: PuckChartProps) {
 	const groupCols = config?.puckGroups ?? [];
 	const valueCol = config?.yKeys?.[0] ?? "";
@@ -346,20 +349,17 @@ export function PuckChart({
 		return cp?.colors?.length ? cp.colors : DEFAULT_PALETTE;
 	}, [palette, config?.styling?.colorPalette]);
 
+	const containerRef = useRef<HTMLDivElement | null>(null);
 	const [size, setSize] = useState({ width: 0, height: 0 });
-	const roRef = useRef<ResizeObserver | null>(null);
-	// Callback ref so we measure whenever the container actually mounts — including
-	// when the chart first appears after Group/Value are added (it isn't rendered
-	// while the config is incomplete, so a mount-once effect would miss it and the
-	// chart would stay blank until a remount).
-	const measureRef = useCallback((el: HTMLDivElement | null) => {
-		roRef.current?.disconnect();
+	useLayoutEffect(() => {
+		const el = containerRef.current;
 		if (!el) return;
-		const update = () =>
-			setSize({ width: el.clientWidth, height: el.clientHeight });
-		update();
-		roRef.current = new ResizeObserver(update);
-		roRef.current.observe(el);
+		setSize({ width: el.clientWidth, height: el.clientHeight });
+		const ro = new ResizeObserver(() =>
+			setSize({ width: el.clientWidth, height: el.clientHeight }),
+		);
+		ro.observe(el);
+		return () => ro.disconnect();
 	}, []);
 
 	const { flatNodes, legendEntries } = useMemo(() => {
@@ -417,7 +417,7 @@ export function PuckChart({
 
 	return (
 		<div className="relative flex h-full w-full flex-col">
-			<div ref={measureRef} className="relative min-h-0 flex-1">
+			<div ref={containerRef} className="relative min-h-0 flex-1">
 				<svg width="100%" height="100%" style={{ display: "block" }}>
 					{flatNodes.map((node, i) => {
 						if (node.r <= 0) return null;
@@ -438,21 +438,77 @@ export function PuckChart({
 									onMouseEnter={(
 										e: React.MouseEvent<SVGCircleElement>,
 									) => {
-										if (!showTooltip || isRoot) return;
-										const rect =
-											(e.currentTarget.ownerSVGElement?.getBoundingClientRect?.() as
-												| DOMRect
-												| undefined) ?? {
-												left: 0,
-												top: 0,
-											};
-										setHovered({
-											node,
-											x: e.clientX - rect.left,
-											y: e.clientY - rect.top,
+										if (isRoot) return;
+										if (showTooltip) {
+											const rect =
+												(e.currentTarget.ownerSVGElement?.getBoundingClientRect?.() as
+													| DOMRect
+													| undefined) ?? {
+													left: 0,
+													top: 0,
+												};
+											setHovered({
+												node,
+												x: e.clientX - rect.left,
+												y: e.clientY - rect.top,
+											});
+										}
+										const puckRow = groupCols
+											.slice(0, node.depth)
+											.reduce<Record<string, unknown>>(
+												(acc, col, i) => ({
+													...acc,
+													[col]: node.path[i],
+												}),
+												{},
+											);
+										onTrigger?.({
+											trigger: "hover",
+											label: node.name,
+											row: puckRow,
 										});
 									}}
-									onMouseLeave={() => setHovered(null)}
+									onMouseLeave={() => {
+										setHovered(null);
+										if (!isRoot)
+											onTrigger?.({
+												trigger: "mouseout",
+											});
+									}}
+									onClick={() => {
+										if (isRoot) return;
+										const puckRow = groupCols
+											.slice(0, node.depth)
+											.reduce<Record<string, unknown>>(
+												(acc, col, i) => ({
+													...acc,
+													[col]: node.path[i],
+												}),
+												{},
+											);
+										onTrigger?.({
+											trigger: "click",
+											label: node.name,
+											row: puckRow,
+										});
+									}}
+									onDoubleClick={() => {
+										if (isRoot) return;
+										const puckRow = groupCols
+											.slice(0, node.depth)
+											.reduce<Record<string, unknown>>(
+												(acc, col, i) => ({
+													...acc,
+													[col]: node.path[i],
+												}),
+												{},
+											);
+										onTrigger?.({
+											trigger: "dblclick",
+											label: node.name,
+											row: puckRow,
+										});
+									}}
 								/>
 								{/* Leaf labels: name + value, same two-line style as BubbleChart */}
 								{showLabels &&

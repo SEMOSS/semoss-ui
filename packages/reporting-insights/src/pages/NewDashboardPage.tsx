@@ -7,18 +7,13 @@ import {
 	type TabNode,
 } from "flexlayout-react";
 import {
-	ArrowLeft,
-	BarChart2,
-	BookOpen,
-	CopyPlus,
 	Globe,
 	Loader2,
 	Lock,
+	Menu,
 	Pencil,
 	Plus,
-	RefreshCw,
 	Save,
-	Sparkles,
 	X,
 } from "lucide-react";
 import React, {
@@ -30,18 +25,31 @@ import React, {
 } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useInsight } from "@semoss/sdk-react";
-import { AiBuilderModal } from "@/components/AiBuilderModal";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogTitle,
+} from "@semoss/ui/next";
 import { DashboardVisualization } from "@/components/DashboardVisualization";
-import { SheetTabs } from "@/components/editor/SheetTabs";
+import { DashboardNav } from "@/components/editor/DashboardNav";
 import { VizEditor } from "@/components/editor/VizEditor";
+import { isParamSatisfied } from "@/components/ParamControl";
 import { ParamSheetEditor } from "@/components/ParamSheetEditor";
 import { UserSearchSelect } from "@/components/UserSearchSelect";
 import { Button, buttonClasses, Input, Select } from "@/components/ui";
 import { TagInput } from "@/components/ui/TagInput";
 import { useToast } from "@/components/ui/Toast";
 import type { Column, DropZoneDataWithTable } from "@/components/VizConfigTabs";
+import { useHeaderSlot } from "@/layouts/AppHeader";
 import { DashboardFilterProvider } from "@/lib/dashboardFilters";
-import { escapeSqlForPixel } from "@/lib/pixel";
+import { EventParamProvider } from "@/lib/eventParamStore";
+import {
+	buildQueryPixel,
+	isDataProduct,
+	lastPixelOutput,
+	sourcesSignature,
+} from "@/lib/queryPixel";
 import {
 	computeParamGroups,
 	ensureParamSheet,
@@ -53,7 +61,6 @@ import {
 import { useTabColors } from "@/lib/tabColors";
 import { inferColumnType, normalizeDataType } from "@/lib/tableAggregate";
 import { VIZ_TYPE_META } from "@/lib/vizMeta";
-import { aiEnabled } from "@/services/aiBuilder";
 import {
 	type DirectoryUser,
 	type GroupInfo,
@@ -62,7 +69,6 @@ import {
 	grantProjectUser,
 	type Role,
 } from "@/services/permissionsApi";
-import { LANDING_PAGE_TAG } from "@/services/projectStore";
 import type {
 	ColorPalette as ColorPaletteType,
 	ColSpan,
@@ -87,7 +93,6 @@ const VIZ_TYPES: VisualizationType[] = [
 	"stackbar",
 	"line",
 	"area",
-	"combo",
 	"scatter",
 	"pie",
 	"radar",
@@ -105,6 +110,7 @@ const VIZ_TYPES: VisualizationType[] = [
 	"wordcloud",
 	"bubble",
 	"sunburst",
+	"combo",
 	"puck",
 	"csvexport",
 	"filter",
@@ -155,12 +161,11 @@ function makeVisualization(): Visualization {
 function makeSheet(
 	name: string,
 	color?: string,
-	id?: string,
 	firstViz?: Visualization,
 ): Sheet {
 	const viz = firstViz ?? makeVisualization();
 	return {
-		id: id ?? crypto.randomUUID(),
+		id: crypto.randomUUID(),
 		name,
 		color,
 		visualizations: [viz],
@@ -170,8 +175,7 @@ function makeSheet(
 
 /** Migrate old dashboard (no sheets) into sheets array */
 function initSheets(existingDashboard: Dashboard | undefined): Sheet[] {
-	if (!existingDashboard)
-		return [makeSheet("Sheet 1", SHEET_COLORS[0], "sheet-1")];
+	if (!existingDashboard) return [makeSheet("Sheet 1", SHEET_COLORS[0])];
 
 	if (existingDashboard.sheets?.length) return existingDashboard.sheets;
 
@@ -181,7 +185,7 @@ function initSheets(existingDashboard: Dashboard | undefined): Sheet[] {
 	if (vizs.length) {
 		return [
 			{
-				id: "sheet-1",
+				id: crypto.randomUUID(),
 				name: "Sheet 1",
 				color: SHEET_COLORS[0],
 				visualizations: vizs,
@@ -189,7 +193,58 @@ function initSheets(existingDashboard: Dashboard | undefined): Sheet[] {
 			},
 		];
 	}
-	return [makeSheet("Sheet 1", SHEET_COLORS[0], "sheet-1")];
+	return [makeSheet("Sheet 1", SHEET_COLORS[0])];
+}
+
+// Simple pub/sub store for layout selection state. React context doesn't
+// propagate through flexlayout's createPortal boundaries.
+function createLayoutSelectionStore() {
+	let selectedId: string | null = null;
+	const listeners = new Set<() => void>();
+	return {
+		getSelectedId: () => selectedId,
+		select: (id: string) => {
+			selectedId = selectedId === id ? null : id;
+			for (const l of listeners) l();
+		},
+		clear: () => {
+			selectedId = null;
+			for (const l of listeners) l();
+		},
+		subscribe: (listener: () => void) => {
+			listeners.add(listener);
+			return () => listeners.delete(listener);
+		},
+	};
+}
+const layoutSelectionStore = createLayoutSelectionStore();
+
+/** Wraps a viz inside the flexlayout factory with click-to-select. */
+function LayoutVizWrapper({
+	vizId,
+	children,
+}: {
+	vizId: string;
+	children: React.ReactNode;
+}) {
+	const selectedId = React.useSyncExternalStore(
+		layoutSelectionStore.subscribe,
+		layoutSelectionStore.getSelectedId,
+	);
+	const isSelected = selectedId === vizId;
+	return (
+		<div
+			className="relative h-full w-full"
+			onPointerDownCapture={() => {
+				layoutSelectionStore.select(vizId);
+			}}
+		>
+			{children}
+			{isSelected && (
+				<div className="pointer-events-none absolute inset-0 z-[9999] border-2 border-indigo-500" />
+			)}
+		</div>
+	);
 }
 
 function collectVizLevelPalettes(sheets: Sheet[]): ColorPaletteType[] {
@@ -216,10 +271,10 @@ export function NewDashboardPage() {
 	const {
 		createDashboard,
 		updateDashboard,
+		redeployDashboard,
 		getDashboard,
 		loadDashboard,
 		folders,
-		dashboards,
 		isAdmin,
 	} = useWorkspace();
 	const tagSuggestions = useMemo(
@@ -259,34 +314,22 @@ export function NewDashboardPage() {
 	const [description, setDescription] = useState(
 		seedSource?.description ?? "",
 	);
-	const seedTags = (seedSource?.tags ?? []).filter(
-		(t) => t !== LANDING_PAGE_TAG,
-	);
-	const [tags, setTags] = useState<string[]>(seedTags);
+	const [tags, setTags] = useState<string[]>(seedSource?.tags ?? []);
 	// Mirror tags in a ref so a Save click reads the latest value synchronously —
 	// even a tag just committed on blur in the same click (state would be stale).
-	const tagsRef = useRef<string[]>(seedTags);
+	const tagsRef = useRef<string[]>(seedSource?.tags ?? []);
 	const applyTags = useCallback((next: string[]) => {
 		tagsRef.current = next;
 		setTags(next);
 	}, []);
 	const [saving, setSaving] = useState(false);
-	const [showAiModal, setShowAiModal] = useState(false);
+	// Mobile: the left navigator (sheets/charts) is an off-canvas drawer.
+	const [navOpen, setNavOpen] = useState(false);
 	const [showPublishDialog, setShowPublishDialog] = useState(false);
 	const [publishVisibility, setPublishVisibility] = useState<
-		"public" | "private" | "landing"
+		"public" | "private"
 	>("public");
 
-	// When Landing Page type is selected, only suggest folders where every dashboard in that folder is also Landing Page type.
-	const effectiveTagSuggestions = useMemo(() => {
-		if (publishVisibility !== "landing") return tagSuggestions;
-		return tagSuggestions.filter((tag) =>
-			dashboards
-				.filter((d) => (d.tags ?? []).includes(tag))
-				.every((d) => (d.tags ?? []).includes(LANDING_PAGE_TAG)),
-		);
-	}, [publishVisibility, tagSuggestions, dashboards]);
-	const [sheetMenuOpen, setSheetMenuOpen] = useState(false);
 	// People granted access when creating a PRIVATE dashboard (applied after the
 	// project is created, since grants need a real project id).
 	const [grants, setGrants] = useState<
@@ -337,35 +380,59 @@ export function NewDashboardPage() {
 	);
 
 	const [selectedVizId, setSelectedVizId] = useState<string>(
-		initialMigration.sheets[0]?.visualizations[0]?.id ?? "",
+		initialMigration.sheets.find((s) => !s.isParamSheet)?.visualizations[0]
+			?.id ?? "",
 	);
 	const [editingVizId, setEditingVizId] = useState<string | null>(null);
+	const editingVizIdRef = useRef<string | null>(null);
 	const layoutTabRef = useRef<ILayoutApi | null>(null);
 
-	// Update the layout tab ref if editingVizId changes.
-	// This ensures that the layout tab rerenders when editing the tab.
-	useEffect(() => {
-		layoutTabRef.current?.redraw();
-	}, [editingVizId]);
+	// Keep ref in sync so onRenderTab (which reads the ref) always has the latest value.
+	editingVizIdRef.current = editingVizId;
 
-	// Close the rename input field when the user clicks outside of the field.
-	// Remove event listener when editing is done.
+	// Redraw tabs, focus the input, and wire up click-outside dismiss.
 	useEffect(() => {
 		if (!editingVizId) return;
-		const dismiss = (e: PointerEvent) => {
-			if (!(e.target as Element).closest?.("[data-viz-rename]")) {
-				setEditingVizId(null);
-			}
+		layoutTabRef.current?.redraw();
+
+		const focusTimer = setTimeout(() => {
+			const el = document.querySelector(
+				'input[data-viz-rename="true"]',
+			) as HTMLInputElement | null;
+			el?.focus();
+		}, 60);
+
+		let dismiss: ((e: PointerEvent) => void) | null = null;
+		const listenerTimer = setTimeout(() => {
+			dismiss = (e: PointerEvent) => {
+				if (!(e.target as Element)?.closest("[data-viz-rename]")) {
+					setEditingVizId(null);
+				}
+			};
+			document.addEventListener("pointerdown", dismiss, true);
+		}, 120);
+
+		return () => {
+			clearTimeout(focusTimer);
+			clearTimeout(listenerTimer);
+			if (dismiss)
+				document.removeEventListener("pointerdown", dismiss, true);
 		};
-		document.addEventListener("pointerdown", dismiss, true);
-		return () => document.removeEventListener("pointerdown", dismiss, true);
 	}, [editingVizId]);
+
 	const [editorTab, setEditorTab] = useState<"visualize" | "layout">(
 		"visualize",
 	);
-	const [layoutSelectedVizId, setLayoutSelectedVizId] = useState<
-		string | null
-	>(null);
+	// Read layout selection imperatively — useSyncExternalStore may not
+	// re-render in time for the Build button click handler.
+	const layoutSelectedVizIdRef = useRef<string | null>(null);
+	useEffect(() => {
+		return layoutSelectionStore.subscribe(() => {
+			layoutSelectedVizIdRef.current =
+				layoutSelectionStore.getSelectedId();
+		});
+	}, []);
+
 	// Tracks raw height input strings so users can clear the field; validated at save time
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const [heightStrings, _setHeightStrings] = useState<Record<string, string>>(
@@ -374,13 +441,10 @@ export function NewDashboardPage() {
 	const [databases, setDatabases] = useState<IDatabase[]>([]);
 	const [testResults, setTestResults] = useState<Record<string, any>>({});
 	const [testLoading, setTestLoading] = useState<Record<string, boolean>>({});
-	const [runningAll, setRunningAll] = useState(false);
+	// True while "Run All Queries" / the param sheet's Run button is executing every query.
+	const [runningAllQueries, setRunningAllQueries] = useState(false);
 	const [_dragIndex, _setDragIndex] = useState<number | null>(null);
 	const [_dragOverIndex, _setDragOverIndex] = useState<number | null>(null);
-	// Preview values for the param sheet when shown in the editor
-	const [paramPreviewValues, setParamPreviewValues] = useState<
-		Record<string, string>
-	>({});
 
 	// flexlayout model cache — one Model per sheet, keyed by sheet ID
 	const flexModelCacheRef = useRef<Record<string, Model>>({});
@@ -412,28 +476,6 @@ export function NewDashboardPage() {
 	useEffect(() => {
 		void loadDatabases();
 	}, []);
-
-	// Auto-create the Parameters sheet whenever any query has params; remove it when none do.
-	const shouldHaveParamSheet = queries.some((q) => q.parameters.length > 0);
-	useEffect(() => {
-		if (shouldHaveParamSheet) {
-			setSheets((prev) => ensureParamSheet(prev, queries));
-		} else {
-			setSheets((prev) => {
-				const next = prev.filter((s) => !s.isParamSheet);
-				return next.length === prev.length ? prev : next;
-			});
-			setActiveSheetId((prev) => {
-				const activeIsParam = sheets.find(
-					(s) => s.id === prev,
-				)?.isParamSheet;
-				return activeIsParam
-					? (sheets.find((s) => !s.isParamSheet)?.id ?? "")
-					: prev;
-			});
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [shouldHaveParamSheet]);
 
 	// Load the directory for the private-access picker (admins get the full list;
 	// others fall back to free-text user ids). Fetched lazily when first needed.
@@ -510,22 +552,10 @@ export function NewDashboardPage() {
 
 	// ── Active sheet helpers ─────────────────────────────────────────────────
 	const activeSheet = sheets.find((s) => s.id === activeSheetId) ?? sheets[0];
-	const hasParamSheet = sheets.some((s) => s.isParamSheet);
-	const paramGroups = useMemo(() => {
-		const groups = computeParamGroups(queries);
-		const order = sheets.find((s) => s.isParamSheet)?.paramSheetConfig
-			?.paramGroupOrder;
-		if (!order?.length) return groups;
-		const orderMap = new Map(order.map((name, i) => [name, i]));
-		return [...groups].sort(
-			(a, b) =>
-				(orderMap.get(a.name) ?? Infinity) -
-				(orderMap.get(b.name) ?? Infinity),
-		);
-	}, [queries, sheets]);
 	const visualizations = activeSheet?.visualizations ?? [];
-	useTabColors(visualizations);
 	const layout = activeSheet?.layout ?? [];
+	// Color the FlexLayout tab buttons by each viz's tabColor (set in the VizEditor).
+	useTabColors(visualizations);
 
 	const setVisualizations = (
 		updater: (prev: Visualization[]) => Visualization[],
@@ -549,34 +579,78 @@ export function NewDashboardPage() {
 		);
 	};
 
+	// ── Parameters sheet (auto-managed) ──────────────────────────────────────
+	// Live preview values used by the ParamSheetEditor form (not persisted).
+	const [paramPreviewValues, setParamPreviewValues] = useState<
+		Record<string, string>
+	>({});
+	const hasParamSheet = sheets.some((s) => s.isParamSheet);
+	// Distinct parameter groups across every query, ordered by the sheet's saved order.
+	const paramGroups = useMemo(() => {
+		const groups = computeParamGroups(queries);
+		const order = sheets.find((s) => s.isParamSheet)?.paramSheetConfig
+			?.paramGroupOrder;
+		if (!order?.length) return groups;
+		const orderMap = new Map(order.map((name, i) => [name, i]));
+		return [...groups].sort(
+			(a, b) =>
+				(orderMap.get(a.name) ?? Infinity) -
+				(orderMap.get(b.name) ?? Infinity),
+		);
+	}, [queries, sheets]);
+
+	// Whether every required param in the Parameters form has a value (enables Run).
+	const allParamsSatisfied = useMemo(
+		() =>
+			paramGroups.every((g) =>
+				isParamSatisfied(
+					g.param,
+					paramPreviewValues[g.name] ?? g.param.defaultValue,
+				),
+			),
+		[paramGroups, paramPreviewValues],
+	);
+
+	// Auto-create the Parameters sheet whenever any query has non-event params; remove it when none do.
+	const shouldHaveParamSheet = queries.some((q) =>
+		q.parameters.some((p) => p.inputType !== "event"),
+	);
+	useEffect(() => {
+		if (shouldHaveParamSheet) {
+			setSheets((prev) => ensureParamSheet(prev, queries));
+		} else {
+			setSheets((prev) => {
+				const next = prev.filter((s) => !s.isParamSheet);
+				return next.length === prev.length ? prev : next;
+			});
+			setActiveSheetId((prev) => {
+				const activeIsParam = sheets.find(
+					(s) => s.id === prev,
+				)?.isParamSheet;
+				return activeIsParam
+					? (sheets.find((s) => !s.isParamSheet)?.id ?? "")
+					: prev;
+			});
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [shouldHaveParamSheet]);
+
 	// ── Sheet CRUD ───────────────────────────────────────────────────────────
 	const addSheet = () => {
-		// Sequential sheet-N IDs: find the highest existing sheet-N number and increment
-		const usedNums = sheets
-			.map((s) => {
-				const m = s.id.match(/^sheet-(\d+)$/);
-				return m ? parseInt(m[1], 10) : -1;
-			})
-			.filter((n) => n >= 0);
-		const maxNum = usedNums.length ? Math.max(...usedNums) : 0;
-		const newId = `sheet-${maxNum + 1}`;
+		// The Parameters sheet shouldn't inflate the numbering/color of real sheets.
 		const nonParamSheets = sheets.filter((s) => !s.isParamSheet);
 		const color = SHEET_COLORS[nonParamSheets.length % SHEET_COLORS.length];
-		const sheet = makeSheet(
-			`Sheet ${nonParamSheets.length + 1}`,
-			color,
-			newId,
-		);
+		const sheet = makeSheet(`Sheet ${nonParamSheets.length + 1}`, color);
 		setSheets((prev) => [...prev, sheet]);
-		setActiveSheetId(newId);
+		setActiveSheetId(sheet.id);
 		setSelectedVizId(sheet.visualizations[0]?.id ?? null);
 		_setDragIndex(null);
 		_setDragOverIndex(null);
 	};
 
 	const deleteSheet = (sheetId: string) => {
-		const targetSheet = sheets.find((s) => s.id === sheetId);
-		if (targetSheet?.isParamSheet) return;
+		// The Parameters sheet is auto-managed; keep at least one real sheet.
+		if (sheets.find((s) => s.id === sheetId)?.isParamSheet) return;
 		if (sheets.filter((s) => !s.isParamSheet).length <= 1) return;
 		setSheets((prev) => {
 			const next = prev.filter((s) => s.id !== sheetId);
@@ -592,12 +666,12 @@ export function NewDashboardPage() {
 
 	const switchSheet = (sheetId: string) => {
 		if (sheetId === activeSheetId) return;
-		setLayoutSelectedVizId(null);
+		layoutSelectionStore.clear();
 		setActiveSheetId(sheetId);
 		const sheet = sheets.find((s) => s.id === sheetId);
-		setSelectedVizId(sheet?.visualizations[0]?.id ?? "");
-		// Param sheet has no Layout tab — always land on the visualize (editor) tab
+		// The Parameters sheet has no layout view — always land on the Build panel.
 		if (sheet?.isParamSheet) setEditorTab("visualize");
+		setSelectedVizId(sheet?.visualizations[0]?.id ?? "");
 		_setDragIndex(null);
 		_setDragOverIndex(null);
 	};
@@ -653,31 +727,37 @@ export function NewDashboardPage() {
 	};
 
 	// ── Visualization CRUD ───────────────────────────────────────────────────
-	const addVisualization = () => {
-		// A new chart starts backed by its own fresh shared query, named generically
-		// (independent of the chart title — rename it from the data-source row).
+	/** Add a visualization to a specific sheet (used by the navigator's per-sheet "+"). */
+	const addVisualizationTo = (sheetId: string) => {
+		// Charts can't live on the auto-managed Parameters sheet.
+		if (sheets.find((s) => s.id === sheetId)?.isParamSheet) return;
 		const q = createQuery({ name: `Query ${queries.length + 1}` });
 		const viz: Visualization = { ...makeVisualization(), queryId: q.id };
-		setVisualizations((prev) => {
-			const newVizId = viz.id;
-			// Any filter viz on this sheet that already has filterTargets set should
-			// automatically include the newly added viz so it applies immediately.
-			return [...prev, viz].map((v) =>
-				v.visualizationType === "filter" &&
-				v.config?.filterTargets?.length
-					? {
-							...v,
-							config: {
-								...v.config,
-								filterTargets: [
-									...v.config.filterTargets,
-									newVizId,
-								],
-							},
-						}
-					: v,
-			);
-		});
+		setSheets((prev) =>
+			prev.map((s) => {
+				if (s.id !== sheetId) return s;
+				const newVizId = viz.id;
+				// Auto-include new viz in any existing filter targets on this sheet
+				const updatedVisualizations = [...s.visualizations, viz].map(
+					(v) =>
+						v.visualizationType === "filter" &&
+						v.config?.filterTargets?.length
+							? {
+									...v,
+									config: {
+										...v.config,
+										filterTargets: [
+											...v.config.filterTargets,
+											newVizId,
+										],
+									},
+								}
+							: v,
+				);
+				return { ...s, visualizations: updatedVisualizations };
+			}),
+		);
+		setActiveSheetId(sheetId);
 		setSelectedVizId(viz.id);
 	};
 
@@ -746,7 +826,7 @@ export function NewDashboardPage() {
 				prev.map((s) => {
 					if (s.id !== target) return s;
 					const newVizId = newViz.id;
-					const updatedVizualizations = [
+					const updatedVisualizations = [
 						...s.visualizations,
 						newViz,
 					].map((v) =>
@@ -766,7 +846,7 @@ export function NewDashboardPage() {
 					);
 					return {
 						...s,
-						visualizations: updatedVizualizations,
+						visualizations: updatedVisualizations,
 						layout: [
 							...s.layout,
 							{
@@ -784,7 +864,6 @@ export function NewDashboardPage() {
 		}
 		setSelectedVizId(newViz.id);
 		setEditorTab("visualize");
-		setSheetMenuOpen(false);
 	};
 
 	const addVizToLayout = (vizId: string) => {
@@ -981,42 +1060,45 @@ export function NewDashboardPage() {
 	};
 
 	// ── Test query ───────────────────────────────────────────────────────────
-	const testQuery = async (vizId: string) => {
-		const viz = visualizations.find((v) => v.id === vizId);
+	const testQuery = async (
+		vizId: string,
+		paramOverrides?: Record<string, string>,
+	) => {
+		const viz = sheets
+			.flatMap((s) => s.visualizations)
+			.find((v) => v.id === vizId);
 		if (!viz) return;
 		// Run the resolved shared query and cache the sample under the query key,
 		// so every chart bound to it previews from the same test result.
 		const source = resolveQuery(viz, queries);
 		const qKey = viz.queryId ?? viz.id;
-		if (!source.databaseId || !source.query) {
+		if (!isDataProduct(source) && (!source.databaseId || !source.query)) {
 			alert("Select a database and enter a query first.");
 			return;
 		}
 		setTestLoading((prev) => ({ ...prev, [qKey]: true }));
 		try {
-			let resolved = source.query;
-			source.parameters.forEach((p) => {
-				if (p.name)
-					resolved = resolved.replaceAll(
-						`{{${p.name}}}`,
-						resolveParamDefault(p),
-					);
-			});
-			const pixel = `Database(database=["${source.databaseId}"]) | Query("${escapeSqlForPixel(resolved)}") | Collect(10);`;
+			// Interpolate {{param}} tokens (used for the single query AND each data-product leg).
+			const substitute = (sql: string) => {
+				let r = sql;
+				source.parameters.forEach((p) => {
+					if (p.name)
+						r = r.replaceAll(
+							`{{${p.name}}}`,
+							paramOverrides?.[p.name] ?? resolveParamDefault(p),
+						);
+				});
+				return r;
+			};
+			const pixel = buildQueryPixel(source, { collect: 10, substitute });
 			const { pixelReturn } =
 				await actions.run<[{ output: any; operationType?: string[] }]>(
 					pixel,
 				);
-			const pr = pixelReturn[0];
 			// SEMOSS reports bad SQL as an ERROR operationType (it does not throw) —
 			// surface the real database message instead of a generic alert.
-			if (
-				Array.isArray(pr.operationType) &&
-				pr.operationType.includes("ERROR")
-			) {
-				throw new Error(String(pr.output ?? "Query failed."));
-			}
-			const output = pr.output as any;
+			const { output, error } = lastPixelOutput(pixelReturn);
+			if (error) throw new Error(error);
 			setTestResults((prev) => ({ ...prev, [qKey]: output }));
 
 			// ── Build column type map ─────────────────────────────────────────
@@ -1092,64 +1174,34 @@ export function NewDashboardPage() {
 		}
 	};
 
-	// Run All Queries
-	const handleRunAll = useCallback(async () => {
-		setRunningAll(true);
-		try {
-			const seen = new Set<string>();
-			const tasks: Array<() => Promise<void>> = [];
-			for (const sheet of sheets) {
-				for (const viz of sheet.visualizations) {
-					const source = resolveQuery(viz, queries);
-					const qKey = viz.queryId ?? viz.id;
-					if (
-						seen.has(qKey) ||
-						!source.databaseId ||
-						!source.query?.trim()
-					)
-						continue;
-					seen.add(qKey);
-					tasks.push(async () => {
-						setTestLoading((prev) => ({ ...prev, [qKey]: true }));
-						try {
-							let resolved = source.query!;
-							source.parameters.forEach((p) => {
-								if (p.name)
-									resolved = resolved.replaceAll(
-										`{{${p.name}}}`,
-										resolveParamDefault(p),
-									);
-							});
-							const pixel = `Database(database=["${source.databaseId}"]) | Query("${escapeSqlForPixel(resolved)}") | Collect(10);`;
-							const { pixelReturn } =
-								await actions.run<
-									[{ output: any; operationType?: string[] }]
-								>(pixel);
-							const pr = pixelReturn[0];
-							if (
-								Array.isArray(pr.operationType) &&
-								pr.operationType.includes("ERROR")
-							)
-								return;
-							setTestResults((prev) => ({
-								...prev,
-								[qKey]: pr.output,
-							}));
-						} finally {
-							setTestLoading((prev) => ({
-								...prev,
-								[qKey]: false,
-							}));
-						}
-					});
-				}
-			}
-			await Promise.all(tasks.map((t) => t().catch(() => {})));
-			setEditorTab("layout");
-		} finally {
-			setRunningAll(false);
+	// Run EVERY distinct query across all sheets once (charts sharing a query run
+	// together). Uses the Parameters form's current values so previews reflect the
+	// entered params. Drives the toolbar "Run All Queries" button + the param sheet's
+	// Run button.
+	const runAllQueries = async () => {
+		if (runningAllQueries) return;
+		// One representative viz per distinct query key (queryId, else viz id).
+		const seen = new Set<string>();
+		const targets: string[] = [];
+		for (const v of sheets.flatMap((s) => s.visualizations)) {
+			const key = v.queryId ?? v.id;
+			if (seen.has(key)) continue;
+			const src = resolveQuery(v, queries);
+			if (!isDataProduct(src) && (!src.databaseId || !src.query))
+				continue;
+			seen.add(key);
+			targets.push(v.id);
 		}
-	}, [sheets, queries, actions]);
+		if (!targets.length) return;
+		setRunningAllQueries(true);
+		try {
+			await Promise.all(
+				targets.map((vid) => testQuery(vid, paramPreviewValues)),
+			);
+		} finally {
+			setRunningAllQueries(false);
+		}
+	};
 
 	// ── Save ─────────────────────────────────────────────────────────────────
 	/** All save-blocking validation. Alerts + returns false on the first problem. */
@@ -1200,6 +1252,7 @@ export function NewDashboardPage() {
 				const s = resolveQuery(v, queries);
 				const missing = (s.parameters ?? []).find((p) => {
 					if (!p.name || p.useCurrentDate) return false;
+					if (p.inputType === "event") return false;
 					// Required text params satisfy the check via placeholder instead of defaultValue
 					if (
 						p.required &&
@@ -1210,9 +1263,8 @@ export function NewDashboardPage() {
 					return !String(p.defaultValue ?? "").trim();
 				});
 				if (missing) {
-					toast.error(
-						`"${missing.label || missing.name}" in "${v.title || "Untitled"}" requires a default value before saving.`,
-						"Missing parameter default",
+					alert(
+						`Parameter "${missing.label || missing.name}" in "${v.title || "Untitled"}" needs a default value.`,
 					);
 					return false;
 				}
@@ -1255,7 +1307,10 @@ export function NewDashboardPage() {
 						} = v.config.styling;
 						return {
 							...v,
-							config: { ...v.config, styling: restStyling },
+							config: {
+								...v.config,
+								styling: restStyling,
+							},
 						};
 					}),
 			};
@@ -1286,34 +1341,35 @@ export function NewDashboardPage() {
 			for (const viz of sheet.visualizations) {
 				if (viz.visualizationType === "htmlblock") continue;
 				const source = resolveQuery(viz, data.queries);
-				if (!source.databaseId || !source.query?.trim()) continue;
-				let resolved = source.query;
-				source.parameters?.forEach((p) => {
-					if (p.name)
-						resolved = resolved.replaceAll(
-							`{{${p.name}}}`,
-							resolveParamDefault(p),
-						);
-				});
-				const dedupeKey = `${source.databaseId}::${resolved}`;
+				const dp = isDataProduct(source);
+				// Data products carry a `-- Data product…` sentinel in `query`; validate them
+				// by running the real frame-merge pixel, not the sentinel string.
+				if (!dp && (!source.databaseId || !source.query?.trim()))
+					continue;
+				const substitute = (sql: string) => {
+					let r = sql;
+					source.parameters?.forEach((p) => {
+						if (p.name)
+							r = r.replaceAll(
+								`{{${p.name}}}`,
+								resolveParamDefault(p) ?? "",
+							);
+					});
+					return r;
+				};
+				const dedupeKey = dp
+					? sourcesSignature(source)
+					: `${source.databaseId}::${substitute(source.query)}`;
 				if (seen.has(dedupeKey)) continue;
 				seen.add(dedupeKey);
 				const label = viz.title || "Untitled";
 				try {
 					const { pixelReturn } = await actions.run<
 						[{ output: any; operationType?: string[] }]
-					>(
-						`Database(database=["${source.databaseId}"]) | Query("${escapeSqlForPixel(resolved)}") | Collect(1);`,
-					);
-					const pr = pixelReturn[0];
-					if (
-						Array.isArray(pr.operationType) &&
-						pr.operationType.includes("ERROR")
-					) {
-						errors.push(
-							`“${label}” (${sheet.name}): ${String(pr.output ?? "invalid query")}`,
-						);
-					}
+					>(buildQueryPixel(source, { collect: 1, substitute }));
+					const { error } = lastPixelOutput(pixelReturn);
+					if (error)
+						errors.push(`“${label}” (${sheet.name}): ${error}`);
 				} catch (e: any) {
 					errors.push(
 						`“${label}” (${sheet.name}): ${String(e?.message ?? e ?? "invalid query")}`,
@@ -1347,48 +1403,21 @@ export function NewDashboardPage() {
 					return;
 				}
 				if (isEditing && id) {
+					// Update local state + name/description metadata, then ALWAYS do a full
+					// redeploy (re-push the portal bundle + definition + republish) so every
+					// edit goes fully live — not just the working copy.
 					updateDashboard(id, dashboardData);
-					toast.success("Dashboard saved.", "Saved");
+					await redeployDashboard(id, dashboardData);
 					navigate(`/dashboard/${id}`);
 				} else {
-					if (
-						publishVisibility === "landing" &&
-						tagsRef.current.length === 0
-					) {
-						toast.error(
-							"Add at least one folder tag so this insight appears in the correct Landing Page category.",
-							"Folder required for Landing Page",
-						);
-						setSaving(false);
-						return;
-					}
 					// Finishing a new dashboard saves it as a project. Public → everyone with
 					// access sees it immediately; Private → only you until you share it with
 					// specific people from the dashboard's Share dialog.
-					const isPublic =
-						publishVisibility === "public" ||
-						publishVisibility === "landing";
-					const saveTags = [
-						...tagsRef.current,
-						...(publishVisibility === "landing"
-							? [LANDING_PAGE_TAG]
-							: []),
-					];
-					console.log("[NewDashboardPage] creating dashboard", {
-						publishVisibility,
-						isPublic,
-						userTags: tagsRef.current,
-						saveTags,
-						hasLandingPageTag: saveTags.includes(LANDING_PAGE_TAG),
-					});
+					const isPublic = publishVisibility === "public";
 					const newId = await createDashboard(dashboardData, {
 						published: isPublic,
-						tags: saveTags,
+						tags: tagsRef.current,
 					});
-					console.log(
-						"[NewDashboardPage] dashboard created, id:",
-						newId,
-					);
 					// For a private dashboard, grant the chosen people + teams access to the
 					// new project so they can see it (and its folder). Teams get View only.
 					if (!isPublic && grants.length) {
@@ -1451,200 +1480,76 @@ export function NewDashboardPage() {
 		setShowPublishDialog(true);
 	};
 
-	// Load an AI-generated draft into the editor (replaces the current in-progress
-	// content; nothing is persisted until the user saves/publishes).
-	const applyGeneratedDashboard = (d: Dashboard) => {
-		setName(d.name ?? "");
-		setDescription(d.description ?? "");
-		applyTags(d.tags ?? []);
-		createdAtRef.current = d.createdAt ?? createdAtRef.current;
-		const { sheets: hydrated, queries: hydratedQueries } =
-			migrateSheetsToSharedQueries(initSheets(d), d.queries);
-		flexModelCacheRef.current = {};
-		setSheets(hydrated);
-		setQueries(hydratedQueries);
-		setCustomColorPalettes(
-			d.customColorPalettes ?? collectVizLevelPalettes(hydrated),
-		);
-		setActiveSheetId(hydrated[0].id);
-		setSelectedVizId(hydrated[0]?.visualizations[0]?.id ?? "");
-	};
-
 	const sortedLayout = [...layout].sort((a, b) => a.order - b.order);
 	const visibleLayout = sortedLayout.filter((item) =>
 		visualizations.some((v) => v.id === item.vizId),
 	);
 
-	if (!defReady) {
-		return (
-			<div className="flex h-full w-full items-center justify-center bg-white">
-				<div className="h-6 w-6 animate-spin rounded-full border-2 border-stone-300 border-t-indigo-500" />
-			</div>
-		);
-	}
-
-	return (
-		<DashboardFilterProvider>
-			<div className="flex h-full flex-col">
-				{/* ── Editor toolbar ── */}
-				<div className="flex h-14 flex-shrink-0 items-center gap-3 border-stone-200 border-b bg-white px-4">
-					<Link
-						to={isEditing ? `/dashboard/${id}` : "/dashboards"}
-						title="Back"
-						className="-ml-1 flex-shrink-0 rounded-md p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-800"
+	// Surface the dashboard title + Save/Publish in the global app header (tier 1),
+	// leaving the in-page toolbar to carry only editor tools (tier 2).
+	useHeaderSlot(
+		{
+			center: (
+				<div className="flex min-w-0 flex-1 items-center gap-2">
+					{/* Mobile: open the sheets/charts navigator drawer */}
+					<button
+						type="button"
+						onClick={() => setNavOpen(true)}
+						aria-label="Open sheets & charts"
+						className="flex-shrink-0 rounded-md p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-700 lg:hidden"
 					>
-						<ArrowLeft className="h-4 w-4" />
-					</Link>
-					<div className="h-6 w-px flex-shrink-0 bg-stone-200" />
-					{/* Title + description — rendered as clear, labelled fields so it's obvious
-                    they're meant to be filled in. Title is required. */}
-					<div className="flex min-w-0 flex-1 items-center gap-2">
-						<div className="relative min-w-0 max-w-xs flex-1">
-							<input
-								type="text"
-								value={name}
-								onChange={(e) => setName(e.target.value)}
-								placeholder="Dashboard title"
-								aria-label="Dashboard title (required)"
-								disabled={!canEditTitle}
-								title={
-									canEditTitle
-										? undefined
-										: "Only the owner can rename this dashboard."
-								}
-								className={`w-full rounded-md border px-2.5 py-1.5 pr-16 font-semibold text-[14px] text-stone-800 placeholder:font-normal placeholder:text-stone-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500 ${
-									!canEditTitle
-										? "border-stone-200"
-										: name.trim()
-											? "border-stone-200 bg-white"
-											: "border-amber-300 bg-amber-50/50"
-								}`}
-							/>
-							{canEditTitle && !name.trim() && (
-								<span className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-2 font-semibold text-[10px] text-amber-600 uppercase tracking-wide">
-									Required
-								</span>
-							)}
-						</div>
-						<input
+						<Menu className="h-4.5 w-4.5" />
+					</button>
+					{/* Title (required) — shares the header center 50/50 with the description */}
+					<div className="relative min-w-0 flex-1">
+						<Input
 							type="text"
-							value={description}
-							onChange={(e) => setDescription(e.target.value)}
-							placeholder="Add a description (optional)"
-							aria-label="Dashboard description"
-							className="min-w-0 max-w-sm flex-1 rounded-md border border-stone-200 bg-white px-2.5 py-1.5 text-[12px] text-stone-600 placeholder:text-stone-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+							value={name}
+							onChange={(e) => setName(e.target.value)}
+							placeholder="Dashboard title"
+							aria-label="Dashboard title (required)"
+							disabled={!canEditTitle}
+							title={
+								canEditTitle
+									? undefined
+									: "Only the owner can rename this dashboard."
+							}
+							className={`w-full rounded-md border px-2.5 py-1.5 pr-16 font-semibold text-[14px] text-stone-800 placeholder:font-normal placeholder:text-stone-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500 ${
+								!canEditTitle
+									? "border-stone-200"
+									: name.trim()
+										? "border-stone-200 bg-white"
+										: "border-amber-300 bg-amber-50/50"
+							}`}
 						/>
+						{canEditTitle && !name.trim() && (
+							<span className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-2 font-semibold text-[10px] text-amber-600 uppercase tracking-wide">
+								Required
+							</span>
+						)}
 					</div>
-					{/* Tags/folders are NOT set here — only in the Publish dialog (create) or the Share dialog (view). */}
-					{/* Start from an AI-generated draft — opens the AI Dashboard Builder modal. */}
-					{aiEnabled() && (
-						<button
-							onClick={() => setShowAiModal(true)}
-							title="Generate a dashboard from a description with AI"
-							className="inline-flex items-center gap-1.5 rounded-md border border-indigo-200 bg-white px-2.5 py-1.5 font-medium text-indigo-600 text-xs transition-colors hover:bg-indigo-50"
-						>
-							<Sparkles className="h-3.5 w-3.5" /> AI Builder
-						</button>
-					)}
-					{/* Reuse this query as another chart — hidden when param sheet is active */}
-					{!activeSheet?.isParamSheet &&
-						(() => {
-							const sel = visualizations.find(
-								(v) => v.id === selectedVizId,
-							);
-							const canDup = !!(
-								sel && resolveQuery(sel, queries).query?.trim()
-							);
-							return (
-								<div className="relative">
-									<button
-										onClick={() =>
-											canDup &&
-											setSheetMenuOpen((v) => !v)
-										}
-										disabled={!canDup}
-										title={
-											canDup
-												? "Reuse this query to build another visualization"
-												: "Write a query first"
-										}
-										className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 px-2.5 py-1.5 font-medium text-stone-600 text-xs transition-colors hover:border-stone-300 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
-									>
-										<CopyPlus className="h-3.5 w-3.5" />{" "}
-										Reuse Query
-									</button>
-									{sheetMenuOpen && canDup && (
-										<>
-											<div
-												className="fixed inset-0 z-20"
-												onClick={() =>
-													setSheetMenuOpen(false)
-												}
-											/>
-											<div className="absolute right-0 z-30 mt-1 w-56 overflow-hidden rounded-lg border border-stone-200 bg-white py-1 shadow-soft-lg">
-												<p className="px-3 py-1 font-semibold text-[10px] text-stone-400 uppercase tracking-widest">
-													Add to sheet
-												</p>
-												<div className="max-h-56 overflow-y-auto">
-													{sheets.map((s) => (
-														<button
-															key={s.id}
-															onClick={() =>
-																addVizFromQuery(
-																	selectedVizId,
-																	s.id,
-																)
-															}
-															className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[13px] text-stone-700 hover:bg-stone-50"
-														>
-															<span
-																className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
-																style={{
-																	backgroundColor:
-																		s.color ??
-																		"#94a3b8",
-																}}
-															/>
-															<span className="min-w-0 flex-1 truncate">
-																{s.name}
-															</span>
-															{s.id ===
-																activeSheetId && (
-																<span className="text-[10px] text-stone-400">
-																	current
-																</span>
-															)}
-														</button>
-													))}
-												</div>
-												<div className="mt-1 border-stone-100 border-t pt-1">
-													<button
-														onClick={() =>
-															addVizFromQuery(
-																selectedVizId,
-																"new",
-															)
-														}
-														className="flex w-full items-center gap-2 px-3 py-1.5 text-left font-semibold text-[13px] text-indigo-600 hover:bg-indigo-50"
-													>
-														<Plus className="h-3.5 w-3.5" />{" "}
-														New sheet
-													</button>
-												</div>
-											</div>
-										</>
-									)}
-								</div>
-							);
-						})()}
-					{/* Build / Layout mode toggle — hidden when param sheet is active */}
+					{/* Description — fills the remaining space up to the Build/Layout toggle */}
+					<Input
+						type="text"
+						value={description}
+						onChange={(e) => setDescription(e.target.value)}
+						placeholder="Add a description (optional)"
+						aria-label="Dashboard description"
+						className="hidden min-w-0 flex-1 rounded-md border border-stone-200 bg-white/80 px-2.5 py-1.5 text-[12px] text-stone-600 placeholder:text-stone-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 md:block"
+					/>
+				</div>
+			),
+			actions: (
+				<>
+					{/* Build / Layout mode toggle — hidden on the Parameters sheet (no layout view) */}
 					{!activeSheet?.isParamSheet && (
 						<div className="inline-flex items-center gap-0.5 rounded-lg bg-stone-100 p-0.5">
 							<button
 								onClick={() => {
-									if (layoutSelectedVizId) {
-										setSelectedVizId(layoutSelectedVizId);
-										setLayoutSelectedVizId(null);
+									const sel = layoutSelectedVizIdRef.current;
+									if (sel) {
+										setSelectedVizId(sel);
+										layoutSelectionStore.clear();
 									}
 									setEditorTab("visualize");
 								}}
@@ -1666,28 +1571,6 @@ export function NewDashboardPage() {
 							</button>
 						</div>
 					)}
-					{/* Run All Queries — hidden when param sheet is active */}
-					{!activeSheet?.isParamSheet && (
-						<button
-							onClick={() => void handleRunAll()}
-							disabled={runningAll}
-							title="Run all saved queries to populate the Layout preview"
-							className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 px-2.5 py-1.5 font-medium text-stone-600 text-xs transition-colors hover:border-stone-300 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
-						>
-							{runningAll ? (
-								<>
-									<Loader2 className="h-3.5 w-3.5 animate-spin" />{" "}
-									Running…
-								</>
-							) : (
-								<>
-									<RefreshCw className="h-3.5 w-3.5" /> Run
-									All
-								</>
-							)}
-						</button>
-					)}
-					<div className="mx-1 h-5 w-px bg-stone-200" />
 					<Link
 						to={isEditing ? `/dashboard/${id}` : "/dashboards"}
 						className={buttonClasses("secondary", "sm")}
@@ -1712,742 +1595,809 @@ export function NewDashboardPage() {
 								? "Save"
 								: "Save & publish"}
 					</button>
-				</div>
+				</>
+			),
+		},
+		// `sheets` + `queries` are essential: the Save button (in the global header) closes
+		// over onSaveClick → buildDashboardData → these. Without them, a sheet-only change
+		// (e.g. toggling a viz's PHI flag) leaves a stale Save handler that persists the
+		// pre-change state, silently dropping the edit.
+		[
+			name,
+			description,
+			saving,
+			isEditing,
+			id,
+			canEditTitle,
+			editorTab,
+			visualizations.length,
+			visibleLayout.length,
+			sheets,
+			queries,
+			activeSheetId,
+		],
+	);
 
-				{/* ── Body ── */}
-				<div className="flex min-h-0 flex-1 flex-col bg-white">
-					{/* Two-panel body — Visualize tab */}
-					{editorTab === "visualize" &&
-						(activeSheet?.isParamSheet ? (
-							<div className="min-h-0 flex-1 overflow-hidden">
-								<ParamSheetEditor
-									paramGroups={paramGroups}
-									queries={queries}
-									config={activeSheet.paramSheetConfig ?? {}}
-									onConfigChange={(patch) =>
-										setSheets((prev) =>
-											prev.map((s) =>
-												s.isParamSheet
+	if (!defReady) {
+		return (
+			<div className="flex h-full w-full items-center justify-center bg-white">
+				<div className="h-6 w-6 animate-spin rounded-full border-2 border-stone-300 border-t-indigo-500" />
+			</div>
+		);
+	}
+
+	return (
+		<DashboardFilterProvider>
+			<EventParamProvider>
+				<div className="flex h-full flex-col">
+					{/* ── Body: left navigator + editor workspace ── */}
+					<div className="flex min-h-0 flex-1">
+						<DashboardNav
+							open={navOpen}
+							onClose={() => setNavOpen(false)}
+							sheets={sheets}
+							activeSheetId={activeSheetId}
+							selectedVizId={selectedVizId}
+							editingVizId={editingVizId}
+							colors={SHEET_COLORS}
+							onSelectSheet={(sid) => {
+								switchSheet(sid);
+								setNavOpen(false);
+							}}
+							onSelectViz={(sheetId, vizId) => {
+								if (sheetId !== activeSheetId)
+									setActiveSheetId(sheetId);
+								setSelectedVizId(vizId);
+								setEditorTab("visualize");
+								setNavOpen(false);
+							}}
+							onRenameSheet={(sid, nm) =>
+								setSheets((prev) =>
+									prev.map((s) =>
+										s.id === sid ? { ...s, name: nm } : s,
+									),
+								)
+							}
+							onDeleteSheet={deleteSheet}
+							onColorChange={changeSheetColor}
+							onAddSheet={addSheet}
+							onAddViz={addVisualizationTo}
+							onRenameViz={(vid, title) =>
+								updateVisualization(vid, { title })
+							}
+							onEditViz={setEditingVizId}
+							onRemoveViz={removeVisualization}
+							onTogglePhi={(vid) =>
+								setSheets((prev) =>
+									prev.map((s) => ({
+										...s,
+										visualizations: s.visualizations.map(
+											(v) =>
+												v.id === vid
 													? {
-															...s,
-															paramSheetConfig: {
-																...s.paramSheetConfig,
-																...patch,
-															},
+															...v,
+															phi:
+																!v.phi ||
+																undefined,
 														}
-													: s,
-											),
-										)
-									}
-									onUpdateQuery={updateQuery}
-									previewValues={paramPreviewValues}
-									onPreviewValueChange={(name, val) =>
-										setParamPreviewValues((prev) => ({
-											...prev,
-											[name]: val,
-										}))
-									}
-								/>
-							</div>
-						) : (
-							<div className="flex min-h-0 flex-1 flex-col">
-								{/* Visualization strip — horizontal tabs */}
-								<div className="flex h-10 flex-shrink-0 items-stretch gap-1 overflow-x-auto border-stone-200 border-b bg-stone-50/60 px-2">
-									{visualizations.map((viz) => {
-										const VizIcon =
-											VIZ_TYPE_META[viz.visualizationType]
-												?.icon ?? BarChart2;
-										const active = selectedVizId === viz.id;
-										const inL = layout.some(
-											(l) => l.vizId === viz.id,
-										);
-										return (
-											<div
-												key={viz.id}
-												onClick={() =>
-													setSelectedVizId(viz.id)
-												}
-												onDoubleClick={() => {
-													setSelectedVizId(viz.id);
-													setEditingVizId(viz.id);
-												}}
-												title="Double-click to rename"
-												className={`group my-1.5 inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 text-xs transition-colors ${
-													active
-														? "border border-stone-200 bg-white font-semibold text-indigo-700 shadow-soft"
-														: "text-stone-500 hover:bg-white/70 hover:text-stone-700"
-												}`}
-											>
-												<VizIcon
-													className={`h-3.5 w-3.5 flex-shrink-0 ${active ? "text-indigo-500" : "text-stone-400"}`}
-												/>
-												{editingVizId === viz.id ? (
-													<input
-														ref={(el) =>
-															el?.focus()
+													: v,
+										),
+									})),
+								)
+							}
+						/>
+
+						<div className="flex min-h-0 min-w-0 flex-1 flex-col bg-white">
+							{/* Visualize tab — the Parameters form (param sheet) or the VizEditor */}
+							{editorTab === "visualize" &&
+								(activeSheet?.isParamSheet ? (
+									<div className="min-h-0 flex-1 overflow-hidden">
+										<ParamSheetEditor
+											paramGroups={paramGroups}
+											queries={queries}
+											config={
+												activeSheet.paramSheetConfig ??
+												{}
+											}
+											onConfigChange={(patch) =>
+												setSheets((prev) =>
+													prev.map((s) =>
+														s.isParamSheet
+															? {
+																	...s,
+																	paramSheetConfig:
+																		{
+																			...s.paramSheetConfig,
+																			...patch,
+																		},
+																}
+															: s,
+													),
+												)
+											}
+											onUpdateQuery={updateQuery}
+											previewValues={paramPreviewValues}
+											onPreviewValueChange={(name, val) =>
+												setParamPreviewValues(
+													(prev) => ({
+														...prev,
+														[name]: val,
+													}),
+												)
+											}
+											onRunAll={() =>
+												void runAllQueries()
+											}
+											allSatisfied={allParamsSatisfied}
+											isRunning={runningAllQueries}
+										/>
+									</div>
+								) : (
+									<div className="flex min-h-0 flex-1 flex-col">
+										{/* VizEditor — full width */}
+										<div className="min-h-0 min-w-0 flex-1">
+											{(() => {
+												const viz = visualizations.find(
+													(v) =>
+														v.id === selectedVizId,
+												);
+												if (!viz)
+													return (
+														<div className="flex h-full items-center justify-center text-sm text-stone-400">
+															Select a
+															visualization to
+															edit
+														</div>
+													);
+												const qKey =
+													viz.queryId ?? viz.id;
+												// Usage counts across all sheets, so the picker can warn when a
+												// query feeds multiple charts (edits apply to all of them).
+												const allVizsFlat =
+													sheets.flatMap(
+														(s) => s.visualizations,
+													);
+												const queryUsage: Record<
+													string,
+													number
+												> = {};
+												for (const v of allVizsFlat)
+													if (v.queryId)
+														queryUsage[v.queryId] =
+															(queryUsage[
+																v.queryId
+															] ?? 0) + 1;
+												return (
+													<VizCard
+														key={viz.id}
+														viz={viz}
+														queries={queries}
+														hasParamSheet={
+															hasParamSheet
 														}
-														value={viz.title}
-														onChange={(e) =>
+														queryUsage={queryUsage}
+														databases={databases}
+														testResult={
+															testResults[qKey]
+														}
+														testLoading={
+															testLoading[qKey] ??
+															false
+														}
+														inLayout={layout.some(
+															(l) =>
+																l.vizId ===
+																viz.id,
+														)}
+														onUpdate={(updates) =>
+															updateVisualization(
+																viz.id,
+																updates,
+															)
+														}
+														onUpdateQuery={
+															updateQuery
+														}
+														onCreateQuery={
+															createQuery
+														}
+														onDeleteQuery={
+															deleteQuery
+														}
+														onSelectQuery={(qid) =>
 															updateVisualization(
 																viz.id,
 																{
-																	title: e
-																		.target
-																		.value,
+																	queryId:
+																		qid,
 																},
 															)
 														}
-														onClick={(e) =>
-															e.stopPropagation()
-														}
-														onBlur={() =>
-															setEditingVizId(
-																null,
+														onAddToLayout={() =>
+															addVizToLayout(
+																viz.id,
 															)
 														}
-														onKeyDown={(e) => {
-															if (
-																e.key ===
-																	"Enter" ||
-																e.key ===
-																	"Escape"
-															) {
-																e.preventDefault();
-																setEditingVizId(
-																	null,
-																);
-															}
-														}}
-														placeholder="Untitled"
-														className="w-28 rounded border border-indigo-300 bg-white px-1 py-0 font-semibold text-stone-800 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-													/>
-												) : (
-													<span className="max-w-[120px] truncate">
-														{viz.title ||
-															"Untitled"}
-													</span>
-												)}
-												{active &&
-													editingVizId !== viz.id && (
-														<button
-															onClick={(e) => {
-																e.stopPropagation();
-																setEditingVizId(
-																	viz.id,
-																);
-															}}
-															className="flex-shrink-0 rounded p-0.5 text-stone-400 hover:text-indigo-600"
-															title="Rename visualization"
-														>
-															<Pencil className="h-3 w-3" />
-														</button>
-													)}
-												{inL && (
-													<span
-														className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-emerald-500"
-														title="In layout"
-													/>
-												)}
-												{visualizations.length > 1 && (
-													<button
-														onClick={(e) => {
-															e.stopPropagation();
-															removeVisualization(
+														onTestQuery={() =>
+															void testQuery(
 																viz.id,
-															);
-														}}
-														className="-mr-1 flex-shrink-0 rounded p-0.5 text-stone-400 opacity-0 transition-all hover:text-red-500 group-hover:opacity-100"
-														title="Remove"
-													>
-														<X className="h-3 w-3" />
-													</button>
-												)}
-											</div>
-										);
-									})}
-									<button
-										onClick={addVisualization}
-										className="my-1.5 inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-md border border-stone-300 border-dashed px-2.5 font-medium text-stone-500 text-xs transition-colors hover:border-indigo-300 hover:bg-white/70 hover:text-indigo-600"
-									>
-										<Plus className="h-3.5 w-3.5" /> Add
-									</button>
-								</div>
-
-								{/* VizEditor — full width */}
-								<div className="min-h-0 min-w-0 flex-1">
-									{(() => {
-										const viz = visualizations.find(
-											(v) => v.id === selectedVizId,
-										);
-										if (!viz)
-											return (
-												<div className="flex h-full items-center justify-center text-sm text-stone-400">
-													Select a visualization to
-													edit
-												</div>
-											);
-										const qKey = viz.queryId ?? viz.id;
-										// Usage counts across all sheets, so the picker can warn when a
-										// query feeds multiple charts (edits apply to all of them).
-										const allVizsFlat = sheets.flatMap(
-											(s) => s.visualizations,
-										);
-										const queryUsage: Record<
-											string,
-											number
-										> = {};
-										for (const v of allVizsFlat)
-											if (v.queryId)
-												queryUsage[v.queryId] =
-													(queryUsage[v.queryId] ??
-														0) + 1;
-										return (
-											<VizCard
-												key={viz.id}
-												viz={viz}
-												queries={queries}
-												queryUsage={queryUsage}
-												hasParamSheet={hasParamSheet}
-												databases={databases}
-												testResult={testResults[qKey]}
-												testLoading={
-													testLoading[qKey] ?? false
-												}
-												inLayout={layout.some(
-													(l) => l.vizId === viz.id,
-												)}
-												onUpdate={(updates) =>
-													updateVisualization(
-														viz.id,
-														updates,
-													)
-												}
-												onUpdateQuery={updateQuery}
-												onCreateQuery={createQuery}
-												onDeleteQuery={deleteQuery}
-												onSelectQuery={(qid) =>
-													updateVisualization(
-														viz.id,
-														{ queryId: qid },
-													)
-												}
-												onAddToLayout={() =>
-													addVizToLayout(viz.id)
-												}
-												onTestQuery={() =>
-													void testQuery(viz.id)
-												}
-												customColorPalettes={
-													customColorPalettes
-												}
-												onCustomColorPalettesChange={
-													setCustomColorPalettes
-												}
-												siblings={sheets
-													.flatMap((s) =>
-														s.visualizations.map(
-															(v) => ({
-																v,
-																sheetName:
-																	s.name,
-															}),
-														),
-													)
-													.filter(
-														({ v }) =>
-															v.id !== viz.id,
-													)
-													.map(
-														({ v, sheetName }) => ({
-															id: v.id,
-															title: v.title,
-															visualizationType:
-																v.visualizationType,
-															sheetName,
-															columns:
-																vizConfigColumns(
-																	v,
+															)
+														}
+														customColorPalettes={
+															customColorPalettes
+														}
+														onCustomColorPalettesChange={
+															setCustomColorPalettes
+														}
+														onRunAllQueries={() =>
+															void runAllQueries()
+														}
+														runningAllQueries={
+															runningAllQueries
+														}
+														siblings={sheets
+															.flatMap((s) =>
+																s.visualizations.map(
+																	(v) => ({
+																		v,
+																		sheetName:
+																			s.name,
+																	}),
 																),
-															queryName: v.queryId
-																? queries.find(
-																		(q) =>
-																			q.id ===
-																			v.queryId,
-																	)?.name
-																: undefined,
-														}),
-													)}
-											/>
-										);
-									})()}
-								</div>
-							</div>
-						))}
-
-					{/* ── Layout tab — flexlayout-react canvas ── */}
-					{editorTab === "layout" && (
-						<div className="relative min-h-0 flex-1">
-							{/* Canvas — fills all space except the 52px footer */}
-							<div className="absolute inset-0 bottom-[52px]">
-								{visibleLayout.length === 0 ? (
-									<div className="flex h-full flex-col items-center justify-center gap-2 text-sm text-stone-400">
-										<p>
-											No visualizations in the layout yet.
-										</p>
-										<p className="text-xs">
-											Add visualizations and click "Add to
-											Layout" to start arranging.
-										</p>
-									</div>
-								) : (
-									<Layout
-										ref={layoutTabRef}
-										key={activeSheetId}
-										model={getFlexModel(activeSheet)}
-										factory={(node: TabNode) => {
-											const cfg = node.getConfig() as
-												| { vizId?: string }
-												| undefined;
-											const viz = visualizations.find(
-												(v) => v.id === cfg?.vizId,
-											);
-											if (!viz)
-												return (
-													<div className="flex h-full items-center justify-center text-stone-400 text-xs">
-														Viz not found
-													</div>
-												);
-											const raw =
-												testResults[
-													viz.queryId ?? viz.id
-												];
-											const headers: string[] =
-												raw?.data?.headers ??
-												raw?.headers ??
-												[];
-											const values: any[][] =
-												raw?.data?.values ??
-												raw?.values ??
-												[];
-											const preloadedData = headers.length
-												? values.map((row) => {
-														const obj: any = {};
-														headers.forEach(
-															(h, i) => {
-																obj[h] = row[i];
-															},
-														);
-														return obj;
-													})
-												: undefined;
-											const vizId = cfg?.vizId ?? "";
-											const isLayoutSelected =
-												layoutSelectedVizId === vizId;
-											return (
-												<div
-													className={`relative h-full${isLayoutSelected ? "ring-2 ring-indigo-500 ring-inset" : ""}`}
-													onClick={() =>
-														setLayoutSelectedVizId(
-															(prev) =>
-																prev === vizId
-																	? null
-																	: vizId,
-														)
-													}
-												>
-													{preloadedData ? (
-														<DashboardVisualization
-															visualization={viz}
-															preloadedData={
-																preloadedData
-															}
-															fillContainer
-															onFilterDefaultValuesChange={(
-																vizId,
-																values,
-															) => {
-																const v =
-																	visualizations.find(
-																		(x) =>
-																			x.id ===
-																			vizId,
-																	);
-																if (!v) return;
-																updateVisualization(
-																	vizId,
-																	{
-																		config: {
-																			...v.config,
-																			filterDefaultValues:
-																				values,
-																		},
-																	},
-																);
-															}}
-															onFilterFloatRulesChange={(
-																vizId,
-																rules,
-															) => {
-																const v =
-																	visualizations.find(
-																		(x) =>
-																			x.id ===
-																			vizId,
-																	);
-																if (!v) return;
-																updateVisualization(
-																	vizId,
-																	{
-																		config: {
-																			...v.config,
-																			filterFloatRules:
-																				rules,
-																		},
-																	},
-																);
-															}}
-															onStackbarStylingChange={(
-																updates,
-															) => {
-																updateVisualization(
+															)
+															.filter(
+																({ v }) =>
+																	v.id !==
 																	viz.id,
-																	{
-																		config: {
-																			...viz.config,
-																			styling:
-																				{
-																					...(viz
-																						.config
-																						?.styling ??
-																						{}),
-																					stackbar:
+															)
+															.map(
+																({
+																	v,
+																	sheetName,
+																}) => {
+																	const resolvedParams =
+																		v.queryId
+																			? (queries.find(
+																					(
+																						q,
+																					) =>
+																						q.id ===
+																						v.queryId,
+																				)
+																					?.parameters ??
+																				v.parameters)
+																			: v.parameters;
+																	return {
+																		id: v.id,
+																		title: v.title,
+																		visualizationType:
+																			v.visualizationType,
+																		sheetName,
+																		columns:
+																			vizConfigColumns(
+																				v,
+																			),
+																		queryName:
+																			v.queryId
+																				? queries.find(
+																						(
+																							q,
+																						) =>
+																							q.id ===
+																							v.queryId,
+																					)
+																						?.name
+																				: undefined,
+																		eventParamNames:
+																			(
+																				resolvedParams ??
+																				[]
+																			)
+																				.filter(
+																					(
+																						p,
+																					) =>
+																						p.inputType ===
+																						"event",
+																				)
+																				.map(
+																					(
+																						p,
+																					) =>
+																						p.name,
+																				),
+																	};
+																},
+															)}
+														reuse={{
+															canReuse:
+																!!resolveQuery(
+																	viz,
+																	queries,
+																).query?.trim(),
+															sheets: sheets.map(
+																(s) => ({
+																	id: s.id,
+																	name: s.name,
+																	color: s.color,
+																}),
+															),
+															activeSheetId,
+															onReuse: (target) =>
+																addVizFromQuery(
+																	viz.id,
+																	target,
+																),
+														}}
+													/>
+												);
+											})()}
+										</div>
+									</div>
+								))}
+
+							{/* ── Layout tab — flexlayout-react canvas ── */}
+							{editorTab === "layout" && (
+								<div className="relative min-h-0 flex-1">
+									{/* Canvas — fills all space except the 52px footer */}
+									<div className="absolute inset-0 bottom-[52px]">
+										{visibleLayout.length === 0 ? (
+											<div className="flex h-full flex-col items-center justify-center gap-2 text-sm text-stone-400">
+												<p>
+													No visualizations in the
+													layout yet.
+												</p>
+												<p className="text-xs">
+													Add visualizations and click
+													"Add to Layout" to start
+													arranging.
+												</p>
+											</div>
+										) : (
+											<Layout
+												ref={layoutTabRef}
+												key={activeSheetId}
+												model={getFlexModel(
+													activeSheet,
+												)}
+												factory={(node: TabNode) => {
+													const cfg =
+														node.getConfig() as
+															| { vizId?: string }
+															| undefined;
+													const viz =
+														visualizations.find(
+															(v) =>
+																v.id ===
+																cfg?.vizId,
+														);
+													if (!viz)
+														return (
+															<div className="flex h-full items-center justify-center text-stone-400 text-xs">
+																Viz not found
+															</div>
+														);
+													const raw =
+														testResults[
+															viz.queryId ??
+																viz.id
+														];
+													const headers: string[] =
+														raw?.data?.headers ??
+														raw?.headers ??
+														[];
+													const values: any[][] =
+														raw?.data?.values ??
+														raw?.values ??
+														[];
+													const preloadedData =
+														headers.length
+															? values.map(
+																	(row) => {
+																		const obj: any =
+																			{};
+																		headers.forEach(
+																			(
+																				h,
+																				i,
+																			) => {
+																				obj[
+																					h
+																				] =
+																					row[
+																						i
+																					];
+																			},
+																		);
+																		return obj;
+																	},
+																)
+															: undefined;
+													const vizId =
+														cfg?.vizId ?? "";
+													return (
+														<LayoutVizWrapper
+															vizId={vizId}
+														>
+															{preloadedData ? (
+																<DashboardVisualization
+																	visualization={
+																		viz
+																	}
+																	dataSource={resolveQuery(
+																		viz,
+																		queries,
+																	)}
+																	preloadedData={
+																		preloadedData
+																	}
+																	fillContainer
+																	onFilterDefaultValuesChange={(
+																		vizId,
+																		values,
+																	) => {
+																		const v =
+																			visualizations.find(
+																				(
+																					x,
+																				) =>
+																					x.id ===
+																					vizId,
+																			);
+																		if (!v)
+																			return;
+																		updateVisualization(
+																			vizId,
+																			{
+																				config: {
+																					...v.config,
+																					filterDefaultValues:
+																						values,
+																				},
+																			},
+																		);
+																	}}
+																	onStackbarStylingChange={(
+																		updates,
+																	) => {
+																		updateVisualization(
+																			viz.id,
+																			{
+																				config: {
+																					...viz.config,
+																					styling:
 																						{
 																							...(viz
 																								.config
-																								?.styling
-																								?.stackbar ??
+																								?.styling ??
 																								{}),
-																							...updates,
+																							stackbar:
+																								{
+																									...(viz
+																										.config
+																										?.styling
+																										?.stackbar ??
+																										{}),
+																									...updates,
+																								},
 																						},
 																				},
-																		},
-																	},
-																);
-															}}
-															onAreaStylingChange={(
-																updates,
-															) => {
-																updateVisualization(
-																	viz.id,
-																	{
-																		config: {
-																			...viz.config,
-																			styling:
-																				{
-																					...(viz
-																						.config
-																						?.styling ??
-																						{}),
-																					area: {
-																						...(viz
-																							.config
-																							?.styling
-																							?.area ??
-																							{}),
-																						...updates,
-																					},
-																				},
-																		},
-																	},
-																);
-															}}
-															onLineStylingChange={(
-																updates,
-															) => {
-																updateVisualization(
-																	viz.id,
-																	{
-																		config: {
-																			...viz.config,
-																			styling:
-																				{
-																					...(viz
-																						.config
-																						?.styling ??
-																						{}),
-																					line: {
-																						...(viz
-																							.config
-																							?.styling
-																							?.line ??
-																							{}),
-																						...updates,
-																					},
-																				},
-																		},
-																	},
-																);
-															}}
-															onMultilineStylingChange={(
-																updates,
-															) => {
-																const v =
-																	visualizations.find(
-																		(x) =>
-																			x.id ===
+																			},
+																		);
+																	}}
+																	onAreaStylingChange={(
+																		updates,
+																	) => {
+																		updateVisualization(
 																			viz.id,
-																	);
-																if (!v) return;
-																updateVisualization(
-																	viz.id,
-																	{
-																		config: {
-																			...v.config,
-																			styling:
-																				{
-																					...(v
-																						.config
-																						?.styling ??
-																						{}),
-																					multiline:
+																			{
+																				config: {
+																					...viz.config,
+																					styling:
 																						{
-																							...(v
+																							...(viz
 																								.config
-																								?.styling
-																								?.multiline ??
+																								?.styling ??
 																								{}),
-																							...updates,
+																							area: {
+																								...(viz
+																									.config
+																									?.styling
+																									?.area ??
+																									{}),
+																								...updates,
+																							},
 																						},
 																				},
-																		},
-																	},
-																);
-															}}
-															onComboStylingChange={(
-																updates,
-															) => {
-																updateVisualization(
-																	viz.id,
-																	{
-																		config: {
-																			...viz.config,
-																			styling:
-																				{
-																					...(viz
-																						.config
-																						?.styling ??
-																						{}),
-																					combo: {
-																						...(viz
-																							.config
-																							?.styling
-																							?.combo ??
-																							{}),
-																						...updates,
-																					},
+																			},
+																		);
+																	}}
+																	onLineStylingChange={(
+																		updates,
+																	) => {
+																		updateVisualization(
+																			viz.id,
+																			{
+																				config: {
+																					...viz.config,
+																					styling:
+																						{
+																							...(viz
+																								.config
+																								?.styling ??
+																								{}),
+																							line: {
+																								...(viz
+																									.config
+																									?.styling
+																									?.line ??
+																									{}),
+																								...updates,
+																							},
+																						},
 																				},
+																			},
+																		);
+																	}}
+																	onComboStylingChange={(
+																		updates,
+																	) => {
+																		updateVisualization(
+																			viz.id,
+																			{
+																				config: {
+																					...viz.config,
+																					styling:
+																						{
+																							...(viz
+																								.config
+																								?.styling ??
+																								{}),
+																							combo: {
+																								...(viz
+																									.config
+																									?.styling
+																									?.combo ??
+																									{}),
+																								...updates,
+																							},
+																						},
+																				},
+																			},
+																		);
+																	}}
+																/>
+															) : resolveQuery(
+																	viz,
+																	queries,
+																).parameters?.some(
+																	(p) =>
+																		p.inputType ===
+																		"event",
+																) ? (
+																<DashboardVisualization
+																	visualization={
+																		viz
+																	}
+																	dataSource={resolveQuery(
+																		viz,
+																		queries,
+																	)}
+																	fillContainer
+																/>
+															) : (
+																<div className="flex h-full flex-col items-center justify-center gap-1.5 bg-stone-50/80 text-stone-400">
+																	<p className="max-w-[80%] truncate px-2 text-center font-semibold text-stone-600 text-xs">
+																		{viz.title ||
+																			"Untitled"}
+																	</p>
+																	<p className="text-[10px]">
+																		Run
+																		query to
+																		preview
+																	</p>
+																</div>
+															)}
+														</LayoutVizWrapper>
+													);
+												}}
+												onModelChange={(
+													model: Model,
+													action?: { type?: string },
+												) => {
+													// Tab selection / active-tabset / maximize are view-only — don't
+													// mark the editor dirty or bake them into the saved layout.
+													if (
+														isViewOnlyLayoutAction(
+															action,
+														)
+													)
+														return;
+													const flexLayout =
+														model.toJson() as unknown as Record<
+															string,
+															unknown
+														>;
+													setSheets((prev) =>
+														prev.map((s) =>
+															s.id ===
+															activeSheetId
+																? {
+																		...s,
+																		flexLayout,
+																	}
+																: s,
+														),
+													);
+													flexModelCacheRef.current[
+														activeSheetId
+													] = model;
+												}}
+												onRenderTab={(node, rv) => {
+													const vizId = (
+														node.getConfig() as
+															| { vizId?: string }
+															| undefined
+													)?.vizId;
+													if (!vizId) return;
+													const viz =
+														visualizations.find(
+															(v) =>
+																v.id === vizId,
+														);
+
+													const inner =
+														editingVizIdRef.current ===
+														vizId ? (
+															<input
+																data-viz-rename="true"
+																defaultValue={
+																	viz?.title ??
+																	""
+																}
+																onChange={(e) =>
+																	updateVisualization(
+																		vizId,
+																		{
+																			title: e
+																				.target
+																				.value,
 																		},
-																	},
-																);
-															}}
-														/>
-													) : (
-														<div className="flex h-full flex-col items-center justify-center gap-1.5 bg-stone-50/80 text-stone-400">
-															<p className="max-w-[80%] truncate px-2 text-center font-semibold text-stone-600 text-xs">
-																{viz.title ||
-																	"Untitled"}
-															</p>
-															<p className="text-[10px]">
-																Run query to
-																preview
-															</p>
-														</div>
-													)}
-												</div>
-											);
-										}}
-										onModelChange={(
-											model: Model,
-											action?: { type?: string },
-										) => {
-											// Tab selection / active-tabset / maximize are view-only — don't
-											// mark the editor dirty or bake them into the saved layout.
-											if (isViewOnlyLayoutAction(action))
-												return;
-											const flexLayout =
-												model.toJson() as unknown as Record<
-													string,
-													unknown
-												>;
-											setSheets((prev) =>
-												prev.map((s) =>
-													s.id === activeSheetId
-														? { ...s, flexLayout }
-														: s,
-												),
-											);
-											flexModelCacheRef.current[
-												activeSheetId
-											] = model;
-										}}
-										onRenderTab={(node, rv) => {
-											const vizId = (
-												node.getConfig() as
-													| { vizId?: string }
-													| undefined
-											)?.vizId;
-											if (!vizId) return;
-											const viz = visualizations.find(
-												(v) => v.id === vizId,
-											);
+																	)
+																}
+																onPointerDown={(
+																	e,
+																) =>
+																	e.stopPropagation()
+																}
+																onMouseDown={(
+																	e,
+																) =>
+																	e.stopPropagation()
+																}
+																onClick={(e) =>
+																	e.stopPropagation()
+																}
+																onKeyDown={(
+																	e,
+																) => {
+																	if (
+																		e.key ===
+																			"Enter" ||
+																		e.key ===
+																			"Escape"
+																	) {
+																		e.preventDefault();
+																		setEditingVizId(
+																			null,
+																		);
+																	}
+																}}
+																placeholder="Untitled"
+																className="w-24 border-indigo-400 border-b bg-transparent px-1 py-0 text-stone-800 text-xs outline-none"
+															/>
+														) : (
+															<span className="group/tabrename flex items-center gap-1">
+																<span className="max-w-[110px] truncate">
+																	{viz?.title ||
+																		"Untitled"}
+																</span>
+																<button
+																	type="button"
+																	onPointerDown={(
+																		e,
+																	) =>
+																		e.stopPropagation()
+																	}
+																	onMouseDown={(
+																		e,
+																	) =>
+																		e.stopPropagation()
+																	}
+																	onClick={(
+																		e,
+																	) => {
+																		e.stopPropagation();
+																		setEditingVizId(
+																			vizId,
+																		);
+																	}}
+																	title="Rename"
+																	className="rounded p-0.5 text-stone-400 opacity-0 transition-opacity hover:text-indigo-600 group-hover/tabrename:opacity-100"
+																>
+																	<Pencil className="h-3 w-3" />
+																</button>
+															</span>
+														);
 
-											const inner =
-												editingVizId === vizId ? (
-													<input
-														ref={(el) =>
-															el?.focus()
-														}
-														data-viz-rename="true"
-														value={viz?.title ?? ""}
-														onChange={(e) =>
-															updateVisualization(
-																vizId,
-																{
-																	title: e
-																		.target
-																		.value,
-																},
-															)
-														}
-														onPointerDown={(e) =>
-															e.stopPropagation()
-														}
-														onClick={(e) =>
-															e.stopPropagation()
-														}
-														onKeyDown={(e) => {
-															if (
-																e.key ===
-																	"Enter" ||
-																e.key ===
-																	"Escape"
-															) {
-																e.preventDefault();
-																setEditingVizId(
-																	null,
-																);
-															}
-														}}
-														placeholder="Untitled"
-														className="w-24 border-indigo-400 border-b bg-transparent px-1 py-0 text-stone-800 text-xs outline-none"
-													/>
-												) : (
-													<span className="group/tabrename flex items-center gap-1">
-														<span className="max-w-[110px] truncate">
-															{viz?.title ||
-																"Untitled"}
-														</span>
-														<button
-															type="button"
-															onClick={(e) => {
-																e.stopPropagation();
-																setEditingVizId(
-																	vizId,
-																);
-															}}
-															title="Rename"
-															className="rounded p-0.5 text-stone-400 opacity-0 transition-opacity hover:text-indigo-600 group-hover/tabrename:opacity-100"
-														>
-															<Pencil className="h-3 w-3" />
-														</button>
-													</span>
-												);
-
-											if (viz?.phi) {
-												rv.content = (
-													<span
-														data-pii="true"
-														style={{
-															display: "contents",
-														}}
-													>
-														{inner}
-													</span>
-												);
-											} else if (viz?.tabColor) {
-												rv.content = (
-													<span
-														data-tab-id={vizId}
-														style={{
-															display: "contents",
-														}}
-													>
-														{inner}
-													</span>
-												);
-											} else {
-												rv.content = inner;
-											}
-										}}
-									/>
-								)}
-							</div>
-							{/* Footer: pinned to bottom — hint only; Save lives in the page header */}
-							<div className="absolute right-0 bottom-0 left-0 flex h-[52px] items-center gap-2 border-stone-200 border-t bg-white px-5 shadow-[0_-2px_6px_rgba(0,0,0,0.04)]">
-								<p className="text-stone-400 text-xs">
-									Drag panels to resize &amp; rearrange ·
-									changes save when you click{" "}
-									{isEditing
-										? "“Save Changes”"
-										: "“Create Dashboard”"}{" "}
-									above
-								</p>
-							</div>
+													if (viz?.phi) {
+														rv.content = (
+															<span
+																data-pii="true"
+																style={{
+																	display:
+																		"contents",
+																	color: "#b91c1c",
+																	fontWeight: 700,
+																}}
+															>
+																{inner}
+															</span>
+														);
+													} else if (viz?.tabColor) {
+														// data-tab-id lets useTabColors() color this tab button via CSS.
+														rv.content = (
+															<span
+																data-tab-id={
+																	vizId
+																}
+																style={{
+																	display:
+																		"contents",
+																}}
+															>
+																{inner}
+															</span>
+														);
+													} else {
+														rv.content = inner;
+													}
+												}}
+											/>
+										)}
+									</div>
+									{/* Footer: pinned to bottom — hint only; Save lives in the page header */}
+									<div className="absolute right-0 bottom-0 left-0 flex h-[52px] items-center gap-2 border-stone-200 border-t bg-white px-5 shadow-[0_-2px_6px_rgba(0,0,0,0.04)]">
+										<p className="text-stone-400 text-xs">
+											Drag panels to resize &amp;
+											rearrange · changes save when you
+											click{" "}
+											{isEditing
+												? "“Save Changes”"
+												: "“Create Dashboard”"}{" "}
+											above
+										</p>
+									</div>
+								</div>
+							)}
 						</div>
-					)}
-				</div>
-				{/* /editor body */}
+					</div>
+					{/* /editor body */}
 
-				{/* Sheet tab bar */}
-				<SheetTabs
-					sheets={sheets}
-					activeId={activeSheetId}
-					onSelect={switchSheet}
-					onRename={(id, name) =>
-						setSheets((prev) =>
-							prev.map((s) => (s.id === id ? { ...s, name } : s)),
-						)
-					}
-					onColorChange={changeSheetColor}
-					onAdd={addSheet}
-					onDelete={deleteSheet}
-				/>
-
-				{/* Publish dialog — assign folders (tags) before going live */}
-				{showPublishDialog && (
-					<div
-						className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-						onClick={() => !saving && setShowPublishDialog(false)}
+					{/* Publish dialog — assign folders (tags) before going live */}
+					<Dialog
+						open={showPublishDialog}
+						onOpenChange={(o) => {
+							if (!o && !saving) setShowPublishDialog(false);
+						}}
 					>
-						<div
-							className="relative w-full max-w-md rounded-xl border border-stone-200 bg-white p-5 shadow-soft-lg"
-							onClick={(e) => e.stopPropagation()}
-						>
-							<button
-								onClick={() => setShowPublishDialog(false)}
-								disabled={saving}
-								title="Close"
-								className="absolute top-3 right-3 rounded-md p-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-700 disabled:opacity-50"
-							>
-								<X className="h-4 w-4" />
-							</button>
-
-							<h2 className="pr-8 font-bold text-lg text-stone-900">
+						<DialogContent className="w-full max-w-md">
+							<DialogTitle className="font-bold text-lg text-stone-900">
 								Publish dashboard
-							</h2>
-							<p className="mt-0.5 text-[13px] text-stone-500">
+							</DialogTitle>
+							<DialogDescription className="mt-0.5 text-[13px] text-stone-500">
 								“{name.trim() || "Untitled dashboard"}”
-							</p>
+							</DialogDescription>
 
 							<div className="mt-4">
 								<label className="mb-1 block font-semibold text-[11px] text-stone-400 uppercase tracking-widest">
@@ -2456,7 +2406,7 @@ export function NewDashboardPage() {
 								<TagInput
 									value={tags}
 									onChange={applyTags}
-									suggestions={effectiveTagSuggestions}
+									suggestions={tagSuggestions}
 									placeholder="Type a folder name and press Enter…"
 									max={1}
 								/>
@@ -2472,9 +2422,7 @@ export function NewDashboardPage() {
 								<label className="mb-1 block font-semibold text-[11px] text-stone-400 uppercase tracking-widest">
 									Who can access
 								</label>
-								<div
-									className={`grid gap-2 ${isAdmin ? "grid-cols-3" : "grid-cols-2"}`}
-								>
+								<div className="grid grid-cols-2 gap-2">
 									<button
 										type="button"
 										onClick={() =>
@@ -2518,38 +2466,7 @@ export function NewDashboardPage() {
 											</span>
 										</span>
 									</button>
-									{isAdmin && (
-										<button
-											type="button"
-											onClick={() =>
-												setPublishVisibility("landing")
-											}
-											className={`flex items-start gap-2 rounded-lg border p-3 text-left transition-colors ${publishVisibility === "landing" ? "border-violet-400 bg-violet-50/60 ring-1 ring-violet-500/20" : "border-stone-200 hover:border-stone-300"}`}
-										>
-											<BookOpen
-												className={`mt-0.5 h-4 w-4 ${publishVisibility === "landing" ? "text-violet-600" : "text-stone-400"}`}
-											/>
-											<span>
-												<span
-													className={`block font-semibold text-[13px] ${publishVisibility === "landing" ? "text-violet-900" : "text-stone-800"}`}
-												>
-													Landing Page
-												</span>
-												<span className="block text-[11px] text-stone-500">
-													Pinned to the Insights
-													Portal
-												</span>
-											</span>
-										</button>
-									)}
 								</div>
-								{publishVisibility === "landing" && (
-									<p className="mt-2 text-[11px] text-violet-600">
-										A folder tag is required — it determines
-										which category this insight appears
-										under in the Insights Portal.
-									</p>
-								)}
 								{publishVisibility === "private" && (
 									<div className="mt-3 space-y-2.5 rounded-lg border border-stone-200 bg-stone-50/60 p-3">
 										<p className="text-[12px] text-stone-500">
@@ -2791,11 +2708,7 @@ export function NewDashboardPage() {
 								</button>
 								<button
 									onClick={handleSave}
-									disabled={
-										saving ||
-										(publishVisibility === "landing" &&
-											tags.length === 0)
-									}
+									disabled={saving}
 									className={`${buttonClasses("primary", "sm")} disabled:cursor-not-allowed disabled:opacity-60`}
 								>
 									{saving ? (
@@ -2805,24 +2718,15 @@ export function NewDashboardPage() {
 									)}
 									{saving
 										? "Saving…"
-										: publishVisibility === "landing"
+										: publishVisibility === "public"
 											? "Save & publish"
-											: publishVisibility === "public"
-												? "Save & publish"
-												: "Save (private)"}
+											: "Save (private)"}
 								</button>
 							</div>
-						</div>
-					</div>
-				)}
-
-				{/* AI Dashboard Builder — generates a draft that replaces the editor content. */}
-				<AiBuilderModal
-					open={showAiModal}
-					onClose={() => setShowAiModal(false)}
-					onGenerated={applyGeneratedDashboard}
-				/>
-			</div>
+						</DialogContent>
+					</Dialog>
+				</div>
+			</EventParamProvider>
 		</DashboardFilterProvider>
 	);
 }
@@ -2834,9 +2738,9 @@ interface VizCardProps {
 	viz: Visualization;
 	/** Shared query registry + how many charts use each (for the picker). */
 	queries: DashboardQuery[];
-	queryUsage: Record<string, number>;
-	/** When true, a Parameters sheet centralises param inputs — Crown and gear overlay suppressed. */
+	/** Whether the dashboard has a Parameters sheet (enables the "wait for params" toggle). */
 	hasParamSheet?: boolean;
+	queryUsage: Record<string, number>;
 	databases: IDatabase[];
 	testResult: any;
 	testLoading: boolean;
@@ -2855,20 +2759,32 @@ interface VizCardProps {
 	onTestQuery: () => void;
 	customColorPalettes: ColorPaletteType[];
 	onCustomColorPalettesChange: (palettes: ColorPaletteType[]) => void;
+	/** Run every query across all visualizations (uses the Parameters form values). */
+	onRunAllQueries?: () => void;
+	/** True while all queries are running. */
+	runningAllQueries?: boolean;
 	siblings: {
 		id: string;
 		title: string;
 		visualizationType: string;
 		sheetName?: string;
 		queryName?: string;
+		eventParamNames?: string[];
 	}[];
+	/** Reuse this viz's query as a new chart (rendered next to the query picker). */
+	reuse?: {
+		canReuse: boolean;
+		sheets: { id: string; name: string; color?: string }[];
+		activeSheetId: string;
+		onReuse: (target: string | "new") => void;
+	};
 }
 
 function VizCard({
 	viz,
 	queries,
-	queryUsage,
 	hasParamSheet = false,
+	queryUsage,
 	databases,
 	testResult,
 	testLoading,
@@ -2882,14 +2798,21 @@ function VizCard({
 	onTestQuery,
 	customColorPalettes,
 	onCustomColorPalettesChange,
+	onRunAllQueries,
+	runningAllQueries = false,
 	siblings,
+	reuse,
 }: VizCardProps) {
 	const { actions } = useInsight();
 
 	// Normalised runPixel for HtmlBlockEditor / VizEditor — returns output directly
 	const runPixel = React.useCallback(
+		// lastPixelOutput → the Collect output of a (possibly multi-statement) pixel,
+		// so data-product frame-merge previews work; identical to [0] for single stmts.
 		(pixel: string) =>
-			actions.run(pixel).then((r: any) => r.pixelReturn[0].output),
+			actions
+				.run(pixel)
+				.then((r: any) => lastPixelOutput(r.pixelReturn).output),
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[],
 	);
@@ -2961,6 +2884,8 @@ function VizCard({
 		"databaseName",
 		"query",
 		"parameters",
+		"sources",
+		"joins",
 	] as const;
 	const handleEditorUpdate = (patch: Partial<Visualization>) => {
 		const queryPatch: Partial<DashboardQuery> = {};
@@ -3089,7 +3014,7 @@ function VizCard({
 					}));
 				}
 			} else if (vizType === "pie") {
-				// Pie: xKey → name, yKeys[0] → value, heatKey → heat
+				// Pie: xKey → name, yKeys[0] → value
 				if (viz.config?.xKey) {
 					data.name = [
 						{
@@ -3112,32 +3037,16 @@ function VizCard({
 						},
 					];
 				}
-				if (viz.config?.heatKey) {
-					const hk = viz.config.heatKey;
-					data.heat = [
-						{
-							name: hk,
-							dataType: typeMap[hk] || "NUMBER",
-							aggregation:
-								viz.config?.columnAggregations?.[hk] || "avg",
-						},
-					];
-				}
 			} else if (vizType === "treemap") {
-				if (viz.config?.seriesKey)
-					data.series = [
-						{
-							name: viz.config.seriesKey,
-							dataType: typeMap[viz.config.seriesKey] || "STRING",
-						},
-					];
-				if (viz.config?.xKey)
-					data.label = [
+				// Treemap: xKey → name, yKeys[0] → size
+				if (viz.config?.xKey) {
+					data.name = [
 						{
 							name: viz.config.xKey,
 							dataType: typeMap[viz.config.xKey] || "STRING",
 						},
 					];
+				}
 				if (viz.config?.yKeys?.[0]) {
 					const colName = viz.config.yKeys[0];
 					data.size = [
@@ -3250,7 +3159,7 @@ function VizCard({
 					];
 				}
 			} else if (vizType === "heatmap") {
-				// Heatmap: xAxis → xKey, yAxis → heatmapYKey, heat → heatKey (required value column)
+				// Heatmap: xAxis → xKey, yAxis → heatmapYKey, value → yKeys[0]
 				if (viz.config?.xKey) {
 					data.xAxis = [
 						{
@@ -3268,16 +3177,17 @@ function VizCard({
 						},
 					];
 				}
-				// heat zone: prefer heatKey, fall back to yKeys[0] for legacy configs
-				const heatCol = viz.config?.heatKey || viz.config?.yKeys?.[0];
-				if (heatCol) {
-					data.heat = [
+				if (viz.config?.yKeys?.[0]) {
+					const colName = viz.config.yKeys[0];
+					data.value = [
 						{
-							name: heatCol,
-							dataType: typeMap[heatCol] || "NUMBER",
+							name: colName,
+							dataType: typeMap[colName] || "NUMBER",
 							aggregation:
-								viz.config?.columnAggregations?.[heatCol] ||
-								"avg",
+								viz.config?.columnAggregations?.[colName] ||
+								(typeMap[colName] === "NUMBER"
+									? "sum"
+									: "count"),
 						},
 					];
 				}
@@ -3505,7 +3415,6 @@ function VizCard({
 					);
 				}
 			} else if (vizType === "combo") {
-				// Combo: xAxis + barSeries zone + lineSeries zone
 				if (viz.config?.xKey) {
 					data.xAxis = [
 						{
@@ -3520,17 +3429,16 @@ function VizCard({
 				const barAggregations = comboStyling.barAggregations ?? {};
 				const lineAggregations = comboStyling.lineAggregations ?? {};
 				if (barKeys.length) {
-					data.barSeries = barKeys.map((name) => ({
+					data.barSeries = barKeys.map((name: string) => ({
 						name,
 						dataType: typeMap[name] || "STRING",
-						// Each zone stores its own aggregation independently
 						aggregation:
 							barAggregations[name] ||
 							(typeMap[name] === "NUMBER" ? "avg" : "count"),
 					}));
 				}
 				if (lineKeys.length) {
-					data.lineSeries = lineKeys.map((name) => ({
+					data.lineSeries = lineKeys.map((name: string) => ({
 						name,
 						dataType: typeMap[name] || "STRING",
 						aggregation:
@@ -3538,39 +3446,15 @@ function VizCard({
 							(typeMap[name] === "NUMBER" ? "avg" : "count"),
 					}));
 				}
-			} else if (viz.visualizationType === "halfdonut") {
-				if (viz.config?.xKey)
-					data.xAxis = [
-						{
-							name: viz.config.xKey,
-							dataType: typeMap[viz.config.xKey] || "STRING",
-						},
-					];
-				if (viz.config?.yKeys?.[0]) {
-					const c = viz.config.yKeys[0];
-					data.yAxis = [
-						{
-							name: c,
-							dataType: typeMap[c] || "STRING",
-							aggregation:
-								viz.config?.columnAggregations?.[c] || "sum",
-						},
-					];
-				}
-				if (viz.config?.targetKey) {
-					const c = viz.config.targetKey;
-					data.target = [
-						{
-							name: c,
-							dataType: typeMap[c] || "STRING",
-							aggregation:
-								viz.config?.columnAggregations?.[c] || "sum",
-						},
-					];
-				}
 				if (viz.config?.tooltips?.length) {
 					data.tooltip = viz.config.tooltips.map(
-						({ column, aggregation }) => ({
+						({
+							column,
+							aggregation,
+						}: {
+							column: string;
+							aggregation: string;
+						}) => ({
 							name: column,
 							dataType: typeMap[column] || "STRING",
 							aggregation,
@@ -3608,7 +3492,7 @@ function VizCard({
 				];
 			}
 
-			// Facet navigation column
+			// Facet navigation column — slices data by a column's values (all viz types)
 			if (viz.config?.facetColumn) {
 				data.facet = [
 					{
@@ -3667,28 +3551,27 @@ function VizCard({
 						.aggregation as any;
 				}
 			} else if (vizType === "pie") {
-				// Pie: name → xKey, value → yKeys[0], heat → heatKey
+				// Pie: name → xKey, value → yKeys[0]
 				newConfig.xKey = data.name?.[0]?.name || "";
 				newConfig.yKeys = data.value?.[0] ? [data.value[0].name] : [];
-				newConfig.columnAggregations =
-					newConfig.columnAggregations || {};
+				// Store aggregation
 				if (data.value?.[0]?.aggregation) {
+					newConfig.columnAggregations =
+						newConfig.columnAggregations || {};
 					newConfig.columnAggregations[data.value[0].name] =
 						data.value[0].aggregation;
 				}
-				newConfig.heatKey = data.heat?.[0]?.name || undefined;
-				if (data.heat?.[0]?.aggregation) {
-					newConfig.columnAggregations[data.heat[0].name] =
-						data.heat[0].aggregation;
-				}
 			} else if (vizType === "treemap") {
-				newConfig.seriesKey = data.series?.[0]?.name || "";
-				newConfig.xKey = data.label?.[0]?.name || "";
+				// Treemap: name → xKey, size → yKeys[0]
+				newConfig.xKey = data.name?.[0]?.name || "";
 				newConfig.yKeys = data.size?.[0] ? [data.size[0].name] : [];
-				newConfig.columnAggregations = {};
-				if (data.size?.[0]?.aggregation)
+				// Store aggregation
+				if (data.size?.[0]?.aggregation) {
+					newConfig.columnAggregations =
+						newConfig.columnAggregations || {};
 					newConfig.columnAggregations[data.size[0].name] =
 						data.size[0].aggregation;
+				}
 			} else if (vizType === "pivot") {
 				// Pivot: rows → pivotRows, columns → pivotColumns, values → pivotValues
 				newConfig.pivotRows = data.rows?.map((c: any) => c.name) || [];
@@ -3729,16 +3612,14 @@ function VizCard({
 			} else if (vizType === "heatmap") {
 				newConfig.xKey = data.xAxis?.[0]?.name || "";
 				newConfig.heatmapYKey = data.yAxis?.[0]?.name || "";
-				newConfig.heatKey = data.heat?.[0]?.name || undefined;
-				// mirror into yKeys for backward compat with any code still reading it
-				newConfig.yKeys = data.heat?.[0] ? [data.heat[0].name] : [];
+				newConfig.yKeys = data.value?.[0] ? [data.value[0].name] : [];
 				newConfig.columnAggregations = {};
 				if (
-					data.heat?.[0]?.aggregation &&
+					data.value?.[0]?.aggregation &&
 					newConfig.columnAggregations
 				) {
-					newConfig.columnAggregations[data.heat[0].name] =
-						data.heat[0].aggregation;
+					newConfig.columnAggregations[data.value[0].name] =
+						data.value[0].aggregation;
 				}
 			} else if (vizType === "worldmap") {
 				// World Map: label, latitudeKey, longitudeKey (required) + size/color (optional)
@@ -3845,7 +3726,6 @@ function VizCard({
 				const lineCols = (data.lineSeries as any[]) ?? [];
 				const barKeys = barCols.map((c: any) => c.name as string);
 				const lineKeys = lineCols.map((c: any) => c.name as string);
-				// Columns in both zones get aliased keys so each zone can have its own aggregation
 				const sharedCols = new Set(
 					barKeys.filter((k) => lineKeys.includes(k)),
 				);
@@ -3870,19 +3750,6 @@ function VizCard({
 							c.aggregation;
 					}
 				});
-			} else if (vizType === "halfdonut") {
-				newConfig.xKey = data.xAxis?.[0]?.name || "";
-				newConfig.yKeys = data.yAxis?.[0] ? [data.yAxis[0].name] : [];
-				newConfig.targetKey = data.target?.[0]?.name || undefined;
-				newConfig.columnAggregations = {};
-				[...(data.yAxis ?? []), ...(data.target ?? [])].forEach(
-					(c: any) => {
-						if (c.aggregation && newConfig.columnAggregations) {
-							newConfig.columnAggregations[c.name] =
-								c.aggregation;
-						}
-					},
-				);
 			} else {
 				// Standard: xAxis → xKey, yAxis → yKeys
 				newConfig.xKey = data.xAxis?.[0]?.name || "";
@@ -3926,7 +3793,7 @@ function VizCard({
 			// Preserve styling configuration
 			newConfig.styling = data.styling;
 
-			// Patch combo: save explicit barKeys/lineKeys, per-zone aggregations, and seriesTypes
+			// Patch combo: save barKeys/lineKeys, per-zone aggregations, and seriesTypes
 			if (vizType === "combo") {
 				const barCols = (data.barSeries as any[]) ?? [];
 				const lineCols = (data.lineSeries as any[]) ?? [];
@@ -3996,6 +3863,8 @@ function VizCard({
 				dropZoneData={getDropZoneData()}
 				onDropZoneChange={handleDropZoneChange}
 				onRunQuery={onTestQuery}
+				onRunAllQueries={onRunAllQueries}
+				runningAllQueries={runningAllQueries}
 				running={testLoading}
 				rowCount={testResult ? rawValues.length : null}
 				hasData={previewData.length > 0}
@@ -4012,89 +3881,6 @@ function VizCard({
 								},
 							})
 						}
-						onFilterFloatRulesChange={(_vizId, rules) =>
-							onUpdate({
-								config: {
-									...(vizForEditor.config ?? {}),
-									filterFloatRules: rules,
-								},
-							})
-						}
-						onStackbarStylingChange={(updates) =>
-							onUpdate({
-								config: {
-									...(vizForEditor.config ?? {}),
-									styling: {
-										...(vizForEditor.config?.styling ?? {}),
-										stackbar: {
-											...(vizForEditor.config?.styling
-												?.stackbar ?? {}),
-											...updates,
-										},
-									},
-								},
-							})
-						}
-						onAreaStylingChange={(updates) =>
-							onUpdate({
-								config: {
-									...(vizForEditor.config ?? {}),
-									styling: {
-										...(vizForEditor.config?.styling ?? {}),
-										area: {
-											...(vizForEditor.config?.styling
-												?.area ?? {}),
-											...updates,
-										},
-									},
-								},
-							})
-						}
-						onLineStylingChange={(updates) =>
-							onUpdate({
-								config: {
-									...(vizForEditor.config ?? {}),
-									styling: {
-										...(vizForEditor.config?.styling ?? {}),
-										line: {
-											...(vizForEditor.config?.styling
-												?.line ?? {}),
-											...updates,
-										},
-									},
-								},
-							})
-						}
-						onMultilineStylingChange={(updates) =>
-							onUpdate({
-								config: {
-									...(vizForEditor.config ?? {}),
-									styling: {
-										...(vizForEditor.config?.styling ?? {}),
-										multiline: {
-											...(vizForEditor.config?.styling
-												?.multiline ?? {}),
-											...updates,
-										},
-									},
-								},
-							})
-						}
-						onComboStylingChange={(updates) =>
-							onUpdate({
-								config: {
-									...(vizForEditor.config ?? {}),
-									styling: {
-										...(vizForEditor.config?.styling ?? {}),
-										combo: {
-											...(vizForEditor.config?.styling
-												?.combo ?? {}),
-											...updates,
-										},
-									},
-								},
-							})
-						}
 					/>
 				)}
 				previewRows={previewData}
@@ -4104,6 +3890,8 @@ function VizCard({
 				siblings={siblings}
 				customColorPalettes={customColorPalettes}
 				onCustomColorPalettesChange={onCustomColorPalettesChange}
+				reuse={reuse}
+				showPhiToggle={false}
 			/>
 		);
 	})();

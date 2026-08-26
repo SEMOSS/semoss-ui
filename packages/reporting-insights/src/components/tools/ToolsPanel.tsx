@@ -37,6 +37,7 @@ import { AxisSettings } from "./shared/AxisSettings";
 import { ChartTitle } from "./shared/ChartTitle";
 import { ColorByValue } from "./shared/ColorByValue";
 import { ColorPalette, type ColorPalettePatch } from "./shared/ColorPalette";
+import { EventsPanel } from "./shared/EventsPanel";
 import { FilterVisualization } from "./shared/FilterVisualization";
 import { FormatDataValues } from "./shared/FormatDataValues";
 import { ResetButton } from "./shared/ResetButton";
@@ -121,6 +122,14 @@ interface ToolsPanelProps {
 	customColorPalettes?: ColorPaletteType[];
 	/** Fires when the user creates/edits/deletes a custom palette template. */
 	onCustomColorPalettesChange?: (palettes: ColorPaletteType[]) => void;
+	/** Other visualizations on the same dashboard — used by Events tool "Apply to Specific" targeting. */
+	allVisualizations?: Array<{
+		id: string;
+		name: string;
+		eventParams?: string[];
+	}>;
+	/** ID of the current visualization — pinned as always-selected in event specific targeting. */
+	hostVizId?: string;
 	onChange: (styling: VisualizationStyling) => void;
 }
 
@@ -137,6 +146,8 @@ export function ToolsPanel({
 	sortableColumns,
 	customColorPalettes = [],
 	onCustomColorPalettesChange,
+	allVisualizations = [],
+	hostVizId,
 	onChange,
 }: ToolsPanelProps) {
 	const [searchQuery, setSearchQuery] = useState("");
@@ -700,6 +711,19 @@ export function ToolsPanel({
 					onReset={() => updateStyling({ vizFilter: undefined })}
 				/>
 			)}
+		</ToolAccordion>
+	);
+
+	const eventsTool = (
+		<ToolAccordion title="Events">
+			<EventsPanel
+				events={styling.events ?? []}
+				onChange={(next) => updateStyling({ events: next })}
+				columns={columns}
+				dropZoneColumns={sortableColumns}
+				allVisualizations={allVisualizations}
+				hostVizId={hostVizId}
+			/>
 		</ToolAccordion>
 	);
 
@@ -2125,6 +2149,27 @@ export function ToolsPanel({
 	// Cluster chart–specific tools
 	const clusterTools = (
 		<>
+			<ToolAccordion title="Color Palette">
+				<ColorPalette
+					value={styling.colorPalette}
+					customPalettes={customColorPalettes}
+					onChange={handleColorPalettePatch}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Color by Value">
+				<ColorByValue
+					columns={columns}
+					visualizationType="cluster"
+					columnValues={columnValues}
+					value={styling.cluster?.colorRules || []}
+					onChange={(colorRules) =>
+						updateClusterStyling({
+							colorRules: colorRules as any,
+						})
+					}
+					onReset={() => updateClusterStyling({ colorRules: [] })}
+				/>
+			</ToolAccordion>
 			<ToolAccordion title="Dot Size">
 				<div className="flex flex-col gap-2 px-1 py-1">
 					<div className="flex items-center justify-between">
@@ -4012,6 +4057,16 @@ export function ToolsPanel({
 								? kpiTitleTool
 								: sharedTools,
 							filterTool,
+							![
+								"filter",
+								"htmlblock",
+								"csvexport",
+								"table",
+								"pivot",
+								"kpi",
+							].includes(visualizationType)
+								? eventsTool
+								: null,
 							!["filter", "htmlblock", "csvexport"].includes(
 								visualizationType,
 							)

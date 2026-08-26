@@ -417,6 +417,23 @@ async function init() {
     var r = await fetch('./dashboard.json?_=' + Date.now(), { credentials: 'include' });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     CONFIG = migrateConfig(await r.json());
+    // Drop synthetic Parameters sheets — they have no visualizations and are
+    // only meaningful in the React editor/viewer.
+    CONFIG.sheets = CONFIG.sheets.filter(function(s){ return !s.isParamSheet; });
+    // Resolve shared queries: copy query/databaseId/parameters from the shared
+    // query onto each viz so the portal can run them without a separate lookup.
+    var queriesMap = {};
+    (CONFIG.queries || []).forEach(function(q){ queriesMap[q.id] = q; });
+    CONFIG.sheets.forEach(function(sheet) {
+      sheet.visualizations.forEach(function(viz) {
+        if (viz.queryId && queriesMap[viz.queryId]) {
+          var sq = queriesMap[viz.queryId];
+          if (!viz.query) viz.query = sq.query || '';
+          if (!viz.databaseId) viz.databaseId = sq.databaseId || '';
+          if (!viz.parameters || !viz.parameters.length) viz.parameters = sq.parameters || [];
+        }
+      });
+    });
   } catch (e) {
     document.getElementById('title').textContent = 'Error loading dashboard';
     return;
@@ -522,7 +539,8 @@ function renderViewGrid() {
       // Card header right-side buttons — matches main app DashboardVisualization header
       var hbtns = document.createElement('div'); hbtns.style.cssText = 'display:flex;align-items:center;gap:4px;flex-shrink:0';
       // Parameters toggle (hidden until first run, matches main app's SlidersHorizontal icon)
-      if (viz.parameters && viz.parameters.length) {
+      var userParams = (viz.parameters || []).filter(function(p) { return p.inputType !== 'event'; });
+      if (userParams.length) {
         var ptbtn = document.createElement('button'); ptbtn.className = 'params-toggle-btn'; ptbtn.id = 'ptbtn-'+viz.id;
         ptbtn.innerHTML = '&#9776;'; ptbtn.title = 'Adjust parameters'; ptbtn.style.display = 'none';
         ptbtn.style.cssText += 'width:28px;height:28px;display:none;align-items:center;justify-content:center;border-radius:6px;border:none;background:none;cursor:pointer;color:#94a3b8;font-size:.9rem;transition:all .15s';
@@ -544,12 +562,12 @@ function renderViewGrid() {
       vc.appendChild(vh);
 
       // Adjust-params strip (post-run, toggled)
-      if (viz.parameters && viz.parameters.length) {
-        viz.parameters.forEach(function(p){ vizParamValues[viz.id][p.name] = p.defaultValue||''; });
-        var cols = viz.parameters.length>=3 ? 'cols-3' : viz.parameters.length===2 ? 'cols-2' : '';
+      if (userParams.length) {
+        userParams.forEach(function(p){ vizParamValues[viz.id][p.name] = p.defaultValue||''; });
+        var cols = userParams.length>=3 ? 'cols-3' : userParams.length===2 ? 'cols-2' : '';
         var strip = document.createElement('div'); strip.className = 'adjust-params-strip'; strip.id = 'apstrip-'+viz.id;
         var sg = document.createElement('div'); sg.className = 'adjust-params-grid '+cols;
-        viz.parameters.forEach(function(p) {
+        userParams.forEach(function(p) {
           var d = document.createElement('div');
           var lbl = document.createElement('label'); lbl.style.cssText = 'font-size:.7rem;font-weight:600;color:#475569;margin-bottom:3px;display:block'; lbl.textContent = p.label||p.name;
           var inp = document.createElement('input'); inp.type='text'; inp.value=p.defaultValue||''; inp.placeholder=p.defaultValue||p.name; inp.style.cssText='padding:6px 10px;font-size:.8rem';
@@ -653,7 +671,10 @@ function renderViewGrid() {
 
   // Auto-run no-param vizs; show inline param form for others
   sheet.visualizations.forEach(function(v){
-    if (!v.parameters || !v.parameters.length) { runViz(v.id); }
+    var vUserParams = (v.parameters || []).filter(function(p) { return p.inputType !== 'event'; });
+    var hasEventParams = (v.parameters || []).some(function(p) { return p.inputType === 'event'; });
+    if (hasEventParams && !vUserParams.length) { renderEventWaiting(v.id); }
+    else if (!vUserParams.length) { runViz(v.id); }
     else { renderParamWaiting(v.id, v); }
   });
   renderSheetTabs();
@@ -666,11 +687,12 @@ function renderParamWaiting(vizId, viz) {
   if (st) { st.textContent=''; st.style.display='none'; }
   if (!rc) return;
   rc.style.display='block'; rc.innerHTML='';
-  var cols = viz.parameters.length>=3 ? 'cols-2' : '';
+  var uParams = (viz.parameters || []).filter(function(p) { return p.inputType !== 'event'; });
+  var cols = uParams.length>=3 ? 'cols-2' : '';
   var form = document.createElement('div'); form.className='param-waiting';
   form.innerHTML = '<div class="param-waiting-hdr"><h4>Query Parameters</h4><p>Set values below, then run to load data</p></div>'
     +'<div class="param-waiting-body"><div class="param-waiting-grid '+cols+'">'
-    +viz.parameters.map(function(p){
+    +uParams.map(function(p){
       return '<div><label style="display:block;font-size:.75rem;font-weight:600;color:#475569;margin-bottom:4px">'+esc(p.label||p.name)+'</label>'
         +'<input class="param-waiting-inp" type="text" data-viz="'+esc(vizId)+'" data-name="'+esc(p.name)+'" value="'+esc(p.defaultValue||'')+'" placeholder="'+esc(p.defaultValue||p.name)+'"/></div>';
     }).join('')
@@ -686,6 +708,66 @@ function renderParamWaiting(vizId, viz) {
     inp.addEventListener('input', function(e){ vizParamValues[vizId][e.target.dataset.name]=e.target.value; });
     inp.addEventListener('keydown', (function(id){ return function(e){ if(e.key==='Enter') runVizFromCard(id); }; })(vizId));
   });
+}
+
+// Awaiting-event idle state — shown for vizzes whose only params are event-driven.
+function renderEventWaiting(vizId) {
+  var rc = document.getElementById('rc-'+vizId);
+  var st = document.getElementById('st-'+vizId);
+  if (st) { st.textContent=''; st.style.display='none'; }
+  if (!rc) return;
+  rc.style.display='block'; rc.innerHTML='';
+  var msg = document.createElement('div');
+  msg.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:24px;text-align:center;height:100%';
+  msg.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>'
+    +'<p style="font-weight:600;color:#475569;font-size:.875rem;margin:0">Awaiting event</p>'
+    +'<p style="color:#94a3b8;font-size:.75rem;max-width:220px;margin:0">Interact with a configured event to load this visualization.</p>';
+  rc.appendChild(msg);
+}
+
+// ── Portal click-event system ─────────────────────────────────────────────
+// Fires configured events when a chart data point is clicked.
+function handleVizClick(sourceVizId, row) {
+  if (!row || typeof row !== 'object') return;
+  var sourceViz = null;
+  for (var _si = 0; _si < CONFIG.sheets.length; _si++) {
+    sourceViz = CONFIG.sheets[_si].visualizations.find(function(v){ return v.id === sourceVizId; });
+    if (sourceViz) break;
+  }
+  if (!sourceViz || !sourceViz.config || !sourceViz.config.events) return;
+  var events = sourceViz.config.events.filter(function(ev) {
+    return ev.enabled && (ev.trigger === 'click' || ev.trigger === 'dblclick');
+  });
+  for (var i = 0; i < events.length; i++) {
+    var ev = events[i];
+    if (ev.action === 'custom_query' && ev.targetVizId) {
+      var paramValues = {};
+      (ev.columnParamMap || []).forEach(function(mapping) {
+        var val = row[mapping.column];
+        if (val != null) paramValues[mapping.paramName] = String(val);
+      });
+      if (Object.keys(paramValues).length > 0) {
+        triggerEventQuery(ev.targetVizId, paramValues);
+      }
+    } else if (ev.action === 'open_url' && ev.url) {
+      window.open(ev.url, '_blank', 'noopener,noreferrer');
+    }
+  }
+}
+
+// Set event param values on a target viz and re-run its query.
+function triggerEventQuery(targetVizId, paramValues) {
+  vizParamValues[targetVizId] = vizParamValues[targetVizId] || {};
+  Object.keys(paramValues).forEach(function(k) {
+    vizParamValues[targetVizId][k] = paramValues[k];
+  });
+  // Clear the awaiting-event state and run the target viz
+  var rc = document.getElementById('rc-'+targetVizId);
+  if (rc) { rc.innerHTML=''; rc.style.display='none'; }
+  var st = document.getElementById('st-'+targetVizId);
+  if (st) { st.textContent=''; st.style.display='none'; }
+  vizHasRun[targetVizId] = true;
+  runViz(targetVizId);
 }
 
 // Run from card: clear waiting form, show chart
@@ -826,6 +908,14 @@ function renderVizResult(vizId, vizType, headers, values, config) {
     data: chartData,
     options: {
       responsive: true, maintainAspectRatio: false,
+      onClick: (function(_vid, _headers, _values){ return function(e, elements) {
+        if (!elements.length) return;
+        var idx = elements[0].index;
+        if (idx < 0 || idx >= _values.length) return;
+        var row = {};
+        _headers.forEach(function(h, i){ row[h] = _values[idx][i]; });
+        handleVizClick(_vid, row);
+      }; })(vizId, headers, values),
       plugins: { legend: { display: datasets.length>1||ct==='pie'||ct==='radar', labels: { font: { size: 11 } } } },
       scales: (ct==='pie'||ct==='radar') ? {} : {
         x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#94a3b8' }, border: { display: false } },
@@ -1372,6 +1462,8 @@ function renderTable(container, headers, values, vizId, isPivot) {
   pageData.forEach(function(row){
     var tr = document.createElement('tr');
     row.forEach(function(cell){ var td = document.createElement('td'); td.textContent = cell != null ? (typeof cell==='number'?cell.toLocaleString():String(cell)) : ''; tr.appendChild(td); });
+    tr.style.cursor = 'pointer';
+    tr.onclick = (function(_vizId, _headers, _row){ return function(){ var obj={}; _headers.forEach(function(h,i){ obj[h]=_row[i]; }); handleVizClick(_vizId, obj); }; })(vizId, headers, row);
     tbody.appendChild(tr);
   });
   table.appendChild(tbody); wrap.appendChild(table); container.appendChild(wrap);

@@ -56,6 +56,14 @@ interface VizConfigTabsProps {
 	rows?: Array<Record<string, unknown>>;
 	customColorPalettes?: ColorPaletteType[];
 	onCustomColorPalettesChange?: (palettes: ColorPaletteType[]) => void;
+	/** Other visualizations on this dashboard — used by Events tool targeting. */
+	allVisualizations?: Array<{
+		id: string;
+		name: string;
+		eventParams?: string[];
+	}>;
+	/** ID of the current visualization — pinned as always-selected in event specific targeting. */
+	hostVizId?: string;
 }
 
 type TabId = "data" | "tools";
@@ -68,6 +76,8 @@ export function VizConfigTabs({
 	rows,
 	customColorPalettes,
 	onCustomColorPalettesChange,
+	allVisualizations,
+	hostVizId,
 }: VizConfigTabsProps) {
 	const [activeTab, setActiveTab] = useState<TabId>("data");
 
@@ -164,6 +174,8 @@ export function VizConfigTabs({
 						onCustomColorPalettesChange={
 							onCustomColorPalettesChange
 						}
+						allVisualizations={allVisualizations}
+						hostVizId={hostVizId}
 						onChange={(styling) => {
 							onChange({
 								...value,

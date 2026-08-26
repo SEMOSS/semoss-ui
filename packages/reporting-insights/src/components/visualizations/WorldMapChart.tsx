@@ -1,12 +1,27 @@
+import L from "leaflet";
 import { Globe } from "lucide-react";
-import { type CSSProperties, useMemo } from "react";
-import { CircleMarker, MapContainer, TileLayer, Tooltip } from "react-leaflet";
+import {
+	type CSSProperties,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
+import {
+	CircleMarker,
+	MapContainer,
+	TileLayer,
+	Tooltip,
+	useMap,
+} from "react-leaflet";
 import { formatValue } from "@/lib/formatValue";
 import {
 	type ColorPalette as ColorPaletteType,
 	DEFAULT_WORLDMAP_STYLING,
 	type FormatRule,
 	type VisualizationConfig,
+	type VizEvent,
+	type VizTriggerPayload,
 	type WorldMapLayer,
 } from "@/types/dashboard";
 
@@ -119,6 +134,8 @@ export interface WorldMapPoint {
 	colorCategory?: string;
 	/** Aggregated tooltip extra values keyed by column name */
 	tooltipValues?: Record<string, number | string>;
+	/** First raw data row contributing to this marker — used for event filter matching */
+	rawRow?: Record<string, unknown>;
 }
 
 /** Aggregate raw rows into one marker per label.
@@ -159,6 +176,7 @@ export function aggregateWorldMapPoints(
 			sizeValues: unknown[];
 			colorCategory?: string;
 			_tooltipValues: Record<string, unknown[]>;
+			_firstRow: Record<string, unknown>;
 		}
 	>();
 
@@ -182,6 +200,7 @@ export function aggregateWorldMapPoints(
 					? String(row[colorKey] ?? "")
 					: undefined,
 				_tooltipValues,
+				_firstRow: row,
 			});
 		} else {
 			if (sizeKey) existing.sizeValues.push(row[sizeKey]);
@@ -200,8 +219,12 @@ export function aggregateWorldMapPoints(
 		const tooltipValues: Record<string, number | string> = {};
 		for (const { column, aggregation } of tooltipEntries) {
 			const vals = g._tooltipValues[column] ?? [];
-			if (vals.length)
-				tooltipValues[column] = aggregate(vals, aggregation);
+			if (vals.length) {
+				tooltipValues[column] =
+					aggregation === "raw"
+						? String(g._firstRow[column] ?? "")
+						: aggregate(vals, aggregation);
+			}
 		}
 		return {
 			label: g.label,
@@ -215,8 +238,81 @@ export function aggregateWorldMapPoints(
 			tooltipValues: Object.keys(tooltipValues).length
 				? tooltipValues
 				: undefined,
+			rawRow: g._firstRow,
 		};
 	});
+}
+
+// Fallback used only for the MapContainer's required initial center/zoom props before
+// the MapViewController has a chance to fit to actual data bounds.
+const FALLBACK_CENTER: [number, number] = [20, 0];
+const FALLBACK_ZOOM = 2;
+
+/** Fit the map to the bounding box of all points. Non-animated on first call, animated on subsequent calls. */
+function fitToPoints(
+	map: L.Map,
+	points: WorldMapPoint[],
+	focusZoom: number,
+	animate: boolean,
+) {
+	if (!points.length) return;
+	if (points.length === 1) {
+		if (animate)
+			map.flyTo([points[0].latitude, points[0].longitude], focusZoom, {
+				duration: 0.8,
+			});
+		else
+			map.setView([points[0].latitude, points[0].longitude], focusZoom, {
+				animate: false,
+			});
+		return;
+	}
+	const bounds = L.latLngBounds(
+		points.map((p) => [p.latitude, p.longitude] as [number, number]),
+	);
+	if (animate) map.flyToBounds(bounds, { padding: [30, 30], duration: 0.8 });
+	else map.fitBounds(bounds, { padding: [30, 30], animate: false });
+}
+
+/**
+ * Lives inside MapContainer (so it can call useMap()):
+ * - On first render with data, fits the map to the bounding box of all points.
+ * - When focusPoint is set (filter event fired), flies to that single point.
+ * - When focusPoint is cleared (unfilter event fired), flies back to show all points.
+ */
+function MapViewController({
+	focusPoint,
+	focusZoom,
+	points,
+}: {
+	focusPoint: { lat: number; lon: number } | null;
+	focusZoom: number;
+	points: WorldMapPoint[];
+}) {
+	const map = useMap();
+	const initialFitDone = useRef(false);
+
+	// Initial fit-to-bounds: runs once when points first become available.
+	useEffect(() => {
+		if (initialFitDone.current || !points.length) return;
+		initialFitDone.current = true;
+		fitToPoints(map, points, focusZoom, false);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [points]);
+
+	// Filter zoom-in / unfilter zoom-out.
+	useEffect(() => {
+		if (focusPoint !== null) {
+			map.flyTo([focusPoint.lat, focusPoint.lon], focusZoom, {
+				duration: 0.8,
+			});
+		} else if (initialFitDone.current && points.length) {
+			fitToPoints(map, points, focusZoom, true);
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [focusPoint]);
+
+	return null;
 }
 
 interface WorldMapChartProps {
@@ -225,6 +321,9 @@ interface WorldMapChartProps {
 	/** Optional explicit palette override (otherwise reads `config.styling.colorPalette`). */
 	palette?: string[];
 	formatRules?: FormatRule[];
+	onTrigger?: (payload: VizTriggerPayload) => void;
+	/** Configured viz events — used to gate zoom-on-filter/unfilter behaviour. */
+	events?: VizEvent[];
 }
 
 export function WorldMapChart({
@@ -232,11 +331,64 @@ export function WorldMapChart({
 	config,
 	palette,
 	formatRules = [],
+	onTrigger,
+	events,
 }: WorldMapChartProps) {
 	const labelKey = config?.label;
 	const latKey = config?.latitudeKey;
 	const lonKey = config?.longitudeKey;
 	const sizeKey = config?.size;
+	const hoveredPointRef = useRef<Record<string, unknown> | null>(null);
+	// Stable ref so the keydown listener always calls the latest onTrigger without needing to re-attach.
+	const onTriggerRef = useRef(onTrigger);
+	onTriggerRef.current = onTrigger;
+	// Debounce mouseout: Leaflet fires mouseout on the SVG circle whenever the mouse
+	// enters the adjacent tooltip <div>, even though the user is still "hovering" the
+	// point. Cancelling the pending mouseout when a mouseover fires within 50ms avoids
+	// the spurious fire and only triggers when the mouse genuinely leaves the area.
+	const mouseoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	// Fire keypress events while a point is hovered.
+	useEffect(() => {
+		const onKeyDown = (e: KeyboardEvent) => {
+			if (!hoveredPointRef.current) return;
+			if (
+				e.target instanceof HTMLInputElement ||
+				e.target instanceof HTMLTextAreaElement ||
+				e.target instanceof HTMLSelectElement
+			)
+				return;
+			onTriggerRef.current?.({
+				trigger: "keypress",
+				key: e.key,
+				row: hoveredPointRef.current,
+			});
+		};
+		document.addEventListener("keydown", onKeyDown);
+		return () => document.removeEventListener("keydown", onKeyDown);
+	}, []);
+	const [focusedPoint, setFocusedPoint] = useState<{
+		lat: number;
+		lon: number;
+	} | null>(null);
+
+	// Map each trigger to the zoom action ('in' | 'out' | null) driven by its event action.
+	// Any trigger bound to 'filter' zooms in; any trigger bound to 'unfilter' zooms out.
+	const zoomOnTrigger = useMemo(() => {
+		const enabled = events?.filter((e) => e.enabled) ?? [];
+		const actionFor = (trigger: string): "in" | "out" | null => {
+			const ev = enabled.find((e) => e.trigger === trigger);
+			if (ev?.action === "filter") return "in";
+			if (ev?.action === "unfilter") return "out";
+			return null;
+		};
+		return {
+			click: actionFor("click"),
+			dblclick: actionFor("dblclick"),
+			hover: actionFor("hover"),
+			mouseout: actionFor("mouseout"),
+		};
+	}, [events]);
+
 	const colorKey = config?.color;
 	const tooltipEntries: Array<{ column: string; aggregation: string }> =
 		config?.tooltips?.length
@@ -324,13 +476,16 @@ export function WorldMapChart({
 	}
 
 	const tileConfig = TILE_LAYERS[mapLayer];
+	// Zoom level to fly to when a point is selected. Cap at a "city view" level so
+	// we don't end up at street level on high-maxZoom tile layers.
+	const focusZoom = Math.min((tileConfig?.maxZoom ?? 19) - 1, 12);
 
 	return (
 		<div className="relative flex h-full w-full flex-col">
 			<div className="relative min-h-0 flex-1">
 				<MapContainer
-					center={[20, 0]}
-					zoom={2}
+					center={FALLBACK_CENTER}
+					zoom={FALLBACK_ZOOM}
 					style={{ width: "100%", height: "100%" }}
 					zoomControl={true}
 					attributionControl={true}
@@ -347,6 +502,12 @@ export function WorldMapChart({
 						/>
 					)}
 
+					<MapViewController
+						focusPoint={focusedPoint}
+						focusZoom={focusZoom}
+						points={points}
+					/>
+
 					{points.map((p) => {
 						const radius = sizeScale(p.sizeValue);
 						const fill =
@@ -354,6 +515,18 @@ export function WorldMapChart({
 								? (colorIndex.get(p.colorCategory) ??
 									resolvedPalette[0])
 								: resolvedPalette[0];
+						// Use the original raw data row so filter matching compares exact
+						// column values (aggregated tooltipValues are transformed numbers
+						// that won't match the raw strings in target visualizations).
+						const buildRow = () =>
+							p.rawRow ?? {
+								...(labelKey ? { [labelKey]: p.label } : {}),
+								...(latKey ? { [latKey]: p.latitude } : {}),
+								...(lonKey ? { [lonKey]: p.longitude } : {}),
+								...(colorKey
+									? { [colorKey]: p.colorCategory }
+									: {}),
+							};
 						return (
 							<CircleMarker
 								key={p.label}
@@ -364,6 +537,105 @@ export function WorldMapChart({
 									fillOpacity: 0.75,
 									color: "#fff",
 									weight: 1,
+								}}
+								eventHandlers={{
+									click: (e) => {
+										const z = zoomOnTrigger.click;
+										if (z === "in")
+											setFocusedPoint({
+												lat: p.latitude,
+												lon: p.longitude,
+											});
+										else if (z === "out")
+											setFocusedPoint(null);
+										const row = buildRow();
+										const oe = (e as any).originalEvent as
+											| MouseEvent
+											| undefined;
+										onTrigger?.({
+											trigger: "click",
+											label: p.label,
+											row,
+											modifiers: {
+												ctrl: !!oe?.ctrlKey,
+												shift: !!oe?.shiftKey,
+												alt: !!oe?.altKey,
+											},
+										});
+									},
+									dblclick: (e) => {
+										const z = zoomOnTrigger.dblclick;
+										if (z === "in")
+											setFocusedPoint({
+												lat: p.latitude,
+												lon: p.longitude,
+											});
+										else if (z === "out")
+											setFocusedPoint(null);
+										const oe = (e as any).originalEvent as
+											| MouseEvent
+											| undefined;
+										onTrigger?.({
+											trigger: "dblclick",
+											label: p.label,
+											row: buildRow(),
+											modifiers: {
+												ctrl: !!oe?.ctrlKey,
+												shift: !!oe?.shiftKey,
+												alt: !!oe?.altKey,
+											},
+										});
+									},
+									mouseover: () => {
+										// Cancel any pending mouseout — mouse re-entered a point.
+										if (mouseoutTimerRef.current) {
+											clearTimeout(
+												mouseoutTimerRef.current,
+											);
+											mouseoutTimerRef.current = null;
+										}
+										hoveredPointRef.current = buildRow();
+										const z = zoomOnTrigger.hover;
+										if (z === "in")
+											setFocusedPoint({
+												lat: p.latitude,
+												lon: p.longitude,
+											});
+										else if (z === "out")
+											setFocusedPoint(null);
+										onTrigger?.({
+											trigger: "hover",
+											label: p.label,
+											row: buildRow(),
+										});
+									},
+									mouseout: () => {
+										const row = buildRow();
+										const z = zoomOnTrigger.mouseout;
+										// Debounce: only fire if the mouse doesn't re-enter a point within 50ms.
+										// Leaflet fires mouseout on the SVG circle when the mouse enters the
+										// adjacent tooltip <div>, making mouseout appear to fire while the user
+										// is still visually "hovering". The 50ms window absorbs that gap.
+										mouseoutTimerRef.current = setTimeout(
+											() => {
+												mouseoutTimerRef.current = null;
+												hoveredPointRef.current = null;
+												if (z === "in")
+													setFocusedPoint({
+														lat: p.latitude,
+														lon: p.longitude,
+													});
+												else if (z === "out")
+													setFocusedPoint(null);
+												onTrigger?.({
+													trigger: "mouseout",
+													label: p.label,
+													row,
+												});
+											},
+											50,
+										);
+									},
 								}}
 							>
 								{showTooltip && (
@@ -490,10 +762,11 @@ function TooltipContent({
 						key={column}
 						className="mt-1 border-slate-200 border-t pt-1 text-slate-700"
 					>
-						{column} ({aggregation}):{" "}
+						{column}
+						{aggregation !== "raw" ? ` (${aggregation})` : ""}:{" "}
 						<span className="font-medium tabular-nums">
 							{formatValue(
-								point.tooltipValues![column],
+								point.tooltipValues?.[column],
 								column,
 								formatRules,
 							)}

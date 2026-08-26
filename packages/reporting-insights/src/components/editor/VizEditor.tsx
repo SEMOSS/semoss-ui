@@ -182,6 +182,7 @@ export interface VizEditorProps {
 		sheetName?: string;
 		columns?: string[];
 		queryName?: string;
+		eventParamNames?: string[];
 	}[];
 	/**
 	 * Shared query registry for the data-source picker. When provided (with the
@@ -632,6 +633,12 @@ export function VizEditor(props: VizEditorProps) {
 						onCustomColorPalettesChange={
 							onCustomColorPalettesChange
 						}
+						allVisualizations={siblings.map((s) => ({
+							id: s.id,
+							name: s.title,
+							eventParams: s.eventParamNames,
+						}))}
+						hostVizId={viz.title}
 					/>
 				)}
 			</div>

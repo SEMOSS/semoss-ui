@@ -33,10 +33,16 @@ export interface AppliedFilter {
 	column: string;
 	/** Selected values — a row matches if its cell equals ANY of these (SQL IN). Empty = inactive. */
 	values: string[];
-	/** Visualization ids this filter applies to. */
+	/** Visualization ids this filter applies to. Empty array = apply to ALL known visualizations. */
 	targets: string[];
 	/** Float display type: author defined rule tree applied instead of column+values. */
 	rules?: VizFilterGroup;
+	/**
+	 * Full data row from a click event: when set, a target row passes only if every
+	 * key present in this object matches (string comparison). Replaces column+values
+	 * for event-triggered filters so no column selection is needed.
+	 */
+	row?: Record<string, unknown>;
 }
 
 /** A visualization's currently-loaded rows, published so filter widgets can read
@@ -91,30 +97,43 @@ class FilterStore {
 	getDataVersion = (vizId: string): number =>
 		this.dataVersions.get(vizId) ?? 0;
 
+	/** All visualization ids that have ever published data to this store. */
+	getAllVizIds = (): string[] => Array.from(this.vizData.keys());
+
 	/** Per-viz version — a primitive that only changes when a filter targeting it changes. */
 	getVizVersion = (vizId: string): number => this.versions.get(vizId) ?? 0;
 
-	/** Set (or, when no values are selected, clear) the filter owned by a filter widget. */
+	/** Set (or, when nothing is active, clear) the filter owned by a filter widget or event. */
 	setFilter(next: AppliedFilter) {
 		const prev = this.filters.get(next.id);
+		const isActive =
+			next.values.length > 0 ||
+			vizFilterIsActive(next.rules) ||
+			(next.row != null && Object.keys(next.row).length > 0);
 		// Every viz that was OR is now targeted must be re-evaluated.
+		// Empty targets means "all known visualizations".
+		const resolveTargets = (f: AppliedFilter) =>
+			f.targets.length > 0 ? f.targets : Array.from(this.vizData.keys());
 		const affected = new Set<string>([
-			...(prev?.targets ?? []),
-			...next.targets,
+			...resolveTargets(prev ?? { ...next, targets: [] }),
+			...resolveTargets(next),
 		]);
-		if (next.values.length || vizFilterIsActive(next.rules))
-			this.filters.set(next.id, next);
+		if (isActive) this.filters.set(next.id, next);
 		else this.filters.delete(next.id);
 		affected.forEach((v) => this.bump(v));
 		this.emit();
 	}
 
-	/** Remove a filter entirely (e.g. when the widget unmounts). */
+	/** Remove a filter entirely (e.g. when the widget unmounts or an unfilter event fires). */
 	clearFilter(id: string) {
 		const prev = this.filters.get(id);
 		if (!prev) return;
 		this.filters.delete(id);
-		prev.targets.forEach((v) => this.bump(v));
+		const targets =
+			prev.targets.length > 0
+				? prev.targets
+				: Array.from(this.vizData.keys());
+		targets.forEach((v) => this.bump(v));
 		this.emit();
 	}
 
@@ -128,8 +147,13 @@ class FilterStore {
 		const out: AppliedFilter[] = [];
 		this.filters.forEach((f) => {
 			const isActive =
-				(f.column && f.values.length > 0) || vizFilterIsActive(f.rules);
-			if (isActive && f.targets.includes(vizId)) out.push(f);
+				(f.column && f.values.length > 0) ||
+				vizFilterIsActive(f.rules) ||
+				(f.row != null && Object.keys(f.row).length > 0);
+			// Empty targets = apply to all known visualizations
+			const appliesToThis =
+				f.targets.length === 0 || f.targets.includes(vizId);
+			if (isActive && appliesToThis) out.push(f);
 		});
 		return out;
 	}
@@ -191,11 +215,7 @@ export function useTargetData(
 			if (!store) return "0";
 			// Combined snapshot: a string of each target's data version. Changes
 			// whenever any target publishes, so the widget re-derives its options.
-			return (
-				targets.map((t) => store.getDataVersion(t)).join("|") +
-				"#" +
-				key
-			);
+			return `${targets.map((t) => store.getDataVersion(t)).join("|")}#${key}`;
 		},
 		() => "0",
 	);
@@ -229,13 +249,38 @@ export function distinctValuesFor(
 	return out.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 }
 
-/** Apply client-side multi-value (IN) filters and rule trees to a set of rows. */
+/** Apply client-side multi-value (IN) filters, row-match filters, and rule trees to a set of rows. */
 export function applyFilters<T extends Record<string, any>>(
 	rows: T[],
 	filters: AppliedFilter[],
 ): T[] {
 	if (!filters.length || !Array.isArray(rows) || !rows.length) return rows;
 	let result = rows;
+	// Row-match pass: event-triggered filters
+	// Only match on columns that exist in BOTH the filter row and the target row,
+	// so extra columns that don't appear in the target dataset are ignored rather
+	// than blocking all matches.
+	// If no shared columns exist between the filter row and a target row, that
+	// filter is treated as inactive (all rows pass) rather than killing the result.
+	const rowFilters = filters.filter(
+		(f) => f.row != null && Object.keys(f.row).length > 0,
+	);
+	if (rowFilters.length) {
+		result = result.filter((row) =>
+			rowFilters.every((f) => {
+				const sharedEntries = Object.entries(f.row!).filter(
+					([k]) => row?.[k] != null,
+				);
+				if (sharedEntries.length === 0) {
+					return true; // no shared columns: filter is inapplicable
+				}
+				const pass = sharedEntries.every(
+					([k, v]) => String(row[k]) === String(v),
+				);
+				return pass;
+			}),
+		);
+	}
 	// Column + values (IN) pass
 	const columnFilters = filters.filter(
 		(f) => f.column && f.values.length > 0,

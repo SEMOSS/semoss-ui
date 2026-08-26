@@ -489,6 +489,9 @@ interface BarChartVizProps {
 	stacked?: boolean;
 	/** Called when stackbar styling should be persisted (e.g. save-zoom on brush release). */
 	onStylingChange?: (updates: Partial<StackBarStyling>) => void;
+	onTrigger?: (
+		payload: import("@/types/dashboard").VizTriggerPayload,
+	) => void;
 }
 
 export function Bar_Chart({
@@ -496,6 +499,7 @@ export function Bar_Chart({
 	config,
 	stacked = false,
 	onStylingChange,
+	onTrigger,
 }: BarChartVizProps) {
 	const xKey = config?.xKey ?? "";
 	const yKeys = config?.yKeys ?? [];
@@ -680,79 +684,6 @@ export function Bar_Chart({
 		}));
 	}, [trendlineType, chartData, yKeys]);
 
-	if (!xKey || !yKeys.length) {
-		return (
-			<div className="flex h-full items-center justify-center">
-				<div className="px-6 text-center text-slate-400">
-					<BarChart2 className="mx-auto mb-3 h-12 w-12 opacity-30" />
-					<p className="font-medium text-sm">No data configured</p>
-					<p className="mt-1 text-xs">
-						Drag columns to X-Axis and Y-Axis drop zones
-					</p>
-				</div>
-			</div>
-		);
-	}
-
-	// Recharts draws SVG (one node per bar). Past a safe mark count that would bog
-	// down or crash the DOM, fall back to the canvas renderer, which paints the same
-	// bars as pixels and handles hundreds of thousands of them (legacy parity).
-	// Normal-size charts stay on Recharts below, keeping full styling + tooltips.
-	const SVG_MARK_LIMIT = 8000; // categories × series
-	const totalMarks = renderData.length * Math.max(1, seriesKeys.length);
-	if (totalMarks > SVG_MARK_LIMIT) {
-		return (
-			<CanvasBarChart
-				renderData={renderData}
-				seriesKeys={seriesKeys}
-				xKey={xKey}
-				palette={palette}
-				stacked={stacked}
-			/>
-		);
-	}
-
-	/** Resolve a fill color for a given row + Y series. ColorRule wins over palette. */
-	const colorForBar = (
-		row: Record<string, unknown>,
-		seriesKey: string,
-		seriesIndex: number,
-	): string => {
-		for (const rule of colorRules) {
-			if (rule.targetColumn && rule.targetColumn !== seriesKey) continue;
-			const candidate: unknown = row[rule.valueColumn];
-			if (compareColorRule(rule.comparator, candidate, rule.value))
-				return rule.color;
-		}
-		return palette[seriesIndex % palette.length];
-	};
-
-	const xAxisLabel = xCfg.title ?? config?.xLabel ?? (xKey || undefined);
-	const yAxisLabel =
-		yCfg.title ??
-		config?.yLabel ??
-		(buildDefaultYAxisTitle(yKeys, config?.columnAggregations) ||
-			undefined);
-
-	// ComposedChart only when trendline is active (Line inside BarChart is unsupported).
-	// ReferenceLine, ReferenceArea, and Brush all work natively in BarChart.
-	// Note: !facetMode restriction removed — ComposedChart with a Line child still
-	// gives per-column hover for stacked facet charts.
-	// Trendline disabled when non-stacked flip-series is active (pivoted layout has no meaningful trend axis)
-	const useComposed = trendlineType !== "none" && (stacked || !flipSeries);
-	const ChartComponent: typeof BarChart | typeof ComposedChart = useComposed
-		? ComposedChart
-		: BarChart;
-
-	// FlipSeries in stacked-facet mode: swap facet/xKey roles.
-	// FlipSeries in non-stacked mode: pivot applied in renderData, synthetic key used.
-	const effectiveXDataKey =
-		flipSeries && facetMode
-			? facetKey
-			: !stacked && flipSeries
-				? "__yKey__"
-				: xKey;
-
 	// Y brush state: [minFrac, maxFrac] where 0=data min, 1=data max
 	const [yBrushFrac, setYBrushFrac] = useState<[number, number]>(() =>
 		saveZoom && sbStyling.savedZoomY ? sbStyling.savedZoomY : [0, 1],
@@ -761,6 +692,9 @@ export function Bar_Chart({
 	const [xBrushFrac, setXBrushFrac] = useState<[number, number]>(() =>
 		saveZoom && sbStyling.savedZoomX ? sbStyling.savedZoomX : [0, 1],
 	);
+
+	const lastHoveredLabelRef = useRef<string | null>(null);
+	const lastHoveredPayloadRef = useRef<Record<string, unknown> | null>(null);
 
 	// Keep refs so the saveZoom effect below reads the latest fracs without re-running.
 	const xBrushFracRef = useRef(xBrushFrac);
@@ -876,6 +810,79 @@ export function Bar_Chart({
 			] as [number, number])
 		: undefined;
 
+	if (!xKey || !yKeys.length) {
+		return (
+			<div className="flex h-full items-center justify-center">
+				<div className="px-6 text-center text-slate-400">
+					<BarChart2 className="mx-auto mb-3 h-12 w-12 opacity-30" />
+					<p className="font-medium text-sm">No data configured</p>
+					<p className="mt-1 text-xs">
+						Drag columns to X-Axis and Y-Axis drop zones
+					</p>
+				</div>
+			</div>
+		);
+	}
+
+	// Recharts draws SVG (one node per bar). Past a safe mark count that would bog
+	// down or crash the DOM, fall back to the canvas renderer, which paints the same
+	// bars as pixels and handles hundreds of thousands of them (legacy parity).
+	// Normal-size charts stay on Recharts below, keeping full styling + tooltips.
+	const SVG_MARK_LIMIT = 8000; // categories × series
+	const totalMarks = renderData.length * Math.max(1, seriesKeys.length);
+	if (totalMarks > SVG_MARK_LIMIT) {
+		return (
+			<CanvasBarChart
+				renderData={renderData}
+				seriesKeys={seriesKeys}
+				xKey={xKey}
+				palette={palette}
+				stacked={stacked}
+			/>
+		);
+	}
+
+	/** Resolve a fill color for a given row + Y series. ColorRule wins over palette. */
+	const colorForBar = (
+		row: Record<string, unknown>,
+		seriesKey: string,
+		seriesIndex: number,
+	): string => {
+		for (const rule of colorRules) {
+			if (rule.targetColumn && rule.targetColumn !== seriesKey) continue;
+			const candidate: unknown = row[rule.valueColumn];
+			if (compareColorRule(rule.comparator, candidate, rule.value))
+				return rule.color;
+		}
+		return palette[seriesIndex % palette.length];
+	};
+
+	const xAxisLabel = xCfg.title ?? config?.xLabel ?? (xKey || undefined);
+	const yAxisLabel =
+		yCfg.title ??
+		config?.yLabel ??
+		(buildDefaultYAxisTitle(yKeys, config?.columnAggregations) ||
+			undefined);
+
+	// ComposedChart only when trendline is active (Line inside BarChart is unsupported).
+	// ReferenceLine, ReferenceArea, and Brush all work natively in BarChart.
+	// Note: !facetMode restriction removed — ComposedChart with a Line child still
+	// gives per-column hover for stacked facet charts.
+	// Trendline disabled when non-stacked flip-series is active (pivoted layout has no meaningful trend axis)
+	const useComposed = trendlineType !== "none" && (stacked || !flipSeries);
+	const ChartComponent: typeof BarChart | typeof ComposedChart = useComposed
+		? ComposedChart
+		: BarChart;
+
+	// FlipSeries in stacked-facet mode: swap facet/xKey roles.
+	// FlipSeries in non-stacked mode: pivot applied in renderData, synthetic key used.
+	const effectiveXDataKey =
+		flipSeries && facetMode
+			? facetKey
+			: !stacked && flipSeries
+				? "__yKey__"
+				: xKey;
+
 	return (
 		<div
 			style={{
@@ -917,6 +924,65 @@ export function Bar_Chart({
 										: 8,
 							left: yAxisLabel && !flipAxis ? 12 : 0,
 							bottom: 4,
+						}}
+						onClick={(e: any) => {
+							if (e?.activeLabel != null) {
+								const row = e.activePayload?.[0]?.payload ??
+									visibleRenderData.find(
+										(d) =>
+											String(d[xKey]) ===
+											String(e.activeLabel),
+									) ?? { [xKey]: String(e.activeLabel) };
+								onTrigger?.({
+									trigger: "click",
+									label: String(e.activeLabel),
+									row,
+								});
+							}
+						}}
+						onDoubleClick={() => {
+							const label = lastHoveredLabelRef.current;
+							if (label != null)
+								onTrigger?.({
+									trigger: "dblclick",
+									label,
+									row: lastHoveredPayloadRef.current ??
+										visibleRenderData.find(
+											(d) =>
+												String(d[xKey]) ===
+												String(label),
+										) ?? { [xKey]: label },
+								});
+						}}
+						onMouseMove={(e: any) => {
+							const label = e?.activeLabel
+								? String(e.activeLabel)
+								: null;
+							if (
+								label &&
+								label !== lastHoveredLabelRef.current
+							) {
+								lastHoveredLabelRef.current = label;
+								lastHoveredPayloadRef.current =
+									e.activePayload?.[0]?.payload ?? null;
+								onTrigger?.({
+									trigger: "hover",
+									label,
+									row: e.activePayload?.[0]?.payload ??
+										visibleRenderData.find(
+											(d) =>
+												String(d[xKey]) ===
+												String(label),
+										) ?? { [xKey]: label },
+								});
+							}
+						}}
+						onMouseLeave={() => {
+							if (lastHoveredLabelRef.current !== null) {
+								lastHoveredLabelRef.current = null;
+								lastHoveredPayloadRef.current = null;
+								onTrigger?.({ trigger: "mouseout" });
+							}
 						}}
 					>
 						<CartesianGrid
@@ -1140,7 +1206,11 @@ export function Bar_Chart({
 												palette[i % palette.length];
 											const label =
 												typeof value === "number"
-													? value.toLocaleString()
+													? formatValue(
+															value,
+															k,
+															formatRules,
+														)
 													: String(value ?? "");
 											const badgeW = Math.max(
 												label.length * 6 + 10,

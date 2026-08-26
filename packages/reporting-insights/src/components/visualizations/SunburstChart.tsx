@@ -18,12 +18,14 @@ import type {
 	ColorRule,
 	FormatRule,
 	VisualizationConfig,
+	VizTriggerPayload,
 } from "@/types/dashboard";
 
 interface Props {
 	data: any[];
 	config?: VisualizationConfig;
 	formatRules?: FormatRule[];
+	onTrigger?: (payload: VizTriggerPayload) => void;
 }
 
 const FALLBACK_PALETTE = [
@@ -98,7 +100,7 @@ function buildTree(
 		subset.forEach((row) => {
 			const key = String(row[col] ?? "");
 			if (!grouped.has(key)) grouped.set(key, []);
-			grouped.get(key)!.push(row);
+			grouped.get(key)?.push(row);
 		});
 		return Array.from(grouped.entries()).map(([name, items]) => {
 			const children = recurse(items, depth + 1);
@@ -228,7 +230,12 @@ function flattenArcs(
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export function SunburstChart({ data, config, formatRules = [] }: Props) {
+export function SunburstChart({
+	data,
+	config,
+	formatRules = [],
+	onTrigger,
+}: Props) {
 	const levels = config?.sunburstLevels ?? [];
 	const valueCol = config?.yKeys?.[0] ?? "";
 	const aggType =
@@ -242,7 +249,7 @@ export function SunburstChart({ data, config, formatRules = [] }: Props) {
 
 	const palette: string[] = (config?.styling as any)?.colorPalette?.colors
 		?.length
-		? (config!.styling as any).colorPalette.colors
+		? (config?.styling as any).colorPalette.colors
 		: FALLBACK_PALETTE;
 
 	const tree = useMemo(
@@ -347,6 +354,7 @@ export function SunburstChart({ data, config, formatRules = [] }: Props) {
 				onMouseLeave={() => {
 					setHovered(null);
 					setRootHovered(null);
+					onTrigger?.({ trigger: "mouseout" });
 				}}
 			>
 				{arcs.map((arc, i) => {
@@ -386,12 +394,45 @@ export function SunburstChart({ data, config, formatRules = [] }: Props) {
 								fillOpacity={isHovered ? 1 : 0.82}
 								stroke="#fff"
 								strokeWidth={1.5}
+								onMouseEnter={() =>
+									onTrigger?.({
+										trigger: "hover",
+										label: arc.node.name,
+										row: {
+											[levels[arc.node.depth] ?? "name"]:
+												arc.node.name,
+										},
+									})
+								}
 								onMouseMove={(e) =>
 									setHovered({
 										x: e.clientX,
 										y: e.clientY,
 										arc,
 										fill,
+									})
+								}
+								onMouseLeave={() =>
+									onTrigger?.({ trigger: "mouseout" })
+								}
+								onClick={() =>
+									onTrigger?.({
+										trigger: "click",
+										label: arc.node.name,
+										row: {
+											[levels[arc.node.depth] ?? "name"]:
+												arc.node.name,
+										},
+									})
+								}
+								onDoubleClick={() =>
+									onTrigger?.({
+										trigger: "dblclick",
+										label: arc.node.name,
+										row: {
+											[levels[arc.node.depth] ?? "name"]:
+												arc.node.name,
+										},
 									})
 								}
 								style={{
@@ -426,7 +467,7 @@ export function SunburstChart({ data, config, formatRules = [] }: Props) {
 												formatRules,
 											);
 											return fmtName.length > 12
-												? fmtName.slice(0, 10) + "…"
+												? `${fmtName.slice(0, 10)}…`
 												: fmtName;
 										})()}
 									</text>

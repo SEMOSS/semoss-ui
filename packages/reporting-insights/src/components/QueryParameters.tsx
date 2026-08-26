@@ -26,7 +26,6 @@ import {
 	X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Checkbox, Input, Select } from "@/components/ui";
 import { escapeSqlForPixel } from "@/lib/pixel";
 import { ParamControl } from "./ParamControl";
 
@@ -44,7 +43,7 @@ export interface QueryParam {
 	defaultValue: string;
 	/** Text inputs only: hint shown grayed-out in the empty input at runtime. */
 	placeholder?: string;
-	inputType?: "text" | "dropdown" | "multiselect" | "date";
+	inputType?: "text" | "dropdown" | "multiselect" | "date" | "event";
 	required?: boolean;
 	useCurrentDate?: boolean;
 	options?: string[];
@@ -73,6 +72,7 @@ const TYPE_LABEL: Record<NonNullable<QueryParam["inputType"]>, string> = {
 	dropdown: "Dropdown",
 	multiselect: "Multi-select",
 	date: "Date",
+	event: "Event Param",
 };
 
 /** Pull the distinct first-column values out of a SEMOSS query result. */
@@ -186,8 +186,7 @@ export function QueryParameters({
 					</strong>{" "}
 					you can pre-select a default option. For{" "}
 					<strong className="text-stone-700">date</strong> you can
-					pre-set a date or always use today&apos;s date
-					automatically.
+					pre-set a date or always use today's date automatically.
 				</>,
 			],
 		},
@@ -287,7 +286,7 @@ export function QueryParameters({
 						<div className="flex gap-1.5">
 							{FLOWS.map((f, i) => (
 								<button
-									key={f.label}
+									key={i}
 									type="button"
 									onClick={() =>
 										setActiveFlow(i as 0 | 1 | 2)
@@ -304,10 +303,7 @@ export function QueryParameters({
 						</div>
 						<ol className="space-y-2">
 							{FLOWS[activeFlow].steps.map((step, i) => (
-								<li
-									key={`step-${activeFlow}-${i}`}
-									className="flex gap-2.5"
-								>
+								<li key={i} className="flex gap-2.5">
 									<span className="mt-0.5 grid h-4 w-4 flex-shrink-0 place-items-center rounded-full bg-indigo-100 font-bold text-[10px] text-indigo-600">
 										{i + 1}
 									</span>
@@ -455,13 +451,15 @@ export function QueryParameters({
 								{/* ── Editor (expanded) ── */}
 								{isOpen && (
 									<div className="space-y-3 px-3 py-3">
-										<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+										<div
+											className={`grid grid-cols-1 gap-3 ${param.inputType !== "event" ? "sm:grid-cols-3" : ""}`}
+										>
 											<label className="block">
 												<span className="mb-1 block font-medium text-[11px] text-stone-500">
 													Variable
 												</span>
 												<div className="flex gap-1">
-													<Input
+													<input
 														type="text"
 														value={param.name}
 														onChange={(e) =>
@@ -493,182 +491,222 @@ export function QueryParameters({
 													</button>
 												</div>
 											</label>
-											<label className="block">
-												<span className="mb-1 block font-medium text-[11px] text-stone-500">
-													Label
-												</span>
-												<Input
-													type="text"
-													value={param.label}
-													onChange={(e) =>
-														updateParam(param.id, {
-															label: e.target
-																.value,
-														})
-													}
-													className={FIELD}
-													placeholder="Display label"
-												/>
-											</label>
-											<label className="block">
-												<span className="mb-1 flex items-center gap-1 font-medium text-[11px] text-stone-500">
-													{inputType === "text"
-														? param.required
-															? "Placeholder text"
-															: "Default value"
-														: inputType === "date"
-															? "Default date"
-															: "Default selection"}
-													{inputType !== "text" && (
-														<span className="text-rose-500">
-															*
-														</span>
-													)}
-												</span>
-												{inputType === "text" &&
-													(param.required ? (
-														<Input
-															type="text"
-															value={
-																param.placeholder ??
-																""
-															}
-															onChange={(e) =>
-																updateParam(
-																	param.id,
-																	{
-																		placeholder:
-																			e
-																				.target
-																				.value ||
-																			undefined,
-																	},
-																)
-															}
-															className={FIELD}
-															placeholder="e.g. Enter city name…"
-														/>
-													) : (
-														<Input
-															type="text"
-															value={
-																param.defaultValue
-															}
-															onChange={(e) =>
-																updateParam(
-																	param.id,
-																	{
-																		defaultValue:
-																			e
-																				.target
-																				.value,
-																	},
-																)
-															}
-															className={FIELD}
-															placeholder="Default value"
-														/>
-													))}
-												{inputType === "date" && (
-													<>
-														<Input
-															type="date"
-															value={
-																param.defaultValue
-															}
-															disabled={
-																param.useCurrentDate
-															}
-															onChange={(e) =>
-																updateParam(
-																	param.id,
-																	{
-																		defaultValue:
-																			e
-																				.target
-																				.value,
-																	},
-																)
-															}
-															className={`${FIELD} ${param.useCurrentDate ? "cursor-not-allowed opacity-40" : ""}`}
-														/>
-														<label className="mt-1.5 inline-flex cursor-pointer items-center gap-1.5 text-[11px] text-stone-500">
+											{param.inputType !== "event" && (
+												<label className="block">
+													<span className="mb-1 block font-medium text-[11px] text-stone-500">
+														Label
+													</span>
+													<input
+														type="text"
+														value={param.label}
+														onChange={(e) =>
+															updateParam(
+																param.id,
+																{
+																	label: e
+																		.target
+																		.value,
+																},
+															)
+														}
+														className={FIELD}
+														placeholder="Display label"
+													/>
+												</label>
+											)}
+											{param.inputType !== "event" && (
+												<label className="block">
+													<span className="mb-1 flex items-center gap-1 font-medium text-[11px] text-stone-500">
+														{inputType === "text"
+															? param.required
+																? "Placeholder text"
+																: "Default value"
+															: inputType ===
+																	"date"
+																? "Default date"
+																: "Default selection"}
+														{inputType !==
+															"text" && (
+															<span className="text-rose-500">
+																*
+															</span>
+														)}
+													</span>
+													{inputType === "text" &&
+														(param.required ? (
 															<input
-																type="checkbox"
-																checked={
-																	param.useCurrentDate ??
-																	false
+																type="text"
+																value={
+																	param.placeholder ??
+																	""
 																}
 																onChange={(e) =>
 																	updateParam(
 																		param.id,
 																		{
-																			useCurrentDate:
+																			placeholder:
 																				e
 																					.target
-																					.checked,
+																					.value ||
+																				undefined,
 																		},
 																	)
 																}
-																className="h-3 w-3 rounded border-stone-300 accent-indigo-600"
+																className={
+																	FIELD
+																}
+																placeholder="e.g. Enter city name…"
 															/>
-															Always use
-															today&apos;s date
-														</label>
-													</>
-												)}
-												{needsOptions &&
-													(hasOptionsSource ? (
-														mergedOptions.length >
-														0 ? (
-															<ParamControl
-																param={{
-																	name:
-																		param.name ||
-																		"value",
-																	defaultValue:
-																		"",
-																	inputType,
-																	required: false,
-																}}
+														) : (
+															<input
+																type="text"
 																value={
 																	param.defaultValue
 																}
-																options={
-																	mergedOptions
-																}
-																onChange={(v) =>
+																onChange={(e) =>
 																	updateParam(
 																		param.id,
 																		{
 																			defaultValue:
-																				v,
+																				e
+																					.target
+																					.value,
 																		},
 																	)
 																}
-																size="sm"
+																className={`${FIELD} ${!param.defaultValue ? "border-rose-300 focus:border-rose-400 focus:ring-rose-500/20" : ""}`}
+																placeholder="Required"
 															/>
+														))}
+													{inputType === "date" && (
+														<>
+															<input
+																type="date"
+																value={
+																	param.defaultValue
+																}
+																disabled={
+																	param.useCurrentDate
+																}
+																onChange={(e) =>
+																	updateParam(
+																		param.id,
+																		{
+																			defaultValue:
+																				e
+																					.target
+																					.value,
+																		},
+																	)
+																}
+																className={`${FIELD} ${!param.defaultValue && !param.useCurrentDate ? "border-rose-300 focus:border-rose-400 focus:ring-rose-500/20" : ""} ${param.useCurrentDate ? "cursor-not-allowed opacity-40" : ""}`}
+															/>
+															<label className="mt-1.5 inline-flex cursor-pointer items-center gap-1.5 text-[11px] text-stone-500">
+																<input
+																	type="checkbox"
+																	checked={
+																		param.useCurrentDate ??
+																		false
+																	}
+																	onChange={(
+																		e,
+																	) =>
+																		updateParam(
+																			param.id,
+																			{
+																				useCurrentDate:
+																					e
+																						.target
+																						.checked,
+																			},
+																		)
+																	}
+																	className="h-3 w-3 rounded border-stone-300 accent-indigo-600"
+																/>
+																Always use
+																today's date
+															</label>
+														</>
+													)}
+													{needsOptions &&
+														(hasOptionsSource ? (
+															mergedOptions.length >
+															0 ? (
+																<>
+																	<ParamControl
+																		param={{
+																			name:
+																				param.name ||
+																				"value",
+																			defaultValue:
+																				"",
+																			inputType,
+																			required: false,
+																		}}
+																		value={
+																			param.defaultValue
+																		}
+																		options={
+																			mergedOptions
+																		}
+																		onChange={(
+																			v,
+																		) =>
+																			updateParam(
+																				param.id,
+																				{
+																					defaultValue:
+																						v,
+																				},
+																			)
+																		}
+																		size="sm"
+																	/>
+																	{!param.defaultValue && (
+																		<p className="mt-1 text-[11px] text-rose-500">
+																			Select
+																			a
+																			default
+																			value
+																		</p>
+																	)}
+																	{param.required &&
+																		param.defaultValue && (
+																			<p className="mt-1 text-[11px] text-stone-400">
+																				Shown
+																				pre-selected.
+																				Viewer
+																				must
+																				make
+																				a
+																				selection
+																				to
+																				run.
+																			</p>
+																		)}
+																</>
+															) : (
+																<div
+																	className={`${FIELD} cursor-not-allowed bg-stone-50 text-stone-400`}
+																>
+																	Click{" "}
+																	<span className="font-medium text-stone-500">
+																		Load
+																	</span>{" "}
+																	below to see
+																	options
+																</div>
+															)
 														) : (
 															<div
 																className={`${FIELD} cursor-not-allowed bg-stone-50 text-stone-400`}
 															>
-																Click{" "}
-																<span className="font-medium text-stone-500">
-																	Load
-																</span>{" "}
-																below to see
-																options
+																Add options
+																below first
 															</div>
-														)
-													) : (
-														<div
-															className={`${FIELD} cursor-not-allowed bg-stone-50 text-stone-400`}
-														>
-															Add options below
-															first
-														</div>
-													))}
-											</label>
+														))}
+												</label>
+											)}
 										</div>
 
 										<div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -682,6 +720,7 @@ export function QueryParameters({
 														"dropdown",
 														"multiselect",
 														"date",
+														"event",
 													] as const
 												).map((v) => (
 													<button
@@ -693,14 +732,31 @@ export function QueryParameters({
 																"text";
 															if (current === v)
 																return;
-															// Clear default so the user must re-pick a value valid for the new type.
+															// Seed date params with today so users have a ready upper bound; clear all others.
+															// Event params don't use label/required/defaultValue — clear them on switch.
 															updateParam(
 																param.id,
 																{
 																	inputType:
 																		v,
 																	defaultValue:
-																		"",
+																		v ===
+																		"date"
+																			? new Date()
+																					.toISOString()
+																					.slice(
+																						0,
+																						10,
+																					)
+																			: "",
+																	...(v ===
+																	"event"
+																		? {
+																				label: "",
+																				required:
+																					undefined,
+																			}
+																		: {}),
 																},
 															);
 														}}
@@ -717,41 +773,48 @@ export function QueryParameters({
 													</button>
 												))}
 											</div>
-											<label className="ml-auto inline-flex cursor-pointer items-center gap-1.5 text-[12px] text-stone-600">
-												<Checkbox
-													type="checkbox"
-													checked={
-														param.required ?? false
-													}
-													onChange={(e) => {
-														const nowRequired =
-															e.target.checked;
-														const patch: Partial<QueryParam> =
-															{
-																required:
-																	nowRequired ||
-																	undefined,
-															};
-														if (
-															inputType === "text"
-														) {
-															if (nowRequired) {
-																patch.defaultValue =
-																	"";
-															} else {
-																patch.placeholder =
-																	undefined;
-															}
+											{param.inputType !== "event" && (
+												<label className="ml-auto inline-flex cursor-pointer items-center gap-1.5 text-[12px] text-stone-600">
+													<input
+														type="checkbox"
+														checked={
+															param.required ??
+															false
 														}
-														updateParam(
-															param.id,
-															patch,
-														);
-													}}
-													className="h-4 w-4 rounded border-stone-300 text-indigo-600 focus:ring-indigo-500"
-												/>
-												Required
-											</label>
+														onChange={(e) => {
+															const nowRequired =
+																e.target
+																	.checked;
+															const patch: Partial<QueryParam> =
+																{
+																	required:
+																		nowRequired ||
+																		undefined,
+																};
+															if (
+																inputType ===
+																"text"
+															) {
+																if (
+																	nowRequired
+																) {
+																	patch.defaultValue =
+																		"";
+																} else {
+																	patch.placeholder =
+																		undefined;
+																}
+															}
+															updateParam(
+																param.id,
+																patch,
+															);
+														}}
+														className="h-4 w-4 rounded border-stone-300 text-indigo-600 focus:ring-indigo-500"
+													/>
+													Required
+												</label>
+											)}
 										</div>
 
 										{param.inputType === "multiselect" && (
@@ -764,6 +827,13 @@ export function QueryParameters({
 												</code>{" "}
 												— selected values become a SQL
 												list.
+											</p>
+										)}
+										{param.inputType === "event" && (
+											<p className="rounded-md bg-indigo-50 px-3 py-2 text-[12px] text-indigo-600">
+												This parameter will be set by an
+												event action and will not appear
+												on the parameter sheet.
 											</p>
 										)}
 										{(param.inputType === "dropdown" ||
@@ -917,15 +987,28 @@ function ConditionalConfig({
 	};
 
 	const parentParam = allParams.find((p) => p.name === param.conditionalOn);
+	const parentOptions = parentParam?.options ?? [];
+
+	const autoCreateRules = () => {
+		const existing = new Set(branches.map((b) => b.whenValue));
+		const toAdd = parentOptions.filter((o) => !existing.has(o));
+		if (!toAdd.length) return;
+		const newBranches: ConditionalBranch[] = toAdd.map((o) => ({
+			whenValue: o,
+			options: [],
+		}));
+		onPatch({ conditionalBranches: [...branches, ...newBranches] });
+		setDrafts((prev) => [...prev, ...newBranches.map(makeDraft)]);
+	};
 
 	return (
 		<div className="space-y-3">
 			{/* Parent selector */}
 			<div className="flex items-center gap-2">
 				<span className="shrink-0 font-medium text-[11px] text-stone-500">
-					Depends on
+					Changes based on
 				</span>
-				<Select
+				<select
 					value={param.conditionalOn ?? ""}
 					onChange={(e) =>
 						onPatch({
@@ -935,18 +1018,30 @@ function ConditionalConfig({
 					}
 					className="flex-1 rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-[12px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
 				>
-					<option value="">— select a parameter —</option>
+					<option value="">— pick a dropdown —</option>
 					{allParams.map((p) => (
 						<option key={p.id} value={p.name}>
-							{p.label || p.name} ({p.name})
+							{`{{${p.name}}}`}
 						</option>
 					))}
-				</Select>
+				</select>
 			</div>
 
-			{/* Branch list */}
+			{/* Rule list */}
 			{param.conditionalOn && (
 				<div className="space-y-2">
+					{parentOptions.length > 0 &&
+						branches.length < parentOptions.length && (
+							<button
+								type="button"
+								onClick={autoCreateRules}
+								className="inline-flex items-center gap-1.5 rounded-md bg-indigo-50 px-2.5 py-1 font-semibold text-[11px] text-indigo-700 transition-colors hover:bg-indigo-100"
+							>
+								<Plus className="h-3 w-3" />
+								Auto-create rules for all "
+								{`{{${param.conditionalOn}}}`}" options
+							</button>
+						)}
 					{branches.map((branch, i) => {
 						const draft = drafts[i] ?? makeDraft(branch);
 						const sqlDirty =
@@ -957,31 +1052,49 @@ function ConditionalConfig({
 								key={i}
 								className="space-y-2 rounded-lg border border-stone-200 bg-stone-50 p-3"
 							>
-								{/* Branch header: whenValue + remove */}
+								{/* Rule header */}
 								<div className="flex items-center gap-2">
 									<span className="shrink-0 font-medium text-[11px] text-stone-500">
 										When{" "}
-										<span className="font-mono text-indigo-600">
-											{parentParam?.label ||
-												param.conditionalOn}
-										</span>{" "}
-										=
+										<span className="font-semibold text-indigo-600">{`{{${param.conditionalOn}}}`}</span>{" "}
+										is
 									</span>
-									<Input
-										value={branch.whenValue}
-										onChange={(e) =>
-											patchBranch(i, {
-												whenValue: e.target.value,
-											})
-										}
-										placeholder="exact value"
-										className="min-w-0 flex-1 rounded-md border border-stone-200 bg-white px-2 py-1 text-[12px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-									/>
+									{parentOptions.length > 0 ? (
+										<select
+											value={branch.whenValue}
+											onChange={(e) =>
+												patchBranch(i, {
+													whenValue: e.target.value,
+												})
+											}
+											className="min-w-0 flex-1 rounded-md border border-stone-200 bg-white px-2 py-1 text-[12px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+										>
+											<option value="">
+												— pick a value —
+											</option>
+											{parentOptions.map((o) => (
+												<option key={o} value={o}>
+													{o}
+												</option>
+											))}
+										</select>
+									) : (
+										<input
+											value={branch.whenValue}
+											onChange={(e) =>
+												patchBranch(i, {
+													whenValue: e.target.value,
+												})
+											}
+											placeholder="value to match"
+											className="min-w-0 flex-1 rounded-md border border-stone-200 bg-white px-2 py-1 text-[12px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+										/>
+									)}
 									<button
 										type="button"
 										onClick={() => removeBranch(i)}
 										className="shrink-0 text-stone-400 hover:text-red-500"
-										title="Remove branch"
+										title="Remove rule"
 									>
 										<X className="h-3.5 w-3.5" />
 									</button>
@@ -990,10 +1103,10 @@ function ConditionalConfig({
 								{/* Source type toggle */}
 								<div className="flex items-center gap-1.5">
 									<span className="text-[11px] text-stone-400">
-										Options from:
+										…then show options from:
 									</span>
 									<div className="inline-flex items-center gap-0.5 rounded-md bg-stone-100 p-0.5">
-										{(["sql", "static"] as const).map(
+										{(["static", "sql"] as const).map(
 											(t) => (
 												<button
 													key={t}
@@ -1010,8 +1123,8 @@ function ConditionalConfig({
 													}`}
 												>
 													{t === "sql"
-														? "SQL query"
-														: "Static list"}
+														? "Database query"
+														: "My own list"}
 												</button>
 											),
 										)}
@@ -1024,7 +1137,7 @@ function ConditionalConfig({
 										<div className="flex flex-col gap-1.5 sm:flex-row">
 											{databases &&
 												databases.length > 0 && (
-													<Select
+													<select
 														value={
 															branch.optionsDatabaseId ??
 															databaseId ??
@@ -1052,9 +1165,9 @@ function ConditionalConfig({
 																{d.label}
 															</option>
 														))}
-													</Select>
+													</select>
 												)}
-											<Input
+											<input
 												value={draft.sql}
 												onChange={(e) =>
 													setDraft(i, {
@@ -1124,7 +1237,7 @@ function ConditionalConfig({
 								{draft.sourceType === "static" && (
 									<div className="space-y-1.5">
 										<div className="flex gap-1.5">
-											<Input
+											<input
 												value={draft.manualInput}
 												onChange={(e) =>
 													setDraft(i, {
@@ -1247,7 +1360,7 @@ function ConditionalConfig({
 						onClick={addBranch}
 						className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-stone-300 border-dashed py-1.5 font-medium text-[12px] text-stone-500 transition-colors hover:border-indigo-300 hover:text-indigo-600"
 					>
-						<Plus className="h-3.5 w-3.5" /> Add branch
+						<Plus className="h-3.5 w-3.5" /> Add rule
 					</button>
 				</div>
 			)}
@@ -1353,7 +1466,7 @@ function DropdownConfig({
 					</div>
 					<div className="flex flex-col gap-1.5 sm:flex-row">
 						{databases && databases.length > 0 && (
-							<Select
+							<select
 								value={
 									param.optionsDatabaseId ?? databaseId ?? ""
 								}
@@ -1377,9 +1490,9 @@ function DropdownConfig({
 										{d.label}
 									</option>
 								))}
-							</Select>
+							</select>
 						)}
-						<Input
+						<input
 							value={sql}
 							onChange={(e) => setSql(e.target.value)}
 							placeholder="SELECT DISTINCT region FROM sales ORDER BY region"
@@ -1429,7 +1542,7 @@ function DropdownConfig({
 						Or add options manually
 					</div>
 					<div className="flex gap-1.5">
-						<Input
+						<input
 							value={manual}
 							onChange={(e) => setManual(e.target.value)}
 							onKeyDown={(e) => {
@@ -1482,7 +1595,7 @@ function DropdownConfig({
 			{allParams.length > 0 && (
 				<div className="space-y-2 border-stone-100 border-t pt-3">
 					<label className="flex cursor-pointer select-none items-center gap-2 font-medium text-[12px] text-stone-600">
-						<Checkbox
+						<input
 							type="checkbox"
 							checked={!!param.conditionalOn}
 							onChange={(e) => {
@@ -1503,7 +1616,7 @@ function DropdownConfig({
 							className="h-4 w-4 rounded border-stone-300 text-indigo-600 focus:ring-indigo-500"
 						/>
 						<GitBranch className="h-3.5 w-3.5 text-stone-400" />
-						Options depend on another parameter (IF conditions)
+						Show different options based on another dropdown
 					</label>
 					{param.conditionalOn && (
 						<ConditionalConfig

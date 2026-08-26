@@ -444,7 +444,8 @@ function TotalLabels({
 	xDataKey: string;
 	flipAxis: boolean;
 	yKey: string;
-	formatRules: unknown[];
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	formatRules: any;
 }) {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const xScale = useXAxisScale() as any;
@@ -506,12 +507,16 @@ interface LineChartVizProps {
 	data: Record<string, unknown>[];
 	config?: VisualizationConfig;
 	onStylingChange?: (updates: Partial<LineStyling>) => void;
+	onTrigger?: (
+		payload: import("@/types/dashboard").VizTriggerPayload,
+	) => void;
 }
 
 export function Line_Chart({
 	data,
 	config,
 	onStylingChange,
+	onTrigger,
 }: LineChartVizProps) {
 	const xKey = config?.xKey ?? "";
 	const yKeys = config?.yKeys ?? [];
@@ -592,6 +597,8 @@ export function Line_Chart({
 	const [xBrushFrac, setXBrushFrac] = useState<[number, number]>(() =>
 		saveZoom && s.savedZoomX ? s.savedZoomX : [0, 1],
 	);
+	const lastHoveredLabelRef = useRef<string | null>(null);
+	const lastHoveredPayloadRef = useRef<Record<string, unknown> | null>(null);
 	const xBrushFracRef = useRef(xBrushFrac);
 	xBrushFracRef.current = xBrushFrac;
 	const yBrushFracRef = useRef(yBrushFrac);
@@ -711,7 +718,7 @@ export function Line_Chart({
 			}
 			if (needsTrend) {
 				for (const sk of seriesKeys) {
-					extra[`_trend_${sk}`] = trendDataMap![sk][i];
+					extra[`_trend_${sk}`] = trendDataMap?.[sk][i];
 				}
 			}
 			return { ...row, ...extra };
@@ -808,8 +815,56 @@ export function Line_Chart({
 								flipAxis && showMinMax ? 50 : 8,
 								showTotals && flipAxis ? 50 : 8,
 							),
-							left: 0,
+							left: yAxisLabel && !flipAxis ? 12 : 0,
 							bottom: 4,
+						}}
+						onClick={(e: any) => {
+							if (e?.activeLabel != null)
+								onTrigger?.({
+									trigger: "click",
+									label: String(e.activeLabel),
+									row: e.activePayload?.[0]?.payload ?? {
+										[xKey]: String(e.activeLabel),
+									},
+								});
+						}}
+						onDoubleClick={() => {
+							const label = lastHoveredLabelRef.current;
+							if (label != null)
+								onTrigger?.({
+									trigger: "dblclick",
+									label,
+									row: lastHoveredPayloadRef.current ?? {
+										[xKey]: label,
+									},
+								});
+						}}
+						onMouseMove={(e: any) => {
+							const label = e?.activeLabel
+								? String(e.activeLabel)
+								: null;
+							if (
+								label &&
+								label !== lastHoveredLabelRef.current
+							) {
+								lastHoveredLabelRef.current = label;
+								lastHoveredPayloadRef.current =
+									e.activePayload?.[0]?.payload ?? null;
+								onTrigger?.({
+									trigger: "hover",
+									label,
+									row: e.activePayload?.[0]?.payload ?? {
+										[xKey]: label,
+									},
+								});
+							}
+						}}
+						onMouseLeave={() => {
+							if (lastHoveredLabelRef.current !== null) {
+								lastHoveredLabelRef.current = null;
+								lastHoveredPayloadRef.current = null;
+								onTrigger?.({ trigger: "mouseout" });
+							}
 						}}
 					>
 						<CartesianGrid
@@ -880,14 +935,14 @@ export function Line_Chart({
 									textAnchor={
 										xCfg.rotateValues ? "end" : "middle"
 									}
-									tickFormatter={(v: unknown) =>
-										formatValue(v, xKey, formatRules)
-									}
 									label={buildAxisLabelProps(
 										xAxisLabel,
 										xCfg,
 										"x",
 									)}
+									tickFormatter={(v: unknown) =>
+										formatValue(v, xKey, formatRules)
+									}
 								/>
 								<YAxis
 									tick={
@@ -908,6 +963,11 @@ export function Line_Chart({
 									domain={yDomain}
 									allowDataOverflow={yBrushActive}
 									allowDecimals={zoomY ? false : undefined}
+									label={buildAxisLabelProps(
+										yAxisLabel,
+										yCfg,
+										"y",
+									)}
 									tickFormatter={(v: unknown) =>
 										formatValue(
 											v,
@@ -915,11 +975,6 @@ export function Line_Chart({
 											formatRules,
 										)
 									}
-									label={buildAxisLabelProps(
-										yAxisLabel,
-										yCfg,
-										"y",
-									)}
 								/>
 							</>
 						)}
@@ -1032,7 +1087,11 @@ export function Line_Chart({
 											formatter={
 												((v: unknown) =>
 													typeof v === "number"
-														? v.toLocaleString()
+														? formatValue(
+																v,
+																k,
+																formatRules,
+															)
 														: String(
 																v ?? "",
 															)) as never
@@ -1061,7 +1120,11 @@ export function Line_Chart({
 													palette[i % palette.length];
 												const label =
 													typeof value === "number"
-														? value.toLocaleString()
+														? formatValue(
+																value,
+																k,
+																formatRules,
+															)
 														: String(value ?? "");
 												const badgeW = Math.max(
 													label.length * 6 + 10,
