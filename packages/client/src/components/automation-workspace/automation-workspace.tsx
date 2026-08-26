@@ -236,6 +236,22 @@ export const AutomationWorkspace = observer(() => {
 		}
 	}, [workspace.model]);
 
+	const activateTrace = useCallback(() => {
+		const traceTab = workspace.model?.getNodeById("automation-trace");
+		if (traceTab instanceof FlexLayout.TabNode) {
+			const traceBorder = traceTab.getParent();
+			if (
+				traceBorder instanceof FlexLayout.BorderNode &&
+				traceBorder.getSelectedNode()?.getId() === traceTab.getId()
+			) {
+				return;
+			}
+			traceTab
+				.getModel()
+				.doAction(FlexLayout.Actions.selectTab(traceTab.getId()));
+		}
+	}, [workspace.model]);
+
 	const runStatus = useMemo(() => {
 		if (
 			typeof traceSnapshot === "object" &&
@@ -342,6 +358,10 @@ export const AutomationWorkspace = observer(() => {
 				message.type === "SEMOSS_AUTOMATION_TRACE"
 			) {
 				setTraceSnapshot(message.snapshot);
+				const snap = message.snapshot as { running?: boolean } | null;
+				if (snap?.running === true) {
+					activateTrace();
+				}
 			}
 			if (
 				event.source === automationFrameRef.current?.contentWindow &&
@@ -417,6 +437,7 @@ export const AutomationWorkspace = observer(() => {
 		return () => window.removeEventListener("message", handleMessage);
 	}, [
 		activateInspector,
+		activateTrace,
 		appId,
 		automationWorkspaceOrigin,
 		inspectorSnapshot,

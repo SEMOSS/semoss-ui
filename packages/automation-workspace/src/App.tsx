@@ -37,8 +37,10 @@ export default function App() {
 	const parentOrigin = params.get("parentOrigin") || window.location.origin;
 	const rawReadOnly = params.get("readOnly");
 	const readOnly = rawReadOnly === "1" || rawReadOnly === "true";
-	const mcpMode: "edit" | "create" | null =
-		rawMode === "edit" || rawMode === "create" ? rawMode : null;
+	const mcpMode: "edit" | "create" | "trigger" | null =
+		rawMode === "edit" || rawMode === "create" || rawMode === "trigger"
+			? rawMode
+			: null;
 	const traceMode = rawMode === "trace";
 	const inspectorMode = rawMode === "inspector";
 	const historyMode = rawMode === "history";

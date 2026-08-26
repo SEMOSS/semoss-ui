@@ -146,7 +146,7 @@ const NODE_ARROW_GAP = 40;
 interface AutomationCanvasProps {
 	appId: string;
 	readOnly?: boolean;
-	mcpMode?: "edit" | "create" | null;
+	mcpMode?: "edit" | "create" | "trigger" | null;
 	mcpContext?: AutomationToolContext;
 }
 
@@ -493,6 +493,7 @@ export function AutomationCanvas({
 	useEffect(() => {}, [editingStepId]);
 	const loadedRef = useRef(false);
 	const skipDraftPersistenceRef = useRef(true);
+	const skipNextDraftPersistenceRef = useRef(false);
 	const initialLayoutAppliedRef = useRef(false);
 	const [workflowLoaded, setWorkflowLoaded] = useState(false);
 
@@ -748,7 +749,11 @@ export function AutomationCanvas({
 			return;
 		initialLayoutAppliedRef.current = true;
 		initialViewFittedRef.current = false;
-		setSteps((previous) => layoutNodes(previous, graphEdges));
+		skipDraftPersistenceRef.current = true;
+		setSteps((previous) => {
+			skipNextDraftPersistenceRef.current = true;
+			return layoutNodes(previous, graphEdges);
+		});
 	}, [
 		canvasInitialized,
 		graphEdges,
@@ -762,6 +767,10 @@ export function AutomationCanvas({
 		if (!loadedRef.current || readOnly) return;
 		if (skipDraftPersistenceRef.current) {
 			skipDraftPersistenceRef.current = false;
+			return;
+		}
+		if (skipNextDraftPersistenceRef.current) {
+			skipNextDraftPersistenceRef.current = false;
 			return;
 		}
 		const draft = {
@@ -1190,7 +1199,7 @@ export function AutomationCanvas({
 	);
 
 	const run = useCallback(async () => {
-		if (readOnly) {
+		if (readOnly && mcpMode !== "trigger") {
 			toast.error("You have read-only access to this automation.");
 			return;
 		}
@@ -1206,7 +1215,8 @@ export function AutomationCanvas({
 			setActiveDockTab("validation");
 			return;
 		}
-		if (!(await save())) return;
+		// In trigger mode the automation is already saved — skip the save step.
+		if (mcpMode !== "trigger" && !(await save())) return;
 
 		setRunning(true);
 		setAiRunSummary(null);
@@ -1273,12 +1283,72 @@ export function AutomationCanvas({
 			} else {
 				toast.error(finalDetail.ERROR_MESSAGE ?? "Automation failed");
 			}
+			if (mcpMode === "trigger" && mcpContext) {
+				const succeeded = finalDetail.STATUS === "SUCCESS";
+				const nodeResultLines = (finalDetail.nodeResults ?? []).map(
+					(r) => {
+						const dur =
+							r.DURATION_MS != null
+								? ` (${(r.DURATION_MS / 1000).toFixed(1)}s)`
+								: "";
+						const extra = r.OUTPUT_PREVIEW
+							? ` → ${r.OUTPUT_PREVIEW}`
+							: r.ERROR_MESSAGE
+								? ` → Error: ${r.ERROR_MESSAGE}`
+								: "";
+						return `• ${r.NODE_LABEL}: ${r.STATUS}${dur}${extra}`;
+					},
+				);
+				const baseSummary =
+					finalDetail.RESULT_SUMMARY ??
+					(succeeded
+						? "Automation completed successfully."
+						: (finalDetail.ERROR_MESSAGE ?? "Automation failed."));
+				const mcpResponse =
+					nodeResultLines.length > 0
+						? `${baseSummary}\n\nStep results:\n${nodeResultLines.join("\n")}`
+						: baseSummary;
+				window.parent.postMessage(
+					{
+						type: "SMSS_EXEC_TOOL",
+						tool: {
+							type: "MCP",
+							id: mcpContext.id,
+							name: mcpContext.name,
+							message: mcpContext.message,
+							roomId: mcpContext.roomId,
+							response: mcpResponse,
+							tool_status: succeeded ? "success" : "error",
+							executedParameters: { ...mcpContext.parameters },
+						},
+					},
+					window.location.origin,
+				);
+			}
 		} catch (error) {
 			const message =
 				error instanceof Error ? error.message : "Automation failed";
 			setLatestRunStatus("FAILED");
 			setAiRunSummary(null);
 			toast.error(message);
+			if (mcpMode === "trigger" && mcpContext) {
+				window.parent.postMessage(
+					{
+						type: "SMSS_EXEC_TOOL",
+						tool: {
+							type: "MCP",
+							id: mcpContext.id,
+							name: mcpContext.name,
+							message: mcpContext.message,
+							roomId: mcpContext.roomId,
+							response: message,
+							tool_status: "error",
+							executedParameters: { ...mcpContext.parameters },
+						},
+					},
+					window.location.origin,
+				);
+			}
 		} finally {
 			setRunning(false);
 		}
@@ -1286,6 +1356,8 @@ export function AutomationCanvas({
 		appId,
 		applyNodeProgress,
 		applyRunData,
+		mcpContext,
+		mcpMode,
 		notifyHistoryChanged,
 		readOnly,
 		save,
@@ -1652,38 +1724,41 @@ export function AutomationCanvas({
 									</ReactFlow>
 
 									<div
-										className={`absolute top-4 right-4 z-30 items-center gap-2 ${readOnly ? "hidden" : "flex"}`}
+										className={`absolute top-4 right-4 z-30 items-center gap-2 ${readOnly && mcpMode !== "trigger" ? "hidden" : "flex"}`}
 									>
-										<div
-											className="relative"
-											data-tour="save"
-										>
-											<Button
-												size="sm"
-												variant="outline"
-												className="bg-background shadow-sm"
-												onClick={() =>
-													void (mcpMode && mcpContext
-														? handleDoneReturnToChat()
-														: save())
-												}
-												disabled={saving}
+										{mcpMode !== "trigger" && (
+											<div
+												className="relative"
+												data-tour="save"
 											>
-												<span className="relative mr-1.5">
-													{saving ? (
-														<Loader2 className="h-3.5 w-3.5 animate-spin" />
-													) : (
-														<Save className="h-3.5 w-3.5" />
-													)}
-													{isDirty && !saving && (
-														<span className="-top-1 -right-1 absolute h-2 w-2 rounded-full bg-amber-500 ring-1 ring-background" />
-													)}
-												</span>
-												{mcpMode && mcpContext
-													? "Save — Return to Chat"
-													: "Save"}
-											</Button>
-										</div>
+												<Button
+													size="sm"
+													variant="outline"
+													className="bg-background shadow-sm"
+													onClick={() =>
+														void (mcpMode &&
+														mcpContext
+															? handleDoneReturnToChat()
+															: save())
+													}
+													disabled={saving}
+												>
+													<span className="relative mr-1.5">
+														{saving ? (
+															<Loader2 className="h-3.5 w-3.5 animate-spin" />
+														) : (
+															<Save className="h-3.5 w-3.5" />
+														)}
+														{isDirty && !saving && (
+															<span className="-top-1 -right-1 absolute h-2 w-2 rounded-full bg-amber-500 ring-1 ring-background" />
+														)}
+													</span>
+													{mcpMode && mcpContext
+														? "Save — Return to Chat"
+														: "Save"}
+												</Button>
+											</div>
+										)}
 										<Button
 											data-tour="run"
 											size="sm"
@@ -1707,96 +1782,98 @@ export function AutomationCanvas({
 										</Button>
 									</div>
 
-									<div className="absolute bottom-4 left-4 z-10 flex items-center overflow-hidden rounded-lg border bg-background shadow-sm">
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<button
-													type="button"
-													aria-label="Clean up node layout"
-													onClick={cleanUpLayout}
-													className={`${readOnly ? "hidden" : "flex"} items-center justify-center border-r p-2 text-muted-foreground transition-colors hover:bg-muted`}
-												>
-													<RefreshCw className="h-4 w-4" />
-												</button>
-											</TooltipTrigger>
-											<TooltipContent side="top">
-												Clean up layout
-											</TooltipContent>
-										</Tooltip>
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<button
-													type="button"
-													aria-label="Interact mode"
-													onClick={() =>
-														setCanvasMode(
-															"interact",
-														)
-													}
-													className={`flex items-center justify-center p-2 transition-colors ${canvasMode === "interact" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
-												>
-													<MousePointer2 className="h-4 w-4" />
-												</button>
-											</TooltipTrigger>
-											<TooltipContent side="top">
-												Interact mode — click nodes to
-												edit (V)
-											</TooltipContent>
-										</Tooltip>
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<button
-													type="button"
-													aria-label="Pan mode"
-													onClick={() =>
-														setCanvasMode("pan")
-													}
-													className={`flex items-center justify-center p-2 transition-colors ${canvasMode === "pan" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
-												>
-													<Hand className="h-4 w-4" />
-												</button>
-											</TooltipTrigger>
-											<TooltipContent side="top">
-												Pan mode — drag to move canvas
-												(H)
-											</TooltipContent>
-										</Tooltip>
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<div className="flex cursor-pointer items-center gap-1.5 border-l px-2 py-2 text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground">
-													<Switch
-														checked={devMode}
-														onCheckedChange={
-															handleDevModeChange
+									{!readOnly && (
+										<div className="absolute bottom-4 left-4 z-10 flex items-center overflow-hidden rounded-lg border bg-background shadow-sm">
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<button
+														type="button"
+														aria-label="Clean up node layout"
+														onClick={cleanUpLayout}
+														className="flex items-center justify-center border-r p-2 text-muted-foreground transition-colors hover:bg-muted"
+													>
+														<RefreshCw className="h-4 w-4" />
+													</button>
+												</TooltipTrigger>
+												<TooltipContent side="top">
+													Clean up layout
+												</TooltipContent>
+											</Tooltip>
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<button
+														type="button"
+														aria-label="Interact mode"
+														onClick={() =>
+															setCanvasMode(
+																"interact",
+															)
 														}
-													/>
-													Dev
-												</div>
-											</TooltipTrigger>
-											<TooltipContent side="top">
-												Show Python source editors on
-												executable nodes
-											</TooltipContent>
-										</Tooltip>
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<button
-													type="button"
-													aria-label="Open automation help"
-													onClick={() =>
-														setShowHelp(true)
-													}
-													className="flex items-center gap-1.5 border-l px-2 py-2 text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground"
-												>
-													<HelpCircle className="h-4 w-4" />
-													Help
-												</button>
-											</TooltipTrigger>
-											<TooltipContent side="top">
-												Automation help
-											</TooltipContent>
-										</Tooltip>
-									</div>
+														className={`flex items-center justify-center p-2 transition-colors ${canvasMode === "interact" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
+													>
+														<MousePointer2 className="h-4 w-4" />
+													</button>
+												</TooltipTrigger>
+												<TooltipContent side="top">
+													Interact mode — click nodes
+													to edit (V)
+												</TooltipContent>
+											</Tooltip>
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<button
+														type="button"
+														aria-label="Pan mode"
+														onClick={() =>
+															setCanvasMode("pan")
+														}
+														className={`flex items-center justify-center p-2 transition-colors ${canvasMode === "pan" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
+													>
+														<Hand className="h-4 w-4" />
+													</button>
+												</TooltipTrigger>
+												<TooltipContent side="top">
+													Pan mode — drag to move
+													canvas (H)
+												</TooltipContent>
+											</Tooltip>
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<div className="flex cursor-pointer items-center gap-1.5 border-l px-2 py-2 text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground">
+														<Switch
+															checked={devMode}
+															onCheckedChange={
+																handleDevModeChange
+															}
+														/>
+														Dev
+													</div>
+												</TooltipTrigger>
+												<TooltipContent side="top">
+													Show Python source editors
+													on executable nodes
+												</TooltipContent>
+											</Tooltip>
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<button
+														type="button"
+														aria-label="Open automation help"
+														onClick={() =>
+															setShowHelp(true)
+														}
+														className="flex items-center gap-1.5 border-l px-2 py-2 text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground"
+													>
+														<HelpCircle className="h-4 w-4" />
+														Help
+													</button>
+												</TooltipTrigger>
+												<TooltipContent side="top">
+													Automation help
+												</TooltipContent>
+											</Tooltip>
+										</div>
+									)}
 								</div>
 							}
 						/>
